@@ -15,9 +15,9 @@
 // Public
 // Constructor
 //-----------------------------------------------------------------------------
-HMDLayerInfoPDF::HMDLayerInfoPDF(const WString& pi_rKeyName,
+HMDLayerInfoPDF::HMDLayerInfoPDF(const Utf8String& pi_rKeyName,
                                         bool    pi_InitialVisibleState,
-                                        const WString& pi_rLayerName)
+                                        const Utf8String& pi_rLayerName)
     : HMDLayerInfo(pi_rKeyName, pi_InitialVisibleState)
     {
     m_LayerName = pi_rLayerName;
@@ -35,7 +35,7 @@ HMDLayerInfoPDF::~HMDLayerInfoPDF()
 // Public
 // Get the layer's name
 //-----------------------------------------------------------------------------
-const WString& HMDLayerInfoPDF::GetLayerName() const
+const Utf8String& HMDLayerInfoPDF::GetLayerName() const
     {
     return m_LayerName;
     }

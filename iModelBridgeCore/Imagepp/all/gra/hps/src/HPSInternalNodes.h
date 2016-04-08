@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hps/src/HPSInternalNodes.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Node types, in order of appearance in grammar description
@@ -308,11 +308,11 @@ private:
 
     void GetRasterDescriptivePSS(const HFCPtr<HPANode>& pi_rpRasterNode,
                                  bool                  pi_EnclosedLastLineByPG,
-                                 WString&               po_rPSS);
+                                 Utf8String&               po_rPSS);
 
     void AddLineToDescriptivePSS(HFCMemoryLineStream& pi_rFileStream,
                                  uint32_t            pi_LineNb,
-                                 WString&             po_rPSS,
+                                 Utf8String&             po_rPSS,
                                  int32_t            pi_StartingColPos = -1,
                                  int32_t            pi_EndingColPos   = -1);
 
@@ -325,7 +325,7 @@ private:
     void UpdatePixelSizeRange(HFCPtr<HRARaster>&     pi_rpRaster,
                               const HFCPtr<HGF2DCoordSys>& pi_rpMosaicCoordSys);
 
-    HFCMemoryLineStream& GetLineStream(WString& pi_rPSSFileName);
+    HFCMemoryLineStream& GetLineStream(Utf8String& pi_rPSSFileName);
 
     LineStreamList m_pLineStreams;
 
@@ -803,7 +803,7 @@ public:
                              const HFCPtr<HPASession>& pi_pSession);
     virtual ~StatementDeclarationNode() { }
     HFCPtr<HPSParserScope> m_pScope;
-    WString                m_Name;
+    Utf8String                m_Name;
     };
 
 //---------------------------------------------------------------------------

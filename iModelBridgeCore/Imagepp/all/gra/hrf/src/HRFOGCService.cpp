@@ -55,7 +55,7 @@ public:
         }
 
 private:
-    virtual WString _ToString() const override
+    virtual Utf8String _ToString() const override
         {
         return m_RelatedException.GetExceptionMessage();
         }
@@ -414,7 +414,7 @@ void HRFOGCService::ValidateConnection(bool authenticate)
         HttpResponsePtr response;
         HttpRequestStatus ReqStatus = session.Request(response, request);
         if(HttpRequestStatus::Success != ReqStatus)
-            throw HFCInternetConnectionException(L"HTTP", HFCInternetConnectionException::CANNOT_CONNECT);
+            throw HFCInternetConnectionException("HTTP", HFCInternetConnectionException::CANNOT_CONNECT);
 
         return;
         }
@@ -478,9 +478,9 @@ void HRFOGCService::ValidateConnection(bool authenticate)
                 {
                 if (pAuthentication == nullptr || !pAuthentication->IsCompatibleWith(HFCInternetAuthentication::CLASS_ID))
                     {
-                    pAuthentication = new HFCInternetAuthentication(WString(request.GetUrl().c_str(), true),
-                                                                    WString(request.GetCredentials().GetUsername().c_str(), true),
-                                                                    WString(request.GetCredentials().GetPassword().c_str(), true));
+                    pAuthentication = new HFCInternetAuthentication(request.GetUrl(),
+                                                                    request.GetCredentials().GetUsername(),
+                                                                    request.GetCredentials().GetPassword());
                     }
                 }
             else
@@ -491,21 +491,21 @@ void HRFOGCService::ValidateConnection(bool authenticate)
 
             if (pAuthentication->GetRetryCount() < MaxRetryCount)
                 {
-                HFCPtr<HFCAuthenticationError> pAuthError(new OGRAuthenticationError(HFCInternetConnectionException(L"HTTP", connectErrorType)));
+                HFCPtr<HFCAuthenticationError> pAuthError(new OGRAuthenticationError(HFCInternetConnectionException("HTTP", connectErrorType)));
                 pAuthentication->PushLastError(pAuthError);
 
                 if (pCallback->GetAuthentication(pAuthentication))
                     {
                     if (pAuthentication->IsCompatibleWith(HFCInternetAuthentication::CLASS_ID))
                         {
-                        Credentials newCredentials(Utf8String(((HFCInternetAuthentication*)pAuthentication.get())->GetUser()).c_str(), 
-                                                    Utf8String(((HFCInternetAuthentication*)pAuthentication.get())->GetPassword()).c_str());
+                        Credentials newCredentials(((HFCInternetAuthentication*)pAuthentication.get())->GetUser().c_str(), 
+                                                    ((HFCInternetAuthentication*)pAuthentication.get())->GetPassword().c_str());
                         request.SetCredentials(newCredentials);
                         }
                     else
                         {
-                        Credentials newCredentials(Utf8String(((HFCProxyAuthentication*)pAuthentication.get())->GetUser()).c_str(), 
-                                                    Utf8String(((HFCProxyAuthentication*)pAuthentication.get())->GetPassword()).c_str());
+                        Credentials newCredentials(((HFCProxyAuthentication*)pAuthentication.get())->GetUser().c_str(), 
+                                                    ((HFCProxyAuthentication*)pAuthentication.get())->GetPassword().c_str());
                         request.SetProxyCredentials(newCredentials);
                         }
 
@@ -533,7 +533,7 @@ void HRFOGCService::ValidateConnection(bool authenticate)
         }
     else
         {
-        throw HFCInternetConnectionException(L"HTTP", HFCInternetConnectionException::CANNOT_CONNECT);
+        throw HFCInternetConnectionException("HTTP", HFCInternetConnectionException::CANNOT_CONNECT);
         }
     }
 

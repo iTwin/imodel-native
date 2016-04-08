@@ -33,7 +33,7 @@ protected:
     //Those constructors are protected to make sure we always throw a specific exception and don't lose type information
     HCDException();
     HCDException (const HCDException& pi_rObj);
-    virtual WString _BuildMessage(const ImagePPExceptions::StringId& pi_ID) const override;
+    virtual Utf8String _BuildMessage(const ImagePPExceptions::StringId& pi_ID) const override;
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -47,7 +47,7 @@ public:
     HCDException_T (const HCDException_T& pi_rObj) : HCDException(pi_rObj){}
     virtual HFCException* Clone() const override {return new HCDException_T(*this);}
     virtual void ThrowMyself() const override {throw *this;} 
-    virtual WString GetExceptionMessage() const override
+    virtual Utf8String GetExceptionMessage() const override
         {
         return HCDException::_BuildMessage(GetStringId());
         }
@@ -66,7 +66,7 @@ public:
     virtual ~HCDIJLErrorException();
     const int16_t GetErrorCode() const;
     HCDIJLErrorException (const HCDIJLErrorException&     pi_rObj); 
-    virtual WString GetExceptionMessage() const override; 
+    virtual Utf8String GetExceptionMessage() const override; 
     virtual HFCException* Clone() const override; 
     virtual void ThrowMyself() const override {throw *this;} 
 protected: 

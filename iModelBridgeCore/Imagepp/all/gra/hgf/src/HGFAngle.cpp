@@ -19,13 +19,13 @@
 // Convert an angle in degree, minute second to an angle in decimal degree
 // Returns true if the conversion succeeded, otherwise false
 //-----------------------------------------------------------------------------
-bool ImagePP::ConvertDegMinSecToDeg(WString& pi_rDegMinSec,
+bool ImagePP::ConvertDegMinSecToDeg(Utf8String& pi_rDegMinSec,
                             double& po_rResultigDegreeValue)
     {
     uint16_t ValueComponentInd   = 0;
-    WChar   Sep[] = L":";
-    WCharP  pNextToken=NULL;
-    WCharP  pToken = BeStringUtilities::Wcstok((WChar*)pi_rDegMinSec.c_str(), Sep, &pNextToken);
+    Utf8Char   Sep[] = ":";
+    Utf8P  pNextToken=NULL;
+    Utf8P  pToken = BeStringUtilities::Strtok((Utf8Char*)pi_rDegMinSec.c_str(), Sep, &pNextToken);
     bool   WellFormattedString = false;
 
     po_rResultigDegreeValue = 0;
@@ -36,22 +36,22 @@ bool ImagePP::ConvertDegMinSecToDeg(WString& pi_rDegMinSec,
             {
                 //Degrees
             case 0 :
-                po_rResultigDegreeValue = BeStringUtilities::Wtoi(pToken);
+                po_rResultigDegreeValue = atoi(pToken);
                 WellFormattedString = true;
                 break;
                 //Minutes
             case 1 :
-                po_rResultigDegreeValue += (double)(BeStringUtilities::Wtoi(pToken) / 60.0);
+                po_rResultigDegreeValue += (double)(atoi(pToken) / 60.0);
                 break;
                 //Seconds
             case 2 :
-                po_rResultigDegreeValue += (double)(BeStringUtilities::Wtof(pToken) / 3600.0);
+                po_rResultigDegreeValue += (double)(atof(pToken) / 3600.0);
                 break;
             default :
                 HASSERT(0); //Should not happen
                 break;
             }
-        pToken = BeStringUtilities::Wcstok(0, Sep, &pNextToken);
+        pToken = BeStringUtilities::Strtok(0, Sep, &pNextToken);
         ValueComponentInd++;
         }
 

@@ -172,18 +172,18 @@ HRFIntergraphMPFCreator::HRFIntergraphMPFCreator()
 // Identification information
 //-----------------------------------------------------------------------------
 
-WString HRFIntergraphMPFCreator::GetLabel() const
+Utf8String HRFIntergraphMPFCreator::GetLabel() const
     {
-    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_MPF()); // Intergraph MPF File Format
+    return ImagePPMessages::GetString(ImagePPMessages::FILEFORMAT_MPF()); // Intergraph MPF File Format
     }
 
 //-----------------------------------------------------------------------------
 // Identification information
 //-----------------------------------------------------------------------------
 
-WString HRFIntergraphMPFCreator::GetExtensions() const
+Utf8String HRFIntergraphMPFCreator::GetExtensions() const
     {
-    return WString(L"*.mpf");
+    return Utf8String("*.mpf");
     }
 
 //-----------------------------------------------------------------------------

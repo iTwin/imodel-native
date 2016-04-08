@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRAOnDemandRaster.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -29,7 +29,7 @@ END_BENTLEY_NAMESPACE
 #define DOUBLE_FORMATTING_BUFFER_LENGTH 24
 
 BEGIN_IMAGEPP_NAMESPACE
-void GetDoubleFormatting(WChar* format, size_t maxNbChars);
+void GetDoubleFormatting(Utf8Char* format, size_t maxNbChars);
 
 class HRAOnDemandRaster : public HFCShareableObject<HRAOnDemandRaster>
     {
@@ -39,7 +39,7 @@ public:
     IMAGEPP_EXPORT              HRAOnDemandRaster(HPMPool*                          pi_pMemPool,
                                           bool                              pi_IsOpaque,
                                           const HFCPtr<HVEShape>&           pi_rpEffectiveShape,
-                                          const WString&                    pi_rRepresentativePSS,
+                                          const Utf8String&                    pi_rRepresentativePSS,
                                           const HFCPtr<HPSWorldCluster>&    pi_rpHPSWorldCluster,
                                           HGF2DWorldIdentificator           pi_CurrentWorldId,
                                           const HFCPtr<HFCURL>&             pi_rpPSSUrl, 
@@ -70,7 +70,7 @@ public:
         IMAGEPP_EXPORT bool         GetSourceFileURLs(ListOfRelatedURLs& po_rRelatedURLs);
 
     //Miscellaneous Methods
-        WString             GetRepresentativePSS() const;
+        Utf8String             GetRepresentativePSS() const;
 
         bool                HasLookAhead() const;
 
@@ -98,7 +98,7 @@ private:
     HFCPtr<HVEShape> m_pEffectiveShape;        
     bool             m_IsOpaque;
     HPMPool*         m_pMemPool;
-    WString          m_RepresentativePSS;
+    Utf8String          m_RepresentativePSS;
     HFCPtr<HFCURL>   m_pPSSUrl;
     bool             m_hasLookAhead;
     bool             m_hasUnlimitedRasterSource;

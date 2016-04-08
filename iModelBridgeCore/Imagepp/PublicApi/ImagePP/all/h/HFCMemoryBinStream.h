@@ -25,14 +25,14 @@ public:
     // Primary methods
     IMAGEPP_EXPORT                  HFCMemoryBinStream();
 
-    IMAGEPP_EXPORT                  HFCMemoryBinStream(const WString&       pi_Filename,
+    IMAGEPP_EXPORT                  HFCMemoryBinStream(const Utf8String&       pi_Filename,
                                                HFCAccessMode        pi_AccessMode,
                                                bool                 pi_AutoRemove = false,
                                                uint64_t             pi_OriginOffset = 0,
                                                int16_t pi_NbRetryBeforeThrow = 0,
                                                const HFCPtr<HFCBuffer>&   pi_rpBuffer = HFCPtr<HFCBuffer>());
 
-    IMAGEPP_EXPORT                  HFCMemoryBinStream(const WString&       pi_Filename,
+    IMAGEPP_EXPORT                  HFCMemoryBinStream(const Utf8String&       pi_Filename,
                                                HFCAccessMode        pi_AccessMode,
                                                bool                 pi_CreateFile,
                                                bool                 pi_AutoRemove,
@@ -41,7 +41,7 @@ public:
                                                const HFCPtr<HFCBuffer>&   pi_rpBuffer = HFCPtr<HFCBuffer>());
 
 
-    IMAGEPP_EXPORT                  HFCMemoryBinStream(const WString&       pi_Filename,
+    IMAGEPP_EXPORT                  HFCMemoryBinStream(const Utf8String&       pi_Filename,
                                                bool                 pi_ShareWrite = false,
                                                bool                 pi_ShareRead = true,
                                                bool                 pi_CreateFile = true,
@@ -95,7 +95,7 @@ private:
     HFCPtr<HFCBuffer >     m_BinStreamBuffer;
     size_t                 m_CurrentOffset;
 
-    WString                m_Filename;
+    Utf8String                m_Filename;
 
     HFCAccessMode          m_AccessMode;
     uint64_t               m_OriginOffset;

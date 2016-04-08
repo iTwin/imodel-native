@@ -19,7 +19,7 @@
 // public
 // Constructor
 //-----------------------------------------------------------------------------
-HRFException::HRFException(const WString&    pi_rFileName)
+HRFException::HRFException(const Utf8String&    pi_rFileName)
     : HFCFileException(pi_rFileName)
     {
     }
@@ -44,7 +44,7 @@ HRFException::~HRFException()
 // Return the message formatted with specific information on the exception
 // that have occurred.
 //-----------------------------------------------------------------------------
-WString HRFException::_BuildMessage(const ImagePPExceptions::StringId& pi_rsID) const
+Utf8String HRFException::_BuildMessage(const ImagePPExceptions::StringId& pi_rsID) const
     {
     return  HFCFileException::_BuildMessage(pi_rsID);
     }
@@ -52,7 +52,7 @@ WString HRFException::_BuildMessage(const ImagePPExceptions::StringId& pi_rsID) 
 // public
 // Constructor
 //-----------------------------------------------------------------------------
-HRFFileParameterException::HRFFileParameterException(const WString& pi_rFileName, const WString& pi_rParamName)
+HRFFileParameterException::HRFFileParameterException(const Utf8String& pi_rFileName, const Utf8String& pi_rParamName)
     : HRFException(pi_rFileName)
     {
         m_ParameterName = pi_rParamName;
@@ -78,20 +78,20 @@ HRFFileParameterException::~HRFFileParameterException()
 // Return the message formatted with specific information on the exception
 // that have occurred.
 //-----------------------------------------------------------------------------
-WString HRFFileParameterException::_BuildMessage(const ImagePPExceptions::StringId& pi_rsID) const
+Utf8String HRFFileParameterException::_BuildMessage(const ImagePPExceptions::StringId& pi_rsID) const
     {
-    WPrintfString rawMessage = L"";
+    Utf8String rawMessage;
     if(HasFilenameInMessageString())
         {
-        rawMessage = WPrintfString(GetRawMessageFromResource(pi_rsID).c_str(), m_FileName.c_str(), m_ParameterName.c_str());
+        rawMessage = Utf8PrintfString(GetRawMessageFromResource(pi_rsID).c_str(), m_FileName.c_str(), m_ParameterName.c_str());
         }
     else
         {
-        rawMessage = WPrintfString(GetRawMessageFromResource(pi_rsID).c_str(), m_ParameterName.c_str());
+        rawMessage = Utf8PrintfString(GetRawMessageFromResource(pi_rsID).c_str(), m_ParameterName.c_str());
         }
 
-    WString exceptionName(pi_rsID.m_str, true/*isUtf8*/);
-    WPrintfString message(L"%ls - [%ls]", rawMessage.c_str(), exceptionName.c_str());
+    Utf8String exceptionName(pi_rsID.m_str);
+    Utf8PrintfString message("%s - [%s]", rawMessage.c_str(), exceptionName.c_str());
     return message; 
     }
 
@@ -99,7 +99,7 @@ WString HRFFileParameterException::_BuildMessage(const ImagePPExceptions::String
 // public
 // Get the exception information, if any.
 //-----------------------------------------------------------------------------
-WStringCR HRFFileParameterException::GetParameterName() const
+Utf8StringCR HRFFileParameterException::GetParameterName() const
     {
     return m_ParameterName;
     }
@@ -107,8 +107,8 @@ WStringCR HRFFileParameterException::GetParameterName() const
 // public
 // Constructor
 //-----------------------------------------------------------------------------
-HRFChildFileException::HRFChildFileException(const WString&    pi_rParentFileName,
-                                                    const WString&    pi_rChildFileName)
+HRFChildFileException::HRFChildFileException(const Utf8String&    pi_rParentFileName,
+                                                    const Utf8String&    pi_rChildFileName)
     : HRFException(pi_rParentFileName)
     {
     m_ChildFileName = pi_rChildFileName; 
@@ -133,7 +133,7 @@ HRFChildFileException::~HRFChildFileException()
 // public
 // Get the exception information, if any.
 //-----------------------------------------------------------------------------
-WStringCR HRFChildFileException::GetChildFileName() const
+Utf8StringCR HRFChildFileException::GetChildFileName() const
     {
     return m_ChildFileName;
     }
@@ -142,8 +142,8 @@ WStringCR HRFChildFileException::GetChildFileName() const
 // public
 // Constructor
 //-----------------------------------------------------------------------------
-HRFCannotOpenChildFileException::HRFCannotOpenChildFileException(const WString&    pi_rParentFileName,
-                                                    const WString&    pi_rChildFileName)
+HRFCannotOpenChildFileException::HRFCannotOpenChildFileException(const Utf8String&    pi_rParentFileName,
+                                                    const Utf8String&    pi_rChildFileName)
     : HRFChildFileException(pi_rParentFileName,pi_rChildFileName)
     {
     }
@@ -174,11 +174,11 @@ HFCException* HRFCannotOpenChildFileException::Clone() const
 // Return the message formatted with specific information on the exception
 // that have occurred.
 //-----------------------------------------------------------------------------
-WString HRFCannotOpenChildFileException::GetExceptionMessage() const
+Utf8String HRFCannotOpenChildFileException::GetExceptionMessage() const
     {
-    WPrintfString rawMessage(GetRawMessageFromResource(ImagePPExceptions::HRFCannotOpenChildFile()).c_str(), m_ChildFileName.c_str());
-    WString exceptionName(ImagePPExceptions::HRFCannotOpenChildFile().m_str, true/*isUtf8*/);
-    WPrintfString message(L"%ls - [%ls]", rawMessage.c_str(), exceptionName.c_str());
+    Utf8PrintfString rawMessage(GetRawMessageFromResource(ImagePPExceptions::HRFCannotOpenChildFile()).c_str(), m_ChildFileName.c_str());
+    Utf8String exceptionName(ImagePPExceptions::HRFCannotOpenChildFile().m_str);
+    Utf8PrintfString message("%s - [%s]", rawMessage.c_str(), exceptionName.c_str());
     return message;
     }
 
@@ -186,7 +186,7 @@ WString HRFCannotOpenChildFileException::GetExceptionMessage() const
 // public
 // Constructor
 //-----------------------------------------------------------------------------
-HRFTiffErrorException::HRFTiffErrorException(const WString&        pi_rFileName, const HTIFFError&    pi_rErrorInfo)
+HRFTiffErrorException::HRFTiffErrorException(const Utf8String&        pi_rFileName, const HTIFFError&    pi_rErrorInfo)
     : HRFException(pi_rFileName),
       m_ErrorInfo(pi_rErrorInfo)
     {
@@ -220,16 +220,16 @@ HFCException* HRFTiffErrorException::Clone() const
 // Return the message formatted with specific information on the exception
 // that have occurred.
 //-----------------------------------------------------------------------------
-WString HRFTiffErrorException::GetExceptionMessage() const
+Utf8String HRFTiffErrorException::GetExceptionMessage() const
     {
-    WString HTIFFErrorMsg;
+    Utf8String HTIFFErrorMsg;
 
     //Get the detailed HTIFF error message from the localized resource and format it.
     m_ErrorInfo.GetErrorMsg(HTIFFErrorMsg);
 
-    WPrintfString rawMessage(GetRawMessageFromResource(ImagePPExceptions::HRFTiffError()).c_str(), HTIFFErrorMsg.c_str());
-    WString exceptionName(ImagePPExceptions::HRFTiffError().m_str, true/*isUtf8*/);
-    WPrintfString message(L"%ls - [%ls]", rawMessage.c_str(), exceptionName.c_str());
+    Utf8PrintfString rawMessage(GetRawMessageFromResource(ImagePPExceptions::HRFTiffError()).c_str(), HTIFFErrorMsg.c_str());
+    Utf8String exceptionName(ImagePPExceptions::HRFTiffError().m_str);
+    Utf8PrintfString message("%s - [%s]", rawMessage.c_str(), exceptionName.c_str());
 
     return message;
     }
@@ -246,9 +246,9 @@ const HTIFFError HRFTiffErrorException::GetError() const
 // public
 // Constructor
 //-----------------------------------------------------------------------------
-HRFChildFileParameterException::HRFChildFileParameterException(const WString& pi_rFileName,
-                                                                      const WString& pi_rChildFileName,
-                                                                      const WString& pi_rParameterName)
+HRFChildFileParameterException::HRFChildFileParameterException(const Utf8String& pi_rFileName,
+                                                                      const Utf8String& pi_rChildFileName,
+                                                                      const Utf8String& pi_rParameterName)
     : HRFChildFileException(pi_rFileName, pi_rChildFileName)
     {
     m_ParameterName = pi_rParameterName;  
@@ -281,13 +281,12 @@ HFCException* HRFChildFileParameterException::Clone() const
 // Return the message formatted with specific information on the exception
 // that have occurred.
 //-----------------------------------------------------------------------------
-WString HRFChildFileParameterException::GetExceptionMessage() const
+Utf8String HRFChildFileParameterException::GetExceptionMessage() const
     {
-    WPrintfString rawMessage = (GetRawMessageFromResource(ImagePPExceptions::HRFChildFileParameter()).c_str(), 
-        m_ChildFileName.c_str(), m_ParameterName.c_str());
+    Utf8PrintfString rawMessage(GetRawMessageFromResource(ImagePPExceptions::HRFChildFileParameter()).c_str(), m_ChildFileName.c_str(), m_ParameterName.c_str());
 
-    WString exceptionName(ImagePPExceptions::HRFChildFileParameter().m_str, true/*isUtf8*/);
-    WPrintfString message(L"%ls - [%ls]", rawMessage.c_str(), exceptionName.c_str());
+    Utf8String exceptionName(ImagePPExceptions::HRFChildFileParameter().m_str);
+    Utf8PrintfString message("%s - [%s]", rawMessage.c_str(), exceptionName.c_str());
 
     return message;
     }
@@ -296,7 +295,7 @@ WString HRFChildFileParameterException::GetExceptionMessage() const
 // public
 // Get the exception information, if any.
 //-----------------------------------------------------------------------------
-WStringCR HRFChildFileParameterException::GetParameterName() const
+Utf8StringCR HRFChildFileParameterException::GetParameterName() const
     {
     return m_ParameterName;
     }
@@ -305,7 +304,7 @@ WStringCR HRFChildFileParameterException::GetParameterName() const
 // public
 // Constructor
 //-----------------------------------------------------------------------------
-HRFInvalidNewFileDimensionException::HRFInvalidNewFileDimensionException(const WString& pi_rFileName,
+HRFInvalidNewFileDimensionException::HRFInvalidNewFileDimensionException(const Utf8String& pi_rFileName,
                                                                                 uint64_t      pi_WidthLimit,
                                                                                 uint64_t      pi_HeightLimit)
     : HRFException(pi_rFileName)
@@ -342,11 +341,11 @@ HFCException* HRFInvalidNewFileDimensionException::Clone() const
 // Return the message formatted with specific information on the exception
 // that have occurred.
 //-----------------------------------------------------------------------------
-WString HRFInvalidNewFileDimensionException::GetExceptionMessage() const
+Utf8String HRFInvalidNewFileDimensionException::GetExceptionMessage() const
     {
-    WPrintfString rawMessage(GetRawMessageFromResource(ImagePPExceptions::HRFInvalidNewFileDimension()).c_str(), m_WidthLimit, m_HeightLimit);
-    WString exceptionName(ImagePPExceptions::HRFInvalidNewFileDimension().m_str, true/*isUtf8*/);
-    WPrintfString message(L"%ls - [%ls]", rawMessage.c_str(), exceptionName.c_str());
+    Utf8PrintfString rawMessage(GetRawMessageFromResource(ImagePPExceptions::HRFInvalidNewFileDimension()).c_str(), m_WidthLimit, m_HeightLimit);
+    Utf8String exceptionName(ImagePPExceptions::HRFInvalidNewFileDimension().m_str);
+    Utf8PrintfString message("%s - [%s]", rawMessage.c_str(), exceptionName.c_str());
     return message;
     }
 

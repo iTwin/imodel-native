@@ -70,7 +70,7 @@ public:
     virtual uint64_t                        GetFileCurrentSize() const;
 
     static void                           ThrowExBasedOnJPGErrCode(uint32_t pi_GetLastErrorCode,
-                                                                   const WString& pi_rUrl);
+                                                                   const Utf8String& pi_rUrl);
 
     void                                  GetExifTags(bool            pi_ExifTags,
                                                       bool            pi_ExifRelatedGPSTags,
@@ -137,9 +137,9 @@ struct HRFJpegCreator : public HRFRasterFileCreator
                                                    uint64_t                pi_Offset = 0) const;
 
     // Identification information
-    virtual WString                   GetLabel() const;
-    virtual WString                   GetSchemes() const;
-    virtual WString                   GetExtensions() const;
+    virtual Utf8String                   GetLabel() const;
+    virtual Utf8String                   GetSchemes() const;
+    virtual Utf8String                   GetExtensions() const;
 
     // capabilities of Raster file.
     virtual const HFCPtr<HRFRasterFileCapabilities>&

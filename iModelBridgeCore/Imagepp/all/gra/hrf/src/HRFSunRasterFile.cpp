@@ -153,9 +153,9 @@ HRFSunRasterCreator::HRFSunRasterCreator()
 // Public (HRFSunRasterCreator)
 // Identification information
 //-----------------------------------------------------------------------------
-WString HRFSunRasterCreator::GetLabel() const
+Utf8String HRFSunRasterCreator::GetLabel() const
     {
-    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_SunRaster()); // SunRaster File Format
+    return ImagePPMessages::GetString(ImagePPMessages::FILEFORMAT_SunRaster()); // SunRaster File Format
     }
 
 //-----------------------------------------------------------------------------
@@ -163,9 +163,9 @@ WString HRFSunRasterCreator::GetLabel() const
 // Public (HRFSunRasterCreator)
 // Identification information
 //-----------------------------------------------------------------------------
-WString HRFSunRasterCreator::GetSchemes() const
+Utf8String HRFSunRasterCreator::GetSchemes() const
     {
-    return WString(HFCURLFile::s_SchemeName());
+    return Utf8String(HFCURLFile::s_SchemeName());
     }
 
 //-----------------------------------------------------------------------------
@@ -173,9 +173,9 @@ WString HRFSunRasterCreator::GetSchemes() const
 // Public (HRFSunRasterCreator)
 // Identification information
 //-----------------------------------------------------------------------------
-WString HRFSunRasterCreator::GetExtensions() const
+Utf8String HRFSunRasterCreator::GetExtensions() const
     {
-    return WString(L"*.rs;*.ras");
+    return Utf8String("*.rs;*.ras");
     }
 
 //-----------------------------------------------------------------------------

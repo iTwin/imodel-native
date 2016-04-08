@@ -90,7 +90,7 @@ const HMDLayerInfo* HMDVolatileLayers::GetLayerInfo(uint16_t pi_Index) const
 // Public
 // GetIndexFromKey
 //-----------------------------------------------------------------------------
-bool HMDVolatileLayers::GetIndexFromKey(const WString& pi_rKey,
+bool HMDVolatileLayers::GetIndexFromKey(const Utf8String& pi_rKey,
                                                 uint16_t&       po_rIndex) const
     {
     for (po_rIndex = 0; po_rIndex < m_NbVolatileLayers; po_rIndex++)

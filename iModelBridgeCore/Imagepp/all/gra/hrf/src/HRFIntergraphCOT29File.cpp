@@ -167,18 +167,18 @@ HRFIntergraphCot29Creator::HRFIntergraphCot29Creator()
 // Identification information
 //-----------------------------------------------------------------------------
 
-WString HRFIntergraphCot29Creator::GetLabel() const
+Utf8String HRFIntergraphCot29Creator::GetLabel() const
     {
-    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_C29()); // Intergraph 29
+    return ImagePPMessages::GetString(ImagePPMessages::FILEFORMAT_C29()); // Intergraph 29
     }
 
 //-----------------------------------------------------------------------------
 // Identification information
 //-----------------------------------------------------------------------------
 
-WString HRFIntergraphCot29Creator::GetExtensions() const
+Utf8String HRFIntergraphCot29Creator::GetExtensions() const
     {
-    return WString(L"*.c29;*.t29");
+    return Utf8String("*.c29;*.t29");
     }
 
 //-----------------------------------------------------------------------------

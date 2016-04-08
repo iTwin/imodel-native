@@ -187,23 +187,23 @@ HFCPtr<HFCURL> HRFHGRPageFileCreator::ComposeURLFor(const HFCPtr<HFCURL>&   pi_r
         throw HFCInvalidUrlForSisterFileException(pi_rpURLFileName->GetURL());
 
     // Decompose the file name
-    WString DriveDirName;
+    Utf8String DriveDirName;
 
     // Extract the Path
-    WString Path(((HFCPtr<HFCURLFile>&)pi_rpURLFileName)->GetHost()+WString(L"\\")+((HFCPtr<HFCURLFile>&)pi_rpURLFileName)->GetPath());
+    Utf8String Path(((HFCPtr<HFCURLFile>&)pi_rpURLFileName)->GetHost()+Utf8String("\\")+((HFCPtr<HFCURLFile>&)pi_rpURLFileName)->GetPath());
 
     // Find the file extension
-    WString::size_type DotPos = Path.rfind(L'.');
+    Utf8String::size_type DotPos = Path.rfind('.');
 
     // Extract the extension and the drive dir name
-    if (DotPos != WString::npos)
+    if (DotPos != Utf8String::npos)
         {
         // Compose the decoration file name
         DriveDirName = Path.substr(0, DotPos);
-        URLForPageFile = new HFCURLFile(WString(HFCURLFile::s_SchemeName() + L"://") + DriveDirName + WString(L".hgr"));
+        URLForPageFile = new HFCURLFile(Utf8String(HFCURLFile::s_SchemeName() + "://") + DriveDirName + Utf8String(".hgr"));
         }
     else
-        URLForPageFile = new HFCURLFile(WString(HFCURLFile::s_SchemeName() + L"://") + Path + WString(L".hgr"));
+        URLForPageFile = new HFCURLFile(Utf8String(HFCURLFile::s_SchemeName() + "://") + Path + Utf8String(".hgr"));
 
     return URLForPageFile;
     }
@@ -351,7 +351,7 @@ void HRFHGRPageFile::WriteToDisk()
         {
         // Errors can happen, but they surely can't propagate in a destructor!
         // Break anyway so that we can make sure it's not a fatal error.
-        HASSERT(!L"Write error HGR file");
+        HASSERT(!"Write error HGR file");
         }
     }
 
@@ -383,7 +383,7 @@ const HGF2DWorldIdentificator HRFHGRPageFile::GetWorldIdentificator () const
 // Private
 // GetFileVersion
 //-----------------------------------------------------------------------------
-HRFHGRPageFile::FileVersion HRFHGRPageFile::GetFileVersion(const string& pi_rVersion) const
+HRFHGRPageFile::FileVersion HRFHGRPageFile::GetFileVersion(Utf8StringCR pi_rVersion) const
     {
     HPRECONDITION(!pi_rVersion.empty());
 
@@ -423,7 +423,7 @@ string HRFHGRPageFile::GetFileVersion(FileVersion pi_Version) const
             Version = "2.2";
             break;
         default:
-            HASSERT(!L"Unknown HGR version");
+            HASSERT(!"Unknown HGR version");
         }
     return Version;
     }
@@ -437,83 +437,67 @@ void HRFHGRPageFile::ReadFile()
     HPRECONDITION(m_pFile != 0);
 
     HFCIniFileBrowser InitFile(m_pFile);
-    string            Value;
+    Utf8String Value;
 
     // Read ID section
     if (!InitFile.FindTopic(ID))
-        throw HRFSisterFileMissingParamGroupException(GetURL()->GetURL(),
-                                        WString(ID,false));
+        throw HRFSisterFileMissingParamGroupException(GetURL()->GetURL(), ID);
 
     // File
     if (!InitFile.GetVariableValue(FILE, m_File))
-        throw HRFSisterFileMissingParamException(GetURL()->GetURL(),
-                                        WString(FILE,false));
+        throw HRFSisterFileMissingParamException(GetURL()->GetURL(), FILE);
 
     // Version
     if (!InitFile.GetVariableValue(VERSION, Value))
-        throw HRFSisterFileMissingParamException(GetURL()->GetURL(),
-                                        WString(VERSION,false));
+        throw HRFSisterFileMissingParamException(GetURL()->GetURL(),VERSION);
 
     m_Version = GetFileVersion(Value);
 
     // Read the GoeRefSetting section
     if (!InitFile.FindTopic(GEOREFSETTING))
-        throw HRFSisterFileMissingParamGroupException(GetURL()->GetURL(),
-                                        WString(GEOREFSETTING,false));
+        throw HRFSisterFileMissingParamGroupException(GetURL()->GetURL(), GEOREFSETTING);
 
     // OriginX
     if (!InitFile.GetVariableValue(ORIGIN_LOWER_LEFT_X, Value))
-        throw HRFSisterFileMissingParamException(GetURL()->GetURL(),
-                                        WString(ORIGIN_LOWER_LEFT_X,false));
+        throw HRFSisterFileMissingParamException(GetURL()->GetURL(), ORIGIN_LOWER_LEFT_X);
 
     if (!ConvertStringToDouble(Value, &m_OriginX))
-        throw HRFSisterFileInvalidParamValueException(GetURL()->GetURL(),
-                                        WString(ORIGIN_LOWER_LEFT_X,false));
+        throw HRFSisterFileInvalidParamValueException(GetURL()->GetURL(), ORIGIN_LOWER_LEFT_X);
 
     // OriginY
     if (!InitFile.GetVariableValue(ORIGIN_LOWER_LEFT_Y, Value))
-        throw HRFSisterFileMissingParamException(GetURL()->GetURL(),
-                                        WString(ORIGIN_LOWER_LEFT_Y,false));
+        throw HRFSisterFileMissingParamException(GetURL()->GetURL(), ORIGIN_LOWER_LEFT_Y);
 
     if (!ConvertStringToDouble(Value, &m_OriginY))
-        throw HRFSisterFileInvalidParamValueException(GetURL()->GetURL(),
-                                        WString(ORIGIN_LOWER_LEFT_Y,false));
+        throw HRFSisterFileInvalidParamValueException(GetURL()->GetURL(), ORIGIN_LOWER_LEFT_Y);
 
     // PixelSizeX
     if (!InitFile.GetVariableValue(PIXEL_SIZE_X, Value))
-        throw HRFSisterFileMissingParamException(GetURL()->GetURL(),
-                                        WString(PIXEL_SIZE_X,false));
+        throw HRFSisterFileMissingParamException(GetURL()->GetURL(), PIXEL_SIZE_X);
 
     if (!ConvertStringToDouble(Value, &m_PixelSizeX))
-        throw HRFSisterFileInvalidParamValueException(GetURL()->GetURL(),
-                                        WString(PIXEL_SIZE_X,false));
+        throw HRFSisterFileInvalidParamValueException(GetURL()->GetURL(),PIXEL_SIZE_X);
 
     // PixelSizeY
     if (!InitFile.GetVariableValue(PIXEL_SIZE_Y, Value))
-        throw HRFSisterFileMissingParamException(GetURL()->GetURL(),
-                                        WString(PIXEL_SIZE_Y,false));
+        throw HRFSisterFileMissingParamException(GetURL()->GetURL(), PIXEL_SIZE_Y);
 
     if (!ConvertStringToDouble(Value, &m_PixelSizeY))
-        throw HRFSisterFileInvalidParamValueException(GetURL()->GetURL(),
-                                        WString(PIXEL_SIZE_Y,false));
+        throw HRFSisterFileInvalidParamValueException(GetURL()->GetURL(), PIXEL_SIZE_Y);
 
     // ImageWidth
     if (!InitFile.GetVariableValue(IMAGE_WIDTH, Value))
-        throw HRFSisterFileMissingParamException(GetURL()->GetURL(),
-                                        WString(IMAGE_WIDTH,false));
+        throw HRFSisterFileMissingParamException(GetURL()->GetURL(), IMAGE_WIDTH);
 
     if (!ConvertStringToUnsignedLong(Value, &m_ImageWidth))
-        throw HRFSisterFileInvalidParamValueException(GetURL()->GetURL(),
-                                        WString(IMAGE_WIDTH,false));
+        throw HRFSisterFileInvalidParamValueException(GetURL()->GetURL(), IMAGE_WIDTH);
 
     // ImageHeight
     if (!InitFile.GetVariableValue(IMAGE_HEIGHT, Value))
-        throw HRFSisterFileMissingParamException(GetURL()->GetURL(),
-                                        WString(IMAGE_HEIGHT,false));
+        throw HRFSisterFileMissingParamException(GetURL()->GetURL(), IMAGE_HEIGHT);
 
     if (!ConvertStringToUnsignedLong(Value, &m_ImageHeight))
-        throw HRFSisterFileInvalidParamValueException(GetURL()->GetURL(),
-                                        WString(IMAGE_HEIGHT,false));
+        throw HRFSisterFileInvalidParamValueException(GetURL()->GetURL(), IMAGE_HEIGHT);
 
     m_Rotation = 0.0;
     m_Affinity = 0.0;
@@ -521,58 +505,46 @@ void HRFHGRPageFile::ReadFile()
         {
         // Rotation
         if (!InitFile.GetVariableValue(ROTATION, Value))
-            throw HRFSisterFileMissingParamException(GetURL()->GetURL(),
-                                            WString(ROTATION,false));
+            throw HRFSisterFileMissingParamException(GetURL()->GetURL(), ROTATION);
 
         if (!ConvertStringToDouble(Value, &m_Rotation))
-            throw HRFSisterFileInvalidParamValueException(GetURL()->GetURL(),
-                                            WString(ROTATION,false));
+            throw HRFSisterFileInvalidParamValueException(GetURL()->GetURL(), ROTATION);
 
         // Affinity
         if (!InitFile.GetVariableValue(AFFINITY, Value))
-            throw HRFSisterFileMissingParamException(GetURL()->GetURL(),
-                                            WString(AFFINITY,false));
+            throw HRFSisterFileMissingParamException(GetURL()->GetURL(), AFFINITY);
 
         if (!ConvertStringToDouble(Value, &m_Affinity))
-            throw HRFSisterFileInvalidParamValueException(GetURL()->GetURL(),
-                                            WString(AFFINITY,false));
+            throw HRFSisterFileInvalidParamValueException(GetURL()->GetURL(), AFFINITY);
         }
 
     // Read ImageInfo section
     if (!InitFile.FindTopic(IMAGEINFO))
-        throw HRFSisterFileMissingParamException(GetURL()->GetURL(),
-                                        WString(IMAGEINFO,false));
+        throw HRFSisterFileMissingParamException(GetURL()->GetURL(), IMAGEINFO);
 
     if (!InitFile.GetVariableValue(IMAGE_OWNER, m_Owner))
-        throw HRFSisterFileMissingParamException(GetURL()->GetURL(),
-                                        WString(IMAGE_OWNER,false));
+        throw HRFSisterFileMissingParamException(GetURL()->GetURL(), IMAGE_OWNER);
 
     if (!InitFile.GetVariableValue(IMAGE_DESCRIPTION, m_Description))
-        throw HRFSisterFileMissingParamException(GetURL()->GetURL(),
-                                        WString(IMAGE_DESCRIPTION,false));
-
+        throw HRFSisterFileMissingParamException(GetURL()->GetURL(), IMAGE_DESCRIPTION);
     if (m_Version>= VERSION_2_2)
         {
         // ScanningResX
         if (!InitFile.GetVariableValue(SCANNING_RES_X, Value))
-            throw HRFSisterFileMissingParamException(GetURL()->GetURL(),
-                                            WString(SCANNING_RES_X,false));
+            throw HRFSisterFileMissingParamException(GetURL()->GetURL(), SCANNING_RES_X);
 
         double ScanningRes;
         if (!ConvertStringToDouble(Value, &ScanningRes))
-            throw HRFSisterFileInvalidParamValueException(GetURL()->GetURL(),
-                                            WString(SCANNING_RES_X,false));
+            throw HRFSisterFileInvalidParamValueException(GetURL()->GetURL(), SCANNING_RES_X);
 
         m_ScanningResX = (uint32_t)ScanningRes;
 
         // ScanningResY
         if (!InitFile.GetVariableValue(SCANNING_RES_Y, Value))
-            throw HRFSisterFileMissingParamException(GetURL()->GetURL(),
-                                            WString(SCANNING_RES_Y,false));
+            throw HRFSisterFileMissingParamException(GetURL()->GetURL(), SCANNING_RES_Y);
 
         if (!ConvertStringToDouble(Value, &ScanningRes))
-            throw HRFSisterFileInvalidParamValueException(GetURL()->GetURL(),
-                                            WString(SCANNING_RES_Y,false));
+            throw HRFSisterFileInvalidParamValueException(GetURL()->GetURL(), SCANNING_RES_Y);
 
         m_ScanningResY = (uint32_t)ScanningRes;
         }
@@ -648,15 +620,15 @@ void HRFHGRPageFile::CreateDescriptor()
     HPMAttributeSet     TagList;
     HFCPtr<HPMGenericAttribute> pTag;
     // ID section
-    pTag = new HRFAttributeHGRFile(m_File);
+    pTag = new HRFAttributeHGRFile(m_File.c_str());
     TagList.Set(pTag);
-    pTag = new HRFAttributeHGRVersion(GetFileVersion(m_Version));
+    pTag = new HRFAttributeHGRVersion(GetFileVersion(m_Version).c_str());
     TagList.Set(pTag);
 
     // ImageInfo section
-    pTag = new HRFAttributeHGROwner(m_Owner);
+    pTag = new HRFAttributeHGROwner(m_Owner.c_str());
     TagList.Set(pTag);
-    pTag = new HRFAttributeHGRDescription(m_Description);
+    pTag = new HRFAttributeHGRDescription(m_Description.c_str());
     TagList.Set(pTag);
 
     if (m_Version >= VERSION_2_2)
@@ -696,7 +668,7 @@ void HRFHGRPageFile::CreateDescriptor()
 // Private
 // ConvertStringToDouble
 //-----------------------------------------------------------------------------
-bool HRFHGRPageFile::ConvertStringToDouble(const string& pi_rString, double* po_pDouble) const
+bool HRFHGRPageFile::ConvertStringToDouble(Utf8StringCR pi_rString, double* po_pDouble) const
     {
     HPRECONDITION(po_pDouble != 0);
 
@@ -710,7 +682,7 @@ bool HRFHGRPageFile::ConvertStringToDouble(const string& pi_rString, double* po_
 // Private
 // ConvertStringToUndignedLong
 //-----------------------------------------------------------------------------
-bool HRFHGRPageFile::ConvertStringToUnsignedLong(const string& pi_rString, uint32_t* po_pLong) const
+bool HRFHGRPageFile::ConvertStringToUnsignedLong(Utf8StringCR pi_rString, uint32_t* po_pLong) const
     {
     HPRECONDITION(po_pLong != 0);
 
@@ -852,7 +824,7 @@ void HRFHGRPageFile::WriteFile()
             if (!HDOUBLE_EQUAL_EPSILON(Rotation, 0.0) || !HDOUBLE_EQUAL_EPSILON(Affinity, 0.0))
                 WriteVersion = VERSION_2_1;
             }
-        HDEBUGCODE(else HASSERT(!L"Cannot find the HGR version with the given parameters");)
+        HDEBUGCODE(else HASSERT(!"Cannot find the HGR version with the given parameters");)
 
             if (WriteVersion > m_Version)
                 m_Version = WriteVersion;
@@ -869,11 +841,11 @@ void HRFHGRPageFile::WriteFile()
     NewSize += m_pFile->Write(Data.c_str(), Data.length());
 
     // File
-    Data = string(FILE) + string("=") + m_File + string("\r\n");
+    Data = string(FILE) + string("=") + m_File.c_str() + string("\r\n");
     NewSize += m_pFile->Write(Data.c_str(), Data.length());
 
     // Version
-    Data = string(VERSION) + string("=") + GetFileVersion(m_Version) + string("\r\n\r\n");
+    Data = string(VERSION) + string("=") + GetFileVersion(m_Version).c_str() + string("\r\n\r\n");
     NewSize += m_pFile->Write(Data.c_str(), Data.length());
 
     // GeoRefSetting section
@@ -902,11 +874,11 @@ void HRFHGRPageFile::WriteFile()
     Data += string(aBuffer);
     NewSize += m_pFile->Write(Data.c_str(), Data.length());
 
-    sprintf(aBuffer, "%ld\r\n", m_ImageWidth);
+    sprintf(aBuffer, "%d\r\n", m_ImageWidth);
     Data = string(IMAGE_WIDTH) + string("=") + aBuffer;
     NewSize += m_pFile->Write(Data.c_str(), Data.length());
 
-    sprintf(aBuffer, "%ld\r\n", m_ImageHeight);
+    sprintf(aBuffer, "%d\r\n", m_ImageHeight);
     Data = string(IMAGE_HEIGHT) + string("=") + aBuffer;
     NewSize += m_pFile->Write(Data.c_str(), Data.length());
 

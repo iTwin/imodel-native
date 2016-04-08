@@ -86,17 +86,16 @@ private:
     void SetPathToGdalData()
         {
         CPLCleanFinderLocation();
-        WString rPathToGdalData;
-        if (BSISUCCESS == ImageppLib::GetHost().GetImageppLibAdmin()._GetGDalDataPath(rPathToGdalData))
+        BeFileName pathToGdalData;
+        if (BSISUCCESS == ImageppLib::GetHost().GetImageppLibAdmin()._GetGDalDataPath(pathToGdalData))
             {
             // TFS#86887: GDAL_FILENAME_IS_UTF8
-            Utf8String localeChars;
-            BeStringUtilities::WCharToUtf8(localeChars, rPathToGdalData.c_str());
+            Utf8String localeChars = pathToGdalData.GetNameUtf8();
 
             CPLPushFinderLocation(localeChars.c_str());
             //The path should exists, otherwise, there is a problem with the
             //build/installation procedure.
-            BeAssert(!rPathToGdalData.empty() && BeFileName::IsDirectory(rPathToGdalData.c_str()));
+            BeAssert(!pathToGdalData.empty() && pathToGdalData.IsDirectory());
             }
         }
 
@@ -333,8 +332,7 @@ bool HRFGdalSupportedFile::Open()
     try
         {
         // TFS#86887: GDAL_FILENAME_IS_UTF8
-        Utf8String filenameUtf8;
-        BeStringUtilities::WCharToUtf8(filenameUtf8, static_cast<HFCURLFile*>(GetURL().GetPtr())->GetAbsoluteFileName().c_str());
+        Utf8String filenameUtf8 = static_cast<HFCURLFile*>(GetURL().GetPtr())->GetAbsoluteFileName();
 
         // Only allowed the expected driver to avoid hostile file format that might be registered.
         const char * const allowedDrivers[] = {GDALGetDriverShortName(m_pGdalDriver), NULL};       
@@ -1704,8 +1702,7 @@ bool HRFGdalSupportedFile::AddPage(HFCPtr<HRFPageDescriptor> pi_pPage)
             SetCreationOptions(pi_pPage, ppCreationOptions );
 
             // TFS#86887: GDAL_FILENAME_IS_UTF8
-            Utf8String filenameUtf8;
-            BeStringUtilities::WCharToUtf8(filenameUtf8, static_cast<HFCURLFile*>(GetURL().GetPtr())->GetAbsoluteFileName().c_str());
+            Utf8String filenameUtf8 = static_cast<HFCURLFile*>(GetURL().GetPtr())->GetAbsoluteFileName();
 
             CHECK_ERR(m_poDataset = m_pGdalDriver->Create(filenameUtf8.c_str(),
                                                          (uint32_t)pi_pPage->GetResolutionDescriptor(0)->GetWidth(),
@@ -1793,8 +1790,7 @@ GeoCoordinates::BaseGCSPtr HRFGdalSupportedFile::ExtractGeocodingInformation(dou
         {
         CHECK_ERR(string WktGeocodeTemp = m_poDataset->GetProjectionRef();)
 
-        WString WktGeocode;
-        BeStringUtilities::CurrentLocaleCharToWChar(WktGeocode, WktGeocodeTemp.c_str());
+        WString WktGeocode(WktGeocodeTemp.c_str(), BentleyCharEncoding::Locale);
 
         if (WktGeocode != L"")
             {   
@@ -1906,7 +1902,9 @@ bool HRFGdalSupportedFile::SetGeocodingInformation()
 
         if (!IsGeocodingSet && pGeoTiffKeys != NULL)
             {
-            IsGeocodingSet = HRFGdalUtilities::ConvertGeotiffKeysToOGCWKT(pGeoTiffKeys, OGCWellKnownText);
+            AString wkt;
+            IsGeocodingSet = HRFGdalUtilities::ConvertGeotiffKeysToOGCWKT(wkt, *pGeoTiffKeys);
+            OGCWellKnownText.AssignUtf8(wkt.c_str());
             }
 
         if (IsGeocodingSet)

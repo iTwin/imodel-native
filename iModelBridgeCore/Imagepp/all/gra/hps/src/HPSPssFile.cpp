@@ -46,10 +46,10 @@ size_t HPSPssFile::CountToken() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    StephanePoulin  01/2007
 +---------------+---------------+---------------+---------------+---------------+------*/
-HSTATUS HPSPssFile::CreatePSSFile(WString const& fileName)
+HSTATUS HPSPssFile::CreatePSSFile(Utf8String const& fileName)
     {
-    AString localeStr;
-    BeStringUtilities::WCharToCurrentLocaleChar(localeStr, fileName.c_str());
+    WString filenameW(fileName.c_str(), BentleyCharEncoding::Utf8);
+    AString localeStr(filenameW.c_str());
     ofstream os(localeStr.c_str());
 
     if (!os.is_open())

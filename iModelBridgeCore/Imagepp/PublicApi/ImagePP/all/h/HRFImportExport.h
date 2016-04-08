@@ -284,7 +284,7 @@ public:
     // BestMatch interface
     IMAGEPP_EXPORT virtual void                         BestMatchSelectedValues() = 0;
 
-    IMAGEPP_EXPORT virtual WString                      ComposeFilenameWithOptions() const;
+    IMAGEPP_EXPORT virtual Utf8String                      ComposeFilenameWithOptions() const;
     IMAGEPP_EXPORT virtual uint32_t                     ExportToAllOptions(const HFCPtr<HFCURL>& pi_rpURLPath);
 
     // Default Values

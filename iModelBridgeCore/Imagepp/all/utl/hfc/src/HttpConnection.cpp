@@ -136,15 +136,6 @@ HttpSession::~HttpSession()
 //         curl_global_cleanup();
     }
 
-    //! CURL handle is not reliable after a connectOnly request. So we use a static function that will make sure that the Curl handle won't be reuse. 
-    //! From CURL KNOWN_BUGS file:
-    //! 63. When CURLOPT_CONNECT_ONLY is used, the handle cannot reliably be re-used
-    //! for any further requests or transfers. The work-around is then to close that
-    //! handle with curl_easy_cleanup() and create a new. Some more details:
-    //! http://curl.haxx.se/mail/lib-2009-04/0300.html
-    static bool TestConnection(HttpRequest const& request);
-
-    
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  12/2015
 //----------------------------------------------------------------------------------------

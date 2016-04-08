@@ -13,7 +13,7 @@
 
 #include <Imagepp/all/h/HCDCodecTgaRLE.h>
 
-#define HCD_CODEC_NAME L"TGA RLE ENCODED"
+#define HCD_CODEC_NAME "TGA RLE ENCODED"
 
 //-----------------------------------------------------------------------------
 // public

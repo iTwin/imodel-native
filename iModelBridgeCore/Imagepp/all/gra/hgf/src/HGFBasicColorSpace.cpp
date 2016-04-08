@@ -143,9 +143,9 @@ void HGFBasicColorSpace::BuildLookupTableFromXYZ()
                                       0.188212, 0.0752847, 0.991248}; /* */
 
     // Poynton's : sRGB Rec 709 (D65 white point) to CIE XYZ
-    double XYZToRBGMatrix [3][3] = { 0.412453, 0.357580, 0.180423,
-                                      0.212671, 0.715160, 0.072169,
-                                      0.019334, 0.119193, 0.950227
+    double XYZToRBGMatrix [3][3] = { {0.412453, 0.357580, 0.180423},
+                                     {0.212671, 0.715160, 0.072169},
+                                     {0.019334, 0.119193, 0.950227}
                                     }; /* */
 
     /*// International Standard (D65) adopted for HDTV

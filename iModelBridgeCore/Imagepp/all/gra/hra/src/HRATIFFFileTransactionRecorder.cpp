@@ -27,7 +27,7 @@
 class ImagePP::HTIFFFileRecorder
     {
 public:
-    HTIFFFileRecorder       (const WString& pi_rFileName,
+    HTIFFFileRecorder       (const Utf8String& pi_rFileName,
                              bool          pi_NewFile);
     virtual ~HTIFFFileRecorder      ();
 
@@ -143,14 +143,14 @@ HRATIFFFileTransactionRecorder* HRATIFFFileTransactionRecorder::CreateFor(const 
     HPRECONDITION(pi_rpURL != 0);
     HPRECONDITION(pi_rpURL->IsCompatibleWith(HFCURLFile::CLASS_ID) || pi_rpURL->IsCompatibleWith(HFCURLEmbedFile::CLASS_ID));
 
-    WString ComposedName(pi_rpURL->GetURL());
+    Utf8String ComposedName(pi_rpURL->GetURL());
 
     // Compose the file name for the specified URL
-    WString  Seps(L"\\/:*?\"<>|");
+    Utf8String  Seps("\\/:*?\"<>|");
     size_t   Pos = 0;
-    while ((Pos = ComposedName.find_first_of (Seps, Pos)) != WString::npos)
+    while ((Pos = ComposedName.find_first_of (Seps, Pos)) != Utf8String::npos)
         {
-        ComposedName[Pos] = L'_';
+        ComposedName[Pos] = '_';
         Pos++;
         }
 
@@ -159,21 +159,18 @@ HRATIFFFileTransactionRecorder* HRATIFFFileTransactionRecorder::CreateFor(const 
     ImageppLib::GetHost().GetImageppLibAdmin()._GetFileTransactionRecorderDirPath(pathFilename);
     HFCPtr<HFCURL> pPath = HFCURL::CreateFrom(pathFilename);
 
-    WString RecorderPath(pPath->GetURL());
+    Utf8String RecorderPath(pPath->GetURL());
 
     // Add the / if necessary
-    if ((RecorderPath[RecorderPath.size() - 1] != L'/') && (RecorderPath[RecorderPath.size() - 1] != L'\\'))
-        RecorderPath += L"\\";
+    if ((RecorderPath[RecorderPath.size() - 1] != '/') && (RecorderPath[RecorderPath.size() - 1] != '\\'))
+        RecorderPath += "\\";
 
     RecorderPath += ComposedName;
 
     if(pi_Page != 0)
         {
-        WChar TempBuffer[10];
-        BeStringUtilities::Itow(TempBuffer, pi_Page, sizeof(TempBuffer) / sizeof(WChar), 10);
-
-        RecorderPath += L"_page_";
-        RecorderPath += TempBuffer;
+        Utf8PrintfString pagePath("_page_%d", pi_Page);
+        RecorderPath += pagePath;
         }
 
     HFCPtr<HFCURLFile> pRecorderFile(new HFCURLFile(RecorderPath));
@@ -198,7 +195,7 @@ HRATIFFFileTransactionRecorder::HRATIFFFileTransactionRecorder(const HFCPtr<HFCU
     HPRECONDITION(pi_rpURL != 0);
 
     // keep file information and create files only if a transaction is started
-    m_FileName = pi_rpURL->GetHost()  + L"\\" + pi_rpURL->GetPath();
+    m_FileName = pi_rpURL->GetAbsoluteFileName();
     m_NewFile = pi_NewFile;
 
     }
@@ -321,13 +318,13 @@ void HRATIFFFileTransactionRecorder::ClearAllRecordedData()
     if (m_pUndoRecorder != 0)
         {
         m_pUndoRecorder = 0;
-        BeFileName::BeDeleteFile((m_FileName + L".UNDO").c_str());
+        BeFileName(m_FileName + ".UNDO").BeDeleteFile();
         }
 
     if (m_pRedoRecorder != 0)
         {
         m_pRedoRecorder = 0;
-        BeFileName::BeDeleteFile((m_FileName + L".REDO").c_str());
+        BeFileName(m_FileName + ".REDO").BeDeleteFile();
         }
     }
 
@@ -342,8 +339,8 @@ void HRATIFFFileTransactionRecorder::AcquiredRecorders()
 
     if (m_pUndoRecorder == 0 && m_pRedoRecorder == 0)
         {
-        m_pUndoRecorder = new HTIFFFileRecorder(m_FileName + L".UNDO", m_NewFile);
-        m_pRedoRecorder = new HTIFFFileRecorder(m_FileName + L".REDO", m_NewFile);
+        m_pUndoRecorder = new HTIFFFileRecorder(m_FileName + ".UNDO", m_NewFile);
+        m_pRedoRecorder = new HTIFFFileRecorder(m_FileName + ".REDO", m_NewFile);
         }
 
     HPOSTCONDITION(m_pUndoRecorder != 0 && m_pRedoRecorder != 0);
@@ -516,7 +513,7 @@ uint32_t HRATIFFFileTransaction::GetID() const
 // public
 // constructor
 //---------------------------------------------------------------------------
-HTIFFFileRecorder::HTIFFFileRecorder(const WString& pi_rFileName,
+HTIFFFileRecorder::HTIFFFileRecorder(const Utf8String& pi_rFileName,
                                      bool          pi_NewFile)
     : m_CurrentIndex(-1),
       m_NewTransactionIndex(1)

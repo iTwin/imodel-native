@@ -108,8 +108,8 @@ public:
     bool                       GetField                       (HTagID pi_Tag, uint32_t* po_pVal) const;
     bool                       GetField                       (HTagID pi_Tag, double* po_pVal) const;
     bool                       GetField                       (HTagID pi_Tag, uint64_t* po_pVal) const;
-    bool                       GetField                       (HTagID pi_Tag, char** po_ppVal) const;
-    bool                       GetField                       (HTagID pi_Tag, WChar** po_ppVal) const;
+    bool                       GetFieldA                      (HTagID pi_Tag, CharP*) const;
+    bool                       GetFieldW                      (HTagID pi_Tag, WCharP*) const;
     bool                       GetField                       (HTagID pi_Tag, uint16_t* po_pVal1, uint16_t* po_pVal2) const;
 
     bool                       GetField                       (HTagID pi_Tag, uint32_t* po_pCount, uint16_t** po_ppVal) const;
@@ -122,8 +122,8 @@ public:
     bool                       SetField                       (HTagID pi_Tag, uint32_t pi_Val);
     bool                       SetField                       (HTagID pi_Tag, double pi_Val);
     bool                       SetField                       (HTagID pi_Tag, uint64_t pi_Val);
-    bool                       SetFieldA                      (HTagID pi_Tag, const char* pi_pVal);
-    bool                       SetFieldW                      (HTagID pi_Tag, const WChar* pi_pVal);
+    bool                       SetFieldA                      (HTagID pi_Tag, CharCP pi_pVal);
+    bool                       SetFieldW                      (HTagID pi_Tag, WCharCP pi_pVal);
     bool                       SetField                       (HTagID pi_Tag, uint16_t pi_Val1, uint16_t pi_Val2);
 
     bool                       SetField                       (HTagID pi_Tag, uint32_t pi_Count, const Byte* pi_pVal);
@@ -132,11 +132,16 @@ public:
     bool                       SetField                       (HTagID pi_Tag, uint32_t pi_Count, const double* pi_pVal);
     bool                       SetField                       (HTagID pi_Tag, uint32_t pi_Count, const uint64_t* pi_pVal);
 
+    // No implementation use GetFieldA or GetFieldW. 
+    // They are public to a fix: HTIFFFile.h(97): error C2876: 'BentleyG0601::ImagePP::HTagFile': not all overloads are accessible
+//     bool                       GetField(HTagID pi_Tag, CharP*) const;
+//     bool                       GetField(HTagID pi_Tag, WCharP*) const;
+
 protected:
 
     typedef uint16_t     MagicNumber;
 
-    IMAGEPP_EXPORT explicit    HTagFile                       (const WString&          pi_rFilename,
+    IMAGEPP_EXPORT explicit    HTagFile                       (const Utf8String&          pi_rFilename,
                                                                 const HTagInfo&         pi_rTagInfo,
                                                                 HFCAccessMode           pi_Mode,
                                                                 uint64_t               pi_OriginOffset = 0,
@@ -154,7 +159,7 @@ protected:
 
 
     IMAGEPP_EXPORT void         Construct                      (const HFCPtr<HFCURL>&   pi_rpURL,           // by URL
-                                                                const WString*          pi_pFilename,              // by string
+                                                                const Utf8String*          pi_pFilename,              // by string
                                                                 HFCAccessMode           pi_Mode,
                                                                 uint64_t               pi_OriginOffset,
                                                                 bool                   pi_CreateBigTifFormat = false,
@@ -275,12 +280,12 @@ private:
 
 
     bool                       OpenTiffFile                   (const HFCPtr<HFCURL>*   pi_pURL,        // by URL
-                                                                const WString*          pi_pFilename,         // by string
+                                                                const Utf8String*          pi_pFilename,         // by string
                                                                 HFCAccessMode           pi_AccessMode,
                                                                 uint64_t               pi_OriginOffset=0);
 
     bool                       CreateTiffFile                 (const HFCPtr<HFCURL>*   pi_pURL,
-                                                                const WString*          pi_pFilename,
+                                                                const Utf8String*          pi_pFilename,
                                                                 HFCAccessMode           pi_AccessMode,
                                                                 bool                   pi_CreateBigTifFormat=false);
 

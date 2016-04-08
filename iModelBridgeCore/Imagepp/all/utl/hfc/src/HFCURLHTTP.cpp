@@ -19,9 +19,9 @@ struct URLHTTPCreator : public HFCURL::Creator
     {
     URLHTTPCreator()
         {
-        HFCURLHTTP::GetSchemeList().insert(HFCURLHTTP::SchemeList::value_type(HFCURLHTTP::s_SchemeName(), this));
+        HFCURL::RegisterCreator(HFCURLHTTP::s_SchemeName(), this);
         }
-    virtual HFCURL* Create(const WString& pi_URL) const
+    virtual HFCURL* Create(const Utf8String& pi_URL) const
         {
         return new HFCURLHTTP(pi_URL);
         }
@@ -64,12 +64,12 @@ struct URLHTTPCreator : public HFCURL::Creator
               precise kind of URL and no child of it are expected to be
               defined.
 -----------------------------------------------------------------------------*/
-HFCURLHTTP::HFCURLHTTP(const WString& pi_User,
-                       const WString& pi_Password,
-                       const WString& pi_Host,
-                       const WString& pi_Port,
-                       const WString& pi_Path,
-                       const WString& pi_SearchPart)
+HFCURLHTTP::HFCURLHTTP(const Utf8String& pi_User,
+                       const Utf8String& pi_Password,
+                       const Utf8String& pi_Host,
+                       const Utf8String& pi_Port,
+                       const Utf8String& pi_Path,
+                       const Utf8String& pi_SearchPart)
     : HFCURLHTTPBase(pi_User,
                      pi_Password,
                      pi_Host,
@@ -92,7 +92,7 @@ HFCURLHTTP::HFCURLHTTP(const WString& pi_User,
               precise kind of URL and no child of it are expected to be
               defined.
 -----------------------------------------------------------------------------*/
-HFCURLHTTP::HFCURLHTTP(const WString& pi_pURL)
+HFCURLHTTP::HFCURLHTTP(const Utf8String& pi_pURL)
     : HFCURLHTTPBase(pi_pURL, true)
     {
     }

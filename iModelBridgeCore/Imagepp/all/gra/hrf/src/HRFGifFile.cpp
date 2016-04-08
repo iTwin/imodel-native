@@ -140,9 +140,9 @@ HRFGifCreator::HRFGifCreator()
 // Public (HRFGifCreator)
 // Identification information
 //-----------------------------------------------------------------------------
-WString HRFGifCreator::GetLabel() const
+Utf8String HRFGifCreator::GetLabel() const
     {
-    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_GIF()); // Gif File Format
+    return ImagePPMessages::GetString(ImagePPMessages::FILEFORMAT_GIF()); // Gif File Format
     }
 
 //-----------------------------------------------------------------------------
@@ -150,9 +150,9 @@ WString HRFGifCreator::GetLabel() const
 // Public (HRFGifCreator)
 // Identification information
 //-----------------------------------------------------------------------------
-WString HRFGifCreator::GetSchemes() const
+Utf8String HRFGifCreator::GetSchemes() const
     {
-    return WString(HFCURLFile::s_SchemeName());
+    return Utf8String(HFCURLFile::s_SchemeName());
     }
 
 //-----------------------------------------------------------------------------
@@ -160,9 +160,9 @@ WString HRFGifCreator::GetSchemes() const
 // Public (HRFGifCreator)
 // Identification information
 //-----------------------------------------------------------------------------
-WString HRFGifCreator::GetExtensions() const
+Utf8String HRFGifCreator::GetExtensions() const
     {
-    return WString(L"*.gif");
+    return Utf8String("*.gif");
     }
 
 //-----------------------------------------------------------------------------
@@ -656,24 +656,26 @@ void HRFGifFile::SaveGifFile(bool pi_CloseFile)
             if (pPageDescriptor->TagHasChanged(*pTag)) 
                 {
                 // Software tag
-                if (pTag->GetID() == HRFAttributeSoftware::ATTRIBUTE_ID)
+                if (pTag->GetID() == (HPMAttributesID)HRFAttributeSoftware::ATTRIBUTE_ID)
                     {
+                    WString tagW(((HFCPtr<HRFAttributeSoftware>&)pTag)->GetData().c_str(), BentleyCharEncoding::Utf8);
                     AString tempStrA;
-                    BeStringUtilities::WCharToCurrentLocaleChar(tempStrA, ((HFCPtr<HRFAttributeSoftware>&)pTag)->GetData().c_str());
+                    BeStringUtilities::WCharToCurrentLocaleChar(tempStrA, tagW.c_str());
                     Software = tempStrA.c_str();
                     }
                 // Application code tag
-                if (pTag->GetID() == HRFAttributeGIFApplicationCode::ATTRIBUTE_ID)
+                if (pTag->GetID() == (HPMAttributesID)HRFAttributeGIFApplicationCode::ATTRIBUTE_ID)
                     ApplicationCode = ((HFCPtr<HRFAttributeGIFApplicationCode>&)pTag)->GetData();
                 // Notes Tag
-                if (pTag->GetID() == HRFAttributeNotes::ATTRIBUTE_ID)
+                if (pTag->GetID() == (HPMAttributesID)HRFAttributeNotes::ATTRIBUTE_ID)
                     {
+                    WString tagW(((HFCPtr<HRFAttributeNotes>&)pTag)->GetData().c_str(), BentleyCharEncoding::Utf8);
                     AString tempStrA;
-                    BeStringUtilities::WCharToCurrentLocaleChar(tempStrA, ((HFCPtr<HRFAttributeNotes>&)pTag)->GetData().c_str());
+                    BeStringUtilities::WCharToCurrentLocaleChar(tempStrA, tagW.c_str());
                     CommentData = tempStrA.c_str();
                     }
                 // Background Tag
-                if (pTag->GetID() == HRFAttributeBackground::ATTRIBUTE_ID)
+                if (pTag->GetID() == (HPMAttributesID)HRFAttributeBackground::ATTRIBUTE_ID)
                     Background = (Byte)((HFCPtr<HRFAttributeBackground>&)pTag)->GetData();
                 }
 
@@ -1131,7 +1133,7 @@ bool HRFGifFile::LookUpExtensionBlocks()
 
             // Adding tag Comment in the general tag list.
             // Notes Tag
-            HFCPtr<HPMGenericAttribute> pTag = new HRFAttributeNotes(WString(Text.str().c_str(),false));
+            HFCPtr<HPMGenericAttribute> pTag = new HRFAttributeNotes(Utf8String(Text.str().c_str()));
             m_GeneralTagList.Set(pTag);
             delete [] gifComment.CommentData;
             }
@@ -1181,7 +1183,7 @@ bool HRFGifFile::LookUpExtensionBlocks()
             // Adding tag Comment in the general tag list.
             HFCPtr<HPMGenericAttribute> pTag;
             // Software tag
-            pTag = new HRFAttributeSoftware(WString(soft.c_str(),false));
+            pTag = new HRFAttributeSoftware(Utf8String(soft.c_str()));
             m_GeneralTagList.Set(pTag);
             // Application code tag
             pTag = new HRFAttributeGIFApplicationCode(appCode);
@@ -1211,8 +1213,6 @@ WRAPUP:
 //-----------------------------------------------------------------------------
 bool HRFGifFile::ReadGifHeader(GifHeader* pio_pGifHeader, HFCBinStream* pi_pGifFile, HRFRasterFile* pi_pRaster)
     {
-    HPRECONDITION (pi_pRaster == 0);
-
     bool Status = false;
 
     if ((pi_pGifFile->Read(&pio_pGifHeader->Signature,    sizeof(Byte) * 3)                  != (sizeof(Byte) * 3))                  ||
@@ -1254,8 +1254,6 @@ WRAPUP:
 //-----------------------------------------------------------------------------
 bool HRFGifFile::ReadGifImageDesc(GifImageDescriptor* pio_pGifImageDesc, HFCBinStream* pi_pGifFile, HRFRasterFile* pi_pRaster)
     {
-    HPRECONDITION (pi_pRaster == 0);
-
     bool Status = false;
 
     if ((pi_pGifFile->Read(&pio_pGifImageDesc->ImageLeft,   sizeof pio_pGifImageDesc->ImageLeft)   != (sizeof pio_pGifImageDesc->ImageLeft)) ||
@@ -1293,8 +1291,6 @@ WRAPUP:
 //-----------------------------------------------------------------------------
 bool HRFGifFile::ReadGifGraphicControl(GifGraphicControl* pio_pGifGraphicControl, HFCBinStream* pi_pGifFile, HRFRasterFile* pi_pRaster)
     {
-    HPRECONDITION (pi_pRaster == 0);
-
     bool Status = true;
 
     if ((pi_pGifFile->Read(&pio_pGifGraphicControl->BlockSize,   sizeof pio_pGifGraphicControl->BlockSize)   != (sizeof pio_pGifGraphicControl->BlockSize)) ||
@@ -1317,8 +1313,6 @@ bool HRFGifFile::ReadGifGraphicControl(GifGraphicControl* pio_pGifGraphicControl
 //-----------------------------------------------------------------------------
 bool HRFGifFile::ReadGifPlainText(GifPlainText* pio_pGifPlainText, HFCBinStream* pi_pGifFile, HRFRasterFile* pi_pRaster)
     {
-    HPRECONDITION (pi_pRaster == 0);
-
     bool Status = false;
 
     if ((pi_pGifFile->Read(&pio_pGifPlainText->BlockSize,       sizeof pio_pGifPlainText->BlockSize)        != (sizeof pio_pGifPlainText->BlockSize)) ||
@@ -1354,8 +1348,6 @@ WRAPUP:
 //-----------------------------------------------------------------------------
 bool HRFGifFile::ReadGifApplication(GifApplication* pio_pGifApplication, HFCBinStream* pi_pGifFile, HRFRasterFile* pi_pRaster)
     {
-    HPRECONDITION (pi_pRaster == 0);
-
     bool Status = false;
 
     if ((pi_pGifFile->Read(&pio_pGifApplication->BlockSize,   sizeof(pio_pGifApplication->BlockSize)) != (sizeof(pio_pGifApplication->BlockSize))) ||
@@ -1383,8 +1375,6 @@ WRAPUP:
 //-----------------------------------------------------------------------------
 bool HRFGifFile::ReadGifComment(GifComment* pio_pGifComment, HFCBinStream* pi_pGifFile, HRFRasterFile* pi_pRaster)
     {
-    HPRECONDITION (pi_pRaster == 0);
-
     bool Status = true;
 
     // Read in the Comment data sub-blocks.
@@ -1409,8 +1399,6 @@ bool HRFGifFile::ReadGifComment(GifComment* pio_pGifComment, HFCBinStream* pi_pG
 //-----------------------------------------------------------------------------
 Byte* HRFGifFile::ReadDataSubBlocks(HFCBinStream* pi_pGifFile, HRFRasterFile* pi_pRaster)
     {
-    HPRECONDITION (pi_pRaster == 0);
-
 #define BUFFER_INCREMENT 4096
 
     Byte  blockDataSize(0);
@@ -1757,7 +1745,7 @@ void HRFGifFile::SetGraphicControl(uint16_t    pi_DelayTime,              // TO 
     po_pGraphicControl->Label      = 0xf9;
     po_pGraphicControl->BlockSize  = 0x04;
 
-    if (pi_TransparentColorIndex == -1)
+    if (pi_TransparentColorIndex == (Byte) -1)
         po_pGraphicControl->PackedField = 0x00 |
                                           (pi_DisposalMethode << 2) |
                                           (pi_UserInput << 1);

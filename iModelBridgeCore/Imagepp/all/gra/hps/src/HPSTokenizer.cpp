@@ -33,7 +33,7 @@ HPSTokenizer::~HPSTokenizer()
 
 
 //---------------------------------------------------------------------------
-HPANode* HPSTokenizer::MakeNode(HPAToken* pi_pToken, const WString& pi_rText,
+HPANode* HPSTokenizer::MakeNode(HPAToken* pi_pToken, const Utf8String& pi_rText,
                                 const HPASourcePos& pi_rLeft,
                                 const HPASourcePos& pi_rRight,
                                 HPASession* pi_pSession)
@@ -52,7 +52,7 @@ HPANode* HPSTokenizer::MakeNode(HPAToken* pi_pToken, const WString& pi_rText,
         }
     else if (pi_pToken == &m_pParser->INCLUDE_tk)
         {
-        WString FileName;
+        Utf8String FileName;
         HFCPtr<HPANode> pStringNode = (HPATokenNode*)GetToken();
 
         if (pStringNode->GetGrammarObject() == &m_pParser->String_tk)
@@ -71,8 +71,8 @@ HPANode* HPSTokenizer::MakeNode(HPAToken* pi_pToken, const WString& pi_rText,
         if (pURL == 0) // no...  is it a full path name having drive spec?
             {
             if ((FileName.size() > 2) &&   // yes, do the url accordingly
-                ((FileName[1] == L':') || (FileName.substr(0, 2) == L"\\\\") || (FileName.substr(0,2) == L"//")))
-                pURL = new HFCURLFile(WString(HFCURLFile::s_SchemeName() + L"://") + FileName);
+                ((FileName[1] == ':') || (FileName.substr(0, 2) == "\\\\") || (FileName.substr(0,2) == "//")))
+                pURL = new HFCURLFile(Utf8String(HFCURLFile::s_SchemeName() + "://") + FileName);
             else
                 pURL = ((HPSSession*)pi_pSession)->GetURL()->MakeURLTo(FileName);  // no, it is a relative path
             }

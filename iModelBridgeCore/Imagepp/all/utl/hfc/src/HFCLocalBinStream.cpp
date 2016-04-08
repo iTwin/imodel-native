@@ -48,7 +48,7 @@ static struct LocalBinStreamCreator : public HFCBinStream::Creator
 
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
-HFCLocalBinStream::HFCLocalBinStream(const WString&  pi_Filename,
+HFCLocalBinStream::HFCLocalBinStream(const Utf8String&  pi_Filename,
     HFCAccessMode   pi_AccessMode,
     bool            pi_AutoRemove,
     uint64_t        pi_OriginOffset,
@@ -72,7 +72,7 @@ HFCLocalBinStream::HFCLocalBinStream(const WString&  pi_Filename,
 
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
-HFCLocalBinStream::HFCLocalBinStream(const WString&  pi_Filename,
+HFCLocalBinStream::HFCLocalBinStream(const Utf8String&  pi_Filename,
     HFCAccessMode   pi_AccessMode,
     bool           pi_CreateFile,
     bool           pi_AutoRemove,
@@ -97,7 +97,7 @@ HFCLocalBinStream::HFCLocalBinStream(const WString&  pi_Filename,
 
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
-HFCLocalBinStream::HFCLocalBinStream(const WString&  pi_Filename,
+HFCLocalBinStream::HFCLocalBinStream(const Utf8String&  pi_Filename,
     bool           pi_ShareWrite,
     bool           pi_ShareRead,
     bool           pi_CreateFile,
@@ -135,7 +135,7 @@ HFCLocalBinStream::~HFCLocalBinStream()
 
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
-void HFCLocalBinStream::Open(const WString& pi_Filename,
+void HFCLocalBinStream::Open(const Utf8String& pi_Filename,
                              HFCAccessMode pi_Mode,
                              bool    pi_ShareWrite,
                              bool    pi_ShareRead,
@@ -154,8 +154,9 @@ void HFCLocalBinStream::Open(const WString& pi_Filename,
     m_CurrentFileSize       = 0;
     m_WeAreWritingAtTheEnd  = false;
 
-    BeFileName::BeGetFullPathName(m_Filename, pi_Filename.c_str());
-        
+    WString filenameW(pi_Filename.c_str(), BentleyCharEncoding::Utf8);
+    BeFileName::BeGetFullPathName(m_Filename, filenameW.c_str());
+            
     m_AccessMode.m_HasWriteShare = pi_ShareWrite;
     m_AccessMode.m_HasReadShare = pi_ShareRead;
 #if defined (WIP_BEFILE_SHARING)
@@ -167,7 +168,7 @@ void HFCLocalBinStream::Open(const WString& pi_Filename,
     else if (pi_ShareWrite)
         dwShareMode = BeFileSharing::Write;
 #endif
-    WString FilenameWithLongNameTagW = CookFilenameWithLongNameTagW();
+    BeFileName FilenameWithLongNameTagW(CookFilenameWithLongNameTagW());
 
     uint32_t NbTry = (pi_NbRetry >= 0) ? (pi_NbRetry+1) : abs(pi_NbRetry);
 
@@ -241,9 +242,9 @@ void HFCLocalBinStream::Open(const WString& pi_Filename,
             BeThreadUtilities::BeSleep(SLEEP_TIME * 20);
 
             // Trace for debugging...
-            HDEBUGCODE(WChar pTxt[512]);
-            HDEBUGCODE(BeStringUtilities::Snwprintf(pTxt, L"NbTry:%d (%ls)\n", NbTry, m_Filename.c_str()););
-            HDEBUGTEXT(Utf8String(pTxt).c_str());
+            HDEBUGCODE(Utf8Char pTxt[512]);
+            HDEBUGCODE(BeStringUtilities::Snprintf(pTxt, "NbTry:%d (%s)\n", NbTry, m_Filename.GetNameUtf8().c_str()));
+            HDEBUGTEXT(pTxt);
             }
         }
 
@@ -272,7 +273,7 @@ void HFCLocalBinStream::Open(const WString& pi_Filename,
 //---------------------------------------------------------------------------
 HFCPtr<HFCURL> HFCLocalBinStream::GetURL() const
     {
-    return new HFCURLFile(WString(HFCURLFile::s_SchemeName() + L"://") + m_Filename);
+    return new HFCURLFile(HFCURLFile::s_SchemeName() + "://" + m_Filename.GetNameUtf8());
     }
 
 
@@ -329,7 +330,7 @@ size_t HFCLocalBinStream::Write(const void* pi_pData, size_t pi_DataSize)
                 {
                 // Indicate an error
                 BytesWritten = 0;
-                m_pLastException.reset(new HFCFileOutOfRangeException(m_Filename));
+                m_pLastException.reset(new HFCFileOutOfRangeException(m_Filename.GetNameUtf8()));
                 }
             }
         }
@@ -344,15 +345,13 @@ void HFCLocalBinStream::SetLastExceptionClassID()
     {
     BeFileStatus LastError = m_BeFile.GetLastError();
 
-    HDEBUGCODE(if ((LastError != BeFileStatus::NotLockedError)) {
-              );
-    HDEBUGCODE(WChar Msg[512];
-                  );
-        HDEBUGCODE(BeStringUtilities::Snwprintf (Msg, L"GetLastError: %lu (%ls)\n", LastError, m_Filename.c_str());
-                  );
-        HDEBUGTEXT(Utf8String(Msg).c_str());
-        HDEBUGCODE(
-        });
+#if defined(__HMR_DEBUG)
+    if ((LastError != BeFileStatus::NotLockedError)) 
+        {
+        Utf8Char Msg[512];
+        BeStringUtilities::Snprintf(Msg, "GetLastError: %lu (%s)\n", LastError, m_Filename.GetNameUtf8().c_str());
+        };
+#endif
 
     if (LastError != BeFileStatus::NotLockedError) // Don't throw.. error is normal
         {
@@ -369,31 +368,31 @@ void HFCLocalBinStream::FileExceptionFromBeFileStatus(BeFileStatus pi_Status)
     switch(pi_Status)
         {
         case BeFileStatus::SharingViolationError:
-            m_pLastException.reset(new HFCSharingViolationException(m_Filename));
+            m_pLastException.reset(new HFCSharingViolationException(m_Filename.GetNameUtf8()));
             m_pLastException->ThrowMyself();
             break;
         case BeFileStatus::ReadError:
-            m_pLastException.reset(new HFCReadFaultException(m_Filename));
+            m_pLastException.reset(new HFCReadFaultException(m_Filename.GetNameUtf8()));
             m_pLastException->ThrowMyself();
             break;
             case BeFileStatus::NotLockedError:
-            m_pLastException.reset(new HFCFileLockViolationException(m_Filename));
+            m_pLastException.reset(new HFCFileLockViolationException(m_Filename.GetNameUtf8()));
             m_pLastException->ThrowMyself();
             break;
         case BeFileStatus::AccessViolationError:
-            m_pLastException.reset(new HFCFilePermissionDeniedException(m_Filename));
+            m_pLastException.reset(new HFCFilePermissionDeniedException(m_Filename.GetNameUtf8()));
             m_pLastException->ThrowMyself();
             break;
 
         case BeFileStatus::DiskFull:
-            m_pLastException.reset(new HFCNoDiskSpaceLeftException(m_Filename));
+            m_pLastException.reset(new HFCNoDiskSpaceLeftException(m_Filename.GetNameUtf8()));
             m_pLastException->ThrowMyself();
             break;
 
         case BeFileStatus::TooManyOpenFilesError:
         case BeFileStatus::FileNotOpenError:
         default:
-            m_pLastException.reset(new HFCFileNotCreatedException(m_Filename));
+            m_pLastException.reset(new HFCFileNotCreatedException(m_Filename.GetNameUtf8()));
             m_pLastException->ThrowMyself();
             break;
         }
@@ -542,10 +541,16 @@ bool HFCLocalBinStream::SetEOF()
 //---------------------------------------------------------------------------
 WString HFCLocalBinStream::CookFilenameWithLongNameTagW() const
     {
+#if defined (BENTLEY_WIN32) 
     // TR 276264: Add support to filename longer than MAX_PATH
     //            Need to use unicode version and prepend "\\?\"
-    if(m_Filename.size() >= MAX_PATH-2)
-        return WString(L"\\\\\?\\") + m_Filename;
+    if (m_Filename.size() >= MAX_PATH - 2)
+        {
+        WString longFilename(L"\\\\\?\\");
+        longFilename += m_Filename;
+        return longFilename;
+        }
+#endif
 
     return m_Filename;
     }

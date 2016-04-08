@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HPSTokenizer.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HPSTokenizer
@@ -28,7 +28,7 @@ public:
 
 protected:
 
-    virtual HPANode*        MakeNode(HPAToken* pi_pToken, const WString& pi_rText,
+    virtual HPANode*        MakeNode(HPAToken* pi_pToken, const Utf8String& pi_rText,
                                      const HPASourcePos& pi_rLeft,
                                      const HPASourcePos& pi_rRight,
                                      HPASession* pi_pSession);

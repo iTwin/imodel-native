@@ -386,9 +386,9 @@ void HRPDitherFilter::FillQuantizedPalette()
     const HRPPixelPalette& rPalette = m_pPixelType->GetPalette();
 
     // fill the octree with the destination palette entries
-    for(Byte Index = 0; Index < 256; Index++)
+    for(uint16_t Index = 0; Index < 256; Index++)
         {
         m_QuantizedPalette.AddCompositeValue(rPalette.GetCompositeValue(Index),
-                                             Index);
+                                             (Byte)Index);
         }
     }

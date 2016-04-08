@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HPATokenizer.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HPATokenizer
@@ -36,7 +36,7 @@ protected:
 
     friend class HPAParser;
 
-    virtual HPANode*        MakeNode(HPAToken* pi_pToken, const WString& pi_rText,
+    virtual HPANode*        MakeNode(HPAToken* pi_pToken, const Utf8String& pi_rText,
                                      const HPASourcePos& pi_rLeft,
                                      const HPASourcePos& pi_rRight,
                                      HPASession* pi_pSession) = 0;
@@ -76,8 +76,8 @@ public:
 
     IMAGEPP_EXPORT virtual bool       Include(HFCBinStream* pi_pStream);
 
-    void                SetCommentMarker(WChar pi_Marker);
-    IMAGEPP_EXPORT void                AddSymbol(const WString& pi_rString, HPAToken& pi_rToken);
+    void                SetCommentMarker(Utf8Char pi_Marker);
+    IMAGEPP_EXPORT void                AddSymbol(const Utf8String& pi_rString, HPAToken& pi_rToken);
     void                SetNumberToken(HPAToken& pi_rToken);
     void                SetStringToken(HPAToken& pi_rToken);
     void                SetIdentifierToken(HPAToken& pi_rToken);
@@ -85,7 +85,7 @@ public:
 
 protected:
 
-    IMAGEPP_EXPORT virtual HPANode*        MakeNode(HPAToken* pi_pToken, const WString& pi_rText,
+    IMAGEPP_EXPORT virtual HPANode*        MakeNode(HPAToken* pi_pToken, const Utf8String& pi_rText,
                                             const HPASourcePos& pi_rLeft,
                                             const HPASourcePos& pi_rRight,
                                             HPASession* pi_pSession);
@@ -94,8 +94,8 @@ protected:
     IMAGEPP_EXPORT virtual HPANode*        GetToken();
     IMAGEPP_EXPORT virtual void            EndSession();
 
-    bool                   GetChar(HPAStreamReaderUTF8* pi_pStream, WChar* po_pChar);
-    void                    PushChar(WChar pi_Char);
+    bool                   GetChar(HPAStreamReaderUTF8* pi_pStream, Utf8Char* po_pChar);
+    void                    PushChar(Utf8Char pi_Char);
 
 #if (0)
 // HChk AR To override default token, all members require protected access
@@ -105,18 +105,18 @@ private:
 protected:
 #endif
 
-    typedef map<WString, HPAToken*, less<WString> > SymbolTable;
+    typedef map<Utf8String, HPAToken*, less<Utf8String> > SymbolTable;
 
     typedef deque<HFCPtr<HPAStreamReaderUTF8>> StreamRefStack;
 
     typedef deque<HPASourcePos> StreamInfoStack;
 
-    typedef deque<WChar> PushedChars;
+    typedef deque<Utf8Char> PushedChars;
 
     HPASession*         m_pSession;
     SymbolTable         m_SymbolTable;
     bool               m_IsCaseSensitive;
-    WChar              m_CommentMarker;
+    Utf8Char              m_CommentMarker;
     HPAToken*           m_pNumberToken;
     HPAToken*           m_pStringToken;
     HPAToken*           m_pIdentifierToken;

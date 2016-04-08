@@ -267,21 +267,21 @@ HRFErdasImgCreator::HRFErdasImgCreator()
     }
 
 // Identification information
-WString HRFErdasImgCreator::GetLabel() const
+Utf8String HRFErdasImgCreator::GetLabel() const
     {
-    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_ErdasImg()); // "Erdas IMG"
+    return ImagePPMessages::GetString(ImagePPMessages::FILEFORMAT_ErdasImg()); // "Erdas IMG"
     }
 
 // Identification information
-WString HRFErdasImgCreator::GetSchemes() const
+Utf8String HRFErdasImgCreator::GetSchemes() const
     {
-    return WString(HFCURLFile::s_SchemeName());
+    return Utf8String(HFCURLFile::s_SchemeName());
     }
 
 // Identification information
-WString HRFErdasImgCreator::GetExtensions() const
+Utf8String HRFErdasImgCreator::GetExtensions() const
     {
-    return WString(L"*.img");
+    return Utf8String("*.img");
     }
 
 // allow to Open an image file
@@ -320,8 +320,7 @@ bool HRFErdasImgCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     if(pHFADriver != NULL && pHFADriver->pfnIdentify != NULL) 
         {
         // TFS#86887: GDAL_FILENAME_IS_UTF8
-        Utf8String filenameUtf8;
-        BeStringUtilities::WCharToUtf8(filenameUtf8, static_cast<HFCURLFile*>(pi_rpURL.GetPtr())->GetAbsoluteFileName().c_str());
+        Utf8String filenameUtf8 = static_cast<HFCURLFile*>(pi_rpURL.GetPtr())->GetAbsoluteFileName();
 
 
         GDALOpenInfo oOpenInfo(filenameUtf8.c_str(), GA_ReadOnly);

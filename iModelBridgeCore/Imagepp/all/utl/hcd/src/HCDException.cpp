@@ -31,10 +31,10 @@ HCDException::~HCDException()
 // Return the message formatted with specific information on the exception
 // that have occurred.
 //-----------------------------------------------------------------------------
-WString HCDException::_BuildMessage(const ImagePPExceptions::StringId& pi_rsID) const
+Utf8String HCDException::_BuildMessage(const ImagePPExceptions::StringId& pi_rsID) const
     {
-    WString exceptionName(pi_rsID.m_str, true/*isUtf8*/);
-    WPrintfString message(L"%ls - [%ls]", GetRawMessageFromResource(pi_rsID).c_str(), exceptionName.c_str());
+    Utf8String exceptionName(pi_rsID.m_str);
+    Utf8PrintfString message("%s - [%s]", GetRawMessageFromResource(pi_rsID).c_str(), exceptionName.c_str());
     return message;
     }
 //-----------------------------------------------------------------------------
@@ -83,7 +83,7 @@ HFCException* HCDIJLErrorException::Clone() const
 // Return the message formatted with specific information on the exception
 // that have occurred.
 //-----------------------------------------------------------------------------
-WString HCDIJLErrorException::GetExceptionMessage() const
+Utf8String HCDIJLErrorException::GetExceptionMessage() const
     {
      return HCDException::_BuildMessage(ImagePPExceptions::HCDIJLError());
     }

@@ -73,7 +73,7 @@ HFCProfiler::~HFCProfiler()
 //-----------------------------------------------------------------------------
 // Add a function
 //-----------------------------------------------------------------------------
-size_t HFCProfiler::RegisterCounter(const WString& pi_rName)
+size_t HFCProfiler::RegisterCounter(const Utf8String& pi_rName)
     {
     HFCMonitor Monitor(m_ProfilerKey);
 

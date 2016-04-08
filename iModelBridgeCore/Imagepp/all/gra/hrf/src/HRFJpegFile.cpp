@@ -54,7 +54,7 @@ struct HRFJpegFileErrorManager
 struct HRFJpegFileIsKindOfErrorManager
     {
     struct jpeg_error_mgr  pub;
-    WString                m_Url;
+    Utf8String                m_Url;
     };
 
 //-----------------------------------------------------------------------------
@@ -630,21 +630,21 @@ HRFJpegCreator::HRFJpegCreator()
     }
 
 // Identification information
-WString HRFJpegCreator::GetLabel() const
+Utf8String HRFJpegCreator::GetLabel() const
     {
-    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_Jpeg()); //JPEG File Format
+    return ImagePPMessages::GetString(ImagePPMessages::FILEFORMAT_Jpeg()); //JPEG File Format
     }
 
 // Identification information
-WString HRFJpegCreator::GetSchemes() const
+Utf8String HRFJpegCreator::GetSchemes() const
     {
-    return HFCURLFile::s_SchemeName() + L";" + HFCURLMemFile::s_SchemeName();
+    return HFCURLFile::s_SchemeName() + ";" + HFCURLMemFile::s_SchemeName();
     }
 
 // Identification information
-WString HRFJpegCreator::GetExtensions() const
+Utf8String HRFJpegCreator::GetExtensions() const
     {
-    return WString(L"*.jpg;*.jpeg;*.jpe;*.jfif");
+    return Utf8String("*.jpg;*.jpeg;*.jpe;*.jfif");
     }
 
 // allow to Open an image file
@@ -1011,15 +1011,15 @@ bool HRFJpegFile::AssignPageToStruct2 (jpeg_compress_struct* pi_pTable)
             m_Jpeg.m_pCompress->write_JFIF_header = true;
 
             // RESOLUTIONUNIT Tag
-            if (pTag->GetID() == HRFAttributeResolutionUnit::ATTRIBUTE_ID)
+            if (pTag->GetID() == (HPMAttributesID)HRFAttributeResolutionUnit::ATTRIBUTE_ID)
                 m_Jpeg.m_pCompress->density_unit = (Byte)((HFCPtr<HRFAttributeResolutionUnit>&)pTag)->GetData() - 1;
 
             // XRESOLUTION Tag
-            else if (pTag->GetID() == HRFAttributeXResolution::ATTRIBUTE_ID)
+            else if (pTag->GetID() == (HPMAttributesID)HRFAttributeXResolution::ATTRIBUTE_ID)
                 m_Jpeg.m_pCompress->X_density = (uint16_t)((HFCPtr<HRFAttributeXResolution>&)pTag)->GetData();
 
             // YRESOLUTION Tag
-            else if (pTag->GetID() ==HRFAttributeYResolution::ATTRIBUTE_ID)
+            else if (pTag->GetID() ==(HPMAttributesID)HRFAttributeYResolution::ATTRIBUTE_ID)
                 m_Jpeg.m_pCompress->Y_density = (uint16_t)((HFCPtr<HRFAttributeYResolution>&)pTag)->GetData();
         }
     }
@@ -1505,7 +1505,7 @@ HFCPtr<HRPPixelType> HRFJpegFile::CreatePixelTypeFromFile() const
 // ThrowExBasedOnJPGErrorCode
 //-----------------------------------------------------------------------------
 void HRFJpegFile::ThrowExBasedOnJPGErrCode(uint32_t pi_GetLastErrorCode,
-                                           const WString& pi_rUrl)
+                                           const Utf8String& pi_rUrl)
     {
     switch (pi_GetLastErrorCode)
         {
@@ -1667,19 +1667,19 @@ void HRFJpegFile::GetExifTags(bool            pi_ExifTags,
                     }
 
                 // MAKE Tag
-                char*                      pTagValue;
+                CharP pTagValue = nullptr;
                 HFCPtr<HPMGenericAttribute> pTag;
 
-                if (pHTIFFFile->GetField(MAKE, &pTagValue))
+                if (pHTIFFFile->GetFieldA(MAKE, &pTagValue))
                     {
-                    pTag = new HRFAttributeMake(WString(pTagValue,false));
+                    pTag = new HRFAttributeMake(pTagValue);
                     po_rTags.Set(pTag);
                     }
 
                 // MODEL Tag
-                if (pHTIFFFile->GetField(MODEL, &pTagValue))
+                if (pHTIFFFile->GetFieldA(MODEL, &pTagValue))
                     {
-                    pTag = new HRFAttributeModel(WString(pTagValue,false));
+                    pTag = new HRFAttributeModel(pTagValue);
                     po_rTags.Set(pTag);
                     }
                 }

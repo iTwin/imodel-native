@@ -537,9 +537,9 @@ Byte oneruns[256] = {
 //-----------------------------------------------------------------------------
 inline int32_t HCDCodecHMRCCITT::findspan(Byte** bpp, int32_t bs, int32_t be, register Byte const* tab)
     {
-    register Byte* bp = *bpp;
-    register int32_t bits = be - bs;
-    register int32_t n, span;
+    Byte* bp = *bpp;
+    int32_t bits = be - bs;
+    int32_t n, span;
 
     /*
      * Check partial byte on lhs.
@@ -1157,8 +1157,8 @@ void HCDCodecHMRCCITT::Fax3PreDecode()
 void HCDCodecHMRCCITT::skiptoeol(int32_t len)
     {
     Fax3DecodeState* sp = (Fax3DecodeState*)m_pStateBlock;
-    register int32_t bit = sp->b.bit;
-    register int32_t data = sp->b.data;
+    int32_t bit = sp->b.bit;
+    int32_t data = sp->b.data;
     int32_t code = 0;
 
     /*
@@ -1329,7 +1329,7 @@ int32_t HCDCodecHMRCCITT::Fax3Decode2DRow(Byte* buf, int32_t npels)
     int32_t run1, run2;        /* for horizontal mode */
     int16_t mode;
     int16_t color = sp->b.white;
-    static char module[] = "Fax3Decode2D";
+    //static char module[] = "Fax3Decode2D";
 
     do {
         if (sp->b.bit == 0 || sp->b.bit > 7) {
@@ -1668,7 +1668,7 @@ int32_t HCDCodecHMRCCITT::Fax3Decode1DRow(Byte* buf, int32_t npels)
     int32_t runlen;
     //int16_t action;
     int16_t color = sp->b.white;
-    static char module[] = "Fax3Decode1D";
+    //static char module[] = "Fax3Decode1D";
 
     for (;;) {
         if (color == sp->b.white)
@@ -1822,7 +1822,7 @@ DECLARE1(find_null_mode_prefix, int32_t, prefix)
         exit(1);
         }
     if (verbose)
-        fprintf(stderr, "adding null mode prefix[%d] 0x%lx\n",
+        fprintf(stderr, "adding null mode prefix[%d] 0x%x\n",
                 (int32_t) null_mode_prefix_count, prefix);
     null_mode_prefix[null_mode_prefix_count++] = prefix;
     return (null_mode_prefix_count-1);
@@ -1966,9 +1966,14 @@ DECLARE2(find_horiz_mode_prefix, int32_t, prefix, char, color)
         exit(1);
         }
     /* OK, there's room... */
+    char colChar;
+    if (color == 0)
+        colChar = 'W';
+    else
+        colChar ='B';
     if (verbose)
-        fprintf(stderr, "\nhoriz mode prefix %d, color %c = 0x%lx ",
-                (int32_t) horiz_mode_prefix_count, "WB"[color], prefix);
+        fprintf(stderr, "\nhoriz mode prefix %d, color %c = 0x%x ",
+                (int32_t) horiz_mode_prefix_count, colChar, prefix);
     horiz_mode_prefix[horiz_mode_prefix_count] = prefix;
     horiz_mode_color[horiz_mode_prefix_count] = color;
     horiz_mode_prefix_count++;
@@ -2129,7 +2134,7 @@ DECLARE1(find_uncomp_mode_prefix, int32_t, prefix)
         exit(1);
         }
     if (verbose)
-        fprintf(stderr, "adding uncomp mode prefix[%d] 0x%lx\n",
+        fprintf(stderr, "adding uncomp mode prefix[%d] 0x%x\n",
                 (int32_t) uncomp_mode_prefix_count, prefix);
     uncomp_mode_prefix[uncomp_mode_prefix_count++] = prefix;
     return (uncomp_mode_prefix_count-1);

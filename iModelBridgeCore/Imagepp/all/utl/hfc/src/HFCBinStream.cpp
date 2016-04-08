@@ -72,7 +72,7 @@ HFCBinStream* HFCBinStream::Instanciate(HFCPtr<HFCURL> pi_pURL,
                                                   int16_t pi_NbRetry, bool pi_ThrowOnError)
     {
     HFCBinStream* pNewObj = 0;
-    WString SchemeType((pi_pURL != 0) ? pi_pURL->GetSchemeType() : WString());
+    Utf8String SchemeType((pi_pURL != 0) ? pi_pURL->GetSchemeType() : Utf8String());
     StreamTypeList::iterator itr = GetStreamTypeList().find(SchemeType);
     if (itr != GetStreamTypeList().end())
         {

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HPSPssToken.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #include <Imagepp/all/h/HFCPtr.h>
@@ -207,16 +207,15 @@ public:
             if (!m_layersOn.empty())
                 {
                 os << "SETLAYERON(" << tokenId.str() << ",";
-                std::list<WString>::const_iterator itr (m_layersOn.begin());
+                std::list<Utf8String>::const_iterator itr (m_layersOn.begin());
 
-                Utf8String utf8Str;
-                BeStringUtilities::WCharToUtf8(utf8Str,(*itr).c_str());
+                Utf8String utf8Str = (*itr);
 
                 os << "\"" << utf8Str << "\"";
                 ++itr;
                 while (itr != m_layersOn.end())
                     {
-                    BeStringUtilities::WCharToUtf8(utf8Str,(*itr).c_str());
+                    utf8Str = (*itr);
 
                     os << ",\"" << utf8Str << "\"";
                     ++itr;
@@ -227,16 +226,15 @@ public:
             if (!m_layersOff.empty())
                 {
                 os << "SETLAYEROFF(" << tokenId.str() << ",";
-                std::list<WString>::const_iterator itr (m_layersOff.begin());
+                std::list<Utf8String>::const_iterator itr (m_layersOff.begin());
 
-                Utf8String utf8Str;
-                BeStringUtilities::WCharToUtf8(utf8Str,(*itr).c_str());
+                Utf8String utf8Str = (*itr);
 
                 os << "\"" << utf8Str << "\"";
                 ++itr;
                 while (itr != m_layersOff.end())
                     {
-                    BeStringUtilities::WCharToUtf8(utf8Str,(*itr).c_str());
+                    utf8Str = (*itr);
 
                     os << ",\"" << utf8Str << "\"";
                     ++itr;
@@ -247,27 +245,26 @@ public:
             return os;
     }
 
-    void SetLayerOn(WString const& layer)
+    void SetLayerOn(Utf8String const& layer)
     {
             m_layersOn.push_back(layer);
     }
 
-    void SetLayerOff(WString const& layer)
+    void SetLayerOff(Utf8String const& layer)
     {
             m_layersOff.push_back(layer);
     }
 
-    WString GetName() const
+    Utf8String GetName() const
         {
-        wostringstream tokenId;
-        tokenId << L"ImgCt" << m_id;
-        return tokenId.str().c_str();
+        Utf8PrintfString tokenId("ImgCt%d", m_id);
+        return tokenId;
         }
 
     private:
     int32_t            m_id;
-    std::list<WString> m_layersOn;
-    std::list<WString> m_layersOff;
+    std::list<Utf8String> m_layersOn;
+    std::list<Utf8String> m_layersOff;
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -297,12 +294,9 @@ class PSSImageFileGeorefContextToken : public HPSPssToken
 
         virtual std::ostream& Write(std::ostream &os) const
             {
-            WString name (GetName());
+            Utf8String name (GetName());
 
-            Utf8String utf8Str;
-            BeStringUtilities::WCharToUtf8(utf8Str, name.c_str());
-
-            os << utf8Str;
+            os << name;
             os << " = GEOR(";
             os << m_defaultRatioToMeterForRaster << ",";
             os << m_defaultRatioToMeterForSisterFile << ",";
@@ -315,10 +309,10 @@ class PSSImageFileGeorefContextToken : public HPSPssToken
             return os;
             }
 
-        WString GetName() const
+        Utf8String GetName() const
             {    
-            wostringstream tokenId;
-            tokenId << L"GeorCt" << m_id;
+            ostringstream tokenId;
+            tokenId << "GeorCt" << m_id;
             return tokenId.str().c_str();            
             }
 
@@ -376,25 +370,20 @@ private:
 class PSSIMFToken : public HPSPssToken
     {
     public:
-    PSSIMFToken(WString const& fileName, uint32_t pageNumber) : HPSPssToken(), m_fileName(fileName), m_pageNumber(pageNumber) {}
+    PSSIMFToken(Utf8String const& fileName, uint32_t pageNumber) : HPSPssToken(), m_fileName(fileName), m_pageNumber(pageNumber) {}
         virtual ~PSSIMFToken() {}
 
         // from PSSToken
     virtual std::ostream& Write(std::ostream &os) const
         {
-        Utf8String utf8Str;
-        BeStringUtilities::WCharToUtf8(utf8Str,m_fileName.c_str());
+        Utf8String utf8Str = m_fileName;
 
         os << "IMF(\"" << utf8Str << "\", " << m_pageNumber;
 
         if (m_context.GetPtr())
             {
-            WString name (m_context->GetName());
-            
-            BeStringUtilities::WCharToUtf8(utf8Str,name.c_str());
-
-            os << ", " << utf8Str;
-            
+            Utf8String name (m_context->GetName());
+            os << ", " << name;
             }
 
         if (m_georeferenceContext.GetPtr())
@@ -402,9 +391,8 @@ class PSSIMFToken : public HPSPssToken
             // Must have a PSSIFCToken.
             HASSERT(NULL != m_context.GetPtr());
 
-            WString name (m_georeferenceContext->GetName());
-            BeStringUtilities::WCharToUtf8(utf8Str, name.c_str());
-            os << ", " << utf8Str;
+            Utf8String name (m_georeferenceContext->GetName());
+            os << ", " << name;
             }
 
         os <<  ")";
@@ -423,7 +411,7 @@ class PSSIMFToken : public HPSPssToken
             }
     protected:
     private:
-    WString                                m_fileName;
+    Utf8String                                m_fileName;
     uint32_t                               m_pageNumber;
     HFCPtr<PSSIFCToken>                    m_context;
     HFCPtr<PSSImageFileGeorefContextToken> m_georeferenceContext;
@@ -435,22 +423,20 @@ class PSSIMFToken : public HPSPssToken
 class PSSDescriptionToken : public HPSPssToken
     {
 public:
-    PSSDescriptionToken(WString const& description) : HPSPssToken(), m_description(description) {}
+    PSSDescriptionToken(Utf8String const& description) : HPSPssToken(), m_description(description) {}
     virtual ~PSSDescriptionToken() {}
 
     // from PSSToken
     virtual std::ostream& Write(std::ostream& os) const
         {
-        Utf8String utf8Str;
-        BeStringUtilities::WCharToUtf8(utf8Str,m_description.c_str());
-
+        Utf8String utf8Str = m_description;
         os << "; " << utf8Str;
         return os;
         }
 
 protected:
 private:
-    WString m_description;
+    Utf8String m_description;
     };
 
 /*---------------------------------------------------------------------------------**//**

@@ -40,6 +40,13 @@ HRFAdaptTileToImageCapabilities::HRFAdaptTileToImageCapabilities()
 HFC_IMPLEMENT_SINGLETON(HRFAdaptTileToImageCreator)
 
 //-----------------------------------------------------------------------------
+// Destructor
+//-----------------------------------------------------------------------------
+HRFAdaptTileToImageCreator::~HRFAdaptTileToImageCreator()
+    {
+    }
+
+//-----------------------------------------------------------------------------
 // Obtain the capabilities of stretcher
 //-----------------------------------------------------------------------------
 HRFBlockAdapterCapabilities* HRFAdaptTileToImageCreator::GetCapabilities() const

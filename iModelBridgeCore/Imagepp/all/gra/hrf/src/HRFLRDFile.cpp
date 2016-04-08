@@ -131,9 +131,9 @@ HRFLRDCreator::HRFLRDCreator()
 // Identification information
 //-----------------------------------------------------------------------------
 
-WString HRFLRDCreator::GetLabel() const
+Utf8String HRFLRDCreator::GetLabel() const
     {
-    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_LRD()); // LRD File Format
+    return ImagePPMessages::GetString(ImagePPMessages::FILEFORMAT_LRD()); // LRD File Format
     }
 
 //-----------------------------------------------------------------------------
@@ -141,9 +141,9 @@ WString HRFLRDCreator::GetLabel() const
 // Schemes information
 //-----------------------------------------------------------------------------
 
-WString HRFLRDCreator::GetSchemes() const
+Utf8String HRFLRDCreator::GetSchemes() const
     {
-    return WString(HFCURLFile::s_SchemeName());
+    return Utf8String(HFCURLFile::s_SchemeName());
     }
 
 //-----------------------------------------------------------------------------
@@ -151,9 +151,9 @@ WString HRFLRDCreator::GetSchemes() const
 // Extensions information
 //-----------------------------------------------------------------------------
 
-WString HRFLRDCreator::GetExtensions() const
+Utf8String HRFLRDCreator::GetExtensions() const
     {
-    return WString(L"*.lrd");
+    return Utf8String("*.lrd");
     }
 
 //-----------------------------------------------------------------------------

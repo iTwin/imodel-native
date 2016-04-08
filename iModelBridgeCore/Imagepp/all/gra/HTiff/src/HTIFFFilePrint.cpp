@@ -31,7 +31,7 @@ static void s_PrintDoubleArray   (FILE* po_pOutput, const double* pi_pArray, uin
 class PrintValue
     {
 public:
-    PrintValue(FILE* const po_pOutputFile, const WChar* const pi_Separator)
+    PrintValue(FILE* const po_pOutputFile, const Utf8Char* const pi_Separator)
         :   m_pOutputFile(po_pOutputFile), m_Separator(pi_Separator)
         {
         HPRECONDITION(po_pOutputFile != 0);
@@ -40,19 +40,19 @@ public:
 
     void operator() (const double pi_rValue)
         {
-        fprintf(m_pOutputFile, "%8.6lf%ls", pi_rValue, m_Separator);
+        fprintf(m_pOutputFile, "%8.6lf%s", pi_rValue, m_Separator);
         }
     void operator() (const float pi_rValue)
         {
-        fprintf(m_pOutputFile, "%8.6f%ls", pi_rValue, m_Separator);
+        fprintf(m_pOutputFile, "%8.6f%s", pi_rValue, m_Separator);
         }
     void operator() (const uint16_t pi_rValue)
         {
-        fprintf(m_pOutputFile, "%u%ls", pi_rValue, m_Separator);
+        fprintf(m_pOutputFile, "%u%s", pi_rValue, m_Separator);
         }
     void operator() (const uint32_t pi_rValue)
         {
-        fprintf(m_pOutputFile, "%u%ls", pi_rValue, m_Separator);
+        fprintf(m_pOutputFile, "%u%s", pi_rValue, m_Separator);
         }
 
     // Add more types here as needed...
@@ -60,7 +60,7 @@ public:
 
 private:
     FILE* const         m_pOutputFile;
-    const WChar* const m_Separator;
+    const Utf8Char* const m_Separator;
     };
 
 
@@ -101,7 +101,7 @@ void HTIFFFile::_PrintCurrentDirectory (FILE* po_pOutput, uint32_t pi_Flag)
     uint64_t Val64;
     HFCMonitor Monitor(m_Key);
 
-    fprintf(po_pOutput, "TIFF Directory at offset 0x%I64x\n", DirectoryOffset(m_CurDir));
+    fprintf(po_pOutput, "TIFF Directory at offset (0x%jx)\n", DirectoryOffset(m_CurDir));
 
     if (m_pCurDir->TagIsPresent(SUBFILETYPE))
         {
@@ -116,18 +116,18 @@ void HTIFFFile::_PrintCurrentDirectory (FILE* po_pOutput, uint32_t pi_Flag)
         if (ValL == FILETYPE_MASK)
             fprintf(po_pOutput, "transparency mask");
 
-        fprintf(po_pOutput, " (%lu = 0x%lx)\n", ValL, ValL);
+        fprintf(po_pOutput, " (%u = 0x%x)\n", ValL, ValL);
         }
 
     if (m_pCurDir->TagIsPresent(IMAGEWIDTH))
         {
-        fprintf(po_pOutput, "  %s: %lu %s: %lu",GetTagNameString(IMAGEWIDTH), m_ImageWidth,
+        fprintf(po_pOutput, "  %s: %u %s: %u",GetTagNameString(IMAGEWIDTH), m_ImageWidth,
                 GetTagNameString(IMAGELENGTH), m_ImageLength);
 
         if (m_pCurDir->TagIsPresent(IMAGEDEPTH))
             {
             GetField (IMAGEDEPTH, &ValL);
-            fprintf(po_pOutput, " %s: %lu", GetTagNameString(IMAGEDEPTH), ValL);
+            fprintf(po_pOutput, " %s: %u", GetTagNameString(IMAGEDEPTH), ValL);
             }
 
         fprintf(po_pOutput, "\n");
@@ -138,13 +138,13 @@ void HTIFFFile::_PrintCurrentDirectory (FILE* po_pOutput, uint32_t pi_Flag)
         GetField (TILEWIDTH, &ValL);
         GetField (TILELENGTH, &ValL2);
 
-        fprintf(po_pOutput, "  %s: %lu %s: %lu",GetTagNameString(TILEWIDTH), ValL,
+        fprintf(po_pOutput, "  %s: %u %s: %u",GetTagNameString(TILEWIDTH), ValL,
                 GetTagNameString(TILELENGTH), ValL2);
 
         if (m_pCurDir->TagIsPresent(TILEDEPTH))
             {
             GetField (TILEDEPTH, &ValL);
-            fprintf(po_pOutput, " %s: %lu", GetTagNameString(TILEDEPTH), ValL);
+            fprintf(po_pOutput, " %s: %u", GetTagNameString(TILEDEPTH), ValL);
             }
         fprintf(po_pOutput, "\n");
         }
@@ -359,7 +359,7 @@ void HTIFFFile::_PrintCurrentDirectory (FILE* po_pOutput, uint32_t pi_Flag)
         char*  pCar;
 
         fprintf(po_pOutput, "  %s: ", GetTagNameString(INKNAMES));
-        GetField (INKNAMES, &pValC);
+        GetFieldA (INKNAMES, &pValC);
 
         for (pCar = pValC; i > 0; pCar = strchr(pCar, '\0'), i--)
             {
@@ -378,7 +378,7 @@ void HTIFFFile::_PrintCurrentDirectory (FILE* po_pOutput, uint32_t pi_Flag)
 
     if (m_pCurDir->TagIsPresent(TARGETPRINTER))
         {
-        GetField (TARGETPRINTER, &pValC);
+        GetFieldA (TARGETPRINTER, &pValC);
 
         s_PrintAsciiTag(po_pOutput, GetTagNameString(TARGETPRINTER), pValC);
         }
@@ -466,49 +466,49 @@ void HTIFFFile::_PrintCurrentDirectory (FILE* po_pOutput, uint32_t pi_Flag)
 
     if (m_pCurDir->TagIsPresent(ARTIST))
         {
-        GetField (ARTIST, &pValC);
+        GetFieldA (ARTIST, &pValC);
         s_PrintAsciiTag(po_pOutput, GetTagNameString(ARTIST), pValC);
         }
 
     if (m_pCurDir->TagIsPresent(DATETIME))
         {
-        GetField (DATETIME, &pValC);
+        GetFieldA(DATETIME, &pValC);
         s_PrintAsciiTag(po_pOutput, GetTagNameString(DATETIME), pValC);
         }
 
     if (m_pCurDir->TagIsPresent(HOSTCOMPUTER))
         {
-        GetField (HOSTCOMPUTER, &pValC);
+        GetFieldA(HOSTCOMPUTER, &pValC);
         s_PrintAsciiTag(po_pOutput, GetTagNameString(HOSTCOMPUTER), pValC);
         }
 
     if (m_pCurDir->TagIsPresent(SOFTWARE))
         {
-        GetField (SOFTWARE, &pValC);
+        GetFieldA(SOFTWARE, &pValC);
         s_PrintAsciiTag(po_pOutput, GetTagNameString(SOFTWARE), pValC);
         }
 
     if (m_pCurDir->TagIsPresent(DOCUMENTNAME))
         {
-        GetField (DOCUMENTNAME, &pValC);
+        GetFieldA(DOCUMENTNAME, &pValC);
         s_PrintAsciiTag(po_pOutput, GetTagNameString(DOCUMENTNAME), pValC);
         }
 
     if (m_pCurDir->TagIsPresent(IMAGEDESCRIPTION))
         {
-        GetField (IMAGEDESCRIPTION, &pValC);
+        GetFieldA(IMAGEDESCRIPTION, &pValC);
         s_PrintAsciiTag(po_pOutput, GetTagNameString(IMAGEDESCRIPTION), pValC);
         }
 
     if (m_pCurDir->TagIsPresent(MAKE))
         {
-        GetField (MAKE, &pValC);
+        GetFieldA(MAKE, &pValC);
         s_PrintAsciiTag(po_pOutput, GetTagNameString(MAKE), pValC);
         }
 
     if (m_pCurDir->TagIsPresent(MODEL))
         {
-        GetField (MODEL, &pValC);
+        GetFieldA(MODEL, &pValC);
         s_PrintAsciiTag(po_pOutput, GetTagNameString(MODEL), pValC);
         }
 
@@ -534,14 +534,14 @@ void HTIFFFile::_PrintCurrentDirectory (FILE* po_pOutput, uint32_t pi_Flag)
         if (ValL == (uint32_t) -1)
             fprintf(po_pOutput, "(infinite)\n");
         else
-            fprintf(po_pOutput, "%lu\n", ValL);
+            fprintf(po_pOutput, "%u\n", ValL);
 
         if (ValL != m_RowsByStrip)
             {
             // Emulation by HTIFF
             fprintf(po_pOutput, "  Emulation by HTIFF library\n");
             fprintf(po_pOutput, "    %s: ",GetTagNameString(ROWSPERSTRIP));
-            fprintf(po_pOutput, "%lu\n", m_RowsByStrip);
+            fprintf(po_pOutput, "%u\n", m_RowsByStrip);
             }
         }
 
@@ -552,7 +552,7 @@ void HTIFFFile::_PrintCurrentDirectory (FILE* po_pOutput, uint32_t pi_Flag)
 
         GetField (MINSAMPLEVALUE, &Count, &pMinSampleValues);
         fprintf(po_pOutput, "  %s: ", GetTagNameString(MINSAMPLEVALUE));
-        for_each(pMinSampleValues, pMinSampleValues + Count, PrintValue(po_pOutput, L"\t"));
+        for_each(pMinSampleValues, pMinSampleValues + Count, PrintValue(po_pOutput, "\t"));
         fprintf(po_pOutput, "\n");
         }
 
@@ -563,7 +563,7 @@ void HTIFFFile::_PrintCurrentDirectory (FILE* po_pOutput, uint32_t pi_Flag)
 
         GetField (MAXSAMPLEVALUE, &Count, &pMaxSampleValues);
         fprintf(po_pOutput, "  %s: ", GetTagNameString(MAXSAMPLEVALUE));
-        for_each(pMaxSampleValues, pMaxSampleValues + Count, PrintValue(po_pOutput, L"\t"));
+        for_each(pMaxSampleValues, pMaxSampleValues + Count, PrintValue(po_pOutput, "\t"));
         fprintf(po_pOutput, "\n");
         }
 
@@ -573,7 +573,7 @@ void HTIFFFile::_PrintCurrentDirectory (FILE* po_pOutput, uint32_t pi_Flag)
         GetConvertedField(SMINSAMPLEVALUE, Values);
 
         fprintf(po_pOutput, "  %s: ", GetTagNameString(SMINSAMPLEVALUE));
-        for_each(Values.begin(), Values.end(), PrintValue(po_pOutput, L"\t"));
+        for_each(Values.begin(), Values.end(), PrintValue(po_pOutput, "\t"));
         fprintf(po_pOutput, "\n");
 
         }
@@ -584,7 +584,7 @@ void HTIFFFile::_PrintCurrentDirectory (FILE* po_pOutput, uint32_t pi_Flag)
         GetConvertedField(SMAXSAMPLEVALUE, Values);
 
         fprintf(po_pOutput, "  %s: ", GetTagNameString(SMAXSAMPLEVALUE));
-        for_each(Values.begin(), Values.end(), PrintValue(po_pOutput, L"\t"));
+        for_each(Values.begin(), Values.end(), PrintValue(po_pOutput, "\t"));
         fprintf(po_pOutput, "\n");
 
         }
@@ -609,7 +609,7 @@ void HTIFFFile::_PrintCurrentDirectory (FILE* po_pOutput, uint32_t pi_Flag)
 
     if (m_pCurDir->TagIsPresent(PAGENAME))
         {
-        GetField (PAGENAME, &pValC);
+        GetFieldA(PAGENAME, &pValC);
         s_PrintAsciiTag(po_pOutput, GetTagNameString(PAGENAME), pValC);
         }
 
@@ -635,7 +635,7 @@ void HTIFFFile::_PrintCurrentDirectory (FILE* po_pOutput, uint32_t pi_Flag)
             GetField (TCOLORMAP, &pR, &pG, &pB);
 
             for (uint32_t i=0; i<Num; i++)
-                fprintf(po_pOutput, "   %5lu: %5u %5u %5u\n",i, pR[i], pG[i], pB[i]);
+                fprintf(po_pOutput, "   %5u: %5u %5u %5u\n",i, pR[i], pG[i], pB[i]);
             }
         else
             fprintf(po_pOutput, "(present)\n");
@@ -678,9 +678,9 @@ void HTIFFFile::_PrintCurrentDirectory (FILE* po_pOutput, uint32_t pi_Flag)
                 {
                 fprintf(po_pOutput, "  %s: \n", GetTagNameString(REFERENCEBLACKWHITE));
 
-                fprintf(po_pOutput, "    0: %lu, %lu\n", pVal[0], pVal[1]);
-                fprintf(po_pOutput, "    1: %lu, %lu\n", pVal[2], pVal[3]);
-                fprintf(po_pOutput, "    2: %lu, %lu\n", pVal[4], pVal[5]);
+                fprintf(po_pOutput, "    0: %u, %u\n", pVal[0], pVal[1]);
+                fprintf(po_pOutput, "    1: %u, %u\n", pVal[2], pVal[3]);
+                fprintf(po_pOutput, "    2: %u, %u\n", pVal[4], pVal[5]);
                 }
             }
         }
@@ -721,13 +721,13 @@ void HTIFFFile::_PrintCurrentDirectory (FILE* po_pOutput, uint32_t pi_Flag)
 
         GetField (SUBIFD, &ValL, &pVal);
         for (uint32_t i=0; i<ValL; i++)
-            fprintf(po_pOutput, " %5lu", pVal[i]);
+            fprintf(po_pOutput, " %5u", pVal[i]);
         fputc('\n', po_pOutput);
         }
 
     if (m_pCurDir->TagIsPresent(GDALNODATA)) 
         {
-        GetField (GDALNODATA, &pValC);
+        GetFieldA(GDALNODATA, &pValC);
 
         s_PrintAsciiTag(po_pOutput, GetTagNameString(GDALNODATA), pValC);
         }
@@ -928,7 +928,7 @@ void HTIFFFile::_PrintCurrentDirectory (FILE* po_pOutput, uint32_t pi_Flag)
         {
         if (pi_Flag & TIFFPRINT_GEOKEYPARAMS)
             {
-            GetField (GEOASCIIPARAMS, &pValC);
+            GetFieldA(GEOASCIIPARAMS, &pValC);
             s_PrintAsciiTag(po_pOutput,GetTagNameString(GEOASCIIPARAMS), pValC);
             }
         else
@@ -938,7 +938,7 @@ void HTIFFFile::_PrintCurrentDirectory (FILE* po_pOutput, uint32_t pi_Flag)
     if (m_pCurDir->TagIsPresent(HMR2_WELLKNOWNTEXT))
         {
         char*  pCharVal;
-        if (m_pCurDir->GetValues(HMR2_WELLKNOWNTEXT, &pCharVal))
+        if (m_pCurDir->GetValuesA(HMR2_WELLKNOWNTEXT, &pCharVal))
             {
             fprintf(po_pOutput, "  %s : \n", GetTagNameString(HMR2_WELLKNOWNTEXT));
             s_PrintAscii(po_pOutput, pCharVal);
@@ -973,12 +973,12 @@ void HTIFFFile::_PrintCurrentDirectory (FILE* po_pOutput, uint32_t pi_Flag)
         if (m_pFile->m_IsTiff64)
             {
             GetField (HMR_IMAGEINFORMATION, &Val64);
-            fprintf(po_pOutput, "  %s: 0x%I64x\n", GetTagNameString(HMR_IMAGEINFORMATION), Val64);
+            fprintf(po_pOutput, "  %s: 0x%jx\n", GetTagNameString(HMR_IMAGEINFORMATION), Val64);
             }
         else
             {
             GetField (HMR_IMAGEINFORMATION, &ValL);
-            fprintf(po_pOutput, "  %s: 0x%lx\n", GetTagNameString(HMR_IMAGEINFORMATION), ValL);
+            fprintf(po_pOutput, "  %s: 0x%x\n", GetTagNameString(HMR_IMAGEINFORMATION), ValL);
             }
         }
     else if (m_pCurDir->TagIsPresent(HMR2_IMAGEINFORMATION))
@@ -986,49 +986,49 @@ void HTIFFFile::_PrintCurrentDirectory (FILE* po_pOutput, uint32_t pi_Flag)
         if (m_pFile->m_IsTiff64)
             {
             GetField (HMR2_IMAGEINFORMATION, &Val64);
-            fprintf(po_pOutput, "  %s: 0x%I64x\n", GetTagNameString(HMR2_IMAGEINFORMATION), Val64);
+            fprintf(po_pOutput, "  %s: 0x%jx\n", GetTagNameString(HMR2_IMAGEINFORMATION), Val64);
             }
         else
             {
             GetField (HMR2_IMAGEINFORMATION, &ValL);
-            fprintf(po_pOutput, "  %s: 0x%lx\n", GetTagNameString(HMR2_IMAGEINFORMATION), ValL);
+            fprintf(po_pOutput, "  %s: 0x%x\n", GetTagNameString(HMR2_IMAGEINFORMATION), ValL);
             }
         }
 
     if (m_pCurDir->TagIsPresent(HMR_VERSION))
         {
         GetField (HMR_VERSION, &ValL);
-        fprintf(po_pOutput, "  %s: %ld\n", GetTagNameString(HMR_VERSION), ValL);
+        fprintf(po_pOutput, "  %s: %d\n", GetTagNameString(HMR_VERSION), ValL);
         }
 
     if (m_pCurDir->TagIsPresent(HMR_VERSION_MINOR))
         {
         GetField (HMR_VERSION_MINOR, &ValL);
-        fprintf(po_pOutput, "  %s: %ld\n", GetTagNameString(HMR_VERSION_MINOR), ValL);
+        fprintf(po_pOutput, "  %s: %d\n", GetTagNameString(HMR_VERSION_MINOR), ValL);
         }
 
     if (m_pCurDir->TagIsPresent(HMR_FILTERS))
         {
-        GetField(HMR_FILTERS, &pValC);
+        GetFieldA(HMR_FILTERS, &pValC);
         s_PrintAsciiTag(po_pOutput, GetTagNameString(HMR_FILTERS), pValC);
         }
 
     if (m_pCurDir->TagIsPresent(HMR_PADDING))
         {
         GetField (HMR_PADDING, &ValL);
-        fprintf(po_pOutput, "  %s: %ld\n", GetTagNameString(HMR_PADDING), ValL);
+        fprintf(po_pOutput, "  %s: %d\n", GetTagNameString(HMR_PADDING), ValL);
         }
 
     if (m_pCurDir->TagIsPresent(HMR_PIXEL_TYPE_SPEC))
         {
         GetField (HMR_PIXEL_TYPE_SPEC, &ValL);
-        fprintf(po_pOutput, "  %s: %ld (0=RGB, 1=BGR\n", GetTagNameString(HMR_PIXEL_TYPE_SPEC), ValL);
+        fprintf(po_pOutput, "  %s: %d (0=RGB, 1=BGR\n", GetTagNameString(HMR_PIXEL_TYPE_SPEC), ValL);
         }
 
     if (m_pCurDir->TagIsPresent(HMR_THUMBNAIL_COMPOSED))
         {
         GetField (HMR_THUMBNAIL_COMPOSED, &ValL);
-        fprintf(po_pOutput, "  %s: %ld\n", GetTagNameString(HMR_THUMBNAIL_COMPOSED), ValL);
+        fprintf(po_pOutput, "  %s: %d\n", GetTagNameString(HMR_THUMBNAIL_COMPOSED), ValL);
         }
 
     if (m_pCurDir->TagIsPresent(HMR_TRANSPARENCY_PALETTE))
@@ -1046,11 +1046,11 @@ void HTIFFFile::_PrintCurrentDirectory (FILE* po_pOutput, uint32_t pi_Flag)
             fprintf(po_pOutput, "\n");
 
             if (Num == 2)
-                fprintf(po_pOutput, "   %5lu: %5u %5u \n",2, (Byte)pVal[0], (Byte)pVal[1]);
+                fprintf(po_pOutput, "   %5u: %5u %5u \n",2, (Byte)pVal[0], (Byte)pVal[1]);
             else
                 {
                 for (uint32_t i=0; i<Num; i+=8)
-                    fprintf(po_pOutput, "   %5lu: %5u %5u %5u %5u %5u %5u %5u %5u\n",i,
+                    fprintf(po_pOutput, "   %5u: %5u %5u %5u %5u %5u %5u %5u %5u\n",i,
                             (Byte)pVal[i],
                             (Byte)pVal[i+1],
                             (Byte)pVal[i+2],
@@ -1069,7 +1069,7 @@ void HTIFFFile::_PrintCurrentDirectory (FILE* po_pOutput, uint32_t pi_Flag)
 
     if (m_pCurDir->TagIsPresent(HMR_IMAGECOORDINATESYSTEM))
         {
-        GetField (HMR_IMAGECOORDINATESYSTEM, &pValC);
+        GetFieldA(HMR_IMAGECOORDINATESYSTEM, &pValC);
         fprintf(po_pOutput, "  %s: \"%s\"\n", GetTagNameString(HMR_IMAGECOORDINATESYSTEM), pValC);
         }
 
@@ -1099,7 +1099,7 @@ void HTIFFFile::_PrintCurrentDirectory (FILE* po_pOutput, uint32_t pi_Flag)
 
     if (m_pCurDir->TagIsPresent(HMR_HISTOGRAMDATETIME))
         {
-        GetField (HMR_HISTOGRAMDATETIME, &pValC);
+        GetFieldA(HMR_HISTOGRAMDATETIME, &pValC);
         fprintf(po_pOutput, "  %s: \"%s\"\n", GetTagNameString(HMR_HISTOGRAMDATETIME), pValC);
         }
 
@@ -1116,7 +1116,7 @@ void HTIFFFile::_PrintCurrentDirectory (FILE* po_pOutput, uint32_t pi_Flag)
 
             for (size_t i=0; i<ValL;)
                 {
-                fprintf (po_pOutput, " [%3ld] ", (int32_t)i);
+                fprintf (po_pOutput, " [%3d] ", (int32_t)i);
                 for (size_t j=0; (j<8) && (i<ValL); j++, i++)
                     fprintf (po_pOutput, "%8u ", pVal[i]);
                 fprintf (po_pOutput, "\n");
@@ -1166,7 +1166,7 @@ void HTIFFFile::_PrintCurrentDirectory (FILE* po_pOutput, uint32_t pi_Flag)
         {
         if (pi_Flag & TIFFPRINT_HMR_USERDATA)
             {
-            GetField (HMR_USERDATA, &pValC);
+            GetFieldA(HMR_USERDATA, &pValC);
             fprintf(po_pOutput, "  %s: \"%s\"\n\n", GetTagNameString(HMR_USERDATA), pValC);
             }
         else
@@ -1185,7 +1185,7 @@ void HTIFFFile::_PrintCurrentDirectory (FILE* po_pOutput, uint32_t pi_Flag)
             uint16_t CntRes  = 0;
 
             fprintf(po_pOutput, "\n Resolution : 0\n");
-            GetField (HMR2_TILEFLAG, (char**)&pVal);
+            GetFieldA(HMR2_TILEFLAG, (char**)&pVal);
             for (uint32_t i=0; i<strlen((char*)pVal); ++i, ++Cnt)
                 {
                 if (Cnt >= 16)
@@ -1304,9 +1304,9 @@ void HTIFFFile::_PrintCurrentDirectory (FILE* po_pOutput, uint32_t pi_Flag)
 
                 GetField(HMR_PROJECTWISE_BLOB, &DataSize, &pData);
 
-                fprintf(po_pOutput, "  %lu DataBlocks:\n", DataSize/2);
+                fprintf(po_pOutput, "  %u DataBlocks:\n", DataSize/2);
                 for (uint32_t i = 0; i<DataSize; i+=2)
-                    fprintf(po_pOutput, "    %10lu: [%10I64u, %10I64u]\n",(i/2), pData[i], pData[i+1]);
+                    fprintf(po_pOutput, "    %10u: [%10ju, %10ju]\n",(i/2), pData[i], pData[i+1]);
                 }
             else
                 {
@@ -1315,9 +1315,9 @@ void HTIFFFile::_PrintCurrentDirectory (FILE* po_pOutput, uint32_t pi_Flag)
 
                 GetField(HMR_PROJECTWISE_BLOB, &DataSize, &pData);
 
-                fprintf(po_pOutput, "  %lu DataBlocks:\n", DataSize/2);
+                fprintf(po_pOutput, "  %u DataBlocks:\n", DataSize/2);
                 for (uint32_t i = 0; i<DataSize; i+=2)
-                    fprintf(po_pOutput, "    %3lu: [%8lu, %8lu]\n",(i/2), pData[i], pData[i+1]);
+                    fprintf(po_pOutput, "    %3u: [%8u, %8u]\n",(i/2), pData[i], pData[i+1]);
                 }
             }
         else
@@ -1327,14 +1327,14 @@ void HTIFFFile::_PrintCurrentDirectory (FILE* po_pOutput, uint32_t pi_Flag)
 
     if (m_pCurDir->TagIsPresent(HMR_SOURCEFILE_CREATIONDATE))
         {
-        GetField (HMR_SOURCEFILE_CREATIONDATE, &pValC);
+        GetFieldA(HMR_SOURCEFILE_CREATIONDATE, &pValC);
         fprintf(po_pOutput, "  %s: \"%s\"\n", GetTagNameString(HMR_SOURCEFILE_CREATIONDATE), pValC);
         }
 
     if (m_pCurDir->TagIsPresent(HMR_SYNCHRONIZE_FIELD))
         {
         GetField (HMR_SYNCHRONIZE_FIELD, &ValL);
-        fprintf(po_pOutput, "  %s: 0x%lx\n", GetTagNameString(HMR_SYNCHRONIZE_FIELD), ValL);
+        fprintf(po_pOutput, "  %s: 0x%x\n", GetTagNameString(HMR_SYNCHRONIZE_FIELD), ValL);
         }
 
     if (m_pCurDir->TagIsPresent(FREEOFFSETS))
@@ -1350,12 +1350,12 @@ void HTIFFFile::_PrintCurrentDirectory (FILE* po_pOutput, uint32_t pi_Flag)
         // Compute number of bytes free
         for (uint32_t i = 0; i<NbEntry; i++)
             FreeBytes += pCount[i];
-        fprintf(po_pOutput, "  BytesTotal in Freeblocks: %lu\n", FreeBytes);
+        fprintf(po_pOutput, "  BytesTotal in Freeblocks: %u\n", FreeBytes);
 
         if ((pi_Flag & TIFFPRINT_FREEBLOCKS) && (NbEntry > 0))
             {
             for (uint32_t i = 0; i<NbEntry; i++)
-                fprintf(po_pOutput, "    %3lu: [%8lu, %8lu]\n",i, pOffset[i], pCount[i]);
+                fprintf(po_pOutput, "    %3u: [%8u, %8u]\n",i, pOffset[i], pCount[i]);
             }
         }
 
@@ -1381,9 +1381,9 @@ void HTIFFFile::_PrintCurrentDirectory (FILE* po_pOutput, uint32_t pi_Flag)
             }
 
         if (m_pCurDir->TagIsPresent(STRIPOFFSETS))
-            fprintf(po_pOutput, "  %lu Strips:\n", NbEntry);
+            fprintf(po_pOutput, "  %u Strips:\n", NbEntry);
         else if (m_pCurDir->TagIsPresent(TILEOFFSETS))
-            fprintf(po_pOutput, "  %lu Tiles:\n", NbEntry);
+            fprintf(po_pOutput, "  %u Tiles:\n", NbEntry);
         else
             fprintf(po_pOutput, "  Not found\n");
 
@@ -1391,10 +1391,10 @@ void HTIFFFile::_PrintCurrentDirectory (FILE* po_pOutput, uint32_t pi_Flag)
             {
             if (m_pFile->m_IsTiff64)
                 for (uint32_t i = 0; i<NbEntry; i++)
-                    fprintf(po_pOutput, "    %8lu: [%20I64u, %20I64u]\n",i, pOffset64[i], pCount64[i]);
+                    fprintf(po_pOutput, "    %8u: [%20ju, %20ju]\n",i, pOffset64[i], pCount64[i]);
             else
                 for (uint32_t i = 0; i<NbEntry; i++)
-                    fprintf(po_pOutput, "    %3lu: [%8lu, %8lu]\n",i, pOffset32[i], pCount32[i]);
+                    fprintf(po_pOutput, "    %3u: [%8u, %8u]\n",i, pOffset32[i], pCount32[i]);
             }
 
         if ((m_NbData32 > 0) && (m_NbData32 != NbEntry || m_NbData32 != NbEntry2))
@@ -1403,12 +1403,12 @@ void HTIFFFile::_PrintCurrentDirectory (FILE* po_pOutput, uint32_t pi_Flag)
             fprintf(po_pOutput, "  Emulation by HTIFF library\n");
 
             if (m_pCurDir->TagIsPresent(STRIPOFFSETS))
-                fprintf(po_pOutput, "    %lu Strips:\n", m_NbData32);
+                fprintf(po_pOutput, "    %u Strips:\n", m_NbData32);
             else if (m_pCurDir->TagIsPresent(TILEOFFSETS))
-                fprintf(po_pOutput, "    %lu Tiles:\n", m_NbData32);
+                fprintf(po_pOutput, "    %u Tiles:\n", m_NbData32);
 
             for (uint32_t i = 0; i<m_NbData32; i++)
-                fprintf(po_pOutput, "      %3lu: [%8I64u, %8u]\n",i, GetOffset(i), GetCount(i));
+                fprintf(po_pOutput, "      %3u: [%8ju, %8u]\n",i, GetOffset(i), GetCount(i));
 
             }
         }
@@ -1445,7 +1445,7 @@ void HTIFFFile::PrintEXIFDefinedGPSTags(uint32_t pi_PageDirInd,
         vector<Byte>   ByteVec;
         vector<double> DblVec;
 
-        fprintf(po_pOutput, "\nEXIF Related GPS Info Directory at offset 0x%I64x\n", GPSIFDOffset64);
+        fprintf(po_pOutput, "\nEXIF Related GPS Info Directory at offset 0x%jx\n", GPSIFDOffset64);
 
         HAutoPtr<HTIFFDirectory> pGPSDir(new HTIFFDirectory(m_rTagInfo, &m_ByteOrder, IsTiff64()));
 
@@ -1473,7 +1473,7 @@ void HTIFFFile::PrintEXIFDefinedGPSTags(uint32_t pi_PageDirInd,
                     }
                 }
 
-            if (pGPSDir->GetValues(GPS_LATITUDEREF, &pCharVal))
+            if (pGPSDir->GetValuesA(GPS_LATITUDEREF, &pCharVal))
                 {
                 if (BeStringUtilities::Stricmp("n", pCharVal) == 0)
                     {
@@ -1507,7 +1507,7 @@ void HTIFFFile::PrintEXIFDefinedGPSTags(uint32_t pi_PageDirInd,
                         ConvRationalToDblVals[2]);
                 }
 
-            if (pGPSDir->GetValues(GPS_LONGITUDEREF, &pCharVal))
+            if (pGPSDir->GetValuesA(GPS_LONGITUDEREF, &pCharVal))
                 {
                 if (BeStringUtilities::Stricmp("e", pCharVal) == 0)
                     {
@@ -1595,12 +1595,12 @@ void HTIFFFile::PrintEXIFDefinedGPSTags(uint32_t pi_PageDirInd,
                         pDblVal[2]);
                 }
 
-            if (pGPSDir->GetValues(GPS_SATELLITES, &pCharVal))
+            if (pGPSDir->GetValuesA(GPS_SATELLITES, &pCharVal))
                 {
                 s_PrintAsciiTag(po_pOutput, pGPSDir->GetTagNameString(GPS_SATELLITES), pCharVal);
                 }
 
-            if (pGPSDir->GetValues(GPS_STATUS, &pCharVal))
+            if (pGPSDir->GetValuesA(GPS_STATUS, &pCharVal))
                 {
                 if (BeStringUtilities::Stricmp("a", pCharVal) == 0)
                     {
@@ -1618,7 +1618,7 @@ void HTIFFFile::PrintEXIFDefinedGPSTags(uint32_t pi_PageDirInd,
                     }
                 }
 
-            if (pGPSDir->GetValues(GPS_MEASUREMODE, &pCharVal))
+            if (pGPSDir->GetValuesA(GPS_MEASUREMODE, &pCharVal))
                 {
                 if (BeStringUtilities::Stricmp("2", pCharVal) == 0)
                     {
@@ -1650,7 +1650,7 @@ void HTIFFFile::PrintEXIFDefinedGPSTags(uint32_t pi_PageDirInd,
                         ConvRationalToDblVals[0]);
                 }
 
-            if (pGPSDir->GetValues(GPS_SPEEDREF, &pCharVal))
+            if (pGPSDir->GetValuesA(GPS_SPEEDREF, &pCharVal))
                 {
                 if (BeStringUtilities::Stricmp("K", pCharVal) == 0)
                     {
@@ -1686,7 +1686,7 @@ void HTIFFFile::PrintEXIFDefinedGPSTags(uint32_t pi_PageDirInd,
                         ConvRationalToDblVals[0]);
                 }
 
-            if (pGPSDir->GetValues(GPS_TRACKREF, &pCharVal))
+            if (pGPSDir->GetValuesA(GPS_TRACKREF, &pCharVal))
                 {
                 if (BeStringUtilities::Stricmp("T", pCharVal) == 0)
                     {
@@ -1718,7 +1718,7 @@ void HTIFFFile::PrintEXIFDefinedGPSTags(uint32_t pi_PageDirInd,
                         ConvRationalToDblVals[0]);
                 }
 
-            if (pGPSDir->GetValues(GPS_IMGDIRECTIONREF, &pCharVal))
+            if (pGPSDir->GetValuesA(GPS_IMGDIRECTIONREF, &pCharVal))
                 {
                 if (BeStringUtilities::Stricmp("T", pCharVal) == 0)
                     {
@@ -1750,12 +1750,12 @@ void HTIFFFile::PrintEXIFDefinedGPSTags(uint32_t pi_PageDirInd,
                         ConvRationalToDblVals[0]);
                 }
 
-            if (pGPSDir->GetValues(GPS_MAPDATUM, &pCharVal))
+            if (pGPSDir->GetValuesA(GPS_MAPDATUM, &pCharVal))
                 {
                 s_PrintAsciiTag(po_pOutput, pGPSDir->GetTagNameString(GPS_MAPDATUM), pCharVal);
                 }
 
-            if (pGPSDir->GetValues(GPS_DESTLATITUDEREF, &pCharVal))
+            if (pGPSDir->GetValuesA(GPS_DESTLATITUDEREF, &pCharVal))
                 {
                 if (BeStringUtilities::Stricmp("N", pCharVal) == 0)
                     {
@@ -1789,7 +1789,7 @@ void HTIFFFile::PrintEXIFDefinedGPSTags(uint32_t pi_PageDirInd,
                         ConvRationalToDblVals[2]);
                 }
 
-            if (pGPSDir->GetValues(GPS_DESTLONGITUDEREF, &pCharVal))
+            if (pGPSDir->GetValuesA(GPS_DESTLONGITUDEREF, &pCharVal))
                 {
                 if (BeStringUtilities::Stricmp("E", pCharVal) == 0)
                     {
@@ -1823,7 +1823,7 @@ void HTIFFFile::PrintEXIFDefinedGPSTags(uint32_t pi_PageDirInd,
                         ConvRationalToDblVals[2]);
                 }
 
-            if (pGPSDir->GetValues(GPS_DESTBEARINGREF, &pCharVal))
+            if (pGPSDir->GetValuesA(GPS_DESTBEARINGREF, &pCharVal))
                 {
                 if (BeStringUtilities::Stricmp("T", pCharVal) == 0)
                     {
@@ -1855,7 +1855,7 @@ void HTIFFFile::PrintEXIFDefinedGPSTags(uint32_t pi_PageDirInd,
                         ConvRationalToDblVals[0]);
                 }
 
-            if (pGPSDir->GetValues(GPS_DESTDISTANCEREF, &pCharVal))
+            if (pGPSDir->GetValuesA(GPS_DESTDISTANCEREF, &pCharVal))
                 {
                 if (BeStringUtilities::Stricmp("K", pCharVal) == 0)
                     {
@@ -1919,7 +1919,7 @@ void HTIFFFile::PrintEXIFDefinedGPSTags(uint32_t pi_PageDirInd,
                 fprintf(po_pOutput, "\n");
                 }
 
-            if (pGPSDir->GetValues(GPS_DATESTAMP, &pCharVal))
+            if (pGPSDir->GetValuesA(GPS_DATESTAMP, &pCharVal))
                 {
                 s_PrintAsciiTag(po_pOutput, pGPSDir->GetTagNameString(GPS_DATESTAMP), pCharVal);
                 }
@@ -1985,7 +1985,7 @@ void HTIFFFile::PrintEXIFTags(uint32_t pi_PageDirInd,
     //Check for a private IFD
     if (m_ppListDir[pi_PageDirInd]->GetValues(EXIFDIRECTORY, &EXIFIFDOffset))
         {
-        fprintf(po_pOutput, "\nEXIF Directory at offset 0x%I32x\n", EXIFIFDOffset);
+        fprintf(po_pOutput, "\nEXIF Directory at offset 0x%ux\n", EXIFIFDOffset);
 
         pExifDir = new HTIFFDirectory(m_rTagInfo, &m_ByteOrder, IsTiff64());
         pExifDir->ReadDirectory(m_pFile, EXIFIFDOffset);
@@ -2068,7 +2068,7 @@ void HTIFFFile::PrintEXIFTags(uint32_t pi_PageDirInd,
         s_PrintAsciiTag(po_pOutput, pDirToSearch->GetTagNameString(EXIF_EXPOSUREPROGRAM), ExposureProgram.c_str());
         }
 
-    if (pDirToSearch->GetValues(EXIF_SPECTRALSENSITIVITY, &pCharVal))
+    if (pDirToSearch->GetValuesA(EXIF_SPECTRALSENSITIVITY, &pCharVal))
         {
         s_PrintAsciiTag(po_pOutput, pDirToSearch->GetTagNameString(EXIF_SPECTRALSENSITIVITY), pCharVal);
         }
@@ -2112,12 +2112,12 @@ void HTIFFFile::PrintEXIFTags(uint32_t pi_PageDirInd,
                 pByteVal[0], pByteVal[1], pByteVal[2], pByteVal[3]);
         }
 
-    if (pDirToSearch->GetValues(EXIF_DATETIMEORIGINAL, &pCharVal))
+    if (pDirToSearch->GetValuesA(EXIF_DATETIMEORIGINAL, &pCharVal))
         {
         s_PrintAsciiTag(po_pOutput, pDirToSearch->GetTagNameString(EXIF_DATETIMEORIGINAL), pCharVal);
         }
 
-    if (pDirToSearch->GetValues(EXIF_DATETIMEDIGITIZED, &pCharVal))
+    if (pDirToSearch->GetValuesA(EXIF_DATETIMEDIGITIZED, &pCharVal))
         {
         s_PrintAsciiTag(po_pOutput, pDirToSearch->GetTagNameString(EXIF_DATETIMEDIGITIZED), pCharVal);
         }
@@ -2650,17 +2650,17 @@ void HTIFFFile::PrintEXIFTags(uint32_t pi_PageDirInd,
             }
         }
 
-    if (pDirToSearch->GetValues(EXIF_SUBSECTIME, &pCharVal))
+    if (pDirToSearch->GetValuesA(EXIF_SUBSECTIME, &pCharVal))
         {
         s_PrintAsciiTag(po_pOutput, pDirToSearch->GetTagNameString(EXIF_SUBSECTIME), pCharVal);
         }
 
-    if (pDirToSearch->GetValues(EXIF_SUBSECTIME_ORIGINAL, &pCharVal))
+    if (pDirToSearch->GetValuesA(EXIF_SUBSECTIME_ORIGINAL, &pCharVal))
         {
         s_PrintAsciiTag(po_pOutput, pDirToSearch->GetTagNameString(EXIF_SUBSECTIME_ORIGINAL), pCharVal);
         }
 
-    if (pDirToSearch->GetValues(EXIF_SUBSECTIME_DIGITIZED, &pCharVal))
+    if (pDirToSearch->GetValuesA(EXIF_SUBSECTIME_DIGITIZED, &pCharVal))
         {
         s_PrintAsciiTag(po_pOutput, pDirToSearch->GetTagNameString(EXIF_SUBSECTIME_DIGITIZED), pCharVal);
         }
@@ -2710,7 +2710,7 @@ void HTIFFFile::PrintEXIFTags(uint32_t pi_PageDirInd,
                 ULongVal);
         }
 
-    if (pDirToSearch->GetValues(EXIF_RELATEDSOUNDFILE, &pCharVal))
+    if (pDirToSearch->GetValuesA(EXIF_RELATEDSOUNDFILE, &pCharVal))
         {
         s_PrintAsciiTag(po_pOutput, pDirToSearch->GetTagNameString(EXIF_RELATEDSOUNDFILE), pCharVal);
         }
@@ -3159,7 +3159,7 @@ void HTIFFFile::PrintEXIFTags(uint32_t pi_PageDirInd,
             }
         }
 
-    if (pDirToSearch->GetValues(EXIF_IMAGEUNIQUEID, &pCharVal))
+    if (pDirToSearch->GetValuesA(EXIF_IMAGEUNIQUEID, &pCharVal))
         {
         s_PrintAsciiTag(po_pOutput, pDirToSearch->GetTagNameString(EXIF_IMAGEUNIQUEID), pCharVal);
         }

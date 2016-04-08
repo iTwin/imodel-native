@@ -118,7 +118,7 @@ HSTATUS HRFPWEditor::WriteBlock(uint64_t                 pi_PosBlockX,
 #if 0
 HRFPWHandler::HRFPWHandler(const HFCURL& pi_rPWFile)
     {
-    WString URL = pi_rPWFile.GetURL();
+    Utf8String URL = pi_rPWFile.GetURL();
     URL.erase(URL.length() - 3);
 
     HFCPtr<HRFRasterFile> pTrueRasterFile = HRFRasterFileFactory::GetInstance()->OpenFile(HFCURL::Instanciate(URL));

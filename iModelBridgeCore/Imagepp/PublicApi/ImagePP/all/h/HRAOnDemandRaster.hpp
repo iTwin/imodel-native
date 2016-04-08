@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRAOnDemandRaster.hpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -36,7 +36,7 @@ inline HFCPtr<HVEShape> HRAOnDemandRaster::GetEffectiveShape () const
 // public
 // GetRepresentativePSS - Return the representative PSS.
 //-----------------------------------------------------------------------------
-inline WString HRAOnDemandRaster::GetRepresentativePSS() const
+inline Utf8String HRAOnDemandRaster::GetRepresentativePSS() const
     {
     return m_RepresentativePSS;
     }

@@ -27,14 +27,14 @@ public:
     // Primary methods
     //--------------------------------------
 
-    HRFURLInternetImagingHTTP(const WString& pi_User,
-                              const WString& pi_Password,
-                              const WString& pi_Host,
-                              const WString& pi_Port,
-                              const WString& pi_Path,
-                              const WString& pi_ImageName,
+    HRFURLInternetImagingHTTP(const Utf8String& pi_User,
+                              const Utf8String& pi_Password,
+                              const Utf8String& pi_Host,
+                              const Utf8String& pi_Port,
+                              const Utf8String& pi_Path,
+                              const Utf8String& pi_ImageName,
                               bool    pi_IsHTTP);
-    IMAGEPP_EXPORT HRFURLInternetImagingHTTP(const WString& pi_URL, bool pi_IsHTTP);
+    IMAGEPP_EXPORT HRFURLInternetImagingHTTP(const Utf8String& pi_URL, bool pi_IsHTTP);
 
     virtual         ~HRFURLInternetImagingHTTP();
 
@@ -43,7 +43,7 @@ public:
     //--------------------------------------
 
     // Image name
-    IMAGEPP_EXPORT const WString&      GetImage() const;
+    IMAGEPP_EXPORT const Utf8String&      GetImage() const;
 
     // UTF8 encoded and escaped image name
     IMAGEPP_EXPORT bool               GetUTF8EscapedImage(string* po_pUTF8EscapedImage);
@@ -68,7 +68,7 @@ private:
     //--------------------------------------
 
     // Image name
-    WString                  m_Image;
+    Utf8String                  m_Image;
 
     // Disabled methods
     //--------------------------------------

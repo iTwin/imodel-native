@@ -203,9 +203,9 @@ HRFTgaCreator::HRFTgaCreator()
 
  @return string TGA file format label.
 ------------------------------------------------------------------------------*/
-WString HRFTgaCreator::GetLabel() const
+Utf8String HRFTgaCreator::GetLabel() const
     {
-    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_Targa()); // TGA Targa TrueVision
+    return ImagePPMessages::GetString(ImagePPMessages::FILEFORMAT_Targa()); // TGA Targa TrueVision
     }
 
 /**-----------------------------------------------------------------------------
@@ -213,9 +213,9 @@ WString HRFTgaCreator::GetLabel() const
 
  @return string The scheme of the URL.
 ------------------------------------------------------------------------------*/
-WString HRFTgaCreator::GetSchemes() const
+Utf8String HRFTgaCreator::GetSchemes() const
     {
-    return WString(HFCURLFile::s_SchemeName());
+    return Utf8String(HFCURLFile::s_SchemeName());
     }
 
 /**-----------------------------------------------------------------------------
@@ -223,9 +223,9 @@ WString HRFTgaCreator::GetSchemes() const
 
  @return string The TGA extention.
 ------------------------------------------------------------------------------*/
-WString HRFTgaCreator::GetExtensions() const
+Utf8String HRFTgaCreator::GetExtensions() const
     {
-    return WString(L"*.tga");
+    return Utf8String("*.tga");
     }
 
 /**-----------------------------------------------------------------------------
@@ -532,14 +532,14 @@ void HRFTgaFile::CreateDescriptors ()
         // AuthorName Tag
         if (strlen((const char*)m_pTgaExtentionArea->m_AuthorName) != 0)
             {
-            pTag = new HRFAttributeArtist(WString((char*)m_pTgaExtentionArea->m_AuthorName,false));
+            pTag = new HRFAttributeArtist((CharCP)m_pTgaExtentionArea->m_AuthorName);
             TagList.Set(pTag);
             }
 
         // AuthorComment Tag
         if (strlen((const char*)m_pTgaExtentionArea->m_AuthorComments) != 0)
             {
-            pTag = new HRFAttributeNotes(WString((char*)m_pTgaExtentionArea->m_AuthorComments,false));
+            pTag = new HRFAttributeNotes((CharCP)m_pTgaExtentionArea->m_AuthorComments);
             TagList.Set(pTag);
             }
 
@@ -553,7 +553,7 @@ void HRFTgaFile::CreateDescriptors ()
                           m_pTgaExtentionArea->m_Minute,
                           m_pTgaExtentionArea->m_Second);
 
-        pTag = new HRFAttributeDateTime(WString(StrInput,false));
+        pTag = new HRFAttributeDateTime(Utf8String(StrInput));
         TagList.Set(pTag);
 
 
@@ -577,7 +577,7 @@ void HRFTgaFile::CreateDescriptors ()
         // SoftwareId Tag
         if (strlen((const char*)m_pTgaExtentionArea->m_SoftwareId) != 0)
             {
-            pTag = new HRFAttributeSoftware(WString((char*)m_pTgaExtentionArea->m_SoftwareId,false));
+            pTag = new HRFAttributeSoftware((CharCP)m_pTgaExtentionArea->m_SoftwareId);
             TagList.Set(pTag);
             }
 
@@ -586,7 +586,7 @@ void HRFTgaFile::CreateDescriptors ()
                           "%3.2f%c",
                           ((float)m_pTgaExtentionArea->m_SoftwareVersion/100.0),
                           m_pTgaExtentionArea->m_SoftwareVersionLetter);
-        pTag = new HRFAttributeVersion(WString(StrInput,false));
+        pTag = new HRFAttributeVersion(StrInput);
         TagList.Set(pTag);
 
         // BackGround Color
@@ -700,37 +700,37 @@ void HRFTgaFile::SaveTgaFile(bool pi_CloseFile)
             if (pPageDescriptor->TagHasChanged(*pTag) || GetAccessMode().m_HasCreateAccess)
                 {
                 // AuthorName Tag
-                if (pTag->GetID() == HRFAttributeArtist::ATTRIBUTE_ID) 
+                if (pTag->GetID() == (HPMAttributesID)HRFAttributeArtist::ATTRIBUTE_ID)
                     {
-                    AString tempStrA;
-                    BeStringUtilities::WCharToCurrentLocaleChar(tempStrA, ((HFCPtr<HRFAttributeArtist>&)pTag)->GetData().c_str());
-                    BeStringUtilities::Strncpy((char*)m_pTgaExtentionArea->m_AuthorName, sizeof(m_pTgaExtentionArea->m_AuthorName), tempStrA.c_str());
+                    WString nameW(((HFCPtr<HRFAttributeArtist>&)pTag)->GetData().c_str(), BentleyCharEncoding::Utf8);
+                    AString nameA(nameW.c_str());
+                    BeStringUtilities::Strncpy((char*)m_pTgaExtentionArea->m_AuthorName, sizeof(m_pTgaExtentionArea->m_AuthorName), nameA.c_str());
                     HasExt = true;
                     }
 
 
                 // AuthorComment Tag
-                if (pTag->GetID() == HRFAttributeNotes::ATTRIBUTE_ID)
+                if (pTag->GetID() == (HPMAttributesID)HRFAttributeNotes::ATTRIBUTE_ID)
                     {
-                    AString tempStrA;
-                    BeStringUtilities::WCharToCurrentLocaleChar(tempStrA, ((HFCPtr<HRFAttributeNotes>&)pTag)->GetData().c_str());
-                    BeStringUtilities::Strncpy((char*)m_pTgaExtentionArea->m_AuthorComments, sizeof(m_pTgaExtentionArea->m_AuthorComments), tempStrA.c_str());
+                    WString commentW(((HFCPtr<HRFAttributeNotes>&)pTag)->GetData().c_str(), BentleyCharEncoding::Utf8);
+                    AString commentA(commentW.c_str());
+                    BeStringUtilities::Strncpy((char*)m_pTgaExtentionArea->m_AuthorComments, sizeof(m_pTgaExtentionArea->m_AuthorComments), commentA.c_str());
 
                     HasExt = true;
                     }
 
                 // Date/Time Tag
-                if (pTag->GetID() == HRFAttributeDateTime::ATTRIBUTE_ID)
+                if (pTag->GetID() == (HPMAttributesID)HRFAttributeDateTime::ATTRIBUTE_ID)
                     {
-                    BE_STRING_UTILITIES_SWSCANF (((HFCPtr<HRFAttributeDateTime>&)pTag)->GetData().c_str(),
-                                                L"%hu/%hu/%hu %hu:%hu:%hu",
+                    BE_STRING_UTILITIES_UTF8_SSCANF(((HFCPtr<HRFAttributeDateTime>&)pTag)->GetData().c_str(),
+                                                "%hu/%hu/%hu %hu:%hu:%hu",
                                                 &m_pTgaExtentionArea->m_Year,
                                                 &m_pTgaExtentionArea->m_Month,
                                                 &m_pTgaExtentionArea->m_Day,
                                                 &m_pTgaExtentionArea->m_Hour,
                                                 &m_pTgaExtentionArea->m_Minute,
                                                 &m_pTgaExtentionArea->m_Second);
-                    m_pTgaExtentionArea->m_Year = (uint16_t)BeStringUtilities::Wtoi (((HFCPtr<HRFAttributeDateTime>&)pTag)->GetData().c_str());
+                    m_pTgaExtentionArea->m_Year = (uint16_t)atoi (((HFCPtr<HRFAttributeDateTime>&)pTag)->GetData().c_str());
                     HasExt = true;
                     }
 
@@ -754,21 +754,20 @@ void HRFTgaFile::SaveTgaFile(bool pi_CloseFile)
                 //                }
 
                 // SoftwareId Tag
-                if (pTag->GetID() == HRFAttributeSoftware::ATTRIBUTE_ID)
+                if (pTag->GetID() == (HPMAttributesID)HRFAttributeSoftware::ATTRIBUTE_ID)
                     {
-                    AString softNameA;
-                    BeStringUtilities::WCharToCurrentLocaleChar(softNameA, ((HFCPtr<HRFAttributeSoftware>&)pTag)->GetData().c_str());
-
+                    WString softNameW(((HFCPtr<HRFAttributeSoftware>&)pTag)->GetData().c_str(), BentleyCharEncoding::Utf8);
+                    AString softNameA(softNameW.c_str());
                     BeStringUtilities::Strncpy((char*)m_pTgaExtentionArea->m_SoftwareId, sizeof(m_pTgaExtentionArea->m_SoftwareId), softNameA.c_str());
                     HasExt = true;
                     }
 
                 // SoftwareVersion Tag
-                if (pTag->GetID() == HRFAttributeVersion::ATTRIBUTE_ID)
+                if (pTag->GetID() == (HPMAttributesID)HRFAttributeVersion::ATTRIBUTE_ID)
                     {
                     float temp;
-                    BE_STRING_UTILITIES_SWSCANF (((HFCPtr<HRFAttributeVersion>&)pTag)->GetData().c_str(),
-                                                L"%f%hc",
+                    BE_STRING_UTILITIES_UTF8_SSCANF(((HFCPtr<HRFAttributeVersion>&)pTag)->GetData().c_str(),
+                                                "%f%c",
                                                 &temp,
                                                 &m_pTgaExtentionArea->m_SoftwareVersionLetter);
                     //temp = (float)atof (((HFCPtr<HRFAttributeVersion>&)pTag)->GetData().c_str());
@@ -777,7 +776,7 @@ void HRFTgaFile::SaveTgaFile(bool pi_CloseFile)
                     }
 
                 // BackGround Color
-                if (pTag->GetID() == HRFAttributeBackground::ATTRIBUTE_ID)
+                if (pTag->GetID() == (HPMAttributesID)HRFAttributeBackground::ATTRIBUTE_ID)
                     {
                     m_pTgaExtentionArea->m_BackgroundColor = ((HFCPtr<HRFAttributeBackground>&)pTag)->GetData();
                     HasExt = true;

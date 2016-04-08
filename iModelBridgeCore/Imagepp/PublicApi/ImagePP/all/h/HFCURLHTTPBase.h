@@ -36,32 +36,32 @@ public:
     HDECLARE_CLASS_ID(HFCURLId_HTTPBase, HFCURLCommonInternet);
 
     // Define the Scheme label
-    static const WString& s_SchemeName()
-        {   static const WString Val(L"http");
+    static const Utf8String& s_SchemeName()
+        {   static const Utf8String Val("http");
         return Val;
         }
 
     //:> constructor
-    IMAGEPP_EXPORT                         HFCURLHTTPBase(const WString& pi_URL,
+    IMAGEPP_EXPORT                         HFCURLHTTPBase(const Utf8String& pi_URL,
                                                   bool    pi_IsHTTPURL);
-    IMAGEPP_EXPORT                         HFCURLHTTPBase(const WString& pi_User,
-                                                  const WString& pi_Password,
-                                                  const WString& pi_Host,
-                                                  const WString& pi_Port,
-                                                  const WString& pi_Path,
-                                                  const WString& pi_SearchPart,
+    IMAGEPP_EXPORT                         HFCURLHTTPBase(const Utf8String& pi_User,
+                                                  const Utf8String& pi_Password,
+                                                  const Utf8String& pi_Host,
+                                                  const Utf8String& pi_Port,
+                                                  const Utf8String& pi_Path,
+                                                  const Utf8String& pi_SearchPart,
                                                   bool    pi_IsHTTPURL);
     IMAGEPP_EXPORT virtual                 ~HFCURLHTTPBase();
 
     //:> Content access methods
-    IMAGEPP_EXPORT virtual WString         GetURL() const;
-    const WString&                 GetPath() const;
-    const WString&                 GetSearchPart() const;
+    IMAGEPP_EXPORT virtual Utf8String         GetURL() const;
+    const Utf8String&                 GetPath() const;
+    const Utf8String&                 GetSearchPart() const;
 
     //:> Overriden methods, used in relative path management
     IMAGEPP_EXPORT virtual bool           HasPathTo(HFCURL* pi_pURL);
-    IMAGEPP_EXPORT virtual WString         FindPathTo(HFCURL* pi_pDest);
-    IMAGEPP_EXPORT virtual HFCURL*         MakeURLTo(const WString& pi_Path);
+    IMAGEPP_EXPORT virtual Utf8String         FindPathTo(HFCURL* pi_pDest);
+    IMAGEPP_EXPORT virtual HFCURL*         MakeURLTo(const Utf8String& pi_Path);
 
     IMAGEPP_EXPORT virtual void            SetUTF8EscapedURLPath(const string* pi_pURLPath = 0);
 
@@ -76,8 +76,8 @@ protected:
 private:
 
     // Components of the URLPath part of the URL string.
-    WString                  m_Path;
-    WString                  m_SearchPart;
+    Utf8String                  m_Path;
+    Utf8String                  m_SearchPart;
     bool                    m_IsHTTPURL; //HTTP or HTTPS
 
     // Disabled methods

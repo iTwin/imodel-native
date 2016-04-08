@@ -19,10 +19,10 @@ class OCIGeoRasterWrapper : public SDOGeoRasterWrapper
     {
 public:
 
-    OCIGeoRasterWrapper  (const WString&      pi_rTableName,
-                           const WString&      pi_rColumnName,
-                           const WString&      pi_RasterID,
-                           const WString&      pi_rRasterDataTableName = WString(L""),
+    OCIGeoRasterWrapper  (const Utf8String&      pi_rTableName,
+                           const Utf8String&      pi_rColumnName,
+                           const Utf8String&      pi_RasterID,
+                           const Utf8String&      pi_rRasterDataTableName = Utf8String(""),
                            const Utf16Char*         pi_pXMLGeoRasterHeader = 0,
                            size_t              pi_XMLSize = 0);
 
@@ -52,16 +52,16 @@ public:
                                             size_t         pi_BufferSize) override;
 
     virtual bool       GetWkt      (uint32_t       pi_SRID,
-                                    WStringR       po_rWKT) override;
+                                    Utf8StringR       po_rWKT) override;
 
     static bool       IsConnected     ();
 
-    static bool       Connect         (const WString&      pi_rUser,
-                                        const WString&     pi_rPassword,
-                                        const WString&     pi_rDatabase,
+    static bool       Connect         (const Utf8String&      pi_rUser,
+                                        const Utf8String&     pi_rPassword,
+                                        const Utf8String&     pi_rDatabase,
                                         OracleError*       po_pError = 0);
 
-    static bool       Connect         (const WString&      pi_rConnectionString,
+    static bool       Connect         (const Utf8String&      pi_rConnectionString,
                                         OracleError*       po_pError = 0);
 
     static bool       Disconnect      ();
@@ -70,7 +70,7 @@ public:
 
 private:
     OracleOCIConnectionP       m_pConnection; 
-    WString                    m_getBlockRequest;
+    Utf8String                    m_getBlockRequest;
     };
 END_IMAGEPP_NAMESPACE
 

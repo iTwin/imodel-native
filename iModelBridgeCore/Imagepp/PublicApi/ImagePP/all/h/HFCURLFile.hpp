@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCURLFile.hpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -21,7 +21,7 @@ BEGIN_IMAGEPP_NAMESPACE
 
  @inheritance This method cannot be overriden.
 -----------------------------------------------------------------------------*/
-inline const WString& HFCURLFile::GetHost() const
+inline const Utf8String& HFCURLFile::GetHost() const
     {
     return m_Host;
     }
@@ -38,7 +38,7 @@ inline const WString& HFCURLFile::GetHost() const
 
  @inheritance This method cannot be overriden.
 -----------------------------------------------------------------------------*/
-inline const WString& HFCURLFile::GetPath() const
+inline const Utf8String& HFCURLFile::GetPath() const
     {
     return m_Path;
     }

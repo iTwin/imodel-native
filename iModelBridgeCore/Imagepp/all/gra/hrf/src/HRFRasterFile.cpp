@@ -72,13 +72,13 @@ HCLASS_ID HRFRasterFileCreator::GetRasterFileClassID() const
 // GetDefaultExtension
 // Get the Default Extension
 //-----------------------------------------------------------------------------
-WString HRFRasterFileCreator::GetDefaultExtension() const
+Utf8String HRFRasterFileCreator::GetDefaultExtension() const
     {
     // Find the first file extension
-    WString::size_type SeparatorPos = GetExtensions().find(L';');
-    WString Extension;
+    Utf8String::size_type SeparatorPos = GetExtensions().find(';');
+    Utf8String Extension;
 
-    if (SeparatorPos != WString::npos)
+    if (SeparatorPos != Utf8String::npos)
         Extension = GetExtensions() .substr(0, SeparatorPos);
     else
         Extension = GetExtensions();
@@ -117,24 +117,24 @@ bool HRFRasterFileCreator::SupportsURL(const HFCPtr<HFCURL>& pi_rpURL) const
 // Public
 // SupportsScheme
 //-----------------------------------------------------------------------------
-bool HRFRasterFileCreator::SupportsScheme(const WString& pi_rScheme) const
+bool HRFRasterFileCreator::SupportsScheme(const Utf8String& pi_rScheme) const
     {
     // Find the specified Scheme
-    WString Schemes(GetSchemes());
-    CaseInsensitiveStringTools().ToLower(Schemes);
+    Utf8String Schemes(GetSchemes());
+    Schemes.ToLower();
 
-    WString SchemeToFind(pi_rScheme);
-    CaseInsensitiveStringTools().ToLower(SchemeToFind);
+    Utf8String SchemeToFind(pi_rScheme);
+    SchemeToFind.ToLower();
 
-    WString::size_type Pos = Schemes.find(SchemeToFind);
+    Utf8String::size_type Pos = Schemes.find(SchemeToFind);
     bool  Support = false;
 
-    if (Pos != WString::npos)
+    if (Pos != Utf8String::npos)
         {
         // We found the Scheme only when the Scheme is the last or
         // the next char is a separator
         if ((Pos + pi_rScheme.length() < Schemes.length()) &&
-            (Schemes.substr(Pos + pi_rScheme.length(), 1) != L";"))
+            (Schemes.substr(Pos + pi_rScheme.length(), 1) != ";"))
             Support = false;
         else
             Support = true;
@@ -147,25 +147,25 @@ bool HRFRasterFileCreator::SupportsScheme(const WString& pi_rScheme) const
 // Public
 // SupportsExtension
 //-----------------------------------------------------------------------------
-bool HRFRasterFileCreator::SupportsExtension(const WString& pi_rExtension) const
+bool HRFRasterFileCreator::SupportsExtension(const Utf8String& pi_rExtension) const
     {
     // Find the specified Extension
-    WString Extensions(GetExtensions());
-    CaseInsensitiveStringTools().ToLower(Extensions);
+    Utf8String Extensions(GetExtensions());
+    Extensions.ToLower();
 
-    WString ExtensionToFind(pi_rExtension);
-    CaseInsensitiveStringTools().ToLower(ExtensionToFind);
+    Utf8String ExtensionToFind(pi_rExtension);
+    ExtensionToFind.ToLower();
 
-    WString::size_type Pos = Extensions.find(ExtensionToFind);
+    Utf8String::size_type Pos = Extensions.find(ExtensionToFind);
     bool  Support = false;
 
-    if (Pos != WString::npos)
+    if (Pos != Utf8String::npos)
         {
         // We found the extension only when the extension is the last or
         // the next char is a separator
         if (((Pos + pi_rExtension.length() < Extensions.length()) &&
-             (Extensions.substr(Pos + pi_rExtension.length(), 1) != L";")) ||
-            (Extensions.substr(Pos-1, 1) != L"."))
+             (Extensions.substr(Pos + pi_rExtension.length(), 1) != ";")) ||
+            (Extensions.substr(Pos-1, 1) != "."))
             Support = false;
         else
             Support = true;
@@ -214,7 +214,7 @@ bool HRFRasterFileCreator::NeedRasterDllDirectory() const
 // Public
 // Set a path for dll.
 //-----------------------------------------------------------------------------
-void HRFRasterFileCreator::SetRasterDllDirectory(const WString& pi_rDllDirectory)
+void HRFRasterFileCreator::SetRasterDllDirectory(const Utf8String& pi_rDllDirectory)
     {
     HPRECONDITION(NeedRasterDllDirectory());
 
@@ -225,7 +225,7 @@ void HRFRasterFileCreator::SetRasterDllDirectory(const WString& pi_rDllDirectory
 // Public
 // Return the dll path setted by GetRasterDllDirectory.
 //-----------------------------------------------------------------------------
-const WString& HRFRasterFileCreator::GetRasterDllDirectory() const
+const Utf8String& HRFRasterFileCreator::GetRasterDllDirectory() const
     {
     return m_DllDirectory;
     }

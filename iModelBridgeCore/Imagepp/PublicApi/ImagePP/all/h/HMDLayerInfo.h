@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HMDLayerInfo.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -19,7 +19,7 @@ class HMDLayerInfo : public HMDMetaData
     friend class HMDLayers;
 
 public :
-    IMAGEPP_EXPORT HMDLayerInfo(const WString& pi_rKeyName,
+    IMAGEPP_EXPORT HMDLayerInfo(const Utf8String& pi_rKeyName,
                  bool    pi_InitialVisibleState);
     IMAGEPP_EXPORT virtual ~HMDLayerInfo();
 
@@ -28,13 +28,13 @@ public :
 
     IMAGEPP_EXPORT bool          GetInitialVisibleState() const;
 
-    IMAGEPP_EXPORT const WString& GetKeyName() const;
+    IMAGEPP_EXPORT const Utf8String& GetKeyName() const;
 
 protected:
 
     void           SetInitialVisibleState(bool pi_VisibleState) ;
 
-    WString m_KeyName;
+    Utf8String m_KeyName;
     bool   m_InitialVisibleState;
 
 private :

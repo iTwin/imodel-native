@@ -87,9 +87,9 @@ inline void HGFCMYKColorSpace::ConvertToRGB (Byte pi_Cyan, Byte pi_Magenta, Byte
     // This is really not accurate, to get correct color conversion, we must use a
     // non linear mathematical function.  Maybe pass trough the the XYZ color space..
 
-    double AdjustmentMatrix[3][3] = { 0.85 , 0.10 , 0.05,
-                                      0.20 , 0.70 , 0.10,
-                                      0.05,  0.15,  0.80
+    double AdjustmentMatrix[3][3] = { {0.85 , 0.10 , 0.05},
+                                      {0.20 , 0.70 , 0.10},
+                                      {0.05,  0.15,  0.80}
                                     };
     /*
     // Keep for debugging purpose, will be remove soon...
@@ -133,9 +133,9 @@ inline void HGFCMYKColorSpace::ConvertFromRGB (Byte pi_Red,   Byte pi_Green,    
                                      -0.343030,  1.51350, -0.167750,
                                      -0.011065, -0.27376,  1.284900 };*/
 
-    double AdjustmentMatrix[3][3] = { 1.0, 0.0, 0.0,
-                                      0.0, 1.0, 0.0,
-                                      0.0, 0.0, 1.0
+    double AdjustmentMatrix[3][3] = { {1.0, 0.0, 0.0},
+                                      {0.0, 1.0, 0.0},
+                                      {0.0, 0.0, 1.0}
                                     };
 
     Byte Red   = (Byte)((AdjustmentMatrix[0][0] * pi_Red) + (AdjustmentMatrix[0][1] * pi_Green) + (AdjustmentMatrix[0][2] * pi_Blue));

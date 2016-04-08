@@ -25,20 +25,20 @@ class HRFRasterFile;
     @code
         // Example code
         HPSPssFileCreator MyCreator;
-        WString FileName = "c:\\image.itiff";
-        WString Projection = "Format to be defined";
+        Utf8String FileName = "c:\\image.itiff";
+        Utf8String Projection = "Format to be defined";
         UInt32   PageNumber = 0;
 
         // Add one or several images
         MyCreator.AddImage(FileName, PageNumber, Projection);
 
         // Set the destination Coordinate System
-        WString DestinationProjection = "Format to be defined";
+        Utf8String DestinationProjection = "Format to be defined";
         MyCreator.SetDstProjection(DestinationProjection);
 
 
         // Create PSS file
-        WString PSSName = "c:\\MyPictureScript.pss";
+        Utf8String PSSName = "c:\\MyPictureScript.pss";
         MyCreator.CreateFileW(PSSName);
     @end
     -----------------------------------------------------------------------------
@@ -48,21 +48,21 @@ class HPSPssFileCreator
 public:
     IMAGEPP_EXPORT                  HPSPssFileCreator ();
     IMAGEPP_EXPORT                  ~HPSPssFileCreator();
-    IMAGEPP_EXPORT HSTATUS          CreateFileW(WString const& pi_rPssFileName);
-    IMAGEPP_EXPORT void             AddImage(WString const& pi_rImageName, uint32_t pi_pageNumber, GeoCoordinates::BaseGCSP pi_projection);
+    IMAGEPP_EXPORT HSTATUS          CreateFileW(Utf8String const& pi_rPssFileName);
+    IMAGEPP_EXPORT void             AddImage(Utf8String const& pi_rImageName, uint32_t pi_pageNumber, GeoCoordinates::BaseGCSP pi_projection);
 
     IMAGEPP_EXPORT void             SetDstProjection(GeoCoordinates::BaseGCSP pi_projection);
     IMAGEPP_EXPORT GeoCoordinates::BaseGCSCP  GetDstProjectionCP() const;
 
 protected:
-    HFCPtr<HRFRasterFile>   GetRasterFile(WString const& rImageName) const;
+    HFCPtr<HRFRasterFile>   GetRasterFile(Utf8String const& rImageName) const;
 
 private:
 
     struct ImageDef
         {
         uint32_t                    m_pageNumber;
-        WString                     m_imageName;
+        Utf8String                     m_imageName;
         GeoCoordinates::BaseGCSPtr  m_projection;
         };
 

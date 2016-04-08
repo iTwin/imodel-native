@@ -160,22 +160,22 @@ HRFBsbCreator::HRFBsbCreator()
 
 
 // Identification information
-WString HRFBsbCreator::GetLabel() const
+Utf8String HRFBsbCreator::GetLabel() const
     {
-    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_BSB()); // BSB File Format
+    return ImagePPMessages::GetString(ImagePPMessages::FILEFORMAT_BSB()); // BSB File Format
     }
 
 
 // Identification information
-WString HRFBsbCreator::GetSchemes() const
+Utf8String HRFBsbCreator::GetSchemes() const
     {
-    return WString(HFCURLFile::s_SchemeName());
+    return HFCURLFile::s_SchemeName();
     }
 
 // Identification information
-WString HRFBsbCreator::GetExtensions() const
+Utf8String HRFBsbCreator::GetExtensions() const
     {
-    return WString(L"*.kap");
+    return "*.kap";
     }
 
 // allow to Open an image file

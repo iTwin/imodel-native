@@ -194,22 +194,22 @@ HRFDoqCreator::HRFDoqCreator()
     }
 
 // Identification information
-WString HRFDoqCreator::GetLabel() const
+Utf8String HRFDoqCreator::GetLabel() const
     {
     // DOQ File Format
-    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_USGS_DOQ()); // DOQ File Format
+    return ImagePPMessages::GetString(ImagePPMessages::FILEFORMAT_USGS_DOQ()); // DOQ File Format
     }
 
 // Identification information
-WString HRFDoqCreator::GetSchemes() const
+Utf8String HRFDoqCreator::GetSchemes() const
     {
-    return WString(HFCURLFile::s_SchemeName());
+    return Utf8String(HFCURLFile::s_SchemeName());
     }
 
 // Identification information
-WString HRFDoqCreator::GetExtensions() const
+Utf8String HRFDoqCreator::GetExtensions() const
     {
-    return WString(L"*.doq");
+    return Utf8String("*.doq");
     }
 
 // allow to Open an image file
@@ -615,7 +615,6 @@ bool HRFDoqFile::GetKeywordLine(KeywordName pi_Keyword)const
     uint32_t KeywordLength = 0;
     uint16_t CurrentKeywordNb = 0;
 
-    KeywordMap::const_iterator loc_end = m_KeywordMap.find(END);
     KeywordMap::const_iterator loc_keyword = m_KeywordMap.find(pi_Keyword);
 
 

@@ -24,14 +24,14 @@ class HFCAuthenticationError : public HFCShareableObject<HFCAuthenticationError>
 public:
     IMAGEPP_EXPORT virtual              ~HFCAuthenticationError        ();
 
-    IMAGEPP_EXPORT WString              ToString                       () const;
+    IMAGEPP_EXPORT Utf8String              ToString                       () const;
     IMAGEPP_EXPORT void                 Throw                          () const;
 
 protected:
     IMAGEPP_EXPORT explicit             HFCAuthenticationError         ();
 
 private:
-    virtual WString             _ToString                      () const = 0;
+    virtual Utf8String             _ToString                      () const = 0;
     virtual void                _Throw                         () const = 0;
 
     };
@@ -44,7 +44,7 @@ struct HFCAuthentication
 public:
     virtual                                 ~HFCAuthentication     ();
 
-    IMAGEPP_EXPORT virtual void                     SetByString            (const WString&              pi_rAuthenticationString) = 0;
+    IMAGEPP_EXPORT virtual void                     SetByString            (const Utf8String&              pi_rAuthenticationString) = 0;
 
     IMAGEPP_EXPORT bool                            Failed                 () const;
     IMAGEPP_EXPORT size_t                           GetErrorsQty           () const;
@@ -98,26 +98,26 @@ struct HFCInternetAuthentication : HFCAuthentication
     HDECLARE_CLASS_ID(HFCAuthenticationId_Internet, HFCAuthentication)
 
 public:
-    IMAGEPP_EXPORT explicit         HFCInternetAuthentication  (const WString&          pi_Server,
-                                                        const WString&          pi_User = L"",
-                                                        const WString&          pi_Password = L"",
+    IMAGEPP_EXPORT explicit         HFCInternetAuthentication  (const Utf8String&          pi_Server,
+                                                        const Utf8String&          pi_User = "",
+                                                        const Utf8String&          pi_Password = "",
                                                         const uint16_t   pi_RetryCount = 0);
     IMAGEPP_EXPORT virtual          ~HFCInternetAuthentication ();
 
-    IMAGEPP_EXPORT virtual void     SetByString                (const WString&          pi_rAuthenticationString);
+    IMAGEPP_EXPORT virtual void     SetByString                (const Utf8String&          pi_rAuthenticationString);
 
-    IMAGEPP_EXPORT void             SetUser                    (const WString&          pi_User);
-    IMAGEPP_EXPORT void             SetPassword                (const WString&          pi_Password);
+    IMAGEPP_EXPORT void             SetUser                    (const Utf8String&          pi_User);
+    IMAGEPP_EXPORT void             SetPassword                (const Utf8String&          pi_Password);
 
-    IMAGEPP_EXPORT const WString&   GetUser                    () const;
-    IMAGEPP_EXPORT const WString&   GetPassword                () const;
-    IMAGEPP_EXPORT const WString&   GetServer                  () const;
+    IMAGEPP_EXPORT const Utf8String&   GetUser                    () const;
+    IMAGEPP_EXPORT const Utf8String&   GetPassword                () const;
+    IMAGEPP_EXPORT const Utf8String&   GetServer                  () const;
 
 private:
     // authentication's members
-    WString         m_User;
-    WString         m_Password;
-    WString         m_Server;
+    Utf8String         m_User;
+    Utf8String         m_Password;
+    Utf8String         m_Server;
     };
 
 struct HFCOracleAuthentication : HFCAuthentication
@@ -129,24 +129,24 @@ public:
     IMAGEPP_EXPORT explicit         HFCOracleAuthentication    (const uint16_t   pi_RetryCount = 0);
     IMAGEPP_EXPORT virtual          ~HFCOracleAuthentication   ();
 
-    IMAGEPP_EXPORT virtual void     SetByString                (const WString&          pi_rAuthenticationString);
+    IMAGEPP_EXPORT virtual void     SetByString                (const Utf8String&          pi_rAuthenticationString);
 
-    IMAGEPP_EXPORT const WString&   GetUser                    () const;
-    IMAGEPP_EXPORT const WString&   GetPassword                () const;
-    IMAGEPP_EXPORT const WString&   GetDatabaseName               () const;
+    IMAGEPP_EXPORT const Utf8String&   GetUser                    () const;
+    IMAGEPP_EXPORT const Utf8String&   GetPassword                () const;
+    IMAGEPP_EXPORT const Utf8String&   GetDatabaseName               () const;
 
-    IMAGEPP_EXPORT const WString&   GetConnectionString        () const;
+    IMAGEPP_EXPORT const Utf8String&   GetConnectionString        () const;
 
-    IMAGEPP_EXPORT void             SetUser                    (const WString&          pi_User);
-    IMAGEPP_EXPORT void             SetPassword                (const WString&          pi_Password);
-    IMAGEPP_EXPORT void             SetDatabaseName            (const WString&          pi_DbName);
+    IMAGEPP_EXPORT void             SetUser                    (const Utf8String&          pi_User);
+    IMAGEPP_EXPORT void             SetPassword                (const Utf8String&          pi_Password);
+    IMAGEPP_EXPORT void             SetDatabaseName            (const Utf8String&          pi_DbName);
 
 
 private: 
-    WString         m_ConnectionString;
-    WString         m_User;
-    WString         m_Password;
-    WString         m_DbName;
+    Utf8String         m_ConnectionString;
+    Utf8String         m_User;
+    Utf8String         m_Password;
+    Utf8String         m_DbName;
     };
 
 struct HFCProxyAuthentication : HFCAuthentication
@@ -154,23 +154,23 @@ struct HFCProxyAuthentication : HFCAuthentication
     HDECLARE_CLASS_ID(HFCAuthenticationId_Proxy, HFCAuthentication)
 
 public:
-    IMAGEPP_EXPORT                  HFCProxyAuthentication     (const WString&          pi_User = L"",
-                                                        const WString&          pi_Password = L"",
+    IMAGEPP_EXPORT                  HFCProxyAuthentication     (const Utf8String&          pi_User = "",
+                                                        const Utf8String&          pi_Password = "",
                                                         const uint16_t   pi_RetryCount = 0);
     IMAGEPP_EXPORT virtual          ~HFCProxyAuthentication    ();
 
-    IMAGEPP_EXPORT virtual void     SetByString                (const WString&          pi_rAuthenticationString);
+    IMAGEPP_EXPORT virtual void     SetByString                (const Utf8String&          pi_rAuthenticationString);
 
-    IMAGEPP_EXPORT void             SetUser                    (const WString&          pi_User);
-    IMAGEPP_EXPORT void             SetPassword                (const WString&          pi_Password);
+    IMAGEPP_EXPORT void             SetUser                    (const Utf8String&          pi_User);
+    IMAGEPP_EXPORT void             SetPassword                (const Utf8String&          pi_Password);
 
-    IMAGEPP_EXPORT const WString&   GetUser                    () const;
-    IMAGEPP_EXPORT const WString&   GetPassword                () const;
+    IMAGEPP_EXPORT const Utf8String&   GetUser                    () const;
+    IMAGEPP_EXPORT const Utf8String&   GetPassword                () const;
 
 private:
     // authentication's members
-    WString         m_User;
-    WString         m_Password;
+    Utf8String         m_User;
+    Utf8String         m_Password;
     };
 
 
@@ -187,17 +187,17 @@ public:
 
     typedef uint32_t PDFError;
 
-    IMAGEPP_EXPORT                  HFCPDFAuthentication       (const WString&          pi_FileName,
+    IMAGEPP_EXPORT                  HFCPDFAuthentication       (const Utf8String&          pi_FileName,
                                                         const PasswordType      pi_PasswordType,
                                                         const uint16_t   pi_RetryCount = 0);
     IMAGEPP_EXPORT virtual          ~HFCPDFAuthentication      ();
 
-    IMAGEPP_EXPORT const WString&   GetFileName                () const;
+    IMAGEPP_EXPORT const Utf8String&   GetFileName                () const;
     IMAGEPP_EXPORT PasswordType     GetPasswordType            () const;
     IMAGEPP_EXPORT const string&    GetPassword                () const;
 
     IMAGEPP_EXPORT void             SetPassword                (const string&           pi_rPassword);
-    IMAGEPP_EXPORT virtual void     SetByString                (const WString&          pi_rAuthenticationString);
+    IMAGEPP_EXPORT virtual void     SetByString                (const Utf8String&          pi_rAuthenticationString);
 
 
 private:
@@ -207,7 +207,7 @@ private:
     HFCPDFAuthentication&   operator=                  (const HFCPDFAuthentication&);
 
 
-    WString         m_FileName;
+    Utf8String         m_FileName;
     PasswordType    m_PasswordType;
     string          m_Password;
     };

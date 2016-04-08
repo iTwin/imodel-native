@@ -161,7 +161,7 @@ HRFOGCServiceEditor::HRFOGCServiceEditor(HFCPtr<HRFRasterFile> pi_rpRasterFile,
         m_ImageType = GEOTIFF;
     else
         {
-        HASSERT(!L"HRFOGCServiceEditor::HRFOGCServiceEditor() : ImageType not supported");
+        HASSERT(!"HRFOGCServiceEditor::HRFOGCServiceEditor() : ImageType not supported");
         }
 
     uint64_t ResWidth;
@@ -643,7 +643,7 @@ bool OGCBlockQuery::UncompressBuffer(HFCPtr<HFCBuffer>&         pi_rpBuffer,
     {
     bool RetValue = true;
 
-    HFCPtr<HFCURL> pURL(new HFCURLMemFile(L"memory://mem.file", pi_rpBuffer));
+    HFCPtr<HFCURL> pURL(new HFCURLMemFile("memory://mem.file", pi_rpBuffer));
 
     try
         {

@@ -148,6 +148,7 @@ private:
 struct PixelSelectionStrategyCreator
     {
     virtual PixelSelectionStrategy* operator ()() const = 0;
+    virtual ~PixelSelectionStrategyCreator() {};
     };
 
 struct DefaultPixelSelectionStrategyCreator : public PixelSelectionStrategyCreator

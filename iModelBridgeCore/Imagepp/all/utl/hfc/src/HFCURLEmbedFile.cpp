@@ -17,9 +17,9 @@ struct URLEmbedFileCreator : public HFCURL::Creator
     {
     URLEmbedFileCreator()
         {
-        HFCURLEmbedFile::GetSchemeList().insert(HFCURLEmbedFile::SchemeList::value_type(HFCURLEmbedFile::s_SchemeName(), this));
+        HFCURL::RegisterCreator(HFCURLEmbedFile::s_SchemeName(), this);
         }
-    virtual HFCURL* Create(const WString& pi_URL) const
+    virtual HFCURL* Create(const Utf8String& pi_URL) const
         {
         return new HFCURLEmbedFile(pi_URL, NULL);
         }
@@ -30,7 +30,7 @@ struct URLEmbedFileCreator : public HFCURL::Creator
 // Syntax :  embed://<fileName>
 //
 //-----------------------------------------------------------------------------
-HFCURLEmbedFile::HFCURLEmbedFile(const WString& pi_rURL,
+HFCURLEmbedFile::HFCURLEmbedFile(const Utf8String& pi_rURL,
                                  IFileReaderHandler* pi_pHandler)
     : HFCURL(pi_rURL),
       m_pHandler(pi_pHandler)
@@ -39,9 +39,9 @@ HFCURLEmbedFile::HFCURLEmbedFile(const WString& pi_rURL,
     m_creationTime=BeTimeUtilities::GetCurrentTimeAsUnixMillis() / 1000;    // time_t is in second.
     m_modificationTime=m_creationTime;
 
-    if (BeStringUtilities::Wcsicmp(GetSchemeType().c_str(), s_SchemeName().c_str()) == 0)
+    if (GetSchemeType().EqualsI(s_SchemeName()))
         {
-        WString SchemeSpecificPart = GetSchemeSpecificPart();
+        Utf8String SchemeSpecificPart = GetSchemeSpecificPart();
 
         m_Path = SchemeSpecificPart.substr(2, SchemeSpecificPart.length());
         }
@@ -62,9 +62,9 @@ HFCURLEmbedFile::~HFCURLEmbedFile()
 // GetURL
 // Returns the standardized and complete URL string.
 //-----------------------------------------------------------------------------
-WString HFCURLEmbedFile::GetURL() const
+Utf8String HFCURLEmbedFile::GetURL() const
     {
-    return WString(s_SchemeName() + L"://") + m_Path;
+    return Utf8String(s_SchemeName() + "://") + m_Path;
     }
 
 //-----------------------------------------------------------------------------
@@ -73,10 +73,10 @@ WString HFCURLEmbedFile::GetURL() const
 //
 // Not implemented.
 //-----------------------------------------------------------------------------
-WString HFCURLEmbedFile::FindPathTo(HFCURL* pi_pDest)
+Utf8String HFCURLEmbedFile::FindPathTo(HFCURL* pi_pDest)
     {
     HASSERT(0);
-    return WString();
+    return Utf8String();
     }
 
 //-----------------------------------------------------------------------------
@@ -85,7 +85,7 @@ WString HFCURLEmbedFile::FindPathTo(HFCURL* pi_pDest)
 //
 // Not implemented.
 //-----------------------------------------------------------------------------
-HFCURL* HFCURLEmbedFile::MakeURLTo(const WString& pi_Path)
+HFCURL* HFCURLEmbedFile::MakeURLTo(const Utf8String& pi_Path)
     {
     HASSERT(0);
     return 0;

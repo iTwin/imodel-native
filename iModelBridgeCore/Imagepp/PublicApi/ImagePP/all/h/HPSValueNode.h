@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HPSValueNode.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HPSValueNode.h
@@ -42,7 +42,7 @@ public:
     union Value
         {
         double  m_Number;
-        WString* m_pString;
+        Utf8String* m_pString;
         HPSObjectValue* m_pObjValue;
         };
 
@@ -66,7 +66,7 @@ protected:
 
     void                SetValue(int32_t pi_Value);
     void                SetValue(double pi_Value);
-    void                SetValue(const WString& pi_rString);
+    void                SetValue(const Utf8String& pi_rString);
     void                SetValue(HPSObjectValue* pi_pObj);
 
     void                SetType(ValueType pi_Type);

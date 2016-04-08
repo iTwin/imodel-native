@@ -165,7 +165,7 @@
 #if defined(__HMR_DEBUG) || defined(HVERIFYCONTRACT)
 
 #   if defined(__HMR_REDIRECT_ASSERTPATH)
-inline void RedirectedAssert(bool pi_Success, WCharCP pi_pExpr, WCharCP pi_pFile, size_t pi_Line)
+inline void RedirectedAssert(bool pi_Success, Utf8CP pi_pExpr, Utf8CP pi_pFile, size_t pi_Line)
     {
     static const char* ASSERT_LOG_FILE_PATH = getenv("__HMR_REDIRECT_ASSERTPATH");
     if (!pi_Success)
@@ -183,7 +183,7 @@ inline void RedirectedAssert(bool pi_Success, WCharCP pi_pExpr, WCharCP pi_pFile
             {
             time_t rawtime;
             time ( &rawtime );
-            fwprintf(LogFile, L"%s %s(%d): %s\n", _wctime(&rawtime), pi_pFile, pi_Line, pi_pExpr);
+            fwprintf(LogFile, "%s %s(%d): %s\n", _wctime(&rawtime), pi_pFile, pi_Line, pi_pExpr);
             fclose(LogFile);
             }
         }

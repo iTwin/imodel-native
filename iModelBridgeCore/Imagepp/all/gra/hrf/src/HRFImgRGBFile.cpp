@@ -111,9 +111,9 @@ HRFImgRGBCreator::HRFImgRGBCreator()
     @return string ImgRGB file format label.
     ---------------------------------------------------------------------------
  */
-WString HRFImgRGBCreator::GetLabel() const
+Utf8String HRFImgRGBCreator::GetLabel() const
     {
-    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_ImgRGB()); //ImgRGB File Format
+    return ImagePPMessages::GetString(ImagePPMessages::FILEFORMAT_ImgRGB()); //ImgRGB File Format
     }
 
 /** ---------------------------------------------------------------------------
@@ -122,9 +122,9 @@ WString HRFImgRGBCreator::GetLabel() const
     @return string scheme of URL.
     ---------------------------------------------------------------------------
  */
-WString HRFImgRGBCreator::GetSchemes() const
+Utf8String HRFImgRGBCreator::GetSchemes() const
     {
-    return WString(HFCURLFile::s_SchemeName());
+    return Utf8String(HFCURLFile::s_SchemeName());
     }
 
 /** ---------------------------------------------------------------------------
@@ -133,9 +133,9 @@ WString HRFImgRGBCreator::GetSchemes() const
     @return string ImgRGB extension.
     ---------------------------------------------------------------------------
  */
-WString HRFImgRGBCreator::GetExtensions() const
+Utf8String HRFImgRGBCreator::GetExtensions() const
     {
-    return WString(L"*.a");
+    return Utf8String("*.a");
     }
 
 /** ---------------------------------------------------------------------------
@@ -210,31 +210,29 @@ bool HRFImgRGBCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
         goto WRAPUP;
 
         {
-        WString Path = ((HFCPtr<HFCURLFile>&)pi_rpURL)->GetPath();
-        WString Extension;
+        Utf8String Path = ((HFCPtr<HFCURLFile>&)pi_rpURL)->GetPath();
+        Utf8String Extension;
 
         // Find the file extension
-        WString::size_type DotPos = Path.rfind(L'.');
+        Utf8String::size_type DotPos = Path.rfind('.');
 
-        if (DotPos != WString::npos)
+        if (DotPos != Utf8String::npos)
             {
             Extension = Path.substr(DotPos+1, Extension.length() - DotPos - 1);
             Path      = Path.substr(0, DotPos);
             }
 
-        CaseInsensitiveStringTools().ToLower(Extension);
-
         // For this format, extension MUST be ".a"
         if (SupportsExtension(Extension))
             {
             // Compose url for .r, .g and .b files
-            WString FileName = WString(HFCURLFile::s_SchemeName() + L"://")
-                               + ((HFCPtr<HFCURLFile>&)pi_rpURL)->GetHost() + WString(L"\\")
+            Utf8String FileName = Utf8String(HFCURLFile::s_SchemeName() + "://")
+                               + ((HFCPtr<HFCURLFile>&)pi_rpURL)->GetHost() + Utf8String("\\")
                                + Path;
 
-            pRedFileURL   = new HFCURLFile(FileName + WString(L".r"));
-            pGreenFileURL = new HFCURLFile(FileName + WString(L".g"));
-            pBlueFileURL  = new HFCURLFile(FileName + WString(L".b"));
+            pRedFileURL   = new HFCURLFile(FileName + Utf8String(".r"));
+            pGreenFileURL = new HFCURLFile(FileName + Utf8String(".g"));
+            pBlueFileURL  = new HFCURLFile(FileName + Utf8String(".b"));
 
             // Check if .r, .g and .b files exist
             if (!HFCStat(pRedFileURL).IsExistent() ||
@@ -267,22 +265,22 @@ bool HRFImgRGBCreator::GetRelatedURLs(const HFCPtr<HFCURL>& pi_rpURL,
     HASSERT (pio_rRelatedURLs.size() == 0);
 
     // Find the file extension
-    WString Path = ((HFCPtr<HFCURLFile>&)pi_rpURL)->GetPath();
+    Utf8String Path = ((HFCPtr<HFCURLFile>&)pi_rpURL)->GetPath();
 
-    WString::size_type DotPos = Path.rfind(L'.');
+    Utf8String::size_type DotPos = Path.rfind('.');
 
-    if (DotPos != WString::npos)
+    if (DotPos != Utf8String::npos)
         Path = Path.substr(0, DotPos);
 
     // Compose url for .r, .g and .b files
-    WString FileName = WString(HFCURLFile::s_SchemeName() + L"://")
-                       + ((HFCPtr<HFCURLFile>&)pi_rpURL)->GetHost() + WString(L"\\")
+    Utf8String FileName = Utf8String(HFCURLFile::s_SchemeName() + "://")
+                       + ((HFCPtr<HFCURLFile>&)pi_rpURL)->GetHost() + Utf8String("\\")
                        + Path;
 
     // Create related files
-    HFCPtr<HFCURL> pRedFileURL   = new HFCURLFile(FileName + WString(L".r"));
-    HFCPtr<HFCURL> pGreenFileURL = new HFCURLFile(FileName + WString(L".g"));
-    HFCPtr<HFCURL> pBlueFileURL  = new HFCURLFile(FileName + WString(L".b"));
+    HFCPtr<HFCURL> pRedFileURL   = new HFCURLFile(FileName + Utf8String(".r"));
+    HFCPtr<HFCURL> pGreenFileURL = new HFCURLFile(FileName + Utf8String(".g"));
+    HFCPtr<HFCURL> pBlueFileURL  = new HFCURLFile(FileName + Utf8String(".b"));
 
     pio_rRelatedURLs.push_back(pRedFileURL);
     pio_rRelatedURLs.push_back(pGreenFileURL);
@@ -384,10 +382,10 @@ HRFImgRGBFile::~HRFImgRGBFile()
         m_pBlueFile   = 0;
 
         // Delete all files
-        BeFileName::BeDeleteFile(static_cast<HFCURLFile*>(GetURL().GetPtr())->GetAbsoluteFileName().c_str());
-        BeFileName::BeDeleteFile(static_cast<HFCURLFile*>(m_pRedFileURL.GetPtr())->GetAbsoluteFileName().c_str());
-        BeFileName::BeDeleteFile(static_cast<HFCURLFile*>(m_pGreenFileURL.GetPtr())->GetAbsoluteFileName().c_str());
-        BeFileName::BeDeleteFile(static_cast<HFCURLFile*>(m_pBlueFileURL.GetPtr())->GetAbsoluteFileName().c_str());
+        BeFileName(static_cast<HFCURLFile*>(GetURL().GetPtr())->GetAbsoluteFileName()).BeDeleteFile();
+        BeFileName(static_cast<HFCURLFile*>(m_pRedFileURL.GetPtr())->GetAbsoluteFileName()).BeDeleteFile();
+        BeFileName(static_cast<HFCURLFile*>(m_pGreenFileURL.GetPtr())->GetAbsoluteFileName()).BeDeleteFile();
+        BeFileName(static_cast<HFCURLFile*>(m_pBlueFileURL.GetPtr())->GetAbsoluteFileName()).BeDeleteFile();
         }
     }
 
@@ -542,22 +540,22 @@ void HRFImgRGBFile::OpenFiles()
         m_pImgRGBFile = HFCBinStream::Instanciate(GetURL(), m_Offset, GetAccessMode(), 0, true);
 
         // Open 3 channel files
-        WString Path(((HFCPtr<HFCURLFile>&)GetURL())->GetPath());
+        Utf8String Path(((HFCPtr<HFCURLFile>&)GetURL())->GetPath());
 
         // Find the file extension
-        WString::size_type DotPos = Path.rfind(L'.');
+        Utf8String::size_type DotPos = Path.rfind('.');
 
-        if (DotPos != WString::npos)
+        if (DotPos != Utf8String::npos)
             Path = Path.substr(0, DotPos);
 
         // Compose url for .r, .g and .b files
-        WString FileName = WString(HFCURLFile::s_SchemeName() + L"://")
-                           + ((HFCPtr<HFCURLFile>&)GetURL())->GetHost() + WString(L"\\")
+        Utf8String FileName = Utf8String(HFCURLFile::s_SchemeName() + "://")
+                           + ((HFCPtr<HFCURLFile>&)GetURL())->GetHost() + Utf8String("\\")
                            + Path;
 
-        m_pRedFileURL   = new HFCURLFile(FileName + WString(L".r"));
-        m_pGreenFileURL = new HFCURLFile(FileName + WString(L".g"));
-        m_pBlueFileURL  = new HFCURLFile(FileName + WString(L".b"));
+        m_pRedFileURL   = new HFCURLFile(FileName + Utf8String(".r"));
+        m_pGreenFileURL = new HFCURLFile(FileName + Utf8String(".g"));
+        m_pBlueFileURL  = new HFCURLFile(FileName + Utf8String(".b"));
 
         m_pRedFile   = HFCBinStream::Instanciate(m_pRedFileURL, m_Offset, GetAccessMode(), 0, true);
 

@@ -146,7 +146,7 @@ protected:
 
 private:
 
-    vector<WString>                     m_SceneNumbers;
+    vector<Utf8String>                     m_SceneNumbers;
     HAutoPtr<HFCBinStream>              m_pFilFile;
     HAutoPtr<HFCBinStream>              m_pImagFile;
     HAutoPtr<HFCBinStream>              m_pLeadFile;
@@ -198,9 +198,9 @@ struct HRFSpotCAPCreator : public HRFRasterFileCreator
                                                          uint64_t                  pi_Offset) const;
 
     // Identification information
-    virtual WString                         GetLabel() const;
-    virtual WString                         GetSchemes() const;
-    virtual WString                         GetExtensions() const;
+    virtual Utf8String                         GetLabel() const;
+    virtual Utf8String                         GetSchemes() const;
+    virtual Utf8String                         GetExtensions() const;
 
     // File format is multi-file
     virtual bool                           GetRelatedURLs(const HFCPtr<HFCURL>& pi_rpURL,

@@ -83,10 +83,10 @@ size_t HCDLZWEncoder::Encode(Byte* pi_pInputBuffer, size_t pi_inputBytesCount, B
     Byte*      pInputLimit = pi_pInputBuffer + pi_inputBytesCount;
     int32_t     disp;
     hcode_t     entry;
-    register int32_t code;
-    register int32_t fcode;
-    register int32_t hash;
-    register hash_t* pHashEntry;
+    int32_t     code;
+    int32_t     fcode;
+    int32_t     hash;
+    hash_t*     pHashEntry;
 
 
     if(pi_inputBytesCount > 0)

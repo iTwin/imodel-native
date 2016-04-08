@@ -158,9 +158,9 @@ HRFPcxCreator::HRFPcxCreator()
 
  @return string Pcx file format label.
 ------------------------------------------------------------------------------*/
-WString HRFPcxCreator::GetLabel() const
+Utf8String HRFPcxCreator::GetLabel() const
     {
-    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_PCX());  // Zsoft Paintbrush PCX
+    return ImagePPMessages::GetString(ImagePPMessages::FILEFORMAT_PCX());  // Zsoft Paintbrush PCX
     }
 
 /**-----------------------------------------------------------------------------
@@ -168,9 +168,9 @@ WString HRFPcxCreator::GetLabel() const
 
  @return string The scheme of the URL.
 ------------------------------------------------------------------------------*/
-WString HRFPcxCreator::GetSchemes() const
+Utf8String HRFPcxCreator::GetSchemes() const
     {
-    return WString(HFCURLFile::s_SchemeName());
+    return Utf8String(HFCURLFile::s_SchemeName());
     }
 
 /**-----------------------------------------------------------------------------
@@ -178,9 +178,9 @@ WString HRFPcxCreator::GetSchemes() const
 
  @return string The PCX extention.
 ------------------------------------------------------------------------------*/
-WString HRFPcxCreator::GetExtensions() const
+Utf8String HRFPcxCreator::GetExtensions() const
     {
-    return WString(L"*.pcx");
+    return Utf8String("*.pcx");
     }
 
 /**-----------------------------------------------------------------------------

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFIntergraphC31File.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // This class describes a File Raster image.
@@ -69,8 +69,8 @@ struct HRFIntergraphC31Creator : public HRFIntergraphFile::Creator
                                      uint64_t                pi_Offset = 0) const;
 
     // Identification information
-    virtual WString     GetLabel() const;
-    virtual WString     GetExtensions() const;
+    virtual Utf8String     GetLabel() const;
+    virtual Utf8String     GetExtensions() const;
 
     // capabilities of Raster file.
     virtual const HFCPtr<HRFRasterFileCapabilities>&

@@ -196,7 +196,7 @@ HRFRasterFileCache::~HRFRasterFileCache()
     // The raster file close will kill it's internal key, so release it now.
     Monitor.ReleaseKey();
 
-    WString FileName;
+    Utf8String FileName;
 
     // Erase the cache file
     if (m_AutoErase)
@@ -219,7 +219,8 @@ HRFRasterFileCache::~HRFRasterFileCache()
     if (m_AutoErase && !FileName.empty())
         {
         m_pCache = 0;
-        BeFileName::BeDeleteFile(FileName.c_str());
+        WString filenameW(FileName.c_str(), BentleyCharEncoding::Utf8);
+        BeFileName::BeDeleteFile(filenameW.c_str());
         }
     }
 

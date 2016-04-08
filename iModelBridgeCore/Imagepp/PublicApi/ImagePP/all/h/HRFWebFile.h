@@ -111,9 +111,9 @@ struct HRFWebFileCreator : public HRFRasterFileCreator
     virtual bool   SupportsURL(const HFCPtr<HFCURL>& pi_rpURL) const;
 
     // Identification information
-    virtual WString      GetExtensions() const;
-    virtual WString      GetLabel() const;
-    virtual WString      GetSchemes() const;
+    virtual Utf8String      GetExtensions() const;
+    virtual Utf8String      GetLabel() const;
+    virtual Utf8String      GetSchemes() const;
 
     // capabilities of Raster file.
     virtual const HFCPtr<HRFRasterFileCapabilities> & GetCapabilities();
@@ -130,8 +130,8 @@ private:
     HRFWebFileCreator();
 
     // Label & schemes
-    WString         m_Label;
-    WString         m_Schemes;
-    WString         m_Extensions;
+    Utf8String         m_Label;
+    Utf8String         m_Schemes;
+    Utf8String         m_Extensions;
     };
 END_IMAGEPP_NAMESPACE

@@ -12,7 +12,7 @@
 
 #include <Imagepp/all/h/HCDCodecGIF.h>
 
-#define HCD_CODEC_NAME     L"LZWGif"
+#define HCD_CODEC_NAME     "LZWGif"
 
 // Estimation of the compression ratio (to be adjusted by Dominic if required)
 #define HCDCODECGIF_COMPRESSION_RATIO   0.1

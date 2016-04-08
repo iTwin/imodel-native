@@ -18,9 +18,9 @@ struct URLSqlCreator : public HFCURL::Creator
     {
     URLSqlCreator()
         {
-        HFCURLSql::GetSchemeList().insert(HFCURLSql::SchemeList::value_type(HFCURLSql::s_SchemeName(), this));
+        HFCURL::RegisterCreator(HFCURLSql::s_SchemeName(), this);
         }
-    virtual HFCURL* Create(const WString& pi_URL) const
+    virtual HFCURL* Create(const Utf8String& pi_URL) const
         {
         return new HFCURLSql(pi_URL);
         }
@@ -30,12 +30,12 @@ struct URLSqlCreator : public HFCURL::Creator
 //-----------------------------------------------------------------------------
 // Little static function that is used by constructor
 
-static WString BuildHostString(const WString& pi_rSchema,
-                               const WString& pi_rHost,
-                               const WString& pi_rDirTableName,
-                               const WString& pi_rPath)
+static Utf8String BuildHostString(const Utf8String& pi_rSchema,
+                               const Utf8String& pi_rHost,
+                               const Utf8String& pi_rDirTableName,
+                               const Utf8String& pi_rPath)
     {
-    WString  Result;
+    Utf8String  Result;
     bool   Error = false;
 
     // validation
@@ -51,12 +51,12 @@ static WString BuildHostString(const WString& pi_rSchema,
             Result += pi_rSchema;
 
         if (!pi_rHost.empty())
-            Result += L"@" + pi_rHost;
+            Result += "@" + pi_rHost;
 
-        Result += L"?";
+        Result += "?";
 
         if (!pi_rDirTableName.empty())
-            Result += pi_rDirTableName + L":";
+            Result += pi_rDirTableName + ":";
 
         Result += pi_rPath;
         }
@@ -69,8 +69,8 @@ static WString BuildHostString(const WString& pi_rSchema,
 // This constructor configures the object from the detached parts of the
 // scheme-specific part of the URL string.
 //-----------------------------------------------------------------------------
-HFCURLSql::HFCURLSql(const WString& pi_rQuery)
-    : HFCURL(s_SchemeName(), WString(L"//?") + pi_rQuery),
+HFCURLSql::HFCURLSql(const Utf8String& pi_rQuery)
+    : HFCURL(s_SchemeName(), Utf8String("//?") + pi_rQuery),
       m_Query(pi_rQuery)
     {
     FREEZE_STL_STRING(m_Query);
@@ -81,16 +81,16 @@ HFCURLSql::HFCURLSql(const WString& pi_rQuery)
 // Syntax :  hsql://?<Query>
 //
 //-----------------------------------------------------------------------------
-HFCURLSql::HFCURLSql(const WString& pi_rURL)
+HFCURLSql::HFCURLSql(const Utf8String& pi_rURL)
     : HFCURL(pi_rURL)
     {
 
-    if (BeStringUtilities::Wcsicmp(GetSchemeType().c_str(), s_SchemeName().c_str()) == 0)
+    if (GetSchemeType().EqualsI(s_SchemeName()))
         {
-        WString SchemeSpecificPart = GetSchemeSpecificPart();
+        Utf8String SchemeSpecificPart = GetSchemeSpecificPart();
 
         // must be start with "//"
-        if ( (SchemeSpecificPart.length() > 3) && (SchemeSpecificPart.substr(0,3) == L"//?") )
+        if ( (SchemeSpecificPart.length() > 3) && (SchemeSpecificPart.substr(0,3) == "//?") )
             {
             m_Query = SchemeSpecificPart.substr(3);
             }
@@ -111,9 +111,9 @@ HFCURLSql::~HFCURLSql()
 // GetURL
 // Returns the standardized and complete URL string.
 //-----------------------------------------------------------------------------
-WString HFCURLSql::GetURL() const
+Utf8String HFCURLSql::GetURL() const
     {
-    WString URL(WString(s_SchemeName()+ L"://?") + m_Query);
+    Utf8String URL(Utf8String(s_SchemeName()+ "://?") + m_Query);
 
     return URL;
     }
@@ -125,10 +125,10 @@ WString HFCURLSql::GetURL() const
 //
 // Not implemented.
 //-----------------------------------------------------------------------------
-WString HFCURLSql::FindPathTo(HFCURL* pi_pDest)
+Utf8String HFCURLSql::FindPathTo(HFCURL* pi_pDest)
     {
     HASSERT(0);
-    return WString();
+    return Utf8String();
     }
 
 
@@ -138,7 +138,7 @@ WString HFCURLSql::FindPathTo(HFCURL* pi_pDest)
 //
 // Not implemented.
 //-----------------------------------------------------------------------------
-HFCURL* HFCURLSql::MakeURLTo(const WString& pi_Path)
+HFCURL* HFCURLSql::MakeURLTo(const Utf8String& pi_Path)
     {
     HASSERT(0);
     return 0;

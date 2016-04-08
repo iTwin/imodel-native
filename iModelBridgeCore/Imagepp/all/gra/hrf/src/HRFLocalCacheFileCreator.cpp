@@ -48,7 +48,7 @@ HRFLocalCacheFileCreator::~HRFLocalCacheFileCreator()
 //-----------------------------------------------------------------------------
 HFCPtr<HFCURL> HRFLocalCacheFileCreator::GetTentativeURLFor(
     const HFCPtr<HFCURL>& pi_rpURLFileName,
-    const WString&        pi_Extension,
+    const Utf8String&        pi_Extension,
     uint64_t             pi_Offset) const
     {
     return ComposeURLFor(pi_rpURLFileName, pi_Extension, pi_Offset);
@@ -61,17 +61,17 @@ HFCPtr<HFCURL> HRFLocalCacheFileCreator::GetTentativeURLFor(
 //-----------------------------------------------------------------------------
 HFCPtr<HFCURL> HRFLocalCacheFileCreator::ComposeURLFor(
     const HFCPtr<HFCURL>& pi_rpURLFileName,
-    const WString&        pi_Extension,
+    const Utf8String&        pi_Extension,
     uint64_t             pi_Offset) const
     {
     // Get the filename
-    WString ComposedFileName(ComposeFilenameFor(pi_rpURLFileName));
+    Utf8String ComposedFileName(ComposeFilenameFor(pi_rpURLFileName));
 
     // Add the offset to the file name
     if (pi_Offset != 0)
         {
-        WChar StrOffset[256];
-        BeStringUtilities::Snwprintf(StrOffset, L"%ld", pi_Offset);
+        Utf8Char StrOffset[256];
+        BeStringUtilities::Snprintf(StrOffset, "%ld", pi_Offset);
 
         ComposedFileName += StrOffset;
         }
@@ -82,7 +82,8 @@ HFCPtr<HFCURL> HRFLocalCacheFileCreator::ComposeURLFor(
     // Add the path to the Booster url
     BeFileName localPath;
     ImageppLib::GetHost().GetImageppLibAdmin()._GetLocalCacheDirPath(localPath);
-    localPath.AppendToPath(ComposedFileName.c_str());
+    WString ComposedFileNameW(ComposedFileName.c_str(), BentleyCharEncoding::Utf8);
+    localPath.AppendToPath(ComposedFileNameW.c_str());
 
     return HFCURL::CreateFrom(localPath);
     }
@@ -92,16 +93,16 @@ HFCPtr<HFCURL> HRFLocalCacheFileCreator::ComposeURLFor(
 // ComposeFilenameFor
 // Compose a Booster FileName with the URL from source file
 //-----------------------------------------------------------------------------
-WString HRFLocalCacheFileCreator::ComposeFilenameFor(const HFCPtr<HFCURL>& pi_rpURLFileName) const
+Utf8String HRFLocalCacheFileCreator::ComposeFilenameFor(const HFCPtr<HFCURL>& pi_rpURLFileName) const
     {
-    WString ComposedName(pi_rpURLFileName->GetURL());
+    Utf8String ComposedName(pi_rpURLFileName->GetURL());
 
     // Compose the file name for the specified URL
-    WString  Seps(L"\\/:*?\"<>|");
+    Utf8String  Seps("\\/:*?\"<>|");
     size_t   Pos = 0;
-    while ((Pos = ComposedName.find_first_of (Seps, Pos)) != WString::npos)
+    while ((Pos = ComposedName.find_first_of (Seps, Pos)) != Utf8String::npos)
         {
-        ComposedName[Pos] = L'_';
+        ComposedName[Pos] = '_';
         Pos++;
         }
 
@@ -130,7 +131,7 @@ void HRFLocalCacheFileCreator::SetCacheTags(HFCPtr<HRFRasterFile>& pi_rpFile)
             if (!softwareName.empty())
                 pPage->SetTag(new HRFAttributeSoftware(*softwareName.begin()));
                 
-            WString description;
+            Utf8String description;
             ImageppLib::GetHost().GetImageppLibAdmin()._GetCacheDescription(description);
             if (!description.empty())
                 pPage->SetTag(new HRFAttributeDocumentName(description));
@@ -202,7 +203,7 @@ bool HRFLocalCacheFileCreator::IsValidCache(const HFCPtr<HRFRasterFile>& pi_rpFi
             }
 
         // verify if the document name was set on the extender (this)
-        WString description;
+        Utf8String description;
         ImageppLib::GetHost().GetImageppLibAdmin()._GetCacheDescription(description);
         if (Result && !description.empty())
             {

@@ -287,9 +287,9 @@ void HRFBmpCreator::CreateBmpFileFromImageData(HFCPtr<HFCURL>&       pi_rpFileNa
 // Public (HRFBmpCreator)
 // Identification information
 //-----------------------------------------------------------------------------
-WString HRFBmpCreator::GetLabel() const
+Utf8String HRFBmpCreator::GetLabel() const
     {
-    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_BMP()); // BMP File Format
+    return ImagePPMessages::GetString(ImagePPMessages::FILEFORMAT_BMP()); // BMP File Format
     }
 
 //-----------------------------------------------------------------------------
@@ -297,9 +297,9 @@ WString HRFBmpCreator::GetLabel() const
 // Public (HRFBmpCreator)
 // Identification information
 //-----------------------------------------------------------------------------
-WString HRFBmpCreator::GetSchemes() const
+Utf8String HRFBmpCreator::GetSchemes() const
     {
-    return WString(HFCURLFile::s_SchemeName());
+    return HFCURLFile::s_SchemeName();
     }
 
 //-----------------------------------------------------------------------------
@@ -307,9 +307,9 @@ WString HRFBmpCreator::GetSchemes() const
 // Public (HRFBmpCreator)
 // Identification information
 //-----------------------------------------------------------------------------
-WString HRFBmpCreator::GetExtensions() const
+Utf8String HRFBmpCreator::GetExtensions() const
     {
-    return WString(L"*.bmp;*.dib");
+    return "*.bmp;*.dib";
     }
 
 //-----------------------------------------------------------------------------
@@ -599,13 +599,13 @@ bool HRFBmpFile::AddPage(HFCPtr<HRFPageDescriptor> pi_pPage)
         HFCPtr<HPMGenericAttribute> pTag = (*TagIterator);
 
         // X Resolution Tag
-        if (pTag->GetID() == HRFAttributeXResolution::ATTRIBUTE_ID)
+        if (pTag->GetID() == (HPMAttributesID)HRFAttributeXResolution::ATTRIBUTE_ID)
             XResolution = ((HFCPtr<HRFAttributeXResolution>&)pTag)->GetData();
         // Y Resolution Tag
-        else if (pTag->GetID() == HRFAttributeYResolution::ATTRIBUTE_ID)
+        else if (pTag->GetID() == (HPMAttributesID)HRFAttributeYResolution::ATTRIBUTE_ID)
             YResolution = ((HFCPtr<HRFAttributeYResolution>&)pTag)->GetData();
         // Resolution Unit
-        else if (pTag->GetID() == HRFAttributeResolutionUnit::ATTRIBUTE_ID)
+        else if (pTag->GetID() == (HPMAttributesID)HRFAttributeResolutionUnit::ATTRIBUTE_ID)
             Unit = ((HFCPtr<HRFAttributeResolutionUnit>&)pTag)->GetData();
 
         }
@@ -902,21 +902,21 @@ void HRFBmpFile::SaveBmpFile(bool pi_CloseFile)
                 HFCPtr<HPMGenericAttribute> pTag = (*TagIterator);
 
                 // X Resolution Tag
-                if (pTag->GetID() == HRFAttributeXResolution::ATTRIBUTE_ID)
+                if (pTag->GetID() == (HPMAttributesID)HRFAttributeXResolution::ATTRIBUTE_ID)
                     {
                     XResolution = ((HFCPtr<HRFAttributeXResolution>&)pTag)->GetData();
                     if (pPageDescriptor->TagHasChanged(*pTag))
                         ResolutionChanged = true;
                     }
                 // Y Resolution Tag
-                else if (pTag->GetID() == HRFAttributeYResolution::ATTRIBUTE_ID)
+                else if (pTag->GetID() == (HPMAttributesID)HRFAttributeYResolution::ATTRIBUTE_ID)
                     {
                     YResolution = ((HFCPtr<HRFAttributeYResolution>&)pTag)->GetData();
                     if (pPageDescriptor->TagHasChanged(*pTag))
                         ResolutionChanged = true;
                     }
                 // Resolution Unit
-                else if (pTag->GetID() == HRFAttributeResolutionUnit::ATTRIBUTE_ID)
+                else if (pTag->GetID() == (HPMAttributesID)HRFAttributeResolutionUnit::ATTRIBUTE_ID)
                     {
                     Unit = ((HFCPtr<HRFAttributeResolutionUnit>&)pTag)->GetData();
                     if (pPageDescriptor->TagHasChanged(*pTag))

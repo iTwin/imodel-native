@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCVersion.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -21,9 +21,9 @@ public:
 
     // Construction/Destruction
     HFCVersion();
-    HFCVersion(const WString&   pi_rName);
-    HFCVersion(const WString&   pi_rName,
-               const WString&   pi_rInfo,
+    HFCVersion(const Utf8String&   pi_rName);
+    HFCVersion(const Utf8String&   pi_rName,
+               const Utf8String&   pi_rInfo,
                size_t           pi_Count,
                ...);
     HFCVersion(const HFCVersion& pi_rObj);
@@ -49,8 +49,8 @@ public:
     // Query
     //--------------------------------------
 
-    const WString&  GetName() const;
-    const WString&  GetInfo() const;
+    const Utf8String&  GetName() const;
+    const Utf8String&  GetInfo() const;
     size_t          GetNumberCount() const;
     uint32_t        GetNumber(size_t pi_Index) const;
 
@@ -60,8 +60,8 @@ protected:
     // Members
     //--------------------------------------
 
-    WString     m_Name;
-    WString     m_Info;
+    Utf8String     m_Name;
+    Utf8String     m_Info;
     size_t      m_NumberCount;
     HArrayAutoPtr<uint32_t>
     m_pNumbers;

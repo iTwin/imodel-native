@@ -13,7 +13,7 @@
 
 #include <Imagepp/all/h/HCDCodecDeflate.h>
 
-#define HCD_CODEC_NAME L"Deflate"
+#define HCD_CODEC_NAME "Deflate"
 
 //-----------------------------------------------------------------------------
 // public

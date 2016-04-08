@@ -116,27 +116,27 @@ HRFIG4Creator::HRFIG4Creator()
 // public
 // Identification information
 //-----------------------------------------------------------------------------
-WString HRFIG4Creator::GetLabel() const
+Utf8String HRFIG4Creator::GetLabel() const
     {
-    return ImagePPMessages::GetStringW(ImagePPMessages::GRA_HRF_IG4_FILE_FORMAT());  //IG4 File Format
+    return ImagePPMessages::GetString(ImagePPMessages::GRA_HRF_IG4_FILE_FORMAT());  //IG4 File Format
     }
 
 //-----------------------------------------------------------------------------
 // public
 // Schemes information
 //-----------------------------------------------------------------------------
-WString HRFIG4Creator::GetSchemes() const
+Utf8String HRFIG4Creator::GetSchemes() const
     {
-    return WString(HFCURLFile::s_SchemeName());
+    return Utf8String(HFCURLFile::s_SchemeName());
     }
 
 //-----------------------------------------------------------------------------
 // public
 // Extensions information
 //-----------------------------------------------------------------------------
-WString HRFIG4Creator::GetExtensions() const
+Utf8String HRFIG4Creator::GetExtensions() const
     {
-    return WString(L"*.ig4");
+    return Utf8String("*.ig4");
     }
 
 //-----------------------------------------------------------------------------
@@ -168,7 +168,7 @@ bool HRFIG4Creator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     bool Result = false;
 
     if (pi_rpURL->IsCompatibleWith(HFCURLFile::CLASS_ID) &&
-        BeStringUtilities::Wcsicmp(((HFCPtr<HFCURLFile>&)pi_rpURL)->GetExtension().c_str(), L"ig4") == 0)
+        BeStringUtilities::Wcsicmp(((HFCPtr<HFCURLFile>&)pi_rpURL)->GetExtension().c_str(), "ig4") == 0)
         Result = true;
 
     return Result;

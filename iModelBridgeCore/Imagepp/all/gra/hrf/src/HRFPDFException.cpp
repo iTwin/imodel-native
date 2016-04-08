@@ -20,7 +20,7 @@
 typedef map<HRFPDFException::ErrorCode, ExceptionID>        ErrorMap;
 typedef ErrorMap::value_type                                ErrorMapItem;
 
-HRFPDFException::HRFPDFException(const WString&          pi_rFileName,
+HRFPDFException::HRFPDFException(const Utf8String&          pi_rFileName,
                                         const ErrorCode         pi_ErrorCode)
     :   HRFException(pi_rFileName)
     {
@@ -80,10 +80,10 @@ ExceptionID  HRFPDFException::GetExceptionIDForCode(ErrorCode pi_ErrorCode) cons
     }
 
 
-WString HRFPDFException::GetExceptionMessage() const
+Utf8String HRFPDFException::GetExceptionMessage() const
 {
     ImagePPExceptions::StringId exceptionID = GetExceptionIDForCode(m_ErrorCode);
-    WString message = GetRawMessageFromResource(exceptionID);
+    Utf8String message = GetRawMessageFromResource(exceptionID);
     if(exceptionID == ImagePPExceptions::HRFPDFGeneric())
         {
         // Get acrobat's descriptive string for error code
@@ -94,14 +94,13 @@ WString HRFPDFException::GetExceptionMessage() const
         HASSERT(strlen(&ErrorString[0]) > 0);
         string ErrCodeMess(ErrorString.begin(), ErrorString.end());              
         
-        WChar TempBuffer[2048]; 
-        BeStringUtilities::Snwprintf(TempBuffer, message.c_str(), m_ErrorCode,
-                             WString(ErrCodeMess.c_str(),false).c_str()); 
-        message = WString(TempBuffer); 
+        Utf8Char TempBuffer[2048]; 
+        BeStringUtilities::Snprintf(TempBuffer, message.c_str(), m_ErrorCode, ErrCodeMess.c_str()); 
+        message = Utf8String(TempBuffer); 
         }
 
-    WString exceptionName(exceptionID.m_str, true/*isUtf8*/);
-    WPrintfString formatedMessage(L"%ls - [%ls]", message.c_str(), exceptionName.c_str());
+    Utf8String exceptionName(exceptionID.m_str);
+    Utf8PrintfString formatedMessage("%s - [%s]", message.c_str(), exceptionName.c_str());
     return formatedMessage;
 }
 

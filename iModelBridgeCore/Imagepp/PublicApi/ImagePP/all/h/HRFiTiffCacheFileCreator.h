@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFiTiffCacheFileCreator.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFiTiffCacheFileCreator
@@ -46,7 +46,7 @@ public:
                                                   uint32_t                          pi_Page = -1) const;
 
     IMAGEPP_EXPORT HFCPtr<HFCURL>         ComposeURLFor(const HFCPtr<HFCURL>& pi_rpURLFileName,
-                                                const WString&        pi_Extension,
+                                                const Utf8String&        pi_Extension,
                                                 uint64_t             pi_Offset = 0,
                                                 uint32_t              pi_Page = -1) const;
 

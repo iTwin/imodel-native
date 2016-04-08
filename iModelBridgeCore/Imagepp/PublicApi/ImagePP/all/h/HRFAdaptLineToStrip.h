@@ -39,6 +39,8 @@ class HRFAdaptLineToStripCreator : public HRFBlockAdapterCreator
     HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HRFAdaptLineToStripCreator)
 
 public:
+    virtual ~HRFAdaptLineToStripCreator();
+        
     // Obtain the capabilities of stretcher
     virtual HRFBlockAdapterCapabilities* GetCapabilities() const;
 

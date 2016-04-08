@@ -5235,7 +5235,7 @@ void HVE2DPolygonOfSegments::InsertAutoFlirtPoints(HGF2DPositionCollection& pio_
         // Declare iterator for test point
         HGF2DPositionCollection::iterator   OtherItr(pio_rPoints.begin());
 
-        for (OtherItr ; OtherItr != pio_rPoints.end() ; ++OtherItr)
+        for ((void)OtherItr ; OtherItr != pio_rPoints.end() ; ++OtherItr)
             {
             // Check if the point can possibly interact with segment
             bool Result = (HDOUBLE_GREATER_OR_EQUAL(SelfXMax, OtherItr->GetX(), Tolerance) &&

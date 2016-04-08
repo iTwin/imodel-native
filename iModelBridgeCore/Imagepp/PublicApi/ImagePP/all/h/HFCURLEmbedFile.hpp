@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCURLEmbedFile.hpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -13,7 +13,7 @@ BEGIN_IMAGEPP_NAMESPACE
 // Returns a reference to a string that contains the Path part of the
 // URL string.
 //-----------------------------------------------------------------------------
-inline const WString& HFCURLEmbedFile::GetPath() const
+inline const Utf8String& HFCURLEmbedFile::GetPath() const
     {
     return m_Path;
     }

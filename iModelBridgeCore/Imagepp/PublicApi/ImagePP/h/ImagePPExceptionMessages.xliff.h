@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ImagePP/h/ImagePPExceptionMessages.xliff.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -26,11 +26,11 @@ BENTLEY_TRANSLATABLE_STRINGS_START(ImagePPExceptions,ImagePPExceptions)
     L10N_STRING(HFCFileNotSupported)                         // =="The file type is not supported"==
     L10N_STRING(HFCFileOutOfRange)                           // =="Out of range exception"==
     L10N_STRING(HFCFilePermissionDenied)                     // =="File permission denied"==
-    L10N_STRING(HFCDllNotFound)                              // =="Cannot find the DLL %ls"==
-    L10N_STRING(HFCUndefinedDevice)                          // =="An exception occurred with the following device : %ls"==
+    L10N_STRING(HFCDllNotFound)                              // =="Cannot find the DLL %s"==
+    L10N_STRING(HFCUndefinedDevice)                          // =="An exception occurred with the following device : %s"==
     L10N_STRING(HFCNoDiskSpaceLeft)                          // =="There is not enough disk space left"==
-    L10N_STRING(HFCDeviceAbort)                              // =="The following device aborted : %ls"==
-    L10N_STRING(HFCInternetConnection)                       // =="Internet connection exception (device : %ls, error code : %i)"==
+    L10N_STRING(HFCDeviceAbort)                              // =="The following device aborted : %s"==
+    L10N_STRING(HFCInternetConnection)                       // =="Internet connection exception (device : %s, error code : %i)"==
     L10N_STRING(HFCObjectNotInFactory)                       // =="The object is not in the factory"==
     L10N_STRING(HFCErrorCode)                                // =="An error code triggered an exception"==
     L10N_STRING(HFCCannotCreateSynchroObj)                   // =="Cannot create a synchronization object (object : %i)"==
@@ -41,9 +41,9 @@ BENTLEY_TRANSLATABLE_STRINGS_START(ImagePPExceptions,ImagePPExceptions)
     L10N_STRING(HFCCannotOpenFile)                           // =="Cannot open file"==
     L10N_STRING(HFCCannotConnectToDB)                        // =="Cannot connect to the database"==
     L10N_STRING(HFCInvalidUrlForSisterFile)                  // =="Cannot create a sister file for that URL"==
-    L10N_STRING(HFCDirectoryReadOnly)                        // =="%ls is in read-only mode"==
-    L10N_STRING(HFCSisterFileNotCreated)                     // =="Cannot open the following sister file : %ls"==
-    L10N_STRING(HFCDirectoryNotCreated)                      // =="Cannot create the following directory : %ls"==
+    L10N_STRING(HFCDirectoryReadOnly)                        // =="%s is in read-only mode"==
+    L10N_STRING(HFCSisterFileNotCreated)                     // =="Cannot open the following sister file : %s"==
+    L10N_STRING(HFCDirectoryNotCreated)                      // =="Cannot create the following directory : %s"==
     L10N_STRING(HFCCannotCloseFile)                          // =="Cannot close the file"==
     L10N_STRING(HFCWriteFault)                               // =="A write fault occurred"==
     L10N_STRING(HFCReadFault)                                // =="A read fault occurred"==
@@ -56,12 +56,12 @@ BENTLEY_TRANSLATABLE_STRINGS_START(ImagePPExceptions,ImagePPExceptions)
     L10N_STRING(HCDIJGLibraryError)                          // =="A JPEG error occurred"==
     L10N_STRING(HCDCorruptedPackbitsData)                    // =="The PackBits encoded data are corrupted"==
 
-    L10N_STRING(HFSGenericInvalidPath)                       // =="%ls is an invalid file server path"==
+    L10N_STRING(HFSGenericInvalidPath)                       // =="%s is an invalid file server path"==
     L10N_STRING(HFSHIBPInvalidResponseException)             // =="Invalid IBP response"==
-    L10N_STRING(HFSHIBPErrorException)                       // =="The following IBP error occurred : %ls"==
-    L10N_STRING(HFSUrlSchemeNotSupported)                    // =="The scheme of the following URL is not supported by the file server : %ls"==
+    L10N_STRING(HFSHIBPErrorException)                       // =="The following IBP error occurred : %s"==
+    L10N_STRING(HFSUrlSchemeNotSupported)                    // =="The scheme of the following URL is not supported by the file server : %s"==
     L10N_STRING(HFSHIBPProtocolNotSupported)                 // =="The requested Internet browsing protocol requested is not supported"==
-    L10N_STRING(HFSInvalidDirectory)                         // =="%ls is an invalid directory path on the file server"==
+    L10N_STRING(HFSInvalidDirectory)                         // =="%s is an invalid directory path on the file server"==
     L10N_STRING(HFSCannotStartNexNetResourceEnum)            // =="Cannot start the enumeration of network resources"==
     L10N_STRING(HFSCannotEnumNextNetResource)                // =="Cannot enumerate the next network resource"==
 
@@ -70,7 +70,7 @@ BENTLEY_TRANSLATABLE_STRINGS_START(ImagePPExceptions,ImagePPExceptions)
 
     L10N_STRING(HPANoToken)                                  // =="The parser cannot find a token (line : %lu, column : %lu)"==
     L10N_STRING(HPARecursiveInclusion)                       // =="The file or stream currently being parsed has already been included (line : %lu, column : %lu)"==
-    L10N_STRING(HPAGeneric)                                  // =="The following generic parser exception occurred : %ls"==
+    L10N_STRING(HPAGeneric)                                  // =="The following generic parser exception occurred : %s"==
     L10N_STRING(HPACannotFindProduction)                     // =="The parser cannot find a valid production (line : %lu, column : %lu)"==
     L10N_STRING(HPACannotResolveStartRule)                   // =="The parser cannot resolve the starting rule"==
     L10N_STRING(HPANodeLeftToParse)                          // =="Some unparsed nodes remain after finding the starting rule  (line : %lu, column : %lu)"==
@@ -100,7 +100,7 @@ BENTLEY_TRANSLATABLE_STRINGS_START(ImagePPExceptions,ImagePPExceptions)
     L10N_STRING(HPSTranslucentInfoNotFound)                  // =="Cannot find the translucency information in the PSS (line : %lu, column : %lu)"==
 
     L10N_STRING(HRFIIConnection)                             // =="An Internet connection exception occurred (error type : %i)"==
-    L10N_STRING(HRFIIServer)                                 // =="A server exception occurred (class : %lu, number : %lu, object : %ls, message : %ls)"==
+    L10N_STRING(HRFIIServer)                                 // =="A server exception occurred (class : %lu, number : %lu, object : %s, message : %s)"==
     L10N_STRING(HRFIICancelled)                              // =="The request has been cancelled"==
     L10N_STRING(HRFIIInvalidDataFormat)                      // =="Invalid IIP data format (handler : %i)"==
     L10N_STRING(HRFIIInvalidValue)                           // =="Invalid IIP value (handler : %i)"==
@@ -132,21 +132,21 @@ BENTLEY_TRANSLATABLE_STRINGS_START(ImagePPExceptions,ImagePPExceptions)
     L10N_STRING(HRFUnsupportedITiffVersion)                  // =="Unsupported iTIFF version"==
     L10N_STRING(HRFGeotiffCompressedTableLock)               // =="The GeoTIFF compression table is locked"==
     L10N_STRING(HRFPWNoHandler)                              // =="Cannot find a ProjectWise handler"==
-    L10N_STRING(HRFCannotOpenChildFile)                      // =="Cannot open the following child file : %ls"==
-    L10N_STRING(HRFChildFileParameter)                       // =="The following parameter is invalid : (child file : %ls, parameter : %ls)"==
-    L10N_STRING(HRFSisterFileInvalidParamValue)              // =="The following parameter is invalid : (sister file : %ls, parameter : %ls)"==
-    L10N_STRING(HRFSisterFileMissing)                        // =="The following parameter is missing : (sister file : %ls, parameter : %ls)"==
-    L10N_STRING(HRFSisterFileMissingParamGroup)              // =="The following parameter group is missing : (sister file : %ls, parameter : %ls)"==
-    L10N_STRING(HRFSisterFileSlotNotSupported)               // =="The SLO of the following sister file is not supported : %ls"==
-    L10N_STRING(HRFInvalidSisterFile)                        // =="The following sister file is invalid : %ls"==
-    L10N_STRING(HRFInvalidTransfoForSisterFile)              // =="The following sister file cannot store the transformation model : %ls"==
-    L10N_STRING(HRFInvalidParamValue)                        // =="The value of the following parameter is invalid : %ls"==
+    L10N_STRING(HRFCannotOpenChildFile)                      // =="Cannot open the following child file : %s"==
+    L10N_STRING(HRFChildFileParameter)                       // =="The following parameter is invalid : (child file : %s, parameter : %s)"==
+    L10N_STRING(HRFSisterFileInvalidParamValue)              // =="The following parameter is invalid : (sister file : %s, parameter : %s)"==
+    L10N_STRING(HRFSisterFileMissing)                        // =="The following parameter is missing : (sister file : %s, parameter : %s)"==
+    L10N_STRING(HRFSisterFileMissingParamGroup)              // =="The following parameter group is missing : (sister file : %s, parameter : %s)"==
+    L10N_STRING(HRFSisterFileSlotNotSupported)               // =="The SLO of the following sister file is not supported : %s"==
+    L10N_STRING(HRFInvalidSisterFile)                        // =="The following sister file is invalid : %s"==
+    L10N_STRING(HRFInvalidTransfoForSisterFile)              // =="The following sister file cannot store the transformation model : %s"==
+    L10N_STRING(HRFInvalidParamValue)                        // =="The value of the following parameter is invalid : %s"==
     L10N_STRING(HRFXCHChannelsBlockDimensionsDiffer)         // =="The X channels do not have the same block dimension"==
-    L10N_STRING(HRFMimeFormatNotSupported)                   // =="The MIME format is not supported for the following parameter : %ls"==
-    L10N_STRING(HRFMissingParameter)                         // =="The following parameter is missing : %ls"==
+    L10N_STRING(HRFMimeFormatNotSupported)                   // =="The MIME format is not supported for the following parameter : %s"==
+    L10N_STRING(HRFMissingParameter)                         // =="The following parameter is missing : %s"==
     L10N_STRING(HRFUnsupportedxWMSVersion)                   // =="Unsupported xWMS version"==
-    L10N_STRING(HRFUSGSBandNotFoundInHeaderFile)             // =="Cannot find the following USGS band cannot be found in the header file : %ls"==
-    L10N_STRING(HRFTiffError)                                // =="The following error occurred in the TIFF library : %ls"==
+    L10N_STRING(HRFUSGSBandNotFoundInHeaderFile)             // =="Cannot find the following USGS band cannot be found in the header file : %s"==
+    L10N_STRING(HRFTiffError)                                // =="The following error occurred in the TIFF library : %s"==
     L10N_STRING(HRFSloNotSupported)                          // =="The SLO is not supported"==
     L10N_STRING(HRFSubResAcessDifferReadOnly)                // =="The file is only supported in read-only mode because of different block access modes between the first resolution and at least one sub-resolution"==
     L10N_STRING(HRFIntergraphLutReadOnly)                    // =="The Intergraph LUT is only supported in read-only mode"==
@@ -157,29 +157,29 @@ BENTLEY_TRANSLATABLE_STRINGS_START(ImagePPExceptions,ImagePPExceptions)
     L10N_STRING(HRFTransfoCannotBeAMatrix)                   // =="The transformation model cannot be represented by a matrix"==
     L10N_STRING(HRFUnsupportedHGRVersion)                    // =="Unsupported HGR version"==
     L10N_STRING(HRFCannotDownloadToInternetCache)            // =="Cannot download remote file to local Internet cache"==
-    L10N_STRING(HRFERSDataFoundOutsideDatasetHeader)         // =="No data can be present outside the dataset header block (sister file : %ls, parameter : %ls)"==
-    L10N_STRING(HRFERSUnmatchRegSpaceCoordType)              // =="The following sister file has different types for the registration coordinates and space coordinates : %ls"==
-    L10N_STRING(HRFERSUnmatchRegCoordType)                   // =="The coordinates space block of the following sister file has at least two parameters of different types : %ls"==
+    L10N_STRING(HRFERSDataFoundOutsideDatasetHeader)         // =="No data can be present outside the dataset header block (sister file : %s, parameter : %s)"==
+    L10N_STRING(HRFERSUnmatchRegSpaceCoordType)              // =="The following sister file has different types for the registration coordinates and space coordinates : %s"==
+    L10N_STRING(HRFERSUnmatchRegCoordType)                   // =="The coordinates space block of the following sister file has at least two parameters of different types : %s"==
     L10N_STRING(HRFTooSmallForEcwCompression)                // =="The dimensions of the image to compress are too small for ECW compression"==
     L10N_STRING(HRFTooBigForEcwCompression)                  // =="Input image size was exceeded for this version of the SDK"==
     L10N_STRING(HRFInvalidExportOption)                      // =="The export options are invalid"==
     L10N_STRING(HRFOperationRestrictedPDFNotSupported)       // =="PDF files with any operation restrictions are not supported"==
     L10N_STRING(HRFInvalidNewFileDimension)                  // =="The image cannot be exported to the selected file format because its size is too large (width limit : %I64u, height limit : %I64u)"==
     L10N_STRING(HRFDataHaveBeenScaleReadOnly)                // =="The image is only supported in read-only mode because its pixel values have been scaled."==
-    L10N_STRING(HRFPDFGeneric)                               // =="An error occurred in the PDF library (Error code: %d, Error message: %ls)"==
+    L10N_STRING(HRFPDFGeneric)                               // =="An error occurred in the PDF library (Error code: %d, Error message: %s)"==
     L10N_STRING(HRFAuthenticationMaxRetryCountReadched)      // =="Maximum retry count has been reached"==
-    L10N_STRING(HRFOracleGeneric)                            // =="An error occurred while using the Oracle database (Error code: %ls, Error message: %ls)"==
+    L10N_STRING(HRFOracleGeneric)                            // =="An error occurred while using the Oracle database (Error code: %s, Error message: %s)"==
     L10N_STRING(HRFAuthenticationCancelled)                  // =="Authentication was cancelled by the user"==
     L10N_STRING(HRFAuthenticationInvalidLogin)               // =="The specified authentication login name or password is invalid"==
     L10N_STRING(HRFAuthenticationInvalidService)             // =="The specified service is invalid or could not be reached"==
 
-    L10N_STRING(HCSNotConnected)                             // =="%ls is not connected"==
-    L10N_STRING(HCSCannotAcceptConnection)                   // =="%ls cannot accept connection"==
-    L10N_STRING(HCSCannotGetName)                            // =="Cannot get %ls's name"==
-    L10N_STRING(HCSCannotListen)                             // =="%ls cannot listen"==
-    L10N_STRING(HCannotBindConnection)                       // =="%ls cannot bind"==
-    L10N_STRING(HCSInvalidDomainName)                        // =="The domain name for the %ls is not valid"==
-    L10N_STRING(HCSCannotCreate)                             // =="Cannot create %ls"==
+    L10N_STRING(HCSNotConnected)                             // =="%s is not connected"==
+    L10N_STRING(HCSCannotAcceptConnection)                   // =="%s cannot accept connection"==
+    L10N_STRING(HCSCannotGetName)                            // =="Cannot get %s's name"==
+    L10N_STRING(HCSCannotListen)                             // =="%s cannot listen"==
+    L10N_STRING(HCannotBindConnection)                       // =="%s cannot bind"==
+    L10N_STRING(HCSInvalidDomainName)                        // =="The domain name for the %s is not valid"==
+    L10N_STRING(HCSCannotCreate)                             // =="Cannot create %s"==
 
 BENTLEY_TRANSLATABLE_STRINGS_END
 

@@ -33,7 +33,7 @@ public :
     IMAGEPP_EXPORT uint16_t                      GetNbVolatileLayers () const;
     IMAGEPP_EXPORT HMDVolatileLayerInfo*                GetVolatileLayerInfo(uint16_t pi_Index);
     IMAGEPP_EXPORT const HMDLayerInfo*                  GetLayerInfo        (uint16_t pi_Index) const;
-    IMAGEPP_EXPORT bool                                GetIndexFromKey     (const WString& pi_rKey,
+    IMAGEPP_EXPORT bool                                GetIndexFromKey     (const Utf8String& pi_rKey,
                                                               uint16_t&       po_rIndex) const;
 
     IMAGEPP_EXPORT void                                 ResetInitialVisibleState();

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ImagePP/all/h/HPSPssFile.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -23,7 +23,7 @@ public:
 
     IMAGEPP_EXPORT virtual void     AddToken(HFCPtr<HPSPssToken> pToken);
     IMAGEPP_EXPORT virtual size_t   CountToken() const;
-    IMAGEPP_EXPORT virtual HSTATUS  CreatePSSFile(WString const& fileName);
+    IMAGEPP_EXPORT virtual HSTATUS  CreatePSSFile(Utf8String const& fileName);
 
 protected:
 private:

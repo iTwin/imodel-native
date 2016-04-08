@@ -56,33 +56,33 @@ public:
 
     //:> Primary methods
 
-    IMAGEPP_EXPORT HFCURLCommonInternet(const WString& pi_URL);
-    IMAGEPP_EXPORT HFCURLCommonInternet(const WString& pi_SchemeType,
-                                        const WString& pi_User,
-                                        const WString& pi_Password,
-                                        const WString& pi_Host,
-                                        const WString& pi_Port,
-                                        const WString& pi_URLPath);
+    IMAGEPP_EXPORT HFCURLCommonInternet(const Utf8String& pi_URL);
+    IMAGEPP_EXPORT HFCURLCommonInternet(const Utf8String& pi_SchemeType,
+                                        const Utf8String& pi_User,
+                                        const Utf8String& pi_Password,
+                                        const Utf8String& pi_Host,
+                                        const Utf8String& pi_Port,
+                                        const Utf8String& pi_URLPath);
 
     IMAGEPP_EXPORT virtual               ~HFCURLCommonInternet();
 
-    IMAGEPP_EXPORT static void    SplitPath(const WString& pi_rURL,
-                                    WString*       po_pScheme,
-                                    WString*       po_pHost,
-                                    WString*       po_pPort,
-                                    WString*       po_pUser,
-                                    WString*       po_pPassword,
-                                    WString*       po_pPath);
+    IMAGEPP_EXPORT static void    SplitPath(const Utf8String& pi_rURL,
+                                    Utf8String*       po_pScheme,
+                                    Utf8String*       po_pHost,
+                                    Utf8String*       po_pPort,
+                                    Utf8String*       po_pUser,
+                                    Utf8String*       po_pPassword,
+                                    Utf8String*       po_pPath);
 
     IMAGEPP_EXPORT static string  EscapeURLParamValue(const string& pi_rURLPart);
 
     //:> Content access methods
 
-    const WString&      GetUser() const;
-    const WString&      GetPassword() const;
-    const WString&      GetHost() const;
-    const WString&      GetPort() const;
-    const WString&      GetURLPath() const;
+    const Utf8String&      GetUser() const;
+    const Utf8String&      GetPassword() const;
+    const Utf8String&      GetHost() const;
+    const Utf8String&      GetPort() const;
+    const Utf8String&      GetURLPath() const;
 
     const string&       GetUTF8EscapedURLPath() const;
     IMAGEPP_EXPORT virtual void        SetUTF8EscapedURLPath(const string* pi_pURLPath = 0);
@@ -93,11 +93,11 @@ public:
 
 protected:
     // Components of the scheme-specific part of the URL string.
-    WString m_User;
-    WString m_Password;
-    WString m_Host;
-    WString m_Port;
-    WString m_URLPath;
+    Utf8String m_User;
+    Utf8String m_Password;
+    Utf8String m_Host;
+    Utf8String m_Port;
+    Utf8String m_URLPath;
     string  m_UTF8EscapedURLPath;
 
 private:

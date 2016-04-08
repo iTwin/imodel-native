@@ -42,20 +42,20 @@
 // These are the ImagerySet tag that we use when requesting tiles URI. 
 // See Bing map "Get Imagery Metadata": http://msdn.microsoft.com/en-us/library/ff701716.aspx
 // *** DO NOT MODIFY unless bing map API is changing.
-#define BING_MAPS_METADATA_URL    L"http://dev.virtualearth.net/REST/V1/Imagery/Metadata/{ImagerySet}?o=xml&incl=ImageryProviders&key={BingMapsKey}"
+#define BING_MAPS_METADATA_URL    "http://dev.virtualearth.net/REST/V1/Imagery/Metadata/{ImagerySet}?o=xml&incl=ImageryProviders&key={BingMapsKey}"
 
 // Tags use to format server request
-#define SUBDOMAIN_TAG   L"{subdomain}"
-#define QUADKEY_TAG     L"{quadkey}"
-#define CULTURE_TAG     L"{culture}"
-#define IMAGERYSET_TAG  L"{ImagerySet}"
-#define BINGMAPSKEY_TAG L"{BingMapsKey}"
+#define SUBDOMAIN_TAG   "{subdomain}"
+#define QUADKEY_TAG     "{quadkey}"
+#define CULTURE_TAG     "{culture}"
+#define IMAGERYSET_TAG  "{ImagerySet}"
+#define BINGMAPSKEY_TAG "{BingMapsKey}"
 
 // These are tags that we use to build a pseudo Bing map URL.
 // They cannot be changed since MicroStation will persist these URL in its DGN format.
 // {ImagerySet} = "Road", "AerialWithLabels" or whatever bing map support
-#define PSEUDO_BING_PARTIAL_URL L"www.bing.com/maps/"
-#define PSEUDO_BING_URL L"http://" PSEUDO_BING_PARTIAL_URL IMAGERYSET_TAG    // http://www.bing.com/maps/{ImagerySet}
+#define PSEUDO_BING_PARTIAL_URL "www.bing.com/maps/"
+#define PSEUDO_BING_URL "http://" PSEUDO_BING_PARTIAL_URL IMAGERYSET_TAG    // http://www.bing.com/maps/{ImagerySet}
 
 // Xml Response 
 #define BING_XML_REST_1_0               "http://schemas.microsoft.com/search/local/ws/rest/v1"
@@ -152,10 +152,10 @@ static bool ReadImageryProvider(HRFVirtualEarthFile::ImageryProvider& provider, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   Mathieu.Marchand  03/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool ReplaceTagInString(WStringR str, WStringCR tag, WStringCR tagValue)
+static bool ReplaceTagInString(Utf8StringR str, Utf8StringCR tag, Utf8StringCR tagValue)
 {
-    WString::size_type pos = str.find(tag);
-    if(WString::npos == pos)
+    Utf8String::size_type pos = str.find(tag);
+    if(Utf8String::npos == pos)
         return false;
 
     str.replace(pos, tag.size(), tagValue);
@@ -165,13 +165,13 @@ static bool ReplaceTagInString(WStringR str, WStringCR tag, WStringCR tagValue)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   Mathieu.Marchand  03/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HRFVirtualEarthFile::QueryImageURI(WStringCR bingMapKey)
+void HRFVirtualEarthFile::QueryImageURI(Utf8StringCR bingMapKey)
     {
     m_ImageURI.clear();
     m_ImageURISubdomains.clear();
     m_LogoURI.clear();
 
-    WString imagerySetLabel;
+    Utf8String imagerySetLabel;
     if(!FindImagerySetFromURL(imagerySetLabel, *GetURL()))
         throw HFCCorruptedFileException(GetURL()->GetURL());
 
@@ -180,12 +180,12 @@ void HRFVirtualEarthFile::QueryImageURI(WStringCR bingMapKey)
     // http://dev.virtualearth.net/REST/V1/Imagery/Metadata/Road?incl=ImageryProviders&o=xml&key=AjdiY0PuqXOEdT0JWVjvXqC3nydpHgDEhLcUwXtnKUUH_BW5u3pV3-Zhk5Ez_mwt
     // http://dev.virtualearth.net/REST/V1/Imagery/Metadata/{ImagerySet}?incl=ImageryProviders&o=xml&key={bingMapKey}
     // ref: http://msdn.microsoft.com/en-us/library/ff701716.aspx
-    WString urlRequest(BING_MAPS_METADATA_URL);
+    Utf8String urlRequest(BING_MAPS_METADATA_URL);
     ReplaceTagInString(urlRequest, IMAGERYSET_TAG, imagerySetLabel);
     ReplaceTagInString(urlRequest, BINGMAPSKEY_TAG, bingMapKey);
 
     HttpSession session;
-    HttpRequest request(Utf8String(urlRequest).c_str());
+    HttpRequest request(urlRequest.c_str());
     HttpResponsePtr response;
     if(HttpRequestStatus::Success != session.Request(response, request) || response.IsNull() || response->GetBody().empty())
         throw HFCCannotOpenFileException(GetURL()->GetURL());
@@ -225,7 +225,7 @@ void HRFVirtualEarthFile::QueryImageURI(WStringCR bingMapKey)
                 {
                 for(BeXmlNodeP pSubDomainNode = pSubImageryMetaDataNode->GetFirstChild (); NULL != pSubDomainNode || m_ImageURISubdomains.size() > 4; pSubDomainNode = pSubDomainNode->GetNextSibling())
                     {
-                    WString subDomain;
+                    Utf8String subDomain;
                     if(BEXML_Success != pSubDomainNode->GetContent(subDomain))
                         break;
 
@@ -238,10 +238,10 @@ void HRFVirtualEarthFile::QueryImageURI(WStringCR bingMapKey)
     pXmlDom->SelectNodeContent(m_LogoURI, "/" BING_NAMESPACE_PREFIX ":" BING_RESPONSE_ELEMENT "/" BING_NAMESPACE_PREFIX ":" BING_BRANDLOGOURI_ELEMENT, NULL, BeXmlDom::NODE_BIAS_First);
 
     // Image URI must have the following form : "http://{subdomain}.tiles.virtualearth.net/tiles/r{quadkey}.jpeg?g=266&mkt={culture}"
-    if(m_ImageURI.empty() || m_ImageURI.find(SUBDOMAIN_TAG) == WString::npos ||
-       m_ImageURI.find(QUADKEY_TAG) == WString::npos ||
+    if(m_ImageURI.empty() || m_ImageURI.find(SUBDOMAIN_TAG) == Utf8String::npos ||
+       m_ImageURI.find(QUADKEY_TAG) == Utf8String::npos ||
        // Not fatal! 
-       //       m_ImageURI.find(CULTURE_TAG) == WString::npos ||
+       //       m_ImageURI.find(CULTURE_TAG) == Utf8String::npos ||
        // Not Fatal. Some layer(ex. 'OrdnanceSurvey' and 'CollinsBart') do not have providers.
        //       m_Providers.empty() ||  
        // PM: Not a fatal error.
@@ -250,7 +250,7 @@ void HRFVirtualEarthFile::QueryImageURI(WStringCR bingMapKey)
         throw HFCCannotOpenFileException(GetURL()->GetURL());
 
     // Replace the culture tag now, it won't change
-    WString CultureVal = ImagePPMessages::GetStringW(ImagePPMessages::BingMapsCultureId());
+    Utf8String CultureVal = ImagePPMessages::GetString(ImagePPMessages::BingMapsCultureId());
 
     ReplaceTagInString(m_ImageURI, CULTURE_TAG, !CultureVal.empty() ? CultureVal : CULTURE_TAG);
     }
@@ -258,15 +258,15 @@ void HRFVirtualEarthFile::QueryImageURI(WStringCR bingMapKey)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   Mathieu.Marchand  03/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString HRFVirtualEarthFile::GetTileURI(uint32_t pixelX, uint32_t pixelY, int32_t levelOfDetail) const
+Utf8String HRFVirtualEarthFile::GetTileURI(uint32_t pixelX, uint32_t pixelY, int32_t levelOfDetail) const
     {
     HASSERT(levelOfDetail >=1 && levelOfDetail <= 23); // 1 (lowest detail) to 23 (highest detail).
 
-    WString imageURI = m_ImageURI;
+    Utf8String imageURI = m_ImageURI;
     string quadKey = HRFVirtualEarthEditor::VirtualEarthTileSystem::PixelXYToQuadKey(pixelX, pixelY, levelOfDetail);
 
     ReplaceTagInString(imageURI, SUBDOMAIN_TAG, m_ImageURISubdomains[quadKey[quadKey.size()-1] - '0']);
-    ReplaceTagInString(imageURI, QUADKEY_TAG, WString(quadKey.c_str(),false));
+    ReplaceTagInString(imageURI, QUADKEY_TAG, Utf8String(quadKey.c_str()));
 
     return imageURI;
     }
@@ -428,25 +428,25 @@ HRFVirtualEarthCreator::HRFVirtualEarthCreator()
 //-----------------------------------------------------------------------------
 // Identification information
 //-----------------------------------------------------------------------------
-WString HRFVirtualEarthCreator::GetLabel() const
+Utf8String HRFVirtualEarthCreator::GetLabel() const
     {
-    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_BingMaps());
+    return ImagePPMessages::GetString(ImagePPMessages::FILEFORMAT_BingMaps());
     }
 
 //-----------------------------------------------------------------------------
 // Identification information
 //-----------------------------------------------------------------------------
-WString HRFVirtualEarthCreator::GetSchemes() const
+Utf8String HRFVirtualEarthCreator::GetSchemes() const
     {
-    return WString(HFCURLHTTP::s_SchemeName());
+    return Utf8String(HFCURLHTTP::s_SchemeName());
     }
 
 //-----------------------------------------------------------------------------
 // Identification information
 //-----------------------------------------------------------------------------
-WString HRFVirtualEarthCreator::GetExtensions() const
+Utf8String HRFVirtualEarthCreator::GetExtensions() const
     {
-    return WString(L"");
+    return Utf8String("");
     }
 
 //-----------------------------------------------------------------------------
@@ -515,7 +515,7 @@ HRFVirtualEarthFile::HRFVirtualEarthFile(const HFCPtr<HFCURL>& pi_rURL,
         throw HFCCannotOpenFileException(pi_rURL->GetURL());
 
 #ifdef BINGMAPS_AUTO_PASSWORD        
-    QueryImageURI(L"AjdiY0PuqXOEdT0JWVjvXqC3nydpHgDEhLcUwXtnKUUH_BW5u3pV3-Zhk5Ez_mwt");
+    QueryImageURI("AjdiY0PuqXOEdT0JWVjvXqC3nydpHgDEhLcUwXtnKUUH_BW5u3pV3-Zhk5Ez_mwt");
 #else
     HFCInternetAuthentication VEAuthentication(pi_rURL->GetURL());
 
@@ -559,9 +559,9 @@ HRFVirtualEarthFile::~HRFVirtualEarthFile()
 //-----------------------------------------------------------------------------
 // Compose a Virtual Earth URL
 //-----------------------------------------------------------------------------
-WString HRFVirtualEarthFile::ComposeURL(WStringCR imagerySet)
+Utf8String HRFVirtualEarthFile::ComposeURL(Utf8StringCR imagerySet)
     {
-    WString bingpseudoURL = PSEUDO_BING_URL;
+    Utf8String bingpseudoURL = PSEUDO_BING_URL;
     ReplaceTagInString(bingpseudoURL, IMAGERYSET_TAG, imagerySet);
 
     return bingpseudoURL;
@@ -570,7 +570,7 @@ WString HRFVirtualEarthFile::ComposeURL(WStringCR imagerySet)
 //-----------------------------------------------------------------------------
 // Find the map style from an URL and return the label needed for the http request.
 //-----------------------------------------------------------------------------
-bool HRFVirtualEarthFile::FindImagerySetFromURL(WStringR imagerySet, HFCURL const& bingURL)
+bool HRFVirtualEarthFile::FindImagerySetFromURL(Utf8StringR imagerySet, HFCURL const& bingURL)
     {
     //Input: http://www.bing.com/maps/{ImagerySet}
     imagerySet.clear();
@@ -581,20 +581,21 @@ bool HRFVirtualEarthFile::FindImagerySetFromURL(WStringR imagerySet, HFCURL cons
     HFCURLHTTPBase const& HttpURL = static_cast<HFCURLHTTPBase const&>(bingURL);
 
     // Avoid the default port(:80) added by HFCURLCommonInternet::GetURL()
-    WString cleanedUrl = HttpURL.GetHost() + L"/" + HttpURL.GetURLPath();
+    Utf8String cleanedUrl = HttpURL.GetHost() + "/" + HttpURL.GetURLPath();
 
-    WString partialUrl(PSEUDO_BING_PARTIAL_URL);
+    Utf8String partialUrl(PSEUDO_BING_PARTIAL_URL);
+    partialUrl.ToLower();   // using to lower should not affect bing URL. We do not have a case-insensitive find for UTF8
 
-    WString::size_type partialPos = CaseInsensitiveStringTools().Find(cleanedUrl, partialUrl);
-    if(WString::npos == partialPos)
+    Utf8String::size_type partialPos = partialUrl.find(partialUrl);
+    if(Utf8String::npos == partialPos)
         {
         HASSERT(!"Invalid bing URL");
         return false;
         }        
 
     // look for first delimiter and remove it if any.
-    WString::size_type imageryStartPos = partialPos + partialUrl.length();
-    WString::size_type imageryEndPos = cleanedUrl.find_first_of(L"\\/?", imageryStartPos);
+    Utf8String::size_type imageryStartPos = partialPos + partialUrl.length();
+    Utf8String::size_type imageryEndPos = cleanedUrl.find_first_of("\\/?", imageryStartPos);
     imagerySet = cleanedUrl.substr(imageryStartPos, imageryEndPos-imageryStartPos);
 
     return !imagerySet.empty();
@@ -612,11 +613,9 @@ bool HRFVirtualEarthFile::IsURLVirtualEarth(HFCURL const& bingURL)
     HFCURLHTTPBase const& HttpURL = static_cast<HFCURLHTTPBase const&>(bingURL);
 
     // Avoid the default port(:80) added by HFCURLCommonInternet::GetURL()
-    WString cleanedUurl = HttpURL.GetHost() + L"/" + HttpURL.GetURLPath();
+    Utf8String cleanedUurl = HttpURL.GetHost() + "/" + HttpURL.GetURLPath();
 
-    WString::size_type partialPos = CaseInsensitiveStringTools().Find(cleanedUurl, PSEUDO_BING_PARTIAL_URL);
-
-    return WString::npos != partialPos;
+    return cleanedUurl.ContainsI(PSEUDO_BING_PARTIAL_URL);
     }
 
 //-----------------------------------------------------------------------------
@@ -923,7 +922,7 @@ bool HRFVirtualEarthFile::CanPerformLookAhead(uint32_t pi_Page) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   Mathieu.Marchand  02/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR HRFVirtualEarthFile::GetBrandLogoURI() const
+Utf8StringCR HRFVirtualEarthFile::GetBrandLogoURI() const
     {
     return m_LogoURI;
     }

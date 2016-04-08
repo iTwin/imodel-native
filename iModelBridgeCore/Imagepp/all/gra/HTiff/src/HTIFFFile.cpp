@@ -62,7 +62,7 @@ static HTIFFTagInfo HTIFF_TAG_INFO;
 // public
 // Constructor,
 //-----------------------------------------------------------------------------
-HTIFFFile::HTIFFFile(const WString& pi_rFilename,
+HTIFFFile::HTIFFFile(const Utf8String& pi_rFilename,
                      HFCAccessMode  pi_Mode,
                      uint64_t      pi_OriginOffset,
                      bool          pi_CreateBigTifFormat,
@@ -198,9 +198,9 @@ bool HTIFFFile::GetEXIFDefinedGPSTags(uint32_t pi_PageDirInd, HPMAttributeSet& p
                 po_rExifGpsTags.Set(pTag);
                 }
 
-            if (pGPSDir->GetValues(GPS_LATITUDEREF, &pCharVal))
+            if (pGPSDir->GetValuesA(GPS_LATITUDEREF, &pCharVal))
                 {
-                HFCPtr<HPMGenericAttribute> pTag = new HRFAttributeGPSLatitudeRef(WString(pCharVal,false));
+                HFCPtr<HPMGenericAttribute> pTag = new HRFAttributeGPSLatitudeRef(pCharVal);
                 po_rExifGpsTags.Set(pTag);
                 }
 
@@ -218,9 +218,9 @@ bool HTIFFFile::GetEXIFDefinedGPSTags(uint32_t pi_PageDirInd, HPMAttributeSet& p
                 po_rExifGpsTags.Set(pTag);
                 }
 
-            if (pGPSDir->GetValues(GPS_LONGITUDEREF, &pCharVal))
+            if (pGPSDir->GetValuesA(GPS_LONGITUDEREF, &pCharVal))
                 {
-                HFCPtr<HPMGenericAttribute> pTag = new HRFAttributeGPSLongitudeRef(WString(pCharVal,false));
+                HFCPtr<HPMGenericAttribute> pTag = new HRFAttributeGPSLongitudeRef(pCharVal);
                 po_rExifGpsTags.Set(pTag);
                 }
 
@@ -272,21 +272,21 @@ bool HTIFFFile::GetEXIFDefinedGPSTags(uint32_t pi_PageDirInd, HPMAttributeSet& p
                 po_rExifGpsTags.Set(pTag);
                 }
 
-            if (pGPSDir->GetValues(GPS_SATELLITES, &pCharVal))
+            if (pGPSDir->GetValuesA(GPS_SATELLITES, &pCharVal))
                 {
-                HFCPtr<HPMGenericAttribute> pTag = new HRFAttributeGPSSatellites(WString(pCharVal,false));
+                HFCPtr<HPMGenericAttribute> pTag = new HRFAttributeGPSSatellites(pCharVal);
                 po_rExifGpsTags.Set(pTag);
                 }
 
-            if (pGPSDir->GetValues(GPS_STATUS, &pCharVal))
+            if (pGPSDir->GetValuesA(GPS_STATUS, &pCharVal))
                 {
-                HFCPtr<HPMGenericAttribute> pTag = new HRFAttributeGPSStatus(WString(pCharVal,false));
+                HFCPtr<HPMGenericAttribute> pTag = new HRFAttributeGPSStatus(pCharVal);
                 po_rExifGpsTags.Set(pTag);
                 }
 
-            if (pGPSDir->GetValues(GPS_MEASUREMODE, &pCharVal))
+            if (pGPSDir->GetValuesA(GPS_MEASUREMODE, &pCharVal))
                 {
-                HFCPtr<HPMGenericAttribute> pTag = new HRFAttributeGPSMeasureMode(WString(pCharVal,false));
+                HFCPtr<HPMGenericAttribute> pTag = new HRFAttributeGPSMeasureMode(pCharVal);
                 po_rExifGpsTags.Set(pTag);
                 }
 
@@ -302,9 +302,9 @@ bool HTIFFFile::GetEXIFDefinedGPSTags(uint32_t pi_PageDirInd, HPMAttributeSet& p
                 po_rExifGpsTags.Set(pTag);
                 }
 
-            if (pGPSDir->GetValues(GPS_SPEEDREF, &pCharVal))
+            if (pGPSDir->GetValuesA(GPS_SPEEDREF, &pCharVal))
                 {
-                HFCPtr<HPMGenericAttribute> pTag = new HRFAttributeGPSSpeedRef(WString(pCharVal,false));
+                HFCPtr<HPMGenericAttribute> pTag = new HRFAttributeGPSSpeedRef(pCharVal);
                 po_rExifGpsTags.Set(pTag);
                 }
 
@@ -320,9 +320,9 @@ bool HTIFFFile::GetEXIFDefinedGPSTags(uint32_t pi_PageDirInd, HPMAttributeSet& p
                 po_rExifGpsTags.Set(pTag);
                 }
 
-            if (pGPSDir->GetValues(GPS_TRACKREF, &pCharVal))
+            if (pGPSDir->GetValuesA(GPS_TRACKREF, &pCharVal))
                 {
-                HFCPtr<HPMGenericAttribute> pTag = new HRFAttributeGPSTrackRef(WString(pCharVal,false));
+                HFCPtr<HPMGenericAttribute> pTag = new HRFAttributeGPSTrackRef(pCharVal);
                 po_rExifGpsTags.Set(pTag);
                 }
 
@@ -338,9 +338,9 @@ bool HTIFFFile::GetEXIFDefinedGPSTags(uint32_t pi_PageDirInd, HPMAttributeSet& p
                 po_rExifGpsTags.Set(pTag);
                 }
 
-            if (pGPSDir->GetValues(GPS_IMGDIRECTIONREF, &pCharVal))
+            if (pGPSDir->GetValuesA(GPS_IMGDIRECTIONREF, &pCharVal))
                 {
-                HFCPtr<HPMGenericAttribute> pTag = new HRFAttributeGPSImgDirectionRef(WString(pCharVal,false));
+                HFCPtr<HPMGenericAttribute> pTag = new HRFAttributeGPSImgDirectionRef(pCharVal);
                 po_rExifGpsTags.Set(pTag);
                 }
 
@@ -356,15 +356,15 @@ bool HTIFFFile::GetEXIFDefinedGPSTags(uint32_t pi_PageDirInd, HPMAttributeSet& p
                 po_rExifGpsTags.Set(pTag);
                 }
 
-            if (pGPSDir->GetValues(GPS_MAPDATUM, &pCharVal))
+            if (pGPSDir->GetValuesA(GPS_MAPDATUM, &pCharVal))
                 {
-                HFCPtr<HPMGenericAttribute> pTag = new HRFAttributeGPSMapDatum(WString(pCharVal,false));
+                HFCPtr<HPMGenericAttribute> pTag = new HRFAttributeGPSMapDatum(pCharVal);
                 po_rExifGpsTags.Set(pTag);
                 }
 
-            if (pGPSDir->GetValues(GPS_DESTLATITUDEREF, &pCharVal))
+            if (pGPSDir->GetValuesA(GPS_DESTLATITUDEREF, &pCharVal))
                 {
-                HFCPtr<HPMGenericAttribute> pTag = new HRFAttributeGPSDestLatitudeRef(WString(pCharVal,false));
+                HFCPtr<HPMGenericAttribute> pTag = new HRFAttributeGPSDestLatitudeRef(pCharVal);
                 po_rExifGpsTags.Set(pTag);
                 }
 
@@ -382,9 +382,9 @@ bool HTIFFFile::GetEXIFDefinedGPSTags(uint32_t pi_PageDirInd, HPMAttributeSet& p
                 po_rExifGpsTags.Set(pTag);
                 }
 
-            if (pGPSDir->GetValues(GPS_DESTLONGITUDEREF, &pCharVal))
+            if (pGPSDir->GetValuesA(GPS_DESTLONGITUDEREF, &pCharVal))
                 {
-                HFCPtr<HPMGenericAttribute> pTag = new HRFAttributeGPSDestLongitudeRef(WString(pCharVal,false));
+                HFCPtr<HPMGenericAttribute> pTag = new HRFAttributeGPSDestLongitudeRef(pCharVal);
                 po_rExifGpsTags.Set(pTag);
                 }
 
@@ -402,9 +402,9 @@ bool HTIFFFile::GetEXIFDefinedGPSTags(uint32_t pi_PageDirInd, HPMAttributeSet& p
                 po_rExifGpsTags.Set(pTag);
                 }
 
-            if (pGPSDir->GetValues(GPS_DESTBEARINGREF, &pCharVal))
+            if (pGPSDir->GetValuesA(GPS_DESTBEARINGREF, &pCharVal))
                 {
-                HFCPtr<HPMGenericAttribute> pTag = new HRFAttributeGPSDestBearingRef(WString(pCharVal,false));
+                HFCPtr<HPMGenericAttribute> pTag = new HRFAttributeGPSDestBearingRef(pCharVal);
                 po_rExifGpsTags.Set(pTag);
                 }
 
@@ -420,9 +420,9 @@ bool HTIFFFile::GetEXIFDefinedGPSTags(uint32_t pi_PageDirInd, HPMAttributeSet& p
                 po_rExifGpsTags.Set(pTag);
                 }
 
-            if (pGPSDir->GetValues(GPS_DESTDISTANCEREF, &pCharVal))
+            if (pGPSDir->GetValuesA(GPS_DESTDISTANCEREF, &pCharVal))
                 {
-                HFCPtr<HPMGenericAttribute> pTag = new HRFAttributeGPSDestDistanceRef(WString(pCharVal,false));
+                HFCPtr<HPMGenericAttribute> pTag = new HRFAttributeGPSDestDistanceRef(pCharVal);
                 po_rExifGpsTags.Set(pTag);
                 }
 
@@ -452,9 +452,9 @@ bool HTIFFFile::GetEXIFDefinedGPSTags(uint32_t pi_PageDirInd, HPMAttributeSet& p
                 po_rExifGpsTags.Set(pTag);
                 }
 
-            if (pGPSDir->GetValues(GPS_DATESTAMP, &pCharVal))
+            if (pGPSDir->GetValuesA(GPS_DATESTAMP, &pCharVal))
                 {
-                HFCPtr<HPMGenericAttribute> pTag = new HRFAttributeGPSDateStamp(WString(pCharVal,false));
+                HFCPtr<HPMGenericAttribute> pTag = new HRFAttributeGPSDateStamp(pCharVal);
                 po_rExifGpsTags.Set(pTag);
                 }
 
@@ -543,9 +543,9 @@ bool HTIFFFile::GetEXIFTags(uint32_t pi_PageDirInd, HPMAttributeSet& po_rExifGps
         po_rExifGpsTags.Set(pTag);
         }
 
-    if (pDirToSearch->GetValues(EXIF_SPECTRALSENSITIVITY, &pCharVal))
+    if (pDirToSearch->GetValuesA(EXIF_SPECTRALSENSITIVITY, &pCharVal))
         {
-        HFCPtr<HPMGenericAttribute> pTag = new HRFAttributeSpectralSensitivity(WString(pCharVal,false));
+        HFCPtr<HPMGenericAttribute> pTag = new HRFAttributeSpectralSensitivity(pCharVal);
         po_rExifGpsTags.Set(pTag);
         }
 
@@ -572,15 +572,15 @@ bool HTIFFFile::GetEXIFTags(uint32_t pi_PageDirInd, HPMAttributeSet& po_rExifGps
         po_rExifGpsTags.Set(pTag);
         }
 
-    if (pDirToSearch->GetValues(EXIF_DATETIMEORIGINAL, &pCharVal))
+    if (pDirToSearch->GetValuesA(EXIF_DATETIMEORIGINAL, &pCharVal))
         {
-        HFCPtr<HPMGenericAttribute> pTag = new HRFAttributeDateTimeOriginal(WString(pCharVal,false));
+        HFCPtr<HPMGenericAttribute> pTag = new HRFAttributeDateTimeOriginal(pCharVal);
         po_rExifGpsTags.Set(pTag);
         }
 
-    if (pDirToSearch->GetValues(EXIF_DATETIMEDIGITIZED, &pCharVal))
+    if (pDirToSearch->GetValuesA(EXIF_DATETIMEDIGITIZED, &pCharVal))
         {
-        HFCPtr<HPMGenericAttribute> pTag = new HRFAttributeDateTimeDigitized(WString(pCharVal,false));
+        HFCPtr<HPMGenericAttribute> pTag = new HRFAttributeDateTimeDigitized(pCharVal);
         po_rExifGpsTags.Set(pTag);
         }
 
@@ -728,21 +728,21 @@ bool HTIFFFile::GetEXIFTags(uint32_t pi_PageDirInd, HPMAttributeSet& po_rExifGps
         po_rExifGpsTags.Set(pTag);
         }
 
-    if (pDirToSearch->GetValues(EXIF_SUBSECTIME, &pCharVal))
+    if (pDirToSearch->GetValuesA(EXIF_SUBSECTIME, &pCharVal))
         {
-        HFCPtr<HPMGenericAttribute> pTag = new HRFAttributeSubSecTime(WString(pCharVal,false));
+        HFCPtr<HPMGenericAttribute> pTag = new HRFAttributeSubSecTime(pCharVal);
         po_rExifGpsTags.Set(pTag);
         }
 
-    if (pDirToSearch->GetValues(EXIF_SUBSECTIME_ORIGINAL, &pCharVal))
+    if (pDirToSearch->GetValuesA(EXIF_SUBSECTIME_ORIGINAL, &pCharVal))
         {
-        HFCPtr<HPMGenericAttribute> pTag = new HRFAttributeSubSecTimeOriginal(WString(pCharVal,false));
+        HFCPtr<HPMGenericAttribute> pTag = new HRFAttributeSubSecTimeOriginal(pCharVal);
         po_rExifGpsTags.Set(pTag);
         }
 
-    if (pDirToSearch->GetValues(EXIF_SUBSECTIME_DIGITIZED, &pCharVal))
+    if (pDirToSearch->GetValuesA(EXIF_SUBSECTIME_DIGITIZED, &pCharVal))
         {
-        HFCPtr<HPMGenericAttribute> pTag = new HRFAttributeSubSecTimeDigitized(WString(pCharVal,false));
+        HFCPtr<HPMGenericAttribute> pTag = new HRFAttributeSubSecTimeDigitized(pCharVal);
         po_rExifGpsTags.Set(pTag);
         }
 
@@ -773,9 +773,9 @@ bool HTIFFFile::GetEXIFTags(uint32_t pi_PageDirInd, HPMAttributeSet& po_rExifGps
         po_rExifGpsTags.Set(pTag);
         }
 
-    if (pDirToSearch->GetValues(EXIF_RELATEDSOUNDFILE, &pCharVal))
+    if (pDirToSearch->GetValuesA(EXIF_RELATEDSOUNDFILE, &pCharVal))
         {
-        HFCPtr<HPMGenericAttribute> pTag = new HRFAttributeRelatedSoundFile(WString(pCharVal,false));
+        HFCPtr<HPMGenericAttribute> pTag = new HRFAttributeRelatedSoundFile(pCharVal);
         po_rExifGpsTags.Set(pTag);
         }
 
@@ -953,9 +953,9 @@ bool HTIFFFile::GetEXIFTags(uint32_t pi_PageDirInd, HPMAttributeSet& po_rExifGps
         po_rExifGpsTags.Set(pTag);
         }
 
-    if (pDirToSearch->GetValues(EXIF_IMAGEUNIQUEID, &pCharVal))
+    if (pDirToSearch->GetValuesA(EXIF_IMAGEUNIQUEID, &pCharVal))
         {
-        HFCPtr<HPMGenericAttribute> pTag = new HRFAttributeImageUniqueID(WString(pCharVal,false));
+        HFCPtr<HPMGenericAttribute> pTag = new HRFAttributeImageUniqueID(pCharVal);
         po_rExifGpsTags.Set(pTag);
         }
 
@@ -1120,8 +1120,7 @@ bool HTIFFFile::SetField (HTagID pi_Tag, RATIONAL pi_Val)
     if (Val < 0)
         {
         HTIFFError::NegativeValueForRationalErInfo ErInfo;
-        string TagName = string(GetTagNameString(pi_Tag));
-        ErInfo.m_TagName = WString(TagName.c_str(),false);
+        ErInfo.m_TagName = GetTagNameString(pi_Tag);
         ErInfo.m_RationalValue = Val;
 
         ErrorMsg(&m_pError,
@@ -3142,8 +3141,8 @@ bool HTIFFFile::PostCurrentDirectorySet (HTagFile::DirectoryID pi_DirID, bool pi
     // We identify the file with :
     if (m_ImageWidth == 0)
         {
-        char* pStr;
-        if (m_pCurDir->GetValues (SOFTWARE, &pStr) &&
+        CharP pStr = nullptr;
+        if (m_pCurDir->GetValuesA (SOFTWARE, &pStr) &&
             strcmp(pStr, IDENTIFY_UNDOREDO_FILE) == 0)
             m_UndoRedoFileMode = true;
         }
@@ -3466,7 +3465,7 @@ bool HTIFFFile::ValidateAndCorrectBlocInfo()
 // Utility function to create an Undo-Redo file
 //   - Strip, LZW compression, increase dynamically
 //-----------------------------------------------------------------------------
-/*static*/ HTIFFFile* HTIFFFile::UndoRedoFile(const WString& pi_rFilename, HFCAccessMode pi_Mode)
+/*static*/ HTIFFFile* HTIFFFile::UndoRedoFile(const Utf8String& pi_rFilename, HFCAccessMode pi_Mode)
     {
     HAutoPtr<HTIFFFile> pFile;
     try
@@ -3612,7 +3611,7 @@ void HTIFFFile::ReadWriteNewPosition(uint64_t& p_CountFreeBlockTotal,
         p_PositionSortedData++;
 
     //Move the Tile/Strip data in the file.
-    for (p_IteratorPositionSortedData; p_IteratorPositionSortedData < p_PositionSortedData; p_IteratorPositionSortedData++)
+    for ((void)p_IteratorPositionSortedData; p_IteratorPositionSortedData < p_PositionSortedData; p_IteratorPositionSortedData++)
         {
         uint64_t SumByteToMoved    = m_MergedDirectories[p_IteratorPositionSortedData].Size;
         uint64_t InitialPosition   = m_MergedDirectories[p_IteratorPositionSortedData].Offset;

@@ -20,16 +20,11 @@ class HRFGdalUtilities
     {
 public :
 
-    static HCPGeoTiffKeys*      ConvertOGCWKTtoGeotiffKeys(char const* po_pOGCWKT);
+    static HCPGeoTiffKeys*      ConvertOGCWKTtoGeotiffKeys(CharCP pOGCWKT);
 
-    static bool                 ConvertGeotiffKeysToOGCWKT(
-        const HFCPtr<HCPGeoTiffKeys>&        pi_rpGeoTiffKeys,
-        WString&                             po_rOGCWKT);
+    static bool                 ConvertGeotiffKeysToOGCWKT(AStringR OGCWKT, HCPGeoTiffKeys const& geoTiffKeys);
 
-    static bool                 ConvertERMToOGCWKT( WStringR  po_rOGCWKT,
-                                                    WStringCR pi_rErmProjection, 
-                                                    WStringCR pi_rErmDatum, 
-                                                    WStringCR pi_rErmUnits );
+    static bool                 ConvertERMToOGCWKT(AStringR OGCWKT, CharCP pErmProjection, CharCP pErmDatum, CharCP pErmUnits);
 
 private :
     HRFGdalUtilities();

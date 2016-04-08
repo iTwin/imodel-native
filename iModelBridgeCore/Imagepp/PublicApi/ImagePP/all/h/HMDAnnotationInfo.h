@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HMDAnnotationInfo.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -20,29 +20,29 @@ class HMDAnnotationInfo : public HMDMetaData
     HDECLARE_CLASS_ID(HMDAnnotationId_Info, HMDMetaData);
 
 public :
-    IMAGEPP_EXPORT HMDAnnotationInfo(const WString& pi_rMsg,
+    IMAGEPP_EXPORT HMDAnnotationInfo(const Utf8String& pi_rMsg,
                       bool          pi_IsSupported,
-                      const WString& pi_rAnnotationType = L"");
+                      const Utf8String& pi_rAnnotationType = "");
     IMAGEPP_EXPORT virtual                 ~HMDAnnotationInfo();
 
     IMAGEPP_EXPORT HMDAnnotationInfo(const HMDAnnotationInfo& pi_rObj);
 
 
-    IMAGEPP_EXPORT const WString&          GetAnnotationType() const;
-    IMAGEPP_EXPORT const WString&          GetAnnotationMsg() const;
+    IMAGEPP_EXPORT const Utf8String&          GetAnnotationType() const;
+    IMAGEPP_EXPORT const Utf8String&          GetAnnotationMsg() const;
 
     IMAGEPP_EXPORT bool                   IsSupported() const;
 
 protected:
 
-    WString m_AnnotationType;
+    Utf8String m_AnnotationType;
 
 private :
     HMDAnnotationInfo& operator=(const HMDAnnotationInfo& pi_rObj);
 
     void CopyMemberData(const HMDAnnotationInfo& pi_rObj);
 
-    WString m_Msg;
+    Utf8String m_Msg;
     bool   m_IsSupported;
     };
 

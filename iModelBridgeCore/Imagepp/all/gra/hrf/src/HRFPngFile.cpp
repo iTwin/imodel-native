@@ -248,9 +248,9 @@ HRFPngCreator::HRFPngCreator()
 // Public (HRFPngCreator)
 // Identification information
 //-----------------------------------------------------------------------------
-WString HRFPngCreator::GetLabel() const
+Utf8String HRFPngCreator::GetLabel() const
     {
-    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_PNG()); // PNG File Format
+    return ImagePPMessages::GetString(ImagePPMessages::FILEFORMAT_PNG()); // PNG File Format
     }
 
 //-----------------------------------------------------------------------------
@@ -258,9 +258,9 @@ WString HRFPngCreator::GetLabel() const
 // Public (HRFPngCreator)
 // Identification information
 //-----------------------------------------------------------------------------
-WString HRFPngCreator::GetSchemes() const
+Utf8String HRFPngCreator::GetSchemes() const
     {
-    return HFCURLFile::s_SchemeName() + L";" + HFCURLMemFile::s_SchemeName();
+    return HFCURLFile::s_SchemeName() + ";" + HFCURLMemFile::s_SchemeName();
     }
 
 //-----------------------------------------------------------------------------
@@ -268,9 +268,9 @@ WString HRFPngCreator::GetSchemes() const
 // Public (HRFPngCreator)
 // Identification information
 //-----------------------------------------------------------------------------
-WString HRFPngCreator::GetExtensions() const
+Utf8String HRFPngCreator::GetExtensions() const
     {
-    return WString(L"*.png");
+    return Utf8String("*.png");
     }
 
 //-----------------------------------------------------------------------------
@@ -511,8 +511,9 @@ bool HRFPngFile::AssignStructTo(HFCPtr<HRFPageDescriptor> pi_pPage)
     double YResolution = 0;
 
 	// setPngText lambda
-	auto setPngText = [&](CharCP key, WCharCP text) 
+	auto setPngText = [&](CharCP key, Utf8CP text) 
 		{
+        //&&MM_UTF8
         AString textA(text);
         png_text pngText;
         memset(&pngText, 0, sizeof(pngText));
@@ -528,10 +529,10 @@ bool HRFPngFile::AssignStructTo(HFCPtr<HRFPageDescriptor> pi_pPage)
         HFCPtr<HPMGenericAttribute> pTag = (*TagIterator);
         
         // Image Gamma Tag
-        if (pTag->GetID() == HRFAttributeImageGamma::ATTRIBUTE_ID)
+        if (pTag->GetID() == (HPMAttributesID)HRFAttributeImageGamma::ATTRIBUTE_ID)
             png_set_gAMA(m_pPngFileStruct, m_pPngInfo, ((HFCPtr<HRFAttributeImageGamma>&)pTag)->GetData());
         // Background Tag
-        else if (pTag->GetID() == HRFAttributeBackground::ATTRIBUTE_ID)
+        else if (pTag->GetID() == (HPMAttributesID)HRFAttributeBackground::ATTRIBUTE_ID)
             {
             m_pPngInfo->valid  |= PNG_INFO_bKGD;
             switch (m_pPngInfo->color_type)
@@ -561,12 +562,12 @@ bool HRFPngFile::AssignStructTo(HFCPtr<HRFPageDescriptor> pi_pPage)
                 }
             }
         // Time Last Modification
-        else if (pTag->GetID() == HRFAttributeTimeModification::ATTRIBUTE_ID)
+        else if (pTag->GetID() == (HPMAttributesID)HRFAttributeTimeModification::ATTRIBUTE_ID)
             {
             m_pPngInfo->valid  |= PNG_INFO_tIME;
 
-            BE_STRING_UTILITIES_SWSCANF(((HFCPtr<HRFAttributeTimeModification>&)pTag)->GetData().c_str(),
-                    L"%04hd:%02hc:%02hc %02hc:%02hc:%02hc",
+            BE_STRING_UTILITIES_UTF8_SSCANF(((HFCPtr<HRFAttributeTimeModification>&)pTag)->GetData().c_str(),
+                    "%04hd:%02c:%02c %02c:%02c:%02c",
                     &m_pPngInfo->mod_time.year,
                     &m_pPngInfo->mod_time.month,
                     &m_pPngInfo->mod_time.day,
@@ -575,67 +576,67 @@ bool HRFPngFile::AssignStructTo(HFCPtr<HRFPageDescriptor> pi_pPage)
                     &m_pPngInfo->mod_time.second);
             }
         // Title Tag
-        else if (pTag->GetID() == HRFAttributeTitle::ATTRIBUTE_ID)
+        else if (pTag->GetID() == (HPMAttributesID)HRFAttributeTitle::ATTRIBUTE_ID)
             {
             setPngText("Title", ((HFCPtr<HRFAttributeTitle>&)pTag)->GetData().c_str());
             }
         // Artist Tag
-        else if (pTag->GetID() == HRFAttributeArtist::ATTRIBUTE_ID)
+        else if (pTag->GetID() == (HPMAttributesID)HRFAttributeArtist::ATTRIBUTE_ID)
             {
             setPngText("Author", ((HFCPtr<HRFAttributeArtist>&)pTag)->GetData().c_str());
             }
         // Image Description Tag
-        else if (pTag->GetID() == HRFAttributeImageDescription::ATTRIBUTE_ID)
+        else if (pTag->GetID() == (HPMAttributesID)HRFAttributeImageDescription::ATTRIBUTE_ID)
             {
             setPngText("Description", ((HFCPtr<HRFAttributeImageDescription>&)pTag)->GetData().c_str());
             }
         // Copyright Tag (Copyright: Copyright notice)
-        else if (pTag->GetID() == HRFAttributeCopyright::ATTRIBUTE_ID)
+        else if (pTag->GetID() == (HPMAttributesID)HRFAttributeCopyright::ATTRIBUTE_ID)
             {
             setPngText("Copyright", ((HFCPtr<HRFAttributeCopyright>&)pTag)->GetData().c_str());
             }
         // Date Time Tag (Creation Time: Time of original image creation)
-        else if (pTag->GetID() == HRFAttributeDateTime::ATTRIBUTE_ID)
+        else if (pTag->GetID() == (HPMAttributesID)HRFAttributeDateTime::ATTRIBUTE_ID)
             {
             setPngText("Creation Time", ((HFCPtr<HRFAttributeDateTime>&)pTag)->GetData().c_str());
             }
         // Software Tag (Software:  Software used to create the image)
-        else if (pTag->GetID() == HRFAttributeSoftware::ATTRIBUTE_ID)
+        else if (pTag->GetID() == (HPMAttributesID)HRFAttributeSoftware::ATTRIBUTE_ID)
             {
             setPngText("Software", ((HFCPtr<HRFAttributeSoftware>&)pTag)->GetData().c_str());
             }
         // Legal Disclaimer Tag (Disclaimer:  Legal disclaimer)
-        else if (pTag->GetID() == HRFAttributeLegalDisclaimer::ATTRIBUTE_ID)
+        else if (pTag->GetID() == (HPMAttributesID)HRFAttributeLegalDisclaimer::ATTRIBUTE_ID)
             {
             setPngText("Disclaimer", ((HFCPtr<HRFAttributeLegalDisclaimer>&)pTag)->GetData().c_str());
             }
         // Content Warning Tag (Warning: Warning of nature of content)
-        else if (pTag->GetID() == HRFAttributeContentWarning::ATTRIBUTE_ID)
+        else if (pTag->GetID() == (HPMAttributesID)HRFAttributeContentWarning::ATTRIBUTE_ID)
             {
             setPngText("Warning", ((HFCPtr<HRFAttributeContentWarning>&)pTag)->GetData().c_str());
             }
         // Host Computer Tag (Source:  Device used to create the image)
-        else if (pTag->GetID() == HRFAttributeHostComputer::ATTRIBUTE_ID)
+        else if (pTag->GetID() == (HPMAttributesID)HRFAttributeHostComputer::ATTRIBUTE_ID)
             {
             setPngText("Source", ((HFCPtr<HRFAttributeHostComputer>&)pTag)->GetData().c_str());
             }
         // Notes Tag (Comment: Miscellaneous comment; conversion from GIF comment)
-        else if (pTag->GetID() == HRFAttributeNotes::ATTRIBUTE_ID)
+        else if (pTag->GetID() == (HPMAttributesID)HRFAttributeNotes::ATTRIBUTE_ID)
             {
             setPngText("Comment", ((HFCPtr<HRFAttributeNotes>&)pTag)->GetData().c_str());
             }
         // X Resolution Tag (pHYs Chunk)
-        else if (pTag->GetID() == HRFAttributeXResolution::ATTRIBUTE_ID)
+        else if (pTag->GetID() == (HPMAttributesID)HRFAttributeXResolution::ATTRIBUTE_ID)
             {
             XResolution = ((HFCPtr<HRFAttributeXResolution>&)pTag)->GetData();
             }
         // Y Resolution Tag (pHYs Chunk)
-        else if (pTag->GetID() == HRFAttributeYResolution::ATTRIBUTE_ID)
+        else if (pTag->GetID() == (HPMAttributesID)HRFAttributeYResolution::ATTRIBUTE_ID)
             {
             YResolution = ((HFCPtr<HRFAttributeYResolution>&)pTag)->GetData();
             }
         // Resolution Unit Tag (pHYs Chunk)
-        else if (pTag->GetID() == HRFAttributeResolutionUnit::ATTRIBUTE_ID)
+        else if (pTag->GetID() == (HPMAttributesID)HRFAttributeResolutionUnit::ATTRIBUTE_ID)
             {
             Unit = ((HFCPtr<HRFAttributeResolutionUnit>&)pTag)->GetData();
             }
@@ -884,7 +885,7 @@ void HRFPngFile::CreateDescriptors ()
     png_timep mod_time;
     if (png_get_tIME(m_pPngFileStruct, m_pPngInfo, &mod_time))
         {
-        WPrintfString timeLastModification(L"%4d:%02d:%02d %02d:%02d:%02d", 
+        Utf8PrintfString timeLastModification("%4d:%02d:%02d %02d:%02d:%02d",
                                            mod_time->year,
                                            mod_time->month,
                                            mod_time->day,
@@ -906,61 +907,61 @@ void HRFPngFile::CreateDescriptors ()
         // Title Tag
         if (!strcmp(pText[i].key, "Title"))
             {
-            pTag = new HRFAttributeTitle(WString(pText[i].text,false));
+            pTag = new HRFAttributeTitle(pText[i].text);
             TagList.Set(pTag);
             }
         // Artist Tag (Author:  Name of image's creator)
         else if (!strcmp(pText[i].key, "Author"))
             {
-            pTag = new HRFAttributeArtist(WString(pText[i].text,false));
+            pTag = new HRFAttributeArtist(pText[i].text);
             TagList.Set(pTag);
             }
         // Image Description Tag (Description: Description of image (possibly long))
         else if (!strcmp(pText[i].key, "Description"))
             {
-            pTag = new HRFAttributeImageDescription(WString(pText[i].text,false));
+            pTag = new HRFAttributeImageDescription(pText[i].text);
             TagList.Set(pTag);
             }
         // Copyright Tag (Copyright: Copyright notice)
         else if (!strcmp(pText[i].key, "Copyright"))
             {
-            pTag = new HRFAttributeCopyright(WString(pText[i].text,false));
+            pTag = new HRFAttributeCopyright(pText[i].text);
             TagList.Set(pTag);
             }
         // Date Time Tag (Creation Time: Time of original image creation)
         else if (!strcmp(pText[i].key, "Creation Time"))
             {
-            pTag = new HRFAttributeDateTime(WString(pText[i].text,false));
+            pTag = new HRFAttributeDateTime(pText[i].text);
             TagList.Set(pTag);
             }
         // Software Tag (Software:  Software used to create the image)
         else if (!strcmp(pText[i].key, "Software"))
             {
-            pTag = new HRFAttributeSoftware(WString(pText[i].text,false));
+            pTag = new HRFAttributeSoftware(pText[i].text);
             TagList.Set(pTag);
             }
         // Disclaimer Tag (Disclaimer:  Legal disclaimer)
         else if (!strcmp(pText[i].key, "Disclaimer"))
             {
-            pTag = new HRFAttributeLegalDisclaimer(WString(pText[i].text,false));
+            pTag = new HRFAttributeLegalDisclaimer(pText[i].text);
             TagList.Set(pTag);
             }
         // Warning Tag (Warning: Warning of nature of content)
         else if (!strcmp(pText[i].key, "Warning"))
             {
-            pTag = new HRFAttributeContentWarning(WString(pText[i].text,false));
+            pTag = new HRFAttributeContentWarning(pText[i].text);
             TagList.Set(pTag);
             }
         // Host Computer Tag (Source:  Device used to create the image)
         else if (!strcmp(pText[i].key, "Source"))
             {
-            pTag = new HRFAttributeHostComputer(WString(pText[i].text,false));
+            pTag = new HRFAttributeHostComputer(pText[i].text);
             TagList.Set(pTag);
             }
         // Notes Tag (Comment: Miscellaneous comment; conversion from GIF comment)
         else if (!strcmp(pText[i].key, "Comment"))
             {
-            pTag = new HRFAttributeNotes(WString(pText[i].text,false));
+            pTag = new HRFAttributeNotes(pText[i].text);
             TagList.Set(pTag);
             }
         }

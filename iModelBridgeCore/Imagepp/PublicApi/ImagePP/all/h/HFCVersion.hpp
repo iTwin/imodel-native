@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCVersion.hpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -25,9 +25,9 @@ inline HFCVersion::HFCVersion()
 // public
 // Constructor
 //-----------------------------------------------------------------------------
-inline HFCVersion::HFCVersion(const WString& pi_rName)
+inline HFCVersion::HFCVersion(const Utf8String& pi_rName)
     : m_Name(pi_rName),
-      m_Info(L"")
+      m_Info("")
     {
     FREEZE_STL_STRING(m_Name);
     FREEZE_STL_STRING(m_Info);
@@ -40,8 +40,8 @@ inline HFCVersion::HFCVersion(const WString& pi_rName)
 // public
 // Constructor
 //-----------------------------------------------------------------------------
-inline HFCVersion::HFCVersion(const WString& pi_rName,
-                              const WString& pi_rInfo,
+inline HFCVersion::HFCVersion(const Utf8String& pi_rName,
+                              const Utf8String& pi_rInfo,
                               size_t         pi_NumberCount,
                               ...)
     : m_Name(pi_rName),
@@ -241,7 +241,7 @@ inline bool HFCVersion::operator>=(const HFCVersion& pi_rObj) const
 // public
 // Returns the name of the version
 //-----------------------------------------------------------------------------
-inline const WString& HFCVersion::GetName() const
+inline const Utf8String& HFCVersion::GetName() const
     {
     return m_Name;
     }
@@ -251,7 +251,7 @@ inline const WString& HFCVersion::GetName() const
 // public
 // Returns the information string
 //-----------------------------------------------------------------------------
-inline const WString& HFCVersion::GetInfo() const
+inline const Utf8String& HFCVersion::GetInfo() const
     {
     return m_Info;
     }

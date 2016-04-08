@@ -31,9 +31,9 @@ bool SDOGeoRasterWrapper::IsConnected()
 // public static
 // Connect
 //-----------------------------------------------------------------------------
-bool SDOGeoRasterWrapper::Connect( WStringCR        pi_rUser,
-                                   WStringCR        pi_rPassword,
-                                   WStringCR        pi_rDatabase,
+bool SDOGeoRasterWrapper::Connect( Utf8StringCR        pi_rUser,
+                                   Utf8StringCR        pi_rPassword,
+                                   Utf8StringCR        pi_rDatabase,
                                    OracleError*     po_pError)
     {
     HPRECONDITION(!OCIGeoRasterWrapper::IsConnected());
@@ -49,7 +49,7 @@ bool SDOGeoRasterWrapper::Connect( WStringCR        pi_rUser,
 // public static
 // Connect
 //-----------------------------------------------------------------------------
-bool SDOGeoRasterWrapper::Connect( WStringCR    pi_rConnectionString,
+bool SDOGeoRasterWrapper::Connect( Utf8StringCR    pi_rConnectionString,
                                    OracleError*   po_pError)
     {
     HPRECONDITION(!OCIGeoRasterWrapper::IsConnected());
@@ -73,10 +73,10 @@ bool SDOGeoRasterWrapper::Disconnect()
 // public static
 // GetWrapper
 //-----------------------------------------------------------------------------
-SDOGeoRasterWrapper* SDOGeoRasterWrapper::GetWrapper(WStringCR  pi_rTableName,
-                                                     WStringCR  pi_rColumnName,
-                                                     WStringCR  pi_rImageID,
-                                                     WStringCR  pi_rRasterDataTableName,
+SDOGeoRasterWrapper* SDOGeoRasterWrapper::GetWrapper(Utf8StringCR  pi_rTableName,
+                                                     Utf8StringCR  pi_rColumnName,
+                                                     Utf8StringCR  pi_rImageID,
+                                                     Utf8StringCR  pi_rRasterDataTableName,
                                                      const Utf16Char*   pi_pXMLGeoRasterHeader,
                                                      size_t         pi_XMLSize)
     {
@@ -122,10 +122,10 @@ bool SDOGeoRasterWrapper::GetHeader(Utf16Char**    po_ppHeader,
 // protected
 // Constructor
 //-----------------------------------------------------------------------------
-SDOGeoRasterWrapper::SDOGeoRasterWrapper(WStringCR  pi_rTableName,
-                                         WStringCR  pi_rColumnName,
-                                         WStringCR  pi_rImageID,
-                                         WStringCR  pi_rRasterDataTableName,
+SDOGeoRasterWrapper::SDOGeoRasterWrapper(Utf8StringCR  pi_rTableName,
+                                         Utf8StringCR  pi_rColumnName,
+                                         Utf8StringCR  pi_rImageID,
+                                         Utf8StringCR  pi_rRasterDataTableName,
                                          const Utf16Char*   pi_pXMLGeoRasterHeader,
                                          size_t         pi_XMLSize)
     : m_RasterDataTable(pi_rRasterDataTableName),

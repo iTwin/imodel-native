@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HUTDEMRasterXYZPointsExtractor.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -20,12 +20,12 @@ public:
 
     friend class                    HUTDEMRasterXYZPointsIterator;
 
-    IMAGEPP_EXPORT                          HUTDEMRasterXYZPointsExtractor         (const WString&         pi_rDEMRasterFileName,
+    IMAGEPP_EXPORT                          HUTDEMRasterXYZPointsExtractor         (const Utf8String&         pi_rDEMRasterFileName,
                                                                             const HFCPtr<HPMPool>& pi_rpMemPool);                
 
     // NTERAY: For TR#330441, added this overload in order to ensure that we won't break civil work-flow. We should
     // probably preserve only the most permissive version (this one) and remove the redundant flag.
-    IMAGEPP_EXPORT                          HUTDEMRasterXYZPointsExtractor         (const WString&         pi_rDEMRasterFileName, 
+    IMAGEPP_EXPORT                          HUTDEMRasterXYZPointsExtractor         (const Utf8String&         pi_rDEMRasterFileName, 
                                                                             const HFCPtr<HPMPool>& pi_rpMemPool,
                                                                             bool                   pi_legacyPixelTypeSupportOnly);   
 
@@ -56,13 +56,13 @@ public:
 
     // Deprecated. Use CreateXYZPointsIteratorWithNoDataValueRemoval
     IMAGEPP_EXPORT HUTDEMRasterXYZPointsIterator*
-                                    CreateXYZPointsIterator                (const WString& pi_rDestCoordSysKeyName = WString(L""),
+                                    CreateXYZPointsIterator                (const Utf8String& pi_rDestCoordSysKeyName = Utf8String(""),
                                                                             double         pi_ScaleFactor = 1.0);
 
     // NTERAY: Should be removed once support for legacy use is removed
     IMAGEPP_EXPORT HUTDEMRasterXYZPointsIterator*
                                     CreateXYZPointsIteratorWithNoDataValueRemoval
-                                                                            (const WString& pi_rDestCoordSysKeyName = WString(L""),
+                                                                            (const Utf8String& pi_rDestCoordSysKeyName = Utf8String(""),
                                                                              double         pi_ScaleFactor = 1.0);
 
 

@@ -120,7 +120,7 @@ private:
     HFCExclusiveKey                 m_ExceptionKey;
     HAutoPtr<HFCException>          m_pException;
 
-    WString                         m_grayPixelType;
+    Utf8String                         m_grayPixelType;
 
     static size_t                   s_UncompressedInvalidTileBitmapSize;
     static size_t                   s_CompressedInvalidTileBitmapSize;

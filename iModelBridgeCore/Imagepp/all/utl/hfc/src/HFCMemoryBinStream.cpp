@@ -65,7 +65,7 @@ HFCMemoryBinStream::HFCMemoryBinStream()
 //
 //---------------------------------------------------------------------------
 
-HFCMemoryBinStream::HFCMemoryBinStream(const WString&        pi_Filename,
+HFCMemoryBinStream::HFCMemoryBinStream(const Utf8String&        pi_Filename,
     HFCAccessMode         pi_AccessMode,
     bool                  pi_AutoRemove,
     uint64_t              pi_OriginOffset,
@@ -92,7 +92,7 @@ HFCMemoryBinStream::HFCMemoryBinStream(const WString&        pi_Filename,
 //
 //---------------------------------------------------------------------------
 
-HFCMemoryBinStream::HFCMemoryBinStream(const WString&        pi_Filename,
+HFCMemoryBinStream::HFCMemoryBinStream(const Utf8String&        pi_Filename,
     HFCAccessMode         pi_AccessMode,
     bool                 pi_CreateFile,
     bool                 pi_AutoRemove,
@@ -120,7 +120,7 @@ HFCMemoryBinStream::HFCMemoryBinStream(const WString&        pi_Filename,
 //
 //---------------------------------------------------------------------------
 
-HFCMemoryBinStream::HFCMemoryBinStream(const WString&        pi_Filename,
+HFCMemoryBinStream::HFCMemoryBinStream(const Utf8String&        pi_Filename,
     bool                 pi_ShareWrite,
     bool                 pi_ShareRead,
     bool                 pi_CreateFile,
@@ -163,7 +163,7 @@ HFCMemoryBinStream::~HFCMemoryBinStream()
 
 HFCPtr<HFCURL> HFCMemoryBinStream::GetURL() const
     {
-    return new HFCURLMemFile(WString(HFCURLMemFile::s_SchemeName() + L"://") + m_Filename);
+    return new HFCURLMemFile(HFCURLMemFile::s_SchemeName() + "://" + m_Filename);
     }
 
 #ifdef __HMR_DEBUG_MEMBER
@@ -176,7 +176,7 @@ HFCPtr<HFCURL> HFCMemoryBinStream::GetURL() const
 
 void HFCMemoryBinStream::DumpToFile() const
     {
-    WString TempFileName(L"X:\\raster_file.memory_dump.pgn");
+    Utf8String TempFileName("X:\\raster_file.memory_dump.pgn");
 
     // Open the physical file.
     HFCLocalBinStream PhysicalFile(TempFileName,  false, true, true, false, 0, 0);

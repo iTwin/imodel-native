@@ -47,38 +47,38 @@ public:
     HDECLARE_CLASS_ID(HFCURLId_File, HFCURL);
 
     // Define the Scheme label
-    static const WString& s_SchemeName()
-        {   static const WString Val(L"file");
+    static const Utf8String& s_SchemeName()
+        {   static const Utf8String Val("file");
         FREEZE_STL_STRING(Val);
         return Val;
         }
 
     //:> Primary methods
 
-    IMAGEPP_EXPORT                         HFCURLFile(const WString& pi_URL);
-    IMAGEPP_EXPORT                         HFCURLFile(const WString& pi_Host,
-                                              const WString& pi_Path);
+    IMAGEPP_EXPORT                         HFCURLFile(const Utf8String& pi_URL);
+    IMAGEPP_EXPORT                         HFCURLFile(const Utf8String& pi_Host,
+                                              const Utf8String& pi_Path);
     IMAGEPP_EXPORT virtual                 ~HFCURLFile();
 
     //:> Content access methods
 
-    IMAGEPP_EXPORT virtual WString          GetURL() const;
-    IMAGEPP_EXPORT const WString&           GetHost() const;
-    IMAGEPP_EXPORT const WString&           GetPath() const;
-    IMAGEPP_EXPORT WString                  GetFilename() const;
-    IMAGEPP_EXPORT WString                  GetAbsoluteFileName() const;
-    IMAGEPP_EXPORT WString                  GetExtension() const;
+    IMAGEPP_EXPORT virtual Utf8String          GetURL() const;
+    IMAGEPP_EXPORT const Utf8String&           GetHost() const;
+    IMAGEPP_EXPORT const Utf8String&           GetPath() const;
+    IMAGEPP_EXPORT Utf8String                  GetFilename() const;
+    IMAGEPP_EXPORT Utf8String                  GetAbsoluteFileName() const;
+    IMAGEPP_EXPORT Utf8String                  GetExtension() const;
 
     //:> Overriden methods, used in relative path management
 
     virtual bool            HasPathTo(HFCURL* pi_pURL);
-    virtual WString         FindPathTo(HFCURL* pi_pDest);
-    virtual HFCURL*         MakeURLTo(const WString& pi_Path);
+    virtual Utf8String         FindPathTo(HFCURL* pi_pDest);
+    virtual HFCURL*         MakeURLTo(const Utf8String& pi_Path);
 
     //:> Utility methods
 
     IMAGEPP_EXPORT bool             CreatePath();
-    IMAGEPP_EXPORT void             SetFileName(const WString& pi_rFileName);
+    IMAGEPP_EXPORT void             SetFileName(const Utf8String& pi_rFileName);
 
 
 #ifdef __HMR_DEBUG_MEMBER
@@ -93,8 +93,8 @@ private:
 
     //:> Components of the scheme-specific part of the URL string.
 
-    WString                  m_Host;
-    WString                  m_Path;
+    Utf8String                  m_Host;
+    Utf8String                  m_Path;
 
     //:> Disabled methods
 

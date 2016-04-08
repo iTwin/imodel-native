@@ -335,19 +335,19 @@ bool HRFPWCreator::IsKindOfFile(const HFCPtr<HFCURL>&    pi_rpURL,
 
 
 // Identification information
-WString HRFPWCreator::GetLabel() const
+Utf8String HRFPWCreator::GetLabel() const
     {
-    return WString(L"ProjectWise File Format");
+    return Utf8String("ProjectWise File Format");
     }
 
-WString HRFPWCreator::GetSchemes() const
+Utf8String HRFPWCreator::GetSchemes() const
     {
-    return WString(HFCURLFile::s_SchemeName());
+    return Utf8String(HFCURLFile::s_SchemeName());
     }
 
-WString HRFPWCreator::GetExtensions() const
+Utf8String HRFPWCreator::GetExtensions() const
     {
-    return WString(L"*.pw");
+    return Utf8String("*.pw");
     }
 
 

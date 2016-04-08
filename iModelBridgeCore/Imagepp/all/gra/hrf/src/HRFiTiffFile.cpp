@@ -575,15 +575,15 @@ HRFiTiff64Creator::HRFiTiff64Creator()
     }
 
 // Identification information
-WString HRFiTiff64Creator::GetLabel() const
+Utf8String HRFiTiff64Creator::GetLabel() const
     {
-    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_iTiff64());  // Internet TIFF 64 File Format
+    return ImagePPMessages::GetString(ImagePPMessages::FILEFORMAT_iTiff64());  // Internet TIFF 64 File Format
     }
 
 // Identification information
-WString HRFiTiff64Creator::GetExtensions() const
+Utf8String HRFiTiff64Creator::GetExtensions() const
     {
-    return WString(L"*.itiff64");
+    return Utf8String("*.itiff64");
     }
 
 // allow to Open an image file
@@ -643,15 +643,15 @@ HRFiTiffCreator::HRFiTiffCreator()
     }
 
 // Identification information
-WString HRFiTiffCreator::GetLabel() const
+Utf8String HRFiTiffCreator::GetLabel() const
     {
-    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_iTiff());  // Internet TIFF File Format
+    return ImagePPMessages::GetString(ImagePPMessages::FILEFORMAT_iTiff());  // Internet TIFF File Format
     }
 
 // Identification information
-WString HRFiTiffCreator::GetExtensions() const
+Utf8String HRFiTiffCreator::GetExtensions() const
     {
-    return WString(L"*.itiff");
+    return Utf8String("*.itiff");
     }
 
 // allow to Open an image file
@@ -682,9 +682,9 @@ bool HRFiTiffCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
 // Return the scheme(s) supported by the file format.
 //-----------------------------------------------------------------------------
 
-WString HRFiTiffCreatorBase::GetSchemes() const
+Utf8String HRFiTiffCreatorBase::GetSchemes() const
     {
-    return WString(HFCURLFile::s_SchemeName());
+    return Utf8String(HFCURLFile::s_SchemeName());
     }
 
 //-----------------------------------------------------------------------------
@@ -1417,8 +1417,7 @@ void HRFiTiffFile::CreateDescriptors()
             {
             HASSERT(GetFilePtr()->IsTiff64() == true);
 
-            WString WktGeocode;
-            BeStringUtilities::CurrentLocaleCharToWChar(WktGeocode, pHMRHeader->m_WellKnownText.c_str());
+            WString WktGeocode(pHMRHeader->m_WellKnownText.c_str(), BentleyCharEncoding::Locale);
 
             pBaseGCS = GeoCoordinates::BaseGCS::CreateGCS();
 
@@ -2058,34 +2057,28 @@ bool HRFiTiffFile::ReadPrivateDirectory(uint32_t pi_Page, HMRHeader* po_pHMRHead
     bool    Ret = true;
 
     double* pData;
-    char*   pTileFlags;
-
+    
     HTIFFFile::DirectoryID CurDir = GetFilePtr()->CurrentDirectory();
 
     // Check if the private tag is present
     //
     if (GetFilePtr()->SetDirectory(HTIFFFile::MakeDirectoryID(HTIFFFile::HMR, pi_Page)))
         {
-        char*  pSystem;
+        CharP pFieldA = nullptr;
         uint32_t* pHisto;
 
         po_pHMRHeader->m_HMRDirDirty   = false;
 
         // Read System Coord.
-        if (GetFilePtr()->GetField(HMR_IMAGECOORDINATESYSTEM,  &pSystem))
-            {
-            if (strlen (pSystem) >= HMR_LgStringSystemCoord)
-                memcpy (po_pHMRHeader->m_SystemCoord, pSystem, HMR_LgStringSystemCoord);
-            else
-                memcpy (po_pHMRHeader->m_SystemCoord, pSystem, strlen(pSystem));
-            po_pHMRHeader->m_SystemCoord[HMR_LgStringSystemCoord-1] = '\0';
-            }
-
+        memset(po_pHMRHeader->m_SystemCoord, 0, HMR_LgStringSystemCoord);
+        if (GetFilePtr()->GetFieldA(HMR_IMAGECOORDINATESYSTEM, &pFieldA))
+            BeStringUtilities::Strncpy(po_pHMRHeader->m_SystemCoord, HMR_LgStringSystemCoord, pFieldA, BeStringUtilities::AsManyAsPossible);
+            
         // DateTime Histogram
         memset (po_pHMRHeader->m_HistoDateTime, ' ', HMR_LgStringDateTime);
         po_pHMRHeader->m_HistoDateTime[HMR_LgStringDateTime-1] = '\0';
-        if (GetFilePtr()->GetField(HMR_HISTOGRAMDATETIME,  &pSystem))
-            memcpy (po_pHMRHeader->m_HistoDateTime, pSystem, strlen(pSystem));
+        if (GetFilePtr()->GetFieldA(HMR_HISTOGRAMDATETIME, &pFieldA))
+            BeStringUtilities::Strncpy(po_pHMRHeader->m_HistoDateTime, HMR_LgStringDateTime, pFieldA, BeStringUtilities::AsManyAsPossible);
 
         // Read Histogram
         uint32_t Count;
@@ -2107,9 +2100,8 @@ bool HRFiTiffFile::ReadPrivateDirectory(uint32_t pi_Page, HMRHeader* po_pHMRHead
             {
             po_pHMRHeader->m_p3DTranfoMatrix = Create3DMatrixFromiTiffTag();
 
-            char*  pWKT;
-            if (GetFilePtr()->GetField(HMR2_WELLKNOWNTEXT,  &pWKT) == true)
-
+            CharP pWKT = nullptr;
+            if (GetFilePtr()->GetFieldA(HMR2_WELLKNOWNTEXT, &pWKT))
                 po_pHMRHeader->m_WellKnownText = pWKT;
             }
 
@@ -2154,7 +2146,8 @@ bool HRFiTiffFile::ReadPrivateDirectory(uint32_t pi_Page, HMRHeader* po_pHMRHead
             }
 
         // Get TileFlags
-        if (GetFilePtr()->GetField(HMR2_TILEFLAG, &pTileFlags))
+        CharP pTileFlags = nullptr;
+        if (GetFilePtr()->GetFieldA(HMR2_TILEFLAG, &pTileFlags))
             {
             po_pHMRHeader->m_iTiffTileFlagsLength = (uint32_t)strlen(pTileFlags)+1;
             po_pHMRHeader->m_piTiffTileFlags = new Byte[po_pHMRHeader->m_iTiffTileFlagsLength];
@@ -2211,10 +2204,9 @@ bool HRFiTiffFile::ReadPrivateDirectory(uint32_t pi_Page, HMRHeader* po_pHMRHead
 
         // Get SourceFile creation date, if present
         // That information is only keep for back compatible between V8i, on Windows platform.
-        char* p_SrcFileTime=0;
-        GetFilePtr()->GetField(HMR_SOURCEFILE_CREATIONDATE,  &p_SrcFileTime);
-        if (p_SrcFileTime != 0)
-            po_pHMRHeader->m_SourceFileCreationTime = p_SrcFileTime;
+        CharP pSrcFileTime = nullptr;
+        if(GetFilePtr()->GetFieldA(HMR_SOURCEFILE_CREATIONDATE, &pSrcFileTime) && pSrcFileTime != nullptr)
+            po_pHMRHeader->m_SourceFileCreationTime = pSrcFileTime;
 
         // Reset Directory
         GetFilePtr()->SetDirectory(CurDir);
@@ -2581,8 +2573,6 @@ void HRFiTiffFile::ReloadDescriptors()
     {
     HRFTiffFile::ReloadDescriptors();
 
-    char*   pTileFlags;
-
     HTIFFFile::DirectoryID CurDir = GetFilePtr()->CurrentDirectory();
     HMRHeader* pHMRHeader;
     // Reload Flags to the descriptor for each page
@@ -2593,7 +2583,8 @@ void HRFiTiffFile::ReloadDescriptors()
             GetFilePtr()->AddHMRDirectory(HMR2_IMAGEINFORMATION);
 
         // Get TileFlags
-        if (GetFilePtr()->GetField(HMR2_TILEFLAG, &pTileFlags))
+        CharP pTileFlags = nullptr;
+        if (GetFilePtr()->GetFieldA(HMR2_TILEFLAG, &pTileFlags))
             {
             HFCPtr<HRFPageDescriptor> pPageDescriptor = GetPageDescriptor(Page);
             pHMRHeader = m_ppHMRHeaders[Page];
@@ -2601,7 +2592,6 @@ void HRFiTiffFile::ReloadDescriptors()
             pHMRHeader->m_iTiffTileFlagsLength = (uint32_t)strlen(pTileFlags)+1;
             if (memcmp (pHMRHeader->m_piTiffTileFlags, pTileFlags, pHMRHeader->m_iTiffTileFlagsLength) != 0)
                 {
-
                 pHMRHeader->m_piTiffTileFlags = new Byte[pHMRHeader->m_iTiffTileFlagsLength];
                 memcpy(pHMRHeader->m_piTiffTileFlags, pTileFlags, pHMRHeader->m_iTiffTileFlagsLength * sizeof(char));
                 uint32_t CurDataFlagsResolution = 0;

@@ -41,7 +41,7 @@ HPSException::~HPSException()
 // Return the message formatted with specific information on the exception
 // that have occurred.
 //-----------------------------------------------------------------------------
-WString HPSException::_BuildMessage(const ImagePPExceptions::StringId& rsID) const
+Utf8String HPSException::_BuildMessage(const ImagePPExceptions::StringId& rsID) const
     {
     return HPAException::_BuildMessage(rsID);
     }
@@ -84,7 +84,7 @@ HFCException* HPSTypeMismatchException::Clone() const
 // Return the message formatted with specific information on the exception
 // that have occurred.
 //-----------------------------------------------------------------------------
-WString HPSTypeMismatchException::GetExceptionMessage() const
+Utf8String HPSTypeMismatchException::GetExceptionMessage() const
     {
     return HPSException::_BuildMessage(ImagePPExceptions::HPSTypeMismatch());
     }
@@ -138,7 +138,7 @@ HFCException* HPSOutOfRangeException::Clone() const
 // Return the message formatted with specific information on the exception
 // that have occurred.
 //-----------------------------------------------------------------------------
-WString HPSOutOfRangeException::GetExceptionMessage() const
+Utf8String HPSOutOfRangeException::GetExceptionMessage() const
     {
     return HPSException::_BuildMessage(ImagePPExceptions::HPSOutOfRange());
     }
@@ -164,7 +164,7 @@ const double HPSOutOfRangeException::GetUpper() const
 // Constructor
 //-----------------------------------------------------------------------------
 HPSAlreadyDefinedException::HPSAlreadyDefinedException(HFCPtr<HPANode>    pi_pOffendingNode,
-                                                              const WString&    pi_rName)
+                                                              const Utf8String&    pi_rName)
     : HPSException(pi_pOffendingNode)
     {
     m_Name              = pi_rName;   
@@ -197,7 +197,7 @@ HFCException* HPSAlreadyDefinedException::Clone() const
 // Return the message formatted with specific information on the exception
 // that have occurred.
 //-----------------------------------------------------------------------------
-WString HPSAlreadyDefinedException::GetExceptionMessage() const
+Utf8String HPSAlreadyDefinedException::GetExceptionMessage() const
     {
     return HPAException::_BuildMessage(ImagePPExceptions::HPSAlreadyDefined());
     }
@@ -206,7 +206,7 @@ WString HPSAlreadyDefinedException::GetExceptionMessage() const
 // public
 // Get the exception information, if any.
 //-----------------------------------------------------------------------------
-WStringCR HPSAlreadyDefinedException::GetName() const
+Utf8StringCR HPSAlreadyDefinedException::GetName() const
     {
     return m_Name;
     }

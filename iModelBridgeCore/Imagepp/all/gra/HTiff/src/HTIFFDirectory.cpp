@@ -209,7 +209,7 @@ uint64_t HTIFFDirectory::ReadDirectory (HTIFFStream* pi_pFile, uint64_t pi_Offse
 
         GetValues (m_rTagInfo.GetGeoKeyDirectoryTagID(), &KeyCount, &pKeyDirectory);
         GetValues (m_rTagInfo.GetGeoDoubleParamsTagID(), &DoubleCount, &pDoubleParams);
-        GetValues (m_rTagInfo.GetGeoAsciiParamsTagID(), &pASCIIParams);
+        GetValuesA (m_rTagInfo.GetGeoAsciiParamsTagID(), &pASCIIParams);
         m_pGeoKeys = new HTIFFGeoKey(pKeyDirectory, KeyCount,
                                      pDoubleParams, DoubleCount,
                                      pASCIIParams);
@@ -588,28 +588,28 @@ bool HTIFFDirectory::GetValues (HTagID pi_Tag, uint64_t* po_pVal)
         return false;
     }
 
-bool HTIFFDirectory::GetValues (HTagID pi_Tag, char** po_ppVal)
+bool HTIFFDirectory::GetValuesA(HTagID pi_Tag, CharP* po_ppVal)
     {
     HPRECONDITION(m_ppDirEntry != 0);
     HPRECONDITION(po_ppVal != 0);
 
     if (m_ppDirEntry[pi_Tag] != 0)
         {
-        m_ppDirEntry[pi_Tag]->GetValues(po_ppVal);
+        m_ppDirEntry[pi_Tag]->GetValuesA(po_ppVal);
         return true;
         }
     else
         return false;
     }
 
-bool HTIFFDirectory::GetValues (HTagID pi_Tag, WChar** po_ppVal)
+bool HTIFFDirectory::GetValuesW (HTagID pi_Tag, WCharP* po_ppVal)
     {
     HPRECONDITION(m_ppDirEntry != 0);
     HPRECONDITION(po_ppVal != 0);
 
     if (m_ppDirEntry[pi_Tag] != 0)
         {
-        m_ppDirEntry[pi_Tag]->GetValues(po_ppVal);
+        m_ppDirEntry[pi_Tag]->GetValuesW(po_ppVal);
         return true;
         }
     else
@@ -811,7 +811,7 @@ WRAPUP:
     }
 
 
-bool HTIFFDirectory::SetValuesA (HTagID pi_Tag, const char*  pi_pVal)
+bool HTIFFDirectory::SetValuesA (HTagID pi_Tag, CharCP pi_pVal)
     {
     HPRECONDITION(m_ppDirEntry != 0);
     HPRECONDITION(pi_pVal != 0);
@@ -830,7 +830,7 @@ WRAPUP:
     return false;
     }
 
-bool HTIFFDirectory::SetValuesW (HTagID pi_Tag, const WChar*  pi_pVal)
+bool HTIFFDirectory::SetValuesW (HTagID pi_Tag, WCharCP pi_pVal)
     {
     HPRECONDITION(m_ppDirEntry != 0);
     HPRECONDITION(pi_pVal != 0);

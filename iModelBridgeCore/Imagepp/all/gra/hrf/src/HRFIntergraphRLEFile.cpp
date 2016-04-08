@@ -167,18 +167,18 @@ HRFIntergraphRleCreator::HRFIntergraphRleCreator()
 // Identification information
 //-----------------------------------------------------------------------------
 
-WString HRFIntergraphRleCreator::GetLabel() const
+Utf8String HRFIntergraphRleCreator::GetLabel() const
     {
-    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_RLE());  // Intergraph rle File Format
+    return ImagePPMessages::GetString(ImagePPMessages::FILEFORMAT_RLE());  // Intergraph rle File Format
     }
 
 //-----------------------------------------------------------------------------
 // Identification information
 //-----------------------------------------------------------------------------
 
-WString HRFIntergraphRleCreator::GetExtensions() const
+Utf8String HRFIntergraphRleCreator::GetExtensions() const
     {
-    return WString(L"*.rle");
+    return Utf8String("*.rle");
     }
 
 //-----------------------------------------------------------------------------

@@ -23,28 +23,28 @@ class HFCURLSql : public HFCURL
 public:
 
     // Define the Scheme label
-    static const WString& s_SchemeName()
-        {   static const WString Val(L"hsql");
+    static const Utf8String& s_SchemeName()
+        {   static const Utf8String Val("hsql");
         FREEZE_STL_STRING(Val);
         return Val;
         }
 
     // Primary methods
 
-    HFCURLSql(const WString& pi_rURL);
+    HFCURLSql(const Utf8String& pi_rURL);
 
     virtual                 ~HFCURLSql();
 
     // Content access methods
 
-    virtual WString          GetURL() const;
-    const WString&           GetQuery() const;
+    virtual Utf8String          GetURL() const;
+    const Utf8String&           GetQuery() const;
 
     // Overriden methods, used in relative path management
 
     virtual bool           HasPathTo(HFCURL* pi_pURL);
-    virtual WString         FindPathTo(HFCURL* pi_pDest);
-    virtual HFCURL*         MakeURLTo(const WString& pi_Path);
+    virtual Utf8String         FindPathTo(HFCURL* pi_pDest);
+    virtual HFCURL*         MakeURLTo(const Utf8String& pi_Path);
 
 
 #ifdef __HMR_DEBUG_MEMBER
@@ -59,7 +59,7 @@ private:
 
     // Components of the scheme-specific part of the URL string.
 
-    WString      m_Query;
+    Utf8String      m_Query;
 
     // Disabled methods
 

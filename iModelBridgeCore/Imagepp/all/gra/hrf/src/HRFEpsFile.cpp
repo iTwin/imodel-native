@@ -134,9 +134,9 @@ HRFEpsCreator::HRFEpsCreator()
     Retrieve a string identifying the EPS file format
     -----------------------------------------------------------------------------
 */
-WString HRFEpsCreator::GetLabel() const
+Utf8String HRFEpsCreator::GetLabel() const
     {
-    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_EncapsulatedPostScript()); // Encapsulated PostScript
+    return ImagePPMessages::GetString(ImagePPMessages::FILEFORMAT_EncapsulatedPostScript()); // Encapsulated PostScript
     }
 
 
@@ -144,9 +144,9 @@ WString HRFEpsCreator::GetLabel() const
     Get possible URL schemes for the file format
     -----------------------------------------------------------------------------
 */
-WString HRFEpsCreator::GetSchemes() const
+Utf8String HRFEpsCreator::GetSchemes() const
     {
-    return WString(HFCURLFile::s_SchemeName());
+    return Utf8String(HFCURLFile::s_SchemeName());
     }
 
 
@@ -154,9 +154,9 @@ WString HRFEpsCreator::GetSchemes() const
     Retrieve the file format extension list
     -----------------------------------------------------------------------------
 */
-WString HRFEpsCreator::GetExtensions() const
+Utf8String HRFEpsCreator::GetExtensions() const
     {
-    return WString(L"*.eps");
+    return Utf8String("*.eps");
     }
 
 
@@ -385,16 +385,16 @@ void HRFEpsFile::WriteHeader(HFCPtr<HRFResolutionDescriptor>& pi_rpResDescriptor
     m_pFile->Write(s_EndOfLine.c_str(), s_EndOfLine.size());
 
     // Boundingbox
-    sprintf(Temp, "0 0 %ld %ld", FileWidth, FileHeight);
+    sprintf(Temp, "0 0 %d %d", FileWidth, FileHeight);
     m_pFile->Write(s_BoundingBoxStatement.c_str(), s_BoundingBoxStatement.size());
     m_pFile->Write(Temp, (uint32_t)strlen(Temp));
     m_pFile->Write(s_EndOfLine.c_str(), s_EndOfLine.size());
 
     // Title
     m_pFile->Write(s_TitleStatement.c_str(), s_TitleStatement.size());
-    WString::size_type Pos = 0;
-    if ((GetURL()->GetSchemeSpecificPart().substr(Pos,2) == L"//") ||
-        (GetURL()->GetSchemeSpecificPart().substr(Pos,2) == L"\\\\"))
+    Utf8String::size_type Pos = 0;
+    if ((GetURL()->GetSchemeSpecificPart().substr(Pos,2) == "//") ||
+        (GetURL()->GetSchemeSpecificPart().substr(Pos,2) == "\\\\"))
         {
         Pos += 2;
         }
@@ -413,7 +413,7 @@ void HRFEpsFile::WriteHeader(HFCPtr<HRFResolutionDescriptor>& pi_rpResDescriptor
     // variable definition
     // It must be big enough to hold one line of data.
     sprintf(Temp,
-            "/%s %ld %s",
+            "/%s %d %s",
             s_PicstrStatement.c_str(),
             IsRGBFile ? FileWidth * 3 : FileWidth,
             s_StringdefStatement.c_str());
@@ -421,13 +421,13 @@ void HRFEpsFile::WriteHeader(HFCPtr<HRFResolutionDescriptor>& pi_rpResDescriptor
     m_pFile->Write(s_EndOfLine.c_str(), s_EndOfLine.size());
 
     // Scale to dimensions
-    sprintf(Temp, "%ld %ld %s", FileWidth, FileHeight, s_ScaleStatement.c_str());
+    sprintf(Temp, "%d %d %s", FileWidth, FileHeight, s_ScaleStatement.c_str());
     m_pFile->Write(Temp, strlen(Temp));
     m_pFile->Write(s_EndOfLine.c_str(), s_EndOfLine.size());
 
     // Image data information. Fixed Upper left horizontal
     sprintf(Temp,
-            "%ld %ld %d [%ld 0 0 -%ld 0 %ld]",
+            "%d %d %d [%d 0 0 -%d 0 %d]",
             FileWidth,
             FileHeight,
             Is1Bit ? 1 : 8,

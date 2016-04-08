@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HUTClassIDDescriptor.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HUTClassIDDescriptor
@@ -31,23 +31,23 @@ class HRFGeoreferenceFormat;
 class HFCClassDescriptor
     {
 public:
-    HFCClassDescriptor(ImagePPMessages::StringId const& pi_ID, WCharCP pi_ClassCode);
+    HFCClassDescriptor(ImagePPMessages::StringId const& pi_ID, Utf8CP pi_ClassCode);
     HFCClassDescriptor(const HFCClassDescriptor& pi_rObj);
 
-    const WString& GetClassCode()  const;
+    const Utf8String& GetClassCode()  const;
     ImagePPMessages::StringId const& GetStringID() const;
 
 private:
 
     ImagePPMessages::StringId m_ID;
-    WString m_ClassCode;
+    Utf8String m_ClassCode;
 
     // Disable unusable operator= and default constructor.
     HFCClassDescriptor();
     HFCClassDescriptor& operator=(const HFCClassDescriptor& pi_rObj);
     };
 
-inline const WString& HFCClassDescriptor::GetClassCode () const
+inline const Utf8String& HFCClassDescriptor::GetClassCode () const
     {
     return m_ClassCode;
     }
@@ -56,7 +56,7 @@ inline const WString& HFCClassDescriptor::GetClassCode () const
 // Inline standard constructor
 //-----------------------------------------------------------------------------
 
-inline HFCClassDescriptor::HFCClassDescriptor(ImagePPMessages::StringId const& pi_ID, WCharCP pi_ClassCode)
+inline HFCClassDescriptor::HFCClassDescriptor(ImagePPMessages::StringId const& pi_ID, Utf8CP pi_ClassCode)
     {
     m_ID = pi_ID;
     m_ClassCode  = pi_ClassCode;
@@ -95,31 +95,31 @@ public:
     HUTClassIDDescriptor();
     ~HUTClassIDDescriptor();
 
-    IMAGEPP_EXPORT WString GetClassLabelCodec           (HCLASS_ID          pi_ClassID) const;
-    IMAGEPP_EXPORT WString GetClassLabelCodec           (const HCDCodec&    pi_rCodec) const;
-    IMAGEPP_EXPORT WString GetClassLabelPixelType       (HCLASS_ID          pi_ClassID) const;
-    IMAGEPP_EXPORT WString GetClassLabelPixelType       (const HRPPixelType&
+    IMAGEPP_EXPORT Utf8String GetClassLabelCodec           (HCLASS_ID          pi_ClassID) const;
+    IMAGEPP_EXPORT Utf8String GetClassLabelCodec           (const HCDCodec&    pi_rCodec) const;
+    IMAGEPP_EXPORT Utf8String GetClassLabelPixelType       (HCLASS_ID          pi_ClassID) const;
+    IMAGEPP_EXPORT Utf8String GetClassLabelPixelType       (const HRPPixelType&
                                                  pi_rPixelType) const;
-    IMAGEPP_EXPORT WString GetClassLabelTransfoModel    (HCLASS_ID          pi_ClassID) const;
-    IMAGEPP_EXPORT WString GetClassLabelTransfoModel    (const HGF2DTransfoModel&
+    IMAGEPP_EXPORT Utf8String GetClassLabelTransfoModel    (HCLASS_ID          pi_ClassID) const;
+    IMAGEPP_EXPORT Utf8String GetClassLabelTransfoModel    (const HGF2DTransfoModel&
                                                  pi_rTransfoModel) const;
-    IMAGEPP_EXPORT WString GetClassLabelFilter          (HCLASS_ID          pi_ClassID) const;
-    IMAGEPP_EXPORT WString GetClassLabelFilter          (const HRPFilter&   pi_rFilter) const;
-    IMAGEPP_EXPORT WString GetClassLabelSLO       (const HRFScanlineOrientation&
+    IMAGEPP_EXPORT Utf8String GetClassLabelFilter          (HCLASS_ID          pi_ClassID) const;
+    IMAGEPP_EXPORT Utf8String GetClassLabelFilter          (const HRPFilter&   pi_rFilter) const;
+    IMAGEPP_EXPORT Utf8String GetClassLabelSLO       (const HRFScanlineOrientation&
                                            pi_rScanlineO) const;
-    IMAGEPP_EXPORT WString GetClassLabelBlockType       (const HRFBlockType&
+    IMAGEPP_EXPORT Utf8String GetClassLabelBlockType       (const HRFBlockType&
                                                  pi_rBlockT) const;
-    IMAGEPP_EXPORT WString GetClassLabelEncodingType    (const HRFEncodingType&
+    IMAGEPP_EXPORT Utf8String GetClassLabelEncodingType    (const HRFEncodingType&
                                                  pi_rEncodingT) const;
-    IMAGEPP_EXPORT WString GetClassLabelResampling      (const HRFDownSamplingMethod&
+    IMAGEPP_EXPORT Utf8String GetClassLabelResampling      (const HRFDownSamplingMethod&
                                                  pi_rSampling) const;
-    IMAGEPP_EXPORT WString GetClassLabelGeoRef          (const HRFGeoreferenceFormat&
+    IMAGEPP_EXPORT Utf8String GetClassLabelGeoRef          (const HRFGeoreferenceFormat&
                                                  pi_rGeoRef) const;
-    IMAGEPP_EXPORT const WString& GetClassCodeCodec     (HCLASS_ID          pi_ClassID) const;
-    IMAGEPP_EXPORT const WString& GetClassCodePixelType (HCLASS_ID          pi_ClassID) const;
-    const WString& GetClassCodeTransfoModel     (HCLASS_ID          pi_ClassID) const;
-    const WString& GetClassCodeFilter           (HCLASS_ID          pi_ClassID) const;
-    IMAGEPP_EXPORT const WString& GetNotfoundString() const;
+    IMAGEPP_EXPORT const Utf8String& GetClassCodeCodec     (HCLASS_ID          pi_ClassID) const;
+    IMAGEPP_EXPORT const Utf8String& GetClassCodePixelType (HCLASS_ID          pi_ClassID) const;
+    const Utf8String& GetClassCodeTransfoModel     (HCLASS_ID          pi_ClassID) const;
+    const Utf8String& GetClassCodeFilter           (HCLASS_ID          pi_ClassID) const;
+    IMAGEPP_EXPORT const Utf8String& GetNotfoundString() const;
 
 private:
     typedef map<HCLASS_ID , HFCClassDescriptor, less<HCLASS_ID>, allocator<HFCClassDescriptor> > IDDescriptorMap;
@@ -128,7 +128,7 @@ private:
     IDDescriptorMap     m_TransfoClassIDDescriptorMap;
     IDDescriptorMap     m_FilterClassIDDescriptorMap;
 
-    const WString m_NotFound;
+    const Utf8String m_NotFound;
 
     // Disable operator= and copy constructor
     HUTClassIDDescriptor                        (const HUTClassIDDescriptor& pi_rObj);

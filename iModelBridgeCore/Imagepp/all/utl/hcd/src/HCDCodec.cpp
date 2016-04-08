@@ -17,7 +17,7 @@
 // protected
 // Default constructor
 //-----------------------------------------------------------------------------
-HCDCodec::HCDCodec(const WString& pi_rCodecName)
+HCDCodec::HCDCodec(const Utf8String& pi_rCodecName)
     : m_CodecName(pi_rCodecName),
       m_CurrentState(STATE_NONE)     // the default state if none (not in compression or decompression)
     {
@@ -115,7 +115,7 @@ HCDCodecRLEInterface* HCDCodec::GetRLEInterface()
 // public inline method
 // GetName
 //-----------------------------------------------------------------------------
-const WString& HCDCodec::GetName() const
+const Utf8String& HCDCodec::GetName() const
     {
     return m_CodecName;
     }
