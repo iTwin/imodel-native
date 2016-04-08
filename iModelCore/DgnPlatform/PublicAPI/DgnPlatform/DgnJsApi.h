@@ -228,6 +228,9 @@ struct JsDgnObjectId : RefCountedBaseWithCreate
 
 typedef JsDgnObjectId* JsDgnObjectIdP;
 
+//=======================================================================================
+// @bsiclass                                                    Sam.Wilson      06/15
+//=======================================================================================
 struct JsDgnObjectIdSetIterator : RefCountedBaseWithCreate
     {
     JS_ITERATOR_IMPL(JsDgnObjectIdSetIterator, bset<uint64_t>)
@@ -235,6 +238,9 @@ struct JsDgnObjectIdSetIterator : RefCountedBaseWithCreate
 
 typedef JsDgnObjectIdSetIterator* JsDgnObjectIdSetIteratorP;
 
+//=======================================================================================
+// @bsiclass                                                    Sam.Wilson      06/15
+//=======================================================================================
 struct JsDgnObjectIdSet : RefCountedBaseWithCreate
 {
     JsDgnObjectIdSet() {;}
@@ -271,6 +277,57 @@ struct JsAuthorityIssuedCode : RefCountedBaseWithCreate
 
 typedef JsAuthorityIssuedCode* JsAuthorityIssuedCodeP;
 
+struct JsECSqlArrayValue;
+
+//=======================================================================================
+// @bsiclass                                                Ramanujam.Raman      04/16
+//=======================================================================================
+struct JsECSqlValue : RefCountedBaseWithCreate
+    {
+    BeSQLite::EC::IECSqlValue const* m_value;
+
+    JsECSqlValue(BeSQLite::EC::IECSqlValue const* value) : m_value(value) { ; }
+
+    Utf8String GetText() { return m_value->GetText(); }
+    Utf8String GetDateTime() { return m_value->GetDateTime().ToUtf8String(); }
+    double GetDouble() { return m_value->GetDouble(); }
+    JsDPoint3dP GetDPoint3d() { return new JsDPoint3d(m_value->GetPoint3D()); }
+    int32_t GetInt() { return m_value->GetInt(); }
+    JsDgnObjectIdP GetId() { return new JsDgnObjectId(m_value->GetUInt64()); }
+    JsECSqlArrayValue* GetArray();
+    };
+
+typedef JsECSqlValue* JsECSqlValueP;
+
+//=======================================================================================
+// @bsiclass                                                Ramanujam.Raman      04/16
+//=======================================================================================
+struct JsECSqlArrayValueIterator : RefCountedBaseWithCreate
+    {
+    IECSqlArrayValue::const_iterator m_iter; \
+        JsECSqlArrayValueIterator(IECSqlArrayValue::const_iterator it) : m_iter(it) { ; }
+    };
+
+typedef JsECSqlArrayValueIterator* JsECSqlArrayValueIteratorP;
+
+//=======================================================================================
+// @bsiclass                                                Ramanujam.Raman      04/16
+//=======================================================================================
+struct JsECSqlArrayValue : RefCountedBaseWithCreate
+    {
+    BeSQLite::EC::IECSqlArrayValue const& m_arrayValue;
+
+    JsECSqlArrayValue(BeSQLite::EC::IECSqlArrayValue const& arrayValue) : m_arrayValue(arrayValue) { ; }
+
+    JsECSqlArrayValueIteratorP Begin() { return new JsECSqlArrayValueIterator(m_arrayValue.begin()); }
+    bool IsValid(JsECSqlArrayValueIteratorP iter) { return iter && iter->m_iter != m_arrayValue.end(); }
+    bool ToNext(JsECSqlArrayValueIteratorP iter) { if (nullptr == iter) return false; ++(iter->m_iter); return IsValid(iter); }
+
+    JsECSqlValueP GetValue(JsECSqlArrayValueIteratorP iter) { return IsValid(iter) ? new JsECSqlValue(*iter->m_iter) : nullptr; }
+    };
+
+typedef JsECSqlArrayValue* JsECSqlArrayValueP;
+
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      06/15
 //=======================================================================================
@@ -298,6 +355,7 @@ struct JsPreparedECSqlStatement : RefCountedBaseWithCreate
     JsDRange3dP GetValueDRange3d(int32_t col);
     int32_t GetValueInt(int32_t col);
     JsDgnObjectIdP GetValueId(int32_t col);
+    JsECSqlArrayValueP GetValueArray(int32_t col);
 };
 
 typedef JsPreparedECSqlStatement* JsPreparedECSqlStatementP;
