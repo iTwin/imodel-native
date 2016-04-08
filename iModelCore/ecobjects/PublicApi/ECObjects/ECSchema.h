@@ -2293,7 +2293,7 @@ enum class SchemaMatchType
 //!   -	Can still safely read all the values that were in schema 1
 //!   -	Cannot modify any values that were in schema 1 because they will likely set Overall GPA incorrectly.
 //! 
-// @bsistruct                                                Robert.Schili            03/2016
+// @bsiclass                                                
 //=======================================================================================
 struct SchemaKey
     {
