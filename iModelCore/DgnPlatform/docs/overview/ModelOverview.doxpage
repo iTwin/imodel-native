@@ -1,0 +1,104 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: docs/overview/ModelOverview.doxpage $
+|
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+//__PUBLISH_SECTION_START__
+
+BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+
+/** @page PAGE_ModelOverview Model Overview
+
+A DgnModel is a container that owns and organizes %DgnElements to represent a <i>model</i> of something.
+A DgnModel can contain spatial elements to geometrically model physical objects in a given domain, graphical elements to represent a drawing, or definition elements to capture project styles and templates.
+Basically, %DgnModels are used to partition the virtual world.
+
+@tableofcontents
+
+<!-- ---------------------------------------------------------------------------------- -->
+@section SECTION_ModelClasses DgnModel Classes
+
+It is expected that domain developers will subclass from the appropriate DgnModel class.
+Application developers will use the domain classes or base classes.
+Some of the most common model classes are described below:
+
+<p>
+<table>
+    <tr>
+        <td>DgnModel</td>
+        <td>The base class for all models.</td>
+    </tr>
+    <tr>
+        <td>SpatialModel</td>
+        <td>The base class for models that contain elements in 3-dimensional space.</td>
+    </tr>
+    <tr>
+        <td>DefinitionModel</td>
+        <td>The base class for models that contain project styles and templates.</td>
+    </tr>
+</table>
+<p>
+
+<hr>
+<!-- ---------------------------------------------------------------------------------- -->
+@section SECTION_ModelIncludes Required include files
+
+__PUBLISH_INSERT_FILE__ Model_Includes.sampleCode
+
+<hr>
+<!-- ---------------------------------------------------------------------------------- -->
+@section SECTION_CreateAndInsertModel Create and insert a DgnModel
+
+The model classes provided by the DgnPlatform can be used directly.
+The following code sample demonstrates creating a standard SpatialModel using a name passed in as a parameter:
+
+__PUBLISH_INSERT_FILE__ Model_CreateAndInsert.sampleCode
+
+<hr>
+<!-- ---------------------------------------------------------------------------------- -->
+@section SECTION_CreateAndInsertCustomModel Create and insert a custom DgnModel
+
+If custom <i>container</i> behavior is desired, it is also possible to subclass one of the base model classes.
+To accomplish this, the first step is to create an ECEntityClass in the ecschema.xml file (data model) that subclasses the appropriate DgnPlatform ECEntityClass:
+
+__PUBLISH_INSERT_FILE__ ToyTileECSchema_ToyTileModel.sampleCode
+
+The next step is to create a C++ class that subclasses the appropriate DgnModel C++ class:
+
+__PUBLISH_INSERT_FILE__ ToyTileModel_Declare.sampleCode
+
+This subclass wants custom behavior that ensures that only particular types of elements are inserted in the model.
+This is accomplished by overriding the appropriate virtual method:
+
+__PUBLISH_INSERT_FILE__ ToyTileModel_OnInsertElement.sampleCode
+
+It is also required to declare a C++ handler class that serves as a <i>factory</i> to create new instances of the C++ class:
+
+__PUBLISH_INSERT_FILE__ ToyTileModelHandler_Declare.sampleCode
+
+A macro is provided to auto-generate the required factory methods within the handler class.
+See the @c ToyTileModelHandler line in the sample code below:
+
+__PUBLISH_INSERT_FILE__ ToyTileDomain_DefineMembers.sampleCode
+
+The handlers must also be registered.
+See the @c ToyTileModelHandler line in the sample code below:
+
+__PUBLISH_INSERT_FILE__ ToyTileDomain_RegisterHandlers.sampleCode
+
+Finally, once everything is configured, here is an example of how to use the handler to create an instance of a custom model subclass and insert it into the %DgnDb:
+
+__PUBLISH_INSERT_FILE__ ToyTileCreator_CreateModel.sampleCode
+__PUBLISH_INSERT_FILE__ ToyTileModel_Create.sampleCode
+
+<hr>
+<!-- ---------------------------------------------------------------------------------- -->
+@section SECTION_LinkToModelModules Model Modules and Links
+
+@see DgnModelGroup
+
+*/
+
+END_BENTLEY_DGNPLATFORM_NAMESPACE

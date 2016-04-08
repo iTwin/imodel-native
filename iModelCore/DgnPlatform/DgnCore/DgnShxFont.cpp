@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnShxFont.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -82,7 +82,7 @@ static void bulgeFactorToDEllipse3d(DEllipse3dP pEllipse, DPoint2dCP pStart, DPo
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     08/2012
 //---------------------------------------------------------------------------------------
-static bool codeNameExists(ByteCP pBytes, size_t maxNameLength)
+static bool codeNameExists(CharCP pBytes, size_t maxNameLength)
     {
     if (0 == *pBytes)
         return false;
@@ -133,24 +133,24 @@ public:
     bool HasVEnd() const { return m_vEnd; }
     bool HasVStart() const { return m_vStart; }
     bool IsPenDown() const { return m_isPenDown; }
-    void DecodeBulgeArc(int& currentCode, ByteCP pCodes);
-    void DecodeCodes(int& currentCode, ByteCP pCodes);
-    void DecodeDivLengths(int& currentCode, ByteCP pCodes);
-    void DecodeExtenedFontSubShape(int& currentCode, ByteCP pCodes);
-    void DecodeFractionArc(int& currentCode, ByteCP pCodes);
-    void DecodeMultiBulgeArc(int& currentCode, ByteCP pCodes);
-    void DecodeMultLengths(int& currentCode, ByteCP pCodes);
-    void DecodeOctantArc(int& currentCode, ByteCP pCodes);
+    void DecodeBulgeArc(int& currentCode, CharCP pCodes);
+    void DecodeCodes(int& currentCode, CharCP pCodes);
+    void DecodeDivLengths(int& currentCode, CharCP pCodes);
+    void DecodeExtenedFontSubShape(int& currentCode, CharCP pCodes);
+    void DecodeFractionArc(int& currentCode, CharCP pCodes);
+    void DecodeMultiBulgeArc(int& currentCode, CharCP pCodes);
+    void DecodeMultLengths(int& currentCode, CharCP pCodes);
+    void DecodeOctantArc(int& currentCode, CharCP pCodes);
     void DecodePenDown();
     void DecodePenUp();
     void DecodePop();
     void DecodePush();
-    void DecodeSubShape(int& currentCode, ByteCP pCodes);
-    void DecodeVector(Byte iCode, ByteCP);
-    void DecodeVertical(int& currentCode, ByteCP pCodes);
-    void DecodeXYDisp(int& currentCode, ByteCP pCodes);
-    void DecodeXYMultiDisp(int& currentCode, ByteCP pCodes);
-    void DoConversion(size_t numBytes, ByteCP buff, bool doVerticals, bool hasData);
+    void DecodeSubShape(int& currentCode, CharCP pCodes);
+    void DecodeVector(Byte iCode, CharCP);
+    void DecodeVertical(int& currentCode, CharCP pCodes);
+    void DecodeXYDisp(int& currentCode, CharCP pCodes);
+    void DecodeXYMultiDisp(int& currentCode, CharCP pCodes);
+    void DoConversion(size_t numBytes, CharCP buff, bool doVerticals, bool hasData);
     bool IsPointInGPA(DPoint2dCR point) const;
     bool NeedPointInGPA(DPoint2dCR point) const;
 };
@@ -190,7 +190,7 @@ void ShapeConverter::AddEllipse(DEllipse3dCR el)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     08/2012
 //---------------------------------------------------------------------------------------
-void ShapeConverter::DecodeBulgeArc(int& currentCode, ByteCP pCodes)
+void ShapeConverter::DecodeBulgeArc(int& currentCode, CharCP pCodes)
     {
     DPoint2d sDisp;
     sDisp.x = ((double)pCodes[++currentCode] * m_multiplier);
@@ -236,7 +236,7 @@ void ShapeConverter::DecodeBulgeArc(int& currentCode, ByteCP pCodes)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     08/2012
 //---------------------------------------------------------------------------------------
-void ShapeConverter::DecodeCodes(int& currentCode, ByteCP pCodes)
+void ShapeConverter::DecodeCodes(int& currentCode, CharCP pCodes)
     {
     Byte iCode = pCodes[currentCode];
     if ((int)(iCode & 0xF0) > 0)
@@ -271,7 +271,7 @@ void ShapeConverter::DecodeCodes(int& currentCode, ByteCP pCodes)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     08/2012
 //---------------------------------------------------------------------------------------
-void ShapeConverter::DecodeDivLengths(int& currentCode, ByteCP pCodes)
+void ShapeConverter::DecodeDivLengths(int& currentCode, CharCP pCodes)
     {
     Byte iCode = pCodes[++currentCode];
     BeAssert(0 != iCode);
@@ -286,7 +286,7 @@ void ShapeConverter::DecodeDivLengths(int& currentCode, ByteCP pCodes)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     08/2012
 //---------------------------------------------------------------------------------------
-void ShapeConverter::DecodeExtenedFontSubShape(int&, ByteCP)
+void ShapeConverter::DecodeExtenedFontSubShape(int&, CharCP)
     {
     // As far as I can tell, this only applies to big fonts, which we no longer support.
     return;
@@ -295,7 +295,7 @@ void ShapeConverter::DecodeExtenedFontSubShape(int&, ByteCP)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     08/2012
 //---------------------------------------------------------------------------------------
-void ShapeConverter::DecodeFractionArc(int& currentCode, ByteCP pCodes)
+void ShapeConverter::DecodeFractionArc(int& currentCode, CharCP pCodes)
     {
     double radius;
     double sweep;
@@ -450,7 +450,7 @@ void ShapeConverter::DecodeFractionArc(int& currentCode, ByteCP pCodes)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     08/2012
 //---------------------------------------------------------------------------------------
-void ShapeConverter::DecodeMultiBulgeArc(int& currentCode, ByteCP pCodes)
+void ShapeConverter::DecodeMultiBulgeArc(int& currentCode, CharCP pCodes)
     {
     signed char x = pCodes[currentCode + 1];
     signed char y = pCodes[currentCode + 2];
@@ -471,7 +471,7 @@ void ShapeConverter::DecodeMultiBulgeArc(int& currentCode, ByteCP pCodes)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     08/2012
 //---------------------------------------------------------------------------------------
-void ShapeConverter::DecodeMultLengths(int& currentCode, ByteCP pCodes)
+void ShapeConverter::DecodeMultLengths(int& currentCode, CharCP pCodes)
     {
     Byte iCode = pCodes[++currentCode];
 
@@ -487,7 +487,7 @@ void ShapeConverter::DecodeMultLengths(int& currentCode, ByteCP pCodes)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     08/2012
 //---------------------------------------------------------------------------------------
-void ShapeConverter::DecodeOctantArc(int& currentCode, ByteCP pCodes)
+void ShapeConverter::DecodeOctantArc(int& currentCode, CharCP pCodes)
     {
     signed char b = pCodes[++currentCode];
     double radius = ((double)b * m_multiplier);
@@ -697,7 +697,7 @@ void ShapeConverter::DecodePush()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     08/2012
 //---------------------------------------------------------------------------------------
-void ShapeConverter::DecodeSubShape(int& currentCode, ByteCP pCodes)
+void ShapeConverter::DecodeSubShape(int& currentCode, CharCP pCodes)
     {
     uint16_t subshapeCode = pCodes[++currentCode];
     if (DgnShxFont::ShxType::Unicode == m_data->GetShxType())
@@ -716,7 +716,7 @@ void ShapeConverter::DecodeSubShape(int& currentCode, ByteCP pCodes)
     if (0 != m_data->_Seek(fPos->m_dataOffset, BeFileSeekOrigin::Begin))
         return;
 
-    Byte* pBuf = reinterpret_cast<Byte*>(_alloca(sizeof (Byte) * fPos->m_dataSize));
+    CharP pBuf = reinterpret_cast<CharP>(_alloca(sizeof (char) * fPos->m_dataSize));
     m_data->_Read(pBuf, sizeof (Byte) * fPos->m_dataSize, 1);
 
     DoConversion(fPos->m_dataSize, pBuf, m_processVertical, m_hasData);
@@ -725,7 +725,7 @@ void ShapeConverter::DecodeSubShape(int& currentCode, ByteCP pCodes)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     08/2012
 //---------------------------------------------------------------------------------------
-void ShapeConverter::DecodeVector(Byte iCode, ByteCP)
+void ShapeConverter::DecodeVector(Byte iCode, CharCP)
     {
     if (m_skipCodes)
         return;
@@ -837,7 +837,7 @@ void ShapeConverter::DecodeVector(Byte iCode, ByteCP)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     08/2012
 //---------------------------------------------------------------------------------------
-void ShapeConverter::DecodeVertical(int& currentCode, ByteCP pCodes)
+void ShapeConverter::DecodeVertical(int& currentCode, CharCP pCodes)
     {
     // While we aren't supporting vertical SHX glyphs at this time, we still need to eat the codes.
     AutoRestore<bool> skipCodes(&m_skipCodes, true);
@@ -848,7 +848,7 @@ void ShapeConverter::DecodeVertical(int& currentCode, ByteCP pCodes)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     08/2012
 //---------------------------------------------------------------------------------------
-void ShapeConverter::DecodeXYDisp(int& currentCode, ByteCP pCodes)
+void ShapeConverter::DecodeXYDisp(int& currentCode, CharCP pCodes)
     {
     DPoint2d sDisp;
     DPoint2d pt;
@@ -881,7 +881,7 @@ void ShapeConverter::DecodeXYDisp(int& currentCode, ByteCP pCodes)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     08/2012
 //---------------------------------------------------------------------------------------
-void ShapeConverter::DecodeXYMultiDisp(int& currentCode, ByteCP pCodes)
+void ShapeConverter::DecodeXYMultiDisp(int& currentCode, CharCP pCodes)
     {
     signed char x = pCodes[currentCode + 1];
     signed char y = pCodes[currentCode + 2];
@@ -902,14 +902,14 @@ void ShapeConverter::DecodeXYMultiDisp(int& currentCode, ByteCP pCodes)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     08/2012
 //---------------------------------------------------------------------------------------
-void ShapeConverter::DoConversion(size_t numBytes, ByteCP buff, bool doVerticals, bool hasData)
+void ShapeConverter::DoConversion(size_t numBytes, CharCP buff, bool doVerticals, bool hasData)
     {
     m_isPenDown = true;
     m_hasData = hasData;
     m_processVertical = doVerticals;
 
     // If there is a code name for the glyph then skip it
-    size_t iOffset = (codeNameExists ((unsigned char*)buff, numBytes) ? (strlen (reinterpret_cast<CharCP>(buff)) + 1) : 1);
+    size_t iOffset = (codeNameExists (buff, numBytes) ? (strlen(buff) + 1) : 1);
 
     numBytes -= iOffset;
     buff += iOffset;
@@ -1016,7 +1016,7 @@ void DgnShxGlyph::EnsureMetrics() const
     
     GPArraySmartP gpa;
     ShapeConverter converter(gpa, *m_data);
-    converter.DoConversion(m_dataSize, glyphData.GetDataCP(), false, false);
+    converter.DoConversion(m_dataSize, (CharCP)glyphData.GetDataCP(), false, false);
 
     double scale = (1.0 / m_data->GetAscender());
     DRange2d tRange = DRange2d::NullRange();
@@ -1085,7 +1085,7 @@ BentleyStatus DgnShxGlyph::_FillGpa(GPArrayR gpa) const
         return ERROR;
 
     ShapeConverter converter(gpa, *m_data);
-    converter.DoConversion(m_dataSize, glyphData.GetDataCP(), false, false);
+    converter.DoConversion(m_dataSize, (CharCP)glyphData.GetDataCP(), false, false);
 
     if (gpa.IsEmpty())
         return SUCCESS;

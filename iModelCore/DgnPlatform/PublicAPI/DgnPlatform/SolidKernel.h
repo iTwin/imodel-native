@@ -285,15 +285,14 @@ IFacetOptionsCR                 facetOptions
 typedef RefCountedPtr<IFacetTopologyTable> IFacetTopologyTablePtr;
 
 //=======================================================================================
-//! SolidKernelUtil provides BRep functionality required for DgnPlatform.
+//! SolidKernelUtil is intended as a bridge between DgnPlatform and Open CASCADE so
+//! that the entire set of Open CASCADE includes isn't required for the published api.
 //=======================================================================================
 struct SolidKernelUtil
 {
 DGNPLATFORM_EXPORT static ISolidKernelEntityPtr CreateNewEntity(TopoDS_Shape const&);
 DGNPLATFORM_EXPORT static TopoDS_Shape const* GetShape(ISolidKernelEntityCR);
 DGNPLATFORM_EXPORT static TopoDS_Shape* GetShapeP(ISolidKernelEntityR);
-DGNPLATFORM_EXPORT static PolyfaceHeaderPtr IncrementalMesh(ISolidKernelEntityCR, IFacetOptionsR);
-DGNPLATFORM_EXPORT static bool IntersectRay(ISolidKernelEntityCR, DRay3dCR, bvector<DPoint3d>& points, bvector<DVec3d>& normals);
 };
 
 END_BENTLEY_DGN_NAMESPACE

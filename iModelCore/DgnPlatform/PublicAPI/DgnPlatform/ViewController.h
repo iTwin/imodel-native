@@ -215,7 +215,7 @@ protected:
     virtual void _CreateScene(SceneContextR context) {_DrawView(context);}
     virtual void _DoHeal(HealContext&) {}
     virtual void _CreateTerrain(TerrainContextR context) {}
-    virtual bool _IsSceneReady() const {return false;}
+    virtual bool _IsSceneReady() const {return true;}
     virtual void _InvalidateScene() {}
 
     virtual void _OverrideGraphicParams(Render::OvrGraphicParamsR, GeometrySourceCP) {}

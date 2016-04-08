@@ -26,7 +26,7 @@ TopoDS_Shape m_shape;
 
 protected:
 
-virtual Transform _GetEntityTransform () const override {Transform transform = OCBRepUtil::ToTransform(m_shape.Location()); return transform;}
+virtual Transform _GetEntityTransform () const override {Transform transform = OCBRep::ToTransform(m_shape.Location()); return transform;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/16
@@ -60,7 +60,7 @@ virtual void _SetEntityTransform (TransformCR transform) override
 
         if (rMatrix.IsUniformScale(goopScale))
             {
-            gp_Trsf goopTrsf = OCBRepUtil::ToGpTrsf(goopTrans);
+            gp_Trsf goopTrsf = OCBRep::ToGpTrsf(goopTrans);
 
             m_shape.Location(TopLoc_Location()); // NOTE: Need to ignore shape location...
             BRepBuilderAPI_Transform transformer(m_shape, goopTrsf);
@@ -75,7 +75,7 @@ virtual void _SetEntityTransform (TransformCR transform) override
             }
         else
             {
-            gp_GTrsf goopTrsf = OCBRepUtil::ToGpGTrsf(goopTrans);
+            gp_GTrsf goopTrsf = OCBRep::ToGpGTrsf(goopTrans);
 
             m_shape.Location(TopLoc_Location()); // NOTE: Need to ignore shape location...
             BRepBuilderAPI_GTransform transformer(m_shape, goopTrsf);
@@ -92,7 +92,7 @@ virtual void _SetEntityTransform (TransformCR transform) override
         BeAssert(m_shape.Location().IsIdentity());
         }
 
-    m_shape.Location(OCBRepUtil::ToGpTrsf(shapeTrans));
+    m_shape.Location(OCBRep::ToGpTrsf(shapeTrans));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -125,7 +125,7 @@ DRange3d _GetEntityRange() const
 
     BRepBndLib::Add(m_shape, box, false); // Never use triangulation...
 
-    return OCBRepUtil::ToDRange3d(box);
+    return OCBRep::ToDRange3d(box);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -181,58 +181,6 @@ static OpenCascadeEntity* CreateNewEntity(TopoDS_Shape const& shape) {return new
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-PolyfaceHeaderPtr SolidKernelUtil::IncrementalMesh(ISolidKernelEntityCR entity, IFacetOptionsR facetOptions)
-    {
-#if defined (BENTLEYCONFIG_OPENCASCADE)
-    OpenCascadeEntity const* ocEntity = dynamic_cast <OpenCascadeEntity const*> (&entity);
-
-    if (!ocEntity)
-        return nullptr;
-
-    return OCBRepUtil::IncrementalMesh(ocEntity->GetShape(), facetOptions);
-#else
-    return nullptr;
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  03/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool SolidKernelUtil::IntersectRay(ISolidKernelEntityCR entity, DRay3dCR boresite, bvector<DPoint3d>& points, bvector<DVec3d>& normals)
-    {
-#if defined (BENTLEYCONFIG_OPENCASCADE)
-    OpenCascadeEntity const* ocEntity = dynamic_cast <OpenCascadeEntity const*> (&entity);
-
-    if (!ocEntity)
-        return false;
-
-    gp_Lin lin = OCBRepUtil::ToGpLin(boresite);
-    IntCurvesFace_ShapeIntersector shint;
-
-    shint.Load(ocEntity->GetShape(), Precision::Confusion());
-    shint.Perform(lin, -RealLast(), RealLast());
-
-    if (!shint.IsDone() || 0 == shint.NbPnt())
-        return false;
-
-    for (int iHit=1; iHit <= shint.NbPnt(); ++iHit)
-        {
-        const Handle(Geom_Surface)& surface = BRep_Tool::Surface(shint.Face(iHit));
-        GeomLProp_SLProps props(surface, shint.UParameter(iHit), shint.VParameter(iHit), 1, Precision::Confusion()); // Need 1st derivative for normal...
-
-        points.push_back(OCBRepUtil::ToDPoint3d(shint.Pnt(iHit)));
-        normals.push_back(OCBRepUtil::ToDVec3d(props.Normal()));
-        }
-
-    return true;
-#else
-    return false;
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  03/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
 TopoDS_Shape const* SolidKernelUtil::GetShape(ISolidKernelEntityCR entity)
     {
 #if defined (BENTLEYCONFIG_OPENCASCADE)
@@ -273,75 +221,5 @@ ISolidKernelEntityPtr SolidKernelUtil::CreateNewEntity(TopoDS_Shape const& shape
     return OpenCascadeEntity::CreateNewEntity(shape);
 #else
     return nullptr;
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  06/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void GeometryStreamIO::Writer::Append(ISolidKernelEntityCR entity)
-    {
-#if defined (BENTLEYCONFIG_OPENCASCADE)
-    OpenCascadeEntity const* ocEntity = dynamic_cast <OpenCascadeEntity const*> (&entity);
-
-    if (!ocEntity)
-        return;
-
-    TopoDS_Shape const& shape = ocEntity->GetShape();
-
-    if (shape.IsNull())
-        return;
-
-    BRepTools::Clean(shape); // Make sure to remove any triangulations...
-
-    std::ostringstream os;
-    BinTools_ShapeSet ss;
-    ss.SetFormatNb(3);
-    ss.Add(shape);
-    ss.Write(os);
-    ss.Write(shape, os);
-
-    FlatBufferBuilder fbb;
-
-    auto entityData = fbb.CreateVector((uint8_t*)os.str().c_str(), os.str().size());
-
-    FB::OCBRepDataBuilder builder(fbb);
-
-    builder.add_brepType((FB::BRepType) entity.GetEntityType()); // Allow possibility of checking type w/o expensive restore of brep...
-    builder.add_entityData(entityData);
-
-    auto mloc = builder.Finish();
-
-    fbb.Finish(mloc);
-    Append(Operation(OpCode::OpenCascadeBRep, (uint32_t) fbb.GetSize(), fbb.GetBufferPointer()));
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  12/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometryStreamIO::Reader::Get(Operation const& egOp, ISolidKernelEntityPtr& entity) const
-    {
-#if defined (BENTLEYCONFIG_OPENCASCADE)
-    if (OpCode::OpenCascadeBRep != egOp.m_opCode)
-        return false;
-
-    auto ppfb = flatbuffers::GetRoot<FB::OCBRepData>(egOp.m_data);
-
-    // NOTE: It's possible to check ppfb->brepType() to avoid calling restore when filtering on shape type...
-    std::istringstream is(std::string((char*)ppfb->entityData()->Data(), ppfb->entityData()->Length()));
-    BinTools_ShapeSet ss;
-    TopoDS_Shape shape;
-    ss.Read(is);
-    ss.Read(shape, is, ss.NbShapes());
-
-    if (shape.IsNull())
-        return false;
-
-    entity = OpenCascadeEntity::CreateNewEntity(shape);
-
-    return true;
-#else
-    return false;
 #endif
     }

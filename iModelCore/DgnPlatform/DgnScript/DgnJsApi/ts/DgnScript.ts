@@ -26,6 +26,10 @@
     /** The alias of the Generic schema namespace */
     export var GENERIC_ECSCHEMA_NAME = "Generic";
 
+    /** The name of the GeometricElement class in the dgn schema. */
+    export var DGN_CLASSNAME_GeometricElement = "GeometricElement";
+    /** The name of the GeometricElement3d class in the dgn schema. */
+    export var DGN_CLASSNAME_GeometricElement3d = "GeometricElement3d";
     /** The name of the SpatialElement class in the dgn schema. */
     export var DGN_CLASSNAME_SpatialElement = "SpatialElement";
     /** The name of the PhysicalElement class in the dgn schema. */

@@ -11,7 +11,7 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void getOcctKnots(TColStd_Array1OfReal*& occtKnots, TColStd_Array1OfInteger*& occtMultiplicities, bvector<double> const& knots, int order)
+void OCBRep::GetOcctKnots(TColStd_Array1OfReal*& occtKnots, TColStd_Array1OfInteger*& occtMultiplicities, bvector<double> const& knots, int order)
     {
     size_t          lowIndex, highIndex;
     bvector<double> compressedKnots;
@@ -32,39 +32,39 @@ static void getOcctKnots(TColStd_Array1OfReal*& occtKnots, TColStd_Array1OfInteg
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-Handle(Geom_BSplineCurve) OCBRepUtil::ToGeomBSplineCurve(MSBsplineCurveCR bcurveIn, TransformCP transform)
+Handle(Geom_BSplineCurve) OCBRep::ToGeomBSplineCurve(MSBsplineCurveCR bCurveIn, TransformCP transform)
     {
-    MSBsplineCurvePtr bcurve = (nullptr == transform) ? bcurveIn.CreateCopy() : bcurveIn.CreateCopyTransformed(*transform);
+    MSBsplineCurvePtr bCurve = (nullptr == transform) ? bCurveIn.CreateCopy() : bCurveIn.CreateCopyTransformed(*transform);
 
-    if (bcurve->IsClosed())
-        bcurve->MakeOpen(0.0); // NEEDSWORK - Can we somehow send periodic knot vector intact?? -- for now ignore periodic knot nonsense.
+    if (bCurve->IsClosed())
+        bCurve->MakeOpen(0.0); // Needs work -- Can we somehow send periodic knot vector intact?? -- for now ignore periodic knot nonsense.
 
-    int                      numPoles = (int) bcurve->GetNumPoles();
+    int                      numPoles = (int) bCurve->GetNumPoles();
     TColgp_Array1OfPnt       occtPoles(1, numPoles);
     TColStd_Array1OfReal*    occtKnots = nullptr;
     TColStd_Array1OfInteger* occtMultiplicities = nullptr;
     bvector <double>         knots;
 
-    bcurve->GetKnots(knots);
-    getOcctKnots(occtKnots, occtMultiplicities, knots, bcurve->GetIntOrder());
+    bCurve->GetKnots(knots);
+    GetOcctKnots(occtKnots, occtMultiplicities, knots, bCurve->GetIntOrder());
 
     for (int i=0; i<numPoles; i++)
-        occtPoles.ChangeValue(i+1) = ToGpPnt(bcurve->GetUnWeightedPole(i));
+        occtPoles.ChangeValue(i+1) = ToGpPnt(bCurve->GetUnWeightedPole(i));
         
     Handle(Geom_BSplineCurve) geomCurve;
 
-    if (bcurve->HasWeights())                          
+    if (bCurve->HasWeights())                          
         {
         TColStd_Array1OfReal occtWeights(1, numPoles);
 
         for (int i=0; i<numPoles; i++)
-            occtWeights.ChangeValue(i+1) = bcurve->GetWeight(i);
+            occtWeights.ChangeValue(i+1) = bCurve->GetWeight(i);
 
-        geomCurve = new Geom_BSplineCurve(occtPoles, occtWeights, *occtKnots, *occtMultiplicities, bcurve->GetIntOrder()-1, false, false);
+        geomCurve = new Geom_BSplineCurve(occtPoles, occtWeights, *occtKnots, *occtMultiplicities, bCurve->GetIntOrder()-1, false, false);
         }
     else
         {
-        geomCurve = new Geom_BSplineCurve(occtPoles, *occtKnots, *occtMultiplicities, bcurve->GetIntOrder()-1, false);
+        geomCurve = new Geom_BSplineCurve(occtPoles, *occtKnots, *occtMultiplicities, bCurve->GetIntOrder()-1, false);
         }
 
     DELETE_AND_CLEAR(occtKnots)
@@ -76,7 +76,51 @@ Handle(Geom_BSplineCurve) OCBRepUtil::ToGeomBSplineCurve(MSBsplineCurveCR bcurve
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-gp_Circ OCBRepUtil::ToGpCirc(double& start, double& end, DEllipse3dCR ellipse)
+Handle(Geom2d_BSplineCurve) OCBRep::ToGeom2dBSplineCurve(MSBsplineCurveCR bCurveIn, TransformCP transform)
+    {
+    MSBsplineCurvePtr bCurve = (nullptr == transform) ? bCurveIn.CreateCopy() : bCurveIn.CreateCopyTransformed(*transform);
+
+    if (bCurve->IsClosed())
+        bCurve->MakeOpen(0.0);      // Needs work -- Can we somehow send periodic knot vector intact??  -- for now ignore periodic knot nonsense.
+
+    int                      numPoles = (int) bCurve->GetNumPoles();
+    TColgp_Array1OfPnt2d     occtPoles(1, numPoles);
+    TColStd_Array1OfReal*    occtKnots = nullptr;
+    TColStd_Array1OfInteger* occtMultiplicities = nullptr;
+    bvector <double>         knots;
+
+    bCurve->GetKnots(knots);
+    GetOcctKnots(occtKnots, occtMultiplicities, knots, bCurve->GetIntOrder());
+
+    for (int i=0; i<numPoles; i++)
+        occtPoles.ChangeValue(i+1) = ToGpPnt2d(bCurve->GetUnWeightedPole(i));
+        
+    Handle(Geom2d_BSplineCurve) geomCurve;
+
+    if (bCurve->HasWeights())                          
+        {
+        TColStd_Array1OfReal occtWeights(1, numPoles);
+
+        for (int i=0; i<numPoles; i++)
+            occtWeights.ChangeValue(i+1) = bCurve->GetWeight(i);
+
+        geomCurve = new Geom2d_BSplineCurve(occtPoles, occtWeights, *occtKnots, *occtMultiplicities, bCurve->GetIntOrder()-1, false);
+        }
+    else
+        {
+        geomCurve = new Geom2d_BSplineCurve(occtPoles, *occtKnots, *occtMultiplicities, bCurve->GetIntOrder()-1, false);
+        }
+
+    DELETE_AND_CLEAR (occtKnots)
+    DELETE_AND_CLEAR (occtMultiplicities);
+
+    return geomCurve;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+gp_Circ OCBRep::ToGpCirc(double& start, double& end, DEllipse3dCR ellipse)
     {
     double      r0, r1, startAngle, sweepAngle;
     DPoint3d    center;
@@ -84,7 +128,7 @@ gp_Circ OCBRepUtil::ToGpCirc(double& start, double& end, DEllipse3dCR ellipse)
     RotMatrix   rMatrix;
 
     ellipse.GetScaledRotMatrix(center, rMatrix, r0, r1, startAngle, sweepAngle);
-    BeAssert(DoubleOps::AlmostEqual(r0, r1));
+    BeAssert(DoubleOps::WithinTolerance(r0, r1, Precision::Confusion()));
 
     rMatrix.GetColumn(xVec, 0);
     rMatrix.GetColumn(zVec, 2);
@@ -116,7 +160,7 @@ gp_Circ OCBRepUtil::ToGpCirc(double& start, double& end, DEllipse3dCR ellipse)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-gp_Elips OCBRepUtil::ToGpElips(double& start, double& end, DEllipse3dCR ellipse)
+gp_Elips OCBRep::ToGpElips(double& start, double& end, DEllipse3dCR ellipse)
     {
     double      r0, r1, startAngle, sweepAngle;
     DPoint3d    center;

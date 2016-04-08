@@ -499,7 +499,7 @@ void DgnQueryView::_CreateScene(SceneContextR context)
     if (!m_scene->m_complete)
         {
         DEBUG_PRINTF("schedule progressive");
-        vp.ScheduleProgressiveTask(*new ProgressiveTask(*this, vp));
+        vp.ScheduleElementProgressiveTask(*new ProgressiveTask(*this, vp));
         }
 
     DEBUG_PRINTF("Done create scene=%ld entries, aborted=%ld, time=%lf", m_scene->size(), context.WasAborted(), watch.GetCurrentSeconds());
