@@ -215,14 +215,6 @@
     </ECEntityClass>
     <ECEntityClass typeName="Chair" displayLabel="Office Chair" modifier="None">
         <BaseClass>Furniture</BaseClass>
-        <ECCustomAttributes>
-            <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.12">
-                <Hidden>False</Hidden>
-            </DisplayOptions>
-            <InstanceLabelSpecification xmlns="Bentley_Standard_CustomAttributes.01.12">
-                <PropertyName>AssetID</PropertyName>
-            </InstanceLabelSpecification>
-        </ECCustomAttributes>
         <ECProperty propertyName="ChairFootPrint" typeName="Bentley.Geometry.Common.IGeometry" readOnly="false"/>
         <ECProperty propertyName="Type" typeName="string" readOnly="false"/>
         <ECProperty propertyName="Color" typeName="string" readOnly="false"/>
@@ -337,14 +329,6 @@
         </ECProperty>
     </ECEntityClass>
     <ECEntityClass typeName="Company" modifier="None">
-        <ECCustomAttributes>
-            <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.12">
-                <Hidden>False</Hidden>
-            </DisplayOptions>
-            <ArrayBehaviorAttributes xmlns="EditorCustomAttributes.01.02">
-                <ShowEmpty>False</ShowEmpty>
-            </ArrayBehaviorAttributes>
-        </ECCustomAttributes>
         <ECProperty propertyName="Name" typeName="string" readOnly="false"/>
         <ECProperty propertyName="NumberOfEmployees" typeName="int" displayLabel="Number Of Employees" readOnly="false"/>
         <ECArrayProperty propertyName="Products" typeName="string" readOnly="false" minOccurs="0" maxOccurs="unbounded"/>
