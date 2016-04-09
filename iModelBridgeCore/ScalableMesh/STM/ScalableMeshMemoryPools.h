@@ -61,12 +61,12 @@ template <typename POINT> ScalableMeshMemoryPools<POINT>::ScalableMeshMemoryPool
     m_texturePoolSize = 600000000;
     m_uvPoolSize = 2000000;
     m_uvsIndicesPoolSize = 2000000;
-    m_pointPool = new HPMCountLimitedPool<POINT>(m_myMemMgr, m_pointPoolSize);
-    m_ptsIndicePool = new HPMCountLimitedPool<int32_t>(m_myMemMgr,m_ptsIndicePoolSize);
+    m_pointPool = new HPMCountLimitedPool<POINT>(/*m_myMemMgr,*/ m_pointPoolSize);
+    m_ptsIndicePool = new HPMCountLimitedPool<int32_t>(/*m_myMemMgr,*/m_ptsIndicePoolSize);
     m_graphPool = new HPMIndirectCountLimitedPool<MTGGraph>(m_graphPoolSize);
-    m_texturePool = new HPMCountLimitedPool<Byte>(m_myMemMgr, m_texturePoolSize);
-    m_uvPool = new HPMCountLimitedPool<DPoint2d>(m_myMemMgr, m_uvPoolSize);
-    m_uvsIndicesPool = new HPMCountLimitedPool<int32_t>(m_myMemMgr, m_uvsIndicesPoolSize);
+    m_texturePool = new HPMCountLimitedPool<Byte>(/*m_myMemMgr,*/ m_texturePoolSize);
+    m_uvPool = new HPMCountLimitedPool<DPoint2d>(/*m_myMemMgr,*/ m_uvPoolSize);
+    m_uvsIndicesPool = new HPMCountLimitedPool<int32_t>(/*m_myMemMgr, */m_uvsIndicesPoolSize);
     m_featurePool = new HPMCountLimitedPool<int32_t>(m_featurePoolSize);
     m_diffSetPool = new HPMIndirectCountLimitedPool<DifferenceSet>(m_diffSetPoolSize);
     }

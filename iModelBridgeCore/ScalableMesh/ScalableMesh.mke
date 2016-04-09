@@ -9,6 +9,7 @@
 baseDir         = $(_MakeFilePath)
 
 %include  mdl.mki
+%include $(SrcRoot)ScalableMesh/mki/ScalableMeshLibName.mki
 %include $(SrcRoot)ScalableMesh/mki/ScalableMeshPolicy.mki
 %include $(baseDir)ScalableMesh.mki
 
@@ -329,7 +330,7 @@ $(o)DEMRasterImporter$(oext) : $(importerPluginsDir)DEMRasterImporter.cpp $(PCHH
 
 #$(o)DGNModelGeoRef$(oext) : $(geocoordsDir)DGNModelGeoRef.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)PODImporter$(oext) : $(importerPluginsDir)PODImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+#$(o)PODImporter$(oext) : $(importerPluginsDir)PODImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 #$(o)STMSource$(oext) : $(importerPluginsDir)STMSource.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
@@ -410,8 +411,8 @@ LINKER_LIBRARIES            = \
     $(ContextSubpartsLibs)$(BeJsonCppLib) \
     $(ContextSubpartsLibs)$(BentleyGeomLib) \
     $(ContextSubpartsLibs)DgnPlatform.lib \
-    $(ContextSubpartsLibs)CGAL.lib \
-    $(ContextSubpartsLibs)BePointCloud.lib \
+    $(ContextSubpartsLibs)CGAL.lib 
+#    $(ContextSubpartsLibs)BePointCloud.lib \
 
 %include $(sharedMki)LinkLibrary.mki
 
