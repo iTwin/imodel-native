@@ -2476,14 +2476,14 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
                                               pixelBuffer);
     delete[] pixelBuffer;
 #endif
-	Byte *pPixel = pixelBufferP + 3 * sizeof(int);
-	for (size_t i = 0; i < textureWidthInPixels*textureHeightInPixels; ++i)
+    Byte *pPixel = pixelBufferP + 3 * sizeof(int);
+    for (size_t i = 0; i < textureWidthInPixels*textureHeightInPixels; ++i)
         {
-		*pPixel++ = pixelBufferPRGBA[i * 4];
-		*pPixel++ = pixelBufferPRGBA[i * 4 + 1];
-		*pPixel++ = pixelBufferPRGBA[i * 4 + 2];
+        *pPixel++ = pixelBufferPRGBA[i * 4];
+        *pPixel++ = pixelBufferPRGBA[i * 4 + 1];
+        *pPixel++ = pixelBufferPRGBA[i * 4 + 2];
         }
-	PushTexture(texId, pixelBufferP, 3 * sizeof(int) + textureWidthInPixels * textureHeightInPixels * 3);
+    PushTexture(texId, pixelBufferP, 3 * sizeof(int) + textureWidthInPixels * textureHeightInPixels * 3);
      SetTextureDirty(texId);
     StoreTexture(texId);
     if (GetNbPtsIndices(0) >= 4)
@@ -2527,6 +2527,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
         StoreUV();
     StoreUVsIndices(texId);
     StorePtsIndice(texId+1);
+    SetDirty(true);
 #if DEBUG && SM_TRACE_RASTER_TEXTURING 
         std::string s;
     s += " N OF INDICE ARRAYS " + std::to_string(GetNbPtsIndiceArrays());
