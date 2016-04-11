@@ -1,0 +1,20 @@
+#*--------------------------------------------------------------------------------------+
+#
+#     $Source: Tests/prewire.mke $
+#
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------*/
+%include mdl.mki
+
+baseDir                     = $(_makeFilePath)
+
+# Symlink Imagepp objs like it was part of the tests. Everything will be link together.
+always:
+    @CreateSymLinks.py -m"$(BuildContext)Delivery/UnitTests/Objects/ImagePPDllObjs=$(OutputRootDir)build/ImagePP/ImagePP/*$(oext)"
+
+# deliver ignorelist.
+$(BuildContext)Delivery/UnitTests/ignore_list.txt : $(baseDir)ignore_list.txt
+    $(LinkFirstDepToFirstTarget)
+
+

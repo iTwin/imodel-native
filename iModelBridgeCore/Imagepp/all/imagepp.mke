@@ -1423,6 +1423,7 @@ LINKER_LIBRARIES =  $(BeLibJpegTurbo) \
 
 %if !defined(IPP_OBJ_ONLY)
 %include $(sharedMki)linkLibrary.mki
+%endif
 
 #----------------------------------------------------------------------
 #       Create output directories
@@ -1439,7 +1440,7 @@ SQLANG_CHeader      = $(ippPublicAPISrc)h/ImagePPExceptionMessages.xliff.h
 SQLANG_Xliff        = $(o)xliffs/ImagePPExceptionMessages_en.xliff
 
 %include $(sharedMki)CHeaderToXliff.mki
-%endif
+
 
 
 

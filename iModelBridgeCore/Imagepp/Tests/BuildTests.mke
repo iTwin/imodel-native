@@ -36,13 +36,7 @@ o = $(BEGTEST_OUTPUT)$(BEGTEST_NAME)/
 $(BuildContext)Delivery/UnitTests/Objects/$(TestDir) : ${o}
     $(LinkFirstDepToFirstTargetAsDirectory)
 
-# Symlink Imagepp objs like it was part of the test. Everything will be link together.
-always:
-    @CreateSymLinks.py -m"$(BuildContext)Delivery/UnitTests/Objects/$(TestDir)/ImagePPDllObjs=$(OutputRootDir)build/ImagePP/ImagePP/*$(oext)"
 
-# deliver ignorelist.
-$(BuildContext)Delivery/UnitTests/ignore_list.txt : $(baseDir)ignore_list.txt
-    $(LinkFirstDepToFirstTarget)
 
 
     
