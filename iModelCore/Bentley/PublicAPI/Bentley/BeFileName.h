@@ -58,12 +58,13 @@ static WCharCP  const  WCSPATH_SEPARATOR         = L";";
 static WChar    const  WCSPATH_SEPARATOR_CHAR    = L';';
 
 /**
-* @addtogroup BeFileGroup
+* @addtogroup GROUP_File File Module
 * The BentleyApi::BeFileName and BentleyApi::BeFile classes contain cross-platform utilities for working with files.
+* @see @ref PAGE_BeFileNameOverview
 */
 
 //! Status codes for BeFileName operations
-//! @ingroup BeFileGroup
+//! @ingroup GROUP_File
 enum class BeFileNameStatus
     {
     Success             = SUCCESS,  //!< The BeFileName operation was successful
@@ -79,7 +80,7 @@ enum class BeFileNameStatus
 
 //! Types used when checking for user access rights.
 //! @see BeFileName::CheckAccess
-//! @ingroup BeFileGroup
+//! @ingroup GROUP_File
 enum class BeFileNameAccess
     {
     Read  = 4,              //!< read the file.
@@ -89,7 +90,7 @@ enum class BeFileNameAccess
 
 //=======================================================================================
 //! Represents a filename and provides functions to manipulate the filename and to work with files on disk by name.
-//! @ingroup BeFileGroup
+//! @ingroup GROUP_File
 //=======================================================================================
 struct BeFileName : WString
 {

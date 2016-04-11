@@ -2,21 +2,18 @@
 |
 |     $Source: PublicAPI/Bentley/BeTextFile.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 /*__PUBLISH_SECTION_START__*/
 
-//! @file BeTextFile.h Provides %Bentley specific text file read/write functions (Bentley/BeAssert.h).
+//! @file BeTextFile.h Provides %Bentley specific text file read/write functions (Bentley/BeTextFile.h).
 
 #include    <Bentley/BeFile.h>
 #include    <Bentley/RefCounted.h>
 
 BEGIN_BENTLEY_NAMESPACE
-
-//! @addtogroup BentleyLibrary
-//! @beginGroup
 
 //! The possible BeTextFile open modes.
 enum class TextFileOpenType
@@ -61,10 +58,10 @@ enum class TextFileWriteStatus
 //! A reference counted pointer to a BeTextFile instance.
 typedef RefCountedPtr<struct BeTextFile>  BeTextFilePtr;
 
-/*=================================================================================**//**
-* Reads and Writes Text Files regardless of whether they are encoded on disk as locale-encoded ASCII, UTF8, or UTF16.
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
+//=======================================================================================
+//! Reads and Writes Text Files regardless of whether they are encoded on disk as locale-encoded ASCII, UTF8, or UTF16.
+//! @ingroup GROUP_File
+//=======================================================================================
 struct  BeTextFile : public RefCountedBase
     {
     static const uint32_t BUFFER_SIZE = 100;
@@ -158,7 +155,5 @@ public:
     BENTLEYDLL_EXPORT BeFileStatus GetPointer (uint64_t& position);
 
     };
-
-//! @endGroup
 
 END_BENTLEY_NAMESPACE

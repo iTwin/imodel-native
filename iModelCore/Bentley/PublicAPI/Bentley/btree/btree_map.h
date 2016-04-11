@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/btree/btree_map.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -69,7 +69,7 @@ you should use bstdmap.
 <p>
 To understand the @c bmap class, consult the documentation for @c std::map.
 @see http://www.cplusplus.com/reference/map/map/
-@ingroup BeCollectionsGroup
+@ingroup GROUP_Collection
 */
 //=======================================================================================
 template <typename Key, typename Value, typename Compare = std::less<Key>, uint16_t EntriesPerNode = 32,
