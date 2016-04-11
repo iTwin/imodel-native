@@ -163,9 +163,6 @@ RepositoryStatus DgnDbRepositoryManager::_QueryHeldResources (DgnLockSet& locks,
     if (!m_connection)
         return RepositoryStatus::ServerUnavailable;
 
-    if (locks.empty ())
-        return RepositoryStatus::Success;
-
     // NEEDSWORK_LOCKS: Handle codes
     auto result = m_connection->QueryLocks (db.GetBriefcaseId (), m_cancellationToken)->GetResult ();
     if (result.IsSuccess ())
