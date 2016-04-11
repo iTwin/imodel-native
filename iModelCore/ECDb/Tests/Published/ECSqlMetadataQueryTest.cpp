@@ -286,39 +286,35 @@ void ECSqlMetadataQueryTestFixture::CompareClassDefLists(bvector<ECClassCP> & ex
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ECSqlMetadataQueryTestFixture::CompareSchemaDefProperties(ECSchemaCR expectedSchema, IECInstanceCR actualSchema)
     {
-    ECValue u, v;
-
-    u.SetUtf8CP(expectedSchema.GetName().c_str());
+    ECValue v;
     actualSchema.GetValue(v, "Name");
-    EXPECT_TRUE(u.Equals(v));
+    ASSERT_STREQ(expectedSchema.GetName().c_str(), v.GetUtf8CP()) << "ECSchema.Name";
 
     if (expectedSchema.GetIsDisplayLabelDefined())
         {
-        u.SetUtf8CP(expectedSchema.GetDisplayLabel().c_str());
         actualSchema.GetValue(v, "DisplayLabel");
-        EXPECT_TRUE(u.Equals(v));
+        ASSERT_STREQ(expectedSchema.GetDisplayLabel().c_str(), v.GetUtf8CP()) << "ECSchema.DisplayLabel";
         }
     else
         {
         actualSchema.GetValue(v, "DisplayLabel");
-        EXPECT_TRUE(v.IsNull());
+        ASSERT_TRUE(v.IsNull());
         }
 
-    u.SetUtf8CP(expectedSchema.GetDescription().c_str());
     actualSchema.GetValue(v, "Description");
-    EXPECT_TRUE(u.Equals(v));
+    ASSERT_STREQ(expectedSchema.GetDescription().c_str(), v.GetUtf8CP()) << "ECSchema.Description";
 
-    u.SetUtf8CP(expectedSchema.GetNamespacePrefix().c_str());
     actualSchema.GetValue(v, "NameSpacePrefix");
-    EXPECT_TRUE(u.Equals(v));
+    ASSERT_STREQ(expectedSchema.GetNamespacePrefix().c_str(), v.GetUtf8CP()) << "ECSchema.NamespacePrefix";
 
-    u.SetInteger(expectedSchema.GetVersionMajor());
     actualSchema.GetValue(v, "VersionMajor");
-    EXPECT_TRUE(u.Equals(v));
+    ASSERT_EQ(expectedSchema.GetVersionMajor(), v.GetInteger()) << "ECSchema.VersionMajor";
 
-    u.SetInteger(expectedSchema.GetVersionMinor());
+    actualSchema.GetValue(v, "VersionWrite");
+    ASSERT_EQ(expectedSchema.GetVersionWrite(), v.GetInteger()) << "ECSchema.VersionWrite";
+
     actualSchema.GetValue(v, "VersionMinor");
-    EXPECT_TRUE(u.Equals(v));
+    ASSERT_EQ(expectedSchema.GetVersionMinor(), v.GetInteger()) << "ECSchema.VersionMinor";
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -326,16 +322,14 @@ void ECSqlMetadataQueryTestFixture::CompareSchemaDefProperties(ECSchemaCR expect
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECSqlMetadataQueryTestFixture, VerifyQueries)
     {
-    SetupECDb("metaschematests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema"));
-    ECDbSchemaManager const& manager = GetECDb().Schemas();
-    ECSchemaCP expectedSchema = manager.GetECSchema("ECSqlTest");
+    SetupECDb("metaschematests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
+    ASSERT_TRUE(GetECDb().IsDbOpen());
 
-    Utf8String schemaQuery =
-    "SELECT ECSchemaDef.* FROM ec.ECSchemaDef \
-    WHERE ECSchemaDef.Name='ECSqlTest'";
+    ECSchemaCP expectedSchema = GetECDb().Schemas().GetECSchema("ECSqlTest");
+
     ECSqlStatement schemaStatement;
-    schemaStatement.Prepare(GetECDb(), schemaQuery.c_str());
-    ASSERT_TRUE(BE_SQLITE_ROW == schemaStatement.Step());
+    ASSERT_EQ(ECSqlStatus::Success, schemaStatement.Prepare(GetECDb(), "SELECT * FROM ec.ECSchemaDef WHERE Name='ECSqlTest'"));
+    ASSERT_EQ(BE_SQLITE_ROW, schemaStatement.Step());
     ECInstanceECSqlSelectAdapter schemaAdapter(schemaStatement);
     IECInstancePtr actualSchema = schemaAdapter.GetInstance();
 
@@ -345,31 +339,19 @@ TEST_F(ECSqlMetadataQueryTestFixture, VerifyQueries)
     for (ECClassCP const& expectedClass : expectedSchema->GetClasses())
         {
         expectedClasses.push_back(expectedClass);
-#if defined (DEBUGGING)
-        printf("Expected class %s\n", expectedClass->GetName().c_str());
-#endif
         }
 
     bvector<IECInstancePtr> actualClasses;
-    Utf8String classQuery =
-    "SELECT ECClassDef.* FROM ms.ECSchemaDef \
-    JOIN ms.ECClassDef USING ms.SchemaHasClass \
-    WHERE ECSchemaDef.Name='ECSqlTest'";
     ECSqlStatement classStatement;
-    ASSERT_EQ (ECSqlStatus::Success, classStatement.Prepare(GetECDb(), classQuery.c_str()));
-    while (DbResult::BE_SQLITE_ROW == classStatement.Step())
+    ASSERT_EQ (ECSqlStatus::Success, classStatement.Prepare(GetECDb(), "SELECT c.* FROM ec.ECSchemaDef s "
+                                                            "JOIN ec.ECClassDef c USING ec.SchemaOwnsClasses "
+                                                            "WHERE s.Name='ECSqlTest'"));
+    while (BE_SQLITE_ROW == classStatement.Step())
         {
         ECInstanceECSqlSelectAdapter classAdapter(classStatement);
         actualClasses.push_back(classAdapter.GetInstance());
-#if defined (DEBUGGING)
-        printf("Actual class   %s\n", classStatement.GetValueText(1));
-#endif
         }
 
-#if defined (DEBUGGING)
-    printf(" Expected class list size: %i\n Actual class list size:   %i\n\n",
-    (int)expectedClasses.size(), (int)actualClasses.size());
-#endif
     CompareClassDefLists(expectedClasses, actualClasses);
     }
 

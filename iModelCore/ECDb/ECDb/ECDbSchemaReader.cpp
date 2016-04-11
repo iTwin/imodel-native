@@ -919,43 +919,6 @@ BentleyStatus ECDbSchemaReader::LoadCAFromDb(ECN::IECCustomAttributeContainerR c
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaReader::LoadCAFromDbForLoadedCAClass(ECN::IECCustomAttributeContainerR caConstainer, ECContainerId containerId, ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType containerType) const
-    {
-    CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != m_db.GetCachedStatement(stmt, "SELECT ClassId,Instance FROM ec_CustomAttribute WHERE ContainerId=? AND ContainerType=? ORDER BY Ordinal"))
-        return ERROR;
-
-    if (BE_SQLITE_OK != stmt->BindId(1, containerId))
-        return ERROR;
-
-    if (BE_SQLITE_OK != stmt->BindInt(2, Enum::ToInt(containerType)))
-        return ERROR;
-
-    while (stmt->Step() == BE_SQLITE_ROW)
-        {
-        ECClassId caClassId = stmt->GetValueId<ECClassId>(0);
-        ECClassP caClass = nullptr;
-        if (!TryGetECClassFromCache(caClass, caClassId))
-            {
-            BeAssert(false && "LoadCAFromDbForLoadedCAClass is expected to find the CA class in the reader cache");
-            return ERROR;
-            }
-
-        Utf8CP caXml = stmt->GetValueText(1);
-        ECInstanceReadContextPtr readContext = ECInstanceReadContext::CreateContext(caClass->GetSchema());
-        IECInstancePtr deserializedCa = nullptr;
-        if (InstanceReadStatus::Success != IECInstance::ReadFromXmlString(deserializedCa, caXml, *readContext))
-            return ERROR;
-        BeAssert(deserializedCa != nullptr);
-        caConstainer.SetCustomAttribute(*deserializedCa);
-        }
-
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        05/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECDbSchemaReader::LoadECRelationshipConstraintFromDb(ECRelationshipClassP& ecRelationship, Context& ctx, ECClassId relationshipClassId, ECRelationshipEnd relationshipEnd) const
     {
     CachedStatementPtr stmt = nullptr;
@@ -1072,14 +1035,20 @@ BentleyStatus ECDbSchemaReader::Context::Postprocess(ECDbSchemaReader const& rea
             return ERROR;
         }
 
+    if (m_schemasToLoadCAInstancesFor.empty())
+        return SUCCESS;
+
+    //load CAs for gatherer schemas now and in a separate context.
+    //delaying CA loading on schemas is necessary for the case where a schema defines a CA class
+    //and at the same time carries an instance of it.
+    Context ctx;
     for (ECN::ECSchema* schema : m_schemasToLoadCAInstancesFor)
         {
-        if (SUCCESS != reader.LoadCAFromDbForLoadedCAClass(*schema, ECContainerId(schema->GetId()), ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Schema))
+        if (SUCCESS != reader.LoadCAFromDb(*schema, ctx, ECContainerId(schema->GetId()), ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Schema))
             return ERROR;
-
         }
 
-    return SUCCESS;
+    return ctx.Postprocess(reader);
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
