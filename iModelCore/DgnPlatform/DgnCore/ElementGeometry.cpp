@@ -10,6 +10,9 @@
 #include <DgnPlatformInternal/DgnCore/ElementGraphics.fb.h>
 #include <DgnPlatformInternal/DgnCore/TextStringPersistence.h>
 #include "DgnPlatform/Annotations/TextAnnotationDraw.h"
+#if defined (BENTLEYCONFIG_OPENCASCADE)
+#include <DgnPlatform/DgnBRep/OCBRep.h>
+#endif
 
 using namespace flatbuffers;
 
@@ -1171,6 +1174,47 @@ void GeometryStreamIO::Writer::Append(ISolidKernelEntityCR entity)
             }
         }
     }
+#elif defined (BENTLEYCONFIG_OPENCASCADE)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometryStreamIO::Writer::Append(ISolidKernelEntityCR entity)
+    {
+    TopoDS_Shape const* shape = SolidKernelUtil::GetShape(entity);
+
+    if (nullptr == shape || shape->IsNull())
+        return;
+
+    BRepTools::Clean(*shape); // Make sure to remove any triangulations...
+
+    std::ostringstream os;
+    BinTools_ShapeSet ss;
+    ss.SetFormatNb(3);
+    ss.Add(*shape);
+    ss.Write(os);
+    ss.Write(*shape, os);
+
+    FlatBufferBuilder fbb;
+
+    auto entityData = fbb.CreateVector((uint8_t*)os.str().c_str(), os.str().size());
+
+    FB::OCBRepDataBuilder builder(fbb);
+
+    builder.add_brepType((FB::BRepType) entity.GetEntityType()); // Allow possibility of checking type w/o expensive restore of brep...
+    builder.add_entityData(entityData);
+
+    auto mloc = builder.Finish();
+
+    fbb.Finish(mloc);
+    Append(Operation(OpCode::OpenCascadeBRep, (uint32_t) fbb.GetSize(), fbb.GetBufferPointer()));
+    }
+#else
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometryStreamIO::Writer::Append(ISolidKernelEntityCR entity)
+    {
+    }
 #endif
 
 /*---------------------------------------------------------------------------------**//**
@@ -1545,6 +1589,39 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, ISolidKernelEntityPtr&
         }
 
     return true;
+    }
+#elif defined (BENTLEYCONFIG_OPENCASCADE)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  12/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+bool GeometryStreamIO::Reader::Get(Operation const& egOp, ISolidKernelEntityPtr& entity) const
+    {
+    if (OpCode::OpenCascadeBRep != egOp.m_opCode)
+        return false;
+
+    auto ppfb = flatbuffers::GetRoot<FB::OCBRepData>(egOp.m_data);
+
+    // NOTE: It's possible to check ppfb->brepType() to avoid calling restore when filtering on shape type...
+    std::istringstream is(std::string((char*)ppfb->entityData()->Data(), ppfb->entityData()->Length()));
+    BinTools_ShapeSet ss;
+    TopoDS_Shape shape;
+    ss.Read(is);
+    ss.Read(shape, is, ss.NbShapes());
+
+    if (shape.IsNull())
+        return false;
+
+    entity = SolidKernelUtil::CreateNewEntity(shape);
+
+    return true;
+    }
+#else
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  12/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+bool GeometryStreamIO::Reader::Get(Operation const& egOp, ISolidKernelEntityPtr& entity) const
+    {
+    return false;
     }
 #endif
 

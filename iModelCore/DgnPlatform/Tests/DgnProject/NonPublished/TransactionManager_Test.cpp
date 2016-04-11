@@ -1395,4 +1395,360 @@ TEST_F(DynamicTxnsTest, IndirectChanges)
     EXPECT_FALSE(cb.WasInvoked());
     }
 
+/*=================================================================================**//**
+* @bsiclass                                                     Sam.Wilson      01/15
++===============+===============+===============+===============+===============+======*/
+struct TestRelationshipLinkTableTrackingTxnMonitor : TxnMonitor
+    {
+    struct RelDef
+        {
+        BeSQLite::EC::ECInstanceId relid;
+        ECN::ECClassId relclsid;
+        DgnElementId srcid;
+        DgnElementId tgtid;
+        TxnTable::ChangeType changeType;
+        };
+
+    bvector<RelDef> m_changes;
+    BeSQLite::CachedStatementPtr m_stmt;
+    bvector<ECN::ECClassId> m_classesToTrack;
+
+    TestRelationshipLinkTableTrackingTxnMonitor()
+        {
+        DgnPlatformLib::GetHost().GetTxnAdmin().AddTxnMonitor(*this);
+        Clear();
+        }
+    ~TestRelationshipLinkTableTrackingTxnMonitor()
+        {
+        DgnPlatformLib::GetHost().GetTxnAdmin().DropTxnMonitor(*this);
+        }
+    void Clear()
+        {
+        m_changes.clear();
+        }
+    //__PUBLISH_EXTRACT_START__ RelationshipLinkTableTrackingTxnMonitor_OnCommit_.sampleCode
+    void _OnCommit(TxnManager& txnMgr) override
+        {
+        // In this example, I track a particular ECRelationshipClass. A real app could have a variety
+        // of criteria in its WHERE clause. It's just a SQL SELECT statement. Set it up in whatever way you need.
+        // Do not attempt to modify the table!
+        if (!m_stmt.IsValid())
+            {
+            typedef TxnRelationshipLinkTables RLT;
+            Utf8String sql = "SELECT ";
+            sql.append(RLT::COLNAME_ECInstanceId).append(",");             // 0
+            sql.append(RLT::COLNAME_ECClassId).append(",");                // 1
+            sql.append(RLT::COLNAME_SourceECInstanceId).append(",");       // 2
+            sql.append(RLT::COLNAME_TargetECInstanceId).append(",");       // 3
+            sql.append(RLT::COLNAME_ChangeType);                           // 4
+            sql.append(" FROM ").append(RLT::TABLE_NAME);
+            sql.append(" WHERE ").append(RLT::COLNAME_ECClassId).append(" IN (");
+            Utf8CP comma="";
+            for (auto clsid : m_classesToTrack)
+                {
+                sql.append(comma).append(Utf8PrintfString("%" PRIu64, clsid.GetValue()).c_str());
+                comma = ",";
+                }
+            sql.append(")");
+            m_stmt = txnMgr.GetDgnDb().GetCachedStatement(sql.c_str());
+            }
+
+        while (BE_SQLITE_ROW == m_stmt->Step())
+            {
+            RelDef def;
+            def.relid = m_stmt->GetValueId<BeSQLite::EC::ECInstanceId>      (0);
+            def.relclsid = m_stmt->GetValueId<ECN::ECClassId>               (1);
+            def.srcid = m_stmt->GetValueId<DgnElementId>                    (2);
+            def.tgtid = m_stmt->GetValueId<DgnElementId>                    (3);
+            def.changeType = (TxnTable::ChangeType)m_stmt->GetValueInt      (4);
+            m_changes.push_back(def);
+            }
+
+        m_stmt->Reset();
+        m_stmt->ClearBindings();
+        }
+    //__PUBLISH_EXTRACT_END__
+
+    bool HasChanges() const {return !m_changes.empty(); }
+
+    RelDef const* Find(BeSQLite::EC::ECInstanceId relid)
+        {
+        for (auto const& def : m_changes)
+            {
+            if (def.relid == relid)
+                return &def;
+            }
+        return nullptr;
+        }
+
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static BeSQLite::EC::ECInstanceId insertRelationship(DgnDbR db, ECN::ECClassCR relcls, DgnElementId root, DgnElementId dependent)
+    {
+    Utf8String ecsql("INSERT INTO ");
+    ecsql.append(relcls.GetECSqlName()).append("(SourceECInstanceId,TargetECInstanceId) VALUES(?,?)");
+
+    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement(ecsql.c_str());
+
+    stmt->BindId(1, root);
+    stmt->BindId(2, dependent);
+
+    ECInstanceKey rkey;
+    if (BE_SQLITE_DONE != stmt->Step(rkey))
+        return BeSQLite::EC::ECInstanceId();
+
+    return rkey.GetECInstanceId();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      12/15
+//---------------------------------------------------------------------------------------
+struct ECDbIssueListener : BeSQLite::EC::ECDb::IIssueListener
+    {
+    mutable BeSQLite::EC::ECDbIssueSeverity m_severity;
+    mutable Utf8String m_issue;
+
+    void _OnIssueReported(BeSQLite::EC::ECDbIssueSeverity severity, Utf8CP message) const override
+        {
+        m_severity = severity;
+        m_issue = message;
+        }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static BeSQLite::DbResult modifyRelationshipProperty(DgnDbR db, ECN::ECClassCR relcls, BeSQLite::EC::ECInstanceId relid, Utf8CP propName, Utf8CP newValue)
+    {
+    Utf8String ecsql("UPDATE ");
+    ecsql.append(relcls.GetECSqlName());
+    ecsql.append(" SET ").append(propName).append("=?");
+    ecsql.append(" WHERE ECInstanceId=?");
+
+    ECDbIssueListener issues;
+    db.AddIssueListener(issues);
+    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement(ecsql.c_str());
+    db.RemoveIssueListener();
+
+    stmt->BindText(1, newValue, IECSqlBinder::MakeCopy::No);
+    stmt->BindId(2, relid);
+
+    return stmt->Step();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static BeSQLite::DbResult selectRelationshipProperty(Utf8StringR value, DgnDbR db, ECN::ECClassCR relcls, BeSQLite::EC::ECInstanceId relid, Utf8CP propName)
+    {
+    Utf8String ecsql("SELECT ");
+    ecsql.append(propName);
+    ecsql.append(" FROM ");
+    ecsql.append(relcls.GetECSqlName());
+    ecsql.append("WHERE ECInstanceId=?");
+
+    ECDbIssueListener issues;
+    db.AddIssueListener(issues);
+    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement(ecsql.c_str());
+    db.RemoveIssueListener();
+
+    stmt->BindId(1, relid);
+
+    auto rc = stmt->Step();
+    if (BE_SQLITE_ROW != rc)
+        return rc;
+
+    value = stmt->GetValueText(0);
+    return BE_SQLITE_ROW;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static BeSQLite::DbResult deleteRelationship(DgnDbR db, ECN::ECClassCR relcls, BeSQLite::EC::ECInstanceId relid)
+    {
+    Utf8String ecsql("DELETE FROM ");
+    ecsql.append(relcls.GetECSqlName()).append("WHERE ECInstanceId=?");
+
+    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement(ecsql.c_str());
+
+    stmt->BindId(1, relid);
+
+    return stmt->Step();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(TransactionManagerTests, TestRelationshipLinkTableTracking)
+    {
+    SetupProject(L"3dMetricGeneral.idgndb", L"TestRelationshipLinkTableTracking.dgndb", Db::OpenMode::ReadWrite);
+
+    // Put a couple of elements in the default model
+    DgnElementId eid1, eid2;
+        {
+        TestElementPtr e1 = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId);
+        TestElementPtr e2 = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId);
+        auto pe1 = e1->Insert();
+        auto pe2 = e2->Insert();
+        ASSERT_TRUE(pe1.IsValid() && pe2.IsValid());
+        eid1 = pe1->GetElementId();
+        eid2 = pe2->GetElementId();
+        ASSERT_EQ(BeSQLite::BE_SQLITE_OK, m_db->SaveChanges());
+        }
+
+    TestRelationshipLinkTableTrackingTxnMonitor monitor;
+
+    // Modify one of the elements
+        {
+        auto e1 = m_db->Elements().GetForEdit<TestElement>(eid1);
+        e1->SetTestElementProperty("Changed");
+        e1->Update();
+        ASSERT_EQ(BeSQLite::BE_SQLITE_OK, m_db->SaveChanges());
+        }
+
+    // Verify that my relationship monitor is NOT called when I just change elements.
+    ASSERT_FALSE(monitor.HasChanges());
+
+    auto relcls = m_db->Schemas().GetECClass("DgnPlatformTest", "TestElementIsRelatedToElement");
+    ASSERT_FALSE(nullptr == relcls);
+
+    //  Insert a relationship.
+    BeSQLite::EC::ECInstanceId relid = insertRelationship(*m_db, *relcls, eid1, eid2);
+    ASSERT_TRUE(relid.IsValid());
+    ASSERT_EQ(BeSQLite::BE_SQLITE_OK, m_db->SaveChanges());
+    
+    // Verify that my relationship monitor is NOT called, since I haven't started tracking this rel class yet.
+    ASSERT_FALSE(monitor.HasChanges());
+
+    // Now start tracking this relationship
+    m_db->Txns().BeginTrackingRelationship(*relcls);
+    monitor.m_classesToTrack.clear();
+    monitor.m_stmt = nullptr;
+    monitor.m_classesToTrack.push_back(relcls->GetId());
+
+    //  Delete that relationship
+    ASSERT_EQ(BeSQLite::BE_SQLITE_DONE, deleteRelationship(*m_db, *relcls, relid));
+    ASSERT_EQ(BeSQLite::BE_SQLITE_OK, m_db->SaveChanges());
+
+    // Verify that my relationship monitor was called and that it detected a delete
+    ASSERT_TRUE(monitor.HasChanges());
+        {
+        TestRelationshipLinkTableTrackingTxnMonitor::RelDef def = monitor.m_changes.front();
+        ASSERT_TRUE(def.changeType == TxnTable::ChangeType::Delete);
+        ASSERT_TRUE(def.relid == relid);
+        ASSERT_TRUE(def.relclsid == relcls->GetId());
+        ASSERT_TRUE(def.srcid == eid1);
+        ASSERT_TRUE(def.tgtid == eid2);
+        monitor.Clear();
+        }
+
+    //  Insert another instance of the same relationship class
+    auto wasrelid = relid;
+    relid = insertRelationship(*m_db, *relcls, eid1, eid2);
+    ASSERT_TRUE(relid.IsValid());
+    ASSERT_TRUE(relid != wasrelid);
+    ASSERT_EQ(BeSQLite::BE_SQLITE_OK, m_db->SaveChanges());
+
+    // Verify that my relationship monitor was called and that it detected an insert
+    ASSERT_TRUE(monitor.HasChanges());
+        {
+        ASSERT_EQ(1, monitor.m_changes.size());
+        TestRelationshipLinkTableTrackingTxnMonitor::RelDef const* def = monitor.Find(relid);
+        ASSERT_TRUE(nullptr != def);
+        ASSERT_TRUE(def->changeType == TxnTable::ChangeType::Insert);
+        ASSERT_TRUE(def->relid == relid);
+        ASSERT_TRUE(def->relclsid == relcls->GetId());
+        ASSERT_TRUE(def->srcid == eid1);
+        ASSERT_TRUE(def->tgtid == eid2);
+        monitor.Clear();
+        }
+
+    //  Modify the relationship
+    Utf8String propvalue;
+    ASSERT_EQ(BeSQLite::BE_SQLITE_ROW, selectRelationshipProperty(propvalue, *m_db, *relcls, relid, "Property1"));
+    ASSERT_TRUE(propvalue.empty());
+    ASSERT_EQ(BeSQLite::BE_SQLITE_DONE, modifyRelationshipProperty(*m_db, *relcls, relid, "Property1", "Changed"));
+    ASSERT_EQ(BeSQLite::BE_SQLITE_OK, m_db->SaveChanges());
+    ASSERT_EQ(BeSQLite::BE_SQLITE_ROW, selectRelationshipProperty(propvalue, *m_db, *relcls, relid, "Property1"));
+    ASSERT_STREQ("Changed", propvalue.c_str());
+
+    // Verify that my relationship monitor was called and that it detected an update
+    ASSERT_TRUE(monitor.HasChanges());
+        {
+        ASSERT_EQ(1, monitor.m_changes.size());
+        TestRelationshipLinkTableTrackingTxnMonitor::RelDef def = monitor.m_changes.front();
+        ASSERT_TRUE(def.changeType == TxnTable::ChangeType::Update);
+        ASSERT_TRUE(def.relid == relid);
+        ASSERT_TRUE(def.relclsid == relcls->GetId());
+        ASSERT_TRUE(def.srcid == eid1);
+        ASSERT_TRUE(def.tgtid == eid2);
+        monitor.Clear();
+        }
+
+    //  Start tracking a different relationship class, and insert an instance of that class
+    auto relcls2 = m_db->Schemas().GetECClass("DgnPlatformTest", "TestElementIsRelatedToElement2");
+    ASSERT_FALSE(nullptr == relcls2);
+    m_db->Txns().BeginTrackingRelationship(*relcls2);
+
+    auto relid2 = insertRelationship(*m_db, *relcls2, eid1, eid2);
+    ASSERT_TRUE(relid2.IsValid());
+    ASSERT_EQ(BeSQLite::BE_SQLITE_OK, m_db->SaveChanges());
+
+    // Verify that my relationship monitor was NOT called, because it is still selecting on the other relationship class
+    ASSERT_FALSE(monitor.HasChanges());
+
+    // Now point my monitor at the second class also, delete the instance, and verify that I saw the deletion
+    monitor.m_classesToTrack.push_back(relcls2->GetId());
+    monitor.m_stmt = nullptr;
+    ASSERT_EQ(2, monitor.m_classesToTrack.size());
+    ASSERT_EQ(BE_SQLITE_DONE, deleteRelationship(*m_db, *relcls2, relid2));
+    ASSERT_EQ(BeSQLite::BE_SQLITE_OK, m_db->SaveChanges());
+    ASSERT_TRUE(monitor.HasChanges());
+        {
+        ASSERT_EQ(1, monitor.m_changes.size());
+        TestRelationshipLinkTableTrackingTxnMonitor::RelDef def = monitor.m_changes.front();
+        ASSERT_TRUE(def.changeType == TxnTable::ChangeType::Delete);
+        ASSERT_TRUE(def.relid == relid2);
+        ASSERT_TRUE(def.relclsid == relcls2->GetId());
+        ASSERT_TRUE(def.srcid == eid1);
+        ASSERT_TRUE(def.tgtid == eid2);
+        monitor.Clear();
+        }
+
+    //  Now modify the first relationship, and make sure that I am still tracking it
+    ASSERT_EQ(BeSQLite::BE_SQLITE_DONE, modifyRelationshipProperty(*m_db, *relcls, relid, "Property1", "Changed again"));
+    ASSERT_EQ(BeSQLite::BE_SQLITE_OK, m_db->SaveChanges());
+    ASSERT_TRUE(monitor.HasChanges());
+        {
+        ASSERT_EQ(1, monitor.m_changes.size());
+        TestRelationshipLinkTableTrackingTxnMonitor::RelDef def = monitor.m_changes.front();
+        ASSERT_TRUE(def.changeType == TxnTable::ChangeType::Update);
+        ASSERT_TRUE(def.relid == relid);
+        ASSERT_TRUE(def.relclsid == relcls->GetId());
+        ASSERT_TRUE(def.srcid == eid1);
+        ASSERT_TRUE(def.tgtid == eid2);
+        monitor.Clear();
+        }
+
+    //  Finally, modify the first and insert an instance of the second, and verify that both were tracked
+    ASSERT_EQ(BeSQLite::BE_SQLITE_DONE, modifyRelationshipProperty(*m_db, *relcls, relid, "Property1", "Changed a third time"));
+    relid2 = insertRelationship(*m_db, *relcls2, eid1, eid2);
+    ASSERT_TRUE(relid2.IsValid());
+    ASSERT_EQ(BeSQLite::BE_SQLITE_OK, m_db->SaveChanges());
+    ASSERT_TRUE(monitor.HasChanges());
+    ASSERT_EQ(2, monitor.m_changes.size());
+        {
+        TestRelationshipLinkTableTrackingTxnMonitor::RelDef const* def1 = monitor.Find(relid);
+        ASSERT_TRUE(nullptr != def1);
+        ASSERT_EQ(TxnTable::ChangeType::Update, def1->changeType);
+        TestRelationshipLinkTableTrackingTxnMonitor::RelDef const* def2 = monitor.Find(relid2);
+        ASSERT_TRUE(nullptr != def2);
+        ASSERT_EQ(TxnTable::ChangeType::Insert, def2->changeType);
+        }
+    }
+
 

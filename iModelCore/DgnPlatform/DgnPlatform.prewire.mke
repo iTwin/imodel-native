@@ -37,6 +37,9 @@ $(BuildContext)Dox/Pages/DgnPlatform/DgnPlatformOverview.doxpage : $(_MakeFilePa
 $(BuildContext)Dox/Pages/DgnPlatform/ElementOverview.doxpage : $(_MakeFilePath)docs/overview/ElementOverview.doxpage
     $(LinkFirstDepToFirstTarget)
 
+$(BuildContext)Dox/Pages/DgnPlatform/CustomElement.doxpage : $(_MakeFilePath)docs/overview/CustomElement.doxpage
+    $(LinkFirstDepToFirstTarget)
+
 $(BuildContext)Dox/Pages/DgnPlatform/ModelOverview.doxpage : $(_MakeFilePath)docs/overview/ModelOverview.doxpage
     $(LinkFirstDepToFirstTarget)
 

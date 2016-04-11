@@ -259,6 +259,7 @@ public:
     bool IsValid() {return 0!=m_width && 0!=m_height;}
     ByteStream const& GetByteStream() const {return m_image;}
     ByteStream& GetByteStreamR() {return m_image;}
+    void SetSize(uint32_t width, uint32_t height);
 };
 
 //=======================================================================================
