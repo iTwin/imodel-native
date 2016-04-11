@@ -2,7 +2,7 @@
 |
 |     $Source: BeSQLiteProfileManager.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -78,10 +78,7 @@ struct BeSQLiteProfileUpgrader_3101 : BeSQLiteProfileUpgrader
     {
     //intentionally use compiler generated ctor, dtor, copy ctor and copy assignment op
 private:
-    virtual SchemaVersion _GetTargetVersion () const override
-        {
-        return SchemaVersion (3, 1, 0, 1);
-        }
+    virtual SchemaVersion _GetTargetVersion () const override { return SchemaVersion (3, 1, 0, 1); }
     virtual DbResult _Upgrade (DbR db) const override;
     };
 

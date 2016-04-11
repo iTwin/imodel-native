@@ -1731,7 +1731,7 @@ bool BriefcaseLocalValueCache::TryQuery(CachedRLV*& value, size_t rlvIndex)
 
         BeAssert(!stmt.IsColumnNull(0));
         void const* blob = stmt.GetValueBlob(0);
-        int64_t val = -1LL;
+        int64_t val = INT64_C(-1);
         memcpy(&val, blob, sizeof(val));
         BeAssert(stmt.GetColumnBytes(0) <= (int) sizeof (int64_t));
         cachedRlv.ChangeValue(val, true);
