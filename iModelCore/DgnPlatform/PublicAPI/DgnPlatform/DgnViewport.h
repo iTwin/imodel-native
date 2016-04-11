@@ -189,7 +189,7 @@ public:
     void AlignWithRootZ();
     ProgressiveTask::Completion DoProgressiveTasks();
     void ClearAllProgressiveTasks() {m_elementProgressiveTasks.clear(); m_terrainProgressiveTasks.clear();}
-    void ClearElementProgressiveTasks() {; m_terrainProgressiveTasks.clear();}
+    void ClearElementProgressiveTasks() { m_elementProgressiveTasks.clear();}
     DGNPLATFORM_EXPORT void InvalidateScene() const;
     DGNPLATFORM_EXPORT void ScheduleElementProgressiveTask(ProgressiveTask& pd);
     DGNPLATFORM_EXPORT void ScheduleTerrainProgressiveTask(ProgressiveTask& pd);
