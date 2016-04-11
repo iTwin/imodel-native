@@ -179,8 +179,9 @@ void    MRMeshScene::_Draw (bool& childrenScheduled, ViewContextR viewContext, M
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MRMeshScene::_GetTiles(GetTileCallback callback, double resolution)
   {
-  for (bvector<MRMeshNodePtr>::const_iterator child = m_children.begin(); child != m_children.end(); child++)
+  for (bvector<MRMeshNodePtr>::iterator child = m_children.begin(); child != m_children.end(); child++)
     {
+    (*child)->Load();
     (*child)->GetTiles(callback, resolution);
     }
   }
