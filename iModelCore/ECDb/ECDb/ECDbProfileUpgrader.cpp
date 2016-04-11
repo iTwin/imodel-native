@@ -147,14 +147,14 @@ DbResult ECDbProfileUpgrader_3300::SetCustomContainerType(ECDbCR ecdb, Statement
         LOG.errorv("ECDb profile upgrade failed: Validating existing %s CustomAttribute instances against container type failed. %s", caClassName, ecdb.GetLastError().c_str());
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
-    
+
     while (BE_SQLITE_ROW == validateStmt->Step())
         {
         const ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType actualType = Enum::FromInt<ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType>(validateStmt->GetValueInt(1));
         if (!Enum::Intersects(type, (CustomAttributeContainerType) actualType))
             {
             LOG.errorv("ECDb profile upgrade failed: Found %s custom attribute instance on a container which is not supported for this custom attribute class. (rowid %lld in table ec_CustomAttribute)",
-                         caClassName, validateStmt->GetValueInt64(0));
+                       caClassName, validateStmt->GetValueInt64(0));
             return BE_SQLITE_ERROR_ProfileUpgradeFailed;
             }
         }
@@ -196,8 +196,8 @@ DbResult ECDbProfileUpgrader_3202::_Upgrade(ECDbR ecdb) const
 DbResult ECDbProfileUpgrader_3201::_Upgrade(ECDbR ecdb) const
     {
     if (BE_SQLITE_OK != ecdb.ExecuteSql("DELETE FROM ec_Property WHERE lower(Name) IN ('parentecinstanceid','ecpropertypathid','ecarrayindex') AND "
-                                     "ClassId IN (SELECT c.Id FROM ec_Class c, ec_Schema s "
-                                     "WHERE c.SchemaId=s.Id AND lower(s.Name) LIKE 'ecdb_system' AND lower(c.Name) LIKE 'ecsqlsystemproperties')"))
+                                        "ClassId IN (SELECT c.Id FROM ec_Class c, ec_Schema s "
+                                        "WHERE c.SchemaId=s.Id AND lower(s.Name) LIKE 'ecdb_system' AND lower(c.Name) LIKE 'ecsqlsystemproperties')"))
         {
         LOG.errorv("ECDb profile upgrade failed for '%s': Executing SQL to delete obsolete ECProperties 'ParentECInstanceId', 'ECPropertyPathId' and 'ECArrayIndex' "
                    "from ECClass 'ECDb_System.ECSqlSystemProperties' failed. Error: %s", ecdb.GetDbFileName(), ecdb.GetLastError().c_str());
@@ -220,7 +220,7 @@ DbResult ECDbProfileUpgrader_3200::_Upgrade(ECDbR ecdb) const
     Statement stmt;
     if (BE_SQLITE_OK != stmt.Prepare(ecdb, "SELECT Name FROM sqlite_master WHERE type='trigger' AND Name LIKE '%_StructArray_Delete'"))
         {
-        LOG.errorv("ECDb profile upgrade failed for '%s'. Preparing SQL to find struct array delete triggers failed. SQL: %s. Error: %s", 
+        LOG.errorv("ECDb profile upgrade failed for '%s'. Preparing SQL to find struct array delete triggers failed. SQL: %s. Error: %s",
                    ecdb.GetDbFileName(), stmt.GetSql(), ecdb.GetLastError().c_str());
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
@@ -283,7 +283,7 @@ DbResult ECDbProfileUpgrader_3200::_Upgrade(ECDbR ecdb) const
     //Here we have to delete non-virtual tables, too, as we don't even have virtual tables for struct arrays anymore
     if (BE_SQLITE_OK != ecdb.ExecuteSql("DELETE FROM ec_Table WHERE Type=" OBSOLETE_STRUCTARRAY_TABLETYPE))
         {
-        LOG.errorv("ECDb profile upgrade failed for '%s'. Deleting struct array entries from ec_Table failed: %s", 
+        LOG.errorv("ECDb profile upgrade failed for '%s'. Deleting struct array entries from ec_Table failed: %s",
                    ecdb.GetDbFileName(), ecdb.GetLastError().c_str());
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
@@ -301,7 +301,7 @@ DbResult ECDbProfileUpgrader_3100::_Upgrade(ECDbR ecdb) const
     //Identifying shared columns in the previous version is done by looking for columns with DbColumn::Kind::DataColumn, Type::Any
     //and a table created by ECDb (-> not an existing table)
     const int dataColKindInt = Enum::ToInt(DbColumn::Kind::DataColumn);
-    
+
     Utf8String sql;
     sql.Sprintf("UPDATE ec_Column SET ColumnKind=%d WHERE ColumnKind & %d=%d AND Type=%d AND TableId IN (SELECT t.Id FROM ec_Table t WHERE t.Type<>%d)", Enum::ToInt(DbColumn::Kind::SharedDataColumn),
                 dataColKindInt, dataColKindInt, Enum::ToInt(DbColumn::Type::Any), Enum::ToInt(DbTable::Type::Existing));
@@ -347,12 +347,12 @@ DbResult ECDbProfileUpgrader_3001::_Upgrade(ECDbR ecdb) const
 // @bsimethod                                                    Krischan.Eberle    07/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-DbResult ECDbProfileUpgrader::AlterColumns (ECDbR ecdb, Utf8CP tableName, Utf8CP newDdlBody, bool recreateIndices, Utf8CP allColumnNamesAfter,  Utf8CP matchingColumnNamesWithOldNames)
+DbResult ECDbProfileUpgrader::AlterColumns(ECDbR ecdb, Utf8CP tableName, Utf8CP newDdlBody, bool recreateIndices, Utf8CP allColumnNamesAfter, Utf8CP matchingColumnNamesWithOldNames)
     {
-    if (IsView (ecdb, tableName))
-        return AlterColumnsInView (ecdb, tableName, allColumnNamesAfter);
+    if (IsView(ecdb, tableName))
+        return AlterColumnsInView(ecdb, tableName, allColumnNamesAfter);
 
-    return AlterColumnsInTable (ecdb, tableName, newDdlBody, recreateIndices, allColumnNamesAfter, matchingColumnNamesWithOldNames);
+    return AlterColumnsInTable(ecdb, tableName, newDdlBody, recreateIndices, allColumnNamesAfter, matchingColumnNamesWithOldNames);
     }
 
 //-----------------------------------------------------------------------------------------
@@ -499,9 +499,6 @@ bool ECDbProfileUpgrader::IsView(ECDbCR ecdb, Utf8CP tableOrViewName)
     }
 
 //*************************************** ECDbProfileSchemaUpgrader *********************************
-//static
-SchemaKey ECDbProfileECSchemaUpgrader::s_ecdbfileinfoSchemaKey = SchemaKey ("ECDb_FileInfo", 2, 0);
-
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle        07/2012
 //+---------------+---------------+---------------+---------------+---------------+--------
@@ -520,7 +517,12 @@ DbResult ECDbProfileECSchemaUpgrader::ImportProfileSchemas(ECDbCR ecdb)
     if (SUCCESS != ReadECDbSystemSchema(*context, ecdb.GetDbFileName()))
         return BE_SQLITE_ERROR;
 
-    if (SUCCESS != ReadECDbFileInfoSchema(*context, ecdb.GetDbFileName()))
+    SchemaKey schemaKey("ECDb_FileInfo", 2, 0, 0);
+    if (SUCCESS != ReadSchemaFromDisk(*context, schemaKey, ecdb.GetDbFileName()))
+        return BE_SQLITE_ERROR;
+
+    schemaKey = SchemaKey("MetaSchema", 3, 0, 0);
+    if (SUCCESS != ReadSchemaFromDisk(*context, schemaKey, ecdb.GetDbFileName()))
         return BE_SQLITE_ERROR;
 
     //import if already existing
@@ -528,14 +530,14 @@ DbResult ECDbProfileECSchemaUpgrader::ImportProfileSchemas(ECDbCR ecdb)
     timer.Stop();
     if (importStat != SUCCESS)
         {
-        LOG.errorv("Creating / upgrading ECDb file failed because importing the ECDb standard ECSchemas into the file '%s' failed.",
+        LOG.errorv("Creating / upgrading ECDb file failed because importing the ECDb standard ECSchemas and the MetaSchema ECSchema into the file '%s' failed.",
                    ecdb.GetDbFileName());
         return BE_SQLITE_ERROR;
         }
 
     if (LOG.isSeverityEnabled(NativeLogging::LOG_DEBUG))
         {
-        LOG.debugv("Imported ECDb system ECSchemas into the file '%s' in %.4f msecs.",
+        LOG.debugv("Imported ECDb system ECSchemas and MetaSchema ECSchema into the file '%s' in %.4f msecs.",
                    ecdb.GetDbFileName(),
                    timer.GetElapsedSeconds() * 1000.0);
         }
@@ -547,19 +549,19 @@ DbResult ECDbProfileECSchemaUpgrader::ImportProfileSchemas(ECDbCR ecdb)
 // @bsimethod                                                    Krischan.Eberle    10/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-BentleyStatus ECDbProfileECSchemaUpgrader::ReadECDbSystemSchema (ECSchemaReadContextR readContext, Utf8CP ecdbFileName)
+BentleyStatus ECDbProfileECSchemaUpgrader::ReadECDbSystemSchema(ECSchemaReadContextR readContext, Utf8CP ecdbFileName)
     {
     ECSchemaPtr ecdbSystemSchema = nullptr;
-    const SchemaReadStatus deserializeStat = ECSchema::ReadFromXmlString (ecdbSystemSchema, GetECDbSystemECSchemaXml (), readContext);
+    const SchemaReadStatus deserializeStat = ECSchema::ReadFromXmlString(ecdbSystemSchema, GetECDbSystemECSchemaXml(), readContext);
     if (SchemaReadStatus::Success != deserializeStat)
         {
         if (SchemaReadStatus::ReferencedSchemaNotFound == deserializeStat)
-            LOG.errorv ("Creating / upgrading ECDb file %s failed because required standard ECSchemas could not be found.", ecdbFileName);
+            LOG.errorv("Creating / upgrading ECDb file %s failed because required standard ECSchemas could not be found.", ecdbFileName);
         else
             {
             //other error codes are considered programmer errors and therefore have an assertion, too
-            LOG.errorv ("Creating / upgrading ECDb file %s failed because ECDb_System ECSchema could not be deserialized. Error code SchemaReadStatus::%d", ecdbFileName, deserializeStat);
-            BeAssert (false && "ECDb upgrade: Failed to deserialize ECDb_System ECSchema");
+            LOG.errorv("Creating / upgrading ECDb file %s failed because ECDb_System ECSchema could not be deserialized. Error code SchemaReadStatus::%d", ecdbFileName, deserializeStat);
+            BeAssert(false && "ECDb upgrade: Failed to deserialize ECDb_System ECSchema");
             }
 
         return ERROR;
@@ -568,17 +570,18 @@ BentleyStatus ECDbProfileECSchemaUpgrader::ReadECDbSystemSchema (ECSchemaReadCon
     return SUCCESS;
     }
 
+
 //-----------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle    10/2014
+// @bsimethod                                                    Krischan.Eberle    04/2016
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-BentleyStatus ECDbProfileECSchemaUpgrader::ReadECDbFileInfoSchema (ECSchemaReadContextR readContext, Utf8CP ecdbFileName)
+BentleyStatus ECDbProfileECSchemaUpgrader::ReadSchemaFromDisk(ECSchemaReadContextR readContext, SchemaKey& schemaKey, Utf8CP ecdbFileName)
     {
-    ECSchemaPtr schema = readContext.LocateSchema (s_ecdbfileinfoSchemaKey, SchemaMatchType::LatestCompatible);
+    ECSchemaPtr schema = readContext.LocateSchema(schemaKey, SchemaMatchType::LatestCompatible);
     if (schema == nullptr)
         {
-        LOG.errorv ("Creating / upgrading ECDb file %s failed because required ECSchema '%s' could not be found.", ecdbFileName,
-                    Utf8String (s_ecdbfileinfoSchemaKey.GetFullSchemaName ().c_str ()).c_str());
+        LOG.errorv("Creating / upgrading ECDb file %s failed because required ECSchema '%s' could not be found.", ecdbFileName,
+                   schemaKey.GetFullSchemaName());
         return ERROR;
         }
 
@@ -589,10 +592,10 @@ BentleyStatus ECDbProfileECSchemaUpgrader::ReadECDbFileInfoSchema (ECSchemaReadC
 // @bsimethod                                 Krischan.Eberle                12/2012
 //+---------------+---------------+---------------+---------------+---------------+-
 //static
-Utf8CP ECDbProfileECSchemaUpgrader::GetECDbSystemECSchemaXml ()
+Utf8CP ECDbProfileECSchemaUpgrader::GetECDbSystemECSchemaXml()
     {
     return "<?xml version='1.0' encoding='utf-8'?> "
-        "<ECSchema schemaName='ECDb_System' nameSpacePrefix='ecdbsys' version='3.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
+        "<ECSchema schemaName='ECDb_System' nameSpacePrefix='ecdbsys' version='3.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
         "    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.13' prefix='bsca' /> "
         "    <ECSchemaReference name='ECDbMap' version='01.00.01' prefix='ecdbmap' /> "
         "    <ECCustomAttributes> "

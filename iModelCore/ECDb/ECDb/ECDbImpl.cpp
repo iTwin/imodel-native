@@ -6,8 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
-#include "ECDbImpl.h"
-#include "ECDbProfileManager.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -36,21 +34,21 @@ ECDb::Impl::Impl(ECDbR ecdb) : m_ecdb(ecdb), m_schemaManager(nullptr),
 // @bsimethod                                Krischan.Eberle                09/2012
 //---------------+---------------+---------------+---------------+---------------+------
 //static
-DbResult ECDb::Impl::Initialize (BeFileNameCR ecdbTempDir, BeFileNameCP hostAssetsDir, BeSQLiteLib::LogErrors logSqliteErrors)
+DbResult ECDb::Impl::Initialize(BeFileNameCR ecdbTempDir, BeFileNameCP hostAssetsDir, BeSQLiteLib::LogErrors logSqliteErrors)
     {
-    const auto stat = BeSQLiteLib::Initialize (ecdbTempDir, logSqliteErrors);
+    const DbResult stat = BeSQLiteLib::Initialize(ecdbTempDir, logSqliteErrors);
     if (stat != BE_SQLITE_OK)
         return stat;
 
     if (hostAssetsDir != nullptr)
         {
-        if (!hostAssetsDir->DoesPathExist ())
+        if (!hostAssetsDir->DoesPathExist())
             {
-            LOG.warningv ("ECDb::Initialize: host assets dir '%s' does not exist.", hostAssetsDir->GetNameUtf8 ().c_str ());
-            BeAssert (false && "ECDb::Initialize: host assets dir does not exist!");
+            LOG.warningv("ECDb::Initialize: host assets dir '%s' does not exist.", hostAssetsDir->GetNameUtf8().c_str());
+            BeAssert(false && "ECDb::Initialize: host assets dir does not exist!");
             }
 
-        ECN::ECSchemaReadContext::Initialize (*hostAssetsDir);
+        ECN::ECSchemaReadContext::Initialize(*hostAssetsDir);
         }
 
     return BE_SQLITE_OK;
@@ -59,11 +57,11 @@ DbResult ECDb::Impl::Initialize (BeFileNameCR ecdbTempDir, BeFileNameCP hostAsse
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                07/2014
 //---------------+---------------+---------------+---------------+---------------+------
-DbResult ECDb::Impl::OnDbOpened () const
+DbResult ECDb::Impl::OnDbOpened() const
     {
-    for (auto sequence : GetSequences ())
+    for (BeBriefcaseBasedIdSequence const* sequence : GetSequences())
         {
-        auto stat = sequence->Initialize ();
+        const DbResult stat = sequence->Initialize();
         if (stat != BE_SQLITE_OK)
             return stat;
         }
@@ -76,7 +74,7 @@ DbResult ECDb::Impl::OnDbOpened () const
 //---------------+---------------+---------------+---------------+---------------+------
 DbResult ECDb::Impl::OnDbCreated() const
     {
-    auto stat = OnDbOpened();
+    const DbResult stat = OnDbOpened();
     if (stat != BE_SQLITE_OK)
         return stat;
 
@@ -88,47 +86,30 @@ DbResult ECDb::Impl::OnDbCreated() const
 //---------------+---------------+---------------+---------------+---------------+------
 DbResult ECDb::Impl::OnBriefcaseIdChanged(BeBriefcaseId newBriefcaseId)
     {
-    if (m_ecdb.IsReadonly ())
+    if (m_ecdb.IsReadonly())
         return BE_SQLITE_READONLY;
 
-    const auto stat = ResetSequences (&newBriefcaseId);
+    const DbResult stat = ResetSequences(&newBriefcaseId);
     if (BE_SQLITE_OK != stat)
         {
-        LOG.errorv ("Changing briefcase id to %d in file '%s' failed because ECDb's id sequences could not be reset.",
-                    newBriefcaseId.GetValue (),
-                    m_ecdb.GetDbFileName());
+        LOG.errorv("Changing briefcase id to %d in file '%s' failed because ECDb's id sequences could not be reset.",
+                   newBriefcaseId.GetValue(),
+                   m_ecdb.GetDbFileName());
         }
 
     return stat;
     }
 
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                Krischan.Eberle                01/2015
-//---------------+---------------+---------------+---------------+---------------+------
-void ECDb::Impl::OnDbChangedByOtherConnection () const
-    {
-    ClearECDbCache ();
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                Krischan.Eberle                07/2013
-//---------------+---------------+---------------+---------------+---------------+------
-DbResult ECDb::Impl::VerifySchemaVersion (Db::OpenParams const& params) const
-    {
-    return ECDbProfileManager::UpgradeECProfile (m_ecdb, params);
-    }
-
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                12/2014
 //---------------+---------------+---------------+---------------+---------------+------
-void ECDb::Impl::ClearECDbCache () const
+void ECDb::Impl::ClearECDbCache() const
     {
     if (m_ecdbMap != nullptr)
-        m_ecdbMap->ClearCache ();
+        m_ecdbMap->ClearCache();
 
     if (m_schemaManager != nullptr)
-        m_schemaManager->ClearCache ();
+        m_schemaManager->ClearCache();
 
     m_statementRegistry.ReprepareStatements();
 
@@ -146,17 +127,17 @@ void ECDb::Impl::ClearECDbCache () const
 std::vector<BeBriefcaseBasedIdSequence const*> ECDb::Impl::GetSequences() const
     {
     return std::vector<BeBriefcaseBasedIdSequence const*>  {
-                                            &m_ecInstanceIdSequence,
-                                            &m_ecSchemaIdSequence,
-                                            &m_ecClassIdSequence,
-                                            &m_ecPropertyIdSequence,
-                                            &m_ecEnumIdSequence,
-                                            &m_classmapIdSequence,
-                                            &m_columnIdSequence,
-                                            &m_constraintIdSequence,
-                                            &m_tableIdSequence,
-                                            &m_propertypathIdSequence,
-                                            &m_indexIdSequence};
+        &m_ecInstanceIdSequence,
+            &m_ecSchemaIdSequence,
+            &m_ecClassIdSequence,
+            &m_ecPropertyIdSequence,
+            &m_ecEnumIdSequence,
+            &m_classmapIdSequence,
+            &m_columnIdSequence,
+            &m_constraintIdSequence,
+            &m_tableIdSequence,
+            &m_propertypathIdSequence,
+            &m_indexIdSequence};
     }
 
 //---------------------------------------------------------------------------------------
@@ -197,12 +178,12 @@ bool ECDb::Impl::TryGetSqlFunction(DbFunction*& function, Utf8CP name, int argCo
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  12/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ECDb::Impl::ResetSequences (BeBriefcaseId* repoId)
+DbResult ECDb::Impl::ResetSequences(BeBriefcaseId* repoId)
     {
-    BeBriefcaseId actualRepoId = repoId != nullptr ? *repoId : m_ecdb.GetBriefcaseId ();
-    for (auto sequence : GetSequences ())
+    BeBriefcaseId actualRepoId = repoId != nullptr ? *repoId : m_ecdb.GetBriefcaseId();
+    for (BeBriefcaseBasedIdSequence const* sequence : GetSequences())
         {
-        auto stat = sequence->Reset (actualRepoId);
+        const DbResult stat = sequence->Reset(actualRepoId);
         if (stat != BE_SQLITE_OK)
             return stat;
         }
@@ -310,7 +291,7 @@ void ECDb::Impl::AddAppData(ECDb::AppData::Key const& key, ECDb::AppData* appDat
     {
     if (deleteOnClearCache)
         m_appDataToDeleteOnClearCache.insert(&key);
-        
+
     m_ecdb.AddAppData(key, appData);
     }
 
