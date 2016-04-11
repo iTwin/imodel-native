@@ -167,18 +167,18 @@ DbResult ECDbProfileUpgrader_3300::SetCustomContainerType(ECDbCR ecdb, Statement
 //+---------------+---------------+---------------+---------------+---------------+--------
 DbResult ECDbProfileUpgrader_3202::_Upgrade(ECDbR ecdb) const
     {
-    if (BE_SQLITE_OK != ecdb.ExecuteSql("DROP INDEX ix_ec_Property_ClassId; DROP INDEX ix_ec_Column_TableId;"))
-        {
-        LOG.errorv("ECDb profile upgrade failed for '%s': Failed to drop indexes ix_ec_Property_ClassId and ix_ec_Column_TableId: %s", ecdb.GetDbFileName(), ecdb.GetLastError().c_str());
-        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
-        }
+    //don't fail if indexes to drop don't exist, or indexes to create already exist, because there was a bad
+    //push that pushed the index stuff when creating a new file but the upgrader wasn't added to the list yet.
+    //So files were created with a too old profile version, so that ECDb attempts to upgrade it although it doesn't
+    //have to upgrade.
+    ecdb.TryExecuteSql("DROP INDEX ix_ec_Property_ClassId; DROP INDEX ix_ec_Column_TableId;");
 
-    if (BE_SQLITE_OK != ecdb.ExecuteSql("CREATE INDEX ix_ec_BaseClass_ClassId_Ordinal ON ec_BaseClass(ClassId,Ordinal);"
-                                        "CREATE INDEX ix_ec_Property_ClassId_Ordinal ON ec_Property(ClassId,Ordinal);"
-                                        "CREATE INDEX ix_ec_CustomAttribute_ContainerId_ContainerType_Ordinal ON ec_CustomAttribute(ContainerId,ContainerType,Ordinal);"
-                                        "CREATE INDEX ix_ec_Table_BaseTableId ON ec_Table(BaseTableId);"
-                                        "CREATE INDEX ix_ec_Column_TableId_Ordinal ON ec_Column(TableId,Ordinal);"
-                                        "CREATE INDEX ix_ec_IndexColumn_IndexId_Ordinal ON ec_IndexColumn(IndexId,Ordinal);"))
+    if (BE_SQLITE_OK != ecdb.ExecuteSql("CREATE INDEX IF NOT EXISTS ix_ec_BaseClass_ClassId_Ordinal ON ec_BaseClass(ClassId,Ordinal);"
+                                        "CREATE INDEX IF NOT EXISTS ix_ec_Property_ClassId_Ordinal ON ec_Property(ClassId,Ordinal);"
+                                        "CREATE INDEX IF NOT EXISTS ix_ec_CustomAttribute_ContainerId_ContainerType_Ordinal ON ec_CustomAttribute(ContainerId,ContainerType,Ordinal);"
+                                        "CREATE INDEX IF NOT EXISTS ix_ec_Table_BaseTableId ON ec_Table(BaseTableId);"
+                                        "CREATE INDEX IF NOT EXISTS ix_ec_Column_TableId_Ordinal ON ec_Column(TableId,Ordinal);"
+                                        "CREATE INDEX IF NOT EXISTS ix_ec_IndexColumn_IndexId_Ordinal ON ec_IndexColumn(IndexId,Ordinal);"))
         {
         LOG.errorv("ECDb profile upgrade failed for '%s': Failed to create indexes ix_ec_BaseClass_ClassId_Ordinal, ix_ec_Property_ClassId_Ordinal, "
                    "ix_ec_CustomAttribute_ContainerId_ContainerType_Ordinal, ix_ec_Table_BaseTableId, ix_ec_Column_TableId_Ordinal, ix_ec_IndexColumn_IndexId_Ordinal: %s", ecdb.GetDbFileName(), ecdb.GetLastError().c_str());
