@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 //__PUBLISH_SECTION_START__
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 /** @page PAGE_CategoryOverview Category and SubCategory Overview
 
@@ -65,9 +65,9 @@ While both have the same primary role (filtering) there are some important diffe
 <!-- ---------------------------------------------------------------------------------- -->
 @section PAGE_CategoryOverview_SECTION_LinkToCategoryModules Category Modules and Links
 
-@see DgnCategoryGroup
+@see GROUP_DgnCategory
 
 <!-- ---------------------------------------------------------------------------------- -->
 */
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

@@ -26,13 +26,10 @@ DGNPLATFORM_REF_COUNTED_PTR(LinearDimension3d);
 #define DGN_CLASSNAME_LinearDimension2d         "LinearDimension2d"
 #define DGN_CLASSNAME_LinearDimension3d         "LinearDimension3d"
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
-
-//! @addtogroup Annotations
-//! @beginGroup
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 //=======================================================================================
-// @bsiclass
+//! @ingroup GROUP_Annotation
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DimensionStyle : DictionaryElement
 {
@@ -84,7 +81,6 @@ namespace dgn_ElementHandler
 {
     //=======================================================================================
     //! The handler for dimension styles
-    //! @bsistruct
     //=======================================================================================
     struct DimensionStyleHandler : Element
     {
@@ -96,7 +92,7 @@ namespace dgn_ElementHandler
 }
 
 //=======================================================================================
-// @bsiclass
+//! @ingroup GROUP_Annotation
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE LinearDimension
 {
@@ -156,7 +152,7 @@ DGNPLATFORM_EXPORT  static LinearDimensionPtr       Create(CreateParams const& p
 };
 
 //=======================================================================================
-// @bsiclass
+//! @ingroup GROUP_Annotation
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE LinearDimension2d : AnnotationElement2d, LinearDimension
 {
@@ -222,9 +218,9 @@ namespace dgn_ElementHandler
 #endif
 }
 
-/*=================================================================================**//**
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
+//=======================================================================================
+//! @ingroup GROUP_Annotation
+//=======================================================================================
 struct          LinearDimensionStroker
 {
 private:
@@ -254,7 +250,5 @@ public:
 
     void            AppendDimensionGeometry();
 };
-
-//! @endGroup
 
 END_BENTLEY_DGN_NAMESPACE

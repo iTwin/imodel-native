@@ -21,11 +21,9 @@ DGNPLATFORM_REF_COUNTED_PTR(AnnotationLeaderStyle);
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-//! @addtogroup Annotations
-//! @beginGroup
-
 //=======================================================================================
 //! This enumerates all possible annotation leader line types.
+//! @ingroup GROUP_Annotation
 // @bsiclass                                                    Jeff.Marker     06/2014
 //=======================================================================================
 enum class AnnotationLeaderLineType
@@ -37,6 +35,7 @@ enum class AnnotationLeaderLineType
 
 //=======================================================================================
 //! This enumerates all possible annotation leader terminator types.
+//! @ingroup GROUP_Annotation
 // @bsiclass                                                    Jeff.Marker     06/2014
 //=======================================================================================
 enum class AnnotationLeaderTerminatorType
@@ -49,6 +48,7 @@ enum class AnnotationLeaderTerminatorType
 //=======================================================================================
 //! This enumerates all possible AnnotationLeaderStyle property keys.
 //! @note Unless dealing with style overrides, you will not typically use this enumeration directly. While AnnotationLeaderStyle provides high-level accessors to its properties, overrides are expressed directly via AnnotationLeaderStylePropertyBag and AnnotationLeaderStyleProperty.
+//! @ingroup GROUP_Annotation
 // @bsiclass                                                    Jeff.Marker     06/2014
 //=======================================================================================
 enum class AnnotationLeaderStyleProperty
@@ -69,6 +69,7 @@ enum class AnnotationLeaderStyleProperty
 //! Unlike the higher-level AnnotationLeaderStyle, this collection deals directly with property keys and their underlying values. You must know a property's data type when using this class. The AnnotationLeaderStyleProperty enumeration describes each property's data type.
 //! When created, this collection has no properties in it; their values are assumed to be default. In other words, this only stores deltas from defaults. In the case of overrides, it only stores the properties that are overridden, even if overridden with the same value.
 //! @note Unless dealing with style overrides, you will not typically use this enumeration directly. While AnnotationLeaderStyle provides high-level accessors to its properties, overrides are expressed directly via AnnotationLeaderStylePropertyBag and AnnotationLeaderStyleProperty.
+//! @ingroup GROUP_Annotation
 // @bsiclass                                                    Jeff.Marker     06/2014
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE AnnotationLeaderStylePropertyBag : AnnotationPropertyBag
@@ -96,11 +97,13 @@ public:
 };
 
 //! As an element, AnnotationLeaderStyle IDs are inherently DgnElementId, but create a typedef so that argument types are more obvious/natural.
+//! @ingroup GROUP_Annotation
 typedef DgnElementId AnnotationLeaderStyleId;
 
 //=======================================================================================
 //! This is used to provide style properties when creating an AnnotationLeader.
 //! @note When creating an AnnotationLeader, the typical work flow is to create and store the style, and then create the AnnotationLeader with the stored style's ID.
+//! @ingroup GROUP_Annotation
 // @bsiclass                                                    Jeff.Marker     06/2014
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE AnnotationLeaderStyle : DictionaryElement
@@ -169,6 +172,7 @@ public:
     AnnotationLeaderStyleCPtr Update() { return GetDgnDb().Elements().Update<AnnotationLeaderStyle>(*this); }
 
     //=======================================================================================
+    //! @ingroup GROUP_Annotation
     // @bsiclass                                                    Jeff.Marker     11/2014
     //=======================================================================================
     struct Entry : ECSqlStatementEntry
@@ -197,7 +201,6 @@ namespace dgn_ElementHandler
 {
     //=======================================================================================
     //! The handler for annotation leader styles
-    //! @bsistruct                                                  Paul.Connelly   10/15
     //=======================================================================================
     struct AnnotationLeaderStyleHandler : Element
     {
@@ -207,7 +210,5 @@ namespace dgn_ElementHandler
         DGNPLATFORM_EXPORT virtual void _GetClassParams(ECSqlClassParams& params) override;
     };
 }
-
-//! @endGroup
 
 END_BENTLEY_DGN_NAMESPACE

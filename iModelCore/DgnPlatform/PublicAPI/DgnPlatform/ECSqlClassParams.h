@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/ECSqlClassParams.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -47,7 +47,7 @@ public:
 //! A list of parameters used in ECSql SELECT, INSERT, and UPDATE statements for a
 //! specific ECClass. Maps names to indices in the results of a SELECT statement or in
 //! the bindings of an INSERT or UPDATE statement.
-//! @ingroup DgnElementGroup
+//! @ingroup GROUP_DgnElement
 // @bsiclass                                                     Paul.Connelly   09/15
 //=======================================================================================
 struct ECSqlClassParams
