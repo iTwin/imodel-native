@@ -74,7 +74,7 @@ static double restrictAngleTol (double radians, double defaultRadians, double mi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-PolyfaceHeaderPtr OCBRepUtil::IncrementalMesh(TopoDS_Shape const& shape, IFacetOptionsR facetOptions)
+PolyfaceHeaderPtr OCBRep::IncrementalMesh(TopoDS_Shape const& shape, IFacetOptionsR facetOptions)
     {
     if (shape.IsNull())
         return nullptr;
@@ -101,7 +101,7 @@ PolyfaceHeaderPtr OCBRepUtil::IncrementalMesh(TopoDS_Shape const& shape, IFacetO
             continue;
 
         if (false != (doLocationTransform = !location.IsIdentity()))
-            locationTransform = OCBRepUtil::ToTransform(location.Transformation());
+            locationTransform = OCBRep::ToTransform(location.Transformation());
 
         for (TopExp_Explorer edgeExplorer (face, TopAbs_EDGE); edgeExplorer.More(); edgeExplorer.Next())
             {
@@ -116,7 +116,7 @@ PolyfaceHeaderPtr OCBRepUtil::IncrementalMesh(TopoDS_Shape const& shape, IFacetO
         TColgp_Array1OfPnt const& points = polyTriangulation->Nodes();
         for (int i=1; i <= points.Length(); i++)
             {
-            DPoint3d    point = OCBRepUtil::ToDPoint3d(points.Value(i));
+            DPoint3d    point = OCBRep::ToDPoint3d(points.Value(i));
 
             if (doLocationTransform)
                 locationTransform.Multiply(point);

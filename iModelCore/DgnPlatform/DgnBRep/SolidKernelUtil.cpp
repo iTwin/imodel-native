@@ -26,7 +26,7 @@ TopoDS_Shape m_shape;
 
 protected:
 
-virtual Transform _GetEntityTransform () const override {Transform transform = OCBRepUtil::ToTransform(m_shape.Location()); return transform;}
+virtual Transform _GetEntityTransform () const override {Transform transform = OCBRep::ToTransform(m_shape.Location()); return transform;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/16
@@ -60,7 +60,7 @@ virtual void _SetEntityTransform (TransformCR transform) override
 
         if (rMatrix.IsUniformScale(goopScale))
             {
-            gp_Trsf goopTrsf = OCBRepUtil::ToGpTrsf(goopTrans);
+            gp_Trsf goopTrsf = OCBRep::ToGpTrsf(goopTrans);
 
             m_shape.Location(TopLoc_Location()); // NOTE: Need to ignore shape location...
             BRepBuilderAPI_Transform transformer(m_shape, goopTrsf);
@@ -75,7 +75,7 @@ virtual void _SetEntityTransform (TransformCR transform) override
             }
         else
             {
-            gp_GTrsf goopTrsf = OCBRepUtil::ToGpGTrsf(goopTrans);
+            gp_GTrsf goopTrsf = OCBRep::ToGpGTrsf(goopTrans);
 
             m_shape.Location(TopLoc_Location()); // NOTE: Need to ignore shape location...
             BRepBuilderAPI_GTransform transformer(m_shape, goopTrsf);
@@ -92,7 +92,7 @@ virtual void _SetEntityTransform (TransformCR transform) override
         BeAssert(m_shape.Location().IsIdentity());
         }
 
-    m_shape.Location(OCBRepUtil::ToGpTrsf(shapeTrans));
+    m_shape.Location(OCBRep::ToGpTrsf(shapeTrans));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -125,7 +125,7 @@ DRange3d _GetEntityRange() const
 
     BRepBndLib::Add(m_shape, box, false); // Never use triangulation...
 
-    return OCBRepUtil::ToDRange3d(box);
+    return OCBRep::ToDRange3d(box);
     }
 
 /*---------------------------------------------------------------------------------**//**
