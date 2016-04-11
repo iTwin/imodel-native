@@ -24,6 +24,7 @@
         <SubPart PartName="GeomlibsSerialization" PartFile="geomlibs" Repository="geomlibs" />
         <SubPart PartName="BeJsonCpp"       PartFile="BeJsonCpp" Repository="Libsrc-JsonCpp"/>
         <SubPart PartName="rapidjson"       PartFile="rapidjson" Repository="Libsrc-RapidJson"/>
+        <SubPart PartName="StandardSchemasV3" PartFile="ECStandards"  Repository="ECStandards"/>
         <Bindings>
             <Libs>Delivery/$(libprefix)BeSQLiteEC$(libext)</Libs>
             <Assemblies ProductDirectoryName="BentleyNativeAssemblies">Delivery/$(libprefix)BeSQLiteEC$(ApiNumber)$(shlibext)</Assemblies>

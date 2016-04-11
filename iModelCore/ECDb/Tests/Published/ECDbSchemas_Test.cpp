@@ -131,27 +131,27 @@ TEST_F(ECDbSchemaTests, LoadECSchemas)
     DbResult stat = db.OpenBeSQLiteDb (saveTestProject.GetECDb().GetDbFileName(), Db::OpenParams(Db::OpenMode::Readonly));
     EXPECT_EQ (BE_SQLITE_OK, stat);
    
-    bset<Utf8String> expectedSchemas;
-    expectedSchemas.insert ("Bentley_Standard_CustomAttributes");
-    expectedSchemas.insert ("EditorCustomAttributes");
-    expectedSchemas.insert("ECDbMap");
-    expectedSchemas.insert("ECDb_System");
-    expectedSchemas.insert ("ECDb_FileInfo");
-    expectedSchemas.insert ("StartupCompany");
-    expectedSchemas.insert ("Unit_Attributes");
+    std::vector<Utf8CP> expectedSchemas;
+    expectedSchemas.push_back("Bentley_Standard_CustomAttributes");
+//    expectedSchemas.push_back("CoreCustomAttributes");
+    expectedSchemas.push_back("ECDbMap");
+    expectedSchemas.push_back("ECDb_FileInfo");
+    expectedSchemas.push_back("ECDb_System");
+    expectedSchemas.push_back("EditorCustomAttributes");
+    expectedSchemas.push_back("StartupCompany");
+    expectedSchemas.push_back("Unit_Attributes");
 
     // Validate the expected ECSchemas in the project
     Statement stmt;
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, stmt.Prepare (db, "SELECT NAME FROM ec_Schema"));
-    int nSchemas = 0;
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, stmt.Prepare (db, "SELECT Name FROM ec_Schema ORDER BY Name"));
+    int i = 0;
     while (BE_SQLITE_ROW == stmt.Step())
         {
-        nSchemas++;
-        Utf8String schemaName(stmt.GetValueText(0));
-        if (expectedSchemas.end() == expectedSchemas.find(schemaName))
-            LOG.errorv("Found unexpected ECSchema '%s'", schemaName.c_str());
+        ASSERT_STREQ(expectedSchemas[i], stmt.GetValueText(0));
+        i++;
         }
-    ASSERT_EQ (expectedSchemas.size(), nSchemas);
+
+    ASSERT_EQ (expectedSchemas.size(), i);
     }
 
 /*---------------------------------------------------------------------------------**//**
