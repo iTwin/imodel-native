@@ -23,7 +23,7 @@ ECSchemaCP ECDbSchemaReader::GetECSchema(ECSchemaId ecSchemaId, bool ensureAllCl
     if (schema == nullptr)
         return nullptr;
 
-    if (SUCCESS != ctx.Postprocess())
+    if (SUCCESS != ctx.Postprocess(*this))
         return nullptr;
 
     return schema;
@@ -51,7 +51,7 @@ ECEnumerationCP ECDbSchemaReader::GetECEnumeration(Utf8CP schemaName, Utf8CP enu
     if (ecenum == nullptr)
         return nullptr;
 
-    if (SUCCESS != ctx.Postprocess())
+    if (SUCCESS != ctx.Postprocess(*this))
         return nullptr;
 
     return ecenum;
@@ -66,7 +66,7 @@ BentleyStatus ECDbSchemaReader::EnsureDerivedClassesExist(ECClassId baseClassId)
     if (SUCCESS != EnsureDerivedClassesExist(ctx, baseClassId))
         return ERROR;
 
-    return ctx.Postprocess();
+    return ctx.Postprocess(*this);
     }
 
 
@@ -101,7 +101,7 @@ ECClassCP ECDbSchemaReader::GetECClass(ECClassId ecClassId) const
     if (ecclass == nullptr)
         return nullptr;
 
-    if (SUCCESS != ctx.Postprocess())
+    if (SUCCESS != ctx.Postprocess(*this))
         return nullptr;
 
     return ecclass;
@@ -118,9 +118,9 @@ ECClassP ECDbSchemaReader::GetECClass(Context& ctx, ECClassId ecClassId) const
     BeMutexHolder lock(m_criticalSection);
     ECDbExpressionSymbolContext symbolsContext(m_db);
 
-    DbECClassEntryMap::const_iterator classKeyIterator = m_ecClassCache.find(ecClassId);
-    if (classKeyIterator != m_ecClassCache.end())
-        return classKeyIterator->second->m_cachedECClass;
+    ECClassP classFromCache = nullptr;
+    if (TryGetECClassFromCache(classFromCache, ecClassId))
+        return classFromCache;
 
     const int schemaIdColIx = 0;
     const int nameColIx = 1;
@@ -246,6 +246,24 @@ ECClassP ECDbSchemaReader::GetECClass(Context& ctx, ECClassId ecClassId) const
         }
 
     return ecClass;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        05/2012
+//+---------------+---------------+---------------+---------------+---------------+------
+bool ECDbSchemaReader::TryGetECClassFromCache(ECClassP& ecClass, ECClassId ecClassId) const
+    {
+    if (!ecClassId.IsValid())
+        return false;
+
+    DbECClassEntryMap::const_iterator classKeyIterator = m_ecClassCache.find(ecClassId);
+    if (classKeyIterator != m_ecClassCache.end())
+        {
+        ecClass = classKeyIterator->second->m_cachedECClass;
+        return true;
+        }
+
+    return false;
     }
 
 //---------------------------------------------------------------------------------------
@@ -400,8 +418,7 @@ BentleyStatus ECDbSchemaReader::ReadECSchema(DbECSchemaEntry*& outECSchemaKey, C
     for (DbECSchemaEntry* newlyLoadedSchema : newlyLoadedSchemas)
         {
         ECSchemaR schema = *newlyLoadedSchema->m_cachedECSchema;
-        if (SUCCESS != LoadCAFromDb(schema, ctx, ECContainerId(schema.GetId()), ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Schema))
-            return ERROR;
+        ctx.AddSchemaToLoadCAInstanceFor(schema);
         }
 
     if (ensureAllClassesLoaded && !outECSchemaKey->IsFullyLoaded())
@@ -902,6 +919,43 @@ BentleyStatus ECDbSchemaReader::LoadCAFromDb(ECN::IECCustomAttributeContainerR c
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ECDbSchemaReader::LoadCAFromDbForLoadedCAClass(ECN::IECCustomAttributeContainerR caConstainer, ECContainerId containerId, ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType containerType) const
+    {
+    CachedStatementPtr stmt = nullptr;
+    if (BE_SQLITE_OK != m_db.GetCachedStatement(stmt, "SELECT ClassId,Instance FROM ec_CustomAttribute WHERE ContainerId=? AND ContainerType=? ORDER BY Ordinal"))
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindId(1, containerId))
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindInt(2, Enum::ToInt(containerType)))
+        return ERROR;
+
+    while (stmt->Step() == BE_SQLITE_ROW)
+        {
+        ECClassId caClassId = stmt->GetValueId<ECClassId>(0);
+        ECClassP caClass = nullptr;
+        if (!TryGetECClassFromCache(caClass, caClassId))
+            {
+            BeAssert(false && "LoadCAFromDbForLoadedCAClass is expected to find the CA class in the reader cache");
+            return ERROR;
+            }
+
+        Utf8CP caXml = stmt->GetValueText(1);
+        ECInstanceReadContextPtr readContext = ECInstanceReadContext::CreateContext(caClass->GetSchema());
+        IECInstancePtr deserializedCa = nullptr;
+        if (InstanceReadStatus::Success != IECInstance::ReadFromXmlString(deserializedCa, caXml, *readContext))
+            return ERROR;
+        BeAssert(deserializedCa != nullptr);
+        caConstainer.SetCustomAttribute(*deserializedCa);
+        }
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    Affan.Khan        05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECDbSchemaReader::LoadECRelationshipConstraintFromDb(ECRelationshipClassP& ecRelationship, Context& ctx, ECClassId relationshipClassId, ECRelationshipEnd relationshipEnd) const
     {
     CachedStatementPtr stmt = nullptr;
@@ -1007,17 +1061,24 @@ void ECDbSchemaReader::ClearCache()
     }
 
 
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  12/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus ECDbSchemaReader::Context::Postprocess() const
+BentleyStatus ECDbSchemaReader::Context::Postprocess(ECDbSchemaReader const& reader) const
     {
     for (ECN::NavigationECProperty* navProp : m_navProps)
         {
         if (!navProp->Verify())
             return ERROR;
         }
+
+    for (ECN::ECSchema* schema : m_schemasToLoadCAInstancesFor)
+        {
+        if (SUCCESS != reader.LoadCAFromDbForLoadedCAClass(*schema, ECContainerId(schema->GetId()), ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Schema))
+            return ERROR;
+
+        }
+
     return SUCCESS;
     }
 
