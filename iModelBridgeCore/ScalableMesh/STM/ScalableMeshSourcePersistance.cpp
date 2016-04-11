@@ -10,7 +10,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
-   
+#include "ImagePPHeaders.h"
 #include "ScalableMeshSourcePersistance.h"
 
 #include <ScalableMesh/IScalableMeshSourceVisitor.h>

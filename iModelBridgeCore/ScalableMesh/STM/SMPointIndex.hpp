@@ -464,6 +464,14 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Load()
         assert(!"Cannot load node header");
         throw HFCUnknownException();
         }
+   /* if (IsParentSet())
+        {
+        if (m_nodeHeader.m_contentExtentDefined && !m_nodeHeader.m_contentExtent.IsContained(GetParentNodePtr()->m_nodeHeader.m_contentExtent))
+            {
+            GetParentNodePtr()->m_nodeHeader.m_contentExtent.Extend(m_nodeHeader.m_contentExtent);
+            static_cast<SMPointTileStore<POINT, EXTENT>*>(&*m_store)->StoreHeader(&GetParentNodePtr()->m_nodeHeader, m_nodeHeader.m_parentNodeID);
+            }
+        }*/
     m_wasBalanced = true;
 
     SMPointIndexNode<POINT, EXTENT>* UNCONSTTHIS =  const_cast<SMPointIndexNode<POINT, EXTENT>* >(this);

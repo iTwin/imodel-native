@@ -169,6 +169,7 @@ struct IScalableMeshCreator::Impl
                                                                    int                                     levelToStitch = -1,
                                                                    bool                                    do2_5dStitchFirst = false);
 
+
           HFCPtr<IndexType>                   m_pDataIndex;
     public :  
         explicit                            Impl                           (const WChar*                          scmFileName);
@@ -186,6 +187,9 @@ struct IScalableMeshCreator::Impl
         StatusInt                           SaveToFile                     ();  
 
         virtual StatusInt                           CreateScalableMesh                    (bool isSingleFile);  
+
+        StatusInt  SetTextureMosaic(HIMMosaic* mosaicP);
+
         StatusInt                           Filter                         ();
 
       //  IScalableMeshNodePtr                AddChildNode (const IScalableMeshNodePtr& parentNode, 

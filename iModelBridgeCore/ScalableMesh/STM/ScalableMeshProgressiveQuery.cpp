@@ -1859,7 +1859,7 @@ BentleyStatus ScalableMeshProgressiveQueryEngine::_GetRequiredNodes(bvector<BENT
             if (requestedQueryP->m_isQueryCompleted == true)
                 {
                 requestedQueryP->m_fetchLastCompletedNodes = true;
-                assert(requestedQueryP->m_requiredMeshNodes.size() > 0);
+                //assert(requestedQueryP->m_requiredMeshNodes.size() > 0);
                 s_queryProcessor.CancelQuery(queryId);
                 }
             }

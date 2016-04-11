@@ -94,6 +94,8 @@ public:
     bool Close();
     bool IsOpen() { return m_database->IsDbOpen(); }
 
+    void CommitAll();
+
     static SMSQLiteFilePtr Open(const WString& filename, bool openReadOnly, StatusInt& status);
     void SetSource();
     bool SetWkt(WCharCP extendedWkt);
