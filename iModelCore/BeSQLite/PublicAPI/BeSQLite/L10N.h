@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/BeSQLite/L10N.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -70,7 +70,7 @@ struct L10N
     };
     
     //! Set of 1 to 3 SQLang database files.
-    //! @ingroup L10NGroup
+    //! @ingroup GROUP_L10N
     struct SqlangFiles
     {
         BeFileName  m_default;
