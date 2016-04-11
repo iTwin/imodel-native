@@ -35,3 +35,5 @@ JsonReaderTests.ReadInstanceAlongWithRelatedInstances
 # Needs ECObjects fixed so that schema deserialization fails if CA is applied to wrong container
 ECDbMappingTestFixture.NotNullableProperty
 ECDbSchemaManagerTests.ImportSchemaWithReferenceToECDbMap10
+
+ECSqlMetadataQueryTestFixture.VerifyQueries # notified Krischan
