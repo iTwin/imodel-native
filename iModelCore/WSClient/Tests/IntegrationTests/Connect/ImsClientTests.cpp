@@ -64,7 +64,7 @@ TEST_F(ImsClientTests, RequestToken_NoLifetimeSpecified_RetrievesTokenWithDefaul
 
     SamlTokenPtr token = result.GetValue();
     EXPECT_TRUE(token->IsSupported());
-    EXPECT_TRUE(token->IsValidNow(0));
+    EXPECT_TRUE(token->IsValidNow(2));
     EXPECT_NE(0, token->GetLifetime());
     }
 
@@ -83,7 +83,7 @@ TEST_F(ImsClientTests, RequestToken_LifetimeSpecified_RetrievesTokenWithSpecifie
 
     SamlTokenPtr token = result.GetValue();
     EXPECT_TRUE(token->IsSupported());
-    EXPECT_TRUE(token->IsValidNow(0));
+    EXPECT_TRUE(token->IsValidNow(2));
     EXPECT_EQ(5, token->GetLifetime());
     }
 
@@ -104,7 +104,7 @@ TEST_F(ImsClientTests, RequestToken_UsingParentTokenAndLifetimeSpecified_Retriev
 
     SamlTokenPtr token = result.GetValue();
     EXPECT_TRUE(token->IsSupported());
-    EXPECT_TRUE(token->IsValidNow(0));
+    EXPECT_TRUE(token->IsValidNow(2));
     EXPECT_EQ(5, token->GetLifetime());
     }
     
