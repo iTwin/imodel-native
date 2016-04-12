@@ -25,6 +25,7 @@ protected:
     ECSqlColumnInfo m_ecsqlColumnInfo;
 
 private:
+    static Collection* s_emptyChildCollection;
     ECSqlStatementBase& m_ecsqlStatement;
 
     virtual ECSqlColumnInfoCR _GetColumnInfo() const override;
@@ -32,7 +33,7 @@ private:
     virtual ECSqlStatus _OnAfterReset() { return ECSqlStatus::Success; }
     virtual ECSqlStatus _OnAfterStep() { return ECSqlStatus::Success; }
 
-    static Collection s_emptyChildCollection;
+    static Collection const& GetEmptyChildCollection();
 
 protected:
     bool m_requiresOnAfterStep;
@@ -49,7 +50,7 @@ protected:
 public:
     virtual ~ECSqlField() {}
 
-    virtual Collection const& GetChildren() const { return s_emptyChildCollection; }
+    virtual Collection const& GetChildren() const { return GetEmptyChildCollection(); }
 
     bool RequiresOnAfterStep() const { return m_requiresOnAfterStep; }
     ECSqlStatus OnAfterStep();

@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/PointECSqlBinder.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -226,7 +226,7 @@ IECSqlPrimitiveBinder& PointToColumnsECSqlBinder::_BindPrimitive()
 IECSqlStructBinder& PointToColumnsECSqlBinder::_BindStruct()
     {
     GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind ECStruct to Point2D / Point3D parameter.");
-    return GetNoopBinder(ECSqlStatus::Error).BindStruct();
+    return NoopECSqlBinder::Get().BindStruct();
     }
 
 //---------------------------------------------------------------------------------------
@@ -235,7 +235,7 @@ IECSqlStructBinder& PointToColumnsECSqlBinder::_BindStruct()
 IECSqlArrayBinder& PointToColumnsECSqlBinder::_BindArray(uint32_t initialCapacity)
     {
     GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind array to Point2D / Point3D parameter.");
-    return GetNoopBinder(ECSqlStatus::Error).BindArray(initialCapacity);
+    return NoopECSqlBinder::Get().BindArray(initialCapacity);
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

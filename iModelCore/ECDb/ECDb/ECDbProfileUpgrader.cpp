@@ -581,7 +581,7 @@ BentleyStatus ECDbProfileECSchemaUpgrader::ReadSchemaFromDisk(ECSchemaReadContex
     if (schema == nullptr)
         {
         LOG.errorv("Creating / upgrading ECDb file %s failed because required ECSchema '%s' could not be found.", ecdbFileName,
-                   schemaKey.GetFullSchemaName());
+                   schemaKey.GetFullSchemaName().c_str());
         return ERROR;
         }
 

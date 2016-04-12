@@ -53,9 +53,9 @@ DbResult ECDb::Initialize(BeFileNameCR ecdbTempDir, BeFileNameCP hostAssetsDir, 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                07/2014
 //---------------+---------------+---------------+---------------+---------------+------
-DbResult ECDb::_OnDbOpened()
+DbResult ECDb::_OnDbOpening()
     {
-    DbResult stat = Db::_OnDbOpened();
+    DbResult stat = Db::_OnDbOpening();
     if (stat != BE_SQLITE_OK)
         return stat;
 

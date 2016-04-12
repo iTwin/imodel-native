@@ -36,7 +36,7 @@ struct FindMatchingNamePredicate
         {
         m_expectedValue.SetUtf8CP(expectedName);
         }
-    bool operator () (IECInstancePtr const& actualElement)
+    bool operator()(IECInstancePtr const& actualElement)
         {
         actualElement->GetValue(m_actualValue, "Name");
         return m_expectedValue.Equals(m_actualValue);
@@ -48,99 +48,18 @@ struct FindMatchingNamePredicate
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ECSqlMetadataQueryTestFixture::ComparePropertyDefProperties(ECPropertyCR expectedProperty, IECInstanceCR actualProperty)
     {
-    ECValue u, v;
+    ECValue v;
+    ASSERT_EQ(ECObjectsStatus::Success, actualProperty.GetValue(v, "Name"));
+    ASSERT_STREQ(expectedProperty.GetName().c_str(), v.GetUtf8CP()) << "ECPropertyDef.Name";
 
-    u.SetUtf8CP(expectedProperty.GetName().c_str());
-    actualProperty.GetValue(v, "Name");
-    EXPECT_TRUE(u.Equals(v));
-
+    ASSERT_EQ(ECObjectsStatus::Success, actualProperty.GetValue(v, "DisplayLabel"));
     if (expectedProperty.GetIsDisplayLabelDefined())
-        {
-        u.SetUtf8CP(expectedProperty.GetDisplayLabel().c_str());
-        actualProperty.GetValue(v, "DisplayLabel");
-        EXPECT_TRUE(u.Equals(v));
-        }
+        ASSERT_STREQ(expectedProperty.GetDisplayLabel().c_str(), v.GetUtf8CP()) << "ECPropertyDef.DisplayLabel";
     else
-        {
-        actualProperty.GetValue(v, "DisplayLabel");
-        EXPECT_TRUE(v.IsNull());
-        }
+        ASSERT_TRUE(v.IsNull()) << "ECPropertyDef.DisplayLabel";
 
-    u.SetUtf8CP(expectedProperty.GetDescription().c_str());
-    actualProperty.GetValue(v, "Description");
-    EXPECT_TRUE(u.Equals(v));
-
-    /* Not implemented in MetaSchema yet
-    enum class ECPropertyKind
-        {
-        Primitive = 0,
-        Struct = 1,
-        PrimitiveArray = 2,
-        StructArray = 3,
-        Navigation = 4
-        };
-
-    actualProperty.GetValue(v, "Kind");
-    ECPropertyKind propKind = (ECPropertyKind) v.GetInteger();
-
-    if (propKind == ECPropertyKind::PrimitiveArray || propKind == ECPropertyKind::StructArray)
-        {
-        u.SetInteger(expectedProperty.GetAsArrayProperty()->GetMinOccurs());
-        actualProperty.GetValue(v, "ArrayMinOccurs");
-        EXPECT_TRUE(u.Equals(v));
-        u.SetInteger(expectedProperty.GetAsArrayProperty()->GetStoredMaxOccurs());
-        actualProperty.GetValue(v, "ArrayMaxOccurs");
-        EXPECT_TRUE(u.Equals(v));
-
-        if (ARRAYKIND_Primitive == expectedProperty.GetAsArrayProperty()->GetKind())
-            {
-            u.SetInteger(static_cast<int32_t>(expectedProperty.GetAsArrayProperty()->GetPrimitiveElementType()));
-            actualProperty.GetValue(v, "PrimitiveType");
-            EXPECT_TRUE(u.Equals(v));
-            }
-        else if (ARRAYKIND_Struct == expectedProperty.GetAsArrayProperty()->GetKind())
-            {
-            u.SetLong(expectedProperty.GetAsStructArrayProperty()->GetStructElementType()->GetId().GetValue());
-            actualProperty.GetValue(v, "NonPrimitiveType");
-            EXPECT_TRUE(u.Equals(v));
-            }
-        }
-    else
-        {
-        actualProperty.GetValue(v, "ArrayMinOccurs");
-        EXPECT_TRUE(v.IsNull());
-        actualProperty.GetValue(v, "ArrayMaxOccurs");
-        EXPECT_TRUE(v.IsNull());
-
-        if (expectedProperty.GetIsPrimitive())
-            {
-            u.SetInteger(static_cast<int32_t>(expectedProperty.GetAsPrimitiveProperty()->GetType()));
-            actualProperty.GetValue(v, "PrimitiveType");
-            EXPECT_TRUE(u.Equals(v));
-            }
-        else
-            {
-            actualProperty.GetValue(v, "PrimitiveType");
-            EXPECT_TRUE(v.IsNull());
-            }
-
-        if (expectedProperty.GetIsStruct())
-            {
-            u.SetLong(expectedProperty.GetAsStructProperty()->GetType().GetId().GetValue());
-            actualProperty.GetValue(v, "NonPrimitiveType");
-            EXPECT_TRUE(u.Equals(v));
-            }
-        else
-            {
-            actualProperty.GetValue(v, "NonPrimitiveType");
-            EXPECT_TRUE(v.IsNull());
-            }
-        }
-
-    u.SetBoolean(expectedProperty.GetIsReadOnly());
-    actualProperty.GetValue(v, "IsReadOnly");
-    EXPECT_TRUE(u.Equals(v));
-    */
+    ASSERT_EQ(ECObjectsStatus::Success, actualProperty.GetValue(v, "Description"));
+    ASSERT_STREQ(expectedProperty.GetDescription().c_str(), v.GetUtf8CP()) << "ECPropertyDef.Description";
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -150,9 +69,6 @@ void ECSqlMetadataQueryTestFixture::ComparePropertyDefLists(bvector<ECPropertyCP
     {
     for (ECPropertyCP const& expectedProperty : expectedProperties)
         {
-#if defined (DEBUGGING)
-        printf("   For expected property %s:\n", expectedProperty->GetName().c_str());
-#endif
         FindMatchingNamePredicate predicate(expectedProperty->GetName().c_str());
         bvector<IECInstancePtr>::iterator matchedActualProperty = std::find_if(actualProperties.begin(), actualProperties.end(), predicate);
 
@@ -164,16 +80,14 @@ void ECSqlMetadataQueryTestFixture::ComparePropertyDefLists(bvector<ECPropertyCP
             actualProperties.erase(matchedActualProperty);
             }
         else
-            {
-            EXPECT_TRUE(actualProperties.end() != matchedActualProperty) <<
-            "No match found for expected property " << expectedProperty->GetName().c_str() << "\n";
-            }
+            ASSERT_TRUE(actualProperties.end() != matchedActualProperty) << "No match found for expected property " << expectedProperty->GetName().c_str();
         }
-    ECValue v;
+
     for (IECInstancePtr const& actualProperty : actualProperties)
         {
+        ECValue v;
         actualProperty->GetValue(v, "Name");
-        EXPECT_TRUE(actualProperties.empty()) << "Unexpected actual property " << v.GetUtf8CP() << "\n";
+        ASSERT_TRUE(actualProperties.empty()) << "Unexpected actual property " << v.GetUtf8CP();
         }
     }
 
@@ -182,35 +96,25 @@ void ECSqlMetadataQueryTestFixture::ComparePropertyDefLists(bvector<ECPropertyCP
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ECSqlMetadataQueryTestFixture::CompareClassDefProperties(ECClassCR expectedClass, IECInstanceCR actualClass)
     {
-    ECValue u, v;
+    ECValue v;
+    ASSERT_EQ(ECObjectsStatus::Success, actualClass.GetValue(v, "Name"));
 
-    u.SetUtf8CP(expectedClass.GetName().c_str());
-    actualClass.GetValue(v, "Name");
-    EXPECT_TRUE(u.Equals(v));
+    ASSERT_STREQ(expectedClass.GetName().c_str(), v.GetUtf8CP()) << "ECClassDef.Name";
 
+    ASSERT_EQ(ECObjectsStatus::Success, actualClass.GetValue(v, "DisplayLabel"));
     if (expectedClass.GetIsDisplayLabelDefined())
-        {
-        u.SetUtf8CP(expectedClass.GetDisplayLabel().c_str());
-        actualClass.GetValue(v, "DisplayLabel");
-        EXPECT_TRUE(u.Equals(v));
-        }
+        ASSERT_STREQ(expectedClass.GetDisplayLabel().c_str(), v.GetUtf8CP()) << "ECClassDef.DisplayLabel";
     else
-        {
-        actualClass.GetValue(v, "DisplayLabel");
-        EXPECT_TRUE(v.IsNull());
-        }
+        ASSERT_TRUE(v.IsNull());
 
-    u.SetUtf8CP(expectedClass.GetDescription().c_str());
-    actualClass.GetValue(v, "Description");
-    EXPECT_TRUE(u.Equals(v));
+    ASSERT_EQ(ECObjectsStatus::Success, actualClass.GetValue(v, "Description"));
+    ASSERT_STREQ(expectedClass.GetDescription().c_str(), v.GetUtf8CP()) << "ECClassDef.Description";
 
-    u.SetInteger((int) expectedClass.GetClassType());
-    actualClass.GetValue(v, "Type");
-    EXPECT_TRUE(u.Equals(v));
+    ASSERT_EQ(ECObjectsStatus::Success, actualClass.GetValue(v, "Type"));
+    ASSERT_EQ((int) expectedClass.GetClassType(), v.GetInteger()) << "ECClassDef.Type";
 
-    u.SetInteger((int) expectedClass.GetClassModifier());
-    actualClass.GetValue(v, "Modifier");
-    EXPECT_TRUE(u.Equals(v));
+    ASSERT_EQ(ECObjectsStatus::Success, actualClass.GetValue(v, "Modifier"));
+    ASSERT_EQ((int) expectedClass.GetClassModifier(), v.GetInteger()) << "ECClassDef.Modifier";
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -220,9 +124,6 @@ void ECSqlMetadataQueryTestFixture::CompareClassDefLists(bvector<ECClassCP> & ex
     {
     for (ECClassCP const& expectedClass : expectedClasses)
         {
-#if defined (DEBUGGING)
-        printf("  For expected class %s:\n", expectedClass->GetName().c_str());
-#endif
         FindMatchingNamePredicate predicate(expectedClass->GetName().c_str());
         bvector<IECInstancePtr>::iterator matchedActualClass = std::find_if(actualClasses.begin(), actualClasses.end(), predicate);
 
@@ -235,14 +136,11 @@ void ECSqlMetadataQueryTestFixture::CompareClassDefLists(bvector<ECClassCP> & ex
             for (ECPropertyCP const& expectedProperty : expectedClass->GetProperties(false))
                 {
                 expectedProperties.push_back(expectedProperty);
-#if defined (DEBUGGING)
-                printf("   Expected property %s\n", expectedProperty->GetName().c_str());
-#endif
                 }
 
             bvector<IECInstancePtr> actualProperties;
             Utf8String propQuery =
-            "SELECT prop.* FROM ec.ECPropertyDef prop \
+                "SELECT prop.* FROM ec.ECPropertyDef prop \
             JOIN ec.ECClassDef cl USING ec.ClassOwnsProperties \
             JOIN ec.ECSchemaDef sch USING ec.SchemaOwnsClasses \
             WHERE sch.Name='ECSqlTest' AND cl.Name='";
@@ -254,23 +152,14 @@ void ECSqlMetadataQueryTestFixture::CompareClassDefLists(bvector<ECClassCP> & ex
                 {
                 ECInstanceECSqlSelectAdapter propAdapter(propStatement);
                 actualProperties.push_back(propAdapter.GetInstance());
-#if defined (DEBUGGING)
-                printf("   Actual property   %s\n", propStatement.GetValueText(1));
-#endif
                 }
 
-#if defined (DEBUGGING)
-            printf("    Expected property list size: %i\n    Actual property list size:   %i\n\n",
-            (int)expectedProperties.size(), (int)actualProperties.size());
-#endif
             ComparePropertyDefLists(expectedProperties, actualProperties);
-
             actualClasses.erase(matchedActualClass);
             }
         else
             {
-            EXPECT_TRUE(actualClasses.end() != matchedActualClass) <<
-            "No match found for expected class" << expectedClass->GetName().c_str() << "\n";
+            EXPECT_TRUE(actualClasses.end() != matchedActualClass) << "No match found for expected class" << expectedClass->GetName().c_str() << "\n";
             }
         }
     ECValue v;
@@ -287,34 +176,29 @@ void ECSqlMetadataQueryTestFixture::CompareClassDefLists(bvector<ECClassCP> & ex
 void ECSqlMetadataQueryTestFixture::CompareSchemaDefProperties(ECSchemaCR expectedSchema, IECInstanceCR actualSchema)
     {
     ECValue v;
-    actualSchema.GetValue(v, "Name");
+    ASSERT_EQ(ECObjectsStatus::Success, actualSchema.GetValue(v, "Name"));
     ASSERT_STREQ(expectedSchema.GetName().c_str(), v.GetUtf8CP()) << "ECSchema.Name";
 
+    ASSERT_EQ(ECObjectsStatus::Success, actualSchema.GetValue(v, "DisplayLabel"));
     if (expectedSchema.GetIsDisplayLabelDefined())
-        {
-        actualSchema.GetValue(v, "DisplayLabel");
-        ASSERT_STREQ(expectedSchema.GetDisplayLabel().c_str(), v.GetUtf8CP()) << "ECSchema.DisplayLabel";
-        }
+        ASSERT_STREQ(expectedSchema.GetDisplayLabel().c_str(), v.GetUtf8CP()) << "ECSchemaDef.DisplayLabel";
     else
-        {
-        actualSchema.GetValue(v, "DisplayLabel");
         ASSERT_TRUE(v.IsNull());
-        }
 
-    actualSchema.GetValue(v, "Description");
-    ASSERT_STREQ(expectedSchema.GetDescription().c_str(), v.GetUtf8CP()) << "ECSchema.Description";
+    ASSERT_EQ(ECObjectsStatus::Success, actualSchema.GetValue(v, "Description"));
+    ASSERT_STREQ(expectedSchema.GetDescription().c_str(), v.GetUtf8CP()) << "ECSchemaDef.Description";
 
-    actualSchema.GetValue(v, "NameSpacePrefix");
-    ASSERT_STREQ(expectedSchema.GetNamespacePrefix().c_str(), v.GetUtf8CP()) << "ECSchema.NamespacePrefix";
+    ASSERT_EQ(ECObjectsStatus::Success, actualSchema.GetValue(v, "NameSpacePrefix"));
+    ASSERT_STREQ(expectedSchema.GetNamespacePrefix().c_str(), v.GetUtf8CP()) << "ECSchemaDef.NamespacePrefix";
 
-    actualSchema.GetValue(v, "VersionMajor");
-    ASSERT_EQ(expectedSchema.GetVersionMajor(), v.GetInteger()) << "ECSchema.VersionMajor";
+    ASSERT_EQ(ECObjectsStatus::Success, actualSchema.GetValue(v, "VersionMajor"));
+    ASSERT_EQ(expectedSchema.GetVersionMajor(), v.GetInteger()) << "ECSchemaDef.VersionMajor";
 
-    actualSchema.GetValue(v, "VersionWrite");
-    ASSERT_EQ(expectedSchema.GetVersionWrite(), v.GetInteger()) << "ECSchema.VersionWrite";
+    ASSERT_EQ(ECObjectsStatus::Success, actualSchema.GetValue(v, "VersionWrite"));
+    ASSERT_EQ(expectedSchema.GetVersionWrite(), v.GetInteger()) << "ECSchemaDef.VersionWrite";
 
-    actualSchema.GetValue(v, "VersionMinor");
-    ASSERT_EQ(expectedSchema.GetVersionMinor(), v.GetInteger()) << "ECSchema.VersionMinor";
+    ASSERT_EQ(ECObjectsStatus::Success, actualSchema.GetValue(v, "VersionMinor"));
+    ASSERT_EQ(expectedSchema.GetVersionMinor(), v.GetInteger()) << "ECSchemaDef.VersionMinor";
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -343,9 +227,9 @@ TEST_F(ECSqlMetadataQueryTestFixture, VerifyQueries)
 
     bvector<IECInstancePtr> actualClasses;
     ECSqlStatement classStatement;
-    ASSERT_EQ (ECSqlStatus::Success, classStatement.Prepare(GetECDb(), "SELECT c.* FROM ec.ECSchemaDef s "
-                                                            "JOIN ec.ECClassDef c USING ec.SchemaOwnsClasses "
-                                                            "WHERE s.Name='ECSqlTest'"));
+    ASSERT_EQ(ECSqlStatus::Success, classStatement.Prepare(GetECDb(), "SELECT c.* FROM ec.ECSchemaDef s "
+                                                           "JOIN ec.ECClassDef c USING ec.SchemaOwnsClasses "
+                                                           "WHERE s.Name='ECSqlTest'"));
     while (BE_SQLITE_ROW == classStatement.Step())
         {
         ECInstanceECSqlSelectAdapter classAdapter(classStatement);

@@ -44,7 +44,7 @@ ParentOfJoinedTableECSqlStatement* ECSqlPreparedStatement::GetParentOfJoinedTabl
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        12/13
 //---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlPreparedStatement::Prepare(ECSqlPrepareContext& prepareContext, ECSqlParseTreeCR ecsqlParseTree, Utf8CP ecsql)
+ECSqlStatus ECSqlPreparedStatement::Prepare(ECSqlPrepareContext& prepareContext, Exp const& exp, Utf8CP ecsql)
     {
     BeAssert(m_nativeSql.empty());
     ECDbCR ecdb = GetECDb();
@@ -56,7 +56,7 @@ ECSqlStatus ECSqlPreparedStatement::Prepare(ECSqlPrepareContext& prepareContext,
         }
 
     Utf8String nativeSql;
-    ECSqlStatus stat = ECSqlPreparer::Prepare(nativeSql, prepareContext, ecsqlParseTree);
+    ECSqlStatus stat = ECSqlPreparer::Prepare(nativeSql, prepareContext, exp);
     if (!stat.IsSuccess())
         return stat;
 
@@ -109,7 +109,7 @@ IECSqlBinder& ECSqlPreparedStatement::GetBinder(int parameterIndex)
     if (stat == ECSqlStatus::Error)
         GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Parameter index %d passed to ECSqlStatement binding API is out of bounds.", parameterIndex);
 
-    return NoopECSqlBinderFactory::GetBinder(stat);
+    return NoopECSqlBinder::Get();
     }
 
 //---------------------------------------------------------------------------------------

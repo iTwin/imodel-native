@@ -15,7 +15,6 @@
 #include "ECSqlPreparedStatement.h"
 #include "NativeSqlBuilder.h"
  
-
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 struct ECSqlStatementBase;
@@ -34,18 +33,14 @@ struct ECSqlPrepareContext
             private:
                 static bool IsSystemProperty(Utf8CP accessString)
                     {
-                    static std::set<Utf8CP, CompareIUtf8Ascii> s_systemProperties
-                        {
-                        ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME,
-                        ECDbSystemSchemaHelper::SOURCEECCLASSID_PROPNAME,
-                        ECDbSystemSchemaHelper::SOURCEECINSTANCEID_PROPNAME,
-                        ECDbSystemSchemaHelper::TARGETECCLASSID_PROPNAME,
-                        ECDbSystemSchemaHelper::TARGETECINSTANCEID_PROPNAME
-                        };
-
-                    return s_systemProperties.find(accessString) != s_systemProperties.end();
+                    return BeStringUtilities::StricmpAscii(accessString, ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME) == 0 ||
+                        BeStringUtilities::StricmpAscii(accessString, ECDbSystemSchemaHelper::SOURCEECCLASSID_PROPNAME) == 0 ||
+                        BeStringUtilities::StricmpAscii(accessString, ECDbSystemSchemaHelper::SOURCEECINSTANCEID_PROPNAME) == 0 ||
+                        BeStringUtilities::StricmpAscii(accessString, ECDbSystemSchemaHelper::TARGETECCLASSID_PROPNAME) == 0 ||
+                        BeStringUtilities::StricmpAscii(accessString, ECDbSystemSchemaHelper::TARGETECINSTANCEID_PROPNAME) == 0;
                     }
-                static const std::vector<Utf8String> Split(Utf8CP accessString, Utf8Char seperator)
+
+                static std::vector<Utf8String> Split(Utf8CP accessString, Utf8Char seperator)
                     {
                     Utf8String s = accessString;
                     std::vector<Utf8String> output;
@@ -61,13 +56,10 @@ struct ECSqlPrepareContext
                     }
             private:
                 std::set<Utf8String, CompareIUtf8Ascii> m_selection;
+
             public:
-                SelectionOptions()
-                    {}
-
-                ~SelectionOptions()
-                    {}
-
+                SelectionOptions() {}
+                ~SelectionOptions() {}
 
                 void AddProperty(Utf8CP accessString)
                     {
@@ -82,18 +74,16 @@ struct ECSqlPrepareContext
                         m_selection.insert(path);
                         }
                     }
+
                 bool IsSelected(Utf8CP accessString) const
                     {
-
                     if (m_selection.find(accessString) != m_selection.end())
                         return true;
 
                     return SelectionOptions::IsSystemProperty(accessString);
                     }
-                bool IsConstantExpression() const
-                    {
-                    return m_selection.empty();
-                    }
+
+                bool IsConstantExpression() const { return m_selection.empty(); }
             };
 
         //=======================================================================================
@@ -252,31 +242,12 @@ struct ECSqlPrepareContext
                         ParameterSet m_secondary;
 
                     public:
-                        ParameterSet& GetOrignalR()
-                            {
-                            return m_orignal;
-                            }
-                        ParameterSet& GetPrimaryR()
-                            {
-                            return m_primary;
-                            }
-                        ParameterSet& GetSecondaryR()
-                            {
-                            return m_secondary;
-                            }
-
-                        ParameterSet const& GetOrignal() const
-                            {
-                            return m_orignal;
-                            }
-                        ParameterSet const& GetPrimary() const
-                            {
-                            return m_primary;
-                            }
-                        ParameterSet const& GetSecondary() const
-                            {
-                            return m_secondary;
-                            }
+                        ParameterSet& GetOrignalR() { return m_orignal; }
+                        ParameterSet& GetPrimaryR() { return m_primary; }
+                        ParameterSet& GetSecondaryR() { return m_secondary; }
+                        ParameterSet const& GetOrignal() const { return m_orignal; }
+                        ParameterSet const& GetPrimary() const { return m_primary; }
+                        ParameterSet const& GetSecondary() const { return m_secondary; }
                     };
 
             private:
@@ -297,7 +268,7 @@ struct ECSqlPrepareContext
 
             public:
                 ~JoinedTableInfo() {}
-                static std::unique_ptr<JoinedTableInfo> Create(ECSqlPrepareContext& ctx, ECSqlParseTreeCR exp, Utf8CP orignalECSQL);
+                static std::unique_ptr<JoinedTableInfo> Create(ECSqlPrepareContext&, Exp const&, Utf8CP orignalECSQL);
                 Utf8CP GetJoinedTableECSql() const { return m_joinedTableECSql.c_str(); }
                 Utf8CP GetParentOfJoinedTableECSql() const { return m_parentOfJoinedTableECSql.c_str(); }
                 Utf8CP GetOrignalECSql() const { return m_originalECSql.c_str(); }
@@ -400,7 +371,7 @@ struct ECSqlPrepareContext
         bool IsParentOfJoinedTable() const { return m_joinedTableClassId.IsValid(); }
         void MarkAsParentOfJoinedTable(ECN::ECClassId classId) { BeAssert(!IsParentOfJoinedTable()); m_joinedTableClassId = classId; }
         JoinedTableInfo const* GetJoinedTableInfo() const { return m_joinedTableInfo.get(); }
-        JoinedTableInfo const* TrySetupJoinedTableInfo(ECSqlParseTreeCR exp, Utf8CP originalECSQL);
+        JoinedTableInfo const* TrySetupJoinedTableInfo(Exp const&, Utf8CP originalECSQL);
         
         ECSqlStatementBase& GetECSqlStatementR() const;
         NativeSqlBuilder const& GetSqlBuilder() const { return m_nativeSqlBuilder; }

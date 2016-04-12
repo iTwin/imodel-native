@@ -16,7 +16,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod                                                Krischan.Eberle      10/2013
 //---------------------------------------------------------------------------------------
 //static
-ECSqlField::Collection ECSqlField::s_emptyChildCollection;
+ECSqlField::Collection* ECSqlField::s_emptyChildCollection = nullptr;
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      09/2013
@@ -127,6 +127,19 @@ Utf8CP ECSqlField::GetPrimitiveGetMethodName(ECN::PrimitiveType getMethodType)
                 return "";
         }
     }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+ECSqlField::Collection const& ECSqlField::GetEmptyChildCollection()
+    {
+    if (s_emptyChildCollection == nullptr)
+        s_emptyChildCollection = new Collection();
+
+    return *s_emptyChildCollection;
+    }
+
 
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
