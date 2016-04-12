@@ -1042,7 +1042,7 @@ bool HTIFFFile::SetField (HTagID pi_Tag, const uint16_t* pi_pVal1, const uint16_
 
             Ret = m_pCurDir->SetValues(pi_Tag, Count, pBuf);
 
-            delete pBuf;
+            delete[] pBuf;
             }
         break;
 

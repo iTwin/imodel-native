@@ -3679,8 +3679,8 @@ void HGF2DPolygonOfSegments::SuperScan2(const HGF2DPolygonOfSegments&  pi_rGiven
             ;
         }
 
-    delete pMyFlagsSelf;
-    delete pMyFlagsGiven;
+    delete[] pMyFlagsSelf;
+    delete[] pMyFlagsGiven;
 
     }
 
