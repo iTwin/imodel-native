@@ -203,12 +203,14 @@ void   LinearDimensionStroker::AppendDimensionGeometry ()
     for (uint32_t iSegment = 0; iSegment < m_dimPoints.size() - 1; ++iSegment)
         GenerateSegment (iSegment);
 
+#if defined (NOT_NOW)
     bvector<DPoint3d>  points;
     for (uint32_t index = 0; index < m_dimPoints.size(); index++)
         points.push_back (DPoint3d::From (m_dimPoints[index]));
     
     ICurvePrimitivePtr curve = ICurvePrimitive::CreateLineString(points);
     m_geomBuilder.Append(*curve);
+#endif
     }
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

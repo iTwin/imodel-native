@@ -17,9 +17,6 @@ DGNPLATFORM_REF_COUNTED_PTR(TextAnnotation);
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-//! @addtogroup Annotations
-//! @beginGroup
-
 typedef bvector<AnnotationLeaderPtr> AnnotationLeaderCollection;
 typedef AnnotationLeaderCollection& AnnotationLeaderCollectionR;
 typedef AnnotationLeaderCollection const& AnnotationLeaderCollectionCR;
@@ -27,11 +24,13 @@ typedef AnnotationLeaderCollection const& AnnotationLeaderCollectionCR;
 //=======================================================================================
 //! TextAnnotation objects are used to place markup text (vs. physical text) in a drawing. They are comprised of a piece of text (AnnotationTextBlock), an optional frame (AnnotationFrame), and 0 or more leaders (AnnotationLeader). TextAnnotation is merely a data object; see TextAnnotationDraw for drawing, and TextAnnotationHandler for persistence.
 //! TextAnnotation objects themselves do not have "styles"; they can instead be created from "seeds" (TextAnnotationSeed). Unlike a style, a seed is only used when creating the TextAnnotation. TextAnnotation objects do not automatically react to changes in their seed (unlike how a style system normally operates), but it is a convenient way to create multiple TextAnnotation objects with the same look and feel. The individual pieces of a TextAnnotation (the text, frame, and leaders) all have styles, which do behave like a classical style system.
+//! @ingroup GROUP_Annotation
 // @bsiclass                                                    Jeff.Marker     07/2014
 //=======================================================================================
 struct TextAnnotation : RefCountedBase
 {
     //=======================================================================================
+    //! @ingroup GROUP_Annotation
     // @bsiclass                                                    Josh.Schifter   04/2016
     //=======================================================================================
     enum class AnchorPoint
@@ -87,7 +86,5 @@ public:
     AnnotationLeaderCollectionR GetLeadersR() { return m_leaders; }
     DGNPLATFORM_EXPORT void ApplySeed(DgnElementId);
 };
-
-//! @endGroup
 
 END_BENTLEY_DGN_NAMESPACE

@@ -23,12 +23,10 @@ DGNPLATFORM_REF_COUNTED_PTR(TextAnnotationSeed);
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-//! @addtogroup Annotations
-//! @beginGroup
-
 //=======================================================================================
 //! This enumerates all possible TextAnnotationSeed property keys.
 //! @note Unless dealing with style overrides, you will not typically use this enumeration directly. While TextAnnotationSeed provides high-level accessors to its properties, overrides are expressed directly via TextAnnotationSeedPropertyBag and TextAnnotationSeedProperty.
+//! @ingroup GROUP_Annotation
 // @bsiclass                                                    Jeff.Marker     07/2014
 //=======================================================================================
 enum class TextAnnotationSeedProperty
@@ -43,6 +41,7 @@ enum class TextAnnotationSeedProperty
 //! Unlike the higher-level TextAnnotationSeed, this collection deals directly with property keys and their underlying values. You must know a property's data type when using this class. The TextAnnotationSeedProperty enumeration describes each property's data type.
 //! When created, this collection has no properties in it; their values are assumed to be default. In other words, this only stores deltas from defaults. In the case of overrides, it only stores the properties that are overridden, even if overridden with the same value.
 //! @note Unless dealing with style overrides, you will not typically use this enumeration directly. While TextAnnotationSeed provides high-level accessors to its properties, overrides are expressed directly via TextAnnotationSeedPropertyBag and TextAnnotationSeedProperty.
+//! @ingroup GROUP_Annotation
 // @bsiclass                                                    Jeff.Marker     07/2014
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE TextAnnotationSeedPropertyBag : AnnotationPropertyBag
@@ -70,12 +69,14 @@ public:
 };
 
 //! As an element, TextAnnotationSeed IDs are inherently DgnElementId, but create a typedef so that argument types are more obvious/natural.
+//! @ingroup GROUP_Annotation
 typedef DgnElementId TextAnnotationSeedId;
 
 //=======================================================================================
 //! This is used to provide seed properties when creating a TextAnnotation. Unlike a classic "style", a "seed" is only used when creating the element. Once created, elements will not react to changes in the seed.
 //! @note To be valid, a seed must have all 3 style properties set. When created from scratch, all 3 styles are invalid and must therefore be set.
 //! @note When creating a TextAnnotation, the typical work flow is to create and store the required styles for a seed, create and store the seed, and then create the TextAnnotation with the stored seed's ID.
+//! @ingroup GROUP_Annotation
 // @bsiclass                                                    Jeff.Marker     07/2014
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE TextAnnotationSeed : DictionaryElement
@@ -132,6 +133,7 @@ public:
     TextAnnotationSeedCPtr Update() { return GetDgnDb().Elements().Update<TextAnnotationSeed>(*this); }
 
     //=======================================================================================
+    //! @ingroup GROUP_Annotation
     // @bsiclass                                                    Jeff.Marker     11/2014
     //=======================================================================================
     struct Entry : ECSqlStatementEntry
@@ -160,7 +162,6 @@ namespace dgn_ElementHandler
 {
     //=======================================================================================
     //! The handler for text annotation seeds
-    //! @bsistruct                                                  Paul.Connelly   10/15
     //=======================================================================================
     struct TextAnnotationSeedHandler : Element
     {
@@ -170,7 +171,5 @@ namespace dgn_ElementHandler
         DGNPLATFORM_EXPORT virtual void _GetClassParams(ECSqlClassParams& params) override;
     };
 }
-
-//! @endGroup
 
 END_BENTLEY_DGN_NAMESPACE

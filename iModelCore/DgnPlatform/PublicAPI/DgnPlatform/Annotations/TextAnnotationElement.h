@@ -32,10 +32,8 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 namespace DgnDbSync { namespace DgnV8 { struct ConvertV8TextToDgnDbExtension; } }
 //__PUBLISH_SECTION_START__
 
-//! @addtogroup Annotations
-//! @beginGroup
-
 //=======================================================================================
+//! @ingroup GROUP_Annotation
 // @bsiclass                                                    Jeff.Marker     09/2015
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE TextAnnotationData : DgnElement::UniqueAspect
@@ -83,6 +81,7 @@ namespace dgn_AspectHandler
 }
 
 //=======================================================================================
+//! @ingroup GROUP_Annotation
 // @bsiclass                                                    Jeff.Marker     09/2015
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE TextAnnotation2d : AnnotationElement2d
@@ -127,6 +126,7 @@ namespace dgn_ElementHandler
 }
 
 //=======================================================================================
+//! @ingroup GROUP_Annotation
 // @bsiclass                                                    Jeff.Marker     09/2015
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE TextAnnotation3d : GraphicalElement3d
@@ -169,7 +169,5 @@ namespace dgn_ElementHandler
         ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_TextAnnotation3d, TextAnnotation3d, TextAnnotation3dHandler, Geometric3d, DGNPLATFORM_EXPORT);
     };
 }
-
-//! @endGroup
 
 END_BENTLEY_DGN_NAMESPACE

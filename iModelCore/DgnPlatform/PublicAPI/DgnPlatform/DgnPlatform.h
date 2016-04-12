@@ -267,16 +267,16 @@ END_BENTLEY_RENDER_NAMESPACE
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-BEBRIEFCASEBASED_ID_CLASS(DgnElementId)       //!< An Id that is assigned to an Element. @ingroup DgnElementGroup
+BEBRIEFCASEBASED_ID_CLASS(DgnElementId)       //!< An Id that is assigned to an Element. @ingroup GROUP_DgnElement
 BEBRIEFCASEBASED_ID_CLASS(DgnGeometryPartId)      //!< An Id that is assigned to a DgnGeometryPart.
-BEBRIEFCASEBASED_ID_CLASS(DgnModelId)         //!< An Id that is assigned to a DgnModel.  A DgnModel is a container for DgnElements. @ingroup DgnModelGroup
+BEBRIEFCASEBASED_ID_CLASS(DgnModelId)         //!< An Id that is assigned to a DgnModel.  A DgnModel is a container for DgnElements. @ingroup GROUP_DgnModel
 BEBRIEFCASEBASED_ID_CLASS(DgnLinkId)          //!< An Id that is assigned to a DGN link. See DgnLinkTable.
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnMaterialId, DgnElementId) //!< An element Id that refers to a material.
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnTextureId, DgnElementId) //!< An element Id that refers to a named texture.
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnLightId, DgnElementId) //!< An element Id that refers to a light definition.
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnStyleId, DgnElementId) //!< An Id that is assigned to a style. See DgnDb#Styles.
-BEBRIEFCASEBASED_ID_SUBCLASS(DgnCategoryId, DgnElementId) //!< An element Id that refers to a DgnCategory. @ingroup DgnCategoryGroup
-BEBRIEFCASEBASED_ID_SUBCLASS(DgnSubCategoryId, DgnElementId) //!< An element Id that refers to a DgnSubCategory. @ingroup DgnCategoryGroup
+BEBRIEFCASEBASED_ID_SUBCLASS(DgnCategoryId, DgnElementId) //!< An element Id that refers to a DgnCategory. @ingroup GROUP_DgnCategory
+BEBRIEFCASEBASED_ID_SUBCLASS(DgnSubCategoryId, DgnElementId) //!< An element Id that refers to a DgnSubCategory. @ingroup GROUP_DgnCategory
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnTrueColorId, DgnElementId) //!< An element Id that refers a a DgnTrueColor.
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnViewId, DgnElementId) //!< An element Id that refers to a ViewDefinition.
 
@@ -340,10 +340,10 @@ public:
     BeBriefcaseBasedIdSet const& GetBriefcaseBasedIdSet() const { return m_set; }
 };
 
-typedef IdSet<DgnElementId> DgnElementIdSet;            //!< IdSet with DgnElementId members. @ingroup DgnElementGroup
-typedef IdSet<DgnModelId> DgnModelIdSet;                //!< IdSet with DgnModelId members. @ingroup DgnModelGroup
-typedef IdSet<DgnCategoryId> DgnCategoryIdSet;          //!< IdSet with DgnCategoryId members. @ingroup DgnCategoryGroup
-typedef IdSet<DgnSubCategoryId> DgnSubCategoryIdSet;    //!< IdSet with DgnSubCategoryId members. @ingroup DgnCategoryGroup
+typedef IdSet<DgnElementId> DgnElementIdSet;            //!< IdSet with DgnElementId members. @ingroup GROUP_DgnElement
+typedef IdSet<DgnModelId> DgnModelIdSet;                //!< IdSet with DgnModelId members. @ingroup GROUP_DgnModel
+typedef IdSet<DgnCategoryId> DgnCategoryIdSet;          //!< IdSet with DgnCategoryId members. @ingroup GROUP_DgnCategory
+typedef IdSet<DgnSubCategoryId> DgnSubCategoryIdSet;    //!< IdSet with DgnSubCategoryId members. @ingroup GROUP_DgnCategory
 typedef IdSet<DgnMaterialId> DgnMaterialIdSet;          //!< IdSet with DgnMaterialId members.
 
 typedef ECN::ECClassId DgnClassId;
@@ -625,7 +625,6 @@ enum class DgnCoordSystem
     World     = 3,     //!< Coordinates are relative to the <i>world</i> coordinate system for the physical elements in the DgnDb
 };
 
-/** @cond BENTLEY_SDK_Internal */
 enum class GradientFlags
 {
     None         = 0,
@@ -655,7 +654,7 @@ ENUM_IS_FLAGS(ClipMask)
 //! @ingroup LineStyleManagerModule
 enum class LsComponentType
 {
-    Unknown         = 0,             //!<   Unknown, should never occur
+    Unknown         = 0,             //!<  Unknown, should never occur
     PointSymbol     = 1,
     Compound        = 2,
     LineCode        = 3,
@@ -711,6 +710,7 @@ enum class SnapStatus
     FilteredByAppQuietly = 700,
 };
 
+//! @private
 enum class OutputMessagePriority
 {
     None           = 0,
@@ -724,7 +724,8 @@ enum class OutputMessagePriority
     Fatal          = 17,
 };
 
-/* Values for NotificationManager::OutputMessage */
+//! Values for NotificationManager::OutputMessage
+//! @private
 enum class OutputMessageAlert
 {
     None     = 0,
@@ -735,9 +736,9 @@ enum class OutputMessageAlert
 enum class GridOrientationType
 {
     View    = 0,
-    WorldXY = 1,           // Top
-    WorldYZ = 2,           // Right
-    WorldXZ = 3,           // Front
+    WorldXY = 1,           //!< Top
+    WorldYZ = 2,           //!< Right
+    WorldXZ = 3,           //!< Front
     ACS     = 4,
     Maximum = 4,
 };
@@ -858,17 +859,16 @@ enum class GeoLocationProviderStatus
 };
 
 typedef bvector<double> T_DoubleVector;
-typedef T_DoubleVector*        T_DoubleVectorP, &T_DoubleVectorR;
-typedef T_DoubleVector const*  T_DoubleVectorCP;
-typedef T_DoubleVector const&  T_DoubleVectorCR;
+typedef T_DoubleVector* T_DoubleVectorP, &T_DoubleVectorR;
+typedef T_DoubleVector const* T_DoubleVectorCP;
+typedef T_DoubleVector const& T_DoubleVectorCR;
 
 #define   IMAXI8      INT64_MAX
 #define   IMINI8      INT64_MIN
 #define   IMAXUI8     UINT64_MAX
 
-
 //=======================================================================================
-// @bsiclass                                                    Keith.Bentley   12/14
+//! @ingroup GROUP_DgnView
 //=======================================================================================
 enum class StandardView
     {
@@ -885,7 +885,7 @@ enum class StandardView
 
 //=======================================================================================
 //! RGBA values for a color
-//! @ingroup DgnColorGroup
+//! @ingroup GROUP_Appearance
 //=======================================================================================
 struct ColorDef
 {
@@ -949,8 +949,5 @@ public:
 // Used for verifying published tests in DgnPlatformTest are using published headers. DO NOT REMOVE.
 #define __DGNPLATFORM_NON_PUBLISHED_HEADER__ 1
 /*__PUBLISH_SECTION_START__*/
-
-
-/** @endcond */
 
 END_BENTLEY_DGN_NAMESPACE

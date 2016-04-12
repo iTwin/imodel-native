@@ -795,3 +795,15 @@ Utf8CP  name
     return  NULL;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    03/2016
+//---------------------------------------------------------------------------------------
+LsDefinition* LsDefinition::Clone()
+    {
+    Json::Value jsonObj(Json::objectValue);
+    LsDefinition::InitializeJsonObject(jsonObj, GetLocation()->GetComponentId(), GetAttributes(), m_unitDef);
+
+    LsDefinition* retval = new LsDefinition(_GetName(), *GetLocation()->GetDgnDb(), jsonObj, m_styleId);
+
+    return retval;
+    }

@@ -83,7 +83,7 @@ public:
 };
 
 //=======================================================================================
-//! @ingroup DgnViewGroup
+//! @ingroup GROUP_DgnView
 /**
  A ViewController provides the behavior for a type of view. It also provides the persistent information
  about how the view relates to a \ref DgnDbGroup (e.g. what models/categories are displayed, the ViewFlags that control how graphics
@@ -535,7 +535,7 @@ public:
 
 //=======================================================================================
 //! A SpatialViewControllerBase controls views of SpatialModels.
-//! @ingroup DgnViewGroup
+//! @ingroup GROUP_DgnView
 // @bsiclass                                                    Keith.Bentley   03/12
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE SpatialViewController : ViewController
@@ -589,7 +589,7 @@ public:
     void SetAuxCoordinateSystem(IAuxCoordSysP acs) {m_auxCoordSys = acs;}
 };
 
-/** @addtogroup DgnViewGroup
+/** @addtogroup GROUP_DgnView DgnView Module
 <h4>%SpatialViewController Camera</h4>
 
 This is what the parameters to the camera methods, and the values stored by CameraViewController mean.
@@ -650,7 +650,7 @@ This is what the parameters to the camera methods, and the values stored by Came
 //=======================================================================================
 //! A CameraViewController is used to control views of SpatialModels. A CameraViewController
 //! may have a camera enabled that displays world-coordinate geometry onto the image plane through a perspective projection.
-//! @ingroup DgnViewGroup
+//! @ingroup GROUP_DgnView
 // @bsiclass                                                    Keith.Bentley   03/12
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE CameraViewController : SpatialViewController
@@ -813,7 +813,7 @@ public:
 
 //=======================================================================================
 //! A SectioningViewController is a physical view with a clip that defines a section cut.
-//! @ingroup DgnViewGroup
+//! @ingroup GROUP_DgnView
 // @bsiclass                                                    Keith.Bentley   03/12
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE SectioningViewController : SpatialViewController
@@ -859,7 +859,7 @@ public:
 
 //=======================================================================================
 //! A ViewController2d is used to control views of 2d models.
-//! @ingroup DgnViewGroup
+//! @ingroup GROUP_DgnView
 // @bsiclass                                                    Keith.Bentley   03/12
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ViewController2d : ViewController
@@ -890,7 +890,7 @@ public:
 
 //=======================================================================================
 //! A DrawingViewController is used to control views of DrawingModels
-//! @ingroup DgnViewGroup
+//! @ingroup GROUP_DgnView
 // @bsiclass                                                    Keith.Bentley   03/12
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DrawingViewController : ViewController2d
@@ -907,7 +907,7 @@ public:
 
 //=======================================================================================
 //! A SectionDrawingViewController is used to control views of SectionDrawingModels
-//! @ingroup DgnViewGroup
+//! @ingroup GROUP_DgnView
 // @bsiclass                                                    Keith.Bentley   03/12
 //=======================================================================================
 struct SectionDrawingViewController : DrawingViewController
@@ -938,7 +938,7 @@ public:
 //! etc. to the underlying physical view controller, so that, if the HypermodelingViewController is deleted and the physical
 //! view controller is restored, the view will not changed.
 //! <p>Note that a hypermodeling view is not a persistent concept. It is created at runtime to compose other views.
-//! @ingroup DgnViewGroup
+//! @ingroup GROUP_DgnView
 // @bsiclass                                                    Keith.Bentley   03/12
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE HypermodelingViewController : SpatialViewController

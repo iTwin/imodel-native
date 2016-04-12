@@ -77,8 +77,8 @@ TEST_F(DgnBaseDomainSchemaTests, ValidateDomainSchemaDDL)
         ASSERT_TRUE(ddl.Contains("[ParentId] INTEGER,"));
         ASSERT_TRUE(ddl.Contains("[ModelId] INTEGER NOT NULL,"));
         ASSERT_TRUE(ddl.Contains("[Code_AuthorityId] INTEGER NOT NULL,"));
-        ASSERT_TRUE(ddl.Contains("[Code_Namespace] TEXT NOT NULL COLLATE NoCase,"));
-        ASSERT_TRUE(ddl.Contains("[Code_Value] TEXT COLLATE NoCase,"));
+        ASSERT_TRUE(ddl.Contains("[Code_Namespace] TEXT NOT NULL COLLATE NOCASE,"));
+        ASSERT_TRUE(ddl.Contains("[Code_Value] TEXT COLLATE NOCASE,"));
         ASSERT_TRUE(ddl.Contains("[LastMod] TIMESTAMP NOT NULL DEFAULT(julianday('now')),"));
         ASSERT_TRUE(ddl.Contains("PRIMARY KEY([Id])"));
         ASSERT_TRUE(ddl.Contains("FOREIGN KEY([Code_AuthorityId]) REFERENCES [dgn_Authority]([Id])"));

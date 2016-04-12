@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: PrivateApi/DgnPlatformInternal/DgnCore/Annotations/TextAnnotationPersistence.h $
-//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
 /*__BENTLEY_INTERNAL_ONLY__*/
 #pragma once
@@ -9,9 +9,6 @@
 #include "Annotations.fb.h"
 
 BEGIN_BENTLEY_DGN_NAMESPACE
-
-//! @addtogroup Annotations
-//! @beginGroup
 
 //=======================================================================================
 // @bsiclass                                                    Jeff.Marker     07/2014
@@ -27,7 +24,5 @@ public:
     static BentleyStatus DecodeFromFlatBuf(TextAnnotationR, ByteCP, size_t numBytes);
 
 }; // TextAnnotationPersistence
-
-//! @endGroup
 
 END_BENTLEY_DGN_NAMESPACE

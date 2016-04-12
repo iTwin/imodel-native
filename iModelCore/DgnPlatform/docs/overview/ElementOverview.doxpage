@@ -132,7 +132,7 @@ By default, an element's display label is the label if set or the code value if 
 <!-- ---------------------------------------------------------------------------------- -->
 @section SECTION_ElementOverviewSeeAlso See Also
 
-@see DgnElementGroup
+@see GROUP_DgnElement
 @see @ref PAGE_CustomElement
 */
 

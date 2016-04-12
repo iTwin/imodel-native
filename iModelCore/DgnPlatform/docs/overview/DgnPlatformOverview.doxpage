@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 //__PUBLISH_SECTION_START__
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 /** @page PAGE_DgnPlatform DgnPlatform Overview
 
@@ -50,7 +50,7 @@ Domains ship with the platform but are separate in a software architecture sense
 required for a specific discipline or lifecycle phase.  Domains are meant to be used across applications and to raise the level of information sharing.
 Domains are written in C++ and do not include user interface or tools.
 
-@ref DgnDomainGroup
+@ref GROUP_DgnDomain
 
 <p>
 Within a domain, real-world objects are modeled using elements and element aspects.  An element represents that identity and function of the real-world object.
@@ -79,4 +79,4 @@ The DgnPlatform library also adds other key concepts required by infrastructure 
 
 */
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

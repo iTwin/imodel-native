@@ -14,11 +14,9 @@ DGNPLATFORM_REF_COUNTED_PTR(AnnotationLeader);
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-//! @addtogroup Annotations
-//! @beginGroup
-
 //=======================================================================================
 //! This enumerates all possible ways to apply an AnnotationLeaderStyle to an AnnotationLeader.
+//! @ingroup GROUP_Annotation
 // @bsiclass                                                    Jeff.Marker     06/2014
 //=======================================================================================
 enum class SetAnnotationLeaderStyleOptions
@@ -32,6 +30,7 @@ enum class SetAnnotationLeaderStyleOptions
 //=======================================================================================
 //! This enumerates all possible annotation leader source attachment types (e.g. how a leader connects to the frame).
 // Members should match AnnotationLeader::SourceAttachmentType in Annotations.proto.
+//! @ingroup GROUP_Annotation
 // @bsiclass                                                    Jeff.Marker     06/2014
 //=======================================================================================
 enum class AnnotationLeaderSourceAttachmentType
@@ -43,6 +42,7 @@ enum class AnnotationLeaderSourceAttachmentType
 //=======================================================================================
 //! This enumerates all possible annotation leader target attachment types (e.g. how a leader connects to its target).
 // Members should match AnnotationLeader::TargetAttachmentType in Annotations.proto.
+//! @ingroup GROUP_Annotation
 // @bsiclass                                                    Jeff.Marker     06/2014
 //=======================================================================================
 enum class AnnotationLeaderTargetAttachmentType
@@ -56,6 +56,7 @@ enum class AnnotationLeaderTargetAttachmentType
 //! @note An AnnotationLeader must be created with an AnnotationLeaderStyle; if a style does not exist, you must first create and store one, and then used its ID to create an AnnotationLeader. While an AnnotationLeader must have a style, it can override each individual style property as needed. Properties are not typically overridden in order to enforce project standards, however it is technically possible.
 //! @note Since different data is needed for each attachment type, use the appropriate Get/Set...AttachmentDataFor... methods based on the type of attachment you have set.
 //! @note It is invalid to set an attachment type without also setting its data.
+//! @ingroup GROUP_Annotation
 // @bsiclass                                                    Jeff.Marker     06/2014
 //=======================================================================================
 struct AnnotationLeader : public RefCountedBase
@@ -101,7 +102,5 @@ public:
     DPoint3dCR GetTargetAttachmentDataForPhysicalPoint() const { return m_targetAttachmentDataForPhysicalPoint; }
     void SetTargetAttachmentDataForPhysicalPoint(DPoint3dCR value) { m_targetAttachmentDataForPhysicalPoint = value; }
 };
-
-//! @endGroup
 
 END_BENTLEY_DGN_NAMESPACE
