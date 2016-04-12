@@ -3182,6 +3182,23 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                 if (!reader.Get(egOp, curvePtr))
                     break;
 
+#if defined (NOT_NOW_OCC_TESTING)
+                TopoDS_Shape shape;
+
+                if (curvePtr->IsAnyRegionType() && SUCCESS == OCBRep::Create::TopoShapeFromCurveVector(shape, *curvePtr))
+                    {
+                    ISolidKernelEntityPtr entityPtr = SolidKernelUtil::CreateNewEntity(shape);
+
+                    DrawHelper::CookGeometryParams(context, geomParams, graphic, geomParamsChanged);
+                    graphic.AddBody(*entityPtr);
+                    break;
+                    }
+                else
+                    {
+                    geomParams.SetLineColor(ColorDef::Selected()); // Set failure color...
+                    }
+#endif
+
                 DrawHelper::CookGeometryParams(context, geomParams, graphic, geomParamsChanged);
 
                 if (!context.Is3dView())
@@ -3206,6 +3223,23 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                 if (!reader.Get(egOp, meshData))
                     break;
 
+#if defined (NOT_NOW_OCC_TESTING)
+                TopoDS_Shape shape;
+
+                if (SUCCESS == OCBRep::Create::TopoShapeFromPolyface(shape, meshData))
+                    {
+                    ISolidKernelEntityPtr entityPtr = SolidKernelUtil::CreateNewEntity(shape);
+
+                    DrawHelper::CookGeometryParams(context, geomParams, graphic, geomParamsChanged);
+                    graphic.AddBody(*entityPtr);
+                    break;
+                    }
+                else
+                    {
+                    geomParams.SetLineColor(ColorDef::Selected()); // Set failure color...
+                    }
+#endif
+
                 DrawHelper::CookGeometryParams(context, geomParams, graphic, geomParamsChanged);
                 graphic.AddPolyface(meshData, FillDisplay::Never != geomParams.GetFillDisplay());
                 break;
@@ -3223,6 +3257,23 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                 if (!reader.Get(egOp, solidPtr))
                     break;
 
+#if defined (NOT_NOW_OCC_TESTING)
+                TopoDS_Shape shape;
+
+                if (SUCCESS == OCBRep::Create::TopoShapeFromSolidPrimitive(shape, *solidPtr))
+                    {
+                    ISolidKernelEntityPtr entityPtr = SolidKernelUtil::CreateNewEntity(shape);
+
+                    DrawHelper::CookGeometryParams(context, geomParams, graphic, geomParamsChanged);
+                    graphic.AddBody(*entityPtr);
+                    break;
+                    }
+                else
+                    {
+                    geomParams.SetLineColor(ColorDef::Selected()); // Set failure color...
+                    }
+#endif
+
                 DrawHelper::CookGeometryParams(context, geomParams, graphic, geomParamsChanged);
                 graphic.AddSolidPrimitive(*solidPtr);
                 break;
@@ -3239,6 +3290,23 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
 
                 if (!reader.Get(egOp, surfacePtr))
                     break;
+
+#if defined (NOT_NOW_OCC_TESTING)
+                TopoDS_Shape shape;
+
+                if (SUCCESS == OCBRep::Create::TopoShapeFromBSurface(shape, *surfacePtr))
+                    {
+                    ISolidKernelEntityPtr entityPtr = SolidKernelUtil::CreateNewEntity(shape);
+
+                    DrawHelper::CookGeometryParams(context, geomParams, graphic, geomParamsChanged);
+                    graphic.AddBody(*entityPtr);
+                    break;
+                    }
+                else
+                    {
+                    geomParams.SetLineColor(ColorDef::Selected()); // Set failure color...
+                    }
+#endif
 
                 DrawHelper::CookGeometryParams(context, geomParams, graphic, geomParamsChanged);
                 graphic.AddBSplineSurface(*surfacePtr);

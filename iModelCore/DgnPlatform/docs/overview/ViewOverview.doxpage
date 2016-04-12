@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 //__PUBLISH_SECTION_START__
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 /** @page PAGE_ViewOverview View and ViewController
 
@@ -15,21 +15,21 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 <hr>
 <!-- ---------------------------------------------------------------------------------- -->
-@section PAGE_ViewOverview_SECTION_Category_Includes Required include files
+@section PAGE_ViewOverview1 Required include files
 
 __PUBLISH_INSERT_FILE__ View_Includes.sampleCode
 
 <hr>
 <!-- ---------------------------------------------------------------------------------- -->
-@section PAGE_ViewOverview_SECTION_CreateAndInsertView Create and Insert View
+@section SECTION_ViewOverview2 Create and Insert View
 
-__PUBLISH_INSERT_FILE__ View_CreateAndInsert.sampleCode
+__PUBLISH_INSERT_FILE__ ToyTile_CreateView.sampleCode
 
 <hr>
 <!-- ---------------------------------------------------------------------------------- -->
-@section PAGE_ViewOverview_SECTION_LinkToViewModules View Modules and Links
+@section SECTION_ViewOverview3 See Also
 
 @see GROUP_DgnView
 */
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

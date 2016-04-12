@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 //=======================================================================================
 //! Interface adopted by a DgnDomain::Handler which can supply ECSqlClassParams
@@ -111,4 +111,4 @@ public:
 
 ENUM_IS_FLAGS(ECSqlClassParams::StatementType);
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

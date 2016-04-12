@@ -53,9 +53,10 @@
 #include <BRepPrimAPI_MakeCylinder.hxx>
 #include <BRepPrimAPI_MakeTorus.hxx>
 #include <BRepBuilderAPI_MakeShell.hxx>
-#include <BRepPrimAPI_MakeSphere.hxx>
+#include <BRepPrimAPI_MakeBox.hxx>
 #include <BRepPrimApi_MakePrism.hxx>
 #include <BRepPrimApi_MakeRevol.hxx>
+#include <BRepPrimAPI_MakeSphere.hxx>
 #include <BRepAlgoAPI_Cut.hxx>
 #include <BRepAlgoAPI_Fuse.hxx>
 #include <TColStd_Array1OfReal.hxx>
@@ -123,15 +124,58 @@ struct Create
     //! @return SUCCESS if shape was created.
     DGNPLATFORM_EXPORT static BentleyStatus TopoShapeFromPolyface(TopoDS_Shape& shape, PolyfaceQueryCR mesh);
 
-//    DGNPLATFORM_EXPORT static BentleyStatus BodyFromBox (IOcctEntityPtr& occtBody, DgnBoxDetailCR box, double solidToDgnScale);
-    DGNPLATFORM_EXPORT static BentleyStatus TopoShapeFromCone(TopoDS_Shape& shape, DgnConeDetailCR cone);
-//    DGNPLATFORM_EXPORT static BentleyStatus BodyFromSphere (IOcctEntityPtr& occtBody, DPoint3dCR center, RotMatrixCR rMatrix, double radius, double solidToDgnScale);
-//    DGNPLATFORM_EXPORT static BentleyStatus BodyFromTorus (IOcctEntityPtr& occtBody, DgnTorusPipeDetailCR cone, double solidToDgnScale);
-//    DGNPLATFORM_EXPORT static BentleyStatus BodyFromExtrusion (IOcctEntityPtr& occtBody, DgnExtrusionDetailCR detail, double solidToDgnScale, bool capped);
-//    DGNPLATFORM_EXPORT static BentleyStatus BodyFromRotationalSweep (IOcctEntityPtr& occtBody, DgnRotationalSweepDetailCR detail, double solidToDgnScale, bool capped);
-//    DGNPLATFORM_EXPORT static BentleyStatus BodyFromRuledSweep (IOcctEntityPtr& occtBody, DgnRuledSweepDetailCR detail, double solidToDgnScale, bool capped);
-//    DGNPLATFORM_EXPORT static BentleyStatus BodyFromSolidPrimitive (IOcctEntityPtr& occtBody, ISolidPrimitiveCR primitive, DgnModelRefP modelRef);
+    //! Create a new sheet or solid from a DgnBoxDetail.
+    //! @param[out] out The new shape.
+    //! @param[in] detail The DgnBoxDetail to create a shape from.
+    //! @return SUCCESS if shape was created.
+    DGNPLATFORM_EXPORT static BentleyStatus TopoShapeFromBox(TopoDS_Shape& shape, DgnBoxDetailCR detail);
 
+    //! Create a new sheet or solid from a DgnConeDetail.
+    //! @param[out] out The new shape.
+    //! @param[in] detail The DgnConeDetail to create a shape from.
+    //! @return SUCCESS if shape was created.
+    DGNPLATFORM_EXPORT static BentleyStatus TopoShapeFromCone(TopoDS_Shape& shape, DgnConeDetailCR detail);
+
+    //! Create a new sheet or solid from a DgnSphereDetail.
+    //! @param[out] out The new shape.
+    //! @param[in] detail The DgnSphereDetail to create a shape from.
+    //! @return SUCCESS if shape was created.
+    DGNPLATFORM_EXPORT static BentleyStatus TopoShapeFromSphere(TopoDS_Shape& shape, DgnSphereDetailCR detail);
+
+    //! Create a new sheet or solid from a DgnTorusPipeDetail.
+    //! @param[out] out The new shape.
+    //! @param[in] detail The DgnTorusPipeDetail to create a shape from.
+    //! @return SUCCESS if shape was created.
+    DGNPLATFORM_EXPORT static BentleyStatus TopoShapeFromTorus(TopoDS_Shape& shape, DgnTorusPipeDetailCR detail);
+
+    //! Create a new sheet or solid from a DgnExtrusionDetail.
+    //! @param[out] out The new shape.
+    //! @param[in] detail The DgnExtrusionDetail to create a shape from.
+    //! @return SUCCESS if shape was created.
+    DGNPLATFORM_EXPORT static BentleyStatus TopoShapeFromExtrusion(TopoDS_Shape& shape, DgnExtrusionDetailCR detail);
+
+    //! Create a new sheet or solid from a DgnRotationalSweepDetail.
+    //! @param[out] out The new shape.
+    //! @param[in] detail The DgnRotationalSweepDetail to create a shape from.
+    //! @return SUCCESS if shape was created.
+    DGNPLATFORM_EXPORT static BentleyStatus TopoShapeFromRotationalSweep(TopoDS_Shape& shape, DgnRotationalSweepDetailCR detail);
+
+    //! Create a new sheet or solid from a DgnRuledSweepDetail.
+    //! @param[out] out The new shape.
+    //! @param[in] detail The DgnRuledSweepDetail to create a shape from.
+    //! @return SUCCESS if shape was created.
+    DGNPLATFORM_EXPORT static BentleyStatus TopoShapeFromRuledSweep(TopoDS_Shape& shape, DgnRuledSweepDetailCR detail);
+
+    //! Create a new sheet or solid from a ISolidPrimitive.
+    //! @param[out] out The new shape.
+    //! @param[in] primitive The ISolidPrimitive to create a shape from.
+    //! @return SUCCESS if shape was created.
+    DGNPLATFORM_EXPORT static BentleyStatus TopoShapeFromSolidPrimitive(TopoDS_Shape& shape, ISolidPrimitiveCR primitive);
+
+    //! Create a new sheet from a MSBsplineSurface.
+    //! @param[out] out The new shape.
+    //! @param[in] bSurface The MSBsplineSurface to create a shape from.
+    //! @return SUCCESS if shape was created.
     DGNPLATFORM_EXPORT static BentleyStatus TopoShapeFromBSurface(TopoDS_Shape& shape, MSBsplineSurfaceCR bSurface);
     };
 
