@@ -109,7 +109,7 @@ IECSqlBinder& ECSqlPreparedStatement::GetBinder(int parameterIndex)
     if (stat == ECSqlStatus::Error)
         GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Parameter index %d passed to ECSqlStatement binding API is out of bounds.", parameterIndex);
 
-    return NoopECSqlBinderFactory::GetBinder(stat);
+    return NoopECSqlBinder::Get();
     }
 
 //---------------------------------------------------------------------------------------

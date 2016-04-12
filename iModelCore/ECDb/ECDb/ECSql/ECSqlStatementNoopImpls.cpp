@@ -10,29 +10,65 @@
 #include "ECSqlStatementImpl.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
-
-//****************** NoopECSqlBinderFactory **************************
-//static member initialization
-std::map<ECSqlStatus::Status, std::unique_ptr<NoopECSqlBinder>> NoopECSqlBinderFactory::s_flyweightBinderMap;
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      05/2013
-//---------------------------------------------------------------------------------------
-//static
-NoopECSqlBinder& NoopECSqlBinderFactory::GetBinder (ECSqlStatus status)
-    {
-    //insert returns a pair where the first element is an iterator pointing to the inserted / existing element in the map.
-    //the second element indicates whether the pair was newly inserted or whether it already existed.
-    s_flyweightBinderMap[status.Get()] = std::unique_ptr<NoopECSqlBinder>(new NoopECSqlBinder(status));
-    return *s_flyweightBinderMap[status.Get()];
-    }
-
-
-//****************** NoopECSqlValue **************************
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      12/2013
 //---------------------------------------------------------------------------------------
-//static member initialization
-NoopECSqlValue NoopECSqlValue::s_singleton;
+//static
+NoopECSqlBinder* NoopECSqlBinder::s_singleton = nullptr;
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      12/2013
+//---------------------------------------------------------------------------------------
+//static
+NoopECSqlBinder& NoopECSqlBinder::Get()
+    {
+    if (s_singleton == nullptr)
+        s_singleton = new NoopECSqlBinder();
+
+    return *s_singleton;
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      12/2013
+//---------------------------------------------------------------------------------------
+//static
+NoopECSqlValue const* NoopECSqlValue::s_singleton = nullptr;
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      12/2013
+//---------------------------------------------------------------------------------------
+//static
+NoopECSqlValue const& NoopECSqlValue::GetSingleton()
+    {
+    if (s_singleton == nullptr)
+        s_singleton = new NoopECSqlValue();
+
+    return *s_singleton;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      12/2013
+//---------------------------------------------------------------------------------------
+void const* NoopECSqlValue::_GetBinary(int* binarySize) const
+    {
+    if (binarySize != nullptr)
+        *binarySize = -1;
+
+    return nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      12/2013
+//---------------------------------------------------------------------------------------
+void const* NoopECSqlValue::_GetGeometryBlob(int* blobSize) const
+    {
+    if (blobSize != nullptr)
+        *blobSize = -1;
+
+    return nullptr;
+    }
+
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
+

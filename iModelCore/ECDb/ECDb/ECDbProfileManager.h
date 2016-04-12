@@ -17,32 +17,25 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct ECDbProfileManager
     {
 private:
-    //! Minimum version of the ECDb profile which can still be auto-upgraded to the latest profile version.
-    static const SchemaVersion MINIMUM_SUPPORTED_VERSION;
-
-    typedef std::vector<std::unique_ptr<ECDbProfileUpgrader>> ECDbProfileUpgraderSequence;
-    static Utf8CP const PROFILENAME;
-
-    static const PropertySpec PROFILEVERSION_PROPSPEC;
-
-    static ECDbProfileUpgraderSequence s_upgraderSequence;
-
     //non-instantiable class
     ECDbProfileManager();
     ~ECDbProfileManager();
 
-    static DbResult CreateECProfileTables(ECDbR);
+    static DbResult CreateECProfileTables(ECDbCR);
     //! Reads the version of the ECDb profile of the given ECDb file
     //! @return BE_SQLITE_OK in case of success or error code if the SQLite database is no
     //! ECDb file, i.e. does not have the ECDb profile
     static DbResult ReadProfileVersion(SchemaVersion& profileVersion, ECDbCR, Savepoint& defaultTransaction);
     static DbResult AssignProfileVersion(ECDbR);
 
-    static SchemaVersion GetExpectedVersion() { return GetLatestUpgrader().GetTargetVersion(); }
-    static ECDbProfileUpgrader const& GetLatestUpgrader() { return *GetUpgraderSequence().back(); }
+    //! Expected version of the ECDb profile for this version of the ECDb API.
+    static SchemaVersion GetExpectedVersion() { return SchemaVersion(3, 3, 0, 1); }
+    //! Minimum version of the ECDb profile which can still be auto-upgraded to the latest profile version.
+    static SchemaVersion GetMinimumSupportedVersion() { return SchemaVersion(3, 0, 0, 0); }
 
-    static ECDbProfileManager::ECDbProfileUpgraderSequence::const_iterator GetUpgraderSequenceFor(SchemaVersion const& currentProfileVersion);
-    static ECDbProfileManager::ECDbProfileUpgraderSequence const& GetUpgraderSequence();
+    static void GetUpgraderSequence(std::vector<std::unique_ptr<ECDbProfileUpgrader>>&, SchemaVersion const& currentProfileVersion);
+
+    static PropertySpec GetProfileVersionPropertySpec() { return PropertySpec("SchemaVersion", "ec_Db"); }
 
 public:
     //! Creates the ECDb profile in the specified ECDb file.

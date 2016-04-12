@@ -34,18 +34,14 @@ struct ECSqlPrepareContext
             private:
                 static bool IsSystemProperty(Utf8CP accessString)
                     {
-                    static std::set<Utf8CP, CompareIUtf8Ascii> s_systemProperties
-                        {
-                        ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME,
-                        ECDbSystemSchemaHelper::SOURCEECCLASSID_PROPNAME,
-                        ECDbSystemSchemaHelper::SOURCEECINSTANCEID_PROPNAME,
-                        ECDbSystemSchemaHelper::TARGETECCLASSID_PROPNAME,
-                        ECDbSystemSchemaHelper::TARGETECINSTANCEID_PROPNAME
-                        };
-
-                    return s_systemProperties.find(accessString) != s_systemProperties.end();
+                    return BeStringUtilities::StricmpAscii(accessString, ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME) == 0 ||
+                        BeStringUtilities::StricmpAscii(accessString, ECDbSystemSchemaHelper::SOURCEECCLASSID_PROPNAME) == 0 ||
+                        BeStringUtilities::StricmpAscii(accessString, ECDbSystemSchemaHelper::SOURCEECINSTANCEID_PROPNAME) == 0 ||
+                        BeStringUtilities::StricmpAscii(accessString, ECDbSystemSchemaHelper::TARGETECCLASSID_PROPNAME) == 0 ||
+                        BeStringUtilities::StricmpAscii(accessString, ECDbSystemSchemaHelper::TARGETECINSTANCEID_PROPNAME) == 0;
                     }
-                static const std::vector<Utf8String> Split(Utf8CP accessString, Utf8Char seperator)
+
+                static std::vector<Utf8String> Split(Utf8CP accessString, Utf8Char seperator)
                     {
                     Utf8String s = accessString;
                     std::vector<Utf8String> output;
@@ -61,13 +57,10 @@ struct ECSqlPrepareContext
                     }
             private:
                 std::set<Utf8String, CompareIUtf8Ascii> m_selection;
+
             public:
-                SelectionOptions()
-                    {}
-
-                ~SelectionOptions()
-                    {}
-
+                SelectionOptions() {}
+                ~SelectionOptions() {}
 
                 void AddProperty(Utf8CP accessString)
                     {
@@ -82,18 +75,16 @@ struct ECSqlPrepareContext
                         m_selection.insert(path);
                         }
                     }
+
                 bool IsSelected(Utf8CP accessString) const
                     {
-
                     if (m_selection.find(accessString) != m_selection.end())
                         return true;
 
                     return SelectionOptions::IsSystemProperty(accessString);
                     }
-                bool IsConstantExpression() const
-                    {
-                    return m_selection.empty();
-                    }
+
+                bool IsConstantExpression() const { return m_selection.empty(); }
             };
 
         //=======================================================================================

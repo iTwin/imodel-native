@@ -399,9 +399,9 @@ struct SelectStatementExp : QueryExp
         SingleSelectStatementExp const& GetCurrent() const;
         SelectStatementExp const* GetNext() const;
         bool IsAll()const;
-        Operator GetOP() const;
+        Operator GetOperator() const;
         bool IsCompound() const;
-        static Utf8CP OPToString(Operator op);
+        static Utf8CP OperatorToString(Operator op);
     };
 
 

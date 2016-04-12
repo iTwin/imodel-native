@@ -97,7 +97,7 @@ IECSqlBinder& ECSqlStatementBase::GetBinder(int parameterIndex) const
     {
     ECSqlStatus stat = FailIfNotPrepared("Cannot call binding API on an unprepared ECSqlStatement.");
     if (!stat.IsSuccess())
-        return NoopECSqlBinderFactory::GetBinder(stat);
+        return NoopECSqlBinder::Get();
 
     //Reports errors (not prepared yet, index out of bounds) and uses no-op binder in case of error
     return GetPreparedStatementP()->GetBinder(parameterIndex);
