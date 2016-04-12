@@ -32,7 +32,7 @@ strname ## .append(std::to_string(ExtentOp<EXTENT>::GetYMin(node ## ->m_nodeHead
     fwrite(&_nVertices, sizeof(size_t), 1, _meshFile); \
     fwrite(_vbuffer, sizeof(DPoint3d), _nVertices, _meshFile); \
     fwrite(&_nIndices, sizeof(size_t), 1, _meshFile); \
-    fwrite(_indbuffer, sizeof(int32_t), _nIndices, _meshFile); \
+    fwrite(_indbuffer, sizeof(int32_t), &(*_nIndices)[0], _meshFile); \
     fclose(_meshFile); \
 }
 

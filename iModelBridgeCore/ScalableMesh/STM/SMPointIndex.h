@@ -1513,6 +1513,8 @@ protected:
     bool                    m_propagatesDataDown;
 
     public:
+
+        //NEEDS_WORK_SM : Remove
         bool m_useSTMFormat;
     };
 

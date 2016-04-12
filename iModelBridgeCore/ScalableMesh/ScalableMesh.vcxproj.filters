@@ -1335,6 +1335,9 @@
     <ClCompile Include="STM\Edits\Skirts.cpp">
       <Filter>Source\STM\Edits</Filter>
     </ClCompile>
+    <ClCompile Include="STM\SMMemoryPool.cpp">
+      <Filter>Includes\STM</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="ScalableTerrainModel.mke" />
