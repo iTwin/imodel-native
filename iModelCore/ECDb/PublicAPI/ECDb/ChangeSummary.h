@@ -247,37 +247,100 @@ struct ChangeSummary : NonCopyableClass
         ECDB_EXPORT int QueryCount() const;
     }; // ValueIterator
 
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(ColumnMap);
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(TableMap);
+    typedef RefCountedPtr<TableMap> TableMapPtr;
+
     //! @private
     //! Information on mappings to a column
-    struct ColumnMapInfo
+    struct ColumnMap
     {
     private:
         Utf8String m_columnName;
         int m_columnIndex;
+        bool m_isSystemColumn;
     public:
-        ColumnMapInfo() {}
-        ColumnMapInfo(Utf8StringCR columnName, int columnIndex) : m_columnName(columnName), m_columnIndex(columnIndex) {}
+        //! Constructor
+        ColumnMap() {}
 
-        Utf8StringCR GetColumnName() const { return m_columnName; }
-        int GetColumnIndex() const { return m_columnIndex; }
+        //! Constructor
+        ColumnMap(Utf8StringCR columnName, int columnIndex, bool isSystemColumn) : m_columnName(columnName), m_columnIndex(columnIndex), m_isSystemColumn(isSystemColumn) {}
+
+        //! Gets the name of the column
+        Utf8StringCR GetName() const { return m_columnName; }
+
+        //! Gets the index of the column in the table
+        int GetIndex() const { return m_columnIndex; }
+
+        //! Returns true if the column is one of the system columns storing ECClassId, ECInstanceId, etc. 
+        bool IsSystemColumn() const { return m_isSystemColumn; }
     };
 
     //! @private
     //! Information on mappings to a table
-    struct TableMapInfo
+    struct TableMap : RefCounted<NonCopyableClass>
     {
     friend struct ChangeSummary;
     private:
-        Utf8String m_tableName;
-        bmap<Utf8String, ColumnMapInfo> m_columnMapByAccessString;
+        struct TableMapDetail* m_impl;
+
+        TableMap(ECDbCR ecdb, Utf8StringCR tableName);
+        TableMap(ECDbCR ecdb, ECN::ECClassCR ecClass);
+
     public:
-        Utf8StringCR GetTableName() const { return m_tableName; }
-        ColumnMapInfo const& GetColumnMap(Utf8CP propertyAccessString) const
+        //! @private
+        //! Create the table map for a table with the specified name
+        static TableMapPtr Create(ECDbCR ecdb, Utf8StringCR tableName) {return new TableMap(ecdb, tableName);}
+
+        //! @private
+        //! Create the table map for the primary table of the specified class
+        static TableMapPtr Create(ECDbCR ecdb, ECN::ECClassCR ecClass) { return new TableMap(ecdb, ecClass); }
+
+        //! Destructor
+        ECDB_EXPORT ~TableMap();
+
+        //! Returns true if the table is mapped to a ECClass. false otherwise. 
+        ECDB_EXPORT bool IsMapped() const;
+
+        //! Gets the name of the table
+        ECDB_EXPORT Utf8StringCR GetTableName() const;
+        
+        //! Returns true if the table contains a column for the specified property (access string)
+        ECDB_EXPORT bool ContainsColumn(Utf8CP propertyAccessString) const;
+
+        //! Gets column map for the specified property (access string)
+        ECDB_EXPORT ColumnMap const& GetColumn(Utf8CP propertyAccessString) const;
+        
+        //! Returns true if the table contains a column storing ECClassId (if the table stores multiple classes)
+        ECDB_EXPORT bool ContainsECClassIdColumn() const;
+
+        //! Gets the primary ECClassId column if the table stores multiple classes
+        //! @see ContainsECClassIdColumn()
+        ECDB_EXPORT ColumnMap const& GetECClassIdColumn() const;
+
+        //! Gets the primary ECClassId if the table stores a single class
+        ECDB_EXPORT ECN::ECClassId GetECClassId() const;
+        
+        //! Gets the primary ECInstanceId column
+        ECDB_EXPORT ColumnMap const& GetECInstanceIdColumn() const;
+
+        //! @private
+        //! Queries the value stored in the table at the specified column, for the specified instanceId
+        DbDupValue QueryValue(Utf8StringCR columnName, ECInstanceId instanceId) const;
+
+        //! @private
+        //! Queries the id value stored in the table at the specified column, for the specified instanceId
+        template <class T_Id> T_Id QueryValueId(Utf8StringCR columnName, ECInstanceId instanceId) const
             {
-            bmap<Utf8String, ColumnMapInfo>::const_iterator iter = m_columnMapByAccessString.find(propertyAccessString);
-            BeAssert(iter != m_columnMapByAccessString.end());
-            return iter->second;
+            DbDupValue value = QueryValue(columnName, instanceId);
+            if (!value.IsValid() || value.IsNull())
+                return T_Id();
+            return value.GetValueId<T_Id>();
             }
+
+        // @private
+        // For internal uses
+        TableMapDetail* GetDetail() const { return m_impl; }
     };
 
 private:
@@ -350,7 +413,7 @@ public:
 
     //! @private internal use only
     //! Utility to get the mapping information on the primary table containing the class
-    ECDB_EXPORT static BentleyStatus GetPrimaryTableMapInfo(TableMapInfo& tableMapInfo, ECN::ECClassCR cls, ECDbCR ecdb);
+    ECDB_EXPORT static TableMapPtr GetPrimaryTableMap(ECDbCR ecdb, ECN::ECClassCR cls);
 };
 
 ENUM_IS_FLAGS(ChangeSummary::QueryDbOpcode);
