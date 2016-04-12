@@ -1961,7 +1961,7 @@ public:
     {
         mutable OpenMode m_openMode;
         DefaultTxn     m_startDefaultTxn;
-        mutable bool  m_skipSchemaCheck;
+        mutable bool  m_forSchemaUpgrade;
         bool          m_rawSQLite;
         BusyRetry*    m_busyRetry;
 
@@ -2064,7 +2064,13 @@ protected:
 
     //! override to perform additional processing when Db is opened
     //! @note implementers should always forward this call to their superclass.
-    virtual DbResult _OnDbOpened() {return QueryDbIds();}
+    //! @note this function is invoked before _VerifySchemaVersion() and therefore should not attempt to access data which depends on the schema version
+    virtual DbResult _OnDbOpening() {return QueryDbIds();}
+
+    //! override to perform additional processing when Db is opened
+    //! @note implementers should always forward this call to their superclass.
+    //! @note this function is invoked after _VerifySchemaVersion() and can therefore access data which depends on the schema version
+    virtual DbResult _OnDbOpened() {return BE_SQLITE_OK;}
 
     //! override to perform processing when Db is closed
     //! @note implementers should always forward this call to their superclass.

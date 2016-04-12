@@ -1477,7 +1477,7 @@ BeGuid Db::QueryProjectGuid() const
 * @bsimethod                                    Keith.Bentley                   12/11
 +---------------+---------------+---------------+---------------+---------------+------*/
 Db::OpenParams::OpenParams(OpenMode openMode, DefaultTxn defaultTxn, BusyRetry* retry)
-    : m_openMode(openMode), m_startDefaultTxn(defaultTxn), m_skipSchemaCheck(false), m_rawSQLite(false), m_busyRetry(retry)
+    : m_openMode(openMode), m_startDefaultTxn(defaultTxn), m_forSchemaUpgrade(false), m_rawSQLite(false), m_busyRetry(retry)
     {
     }
 
@@ -2096,7 +2096,7 @@ DbResult Db::DoOpenDb(Utf8CP dbName, OpenParams const& params)
         if (BE_SQLITE_OK != rc)
             return rc == BE_SQLITE_ERROR ? BE_SQLITE_ERROR_NoPropertyTable : rc;
 
-        rc = _OnDbOpened();
+        rc = _OnDbOpening();
         }
 
     if (params.m_startDefaultTxn == DefaultTxn::No)
@@ -2118,9 +2118,15 @@ bool Db::OpenParams::_ReopenForSchemaUpgrade(Db& db) const
     db.CloseDb();
 
     m_openMode = OpenMode::ReadWrite;
-    m_skipSchemaCheck = true;
+    m_forSchemaUpgrade = true;
 
-    return db.OpenBeSQLiteDb(filename.c_str(), *this) == BE_SQLITE_OK;
+    auto result = db.OpenBeSQLiteDb(filename.c_str(), *this) == BE_SQLITE_OK;
+
+    // Caller may attempt to reopen DgnDb using same params...do not leave this flag modified
+    // (See e.g. sample navigator, which will re-open for read-only if we upgrade the schema)
+    m_forSchemaUpgrade = false;
+
+    return result;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2130,8 +2136,13 @@ DbResult Db::OpenBeSQLiteDb(Utf8CP dbName, OpenParams const& params)
     {
     DbResult rc = DoOpenDb(dbName, params);
 
-    if (rc == BE_SQLITE_OK && !params.m_skipSchemaCheck)
+    if (rc == BE_SQLITE_OK && !params.m_forSchemaUpgrade)
+        {
         rc = _VerifySchemaVersion(params);
+
+        if (rc == BE_SQLITE_OK && !params.m_rawSQLite)
+            rc = _OnDbOpened();
+        }
 
     if (rc != BE_SQLITE_OK)
         DoCloseDb();
