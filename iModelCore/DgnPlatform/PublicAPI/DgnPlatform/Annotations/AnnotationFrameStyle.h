@@ -24,11 +24,9 @@ DGNPLATFORM_REF_COUNTED_PTR(AnnotationFrameStyle);
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-//! @addtogroup Annotations
-//! @beginGroup
-
 //=======================================================================================
 //! This enumerates all possible annotation frame types.
+//! @ingroup GROUP_Annotation
 // @bsiclass                                                    Jeff.Marker     06/2014
 //=======================================================================================
 enum class AnnotationFrameType
@@ -42,6 +40,7 @@ enum class AnnotationFrameType
 //=======================================================================================
 //! This enumerates all possible AnnotationFrameStyle property keys.
 //! @note Unless dealing with style overrides, you will not typically use this enumeration directly. While AnnotationFrameStyle provides high-level accessors to its properties, overrides are expressed directly via AnnotationFrameStylePropertyBag and AnnotationFrameStyleProperty.
+//! @ingroup GROUP_Annotation
 // @bsiclass                                                    Jeff.Marker     06/2014
 //=======================================================================================
 enum class AnnotationFrameStyleProperty
@@ -67,6 +66,7 @@ enum class AnnotationFrameStyleProperty
 //! Unlike the higher-level AnnotationFrameStyle, this collection deals directly with property keys and their underlying values. You must know a property's data type when using this class. The AnnotationFrameStyleProperty enumeration describes each property's data type.
 //! When created, this collection has no properties in it; their values are assumed to be default. In other words, this only stores deltas from defaults. In the case of overrides, it only stores the properties that are overridden, even if overridden with the same value.
 //! @note Unless dealing with style overrides, you will not typically use this enumeration directly. While AnnotationFrameStyle provides high-level accessors to its properties, overrides are expressed directly via AnnotationFrameStylePropertyBag and AnnotationFrameStyleProperty.
+//! @ingroup GROUP_Annotation
 // @bsiclass                                                    Jeff.Marker     06/2014
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE AnnotationFrameStylePropertyBag : AnnotationPropertyBag
@@ -99,6 +99,7 @@ typedef DgnElementId AnnotationFrameStyleId;
 //=======================================================================================
 //! This is used to provide style properties when creating an AnnotationFrame.
 //! @note When creating an AnnotationFrame, the typical work flow is to create and store the style, and then create the AnnotationFrame with the stored style's ID.
+//! @ingroup GROUP_Annotation
 // @bsiclass                                                    Jeff.Marker     06/2014
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE AnnotationFrameStyle : DictionaryElement
@@ -178,6 +179,7 @@ public:
     AnnotationFrameStyleCPtr Update() { return GetDgnDb().Elements().Update<AnnotationFrameStyle>(*this); }
 
     //=======================================================================================
+    //! @ingroup GROUP_Annotation
     // @bsiclass                                                    Jeff.Marker     11/2014
     //=======================================================================================
     struct Entry : ECSqlStatementEntry
@@ -206,7 +208,6 @@ namespace dgn_ElementHandler
 {
     //=======================================================================================
     //! The handler for annotation frame styles
-    //! @bsistruct                                                  Paul.Connelly   10/15
     //=======================================================================================
     struct AnnotationFrameStyleHandler : Element
     {
@@ -216,7 +217,5 @@ namespace dgn_ElementHandler
         DGNPLATFORM_EXPORT virtual void _GetClassParams(ECSqlClassParams& params) override;
     };
 }
-
-//! @endGroup
 
 END_BENTLEY_DGN_NAMESPACE

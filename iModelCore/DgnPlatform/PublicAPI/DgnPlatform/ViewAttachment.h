@@ -30,7 +30,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //! The subcategories of the viewed geometry are not preserved in the attachment's geometry
 //! - to control visibility of (sub)-categories or other graphic settings, edit the view
 //! and/or viewed model.
-//! @ingroup DgnViewGroup
+//! @ingroup GROUP_DgnView
 // @bsiclass                                                      Paul.Connelly   10/15
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ViewAttachment : GraphicalElement2d

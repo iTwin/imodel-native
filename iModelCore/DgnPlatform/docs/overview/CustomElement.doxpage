@@ -64,8 +64,7 @@ __PUBLISH_INSERT_FILE__ ToyTileElement_StaticCreate.sampleCode
 <!-- ---------------------------------------------------------------------------------- -->
 @section SECTION_CustomElementSeeAlso See Also
 
-@see DgnElementGroup
-@see @ref PAGE_ElementOverview
+@see GROUP_DgnElement
 */
 
 END_BENTLEY_DGN_NAMESPACE

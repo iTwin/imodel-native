@@ -29,7 +29,7 @@ __PUBLISH_INSERT_FILE__ View_CreateAndInsert.sampleCode
 <!-- ---------------------------------------------------------------------------------- -->
 @section PAGE_ViewOverview_SECTION_LinkToViewModules View Modules and Links
 
-@see DgnViewGroup
+@see GROUP_DgnView
 */
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
