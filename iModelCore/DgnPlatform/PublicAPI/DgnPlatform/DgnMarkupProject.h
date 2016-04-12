@@ -241,7 +241,7 @@ public:
 
 //=======================================================================================
 //! Displays a RedlineModel
-//! @ingroup DgnViewGroup
+//! @ingroup GROUP_DgnView
 // @bsiclass                                                    Keith.Bentley   03/12
 //=======================================================================================
 struct RedlineViewController : SheetViewController
@@ -300,7 +300,7 @@ public:
 //! in order to change the SpatialRedlineViewController's target model.
 //!
 //! @see @ref DgnMarkupProjectGroup_SpatialRedlines
-//! @ingroup DgnViewGroup
+//! @ingroup GROUP_DgnView
 // @bsiclass                                                    Keith.Bentley   03/12
 //=======================================================================================
 struct SpatialRedlineViewController : SpatialViewController

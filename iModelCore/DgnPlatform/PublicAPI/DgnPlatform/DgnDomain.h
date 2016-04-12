@@ -65,7 +65,7 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 
 struct DgnDomains;
 
-/** @addtogroup DgnDomainGroup
+/** @addtogroup GROUP_DgnDomain DgnDomain Module
 
 A "Domain" is a combination of an ECSchema, plus a set of C++ classes that implement its runtime behavior.
 
@@ -101,7 +101,7 @@ struct DgnDomains;
 //! remain for an entire session, and apply to all DgnDb's that are opened
 //! or created during that session. If a DgnDomain is registered, its name is recorded in every DgnDb accessed during the session
 //! and becomes required to access that DgnDb in the future.
-//! @ingroup DgnDomainGroup
+//! @ingroup GROUP_DgnDomain
 // @bsiclass                                                    Keith.Bentley   02/11
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DgnDomain : NonCopyableClass
@@ -402,7 +402,7 @@ ENUM_IS_FLAGS(DgnDomain::ImportSchemaOptions);
 //! The set of DgnDomains used by this DgnDb. This class also caches the DgnDomain::Handler to DgnDb-specific
 //! DgnClassId lookups.
 //! @see DgnDb::Domains, DgnDomain
-//! @ingroup DgnDomainGroup
+//! @ingroup GROUP_DgnDomain
 // @bsiclass                                                    Keith.Bentley   02/11
 //=======================================================================================
 struct DgnDomains : DgnDbTable
@@ -461,7 +461,7 @@ public:
 //=======================================================================================
 //! The DgnDomain for the base "dgn" schema.
 //! @see DgnDbSqlFunctions for a list of built-in functions that you can call in SQL statements.
-//! @ingroup DgnDomainGroup
+//! @ingroup GROUP_DgnDomain
 // @bsiclass                                                    Keith.Bentley   02/11
 //=======================================================================================
 struct DgnBaseDomain : DgnDomain

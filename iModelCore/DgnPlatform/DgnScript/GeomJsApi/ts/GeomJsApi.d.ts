@@ -758,6 +758,24 @@ Clone (): GeometryP;
 type GeometryP = cxx_pointer<Geometry>;
    
 /**
+@description Data bundle describing fractional and xyz coordinates of a point on a CurvePrimitive
+*/
+class CurveLocationDetail implements BeJsProjection_SuppressConstructor
+{
+/*** NATIVE_TYPE_NAME = JsCurveLocationDetail ***/
+/** Fractional position along the curve. */
+Fraction:cxx_double;
+/** point coordinates */
+Point: DPoint3dP;
+/** the curve primitive */
+Curve: CurvePrimitiveP;
+/** a numeric field with context-specific meaning.*/
+A:cxx_double; 
+
+}
+
+type CurveLocationDetailP = cxx_pointer<CurveLocationDetail>;
+/**
 @description Intermediate base class for various curve types.
 <ul>
 <li>LineSegment
@@ -797,7 +815,9 @@ FrenetFrameAtFraction (f : cxx_double) : TransformP;
     /** return start point of the primitive.  Equivalent to PointAtFraction (0.0); */
     GetStartPoint () : DPoint3dP;
 /** return end point of the primitive.  Equivalent to PointAtFraction (1.0); */
-    GetEndPoint () : DPoint3dP;  
+    GetEndPoint () : DPoint3dP; 
+/** Find the closest point within the curve */
+    ClosestPointBounded (spacePoint: DPoint3dP) : CurveLocationDetailP;
     }
 
     type CurvePrimitiveP = cxx_pointer<CurvePrimitive>;
