@@ -8,16 +8,8 @@
 #include "ECDbPch.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
-//static
-Utf8CP const ECDbProfileManager::PROFILENAME = "ECDb";
-//static
-const PropertySpec ECDbProfileManager::PROFILEVERSION_PROPSPEC = PropertySpec("SchemaVersion", "ec_Db");
 
-//static
-const SchemaVersion ECDbProfileManager::MINIMUM_SUPPORTED_VERSION = SchemaVersion(3, 0, 0, 0);
-
-//static
-std::vector<std::unique_ptr<ECDbProfileUpgrader>> ECDbProfileManager::s_upgraderSequence;
+#define PROFILENAME "ECDb"
 
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                12/2012
@@ -121,7 +113,7 @@ DbResult ECDbProfileManager::UpgradeECProfile(ECDbR ecdb, Db::OpenParams const& 
 
     const SchemaVersion expectedVersion = GetExpectedVersion();
     bool profileNeedsUpgrade = false;
-    stat = ECDb::CheckProfileVersion(profileNeedsUpgrade, expectedVersion, actualProfileVersion, MINIMUM_SUPPORTED_VERSION, openParams.IsReadonly(), PROFILENAME);
+    stat = ECDb::CheckProfileVersion(profileNeedsUpgrade, expectedVersion, actualProfileVersion, GetMinimumSupportedVersion(), openParams.IsReadonly(), PROFILENAME);
     if (!profileNeedsUpgrade)
         return stat;
 
@@ -136,10 +128,10 @@ DbResult ECDbProfileManager::UpgradeECProfile(ECDbR ecdb, Db::OpenParams const& 
 
     //Call upgrader sequence and let upgraders incrementally upgrade the profile
     //to the latest state
-    auto upgraderIterator = GetUpgraderSequenceFor(actualProfileVersion);
-    for (; upgraderIterator != GetUpgraderSequence().end(); ++upgraderIterator)
+    std::vector<std::unique_ptr<ECDbProfileUpgrader>> upgraders;
+    GetUpgraderSequence(upgraders, actualProfileVersion);
+    for (std::unique_ptr<ECDbProfileUpgrader> const& upgrader : upgraders)
         {
-        std::unique_ptr<ECDbProfileUpgrader> const& upgrader = *upgraderIterator;
         stat = upgrader->Upgrade(ecdb);
         if (BE_SQLITE_OK != stat)
             return stat;
@@ -179,7 +171,7 @@ DbResult ECDbProfileManager::AssignProfileVersion(ECDbR ecdb)
     {
     //Save the profile version as string (JSON format)
     const Utf8String profileVersionStr = GetExpectedVersion().ToJson();
-    return ecdb.SavePropertyString(PROFILEVERSION_PROPSPEC, profileVersionStr);
+    return ecdb.SavePropertyString(GetProfileVersionPropertySpec(), profileVersionStr);
     }
 
 //--------------------------------------------------------------------------------------
@@ -200,7 +192,7 @@ DbResult ECDbProfileManager::ReadProfileVersion(SchemaVersion& profileVersion, E
     // a version entry for profile 1.0 or it isn't an ECDb file at all. In order to tell these we need
     // to check for a typical table of the ECDb profile:
     DbResult stat = BE_SQLITE_OK;
-    if (BE_SQLITE_ROW == ecdb.QueryProperty(currentVersionString, PROFILEVERSION_PROPSPEC))
+    if (BE_SQLITE_ROW == ecdb.QueryProperty(currentVersionString, GetProfileVersionPropertySpec()))
         profileVersion.FromJson(currentVersionString.c_str());
     else if (ecdb.TableExists("ec_Schema"))
         profileVersion = SchemaVersion(1, 0, 0, 0);
@@ -219,45 +211,39 @@ DbResult ECDbProfileManager::ReadProfileVersion(SchemaVersion& profileVersion, E
 // @bsimethod                                                    Krischan.Eberle    07/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-ECDbProfileManager::ECDbProfileUpgraderSequence::const_iterator ECDbProfileManager::GetUpgraderSequenceFor(SchemaVersion const& currentProfileVersion)
+void ECDbProfileManager::GetUpgraderSequence(std::vector<std::unique_ptr<ECDbProfileUpgrader>>& upgraders, SchemaVersion const& currentProfileVersion)
     {
-    auto end = GetUpgraderSequence().end();
-    for (auto it = GetUpgraderSequence().begin(); it != end; ++it)
-        {
-        auto const& upgrader = *it;
-        if (currentProfileVersion < upgrader->GetTargetVersion())
-            return it;
-        }
+    upgraders.clear();
 
-    return end;
-    }
+    if (currentProfileVersion < SchemaVersion(3, 0, 0, 1))
+        upgraders.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3001()));
 
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle    07/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-//static
-ECDbProfileManager::ECDbProfileUpgraderSequence const& ECDbProfileManager::GetUpgraderSequence()
-    {
-    if (s_upgraderSequence.empty())
-        {
-        //upgraders must be listed in ascending order
-        s_upgraderSequence.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3001()));
-        s_upgraderSequence.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3100()));
-        s_upgraderSequence.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3200()));
-        s_upgraderSequence.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3201()));
-        s_upgraderSequence.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3202()));
-        s_upgraderSequence.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3300()));
-        s_upgraderSequence.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3301()));
-        }
+    if (currentProfileVersion < SchemaVersion(3, 1, 0, 0))
+        upgraders.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3100()));
 
-    return s_upgraderSequence;
+    if (currentProfileVersion < SchemaVersion(3, 2, 0, 0))
+        upgraders.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3200()));
+
+    if (currentProfileVersion < SchemaVersion(3, 2, 0, 1))
+        upgraders.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3201()));
+
+    if (currentProfileVersion < SchemaVersion(3, 2, 0, 2))
+        upgraders.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3202()));
+
+    if (currentProfileVersion < SchemaVersion(3, 3, 0, 0))
+        upgraders.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3300()));
+
+    if (currentProfileVersion < SchemaVersion(3, 3, 0, 1))
+        upgraders.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3301()));
+
+    BeAssert(GetExpectedVersion() == SchemaVersion(3, 3, 0, 1) && "ExpectedVersion and latest upgrader don't match.");
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        05/2012
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-DbResult ECDbProfileManager::CreateECProfileTables(ECDbR ecdb)
+DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
     {
     //ec_Schema
     DbResult stat = ecdb.ExecuteSql("CREATE TABLE ec_Schema("

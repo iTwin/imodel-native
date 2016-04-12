@@ -254,7 +254,7 @@ IECSqlPrimitiveBinder& SystemPropertyECSqlBinder::_BindPrimitive()
 IECSqlStructBinder& SystemPropertyECSqlBinder::_BindStruct()
     {
     GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind ECStruct to %s parameter.", SystemPropertyToString());
-    return GetNoopBinder(ECSqlStatus::Error).BindStruct();
+    return NoopECSqlBinder::Get().BindStruct();
     }
 
 //---------------------------------------------------------------------------------------
@@ -263,7 +263,7 @@ IECSqlStructBinder& SystemPropertyECSqlBinder::_BindStruct()
 IECSqlArrayBinder& SystemPropertyECSqlBinder::_BindArray(uint32_t initialCapacity)
     {
     GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind array to %s parameter.", SystemPropertyToString());
-    return GetNoopBinder(ECSqlStatus::Error).BindArray(initialCapacity);
+    return NoopECSqlBinder::Get().BindArray(initialCapacity);
     }
 
 

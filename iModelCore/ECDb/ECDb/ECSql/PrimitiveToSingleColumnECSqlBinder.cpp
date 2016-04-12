@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/PrimitiveToSingleColumnECSqlBinder.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -305,7 +305,7 @@ IECSqlPrimitiveBinder& PrimitiveToSingleColumnECSqlBinder::_BindPrimitive()
 IECSqlStructBinder& PrimitiveToSingleColumnECSqlBinder::_BindStruct()
     {
     GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind ECStruct to primitive type parameter.");
-    return GetNoopBinder(ECSqlStatus::Error).BindStruct();
+    return NoopECSqlBinder::Get().BindStruct();
     }
 
 //---------------------------------------------------------------------------------------
@@ -314,7 +314,7 @@ IECSqlStructBinder& PrimitiveToSingleColumnECSqlBinder::_BindStruct()
 IECSqlArrayBinder& PrimitiveToSingleColumnECSqlBinder::_BindArray(uint32_t initialCapacity)
     {
     GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind array to primitive parameter.");
-    return GetNoopBinder(ECSqlStatus::Error).BindArray(initialCapacity);
+    return NoopECSqlBinder::Get().BindArray(initialCapacity);
     }
 
 //---------------------------------------------------------------------------------------

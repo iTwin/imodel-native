@@ -929,20 +929,26 @@ Utf8CP DbColumn::KindToString(Kind columnKind)
 // @bsimethod                                                    Affan.Khan        10/2014
 //---------------------------------------------------------------------------------------
 //static 
-Utf8CP DbColumn::Constraint::CollationToString(DbColumn::Constraint::Collation collation)
+Utf8CP DbColumn::Constraint::CollationToSql(DbColumn::Constraint::Collation collation)
     {
-    static std::map<Collation, Utf8CP> s_type
+    switch (collation)
         {
-                {Collation::Default, "Default"},
-                {Collation::Binary, "Binary",},
-                {Collation::NoCase, "NoCase"},
-                {Collation::RTrim, "RTrim"}
-        };
-    auto itor = s_type.find(collation);
-    if (itor == s_type.end())
-        return nullptr;
+        case Collation::Default:
+            return "";
 
-    return itor->second;
+        case Collation::Binary:
+            return "BINARY";
+
+        case Collation::NoCase:
+            return "NOCASE";
+
+        case Collation::RTrim:
+            return "RTRIM";
+
+        default:
+            BeAssert(false && "Unhandled value of Enum Collation");
+            return "";
+        }
     }
 
 //---------------------------------------------------------------------------------------

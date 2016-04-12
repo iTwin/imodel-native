@@ -86,7 +86,7 @@ ECSqlStatus JsonECSqlBindValue::BuildJson(Json::Value& json) const
 IECSqlPrimitiveBinder& JsonECSqlBindValue::_BindPrimitive()
     {
     GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind primitive value to non-primitive parameter.");
-    return NoopECSqlBinderFactory::GetBinder(ECSqlStatus::Error).BindPrimitive();
+    return NoopECSqlBinder::Get().BindPrimitive();
     }
 
 //---------------------------------------------------------------------------------------
@@ -95,7 +95,7 @@ IECSqlPrimitiveBinder& JsonECSqlBindValue::_BindPrimitive()
 IECSqlStructBinder& JsonECSqlBindValue::_BindStruct()
     {
     GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind struct value to non-struct parameter.");
-    return NoopECSqlBinderFactory::GetBinder(ECSqlStatus::Error).BindStruct();
+    return NoopECSqlBinder::Get().BindStruct();
     }
 
 //---------------------------------------------------------------------------------------
@@ -104,7 +104,7 @@ IECSqlStructBinder& JsonECSqlBindValue::_BindStruct()
 IECSqlArrayBinder& JsonECSqlBindValue::_BindArray(uint32_t initialCapacity)
     {
     GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind array value to non-array parameter.");
-    return NoopECSqlBinderFactory::GetBinder(ECSqlStatus::Error).BindArray(initialCapacity);
+    return NoopECSqlBinder::Get().BindArray(initialCapacity);
     }
 
 //*****************************************************
@@ -361,7 +361,7 @@ IECSqlBinder& StructJsonECSqlBindValue::_GetMember(Utf8CP structMemberPropertyNa
         {
         GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Cannot bind to struct member. Member %s does not exist.", structMemberPropertyName);
         BeAssert(false);
-        return NoopECSqlBinderFactory::GetBinder(ECSqlStatus::Error);
+        return NoopECSqlBinder::Get();
         }
 
     return _GetMember(memberProp->GetId());
@@ -387,7 +387,7 @@ IECSqlBinder& StructJsonECSqlBindValue::_GetMember(ECN::ECPropertyId structMembe
         }
 
     GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Cannot bind to struct member. Member %s does not exist.", structMemberPropertyName);
-    return NoopECSqlBinderFactory::GetBinder(ECSqlStatus::Error);
+    return NoopECSqlBinder::Get();
     }
 
 //---------------------------------------------------------------------------------------
@@ -452,7 +452,7 @@ IECSqlBinder& ArrayJsonECSqlBindValue::_AddArrayElement()
     const size_t newIndex = GetLength() + 1;
     const ECSqlStatus stat = ArrayConstraintValidator::ValidateMaximum(GetECDb(), GetTypeInfo(), (uint32_t) newIndex);
     if (!stat.IsSuccess())
-        return NoopECSqlBinderFactory::GetBinder(stat).AddArrayElement();
+        return NoopECSqlBinder::Get().AddArrayElement();
 
     //array elements are added to the JSON without their prop names
     std::unique_ptr<JsonECSqlBindValue> arrayElement = nullptr;
@@ -532,7 +532,7 @@ ECSqlStatus StructArrayJsonECSqlBinder::_OnBeforeStep()
 IECSqlPrimitiveBinder& StructArrayJsonECSqlBinder::_BindPrimitive()
     {
     GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind primitive value to struct array parameter.");
-    return NoopECSqlBinderFactory::GetBinder(ECSqlStatus::Error).BindPrimitive();
+    return NoopECSqlBinder::Get().BindPrimitive();
     }
 
 //---------------------------------------------------------------------------------------
@@ -541,7 +541,7 @@ IECSqlPrimitiveBinder& StructArrayJsonECSqlBinder::_BindPrimitive()
 IECSqlStructBinder& StructArrayJsonECSqlBinder::_BindStruct()
     {
     GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind struct value to struct array parameter.");
-    return NoopECSqlBinderFactory::GetBinder(ECSqlStatus::Error).BindStruct();
+    return NoopECSqlBinder::Get().BindStruct();
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

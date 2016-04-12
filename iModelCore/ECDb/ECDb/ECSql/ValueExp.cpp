@@ -60,76 +60,76 @@ Exp::FinalizeParseStatus BinaryValueExp::_FinalizeParsing(ECSqlParseContext& ctx
     switch (mode)
         {
             case Exp::FinalizeParseMode::BeforeFinalizingChildren:
+            {
+            switch (m_op)
                 {
-                switch (m_op)
-                    {
-                        case BinarySqlOperator::Plus:
-                        case BinarySqlOperator::Minus:
-                        case BinarySqlOperator::Modulo:
-                        case BinarySqlOperator::Divide:
-                        case BinarySqlOperator::Multiply:
-                            SetTypeInfo(ECSqlTypeInfo(PRIMITIVETYPE_Double));
-                            break;
-                        case BinarySqlOperator::ShiftLeft:
-                        case BinarySqlOperator::ShiftRight:
-                        case BinarySqlOperator::BitwiseOr:
-                        case BinarySqlOperator::BitwiseAnd:
-                        case BinarySqlOperator::BitwiseXOr:
-                            SetTypeInfo(ECSqlTypeInfo(PRIMITIVETYPE_Long));
-                            break;
+                    case BinarySqlOperator::Plus:
+                    case BinarySqlOperator::Minus:
+                    case BinarySqlOperator::Modulo:
+                    case BinarySqlOperator::Divide:
+                    case BinarySqlOperator::Multiply:
+                        SetTypeInfo(ECSqlTypeInfo(PRIMITIVETYPE_Double));
+                        break;
+                    case BinarySqlOperator::ShiftLeft:
+                    case BinarySqlOperator::ShiftRight:
+                    case BinarySqlOperator::BitwiseOr:
+                    case BinarySqlOperator::BitwiseAnd:
+                    case BinarySqlOperator::BitwiseXOr:
+                        SetTypeInfo(ECSqlTypeInfo(PRIMITIVETYPE_Long));
+                        break;
 
-                        case BinarySqlOperator::Concat:
-                            SetTypeInfo(ECSqlTypeInfo(PRIMITIVETYPE_String));
-                            break;
+                    case BinarySqlOperator::Concat:
+                        SetTypeInfo(ECSqlTypeInfo(PRIMITIVETYPE_String));
+                        break;
 
-                        default:
-                            BeAssert(false && "Adjust BinaryValueExp::_FinalizeParsing for new value of BinarySqlOperator enum.");
-                            ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Adjust BinaryValueExp::_FinalizeParsing for new value of BinarySqlOperator enum.");
-                            return FinalizeParseStatus::Error;
-                    }
-
-                return FinalizeParseStatus::NotCompleted;
+                    default:
+                        BeAssert(false && "Adjust BinaryValueExp::_FinalizeParsing for new value of BinarySqlOperator enum.");
+                        ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Adjust BinaryValueExp::_FinalizeParsing for new value of BinarySqlOperator enum.");
+                        return FinalizeParseStatus::Error;
                 }
+
+            return FinalizeParseStatus::NotCompleted;
+            }
 
             case Exp::FinalizeParseMode::AfterFinalizingChildren:
+            {
+            std::vector<ValueExp const*> operands {GetLeftOperand(), GetRightOperand()};
+            for (ValueExp const* operand : operands)
                 {
-                std::vector<ValueExp const*> operands {GetLeftOperand(), GetRightOperand()};
-                for (ValueExp const* operand : operands)
+                ECSqlTypeInfo const& typeInfo = operand->GetTypeInfo();
+                //ignore parameter exp whose type will be resolved later
+                if (typeInfo.GetKind() == ECSqlTypeInfo::Kind::Unset)
                     {
-                    ECSqlTypeInfo const& typeInfo = operand->GetTypeInfo();
-                    //ignore parameter exp whose type will be resolved later
-                    if (typeInfo.GetKind() == ECSqlTypeInfo::Kind::Unset)
-                        {
-                        BeAssert(operand->IsParameterExp());
-                        continue;
-                        }
-
-                    if (!typeInfo.IsPrimitive())
-                        {
-                        ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Expecting a primitive value expression as operand. '%s'", ToECSql().c_str());
-                        return FinalizeParseStatus::Error;
-                        }
-
-                    ECSqlTypeInfo const& expectedType = GetTypeInfo();
-                    if (expectedType.IsExactNumeric() && !typeInfo.IsExactNumeric())
-                        {
-                        ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Expecting an integral value expression as operand. '%s'", ToECSql().c_str());
-                        return FinalizeParseStatus::Error;
-                        }
-                    else if (expectedType.IsNumeric() && !typeInfo.IsNumeric())
-                        {
-                        ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Expecting a numeric value expression as operand. '%s'", ToECSql().c_str());
-                        return FinalizeParseStatus::Error;
-                        }
-                    else if (expectedType.GetPrimitiveType() == PRIMITIVETYPE_String && typeInfo.GetPrimitiveType() != PRIMITIVETYPE_String)
-                        {
-                        ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Expecting value expression of type String as operand. '%s'", ToECSql().c_str());
-                        return FinalizeParseStatus::Error;
-                        }
+                    BeAssert(operand->IsParameterExp());
+                    continue;
                     }
 
-                return FinalizeParseStatus::Completed;
+                if (!typeInfo.IsPrimitive())
+                    {
+                    ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Expecting a primitive value expression as operand. '%s'", ToECSql().c_str());
+                    return FinalizeParseStatus::Error;
+                    }
+
+                ECSqlTypeInfo const& expectedType = GetTypeInfo();
+                if (expectedType.IsExactNumeric() && !typeInfo.IsExactNumeric())
+                    {
+                    ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Expecting an integral value expression as operand. '%s'", ToECSql().c_str());
+                    return FinalizeParseStatus::Error;
+                    }
+                else if (expectedType.IsNumeric() && !typeInfo.IsNumeric())
+                    {
+                    ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Expecting a numeric value expression as operand. '%s'", ToECSql().c_str());
+                    return FinalizeParseStatus::Error;
+                    }
+                else if (expectedType.GetPrimitiveType() == PRIMITIVETYPE_String && typeInfo.GetPrimitiveType() != PRIMITIVETYPE_String)
+                    {
+                    ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Expecting value expression of type String as operand. '%s'", ToECSql().c_str());
+                    return FinalizeParseStatus::Error;
+                    }
                 }
+
+            return FinalizeParseStatus::Completed;
+            }
 
 
             default:
@@ -158,10 +158,10 @@ void BinaryValueExp::_DoToECSql(Utf8StringR ecsql) const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8String BinaryValueExp::_ToString() const 
+Utf8String BinaryValueExp::_ToString() const
     {
-    Utf8String str ("Binary [Operator: ");
-    str.append (ExpHelper::ToSql (m_op)).append ("]");
+    Utf8String str("Binary [Operator: ");
+    str.append(ExpHelper::ToSql(m_op)).append("]");
     return str;
     }
 
@@ -225,11 +225,11 @@ Exp::FinalizeParseStatus CastExp::_FinalizeParsing(ECSqlParseContext& ctx, Final
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-bool CastExp::NeedsCasting () const
+bool CastExp::NeedsCasting() const
     {
-    BeAssert (IsComplete ());
+    BeAssert(IsComplete());
     //DateTimeInfo is ignored as any date time value can be cast to another date time type
-    return !GetCastOperand ()->GetTypeInfo ().Equals (GetTypeInfo (), true);
+    return !GetCastOperand()->GetTypeInfo().Equals(GetTypeInfo(), true);
     }
 
 //-----------------------------------------------------------------------------------------
@@ -237,16 +237,16 @@ bool CastExp::NeedsCasting () const
 //+---------------+---------------+---------------+---------------+---------------+------
 void CastExp::_DoToECSql(Utf8StringR ecsql) const
     {
-    ecsql.append("CAST (").append(GetCastOperand ()->ToECSql()).append(" AS ").append(m_castTargetType).append (")");
+    ecsql.append("CAST (").append(GetCastOperand()->ToECSql()).append(" AS ").append(m_castTargetType).append(")");
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8String CastExp::_ToString() const 
+Utf8String CastExp::_ToString() const
     {
-    Utf8String str ("Cast [Target type: ");
-    str.append (m_castTargetType.c_str ()).append ("]");
+    Utf8String str("Cast [Target type: ");
+    str.append(m_castTargetType.c_str()).append("]");
     return str;
     }
 
@@ -265,29 +265,29 @@ Exp::FinalizeParseStatus ECClassIdFunctionExp::_FinalizeParsing(ECSqlParseContex
     {
     if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
         {
-        auto finalizeParseArgs = ctx.GetFinalizeParseArg ();
-        BeAssert (finalizeParseArgs != nullptr && "ECClassIdFunctionExp::_FinalizeParsing: ECSqlParseContext::GetFinalizeParseArgs is expected to return a RangeClassRefList.");
+        auto finalizeParseArgs = ctx.GetFinalizeParseArg();
+        BeAssert(finalizeParseArgs != nullptr && "ECClassIdFunctionExp::_FinalizeParsing: ECSqlParseContext::GetFinalizeParseArgs is expected to return a RangeClassRefList.");
         RangeClassRefList const& rangeClassRefList = *static_cast<RangeClassRefList const*> (finalizeParseArgs);
 
-        if (HasClassAlias ())
+        if (HasClassAlias())
             {
             bvector<RangeClassRefExp const*> matchingClassRefExpList;
             //1. Assume that the first entry of the prop path is a property name and not a class alias and directly search it in classrefs
-            for(auto rangeClassRef : rangeClassRefList)
+            for (auto rangeClassRef : rangeClassRefList)
                 {
                 if (rangeClassRef->GetId().Equals(m_classAlias))
                     matchingClassRefExpList.push_back(rangeClassRef);
                 }
 
-            const auto matchCount = matchingClassRefExpList.size ();
+            const auto matchCount = matchingClassRefExpList.size();
             if (matchCount == 0)
                 {
-                ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Undefined Class alias '%s' in expression '%s'.", GetClassAlias (), ToECSql ().c_str ());
+                ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Undefined Class alias '%s' in expression '%s'.", GetClassAlias(), ToECSql().c_str());
                 return FinalizeParseStatus::Error;
                 }
             else if (matchCount > 1)
                 {
-                ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Class alias '%s' used in expression '%s' is ambiguous.", GetClassAlias (), ToECSql ().c_str ());
+                ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Class alias '%s' used in expression '%s' is ambiguous.", GetClassAlias(), ToECSql().c_str());
                 return FinalizeParseStatus::Error;
                 }
 
@@ -295,15 +295,15 @@ Exp::FinalizeParseStatus ECClassIdFunctionExp::_FinalizeParsing(ECSqlParseContex
             }
         else // no class alias
             {
-            const auto classRefCount = rangeClassRefList.size ();
+            const auto classRefCount = rangeClassRefList.size();
             if (classRefCount == 0)
                 {
-                ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "No class reference found for '%s' in ECSQL statement.", ToECSql ().c_str ());
+                ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "No class reference found for '%s' in ECSQL statement.", ToECSql().c_str());
                 return FinalizeParseStatus::Error;
                 }
             else if (classRefCount > 1)
                 {
-                ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Ambiguous call to '%s'. Class alias is missing.", ToECSql ().c_str ());
+                ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Ambiguous call to '%s'. Class alias is missing.", ToECSql().c_str());
                 return FinalizeParseStatus::Error;
                 }
 
@@ -312,18 +312,18 @@ Exp::FinalizeParseStatus ECClassIdFunctionExp::_FinalizeParsing(ECSqlParseContex
 
         if (m_classRefExp == nullptr)
             {
-            BeAssert (m_classRefExp != nullptr && "Resolved class reference expression is nullptr");
+            BeAssert(m_classRefExp != nullptr && "Resolved class reference expression is nullptr");
             ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Resolved class reference expression is nullptr");
             return FinalizeParseStatus::Error;
             }
 
-        if (m_classRefExp->GetType () != Exp::Type::ClassName)
+        if (m_classRefExp->GetType() != Exp::Type::ClassName)
             {
-            ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "%s only supported for simple class references. Subqueries are not yet supported.", ToECSql ().c_str ());
+            ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "%s only supported for simple class references. Subqueries are not yet supported.", ToECSql().c_str());
             return FinalizeParseStatus::Error;
             }
 
-        SetTypeInfo (ECSqlTypeInfo (FunctionCallExp::DetermineReturnType (ctx.GetECDb(), NAME, 0)));
+        SetTypeInfo(ECSqlTypeInfo(FunctionCallExp::DetermineReturnType(ctx.GetECDb(), NAME, 0)));
         }
 
     return FinalizeParseStatus::Completed;
@@ -332,22 +332,22 @@ Exp::FinalizeParseStatus ECClassIdFunctionExp::_FinalizeParsing(ECSqlParseContex
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    10/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8String ECClassIdFunctionExp::_ToString () const 
+Utf8String ECClassIdFunctionExp::_ToString() const
     {
-    Utf8String str ("ECClassIdFunction [Alias: ");
-    str.append (m_classAlias).append ("]");
+    Utf8String str("ECClassIdFunction [Alias: ");
+    str.append(m_classAlias).append("]");
     return str;
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    10/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECClassIdFunctionExp::_DoToECSql (Utf8StringR ecsql) const 
+void ECClassIdFunctionExp::_DoToECSql(Utf8StringR ecsql) const
     {
-    if (HasClassAlias ())
-        ecsql.append (m_classAlias).append (".");
+    if (HasClassAlias())
+        ecsql.append(m_classAlias).append(".");
 
-    ecsql.append (NAME).append ("()");
+    ecsql.append(NAME).append("()");
     }
 
 //****************************** GetPointCoordinateFunctionExp *****************************************
@@ -363,7 +363,7 @@ const size_t GetPointCoordinateFunctionExp::s_functionNameRootLength = strlen(GE
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    11/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-GetPointCoordinateFunctionExp::GetPointCoordinateFunctionExp(Utf8StringCR functionName, std::unique_ptr<ValueExp> pointArgumentExp) 
+GetPointCoordinateFunctionExp::GetPointCoordinateFunctionExp(Utf8StringCR functionName, std::unique_ptr<ValueExp> pointArgumentExp)
     : ValueExp(), m_coordinate(CoordinateFromFunctionName(functionName))
     {
     m_argIndex = AddChild(std::move(pointArgumentExp));
@@ -382,7 +382,7 @@ Exp::FinalizeParseStatus GetPointCoordinateFunctionExp::_FinalizeParsing(ECSqlPa
     if (argCount != 1)
         {
         ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Function '%s' can only be called with a single arguments.",
-                     ToECSql().c_str());
+                                      ToECSql().c_str());
         return FinalizeParseStatus::Error;
         }
 
@@ -392,14 +392,14 @@ Exp::FinalizeParseStatus GetPointCoordinateFunctionExp::_FinalizeParsing(ECSqlPa
     if (!argTypeInfo.IsPoint() || argExp->GetType() == Exp::Type::Parameter)
         {
         ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Function '%s' can only be called with Point2D or Point3D arguments.",
-                     ToECSql().c_str());
+                                      ToECSql().c_str());
         return FinalizeParseStatus::Error;
         }
 
     if (m_coordinate == Coordinate::Z && argTypeInfo.GetPrimitiveType() != PRIMITIVETYPE_Point3D)
         {
         ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Function '%s' can only be called with Point3D arguments.",
-                     ToECSql().c_str());
+                                      ToECSql().c_str());
         return FinalizeParseStatus::Error;
         }
 
@@ -489,12 +489,6 @@ Utf8CP GetPointCoordinateFunctionExp::CoordinateToString(Coordinate coordinate)
     }
 
 //****************************** FunctionCallExp *****************************************
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       05/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-bmap<Utf8CP, ECN::PrimitiveType, CompareIUtf8Ascii> FunctionCallExp::s_builtinFunctionNonDefaultReturnTypes;
-
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -588,52 +582,95 @@ ECN::PrimitiveType FunctionCallExp::DetermineReturnType(ECDbCR ecdb, Utf8CP func
                 case DbValueType::IntegerVal: return ECN::PRIMITIVETYPE_Long;
                 case DbValueType::TextVal: return ECN::PRIMITIVETYPE_String;
 
-                case DbValueType::FloatVal: 
-                //NullVal means that no return type was specified. In that case we use Double to be as generic as possible
+                case DbValueType::FloatVal:
+                    //NullVal means that no return type was specified. In that case we use Double to be as generic as possible
                 case DbValueType::NullVal:
                 default:
                     return ECN::PRIMITIVETYPE_Double;
-            }       
+            }
         }
 
     //return type for SQLite built-in functions
     //TODO: This is SQLite specific and therefore should be moved out of the parser. Maybe an external file
     //for better maintainability?
-    if (s_builtinFunctionNonDefaultReturnTypes.empty())
-        {
-        s_builtinFunctionNonDefaultReturnTypes["ANY"] = ECN::PRIMITIVETYPE_Boolean;
-        s_builtinFunctionNonDefaultReturnTypes["COUNT"] = ECN::PRIMITIVETYPE_Long;
-        s_builtinFunctionNonDefaultReturnTypes["EVERY"] = ECN::PRIMITIVETYPE_Boolean;
-        s_builtinFunctionNonDefaultReturnTypes["GETECCLASSID"] = ECN::PRIMITIVETYPE_Long;
-        s_builtinFunctionNonDefaultReturnTypes["GLOB"] = ECN::PRIMITIVETYPE_Boolean;
-        s_builtinFunctionNonDefaultReturnTypes["GROUP_CONCAT"] = ECN::PRIMITIVETYPE_String;
-        s_builtinFunctionNonDefaultReturnTypes["HEX"] = ECN::PRIMITIVETYPE_String;
-        s_builtinFunctionNonDefaultReturnTypes["INSTR"] = ECN::PRIMITIVETYPE_Integer;
-        s_builtinFunctionNonDefaultReturnTypes["LENGTH"] = ECN::PRIMITIVETYPE_Long;
-        s_builtinFunctionNonDefaultReturnTypes["LIKE"] = ECN::PRIMITIVETYPE_Boolean;
-        s_builtinFunctionNonDefaultReturnTypes["LOWER"] = ECN::PRIMITIVETYPE_String;
-        s_builtinFunctionNonDefaultReturnTypes["LTRIM"] = ECN::PRIMITIVETYPE_String;
-        s_builtinFunctionNonDefaultReturnTypes["MATCH"] = PRIMITIVETYPE_Boolean;
-        s_builtinFunctionNonDefaultReturnTypes["QUOTE"] = ECN::PRIMITIVETYPE_String;
-        s_builtinFunctionNonDefaultReturnTypes["RANDOMBLOB"] = ECN::PRIMITIVETYPE_Binary;
-        s_builtinFunctionNonDefaultReturnTypes["REGEXP"] = PRIMITIVETYPE_Boolean;
-        s_builtinFunctionNonDefaultReturnTypes["REPLACE"] = PRIMITIVETYPE_String;
-        s_builtinFunctionNonDefaultReturnTypes["RTRIM"] = PRIMITIVETYPE_String;
-        s_builtinFunctionNonDefaultReturnTypes["SOME"] = ECN::PRIMITIVETYPE_Boolean;
-        s_builtinFunctionNonDefaultReturnTypes["SOUNDEX"] = PRIMITIVETYPE_String;
-        s_builtinFunctionNonDefaultReturnTypes["SUBSTR"] = PRIMITIVETYPE_String;
-        s_builtinFunctionNonDefaultReturnTypes["TRIM"] = PRIMITIVETYPE_String;
-        s_builtinFunctionNonDefaultReturnTypes["UNICODE"] = ECN::PRIMITIVETYPE_Long;
-        s_builtinFunctionNonDefaultReturnTypes["UPPER"] = ECN::PRIMITIVETYPE_String;
-        s_builtinFunctionNonDefaultReturnTypes["ZEROBLOB"] = ECN::PRIMITIVETYPE_Binary;
+    if (BeStringUtilities::StricmpAscii(functionName, "any") == 0)
+        return PRIMITIVETYPE_Boolean;
 
-        //Functions built-into BeSQLite
-        s_builtinFunctionNonDefaultReturnTypes["INVIRTUALSET"] = ECN::PRIMITIVETYPE_Boolean;
-        }
+    if (BeStringUtilities::StricmpAscii(functionName, "count") == 0)
+        return PRIMITIVETYPE_Long;
 
-    auto it = s_builtinFunctionNonDefaultReturnTypes.find(functionName);
-    if (it != s_builtinFunctionNonDefaultReturnTypes.end())
-        return it->second;
+    if (BeStringUtilities::StricmpAscii(functionName, "every") == 0)
+        return PRIMITIVETYPE_Boolean;
+
+    if (BeStringUtilities::StricmpAscii(functionName, "getecclassid") == 0)
+        return PRIMITIVETYPE_Long;
+
+    if (BeStringUtilities::StricmpAscii(functionName, "glob") == 0)
+        return PRIMITIVETYPE_Boolean;
+
+    if (BeStringUtilities::StricmpAscii(functionName, "group_concat") == 0)
+        return PRIMITIVETYPE_String;
+
+    if (BeStringUtilities::StricmpAscii(functionName, "hex") == 0)
+        return PRIMITIVETYPE_String;
+
+    if (BeStringUtilities::StricmpAscii(functionName, "instr") == 0)
+        return PRIMITIVETYPE_Integer;
+
+    if (BeStringUtilities::StricmpAscii(functionName, "length") == 0)
+        return PRIMITIVETYPE_Long;
+
+    if (BeStringUtilities::StricmpAscii(functionName, "like") == 0)
+        return PRIMITIVETYPE_Boolean;
+
+    if (BeStringUtilities::StricmpAscii(functionName, "lower") == 0)
+        return PRIMITIVETYPE_String;
+
+    if (BeStringUtilities::StricmpAscii(functionName, "ltrim") == 0)
+        return PRIMITIVETYPE_String;
+
+    if (BeStringUtilities::StricmpAscii(functionName, "match") == 0)
+        return PRIMITIVETYPE_Boolean;
+
+    if (BeStringUtilities::StricmpAscii(functionName, "quote") == 0)
+        return PRIMITIVETYPE_String;
+
+    if (BeStringUtilities::StricmpAscii(functionName, "randomblob") == 0)
+        return PRIMITIVETYPE_Binary;
+
+    if (BeStringUtilities::StricmpAscii(functionName, "regexp") == 0)
+        return PRIMITIVETYPE_Boolean;
+
+    if (BeStringUtilities::StricmpAscii(functionName, "replace") == 0)
+        return PRIMITIVETYPE_String;
+
+    if (BeStringUtilities::StricmpAscii(functionName, "rtrim") == 0)
+        return PRIMITIVETYPE_String;
+
+    if (BeStringUtilities::StricmpAscii(functionName, "some") == 0)
+        return PRIMITIVETYPE_Boolean;
+
+    if (BeStringUtilities::StricmpAscii(functionName, "soundex") == 0)
+        return PRIMITIVETYPE_String;
+
+    if (BeStringUtilities::StricmpAscii(functionName, "substr") == 0)
+        return PRIMITIVETYPE_String;
+
+    if (BeStringUtilities::StricmpAscii(functionName, "trim") == 0)
+        return PRIMITIVETYPE_String;
+
+    if (BeStringUtilities::StricmpAscii(functionName, "unicode") == 0)
+        return PRIMITIVETYPE_Long;
+
+    if (BeStringUtilities::StricmpAscii(functionName, "upper") == 0)
+        return PRIMITIVETYPE_String;
+
+    if (BeStringUtilities::StricmpAscii(functionName, "zeroblob") == 0)
+        return PRIMITIVETYPE_Binary;
+
+    //Functions built-into BeSQLite
+    if (BeStringUtilities::StricmpAscii(functionName, "invirtualset") == 0)
+        return PRIMITIVETYPE_Boolean;
 
     //all other functions get the default return type
     return ECN::PRIMITIVETYPE_Double;
@@ -646,10 +683,10 @@ Utf8String FunctionCallExp::_ToString() const
     {
     Utf8String str("FunctionCall [Function: ");
     str.append(m_functionName);
-    
+
     if (m_setQuantifier != SqlSetQuantifier::NotSpecified)
         str.append(" Aggregate operator: ").append(ExpHelper::ToSql(m_setQuantifier));
-        
+
     str.append("]");
     return str;
     }
@@ -701,10 +738,10 @@ bool LikeRhsValueExp::_TryDetermineParameterExpType(ECSqlParseContext& ctx, Para
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    09/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-ValueExp const* LikeRhsValueExp::GetEscapeExp () const
+ValueExp const* LikeRhsValueExp::GetEscapeExp() const
     {
-    if (HasEscapeExp ())
-        return GetChild<ValueExp> (static_cast<size_t> (m_escapeExpIndex));
+    if (HasEscapeExp())
+        return GetChild<ValueExp>(static_cast<size_t> (m_escapeExpIndex));
     else
         return nullptr;
     }
@@ -714,9 +751,9 @@ ValueExp const* LikeRhsValueExp::GetEscapeExp () const
 //+---------------+---------------+---------------+---------------+---------------+------
 void LikeRhsValueExp::_DoToECSql(Utf8StringR ecsql) const
     {
-    ecsql.append (GetRhsExp ()->ToECSql());
-    if (HasEscapeExp ())
-        ecsql.append (" ESCAPE ").append (GetEscapeExp ()->ToECSql ()); 
+    ecsql.append(GetRhsExp()->ToECSql());
+    if (HasEscapeExp())
+        ecsql.append(" ESCAPE ").append(GetEscapeExp()->ToECSql());
     }
 
 //*************************** LiteralValueExp ******************************************
@@ -1001,8 +1038,8 @@ Exp::FinalizeParseStatus UnaryValueExp::_FinalizeParsing(ECSqlParseContext& ctx,
     auto const& operandTypeInfo = operand->GetTypeInfo();
     switch (m_op)
         {
-        case UnarySqlOperator::Minus:
-        case UnarySqlOperator::Plus:
+            case UnarySqlOperator::Minus:
+            case UnarySqlOperator::Plus:
             {
             if (!operandTypeInfo.IsNumeric())
                 {
@@ -1012,9 +1049,9 @@ Exp::FinalizeParseStatus UnaryValueExp::_FinalizeParsing(ECSqlParseContext& ctx,
 
             break;
             }
-        case UnarySqlOperator::BitwiseNot:
+            case UnarySqlOperator::BitwiseNot:
             {
-            if (!operandTypeInfo.IsExactNumeric ())
+            if (!operandTypeInfo.IsExactNumeric())
                 {
                 ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid type in expression %s: Unary operator expects an integral type expression", ToECSql().c_str());
                 return FinalizeParseStatus::Error;
@@ -1023,7 +1060,7 @@ Exp::FinalizeParseStatus UnaryValueExp::_FinalizeParsing(ECSqlParseContext& ctx,
             break;
             }
 
-        default:
+            default:
             {
             ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid unary operator in expression %s.", ToECSql().c_str());
             return FinalizeParseStatus::Error;
@@ -1054,10 +1091,10 @@ void UnaryValueExp::_DoToECSql(Utf8StringR ecsql) const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8String UnaryValueExp::_ToString() const 
+Utf8String UnaryValueExp::_ToString() const
     {
-    Utf8String str ("UnaryValue [Operator: ");
-    str.append (ExpHelper::ToSql (m_op)).append ("]");
+    Utf8String str("UnaryValue [Operator: ");
+    str.append(ExpHelper::ToSql(m_op)).append("]");
     return str;
     }
 

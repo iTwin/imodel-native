@@ -132,7 +132,7 @@ public:
             void SetDefaultExpression(Utf8CP expression) { m_constraintDefaultValue = expression; }
             Collation GetCollation()  const { return m_collation; }
             void SetCollation(Collation collation) { m_collation = collation; }
-            static Utf8CP CollationToString(Collation);
+            static Utf8CP CollationToSql(Collation);
             static bool TryParseCollationString(Collation&, Utf8CP);
         };
 

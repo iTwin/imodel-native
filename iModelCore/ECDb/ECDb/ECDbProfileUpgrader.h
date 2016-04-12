@@ -16,7 +16,6 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct ECDbProfileUpgrader
     {
 private:
-    virtual SchemaVersion _GetTargetVersion() const = 0;
     virtual DbResult _Upgrade(ECDbR) const = 0;
 
     static DbResult AlterColumnsInView(ECDbCR, Utf8CP viewName, Utf8CP allColumnNamesAfter);
@@ -51,7 +50,6 @@ protected:
 
 public:
     virtual ~ECDbProfileUpgrader() {}
-    SchemaVersion GetTargetVersion() const { return _GetTargetVersion(); }
     DbResult Upgrade(ECDbR ecdb) const { return _Upgrade(ecdb); }
     };
 
@@ -62,7 +60,6 @@ struct ECDbProfileUpgrader_3301 : ECDbProfileUpgrader
     {
     //intentionally use compiler generated ctor, dtor, copy ctor and copy assignment op
     private:
-        virtual SchemaVersion _GetTargetVersion() const override { return SchemaVersion(3, 3, 0, 1); }
         //Just there to trigger a reimport of the system schemas.
         virtual DbResult _Upgrade(ECDbR) const override { return BE_SQLITE_OK; }
     };
@@ -74,7 +71,6 @@ struct ECDbProfileUpgrader_3300 : ECDbProfileUpgrader
     {
     //intentionally use compiler generated ctor, dtor, copy ctor and copy assignment op
     private:
-        virtual SchemaVersion _GetTargetVersion() const override { return SchemaVersion(3, 3, 0, 0); }
         virtual DbResult _Upgrade(ECDbR) const override;
 
         //! ec_CustomAttribute stored a proprietary container type which has now been changed
@@ -90,7 +86,6 @@ struct ECDbProfileUpgrader_3202 : ECDbProfileUpgrader
     {
     //intentionally use compiler generated ctor, dtor, copy ctor and copy assignment op
     private:
-        virtual SchemaVersion _GetTargetVersion() const override { return SchemaVersion(3, 2, 0, 2); }
         virtual DbResult _Upgrade(ECDbR) const override;
     };
 
@@ -101,7 +96,6 @@ struct ECDbProfileUpgrader_3201 : ECDbProfileUpgrader
     {
     //intentionally use compiler generated ctor, dtor, copy ctor and copy assignment op
     private:
-        virtual SchemaVersion _GetTargetVersion() const override { return SchemaVersion(3, 2, 0, 1); }
         virtual DbResult _Upgrade(ECDbR) const override;
     };
 
@@ -112,7 +106,6 @@ struct ECDbProfileUpgrader_3200 : ECDbProfileUpgrader
     {
     //intentionally use compiler generated ctor, dtor, copy ctor and copy assignment op
     private:
-        virtual SchemaVersion _GetTargetVersion() const override { return SchemaVersion(3, 2, 0, 0); }
         virtual DbResult _Upgrade(ECDbR) const override;
     };
 
@@ -123,7 +116,6 @@ struct ECDbProfileUpgrader_3100 : ECDbProfileUpgrader
     {
     //intentionally use compiler generated ctor, dtor, copy ctor and copy assignment op
     private:
-        virtual SchemaVersion _GetTargetVersion() const override { return SchemaVersion(3, 1, 0, 0); }
         virtual DbResult _Upgrade(ECDbR) const override;
     };
 
@@ -134,7 +126,6 @@ struct ECDbProfileUpgrader_3001 : ECDbProfileUpgrader
     {
 //intentionally use compiler generated ctor, dtor, copy ctor and copy assignment op
 private:
-    virtual SchemaVersion _GetTargetVersion() const override { return SchemaVersion(3, 0, 0, 1); }
     virtual DbResult _Upgrade(ECDbR) const override;
     };
 
