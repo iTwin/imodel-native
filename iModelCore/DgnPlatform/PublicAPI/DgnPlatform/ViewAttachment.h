@@ -18,7 +18,7 @@ DGNPLATFORM_REF_COUNTED_PTR(ViewAttachment);
 
 #define DGN_CLASSNAME_ViewAttachment "ViewAttachment"
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 //=======================================================================================
 //! A ViewAttachment is a reference to a View of a model which can be placed on a sheet.
@@ -144,5 +144,5 @@ namespace dgn_ElementHandler
     };
 };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 
