@@ -7,21 +7,22 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
 
+using namespace connectivity;
+
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      03/2013
 //---------------------------------------------------------------------------------------
-BentleyStatus ECSqlParseTreeFormatter::ParseAndFormatECSqlParseNodeTree (Utf8StringR parseNodeTree, ECDbCR ecdb, Utf8CP ecsql)
+BentleyStatus ECSqlParseTreeFormatter::ParseAndFormatECSqlParseNodeTree (Utf8StringR parseNodeTreeString, ECDbCR ecdb, Utf8CP ecsql)
     {
     if (Utf8String::IsNullOrEmpty (ecsql))
         return ERROR;
 
-    RefCountedPtr<com::sun::star::lang::XMultiServiceFactory> serviceFactory = com::sun::star::lang::XMultiServiceFactory::CreateInstance();
-    connectivity::OSQLParser aParser(serviceFactory);
+    OSQLParser parser(com::sun::star::lang::XMultiServiceFactory::CreateInstance());
     Utf8String error;
-    connectivity::OSQLParseNode* n = aParser.parseTree(error, ecsql);
-    if (n == nullptr)
+    std::unique_ptr<OSQLParseNode> parseNode(parser.parseTree(error, ecsql));
+    if (parseNode == nullptr)
         {
         if (!error.empty())
             ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, error.c_str());
@@ -29,7 +30,7 @@ BentleyStatus ECSqlParseTreeFormatter::ParseAndFormatECSqlParseNodeTree (Utf8Str
         return ERROR;
         }
 
-    n->showParseTree(parseNodeTree);
+    parseNode->showParseTree(parseNodeTreeString);
     return SUCCESS;
     }
 
@@ -43,19 +44,14 @@ BentleyStatus ECSqlParseTreeFormatter::ParseAndFormatECSqlExpTree(Utf8StringR ex
     if (Utf8String::IsNullOrEmpty(ecsql))
         return ERROR;
 
-    std::unique_ptr<Exp> exp = nullptr;
     ECSqlParser parser;
-    if (SUCCESS != parser.Parse(exp, ecdb, ecsql))
+    std::unique_ptr<Exp> exp = parser.Parse(ecdb, ecsql);
+    if (exp == nullptr)
         return ERROR;
 
-    if (exp != nullptr)
-        {
-        expTreeToECSql = exp->ToECSql();
-        GenerateExpTree(expTree, *exp, 0);
-        return SUCCESS;
-        }
-
-    return ERROR;
+    expTreeToECSql = exp->ToECSql();
+    GenerateExpTree(expTree, *exp, 0);
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------

@@ -55,7 +55,7 @@ struct ECSqlPreparedStatement : NonCopyableClass
         virtual ~ECSqlPreparedStatement() {}
 
         ECSqlType GetType() const { return m_type; }
-        ECSqlStatus Prepare(ECSqlPrepareContext& prepareContext, ECSqlParseTreeCR ecsqlParseTree, Utf8CP ecsql);
+        ECSqlStatus Prepare(ECSqlPrepareContext&, Exp const&, Utf8CP ecsql);
         IECSqlBinder& GetBinder(int parameterIndex);
         int GetParameterIndex(Utf8CP parameterName) const;
 

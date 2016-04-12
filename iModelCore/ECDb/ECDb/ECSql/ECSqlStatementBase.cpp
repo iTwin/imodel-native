@@ -48,16 +48,16 @@ ECSqlStatus ECSqlStatementBase::_Prepare(ECDbCR ecdb, Utf8CP ecsql)
     ECSqlPrepareContext prepareContext = _InitializePrepare(ecdb, ecsql);
 
     //Step 1: parse the ECSQL
-    ECSqlParseTreePtr ecsqlParseTree = nullptr;
     ECSqlParser parser;
-    if (SUCCESS != parser.Parse(ecsqlParseTree, ecdb, ecsql))
+    std::unique_ptr<Exp> exp = parser.Parse(ecdb, ecsql);
+    if (exp == nullptr)
         {
         Finalize();
         return ECSqlStatus::InvalidECSql;
         }
 
     //establish joinTable context if any
-    ECSqlPrepareContext::JoinedTableInfo const* joinedTableInfo = prepareContext.TrySetupJoinedTableInfo(*ecsqlParseTree, ecsql);
+    ECSqlPrepareContext::JoinedTableInfo const* joinedTableInfo = prepareContext.TrySetupJoinedTableInfo(*exp, ecsql);
     if (joinedTableInfo != nullptr)
         {
         if (joinedTableInfo->HasJoinedTableECSql()) //in case joinTable update it is possible that current could be null
@@ -65,8 +65,9 @@ ECSqlStatus ECSqlStatementBase::_Prepare(ECDbCR ecdb, Utf8CP ecsql)
         else
             ecsql = joinedTableInfo->GetParentOfJoinedTableECSql();
 
-        ecsqlParseTree = nullptr; //delete existing parse tree
-        if (SUCCESS != parser.Parse(ecsqlParseTree, ecdb, ecsql))
+        //reparse
+        exp = parser.Parse(ecdb, ecsql); 
+        if (exp == nullptr)
             {
             Finalize();
             return ECSqlStatus::InvalidECSql;
@@ -74,20 +75,12 @@ ECSqlStatus ECSqlStatementBase::_Prepare(ECDbCR ecdb, Utf8CP ecsql)
         }
 
     //Step 2: translate into SQLite SQL and prepare SQLite statement
-    ECSqlPreparedStatement& preparedStatement = CreatePreparedStatement(ecdb, *ecsqlParseTree);
-    ECSqlStatus stat = preparedStatement.Prepare(prepareContext, *ecsqlParseTree, ecsql);
+    ECSqlPreparedStatement& preparedStatement = CreatePreparedStatement(ecdb, *exp);
+    ECSqlStatus stat = preparedStatement.Prepare(prepareContext, *exp, ecsql);
     if (!stat.IsSuccess())
         Finalize();
 
     return stat;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle        10/13
-//---------------------------------------------------------------------------------------
-bool ECSqlStatementBase::IsPrepared() const
-    {
-    return GetPreparedStatementP() != nullptr;
     }
 
 //---------------------------------------------------------------------------------------
@@ -282,9 +275,9 @@ ECSqlStatus ECSqlStatementBase::FailIfWrongType(ECSqlType expectedType, Utf8CP e
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        12/13
 //---------------------------------------------------------------------------------------
-ECSqlPreparedStatement& ECSqlStatementBase::CreatePreparedStatement(ECDbCR ecdb, ECSqlParseTreeCR parseTree)
+ECSqlPreparedStatement& ECSqlStatementBase::CreatePreparedStatement(ECDbCR ecdb, Exp const& exp)
     {
-    switch (parseTree.GetType())
+    switch (exp.GetType())
         {
             case Exp::Type::Select:
                 m_preparedStatement = unique_ptr<ECSqlPreparedStatement>(new ECSqlSelectPreparedStatement(ecdb));

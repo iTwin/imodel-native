@@ -15,7 +15,6 @@
 #include "ECSqlPreparedStatement.h"
 #include "NativeSqlBuilder.h"
  
-
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 struct ECSqlStatementBase;
@@ -243,31 +242,12 @@ struct ECSqlPrepareContext
                         ParameterSet m_secondary;
 
                     public:
-                        ParameterSet& GetOrignalR()
-                            {
-                            return m_orignal;
-                            }
-                        ParameterSet& GetPrimaryR()
-                            {
-                            return m_primary;
-                            }
-                        ParameterSet& GetSecondaryR()
-                            {
-                            return m_secondary;
-                            }
-
-                        ParameterSet const& GetOrignal() const
-                            {
-                            return m_orignal;
-                            }
-                        ParameterSet const& GetPrimary() const
-                            {
-                            return m_primary;
-                            }
-                        ParameterSet const& GetSecondary() const
-                            {
-                            return m_secondary;
-                            }
+                        ParameterSet& GetOrignalR() { return m_orignal; }
+                        ParameterSet& GetPrimaryR() { return m_primary; }
+                        ParameterSet& GetSecondaryR() { return m_secondary; }
+                        ParameterSet const& GetOrignal() const { return m_orignal; }
+                        ParameterSet const& GetPrimary() const { return m_primary; }
+                        ParameterSet const& GetSecondary() const { return m_secondary; }
                     };
 
             private:
@@ -288,7 +268,7 @@ struct ECSqlPrepareContext
 
             public:
                 ~JoinedTableInfo() {}
-                static std::unique_ptr<JoinedTableInfo> Create(ECSqlPrepareContext& ctx, ECSqlParseTreeCR exp, Utf8CP orignalECSQL);
+                static std::unique_ptr<JoinedTableInfo> Create(ECSqlPrepareContext&, Exp const&, Utf8CP orignalECSQL);
                 Utf8CP GetJoinedTableECSql() const { return m_joinedTableECSql.c_str(); }
                 Utf8CP GetParentOfJoinedTableECSql() const { return m_parentOfJoinedTableECSql.c_str(); }
                 Utf8CP GetOrignalECSql() const { return m_originalECSql.c_str(); }
@@ -391,7 +371,7 @@ struct ECSqlPrepareContext
         bool IsParentOfJoinedTable() const { return m_joinedTableClassId.IsValid(); }
         void MarkAsParentOfJoinedTable(ECN::ECClassId classId) { BeAssert(!IsParentOfJoinedTable()); m_joinedTableClassId = classId; }
         JoinedTableInfo const* GetJoinedTableInfo() const { return m_joinedTableInfo.get(); }
-        JoinedTableInfo const* TrySetupJoinedTableInfo(ECSqlParseTreeCR exp, Utf8CP originalECSQL);
+        JoinedTableInfo const* TrySetupJoinedTableInfo(Exp const&, Utf8CP originalECSQL);
         
         ECSqlStatementBase& GetECSqlStatementR() const;
         NativeSqlBuilder const& GetSqlBuilder() const { return m_nativeSqlBuilder; }

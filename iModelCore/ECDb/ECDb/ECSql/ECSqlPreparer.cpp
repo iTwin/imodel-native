@@ -26,14 +26,14 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod                                    Affan.Khan                       09/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlStatus ECSqlPreparer::Prepare(Utf8StringR nativeSql, ECSqlPrepareContext& context, ECSqlParseTreeCR ecsqlParseTree)
+ECSqlStatus ECSqlPreparer::Prepare(Utf8StringR nativeSql, ECSqlPrepareContext& context, Exp const& exp)
     {
     ECSqlStatus status = ECSqlStatus::Error;
-    switch (ecsqlParseTree.GetType())
+    switch (exp.GetType())
         {
             case Exp::Type::Select:
             {
-            status = ECSqlSelectPreparer::Prepare(context, static_cast<SelectStatementExp const&> (ecsqlParseTree));
+            status = ECSqlSelectPreparer::Prepare(context, static_cast<SelectStatementExp const&> (exp));
             if (!status.IsSuccess())
                 return status;
 
@@ -42,7 +42,7 @@ ECSqlStatus ECSqlPreparer::Prepare(Utf8StringR nativeSql, ECSqlPrepareContext& c
 
             case Exp::Type::Insert:
             {
-            status = ECSqlInsertPreparer::Prepare(context, static_cast<InsertStatementExp const&> (ecsqlParseTree));
+            status = ECSqlInsertPreparer::Prepare(context, static_cast<InsertStatementExp const&> (exp));
             if (!status.IsSuccess())
                 return status;
 
@@ -51,7 +51,7 @@ ECSqlStatus ECSqlPreparer::Prepare(Utf8StringR nativeSql, ECSqlPrepareContext& c
 
             case Exp::Type::Update:
             {
-            status = ECSqlUpdatePreparer::Prepare(context, static_cast<UpdateStatementExp const&> (ecsqlParseTree));
+            status = ECSqlUpdatePreparer::Prepare(context, static_cast<UpdateStatementExp const&> (exp));
             if (!status.IsSuccess())
                 return status;
 
@@ -60,7 +60,7 @@ ECSqlStatus ECSqlPreparer::Prepare(Utf8StringR nativeSql, ECSqlPrepareContext& c
 
             case Exp::Type::Delete:
             {
-            status = ECSqlDeletePreparer::Prepare(context, static_cast<DeleteStatementExp const&> (ecsqlParseTree));
+            status = ECSqlDeletePreparer::Prepare(context, static_cast<DeleteStatementExp const&> (exp));
             if (!status.IsSuccess())
                 return status;
 

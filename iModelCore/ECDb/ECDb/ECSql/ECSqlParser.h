@@ -55,9 +55,6 @@ public:
     ECDbCR GetECDb() const { return m_ecdb; }
     };
 
-typedef std::unique_ptr<Exp> ECSqlParseTreePtr;
-typedef Exp const& ECSqlParseTreeCR;
-
 //=======================================================================================
 //!The name convention here is different as parse_<parser_rule>() style naming is used 
 //! so that it easy to lookup rule corresponding to the function that parsing it.
@@ -87,19 +84,22 @@ private:
 
     mutable std::unique_ptr<ECSqlParseContext> m_context;
 
+    //No need to free this as it is a static member (See http://bsw-wiki.bentley.com/bin/view.pl/Main/CPlusPlusSpecific)
+    static connectivity::OSQLParser* s_sharedParser;
+
     //root nodes
-    BentleyStatus parse_select_statement(std::unique_ptr<SelectStatementExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus parse_insert_statement(std::unique_ptr<InsertStatementExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus parse_update_statement_searched(std::unique_ptr<UpdateStatementExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus parse_delete_statement_searched(std::unique_ptr<DeleteStatementExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseSelectStatement(std::unique_ptr<SelectStatementExp>&, connectivity::OSQLParseNode const&) const;
+    BentleyStatus ParseInsertStatement(std::unique_ptr<InsertStatementExp>&, connectivity::OSQLParseNode const&) const;
+    BentleyStatus ParseUpdateStatementSearched(std::unique_ptr<UpdateStatementExp>&, connectivity::OSQLParseNode const&) const;
+    BentleyStatus ParseDeleteStatementSearched(std::unique_ptr<DeleteStatementExp>&, connectivity::OSQLParseNode const&) const;
 
     // SELECT
-    BentleyStatus parse_single_select_statement(std::unique_ptr<SingleSelectStatementExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus parse_selection(std::unique_ptr<SelectClauseExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus parse_derived_column(std::unique_ptr<DerivedPropertyExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus parse_from_clause(std::unique_ptr<FromExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseSingleSelectStatement(std::unique_ptr<SingleSelectStatementExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseSelection(std::unique_ptr<SelectClauseExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseDerivedColumn(std::unique_ptr<DerivedPropertyExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseFromClause(std::unique_ptr<FromExp>&, connectivity::OSQLParseNode const*) const;
 
-    BentleyStatus parse_assignment_commalist(std::unique_ptr<AssignmentListExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseAssignmentCommalist(std::unique_ptr<AssignmentListExp>&, connectivity::OSQLParseNode const*) const;
 
     //Common expressions
     BentleyStatus parse_all(bool& isAll, connectivity::OSQLParseNode const*) const;
@@ -195,15 +195,15 @@ private:
 
     IssueReporter const& GetIssueReporter() const { BeAssert(m_context != nullptr); return m_context->GetIssueReporter(); }
 
-    //WIP_ECSQL: Mem leaks where there is error in statement. Need to use shared_ptr instead of unique_ptr
-    static connectivity::OSQLParser* GetSharedParser();
-    static bool IsPredicate(connectivity::OSQLParseNode const* parseNode);
+    static bool IsPredicate(connectivity::OSQLParseNode const& parseNode);
+
+    static connectivity::OSQLParser& GetSharedParser();
 
 public:
     ECSqlParser() : m_context (nullptr) {}
     ~ECSqlParser() {}
 
-    BentleyStatus Parse(ECSqlParseTreePtr& ecsqlParseTree, ECDbCR, Utf8CP ecsql) const;
+    std::unique_ptr<Exp> Parse(ECDbCR, Utf8CP ecsql) const;
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
