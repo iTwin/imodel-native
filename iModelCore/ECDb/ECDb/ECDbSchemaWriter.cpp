@@ -212,13 +212,18 @@ BentleyStatus ECDbSchemaWriter::UpdateECProperty(ECPropertyChange& propertyChang
     if (propertyChange.GetStatus() == ECChange::Status::Done)
         return SUCCESS;
 
-    auto propertyId = ECDbSchemaManager::GetPropertyIdForECPropertyFromDuplicateECSchema(m_ecdb, newProperty);
-    if (!propertyId.IsValid())
+    ECPropertyId propertyId;
+    if (!newProperty.HasId())
         {
-        BeAssert(false && "Failed to resolve ecclass id");
-        return ERROR;
+        propertyId = ECDbSchemaManager::GetPropertyIdForECPropertyFromDuplicateECSchema(m_ecdb, newProperty);
+        if (!propertyId.IsValid())
+            {
+            BeAssert(false && "Failed to resolve ecclass id");
+            return ERROR;
+            }
         }
-
+    else
+        propertyId = newProperty.GetId();
     SqlUpdater updater("ec_Property");
     if (propertyChange.GetTypeName().IsValid())
         {
@@ -439,14 +444,18 @@ BentleyStatus ECDbSchemaWriter::UpdateECClass(ECClassChange& classChange, ECClas
     if (classChange.GetStatus() == ECChange::Status::Done)
         return SUCCESS;
 
-    auto classId = ECDbSchemaManager::GetClassIdForECClassFromDuplicateECSchema(m_ecdb, newClass);
-    if (!classId.IsValid())
+    ECClassId classId;
+    if (!newClass.HasId())
         {
-        BeAssert(false && "Failed to resolve ecclass id");
-        return ERROR;
+        classId = ECDbSchemaManager::GetClassIdForECClassFromDuplicateECSchema(m_ecdb, newClass);
+        if (!classId.IsValid())
+            {
+            BeAssert(false && "Failed to resolve ecclass id");
+            return ERROR;
+            }
         }
-
-
+    else
+        classId = newClass.GetId();
     SqlUpdater updater("ec_Class");
 
     if (classChange.GetClassModifier().IsValid())
@@ -777,12 +786,18 @@ BentleyStatus ECDbSchemaWriter::UpdateECSchema(ECSchemaChange& schemaChange, ECS
     if (schemaChange.GetStatus() == ECChange::Status::Done)
         return SUCCESS;
 
-    auto schemaId = ECDbSchemaManager::GetSchemaIdForECSchemaFromDuplicateECSchema(m_ecdb, newSchema);
-    if (!schemaId.IsValid())
+    ECSchemaId schemaId;
+    if (!newSchema.HasId())
         {
-        BeAssert(false && "Failed to resolve ecshema id");
-        return ERROR;
+        schemaId = ECDbSchemaManager::GetSchemaIdForECSchemaFromDuplicateECSchema(m_ecdb, newSchema);
+        if (!schemaId.IsValid())
+            {
+            BeAssert(false && "Failed to resolve ecshema id");
+            return ERROR;
+            }
         }
+    else
+        schemaId = newSchema.GetId();
 
     SqlUpdater updater("ec_Schema");
     if (schemaChange.GetName().IsValid())
