@@ -88,7 +88,7 @@ private:
 
 #if !defined (DOCUMENTATION_GENERATOR)
 protected:
-    ECDB_EXPORT virtual DbResult _OnDbOpened() override;
+    ECDB_EXPORT virtual DbResult _OnDbOpening() override;
     //! Fired when an ECDb file was created. Creates the %EC profile.
     ECDB_EXPORT virtual DbResult _OnDbCreated(CreateParams const& params) override;
     ECDB_EXPORT virtual DbResult _OnBriefcaseIdChanged(BeBriefcaseId newBriefcaseId) override;
