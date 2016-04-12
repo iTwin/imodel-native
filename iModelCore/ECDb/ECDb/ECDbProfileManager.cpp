@@ -8,16 +8,8 @@
 #include "ECDbPch.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
-//static
-Utf8CP const ECDbProfileManager::PROFILENAME = "ECDb";
-//static
-const PropertySpec ECDbProfileManager::PROFILEVERSION_PROPSPEC = PropertySpec("SchemaVersion", "ec_Db");
 
-//static
-const SchemaVersion ECDbProfileManager::MINIMUM_SUPPORTED_VERSION = SchemaVersion(3, 0, 0, 0);
-
-//static
-std::vector<std::unique_ptr<ECDbProfileUpgrader>> ECDbProfileManager::s_upgraderSequence;
+#define PROFILENAME "ECDb"
 
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                12/2012
@@ -37,7 +29,7 @@ DbResult ECDbProfileManager::CreateECProfile(ECDbR ecdb)
     if (stat != BE_SQLITE_OK)
         {
         LOG.errorv("Failed to create %s profile in file '%s'. Could not initialize id sequences.",
-            PROFILENAME, ecdb.GetDbFileName());
+                   PROFILENAME, ecdb.GetDbFileName());
         ecdb.AbandonChanges();
         return stat;
         }
@@ -62,14 +54,14 @@ DbResult ECDbProfileManager::CreateECProfile(ECDbR ecdb)
         {
         ecdb.AbandonChanges();
         LOG.errorv("Failed to create %s profile in file '%s'. Could not assign new profile version. %s",
-            PROFILENAME, ecdb.GetDbFileName(), ecdb.GetLastError().c_str());
+                   PROFILENAME, ecdb.GetDbFileName(), ecdb.GetLastError().c_str());
         return stat;
         }
 
     ecdb.SaveChanges();
     timer.Stop();
-    
-    if (LOG.isSeverityEnabled (NativeLogging::LOG_INFO))
+
+    if (LOG.isSeverityEnabled(NativeLogging::LOG_INFO))
         LOG.infov("Created %s profile (in %.4lf msecs) in '%s'.", PROFILENAME, timer.GetElapsedSeconds() * 1000.0, ecdb.GetDbFileName());
 
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("End CreateECProfile");
@@ -86,24 +78,24 @@ DbResult ECDbProfileManager::CreateECProfile(ECDbR ecdb)
 //+===============+===============+===============+===============+===============+======
 struct ProfileUpgradeContext : NonCopyableClass
     {
-private:
-    ECDbR m_ecdb;
-    Savepoint& m_defaultTransaction;
-    bool m_isDefaultTransOpen;
-    bool m_rollbackOnDestruction;
-    DbResult m_beginTransError;
+    private:
+        ECDbR m_ecdb;
+        Savepoint& m_defaultTransaction;
+        bool m_isDefaultTransOpen;
+        bool m_rollbackOnDestruction;
+        DbResult m_beginTransError;
 
-    void DisableForeignKeyEnforcement();
-    void EnableForeignKeyEnforcement() const;
-public:
-    ProfileUpgradeContext(ECDbR ecdb, Savepoint& defaultTransaction);
-    ~ProfileUpgradeContext();
+        void DisableForeignKeyEnforcement();
+        void EnableForeignKeyEnforcement() const;
+    public:
+        ProfileUpgradeContext(ECDbR ecdb, Savepoint& defaultTransaction);
+        ~ProfileUpgradeContext();
 
-    //! Be default the upgrade transaction is rolled back when the context is destroyed.
-    //! Be calling this method, the transaction is committed when the context is destroyed.
-    void SetCommitAfterUpgrade() {m_rollbackOnDestruction = false;}
+        //! Be default the upgrade transaction is rolled back when the context is destroyed.
+        //! Be calling this method, the transaction is committed when the context is destroyed.
+        void SetCommitAfterUpgrade() { m_rollbackOnDestruction = false; }
 
-    DbResult GetBeginTransError() const {return m_beginTransError;}
+        DbResult GetBeginTransError() const { return m_beginTransError; }
     };
 
 //--------------------------------------------------------------------------------------
@@ -121,7 +113,7 @@ DbResult ECDbProfileManager::UpgradeECProfile(ECDbR ecdb, Db::OpenParams const& 
 
     const SchemaVersion expectedVersion = GetExpectedVersion();
     bool profileNeedsUpgrade = false;
-    stat = ECDb::CheckProfileVersion(profileNeedsUpgrade, expectedVersion, actualProfileVersion, MINIMUM_SUPPORTED_VERSION, openParams.IsReadonly(), PROFILENAME);
+    stat = ECDb::CheckProfileVersion(profileNeedsUpgrade, expectedVersion, actualProfileVersion, GetMinimumSupportedVersion(), openParams.IsReadonly(), PROFILENAME);
     if (!profileNeedsUpgrade)
         return stat;
 
@@ -136,10 +128,10 @@ DbResult ECDbProfileManager::UpgradeECProfile(ECDbR ecdb, Db::OpenParams const& 
 
     //Call upgrader sequence and let upgraders incrementally upgrade the profile
     //to the latest state
-    auto upgraderIterator = GetUpgraderSequenceFor(actualProfileVersion);
-    for (;upgraderIterator != GetUpgraderSequence().end(); ++upgraderIterator)
+    std::vector<std::unique_ptr<ECDbProfileUpgrader>> upgraders;
+    GetUpgraderSequence(upgraders, actualProfileVersion);
+    for (std::unique_ptr<ECDbProfileUpgrader> const& upgrader : upgraders)
         {
-        std::unique_ptr<ECDbProfileUpgrader> const& upgrader = *upgraderIterator;
         stat = upgrader->Upgrade(ecdb);
         if (BE_SQLITE_OK != stat)
             return stat;
@@ -155,10 +147,10 @@ DbResult ECDbProfileManager::UpgradeECProfile(ECDbR ecdb, Db::OpenParams const& 
     if (stat != BE_SQLITE_OK)
         {
         LOG.errorv("Failed to upgrade %s profile in file '%s'. Could not assign new profile version. %s",
-            PROFILENAME, ecdb.GetDbFileName(), ecdb.GetLastError().c_str());
+                   PROFILENAME, ecdb.GetDbFileName(), ecdb.GetLastError().c_str());
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
-    
+
     if (LOG.isSeverityEnabled(NativeLogging::LOG_INFO))
         {
         LOG.infov("Upgraded %s profile from version %d.%d.%d.%d to version %d.%d.%d.%d (in %.4lf seconds) in file '%s'.",
@@ -179,14 +171,14 @@ DbResult ECDbProfileManager::AssignProfileVersion(ECDbR ecdb)
     {
     //Save the profile version as string (JSON format)
     const Utf8String profileVersionStr = GetExpectedVersion().ToJson();
-    return ecdb.SavePropertyString(PROFILEVERSION_PROPSPEC, profileVersionStr);
+    return ecdb.SavePropertyString(GetProfileVersionPropertySpec(), profileVersionStr);
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                07/2013
 //---------------+---------------+---------------+---------------+---------------+------
 //static
- DbResult ECDbProfileManager::ReadProfileVersion(SchemaVersion& profileVersion, ECDbCR ecdb, Savepoint& defaultTransaction)
+DbResult ECDbProfileManager::ReadProfileVersion(SchemaVersion& profileVersion, ECDbCR ecdb, Savepoint& defaultTransaction)
     {
     //we always need a transaction to execute SQLite statements. If ECDb was opened in no-default-trans mode, we need to
     //begin a transaction ourselves (just use BeSQLite's default transaction which is always there even in no-default-trans mode,
@@ -200,7 +192,7 @@ DbResult ECDbProfileManager::AssignProfileVersion(ECDbR ecdb)
     // a version entry for profile 1.0 or it isn't an ECDb file at all. In order to tell these we need
     // to check for a typical table of the ECDb profile:
     DbResult stat = BE_SQLITE_OK;
-    if (BE_SQLITE_ROW == ecdb.QueryProperty(currentVersionString, PROFILEVERSION_PROPSPEC))
+    if (BE_SQLITE_ROW == ecdb.QueryProperty(currentVersionString, GetProfileVersionPropertySpec()))
         profileVersion.FromJson(currentVersionString.c_str());
     else if (ecdb.TableExists("ec_Schema"))
         profileVersion = SchemaVersion(1, 0, 0, 0);
@@ -219,44 +211,39 @@ DbResult ECDbProfileManager::AssignProfileVersion(ECDbR ecdb)
 // @bsimethod                                                    Krischan.Eberle    07/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-ECDbProfileManager::ECDbProfileUpgraderSequence::const_iterator ECDbProfileManager::GetUpgraderSequenceFor(SchemaVersion const& currentProfileVersion)
+void ECDbProfileManager::GetUpgraderSequence(std::vector<std::unique_ptr<ECDbProfileUpgrader>>& upgraders, SchemaVersion const& currentProfileVersion)
     {
-    auto end = GetUpgraderSequence().end();
-    for (auto it = GetUpgraderSequence().begin(); it != end; ++it)
-        {
-        auto const& upgrader = *it;
-        if (currentProfileVersion < upgrader->GetTargetVersion())
-            return it;
-        }
+    upgraders.clear();
 
-    return end;
-    }
+    if (currentProfileVersion < SchemaVersion(3, 0, 0, 1))
+        upgraders.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3001()));
 
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle    07/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-//static
-ECDbProfileManager::ECDbProfileUpgraderSequence const& ECDbProfileManager::GetUpgraderSequence()
-    {
-    if (s_upgraderSequence.empty())
-        {
-        //upgraders must be listed in ascending order
-        s_upgraderSequence.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3001()));
-        s_upgraderSequence.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3100()));
-        s_upgraderSequence.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3200()));
-        s_upgraderSequence.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3201()));
-        s_upgraderSequence.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3202()));
-        s_upgraderSequence.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3300()));
-        }
+    if (currentProfileVersion < SchemaVersion(3, 1, 0, 0))
+        upgraders.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3100()));
 
-    return s_upgraderSequence;
+    if (currentProfileVersion < SchemaVersion(3, 2, 0, 0))
+        upgraders.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3200()));
+
+    if (currentProfileVersion < SchemaVersion(3, 2, 0, 1))
+        upgraders.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3201()));
+
+    if (currentProfileVersion < SchemaVersion(3, 2, 0, 2))
+        upgraders.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3202()));
+
+    if (currentProfileVersion < SchemaVersion(3, 3, 0, 0))
+        upgraders.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3300()));
+
+    if (currentProfileVersion < SchemaVersion(3, 3, 0, 1))
+        upgraders.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3301()));
+
+    BeAssert(GetExpectedVersion() == SchemaVersion(3, 3, 0, 1) && "ExpectedVersion and latest upgrader don't match.");
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        05/2012
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-DbResult ECDbProfileManager::CreateECProfileTables(ECDbR ecdb)
+DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
     {
     //ec_Schema
     DbResult stat = ecdb.ExecuteSql("CREATE TABLE ec_Schema("
@@ -505,10 +492,10 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbR ecdb)
 
     //ec_IndexColumn
     stat = ecdb.ExecuteSql("CREATE TABLE ec_IndexColumn("
-        "IndexId INTEGER NOT NULL REFERENCES ec_Index (Id) ON DELETE CASCADE,"
-        "ColumnId INTEGER NOT NULL REFERENCES ec_Column (Id) ON DELETE CASCADE,"
-        "Ordinal INTEGER NOT NULL,"
-        "PRIMARY KEY (IndexId, ColumnId))");
+                           "IndexId INTEGER NOT NULL REFERENCES ec_Index (Id) ON DELETE CASCADE,"
+                           "ColumnId INTEGER NOT NULL REFERENCES ec_Column (Id) ON DELETE CASCADE,"
+                           "Ordinal INTEGER NOT NULL,"
+                           "PRIMARY KEY (IndexId, ColumnId))");
     if (BE_SQLITE_OK != stat)
         return stat;
 
@@ -528,10 +515,10 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbR ecdb)
         return stat;
 
     stat = ecdb.ExecuteSql("CREATE TABLE ec_ForeignKeyColumn("
-        "ForeignKeyId INTEGER NOT NULL REFERENCES ec_ForeignKey (Id) ON DELETE CASCADE,"
-        "ColumnId INTEGER NOT NULL REFERENCES ec_Column (Id) ON DELETE CASCADE,"
-        "ReferencedColumnId INTEGER NOT NULL REFERENCES ec_Column (Id) ON DELETE CASCADE,"
-        "Ordinal INTEGER NOT NULL)");
+                           "ForeignKeyId INTEGER NOT NULL REFERENCES ec_ForeignKey (Id) ON DELETE CASCADE,"
+                           "ColumnId INTEGER NOT NULL REFERENCES ec_Column (Id) ON DELETE CASCADE,"
+                           "ReferencedColumnId INTEGER NOT NULL REFERENCES ec_Column (Id) ON DELETE CASCADE,"
+                           "Ordinal INTEGER NOT NULL)");
     if (BE_SQLITE_OK != stat)
         return stat;
 

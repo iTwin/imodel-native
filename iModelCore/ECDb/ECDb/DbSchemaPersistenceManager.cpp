@@ -1285,7 +1285,7 @@ BentleyStatus DbSchemaPersistenceManager::AppendColumnDdl(Utf8StringR ddl, DbCol
         ddl.append(" UNIQUE");
 
     if (colConstraint.GetCollation() != DbColumn::Constraint::Collation::Default)
-        ddl.append(" COLLATE ").append(DbColumn::Constraint::CollationToString(colConstraint.GetCollation()));
+        ddl.append(" COLLATE ").append(DbColumn::Constraint::CollationToSql(colConstraint.GetCollation()));
 
     if (!colConstraint.GetDefaultExpression().empty())
         ddl.append(" DEFAULT(").append(colConstraint.GetDefaultExpression()).append(")");

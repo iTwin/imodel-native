@@ -10,6 +10,7 @@
 #include <ECDb/ECDbSchemaManager.h>
 #include "ECDbMap.h"
 #include "BeBriefcaseBasedIdSequence.h"
+#include "ECDbProfileManager.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -128,8 +129,8 @@ private:
     DbResult OnDbOpened() const;
     DbResult OnDbCreated() const;
     DbResult OnBriefcaseIdChanged(BeBriefcaseId newBriefcaseId);
-    void OnDbChangedByOtherConnection() const;
-    DbResult VerifySchemaVersion(Db::OpenParams const& params) const;
+    void OnDbChangedByOtherConnection() const { ClearECDbCache(); }
+    DbResult VerifySchemaVersion(Db::OpenParams const& params) const { return ECDbProfileManager::UpgradeECProfile(m_ecdb, params); }
 
     //other private methods
     std::vector<BeBriefcaseBasedIdSequence const*> GetSequences() const;

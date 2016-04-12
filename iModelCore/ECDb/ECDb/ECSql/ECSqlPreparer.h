@@ -23,7 +23,7 @@ private:
     ~ECSqlPreparer ();
 
 public:
-    static ECSqlStatus Prepare (Utf8StringR nativeSql, ECSqlPrepareContext& context, ECSqlParseTreeCR ecsqlParseTree);
+    static ECSqlStatus Prepare (Utf8StringR nativeSql, ECSqlPrepareContext&, Exp const&);
     };
 
 

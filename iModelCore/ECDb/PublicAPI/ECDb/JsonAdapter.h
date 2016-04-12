@@ -412,10 +412,10 @@ private:
     ECN::ECClassCP m_ecClass;
     ECSqlStatementCache m_statementCache;
 
-    BentleyStatus PrepareECSql(CachedECSqlStatementPtr& statement, Utf8StringCR ecSql) const;
-    BentleyStatus PrepareECSql(CachedECSqlStatementPtr& statement, ECN::ECRelationshipPath const& pathFromRelatedClass, ECInstanceId, bool selectInstanceKeyOnly, bool isPolymorphic) const;
+     BentleyStatus GenerateECSql(Utf8StringR ecSql, ECN::ECRelationshipPath const& pathFromRelatedClass, bool selectInstanceKeyOnly, bool isPolymorphic) const;
+    BentleyStatus PrepareAndBindStatement(CachedECSqlStatementPtr& statement, Utf8StringCR ecSql, ECInstanceId ecInstanceId) const;
 
-    BentleyStatus AddInstancesFromSpecifiedClassPath(JsonValueR jsonInstances, JsonValueR jsonDisplayInfo, ECN::ECRelationshipPath const& pathToClass, ECInstanceId, JsonECSqlSelectAdapter::FormatOptions const&) const;
+    BentleyStatus AddInstancesFromSpecifiedClassPath(JsonValueR jsonInstances, JsonValueR jsonDisplayInfo, ECN::ECRelationshipPath const& pathToClass, ECInstanceId, JsonECSqlSelectAdapter::FormatOptions const&, bool) const;
     BentleyStatus AddInstancesFromRelatedItems(JsonValueR allInstances, JsonValueR allDisplayInfo, ECN::ECClassCR parentClass, ECN::ECRelationshipPath const& pathFromParent, ECInstanceId, JsonECSqlSelectAdapter::FormatOptions const&) const;
 
     BentleyStatus GetTrivialPathToSelf(ECN::ECRelationshipPath& emptyPath, ECN::ECClassCR) const;

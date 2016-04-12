@@ -128,7 +128,7 @@ ECSqlPrepareContext::ECSqlPrepareContext(ECDbCR ecdb, ECSqlStatementBase& prepar
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       01/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlPrepareContext::JoinedTableInfo const* ECSqlPrepareContext::TrySetupJoinedTableInfo(ECSqlParseTreeCR exp, Utf8CP orignalECSQL)
+ECSqlPrepareContext::JoinedTableInfo const* ECSqlPrepareContext::TrySetupJoinedTableInfo(Exp const& exp, Utf8CP orignalECSQL)
     {
     m_joinedTableInfo = JoinedTableInfo::Create(*this, exp, orignalECSQL);
     return GetJoinedTableInfo();
@@ -406,7 +406,7 @@ NativeSqlBuilder ECSqlPrepareContext::JoinedTableInfo::BuildAssignmentExpression
 // @bsimethod                                    Affan.Khan                       01/2016
 //+---------------+---------------+---------------+---------------+---------------+------
 //static 
-std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::JoinedTableInfo::Create(ECSqlPrepareContext& ctx, ECSqlParseTreeCR exp, Utf8CP orignalECSQL)
+std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::JoinedTableInfo::Create(ECSqlPrepareContext& ctx, Exp const& exp, Utf8CP orignalECSQL)
     {
     std::unique_ptr<JoinedTableInfo> info = nullptr;
     if (exp.GetType() == Exp::Type::Insert)

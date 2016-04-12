@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/StructToColumnsECSqlBinder.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -50,7 +50,7 @@ private:
     virtual IECSqlBinder& _GetMember (ECN::ECPropertyId structMemberPropertyId) override;
     virtual ECSqlStatus _BindNull () override;
     virtual IECSqlPrimitiveBinder& _BindPrimitive () override;
-    virtual IECSqlStructBinder& _BindStruct () override;
+    virtual IECSqlStructBinder& _BindStruct() override { return *this; }
     virtual IECSqlArrayBinder& _BindArray (uint32_t initialCapacity) override;
 
     void Initialize ();

@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/PrimitiveArrayToColumnECSqlBinder.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -37,9 +37,9 @@ void PrimitiveArrayToColumnECSqlBinder::_SetSqliteIndex(int ecsqlParameterCompon
 //---------------------------------------------------------------------------------------
 IECSqlBinder& PrimitiveArrayToColumnECSqlBinder::_AddArrayElement()
     {
-    const auto stat = ArrayConstraintValidator::ValidateMaximum(GetECDb(), GetTypeInfo(), GetCurrentArrayLength() + 1);
+    const ECSqlStatus stat = ArrayConstraintValidator::ValidateMaximum(GetECDb(), GetTypeInfo(), GetCurrentArrayLength() + 1);
     if (!stat.IsSuccess())
-        return GetNoopBinder(stat);
+        return NoopECSqlBinder::Get();
 
     m_currentArrayIndex++;
     uint32_t currentArrayIndex = (uint32_t) m_currentArrayIndex;
@@ -67,7 +67,7 @@ ECSqlStatus PrimitiveArrayToColumnECSqlBinder::_BindNull()
 IECSqlPrimitiveBinder& PrimitiveArrayToColumnECSqlBinder::_BindPrimitive()
     {
     GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind primitive value to array parameter.");
-    return GetNoopBinder(ECSqlStatus::Error).BindPrimitive();
+    return NoopECSqlBinder::Get().BindPrimitive();
     }
 
 //---------------------------------------------------------------------------------------
@@ -76,7 +76,7 @@ IECSqlPrimitiveBinder& PrimitiveArrayToColumnECSqlBinder::_BindPrimitive()
 IECSqlStructBinder& PrimitiveArrayToColumnECSqlBinder::_BindStruct()
     {
     GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind struct value to array parameter.");
-    return GetNoopBinder(ECSqlStatus::Error).BindStruct();
+    return NoopECSqlBinder::Get().BindStruct();
     }
 
 //---------------------------------------------------------------------------------------
@@ -357,7 +357,7 @@ IECSqlPrimitiveBinder& PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::_B
 IECSqlStructBinder& PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::_BindStruct()
     {
     m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind struct value to primitive array element");
-    return GetNoopBinder(ECSqlStatus::Error).BindStruct();
+    return NoopECSqlBinder::Get().BindStruct();
     }
 
 //---------------------------------------------------------------------------------------
@@ -366,7 +366,7 @@ IECSqlStructBinder& PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::_Bind
 IECSqlArrayBinder& PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::_BindArray(uint32_t initialCapacity)
     {
     m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind array value to array element.");
-    return GetNoopBinder(ECSqlStatus::Error).BindArray(initialCapacity);
+    return NoopECSqlBinder::Get().BindArray(initialCapacity);
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

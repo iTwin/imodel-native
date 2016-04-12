@@ -462,9 +462,6 @@
     <ClCompile Include="ECDbProfileManager.cpp">
       <Filter>ECDbProfile</Filter>
     </ClCompile>
-    <ClCompile Include="ECDbProfileUpgrader.cpp">
-      <Filter>ECDbProfile</Filter>
-    </ClCompile>
     <ClCompile Include="ECDbSchemaManager.cpp">
       <Filter>ECDbSchemaManager</Filter>
     </ClCompile>
@@ -709,6 +706,9 @@
     </ClCompile>
     <ClCompile Include="ClassMappingInfo.cpp">
       <Filter>ECDbMap</Filter>
+    </ClCompile>
+    <ClCompile Include="ECDbProfileUpgrader.cpp">
+      <Filter>ECDbProfile</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

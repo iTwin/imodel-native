@@ -122,7 +122,7 @@ ECSqlStatus ECSqlSelectPreparer::Prepare(ECSqlPrepareContext& ctx, SelectStateme
 
     SelectClauseExp const* lhs = exp.GetSelection();
     ctx.PushScope(exp);
-    switch (exp.GetOP())
+    switch (exp.GetOperator())
         {
             case SelectStatementExp::Operator::Except:
                 ctx.GetSqlBuilderR().Append(" EXCEPT "); break;

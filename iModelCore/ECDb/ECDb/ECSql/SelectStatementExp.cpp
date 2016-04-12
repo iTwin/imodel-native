@@ -908,7 +908,7 @@ Utf8String SelectStatementExp::_ToECSql() const
     {
     if (IsCompound())
         {
-        return GetCurrent().ToECSql() + " " + OPToString(m_operator) + (m_isAll ? " ALL " : " ") + GetNext()->ToECSql();
+        return GetCurrent().ToECSql() + " " + OperatorToString(m_operator) + (m_isAll ? " ALL " : " ") + GetNext()->ToECSql();
         }
 
     return  GetCurrent().ToECSql();
@@ -979,7 +979,7 @@ bool SelectStatementExp::IsAll()const { return m_isAll; }
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       09/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-SelectStatementExp::Operator SelectStatementExp::GetOP() const { return m_operator; }
+SelectStatementExp::Operator SelectStatementExp::GetOperator() const { return m_operator; }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       09/2015
@@ -989,7 +989,7 @@ bool SelectStatementExp::IsCompound() const { return m_operator != Operator::Non
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       09/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8CP SelectStatementExp::OPToString(Operator op)
+Utf8CP SelectStatementExp::OperatorToString(Operator op)
     {
     switch (op)
         {

@@ -10,7 +10,6 @@
 
 #include <ECDb/IECSqlBinder.h>
 #include "ECSqlBinderFactory.h"
-#include "ECSqlStatementNoopImpls.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -43,7 +42,6 @@ protected:
     void SetMappedSqlParameterCount (int mappedSqlParameterCount) { m_mappedSqlParameterCount = mappedSqlParameterCount; }
         
     std::function<void (ECInstanceId const& bindValue)> GetOnBindBriefcaseBasedIdEventHandler () const { return m_onBindRepositoyBasedIdEventHandler; }
-    static NoopECSqlBinder& GetNoopBinder (ECSqlStatus status);
     std::vector<IECSqlBinder*>* GetOnBindEventHandlers () { return m_onBindEventHandlers.get(); }
 
     ECSqlStatus ReportError(DbResult sqliteStat, Utf8CP errorMessageHeader = nullptr) const;
