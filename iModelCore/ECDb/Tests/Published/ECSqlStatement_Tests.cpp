@@ -3397,4 +3397,53 @@ TEST_F(ECSqlStatementTestFixture, InstanceInsertionInArray)
     stmt.Finalize();
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Sam.Wilson                      12/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, SelectAfterImport)
+    {
+    auto importSchema = [] (ECDbCR db, ECN::ECSchemaCR schemaIn)
+        {
+        ECN::ECSchemaCP existing = db.Schemas().GetECSchema(schemaIn.GetName().c_str());
+        if (nullptr != existing)
+            return;
+
+        ECN::ECSchemaPtr imported = nullptr;
+        ASSERT_EQ(ECN::ECObjectsStatus::Success, schemaIn.CopySchema(imported));
+
+        ASSERT_EQ(ECN::ECObjectsStatus::Success, imported->SetName(schemaIn.GetName()));
+
+        ASSERT_EQ(ECN::ECObjectsStatus::Success, imported->SetNamespacePrefix(schemaIn.GetNamespacePrefix()));
+
+        ECN::ECSchemaReadContextPtr contextPtr = ECN::ECSchemaReadContext::CreateContext();
+        ASSERT_EQ(ECN::ECObjectsStatus::Success, contextPtr->AddSchema(*imported));
+
+        ASSERT_EQ(SUCCESS, db.Schemas().ImportECSchemas(contextPtr->GetCache()));
+        db.Schemas().CreateECClassViewsInDb();
+        };
+
+    ECDbR ecdb = SetupECDb("ImportTwoInARow.ecdb");
+    ASSERT_TRUE(ecdb.IsDbOpen());
+
+    {
+    ECN::ECSchemaPtr schema;
+    ASSERT_EQ(ECN::ECObjectsStatus::Success, ECN::ECSchema::CreateSchema(schema, "ImportTwoInARow", 0, 0));
+    schema->SetNamespacePrefix("tir");
+
+    ECN::ECEntityClassP ecclass;
+    ASSERT_EQ(ECN::ECObjectsStatus::Success, schema->CreateEntityClass(ecclass, "C1"));
+
+    ECN::PrimitiveECPropertyP ecprop;
+    ASSERT_EQ(ECN::ECObjectsStatus::Success, ecclass->CreatePrimitiveProperty(ecprop, "X"));
+
+    ecprop->SetType(ECN::PRIMITIVETYPE_Double);
+
+    importSchema(ecdb, *schema);
+    }
+
+    EC::ECSqlStatement selectC1;
+    selectC1.Prepare(ecdb, "SELECT ECInstanceId FROM tir.C1");
+    }
+
+
 END_ECDBUNITTESTS_NAMESPACE

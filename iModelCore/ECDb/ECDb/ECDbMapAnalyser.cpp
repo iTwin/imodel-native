@@ -971,9 +971,7 @@ std::set<ECN::ECClassId> const& ECDbMapAnalyser::GetDerivedClassIds(ECN::ECClass
 //---------------------------------------------------------------------------------------
 ClassMapCP ECDbMapAnalyser::GetClassMap(ECN::ECClassId classId) const
     {
-    ClassMapCP classMap = GetMap().GetClassMap(classId);
-    BeAssert(classMap != nullptr && "ClassMap not found");
-    return classMap;
+    return GetMap().GetClassMap(classId);
     }
 
 //---------------------------------------------------------------------------------------

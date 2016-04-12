@@ -453,13 +453,5 @@ always:
     ~linkdir "$(BuildContext)Dox/Pages/ECDb=$(baseDir)docs/source"
     ~linkdir "$(BuildContext)Dox/Images/ECDb=$(baseDir)docs/images"
     @CreateSymLinks.py -m"$(BuildContext)Dox/Files/ECDb=$(baseDir)docs/files"
-
-#
-#   *** NEEDS WORK: We should never look in the BuildContext of another partfile.
-#                   The .xml file that we need from StandardSchemasV3 should be in its bindings.
-#                   It can decide which file to deliver and bind. This dependent part mke file should always
-#                   find it in a know location in its own BuildContext/SubParts directory.
-#                                                                          vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-always:
-    @CreateSymLinks.py "$(BuildContext)Dox/Files/ECDb/ECDbMap.ecschema.xml=$(OutBuildContexts)ECStandards/ECSchemas/Standard/$(ECDbMapSchemaName)"
+    @CreateSymLinks.py "$(BuildContext)Dox/Files/ECDb/ECDbMap.ecschema.xml=$(BuildContext)SubParts/ECSchemas/Standard/$(ECDbMapSchemaName)"
   
