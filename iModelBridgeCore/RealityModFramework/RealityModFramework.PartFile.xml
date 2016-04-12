@@ -61,6 +61,7 @@
         <SubPart PartName="BeCurl"              PartFile="BeCurl"       Repository="Libsrc-Curl"/>
         <SubPart PartName="BentleyDll"  PartFile="Bentley"      Repository="Bentley" />
         <SubPart PartName="RealityPlatform"/>
+		<SubPart PartName="RealityPackage"/>
         <Bindings>
             <Assemblies ProductDirectoryName="RealityAssemblies">Delivery/DownloadEngineExample.exe</Assemblies>
         </Bindings>
