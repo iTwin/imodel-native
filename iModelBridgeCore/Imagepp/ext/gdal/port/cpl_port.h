@@ -32,6 +32,11 @@
 #ifndef CPL_BASE_H_INCLUDED
 #define CPL_BASE_H_INCLUDED
 
+//IPP Always consume as a static lib. if we do not do this consumer will export gdal symbols.
+#ifndef CPL_DLL
+    #define CPL_DLL
+    //#define CPL_DISABLE_DLL
+#endif
 //IPP Remove annoying warnings Microsoft Visual C++ 
 #if defined(_MSC_VER)
 #  pragma warning(disable:4251 4275 4786 4127 4100)
