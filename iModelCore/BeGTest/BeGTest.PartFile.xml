@@ -83,6 +83,8 @@
         <ProductDirectory Name="WSClientAssemblies"                 Deliver="false" LibType="static"/>
         <ProductDirectory Name="BeCasablancaAssemblies"             Path="Assemblies"/>
         <ProductDirectory Name="BeCasablancaAssemblies"             Deliver="false" LibType="static"/>
+        <ProductDirectory Name="ChakraCoreAssemblies"               Path="Assemblies"/>
+        <ProductDirectory Name="ChakraCoreAssemblies"               Deliver="false" LibType="static"/>
 
         <ProductDirectory Name="Libs"                               Path="Libs"/>
         <ProductDirectory Name="Libs"                               Path="Libs" LibType="static"/>
