@@ -20,18 +20,24 @@ DGNPLATFORM_TYPEDEFS(DgnSubCategory);
 DGNPLATFORM_REF_COUNTED_PTR(DgnCategory);
 DGNPLATFORM_REF_COUNTED_PTR(DgnSubCategory);
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 typedef bvector<DgnCategoryId> DgnCategoryIdList;
 
+/**
+* @addtogroup GROUP_Appearance Appearance Module
+* Types related to determining how graphics appear when drawn
+*/
+
 //! A sub-category of a category.
-//! @ingroup DgnCategoryGroup
+//! @ingroup GROUP_DgnCategory
 struct EXPORT_VTABLE_ATTRIBUTE DgnSubCategory : DictionaryElement
 {
     DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_SubCategory, DictionaryElement);
 public:
     //! The parameters that can determine how graphics on a SubCategory appear when drawn.
-    //! @ingroup DgnCategoryGroup
+    //! @ingroup GROUP_DgnCategory
+    //! @ingroup GROUP_Appearance
     struct Appearance
     {
     private:
@@ -80,7 +86,7 @@ public:
     };// Appearance
 
     //! View-specific overrides of the appearance of a SubCategory
-    //! @ingroup DgnCategoryGroup
+    //! @ingroup GROUP_DgnCategory
     struct Override
     {
     private:
@@ -224,17 +230,23 @@ public:
     static DgnClassId QueryDgnClassId(DgnDbR db) { return DgnClassId(QueryECClassId(db)); } //!< Returns the class ID used for sub-categories
 };
 
+/**
+* @addtogroup GROUP_DgnCategory DgnCategory and DgnSubCategory Module
+* Types related to working with categories and subcategories
+* @see @ref PAGE_CategoryOverview
+*/
+
 //=======================================================================================
 //! Categorizes a geometric element. Each category has one default sub-category and any number
 //! of additional sub-categories.
-//! @ingroup DgnCategoryGroup
+//! @ingroup GROUP_DgnCategory
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DgnCategory : DictionaryElement
 {
     DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_Category, DictionaryElement);
 public:
     //! The Rank of a category indicates how it was created and where it can be used.
-    //! @ingroup DgnCategoryGroup
+    //! @ingroup GROUP_DgnCategory
     enum class Rank
     {
         System      = 0,    //!< This category is predefined by the system
@@ -244,7 +256,7 @@ public:
     };
 
     //! The Scope of a category determines what types of models may use it.
-    //! @ingroup DgnCategoryGroup
+    //! @ingroup GROUP_DgnCategory
     enum class Scope
     {
         Any         = 0,    //!< This category may be used in any type of model. Generally, this means it came from some external source (e.g. a dgn or dwg file)
@@ -405,5 +417,5 @@ namespace dgn_ElementHandler
     };
 }
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 

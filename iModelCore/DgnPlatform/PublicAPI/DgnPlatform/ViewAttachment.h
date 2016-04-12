@@ -18,7 +18,7 @@ DGNPLATFORM_REF_COUNTED_PTR(ViewAttachment);
 
 #define DGN_CLASSNAME_ViewAttachment "ViewAttachment"
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 //=======================================================================================
 //! A ViewAttachment is a reference to a View of a model which can be placed on a sheet.
@@ -30,7 +30,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //! The subcategories of the viewed geometry are not preserved in the attachment's geometry
 //! - to control visibility of (sub)-categories or other graphic settings, edit the view
 //! and/or viewed model.
-//! @ingroup DgnViewGroup
+//! @ingroup GROUP_DgnView
 // @bsiclass                                                      Paul.Connelly   10/15
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ViewAttachment : GraphicalElement2d
@@ -144,5 +144,5 @@ namespace dgn_ElementHandler
     };
 };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 

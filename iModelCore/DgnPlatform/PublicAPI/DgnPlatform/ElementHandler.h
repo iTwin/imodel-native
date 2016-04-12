@@ -68,7 +68,7 @@ namespace dgn_ElementHandler
     //! The ElementHandler for DgnElement.
     //! An ElementHandler creates instances of (a subclass of) DgnElement.
     //! @see DgnElement
-    //! @ingroup DgnElementGroup
+    //! @ingroup GROUP_DgnElement
     //=======================================================================================
     struct EXPORT_VTABLE_ATTRIBUTE Element : DgnDomain::Handler, IECSqlClassParamsProvider
     {
@@ -136,7 +136,7 @@ namespace dgn_AspectHandler
     //=======================================================================================
     //! A dgn_AspectHandler::Aspect creates instances of (a subclass of) DgnElement::Aspect.
     //! @see DgnElement
-    //! @ingroup DgnElementGroup
+    //! @ingroup GROUP_DgnElement
     //=======================================================================================
     struct EXPORT_VTABLE_ATTRIBUTE Aspect : DgnDomain::Handler
     {

@@ -123,29 +123,6 @@ struct DgnDb : RefCounted<BeSQLite::EC::ECDb>
         DGNPLATFORM_EXPORT virtual BeSQLite::DbResult _DoUpgrade(DgnDbR, DgnVersion& from) const;
     };
 
-    //=======================================================================================
-    // Used internally as a local cache for serer-issued data like codes and locks.
-    //! @private
-    // @bsiclass                                                    Paul.Connelly   01/16
-    //=======================================================================================
-    struct LocalStateDb
-    {
-        friend struct DgnDb;
-    private:
-        enum class DbState { New, Ready, Invalid };
-
-        BeSQLite::Db    m_db;
-        DbState         m_state;
-
-        LocalStateDb() : m_state(DbState::New) { }
-        ~LocalStateDb() { Destroy(); }
-
-        bool Validate(DgnDbR dgndb);
-        void Destroy();
-    public:
-        BeSQLite::Db& GetDb() { return m_db; }
-        bool IsValid() const { return DbState::Ready == m_state; }
-    };
 private:
     void Destroy();
 
@@ -171,7 +148,6 @@ protected:
     mutable RevisionManagerP m_revisionManager;
     BeSQLite::EC::ECSqlStatementCache m_ecsqlCache;
     DgnQueryQueue m_queryQueue;
-    LocalStateDb    m_localStateDb;
 
     DGNPLATFORM_EXPORT virtual BeSQLite::DbResult _VerifySchemaVersion(BeSQLite::Db::OpenParams const& params) override;
     DGNPLATFORM_EXPORT virtual void _OnDbClose() override;
@@ -232,7 +208,6 @@ public:
     MemoryManager& Memory() const { return const_cast<MemoryManager&>(m_memoryManager);} //!< Manages memory associated with this DgnDb.
     DGNPLATFORM_EXPORT IBriefcaseManager& BriefcaseManager(); //!< Manages this briefcase's held locks and codes
     DgnQueryQueue& GetQueryQueue() const {return const_cast<DgnQueryQueue&>(m_queryQueue);}
-    LocalStateDb& GetLocalStateDb(); //!< @private
 
     //! Gets a cached and prepared ECSqlStatement.
     DGNPLATFORM_EXPORT BeSQLite::EC::CachedECSqlStatementPtr GetPreparedECSqlStatement(Utf8CP ecsql) const;

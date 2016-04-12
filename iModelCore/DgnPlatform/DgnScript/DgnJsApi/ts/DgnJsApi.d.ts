@@ -113,6 +113,76 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
         static ReportError(description: Bentley_Utf8String): void;
     }
 
+    /** An ECSql Value
+    */
+    class ECSqlValue implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
+    {
+        /*** NATIVE_TYPE_NAME = JsECSqlValue ***/
+        /**
+         * Get the value as a string
+         */
+        GetText(): Bentley_Utf8String;
+        /**
+         * Get the value as an integer
+         */
+        GetInt(): cxx_int32_t;
+        /**
+         * Get the value as a double
+         */
+        GetDouble(): cxx_double;
+        /**
+         * Get the value as a DgnObjectId
+         */
+        GetId(): DgnObjectIdP;
+        /**
+         * Get the value as a DPoint3d
+         */
+        GetDPoint3d(): DPoint3dP;
+        /**
+         * Get the value as a DateTime string
+         */
+        GetDateTime(): Bentley_Utf8String;
+        /**
+         * Get the value as an Array
+         */
+        GetArray(): cxx_pointer<ECSqlArrayValue>;
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+    
+    type ECSqlValueP = cxx_pointer<ECSqlValue>;
+
+    /** Used when iterating over a ECSqlArrayValue */
+    class ECSqlArrayValueIterator implements IDisposable, BeJsProjection_SuppressConstructor, BeJsProjection_RefCounted
+    {
+        /*** NATIVE_TYPE_NAME = JsECSqlArrayValueIterator ***/
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type ECSqlArrayValueIteratorP = cxx_pointer<ECSqlArrayValueIterator>;
+
+    /** An ECSql Array Value
+    */
+    class ECSqlArrayValue implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
+    {
+        /*** NATIVE_TYPE_NAME = JsECSqlArrayValue ***/
+        /** Get an iterator positioned at the start of the array. */
+        Begin(): ECSqlArrayValueIteratorP;
+        /** Query if the iterator is at a valid position in the array. @param iter The iterator. @return true if the iterator's position is valid.   */
+        IsValid(iter: ECSqlArrayValueIteratorP): cxx_bool;
+        /** Move the iterator to the next position in the array. @param iter The iterator @return true if the new position is valid. */
+        ToNext(iter: ECSqlArrayValueIteratorP): cxx_bool;
+        /** Get the value to which the iterator points in the set. @param iter The iterator @return The current ID value. */
+        GetValue(iter: ECSqlArrayValueIteratorP): ECSqlValueP;
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+    
+    type ECSqlArrayValueP = cxx_pointer<ECSqlArrayValue>;
+
     /** A prepared ECSqlStatement 
     */
     class PreparedECSqlStatement implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
@@ -210,6 +280,11 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
          * @param columnIndex Index of ECSQL column in result set (0-based)
          */
         GetValueDateTime(columnIndex: cxx_int32_t): Bentley_Utf8String;
+        /**
+         * Get the value of the specified column as an Array
+         * @param columnIndex Index of ECSQL column in result set (0-based)
+         */
+        GetValueArray(columnIndex: cxx_int32_t): ECSqlArrayValueP;
 
         OnDispose(): void;
         Dispose(): void;

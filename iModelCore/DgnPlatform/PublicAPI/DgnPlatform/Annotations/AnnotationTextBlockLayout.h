@@ -17,9 +17,6 @@ DGNPLATFORM_REF_COUNTED_PTR(AnnotationTextBlockLayout);
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-//! @addtogroup Annotations
-//! @beginGroup
-
 typedef bvector<AnnotationLayoutLinePtr> AnnotationLayoutLineCollection;
 typedef AnnotationLayoutLineCollection& AnnotationLayoutLineCollectionR;
 typedef AnnotationLayoutLineCollection const& AnnotationLayoutLineCollectionCR;
@@ -30,11 +27,13 @@ typedef AnnotationLayoutRunCollection const& AnnotationLayoutRunCollectionCR;
 
 //=======================================================================================
 //! Represents a run or a subset of a run that can exist in a AnnotationLayoutLine. If a single logical run (e.g. AnnotationTextRun) spans multiple lines due to word wrapping, multiple AnnotationLayoutRun objects are created (one per-line) that reference the same "seed" run, but have different offsets and lengths.
+//! @ingroup GROUP_Annotation
 // @bsiclass                                                    Jeff.Marker     05/2014
 //=======================================================================================
 struct AnnotationLayoutRun : public RefCountedBase
 {
     //=======================================================================================
+    //! @ingroup GROUP_Annotation
     // @bsiclass                                                    Jeff.Marker     05/2014
     //=======================================================================================
     enum class SubRange
@@ -83,6 +82,7 @@ public:
 
 //=======================================================================================
 //! Represents a sequence or sub-sequence of runs that visually comprise a line of text on screen. When a single run is spliced between multiple lines, unique AnnotationLayoutRun objects will exist in both lines with appropriate offset and size values. There is no concept of a layout "paragraph"; when computing layout information, only lines matter, not paragraphs.
+//! @ingroup GROUP_Annotation
 // @bsiclass                                                    Jeff.Marker     05/2014
 //=======================================================================================
 struct AnnotationLayoutLine : public RefCountedBase
@@ -119,6 +119,7 @@ public:
 //=======================================================================================
 //! Computes size, lines, and layout information for an AnnotationTextBlock. Layout information is computed on-demand and cached, so it is (a) cheap to create instances of this object up-front, and (b) cheap to re-query this object between calls to Invalidate.
 //! @note If the underlying AnnotationTextBlock changes after you create this object, it is your responsibility to call Invalidate.
+//! @ingroup GROUP_Annotation
 // @bsiclass                                                    Jeff.Marker     05/2014
 //=======================================================================================
 struct AnnotationTextBlockLayout : public RefCountedBase
@@ -149,7 +150,5 @@ public:
     AnnotationLayoutLineCollectionCR GetLines() const { const_cast<AnnotationTextBlockLayoutP>(this)->Update(); return m_lines; }
     DRange2dCR GetLayoutRange() const { const_cast<AnnotationTextBlockLayoutP>(this)->Update(); return m_layoutRange; }
 };
-
-//! @endGroup
 
 END_BENTLEY_DGN_NAMESPACE

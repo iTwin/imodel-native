@@ -14,11 +14,9 @@ DGNPLATFORM_REF_COUNTED_PTR(AnnotationFrameLayout);
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-//! @addtogroup Annotations
-//! @beginGroup
-
 //=======================================================================================
 //! Computes size, geometry, and layout information for AnnotationFrame. This includes possible attachment points' IDs and computed physical points.
+//! @ingroup GROUP_Annotation
 // @bsiclass                                                    Jeff.Marker     06/2014
 //=======================================================================================
 struct AnnotationFrameLayout : public RefCountedBase
@@ -54,7 +52,5 @@ public:
     DGNPLATFORM_EXPORT uint32_t GetAttachmentId(size_t) const;
     DGNPLATFORM_EXPORT void ComputePhysicalPointForAttachmentId(DPoint3dR, DVec3dR, uint32_t) const;
 };
-
-//! @endGroup
 
 END_BENTLEY_DGN_NAMESPACE

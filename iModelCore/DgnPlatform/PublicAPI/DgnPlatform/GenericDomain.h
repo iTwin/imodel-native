@@ -32,10 +32,11 @@ DGNPLATFORM_REF_COUNTED_PTR(GenericPhysicalObject)
 #define GENERIC_CLASSNAME_MultiAspect       "MultiAspect"
 #define GENERIC_RELCLASSNAME_Refers         "ElementRefersToElement"
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 //=======================================================================================
 //! The Generic DgnDomain
+//! @ingroup GROUP_DgnDomain
 // @bsiclass                                                    Shaun.Sewall    01/2016
 //=======================================================================================
 struct GenericDomain : DgnDomain
@@ -167,4 +168,4 @@ namespace generic_ElementHandler
     };
 }
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

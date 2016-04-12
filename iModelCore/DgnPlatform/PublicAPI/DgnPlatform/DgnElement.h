@@ -8,11 +8,6 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
-/** @addtogroup DgnElementGroup
-
-Classes for working with %DgnElements in memory.
-@ref PAGE_ElementOverview
-*/
 BENTLEY_NAMESPACE_TYPEDEFS(HeapZone);
 #include <Bentley/BeAssert.h>
 #include "DgnAuthority.h"
@@ -250,6 +245,13 @@ public:
                 virtual Utf8CP _GetECClassName() const override {return MyECClassName();}\
                 virtual Utf8CP _GetSuperECClassName() const override {return T_Super::_GetECClassName();}
 
+/**
+* @addtogroup GROUP_DgnElement DgnElement Module
+* Types related to working with %DgnElements
+* @see @ref PAGE_ElementOverview
+* @see @ref PAGE_CustomElement
+*/
+
 //=======================================================================================
 //! An instance of a DgnElement in memory. 
 //!
@@ -258,7 +260,7 @@ public:
 //!  * Properties that are defined by the ECClass - use _GetProperty and _SetProperty. Various subclasses may also have their own strongly typed property access functions.
 //!  * Properties that are not defined by the ECClass but are added by the user use GetUserProperties
 //!
-//! @ingroup DgnElementGroup
+//! @ingroup GROUP_DgnElement
 // @bsiclass                                                     KeithBentley    10/13
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DgnElement : NonCopyableClass, ICodedEntity
@@ -1254,7 +1256,7 @@ public:
 
 //=======================================================================================
 //! Base class for elements with geometry.
-//! @ingroup DgnElementGroup
+//! @ingroup GROUP_DgnElement
 // @bsiclass                                                    Paul.Connelly   02/16
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE GeometricElement : DgnElement
@@ -1323,7 +1325,7 @@ protected:
 //=======================================================================================
 //! Base class for elements with 3d geometry.
 //! GeometricElement3d elements are not inherently spatially located, but can be spatially located.
-//! @ingroup DgnElementGroup
+//! @ingroup GROUP_DgnElement
 // @bsiclass                                                    Paul.Connelly   02/16
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE GeometricElement3d : GeometricElement, GeometrySource3d
@@ -1394,7 +1396,7 @@ public:
 
 //=======================================================================================
 //! Base class for elements with 2d geometry
-//! @ingroup DgnElementGroup
+//! @ingroup GROUP_DgnElement
 // @bsiclass                                                    Paul.Connelly   02/16
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE GeometricElement2d : GeometricElement, GeometrySource2d
@@ -1461,7 +1463,7 @@ public:
 //=======================================================================================
 //! A 3-dimensional geometric element that is used to convey information in 3-dimensional graphical presentations.
 //! It is common for the GeometryStream of a GraphicalElement3d to contain display-oriented metadata such as symbology overrides, styles, etc.
-//! @ingroup DgnElementGroup
+//! @ingroup GROUP_DgnElement
 // @bsiclass                                                    Shaun.Sewall    02/16
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE GraphicalElement3d : GeometricElement3d
@@ -1475,7 +1477,7 @@ protected:
 //! An abstract base class for elements that occupy real world 3-dimensional space
 //! It is uncommon for the GeometryStream of a SpatialElement to contain display-oriented metadata. 
 //! Instead, display-oriented settings should come from the SubCategories that classify the geometry in the GeometryStream.
-//! @ingroup DgnElementGroup
+//! @ingroup GROUP_DgnElement
 // @bsiclass                                                    Shaun.Sewall    12/15
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE SpatialElement : GeometricElement3d
@@ -1488,7 +1490,7 @@ protected:
 //=======================================================================================
 //! A PhysicalElement is a SpatialElement that has mass and can be physically "touched".
 //! Examples (which would be subclasses) include pumps, walls, and light posts.
-//! @ingroup DgnElementGroup
+//! @ingroup GROUP_DgnElement
 // @bsiclass                                                    Keith.Bentley   04/15
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE PhysicalElement : SpatialElement
@@ -1501,7 +1503,7 @@ protected:
 //=======================================================================================
 //! A SpatialElement that identifies a "tracked" real word 3-dimensional location but has no mass and cannot be "touched".
 //! Examples include grid lines, parcel boundaries, and work areas.
-//! @ingroup DgnElementGroup
+//! @ingroup GROUP_DgnElement
 // @bsiclass                                                    Shaun.Sewall    12/15
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE SpatialLocationElement : SpatialElement
@@ -1513,7 +1515,7 @@ protected:
 
 //=======================================================================================
 //! A 2-dimensional geometric element that is used to convey information within graphical presentations (like drawings).
-//! @ingroup DgnElementGroup
+//! @ingroup GROUP_DgnElement
 // @bsiclass                                                    Shaun.Sewall    02/16
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE GraphicalElement2d : GeometricElement2d
@@ -1525,7 +1527,7 @@ protected:
 
 //=======================================================================================
 //! A 2-dimensional geometric element used to annotate drawings and sheets.
-//! @ingroup DgnElementGroup
+//! @ingroup GROUP_DgnElement
 // @bsiclass                                                    Paul.Connelly   12/15
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE AnnotationElement2d : GraphicalElement2d
@@ -1543,7 +1545,7 @@ protected:
 
 //=======================================================================================
 //! A 2-dimensional geometric element used in drawings
-//! @ingroup DgnElementGroup
+//! @ingroup GROUP_DgnElement
 // @bsiclass                                                    Paul.Connelly   12/15
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DrawingGraphic : GraphicalElement2d
@@ -1580,7 +1582,7 @@ public:
 //=======================================================================================
 //! Base interface to query a group (element) that has other elements as members
 //! @see IElementGroupOf
-//! @ingroup DgnElementGroup
+//! @ingroup GROUP_DgnElement
 // @bsiclass                                                    Shaun.Sewall    11/15
 //=======================================================================================
 struct IElementGroup
@@ -1604,7 +1606,7 @@ public:
 //! members of the group in a type-safe way.
 //! @note Template type T must be a subclass of DgnElement.
 //! @note The class that implements this interface must also be an element.
-//! @ingroup DgnElementGroup
+//! @ingroup GROUP_DgnElement
 // @bsiclass                                                    Shaun.Sewall    10/15
 //=======================================================================================
 template<class T> class IElementGroupOf : public IElementGroup
@@ -1678,7 +1680,7 @@ public:
 };
 
 //=======================================================================================
-//! @ingroup DgnElementGroup
+//! @ingroup GROUP_DgnElement
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE InformationElement : DgnElement
 {
@@ -1690,7 +1692,7 @@ protected:
 
 //=======================================================================================
 //! A DefinitionElement which resides in (and only in) a DefinitionModel.
-//! @ingroup DgnElementGroup
+//! @ingroup GROUP_DgnElement
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DefinitionElement : InformationElement
 {
@@ -1705,7 +1707,7 @@ protected:
 //! A DefinitionElement which resides in (and only in) the dictionary model.
 //! Typically represents a style or similar resource used by other elements throughout
 //! the DgnDb.
-//! @ingroup DgnElementGroup
+//! @ingroup GROUP_DgnElement
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DictionaryElement : DefinitionElement
 {
@@ -1745,7 +1747,7 @@ protected:
 //! and may be "reclaimed" later if/when it is needed again. The memory held by DgnElements is not actually freed until
 //! their reference count goes to 0 and the cache is subsequently purged.
 //! @see DgnDb::Elements
-//! @ingroup DgnElementGroup
+//! @ingroup GROUP_DgnElement
 //=======================================================================================
 struct DgnElements : DgnDbTable, IMemoryConsumer
 {

@@ -16,7 +16,7 @@
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 //=======================================================================================
-//! Displays \ref DgnElementGroup from a SQL query. The query can combine
+//! Displays %DgnElements from a SQL query. The query can combine
 //! spatial criteria with business and graphic criteria.
 //!
 //! @remarks QueryView is also used to produce graphics for picking and for purposes other than display.

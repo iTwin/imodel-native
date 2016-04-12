@@ -229,7 +229,7 @@ enum class ModelIterate
 //=======================================================================================
 //! Each DgnModel has an entry in the DgnModels table
 //! @see DgnDb::Models
-//! @ingroup DgnModelGroup
+//! @ingroup GROUP_DgnModel
 //=======================================================================================
 struct DgnModels : DgnDbTable
 {

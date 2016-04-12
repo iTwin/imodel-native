@@ -25,9 +25,6 @@ DGNPLATFORM_REF_COUNTED_PTR(AnnotationTextBlock);
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-//! @addtogroup Annotations
-//! @beginGroup
-   
 typedef bvector<AnnotationParagraphPtr> AnnotationParagraphCollection;
 typedef AnnotationParagraphCollection& AnnotationParagraphCollectionR;
 typedef AnnotationParagraphCollection const& AnnotationParagraphCollectionCR;
@@ -38,6 +35,7 @@ typedef AnnotationRunCollection const& AnnotationRunCollectionCR;
 
 //=======================================================================================
 //! This enumerates all possible ways to apply an AnnotationTextStyle to an AnnotationTextBlock objects.
+//! @ingroup GROUP_Annotation
 // @bsiclass                                                    Jeff.Marker     05/2014
 //=======================================================================================
 enum class SetAnnotationTextStyleOptions
@@ -51,6 +49,7 @@ enum class SetAnnotationTextStyleOptions
 
 //=======================================================================================
 //! This enumerates all possible annotation run types.
+//! @ingroup GROUP_Annotation
 // @bsiclass                                                    Jeff.Marker     05/2014
 //=======================================================================================
 enum class AnnotationRunType
@@ -63,6 +62,7 @@ enum class AnnotationRunType
 //=======================================================================================
 //! A "run" is typically a sequence of characters that share a single format/style, but other specialized run types exist. In the hierarchy of block/paragraph/run, run is the most granular piece of the block, and contains the actual character data. When laid out on screen, a single run may span multiple lines, but it can never span different formats/styles.
 //! @note A run must be created with an AnnotationTextStyle; if a style does not exist, you must first create and store one, and then used its ID to create a run. Not all properties of an AnnotationTextStyle apply to runs; see AnnotationTextStyleProperty to determine which properties pertain to runs. While a run must have a style, it can override each individual style property as needed. Properties are not typically overridden in order to enforce project standards, however it is technically possible.
+//! @ingroup GROUP_Annotation
 // @bsiclass                                                    Jeff.Marker     05/2014
 //=======================================================================================
 struct AnnotationRunBase : public RefCountedBase
@@ -101,6 +101,7 @@ public:
 //=======================================================================================
 //! Specifies if an AnnotationTextRun is normal, subscript, or superscript.
 // The values of the members are expected to match the flatbuffers AnnotationTextRunSubSuperScript.
+//! @ingroup GROUP_Annotation
 // @bsiclass                                                    Jeff.Marker     01/2015
 //=======================================================================================
 enum class AnnotationTextRunSubSuperScript
@@ -112,6 +113,7 @@ enum class AnnotationTextRunSubSuperScript
 
 //=======================================================================================
 //! A text run is the most common specialization of AnnotationRunBase, and contains a sequence of characters.
+//! @ingroup GROUP_Annotation
 // @bsiclass                                                    Jeff.Marker     05/2014
 //=======================================================================================
 struct AnnotationTextRun : public AnnotationRunBase
@@ -149,6 +151,7 @@ public:
 
 //=======================================================================================
 //! A fraction run is a specialization of AnnotationRunBase that represents a stacked fraction.
+//! @ingroup GROUP_Annotation
 // @bsiclass                                                    Jeff.Marker     05/2014
 //=======================================================================================
 struct AnnotationFractionRun: public AnnotationRunBase
@@ -182,6 +185,7 @@ public:
 
 //=======================================================================================
 //! A line break run is a specialization of AnnotationRunBase that manually breaks a line within a paragraph.
+//! @ingroup GROUP_Annotation
 // @bsiclass                                                    Jeff.Marker     05/2014
 //=======================================================================================
 struct AnnotationLineBreakRun : public AnnotationRunBase
@@ -205,6 +209,7 @@ public:
 //=======================================================================================
 //! A paragraph is a collection of runs. In a block, individual paragraphs are started on their own "line", similar to how an AnnotationLineBreakRun operates within a paragraph.
 //! @note A paragraph must be created with an AnnotationTextStyle; if a style does not exist, you must first create and store one, and then used its ID to create a run. Not all properties of an AnnotationTextStyle apply to paragraphs; see AnnotationTextStyleProperty to determine which properties pertain to paragraphs. While a paragraph must have a style, it can override each individual style property as needed. Properties are not typically overridden in order to enforce project standards, however it is technically possible.
+//! @ingroup GROUP_Annotation
 // @bsiclass                                                    Jeff.Marker     05/2014
 //=======================================================================================
 struct AnnotationParagraph : public RefCountedBase
@@ -245,11 +250,13 @@ public:
 //=======================================================================================
 //! A block is a collection of paragraphs, and contains some unique formatting properties that cannot be on paragraphs or runs, such as justification. AnnotationTextBlock is merely a data object; see AnnotationTextBlockLayout for size/position/lines, and AnnotationTextBlockDraw for drawing. By default, no word-wrapping occurs. You can define a physical word wrap distance by calling SetDocumentWidth; runs will then automatically be split according to line break rules when performing layout.
 //! @note A block must be created with an AnnotationTextStyle; if a style does not exist, you must first create and store one, and then used its ID to create a block. Not all properties of an AnnotationTextStyle apply to blocks; see AnnotationTextStyleProperty to determine which properties pertain to blocks. While a block must have a style, it can override each individual style property as needed. Properties are not typically overridden in order to enforce project standards, however it is technically possible.
+//! @ingroup GROUP_Annotation
 // @bsiclass                                                    Jeff.Marker     05/2014
 //=======================================================================================
 struct AnnotationTextBlock : public RefCountedBase
 {
     //=======================================================================================
+    //! @ingroup GROUP_Annotation
     // INTERNAL WARNING: The integer values are used for persistence; do not change them.
     // @bsiclass                                                    Jeff.Marker     05/2014
     //=======================================================================================
@@ -261,6 +268,7 @@ struct AnnotationTextBlock : public RefCountedBase
     };
 
     //=======================================================================================
+    //! @ingroup GROUP_Annotation
     // @bsiclass                                                    Jeff.Marker     10/2015
     //=======================================================================================
     struct ToStringOpts
@@ -327,7 +335,5 @@ public:
     Utf8String ToString() const { return ToString(ToStringOpts::CreateForPlainText()); }
     DGNPLATFORM_EXPORT Utf8String ToString(ToStringOpts const&) const;
 };
-
-//! @endGroup
 
 END_BENTLEY_DGN_NAMESPACE

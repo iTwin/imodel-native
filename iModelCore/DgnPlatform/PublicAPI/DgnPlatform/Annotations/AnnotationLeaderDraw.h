@@ -13,11 +13,9 @@ DGNPLATFORM_REF_COUNTED_PTR(AnnotationLeaderDraw);
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-//! @addtogroup Annotations
-//! @beginGroup
-
 //=======================================================================================
 //! Used to draw an AnnotationLeader.
+//! @ingroup GROUP_Annotation
 // @bsiclass                                                    Jeff.Marker     06/2014
 //=======================================================================================
 struct AnnotationLeaderDraw : public RefCountedBase
@@ -40,7 +38,5 @@ public:
 
     DGNPLATFORM_EXPORT BentleyStatus Draw(Render::GraphicR, ViewContextR, Render::GeometryParamsR) const;
 };
-
-//! @endGroup
 
 END_BENTLEY_DGN_NAMESPACE
