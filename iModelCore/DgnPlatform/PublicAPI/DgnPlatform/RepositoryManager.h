@@ -139,6 +139,7 @@ protected:
     virtual void _OnElementInserted(DgnElementId id) = 0;
     virtual void _OnModelInserted(DgnModelId id) = 0;
     virtual RepositoryStatus _RefreshFromRepository() = 0;
+    virtual void _OnDgnDbDestroyed() { }
 
     DGNPLATFORM_EXPORT IRepositoryManagerP GetRepositoryManager() const;
     DGNPLATFORM_EXPORT bool LocksRequired() const;
@@ -286,6 +287,7 @@ public:
     DgnDbStatus OnModelInsert(DgnModelCR model); //!< @private
     DgnDbStatus OnModelUpdate(DgnModelCR model); //!< @private
     DgnDbStatus OnModelDelete(DgnModelCR model); //!< @private
+    void OnDgnDbDestroyed() { _OnDgnDbDestroyed(); } //!< @private
 //__PUBLISH_SECTION_END__
     DGNPLATFORM_EXPORT static void BackDoor_SetEnabled(bool enable);
 //__PUBLISH_SECTION_START__
