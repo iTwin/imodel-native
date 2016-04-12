@@ -14,7 +14,7 @@ USING_NAMESPACE_BENTLEY_EC
 
 // The counts recorded by change summary are quite sensitive to changes in the schema and implementation...
 // Turn this on for debugging.
-//#define DUMP_CHANGE_SUMMARY 1
+// #define DUMP_CHANGE_SUMMARY 1
 
 //=======================================================================================
 // @bsiclass                                                 Ramanujam.Raman   10/15
@@ -1033,4 +1033,32 @@ TEST_F(ChangeSummaryTestFixture, QueryMultipleSessions)
 
     int expectedChangeCount = nSessions * nTransactionsPerSession + 2; /* category and sub category are now elements */
     EXPECT_EQ(expectedChangeCount, GetChangeSummaryInstanceCount(changeSummary, "dgn.Element"));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    07/2015
+//---------------------------------------------------------------------------------------
+TEST_F(ChangeSummaryTestFixture, ValidateTableMap)
+    {
+    CreateDgnDb();
+    m_testDb->SaveChanges();
+
+    ECClassCP ecClass = m_testDb->Schemas().GetECClass("Generic", GENERIC_CLASSNAME_PhysicalObject);
+    ASSERT_TRUE(ecClass != nullptr);
+
+    ChangeSummary::TableMapPtr tableMap = ChangeSummary::GetPrimaryTableMap(*m_testDb, *ecClass);
+
+    ASSERT_TRUE(tableMap.IsValid());
+    ASSERT_EQ(true, tableMap->ContainsECClassIdColumn());
+    ASSERT_TRUE(tableMap->GetECClassIdColumn().GetIndex() >= 0);
+    ASSERT_TRUE(tableMap->GetECInstanceIdColumn().GetIndex() >= 0);
+
+    ECClassCP ecRelClass = m_testDb->Schemas().GetECClass(DGN_ECSCHEMA_NAME, DGN_RELNAME_ElementHasLinks);
+    ASSERT_TRUE(ecRelClass != nullptr);
+
+    ChangeSummary::TableMapPtr relTableMap = ChangeSummary::GetPrimaryTableMap(*m_testDb, *ecRelClass);
+
+    ASSERT_TRUE(relTableMap.IsValid());
+    ASSERT_EQ(false, relTableMap->ContainsECClassIdColumn());
+    ASSERT_TRUE(relTableMap->GetECClassId().IsValid());
     }

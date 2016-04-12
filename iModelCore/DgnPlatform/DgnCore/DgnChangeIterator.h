@@ -65,14 +65,14 @@ struct BaseChangeIterator
 {
     friend struct BaseChangeEntry;
 private:
-    ChangeSummary::ColumnMapInfo m_instanceIdColumnMap;
-    ChangeSummary::ColumnMapInfo m_codeAuthorityIdColumnMap;
-    ChangeSummary::ColumnMapInfo m_codeNamespaceColumnMap;
-    ChangeSummary::ColumnMapInfo m_codeValueColumnMap;
+    ChangeSummary::ColumnMap m_instanceIdColumnMap;
+    ChangeSummary::ColumnMap m_codeAuthorityIdColumnMap;
+    ChangeSummary::ColumnMap m_codeNamespaceColumnMap;
+    ChangeSummary::ColumnMap m_codeValueColumnMap;
 protected:
     DgnDbCR m_dgndb;
     Changes m_changes;
-    ChangeSummary::TableMapInfo m_tableMap;
+    ChangeSummary::TableMapPtr m_tableMap;
 
     BaseChangeIterator(DgnDbCR dgndb, IChangeSet& changeSet, ECN::ECClassCR ecClass);
     virtual void _Initialize();
@@ -120,7 +120,7 @@ struct ElementChangeIterator : BaseChangeIterator
     typedef const_iterator iterator;
 
 private:
-    ChangeSummary::ColumnMapInfo m_modelIdColumnMap;
+    ChangeSummary::ColumnMap m_modelIdColumnMap;
 
 protected:
     virtual void _Initialize() override;
