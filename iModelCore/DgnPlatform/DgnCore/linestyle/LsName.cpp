@@ -795,20 +795,15 @@ Utf8CP  name
     return  NULL;
     }
 
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    03/2016
 //---------------------------------------------------------------------------------------
 LsDefinition* LsDefinition::Clone()
     {
-#ifdef WIP_MERGE
     Json::Value jsonObj(Json::objectValue);
-    LsDefinition::InitializeJsonObject(jsonObj, GetLocation()->GetRscID(), (uint16_t)GetLocation()->GetRscType(), GetAttributes(), m_unitDef);
+    LsDefinition::InitializeJsonObject(jsonObj, GetLocation()->GetComponentId(), GetAttributes(), m_unitDef);
 
-    LsDefinition* retval = new LsDefinition(_GetName(), *GetLocation()->GetDgnProject(), jsonObj, m_styleNumber);
+    LsDefinition* retval = new LsDefinition(_GetName(), *GetLocation()->GetDgnDb(), jsonObj, m_styleId);
 
     return retval;
-#else
-    return nullptr;
-#endif
     }
