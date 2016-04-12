@@ -13,22 +13,172 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //*************************************** ECDbProfileUpgrader_XXX *********************************
 //-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle        04/2016
+//+---------------+---------------+---------------+---------------+---------------+--------
+DbResult ECDbProfileUpgrader_3300::_Upgrade(ECDbR ecdb) const
+    {
+    if (BE_SQLITE_OK != ecdb.ExecuteSql("ALTER TABLE ec_Class ADD COLUMN CustomAttributeContainerType INTEGER;"))
+        {
+        LOG.error("ECDb profile upgrade failed: Adding column 'CustomAttributeContainerType' to table 'ec_Class' failed.");
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    LOG.debug("ECDb profile upgrade: Table 'ec_Class': added column 'CustomAttributeContainerType'.");
+
+    DbResult stat = UpdateGeneralizedCustomContainerTypeInCAInstanceTable(ecdb);
+    if (BE_SQLITE_OK != stat)
+        return stat;
+
+    Statement stmt;
+    if (BE_SQLITE_OK != stmt.Prepare(ecdb, "SELECT Id FROM ec_Schema WHERE Name='ECDbMap'"))
+        {
+        LOG.errorv("ECDb profile upgrade failed: Updating CustomAttribute container type in ECDbMap ECSchema failed. %s", ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    if (BE_SQLITE_ROW != stmt.Step())
+        return BE_SQLITE_OK;
+
+    const ECSchemaId ecdbMapSchemaId = stmt.GetValueId<ECSchemaId>(0);
+    stmt.Finalize();
+
+    Utf8String updateSql;
+    updateSql.Sprintf("UPDATE ec_Class SET CustomAttributeContainerType=:type WHERE SchemaId=%s AND Name=:name",
+                      ecdbMapSchemaId.ToString().c_str());
+
+    if (BE_SQLITE_OK != stmt.Prepare(ecdb, updateSql.c_str()))
+        {
+        LOG.errorv("ECDb profile upgrade failed: Updating CustomAttribute container type in ECDbMap ECSchema failed. %s", ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    stat = SetCustomContainerType(ecdb, stmt, "SchemaMap", CustomAttributeContainerType::Schema);
+    if (BE_SQLITE_OK != stat)
+        return stat;
+
+    stat = SetCustomContainerType(ecdb, stmt, "ClassMap", CustomAttributeContainerType::EntityClass | CustomAttributeContainerType::RelationshipClass);
+    if (BE_SQLITE_OK != stat)
+        return stat;
+
+    stat = SetCustomContainerType(ecdb, stmt, "DisableECInstanceIdAutogeneration", CustomAttributeContainerType::EntityClass);
+    if (BE_SQLITE_OK != stat)
+        return stat;
+
+    stat = SetCustomContainerType(ecdb, stmt, "PropertyMap", CustomAttributeContainerType::PrimitiveProperty);
+    if (BE_SQLITE_OK != stat)
+        return stat;
+
+    stat = SetCustomContainerType(ecdb, stmt, "LinkTableRelationshipMap", CustomAttributeContainerType::RelationshipClass);
+    if (BE_SQLITE_OK != stat)
+        return stat;
+
+    stat = SetCustomContainerType(ecdb, stmt, "ForeignKeyRelationshipMap", CustomAttributeContainerType::RelationshipClass);
+    if (BE_SQLITE_OK != stat)
+        return stat;
+
+    stmt.Finalize();
+
+    LOG.debug("ECDb profile upgrade: Updated CustomAttributeContainerType in table 'ec_Class' for the CustomAttribute classes in the ECDbMap ECSchema.");
+    return BE_SQLITE_OK;
+    }
+
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle        04/2016
+//+---------------+---------------+---------------+---------------+---------------+--------
+//static
+DbResult ECDbProfileUpgrader_3300::UpdateGeneralizedCustomContainerTypeInCAInstanceTable(ECDbCR ecdb)
+    {
+    Utf8String sql;
+    sql.Sprintf("UPDATE ec_customattribute SET ContainerType = CASE ContainerType "
+                "WHEN 1 THEN %d "
+                "WHEN 2 THEN %d "
+                "WHEN 3 THEN %d "
+                "WHEN 4 THEN %d "
+                "WHEN 5 THEN %d "
+                "ELSE ContainerType END",
+                Enum::ToInt(ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Schema),
+                Enum::ToInt(ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Class),
+                Enum::ToInt(ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Property),
+                Enum::ToInt(ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::SourceRelationshipConstraint),
+                Enum::ToInt(ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::TargetRelationshipConstraint));
+
+    if (BE_SQLITE_OK != ecdb.ExecuteSql(sql.c_str()))
+        {
+        LOG.errorv("ECDb profile upgrade failed: Updating ContainerType values in ec_CustomAttribute to enum GeneralizedCustomAttributeContainerType failed. %s", ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    LOG.debug("ECDb profile upgrade: Updated values of column 'ContainerType' in table 'ec_CustomAttribute' to enum GeneralizedCustomAttributeContainerType.");
+    return BE_SQLITE_OK;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle        04/2016
+//+---------------+---------------+---------------+---------------+---------------+--------
+//static
+DbResult ECDbProfileUpgrader_3300::SetCustomContainerType(ECDbCR ecdb, Statement& stmt, Utf8CP caClassName, CustomAttributeContainerType type)
+    {
+    if (BE_SQLITE_OK != stmt.BindText(stmt.GetParameterIndex(":name"), caClassName, Statement::MakeCopy::No) ||
+        BE_SQLITE_OK != stmt.BindInt(stmt.GetParameterIndex(":type"), Enum::ToInt(type)))
+        {
+        LOG.errorv("ECDb profile upgrade failed: Updating CustomAttribute container type for class 'ECDbMap:%s' failed. %s", caClassName, ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    if (BE_SQLITE_DONE != stmt.Step() || ecdb.GetModifiedRowCount() != 1)
+        {
+        LOG.errorv("ECDb profile upgrade failed: Updating CustomAttribute container type for class 'ECDbMap:%s' failed. %s", caClassName, ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    stmt.ClearBindings();
+    stmt.Reset();
+
+    CachedStatementPtr validateStmt = ecdb.GetCachedStatement("SELECT ca.rowId, ca.ContainerType FROM ec_CustomAttribute ca, ec_Class c WHERE ca.ClassId=c.Id AND c.Name=?");
+    if (validateStmt == nullptr)
+        {
+        LOG.errorv("ECDb profile upgrade failed: Validating existing %s CustomAttribute instances against container type failed. %s", caClassName, ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    if (BE_SQLITE_OK != validateStmt->BindText(1, caClassName, Statement::MakeCopy::No))
+        {
+        LOG.errorv("ECDb profile upgrade failed: Validating existing %s CustomAttribute instances against container type failed. %s", caClassName, ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+    
+    while (BE_SQLITE_ROW == validateStmt->Step())
+        {
+        const ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType actualType = Enum::FromInt<ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType>(validateStmt->GetValueInt(1));
+        if (!Enum::Intersects(type, (CustomAttributeContainerType) actualType))
+            {
+            LOG.errorv("ECDb profile upgrade failed: Found %s custom attribute instance on a container which is not supported for this custom attribute class. (rowid %lld in table ec_CustomAttribute)",
+                         caClassName, validateStmt->GetValueInt64(0));
+            return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+            }
+        }
+
+    return BE_SQLITE_OK;
+    }
+
+//-----------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle        03/2016
 //+---------------+---------------+---------------+---------------+---------------+--------
 DbResult ECDbProfileUpgrader_3202::_Upgrade(ECDbR ecdb) const
     {
-    if (BE_SQLITE_OK != ecdb.ExecuteSql("DROP INDEX ix_ec_Property_ClassId; DROP INDEX ix_ec_Column_TableId;"))
-        {
-        LOG.errorv("ECDb profile upgrade failed for '%s': Failed to drop indexes ix_ec_Property_ClassId and ix_ec_Column_TableId: %s", ecdb.GetDbFileName(), ecdb.GetLastError().c_str());
-        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
-        }
+    //don't fail if indexes to drop don't exist, or indexes to create already exist, because there was a bad
+    //push that pushed the index stuff when creating a new file but the upgrader wasn't added to the list yet.
+    //So files were created with a too old profile version, so that ECDb attempts to upgrade it although it doesn't
+    //have to upgrade.
+    ecdb.TryExecuteSql("DROP INDEX ix_ec_Property_ClassId; DROP INDEX ix_ec_Column_TableId;");
 
-    if (BE_SQLITE_OK != ecdb.ExecuteSql("CREATE INDEX ix_ec_BaseClass_ClassId_Ordinal ON ec_BaseClass(ClassId,Ordinal);"
-                                        "CREATE INDEX ix_ec_Property_ClassId_Ordinal ON ec_Property(ClassId,Ordinal);"
-                                        "CREATE INDEX ix_ec_CustomAttribute_ContainerId_ContainerType_Ordinal ON ec_CustomAttribute(ContainerId,ContainerType,Ordinal);"
-                                        "CREATE INDEX ix_ec_Table_BaseTableId ON ec_Table(BaseTableId);"
-                                        "CREATE INDEX ix_ec_Column_TableId_Ordinal ON ec_Column(TableId,Ordinal);"
-                                        "CREATE INDEX ix_ec_IndexColumn_IndexId_Ordinal ON ec_IndexColumn(IndexId,Ordinal);"))
+    if (BE_SQLITE_OK != ecdb.ExecuteSql("CREATE INDEX IF NOT EXISTS ix_ec_BaseClass_ClassId_Ordinal ON ec_BaseClass(ClassId,Ordinal);"
+                                        "CREATE INDEX IF NOT EXISTS ix_ec_Property_ClassId_Ordinal ON ec_Property(ClassId,Ordinal);"
+                                        "CREATE INDEX IF NOT EXISTS ix_ec_CustomAttribute_ContainerId_ContainerType_Ordinal ON ec_CustomAttribute(ContainerId,ContainerType,Ordinal);"
+                                        "CREATE INDEX IF NOT EXISTS ix_ec_Table_BaseTableId ON ec_Table(BaseTableId);"
+                                        "CREATE INDEX IF NOT EXISTS ix_ec_Column_TableId_Ordinal ON ec_Column(TableId,Ordinal);"
+                                        "CREATE INDEX IF NOT EXISTS ix_ec_IndexColumn_IndexId_Ordinal ON ec_IndexColumn(IndexId,Ordinal);"))
         {
         LOG.errorv("ECDb profile upgrade failed for '%s': Failed to create indexes ix_ec_BaseClass_ClassId_Ordinal, ix_ec_Property_ClassId_Ordinal, "
                    "ix_ec_CustomAttribute_ContainerId_ContainerType_Ordinal, ix_ec_Table_BaseTableId, ix_ec_Column_TableId_Ordinal, ix_ec_IndexColumn_IndexId_Ordinal: %s", ecdb.GetDbFileName(), ecdb.GetLastError().c_str());
@@ -444,13 +594,13 @@ Utf8CP ECDbProfileECSchemaUpgrader::GetECDbSystemECSchemaXml ()
     return "<?xml version='1.0' encoding='utf-8'?> "
         "<ECSchema schemaName='ECDb_System' nameSpacePrefix='ecdbsys' version='3.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
         "    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.13' prefix='bsca' /> "
-        "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' /> "
+        "    <ECSchemaReference name='ECDbMap' version='01.00.01' prefix='ecdbmap' /> "
         "    <ECCustomAttributes> "
         "         <SystemSchema xmlns='Bentley_Standard_CustomAttributes.01.13'/> "
         "    </ECCustomAttributes> "
         "    <ECEntityClass typeName='PrimitiveArray' modifier='Abstract'> "
         "        <ECCustomAttributes> "
-        "            <ClassMap xmlns='ECDbMap.01.00'> "
+        "            <ClassMap xmlns='ECDbMap.01.00.01'> "
         "                <MapStrategy>"
         "                   <Strategy>NotMapped</Strategy>"
         "                   <AppliesToSubclasses>True</AppliesToSubclasses> "
@@ -500,7 +650,7 @@ Utf8CP ECDbProfileECSchemaUpgrader::GetECDbSystemECSchemaXml ()
         "    </ECEntityClass> "
         "    <ECEntityClass typeName='ECSqlSystemProperties' modifier='Abstract' >"
         "       <ECCustomAttributes>"
-        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "            <ClassMap xmlns='ECDbMap.01.00.01'>"
         "                <MapStrategy>"
         "                   <Strategy>NotMapped</Strategy>"
         "                </MapStrategy>"

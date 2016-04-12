@@ -21,7 +21,7 @@ bool ECDbSchemaPersistenceHelper::ContainsECClass(ECDbCR db, ECClassCR ecClass)
     const ECClassId classId = GetECClassId(db, ecClass.GetSchema().GetName().c_str(), ecClass.GetName().c_str(), ResolveSchema::BySchemaName);
     return classId.IsValid();
     }
-    
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    01/2016
 //---------------------------------------------------------------------------------------
@@ -74,8 +74,8 @@ BentleyStatus ECDbSchemaPersistenceHelper::GetECSchemaKeys(ECSchemaKeys& keys, E
     while (stmt->Step() == BE_SQLITE_ROW)
         {
         keys.push_back(ECSchemaKey(stmt->GetValueId<ECSchemaId>(0), stmt->GetValueText(1),
-                                   (uint32_t) stmt->GetValueInt(2), (uint32_t) stmt->GetValueInt(3), (uint32_t) stmt->GetValueInt(4),
-                                stmt->IsColumnNull(5) ? (Utf8CP)nullptr : stmt->GetValueText(5)));
+            (uint32_t) stmt->GetValueInt(2), (uint32_t) stmt->GetValueInt(3), (uint32_t) stmt->GetValueInt(4),
+                                   stmt->IsColumnNull(5) ? (Utf8CP)nullptr : stmt->GetValueText(5)));
         }
 
     return SUCCESS;
@@ -90,8 +90,8 @@ bool ECDbSchemaPersistenceHelper::ContainsECSchema(ECDbCR db, ECSchemaId ecSchem
     if (BE_SQLITE_OK != db.GetCachedStatement(stmt, "SELECT NULL FROM ec_Schema WHERE Id = ?"))
         return false;
 
-    stmt->BindId (1, ecSchemaId);
-    return stmt->Step () == BE_SQLITE_ROW;
+    stmt->BindId(1, ecSchemaId);
+    return stmt->Step() == BE_SQLITE_ROW;
     }
 
 /*---------------------------------------------------------------------------------------
@@ -116,8 +116,8 @@ ECSchemaId ECDbSchemaPersistenceHelper::GetECSchemaId(ECDbCR db, Utf8CP schemaNa
     if (BE_SQLITE_OK != db.GetCachedStatement(stmt, "SELECT Id FROM ec_Schema WHERE Name LIKE ?"))
         return ECSchemaId();
 
-    stmt->BindText (1, schemaName, Statement::MakeCopy::No);
-    
+    stmt->BindText(1, schemaName, Statement::MakeCopy::No);
+
     if (BE_SQLITE_ROW != stmt->Step())
         return ECSchemaId();
 
@@ -129,7 +129,7 @@ ECSchemaId ECDbSchemaPersistenceHelper::GetECSchemaId(ECDbCR db, Utf8CP schemaNa
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECDbSchemaPersistenceHelper::GetECClassKeys(ECClassKeys& keys, ECSchemaId schemaId, ECDbCR db)
     {
-    keys.clear ();
+    keys.clear();
     CachedStatementPtr stmt = nullptr;
     if (BE_SQLITE_OK != db.GetCachedStatement(stmt, "SELECT Id, Name, DisplayLabel FROM ec_Class WHERE SchemaId = ? ORDER BY Name"))
         return ERROR;
@@ -209,9 +209,9 @@ ECPropertyId ECDbSchemaPersistenceHelper::GetECPropertyId(ECDbCR db, Utf8CP sche
     if (BE_SQLITE_OK != db.GetCachedStatement(stmt, "SELECT p.Id FROM ec_Property p INNER JOIN ec_Class c ON p.ClassId = c.Id INNER JOIN ec_Schema s WHERE c.SchemaId = s.Id AND s.Name LIKE ? AND c.Name LIKE ? AND p.Name LIKE ?"))
         return ECPropertyId();
 
-    stmt->BindText (1, schemaName, Statement::MakeCopy::No);
-    stmt->BindText (2, className, Statement::MakeCopy::No);
-    stmt->BindText (3, propertyName, Statement::MakeCopy::No);
+    stmt->BindText(1, schemaName, Statement::MakeCopy::No);
+    stmt->BindText(2, className, Statement::MakeCopy::No);
+    stmt->BindText(3, propertyName, Statement::MakeCopy::No);
 
     if (BE_SQLITE_ROW != stmt->Step())
         return ECPropertyId();

@@ -525,7 +525,7 @@ struct ECPrimitiveChange : ECChange
 
         virtual ~ECPrimitiveChange() {}
         Nullable<T> const& GetNew() const { return m_new; }
-        Nullable<T> const& GetOld() const { return m_new; }
+        Nullable<T> const& GetOld() const { return m_old; }
         Utf8String ToString(ValueId id) const { return _ToString(id); }
 
         //---------------------------------------------------------------------------------------

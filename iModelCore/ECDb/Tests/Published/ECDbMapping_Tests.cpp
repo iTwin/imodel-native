@@ -2718,7 +2718,13 @@ TEST_F(ECDbMappingTestFixture, PropertyWithSameNameAsStructMemberColumn)
      ASSERT_FALSE (asserted);
 
      ASSERT_TRUE (ecdb.ColumnExists ("ts_Foo", "Code_Name"));
-     ASSERT_TRUE (ecdb.ColumnExists ("ts_Foo", "c127_Code_Name"));
+
+     ECClassId fooClassId = ecdb.Schemas().GetECClassId("TestSchema", "Foo");
+     ASSERT_TRUE(fooClassId.IsValid());
+
+     Utf8String expectedColumnName;
+     expectedColumnName.Sprintf("c%s_Code_Name", fooClassId.ToString().c_str());
+     ASSERT_TRUE (ecdb.ColumnExists ("ts_Foo", expectedColumnName.c_str()));
      }
 
      {
@@ -2739,7 +2745,12 @@ TEST_F(ECDbMappingTestFixture, PropertyWithSameNameAsStructMemberColumn)
      ASSERT_FALSE (asserted);
 
      ASSERT_TRUE (ecdb.ColumnExists ("ts_Foo", "Code_Name"));
-     ASSERT_TRUE (ecdb.ColumnExists ("ts_Foo", "c127_Code_Name"));
+     ECClassId fooClassId = ecdb.Schemas().GetECClassId("TestSchema", "Foo");
+     ASSERT_TRUE(fooClassId.IsValid());
+
+     Utf8String expectedColumnName;
+     expectedColumnName.Sprintf("c%s_Code_Name", fooClassId.ToString().c_str());
+     ASSERT_TRUE(ecdb.ColumnExists("ts_Foo", expectedColumnName.c_str()));
      }
     }
 

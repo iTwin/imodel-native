@@ -25,7 +25,7 @@ ECDbSchemaManager::ECDbSchemaManager(ECDbCR ecdb, ECDbMap& map) :m_ecdb(ecdb), m
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      01/2013
 //---------------------------------------------------------------------------------------
-ECDbSchemaManager::~ECDbSchemaManager () 
+ECDbSchemaManager::~ECDbSchemaManager()
     {
     if (m_schemaReader != nullptr)
         {
@@ -37,7 +37,7 @@ ECDbSchemaManager::~ECDbSchemaManager ()
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                   Affan.Khan        06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaManager::GetECSchemas (ECSchemaList& schemas, bool ensureAllClassesLoaded) const
+BentleyStatus ECDbSchemaManager::GetECSchemas(ECSchemaList& schemas, bool ensureAllClassesLoaded) const
     {
     ECSchemaKeys schemaKeys;
     auto stat = GetECSchemaKeys(schemaKeys);
@@ -47,7 +47,7 @@ BentleyStatus ECDbSchemaManager::GetECSchemas (ECSchemaList& schemas, bool ensur
     schemas.clear();
     for (ECSchemaKey const& schemaKey : schemaKeys)
         {
-        ECSchemaCP out = GetECSchema (schemaKey.GetECSchemaId (), ensureAllClassesLoaded);
+        ECSchemaCP out = GetECSchema(schemaKey.GetECSchemaId(), ensureAllClassesLoaded);
         if (out == nullptr)
             return ERROR;
 
@@ -140,13 +140,13 @@ BentleyStatus ECDbSchemaManager::ImportECSchemas(ECSchemaCacheR cache, ImportOpt
     {
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin ECDbSchemaManager::ImportECSchemas");
 
-    if (m_ecdb.IsReadonly ())
+    if (m_ecdb.IsReadonly())
         {
         m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to import ECSchemas. ECDb file is read-only.");
         return ERROR;
         }
 
-    if (cache.GetCount () == 0)
+    if (cache.GetCount() == 0)
         {
         m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to import ECSchemas. List of ECSchemas to import is empty.");
         return ERROR;
@@ -154,15 +154,15 @@ BentleyStatus ECDbSchemaManager::ImportECSchemas(ECSchemaCacheR cache, ImportOpt
 
     StopWatch timer(true);
 
-    BeMutexHolder lock (m_criticalSection);
-    
+    BeMutexHolder lock(m_criticalSection);
+
     SchemaImportContext context;
     if (SUCCESS != context.Initialize(m_map.GetDbSchemaR(), m_ecdb))
         return ERROR;
 
-    if (SUCCESS != BatchImportECSchemas (context, cache, options))
+    if (SUCCESS != BatchImportECSchemas(context, cache, options))
         return ERROR;
-  
+
     ECSchemaCompareContext& compareContext = context.GetECSchemaCompareContext();
     if (compareContext.IsEmpty())
         return SUCCESS;
@@ -185,7 +185,7 @@ BentleyStatus ECDbSchemaManager::ImportECSchemas(ECSchemaCacheR cache, ImportOpt
         m_ecdb.ClearECDbCache();
 
     timer.Stop();
-    LOG.infov("Imported ECSchemas in %.4f msecs.",  timer.GetElapsedSeconds() * 1000.0);
+    LOG.infov("Imported ECSchemas in %.4f msecs.", timer.GetElapsedSeconds() * 1000.0);
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("End ECDbSchemaManager::ImportECSchemas");
     return SUCCESS;
     }
@@ -212,7 +212,7 @@ BentleyStatus ECDbSchemaManager::BatchImportECSchemas(SchemaImportContext& conte
             }
 
 
-            BuildDependencyOrderedSchemaList(schemasToImport, schema);
+        BuildDependencyOrderedSchemaList(schemasToImport, schema);
         }
 
     //1. Only import supplemental schema if doSupplement = True AND saveSupplementals = TRUE
@@ -319,7 +319,7 @@ BentleyStatus ECDbSchemaManager::CompareECSchemas(Utf8StringR differences, ECN::
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaCP ECDbSchemaManager::GetECSchema (Utf8CP schemaName, bool ensureAllClassesLoaded) const
+ECSchemaCP ECDbSchemaManager::GetECSchema(Utf8CP schemaName, bool ensureAllClassesLoaded) const
     {
     const ECSchemaId schemaId = ECDbSchemaPersistenceHelper::GetECSchemaId(GetECDb(), schemaName);
     if (!schemaId.IsValid())
@@ -331,7 +331,7 @@ ECSchemaCP ECDbSchemaManager::GetECSchema (Utf8CP schemaName, bool ensureAllClas
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaCP ECDbSchemaManager::GetECSchema (ECSchemaId schemaId, bool ensureAllClassesLoaded) const
+ECSchemaCP ECDbSchemaManager::GetECSchema(ECSchemaId schemaId, bool ensureAllClassesLoaded) const
     {
     return m_schemaReader->GetECSchema(schemaId, ensureAllClassesLoaded);
     }
@@ -353,7 +353,7 @@ bool ECDbSchemaManager::ContainsECSchema(Utf8CP schemaName)  const
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECClassCP ECDbSchemaManager::GetECClass (Utf8CP schemaNameOrPrefix, Utf8CP className, ResolveSchema resolveSchema) const
+ECClassCP ECDbSchemaManager::GetECClass(Utf8CP schemaNameOrPrefix, Utf8CP className, ResolveSchema resolveSchema) const
     {
     ECClassId id;
     if (!TryGetECClassId(id, schemaNameOrPrefix, className, resolveSchema))
@@ -381,14 +381,14 @@ bool ECDbSchemaManager::TryGetECClassId(ECClassId& id, Utf8CP schemaNameOrPrefix
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                       12/13
 //---------------------------------------------------------------------------------------
-ECDerivedClassesList const& ECDbSchemaManager::GetDerivedECClasses (ECClassCR baseECClass) const
+ECDerivedClassesList const& ECDbSchemaManager::GetDerivedECClasses(ECClassCR baseECClass) const
     {
-    if (EnsureDerivedClassesExist (baseECClass) != SUCCESS)
-       {
-       BeAssert (false);
-       }
+    if (EnsureDerivedClassesExist(baseECClass) != SUCCESS)
+        {
+        BeAssert(false);
+        }
 
-    return baseECClass.GetDerivedClasses ();
+    return baseECClass.GetDerivedClasses();
     }
 
 //---------------------------------------------------------------------------------------
@@ -402,7 +402,7 @@ ECEnumerationCP ECDbSchemaManager::GetECEnumeration(Utf8CP schemaName, Utf8CP en
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaManager::GetECSchemaKeys (ECSchemaKeys& keys) const
+BentleyStatus ECDbSchemaManager::GetECSchemaKeys(ECSchemaKeys& keys) const
     {
     return ECDbSchemaPersistenceHelper::GetECSchemaKeys(keys, m_ecdb);
     }
@@ -410,17 +410,17 @@ BentleyStatus ECDbSchemaManager::GetECSchemaKeys (ECSchemaKeys& keys) const
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaManager::GetECClassKeys (ECClassKeys& keys, Utf8CP schemaName) const
+BentleyStatus ECDbSchemaManager::GetECClassKeys(ECClassKeys& keys, Utf8CP schemaName) const
     {
     PRECONDITION(schemaName != nullptr && "schemaName parameter cannot be null", ERROR);
-    ECSchemaId schemaId = ECDbSchemaPersistenceHelper::GetECSchemaId (m_ecdb, schemaName);
+    ECSchemaId schemaId = ECDbSchemaPersistenceHelper::GetECSchemaId(m_ecdb, schemaName);
     return ECDbSchemaPersistenceHelper::GetECClassKeys(keys, schemaId, m_ecdb);
     }
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECDbSchemaManager::ClearCache () const { m_schemaReader->ClearCache(); }
+void ECDbSchemaManager::ClearCache() const { m_schemaReader->ClearCache(); }
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        09/2012
@@ -428,7 +428,7 @@ void ECDbSchemaManager::ClearCache () const { m_schemaReader->ClearCache(); }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle               12/2012
 //+---------------+---------------+---------------+---------------+---------------+------
-ECDbCR ECDbSchemaManager::GetECDb () const { return m_ecdb; }
+ECDbCR ECDbSchemaManager::GetECDb() const { return m_ecdb; }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      01/2013
@@ -456,16 +456,16 @@ ECSchemaPtr ECDbSchemaManager::_LocateSchema(SchemaKeyR key, SchemaMatchType mat
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   12/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECClassCP ECDbSchemaManager::_LocateClass (Utf8CP schemaName, Utf8CP className)
+ECClassCP ECDbSchemaManager::_LocateClass(Utf8CP schemaName, Utf8CP className)
     {
-    return GetECClass (schemaName, className);
+    return GetECClass(schemaName, className);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      05/2013
 //---------------------------------------------------------------------------------------
 //static
-ECClassId ECDbSchemaManager::GetClassIdForECClassFromDuplicateECSchema (ECDbCR db, ECClassCR ecClass)
+ECClassId ECDbSchemaManager::GetClassIdForECClassFromDuplicateECSchema(ECDbCR db, ECClassCR ecClass)
     {
     ECClassId id;
     db.Schemas().TryGetECClassId(id, ecClass.GetSchema().GetName().c_str(), ecClass.GetName().c_str(), ResolveSchema::BySchemaName);
@@ -478,7 +478,7 @@ ECClassId ECDbSchemaManager::GetClassIdForECClassFromDuplicateECSchema (ECDbCR d
 //---------------------------------------------------------------------------------------
 ECPropertyId ECDbSchemaManager::GetPropertyIdForECPropertyFromDuplicateECSchema(ECDbCR db, ECPropertyCR ecProperty)
     {
-    ECPropertyId ecPropertyId = ECDbSchemaPersistenceHelper::GetECPropertyId (db, ecProperty.GetClass().GetSchema().GetName().c_str(), ecProperty.GetClass().GetName().c_str(), ecProperty.GetName().c_str()); 
+    ECPropertyId ecPropertyId = ECDbSchemaPersistenceHelper::GetECPropertyId(db, ecProperty.GetClass().GetSchema().GetName().c_str(), ecProperty.GetClass().GetName().c_str(), ecProperty.GetName().c_str());
     const_cast<ECPropertyR>(ecProperty).SetId(ecPropertyId);
     return ecPropertyId;
     }
@@ -522,21 +522,21 @@ BentleyStatus ECDbSchemaManager::CreateECClassViewsInDb() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle   04/2014
 //---------------------------------------------------------------------------------------
-ECDbSchemaManager::ImportOptions::ImportOptions ()
-    : m_doSupplementation (true)
+ECDbSchemaManager::ImportOptions::ImportOptions()
+    : m_doSupplementation(true)
     {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle   04/2014
 //---------------------------------------------------------------------------------------
-ECDbSchemaManager::ImportOptions::ImportOptions (bool doSupplementation)
-    : m_doSupplementation (doSupplementation)
+ECDbSchemaManager::ImportOptions::ImportOptions(bool doSupplementation)
+    : m_doSupplementation(doSupplementation)
     {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle   04/2014
 //---------------------------------------------------------------------------------------
-bool ECDbSchemaManager::ImportOptions::DoSupplementation () const { return m_doSupplementation; }
+bool ECDbSchemaManager::ImportOptions::DoSupplementation() const { return m_doSupplementation; }
 
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

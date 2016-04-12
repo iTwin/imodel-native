@@ -1365,4 +1365,110 @@ void DbSchemaPersistenceManager::DoAppendForeignKeyDdl(Utf8StringR ddl, ForeignK
     }
 
 
+//---------------------------------------------------------------------------------------
+//! This method is not called from anywhere, because it provides compile-time asserts
+//! for all enumerations that ECDb persists. This is a safe-guard to notify us whenever
+//! somebody changes the enums. We then need to react to that so that old files don't get hornswaggled
+// @bsimethod                                                    Krischan.Eberle  04/2016
+//---------------------------------------------------------------------------------------
+void AssertPersistedEnumsAreUnchanged()
+    {
+    static_assert((int) CustomAttributeContainerType::Any == 4095 &&
+                  (int) CustomAttributeContainerType::AnyClass == 30 &&
+                  (int) CustomAttributeContainerType::AnyProperty == 992 &&
+                  (int) CustomAttributeContainerType::AnyRelationshipConstraint == 3072 &&
+                  (int) CustomAttributeContainerType::ArrayProperty == 128 &&
+                  (int) CustomAttributeContainerType::CustomAttributeClass == 4 &&
+                  (int) CustomAttributeContainerType::EntityClass == 2 &&
+                  (int) CustomAttributeContainerType::NavigationProperty == 512 &&
+                  (int) CustomAttributeContainerType::PrimitiveProperty == 32 &&
+                  (int) CustomAttributeContainerType::RelationshipClass == 16 &&
+                  (int) CustomAttributeContainerType::Schema == 1 &&
+                  (int) CustomAttributeContainerType::SourceRelationshipConstraint == 1024 &&
+                  (int) CustomAttributeContainerType::StructArrayProperty == 256 &&
+                  (int) CustomAttributeContainerType::StructClass == 8 &&
+                  (int) CustomAttributeContainerType::TargetRelationshipConstraint == 2048, "Persisted Enum has changed: ECN::CustomAttributeContainerType.");
+
+    static_assert((int) DbColumn::Kind::DataColumn == 512 &&
+                  (int) DbColumn::Kind::ECClassId == 2 &&
+                  (int) DbColumn::Kind::ECInstanceId == 1 &&
+                  (int) DbColumn::Kind::NonRelSystemColumn == 3 &&
+                  (int) DbColumn::Kind::SharedDataColumn == 1024 &&
+                  (int) DbColumn::Kind::SourceECClassId == 64 &&
+                  (int) DbColumn::Kind::SourceECInstanceId == 32 &&
+                  (int) DbColumn::Kind::TargetECClassId == 256 &&
+                  (int) DbColumn::Kind::TargetECInstanceId == 128 &&
+                  (int) DbColumn::Kind::Unknown == 0, "Persisted Enum has changed: DbColumn::Kind.");
+
+    static_assert((int) DbColumn::Type::Any == 0 &&
+                  (int) DbColumn::Type::Blob == 2 &&
+                  (int) DbColumn::Type::Boolean == 1 &&
+                  (int) DbColumn::Type::Integer == 5 &&
+                  (int) DbColumn::Type::Real == 4 &&
+                  (int) DbColumn::Type::Text == 6 &&
+                  (int) DbColumn::Type::TimeStamp == 3, "Persisted Enum has changed: DbColumn::Type.");
+
+    static_assert((int) DbTable::Type::Existing == 2 &&
+                  (int) DbTable::Type::Joined == 1 &&
+                  (int) DbTable::Type::Primary == 0, "Persisted Enum has changed: DbTable::Type.");
+
+    static_assert((int) ECClassModifier::Abstract == 1 &&
+                  (int) ECClassModifier::None == 0 &&
+                  (int) ECClassModifier::Sealed == 2, "Persisted Enum has changed: ECN::ECClassModifier.");
+
+    static_assert((int) ECClassType::CustomAttribute == 3 &&
+                  (int) ECClassType::Entity == 0 &&
+                  (int) ECClassType::Relationship == 1 &&
+                  (int) ECClassType::Struct == 2, "Persisted Enum has changed: ECN::ECClassType.");
+
+    static_assert((int) ECDbMapStrategy::Options::JoinedTable == 4 &&
+                  (int) ECDbMapStrategy::Options::None == 0 &&
+                  (int) ECDbMapStrategy::Options::ParentOfJoinedTable == 2 &&
+                  (int) ECDbMapStrategy::Options::SharedColumns == 1, "Persisted Enum has changed: ECDbMapStrategy::Options.");
+
+    static_assert((int) ECDbMapStrategy::Strategy::ExistingTable == 3 &&
+                  (int) ECDbMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable == 101 &&
+                  (int) ECDbMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable == 100 &&
+                  (int) ECDbMapStrategy::Strategy::NotMapped == 0 &&
+                  (int) ECDbMapStrategy::Strategy::OwnTable == 1 &&
+                  (int) ECDbMapStrategy::Strategy::SharedTable == 2, "Persisted Enum has changed: ECDbMapStrategy::Strategy.");
+
+    static_assert((int) ECPropertyKind::Enumeration == 4 &&
+                  (int) ECPropertyKind::Navigation == 5 &&
+                  (int) ECPropertyKind::Primitive == 0 &&
+                  (int) ECPropertyKind::PrimitiveArray == 2 &&
+                  (int) ECPropertyKind::Struct == 1 &&
+                  (int) ECPropertyKind::StructArray == 3, "Persisted Enum has changed: ECPropertyKind.");
+
+    static_assert((int) ECRelatedInstanceDirection::Backward == 2 &&
+                  (int) ECRelatedInstanceDirection::Forward == 1, "Persisted Enum has changed: ECN::ECRelatedInstanceDirection.");
+
+    static_assert((int) ECRelationshipEnd::ECRelationshipEnd_Source == 0 &&
+                  (int) ECRelationshipEnd::ECRelationshipEnd_Target == 1, "Persisted Enum has changed: ECN::ECRelationshipEnd.");
+
+    static_assert((int) ForeignKeyDbConstraint::ActionType::Cascade == 1 &&
+                  (int) ForeignKeyDbConstraint::ActionType::NoAction == 2 &&
+                  (int) ForeignKeyDbConstraint::ActionType::NotSpecified == 0 &&
+                  (int) ForeignKeyDbConstraint::ActionType::Restrict == 5 &&
+                  (int) ForeignKeyDbConstraint::ActionType::SetDefault == 4 &&
+                  (int) ForeignKeyDbConstraint::ActionType::SetNull == 3, "Persisted Enum has changed: ForeignKeyDbConstraint::ActionType.");
+
+    static_assert((int) ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Class == 30 &&
+                  (int) ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Property == 992 &&
+                  (int) ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Schema == 1 &&
+                  (int) ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::SourceRelationshipConstraint == 1024 &&
+                  (int) ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::TargetRelationshipConstraint == 2048, "Persisted Enum has changed: ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType.");
+
+    static_assert((int) PrimitiveType::PRIMITIVETYPE_Binary == 0x101 &&
+                  (int) PrimitiveType::PRIMITIVETYPE_Boolean == 0x201 &&
+                  (int) PrimitiveType::PRIMITIVETYPE_DateTime == 0x301 &&
+                  (int) PrimitiveType::PRIMITIVETYPE_Double == 0x401 &&
+                  (int) PrimitiveType::PRIMITIVETYPE_IGeometry == 0xa01 &&
+                  (int) PrimitiveType::PRIMITIVETYPE_Integer == 0x501 &&
+                  (int) PrimitiveType::PRIMITIVETYPE_Long == 0x601 &&
+                  (int) PrimitiveType::PRIMITIVETYPE_Point2D == 0x701 &&
+                  (int) PrimitiveType::PRIMITIVETYPE_Point3D == 0x801 &&
+                  (int) PrimitiveType::PRIMITIVETYPE_String == 0x901, "Persisted Enum has changed: ECN::PrimitiveType.");
+    }
+
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -475,13 +475,21 @@ MappingStatus ECDbMap::AddClassMap (ClassMapPtr& classMap) const
 //+---------------+---------------+---------------+---------------+---------------+------
 ClassMap const* ECDbMap::GetClassMap(ECN::ECClassCR ecClass) const
     {
-    ClassMapLoadContext ctx;
+    if (m_schemaImportContext == nullptr)
+        {
+        ClassMapLoadContext ctx;
+        ClassMapPtr classMap = nullptr;
+        if (!TryGetClassMap(classMap, ctx, ecClass))
+            return nullptr;
+
+        if (SUCCESS != ctx.Postprocess(*this))
+            return nullptr;
+
+        return classMap.get();
+        }
 
     ClassMapPtr classMap = nullptr;
-    if (!TryGetClassMap(classMap, ctx, ecClass))
-        return nullptr;
-
-    if (SUCCESS != ctx.Postprocess(*this))
+    if (!TryGetClassMap(classMap, m_schemaImportContext->GetClassMapLoadContext(), ecClass))
         return nullptr;
 
     return classMap.get();

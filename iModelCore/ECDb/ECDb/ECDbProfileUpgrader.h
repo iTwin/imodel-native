@@ -111,6 +111,22 @@ struct ECDbProfileUpgrader_3202 : ECDbProfileUpgrader
     };
 
 //=======================================================================================
+// @bsiclass                                                 Krischan.Eberle      0/2016
+//+===============+===============+===============+===============+===============+======
+struct ECDbProfileUpgrader_3300 : ECDbProfileUpgrader
+    {
+//intentionally use compiler generated ctor, dtor, copy ctor and copy assignment op
+private:
+    virtual SchemaVersion _GetTargetVersion() const override { return SchemaVersion(3, 3, 0, 0); }
+    virtual DbResult _Upgrade(ECDbR) const override;
+
+    //! ec_CustomAttribute stored a proprietary container type which has now been changed
+    //! to store the values from the ECN::CustomAttributeContainerType enum
+    static DbResult UpdateGeneralizedCustomContainerTypeInCAInstanceTable(ECDbCR);
+    static DbResult SetCustomContainerType(ECDbCR, Statement&, Utf8CP caClassName, CustomAttributeContainerType);
+    };
+
+//=======================================================================================
 // @bsiclass                                                 Krischan.Eberle      07/2013
 //+===============+===============+===============+===============+===============+======
 struct ECDbProfileECSchemaUpgrader

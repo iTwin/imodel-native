@@ -122,17 +122,8 @@ struct ECEnumerationId : BeInt64Id
 
 typedef BeInt64Id ECContainerId;
 
-enum class ECContainerType
-    {
-    Schema = 1,
-    Class = 2,
-    Property = 3,
-    RelationshipConstraintSource = 4,
-    RelationshipConstraintTarget = 5
-    };
-
-#define ECDB_COL_ECInstanceId           "ECInstanceId"
-#define ECDB_COL_ECClassId              "ECClassId"
+#define ECDB_COL_ECInstanceId "ECInstanceId"
+#define ECDB_COL_ECClassId "ECClassId"
 
 //=======================================================================================
 // @bsiclass                                 Affan.Khan                10/2015

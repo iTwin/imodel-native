@@ -446,18 +446,20 @@ $(BuildContext)Delivery/openoffice-license.txt : $(baseDir)ECSql/Parser/LICENSE
 #----------------------------------------------------------------------------------------
 # Deploy documentation raw material for input into PublishApi+Doxygen by consuming SDKs
 #----------------------------------------------------------------------------------------
-$(BuildContext)Dox/Pages/ECDb : $(baseDir)docs/source
-    $(LinkFirstDepToFirstTargetAsDirectory)
+# for the name of the latest version of the ECDbMap ECSchema
+%include $(BuildContext)SubParts/mki/StandardSchemasV3.delivery.mki
 
-$(BuildContext)Dox/Images/ECDb : $(baseDir)docs/images
-    $(LinkFirstDepToFirstTargetAsDirectory)
+always:
+    ~linkdir "$(BuildContext)Dox/Pages/ECDb=$(baseDir)docs/source"
+    ~linkdir "$(BuildContext)Dox/Images/ECDb=$(baseDir)docs/images"
+    @CreateSymLinks.py -m"$(BuildContext)Dox/Files/ECDb=$(baseDir)docs/files"
 
-$(BuildContext)Dox/Files/ECDb : $(baseDir)docs/files
-    $(LinkFirstDepToFirstTargetAsDirectory)
-
-###### WIP: FIXME
-###### for the name of the latest version of the BSCA schema
-#####%include $(OutBuildContexts)ECStandards/StandardSchemas.delivery.mki
-#####
-#####always:
-#####    @CreateSymLinks.py "$(BuildContext)Dox/Files/ECDb/ECDbMap.ecschema.xml=$(OutBuildContexts)ECStandards/ECSchemas/Standard/$(ECDbMapSchemaName)"
+#
+#   *** NEEDS WORK: We should never look in the BuildContext of another partfile.
+#                   The .xml file that we need from StandardSchemasV3 should be in its bindings.
+#                   It can decide which file to deliver and bind. This dependent part mke file should always
+#                   find it in a know location in its own BuildContext/SubParts directory.
+#                                                                          vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+always:
+    @CreateSymLinks.py "$(BuildContext)Dox/Files/ECDb/ECDbMap.ecschema.xml=$(OutBuildContexts)ECStandards/ECSchemas/Standard/$(ECDbMapSchemaName)"
+  
