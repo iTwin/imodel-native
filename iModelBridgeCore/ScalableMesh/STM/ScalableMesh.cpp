@@ -1728,6 +1728,11 @@ template <class POINT> int ScalableMeshSingleResolutionPointIndexView<POINT>::_S
 |ScalableMeshSingleResolutionPointIndexView Method Definition Section - End
 +----------------------------------------------------------------------------*/
 
+/*DTMStatusInt IDTMVolume::ComputeCutFillVolume(double* cut, double* fill, double* volume, PolyfaceHeaderCP mesh)
+    {
+    return _ComputeCutFillVolume(cut, fill, volume, mesh);
+    }*/
+
 DTMStatusInt IDTMVolume::ComputeVolumeCutAndFill(double& cut, double& fill, double& area, PolyfaceHeader& intersectingMeshSurface, DRange3d& meshRange, bvector<PolyfaceHeaderPtr>& volumeMeshVector)
     {
     return _ComputeVolumeCutAndFill(cut, fill, area, intersectingMeshSurface,meshRange, volumeMeshVector);

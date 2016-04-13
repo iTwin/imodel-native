@@ -371,9 +371,7 @@ $(o)tetgenpredicates$(oext) : $(delaunayDir)tetgen/tetgenpredicates.cpp $(delaun
 #   dependencies of the subsystem.
 #----------------------------------------------------------------------
 DLM_OBJECT_PCH      = $(o)ScalableMeshPCH$(oext)
-DLM_OBJECT_FILES    = $(MultiCompileObjectList) 
-
-#SCALABLE_MESH_DGN=1
+DLM_OBJECT_FILES    = $(MultiCompileObjectList)
 
 LINKER_LIBRARIES_DELAYLOADED  = \
     $(ContextSubpartsLibs)wastorage.lib \

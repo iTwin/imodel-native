@@ -141,6 +141,40 @@ DRange3d RangeOfNodes (MTGFacets *facets, bvector<MTGNodeId> &nodes, size_t &num
     return range;
     }
 
+/*DTMStatusInt ScalableMeshVolume::_ComputeCutFillVolume(double* cut, double* fill, double* volume, PolyfaceHeaderCP mesh)
+    {
+    double totalVolume = 0.0, totalCut = 0.0, totalFill = 0.0;
+
+    IScalableMeshMeshQueryPtr meshQueryInterface = ((IScalableMesh*)m_scmPtr.get())->GetMeshQueryInterface(MESH_QUERY_FULL_RESOLUTION);
+    bvector<IScalableMeshNodePtr> returnedNodes;
+    IScalableMeshMeshQueryParamsPtr params = IScalableMeshMeshQueryParams::CreateParams();
+    DRange3d fileRange;
+    ((IDTM*)m_scmPtr->GetDTMInterface())->GetRange(fileRange);
+    DRange3d meshRange = mesh->PointRange();
+    DPoint3d box[4] = {
+        DPoint3d::From(meshRange.low.x, meshRange.low.y, fileRange.low.z),
+        DPoint3d::From(meshRange.low.x, meshRange.high.y, fileRange.low.z),
+        DPoint3d::From(meshRange.high.x, meshRange.low.y, fileRange.high.z),
+        DPoint3d::From(meshRange.high.x, meshRange.high.y, fileRange.high.z)
+        };
+    meshQueryInterface->Query(returnedNodes, box, 4, params);
+    for (auto& node : returnedNodes)
+        {
+        bvector<bool> clips;
+        IScalableMeshMeshPtr scalableMesh = node->GetMesh(false, clips);
+        //ScalableMeshMeshWithGraphPtr scalableMeshWithGraph((ScalableMeshMeshWithGraph*)scalableMesh.get(), true);
+        double tileCut, tileFill;
+        bvector<PolyfaceHeaderPtr> volumeMeshVector;
+        totalVolume += _ComputeVolumeCutAndFillForTile(scalableMesh, tileCut, tileFill, *const_cast<PolyfaceHeaderP>(mesh), true, meshRange, volumeMeshVector);
+        totalCut += tileCut;
+        totalFill += tileFill;
+        }
+    *cut = totalCut;
+    *fill = totalFill;
+    *volume = totalVolume;
+    return DTMStatusInt::DTM_SUCCESS;
+    }*/
+
 //double ScalableMeshVolume::ComputeVolumeCutAndFillForTile(PolyfaceHeaderPtr terrainMesh, double& cut, double& fill, PolyfaceHeader& mesh, bool is2d, bvector<PolyfaceHeaderPtr>& volumeMeshVector)
 DTMStatusInt ScalableMeshVolume::_ComputeVolumeCutAndFill(PolyfaceHeaderPtr& terrainMesh, double& cut, double& fill, PolyfaceHeader& mesh, bool is2d, bvector<PolyfaceHeaderPtr>& volumeMeshVector)
     {
