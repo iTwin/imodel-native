@@ -2120,13 +2120,13 @@ bool Db::OpenParams::_ReopenForSchemaUpgrade(Db& db) const
     m_openMode = OpenMode::ReadWrite;
     m_forSchemaUpgrade = true;
 
-    auto result = db.OpenBeSQLiteDb(filename.c_str(), *this) == BE_SQLITE_OK;
+    const bool succeeded = db.OpenBeSQLiteDb(filename.c_str(), *this) == BE_SQLITE_OK;
 
     // Caller may attempt to reopen DgnDb using same params...do not leave this flag modified
     // (See e.g. sample navigator, which will re-open for read-only if we upgrade the schema)
     m_forSchemaUpgrade = false;
 
-    return result;
+    return succeeded;
     }
 
 /*---------------------------------------------------------------------------------**//**
