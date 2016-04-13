@@ -22,12 +22,16 @@
 
 
 #include <Bentley/BeFileName.h>
-#include <ImagePP/all/h/HRFFileFormats.h>
+#include <Imagepp/all/h/HPMPool.h>
+#include <Imagepp/all/h/HRSObjectStore.h>
+#include <regex>
 
 static uint32_t s_nbOfLoadedFiles = 0;
 static uint32_t s_nbOfExportedAllOptionsFiles = 0;
 static uint32_t s_nbOfFilesToBestiTiff = 0;
 static uint32_t s_nbOfFilesToMostCommonOptions = 0;
+
+USING_NAMESPACE_IMAGEPP
 
 /*=================================================================================**//**
 * Define a MACRO to display messages while testing the export.
@@ -122,159 +126,167 @@ static vector<std::wstring> s_GetDirectoryVector(const WString& pSourceDir)
     BeFileListIterator sourcePathItr(pSourceDir, true);
     BeFileName actualName;
     while (sourcePathItr.GetNextFileName(actualName) == SUCCESS)
-        {               
+        {
         if (actualName.IsDirectory())
             continue;
         else
+            {            
+            std::regex filter("(.*)(NITF\\\\PasSupportees)(.*)|(.*)(ErdasImg\\\\ImagesInvalides)(.*)|(.*)(iTIFF\\\\xFileNotSupported)(.*)");
+
+            //exclusion of the files not supported
+            if (std::regex_match(actualName.GetNameUtf8().c_str(), filter))
+                continue;
+
             directoryList.push_back(actualName.GetName());
+            }           
         }
 
     return directoryList;
     }
 
-static const size_t s_nbTotalOfFiles = s_GetDirectoryVector("C:\\Users\\Laurent.Robert-Veill\\Desktop\\FolderTestExport\\").size();
+static const size_t s_nbTotalOfFiles = s_GetDirectoryVector(L"C:\\Users\\Laurent.Robert-Veill\\Desktop\\Images\\*").size();
 
-/*---------------------------------------------------------------------------------**//**
-* Format the name of the file with the specific options of the export
-* @bsimethod                                         Laurent.Robert-Veillette     04/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-static BeFileName s_GetProfileID(const HFCPtr<HRFRasterFile>&   pi_rpRasterFile,
-                                 HCLASS_ID                      pixelTypeClassKey,
-                                 HCLASS_ID                      codecClassKey,
-                                 HRFBlockType                   blockType)
-    {
-    Utf8String ComposedFilename;
-
-    HRFResolutionDescriptor ResolutionDescriptor(*(pi_rpRasterFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)));
-
-    //------------------------------------
-    // Color space (Pixel Type)
-    ComposedFilename += HUTClassIDDescriptor::GetInstance()->GetClassCodePixelType(pixelTypeClassKey);
-
-    //------------------------------------
-    // Compression Codec
-    //const HCDCodecsList::ListCodecs& rList = ResolutionDescriptor.GetCodec()->GetList();
-    //HCDCodecsList::ListCodecs::const_iterator Itr(rList.begin());
-    ComposedFilename += HUTClassIDDescriptor::GetInstance()->GetClassCodeCodec(codecClassKey);
-
-    //------------------------------------
-    // Raster organisation...
-    if (blockType == HRFBlockType::LINE)
-        ComposedFilename += "L";
-    else if (blockType == HRFBlockType::STRIP)
-        {
-        if (ResolutionDescriptor.GetBlockType() == blockType)
-            {
-            if (ResolutionDescriptor.GetBlockHeight() == 1)
-                ComposedFilename += "C";
-            else if (!(ResolutionDescriptor.GetBlockHeight() % 16))
-                ComposedFilename += "S";
-            else
-                ComposedFilename += "Z";
-            }
-        else
-            {
-            ComposedFilename += "C";     // default value when setting a new block type
-            }
-        }
-    else if (blockType == HRFBlockType::TILE)
-        {
-        if (ResolutionDescriptor.GetBlockType() == blockType)
-            {
-            if (!(ResolutionDescriptor.GetBlockWidth() % 256))
-                ComposedFilename += "T";
-            else  if (ResolutionDescriptor.GetBlockWidth() == 64)
-                ComposedFilename += "R";
-            else if (!(ResolutionDescriptor.GetBlockWidth() % 32))
-                ComposedFilename += "M";
-            else if (!(ResolutionDescriptor.GetBlockWidth() % 16))
-                ComposedFilename += "X";
-            else
-                ComposedFilename += "Z";
-            }
-        else
-            {
-            ComposedFilename += "T";     // default value when setting a new block type
-            }
-        }
-    else if (blockType == HRFBlockType::IMAGE)
-        ComposedFilename += "I";
-
-    //------------------------------------
-    // Resolution...
-    if (pi_rpRasterFile->GetPageDescriptor(0)->CountResolutions() > 1)
-        {
-        // At this time we may only generate 2x multi-resolution...
-        ComposedFilename += "1";
-        /*
-        ComposedFilename += AtpAStr("2");
-
-        ComposedFilename += AtpAStr("3");
-        */
-        }
-    else
-        ComposedFilename += "0";
-
-
-    //------------------------------------
-    // iTiff Specific part
-    if (pi_rpRasterFile->IsCompatibleWith(HRFiTiffFile::CLASS_ID))
-        {
-        //------------------------------------
-        // Downsampling used
-        if (ResolutionDescriptor.GetDownSamplingMethod() == HRFDownSamplingMethod::NEAREST_NEIGHBOUR)
-            ComposedFilename += "N";
-        else if (ResolutionDescriptor.GetDownSamplingMethod() == HRFDownSamplingMethod::AVERAGE)
-            ComposedFilename += "A";
-        else if (ResolutionDescriptor.GetDownSamplingMethod() == HRFDownSamplingMethod::VECTOR_AWARENESS)
-            ComposedFilename += "V";
-        else if (ResolutionDescriptor.GetDownSamplingMethod() == HRFDownSamplingMethod::UNKOWN)
-            ComposedFilename += "U";
-        else if (ResolutionDescriptor.GetDownSamplingMethod() == HRFDownSamplingMethod::ORING4)
-            ComposedFilename += "4";
-        else if (ResolutionDescriptor.GetDownSamplingMethod() == HRFDownSamplingMethod::NONE)
-            ComposedFilename += "Z";
-
-        //------------------------------------
-        // Version..
-        ComposedFilename += "2";
-        }
-
-    //------------------------------------
-    // BMP Specific part.
-    else if (pi_rpRasterFile->IsCompatibleWith(HRFBmpFile::CLASS_ID))
-        {
-        ComposedFilename += "W";
-        }
-    //------------------------------------
-    // HMR Specific part.
-    else if (pi_rpRasterFile->IsCompatibleWith(HRFHMRFile::CLASS_ID))
-        {
-        ComposedFilename += "1";
-        }
-    //------------------------------------
-    // JPEG Specific part.
-    else if (pi_rpRasterFile->IsCompatibleWith(HRFJpegFile::CLASS_ID))
-        {
-        ComposedFilename += "1";
-        }
-    //------------------------------------
-    // Intergraph Specific part.
-    else if ((pi_rpRasterFile->IsCompatibleWith(HRFIntergraphCot29File::CLASS_ID)) ||
-             (pi_rpRasterFile->IsCompatibleWith(HRFIntergraphCitFile::CLASS_ID)) ||
-             (pi_rpRasterFile->IsCompatibleWith(HRFIntergraphCotFile::CLASS_ID)) ||
-             (pi_rpRasterFile->IsCompatibleWith(HRFIntergraphRGBFile::CLASS_ID)) ||
-             (pi_rpRasterFile->IsCompatibleWith(HRFIntergraphRleFile::CLASS_ID)) ||
-             (pi_rpRasterFile->IsCompatibleWith(HRFIntergraphTG4File::CLASS_ID)))
-        {
-        char Buffer[4];
-
-        itoa(ResolutionDescriptor.GetScanlineOrientation().m_ScanlineOrientation, Buffer, 10);
-        ComposedFilename += Buffer;
-        }
-
-    return BeFileName(ComposedFilename);
-    }
+///*---------------------------------------------------------------------------------**//**
+//* Format the name of the file with the specific options of the export
+//* @bsimethod                                         Laurent.Robert-Veillette     04/2016
+//+---------------+---------------+---------------+---------------+---------------+------*/
+//static BeFileName s_GetProfileID(const HFCPtr<HRFRasterFile>&   pi_rpRasterFile,
+//                                 HCLASS_ID                      pixelTypeClassKey,
+//                                 HCLASS_ID                      codecClassKey,
+//                                 HRFBlockType                   blockType)
+//    {
+//    Utf8String ComposedFilename;
+//
+//    HRFResolutionDescriptor ResolutionDescriptor(*(pi_rpRasterFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)));
+//
+//    //------------------------------------
+//    // Color space (Pixel Type)
+//    ComposedFilename += HUTClassIDDescriptor::GetInstance()->GetClassCodePixelType(pixelTypeClassKey);
+//
+//    //------------------------------------
+//    // Compression Codec
+//    //const HCDCodecsList::ListCodecs& rList = ResolutionDescriptor.GetCodec()->GetList();
+//    //HCDCodecsList::ListCodecs::const_iterator Itr(rList.begin());
+//    ComposedFilename += HUTClassIDDescriptor::GetInstance()->GetClassCodeCodec(codecClassKey);
+//
+//    //------------------------------------
+//    // Raster organisation...
+//    if (blockType == HRFBlockType::LINE)
+//        ComposedFilename += "L";
+//    else if (blockType == HRFBlockType::STRIP)
+//        {
+//        if (ResolutionDescriptor.GetBlockType() == blockType)
+//            {
+//            if (ResolutionDescriptor.GetBlockHeight() == 1)
+//                ComposedFilename += "C";
+//            else if (!(ResolutionDescriptor.GetBlockHeight() % 16))
+//                ComposedFilename += "S";
+//            else
+//                ComposedFilename += "Z";
+//            }
+//        else
+//            {
+//            ComposedFilename += "C";     // default value when setting a new block type
+//            }
+//        }
+//    else if (blockType == HRFBlockType::TILE)
+//        {
+//        if (ResolutionDescriptor.GetBlockType() == blockType)
+//            {
+//            if (!(ResolutionDescriptor.GetBlockWidth() % 256))
+//                ComposedFilename += "T";
+//            else  if (ResolutionDescriptor.GetBlockWidth() == 64)
+//                ComposedFilename += "R";
+//            else if (!(ResolutionDescriptor.GetBlockWidth() % 32))
+//                ComposedFilename += "M";
+//            else if (!(ResolutionDescriptor.GetBlockWidth() % 16))
+//                ComposedFilename += "X";
+//            else
+//                ComposedFilename += "Z";
+//            }
+//        else
+//            {
+//            ComposedFilename += "T";     // default value when setting a new block type
+//            }
+//        }
+//    else if (blockType == HRFBlockType::IMAGE)
+//        ComposedFilename += "I";
+//
+//    //------------------------------------
+//    // Resolution...
+//    if (pi_rpRasterFile->GetPageDescriptor(0)->CountResolutions() > 1)
+//        {
+//        // At this time we may only generate 2x multi-resolution...
+//        ComposedFilename += "1";
+//        /*
+//        ComposedFilename += AtpAStr("2");
+//
+//        ComposedFilename += AtpAStr("3");
+//        */
+//        }
+//    else
+//        ComposedFilename += "0";
+//
+//
+//    //------------------------------------
+//    // iTiff Specific part
+//    if (pi_rpRasterFile->IsCompatibleWith(HRFiTiffFile::CLASS_ID))
+//        {
+//        //------------------------------------
+//        // Downsampling used
+//        if (ResolutionDescriptor.GetDownSamplingMethod() == HRFDownSamplingMethod::NEAREST_NEIGHBOUR)
+//            ComposedFilename += "N";
+//        else if (ResolutionDescriptor.GetDownSamplingMethod() == HRFDownSamplingMethod::AVERAGE)
+//            ComposedFilename += "A";
+//        else if (ResolutionDescriptor.GetDownSamplingMethod() == HRFDownSamplingMethod::VECTOR_AWARENESS)
+//            ComposedFilename += "V";
+//        else if (ResolutionDescriptor.GetDownSamplingMethod() == HRFDownSamplingMethod::UNKOWN)
+//            ComposedFilename += "U";
+//        else if (ResolutionDescriptor.GetDownSamplingMethod() == HRFDownSamplingMethod::ORING4)
+//            ComposedFilename += "4";
+//        else if (ResolutionDescriptor.GetDownSamplingMethod() == HRFDownSamplingMethod::NONE)
+//            ComposedFilename += "Z";
+//
+//        //------------------------------------
+//        // Version..
+//        ComposedFilename += "2";
+//        }
+//
+//    //------------------------------------
+//    // BMP Specific part.
+//    else if (pi_rpRasterFile->IsCompatibleWith(HRFBmpFile::CLASS_ID))
+//        {
+//        ComposedFilename += "W";
+//        }
+//    //------------------------------------
+//    // HMR Specific part.
+//    else if (pi_rpRasterFile->IsCompatibleWith(HRFHMRFile::CLASS_ID))
+//        {
+//        ComposedFilename += "1";
+//        }
+//    //------------------------------------
+//    // JPEG Specific part.
+//    else if (pi_rpRasterFile->IsCompatibleWith(HRFJpegFile::CLASS_ID))
+//        {
+//        ComposedFilename += "1";
+//        }
+//    //------------------------------------
+//    // Intergraph Specific part.
+//    else if ((pi_rpRasterFile->IsCompatibleWith(HRFIntergraphCot29File::CLASS_ID)) ||
+//             (pi_rpRasterFile->IsCompatibleWith(HRFIntergraphCitFile::CLASS_ID)) ||
+//             (pi_rpRasterFile->IsCompatibleWith(HRFIntergraphCotFile::CLASS_ID)) ||
+//             (pi_rpRasterFile->IsCompatibleWith(HRFIntergraphRGBFile::CLASS_ID)) ||
+//             (pi_rpRasterFile->IsCompatibleWith(HRFIntergraphRleFile::CLASS_ID)) ||
+//             (pi_rpRasterFile->IsCompatibleWith(HRFIntergraphTG4File::CLASS_ID)))
+//        {
+//        char Buffer[4];
+//
+//        itoa(ResolutionDescriptor.GetScanlineOrientation().m_ScanlineOrientation, Buffer, 10);
+//        ComposedFilename += Buffer;
+//        }
+//
+//    return BeFileName(ComposedFilename);
+//    }
 
 //:>--------------------------------------------------------------------------------------+
 //
@@ -292,30 +304,32 @@ TEST_P(ExportTester, LoadingRasters)
     HFCPtr<HGF2DWorldCluster> worldCluster = new HGFHMRStdWorldCluster();
     HPMPool pPool(64 * 1024, nullptr);
 
-    HFCPtr<HFCURL> UrlSource = new HFCURLFile(HFCURLFile::s_SchemeName() + "://" + Utf8String(GetParam().c_str()));
-    HRFRasterFileCreator const* pSrcCreator = HRFRasterFileFactory::GetInstance()->FindCreator(UrlSource, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
-    if (pSrcCreator == nullptr)
-        return;
-
-    HFCPtr<HRFRasterFile> pRasterFileSource = pSrcCreator->Create(UrlSource, HFC_READ_ONLY);
-    //Verify that the Rasterfile created is valid
-    ASSERT_FALSE(nullptr == pRasterFileSource);
-
-    HFCPtr<HGF2DCoordSys> pLogical = worldCluster->GetCoordSysReference(pRasterFileSource->GetPageWorldIdentificator(0));
-    HFCPtr<HRSObjectStore> pStore = new HRSObjectStore(&pPool, pRasterFileSource, 0, pLogical);
-    //HFCPtr<HPSObjectStore> pStore = new HPSObjectStore(&pPool, UrlSource, worldCluster);
-    ASSERT_TRUE(nullptr != pStore);
-
     try
         {
+        HFCPtr<HFCURL> UrlSource = new HFCURLFile(HFCURLFile::s_SchemeName() + "://" + Utf8String(GetParam().c_str()));
+        HRFRasterFileCreator const* pSrcCreator = HRFRasterFileFactory::GetInstance()->FindCreator(UrlSource, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
+        if (pSrcCreator == nullptr)
+            return;
+
+        HFCPtr<HRFRasterFile> pRasterFileSource = pSrcCreator->Create(UrlSource, HFC_READ_ONLY);
+        //Verify that the Rasterfile created is valid
+        ASSERT_FALSE(nullptr == pRasterFileSource);
+
+        HFCPtr<HGF2DCoordSys> pLogical = worldCluster->GetCoordSysReference(pRasterFileSource->GetPageWorldIdentificator(0));
+        HFCPtr<HRSObjectStore> pStore = new HRSObjectStore(&pPool, pRasterFileSource, 0, pLogical);
+        //HFCPtr<HPSObjectStore> pStore = new HPSObjectStore(&pPool, UrlSource, worldCluster);
+        ASSERT_TRUE(nullptr != pStore);
+
+
         HFCPtr<HRARaster> pRaster = pStore->LoadRaster();
         ASSERT_FALSE(pRaster == nullptr);
         //ASSERT_NO_THROW(pStore->LoadRaster());
         }
-    catch (...)
+    catch (HFCException& excep)
         {
         //&&LRV filter what are common error and what are not.
-        FAIL();
+        WString message(excep.GetExceptionMessage().c_str(), BentleyCharEncoding::Utf8);
+        FAIL() << message.c_str();
         }
     }
 
@@ -556,14 +570,14 @@ TEST_P(ExportTester, LoadingRasters)
 //                //outputFilePath.AppendToPath(filename.c_str());
 //                HFCPtr<HFCURL> pURL = new HFCURLFile(HFCURLFile::s_SchemeName() + "://" + outfilename.GetNameUtf8());
 //                                  
-//                HUTImportFromFileExportToFile exporter(worldCluster);
+//                std::unique_ptr<HUTImportFromFileExportToFile> exporter(new HUTImportFromFileExportToFile(worldCluster));
 //
-//                exporter.SetImportRasterFile(pRasterFileSource);
-//                exporter.SelectExportFileFormat(creator);
-//                exporter.SelectExportFilename(pURL);
-//                exporter.SelectPixelType(pCurrentPixelType->GetPixelTypeClassID());
-//                exporter.SelectCodec(pCurrentCodec->GetCodecClassID());
-//                exporter.SelectBlockType(pCurrentBlock->GetBlockType());
+//                exporter->SetImportRasterFile(pRasterFileSource);
+//                exporter->SelectExportFileFormat(creator);
+//                exporter->SelectExportFilename(pURL);
+//                exporter->SelectPixelType(pCurrentPixelType->GetPixelTypeClassID());
+//                exporter->SelectCodec(pCurrentCodec->GetCodecClassID());
+//                exporter->SelectBlockType(pCurrentBlock->GetBlockType());
 //
 //                try
 //                    {
@@ -588,7 +602,7 @@ TEST_P(ExportTester, LoadingRasters)
 //
 //:>+--------------------------------------------------------------------------------------
 INSTANTIATE_TEST_CASE_P(AllRastersInDirectory, ExportTester,
-                        ::testing::ValuesIn(s_GetDirectoryVector("C:\\Users\\Laurent.Robert-Veill\\Desktop\\FolderTestExport\\")));
+                        ::testing::ValuesIn(s_GetDirectoryVector(L"C:\\Users\\Laurent.Robert-Veill\\Desktop\\Images\\*")));
 
 
 
