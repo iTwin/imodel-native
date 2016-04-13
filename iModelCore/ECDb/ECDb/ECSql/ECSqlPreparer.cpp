@@ -525,16 +525,16 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassRefExp(NativeSqlBuilder::List& nativeS
         {
             case Exp::Type::ClassName:
                 return PrepareClassNameExp(nativeSqlSnippets, ctx, static_cast<ClassNameExp const&>(exp));
-            case Exp::Type::SubqueryRef:
-                return PrepareSubqueryRefExp(ctx, static_cast<SubqueryRefExp const*>(&exp));
             case Exp::Type::CrossJoin:
                 return PrepareCrossJoinExp(ctx, static_cast<CrossJoinExp const&>(exp));
+            case Exp::Type::ECRelationshipJoin:
+                return PrepareRelationshipJoinExp(ctx, static_cast<ECRelationshipJoinExp const&>(exp));
             case Exp::Type::NaturalJoin:
                 return PrepareNaturalJoinExp(ctx, static_cast<NaturalJoinExp const&>(exp));
             case Exp::Type::QualifiedJoin:
                 return PrepareQualifiedJoinExp(ctx, static_cast<QualifiedJoinExp const&>(exp));
-            case Exp::Type::RelationshipJoin:
-                return PrepareRelationshipJoinExp(ctx, static_cast<RelationshipJoinExp const&>(exp));
+            case Exp::Type::SubqueryRef:
+                return PrepareSubqueryRefExp(ctx, static_cast<SubqueryRefExp const*>(&exp));
         }
 
     BeAssert(false && "Unhandled ClassRef expression case");
@@ -1222,7 +1222,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareQueryExp(NativeSqlBuilder::List& nativeSqlS
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ctx, RelationshipJoinExp const& exp)
+ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ctx, ECRelationshipJoinExp const& exp)
     {
     // (from) INNER JOIN (to) ON (from.ECInstanceId = to.ECInstanceId)
     // (from) INNER JOIN (view) ON view.SourceECInstanceId = from.ECInstanceId INNER JOIN to ON view.TargetECInstanceId=to.ECInstanceId
@@ -1246,7 +1246,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
 
     switch (fromEP.GetLocation())
         {
-            case RelationshipJoinExp::ClassLocation::ExistInBoth:
+            case ECRelationshipJoinExp::ClassLocation::ExistInBoth:
             {
             switch (direction)
                 {
@@ -1262,7 +1262,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
                 };
             break;
             }
-            case RelationshipJoinExp::ClassLocation::ExistInSource:
+            case ECRelationshipJoinExp::ClassLocation::ExistInSource:
             {
             if (direction != JoinDirection::Implied)
                 {
@@ -1275,7 +1275,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
 
             fromIsSource = TriState::True;
             } break;
-            case RelationshipJoinExp::ClassLocation::ExistInTarget:
+            case ECRelationshipJoinExp::ClassLocation::ExistInTarget:
             {
             if (direction != JoinDirection::Implied)
                 {

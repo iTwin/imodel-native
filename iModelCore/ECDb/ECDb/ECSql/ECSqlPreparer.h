@@ -73,7 +73,7 @@ struct ECSqlExpPreparer
         static ECSqlStatus PreparePropertyNameListExp(NativeSqlBuilder::List&, ECSqlPrepareContext&, PropertyNameListExp const*);
         static ECSqlStatus PrepareQualifiedJoinExp(ECSqlPrepareContext&, QualifiedJoinExp const&);
         static ECSqlStatus PrepareQueryExp(NativeSqlBuilder::List&, ECSqlPrepareContext&, QueryExp const*);
-        static ECSqlStatus PrepareRelationshipJoinExp(ECSqlPrepareContext&, RelationshipJoinExp const&);
+        static ECSqlStatus PrepareRelationshipJoinExp(ECSqlPrepareContext&, ECRelationshipJoinExp const&);
         static ECSqlStatus PrepareSelectClauseExp(ECSqlPrepareContext&, SelectClauseExp const*);
         static ECSqlStatus PrepareSubqueryExp(ECSqlPrepareContext&, SubqueryExp const*);
         static ECSqlStatus PrepareSubqueryRefExp(ECSqlPrepareContext&, SubqueryRefExp const*);

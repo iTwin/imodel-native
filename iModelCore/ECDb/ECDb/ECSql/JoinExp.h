@@ -144,9 +144,9 @@ public:
 //=======================================================================================
 //! @bsiclass                                                Affan.Khan      05/2013
 //+===============+===============+===============+===============+===============+======
-struct RelationshipJoinExp: JoinExp
+struct ECRelationshipJoinExp: JoinExp
     {    
-DEFINE_EXPR_TYPE(RelationshipJoin) 
+DEFINE_EXPR_TYPE(ECRelationshipJoin) 
 public:
     enum class ClassLocation
         {
@@ -158,7 +158,7 @@ public:
     ;
     struct ResolvedEndPoint
         {
-        friend RelationshipJoinExp;
+        friend ECRelationshipJoinExp;
     private:
         ClassNameExp const*    m_classRef;
         ClassLocation           m_location;
@@ -197,7 +197,7 @@ private:
     virtual FinalizeParseStatus _FinalizeParsing (ECSqlParseContext&, FinalizeParseMode mode) override;
 
 public:
-    RelationshipJoinExp(std::unique_ptr<ClassRefExp> from, std::unique_ptr<ClassRefExp> to, std::unique_ptr<ClassRefExp> relationship, JoinDirection direction)
+    ECRelationshipJoinExp(std::unique_ptr<ClassRefExp> from, std::unique_ptr<ClassRefExp> to, std::unique_ptr<ClassRefExp> relationship, JoinDirection direction)
         : JoinExp(ECSqlJoinType::JoinUsingRelationship, move (from), move (to)), m_direction(direction)
         {
         m_relationshipClassIndex = AddChild (move (relationship));

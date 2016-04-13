@@ -86,7 +86,7 @@ Utf8String NaturalJoinExp::_ToString() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan       08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-Exp::FinalizeParseStatus RelationshipJoinExp::_FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode)
+Exp::FinalizeParseStatus ECRelationshipJoinExp::_FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode)
     {
     if (mode == FinalizeParseMode::AfterFinalizingChildren)
         {
@@ -101,7 +101,7 @@ Exp::FinalizeParseStatus RelationshipJoinExp::_FinalizeParsing(ECSqlParseContext
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan       08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-BentleyStatus RelationshipJoinExp::ResolveRelationshipEnds (ECSqlParseContext& ctx)
+BentleyStatus ECRelationshipJoinExp::ResolveRelationshipEnds (ECSqlParseContext& ctx)
     {
     auto fromExpression = FindFromExpression();
     PRECONDITION(fromExpression != nullptr, ERROR);
@@ -280,7 +280,7 @@ BentleyStatus RelationshipJoinExp::ResolveRelationshipEnds (ECSqlParseContext& c
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan       08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-Utf8String RelationshipJoinExp::_ToECSql() const 
+Utf8String ECRelationshipJoinExp::_ToECSql() const 
     {
     auto tmp = GetFromClassRef().ToECSql() + " JOIN " + GetToClassRef().ToECSql() + " USING " + GetRelationshipClass ().ToECSql();
     if (m_direction != JoinDirection::Implied)
@@ -292,7 +292,7 @@ Utf8String RelationshipJoinExp::_ToECSql() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan       08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-Utf8String RelationshipJoinExp::_ToString() const 
+Utf8String ECRelationshipJoinExp::_ToString() const 
     {
     Utf8String str ("RelationshipJoin [Direction: ");
     str.append (ExpHelper::ToECSql (m_direction)).append ("]");
