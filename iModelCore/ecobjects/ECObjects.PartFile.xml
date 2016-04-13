@@ -224,12 +224,22 @@
       <Directories DirectoryListName="ECObjects" />
     </Product>
 
-    <Part Name="SchemaConverter" BentleyBuildMakeFile="tools/SchemaConverter/SchemaConverter.mke" >
+    <Part Name="SchemaConverter" BentleyBuildMakeFile="tools/SchemaConverter/SchemaConverter.mke" ExcludePlatforms="Android*,Linux*,iOS*">
         <SubPart PartName="ECObjectsNative" />
         <Bindings>
             <Files ProductDirectoryName="SchemaConverterExe">
                 Delivery/SchemaConverter.exe
                 Delivery/SchemaConverter.logging.config.xml
+            </Files>
+        </Bindings>
+    </Part>
+    
+    <Part Name="SchemaResourceGenerator" BentleyBuildMakeFile="tools/SchemaResourceGenerator/SchemaResourceGenerator.mke" ExcludePlatforms="Android*,Linux*,iOS*">
+        <SubPart PartName="ECObjectsNative" />
+        <Bindings>
+            <Files ProductDirectoryName="SchemaResourceGeneratorExe">
+                Delivery/SchemaResourceGenerator.exe
+                Delivery/SchemaResourceGenerator.logging.config.xml
             </Files>
         </Bindings>
     </Part>
@@ -279,10 +289,16 @@
     <ProductDirectoryList ListName="SchemaConverter">
         <ProductDirectory Name="SchemaConverterExe"     Path="Runtime"/>
     </ProductDirectoryList>
+    
+    <ProductDirectoryList ListName="SchemaResourceGenerator">
+        <ProductDirectory Name="SchemaResourceGeneratorExe"     Path="Runtime"/>
+    </ProductDirectoryList>
     <Product Name="ECObjectsTools">
         <SubPart    PartName="SchemaConverter" />
+        <SubPart    PartName="SchemaResourceGenerator" />
         <SubProduct ProductName="ECObjects"/>
         <Directories DirectoryListName="SchemaConverter" />
+        <Directories DirectoryListName="SchemaResourceGenerator" />
         <Directories DirectoryListName="ECObjects" />
     </Product>
     
