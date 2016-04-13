@@ -54,28 +54,19 @@ DbResult ECDb::Impl::Initialize(BeFileNameCR ecdbTempDir, BeFileNameCP hostAsset
     return BE_SQLITE_OK;
     }
 
-//--------------------------------------------------------------------------------------
-// @bsimethod                                Krischan.Eberle                07/2014
-//---------------+---------------+---------------+---------------+---------------+------
-DbResult ECDb::Impl::OnDbOpened() const
-    {
-    for (BeBriefcaseBasedIdSequence const* sequence : GetSequences())
-        {
-        const DbResult stat = sequence->Initialize();
-        if (stat != BE_SQLITE_OK)
-            return stat;
-        }
-
-    return BE_SQLITE_OK;
-    }
 
 //--------------------------------------------------------------------------------------
-// @bsimethod                                Krischan.Eberle                11/2012
+// @bsimethod                                Krischan.Eberle                12/2012
 //---------------+---------------+---------------+---------------+---------------+------
 DbResult ECDb::Impl::OnDbCreated() const
     {
-    const DbResult stat = OnDbOpened();
-    if (stat != BE_SQLITE_OK)
+    DbResult stat = InitializeSequences();
+    if (BE_SQLITE_OK != stat)
+        return stat;
+
+    //set initial value of sequence to current briefcase id.
+    stat = ResetSequences();
+    if (BE_SQLITE_OK != stat)
         return stat;
 
     return ECDbProfileManager::CreateECProfile(m_ecdb);
@@ -121,25 +112,6 @@ void ECDb::Impl::ClearECDbCache() const
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("After ECDb::ClearECDbCache");
     }
 
-//--------------------------------------------------------------------------------------
-// @bsimethod                                Krischan.Eberle                12/2014
-//---------------+---------------+---------------+---------------+---------------+------
-std::vector<BeBriefcaseBasedIdSequence const*> ECDb::Impl::GetSequences() const
-    {
-    return std::vector<BeBriefcaseBasedIdSequence const*>  {
-        &m_ecInstanceIdSequence,
-            &m_ecSchemaIdSequence,
-            &m_ecClassIdSequence,
-            &m_ecPropertyIdSequence,
-            &m_ecEnumIdSequence,
-            &m_classmapIdSequence,
-            &m_columnIdSequence,
-            &m_constraintIdSequence,
-            &m_tableIdSequence,
-            &m_propertypathIdSequence,
-            &m_indexIdSequence};
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  03/2015
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -175,10 +147,26 @@ bool ECDb::Impl::TryGetSqlFunction(DbFunction*& function, Utf8CP name, int argCo
     return true;
     }
 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  04/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult ECDb::Impl::InitializeSequences() const
+    {
+    for (BeBriefcaseBasedIdSequence const* sequence : GetSequences())
+        {
+        const DbResult stat = sequence->Initialize();
+        if (stat != BE_SQLITE_OK)
+            return stat;
+        }
+
+    return BE_SQLITE_OK;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  12/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ECDb::Impl::ResetSequences(BeBriefcaseId* repoId)
+DbResult ECDb::Impl::ResetSequences(BeBriefcaseId* repoId) const
     {
     BeBriefcaseId actualRepoId = repoId != nullptr ? *repoId : m_ecdb.GetBriefcaseId();
     for (BeBriefcaseBasedIdSequence const* sequence : GetSequences())
@@ -190,6 +178,26 @@ DbResult ECDb::Impl::ResetSequences(BeBriefcaseId* repoId)
 
     return BE_SQLITE_OK;
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                12/2014
+//---------------+---------------+---------------+---------------+---------------+------
+std::vector<BeBriefcaseBasedIdSequence const*> ECDb::Impl::GetSequences() const
+    {
+    return std::vector<BeBriefcaseBasedIdSequence const*>  {
+        &m_ecInstanceIdSequence,
+            &m_ecSchemaIdSequence,
+            &m_ecClassIdSequence,
+            &m_ecPropertyIdSequence,
+            &m_ecEnumIdSequence,
+            &m_classmapIdSequence,
+            &m_columnIdSequence,
+            &m_constraintIdSequence,
+            &m_tableIdSequence,
+            &m_propertypathIdSequence,
+            &m_indexIdSequence};
+    }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  11/2015

@@ -22,19 +22,7 @@ DbResult ECDbProfileManager::CreateECProfile(ECDbR ecdb)
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin CreateECProfile");
 
     StopWatch timer(true);
-    // Set up the id sequences as the upgrade steps might add entries to the ec tables and therefore
-    // need the sequence.
-    // Setting up the sequence just means to reset them to the current repo id
-    auto stat = ecdb.GetECDbImplR().ResetSequences();
-    if (stat != BE_SQLITE_OK)
-        {
-        LOG.errorv("Failed to create %s profile in file '%s'. Could not initialize id sequences.",
-                   PROFILENAME, ecdb.GetDbFileName());
-        ecdb.AbandonChanges();
-        return stat;
-        }
-
-    stat = CreateECProfileTables(ecdb);
+    DbResult stat = CreateECProfileTables(ecdb);
     if (stat != BE_SQLITE_OK)
         {
         LOG.errorv("Failed to create %s profile in %s: %s", PROFILENAME, ecdb.GetDbFileName(), ecdb.GetLastError().c_str());

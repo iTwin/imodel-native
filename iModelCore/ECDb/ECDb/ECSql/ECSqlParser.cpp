@@ -1143,13 +1143,6 @@ BentleyStatus ECSqlParser::ParseDatetimeValueExp(unique_ptr<ValueExp>& exp, OSQL
     if (factorNode == nullptr)
         return ERROR;
 
-    const size_t factorNodeChildCount = factorNode->count();
-    if (factorNodeChildCount == 1 || factorNodeChildCount == 2)
-        {
-        BeAssert(false && "Wrong grammar");
-        return ERROR;
-        }
-
     OSQLParseNode const* primaryNode = factorNode->getByRule(OSQLParseNode::datetime_primary);
     if (primaryNode == nullptr)
         return ERROR;

@@ -126,13 +126,14 @@ private:
     void AddAppData(ECDb::AppData::Key const& key, ECDb::AppData* appData, bool deleteOnClearCache) const;
 
     void ClearECDbCache() const;
-    DbResult OnDbOpened() const;
+    DbResult OnDbOpening() const { return InitializeSequences(); }
     DbResult OnDbCreated() const;
     DbResult OnBriefcaseIdChanged(BeBriefcaseId newBriefcaseId);
     void OnDbChangedByOtherConnection() const { ClearECDbCache(); }
     DbResult VerifySchemaVersion(Db::OpenParams const& params) const { return ECDbProfileManager::UpgradeECProfile(m_ecdb, params); }
 
-    //other private methods
+    DbResult InitializeSequences() const;
+    DbResult ResetSequences(BeBriefcaseId* repoId = nullptr) const;
     std::vector<BeBriefcaseBasedIdSequence const*> GetSequences() const;
 
 public:
@@ -140,7 +141,6 @@ public:
 
     ECDbMap const& GetECDbMap() const { return *m_ecdbMap; }
 
-    DbResult ResetSequences(BeBriefcaseId* repoId = nullptr);
     BeBriefcaseBasedIdSequence& GetECInstanceIdSequence() { return m_ecInstanceIdSequence; }
     BeBriefcaseBasedIdSequence& GetECSchemaIdSequence() { return m_ecSchemaIdSequence; }
     BeBriefcaseBasedIdSequence& GetECClassIdSequence() { return m_ecClassIdSequence; }
