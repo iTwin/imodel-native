@@ -29,6 +29,7 @@ struct BackwardsCompatibilityTests : public DgnDbTestFixture
 
     protected:
         CompatibilityStatus VerifyElementsAndModels();
+        Utf8CP getCompatibilityStatusString(CompatibilityStatus num);
     };
 
 //---------------------------------------------------------------------------------------
@@ -125,6 +126,40 @@ CompatibilityStatus BackwardsCompatibilityTests::VerifyElementsAndModels()
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                      Muhammad Hassan                  04/16
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8CP BackwardsCompatibilityTests::getCompatibilityStatusString(CompatibilityStatus stat)
+    {
+    switch (stat)
+        {
+            case CompatibilityStatus::Success:
+                return "SUCCESS";
+                break;
+            case CompatibilityStatus::Error:
+                return "ERROR";
+                break;
+            case CompatibilityStatus::BadElement:
+                return "BadElement";
+                break;
+            case CompatibilityStatus::BadModel:
+                return "BadModel";
+                break;
+            case CompatibilityStatus::ModelInsertFailed:
+                return "ModelInsertFailed";
+                break;
+            case CompatibilityStatus::ElementInsertFailed:
+                return "ElementInsertFailed";
+                break;
+            case CompatibilityStatus::ModelFillFailed:
+                return "ModelFillFailed";
+                break;
+            default:
+                return "Bad Enum Value";
+                break;
+        }
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                      Muhammad Hassan                  02/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(BackwardsCompatibilityTests, OpenDgndbInCurrent)
@@ -140,11 +175,16 @@ TEST_F(BackwardsCompatibilityTests, OpenDgndbInCurrent)
     BeTest::GetHost().GetOutputRoot(outputRoot);
 
     BeFileName resultsFilePath = outputRoot;
-    resultsFilePath.AppendToPath(L"CompatibilityResults_0601.txt");
+    resultsFilePath.AppendToPath(L"CompatibilityResults_0601.csv");
 
     FILE *f;
     f = fopen(resultsFilePath.GetNameUtf8().c_str(), "a");
-    fprintf(f, "Test Files Stream: DgnDb06 \n");
+    if (f != NULL)
+        {
+        fprintf(f, "FileName, PublishedThrough, TestedIn, FileOpeningStatus\n");
+        }
+    else
+        ASSERT_TRUE(false)<<"Error opening csv file";
 
     BeFileListIterator filesIterator(srcFilesPath, false);
     BeFileName dbName;
@@ -178,11 +218,11 @@ TEST_F(BackwardsCompatibilityTests, OpenDgndbInCurrent)
                 }
 
             if (writeStatus)
-                fprintf(f, "SUCCESS: %ls \n", outputFilePath.GetFileNameAndExtension().c_str());
+                fprintf(f, "%ls, DgnDb06, DgnDb0601, %s\n", outputFilePath.GetFileNameAndExtension().c_str(), getCompatibilityStatusString(stat));
             else
-                fprintf(f, "ERROR: %ls Description: %d \n", outputFilePath.GetFileNameAndExtension().c_str(), stat);
+                fprintf(f, "%ls, DgnDb06, DgnDb0601, %s\n", outputFilePath.GetFileNameAndExtension().c_str(), getCompatibilityStatusString(stat));
             }
         else
-            fprintf(f, "FileCopyERROR: %ls \n", dbName.GetFileNameAndExtension().c_str());
+            fprintf(f, "%ls, DgnDb06, DgnDb0601, %s\n", dbName.GetFileNameAndExtension().c_str(), "Error Copying File");
         }
     }
