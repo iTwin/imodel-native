@@ -76,6 +76,7 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #include "SMSQLiteUVStore.h"
 #include "SMSQLiteUVIndiceTileStore.h"
 #include "SMSQLiteTextureTileStore.h"
+#include <ImagePP\all\h\HIMMosaic.h>
 
 
 
@@ -332,6 +333,10 @@ StatusInt IScalableMeshCreator::SetCompression(ScalableMeshCompressionType compr
     return SUCCESS;
     }
 
+StatusInt   IScalableMeshCreator::SetTextureMosaic(HIMMosaic* mosaicP)
+    {
+    return m_implP->SetTextureMosaic(mosaicP);
+    }
 
 
 StatusInt IScalableMeshCreator::SetBaseGCS (const BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& gcsPtr)
@@ -446,6 +451,13 @@ IScalableMeshCreator::Impl::~Impl()
     assert(BSISUCCESS == status);
     m_scmPtr = 0;
     //m_sources.UnregisterEditListener(*this);
+    }
+
+StatusInt IScalableMeshCreator::Impl::SetTextureMosaic(HIMMosaic* mosaicP)
+    {
+    if (m_scmPtr.get() == nullptr) return ERROR;
+    m_scmPtr->TextureFromRaster(mosaicP);
+    return SUCCESS;
     }
 
 /*----------------------------------------------------------------------------+

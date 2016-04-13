@@ -51,6 +51,7 @@ extern bool   GET_HIGHEST_RES;
 #include <Vu\VuApi.h>
 #include <Vu\vupoly.fdf>
 #include "vuPolygonClassifier.h"
+#include <ImagePP\all\h\HIMMosaic.h>
 //#include "CGALEdgeCollapse.h"
 
 
@@ -134,6 +135,12 @@ const size_t DEFAULT_WORKING_LAYER = 0;
 /*----------------------------------------------------------------------------+
 |IScalableMesh Method Definition Section - Begin
 +----------------------------------------------------------------------------*/
+
+void IScalableMesh::TextureFromRaster(HIMMosaic* mosaicP)
+    {
+    return _TextureFromRaster(mosaicP);
+    }
+
 _int64 IScalableMesh::GetPointCount()
     {
     return _GetPointCount();
@@ -1285,6 +1292,15 @@ template <class POINT> __int64 ScalableMesh<POINT>::_GetPointCount()
     return nbPoints;
     }
 
+template <class POINT> void ScalableMesh<POINT>::_TextureFromRaster(HIMMosaic* mosaicP)
+    {
+    m_scmIndexPtr->TextureFromRaster(mosaicP);
+    m_scmIndexPtr->Store();
+    m_smSQLitePtr->CommitAll();
+    m_scmIndexPtr = 0;
+    Open();
+    }
+
 /*----------------------------------------------------------------------------+
 |ScalableMesh::_GetBreaklineCount
 +----------------------------------------------------------------------------*/
@@ -1883,6 +1899,9 @@ template <class POINT> ScalableMeshSingleResolutionPointIndexView<POINT>::Scalab
 template <class POINT> ScalableMeshSingleResolutionPointIndexView<POINT>::~ScalableMeshSingleResolutionPointIndexView()
     {
     } 
+
+template <class POINT> void ScalableMeshSingleResolutionPointIndexView<POINT>::_TextureFromRaster(HIMMosaic* mosaicP)
+    {}
 
 // Inherited from IDTM   
 template <class POINT> __int64 ScalableMeshSingleResolutionPointIndexView<POINT>::_GetPointCount()

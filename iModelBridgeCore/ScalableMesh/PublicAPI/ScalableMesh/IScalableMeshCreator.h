@@ -23,6 +23,7 @@
 #include <ScalableMesh/IScalableMeshTime.h>
 #include <ScalableMesh/IScalableMeshSources.h>
 #include <ScalableMesh/GeoCoords/GCS.h>
+#include <ImagePP\all\h\HIMMosaic.h>
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
@@ -62,6 +63,8 @@ public:
         //BENTLEYSTM_EXPORT bool                    AreAllSourcesReachable     () const;
 
         BENTLEYSTM_EXPORT StatusInt               Create                     (bool isSingleFile = true);    
+
+        BENTLEYSTM_EXPORT StatusInt               SetTextureMosaic(BENTLEY_NAMESPACE_NAME::ImagePP::HIMMosaic* mosaicP);
 
 
         // TDORAY: Rename in GetGCS once GetBaseGCS is used.

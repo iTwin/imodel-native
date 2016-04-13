@@ -2158,7 +2158,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
     pTextureBitmap->CopyFrom(*sourceRasterP, copyFromOptions);
 #ifdef ACTIVATE_TEXTURE_DUMP
     WString fileName = L"file://";
-    fileName.append(L"e:\\output\\scmesh\\2015-11-19\\texture_before_");
+    fileName.append(L"e:\\output\\scmesh\\2016-4-11\\texture_before_");
     fileName.append(std::to_wstring(m_nodeHeader.m_level).c_str());
     fileName.append(L"_");
     fileName.append(std::to_wstring(ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_nodeExtent)).c_str());
@@ -2171,9 +2171,9 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
     size_t t = 0;
     for (size_t i = 0; i < 1024 * 1024 * 4; i += 4)
         {
-        pixelBuffer[t] = *(pixelBufferP + 3 * sizeof(int) + i);
-        pixelBuffer[t + 1] = *(pixelBufferP + 3 * sizeof(int) + i + 1);
-        pixelBuffer[t + 2] = *(pixelBufferP + 3 * sizeof(int) + i + 2);
+        pixelBuffer[t] = *(pixelBufferPRGBA + 3 * sizeof(int) + i);
+        pixelBuffer[t + 1] = *(pixelBufferPRGBA + 3 * sizeof(int) + i + 1);
+        pixelBuffer[t + 2] = *(pixelBufferPRGBA + 3 * sizeof(int) + i + 2);
         t += 3;
         }
     HRFBmpCreator::CreateBmpFileFromImageData(fileUrl,
@@ -2182,7 +2182,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
                                               pImageDataPixelType,
                                               pixelBuffer);
     delete[] pixelBuffer;
-
+//#ifdef ACTIVATE_TEXTURE_DUMP
     auto codec = new HCDCodecIJG(1024, 1024, 8 * 4);
     codec->SetSourceColorMode(HCDCodecIJG::ColorModes::RGB);
     codec->SetQuality(100);
@@ -2232,14 +2232,15 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
                                               pixelBuffer);
     delete[] pixelBuffer;
 #endif
+    Byte *pPixel = pixelBufferP + 3 * sizeof(int);
     for (size_t i = 0; i < textureWidthInPixels*textureHeightInPixels; ++i)
         {
-        *(pixelBufferP + 3 * sizeof(int) + i * 3) = pixelBufferPRGBA[i * 4];
-        *(pixelBufferP + 3 * sizeof(int) + i * 3 + 1) = pixelBufferPRGBA[i * 4 + 1];
-        *(pixelBufferP + 3 * sizeof(int) + i * 3 + 2) = pixelBufferPRGBA[i * 4 + 2];
+        *pPixel++ = pixelBufferPRGBA[i * 4];
+        *pPixel++ = pixelBufferPRGBA[i * 4 + 1];
+        *pPixel++ = pixelBufferPRGBA[i * 4 + 2];
         }
-    PushTexture(texId, pixelBufferP + 3 * sizeof(int), textureWidthInPixels * textureHeightInPixels * 3);
-    SetTextureDirty(texId);
+    PushTexture(texId, pixelBufferP, 3 * sizeof(int) + textureWidthInPixels * textureHeightInPixels * 3);
+     SetTextureDirty(texId);
     StoreTexture(texId);
 
     RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> existingFaces(GetPtsIndicePtr());

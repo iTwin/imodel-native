@@ -773,7 +773,7 @@ int IScalableMeshSourceCreator::Impl::ImportRasterSourcesTo(HFCPtr<IndexType>& p
     HIMMosaic::RasterList rasterList;
     for (auto& source : filteredSources)
         {
-        //const ILocalFileMoniker* moniker(dynamic_cast<const ILocalFileMoniker*>(&source->GetPath()));
+
         WString path = WString(L"file://") + source->GetPath();
         HFCPtr<HGF2DCoordSys>  pLogicalCoordSys;
         HFCPtr<HRSObjectStore> pObjectStore;
@@ -789,7 +789,7 @@ int IScalableMeshSourceCreator::Impl::ImportRasterSourcesTo(HFCPtr<IndexType>& p
 
         // Get the raster from the store
         pRaster = pObjectStore->LoadRaster();
-       // pOnDemandRaster = new HRAOnDemandRaster(rasterMemPool, pRaster->IsOpaque(), pRaster->GetEffectiveShape(), ,new HPSWorldCluster(), HGF2DWorld_HMRWORLD, , pRaster->HasLookAhead(), false, false);
+       
         HASSERT(pRaster != NULL);
         //NEEDS_WORK_SM: do not do this if raster does not intersect sm extent
         rasterList.push_back(pRaster.GetPtr());

@@ -24,8 +24,14 @@ SMSQLiteFile::~SMSQLiteFile()
     m_database = nullptr;
 }
 
+void SMSQLiteFile::CommitAll()
+    {
+    if (m_database != nullptr) m_database->SaveChanges();
+    }
+
 bool SMSQLiteFile::Close()
 {
+m_database->SaveChanges();
     //DbResult result;
     /*result =*/ m_database->CloseDb();
     
