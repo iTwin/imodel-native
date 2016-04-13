@@ -526,7 +526,8 @@ ECObjectsStatus ECClass::AddProperty (ECPropertyP& pProperty, bool resolveConfli
         {
         if (!resolveConflicts)
             {
-            LOG.errorv("Cannot create property '%s' because it already exists in this ECClass", pProperty->GetName().c_str());
+            LOG.errorv("Cannot create property '%s' because it already exists in this ECClass (%s:%s)", pProperty->GetName().c_str(), pProperty->GetClass().GetSchema().GetFullSchemaName().c_str(),
+                       pProperty->GetClass().GetName().c_str());
             return ECObjectsStatus::NamedItemAlreadyExists;
             }
         Utf8String newName;
@@ -1064,7 +1065,8 @@ ECObjectsStatus ECClass::_AddBaseClass(ECClassCR baseClass, bool insertAtBeginni
 
     if (GetClassType() != baseClass.GetClassType())
         {
-        LOG.errorv("Cannot add class '%s' as a base class to '%s' because they are of differing class types", baseClass.GetFullName(), GetFullName());
+        if (!resolveConflicts)
+            LOG.errorv("Cannot add class '%s' as a base class to '%s' because they are of differing class types", baseClass.GetFullName(), GetFullName());
         return ECObjectsStatus::BaseClassUnacceptable;
         }
 
@@ -1441,7 +1443,7 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadCo
             }
         else if (!isSchemaSupplemental && (0 == strcmp (childNodeName, EC_BASE_CLASS_ELEMENT)))
             {
-            SchemaReadStatus status = _ReadBaseClassFromXml(childNode, context);
+            SchemaReadStatus status = _ReadBaseClassFromXml(childNode, context, conversionSchema);
             if (SchemaReadStatus::Success != status)
                 return status;
 
@@ -1555,7 +1557,10 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadCo
     return SchemaReadStatus::Success;
     }
 
-SchemaReadStatus ECClass::_ReadBaseClassFromXml (BeXmlNodeP childNode, ECSchemaReadContextR context)
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr            09/2012
+//---------------+---------------+---------------+---------------+---------------+-------
+SchemaReadStatus ECClass::_ReadBaseClassFromXml (BeXmlNodeP childNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema)
     {
     Utf8String qualifiedClassName;
     childNode->GetContent (qualifiedClassName);
@@ -1588,8 +1593,25 @@ SchemaReadStatus ECClass::_ReadBaseClassFromXml (BeXmlNodeP childNode, ECSchemaR
         return SchemaReadStatus::InvalidECSchemaXml;
         }
 
-    if (ECObjectsStatus::Success != AddBaseClass(*baseClass))
+    bool resolveConflicts = false;
+    if (nullptr != conversionSchema)
         {
+        ECClassCP conversionClass = conversionSchema->GetClassCP(GetName().c_str());
+        if (nullptr != conversionClass && conversionClass->GetCustomAttribute("IgnoreBaseClass").IsValid())
+            {
+            resolveConflicts = true;
+            }
+        }
+
+    if (ECObjectsStatus::Success != AddBaseClass(*baseClass, false, resolveConflicts))
+        {
+        if (resolveConflicts)
+            {
+            LOG.warningv("Ignoring incompatible base class '%s:%s' (%d) for '%s:%s' (%d) due to 'IgnoreBaseClass' override.",
+                         baseClass->GetSchema().GetFullSchemaName().c_str(), baseClass->GetName().c_str(), baseClass->GetClassType(),
+                         GetSchema().GetFullSchemaName().c_str(), GetName().c_str(), GetClassType());
+                return SchemaReadStatus::Success;
+            }
         LOG.errorv("Invalid ECSchemaXML: The ECClass '%s:%s' (%d) has a base class '%s:%s' (%d) but their types differ.",
                      GetSchema().GetFullSchemaName().c_str(), GetName().c_str(), GetClassType(),
                      baseClass->GetSchema().GetFullSchemaName().c_str(), baseClass->GetName().c_str(), baseClass->GetClassType());
@@ -1599,7 +1621,9 @@ SchemaReadStatus ECClass::_ReadBaseClassFromXml (BeXmlNodeP childNode, ECSchemaR
     return SchemaReadStatus::Success;
     }
 
-
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr            09/2012
+//---------------+---------------+---------------+---------------+---------------+-------
 SchemaReadStatus ECClass::_ReadPropertyFromXmlAndAddToClass( ECPropertyP ecProperty, BeXmlNodeP& childNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, Utf8CP childNodeName, int ecXmlVersionMajor)
     {
     // read the property data.
@@ -1617,8 +1641,6 @@ SchemaReadStatus ECClass::_ReadPropertyFromXmlAndAddToClass( ECPropertyP ecPrope
 
     if (ECObjectsStatus::Success != this->AddProperty (ecProperty, resolveConflicts))
         {
-        LOG.errorv ("Invalid ECSchemaXML: Failed to read ECClass '%s:%s' because a problem occurred while adding ECProperty '%s'", 
-            this->GetName().c_str(), this->GetSchema().GetName().c_str(), childNodeName);
         delete ecProperty;
         return SchemaReadStatus::InvalidECSchemaXml;
         }

@@ -504,14 +504,16 @@ void SchemaXmlReader2::DetermineClassTypeAndModifier(Utf8StringCR className, ECS
     else
         classModifier = ECClassModifier::None;
 
-    if (1 < sum)
-        LOG.warningv("Class '%s' in schema '%s' has more than one type flag set to true: isStruct(%d) isDomainClass(%d) isCustomAttributeClass(%d).  Only one is allowed, defaulting to %s.  "
+    if (!m_conversionSchema.IsValid())
+        {
+        if (1 < sum)
+            LOG.warningv("Class '%s' in schema '%s' has more than one type flag set to true: isStruct(%d) isDomainClass(%d) isCustomAttributeClass(%d).  Only one is allowed, defaulting to %s.  "
                      "Modify the schema or use the ECv3ConversionAttributes in a conversion schema named '%s' to force a different class type.",
                      className.c_str(), schemaOut->GetFullSchemaName().c_str(), isStruct, isDomain, isCA, isStruct ? "Struct" : "CustomAttribute",
                      schemaOut->GetFullSchemaName().insert(schemaOut->GetName().length(), "_V3Conversion").c_str());
 
-    if (!m_conversionSchema.IsValid())
         return;
+        }
 
     ECClassCP ecClass = m_conversionSchema->GetClassCP(className.c_str());
     if (nullptr == ecClass)
@@ -532,6 +534,12 @@ void SchemaXmlReader2::DetermineClassTypeAndModifier(Utf8StringCR className, ECS
         WriteLogMessage(ecClass, "ECClass", "StructClass");
         classType = ECClassType::Struct;
         }
+    else if (1 < sum)
+        LOG.warningv("Class '%s' in schema '%s' has more than one type flag set to true: isStruct(%d) isDomainClass(%d) isCustomAttributeClass(%d).  Only one is allowed, defaulting to %s.  "
+                     "Modify the schema or use the ECv3ConversionAttributes in a conversion schema named '%s' to force a different class type.",
+                     className.c_str(), schemaOut->GetFullSchemaName().c_str(), isStruct, isDomain, isCA, isStruct ? "Struct" : "CustomAttribute",
+                     schemaOut->GetFullSchemaName().insert(schemaOut->GetName().length(), "_V3Conversion").c_str());
+
 
     if (ecClass->IsDefined("ForceAbstract"))
         {
