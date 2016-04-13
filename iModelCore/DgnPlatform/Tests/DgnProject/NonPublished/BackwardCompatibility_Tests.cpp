@@ -13,12 +13,12 @@
 enum class CompatibilityStatus
     {
     Success,
-    Error,
-    BadElement,
-    BadModel,
-    ModelInsertFailed,
-    ElementInsertFailed,
-    ModelFillFailed
+    ERROR_FileOpeningFailed,
+    ERROR_BadElement,
+    ERROR_BadModel,
+    ERROR_ModelInsertFailed,
+    ERROR_ElementInsertFailed,
+    ERROR_ModelFillFailed
     };
 
 struct BackwardsCompatibilityTests : public DgnDbTestFixture
@@ -69,7 +69,7 @@ CompatibilityStatus BackwardsCompatibilityTests::insertTestElement()
     DgnClassId mclassId = DgnClassId(m_db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel));
     SpatialModelPtr model = new SpatialModel(SpatialModel::CreateParams(*m_db, mclassId, DgnModel::CreateModelCode("newModel")));
     if (DgnDbStatus::Success != model->Insert()) /* Insert the new model into the DgnDb */
-        return CompatibilityStatus::ModelInsertFailed;
+        return CompatibilityStatus::ERROR_ModelInsertFailed;
 
     DgnElementPtr element;
     DgnDbStatus insertStatus;
@@ -79,7 +79,7 @@ CompatibilityStatus BackwardsCompatibilityTests::insertTestElement()
 
         model->GetDgnDb().Elements().Insert(*element, &insertStatus);
         if (DgnDbStatus::Success != insertStatus)
-            return CompatibilityStatus::ElementInsertFailed;
+            return CompatibilityStatus::ERROR_ElementInsertFailed;
         }
 
     return CompatibilityStatus::Success;
@@ -99,13 +99,13 @@ CompatibilityStatus BackwardsCompatibilityTests::VerifyElementsAndModels()
         //printf("modelName: %s \n", model->GetCode().GetValue().c_str());
         if (!model.IsValid())
             {
-            status = CompatibilityStatus::BadModel;
+            status = CompatibilityStatus::ERROR_BadModel;
             break;
             }
         model->FillModel();
         if (!model->IsFilled())
             {
-            status = CompatibilityStatus::ModelFillFailed;
+            status = CompatibilityStatus::ERROR_ModelFillFailed;
             break;
             }
 
@@ -117,7 +117,7 @@ CompatibilityStatus BackwardsCompatibilityTests::VerifyElementsAndModels()
             DgnElementCPtr elementCPtr = m_db->Elements().GetElement(elementId);
             if (!elementCPtr.IsValid())
                 {
-                status = CompatibilityStatus::BadElement;
+                status = CompatibilityStatus::ERROR_BadElement;
                 break;
                 }
             }
@@ -135,23 +135,23 @@ Utf8CP BackwardsCompatibilityTests::getCompatibilityStatusString(CompatibilitySt
             case CompatibilityStatus::Success:
                 return "SUCCESS";
                 break;
-            case CompatibilityStatus::Error:
-                return "ERROR";
+            case CompatibilityStatus::ERROR_FileOpeningFailed:
+                return "ERROR_FileOpeningFailed";
                 break;
-            case CompatibilityStatus::BadElement:
-                return "BadElement";
+            case CompatibilityStatus::ERROR_BadElement:
+                return "ERROR_BadElement";
                 break;
-            case CompatibilityStatus::BadModel:
-                return "BadModel";
+            case CompatibilityStatus::ERROR_BadModel:
+                return "ERROR_BadModel";
                 break;
-            case CompatibilityStatus::ModelInsertFailed:
-                return "ModelInsertFailed";
+            case CompatibilityStatus::ERROR_ModelInsertFailed:
+                return "ERROR_ModelInsertFailed";
                 break;
-            case CompatibilityStatus::ElementInsertFailed:
-                return "ElementInsertFailed";
+            case CompatibilityStatus::ERROR_ElementInsertFailed:
+                return "ERROR_ElementInsertFailed";
                 break;
-            case CompatibilityStatus::ModelFillFailed:
-                return "ModelFillFailed";
+            case CompatibilityStatus::ERROR_ModelFillFailed:
+                return "ERROR_ModelFillFailed";
                 break;
             default:
                 return "Bad Enum Value";
@@ -213,7 +213,7 @@ TEST_F(BackwardsCompatibilityTests, OpenDgndbInCurrent)
                 }
             else
                 {
-                stat = CompatibilityStatus::Error;
+                stat = CompatibilityStatus::ERROR_FileOpeningFailed;
                 writeStatus = false;
                 }
 
