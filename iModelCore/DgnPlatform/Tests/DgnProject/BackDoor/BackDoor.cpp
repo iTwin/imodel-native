@@ -95,20 +95,6 @@ namespace DirectionParser
         void Terminate(IRealityDataStorageBase& storage) {storage.Terminate();}
 
     }; // RealityData
-
-    /*---------------------------------------------------------------------------------**//**
-    * @bsinamespace
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    namespace IBriefcaseManager
-    {
-        /*---------------------------------------------------------------------------------**//**
-        * @bsimethod                                                    Paul.Connelly   11/15
-        +---------------+---------------+---------------+---------------+---------------+------*/
-        void SetEnabled(bool enabled)
-            {
-            Dgn::IBriefcaseManager::BackDoor_SetEnabled(enabled);
-            }
-    };
 }
 
 /*---------------------------------------------------------------------------------**//**
