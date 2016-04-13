@@ -992,6 +992,8 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
             PointBlock* block = nullptr;
             if (m_countInfo.count(blockIDConvert) > 0)
                 {
+                assert(m_countInfo.count(blockIDConvert) == 1);
+
                 // Block already created. Check if data available.
                 block = &m_countInfo[blockIDConvert];
                 if (block->IsLoading())
@@ -1410,7 +1412,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                     // must update data count
                     auto& points = this->m_countInfo[blockIDConvert];
                     points.resize(UncompressedSize);
-                    memcpy(points.data(), compressedPacket.GetBufferAddress(), compressedPacket.GetDataSize());
+                    memcpy(points.data(), uncompressedPacket.GetBufferAddress(), uncompressedPacket.GetDataSize());
                     }
 
                 memcpy(data + sizeof(uint32_t), compressedPacket.GetBufferAddress(), compressedPacket.GetDataSize());
