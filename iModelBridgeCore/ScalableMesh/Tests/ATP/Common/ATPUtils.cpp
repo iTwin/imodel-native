@@ -118,6 +118,8 @@ bool ParseTestType(BeXmlNodeP pRootNode, TestType& t)
             t = TEST_STREAMING;
         else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"exportLine"))
             t = EXPORT_LINE;
+        else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"addTextures"))
+            t = ADD_TEXTURES_TO_MESH;
         else return false;
         }
     else return false;
@@ -264,6 +266,9 @@ bool RunTestPlan(BeFileName& testPlanPath)
                 break;
             case EXPORT_LINE:
                 ExportDrapeLine(pTestNode, pResultFile);
+            case ADD_TEXTURES_TO_MESH:
+                AddTexturesToMesh(pTestNode, pResultFile);
+                break;
             default: break;
             }
         pTestNode = pTestNode->GetNextSibling();

@@ -13,6 +13,10 @@
 #include <ScalableMesh/IScalableMeshQuery.h>
 #include <ScalableMesh/ScalableMeshDefs.h>
 #include <Bentley/RefCounted.h>
+#ifdef SCALABLE_MESH_ATP
+#include <ImagePP/h/ImageppAPI.h>
+#include <ImagePP/all/h/HIMMosaic.h>
+#endif
 
 ADD_BENTLEY_TYPEDEFS (Bentley::ScalableMesh, IDTMVolume)
 
@@ -103,6 +107,7 @@ struct IScalableMesh abstract:  IRefCounted //Bentley::TerrainModel::IDTM
 
 #ifdef SCALABLE_MESH_ATP
         virtual int                                 _LoadAllNodeHeaders(size_t& nbLoadedNodes) const = 0; 
+        virtual int                                 _AddTextures(const HFCPtr<HIMMosaic>& pMosaic) const = 0;
 #endif
         virtual uint64_t                           _AddClip(const DPoint3d* pts, size_t ptsSize) = 0;
     /*__PUBLISH_SECTION_START__*/
@@ -187,6 +192,7 @@ struct IScalableMesh abstract:  IRefCounted //Bentley::TerrainModel::IDTM
 
 #ifdef SCALABLE_MESH_ATP
         BENTLEYSTM_EXPORT int                     LoadAllNodeHeaders(size_t& nbLoadedNodes) const; 
+        BENTLEYSTM_EXPORT int                     AddTextures(const HFCPtr<HIMMosaic>& pMosaic) const;
 #endif
 
     };

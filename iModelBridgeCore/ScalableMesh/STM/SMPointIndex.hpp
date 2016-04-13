@@ -7108,6 +7108,34 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveCl
         }
     }
 
+#ifdef SCALABLE_MESH_ATP
+//=======================================================================================
+// @bsimethod                                                   Richard.Bois 04/16
+//=======================================================================================
+template<class POINT, class EXTENT>
+uint64_t SMPointIndexNode<POINT, EXTENT>::GetNextID() const
+    {
+    if (!IsLoaded())
+        Load();
+
+    uint64_t thisID = GetBlockID().m_integerID;
+    uint64_t childID = thisID;
+    if (m_pSubNodeNoSplit != NULL)
+        {
+        childID = std::max(childID, static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_pSubNodeNoSplit))->GetNextID());
+        }
+    else
+        {
+        for (size_t indexNode = 0; indexNode < GetNumberOfSubNodesOnSplit(); indexNode++)
+            {
+            childID = std::max(childID, static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNode]))->GetNextID());
+            }
+        }
+
+    return childID;
+    }
+#endif
+
 #ifdef INDEX_DUMPING_ACTIVATED
 
 /**----------------------------------------------------------------------------
@@ -8095,6 +8123,18 @@ template<class POINT, class EXTENT> void SMPointIndex<POINT, EXTENT>::DumpOctTre
     }
 #endif
 
+#ifdef SCALABLE_MESH_ATP
+template<class POINT, class EXTENT> void SMPointIndex<POINT, EXTENT>::SetNextID(const uint64_t& id)
+    {
+    assert(id != uint64_t(-1) && id > 0);
+    s_nextNodeID = id;
+    }
+
+template<class POINT, class EXTENT> uint64_t SMPointIndex<POINT, EXTENT>::GetNextID() const
+    {
+    return GetRootNode()->GetNextID();
+    }
+#endif
 
 #ifdef __HMR_DEBUG
 /**----------------------------------------------------------------------------

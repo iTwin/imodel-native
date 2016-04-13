@@ -235,6 +235,15 @@ public:
     -----------------------------------------------------------------------------*/
     virtual void SetParentNode(const HFCPtr<SMPointIndexNode<POINT, EXTENT> >& pi_rpParentNode);
 
+#ifdef SCALABLE_MESH_ATP
+    /**----------------------------------------------------------------------------
+    Returns the next available node ID
+
+    @return next available node ID
+    -----------------------------------------------------------------------------*/
+    uint64_t GetNextID() const;
+#endif
+
     /**----------------------------------------------------------------------------
     Returns the parent node
 
@@ -1383,6 +1392,9 @@ public:
 
 #ifdef SCALABLE_MESH_ATP
     unsigned __int64    m_nbInputPoints;
+
+    void SetNextID(const uint64_t& id);
+    uint64_t GetNextID() const;
 #endif    
 
     /**----------------------------------------------------------------------------

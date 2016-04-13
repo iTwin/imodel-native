@@ -282,6 +282,11 @@ int IScalableMesh::LoadAllNodeHeaders(size_t& nbLoadedNodes) const
     {
     return _LoadAllNodeHeaders(nbLoadedNodes);
     }
+
+int IScalableMesh::AddTextures(const HFCPtr<HIMMosaic>& pMosaic) const
+    {
+    return _AddTextures(pMosaic);
+    }
 #endif
 
 /*----------------------------------------------------------------------------+
@@ -1461,15 +1466,27 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_ConvertToCloud(const WStr
     return m_scmIndexPtr->SaveCloudReady(pi_pOutputDirPath);
     }
 
+#ifdef SCALABLE_MESH_ATP
 /*----------------------------------------------------------------------------+
 |MrDTM::_LoadAllNodeHeaders
 +----------------------------------------------------------------------------*/
-#ifdef SCALABLE_MESH_ATP
 template <class POINT> int ScalableMesh<POINT>::_LoadAllNodeHeaders(size_t& nbLoadedNodes) const
     {    
     m_scmIndexPtr->LoadTree(nbLoadedNodes);    
     return SUCCESS;
     } 
+
+/*----------------------------------------------------------------------------+
+|MrDTM::_AddTextures
++----------------------------------------------------------------------------*/
+template <class POINT> int ScalableMesh<POINT>::_AddTextures(const HFCPtr<HIMMosaic>& pMosaic) const
+    {
+    auto nextID = m_scmIndexPtr->GetStore()->GetNextID();
+    nextID = nextID != uint64_t(-1) ? nextID : m_scmIndexPtr->GetNextID();
+    m_scmIndexPtr->SetNextID(nextID);
+    m_scmIndexPtr->TextureFromRaster(pMosaic.GetPtr());
+    return SUCCESS;
+    }
 #endif
 /*----------------------------------------------------------------------------+
 |ScalableMeshSingleResolutionPointIndexView Method Definition Section - Begin

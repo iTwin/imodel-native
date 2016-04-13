@@ -18,3 +18,4 @@ void PerformConstraintTest(BeXmlNodeP pTestNode, FILE* pResultFile);
 void PerformSDKCreationTexturedMeshNode(BeXmlNodeP pTestNode, FILE* pResultFile);
 void PerformStreaming(BeXmlNodeP pTestNode, FILE* pResultFile);
 void ExportDrapeLine(BeXmlNodeP pTestNode, FILE* pResultFile);
+void AddTexturesToMesh(BeXmlNodeP pTestNode, FILE* pResultFile);

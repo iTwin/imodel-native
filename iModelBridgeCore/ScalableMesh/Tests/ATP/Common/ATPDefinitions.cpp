@@ -1140,6 +1140,78 @@ void ExportDrapeLine(BeXmlNodeP pTestNode, FILE* pResultFile)
     file.Close();
     }
 
+void AddTexturesToMesh(BeXmlNodeP pTestNode, FILE* pResultFile)
+    {
+    WString scmFileName, cloudOutDirPath, result;
+    // Parses the test(s) definition:
+    if (pTestNode->GetAttributeStringValue(scmFileName, "scmFileName") != BEXML_Success)
+        {
+        printf("ERROR : scmFileName attribute not found\r\n");
+        return;
+        }
+
+    double t = clock();
+
+    // copy file helper
+    auto copy_file = [](const WString& source, const WString& dest)
+        {
+        _wremove(dest.c_str());
+        ifstream ss(source.c_str(), ios::binary);
+        ofstream ds(dest.c_str(), ios::binary);
+        istreambuf_iterator<char> begin_source(ss);
+        istreambuf_iterator<char> end_source;
+        ostreambuf_iterator<char> begin_dest(ds);
+        copy(begin_source, end_source, begin_dest);
+        ss.close();
+        ds.close();
+        };
+
+    // setup data for adding textures (cleanup, save original, etc)
+    //auto position = scmFileName.find_last_of(L".stm");
+    //auto filenameWithoutExtension = scmFileName.substr(0, position - 3);
+    //WString texturedFileName = filenameWithoutExtension + L"_textured.stm";
+
+    //copy_file(scmFileName, texturedFileName);
+
+    // Check existence of scm file
+    StatusInt status;
+    IScalableMeshPtr scmFile = IScalableMesh::GetFor(scmFileName.c_str(), false, false, status);
+
+    if (scmFile != 0 && status == SUCCESS)
+        {
+        Bentley::ScalableMesh::IScalableMeshSourceCreatorPtr sourceCreator(Bentley::ScalableMesh::IScalableMeshSourceCreator::GetFor(scmFile, status));
+
+        if (sourceCreator != 0 && status == SUCCESS)
+            {
+            if (ParseSourceSubNodes(sourceCreator->EditSources(), pTestNode) == true)
+                {
+                sourceCreator->ImportRastersTo(scmFile);
+
+                result = L"SUCCESS";
+                }
+            else {
+                result = L"FAILURE -> could not parse sources from xml file";
+                }
+            }
+        else
+            {
+            result = L"FAILURE -> could not get scalable mesh sources";
+            }
+        }
+    else
+        {
+        result = L"FAILURE -> could not open scm file";
+        }
+    t = clock() - t;
+
+    fwprintf(pResultFile, L"%s,%s,%0.5f\n",
+             scmFileName.c_str(),
+             result,
+             (double)t / CLOCKS_PER_SEC
+             );
+
+    fflush(pResultFile);
+    }
 void PerformDrapeLineTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     {
     //assert(false && "Not ported yet! Perhaps we could use your help?");

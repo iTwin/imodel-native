@@ -540,6 +540,18 @@ void SMSQLiteFile::GetDiffSet(int64_t diffsetID, bvector<uint8_t>& diffsetData, 
     memcpy(&diffsetData[0], stmt->GetValueBlob(0), diffsetData.size());
     }
 
+uint64_t SMSQLiteFile::GetLastNodeId()
+    {
+    std::lock_guard<std::mutex> lock(dbLock);
+    CachedStatementPtr stmt;
+    m_database->GetCachedStatement(stmt, "SELECT NodeId FROM SMPoint ORDER BY NodeId DESC LIMIT 1");
+    stmt->Step();
+    auto numResults = stmt->GetColumnCount();
+
+    auto lastID = numResults > 0 ? stmt->GetValueInt64(0) : 0;
+    return lastID;
+    }
+
 
 void SMSQLiteFile::StorePoints(int64_t& nodeID, const bvector<uint8_t>& pts, size_t uncompressedSize)
     {

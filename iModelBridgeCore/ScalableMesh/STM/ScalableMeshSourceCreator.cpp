@@ -304,6 +304,14 @@ double IScalableMeshSourceCreator::GetLastStitchingDuration()
     {
     return s_getLastStitchingDuration;
     }
+
+void IScalableMeshSourceCreator::ImportRastersTo(const IScalableMeshPtr& scmPtr)
+    {
+    HFCPtr<HIMMosaic> pMosaic;
+    int status = dynamic_cast<IScalableMeshSourceCreator::Impl*>(m_implP.get())->GetRasterSources(pMosaic);
+    scmPtr->AddTextures(pMosaic);
+    assert(BSISUCCESS == status);
+    }
 #endif
 /*---------------------------------------------------------------------------------**//**
 * @description
@@ -462,7 +470,9 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
     //True when only linear feature are imported.
     if (pDataIndex->GetRootNode() == 0)
         {
+#ifdef SCALABLE_MESH_ATP
         assert(pDataIndex->m_nbInputPoints == 0);
+#endif
 
         return BSISUCCESS;
         }
@@ -599,6 +609,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
         //pointIndex.DumpOctTree("D:\\MyDoc\\Scalable Mesh Iteration 7\\Partial Update - Remove\\Log\\NodeAferCreation.xml", false);    
         //pDataIndex->DumpOctTree("C:\\Users\\Thomas.Butzbach\\Documents\\data_scalableMesh\\ATP\\NodeAferCreation.xml", false);
         pDataIndex->DumpOctTree("e:\\output\\scmesh\\NodeAferCreation.xml", false);
+        //pDataIndex->DumpOctTree("C:\\Users\\Richard.Bois\\Documents\\ScalableMesh\\Streaming\\QuebecCityMini\\NodeAferCreationAfterTextures.xml", false);
         }
 #endif
 
@@ -750,7 +761,7 @@ int IScalableMeshSourceCreator::Impl::ApplyEditsFromSources(HFCPtr<IndexType>& p
     return status;
     }
 
-int IScalableMeshSourceCreator::Impl::ImportRasterSourcesTo(HFCPtr<IndexType>& pIndex)
+int IScalableMeshSourceCreator::Impl::GetRasterSources(HFCPtr<HIMMosaic>& pMosaicP)
     {
     const GCS& fileGCS = GetGCS();
     const ScalableMeshData& targetScalableMeshData = ScalableMeshData::GetNull();
@@ -760,23 +771,23 @@ int IScalableMeshSourceCreator::Impl::ImportRasterSourcesTo(HFCPtr<IndexType>& p
     int status = BSISUCCESS;
     bvector<IDTMSource*> filteredSources;
     status = TraverseSourceCollectionRasters(filteredSources,
-                                               m_sources,
-                                               resultingClipShapePtr,
-                                               fileGCS,
-                                               targetScalableMeshData);
+                                             m_sources,
+                                             resultingClipShapePtr,
+                                             fileGCS,
+                                             targetScalableMeshData);
     s_rasterMemPool = new HPMPool(30000, HPMPool::None);
     auto cluster = new HGFHMRStdWorldCluster();
-    HFCPtr<HIMMosaic> mosaicP = new HIMMosaic(HFCPtr<HGF2DCoordSys>(cluster->GetWorldReference(HGF2DWorld_HMRWORLD).GetPtr()));
+    pMosaicP = new HIMMosaic(HFCPtr<HGF2DCoordSys>(cluster->GetWorldReference(HGF2DWorld_HMRWORLD).GetPtr()));
     HIMMosaic::RasterList rasterList;
     for (auto& source : filteredSources)
         {
         const ILocalFileMoniker* moniker(dynamic_cast<const ILocalFileMoniker*>(&source->GetMoniker()));
-        WString path = WString(L"file://")+moniker->GetURL().GetPath();
+        WString path = WString(L"file://") + moniker->GetURL().GetPath();
         HFCPtr<HGF2DCoordSys>  pLogicalCoordSys;
         HFCPtr<HRSObjectStore> pObjectStore;
         HFCPtr<HRFRasterFile>  pRasterFile;
         HFCPtr<HRARaster>      pRaster;
-       // HFCPtr<HRAOnDemandRaster> pOnDemandRaster;
+        // HFCPtr<HRAOnDemandRaster> pOnDemandRaster;
         pRasterFile = HRFRasterFileFactory::GetInstance()->OpenFile(HFCURL::Instanciate(path), TRUE);
         pLogicalCoordSys = cluster->GetWorldReference(pRasterFile->GetPageWorldIdentificator(0));
         pObjectStore = new HRSObjectStore(s_rasterMemPool,
@@ -786,17 +797,25 @@ int IScalableMeshSourceCreator::Impl::ImportRasterSourcesTo(HFCPtr<IndexType>& p
 
         // Get the raster from the store
         pRaster = pObjectStore->LoadRaster();
-       // pOnDemandRaster = new HRAOnDemandRaster(rasterMemPool, pRaster->IsOpaque(), pRaster->GetEffectiveShape(), ,new HPSWorldCluster(), HGF2DWorld_HMRWORLD, , pRaster->HasLookAhead(), false, false);
+        // pOnDemandRaster = new HRAOnDemandRaster(rasterMemPool, pRaster->IsOpaque(), pRaster->GetEffectiveShape(), ,new HPSWorldCluster(), HGF2DWorld_HMRWORLD, , pRaster->HasLookAhead(), false, false);
         HASSERT(pRaster != NULL);
         //NEEDS_WORK_SM: do not do this if raster does not intersect sm extent
         rasterList.push_back(pRaster.GetPtr());
         pRaster = 0;
         }
-    mosaicP->Add(rasterList);
+    pMosaicP->Add(rasterList);
     rasterList.clear();
-    pIndex->TextureFromRaster(mosaicP.GetPtr());
     delete cluster;
     return status;
+    }
+
+int IScalableMeshSourceCreator::Impl::ImportRasterSourcesTo(HFCPtr<IndexType>& pIndex)
+    {
+    HFCPtr<HIMMosaic> pMosaic;
+    StatusInt status = GetRasterSources(pMosaic);
+    if (BSISUCCESS != status) return BSIERROR;
+    pIndex->TextureFromRaster(pMosaic.GetPtr());
+    return BSISUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**

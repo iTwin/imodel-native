@@ -502,6 +502,12 @@ template <class POINT, class EXTENT> class SMPointTileStore: public IScalableMes
 public:
     SMPointTileStore() {};
     virtual ~SMPointTileStore() {};
+
+    virtual uint64_t GetNextID() const
+        {
+        //assert(false); // Not implemented!
+        return -1;
+        }
     };
 
 

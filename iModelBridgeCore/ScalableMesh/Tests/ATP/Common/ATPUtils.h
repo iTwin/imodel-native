@@ -35,6 +35,7 @@ typedef enum
     TEST_SDK_MESH,
     TEST_STREAMING,
     EXPORT_LINE,
+    ADD_TEXTURES_TO_MESH,
     } TestType;
 
 

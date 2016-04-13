@@ -159,7 +159,7 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableMesh -f ScalableMesh 
     <NMakeAssemblySearchPath />
     <SourcePath>$(SourcePath)</SourcePath>
     <IncludePath>$(OutDir)BuildContexts\DgnPlatform\PublicAPI;$(OutDir)BuildContexts\TerrainModel\PublicAPI;$(IncludePath)</IncludePath>
-    <OutDir>C:\dev\realitymesh\out\scalablemeshteam\VS2012\debug\Winx64\</OutDir>
+    <OutDir>E:\dev\realitymesh\out\scalablemeshteam\VS2012\debug\Winx64\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Local LKG|Win32'">
     <OutDir>$(OutRoot)VS\$(Configuration)\</OutDir>
