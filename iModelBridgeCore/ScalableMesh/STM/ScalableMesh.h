@@ -178,7 +178,13 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
 
         typedef SMStreamingPointTaggedTileStore<
             INDEXPOINT,
-            YProtPtExtentType >        StreamingStoreType;
+            YProtPtExtentType >        StreamingPointStoreType;
+        typedef SMStreamingPointTaggedTileStore<
+            int32_t,
+            YProtPtExtentType >        StreamingIndiceStoreType;
+        typedef SMStreamingPointTaggedTileStore<
+            DPoint2d,
+            YProtPtExtentType >        StreamingUVStoreType;
 
         typedef SMMeshIndex<INDEXPOINT, YProtPtExtentType>
                                         PointIndexType;
@@ -286,6 +292,7 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         virtual bool                               _ModifySkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID) override;
         virtual bool                               _AddSkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID) override;
         virtual bool                               _RemoveSkirt(uint64_t skirtID) override;
+        virtual int                                _ConvertToCloud(const WString& pi_pOutputDirPath) const override;
 
 
         virtual void                               _GetCurrentlyViewedNodes(bvector<IScalableMeshNodePtr>& nodes) override;
@@ -293,6 +300,7 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         
 #ifdef SCALABLE_MESH_ATP
         virtual int                    _LoadAllNodeHeaders(size_t& nbLoadedNodes) const override; 
+        virtual int                    _AddTextures(const HFCPtr<HIMMosaic>& pMosaic) const override;
 #endif
 
         //Data source synchronization functions.
@@ -393,9 +401,11 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
         virtual int                    _SynchWithSources() override;
 
         virtual int                    _GetRangeInSpecificGCS(DPoint3d& lowPt, DPoint3d& highPt, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS) const override;
+        virtual int                    _ConvertToCloud(const WString& pi_pOutputDirPath) const override { return ERROR; }
 
 #ifdef SCALABLE_MESH_ATP
         virtual int                    _LoadAllNodeHeaders(size_t& nbLoadedNodes) const override {return ERROR;}
+        virtual int                    _AddTextures(const HFCPtr<HIMMosaic>& pMosaic) const override { return ERROR; }
 #endif
            
     };

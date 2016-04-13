@@ -8,6 +8,14 @@
 
 #include <cpprest/filestream.h>
 
+#ifndef NDEBUG
+#define DEBUG_AZURE
+#endif
+
+#ifdef DEBUG_AZURE
+#include <Bentley\BeConsole.h>
+#endif
+
 namespace scalable_mesh
     {
     using namespace azure;
@@ -262,20 +270,33 @@ namespace scalable_mesh
 
             void DownloadBlob(const std::wstring& blob_name, std::function<void(point_buffer_type)> callback) const
                 {
+#ifdef DEBUG_AZURE
+                static std::atomic<int> s_parallelCalls = 0;
+                static std::mutex s_consoleMutex;
+
+                s_parallelCalls += 1;
+
+                s_consoleMutex.lock();
+                BeConsole::Printf("Threads in DownloadBlob : %i \r\n", s_parallelCalls);
+                BeConsole::WPrintf(L"blob name : %s \r\n", blob_name.c_str());
+                s_consoleMutex.unlock();
+#endif
                 point_buffer_type2 buffer;
                 auto block_blob = this->GetBlockBlob(blob_name);
-                if (block_blob.is_valid() && block_blob.exists())
+                assert(block_blob.is_valid() && block_blob.exists());
+                try
                     {
-                    try
-                        {
-                        block_blob.download_to_stream(concurrency::streams::ostream(buffer));
-                        callback(buffer.collection());
-                        }
-                    catch (const std::exception& e)
-                        {
-                        std::wcout << U("Error: ") << e.what() << std::endl;
-                        }
+                    block_blob.download_to_stream(concurrency::streams::ostream(buffer));
+                    callback(buffer.collection());
                     }
+                catch (const std::exception& e)
+                    {
+                    assert(!"There is an error downloading from Azure");
+                    std::wcout << U("Error: ") << e.what() << std::endl;
+                    }
+#ifdef DEBUG_AZURE
+                s_parallelCalls -= 1;
+#endif
                 }
 
             void DownloadBlobRange(const std::wstring& blob_name, const uint64_t& offset, const uint64_t& length, std::function<void(point_buffer_type)> callback) const

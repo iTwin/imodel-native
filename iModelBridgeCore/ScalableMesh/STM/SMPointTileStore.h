@@ -11,7 +11,7 @@
 
 
 
-#include <ImagePP/all/h/HPMDataStore.h>
+#include <ScalableMesh/IScalableMeshDataStore.h>
 /*#include <ImagePP/all/h/IDTMTypes.h>
 #include <ImagePP/all/h/IDTMFile.h>
 #include <ImagePP/all/h/HGFSpatialIndex.h>
@@ -593,6 +593,7 @@ public:
         for (auto& id : m_uvsIndicesID) header.m_uvsIndicesID[&id - &m_uvsIndicesID.front()] = id.IsValid() && id != IDTMFile::GetNullNodeID() ? id.m_integerID : -1;
         header.m_apSubNodeID.resize(m_apSubNodeID.size());
         for (auto& id : m_apSubNodeID) header.m_apSubNodeID[&id - &m_apSubNodeID.front()] = id.IsValid() && id != IDTMFile::GetNullNodeID() ? id.m_integerID : -1;
+        if (header.m_SubNodeNoSplitID != -1) header.m_apSubNodeID[0] = header.m_SubNodeNoSplitID;
         for (size_t i = 0; i < 26; ++i)
             {
             header.m_apNeighborNodeID[i].resize(m_apNeighborNodeID[i].size());
@@ -646,11 +647,17 @@ public:
 
 
 
-template <class POINT, class EXTENT> class SMPointTileStore: public IHPMPermanentStore<POINT, SMPointIndexHeader<EXTENT>, SMPointNodeHeader<EXTENT>>
+template <class POINT, class EXTENT> class SMPointTileStore: public IScalableMeshDataStore<POINT, SMPointIndexHeader<EXTENT>, SMPointNodeHeader<EXTENT>>
     {
 public:
     SMPointTileStore() {};
     virtual ~SMPointTileStore() {};
+
+    virtual uint64_t GetNextID() const
+        {
+        //assert(false); // Not implemented!
+        return -1;
+        }
     };
 
 template <typename POINT, typename EXTENT> class SMPointTaggedTileStore : public SMPointTileStore<POINT, EXTENT>// , public HFCShareableObject<SMPointTileStore<POINT, EXTENT> >

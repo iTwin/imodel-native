@@ -75,6 +75,12 @@ public:
         return string();
     }
 
+    virtual uint64_t GetNextID() const override
+        {
+        //return m_smSQLiteFile->GetLastInsertRowId(); // This only works if last insert was performed on the same database connection
+        return m_smSQLiteFile->GetLastNodeId();
+        }
+
     virtual void Close()
     {
     }
