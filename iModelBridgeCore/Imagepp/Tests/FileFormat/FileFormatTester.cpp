@@ -144,7 +144,7 @@ static vector<std::wstring> s_GetDirectoryVector(const WString& pSourceDir)
     return directoryList;
     }
 
-static const size_t s_nbTotalOfFiles = s_GetDirectoryVector(L"C:\\Users\\Laurent.Robert-Veill\\Desktop\\Images\\*").size();
+static const size_t s_nbTotalOfFiles = s_GetDirectoryVector(L"\\\\TEST33393QBC\\Dataset\\Images_Files\\Images\\*").size();
 
 ///*---------------------------------------------------------------------------------**//**
 //* Format the name of the file with the specific options of the export
@@ -602,7 +602,7 @@ TEST_P(ExportTester, LoadingRasters)
 //
 //:>+--------------------------------------------------------------------------------------
 INSTANTIATE_TEST_CASE_P(AllRastersInDirectory, ExportTester,
-                        ::testing::ValuesIn(s_GetDirectoryVector(L"C:\\Users\\Laurent.Robert-Veill\\Desktop\\Images\\*")));
+                        ::testing::ValuesIn(s_GetDirectoryVector(L"\\\\TEST33393QBC\\Dataset\\Images_Files\\Images\\*")));
 
 
 
