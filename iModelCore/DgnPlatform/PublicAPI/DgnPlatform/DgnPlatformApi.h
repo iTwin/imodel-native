@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnPlatformApi.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -105,7 +105,7 @@
  @defgroup AreaPattern              Area Patterns
  @defgroup NamedGroup               Named Groups
  @defgroup LineStyleManagerModule   Line Style Manager
- @defgroup TxnMgr                   Transaction Manager
+ @defgroup GROUP_TxnManager                   Transaction Manager
  @defgroup GeoCoordinate            Geographic Coordination
  @defgroup AuxiliaryCoordinateSystems Auxiliary Coordinate Systems
  @defgroup XMLFragments             XML Fragments

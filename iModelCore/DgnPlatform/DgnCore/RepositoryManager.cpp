@@ -61,7 +61,8 @@ struct BriefcaseManager : IBriefcaseManager
 private:
     enum class DbState { New, Ready, Invalid };
 
-    DbState m_dbState;
+    Db      m_localDb;
+    DbState m_localDbState;
 
     virtual Response _ProcessRequest(Request&) override;
     virtual RepositoryStatus _Demote(DgnLockSet&, DgnCodeSet const&) override;
@@ -74,11 +75,13 @@ private:
     virtual RepositoryStatus _RefreshFromRepository() override { return Refresh(); }
     virtual void _OnElementInserted(DgnElementId) override;
     virtual void _OnModelInserted(DgnModelId) override;
+    virtual void _OnDgnDbDestroyed() override;
 
-    BriefcaseManager(DgnDbR db) : IBriefcaseManager(db), m_dbState(DbState::New) { }
+    BriefcaseManager(DgnDbR db) : IBriefcaseManager(db), m_localDbState(DbState::New) { }
 
-    DbR GetLocalDb() { return GetDgnDb().GetLocalStateDb().GetDb(); }
+    DbR GetLocalDb();
     bool Validate(RepositoryStatus* status=nullptr);
+    RepositoryStatus Initialize();
     RepositoryStatus Refresh();
     RepositoryStatus Pull();
     DbResult Save() { return GetLocalDb().SaveChanges(); }
@@ -96,9 +99,47 @@ private:
     RepositoryStatus PromoteDependentElements(LockRequestCR usedLocks, bvector<DgnModelId> const& models);
     void Cull(DgnLockSet& locks);
     RepositoryStatus AcquireLocks(LockRequestR locks, bool cull);
+
+    BeFileName GetLocalDbFileName() const
+        {
+        BeFileName filename = GetDgnDb().GetFileName();
+        filename.AppendExtension(L"local");
+        return filename;
+        }
+
+    static PropSpec GetCreationDatePropSpec() { return PropSpec("DgnDbCreationDate"); }
 public:
     static IBriefcaseManagerPtr Create(DgnDbR db) { return new BriefcaseManager(db); }
 };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DbR BriefcaseManager::GetLocalDb()
+    {
+    Validate();
+    return m_localDb;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void BriefcaseManager::_OnDgnDbDestroyed()
+    {
+    if (DbState::New == m_localDbState)
+        return;
+
+    m_localDb.CloseDb();
+
+    // NB: Keep a valid local db around for potential offline workflows...
+    if (DbState::Invalid == m_localDbState)
+        {
+        BeFileName filename = GetLocalDbFileName();
+        filename.BeDeleteFile();
+        }
+
+    m_localDbState = DbState::New;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
@@ -155,46 +196,77 @@ bool IBriefcaseManager::LocksRequired() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool BriefcaseManager::Validate(RepositoryStatus* pStatus)
     {
-    RepositoryStatus localStatus;
-    RepositoryStatus& status = nullptr != pStatus ? *pStatus : localStatus;
-
-    switch (m_dbState)
+    switch (m_localDbState)
         {
         case DbState::Ready:
-            status = RepositoryStatus::Success;
+            if (nullptr != pStatus)
+                *pStatus = RepositoryStatus::Success;
             return true;
         case DbState::Invalid:
-            status = nullptr != GetRepositoryManager() ? RepositoryStatus::SyncError : RepositoryStatus::ServerUnavailable;
+            if (nullptr != pStatus)
+                *pStatus = nullptr != GetRepositoryManager() ? RepositoryStatus::SyncError : RepositoryStatus::ServerUnavailable;
             return false;
+        default:
+            {
+            auto initStatus = Initialize();
+            if (nullptr != pStatus)
+                *pStatus = initStatus;
+            return RepositoryStatus::Success == initStatus;
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/16
++---------------+---------------+---------------+---------------+---------------+------*/
+RepositoryStatus BriefcaseManager::Initialize()
+    {
+    BeAssert(DbState::New == m_localDbState);
+
+    m_localDbState = DbState::Invalid;
+
+    // Local state DB stored alongside the DgnDb
+    BeFileName filename = GetLocalDbFileName();
+
+    // To support temporarily-offline workflows: if local state db already exists, AND server unavailable, AND pass verification checks, reuse existing.
+    if (filename.DoesPathExist() && nullptr == GetRepositoryManager() && BE_SQLITE_OK == m_localDb.OpenBeSQLiteDb(filename, Db::OpenParams(Db::OpenMode::ReadWrite)))
+        {
+        DateTime storedCreationDate, currentCreationDate;
+        Utf8String creationDateString;
+        if (BE_SQLITE_ROW == m_localDb.QueryProperty(creationDateString, GetCreationDatePropSpec()) && BSISUCCESS == DateTime::FromString(storedCreationDate, creationDateString.c_str())
+            && BE_SQLITE_ROW == GetDgnDb().QueryCreationDate(currentCreationDate) && storedCreationDate == currentCreationDate)
+            {
+            m_localDbState = DbState::Ready;
+            return RepositoryStatus::Success;
+            }
         }
 
-    m_dbState = DbState::Invalid;
-    status = RepositoryStatus::SyncError;
+    // Delete existing, if any, and create new
+    filename.BeDeleteFile();
+    if (BE_SQLITE_OK != m_localDb.CreateNewDb(filename))
+        return RepositoryStatus::SyncError;
 
-    // Set up the local Db tables
-    DgnDb::LocalStateDb& localState = GetDgnDb().GetLocalStateDb();
-    if (!localState.IsValid())
-        return false;
+    // Save the DgnDb creation date for later verification in offline mode...
+    DateTime dgnDbCreationDate;
+    if (BE_SQLITE_ROW == GetDgnDb().QueryCreationDate(dgnDbCreationDate))
+        m_localDb.SavePropertyString(GetCreationDatePropSpec(), dgnDbCreationDate.ToUtf8String());
 
-    DbResult result = localState.GetDb().CreateTable(TABLE_Codes,
+    // Set up the required tables
+    DbResult result = m_localDb.CreateTable(TABLE_Codes,
                                                      CODE_AuthorityId " INTEGER,"
                                                      CODE_NameSpace " TEXT,"
                                                      CODE_Value " TEXT,"
                                                      "PRIMARY KEY" CODE_Values);
     if (BE_SQLITE_OK == result)
         {
-        result = localState.GetDb().CreateTable(TABLE_Locks,
+        result = m_localDb.CreateTable(TABLE_Locks,
                                                 LOCK_Type " INTEGER,"
                                                 LOCK_Id " INTEGER,"
                                                 LOCK_Level " INTEGER,"
                                                 "PRIMARY KEY(" LOCK_Type "," LOCK_Id ")");
         }
 
-    if (BE_SQLITE_OK != result)
-        return false;
-
-    status = Pull();
-    return RepositoryStatus::Success == status;
+    return BE_SQLITE_OK == result ? Pull() : RepositoryStatus::SyncError;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -216,7 +288,7 @@ RepositoryStatus BriefcaseManager::Pull()
     if (!codes.empty())
         Insert(codes);
 
-    m_dbState = DbState::Ready;
+    m_localDbState = DbState::Ready;
     return RepositoryStatus::Success;
     }
 
@@ -225,7 +297,7 @@ RepositoryStatus BriefcaseManager::Pull()
 +---------------+---------------+---------------+---------------+---------------+------*/
 RepositoryStatus BriefcaseManager::Refresh()
     {
-    if (DbState::Ready != m_dbState)
+    if (DbState::Ready != m_localDbState)
         {
         // Either we haven't yet initialized the localDB, or failed to do so previously. Retry that.
         RepositoryStatus stat;
@@ -234,7 +306,7 @@ RepositoryStatus BriefcaseManager::Refresh()
         }
 
     // Empty out our local DB tables and re-populate from server
-    m_dbState = DbState::Invalid; // assume something will go wrong...
+    m_localDbState = DbState::Invalid; // assume something will go wrong...
     if (BE_SQLITE_OK != GetLocalDb().ExecuteSql("DELETE FROM " TABLE_Locks) || BE_SQLITE_OK != GetLocalDb().ExecuteSql("DELETE FROM " TABLE_Codes))
         return RepositoryStatus::SyncError;
 
@@ -743,7 +815,7 @@ RepositoryStatus BriefcaseManager::_Relinquish(Resources which)
     if (BE_SQLITE_OK != result || BE_SQLITE_OK != Save())
         {
         BeAssert(false);
-        m_dbState = DbState::Invalid;
+        m_localDbState = DbState::Invalid;
         return RepositoryStatus::SyncError;
         }
 

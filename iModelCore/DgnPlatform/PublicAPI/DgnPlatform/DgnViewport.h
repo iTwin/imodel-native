@@ -14,9 +14,9 @@
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-/**  @addtogroup DgnViewGroup
+/**  @addtogroup GROUP_DgnView DgnView Module
 
- A View is an abstract term to describe the way that applications display contents from a \ref DgnDbGroup on a device like a screen. 
+ A View is an abstract term to describe the way that applications display contents from a DgnDb on a device like a screen. 
  <p>There are different types of views to show different types of DgnModels in application-specific ways.
  <p>A ViewController provides persistence and behavior to a type of view.
  <p>A DgnViewport has a reference-counted-pointer to a ViewController that controls it.
@@ -71,7 +71,7 @@ enum class ViewportResizeMode
  local copies of the current state). So, viewing tools that wish to change camera location or other viewing state, must call 
  DgnViewport::SynchWithViewController before the changes are visible to the user.
 */
-//! @ingroup DgnViewGroup
+//! @ingroup GROUP_DgnView
 //! @nosubgrouping
 //  @bsiclass                                                     KeithBentley    10/02
 //=======================================================================================
@@ -188,7 +188,8 @@ public:
     Render::Plan::AntiAliasPref WantAntiAliasText() const {return _WantAntiAliasText();}
     void AlignWithRootZ();
     ProgressiveTask::Completion DoProgressiveTasks();
-    void ClearProgressiveTasks() {m_elementProgressiveTasks.clear(); m_terrainProgressiveTasks.clear();}
+    void ClearAllProgressiveTasks() {m_elementProgressiveTasks.clear(); m_terrainProgressiveTasks.clear();}
+    void ClearElementProgressiveTasks() { m_elementProgressiveTasks.clear();}
     DGNPLATFORM_EXPORT void InvalidateScene() const;
     DGNPLATFORM_EXPORT void ScheduleElementProgressiveTask(ProgressiveTask& pd);
     DGNPLATFORM_EXPORT void ScheduleTerrainProgressiveTask(ProgressiveTask& pd);

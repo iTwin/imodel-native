@@ -735,6 +735,14 @@ bool Logging::IsSeverityEnabled(Utf8StringCR category, LoggingSeverity severity)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                               Ramanujam.Raman                      04/16
+//---------------------------------------------------------------------------------------
+JsECSqlArrayValueP JsECSqlValue::GetArray()
+    {
+    return new JsECSqlArrayValue(m_value->GetArray());
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      07/15
 //---------------------------------------------------------------------------------------
 BentleyStatus JsPreparedECSqlStatement::CheckValueIndexInRange(int idx)
@@ -821,6 +829,16 @@ JsDRange3dP JsPreparedECSqlStatement::GetValueDRange3d(int32_t col)
         }
 
     return new JsDRange3d(*(DRange3d*)p);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Ramanujam.Raman                      04/16
+//---------------------------------------------------------------------------------------
+JsECSqlArrayValueP JsPreparedECSqlStatement::GetValueArray(int32_t col)
+    {
+    CHECK_GET_VALUE_ARGS(col, nullptr);
+    IECSqlArrayValue const& arrayValue = m_stmt->GetValueArray(col);
+    return new JsECSqlArrayValue(arrayValue);
     }
 
 //---------------------------------------------------------------------------------------

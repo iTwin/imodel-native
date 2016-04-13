@@ -24,20 +24,18 @@ DGNPLATFORM_REF_COUNTED_PTR(DynamicChangeTracker)
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 /*=================================================================================**//**
- @addtogroup TxnMgr
-<h1>Transaction Manager</h1>
+ @addtogroup GROUP_TxnManager Transaction Manager Module
+ Types related to the transaction (txn) manager.
  The TxnManager API manages Txns. A Txn is a named, committed, undoable unit of work, stored in the DgnDb as a changeset.
  Txns may be "reversed" via an application Undo command, or "reinstated" via a corresponding Redo command.
 <p>
-<h2>Sessions</h2>
  Every time the TxnManager is initialized, it creates a GUID for itself called a SessionId.
  Whenever an application calls DgnDb::SaveChanges(), a new Txn is created. Txns are saved in Briefcases in the DGN_TABLE_Txns
  table, along with the current SessionId. Only Txns from the current SessionId are (usually) undoable. After the completion of a
  session, all of the Txns for that SessionId may be merged together to form a "session Txn". Further, all of the session Txns
  since a Briefcase was last committed to a server may be merged together to form a Briefcase Txn. Briefcase Txns are sent between
  users and changed-merged.
- @bsiclass
-+===============+===============+===============+===============+===============+======*/
+*/
 
 //! Actions that cause events to be sent to TxnTables.
 enum class TxnAction
@@ -53,7 +51,7 @@ enum class TxnAction
 //=======================================================================================
 //! Interface to be implemented to monitor changes to a DgnDb.
 //! Call DgnPlatformLib::GetHost().GetTxnAdmin().AddTxnMonitor to register a TxnMonitor.
-//! @ingroup TxnMgr
+//! @ingroup GROUP_TxnManager
 // @bsiclass                                                      Keith.Bentley   10/07
 //=======================================================================================
 struct TxnMonitor
@@ -743,7 +741,7 @@ namespace dgn_TxnTable
 };
 
 //=======================================================================================
-//! @ingroup TxnMgr
+//! @ingroup GROUP_TxnManager
 //! @namespace BentleyApi::Dgn::dgn_TableHandler TableHandlers in the base "Dgn" domain.
 //! @note Only handlers from the base "Dgn" domain belong in this namespace.
 // @bsiclass                                                    Keith.Bentley   06/15

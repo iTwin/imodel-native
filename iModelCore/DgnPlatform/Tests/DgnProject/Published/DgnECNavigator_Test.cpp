@@ -105,8 +105,8 @@ public:
 struct DgnECNavigatorTest : public testing::Test
 {
 private:
-    ScopedDgnHost m_host;
     SyncInfoUtility m_syncInfoUtility;
+    ScopedDgnHost m_host;
     
     void ReinitializeL10N()
         {
@@ -136,15 +136,19 @@ protected:
 
     void OpenDgnDb(WCharCP testFileName)
         {
-        DbResult openStatus;
-        DgnDb::OpenParams openParams(Db::OpenMode::Readonly);
-
         BeFileName pathname;
         BeTest::GetHost().GetDocumentsRoot(pathname);
         pathname.AppendToPath(L"DgnDb");
         pathname.AppendToPath(testFileName);
 
-        m_testDb = DgnDb::OpenDgnDb(&openStatus, pathname, openParams);
+        OpenDgnDb(pathname);
+        }
+
+    void OpenDgnDb(BeFileNameCR testPathname)
+        {
+        DgnDb::OpenParams openParams(Db::OpenMode::Readonly);
+        DbResult openStatus;
+        m_testDb = DgnDb::OpenDgnDb(&openStatus, testPathname, openParams);
         ASSERT_TRUE(m_testDb.IsValid()) << "Could not open test project";
 
         BentleyStatus status = m_syncInfoUtility.Initialize(*m_testDb);

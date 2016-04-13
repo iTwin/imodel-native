@@ -18,11 +18,9 @@ DGNPLATFORM_REF_COUNTED_PTR(AnnotationFrame);
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-//! @addtogroup Annotations
-//! @beginGroup
-
 //=======================================================================================
 //! This enumerates all possible ways to apply an AnnotationFrameStyle to an AnnotationFrame.
+//! @ingroup GROUP_Annotation
 // @bsiclass                                                    Jeff.Marker     05/2014
 //=======================================================================================
 enum class SetAnnotationFrameStyleOptions
@@ -36,6 +34,7 @@ enum class SetAnnotationFrameStyleOptions
 //=======================================================================================
 //! An AnnotationFrame is an enclosing piece of geometry around an AnnotationTextBlock, used in a TextAnnotation. A frame also enables the TextAnnotation to have leaders, as the frame defines attachment points based on its type. AnnotationFrame is merely a data object; see AnnotationFrameLayout for size/position/geometry, and AnnotationFrameDraw for drawing.
 //! @note An AnnotationFrame must be created with an AnnotationFrameStyle; if a style does not exist, you must first create and store one, and then used its ID to create an AnnotationFrame. While an AnnotationFrame must have a style, it can override each individual style property as needed. Properties are not typically overridden in order to enforce project standards, however it is technically possible.
+//! @ingroup GROUP_Annotation
 // @bsiclass                                                    Jeff.Marker     06/2014
 //=======================================================================================
 struct AnnotationFrame : public RefCountedBase
@@ -67,7 +66,5 @@ public:
     AnnotationFrameStylePropertyBagCR GetStyleOverrides() const { return m_styleOverrides; }
     AnnotationFrameStylePropertyBagR GetStyleOverridesR() { return m_styleOverrides; }
 };
-
-//! @endGroup
 
 END_BENTLEY_DGN_NAMESPACE
