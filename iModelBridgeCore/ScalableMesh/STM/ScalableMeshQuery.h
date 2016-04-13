@@ -1383,8 +1383,8 @@ template<class POINT> class ScalableMeshCachedMeshNode : public virtual IScalabl
                 {           
                 auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_node);
 
-                if (loadTexture)
-                    m_nbMeshes = meshNode->GetNbPtsIndiceArrays();
+                if (loadTexture)                    
+                    m_nbMeshes = meshNode->GetNbOfTextures() + 1;
                 else
                     m_nbMeshes = 1;
                 }
@@ -1460,7 +1460,7 @@ template<class POINT> class ScalableMeshCachedDisplayNode : public virtual IScal
 
                 auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_node);
 
-                m_nbMeshes = meshNode->GetNbPtsIndiceArrays();                
+                m_nbMeshes = meshNode->GetNbOfTextures() + 1;                
                 }
 
             ~ScalableMeshCachedDisplayNode()

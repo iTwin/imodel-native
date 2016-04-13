@@ -1108,11 +1108,11 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMesh(IS
                 {
                 m_meshNode->PinUV();
                 }
-            for (size_t i = 0; i < m_meshNode->GetNbPtsIndiceArrays(); ++i)
+            for (size_t i = 0; i < m_meshNode->GetNbOfTextures() + 1; ++i)
                 { 
                 RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> faceIndexes(m_meshNode->GetPtsIndicePtr());
 
-                if (faceIndexes->size() == 0) continue;
+                if (faceIndexes->size() == 0 || (i == 0 && m_meshNode->GetNbOfTextures() > 0)) continue;
                                 
                 DPoint2d* pUv = flags->ShouldLoadTexture() ? m_meshNode->GetUVPtr() : nullptr;
                 
@@ -2088,7 +2088,7 @@ inline void ApplyClipDiffSetToMesh(FloatXYZ*& points, size_t& nbPoints,
             
             m_cachedDisplayMeshes.resize(_GetNbMeshes());
 
-            assert(meshNode->GetNbPtsIndiceArrays() == m_cachedDisplayMeshes.size());
+            assert(meshNode->GetNbOfTextures() + 1 == m_cachedDisplayMeshes.size());
 
             m_cachedDisplayTextures.resize(_GetNbMeshes());
 
@@ -2110,7 +2110,10 @@ inline void ApplyClipDiffSetToMesh(FloatXYZ*& points, size_t& nbPoints,
 
             m_node->UnPin();
                                        
-            for (size_t meshInd = 0; meshInd < meshNode->GetNbPtsIndiceArrays(); meshInd++)
+
+//            size_t GetNbOfTextures()
+  
+            for (size_t meshInd = 0; meshInd < meshNode->GetNbOfTextures() + 1; meshInd++)
                 {                                    
                 FloatXYZ* toLoadPoints = 0;
                 size_t    toLoadNbPoints = 0; 
@@ -2118,7 +2121,10 @@ inline void ApplyClipDiffSetToMesh(FloatXYZ*& points, size_t& nbPoints,
                 size_t    toLoadNbFaceIndexes = 0;
                 FloatXY*  toLoadUv = 0;
                 int32_t*  toLoadUvIndex = 0;
-                size_t    toLoadUvCount = 0;                
+                size_t    toLoadUvCount = 0;      
+
+                if (meshInd == 0 && meshNode->GetNbOfTextures() == 1)
+                    continue;
 
                 RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> faceIndexes(meshNode->GetPtsIndicePtr());
                                 
@@ -2333,7 +2339,7 @@ inline void ApplyClipDiffSetToMesh(FloatXYZ*& points, size_t& nbPoints,
 
             m_cachedDisplayMeshes.resize(_GetNbMeshes());
 
-            assert(meshNode->GetNbPtsIndiceArrays() == m_cachedDisplayMeshes.size());
+            assert(meshNode->GetNbOfTextures() + 1 == m_cachedDisplayMeshes.size());
 
             m_cachedDisplayTextures.resize(_GetNbMeshes());
 
@@ -2355,7 +2361,7 @@ inline void ApplyClipDiffSetToMesh(FloatXYZ*& points, size_t& nbPoints,
 
             m_node->UnPin();
 
-            for (size_t meshInd = 0; meshInd < meshNode->GetNbPtsIndiceArrays(); meshInd++)
+            for (size_t meshInd = 0; meshInd < meshNode->GetNbOfTextures() + 1; meshInd++)
                 {
                 FloatXYZ* toLoadPoints = 0;
                 size_t    toLoadNbPoints = 0;
@@ -2367,7 +2373,7 @@ inline void ApplyClipDiffSetToMesh(FloatXYZ*& points, size_t& nbPoints,
 
                 RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> faceIndexes(meshNode->GetPtsIndicePtr());
                 
-                if (faceIndexes == 0)
+                if (faceIndexes == 0 || (meshInd == 0 && meshNode->GetNbOfTextures() + 1 > 1))
                     {
                     assert(meshInd == 0 || m_node->size() <= 4);
                     m_cachedDisplayMeshes[meshInd] = 0;

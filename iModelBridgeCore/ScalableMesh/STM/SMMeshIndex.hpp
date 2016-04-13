@@ -655,14 +655,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Load() 
             m_uvsIndicesVec[i].SetDiscarded(true);
         m_uvsIndicesVec[i].SetDirty(false);
         }
-#if DEBUG && SM_TRACE_RASTER_TEXTURING 
 
-    s += " N OF INDICE ARRAYS " + std::to_string(GetNbPtsIndiceArrays());
-    for (size_t i = 0; i <GetNbPtsIndiceArrays(); ++i)
-        {
-        s += " ARRAY " + std::to_string(i) + " HAS " + std::to_string(GetNbPtsIndices(i)) + " INDICES ";
-        }
-#endif
     m_uvVec.SetStore(dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetUVStore());
     if (m_uvVec.GetPool() == NULL) m_uvVec.SetPool(dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetUVPool());
     m_uvVec.SetBlockID(m_nodeHeader.m_uvID);
@@ -2324,14 +2317,6 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
     StoreUV();
     StoreUVsIndices(texId);
     StorePtsIndice(texId+1);
-#if DEBUG && SM_TRACE_RASTER_TEXTURING 
-        std::string s;
-    s += " N OF INDICE ARRAYS " + std::to_string(GetNbPtsIndiceArrays());
-    for (size_t i = 0; i <GetNbPtsIndiceArrays(); ++i)
-            {
-        s += " ARRAY " + std::to_string(i) + " HAS " + std::to_string(GetNbPtsIndices(i)) + " INDICES ";
-        }
-#endif
     }
     delete[] pixelBufferP;
     delete[] pixelBufferPRGBA;
@@ -2475,11 +2460,11 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
     m_differenceSets.clear();
     for(auto& skirt: skirts) m_differenceSets.push_back(skirt);
     m_nbClips = skirts.size();
-    for (size_t j = 0; j < GetNbPtsIndiceArrays(); ++j)
+    for (size_t j = 0; j < GetNbOfTextures() + 1; ++j)
         {
         RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> ptIndices(GetPtsIndicePtr());
 
-        if (ptIndices->size() == 0)
+        if (ptIndices->size() == 0 || (j == 0 && GetNbOfTextures() == 1))
             {
             DifferenceSet current;
             current.clientID = 0;

@@ -375,13 +375,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     void ReplacePtsIndices(size_t texture_id, const int32_t* indices, size_t size) const;
 
     void ClearPtsIndices(size_t texture_id) const;                
-
-    size_t GetNbPtsIndiceArrays() const
-        {
-        //NEEDS_WORK_SM : To be removed
-        return 1;
-        }
-
+    
     virtual RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> GetPtsIndicePtr()
         {
         RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> poolMemVectorItemPtr;
