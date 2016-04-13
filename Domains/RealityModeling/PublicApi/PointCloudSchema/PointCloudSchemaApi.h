@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/PointCloudSchema/PointCloudSchemaApi.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -21,9 +21,9 @@
 //-----------------------------------------------------------------------------------------
 // ECSchema macros
 //-----------------------------------------------------------------------------------------
-#define BENTLEY_POINTCLOUD_SCHEMA_NAME                      "BentleyPointCloud"
-#define BENTLEY_POINTCLOUD_SCHEMA_PATH                      L"ECSchemas/Domain/BentleyPointCloud.01.00.ecschema.xml"
-#define POINTCLOUD_SCHEMA(className)                        BENTLEY_POINTCLOUD_SCHEMA_NAME "." className
+#define POINTCLOUD_SCHEMA_NAME                              "PointCloud"
+#define POINTCLOUD_SCHEMA_PATH                              L"ECSchemas/Domain/PointCloud.01.00.ecschema.xml"
+#define POINTCLOUD_SCHEMA(className)                        POINTCLOUD_SCHEMA_NAME "." className
 
 //-----------------------------------------------------------------------------------------
 // Include from PublicApi

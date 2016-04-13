@@ -2,7 +2,7 @@
 |
 |     $Source: RasterSchema/RasterDomain.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <RasterSchemaInternal.h>
@@ -15,7 +15,7 @@ DOMAIN_DEFINE_MEMBERS(RasterDomain)
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                   Eric.Paquet         05/2015
 //-----------------------------------------------------------------------------------------
-RasterDomain::RasterDomain() : DgnDomain(BENTLEY_RASTER_SCHEMA_NAME, "Bentley Raster Domain", 1) 
+RasterDomain::RasterDomain() : DgnDomain(RASTER_SCHEMA_NAME, "Raster Domain", 1) 
     {
     RegisterHandler(RasterModelHandler::GetHandler()); 
     RegisterHandler(WmsModelHandler::GetHandler());
