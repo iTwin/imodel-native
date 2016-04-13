@@ -1,7 +1,7 @@
 #----------------------------------------------------------------------------------------
 #  $Source: mki/FeatureExtractPolicy.mki $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #----------------------------------------------------------------------------------------
 
 %include $(SrcRoot)/Pointools/PointoolsCommon/mki/PolicyCommon.mki
@@ -42,11 +42,6 @@ CCompOpts + -D"WIN32"
 CCompOpts + -D"_WINDOWS"
 CCompOpts + -D"_USRDLL"
 CCompOpts + -D"VORTEX_FEATURE_FIT_API"
-%if $(TARGET_PROCESSOR_ARCHITECTURE) == "x86"
-    CCompOpts + -D"NOMINMAX"
-    CCompOpts + -D"_CRT_SECURE_NO_WARNINGS"
-    CCompOpts + -D"FLANN_STATIC"
-%endif
 
 NOSTRICT=1
 warnLevel = -W1

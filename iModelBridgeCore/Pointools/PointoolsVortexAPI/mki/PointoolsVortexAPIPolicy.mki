@@ -7,7 +7,7 @@
 #--------------------------------------------------------------------------------------
 
 %include $(SrcRoot)/Pointools/PointoolsCommon/mki/PolicyCommon.mki
-%include PointoolsVortexAPI_Version.mki
+%include $(SrcRoot)/Pointools/PointoolsVortexAPI/mki/PointoolsVortexAPI_Version.mki
 
 appName                         = PointoolsVortexAPI
 o                               = $(OutputRootDir)build/Pointools/$(appName)$(VSOutputSubfolder)/
@@ -15,6 +15,10 @@ CCompPDBName                    = $(appName)
 MultiCompileIntermediatePdbFile = $(o)$(CCompPDBName).pdb
 IntermediatePdbFile             = $(MultiCompileIntermediatePdbFile)
 
+PointoolsVortexAPISrcDir=$(SrcRoot)Pointools/PointoolsVortexAPI/
+PointoolsVortexAPI=$(SrcRoot)Pointools/PointoolsVortexAPI/
+PointoolsVortexAPIInclude = $(PointoolsVortexAPI)include/
+PointoolsVortexAPISrc = $(PointoolsVortexAPI)src/
 PointoolsVortexAPIShaderSrc=$(SrcRoot)Pointools/PointoolsVortexAPI/shaders/
 PointoolsVortexAPIShaderSrcEnc=$(o)shaders/
 pointoolsVortexAPIVendorAPI     = $(OutBuildContexts)PointoolsVortexAPI/VendorAPI/
@@ -67,11 +71,6 @@ CCompOpts + -D"DATATREE_NO_PARAMMAP"
 CCompOpts + -D"GLEW_STATIC"
 CCompOpts + -D"POINTOOLS_PTRMI_PIPE_MANAGER_EXT"
 CCompOpts + -D"VORTEX_OBJECTS_API"
-%if $(TARGET_PROCESSOR_ARCHITECTURE) == "x64"
-    CCompOpts + -D"WIN64"
-%else
-    CCompOpts + -D"WIN32"
-%endif
 CCompOpts + -D"POINTOOLS_API"
 CCompOpts + -D"BOOST_DISABLE_UNKNOWN_COMPILER_VERSION_MESSAGE"
 CCompOpts + -wd4005							# Ignore macro redefinition warnings (conflicts between Boost and Microsoft librairies)

@@ -70,7 +70,7 @@ PointoolsBentleyLicense::~PointoolsBentleyLicense(void)
 
 PointoolsBentleyLicense::LicenseStatus PointoolsBentleyLicense::startLicenseDesktop(void)
 {
-	UINT32			licenseConfigured;
+	uint32_t			licenseConfigured;
 	LICENSE_STATUS	licenseStatus;
 
 	if(getInitalized() == false)
@@ -120,7 +120,7 @@ PointoolsBentleyLicense::LicenseStatus PointoolsBentleyLicense::startLicenseDesk
 																	//  OR 'Disconnected' (activated but disconnected from license server)
 	case LICENSE_STATUS_Offline:
 	{
-		UINT32		daysLeft = 0;
+		uint32_t		daysLeft = 0;
 		wchar_t		message[POINTOOLSBENTLEYLICENSE_MAX_MESSAGE_LENGTH];
 
 																	// Get days until disabled in either trial or offline status
@@ -293,7 +293,7 @@ const PointoolsBentleyLicense::ProductUsageID& PointoolsBentleyLicense::getProdu
     return productUsageID;
     }
 
-UINT32 PointoolsBentleyLicense::getLicenseConfigured(void)
+uint32_t PointoolsBentleyLicense::getLicenseConfigured(void)
 {
 	__try 
 	{
@@ -334,8 +334,8 @@ PointoolsBentleyLicense::LicenseType PointoolsBentleyLicense::getLicenseType(voi
 
 int PointoolsBentleyLicense::getDaysUntilDisabled(void)
 {
-	UINT32	days;
-    UInt32  loginDaysRemaining = 0;
+	uint32_t	days;
+    uint32_t  loginDaysRemaining = 0;
 
 	__try 
 	{

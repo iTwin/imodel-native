@@ -5,11 +5,15 @@
 #  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-
-
-PolicyFile = $(SrcRoot)Pointools/PointoolsVortexAPI/mki/PointoolsVortexAPIPolicy.mki
-SolutionPolicyMki = $(PolicyFile)
+%include $(SrcRoot)Pointools/PointoolsVortexAPI/mki/PointoolsVortexAPIPolicy.mki
 %include mdl.mki
+
+#----------------------------------------------------------
+# Set and then include the CompileOptionsMki file.
+# It is needed and also %included by PreCompileHeader.mki
+#----------------------------------------------------------
+CompileOptionsMki               = $(SrcRoot)Pointools/PointoolsVortexAPI/mki/PointoolsVortexAPIPolicy.mki
+%include $(CompileOptionsMki)
 
 #--------------------------------------------------------------------------------------
 #   Macros
@@ -55,6 +59,14 @@ always:
     @CreateSymLinks.py   -f"$(VendorAPIDir)\VortexObjects\IClashTree.h=$(appSrc)include\vortexobjects\IClashTree.h"
     @CreateSymLinks.py   -f"$(VendorAPIDir)\VortexObjects\VortexObjects_import.h=$(appSrc)include\vortexobjects\VortexObjects_import.h"
 
+%if $(TARGET_PROCESSOR_ARCHITECTURE) == "x64"
+    CCompOpts + -D"WIN64"
+%else
+    CCompOpts + -D"WIN32"
+%endif
+dirToSearch=$(PointoolsVortexAPIInclude)
+%include cincapnd.mki
+
 #----------------------------------------------------------------------
 #   Pre-compiled header
 #----------------------------------------------------------------------
@@ -69,7 +81,6 @@ PchExplicitDepends  = $(MultiCompileDepends)
         GCC_NO_PRE_COMPILED_HEADER = 1
     %endif
 %endif
-
 %include $(SharedMki)PreCompileHeader.mki
 
 CCPchOpts = $(UsePrecompiledHeaderOptions)
@@ -81,8 +92,8 @@ CPchOpts  = $(UsePrecompiledHeaderOptions)
 #----------------------------------------------------------------------
 #       Build source files
 #----------------------------------------------------------------------
-%include MultiCppCompileRule.mki
 
+%include MultiCppCompileRule.mki
 $(o)PointoolsBentleyLicense$(oext)       : $(basedir)\src\ptlic\PointoolsBentleyLicense.cpp                       $(basedir)\include\ptlic\PointoolsBentleyLicense.h                ${MultiCompileDepends}
 
 $(o)PointoolsBentleyLicenseAPI$(oext)    : $(basedir)\src\ptlic\PointoolsBentleyLicenseAPI.cpp                    $(basedir)\include\ptlic\PointoolsBentleyLicenseAPI.h             ${MultiCompileDepends}
@@ -482,6 +493,7 @@ $(o)ClipPlane$(oext)                     : $(basedir)\src\ptengine\ClipPlane.cpp
 $(o)ClipManager$(oext)                   : $(basedir)\src\ptengine\ClipManager.cpp                                $(basedir)\include\ptengine\ClipManager.h                         ${MultiCompileDepends}
 
 $(o)IsolationFilter$(oext)               : $(basedir)\src\ptedit\IsolationFilter.cpp                              $(basedir)\include\ptedit\IsolationFilter.h                       ${MultiCompileDepends}
+
 
 #
 # Compile the above uniform set of dependency blocks in a single invocation of the Visual C compiler.

@@ -2,14 +2,27 @@
 #
 #     $Source: extensions/VortexFeatureExtract/FeatureExtract.mke $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 
 
-PolicyFile = $(SrcRoot)Pointools/PointoolsVortexAPI/mki/FeatureExtractPolicy.mki
-SolutionPolicyMki = $(PolicyFile)
+%include $(SrcRoot)Pointools/PointoolsVortexAPI/mki/FeatureExtractPolicy.mki
 %include mdl.mki
+
+# TARGET_PROCESSOR_ARCHITECTURE is not defined before including mdl.mki
+%if $(TARGET_PROCESSOR_ARCHITECTURE) == "x86"
+    CCompOpts + -D"NOMINMAX"
+    CCompOpts + -D"_CRT_SECURE_NO_WARNINGS"
+    CCompOpts + -D"FLANN_STATIC"
+%endif
+
+#----------------------------------------------------------
+# Set and then include the CompileOptionsMki file.
+# It is needed and also %included by PreCompileHeader.mki
+#----------------------------------------------------------
+CompileOptionsMki               = $(SrcRoot)Pointools/PointoolsVortexAPI/mki/FeatureExtractPolicy.mki
+%include $(CompileOptionsMki)
 
 #--------------------------------------------------------------------------------------
 #   Macros

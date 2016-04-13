@@ -58,7 +58,7 @@
 * PointoolsVortexAPI VS2012 Parts
 ********************************************************************************************************
 -->
-  <Part Name="PointoolsVortexAPI_VS2012" OnlyPlatforms="x86,x64" PrgOutputDir="PointoolsVortexAPI" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
+  <Part Name="PointoolsVortexAPI_VS2012" OnlyPlatforms="x86,x64" PrgOutputDir="PointoolsVortexAPI" BentleyBuildMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
     <RequiredRepository>Bentley</RequiredRepository>
     <RequiredRepository>PointoolsCommon</RequiredRepository>	
     <Directories DirectoryListName="PointoolsVortexAPIDirectoryList_VS2012_NULL"/>
@@ -67,12 +67,13 @@
     <SubPart PartName="PointoolsIO_VS2012" PartFile="PointoolsIO" Repository="PointoolsIO"/>
   </Part>
 
-   <Part Name="PointoolsVortexAPI_DLL_VS2012" BMakeFile="PointoolsVortexAPI.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1"> 
+  <Part Name="PointoolsVortexAPI_DLL_VS2012" BentleyBuildMakeFile="PointoolsVortexAPI.mke" BentleyBuildMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
     <RequiredRepository>PointoolsCommon</RequiredRepository>	
     <SubPart PartName="EncryptShaders_VS2012" />
     <SubPart PartName="Base" PartFile="Bentley" Repository="Bentley" />
-    <SubPart PartName="LicenseSDK8.11" PartFile="${SrcBsiCommon}CvsPartFiles\bsibin" Repository="bsibin-licensesdk" />  
+    <SubPart PartName="LicenseSDK8.11" PartFile="${SrcRoot}bsicommon/CvsPartfiles/bsibin" Repository="bsibin-licensesdk" /> 
     <SubPart PartName="PointoolsLibsVortex_VS2012" />
+    <Directories DirectoryListName="PointoolsVortexAPI_DLL_List"/>
     <Bindings>
       <VendorAPI Domain="PointoolsVortexAPI_DLL"/>
       <Libs> Delivery\PointoolsVortexAPI.lib </Libs>
@@ -85,7 +86,7 @@
 * PointoolsVortexAPI VS2012 Parts
 ********************************************************************************************************
 -->
-  <Part Name="EncryptShaders_VS2012" BMakeFile="EncryptShaders\EncryptShaders.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
+  <Part Name="EncryptShaders_VS2012" BentleyBuildMakeFile="EncryptShaders\EncryptShaders.mke" BentleyBuildMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
     <RequiredRepository>PointoolsCommon</RequiredRepository>	
     <Bindings>
       <Files> Delivery\enc-shaders.exe </Files>
@@ -97,7 +98,7 @@
 * Pointools Vortex FeatureExtract VS2012 Parts
 ********************************************************************************************************
 -->
-  <Part Name="PointoolsVortexAPI_FeatureExtract_DLL_VS2012" BMakeFile="extensions\VortexFeatureExtract\FeatureExtract.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
+  <Part Name="PointoolsVortexAPI_FeatureExtract_DLL_VS2012" BentleyBuildMakeFile="extensions\VortexFeatureExtract\FeatureExtract.mke" BentleyBuildMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
     <RequiredRepository>PointoolsCommon</RequiredRepository>	
     <SubPart PartName="wildmagic_VS2012" PartFile="wildmagic_VS2012" Repository="libsrc-geometrictools"/>
     <Bindings>    
@@ -138,7 +139,7 @@
     <!-- <SubPart PartName="Pointools_SDK_VS2012_x64_Bundle_InstallerFiles" /> -->	
   </Product>
   
-  <Part Name="Pointools_SDK_VS2012_x64_Bundle_InstallerFiles" OnlyPlatforms="x86,x64" BMakeFile="installers\Pointools_SDK_VS2012_InstallerFiles.mke">
+  <Part Name="Pointools_SDK_VS2012_x64_Bundle_InstallerFiles" OnlyPlatforms="x86,x64" BentleyBuildMakeFile="installers\Pointools_SDK_VS2012_InstallerFiles.mke">
       <SubPart PartName="InstallFrameworkBase" PartFile="InstallFramework" Repository="InstallFramework"/>
       <Bindings>
           <Files BindToWixBuild="true" SubPartDirectory="installer">
@@ -268,7 +269,7 @@
     </Bindings>
   </Part>
 
-  <Part Name="PointoolsVortexAPI_API_Examples_Dependencies_VS2012_x86" BMakeFile="Examples\Dependencies" OnlyPlatforms="x86" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
+  <Part Name="PointoolsVortexAPI_API_Examples_Dependencies_VS2012_x86" BentleyBuildMakeFile="Examples\Dependencies" OnlyPlatforms="x86" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
     <SubPart PartName="FreeGlut_VS2012"        PartFile="opengl_VS2012" Repository="libsrc-opengl"/>
     <SubPart PartName="GLUI_VS2012"            PartFile="opengl_VS2012" Repository="libsrc-opengl" LibType="static"/>
     <SubPart PartName="glewVendorAPI"          PartFile="openglHeaders" Repository="libsrc-opengl"/>
@@ -297,7 +298,7 @@
     </Bindings>
   </Part>
   
-  <Part Name="PointoolsVortexAPI_API_Examples_Dependencies_VS2012_x64" BMakeFile="Examples\Dependencies" OnlyPlatforms="x64" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
+  <Part Name="PointoolsVortexAPI_API_Examples_Dependencies_VS2012_x64" BentleyBuildMakeFile="Examples\Dependencies" OnlyPlatforms="x64" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
     <SubPart PartName="FreeGlut_VS2012"        PartFile="opengl_VS2012" Repository="libsrc-opengl"/>
     <SubPart PartName="GLUI_VS2012"            PartFile="opengl_VS2012" Repository="libsrc-opengl" LibType="static"/>
     <SubPart PartName="glewVendorAPI"          PartFile="openglHeaders" Repository="libsrc-opengl"/>
@@ -324,7 +325,7 @@
     </Bindings>
   </Part>
   
-  <Part Name="PointoolsVortexAPI_API_Examples_VS2012" BMakeFile="examples/Examples">
+  <Part Name="PointoolsVortexAPI_API_Examples_VS2012" BentleyBuildMakeFile="examples/Examples">
     <SubPart PartName="PointoolsVortexAPI_API_Example_Simple"/>
     <SubPart PartName="PointoolsVortexAPI_API_Example_Channels"/>
     <SubPart PartName="PointoolsVortexAPI_API_Example_Clash"/>
@@ -400,7 +401,7 @@
     </Bindings>
   </Part>
   
-  <Part Name="PointoolsVortexAPI_API_Example_Simple" BMakeFile="examples/Example" BMakeOptions="+dExample=Simple">
+  <Part Name="PointoolsVortexAPI_API_Example_Simple" BentleyBuildMakeFile="examples/Example" BentleyBuildMakeOptions="+dExample=Simple">
     <Bindings>
       <Files SubPartDirectory="Examples\simple" ProductDirectoryName="PointoolsVortexAPI_API_VS2012_Example_Simple">
         Delivery\Examples\simple\simple-vc9.vcproj
@@ -414,7 +415,7 @@
     </Bindings>
   </Part>
   
-  <Part Name="PointoolsVortexAPI_API_Example_Channels" BMakeFile="examples/Example" BMakeOptions="+dExample=Channels">
+  <Part Name="PointoolsVortexAPI_API_Example_Channels" BentleyBuildMakeFile="examples/Example" BentleyBuildMakeOptions="+dExample=Channels">
     <Bindings>
       <Files SubPartDirectory="Examples\channels" ProductDirectoryName="PointoolsVortexAPI_API_VS2012_Example_Channels">
         Delivery\Examples\channels\channels-vc9.vcproj
@@ -432,7 +433,7 @@
     </Bindings>
   </Part>
 
-  <Part Name="PointoolsVortexAPI_API_Example_Clash" BMakeFile="examples/Example" BMakeOptions="+dExample=Clash">
+  <Part Name="PointoolsVortexAPI_API_Example_Clash" BentleyBuildMakeFile="examples/Example" BentleyBuildMakeOptions="+dExample=Clash">
     <Bindings>
       <Files SubPartDirectory="Examples\clash" ProductDirectoryName="PointoolsVortexAPI_API_VS2012_Example_Clash">
         Delivery\Examples\clash\clashApp.cpp
@@ -448,7 +449,7 @@
     </Bindings>
   </Part>
   
-  <Part Name="PointoolsVortexAPI_API_Example_ClassificationChannel" BMakeFile="examples/Example" BMakeOptions="+dExample=Classif_Channel">
+  <Part Name="PointoolsVortexAPI_API_Example_ClassificationChannel" BentleyBuildMakeFile="examples/Example" BentleyBuildMakeOptions="+dExample=Classif_Channel">
     <Bindings>
       <Files SubPartDirectory="Examples\classif_channel" ProductDirectoryName="PointoolsVortexAPI_API_VS2012_Example_ClassificationChannel">
         Delivery\Examples\classif_channel\ClassifChannelExampleApp.cpp
@@ -466,7 +467,7 @@
     </Bindings>
   </Part>
 
-  <Part Name="PointoolsVortexAPI_API_Example_Editing" BMakeFile="examples/Example" BMakeOptions="+dExample=Editing">
+  <Part Name="PointoolsVortexAPI_API_Example_Editing" BentleyBuildMakeFile="examples/Example" BentleyBuildMakeOptions="+dExample=Editing">
     <Bindings>
       <Files SubPartDirectory="Examples\editing" ProductDirectoryName="PointoolsVortexAPI_API_VS2012_Example_Editing">
         Delivery\Examples\editing\editing-vc9.vcproj
@@ -480,7 +481,7 @@
     </Bindings>
   </Part>
 
-  <Part Name="PointoolsVortexAPI_API_Example_FeatureExtraction" BMakeFile="examples/Example" BMakeOptions="+dExample=Feature-Extraction">
+  <Part Name="PointoolsVortexAPI_API_Example_FeatureExtraction" BentleyBuildMakeFile="examples/Example" BentleyBuildMakeOptions="+dExample=Feature-Extraction">
     <Bindings>
       <Files SubPartDirectory="Examples\feature-extraction" ProductDirectoryName="PointoolsVortexAPI_API_VS2012_Example_FeatureExtraction">
         Delivery\Examples\feature-extraction\feature-extraction.vcproj
@@ -496,7 +497,7 @@
     </Bindings>
   </Part>
 
-  <Part Name="PointoolsVortexAPI_API_Example_MakeBMP" BMakeFile="examples/Example" BMakeOptions="+dExample=Make-BMP">
+  <Part Name="PointoolsVortexAPI_API_Example_MakeBMP" BentleyBuildMakeFile="examples/Example" BentleyBuildMakeOptions="+dExample=Make-BMP">
     <Bindings>
       <Files SubPartDirectory="Examples\make-bmp" ProductDirectoryName="PointoolsVortexAPI_API_VS2012_Example_MakeBMP">
         Delivery\Examples\make-bmp\DrawBitmapExampleApp.cpp
@@ -510,7 +511,7 @@
     </Bindings>
   </Part>
 
-  <Part Name="PointoolsVortexAPI_API_Example_Testing" BMakeFile="examples/Example" BMakeOptions="+dExample=Testing">
+  <Part Name="PointoolsVortexAPI_API_Example_Testing" BentleyBuildMakeFile="examples/Example" BentleyBuildMakeOptions="+dExample=Testing">
     <Bindings>
       <Files SubPartDirectory="Examples\testing" ProductDirectoryName="PointoolsVortexAPI_API_VS2012_Example_Testing">
         Delivery\Examples\testing\leak-test.cpp
@@ -524,7 +525,7 @@
     </Bindings>
   </Part>
   
-  <Part Name="PointoolsVortexAPI_API_Example_Tuning" BMakeFile="examples/Example" BMakeOptions="+dExample=Tuning">
+  <Part Name="PointoolsVortexAPI_API_Example_Tuning" BentleyBuildMakeFile="examples/Example" BentleyBuildMakeOptions="+dExample=Tuning">
     <Bindings>
       <Files SubPartDirectory="Examples\tuning" ProductDirectoryName="PointoolsVortexAPI_API_VS2012_Example_Tuning">
         Delivery\Examples\tuning\stdafx.cpp
@@ -540,7 +541,7 @@
     </Bindings>
   </Part>
   
-  <Part Name="PointoolsVortexAPI_API_Example_Snapping" BMakeFile="examples/Example" BMakeOptions="+dExample=Snapping">
+  <Part Name="PointoolsVortexAPI_API_Example_Snapping" BentleyBuildMakeFile="examples/Example" BentleyBuildMakeOptions="+dExample=Snapping">
     <Bindings>
       <Files SubPartDirectory="Examples\snapping" ProductDirectoryName="PointoolsVortexAPI_API_VS2012_Example_Snapping">
         Delivery\Examples\snapping\snapping-vc9.vcproj
@@ -556,7 +557,7 @@
     </Bindings>
   </Part>
 
-  <Part Name="PointoolsVortexAPI_API_Example_MetaData" BMakeFile="examples/Example" BMakeOptions="+dExample=MetaData">
+  <Part Name="PointoolsVortexAPI_API_Example_MetaData" BentleyBuildMakeFile="examples/Example" BentleyBuildMakeOptions="+dExample=MetaData">
     <Bindings>
       <Files SubPartDirectory="Examples\metadata" ProductDirectoryName="PointoolsVortexAPI_API_VS2012_Example_MetaData">      
         Delivery\Examples\metadata\metadata-vc9.vcproj
@@ -641,7 +642,7 @@
     </Bindings>
   </Part>
   
-  <Part Name="PointoolsVortexAPI_ReleaseNotes" BMakeFile="ReleaseNotes/ReleaseNotes">
+  <Part Name="PointoolsVortexAPI_ReleaseNotes" BentleyBuildMakeFile="ReleaseNotes/ReleaseNotes">
     <Bindings>
       <Files SubPartDirectory="Examples\metadata\PropertyGrid\include\res" ProductDirectoryName="PointoolsVortexAPI_API_ReleaseNotes">          
         Delivery\PointoolsVortexAPI-ReleaseNotes-*.txt 
@@ -649,6 +650,11 @@
     </Bindings> 
   </Part>
   
+  <ProductDirectoryList ListName="PointoolsVortexAPI_DLL_List">
+    <ProductDirectory Name="BoostLibs" Path="" Deliver="false"/>
+    <ProductDirectory Name="Libs" Path="Libs" Deliver="false"/>
+  </ProductDirectoryList>
+
   <ProductDirectoryList ListName="PointoolsVortexAPI_Runtime_List">
   
     <ProductDirectory Name="ConfigDir" Path="" Deliver="false"/>                   <!-- This shouldn't be needed? -->
@@ -785,7 +791,7 @@
   </Part>
   
   
-  <Part Name="PointoolsVortexAPI_DLL_VS2005" BMakeFile="PointoolsVortexAPI.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2005=1">
+  <Part Name="PointoolsVortexAPI_DLL_VS2005" BentleyBuildMakeFile="PointoolsVortexAPI_DLL.mke" BentleyBuildMakeOptions="+dPOINTOOLS_BUILD_USING_VS2005=1">
     <RequiredRepository>PointoolsCommon</RequiredRepository>	
     <SubPart PartName="EncryptShaders_VS2005"/>
     <SubPart PartName="Base" PartFile="Bentley" Repository="Bentley" />
@@ -803,7 +809,7 @@
 * EncryptShaders VS2005 Part
 ********************************************************************************************************
 -->
-  <Part Name="EncryptShaders_VS2005" BMakeFile="EncryptShaders\EncryptShaders.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2005=1">
+  <Part Name="EncryptShaders_VS2005" BentleyBuildMakeFile="EncryptShaders\EncryptShaders.mke" BentleyBuildMakeOptions="+dPOINTOOLS_BUILD_USING_VS2005=1">
     <RequiredRepository>PointoolsCommon</RequiredRepository>	
     <Bindings>
       <Assemblies ProductDirectoryName="PointoolsAssemblies"> Delivery\enc-shaders.exe </Assemblies>
@@ -816,7 +822,7 @@
 ********************************************************************************************************
 -->
 
-  <Part Name="PointoolsVortexAPI_FeatureExtract_DLL_VS2005" BMakeFile="extensions\VortexFeatureExtract\FeatureExtract.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2005=1">
+  <Part Name="PointoolsVortexAPI_FeatureExtract_DLL_VS2005" BentleyBuildMakeFile="extensions\VortexFeatureExtract\FeatureExtract.mke" BentleyBuildMakeOptions="+dPOINTOOLS_BUILD_USING_VS2005=1">
     <RequiredRepository>PointoolsCommon</RequiredRepository>	
     <SubPart PartName="wildmagic_VS2005" PartFile="wildmagic_VS2005" Repository="libsrc-geometrictools"/>
    <Bindings>
