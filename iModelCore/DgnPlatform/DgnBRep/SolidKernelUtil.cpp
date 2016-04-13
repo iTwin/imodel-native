@@ -96,25 +96,63 @@ virtual void _SetEntityTransform (TransformCR transform) override
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  03/16
+* @bsimethod                                                    Brien.Bastings  04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-KernelEntityType _GetEntityType () const
+TopAbs_ShapeEnum GetShapeType(TopoDS_Shape const& shape) const
     {
-    switch (m_shape.ShapeType())
+    TopAbs_ShapeEnum shapeType = shape.ShapeType();
+
+    if (TopAbs_COMPOUND != shapeType)
+        return shapeType;
+
+    TopoDS_Iterator shapeIter(shape);
+
+    if (!shapeIter.More() || TopAbs_COMPOUND == (shapeType = GetShapeType(shapeIter.Value())))
+        return shapeType;
+
+    shapeIter.Next();
+
+    for (; shapeIter.More(); shapeIter.Next())
         {
+        if (shapeType != GetShapeType(shapeIter.Value()))
+            return TopAbs_COMPOUND;
+        }
+
+    return shapeType;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/16
++---------------+---------------+---------------+---------------+---------------+------*/
+KernelEntityType ToEntityType(TopAbs_ShapeEnum shapeType) const
+    {
+    switch (shapeType)
+        {
+        case TopAbs_COMPOUND:
+            return ISolidKernelEntity::EntityType_Solid; // NEEDSWORK: Add enum value...
+
+        case TopAbs_COMPSOLID:
         case TopAbs_SOLID:
             return ISolidKernelEntity::EntityType_Solid;
 
         case TopAbs_SHELL:
+        case TopAbs_FACE:
             return ISolidKernelEntity::EntityType_Sheet;
 
         case TopAbs_WIRE:
+        case TopAbs_EDGE:
             return ISolidKernelEntity::EntityType_Wire;
 
+        case TopAbs_VERTEX:
         default:
             return ISolidKernelEntity::EntityType_Minimal;
         }
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  03/16
++---------------+---------------+---------------+---------------+---------------+------*/
+KernelEntityType _GetEntityType() const {return ToEntityType(GetShapeType(m_shape));}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/2016
