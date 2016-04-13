@@ -18,7 +18,8 @@
     ScalingX = 1.00001;
     ScalingY = 2.00001;
     Anortho = -0.000001;
-    Affine1 = HGF2DAffine(Translation, Rotation, ScalingX, ScalingY, Anortho);
+    HGF2DAffine Affine1(Translation, Rotation, ScalingX, ScalingY, Anortho);
+    HGF2DProjectiveGrid Projective;
 
     // COORDINATE SYSTEMS
     pWorld = new HGF2DCoordSys();

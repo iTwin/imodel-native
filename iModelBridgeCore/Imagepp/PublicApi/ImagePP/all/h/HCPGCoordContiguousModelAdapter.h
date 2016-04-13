@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCPGCoordContiguousModelAdapter.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -31,68 +31,70 @@ public:
     IMAGEPP_EXPORT virtual               ~HCPGCoordContiguousModelAdapter();
     IMAGEPP_EXPORT HCPGCoordContiguousModelAdapter&       operator=(const HCPGCoordContiguousModelAdapter& pi_rObj);
 
-    virtual bool IsConvertDirectThreadSafe() const override {return false;}
-    virtual bool IsConvertInverseThreadSafe() const override {return false;}
-    virtual bool                        CanBeRepresentedByAMatrix() const {return false;}
-    virtual HFCMatrix<3, 3>             GetMatrix() const;
+private:
 
-    virtual bool                        PreservesLinearity() const {return false;}
-    virtual bool                        PreservesParallelism() const {return false;}
-    virtual bool                        PreservesShape() const {return false;}
-    virtual bool                        PreservesDirection() const {return false;}
+    virtual bool _IsConvertDirectThreadSafe() const override { return false; }
+    virtual bool _IsConvertInverseThreadSafe() const override { return false; }
+    virtual bool                        _CanBeRepresentedByAMatrix() const  override { return false; }
+    virtual HFCMatrix<3, 3>             _GetMatrix() const override;
 
-    virtual bool                        IsStretchable   (double pi_AngleTolerance = 0) const {return false;}
+    virtual bool                        _PreservesLinearity() const override { return false; }
+    virtual bool                        _PreservesParallelism() const  override { return false; }
+    virtual bool                        _PreservesShape() const  override { return false; }
+    virtual bool                        _PreservesDirection() const  override { return false; }
 
-    virtual void                        GetStretchParams(double*           po_pScaleFactorX,
+    virtual bool                        _IsStretchable(double pi_AngleTolerance) const  override { return false; }
+
+    virtual void                        _GetStretchParams(double*           po_pScaleFactorX,
                                                          double*           po_pScaleFactorY,
-                                                         HGF2DDisplacement* po_pDisplacement) const;
+                                                         HGF2DDisplacement* po_pDisplacement) const override;
     // HGF2DTransfoModel interface
 
     // Conversion interface
-    IMAGEPP_EXPORT virtual StatusInt     ConvertDirect(double*   pio_pXInOut,
-                                                      double*   pio_pYInOut) const override;
+    virtual StatusInt     _ConvertDirect(double*   pio_pXInOut,
+                                                       double*   pio_pYInOut) const override;
 
-    IMAGEPP_EXPORT virtual StatusInt     ConvertDirect(double    pi_YIn,
-                                                      double    pi_XInStart,
-                                                      size_t     pi_NumLoc,
-                                                      double    pi_XInStep,
-                                                      double*   po_pXOut,
-                                                      double*   po_pYOut) const override;
+    virtual StatusInt     _ConvertDirect(double    pi_YIn,
+                                                       double    pi_XInStart,
+                                                       size_t     pi_NumLoc,
+                                                       double    pi_XInStep,
+                                                       double*   po_pXOut,
+                                                       double*   po_pYOut) const override;
 
-    IMAGEPP_EXPORT virtual StatusInt     ConvertDirect(double    pi_XIn,
-                                                      double    pi_YIn,
-                                                      double*   po_pXOut,
-                                                      double*   po_pYOut) const override;
+    virtual StatusInt     _ConvertDirect(double    pi_XIn,
+                                                       double    pi_YIn,
+                                                       double*   po_pXOut,
+                                                       double*   po_pYOut) const override;
 
-    IMAGEPP_EXPORT virtual StatusInt     ConvertDirect(size_t    pi_NumLoc,
+    virtual StatusInt     _ConvertDirect(size_t    pi_NumLoc,
                                                        double*   pio_aXInOut,
                                                        double*   pio_aYInOut) const override;
 
-    IMAGEPP_EXPORT virtual StatusInt     ConvertInverse(double*   pio_pXInOut,
+    virtual StatusInt     _ConvertInverse(double*   pio_pXInOut,
                                                         double*   pio_pYInOut) const override;
 
-    IMAGEPP_EXPORT virtual StatusInt     ConvertInverse(double    pi_YIn,
+    virtual StatusInt     _ConvertInverse(double    pi_YIn,
                                                         double    pi_XInStart,
                                                         size_t     pi_NumLoc,
                                                         double    pi_XInStep,
                                                         double*   po_pXOut,
                                                         double*   po_pYOut) const override;
 
-    IMAGEPP_EXPORT virtual StatusInt     ConvertInverse(double    pi_XIn,
+    virtual StatusInt     _ConvertInverse(double    pi_XIn,
                                                         double    pi_YIn,
                                                         double*   po_pXOut,
                                                         double*   po_pYOut) const override;
 
-    IMAGEPP_EXPORT virtual StatusInt     ConvertInverse(size_t    pi_NumLoc,
-                                                       double*   pio_aXInOut,
-                                                       double*   pio_aYInOut) const override;
+    virtual StatusInt     _ConvertInverse(size_t    pi_NumLoc,
+                                                        double*   pio_aXInOut,
+                                                        double*   pio_aYInOut) const override;
 
-    virtual HGF2DTransfoModel*          Clone () const override;
+    virtual HGF2DTransfoModel*          _Clone() const override;
 
 
-    IMAGEPP_EXPORT virtual void     Reverse() override;
+    virtual void     _Reverse() override;
+    virtual HFCPtr<HGF2DTransfoModel> _CreateSimplifiedModel() const override { return nullptr; };
 
-private:
     // Private methods
     void                        Copy (const HCPGCoordContiguousModelAdapter& pi_rObj);
 

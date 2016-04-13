@@ -6,6 +6,7 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
 
+#ifdef TEST_DLL_NOT_NOT
 #include "../imagepptestpch.h"
 #include "HGF2DLocationTester.h"
 
@@ -226,3 +227,4 @@ TEST_F (HGF2DLocationTester, GetSetTest)
     ASSERT_DOUBLE_EQ(25.0, Location1.GetPosition().GetY());
 
     }
+#endif

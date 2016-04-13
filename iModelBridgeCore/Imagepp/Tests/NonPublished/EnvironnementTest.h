@@ -26,8 +26,6 @@ protected:
     double              ScalingX;
     double              ScalingY;
     double              Anortho;
-    HGF2DAffine Affine1;   
-    HGF2DProjectiveGrid Projective;
 
     // COORDINATE SYSTEMS
     HFCPtr<HGF2DCoordSys>   pWorld;

@@ -186,15 +186,15 @@ public:
     bool PreservesLinearity() const;
 
     // ** For google tests only **
-    ImagePPStatus test_Stretch(HRAImageSampleR outData, PixelOffset const& outOffset, HRAImageSurfaceR inData, PixelOffset const& inOffset);
-    ImagePPStatus test_Warp(HRAImageSampleR outData, PixelOffset const& outOffset, HRAImageSurfaceR inData, PixelOffset const& inOffset);
+    IMAGEPPTEST_EXPORT ImagePPStatus test_Stretch(HRAImageSampleR outData, PixelOffset const& outOffset, HRAImageSurfaceR inData, PixelOffset const& inOffset);
+    IMAGEPPTEST_EXPORT ImagePPStatus test_Warp(HRAImageSampleR outData, PixelOffset const& outOffset, HRAImageSurfaceR inData, PixelOffset const& inOffset);
     
     //! Samplers create methods. NULL is returned when pixeltype is not supported.
-    static HRAImageSampler* CreateNearestRle(HFCPtr<HGF2DTransfoModel>& destToSrcTransfo, HRPPixelType const& pixelType);
-    static HRAImageSampler* CreateNearestN1(HFCPtr<HGF2DTransfoModel>& destToSrcTransfo, HRPPixelType const& pixelType);
-    static HRAImageSampler* CreateNearestN8(HFCPtr<HGF2DTransfoModel>& destToSrcTransfo, HRPPixelType const& pixelType);
-    static HRAImageSampler* CreateBilinear(HFCPtr<HGF2DTransfoModel>& destToSrcTransfo, HRPPixelType const& pixelType);
-    static HRAImageSampler* CreateBicubic(HFCPtr<HGF2DTransfoModel>& destToSrcTransfo, HRPPixelType const& pixelType);
+    IMAGEPPTEST_EXPORT static HRAImageSampler* CreateNearestRle(HFCPtr<HGF2DTransfoModel>& destToSrcTransfo, HRPPixelType const& pixelType);
+    IMAGEPPTEST_EXPORT static HRAImageSampler* CreateNearestN1(HFCPtr<HGF2DTransfoModel>& destToSrcTransfo, HRPPixelType const& pixelType);
+    IMAGEPPTEST_EXPORT static HRAImageSampler* CreateNearestN8(HFCPtr<HGF2DTransfoModel>& destToSrcTransfo, HRPPixelType const& pixelType);
+    IMAGEPPTEST_EXPORT static HRAImageSampler* CreateBilinear(HFCPtr<HGF2DTransfoModel>& destToSrcTransfo, HRPPixelType const& pixelType);
+    IMAGEPPTEST_EXPORT static HRAImageSampler* CreateBicubic(HFCPtr<HGF2DTransfoModel>& destToSrcTransfo, HRPPixelType const& pixelType);
 
 protected:
     //! Fill the output sample. Assumed that buffer is already allocated.

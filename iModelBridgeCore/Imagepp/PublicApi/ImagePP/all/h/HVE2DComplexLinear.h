@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVE2DComplexLinear.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HVE2DComplexLinear
@@ -46,8 +46,7 @@ public:
     IMAGEPP_EXPORT                    HVE2DComplexLinear (const HVE2DComplexLinear&    pi_rObject);
     IMAGEPP_EXPORT virtual            ~HVE2DComplexLinear();
 
-    HVE2DComplexLinear&
-    operator=(const HVE2DComplexLinear& pi_rObj);
+    IMAGEPP_EXPORT HVE2DComplexLinear& operator=(const HVE2DComplexLinear& pi_rObj);
 
     // Information extraction
     bool              IsEmpty() const;

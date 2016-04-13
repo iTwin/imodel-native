@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVE2DRectangle.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HVE2DRectangle
@@ -104,9 +104,8 @@ public:
     HVE2DRectangle&    operator=(const HVE2DRectangle& pi_rObj);
 
     // Getting and setting
-    void               SetRectangle(const HGF2DLocation& pi_rFirstPoint,
-                                    const HGF2DLocation& pi_rSecondPoint);
-    void               SetRectangle(double pi_XMin,
+    IMAGEPP_EXPORT void SetRectangle(const HGF2DLocation& pi_rFirstPoint, const HGF2DLocation& pi_rSecondPoint);
+    IMAGEPP_EXPORT void SetRectangle(double pi_XMin,
                                     double pi_YMin,
                                     double pi_XMax,
                                     double pi_YMax);
@@ -116,7 +115,7 @@ public:
                                     double* po_pYMin,
                                     double* po_pXMax,
                                     double* po_pYMax) const;
-    bool               Overlaps(const HVE2DShape& pi_rShape) const;
+    IMAGEPP_EXPORT bool Overlaps(const HVE2DShape& pi_rShape) const;
 
     // Misc
     IMAGEPP_EXPORT virtual void       Scale(double              pi_ScaleFactorX,

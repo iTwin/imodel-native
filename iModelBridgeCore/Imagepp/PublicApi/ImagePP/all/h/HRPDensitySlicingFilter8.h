@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPDensitySlicingFilter8.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRPDensitySlicingFilter8
@@ -20,8 +20,8 @@ class HRPDensitySlicingFilter8 : public HRPDensitySlicingFilter
     
 
 public:             // Primary methods
-    HRPDensitySlicingFilter8();
-    IMAGEPP_EXPORT          HRPDensitySlicingFilter8(const HFCPtr<HRPPixelType>&     pi_pFilterPixelType);
+    IMAGEPP_EXPORT HRPDensitySlicingFilter8();
+    IMAGEPP_EXPORT HRPDensitySlicingFilter8(const HFCPtr<HRPPixelType>&     pi_pFilterPixelType);
     HRPDensitySlicingFilter8(const HRPDensitySlicingFilter8& pi_rFilter);
 
     virtual            ~HRPDensitySlicingFilter8();

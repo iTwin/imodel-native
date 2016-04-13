@@ -7,6 +7,7 @@
 //:>+--------------------------------------------------------------------------------------
 
 #include "../imagepptestpch.h"
+
 #include "HGF2DHelmertTester.h"
 
 HGF2DHelmertTester::HGF2DHelmertTester() 

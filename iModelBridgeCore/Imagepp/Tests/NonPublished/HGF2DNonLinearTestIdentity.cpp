@@ -58,7 +58,7 @@ HGF2DNonLinearTestIdentity& HGF2DNonLinearTestIdentity::operator=(const HGF2DNon
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DNonLinearTestIdentity::ConvertDirect(double* pio_pXInOut,
+StatusInt HGF2DNonLinearTestIdentity::_ConvertDirect(double* pio_pXInOut,
                                                     double* pio_pYInOut) const
     {
     // Make sure variables are provided
@@ -71,7 +71,7 @@ StatusInt HGF2DNonLinearTestIdentity::ConvertDirect(double* pio_pXInOut,
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DNonLinearTestIdentity::ConvertDirect 
+StatusInt HGF2DNonLinearTestIdentity::_ConvertDirect 
 (
 double    pi_YIn,
 double    pi_XInStart,
@@ -104,7 +104,7 @@ double*   po_aYOut
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DNonLinearTestIdentity::ConvertDirect 
+StatusInt HGF2DNonLinearTestIdentity::_ConvertDirect 
 (
 size_t    pi_NumLoc,
 double*   pio_aXInOut,
@@ -121,7 +121,7 @@ double*   pio_aYInOut
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DNonLinearTestIdentity::ConvertDirect(double   pi_XIn,
+StatusInt HGF2DNonLinearTestIdentity::_ConvertDirect(double   pi_XIn,
                                                     double   pi_YIn,
                                                     double*  po_pXOut,
                                                     double*  po_pYOut) const
@@ -139,7 +139,7 @@ StatusInt HGF2DNonLinearTestIdentity::ConvertDirect(double   pi_XIn,
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DNonLinearTestIdentity::ConvertInverse(double* pio_pXInOut,
+StatusInt HGF2DNonLinearTestIdentity::_ConvertInverse(double* pio_pXInOut,
                                                      double* pio_pYInOut) const
     {
     // Make sure recipient variables are provided
@@ -152,7 +152,7 @@ StatusInt HGF2DNonLinearTestIdentity::ConvertInverse(double* pio_pXInOut,
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DNonLinearTestIdentity::ConvertInverse 
+StatusInt HGF2DNonLinearTestIdentity::_ConvertInverse 
 (
 double    pi_YIn,
 double    pi_XInStart,
@@ -184,7 +184,7 @@ double*   po_aYOut
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DNonLinearTestIdentity::ConvertInverse
+StatusInt HGF2DNonLinearTestIdentity::_ConvertInverse
 (
 size_t    pi_NumLoc,
 double*   pio_aXInOut,
@@ -201,7 +201,7 @@ double*   pio_aYInOut
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DNonLinearTestIdentity::ConvertInverse(double  pi_XIn,
+StatusInt HGF2DNonLinearTestIdentity::_ConvertInverse(double  pi_XIn,
                                                      double  pi_YIn,
                                                      double* po_pXOut,
                                                      double* po_pYOut) const
@@ -219,7 +219,7 @@ StatusInt HGF2DNonLinearTestIdentity::ConvertInverse(double  pi_XIn,
 //-----------------------------------------------------------------------------
 // IsStretchable
 //-----------------------------------------------------------------------------
-bool   HGF2DNonLinearTestIdentity::IsStretchable (double pi_AngleTolerance) const
+bool   HGF2DNonLinearTestIdentity::_IsStretchable (double pi_AngleTolerance) const
     {
     return(false);
     }
@@ -227,7 +227,7 @@ bool   HGF2DNonLinearTestIdentity::IsStretchable (double pi_AngleTolerance) cons
 //-----------------------------------------------------------------------------
 // IsIdentity
 //-----------------------------------------------------------------------------
-bool   HGF2DNonLinearTestIdentity::IsIdentity () const
+bool   HGF2DNonLinearTestIdentity::_IsIdentity () const
     {
     return(false);
     }
@@ -236,7 +236,7 @@ bool   HGF2DNonLinearTestIdentity::IsIdentity () const
 // PreservesLinearity
 // Indicate if the transformation model preserves linearity
 //-----------------------------------------------------------------------------
-bool   HGF2DNonLinearTestIdentity::PreservesLinearity () const
+bool   HGF2DNonLinearTestIdentity::_PreservesLinearity () const
     {
     return(false);
     }
@@ -245,7 +245,7 @@ bool   HGF2DNonLinearTestIdentity::PreservesLinearity () const
 // PreservesParallelism
 // Indicate if the transformation model preserves parallelism
 //-----------------------------------------------------------------------------
-bool   HGF2DNonLinearTestIdentity::PreservesParallelism() const
+bool   HGF2DNonLinearTestIdentity::_PreservesParallelism() const
     {
     return(false);
     }
@@ -254,7 +254,7 @@ bool   HGF2DNonLinearTestIdentity::PreservesParallelism() const
 // PreservesShape
 // Indicate if the transformation model preserves the shape
 //-----------------------------------------------------------------------------
-bool   HGF2DNonLinearTestIdentity::PreservesShape() const
+bool   HGF2DNonLinearTestIdentity::_PreservesShape() const
     {
     return(false);
     }
@@ -263,7 +263,7 @@ bool   HGF2DNonLinearTestIdentity::PreservesShape() const
 // PreservesDirection
 // Indicate if the transformation model preserves directions
 //-----------------------------------------------------------------------------
-bool   HGF2DNonLinearTestIdentity::PreservesDirection() const
+bool   HGF2DNonLinearTestIdentity::_PreservesDirection() const
     {
     return(false);
     }
@@ -271,7 +271,7 @@ bool   HGF2DNonLinearTestIdentity::PreservesDirection() const
 //-----------------------------------------------------------------------------
 // GetStretchParams
 //-----------------------------------------------------------------------------
-void    HGF2DNonLinearTestIdentity::GetStretchParams (double*  po_pScaleFactorX,
+void    HGF2DNonLinearTestIdentity::_GetStretchParams (double*  po_pScaleFactorX,
                                                       double*  po_pScaleFactorY,
                                                       HGF2DDisplacement* po_pDisplacement) const
     {
@@ -290,7 +290,7 @@ void    HGF2DNonLinearTestIdentity::GetStretchParams (double*  po_pScaleFactorX,
 // Prepare
 // Prepares transformation parameters
 //-----------------------------------------------------------------------------
-void HGF2DNonLinearTestIdentity::Prepare ()
+void HGF2DNonLinearTestIdentity::_Prepare()
     {
  
     }
@@ -298,10 +298,10 @@ void HGF2DNonLinearTestIdentity::Prepare ()
 // Reverse
 // This method reverses the transformation model
 //-----------------------------------------------------------------------------
-void HGF2DNonLinearTestIdentity::Reverse()
+void HGF2DNonLinearTestIdentity::_Reverse()
     {
     // Invoque reversing of ancester
-    HGF2DTransfoModel::Reverse();
+    HGF2DTransfoModel::_Reverse();
 
     // Prepare
     Prepare();
@@ -313,7 +313,7 @@ void HGF2DNonLinearTestIdentity::Reverse()
 // CanBeRepresentedByAMatrix
 // Indicates if the model can be represented by a transformation matrix
 //-----------------------------------------------------------------------------
-bool HGF2DNonLinearTestIdentity::CanBeRepresentedByAMatrix() const
+bool HGF2DNonLinearTestIdentity::_CanBeRepresentedByAMatrix() const
     {
     return(false);
     }
@@ -322,37 +322,27 @@ bool HGF2DNonLinearTestIdentity::CanBeRepresentedByAMatrix() const
 //  GetMatrix
 //  Gets the components of the model by matrix
 //-----------------------------------------------------------------------------
-HFCMatrix<3, 3> HGF2DNonLinearTestIdentity::GetMatrix() const
+HFCMatrix<3, 3> HGF2DNonLinearTestIdentity::_GetMatrix() const
     {
     HFCMatrix<3, 3> ReturnedMatrix;
+    ReturnedMatrix[0][0] = 1.0;
+    ReturnedMatrix[0][1] = 0.0;
+    ReturnedMatrix[0][2] = 0.0;
+    ReturnedMatrix[1][0] = 0.0;
+    ReturnedMatrix[1][1] = 1.0;
+    ReturnedMatrix[1][2] = 0.0;
+    ReturnedMatrix[2][0] = 0.0;
+    ReturnedMatrix[2][1] = 0.0;
+    ReturnedMatrix[2][2] = 1.0;
 
-    return(GetMatrix(ReturnedMatrix));
-    }
-
-//-----------------------------------------------------------------------------
-//  GetMatrix
-//  Gets the components of the model by matrix
-//-----------------------------------------------------------------------------
-HFCMatrix<3, 3>& HGF2DNonLinearTestIdentity::GetMatrix(HFCMatrix<3, 3>& po_rRecipient) const
-    {
-    po_rRecipient[0][0] = 1.0;
-    po_rRecipient[0][1] = 0.0;
-    po_rRecipient[0][2] = 0.0;
-    po_rRecipient[1][0] = 0.0;
-    po_rRecipient[1][1] = 1.0;
-    po_rRecipient[1][2] = 0.0;
-    po_rRecipient[2][0] = 0.0;
-    po_rRecipient[2][1] = 0.0;
-    po_rRecipient[2][2] = 1.0;
-
-    return(po_rRecipient);
+    return ReturnedMatrix;
     }
 
 //-----------------------------------------------------------------------------
 // ComposeInverseWithDirectOf
 // Composes a new transformation model as a combination of self and given
 //-----------------------------------------------------------------------------
-HFCPtr<HGF2DTransfoModel>  HGF2DNonLinearTestIdentity::ComposeInverseWithDirectOf(const HGF2DTransfoModel& pi_rModel) const
+HFCPtr<HGF2DTransfoModel>  HGF2DNonLinearTestIdentity::_ComposeInverseWithDirectOf(const HGF2DTransfoModel& pi_rModel) const
     {
      HFCPtr<HGF2DTransfoModel> pResultModel(pi_rModel.Clone());
 
@@ -365,7 +355,7 @@ HFCPtr<HGF2DTransfoModel>  HGF2DNonLinearTestIdentity::ComposeInverseWithDirectO
 // This method allocates a copy of self. The caller is responsible for
 // the deletion of this object.
 //-----------------------------------------------------------------------------
-HGF2DTransfoModel* HGF2DNonLinearTestIdentity::Clone () const
+HGF2DTransfoModel* HGF2DNonLinearTestIdentity::_Clone() const
     {
     // Allocate object as copy and return
     return (new HGF2DNonLinearTestIdentity(*this));
@@ -375,14 +365,14 @@ HGF2DTransfoModel* HGF2DNonLinearTestIdentity::Clone () const
 // ComposeYourself
 // PRIVATE
 //-----------------------------------------------------------------------------
-HFCPtr<HGF2DTransfoModel>  HGF2DNonLinearTestIdentity::ComposeYourself(const HGF2DTransfoModel& pi_rModel) const
+HFCPtr<HGF2DTransfoModel>  HGF2DNonLinearTestIdentity::_ComposeYourself(const HGF2DTransfoModel& pi_rModel) const
     {
     // Recipient
     HFCPtr<HGF2DTransfoModel> pResultModel;
 
     // Type is not known ... build a complex
     // To do this we call the ancester ComposeYourself
-    pResultModel = HGF2DTransfoModel::ComposeYourself(pi_rModel);
+    pResultModel = HGF2DTransfoModel::_ComposeYourself(pi_rModel);
 
     return (pResultModel);
     }

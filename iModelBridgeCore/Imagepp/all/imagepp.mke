@@ -1421,9 +1421,7 @@ LINKER_LIBRARIES =  $(BeLibJpegTurbo) \
         LINKER_LIBRARIES_DELAYLOADED   + $(ContextSubpartsLibs)lti_dsdk.lib $(ContextSubpartsLibs)lti_dsdk_cdll.lib 
 %endif
 
-%if !defined(IPP_OBJ_ONLY)
 %include $(sharedMki)linkLibrary.mki
-%endif
 
 #----------------------------------------------------------------------
 #       Create output directories

@@ -6,6 +6,7 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
 
+#ifdef TEST_DLL_NOT_NOT
 #include "../imagepptestpch.h"
 #include "HGF2DLiteLineTester.h"
 
@@ -275,3 +276,4 @@ TEST_F (HGF2DLiteLineTester, IsTest)
     ASSERT_TRUE(Line7.IsVertical());
 
     }
+#endif

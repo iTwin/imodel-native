@@ -26,7 +26,7 @@ HGF2DComplexTransfoModelTester::HGF2DComplexTransfoModelTester()
     Projective = HGF2DProjective(Displacement, Rotation, ScalingX, ScalingY, Anortho);
     Similitude = HGF2DSimilitude(Displacement, Rotation, Scaling);
     Stretch = HGF2DStretch(Displacement, ScalingX, ScalingY);
-    Translation = HGF2DTranslation(Displacement);
+    Translation.SetTranslation(Displacement);
 
     //Coord Sys
     pWorld = new HGF2DCoordSys();

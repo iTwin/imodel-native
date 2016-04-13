@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DTransfoModel.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGF2DTransfoModel
@@ -209,30 +209,29 @@ public:
     */
     //! Computation intensive algorithms can call ConvertDirect/ConvertInverse concurrently.
     //! Override this method if the descendant HGF2DTransfoModel is thread safe.
-    virtual bool IsConvertDirectThreadSafe() const = 0;
-    virtual bool IsConvertInverseThreadSafe() const = 0;
+    bool IsConvertDirectThreadSafe() const;
+    bool IsConvertInverseThreadSafe() const;
 
-    IMAGEPP_EXPORT virtual StatusInt ConvertDirect (double*   pio_pXInOut,
-                                                   double*   pio_pYInOut) const = 0;
+    IMAGEPP_EXPORT StatusInt ConvertDirect (double* pio_pXInOut, double* pio_pYInOut) const;
 
-    IMAGEPP_EXPORT virtual StatusInt ConvertDirect (double    pi_YIn,
-                                                   double    pi_XInStart,
-                                                   size_t     pi_NumLoc,
-                                                   double    pi_XInStep,
-                                                   double*   po_aXOut,
-                                                   double*   po_aYOut) const;
+    IMAGEPP_EXPORT StatusInt ConvertDirect (double    pi_YIn,
+                                            double    pi_XInStart,
+                                            size_t     pi_NumLoc,
+                                            double    pi_XInStep,
+                                            double*   po_aXOut,
+                                            double*   po_aYOut) const;
 
-    IMAGEPP_EXPORT virtual StatusInt ConvertDirect(double    pi_XIn,
-                                                  double    pi_YIn,
-                                                  double*   po_pXOut,
-                                                  double*   po_pYOut) const;
+    IMAGEPP_EXPORT StatusInt ConvertDirect(double    pi_XIn,
+                                           double    pi_YIn,
+                                           double*   po_pXOut,
+                                           double*   po_pYOut) const;
 
-    IMAGEPP_EXPORT virtual StatusInt ConvertDirect(size_t    pi_NumLoc,
-                                                  double*   pio_aXInOut,
-                                                  double*   pio_aYInOut) const;
+    IMAGEPP_EXPORT StatusInt ConvertDirect(size_t    pi_NumLoc,
+                                           double*   pio_aXInOut,
+                                           double*   pio_aYInOut) const;
 
 
-    IMAGEPP_EXPORT virtual StatusInt ConvertPosDirect (HGF2DPosition* pio_rpCoord) const;
+    IMAGEPP_EXPORT StatusInt ConvertPosDirect (HGF2DPosition* pio_rpCoord) const;
 
     /** -----------------------------------------------------------------------------
         This method converts inverse the given coordinates by the relation of the
@@ -255,33 +254,64 @@ public:
         @see ConvertDirect()
         -----------------------------------------------------------------------------
     */
-    IMAGEPP_EXPORT virtual StatusInt ConvertInverse(double*   pio_pXInOut,
-                                            double*   pio_pYInOut) const = 0;
+    IMAGEPP_EXPORT StatusInt ConvertInverse(double* pio_pXInOut, double* pio_pYInOut) const;
 
-    IMAGEPP_EXPORT virtual StatusInt ConvertInverse(double    pi_YIn,
+    IMAGEPP_EXPORT StatusInt ConvertInverse(double    pi_YIn,
                                             double    pi_XInStart,
                                             size_t     pi_NumLoc,
                                             double    pi_XInStep,
                                             double*   po_aXOut,
                                             double*   po_aYOut) const;
 
-    IMAGEPP_EXPORT virtual StatusInt ConvertInverse(double    pi_XIn,
+    IMAGEPP_EXPORT StatusInt ConvertInverse(double    pi_XIn,
                                             double    pi_YIn,
                                             double*   po_pXOut,
                                             double*   po_pYOut) const;
 
-    IMAGEPP_EXPORT virtual StatusInt ConvertInverse(size_t    pi_NumLoc,
-                                                   double*   pio_aXInOut,
-                                                   double*   pio_aYInOut) const;
+    IMAGEPP_EXPORT StatusInt ConvertInverse(size_t    pi_NumLoc,
+                                            double*   pio_aXInOut,
+                                            double*   pio_aYInOut) const;
 
-    IMAGEPP_EXPORT virtual StatusInt ConvertPosInverse (HGF2DPosition* pio_rpCoord) const;
+    IMAGEPP_EXPORT StatusInt ConvertPosInverse(HGF2DPosition* pio_rpCoord) const;
 
 
 
-    // Miscalenious
-    IMAGEPP_EXPORT virtual bool     IsIdentity() const;
-    IMAGEPP_EXPORT virtual bool     IsStretchable(double pi_AngleTolerance = 0) const;
+    
+    /** -----------------------------------------------------------------------------
+    This method returns true if the present instance of the transformation model
+    can be represented by an identity transformation model. This implies that
+    the model contains no transformation. If not overridden this method always
+    returns false.
 
+    @return A Boolean value. true if the model can be represented completely by
+    an identity, and false otherwise
+
+    @see GetStretchParams()
+    @see CanBeRepresentedByAMatrix()
+    -----------------------------------------------------------------------------*/
+    IMAGEPP_EXPORT bool IsIdentity() const;
+
+
+    /** -----------------------------------------------------------------------------
+    This method returns true if the present instance of the transformation model
+    can be represented by a stretch. This implies that the model only contains a
+    translation component and scaling factors. If not overridden this method
+    always returns false.
+    The optional angle tolerance parameter when provided indicates that some small
+    specified amount of rotation can be disregarded in the determination of
+    stretcheability of the model.
+
+    @param pi_AngleTolerance IN OPTIONAL An angular tolerance interpreted in
+    radians. The default value is 0 meaning that no
+    rotation is acceptable.
+
+    @return A Boolean value. true if the model can be represented completely by
+    a stretch, and false otherwise.
+
+    @see GetStretchParams()
+    @see CanBeRepresentedByAMatrix()
+    -----------------------------------------------------------------------------*/
+    IMAGEPP_EXPORT bool IsStretchable(double pi_AngleTolerance = 0) const;
 
     /** -----------------------------------------------------------------------------
         This method permits to extract the stretch parameters. These stretch parameters
@@ -306,21 +336,22 @@ public:
         @see IsStretchable()
         -----------------------------------------------------------------------------
     */
-    IMAGEPP_EXPORT virtual void      GetStretchParams(double*  po_pScaleFactorX,
-                                              double*  po_pScaleFactorY,
-                                              HGF2DDisplacement* po_pDisplacement) const = 0;
-    IMAGEPP_EXPORT virtual void      GetStretchParamsAt(double*  po_pScaleFactorX,
-                                                double*  po_pScaleFactorY,
-                                                HGF2DDisplacement* po_pDisplacement,
-                                                double   pi_XLocation,
-                                                double   pi_YLocation,
-                                                double   pi_AreaSize = -1.0) const;
+    IMAGEPP_EXPORT void GetStretchParams(double*  po_pScaleFactorX,
+                                         double*  po_pScaleFactorY,
+                                         HGF2DDisplacement* po_pDisplacement) const;
+
+    IMAGEPP_EXPORT void GetStretchParamsAt(double*  po_pScaleFactorX,
+                                           double*  po_pScaleFactorY,
+                                           HGF2DDisplacement* po_pDisplacement,
+                                           double   pi_XLocation,
+                                           double   pi_YLocation,
+                                           double   pi_AreaSize = -1.0) const;
 
 
-    virtual HGF2DTransfoModel* Clone() const = 0;
+    IMAGEPP_EXPORT HGF2DTransfoModel* Clone() const;
 
-    IMAGEPP_EXPORT virtual HFCPtr<HGF2DTransfoModel>     ComposeInverseWithDirectOf(const HGF2DTransfoModel& pi_rModel) const;
-    IMAGEPP_EXPORT virtual HFCPtr<HGF2DTransfoModel>     ComposeInverseWithInverseOf(const HGF2DTransfoModel& pi_rModel) const;
+    IMAGEPP_EXPORT HFCPtr<HGF2DTransfoModel>     ComposeInverseWithDirectOf(const HGF2DTransfoModel& pi_rModel) const;
+    IMAGEPP_EXPORT HFCPtr<HGF2DTransfoModel>     ComposeInverseWithInverseOf(const HGF2DTransfoModel& pi_rModel) const;
 
     /** -----------------------------------------------------------------------------
         This method indicates if the transformation model can be completely
@@ -332,7 +363,7 @@ public:
         @see GetMatrix()
         -----------------------------------------------------------------------------
     */
-    virtual bool     CanBeRepresentedByAMatrix() const = 0;
+    IMAGEPP_EXPORT bool CanBeRepresentedByAMatrix() const;
 
     /** -----------------------------------------------------------------------------
         These methods extract the matrix or equation parameters from the transformation
@@ -351,9 +382,18 @@ public:
         @see CanBeRepresentedByAMatrix()
         -----------------------------------------------------------------------------
     */
-    IMAGEPP_EXPORT virtual HFCMatrix<3, 3>      GetMatrix() const = 0;
+    IMAGEPP_EXPORT HFCMatrix<3, 3>  GetMatrix() const;
 
-    IMAGEPP_EXPORT virtual HFCPtr<HGF2DTransfoModel>    CreateSimplifiedModel() const;
+    /** -----------------------------------------------------------------------------
+    This method attempts to create a new transformation model that is a simplified,
+    more efficient form of the current model. If this is not possible, a null
+    pointer will be returned.
+
+    @return A smart pointer to the new simplified model, or null if the model
+    is already in its simplest form.
+    -----------------------------------------------------------------------------
+    */
+    IMAGEPP_EXPORT HFCPtr<HGF2DTransfoModel> CreateSimplifiedModel() const;
 
     // Geometric properties
 
@@ -372,7 +412,7 @@ public:
         @see PreservesDirection()
         -----------------------------------------------------------------------------
     */
-    virtual bool     PreservesLinearity() const = 0;
+    IMAGEPP_EXPORT bool     PreservesLinearity() const;
 
     /** -----------------------------------------------------------------------------
         This method returns true if the present instance of the transformation model
@@ -391,7 +431,7 @@ public:
         @see PreservesDirection()
         -----------------------------------------------------------------------------
     */
-    virtual bool     PreservesParallelism() const = 0;
+    IMAGEPP_EXPORT bool     PreservesParallelism() const;
     /** -----------------------------------------------------------------------------
         This method returns true if the present instance of the transformation model
         possesses the indicated shape preserving property.
@@ -410,7 +450,7 @@ public:
         @see PreservesDirection()
         -----------------------------------------------------------------------------
     */
-    virtual bool     PreservesShape() const = 0;
+    IMAGEPP_EXPORT bool     PreservesShape() const;
 
     /** -----------------------------------------------------------------------------
         This method returns true if the present instance of the transformation model
@@ -429,7 +469,7 @@ public:
         @see PreservesLinearity()
         -----------------------------------------------------------------------------
     */
-    virtual bool            PreservesDirection() const = 0;
+    IMAGEPP_EXPORT bool            PreservesDirection() const;
 
     /** -----------------------------------------------------------------------------
         This method returns true if the transformation model has a domain
@@ -442,7 +482,7 @@ public:
         @see GetInverseDomain()
         -----------------------------------------------------------------------------
     */
-    IMAGEPP_EXPORT virtual bool            HasDomain() const;
+    IMAGEPP_EXPORT bool            HasDomain() const;
 
     /** -----------------------------------------------------------------------------
         This method returns the direct domain of the transformation model.
@@ -461,8 +501,7 @@ public:
         @see GetInverseDomain()
         -----------------------------------------------------------------------------
     */
-    IMAGEPP_EXPORT virtual HFCPtr<HGF2DShape> 
-                            GetDirectDomain() const;
+    IMAGEPP_EXPORT HFCPtr<HGF2DShape> GetDirectDomain() const;
     
 
     /** -----------------------------------------------------------------------------
@@ -482,12 +521,19 @@ public:
         @see GetDirectDomain()
         -----------------------------------------------------------------------------
     */
-    IMAGEPP_EXPORT virtual HFCPtr<HGF2DShape> 
-                            GetInverseDomain() const;
+    IMAGEPP_EXPORT HFCPtr<HGF2DShape> GetInverseDomain() const;
 
 
-    // Operations
-    virtual void      Reverse ();
+    /** -----------------------------------------------------------------------------
+    This method reverses the current transformation model. The operation of
+    reversing implies that results produced by the ConvertDirect() method will
+    from now on be produced by ConvertInverse() and vice-versa. The different
+    parameters related to the model are modified. The units used for the direct
+    and inverse output channels are also swapped.
+
+    -----------------------------------------------------------------------------
+    */
+    IMAGEPP_EXPORT void Reverse();
 
     void StudyReversibilityPrecisionOver (const HGF2DLiteExtent& pi_PrecisionArea,
                                           double                pi_Step,
@@ -504,10 +550,46 @@ protected:
     IMAGEPP_EXPORT                   HGF2DTransfoModel(const HGF2DTransfoModel& pi_rObj);
     IMAGEPP_EXPORT HGF2DTransfoModel&    operator=(const HGF2DTransfoModel& pi_rObj);
 
-    // Protected methods (VIRTUAL)
-    IMAGEPP_EXPORT virtual HFCPtr<HGF2DTransfoModel>    ComposeYourself (const HGF2DTransfoModel& pi_rModel) const;
+    virtual bool            _IsConvertDirectThreadSafe()  const = 0;
+    virtual bool            _IsConvertInverseThreadSafe() const = 0;
+    
+    virtual StatusInt       _ConvertDirect(double* pio_pXInOut, double* pio_pYInOut) const = 0;
+    virtual StatusInt       _ConvertDirect(double  pi_YIn, double pi_XInStart, size_t pi_NumLoc, double pi_XInStep, double* po_aXOut, double* po_aYOut) const;
+    virtual StatusInt       _ConvertDirect(double  pi_XIn, double pi_YIn, double* po_pXOut, double* po_pYOut) const;
+    virtual StatusInt       _ConvertDirect(size_t  pi_NumLoc, double* pio_aXInOut, double* pio_aYInOut) const;
 
+    virtual StatusInt       _ConvertInverse(double* pio_pXInOut, double* pio_pYInOut) const = 0;
+    virtual StatusInt       _ConvertInverse(double  pi_YIn, double pi_XInStart, size_t pi_NumLoc, double pi_XInStep, double* po_aXOut, double* po_aYOut) const;
+    virtual StatusInt       _ConvertInverse(double  pi_XIn, double pi_YIn, double* po_pXOut, double* po_pYOut) const; 
+    virtual StatusInt       _ConvertInverse(size_t  pi_NumLoc, double* pio_aXInOut, double* pio_aYInOut) const;
 
+    virtual bool            _IsIdentity() const { return false; }
+
+    virtual bool            _IsStretchable(double pi_AngleTolerance) const { return false; }
+    virtual void            _GetStretchParams(double* po_pScaleFactorX, double* po_pScaleFactorY, HGF2DDisplacement* po_pDisplacement) const = 0;
+
+    virtual bool                              _HasDomain() const { return false;}
+    IMAGEPP_EXPORT virtual HFCPtr<HGF2DShape> _GetDirectDomain() const;
+    IMAGEPP_EXPORT virtual HFCPtr<HGF2DShape> _GetInverseDomain() const;
+
+    virtual HGF2DTransfoModel*          _Clone() const = 0;
+
+    IMAGEPP_EXPORT virtual HFCPtr<HGF2DTransfoModel>   _ComposeYourself(const HGF2DTransfoModel& pi_rModel) const;
+    IMAGEPP_EXPORT virtual HFCPtr<HGF2DTransfoModel>   _ComposeInverseWithDirectOf(const HGF2DTransfoModel& pi_rModel) const;
+    IMAGEPP_EXPORT virtual HFCPtr<HGF2DTransfoModel>   _ComposeInverseWithInverseOf(const HGF2DTransfoModel& pi_rModel) const;
+
+    IMAGEPP_EXPORT virtual void                        _Reverse();
+
+    virtual bool                        _CanBeRepresentedByAMatrix() const = 0;
+    virtual HFCMatrix<3, 3>             _GetMatrix() const = 0;
+
+    virtual HFCPtr<HGF2DTransfoModel>   _CreateSimplifiedModel() const = 0;
+
+    virtual bool                        _PreservesLinearity() const = 0;
+    virtual bool                        _PreservesParallelism() const = 0;
+    virtual bool                        _PreservesShape() const = 0;
+    virtual bool                        _PreservesDirection() const = 0;
+    
     /** -----------------------------------------------------------------------------
         PROTECTED
         This protected method must be overloaded by transformation models to
@@ -516,10 +598,15 @@ protected:
         by any of the unit specification methods
         -----------------------------------------------------------------------------
     */
-    virtual void      Prepare () = 0;
+    void Prepare() { _Prepare(); }
+    virtual void _Prepare () = 0;
 
-    // Protected methods (non-virtual)
-    HFCPtr<HGF2DTransfoModel>    CallComposeOf (const HGF2DTransfoModel& pi_rModel) const;
+    //-----------------------------------------------------------------------------
+    // CallComposeOf
+    // This protected method permits to call the protected method of another
+    // transfo model not necessarely of the same type.
+    //----------------------------------------------------------------------------
+    HFCPtr<HGF2DTransfoModel> CallComposeOf(const HGF2DTransfoModel& pi_rModel) const { return pi_rModel._ComposeYourself(*this); }
 
 private:
 
@@ -527,4 +614,3 @@ private:
     };
 
 END_IMAGEPP_NAMESPACE
-#include <Imagepp/all/h/HGF2DTransfoModel.hpp>

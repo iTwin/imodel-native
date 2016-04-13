@@ -189,7 +189,7 @@ HGF2DSimilitude& HGF2DSimilitude::operator=(const HGF2DSimilitude& pi_rObj)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Alexandre.Gariepy               06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool HGF2DSimilitude::IsConvertDirectThreadSafe() const 
+bool HGF2DSimilitude::_IsConvertDirectThreadSafe() const 
     { 
     return true; 
     }
@@ -197,7 +197,7 @@ bool HGF2DSimilitude::IsConvertDirectThreadSafe() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Alexandre.Gariepy               06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool HGF2DSimilitude::IsConvertInverseThreadSafe() const 
+bool HGF2DSimilitude::_IsConvertInverseThreadSafe() const 
     { 
     return true; 
     }
@@ -205,7 +205,7 @@ bool HGF2DSimilitude::IsConvertInverseThreadSafe() const
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DSimilitude::ConvertDirect(double* pio_pXInOut,
+StatusInt HGF2DSimilitude::_ConvertDirect(double* pio_pXInOut,
                                          double* pio_pYInOut) const
     {
     // Make sure that recipient variables are provided
@@ -227,7 +227,7 @@ StatusInt HGF2DSimilitude::ConvertDirect(double* pio_pXInOut,
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DSimilitude::ConvertDirect (double    pi_YIn,
+StatusInt HGF2DSimilitude::_ConvertDirect (double    pi_YIn,
                                           double    pi_XInStart,
                                           size_t    pi_NumLoc,
                                           double    pi_XInStep,
@@ -259,7 +259,7 @@ StatusInt HGF2DSimilitude::ConvertDirect (double    pi_YIn,
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DSimilitude::ConvertDirect (size_t    pi_NumLoc,
+StatusInt HGF2DSimilitude::_ConvertDirect (size_t    pi_NumLoc,
                                           double*   pio_aXInOut,
                                           double*   pio_aYInOut) const
     {
@@ -291,7 +291,7 @@ StatusInt HGF2DSimilitude::ConvertDirect (size_t    pi_NumLoc,
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DSimilitude::ConvertDirect(double   pi_XIn,
+StatusInt HGF2DSimilitude::_ConvertDirect(double   pi_XIn,
                                          double   pi_YIn,
                                          double*  po_pXOut,
                                          double*  po_pYOut) const
@@ -313,7 +313,7 @@ StatusInt HGF2DSimilitude::ConvertDirect(double   pi_XIn,
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DSimilitude::ConvertInverse(double* pio_pXInOut,
+StatusInt HGF2DSimilitude::_ConvertInverse(double* pio_pXInOut,
                                           double* pio_pYInOut) const
     {
     // Make sure that recipient variables are provided
@@ -336,7 +336,7 @@ StatusInt HGF2DSimilitude::ConvertInverse(double* pio_pXInOut,
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DSimilitude::ConvertInverse (double    pi_YIn,
+StatusInt HGF2DSimilitude::_ConvertInverse (double    pi_YIn,
                                            double    pi_XInStart,
                                            size_t    pi_NumLoc,
                                            double    pi_XInStep,
@@ -370,7 +370,7 @@ StatusInt HGF2DSimilitude::ConvertInverse (double    pi_YIn,
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DSimilitude::ConvertInverse (size_t    pi_NumLoc,
+StatusInt HGF2DSimilitude::_ConvertInverse (size_t    pi_NumLoc,
                                            double*   pio_aXInOut,
                                            double*   pio_aYInOut) const
     {
@@ -404,7 +404,7 @@ StatusInt HGF2DSimilitude::ConvertInverse (size_t    pi_NumLoc,
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DSimilitude::ConvertInverse(double  pi_XIn,
+StatusInt HGF2DSimilitude::_ConvertInverse(double  pi_XIn,
                                           double  pi_YIn,
                                           double* po_pXOut,
                                           double* po_pYOut) const
@@ -427,7 +427,7 @@ StatusInt HGF2DSimilitude::ConvertInverse(double  pi_XIn,
 // PreservesLinearity
 // Indicate if the transformation model preserves linearity
 //-----------------------------------------------------------------------------
-bool   HGF2DSimilitude::PreservesLinearity () const
+bool   HGF2DSimilitude::_PreservesLinearity () const
     {
     return (true);
     }
@@ -436,7 +436,7 @@ bool   HGF2DSimilitude::PreservesLinearity () const
 // PreservesParallelism
 // Indicate if the transformation model preserves parallelism
 //-----------------------------------------------------------------------------
-bool   HGF2DSimilitude::PreservesParallelism() const
+bool   HGF2DSimilitude::_PreservesParallelism() const
     {
     return (true);
     }
@@ -445,7 +445,7 @@ bool   HGF2DSimilitude::PreservesParallelism() const
 // PreservesShape
 // Indicate if the transformation model preserves the shape
 //-----------------------------------------------------------------------------
-bool   HGF2DSimilitude::PreservesShape() const
+bool   HGF2DSimilitude::_PreservesShape() const
     {
     return (true);
     }
@@ -454,7 +454,7 @@ bool   HGF2DSimilitude::PreservesShape() const
 // PreservesDirection
 // Indicate if the transformation model preserves directions
 //-----------------------------------------------------------------------------
-bool   HGF2DSimilitude::PreservesDirection() const
+bool   HGF2DSimilitude::_PreservesDirection() const
     {
     // Direction is preserved only if there is no rotation implied
     // Note that no tolerance is applied since exact equality to 0.0 is
@@ -467,7 +467,7 @@ bool   HGF2DSimilitude::PreservesDirection() const
 // CanBeRepresentedByAMatrix
 // Indicates if the model can be represented by a transformation matrix
 //-----------------------------------------------------------------------------
-bool HGF2DSimilitude::CanBeRepresentedByAMatrix() const
+bool HGF2DSimilitude::_CanBeRepresentedByAMatrix() const
     {
     return true;
     }
@@ -477,7 +477,7 @@ bool HGF2DSimilitude::CanBeRepresentedByAMatrix() const
 //  IsIdentity
 //  Returns true if the model contains no transformation
 //-----------------------------------------------------------------------------
-bool HGF2DSimilitude::IsIdentity () const
+bool HGF2DSimilitude::_IsIdentity () const
     {
     return ((m_Rotation == 0.0) &&
             (m_XTranslation == 0.0) &&
@@ -489,7 +489,7 @@ bool HGF2DSimilitude::IsIdentity () const
 //  IsStetchable
 //  Returns true if the model contains only scaling and translation
 //-----------------------------------------------------------------------------
-bool HGF2DSimilitude::IsStretchable (double pi_AngleTolerance) const
+bool HGF2DSimilitude::_IsStretchable (double pi_AngleTolerance) const
     {
     return (HDOUBLE_EQUAL(m_Rotation, 0.0, pi_AngleTolerance));
     }
@@ -500,7 +500,7 @@ bool HGF2DSimilitude::IsStretchable (double pi_AngleTolerance) const
 //  GetStetchParams
 //  Returns the stretch parameters
 //-----------------------------------------------------------------------------
-void HGF2DSimilitude::GetStretchParams (double* po_pScaleFactorX,
+void HGF2DSimilitude::_GetStretchParams (double* po_pScaleFactorX,
                                         double* po_pScaleFactorY,
                                         HGF2DDisplacement* po_pDisplacement) const
     {
@@ -729,7 +729,7 @@ void HGF2DSimilitude::AddScaling (double pi_Scale,
 // Reverse
 // This method reverses the transfomation mdoel
 //-----------------------------------------------------------------------------
-void    HGF2DSimilitude::Reverse()
+void    HGF2DSimilitude::_Reverse()
     {
     // Reverse transformation parameters
     m_XTranslation = m_XTranslationInverse;
@@ -738,7 +738,7 @@ void    HGF2DSimilitude::Reverse()
     m_Rotation = -m_Rotation;
 
     // Invoque reversing of ancester
-    HGF2DTransfoModel::Reverse();
+    HGF2DTransfoModel::_Reverse();
 
     // Prepare
     Prepare();
@@ -750,7 +750,7 @@ void    HGF2DSimilitude::Reverse()
 // ComposeInverseWithDirectOf
 // Composes a new transformation model as a combination of self and given
 //-----------------------------------------------------------------------------
-HFCPtr<HGF2DTransfoModel>  HGF2DSimilitude::ComposeInverseWithDirectOf (const HGF2DTransfoModel& pi_rModel) const
+HFCPtr<HGF2DTransfoModel>  HGF2DSimilitude::_ComposeInverseWithDirectOf (const HGF2DTransfoModel& pi_rModel) const
     {
     // Recipient
     HFCPtr<HGF2DTransfoModel> pResultModel;
@@ -839,7 +839,7 @@ HFCPtr<HGF2DTransfoModel>  HGF2DSimilitude::ComposeInverseWithDirectOf (const HG
 // This method allocates a copy of self. The caller is responsible for
 // the deletion of this object.
 //-----------------------------------------------------------------------------
-    HGF2DTransfoModel* HGF2DSimilitude::Clone () const
+    HGF2DTransfoModel* HGF2DSimilitude::_Clone() const
     {
     // Allocate object as copy and return
     return (new HGF2DSimilitude (*this));
@@ -855,7 +855,7 @@ HFCPtr<HGF2DTransfoModel>  HGF2DSimilitude::ComposeInverseWithDirectOf (const HG
 // returned. The major difference with the Compose() method, is that the order
 // of composition is reversed,
 //-----------------------------------------------------------------------------
-HFCPtr<HGF2DTransfoModel>  HGF2DSimilitude::ComposeYourself (const HGF2DTransfoModel& pi_rModel) const
+HFCPtr<HGF2DTransfoModel>  HGF2DSimilitude::_ComposeYourself (const HGF2DTransfoModel& pi_rModel) const
     {
     // Recipient
     HFCPtr<HGF2DTransfoModel> pResultModel;
@@ -901,7 +901,7 @@ HFCPtr<HGF2DTransfoModel>  HGF2DSimilitude::ComposeYourself (const HGF2DTransfoM
         {
         // Type is not known ... build a complex
         // To do this we call the ancester ComposeYourself
-        pResultModel = HGF2DTransfoModel::ComposeYourself (pi_rModel);
+        pResultModel = HGF2DTransfoModel::_ComposeYourself (pi_rModel);
         }
 
     return (pResultModel);
@@ -915,7 +915,7 @@ HFCPtr<HGF2DTransfoModel>  HGF2DSimilitude::ComposeYourself (const HGF2DTransfoM
 //  This methods prepares the conversion parameters from the basic
 //  model attribute
 //-----------------------------------------------------------------------------
-void HGF2DSimilitude::Prepare ()
+void HGF2DSimilitude::_Prepare()
     {
 
     double     MySin = sin(m_Rotation);
@@ -984,7 +984,7 @@ void HGF2DSimilitude::Copy(const HGF2DSimilitude& pi_rObj)
 //  GetMatrix
 //  Gets the components of the model by matrix
 //-----------------------------------------------------------------------------
-HFCMatrix<3, 3> HGF2DSimilitude::GetMatrix() const
+HFCMatrix<3, 3> HGF2DSimilitude::_GetMatrix() const
     {
     HFCMatrix<3, 3> ReturnedMatrix;
 
@@ -1004,34 +1004,10 @@ HFCMatrix<3, 3> HGF2DSimilitude::GetMatrix() const
     return(ReturnedMatrix);
     }
 
-
-//-----------------------------------------------------------------------------
-//  GetMatrix
-//  Gets the components of the model by matrix
-//-----------------------------------------------------------------------------
-HFCMatrix<3, 3>& HGF2DSimilitude::GetMatrix(HFCMatrix<3, 3>& po_rRecipient) const
-    {
-    double MySin = sin(m_Rotation);
-    double MyCos = cos(m_Rotation);
-
-    po_rRecipient[0][2] = m_XTranslation;
-    po_rRecipient[1][2] = m_YTranslation;
-    po_rRecipient[0][0] = m_Scale * MyCos;
-    po_rRecipient[0][1] = -m_Scale * MySin;
-    po_rRecipient[1][0] = m_Scale * MySin;
-    po_rRecipient[1][1] = m_Scale * MyCos;
-    po_rRecipient[2][0] = 0.0;
-    po_rRecipient[2][1] = 0.0;
-    po_rRecipient[2][2] = 1.0;
-
-    return(po_rRecipient);
-    }
-
-
 //-----------------------------------------------------------------------------
 // CreateSimplifiedModel
 //-----------------------------------------------------------------------------
-HFCPtr<HGF2DTransfoModel> HGF2DSimilitude::CreateSimplifiedModel() const
+HFCPtr<HGF2DTransfoModel> HGF2DSimilitude::_CreateSimplifiedModel() const
     {
     if (m_Rotation == 0.0)
         {

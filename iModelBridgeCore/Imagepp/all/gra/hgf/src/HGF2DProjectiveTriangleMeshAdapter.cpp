@@ -115,7 +115,7 @@ HGF2DProjectiveTriangleMeshAdapter& HGF2DProjectiveTriangleMeshAdapter::operator
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DProjectiveTriangleMeshAdapter::ConvertDirect(double    pi_YIn,
+StatusInt HGF2DProjectiveTriangleMeshAdapter::_ConvertDirect(double    pi_YIn,
                                                             double    pi_XInStart,
                                                             uint32_t  pi_NumLoc,
                                                             double    pi_XInStep,
@@ -170,7 +170,7 @@ StatusInt HGF2DProjectiveTriangleMeshAdapter::ConvertDirect(double    pi_YIn,
             {
             *pCurrentX = X;
             *pCurrentY = pi_YIn;
-            tempStatus = HGF2DProjectiveMeshAdapter::ConvertDirect(pCurrentX, pCurrentY);
+            tempStatus = HGF2DProjectiveMeshAdapter::_ConvertDirect(pCurrentX, pCurrentY);
             }
 
         // We will return the first non SUCCESS return status only yet continue on with all coordinates
@@ -186,7 +186,7 @@ StatusInt HGF2DProjectiveTriangleMeshAdapter::ConvertDirect(double    pi_YIn,
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DProjectiveTriangleMeshAdapter::ConvertInverse(double    pi_YIn,
+StatusInt HGF2DProjectiveTriangleMeshAdapter::_ConvertInverse(double    pi_YIn,
                                                              double    pi_XInStart,
                                                              uint32_t  pi_NumLoc,
                                                              double    pi_XInStep,
@@ -242,7 +242,7 @@ StatusInt HGF2DProjectiveTriangleMeshAdapter::ConvertInverse(double    pi_YIn,
             {
             *pCurrentX = X;
             *pCurrentY = pi_YIn;
-            HGF2DProjectiveMeshAdapter::ConvertInverse(pCurrentX, pCurrentY);
+            HGF2DProjectiveMeshAdapter::_ConvertInverse(pCurrentX, pCurrentY);
             }
         // We will return the first non SUCCESS return status only yet continue on with all coordinates
         if ((SUCCESS != tempStatus) && (SUCCESS == status))
@@ -261,7 +261,7 @@ StatusInt HGF2DProjectiveTriangleMeshAdapter::ConvertInverse(double    pi_YIn,
 // ComposeInverseWithDirectOf
 // Composes a new transformation model as a combination of self and given
 //-----------------------------------------------------------------------------
-HFCPtr<HGF2DTransfoModel>  HGF2DProjectiveTriangleMeshAdapter::ComposeInverseWithDirectOf(const HGF2DTransfoModel& pi_rModel) const
+HFCPtr<HGF2DTransfoModel>  HGF2DProjectiveTriangleMeshAdapter::_ComposeInverseWithDirectOf(const HGF2DTransfoModel& pi_rModel) const
     {
     KINVARIANTS;
 
@@ -312,7 +312,7 @@ HFCPtr<HGF2DTransfoModel>  HGF2DProjectiveTriangleMeshAdapter::ComposeInverseWit
 // ComposeYourself
 // PRIVATE
 //-----------------------------------------------------------------------------
-HFCPtr<HGF2DTransfoModel>  HGF2DProjectiveTriangleMeshAdapter::ComposeYourself (const HGF2DTransfoModel& pi_rModel) const
+HFCPtr<HGF2DTransfoModel>  HGF2DProjectiveTriangleMeshAdapter::_ComposeYourself (const HGF2DTransfoModel& pi_rModel) const
     {
     KINVARIANTS;
 
@@ -349,7 +349,7 @@ HFCPtr<HGF2DTransfoModel>  HGF2DProjectiveTriangleMeshAdapter::ComposeYourself (
         {
         // Type is not known ... build a complex
         // To do this we call the ancester ComposeYourself
-        pResultModel = HGF2DTransfoModel::ComposeYourself(pi_rModel);
+        pResultModel = HGF2DTransfoModel::_ComposeYourself(pi_rModel);
         }
 
     return (pResultModel);

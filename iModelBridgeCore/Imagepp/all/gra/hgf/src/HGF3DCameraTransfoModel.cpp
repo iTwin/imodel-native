@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGF3DCameraTransfoModel.cpp $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : KGI3DCameraTransfoModel (inline methods)
@@ -63,7 +63,7 @@ HGF3DCameraTransfoModel::~HGF3DCameraTransfoModel()
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-void HGF3DCameraTransfoModel::ConvertDirect(double*   pio_pXInOut,
+void HGF3DCameraTransfoModel::_ConvertDirect(double*   pio_pXInOut,
                                             double*   pio_pYInOut,
                                             double*   pio_pZInOut) const
     {
@@ -100,7 +100,7 @@ void HGF3DCameraTransfoModel::ConvertDirect(double*   pio_pXInOut,
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-void HGF3DCameraTransfoModel::ConvertInverse(double*   pio_pXInOut,
+void HGF3DCameraTransfoModel::_ConvertInverse(double*   pio_pXInOut,
                                              double*   pio_pYInOut,
                                              double*   pio_pZInOut) const
     {
@@ -145,7 +145,7 @@ void HGF3DCameraTransfoModel::ConvertInverse(double*   pio_pXInOut,
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-void HGF3DCameraTransfoModel::ConvertDirect(double    pi_XIn,
+void HGF3DCameraTransfoModel::_ConvertDirect(double    pi_XIn,
                                             double    pi_YIn,
                                             double    pi_ZIn,
                                             double*   po_pXOut,
@@ -162,7 +162,7 @@ void HGF3DCameraTransfoModel::ConvertDirect(double    pi_XIn,
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-void HGF3DCameraTransfoModel::ConvertInverse(double    pi_XIn,
+void HGF3DCameraTransfoModel::_ConvertInverse(double    pi_XIn,
                                              double    pi_YIn,
                                              double    pi_ZIn,
                                              double*   po_pXOut,

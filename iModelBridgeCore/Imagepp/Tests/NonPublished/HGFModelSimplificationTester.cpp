@@ -13,13 +13,15 @@ HGFModelSimplificationTester::HGFModelSimplificationTester()
     {
 
     //Similitude
-    Similitude6 = HGF2DSimilitude(HGF2DDisplacement(2.0, 0.0), (56 * PI/180), 3.0);
+    m_pSimilitude6 = new HGF2DSimilitude(HGF2DDisplacement(2.0, 0.0), (56 * PI/180), 3.0);
+
+    m_pSimilitude1 = new HGF2DSimilitude();
 
     //Stretch
-    Stretch2 = HGF2DStretch(HGF2DDisplacement(0.0, 0.3), 1.0, 1.0);
+    m_pStretch2 = new HGF2DStretch(HGF2DDisplacement(0.0, 0.3), 1.0, 1.0);
 
     // Projective with perspective
-    (void)Projective10;
+    HFCMatrix<3, 3> TheMatrix;
     TheMatrix[0][0] = 1.0;
     TheMatrix[0][1] = 0.0;
     TheMatrix[0][2] = 0.0;
@@ -29,7 +31,7 @@ HGFModelSimplificationTester::HGFModelSimplificationTester()
     TheMatrix[2][0] = 3.0;
     TheMatrix[2][1] = 4.0;
     TheMatrix[2][2] = 1.0;
-    Projective10.SetByMatrix(TheMatrix);
+    m_pProjective10 = new HGF2DProjective(TheMatrix);
 
     }
 
@@ -74,7 +76,7 @@ TEST_F(HGFModelSimplificationTester, SimilitudeCreateSimplifiedModel)
     HGF2DSimilitude   Similitude5(HGF2DDisplacement(2.0, 0.0), 0.0, 3.0);
 
     // This one should give an identity
-    pResult = Similitude1.CreateSimplifiedModel();
+    pResult = m_pSimilitude1->CreateSimplifiedModel();
     ASSERT_EQ(HGF2DIdentity::CLASS_ID, pResult->GetClassID());
 
     // This one should give a translation
@@ -103,7 +105,7 @@ TEST_F(HGFModelSimplificationTester, SimilitudeCreateSimplifiedModel)
     ASSERT_DOUBLE_EQ(3.0, ((HFCPtr<HGF2DStretch>&)pResult)->GetYScaling());
 
     // This one should not simplify
-    pResult = Similitude6.CreateSimplifiedModel();
+    pResult = m_pSimilitude6->CreateSimplifiedModel();
     ASSERT_TRUE(pResult == 0);
 
     }
@@ -128,7 +130,7 @@ TEST_F(HGFModelSimplificationTester, StretchCreateSimplifiedModel)
     ASSERT_EQ(HGF2DIdentity::CLASS_ID, pResult->GetClassID());
 
     // This one should give a translation
-    pResult = Stretch2.CreateSimplifiedModel();
+    pResult = m_pStretch2->CreateSimplifiedModel();
     ASSERT_EQ(HGF2DTranslation::CLASS_ID, pResult->GetClassID());
 
     ASSERT_NEAR(0.0, ((HFCPtr<HGF2DTranslation>&)pResult)->GetTranslation().GetDeltaX(), MYEPSILON);
@@ -339,7 +341,7 @@ TEST_F(HGFModelSimplificationTester, ProjectiveCreateSimplifiedModel)
     ASSERT_NEAR(0.0, ((HFCPtr<HGF2DAffine>&)pResult)->GetAnorthogonality(), MYEPSILON);
 
     // This one should not simplify
-    pResult = Projective10.CreateSimplifiedModel();
+    pResult = m_pProjective10->CreateSimplifiedModel();
     ASSERT_TRUE(pResult == 0);
 
     }
@@ -355,38 +357,38 @@ TEST_F(HGFModelSimplificationTester, ComplexTransfoModelCreateSimplifiedModel)
 
     // Complex with one model (not simplifiable)
     HGF2DComplexTransfoModel Complex2;
-    Complex2.AddModel(Similitude6);
+    Complex2.AddModel(*m_pSimilitude6);
 
     // Complex with one model (simplifiable)
     HGF2DComplexTransfoModel Complex3;
-    Complex3.AddModel(Similitude1);
+    Complex3.AddModel(*m_pSimilitude1);
 
     // Complex with two models (not simplifiable)
     HGF2DComplexTransfoModel Complex4;
-    Complex4.AddModel(Similitude6);
-    Complex4.AddModel(Projective10);
+    Complex4.AddModel(*m_pSimilitude6);
+    Complex4.AddModel(*m_pProjective10);
 
     // Complex with two models (simplifiable first)
     HGF2DComplexTransfoModel Complex5;
-    Complex5.AddModel(Similitude1);
-    Complex5.AddModel(Projective10);
+    Complex5.AddModel(*m_pSimilitude1);
+    Complex5.AddModel(*m_pProjective10);
 
     // Complex with two models (simplifiable second)
     HGF2DComplexTransfoModel Complex6;
-    Complex6.AddModel(Projective10);
-    Complex6.AddModel(Similitude1);
+    Complex6.AddModel(*m_pProjective10);
+    Complex6.AddModel(*m_pSimilitude1);
 
     // Complex with three models (simplifiable second)
     HGF2DComplexTransfoModel Complex7;
-    Complex7.AddModel(Projective10);
-    Complex7.AddModel(Similitude1);
-    Complex7.AddModel(Stretch2);
+    Complex7.AddModel(*m_pProjective10);
+    Complex7.AddModel(*m_pSimilitude1);
+    Complex7.AddModel(*m_pStretch2);
 
     // Complex with three models (simplifiable third)
     HGF2DComplexTransfoModel Complex8;
-    Complex8.AddModel(Projective10);
-    Complex8.AddModel(Similitude6);
-    Complex8.AddModel(Similitude1);
+    Complex8.AddModel(*m_pProjective10);
+    Complex8.AddModel(*m_pSimilitude6);
+    Complex8.AddModel(*m_pSimilitude1);
 
         // This one should give an identity
     pResult = Complex1.CreateSimplifiedModel();

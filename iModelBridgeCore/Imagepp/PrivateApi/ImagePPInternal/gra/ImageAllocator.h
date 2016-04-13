@@ -2,7 +2,7 @@
 |
 |     $Source: PrivateApi/ImagePPInternal/gra/ImageAllocator.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -126,10 +126,10 @@ struct ImageAllocatorPool
     friend ImageAllocatorRef;
 
     public:
-        ImageAllocatorPool(uint32_t maxAllocators = 5, uint32_t blockAlignment = 64 * 64, uint32_t maxBlocksPerAllocator = 5);
-        ~ImageAllocatorPool();
+        IMAGEPPTEST_EXPORT ImageAllocatorPool(uint32_t maxAllocators = 5, uint32_t blockAlignment = 64 * 64, uint32_t maxBlocksPerAllocator = 5);
+        IMAGEPPTEST_EXPORT ~ImageAllocatorPool();
 
-        ImageAllocatorRefPtr GetAllocatorRef();
+        IMAGEPPTEST_EXPORT ImageAllocatorRefPtr GetAllocatorRef();
 
     protected:
         // to be used by ImageAllocatorRef to get access to allocators.

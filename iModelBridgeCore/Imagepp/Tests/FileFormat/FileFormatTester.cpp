@@ -8,7 +8,11 @@
 // Class : ExportTester
 //-----------------------------------------------------------------------------
 
-#include "../imagepptestpch.h"
+#include <Bentley/BeTest.h>
+#include <ImagePP/h/ImageppAPI.h>
+#include <ImagePP/all/h/HRFFileFormats.h>
+#include <ImagePP/all/h/HGFHMRStdWorldCluster.h>
+#include <ImagePP/all/h/HUTImportFromFileExportToFile.h>
 
 //#ifdef USE_GTEST        // TEST_P only available when using gtest.
 
@@ -25,6 +29,7 @@
 #include <BeSQLite/L10N.h>
 #include <BeSQLite/BeSQLite.h>
 
+USING_NAMESPACE_IMAGEPP
 
 /*=================================================================================**//**
 * @bsiclass                                         Laurent.Robert-Veillette    04/2016
@@ -311,21 +316,21 @@ TEST_P(ExportTester, FromFileToiTiffExportAllOptions)
                 HFCPtr<HFCURL> pURL = new HFCURLFile(HFCURLFile::s_SchemeName() + "://" + outfilename.GetNameUtf8());
                 //????????????????????????????????????????????????????????????????????????????????????????????????????????????
                                   
-                HUTImportFromFileExportToFile exporter(worldCluster);
+                std::unique_ptr<HUTImportFromFileExportToFile> exporter(new HUTImportFromFileExportToFile(worldCluster));
 
-                exporter.SetImportRasterFile(pRasterFileSource);
-                exporter.SelectExportFileFormat(creator);
-                exporter.SelectExportFilename(pURL);
-                exporter.SelectPixelType(pCurrentPixelType->GetPixelTypeClassID());
-                exporter.SelectCodec(pCurrentCodec->GetCodecClassID());
-                exporter.SelectBlockType(pCurrentBlock->GetBlockType());
+                exporter->SetImportRasterFile(pRasterFileSource);
+                exporter->SelectExportFileFormat(creator);
+                exporter->SelectExportFilename(pURL);
+                exporter->SelectPixelType(pCurrentPixelType->GetPixelTypeClassID());
+                exporter->SelectCodec(pCurrentCodec->GetCodecClassID());
+                exporter->SelectBlockType(pCurrentBlock->GetBlockType());
 
                 try
                     {
                     // Exporting
-                    HFCPtr<HRFRasterFile> pFile = exporter.StartExport();
+                    HFCPtr<HRFRasterFile> pFile = exporter->StartExport();
                     ASSERT_TRUE(pFile.GetPtr() != nullptr);
-                    //ASSERT_NO_THROW(exporter.StartExport());
+                    //ASSERT_NO_THROW(exporter->StartExport());
                     }                
                 catch (...)
                     {

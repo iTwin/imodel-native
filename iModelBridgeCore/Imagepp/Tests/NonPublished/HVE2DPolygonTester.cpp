@@ -6,6 +6,7 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
 
+#ifdef TEST_DLL_NOT_NOT
 #include "../imagepptestpch.h"
 #include "EnvironnementTest.h"
 #include "HVE2DPolygonTester.h"
@@ -3452,3 +3453,5 @@ TEST_F (HVE2DPolygonTester, CalculateSpatialPositionOfTest)
     pShape1->CalculateSpatialPositionOf(*pShape2);
 
     }
+
+#endif

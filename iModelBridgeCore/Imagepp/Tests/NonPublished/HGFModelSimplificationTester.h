@@ -23,14 +23,12 @@ protected :
     HFCPtr<HGF2DTransfoModel> pResult;
 
     //Similitude
-    HGF2DSimilitude   Similitude1;
-    HGF2DSimilitude   Similitude6;
+    HFCPtr<HGF2DSimilitude>   m_pSimilitude1;
+    HFCPtr<HGF2DSimilitude>   m_pSimilitude6;
 
     //Stretch
-    HGF2DStretch      Stretch2;
+    HFCPtr<HGF2DStretch>      m_pStretch2;
 
     //Projective
-    HGF2DProjective   Projective10;
-    HFCMatrix<3, 3> TheMatrix;
-
+    HFCPtr<HGF2DProjective>   m_pProjective10;
     };

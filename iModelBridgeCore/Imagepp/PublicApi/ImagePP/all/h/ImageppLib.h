@@ -525,7 +525,7 @@ public:
             //! Implementation should look like this: 
             //! virtual void _RegisterFileFormat() override { REGISTER_SUPPORTED_FILEFORMAT }
             //! where REGISTER_SUPPORTED_FILEFORMAT is a macro in HRFFileFormats.h
-            IMAGEPP_EXPORT virtual void             _RegisterFileFormat()=0;
+            virtual void             _RegisterFileFormat()=0;
 
         public:
             Host()

@@ -6,6 +6,7 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
 
+#ifdef TEST_DLL_NOT_NOT
 #include "../imagepptestpch.h"
 #include "HGF2DLiteSegmentTester.h"
 
@@ -1368,3 +1369,4 @@ TEST_F (HGF2DLiteSegmentTester, AreContiguous6)
     ASSERT_FALSE(HorizontalSegmentSup1.AreContiguous(HorizontalSegmentSup2));
 
     }
+#endif

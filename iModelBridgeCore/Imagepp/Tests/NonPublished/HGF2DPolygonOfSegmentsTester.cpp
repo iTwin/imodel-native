@@ -6,6 +6,7 @@
 ////:>
 ////:>+--------------------------------------------------------------------------------------
 
+#ifdef TEST_DLL_NOT_NOT
 #include "../imagepptestpch.h"
 #include "EnvironnementTest.h"
 #include "HGF2DPolygonOfSegmentsTester.h"
@@ -7818,3 +7819,4 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  IntersectShapeWhoFailed2)
     HFCPtr<HGF2DShape>  pResult = pShape1->IntersectShape (*pShape2);
         
     }
+#endif

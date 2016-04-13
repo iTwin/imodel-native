@@ -30,7 +30,7 @@ TEST(RectangleChangeCoordSysTester, CompareHGF2DRectangleAndHVEShape)
     //Transform via HGF2DRectangle
     HGF2DRectangle currentExtentHGF(minX, minY, maxX, maxY);
     HFCPtr<HGF2DTransfoModel> transfoModel = pDestCoordSys->GetTransfoModelTo(pSourceCoordSys);
-    HFCPtr<HGF2DShape> resultShape = currentExtentHGF.AllocTransformDirect(*pFinalTransfoModel);
+    HFCPtr<HGF2DShape> resultShape = (&currentExtentHGF)->AllocTransformDirect(*pFinalTransfoModel);
     HGF2DLiteExtent finalExtentHGFRectangle = resultShape->GetExtent();
 
     //Transform via HVEShape

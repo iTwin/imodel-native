@@ -102,7 +102,7 @@ HGF2DTransfoModelAdapter& HGF2DTransfoModelAdapter::operator=(const HGF2DTransfo
 
 
 
-void    HGF2DTransfoModelAdapter::Reverse()
+void    HGF2DTransfoModelAdapter::_Reverse()
     {
     HINVARIANTS;
 
@@ -111,7 +111,7 @@ void    HGF2DTransfoModelAdapter::Reverse()
 
     // Invoque reversing of ancester
     // This call will in turn invoque Prepare()
-    HGF2DTransfoModel::Reverse();
+    HGF2DTransfoModel::_Reverse();
     }
 
 
@@ -147,7 +147,7 @@ void HGF2DTransfoModelAdapter::StudyPrecisionOver(const HGF2DLiteExtent& pi_Prec
 //  This methods prepares the conversion parameters from the basic
 //  model attribute
 //-----------------------------------------------------------------------------
-void HGF2DTransfoModelAdapter::Prepare ()
+void HGF2DTransfoModelAdapter::_Prepare()
     {
     // Obtain conversion ratio for direct X to inverse X units
 

@@ -94,9 +94,9 @@
         <SubPart PartName="PdfLibInitializer"       PartFile="PdfLibInitializer"                        Repository="PdfLibInterface"/>
         <SubPart PartName="Adobe11.0"               PartFile="${SrcRoot}bsicommon/CvsPartfiles/adobe"        Repository="bin-adobe11.0"/-->
     </Part>
-
-    <!-- shared between ImagePPDll and ImagePPDllObjsOnly-->
-    <Part Name ="ImageppDLLSubParts">
+    
+    <!-- NOTE: Graphite uses "G" as an ApiNumber (library suffix) to disambiguate from Vancouver libraries -->
+    <Part Name="ImagePPDll" BentleyBuildMakeFile="All/ImagePP.mke" ApiNumber="G06">
         <SubPart PartName="PublicApi" />
         <SubPart PartName="ImagePPThirdPartsDll" />
         <SubPart PartName="BentleyDll"                      PartFile="Bentley"              Repository="Bentley" />
@@ -112,11 +112,6 @@
         <SubPart PartName="GdalLib" />
         <SubPart PartName="GdalData" />
         <SubPart PartName="MatrixFromTiePtsLib" />
-    </Part>
-    
-    <!-- NOTE: Graphite uses "G" as an ApiNumber (library suffix) to disambiguate from Vancouver libraries -->
-    <Part Name="ImagePPDll" BentleyBuildMakeFile="All/ImagePP.mke" ApiNumber="G06">
-        <SubPart PartName="ImageppDLLSubParts" />
         <Bindings>
             <Libs>Delivery/$(shlibprefix)Imagepp$(libext)</Libs>
             <Assemblies ProductDirectoryName="ImagePPAssemblies">Delivery/$(shlibprefix)Imagepp$(ApiNumber)$(shlibext)
@@ -129,20 +124,7 @@
         </Bindings>
     </Part>
 
-    <!-- ImagePP tests use a lot of private/internal stuff that we do not want to export. So we had 2 choices:
-        1) Use a static version. That gives all sort of conflict between dynamic and static part when linking the test. 
-           And we also have to build the library twice.
-        2) Hijack ImagePPDll objs and add them to the test obj list. We save the second build and avoid to export everything -->
-    <Part Name="ImagePPDllObjsOnly" BentleyBuildMakeFile="All/ImagePP.mke" BMakeOptions="+dIPP_OBJ_ONLY">
-        <SubPart PartName="ImageppDLLSubParts" />
-        <Bindings>
-            <Files ProductDirectoryName="xliffs" Required="false" SubPartDirectory="xliffs">
-                Delivery/xliffs/ImagePPMessages_en.xliff
-                Delivery/xliffs/ImagePPExceptionMessages_en.xliff
-            </Files>
-        </Bindings>
-    </Part>
-   
+  
     <!-- NOTE: Graphite uses "G" as an ApiNumber (library suffix) to disambiguate from Vancouver libraries -->
     <Part Name="IppImagingDll" BentleyBuildMakeFile="IppImaging/IppImaging.mke" ApiNumber="G06" OnlyPlatforms="x86,x64">
         <SubPart PartName="ImagePPDll" />       
@@ -197,7 +179,7 @@
     <!-- ******************************** Unit Tests ************************************** -->
 
     <Part Name="ImagePPSqlang" BentleyBuildMakeFile="${SrcRoot}bsicommon/sqlang/mki/XliffsToDb.mke" BentleyBuildMakeOptions="-dSQLANG_OutputDb=$(OutputRootDir)Build/ImagePP/ImagePP_en.sqlang.db3 -dSQLANG_XliffWildcard=$(BuildContext)SubParts/xliffs/*.xliff">
-        <SubPart PartName="ImagePPDllObjsOnly" />
+        <SubPart PartName="ImagePPDll" />
         <Bindings>
             <Files ProductDirectoryName="sqlang" Required="true">Delivery/sqlang/ImagePP_en.sqlang.db3</Files>
         </Bindings>
@@ -206,7 +188,6 @@
     <Part Name="PrewireForUnitTests" BentleyBuildMakeFile="Tests/prewire.mke">
         <SubPart PartName="ImagePPSqlang"/>
         <Bindings>
-            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="ImagePP/ImagePPDllObjs" SourceName="Delivery/UnitTests/Objects/ImagePPDllObjs"/>
             <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="ImagePP" SubPartDirectory="UnitTests/ImagePP">Delivery/UnitTests/ignore_list.txt</Files>
         </Bindings>
     </Part>

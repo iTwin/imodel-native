@@ -28,7 +28,7 @@ public:
 
     // Primary methods
 
-    HRPCustomMap16Filter();
+    IMAGEPPTEST_EXPORT HRPCustomMap16Filter();
     HRPCustomMap16Filter(Byte pi_channels);
     HRPCustomMap16Filter(const HFCPtr<HRPPixelType>& pi_pFilterPixelType);
     virtual         ~HRPCustomMap16Filter();
@@ -134,7 +134,7 @@ public:
         };
 
     // Primary methods
-    HRPHistogramScalingFilter16();
+    IMAGEPPTEST_EXPORT HRPHistogramScalingFilter16();
     HRPHistogramScalingFilter16(const HFCPtr<HRPPixelType>&   pi_pFilterPixelType,
                                 HistogramScalingMode          pi_ScalingMode);
     virtual         ~HRPHistogramScalingFilter16();
@@ -176,7 +176,7 @@ class HRPGammaFilter16 : public HRPMapFilter16
 
 public:
 
-    HRPGammaFilter16();
+    IMAGEPPTEST_EXPORT HRPGammaFilter16();
     HRPGammaFilter16(double pi_Gamma);
     virtual ~HRPGammaFilter16();
 

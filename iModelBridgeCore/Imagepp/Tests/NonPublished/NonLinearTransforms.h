@@ -62,17 +62,17 @@
         }
 
     // Conversion interface
-    virtual bool       IsConvertDirectThreadSafe()  const override {return true;}
-    virtual bool       IsConvertInverseThreadSafe() const override {return true;}
+    virtual bool       _IsConvertDirectThreadSafe()  const override {return true;}
+    virtual bool       _IsConvertInverseThreadSafe() const override {return true;}
 
-    virtual StatusInt  ConvertDirect(double* pio_pXInOut, double* pio_pYInOut) const
+    virtual StatusInt  _ConvertDirect(double* pio_pXInOut, double* pio_pYInOut) const override
         {
         RemapCoordinate(*pio_pXInOut, *pio_pYInOut, pio_pXInOut, pio_pYInOut, m_reverse);
         return SUCCESS;
         }
 
-    virtual StatusInt  ConvertDirect(double pi_YIn, double pi_XInStart, size_t pi_NumLoc,
-                                     double pi_XInStep, double* po_pXOut, double* po_pYOut) const
+    virtual StatusInt  _ConvertDirect(double pi_YIn, double pi_XInStart, size_t pi_NumLoc,
+                                     double pi_XInStep, double* po_pXOut, double* po_pYOut) const override
         {
         double  X;
         uint32_t Index;
@@ -89,7 +89,7 @@
         }
 
 
-    virtual StatusInt ConvertDirect(size_t pi_NumLoc, double* pio_aXInOut, double* pio_aYInOut) const
+    virtual StatusInt _ConvertDirect(size_t pi_NumLoc, double* pio_aXInOut, double* pio_aYInOut) const override
         {
         for (uint32_t i = 0; i < pi_NumLoc; i++)
             {
@@ -98,21 +98,21 @@
         return SUCCESS;
         }
 
-    virtual StatusInt  ConvertDirect(double pi_XIn, double pi_YIn, double* po_pXOut, 
-                                     double* po_pYOut) const
+    virtual StatusInt  _ConvertDirect(double pi_XIn, double pi_YIn, double* po_pXOut,
+                                     double* po_pYOut) const override
         {
         RemapCoordinate(pi_XIn, pi_YIn, po_pXOut, po_pYOut, m_reverse);
         return SUCCESS;
         }
 
-    virtual StatusInt  ConvertInverse(double* pio_pXInOut, double* pio_pYInOut) const
+    virtual StatusInt  _ConvertInverse(double* pio_pXInOut, double* pio_pYInOut) const override
         {
         RemapCoordinate(*pio_pXInOut, *pio_pYInOut, pio_pXInOut, pio_pYInOut, !m_reverse);
         return SUCCESS;
         }
 
-    virtual StatusInt  ConvertInverse(double pi_YIn, double pi_XInStart, size_t pi_NumLoc,
-                                      double pi_XInStep, double* po_pXOut, double* po_pYOut) const
+    virtual StatusInt  _ConvertInverse(double pi_YIn, double pi_XInStart, size_t pi_NumLoc,
+                                      double pi_XInStep, double* po_pXOut, double* po_pYOut) const override
         {
         double  X;
         uint32_t Index;
@@ -128,7 +128,7 @@
         return SUCCESS;
         }
 
-    virtual StatusInt ConvertInverse(size_t pi_NumLoc, double* pio_aXInOut, double* pio_aYInOut) const
+    virtual StatusInt _ConvertInverse(size_t pi_NumLoc, double* pio_aXInOut, double* pio_aYInOut) const override
         {
         for (uint32_t i = 0; i < pi_NumLoc; i++)
             {
@@ -137,49 +137,51 @@
         return SUCCESS;
         }
 
-    virtual StatusInt  ConvertInverse(double pi_XIn, double pi_YIn, double* po_pXOut,
-                                      double* po_pYOut) const
+    virtual StatusInt  _ConvertInverse(double pi_XIn, double pi_YIn, double* po_pXOut,
+                                      double* po_pYOut) const override
         {
         RemapCoordinate(pi_XIn, pi_YIn, po_pXOut, po_pYOut, !m_reverse);
         return SUCCESS;
         }
 
-    virtual bool IsIdentity() const {return false;}
+    virtual bool _IsIdentity() const override {return false;}
 
-    virtual bool IsStretchable(double pi_AngleTolerance = 0) const {return false;}
+    virtual bool _IsStretchable(double pi_AngleTolerance = 0) const override {return false;}
 
-    virtual void GetStretchParams(double* po_pScaleFactorX, double* po_pScaleFactorY,
-                                  HGF2DDisplacement* po_pDisplacement) const
+    virtual void _GetStretchParams(double* po_pScaleFactorX, double* po_pScaleFactorY,
+                                  HGF2DDisplacement* po_pDisplacement) const override
         {
-        HGF2DTransfoModel::GetStretchParamsAt(po_pScaleFactorX, po_pScaleFactorY, po_pDisplacement, 0.0, 0.0);
+        GetStretchParamsAt(po_pScaleFactorX, po_pScaleFactorY, po_pDisplacement, 0.0, 0.0);
         }
 
-    virtual HGF2DTransfoModel* Clone () const override
+    virtual HGF2DTransfoModel* _Clone () const override
         {
         return new ParabolaTransfoModel(*this);
         }
 
-    virtual bool CanBeRepresentedByAMatrix() const {return false;}
+    virtual bool _CanBeRepresentedByAMatrix() const override {return false;}
 
-    virtual HFCMatrix<3, 3> GetMatrix() const
+    virtual HFCMatrix<3, 3> _GetMatrix() const override
         {
         HFCMatrix<3, 3> m;
         return m;
         }
 
+    virtual HFCPtr<HGF2DTransfoModel> _CreateSimplifiedModel() const override { return nullptr; };
+
     // Geometric properties
-    virtual bool PreservesLinearity() const {return false;}
-    virtual bool PreservesParallelism() const {return false;}
-    virtual bool PreservesShape() const {return false;}
-    virtual bool PreservesDirection() const {return false;}
+    virtual bool _PreservesLinearity() const override {return false;}
+    virtual bool _PreservesParallelism() const override {return false;}
+    virtual bool _PreservesShape() const override {return false;}
+    virtual bool _PreservesDirection() const override {return false;}
 
     // Operations
-    virtual void Reverse ()
+    virtual void _Reverse () override
         {
         m_reverse = !m_reverse;
         }
 
-    virtual void Prepare () {}
+    virtual void _Prepare () override {}
 
     bool m_reverse;
 
@@ -235,17 +237,17 @@ class ThirdDegreeTransfoModel : public HGF2DTransfoModel
         }
 
     // Conversion interface
-    virtual bool       IsConvertDirectThreadSafe() const override {return true;}
-    virtual bool       IsConvertInverseThreadSafe() const override {return true;}
+    virtual bool       _IsConvertDirectThreadSafe() const override {return true;}
+    virtual bool       _IsConvertInverseThreadSafe() const override {return true;}
 
-    virtual StatusInt  ConvertDirect(double* pio_pXInOut, double* pio_pYInOut) const
+    virtual StatusInt  _ConvertDirect(double* pio_pXInOut, double* pio_pYInOut) const override
         {
         RemapCoordinate(*pio_pXInOut, *pio_pYInOut, m_CoefficientsA, m_CoefficientsB, pio_pXInOut, pio_pYInOut);
         return SUCCESS;
         }
 
-    virtual StatusInt  ConvertDirect(double pi_YIn, double pi_XInStart, size_t pi_NumLoc,
-                                     double pi_XInStep, double* po_pXOut, double* po_pYOut) const
+    virtual StatusInt  _ConvertDirect(double pi_YIn, double pi_XInStart, size_t pi_NumLoc,
+                                     double pi_XInStep, double* po_pXOut, double* po_pYOut) const override
         {
         double  X;
         uint32_t Index;
@@ -261,7 +263,7 @@ class ThirdDegreeTransfoModel : public HGF2DTransfoModel
         return SUCCESS;
         }
 
-    virtual StatusInt ConvertDirect(size_t pi_NumLoc, double* pio_aXInOut, double* pio_aYInOut) const
+    virtual StatusInt _ConvertDirect(size_t pi_NumLoc, double* pio_aXInOut, double* pio_aYInOut) const override
         {
         for (uint32_t i = 0; i < pi_NumLoc; i++)
             {
@@ -270,21 +272,21 @@ class ThirdDegreeTransfoModel : public HGF2DTransfoModel
         return SUCCESS;
         }
 
-    virtual StatusInt  ConvertDirect(double pi_XIn, double pi_YIn, double* po_pXOut, 
-                                     double* po_pYOut) const
+    virtual StatusInt  _ConvertDirect(double pi_XIn, double pi_YIn, double* po_pXOut,
+                                     double* po_pYOut) const override
         {
         RemapCoordinate(pi_XIn, pi_YIn, m_CoefficientsA, m_CoefficientsB, po_pXOut, po_pYOut);
         return SUCCESS;
         }
 
-    virtual StatusInt  ConvertInverse(double* pio_pXInOut, double* pio_pYInOut) const
+    virtual StatusInt  _ConvertInverse(double* pio_pXInOut, double* pio_pYInOut) const override
         {
         RemapCoordinate(*pio_pXInOut, *pio_pYInOut, m_CoefficientsC, m_CoefficientsD, pio_pXInOut, pio_pYInOut);
         return SUCCESS;
         }
 
-    virtual StatusInt  ConvertInverse(double pi_YIn, double pi_XInStart, size_t pi_NumLoc,
-                                      double pi_XInStep, double* po_pXOut, double* po_pYOut) const
+    virtual StatusInt  _ConvertInverse(double pi_YIn, double pi_XInStart, size_t pi_NumLoc,
+                                      double pi_XInStep, double* po_pXOut, double* po_pYOut) const override
         {
         double  X;
         uint32_t Index;
@@ -300,7 +302,7 @@ class ThirdDegreeTransfoModel : public HGF2DTransfoModel
         return SUCCESS;
         }
 
-    virtual StatusInt ConvertInverse(size_t pi_NumLoc, double* pio_aXInOut, double* pio_aYInOut) const
+    virtual StatusInt _ConvertInverse(size_t pi_NumLoc, double* pio_aXInOut, double* pio_aYInOut) const override
         {
         for (uint32_t i = 0; i < pi_NumLoc; i++)
             {
@@ -309,44 +311,46 @@ class ThirdDegreeTransfoModel : public HGF2DTransfoModel
         return SUCCESS;
         }
 
-    virtual StatusInt  ConvertInverse(double pi_XIn, double pi_YIn, double* po_pXOut,
-                                      double* po_pYOut) const
+    virtual StatusInt  _ConvertInverse(double pi_XIn, double pi_YIn, double* po_pXOut,
+                                      double* po_pYOut) const override
         {
         RemapCoordinate(pi_XIn, pi_YIn, m_CoefficientsC, m_CoefficientsD, po_pXOut, po_pYOut);
         return SUCCESS;
         }
 
-    virtual bool IsIdentity() const {return false;}
+    virtual bool _IsIdentity() const override {return false;}
 
-    virtual bool IsStretchable(double pi_AngleTolerance = 0) const {return false;}
+    virtual bool _IsStretchable(double pi_AngleTolerance = 0) const override {return false;}
 
-    virtual void GetStretchParams(double* po_pScaleFactorX, double* po_pScaleFactorY,
-                                  HGF2DDisplacement* po_pDisplacement) const
+    virtual void _GetStretchParams(double* po_pScaleFactorX, double* po_pScaleFactorY,
+                                  HGF2DDisplacement* po_pDisplacement) const override
         {
-        HGF2DTransfoModel::GetStretchParamsAt(po_pScaleFactorX, po_pScaleFactorY, po_pDisplacement, 0.0, 0.0);
+        GetStretchParamsAt(po_pScaleFactorX, po_pScaleFactorY, po_pDisplacement, 0.0, 0.0);
         }
 
-    virtual HGF2DTransfoModel* Clone () const override
+    virtual HGF2DTransfoModel* _Clone () const override
         {
         return new ThirdDegreeTransfoModel(*this);
         }
 
-    virtual bool CanBeRepresentedByAMatrix() const {return false;}
+    virtual bool _CanBeRepresentedByAMatrix() const override {return false;}
 
-    virtual HFCMatrix<3, 3> GetMatrix() const
+    virtual HFCPtr<HGF2DTransfoModel> _CreateSimplifiedModel() const override { return nullptr; };
+
+    virtual HFCMatrix<3, 3> _GetMatrix() const override
         {
         HFCMatrix<3, 3> m;
         return m;
         }
 
     // Geometric properties
-    virtual bool PreservesLinearity() const {return false;}
-    virtual bool PreservesParallelism() const {return false;}
-    virtual bool PreservesShape() const {return false;}
-    virtual bool PreservesDirection() const {return false;}
+    virtual bool _PreservesLinearity() const override {return false;}
+    virtual bool _PreservesParallelism() const override {return false;}
+    virtual bool _PreservesShape() const override {return false;}
+    virtual bool _PreservesDirection() const override {return false;}
 
     // Operations
-    virtual void Reverse ()
+    virtual void _Reverse () override
         {
         double temp;
         for(uint32_t i = 0; i < NUMBER_OF_COEFFICIENT; i++)
@@ -361,7 +365,7 @@ class ThirdDegreeTransfoModel : public HGF2DTransfoModel
             }
         }
 
-    virtual void Prepare () 
+    virtual void _Prepare () override
         {
         // direct
         m_CoefficientsA[0] = -16.4702606071;

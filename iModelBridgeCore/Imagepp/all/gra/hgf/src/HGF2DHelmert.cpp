@@ -171,7 +171,7 @@ HGF2DHelmert& HGF2DHelmert::operator=(const HGF2DHelmert& pi_rObj)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Alexandre.Gariepy               06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool HGF2DHelmert::IsConvertDirectThreadSafe() const 
+bool HGF2DHelmert::_IsConvertDirectThreadSafe() const 
     { 
     return true; 
     }
@@ -179,7 +179,7 @@ bool HGF2DHelmert::IsConvertDirectThreadSafe() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Alexandre.Gariepy               06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool HGF2DHelmert::IsConvertInverseThreadSafe() const 
+bool HGF2DHelmert::_IsConvertInverseThreadSafe() const 
     { 
     return true; 
     }
@@ -187,7 +187,7 @@ bool HGF2DHelmert::IsConvertInverseThreadSafe() const
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DHelmert::ConvertDirect(double* pio_pXInOut,
+StatusInt HGF2DHelmert::_ConvertDirect(double* pio_pXInOut,
                                  double* pio_pYInOut) const
     {
     // Make sure that recipient variables are provided
@@ -209,7 +209,7 @@ StatusInt HGF2DHelmert::ConvertDirect(double* pio_pXInOut,
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DHelmert::ConvertDirect (double    pi_YIn,
+StatusInt HGF2DHelmert::_ConvertDirect (double    pi_YIn,
                                        double    pi_XInStart,
                                        size_t    pi_NumLoc,
                                        double    pi_XInStep,
@@ -241,7 +241,7 @@ StatusInt HGF2DHelmert::ConvertDirect (double    pi_YIn,
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DHelmert::ConvertDirect (size_t    pi_NumLoc,
+StatusInt HGF2DHelmert::_ConvertDirect (size_t    pi_NumLoc,
                                        double*   pio_aXInOut,
                                        double*   pio_aYInOut) const
     {
@@ -272,7 +272,7 @@ StatusInt HGF2DHelmert::ConvertDirect (size_t    pi_NumLoc,
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DHelmert::ConvertDirect(double   pi_XIn,
+StatusInt HGF2DHelmert::_ConvertDirect(double   pi_XIn,
                                  double   pi_YIn,
                                  double*  po_pXOut,
                                  double*  po_pYOut) const
@@ -295,7 +295,7 @@ StatusInt HGF2DHelmert::ConvertDirect(double   pi_XIn,
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DHelmert::ConvertInverse(double* pio_pXInOut,
+StatusInt HGF2DHelmert::_ConvertInverse(double* pio_pXInOut,
                                        double* pio_pYInOut) const
     {
     // Make sure that recipient variables are provided
@@ -318,7 +318,7 @@ StatusInt HGF2DHelmert::ConvertInverse(double* pio_pXInOut,
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DHelmert::ConvertInverse (double    pi_YIn,
+StatusInt HGF2DHelmert::_ConvertInverse (double    pi_YIn,
                                         double    pi_XInStart,
                                         size_t     pi_NumLoc,
                                         double    pi_XInStep,
@@ -351,7 +351,7 @@ StatusInt HGF2DHelmert::ConvertInverse (double    pi_YIn,
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DHelmert::ConvertInverse (size_t     pi_NumLoc,
+StatusInt HGF2DHelmert::_ConvertInverse (size_t     pi_NumLoc,
                                         double*    pio_aXInOut,
                                         double*    pio_aYInOut) const
     {
@@ -383,7 +383,7 @@ StatusInt HGF2DHelmert::ConvertInverse (size_t     pi_NumLoc,
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DHelmert::ConvertInverse(double  pi_XIn,
+StatusInt HGF2DHelmert::_ConvertInverse(double  pi_XIn,
                                        double  pi_YIn,
                                        double* po_pXOut,
                                        double* po_pYOut) const
@@ -407,7 +407,7 @@ StatusInt HGF2DHelmert::ConvertInverse(double  pi_XIn,
 // PreservesLinearity
 // Indicate if the transformation model preserves linearity
 //-----------------------------------------------------------------------------
-bool   HGF2DHelmert::PreservesLinearity () const
+bool   HGF2DHelmert::_PreservesLinearity () const
     {
     return (true);
     }
@@ -416,7 +416,7 @@ bool   HGF2DHelmert::PreservesLinearity () const
 // PreservesParallelism
 // Indicate if the transformation model preserves parallelism
 //-----------------------------------------------------------------------------
-bool   HGF2DHelmert::PreservesParallelism() const
+bool   HGF2DHelmert::_PreservesParallelism() const
     {
     return (true);
     }
@@ -425,7 +425,7 @@ bool   HGF2DHelmert::PreservesParallelism() const
 // PreservesShape
 // Indicate if the transformation model preserves the shape
 //-----------------------------------------------------------------------------
-bool   HGF2DHelmert::PreservesShape() const
+bool   HGF2DHelmert::_PreservesShape() const
     {
     return (true);
     }
@@ -434,7 +434,7 @@ bool   HGF2DHelmert::PreservesShape() const
 // PreservesDirection
 // Indicate if the transformation model preserves directions
 //-----------------------------------------------------------------------------
-bool   HGF2DHelmert::PreservesDirection() const
+bool   HGF2DHelmert::_PreservesDirection() const
     {
     // Direction is preserved only if there is no rotation implied
     // Note that no tolerance is applied since exact equality to 0.0 is
@@ -447,7 +447,7 @@ bool   HGF2DHelmert::PreservesDirection() const
 // CanBeRepresentedByAMatrix
 // Indicates if the model can be represented by a transformation matrix
 //-----------------------------------------------------------------------------
-bool HGF2DHelmert::CanBeRepresentedByAMatrix() const
+bool HGF2DHelmert::_CanBeRepresentedByAMatrix() const
     {
     return true;
     }
@@ -457,7 +457,7 @@ bool HGF2DHelmert::CanBeRepresentedByAMatrix() const
 //  IsIdentity
 //  Returns true if the model contains no transformation
 //-----------------------------------------------------------------------------
-bool HGF2DHelmert::IsIdentity () const
+bool HGF2DHelmert::_IsIdentity () const
     {
     return ((m_Rotation == 0.0) &&
             (m_XTranslation == 0.0) &&
@@ -468,7 +468,7 @@ bool HGF2DHelmert::IsIdentity () const
 //  IsStetchable
 //  Returns true if the model contains only scaling and translation
 //-----------------------------------------------------------------------------
-bool HGF2DHelmert::IsStretchable (double pi_AngleTolerance) const
+bool HGF2DHelmert::_IsStretchable (double pi_AngleTolerance) const
     {
     return (HDOUBLE_EQUAL(m_Rotation, 0.0, pi_AngleTolerance));
     }
@@ -479,7 +479,7 @@ bool HGF2DHelmert::IsStretchable (double pi_AngleTolerance) const
 //  GetStetchParams
 //  Returns the stretch parameters
 //-----------------------------------------------------------------------------
-void HGF2DHelmert::GetStretchParams (double* po_pScaleFactorX,
+void HGF2DHelmert::_GetStretchParams (double* po_pScaleFactorX,
                                      double* po_pScaleFactorY,
                                      HGF2DDisplacement* po_pDisplacement) const
     {
@@ -638,7 +638,7 @@ void HGF2DHelmert::AddRotation (double pi_Angle,
 // Reverse
 // This method reverses the transfomation mdoel
 //-----------------------------------------------------------------------------
-void    HGF2DHelmert::Reverse()
+void    HGF2DHelmert::_Reverse()
     {
     // Reverse transformation parameters
     m_XTranslation = m_XTranslationInverse;
@@ -646,7 +646,7 @@ void    HGF2DHelmert::Reverse()
     m_Rotation = -m_Rotation;
 
     // Invoque reversing of ancester
-    HGF2DTransfoModel::Reverse();
+    HGF2DTransfoModel::_Reverse();
 
     // Prepare
     Prepare();
@@ -658,7 +658,7 @@ void    HGF2DHelmert::Reverse()
 // ComposeInverseWithDirectOf
 // Composes a new transformation model as a combination of self and given
 //-----------------------------------------------------------------------------
-HFCPtr<HGF2DTransfoModel>  HGF2DHelmert::ComposeInverseWithDirectOf (const HGF2DTransfoModel& pi_rModel) const
+HFCPtr<HGF2DTransfoModel>  HGF2DHelmert::_ComposeInverseWithDirectOf (const HGF2DTransfoModel& pi_rModel) const
     {
     // Recipient
     HFCPtr<HGF2DTransfoModel> pResultModel;
@@ -741,7 +741,7 @@ HFCPtr<HGF2DTransfoModel>  HGF2DHelmert::ComposeInverseWithDirectOf (const HGF2D
 // This method allocates a copy of self. The caller is responsible for
 // the deletion of this object.
 //-----------------------------------------------------------------------------
-HGF2DTransfoModel* HGF2DHelmert::Clone () const
+HGF2DTransfoModel* HGF2DHelmert::_Clone() const
     {
     // Allocate object as copy and return
     return (new HGF2DHelmert (*this));
@@ -757,7 +757,7 @@ HGF2DTransfoModel* HGF2DHelmert::Clone () const
 // returned. The major difference with the Compose() method, is that the order
 // of composition is reversed,
 //-----------------------------------------------------------------------------
-HFCPtr<HGF2DTransfoModel>  HGF2DHelmert::ComposeYourself (const HGF2DTransfoModel& pi_rModel) const
+HFCPtr<HGF2DTransfoModel>  HGF2DHelmert::_ComposeYourself (const HGF2DTransfoModel& pi_rModel) const
     {
     // Recipient
     HFCPtr<HGF2DTransfoModel> pResultModel;
@@ -802,7 +802,7 @@ HFCPtr<HGF2DTransfoModel>  HGF2DHelmert::ComposeYourself (const HGF2DTransfoMode
         {
         // Type is not known ... build a complex
         // To do this we call the ancester ComposeYourself
-        pResultModel = HGF2DTransfoModel::ComposeYourself (pi_rModel);
+        pResultModel = HGF2DTransfoModel::_ComposeYourself (pi_rModel);
         }
 
     return (pResultModel);
@@ -816,7 +816,7 @@ HFCPtr<HGF2DTransfoModel>  HGF2DHelmert::ComposeYourself (const HGF2DTransfoMode
 //  This methods prepares the conversion parameters from the basic
 //  model attribute
 //-----------------------------------------------------------------------------
-void HGF2DHelmert::Prepare ()
+void HGF2DHelmert::_Prepare()
     {
     double     MySin = sin(m_Rotation);
     double     MyCos = cos(m_Rotation);
@@ -884,7 +884,7 @@ void HGF2DHelmert::Copy(const HGF2DHelmert& pi_rObj)
 //  GetMatrix
 //  Gets the components of the model by matrix
 //-----------------------------------------------------------------------------
-HFCMatrix<3, 3> HGF2DHelmert::GetMatrix() const
+HFCMatrix<3, 3> HGF2DHelmert::_GetMatrix() const
     {
     HFCMatrix<3, 3> ReturnedMatrix;
 
@@ -904,34 +904,10 @@ HFCMatrix<3, 3> HGF2DHelmert::GetMatrix() const
     return(ReturnedMatrix);
     }
 
-
-//-----------------------------------------------------------------------------
-//  GetMatrix
-//  Gets the components of the model by matrix
-//-----------------------------------------------------------------------------
-HFCMatrix<3, 3>& HGF2DHelmert::GetMatrix(HFCMatrix<3, 3>& po_rRecipient) const
-    {
-    double MySin = sin(m_Rotation);
-    double MyCos = cos(m_Rotation);
-
-    po_rRecipient[0][2] = m_XTranslation;
-    po_rRecipient[1][2] = m_YTranslation;
-    po_rRecipient[0][0] = MyCos;
-    po_rRecipient[0][1] = -MySin;
-    po_rRecipient[1][0] = MySin;
-    po_rRecipient[1][1] = MyCos;
-    po_rRecipient[2][0] = 0.0;
-    po_rRecipient[2][1] = 0.0;
-    po_rRecipient[2][2] = 1.0;
-
-    return(po_rRecipient);
-    }
-
-
 //-----------------------------------------------------------------------------
 // CreateSimplifiedModel
 //-----------------------------------------------------------------------------
-HFCPtr<HGF2DTransfoModel> HGF2DHelmert::CreateSimplifiedModel() const
+HFCPtr<HGF2DTransfoModel> HGF2DHelmert::_CreateSimplifiedModel() const
     {
     if (m_Rotation == 0.0)
         {

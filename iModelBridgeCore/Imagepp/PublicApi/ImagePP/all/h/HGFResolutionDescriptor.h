@@ -51,7 +51,7 @@ public:
     IMAGEPP_EXPORT double       GetResolution   (uint16_t pi_SubImage) const;
     IMAGEPP_EXPORT uint32_t    GetWidth        (uint16_t pi_SubImage) const;
     IMAGEPP_EXPORT uint32_t    GetHeight       (uint16_t pi_SubImage) const;
-    void                GetDescription  (uint16_t pi_SubImage,
+    IMAGEPP_EXPORT void                GetDescription  (uint16_t pi_SubImage,
                                          double*   po_pResolution,
                                          uint32_t*    po_pWidth,
                                          uint32_t*    po_pHeight)  const;

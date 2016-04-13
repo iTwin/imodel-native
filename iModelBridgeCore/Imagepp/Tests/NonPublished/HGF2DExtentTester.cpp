@@ -6,6 +6,7 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
 
+#ifdef TEST_DLL_NOT_NOT
 #include "../imagepptestpch.h"
 #include "HGF2DExtentTester.h"
 
@@ -659,3 +660,4 @@ TEST_F (HGF2DExtentTester, ContainsTest)
     ASSERT_FALSE(ExtentHimself.OuterContains(ExtentNoInside, MYEPSILON));
 
     }
+#endif

@@ -44,7 +44,7 @@ struct HFCAuthentication
 public:
     virtual                                 ~HFCAuthentication     ();
 
-    IMAGEPP_EXPORT virtual void                     SetByString            (const Utf8String&              pi_rAuthenticationString) = 0;
+    virtual void                     SetByString            (const Utf8String&              pi_rAuthenticationString) = 0;
 
     IMAGEPP_EXPORT bool                            Failed                 () const;
     IMAGEPP_EXPORT size_t                           GetErrorsQty           () const;

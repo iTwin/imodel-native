@@ -67,65 +67,9 @@ public:
     IMAGEPP_EXPORT                   HGF2DAffine(uint16_t pi_NumberOfPoints,
                                                 const double*  pi_pTiePoints);
     IMAGEPP_EXPORT virtual           ~HGF2DAffine ();
-    HGF2DAffine&                    operator=(const HGF2DAffine& pi_rObj);
+    IMAGEPP_EXPORT HGF2DAffine& operator=(const HGF2DAffine& pi_rObj);
 
-
-    // Conversion interface
-    virtual bool                    IsConvertDirectThreadSafe()  const override;
-    virtual bool                    IsConvertInverseThreadSafe() const override;
-
-    virtual StatusInt               ConvertDirect(double*   pio_pXInOut,
-                                                  double*   pio_pYInOut) const override;
-
-    virtual StatusInt               ConvertDirect(double    pi_YIn,
-                                                  double    pi_XInStart,
-                                                  size_t    pi_NumLoc,
-                                                  double    pi_XInStep,
-                                                  double*   po_pXOut,
-                                                  double*   po_pYOut) const override;
-
-    virtual StatusInt               ConvertDirect(double    pi_XIn,
-                                                  double    pi_YIn,
-                                                  double*   po_pXOut,
-                                                  double*   po_pYOut) const override;
-
-    virtual StatusInt               ConvertDirect(size_t    pi_NumLoc,
-                                                  double*   pio_aXInOut,
-                                                  double*   pio_aYInOut) const override;
-
-    virtual StatusInt               ConvertInverse(double*   pio_pXInOut,
-                                                   double*   pio_pYInOut) const override;
-
-    virtual StatusInt               ConvertInverse(double    pi_YIn,
-                                                   double    pi_XInStart,
-                                                   size_t    pi_NumLoc,
-                                                   double    pi_XInStep,
-                                                   double*   po_pXOut,
-                                                   double*   po_pYOut) const override;
-
-    virtual StatusInt               ConvertInverse(double    pi_XIn,
-                                                   double    pi_YIn,
-                                                   double*   po_pXOut,
-                                                   double*   po_pYOut) const override;
-
-
-    virtual StatusInt               ConvertInverse(size_t    pi_NumLoc,
-                                                   double*   pio_aXInOut,
-                                                   double*   pio_aYInOut) const override;
-
-    // Miscellaneous
-    virtual bool                    IsIdentity      () const;
-    virtual bool                    IsStretchable   (double pi_AngleTolerance = 0) const;
-    virtual void                    GetStretchParams(double*           po_pScaleFactorX,
-                                                     double*           po_pScaleFactorY,
-                                                     HGF2DDisplacement* po_pDisplacement) const;
     static uint32_t                 GetMinimumNumberOfTiePoints();
-
-    virtual HGF2DTransfoModel*      Clone () const override;
-
-    IMAGEPP_EXPORT virtual HFCPtr<HGF2DTransfoModel>    
-                                    ComposeInverseWithDirectOf (const HGF2DTransfoModel& pi_rModel) const;
-
 
     // Model definition
     IMAGEPP_EXPORT void              SetTranslation(const HGF2DDisplacement& pi_rTranslation);
@@ -138,12 +82,6 @@ public:
     double                          GetYScaling() const;
     IMAGEPP_EXPORT void              SetAnorthogonality(double pi_Angle);
     double                          GetAnorthogonality() const;
-    virtual bool                    CanBeRepresentedByAMatrix() const;
-    virtual HFCMatrix<3, 3>         GetMatrix() const;
-    virtual HFCMatrix<3, 3>&        GetMatrix(HFCMatrix<3, 3>& po_rRecipient) const;
-
-    virtual HFCPtr<HGF2DTransfoModel>    
-                                    CreateSimplifiedModel() const;
 
     // TEMPORARY for HPS etc...
     IMAGEPP_EXPORT void              SetByMatrixParameters(double pi_A0,
@@ -152,23 +90,15 @@ public:
                                                           double pi_B0,
                                                           double pi_B1,
                                                           double pi_B2);
-
-    // Geometric properties
-    virtual bool                    PreservesLinearity() const;
-    virtual bool                    PreservesParallelism() const;
-    virtual bool                    PreservesShape() const;
-    virtual bool                    PreservesDirection() const;
-
-
     // High level model definition
     IMAGEPP_EXPORT void              AddTranslation(const HGF2DDisplacement& pi_rTranslation);
     IMAGEPP_EXPORT void              AddRotation(double         pi_Angle,
                                                 double         pi_RawXCenter=0.0,
                                                 double         pi_RawYCenter=0.0);
-    void                            AddIsotropicScaling(double pi_ScalingFactor,
+    IMAGEPP_EXPORT void              AddIsotropicScaling(double pi_ScalingFactor,
                                                         double pi_XCenter=0.0,
                                                         double pi_YCenter=0.0);
-    void                            AddAnisotropicScaling(double pi_ScalingFactorX,
+    IMAGEPP_EXPORT void              AddAnisotropicScaling(double pi_ScalingFactorX,
                                                           double pi_ScalingFactorY,
                                                           double pi_XCenter=0.0,
                                                           double pi_YCenter=0.0);
@@ -178,15 +108,81 @@ public:
     IMAGEPP_EXPORT void              AddVerticalFlip (double pi_RawYMirrorPos=0.0);
 
 
-    // Operations
-    virtual void                    Reverse ();
+
 
 
 protected:
+    // Conversion interface
+    virtual bool                    _IsConvertDirectThreadSafe()  const override;
+    virtual bool                    _IsConvertInverseThreadSafe() const override;
 
-    virtual void                    Prepare ();
-    virtual HFCPtr<HGF2DTransfoModel>    
-                                    ComposeYourself (const HGF2DTransfoModel& pi_rModel) const;
+    virtual StatusInt               _ConvertDirect(double*   pio_pXInOut,
+                                                   double*   pio_pYInOut) const override;
+
+    virtual StatusInt               _ConvertDirect(double    pi_YIn,
+                                                   double    pi_XInStart,
+                                                   size_t    pi_NumLoc,
+                                                   double    pi_XInStep,
+                                                   double*   po_pXOut,
+                                                   double*   po_pYOut) const override;
+
+    virtual StatusInt               _ConvertDirect(double    pi_XIn,
+                                                   double    pi_YIn,
+                                                   double*   po_pXOut,
+                                                   double*   po_pYOut) const override;
+
+    virtual StatusInt               _ConvertDirect(size_t    pi_NumLoc,
+                                                   double*   pio_aXInOut,
+                                                   double*   pio_aYInOut) const override;
+
+    virtual StatusInt               _ConvertInverse(double*   pio_pXInOut,
+                                                    double*   pio_pYInOut) const override;
+
+    virtual StatusInt               _ConvertInverse(double    pi_YIn,
+                                                    double    pi_XInStart,
+                                                    size_t    pi_NumLoc,
+                                                    double    pi_XInStep,
+                                                    double*   po_pXOut,
+                                                    double*   po_pYOut) const override;
+
+    virtual StatusInt               _ConvertInverse(double    pi_XIn,
+                                                    double    pi_YIn,
+                                                    double*   po_pXOut,
+                                                    double*   po_pYOut) const override;
+
+
+    virtual StatusInt               _ConvertInverse(size_t    pi_NumLoc,
+                                                    double*   pio_aXInOut,
+                                                    double*   pio_aYInOut) const override;
+
+    // Miscellaneous
+    virtual bool                    _IsIdentity() const override;
+    virtual bool                    _IsStretchable(double pi_AngleTolerance) const override;
+    virtual void                    _GetStretchParams(double*           po_pScaleFactorX,
+                                                      double*           po_pScaleFactorY,
+                                                      HGF2DDisplacement* po_pDisplacement) const override;
+
+    // Geometric properties
+    virtual bool                    _PreservesLinearity() const override;
+    virtual bool                    _PreservesParallelism() const override;
+    virtual bool                    _PreservesShape() const override;
+    virtual bool                    _PreservesDirection() const override;
+
+
+    virtual bool                    _CanBeRepresentedByAMatrix() const override;
+    virtual HFCMatrix<3, 3>         _GetMatrix() const override;
+
+    virtual HFCPtr<HGF2DTransfoModel> _CreateSimplifiedModel() const override;
+
+    virtual HGF2DTransfoModel*      _Clone() const override;
+
+    virtual HFCPtr<HGF2DTransfoModel> _ComposeInverseWithDirectOf(const HGF2DTransfoModel& pi_rModel) const override;
+
+    virtual void                    _Prepare () override;
+    virtual HFCPtr<HGF2DTransfoModel>   _ComposeYourself (const HGF2DTransfoModel& pi_rModel) const override;
+
+    // Operations
+    virtual void                    _Reverse() override;
 private:
 
     // Primary attributes

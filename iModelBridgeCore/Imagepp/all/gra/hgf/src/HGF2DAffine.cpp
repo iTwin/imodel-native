@@ -156,7 +156,7 @@ HGF2DAffine& HGF2DAffine::operator=(const HGF2DAffine& pi_rObj)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Alexandre.Gariepy               06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool HGF2DAffine::IsConvertDirectThreadSafe() const 
+bool HGF2DAffine::_IsConvertDirectThreadSafe() const 
     { 
     return true; 
     }
@@ -164,7 +164,7 @@ bool HGF2DAffine::IsConvertDirectThreadSafe() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Alexandre.Gariepy               06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool HGF2DAffine::IsConvertInverseThreadSafe() const 
+bool HGF2DAffine::_IsConvertInverseThreadSafe() const 
     { 
     return true; 
     }
@@ -172,7 +172,7 @@ bool HGF2DAffine::IsConvertInverseThreadSafe() const
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DAffine::ConvertDirect(double* pio_pXInOut,
+StatusInt HGF2DAffine::_ConvertDirect(double* pio_pXInOut,
                                      double* pio_pYInOut) const
     {
     // Make sure variables are provided
@@ -194,7 +194,7 @@ StatusInt HGF2DAffine::ConvertDirect(double* pio_pXInOut,
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DAffine::ConvertDirect (double    pi_YIn,
+StatusInt HGF2DAffine::_ConvertDirect (double    pi_YIn,
                                       double    pi_XInStart,
                                       size_t     pi_NumLoc,
                                       double    pi_XInStep,
@@ -227,7 +227,7 @@ StatusInt HGF2DAffine::ConvertDirect (double    pi_YIn,
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DAffine::ConvertDirect (size_t     pi_NumLoc,
+StatusInt HGF2DAffine::_ConvertDirect (size_t     pi_NumLoc,
                                       double*    pio_aXInOut,
                                       double*    pio_aYInOut) const
     {
@@ -250,7 +250,7 @@ StatusInt HGF2DAffine::ConvertDirect (size_t     pi_NumLoc,
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DAffine::ConvertDirect(double   pi_XIn,
+StatusInt HGF2DAffine::_ConvertDirect(double   pi_XIn,
                                      double   pi_YIn,
                                      double*  po_pXOut,
                                      double*  po_pYOut) const
@@ -273,7 +273,7 @@ StatusInt HGF2DAffine::ConvertDirect(double   pi_XIn,
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DAffine::ConvertInverse(double* pio_pXInOut,
+StatusInt HGF2DAffine::_ConvertInverse(double* pio_pXInOut,
                                       double* pio_pYInOut) const
     {
     // Make sure recipient variables are provided
@@ -297,7 +297,7 @@ StatusInt HGF2DAffine::ConvertInverse(double* pio_pXInOut,
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DAffine::ConvertInverse (double    pi_YIn,
+StatusInt HGF2DAffine::_ConvertInverse (double    pi_YIn,
                                        double    pi_XInStart,
                                        size_t     pi_NumLoc,
                                        double    pi_XInStep,
@@ -330,7 +330,7 @@ StatusInt HGF2DAffine::ConvertInverse (double    pi_YIn,
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DAffine::ConvertInverse (size_t     pi_NumLoc,
+StatusInt HGF2DAffine::_ConvertInverse (size_t     pi_NumLoc,
                                        double*    pio_aXInOut,
                                        double*    pio_aYInOut) const
     {
@@ -352,7 +352,7 @@ StatusInt HGF2DAffine::ConvertInverse (size_t     pi_NumLoc,
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DAffine::ConvertInverse(double  pi_XIn,
+StatusInt HGF2DAffine::_ConvertInverse(double  pi_XIn,
                                       double  pi_YIn,
                                       double* po_pXOut,
                                       double* po_pYOut) const
@@ -377,7 +377,7 @@ StatusInt HGF2DAffine::ConvertInverse(double  pi_XIn,
 // Indicate if the transformation model preserves linearity
 // An affine transform always preserves linearity
 //-----------------------------------------------------------------------------
-bool   HGF2DAffine::PreservesLinearity () const
+bool   HGF2DAffine::_PreservesLinearity () const
     {
     return (true);
     }
@@ -387,7 +387,7 @@ bool   HGF2DAffine::PreservesLinearity () const
 // Indicate if the transformation model preserves parallelism
 // An affine transform always preserves parallelism
 //-----------------------------------------------------------------------------
-bool   HGF2DAffine::PreservesParallelism() const
+bool   HGF2DAffine::_PreservesParallelism() const
     {
     return (true);
     }
@@ -396,7 +396,7 @@ bool   HGF2DAffine::PreservesParallelism() const
 // PreservesShape
 // Indicate if the transformation model preserves the shape
 //-----------------------------------------------------------------------------
-bool   HGF2DAffine::PreservesShape() const
+bool   HGF2DAffine::_PreservesShape() const
     {
     // Shape is preserved only if there is no anisotropic scaling implied
     // and no anorthogonality
@@ -407,7 +407,7 @@ bool   HGF2DAffine::PreservesShape() const
 // PreservesDirection
 // Indicate if the transformation model preserves directions
 //-----------------------------------------------------------------------------
-bool   HGF2DAffine::PreservesDirection() const
+bool   HGF2DAffine::_PreservesDirection() const
     {
     // Direction is preserved only if there is no anisotropic scaling implied
     // no rotation nor anorthogonality
@@ -422,7 +422,7 @@ bool   HGF2DAffine::PreservesDirection() const
 // Indicates if the model can be represented by a transformation matrix
 // in the case of an affine this is always true
 //-----------------------------------------------------------------------------
-bool HGF2DAffine::CanBeRepresentedByAMatrix() const
+bool HGF2DAffine::_CanBeRepresentedByAMatrix() const
     {
     return(true);
     }
@@ -432,7 +432,7 @@ bool HGF2DAffine::CanBeRepresentedByAMatrix() const
 //  IsIdentity
 //  Returns true if the model contains no transformation
 //-----------------------------------------------------------------------------
-bool HGF2DAffine::IsIdentity () const
+bool HGF2DAffine::_IsIdentity () const
     {
 
     return ((m_Rotation == 0.0) &&
@@ -447,7 +447,7 @@ bool HGF2DAffine::IsIdentity () const
 //  IsStetchable
 //  Returns true if the model contains only scaling and translation
 //-----------------------------------------------------------------------------
-bool HGF2DAffine::IsStretchable (double pi_AngleTolerance) const
+bool HGF2DAffine::_IsStretchable (double pi_AngleTolerance) const
     {
     // For the model to be stretchable it must have no rotation and no anorthogonality
     return ((HDOUBLE_EQUAL(m_Anorthogonality, 0.0, pi_AngleTolerance)) &&
@@ -460,7 +460,7 @@ bool HGF2DAffine::IsStretchable (double pi_AngleTolerance) const
 //  GetStetchParams
 //  Returns the stretch parameters
 //-----------------------------------------------------------------------------
-void HGF2DAffine::GetStretchParams (double*           po_pScaleFactorX,
+void HGF2DAffine::_GetStretchParams (double*           po_pScaleFactorX,
                                     double*           po_pScaleFactorY,
                                     HGF2DDisplacement* po_pDisplacement) const
     {
@@ -562,7 +562,7 @@ void HGF2DAffine::SetByMatrixParameters(double pi_A0,
 //  GetMatrix
 //  Gets the components of the affine by matrix
 //-----------------------------------------------------------------------------
-HFCMatrix<3, 3> HGF2DAffine::GetMatrix() const
+HFCMatrix<3, 3> HGF2DAffine::_GetMatrix() const
     {
     HFCMatrix<3, 3> ReturnedMatrix;
 
@@ -577,25 +577,6 @@ HFCMatrix<3, 3> HGF2DAffine::GetMatrix() const
     ReturnedMatrix[2][2] = 1.0;
 
     return(ReturnedMatrix);
-    }
-
-//-----------------------------------------------------------------------------
-//  GetMatrix
-//  Gets the components of the affine by matrix
-//-----------------------------------------------------------------------------
-HFCMatrix<3, 3>& HGF2DAffine::GetMatrix(HFCMatrix<3, 3>& po_rRecipient) const
-    {
-    po_rRecipient[0][0] = m_ScaleX * cos(m_Rotation);
-    po_rRecipient[0][1] = -m_ScaleY * sin(m_Rotation + m_Anorthogonality);
-    po_rRecipient[0][2] = m_XTranslation;
-    po_rRecipient[1][0] = m_ScaleX * sin(m_Rotation);
-    po_rRecipient[1][1] = m_ScaleY * cos(m_Rotation + m_Anorthogonality);
-    po_rRecipient[1][2] = m_YTranslation;
-    po_rRecipient[2][0] = 0.0;
-    po_rRecipient[2][1] = 0.0;
-    po_rRecipient[2][2] = 1.0;
-
-    return(po_rRecipient);
     }
 
 /** -----------------------------------------------------------------------------
@@ -1013,7 +994,7 @@ void HGF2DAffine::AddVerticalFlip (double pi_rYMirrorPos)
 // Reverse
 // This method reverses the transformation model
 //-----------------------------------------------------------------------------
-void    HGF2DAffine::Reverse()
+void    HGF2DAffine::_Reverse()
     {
 
     HFCMatrix<3, 3> MyMatrix = GetMatrix();
@@ -1105,7 +1086,7 @@ void    HGF2DAffine::Reverse()
 
 
     // Invoque reversing of ancester
-    HGF2DTransfoModel::Reverse();
+    HGF2DTransfoModel::_Reverse();
 
     // Prepare
     Prepare();
@@ -1117,7 +1098,7 @@ void    HGF2DAffine::Reverse()
 // ComposeInverseWithDirectOf
 // Composes a new transformation model as a combination of self and given
 //-----------------------------------------------------------------------------
-HFCPtr<HGF2DTransfoModel>  HGF2DAffine::ComposeInverseWithDirectOf (const HGF2DTransfoModel& pi_rModel) const
+HFCPtr<HGF2DTransfoModel>  HGF2DAffine::_ComposeInverseWithDirectOf (const HGF2DTransfoModel& pi_rModel) const
     {
     // Recipient
     HFCPtr<HGF2DTransfoModel> pResultModel;
@@ -1239,7 +1220,7 @@ HFCPtr<HGF2DTransfoModel>  HGF2DAffine::ComposeInverseWithDirectOf (const HGF2DT
 // This method allocates a copy of self. The caller is responsible for
 // the deletion of this object.
 //-----------------------------------------------------------------------------
-HGF2DTransfoModel* HGF2DAffine::Clone () const
+HGF2DTransfoModel* HGF2DAffine::_Clone() const
     {
     // Allocate object as copy and return
     return(new HGF2DAffine(*this));
@@ -1255,7 +1236,7 @@ HGF2DTransfoModel* HGF2DAffine::Clone () const
 // returned. The major difference with the Compose() method, is that the order
 // of composition is reversed,
 //-----------------------------------------------------------------------------
-HFCPtr<HGF2DTransfoModel>  HGF2DAffine::ComposeYourself (const HGF2DTransfoModel& pi_rModel) const
+HFCPtr<HGF2DTransfoModel>  HGF2DAffine::_ComposeYourself (const HGF2DTransfoModel& pi_rModel) const
     {
     // Recipient
     HFCPtr<HGF2DTransfoModel> pResultModel;
@@ -1401,7 +1382,7 @@ HFCPtr<HGF2DTransfoModel>  HGF2DAffine::ComposeYourself (const HGF2DTransfoModel
         {
         // Type is not known ... build a complex
         // To do this we call the ancester ComposeYourself
-        pResultModel = HGF2DTransfoModel::ComposeYourself (pi_rModel);
+        pResultModel = HGF2DTransfoModel::_ComposeYourself (pi_rModel);
         }
 
     return (pResultModel);
@@ -1415,7 +1396,7 @@ HFCPtr<HGF2DTransfoModel>  HGF2DAffine::ComposeYourself (const HGF2DTransfoModel
 //  This methods prepares the conversion parameters from the basic
 //  model attribute
 //-----------------------------------------------------------------------------
-void HGF2DAffine::Prepare ()
+void HGF2DAffine::_Prepare()
     {
     double      InvRotation;
     double      InvScaleX;
@@ -1559,7 +1540,7 @@ void HGF2DAffine::Copy(const HGF2DAffine& pi_rObj)
 //-----------------------------------------------------------------------------
 // CreateSimplifiedModel
 //-----------------------------------------------------------------------------
-HFCPtr<HGF2DTransfoModel> HGF2DAffine::CreateSimplifiedModel() const
+HFCPtr<HGF2DTransfoModel> HGF2DAffine::_CreateSimplifiedModel() const
     {
     if (m_Anorthogonality == 0.0)
         {

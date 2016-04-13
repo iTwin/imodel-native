@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DVector.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGF2DVector
@@ -405,7 +405,7 @@ public:
         @see ObtainContiguousnessPoints()
         -----------------------------------------------------------------------------
     */
-    IMAGEPP_EXPORT virtual bool      AreContiguous(const HGF2DVector& pi_rVector) const = 0;
+    virtual bool      AreContiguous(const HGF2DVector& pi_rVector) const = 0;
 
     /** -----------------------------------------------------------------------------
         This method determines if the two vectors are adjacent to each
@@ -428,7 +428,7 @@ public:
         @see CalculateBearing()
         -----------------------------------------------------------------------------
     */
-    IMAGEPP_EXPORT virtual bool      AreAdjacent(const HGF2DVector& pi_rVector) const = 0;
+    virtual bool      AreAdjacent(const HGF2DVector& pi_rVector) const = 0;
 
 
     /** -----------------------------------------------------------------------------

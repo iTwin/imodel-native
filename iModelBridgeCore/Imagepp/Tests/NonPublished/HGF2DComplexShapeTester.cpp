@@ -6,6 +6,7 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
 
+#ifdef TEST_DLL_NOT_NOT
 #include "../imagepptestpch.h"
 #include "EnvironnementTest.h"
 #include "HGF2DComplexShapeTester.h"
@@ -1417,3 +1418,4 @@ TEST_F (HGF2DComplexShapeTester, UnifyShapeTest)
     ASSERT_TRUE(pResultShape6->IsPointOn(HGF2DPosition(20.0, 20.0)));
 
     }
+#endif

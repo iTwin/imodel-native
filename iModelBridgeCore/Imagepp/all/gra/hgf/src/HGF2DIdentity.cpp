@@ -65,7 +65,7 @@ HGF2DIdentity& HGF2DIdentity::operator=(const HGF2DIdentity& pi_rObj)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Alexandre.Gariepy               06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool HGF2DIdentity::IsConvertDirectThreadSafe() const 
+bool HGF2DIdentity::_IsConvertDirectThreadSafe() const 
     { 
     return true; 
     }
@@ -73,7 +73,7 @@ bool HGF2DIdentity::IsConvertDirectThreadSafe() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Alexandre.Gariepy               06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool HGF2DIdentity::IsConvertInverseThreadSafe() const 
+bool HGF2DIdentity::_IsConvertInverseThreadSafe() const 
     { 
     return true; 
     }
@@ -81,7 +81,7 @@ bool HGF2DIdentity::IsConvertInverseThreadSafe() const
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DIdentity::ConvertDirect(double* pio_pXInOut,
+StatusInt HGF2DIdentity::_ConvertDirect(double* pio_pXInOut,
                                        double* pio_pYInOut) const
     {
     // Make sure that recipient variables are provided
@@ -94,7 +94,7 @@ StatusInt HGF2DIdentity::ConvertDirect(double* pio_pXInOut,
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DIdentity::ConvertDirect(double   pi_XIn,
+StatusInt HGF2DIdentity::_ConvertDirect(double   pi_XIn,
                                        double   pi_YIn,
                                        double*  po_pXOut,
                                        double*  po_pYOut) const
@@ -112,7 +112,7 @@ StatusInt HGF2DIdentity::ConvertDirect(double   pi_XIn,
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DIdentity::ConvertDirect(double    pi_YIn,
+StatusInt HGF2DIdentity::_ConvertDirect(double    pi_YIn,
                                        double    pi_XInStart,
                                        size_t    pi_NumLoc,
                                        double    pi_XInStep,
@@ -141,7 +141,7 @@ StatusInt HGF2DIdentity::ConvertDirect(double    pi_YIn,
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DIdentity::ConvertDirect(size_t    pi_NumLoc,
+StatusInt HGF2DIdentity::_ConvertDirect(size_t    pi_NumLoc,
                                        double*   pio_aXInOut,
                                        double*   pio_aYInOut) const
     {
@@ -154,7 +154,7 @@ StatusInt HGF2DIdentity::ConvertDirect(size_t    pi_NumLoc,
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DIdentity::ConvertInverse(double* pio_pXInOut,
+StatusInt HGF2DIdentity::_ConvertInverse(double* pio_pXInOut,
                                         double* pio_pYInOut) const
     {
     // Make sure that recipient variables are provided
@@ -167,7 +167,7 @@ StatusInt HGF2DIdentity::ConvertInverse(double* pio_pXInOut,
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DIdentity::ConvertInverse(double  pi_XIn,
+StatusInt HGF2DIdentity::_ConvertInverse(double  pi_XIn,
                                         double  pi_YIn,
                                         double* po_pXOut,
                                         double* po_pYOut) const
@@ -185,7 +185,7 @@ StatusInt HGF2DIdentity::ConvertInverse(double  pi_XIn,
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DIdentity::ConvertInverse(double    pi_YIn,
+StatusInt HGF2DIdentity::_ConvertInverse(double    pi_YIn,
                                         double    pi_XInStart,
                                         size_t    pi_NumLoc,
                                         double    pi_XInStep,
@@ -214,7 +214,7 @@ StatusInt HGF2DIdentity::ConvertInverse(double    pi_YIn,
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DIdentity::ConvertInverse(size_t    pi_NumLoc,
+StatusInt HGF2DIdentity::_ConvertInverse(size_t    pi_NumLoc,
                                         double*   pio_aXInOut,
                                         double*   pio_aYInOut) const
     {
@@ -228,7 +228,7 @@ StatusInt HGF2DIdentity::ConvertInverse(size_t    pi_NumLoc,
 //-----------------------------------------------------------------------------
 // IsStretchable
 //-----------------------------------------------------------------------------
-bool   HGF2DIdentity::IsStretchable (double pi_AngleTolerance) const
+bool   HGF2DIdentity::_IsStretchable (double pi_AngleTolerance) const
     {
     return (true);
     }
@@ -236,7 +236,7 @@ bool   HGF2DIdentity::IsStretchable (double pi_AngleTolerance) const
 //-----------------------------------------------------------------------------
 // IsIdentity
 //-----------------------------------------------------------------------------
-bool   HGF2DIdentity::IsIdentity () const
+bool   HGF2DIdentity::_IsIdentity () const
     {
     return (true);
     }
@@ -245,7 +245,7 @@ bool   HGF2DIdentity::IsIdentity () const
 // PreservesLinearity
 // Indicate if the transformation model preserves linearity
 //-----------------------------------------------------------------------------
-bool   HGF2DIdentity::PreservesLinearity () const
+bool   HGF2DIdentity::_PreservesLinearity () const
     {
     return (true);
     }
@@ -254,7 +254,7 @@ bool   HGF2DIdentity::PreservesLinearity () const
 // PreservesParallelism
 // Indicate if the transformation model preserves parallelism
 //-----------------------------------------------------------------------------
-bool   HGF2DIdentity::PreservesParallelism() const
+bool   HGF2DIdentity::_PreservesParallelism() const
     {
     return (true);
     }
@@ -263,7 +263,7 @@ bool   HGF2DIdentity::PreservesParallelism() const
 // PreservesShape
 // Indicate if the transformation model preserves the shape
 //-----------------------------------------------------------------------------
-bool   HGF2DIdentity::PreservesShape() const
+bool   HGF2DIdentity::_PreservesShape() const
     {
     return (true);
     }
@@ -272,7 +272,7 @@ bool   HGF2DIdentity::PreservesShape() const
 // PreservesDirection
 // Indicate if the transformation model preserves directions
 //-----------------------------------------------------------------------------
-bool   HGF2DIdentity::PreservesDirection() const
+bool   HGF2DIdentity::_PreservesDirection() const
     {
     return (true);
     }
@@ -280,7 +280,7 @@ bool   HGF2DIdentity::PreservesDirection() const
 //-----------------------------------------------------------------------------
 // GetStretchParams
 //-----------------------------------------------------------------------------
-void    HGF2DIdentity::GetStretchParams (double*  po_pScaleFactorX,
+void    HGF2DIdentity::_GetStretchParams (double*  po_pScaleFactorX,
                                          double*  po_pScaleFactorY,
                                          HGF2DDisplacement* po_pDisplacement) const
     {
@@ -299,7 +299,7 @@ void    HGF2DIdentity::GetStretchParams (double*  po_pScaleFactorX,
 // Prepare
 // Prepares transformation parameters
 //-----------------------------------------------------------------------------
-void HGF2DIdentity::Prepare ()
+void HGF2DIdentity::_Prepare ()
     {
     }
 
@@ -307,22 +307,21 @@ void HGF2DIdentity::Prepare ()
 // Reverse
 // This method reverses the transformation model
 //-----------------------------------------------------------------------------
-void HGF2DIdentity::Reverse()
+void HGF2DIdentity::_Reverse()
     {
     // Invoque reversing of ancester
-    HGF2DTransfoModel::Reverse();
+    HGF2DTransfoModel::_Reverse();
 
     // Prepare
     Prepare();
 
     }
 
-
 //-----------------------------------------------------------------------------
 // CanBeRepresentedByAMatrix
 // Indicates if the model can be represented by a transformation matrix
 //-----------------------------------------------------------------------------
-bool HGF2DIdentity::CanBeRepresentedByAMatrix() const
+bool HGF2DIdentity::_CanBeRepresentedByAMatrix() const
     {
     return true;
     }
@@ -331,37 +330,27 @@ bool HGF2DIdentity::CanBeRepresentedByAMatrix() const
 //  GetMatrix
 //  Gets the components of the model by matrix
 //-----------------------------------------------------------------------------
-HFCMatrix<3, 3> HGF2DIdentity::GetMatrix() const
+HFCMatrix<3, 3> HGF2DIdentity::_GetMatrix() const
     {
     HFCMatrix<3, 3> ReturnedMatrix;
+    ReturnedMatrix[0][0] = 1.0;
+    ReturnedMatrix[0][1] = 0.0;
+    ReturnedMatrix[0][2] = 0.0;
+    ReturnedMatrix[1][0] = 0.0;
+    ReturnedMatrix[1][1] = 1.0;
+    ReturnedMatrix[1][2] = 0.0;
+    ReturnedMatrix[2][0] = 0.0;
+    ReturnedMatrix[2][1] = 0.0;
+    ReturnedMatrix[2][2] = 1.0;
 
-    return(GetMatrix(ReturnedMatrix));
-    }
-
-//-----------------------------------------------------------------------------
-//  GetMatrix
-//  Gets the components of the model by matrix
-//-----------------------------------------------------------------------------
-HFCMatrix<3, 3>& HGF2DIdentity::GetMatrix(HFCMatrix<3, 3>& po_rRecipient) const
-    {
-    po_rRecipient[0][0] = 1.0;
-    po_rRecipient[0][1] = 0.0;
-    po_rRecipient[0][2] = 0.0;
-    po_rRecipient[1][0] = 0.0;
-    po_rRecipient[1][1] = 1.0;
-    po_rRecipient[1][2] = 0.0;
-    po_rRecipient[2][0] = 0.0;
-    po_rRecipient[2][1] = 0.0;
-    po_rRecipient[2][2] = 1.0;
-
-    return(po_rRecipient);
+    return ReturnedMatrix;
     }
 
 //-----------------------------------------------------------------------------
 // ComposeInverseWithDirectOf
 // Composes a new transformation model as a combination of self and given
 //-----------------------------------------------------------------------------
-HFCPtr<HGF2DTransfoModel>  HGF2DIdentity::ComposeInverseWithDirectOf (const HGF2DTransfoModel& pi_rModel) const
+HFCPtr<HGF2DTransfoModel>  HGF2DIdentity::_ComposeInverseWithDirectOf (const HGF2DTransfoModel& pi_rModel) const
     {
     // Recipient
     HFCPtr<HGF2DTransfoModel> pResultModel(pi_rModel.Clone());
@@ -375,7 +364,7 @@ HFCPtr<HGF2DTransfoModel>  HGF2DIdentity::ComposeInverseWithDirectOf (const HGF2
 // This method allocates a copy of self. The caller is responsible for
 // the deletion of this object.
 //-----------------------------------------------------------------------------
-HGF2DTransfoModel* HGF2DIdentity::Clone () const
+HGF2DTransfoModel* HGF2DIdentity::_Clone () const
     {
     // Allocate object as copy and return
     return (new HGF2DIdentity (*this));

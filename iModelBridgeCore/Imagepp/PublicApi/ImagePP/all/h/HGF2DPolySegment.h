@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DPolySegment.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -45,7 +45,7 @@ public:
     HGF2DPolySegment&  operator=(const HGF2DPolySegment& pi_rObj);
 
     // Setting and extracting
-    void               AppendPoint(const HGF2DPosition& pi_rNewPoint);
+    IMAGEPP_EXPORT void               AppendPoint(const HGF2DPosition& pi_rNewPoint);
     HGF2DPosition      GetPoint(size_t pi_Index) const;
     size_t             GetSize() const;
     void               RemovePoint(size_t pi_Index);
@@ -140,7 +140,7 @@ public:
 
     IMAGEPP_EXPORT virtual void         PrintState(ostream& po_rOutput) const;
 
-    virtual HFCPtr<HGF2DPolySegment>    AllocPolySegmentTransformDirect(const HGF2DTransfoModel& pi_rModel) const;
+    HFCPtr<HGF2DPolySegment>    AllocPolySegmentTransformDirect(const HGF2DTransfoModel& pi_rModel) const;
 
 protected:
 

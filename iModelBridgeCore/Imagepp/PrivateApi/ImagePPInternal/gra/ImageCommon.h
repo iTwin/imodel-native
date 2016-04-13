@@ -2,7 +2,7 @@
 |
 |     $Source: PrivateApi/ImagePPInternal/gra/ImageCommon.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -30,14 +30,15 @@ class HRABitmapRLE;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod               
 +---------------+---------------+---------------+---------------+---------------+------*/
-ImagePPStatus CopyPixelsN8(uint32_t outWidth, uint32_t outHeight, Byte* pOutData, size_t outPitch,
-                           uint32_t inWidth, uint32_t inHeight, Byte const* pInData, size_t inPitch,
-                           uint32_t pixelSizeBytes, PixelOffset64 const& offset);
+IMAGEPPTEST_EXPORT ImagePPStatus CopyPixelsN8(uint32_t outWidth, uint32_t outHeight, Byte* pOutData, size_t outPitch,
+                                               uint32_t inWidth, uint32_t inHeight, Byte const* pInData, size_t inPitch,
+                                               uint32_t pixelSizeBytes, PixelOffset64 const& offset);
 
-void CopyLineN1(Byte* pOutData, uint32_t posX, uint32_t pixelCount, Byte const* pInData);
-void CopyPixelsN1(uint32_t outWidth, uint32_t outHeight, Byte* pOutData, size_t outPitch,
-                  uint32_t inWidth, uint32_t inHeight, Byte const* pInData, size_t inPitch,
-                  PixelOffset64 const& offset);
+IMAGEPPTEST_EXPORT void CopyLineN1(Byte* pOutData, uint32_t posX, uint32_t pixelCount, Byte const* pInData);
+
+IMAGEPPTEST_EXPORT void CopyPixelsN1(uint32_t outWidth, uint32_t outHeight, Byte* pOutData, size_t outPitch,
+                                      uint32_t inWidth, uint32_t inHeight, Byte const* pInData, size_t inPitch,
+                                      PixelOffset64 const& offset);
 
 /*----------------------------------------------------------------------------+
 |struct HRAImageBufferParasiteMemory

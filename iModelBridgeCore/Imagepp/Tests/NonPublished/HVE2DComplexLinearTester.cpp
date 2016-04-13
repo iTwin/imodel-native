@@ -6,6 +6,7 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
 
+#ifdef TEST_DLL_NOT_NOT
 #include "../imagepptestpch.h"
 #include "EnvironnementTest.h"
 #include "HVE2DComplexLinearTester.h"
@@ -5920,3 +5921,4 @@ TEST_F (HVE2DComplexLinearTester, CrossingTest3)
     ASSERT_FALSE(AddComplexLinear1.Crosses(AddComplexLinear2));
         
      }
+#endif

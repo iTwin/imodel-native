@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRAImageOpDensitySlicingFilter.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -46,8 +46,8 @@ public:
         };
 
     //! a desaturation factor. Range is [0,1]
-    void SetDesaturationFactor(double desaturationFactor);
-    double GetDesaturationFactor() const;
+    IMAGEPPTEST_EXPORT void SetDesaturationFactor(double desaturationFactor);
+    IMAGEPPTEST_EXPORT double GetDesaturationFactor() const;
 
 protected:
     virtual ImagePPStatus _GetAvailableInputPixelType(HFCPtr<HRPPixelType>& pixelType, uint32_t index, const HFCPtr<HRPPixelType> pixelTypeToMatch) override;
@@ -80,19 +80,19 @@ public:
     //! Create a density slicing filter. Pixel depth is used to specify the domain of slice values and the pixel depth of produced output.
     //! PIXELDEPTH_8bits  will have a range of [0,255]. 
     //! PIXELDEPTH_16bits will have a range of [0, 65535].
-    static HRAImageOpDensitySlicingFilterPtr CreateDensitySlicingFilter(PixelDepth depth);    
+    IMAGEPPTEST_EXPORT static HRAImageOpDensitySlicingFilterPtr CreateDensitySlicingFilter(PixelDepth depth);
 
     //! Add a slice. 
     //! StartValue and EndValue range is PixelDepth dependent.
     //! StartColor and EndColor are RGB8. 
     //! Opacity range is [0,1].
-    uint32_t AddSlice (uint32_t StartValue, uint32_t EndValue, uint32_t StartColor, uint32_t EndColor, double Opacity);
+    IMAGEPPTEST_EXPORT uint32_t AddSlice (uint32_t StartValue, uint32_t EndValue, uint32_t StartColor, uint32_t EndColor, double Opacity);
 
     //! Remove all slices.
-    void ClearSlices();
+    IMAGEPPTEST_EXPORT void ClearSlices();
     
     //! Return current slices list.
-    SliceList const& GetSlices() const;
+    IMAGEPPTEST_EXPORT SliceList const& GetSlices() const;
  
 private:
     HRAImageOpDensitySlicingFilter(PixelDepth depth);
@@ -114,19 +114,19 @@ public:
 
     //! Create a LightnessDensitySlicingFilter. Pixels depth is used to specify the depth of the produced output.
     //! Lightness slice values have a range of [0, 100].
-    static HRAImageOpLightnessDensitySlicingFilterPtr CreateLightnessDensitySlicingFilter(PixelDepth depth);
+    IMAGEPPTEST_EXPORT static HRAImageOpLightnessDensitySlicingFilterPtr CreateLightnessDensitySlicingFilter(PixelDepth depth);
 
     //! Add a slice. 
     //! StartValue and EndValue range is [0, 100].
     //! StartColor and EndColor are RGB8. 
     //! Opacity range is [0,1].
-    uint32_t AddSlice (float StartValue, float EndValue, uint32_t StartColor, uint32_t EndColor, double Opacity);
+    IMAGEPPTEST_EXPORT uint32_t AddSlice (float StartValue, float EndValue, uint32_t StartColor, uint32_t EndColor, double Opacity);
 
     //! Remove all slices.
-    void ClearSlices();
+    IMAGEPPTEST_EXPORT void ClearSlices();
 
     //! Return current slices list.
-    SliceList const& GetSlices() const;
+    IMAGEPPTEST_EXPORT SliceList const& GetSlices() const;
 
 private:
     HRAImageOpLightnessDensitySlicingFilter(PixelDepth depth);

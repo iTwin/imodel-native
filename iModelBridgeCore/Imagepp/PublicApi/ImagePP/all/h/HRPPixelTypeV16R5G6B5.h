@@ -21,7 +21,7 @@ class HRPPixelTypeV16R5G6B5 : public HRPPixelType
 public:
 
     // Primary methods
-    HRPPixelTypeV16R5G6B5();
+    IMAGEPPTEST_EXPORT HRPPixelTypeV16R5G6B5();
 
     HRPPixelTypeV16R5G6B5(const HRPPixelTypeV16R5G6B5& pi_rObj);
 

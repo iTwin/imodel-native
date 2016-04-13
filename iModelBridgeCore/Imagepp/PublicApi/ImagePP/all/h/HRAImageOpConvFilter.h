@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRAImageOpConvFilter.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -32,30 +32,30 @@ public:
         };
 
     //! Create a generic convolution filter.
-    static HRAImageOpPtr CreateCustomConvolutionFilter(Kernel const& kernel, HRPPixelNeighbourhood const& pixelNeighbourhood);
+    IMAGEPPTEST_EXPORT static HRAImageOpPtr CreateCustomConvolutionFilter(Kernel const& kernel, HRPPixelNeighbourhood const& pixelNeighbourhood);
 
     //! Create a average filter. 
-    static HRAImageOpPtr CreateAverageFilter();
+    IMAGEPPTEST_EXPORT static HRAImageOpPtr CreateAverageFilter();
 
     //! Create a blur filter. 
-    static HRAImageOpPtr CreateBlurFilter(uint8_t intensity);
+    IMAGEPPTEST_EXPORT static HRAImageOpPtr CreateBlurFilter(uint8_t intensity);
 
     //! Create a detail filter. 
-    static HRAImageOpPtr CreateDetailFilter();
+    IMAGEPPTEST_EXPORT static HRAImageOpPtr CreateDetailFilter();
 
     //! Create a edge enhance filter. 
-    static HRAImageOpPtr CreateEdgeEnhanceFilter();
+    IMAGEPPTEST_EXPORT static HRAImageOpPtr CreateEdgeEnhanceFilter();
 
     //! Create a find edge filter. 
-    static HRAImageOpPtr CreateFindEdgeFilter();
+    IMAGEPPTEST_EXPORT static HRAImageOpPtr CreateFindEdgeFilter();
 
     //! Create a sharpen filter. 
-    static HRAImageOpPtr CreateSharpenFilter(uint8_t intensity);
+    IMAGEPPTEST_EXPORT static HRAImageOpPtr CreateSharpenFilter(uint8_t intensity);
 
     //! Create a smooth filter. 
-    static HRAImageOpPtr CreateSmoothFilter();  
+    IMAGEPPTEST_EXPORT static HRAImageOpPtr CreateSmoothFilter();
 
-    void SetKernel(Kernel const& kernel, HRPPixelNeighbourhood const& neighborhood);
+    IMAGEPPTEST_EXPORT void SetKernel(Kernel const& kernel, HRPPixelNeighbourhood const& neighborhood);
 
 protected:
     virtual ImagePPStatus _GetAvailableInputPixelType(HFCPtr<HRPPixelType>& pixelType, uint32_t index, const HFCPtr<HRPPixelType> pixelTypeToMatch) override;
