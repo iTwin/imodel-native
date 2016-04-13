@@ -23,7 +23,7 @@ struct tm;
 BEGIN_BENTLEY_NAMESPACE
 
 /** 
-* @addtogroup GROUP_Time Time Module 
+* @addtogroup GROUP_Time Dates and Time Module 
 * Cross-platform utilities for working with dates and times.
 */
 

@@ -36,8 +36,8 @@ enum class HexFormatOptions
     };
 
 /**
-* @addtogroup GROUP_String String Module
-* Cross-platform utilities for working with strings.
+* @addtogroup GROUP_String Text String Module
+* Cross-platform utilities for working with text strings.
 * @see @ref PAGE_Utf8StringOverview
 */
 
