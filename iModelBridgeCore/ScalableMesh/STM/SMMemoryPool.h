@@ -297,7 +297,7 @@ public:
             m_nbItems = nbItems;
             m_size = nbItems * sizeof(DataType);
             m_nodeId = nodeId;
-
+            
             if (m_nbItems > 0)
                 m_data = (Byte*)new DataType[nbItems];
             else
@@ -566,9 +566,10 @@ public:
         m_data = (Byte*)newData;
         
         m_nbItems += count;
+        m_size = m_nbItems * sizeof(DataType);
         m_dirty = true;
 
-        NotifySizeChangePoolItem(count);        
+        NotifySizeChangePoolItem(count * sizeof(DataType));        
        
         return true;
         }
@@ -723,9 +724,10 @@ public:
         if (m_data != 0)
             {
             delete [] m_data;
-            NotifySizeChangePoolItem(-(int64_t)m_nbItems);        
+            NotifySizeChangePoolItem(-(int64_t)m_nbItems * sizeof(DataType));        
             m_nbItems = 0;
             m_data = 0;  
+            m_size = 0;
             m_dirty = true;
             }
         }

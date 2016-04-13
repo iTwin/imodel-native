@@ -39,7 +39,8 @@ SMMemoryPoolItemBase::SMMemoryPoolItemBase(Byte* data, uint64_t size, uint64_t n
 
 SMMemoryPoolItemBase::~SMMemoryPoolItemBase()
     {
-    delete [] m_data;
+    if (m_data != 0)
+        delete [] m_data;
     }
 
 uint64_t SMMemoryPoolItemBase::GetSize()
