@@ -158,7 +158,8 @@
     <ClInclude Include="..\PublicApi\EcPresentation\auipresentationmgr.h" />
     <ClInclude Include="..\PublicApi\EcPresentation\auiprovider.h" />
     <ClInclude Include="..\PublicApi\EcPresentation\eccontentdefinition.h" />
-    <ClInclude Include="..\PublicApi\EcPresentation\ECResourceProvider.h" />
+    <ClInclude Include="..\PublicApi\EcPresentation\ECImageProvider.h" />
+    <ClInclude Include="..\PublicApi\EcPresentation\ECLocalizationProvider.h" />
     <ClInclude Include="..\PublicApi\EcPresentation\ecviewdefinition.h" />
     <ClInclude Include="..\PublicApi\ECUnits\ECUnitsClassLocater.h" />
     <ClInclude Include="..\PublicApi\ECUnits\Units.h" />
