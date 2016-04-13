@@ -41,3 +41,6 @@ DgnECNavigatorTest.DgnLinksElementInfo # Need to add support for DgnLinks - Jeff
 DgnECNavigatorTest.IfcElementInfo # Need to add support for RelatedItemsDisplaySpecification - Carole
 
 
+ChangeSummaryTestFixture.RelationshipChangesFromCurrentTransaction # Raman
+
+
