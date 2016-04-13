@@ -206,7 +206,8 @@ HFCPtr<HRFRasterFile> HRFRasterFileFactory::OpenFileAs(const HFCPtr<HFCURL>&    
 const HRFRasterFileCreator* HRFRasterFileFactory::FindCreator(const HFCPtr<HFCURL>& pi_rpURL,
                                                               HFCAccessMode         pi_AccessMode,
                                                               uint64_t              pi_Offset, 
-                                                              bool                  pi_ScanCreatorIfNotFound) const
+                                                              bool                  pi_ScanCreatorIfNotFound,
+                                                              bool                  pi_throwIfNotFound) const
     {
     HPRECONDITION(pi_rpURL != 0);
     HRFRasterFileCreator* pCreator = 0;
@@ -275,9 +276,8 @@ const HRFRasterFileCreator* HRFRasterFileFactory::FindCreator(const HFCPtr<HFCUR
                 CreatorIterator++;
             }
         }
-
-    //if (pCreator == 0)
-        //throw(HFCFileNotSupportedException(pi_rpURL->GetURL()));
+    if(pi_throwIfNotFound && pCreator == 0)
+        throw(HFCFileNotSupportedException(pi_rpURL->GetURL()));
 
     return pCreator;
     }

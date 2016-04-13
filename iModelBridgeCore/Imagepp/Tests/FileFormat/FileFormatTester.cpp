@@ -93,28 +93,6 @@ class ExportTester : public ::testing::TestWithParam< std::wstring >
             };
     };
 
-///*---------------------------------------------------------------------------------**//**
-//* Return a vector with all the paths to the rasters or directories.
-//* @bsimethod                                             Laurent.Robert-Veillette 04/2016
-//+---------------+---------------+---------------+---------------+---------------+------*/
-//static vector<std::wstring> s_GetDirectoryVector(const Utf8String& pSourceDir)
-//    {
-//    vector<std::wstring> directoryList;
-//
-//    BeFileName sourcePath(pSourceDir);
-//    BeFileName actualPath;
-//    bool isDir;
-//    for (BeDirectoryIterator dir(sourcePath); dir.GetCurrentEntry(actualPath, isDir, true) == SUCCESS; dir.ToNext())
-//        {
-//        if (isDir)
-//            continue;//What do we do?? Skip?
-//        else
-//            directoryList.push_back(actualPath.GetName());
-//        }
-//
-//    return directoryList;
-//    }
-
 /*---------------------------------------------------------------------------------**//**
 * Return a vector with all the paths to the rasters or directories.
 * @bsimethod                                             Laurent.Robert-Veillette 04/2016
@@ -125,14 +103,14 @@ static vector<std::wstring> s_GetDirectoryVector(const WString& pSourceDir)
 
     BeFileListIterator sourcePathItr(pSourceDir, true);
     BeFileName actualName;
+    std::regex filter("(.*)(NITF\\\\PasSupportees)(.*)|(.*)(ErdasImg\\\\ImagesInvalides)(.*)|(.*)(iTIFF\\\\xFileNotSupported)(.*)");
+
     while (sourcePathItr.GetNextFileName(actualName) == SUCCESS)
         {
         if (actualName.IsDirectory())
             continue;
         else
-            {            
-            std::regex filter("(.*)(NITF\\\\PasSupportees)(.*)|(.*)(ErdasImg\\\\ImagesInvalides)(.*)|(.*)(iTIFF\\\\xFileNotSupported)(.*)");
-
+            {                       
             //exclusion of the files not supported
             if (std::regex_match(actualName.GetNameUtf8().c_str(), filter))
                 continue;
@@ -144,7 +122,7 @@ static vector<std::wstring> s_GetDirectoryVector(const WString& pSourceDir)
     return directoryList;
     }
 
-static const size_t s_nbTotalOfFiles = s_GetDirectoryVector(L"\\\\TEST33393QBC\\Dataset\\Images_Files\\Images\\*").size();
+static const size_t s_nbTotalOfFiles = s_GetDirectoryVector(L"C:\\Users\\Laurent.Robert-Veill\\Desktop\\Images\\*").size();
 
 ///*---------------------------------------------------------------------------------**//**
 //* Format the name of the file with the specific options of the export
@@ -307,7 +285,7 @@ TEST_P(ExportTester, LoadingRasters)
     try
         {
         HFCPtr<HFCURL> UrlSource = new HFCURLFile(HFCURLFile::s_SchemeName() + "://" + Utf8String(GetParam().c_str()));
-        HRFRasterFileCreator const* pSrcCreator = HRFRasterFileFactory::GetInstance()->FindCreator(UrlSource, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
+        HRFRasterFileCreator const* pSrcCreator = HRFRasterFileFactory::GetInstance()->FindCreator(UrlSource, HFC_READ_ONLY | HFC_SHARE_READ_WRITE, 0, false, false);
         if (pSrcCreator == nullptr)
             return;
 
@@ -317,7 +295,6 @@ TEST_P(ExportTester, LoadingRasters)
 
         HFCPtr<HGF2DCoordSys> pLogical = worldCluster->GetCoordSysReference(pRasterFileSource->GetPageWorldIdentificator(0));
         HFCPtr<HRSObjectStore> pStore = new HRSObjectStore(&pPool, pRasterFileSource, 0, pLogical);
-        //HFCPtr<HPSObjectStore> pStore = new HPSObjectStore(&pPool, UrlSource, worldCluster);
         ASSERT_TRUE(nullptr != pStore);
 
 
@@ -352,7 +329,7 @@ TEST_P(ExportTester, LoadingRasters)
 //    ASSERT_TRUE(creator->GetSupportedAccessMode().m_HasCreateAccess);
 //
 //    HFCPtr<HFCURL> UrlSource = new HFCURLFile(HFCURLFile::s_SchemeName() + "://" + Utf8String(GetParam().c_str()));
-//    HRFRasterFileCreator const* pSrcCreator = HRFRasterFileFactory::GetInstance()->FindCreator(UrlSource, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
+//    HRFRasterFileCreator const* pSrcCreator = HRFRasterFileFactory::GetInstance()->FindCreator(UrlSource, HFC_READ_ONLY | HFC_SHARE_READ_WRITE, 0, false, true);
 //    if (pSrcCreator == nullptr)
 //        return;
 //
@@ -445,7 +422,7 @@ TEST_P(ExportTester, LoadingRasters)
 //    HPMPool pPool(64 * 1024, nullptr);
 //
 //    HFCPtr<HFCURL> UrlSource = new HFCURLFile(HFCURLFile::s_SchemeName() + "://" + Utf8String(GetParam().c_str()));
-//    HRFRasterFileCreator const* pSrcCreator = HRFRasterFileFactory::GetInstance()->FindCreator(UrlSource, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
+//    HRFRasterFileCreator const* pSrcCreator = HRFRasterFileFactory::GetInstance()->FindCreator(UrlSource, HFC_READ_ONLY | HFC_SHARE_READ_WRITE, 0, false, true);
 //    if (pSrcCreator == nullptr)
 //        return;
 //
@@ -501,7 +478,7 @@ TEST_P(ExportTester, LoadingRasters)
 //    ASSERT_TRUE(creator->GetSupportedAccessMode().m_HasCreateAccess);
 //
 //    HFCPtr<HFCURL> UrlSource = new HFCURLFile(HFCURLFile::s_SchemeName() + "://" + Utf8String(GetParam().c_str()));
-//    HRFRasterFileCreator const* pSrcCreator = HRFRasterFileFactory::GetInstance()->FindCreator(UrlSource, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
+//    HRFRasterFileCreator const* pSrcCreator = HRFRasterFileFactory::GetInstance()->FindCreator(UrlSource, HFC_READ_ONLY | HFC_SHARE_READ_WRITE, 0, false, true);
 //    //&&MM find a way to ignore some file extension? ex: world file?? if it throws that generates a failure
 //    // even if we were able to ignore exceptions we might be ignoring a real exception
 //    if (pSrcCreator == nullptr)
@@ -602,7 +579,7 @@ TEST_P(ExportTester, LoadingRasters)
 //
 //:>+--------------------------------------------------------------------------------------
 INSTANTIATE_TEST_CASE_P(AllRastersInDirectory, ExportTester,
-                        ::testing::ValuesIn(s_GetDirectoryVector(L"\\\\TEST33393QBC\\Dataset\\Images_Files\\Images\\*")));
+                        ::testing::ValuesIn(s_GetDirectoryVector(L"C:\\Users\\Laurent.Robert-Veill\\Desktop\\Images\\*")));
 
 
 
