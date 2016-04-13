@@ -769,7 +769,7 @@ void GetScalableMeshTerrainFileName(BeFileName& smtFileName, const BeFileName& d
 
     smtFileName = dgnDbFileName.GetDirectoryName();
     smtFileName.AppendToPath(dgnDbFileName.GetFileNameWithoutExtension().c_str());
-    smtFileName.AppendString(L"\\terrain.smt");
+    smtFileName.AppendString(L"\\terrain.stm");
     }
 
 
