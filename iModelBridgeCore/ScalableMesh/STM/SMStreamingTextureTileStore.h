@@ -74,9 +74,8 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
                     HCDPacket uncompressedPacket, compressedPacket(pi_CompressedTextureData, pi_CompressedTextureSize, pi_CompressedTextureSize);
                     uncompressedPacket.SetDataSize(pi_TextureSize);
 
-                    m_Width = m_Height = (size_t)sqrt(pi_TextureSize / 4);
+                    m_Width = m_Height = (size_t)sqrt(pi_TextureSize / pi_nOfChannels);
                     auto codec = new HCDCodecIJG(m_Width, m_Height, pi_nOfChannels * 8);// 24 bits per pixels
-                    codec->SetSourceColorMode(HCDCodecIJG::ColorModes::RGB);
                     codec->SetQuality(70);
                     codec->SetSubsamplingMode(HCDCodecIJG::SubsamplingModes::SNONE);
                     HFCPtr<HCDCodec> pCodec = codec;
@@ -101,6 +100,8 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
                     {
                     BeFile file;
                     auto fileOpenStatus = file.Open(m_pFilename.c_str(), BeFileAccess::Read, BeFileSharing::None);
+                    if (BeFileStatus::Success != fileOpenStatus) return;
+
                     assert(fileOpenStatus == BeFileStatus::Success);
 
                     // Read Uncompressed texture size
@@ -118,7 +119,7 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
 
                     uint64_t compressedSize = bytesRead;
 
-                    this->DecompressTexture(DataTypeArray, compressedSize, (uint32_t)textureSize, 4);
+                    this->DecompressTexture(DataTypeArray, compressedSize, (uint32_t)textureSize);
 
                     file.Close();
                     }
@@ -259,7 +260,6 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
 
             // initialize codec
             auto codec = new HCDCodecIJG(width, height, 8 * nOfChannels);
-            codec->SetSourceColorMode(HCDCodecIJG::ColorModes::RGB);
             codec->SetQuality(70);
             codec->SetSubsamplingMode(HCDCodecIJG::SubsamplingModes::SNONE);
             HFCPtr<HCDCodec> pCodec = codec;
@@ -281,8 +281,8 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
             pi_uncompressedPacket.SetBuffer(DataTypeArray, countData);
             pi_uncompressedPacket.SetDataSize(countData);
             size_t w, h;
-            w = h = (size_t)sqrt(countData / 4);
-            WriteCompressedPacket(pi_uncompressedPacket, pi_compressedPacket, (int)w, (int)h, 4);
+            w = h = (size_t)sqrt(countData / 3);
+            WriteCompressedPacket(pi_uncompressedPacket, pi_compressedPacket, (int)w, (int)h, 3);
             bvector<uint8_t> texData(pi_compressedPacket.GetDataSize());
             memcpy(&texData[0], pi_compressedPacket.GetBufferAddress(), pi_compressedPacket.GetDataSize());
             int64_t id = SQLiteNodeHeader::NO_NODEID;
@@ -298,8 +298,8 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
             pi_uncompressedPacket.SetBuffer(DataTypeArray, countData);
             pi_uncompressedPacket.SetDataSize(countData);
             size_t w, h;
-            w = h = (size_t)sqrt(countData / 4);
-            WriteCompressedPacket(pi_uncompressedPacket, pi_compressedPacket, (int)w, (int)h, 4);
+            w = h = (size_t)sqrt(countData / 3);
+            WriteCompressedPacket(pi_uncompressedPacket, pi_compressedPacket, (int)w, (int)h, 3);
             bvector<uint8_t> texData(pi_compressedPacket.GetDataSize() + sizeof(size_t));
             reinterpret_cast<size_t&>(*texData.data()) = countData;
             memcpy(&texData[0] + sizeof(size_t), pi_compressedPacket.GetBufferAddress(), pi_compressedPacket.GetDataSize());
@@ -364,7 +364,7 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
             delete[] pixelBuffer;*/
             ((int*)DataTypeArray)[0] = (int)texture.GetWidth();
             ((int*)DataTypeArray)[1] = (int)texture.GetHeight();
-            ((int*)DataTypeArray)[2] = 4;
+            ((int*)DataTypeArray)[2] = 3;
             memcpy(DataTypeArray + 3 * sizeof(int), texture.data(), std::min(texture.size(), maxCountData));
             //return texture.size() + 3 * sizeof(int);
             return std::min(texture.size() + 3 * sizeof(int), maxCountData);
