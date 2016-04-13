@@ -392,7 +392,9 @@ size_t GetNbPtsIndices(size_t texture_id) const
         {
         if (m_ptsIndiceVec.size() <= texture_id)
             return 0;
-        else return m_ptsIndiceVec[texture_id].size();
+        bool needsInflate = m_ptsIndiceVec[texture_id].Discarded() && m_ptsIndiceVec[texture_id].GetBlockID().IsValid();
+        if (needsInflate) m_ptsIndiceVec[texture_id].Inflate();
+        return m_ptsIndiceVec[texture_id].size();
         }
 
     size_t GetNbPtsIndiceArrays() const
