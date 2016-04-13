@@ -108,7 +108,7 @@ std::unique_ptr<Exp> ECSqlParser::Parse(ECDbCR ecdb, Utf8CP ecsql) const
     if (SUCCESS != m_context->FinalizeParsing(*exp))
         return nullptr;
 
-    return std::move(exp);
+    return exp;
     }
 
 //****************** Parsing SELECT statement ***********************************
