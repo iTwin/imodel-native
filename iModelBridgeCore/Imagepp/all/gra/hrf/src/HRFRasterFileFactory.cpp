@@ -276,8 +276,8 @@ const HRFRasterFileCreator* HRFRasterFileFactory::FindCreator(const HFCPtr<HFCUR
             }
         }
 
-    if (pCreator == 0)
-        throw(HFCFileNotSupportedException(pi_rpURL->GetURL()));
+    //if (pCreator == 0)
+        //throw(HFCFileNotSupportedException(pi_rpURL->GetURL()));
 
     return pCreator;
     }
