@@ -76,7 +76,9 @@ template <typename POINT> ScalableMeshMemoryPools<POINT>::ScalableMeshMemoryPool
     m_uvsIndicesPool = new HPMCountLimitedPool<int32_t>(m_myMemMgr, m_uvsIndicesPoolSize);
     m_featurePool = new HPMCountLimitedPool<int32_t>(m_featurePoolSize);
     m_diffSetPool = new HPMIndirectCountLimitedPool<DifferenceSet>(m_diffSetPoolSize);
-    m_genericPool = new SMMemoryPool(m_genericPoolSize)                        ;
+    m_genericPool = SMMemoryPool::GetInstance();
+    bool result = m_genericPool->SetMaxSize(m_genericPoolSize);
+    assert(result == true);
     }
 
 template <typename POINT> ScalableMeshMemoryPools<POINT>*  ScalableMeshMemoryPools<POINT>::Get()

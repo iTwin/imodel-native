@@ -362,14 +362,12 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
                     node->m_nodeHeader.m_numberOfMeshComponents = componentPointsId.size();
                     memcpy(node->m_nodeHeader.m_meshComponents, componentPointsId.data(), componentPointsId.size()*sizeof(int));
                     }
-
+                
                 if (faceIndexes.size() > 0)
-                node->PushPtsIndices(0, /*meshP->GetFaceIndexes()*/&faceIndexes[0], node->m_nodeHeader.m_nbFaceIndexes);
+                    node->PushPtsIndices(0, /*meshP->GetFaceIndexes()*/&faceIndexes[0], node->m_nodeHeader.m_nbFaceIndexes);
                 else
-                    node->ClearPtsIndices(0);                
-
-                node->StorePtsIndice(0);
-
+                    node->ClearPtsIndices(0);
+                
                 //NEEDS_WORK_SM Avoid some assert                            
                 //delete [] pPiggyBackMeshIndexes; 
                 if (node->IsLeaf() && node->size() != node->m_nodeHeader.m_totalCount)
@@ -2074,10 +2072,8 @@ return true;
                 memcpy(node->m_nodeHeader.m_meshComponents, componentPointsId.data(), componentPointsId.size()*sizeof(int));
                 }
           
-            node->PushPtsIndices(0, &faceIndexes[0], node->m_nodeHeader.m_nbFaceIndexes);
-            node->SetPtsIndiceDirty(0);
-            node->StorePtsIndice(/*pPiggyBackMeshIndexes, nbPointsForFaceInd*/0);
-
+            node->PushPtsIndices(0, &faceIndexes[0], node->m_nodeHeader.m_nbFaceIndexes);            
+            
             assert(node->size() == nodePts.size());
             if (node->IsLeaf() && node->size() != node->m_nodeHeader.m_totalCount)
                 {

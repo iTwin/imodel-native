@@ -2796,8 +2796,7 @@ template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddMesh(DPoint3d*
         memcpy(m_meshNode->m_nodeHeader.m_meshComponents, componentPointsId.data(), componentPointsId.size()*sizeof(int));
         }
 
-    m_meshNode->PushPtsIndices(0, &indicesVec[0], m_meshNode->m_nodeHeader.m_nbFaceIndexes);    
-    m_meshNode->StorePtsIndice(0);
+    m_meshNode->PushPtsIndices(0, &indicesVec[0], m_meshNode->m_nodeHeader.m_nbFaceIndexes);        
     m_meshNode->IncreaseTotalCount(m_meshNode->size());
 
     m_meshNode->SetDirty(true);
@@ -2827,8 +2826,7 @@ template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddTexturedMesh(b
 
     // Untexturing part : 
     nIndicesCount += ptsIndices[0].size();
-    m_meshNode->PushPtsIndices(0, &ptsIndices[0][0], ptsIndices[0].size());    
-    m_meshNode->StorePtsIndice(0);
+    m_meshNode->PushPtsIndices(0, &ptsIndices[0][0], ptsIndices[0].size());        
     indicesLine.insert(indicesLine.end(), ptsIndices[0].begin(), ptsIndices[0].end());
 
     // Texturing points
@@ -2836,8 +2834,7 @@ template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddTexturedMesh(b
         {
         nIndicesCount += ptsIndices[i+1].size();
         m_meshNode->PushPtsIndices(i+1, &ptsIndices[i+1][0], ptsIndices[i+1].size());        
-        m_meshNode->StorePtsIndice(i+1);
-
+        
         m_meshNode->PushUVsIndices(i, &uvIndices[i][0], uvIndices[i].size());
         m_meshNode->SetUVsIndicesDirty(i);
         m_meshNode->StoreUVsIndices(i);

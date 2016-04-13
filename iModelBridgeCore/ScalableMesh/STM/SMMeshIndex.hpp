@@ -958,59 +958,26 @@ template <class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::IsPtsI
     return m_isPtsIndiceLoaded;
     }
 
-template <class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::StorePtsIndice(size_t textureID) const
-    {        
-    assert(!"NEEDS_WORK_POOL");
-    /*
-    if (m_nodeHeader.m_ptsIndiceID.size() < textureID + 1) m_nodeHeader.m_ptsIndiceID.resize(textureID + 1);
-        {
-        if(m_ptsIndiceVec[textureID].IsDirty() && !m_ptsIndiceVec[textureID].Discarded()) m_ptsIndiceVec[textureID].Discard();
-        if (m_ptsIndiceVec[textureID].GetBlockID().IsValid())
-            m_nodeHeader.m_ptsIndiceID[textureID] = m_ptsIndiceVec[textureID].GetBlockID();
-        }
-        */
+template <class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::PushPtsIndices(size_t texture_id, const int32_t* indices, size_t size)
+    {    
+    RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> ptsIndicePtr = GetPtsIndicePtr();
+    bool result = ptsIndicePtr->push_back(indices, size);
+    assert(result);
     }
 
-template <class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::PushPtsIndices(size_t texture_id, const int32_t* indices, size_t size) const
+template <class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::ReplacePtsIndices(size_t texture_id, const int32_t* indices, size_t size)
     {
-    assert(!"NEEDS_WORK_POOL");
-    /*
-    if (m_ptsIndiceVec.size() < texture_id + 1)
-        {
-        for(int i=0; i<m_ptsIndiceVec.size(); i++)
-        StorePtsIndice(i);
-        m_ptsIndiceVec.resize(texture_id + 1);
-        }
-    if (m_ptsIndiceVec[texture_id].GetStore() == nullptr) m_ptsIndiceVec[texture_id].SetStore(dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetPtsIndicesStore().GetPtr());
-    if (m_ptsIndiceVec[texture_id].GetPool() == nullptr) m_ptsIndiceVec[texture_id].SetPool(dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetPtsIndicesPool());
-    if (!m_SMIndex->m_useSTMFormat)
-        {
-        m_ptsIndiceVec[texture_id].SetBlockID(m_ptsIndiceVec[0].GetBlockID());
-        }
-    m_ptsIndiceVec[texture_id].push_back(indices, size);
-    */
+    RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> ptsIndicePtr = GetPtsIndicePtr();
+    ptsIndicePtr->clear();
+    bool result = ptsIndicePtr->push_back(indices, size);
+    assert(result);
     }
 
-template <class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::ReplacePtsIndices(size_t texture_id, const int32_t* indices, size_t size) const
+template <class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::ClearPtsIndices(size_t texture_id)
     {
-    assert(!"NEEDS_WORK_POOL");
-    /*
-    m_ptsIndiceVec[texture_id].clear();
-    m_ptsIndiceVec[texture_id].push_back(indices, size);
-    */
+    RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> ptsIndicePtr = GetPtsIndicePtr();
+    ptsIndicePtr->clear();    
     }
-
-template <class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::ClearPtsIndices(size_t texture_id) const
-    {
-    assert(!"NEEDS_WORK_POOL");
-    /*
-        if (m_ptsIndiceVec.size() > texture_id)
-            m_ptsIndiceVec[texture_id].clear();
-        */
-    }
-
-
-
 
 template <class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::IsUVLoaded() const
     {
@@ -1876,8 +1843,7 @@ void SMMeshIndexNode<POINT, EXTENT>::SplitMeshForChildNodes()
         childContentRange.IntersectionOf(contentRange, nodeRange);
         nodeP->m_nodeHeader.m_contentExtent = ExtentOp<EXTENT>::Create(childContentRange.low.x, childContentRange.low.y, childContentRange.low.z, childContentRange.high.x, childContentRange.high.y, childContentRange.high.z);
         nodeP->m_nodeHeader.m_contentExtentDefined = true;
-        dynamic_pcast<SMMeshIndexNode<POINT,EXTENT>,SMPointIndexNode<POINT,EXTENT>>(nodeP)->PushPtsIndices(0, &childIndices[0], childIndices.size());        
-        dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(nodeP)->StorePtsIndice(0);
+        dynamic_pcast<SMMeshIndexNode<POINT,EXTENT>,SMPointIndexNode<POINT,EXTENT>>(nodeP)->PushPtsIndices(0, &childIndices[0], childIndices.size());                
         nodeP->push_back(&nodePts[0], nodePts.size());
         nodeP->m_nodeHeader.m_totalCount = nodeP->size();
         nodeP->SetDirty(true);
@@ -2315,8 +2281,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
     SetUVDirty(/*texId + 1*/);
     SetUVsIndicesDirty(texId);    
     StoreUV();
-    StoreUVsIndices(texId);
-    StorePtsIndice(texId+1);
+    StoreUVsIndices(texId);    
     }
     delete[] pixelBufferP;
     delete[] pixelBufferPRGBA;

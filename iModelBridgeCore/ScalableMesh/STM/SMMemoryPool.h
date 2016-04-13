@@ -79,39 +79,38 @@ enum class ContainerType
 template <typename DataType> class SMMemoryPoolVectorItem;
 template <typename DataType> class SMMemoryPoolItem;
 
+class SMMemoryPool;
+typedef RefCountedPtr<SMMemoryPool> SMMemoryPoolPtr;
+
+typedef uint64_t SMMemoryPoolItemId;
+
 
 class SMMemoryPoolItemBase : public RefCountedBase
     {
+    private : 
+
+        SMMemoryPoolItemId        m_poolItemId;         
+
     protected : 
 
-        Byte*         m_data;
-        uint64_t      m_size;
-        uint64_t      m_nodeId;
-        SMPoolDataTypeDesc  m_dataType;
-        bool          m_dirty;
+        Byte*                     m_data;
+        uint64_t                  m_size;
+        uint64_t                  m_nodeId;
+        SMPoolDataTypeDesc        m_dataType;
+        bool                      m_dirty;   
+                
         //ContainerType m_containerType;
 
         //type_info m_dataType;
         
+        void NotifySizeChangePoolItem(int64_t sizeDelta);
+        
     public :
 
-        SMMemoryPoolItemBase()
-            {
-            m_dataType = SMPoolDataTypeDesc::Unknown;
-            m_dirty = false;
-            m_nodeId = std::numeric_limits<uint64_t>::max();
-            }
-
-        SMMemoryPoolItemBase(Byte* data, uint64_t size, uint64_t nodeId, SMPoolDataTypeDesc& dataType)
-            {
-            m_data = data;
-            m_size = size;
-            m_nodeId = nodeId;
-            m_dataType = dataType;
-            m_data = data;
-            m_dirty = true;
-            }
-
+        SMMemoryPoolItemBase();
+            
+        SMMemoryPoolItemBase(Byte* data, uint64_t size, uint64_t nodeId, SMPoolDataTypeDesc& dataType);
+            
         template<typename T>
         RefCountedPtr<SMMemoryPoolVectorItem<T>> GetAsPoolVector()
             {            
@@ -120,33 +119,19 @@ class SMMemoryPoolItemBase : public RefCountedBase
 
         template<typename T>
         RefCountedPtr<SMMemoryPoolItem<T>> GetAsTypedPoolItem()
-            {/*
-            if (GetDataType(typeid(T)) != m_dataType)
-               return 0;
-               */
-
+            {            
             return dynamic_cast<SMMemoryPoolItem<T>*>(this);
             }
         
-        virtual ~SMMemoryPoolItemBase()
-            {
-            delete [] m_data;
-            }
-
-        void* GetItem();
-
-        uint64_t GetSize()
-            {
-            return m_size;
-            }        
-
-        bool IsCorrect(uint64_t nodeId, SMPoolDataTypeDesc& dataType)
-            {
-            if (nodeId == m_nodeId && dataType == m_dataType)
-                return true;
-
-            return false;
-            }
+        virtual ~SMMemoryPoolItemBase();
+                    
+        uint64_t GetSize();
+        
+        bool IsCorrect(uint64_t nodeId, SMPoolDataTypeDesc& dataType);        
+            
+        SMMemoryPoolItemId GetPoolItemId() const;
+            
+        void SetPoolItemId(SMMemoryPoolItemId poolItemId);            
     };
 
 
@@ -166,6 +151,7 @@ class TextureTypedPoolItemCreator : public CustomTypedPoolItemCreator
         {
         }
 
+
     virtual ~TextureTypedPoolItemCreator()
         {
         }
@@ -183,8 +169,12 @@ template <typename DataType> class SMMemoryPoolItem : public SMMemoryPoolItemBas
             {            
             m_size = size;
             m_nodeId = nodeId;
-            m_data = (Byte*)new Byte[m_size];
-            memset(m_data, 1, m_size);                               
+
+            if (m_size > 0)
+                m_data = (Byte*)new Byte[m_size];
+            else
+                m_data = 0;
+
             m_dataType = dataType;
             }
 
@@ -307,8 +297,12 @@ public:
             m_nbItems = nbItems;
             m_size = nbItems * sizeof(DataType);
             m_nodeId = nodeId;
-            m_data = (Byte*)new DataType[nbItems];
-            memset(m_data, 1, m_size);                                               
+
+            if (m_nbItems > 0)
+                m_data = (Byte*)new DataType[nbItems];
+            else
+                m_data = 0;
+            
             m_dataType = dataType;
             }
     /*
@@ -557,34 +551,26 @@ public:
         -----------------------------------------------------------------------------
     */
     bool push_back(const DataType* newObjects, size_t count)
-        {
-        assert(!"MST TBD");
-
+        {        
         if (count == 0)
             return false;
-/*
-        if (Discarded())
-            Inflate();
+       
+        DataType* newData = new DataType[m_nbItems + count];        
 
-        HASSERT(!Discarded());
+        if (m_nbItems > 0)
+            std::copy_n((DataType*)m_data, m_nbItems, newData);
 
-        if (m_allocatedCount <= (m_count + count))
-            if (!reserve (m_count + count))
-                throw std::bad_alloc();
+        std::copy_n(newObjects, count, newData + m_nbItems);
 
-        m_accessCount+=count;
-        if ((m_accessCount > 100) && (m_pool != NULL) && !Pinned())
-            {
-            m_pool->NotifyAccess(this);
-            m_accessCount = 0;
-            }
+        delete [] m_data;
+        m_data = (Byte*)newData;
+        
+        m_nbItems += count;
+        m_dirty = true;
 
-        memcpy (&(m_memory[m_count]), newObjects, sizeof(DataType) * count);
-        m_count += count;
-        SetDirty(true);
-
+        NotifySizeChangePoolItem(count);        
+       
         return true;
-        */
         }
 
 
@@ -625,19 +611,9 @@ public:
     // This used to be a reference returned but this caused a problem when the ref was maintained and the
     // tile discarded...
     virtual const DataType& operator[](size_t index) const
-        {             
+        {                     
         HPRECONDITION(index < m_nbItems);        
-
-        /*
-        m_accessCount++;        
               
-        if ((m_accessCount > 100) && (m_pool != NULL) && !Pinned())
-            {            
-            m_pool->NotifyAccess(this);
-            m_accessCount = 0;
-            }
-            */
-        
         return ((DataType*)m_data)[index];
         }
     
@@ -743,38 +719,15 @@ public:
         }
 
     virtual void clear()
-        {
-        assert(!"MST TBD");
-        /*
-        m_itemMutex.lock();
-        if (Discarded())
-            Inflate();
-
-        HASSERT(!Discarded());
-
-        if (m_allocatedCount > 0)
+        {   
+        if (m_data != 0)
             {
-            if (m_pool != NULL)
-                {
-                if (GetPoolManaged())
-                    {
-                    bool freeSuccess = m_pool->Free(this);
-                    freeSuccess = freeSuccess;
-                    HASSERT(freeSuccess);
-                    }
-                }
-            else
-                {
-                delete [] m_memory;
-                m_memory = NULL;
-                }
+            delete [] m_data;
+            NotifySizeChangePoolItem(-(int64_t)m_nbItems);        
+            m_nbItems = 0;
+            m_data = 0;  
+            m_dirty = true;
             }
-
-        m_count = 0;
-        m_allocatedCount = 0;
-        SetDirty (true);
-        m_itemMutex.unlock();
-        */
         }
 
     iterator begin()
@@ -825,7 +778,6 @@ public:
         */
 
         }
-
     };
 
     
@@ -841,13 +793,7 @@ template <typename DataType> class SMStoredMemoryPoolVectorItem : public SMMemor
             : SMMemoryPoolVectorItem(store->GetBlockDataCount(HPMBlockID(nodeId)), nodeId, dataType)
             {                                    
             m_store = store;            
-
-            /*
-            HPMBlockID blockID(m_nodeId);
             
-            size_t m_nbItems = m_store->GetBlockDataCount(blockID);
-            */
-
             if (m_nbItems > 0)
                 {                
                 HPMBlockID blockID(m_nodeId);
@@ -860,6 +806,8 @@ template <typename DataType> class SMStoredMemoryPoolVectorItem : public SMMemor
             {
             if (m_dirty)
                 {
+                HPMBlockID blockID(m_nodeId);
+                m_store->StoreBlock((DataType*)m_data, m_nbItems, blockID);                
                 }
             }    
     };
@@ -870,12 +818,13 @@ typedef RefCountedPtr<SMMemoryPoolItemBase> SMMemoryPoolItemBasePtr;
 static clock_t s_timeDiff = CLOCKS_PER_SEC * 120;
 static double s_maxMemBeforeFlushing = 1.2;
 
-typedef uint64_t SMMemoryPoolItemId; 
 static uint64_t s_initSize = 100;
 
 class SMMemoryPool : public RefCountedBase
     {
     private : 
+
+        static SMMemoryPoolPtr           s_memoryPool; 
 
         uint64_t                         m_maxPoolSizeInBytes;
         atomic<uint64_t>                 m_currentPoolSizeInBytes;
@@ -890,38 +839,16 @@ class SMMemoryPool : public RefCountedBase
         atomic<bool>               m_lastAvailableInd;
         */
 
+        SMMemoryPool();
+            
+        virtual ~SMMemoryPool();
+
+
     public : 
 
         static SMMemoryPoolItemId s_UndefinedPoolItemId;
-
-        SMMemoryPool(uint64_t maxPoolSizeInBytes)                        
-            {
-            m_currentPoolSizeInBytes = 0;
-            m_maxPoolSizeInBytes = maxPoolSizeInBytes;            
-            m_memPoolItems.resize(s_initSize);
-            m_lastAccessTime.resize(s_initSize);
-            m_memPoolItemMutex.resize(s_initSize);
-
-            for (size_t itemId = 0; itemId < m_memPoolItemMutex.size(); itemId++)
-                {
-                m_memPoolItemMutex[itemId] = new mutex;                
-                }
-            }
-
-        virtual ~SMMemoryPool()
-            {
-            for (size_t itemId = 0; itemId < m_memPoolItemMutex.size(); itemId++)
-                {                
-                delete m_memPoolItemMutex[itemId];
-                }            
-                        
-            /*
-            m_lastAvailableInd = 0;
-            m_isFull = false;
-            */
-            }
-
-
+        
+            
         template<typename T>
         bool GetItem(RefCountedPtr<SMMemoryPoolVectorItem<T>>& poolMemVectorItemPtr, SMMemoryPoolItemId id, uint64_t nodeId, SMPoolDataTypeDesc dataType)
             {
@@ -939,158 +866,31 @@ class SMMemoryPool : public RefCountedBase
             return poolMemVectorItemPtr.IsValid();
             }                
                
-        bool GetItem(SMMemoryPoolItemBasePtr& memItemPtr, SMMemoryPoolItemId id)
-            {     
-            if (id == SMMemoryPool::s_UndefinedPoolItemId)
-                return false; 
+        bool GetItem(SMMemoryPoolItemBasePtr& memItemPtr, SMMemoryPoolItemId id);
+            
+        bool RemoveItem(SMMemoryPoolItemId id, uint64_t nodeId, SMPoolDataTypeDesc dataType);
+            
+        SMMemoryPoolItemId AddItem(SMMemoryPoolItemBasePtr& poolItem);
 
-            std::lock_guard<std::mutex> lock(*m_memPoolItemMutex[id]);
-            m_lastAccessTime[id] = clock();
-            memItemPtr = m_memPoolItems[id];
-            return memItemPtr.IsValid();
+        void NotifySizeChangePoolItem(SMMemoryPoolItemBase* poolItem, int64_t sizeDelta);
+
+        bool SetMaxSize(uint64_t maxSize)
+            {
+            if (m_currentPoolSizeInBytes > 0)
+                return false;
+
+            m_maxPoolSizeInBytes = maxSize;
+
+            return true;
             }
 
-        bool RemoveItem(SMMemoryPoolItemId id, uint64_t nodeId, SMPoolDataTypeDesc dataType)
-            {     
-            if (id == SMMemoryPool::s_UndefinedPoolItemId)
-                return false; 
-
-            std::lock_guard<std::mutex> lock(*m_memPoolItemMutex[id]);            
-            SMMemoryPoolItemBasePtr memItemPtr(m_memPoolItems[id]);
-            if (memItemPtr.IsValid() && memItemPtr->IsCorrect(nodeId, dataType))
-                {
-                m_memPoolItems[id] = 0;
-                return true;
-                }
-
-            return false;
-            }
-
-        SMMemoryPoolItemId AddItem(SMMemoryPoolItemBasePtr& poolItem)
-            {    
-            uint64_t itemInd = 0;            
-            clock_t oldestTime = numeric_limits<clock_t>::max();
-            uint64_t oldestInd = 0; 
-
-            m_currentPoolSizeInBytes += poolItem->GetSize();
+        static SMMemoryPoolPtr GetInstance()
+            {
+            if (s_memoryPool == 0)
+                s_memoryPool = new SMMemoryPool;     
             
-            bool needToFlush = false;
-
-            if (m_currentPoolSizeInBytes > m_maxPoolSizeInBytes)
-                {
-                needToFlush = true;
-                }
-
-            clock_t currentTime = clock(); 
-
-            for (; itemInd < (uint64_t)m_memPoolItems.size(); itemInd++)
-                {
-                    {   
-                    std::lock_guard<std::mutex> lock(*m_memPoolItemMutex[itemInd]);
-
-                    if (!m_memPoolItems[itemInd].IsValid())
-                        {
-                        break;
-                        }
-                    }
-
-                if ((needToFlush && (currentTime - m_lastAccessTime[itemInd] > s_timeDiff)))                
-                    {
-                    break;
-                    }                
-
-                if (oldestTime > m_lastAccessTime[itemInd])
-                    {
-                    oldestTime = m_lastAccessTime[itemInd];
-                    oldestInd = itemInd;
-                    }
-                }               
-
-            if (m_currentPoolSizeInBytes > m_maxPoolSizeInBytes)
-                {
-                double flushTimeThreshold = (clock() + oldestTime) / 2.0;
-
-                for (size_t itemIndToDelete = 0; itemIndToDelete < m_memPoolItems.size() && m_currentPoolSizeInBytes > m_maxPoolSizeInBytes; itemIndToDelete++)
-                    {     
-                    std::lock_guard<std::mutex> lock(*m_memPoolItemMutex[itemIndToDelete]);
-
-                    if (m_memPoolItems[itemIndToDelete].IsValid() && m_lastAccessTime[itemIndToDelete] < flushTimeThreshold)                    
-                        {
-                        m_currentPoolSizeInBytes -= m_memPoolItems[itemIndToDelete]->GetSize();                                        
-                        m_memPoolItems[itemIndToDelete] = 0; 
-                        itemInd = itemIndToDelete;
-                        }                                        
-                    }
-                }
-            
-            if (m_currentPoolSizeInBytes > m_maxPoolSizeInBytes * s_maxMemBeforeFlushing)
-                {
-                for (size_t itemIndToDelete = 0; itemIndToDelete < m_memPoolItems.size() && m_currentPoolSizeInBytes > m_maxPoolSizeInBytes; itemIndToDelete++)
-                    {  
-                    std::lock_guard<std::mutex> lock(*m_memPoolItemMutex[itemIndToDelete]);                    
-
-                    if (m_memPoolItems[itemIndToDelete].IsValid())
-                        {
-                        m_currentPoolSizeInBytes -= m_memPoolItems[itemIndToDelete]->GetSize();                
-                        m_memPoolItems[itemIndToDelete] = 0; 
-                        itemInd = itemIndToDelete;
-                        }                    
-                    }
-                }            
-
-            if (itemInd == m_memPoolItems.size())
-                {
-                if (m_currentPoolSizeInBytes < m_maxPoolSizeInBytes)
-                    {                                    
-                    m_memPoolItems.resize((size_t)(m_memPoolItems.size() * 1.5));
-                    m_lastAccessTime.resize(m_memPoolItems.size());
-
-                    size_t oldItemCount = m_memPoolItemMutex.size();
-                    m_memPoolItemMutex.resize(m_memPoolItems.size());
-
-                    for (size_t itemId = oldItemCount; itemId < m_memPoolItemMutex.size(); itemId++)
-                        {
-                        m_memPoolItemMutex[itemId] = new mutex;                
-                        }
-                    }
-                else
-                    {
-                    itemInd = oldestInd;                    
-                    }                
-                }
-            
-            m_memPoolItemMutex[itemInd]->lock();
-
-            if (m_memPoolItems[itemInd].IsValid())            
-                {                
-                m_currentPoolSizeInBytes -= m_memPoolItems[itemInd]->GetSize();
-                }
-
-            m_memPoolItems[itemInd] = poolItem;
-            m_lastAccessTime[itemInd] = clock();
-
-            m_memPoolItemMutex[itemInd]->unlock();
-
-#ifndef NDEBUG
-            /*
-            uint64_t totalSize = 0;
-
-            for (auto poolItem : m_memPoolItems)
-                {
-                if (poolItem.IsValid())
-                    {    
-                    totalSize += poolItem->GetSize();
-                    }
-                }
-
-            assert(totalSize == m_currentPoolSizeInBytes);*/
-
-#endif
-
-            return itemInd;
+            return s_memoryPool;
             }
     };
-
-typedef RefCountedPtr<SMMemoryPool> SMMemoryPoolPtr;
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

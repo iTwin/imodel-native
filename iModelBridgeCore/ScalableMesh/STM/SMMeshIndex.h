@@ -364,17 +364,14 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         {
         return dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetGraphPool();
         };
-
-
-    void StorePtsIndice(size_t textureID) const;    
-
+    
     virtual bool IsPtsIndiceLoaded() const;
 
-    void PushPtsIndices(size_t texture_id, const int32_t* indices, size_t size) const;
+    void PushPtsIndices(size_t texture_id, const int32_t* indices, size_t size);
 
-    void ReplacePtsIndices(size_t texture_id, const int32_t* indices, size_t size) const;
+    void ReplacePtsIndices(size_t texture_id, const int32_t* indices, size_t size);
 
-    void ClearPtsIndices(size_t texture_id) const;                
+    void ClearPtsIndices(size_t texture_id);                
     
     virtual RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> GetPtsIndicePtr()
         {
