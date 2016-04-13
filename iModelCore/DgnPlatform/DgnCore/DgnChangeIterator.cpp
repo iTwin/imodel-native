@@ -31,7 +31,7 @@ void BaseChangeEntry::MoveToNextSqlChange()
         DbResult rc = m_sqlChange.GetOperation(&tableName, &nCols, &dbOpcode, &indirect);
         BeAssert(rc == BE_SQLITE_OK);
 
-        if (indirect == 0 && 0 == ::strcmp(tableName, m_parent.m_tableMap.GetTableName().c_str()))
+        if (indirect == 0 && 0 == ::strcmp(tableName, m_parent.m_tableMap->GetTableName().c_str()))
             break;
 
         ++m_sqlChange;
@@ -78,7 +78,7 @@ DbOpcode BaseChangeEntry::ExtractDbOpcode()
 //---------------------------------------------------------------------------------------
 ECInstanceId BaseChangeEntry::ExtractInstanceId() const
     {
-    DbValue idVal = (m_dbOpcode == DbOpcode::Insert) ? m_sqlChange.GetNewValue(m_parent.m_instanceIdColumnMap.GetColumnIndex()) : m_sqlChange.GetOldValue(m_parent.m_instanceIdColumnMap.GetColumnIndex());
+    DbValue idVal = (m_dbOpcode == DbOpcode::Insert) ? m_sqlChange.GetNewValue(m_parent.m_instanceIdColumnMap.GetIndex()) : m_sqlChange.GetOldValue(m_parent.m_instanceIdColumnMap.GetIndex());
     ECInstanceId instanceId = idVal.GetValueId<ECInstanceId>();
     BeAssert(instanceId.IsValid());
     return instanceId;
@@ -89,9 +89,9 @@ ECInstanceId BaseChangeEntry::ExtractInstanceId() const
 //---------------------------------------------------------------------------------------
 DgnCode BaseChangeEntry::ExtractCode(Changes::Change::Stage stage) const
     {
-    DbValue codeAuthorityIdDbVal = m_sqlChange.GetValue(m_parent.m_codeAuthorityIdColumnMap.GetColumnIndex(), stage);
-    DbValue codeValueDbVal = m_sqlChange.GetValue(m_parent.m_codeValueColumnMap.GetColumnIndex(), stage);
-    DbValue codeNamespaceIndexDbVal = m_sqlChange.GetValue(m_parent.m_codeNamespaceColumnMap.GetColumnIndex(), stage);
+    DbValue codeAuthorityIdDbVal = m_sqlChange.GetValue(m_parent.m_codeAuthorityIdColumnMap.GetIndex(), stage);
+    DbValue codeValueDbVal = m_sqlChange.GetValue(m_parent.m_codeValueColumnMap.GetIndex(), stage);
+    DbValue codeNamespaceIndexDbVal = m_sqlChange.GetValue(m_parent.m_codeNamespaceColumnMap.GetIndex(), stage);
 
     if (codeAuthorityIdDbVal.IsValid() && codeValueDbVal.IsValid() && codeNamespaceIndexDbVal.IsValid())
         {
@@ -105,15 +105,15 @@ DgnCode BaseChangeEntry::ExtractCode(Changes::Change::Stage stage) const
 
     DbDupValue codeAuthorityIdDbVal2(codeAuthorityIdDbVal.GetSqlValueP());
     if (!codeAuthorityIdDbVal2.IsValid())
-        codeAuthorityIdDbVal2 = GetDbValue(m_parent.m_codeAuthorityIdColumnMap.GetColumnName());
+        codeAuthorityIdDbVal2 = GetDbValue(m_parent.m_codeAuthorityIdColumnMap.GetName());
 
     DbDupValue codeValueDbVal2(codeValueDbVal.GetSqlValueP());
     if (!codeValueDbVal2.IsValid())
-        codeValueDbVal2 = GetDbValue(m_parent.m_codeValueColumnMap.GetColumnName());
+        codeValueDbVal2 = GetDbValue(m_parent.m_codeValueColumnMap.GetName());
 
     DbDupValue codeNamespaceIndexDbVal2(codeNamespaceIndexDbVal.GetSqlValueP());
     if (!codeNamespaceIndexDbVal2.IsValid())
-        codeNamespaceIndexDbVal2 = GetDbValue(m_parent.m_codeNamespaceColumnMap.GetColumnName());
+        codeNamespaceIndexDbVal2 = GetDbValue(m_parent.m_codeNamespaceColumnMap.GetName());
 
     if (codeAuthorityIdDbVal2.IsValid() && codeValueDbVal2.IsValid() && codeNamespaceIndexDbVal2.IsValid())
         {
@@ -130,7 +130,7 @@ DgnCode BaseChangeEntry::ExtractCode(Changes::Change::Stage stage) const
 //---------------------------------------------------------------------------------------
 DbDupValue BaseChangeEntry::GetDbValue(Utf8StringCR columnName) const
     {
-    Utf8PrintfString sql("SELECT %s FROM %s WHERE %s=?", columnName.c_str(), m_parent.m_tableMap.GetTableName().c_str(), m_parent.m_instanceIdColumnMap.GetColumnName().c_str());
+    Utf8PrintfString sql("SELECT %s FROM %s WHERE %s=?", columnName.c_str(), m_parent.m_tableMap->GetTableName().c_str(), m_parent.m_instanceIdColumnMap.GetName().c_str());
     CachedStatementPtr statement = m_parent.m_dgndb.GetCachedStatement(sql.c_str());
     BeAssert(statement.IsValid());
 
@@ -161,8 +161,8 @@ BaseChangeEntry& BaseChangeEntry::operator++()
 //---------------------------------------------------------------------------------------
 BaseChangeIterator::BaseChangeIterator(DgnDbCR dgndb, IChangeSet& changeSet, ECClassCR ecClass) : m_dgndb(dgndb), m_changes(changeSet.GetChanges())
     {
-    BentleyStatus status = ChangeSummary::GetPrimaryTableMapInfo(m_tableMap, ecClass, m_dgndb);
-    BeAssert(status == SUCCESS);
+    m_tableMap = ChangeSummary::GetPrimaryTableMap(dgndb, ecClass);
+    BeAssert(m_tableMap.IsValid());
     }
 
 //---------------------------------------------------------------------------------------
@@ -170,10 +170,10 @@ BaseChangeIterator::BaseChangeIterator(DgnDbCR dgndb, IChangeSet& changeSet, ECC
 //---------------------------------------------------------------------------------------
 void BaseChangeIterator::_Initialize()
     {
-    m_instanceIdColumnMap = m_tableMap.GetColumnMap("ECInstanceId");
-    m_codeAuthorityIdColumnMap = m_tableMap.GetColumnMap("Code.AuthorityId");
-    m_codeNamespaceColumnMap = m_tableMap.GetColumnMap("Code.Namespace");
-    m_codeValueColumnMap = m_tableMap.GetColumnMap("Code.Value");
+    m_instanceIdColumnMap = m_tableMap->GetColumn("ECInstanceId");
+    m_codeAuthorityIdColumnMap = m_tableMap->GetColumn("Code.AuthorityId");
+    m_codeNamespaceColumnMap = m_tableMap->GetColumn("Code.Namespace");
+    m_codeValueColumnMap = m_tableMap->GetColumn("Code.Value");
     }
 
 //---------------------------------------------------------------------------------------
@@ -204,7 +204,7 @@ void ElementChangeEntry::_ExtractChanges()
 //---------------------------------------------------------------------------------------
 DgnModelId ElementChangeEntry::ExtractModelId(Changes::Change::Stage stage) const
     {
-    DbValue idVal = m_sqlChange.GetValue(m_parent.m_modelIdColumnMap.GetColumnIndex(), stage);
+    DbValue idVal = m_sqlChange.GetValue(m_parent.m_modelIdColumnMap.GetIndex(), stage);
 
     if (idVal.IsValid())
         {
@@ -218,7 +218,7 @@ DgnModelId ElementChangeEntry::ExtractModelId(Changes::Change::Stage stage) cons
 
     DbDupValue idVal2(idVal.GetSqlValueP());
     if (!idVal2.IsValid())
-        idVal2 = GetDbValue(m_parent.m_modelIdColumnMap.GetColumnName());
+        idVal2 = GetDbValue(m_parent.m_modelIdColumnMap.GetName());
 
     if (idVal2.IsValid())
         {
@@ -242,7 +242,7 @@ ElementChangeIterator::ElementChangeIterator(DgnDbCR dgndb, IChangeSet& changeSe
 void ElementChangeIterator::_Initialize()
     {
     T_Super::_Initialize();
-    m_modelIdColumnMap = m_tableMap.GetColumnMap("ModelId");
+    m_modelIdColumnMap = m_tableMap->GetColumn("ModelId");
     }
 
 //---------------------------------------------------------------------------------------

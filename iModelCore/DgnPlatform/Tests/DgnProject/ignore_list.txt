@@ -17,7 +17,6 @@ UnitManagerTest.GetStandardLabel                        # fails randomonly on 06
 UnitManagerTest.GetStandardName                         # fails randomonly on 06Dev; will have to find someone to investigate... maybe Josh
 UnitIterator.GetName                                    # fails randomonly on 06Dev; will have to find someone to investigate... maybe Josh
 
-ChangeSummaryTestFixture.* # Too fragile due to various schema changes - temporarily commenting the tests out. 
 ConfigurationManager_Test.*                             # UmarH -- Tests are ported from Vancouver for MacroConfiguration ,seems macros are not expanding on get variable method. 
 
 ComponentModelBasicTest.MakeVariationInstance           # UmarH Failing Only on 0601Dev Firebug ( not locally), need to investigate
@@ -38,10 +37,5 @@ TextStringTest.BoundingShape                            # UmarH WIP
 DateTimeFormatterTest.*                                 # UmarH fails randomly, need to investigate
 DgnLineStyleTest.InsertAndQueryWithoutCacheReLoad       # Unable to query line style unless we reload the file ( which will reload the cache )
 
-#TFS 390510 Colin to address it
-ImportTests.simpleSchemaImport
-
 DgnECNavigatorTest.DgnLinksElementInfo # Need to add support for DgnLinks - JeffM
 DgnECNavigatorTest.IfcElementInfo # Need to add support for RelatedItemsDisplaySpecification - Carole
-
-

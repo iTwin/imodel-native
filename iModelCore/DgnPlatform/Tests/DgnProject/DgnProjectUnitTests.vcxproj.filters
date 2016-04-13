@@ -274,7 +274,9 @@
     <ClCompile Include="Published\ViewAttachment_Test.cpp">
       <Filter>Published</Filter>
     </ClCompile>
-    <ClCompile Include="NonPublished\BackwardCompatibility_Tests.cpp" />
+    <ClCompile Include="NonPublished\BackwardCompatibility_Tests.cpp">
+      <Filter>NonPublished</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Published\DgnHandlersTests.h">

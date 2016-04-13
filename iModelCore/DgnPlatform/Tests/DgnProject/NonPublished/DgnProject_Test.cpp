@@ -780,9 +780,10 @@ struct QueryElementIdGraphiteURI : ::testing::Test
     BETEST_DECLARE_TC_TEARDOWN
 
     ScopedDgnHost m_host;
+
     static DgnDbTestUtils::SeedDbInfo s_seedFileInfo;
 
-    QueryElementIdGraphiteURI()
+    QueryElementIdGraphiteURI() : m_host(ScopedDgnHost::Options::DisableRepositoryManager)
         {
         // Must register my domain whenever I initialize a host
         DgnPlatformTestDomain::Register();
@@ -798,7 +799,7 @@ DgnDbTestUtils::SeedDbInfo QueryElementIdGraphiteURI::s_seedFileInfo;
 //---------------------------------------------------------------------------------------
 BETEST_TC_SETUP(QueryElementIdGraphiteURI) 
     {
-    ScopedDgnHost tempHost;
+    ScopedDgnHost tempHost(ScopedDgnHost::Options::DisableRepositoryManager);
     QueryElementIdGraphiteURI::s_seedFileInfo = DgnDbTestUtils::GetSeedDb(DgnDbTestUtils::SeedDbId::OneSpatialModel, DgnDbTestUtils::SeedDbOptions(true, true));
     }
 

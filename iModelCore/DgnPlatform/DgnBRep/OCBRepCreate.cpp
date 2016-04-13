@@ -27,7 +27,10 @@ static BentleyStatus bodyFromPolyface(TopoDS_Shape& shape, PolyfaceQueryCR mesh,
 
     visitor->SetNumWrap (1);
 
-    BRepBuilderAPI_Sewing sewBuilder;
+    TopoDS_Builder shellBuilder;
+    TopoDS_Shell   shell;
+
+    shellBuilder.MakeShell(shell);
 
     for (visitor->Reset(); visitor->AdvanceToNextFace(); )
         {
@@ -49,12 +52,10 @@ static BentleyStatus bodyFromPolyface(TopoDS_Shape& shape, PolyfaceQueryCR mesh,
         if (face.IsNull())
             continue;
 
-        sewBuilder.Add(face);
+        shellBuilder.Add(shell, face);
         }
 
-    sewBuilder.Perform();
-
-    shape = sewBuilder.SewedShape();
+    shape = shell;
 
     if (shape.IsNull())
         return ERROR;
@@ -112,13 +113,24 @@ static BentleyStatus createBSurfEdgeWireFromBoundary(TopoDS_Wire& wire, Handle(G
 
     for (auto& curvePrimitive : boundary)
         {
-        if (nullptr == curvePrimitive->GetBsplineCurveCP())
-            {
-            BeAssert(false && "FUnexpected BSurf Boundary Primitive");
-            return ERROR;
-            }
+        Handle(Geom2d_BSplineCurve) boundaryGeomCurve;
 
-        Handle(Geom2d_BSplineCurve) boundaryGeomCurve = OCBRep::ToGeom2dBSplineCurve(*curvePrimitive->GetBsplineCurveCP(), nullptr);
+        if (nullptr != curvePrimitive->GetProxyBsplineCurveCP())
+            {
+            boundaryGeomCurve = OCBRep::ToGeom2dBSplineCurve(*curvePrimitive->GetProxyBsplineCurveCP(), nullptr);
+            }
+        else
+            {
+            MSBsplineCurvePtr bCurve = curvePrimitive->GetMSBsplineCurvePtr(); // Handle linestring boundary...
+
+            if (!bCurve.IsValid())
+                {
+                BeAssert(false && "Unexpected BSurf Boundary Primitive");
+                return ERROR;
+                }
+
+            boundaryGeomCurve = OCBRep::ToGeom2dBSplineCurve(*bCurve, nullptr);
+            }
 
         if (boundaryGeomCurve.IsNull())
             {
@@ -207,7 +219,11 @@ static BentleyStatus bodyFromBSurface(TopoDS_Shape& shape, MSBsplineSurfaceCR bS
             return ERROR;
 
         shape = shellBuilder.Shell();
-        BRepLib::BuildCurves3d (shape);
+
+        if (shape.IsNull())
+            return ERROR;
+
+        BRepLib::BuildCurves3d(shape);
 
         return (shape.IsNull() ? ERROR : SUCCESS);
         }
@@ -279,6 +295,9 @@ static BentleyStatus bodyFromBSurface(TopoDS_Shape& shape, MSBsplineSurfaceCR bS
             return ERROR;
             }
         }
+
+    if (shape.IsNull())
+        return ERROR;
 
     BRepLib::BuildCurves3d(shape);
 
@@ -706,16 +725,93 @@ BentleyStatus OCBRep::Create::TopoShapeFromCurveVector(TopoDS_Shape& shape, Curv
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus OCBRep::Create::TopoShapeFromCone(TopoDS_Shape& shape, DgnConeDetailCR cone)
+BentleyStatus OCBRep::Create::TopoShapeFromBox(TopoDS_Shape& shape, DgnBoxDetailCR detail)
+    {
+    DPoint3d    origin;
+    DVec3d      localDiagonal;
+    RotMatrix   unitAxes;
+
+    if (detail.IsBlock(origin, unitAxes, localDiagonal, 0.0, 0.0, 0.0))
+        {
+        BRepPrimAPI_MakeBox boxBuilder(OCBRep::ToGpAx2(DPoint3d::FromZero(), unitAxes), localDiagonal.x, localDiagonal.y, localDiagonal.z);
+
+        boxBuilder.Build();
+
+        if (!boxBuilder.IsDone())
+            return ERROR;
+
+        if (detail.m_capped)
+            {
+            shape = boxBuilder.Solid();
+            }
+        else
+            {
+            TopoDS_Builder shellBuilder;
+            TopoDS_Shell   shell;
+
+            shellBuilder.MakeShell(shell); // Make shell from lateral faces...
+            shellBuilder.Add(shell, boxBuilder.BackFace());
+            shellBuilder.Add(shell, boxBuilder.FrontFace());
+            shellBuilder.Add(shell, boxBuilder.LeftFace());
+            shellBuilder.Add(shell, boxBuilder.RightFace());
+            shape = shell;
+            }
+
+        if (shape.IsNull())
+            return ERROR;
+
+        Transform solidToDgn = Transform::From(origin);
+
+        if (!solidToDgn.IsIdentity())
+            shape.Location(TopLoc_Location(OCBRep::ToGpTrsf(solidToDgn)));
+
+        return SUCCESS;
+        }
+
+    bvector<DPoint3d> corners;
+
+    detail.GetCorners(corners);
+
+    DPoint3d baseRectangle[5];
+
+    baseRectangle[0] = corners[0];
+    baseRectangle[1] = corners[1];
+    baseRectangle[2] = corners[3];
+    baseRectangle[3] = corners[2];
+    baseRectangle[4] = corners[0];
+
+    DPoint3d topRectangle[5];
+
+    topRectangle[0] = corners[4];
+    topRectangle[1] = corners[5];
+    topRectangle[2] = corners[7];
+    topRectangle[3] = corners[6];
+    topRectangle[4] = corners[4];
+
+    CurveVectorPtr baseCurve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer);
+    CurveVectorPtr topCurve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer);
+
+    baseCurve->push_back(ICurvePrimitive::CreateLineString(baseRectangle, 5));
+    topCurve->push_back(ICurvePrimitive::CreateLineString(topRectangle, 5));
+
+    DgnRuledSweepDetail ruleDetail(baseCurve, topCurve, detail.m_capped);
+
+    return TopoShapeFromRuledSweep(shape, ruleDetail);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus OCBRep::Create::TopoShapeFromCone(TopoDS_Shape& shape, DgnConeDetailCR detail)
     {
     bool        capped;
     double      radiusA, radiusB;
     DPoint3d    centerA, centerB;
     RotMatrix   rMatrix;
 
-    if (!cone.IsCircular(centerA, centerB, rMatrix, radiusA, radiusB, capped))
+    if (!detail.IsCircular(centerA, centerB, rMatrix, radiusA, radiusB, capped))
         {
-        BeAssert(false && "Error noncircular cone");
+        BeAssert(false && "Error noncircular cone"); // NEEDSWORK: Handle as ellipse ThruSections...
         return ERROR;
         }
 
@@ -758,7 +854,7 @@ BentleyStatus OCBRep::Create::TopoShapeFromCone(TopoDS_Shape& shape, DgnConeDeta
             if (capped)
                 shape = cylinderBuilder.Solid();
             else
-                shape = cylinderBuilder.Face();
+                shape = cylinderBuilder.Face(); // Only want lateral face...
             }
         else
             {
@@ -772,17 +868,458 @@ BentleyStatus OCBRep::Create::TopoShapeFromCone(TopoDS_Shape& shape, DgnConeDeta
             if (capped)
                 shape = coneBuilder.Solid();
             else
-                shape = coneBuilder.Face();
+                shape = coneBuilder.Face(); // Only want lateral face...
             }
         }
 
     if (shape.IsNull())
         return ERROR;
 
-    Transform   solidToDgn = Transform::From(centerA);
+    Transform solidToDgn = Transform::From(centerA);
 
     if (!solidToDgn.IsIdentity())
         shape.Location(TopLoc_Location(OCBRep::ToGpTrsf(solidToDgn)));
 
     return SUCCESS;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus OCBRep::Create::TopoShapeFromSphere(TopoDS_Shape& shape, DgnSphereDetailCR detail)
+    {
+    double      radius;
+    DPoint3d    center;
+    RotMatrix   axes;
+
+    if (!detail.IsTrueSphere(center, axes, radius))
+        {
+        BeAssert(false && "Not a complete sphere"); // NEEDSWORK: Handle as rotational sweep...
+        return ERROR;
+        }
+
+    BRepPrimAPI_MakeSphere sphereBuilder(OCBRep::ToGpAx2(DPoint3d::FromZero(), axes), radius);
+
+    sphereBuilder.Build();
+
+    if (!sphereBuilder.IsDone())
+        return ERROR;
+
+    shape = sphereBuilder.Solid(); // // Full sphere is always a solid...
+    
+    if (shape.IsNull())
+        return ERROR;
+
+    Transform solidToDgn = Transform::From(center);
+
+    if (!solidToDgn.IsIdentity())
+        shape.Location(TopLoc_Location(OCBRep::ToGpTrsf(solidToDgn)));
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus OCBRep::Create::TopoShapeFromTorus(TopoDS_Shape& shape, DgnTorusPipeDetailCR detail)
+    {
+    DPoint3d    center;
+    RotMatrix   rMatrix;
+    double      radiusA, radiusB, sweep;
+
+    if (!detail.TryGetFrame(center, rMatrix, radiusA, radiusB, sweep))
+        return ERROR;
+
+    BRepPrimAPI_MakeTorus torusBuilder(OCBRep::ToGpAx2(DPoint3d::FromZero(), rMatrix), radiusA, radiusB, sweep);
+
+    torusBuilder.Build();
+
+    if (!torusBuilder.IsDone())
+        return ERROR;
+
+    if (detail.HasRealCaps())
+        shape = torusBuilder.Solid();
+    else
+        shape = torusBuilder.Face(); // Only want lateral face...
+
+    if (shape.IsNull())
+        return ERROR;
+
+    Transform solidToDgn = Transform::From(center);
+
+    if (!solidToDgn.IsIdentity())
+        shape.Location(TopLoc_Location(OCBRep::ToGpTrsf(solidToDgn)));
+    
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus OCBRep::Create::TopoShapeFromExtrusion(TopoDS_Shape& shape, DgnExtrusionDetailCR detail)
+    {
+    DPoint3d    startPt;
+
+    if (!detail.m_baseCurve->GetStartPoint(startPt))
+        return ERROR;
+
+    Transform   solidToDgn, dgnToSolid;
+
+    solidToDgn = Transform::From(startPt);
+    dgnToSolid.InverseOf(solidToDgn);
+
+    TopoDS_Shape profileShape;
+
+    if (SUCCESS != bodyFromTopLevelCurveVector(profileShape, *detail.m_baseCurve, dgnToSolid, detail.m_capped))
+        return ERROR;
+
+    DVec3d      extrusion = detail.m_extrusionVector;
+
+    dgnToSolid.MultiplyMatrixOnly(extrusion);
+
+    BRepPrimAPI_MakePrism extrusionBuilder(profileShape, OCBRep::ToGpVec(extrusion));
+
+    extrusionBuilder.Build();
+
+    if (!extrusionBuilder.IsDone())
+        {
+        BeAssert(false && "Failure to create extrusion");
+        return ERROR;
+        }
+
+    shape = extrusionBuilder;
+
+    if (shape.IsNull())
+        return ERROR;
+
+    if (!solidToDgn.IsIdentity())
+        shape.Location(TopLoc_Location(OCBRep::ToGpTrsf(solidToDgn)));
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus OCBRep::Create::TopoShapeFromRotationalSweep(TopoDS_Shape& shape, DgnRotationalSweepDetailCR detail)
+    {
+    DPoint3d    origin;
+    DVec3d      axis;
+    double      sweep;
+
+    if (!detail.TryGetRotationAxis(origin, axis, sweep))
+        return ERROR;
+
+    Transform   solidToDgn, dgnToSolid;
+
+    solidToDgn = Transform::From(origin);
+    dgnToSolid.InverseOf(solidToDgn);
+
+    TopoDS_Shape profileShape;
+
+    if (SUCCESS != bodyFromTopLevelCurveVector(profileShape, *detail.m_baseCurve, dgnToSolid, detail.m_capped))
+        return ERROR;
+
+    dgnToSolid.MultiplyMatrixOnly(axis);
+
+    if (sweep > msGeomConst_2pi)
+        sweep = msGeomConst_2pi;
+    else if (sweep < -msGeomConst_2pi)
+        sweep = -msGeomConst_2pi;
+
+    BRepPrimAPI_MakeRevol revolutionBuilder(profileShape, OCBRep::ToGpAx1(DPoint3d::FromZero(), axis), sweep);
+
+    revolutionBuilder.Build();
+
+    if (!revolutionBuilder.IsDone())
+        {
+        BeAssert(false && "Failure to create revolution");
+        return ERROR;
+        }
+
+    shape = revolutionBuilder;
+
+    if (shape.IsNull())
+        return ERROR;
+
+    if (!solidToDgn.IsIdentity())
+        shape.Location(TopLoc_Location(OCBRep::ToGpTrsf(solidToDgn)));
+
+    return SUCCESS;
+    }
+
+#if defined (NOT_NOW)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+static BentleyStatus getLateralRuledSweepFaces (bvector<TopoDS_Face>& faces, CurveVectorCR profile0, CurveVectorCR profile1, TransformCR dgnToSolid)
+    {
+    if (profile0.GetBoundaryType() != profile1.GetBoundaryType() ||
+        profile0.size() != profile1.size())
+        ASSERT_ERROR_RETURN ("Unexpected error in getLateralRuledFacesP");
+
+
+    if (profile0.IsParityRegion() ||
+        profile1.IsUnionRegion())
+        {
+        for (size_t i=0; i<profile0.size(); i++)
+            {
+            if (NULL == profile0[i]->GetChildCurveVectorCP() ||
+                NULL == profile1[i]->GetChildCurveVectorCP())
+                ASSERT_ERROR_RETURN ("Unexpected error in getLateralRuledFacesP");
+
+            if (SUCCESS != getLateralRuledSweepFaces (faces, *profile0[i]->GetChildCurveVectorCP(), *profile1[i]->GetChildCurveVectorCP(), dgnToSolid))
+                return ERROR;
+            }
+
+        return SUCCESS;
+        }
+
+
+    TopoDS_Shape   profileWire0, profileWire1;
+
+    if (SUCCESS != bodyFromCurveVector (profileWire0, profile0, dgnToSolid, false, false) ||
+        SUCCESS != bodyFromCurveVector (profileWire1, profile1, dgnToSolid, false, false))
+        ASSERT_ERROR_RETURN ("Error extracting ruled sweep profile");
+
+    for (TopExp_Explorer ex0 (profileWire0, TopAbs_EDGE), ex1 (profileWire1, TopAbs_EDGE); ex0.More() && ex1.More(); ex0.Next(), ex1.Next())
+        {
+        TopoDS_Face face = BRepFill::Face (TopoDS::Edge (ex0.Current()), TopoDS::Edge (ex1.Current()));
+
+        if (!face.IsNull())
+            faces.push_back (face);
+        }
+
+    return SUCCESS;
+    }
+#endif
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus OCBRep::Create::TopoShapeFromRuledSweep(TopoDS_Shape& shape, DgnRuledSweepDetailCR detail)
+    {
+#if defined (NOT_NOW)
+    Transform   solidToDgn, dgnToSolid;
+    DPoint3d    origin;
+
+
+    if (!detail.m_sectionCurves.front ()->GetStartPoint (origin))
+        return ERROR;
+
+    getSolidTransforms (solidToDgn, dgnToSolid, dgnToSolidScale, &origin);
+
+    DVec3d      translation;
+
+    if (2 == detail.m_sectionCurves.size () && detail.GetSectionCurveTranslation (translation, 0, 1))
+        {
+        IOcctEntityPtr  baseEntity;
+
+        if (SUCCESS != bodyFromCurveVector (baseEntity, *detail.m_sectionCurves.front(), capped, dgnToSolidScale, &origin))
+            return ERROR;
+
+        dgnToSolid.MultiplyMatrixOnly (translation);
+        BRepPrimAPI_MakePrism  extrusionBuilder (baseEntity->GetShape(), OcctUtil::Create::GpVec(translation));
+
+        extrusionBuilder.Build();
+        if (!extrusionBuilder.IsDone())
+            ASSERT_ERROR_RETURN ("Failure to create extrusion");
+
+        TopoDS_Shape        shape = extrusionBuilder;
+        occtBody = OcctEntity::Create (solidToDgn, shape);
+
+        return SUCCESS;
+        }
+    else
+        {
+        double a = dgnToSolid.ColumnXMagnitude (), b;
+
+        DoubleOps::SafeDivide (b, 1.0, a, 1.0);
+
+        CurveGapOptions             gapOptions (1.0e-10 * b, 1.0e-4 * b, 1.0e-3 * b);
+        bvector<CurveVectorPtr>     correctedProfiles;
+
+        // Create new solid/surface with profiles cleaned up to remove gaps/silver faces...
+        for (auto& profile : detail.m_sectionCurves)
+            correctedProfiles.push_back (profile->CloneWithGapsClosed (gapOptions));
+
+        CurveVector::BoundaryType   boundaryType = correctedProfiles.front()->GetBoundaryType();
+
+
+        for (auto& profile : correctedProfiles)
+            {
+            Transform           flattenTransform = Transform::FromIdentity ();
+
+            if (capped)
+                BRepCurveVectorUtil::TestClosedPathFlattening (capped, flattenTransform, *profile);
+
+            if (capped)
+                profile->TransformInPlace (flattenTransform);
+            }
+
+        if (CurveVector::BOUNDARY_TYPE_ParityRegion != boundaryType &&
+            CurveVector::BOUNDARY_TYPE_UnionRegion != boundaryType)
+            {
+            BRepOffsetAPI_ThruSections  builder (capped, true);
+
+            for (auto& profile : correctedProfiles) 
+                {
+                TopoDS_Shape        profileWire;
+
+                if (SUCCESS != bodyFromCurveVector (profileWire, *profile, dgnToSolid, false, false))
+                    ASSERT_ERROR_RETURN ("bodyFromCurveVector failure");
+                
+                builder.AddWire (TopoDS::Wire (profileWire));
+                }
+        
+            builder.Build();
+
+            if (!builder.IsDone())
+                ASSERT_ERROR_RETURN ("ThruSections failure");
+
+            occtBody = OcctEntity::Create (solidToDgn, builder.Shape());
+
+            return SUCCESS;
+            }
+        else
+            {
+            bvector <TopoDS_Face>   faces;
+
+            for (size_t i=0; i<correctedProfiles.size()-1; i++)
+                if (SUCCESS != getLateralRuledSweepFaces (faces, *correctedProfiles[i], *correctedProfiles[i+1], dgnToSolid))
+                    return ERROR;
+
+            if (capped)
+                {
+                TopoDS_Shape        cap0, cap1;
+                CurveVectorPtr      cap0Curves = correctedProfiles.front(), cap1Curves = correctedProfiles.back();
+
+
+                if (SUCCESS != bodyFromCurveVector (cap0, *cap0Curves, dgnToSolid, true, false) ||
+                    SUCCESS != bodyFromCurveVector (cap1, *cap1Curves, dgnToSolid, true, false))
+                    ASSERT_ERROR_RETURN ("Failure to produce ruled sweep caps");
+
+                for (TopExp_Explorer ex (cap0, TopAbs_FACE); ex.More(); ex.Next())
+                    faces.push_back (TopoDS::Face (ex.Current()));
+
+                for (TopExp_Explorer ex (cap1, TopAbs_FACE); ex.More(); ex.Next())
+                    faces.push_back (TopoDS::Face (ex.Current()));
+                }
+
+            BRepBuilderAPI_Sewing       sewingBuilder;
+
+            for (auto& face : faces)
+                sewingBuilder.Add (face);
+
+            sewingBuilder.Perform();
+
+            TopoDS_Shape    resultShape = sewingBuilder.SewedShape();
+            if (resultShape.IsNull())
+                ASSERT_ERROR_RETURN ("Error sewing faces in ruled sweep");
+
+            if (capped && TopAbs_SHELL == resultShape.ShapeType())
+                {
+                BRepBuilderAPI_MakeSolid solidBuilder;
+
+                solidBuilder.Add (TopoDS::Shell (resultShape));
+                solidBuilder.Build();
+
+                if (solidBuilder.IsDone())
+                    resultShape = solidBuilder.Shape();
+                }
+
+            occtBody = OcctEntity::Create (solidToDgn, resultShape);
+            }
+
+        return SUCCESS;
+        }
+#endif
+
+    return ERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus OCBRep::Create::TopoShapeFromSolidPrimitive(TopoDS_Shape& shape, ISolidPrimitiveCR primitive)
+    {
+    switch (primitive.GetSolidPrimitiveType())
+        {
+        case SolidPrimitiveType_DgnTorusPipe:
+            {
+            DgnTorusPipeDetail detail;
+
+            if (!primitive.TryGetDgnTorusPipeDetail(detail))
+                return ERROR;
+
+            return TopoShapeFromTorus(shape, detail);
+            }
+
+        case SolidPrimitiveType_DgnCone:
+            {
+            DgnConeDetail detail;
+
+            if (!primitive.TryGetDgnConeDetail(detail))
+                return ERROR;
+
+            return TopoShapeFromCone(shape, detail);
+            }
+
+        case SolidPrimitiveType_DgnBox:
+            {
+            DgnBoxDetail detail;
+
+            if (!primitive.TryGetDgnBoxDetail(detail))
+                return ERROR;
+
+            return TopoShapeFromBox(shape, detail);
+            }
+
+        case SolidPrimitiveType_DgnSphere:
+            {
+            DgnSphereDetail detail;
+
+            if (!primitive.TryGetDgnSphereDetail(detail))
+                return ERROR;
+
+            return TopoShapeFromSphere(shape, detail);
+            }
+
+        case SolidPrimitiveType_DgnExtrusion:
+            {
+            DgnExtrusionDetail detail;
+
+            if (!primitive.TryGetDgnExtrusionDetail(detail))
+                return ERROR;
+
+            return TopoShapeFromExtrusion(shape, detail);
+            }
+
+        case SolidPrimitiveType_DgnRotationalSweep:
+            {
+            DgnRotationalSweepDetail detail;
+
+            if (!primitive.TryGetDgnRotationalSweepDetail(detail))
+                return ERROR;
+
+            return TopoShapeFromRotationalSweep(shape, detail);
+            }
+
+        case SolidPrimitiveType_DgnRuledSweep:
+            {
+            DgnRuledSweepDetail detail;
+
+            if (!primitive.TryGetDgnRuledSweepDetail(detail))
+                return ERROR;
+
+            return TopoShapeFromRuledSweep(shape, detail);
+            }
+
+        default:
+            {
+            BeAssert(false && "Unimplemented solid primitive");
+            return ERROR;
+            }
+        }
+    }
+
