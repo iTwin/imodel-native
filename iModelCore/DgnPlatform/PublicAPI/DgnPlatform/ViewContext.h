@@ -17,11 +17,10 @@
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-/*=================================================================================**//**
- @addtogroup ViewContext
- A ViewContext holds the <i>current state</i> of an operation on a DgnViewport. A ViewContext must be first attached to a DgnViewport.
- @beginGroup 
-+===============+===============+===============+===============+===============+======*/
+/**
+* @addtogroup GROUP_ViewContext ViewContext Module
+* A ViewContext holds the <i>current state</i> of an operation on a DgnViewport. A ViewContext must be first attached to a DgnViewport.
+*/
 
 //=======================================================================================
 // @bsiclass
@@ -55,7 +54,6 @@ struct RangeNodeCheck
     virtual ScanCriteria::Result _CheckNodeRange(ScanCriteriaCR, DRange3dCR, bool is3d) = 0;
 };
 
-
 //=======================================================================================
 //! Interface to supply additional topology information that describes the subsequent geometry.
 //! The ViewContext's current IElemTopology will be cloned and saved as part of the HitDetail
@@ -82,6 +80,7 @@ struct IElemTopology : IRefCounted
 DEFINE_REF_COUNTED_PTR(IElemTopology)
 
 //=======================================================================================
+//! @ingroup GROUP_ViewContext
 // @bsiclass                                                     KeithBentley    04/01
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ViewContext : NonCopyableClass, CheckStop, RangeNodeCheck
@@ -198,9 +197,8 @@ public:
     StatusInt VisitGeometry(GeometrySourceCR elem) {return _VisitGeometry(elem);}
     StatusInt VisitHit(HitDetailCR hit) {return _VisitHit(hit);}
 
-    /// @name Coordinate Query and Conversion
-    //@{
-
+/** @name Coordinate Query and Conversion */
+/** @{ */
     //! Transform an array of points in DgnCoordSystem::Npc into DgnCoordSystem::View.
     //! @param[out]     viewPts     An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
     //! @param[in]      npcPts      Input array in DgnCoordSystem::Npc.
@@ -281,10 +279,10 @@ public:
 
     bool Is3dView() const {return m_is3dView;}
     DGNPLATFORM_EXPORT bool IsCameraOn() const;
-    //@}
+/** @} */
 
-    /// @name Get/Set Current Display Parameters
-    //@{
+/** @name Get/Set Current Display Parameters */
+/** @{ */
     //! Modify the supplied "natural" GeometryParams by resolving effective symbology as required by the context.
     //! Initializes the supplied GraphicParams from the resolved GeometryParams.
     void CookGeometryParams(Render::GeometryParamsR geomParams, Render::GraphicParamsR graphicParams) {_CookGeometryParams(geomParams, graphicParams);}
@@ -296,11 +294,10 @@ public:
     //! Get the IPickGeom interface for this ViewContext. Only contexts that are specific to picking will return a non-nullptr value.
     //! @return the IPickGeom interface for this context. May return nullptr.
     IPickGeomP GetIPickGeom() {return _GetIPickGeom();}
+/** @} */
 
-    //@}
-
-    /// @name Identifying element "topology".
-    //@{
+/** @name Identifying element "topology". */
+/** @{ */
     //! Query the current IElemTopology.
     //! @return An object that holds additional information about the graphics that are currently being drawn.
     IElemTopologyCP GetElemTopology() const {return (m_currElemTopo.IsValid() ? m_currElemTopo.get() : nullptr);}
@@ -314,15 +311,13 @@ public:
 
     //! Get a reference to the current GeometryStreamEntryId to modify.
     GeometryStreamEntryId& GetGeometryStreamEntryIdR() {return m_currGeometryStreamEntryId;}
-
-    //@}
+/** @} */
 
     DGNPLATFORM_EXPORT bool WantAreaPatterns();
     DGNPLATFORM_EXPORT void DrawAreaPattern(ClipStencil& boundary);
 
-    /** @name Draw Geometry Using Current Linestyle */
-    /** @{ */
-
+/** @name Draw Geometry Using Current Linestyle */
+/** @{ */
     //! Draw a 2D linestring using the current Linestyle, if any. If there is no current Linestyle, draw a solid linestring.
     //! @param[in]      nPts        Number of vertices in \c pts.
     //! @param[in]      pts         Array of points in linestring.
@@ -349,6 +344,7 @@ public:
     //! @param        curve       curve geometry
     //! @param[in]    zDepth      Z depth value.
     DGNPLATFORM_EXPORT void DrawStyledCurveVector2d(CurveVectorCR curve, double zDepth);
+/** @} */
 
     //! Draw a text string and any adornments such as background shape, underline, overline, etc. Sets up current GeometryParams for TextString symbology.
     void AddTextString(TextStringCR textString) {_AddTextString(textString);}
@@ -357,6 +353,7 @@ public:
 }; // ViewContext
 
 //=======================================================================================
+//! @ingroup GROUP_ViewContext
 // @bsiclass                                                    Keith.Bentley   12/15
 //=======================================================================================
 struct RenderContext : ViewContext
@@ -383,6 +380,7 @@ public:
 };
 
 //=======================================================================================
+//! @ingroup GROUP_ViewContext
 // @bsiclass                                                    Keith.Bentley   02/16
 //=======================================================================================
 struct RenderListContext : RenderContext
@@ -414,6 +412,7 @@ public:
 };
 
 //=======================================================================================
+//! @ingroup GROUP_ViewContext
 // @bsiclass                                                    Keith.Bentley   10/15
 //=======================================================================================
 struct SceneContext : RenderListContext
@@ -429,6 +428,7 @@ public:
 };
 
 //=======================================================================================
+//! @ingroup GROUP_ViewContext
 // @bsiclass                                                    Keith.Bentley   03/16
 //=======================================================================================
 struct RedrawContext : RenderListContext
@@ -439,6 +439,7 @@ public:
 };
 
 //=======================================================================================
+//! @ingroup GROUP_ViewContext
 // @bsiclass                                                    Keith.Bentley   10/15
 //=======================================================================================
 struct ProgressiveContext : RenderListContext
@@ -449,6 +450,7 @@ public:
 };
 
 //=======================================================================================
+//! @ingroup GROUP_ViewContext
 // @bsiclass                                                    Keith.Bentley   10/15
 //=======================================================================================
 struct HealContext : RenderListContext
@@ -461,6 +463,7 @@ public:
 };
 
 //=======================================================================================
+//! @ingroup GROUP_ViewContext
 // @bsiclass                                                    Keith.Bentley   02/16
 //=======================================================================================
 struct TerrainContext : RenderListContext
@@ -471,6 +474,7 @@ public:
 };
 
 //=======================================================================================
+//! @ingroup GROUP_ViewContext
 // @bsiclass                                                    Keith.Bentley   12/15
 //=======================================================================================
 struct DynamicsContext : RenderContext
@@ -490,6 +494,7 @@ public:
 };
 
 //=======================================================================================
+//! @ingroup GROUP_ViewContext
 // @bsiclass                                                    Keith.Bentley   12/15
 //=======================================================================================
 struct DecorateContext : RenderContext
@@ -523,7 +528,5 @@ public:
     //! @private
     DGNPLATFORM_EXPORT void DrawStandardGrid(DPoint3dR gridOrigin, RotMatrixR rMatrix, DPoint2d spacing, uint32_t gridsPerRef, bool isoGrid=false, Point2dCP fixedRepetitions=nullptr);
 };  
-
-/** @endGroup */
 
 END_BENTLEY_DGN_NAMESPACE
