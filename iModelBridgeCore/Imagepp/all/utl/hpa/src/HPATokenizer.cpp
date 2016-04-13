@@ -171,7 +171,7 @@ private:
              }
 
          // Trim utf8 BOOM if any.
-         if (lineUTF8.size() > 3 && lineUTF8[0] == 0xEF && lineUTF8[1] == 0xBB && lineUTF8[2] == 0xBF)
+         if (lineUTF8.size() > 3 && (Byte)lineUTF8[0] == 0xEF && (Byte)lineUTF8[1] == 0xBB && (Byte)lineUTF8[2] == 0xBF)
              lineUTF8 = lineUTF8.substr(3);
          
          return !lineUTF8.empty();

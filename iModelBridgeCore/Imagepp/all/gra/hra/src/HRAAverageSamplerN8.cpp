@@ -157,7 +157,7 @@ void const* HRAAverageSamplerN8::GetPixel(double     pi_PosX,
     for (size_t aByte = 0 ; aByte < m_BytesPerPixel ; ++aByte)
         m_TempData[aByte] = (Byte) (pTotalChannel[aByte] / NumberOfPixels);
 
-    delete pTotalChannel;
+    delete[] pTotalChannel;
 
     return m_TempData;
     }
@@ -232,7 +232,7 @@ void HRAAverageSamplerN8::GetPixels(const double*  pi_pPositionsX,
         ++pi_pPositionsX;
         ++pi_pPositionsY;
 
-        delete pTotalChannel;
+        delete[] pTotalChannel;
         }
     }
 
@@ -334,8 +334,8 @@ void HRAAverageSamplerN8::GetPixels(double         pi_PositionX,
             --pi_PixelCount;
             }
 
-        delete pTotalChannel;
-        delete ppSrcData;
+        delete[] pTotalChannel;
+        delete[] ppSrcData;
         }
     else
         {

@@ -318,6 +318,14 @@ public:
     virtual bool    _IsErMapperUseFeetInsteadofSurveyFeet() const                           {return false;}
 
     /*---------------------------------------------------------------------------------**//**
+    * Target maximum memory cache size for ErMapper (ECW) raster format
+    * @param maxMemorySize : Target maximum memory cache size
+    * @return true if you want to initialize library with maxMemorySize, false to use default library value (maxMemorySize param ignored)
+    * @bsimethod                                                            05/2012
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    virtual bool _ErMapperCacheMaxMemorySize(uint64_t& maxMemorySize) const                           {return false;}
+
+    /*---------------------------------------------------------------------------------**//**
     * This method imposes a storage method for the model to change the standard
     * of ALL GeoTIFF files. Normally the Geotiff model should store with TiePoint(s), but
     * many application support only (1 TiePoint +/- scale, and the matrix), for this reason
