@@ -39,8 +39,3 @@ DgnLineStyleTest.InsertAndQueryWithoutCacheReLoad       # Unable to query line s
 
 DgnECNavigatorTest.DgnLinksElementInfo # Need to add support for DgnLinks - JeffM
 DgnECNavigatorTest.IfcElementInfo # Need to add support for RelatedItemsDisplaySpecification - Carole
-
-
-ChangeSummaryTestFixture.RelationshipChangesFromCurrentTransaction # Raman
-
-
