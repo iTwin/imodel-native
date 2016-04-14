@@ -264,10 +264,11 @@ TEST_F(DgnECNavigatorTest, DgnLinksElementInfo)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnECNavigatorTest, IfcElementInfo)
     {
-    OpenDgnDb(L"ifc.idgndb");
-    WCharCP expectedFileName = L"ElementInfo_ifc.json";
+    BeFileName testPath(L"IfcMechanicalModel.i.idgndb");
+    OpenDgnDb(testPath);
+    WCharCP expectedFileName = L"IfcMechanicalModel.json";
 
-    DgnElementId v9ElementId = GetV9ElementId(227); // "ifc.i.dgn"
+    DgnElementId v9ElementId = GetV9ElementId(1152921506382597545); // "IFC.i.dgn"
     ASSERT_TRUE(v9ElementId.IsValid());
 
     Json::Value actualElementInfo;
