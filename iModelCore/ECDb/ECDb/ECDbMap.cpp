@@ -309,7 +309,10 @@ ClassMapPtr ECDbMap::LoadClassMap(ClassMapLoadContext& ctx, ECN::ECClassCR ecCla
         }
 
     std::vector<ClassDbMapping const*> const* classMaps = m_dbSchema.GetDbMappings().FindClassMappings(ecClass.GetId());
-    if (classMaps == nullptr || classMaps->empty())
+    if (classMaps == nullptr)
+        return nullptr;
+
+    if (classMaps->empty())
         {
         BeAssert(false && "Failed to find ClassDbMapping for given ECClass");
         return nullptr;
