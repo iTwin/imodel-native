@@ -1417,7 +1417,11 @@ BentleyStatus StorageDescription::GenerateECClassIdFilter(Utf8StringR filterSqlE
         {
         //if partition's table is only used by a single class, no filter needed     
         if (partition->IsSharedTable())
-            filterSqlExpression.append(classIdColSql).append("=").append(m_classId.ToString());
+            {
+            Utf8Char classIdStr[ECClassId::ID_STRINGBUFFER_LENGTH];
+            m_classId.ToString(classIdStr);
+            filterSqlExpression.append(classIdColSql).append("=").append(classIdStr);
+            }
 
         return SUCCESS;
         }
@@ -1694,7 +1698,9 @@ void Partition::AppendECClassIdFilterSql(Utf8StringR filterSqlExpression, Utf8CP
         if (!isFirstItem)
             filterSqlExpression.append(" ").append(setOp).append(" ");
 
-        filterSqlExpression.append(classIdColName).append(equalOp).append(classId.ToString());
+        Utf8Char classIdStr[BeInt64Id::ID_STRINGBUFFER_LENGTH];
+        classId.ToString(classIdStr);
+        filterSqlExpression.append(classIdColName).append(equalOp).append(classIdStr);
 
         isFirstItem = false;
         }

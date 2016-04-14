@@ -368,14 +368,13 @@ void ECSqlInsertPreparer::PreparePrimaryKey(ECSqlPrepareContext& ctx, NativeSqlS
         nativeSqlSnippets.m_propertyNamesNativeSqlSnippets.push_back(move(classIdNameSqliteSnippets));
 
         NativeSqlBuilder::List classIdSqliteSnippets {NativeSqlBuilder()};
+        Utf8Char classIdStr[ECClassId::ID_STRINGBUFFER_LENGTH];
         if (auto joinedTableStatement = dynamic_cast<ParentOfJoinedTableECSqlStatement const*>(&ctx.GetECSqlStatementR()))
-            {
-            classIdSqliteSnippets[0].Append(joinedTableStatement->GetClassId().ToString().c_str());
-            }
+            joinedTableStatement->GetClassId().ToString(classIdStr);
         else
-            {
-            classIdSqliteSnippets[0].Append(classMap.GetClass().GetId().ToString().c_str());
-            }
+            classMap.GetClass().GetId().ToString(classIdStr);
+
+        classIdSqliteSnippets[0].Append(classIdStr);
         nativeSqlSnippets.m_valuesNativeSqlSnippets.push_back(move(classIdSqliteSnippets));
         }
     }
@@ -504,8 +503,10 @@ ECSqlStatus ECSqlInsertPreparer::PrepareConstraintClassId(NativeSqlSnippets& ins
     if (!classIdColSqlSnippet.empty())
         {
         insertNativeSqlSnippets.m_propertyNamesNativeSqlSnippets.push_back(move(classIdColSqlSnippet));
-        NativeSqlBuilder classIdSnippet;
-        classIdSnippet.Append(constraintClassId.ToString().c_str());
+
+        Utf8Char classIdStr[ECClassId::ID_STRINGBUFFER_LENGTH];
+        constraintClassId.ToString(classIdStr);
+        NativeSqlBuilder classIdSnippet(classIdStr);
         insertNativeSqlSnippets.m_valuesNativeSqlSnippets.push_back(NativeSqlBuilder::List{ move(classIdSnippet) });
         }
 
