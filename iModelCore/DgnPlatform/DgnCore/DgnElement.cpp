@@ -329,8 +329,9 @@ DgnDbStatus DgnElement::_OnUpdate(DgnElementCR original)
 struct OnUpdatedCaller
     {
     DgnElementCR m_updated, m_original;
-    OnUpdatedCaller(DgnElementCR updated, DgnElementCR original) : m_updated(updated), m_original(original){}
-    DgnElement::AppData::DropMe operator()(DgnElement::AppData& app, DgnElementCR el) const {return app._OnUpdated(m_updated, m_original);}
+    bool m_isOriginal;
+    OnUpdatedCaller(DgnElementCR updated, DgnElementCR original, bool isOriginal) : m_updated(updated), m_original(original), m_isOriginal(isOriginal){}
+    DgnElement::AppData::DropMe operator()(DgnElement::AppData& app, DgnElementCR el) const {return app._OnUpdated(m_updated, m_original, m_isOriginal);}
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -340,10 +341,10 @@ void DgnElement::_OnUpdated(DgnElementCR original) const
     {
     // We need to call the events on both sets of AppData. Start by calling the appdata on this (the replacement)
     // element. NOTE: This is where Aspects, etc. actually update the database.
-    CallAppData(OnUpdatedCaller(*this, original));
+    CallAppData(OnUpdatedCaller(*this, original, false));
 
     // All done. This gives appdata on the *original* element a notification that the update has happened
-    original.CallAppData(OnUpdatedCaller(*this, original));
+    original.CallAppData(OnUpdatedCaller(*this, original, true));
 
     // now tell the model that one of its elements has been changed.
     GetModel()->_OnUpdatedElement(*this, original);
@@ -1165,8 +1166,8 @@ void InstanceUpdater::Update(DgnElementCR el)
         {
         IECInstancePtr instance = adapter.GetInstance();
         BeAssert(instance.IsValid());
-        Utf8Char idStrBuffer[ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH];
-        ECInstanceIdHelper::ToString(idStrBuffer, ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH, ECInstanceId(el.GetElementId().GetValue()));
+        Utf8Char idStrBuffer[BeInt64Id::ID_STRINGBUFFER_LENGTH];
+        el.GetElementId().ToString(idStrBuffer);
         ECN::StandaloneECInstancePtr targetInstance = targetClass->GetDefaultStandaloneEnabler()->CreateInstance();
         targetInstance->SetInstanceId(idStrBuffer);
         targetInstance->CopyValues(*instance.get());
@@ -1545,7 +1546,7 @@ DgnElement::AppData::DropMe DgnElement::Aspect::_OnInserted(DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElement::AppData::DropMe DgnElement::Aspect::_OnUpdated(DgnElementCR modified, DgnElementCR original)
+DgnElement::AppData::DropMe DgnElement::Aspect::_OnUpdated(DgnElementCR modified, DgnElementCR original, bool isOriginal)
     {
     if (ChangeType::None == m_changeType)
         return DropMe::Yes;     // Was just a cached instance? Drop it now, so that it does not become stale.
@@ -1619,7 +1620,7 @@ struct MultiAspectMux : DgnElement::AppData
 
     MultiAspectMux(ECClassCR cls) : m_ecclass(cls) {;}
     DropMe _OnInserted(DgnElementCR el) override;
-    DropMe _OnUpdated(DgnElementCR modified, DgnElementCR original) override;
+    DropMe _OnUpdated(DgnElementCR modified, DgnElementCR original, bool isOriginal) override;
 };
 
 END_BENTLEY_DGN_NAMESPACE
@@ -1662,10 +1663,10 @@ DgnElement::AppData::DropMe MultiAspectMux::_OnInserted(DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElement::AppData::DropMe MultiAspectMux::_OnUpdated(DgnElementCR modified, DgnElementCR original)
+DgnElement::AppData::DropMe MultiAspectMux::_OnUpdated(DgnElementCR modified, DgnElementCR original, bool isOriginal)
     {
     for (auto aspect : m_instances)
-        aspect->_OnUpdated(modified, original);
+        aspect->_OnUpdated(modified, original, isOriginal);
 
     return DropMe::Yes; // all scheduled changes have been processed, so remove them.
     }
@@ -1946,7 +1947,7 @@ struct UnhandledProps : DgnElement::AppData
     ECN::IECInstancePtr m_instance;
 
     virtual DropMe _OnInserted(DgnElementCR el){UpdateModifiedProperties(el); return DropMe::Yes;}
-    virtual DropMe _OnUpdated(DgnElementCR modified, DgnElementCR original) {UpdateModifiedProperties(original); return DropMe::Yes;}
+    virtual DropMe _OnUpdated(DgnElementCR modified, DgnElementCR original, bool isOriginal) {UpdateModifiedProperties(original); return DropMe::Yes;}
     virtual DropMe _OnReversedUpdate(DgnElementCR original, DgnElementCR modified) {return DropMe::Yes;}
     virtual DropMe _OnDeleted(DgnElementCR el) {return DropMe::Yes;}
 

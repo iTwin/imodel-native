@@ -12,11 +12,9 @@
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-/// @addtogroup GeometryCollectors
-/// @beginGroup
-
 //=======================================================================================
 //! Re-interpret complex geometry types as simple types
+//! @ingroup GROUP_Geometry
 // @bsiclass                                                      Brien.Bastings  06/05
 //=======================================================================================
 struct SimplifyGraphic : Render::Graphic
@@ -134,9 +132,10 @@ public:
 
 }; // SimplifyGraphic
 
-/*=================================================================================**//**
-* @bsiclass                                                     Brien.Bastings  12/15
-+===============+===============+===============+===============+===============+======*/
+//=======================================================================================
+//! @ingroup GROUP_Geometry
+// @bsiclass                                                    Brien.Bastings  12/15
+//=======================================================================================
 struct IGeometryProcessor
 {
 public:
@@ -217,12 +216,13 @@ virtual void _OutputGraphics(ViewContextR context) {}
 
 ENUM_IS_FLAGS(IGeometryProcessor::UnhandledPreference)
 
-/*=================================================================================**//**
-* Provides an implementation of a ViewContext and Render::Graphic suitable for 
-* collecting a "picture" of an element's graphics. The element handler's Draw method is 
-* called and the output is sent to the supplied IGeometryProcessor.
-* @bsiclass                                                     Brien.Bastings  06/2009
-+===============+===============+===============+===============+===============+======*/
+//=======================================================================================
+//! Provides an implementation of a ViewContext and Render::Graphic suitable for 
+//! collecting a "picture" of an element's graphics. The element handler's Draw method is 
+//! called and the output is sent to the supplied IGeometryProcessor.
+//! @ingroup GROUP_Geometry
+// @bsiclass                                                    Brien.Bastings  06/2009
+//=======================================================================================
 struct GeometryProcessor
 {
 //! Visit the supplied element and send it's Draw output to the supplied processor.
@@ -236,7 +236,5 @@ DGNPLATFORM_EXPORT static void Process(IGeometryProcessorR processor, GeometrySo
 DGNPLATFORM_EXPORT static void Process(IGeometryProcessorR processor, DgnDbR dgnDb);
 
 }; // GeometryProcessor
-
-/** @endGroup */
 
 END_BENTLEY_DGN_NAMESPACE

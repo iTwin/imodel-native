@@ -39,3 +39,5 @@ DgnLineStyleTest.InsertAndQueryWithoutCacheReLoad       # Unable to query line s
 
 DgnECNavigatorTest.DgnLinksElementInfo # Need to add support for DgnLinks - JeffM
 DgnECNavigatorTest.IfcElementInfo # Need to add support for RelatedItemsDisplaySpecification - Carole
+
+ECInstanceSelectTests.ImportSchema			# This test doesn't really do anything and it takes 40 seconds to run

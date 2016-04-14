@@ -2785,7 +2785,7 @@ typedef bmap<uint16_t, ISolidKernelEntityPtr> IndexedGeomMap;
 IndexedGeomMap m_map;
 
 virtual DropMe _OnInserted(DgnElementCR el){return DropMe::Yes;}
-virtual DropMe _OnUpdated(DgnElementCR modified, DgnElementCR original) {return DropMe::Yes;}
+virtual DropMe _OnUpdated(DgnElementCR modified, DgnElementCR original, bool isOriginal) {return DropMe::Yes;}
 virtual DropMe _OnReversedUpdate(DgnElementCR original, DgnElementCR modified) {return DropMe::Yes;}
 virtual DropMe _OnDeleted(DgnElementCR el) {return DropMe::Yes;}
 

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnIModel.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -56,9 +56,6 @@ public:
     //! @param[in] overwriteExisting  Pass true to enable overwriting an existing file.
     //! @param[in] progress the interface to call to report progress.  May be NULL.
     //! @remarks See BeSQLite::DbEmbeddedFileTable::ExportDbFile for information about the expected BeSQLite::DbResult error codes.
-    //! @if BENTLEY_SDK_Publisher
-    //!     @ingroup DgnDbGroup
-    //! @endif
     DGNPLATFORM_EXPORT static DgnDbStatus Extract(BeSQLite::DbResult& dbResult, Utf8CP outputDirectory, Utf8CP dbName, BeFileNameCR imodelFile, bool overwriteExisting, BeSQLite::ICompressProgressTracker* progress = NULL);
 
     //! Extracts a DgnDb file from an imodel.
