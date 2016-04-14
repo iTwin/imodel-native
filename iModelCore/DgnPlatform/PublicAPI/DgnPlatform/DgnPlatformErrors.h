@@ -157,8 +157,6 @@ enum class RevisionStatus : int
     ParentMismatch, //!< Parent revision of the Db does not match the parent id of the revision
     };
 
-/** @cond BENTLEY_SDK_Publisher */
-
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
@@ -179,7 +177,5 @@ enum LineStyleStatus
     LINESTYLE_STATUS_SQLITE_Constraint          = LINESTYLE_ERROR_BASE + 0x0d,
     LINESTYLE_STATUS_ConvertingComponent        = LINESTYLE_ERROR_BASE + 0x0e,
 };
-
-/** @endcond */
 
 END_BENTLEY_DGN_NAMESPACE

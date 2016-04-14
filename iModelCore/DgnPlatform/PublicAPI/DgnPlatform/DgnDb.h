@@ -15,15 +15,6 @@
 #include "UpdatePlan.h"
 #include <Bentley/BeFileName.h>
 
-/** @addtogroup DgnDbGroup
-
-Classes for creating and opening a DgnDb.
-
-A DgnDb is a BeSQLite::Db that holds data based on the Dgn schema. A DgnDb object is used to access the database.
-
-@ref PAGE_DgnPlatform
-*/
-
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 //=======================================================================================
@@ -104,7 +95,6 @@ struct DgnVersion : BeSQLite::SchemaVersion
 
 //=======================================================================================
 //! A DgnDb is an in-memory object to access the information in a DgnDb file.
-//! @ingroup DgnDbGroup
 // @bsiclass
 //=======================================================================================
 struct DgnDb : RefCounted<BeSQLite::EC::ECDb>

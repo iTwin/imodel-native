@@ -394,7 +394,7 @@ public:
 //=======================================================================================
 //! Each GeometryPart has a row in the DgnGeometryParts table
 //! @see DgnDb::GeometryParts
-//! @ingroup GeometricPrimitiveGroup
+//! @ingroup GROUP_Geometry
 //=======================================================================================
 struct DgnGeometryParts : DgnDbTable
 {

@@ -1061,7 +1061,7 @@ public:
 
 //=======================================================================================
 //! A stream of geometry, stored on a DgnElement, created by an GeometryBuilder.
-//! @ingroup GeometricPrimitiveGroup
+//! @ingroup GROUP_Geometry
 // @bsiclass                                                    Keith.Bentley   12/14
 //=======================================================================================
 struct GeometryStream : ByteStream
