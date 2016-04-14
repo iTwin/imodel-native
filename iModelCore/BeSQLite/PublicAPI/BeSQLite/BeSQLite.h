@@ -2366,7 +2366,7 @@ public:
     //! Query the value of the blob part a property from the Db.
     //! @param[out] value A pointer to buffer of propsize bytes to hold the property. On success, the number of bytes of valid data in value will be the
     //!                    lesser of propsize and the actual size of the property in the Db.
-    //! @param[out] propsize The number of bytes in value.
+    //! @param[in] propsize The number of bytes in value.
     //! @param[in] spec The PropertySpec of the property to query.
     //! @param[in] majorId The majorId of the property.
     //! @param[in] subId The subId of the property.
