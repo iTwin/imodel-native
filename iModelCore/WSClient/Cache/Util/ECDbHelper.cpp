@@ -60,8 +60,8 @@ ECSchemaPtr ECDbHelper::CopySchema(ECSchemaCR schema, IECSchemaLocater* optional
 ECInstanceId ECDbHelper::ECInstanceIdFromECInstance(IECInstanceCR ecInstance)
     {
     ECInstanceId instanceId;
-    bool success = ECInstanceIdHelper::FromString(instanceId, ecInstance.GetInstanceId().c_str());
-    BeAssert(success);
+    BentleyStatus stat = ECInstanceId::FromString(instanceId, ecInstance.GetInstanceId().c_str());
+    BeAssert(SUCCESS == stat);
     return instanceId;
     }
 
@@ -71,7 +71,7 @@ ECInstanceId ECDbHelper::ECInstanceIdFromECInstance(IECInstanceCR ecInstance)
 ECInstanceId ECDbHelper::ECInstanceIdFromString(Utf8CP ecIdString)
     {
     ECInstanceId instanceId;
-    ECInstanceIdHelper::FromString(instanceId, ecIdString);
+    ECInstanceId::FromString(instanceId, ecIdString);
     return instanceId;
     }
 
@@ -80,9 +80,7 @@ ECInstanceId ECDbHelper::ECInstanceIdFromString(Utf8CP ecIdString)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String ECDbHelper::StringFromECInstanceId(ECInstanceId ecInstanceId)
     {
-    Utf8Char str[ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH];
-    ECInstanceIdHelper::ToString(str, ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH, ecInstanceId);
-    return Utf8String(str);
+    return ecInstanceId.ToString();
     }
 
 /*--------------------------------------------------------------------------------------+
