@@ -429,16 +429,16 @@ struct IScalableMeshMesh : public RefCountedBase
 
         BENTLEYSTM_EXPORT bool CutWithPlane(bvector<DSegment3d>& segmentList, DPlane3d& cuttingPlane) const;
         
-        BENTLEYSTM_EXPORT static IScalableMeshMeshPtr Create(size_t    nbPoints, 
-                                                      DPoint3d* points, 
-                                                      size_t    nbFaceIndexes, 
-                                                      int32_t*    faceInd, 
-                                                      size_t    normalCount,
-                                                      DVec3d*   pNormal,
-                                                      int32_t*    pNormalIndex,
-                                                      size_t uvCount, 
-                                                      DVec2d* pUv,
-                                                      int32_t* pUvIndex);
+        BENTLEYSTM_EXPORT static IScalableMeshMeshPtr Create(size_t         nbPoints, 
+                                                             DPoint3d*      points, 
+                                                             size_t         nbFaceIndexes, 
+                                                             const int32_t* faceInd, 
+                                                             size_t         normalCount,
+                                                             DVec3d*        pNormal,
+                                                             int32_t*       pNormalIndex,
+                                                             size_t         uvCount, 
+                                                             DVec2d*        pUv,
+                                                             int32_t*       pUvIndex);
     
     };
 

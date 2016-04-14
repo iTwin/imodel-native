@@ -189,7 +189,7 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         double                          m_minScreenPixelsPerPoint;            
 
         HFCPtr<PointIndexType>          m_scmIndexPtr;                                                    
-        RefCountedPtr<ScalableMeshDTM>                m_scalableMeshDTM;
+        RefCountedPtr<ScalableMeshDTM>  m_scalableMeshDTM;
 
         bvector<IScalableMeshNodePtr> m_viewedNodes;
 

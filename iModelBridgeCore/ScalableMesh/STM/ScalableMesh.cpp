@@ -720,8 +720,9 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                     pStreamingUVTileStore = new SMStreamingPointTaggedTileStore< DPoint2d, YProtPtExtentType>(uv_store_path, groupedStreamingFilePath, AreDataCompressed());
                     pStreamingUVsIndicesTileStore = new SMStreamingPointTaggedTileStore<int32_t, YProtPtExtentType >(uvIndice_store_path, groupedStreamingFilePath, AreDataCompressed());
                     pTextureTileStore = new StreamingTextureTileStore(texture_store_path.c_str(), 4);
-                    m_scmIndexPtr = new PointIndexType(ScalableMeshMemoryPools<POINT>::Get()->GetPointPool(),
-                                                            &*pStreamingTileStore,
+                    m_scmIndexPtr = new PointIndexType(ScalableMeshMemoryPools<POINT>::Get()->GetGenericPool(),
+                                                       ScalableMeshMemoryPools<POINT>::Get()->GetPointPool(),
+                                                       &*pStreamingTileStore,
                                                             ScalableMeshMemoryPools<POINT>::Get()->GetPtsIndicePool(),
                                                             &*pStreamingIndiceTileStore,
                                                             ScalableMeshMemoryPools<POINT>::Get()->GetGraphPool(),
@@ -762,6 +763,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
 
 
                     m_scmIndexPtr = new PointIndexType(//pMemoryPool, 
+                                                       ScalableMeshMemoryPools<POINT>::Get()->GetGenericPool(),
                                                        ScalableMeshMemoryPools<POINT>::Get()->GetPointPool(),
                                                        &*pTileStore,
                                                        ScalableMeshMemoryPools<POINT>::Get()->GetPtsIndicePool(),

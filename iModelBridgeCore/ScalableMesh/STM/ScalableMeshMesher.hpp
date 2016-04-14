@@ -374,14 +374,12 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
                     node->m_nodeHeader.m_numberOfMeshComponents = componentPointsId.size();
                     memcpy(node->m_nodeHeader.m_meshComponents, componentPointsId.data(), componentPointsId.size()*sizeof(int));
                     }
-
+                
                 if (faceIndexes.size() > 0)
-                node->PushPtsIndices(0, /*meshP->GetFaceIndexes()*/&faceIndexes[0], node->m_nodeHeader.m_nbFaceIndexes);
+                    node->PushPtsIndices(0, /*meshP->GetFaceIndexes()*/&faceIndexes[0], node->m_nodeHeader.m_nbFaceIndexes);
                 else
                     node->ClearPtsIndices(0);
-                node->SetPtsIndiceDirty(0);
-                node->StorePtsIndice(0);
-
+                
                 //NEEDS_WORK_SM Avoid some assert                            
                 //delete [] pPiggyBackMeshIndexes; 
                 if (node->IsLeaf() && node->size() != node->m_nodeHeader.m_totalCount)
@@ -408,7 +406,7 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
                 WString nameBefore = LOG_PATH_STR_W + L"postmeshmesh_";
                 LOGSTRING_NODE_INFO_W(node, nameBefore)
                 nameBefore.append(L".m");
-                LOG_MESH_FROM_FILENAME_AND_BUFFERS_W(nameBefore, pts.size(), node->m_nodeHeader.m_nbFaceIndexes, &pts[0], (int32_t*)node->GetPtsIndicePtr(0));
+                LOG_MESH_FROM_FILENAME_AND_BUFFERS_W(nameBefore, pts.size(), node->m_nodeHeader.m_nbFaceIndexes, &pts[0], node->GetPtsIndicePtr());
 #endif
                 isMeshingDone = true;
 
@@ -1415,7 +1413,7 @@ for (size_t i = 0; i < node->size(); i++)
 WString nameBefore = LOG_PATH_STR_W + L"prestitchmesh_";
 LOGSTRING_NODE_INFO_W(node, nameBefore)
 nameBefore.append(L".m");
-LOG_MESH_FROM_FILENAME_AND_BUFFERS_W(nameBefore, nodePoints.size(), node->m_nodeHeader.m_nbFaceIndexes, &nodePoints[0], (int32_t*)node->GetPtsIndicePtr(0));
+LOG_MESH_FROM_FILENAME_AND_BUFFERS_W(nameBefore, nodePoints.size(), node->m_nodeHeader.m_nbFaceIndexes, &nodePoints[0], node->GetPtsIndicePtr());
 #endif
 bvector<bvector<DPoint3d>> boundary;
 EXTENT ext = node->GetContentExtent();
@@ -1945,7 +1943,7 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
         {
         node->push_back(&newNodePointData[0], stitchedPoints.size());
         node->ReplacePtsIndices(0, (int32_t*)&newNodePointData[stitchedPoints.size()], node->m_nodeHeader.m_nbFaceIndexes);
-        node->SetPtsIndiceDirty(0);
+
         //node->setNbPointsUsedForMeshIndex(arraySize-stitchedPoints.size());
         if (node->IsLeaf()) node->m_nodeHeader.m_totalCount = stitchedPoints.size();
         else
@@ -2086,10 +2084,8 @@ return true;
                 memcpy(node->m_nodeHeader.m_meshComponents, componentPointsId.data(), componentPointsId.size()*sizeof(int));
                 }
           
-            node->PushPtsIndices(0, &faceIndexes[0], node->m_nodeHeader.m_nbFaceIndexes);
-            node->SetPtsIndiceDirty(0);
-            node->StorePtsIndice(/*pPiggyBackMeshIndexes, nbPointsForFaceInd*/0);
-
+            node->PushPtsIndices(0, &faceIndexes[0], node->m_nodeHeader.m_nbFaceIndexes);            
+            
             assert(node->size() == nodePts.size());
             if (node->IsLeaf() && node->size() != node->m_nodeHeader.m_totalCount)
                 {
@@ -2125,9 +2121,12 @@ return true;
     std::vector<int> indicesForFace;
     int newPtsIndex = 0;
     double area = 0;
-    if (node->GetPtsIndicePtr(0) != nullptr)
+
+    RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> ptIndices(node->GetPtsIndicePtr());
+
+    if (ptIndices != nullptr)
         {
-        const POINT nodePts[3] = { node->operator[](node->GetPtsIndicePtr(0)[0] - 1), node->operator[](node->GetPtsIndicePtr(0)[1] - 1), node->operator[](node->GetPtsIndicePtr(0)[2] - 1) };
+        const POINT nodePts[3] = { node->operator[]((*ptIndices)[0] - 1), node->operator[]((*ptIndices)[1] - 1), node->operator[]((*ptIndices)[2] - 1) };
         DPoint3d triangle[3] = { DPoint3d::From(nodePts[0].x, nodePts[0].y, nodePts[0].z), DPoint3d::From(nodePts[1].x, nodePts[1].y, nodePts[1].z), DPoint3d::From(nodePts[2].x, nodePts[2].y, nodePts[2].z) };
         area = bsiGeom_getXYPolygonArea(triangle, 3);
         }
