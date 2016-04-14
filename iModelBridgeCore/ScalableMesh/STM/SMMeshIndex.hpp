@@ -3320,7 +3320,9 @@ template<class POINT, class EXTENT> void SMMeshIndex<POINT, EXTENT>::Stitch(int 
                 if (nodesToStitch.size() == 0) return;
                 if (nodesToStitch.size() <= 72)
                     {
+                    s_useThreadsInStitching = false;
                     ((SMMeshIndexNode<POINT, EXTENT>*)&*m_pRootNode)->Stitch(pi_levelToStitch, 0);
+                    s_useThreadsInStitching = true;
                     return;
                     }
                 set<SMMeshIndexNode<POINT, EXTENT>*> stitchedNodes;
