@@ -2856,7 +2856,10 @@ BentleyStatus ECSqlParseContext::TryResolveClass(shared_ptr<ClassNameExp::Info>&
 
     ClassMap const* map = m_ecdb.GetECDbImplR().GetECDbMap().GetClassMap(*resolvedClass);
     if (map == nullptr)
+        {
+        BeAssert(false && "Could not get class map for a given class");
         return ERROR;
+        }
 
     classNameExpInfo = ClassNameExp::Info::Create(*map);
     m_classNameExpInfoList[resolvedClass->GetECSqlName().c_str()] = classNameExpInfo;
