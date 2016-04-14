@@ -22,7 +22,7 @@ BEGIN_BENTLEY_NAMESPACE
 //=======================================================================================
 //! Convert to/from Android/JNI JStrings.
 //! @ingroup GROUP_String
-//! @ingroup AndroidPlatformGroup
+//! @ingroup GROUP_DgnClientFxAndroid
 //  @bsiclass                                                   Shaun.Sewall     08/2011
 //=======================================================================================
 struct BeJStringUtilities : public NonCopyableClass
