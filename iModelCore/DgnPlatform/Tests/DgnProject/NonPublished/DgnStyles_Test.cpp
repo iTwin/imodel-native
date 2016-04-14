@@ -51,6 +51,8 @@ struct DgnLineStyleTest : public ::testing::Test
         ScopedDgnHost           m_host;
         DgnDbPtr      project;
 
+        DgnLineStyleTest() : m_host(ScopedDgnHost::Options::DisableRepositoryManager) { }
+
         void SetupProject (WCharCP projFile, Db::OpenMode mode);
     };
 

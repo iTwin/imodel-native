@@ -921,12 +921,10 @@ struct RepositoryManagerTest : public ::testing::Test, DgnPlatformLib::Host::Rep
     RepositoryManagerTest()
         {
         RegisterServer();
-        BackDoor::IBriefcaseManager::SetEnabled(true);
         }
 
     ~RepositoryManagerTest()
         {
-        BackDoor::IBriefcaseManager::SetEnabled(false);
         UnregisterServer();
         }
 

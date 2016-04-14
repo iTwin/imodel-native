@@ -90,6 +90,38 @@ struct TestingDgnScriptingAdmin : Dgn::DgnPlatformLib::Host::ScriptAdmin
         }
 };
 
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   04/16
+//=======================================================================================
+struct UnconditionalRepositoryAdmin : Dgn::DgnPlatformLib::Host::RepositoryAdmin
+{
+private:
+    struct RepositoryManager : Dgn::IRepositoryManager
+    {
+    virtual Response _ProcessRequest(Request const&, DgnDbR) override { return Response(RepositoryStatus::Success); }
+    virtual RepositoryStatus _Demote(DgnLockSet const&, DgnCodeSet const&, DgnDbR) override { return RepositoryStatus::Success; }
+    virtual RepositoryStatus _Relinquish(Resources, DgnDbR) override { return RepositoryStatus::Success; }
+    virtual RepositoryStatus _QueryHeldResources(DgnLockSet& locks, DgnCodeSet& codes, DgnDbR db) override { return RepositoryStatus::Success; }
+    virtual RepositoryStatus _QueryStates(DgnLockInfoSet&, DgnCodeInfoSet& codeStates, LockableIdSet const& locks, DgnCodeSet const& codes) override { return RepositoryStatus::Success; }
+    };
+
+    mutable RepositoryManager   m_repositoryManager;
+public:
+    virtual IRepositoryManagerP _GetRepositoryManager(DgnDbR db) const override
+        {
+        return &m_repositoryManager;
+        }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/16
++---------------+---------------+---------------+---------------+---------------+------*/
+Dgn::DgnPlatformLib::Host::RepositoryAdmin* ScopedDgnHost::GetUnconditionalRepositoryAdmin()
+    {
+    static UnconditionalRepositoryAdmin s_admin;
+    return &s_admin;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -133,15 +165,19 @@ struct ScopedDgnHostImpl : DgnPlatformLib::Host
 
     void SetFetchScriptCallback(ScopedDgnHost::FetchScriptCallback* cb) {((TestingDgnScriptingAdmin*)m_scriptingAdmin)->m_callback = cb;}
     void SetRepositoryAdmin(DgnPlatformLib::Host::RepositoryAdmin* admin) {((ProxyRepositoryAdmin*)m_repositoryAdmin)->m_impl = admin;}
+    DgnPlatformLib::Host::RepositoryAdmin* GetRepositoryAdmin() { return ((ProxyRepositoryAdmin*)m_repositoryAdmin)->m_impl; }
 };
 END_BENTLEY_DGN_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      11/2011
+* @bsimethod                                                    Paul.Connelly   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ScopedDgnHost::ScopedDgnHost()
+ScopedDgnHost::ScopedDgnHost(Options options)
     {
     m_pimpl = new ScopedDgnHostImpl;
+
+    if (Options::None != (options & Options::DisableRepositoryManager))
+        SetRepositoryAdmin(GetUnconditionalRepositoryAdmin());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -166,6 +202,14 @@ void ScopedDgnHost::SetFetchScriptCallback(FetchScriptCallback* cb)
 void ScopedDgnHost::SetRepositoryAdmin(DgnPlatformLib::Host::RepositoryAdmin* admin)
     {
     m_pimpl->SetRepositoryAdmin(admin);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnPlatformLib::Host::RepositoryAdmin* ScopedDgnHost::GetRepositoryAdmin()
+    {
+    return m_pimpl->GetRepositoryAdmin();
     }
 
 /*---------------------------------------------------------------------------------**//**

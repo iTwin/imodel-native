@@ -27,10 +27,11 @@ protected:
     DgnCategoryId m_attachmentCatId;
     DgnViewId m_viewId;
     DgnElementId m_textStyleId;
+    ScopedDgnHost::ScopedRepositoryManagerDisabler m_disableRepositoryManager;
 public:
     DEFINE_T_SUPER(GenericDgnModelTestFixture);
 
-    ViewAttachmentTest() : T_Super(__FILE__, true, true) { }
+    ViewAttachmentTest() : T_Super(__FILE__, true, true), m_disableRepositoryManager(m_host) { }
 
     virtual void SetUp() override;
 
