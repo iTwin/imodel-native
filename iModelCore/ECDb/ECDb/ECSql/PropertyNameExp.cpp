@@ -386,7 +386,7 @@ bool PropertyNameExp::PropertyRef::Prepare(NativeSqlBuilder::List const& snippet
             {
             int idx = 0;
             Utf8String postfix;
-            for (auto& snippet : m_nativeSqlSnippets)
+            for (NativeSqlBuilder& snippet : m_nativeSqlSnippets)
                 {
                 postfix.clear();
                 postfix.Sprintf("%s_%d", alias.c_str(), idx++);

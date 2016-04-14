@@ -141,10 +141,8 @@ DbResult ECDbProfileManager::UpgradeECProfile(ECDbR ecdb, Db::OpenParams const& 
 
     if (LOG.isSeverityEnabled(NativeLogging::LOG_INFO))
         {
-        LOG.infov("Upgraded %s profile from version %d.%d.%d.%d to version %d.%d.%d.%d (in %.4lf seconds) in file '%s'.",
-                  PROFILENAME,
-                  actualProfileVersion.GetMajor(), actualProfileVersion.GetMinor(), actualProfileVersion.GetSub1(), actualProfileVersion.GetSub2(),
-                  expectedVersion.GetMajor(), expectedVersion.GetMinor(), expectedVersion.GetSub1(), expectedVersion.GetSub2(),
+        LOG.infov("Upgraded %s profile from version %s to version %s (in %.4lf seconds) in file '%s'.",
+                  PROFILENAME, actualProfileVersion.ToString().c_str(), expectedVersion.ToString().c_str(),
                   timer.GetElapsedSeconds(), ecdb.GetDbFileName());
         }
 

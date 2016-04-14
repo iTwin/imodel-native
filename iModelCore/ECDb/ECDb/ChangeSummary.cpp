@@ -2049,21 +2049,22 @@ Utf8String ChangeSummary::ConstructWhereInClause(QueryDbOpcode queryDbOpcodes) c
     Utf8String whereInStr;
     if (QueryDbOpcode::None != (queryDbOpcodes & QueryDbOpcode::Insert))
         {
-        Utf8PrintfString addStr("%d", (int) DbOpcode::Insert);
+        Utf8PrintfString addStr("%d", Enum::ToInt(DbOpcode::Insert));
         whereInStr.append(addStr);
         }
     if (QueryDbOpcode::None != (queryDbOpcodes & QueryDbOpcode::Update))
         {
         if (!whereInStr.empty())
             whereInStr.append(",");
-        Utf8PrintfString addStr("%d", (int) DbOpcode::Update);
+
+        Utf8PrintfString addStr("%d", Enum::ToInt(DbOpcode::Update));
         whereInStr.append(addStr);
         }
     if (QueryDbOpcode::None != (queryDbOpcodes & QueryDbOpcode::Delete))
         {
         if (!whereInStr.empty())
             whereInStr.append(",");
-        Utf8PrintfString addStr("%d", (int) DbOpcode::Delete);
+        Utf8PrintfString addStr("%d", Enum::ToInt(DbOpcode::Delete));
         whereInStr.append(addStr);
         }
 

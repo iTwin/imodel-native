@@ -287,8 +287,8 @@ MappingStatus ECDbMap::DoMapSchemas()
 
     timer.Stop();
     if (LOG.isSeverityEnabled(NativeLogging::LOG_DEBUG))
-        LOG.debugv("Mapped %d ECSchemas containing %d ECClasses and %d ECRelationshipClasses to the database in %.4f seconds",
-                   ctx.GetImportedSchemaSet().size(), rootClassList.size(), rootRelationshipList.size(), timer.GetElapsedSeconds());
+        LOG.debugv("Mapped %" PRIu64 " ECSchemas containing %" PRIu64 " ECClasses and %" PRIu64 " ECRelationshipClasses to the database in %.4f seconds",
+                   (uint64_t) ctx.GetImportedSchemaSet().size(), (uint64_t) rootClassList.size(), (uint64_t) rootRelationshipList.size(), timer.GetElapsedSeconds());
 
     return MappingStatus::Success;
     }

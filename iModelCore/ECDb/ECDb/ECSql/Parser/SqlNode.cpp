@@ -2244,14 +2244,9 @@ namespace connectivity
         if (!isToken())
             {
             // Regelnamen als rule: ...
-            _inout_rBuffer.append("RULE_ID: ");
             Utf8String ruleIdStr;
-            ruleIdStr.Sprintf("%d ", getRuleID());
+            ruleIdStr.Sprintf("RULE_ID: %" PRIu32 " (%s)\n", getRuleID(), OSQLParser::RuleIDToStr(getRuleID()));
             _inout_rBuffer.append(ruleIdStr);
-            _inout_rBuffer.append("(");
-            _inout_rBuffer.append(OSQLParser::RuleIDToStr(getRuleID()));
-            _inout_rBuffer.append(")");
-            _inout_rBuffer.append("\n");
 
             // hol dir den ersten Subtree
             for (OSQLParseNodes::const_iterator i = m_aChildren.begin();

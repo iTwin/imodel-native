@@ -751,7 +751,7 @@ BentleyStatus ECSqlParser::ParseFctSpec(unique_ptr<ValueExp>& exp, OSQLParseNode
     if (functionName.empty())
         {
         const uint32_t tokenId = functionNameNode->getTokenID();
-        GetIssueReporter().Report(ECDbIssueSeverity::Error, "Function with token ID %d not yet supported.", tokenId);
+        GetIssueReporter().Report(ECDbIssueSeverity::Error, "Function with token ID %" PRIu32 " not yet supported.", tokenId);
         return ERROR;
         }
 
@@ -919,7 +919,7 @@ BentleyStatus ECSqlParser::ParseGeneralSetFct(unique_ptr<ValueExp>& exp, OSQLPar
 
             default:
             {
-            GetIssueReporter().Report(ECDbIssueSeverity::Error, "Unsupported standard set function with token ID %d", functionNameNode->getTokenID());
+            GetIssueReporter().Report(ECDbIssueSeverity::Error, "Unsupported standard set function with token ID %" PRIu32, functionNameNode->getTokenID());
             return ERROR;
             }
         }

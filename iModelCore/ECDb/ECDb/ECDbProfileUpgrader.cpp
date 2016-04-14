@@ -153,7 +153,7 @@ DbResult ECDbProfileUpgrader_3300::SetCustomContainerType(ECDbCR ecdb, Statement
         const ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType actualType = Enum::FromInt<ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType>(validateStmt->GetValueInt(1));
         if (!Enum::Intersects(type, (CustomAttributeContainerType) actualType))
             {
-            LOG.errorv("ECDb profile upgrade failed: Found %s custom attribute instance on a container which is not supported for this custom attribute class. (rowid %lld in table ec_CustomAttribute)",
+            LOG.errorv("ECDb profile upgrade failed: Found %s custom attribute instance on a container which is not supported for this custom attribute class. (rowid %" PRId64 " in table ec_CustomAttribute)",
                        caClassName, validateStmt->GetValueInt64(0));
             return BE_SQLITE_ERROR_ProfileUpgradeFailed;
             }
@@ -560,7 +560,7 @@ BentleyStatus ECDbProfileECSchemaUpgrader::ReadECDbSystemSchema(ECSchemaReadCont
         else
             {
             //other error codes are considered programmer errors and therefore have an assertion, too
-            LOG.errorv("Creating / upgrading ECDb file %s failed because ECDb_System ECSchema could not be deserialized. Error code SchemaReadStatus::%d", ecdbFileName, deserializeStat);
+            LOG.errorv("Creating / upgrading ECDb file %s failed because ECDb_System ECSchema could not be deserialized. Error code SchemaReadStatus::%d", ecdbFileName, Enum::ToInt(deserializeStat));
             BeAssert(false && "ECDb upgrade: Failed to deserialize ECDb_System ECSchema");
             }
 

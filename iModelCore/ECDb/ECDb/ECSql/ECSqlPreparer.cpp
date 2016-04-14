@@ -711,7 +711,8 @@ ECSqlStatus ECSqlExpPreparer::PrepareDerivedPropertyExp(NativeSqlBuilder::List& 
                 for (auto& snippet : nativeSqlSnippets)
                     {
                     postfix.clear();
-                    postfix.Sprintf("%s_%d", alias.c_str(), idx++);
+                    postfix.Sprintf("%s_%d", alias.c_str(), idx);
+                    idx++;
                     snippet.AppendSpace().AppendEscaped(postfix.c_str());
                     }
                 }

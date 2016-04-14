@@ -527,8 +527,8 @@ Exp::FinalizeParseStatus FunctionCallExp::_FinalizeParsing(ECSqlParseContext& ct
         ECSqlTypeInfo::Kind typeKind = argExp->GetTypeInfo().GetKind();
         if (typeKind != ECSqlTypeInfo::Kind::Primitive && typeKind != ECSqlTypeInfo::Kind::Null)
             {
-            ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Function '%s' can only be called with primitive arguments. Argument #%d is not primitive.",
-                                          m_functionName.c_str(), i + 1);
+            ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Function '%s' can only be called with primitive arguments. Argument #%" PRIu64 " is not primitive.",
+                                          m_functionName.c_str(), (uint64_t) (i + 1));
             return FinalizeParseStatus::Error;
             }
         }

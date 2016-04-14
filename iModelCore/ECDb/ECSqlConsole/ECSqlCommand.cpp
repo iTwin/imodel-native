@@ -130,7 +130,7 @@ void ECSqlCommand::ExecuteInsert(ECSqlConsoleSession& session, ECSqlStatement& s
         return;
         }
 
-    Console::WriteLine("New row inserted [ECInstanceId %lld].", generatedECInstanceKey.GetECInstanceId().GetValue());
+    Console::WriteLine("New row inserted [ECInstanceId %s].", generatedECInstanceKey.GetECInstanceId().ToString().c_str());
     }
 
 //---------------------------------------------------------------------------------------
@@ -192,7 +192,7 @@ Utf8String ECSqlCommand::PrimitiveToString(IECSqlValue const& value, ECN::Primit
             }
             case ECN::PRIMITIVETYPE_Long:
             {
-            out.Sprintf("%lld", value.GetInt64());
+            out.Sprintf("%" PRId64, value.GetInt64());
             break;
             }
             case ECN::PRIMITIVETYPE_Point2D:

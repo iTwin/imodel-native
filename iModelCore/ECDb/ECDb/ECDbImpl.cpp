@@ -83,7 +83,7 @@ DbResult ECDb::Impl::OnBriefcaseIdChanged(BeBriefcaseId newBriefcaseId)
     const DbResult stat = ResetSequences(&newBriefcaseId);
     if (BE_SQLITE_OK != stat)
         {
-        LOG.errorv("Changing briefcase id to %d in file '%s' failed because ECDb's id sequences could not be reset.",
+        LOG.errorv("Changing briefcase id to %" PRIu32 " in file '%s' failed because ECDb's id sequences could not be reset.",
                    newBriefcaseId.GetValue(),
                    m_ecdb.GetDbFileName());
         }
