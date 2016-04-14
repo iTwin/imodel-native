@@ -38,7 +38,7 @@ bset<UrlProvider::UrlDescriptor*> s_urlRegistry;
 const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectEula(
     "Mobile.ConnectEula",
     "https://dev-agreement-eus.cloudapp.net/rest",
-    "https://dev-agreement-eus.cloudapp.net/rest",
+    "https://qa-agreement-eus.cloudapp.net/rest",
     "https://connect-agreement.bentley.com/rest",
     &s_urlRegistry
     );
