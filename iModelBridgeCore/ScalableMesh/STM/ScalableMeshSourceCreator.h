@@ -31,6 +31,7 @@ struct IScalableMeshSourceCreator::Impl : public IScalableMeshCreator::Impl, pub
 
         friend struct                       IScalableMeshSourceCreator;
         IDTMSourceCollection                m_sources;
+        DRange2d                           m_extent;
 
         Time                                m_lastSourcesModificationTime;
         Time                                m_lastSourcesModificationCheckTime;

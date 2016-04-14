@@ -110,6 +110,11 @@ bool IScalableMeshSourceCreator::AreAllSourcesReachable() const
     return sources.End() == std::find_if(sources.Begin(), sources.End(), not1(mem_fun_ref(&IDTMSource::IsReachable)));
     }
 
+void IScalableMeshSourceCreator::SetSourceImportExtent(const DRange2d& ext)
+    {
+    dynamic_cast<IScalableMeshSourceCreator::Impl*>(m_implP.get())->m_extent = ext;
+    }
+
 void IScalableMeshSourceCreator::SetSourcesDirty()
     {
     // Make sure that sources are not seen as up to date anymore
@@ -147,7 +152,8 @@ IScalableMeshSourceCreator::Impl::Impl(const WChar* scmFileName)
     m_lastSourcesModificationTime(CreateUnknownModificationTime()),
     m_lastSourcesModificationCheckTime(Time::CreateSmallestPossible()),
     m_sourcesDirty(false),
-    m_sourceEnv(CreateSourceEnvFrom(scmFileName))
+    m_sourceEnv(CreateSourceEnvFrom(scmFileName)),
+    m_extent(DRange2d::NullRange())
     {
     InitSources();
     }
@@ -157,7 +163,8 @@ IScalableMeshSourceCreator::Impl::Impl(const IScalableMeshPtr& scmPtr)
     m_lastSourcesModificationTime(CreateUnknownModificationTime()),
     m_lastSourcesModificationCheckTime(Time::CreateSmallestPossible()),
     m_sourcesDirty(false),
-    m_sourceEnv(CreateSourceEnvFrom(dynamic_cast<const ScalableMeshBase&>(*m_scmPtr).GetPath()))
+    m_sourceEnv(CreateSourceEnvFrom(dynamic_cast<const ScalableMeshBase&>(*m_scmPtr).GetPath())),
+    m_extent(DRange2d::NullRange())
     {
     InitSources();
     }
@@ -840,7 +847,12 @@ StatusInt IScalableMeshSourceCreator::Impl::ImportSourcesTo(Sink* sinkP)
     SourcesImporter sourcesImporter(sinkSourceRef, sinkPtr);
 
     HFCPtr<HVEClipShape>  resultingClipShapePtr(new HVEClipShape(new HGF2DCoordSys()));
-
+    HFCPtr<HVEShape> clip;
+    if (!m_extent.IsNull())
+        {
+        clip = new HVEShape(m_extent.low.x, m_extent.low.y, m_extent.high.x, m_extent.high.y, resultingClipShapePtr->GetCoordSys());
+        resultingClipShapePtr->AddClip(clip, false);
+        }
     int status;
 
     status = TraverseSourceCollection(sourcesImporter,

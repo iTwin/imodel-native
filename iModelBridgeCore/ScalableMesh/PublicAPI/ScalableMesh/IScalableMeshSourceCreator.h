@@ -6,7 +6,7 @@
 |       $Date: 2015/07/15 10:35:02 $
 |     $Author: Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -58,6 +58,8 @@ struct IScalableMeshSourceCreator : public IScalableMeshCreator
         BENTLEYSTM_EXPORT StatusInt               UpdateLastModified();
 
         BENTLEYSTM_EXPORT void                    ResetLastModified();
+
+        BENTLEYSTM_EXPORT void                    SetSourceImportExtent(const DRange2d& ext);
 
 #ifdef SCALABLE_MESH_ATP
 

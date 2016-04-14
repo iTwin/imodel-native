@@ -54,8 +54,8 @@ bool firstTile = false;
 template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXTENT>::Mesh(HFCPtr<SMMeshIndexNode<POINT, EXTENT> > node) const
     {
     bool isMeshingDone = false;
-    LOG_SET_PATH("E:\\output\\scmesh\\2016-03-15\\")
-    LOG_SET_PATH_W("E:\\output\\scmesh\\2016-03-15\\")
+    LOG_SET_PATH("E:\\output\\scmesh\\2016-04-13\\")
+    LOG_SET_PATH_W("E:\\output\\scmesh\\2016-04-13\\")
     //LOGSTRING_NODE_INFO(node, LOG_PATH_STR)
     //LOGSTRING_NODE_INFO_W(node, LOG_PATH_STR_W)
     //NEEDS_WORK_SM
@@ -121,6 +121,18 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
                 status = bcdtmObject_storeDtmFeatureInDtmObject(dtmObjP, (DTMFeatureType)node->m_featureDefinitions[i][0], dtmObjP->nullUserTag, 1, &dtmObjP->nullFeatureId, &feature[0], (long)feature.size());
                 }
             status = bcdtmObject_triangulateDtmObject(dtmObjP);
+            bool dbg = false;
+            if(dbg)
+                {
+                Utf8String namePts = LOG_PATH_STR + "mesh_tile_";
+                LOGSTRING_NODE_INFO(node, namePts)
+                namePts.append(".pts");
+                size_t _nVertices = points.size();
+                FILE* _meshFile = fopen(namePts.c_str(), "wb");
+                fwrite(&_nVertices, sizeof(size_t), 1, _meshFile); 
+                fwrite(&points[0], sizeof(DPoint3d), _nVertices, _meshFile); 
+                fclose(_meshFile);
+                }
 #if 0
             WString dtmFileName(LOG_PATH_STR_W + L"meshtile_");
             LOGSTRING_NODE_INFO_W(node, dtmFileName)
