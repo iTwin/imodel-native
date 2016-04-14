@@ -16,23 +16,23 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //+---------------+---------------+---------------+---------------+---------------+------
 ECInstanceDeleter::ECInstanceDeleter
 (
-ECDbCR ecdb,
-ECClassCR ecClass
-) : m_ecdb (ecdb), m_ecClass (ecClass), m_isValid(false)
+    ECDbCR ecdb,
+    ECClassCR ecClass
+) : m_ecdb(ecdb), m_ecClass(ecClass), m_isValid(false)
     {
-    Initialize ();
+    Initialize();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   08/14
 //+---------------+---------------+---------------+---------------+---------------+------
-ECInstanceDeleter::~ECInstanceDeleter ()
+ECInstanceDeleter::~ECInstanceDeleter()
     {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   06/14
 //+---------------+---------------+---------------+---------------+---------------+------
-bool ECInstanceDeleter::IsValid () const
+bool ECInstanceDeleter::IsValid() const
     {
     return m_isValid;
     }
@@ -42,10 +42,10 @@ bool ECInstanceDeleter::IsValid () const
 //+---------------+---------------+---------------+---------------+---------------+------
 void ECInstanceDeleter::Initialize()
     {
-    Utf8String ecsql ("DELETE FROM ONLY ");
-    ecsql.append (m_ecClass.GetECSqlName()).append (" WHERE ECInstanceId=?");
+    Utf8String ecsql("DELETE FROM ONLY ");
+    ecsql.append(m_ecClass.GetECSqlName()).append(" WHERE ECInstanceId=?");
 
-    ECSqlStatus stat = m_statement.Prepare (m_ecdb, ecsql.c_str ());
+    ECSqlStatus stat = m_statement.Prepare(m_ecdb, ecsql.c_str());
     m_isValid = (stat.IsSuccess());
     }
 
@@ -54,21 +54,21 @@ void ECInstanceDeleter::Initialize()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECInstanceDeleter::Delete
 (
-ECInstanceId const& ecInstanceId
+    ECInstanceId const& ecInstanceId
 ) const
     {
-    if (!IsValid ())
+    if (!IsValid())
         {
-        LOG.errorv ("ECInstanceDeleter for ECClass '%s' is invalid as the ECClass is not mapped or cannot be used for deleting.", m_ecClass.GetFullName ());
+        LOG.errorv("ECInstanceDeleter for ECClass '%s' is invalid as the ECClass is not mapped or cannot be used for deleting.", m_ecClass.GetFullName());
         return ERROR;
         }
 
     if (!m_statement.IsPrepared())
         return ERROR;
 
-    m_statement.BindId (1, ecInstanceId);
+    m_statement.BindId(1, ecInstanceId);
 
-    const DbResult stepStatus = m_statement.Step ();
+    const DbResult stepStatus = m_statement.Step();
 
     //reset once we are done with executing the statement to put the statement in inactive state (less memory etc)
     m_statement.Reset();
@@ -82,21 +82,21 @@ ECInstanceId const& ecInstanceId
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECInstanceDeleter::Delete
 (
-IECInstanceCR ecInstance
+    IECInstanceCR ecInstance
 ) const
     {
     if (!ECInstanceAdapterHelper::Equals(ecInstance.GetClass(), m_ecClass))
         {
         Utf8String displayLabel;
-        ecInstance.GetDisplayLabel (displayLabel);
-        LOG.errorv ("Failed to delete ECInstance '%s'. Invalid ECInstance passed to ECInstanceDeleter. ECClass mismatch: Expected ECClass: '%s'. ECInstance's ECClass: '%s'.",
-            displayLabel.c_str (), m_ecClass.GetFullName (), ecInstance.GetClass ().GetFullName ());
+        ecInstance.GetDisplayLabel(displayLabel);
+        LOG.errorv("Failed to delete ECInstance '%s'. Invalid ECInstance passed to ECInstanceDeleter. ECClass mismatch: Expected ECClass: '%s'. ECInstance's ECClass: '%s'.",
+                   displayLabel.c_str(), m_ecClass.GetFullName(), ecInstance.GetClass().GetFullName());
         return ERROR;
         }
 
     ECInstanceId ecInstanceId;
-    ECInstanceIdHelper::FromString (ecInstanceId, ecInstance.GetInstanceId().c_str());
-    return Delete (ecInstanceId);
+    ECInstanceId::FromString(ecInstanceId, ecInstance.GetInstanceId().c_str());
+    return Delete(ecInstanceId);
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

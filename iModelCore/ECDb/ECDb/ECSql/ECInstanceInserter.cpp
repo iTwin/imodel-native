@@ -224,7 +224,7 @@ BentleyStatus ECInstanceInserter::Impl::Insert (ECInstanceKey& newInstanceKey, I
 
                 }
 
-            if (!ECInstanceIdHelper::FromString (actualUserProvidedInstanceId, instanceIdStr.c_str ()))
+            if (SUCCESS != ECInstanceId::FromString (actualUserProvidedInstanceId, instanceIdStr.c_str ()))
                 {
                 Utf8String errorMessage;
                 errorMessage.Sprintf ("Invalid ECInstance passed to ECInstanceInserter. %s ECInstance's instance id '%s' must be of type ECInstanceId when ECInstanceId auto-gneration is disabled and no user provided ECInstanceId was given explicitly.",

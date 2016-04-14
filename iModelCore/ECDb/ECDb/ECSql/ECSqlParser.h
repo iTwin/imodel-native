@@ -27,7 +27,7 @@ private:
     ECDbCR m_ecdb;
 
     std::vector<void const*> m_finalizeParseArgs;
-    bmap<Utf8String, std::shared_ptr<ClassNameExp::Info>, CompareIUtf8Ascii> m_classNameExpInfoList;
+    bmap<Utf8CP, std::shared_ptr<ClassNameExp::Info>, CompareIUtf8Ascii> m_classNameExpInfoList;
     int m_currentECSqlParameterIndex;
     bvector<ParameterExp*> m_parameterExpList;
     bmap<Utf8CP, int, CompareIUtf8Ascii> m_ecsqlParameterNameToIndexMapping;
@@ -42,7 +42,7 @@ public:
     void const* const GetFinalizeParseArg() const;
     void PopFinalizeParseArg();
 
-    BentleyStatus TryResolveClass(std::shared_ptr<ClassNameExp::Info>& classMetaInfo, Utf8StringCR schemaNameOrPrefix, Utf8StringCR className);
+    BentleyStatus TryResolveClass(std::shared_ptr<ClassNameExp::Info>& classMetaInfo, Utf8CP schemaNameOrPrefix, Utf8CP className);
     void GetSubclasses(ClassListById& classes, ECN::ECClassCR ecClass);
     void GetConstraintClasses(ClassListById& classes, ECN::ECRelationshipConstraintCR constraintEnd, bool* containAnyClass);
     bool IsEndClassOfRelationship(ECN::ECClassCR searchClass, ECN::ECRelationshipEnd searchEnd, ECN::ECRelationshipClassCR relationshipClass);

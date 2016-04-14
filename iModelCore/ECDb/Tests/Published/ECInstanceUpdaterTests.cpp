@@ -132,7 +132,7 @@ TEST_F(ECInstanceUpdaterTests, UpdateWithCurrentTimeStampTrigger)
     ECInstanceInserter inserter(ecdb, *testClass);
     ASSERT_TRUE(inserter.IsValid());
     ASSERT_EQ(SUCCESS, inserter.Insert(*testInstance));
-    ASSERT_TRUE(ECInstanceIdHelper::FromString(testId, testInstance->GetInstanceId().c_str()));
+    ASSERT_EQ(SUCCESS, ECInstanceId::FromString(testId, testInstance->GetInstanceId().c_str()));
     }
 
     DateTime firstLastMod;
@@ -203,8 +203,8 @@ TEST_F(ECInstanceUpdaterTests, UpdateReadonlyProperty)
     ASSERT_TRUE(ecClass != nullptr);
 
     IECInstancePtr updatedInstance = ecClass->GetDefaultStandaloneEnabler()->CreateInstance();
-    Utf8Char idStrBuffer[ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH];
-    ASSERT_TRUE(ECInstanceIdHelper::ToString(idStrBuffer, ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH, key.GetECInstanceId()));
+    Utf8Char idStrBuffer[BeInt64Id::ID_STRINGBUFFER_LENGTH];
+    key.GetECInstanceId().ToString(idStrBuffer);
     updatedInstance->SetInstanceId(idStrBuffer);
 
     ECValue v;
@@ -270,8 +270,8 @@ TEST_F(ECInstanceUpdaterTests, UpdaterBasedOnListOfPropertyIndices)
 
     //create New Instance
     IECInstancePtr updatedInstance = ecClass->GetDefaultStandaloneEnabler()->CreateInstance();
-    Utf8Char idStrBuffer[ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH];
-    ASSERT_TRUE(ECInstanceIdHelper::ToString(idStrBuffer, ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH, key.GetECInstanceId()));
+    Utf8Char idStrBuffer[BeInt64Id::ID_STRINGBUFFER_LENGTH];
+    key.GetECInstanceId().ToString(idStrBuffer);
     updatedInstance->SetInstanceId(idStrBuffer);
 
     ECValue v;
@@ -347,8 +347,8 @@ TEST_F(ECInstanceUpdaterTests, UpdaterBasedOnListOfPropertiesToBind)
 
     //create New Instance
     IECInstancePtr updatedInstance = ecClass->GetDefaultStandaloneEnabler()->CreateInstance();
-    Utf8Char idStrBuffer[ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH];
-    ASSERT_TRUE(ECInstanceIdHelper::ToString(idStrBuffer, ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH, key.GetECInstanceId()));
+    Utf8Char idStrBuffer[BeInt64Id::ID_STRINGBUFFER_LENGTH];
+    key.GetECInstanceId().ToString(idStrBuffer);
     updatedInstance->SetInstanceId(idStrBuffer);
 
     ECValue v;

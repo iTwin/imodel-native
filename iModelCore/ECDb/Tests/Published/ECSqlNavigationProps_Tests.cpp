@@ -311,7 +311,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, SingleInstanceNavProp_ForeignKeyMappi
         {
         IECInstancePtr inst = selAdapter.GetInstance();
         ECInstanceId id;
-        ASSERT_TRUE(ECInstanceIdHelper::FromString(id, inst->GetInstanceId().c_str()));
+        ASSERT_EQ(SUCCESS, ECInstanceId::FromString(id, inst->GetInstanceId().c_str()));
         if (elementKey.GetECInstanceId() == id)
             {
             verifiedElementWithSetNavProp = true;
@@ -423,7 +423,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, SingleInstanceNavProp_ForeignKeyMappi
 
         Utf8CP idStr = json["$ECInstanceId"].asCString();
         ECInstanceId id;
-        ASSERT_TRUE(ECInstanceIdHelper::FromString(id, idStr));
+        ASSERT_EQ(SUCCESS, ECInstanceId::FromString(id, idStr));
         if (elementKey.GetECInstanceId() == id)
             {
             verifiedElementWithSetNavProp = true;

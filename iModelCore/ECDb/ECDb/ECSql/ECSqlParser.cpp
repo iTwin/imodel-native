@@ -2833,25 +2833,24 @@ void ECSqlParseContext::PopFinalizeParseArg()
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       04/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSqlParseContext::TryResolveClass(shared_ptr<ClassNameExp::Info>& classNameExpInfo, Utf8StringCR schemaNameOrPrefix, Utf8StringCR className)
+BentleyStatus ECSqlParseContext::TryResolveClass(shared_ptr<ClassNameExp::Info>& classNameExpInfo, Utf8CP schemaNameOrPrefix, Utf8CP className)
     {
-    ECClassCP resolvedClass = m_ecdb.Schemas().GetECClass(schemaNameOrPrefix.c_str(), className.c_str(), ResolveSchema::AutoDetect);
+    ECClassCP resolvedClass = m_ecdb.Schemas().GetECClass(schemaNameOrPrefix, className, ResolveSchema::AutoDetect);
 
     if (resolvedClass == nullptr)
         {
-        if (schemaNameOrPrefix.empty())
-            GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECClass '%s' does not exist. Try using fully qualified class name: <schema name>.<class name>.", className.c_str());
+        if (Utf8String::IsNullOrEmpty(schemaNameOrPrefix))
+            GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECClass '%s' does not exist. Try using fully qualified class name: <schema name>.<class name>.", className);
         else
-            GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECClass '%s.%s' does not exist.", schemaNameOrPrefix.c_str(), className.c_str());
+            GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECClass '%s.%s' does not exist.", schemaNameOrPrefix, className);
 
         return ERROR;
         }
 
-    auto key = resolvedClass->GetSchema().GetName() + ":" + resolvedClass->GetName();
-    auto search = m_classNameExpInfoList.find(key);
-    if (search != m_classNameExpInfoList.end())
+    auto it = m_classNameExpInfoList.find(resolvedClass->GetECSqlName().c_str());
+    if (it != m_classNameExpInfoList.end())
         {
-        classNameExpInfo = search->second;
+        classNameExpInfo = it->second;
         return SUCCESS;
         }
 
@@ -2860,7 +2859,7 @@ BentleyStatus ECSqlParseContext::TryResolveClass(shared_ptr<ClassNameExp::Info>&
         return ERROR;
 
     classNameExpInfo = ClassNameExp::Info::Create(*map);
-    m_classNameExpInfoList[key] = classNameExpInfo;
+    m_classNameExpInfoList[resolvedClass->GetECSqlName().c_str()] = classNameExpInfo;
 
     return SUCCESS;
     }

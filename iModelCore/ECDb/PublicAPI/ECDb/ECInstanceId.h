@@ -9,13 +9,12 @@
 //__PUBLISH_SECTION_START__
 #include <ECDb/ECDbTypes.h>
 #include <Bentley/BeId.h>
-#include <limits>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //=======================================================================================
 //! ECInstanceId is the unique id of an ECInstance in an @ref ECDbFile "ECDb file". 
-//! @see @ref ECInstanceIdInECDb, ECInstanceIdHelper
+//! @see @ref ECInstanceIdInECDb
 //! @ingroup ECDbGroup
 //+===============+===============+===============+===============+===============+======
 struct ECInstanceId : BeInt64Id
@@ -25,6 +24,13 @@ public:
 
 public:
     explicit ECInstanceId(BeBriefcaseBasedId id) : ECInstanceId(id.GetValue()) {}
+
+    //! Converts the ECInstanceId string to an ECInstanceId.
+    //! @remarks In order to parse correctly, the ECInstanceId string must contain an unsigned number in decimal format.
+    //! @param[out] ecInstanceId resulting ECInstanceId
+    //! @param[in] ecInstanceIdString ECInstanceId string to convert
+    //! @return SUCCESS if the string could be converted to a valid ECInstanceId. ERROR otherwise.
+    ECDB_EXPORT static BentleyStatus FromString(ECInstanceId& ecInstanceId, Utf8CP ecInstanceIdString);
     };
 
 //=======================================================================================
@@ -75,47 +81,6 @@ public:
 typedef ECInstanceKey const& ECInstanceKeyCR;
 typedef ECInstanceKey const* ECInstanceKeyCP;
 typedef ECInstanceKey& ECInstanceKeyR;
-
-//=======================================================================================
-//! Provides functionality related to an ECInstanceId
-//! @see ECInstanceId
-//! @ingroup ECDbGroup
-//+===============+===============+===============+===============+===============+======
-struct ECInstanceIdHelper
-    {
-private:
-    ECInstanceIdHelper();
-    ~ECInstanceIdHelper();
-
-public:
-    //! Required number of characters to represent an ECInstanceId as string.
-    //! @see ECInstanceIdHelper::ToString
-    static const size_t ECINSTANCEID_STRINGBUFFER_LENGTH = std::numeric_limits<uint64_t>::digits + 1; //+1 for the trailing 0 character
-
-    //! Converts the specified ECInstanceId to its string representation.
-    //! 
-    //! Typical example:
-    //!
-    //!     Utf8Char idStrBuffer[ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH];
-    //!     bool success = ECInstanceIdHelper::ToString (idStrBuffer, ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH, ecInstanceId);
-    //!
-    //! @remarks The string representation can be used as an ECN::IECInstance's InstanceId
-    //! (see ECN::IECInstance::SetInstanceId).
-    //! @param[in,out] stringBuffer The output buffer for the ECInstanceId string. Must be large enough
-    //! to hold the maximal number of decimal digits of UInt64 plus the trailing 0 character.
-    //! You can use ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH to allocate the @p stringBuffer.
-    //! @param[in] stringBufferLength Number of characters allocated in @p stringBuffer
-    //! @param[in] ecInstanceId ECInstanceId to convert
-    //! @return true in case of success, false if @p ecInstanceId is not valid or if @p stringBuffer is too small.
-    ECDB_EXPORT static bool ToString(Utf8P stringBuffer, size_t stringBufferLength, ECInstanceId const& ecInstanceId);
-
-    //! Converts the ECInstanceId string to an ECInstanceId.
-    //! @remarks In order to parse correctly, the ECInstanceId string must contain an unsigned number in decimal format.
-    //! @param[out] ecInstanceId resulting ECInstanceId
-    //! @param[in] ecInstanceIdString ECInstanceId string to convert
-    //! @return true in case of success, false otherwise
-    ECDB_EXPORT static bool FromString(ECInstanceId& ecInstanceId, Utf8CP ecInstanceIdString);
-    };
 
 //=======================================================================================
 //! A set of ECInstanceIds
