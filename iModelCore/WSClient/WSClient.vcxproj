@@ -336,6 +336,7 @@
     </Xml>
   </ItemGroup>
   <ItemGroup>
+    <None Include="BentleyDesktopClientCCApi.prewire.mke" />
     <None Include="CacheLib.mke" />
     <None Include="CacheLibPolicy.mki" />
     <None Include="CachePrewire.mke" />
