@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/SyncLocalChangesTask.cpp $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -295,7 +295,6 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncCreation(ChangeGroupPtr changeGroup
 
         if (!changeGroup->AreAllDependenciesSynced())
             {
-            BeAssert(false && "One or more dependencies were not synced");
             RegisterFailedSync(txn.GetCache(), *changeGroup, CachingDataSource::Status::DependencyNotSynced, objectLabel);
             return;
             }
