@@ -86,11 +86,11 @@ public:
 //! @ingroup GROUP_DgnView
 /**
  A ViewController provides the behavior for a type of view. It also provides the persistent information
- about how the view relates to a \ref DgnDbGroup (e.g. what models/categories are displayed, the ViewFlags that control how graphics
+ about how the view relates to a DgnDb (e.g. what models/categories are displayed, the ViewFlags that control how graphics
  are represented, etc.)
  <p>
  When a ViewController is paired with a DgnViewport, it then controls the operation of that view. Generally there will
- be a 1-1 relationship between ViewControllers and Viewports and a DgnViewport holds a reference-counted-pointer to its \
+ be a 1-1 relationship between ViewControllers and Viewports and a DgnViewport holds a reference-counted-pointer to its 
  ViewController. See discussion at #DgnViewport about synchronizing Viewports and ViewControllers.
  <p>
  By overriding virtual methods, subclasses of ViewController may:
@@ -101,10 +101,8 @@ public:
      - draw "decorations" on top of the normal graphics
      - etc.
 
-
 <h3>Defining a subclass of ViewController</h3>
 To create a subclass of ViewController, create a ViewDefinition and implement _SupplyController.
-
 */
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ViewController : RefCountedBase
