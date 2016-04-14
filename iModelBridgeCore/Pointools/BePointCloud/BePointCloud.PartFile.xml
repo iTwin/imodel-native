@@ -5,7 +5,7 @@
     <Part Name="BePointCloud" OnlyPlatforms="x86,x64" BMakeFile="BePointCloud.mke" >
         <SubPart PartName="BentleyDll"      PartFile="Bentley"   Repository="Bentley"/>
         <SubPart PartName="BePointCloudSubParts"/>
-        <SubPart PartName="PointoolsVortexAPI_VS2012" PartFile="PointoolsVortexAPI_VS2012" Repository="PointoolsVortexAPI" />
+        <SubPart PartName="PointoolsVortexAPI_VS2012" PartFile="PointoolsVortexAPI" Repository="PointoolsVortexAPI" />
         <Bindings>
           <PublicAPI Domain="BePointCloud" />
           <Assemblies ProductDirectoryName="PointCloudAssemblies">Delivery/BePointCloud.dll</Assemblies>

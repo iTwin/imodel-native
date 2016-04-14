@@ -2,7 +2,7 @@
 #
 #     $Source: BePointCloud.mki $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 
@@ -20,4 +20,8 @@ IntermediatePdbFile = $(MultiCompileIntermediatePdbFile)
 #----------------------------------------------------------------------
 nameToDefine = __BEPOINTCLOUD_BUILD__
 %include cdefapnd.mki
+
+dirToSearch=$(OutBuildContexts)BePointCloud/VendorAPI/PointoolsVortexAPI_DLL
+%include cincapnd.mki
+
 
