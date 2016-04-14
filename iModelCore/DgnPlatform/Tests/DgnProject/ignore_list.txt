@@ -37,10 +37,5 @@ TextStringTest.BoundingShape                            # UmarH WIP
 DateTimeFormatterTest.*                                 # UmarH fails randomly, need to investigate
 DgnLineStyleTest.InsertAndQueryWithoutCacheReLoad       # Unable to query line style unless we reload the file ( which will reload the cache )
 
-#TFS 390510 Colin to address it
-ImportTests.simpleSchemaImport
-
 DgnECNavigatorTest.DgnLinksElementInfo # Need to add support for DgnLinks - JeffM
 DgnECNavigatorTest.IfcElementInfo # Need to add support for RelatedItemsDisplaySpecification - Carole
-
-

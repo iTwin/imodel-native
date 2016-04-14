@@ -34,7 +34,7 @@ struct DgnDbTestFixture : ::testing::Test
     DgnCategoryId               m_defaultCategoryId;
     DgnModelPtr                 m_defaultModelP;
 public:
-    DgnDbTestFixture()
+    explicit DgnDbTestFixture(ScopedDgnHost::Options hostOptions = ScopedDgnHost::Options::None) : m_host(hostOptions)
     {
         DgnDomains::RegisterDomain(DPTest::DgnPlatformTestDomain::GetDomain());
     }

@@ -144,15 +144,9 @@ void BriefcaseManager::_OnDgnDbDestroyed()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool s_enableBriefcaseManagement = false;
-void IBriefcaseManager::BackDoor_SetEnabled(bool enable) { s_enableBriefcaseManagement = enable; }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/16
-+---------------+---------------+---------------+---------------+---------------+------*/
 IBriefcaseManagerPtr DgnPlatformLib::Host::RepositoryAdmin::_CreateBriefcaseManager(DgnDbR db) const
     {
-    return (db.IsMasterCopy() || !s_enableBriefcaseManagement) ? MasterBriefcaseManager::Create(db) : BriefcaseManager::Create(db);
+    return db.IsMasterCopy() ? MasterBriefcaseManager::Create(db) : BriefcaseManager::Create(db);
     }
 
 #define TABLE_Codes "Codes"
