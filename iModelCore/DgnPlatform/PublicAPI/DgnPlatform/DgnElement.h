@@ -347,7 +347,7 @@ public:
 
         //! Called after the element was Inserted.
         //! @param[in]  el the new persistent DgnElement that was Inserted
-        //! @return true to drop this appData, false to leave it attached to the DgnElement.
+        //! @return DropMe::Yes to drop this appData, DropMe::No to leave it attached to the DgnElement.
         //! @note el will not be the writable element onto which this AppData was attached. It will be the new persistent copy of that element.
         //! If you wish for your AppData to reside on the new element, call el.AddAppData(key,this) inside this method.
         virtual DropMe _OnInserted(DgnElementCR el){return DropMe::No;}
@@ -355,20 +355,21 @@ public:
         //! Called after the element was Updated.
         //! @param[in] modified the modified DgnElement
         //! @param[in] original the original DgnElement
-        //! @return true to drop this appData, false to leave it attached to the DgnElement.
+        //! @param[in] isOriginal If true, this AppData is on the original element, else it's on the modified element.
+        //! @return DropMe::Yes to drop this appData, DropMe::No to leave it attached to the DgnElement.
         //! @note This method is called for @b all AppData on both the original and the modified DgnElements.
-        virtual DropMe _OnUpdated(DgnElementCR modified, DgnElementCR original) {return DropMe::No;}
+        virtual DropMe _OnUpdated(DgnElementCR modified, DgnElementCR original, bool isOriginal) {return isOriginal? DropMe::Yes: DropMe::No;}
 
         //! Called after an update to the element was reversed by undo.
         //! @param[in] original the original DgnElement (after undo)
         //! @param[in] modified the modified DgnElement (before undo)
-        //! @return true to drop this appData, false to leave it attached to the DgnElement.
+        //! @return DropMe::Yes to drop this appData, DropMe::No to leave it attached to the DgnElement.
         //! @note This method is called for @b all AppData on both the original and the modified DgnElements.
         virtual DropMe _OnReversedUpdate(DgnElementCR original, DgnElementCR modified) {return DropMe::Yes;}
 
         //! Called after the element was Deleted.
         //! @param[in]  el the DgnElement that was deleted
-        //! @return true to drop this appData, false to leave it attached to the DgnElement.
+        //! @return DropMe::Yes to drop this appData, DropMe::No to leave it attached to the DgnElement.
         virtual DropMe _OnDeleted(DgnElementCR el) {return DropMe::Yes;}
     };
 
@@ -384,7 +385,7 @@ public:
     {
     private:
         DGNPLATFORM_EXPORT DropMe _OnInserted(DgnElementCR el) override final;
-        DGNPLATFORM_EXPORT DropMe _OnUpdated(DgnElementCR modified, DgnElementCR original) override final;
+        DGNPLATFORM_EXPORT DropMe _OnUpdated(DgnElementCR modified, DgnElementCR original, bool isOriginal) override final;
         friend struct MultiAspectMux;
 
     protected:
@@ -1025,17 +1026,17 @@ public:
     //! @name Properties 
     //! @{
 
-    //! Get a user property on this DgnElement
-    //! @param[in] name Get a user property value by name
+    //! Get the user property on this DgnElement to get or set it's value
+    //! @param[in] name Name of the user property
     //! @remarks The element needs to be held in memory to access the returned property value. 
     DGNPLATFORM_EXPORT ECN::AdHocJsonPropertyValue GetUserProperty(Utf8CP name) const;
 
     //! Returns true if the Element contains the user property
-    //! @param[in] name Get a user property value by name
+    //! @param[in] name Name of the user property
     DGNPLATFORM_EXPORT bool ContainsUserProperty(Utf8CP name) const;
 
     //! Get a user property on this DgnElement
-    //! @param[in] name Get a user property value by name
+    //! @param[in] name Name of the user property
     DGNPLATFORM_EXPORT void RemoveUserProperty(Utf8CP name);
 
     //! Clear all the user properties on this DgnElement
@@ -1061,7 +1062,7 @@ public:
 
 //=======================================================================================
 //! A stream of geometry, stored on a DgnElement, created by an GeometryBuilder.
-//! @ingroup GeometricPrimitiveGroup
+//! @ingroup GROUP_Geometry
 // @bsiclass                                                    Keith.Bentley   12/14
 //=======================================================================================
 struct GeometryStream : ByteStream

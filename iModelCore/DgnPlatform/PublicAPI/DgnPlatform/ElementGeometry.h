@@ -21,7 +21,7 @@ typedef RefCountedPtr<GeometricPrimitive> GeometricPrimitivePtr;
 //=======================================================================================
 //! Class for multiple RefCounted geometry types: ICurvePrimitive, CurveVector, 
 //! ISolidPrimitive, MSBsplineSurface, PolyfaceHeader, ISolidKernelEntity.
-//! @ingroup GeometricPrimitiveGroup
+//! @ingroup GROUP_Geometry
 //=======================================================================================
 struct GeometricPrimitive : RefCountedBase
 {
@@ -280,7 +280,7 @@ struct GeometryStreamIO
 
 //=======================================================================================
 //! GeometryCollection provides iterator for a Geometric Element's GeometryStream.
-//! @ingroup GeometricPrimitiveGroup
+//! @ingroup GROUP_Geometry
 //=======================================================================================
 struct GeometryCollection
 {
@@ -298,7 +298,7 @@ struct GeometryCollection
 
     //=======================================================================================
     //! Iterator
-    //! @ingroup GeometricPrimitiveGroup
+    //! @ingroup GROUP_Geometry
     //=======================================================================================
     struct Iterator : std::iterator<std::forward_iterator_tag, uint8_t const*>
     {
@@ -443,7 +443,7 @@ ENUM_IS_FLAGS(GeometryCollection::BRepOutput)
 //! For repeated geometry that can be shared in a single GeometryStream or by multiple GeometryStreams, a DgnGeometryPart should be
 //! created. When appending a DgnGeometryPartId you specify the part geometry to element transform in order to position the 
 //! part's geometry relative to the other geometry/parts display by the element.
-//! @ingroup GeometricPrimitiveGroup
+//! @ingroup GROUP_Geometry
 //=======================================================================================
 struct GeometryBuilder : RefCountedBase
 {

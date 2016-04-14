@@ -138,7 +138,7 @@ void PerformanceDgnECTests::RunInsertTests (ECSchemaR schema, DgnDbTestDgnManage
 #if defined (NEEDS_WORK_DGNITEM)
         // NEEDSWORK: primary ECInstance affects element class/element handler...should be supplied to CreateArbitraryElement???
         ECInstanceId ecInstanceId;
-        ECInstanceIdHelper::FromString (ecInstanceId, instances[i]->GetInstanceId ().c_str ());
+        ECInstanceId::FromString (ecInstanceId, instances[i]->GetInstanceId ().c_str ());
         StatusInt stat2 = DgnECPersistence::SetPrimaryInstanceOnElement (*elemHandle, ECInstanceKey (testClass->GetId (), ecInstanceId), *tdm.GetDgnProjectP ());
         ASSERT_EQ (SUCCESS, stat2);
 #endif
