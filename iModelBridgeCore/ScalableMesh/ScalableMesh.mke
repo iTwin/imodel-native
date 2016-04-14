@@ -396,9 +396,9 @@ LINKER_LIBRARIES_DELAYLOADED  = \
     $(ContextSubpartsLibs)$(BaseGeocoordLib) \
     ws2_32.lib \
     $(ContextSubpartsLibs)$(TerrainModelCoreLib) \
-    $(ContextSubpartsLibs)$(TerrainModelFormatsLib)
-
-
+    $(ContextSubpartsLibs)$(TerrainModelFormatsLib) \
+    $(ContextSubpartsLibs)wastorage.lib \
+    $(ContextSubpartsLibs)cpprest120_2_6.lib 
 #    $(ContextSubpartsLibs)PCLWrapper.lib \
 #    $(ContextSubpartsLibs)Imagepp-gdal.lib \
 #    $(ContextSubpartsLibs)PointCloud.lib \

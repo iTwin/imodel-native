@@ -19,5 +19,5 @@ size_t s_max_group_size = 256 << 10; // 256 KB
 size_t s_max_group_depth = 5;
 size_t s_max_group_common_ancestor = 2;
 
-template class SMStreamingPointTaggedTileStore<DPoint3d, IDTMFile::Extent3d64f>;
-template class SMStreamingPointTaggedTileStore<int32_t, IDTMFile::Extent3d64f>;
+template class SMStreamingPointTaggedTileStore<DPoint3d, DRange3d>;
+template class SMStreamingPointTaggedTileStore<int32_t, DRange3d>;

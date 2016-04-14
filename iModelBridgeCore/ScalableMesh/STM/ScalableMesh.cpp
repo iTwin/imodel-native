@@ -360,10 +360,10 @@ int IScalableMesh::LoadAllNodeHeaders(size_t& nbLoadedNodes) const
     return _LoadAllNodeHeaders(nbLoadedNodes);
     }
 
-int IScalableMesh::AddTextures(const HFCPtr<HIMMosaic>& pMosaic) const
+/*int IScalableMesh::AddTextures(const HFCPtr<HIMMosaic>& pMosaic) const
     {
     return _AddTextures(pMosaic);
-    }
+    }*/
 #endif
 
 /*----------------------------------------------------------------------------+
@@ -1304,6 +1304,9 @@ template <class POINT> __int64 ScalableMesh<POINT>::_GetPointCount()
 
 template <class POINT> void ScalableMesh<POINT>::_TextureFromRaster(HIMMosaic* mosaicP)
     {
+    auto nextID = m_scmIndexPtr->GetStore()->GetNextID();
+    nextID = nextID != uint64_t(-1) ? nextID : m_scmIndexPtr->GetNextID();
+    m_scmIndexPtr->SetNextID(nextID);
     m_scmIndexPtr->TextureFromRaster(mosaicP);
     m_scmIndexPtr->Store();
     m_smSQLitePtr->CommitAll();
@@ -1907,14 +1910,14 @@ template <class POINT> int ScalableMesh<POINT>::_LoadAllNodeHeaders(size_t& nbLo
 /*----------------------------------------------------------------------------+
 |MrDTM::_AddTextures
 +----------------------------------------------------------------------------*/
-template <class POINT> int ScalableMesh<POINT>::_AddTextures(const HFCPtr<HIMMosaic>& pMosaic) const
+/*template <class POINT> int ScalableMesh<POINT>::_AddTextures(const HFCPtr<HIMMosaic>& pMosaic) const
     {
     auto nextID = m_scmIndexPtr->GetStore()->GetNextID();
     nextID = nextID != uint64_t(-1) ? nextID : m_scmIndexPtr->GetNextID();
     m_scmIndexPtr->SetNextID(nextID);
     m_scmIndexPtr->TextureFromRaster(pMosaic.GetPtr());
     return SUCCESS;
-    }
+    }*/
 #endif
 /*----------------------------------------------------------------------------+
 |ScalableMeshSingleResolutionPointIndexView Method Definition Section - Begin

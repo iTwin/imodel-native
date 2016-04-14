@@ -99,7 +99,7 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
                 void LoadFromLocal(const wstring& m_pFilename)
                     {
                     BeFile file;
-                    auto fileOpenStatus = file.Open(m_pFilename.c_str(), BeFileAccess::Read, BeFileSharing::None);
+                    auto fileOpenStatus = OPEN_FILE(file, m_pFilename.c_str(), BeFileAccess::Read);
                     if (BeFileStatus::Success != fileOpenStatus) return;
 
                     assert(fileOpenStatus == BeFileStatus::Success);
@@ -182,25 +182,19 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
                 mutex m_TextureMutex;
             };
 
-       /* static IDTMFile::NodeID ConvertBlockID(const HPMBlockID& blockID)
-            {
-            return static_cast<IDTMFile::NodeID>(blockID.m_integerID);
-            }*/
-
         void OpenOrCreateBeFile(BeFile& file, HPMBlockID blockID)
             {
             wstringstream ss;
-            ss << m_path << L"t_" << ConvertBlockID(blockID) << L".bin";
+            ss << m_path << L"t_" << blockID.m_integerID << L".bin";
             auto filename = ss.str();
-            auto fileOpenedOrCreated = BeFileStatus::Success == file.Open(filename.c_str(), BeFileAccess::Write, BeFileSharing::None)
+            auto fileOpenedOrCreated = BeFileStatus::Success == OPEN_FILE(file, filename.c_str(), BeFileAccess::Write)
                                     || BeFileStatus::Success== file.Create(filename.c_str());
             assert(fileOpenedOrCreated);
             }
 
         Texture& GetTexture(HPMBlockID blockID) const
             {
-            auto blockIDConvert = ConvertBlockID(blockID);
-            Texture& texture = m_textureCache[blockIDConvert];
+            Texture& texture = m_textureCache[blockID.m_integerID];
             if (!texture.IsLoaded())
                 {
                 if (texture.IsLoading())
@@ -210,7 +204,7 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
                 else
                     {
                     texture.SetDataSource(m_path);
-                    texture.Load(blockIDConvert);
+                    texture.Load(blockID.m_integerID);
                     }
                 }
             assert(texture.IsLoaded());
@@ -343,7 +337,7 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
             auto& texture = this->GetTexture(blockID);
             /*BeFile file;
             wstringstream ss;
-            ss << L"file://"<<m_path << L"textureAfterLoad_" << ConvertBlockID(blockID) << L".jpeg";
+            ss << L"file://"<<m_path << L"textureAfterLoad_" << blockID.m_integerID << L".jpeg";
             auto filename = ss.str();
             HFCPtr<HFCURL> fileUrl(HFCURL::Instanciate(filename.c_str()));
             byte* pixelBuffer = new byte[1024 * 1024 * 3];

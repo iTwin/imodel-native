@@ -351,7 +351,7 @@ class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
             ss << m_pDataSourceName << this->GetID() << L".bin";
             auto group_filename = ss.str();
             BeFile file;
-            if (BeFileStatus::Success == file.Open(group_filename.c_str(), BeFileAccess::Read, BeFileSharing::None))
+            if (BeFileStatus::Success == OPEN_FILE(file, group_filename.c_str(), BeFileAccess::Read))
                 {
                 uint64_t fileSize;
                 file.GetSize(fileSize);
@@ -878,7 +878,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
             // NEEDS_WORK_SM_STREAMING: Remove this when streaming works reasonably well
             //std::lock_guard<std::mutex> lock(fileMutex);
             //BeFile file;
-            //if (BeFileStatus::Success == file.Open(L"C:\\Users\\Richard.Bois\\Documents\\ScalableMeshWorkDir\\FitView.node", BeFileAccess::ReadWrite, BeFileSharing::None) ||
+            //if (BeFileStatus::Success == OPEN_FILE(file, L"C:\\Users\\Richard.Bois\\Documents\\ScalableMeshWorkDir\\FitView.node", BeFileAccess::ReadWrite) ||
             //    BeFileStatus::Success == file.Create(L"C:\\Users\\Richard.Bois\\Documents\\ScalableMeshWorkDir\\FitView.node"))
             //    {
             //    file.SetPointer(0, BeFileSeekOrigin::End);
@@ -959,7 +959,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
             if (s_stream_from_disk)
                 {
                 BeFile file;
-                if (BeFileStatus::Success != file.Open(filename.c_str(), BeFileAccess::Read, BeFileSharing::None))
+                if (BeFileStatus::Success != OPEN_FILE(file, filename.c_str(), BeFileAccess::Read))
                     {
                     assert(false); // node header file must exist
                     return 1;
@@ -1033,7 +1033,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                 {
                 uint32_t uncompressedSize = 0;
                 BeFile file;
-                if (BeFileStatus::Success == file.Open(filename.c_str(), BeFileAccess::Read, BeFileSharing::Read))
+                if (BeFileStatus::Success == OPEN_FILE_SHARE(file, filename.c_str(), BeFileAccess::Read))
                     {
 
                     size_t fileSize = 0;
@@ -1307,7 +1307,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                             position += group_size*sizeof(uint64_t);
 
                             group->GetHeader()->resize(group_size);
-                            transform(begin(nodeIds), end(nodeIds), begin(*group->GetHeader()), [](const int64_t& nodeId) 
+                            transform(begin(nodeIds), end(nodeIds), begin(*group->GetHeader()), [](const uint64_t& nodeId) 
                                 {
                                 return SMNodeHeader{ nodeId, 0, 0 };
                                 });

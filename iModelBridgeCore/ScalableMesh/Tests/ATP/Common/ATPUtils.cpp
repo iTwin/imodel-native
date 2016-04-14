@@ -64,15 +64,15 @@ WString GetHeaderForTestType(TestType t)
         case TEST_RANDOM_DRAPE:
             return L"Test Case, Line Number, N Of Points Draped (SM), N Of Points Draped (Civil), Length (SM), Length (Civil), N Of Points Difference (%%), Length Difference (%%), NDifferentLines Total, Time total(SM) (s), Time total(Civil) (s)\n";
             break;
-        case EXPORT_LINE:
-            return L"\n";
-            break;
-        case EXPORT_VOLUME:
-            return L"\n";
-            break;
-        case IMPORT_VOLUME:
-            return L"\n";
-            break;
+        //case EXPORT_LINE:
+        //    return L"\n";
+        //    break;
+        //case EXPORT_VOLUME:
+        //    return L"\n";
+        //    break;
+        //case IMPORT_VOLUME:
+        //    return L"\n";
+        //    break;
         default: break;
         }
     return L"";
@@ -289,15 +289,15 @@ bool RunTestPlan(BeFileName& testPlanPath)
             case TEST_RANDOM_DRAPE:
                 PerformTestDrapeRandomLines(pTestNode, pResultFile);
                 break;
-            case EXPORT_LINE:
-                ExportDrapeLine(pTestNode, pResultFile);
-                break;
-            case EXPORT_VOLUME:
-                ExportVolume(pTestNode, pResultFile);
-                break;
-            case IMPORT_VOLUME:
-                ImportVolume(pTestNode, pResultFile);
-                break;
+            //case EXPORT_LINE:
+            //    ExportDrapeLine(pTestNode, pResultFile);
+            //    break;
+            //case EXPORT_VOLUME:
+            //    ExportVolume(pTestNode, pResultFile);
+            //    break;
+            //case IMPORT_VOLUME:
+            //    ImportVolume(pTestNode, pResultFile);
+            //    break;
             case ADD_TEXTURES_TO_MESH:
                 AddTexturesToMesh(pTestNode, pResultFile);
                 break;

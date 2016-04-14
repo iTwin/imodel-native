@@ -8075,7 +8075,7 @@ template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveC
             buffer_size = buffer.size();
             file.Write(NULL, buffer.c_str(), buffer_size);
             };
-        if (BeFileStatus::Success == file.Open(filename, BeFileAccess::Write, BeFileSharing::None))
+        if (BeFileStatus::Success == OPEN_FILE(file, filename, BeFileAccess::Write))
             {
             jsonWriter(file, masterHeader);
             }

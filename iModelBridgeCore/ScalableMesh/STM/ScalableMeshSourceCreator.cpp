@@ -309,7 +309,7 @@ void IScalableMeshSourceCreator::ImportRastersTo(const IScalableMeshPtr& scmPtr)
     {
     HFCPtr<HIMMosaic> pMosaic;
     int status = dynamic_cast<IScalableMeshSourceCreator::Impl*>(m_implP.get())->GetRasterSources(pMosaic);
-    scmPtr->AddTextures(pMosaic);
+    scmPtr->TextureFromRaster(pMosaic);
     assert(BSISUCCESS == status);
     }
 #endif
