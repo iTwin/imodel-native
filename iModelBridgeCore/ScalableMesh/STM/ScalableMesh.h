@@ -6,7 +6,7 @@
 |       $Date: 2012/01/06 16:30:13 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -180,6 +180,7 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         virtual IDTMDrainageP    _GetDTMDrainage() override;
         virtual IDTMContouringP  _GetDTMContouring() override;
         virtual IDTMVolumeP  _GetDTMVolume() override;
+        //virtual IDTMVolume_P  _GetDTMVolume() override;
 
         virtual DTMStatusInt     _GetRange(DRange3dR range) override;
         virtual BcDTMP           _GetBcDTM() override;
@@ -263,6 +264,7 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
         virtual IDTMDrainageP    _GetDTMDrainage() override;
         virtual IDTMContouringP  _GetDTMContouring() override;
         virtual IDTMVolumeP  _GetDTMVolume() override;
+        //virtual IDTMVolume_P  _GetDTMVolume() override;
 
         virtual DTMStatusInt     _GetRange(DRange3dR range) override;
         virtual BcDTMP           _GetBcDTM() override;

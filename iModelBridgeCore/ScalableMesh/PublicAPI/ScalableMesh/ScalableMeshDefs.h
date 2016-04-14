@@ -6,7 +6,7 @@
 |       $Date: 2011/10/26 17:55:44 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -140,7 +140,7 @@ enum DTMStatus
 #define MEAN_SCREEN_PIXELS_PER_POINT 100
 
 
-struct IDTMVolume abstract
+struct IDTMVolume_ abstract
 {
 protected:
 virtual DTMStatusInt _ComputeVolumeCutAndFill(double& cut, double& fill, double& area, PolyfaceHeader& intersectingMeshSurface, DRange3d& meshRange, bvector<PolyfaceHeaderPtr>& volumeMeshVector) = 0;

@@ -6,7 +6,7 @@
 |       $Date: 2015/04/20 14:27:27 $
 |     $Author: Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -17,7 +17,7 @@
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
-struct ScalableMeshVolume : IDTMVolume
+struct ScalableMeshVolume : IDTMVolume_
     {
     private:
         IScalableMeshPtr m_scmPtr;

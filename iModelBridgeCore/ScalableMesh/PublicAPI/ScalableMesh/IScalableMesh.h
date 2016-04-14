@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------------------------+
 |
 |
-|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 |
 +--------------------------------------------------------------------------------------*/
@@ -14,7 +14,7 @@
 #include <ScalableMesh/ScalableMeshDefs.h>
 #include <Bentley/RefCounted.h>
 
-ADD_BENTLEY_TYPEDEFS (Bentley::ScalableMesh, IDTMVolume)
+ADD_BENTLEY_TYPEDEFS (BENTLEY_NAMESPACE_NAME::ScalableMesh, IDTMVolume_)
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
@@ -72,7 +72,9 @@ struct IScalableMesh abstract:  Bentley::TerrainModel::IDTM
 
         virtual IScalableMeshNodeRayQueryPtr     _GetNodeQueryInterface() const = 0;
 
-        virtual IDTMVolumeP             _GetDTMVolume() = 0;
+        //virtual IDTMVolume_P             _GetDTMVolume() = 0;
+        
+        virtual IDTMVolumeP            _GetDTMVolume() = 0;
 
         virtual const GeoCoords::GCS&               _GetGCS() const = 0;
 
@@ -131,7 +133,7 @@ struct IScalableMesh abstract:  Bentley::TerrainModel::IDTM
 
         BENTLEYSTM_EXPORT IScalableMeshNodeRayQueryPtr    GetNodeQueryInterface() const;
 
-        BENTLEYSTM_EXPORT  IDTMVolumeP             GetDTMVolume();
+        //BENTLEYSTM_EXPORT  IDTMVolume_P             GetDTMVolume();
 
         BENTLEYSTM_EXPORT const Bentley::GeoCoordinates::BaseGCSPtr&
                                            GetBaseGCS() const;
