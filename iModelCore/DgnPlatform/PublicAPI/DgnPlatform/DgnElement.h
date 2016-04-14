@@ -1025,17 +1025,17 @@ public:
     //! @name Properties 
     //! @{
 
-    //! Get a user property on this DgnElement
-    //! @param[in] name Get a user property value by name
+    //! Get the user property on this DgnElement to get or set it's value
+    //! @param[in] name Name of the user property
     //! @remarks The element needs to be held in memory to access the returned property value. 
     DGNPLATFORM_EXPORT ECN::AdHocJsonPropertyValue GetUserProperty(Utf8CP name) const;
 
     //! Returns true if the Element contains the user property
-    //! @param[in] name Get a user property value by name
+    //! @param[in] name Name of the user property
     DGNPLATFORM_EXPORT bool ContainsUserProperty(Utf8CP name) const;
 
     //! Get a user property on this DgnElement
-    //! @param[in] name Get a user property value by name
+    //! @param[in] name Name of the user property
     DGNPLATFORM_EXPORT void RemoveUserProperty(Utf8CP name);
 
     //! Clear all the user properties on this DgnElement
