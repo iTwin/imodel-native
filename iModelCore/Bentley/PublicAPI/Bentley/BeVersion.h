@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/Bentley/BeVersion.h $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -12,7 +12,7 @@
 
 BEGIN_BENTLEY_NAMESPACE
 
-#define VERSION_FORMAT "%d.%d.%d.%d"
+#define VERSION_FORMAT "%" PRIu16 ".%" PRIu16 ".%" PRIu16 ".%" PRIu16
 
 typedef struct BeVersion& BeVersionR;
 typedef const struct BeVersion& BeVersionCR;
