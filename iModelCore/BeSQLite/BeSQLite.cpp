@@ -372,16 +372,14 @@ int      Db::GetModifiedRowCount() const {return sqlite3_changes(GetSqlDb());}
 void     SnappyFromBlob::Finish() {m_blobIO.Close();}
 void     Db::SetAllowImplictTransactions(bool val) {m_dbFile->m_allowImplicitTxns=val;}
 
-static Utf8CP s_versionfmt = "{\"major\":%d,\"minor\":%d,\"sub1\":%d,\"sub2\":%d}";
-
-Utf8String SchemaVersion::ToJson() const {return ToString(s_versionfmt);}
+Utf8String SchemaVersion::ToJson() const {return ToString("{\"major\":%" PRIu16 ",\"minor\":%" PRIu16 ",\"sub1\":%" PRIu16 ",\"sub2\":%" PRIu16 "}");}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SchemaVersion::FromJson(Utf8CP val)
     {
-    FromString(val, s_versionfmt);
+    FromString(val, "{\"major\":%d,\"minor\":%d,\"sub1\":%d,\"sub2\":%d}");
     }
 
 /*---------------------------------------------------------------------------------**//**
