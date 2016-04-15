@@ -570,7 +570,7 @@ BentleyStatus ClassMap::_Load(std::set<ClassMap const*>& loadGraph, ClassMapLoad
             {
             if (propMapping->GetColumns().front()->GetKind() == DbColumn::Kind::ECClassId)
                 continue;
-           
+
             for (DbColumn const* column : propMapping->GetColumns())
                 {
                 if (column->GetTable().GetType() == DbTable::Type::Joined)
@@ -591,20 +591,16 @@ BentleyStatus ClassMap::_Load(std::set<ClassMap const*>& loadGraph, ClassMapLoad
 
     if (GetECInstanceIdPropertyMap() != nullptr)
         return ERROR;
-    
-    if (PropertyDbMapping const* propInfo = mapInfo.FindPropertyMapping(ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME))
-        {
-        PropertyMapPtr ecInstanceIdPropertyMap = ECInstanceIdPropertyMap::Create(Schemas(), *this, propInfo->GetColumns());
-        if (ecInstanceIdPropertyMap == nullptr)
-            return ERROR;
 
-        GetPropertyMapsR().AddPropertyMap(ecInstanceIdPropertyMap);
-        }
-    else
-        {
-        BeAssert(false);
+    PropertyDbMapping const* ecInstanceIdMapping = mapInfo.FindPropertyMapping(ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME);
+    if (ecInstanceIdMapping == nullptr)
         return ERROR;
-        }
+
+    PropertyMapPtr ecInstanceIdPropertyMap = ECInstanceIdPropertyMap::Create(Schemas(), *this, ecInstanceIdMapping->GetColumns());
+    if (ecInstanceIdPropertyMap == nullptr)
+        return ERROR;
+
+    GetPropertyMapsR().AddPropertyMap(ecInstanceIdPropertyMap);
     return AddPropertyMaps(ctx, parentClassMap, &mapInfo, nullptr) == MappingStatus::Success ? SUCCESS : ERROR;
     }
 

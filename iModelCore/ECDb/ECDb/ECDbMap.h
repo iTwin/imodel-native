@@ -90,10 +90,10 @@ private:
     mutable LightweightCache m_lightweightCache;
     SchemaImportContext* m_schemaImportContext;
 
-    bool TryGetClassMap(ClassMapPtr&, ClassMapLoadContext&, ECN::ECClassCR) const;
+    BentleyStatus TryGetClassMap(ClassMapPtr&, ClassMapLoadContext&, ECN::ECClassCR) const;
     ClassMapPtr DoGetClassMap(ECN::ECClassCR) const;
 
-    ClassMapPtr LoadClassMap(ClassMapLoadContext& ctx, ECN::ECClassCR) const;
+    BentleyStatus TryLoadClassMap(ClassMapPtr&, ClassMapLoadContext& ctx, ECN::ECClassCR) const;
 
     MappingStatus DoMapSchemas();
     MappingStatus MapClass(ECN::ECClassCR);

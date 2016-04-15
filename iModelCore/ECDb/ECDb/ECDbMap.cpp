@@ -296,32 +296,34 @@ MappingStatus ECDbMap::DoMapSchemas()
 //---------------------------------------------------------------------------------------
 //* @bsimethod                                 Affan.Khan                           07 / 2012
 //---------------------------------------------------------------------------------------
-ClassMapPtr ECDbMap::LoadClassMap(ClassMapLoadContext& ctx, ECN::ECClassCR ecClass) const
+ BentleyStatus ECDbMap::TryLoadClassMap(ClassMapPtr& classMap, ClassMapLoadContext& ctx, ECN::ECClassCR ecClass) const
     {
     BeMutexHolder lock(m_mutex);
+    classMap = nullptr;
+
     if (!Enum::Contains(m_dbSchema.GetLoadState(), DbSchema::LoadState::Core))
         {
         if (DbSchemaPersistenceManager::Load(GetDbSchemaR(), m_ecdb, DbSchema::LoadState::Core) != SUCCESS)
             {
             BeAssert(false);
-            return nullptr;
+            return ERROR;
             }
         }
 
     std::vector<ClassDbMapping const*> const* classMaps = m_dbSchema.GetDbMappings().FindClassMappings(ecClass.GetId());
     if (classMaps == nullptr)
-        return nullptr;
+        return SUCCESS;
 
     if (classMaps->empty())
         {
         BeAssert(false && "Failed to find ClassDbMapping for given ECClass");
-        return nullptr;
+        return ERROR;
         }
 
     if (classMaps->size() > 1)
         {
         BeAssert(false && "Feature of nested class map not implemented");
-        return nullptr;
+        return ERROR;
         }
 
     ClassDbMapping const& classMapInfo = *classMaps->front();
@@ -331,36 +333,38 @@ ClassMapPtr ECDbMap::LoadClassMap(ClassMapLoadContext& ctx, ECN::ECClassCR ecCla
     if (baseClass != nullptr)
         {
         ClassMapPtr baseClassMapPtr = nullptr;
-        if (TryGetClassMap(baseClassMapPtr, ctx, *baseClass))
-            baseClassMap = baseClassMapPtr.get();
+        if (SUCCESS != TryGetClassMap(baseClassMapPtr, ctx, *baseClass))
+            return ERROR;
+
+        baseClassMap = baseClassMapPtr.get();
         }
 
     bool setIsDirty = false;
     ECDbMapStrategy const& mapStrategy = classMapInfo.GetMapStrategy();
-    ClassMapPtr classMap = nullptr;
+    ClassMapPtr classMapTmp = nullptr;
     if (mapStrategy.IsNotMapped())
-        classMap = UnmappedClassMap::Create(ecClass, *this, mapStrategy, setIsDirty);
+        classMapTmp = UnmappedClassMap::Create(ecClass, *this, mapStrategy, setIsDirty);
     else
         {
         ECRelationshipClassCP ecRelationshipClass = ecClass.GetRelationshipClassCP();
         if (ecRelationshipClass != nullptr)
             {
             if (mapStrategy.IsForeignKeyMapping())
-                classMap = RelationshipClassEndTableMap::Create(*ecRelationshipClass, *this, mapStrategy, setIsDirty);
+                classMapTmp = RelationshipClassEndTableMap::Create(*ecRelationshipClass, *this, mapStrategy, setIsDirty);
             else
-                classMap = RelationshipClassLinkTableMap::Create(*ecRelationshipClass, *this, mapStrategy, setIsDirty);
+                classMapTmp = RelationshipClassLinkTableMap::Create(*ecRelationshipClass, *this, mapStrategy, setIsDirty);
             }
         else
-            classMap = ClassMap::Create(ecClass, *this, mapStrategy, setIsDirty);
+            classMapTmp = ClassMap::Create(ecClass, *this, mapStrategy, setIsDirty);
         }
-    classMap->SetId(classMapInfo.GetId());
+    classMapTmp->SetId(classMapInfo.GetId());
 
-    if (MappingStatus::Error == AddClassMap(classMap))
-        return nullptr;
+    if (MappingStatus::Error == AddClassMap(classMapTmp))
+        return ERROR;
 
     std::set<ClassMap const*> loadGraph;
-    if (SUCCESS != classMap->Load(loadGraph, ctx, classMapInfo, baseClassMap))
-        return nullptr;
+    if (SUCCESS != classMapTmp->Load(loadGraph, ctx, classMapInfo, baseClassMap))
+        return ERROR;
 
     ECRelationshipClassCP ecRelationshipClass = ecClass.GetRelationshipClassCP();
     // Construct and initialize the class map
@@ -377,7 +381,8 @@ ClassMapPtr ECDbMap::LoadClassMap(ClassMapLoadContext& ctx, ECN::ECClassCR ecCla
             }
         }
 
-    return classMap;
+    classMap = classMapTmp;
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------------
@@ -399,8 +404,10 @@ MappingStatus ECDbMap::MapClass(ECClassCR ecClass)
         }
 
     ClassMapPtr existingClassMap = nullptr;
-    const bool classMapExists = TryGetClassMap(existingClassMap, m_schemaImportContext->GetClassMapLoadContext(), ecClass);
-    if (!classMapExists)
+    if (SUCCESS != TryGetClassMap(existingClassMap, m_schemaImportContext->GetClassMapLoadContext(), ecClass))
+        return MappingStatus::Error;
+
+    if (existingClassMap == nullptr)
         {
         MappingStatus status = MappingStatus::Success;
         std::unique_ptr<ClassMappingInfo> classMapInfo = ClassMappingInfoFactory::Create(status, ecClass, *this);
@@ -476,7 +483,13 @@ ClassMap const* ECDbMap::GetClassMap(ECN::ECClassCR ecClass) const
     ClassMapLoadContext ctx;
 
     ClassMapPtr classMap = nullptr;
-    if (!TryGetClassMap(classMap, ctx, ecClass))
+    if (SUCCESS != TryGetClassMap(classMap, ctx, ecClass))
+        {
+        BeAssert(false && "Error during TryGetClassMap");
+        return nullptr;
+        }
+
+    if (classMap == nullptr)
         return nullptr;
 
     if (SUCCESS != ctx.Postprocess(*this))
@@ -500,7 +513,7 @@ ClassMap const* ECDbMap::GetClassMap(ECN::ECClassId classId) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle   02/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-bool ECDbMap::TryGetClassMap(ClassMapPtr& classMap, ClassMapLoadContext& ctx, ECN::ECClassCR ecClass) const
+BentleyStatus ECDbMap::TryGetClassMap(ClassMapPtr& classMap, ClassMapLoadContext& ctx, ECN::ECClassCR ecClass) const
     {
     BeMutexHolder lock(m_mutex);
     if (!ecClass.HasId())
@@ -511,12 +524,11 @@ bool ECDbMap::TryGetClassMap(ClassMapPtr& classMap, ClassMapLoadContext& ctx, EC
 
     classMap = DoGetClassMap(ecClass);
     if (classMap != nullptr)
-        return true;
+        return SUCCESS;
 
     //lazy loading the class map implemented with const-casting the actual loading so that the 
     //get method itself can remain const (logically const)
-    classMap = LoadClassMap(ctx, ecClass);
-    return classMap != nullptr;
+    return TryLoadClassMap(classMap, ctx, ecClass);
     }
 
 /*---------------------------------------------------------------------------------------

@@ -107,6 +107,8 @@ BentleyStatus ECSchemaCompareContext::ReloadECSchemaIfRequired(ECDbSchemaManager
             BeAssert(false && "Failed to reload a schema");
             return ERROR;
             }
+
+        m_existingSchemaList.push_back(schemaCP);
         }
 
     for (auto const& name : imported)
@@ -117,6 +119,8 @@ BentleyStatus ECSchemaCompareContext::ReloadECSchemaIfRequired(ECDbSchemaManager
             BeAssert(false && "Failed to reload a schema");
             return ERROR;
             }
+
+        m_importedSchemaList.push_back(schemaCP);
         }
 
     return SUCCESS;
