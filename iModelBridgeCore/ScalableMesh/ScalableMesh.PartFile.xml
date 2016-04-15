@@ -14,6 +14,15 @@
         <Files ProductDirectoryName="MdlsysAsneeded" >Delivery\$(shlibprefix)PCLWrapper$(shlibext)</Files>          
       </Bindings>
     </Part>
+
+    <Part Name="AzureSDK">
+        <SubPart PartName="wastorage"       PartFile="${SrcRoot}bsicommon/CvsPartfiles/wastorage"    Repository="Bin-wastorage" />
+        <Bindings>
+            <Files ProductDirectoryName="ScalableMeshAssemblies">SubParts\Assemblies\$(shlibprefix)wastorage$(shlibext)</Files>
+            <Files ProductDirectoryName="ScalableMeshAssemblies">SubParts\Assemblies\$(shlibprefix)cpprest120_2_6$(shlibext)</Files>
+        </Bindings>
+
+    </Part>
     
     <Part Name="ScalableMesh" BMakeFile="ScalableMesh.mke">
         <SubPart PartName="DgnPlatformDll"  PartFile="DgnPlatform"                          Repository="DgnPlatform" />
@@ -24,8 +33,8 @@
         <!--<SubPart PartName="GdalLib"         PartFile="ImagePP"                                  Repository="ImagePP"/>-->
         <SubPart PartName="Core"            PartFile="TerrainModel"                         Repository="TerrainModel"/>
         <SubPart PartName="Formats"         PartFile="TerrainModel"                         Repository="TerrainModel"/>          
-        <!--<SubPart PartName="PointCloud"      PartFile="DgnDisplay"                           Repository="DgnDisplay"/>
-        <SubPart PartName="wastorage"       PartFile="${SrcBsiCommon}CvsPartfiles/wastorage"    Repository="Bin-wastorage" />-->
+        <!--<SubPart PartName="PointCloud"      PartFile="DgnDisplay"                           Repository="DgnDisplay"/>-->
+        <SubPart PartName="AzureSDK"/>
         <SubPart PartName="BeCurl"          PartFile="BeCurl"                                   Repository="Libsrc-Curl"/>
        <SubPart PartName="CGALHeaders" PartFile="CGAL" Repository="Libsrc-CGAL" />
        <SubPart PartName="BeSQLite" PartFile="BeSQLite" Repository="BeSQLite" />
@@ -167,9 +176,12 @@
 		<ProductDirectory Name="Assemblies" Path="Dlls"/>
 		<ProductDirectory Name="ErdasEcwJpeg2000Assemblies" Path="Dlls" />
 		<ProductDirectory Name="BeOpenSSLAssemblies" Path="Dlls"/>
+        <ProductDirectory Name="wastorageAssemblies" Path="Dlls" />
         <ProductDirectory Name="BeCurlAssemblies" Path="Dlls"/>
+        <ProductDirectory Name="cpprestsdkAssemblies" Path="Dlls" />
 		<ProductDirectory Name="BeIcu4cData"       Path="Dlls" LibType="static" />
 		<ProductDirectory Name="PointCloudAssemblies" Path="Dlls" Deliver="true" />
+        <ProductDirectory Name="LibV8Assemblies" Path="Dlls" Deliver="true" />
     </ProductDirectoryList>
     
     <Product Name="ScalableMeshATP" SaveProduct="true" >

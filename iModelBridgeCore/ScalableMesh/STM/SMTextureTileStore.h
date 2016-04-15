@@ -9,7 +9,7 @@
 //#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>
 #include <ImagePP/all/h/HRPPixelTypeV24B8G8R8.h>
 
-class TextureTileStore : public IHPMPermanentStore<Byte, float, float> // JPEGData (Byte*), size
+class TextureTileStore : public IScalableMeshDataStore<Byte, float, float> // JPEGData (Byte*), size
     {
     public:
 
@@ -595,7 +595,7 @@ class TextureTileStore : public IHPMPermanentStore<Byte, float, float> // JPEGDa
 
 
 /*
-template <class POINT> class UVTileStore : public IHPMPermanentStore<POINT, float, float> // POInt, size
+template <class POINT> class UVTileStore : public IScalableMeshDataStore<POINT, float, float> // POInt, size
     {
     public:
 

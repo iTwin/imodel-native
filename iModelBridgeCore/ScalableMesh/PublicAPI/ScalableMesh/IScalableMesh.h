@@ -110,8 +110,11 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
 
         virtual int                                 _GetRangeInSpecificGCS(DPoint3d& lowPt, DPoint3d& highPt, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS) const = 0;
 
+        virtual int                                 _ConvertToCloud(const WString& pi_pOutputDirPath) const = 0;
+
 #ifdef SCALABLE_MESH_ATP
         virtual int                                 _LoadAllNodeHeaders(size_t& nbLoadedNodes) const = 0; 
+        //virtual int                                 _AddTextures(const HFCPtr<BENTLEY_NAMESPACE_NAME::ImagePP::HIMMosaic>& pMosaic) const = 0;
 #endif
         virtual uint64_t                           _AddClip(const DPoint3d* pts, size_t ptsSize) = 0;
 
@@ -236,7 +239,8 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
 
         BENTLEYSTM_EXPORT void                   SetCurrentlyViewedNodes(const bvector<IScalableMeshNodePtr>& nodes);
 
-    
+        BENTLEYSTM_EXPORT int                    ConvertToCloud(const WString& pi_pOutputDirPath) const;
+
         BENTLEYSTM_EXPORT static IScalableMeshPtr        GetFor                 (const WChar*          filePath,
                                                                     bool                    openReadOnly,
                                                                     bool                    openShareable,
@@ -248,6 +252,7 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
 
 #ifdef SCALABLE_MESH_ATP
         BENTLEYSTM_EXPORT int                     LoadAllNodeHeaders(size_t& nbLoadedNodes) const; 
+        //BENTLEYSTM_EXPORT int                     AddTextures(const HFCPtr<HIMMosaic>& pMosaic) const;
 #endif
 
     };

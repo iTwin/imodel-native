@@ -7,7 +7,7 @@
 #include <ImagePP/all/h/IDTMFile.h>
 #include <Mtg/MtgStructs.h>
 
-class DTMGraphTileStore : public IHPMPermanentStore<MTGGraph, Byte, Byte>
+class DTMGraphTileStore : public IScalableMeshDataStore<MTGGraph, Byte, Byte>
     {
     public:
 

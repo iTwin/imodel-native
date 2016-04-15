@@ -39,6 +39,8 @@ using namespace std;
 #include <Bentley/BeTimeUtilities.h>
 #include <ScalableMesh/IScalableMeshNodeCreator.h>
 #include <Vu/VuApi.h>
+#include <BeJsonCpp/BeJsonUtilities.h>
+
 
 #include <ImagePP/h/ImageppAPI.h>
 
@@ -189,6 +191,7 @@ void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
                 {
                 SetGroundDetectionDuration(0.0);
                 clock_t t = clock();
+
 
                 StatusInt status = creatorPtr->Create(isSingleFile);
 
@@ -1143,6 +1146,212 @@ StatusInt DoBatchDrape(vector<vector<DPoint3d>>& lines, DTMPtr& dtmPtr, vector<v
     return status;
     }
 
+//void ExportDrapeLine(BeXmlNodeP pTestNode, FILE* pResultFile)
+//    {
+//    WString linesFileName, name, outputname;
+//    if (pTestNode->GetAttributeStringValue(outputname, "outputFileName") != BEXML_Success)
+//        {
+//        printf("ERROR : outputFileName attribute not found\r\n");
+//        return;
+//        }
+//    // parse dgn file name
+//    if (pTestNode->GetAttributeStringValue(linesFileName, "linesFileName") != BEXML_Success)
+//        {
+//        printf("ERROR : linesFileName attribute not found\r\n");
+//        return;
+//        }
+//    if (pTestNode->GetAttributeStringValue(name, "name") != BEXML_Success)
+//        {
+//        printf("ERROR : name attribute not found\r\n");
+//        }
+//    DgnFileStatus fileOpenStatus;
+//    DgnDocumentPtr lineDoc = DgnDocument::CreateFromFileName(fileOpenStatus, linesFileName.c_str(), NULL, DEFDGNFILE_ID, DgnDocument::FetchMode::Read);
+//
+//    DgnModelRefP model = ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetActiveModelRef();
+//    DgnAttachment* newAttachment;
+//    model->CreateDgnAttachment(newAttachment, *lineDoc->GetMonikerPtr(), L"");
+//    ElementAgenda agenda;
+//    LevelCache& levelCache = newAttachment->GetLevelCacheR();
+//
+//    LevelHandle level = levelCache.GetLevelByName(L"toDrape", false);
+//    LevelId levelId = level.GetLevelId();
+//
+//    ScanCriteriaP scP = new ScanCriteria();
+//    scP->SetModelRef(newAttachment);
+//    scP->SetReturnType(MSSCANCRIT_ITERATE_ELMREF, false, true);
+//    scP->SetElemRefCallback(CollectAllElmsCallback, &agenda);
+//    BitMaskP levelBitMask = BitMask::Create(false);
+//    levelBitMask->SetBit(levelId - 1, 1);
+//    scP->SetLevelTest(levelBitMask, false);
+//    scP->Scan();
+//
+//    bvector<bvector<DPoint3d>> pts;
+//    bvector<bvector<DPoint3d>> lines;
+//    EditElementHandleP curr = agenda.GetFirstP();
+//    EditElementHandleP end = curr + agenda.GetCount();
+//
+//    Json::Value block;
+//    for (; curr < end; curr++) // For each valid element we do draping
+//        {
+//        ElementHandle elemHandle = *curr;
+//        bvector<DPoint3d> origPoints;
+//        MSElementCP element = elemHandle.GetElementCP();
+//        switch (elemHandle.GetElementType())
+//            {
+//            case LINE_ELM:
+//                {
+//                origPoints.push_back(element->line_3d.start);
+//                origPoints.push_back(element->line_3d.end);
+//                break;
+//                }
+//            case LINE_STRING_ELM:
+//                {
+//                origPoints.resize(element->point_string_3d.numpts);
+//                memcpy(&origPoints[0], &element->point_string_3d.point[0], element->point_string_3d.numpts * sizeof(DPoint3d));
+//                break;
+//                }
+//            default:
+//                break;
+//            }
+//
+//        Transform refToActiveTrf;
+//        GetFromModelRefToActiveTransform(refToActiveTrf, elemHandle.GetModelRef());
+//        bsiTransform_multiplyDPoint3dArrayInPlace(&refToActiveTrf, &origPoints[0], (int)origPoints.size());
+//        Transform uorToMeter;
+//        Transform meterToUor;
+//        GetTransformForPoints(uorToMeter, meterToUor);
+//        
+//        DPoint3d ptGO;
+//        ModelInfoCP modelInfo = ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetActiveModelRef()->GetModelInfoCP();
+//        if (SUCCESS != modelInfo->GetGlobalOrigin(modelInfo, &ptGO))
+//            ptGO.x = ptGO.y = ptGO.z = 0.;
+//
+//        Transform transTrf;
+//        transTrf.InitIdentity();
+//        transTrf.SetTranslation(ptGO);
+//        transTrf.InverseOf(transTrf);
+//
+//        bsiTransform_multiplyDPoint3dArrayInPlace(&transTrf, (DPoint3dP)&origPoints[0], (int)origPoints.size());
+//
+//        // Get the coordinates of the line in meter
+//        bsiTransform_multiplyDPoint3dArrayInPlace(&uorToMeter, (DPoint3dP)&origPoints[0], (int)origPoints.size());
+//        lines.push_back(origPoints);
+//
+//        //auto& children = block.append("line");
+//        //auto& children = block["lines"];
+//        Json::Value children;
+//        size_t nbChildren = origPoints.size();
+//        for (size_t childInd = 0; childInd < nbChildren; childInd++)
+//            {
+//            //Json::Value& child = childInd >= nbChildren ? children.append(Json::Value()) : children["point"];
+//            //Json::Value& child = children.append("point");
+//            //child["x"] = origPoints[childInd].x;
+//            //child["y"] = origPoints[childInd].y;
+//            //child["z"] = origPoints[childInd].z;
+//            Json::Value child;
+//            Json::Value points;
+//            points["x"] = origPoints[childInd].x;
+//            points["y"] = origPoints[childInd].y;
+//            points["z"] = origPoints[childInd].z;
+//            /*points["x].push_back(origPoints[childInd].x);
+//            points.push_back(origPoints[childInd].y);
+//            points.push_back(origPoints[childInd].z);*/
+//            child["point"] = points;
+//            children.append(child);
+//            }
+//        block["lines"].append(children);
+//        }
+//
+//    uint64_t buffer_size;
+//    auto jsonWriter = [&buffer_size](BeFile& file, Json::Value& object)
+//        {
+//        Json::StyledWriter writer;
+//        auto buffer = writer.write(object);
+//        buffer_size = buffer.size();
+//        file.Write(NULL, buffer.c_str(), buffer_size);
+//        };
+//    BeFile file;
+//    if (BeFileStatus::Success == file.Open(outputname.c_str(), BeFileAccess::Write, BeFileSharing::None))
+//        jsonWriter(file, block);
+//    else if (BeFileStatus::Success == file.Create(outputname.c_str()))
+//        jsonWriter(file, block);
+//    else
+//        HASSERT(!"Problem creating master header file");
+//    file.Close();
+//    }
+
+void AddTexturesToMesh(BeXmlNodeP pTestNode, FILE* pResultFile)
+    {
+    WString scmFileName, cloudOutDirPath, result;
+    // Parses the test(s) definition:
+    if (pTestNode->GetAttributeStringValue(scmFileName, "scmFileName") != BEXML_Success)
+        {
+        printf("ERROR : scmFileName attribute not found\r\n");
+        return;
+        }
+
+    double t = clock();
+
+    // copy file helper
+    auto copy_file = [](const WString& source, const WString& dest)
+        {
+        _wremove(dest.c_str());
+        ifstream ss(source.c_str(), ios::binary);
+        ofstream ds(dest.c_str(), ios::binary);
+        istreambuf_iterator<char> begin_source(ss);
+        istreambuf_iterator<char> end_source;
+        ostreambuf_iterator<char> begin_dest(ds);
+        copy(begin_source, end_source, begin_dest);
+        ss.close();
+        ds.close();
+        };
+
+    // setup data for adding textures (cleanup, save original, etc)
+    //auto position = scmFileName.find_last_of(L".stm");
+    //auto filenameWithoutExtension = scmFileName.substr(0, position - 3);
+    //WString texturedFileName = filenameWithoutExtension + L"_textured.stm";
+
+    //copy_file(scmFileName, texturedFileName);
+
+    // Check existence of scm file
+    StatusInt status;
+    IScalableMeshPtr scmFile = IScalableMesh::GetFor(scmFileName.c_str(), false, false, status);
+
+    if (scmFile != 0 && status == SUCCESS)
+        {
+        BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreatorPtr sourceCreator(BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreator::GetFor(scmFile, status));
+
+        if (sourceCreator != 0 && status == SUCCESS)
+            {
+            if (ParseSourceSubNodes(sourceCreator->EditSources(), pTestNode) == true)
+                {
+                sourceCreator->ImportRastersTo(scmFile);
+
+                result = L"SUCCESS";
+                }
+            else {
+                result = L"FAILURE -> could not parse sources from xml file";
+                }
+            }
+        else
+            {
+            result = L"FAILURE -> could not get scalable mesh sources";
+            }
+        }
+    else
+        {
+        result = L"FAILURE -> could not open scm file";
+        }
+    t = clock() - t;
+
+    fwprintf(pResultFile, L"%s,%s,%0.5f\n",
+             scmFileName.c_str(),
+             result.c_str(),
+             (double)t / CLOCKS_PER_SEC
+             );
+
+    fflush(pResultFile);
+    }
 void PerformDrapeLineTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     {
     WString stmFileName, linesFileName, name;
@@ -1260,6 +1469,523 @@ void PerformDrapeLineTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     stmFile = nullptr;
     dtmP = nullptr;
     }
+
+//int CollectFirstMeshElement
+//    (
+//        ElementRefP      elemRef,
+//        void            *callbackArg,
+//        ScanCriteria    *scP
+//        )
+//    {
+//    DgnModelRefP modelP(scP->GetModelRef());
+//    ElementAgenda* agendaP = reinterpret_cast<ElementAgenda*>(callbackArg);
+//    //if (MESH_HEADER_ELM == elementRef_getElemType(elemRef))
+//    if (MESH_HEADER_ELM == elemRef->GetElementType())
+//        agendaP->Insert(elemRef, modelP);
+//
+//    return SUCCESS;
+//    }
+
+//void ImportVolume(BeXmlNodeP pTestNode, FILE* pResultFile)
+//    {
+//    //assert(false && "Not ported yet! Perhaps we could use your help?");
+//    WString stmFileName, importFileName;
+//    // Parses the test(s) definition:
+//    if (pTestNode->GetAttributeStringValue(stmFileName, "stmFileName") != BEXML_Success)
+//        {
+//        printf("ERROR : stmFileName attribute not found\r\n");
+//        return;
+//        }
+//    StatusInt status;
+//    IScalableMeshPtr stmFile = IScalableMesh::GetFor(stmFileName.c_str(), true, true, status);
+//
+//    int64_t pointCount = 0;
+//    WString result;
+//
+//    if (stmFile != 0)
+//        {
+//        pointCount = stmFile->GetPointCount();
+//        result = L"SUCCESS";
+//        }
+//    else
+//        {
+//        result = L"FAILURE";
+//        }
+//    if (pTestNode->GetAttributeStringValue(importFileName, "importFileName") != BEXML_Success)
+//        {
+//        printf("ERROR : importFileName attribute not found\r\n");
+//        return;
+//        }
+//
+//    BeFile file;
+//    if (BeFileStatus::Success != OPEN_FILE(file, importFileName.c_str(), BeFileAccess::Read))
+//        {
+//        //printf("ERROR : can't open file : %s", linesFileName);
+//        return;
+//        }
+//    char* meshFileBuffer = nullptr;
+//    size_t fileSize;
+//    file.GetSize(fileSize);
+//    meshFileBuffer = new char[fileSize];
+//    uint32_t bytes_read;
+//    file.Read(meshFileBuffer, &bytes_read, (uint32_t)fileSize);
+//    assert(bytes_read == fileSize);
+//    file.Close();
+//
+//    Json::Reader reader;
+//    Json::Value mesh;
+//    reader.parse(meshFileBuffer, meshFileBuffer + bytes_read, mesh);
+//
+//    DRange3d elemRange;
+//    elemRange.high.x = mesh["elemRange"]["high.x"].asDouble();
+//    elemRange.high.y = mesh["elemRange"]["high.y"].asDouble();
+//    elemRange.high.z = mesh["elemRange"]["high.z"].asDouble();
+//    elemRange.low.x = mesh["elemRange"]["low.x"].asDouble();
+//    elemRange.low.y = mesh["elemRange"]["low.y"].asDouble();
+//    elemRange.low.z = mesh["elemRange"]["low.z"].asDouble();
+//
+//    size_t pointSize = mesh["mesh"]["pointCount"].asInt();
+//    DPoint3dP points = new DPoint3d[pointSize];
+//    int i = 0;
+//    for (const auto& jsonObject : mesh["mesh"]["Points"])
+//        {
+//        DPoint3d point;
+//        point.x = jsonObject["Point"][0].asDouble();
+//        point.y = jsonObject["Point"][1].asDouble();
+//        point.z = jsonObject["Point"][2].asDouble();
+//        points[i++] = point;
+//        }
+//
+//    size_t pointIndexSize = mesh["mesh"]["pointIndexCount"].asInt();
+//    int32_t* pointsIndex = new int32_t[pointIndexSize];
+//    for (int i = 0; i < pointIndexSize; i++)
+//        {
+//        int32_t id = mesh["mesh"]["PointsIndex"][i].asInt();
+//        pointsIndex[i] = id;
+//        }
+//
+//    PolyfaceQuery* poly = new PolyfaceQueryCarrier(3, false/*twoSided*/, pointIndexSize, pointSize, points, pointsIndex);
+//    PolyfaceHeaderPtr meshData;
+//    IFacetOptionsPtr options = IFacetOptions::Create();
+//    options->SetMaxPerFace(3);
+//    IPolyfaceConstructionPtr builder = IPolyfaceConstruction::New(*options);
+//    builder->AddPolyface(*poly);
+//    meshData = builder->GetClientMeshPtr();
+//
+//    double cut = 0.0, fill = 0.0, volume = 0.0;
+//    double cutValidate = 0.0, fillValidate = 0.0, volumeValidate = 0.0;
+//    double cutError = 0.0, fillError = 0.0, volumeError = 0.0, avgError = 0.0;
+//    double secs = 0.0;
+//    double   cutConnected, fillConnected, volConnected, stitchCut, stitchFill, stitchVol;
+//    cutConnected = fillConnected = volConnected = stitchCut = stitchFill = stitchVol = 0.0;
+//
+//    {
+//    IScalableMeshATP::StoreInt(L"nTiles", 0);
+//    IScalableMeshATP::StoreInt(L"nNoCutFillTiles", 0);
+//    IScalableMeshATP::StoreInt(L"nSectionsTotal", 0);
+//    IScalableMeshATP::StoreInt(L"nFailedComputePrincipalMoments", 0);
+//    bvector<PolyfaceHeaderPtr> volumeMesh;
+//    status = ComputeVolumeForAgenda(/*elemRange,*/ meshData, stmFile, cut, fill, volume/*, volumeMesh*/);
+//
+//
+//
+//    /*    for (int i = 0; i < volumeMesh.size(); i++)
+//    {
+//    //Transform uorToMeter, meterToUor;
+//    //GetTransformForPoints(uorToMeter, meterToUor);
+//    //Transform refToActiveTrf;
+//    //GetFromModelRefToActiveTransform(refToActiveTrf, ((EditElementHandleP)agenda.GetFirstP())->GetModelRef());
+//    //volumeMesh[i]->Transform(meterToUor);
+//    //volumeMesh[i]->Transform(refToActiveTrf);
+//    //MSElementDescr* desc = NULL;
+//    //mdlMesh_newPolyfaceFromEmbeddedArraysExt(&desc, NULL, &volumeMesh[i]->PointIndex(), 0, &volumeMesh[i]->Point(), (0 == volumeMesh[i]->NormalIndex().size() ? NULL : &volumeMesh[i]->NormalIndex()), (0 == volumeMesh[i]->Normal().size() ? NULL : (EmbeddedDPoint3dArray*) &volumeMesh[i]->Normal()), (0 == volumeMesh[i]->ParamIndex().size() ? NULL : &volumeMesh[i]->ParamIndex()), (0 == volumeMesh[i]->Param().size() ? NULL : (EmbeddedDPoint2dArray*)&volumeMesh[i]->Param()), NULL, NULL, NULL, NULL, false, true);
+//    //mdlMesh_newPolyfaceFromEmbeddedArraysExt(&desc, NULL, &volumeMesh[i]->PointIndex(), 0, &volumeMesh[i]->Point(), (0 == volumeMesh[i]->NormalIndex().size() ? NULL : &volumeMesh[i]->NormalIndex()), (0 == volumeMesh[i]->Normal().size() ? NULL : (EmbeddedDPoint3dArray*) &volumeMesh[i]->Normal()), (0 == volumeMesh[i]->ParamIndex().size() ? NULL : &volumeMesh[i]->ParamIndex()), (0 == volumeMesh[i]->Param().size() ? NULL : (EmbeddedDPoint2dArray*)&volumeMesh[i]->Param()), NULL, NULL, NULL, NULL, false, true);
+//    //                mdlElmdscr_add(desc);
+//    //EditElementHandle handle(desc, true, true, mdlModelRef_getActive());
+//    //handle.AddToModel();
+//    /*mdlElmdscr_add(desc);
+//    EditElementHandle handle(pNewElmDsc, true, true, model); 
+//    handle.AddToModel();*/
+//    //        }
+//
+//    if (status != SUCCESS)
+//        {
+//        result = L"FAILED TO COMPUTE";
+//        }
+//    else
+//        {
+//        clock_t timer = clock();
+//        IScalableMeshMeshQueryPtr meshQueryInterface = ((IScalableMesh*)stmFile.get())->GetMeshQueryInterface(MESH_QUERY_FULL_RESOLUTION);
+//        bvector<IScalableMeshNodePtr> returnedNodes;
+//        IScalableMeshMeshQueryParamsPtr params = IScalableMeshMeshQueryParams::CreateParams();
+//        DRange3d fileRange;
+//        stmFile->GetRange(fileRange);
+//        //Transform uorToMeter, meterToUor;
+//
+//        DPoint3d box[4] = {
+//            DPoint3d::From(elemRange.low.x, elemRange.low.y, fileRange.low.z),
+//            DPoint3d::From(elemRange.low.x, elemRange.high.y, fileRange.low.z),
+//            DPoint3d::From(elemRange.high.x, elemRange.low.y, fileRange.high.z),
+//            DPoint3d::From(elemRange.high.x, elemRange.high.y, fileRange.high.z)
+//            };
+//        meshQueryInterface->Query(returnedNodes, box, 4, params);
+//        // DPoint3d triangle[4];
+//        // int status = SUCCESS;
+//        PolyfaceHeaderPtr terrainMesh;
+//        IFacetOptionsPtr  options = IFacetOptions::Create();
+//        options->SetMaxPerFace(3);
+//        IPolyfaceConstructionPtr  builder = IPolyfaceConstruction::New(*options);
+//        bvector<DPoint3d> allPts;
+//        for (auto& node : returnedNodes)
+//            {
+//            bvector<bool> clips;
+//            IScalableMeshMeshPtr scalableMesh = node->GetMesh(false, clips);
+//            const PolyfaceQuery* polyface = scalableMesh->GetPolyfaceQuery();
+//            builder->AddPolyface(*polyface);
+//            allPts.insert(allPts.end(), polyface->GetPointCP(), polyface->GetPointCP() + polyface->GetPointCount());
+//            }
+//        //IMeshQuery*  meshQuery = dynamic_cast <IMeshQuery*> (&((EditElementHandleP)agenda.GetFirstP())->GetHandler());
+//        //PolyfaceHeaderPtr mesh;
+//        //meshQuery->GetMeshData(*agenda.GetFirstP(), mesh);
+//        //mesh->Transform(uorToMeter);
+//        //mesh->Transform(refToActiveTrf);
+//        bvector<PolyfaceHeaderPtr> cutSections, fillSections;
+//        terrainMesh = builder->GetClientMeshPtr();
+//        PolyfaceQuery::ComputeCutAndFill(*terrainMesh, *meshData, cutSections, fillSections);
+//        for (auto& polyfaceP : cutSections)
+//            {
+//            double sectionCut = 0.0;
+//            DPoint3d centroid;
+//            RotMatrix axes;
+//            DVec3d moments;
+//            polyfaceP->ComputePrincipalMomentsAllowMissingSideFacets(sectionCut, centroid, axes, moments, true);
+//            cutValidate += fabs(sectionCut);
+//            }
+//        for (auto& polyfaceP : fillSections)
+//            {
+//            double sectionFill = 0.0;
+//            DPoint3d centroid;
+//            RotMatrix axes;
+//            DVec3d moments;
+//            polyfaceP->ComputePrincipalMomentsAllowMissingSideFacets(sectionFill, centroid, axes, moments, true);
+//            fillValidate += fabs(sectionFill);
+//            }
+//
+//        volumeValidate = cutValidate - fillValidate;
+//        cutError = cutValidate == 0 ? 0 : 100.0*(cut - cutValidate) / cutValidate;
+//        fillError = fillValidate == 0 ? 0 : 100.0*(fill - fillValidate) / fillValidate;
+//        volumeError = volumeValidate == 0 ? 0 : 100.0*(volume - volumeValidate) / volumeValidate;
+//        avgError = (fabs(cutError) + fabs(fillError) + fabs(volumeError)) / 3.0;
+//        timer = clock() - timer;
+//        secs = ((float)timer) / CLOCKS_PER_SEC;
+//        terrainMesh->ClearAllVectors();
+//        BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr dtmPtr;
+//        int status = CreateBcDTM(dtmPtr);
+//        BC_DTM_OBJ* dtmObjP(dtmPtr->GetBcDTM()->GetTinHandle());
+//        status = bcdtmObject_storeDtmFeatureInDtmObject(dtmObjP, DTMFeatureType::RandomSpots, dtmObjP->nullUserTag, 1, &dtmObjP->nullFeatureId, &allPts[0], (long)allPts.size());
+//        status = bcdtmObject_triangulateDtmObject(dtmObjP);
+//        builder = IPolyfaceConstruction::New(*options);
+//        BcDTMMeshPtr meshP = dtmPtr->GetBcDTM()->GetMesh((long)true, 0, NULL, 0);
+//        DPoint3d triangle[4];
+//        for (long i = 0; i < meshP->GetFaceCount(); ++i)
+//            {
+//            triangle[0] = meshP->GetFace(i)->GetCoordinates(0);
+//            triangle[1] = meshP->GetFace(i)->GetCoordinates(1);
+//            triangle[2] = meshP->GetFace(i)->GetCoordinates(2);
+//            builder->AddTriStrip(triangle, NULL, NULL, 3, true);
+//            }
+//        terrainMesh = builder->GetClientMeshPtr();
+//        cutSections.clear();
+//        fillSections.clear();
+//        PolyfaceQuery::ComputeCutAndFill(*terrainMesh, *meshData, cutSections, fillSections);
+//        for (auto& polyfaceP : cutSections)
+//            {
+//            double sectionCut = 0.0;
+//            DPoint3d centroid;
+//            RotMatrix axes;
+//            DVec3d moments;
+//            polyfaceP->ComputePrincipalMomentsAllowMissingSideFacets(sectionCut, centroid, axes, moments, true);
+//            cutConnected += fabs(sectionCut);
+//            }
+//        for (auto& polyfaceP : fillSections)
+//            {
+//            double sectionFill = 0.0;
+//            DPoint3d centroid;
+//            RotMatrix axes;
+//            DVec3d moments;
+//            polyfaceP->ComputePrincipalMomentsAllowMissingSideFacets(sectionFill, centroid, axes, moments, true);
+//            fillConnected += fabs(sectionFill);
+//            }
+//        volConnected = cutConnected - fillConnected;
+//        stitchCut = cutConnected == 0 ? 0 : 100.0*(cut - cutConnected) / cutConnected;
+//        stitchFill = fillConnected == 0 ? 0 : 100.0*(fill - fillConnected) / fillConnected;
+//        stitchVol = volConnected == 0 ? 0 : 100.0*(volume - volConnected) / volConnected;
+//        //meshQuery = nullptr;
+//        }
+//    }
+//
+//    //agenda.Clear();
+//    //model->DeleteDgnAttachment(newAttachment);
+//    //write out results
+//    double timeToCompute = 0.0;
+//    int64_t nOfTriangles = 0, nTiles = 0, nFailedTiles = 0, nSections = 0, nSectionErrors = 0;
+//    IScalableMeshATP::GetInt(L"nTrianglesInCorridor", nOfTriangles);
+//    IScalableMeshATP::GetDouble(L"volumeTime", timeToCompute);
+//    IScalableMeshATP::GetInt(L"nTiles", nTiles);
+//    IScalableMeshATP::GetInt(L"nNoCutFillTiles", nFailedTiles);
+//    IScalableMeshATP::GetInt(L"nSectionsTotal", nSections);
+//    IScalableMeshATP::GetInt(L"nFailedComputePrincipalMoments", nSectionErrors);
+//    fwprintf(pResultFile, L"%s,%s,%I64d,%I64d,%.5f,%.5f,%.5f,%I64d,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f\n",
+//             stmFileName.c_str(),
+//             result.c_str(),
+//             stmFile->GetPointCount(),
+//             nOfTriangles,
+//             cut,
+//             fill,
+//             volume,
+//             nTiles,
+//             cutValidate,
+//             fillValidate,
+//             volumeValidate,
+//             cutError,
+//             fillError,
+//             volumeError,
+//             timeToCompute,
+//             avgError,
+//             secs,
+//             cutConnected,
+//             fillConnected,
+//             volConnected,
+//             stitchCut,
+//             stitchFill,
+//             stitchVol);
+//    IScalableMeshATP::StoreDouble(L"volumeTime", 0.0);
+//    IScalableMeshATP::StoreInt(L"nTrianglesInCorridor", 0);
+//    fflush(pResultFile);
+//    }
+
+//void ExportVolume(BeXmlNodeP pTestNode, FILE* pResultFile)
+//    {
+//    WString corridorFileName, exportFileName;
+//    // Parse the test(s) definition:
+//    if (pTestNode->GetAttributeStringValue(corridorFileName, "corridorFileName") != BEXML_Success)
+//        {
+//        printf("ERROR: corridorFileName attribute not found\r\n");
+//        return;
+//        }
+//
+//    if (pTestNode->GetAttributeStringValue(exportFileName, "exportFileName") != BEXML_Success)
+//        {
+//        printf("ERROR : outputFileName attribute not found\r\n");
+//        return;
+//        }
+//    DgnFileStatus fileOpenStatus;
+//    DgnDocumentPtr meshDoc = DgnDocument::CreateFromFileName(fileOpenStatus, corridorFileName.c_str(), NULL, DEFDGNFILE_ID, DgnDocument::FetchMode::Read);
+//    DgnModelRefP model = ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetActiveModelRef();
+//    DgnAttachment* newAttachment;
+//    model->CreateDgnAttachment(newAttachment, *meshDoc->GetMonikerPtr(), L"");
+//
+//    ElementAgenda agenda;
+//
+//    LevelCache& levelCache = newAttachment->GetLevelCacheR();
+//
+//    LevelHandle level = levelCache.GetLevelByName(L"mesh", false);
+//    LevelId levelId = level.GetLevelId();
+//
+//    ScanCriteriaP scP = new ScanCriteria();
+//    BitMaskP  levelBitMask = BitMask::Create(false);
+//
+//    scP->SetModelRef(newAttachment);
+//    scP->SetReturnType(MSSCANCRIT_ITERATE_ELMREF, false, false);
+//    scP->SetElemRefCallback(CollectFirstMeshElement, &agenda);
+//    levelBitMask->SetBit(levelId - 1, 1);
+//    scP->SetLevelTest(levelBitMask, false);
+//    scP->Scan();
+//
+//    if (agenda.GetCount() == 0)
+//        {
+//        //result = L"MESH NOT FOUND";
+//        }
+//    else
+//        {
+//        //DRange3d range;
+//        //ScanRangeCP scanRangeP = elemHandle_checkIndexRange(*(EditElementHandleP)agenda.GetFirstP());
+//        //DataConvert::ScanRangeToDRange3d(range, *scanRangeP);
+//        //bvector<PolyfaceHeaderPtr> volumeMesh;
+//        
+//        EditElementHandleP meshElement = agenda.GetFirstP();
+//
+//        Handler&  elmHandler = meshElement->GetHandler();
+//        IMeshQuery*  meshQuery = dynamic_cast <IMeshQuery*> (&elmHandler);
+//        //clock_t timer = clock();
+//        DRange3d elemRange;
+//        ScanRangeCP scanRangeP = elemHandle_checkIndexRange(*(EditElementHandleP)agenda.GetFirstP());
+//        DataConvert::ScanRangeToDRange3d(elemRange, *scanRangeP);
+//
+//        Json::Value root;
+//        if (NULL != meshQuery)
+//            {
+//            PolyfaceHeaderPtr vec;
+//
+//            if (SUCCESS == meshQuery->GetMeshData(*meshElement, vec))
+//                {
+//
+//                //PolyfaceHeaderPtr meshData = PolyfaceHeader::CreateUnifiedIndexMesh(*vec);
+//                PolyfaceHeaderPtr meshData = PolyfaceHeader::CreateFixedBlockIndexed(3);
+//                meshData->CopyFrom(*vec);
+//                meshData->SetNumPerFace(3);
+//                meshData->Triangulate();
+//
+//                Transform uorToMeter, meterToUor;
+//                GetTransformForPoints(uorToMeter, meterToUor);
+//                meshData->Transform(uorToMeter);
+//                bsiTransform_multiplyDPoint3dArrayInPlace(&uorToMeter, &elemRange.low, 1);
+//                bsiTransform_multiplyDPoint3dArrayInPlace(&uorToMeter, &elemRange.high, 1);
+//                Transform refToActiveTrf;
+//                GetFromModelRefToActiveTransform(refToActiveTrf, meshElement->GetModelRef());
+//                meshData->Transform(refToActiveTrf);
+//                bsiTransform_multiplyDPoint3dArrayInPlace(&refToActiveTrf, &elemRange.low, 1);
+//                bsiTransform_multiplyDPoint3dArrayInPlace(&refToActiveTrf, &elemRange.high, 1);
+//                
+//                Json::Value jsonElemRange;
+//                jsonElemRange["low.x"] = elemRange.low.x;
+//                jsonElemRange["low.y"] = elemRange.low.y;
+//                jsonElemRange["low.z"] = elemRange.low.z;
+//                jsonElemRange["high.x"] = elemRange.high.x;
+//                jsonElemRange["high.y"] = elemRange.high.y;
+//                jsonElemRange["high.z"] = elemRange.high.z;
+//                root["elemRange"] = jsonElemRange;
+//
+//                Json::Value jsonMesh;
+//                Json::Value jsonPoints;
+//                Json::Value jsonFacesIndex;
+//                //Json::Value jsonPointsIndex;
+//                Json::Value jsonNormalIndex;
+//                Json::Value jsonNormal;
+//
+//                DPoint3dCP ptPoints = meshData->GetPointCP();
+//                for (int i = 0; i < meshData->GetPointCount(); i++)
+//                    {
+//                    Json::Value jsonPoint;
+//                    //jsonPoint["point"] = {ptPoints[i].x, ptPoints[i].y, ptPoints[i].z};
+//                    jsonPoint["Point"] = Json::arrayValue;
+//                    jsonPoint["Point"].append(ptPoints[i].x);
+//                    jsonPoint["Point"].append(ptPoints[i].y);
+//                    jsonPoint["Point"].append(ptPoints[i].z);
+//                    jsonPoints.append(jsonPoint);
+//                    }
+//
+//                const int32_t* ptIndexes = meshData->GetPointIndexCP();
+//                jsonMesh["PointsIndex"] = Json::arrayValue;
+//                for (int i = 0; i < meshData->GetPointIndexCount(); i++)
+//                    {
+//                    jsonMesh["PointsIndex"].append(ptIndexes[i]);
+//                    }
+//
+//                FacetFaceDataCP facetFacePtr = meshData->GetFaceDataCP();
+//                for (int i = 0; i < meshData->GetFaceCount(); i++)
+//                    {
+//                    //facetFacePtr[i].
+//                    jsonMesh["FaceData"].append(facetFacePtr[i].m_xyzRange.XLength());
+//                    }
+//
+//                const int32_t* faceIndexesPtr = meshData->GetFaceIndexCP();
+//                for (int i = 0; i < meshData->GetFaceIndexCount(); i++)
+//                    {
+//                    jsonMesh["FaceIndex"].append(faceIndexesPtr[i]);
+//                    }
+//
+//                const int32_t* normalIndexPtr = meshData->GetNormalIndexCP();
+//                for (int i = 0; i < meshData->GetNormalCount(); i++)
+//                    {
+//                    jsonMesh["NormalIndex"].append(normalIndexPtr[i]);
+//                    }
+//
+//                DVec3dCP normalPtr = meshData->GetNormalCP();
+//                for (int i = 0; i < meshData->GetNormalCount(); i++)
+//                    {
+//                    jsonMesh["Normal"].append(normalPtr[i].x);
+//                    }
+//                
+//                jsonMesh["numFace"] = meshData->GetNumFacet();
+//                jsonMesh["chainCount"] = meshData->GetEdgeChainCount();
+//                jsonMesh["faceCount"] = meshData->GetFaceCount();
+//                jsonMesh["faceIndexCount"] = meshData->GetFaceIndexCount();
+//                jsonMesh["normalCount"] = meshData->GetNormalCount();
+//                jsonMesh["pointCount"] = meshData->GetPointCount();
+//                jsonMesh["pointIndexCount"] = meshData->GetPointIndexCount();
+//                //jsonMesh["FacesIndex"] = jsonFacesIndex;
+//                jsonMesh["Points"] = jsonPoints;
+//                //jsonMesh["PointsIndex"] = jsonPointsIndex;
+//                //jsonMesh["NomalIndex"] = jsonNormalIndex;
+//                //jsonMesh["Normal"] = jsonNormal;
+//                jsonMesh["MeshStyle"] = meshData->GetMeshStyle();
+//                root["mesh"] = jsonMesh;
+//
+//                /*IScalableMeshATP::StoreInt(L"nTrianglesInCorridor", meshData->GetNumFacet());
+//                volume = ComputeVolumeCutAndFill(smPtr->GetDTMInterface(), cut, fill, *meshData, elemRange, volumeMeshVector);
+//                timer = clock() - timer;
+//                float secs;
+//                secs = ((float)timer) / CLOCKS_PER_SEC;
+//                IScalableMeshATP::StoreDouble(L"volumeTime", secs);*/
+//                uint64_t buffer_size;
+//                auto jsonWriter = [&buffer_size](BeFile& file, Json::Value& object)
+//                    {
+//                    Json::StyledWriter writer;
+//                    auto buffer = writer.write(object);
+//                    buffer_size = buffer.size();
+//                    file.Write(NULL, buffer.c_str(), buffer_size);
+//                    };
+//                BeFile file;
+//                if (BeFileStatus::Success == file.Open(exportFileName.c_str(), BeFileAccess::Write, BeFileSharing::None))
+//                    jsonWriter(file, root);
+//                else if (BeFileStatus::Success == file.Create(exportFileName.c_str()))
+//                    jsonWriter(file, root);
+//                else
+//                    HASSERT(!"Problem creating master header file");
+//                file.Close();
+//
+//
+//
+//                //return SUCCESS;
+//                }
+//            }
+//        //return ERROR;
+//
+//
+//
+//
+//        }
+//
+//
+//
+//    /*Json::Value children;
+//    size_t nbChildren = origPoints.size();
+//    for (size_t childInd = 0; childInd < nbChildren; childInd++)
+//        {
+//        //Json::Value& child = childInd >= nbChildren ? children.append(Json::Value()) : children["point"];
+//        //Json::Value& child = children.append("point");
+//        //child["x"] = origPoints[childInd].x;
+//        //child["y"] = origPoints[childInd].y;
+//        //child["z"] = origPoints[childInd].z;
+//        Json::Value child;
+//        Json::Value points;
+//        points["x"] = origPoints[childInd].x;
+//        points["y"] = origPoints[childInd].y;
+//        points["z"] = origPoints[childInd].z;
+//        /*points["x].push_back(origPoints[childInd].x);
+//        points.push_back(origPoints[childInd].y);
+//        points.push_back(origPoints[childInd].z);*/
+///*        child["point"] = points;
+//        children.append(child);
+//        }
+//    block["lines"].append(children);
+//    }*/
+//
+//
+//    }
+
+
 
 void PerformVolumeTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     {

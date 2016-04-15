@@ -637,7 +637,7 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<IndexType>&       
 
         
     HFCPtr<TileStoreType> pFinalTileStore;
-    HFCPtr<IHPMPermanentStore<MTGGraph, Byte, Byte>> pGraphTileStore;
+    HFCPtr<IScalableMeshDataStore<MTGGraph, Byte, Byte>> pGraphTileStore;
     bool isSingleFile = true;
 
     isSingleFile = m_smSQLitePtr->IsSingleFile();
@@ -648,7 +648,7 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<IndexType>&       
     HFCPtr<SMStreamingPointTaggedTileStore<int32_t, PointIndexExtentType>> pStreamingIndiceTileStore;
     HFCPtr<SMStreamingPointTaggedTileStore<DPoint2d, PointIndexExtentType>> pStreamingUVTileStore;
     HFCPtr<SMStreamingPointTaggedTileStore<int32_t, PointIndexExtentType>> pStreamingUVsIndicesTileStore;
-
+    HFCPtr<StreamingTextureTileStore> pStreamingTextureTileStore;
 
     HFCPtr<SMSQLiteIndiceTileStore<YProtPtExtentType >> pIndiceTileStore;
     HFCPtr<SMSQLiteUVTileStore<YProtPtExtentType >> pUVTileStore;
@@ -692,7 +692,7 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<IndexType>&       
             pStreamingIndiceTileStore = new SMStreamingPointTaggedTileStore< int32_t, PointIndexExtentType>(indice_store_path, WString(), (SCM_COMPRESSION_DEFLATE == m_compressionType));
             pStreamingUVTileStore = new SMStreamingPointTaggedTileStore< DPoint2d, PointIndexExtentType>(uv_store_path, WString(), (SCM_COMPRESSION_DEFLATE == m_compressionType));
             pStreamingUVsIndicesTileStore = new SMStreamingPointTaggedTileStore< int32_t, PointIndexExtentType>(uvIndice_store_path, WString(), (SCM_COMPRESSION_DEFLATE == m_compressionType));
-            auto pStreamingTextureTileStore = new StreamingTextureTileStore(texture_store_path.c_str(), 4);
+            pStreamingTextureTileStore = new StreamingTextureTileStore(texture_store_path.c_str());
             
             pDataIndex = new IndexType(ScalableMeshMemoryPools<PointType>::Get()->GetGenericPool(),
                                        ScalableMeshMemoryPools<PointType>::Get()->GetPointPool(),
@@ -705,7 +705,7 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<IndexType>&       
 
                                        ScalableMeshMemoryPools<PointType>::Get()->GetTexturePool(),
 
-                                       pStreamingTextureTileStore,
+                                       &*pStreamingTextureTileStore,
 
                                        ScalableMeshMemoryPools<PointType>::Get()->GetUVPool(),
                                        //pUVTileStore,
@@ -723,7 +723,7 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<IndexType>&       
            // WString clipFilePath = m_scmFileName;
             //clipFilePath.append(L"_clips");
             //IDTMFile::File::Ptr clipFilePtr = IDTMFile::File::Create(clipFilePath.c_str());
-           /* HFCPtr<IHPMPermanentStore<DifferenceSet, Byte, Byte>> store = new DiffSetTileStore(clipFilePath, 0, true);
+            /*HFCPtr<IScalableMeshDataStore<DifferenceSet, Byte, Byte>> store = new DiffSetTileStore(clipFilePath, 0, true);
             store->StoreMasterHeader(NULL, 0);
             pDataIndex->SetClipStore(store);
             auto pool = ScalableMeshMemoryPools<POINT>::Get()->GetDiffSetPool();
@@ -772,7 +772,7 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<IndexType>&       
             //WString clipFilePath = m_scmFileName;
             //clipFilePath.append(L"_clips");
             //IDTMFile::File::Ptr clipFilePtr = IDTMFile::File::Create(clipFilePath.c_str());
-            /*HFCPtr<IHPMPermanentStore<DifferenceSet, Byte, Byte>> store = new DiffSetTileStore(clipFilePath, 0, true);
+            /*HFCPtr<IScalableMeshDataStore<DifferenceSet, Byte, Byte>> store = new DiffSetTileStore(clipFilePath, 0, true);
             //store->StoreMasterHeader(NULL, 0);
             pDataIndex->SetClipStore(store);
             auto pool = ScalableMeshMemoryPools<POINT>::Get()->GetDiffSetPool();

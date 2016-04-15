@@ -117,6 +117,10 @@ public:
     bool GetAccessMode() { return m_database->IsReadonly(); }
     bool IsSingleFile();
 
+    //uint64_t GetLastInsertRowId() { return m_database->GetLastInsertRowId(); }
+    uint64_t GetLastNodeId();
+
+
     void GetPoints(int64_t nodeID, bvector<uint8_t>& pts, size_t& uncompressedSize);
     void GetIndices(int64_t nodeID, bvector<uint8_t>& indices, size_t& uncompressedSize);
     void GetUVs(int64_t nodeID, bvector<uint8_t>& uvs, size_t& uncompressedSize);

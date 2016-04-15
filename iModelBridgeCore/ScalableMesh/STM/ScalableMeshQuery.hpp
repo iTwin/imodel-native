@@ -1562,8 +1562,11 @@ template <class POINT> IScalableMeshTexturePtr ScalableMeshNode<POINT>::_GetText
         int nOfChannels;
         //dimension.x = 1;
         //dimension.y = 1;
-        memcpy_s(&dimension.x, sizeof(int), data, sizeof(int));
-        memcpy_s(&dimension.y, sizeof(int), (int*)data + 1, sizeof(int));
+        int w, h;
+        memcpy_s(&w, sizeof(int), data, sizeof(int));
+        memcpy_s(&h, sizeof(int), (int*)data + 1, sizeof(int));
+        dimension.x = w;
+        dimension.y = h;
         memcpy_s(&nOfChannels, sizeof(int), (int*)data + 2, sizeof(int));
         size = dimension.x * dimension.y * nOfChannels;
 
@@ -2147,15 +2150,17 @@ inline void ApplyClipDiffSetToMesh(FloatXYZ*& points, size_t& nbPoints,
                         //                        auto idTexture = GetTextureID(meshInd - 1);
 
                         IScalableMeshTexturePtr smTexturePtr(GetTexture(meshInd - 1));
+                        if (smTexturePtr != nullptr)
+                            {
+                            BentleyStatus status = displayCacheManagerPtr->_CreateCachedTexture(m_cachedDisplayTextures[meshInd],
+                                                                                                smTexturePtr->GetDimension().x,
+                                                                                                smTexturePtr->GetDimension().y,
+                                                                                                false,
+                                                                                                QV_RGB_FORMAT,
+                                                                                                smTexturePtr->GetData());
 
-                        BentleyStatus status = displayCacheManagerPtr->_CreateCachedTexture(m_cachedDisplayTextures[meshInd],
-                                                                                            smTexturePtr->GetDimension().x,
-                                                                                            smTexturePtr->GetDimension().y,
-                                                                                            false,
-                                                                                            QV_RGB_FORMAT,
-                                                                                            smTexturePtr->GetData());
-
-                        assert(status == SUCCESS);
+                            assert(status == SUCCESS);
+                            }
                         }
 
                     DPoint2d* uvPtr = 0;
