@@ -380,7 +380,7 @@ public:
             }
 
         //NEEDS_WORK_SM : m_invalidatedCachedNodes could potentially explode, need to work something out.
-        assert(m_invalidatedCachedNodes.size() / 5.0 < m_cachedNodes.size());
+        assert(m_invalidatedCachedNodes.size() < 5 || m_cachedNodes.size() < 5 || m_invalidatedCachedNodes.size() / 5.0 < m_cachedNodes.size());
 
         m_nodeListMutex.unlock();
         }

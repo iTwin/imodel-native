@@ -11,7 +11,7 @@
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 #define SM_TRACE_CLIPS_GETMESH 0
-const wchar_t* s_path = L"E:\\output\\scmesh\\2016-03-14\\";
+const wchar_t* s_path = L"E:\\output\\scmesh\\2016-4-11\\";
 
 void print_polygonarray(std::string& s, const char* tag, DPoint3d* polyArray, int polySize)
     {
@@ -1591,18 +1591,23 @@ bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyf
         fwrite(&m_nIndices, sizeof(size_t), 1, meshBeforeClip);
         fwrite(m_indexBuffer, sizeof(int32_t), m_nIndices, meshBeforeClip);
         fclose(meshBeforeClip);
-        WString namePoly = WString(s_path) + L"fpreclippolyreg_";
-        namePoly.append(to_wstring(s_nclip).c_str());
-        namePoly.append(L"_");
-        namePoly.append(to_wstring(m_range.low.x).c_str());
-        namePoly.append(L"_");
-        namePoly.append(to_wstring(m_range.low.y).c_str());
-        namePoly.append(L".p");
-        FILE* polyCliPFile = _wfopen(namePoly.c_str(), L"wb");
-        size_t polySize = polygons[0].size();
-        fwrite(&polySize, sizeof(size_t), 1, polyCliPFile);
-        fwrite(&polygons[0][0], sizeof(DPoint3d), polySize, polyCliPFile);
-        fclose(polyCliPFile);
+        for (size_t j = 0; j < polygons.size(); ++j)
+            {
+            WString namePoly = WString(s_path) + L"fpreclippolyreg_";
+            namePoly.append(to_wstring(s_nclip).c_str());
+            namePoly.append(L"_");
+            namePoly.append(to_wstring(j).c_str());
+            namePoly.append(L"_");
+            namePoly.append(to_wstring(m_range.low.x).c_str());
+            namePoly.append(L"_");
+            namePoly.append(to_wstring(m_range.low.y).c_str());
+            namePoly.append(L".p");
+            FILE* polyCliPFile = _wfopen(namePoly.c_str(), L"wb");
+            size_t polySize = polygons[j].size();
+            fwrite(&polySize, sizeof(size_t), 1, polyCliPFile);
+            fwrite(&polygons[j][0], sizeof(DPoint3d), polySize, polyCliPFile);
+            fclose(polyCliPFile);
+            }
         }
     DTMUserTag    userTag = 0;
     DTMFeatureId* textureRegionIdsP = 0;
