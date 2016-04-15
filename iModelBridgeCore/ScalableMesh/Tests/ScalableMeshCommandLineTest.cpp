@@ -1,13 +1,22 @@
 #include <stdint.h>
 typedef uint8_t byte;
 using namespace std;
+
+class SMNodeGroup;
+class SMNodeGroupMasterHeader;
+
 #include <Bentley\Bentley.h>
 #include <ImagePP/h/ImageppAPI.h>
 #include <TerrainModel/Core/bcdtmClass.h>
-
 #include <ScalableMesh\IScalableMesh.h>
 #include <ScalableMesh\IScalableMeshNodeCreator.h>
 #include <ScalableMesh\ScalableMeshLib.h>
+#undef static_assert
+USING_NAMESPACE_BENTLEY_TERRAINMODEL
+#include <ImagePP\all\h\HCDPacket.h>
+#include <ImagePP\all\h\HCDCodecZlib.h>
+#include "..\STM\ScalableMeshQuery.h"
+#undef static_assert
 #include <iostream>
 #include <TerrainModel/Core/DTMIterators.h>
 #include "..\STM\LogUtils.h"
@@ -332,6 +341,39 @@ void RunPrecisionTest(WString& stmFileName)
 
     }
 
+void RunWriteTileTest(WString& stmFileName, const wchar_t* tileID)
+    {
+    LOG_SET_PATH_W("E:\\output\\scmesh\\2016-04-15\\")
+    StatusInt status;
+    ScalableMesh::IScalableMeshPtr meshP = ScalableMesh::IScalableMesh::GetFor(stmFileName.c_str(), true, true, status);
+    wchar_t *end;
+    int nodeID = wcstol(tileID, &end, 10);
+    ScalableMesh::IScalableMeshMeshQueryPtr meshQueryInterface = meshP->GetMeshQueryInterface(ScalableMesh::MESH_QUERY_FULL_RESOLUTION);
+    size_t nbResolutions = meshP->GetNbResolutions();
+    for (size_t i = 0; i < nbResolutions; ++i)
+        {
+        bvector<ScalableMesh::IScalableMeshNodePtr> returnedNodes;
+        ScalableMesh::IScalableMeshMeshQueryParamsPtr params = ScalableMesh::IScalableMeshMeshQueryParams::CreateParams();
+        params->SetLevel(i);
+        meshQueryInterface->Query(returnedNodes, nullptr, 0, params);
+
+        for (auto& node : returnedNodes)
+            {
+            if (node->GetNodeId() == nodeID)
+                {
+                ScalableMesh::IScalableMeshMeshFlagsPtr flags = ScalableMesh::IScalableMeshMeshFlags::Create();
+                bvector<bool> clips;
+                auto meshPtr = node->GetMesh(flags, clips);
+                WString name = LOG_PATH_STR_W + L"mesh_";
+                name.append(std::to_wstring(nodeID).c_str());
+                    name.append(L".m");
+                    ScalableMesh::ScalableMeshMesh * meshP = dynamic_cast<ScalableMesh::ScalableMeshMesh*>(meshPtr.get());
+                LOG_MESH_FROM_FILENAME_AND_BUFFERS_W(name, meshP->GetNbPoints(), meshP->GetNbFaceIndexes(), meshP->GetPoints(), (int32_t*)meshP->GetFaceIndexes())
+                    break;
+                }
+            }
+        }
+    }
 
 void RunDTMTriangulateTest()
     {
@@ -536,7 +578,9 @@ struct  SMHost : ScalableMesh::ScalableMeshLib::Host
 #endif
 
     //RunDTMClipTest();
-    RunDTMTriangulateTest();
+    //RunDTMTriangulateTest();
+    WString stmFileName(argv[1]);
+    RunWriteTileTest(stmFileName, argv[2]);
     std::cout << "THE END" << std::endl;
     return 0;
 }

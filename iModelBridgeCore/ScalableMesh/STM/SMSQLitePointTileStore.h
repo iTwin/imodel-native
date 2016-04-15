@@ -137,6 +137,8 @@ public:
     if (header == nullptr) return 0;
     if (header->m_ptsIndiceID.size() > 0)header->m_ptsIndiceID[0] = blockID;
     SQLiteNodeHeader nodeHeader = *header;
+    if (header->m_SubNodeNoSplitID.IsValid() && !header->m_apSubNodeID[0].IsValid())
+        nodeHeader.m_apSubNodeID[0] = nodeHeader.m_SubNodeNoSplitID;
     nodeHeader.m_nodeID = blockID.m_integerID;
     nodeHeader.m_graphID = nodeHeader.m_nodeID;
     m_smSQLiteFile->SetNodeHeader(nodeHeader);
@@ -153,7 +155,11 @@ public:
     *header = nodeHeader;
     header->m_IsLeaf = header->m_apSubNodeID.size() == 0 || (!header->m_apSubNodeID[0].IsValid());
     header->m_IsBranched = !header->m_IsLeaf && (header->m_apSubNodeID.size() > 1 && header->m_apSubNodeID[1].IsValid());
-    if (!header->m_IsLeaf && !header->m_IsBranched) header->m_SubNodeNoSplitID = header->m_apSubNodeID[0];
+    if (!header->m_IsLeaf && !header->m_IsBranched)
+        {
+        header->m_SubNodeNoSplitID = header->m_apSubNodeID[0];
+        header->m_apSubNodeID[0] = HPMBlockID();
+        }
     //if (header->m_ptsIndiceID.size() > 0)header->m_ptsIndiceID[0] = blockID;
     if (header->m_areTextured)
         {
