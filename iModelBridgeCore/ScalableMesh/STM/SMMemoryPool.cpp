@@ -137,7 +137,7 @@ SMMemoryPoolItemId SMMemoryPool::AddItem(SMMemoryPoolItemBasePtr& poolItem)
         needToFlush = true;
         }
 
-    clock_t currentTime = clock(); 
+    //clock_t currentTime = clock(); 
 
     for (; itemInd < (uint64_t)m_memPoolItems.size(); itemInd++)
         {
@@ -150,10 +150,11 @@ SMMemoryPoolItemId SMMemoryPool::AddItem(SMMemoryPoolItemBasePtr& poolItem)
                 }
             }
 
+            /*
         if ((needToFlush && (currentTime - m_lastAccessTime[itemInd] > s_timeDiff)))                
             {
             break;
-            }                
+            } */               
 
         if (oldestTime > m_lastAccessTime[itemInd])
             {

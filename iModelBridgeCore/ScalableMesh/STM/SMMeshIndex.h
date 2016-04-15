@@ -392,7 +392,9 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         
     SMMemoryPoolPtr GetMemoryPool() const
         {
-        return dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetMemoryPool();
+        return SMMemoryPool::GetInstance();
+        //NEEDS_WORK_SM : No one should have a pointer to the memory pool.
+        //return dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetMemoryPool();
         }
 
     HFCPtr<SMPointTileStore<int32_t, EXTENT>> GetPtsIndiceStore() const
