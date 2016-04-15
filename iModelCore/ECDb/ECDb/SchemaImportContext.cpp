@@ -84,43 +84,43 @@ void SchemaImportContext::CacheClassMapInfo(ClassMap const& classMap, std::uniqu
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECSchemaCompareContext::ReloadECSchemaIfRequired(ECDbSchemaManager const& schemaManager)
     {
-    if (IsEmpty() || !RequireECSchemaUpgrade())
+    if (HasNoSchemasToImport() || !RequiresUpdate())
         return SUCCESS;
 
     //save names
-    std::vector<Utf8String> existing, imported;
-    for (auto schemaP : m_existingSchemaList)
-        existing.push_back(schemaP->GetName());
+    std::vector<Utf8String> existingSchemaNames, importingSchemaNames;
+    for (ECSchemaCP schema : m_existingSchemas)
+        existingSchemaNames.push_back(schema->GetName());
 
-    for (auto schemaP : m_importedSchemaList)
-        imported.push_back(schemaP->GetName());
+    for (ECSchemaCP schema : m_importingSchemas)
+        importingSchemaNames.push_back(schema->GetName());
 
-    m_existingSchemaList.clear();
-    m_importedSchemaList.clear();
+    m_existingSchemas.clear();
+    m_importingSchemas.clear();
     schemaManager.GetECDb().ClearECDbCache();
 
-    for (auto const& name : existing)
+    for (Utf8StringCR name : existingSchemaNames)
         {
-        auto schemaCP = schemaManager.GetECSchema(name.c_str());
-        if (schemaCP == nullptr)
+        ECSchemaCP schema = schemaManager.GetECSchema(name.c_str());
+        if (schema == nullptr)
             {
             BeAssert(false && "Failed to reload a schema");
             return ERROR;
             }
 
-        m_existingSchemaList.push_back(schemaCP);
+        m_existingSchemas.push_back(schema);
         }
 
-    for (auto const& name : imported)
+    for (Utf8StringCR name : importingSchemaNames)
         {
-        auto schemaCP = schemaManager.GetECSchema(name.c_str());
-        if (schemaCP == nullptr)
+        ECSchemaCP schema = schemaManager.GetECSchema(name.c_str());
+        if (schema == nullptr)
             {
             BeAssert(false && "Failed to reload a schema");
             return ERROR;
             }
 
-        m_importedSchemaList.push_back(schemaCP);
+        m_importingSchemas.push_back(schema);
         }
 
     return SUCCESS;
@@ -145,7 +145,7 @@ ECSchemaCP ECSchemaCompareContext::FindExistingSchema(Utf8CP schemaName) const
     if (AssertIfNotPrepared())
         return nullptr;
 
-    for (auto schema : m_existingSchemaList)
+    for (auto schema : m_existingSchemas)
         if (schema->GetName() == schemaName)
             return schema;
 
@@ -155,25 +155,10 @@ ECSchemaCP ECSchemaCompareContext::FindExistingSchema(Utf8CP schemaName) const
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaCP ECSchemaCompareContext::FindImportedSchema(Utf8CP schemaName) const
-    {
-    if (AssertIfNotPrepared())
-        return nullptr;
-
-    for (auto schema : m_importedSchemaList)
-        if (schema->GetName() == schemaName)
-            return schema;
-
-    return nullptr;
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        03/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ECSchemaCompareContext::RequireECSchemaUpgrade() const
+bool ECSchemaCompareContext::RequiresUpdate() const
     {
     AssertIfNotPrepared();
-    return !m_existingSchemaList.empty();
+    return !m_existingSchemas.empty();
     }
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        03/2016
@@ -186,8 +171,8 @@ BentleyStatus ECSchemaCompareContext::Prepare(ECDbSchemaManager const& schemaMan
         return ERROR;
         }
 
-    m_existingSchemaList.clear();
-    m_importedSchemaList.clear();
+    m_existingSchemas.clear();
+    m_importingSchemas.clear();
 
     for (ECSchemaCP schema : dependencyOrderedPrimarySchemas)
         {
@@ -196,16 +181,16 @@ BentleyStatus ECSchemaCompareContext::Prepare(ECDbSchemaManager const& schemaMan
             if (existingSchema == schema)
                 continue;
 
-            m_existingSchemaList.push_back(existingSchema);
+            m_existingSchemas.push_back(existingSchema);
             }
 
-        m_importedSchemaList.push_back(schema);
+        m_importingSchemas.push_back(schema);
         }
 
-    if (!m_existingSchemaList.empty())
+    if (!m_existingSchemas.empty())
         {
         ECSchemaComparer comparer;
-        if (comparer.Compare(m_changes, m_existingSchemaList, m_importedSchemaList) != SUCCESS)
+        if (comparer.Compare(m_changes, m_existingSchemas, m_importingSchemas) != SUCCESS)
             return ERROR;
 
         std::set<Utf8CP, CompareIUtf8Ascii> schemaOfInterest;
@@ -217,21 +202,21 @@ BentleyStatus ECSchemaCompareContext::Prepare(ECDbSchemaManager const& schemaMan
                 }
             }
         //Remove any none interesting schemas
-        auto importItor = m_importedSchemaList.begin();
-        while (importItor != m_importedSchemaList.end())
+        auto importItor = m_importingSchemas.begin();
+        while (importItor != m_importingSchemas.end())
             {
             if (schemaOfInterest.find((*importItor)->GetName().c_str()) == schemaOfInterest.end())
-                importItor = m_importedSchemaList.erase(importItor);
+                importItor = m_importingSchemas.erase(importItor);
             else
                 ++importItor;
             }
 
         //Remove any none interesting schemas
-        auto existingItor = m_existingSchemaList.begin();
-        while (existingItor != m_existingSchemaList.end())
+        auto existingItor = m_existingSchemas.begin();
+        while (existingItor != m_existingSchemas.end())
             {
             if (schemaOfInterest.find((*existingItor)->GetName().c_str()) == schemaOfInterest.end())
-                existingItor = m_existingSchemaList.erase(existingItor);
+                existingItor = m_existingSchemas.erase(existingItor);
             else
                 ++existingItor;
             }

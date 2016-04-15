@@ -11,10 +11,7 @@ InstanceCRUDTests.* 	# No need to run with the build, used by testing after buil
 ECDbSchemaUpgradeTests.UpdatingSchemaShouldNotDeleteExistingRelationshipsOrIndexes
 ECDbSchemaUpgradeTests.UpdateMultipleSchemasInDb
 #TFS 390515
-ECDbSchemaUpgradeTests.AddNewCAOnSchema_AddNewClass
-ECDbSchemaUpgradeTests.MinimumSharedColumnsCount_AddProperty
-ECDbSchemaUpgradeTests.MinimumSharedColumnsCountForSubClasses_AddProperty
-ECDbSchemaUpgradeTests.MinimumSharedColumnsCountWithJoinedTable_AddProperty
+ECDbSchemaUpgradeTests.*
 
 #TFS268976 will address this (Affan)
 ECDbMappingTestFixture.MismatchDataTypesInExistingTable

@@ -81,7 +81,7 @@ MappingStatus ECDbMap::MapSchemas(SchemaImportContext& schemaImportContext)
         return MappingStatus::Error;
         }
 
-    if (schemaImportContext.GetECSchemaCompareContext().IsEmpty())
+    if (schemaImportContext.GetECSchemaCompareContext().HasNoSchemasToImport())
         return MappingStatus::Success;
 
     m_schemaImportContext = &schemaImportContext;
@@ -235,7 +235,7 @@ MappingStatus ECDbMap::DoMapSchemas()
     std::vector<ECClassCP> rootClassList;
     std::vector<ECRelationshipClassCP> rootRelationshipList;
 
-    for (ECSchemaCP schema : ctx.GetImportedSchemaSet())
+    for (ECSchemaCP schema : ctx.GetImportingSchemas())
         {
         if (schema->IsSupplementalSchema())
             continue; // Don't map any supplemental schemas
@@ -288,7 +288,7 @@ MappingStatus ECDbMap::DoMapSchemas()
     timer.Stop();
     if (LOG.isSeverityEnabled(NativeLogging::LOG_DEBUG))
         LOG.debugv("Mapped %" PRIu64 " ECSchemas containing %" PRIu64 " ECClasses and %" PRIu64 " ECRelationshipClasses to the database in %.4f seconds",
-        (uint64_t) ctx.GetImportedSchemaSet().size(), (uint64_t) rootClassList.size(), (uint64_t) rootRelationshipList.size(), timer.GetElapsedSeconds());
+        (uint64_t) ctx.GetImportingSchemas().size(), (uint64_t) rootClassList.size(), (uint64_t) rootRelationshipList.size(), timer.GetElapsedSeconds());
 
     return MappingStatus::Success;
     }

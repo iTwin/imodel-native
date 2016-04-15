@@ -164,8 +164,14 @@ BentleyStatus ECDbSchemaManager::ImportECSchemas(ECSchemaCacheR cache, ImportOpt
         return ERROR;
 
     ECSchemaCompareContext& compareContext = context.GetECSchemaCompareContext();
-    if (compareContext.IsEmpty())
+    if (compareContext.HasNoSchemasToImport())
         return SUCCESS;
+
+    if (compareContext.RequiresUpdate())
+        {
+        m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to import ECSchemas. At least one of the schemas to import already exist and need to be updated in the file. ECSchema Update is not yet available though. But it will soon be.");
+        return ERROR;
+        }
 
     //See if cache need to be cleared. If compareContext.RequireECSchemaUpgrade() == true will clear the cache and reload imported schema.
     if (compareContext.ReloadECSchemaIfRequired(*this) == ERROR)
@@ -181,7 +187,7 @@ BentleyStatus ECDbSchemaManager::ImportECSchemas(ECSchemaCacheR cache, ImportOpt
     }
 
     //only clear cache if its not been cleared before by ReloadECSchemaIfRequired()
-    if (!compareContext.RequireECSchemaUpgrade())
+    if (!compareContext.RequiresUpdate())
         m_ecdb.ClearECDbCache();
 
     timer.Stop();
@@ -288,7 +294,7 @@ BentleyStatus ECDbSchemaManager::BatchImportECSchemas(SchemaImportContext& conte
 
     ECDbSchemaWriter schemaWriter(m_ecdb);
     ECDbExpressionSymbolContext symbolsContext(m_ecdb);
-    for (ECSchemaCP schema : schemaPrepareContext.GetImportedSchemaSet())
+    for (ECSchemaCP schema : schemaPrepareContext.GetImportingSchemas())
         {
         if (SUCCESS != schemaWriter.Import(schemaPrepareContext, *schema))
             return ERROR;
