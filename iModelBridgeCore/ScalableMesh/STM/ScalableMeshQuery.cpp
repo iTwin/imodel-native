@@ -773,7 +773,7 @@ int ScalableMeshReprojectionQuery::ReprojectDTMObject(BC_DTM_OBJ*               
 /*==================================================================*/
 /*        3D MESH RELATED CODE - START                              */
 /*==================================================================*/
-IScalableMeshMeshPtr IScalableMeshMesh::Create(size_t nbPoints, DPoint3d* points, size_t nbFaceIndexes, int32_t* faceIndexes, size_t normalCount, DVec3d* pNormal, int32_t* pNormalIndex, size_t uvCount, DVec2d* pUv, int32_t* pUvIndex)
+IScalableMeshMeshPtr IScalableMeshMesh::Create(size_t nbPoints, DPoint3d* points, size_t nbFaceIndexes, const int32_t* faceIndexes, size_t normalCount, DVec3d* pNormal, int32_t* pNormalIndex, size_t uvCount, DVec2d* pUv, int32_t* pUvIndex)
     {
     return new ScalableMeshMesh(nbPoints, points, nbFaceIndexes, faceIndexes, normalCount, pNormal, pNormalIndex, uvCount, pUv, pUvIndex);
     }
@@ -1126,7 +1126,7 @@ bool ScalableMeshMesh::_FindTriangleForProjectedPoint(int* outTriangle, DPoint3d
     return false;
     }
 
-ScalableMeshMesh::ScalableMeshMesh(size_t nbPoints, DPoint3d* points, size_t nbFaceIndexes, int32_t* faceIndexes, size_t normalCount, DVec3d* pNormal, int32_t* pNormalIndex, size_t uvCount, DVec2d* pUv, int32_t* pUvIndex)
+ScalableMeshMesh::ScalableMeshMesh(size_t nbPoints, DPoint3d* points, size_t nbFaceIndexes, const int32_t* faceIndexes, size_t normalCount, DVec3d* pNormal, int32_t* pNormalIndex, size_t uvCount, DVec2d* pUv, int32_t* pUvIndex)
     {
     m_nbPoints = nbPoints;
     m_points   = new DPoint3d[nbPoints];
@@ -1212,7 +1212,7 @@ ScalableMeshMesh::~ScalableMeshMesh()
         }
     }
 
-int ScalableMeshMesh::AppendMesh(size_t nbPoints, DPoint3d* points, size_t nbFaceIndexes, int32_t* faceIndexes, size_t normalCount, DVec3d* pNormal, int32_t* pNormalIndex, size_t uvCount, DPoint2d* pUv, int32_t* pUvIndex)
+int ScalableMeshMesh::AppendMesh(size_t nbPoints, DPoint3d* points, size_t nbFaceIndexes, const int32_t* faceIndexes, size_t normalCount, DVec3d* pNormal, int32_t* pNormalIndex, size_t uvCount, DPoint2d* pUv, int32_t* pUvIndex)
     {
     //NEEDS_WORK_SM - Not Supported yet
     assert(normalCount == 0 && pNormal == 0 && pNormalIndex == 0);

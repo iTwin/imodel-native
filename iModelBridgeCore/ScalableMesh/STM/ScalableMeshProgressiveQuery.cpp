@@ -143,6 +143,7 @@ IScalableMeshProgressiveQueryEnginePtr IScalableMeshProgressiveQueryEngine::Crea
 static bool s_LoadQVDuringQuery = true;
 
 static bool s_keepSomeInvalidate = true; 
+static int s_maxNbLevelToKeep = 4;
 
 class CachedDisplayNodeManager
     {
@@ -157,7 +158,7 @@ private:
         CachedNode(IScalableMeshPtr& scalableMeshPtr, IScalableMeshCachedDisplayNodePtr& displayNodePtr)
             {
             m_scalableMeshPtr = scalableMeshPtr;
-            m_displayNodePtr = displayNodePtr;
+            m_displayNodePtr = displayNodePtr;            
             }
 
         /*void ReleaseQVisionCache()
@@ -171,7 +172,7 @@ private:
 
 
         IScalableMeshPtr                  m_scalableMeshPtr;
-        IScalableMeshCachedDisplayNodePtr m_displayNodePtr;       
+        IScalableMeshCachedDisplayNodePtr m_displayNodePtr;               
 
         //MaterialPtr m_material;
     };
@@ -183,7 +184,7 @@ private:
     
     CachedDisplayNodeManager()
         {
-        m_maxNbPoints = 3000000;
+        m_maxNbPoints = 1000000;
         m_totalNbPoints = 0;
         }
 
@@ -196,17 +197,31 @@ public:
         size_t addedNodePointCount = displayNodePtr->GetPointCount();
 
         m_nodeListMutex.lock();
+        auto iter = m_cachedNodes.begin();
 
         while (m_totalNbPoints + addedNodePointCount > m_maxNbPoints)
-        {   
-            assert(m_totalNbPoints >= m_cachedNodes.back().m_displayNodePtr->GetPointCount());
-            m_totalNbPoints -= m_cachedNodes.back().m_displayNodePtr->GetPointCount();
+            {                        
+            if (iter == m_cachedNodes.end())
+                {
+                assert(!"Bad, too many data kept for low levels for the set pool size");
+                break;
+                }
+
+            if (iter->m_displayNodePtr->GetLevel() <= s_maxNbLevelToKeep)
+                {
+                iter++;
+                continue;
+                }
+
+            assert(m_totalNbPoints >= iter->m_displayNodePtr->GetPointCount());
+            m_totalNbPoints -= iter->m_displayNodePtr->GetPointCount();
             //T_HOST.GetGraphicsAdmin()._DeleteQvElem (m_cachedNodes.back().m_qvElem);
             //        m_cachedNodes.back().ReleaseQVisionCache();
-            m_cachedNodes.pop_back();
-        }
+            
+            iter = m_cachedNodes.erase(iter);            
+            }
 
-        m_cachedNodes.push_front(CachedNode(scalableMeshPtr, displayNodePtr));        
+        m_cachedNodes.push_back(CachedNode(scalableMeshPtr, displayNodePtr));        
 
         if (s_keepSomeInvalidate)
             {
@@ -365,7 +380,7 @@ public:
             }
 
         //NEEDS_WORK_SM : m_invalidatedCachedNodes could potentially explode, need to work something out.
-        assert(m_invalidatedCachedNodes.size() / 5.0 < m_cachedNodes.size());
+        assert(m_invalidatedCachedNodes.size() < 5 || m_cachedNodes.size() < 5 || m_invalidatedCachedNodes.size() / 5.0 < m_cachedNodes.size());
 
         m_nodeListMutex.unlock();
         }
@@ -401,7 +416,7 @@ public:
                     if (updateLRU)
                         {
                         m_cachedNodes.erase(cachedNodeIter);
-                        m_cachedNodes.push_front(cachedNode);                    
+                        m_cachedNodes.push_back(cachedNode);                    
                         }
                     break;
                     }

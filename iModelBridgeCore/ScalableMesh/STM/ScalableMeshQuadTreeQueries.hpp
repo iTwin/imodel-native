@@ -723,7 +723,9 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeLevelMeshIndexQuery
 /*                    std::ofstream file_s;
                     file_s.open("C:\\dev\\ContextCapture\\_log.txt", ios_base::app);
                     file_s << "PushIndices etc... -- shit 7" << endl;*/
-                    status = mesh->AppendMesh(node->size(), &dataPoints[0], node->m_nodeHeader.m_nbFaceIndexes, meshNode->GetPtsIndicePtr(0), 0, 0, 0, 0, 0, 0);
+                    RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> ptIndices(meshNode->GetPtsIndicePtr());
+
+                    status = mesh->AppendMesh(node->size(), &dataPoints[0], node->m_nodeHeader.m_nbFaceIndexes, &(*ptIndices)[0], 0, 0, 0, 0, 0, 0);
                     }
 
                 assert(status == SUCCESS);
@@ -918,7 +920,10 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQu
  /*                   std::ofstream file_s;
                     file_s.open("C:\\dev\\ContextCapture\\_log.txt", ios_base::app);
                     file_s << "PushIndices etc... -- shit 8" << endl;*/
-                    status = mesh->AppendMesh(node->size(), &dataPoints[0], node->m_nodeHeader.m_nbFaceIndexes, meshNode->GetPtsIndicePtr(0), 0, 0, 0, 0, 0, 0);
+
+                    RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> ptIndices(meshNode->GetPtsIndicePtr());
+
+                    status = mesh->AppendMesh(node->size(), &dataPoints[0], node->m_nodeHeader.m_nbFaceIndexes, &(*ptIndices)[0], 0, 0, 0, 0, 0, 0);
                     }
 
                 assert(status == SUCCESS);
@@ -967,7 +972,10 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQu
  /*           std::ofstream file_s;
             file_s.open("C:\\dev\\ContextCapture\\_log.txt", ios_base::app);
             file_s << "PushIndices etc... -- shit 9" << endl;*/
-            int status = mesh->AppendMesh(node->size(), &dataPoints[0], node->m_nodeHeader.m_nbFaceIndexes, meshNode->GetPtsIndicePtr(0), 0, 0, 0, 0, 0, 0);
+
+            RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> ptIndices(meshNode->GetPtsIndicePtr());
+
+            int status = mesh->AppendMesh(node->size(), &dataPoints[0], node->m_nodeHeader.m_nbFaceIndexes, &(*ptIndices)[0], 0, 0, 0, 0, 0, 0);
 
             assert(status == SUCCESS);                        
             }

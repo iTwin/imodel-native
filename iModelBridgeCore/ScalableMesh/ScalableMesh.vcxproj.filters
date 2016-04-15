@@ -939,6 +939,9 @@
     <ClInclude Include="STM\Edits\Skirts.h">
       <Filter>Includes\STM\Edits</Filter>
     </ClInclude>
+    <ClInclude Include="STM\SMMemoryPool.h">
+      <Filter>Includes\STM</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Foundations\Errors.cpp">
@@ -1337,6 +1340,9 @@
     </ClCompile>
     <ClCompile Include="STM\SMStreamingTileStore.cpp">
       <Filter>Source\STM</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\SMMemoryPool.cpp">
+      <Filter>Includes\STM</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

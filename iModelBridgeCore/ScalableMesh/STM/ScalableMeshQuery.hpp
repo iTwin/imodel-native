@@ -1073,15 +1073,16 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMesh(IS
 /*        std::ofstream file_s;
         file_s.open("C:\\dev\\ContextCapture\\_log.txt", ios_base::app);
         file_s << "PushIndices etc... -- shit 10" << endl;*/
+
+        RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> ptIndices(m_meshNode->GetPtsIndicePtr());
         
-        int status = meshPtr->AppendMesh(m_node->size(), const_cast<DPoint3d*>(&m_node->operator[](0)), m_node->m_nodeHeader.m_nbFaceIndexes, m_meshNode->m_nodeHeader.m_areTextured ? m_meshNode->GetPtsIndicePtr(1) : m_meshNode->GetPtsIndicePtr(0), 0, 0, 0, 0, 0, 0);
+        int status = meshPtr->AppendMesh(m_node->size(), const_cast<DPoint3d*>(&m_node->operator[](0)), ptIndices->size(), &(*ptIndices)[0], 0, 0, 0, 0, 0, 0);
         assert(status == SUCCESS);
         meshP = meshPtr.get();
         m_meshNode->ReleaseGraph();
         }
     else
-        {
-        m_meshNode->PinPtsIndices();
+        {        
         if (flags->ShouldLoadTexture())
             {
             m_meshNode->PinUV();
@@ -1090,8 +1091,7 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMesh(IS
         //NEEDS_WORK_SM_PROGRESSIF : Node header loaded unexpectingly
         if (m_node->size() > 0)
             {
-            //auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_node);
-            //m_meshNode->PinPtsIndices(0);
+            //auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_node);            
             ScalableMeshMeshPtr meshPtr = ScalableMeshMesh::Create();
         
             vector<DPoint3d> dataPoints(m_node->size());
@@ -1108,20 +1108,19 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMesh(IS
                 {
                 m_meshNode->PinUV();
                 }
-            for (size_t i = 0; i < m_meshNode->GetNbPtsIndiceArrays(); ++i)
-                {
-//                    m_meshNode->PinPtsIndices(i);
- //                   m_meshNode->PinUVsIndices(i);
-        int32_t* faceIndexes = m_meshNode->GetPtsIndicePtr(i);
-        assert(faceIndexes != nullptr || m_meshNode->GetNbPtsIndices(i) == 0);
-        DPoint2d* pUv = flags->ShouldLoadTexture() ? m_meshNode->GetUVPtr() : nullptr;
-                if (m_meshNode->GetNbPtsIndices(i) == 0) continue;
-                status = meshPtr->AppendMesh(0, 0, m_meshNode->GetNbPtsIndices(i), faceIndexes, 0, 0, 0, i >= 1 && flags->ShouldLoadTexture() ? m_meshNode->GetNbUVs() : 0, 
+            for (size_t i = 0; i < m_meshNode->GetNbOfTextures() + 1; ++i)
+                { 
+                RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> faceIndexes(m_meshNode->GetPtsIndicePtr());
+
+                if (faceIndexes->size() == 0 || (i == 0 && m_meshNode->GetNbOfTextures() > 0)) continue;
+                                
+                DPoint2d* pUv = flags->ShouldLoadTexture() ? m_meshNode->GetUVPtr() : nullptr;
+                
+                status = meshPtr->AppendMesh(0, 0, faceIndexes->size(), &(*faceIndexes)[0], 0, 0, 0, i >= 1 && flags->ShouldLoadTexture() ? m_meshNode->GetNbUVs() : 0, 
                                              i >= 1&& flags->ShouldLoadTexture() ? pUv : 0, 
                                              i >= 1 && flags->ShouldLoadTexture() ? m_meshNode->GetUVsIndicesPtr(i - 1) : 0);
 
                 // release all
-//                m_meshNode->UnPinPtsIndices(i);
 //                m_meshNode->UnPinUVsIndices(i);
                 }
             if (flags->ShouldLoadTexture())
@@ -1135,7 +1134,7 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMesh(IS
                     m_meshNode->UnPinUVsIndices();
                     m_meshNode->UnPinUV();
                     }
-                m_meshNode->UnPinPtsIndices();
+
                 m_node->UnPin();
                 //if (isStreaming) s_streamingMutex.unlock();
                 return nullptr;
@@ -1188,10 +1187,8 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMesh(IS
                 }
             assert(status == SUCCESS || m_node->size() ==0);        
 
-            meshP = meshPtr.get();
-            //m_meshNode->UnPinPtsIndices(0);
-            }
-        m_meshNode->UnPinPtsIndices();
+            meshP = meshPtr.get();            
+            }        
         }
 
     m_node->UnPin();
@@ -1336,14 +1333,12 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMeshByP
         //if(isStreaming) s_streamingMutex.lock();
 
     m_node->Pin();
-    auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_node);
-    m_meshNode->PinPtsIndices(0);
+    auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_node);    
     IScalableMeshMeshPtr meshP;
     //NEEDS_WORK_SM_PROGRESSIF : Node header loaded unexpectingly
     if (m_node->size() > 0)
         {
-        //auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_node);
-        //m_meshNode->PinPtsIndices(0);
+        //auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_node);        
         ScalableMeshMeshPtr meshPtr = ScalableMeshMesh::Create();
 
         vector<DPoint3d> dataPoints(m_node->size());
@@ -1358,33 +1353,27 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMeshByP
         int status = meshPtr->AppendMesh(m_node->size(), &dataPoints[0], 0, 0, 0, 0, 0, 0, 0, 0);
 
         if (texID == IScalableMeshNode::UNTEXTURED_PART)
-            {
-            //m_meshNode->PinPtsIndices(0);
-            int32_t* faceIndexes = m_meshNode->GetPtsIndicePtr(0);
-            assert(faceIndexes != nullptr || m_meshNode->GetNbPtsIndices(0) == 0);
-            if (m_meshNode->GetNbPtsIndices(0) != 0)
-                status = meshPtr->AppendMesh(0, 0, m_meshNode->GetNbPtsIndices(0), faceIndexes, 0, 0, 0, 0, nullptr, nullptr);
-            //m_meshNode->UnPinPtsIndices(0);
+            {                        
+            RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> faceIndexes = m_meshNode->GetPtsIndicePtr();
+
+            if (faceIndexes->size() > 0)
+                status = meshPtr->AppendMesh(0, 0, faceIndexes->size(), &(*faceIndexes)[0], 0, 0, 0, 0, nullptr, nullptr);            
             }
         else
             {
-            m_meshNode->PinUV();
-            //                    m_meshNode->PinPtsIndices(i);
+            m_meshNode->PinUV();            
             //                   m_meshNode->PinUVsIndices(i);
-            int32_t* faceIndexes = m_meshNode->GetPtsIndicePtr(texID);
-            assert(faceIndexes != nullptr || m_meshNode->GetNbPtsIndices(texID) == 0);
+            RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> faceIndexes = m_meshNode->GetPtsIndicePtr();            
             DPoint2d* pUv = m_meshNode->GetUVPtr();
-            if (m_meshNode->GetNbPtsIndices(texID) != 0)
-                status = meshPtr->AppendMesh(0, 0, m_meshNode->GetNbPtsIndices(texID), faceIndexes, 0, 0, 0, m_meshNode->GetNbUVs(), pUv, m_meshNode->GetUVsIndicesPtr(texID - 1));
+            if (faceIndexes->size() > 0)
+                status = meshPtr->AppendMesh(0, 0, faceIndexes->size(), &(*faceIndexes)[0], 0, 0, 0, m_meshNode->GetNbUVs(), pUv, m_meshNode->GetUVsIndicesPtr(texID - 1));
 
-            // release all
-            //                m_meshNode->UnPinPtsIndices(i);
+            // release all            
             //                m_meshNode->UnPinUVsIndices(i);
             m_meshNode->UnPinUV();
             }
         if (meshPtr->GetNbFaces() == 0)
-            {
-            m_meshNode->UnPinPtsIndices(0);
+            {            
             m_node->UnPin();
             //if (isStreaming) s_streamingMutex.unlock();
             return nullptr;
@@ -1412,13 +1401,11 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMeshByP
             }
         assert(status == SUCCESS || m_node->size() == 0);
 
-        meshP = meshPtr.get();
-        //m_meshNode->UnPinPtsIndices(0);
+        meshP = meshPtr.get();        
         }
 
         m_meshNode->UnPinUVsIndices();
-        m_meshNode->UnPinUV();
-        m_meshNode->UnPinPtsIndices();
+        m_meshNode->UnPinUV();        
 
     m_node->UnPin();
     //if (isStreaming) s_streamingMutex.unlock();
@@ -1436,14 +1423,12 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMeshByP
         //if(isStreaming) s_streamingMutex.lock();
 
         m_node->Pin();
-    auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_node);
-    m_meshNode->PinPtsIndices(0);
+    auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_node);    
     IScalableMeshMeshPtr meshP;
     //NEEDS_WORK_SM_PROGRESSIF : Node header loaded unexpectingly
     if (m_node->size() > 0)
         {
-        //auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_node);
-        //m_meshNode->PinPtsIndices(0);
+        //auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_node);        
         ScalableMeshMeshPtr meshPtr = ScalableMeshMesh::Create();
 
         vector<DPoint3d> dataPoints(m_node->size());
@@ -1458,33 +1443,30 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMeshByP
         int status = meshPtr->AppendMesh(m_node->size(), &dataPoints[0], 0, 0, 0, 0, 0, 0, 0, 0);
 
         if (texID == IScalableMeshNode::UNTEXTURED_PART)
-            {
-            //m_meshNode->PinPtsIndices(0);
-            int32_t* faceIndexes = m_meshNode->GetPtsIndicePtr(0);
-            assert(faceIndexes != nullptr || m_meshNode->GetNbPtsIndices(0) == 0);
-            if (m_meshNode->GetNbPtsIndices(0) != 0)
-                status = meshPtr->AppendMesh(0, 0, m_meshNode->GetNbPtsIndices(0), faceIndexes, 0, 0, 0, 0, nullptr, nullptr);
-            //m_meshNode->UnPinPtsIndices(0);
+            {                        
+            RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> faceIndexes(m_meshNode->GetPtsIndicePtr());
+
+            if (faceIndexes->size() > 0)
+                status = meshPtr->AppendMesh(0, 0, faceIndexes->size(), &(*faceIndexes)[0], 0, 0, 0, 0, nullptr, nullptr);            
             }
         else
             {
-            m_meshNode->PinUV();
-            //                    m_meshNode->PinPtsIndices(i);
-            //                   m_meshNode->PinUVsIndices(i);
-            int32_t* faceIndexes = m_meshNode->GetPtsIndicePtr(texID);
-            assert(faceIndexes != nullptr || m_meshNode->GetNbPtsIndices(texID) == 0);
-            DPoint2d* pUv = m_meshNode->GetUVPtr();
-            if (m_meshNode->GetNbPtsIndices(texID) != 0)
-                status = meshPtr->AppendMesh(0, 0, m_meshNode->GetNbPtsIndices(texID), faceIndexes, 0, 0, 0, m_meshNode->GetNbUVs(), pUv, m_meshNode->GetUVsIndicesPtr(texID - 1));
+            m_meshNode->PinUV();            
+            //                   m_meshNode->PinUVsIndices(i);            
+            RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> faceIndexes(m_meshNode->GetPtsIndicePtr());
 
-            // release all
-            //                m_meshNode->UnPinPtsIndices(i);
+            if (faceIndexes->size() > 0)
+                {
+                DPoint2d* pUv = m_meshNode->GetUVPtr();
+                status = meshPtr->AppendMesh(0, 0, faceIndexes->size(), &(*faceIndexes)[0], 0, 0, 0, m_meshNode->GetNbUVs(), pUv, m_meshNode->GetUVsIndicesPtr(texID - 1));
+                }
+
+            // release all            
             //                m_meshNode->UnPinUVsIndices(i);
             m_meshNode->UnPinUV();
             }
         if (meshPtr->GetNbFaces() == 0)
-            {
-            m_meshNode->UnPinPtsIndices(0);
+            {            
             m_node->UnPin();
             //if (isStreaming) s_streamingMutex.unlock();
             return nullptr;
@@ -1512,13 +1494,11 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMeshByP
             }
         assert(status == SUCCESS || m_node->size() == 0);
 
-        meshP = meshPtr.get();
-        //m_meshNode->UnPinPtsIndices(0);
+        meshP = meshPtr.get();        
         }
 
     m_meshNode->UnPinUVsIndices();
-    m_meshNode->UnPinUV();
-    m_meshNode->UnPinPtsIndices();
+    m_meshNode->UnPinUV();    
 
     m_node->UnPin();
     //if (isStreaming) s_streamingMutex.unlock();
@@ -2111,7 +2091,7 @@ inline void ApplyClipDiffSetToMesh(FloatXYZ*& points, size_t& nbPoints,
             
             m_cachedDisplayMeshes.resize(_GetNbMeshes());
 
-            assert(meshNode->GetNbPtsIndiceArrays() == m_cachedDisplayMeshes.size());
+            assert(meshNode->GetNbOfTextures() + 1 == m_cachedDisplayMeshes.size());
 
             m_cachedDisplayTextures.resize(_GetNbMeshes());
 
@@ -2133,7 +2113,10 @@ inline void ApplyClipDiffSetToMesh(FloatXYZ*& points, size_t& nbPoints,
 
             m_node->UnPin();
                                        
-            for (size_t meshInd = 0; meshInd < meshNode->GetNbPtsIndiceArrays(); meshInd++)
+
+//            size_t GetNbOfTextures()
+  
+            for (size_t meshInd = 0; meshInd < meshNode->GetNbOfTextures() + 1; meshInd++)
                 {                                    
                 FloatXYZ* toLoadPoints = 0;
                 size_t    toLoadNbPoints = 0; 
@@ -2141,12 +2124,13 @@ inline void ApplyClipDiffSetToMesh(FloatXYZ*& points, size_t& nbPoints,
                 size_t    toLoadNbFaceIndexes = 0;
                 FloatXY*  toLoadUv = 0;
                 int32_t*  toLoadUvIndex = 0;
-                size_t    toLoadUvCount = 0;
+                size_t    toLoadUvCount = 0;      
 
-                meshNode->PinPtsIndices(meshInd);
+                if (meshInd == 0 && meshNode->GetNbOfTextures() == 1)
+                    continue;
 
-                int32_t* faceIndexes = meshNode->GetPtsIndicePtr(meshInd);
-                
+                RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> faceIndexes(meshNode->GetPtsIndicePtr());
+                                
                 if (faceIndexes == 0)
                     {
                     assert(meshInd == 0 || m_node->size() <= 4);
@@ -2154,11 +2138,10 @@ inline void ApplyClipDiffSetToMesh(FloatXYZ*& points, size_t& nbPoints,
                     }
                 else
                     {
-                    size_t nbFaceIndices = meshNode->GetNbPtsIndices(meshInd);
+                    size_t nbFaceIndices = faceIndexes->size();
 
                     if (nbFaceIndices == 0)
-                        {
-                        meshNode->UnPinPtsIndices(meshInd);
+                        {                        
                         continue;
                         }
 
@@ -2204,10 +2187,11 @@ inline void ApplyClipDiffSetToMesh(FloatXYZ*& points, size_t& nbPoints,
                                                toLoadFaceIndexes, toLoadNbFaceIndexes,
                                                toLoadUv, toLoadUvIndex, toLoadUvCount,
                                                &dataPoints[0], dataPoints.size(),
-                                               faceIndexes, nbFaceIndices,
+                                               &(*faceIndexes)[0], nbFaceIndices,
                                                uvPtr, uvIndicesP, nbUvs,
                                                clipDiffSet,
                                                centroid);
+
                         for (size_t ind = 0; ind < toLoadNbFaceIndexes; ind++)
                             {
                             toLoadFaceIndexes[ind] -= 1;
@@ -2223,7 +2207,7 @@ inline void ApplyClipDiffSetToMesh(FloatXYZ*& points, size_t& nbPoints,
                         //NEEDS_WORK_SM : Could generate them starting at 0.
                         for (size_t ind = 0; ind < toLoadNbFaceIndexes; ind++)
                             {
-                            toLoadFaceIndexes[ind] = faceIndexes[ind] - 1;
+                            toLoadFaceIndexes[ind] = (*faceIndexes)[ind] - 1;
                             }
 
                         if (nbUvs > 0)
@@ -2326,9 +2310,7 @@ inline void ApplyClipDiffSetToMesh(FloatXYZ*& points, size_t& nbPoints,
 
                         assert(status == SUCCESS);
                         }
-                    }
-
-                meshNode->UnPinPtsIndices(meshInd);
+                    }                
                                      
                 if (meshNode->m_nbClips > 0)
                     {   
@@ -2378,7 +2360,7 @@ inline void ApplyClipDiffSetToMesh(FloatXYZ*& points, size_t& nbPoints,
 
             m_cachedDisplayMeshes.resize(_GetNbMeshes());
 
-            assert(meshNode->GetNbPtsIndiceArrays() == m_cachedDisplayMeshes.size());
+            assert(meshNode->GetNbOfTextures() + 1 == m_cachedDisplayMeshes.size());
 
             m_cachedDisplayTextures.resize(_GetNbMeshes());
 
@@ -2400,7 +2382,7 @@ inline void ApplyClipDiffSetToMesh(FloatXYZ*& points, size_t& nbPoints,
 
             m_node->UnPin();
 
-            for (size_t meshInd = 0; meshInd < meshNode->GetNbPtsIndiceArrays(); meshInd++)
+            for (size_t meshInd = 0; meshInd < meshNode->GetNbOfTextures() + 1; meshInd++)
                 {
                 FloatXYZ* toLoadPoints = 0;
                 size_t    toLoadNbPoints = 0;
@@ -2408,24 +2390,21 @@ inline void ApplyClipDiffSetToMesh(FloatXYZ*& points, size_t& nbPoints,
                 size_t    toLoadNbFaceIndexes = 0;
                 FloatXY*  toLoadUv = 0;
                 int32_t*  toLoadUvIndex = 0;
-                size_t    toLoadUvCount = 0;
+                size_t    toLoadUvCount = 0;                
 
-                meshNode->PinPtsIndices(meshInd);
-
-                int32_t* faceIndexes = meshNode->GetPtsIndicePtr(meshInd);
-
-                if (faceIndexes == 0)
+                RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> faceIndexes(meshNode->GetPtsIndicePtr());
+                
+                if (faceIndexes == 0 || (meshInd == 0 && meshNode->GetNbOfTextures() + 1 > 1))
                     {
                     assert(meshInd == 0 || m_node->size() <= 4);
                     m_cachedDisplayMeshes[meshInd] = 0;
                     }
                 else
                     {
-                    size_t nbFaceIndices = meshNode->GetNbPtsIndices(meshInd);
+                    size_t nbFaceIndices = faceIndexes->size(); 
 
                     if (nbFaceIndices == 0)
-                        {
-                        meshNode->UnPinPtsIndices(meshInd);
+                        {                        
                         continue;
                         }
 
@@ -2469,10 +2448,11 @@ inline void ApplyClipDiffSetToMesh(FloatXYZ*& points, size_t& nbPoints,
                                                toLoadFaceIndexes, toLoadNbFaceIndexes,
                                                toLoadUv, toLoadUvIndex, toLoadUvCount,
                                                &dataPoints[0], dataPoints.size(),
-                                               faceIndexes, nbFaceIndices,
+                                               &(*faceIndexes)[0], nbFaceIndices,
                                                uvPtr, uvIndicesP, nbUvs,
                                                clipDiffSet,
                                                centroid);
+
                         for (size_t ind = 0; ind < toLoadNbFaceIndexes; ind++)
                             {
                             toLoadFaceIndexes[ind] -= 1;
@@ -2488,7 +2468,7 @@ inline void ApplyClipDiffSetToMesh(FloatXYZ*& points, size_t& nbPoints,
                         //NEEDS_WORK_SM : Could generate them starting at 0.
                         for (size_t ind = 0; ind < toLoadNbFaceIndexes; ind++)
                             {
-                            toLoadFaceIndexes[ind] = faceIndexes[ind] - 1;
+                            toLoadFaceIndexes[ind] = (*faceIndexes)[ind] - 1;
                             }
 
                         if (nbUvs > 0)
@@ -2591,9 +2571,7 @@ inline void ApplyClipDiffSetToMesh(FloatXYZ*& points, size_t& nbPoints,
 
                         assert(status == SUCCESS);
                         }
-                    }
-
-                meshNode->UnPinPtsIndices(meshInd);
+                    }                
 
                 if (meshNode->m_nbClips > 0)
                     {
@@ -2855,9 +2833,7 @@ template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddMesh(DPoint3d*
         memcpy(m_meshNode->m_nodeHeader.m_meshComponents, componentPointsId.data(), componentPointsId.size()*sizeof(int));
         }
 
-    m_meshNode->PushPtsIndices(0, &indicesVec[0], m_meshNode->m_nodeHeader.m_nbFaceIndexes);
-    m_meshNode->SetPtsIndiceDirty(0);
-    m_meshNode->StorePtsIndice(0);
+    m_meshNode->PushPtsIndices(0, &indicesVec[0], m_meshNode->m_nodeHeader.m_nbFaceIndexes);        
     m_meshNode->IncreaseTotalCount(m_meshNode->size());
 
     m_meshNode->SetDirty(true);
@@ -2887,19 +2863,15 @@ template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddTexturedMesh(b
 
     // Untexturing part : 
     nIndicesCount += ptsIndices[0].size();
-    m_meshNode->PushPtsIndices(0, &ptsIndices[0][0], ptsIndices[0].size());
-    m_meshNode->SetPtsIndiceDirty(0);
-    m_meshNode->StorePtsIndice(0);
+    m_meshNode->PushPtsIndices(0, &ptsIndices[0][0], ptsIndices[0].size());        
     indicesLine.insert(indicesLine.end(), ptsIndices[0].begin(), ptsIndices[0].end());
 
     // Texturing points
     for(size_t i = 0; i < nTexture; i++)
         {
         nIndicesCount += ptsIndices[i+1].size();
-        m_meshNode->PushPtsIndices(i+1, &ptsIndices[i+1][0], ptsIndices[i+1].size());
-        m_meshNode->SetPtsIndiceDirty(i+1);
-        m_meshNode->StorePtsIndice(i+1);
-
+        m_meshNode->PushPtsIndices(i+1, &ptsIndices[i+1][0], ptsIndices[i+1].size());        
+        
         m_meshNode->PushUVsIndices(i, &uvIndices[i][0], uvIndices[i].size());
         m_meshNode->SetUVsIndicesDirty(i);
         m_meshNode->StoreUVsIndices(i);
@@ -3052,7 +3024,9 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNodeWithReprojection<POI
  /*       std::ofstream file_s;
         file_s.open("C:\\dev\\ContextCapture\\_log.txt", ios_base::app);
         file_s << "PushIndices etc... -- shit 14" << endl;*/
-        int status = meshPtr->AppendMesh(m_node->size(), &dataPoints[0], m_node->m_nodeHeader.m_nbFaceIndexes, m_meshNode->GetPtsIndicePtr(0), 0, 0, 0, 0, 0, 0);
+        RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> ptsIndices(m_meshNode->GetPtsIndicePtr());
+
+        int status = meshPtr->AppendMesh(m_node->size(), &dataPoints[0], m_node->m_nodeHeader.m_nbFaceIndexes, &(*ptsIndices)[0], 0, 0, 0, 0, 0, 0);
 
         assert(status == SUCCESS);
 
@@ -3077,7 +3051,10 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNodeWithReprojection<POI
         }
     m_reprojectFunction.Reproject(&dataPoints[0], m_node->size(), &dataPoints[0]);
     DPoint2d* pUv = m_meshNode->GetUVPtr();
-    int status = meshPtr->AppendMesh(m_node->size(), &dataPoints[0], m_node->m_nodeHeader.m_nbFaceIndexes, m_meshNode->GetPtsIndicePtr(texID), 0, 0, 0, texID >= 1 ? m_meshNode->GetNbUVs() : 0, texID >= 1 ? pUv : 0, texID >= 1 ? m_meshNode->GetUVsIndicesPtr(texID - 1) : 0);
+
+    RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> ptsIndices(m_meshNode->GetPtsIndicePtr());
+
+    int status = meshPtr->AppendMesh(m_node->size(), &dataPoints[0], m_node->m_nodeHeader.m_nbFaceIndexes, &(*ptsIndices)[0], 0, 0, 0, texID >= 1 ? m_meshNode->GetNbUVs() : 0, texID >= 1 ? pUv : 0, texID >= 1 ? m_meshNode->GetUVsIndicesPtr(texID - 1) : 0);
 
     assert(status == SUCCESS);
 
@@ -3100,7 +3077,10 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNodeWithReprojection<POI
         }
     m_reprojectFunction.Reproject(&dataPoints[0], m_node->size(), &dataPoints[0]);
     DPoint2d* pUv = m_meshNode->GetUVPtr();
-    int status = meshPtr->AppendMesh(m_node->size(), &dataPoints[0], m_node->m_nodeHeader.m_nbFaceIndexes, m_meshNode->GetPtsIndicePtr(texID), 0, 0, 0, texID >= 1 ? m_meshNode->GetNbUVs() : 0, texID >= 1 ? pUv : 0, texID >= 1 ? m_meshNode->GetUVsIndicesPtr(texID - 1) : 0);
+
+    RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> ptsIndices(m_meshNode->GetPtsIndicePtr());
+
+    int status = meshPtr->AppendMesh(m_node->size(), &dataPoints[0], m_node->m_nodeHeader.m_nbFaceIndexes, &(*ptsIndices)[0], 0, 0, 0, texID >= 1 ? m_meshNode->GetNbUVs() : 0, texID >= 1 ? pUv : 0, texID >= 1 ? m_meshNode->GetUVsIndicesPtr(texID - 1) : 0);
 
     assert(status == SUCCESS);
 
