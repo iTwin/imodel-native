@@ -2,7 +2,7 @@
 |
 |     $Source: formats/TriangulationPreserver.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <TerrainModel/Formats/Formats.h>
@@ -61,6 +61,12 @@ void TriangulationPreserver::AddTriangle (int* ptNums, int numPoints)
     pts[1] = m_pts[GetLocalId (ptNums[1])];
     pts[2] = m_pts[GetLocalId (ptNums[2])];
     pts[3] = pts[0];
+
+    int side = bcdtmMath_sideOf(pts[0].x, pts[0].y, pts[1].x, pts[1].y, pts[2].x, pts[2].y);
+
+    // Make sure it is the right orientation.
+    if (side > 0)
+        std::swap(pts[2], pts[1]);
 
     DTMUserTag dtmUserTag = 0;
     DTMFeatureId id;
