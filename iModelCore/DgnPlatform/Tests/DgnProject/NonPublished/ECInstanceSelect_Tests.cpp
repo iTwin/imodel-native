@@ -44,21 +44,19 @@ void ECInstanceSelectTests::VerifyInstanceCounts(WCharCP fileName, bmap<Utf8Stri
 
         if (schemasToCheck.end() != iter)
             {
-            Utf8StringCR schemaPrefix = schema->GetNamespacePrefix();
             Utf8String query;
             for (ECN::ECClassCP const& ecClass : schema->GetClasses())
                 {
                 if (ecClass->IsEntityClass() == false || ECN::ECClassModifier::Abstract == ecClass->GetClassModifier())
                     continue;
-                Utf8String ClassName = ecClass->GetName().c_str();
                 if (!Utf8String::IsNullOrEmpty(query.c_str()))
                     query.append(" UNION ALL ");
-                query.append("SELECT COUNT(*), '").append(ClassName).append("' FROM ONLY ");
-                query.append(schemaPrefix);
-                query.append(".[");
-                query.append(ClassName);
-                query.append("]");
+
+                query.append("SELECT COUNT(*), '").append(ecClass->GetName()).append("' FROM ONLY ").append(ecClass->GetECSqlName());
                 }
+
+            if (query.empty())
+                continue;
 
             ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_db, query.c_str())) << "Statement prepare failed for " << query.c_str();
             while (DbResult::BE_SQLITE_ROW == stmt.Step())
