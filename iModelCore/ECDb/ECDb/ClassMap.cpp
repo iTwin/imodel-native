@@ -1127,7 +1127,7 @@ BentleyStatus PropertyMapSet::AddSystemEndPoint(PropertyMapSet& propertySet, Cla
 PropertyMapSet::Ptr PropertyMapSet::Create(ClassMap const& classMap)
     {
     BeAssert(!classMap.GetJoinedTable().IsNullTable());
-    Ptr propertySet = Ptr(new PropertyMapSet(classMap));
+    Ptr propertySet = Ptr(new PropertyMapSet());
     ECValue defaultValue;
     AddSystemEndPoint(*propertySet, classMap, DbColumn::Kind::ECInstanceId, defaultValue);
     AddSystemEndPoint(*propertySet, classMap, DbColumn::Kind::ECClassId, ECValue(classMap.GetClass().GetId().GetValue()));

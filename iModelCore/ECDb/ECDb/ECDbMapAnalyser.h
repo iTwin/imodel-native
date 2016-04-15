@@ -214,7 +214,6 @@ struct ECDbMapAnalyser
                 std::set<Class*> m_classes;
                 PropertyMapCP m_ecid;
                 ECClassIdRelationshipConstraintPropertyMap const* m_classId;
-                EndType m_type;
                 Relationship const& m_parent;
             public:
                 EndPoint(Relationship const& parent, EndType);

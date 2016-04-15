@@ -483,7 +483,7 @@ DbColumn const& ECDbMapAnalyser::Relationship::EndInfo::GetColumn() const
 // @bsimethod                                 Affan.Khan                         09/2015
 //---------------------------------------------------------------------------------------
 ECDbMapAnalyser::Relationship::EndPoint::EndPoint(Relationship const& parent, EndType type)
-    :m_ecid(nullptr), m_classId(nullptr), m_type(type), m_parent(parent)
+    :m_ecid(nullptr), m_classId(nullptr), m_parent(parent)
     {
     auto const& map = parent.GetRelationshipClassMap();
     auto direction = map.GetRelationshipClass().GetStrengthDirection();
