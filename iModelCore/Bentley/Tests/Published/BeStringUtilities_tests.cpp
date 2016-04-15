@@ -1,3 +1,4 @@
+
 /*--------------------------------------------------------------------------------------+
 |
 |  $Source: Tests/Published/BeStringUtilities_tests.cpp $
@@ -1291,4 +1292,45 @@ TEST(BeStringUtilitiesTests, WCharUtf16Roundtrip)
 
     EXPECT_EQ(0, wcscmp(expected.c_str(), strWString.c_str()));
 
+    }
+
+#define ASSERT_SPRINTF_SSCANF(number,stringifiedNumber,Type,printfFormat,scanfFormat)\
+        {\
+        Type num = (Type) number;\
+        Utf8String actualStr;\
+        actualStr.Sprintf(printfFormat, num);\
+        actualStr.ToLower();\
+        ASSERT_STREQ(stringifiedNumber, actualStr.c_str()) << "Utf8String::Sprintf with " << #Type;\
+        Type actualNumber = (Type) 0;\
+        BE_STRING_UTILITIES_UTF8_SSCANF(stringifiedNumber, scanfFormat, &actualNumber);\
+        ASSERT_EQ(number, actualNumber) << "BE_STRING_UTILITIES_UTF8_SSCANF with " << #Type;\
+        }
+
+//---------------------------------------------------------------------------------------
+// @betest                                     Krischan.Eberle                  04/16
+//---------------------------------------------------------------------------------------
+TEST(BeStringUtilitiesTests, SprintfSscanf)
+    {
+    ASSERT_SPRINTF_SSCANF(-8, "-8", int8_t, "%" PRId8, "%" SCNd8);
+    ASSERT_SPRINTF_SSCANF(8, "8", uint8_t, "%" PRIu8, "%" SCNu8);
+    ASSERT_SPRINTF_SSCANF(8, "8", uint8_t, "%" PRIx8, "%" SCNx8);
+
+    ASSERT_SPRINTF_SSCANF(-1616, "-1616", int16_t, "%" PRId16, "%" SCNd16);
+    ASSERT_SPRINTF_SSCANF(1616, "1616", uint16_t, "%" PRIu16, "%" SCNu16);
+    ASSERT_SPRINTF_SSCANF(1616, "650", uint16_t, "%" PRIx16, "%" SCNx16);
+
+    ASSERT_SPRINTF_SSCANF(-323232, "-323232", int32_t, "%" PRId32, "%" SCNd32);
+    ASSERT_SPRINTF_SSCANF(323232, "323232", uint32_t, "%" PRIu32, "%" SCNu32);
+    ASSERT_SPRINTF_SSCANF(323232,"4eea0", uint32_t, "%" PRIx32, "%" SCNx32);
+
+    ASSERT_SPRINTF_SSCANF(-64646464, "-64646464", int64_t, "%" PRId64, "%" SCNd64);
+    ASSERT_SPRINTF_SSCANF(64646464, "64646464", uint64_t, "%" PRIu64, "%" SCNu64);
+    ASSERT_SPRINTF_SSCANF(64646464, "3da6d40", uint64_t, "%" PRIx64, "%" SCNx64);
+
+    ASSERT_SPRINTF_SSCANF(-12345, "-12345", int, "%d", "%d");
+    ASSERT_SPRINTF_SSCANF(123, "123", unsigned, "%u", "%u");
+    ASSERT_SPRINTF_SSCANF(123, "7b", unsigned, "%x", "%x");
+    ASSERT_SPRINTF_SSCANF(-12345, "-12345", long long, "%lld", "%lld");
+    ASSERT_SPRINTF_SSCANF(12345, "12345", unsigned long long, "%llu", "%llu");
+    ASSERT_SPRINTF_SSCANF(12345, "3039", unsigned long long, "%llx", "%llx");
     }
