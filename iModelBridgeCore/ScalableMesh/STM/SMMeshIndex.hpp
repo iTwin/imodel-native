@@ -2147,8 +2147,8 @@ void SMMeshIndexNode<POINT, EXTENT>::SplitNodeBasedOnImageRes()
     }
 
 //=======================================================================================
-// @description Sets texture data for this node based on a raster. This *adds* a texture
-//              to the targeted node, this does not replace the existing texture.
+// @description Sets texture data for this node based on a raster. If untextured this adds
+//              a new texture.
 //              See ScalableMeshSourceCreator::ImportRasterSourcesTo for information
 //              on how to create a raster from image files to be used by this function.
 // @bsimethod                                                   Elenie.Godzaridis 10/15
@@ -2366,6 +2366,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
     StoreUV();
     StoreUVsIndices(texId);    
     }
+    SetDirty(true);
     delete[] pixelBufferP;
     delete[] pixelBufferPRGBA;
     pTextureBitmap = 0;
