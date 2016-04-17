@@ -29,7 +29,7 @@ struct SQLiteNodeHeader
     bool        m_totalCountDefined;         // Indicates if the total count of objects in node and subnode is up to date
     uint64_t      m_totalCount;                // This value indicates the total number of points in node all recursively all sub-nodes.
     bool        m_arePoints3d;               //Indicates if the node contains 3D points or 2.5D points only. 
-    bool        m_areTextured;               // Indicates if the node contains Texture or not
+    bool        m_isTextured;               // Indicates if the node contains Texture or not
     int  m_parentNodeID; //Required when loading 
     std::vector<int>  m_apSubNodeID;
     int  m_SubNodeNoSplitID;

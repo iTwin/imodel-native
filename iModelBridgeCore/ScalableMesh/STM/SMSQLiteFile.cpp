@@ -297,7 +297,7 @@ bool SMSQLiteFile::SetNodeHeader(const SQLiteNodeHeader& newNodeHeader)
         size_t texID = SQLiteNodeHeader::NO_NODEID;
         stmt->BindInt64(16, texID);
         }
-    stmt->BindInt(17, newNodeHeader.m_areTextured ? 1 : 0);
+    stmt->BindInt(17, newNodeHeader.m_isTextured ? 1 : 0);
     stmt->BindInt(18, (int)newNodeHeader.m_nodeCount);
     DbResult status = stmt->Step();
     stmt->ClearBindings();
@@ -384,8 +384,8 @@ bool SMSQLiteFile::GetNodeHeader(SQLiteNodeHeader& nodeHeader)
     nodeHeader.m_clipSetsID = std::vector<int>();
     nodeHeader.m_numberOfSubNodesOnSplit = nodeHeader.m_apSubNodeID.size();
     int64_t texIdx = stmt->GetValueInt64(14);
-    nodeHeader.m_areTextured = stmt->GetValueInt(15) ? true : false;
-    if (texIdx != SQLiteNodeHeader::NO_NODEID && nodeHeader.m_areTextured)
+    nodeHeader.m_isTextured = stmt->GetValueInt(15) ? true : false;
+    if (texIdx != SQLiteNodeHeader::NO_NODEID && nodeHeader.m_isTextured)
         {
         nodeHeader.m_textureID.resize(1);
         nodeHeader.m_textureID[0] = texIdx;

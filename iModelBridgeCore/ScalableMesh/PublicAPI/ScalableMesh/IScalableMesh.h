@@ -149,105 +149,105 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
 
         void TextureFromRaster(BENTLEY_NAMESPACE_NAME::ImagePP::HIMMosaic* mosaicP);
 
-        BENTLEYSTM_EXPORT __int64          GetPointCount();
+        BENTLEY_SM_EXPORT __int64          GetPointCount();
 
-        BENTLEYSTM_EXPORT DTMStatusInt     GetRange(DRange3dR range);
+        BENTLEY_SM_EXPORT DTMStatusInt     GetRange(DRange3dR range);
 
-        BENTLEYSTM_EXPORT StatusInt          GetBoundary(bvector<DPoint3d>& boundary);
+        BENTLEY_SM_EXPORT StatusInt          GetBoundary(bvector<DPoint3d>& boundary);
 
-        BENTLEYSTM_EXPORT int                    GenerateSubResolutions();
+        BENTLEY_SM_EXPORT int                    GenerateSubResolutions();
 
-        BENTLEYSTM_EXPORT __int64                GetBreaklineCount() const;
+        BENTLEY_SM_EXPORT __int64                GetBreaklineCount() const;
             
-        BENTLEYSTM_EXPORT ScalableMeshCompressionType   GetCompressionType() const;
+        BENTLEY_SM_EXPORT ScalableMeshCompressionType   GetCompressionType() const;
 
-        BENTLEYSTM_EXPORT int                    GetNbResolutions() const;    
+        BENTLEY_SM_EXPORT int                    GetNbResolutions() const;    
 
-        BENTLEYSTM_EXPORT size_t                 GetTerrainDepth() const;
+        BENTLEY_SM_EXPORT size_t                 GetTerrainDepth() const;
 
-        BENTLEYSTM_EXPORT IScalableMeshPointQueryPtr         GetQueryInterface(ScalableMeshQueryType queryType) const;
+        BENTLEY_SM_EXPORT IScalableMeshPointQueryPtr         GetQueryInterface(ScalableMeshQueryType queryType) const;
 
-        BENTLEYSTM_EXPORT IScalableMeshPointQueryPtr         GetQueryInterface(ScalableMeshQueryType                queryType,                                                              
+        BENTLEY_SM_EXPORT IScalableMeshPointQueryPtr         GetQueryInterface(ScalableMeshQueryType                queryType,                                                              
                                                                                BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS,
                                                                                const DRange3d&                      extentInTargetGCS) const;
 
-        BENTLEYSTM_EXPORT IScalableMeshMeshQueryPtr    GetMeshQueryInterface(MeshQueryType queryType) const;
+        BENTLEY_SM_EXPORT IScalableMeshMeshQueryPtr    GetMeshQueryInterface(MeshQueryType queryType) const;
 
-        BENTLEYSTM_EXPORT IScalableMeshMeshQueryPtr     GetMeshQueryInterface(MeshQueryType queryType,
+        BENTLEY_SM_EXPORT IScalableMeshMeshQueryPtr     GetMeshQueryInterface(MeshQueryType queryType,
                                                                         BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCSPtr,
                                                                         const DRange3d&                      extentInTargetGCS) const;
 
-        BENTLEYSTM_EXPORT IScalableMeshNodeRayQueryPtr    GetNodeQueryInterface() const;
+        BENTLEY_SM_EXPORT IScalableMeshNodeRayQueryPtr    GetNodeQueryInterface() const;
 
-        BENTLEYSTM_EXPORT BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*   GetDTMInterface();
+        BENTLEY_SM_EXPORT BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*   GetDTMInterface();
 
-        BENTLEYSTM_EXPORT BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*   GetDTMInterface(DMatrix4d& storageToUors);
+        BENTLEY_SM_EXPORT BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*   GetDTMInterface(DMatrix4d& storageToUors);
 
-        BENTLEYSTM_EXPORT const BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr&
+        BENTLEY_SM_EXPORT const BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr&
                                            GetBaseGCS() const;
-        BENTLEYSTM_EXPORT StatusInt              SetBaseGCS(const BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& sourceGCS);
+        BENTLEY_SM_EXPORT StatusInt              SetBaseGCS(const BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& sourceGCS);
 
-        BENTLEYSTM_EXPORT const GeoCoords::GCS&  GetGCS() const;
-        BENTLEYSTM_EXPORT StatusInt              SetGCS(const GeoCoords::GCS& gcs);
+        BENTLEY_SM_EXPORT const GeoCoords::GCS&  GetGCS() const;
+        BENTLEY_SM_EXPORT StatusInt              SetGCS(const GeoCoords::GCS& gcs);
 
-        BENTLEYSTM_EXPORT ScalableMeshState             GetState() const;
+        BENTLEY_SM_EXPORT ScalableMeshState             GetState() const;
 
-        BENTLEYSTM_EXPORT bool                   IsProgressive() const;
+        BENTLEY_SM_EXPORT bool                   IsProgressive() const;
 
-        BENTLEYSTM_EXPORT bool                   IsReadOnly() const;
+        BENTLEY_SM_EXPORT bool                   IsReadOnly() const;
 
-        BENTLEYSTM_EXPORT bool                   IsShareable() const;                        
+        BENTLEY_SM_EXPORT bool                   IsShareable() const;                        
          
         //Synchonization with data sources functions
-        BENTLEYSTM_EXPORT bool                   InSynchWithSources() const; 
+        BENTLEY_SM_EXPORT bool                   InSynchWithSources() const; 
 
         // Deprecated. Remove.
         bool                                     InSynchWithDataSources() const { return InSynchWithSources(); }
 
-        BENTLEYSTM_EXPORT bool                   LastSynchronizationCheck(time_t& last) const;        
+        BENTLEY_SM_EXPORT bool                   LastSynchronizationCheck(time_t& last) const;        
 
-        BENTLEYSTM_EXPORT int                    SynchWithSources(); 
+        BENTLEY_SM_EXPORT int                    SynchWithSources(); 
 
-        BENTLEYSTM_EXPORT int                    GetRangeInSpecificGCS(DPoint3d& lowPt, DPoint3d& highPt, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS) const;
+        BENTLEY_SM_EXPORT int                    GetRangeInSpecificGCS(DPoint3d& lowPt, DPoint3d& highPt, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS) const;
 
-        BENTLEYSTM_EXPORT Count                  GetCountInRange (const DRange2d& range, const CountType& type, const unsigned __int64& maxNumberCountedPoints) const;
+        BENTLEY_SM_EXPORT Count                  GetCountInRange (const DRange2d& range, const CountType& type, const unsigned __int64& maxNumberCountedPoints) const;
 
-        BENTLEYSTM_EXPORT uint64_t               AddClip(const DPoint3d* pts, size_t ptsSize);
+        BENTLEY_SM_EXPORT uint64_t               AddClip(const DPoint3d* pts, size_t ptsSize);
 
-        BENTLEYSTM_EXPORT bool                   AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID);
+        BENTLEY_SM_EXPORT bool                   AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID);
 
-        BENTLEYSTM_EXPORT bool                   ModifyClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID);
+        BENTLEY_SM_EXPORT bool                   ModifyClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID);
 
-        BENTLEYSTM_EXPORT bool                   RemoveClip(uint64_t clipID);
+        BENTLEY_SM_EXPORT bool                   RemoveClip(uint64_t clipID);
 
-        BENTLEYSTM_EXPORT bool                   ModifySkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID);
+        BENTLEY_SM_EXPORT bool                   ModifySkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID);
 
-        BENTLEYSTM_EXPORT bool                   AddSkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID);
+        BENTLEY_SM_EXPORT bool                   AddSkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID);
 
-        BENTLEYSTM_EXPORT bool                   RemoveSkirt(uint64_t skirtID);
+        BENTLEY_SM_EXPORT bool                   RemoveSkirt(uint64_t skirtID);
 
-        BENTLEYSTM_EXPORT void                   SetIsInsertingClips(bool toggleInsertMode);
+        BENTLEY_SM_EXPORT void                   SetIsInsertingClips(bool toggleInsertMode);
 
-        BENTLEYSTM_EXPORT void                   ModifyClipMetadata(uint64_t clipId,double importance, int nDimensions);
+        BENTLEY_SM_EXPORT void                   ModifyClipMetadata(uint64_t clipId,double importance, int nDimensions);
 
-        BENTLEYSTM_EXPORT void                   GetAllClipIds(bvector<uint64_t>& ids);
+        BENTLEY_SM_EXPORT void                   GetAllClipIds(bvector<uint64_t>& ids);
 
-        BENTLEYSTM_EXPORT void                   GetCurrentlyViewedNodes(bvector<IScalableMeshNodePtr>& nodes);
+        BENTLEY_SM_EXPORT void                   GetCurrentlyViewedNodes(bvector<IScalableMeshNodePtr>& nodes);
 
-        BENTLEYSTM_EXPORT void                   SetCurrentlyViewedNodes(const bvector<IScalableMeshNodePtr>& nodes);
+        BENTLEY_SM_EXPORT void                   SetCurrentlyViewedNodes(const bvector<IScalableMeshNodePtr>& nodes);
 
     
-        BENTLEYSTM_EXPORT static IScalableMeshPtr        GetFor                 (const WChar*          filePath,
+        BENTLEY_SM_EXPORT static IScalableMeshPtr        GetFor                 (const WChar*          filePath,
                                                                     bool                    openReadOnly,
                                                                     bool                    openShareable,
                                                                     StatusInt&              status);
 
-        BENTLEYSTM_EXPORT static IScalableMeshPtr        GetFor                 (const WChar*          filePath,
+        BENTLEY_SM_EXPORT static IScalableMeshPtr        GetFor                 (const WChar*          filePath,
                                                                     bool                    openReadOnly,
                                                                     bool                    openShareable);
 
 #ifdef SCALABLE_MESH_ATP
-        BENTLEYSTM_EXPORT int                     LoadAllNodeHeaders(size_t& nbLoadedNodes) const; 
+        BENTLEY_SM_EXPORT int                     LoadAllNodeHeaders(size_t& nbLoadedNodes) const; 
 #endif
 
     };
@@ -261,9 +261,9 @@ struct Count
     };
 
 
-void BENTLEYSTM_EXPORT edgeCollapseTest(WCharCP param);
-void BENTLEYSTM_EXPORT edgeCollapsePrintGraph(WCharCP param);
-void BENTLEYSTM_EXPORT edgeCollapseShowMesh(WCharCP param, PolyfaceQueryP& outMesh);
+void BENTLEY_SM_EXPORT edgeCollapseTest(WCharCP param);
+void BENTLEY_SM_EXPORT edgeCollapsePrintGraph(WCharCP param);
+void BENTLEY_SM_EXPORT edgeCollapseShowMesh(WCharCP param, PolyfaceQueryP& outMesh);
 
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

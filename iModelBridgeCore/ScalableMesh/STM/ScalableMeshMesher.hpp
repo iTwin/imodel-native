@@ -376,9 +376,9 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
                     }
                 
                 if (faceIndexes.size() > 0)
-                    node->PushPtsIndices(0, /*meshP->GetFaceIndexes()*/&faceIndexes[0], node->m_nodeHeader.m_nbFaceIndexes);
+                    node->PushPtsIndices(/*meshP->GetFaceIndexes()*/&faceIndexes[0], node->m_nodeHeader.m_nbFaceIndexes);
                 else
-                    node->ClearPtsIndices(0);
+                    node->ClearPtsIndices();
                 
                 //NEEDS_WORK_SM Avoid some assert                            
                 //delete [] pPiggyBackMeshIndexes; 
@@ -1942,7 +1942,7 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
     if (node->m_nodeHeader.m_nbFaceIndexes > 0)
         {
         node->push_back(&newNodePointData[0], stitchedPoints.size());
-        node->ReplacePtsIndices(0, (int32_t*)&newNodePointData[stitchedPoints.size()], node->m_nodeHeader.m_nbFaceIndexes);
+        node->ReplacePtsIndices((int32_t*)&newNodePointData[stitchedPoints.size()], node->m_nodeHeader.m_nbFaceIndexes);
 
         //node->setNbPointsUsedForMeshIndex(arraySize-stitchedPoints.size());
         if (node->IsLeaf()) node->m_nodeHeader.m_totalCount = stitchedPoints.size();
@@ -2084,7 +2084,7 @@ return true;
                 memcpy(node->m_nodeHeader.m_meshComponents, componentPointsId.data(), componentPointsId.size()*sizeof(int));
                 }
           
-            node->PushPtsIndices(0, &faceIndexes[0], node->m_nodeHeader.m_nbFaceIndexes);            
+            node->PushPtsIndices(&faceIndexes[0], node->m_nodeHeader.m_nbFaceIndexes);            
             
             assert(node->size() == nodePts.size());
             if (node->IsLeaf() && node->size() != node->m_nodeHeader.m_totalCount)

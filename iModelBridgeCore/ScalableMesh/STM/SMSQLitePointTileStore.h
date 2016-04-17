@@ -155,7 +155,7 @@ public:
     header->m_IsBranched = !header->m_IsLeaf && (header->m_apSubNodeID.size() > 1 && header->m_apSubNodeID[1].IsValid());
     if (!header->m_IsLeaf && !header->m_IsBranched) header->m_SubNodeNoSplitID = header->m_apSubNodeID[0];
     //if (header->m_ptsIndiceID.size() > 0)header->m_ptsIndiceID[0] = blockID;
-    if (header->m_areTextured)
+    if (header->m_isTextured)
         {
         header->m_uvID = blockID;
         header->m_ptsIndiceID[0] = HPMBlockID();

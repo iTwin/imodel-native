@@ -853,41 +853,30 @@ bool IScalableMeshMesh::CutWithPlane(bvector<DSegment3d>& segmentList, DPlane3d&
     return _CutWithPlane(segmentList, cuttingPlane);
     }
 
-IScalableMeshTexturePtr IScalableMeshTexture::Create(Byte* data, size_t size, Point2d dimension, int id)
-{
-    return new ScalableMeshTexture(data, size, dimension, id);
-}
+ScalableMeshTexturePtr ScalableMeshTexture::Create(RefCountedPtr<SMMemoryPoolBlobItem<Byte>>& pTextureData)
+    {
+    return new ScalableMeshTexture(pTextureData);
+    }
 
-ScalableMeshTexturePtr ScalableMeshTexture::Create(Byte* data, size_t size, Point2d dimension, int id)
-{
-    return new ScalableMeshTexture(data, size, dimension, id);
-}
-
-Byte* IScalableMeshTexture::GetData() const
-{
+const Byte* IScalableMeshTexture::GetData() const
+    {
     return _GetData();
-}
+    }
 
 Point2d IScalableMeshTexture::GetDimension() const
-{
+    {
     return _GetDimension();
-}
+    }
 
 size_t IScalableMeshTexture::GetSize() const
-{
+    {
     return _GetSize();
-}
+    }
 
 size_t IScalableMeshTexture::GetNOfChannels() const
     {
     return _GetSize() / (_GetDimension().x * _GetDimension().y);
     }
-
-int IScalableMeshTexture::GetID() const
-{
-    return _GetID();
-}
-
 
 void CheckFaceIndexes(size_t& nbFaceIndexes, int32_t* faceIndexes, size_t nbPoints)
     {
@@ -1717,39 +1706,43 @@ bool ScalableMeshMesh::_CutWithPlane(bvector<DSegment3d>& segmentList, DPlane3d&
     return true;
     }
 
-Byte* ScalableMeshTexture::_GetData() const
-{
-    return m_data;
-}
+const Byte* ScalableMeshTexture::_GetData() const
+    {
+    return m_textureData;
+    }
 
 size_t ScalableMeshTexture::_GetSize() const
-{
+    {
     return m_dataSize;
-}
+    }
 
 Point2d ScalableMeshTexture::_GetDimension() const
-{
+    {
     return m_dimension;
-}
+    }
 
-int ScalableMeshTexture::_GetID() const
-{
-    return m_id;
-}
+ScalableMeshTexture::ScalableMeshTexture(RefCountedPtr<SMMemoryPoolBlobItem<Byte>>& pPoolBlobItem)
+    : m_texturePtr(pPoolBlobItem)
+    {
+    
+    if (m_texturePtr.IsValid())
+        {        
+        int dimensionX;
+        memcpy_s(&dimensionX, sizeof(int), m_texturePtr->GetData(), sizeof(int));
+        m_dimension.x = dimensionX;
+        int dimensionY;
+        memcpy_s(&dimensionY, sizeof(int), (int*)m_texturePtr->GetData() + 1, sizeof(int));
+        m_dimension.y = dimensionY;
+        memcpy_s(&m_nbChannels, sizeof(int), (int*)m_texturePtr->GetData() + 2, sizeof(int));
+        m_dataSize = m_dimension.x * m_dimension.y * m_nbChannels;
 
-ScalableMeshTexture::ScalableMeshTexture(Byte* data, size_t size, Point2d dimension, int id)
-{
-    m_dataSize = size;
-    m_dimension = dimension;
-    m_data = new Byte[size];
-    memcpy(m_data, (int*)data+3, size*sizeof(byte));
-    m_id = id;
-}
+        m_textureData = m_texturePtr->GetData() + m_dataSize;
+        }                    
+    }
 
 ScalableMeshTexture::~ScalableMeshTexture()
-{
-    delete[] m_data;
-}
+    {    
+    }
 
 DTMStatusInt ScalableMeshMeshWithGraph::_GetBoundary(bvector<DPoint3d>& pts)
     {
@@ -2339,6 +2332,13 @@ IScalableMeshMeshFlagsPtr IScalableMeshMeshFlags::Create()
     return new ScalableMeshMeshFlags();
     }
 
+IScalableMeshMeshFlagsPtr IScalableMeshMeshFlags::Create(bool shouldLoadTexture, bool shouldLoadGraph)
+    {
+    IScalableMeshMeshFlagsPtr smMeshFlag(new ScalableMeshMeshFlags());
+    smMeshFlag->SetLoadTexture(shouldLoadTexture);
+    smMeshFlag->SetLoadGraph(shouldLoadGraph);
+    return smMeshFlag;
+    }
 
 bool ScalableMeshMeshFlags::_ShouldLoadTexture() const
     {
@@ -2385,30 +2385,25 @@ IScalableMeshMeshPtr IScalableMeshNode::GetMeshUnderClip(IScalableMeshMeshFlagsP
     return _GetMeshUnderClip(flags, clip);
     }
 
-IScalableMeshMeshPtr IScalableMeshNode::GetMeshByParts(bvector<bool>& clipsToShow, ScalableMeshTextureID texId) const
+IScalableMeshMeshPtr IScalableMeshNode::GetMeshByParts(bvector<bool>& clipsToShow) const
     {
-    return _GetMeshByParts(clipsToShow, texId);
+    return _GetMeshByParts(clipsToShow);
     }
 
-IScalableMeshMeshPtr IScalableMeshNode::GetMeshByParts(bset<uint64_t>& clipsToShow, ScalableMeshTextureID texId) const
+IScalableMeshMeshPtr IScalableMeshNode::GetMeshByParts(bset<uint64_t>& clipsToShow) const
     {
-    return _GetMeshByParts(clipsToShow, texId);
+    return _GetMeshByParts(clipsToShow);
     }
 
-IScalableMeshTexturePtr IScalableMeshNode::GetTexture(size_t texture_id) const
-{
-    return _GetTexture(texture_id);
-}
-
-int IScalableMeshNode::GetTextureID(size_t texture_id) const
+IScalableMeshTexturePtr IScalableMeshNode::GetTexture() const
     {
-    return _GetTextureID(texture_id);
+    return _GetTexture();
     }
 
-size_t IScalableMeshNode::GetNbTexture() const
-{
-    return _GetNbTexture();
-}
+bool IScalableMeshNode::IsTextured() const
+    {
+    return _IsTextured();
+    }
 
 //Gets neighbors by relative position. For example, neighbor (-1, 0, 0) shares the node's left face. (1,1,0) shares the node's top-right diagonal. 
 bvector<IScalableMeshNodePtr>  IScalableMeshNode::GetNeighborAt( char relativePosX, char relativePosY, char relativePosZ) const
@@ -2535,9 +2530,9 @@ StatusInt IScalableMeshNodeEdit::AddTexturedMesh(bvector<DPoint3d>& vertices, bv
     return _AddTexturedMesh(vertices, pointsIndices, uv, uvIndices, nTexture);
     }
 
-StatusInt  IScalableMeshNodeEdit::AddTextures(bvector<bvector<Byte>>& data, size_t numTextures, bool sibling)
+StatusInt  IScalableMeshNodeEdit::AddTextures(bvector<Byte>& data, bool sibling)
     {
-    return _AddTextures(data, numTextures, sibling);
+    return _AddTextures(data, sibling);
     }
 
 StatusInt  IScalableMeshNodeEdit::SetNodeExtent(DRange3d& extent)
@@ -2556,19 +2551,14 @@ StatusInt  IScalableMeshNodeEdit::SetContentExtent(DRange3d& extent)
     }
 
 /*=========================IScalableMeshCachedDisplayNode===============================*/
-StatusInt IScalableMeshCachedDisplayNode::GetCachedMesh(SmCachedDisplayMesh*& cachedMesh, size_t cachedMeshId) const
+StatusInt IScalableMeshCachedDisplayNode::GetCachedMesh(SmCachedDisplayMesh*& cachedMesh) const
     {
-    return _GetCachedMesh(cachedMesh, cachedMeshId);
+    return _GetCachedMesh(cachedMesh);
     }
 
-StatusInt IScalableMeshCachedDisplayNode::GetCachedTexture(SmCachedDisplayTexture*& cachedTexture, size_t cachedMeshId) const
+StatusInt IScalableMeshCachedDisplayNode::GetCachedTexture(SmCachedDisplayTexture*& cachedTexture) const
     {
-    return _GetCachedTexture(cachedTexture, cachedMeshId);
-    }
-
-size_t IScalableMeshCachedDisplayNode::GetNbMeshes() const
-    {
-    return _GetNbMeshes();
+    return _GetCachedTexture(cachedTexture);
     }
     
 /*==================================================================*/

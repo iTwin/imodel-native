@@ -729,35 +729,30 @@ class ScalableMeshMesh : public IScalableMeshMesh
 class ScalableMeshTexture;
 typedef RefCountedPtr<ScalableMeshTexture> ScalableMeshTexturePtr;
 
+
 class ScalableMeshTexture : public IScalableMeshTexture
 {
-    friend IScalableMeshTexture;
+    friend IScalableMeshTexture;    
 
 private:
-    Byte* m_data;
-    size_t m_dataSize;
-    Point2d m_dimension;
-    int m_id;
-//    MaterialPtr m_material;
+    
+    const Byte*                               m_textureData;
+    size_t                                    m_dataSize;    
+    Point2d                                   m_dimension;    
+    int                                       m_nbChannels;
+    RefCountedPtr<SMMemoryPoolBlobItem<Byte>> m_texturePtr;
 
 protected:
-    virtual size_t _GetSize() const override;
-    virtual Point2d _GetDimension() const override;
-    virtual Byte* _GetData() const override;
-    virtual int _GetID() const override;
-//    virtual MaterialPtr _GetMaterial() const override;
+    virtual size_t      _GetSize() const override;
+    virtual Point2d     _GetDimension() const override;
+    virtual const Byte* _GetData() const override;   
 
-    ScalableMeshTexture(Byte* data, size_t size, Point2d dimension, int id);
+    ScalableMeshTexture(RefCountedPtr<SMMemoryPoolBlobItem<Byte>>& pTextureData);
     virtual ~ScalableMeshTexture();
 
-public:
-    Byte* GetData() const { return m_data; }
-    Point2d GetDimension() const { return m_dimension; }
-    size_t GetSize() const { return m_dataSize; }
-    int GetID() const { return m_id; }
-//    MaterialPtr GetMaterial() const { return m_material; }
+public:    
 
-    static ScalableMeshTexturePtr Create(byte* pData, size_t dataSize, Point2d dimension, int id);
+    static ScalableMeshTexturePtr Create(RefCountedPtr<SMMemoryPoolBlobItem<Byte>>& pTextureData);
 };
 
 
@@ -1283,9 +1278,9 @@ template<class POINT> class ScalableMeshNode : public virtual IScalableMeshNode
     protected:
         HFCPtr<SMPointIndexNode<POINT, YProtPtExtentType>> m_node;        
 
-        void ComputeDiffSet(DifferenceSet& diffs, const bvector<bool>& clipsToShow, ScalableMeshTextureID texID, bool applyAllClips = false) const;
+        void ComputeDiffSet(DifferenceSet& diffs, const bvector<bool>& clipsToShow, bool applyAllClips = false) const;
 
-        void ComputeDiffSet(DifferenceSet& diffs, const bset<uint64_t>& clipsToShow, ScalableMeshTextureID texID) const;
+        void ComputeDiffSet(DifferenceSet& diffs, const bset<uint64_t>& clipsToShow) const;
 
         virtual BcDTMPtr   _GetBcDTM() const override;
 
@@ -1297,9 +1292,9 @@ template<class POINT> class ScalableMeshNode : public virtual IScalableMeshNode
 
         virtual IScalableMeshMeshPtr _GetMeshUnderClip(IScalableMeshMeshFlagsPtr& flags, uint64_t clip) const override;
 
-        virtual IScalableMeshMeshPtr _GetMeshByParts(const bvector<bool>& clipsToShow, ScalableMeshTextureID texId) const override;
+        virtual IScalableMeshMeshPtr _GetMeshByParts(const bvector<bool>& clipsToShow) const override;
 
-        virtual IScalableMeshMeshPtr _GetMeshByParts(const bset<uint64_t>& clipsToShow, ScalableMeshTextureID texId) const override;
+        virtual IScalableMeshMeshPtr _GetMeshByParts(const bset<uint64_t>& clipsToShow) const override;
 
         virtual void   _ApplyAllExistingClips() const override;
 
@@ -1313,12 +1308,10 @@ template<class POINT> class ScalableMeshNode : public virtual IScalableMeshNode
 
         virtual bool   _DeleteClip(uint64_t id, bool isVisible) const override;
 
-        virtual IScalableMeshTexturePtr _GetTexture(size_t texture_id) const override;
+        virtual IScalableMeshTexturePtr _GetTexture() const override;
 
-        virtual int _GetTextureID(size_t texture_id) const override;
-
-        virtual size_t _GetNbTexture() const override;
-
+        virtual bool                    _IsTextured() const override;
+                
         virtual bvector<IScalableMeshNodePtr> _GetNeighborAt( char relativePosX, char relativePosY, char relativePosZ) const override;
 
         virtual DRange3d _GetNodeExtent() const override;
@@ -1362,19 +1355,20 @@ template<class POINT> class ScalableMeshCachedMeshNode : public virtual IScalabl
     {    
 
     private: 
-            bvector<IScalableMeshMeshPtr>    m_loadedMeshes;
-            bvector<IScalableMeshTexturePtr> m_loadedTextures;            
-            size_t                           m_nbMeshes; 
+            //NEEDS_WORK_TEXTURE
+            IScalableMeshMeshPtr    m_loadedMesh;
+            IScalableMeshTexturePtr m_loadedTexture;            
+            bool                    m_loadTexture;             
 
     protected: 
 
         virtual IScalableMeshMeshPtr _GetMesh(IScalableMeshMeshFlagsPtr& flags, bvector<bool>& clipsToShow) const override;
 
-            virtual IScalableMeshMeshPtr _GetMeshByParts(const bvector<bool>& clipsToShow, ScalableMeshTextureID texId) const override;
+            virtual IScalableMeshMeshPtr _GetMeshByParts(const bvector<bool>& clipsToShow) const override;
 
-            virtual IScalableMeshMeshPtr _GetMeshByParts(const bset<uint64_t>& clipsToShow, ScalableMeshTextureID texId) const override;
+            virtual IScalableMeshMeshPtr _GetMeshByParts(const bset<uint64_t>& clipsToShow) const override;
 
-            virtual IScalableMeshTexturePtr _GetTexture(size_t texture_id) const override;
+            virtual IScalableMeshTexturePtr _GetTexture() const override;
 
     public:             
 
@@ -1383,23 +1377,18 @@ template<class POINT> class ScalableMeshCachedMeshNode : public virtual IScalabl
                 {           
                 auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_node);
 
-                if (loadTexture)                    
-                    m_nbMeshes = meshNode->GetNbOfTextures() + 1;
-                else
-                    m_nbMeshes = 1;
+                m_loadTexture = loadTexture;
                 }
 
             ScalableMeshCachedMeshNode() {};
 
-            void LoadMeshes(bool loadGraph, const bvector<bool>& clipsToShow, bool applyAllClips=false);
+            void LoadMesh(bool loadGraph, const bvector<bool>& clipsToShow, bool applyAllClips=false);
 
-            void LoadMeshes(bool loadGraph, const bset<uint64_t>& clipsToShow);
+            void LoadMesh(bool loadGraph, const bset<uint64_t>& clipsToShow);
 
-            virtual StatusInt _GetCachedMesh(SmCachedDisplayMesh*& cachedMesh, size_t cachedMeshId) const override {return ERROR;}
+            virtual StatusInt _GetCachedMesh(SmCachedDisplayMesh*& cachedMesh) const override {return ERROR;}
 
-            virtual StatusInt _GetCachedTexture(SmCachedDisplayTexture*& cachedTexture, size_t cachedMeshId) const override {return ERROR;}
-
-            virtual size_t    _GetNbMeshes() const override {return m_nbMeshes;}
+            virtual StatusInt _GetCachedTexture(SmCachedDisplayTexture*& cachedTexture) const override {return ERROR;}            
 
             static ScalableMeshCachedMeshNode* Create(HFCPtr<SMPointIndexNode<POINT, YProtPtExtentType>>& nodePtr, bool loadTexture) 
                 {
@@ -1413,44 +1402,27 @@ template<class POINT> class ScalableMeshCachedDisplayNode : public virtual IScal
     {    
 
     private: 
-            //IScalableMeshMeshPtr m_loadedMeshPtr;
-            bvector<SmCachedDisplayMesh*>       m_cachedDisplayMeshes;
-            bvector<SmCachedDisplayTexture*>    m_cachedDisplayTextures;
+
+            SmCachedDisplayMesh*                m_cachedDisplayMesh;
+            SmCachedDisplayTexture*             m_cachedDisplayTexture;
             IScalableMeshDisplayCacheManagerPtr m_displayCacheManagerPtr;
-            bool                                m_isLoaded;
-            size_t                              m_nbMeshes; 
+            bool                                m_isLoaded;            
 
 
     protected:         
                                     
-            virtual StatusInt _GetCachedMesh(SmCachedDisplayMesh*& cachedMesh, size_t cachedMeshId) const override 
+            virtual StatusInt _GetCachedMesh(SmCachedDisplayMesh*& cachedMesh) const override 
                 {                            
-                if (cachedMeshId < m_cachedDisplayMeshes.size()) 
-                    {
-                    cachedMesh = m_cachedDisplayMeshes[cachedMeshId];
-                    return SUCCESS;
-                    }
-
-                return ERROR;                
+                cachedMesh = m_cachedDisplayMesh;
+                return SUCCESS;                
                 }
 
-            virtual StatusInt _GetCachedTexture(SmCachedDisplayTexture*& cachedTexture, size_t cachedMeshId) const override                 
+            virtual StatusInt _GetCachedTexture(SmCachedDisplayTexture*& cachedTexture) const override                 
                 {
-                //Cached mesh Id 0 is the mesh without texture, which can be empty
-                if (cachedMeshId < m_cachedDisplayTextures.size()) 
-                    {
-                    cachedTexture = m_cachedDisplayTextures[cachedMeshId];
-                    return SUCCESS;
-                    }
-
-                return ERROR;                                
+                cachedTexture = m_cachedDisplayTexture;
+                return SUCCESS;                            
                 }            
-
-            virtual size_t _GetNbMeshes() const override
-                {                
-                return m_nbMeshes;
-                }
-
+          
     public:             
 
             ScalableMeshCachedDisplayNode(HFCPtr<SMPointIndexNode<POINT, YProtPtExtentType>>& nodePtr)
@@ -1458,41 +1430,27 @@ template<class POINT> class ScalableMeshCachedDisplayNode : public virtual IScal
                 {                
                 m_isLoaded = false;
 
-                auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_node);
-
-                m_nbMeshes = meshNode->GetNbOfTextures() + 1;                
+                auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_node);                
                 }
 
             ~ScalableMeshCachedDisplayNode()
                 {                                
-                for (auto& mesh : m_cachedDisplayMeshes)
+                if (m_cachedDisplayMesh != 0)
                     {
-                    if (mesh != 0)
-                        {
-                        assert(m_displayCacheManagerPtr != 0);
-                    
-                        BentleyStatus status = m_displayCacheManagerPtr->_DestroyCachedMesh(mesh); 
-
-                        assert(status == SUCCESS);                    
-                        }
+                    BentleyStatus status = m_displayCacheManagerPtr->_DestroyCachedMesh(m_cachedDisplayMesh); 
+                    assert(status == SUCCESS);                    
                     }
 
-                for (auto& texture : m_cachedDisplayTextures)
+                if (m_cachedDisplayTexture != 0)
                     {
-                    if (texture != 0)
-                        {
-                        assert(m_displayCacheManagerPtr != 0);
-                    
-                        BentleyStatus status = m_displayCacheManagerPtr->_DestroyCachedTexture(texture); 
-
-                        assert(status == SUCCESS);                    
-                        }
+                    BentleyStatus status = m_displayCacheManagerPtr->_DestroyCachedTexture(m_cachedDisplayTexture); 
+                    assert(status == SUCCESS);                    
                     }
                 }
             
-            void LoadMeshes(bool loadGraph, const bvector<bool>& clipsToShow, IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr, bool loadTexture, bool applyAllClips = false);
+            void LoadMesh(bool loadGraph, const bvector<bool>& clipsToShow, IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr, bool loadTexture, bool applyAllClips = false);
 
-            void LoadMeshes(bool loadGraph, const bset<uint64_t>& clipsToShow, IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr, bool loadTexture);
+            void LoadMesh(bool loadGraph, const bset<uint64_t>& clipsToShow, IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr, bool loadTexture);
 
             static ScalableMeshCachedDisplayNode<POINT>* Create(HFCPtr<SMPointIndexNode<POINT, YProtPtExtentType>>& nodePtr)
                 {
@@ -1512,8 +1470,8 @@ template<class POINT> class ScalableMeshNodeEdit : public IScalableMeshNodeEdit,
 
         virtual StatusInt _AddMesh(DPoint3d* vertices, size_t nVertices, int32_t* indices, size_t nIndices) override;
 
-		// The binary buffer for each texture starts with three int numbers representing texture width, texture height and number of color channels
-        virtual StatusInt _AddTextures(bvector<bvector<Byte>>& data, size_t numTextures, bool sibling = false) override;
+        // The binary buffer for the texture starts with three int numbers representing texture width, texture height and number of color channels
+        virtual StatusInt _AddTextures(bvector<Byte>& data, bool sibling = false) override;
 
         virtual StatusInt _AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<bvector<int32_t>>& ptsIndices, bvector<DPoint2d>& uv, bvector<bvector<int32_t>>& uvIndices, size_t nTexture) override;
         
@@ -1549,9 +1507,9 @@ template<class POINT> class ScalableMeshNodeWithReprojection : public ScalableMe
     protected:
         virtual IScalableMeshMeshPtr _GetMesh(IScalableMeshMeshFlagsPtr& flags, bvector<bool>& clipsToShow) const override;
 
-        virtual IScalableMeshMeshPtr _GetMeshByParts(const bvector<bool>& clipsToShow, ScalableMeshTextureID texId) const override;
+        virtual IScalableMeshMeshPtr _GetMeshByParts(const bvector<bool>& clipsToShow) const override;
 
-        virtual IScalableMeshMeshPtr _GetMeshByParts(const bset<uint64_t>& clipsToShow, ScalableMeshTextureID texId) const override;
+        virtual IScalableMeshMeshPtr _GetMeshByParts(const bset<uint64_t>& clipsToShow) const override;
     public:
         ScalableMeshNodeWithReprojection(IScalableMeshNodePtr nodeInfo, const GeoCoords::Reprojection& reproject);
         ScalableMeshNodeWithReprojection(HFCPtr<SMPointIndexNode<POINT, YProtPtExtentType>>& nodePtr, const GeoCoords::Reprojection& reproject);

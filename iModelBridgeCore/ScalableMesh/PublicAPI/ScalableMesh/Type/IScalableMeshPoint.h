@@ -6,7 +6,7 @@
 |       $Date: 2011/08/30 19:04:06 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -51,7 +51,7 @@ class PointTypeFamilyCreator : public Import::Plugin::V0::StaticDataTypeFamilyCr
     {
     virtual const Import::DataTypeFamily&         _Create                                        () const override;
 public:
-    BENTLEYSTM_EXPORT explicit                    PointTypeFamilyCreator                         ();
+    BENTLEY_SM_EXPORT explicit                    PointTypeFamilyCreator                         ();
     };
 
 
@@ -63,7 +63,7 @@ class PointType3d64fCreator : public Import::Plugin::V0::StaticDataTypeCreatorBa
     {
     virtual const Import::DataType&                 _Create                                        () const override;
 public: 
-    BENTLEYSTM_EXPORT explicit                    PointType3d64fCreator                          ();
+    BENTLEY_SM_EXPORT explicit                    PointType3d64fCreator                          ();
     };
 
 
@@ -75,7 +75,7 @@ class PointType3d64fM64fCreator : public Import::Plugin::V0::StaticDataTypeCreat
     {
     virtual const Import::DataType&                 _Create                                        () const override;
 public:
-    BENTLEYSTM_EXPORT explicit                    PointType3d64fM64fCreator                      ();
+    BENTLEY_SM_EXPORT explicit                    PointType3d64fM64fCreator                      ();
     
 
     };
@@ -88,7 +88,7 @@ class PointType3d64fG32Creator : public Import::Plugin::V0::StaticDataTypeCreato
     {
     virtual const Import::DataType&                 _Create                                        () const override;
 public:
-    BENTLEYSTM_EXPORT explicit                    PointType3d64fG32Creator                       ();
+    BENTLEY_SM_EXPORT explicit                    PointType3d64fG32Creator                       ();
     };
 
 
@@ -100,7 +100,7 @@ class PointType3d64fM64fG32Creator : public Import::Plugin::V0::StaticDataTypeCr
     {
     virtual const Import::DataType&                 _Create                                        () const override;
 public:
-    BENTLEYSTM_EXPORT explicit                    PointType3d64fM64fG32Creator                   ();
+    BENTLEY_SM_EXPORT explicit                    PointType3d64fM64fG32Creator                   ();
     };
 
 
@@ -114,7 +114,7 @@ class PointType3d64f_R16G16B16_I16Creator : public Import::Plugin::V0::StaticDat
     {
     virtual const Import::DataType&                 _Create                                        () const override;
 public:
-    BENTLEYSTM_EXPORT explicit                    PointType3d64f_R16G16B16_I16Creator            ();
+    BENTLEY_SM_EXPORT explicit                    PointType3d64f_R16G16B16_I16Creator            ();
     };
 
 
@@ -126,7 +126,7 @@ class PointType3d64f_R16G16B16_I16_C8Creator : public Import::Plugin::V0::Static
     {
     virtual const Import::DataType&         _Create                                        () const override;
 public:
-    BENTLEYSTM_EXPORT explicit                    PointType3d64f_R16G16B16_I16_C8Creator         ();
+    BENTLEY_SM_EXPORT explicit                    PointType3d64f_R16G16B16_I16_C8Creator         ();
     };
 
 

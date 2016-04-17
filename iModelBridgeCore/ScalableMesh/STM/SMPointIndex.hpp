@@ -89,7 +89,7 @@ template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointInde
     m_createdNodeMap = createdNodeMap;
     m_nodeHeader.m_filtered = false;
     m_nodeHeader.m_nbFaceIndexes = 0;
-    m_nodeHeader.m_areTextured = false;
+    m_nodeHeader.m_isTextured = false;
     m_nodeHeader.m_nbTextures = 0;
     m_nodeHeader.m_nbUvIndexes = 0;    
     m_nodeHeader.m_numberOfMeshComponents = 0;
@@ -158,7 +158,7 @@ template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointInde
     m_filter = pi_rpParentNode->GetFilter();
     m_nodeHeader.m_filtered = false;
     m_nodeHeader.m_nbFaceIndexes = 0;
-    m_nodeHeader.m_areTextured = false;
+    m_nodeHeader.m_isTextured = false;
     m_nodeHeader.m_nbTextures = 0;
     m_nodeHeader.m_nbUvIndexes = 0;
     m_nodeHeader.m_numberOfMeshComponents = 0;
@@ -4282,7 +4282,7 @@ bool SMPointIndexNode<POINT, EXTENT>::IsTextured() const
     if(!IsLoaded())
         Load();
     
-	return(m_nodeHeader.m_areTextured);
+	return(m_nodeHeader.m_isTextured);
     }
 
 

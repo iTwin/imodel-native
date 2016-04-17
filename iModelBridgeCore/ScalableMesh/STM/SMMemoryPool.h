@@ -77,7 +77,7 @@ enum class ContainerType
     */
 
 template <typename DataType> class SMMemoryPoolVectorItem;
-template <typename DataType> class SMMemoryPoolItem;
+template <typename DataType> class SMMemoryPoolBlobItem;
 
 class SMMemoryPool;
 typedef RefCountedPtr<SMMemoryPool> SMMemoryPoolPtr;
@@ -118,9 +118,9 @@ class SMMemoryPoolItemBase : public RefCountedBase
             }
 
         template<typename T>
-        RefCountedPtr<SMMemoryPoolItem<T>> GetAsTypedPoolItem()
+        RefCountedPtr<SMMemoryPoolBlobItem<T>> GetAsBlobPoolItem()
             {            
-            return dynamic_cast<SMMemoryPoolItem<T>*>(this);
+            return dynamic_cast<SMMemoryPoolBlobItem<T>*>(this);
             }
         
         virtual ~SMMemoryPoolItemBase();
@@ -159,13 +159,13 @@ class TextureTypedPoolItemCreator : public CustomTypedPoolItemCreator
     }
     */
 
-template <typename DataType> class SMMemoryPoolItem : public SMMemoryPoolItemBase
+template <typename DataType> class SMMemoryPoolBlobItem : public SMMemoryPoolItemBase
     {
     protected : 
 
     public : 
         
-        SMMemoryPoolItem(size_t size, uint64_t nodeId, SMPoolDataTypeDesc dataType)
+        SMMemoryPoolBlobItem(size_t size, uint64_t nodeId, SMPoolDataTypeDesc dataType)
             {            
             m_size = size;
             m_nodeId = nodeId;
@@ -178,9 +178,79 @@ template <typename DataType> class SMMemoryPoolItem : public SMMemoryPoolItemBas
             m_dataType = dataType;
             }
 
-        virtual ~SMMemoryPoolItem()
+        virtual ~SMMemoryPoolBlobItem()
             {
             }
+
+        const DataType* GetData()
+            {
+            return m_data;
+            }
+    };
+
+
+/*
+struct BlobItemSerializer
+    {
+    virtual Serialize(Byte* data) = 0;
+
+    virtual Derialize() = 0;
+
+    virtual GetDataSize() = 0;
+    };
+
+
+struct TextureItem : BlobItemSerializer
+    {
+    int   m_sizeX;
+    int   m_sizeY;
+    int   m_nbChannels;
+    Byte* m_data;
+    }
+    */
+
+template <typename DataType> class SMStoredMemoryPoolBlobItem : public SMMemoryPoolBlobItem<DataType>
+    {
+    protected : 
+
+        IHPMDataStore<Byte>* m_store;
+
+    public : 
+        
+         SMStoredMemoryPoolBlobItem(uint64_t nodeId, IHPMDataStore<Byte>* store, SMPoolDataTypeDesc dataType)
+            : SMMemoryPoolBlobItem(store->GetBlockDataCount(HPMBlockID(nodeId)) * sizeof(DataType), nodeId, dataType)
+            {                                    
+            m_store = store;            
+            
+            if (m_size > 0)
+                {                
+                HPMBlockID blockID(m_nodeId);
+                size_t nbBytesLoaded = m_store->LoadBlock ((DataType*)m_data, m_size, blockID);
+                assert(nbBytesLoaded == m_size);
+                }           
+            }
+
+
+         SMStoredMemoryPoolBlobItem(uint64_t nodeId, IHPMDataStore<DataType>* store, const DataType* data, uint64_t dataSize, SMPoolDataTypeDesc dataType)
+            : SMMemoryPoolBlobItem(dataSize, nodeId, dataType)
+            {                                    
+            m_store = store;                        
+
+            if (m_size > 0)
+                {                
+                memcpy((DataType*)m_data, data, dataSize);
+                m_dirty = true;
+                }           
+            }
+
+        ~SMStoredMemoryPoolBlobItem()
+            {
+            if (m_dirty)
+                {
+                HPMBlockID blockID(m_nodeId);
+                m_store->StoreBlock(m_data, m_size, blockID);                
+                }
+            }    
     };
 
 
@@ -866,7 +936,24 @@ class SMMemoryPool : public RefCountedBase
                 }
 
             return poolMemVectorItemPtr.IsValid();
-            }                
+            }  
+
+        template<typename T>
+        bool GetItem(RefCountedPtr<SMMemoryPoolBlobItem<T>>& poolMemBlobItemPtr, SMMemoryPoolItemId id, uint64_t nodeId, SMPoolDataTypeDesc dataType)
+            {
+            if (id == SMMemoryPool::s_UndefinedPoolItemId)
+                return false; 
+
+            assert(!poolMemBlobItemPtr.IsValid());
+            SMMemoryPoolItemBasePtr memItemPtr;
+            
+            if (GetItem(memItemPtr, id) && memItemPtr->IsCorrect(nodeId, dataType))
+                {
+                poolMemBlobItemPtr = memItemPtr->GetAsBlobPoolItem<T>();                
+                }
+
+            return poolMemBlobItemPtr.IsValid();
+            }  
                
         bool GetItem(SMMemoryPoolItemBasePtr& memItemPtr, SMMemoryPoolItemId id);
             

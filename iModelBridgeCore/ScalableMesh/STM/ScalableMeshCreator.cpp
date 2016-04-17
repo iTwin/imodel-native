@@ -700,13 +700,8 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<IndexType>&       
                                        ScalableMeshMemoryPools<PointType>::Get()->GetPtsIndicePool(),
                                        &*pStreamingIndiceTileStore,
                                        ScalableMeshMemoryPools<PointType>::Get()->GetGraphPool(),
-
-                                       pGraphTileStore = new SMSQLiteGraphTileStore(m_smSQLitePtr),
-
-                                       ScalableMeshMemoryPools<PointType>::Get()->GetTexturePool(),
-
+                                       pGraphTileStore = new SMSQLiteGraphTileStore(m_smSQLitePtr),                                       
                                        pStreamingTextureTileStore,
-
                                        ScalableMeshMemoryPools<PointType>::Get()->GetUVPool(),
                                        //pUVTileStore,
                                        //new UVTileStore<PointType>(filePtr, 0),
@@ -753,8 +748,7 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<IndexType>&       
                                        ScalableMeshMemoryPools<PointType>::Get()->GetPtsIndicePool(),
                                        &*pIndiceTileStore,
                                        ScalableMeshMemoryPools<PointType>::Get()->GetGraphPool(),
-                                       pGraphTileStore,
-                                       ScalableMeshMemoryPools<PointType>::Get()->GetTexturePool(),
+                                       pGraphTileStore,                                       
                                        &*pTextureTileStore,
                                        //new TextureTileStore(filePtr, n),
                                        ScalableMeshMemoryPools<PointType>::Get()->GetUVPool(),

@@ -6,7 +6,7 @@
 |       $Date: 2011/08/02 14:59:39 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -156,7 +156,7 @@ class ScalableMeshTilingOptionsBase
     {
     public:     
         
-        BENTLEYSTM_EXPORT ScalableMeshTilingOptionsBase();
+        BENTLEY_SM_EXPORT ScalableMeshTilingOptionsBase();
 
-        BENTLEYSTM_EXPORT virtual ~ScalableMeshTilingOptionsBase();
+        BENTLEY_SM_EXPORT virtual ~ScalableMeshTilingOptionsBase();
     };
