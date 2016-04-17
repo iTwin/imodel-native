@@ -1429,6 +1429,8 @@ template<class POINT> class ScalableMeshCachedDisplayNode : public virtual IScal
             : ScalableMeshNode(nodePtr)
                 {                
                 m_isLoaded = false;
+                m_cachedDisplayMesh = 0;
+                m_cachedDisplayTexture = 0;
 
                 auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_node);                
                 }

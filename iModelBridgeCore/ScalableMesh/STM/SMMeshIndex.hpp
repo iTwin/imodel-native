@@ -2021,7 +2021,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
     DRange2d contentExtent = DRange2d::From(ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMin(m_nodeHeader.m_nodeExtent),
                                             ExtentOp<EXTENT>::GetXMax(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMax(m_nodeHeader.m_nodeExtent));
     if (!rasterBox.IntersectsWith(contentExtent)) return;
-    m_nodeHeader.m_isTextured = true;   
+    
     int textureWidthInPixels = 1024, textureHeightInPixels = 1024;
     double unitsPerPixelX = (contentExtent.high.x - contentExtent.low.x) / textureWidthInPixels;
     double unitsPerPixelY = (contentExtent.high.y - contentExtent.low.y) / textureHeightInPixels;

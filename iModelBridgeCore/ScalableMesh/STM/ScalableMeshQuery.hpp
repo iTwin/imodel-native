@@ -2235,8 +2235,8 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
                 uvPtr = meshNode->GetUVPtr();
                 nbUvs = meshNode->GetNbUVs();
 
-                meshNode->PinUVsIndices(1);
-                uvIndicesP = meshNode->GetUVsIndicesPtr(1);
+                meshNode->PinUVsIndices(0);
+                uvIndicesP = meshNode->GetUVsIndicesPtr(0);
                 }
 
             DifferenceSet clipDiffSet;
@@ -2306,7 +2306,7 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
             if (m_cachedDisplayTexture != 0 && toLoadUvCount > 0)
                 {
                 cachedTexture = m_cachedDisplayTexture;
-                                        
+                                          
                 for (size_t faceInd = 0; faceInd < toLoadNbFaceIndexes; faceInd++)
                     {
                     int32_t pointInd = toLoadFaceIndexes[faceInd];
@@ -2643,8 +2643,7 @@ template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddTexturedMesh(b
     {
     m_node->clear();
     auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_node);
-    m_meshNode->m_nodeHeader.m_arePoints3d = true;
-    m_meshNode->m_nodeHeader.m_isTextured = true;
+    m_meshNode->m_nodeHeader.m_arePoints3d = true;    
 
     size_t nIndicesCount = 0;
     vector<POINT> nodePts(vertices.size());
@@ -2710,6 +2709,8 @@ template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddTexturedMesh(b
 #pragma optimize("", on)
 template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddTextures(bvector<Byte>& data, bool sibling)
     {
+    assert(m_node->m_nodeHeader.m_isTextured == false);
+
     auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_node);
 
     if (m_node->m_nodeHeader.m_isTextured == false)
