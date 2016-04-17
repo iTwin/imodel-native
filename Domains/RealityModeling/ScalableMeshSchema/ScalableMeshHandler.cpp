@@ -261,15 +261,15 @@ void ProgressiveDrawMeshNode2(bvector<IScalableMeshCachedDisplayNodePtr>& meshNo
                 requestedNodes.push_back(meshNodes[nodeInd]);
             else
             */            
-            //if (overviewMeshNodes[nodeInd]->GetNbTexture() != 0)
+            
                 {
                 ElemMatSymbP matSymbP = context.GetElemMatSymb();
 
                 matSymbP->Init();
                 ColorDef white(0xff, 0xff, 0xff);
                 ColorDef green(0, 0x77, 0);
-                matSymbP->SetLineColor(overviewMeshNodes[nodeInd]->GetNbTexture() != 0 ? white : green);
-                matSymbP->SetFillColor(overviewMeshNodes[nodeInd]->GetNbTexture() != 0 ? white : green);                
+                matSymbP->SetLineColor(overviewMeshNodes[nodeInd]->IsTextured() ? white : green);
+                matSymbP->SetFillColor(overviewMeshNodes[nodeInd]->IsTextured() ? white : green);                
                 matSymbP->SetFillTransparency(s_transparency);
                 matSymbP->SetLineTransparency(s_transparency);
 
@@ -277,68 +277,67 @@ void ProgressiveDrawMeshNode2(bvector<IScalableMeshCachedDisplayNodePtr>& meshNo
                 context.ResetContextOverrides(); // If not reset, last drawn override is applyed to dtm (Selected/Hide preview)
                 context.GetIDrawGeom().ActivateMatSymb(matSymbP);
                 }
-            for (size_t meshInd = 0; meshInd < overviewMeshNodes[nodeInd]->GetNbMeshes(); meshInd++)
+
+            
+            SmCachedDisplayMesh* cachedMesh = 0;
+            QvElem* qvElem = 0;                
+            bool isEmptyMesh = false;
+
+            if (isOutputQuickVision && (SUCCESS == overviewMeshNodes[nodeInd]->GetCachedMesh(cachedMesh)))
                 {
-                SmCachedDisplayMesh* cachedMesh = 0;
-                QvElem* qvElem = 0;                
-                bool isEmptyMesh = false;
-
-                if (isOutputQuickVision && (SUCCESS == overviewMeshNodes[nodeInd]->GetCachedMesh(cachedMesh, meshInd)))
+                if (cachedMesh != 0)
+                    {                        
+                    qvElem = cachedMesh->m_qvElem;                    
+                    assert(qvElem != 0);
+                    }
+                else
                     {
-                    if (cachedMesh != 0)
-                        {                        
-                        qvElem = cachedMesh->m_qvElem;                    
-                        assert(qvElem != 0);
-                        }
-                    else
-                        {
-                        qvElem = 0;
-                        isEmptyMesh = true;
-                        }                                        
-                    }
-                else
-                    {                    
-                    /*NEEDS_WORK_SM : Not support yet.
-                    __int64 meshId = GetMeshId(overviewMeshNodes[nodeInd]->GetNodeId(), meshInd);
+                    qvElem = 0;
+                    isEmptyMesh = true;
+                    }                                        
+                }
+            else
+                {                    
+                /*NEEDS_WORK_SM : Not support yet.
+                __int64 meshId = GetMeshId(overviewMeshNodes[nodeInd]->GetNodeId());
 
-                    qvElem = QvCachedNodeManager::GetManager().FindQvElem(meshId, dtmDataRef.get());                            
-                    */
-                    }                
+                qvElem = QvCachedNodeManager::GetManager().FindQvElem(meshId, dtmDataRef.get());                            
+                */
+                }                
         
-                if (qvElem != 0)
-                    {   
-                    if (cachedMesh == 0)
-                        {
-                        //NEEDS_WORK_SM : Not support yet.
-                        //ActivateMaterial(overviewMeshNodes[nodeInd], meshInd, context);
-                        }
-                    
-                    SmCachedGraphics smCached(context.GetDgnDb(), qvElem);
-                    context.DrawCached(smCached);
-                    smCached.UnlinkQvElem();
-                    
-                    //context.DrawQvElem (qvElem, &storageToUorsTransform, 0, false, false, true);                                       
+            if (qvElem != 0)
+                {   
+                if (cachedMesh == 0)
+                    {
+                    //NEEDS_WORK_SM : Not support yet.
+                    //ActivateMaterial(overviewMeshNodes[nodeInd], context);
                     }
-                else
-                if (!isEmptyMesh)
-                    {                                           
-                    //nodesWithoutQvElem.push_back(overviewMeshNodes[nodeInd]);                
-                    //NEEDS_WORK_SM_PROGRESSIVE : Getclip passed to progressive display engine
-                    /*
-                    bvector<bool> clips;
-                    dtmDataRef->GetVisibleClips(clips);
-                    IScalableMeshMeshPtr mrdtmMeshPtr(overviewMeshNodes[nodeInd]->GetMeshByParts(clips, meshInd));
+                
+                SmCachedGraphics smCached(context.GetDgnDb(), qvElem);
+                context.DrawCached(smCached);
+                smCached.UnlinkQvElem();
+                
+                //context.DrawQvElem (qvElem, &storageToUorsTransform, 0, false, false, true);                                       
+                }
+            else
+            if (!isEmptyMesh)
+                {                                           
+                //nodesWithoutQvElem.push_back(overviewMeshNodes[nodeInd]);                
+                //NEEDS_WORK_SM_PROGRESSIVE : Getclip passed to progressive display engine
+                /*
+                bvector<bool> clips;
+                dtmDataRef->GetVisibleClips(clips);
+                IScalableMeshMeshPtr mrdtmMeshPtr(overviewMeshNodes[nodeInd]->GetMeshByParts(clips));
 
-                    if (mrdtmMeshPtr != 0)
-                        {           
-                        ActivateMaterial(overviewMeshNodes[nodeInd], meshInd, context);
+                if (mrdtmMeshPtr != 0)
+                    {           
+                    ActivateMaterial(overviewMeshNodes[nodeInd], context);
 
-                        __int64 meshId = GetMeshId(overviewMeshNodes[nodeInd]->GetNodeId(), meshInd);
-                        CreateQvElemForMesh(mrdtmMeshPtr, dtmDataRef, element, context, meshId, drawingInfo);                                                       
-                        }
-                        */
+                    __int64 meshId = GetMeshId(overviewMeshNodes[nodeInd]->GetNodeId());
+                    CreateQvElemForMesh(mrdtmMeshPtr, dtmDataRef, element, context, meshId, drawingInfo);                                                       
                     }
-                }        
+                    */
+                }                
             }   
         }
 
@@ -359,62 +358,61 @@ void ProgressiveDrawMeshNode2(bvector<IScalableMeshCachedDisplayNodePtr>& meshNo
             else
             */
             bool wasDrawn = false;
-            for (size_t meshInd = 0; meshInd < meshNodes[nodeInd]->GetNbMeshes(); meshInd++)                
+          
+            SmCachedDisplayMesh* cachedMesh = 0;
+            QvElem* qvElem = 0;                
+            bool isEmptyNode = false;
+
+            if (isOutputQuickVision && (SUCCESS == meshNodes[nodeInd]->GetCachedMesh(cachedMesh)))
                 {
-                SmCachedDisplayMesh* cachedMesh = 0;
-                QvElem* qvElem = 0;                
-                bool isEmptyNode = false;
-
-                if (isOutputQuickVision && (SUCCESS == meshNodes[nodeInd]->GetCachedMesh(cachedMesh, meshInd)))
+                if (cachedMesh != 0)
                     {
-                    if (cachedMesh != 0)
-                        {
-                        qvElem = cachedMesh->m_qvElem;                    
-                        assert(qvElem != 0);
-                        }
-                    else
-                        {
-                        qvElem = 0;
-                        isEmptyNode = true;
-                        }                    
+                    qvElem = cachedMesh->m_qvElem;                    
+                    assert(qvElem != 0);
                     }
                 else
                     {
-                    /*NEEDS_WORK_SM : Not support yet.
-                    __int64 meshId = GetMeshId(meshNodes[nodeInd]->GetNodeId(), meshInd);
-                    qvElem = QvCachedNodeManager::GetManager().FindQvElem(meshId, dtmDataRef.get());                            
-                    */
-                    }
-                        
-                if (qvElem != 0)
-                    {
-                    wasDrawn = true;
-                    if (cachedMesh == 0)
-                        {
-                        //NEEDS_WORK_SM : Not support yet.
-                        //ActivateMaterial(meshNodes[nodeInd], meshInd, context);
-                        }
-                                        {
-                                        ElemMatSymbP matSymbP = context.GetElemMatSymb();
-
-                                        matSymbP->Init();
-                                        ColorDef white(0xff, 0xff, 0xff);
-                                        ColorDef green(0, 0x77, 0);
-                                        matSymbP->SetLineColor(meshNodes[nodeInd]->GetNbTexture() != 0 ? white : green);
-                                        matSymbP->SetFillColor(meshNodes[nodeInd]->GetNbTexture() != 0 ? white : green);
-                                        context.OnPreDrawTransient(); // If not reset, last drawn override is applyed to dtm (Selected/Hide preview)
-                                        context.GetIDrawGeom().ActivateMatSymb(matSymbP);
-                                            }
-                    SmCachedGraphics smCached(context.GetDgnDb(), qvElem);
-                    context.DrawCached(smCached);
-                    smCached.UnlinkQvElem();
-                    }
-                else
-                if (!isEmptyNode)
-                    {                                           
-                    nodesWithoutQvElem.push_back(meshNodes[nodeInd]);                
-                    }
+                    qvElem = 0;
+                    isEmptyNode = true;
+                    }                    
                 }
+            else
+                {
+                /*NEEDS_WORK_SM : Not support yet.
+                __int64 meshId = GetMeshId(meshNodes[nodeInd]->GetNodeId());
+                qvElem = QvCachedNodeManager::GetManager().FindQvElem(meshId, dtmDataRef.get());                            
+                */
+                }
+                    
+            if (qvElem != 0)
+                {
+                wasDrawn = true;
+                if (cachedMesh == 0)
+                    {
+                    //NEEDS_WORK_SM : Not support yet.
+                    //ActivateMaterial(meshNodes[nodeInd], context);
+                    }
+                                    {
+                                    ElemMatSymbP matSymbP = context.GetElemMatSymb();
+
+                                    matSymbP->Init();
+                                    ColorDef white(0xff, 0xff, 0xff);
+                                    ColorDef green(0, 0x77, 0);
+                                    matSymbP->SetLineColor(meshNodes[nodeInd]->IsTextured() != 0 ? white : green);
+                                    matSymbP->SetFillColor(meshNodes[nodeInd]->IsTextured() != 0 ? white : green);
+                                    context.OnPreDrawTransient(); // If not reset, last drawn override is applyed to dtm (Selected/Hide preview)
+                                    context.GetIDrawGeom().ActivateMatSymb(matSymbP);
+                                        }
+                SmCachedGraphics smCached(context.GetDgnDb(), qvElem);
+                context.DrawCached(smCached);
+                smCached.UnlinkQvElem();
+                }
+            else
+            if (!isEmptyNode)
+                {                                           
+                nodesWithoutQvElem.push_back(meshNodes[nodeInd]);                
+                }
+            
             if (wasDrawn)
                 {
                 ElemMatSymbP matSymbP = context.GetElemMatSymb();
@@ -440,22 +438,17 @@ void ProgressiveDrawMeshNode2(bvector<IScalableMeshCachedDisplayNodePtr>& meshNo
             bvector<bool> clips;
             //NEEDS_WORK_SM : Not supported yet
             //dtmDataRef->GetVisibleClips(clips);
+            
+            IScalableMeshMeshPtr mrdtmMeshPtr(node->GetMeshByParts(clips));
 
+            if (mrdtmMeshPtr != 0)
+                {         
+                /*NEEDS_WORK_SM : Not supported yet
+                ActivateMaterial(node, meshInd, context);
 
-
-            for (size_t meshInd = 0; meshInd < node->GetNbMeshes(); meshInd++)
-                {
-                IScalableMeshMeshPtr mrdtmMeshPtr(node->GetMeshByParts(clips,meshInd));
-
-                if (mrdtmMeshPtr != 0)
-                    {         
-                    /*NEEDS_WORK_SM : Not supported yet
-                    ActivateMaterial(node, meshInd, context);
-
-                    __int64 meshId = GetMeshId(node->GetNodeId(), meshInd);
-                    CreateQvElemForMesh(mrdtmMeshPtr, dtmDataRef, element, context, meshId, drawingInfo);                                                   
-                    */
-                    }
+                __int64 meshId = GetMeshId(node->GetNodeId(), meshInd);
+                CreateQvElemForMesh(mrdtmMeshPtr, dtmDataRef, element, context, meshId, drawingInfo);                                                   
+                */                    
                 }
             }
         }
