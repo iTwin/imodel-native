@@ -239,7 +239,7 @@ bool SpatialRedlineViewController::_Allow3dManipulations() const {return m_subje
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    04/2016
 //---------------------------------------------------------------------------------------
-double PhysicalRedlineViewController::_GetPatternZOffset (ViewContextR context, ElementHandleCR eh) const {return m_subjectView.GetPatternZOffset(context, eh);}
+// WIP_MERGE_John_Patterns - double PhysicalRedlineViewController::_GetPatternZOffset (ViewContextR context, ElementHandleCR eh) const {return m_subjectView.GetPatternZOffset(context, eh);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/13
