@@ -108,7 +108,7 @@ TEST_F(ImsClientTests, RequestToken_UsingParentTokenAndLifetimeSpecified_Retriev
     EXPECT_EQ(5, token->GetLifetime());
     }
     
-TEST_F(ConnectTests, Login_QaImsStsWithOldAppliesTo_RetrievesValidTokensForValidRPUris)
+TEST_F(ImsClientTests, Login_QaImsStsWithOldAppliesTo_RetrievesValidTokensForValidRPUris)
     {
     Credentials credentials("bentleyvilnius@gmail.com", "Q!w2e3r4t5");
 
@@ -118,53 +118,51 @@ TEST_F(ConnectTests, Login_QaImsStsWithOldAppliesTo_RetrievesValidTokensForValid
     UrlProvider::Initialize(UrlProvider::Qa, UrlProvider::DefaultTimeout, &localState);
 
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-    Connect::Initialize(StubClientInfo(), proxy);
+    auto client = ImsClient::Create (StubClientInfo(), proxy);
 
-    SamlToken token;
-    Utf8CP stsUrl = "https://qa-ims.bentley.com/rest/ActiveSTSService/json/IssueEx";
+    SamlTokenResult result;
 
     // Legacy Graphite apps
-    token = SamlToken();
-    EXPECT_EQ(SUCCESS, Connect::Login(credentials, token, "https://dev-wsg20-eus.cloudapp.net", stsUrl));
-    EXPECT_TRUE(token.IsSupported());
+    result = client->RequestToken(credentials, "https://dev-wsg20-eus.cloudapp.net")->GetResult();
+    ASSERT_TRUE(result.IsSuccess());
+    EXPECT_TRUE(result.GetValue()->IsSupported());
 
-    token = SamlToken();
-    EXPECT_EQ(SUCCESS, Connect::Login(credentials, token, "https://qa-wsg20-eus.cloudapp.net", stsUrl));
-    EXPECT_TRUE(token.IsSupported());
+    result = client->RequestToken(credentials, "https://qa-wsg20-eus.cloudapp.net")->GetResult();
+    ASSERT_TRUE(result.IsSuccess());
+    EXPECT_TRUE(result.GetValue()->IsSupported());
 
-    token = SamlToken();
-    EXPECT_EQ(SUCCESS, Connect::Login(credentials, token, "https://connect-wsg20.bentley.com", stsUrl));
-    EXPECT_TRUE(token.IsSupported());
+    result = client->RequestToken(credentials, "https://connect-wsg20.bentley.com")->GetResult();
+    ASSERT_TRUE(result.IsSuccess());
+    EXPECT_TRUE(result.GetValue()->IsSupported());
 
     // Navigator CONNECT Edition
-    token = SamlToken();
-    EXPECT_EQ(SUCCESS, Connect::Login(credentials, token, "sso://wsfed_desktop/1654", stsUrl));
-    EXPECT_TRUE(token.IsSupported());
+    result = client->RequestToken(credentials, "sso://wsfed_desktop/1654")->GetResult();
+    ASSERT_TRUE(result.IsSuccess());
+    EXPECT_TRUE(result.GetValue()->IsSupported());
 
     // Navigator Mobile
-    token = SamlToken();
-    EXPECT_EQ(SUCCESS, Connect::Login(credentials, token, "sso://wsfed_mobile/2223", stsUrl));
-    EXPECT_TRUE(token.IsSupported());
+    result = client->RequestToken(credentials, "sso://wsfed_mobile/2223")->GetResult();
+    ASSERT_TRUE(result.IsSuccess());
+    EXPECT_TRUE(result.GetValue()->IsSupported());
 
     // ProjectWise Mobile
-    token = SamlToken();
-    EXPECT_EQ(SUCCESS, Connect::Login(credentials, token, "sso://wsfed_mobile/2530", stsUrl));
-    EXPECT_TRUE(token.IsSupported());
+    result = client->RequestToken(credentials, "sso://wsfed_mobile/2530")->GetResult();
+    ASSERT_TRUE(result.IsSuccess());
+    EXPECT_TRUE(result.GetValue()->IsSupported());
 
     // ProjectWise Worksite
-    token = SamlToken();
-    EXPECT_EQ(SUCCESS, Connect::Login(credentials, token, "sso://wsfed_mobile/2226", stsUrl));
-    EXPECT_TRUE(token.IsSupported());
+    result = client->RequestToken(credentials, "sso://wsfed_mobile/2226")->GetResult();
+    ASSERT_TRUE(result.IsSuccess());
+    EXPECT_TRUE(result.GetValue()->IsSupported());
 
     // Structural navigator
-    token = SamlToken();
-    EXPECT_EQ(SUCCESS, Connect::Login(credentials, token, "sso://wsfed_mobile/2067", stsUrl));
-    EXPECT_TRUE(token.IsSupported());
+    result = client->RequestToken(credentials, "sso://wsfed_mobile/2067")->GetResult();
+    ASSERT_TRUE(result.IsSuccess());
+    EXPECT_TRUE(result.GetValue()->IsSupported());
 
     // Invalid RP URI
     BeTest::SetFailOnAssert(false);
-    token = SamlToken();
-    EXPECT_EQ(ERROR, Connect::Login(credentials, token, "https://zz-wsg20-eus.cloudapp.net", stsUrl));
-    EXPECT_FALSE(token.IsSupported());
+    result = client->RequestToken(credentials, "https://zz-wsg20-eus.cloudapp.net")->GetResult();
+    ASSERT_FALSE(result.IsSuccess());
     BeTest::SetFailOnAssert(true);
     }
