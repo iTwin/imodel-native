@@ -251,3 +251,4 @@ void MRMeshScene::_GetTiles(GetTileCallback callback, double resolution)
     child->GetTiles(callback, resolution);
     }
   }
+#endif
