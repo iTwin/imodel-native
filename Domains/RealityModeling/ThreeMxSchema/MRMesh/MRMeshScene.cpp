@@ -243,10 +243,11 @@ bool Scene::Draw(RenderContextR context, LoadContextCR meshContext)
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                Nicholas.Woodfield     01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Scene::GetTiles(TileCallback& callback, double resolution) const
+void MRMeshScene::_GetTiles(GetTileCallback callback, double resolution)
+  {
+  for (auto const& child : m_children)
     {
-    for (auto const& child : m_children)
-        child->GetTiles(callback, resolution);
+    child->Load();
+    child->GetTiles(callback, resolution);
     }
-
-#endif
+  }
