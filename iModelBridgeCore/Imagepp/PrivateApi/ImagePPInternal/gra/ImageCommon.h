@@ -328,7 +328,9 @@ void CopyPixelsN8_T(uint32_t outWidth, uint32_t outHeight, Byte* pOutData, size_
         memcpy(pOutLine, pPrevOutLine, outWidth*PixelSize_T);
         }
 
+#ifndef NDEBUG
     VALIDATE_COPY_PIXELS(outWidth, outHeight, pOutData, outPitch, inWidth, inHeight, pInData, inPitch, PixelSize_T, offset);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
