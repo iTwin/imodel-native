@@ -191,9 +191,13 @@ BentleyStatus ECSchemaCompareContext::Prepare(ECDbSchemaManager const& schemaMan
 
     m_existingSchemaList.clear();
     m_importedSchemaList.clear();
-
+    std::set<Utf8String> doneList;
     for (ECSchemaCP schema : dependencyOrderedPrimarySchemas)
         {
+        if (doneList.find(schema->GetFullSchemaName()) != doneList.end())
+            continue;
+
+        doneList.insert(schema->GetFullSchemaName());
         if (ECSchemaCP existingSchema = schemaManager.GetECSchema(schema->GetName().c_str(), true))
             {
             if (existingSchema == schema)
