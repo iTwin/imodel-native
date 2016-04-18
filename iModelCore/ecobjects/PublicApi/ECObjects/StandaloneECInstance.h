@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/StandaloneECInstance.h $
 |
-|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -162,7 +162,6 @@ public:
     //! @param[in]      fromNativeInstance The IECInstance supplying property values to be merged
     //! @return ECObjectsStatus::Success if property values were successfully merged, otherwise an error status
     ECOBJECTS_EXPORT ECObjectsStatus          MergePropertiesFromInstance (ECN::IECInstanceCR fromNativeInstance);
-//__PUBLISH_SECTION_END__
     ECOBJECTS_EXPORT ECObjectsStatus          RemoveStructArrayElements (PropertyLayoutCR propertyLayout, uint32_t removeIndex, uint32_t removeCount);
     ECOBJECTS_EXPORT ECObjectsStatus          IsPerPropertyBitSet (bool& isSet, uint8_t bitIndex, uint32_t propertyIndex) const;
     ECOBJECTS_EXPORT ECObjectsStatus          IsAnyPerPropertyBitSet (bool& isSet, uint8_t bitIndex) const;
@@ -187,7 +186,6 @@ public:
     ECOBJECTS_EXPORT void                     SetUsageBitmask (uint16_t mask);
     ECOBJECTS_EXPORT void                     SetPartiallyLoaded (bool set);
     ECOBJECTS_EXPORT bool                     IsPartiallyLoaded () const;
-//__PUBLISH_SECTION_START__
 };
 
 /** @endcond */
