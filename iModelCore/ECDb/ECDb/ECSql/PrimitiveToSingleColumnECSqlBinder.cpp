@@ -25,17 +25,18 @@ void PrimitiveToSingleColumnECSqlBinder::_SetSqliteIndex(int ecsqlParameterCompo
 //---------------------------------------------------------------------------------------
 ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindNull()
     {
-    if (auto ehs = GetOnBindEventHandlers())
+    std::vector<IECSqlBinder*>* ehs = GetOnBindEventHandlers();
+    if (ehs != nullptr)
         {
-        for (auto eh : *ehs)
+        for (IECSqlBinder* eh : *ehs)
             {
-            auto es = eh->BindNull();
+            const ECSqlStatus es = eh->BindNull();
             if (es != ECSqlStatus::Success)
                 return es;
             }
         }
 
-    const auto sqliteStat = GetSqliteStatementR ().BindNull(m_sqliteIndex);
+    const DbResult sqliteStat = GetSqliteStatementR().BindNull(m_sqliteIndex);
     if (sqliteStat != BE_SQLITE_OK)
         return ReportError(sqliteStat, "ECSqlStatement::BindNull");
 
@@ -47,15 +48,16 @@ ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindNull()
 //---------------------------------------------------------------------------------------
 ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindBoolean(bool value)
     {
-    const auto stat = CanBind(PRIMITIVETYPE_Boolean);
+    const ECSqlStatus stat = CanBind(PRIMITIVETYPE_Boolean);
     if (!stat.IsSuccess())
         return stat;
 
-    if (auto ehs = GetOnBindEventHandlers())
+    std::vector<IECSqlBinder*>* ehs = GetOnBindEventHandlers();
+    if (ehs != nullptr)
         {
-        for (auto eh : *ehs)
+        for (IECSqlBinder* eh : *ehs)
             {
-            auto es = eh->BindBoolean(value);
+            ECSqlStatus es = eh->BindBoolean(value);
             if (es != ECSqlStatus::Success)
                 return es;
             }
@@ -73,15 +75,16 @@ ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindBoolean(bool value)
 //---------------------------------------------------------------------------------------
 ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindBinary(const void* value, int binarySize, IECSqlBinder::MakeCopy makeCopy)
     {
-    const auto stat = CanBind(PRIMITIVETYPE_Binary);
+    const ECSqlStatus stat = CanBind(PRIMITIVETYPE_Binary);
     if (!stat.IsSuccess())
         return stat;
 
-    if (auto ehs = GetOnBindEventHandlers())
+    std::vector<IECSqlBinder*>* ehs = GetOnBindEventHandlers();
+    if (ehs != nullptr)
         {
-        for (auto eh : *ehs)
+        for (IECSqlBinder* eh : *ehs)
             {
-            auto es = eh->BindBinary(value, binarySize, makeCopy);
+            ECSqlStatus es = eh->BindBinary(value, binarySize, makeCopy);
             if (es != ECSqlStatus::Success)
                 return es;
             }
@@ -125,9 +128,10 @@ ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindDateTime(double julianDay, 
         return ECSqlStatus::Error;
         }
     
-    if (auto ehs = GetOnBindEventHandlers())
+    std::vector<IECSqlBinder*>* ehs = GetOnBindEventHandlers();
+    if (ehs != nullptr)
         {
-        for (auto eh : *ehs)
+        for (IECSqlBinder* eh : *ehs)
             {
             auto es = eh->BindDateTime(julianDay, metadata);
             if (es != ECSqlStatus::Success)
@@ -148,15 +152,16 @@ ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindDateTime(double julianDay, 
 //---------------------------------------------------------------------------------------
 ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindDouble(double value)
     {
-    const auto stat = CanBind(PRIMITIVETYPE_Double);
+    const ECSqlStatus stat = CanBind(PRIMITIVETYPE_Double);
     if (!stat.IsSuccess())
         return stat;
 
-    if (auto ehs = GetOnBindEventHandlers())
+    std::vector<IECSqlBinder*>* ehs = GetOnBindEventHandlers();
+    if (ehs != nullptr)
         {
-        for (auto eh : *ehs)
+        for (IECSqlBinder* eh : *ehs)
             {
-            auto es = eh->BindDouble(value);
+            ECSqlStatus es = eh->BindDouble(value);
             if (es != ECSqlStatus::Success)
                 return es;
             }
@@ -174,15 +179,16 @@ ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindDouble(double value)
 //---------------------------------------------------------------------------------------
 ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindGeometryBlob(const void* value, int blobSize, IECSqlBinder::MakeCopy makeCopy)
     {
-    const auto stat = CanBind(PRIMITIVETYPE_IGeometry);
+    const ECSqlStatus stat = CanBind(PRIMITIVETYPE_IGeometry);
     if (!stat.IsSuccess())
         return stat;
 
-    if (auto ehs = GetOnBindEventHandlers())
+    std::vector<IECSqlBinder*>* ehs = GetOnBindEventHandlers();
+    if (ehs != nullptr)
         {
-        for (auto eh : *ehs)
+        for (IECSqlBinder* eh : *ehs)
             {
-            auto es = eh->BindGeometryBlob(value, blobSize, makeCopy);
+            ECSqlStatus es = eh->BindGeometryBlob(value, blobSize, makeCopy);
             if (es != ECSqlStatus::Success)
                 return es;
             }
@@ -200,15 +206,16 @@ ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindGeometryBlob(const void* va
 //---------------------------------------------------------------------------------------
 ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindInt(int value)
     {
-    const auto stat = CanBind(PRIMITIVETYPE_Integer);
+    const ECSqlStatus stat = CanBind(PRIMITIVETYPE_Integer);
     if (!stat.IsSuccess())
         return stat;
 
-    if (auto ehs = GetOnBindEventHandlers())
+    std::vector<IECSqlBinder*>* ehs = GetOnBindEventHandlers();
+    if (ehs != nullptr)
         {
-        for (auto eh : *ehs)
+        for (IECSqlBinder* eh : *ehs)
             {
-            auto es = eh->BindInt(value);
+            ECSqlStatus es = eh->BindInt(value);
             if (es != ECSqlStatus::Success)
                 return es;
             }
@@ -226,21 +233,22 @@ ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindInt(int value)
 //---------------------------------------------------------------------------------------
 ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindInt64(int64_t value)
     {
-    const auto stat = CanBind(PRIMITIVETYPE_Long);
+    const ECSqlStatus stat = CanBind(PRIMITIVETYPE_Long);
     if (!stat.IsSuccess())
         return stat;
 
-    if (auto ehs = GetOnBindEventHandlers())
+    std::vector<IECSqlBinder*>* ehs = GetOnBindEventHandlers();
+    if (ehs != nullptr)
         {
-        for (auto eh : *ehs)
+        for (IECSqlBinder* eh : *ehs)
             {
-            auto es = eh->BindInt64(value);
+            const ECSqlStatus es = eh->BindInt64(value);
             if (es != ECSqlStatus::Success)
                 return es;
             }
         }
 
-    const auto sqliteStat = GetSqliteStatementR ().BindInt64(m_sqliteIndex, value);
+    const DbResult sqliteStat = GetSqliteStatementR ().BindInt64(m_sqliteIndex, value);
     if (sqliteStat != BE_SQLITE_OK)
         return ReportError(sqliteStat, "ECSqlStatement::BindInt64");
 
@@ -270,15 +278,16 @@ ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindPoint3D (DPoint3dCR value)
 //---------------------------------------------------------------------------------------
 ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindText(Utf8CP value, IECSqlBinder::MakeCopy makeCopy, int byteCount)
     {
-    const auto stat = CanBind(PRIMITIVETYPE_String);
+    const ECSqlStatus stat = CanBind(PRIMITIVETYPE_String);
     if (!stat.IsSuccess())
         return stat;
 
-    if (auto ehs = GetOnBindEventHandlers())
+    std::vector<IECSqlBinder*>* ehs = GetOnBindEventHandlers();
+    if (ehs != nullptr)
         {
-        for (auto eh : *ehs)
+        for (IECSqlBinder* eh : *ehs)
             {
-            auto es = eh->BindText(value, makeCopy, byteCount);
+            ECSqlStatus es = eh->BindText(value, makeCopy, byteCount);
             if (es != ECSqlStatus::Success)
                 return es;
             }
