@@ -18,17 +18,17 @@
     <ECEntityClass typeName="Root">
         <BaseClass>Node</BaseClass>
         <ECCustomAttributes>
-            <ECDbClassHint xmlns="Bentley_Standard_CustomAttributes.01.12">
+            <ClassMap xmlns="ECDbMap.01.00">
                 <Indexes>
-                    <ECDbIndex>
+                    <DbIndex>
                         <Name>WSC_Index_RootName</Name>
                         <IsUnique>True</IsUnique>
                         <Properties>
                             <string>Name</string>
                         </Properties>
-                    </ECDbIndex>
+                    </DbIndex>
                 </Indexes>
-            </ECDbClassHint>
+            </ClassMap>
         </ECCustomAttributes>
         <ECProperty propertyName="Name" typeName="string"/>
         <ECProperty propertyName="Persistence" typeName="int"/>
@@ -78,26 +78,26 @@
     <ECEntityClass typeName="CachedObjectInfo">
         <BaseClass>ChangeInfo</BaseClass>
         <ECCustomAttributes>
-            <ECDbClassHint xmlns="Bentley_Standard_CustomAttributes.01.12">
+            <ClassMap xmlns="ECDbMap.01.00">
                 <Indexes>
-                    <ECDbIndex>
+                    <DbIndex>
                         <Name>WSC_Index_ClassIdAndRemoteId</Name>
                         <IsUnique>True</IsUnique>
                         <Properties>
                             <string>ClassId</string>
                             <string>RemoteId</string>
                         </Properties>
-                    </ECDbIndex>
-                    <ECDbIndex>
+                    </DbIndex>
+                    <DbIndex>
                         <Name>WSC_Index_ClassIdAndInstanceId</Name>
                         <IsUnique>True</IsUnique>
                         <Properties>
                             <string>ClassId</string>
                             <string>InstanceId</string>
                         </Properties>
-                    </ECDbIndex>
+                    </DbIndex>
                 </Indexes>
-            </ECDbClassHint>
+            </ClassMap>
         </ECCustomAttributes>
         <ECProperty propertyName="ClassId" typeName="long"/>
         <ECProperty propertyName="InstanceId" typeName="long"/>
@@ -116,17 +116,17 @@
     <ECEntityClass typeName="CachedRelationshipInfo">
         <BaseClass>CachedObjectInfo</BaseClass>
         <ECCustomAttributes>
-            <ECDbClassHint xmlns="Bentley_Standard_CustomAttributes.01.12">
+            <ClassMap xmlns="ECDbMap.01.00">
                 <Indexes>
-                    <ECDbIndex>
+                    <DbIndex>
                         <Name>WSC_Index_ClassIdAndNonUniqueRemoteId</Name>
                         <IsUnique>False</IsUnique>
                         <Properties>
                             <string>ClassId</string>
                             <string>RemoteId</string>
                         </Properties>
-                    </ECDbIndex>
-                    <ECDbIndex>
+                    </DbIndex>
+                    <DbIndex>
                         <Name>WSC_Index_LocalRelationshipIdentifier</Name>
                         <IsUnique>True</IsUnique>
                         <Properties>
@@ -136,9 +136,9 @@
                             <string>TargetClassId</string>
                             <string>TargetInstanceId</string>
                         </Properties>
-                    </ECDbIndex>
+                    </DbIndex>
                 </Indexes>
-            </ECDbClassHint>
+            </ClassMap>
         </ECCustomAttributes>
         <ECProperty propertyName="RemoteId" typeName="string"/>
         <ECProperty propertyName="SourceClassId" typeName="long"/>
@@ -150,17 +150,17 @@
     <ECEntityClass typeName="CachedResponseInfo">
         <BaseClass>Node</BaseClass>
         <ECCustomAttributes>
-            <ECDbClassHint xmlns="Bentley_Standard_CustomAttributes.01.12">
+            <ClassMap xmlns="ECDbMap.01.00">
                 <Indexes>
-                    <ECDbIndex>
+                    <DbIndex>
                         <Name>WSC_Index_QueryName</Name>
                         <IsUnique>False</IsUnique>
                         <Properties>
                             <string>Name</string>
                         </Properties>
-                    </ECDbIndex>
+                    </DbIndex>
                 </Indexes>
-            </ECDbClassHint>
+            </ClassMap>
         </ECCustomAttributes>
         <ECProperty propertyName="Name" typeName="string"/>
         <ECProperty propertyName="AccessDate" typeName="dateTime">
