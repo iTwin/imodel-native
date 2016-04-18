@@ -235,6 +235,9 @@ template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointInde
     m_filter = pi_rpParentNode->GetFilter();
     m_nodeHeader.m_filtered = false;
     m_nodeHeader.m_nbFaceIndexes = 0;
+    m_nodeHeader.m_isTextured = false;
+    m_nodeHeader.m_nbTextures = 0;
+    m_nodeHeader.m_nbUvIndexes = 0;
     m_nodeHeader.m_numberOfMeshComponents = 0;
     m_nodeHeader.m_meshComponents = nullptr;    
     m_nodeHeader.m_arePoints3d = pi_rpParentNode->m_nodeHeader.m_arePoints3d;

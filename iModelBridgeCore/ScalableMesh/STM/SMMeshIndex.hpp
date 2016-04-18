@@ -1056,7 +1056,10 @@ template <class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::PushTe
     RefCountedPtr<SMStoredMemoryPoolBlobItem<Byte>> storedMemoryPoolVector(new SMStoredMemoryPoolBlobItem<Byte>(GetBlockID().m_integerID, GetTextureStore().GetPtr(), texture, size, SMPoolDataTypeDesc::Texture));
     SMMemoryPoolItemBasePtr poolItem(storedMemoryPoolVector.get());
     m_texturePoolItemId = GetMemoryPool()->AddItem(poolItem);
-    assert(m_texturePoolItemId != SMMemoryPool::s_UndefinedPoolItemId);                
+    assert(m_texturePoolItemId != SMMemoryPool::s_UndefinedPoolItemId);  
+    m_nodeHeader.m_isTextured = true;
+    m_nodeHeader.m_textureID.push_back(GetBlockID());
+    m_nodeHeader.m_nbTextures = 1;
     }
 
 template <class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::IsUVsIndicesLoaded() const
@@ -2288,15 +2291,18 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
             uvsOfTexturedRegion[idx[2] - 1] = uvs[2];
             }
 
-    ClearPtsIndices();    
-    PushPtsIndices(&indicesOfTexturedRegion[0], indicesOfTexturedRegion.size());
-    PushUV(/*texId + 1,*/ &uvsOfTexturedRegion[0], uvsOfTexturedRegion.size());
-    PushUVsIndices(0, &indicesOfTexturedRegion[0], indicesOfTexturedRegion.size());
-    SetUVDirty(/*texId + 1*/);
-    SetUVsIndicesDirty(0);    
-    StoreUV();
-    StoreUVsIndices(0);    
-    }
+        ClearPtsIndices();    
+        PushPtsIndices(&indicesOfTexturedRegion[0], indicesOfTexturedRegion.size());
+        PushUV(/*texId + 1,*/ &uvsOfTexturedRegion[0], uvsOfTexturedRegion.size());
+        PushUVsIndices(0, &indicesOfTexturedRegion[0], indicesOfTexturedRegion.size());
+        SetUVDirty(/*texId + 1*/);
+        SetUVsIndicesDirty(0);    
+        StoreUV();
+        StoreUVsIndices(0);    
+        }
+
+    SetDirty(true);
+
     delete[] pixelBufferP;
     delete[] pixelBufferPRGBA;
     pTextureBitmap = 0;
