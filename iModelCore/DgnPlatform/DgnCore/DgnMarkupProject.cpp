@@ -236,6 +236,11 @@ DPoint3d SpatialRedlineViewController::_GetTargetPoint() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool SpatialRedlineViewController::_Allow3dManipulations() const {return m_subjectView.Allow3dManipulations();}
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    04/2016
+//---------------------------------------------------------------------------------------
+double PhysicalRedlineViewController::_GetPatternZOffset (ViewContextR context, ElementHandleCR eh) const {return m_subjectView.GetPatternZOffset(context, eh);}
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/

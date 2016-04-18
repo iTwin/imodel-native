@@ -149,6 +149,7 @@ protected:
     DGNPLATFORM_EXPORT virtual FitComplete _ComputeFitRange(FitContextR);
     virtual void _OnViewOpened(DgnViewportR) {}
     virtual bool _Allow3dManipulations() const {return false;}
+    virtual double _GetPatternZOffset(ViewContextR, ElementHandleCR) const {return 0.0;}
     virtual void _OnAttachedToViewport(DgnViewportR) {}
     virtual ColorDef _GetBackgroundColor() const {return m_backgroundColor;}
     virtual double _GetAspectRatioSkew() const {return 1.0;}
@@ -501,6 +502,10 @@ public:
     //! @return true if this view supports 3d viewing operations. Otherwise the z-axis of the view must remain aligned with the world z axis, even
     //! if the view is a physical view.
     bool Allow3dManipulations() const {return _Allow3dManipulations();}
+    
+    //! @return a value used to offset patterns in the Z direction.  Typically used only in a physical view used to display map content. Expect Allow3dManipulations to be false when this is non-zero 
+    DGNPLATFORM_EXPORT double GetPatternZOffset(ViewContextR, ElementHandleCR) const;
+
 
     //! Establish the view parameters from an 8-point frustum.
     //! @param[in] frustum The 8-point frustum from which to establish the parameters of this ViewController

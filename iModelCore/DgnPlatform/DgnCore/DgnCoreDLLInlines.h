@@ -46,6 +46,7 @@ DG_INLINE double IViewClipObject::GetWidth() const {return _GetWidth();}
 DG_INLINE void IViewClipObject::SetWidth(double newWidth) {_SetWidth(newWidth);}
 DG_INLINE StatusInt IViewClipObject::GetClipBoundary(ClipVectorPtr& clip, DRange3dR maxRange, ClipVolumePass pass, bool displayCutGeometry) const {return _GetClipBoundary(clip,maxRange,pass,displayCutGeometry);}
 DG_INLINE bool IViewClipObject::IsClipVolumePassValid(ClipVolumePass pass) const {return _IsClipVolumePassValid(pass);}
+DG_INLINE double          ViewController::GetPatternZOffset(ViewContextR context, ElementHandleCR eh) const {return _GetPatternZOffset(context, eh);}
 DG_INLINE StatusInt IViewClipObject::GetCuttingPlane(DPlane3dR cutPlane, DVec3dR xDir, DVec3dR yDir, ClipMask& clipMask, DRange2dR clipRange, bool& forwardFacing, int index, ViewContextR context) const {return _GetCuttingPlane(cutPlane,xDir,yDir,clipMask,clipRange,forwardFacing,index,context);}
 DG_INLINE bool IViewClipObject::GetAuxTransform(TransformR t, ClipVolumePass p) const {return _GetAuxTransform(t,p);}
 DG_INLINE StatusInt IViewClipObject::GetTransform(TransformR trans) const {return _GetTransform(trans);}
