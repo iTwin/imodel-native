@@ -933,6 +933,9 @@
     <ClInclude Include="STM\SMSQLiteSkirtDefinitionsTileStore.h">
       <Filter>Includes\STM</Filter>
     </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshDataStore.h">
+      <Filter>Includes\PublicAPI</Filter>
+    </ClInclude>
     <ClInclude Include="STM\Edits\Skirts.h">
       <Filter>Includes\STM\Edits</Filter>
     </ClInclude>
@@ -1335,16 +1338,16 @@
     <ClCompile Include="STM\Edits\Skirts.cpp">
       <Filter>Source\STM\Edits</Filter>
     </ClCompile>
+    <ClCompile Include="STM\SMStreamingTileStore.cpp">
+      <Filter>Source\STM</Filter>
+    </ClCompile>
     <ClCompile Include="STM\SMMemoryPool.cpp">
       <Filter>Includes\STM</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="ScalableTerrainModel.mke" />
-    <None Include="ScalableTerrainModel.mki" />
     <None Include="Import\Import.mke.realOrig" />
     <None Include="mki\AssertScalableTerrainModelPolicy.mki" />
-    <None Include="mki\ScalableTerrainModelPolicy.mki" />
     <None Include="PrivateAPI\STMInternal\Foundations\_Description.mki" />
     <None Include="PublicAPI\ScalableMesh\Foundations\_Description.mki" />
     <None Include="PublicAPI\ScalableMesh\GeoCoords\_Description.mki" />

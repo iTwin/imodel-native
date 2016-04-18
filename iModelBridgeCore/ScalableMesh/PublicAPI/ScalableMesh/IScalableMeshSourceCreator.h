@@ -74,6 +74,8 @@ struct IScalableMeshSourceCreator : public IScalableMeshCreator
         BENTLEY_SM_EXPORT static double GetLastFilteringDuration();
 
         BENTLEY_SM_EXPORT static double GetLastStitchingDuration();
+
+        BENTLEY_SM_EXPORT        void   ImportRastersTo(const IScalableMeshPtr& scmPtr);
 #endif   
 
 

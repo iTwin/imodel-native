@@ -64,6 +64,15 @@ WString GetHeaderForTestType(TestType t)
         case TEST_RANDOM_DRAPE:
             return L"Test Case, Line Number, N Of Points Draped (SM), N Of Points Draped (Civil), Length (SM), Length (Civil), N Of Points Difference (%%), Length Difference (%%), NDifferentLines Total, Time total(SM) (s), Time total(Civil) (s)\n";
             break;
+        //case EXPORT_LINE:
+        //    return L"\n";
+        //    break;
+        //case EXPORT_VOLUME:
+        //    return L"\n";
+        //    break;
+        //case IMPORT_VOLUME:
+        //    return L"\n";
+        //    break;
         default: break;
         }
     return L"";
@@ -125,6 +134,14 @@ bool ParseTestType(BeXmlNodeP pRootNode, TestType& t)
             t = TEST_STREAMING;
         else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"drapeRandom"))
             t = TEST_RANDOM_DRAPE;
+        else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"exportLine"))
+            t = EXPORT_LINE;
+        else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"exportVolume"))
+            t = EXPORT_VOLUME;
+        else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"importVolume"))
+            t = IMPORT_VOLUME;
+        else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"addTextures"))
+            t = ADD_TEXTURES_TO_MESH;
         else return false;
         }
     else return false;
@@ -271,6 +288,18 @@ bool RunTestPlan(BeFileName& testPlanPath)
                 break;
             case TEST_RANDOM_DRAPE:
                 PerformTestDrapeRandomLines(pTestNode, pResultFile);
+                break;
+            //case EXPORT_LINE:
+            //    ExportDrapeLine(pTestNode, pResultFile);
+            //    break;
+            //case EXPORT_VOLUME:
+            //    ExportVolume(pTestNode, pResultFile);
+            //    break;
+            //case IMPORT_VOLUME:
+            //    ImportVolume(pTestNode, pResultFile);
+            //    break;
+            case ADD_TEXTURES_TO_MESH:
+                AddTexturesToMesh(pTestNode, pResultFile);
                 break;
             default: break;
             }

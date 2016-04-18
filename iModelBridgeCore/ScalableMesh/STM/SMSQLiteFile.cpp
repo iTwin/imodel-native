@@ -268,7 +268,7 @@ bool SMSQLiteFile::SetNodeHeader(const SQLiteNodeHeader& newNodeHeader)
     stmt->BindInt64(3, newNodeHeader.m_level);
     stmt->BindInt(4, newNodeHeader.m_filtered ? 1 : 0);
     stmt->BindBlob(5, &newNodeHeader.m_nodeExtent, 6 * sizeof(double), MAKE_COPY_NO);
-    stmt->BindBlob(6, &newNodeHeader.m_contentExtent, 6 * sizeof(double), MAKE_COPY_NO);
+    stmt->BindBlob(6, newNodeHeader.m_contentExtentDefined ? &newNodeHeader.m_contentExtent : NULL, 6 * sizeof(double), MAKE_COPY_NO);
     stmt->BindInt64(7, newNodeHeader.m_totalCount);
     stmt->BindInt(8, newNodeHeader.m_arePoints3d ? 1 : 0);
     stmt->BindInt64(9, newNodeHeader.m_nbFaceIndexes);
@@ -297,7 +297,8 @@ bool SMSQLiteFile::SetNodeHeader(const SQLiteNodeHeader& newNodeHeader)
         size_t texID = SQLiteNodeHeader::NO_NODEID;
         stmt->BindInt64(16, texID);
         }
-    stmt->BindInt(17, newNodeHeader.m_isTextured ? 1 : 0);
+
+    stmt->BindInt(17, newNodeHeader.m_isTextured ? 1 : 0); 
     stmt->BindInt(18, (int)newNodeHeader.m_nodeCount);
     DbResult status = stmt->Step();
     stmt->ClearBindings();
@@ -378,7 +379,8 @@ bool SMSQLiteFile::GetNodeHeader(SQLiteNodeHeader& nodeHeader)
         }
 
     memcpy(&nodeHeader.m_nodeExtent, extentTmp, sizeof(double) * 6);
-    memcpy(&nodeHeader.m_contentExtent, contentExtentTmp, sizeof(double) * 6);
+    nodeHeader.m_contentExtentDefined = contentExtentTmp != NULL;
+    if (nodeHeader.m_contentExtentDefined) memcpy(&nodeHeader.m_contentExtent, contentExtentTmp, sizeof(double) * 6);
     nodeHeader.m_meshComponents = new int[nodeHeader.m_numberOfMeshComponents];
     memcpy(nodeHeader.m_meshComponents, allComponentTmp, sizeof(int) * nodeHeader.m_numberOfMeshComponents);
     nodeHeader.m_clipSetsID = std::vector<int>();
@@ -580,6 +582,18 @@ void SMSQLiteFile::GetDiffSet(int64_t diffsetID, bvector<uint8_t>& diffsetData, 
     diffsetData.resize(stmt->GetValueInt64(1));
     uncompressedSize = stmt->GetValueInt64(2);
     memcpy(&diffsetData[0], stmt->GetValueBlob(0), diffsetData.size());
+    }
+
+uint64_t SMSQLiteFile::GetLastNodeId()
+    {
+    std::lock_guard<std::mutex> lock(dbLock);
+    CachedStatementPtr stmt;
+    m_database->GetCachedStatement(stmt, "SELECT NodeId FROM SMPoint ORDER BY NodeId DESC LIMIT 1");
+    stmt->Step();
+    auto numResults = stmt->GetColumnCount();
+
+    auto lastID = numResults > 0 ? stmt->GetValueInt64(0) : 0;
+    return lastID;
     }
 
 
@@ -1057,7 +1071,12 @@ size_t SMSQLiteFile::GetNumberOfPoints(int64_t nodeID)
     {
     std::lock_guard<std::mutex> lock(dbLock);
     CachedStatementPtr stmt;
-    m_database->GetCachedStatement(stmt, "SELECT SizePts FROM SMPoint WHERE NodeId=?");
+    DbResult rc = m_database->GetCachedStatement(stmt, "SELECT SizePts FROM SMPoint WHERE NodeId=?");
+    if (rc != BE_SQLITE_OK)
+        {
+        assert(!"Can't get number of points");
+        return 0;
+        }
     stmt->BindInt64(1, nodeID);
     DbResult status = stmt->Step();
     //assert(status == BE_SQLITE_ROW);
@@ -1069,7 +1088,12 @@ size_t SMSQLiteFile::GetNumberOfIndices(int64_t nodeID)
     {
     std::lock_guard<std::mutex> lock(dbLock);
     CachedStatementPtr stmt;
-    m_database->GetCachedStatement(stmt, "SELECT SizeIndices FROM SMPoint WHERE NodeId=?");
+    DbResult rc = m_database->GetCachedStatement(stmt, "SELECT SizeIndices FROM SMPoint WHERE NodeId=?");
+    if (rc != BE_SQLITE_OK)
+        {
+        assert(!"Can't get number of indices");
+        return 0;
+        }
     stmt->BindInt64(1, nodeID);
     DbResult status = stmt->Step();
    // assert(status == BE_SQLITE_ROW);
@@ -1081,7 +1105,12 @@ size_t SMSQLiteFile::GetNumberOfUVIndices(int64_t nodeID)
     {
     std::lock_guard<std::mutex> lock(dbLock);
     CachedStatementPtr stmt;
-    m_database->GetCachedStatement(stmt, "SELECT SizeUVs FROM SMTexture WHERE NodeId=?");
+    DbResult rc = m_database->GetCachedStatement(stmt, "SELECT SizeUVs FROM SMTexture WHERE NodeId=?");
+    if (rc != BE_SQLITE_OK)
+        {
+        assert(!"Can't get number of UV indices");
+        return 0;
+        }
     stmt->BindInt64(1, nodeID);
     DbResult status = stmt->Step();
     // assert(status == BE_SQLITE_ROW);

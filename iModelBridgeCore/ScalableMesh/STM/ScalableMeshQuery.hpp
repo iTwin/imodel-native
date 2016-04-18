@@ -1970,7 +1970,7 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
 
                     if (meshInd > 0 && loadTexture)
                         {                        
-                        IScalableMeshTexturePtr smTexturePtr(GetTexture());
+                        IScalableMeshTexturePtr smTexturePtr(GetTexture());                        
 
                         BentleyStatus status = displayCacheManagerPtr->_CreateCachedTexture(m_cachedDisplayTexture[meshInd],
                                                                                             smTexturePtr->GetDimension().x,
@@ -1979,7 +1979,8 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
                                                                                             QV_RGB_FORMAT,
                                                                                             smTexturePtr->GetData());
 
-                        assert(status == SUCCESS);
+                            assert(status == SUCCESS);
+                            }
                         }
 
                     DPoint2d* uvPtr = 0;

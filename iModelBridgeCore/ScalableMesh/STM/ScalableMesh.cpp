@@ -349,11 +349,21 @@ bool IScalableMesh::RemoveSkirt(uint64_t clipID)
     }
 
 
+int IScalableMesh::ConvertToCloud(const WString& pi_pOutputDirPath) const
+    {
+    return _ConvertToCloud(pi_pOutputDirPath);
+    }
+
 #ifdef SCALABLE_MESH_ATP
 int IScalableMesh::LoadAllNodeHeaders(size_t& nbLoadedNodes) const
     {
     return _LoadAllNodeHeaders(nbLoadedNodes);
     }
+
+/*int IScalableMesh::AddTextures(const HFCPtr<HIMMosaic>& pMosaic) const
+    {
+    return _AddTextures(pMosaic);
+    }*/
 #endif
 
 /*----------------------------------------------------------------------------+
@@ -663,7 +673,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
         //m_smSQLitePtr->Open(m_path);
         // If there are no masterHeader => file empty ?
         bool notEmpty = m_smSQLitePtr->HasMasterHeader();
-        if (!notEmpty)
+        if (!notEmpty && m_smSQLitePtr->IsSingleFile())
             return BSISUCCESS; // File is empty.
 
         if (!LoadGCSFrom())
@@ -674,16 +684,17 @@ template <class POINT> int ScalableMesh<POINT>::Open()
 
 
         HFCPtr<TileStoreType> pTileStore;
-        HFCPtr<StreamingStoreType>  pStreamingTileStore;
+        HFCPtr<StreamingPointStoreType>  pStreamingTileStore;
         HFCPtr<SMStreamingPointTaggedTileStore<int32_t, YProtPtExtentType >> pStreamingIndiceTileStore;
         HFCPtr<SMStreamingPointTaggedTileStore<DPoint2d, YProtPtExtentType >> pStreamingUVTileStore;
         HFCPtr<SMStreamingPointTaggedTileStore<int32_t, YProtPtExtentType >> pStreamingUVsIndicesTileStore;
+        HFCPtr<StreamingTextureTileStore> pStreamingTextureTileStore;
 
         HFCPtr<SMPointTileStore<int32_t, YProtPtExtentType >> pIndiceTileStore;
         HFCPtr<SMPointTileStore<DPoint2d, YProtPtExtentType >> pUVTileStore;
         HFCPtr<SMPointTileStore<int32_t, YProtPtExtentType >> pUVsIndicesTileStore;
-        HFCPtr<IHPMPermanentStore<Byte, float, float>> pTextureTileStore;
-        HFCPtr<IHPMPermanentStore<MTGGraph, Byte, Byte>> pGraphTileStore;
+        HFCPtr<IScalableMeshDataStore<Byte, float, float>> pTextureTileStore;
+        HFCPtr<IScalableMeshDataStore<MTGGraph, Byte, Byte>> pGraphTileStore;
         bool isSingleFile = true;
         
 
@@ -715,11 +726,11 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                     WString texture_store_path = streamingFilePath + L"texture_store\\";
 
                     // NEEDS_WORK_SM - Need to stream textures as well
-                    pStreamingTileStore = new StreamingStoreType(point_store_path, groupedStreamingFilePath, AreDataCompressed());
+                    pStreamingTileStore = new StreamingPointStoreType(point_store_path, groupedStreamingFilePath, AreDataCompressed());
                     pStreamingIndiceTileStore = new SMStreamingPointTaggedTileStore< int32_t, YProtPtExtentType>(indice_store_path, groupedStreamingFilePath, AreDataCompressed());
                     pStreamingUVTileStore = new SMStreamingPointTaggedTileStore< DPoint2d, YProtPtExtentType>(uv_store_path, groupedStreamingFilePath, AreDataCompressed());
                     pStreamingUVsIndicesTileStore = new SMStreamingPointTaggedTileStore<int32_t, YProtPtExtentType >(uvIndice_store_path, groupedStreamingFilePath, AreDataCompressed());
-                    pTextureTileStore = new StreamingTextureTileStore(texture_store_path.c_str(), 4);
+                    pStreamingTextureTileStore = new StreamingTextureTileStore(texture_store_path.c_str());
                     m_scmIndexPtr = new PointIndexType(ScalableMeshMemoryPools<POINT>::Get()->GetGenericPool(),
                                                        ScalableMeshMemoryPools<POINT>::Get()->GetPointPool(),
                                                        &*pStreamingTileStore,
@@ -727,7 +738,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                                                             &*pStreamingIndiceTileStore,
                                                             ScalableMeshMemoryPools<POINT>::Get()->GetGraphPool(),
                                                             new SMSQLiteGraphTileStore((dynamic_cast<SMSQLitePointTileStore<POINT, YProtPtExtentType>*>(pTileStore.GetPtr()))->GetDbConnection()),                                                            
-                                                            pTextureTileStore,
+                                                            &*pStreamingTextureTileStore,
                                                             ScalableMeshMemoryPools<POINT>::Get()->GetUVPool(),
                                                             &*pStreamingUVTileStore,
                                                             ScalableMeshMemoryPools<POINT>::Get()->GetUVsIndicesPool(),
@@ -743,7 +754,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                         {
 
                         auto groupedStreamingFilePath = m_path.substr(0, position - 3) + L"_grouped_stream\\";
-                        m_scmIndexPtr->SaveCloudReady(groupedStreamingFilePath, point_store_path);
+                        m_scmIndexPtr->SaveCloudReady(groupedStreamingFilePath, HFCPtr<SMNodeGroupMasterHeader>(new SMNodeGroupMasterHeader(point_store_path)));
                         }
 
                     }
@@ -785,7 +796,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
             WString clipFilePath = m_path;
             clipFilePath.append(L"_clips"); 
            // IDTMFile::File::Ptr clipFilePtr = IDTMFile::File::Create(clipFilePath.c_str());
-            HFCPtr<IHPMPermanentStore<DifferenceSet, Byte, Byte>> store = new SMSQLiteDiffsetTileStore(clipFilePath, 0);//DiffSetTileStore(clipFilePath, 0);
+            HFCPtr<IScalableMeshDataStore<DifferenceSet, Byte, Byte>> store = new SMSQLiteDiffsetTileStore(clipFilePath, 0);//DiffSetTileStore(clipFilePath, 0);
             //store->StoreMasterHeader(NULL,0);
             m_scmIndexPtr->SetClipStore(store);
             auto pool = ScalableMeshMemoryPools<POINT>::Get()->GetDiffSetPool();
@@ -801,6 +812,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                 {                                        
               //  m_scmIndexPtr->DumpOctTree("D:\\MyDoc\\Scalable Mesh Iteration 8\\PartialUpdate\\Neighbor\\Log\\nodeAfterOpen.xml", false); 
                 m_scmIndexPtr->DumpOctTree("e:\\output\\scmesh\\nodeAfterOpen.xml", false);      
+                //m_scmIndexPtr->DumpOctTree("C:\\Users\\Richard.Bois\\Documents\\ScalableMeshWorkDir\\QuebecCityMini\\nodeAfterOpen.xml", false);      
            //     m_scmMPointIndexPtr->ValidateNeighbors();
                 }
 #endif
@@ -1289,6 +1301,9 @@ template <class POINT> __int64 ScalableMesh<POINT>::_GetPointCount()
 
 template <class POINT> void ScalableMesh<POINT>::_TextureFromRaster(HIMMosaic* mosaicP)
     {
+    auto nextID = m_scmIndexPtr->GetStore()->GetNextID();
+    nextID = nextID != uint64_t(-1) ? nextID : m_scmIndexPtr->GetNextID();
+    m_scmIndexPtr->SetNextID(nextID);
     m_scmIndexPtr->TextureFromRaster(mosaicP);
     m_scmIndexPtr->Store();
     m_smSQLitePtr->CommitAll();
@@ -1870,14 +1885,36 @@ template <class POINT> bool ScalableMesh<POINT>::_IsShareable() const
     } 
 
 /*----------------------------------------------------------------------------+
+|ScalableMesh::_ConvertToCloud
++----------------------------------------------------------------------------*/
+template <class POINT> StatusInt ScalableMesh<POINT>::_ConvertToCloud(const WString& pi_pOutputDirPath) const
+    {
+    if (m_scmIndexPtr == nullptr) return ERROR;
+
+    return m_scmIndexPtr->SaveCloudReady(pi_pOutputDirPath);
+    }
+
+#ifdef SCALABLE_MESH_ATP
+/*----------------------------------------------------------------------------+
 |MrDTM::_LoadAllNodeHeaders
 +----------------------------------------------------------------------------*/
-#ifdef SCALABLE_MESH_ATP
 template <class POINT> int ScalableMesh<POINT>::_LoadAllNodeHeaders(size_t& nbLoadedNodes) const
     {    
     m_scmIndexPtr->LoadTree(nbLoadedNodes);    
     return SUCCESS;
     } 
+
+/*----------------------------------------------------------------------------+
+|MrDTM::_AddTextures
++----------------------------------------------------------------------------*/
+/*template <class POINT> int ScalableMesh<POINT>::_AddTextures(const HFCPtr<HIMMosaic>& pMosaic) const
+    {
+    auto nextID = m_scmIndexPtr->GetStore()->GetNextID();
+    nextID = nextID != uint64_t(-1) ? nextID : m_scmIndexPtr->GetNextID();
+    m_scmIndexPtr->SetNextID(nextID);
+    m_scmIndexPtr->TextureFromRaster(pMosaic.GetPtr());
+    return SUCCESS;
+    }*/
 #endif
 /*----------------------------------------------------------------------------+
 |ScalableMeshSingleResolutionPointIndexView Method Definition Section - Begin

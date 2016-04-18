@@ -184,7 +184,7 @@ $(o)ImportCommands$(oext) : $(importDir)ImportCommands.cpp $(PCHHeaderDepends)  
 #   Build STM
 #-----------------------------------------------------------------------
 
-$(o)SMPointIndex$(oext) : $(stmDir)SMPointIndex.cpp $(stmDir)SMPointIndex.hpp $(stmDir)SMPointIndex.h $(PCHHeaderDepends) ${MultiCompileDepends}
+$(o)SMPointIndex$(oext) : $(stmDir)SMPointIndex.cpp $(stmDir)SMPointIndex.hpp $(stmDir)SMPointIndex.h $(stmDir)SMStreamingTileStore.h $(PCHHeaderDepends) ${MultiCompileDepends}
 
 $(o)IScalableMeshATP$(oext) : $(stmDir)IScalableMeshATP.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
 
@@ -279,6 +279,8 @@ $(o)ScalableMeshScheduler$(oext) : $(stmDir)Threading/ScalableMeshScheduler.cpp 
 $(o)LightThreadPool$(oext) : $(stmDir)Threading/LightThreadPool.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
 
 $(o)SMSQLiteFile$(oext) : $(stmDir)SMSQLiteFile.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
+
+$(o)SMStreamingTileStore$(oext) : $(stmDir)SMStreamingTileStore.cpp $(stmDir)SMStreamingTileStore.h $(PCHHeaderDepends) ${MultiCompileDepends}
 
 $(o)HPUPacket$(oext) : $(stmDir)HPUPacket.cpp $(stmDir)HPUPacket.h ${MultiCompileDepends}
 
@@ -388,7 +390,7 @@ $(o)tetgenpredicates$(oext) : $(delaunayDir)tetgen/tetgenpredicates.cpp $(delaun
 #   dependencies of the subsystem.
 #----------------------------------------------------------------------
 DLM_OBJECT_PCH      = $(o)ScalableMeshPCH$(oext)
-DLM_OBJECT_FILES    = $(MultiCompileObjectList) 
+DLM_OBJECT_FILES    = $(MultiCompileObjectList)
 
 LINKER_LIBRARIES_DELAYLOADED  = \
     $(ContextSubpartsLibs)BeCurl.lib \
@@ -396,9 +398,9 @@ LINKER_LIBRARIES_DELAYLOADED  = \
     $(ContextSubpartsLibs)$(BaseGeocoordLib) \
     ws2_32.lib \
     $(ContextSubpartsLibs)$(TerrainModelCoreLib) \
-    $(ContextSubpartsLibs)$(TerrainModelFormatsLib)
-
-
+    $(ContextSubpartsLibs)$(TerrainModelFormatsLib) \
+    $(ContextSubpartsLibs)wastorage.lib \
+    $(ContextSubpartsLibs)cpprest120_2_6.lib 
 #    $(ContextSubpartsLibs)PCLWrapper.lib \
 #    $(ContextSubpartsLibs)Imagepp-gdal.lib \
 #    $(ContextSubpartsLibs)PointCloud.lib \
