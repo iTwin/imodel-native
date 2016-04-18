@@ -22,19 +22,7 @@ DbResult ECDbProfileManager::CreateECProfile(ECDbR ecdb)
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin CreateECProfile");
 
     StopWatch timer(true);
-    // Set up the id sequences as the upgrade steps might add entries to the ec tables and therefore
-    // need the sequence.
-    // Setting up the sequence just means to reset them to the current repo id
-    auto stat = ecdb.GetECDbImplR().ResetSequences();
-    if (stat != BE_SQLITE_OK)
-        {
-        LOG.errorv("Failed to create %s profile in file '%s'. Could not initialize id sequences.",
-                   PROFILENAME, ecdb.GetDbFileName());
-        ecdb.AbandonChanges();
-        return stat;
-        }
-
-    stat = CreateECProfileTables(ecdb);
+    DbResult stat = CreateECProfileTables(ecdb);
     if (stat != BE_SQLITE_OK)
         {
         LOG.errorv("Failed to create %s profile in %s: %s", PROFILENAME, ecdb.GetDbFileName(), ecdb.GetLastError().c_str());
@@ -134,11 +122,17 @@ DbResult ECDbProfileManager::UpgradeECProfile(ECDbR ecdb, Db::OpenParams const& 
         {
         stat = upgrader->Upgrade(ecdb);
         if (BE_SQLITE_OK != stat)
+            {
+            ecdb.AbandonChanges();
             return stat;
+            }
         }
 
     if (BE_SQLITE_OK != ECDbProfileECSchemaUpgrader::ImportProfileSchemas(ecdb))
+        {
+        ecdb.AbandonChanges();
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
 
     //after upgrade procedure set new profile version in ECDb file
     stat = AssignProfileVersion(ecdb);
@@ -146,6 +140,7 @@ DbResult ECDbProfileManager::UpgradeECProfile(ECDbR ecdb, Db::OpenParams const& 
     timer.Stop();
     if (stat != BE_SQLITE_OK)
         {
+        ecdb.AbandonChanges();
         LOG.errorv("Failed to upgrade %s profile in file '%s'. Could not assign new profile version. %s",
                    PROFILENAME, ecdb.GetDbFileName(), ecdb.GetLastError().c_str());
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
@@ -153,10 +148,8 @@ DbResult ECDbProfileManager::UpgradeECProfile(ECDbR ecdb, Db::OpenParams const& 
 
     if (LOG.isSeverityEnabled(NativeLogging::LOG_INFO))
         {
-        LOG.infov("Upgraded %s profile from version %d.%d.%d.%d to version %d.%d.%d.%d (in %.4lf seconds) in file '%s'.",
-                  PROFILENAME,
-                  actualProfileVersion.GetMajor(), actualProfileVersion.GetMinor(), actualProfileVersion.GetSub1(), actualProfileVersion.GetSub2(),
-                  expectedVersion.GetMajor(), expectedVersion.GetMinor(), expectedVersion.GetSub1(), expectedVersion.GetSub2(),
+        LOG.infov("Upgraded %s profile from version %s to version %s (in %.4lf seconds) in file '%s'.",
+                  PROFILENAME, actualProfileVersion.ToString().c_str(), expectedVersion.ToString().c_str(),
                   timer.GetElapsedSeconds(), ecdb.GetDbFileName());
         }
 

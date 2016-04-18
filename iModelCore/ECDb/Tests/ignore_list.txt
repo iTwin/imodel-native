@@ -12,6 +12,7 @@ ECDbSchemaUpgradeTests.UpdatingSchemaShouldNotDeleteExistingRelationshipsOrIndex
 ECDbSchemaUpgradeTests.UpdateMultipleSchemasInDb
 #TFS 390515
 
+
 #TFS268976 will address this (Affan)
 ECDbMappingTestFixture.MismatchDataTypesInExistingTable
 ECDbMappingTestFixture.PropertiesWithoutColumnsInExistingTable

@@ -179,6 +179,7 @@ namespace connectivity
                 delete_statement_searched,
                 derived_column,
                 ecclassid_fct_spec,
+                ecrelationship_join,
                 ecsqloptions_clause,
                 existence_test,
                 extract_exp,
@@ -233,7 +234,6 @@ namespace connectivity
                 qualified_join,
                 query_term,
                 range_variable,
-                relationship_join,
                 row_value_constructor,
                 row_value_constructor_commalist,
                 scalar_exp,
@@ -503,16 +503,7 @@ namespace connectivity
         }
     // Utility-Methoden zum Abfragen auf bestimmte Rules, Token oder Punctuation:
 #define SQL_ISRULE(pParseNode, eRule)     ((pParseNode)->isRule() && (pParseNode)->getRuleID() == OSQLParser::RuleID(OSQLParseNode::eRule))
-#define SQL_ISRULEOR2(pParseNode, e1, e2)  ((pParseNode)->isRule() && ( \
-    (pParseNode)->getRuleID () == OSQLParser::RuleID (OSQLParseNode::e1) || \
-    (pParseNode)->getRuleID () == OSQLParser::RuleID (OSQLParseNode::e2)))
-#define SQL_ISRULEOR3(pParseNode, e1, e2, e3)  ((pParseNode)->isRule() && ( \
-    (pParseNode)->getRuleID () == OSQLParser::RuleID (OSQLParseNode::e1) || \
-    (pParseNode)->getRuleID () == OSQLParser::RuleID (OSQLParseNode::e2) || \
-    (pParseNode)->getRuleID () == OSQLParser::RuleID (OSQLParseNode::e3)))
 #define SQL_ISTOKEN(pParseNode, token) ((pParseNode)->isToken() && (pParseNode)->getTokenID() == SQL_TOKEN_##token)
-#define SQL_ISTOKENOR2(pParseNode, tok0, tok1) ((pParseNode)->isToken() &&  ( (pParseNode)->getTokenID() == SQL_TOKEN_##tok0 || (pParseNode)->getTokenID() == SQL_TOKEN_##tok1 ))
-#define SQL_ISTOKENOR3(pParseNode, tok0, tok1, tok2) ((pParseNode)->isToken() && ( (pParseNode)->getTokenID() == SQL_TOKEN_##tok0 || (pParseNode)->getTokenID() == SQL_TOKEN_##tok1 || (pParseNode)->getTokenID() == SQL_TOKEN_##tok2 ))
 #define SQL_ISPUNCTUATION(pParseNode, aString) ((pParseNode)->getNodeType() == SQL_NODE_PUNCTUATION && !(pParseNode)->getTokenValue().Equals(aString))
     }
 

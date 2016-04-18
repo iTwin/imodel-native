@@ -1740,11 +1740,11 @@ Utf8String UInt32Change::_ToString(ValueId id) const
 Utf8String Int32Change::_ToString(ValueId id) const
     {
     Utf8String str;
-    auto& v = GetValue(id);
+    Nullable<int32_t> const& v = GetValue(id);
     if (v.IsNull())
         str = NULL_TEXT;
     else
-        str.Sprintf("%d", v.Value());
+        str.Sprintf("%" PRId32, v.Value());
 
     return str;
     }
@@ -1780,7 +1780,7 @@ Utf8String DateTimeChange::_ToString(ValueId id) const
     if (v.IsNull())
         str = NULL_TEXT;
     else
-        str = Utf8String(v.Value().ToString().c_str());
+        str.assign(v.Value().ToUtf8String());
 
     return str;
     }
@@ -1847,11 +1847,11 @@ Utf8String Point3DChange::_ToString(ValueId id) const
 Utf8String Int64Change::_ToString(ValueId id) const
     {
     Utf8String str;
-    auto& v = GetValue(id);
+    Nullable<int64_t> const& v = GetValue(id);
     if (v.IsNull())
         str = NULL_TEXT;
     else
-        str.Sprintf("%lld", v.Value());
+        str.Sprintf("%" PRId64, v.Value());
 
     return str;
     }

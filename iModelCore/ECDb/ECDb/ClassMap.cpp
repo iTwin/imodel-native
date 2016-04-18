@@ -571,7 +571,7 @@ BentleyStatus ClassMap::_Load(std::set<ClassMap const*>& loadGraph, ClassMapLoad
             {
             if (propMapping->GetColumns().front()->GetKind() == DbColumn::Kind::ECClassId)
                 continue;
-           
+
             for (DbColumn const* column : propMapping->GetColumns())
                 {
                 if (column->GetTable().GetType() == DbTable::Type::Joined)
@@ -592,20 +592,16 @@ BentleyStatus ClassMap::_Load(std::set<ClassMap const*>& loadGraph, ClassMapLoad
 
     if (GetECInstanceIdPropertyMap() != nullptr)
         return ERROR;
-    
-    if (PropertyDbMapping const* propInfo = mapInfo.FindPropertyMapping(ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME))
-        {
-        PropertyMapPtr ecInstanceIdPropertyMap = ECInstanceIdPropertyMap::Create(Schemas(), *this, propInfo->GetColumns());
-        if (ecInstanceIdPropertyMap == nullptr)
-            return ERROR;
 
-        GetPropertyMapsR().AddPropertyMap(ecInstanceIdPropertyMap);
-        }
-    else
-        {
-        BeAssert(false);
+    PropertyDbMapping const* ecInstanceIdMapping = mapInfo.FindPropertyMapping(ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME);
+    if (ecInstanceIdMapping == nullptr)
         return ERROR;
-        }
+
+    PropertyMapPtr ecInstanceIdPropertyMap = ECInstanceIdPropertyMap::Create(Schemas(), *this, ecInstanceIdMapping->GetColumns());
+    if (ecInstanceIdPropertyMap == nullptr)
+        return ERROR;
+
+    GetPropertyMapsR().AddPropertyMap(ecInstanceIdPropertyMap);
     return AddPropertyMaps(ctx, parentClassMap, &mapInfo, nullptr) == MappingStatus::Success ? SUCCESS : ERROR;
     }
 
@@ -979,7 +975,11 @@ BentleyStatus ColumnFactory::ResolveColumnName(Utf8StringR resolvedColumName, Ut
 
     DbColumn const* existingColumn = GetTable().FindColumnP(requestedColumnName);
     if (existingColumn != nullptr && IsColumnInUseByClassMap(*existingColumn))
-        resolvedColumName.Sprintf("c%s_%s", classId.ToString().c_str(), requestedColumnName);
+        {
+        Utf8Char classIdStr[ECClassId::ID_STRINGBUFFER_LENGTH];
+        classId.ToString(classIdStr);
+        resolvedColumName.Sprintf("c%s_%s", classIdStr, requestedColumnName);
+        }
     else
         resolvedColumName.assign(requestedColumnName);
 
@@ -1128,7 +1128,7 @@ BentleyStatus PropertyMapSet::AddSystemEndPoint(PropertyMapSet& propertySet, Cla
 PropertyMapSet::Ptr PropertyMapSet::Create(ClassMap const& classMap)
     {
     BeAssert(!classMap.GetJoinedTable().IsNullTable());
-    Ptr propertySet = Ptr(new PropertyMapSet(classMap));
+    Ptr propertySet = Ptr(new PropertyMapSet());
     ECValue defaultValue;
     AddSystemEndPoint(*propertySet, classMap, DbColumn::Kind::ECInstanceId, defaultValue);
     AddSystemEndPoint(*propertySet, classMap, DbColumn::Kind::ECClassId, ECValue(classMap.GetClass().GetId().GetValue()));

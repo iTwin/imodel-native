@@ -55,10 +55,10 @@ struct SqlTriggerBuilder
                 List m_list;
 
             public:
-                TriggerList ();
-                SqlTriggerBuilder& Create (SqlTriggerBuilder::Type type, SqlTriggerBuilder::Condition condition, bool temprary);
-                List const& GetTriggers () const;
-                void Delete (SqlTriggerBuilder const& trigger);
+                TriggerList();
+                SqlTriggerBuilder& Create(SqlTriggerBuilder::Type type, SqlTriggerBuilder::Condition condition, bool temprary);
+                List const& GetTriggers() const;
+                void Delete(SqlTriggerBuilder const& trigger);
             };
 
     private:
@@ -72,24 +72,24 @@ struct SqlTriggerBuilder
         std::vector<Utf8String> m_ofColumns;
 
     public:
-        SqlTriggerBuilder (){}
-        SqlTriggerBuilder (Type type, Condition condition, bool temprary);
-        SqlTriggerBuilder (SqlTriggerBuilder&& rhs);
+        SqlTriggerBuilder() {}
+        SqlTriggerBuilder(Type type, Condition condition, bool temprary);
+        SqlTriggerBuilder(SqlTriggerBuilder&& rhs);
         SqlTriggerBuilder& operator= (SqlTriggerBuilder&& rhs);
-        SqlTriggerBuilder (SqlTriggerBuilder const& rhs);
+        SqlTriggerBuilder(SqlTriggerBuilder const& rhs);
         SqlTriggerBuilder& operator= (SqlTriggerBuilder const& rhs);
-        NativeSqlBuilder& GetNameBuilder ();
-        NativeSqlBuilder& GetWhenBuilder ();
-        NativeSqlBuilder& GetBodyBuilder ();
-        NativeSqlBuilder& GetOnBuilder ();
-        Utf8CP GetName () const;
-        Utf8CP GetWhen () const;
-        Utf8CP GetBody () const;
-        Utf8CP GetOn () const;
-        bool IsTemporary () const;
-        bool IsValid () const;
-        Utf8String ToString (SqlOption option, bool escape) const;
-        bool IsEmpty () const { return m_body.IsEmpty (); }
+        NativeSqlBuilder& GetNameBuilder();
+        NativeSqlBuilder& GetWhenBuilder();
+        NativeSqlBuilder& GetBodyBuilder();
+        NativeSqlBuilder& GetOnBuilder();
+        Utf8CP GetName() const;
+        Utf8CP GetWhen() const;
+        Utf8CP GetBody() const;
+        Utf8CP GetOn() const;
+        bool IsTemporary() const;
+        bool IsValid() const;
+        Utf8String ToString(SqlOption option, bool escape) const;
+        bool IsEmpty() const { return m_body.IsEmpty(); }
     };
 
 //=======================================================================================
@@ -106,17 +106,17 @@ struct SqlViewBuilder
         Utf8String m_sqlComment;
 
     public:
-        SqlViewBuilder ();
-        void MarkAsNullView ();
-        bool IsNullView () const;
-        NativeSqlBuilder& GetNameBuilder ();
-        NativeSqlBuilder& AddSelect ();
+        SqlViewBuilder();
+        void MarkAsNullView();
+        bool IsNullView() const;
+        NativeSqlBuilder& GetNameBuilder();
+        NativeSqlBuilder& AddSelect();
         void SetComment(Utf8CP comment) { m_sqlComment.assign(comment); }
-        bool IsEmpty () const;
-        bool IsValid () const;
-        Utf8CP GetName () const;
-        bool IsTemporary () const;
-        Utf8String ToString (SqlOption option, bool escape = false, bool useUnionAll = true) const;
+        bool IsEmpty() const;
+        bool IsValid() const;
+        Utf8CP GetName() const;
+        bool IsTemporary() const;
+        Utf8String ToString(SqlOption option, bool escape = false, bool useUnionAll = true) const;
     };
 
 //=======================================================================================
@@ -166,7 +166,7 @@ struct ECDbMapAnalyser
         public:
             Class(ClassMapCR classMap, Storage& storage, Class* parent);
             Utf8CP GetSqlName() const;
-            Storage const& GetStorage() const {return m_storage;}
+            Storage const& GetStorage() const { return m_storage; }
             ClassMapCR GetClassMap() const;
             void SetParent(Class& cl) { m_parent = &cl; }
             std::map <Storage const*, std::set<Class const*>>& GetPartitionsR();
@@ -214,7 +214,6 @@ struct ECDbMapAnalyser
                 std::set<Class*> m_classes;
                 PropertyMapCP m_ecid;
                 ECClassIdRelationshipConstraintPropertyMap const* m_classId;
-                EndType m_type;
                 Relationship const& m_parent;
             public:
                 EndPoint(Relationship const& parent, EndType);

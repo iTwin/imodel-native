@@ -4808,7 +4808,7 @@ case 258:
 YY_RULE_SETUP
 {
 				Utf8String tmp; 
-				tmp.Sprintf("Invalid symbol (char=%c, hex=%0x, dec=%d)", SQLyytext[0], SQLyytext[0], SQLyytext[0]); 
+				tmp.Sprintf("Invalid symbol (char=%c, hex=%0x, dec=%" PRIu64 ")", SQLyytext[0], SQLyytext[0], (uint64_t) SQLyytext[0]); 
 				YY_FATAL_ERROR(tmp.c_str()); 
 				return SQL_TOKEN_INVALIDSYMBOL;
 				}

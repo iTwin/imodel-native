@@ -193,13 +193,13 @@ void FromExp::FindRangeClassRefs(RangeClassRefList& classRefs, ClassRefExp const
         case Type::QualifiedJoin:
         case Type::NaturalJoin:
         case Type::CrossJoin:
-        case Type::RelationshipJoin:
+        case Type::ECRelationshipJoin:
             {
             JoinExp const& join = static_cast<JoinExp const&>(classRef);
             FindRangeClassRefs(classRefs, join.GetFromClassRef());
             FindRangeClassRefs(classRefs, join.GetToClassRef());
-            if (classRef.GetType() == Type::RelationshipJoin)
-                FindRangeClassRefs(classRefs, static_cast<RelationshipJoinExp const&>(join).GetRelationshipClass());
+            if (classRef.GetType() == Type::ECRelationshipJoin)
+                FindRangeClassRefs(classRefs, static_cast<ECRelationshipJoinExp const&>(join).GetRelationshipClass());
             break;
             }
         default:

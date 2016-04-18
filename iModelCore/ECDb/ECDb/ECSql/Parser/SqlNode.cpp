@@ -1394,6 +1394,7 @@ namespace connectivity
                         {OSQLParseNode::derived_column, "derived_column"},
                         {OSQLParseNode::ecsqloptions_clause, "ecsqloptions_clause"},
                         {OSQLParseNode::ecclassid_fct_spec, "ecclassid_fct_spec"},
+                        {OSQLParseNode::ecrelationship_join, "ecrelationship_join"},
                         {OSQLParseNode::existence_test, "existence_test"},
                         {OSQLParseNode::extract_exp, "extract_exp"},
                         {OSQLParseNode::factor, "factor"},
@@ -1447,7 +1448,6 @@ namespace connectivity
                         {OSQLParseNode::qualified_join, "qualified_join"},
                         {OSQLParseNode::query_term, "query_term"},
                         {OSQLParseNode::range_variable, "range_variable"},
-                        {OSQLParseNode::relationship_join, "relationship_join"},
                         {OSQLParseNode::row_value_constructor, "row_value_constructor"},
                         {OSQLParseNode::row_value_constructor_commalist, "row_value_constructor_commalist"},
                         {OSQLParseNode::scalar_exp, "scalar_exp"},
@@ -2244,14 +2244,9 @@ namespace connectivity
         if (!isToken())
             {
             // Regelnamen als rule: ...
-            _inout_rBuffer.append("RULE_ID: ");
             Utf8String ruleIdStr;
-            ruleIdStr.Sprintf("%d ", getRuleID());
+            ruleIdStr.Sprintf("RULE_ID: %" PRIu32 " (%s)\n", getRuleID(), OSQLParser::RuleIDToStr(getRuleID()));
             _inout_rBuffer.append(ruleIdStr);
-            _inout_rBuffer.append("(");
-            _inout_rBuffer.append(OSQLParser::RuleIDToStr(getRuleID()));
-            _inout_rBuffer.append(")");
-            _inout_rBuffer.append("\n");
 
             // hol dir den ersten Subtree
             for (OSQLParseNodes::const_iterator i = m_aChildren.begin();

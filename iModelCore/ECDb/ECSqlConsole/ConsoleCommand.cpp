@@ -758,7 +758,7 @@ Utf8String PopulateCommand::_GetUsage() const
 //---------------------------------------------------------------------------------------
 void PopulateCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> const& args) const
     {
-    const auto argCount = args.size();
+    const size_t argCount = args.size();
     if (argCount != 1 && argCount != 2)
         {
         Console::WriteErrorLine("Usage: %s", GetUsage().c_str());
@@ -766,9 +766,7 @@ void PopulateCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> cons
         }
 
     if (!session.HasECDb(true))
-        {
         return;
-        }
 
     if (session.GetECDb().IsReadonly())
         {
@@ -779,7 +777,7 @@ void PopulateCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> cons
     ECSchemaList schemaList;
     if (argCount == 2)
         {
-        auto schemaName = args[1].c_str();
+        Utf8CP schemaName = args[1].c_str();
         ECSchemaCP schema = session.GetECDbR().Schemas().GetECSchema(schemaName, true);
         if (schema == nullptr)
             {
@@ -791,8 +789,7 @@ void PopulateCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> cons
         }
     else
         {
-        auto stat = session.GetECDbR().Schemas().GetECSchemas(schemaList, true);
-        if (stat != SUCCESS)
+        if (SUCCESS != session.GetECDbR().Schemas().GetECSchemas(schemaList, true))
             {
             Console::WriteErrorLine("Could not retrieve the ECSchemas from the ECDb file.");
             return;
@@ -801,13 +798,12 @@ void PopulateCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> cons
 
     //generate class list from all schemas (except standard and system schemas)
     vector<ECClassCP> classList;
-    for (auto schema : schemaList)
+    for (ECSchemaCP schema : schemaList)
         {
         if (ECSchema::IsStandardSchema(schema->GetName().c_str()) || schema->IsSystemSchema())
             return;
 
-        auto const& classes = schema->GetClasses();
-        for (auto ecClass : classes)
+        for (ECClassCP ecClass : schema->GetClasses())
             {
             if (!ecClass->IsCustomAttributeClass())
                 classList.push_back(ecClass);
@@ -815,45 +811,39 @@ void PopulateCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> cons
         };
 
     RandomECInstanceGenerator rig(classList);
-    auto status = rig.Generate(true);
-
-    if (status != BentleyStatus::SUCCESS)
+    if (SUCCESS != rig.Generate(true))
         {
         Console::WriteErrorLine("Failed to generate random instances.");
         return;
         }
 
-    auto& ecdb = session.GetECDbR();
-    auto insertECInstanceDelegate = [&ecdb] (bpair<ECClassCP, vector<IECInstancePtr>> entry)
+    auto insertECInstanceDelegate = [] (ECDbR ecdb, ECClassCP ecClass, vector<IECInstancePtr> const& instances)
         {
-        auto ecClass = entry.first;
-        auto const& instanceList = entry.second;
         ECInstanceInserter inserter(ecdb, *ecClass);
-        for (auto const& instance : instanceList)
+        for (IECInstancePtr const& instance : instances)
             {
             Savepoint savepoint(ecdb, "Populate");
-            ECInstanceKey instanceKey;
-            auto insertStatus = inserter.Insert(instanceKey, *instance);
-            Utf8Char id[ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH] = "";
-            ECInstanceIdHelper::ToString(id, ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH, instanceKey.GetECInstanceId());
-            instance->SetInstanceId(id);
-
-            if (insertStatus != SUCCESS)
+            ECInstanceKey key;
+            if (SUCCESS != inserter.Insert(key, *instance))
                 {
                 Console::WriteErrorLine("Could not insert ECInstance of ECClass %s into ECDb file.", Utf8String(ecClass->GetFullName()).c_str());
                 savepoint.Cancel();
                 }
-            else
-                savepoint.Commit(nullptr);
+
+            savepoint.Commit(nullptr);
             };
         };
 
-    auto const& generatedInstances = rig.GetGeneratedInstances();
-    for_each(generatedInstances.begin(), generatedInstances.end(), insertECInstanceDelegate);
+    for (bpair<ECClassCP, vector<IECInstancePtr>> const& kvPair : rig.GetGeneratedInstances())
+        {
+        insertECInstanceDelegate(session.GetECDbR(), kvPair.first, kvPair.second);
+        }
 
     //relationship instances can only be inserted after the regular instances
-    auto const& generatedRelationshipInstances = rig.GetGeneratedRelationshipInstances();
-    for_each(generatedRelationshipInstances.begin(), generatedRelationshipInstances.end(), insertECInstanceDelegate);
+    for (bpair<ECClassCP, vector<IECInstancePtr>> const& kvPair : rig.GetGeneratedRelationshipInstances())
+        {
+        insertECInstanceDelegate(session.GetECDbR(), kvPair.first, kvPair.second);
+        }
     }
 
 

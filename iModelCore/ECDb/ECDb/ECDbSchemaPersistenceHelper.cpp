@@ -169,8 +169,8 @@ ECClassId ECDbSchemaPersistenceHelper::GetECClassId(ECDbCR db, Utf8CP schemaName
                 break;
         }
 
-    CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != db.GetCachedStatement(stmt, sql))
+    CachedStatementPtr stmt = db.GetCachedStatement(sql);
+    if (stmt == nullptr)
         return ECClassId();
 
     stmt->BindText(1, schemaNameOrPrefix, Statement::MakeCopy::No);

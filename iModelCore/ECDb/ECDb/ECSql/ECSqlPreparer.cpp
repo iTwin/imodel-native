@@ -26,14 +26,14 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod                                    Affan.Khan                       09/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlStatus ECSqlPreparer::Prepare(Utf8StringR nativeSql, ECSqlPrepareContext& context, ECSqlParseTreeCR ecsqlParseTree)
+ECSqlStatus ECSqlPreparer::Prepare(Utf8StringR nativeSql, ECSqlPrepareContext& context, Exp const& exp)
     {
     ECSqlStatus status = ECSqlStatus::Error;
-    switch (ecsqlParseTree.GetType())
+    switch (exp.GetType())
         {
             case Exp::Type::Select:
             {
-            status = ECSqlSelectPreparer::Prepare(context, static_cast<SelectStatementExp const&> (ecsqlParseTree));
+            status = ECSqlSelectPreparer::Prepare(context, static_cast<SelectStatementExp const&> (exp));
             if (!status.IsSuccess())
                 return status;
 
@@ -42,7 +42,7 @@ ECSqlStatus ECSqlPreparer::Prepare(Utf8StringR nativeSql, ECSqlPrepareContext& c
 
             case Exp::Type::Insert:
             {
-            status = ECSqlInsertPreparer::Prepare(context, static_cast<InsertStatementExp const&> (ecsqlParseTree));
+            status = ECSqlInsertPreparer::Prepare(context, static_cast<InsertStatementExp const&> (exp));
             if (!status.IsSuccess())
                 return status;
 
@@ -51,7 +51,7 @@ ECSqlStatus ECSqlPreparer::Prepare(Utf8StringR nativeSql, ECSqlPrepareContext& c
 
             case Exp::Type::Update:
             {
-            status = ECSqlUpdatePreparer::Prepare(context, static_cast<UpdateStatementExp const&> (ecsqlParseTree));
+            status = ECSqlUpdatePreparer::Prepare(context, static_cast<UpdateStatementExp const&> (exp));
             if (!status.IsSuccess())
                 return status;
 
@@ -60,7 +60,7 @@ ECSqlStatus ECSqlPreparer::Prepare(Utf8StringR nativeSql, ECSqlPrepareContext& c
 
             case Exp::Type::Delete:
             {
-            status = ECSqlDeletePreparer::Prepare(context, static_cast<DeleteStatementExp const&> (ecsqlParseTree));
+            status = ECSqlDeletePreparer::Prepare(context, static_cast<DeleteStatementExp const&> (exp));
             if (!status.IsSuccess())
                 return status;
 
@@ -525,16 +525,16 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassRefExp(NativeSqlBuilder::List& nativeS
         {
             case Exp::Type::ClassName:
                 return PrepareClassNameExp(nativeSqlSnippets, ctx, static_cast<ClassNameExp const&>(exp));
-            case Exp::Type::SubqueryRef:
-                return PrepareSubqueryRefExp(ctx, static_cast<SubqueryRefExp const*>(&exp));
             case Exp::Type::CrossJoin:
                 return PrepareCrossJoinExp(ctx, static_cast<CrossJoinExp const&>(exp));
+            case Exp::Type::ECRelationshipJoin:
+                return PrepareRelationshipJoinExp(ctx, static_cast<ECRelationshipJoinExp const&>(exp));
             case Exp::Type::NaturalJoin:
                 return PrepareNaturalJoinExp(ctx, static_cast<NaturalJoinExp const&>(exp));
             case Exp::Type::QualifiedJoin:
                 return PrepareQualifiedJoinExp(ctx, static_cast<QualifiedJoinExp const&>(exp));
-            case Exp::Type::RelationshipJoin:
-                return PrepareRelationshipJoinExp(ctx, static_cast<RelationshipJoinExp const&>(exp));
+            case Exp::Type::SubqueryRef:
+                return PrepareSubqueryRefExp(ctx, static_cast<SubqueryRefExp const*>(&exp));
         }
 
     BeAssert(false && "Unhandled ClassRef expression case");
@@ -711,7 +711,8 @@ ECSqlStatus ECSqlExpPreparer::PrepareDerivedPropertyExp(NativeSqlBuilder::List& 
                 for (auto& snippet : nativeSqlSnippets)
                     {
                     postfix.clear();
-                    postfix.Sprintf("%s_%d", alias.c_str(), idx++);
+                    postfix.Sprintf("%s_%d", alias.c_str(), idx);
+                    idx++;
                     snippet.AppendSpace().AppendEscaped(postfix.c_str());
                     }
                 }
@@ -1222,7 +1223,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareQueryExp(NativeSqlBuilder::List& nativeSqlS
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ctx, RelationshipJoinExp const& exp)
+ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ctx, ECRelationshipJoinExp const& exp)
     {
     // (from) INNER JOIN (to) ON (from.ECInstanceId = to.ECInstanceId)
     // (from) INNER JOIN (view) ON view.SourceECInstanceId = from.ECInstanceId INNER JOIN to ON view.TargetECInstanceId=to.ECInstanceId
@@ -1246,7 +1247,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
 
     switch (fromEP.GetLocation())
         {
-            case RelationshipJoinExp::ClassLocation::ExistInBoth:
+            case ECRelationshipJoinExp::ClassLocation::ExistInBoth:
             {
             switch (direction)
                 {
@@ -1262,7 +1263,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
                 };
             break;
             }
-            case RelationshipJoinExp::ClassLocation::ExistInSource:
+            case ECRelationshipJoinExp::ClassLocation::ExistInSource:
             {
             if (direction != JoinDirection::Implied)
                 {
@@ -1275,7 +1276,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
 
             fromIsSource = TriState::True;
             } break;
-            case RelationshipJoinExp::ClassLocation::ExistInTarget:
+            case ECRelationshipJoinExp::ClassLocation::ExistInTarget:
             {
             if (direction != JoinDirection::Implied)
                 {

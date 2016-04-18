@@ -17,8 +17,8 @@ DbResult BeBriefcaseBasedIdSequence::Initialize() const
     const DbResult stat = m_db.GetRLVCache().Register(m_briefcaseLocalValueIndex, m_briefcaseLocalValueName.c_str());
     if (stat != BE_SQLITE_OK)
         {
-        LOG.fatalv("Could not register BriefcaseLocalValue for BeBriefcaseBasedIdSequence '%s'.", m_briefcaseLocalValueName.c_str());
-        BeAssert(false && "Could not register BriefcaseLocalValue for BeBriefcaseBasedIdSequence");
+        LOG.errorv("Could not register BriefcaseLocalValue for BeBriefcaseBasedIdSequence '%s'. The sequence was already registered with file '%s'.", m_briefcaseLocalValueName.c_str(), m_db.GetDbFileName());
+        BeAssert(false && "Could not register BriefcaseLocalValue for BeBriefcaseBasedIdSequence. Sequence was already registered before.");
         }
 
     return stat;
@@ -38,7 +38,7 @@ DbResult BeBriefcaseBasedIdSequence::Reset(BeBriefcaseId briefcaseId) const
     const DbResult stat = m_db.GetRLVCache().SaveValue(m_briefcaseLocalValueIndex, initialId.GetValueUnchecked());
     if (stat != BE_SQLITE_OK)
         {
-        LOG.fatalv("Could not save initial sequence value SaveBriefcaseLocalValue for BeBriefcaseBasedIdSequence '%s'.", m_briefcaseLocalValueName.c_str());
+        LOG.errorv("Could not save initial sequence value or BeBriefcaseBasedIdSequence '%s' in file '%s'.", m_briefcaseLocalValueName.c_str(), m_db.GetDbFileName());
         BeAssert(false && "BeBriefcaseBasedIdSequence::Reset could not save initial sequence value in be_Local via SaveBriefcaseLocalValue.");
         }
 

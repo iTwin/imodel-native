@@ -1233,7 +1233,7 @@ static const char *const yytname[] =
   "window_frame_bound_1", "window_frame_bound_2", "window_frame_bound",
   "window_frame_following", "window_frame_exclusion", "general_set_fct",
   "set_fct_type", "outer_join_type", "join_condition", "join_spec",
-  "join_type", "cross_union", "qualified_join", "relationship_join",
+  "join_type", "cross_union", "qualified_join", "ecrelationship_join",
   "op_relationship_direction", "joined_table", "named_columns_join", "all",
   "scalar_subquery", "cast_operand", "cast_target", "ec_data_type",
   "cast_spec", "value_exp_primary", "ecclassid_fct_spec", "num_primary",
@@ -7117,9 +7117,7 @@ using namespace ::com::sun::star::uno;
 using namespace ::com::sun::star::i18n;
 using namespace ::com::sun::star::lang;
 using namespace ::com::sun::star::util;
-//using namespace ::osl;
 using namespace ::dbtools;
-//    using namespace connectivity;
 
 //============================================================
 //= a helper for static ascii pseudo-unicode strings

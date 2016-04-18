@@ -19,172 +19,155 @@ struct ECDbInstances : ECDbTestFixture {};
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     09/13
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(ECInstanceIdHelper, ECInstanceIdInstanceIdConversion)
+TEST(ECInstanceIdTests, Conversion)
     {
     //ToString
-    ECInstanceId ecInstanceId (UINT64_C(123456789));
+    ECInstanceId ecInstanceId(UINT64_C(123456789));
     Utf8CP expectedInstanceId = "123456789";
-    Utf8Char actualInstanceId[ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH];
-    bool success = ECInstanceIdHelper::ToString (actualInstanceId, ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH, ecInstanceId);
-    EXPECT_TRUE (success);
-    EXPECT_STREQ (expectedInstanceId, actualInstanceId) << "Unexpected InstanceId generated from ECInstanceId " << ecInstanceId.GetValue ();
+    Utf8Char actualInstanceId[BeInt64Id::ID_STRINGBUFFER_LENGTH];
+    ecInstanceId.ToString(actualInstanceId);
+    EXPECT_STREQ(expectedInstanceId, actualInstanceId) << "Unexpected InstanceId generated from ECInstanceId " << ecInstanceId.GetValue();
 
     ecInstanceId = ECInstanceId(UINT64_C(0));
     expectedInstanceId = "0";
     actualInstanceId[0] = '\0';
-    success = ECInstanceIdHelper::ToString (actualInstanceId, ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH, ecInstanceId);
-    EXPECT_FALSE (success);
-
-    ecInstanceId = ECInstanceId (UINT64_C(123));
-    Utf8Char smallIdBuffer[10];
-    ASSERT_FALSE (ECInstanceIdHelper::ToString (smallIdBuffer, (size_t) 10, ecInstanceId)) << "Expected to fail if buffer is to small to take max uint64_t as string";
-
-    Utf8Char stillTooSmallIdBuffer[std::numeric_limits<int64_t>::digits10 + 1];
-    ASSERT_FALSE (ECInstanceIdHelper::ToString (stillTooSmallIdBuffer, std::numeric_limits<int64_t>::digits10 + 1, ecInstanceId)) << "Expected to fail if buffer is to small to take max int64_t + 2 as string. Sign character and trailing 0 must be considered in the buffer size.";
+    ecInstanceId.ToString(actualInstanceId);
+    EXPECT_STREQ(expectedInstanceId, actualInstanceId) << "Unexpected InstanceId generated from ECInstanceId " << ecInstanceId.GetValueUnchecked();
 
     //FromString
     Utf8CP instanceId = "123456789";
-    ECInstanceId expectedECInstanceId (UINT64_C(123456789));
+    ECInstanceId expectedECInstanceId(UINT64_C(123456789));
     ECInstanceId actualECInstanceId;
-    success = ECInstanceIdHelper::FromString (actualECInstanceId, instanceId);
-    EXPECT_TRUE (success) << "Unexpected failure of ECInstanceIdHelper::FromString";
-    EXPECT_EQ (expectedECInstanceId.GetValue (), actualECInstanceId.GetValue ()) << L"Unexpected ECInstanceId parsed from InstanceId " << instanceId;
+    EXPECT_EQ(SUCCESS, ECInstanceId::FromString(actualECInstanceId, instanceId));
+    EXPECT_EQ(expectedECInstanceId.GetValue(), actualECInstanceId.GetValue()) << "Unexpected ECInstanceId parsed from InstanceId " << instanceId;
 
     instanceId = "0";
     expectedECInstanceId = ECInstanceId(UINT64_C(0));
-    actualECInstanceId = ECInstanceId ();
-    success = ECInstanceIdHelper::FromString (actualECInstanceId, instanceId);
-    EXPECT_FALSE (success) << "Unexpected failure of ECInstanceIdHelper::FromString";
+    actualECInstanceId = ECInstanceId();
+    EXPECT_NE(SUCCESS, ECInstanceId::FromString(actualECInstanceId, instanceId));
 
     instanceId = "0000";
     expectedECInstanceId = ECInstanceId(UINT64_C(0));
-    actualECInstanceId = ECInstanceId ();
-    success = ECInstanceIdHelper::FromString (actualECInstanceId, instanceId);
-    EXPECT_FALSE (success) << "Unexpected failure of ECInstanceIdHelper::FromString";
+    actualECInstanceId = ECInstanceId();
+    EXPECT_NE(SUCCESS, ECInstanceId::FromString(actualECInstanceId, instanceId));
 
     instanceId = "-123456";
-    success = ECInstanceIdHelper::FromString (actualECInstanceId, instanceId);
-    EXPECT_FALSE (success) << L"InstanceId with negative number '" << instanceId << L"' is not expected to be supported by ECInstanceIdHelper::FromString";
+    EXPECT_NE(SUCCESS, ECInstanceId::FromString(actualECInstanceId, instanceId)) << "InstanceId with negative number '" << instanceId << "' is not expected to be supported by ECInstanceId::FromString";
 
     instanceId = "-12345678901234";
-    success = ECInstanceIdHelper::FromString (actualECInstanceId, instanceId);
-    EXPECT_FALSE(success) << L"InstanceId with negative number '" << instanceId << L"' is not expected to be supported by ECInstanceIdHelper::FromString";
+    EXPECT_NE(SUCCESS, ECInstanceId::FromString(actualECInstanceId, instanceId)) << "InstanceId with negative number '" << instanceId << "' is not expected to be supported by ECInstanceId::FromString";
 
     //now test with invalid instance ids
     BeTest::SetFailOnAssert(false);
 
     instanceId = "0x75BCD15";
-    expectedECInstanceId = ECInstanceId (UINT64_C(123456789));
-    actualECInstanceId = ECInstanceId ();
-    success = ECInstanceIdHelper::FromString (actualECInstanceId, instanceId);
-    EXPECT_FALSE (success) << L"InstanceId with hex formatted number '" << instanceId << L"' is not expected to be supported by ECInstanceIdHelper::FromString";
+    expectedECInstanceId = ECInstanceId(UINT64_C(123456789));
+    actualECInstanceId = ECInstanceId();
+    EXPECT_NE(SUCCESS, ECInstanceId::FromString(actualECInstanceId, instanceId)) << "InstanceId with hex formatted number '" << instanceId << "' is not expected to be supported by ECInstanceId::FromString";
 
     instanceId = "i-12345";
-    success = ECInstanceIdHelper::FromString (actualECInstanceId, instanceId);
-    EXPECT_FALSE (success) << L"InstanceId starting with i- '" << instanceId << L"' is not expected to be supported by ECInstanceIdHelper::FromString";
+    EXPECT_NE(SUCCESS, ECInstanceId::FromString(actualECInstanceId, instanceId)) << "InstanceId starting with i- '" << instanceId << "' is not expected to be supported by ECInstanceId::FromString";
 
     instanceId = "1234a123";
-    success = ECInstanceIdHelper::FromString (actualECInstanceId, instanceId);
-    EXPECT_FALSE (success) << L"Non-numeric InstanceId '" << instanceId << L"' is not expected to be supported by ECInstanceIdHelper::FromString";
+    EXPECT_NE(SUCCESS, ECInstanceId::FromString(actualECInstanceId, instanceId)) << "Non-numeric InstanceId '" << instanceId << "' is not expected to be supported by ECInstanceId::FromString";
 
     instanceId = "blabla";
-    success = ECInstanceIdHelper::FromString (actualECInstanceId, instanceId);
-    EXPECT_FALSE (success) << L"Non-numeric InstanceId '" << instanceId << L"' is not expected to be supported by ECInstanceIdHelper::FromString";
+    EXPECT_NE(SUCCESS, ECInstanceId::FromString(actualECInstanceId, instanceId)) << "Non-numeric InstanceId '" << instanceId << "' is not expected to be supported by ECInstanceId::FromString";
 
-    BeTest::SetFailOnAssert (true);
+    BeTest::SetFailOnAssert(true);
     }
 
 TEST_F(ECDbInstances, QuoteTest)
     {
-    ECDb& ecdb = SetupECDb ("StartupCompany.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml"));
+    ECDb& ecdb = SetupECDb("StartupCompany.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml"));
 
     ECSqlStatement stmt1;
-    ASSERT_TRUE (stmt1.Prepare (ecdb, "INSERT INTO stco.ClassWithPrimitiveProperties (stringProp) VALUES('''a''a''')") == ECSqlStatus::Success);
-    ASSERT_TRUE (stmt1.Step () == BE_SQLITE_DONE);
+    ASSERT_TRUE(stmt1.Prepare(ecdb, "INSERT INTO stco.ClassWithPrimitiveProperties (stringProp) VALUES('''a''a''')") == ECSqlStatus::Success);
+    ASSERT_TRUE(stmt1.Step() == BE_SQLITE_DONE);
     ECSqlStatement stmt2;
-    ASSERT_TRUE (stmt2.Prepare (ecdb, "SELECT stringProp FROM stco.ClassWithPrimitiveProperties WHERE stringProp = '''a''a'''") == ECSqlStatus::Success);
-    ASSERT_TRUE (stmt2.Step () == BE_SQLITE_ROW);
-     ECSqlStatement stmt3;
-    ASSERT_TRUE (stmt3.Prepare (ecdb, "UPDATE ONLY stco.ClassWithPrimitiveProperties SET stringProp = '''g''''g'''") == ECSqlStatus::Success);
-    ASSERT_TRUE (stmt3.Step () == BE_SQLITE_DONE);
-     ECSqlStatement stmt4;
-    ASSERT_TRUE (stmt4.Prepare (ecdb, "SELECT stringProp FROM stco.ClassWithPrimitiveProperties WHERE stringProp = '''g''''g'''") == ECSqlStatus::Success);
-    ASSERT_TRUE (stmt4.Step () == BE_SQLITE_ROW);
+    ASSERT_TRUE(stmt2.Prepare(ecdb, "SELECT stringProp FROM stco.ClassWithPrimitiveProperties WHERE stringProp = '''a''a'''") == ECSqlStatus::Success);
+    ASSERT_TRUE(stmt2.Step() == BE_SQLITE_ROW);
+    ECSqlStatement stmt3;
+    ASSERT_TRUE(stmt3.Prepare(ecdb, "UPDATE ONLY stco.ClassWithPrimitiveProperties SET stringProp = '''g''''g'''") == ECSqlStatus::Success);
+    ASSERT_TRUE(stmt3.Step() == BE_SQLITE_DONE);
+    ECSqlStatement stmt4;
+    ASSERT_TRUE(stmt4.Prepare(ecdb, "SELECT stringProp FROM stco.ClassWithPrimitiveProperties WHERE stringProp = '''g''''g'''") == ECSqlStatus::Success);
+    ASSERT_TRUE(stmt4.Step() == BE_SQLITE_ROW);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Affan.Khan                          04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PopulatePrimitiveValueWithCustomDataSet (ECValueR value, PrimitiveType primitiveType, ECPropertyCP ecProperty)
+void PopulatePrimitiveValueWithCustomDataSet(ECValueR value, PrimitiveType primitiveType, ECPropertyCP ecProperty)
     {
     value.Clear();
     switch (primitiveType)
         {
-        case PRIMITIVETYPE_String  : value.SetUtf8CP("Sample string 2"); break;
-        case PRIMITIVETYPE_Integer : value.SetInteger(987); break;
-        case PRIMITIVETYPE_Long    : value.SetLong(987654321); break;
-        case PRIMITIVETYPE_Double  : value.SetDouble(PI*3);break;
-        case PRIMITIVETYPE_DateTime: 
+            case PRIMITIVETYPE_String: value.SetUtf8CP("Sample string 2"); break;
+            case PRIMITIVETYPE_Integer: value.SetInteger(987); break;
+            case PRIMITIVETYPE_Long: value.SetLong(987654321); break;
+            case PRIMITIVETYPE_Double: value.SetDouble(PI * 3); break;
+            case PRIMITIVETYPE_DateTime:
             {
             DateTime dt;
             DateTimeInfo dti;
-            if (ecProperty != nullptr && StandardCustomAttributeHelper::GetDateTimeInfo (dti, *ecProperty) == ECObjectsStatus::Success)
+            if (ecProperty != nullptr && StandardCustomAttributeHelper::GetDateTimeInfo(dti, *ecProperty) == ECObjectsStatus::Success)
                 {
-                DateTime::Info info = dti.GetInfo (true);
-                if (info.GetKind () == DateTime::Kind::Local)
+                DateTime::Info info = dti.GetInfo(true);
+                if (info.GetKind() == DateTime::Kind::Local)
                     {
                     //local date times are not supported by ECObjects
                     break;
                     }
 
-                DateTime::FromJulianDay (dt, 2456341.75, info); 
+                DateTime::FromJulianDay(dt, 2456341.75, info);
                 }
             else
                 {
-                DateTime::FromJulianDay (dt, 2456341.75, DateTimeInfo::GetDefault ()); 
+                DateTime::FromJulianDay(dt, 2456341.75, DateTimeInfo::GetDefault());
                 }
 
-            value.SetDateTime (dt); 
+            value.SetDateTime(dt);
             break;
             }
-        case PRIMITIVETYPE_Boolean : value.SetBoolean(false); break;
-        case PRIMITIVETYPE_Binary  : 
+            case PRIMITIVETYPE_Boolean: value.SetBoolean(false); break;
+            case PRIMITIVETYPE_Binary:
             {
-            Byte blob[]= {0x0a, 0x0a, 0x0c, 0x0c, 0x0e, 0x0e, 0x3a, 0xaa, 0xff, 0xb };
+            Byte blob[] = {0x0a, 0x0a, 0x0c, 0x0c, 0x0e, 0x0e, 0x3a, 0xaa, 0xff, 0xb};
             value.SetBinary(blob, 10);
             break;
             }
-        case PRIMITIVETYPE_Point2D : 
+            case PRIMITIVETYPE_Point2D:
             {
             DPoint2d point2d;
-            point2d.x=33.11;
-            point2d.y=44.12;
+            point2d.x = 33.11;
+            point2d.y = 44.12;
             value.SetPoint2D(point2d);
             break;
             }
-        case PRIMITIVETYPE_Point3D :
+            case PRIMITIVETYPE_Point3D:
             {
             DPoint3d point3d;
-            point3d.x=12.33;
-            point3d.y=44.54;
-            point3d.z=21.55;
+            point3d.x = 12.33;
+            point3d.y = 44.54;
+            point3d.z = 21.55;
             value.SetPoint3D(point3d);
             break;
             }
         }
-    }    
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Krischan.Eberle                  10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus SetupInsertECInstanceWithNullValues(ECInstanceKey& instanceKey, ECValueP nonNullValue, ECClassCP& testClass, ECDbCR ecdb, Utf8CP testSchemaName, Utf8CP testClassName, Utf8CP nonNullPropertyName)
     {
-    testClass = ecdb.Schemas().GetECClass (testSchemaName, testClassName);
+    testClass = ecdb.Schemas().GetECClass(testSchemaName, testClassName);
     if (testClass == nullptr)
         return ERROR;
 
-    ECInstanceInserter inserter (ecdb, *testClass);
-    if (!inserter.IsValid ())
+    ECInstanceInserter inserter(ecdb, *testClass);
+    if (!inserter.IsValid())
         return ERROR;
 
     // Create a new instance with only one prop value being populated (to avoid the special
@@ -193,10 +176,10 @@ BentleyStatus SetupInsertECInstanceWithNullValues(ECInstanceKey& instanceKey, EC
     IECInstancePtr testInstance = instanceEnabler->CreateInstance();
     EXPECT_TRUE(testInstance != nullptr);
 
-    ECDbTestUtility::AssignRandomValueToECInstance (nonNullValue, testInstance, nonNullPropertyName);
+    ECDbTestUtility::AssignRandomValueToECInstance(nonNullValue, testInstance, nonNullPropertyName);
 
-    auto stat = inserter.Insert (instanceKey, *testInstance);
-    BeAssert (stat == SUCCESS);
+    auto stat = inserter.Insert(instanceKey, *testInstance);
+    BeAssert(stat == SUCCESS);
     return SUCCESS;
     }
 
@@ -205,46 +188,46 @@ BentleyStatus SetupInsertECInstanceWithNullValues(ECInstanceKey& instanceKey, EC
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbInstances, InsertECInstancesWithNullValues)
     {
-    ECDb& db = SetupECDb ("insertwithnullvalues.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
+    ECDb& db = SetupECDb("insertwithnullvalues.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
 
     Utf8CP const testClassName = "PSA";
     Utf8CP const nonNullPropertyName = "I";
 
     ECInstanceKey instanceKey;
     ECClassCP testClass = nullptr;
-    BentleyStatus setupState = SetupInsertECInstanceWithNullValues (instanceKey, nullptr, testClass, db, "ECSqlTest", testClassName, nonNullPropertyName);
-    ASSERT_EQ (SUCCESS, setupState);
+    BentleyStatus setupState = SetupInsertECInstanceWithNullValues(instanceKey, nullptr, testClass, db, "ECSqlTest", testClassName, nonNullPropertyName);
+    ASSERT_EQ(SUCCESS, setupState);
 
-    Utf8String ecsql ("SELECT * FROM ");
-    ecsql.append (testClass->GetECSqlName()).append (" WHERE ECInstanceId = ?");
+    Utf8String ecsql("SELECT * FROM ");
+    ecsql.append(testClass->GetECSqlName()).append(" WHERE ECInstanceId = ?");
 
     ECSqlStatement statement;
-    auto stat = statement.Prepare (db, ecsql.c_str ());
+    auto stat = statement.Prepare(db, ecsql.c_str());
     ASSERT_EQ(ECSqlStatus::Success, stat);
 
-    stat = statement.BindId (1, instanceKey.GetECInstanceId ());
+    stat = statement.BindId(1, instanceKey.GetECInstanceId());
     ASSERT_EQ(ECSqlStatus::Success, stat);
 
     int rowCount = 0;
-    while (statement.Step () == BE_SQLITE_ROW)
+    while (statement.Step() == BE_SQLITE_ROW)
         {
         ++rowCount;
-        const int propCount = statement.GetColumnCount ();
+        const int propCount = statement.GetColumnCount();
         for (int i = 0; i < propCount; ++i)
             {
-            ECPropertyCP prop = statement.GetColumnInfo (i).GetProperty ();
+            ECPropertyCP prop = statement.GetColumnInfo(i).GetProperty();
             Utf8StringCR propName = prop->GetName();
-            bool expectedIsNull = propName.CompareTo (nonNullPropertyName) != 0 && !propName.Equals ("ECInstanceId");
+            bool expectedIsNull = propName.CompareTo(nonNullPropertyName) != 0 && !propName.Equals("ECInstanceId");
             if (prop->GetIsArray())
                 expectedIsNull = false; // arrays are never Null
 
-            bool actualIsNull = statement.IsValueNull (i);
-            EXPECT_EQ (expectedIsNull, actualIsNull) << "ECSqlStatement::IsNullValue failed for property index " << i << " (property name " << propName.c_str () << ")";
+            bool actualIsNull = statement.IsValueNull(i);
+            EXPECT_EQ(expectedIsNull, actualIsNull) << "ECSqlStatement::IsNullValue failed for property index " << i << " (property name " << propName.c_str() << ")";
             }
         }
 
     //only one instance was inserted, so row count is expected to be one.
-    ASSERT_EQ (1, rowCount);
+    ASSERT_EQ(1, rowCount);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -252,50 +235,50 @@ TEST_F(ECDbInstances, InsertECInstancesWithNullValues)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbInstances, ECInstanceAdapterGetECInstanceWithNullValues)
     {
-    ECDb& db = SetupECDb ("insertwithnullvalues.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
+    ECDb& db = SetupECDb("insertwithnullvalues.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
 
     Utf8CP const testClassName = "PSA";
     Utf8CP const nonNullPropertyName = "I";
 
     ECInstanceKey instanceKey;
     ECClassCP testClass = nullptr;
-    BentleyStatus setupState = SetupInsertECInstanceWithNullValues (instanceKey, nullptr, testClass, db, "ECSqlTest", testClassName, nonNullPropertyName);
-    ASSERT_EQ (SUCCESS, setupState);
+    BentleyStatus setupState = SetupInsertECInstanceWithNullValues(instanceKey, nullptr, testClass, db, "ECSqlTest", testClassName, nonNullPropertyName);
+    ASSERT_EQ(SUCCESS, setupState);
 
-    Utf8String ecsql ("SELECT * FROM ");
-    ecsql.append (testClass->GetECSqlName()).append (" WHERE ECInstanceId = ?");
+    Utf8String ecsql("SELECT * FROM ");
+    ecsql.append(testClass->GetECSqlName()).append(" WHERE ECInstanceId = ?");
 
     ECSqlStatement statement;
-    auto stat = statement.Prepare (db, ecsql.c_str ());
+    auto stat = statement.Prepare(db, ecsql.c_str());
     ASSERT_EQ(ECSqlStatus::Success, stat);
 
-    stat = statement.BindId (1, instanceKey.GetECInstanceId ());
+    stat = statement.BindId(1, instanceKey.GetECInstanceId());
     ASSERT_EQ(ECSqlStatus::Success, stat);
 
-    ECInstanceECSqlSelectAdapter dataAdapter (statement);
+    ECInstanceECSqlSelectAdapter dataAdapter(statement);
 
     ECValue value;
     int rowCount = 0;
     DbResult result;
-    while ((result = statement.Step ()) == BE_SQLITE_ROW)
+    while ((result = statement.Step()) == BE_SQLITE_ROW)
         {
         ++rowCount;
-        IECInstancePtr instance = dataAdapter.GetInstance ();
+        IECInstancePtr instance = dataAdapter.GetInstance();
 
-        ECValuesCollectionPtr propValues = ECValuesCollection::Create (*instance);
+        ECValuesCollectionPtr propValues = ECValuesCollection::Create(*instance);
         for (ECPropertyValueCR propValue : *propValues)
             {
-            Utf8CP propName = propValue.GetValueAccessor ().GetAccessString ();
-            const bool expectedIsNull = BeStringUtilities::Stricmp (propName, nonNullPropertyName) != 0;
-            value = propValue.GetValue ();
-            bool actualIsNull = ECDbTestUtility::IsECValueNull (value);
+            Utf8CP propName = propValue.GetValueAccessor().GetAccessString();
+            const bool expectedIsNull = BeStringUtilities::Stricmp(propName, nonNullPropertyName) != 0;
+            value = propValue.GetValue();
+            bool actualIsNull = ECDbTestUtility::IsECValueNull(value);
 
-            EXPECT_EQ (expectedIsNull, actualIsNull) << "Assertion of IsNull check for property value failed for property '" << propName << "'.";
-            } 
+            EXPECT_EQ(expectedIsNull, actualIsNull) << "Assertion of IsNull check for property value failed for property '" << propName << "'.";
+            }
         }
 
     //only one instance was inserted, so row count is expected to be one.
-    ASSERT_EQ (1, rowCount);
+    ASSERT_EQ(1, rowCount);
     }
 
 void SetStruct1Values(StandaloneECInstancePtr instance, bool boolVal, int intVal)
@@ -332,8 +315,8 @@ TEST_F(ECDbInstances, CreateAndImportSchemaThenInsertInstance)
     Utf8String filename = dgndb.GetDbFileName();
     dgndb.CloseDb();
     ECDb db;
-    DbResult stat = db.OpenBeSQLiteDb (filename.c_str(), Db::OpenParams(Db::OpenMode::ReadWrite));
-    EXPECT_EQ (BE_SQLITE_OK, stat);
+    DbResult stat = db.OpenBeSQLiteDb(filename.c_str(), Db::OpenParams(Db::OpenMode::ReadWrite));
+    EXPECT_EQ(BE_SQLITE_OK, stat);
 
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "TestSchema", 1, 2);
@@ -362,13 +345,13 @@ TEST_F(ECDbInstances, CreateAndImportSchemaThenInsertInstance)
     StructArrayECPropertyP nestedArrayProperty;
     testClass->CreateStructArrayProperty(nestedArrayProperty, "StructArray", struct2);
 
-    auto schemaCache = ECSchemaCache::Create ();
+    auto schemaCache = ECSchemaCache::Create();
     schemaCache->AddSchema(*schema);
-    ASSERT_EQ (SUCCESS, db.Schemas ().ImportECSchemas (*schemaCache, ECDbSchemaManager::ImportOptions()));
+    ASSERT_EQ(SUCCESS, db.Schemas().ImportECSchemas(*schemaCache, ECDbSchemaManager::ImportOptions()));
 
-    StandaloneECEnablerPtr struct1Enabler = struct1->GetDefaultStandaloneEnabler ();
-    StandaloneECEnablerPtr struct2Enabler = struct2->GetDefaultStandaloneEnabler ();
-    StandaloneECEnablerPtr testClassEnabler = testClass->GetDefaultStandaloneEnabler ();
+    StandaloneECEnablerPtr struct1Enabler = struct1->GetDefaultStandaloneEnabler();
+    StandaloneECEnablerPtr struct2Enabler = struct2->GetDefaultStandaloneEnabler();
+    StandaloneECEnablerPtr testClassEnabler = testClass->GetDefaultStandaloneEnabler();
 
     ECN::StandaloneECInstancePtr struct1Instance1 = struct1Enabler->CreateInstance();
     ECN::StandaloneECInstancePtr struct1Instance2 = struct1Enabler->CreateInstance();
@@ -412,38 +395,38 @@ TEST_F(ECDbInstances, CreateAndImportSchemaThenInsertInstance)
     structVal3.SetStruct(struct2Instance3.get());
     testClassInstance->SetValue("StructArray", structVal3, 2);
 
-    ECInstanceInserter inserter (db, *testClass);
-    ASSERT_TRUE (inserter.IsValid ());
+    ECInstanceInserter inserter(db, *testClass);
+    ASSERT_TRUE(inserter.IsValid());
     ECInstanceKey instanceKey;
-    auto insertStatus = inserter.Insert (instanceKey, *testClassInstance);
-    ASSERT_EQ (SUCCESS, insertStatus);
+    auto insertStatus = inserter.Insert(instanceKey, *testClassInstance);
+    ASSERT_EQ(SUCCESS, insertStatus);
 
-    SqlPrintfString ecSql ("SELECT StructArray FROM TestSchema.TestClass");
+    SqlPrintfString ecSql("SELECT StructArray FROM TestSchema.TestClass");
     ECSqlStatement ecStatement;
-    ECSqlStatus status = ecStatement.Prepare (db, ecSql.GetUtf8CP());
-    ASSERT_TRUE (ECSqlStatus::Success == status);
+    ECSqlStatus status = ecStatement.Prepare(db, ecSql.GetUtf8CP());
+    ASSERT_TRUE(ECSqlStatus::Success == status);
 
     while (ecStatement.Step() == BE_SQLITE_ROW)
         {
-        IECSqlArrayValue const& arrayValue = ecStatement.GetValueArray (0);
-        int arrayLength = arrayValue.GetArrayLength ();
+        IECSqlArrayValue const& arrayValue = ecStatement.GetValueArray(0);
+        int arrayLength = arrayValue.GetArrayLength();
         ASSERT_EQ(3, arrayLength);
         int arrayIndex = 0;
         for (IECSqlValue const* arrayElementValue : arrayValue)
             {
-            IECSqlStructValue const& structValue = arrayElementValue->GetStruct ();
-            auto doubleValue = structValue.GetValue (1).GetDouble ();
+            IECSqlStructValue const& structValue = arrayElementValue->GetStruct();
+            auto doubleValue = structValue.GetValue(1).GetDouble();
             if (arrayIndex == 0)
                 ASSERT_EQ(1.001, doubleValue);
             else if (arrayIndex == 1)
                 ASSERT_EQ(10.002, doubleValue);
             else
                 ASSERT_EQ(15.003, doubleValue);
-            IECSqlArrayValue const& nestedArrayValue = structValue.GetValue (2).GetArray ();
+            IECSqlArrayValue const& nestedArrayValue = structValue.GetValue(2).GetArray();
             int nestedArrayIndex = 0;
             for (IECSqlValue const* nestedArrayElement : nestedArrayValue)
                 {
-                auto intValue = nestedArrayElement->GetStruct ().GetValue (1).GetInt ();
+                auto intValue = nestedArrayElement->GetStruct().GetValue(1).GetInt();
                 ASSERT_EQ((arrayIndex * 3) + nestedArrayIndex, intValue);
                 //printf("Outer array: %d\nInner Array: %d\nIntValue: %d\n\n", arrayIndex, nestedArrayIndex, intValue);
                 nestedArrayIndex++;
@@ -458,77 +441,77 @@ TEST_F(ECDbInstances, CreateAndImportSchemaThenInsertInstance)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbInstances, FindECInstances)
     {
-    ECDb& db = SetupECDb ("StartupCompany.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml"), 3);
+    ECDb& db = SetupECDb("StartupCompany.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml"), 3);
 
     IECInstancePtr resultInstance = nullptr;
     ECValue v;
     int rows;
 
     ECClassKeys classKeys;
-    db.Schemas().GetECClassKeys (classKeys, "StartupCompany");
+    db.Schemas().GetECClassKeys(classKeys, "StartupCompany");
     for (ECClassKey ecClassKey : classKeys)
         {
-        ECClassCP ecClass = db.Schemas().GetECClass (ecClassKey.GetECClassId());  // WIP_FNV: start taking ECSchemaName, ECClassName, instead
-        ASSERT_TRUE (ecClass != nullptr);
+        ECClassCP ecClass = db.Schemas().GetECClass(ecClassKey.GetECClassId());  // WIP_FNV: start taking ECSchemaName, ECClassName, instead
+        ASSERT_TRUE(ecClass != nullptr);
 
         Utf8String className = ecClassKey.GetName();
         if (className == "ClassWithPrimitiveProperties")
             {
-            SqlPrintfString ecSql ("SELECT * FROM [StartupCompany].[ClassWithPrimitiveProperties] WHERE intProp > 0");
+            SqlPrintfString ecSql("SELECT * FROM [StartupCompany].[ClassWithPrimitiveProperties] WHERE intProp > 0");
             ECSqlStatement ecStatement;
-            ECSqlStatus status = ecStatement.Prepare (db, ecSql.GetUtf8CP());
-            ASSERT_TRUE (ECSqlStatus::Success == status);
-            ECInstanceECSqlSelectAdapter dataAdapter (ecStatement);
+            ECSqlStatus status = ecStatement.Prepare(db, ecSql.GetUtf8CP());
+            ASSERT_TRUE(ECSqlStatus::Success == status);
+            ECInstanceECSqlSelectAdapter dataAdapter(ecStatement);
 
             rows = 0;
             while (ecStatement.Step() == BE_SQLITE_ROW)
                 {
                 resultInstance = dataAdapter.GetInstance();
-                ASSERT_TRUE (resultInstance.IsValid());
-                ASSERT_TRUE (ECObjectsStatus::Success == resultInstance->GetValue (v, "intProp"));
-                ASSERT_TRUE (v.GetInteger() > 0);
+                ASSERT_TRUE(resultInstance.IsValid());
+                ASSERT_TRUE(ECObjectsStatus::Success == resultInstance->GetValue(v, "intProp"));
+                ASSERT_TRUE(v.GetInteger() > 0);
                 rows++;
                 }
             LOG.infov(L"Returned %d rows for '(intProp > 0)'", rows);
-            ASSERT_EQ (rows, 3);
+            ASSERT_EQ(rows, 3);
             }
-        else if(className == "AAA")
+        else if (className == "AAA")
             {
-            SqlPrintfString ecSql ("SELECT * FROM [StartupCompany].[AAA] WHERE l = 123456789");
+            SqlPrintfString ecSql("SELECT * FROM [StartupCompany].[AAA] WHERE l = 123456789");
             ECSqlStatement ecStatement;
-            ASSERT_TRUE (ECSqlStatus::Success == ecStatement.Prepare (db, ecSql.GetUtf8CP()));
-            ECInstanceECSqlSelectAdapter dataAdapter (ecStatement);
+            ASSERT_TRUE(ECSqlStatus::Success == ecStatement.Prepare(db, ecSql.GetUtf8CP()));
+            ECInstanceECSqlSelectAdapter dataAdapter(ecStatement);
 
             rows = 0;
             while (ecStatement.Step() == BE_SQLITE_ROW)
                 {
                 resultInstance = dataAdapter.GetInstance();
-                ASSERT_TRUE (resultInstance.IsValid());
-                ASSERT_TRUE (ECObjectsStatus::Success == resultInstance->GetValue (v, "l"));
-                ASSERT_TRUE (v.GetLong() == 123456789L);
+                ASSERT_TRUE(resultInstance.IsValid());
+                ASSERT_TRUE(ECObjectsStatus::Success == resultInstance->GetValue(v, "l"));
+                ASSERT_TRUE(v.GetLong() == 123456789L);
                 rows++;
                 }
             LOG.infov(L"Returned %d rows for '(l = 123456789)'", rows);
-            ASSERT_EQ (rows, 3);
+            ASSERT_EQ(rows, 3);
             }
-        else if(className == "AAFoo")
+        else if (className == "AAFoo")
             {
-            SqlPrintfString ecSql ("SELECT * FROM ONLY [StartupCompany].[AAFoo] WHERE doubleAAFoo BETWEEN 0 AND 100");
+            SqlPrintfString ecSql("SELECT * FROM ONLY [StartupCompany].[AAFoo] WHERE doubleAAFoo BETWEEN 0 AND 100");
             ECSqlStatement ecStatement;
-            ASSERT_TRUE (ECSqlStatus::Success == ecStatement.Prepare (db, ecSql.GetUtf8CP()));
-            ECInstanceECSqlSelectAdapter dataAdapter (ecStatement);
+            ASSERT_TRUE(ECSqlStatus::Success == ecStatement.Prepare(db, ecSql.GetUtf8CP()));
+            ECInstanceECSqlSelectAdapter dataAdapter(ecStatement);
 
             rows = 0;
             while (ecStatement.Step() == BE_SQLITE_ROW)
                 {
                 resultInstance = dataAdapter.GetInstance();
-                ASSERT_TRUE (resultInstance.IsValid());
-                ASSERT_TRUE (ECObjectsStatus::Success == resultInstance->GetValue (v, "doubleAAFoo"));
-                ASSERT_TRUE (v.GetDouble() >= 0 && v.GetDouble() <= 100);
+                ASSERT_TRUE(resultInstance.IsValid());
+                ASSERT_TRUE(ECObjectsStatus::Success == resultInstance->GetValue(v, "doubleAAFoo"));
+                ASSERT_TRUE(v.GetDouble() >= 0 && v.GetDouble() <= 100);
                 rows++;
                 }
             LOG.infov(L"Returned %d rows for '(doubleAAFoo BETWEEN 0 AND 100)' ", rows);
-            ASSERT_EQ (rows, 3);
+            ASSERT_EQ(rows, 3);
             }
         }
     }
@@ -567,16 +550,16 @@ TEST_F(ECDbInstances, FindECInstancesFromSelectWithMultipleClasses)
     ECSqlStatement ecStatement;
     ASSERT_TRUE(ECSqlStatus::Success == ecStatement.Prepare(ecdb, "SELECT c0.intFoo, c1.stringBar from [StartupCompany].[Foo] c0 join [StartupCompany].[Bar] c1 using [StartupCompany].[Foo_has_Bars]"));
 
-    ECInstanceECSqlSelectAdapter dataAdapter (ecStatement);
+    ECInstanceECSqlSelectAdapter dataAdapter(ecStatement);
     int rows = 0;
     ECValue v;
     IECInstancePtr resultInstance = nullptr;
     while (ecStatement.Step() == BE_SQLITE_ROW)
         {
-        BeTest::SetFailOnAssert (false);
+        BeTest::SetFailOnAssert(false);
         resultInstance = dataAdapter.GetInstance();
-        BeTest::SetFailOnAssert (true);
-        ASSERT_TRUE (resultInstance == nullptr);
+        BeTest::SetFailOnAssert(true);
+        ASSERT_TRUE(resultInstance == nullptr);
         rows++;
         }
     ASSERT_TRUE(rows > 0) << "Should have found at least one Foo instance";
@@ -585,13 +568,13 @@ TEST_F(ECDbInstances, FindECInstancesFromSelectWithMultipleClasses)
 
     rows = 0;
     ECClassCP ecClass = ecdb.Schemas().GetECClass("StartupCompany", "Bar");
-    ASSERT_TRUE (ecClass != nullptr) << "ECDbTestSchemaManager::GetClassP returned null";
+    ASSERT_TRUE(ecClass != nullptr) << "ECDbTestSchemaManager::GetClassP returned null";
     while (ecStatement.Step() == BE_SQLITE_ROW)
         {
         resultInstance = dataAdapter.GetInstance(ecClass->GetId());
-        ASSERT_TRUE (resultInstance.IsValid());
-        ASSERT_TRUE (ECObjectsStatus::Success == resultInstance->GetValue (v, "stringBar"));
-        ASSERT_FALSE (v.IsNull ());
+        ASSERT_TRUE(resultInstance.IsValid());
+        ASSERT_TRUE(ECObjectsStatus::Success == resultInstance->GetValue(v, "stringBar"));
+        ASSERT_FALSE(v.IsNull());
         rows++;
         }
     ASSERT_TRUE(rows > 0) << "Should have found at least one Bar instance";
@@ -603,66 +586,66 @@ TEST_F(ECDbInstances, FindECInstancesFromSelectWithMultipleClasses)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbInstances, SelectClause)
     {
-    ECDb& db = SetupECDb ("StartupCompany.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml"), 3);
+    ECDb& db = SetupECDb("StartupCompany.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml"), 3);
     ASSERT_TRUE(db.IsDbOpen());
     ECClassCP employee = db.Schemas().GetECClass("StartupCompany", "Employee");
-    ASSERT_TRUE (employee != nullptr);
+    ASSERT_TRUE(employee != nullptr);
 
     ECSqlStatement ecStatement;
 
     Utf8String jobTitle1;
     int managerId1;
-        {
-        // ECSQL should honor the order of the ecColumns from the select clause
-        ASSERT_EQ(ECSqlStatus::Success, ecStatement.Prepare (db, "SELECT JobTitle, ManagerID FROM [StartupCompany].[Employee]"));
-        ASSERT_EQ(BE_SQLITE_ROW, ecStatement.Step());
-        jobTitle1  = ecStatement.GetValueText(0);
-        managerId1 = ecStatement.GetValueInt(1);
-        EXPECT_TRUE (ecStatement.GetColumnInfo(0).GetProperty()->GetName().Equals("JobTitle"));
-        EXPECT_TRUE (ecStatement.GetColumnInfo(1).GetProperty()->GetName().Equals("ManagerID"));
-        ecStatement.Finalize();
-        }
+    {
+    // ECSQL should honor the order of the ecColumns from the select clause
+    ASSERT_EQ(ECSqlStatus::Success, ecStatement.Prepare(db, "SELECT JobTitle, ManagerID FROM [StartupCompany].[Employee]"));
+    ASSERT_EQ(BE_SQLITE_ROW, ecStatement.Step());
+    jobTitle1 = ecStatement.GetValueText(0);
+    managerId1 = ecStatement.GetValueInt(1);
+    EXPECT_TRUE(ecStatement.GetColumnInfo(0).GetProperty()->GetName().Equals("JobTitle"));
+    EXPECT_TRUE(ecStatement.GetColumnInfo(1).GetProperty()->GetName().Equals("ManagerID"));
+    ecStatement.Finalize();
+    }
 
-        {
-        ASSERT_EQ(ECSqlStatus::Success, ecStatement.Prepare (db, "SELECT JobTitle, ManagerID FROM [StartupCompany].[Employee]"));
-        ASSERT_EQ(BE_SQLITE_ROW, ecStatement.Step());
-        Utf8String jobTitle2  = ecStatement.GetValueText(0);
-        int        managerId2 = ecStatement.GetValueInt(1);
-        EXPECT_TRUE (ecStatement.GetColumnInfo(0).GetProperty()->GetName().Equals("JobTitle"));
-        EXPECT_TRUE (ecStatement.GetColumnInfo(1).GetProperty()->GetName().Equals("ManagerID"));
-        ecStatement.Finalize();
+    {
+    ASSERT_EQ(ECSqlStatus::Success, ecStatement.Prepare(db, "SELECT JobTitle, ManagerID FROM [StartupCompany].[Employee]"));
+    ASSERT_EQ(BE_SQLITE_ROW, ecStatement.Step());
+    Utf8String jobTitle2 = ecStatement.GetValueText(0);
+    int        managerId2 = ecStatement.GetValueInt(1);
+    EXPECT_TRUE(ecStatement.GetColumnInfo(0).GetProperty()->GetName().Equals("JobTitle"));
+    EXPECT_TRUE(ecStatement.GetColumnInfo(1).GetProperty()->GetName().Equals("ManagerID"));
+    ecStatement.Finalize();
 
-        ASSERT_EQ (managerId1, managerId2);
-        ASSERT_TRUE (jobTitle1.Equals(jobTitle2));
-        }
+    ASSERT_EQ(managerId1, managerId2);
+    ASSERT_TRUE(jobTitle1.Equals(jobTitle2));
+    }
 
-        {
-        // ECSQL SelectAll (aka '*') should select in same order as ECProperties appear in the ECSchema
-        ASSERT_TRUE (ECSqlStatus::Success == ecStatement.Prepare (db, "SELECT * FROM [StartupCompany].[Employee]"));
-        ASSERT_TRUE (BE_SQLITE_ROW == ecStatement.Step());
-        EXPECT_TRUE (ecStatement.GetColumnInfo(0).GetProperty()->GetName().Equals("ECInstanceId"));
-        EXPECT_TRUE (ecStatement.GetColumnInfo(1).GetProperty()->GetName().Equals("EmployeeID"));
-        EXPECT_TRUE (ecStatement.GetColumnInfo(2).GetProperty()->GetName().Equals("FirstName" ));
-        EXPECT_TRUE (ecStatement.GetColumnInfo(3).GetProperty()->GetName().Equals("JobTitle"  ));
-        EXPECT_TRUE (ecStatement.GetColumnInfo(4).GetProperty()->GetName().Equals("LastName"  ));
-        EXPECT_TRUE (ecStatement.GetColumnInfo(5).GetProperty()->GetName().Equals("ManagerID" ));
-        EXPECT_TRUE (ecStatement.GetColumnInfo(6).GetProperty()->GetName().Equals("Room"      ));
-        EXPECT_TRUE (ecStatement.GetColumnInfo(7).GetProperty()->GetName().Equals("SSN"       ));
-        EXPECT_TRUE (ecStatement.GetColumnInfo(8).GetProperty()->GetName().Equals("Project"   ));
-        EXPECT_TRUE (ecStatement.GetColumnInfo(9).GetProperty()->GetName().Equals("WorkPhone" ));
-        EXPECT_TRUE (ecStatement.GetColumnInfo(10).GetProperty()->GetName().Equals("MobilePhone"));
-        EXPECT_TRUE (ecStatement.GetColumnInfo(11).GetProperty()->GetName().Equals("FullName" ));
-        EXPECT_TRUE (ecStatement.GetColumnInfo(12).GetProperty()->GetName().Equals("Certifications"));
-        EXPECT_TRUE (ecStatement.GetColumnInfo(13).GetProperty()->GetName().Equals("Location"));
-        EXPECT_TRUE (ecStatement.GetValueStruct(13).GetValue (0).GetColumnInfo().GetProperty()->GetName().Equals(/*Location.*/"Coordinate"));
-        EXPECT_TRUE (ecStatement.GetValueStruct (13).GetValue (1).GetColumnInfo ().GetProperty ()->GetName ().Equals (/*Location.*/"Street"));
-        EXPECT_TRUE (ecStatement.GetColumnInfo(14).GetProperty()->GetName().Equals("EmployeeType"));
-        EXPECT_TRUE (ecStatement.GetColumnInfo(15).GetProperty()->GetName().Equals("Address"));
-        EXPECT_TRUE (ecStatement.GetValueStruct (15).GetValue (0).GetColumnInfo ().GetProperty ()->GetName ().Equals (/*Location.*/"Coordinate"));
-        EXPECT_TRUE (ecStatement.GetValueStruct (15).GetValue (1).GetColumnInfo ().GetProperty ()->GetName ().Equals (/*Location.*/"Street"));
-        EXPECT_TRUE (ecStatement.GetColumnInfo(16).GetProperty()->GetName().Equals("EmployeeRecordKey"));
+    {
+    // ECSQL SelectAll (aka '*') should select in same order as ECProperties appear in the ECSchema
+    ASSERT_TRUE(ECSqlStatus::Success == ecStatement.Prepare(db, "SELECT * FROM [StartupCompany].[Employee]"));
+    ASSERT_TRUE(BE_SQLITE_ROW == ecStatement.Step());
+    EXPECT_TRUE(ecStatement.GetColumnInfo(0).GetProperty()->GetName().Equals("ECInstanceId"));
+    EXPECT_TRUE(ecStatement.GetColumnInfo(1).GetProperty()->GetName().Equals("EmployeeID"));
+    EXPECT_TRUE(ecStatement.GetColumnInfo(2).GetProperty()->GetName().Equals("FirstName"));
+    EXPECT_TRUE(ecStatement.GetColumnInfo(3).GetProperty()->GetName().Equals("JobTitle"));
+    EXPECT_TRUE(ecStatement.GetColumnInfo(4).GetProperty()->GetName().Equals("LastName"));
+    EXPECT_TRUE(ecStatement.GetColumnInfo(5).GetProperty()->GetName().Equals("ManagerID"));
+    EXPECT_TRUE(ecStatement.GetColumnInfo(6).GetProperty()->GetName().Equals("Room"));
+    EXPECT_TRUE(ecStatement.GetColumnInfo(7).GetProperty()->GetName().Equals("SSN"));
+    EXPECT_TRUE(ecStatement.GetColumnInfo(8).GetProperty()->GetName().Equals("Project"));
+    EXPECT_TRUE(ecStatement.GetColumnInfo(9).GetProperty()->GetName().Equals("WorkPhone"));
+    EXPECT_TRUE(ecStatement.GetColumnInfo(10).GetProperty()->GetName().Equals("MobilePhone"));
+    EXPECT_TRUE(ecStatement.GetColumnInfo(11).GetProperty()->GetName().Equals("FullName"));
+    EXPECT_TRUE(ecStatement.GetColumnInfo(12).GetProperty()->GetName().Equals("Certifications"));
+    EXPECT_TRUE(ecStatement.GetColumnInfo(13).GetProperty()->GetName().Equals("Location"));
+    EXPECT_TRUE(ecStatement.GetValueStruct(13).GetValue(0).GetColumnInfo().GetProperty()->GetName().Equals(/*Location.*/"Coordinate"));
+    EXPECT_TRUE(ecStatement.GetValueStruct(13).GetValue(1).GetColumnInfo().GetProperty()->GetName().Equals(/*Location.*/"Street"));
+    EXPECT_TRUE(ecStatement.GetColumnInfo(14).GetProperty()->GetName().Equals("EmployeeType"));
+    EXPECT_TRUE(ecStatement.GetColumnInfo(15).GetProperty()->GetName().Equals("Address"));
+    EXPECT_TRUE(ecStatement.GetValueStruct(15).GetValue(0).GetColumnInfo().GetProperty()->GetName().Equals(/*Location.*/"Coordinate"));
+    EXPECT_TRUE(ecStatement.GetValueStruct(15).GetValue(1).GetColumnInfo().GetProperty()->GetName().Equals(/*Location.*/"Street"));
+    EXPECT_TRUE(ecStatement.GetColumnInfo(16).GetProperty()->GetName().Equals("EmployeeRecordKey"));
 
-        }
+    }
     }
 
 //---------------------------------------------------------------------------------------
@@ -675,10 +658,10 @@ TEST_F(ECDbInstances, AdapterCheckClassBeforeOperation)
 
     //Get two classes and create instance of second
     ECClassCP employee = db.Schemas().GetECClass("StartupCompany", "Employee");
-    ASSERT_TRUE (employee != nullptr);
+    ASSERT_TRUE(employee != nullptr);
 
     ECClassCP project = db.Schemas().GetECClass("StartupCompany", "Project");
-    ASSERT_TRUE (project != nullptr);
+    ASSERT_TRUE(project != nullptr);
     IECInstancePtr instance;
     instance = ECDbTestUtility::CreateArbitraryECInstance(*project, ECDbTestUtility::PopulatePrimitiveValueWithRandomValues);
 
@@ -719,7 +702,7 @@ TEST_F(ECDbInstances, AdapterCheckClassBeforeOperation)
     JsonDeleter jsonDeleter(db, *employee);
     ASSERT_TRUE(jsonDeleter.IsValid());
     ECInstanceId instanceId;
-    ECInstanceIdHelper::FromString(instanceId, instance->GetInstanceId().c_str());
+    ECInstanceId::FromString(instanceId, instance->GetInstanceId().c_str());
     sms = jsonDeleter.Delete(instanceId);
 
     BeTest::SetFailOnAssert(true);

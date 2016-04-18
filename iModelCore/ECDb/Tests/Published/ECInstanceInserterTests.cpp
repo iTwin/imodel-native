@@ -257,8 +257,8 @@ TEST_F (ECInstanceInserterTests, InsertWithUserProvidedECInstanceId)
 
         //now set a valid instance id in test instance
         userProvidedId = ECInstanceId (userProvidedId.GetValue () + 100LL);
-        Utf8Char instanceIdStr[ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH];
-        ASSERT_TRUE (ECInstanceIdHelper::ToString (instanceIdStr, ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH, userProvidedId));
+        Utf8Char instanceIdStr[BeInt64Id::ID_STRINGBUFFER_LENGTH];
+        userProvidedId.ToString(instanceIdStr);
         testInstance.SetInstanceId (instanceIdStr);
 
         status = inserter.Insert (userProvidedKey, testInstance, false);

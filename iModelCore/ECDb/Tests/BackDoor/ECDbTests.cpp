@@ -849,15 +849,9 @@ BentleyStatus ECDbTestUtility::SetECInstanceId(ECN::IECInstanceR instance, ECIns
     if (!instanceId.IsValid())
         return ERROR;
 
-    Utf8Char instanceIdStr[ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH];
-    if (!ECInstanceIdHelper::ToString(instanceIdStr, ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH, instanceId))
-        {
-        LOG.errorv("Could not set ECInstanceId %llu on the ECInstanceId. Conversion to string failed.", instanceId.GetValue());
-        return ERROR;
-        }
-
-    const auto ecstat = instance.SetInstanceId(instanceIdStr);
-    return ecstat == ECObjectsStatus::Success ? SUCCESS : ERROR;
+    Utf8Char instanceIdStr[BeInt64Id::ID_STRINGBUFFER_LENGTH];
+    instanceId.ToString(instanceIdStr);
+    return ECObjectsStatus::Success == instance.SetInstanceId(instanceIdStr) ? SUCCESS : ERROR;
     }
 
 //---------------------------------------------------------------------------------------

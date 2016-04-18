@@ -2,7 +2,7 @@
 |
 |     $Source: ECSqlConsole/ECSqlStatementIterator.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -60,9 +60,9 @@ void ListDataWriter::OnPrimitive(ECSqlPropertyPath const& propertyPath, int rowI
         case ECN::PRIMITIVETYPE_Double:
             Console::WriteLine("%f\t", value.GetDouble()); return;
         case ECN::PRIMITIVETYPE_Integer:
-            Console::WriteLine("%d", value.GetInteger()); return;
+            Console::WriteLine("%" PRId32, value.GetInteger()); return;
         case ECN::PRIMITIVETYPE_Long:
-            Console::WriteLine("%lld", value.GetLong()); return;
+            Console::WriteLine("%" PRId64, value.GetLong()); return;
         case ECN::PRIMITIVETYPE_Point2D:
             Console::WriteLine("(%2.1f, %2.1f)", value.GetPoint2D().x, value.GetPoint2D().y); return;
         case ECN::PRIMITIVETYPE_Point3D:

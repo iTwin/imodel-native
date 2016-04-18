@@ -295,11 +295,13 @@ BentleyStatus ViewGenerator::GetViewQueryForChild(NativeSqlBuilder& viewSql, ECD
 
     DbColumn const* classIdColumn = nullptr;
     if (table.TryGetECClassIdColumn(classIdColumn))
-        {
         viewSql.AppendEscaped(table.GetName().c_str()).AppendDot().Append(classIdColumn->GetName().c_str());
-        }
     else
-        viewSql.Append(firstChildClassMap->GetClass().GetId().ToString().c_str()).AppendSpace().Append(ECDB_COL_ECClassId);
+        {
+        Utf8Char classIdStr[ECClassId::ID_STRINGBUFFER_LENGTH];
+        firstChildClassMap->GetClass().GetId().ToString(classIdStr);
+        viewSql.Append(classIdStr).AppendSpace().Append(ECDB_COL_ECClassId);
+        }
 
 
     std::vector<std::pair<PropertyMapCP, PropertyMapCP>> viewPropMaps;
@@ -678,7 +680,9 @@ BentleyStatus ViewGenerator::AppendSystemPropMaps(NativeSqlBuilder& viewSql, ECD
     viewSql.Append(relationMap.GetECInstanceIdPropertyMap()->ToNativeSql(nullptr, ECSqlType::Select, false, &contextTable)).AppendComma();
 
     //ECClassId-----------------------------------
-    viewSql.Append(relationMap.GetClass().GetId().ToString().c_str()).AppendSpace().Append(ECDB_COL_ECClassId).AppendComma();
+    Utf8Char relClassIdStr[ECClassId::ID_STRINGBUFFER_LENGTH];
+    relationMap.GetClass().GetId().ToString(relClassIdStr);
+    viewSql.Append(relClassIdStr).AppendSpace().Append(ECDB_COL_ECClassId).AppendComma();
 
     //SourceECInstanceId-----------------------------------
     RelationshipConstraintPropertyMap const* idPropMap = static_cast<RelationshipConstraintPropertyMap const*> (relationMap.GetSourceECInstanceIdPropMap());
@@ -807,8 +811,9 @@ BentleyStatus ViewGenerator::AppendConstraintClassIdPropMap(NativeSqlBuilder& vi
         ClassMap const* classMap = relaventClassMaps.front();
         BeAssert(classMap != nullptr);
         const ECClassId endClassId = classMap->GetClass().GetId();
-
-        viewSql.Append(endClassId.ToString().c_str()).AppendSpace();
+        Utf8Char endClassIdStr[ECClassId::ID_STRINGBUFFER_LENGTH];
+        endClassId.ToString(endClassIdStr);
+        viewSql.Append(endClassIdStr).AppendSpace();
         viewSql.Append(propMap.ToNativeSql(nullptr, ECSqlType::Select, false, &contextTable));
         }
     else

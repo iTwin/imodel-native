@@ -103,11 +103,11 @@ void ECSqlStatementCacheDiagnostics::Log(Utf8CP cacheName, size_t maxCacheSize, 
                     break;
             }
 
-        Utf8String message("[%s (max size: %d)] %s");
+        Utf8String message("[%s (max size: %" PRIu64 ")] %s");
         if (!Utf8String::IsNullOrEmpty(ecsql))
             message.append(" | ").append(ecsql);
 
-        GetLogger().messagev(LOG_SEVERITY, message.c_str(), cacheName, maxCacheSize, eventStr);
+        GetLogger().messagev(LOG_SEVERITY, message.c_str(), cacheName, (uint64_t) maxCacheSize, eventStr);
         }
     }
 
@@ -207,7 +207,7 @@ void ECSqlStatementCache::Empty()
 //---------------------------------------------------------------------------------------
 void ECSqlStatementCache::Log() const
     {
-    LOG.debugv("%s (max size: %d)", GetName(), m_maxSize);
+    LOG.debugv("%s (max size: %" PRIu64 ")", GetName(), (uint64_t) m_maxSize);
     for (auto& stmt : m_entries)
         LOG.debugv("\t%s", stmt->GetECSql());
     }

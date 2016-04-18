@@ -218,7 +218,7 @@ using namespace connectivity;
 %type <pParseNode> derived_column as_clause table_name num_primary term num_value_exp
 %type <pParseNode> value_exp_primary num_value_fct unsigned_value_spec cast_spec fct_spec  scalar_subquery
 %type <pParseNode> position_exp extract_exp length_exp general_value_spec
-%type <pParseNode> general_set_fct set_fct_type joined_table relationship_join op_relationship_direction
+%type <pParseNode> general_set_fct set_fct_type joined_table ecrelationship_join op_relationship_direction
 %type <pParseNode> row_value_constructor_commalist row_value_constructor  row_value_constructor_elem
 /* %type <pParseNode> row_value_const_list*/
 %type <pParseNode> qualified_join value_exp join_type outer_join_type join_condition boolean_term unary_predicate
@@ -2321,7 +2321,7 @@ qualified_join:
     ;
 
 /*ECSQL extension*/
-relationship_join:
+ecrelationship_join:
         table_ref join_type SQL_TOKEN_JOIN table_ref SQL_TOKEN_USING table_node op_relationship_direction
         {
             $$ = SQL_NEW_RULE;
@@ -2341,7 +2341,7 @@ op_relationship_direction:
     |    SQL_TOKEN_BACKWARD
     ;
 joined_table:
-        relationship_join
+        ecrelationship_join
     |    qualified_join
     ;
 named_columns_join:
@@ -4056,9 +4056,7 @@ using namespace ::com::sun::star::uno;
 using namespace ::com::sun::star::i18n;
 using namespace ::com::sun::star::lang;
 using namespace ::com::sun::star::util;
-//using namespace ::osl;
 using namespace ::dbtools;
-//    using namespace connectivity;
 
 //============================================================
 //= a helper for static ascii pseudo-unicode strings

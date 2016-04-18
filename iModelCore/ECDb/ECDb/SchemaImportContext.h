@@ -19,26 +19,26 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct ECSchemaCompareContext
     {
 private:
-    ECSchemaList m_existingSchemaList;
-    ECSchemaList m_importedSchemaList;
+    ECSchemaList m_existingSchemas;
+    ECSchemaList m_importingSchemas;
     ECSchemaChanges m_changes;
     bool m_prepared;
 
     bool AssertIfNotPrepared() const;
-    
+
 public:
     ECSchemaCompareContext() : m_prepared(false) {}
     ~ECSchemaCompareContext() {}
-    BentleyStatus Prepare(ECDbSchemaManager const& schemaManager, bvector<ECSchemaP> const& dependencyOrderedPrimarySchemas);
-    ECSchemaList const& GetExistingSchemaSet() const { return m_existingSchemaList; }
-    ECSchemaList const& GetImportedSchemaSet() const { return m_importedSchemaList; }
-    ECSchemaCP FindExistingSchema(Utf8CP schemaName) const;
-    ECSchemaCP FindImportedSchema(Utf8CP schemaName) const;
-    bool RequireECSchemaUpgrade() const;
+
+    BentleyStatus Prepare(ECDbSchemaManager const& schemaManager, bvector<ECN::ECSchemaP> const& dependencyOrderedPrimarySchemas);
+    ECSchemaList const& GetImportingSchemas() const { return m_importingSchemas; }
+    ECN::ECSchemaCP FindExistingSchema(Utf8CP schemaName) const;
     bool IsPrepared() const { return m_prepared; }
     ECSchemaChanges& GetChanges() { return m_changes; }
-    bool IsEmpty() const { return m_importedSchemaList.empty(); }
-    BentleyStatus ReloadECSchemaIfRequired(ECDbSchemaManager const& schemaManager);
+    bool HasNoSchemasToImport() const { return m_importingSchemas.empty(); }
+    bool RequiresUpdate() const;
+
+    BentleyStatus ReloadECSchemaIfRequired(ECDbSchemaManager const&);
     };
 
 //=======================================================================================

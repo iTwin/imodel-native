@@ -27,7 +27,7 @@ private:
     ECDbCR m_ecdb;
 
     std::vector<void const*> m_finalizeParseArgs;
-    bmap<Utf8String, std::shared_ptr<ClassNameExp::Info>, CompareIUtf8Ascii> m_classNameExpInfoList;
+    bmap<Utf8CP, std::shared_ptr<ClassNameExp::Info>, CompareIUtf8Ascii> m_classNameExpInfoList;
     int m_currentECSqlParameterIndex;
     bvector<ParameterExp*> m_parameterExpList;
     bmap<Utf8CP, int, CompareIUtf8Ascii> m_ecsqlParameterNameToIndexMapping;
@@ -42,7 +42,7 @@ public:
     void const* const GetFinalizeParseArg() const;
     void PopFinalizeParseArg();
 
-    BentleyStatus TryResolveClass(std::shared_ptr<ClassNameExp::Info>& classMetaInfo, Utf8StringCR schemaNameOrPrefix, Utf8StringCR className);
+    BentleyStatus TryResolveClass(std::shared_ptr<ClassNameExp::Info>& classMetaInfo, Utf8CP schemaNameOrPrefix, Utf8CP className);
     void GetSubclasses(ClassListById& classes, ECN::ECClassCR ecClass);
     void GetConstraintClasses(ClassListById& classes, ECN::ECRelationshipConstraintCR constraintEnd, bool* containAnyClass);
     bool IsEndClassOfRelationship(ECN::ECClassCR searchClass, ECN::ECRelationshipEnd searchEnd, ECN::ECRelationshipClassCR relationshipClass);
@@ -54,9 +54,6 @@ public:
     ECDbSchemaManagerCR Schemas() const { return m_ecdb.Schemas(); }
     ECDbCR GetECDb() const { return m_ecdb; }
     };
-
-typedef std::unique_ptr<Exp> ECSqlParseTreePtr;
-typedef Exp const& ECSqlParseTreeCR;
 
 //=======================================================================================
 //!The name convention here is different as parse_<parser_rule>() style naming is used 
@@ -87,123 +84,118 @@ private:
 
     mutable std::unique_ptr<ECSqlParseContext> m_context;
 
+    //No need to free this as it is a static member (See http://bsw-wiki.bentley.com/bin/view.pl/Main/CPlusPlusSpecific)
+    static connectivity::OSQLParser* s_sharedParser;
+
     //root nodes
-    BentleyStatus parse_select_statement(std::unique_ptr<SelectStatementExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus parse_insert_statement(std::unique_ptr<InsertStatementExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus parse_update_statement_searched(std::unique_ptr<UpdateStatementExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus parse_delete_statement_searched(std::unique_ptr<DeleteStatementExp>&, connectivity::OSQLParseNode const*) const;
-
-    // SELECT
-    BentleyStatus parse_single_select_statement(std::unique_ptr<SingleSelectStatementExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus parse_selection(std::unique_ptr<SelectClauseExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus parse_derived_column(std::unique_ptr<DerivedPropertyExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus parse_from_clause(std::unique_ptr<FromExp>&, connectivity::OSQLParseNode const*) const;
-
-    BentleyStatus parse_assignment_commalist(std::unique_ptr<AssignmentListExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseDeleteStatementSearched(std::unique_ptr<DeleteStatementExp>&, connectivity::OSQLParseNode const&) const;
+    BentleyStatus ParseInsertStatement(std::unique_ptr<InsertStatementExp>&, connectivity::OSQLParseNode const&) const;
+    BentleyStatus ParseSelectStatement(std::unique_ptr<SelectStatementExp>&, connectivity::OSQLParseNode const&) const;
+    BentleyStatus ParseUpdateStatementSearched(std::unique_ptr<UpdateStatementExp>&, connectivity::OSQLParseNode const&) const;
 
     //Common expressions
-    BentleyStatus parse_all(bool& isAll, connectivity::OSQLParseNode const*) const;
-    BentleyStatus parse_any_all_some(SqlCompareListType&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseAllOrDistinctToken(SqlSetQuantifier&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseAllToken(bool& isAll, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseAnyOrAllOrSomeToken(SqlCompareListType&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseAscOrDescToken(OrderBySpecExp::SortDirection&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseAssignmentCommalist(std::unique_ptr<AssignmentListExp>&, connectivity::OSQLParseNode const*) const;
 
-    BentleyStatus parse_catalog_name(Utf8CP& catalogName, Utf8CP& schemaName, Utf8CP& className, connectivity::OSQLParseNode const*) const;
-    BentleyStatus parse_cast_spec(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus parse_column(std::unique_ptr<PropertyNameExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus parse_column_ref_commalist(std::unique_ptr<PropertyNameListExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus parse_column_ref(std::unique_ptr<PropertyNameExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus parse_comparison(BooleanSqlOperator&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus parse_concatenation(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus parse_cross_union(std::unique_ptr<CrossJoinExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseCatalogName(Utf8CP& catalogName, Utf8CP& schemaName, Utf8CP& className, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseCastSpec(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseColumn(std::unique_ptr<PropertyNameExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseColumnRef(std::unique_ptr<PropertyNameExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseColumnRefCommalist(std::unique_ptr<PropertyNameListExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseComparison(BooleanSqlOperator&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseCompoundSelectOperator(SelectStatementExp::Operator&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseConcatenation(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseCrossUnion(std::unique_ptr<CrossJoinExp>&, connectivity::OSQLParseNode const*) const;
 
-    BentleyStatus parse_datetime_value_exp(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus parse_datetime_term(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus parse_datetime_factor(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus parse_datetime_primary(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus parse_datetime_value_fct(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseDatetimeValueExp(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseDatetimeValueFct(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const&) const;
+    BentleyStatus ParseDerivedColumn(std::unique_ptr<DerivedPropertyExp>&, connectivity::OSQLParseNode const*) const;
 
-    BentleyStatus parse_ecclassid_fct_spec(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus parse_ecsqloption(std::unique_ptr<OptionExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseECClassIdFctSpec(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseECRelationshipJoin(std::unique_ptr<ECRelationshipJoinExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseECSqlOption(std::unique_ptr<OptionExp>&, connectivity::OSQLParseNode const*) const;
 
-    BentleyStatus parse_factor(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus parse_fct_spec(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus parse_functionarg(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const&) const;
-    BentleyStatus parse_fold(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus parse_and_add_functionarg(FunctionCallExp&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseFactor(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseFctSpec(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseFold(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseFromClause(std::unique_ptr<FromExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseFunctionArg(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const&) const;
+    BentleyStatus ParseAndAddFunctionArg(FunctionCallExp&, connectivity::OSQLParseNode const*) const;
 
-    BentleyStatus parse_general_set_fct(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus parse_getpointcoordinate_fct_spec(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const&, Utf8StringCR functionName) const;
-    BentleyStatus parse_group_by_clause(std::unique_ptr<GroupByExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseGeneralSetFct(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseGetPointCoordinateFctSpec(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const&, Utf8StringCR functionName) const;
+    BentleyStatus ParseGroupByClause(std::unique_ptr<GroupByExp>&, connectivity::OSQLParseNode const*) const;
 
-    BentleyStatus parse_having_clause(std::unique_ptr<HavingExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseHavingClause(std::unique_ptr<HavingExp>&, connectivity::OSQLParseNode const*) const;
 
-    BentleyStatus parse_in_predicate(std::unique_ptr<BooleanExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseInPredicate(std::unique_ptr<BooleanExp>&, connectivity::OSQLParseNode const*) const;
     //!@param[out] inOperator parsed IN operator, e.g. IN or NOT IN
-    BentleyStatus parse_in_predicate_part_2(std::unique_ptr<ComputedExp>&, BooleanSqlOperator& inOperator, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseInPredicatePart2(std::unique_ptr<ComputedExp>&, BooleanSqlOperator& inOperator, connectivity::OSQLParseNode const*) const;
 
-    BentleyStatus parse_join_condition(std::unique_ptr<JoinConditionExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus parse_joined_table(std::unique_ptr<JoinExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus parse_join_spec(std::unique_ptr<JoinSpecExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus parse_join_type(ECSqlJoinType&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseJoinCondition(std::unique_ptr<JoinConditionExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseJoinedTable(std::unique_ptr<JoinExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseJoinSpec(std::unique_ptr<JoinSpecExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseJoinType(ECSqlJoinType&, connectivity::OSQLParseNode const*) const;
 
-    BentleyStatus parse_like_predicate(std::unique_ptr<BooleanExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseLikePredicate(std::unique_ptr<BooleanExp>&, connectivity::OSQLParseNode const*) const;
     //!@param[out] likeOperator parsed LIKE operator, e.g. LIKE or NOT LIKE
-    BentleyStatus parse_like_predicate_part_2(std::unique_ptr<ComputedExp>&, BooleanSqlOperator& likeOperator, connectivity::OSQLParseNode const*) const;
-    BentleyStatus parse_limit_offset_clause(std::unique_ptr<LimitOffsetExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus parse_literal(Utf8StringR literalVal, ECSqlTypeInfo& dataType, connectivity::OSQLParseNode const&) const;
+    BentleyStatus ParseLikePredicatePart2(std::unique_ptr<ComputedExp>&, BooleanSqlOperator& likeOperator, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseLimitOffsetClause(std::unique_ptr<LimitOffsetExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseLiteral(Utf8StringR literalVal, ECSqlTypeInfo& dataType, connectivity::OSQLParseNode const&) const;
 
-    BentleyStatus parse_rtreematch_predicate(std::unique_ptr<BooleanExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseNamedColumnsJoin(std::unique_ptr<NamedPropertiesJoinExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseNotToken(bool& isNot, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseNumValueExp(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
 
-    BentleyStatus parse_named_columns_join(std::unique_ptr<NamedPropertiesJoinExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus parse_num_value_exp(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseOptColumnRefCommalist(std::unique_ptr<PropertyNameListExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseOptECSqlOptionsClause(std::unique_ptr<OptionsExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseOrderByClause(std::unique_ptr<OrderByExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseOuterJoinType(ECSqlJoinType&, connectivity::OSQLParseNode const*) const;
 
-    BentleyStatus parse_opt_all_distinct(SqlSetQuantifier&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus parse_opt_asc_desc(OrderBySpecExp::SortDirection&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus parse_opt_column_ref_commalist(std::unique_ptr<PropertyNameListExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus parse_opt_ecsqloptions_clause(std::unique_ptr<OptionsExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus parse_opt_where_clause(std::unique_ptr<WhereExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus parse_order_by_clause(std::unique_ptr<OrderByExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus parse_outer_join_type(ECSqlJoinType&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseParameter(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParsePropertyPath(std::unique_ptr<PropertyNameExp>&, connectivity::OSQLParseNode const*) const;
 
-    BentleyStatus parse_parameter(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseQualifiedJoin(std::unique_ptr<JoinExp>&, connectivity::OSQLParseNode const*) const;
 
-    BentleyStatus parse_qualified_join(std::unique_ptr<JoinExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseResult(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseRowValueConstructor(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseRowValueConstructorCommalist(std::unique_ptr<ValueExpListExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseRTreeMatchPredicate(std::unique_ptr<BooleanExp>&, connectivity::OSQLParseNode const*) const;
 
-    BentleyStatus parse_relationship_join(std::unique_ptr<RelationshipJoinExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus parse_result(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus parse_row_value_constructor(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus parse_row_value_constructor_commalist(std::unique_ptr<ValueExpListExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseSelection(std::unique_ptr<SelectClauseExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseSingleSelectStatement(std::unique_ptr<SingleSelectStatementExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseSubquery(std::unique_ptr<SubqueryExp>&, connectivity::OSQLParseNode const*) const;
 
-    BentleyStatus parse_subquery(std::unique_ptr<SubqueryExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseTableName(Utf8CP& tableName, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseTableNode(std::unique_ptr<ClassNameExp>&, connectivity::OSQLParseNode const*, bool isPolymorphic) const;
+    BentleyStatus ParseTableRef(std::unique_ptr<ClassRefExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseTerm(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseTruthValue(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
 
-    BentleyStatus parse_table_name(Utf8CP& tableName, connectivity::OSQLParseNode const*) const;
-    BentleyStatus parse_table_node(std::unique_ptr<ClassNameExp>&, connectivity::OSQLParseNode const*, bool isPolymorphic) const;
-    BentleyStatus parse_table_ref(std::unique_ptr<ClassRefExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus parse_term(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus parse_trueth_value(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseSchemaName(Utf8CP& schemaName, Utf8CP& className, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseSearchCondition(std::unique_ptr<BooleanExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseSetFct(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const&, Utf8CP functionName, bool isStandardSetFunction) const;
 
-    BentleyStatus parse_schema_name(Utf8CP& schemaName, Utf8CP& className, connectivity::OSQLParseNode const*) const;
-    BentleyStatus parse_search_condition(std::unique_ptr<BooleanExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus parse_set_fct(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const&, Utf8CP functionName, bool isStandardSetFunction) const;
-    BentleyStatus parse_sql_not(bool& isNot, connectivity::OSQLParseNode const*) const;
-
-    BentleyStatus parse_unary_predicate(std::unique_ptr<BooleanExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus parse_compound_select_op(SelectStatementExp::Operator&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus parse_value_exp(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus parse_value_exp_commalist(std::unique_ptr<ValueExpListExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus parse_value_exp_primary(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus parse_values_or_query_spec(std::unique_ptr<ValueExpListExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus parse_property_path(std::unique_ptr<PropertyNameExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseUnaryPredicate(std::unique_ptr<BooleanExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseValueExp(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseValueExpCommalist(std::unique_ptr<ValueExpListExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseValueExpPrimary(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseValuesOrQuerySpec(std::unique_ptr<ValueExpListExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseWhereClause(std::unique_ptr<WhereExp>&, connectivity::OSQLParseNode const*) const;
 
     IssueReporter const& GetIssueReporter() const { BeAssert(m_context != nullptr); return m_context->GetIssueReporter(); }
 
-    //WIP_ECSQL: Mem leaks where there is error in statement. Need to use shared_ptr instead of unique_ptr
-    static connectivity::OSQLParser* GetSharedParser();
-    static bool IsPredicate(connectivity::OSQLParseNode const* parseNode);
+    static bool IsPredicate(connectivity::OSQLParseNode const& parseNode);
+    static connectivity::OSQLParser& GetSharedParser();
 
 public:
     ECSqlParser() : m_context (nullptr) {}
     ~ECSqlParser() {}
 
-    BentleyStatus Parse(ECSqlParseTreePtr& ecsqlParseTree, ECDbCR, Utf8CP ecsql) const;
+    std::unique_ptr<Exp> Parse(ECDbCR, Utf8CP ecsql) const;
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -51,15 +51,15 @@ DbResult ECDb::Initialize(BeFileNameCR ecdbTempDir, BeFileNameCP hostAssetsDir, 
     }
 
 //--------------------------------------------------------------------------------------
-// @bsimethod                                Krischan.Eberle                07/2014
+// @bsimethod                                Krischan.Eberle                11/2012
 //---------------+---------------+---------------+---------------+---------------+------
-DbResult ECDb::_OnDbOpened()
+DbResult ECDb::_OnDbOpening()
     {
-    DbResult stat = Db::_OnDbOpened();
+    DbResult stat = Db::_OnDbOpening();
     if (stat != BE_SQLITE_OK)
         return stat;
 
-    return m_pimpl->OnDbOpened();
+    return m_pimpl->OnDbOpening();
     }
 
 //--------------------------------------------------------------------------------------
@@ -72,7 +72,6 @@ DbResult ECDb::_OnDbCreated(CreateParams const& params)
         return stat;
 
     BeAssert(!IsReadonly());
-
     return m_pimpl->OnDbCreated();
     }
 

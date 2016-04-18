@@ -483,7 +483,7 @@ DbColumn const& ECDbMapAnalyser::Relationship::EndInfo::GetColumn() const
 // @bsimethod                                 Affan.Khan                         09/2015
 //---------------------------------------------------------------------------------------
 ECDbMapAnalyser::Relationship::EndPoint::EndPoint(Relationship const& parent, EndType type)
-    :m_ecid(nullptr), m_classId(nullptr), m_type(type), m_parent(parent)
+    :m_ecid(nullptr), m_classId(nullptr), m_parent(parent)
     {
     auto const& map = parent.GetRelationshipClassMap();
     auto direction = map.GetRelationshipClass().GetStrengthDirection();
@@ -1031,7 +1031,9 @@ NativeSqlBuilder ECDbMapAnalyser::GetClassFilter(std::pair<ECDbMapAnalyser::Stor
         sql.Append("IN (");
         for (ECClassId id : classIdSubset)
             {
-            sql.Append(id.ToString().c_str());
+            Utf8Char classIdStr[BeInt64Id::ID_STRINGBUFFER_LENGTH];
+            id.ToString(classIdStr);
+            sql.Append(classIdStr);
             if (id != *(classIdSubset.rbegin()))
                 sql.Append(",");
             }
@@ -2083,8 +2085,10 @@ BentleyStatus ECClassViewGenerator::BuildSystemSelectionClause(NativeSqlBuilder:
             }
         else
             {
+            Utf8Char classIdStr[ECClassId::ID_STRINGBUFFER_LENGTH];
+            classMap.GetClass().GetId().ToString(classIdStr);
             NativeSqlBuilder exp;
-            exp.AppendFormatted("%s " ECDB_COL_ECClassId, classMap.GetClass().GetId().ToString().c_str());
+            exp.AppendFormatted("%s " ECDB_COL_ECClassId, classIdStr);
             fragments.push_back(exp);
             }
         }
@@ -2154,8 +2158,10 @@ BentleyStatus ECClassViewGenerator::BuildECClassIdConstraintExpression(NativeSql
         }
 
     ECClassId classId = constraint.GetClasses().front()->GetId();
+    Utf8Char classIdStr[ECClassId::ID_STRINGBUFFER_LENGTH];
+    classId.ToString(classIdStr);
     NativeSqlBuilder exp;
-    exp.Append(classId.ToString().c_str()).AppendSpace().AppendEscaped(colAlias);
+    exp.Append(classIdStr).AppendSpace().AppendEscaped(colAlias);
     fragments.push_back(std::move(exp));
     return SUCCESS;
     }
