@@ -522,7 +522,7 @@ void ImportCommand::RunImportSchema(ECSqlConsoleSession& session, BeFileNameCR e
     Utf8CP schemaStr = isFolder ? "ECSchemas in folder" : "ECSchema";
 
     Savepoint savepoint(session.GetECDbR(), "import ecschema");
-    if (SUCCESS == session.GetECDb().Schemas().ImportECSchemas(context->GetCache(), ECDbSchemaManager::ImportOptions()))
+    if (SUCCESS == session.GetECDb().Schemas().ImportECSchemas(context->GetCache()))
         {
         savepoint.Commit(nullptr);
         Console::WriteLine("Successfully imported %s '%s'.", schemaStr, ecschemaPath.GetNameUtf8().c_str());
