@@ -1632,7 +1632,7 @@ bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyf
             if (metadata[&poly - &polygons[0]].second == 1)
                 {
                 auto maxLength = std::max(m_range.XLength(), m_range.YLength());
-                if (metadata[&poly - &polygons[0]].first / maxLength > 0.005) applyClipPoly = true;
+                if (metadata[&poly - &polygons[0]].first / maxLength > 0.0025) applyClipPoly = true;
                 }
             else if (metadata[&poly - &polygons[0]].second == 2)
                 {

@@ -138,9 +138,11 @@ template <class EXTENT> class SMSQLiteFeatureTileStore : public SMPointTileStore
             HCDPacket pi_uncompressedPacket, pi_compressedPacket;
             pi_compressedPacket.SetBuffer(&ptData[0], ptData.size());
             pi_compressedPacket.SetDataSize(ptData.size());
-            pi_uncompressedPacket.SetDataSize(uncompressedSize);
+            pi_uncompressedPacket.SetDataSize(std::min(uncompressedSize, maxCountData*sizeof(int32_t)));
+            pi_uncompressedPacket.SetBuffer(DataTypeArray, maxCountData*sizeof(int32_t));
+            pi_uncompressedPacket.SetBufferOwnership(false);
             LoadCompressedPacket(pi_compressedPacket, pi_uncompressedPacket);
-            memcpy(DataTypeArray, pi_uncompressedPacket.GetBufferAddress(), std::min(uncompressedSize, maxCountData*sizeof(int32_t)));
+            //memcpy(DataTypeArray, pi_uncompressedPacket.GetBufferAddress(), std::min(uncompressedSize, maxCountData*sizeof(int32_t)));
             return std::min(uncompressedSize, maxCountData*sizeof(int32_t));
             }
 

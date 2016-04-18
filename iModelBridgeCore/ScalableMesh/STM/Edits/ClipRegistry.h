@@ -152,6 +152,7 @@ class ClipRegistry : public HFCShareableObject<ClipRegistry>
     void DeleteClip(uint64_t id)
         {
         //m_clips[id].clear();
+        if (m_clipStore == NULL) OpenStore();
         m_clipStore->DestroyBlock(/*m_clips[id].GetBlockID()*/id);
         //m_clips[id].SetDirty(false);
         }
@@ -161,6 +162,7 @@ class ClipRegistry : public HFCShareableObject<ClipRegistry>
         /*if (id < 0 || id > m_clips.size()) return;
         clip.resize(m_clips[id].size());
         m_clips[id].get(&clip[0], clip.size());*/
+        if (m_clipStore == NULL) OpenStore();
         size_t nOfPts = m_clipStore->GetBlockDataCount(id);
         if (nOfPts == 0) return;
         else clip.resize(nOfPts);

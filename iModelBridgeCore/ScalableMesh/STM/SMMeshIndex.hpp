@@ -2537,7 +2537,12 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
         if (dtm.get() != nullptr)
             {
             BcDTMPtr toClipBcDTM = dtm->Clone();
-            DTMPtr toClipDTM = toClipBcDTM.get();
+            DTMPtr toClipDTM = toClipBcDTM.get(); 
+            if (IsLeaf()) //always clip leaves regardless of width/area criteria
+                {
+                for (auto& mdata : metadata)
+                    mdata.second = 0;
+                }
             if (toClipBcDTM->GetTinHandle() != nullptr) hasClip = clipNode.GetRegionsFromClipPolys(polyfaces, polys, metadata, toClipDTM);
             }
        // m_differenceSets.clear();

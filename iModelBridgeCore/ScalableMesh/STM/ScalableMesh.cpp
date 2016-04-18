@@ -52,6 +52,7 @@ extern bool   GET_HIGHEST_RES;
 #include <Vu\vupoly.fdf>
 #include "vuPolygonClassifier.h"
 #include <ImagePP\all\h\HIMMosaic.h>
+#include "LogUtils.h"
 //#include "CGALEdgeCollapse.h"
 
 
