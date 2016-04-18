@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmDrape.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
@@ -2830,8 +2830,8 @@ BENTLEYDTM_EXPORT int bcdtmDrape_intersectSurfaceDtmObject
 */
          else if( fndType == 4 ) 
            {
-            zdp = pzl - pzs ;
-            zdn = nzl - nzs ;
+            zdp = pzl - pzs ;            
+            zdn = endPointP->z - nzs;   
             process = 0 ;
            } 
 /*
