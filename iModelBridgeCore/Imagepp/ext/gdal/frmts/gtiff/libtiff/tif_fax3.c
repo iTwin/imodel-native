@@ -443,7 +443,7 @@ _TIFFFax3fillruns(unsigned char* buf, uint32* runs, uint32* erun, uint32 lastx)
 			run &= 7;
 		    }
 		    if (run)
-			cp[0] |= 0xff00 >> run;
+			cp[0] |= (0xff & (0xff00 >> run));
 		} else
 		    cp[0] |= _fillmasks[run]>>bx;
 		x += runs[1];
