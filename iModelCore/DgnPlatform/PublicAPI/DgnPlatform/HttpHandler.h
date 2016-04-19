@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/HttpHandler.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -105,15 +105,15 @@ struct HttpResponse : RefCountedBase
 private:
     HttpResponseStatus m_status;
     bmap<Utf8String, Utf8String> m_header;
-    bvector<Byte> m_body;
+    ByteStream m_body;
 private:
-    HttpResponse(HttpResponseStatus status, bmap<Utf8String, Utf8String>&& header, bvector<Byte>&& body) 
+    HttpResponse(HttpResponseStatus status, bmap<Utf8String, Utf8String>&& header, ByteStream&& body) 
         : m_status(status), m_header(std::move(header)), m_body(std::move(body)) 
         {}
 public:
-    DGNPLATFORM_EXPORT HttpResponseStatus GetStatus() const;
-    DGNPLATFORM_EXPORT bmap<Utf8String, Utf8String> const& GetHeader() const;
-    DGNPLATFORM_EXPORT bvector<Byte> const& GetBody() const;
+    HttpResponseStatus GetStatus() const {return m_status;}
+    bmap<Utf8String, Utf8String> const& GetHeader() const {return m_header;}
+    ByteStream const& GetBody() const {return m_body;}
 };
 typedef RefCountedPtr<HttpResponse> HttpResponsePtr;
 

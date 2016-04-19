@@ -288,9 +288,6 @@ public:
     DgnDbStatus OnModelUpdate(DgnModelCR model); //!< @private
     DgnDbStatus OnModelDelete(DgnModelCR model); //!< @private
     void OnDgnDbDestroyed() { _OnDgnDbDestroyed(); } //!< @private
-//__PUBLISH_SECTION_END__
-    DGNPLATFORM_EXPORT static void BackDoor_SetEnabled(bool enable);
-//__PUBLISH_SECTION_START__
 };
 
 /*=====================================================================================*/

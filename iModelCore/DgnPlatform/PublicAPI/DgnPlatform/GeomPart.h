@@ -18,8 +18,7 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 //! A DgnGeometryPart stores geometry that can be shared between multiple elements.
 //! Use the GeometryBuilder to create the shared geometry.
 //! @see DgnGeometryParts
-//! @ingroup GeometricPrimitiveGroup
-// @bsiclass                                                BentleySystems
+//! @ingroup GROUP_Geometry
 //=======================================================================================
 struct DgnGeometryPart : RefCountedBase, ICodedEntity
 {
@@ -32,7 +31,7 @@ struct DgnGeometryPart : RefCountedBase, ICodedEntity
 private:
     DgnDbR              m_db;
     DgnGeometryPartId   m_id;       //!< Id of this geometry part.  Invalid until DgnGeometryParts::InsertGeometryPart is called or part is read from the DgnDb.
-    GeometryStream  m_geometry; //!< Geometry of part
+    GeometryStream      m_geometry; //!< Geometry of part
     ElementAlignedBox3d m_bbox;     //!< Bounding box of part geometry
     DgnCode             m_code;     //!< Uniquely identifies this part
 

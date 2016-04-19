@@ -199,13 +199,13 @@ DgnDbStatus TxnManager::BeginTrackingRelationship(ECN::ECClassCR relClass)
     if (!relClass.IsRelationshipClass())
         return DgnDbStatus::BadArg;
 
-    ChangeSummary::TableMapInfo tinfo;
-    if (BSISUCCESS != ChangeSummary::GetPrimaryTableMapInfo(tinfo, relClass, m_dgndb))
+    ChangeSummary::TableMapPtr tinfo = ChangeSummary::GetPrimaryTableMap(m_dgndb, relClass);
+    if (!tinfo.IsValid())
         return DgnDbStatus::BadArg;
 
     dgn_TxnTable::RelationshipLinkTable* rlt;
 
-    auto handler = FindTxnTable(tinfo.GetTableName().c_str());
+    auto handler = FindTxnTable(tinfo->GetTableName().c_str());
     if (handler != nullptr)
         {
         //  Somebody is already tracking this table
@@ -249,7 +249,7 @@ DgnDbStatus TxnManager::BeginTrackingRelationship(ECN::ECClassCR relClass)
         }
 
     m_tables.push_back(handler);
-    m_tablesByName.Insert(tinfo.GetTableName().c_str(), handler);           // (takes ownership of handlers by adding a reference to it)
+    m_tablesByName.Insert(tinfo->GetTableName().c_str(), handler);           // (takes ownership of handlers by adding a reference to it)
 
     return DgnDbStatus::Success;
     }
@@ -679,6 +679,7 @@ RevisionStatus TxnManager::MergeRevision(DgnRevisionCR revision)
             // the merged changes are lost after this routine and cannot be used for change propagation anymore. 
             if (BE_SQLITE_OK != result)
                 {
+                LOG.errorv("MergeRevision failed with SQLite error %s", m_dgndb.GetLastError().c_str());
                 BeAssert(false);
                 status = RevisionStatus::SQLiteError;
                 }

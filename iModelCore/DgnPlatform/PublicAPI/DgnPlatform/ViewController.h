@@ -86,11 +86,11 @@ public:
 //! @ingroup GROUP_DgnView
 /**
  A ViewController provides the behavior for a type of view. It also provides the persistent information
- about how the view relates to a \ref DgnDbGroup (e.g. what models/categories are displayed, the ViewFlags that control how graphics
+ about how the view relates to a DgnDb (e.g. what models/categories are displayed, the ViewFlags that control how graphics
  are represented, etc.)
  <p>
  When a ViewController is paired with a DgnViewport, it then controls the operation of that view. Generally there will
- be a 1-1 relationship between ViewControllers and Viewports and a DgnViewport holds a reference-counted-pointer to its \
+ be a 1-1 relationship between ViewControllers and Viewports and a DgnViewport holds a reference-counted-pointer to its 
  ViewController. See discussion at #DgnViewport about synchronizing Viewports and ViewControllers.
  <p>
  By overriding virtual methods, subclasses of ViewController may:
@@ -101,10 +101,8 @@ public:
      - draw "decorations" on top of the normal graphics
      - etc.
 
-
 <h3>Defining a subclass of ViewController</h3>
 To create a subclass of ViewController, create a ViewDefinition and implement _SupplyController.
-
 */
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ViewController : RefCountedBase
@@ -151,6 +149,7 @@ protected:
     DGNPLATFORM_EXPORT virtual FitComplete _ComputeFitRange(FitContextR);
     virtual void _OnViewOpened(DgnViewportR) {}
     virtual bool _Allow3dManipulations() const {return false;}
+    // WIP_MERGE_John_Patterns - virtual double _GetPatternZOffset(ViewContextR, ElementHandleCR) const {return 0.0;}
     virtual void _OnAttachedToViewport(DgnViewportR) {}
     virtual ColorDef _GetBackgroundColor() const {return m_backgroundColor;}
     virtual double _GetAspectRatioSkew() const {return 1.0;}
@@ -503,6 +502,10 @@ public:
     //! @return true if this view supports 3d viewing operations. Otherwise the z-axis of the view must remain aligned with the world z axis, even
     //! if the view is a physical view.
     bool Allow3dManipulations() const {return _Allow3dManipulations();}
+    
+    //! @return a value used to offset patterns in the Z direction.  Typically used only in a physical view used to display map content. Expect Allow3dManipulations to be false when this is non-zero 
+    // WIP_MERGE_John_Patterns - DGNPLATFORM_EXPORT double GetPatternZOffset(ViewContextR, ElementHandleCR) const;
+
 
     //! Establish the view parameters from an 8-point frustum.
     //! @param[in] frustum The 8-point frustum from which to establish the parameters of this ViewController

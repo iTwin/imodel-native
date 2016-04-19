@@ -1692,12 +1692,56 @@ void ViewContext::_DrawAreaPattern(ClipStencil& boundary)
              display, which in gpa case made use of booleans to subtract holes.
              useParity = (0 != (cookedParams->modifiers & PatternParamsModifierFlags::HoleStyle) && PatternParamsHoleStyleType::Parity == cookedParams->holeStyle) */
 
+    double      offsetDist = 0.0;
+    //  We do this to avoid the Z fighting that occurs when patterning a filled element after converting a 2D file with patterns into a physical model.
+    bool        pushOffset = DisplayHandler::Is3dElem(thisElm.GetElementCP()) && GetIViewDraw()->IsOutputQuickVision() && GetElemMatSymb()->IsFilled();
+    if (pushOffset)
+        {
+        offsetDist = GetViewport()->GetViewControllerCP()->GetPatternZOffset(*this, thisElm);
+        pushOffset = offsetDist != 0;
+        }
+
+    if (pushOffset)
+        {
+        DVec3d      offsetDir;
+
+        cookedParams->rMatrix.GetColumn(offsetDir, 2);
+
+        DVec3d      viewZDir, testDir;
+        DPoint3d    offsetPt, viewPt[2];
+        Transform   transform;
+
+        offsetPt.zero();
+        offsetDir.normalize();
+        testDir = offsetDir;
+
+        viewPt[0].zero();
+        viewPt[1].init(0.0, 0.0, 1.0);
+
+        NpcToFrustum(viewPt, viewPt, 2);
+        viewZDir.differenceOf(&viewPt[0], &viewPt[1]);
+
+        if (SUCCESS == GetCurrLocalToFrustumTrans(transform))
+            transform.multiplyMatrixOnly(&testDir, &testDir);
+
+        if (testDir.dotProduct(&viewZDir) > 0.0)
+            offsetDist *= -1.0;
+
+        offsetPt.sumOf(&offsetPt, &offsetDir, offsetDist);
+        transform.initFrom(&offsetPt);
+
+        PushTransform(transform);
+        }
+
     if (PatternParamsModifierFlags::None != (cookedParams->modifiers & PatternParamsModifierFlags::Cell))
         PatternHelper::ProcessAreaPattern(*this, boundary, cookedParams.get(), origin);
     else if (PatternParamsModifierFlags::None != (cookedParams->modifiers & PatternParamsModifierFlags::DwgHatchDef))
         PatternHelper::ProcessDWGHatchPattern(*this, boundary, cookedParams.get(), origin);
     else
         PatternHelper::ProcessHatchPattern(*this, boundary, cookedParams.get(), origin);
+
+    if (pushOffset)
+        PopTransformClip();
 
     if (NULL != detail)
         detail->SetNonSnappable(!wasSnappable);

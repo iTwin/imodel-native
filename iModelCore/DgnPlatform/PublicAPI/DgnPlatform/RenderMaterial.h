@@ -1479,5 +1479,4 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
 #define RENDER_MATERIAL_LxoWindyWavesBackPrev                       "lxo_windy_waves_background_previous"
 #define RENDER_MATERIAL_LxoWindyWavesForePrev                       "lxo_windy_waves_foreground_previous"
 
-
 //__PUBLISH_SECTION_END__
