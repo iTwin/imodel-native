@@ -5425,6 +5425,71 @@ int                     quadrant
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Alain.Robert   03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt       BaseGCS::InitTransverseMercator
+(
+WStringP                errorMsg,
+WCharCP                 datumName,
+WCharCP                 unitName,
+double                  centralMeridian,
+double                  originLatitude,
+double                  scale,              
+double                  falseEasting,
+double                  falseNorthing,
+int                     quadrant
+)
+    {
+    // Given the library is NOT initialized ...
+    if (!IsLibraryInitialized())
+        {
+        m_csError = GEOCOORDERR_GeoCoordNotInitialized;
+        return m_csError;
+        }
+
+/* &&AR WORK TO BE DONE CONCERNING PARAMS */
+    SetModified(true);
+    
+
+    CSDefinition        csDef;
+    memset (&csDef, 0, sizeof(csDef));
+
+    CSMap::CS_stncp (csDef.prj_knm, CS_TRMER, DIM(csDef.prj_knm));
+    CSMap::CS_stncp (csDef.unit, AString(unitName).c_str(), DIM(csDef.unit));
+    CSMap::CS_stncp (csDef.dat_knm, AString(datumName).c_str(), DIM(csDef.dat_knm));
+
+    // csDef.prj_prm1  =;
+    csDef.org_lng   = centralMeridian;
+    csDef.org_lat   = originLatitude;
+
+    csDef.map_scl   = scale;
+    csDef.x_off     = falseEasting;
+    csDef.y_off     = falseNorthing;
+    csDef.quad      = (short) quadrant;
+
+    if (NULL == (m_csParameters = CSMap::CScsloc1 (&csDef)))
+        {
+        if (NULL != errorMsg)
+            {
+            char    csErrorMsg[512];
+            CSMap::CS_errmsg (csErrorMsg, DIM(csErrorMsg));
+            errorMsg->AssignA (csErrorMsg);
+            assert (false);
+            }
+        m_csError = cs_Error;
+        return cs_Error;
+        }
+
+    m_sourceLibrary = LibraryManager::Instance()->GetSystemLibrary();
+
+    m_coordSysId = COORDSYS_AZMEA;
+
+    SetModified(false);
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   12/06
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       BaseGCS::InitLatLong
