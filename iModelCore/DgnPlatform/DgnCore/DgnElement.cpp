@@ -1098,7 +1098,7 @@ DgnElementPtr DgnElement::Clone(DgnDbStatus* stat, DgnElement::CreateParams cons
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometricElement2d::_AdjustPlacementForImport(DgnImportContext const& importer)
     {
-    m_placement.GetOriginR().Add(importer.GetOriginOffset());
+    m_placement.GetOriginR().Add(DPoint2d::From(importer.GetOriginOffset()));
     m_placement.GetAngleR() = (m_placement.GetAngle() + importer.GetYawAdjustment());
     }
 
@@ -1107,7 +1107,7 @@ void GeometricElement2d::_AdjustPlacementForImport(DgnImportContext const& impor
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometricElement3d::_AdjustPlacementForImport(DgnImportContext const& importer)
     {
-    m_placement.GetOriginR().Add(DPoint3d::From(importer.GetOriginOffset()));
+    m_placement.GetOriginR().Add(importer.GetOriginOffset());
     m_placement.GetAnglesR().AddYaw(importer.GetYawAdjustment());
     }
 
