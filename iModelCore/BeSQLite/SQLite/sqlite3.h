@@ -111,9 +111,9 @@ extern "C" {
 ** [sqlite3_libversion_number()], [sqlite3_sourceid()],
 ** [sqlite_version()] and [sqlite_source_id()].
 */
-#define SQLITE_VERSION        "3.12.0"
-#define SQLITE_VERSION_NUMBER 3012000
-#define SQLITE_SOURCE_ID      "2016-03-07 17:49:17 17fd8f3cf0ec565e08403dc8e10a1cffc2bbe165"
+#define SQLITE_VERSION        "3.13.0"
+#define SQLITE_VERSION_NUMBER 3013000
+#define SQLITE_SOURCE_ID      "2016-04-13 21:00:36 55a62483b9121a8b373d038a26fdebc4308661f6"
 
 /*
 ** CAPI3REF: Run-Time Library Version Numbers
@@ -5187,7 +5187,7 @@ SQLITE_API void *SQLITE_STDCALL sqlite3_rollback_hook(sqlite3*, void(*)(void *),
 ** ^The sqlite3_update_hook() interface registers a callback function
 ** with the [database connection] identified by the first argument
 ** to be invoked whenever a row is updated, inserted or deleted in
-** a rowid table.
+** a [rowid table].
 ** ^Any callback set by a previous call to this function
 ** for the same database connection is overridden.
 **
@@ -6761,7 +6761,7 @@ SQLITE_API int SQLITE_STDCALL sqlite3_db_status(sqlite3*, int op, int *pCur, int
 ** database file in rollback mode databases. Any pages written as part of
 ** transaction rollback or database recovery operations are not included.
 ** If an IO or other error occurs while writing a page to disk, the effect
-** on subsequent SQLITE_DBSTATUS_CACHE_WRITE requests is undefined). ^The
+** on subsequent SQLITE_DBSTATUS_CACHE_WRITE requests is undefined.)^ ^The
 ** highwater mark associated with SQLITE_DBSTATUS_CACHE_WRITE is always 0.
 ** </dd>
 **
@@ -7137,7 +7137,7 @@ typedef struct sqlite3_backup sqlite3_backup;
 ** must be different or else sqlite3_backup_init(D,N,S,M) will fail with
 ** an error.
 **
-** ^A call to sqlite3_backup_init() will fail, returning SQLITE_ERROR, if 
+** ^A call to sqlite3_backup_init() will fail, returning NULL, if 
 ** there is already a read or read-write transaction open on the 
 ** destination database.
 **
@@ -7917,13 +7917,13 @@ SQLITE_API int SQLITE_STDCALL sqlite3_db_cacheflush(sqlite3*);
 
 /*
 ** CAPI3REF: The pre-update hook.
-** EXPERIMENTAL
 **
 ** ^These interfaces are only available if SQLite is compiled using the
-** [SQLITE_ENABLE_UPDATE_HOOK] compile-time option.
+** [SQLITE_ENABLE_PREUPDATE_HOOK] compile-time option.
 **
 ** ^The [sqlite3_preupdate_hook()] interface registers a callback function
-** that is invoked prior to each [INSERT], [UPDATE], and [DELETE] operation.
+** that is invoked prior to each [INSERT], [UPDATE], and [DELETE] operation
+** on a [rowid table].
 ** ^At most one preupdate hook may be registered at a time on a single
 ** [database connection]; each call to [sqlite3_preupdate_hook()] overrides
 ** the previous setting.
@@ -7932,8 +7932,9 @@ SQLITE_API int SQLITE_STDCALL sqlite3_db_cacheflush(sqlite3*);
 ** ^The third parameter to [sqlite3_preupdate_hook()] is passed through as
 ** the first parameter to callbacks.
 **
-** ^The preupdate hook only fires for changes to real tables; the preupdate
-** hook is not invoked for changes to virtual tables.
+** ^The preupdate hook only fires for changes to [rowid tables]; the preupdate
+** hook is not invoked for changes to [virtual tables] or [WITHOUT ROWID]
+** tables.
 **
 ** ^The second parameter to the preupdate callback is a pointer to
 ** the [database connection] that registered the preupdate hook.
@@ -8011,6 +8012,18 @@ SQLITE_API SQLITE_EXPERIMENTAL int SQLITE_STDCALL sqlite3_preupdate_depth(sqlite
 SQLITE_API SQLITE_EXPERIMENTAL int SQLITE_STDCALL sqlite3_preupdate_new(sqlite3 *, int, sqlite3_value **);
 
 /*
+** CAPI3REF: Low-level system error code
+**
+** ^Attempt to return the underlying operating system error code or error
+** number that caused the most recent I/O error or failure to open a file.
+** The return value is OS-dependent.  For example, on unix systems, after
+** [sqlite3_open_v2()] returns [SQLITE_CANTOPEN], this interface could be
+** called to get back the underlying "errno" that caused the problem, such
+** as ENOSPC, EAUTH, EISDIR, and so forth.  
+*/
+SQLITE_API int SQLITE_STDCALL sqlite3_system_errno(sqlite3*);
+
+/*
 ** CAPI3REF: Database Snapshot
 ** KEYWORDS: {snapshot}
 ** EXPERIMENTAL
@@ -8068,20 +8081,29 @@ SQLITE_API SQLITE_EXPERIMENTAL int SQLITE_STDCALL sqlite3_snapshot_get(
 ** CAPI3REF: Start a read transaction on an historical snapshot
 ** EXPERIMENTAL
 **
-** ^The [sqlite3_snapshot_open(D,S,P)] interface attempts to move the
-** read transaction that is currently open on schema S of
-** [database connection] D so that it refers to historical [snapshot] P.
+** ^The [sqlite3_snapshot_open(D,S,P)] interface starts a
+** read transaction for schema S of
+** [database connection] D such that the read transaction
+** refers to historical [snapshot] P, rather than the most
+** recent change to the database.
 ** ^The [sqlite3_snapshot_open()] interface returns SQLITE_OK on success
 ** or an appropriate [error code] if it fails.
 **
 ** ^In order to succeed, a call to [sqlite3_snapshot_open(D,S,P)] must be
-** the first operation, apart from other sqlite3_snapshot_open() calls,
-** following the [BEGIN] that starts a new read transaction.
-** ^A [snapshot] will fail to open if it has been overwritten by a 
+** the first operation following the [BEGIN] that takes the schema S
+** out of [autocommit mode].
+** ^In other words, schema S must not currently be in
+** a transaction for [sqlite3_snapshot_open(D,S,P)] to work, but the
+** database connection D must be out of [autocommit mode].
+** ^A [snapshot] will fail to open if it has been overwritten by a
 ** [checkpoint].
-** ^A [snapshot] will fail to open if the database connection D has not
-** previously completed at least one read operation against the database 
-** file.  (Hint: Run "[PRAGMA application_id]" against a newly opened
+** ^(A call to [sqlite3_snapshot_open(D,S,P)] will fail if the
+** database connection D does not know that the database file for
+** schema S is in [WAL mode].  A database connection might not know
+** that the database file is in [WAL mode] if there has been no prior
+** I/O on that database connection, or if the database entered [WAL mode] 
+** after the most recent I/O on the database connection.)^
+** (Hint: Run "[PRAGMA application_id]" against a newly opened
 ** database connection in order to make it ready to use snapshots.)
 **
 ** The [sqlite3_snapshot_open()] interface is only available when the
@@ -8105,6 +8127,33 @@ SQLITE_API SQLITE_EXPERIMENTAL int SQLITE_STDCALL sqlite3_snapshot_open(
 ** SQLITE_ENABLE_SNAPSHOT compile-time option is used.
 */
 SQLITE_API SQLITE_EXPERIMENTAL void SQLITE_STDCALL sqlite3_snapshot_free(sqlite3_snapshot*);
+
+/*
+** CAPI3REF: Compare the ages of two snapshot handles.
+** EXPERIMENTAL
+**
+** The sqlite3_snapshot_cmp(P1, P2) interface is used to compare the ages
+** of two valid snapshot handles. 
+**
+** If the two snapshot handles are not associated with the same database 
+** file, the result of the comparison is undefined. 
+**
+** Additionally, the result of the comparison is only valid if both of the
+** snapshot handles were obtained by calling sqlite3_snapshot_get() since the
+** last time the wal file was deleted. The wal file is deleted when the
+** database is changed back to rollback mode or when the number of database
+** clients drops to zero. If either snapshot handle was obtained before the 
+** wal file was last deleted, the value returned by this function 
+** is undefined.
+**
+** Otherwise, this API returns a negative value if P1 refers to an older
+** snapshot than P2, zero if the two handles refer to the same database
+** snapshot, and a positive value if P1 is a newer snapshot than P2.
+*/
+SQLITE_API SQLITE_EXPERIMENTAL int SQLITE_STDCALL sqlite3_snapshot_cmp(
+  sqlite3_snapshot *p1,
+  sqlite3_snapshot *p2
+);
 
 /*
 ** Undo the hack that converts floating point types to integer for

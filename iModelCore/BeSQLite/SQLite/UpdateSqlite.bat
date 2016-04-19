@@ -4,7 +4,7 @@ rem /*--------------------------------------------------------------------------
 rem |
 rem |     $Source: SQLite/UpdateSqlite.bat $
 rem |
-rem |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+rem |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 rem |
 rem +--------------------------------------------------------------------------------------*/
 
@@ -35,7 +35,7 @@ rem * set SqliteSrcRoot environment var to point to the location of the sqlite s
 
 rem Check out source
 pushd %SqliteSrcRoot%
-fossil update sessions
+fossil update trunk
 
 rem Set up build directory
 rmdir /s/q bld

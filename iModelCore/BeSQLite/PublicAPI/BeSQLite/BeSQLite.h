@@ -1172,6 +1172,8 @@ private:
     bool m_inCache;
     struct StatementCache const& m_myCache;
     Utf8CP  m_sql;
+    CachedStatement(Utf8CP sql, struct StatementCache const&);
+    ~CachedStatement();
 
 public:
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS
@@ -1179,8 +1181,6 @@ public:
     uint32_t AddRef() const {return m_refCount.IncrementAtomicPre();} 
     uint32_t GetRefCount() const {return m_refCount.load();}
     BE_SQLITE_EXPORT uint32_t Release();
-    BE_SQLITE_EXPORT CachedStatement(Utf8CP sql, struct StatementCache const&);
-    BE_SQLITE_EXPORT ~CachedStatement();
     Utf8CP GetSQL() const {return m_sql;}
 };
 
