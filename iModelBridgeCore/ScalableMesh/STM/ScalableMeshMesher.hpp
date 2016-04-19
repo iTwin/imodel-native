@@ -1422,10 +1422,6 @@ std::vector<EXTENT> stitchedNeighborsExtents;
 
 addedMask = meshGraph.GrabMask();
 //std::string s;
-if (!(ExtentOp<EXTENT>::GetXMin(ext) > TILE_X || ExtentOp<EXTENT>::GetXMax(ext) < TILE_X || ExtentOp<EXTENT>::GetYMin(ext) > TILE_Y || ExtentOp<EXTENT>::GetYMax(ext) < TILE_Y))
-    {
-    //GetGraphExteriorBoundary(meshGraph, boundary, &nodePoints[0]);
-    }
 for (size_t& neighborInd : neighborIndices)
     {
     size_t idx = &neighborInd - &neighborIndices[0];
@@ -1461,13 +1457,13 @@ for (size_t& neighborInd : neighborIndices)
                   
                     //node->m_apNeighborNodes[neighborInd][neighborSubInd]->Pin();
                    // s += " CURRENT N OF POINTS TO STITCH " + std::to_string(stitchedPoints.size()) + "\n";
-                    if (node->m_nodeHeader.m_apAreNeighborNodesStitched[neighborInd] == false)
+                    if (node->m_apNeighborNodes[neighborInd][neighborSubInd]->m_nodeHeader.m_apAreNeighborNodesStitched[nodeIndicesInNeighbor[idx]] == false)
                         SelectPointsToStitch(stitchedPoints, static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*node->m_apNeighborNodes[neighborInd][neighborSubInd]), &meshGraphNeighbor, node->GetContentExtent(), nullptr);
                     else
                          SelectPointsBasedOnBox(stitchedPoints, static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*node->m_apNeighborNodes[neighborInd][neighborSubInd]), node->GetNodeExtent());
                    // SelectPointsToStitch(stitchedPoints, static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*node->m_apNeighborNodes[neighborInd][neighborSubInd]), &meshGraphNeighbor, node->GetContentExtent(), nullptr);
                    // s += " CURRENT N OF POINTS TO STITCH " + std::to_string(stitchedPoints.size()) + "\n";
-                    if (node->m_nodeHeader.m_apAreNeighborNodesStitched[neighborInd] == false)
+                    if (node->m_apNeighborNodes[neighborInd][neighborSubInd]->m_nodeHeader.m_apAreNeighborNodesStitched[nodeIndicesInNeighbor[idx]] == false)
                         {
                         bvector<bvector<DPoint3d>> b;
                         if(s_useThreadsInStitching) node->m_apNeighborNodes[neighborInd][neighborSubInd]->LockPts();
@@ -1503,13 +1499,14 @@ for (size_t& neighborInd : neighborIndices)
                         delete[] pts;
                         }
                     //node->m_apNeighborNodes[neighborInd][neighborSubInd]->UnPin();
-                    node->m_apNeighborNodes[neighborInd][neighborSubInd]->m_nodeHeader.m_apAreNeighborNodesStitched[nodeIndicesInNeighbor[idx]] = true;
+                    //node->m_apNeighborNodes[neighborInd][neighborSubInd]->m_nodeHeader.m_apAreNeighborNodesStitched[nodeIndicesInNeighbor[idx]] = true;
                     
                 }          
-            node->m_nodeHeader.m_apAreNeighborNodesStitched[neighborInd] = true;
+            //node->m_nodeHeader.m_apAreNeighborNodesStitched[neighborInd] = true;
             }
 
         }
+    node->m_nodeHeader.m_apAreNeighborNodesStitched[neighborInd] = true;
     }
     GetGraphExteriorBoundary(&meshGraph, boundary, &nodePoints[0], true);
     //mesh aggregated points
