@@ -5,7 +5,6 @@
     <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap"/>
 
     <ECCustomAttributes>
-        <SystemSchema xmlns='Bentley_Standard_CustomAttributes.01.09'/>
         <RelatedItemsDisplaySpecifications xmlns="Bentley_Standard_CustomAttributes.01.09">
             <Specifications>
                 <RelatedItemsDisplaySpecification>
