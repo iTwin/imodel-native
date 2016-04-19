@@ -1781,17 +1781,37 @@ struct DgnElements : DgnDbTable, IMemoryConsumer
         uint32_t m_purged;         //! number of garbage elements that were purged
     };
 
+    struct CachedSelectStatement : BeSQLite::EC::ECSqlStatement
+    {
+        friend struct DgnElements;
+    private:
+        mutable BeAtomic<uint32_t>  m_refCount;
+        bool                        m_isInCache;
+        BeSQLite::BeDbMutex&        m_mutex;
+
+        CachedSelectStatement(BeSQLite::BeDbMutex& mutex, bool inCache) : m_mutex(mutex), m_isInCache(inCache) { }
+    public:
+        DEFINE_BENTLEY_NEW_DELETE_OPERATORS
+
+        ~CachedSelectStatement() { }
+
+        uint32_t AddRef() const { return m_refCount.IncrementAtomicPre(); }
+        uint32_t GetRefCount() const { return m_refCount.load(); }
+        DGNPLATFORM_EXPORT uint32_t Release();
+    };
+
+    typedef RefCountedPtr<CachedSelectStatement> CachedSelectStatementPtr;
 private:
     struct ElementSelectStatement
     {
-        BeSQLite::EC::CachedECSqlStatementPtr m_statement;
+        CachedSelectStatementPtr m_statement;
         ECSqlClassParamsCR m_params;
-        ElementSelectStatement(BeSQLite::EC::CachedECSqlStatement* stmt, ECSqlClassParamsCR params) : m_statement(stmt), m_params(params) {}
+        ElementSelectStatement(CachedSelectStatement* stmt, ECSqlClassParamsCR params) : m_statement(stmt), m_params(params) {}
     };
 
     struct ClassInfo : ECSqlClassInfo
     {
-        BeSQLite::EC::CachedECSqlStatementPtr m_selectStmt;
+        CachedSelectStatementPtr    m_selectStmt;
     };
 
     typedef bmap<DgnClassId, ClassInfo> ClassInfoMap;
