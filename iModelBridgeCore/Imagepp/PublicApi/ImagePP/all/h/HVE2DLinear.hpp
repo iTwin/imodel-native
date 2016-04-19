@@ -244,6 +244,13 @@ inline void    HVE2DLinear::Move(const HGF2DDisplacement& pi_rDisplacement)
     
     m_StartPoint += pi_rDisplacement;
     m_EndPoint += pi_rDisplacement;
+
+    if (!m_VolatilePeer)
+        m_Peer->Move(pi_rDisplacement);
+
+    HASSERT(m_VolatilePeer || GetLinearPeer().GetStartPoint().IsEqualTo(m_StartPoint.GetPosition()));
+    HASSERT(m_VolatilePeer || GetLinearPeer().GetEndPoint().IsEqualTo(m_EndPoint.GetPosition()));
+
     }
 
 
@@ -265,6 +272,13 @@ inline void HVE2DLinear::Scale(double pi_ScaleFactor,
 
     m_StartPoint = MyScaleOrigin + (pi_ScaleFactor * (m_StartPoint - MyScaleOrigin));
     m_EndPoint = MyScaleOrigin + (pi_ScaleFactor * (m_EndPoint - MyScaleOrigin));
+
+    if (!m_VolatilePeer)
+        m_Peer->Scale(pi_ScaleFactor, MyScaleOrigin.GetPosition());
+
+    HASSERT(m_VolatilePeer || GetLinearPeer().GetStartPoint().IsEqualTo(m_StartPoint.GetPosition()));
+    HASSERT(m_VolatilePeer || GetLinearPeer().GetEndPoint().IsEqualTo(m_EndPoint.GetPosition()));
+
     }
 
 
@@ -363,6 +377,13 @@ inline void HVE2DLinear::Reverse()
     HGF2DLocation   DummyPoint(m_StartPoint);
     m_StartPoint = m_EndPoint;
     m_EndPoint = DummyPoint;
+
+    if (!m_VolatilePeer)
+        GetLinearPeer().Reverse();
+
+    HASSERT(m_VolatilePeer || GetLinearPeer().GetStartPoint().IsEqualTo(m_StartPoint.GetPosition()));
+    HASSERT(m_VolatilePeer || GetLinearPeer().GetEndPoint().IsEqualTo(m_EndPoint.GetPosition()));
+
     }
 
 //-----------------------------------------------------------------------------

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVE2DPolygonOfSegments.hpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -53,8 +53,11 @@ inline HVE2DPolygonOfSegments::~HVE2DPolygonOfSegments()
     {
     HINVARIANTS;
 
+#if (0)
+	// &&AR Unnecessary!
     // Clear list of points
-    m_PolySegment.m_Points.clear();
+    m_PolySegment.GetPoints().clear();
+#endif
     }
 
 //-----------------------------------------------------------------------------

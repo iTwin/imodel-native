@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DLiteExtent.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -116,10 +116,10 @@ private:
     double         m_XMax;
     double         m_YMax;
 
-    HDEBUGCODE(bool m_initializedXMin;)
-    HDEBUGCODE(bool m_initializedXMax;)
-    HDEBUGCODE(bool m_initializedYMin;)
-    HDEBUGCODE(bool m_initializedYMax;)
+    bool m_initializedXMin;
+    bool m_initializedXMax;
+    bool m_initializedYMin;
+    bool m_initializedYMax;
     };
 
 END_IMAGEPP_NAMESPACE

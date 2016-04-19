@@ -25,6 +25,10 @@ class HGF2DLiteLine;
 class HGF2DPolySegment : public HGF2DBasicLinear
     {
 
+// &&AR Remove friendship!
+    friend class HVE2DPolySegment;
+    friend class HVE2DPolygonOfSegments;
+
     HDECLARE_CLASS_ID(HGF2DPolySegmentId, HGF2DBasicLinear)
 
 public:
@@ -140,7 +144,20 @@ public:
 
     IMAGEPP_EXPORT virtual void         PrintState(ostream& po_rOutput) const;
 
-    virtual HFCPtr<HGF2DPolySegment>    AllocPolySegmentTransformDirect(const HGF2DTransfoModel& pi_rModel) const;
+    IMAGEPP_EXPORT virtual HFCPtr<HGF2DPolySegment>    AllocPolySegmentTransformDirect(const HGF2DTransfoModel& pi_rModel) const;
+
+
+// &&AR Not sure we want to decapsulate this much ... try removing!
+    // Method provided to friend
+    const HGF2DPositionCollection& GetPoints() const
+        {
+        return m_Points;
+        }
+
+    HGF2DPositionCollection& GetPoints()
+        {
+        return m_Points;
+        }
 
 protected:
 

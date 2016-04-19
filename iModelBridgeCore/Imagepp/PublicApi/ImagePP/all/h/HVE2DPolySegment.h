@@ -17,12 +17,15 @@
 #include "HGF2DLocation.h"
 #include "HGF2DPosition.h"
 #include "HGF2DLiteSegment.h"
+#include "HGF2DPolySegment.h"
 
 BEGIN_IMAGEPP_NAMESPACE
 class HVE2DSegment;
 class HGF2DCoordSys;
 class HVE2DPolygonOfSegments;
 class HGF2DLine;
+
+
 
 
 class HVE2DPolySegment : public HVE2DBasicLinear
@@ -53,8 +56,7 @@ public:
     IMAGEPP_EXPORT void               AppendPoint(const HGF2DLocation& pi_rNewPoint);
     IMAGEPP_EXPORT void               AppendPosition(const HGF2DPosition& pi_rNewPoint);
     HGF2DLocation      GetPoint(size_t pi_Index) const;
-    const HGF2DPosition&
-    GetPosition(size_t pi_Index) const;
+    HGF2DPosition      GetPosition(size_t pi_Index) const;
     size_t             GetSize() const;
     void               RemovePoint(size_t pi_Index);
 
@@ -165,6 +167,46 @@ protected:
 
     IMAGEPP_EXPORT virtual void       SetCoordSysImplementation(const HFCPtr<HGF2DCoordSys>& pi_pCoordSys);
 
+// &&AR Move to CPP some of these!
+    HVE2DPolySegment(HGF2DPolySegment* peerPolySegment, const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys)
+    : HVE2DBasicLinear(pi_rpCoordSys),
+      m_ExtentUpToDate(false),
+      m_Extent(pi_rpCoordSys)
+        {
+        m_VolatilePeer = false;
+	    m_Peer = peerPolySegment;
+        SetLinearStartPoint(HGF2DLocation(peerPolySegment->GetStartPoint(), pi_rpCoordSys));
+        SetLinearEndPoint(HGF2DLocation(peerPolySegment->GetEndPoint(), pi_rpCoordSys));
+
+        SetAutoToleranceActive(peerPolySegment->IsAutoToleranceActive());
+        SetTolerance(peerPolySegment->GetTolerance());
+        HINVARIANTS;
+        }
+
+    HGF2DPolySegment&  GetPolySegmentPeer() const
+                        {
+                        return (*static_cast<HGF2DPolySegment*>(&(GetPeer())));
+                        }
+                        
+    void CreatePolySegmentPeer(const HGF2DPositionCollection& m_Points)
+        {
+        m_Peer = new HGF2DPolySegment(m_Points);
+        }
+        
+    void CreateEmptyPolySegmentPeer()
+        {
+        m_Peer = new HGF2DPolySegment();
+        }
+        
+    void CreateCopyPolySegmentPeer(const HGF2DPolySegment& polySegment)
+        {
+        m_Peer = new HGF2DPolySegment(polySegment);
+        }        
+                
+    virtual void CreatePeer() const override
+        {
+        HASSERT(!"The polysegment peer should have been created at construction");
+        }
 
 private:
     friend class HVE2DPolygonOfSegments;
@@ -172,13 +214,37 @@ private:
 #ifdef HVERIFYCONTRACT
     void               ValidateInvariants() const
         {
-        HASSERT(m_Points.size() == 0 || (GetStartPoint().GetPosition() == m_Points[0] && GetEndPoint().GetPosition() == m_Points.back()));
+        HASSERT(m_Peer != nullptr);
+
+        HASSERT(m_Peer->GetTolerance() == GetTolerance());
+
+        HASSERT(m_Peer->IsAutoToleranceActive() == IsAutoToleranceActive());
+
+        HASSERT(GetPoints().size() == 0 || (GetStartPoint().GetPosition() == GetPoints()[0] && GetEndPoint().GetPosition() == GetPoints().back()));
+
+        HASSERT(GetPoints().size() == GetPolySegmentPeer().GetSize());
+
+        HASSERT(GetPolySegmentPeer().GetSize() == 0 || (GetStartPoint().GetPosition() == GetPolySegmentPeer().GetStartPoint() && GetEndPoint().GetPosition() == GetPolySegmentPeer().GetEndPoint()));
+
+        HASSERT(!m_VolatilePeer);
+
         }
 #endif
 
+    // Method provided to friend
+	
+	// &&AR Not sure we need those
+    const HGF2DPositionCollection& GetPoints() const
+        {
+        return GetPolySegmentPeer().GetPoints();
+        }
+
+    HGF2DPositionCollection& GetPoints()
+        {
+        return GetPolySegmentPeer().GetPoints();
+        }
 
     // List of points
-    HGF2DPositionCollection m_Points;
 
     // Acceleration attributes
     mutable bool        m_ExtentUpToDate;

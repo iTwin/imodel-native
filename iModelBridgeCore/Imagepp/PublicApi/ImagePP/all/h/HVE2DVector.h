@@ -679,6 +679,11 @@ public:
 protected:
 
     mutable HFCPtr<HGF2DVector> m_Peer;
+
+    // Indicates if the peer is volatile or not. A volatile peer is one that serves as a duplicate. 
+    // If the class relies on the peer for basic storage then it should not be volatile
+    // The default is true;
+    bool m_VolatilePeer; 
     
     HGF2DVector&  GetPeer() const
         {
@@ -699,7 +704,8 @@ protected:
         
     void ClearPeer() const
         {
-        m_Peer = nullptr;
+        if (m_VolatilePeer)
+            m_Peer = nullptr;
         }
 
     IMAGEPP_EXPORT virtual bool      IntersectsAtSplitPoint(const HVE2DVector& pi_rVector,
@@ -707,8 +713,7 @@ protected:
                                                      const HGF2DLocation& pi_rNextEndPoint,
                                                      bool pi_ProcessNext) const;
 
-    mutable HFCPtr<HGFTolerance>
-    m_pStrokeTolerance;
+    mutable HFCPtr<HGFTolerance>    m_pStrokeTolerance;
 
 private:
     double              m_Tolerance;

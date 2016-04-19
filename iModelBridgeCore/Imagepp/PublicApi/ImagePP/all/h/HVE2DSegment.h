@@ -42,6 +42,9 @@ class HVE2DSegment : public HVE2DBasicLinear
 
 public:
 
+// &&AR Not sure we should keep this one!
+    friend class HVE2DPolySegment;
+
     enum CrossState
         {
         CROSS_FOUND,

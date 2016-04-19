@@ -304,7 +304,10 @@ void HGF2DLiteExtent::Intersect(const HGF2DLiteExtent& pi_rExtent)
         // Make copy of given extent
         HGF2DLiteExtent TempExtent (pi_rExtent);
 
+
+
         if (m_XMin < TempExtent.m_XMin)
+            
             m_XMin = TempExtent.m_XMin;
 
         if (m_XMax > TempExtent.m_XMax)
@@ -322,6 +325,11 @@ void HGF2DLiteExtent::Intersect(const HGF2DLiteExtent& pi_rExtent)
             {
             m_XMin = m_XMax;
             m_YMin = m_YMax;
+
+            m_initializedXMin = false;
+            m_initializedXMax = false;
+            m_initializedYMin = false;
+            m_initializedYMax = false;
             }
         }
     else
@@ -329,5 +337,9 @@ void HGF2DLiteExtent::Intersect(const HGF2DLiteExtent& pi_rExtent)
         // One or both extents is not defined ... intersect is not defined
         m_XMin = m_XMax;
         m_YMin = m_YMax;
+        m_initializedXMin = false;
+        m_initializedXMax = false;
+        m_initializedYMin = false;
+        m_initializedYMax = false;
         }
     }

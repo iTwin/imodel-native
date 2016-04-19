@@ -14,6 +14,7 @@ BEGIN_IMAGEPP_NAMESPACE
 inline HVE2DSegment::HVE2DSegment()
     : HVE2DBasicLinear()
     {
+    m_VolatilePeer = true;
     }
 
 //-----------------------------------------------------------------------------
@@ -23,6 +24,8 @@ inline HVE2DSegment::HVE2DSegment(const HGF2DLocation& pi_rStartPoint,
                                   const HGF2DLocation& pi_rEndPoint)
     : HVE2DBasicLinear(pi_rStartPoint, pi_rEndPoint)
     {
+    m_VolatilePeer = true;
+
     // Reset tolerance
     ResetTolerance();
     }
@@ -35,6 +38,8 @@ inline HVE2DSegment::HVE2DSegment(const HGF2DPosition& pi_rStartPoint,
                                   const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys)
     : HVE2DBasicLinear(pi_rStartPoint, pi_rEndPoint, pi_rpCoordSys)
     {
+    m_VolatilePeer = true;
+
     // Reset tolerance
     ResetTolerance();
     }
@@ -47,6 +52,9 @@ inline HVE2DSegment::HVE2DSegment(const HGF2DLocation& pi_rStartPoint,
                                   const HGF2DDisplacement& pi_rDisplacement)
     : HVE2DBasicLinear(pi_rStartPoint, pi_rStartPoint + pi_rDisplacement)
     {
+
+    m_VolatilePeer = true;
+
     // Reset tolerance
     ResetTolerance();
     }
@@ -57,6 +65,8 @@ inline HVE2DSegment::HVE2DSegment(const HGF2DLocation& pi_rStartPoint,
 inline HVE2DSegment::HVE2DSegment(const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys)
     : HVE2DBasicLinear(pi_rpCoordSys)
     {
+    m_VolatilePeer = true;
+
     // Default tolerance is used
     }
 
@@ -66,6 +76,7 @@ inline HVE2DSegment::HVE2DSegment(const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys)
 inline HVE2DSegment::HVE2DSegment(const HVE2DSegment& pi_rObj)
     : HVE2DBasicLinear(pi_rObj)
     {
+    m_VolatilePeer = true;
     }
 
 //-----------------------------------------------------------------------------

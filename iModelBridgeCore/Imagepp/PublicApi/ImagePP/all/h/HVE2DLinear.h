@@ -12,6 +12,7 @@
 #pragma once
 
 #include "HVE2DVector.h"
+#include "HGF2DLinear.h"
 
 /** -----------------------------------------------------------------------------
     @version 1.0
@@ -481,19 +482,28 @@ public:
 protected:
 
 
-    IMAGEPP_EXPORT virtual void
-    SetCoordSysImplementation(const HFCPtr<HGF2DCoordSys>& pi_rpNewCoordSys);
+    IMAGEPP_EXPORT virtual void    SetCoordSysImplementation(const HFCPtr<HGF2DCoordSys>& pi_rpNewCoordSys);
 
     void SetLinearStartPoint(const HGF2DLocation& point)
         {
         ClearPeer();
-        m_StartPoint = point;        
+        m_StartPoint = point.ExpressedIn(GetCoordSys());    
+        if (!m_VolatilePeer)
+            GetLinearPeer().SetLinearStartPoint(m_StartPoint.GetPosition());    
         }
         
     void SetLinearEndPoint(const HGF2DLocation& point)
         {
         ClearPeer();
-        m_EndPoint = point;
+        m_EndPoint = point.ExpressedIn(GetCoordSys());
+        if (!m_VolatilePeer)
+            GetLinearPeer().SetLinearEndPoint(m_EndPoint.GetPosition());    
+
+        }
+
+    HGF2DLinear&  GetLinearPeer() const
+        {
+        return (*static_cast<HGF2DLinear*>(&(GetPeer())));
         }
 private:
     HGF2DLocation           m_StartPoint;

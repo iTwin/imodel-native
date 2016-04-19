@@ -14,7 +14,8 @@ inline HVE2DVector::HVE2DVector()
     : HGFGraphicObject(),
       m_Tolerance(HGLOBAL_EPSILON),
       m_pStrokeTolerance(),
-      m_AutoToleranceActive(true)
+      m_AutoToleranceActive(true),
+      m_VolatilePeer(true)
     {
     }
 
@@ -25,7 +26,8 @@ inline HVE2DVector::HVE2DVector(const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys)
     : HGFGraphicObject(pi_rpCoordSys),
       m_Tolerance(HGLOBAL_EPSILON),
       m_pStrokeTolerance(),
-      m_AutoToleranceActive(true)
+      m_AutoToleranceActive(true),
+      m_VolatilePeer(true)
     {
     }
 
@@ -35,7 +37,8 @@ inline HVE2DVector::HVE2DVector(const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys)
 inline HVE2DVector::HVE2DVector(const HVE2DVector& pi_rObj)
     : HGFGraphicObject(pi_rObj),
       m_Tolerance(pi_rObj.m_Tolerance),
-      m_AutoToleranceActive(pi_rObj.m_AutoToleranceActive)
+      m_AutoToleranceActive(pi_rObj.m_AutoToleranceActive),
+      m_VolatilePeer(true)
     {
     if (pi_rObj.m_pStrokeTolerance != NULL)
         m_pStrokeTolerance = new HGFTolerance(*pi_rObj.m_pStrokeTolerance);
@@ -65,6 +68,7 @@ inline HVE2DVector& HVE2DVector::operator=(const HVE2DVector& pi_rObj)
         HGFGraphicObject::operator=(pi_rObj);
         m_Tolerance = pi_rObj.m_Tolerance;
         m_AutoToleranceActive = pi_rObj.m_AutoToleranceActive;
+        m_VolatilePeer = pi_rObj.m_VolatilePeer;
 
         if (pi_rObj.m_pStrokeTolerance != NULL)
             m_pStrokeTolerance = new HGFTolerance(*pi_rObj.m_pStrokeTolerance);
@@ -76,20 +80,7 @@ inline HVE2DVector& HVE2DVector::operator=(const HVE2DVector& pi_rObj)
     return (*this);
     }
 
-#if (0)
-//-----------------------------------------------------------------------------
-// Touches
-// This method returs true if self and the given vector are not disjoint from
-// each other
-//-----------------------------------------------------------------------------
-inline bool HVE2DVector::Touches(const HVE2DVector& pi_rVector) const
-    {
-    // First we check if the extent of our objects are disjoint and if not,
-    // we check if they do not cross, flirt or are contiguous to one another
-    return ((!GetExtent().DoTheyOverlap(pi_rVector.GetExtent())) &&
-            (Crosses(pi_rVector) || Flirts(pi_rVector) || AreContiguous(pi_rVector)));
-    }
-#endif
+
 
 
 /** -----------------------------------------------------------------------------
@@ -141,6 +132,9 @@ inline void HVE2DVector::SetTolerance(double pi_Tolerance)
 
     m_Tolerance = pi_Tolerance;
     
+    if (!m_VolatilePeer)
+        m_Peer->SetTolerance(pi_Tolerance);
+
     ClearPeer();
     
     }
@@ -190,8 +184,11 @@ inline bool HVE2DVector::IsAutoToleranceActive() const
 inline void HVE2DVector::SetAutoToleranceActive(bool pi_ActiveAutoTolerance)
     {
     m_AutoToleranceActive = pi_ActiveAutoTolerance;
-    
-    ClearPeer();    
+
+    if (!m_VolatilePeer)
+        m_Peer->SetAutoToleranceActive(pi_ActiveAutoTolerance);
+    else
+        ClearPeer();    
     }
 
 

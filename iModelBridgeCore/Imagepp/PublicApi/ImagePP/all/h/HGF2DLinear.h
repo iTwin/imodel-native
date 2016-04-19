@@ -59,6 +59,8 @@ class HNOVTABLEINIT HGF2DLinear : public HGF2DVector
 
     HDECLARE_CLASS_ID(HGF2DLinearId_Base, HGF2DVector)
 
+    // This allows current class to be used as peer to HVE components.
+    friend class HVE2DLinear;
 public:
 
     enum EndPointProcessing

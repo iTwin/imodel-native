@@ -326,13 +326,13 @@ private:
                                                                      const HGF2DPositionCollection& pi_rPoly2) const;
     HGF2DShape*                     DifferentiateFromPolygon(const HGF2DPolygonOfSegments& pi_rPolygon) const;
 
-    void                            Decompose(const HGF2DPolygonOfSegments& pi_rPolygon,
+    bool                            Decompose(const HGF2DPolygonOfSegments& pi_rPolygon,
                                               const HGF2DPositionCollection& pi_rPoly1,
                                               const HGF2DPositionCollection& pi_rPoly2,
                                               HGF2DPolygonOfSegments::DecomposeOperation pi_Operation,
                                               HGF2DShape::SimpleShapeList& pi_rListOfShapes) const;
 
-    void                            SuperScan(const HGF2DPolygonOfSegments&  pi_rGiven,
+    bool                            SuperScan(const HGF2DPolygonOfSegments&  pi_rGiven,
                                               const HGF2DPositionCollection& pi_rPoly1,
                                               const HGF2DPositionCollection& pi_rPoly2,
                                               bool                          pi_WantInPtsOfShape1,
@@ -342,7 +342,7 @@ private:
                                               HGF2DShape::SimpleShapeList&   pi_rListOfShapes,
                                               bool*                         po_pAllOnPoints) const;
 
-    void                            SuperScan2(const HGF2DPolygonOfSegments&  pi_rGiven,
+    bool                            SuperScan2(const HGF2DPolygonOfSegments&  pi_rGiven,
                                                const HGF2DPositionCollection& pi_rPoly1,
                                                const HGF2DPositionCollection& pi_rPoly2,
                                                bool                          pi_WantInPtsOfShape1,
@@ -376,7 +376,7 @@ private:
     PointUsage*                     InsertAutoContiguousPoints(HGF2DPolySegment& pio_rPolySegment) const;
     void                            InsertAutoFlirtPoints(HGF2DPositionCollection& pio_rPoints) const;
 
-    void                            ChangeShape(const HGF2DPolygonOfSegments* const* apPoly,
+    bool                            ChangeShape(const HGF2DPolygonOfSegments* const* apPoly,
                                                 const HGF2DPositionCollection**  apPoints,
                                                 HGF2DLiteExtent* PolyExtents,
                                                 PointUsage** Flags,

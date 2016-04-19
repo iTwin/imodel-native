@@ -14,6 +14,13 @@ inline HVE2DPolySegment::HVE2DPolySegment()
     : HVE2DBasicLinear(),
       m_ExtentUpToDate(false)
     {
+    m_VolatilePeer = false;
+
+    CreateEmptyPolySegmentPeer();
+	
+    // Make sure start and end points are identical
+    GetPolySegmentPeer().SetLinearStartPoint(GetStartPoint().GetPosition());
+    GetPolySegmentPeer().SetLinearEndPoint(GetEndPoint().GetPosition());
     HINVARIANTS;
     }
 
@@ -25,8 +32,16 @@ inline HVE2DPolySegment::HVE2DPolySegment(const HFCPtr<HGF2DCoordSys>& pi_rpCoor
       m_ExtentUpToDate(false),
       m_Extent(pi_rpCoordSys)
     {
+    m_VolatilePeer = false;
+
     // Default tolerance is used
 
+    CreateEmptyPolySegmentPeer();
+	
+    // Make sure start and end points are identical
+
+    GetPolySegmentPeer().SetLinearStartPoint(GetStartPoint().GetPosition());
+    GetPolySegmentPeer().SetLinearEndPoint(GetEndPoint().GetPosition());
     HINVARIANTS;
     }
 
@@ -39,10 +54,18 @@ inline HVE2DPolySegment::HVE2DPolySegment(const HGF2DLocation& pi_rFirstPoint,
       m_ExtentUpToDate(false),
       m_Extent(pi_rFirstPoint.GetCoordSys())
     {
-    // The start and end points are set ... all we need is to copy them\
-    // to the positions list
-    m_Points.push_back(GetStartPoint().GetPosition());
-    m_Points.push_back(pi_rSecondPoint.ExpressedIn(GetCoordSys()).GetPosition());
+    m_VolatilePeer = false;
+
+
+
+
+    HGF2DPositionCollection points;
+    points.push_back(pi_rFirstPoint.GetPosition());
+    points.push_back(pi_rSecondPoint.ExpressedIn(GetCoordSys()).GetPosition());
+
+    CreatePolySegmentPeer(points);
+
+
 
     // Set tolerance
     ResetTolerance();
@@ -55,10 +78,20 @@ inline HVE2DPolySegment::HVE2DPolySegment(const HGF2DLocation& pi_rFirstPoint,
 //-----------------------------------------------------------------------------
 inline HVE2DPolySegment::HVE2DPolySegment(const HVE2DPolySegment& pi_rObj)
     : HVE2DBasicLinear(pi_rObj),
-      m_Points(pi_rObj.m_Points),
       m_ExtentUpToDate(pi_rObj.m_ExtentUpToDate),
       m_Extent(pi_rObj.m_Extent)
     {
+
+    m_VolatilePeer = false;
+
+    CreateCopyPolySegmentPeer(pi_rObj.GetPolySegmentPeer());
+    
+    // Indicate extent is not up to date anymore
+    m_ExtentUpToDate = false;
+
+    // Adjust tolerance
+    ResetTolerance();
+
     HINVARIANTS;
     }
 
@@ -83,7 +116,8 @@ inline HVE2DPolySegment& HVE2DPolySegment::operator=(const HVE2DPolySegment& pi_
         HVE2DBasicLinear::operator=(pi_rObj);
 
         // Copy attributes
-        m_Points = pi_rObj.m_Points;
+		CreateCopyPolySegmentPeer(pi_rObj.GetPolySegmentPeer());
+
         m_ExtentUpToDate = pi_rObj.m_ExtentUpToDate;
         m_Extent = pi_rObj.m_Extent;
 
@@ -104,24 +138,25 @@ inline HGF2DLocation HVE2DPolySegment::GetPoint(size_t pi_Index) const
     HINVARIANTS;
 
     // The given index must be valid
-    HPRECONDITION((pi_Index >= 0) && (pi_Index < m_Points.size()));
+    HPRECONDITION((pi_Index >= 0) && (pi_Index < GetPolySegmentPeer().GetSize()));
 
-    // Return point in self coordinate system
-    return(HGF2DLocation(m_Points[pi_Index], GetCoordSys()));
+    return HGF2DLocation(GetPolySegmentPeer().GetPoint(pi_Index), GetCoordSys());
     }
 //-----------------------------------------------------------------------------
 // GetPosition
 // Returns the point designated by index
 //-----------------------------------------------------------------------------
-inline const HGF2DPosition& HVE2DPolySegment::GetPosition(size_t pi_Index) const
+inline HGF2DPosition HVE2DPolySegment::GetPosition(size_t pi_Index) const
     {
     HINVARIANTS;
 
     // The given index must be valid
-    HPRECONDITION((pi_Index >= 0) && (pi_Index < m_Points.size()));
+    HPRECONDITION((pi_Index >= 0) && (pi_Index < GetPoints().size()));
 
-    // Return point in self coordinate system
-    return(m_Points[pi_Index]);
+    HPRECONDITION((pi_Index >= 0) && (pi_Index <  GetPolySegmentPeer().GetSize()));
+
+    return GetPolySegmentPeer().GetPoint(pi_Index);
+    
     }
 
 
@@ -132,8 +167,7 @@ inline const HGF2DPosition& HVE2DPolySegment::GetPosition(size_t pi_Index) const
 inline size_t HVE2DPolySegment::GetSize() const
     {
     HINVARIANTS;
-
-    return m_Points.size();
+    return GetPolySegmentPeer().GetSize();
     }
 
 //-----------------------------------------------------------------------------
@@ -186,8 +220,7 @@ inline HPMPersistentObject* HVE2DPolySegment::Clone() const
 inline bool HVE2DPolySegment::IsNull() const
     {
     HINVARIANTS;
-
-    return(m_Points.size() == 0);
+    return GetPolySegmentPeer().IsNull();
     }
 
 END_IMAGEPP_NAMESPACE

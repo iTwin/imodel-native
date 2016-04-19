@@ -295,7 +295,7 @@ inline void HGF2DLiteExtent::SetCorner(const HGF2DPosition& pi_rCorner)
 inline bool HGF2DLiteExtent::IsDefined () const
     {
     // Floating-point exact comparison is intentional
-    return ((m_XMax != m_XMin) && (m_YMax != m_YMin));
+    return (m_initializedXMin && m_initializedXMax && m_initializedYMin && m_initializedYMax);
     }
 
 

@@ -9232,6 +9232,10 @@ TEST_F(HVE2DPolygonOfSegmentsTester,  ModifyShapeWithPointerWhoFailed74)
     AddPolySegment2.AppendPoint(HGF2DLocation(  4483.774813115596800000, 1826.44534158706670000000, pWorld));
     
     HFCPtr<HVE2DShape> pShape2 = new HVE2DPolygonOfSegments(AddPolySegment2);
+
+    pShape1->SetAutoToleranceActive(false);
+    pShape2->SetAutoToleranceActive(false);
+
     pShape1->SetTolerance(0.00001);
     pShape2->SetTolerance(0.00001);
 
