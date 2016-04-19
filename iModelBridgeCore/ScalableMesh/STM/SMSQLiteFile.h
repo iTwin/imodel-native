@@ -3,9 +3,11 @@
 #include <Bentley/RefCounted.h>
 #include <BeSQLite\BeSQLite.h>
 #include <ScalableMesh/import/DataSQLite.h>
+#include "ScalableMeshDb.h"
 
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT
+USING_NAMESPACE_BENTLEY_SCALABLEMESH
 
 using namespace std;
 
@@ -161,7 +163,7 @@ public:
 
     bool m_autocommit = true;
 private:
-    BeSQLite::Db* m_database;
+    ScalableMeshDb* m_database;
 
     // string table name
     const std::string m_sMasterHeaderTable = "SMMasterHeader";

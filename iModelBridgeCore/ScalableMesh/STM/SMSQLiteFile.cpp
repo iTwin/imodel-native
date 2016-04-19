@@ -40,8 +40,8 @@ m_database->SaveChanges();
 }
 bool SMSQLiteFile::Open(BENTLEY_NAMESPACE_NAME::Utf8CP filename, bool openReadOnly)
 {
-    if (m_database == nullptr)
-        m_database = new BeSQLite::Db();
+if (m_database == nullptr)
+m_database = new ScalableMeshDb();
     DbResult result;
     if (m_database->IsDbOpen())
         m_database->CloseDb();
@@ -72,8 +72,8 @@ SMSQLiteFilePtr SMSQLiteFile::Open(const WString& filename, bool openReadOnly, S
 
 bool SMSQLiteFile::Create(BENTLEY_NAMESPACE_NAME::Utf8CP filename)
 {
-    if (m_database == nullptr)
-        m_database = new BeSQLite::Db();
+if (m_database == nullptr)
+m_database = new ScalableMeshDb();
     DbResult result;
     result = m_database->CreateNewDb(filename);
 
@@ -252,7 +252,7 @@ bool SMSQLiteFile::SetMasterHeader(const SQLiteIndexHeader& newHeader)
     stmt->BindInt(8, newHeader.m_isTerrain ? 1 : 0);
     //stmt->BindInt(7, newHeader.m_singleFile ? 1 : 0);
     if (nRows != 0)
-        stmt->BindInt64(8, id);
+        stmt->BindInt64(9, id);
     DbResult status = stmt->Step();
     assert(status == BE_SQLITE_DONE);
     return status == BE_SQLITE_DONE;

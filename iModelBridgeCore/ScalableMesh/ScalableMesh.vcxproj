@@ -469,6 +469,7 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f Terra
     <ClInclude Include="STM\CGALEdgeCollapse.h" />
     <ClInclude Include="STM\CGAL_BentleyKernel.h" />
     <ClInclude Include="STM\Edits\Skirts.h" />
+    <ClInclude Include="stm\ScalableMeshDb.h" />
     <ClInclude Include="STM\ScalableMeshFileMoniker.h" />
     <ClInclude Include="STM\DrapeOnGraph.h" />
     <ClInclude Include="STM\SMMemoryPool.h" />
@@ -639,6 +640,7 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f Terra
     <ClCompile Include="STM\3dDelaunay\TrimHull.cpp" />
     <ClCompile Include="STM\CGALEdgeCollapse.cpp" />
     <ClCompile Include="STM\Edits\Skirts.cpp" />
+    <ClCompile Include="stm\ScalableMeshDb.cpp" />
     <ClCompile Include="STM\ScalableMeshQuadTreeQueries.cpp" />
     <ClCompile Include="STM\ScalableTerrainModelAdmin.cpp" />
     <ClCompile Include="STM\DrapeOnGraph.cpp" />

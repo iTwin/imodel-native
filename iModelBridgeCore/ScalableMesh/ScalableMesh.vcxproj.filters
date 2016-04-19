@@ -942,6 +942,9 @@
     <ClInclude Include="STM\SMMemoryPool.h">
       <Filter>Includes\STM</Filter>
     </ClInclude>
+    <ClInclude Include="stm\ScalableMeshDb.h">
+      <Filter>Includes\STM</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Foundations\Errors.cpp">
@@ -1343,6 +1346,9 @@
     </ClCompile>
     <ClCompile Include="STM\SMMemoryPool.cpp">
       <Filter>Includes\STM</Filter>
+    </ClCompile>
+    <ClCompile Include="stm\ScalableMeshDb.cpp">
+      <Filter>Source\STM</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
