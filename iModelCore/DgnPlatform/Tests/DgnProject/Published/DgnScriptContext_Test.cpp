@@ -267,8 +267,10 @@ TEST_F(DgnScriptTest, RunScripts)
     int retstatus = 0;
     DgnScript::ExecuteDgnDbScript(retstatus, *project, "DgnScriptTests.TestDgnDbScript", parms);
     ASSERT_EQ(0, retstatus);
+#ifdef RUN_SCRIPT_PERFORMANCE_TESTS
     DgnScript::ExecuteDgnDbScript(retstatus, *project, "DgnScriptTests.TestDgnDbScriptPerformance", parms);
     ASSERT_EQ(0, retstatus);
+#endif
     // undefined function
     DgnScript::ExecuteDgnDbScript(retstatus, *project, "DgnScriptTests.SomeUndefinedFunction", parms);
     ASSERT_NE(0, retstatus);
