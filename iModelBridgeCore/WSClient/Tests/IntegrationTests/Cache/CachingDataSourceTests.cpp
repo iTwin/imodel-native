@@ -410,7 +410,7 @@ TEST_F(CachingDataSourceTests, ECDbPrepareStatement_ChangesMadeInBetweenReuses_F
     statement.ClearBindings();
     ASSERT_EQ(ECSqlStatus::Success, statement.BindText(1, rootName.c_str(), IECSqlBinder::MakeCopy::No));
     EXPECT_EQ(BE_SQLITE_ROW, statement.Step());
-    EXPECT_EQ(ECInstanceId(1), statement.GetValueId <ECInstanceId>(0));
+    EXPECT_EQ(ECInstanceId(1ull), statement.GetValueId <ECInstanceId>(0));
     }
 
 TEST_F(CachingDataSourceTests, GetObjects_WSG2PWSpatialQuery_Succeeds)
@@ -518,7 +518,7 @@ TEST_F(CachingDataSourceTests, DISABLED_OpenOrCreate_WSG2eBPluginProductionRepos
             a = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
             rels = txn.GetCache().GetAdapter().FindRelationshipClassesInSchema(aClass->GetId(), bClass->GetId(), "eB_Dynamic");
             b = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
-            BeDebugLog(Utf8PrintfString("ECDbAdapter:FindRelationshipClassesInSchema  took:%lld ms rels:%d", b - a, rels.size()));
+            BeDebugLog(Utf8PrintfString("ECDbAdapter:FindRelationshipClassesInSchema  took:%lld ms rels:%d", b - a, rels.size()).c_str());
             });
 
         //txn.GetCache().GetECDb().ClearCache();
@@ -535,7 +535,7 @@ TEST_F(CachingDataSourceTests, DISABLED_OpenOrCreate_WSG2eBPluginProductionRepos
             {
             BeDebugLog(Utf8PrintfString("ECDbAdapter:FindRelationshipClassesWithSource %s:%s",
                 Utf8String(rel->GetSchema().GetName()).c_str(),
-                Utf8String(rel->GetName()).c_str()));
+                Utf8String(rel->GetName()).c_str()).c_str());
             }
 
         //txn.GetCache().GetECDb().ClearCache();

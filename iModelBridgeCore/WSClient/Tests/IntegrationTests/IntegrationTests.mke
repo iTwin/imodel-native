@@ -79,9 +79,8 @@ GUNITTEST_SYMB      = $(o)
 GTEST_MAIN_IS_SUPPLIED = 1
 
 LOCAL_GUNITTEST_OBJS + $[@wildcard $(o)*.obj]
-LOCAL_GUNITTEST_OBJS + $[@wildcard $(BuildContext)SubParts/Libs/*.lib]
 
-LIB_DIR =  $(DGNCLIENTSDK_ROOT)lib/Winx64/
+LIB_DIR =  $(BuildContext)SubParts/Libs/
 
 GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)DgnClientFx$(libext)
 GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)Bentley$(libext)
@@ -91,8 +90,14 @@ GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)BeJsonCpp$(libext)
 GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)ECObjects$(libext)
 GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)BeCurl$(libext)
 GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)BeLibxml2$(libext)
-GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)WebServicesClient$(libext)
 GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)WebServicesCache$(libext)
+GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)WebServicesClient$(libext)
+GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)BeIcu4c$(libext)
+GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)bentleylog4cxx$(libext)
+GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)BeZlib$(libext)
+GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)gmock$(libext)
+GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)gtest$(libext)
+GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)liblog4cxx010$(libext)
 
 # Don't run tests after build
 GUNITTEST_NOEXEC = 1
