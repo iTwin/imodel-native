@@ -129,7 +129,6 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnQueryView : CameraViewController, BeSQLite::Vi
     {
         bool m_complete = false;
         uint32_t m_progressiveTotal = 0;
-
     };
     typedef RefCountedPtr<SceneMembers> SceneMembersPtr;
 

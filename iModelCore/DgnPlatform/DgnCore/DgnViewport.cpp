@@ -911,7 +911,7 @@ int DgnViewport::GetDefaultIndexedLineWidth(int index)
 +---------------+---------------+---------------+---------------+---------------+------*/
 int DgnViewport::_GetIndexedLineWidth(int index) const
     {
-    return DgnViewport::GetDefaultIndexedLineWidth(index);
+    return GetDefaultIndexedLineWidth(index);
     }
 
 /*---------------------------------------------------------------------------------**//**

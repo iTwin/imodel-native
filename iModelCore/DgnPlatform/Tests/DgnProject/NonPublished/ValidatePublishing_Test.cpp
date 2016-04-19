@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/ValidatePublishing_Test.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (DGNPLATFORM_HAVE_DGN_IMPORTER)
@@ -223,10 +223,11 @@ void ValidatePublishing::writeToXml()
     }
     DgnDbPtr dgnProject = openDgnDb();
     ASSERT_TRUE(dgnProject != NULL);
-    DbECSchemaKeys schemaKeys;
-    auto schemaStaus = dgnProject->Schemas().GetECSchemaKeys(schemaKeys);
+    //Rewrite this using ECSQL against the MetaSchema ECSchema
+    /*bvector<ECN::ECSchemaCP> schemas;
+    auto schemaStaus = dgnProject->Schemas().GetECSchemas(schemas, false);
     ASSERT_EQ(schemaStaus, SUCCESS);
-    size_t schemaCount = schemaKeys.size();
+    size_t schemaCount = schemas.size();
 
     ::testing::Test::RecordProperty("TotalSchemas", int(schemaCount));
     DbECClassKeys classKeys;
@@ -238,6 +239,7 @@ void ValidatePublishing::writeToXml()
         classCount += int(noOfClass);
     }
     ::testing::Test::RecordProperty("TotalClasses", int(classCount));
+    */
 }
 
 //=======================================================================================
