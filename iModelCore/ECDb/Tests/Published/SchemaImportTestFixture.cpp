@@ -46,6 +46,7 @@ void SchemaImportTestFixture::AssertSchemaImport(ECDbR ecdb, bool& asserted, Sch
 //+---------------+---------------+---------------+---------------+---------------+------
 void SchemaImportTestFixture::AssertSchemaImport(bool& asserted, ECDbCR ecdb, SchemaItem const& testItem) const
     {
+
     asserted = true;
     ECN::ECSchemaReadContextPtr context = ECN::ECSchemaReadContext::CreateContext();
     context->AddSchemaLocater(ecdb.GetSchemaLocater());
@@ -64,8 +65,16 @@ void SchemaImportTestFixture::AssertSchemaImport(bool& asserted, ECDbCR ecdb, Sc
         }
 
     if (!deserializationFailed)
-        ASSERT_EQ(testItem.m_expectedToSucceed, SUCCESS == ecdb.Schemas().ImportECSchemas(context->GetCache ())) << testItem.m_assertMessage.c_str();
+        {
+        Savepoint sp(const_cast<ECDbR>(ecdb), "ECSChema Import");
+        BentleyStatus schemaImportStatus = ecdb.Schemas().ImportECSchemas(context->GetCache());
+        if (schemaImportStatus == SUCCESS)
+            sp.Commit();
+        else
+            sp.Cancel();
 
+        ASSERT_EQ(testItem.m_expectedToSucceed, SUCCESS == schemaImportStatus) << testItem.m_assertMessage.c_str();
+        }
     asserted = false;
     BeTest::SetFailOnAssert(true);
     }

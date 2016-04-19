@@ -500,7 +500,7 @@ ClassMap const* ECDbMap::GetClassMap(ECN::ECClassCR ecClass) const
         }
 
     ClassMapPtr classMap = nullptr;
-    if (!TryGetClassMap(classMap, m_schemaImportContext->GetClassMapLoadContext(), ecClass))
+    if (SUCCESS != TryGetClassMap(classMap, m_schemaImportContext->GetClassMapLoadContext(), ecClass))
         return nullptr;
 
     return classMap.get();
