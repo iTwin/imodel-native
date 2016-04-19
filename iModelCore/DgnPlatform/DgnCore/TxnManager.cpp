@@ -679,6 +679,7 @@ RevisionStatus TxnManager::MergeRevision(DgnRevisionCR revision)
             // the merged changes are lost after this routine and cannot be used for change propagation anymore. 
             if (BE_SQLITE_OK != result)
                 {
+                LOG.errorv("MergeRevision failed with SQLite error %s", m_dgndb.GetLastError().c_str());
                 BeAssert(false);
                 status = RevisionStatus::SQLiteError;
                 }

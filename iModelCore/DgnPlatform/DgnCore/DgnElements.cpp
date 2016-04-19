@@ -1449,14 +1449,7 @@ DgnElements::ClassInfo& DgnElements::FindClassInfo(DgnElementCR el) const
 
     Utf8StringCR selectECSql = classInfo.GetSelectECSql();
     if (!selectECSql.empty())
-        {
-        classInfo.m_selectStmt = new CachedECSqlStatement();
-        if (ECSqlStatus::Success != classInfo.m_selectStmt->Prepare(GetDgnDb(), selectECSql.c_str()))
-            {
-            BeAssert(false);
-            classInfo.m_selectStmt = nullptr;
-            }
-        }
+        classInfo.m_selectStmt = GetDgnDb().GetPreparedECSqlStatement(selectECSql.c_str());
 
     return classInfo;
     }
@@ -1470,17 +1463,7 @@ DgnElements::ElementSelectStatement DgnElements::GetPreparedSelectStatement(DgnE
     BeDbMutexHolder _v(m_mutex);
 
     auto& classInfo = FindClassInfo(el);
-    CachedECSqlStatementPtr stmt = classInfo.m_selectStmt;
-    if (stmt.IsValid() && stmt->GetRefCount() > 2)  // +1 from above line, +1 from bmap...
-        {
-        // The cached statement is already in use...create a new one for this caller
-        stmt = new CachedECSqlStatement();
-        if (ECSqlStatus::Success != stmt->Prepare(GetDgnDb(), classInfo.GetSelectECSql().c_str()))
-            {
-            BeAssert(false);
-            stmt = nullptr;
-            }
-        }
+    CachedECSqlStatementPtr stmt = GetDgnDb().GetPreparedECSqlStatement(classInfo.GetSelectECSql().c_str());
 
     if (stmt.IsValid())
         stmt->BindId(1, el.GetElementId());
