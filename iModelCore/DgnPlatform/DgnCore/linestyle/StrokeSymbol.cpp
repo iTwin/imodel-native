@@ -191,11 +191,13 @@ void LsSymbolComponent::Draw (LineStyleContextR context)
     if (!geomPart.IsValid())
         return;
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     BeAssert(nullptr != context.GetViewContext());
     ViewContextR vContext = *context.GetViewContext();
     GeometryStreamIO::Collection collection(geomPart->GetGeometryStream().GetData(), geomPart->GetGeometryStream().GetSize());
     collection.Draw(context.GetGraphicR(), vContext, vContext.GetCurrentGeometryParams()); 
     //  collection.Draw(context, context.GetCurrentGeometryParams().GetCategoryId(), context.GetViewFlags()); 
+#endif
     }
 
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
