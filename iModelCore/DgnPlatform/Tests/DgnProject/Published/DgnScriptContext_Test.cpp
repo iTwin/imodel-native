@@ -221,6 +221,17 @@ struct DgnScriptTest_DetectJsErrors : DgnPlatformLib::Host::ScriptAdmin::ScriptN
 }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static DgnDbStatus createSpatialModel(SpatialModelPtr& catalogModel, DgnDbR db, DgnCode const& code)
+    {
+    DgnClassId mclassId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel));
+    catalogModel = new SpatialModel(SpatialModel::CreateParams(db, mclassId, code));
+    catalogModel->SetInGuiList(false);
+    return catalogModel->Insert();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnScriptTest, RunScripts)
@@ -229,7 +240,7 @@ TEST_F(DgnScriptTest, RunScripts)
 
     BeFileName jsFileName;
     BeTest::GetHost().GetDgnPlatformAssetsDirectory(jsFileName);
-    jsFileName.AppendToPath(L"Script/DgnScriptTest.js");
+    jsFileName.AppendToPath(L"Script/DgnScriptTest.js");// NOTE: All scripts in the DgnPlatform\Tests\DgnProject\Published\DgnScriptTest directory are combined into one file: Script/DgnScriptTest.js 
     Utf8String jsProgram;
     DgnScriptLibrary::ReadText(jsProgram, jsFileName);
     T_HOST.GetScriptAdmin().EvaluateScript(jsProgram.c_str());
@@ -242,13 +253,21 @@ TEST_F(DgnScriptTest, RunScripts)
     auto status = BentleyApi::DPTest::DgnPlatformTestDomain::GetDomain().ImportSchema(*project);
     ASSERT_TRUE(DgnDbStatus::Success == status);
 
+    project->SaveChanges(); // digest the schema import
+
     DgnModelPtr model = project->Models().GetModel(project->Models().QueryFirstModelId());
     model->FillModel();
+    SpatialModelPtr newmodel;
+    ASSERT_EQ(DgnDbStatus::Success, createSpatialModel(newmodel, *project, DgnModel::CreateModelCode("DgnScriptTest.RunScripts")));
     Json::Value parms = Json::objectValue;
     parms["modelName"] = model->GetCode().GetValueCP();
+    parms["newModelName"] = newmodel->GetCode().GetValueCP();
     parms["categoryName"] = DgnCategory::QueryCategory(getFirstCategory(*project), *project)->GetCategoryName();
+    project->SaveChanges(); // digest other schema imports ??!!
     int retstatus = 0;
     DgnScript::ExecuteDgnDbScript(retstatus, *project, "DgnScriptTests.TestDgnDbScript", parms);
+    ASSERT_EQ(0, retstatus);
+    DgnScript::ExecuteDgnDbScript(retstatus, *project, "DgnScriptTests.TestDgnDbScriptPerformance", parms);
     ASSERT_EQ(0, retstatus);
     // undefined function
     DgnScript::ExecuteDgnDbScript(retstatus, *project, "DgnScriptTests.SomeUndefinedFunction", parms);

@@ -311,6 +311,9 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
           */
         GetPreparedECSqlSelectStatement(ecsql: Bentley_Utf8String): PreparedECSqlStatementP;
 
+        /** Save changes to the DgnDb, marking the end of a transaction. If undo/redo is enabled, this creates an undo point. @return non-zero if the insert failed. */
+        SaveChanges(): cxx_int32_t;
+
         OnDispose(): void;
         Dispose(): void;
     }

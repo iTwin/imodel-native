@@ -373,6 +373,7 @@ struct JsDgnDb : RefCountedBaseWithCreate
     JsECDbSchemaManagerP GetSchemas();
     JsDgnElementsP GetElements();
     JsPreparedECSqlStatementP GetPreparedECSqlSelectStatement(Utf8StringCR ecsql);
+    int32_t SaveChanges();
 
     STUB_OUT_SET_METHOD(Models, JsDgnModelsP)
     STUB_OUT_SET_METHOD(Elements, JsDgnElementsP)
@@ -384,12 +385,15 @@ struct JsDgnDb : RefCountedBaseWithCreate
 //=======================================================================================
 struct JsDgnElement : RefCountedBaseWithCreate
 {
+    static size_t s_count;
     DgnElementPtr m_el;
 
 protected:
     JsDgnElement(){}
 public:
-    JsDgnElement(DgnElementR el) : m_el(&el) {;}
+    JsDgnElement(DgnElementR el) : m_el(&el) {++s_count;}
+    ~JsDgnElement() {--s_count;}
+
     bool IsValid() const {return m_el.IsValid();}
     JsDgnObjectIdP GetElementId() 
         {
