@@ -771,16 +771,16 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
             header->m_nbFaceIndexes = nodeHeader["nbFaceIndexes"].asUInt();
             header->m_graphID = nodeHeader["graphID"].asUInt();
             header->m_uvID = nodeHeader["uvID"].asUInt();
-            header->m_areTextured = nodeHeader["areTextured"].asBool();
+            header->m_isTextured = nodeHeader["areTextured"].asBool();
 
-            if (header->m_areTextured)
+            if (header->m_isTextured)
                 {
                 auto& textures = nodeHeader["textureIDs"];
                 assert(textures.isArray());
                 header->m_textureID.resize(textures.size());
                 if (textures.size() > 0)
                     {
-                    assert(header->m_areTextured);
+                    assert(header->m_isTextured);
                     for (size_t indiceID = 0; indiceID < (size_t)textures.size(); indiceID++)
                         {
                         auto textureID = textures[(Json::ArrayIndex)indiceID].asUInt();
@@ -1535,7 +1535,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                 indice = header->m_ptsIndiceID[i].IsValid() ? ConvertBlockID(header->m_ptsIndiceID[i]) : IDTMFile::GetNullNodeID();
                 }
 
-            if (header->m_areTextured && !header->m_textureID.empty() && IsValidID(header->m_textureID[0]))
+            if (header->m_isTextured && !header->m_textureID.empty() && IsValidID(header->m_textureID[0]))
                 {
                 block["areTextured"] = true;
                 block["nbTextureIDs"] = (int)header->m_textureID.size();

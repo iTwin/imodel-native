@@ -36,11 +36,11 @@ struct IScalableMeshATP
         IScalableMeshATP&  operator=   (const IScalableMeshATP&) {};
        /*__PUBLISH_SECTION_START__*/
     public:
-        BENTLEYSTM_EXPORT static IScalableMeshATP*   GetInstance();
-        BENTLEYSTM_EXPORT static StatusInt StoreInt(WString name, int64_t value);
-        BENTLEYSTM_EXPORT static StatusInt StoreDouble(WString name, double value);
-        BENTLEYSTM_EXPORT static StatusInt GetInt(WString name, int64_t& value);
-        BENTLEYSTM_EXPORT static StatusInt GetDouble(WString name, double& value);
+        BENTLEY_SM_EXPORT static IScalableMeshATP*   GetInstance();
+        BENTLEY_SM_EXPORT static StatusInt StoreInt(WString name, int64_t value);
+        BENTLEY_SM_EXPORT static StatusInt StoreDouble(WString name, double value);
+        BENTLEY_SM_EXPORT static StatusInt GetInt(WString name, int64_t& value);
+        BENTLEY_SM_EXPORT static StatusInt GetDouble(WString name, double& value);
 
 
     };

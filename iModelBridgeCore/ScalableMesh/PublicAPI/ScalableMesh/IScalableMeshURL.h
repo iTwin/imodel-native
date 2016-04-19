@@ -6,7 +6,7 @@
 |       $Date: 2011/08/02 15:00:10 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -30,16 +30,16 @@ private:
     struct Impl;
     std::auto_ptr<Impl>                 m_implP;
 public:
-    BENTLEYSTM_EXPORT explicit                LocalFileURL                           (const WChar*          path);
+    BENTLEY_SM_EXPORT explicit                LocalFileURL                           (const WChar*          path);
 
-    BENTLEYSTM_EXPORT                         ~LocalFileURL                          ();
+    BENTLEY_SM_EXPORT                         ~LocalFileURL                          ();
 
-    BENTLEYSTM_EXPORT                         LocalFileURL                           (const LocalFileURL&     rhs);
-    BENTLEYSTM_EXPORT LocalFileURL&           operator=                              (const LocalFileURL&     rhs);
+    BENTLEY_SM_EXPORT                         LocalFileURL                           (const LocalFileURL&     rhs);
+    BENTLEY_SM_EXPORT LocalFileURL&           operator=                              (const LocalFileURL&     rhs);
 
 
-    BENTLEYSTM_EXPORT const WString&     GetPath                                () const;
-    BENTLEYSTM_EXPORT const WChar*          GetPathCStr                            () const;
+    BENTLEY_SM_EXPORT const WString&     GetPath                                () const;
+    BENTLEY_SM_EXPORT const WChar*          GetPathCStr                            () const;
 
     // TDORAY: Return raw URL, extensions, filename etc..
 

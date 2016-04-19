@@ -68,39 +68,39 @@ public:
     /*
      * NTERAY: Exported in order to be able to continue development in Descartes. Use with care and only on last resort.
      */
-    BENTLEYSTM_EXPORT const Import::ContentConfig&    GetContentConfig           () const;
-    BENTLEYSTM_EXPORT const Import::ImportSequence&   GetSequence                () const;
-    BENTLEYSTM_EXPORT const Import::ImportConfig&     GetConfig                  () const;
+    BENTLEY_SM_EXPORT const Import::ContentConfig&    GetContentConfig           () const;
+    BENTLEY_SM_EXPORT const Import::ImportSequence&   GetSequence                () const;
+    BENTLEY_SM_EXPORT const Import::ImportConfig&     GetConfig                  () const;
 
     /*
      * NTERAY: Exported in order to be able to continue development in Descartes. Use with care and only on last resort.
      */
-    BENTLEYSTM_EXPORT void                            SetContentConfig           (const Import::ContentConfig&                config);
-    BENTLEYSTM_EXPORT void                            SetSequence                (const Import::ImportSequence&               sequence);
-    BENTLEYSTM_EXPORT void                            SetConfig                  (const Import::ImportConfig&                 config);
+    BENTLEY_SM_EXPORT void                            SetContentConfig           (const Import::ContentConfig&                config);
+    BENTLEY_SM_EXPORT void                            SetSequence                (const Import::ImportSequence&               sequence);
+    BENTLEY_SM_EXPORT void                            SetConfig                  (const Import::ImportConfig&                 config);
 
 
     /*
      * Default is to import all layers. Use this only to import only specific layers.
      */
-    BENTLEYSTM_EXPORT void                            AddImportedLayer           (uint32_t                                        layerID);
+    BENTLEY_SM_EXPORT void                            AddImportedLayer           (uint32_t                                        layerID);
 
 
 
-    BENTLEYSTM_EXPORT void                            SetReplacementType         (const Import::DataType&                     type);
+    BENTLEY_SM_EXPORT void                            SetReplacementType         (const Import::DataType&                     type);
 
 
 
-    BENTLEYSTM_EXPORT const GeoCoords::GCS&           GetReplacementGCS          ();
-    BENTLEYSTM_EXPORT void                            SetReplacementGCS          (const GeoCoords::GCS&                       gcs);
+    BENTLEY_SM_EXPORT const GeoCoords::GCS&           GetReplacementGCS          ();
+    BENTLEY_SM_EXPORT void                            SetReplacementGCS          (const GeoCoords::GCS&                       gcs);
 
 
-    BENTLEYSTM_EXPORT void                            SetReplacementGCS          (const GeoCoords::GCS&                       gcs,
+    BENTLEY_SM_EXPORT void                            SetReplacementGCS          (const GeoCoords::GCS&                       gcs,
                                                                             bool                                        prependToExistingLocalTransform,
                                                                             bool                                        preserveExistingIfGeoreferenced,
                                                                             bool                                        preserveExistingIfLocalCS);
-    BENTLEYSTM_EXPORT void                            SetReplacementSMData       (const Import::ScalableMeshData& data);
-    BENTLEYSTM_EXPORT const Import::ScalableMeshData& GetReplacementSMData       () const;
+    BENTLEY_SM_EXPORT void                            SetReplacementSMData       (const Import::ScalableMeshData& data);
+    BENTLEY_SM_EXPORT const Import::ScalableMeshData& GetReplacementSMData       () const;
 
 
     };

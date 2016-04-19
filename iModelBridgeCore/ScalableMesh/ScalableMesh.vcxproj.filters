@@ -1346,11 +1346,8 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="ScalableTerrainModel.mke" />
-    <None Include="ScalableTerrainModel.mki" />
     <None Include="Import\Import.mke.realOrig" />
     <None Include="mki\AssertScalableTerrainModelPolicy.mki" />
-    <None Include="mki\ScalableTerrainModelPolicy.mki" />
     <None Include="PrivateAPI\STMInternal\Foundations\_Description.mki" />
     <None Include="PublicAPI\ScalableMesh\Foundations\_Description.mki" />
     <None Include="PublicAPI\ScalableMesh\GeoCoords\_Description.mki" />

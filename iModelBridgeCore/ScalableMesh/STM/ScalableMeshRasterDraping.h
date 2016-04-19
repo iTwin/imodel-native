@@ -6,7 +6,7 @@
 |       $Date: 2010/08/19 14:38:33 $
 |     $Author: Mathieu.St-Pierre $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -71,13 +71,13 @@ class ScalableMeshRasterDraping
     {
 public:    
 
-    BENTLEYSTM_EXPORT static ScalableMeshRasterDraping* Create(const AString& pi_rFileNameDescriptors);    
+    BENTLEY_SM_EXPORT static ScalableMeshRasterDraping* Create(const AString& pi_rFileNameDescriptors);    
 
-    BENTLEYSTM_EXPORT virtual ~ScalableMeshRasterDraping();
+    BENTLEY_SM_EXPORT virtual ~ScalableMeshRasterDraping();
 
     
                     
-    BENTLEYSTM_EXPORT void CreateTextureBitmapForCurrentView(vector<TextureDescription>&  rTextures,                                                            
+    BENTLEY_SM_EXPORT void CreateTextureBitmapForCurrentView(vector<TextureDescription>&  rTextures,                                                            
                                                        double&                      textureMinXInUor, 
                                                        double&                      textureMinYInUor, 
                                                        double&                      textureMaxXInUor, 
@@ -87,9 +87,9 @@ public:
                                                        DPoint3d*                         pFencePt,
                                                        int                          nbFencePt);
 
-    BENTLEYSTM_EXPORT void ReleaseLastTextureBitmap();
+    BENTLEY_SM_EXPORT void ReleaseLastTextureBitmap();
     
-    BENTLEYSTM_EXPORT static void LocateWorldClusterInCurrentModel(double meterPerMasterUnits,
+    BENTLEY_SM_EXPORT static void LocateWorldClusterInCurrentModel(double meterPerMasterUnits,
                                                              double masterUnitsPerUor,
                                                              double globalOrgX,
                                                              double globalOrgY);

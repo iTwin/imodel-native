@@ -625,7 +625,7 @@ public:
                                             HFCPtr<StreamingIndiceStoreType> pi_pIndiceStore,
                                             HFCPtr<StreamingUVStoreType> pi_pUVStore,
                                             HFCPtr<StreamingIndiceStoreType> pi_pUVIndiceStore,
-                                            HFCPtr<StreamingTextureTileStoreType> pi_pTextureStore) const;
+                                            HFCPtr<StreamingTextureTileStoreType> pi_pTextureStore);
     virtual void         SaveCloudReadyNode(SMNodeGroup* pi_pNodes, SMNodeGroupMasterHeader* pi_pGroupsHeader) const;
 
 #ifdef INDEX_DUMPING_ACTIVATED

@@ -6,7 +6,7 @@
 |       $Date: 2011/08/10 15:21:39 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -39,7 +39,7 @@ class MeshTypeFamilyCreator : public Import::Plugin::V0::StaticDataTypeFamilyCre
     {
     virtual const Import::DataTypeFamily&           _Create                                        () const override;
 public:
-    BENTLEYSTM_EXPORT explicit                    MeshTypeFamilyCreator                          ();
+    BENTLEY_SM_EXPORT explicit                    MeshTypeFamilyCreator                          ();
     };
 
 
@@ -51,7 +51,7 @@ class MeshType3d64fCreator : public Import::Plugin::V0::StaticDataTypeCreatorBas
     {
     virtual const Import::DataType&                 _Create                                        () const override;
 public: 
-    BENTLEYSTM_EXPORT explicit                    MeshType3d64fCreator                           ();
+    BENTLEY_SM_EXPORT explicit                    MeshType3d64fCreator                           ();
     };
 
 
@@ -63,7 +63,7 @@ class MeshTypeAsLinearTi32Pi32Pq32Gi32_3d64fCreator : public Import::Plugin::V0:
     {
     virtual const Import::DataType&                 _Create                                        () const override;
 public: 
-    BENTLEYSTM_EXPORT explicit                    MeshTypeAsLinearTi32Pi32Pq32Gi32_3d64fCreator  ();
+    BENTLEY_SM_EXPORT explicit                    MeshTypeAsLinearTi32Pi32Pq32Gi32_3d64fCreator  ();
     };
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

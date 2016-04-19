@@ -167,7 +167,7 @@ public:
         header->m_apSubNodeID[0] = HPMBlockID();
         }
     //if (header->m_ptsIndiceID.size() > 0)header->m_ptsIndiceID[0] = blockID;
-    if (header->m_areTextured)
+    if (header->m_isTextured)
         {
         header->m_uvID = blockID;
         header->m_ptsIndiceID[0] = HPMBlockID();

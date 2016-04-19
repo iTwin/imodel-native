@@ -738,12 +738,8 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                                                             ScalableMeshMemoryPools<POINT>::Get()->GetPtsIndicePool(),
                                                             &*pStreamingIndiceTileStore,
                                                             ScalableMeshMemoryPools<POINT>::Get()->GetGraphPool(),
-                                                            new SMSQLiteGraphTileStore((dynamic_cast<SMSQLitePointTileStore<POINT, YProtPtExtentType>*>(pTileStore.GetPtr()))->GetDbConnection()),
-
-                                                            ScalableMeshMemoryPools<POINT>::Get()->GetTexturePool(),
-
+                                                            new SMSQLiteGraphTileStore((dynamic_cast<SMSQLitePointTileStore<POINT, YProtPtExtentType>*>(pTileStore.GetPtr()))->GetDbConnection()),                                                            
                                                             &*pStreamingTextureTileStore,
-
                                                             ScalableMeshMemoryPools<POINT>::Get()->GetUVPool(),
                                                             &*pStreamingUVTileStore,
                                                             ScalableMeshMemoryPools<POINT>::Get()->GetUVsIndicesPool(),
@@ -782,8 +778,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                                                        &*pIndiceTileStore,
                                                        ScalableMeshMemoryPools<POINT>::Get()->GetGraphPool(),
                                                        //new HPMIndirectCountLimitedPool<MTGGraph>(new HPMMemoryMgrReuseAlreadyAllocatedBlocksWithAlignment(100, 2000*sizeof(POINT)), 600000000),
-                                                       &*pGraphTileStore,
-                                                       ScalableMeshMemoryPools<POINT>::Get()->GetTexturePool(),
+                                                       &*pGraphTileStore,                                                       
                                                        &*pTextureTileStore,
                                                        ScalableMeshMemoryPools<POINT>::Get()->GetUVPool(),
                                                        &*pUVTileStore,
