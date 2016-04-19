@@ -374,7 +374,7 @@ JsonReader::ECRelatedItemsDisplaySpecificationsCache* JsonReader::ECRelatedItems
     if (appData)
         return appData;
 
-    ECSchemaList allSchemas;
+    bvector<ECN::ECSchemaCP> allSchemas;
     if (SUCCESS != ecdb.Schemas().GetECSchemas(allSchemas, false))
         {
         BeAssert(false);

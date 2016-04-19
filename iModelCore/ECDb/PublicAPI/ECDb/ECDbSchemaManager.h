@@ -11,59 +11,10 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-#if !defined (DOCUMENTATION_GENERATOR)
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        07/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct ECSchemaKey
-    {
-    private:
-        ECN::ECSchemaId m_ecSchemaId;
-        Utf8String m_name;
-        Utf8String m_displayLabel;
-        uint32_t m_versionMajor;
-        uint32_t m_versionWrite;
-        uint32_t m_versionMinor;
-    public:
-        ECSchemaKey(ECN::ECSchemaId ecSchemaId, Utf8CP name, uint32_t versionMajor, uint32_t versionWrite, uint32_t versionMinor, Utf8CP displayLabel)
-            : m_ecSchemaId(ecSchemaId), m_name(name), m_versionMajor(versionMajor), m_versionWrite(versionWrite), m_versionMinor(versionMinor), m_displayLabel(displayLabel)
-            {}
-
-        ECN::ECSchemaId GetECSchemaId() const { BeAssert(m_ecSchemaId.IsValid()); return m_ecSchemaId; }
-        uint32_t GetVersionMajor() const { return m_versionMajor; }
-        uint32_t GetVersionWrite() const { return m_versionWrite; }
-        uint32_t GetVersionMinor() const { return m_versionMinor; }
-        Utf8CP GetName() const { return m_name.c_str(); }
-        Utf8CP GetDisplayLabel() const { return m_displayLabel.empty() ? GetName() : m_displayLabel.c_str(); }
-    };
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        07/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct ECClassKey
-    {
-    private:
-        ECN::ECClassId m_ecClassId;
-        Utf8String m_name;
-        Utf8String m_displayLabel;
-    public:
-        ECClassKey(ECN::ECClassId ecClassId, Utf8CP name, Utf8CP displayLabel = nullptr) : m_ecClassId(ecClassId), m_name(name), m_displayLabel(displayLabel) {}
-        ECN::ECClassId GetECClassId() const { return m_ecClassId; }
-        Utf8CP GetName() const { return m_name.c_str(); }
-        Utf8CP GetDisplayLabel() const { return m_displayLabel.empty() ? GetName() : m_displayLabel.c_str(); }
-    };
-
-typedef bvector<ECSchemaKey> ECSchemaKeys;
-typedef bvector<ECClassKey> ECClassKeys;
-
 struct ECDbMap;
 struct ECDbSchemaReader;
 struct ECDbSchemaWriter;
 struct SchemaImportContext;
-#endif
-
-typedef bvector<ECN::ECSchemaCP> ECSchemaList;
 
 //=======================================================================================
 //! The ECDbSchemaManager manages @ref ECN::ECSchema "ECSchemas" in the @ref ECDbFile "ECDb file". 
@@ -129,7 +80,6 @@ struct ECDbSchemaManager : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCopya
 
         //! Implementation of IECClassLocater
         virtual ECN::ECClassCP _LocateClass(Utf8CP schemaName, Utf8CP className) override;
-        //void PrepareForImport(ECSchemaList& existingSchemas, ECSchemaList& importedSchemas, bvector<ECN::ECSchemaP> const& dependencyOrderedPrimarySchemas) const;
 
     public:
 #if !defined (DOCUMENTATION_GENERATOR)
@@ -167,14 +117,7 @@ struct ECDbSchemaManager : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCopya
         //! @param[in] ensureAllClassesLoaded true, if all classes in the ECSchema should be proactively loaded into memory. false,
         //!                                   if they are loaded on-demand.
         //! @return BentleyStatus::SUCCESS or BentleyStatus::ERROR
-        ECDB_EXPORT BentleyStatus GetECSchemas(ECSchemaList& schemas, bool ensureAllClassesLoaded = true) const;
-
-#if !defined (DOCUMENTATION_GENERATOR)
-        //replace following and it should return DbECSchemaKeys
-        // Keys base functions
-        ECDB_EXPORT BentleyStatus GetECSchemaKeys(ECSchemaKeys& keys) const;
-        ECDB_EXPORT BentleyStatus GetECClassKeys(ECClassKeys& keys, Utf8CP schemaName) const;
-#endif
+        ECDB_EXPORT BentleyStatus GetECSchemas(bvector<ECN::ECSchemaCP>& schemas, bool ensureAllClassesLoaded = true) const;
 
         //! Gets the ECClass for the specified name.
         //! @param[in] schemaNameOrPrefix Name (not full name) or namespace prefix of the schema containing the class (@see @p resolveSchema)

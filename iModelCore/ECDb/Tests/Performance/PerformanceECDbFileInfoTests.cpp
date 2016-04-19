@@ -90,7 +90,7 @@ protected:
             if (ECSqlStatus::Success != insertOwnershipStmt.Prepare(GetECDb(), "INSERT INTO ecdbf.FileInfoOwnership(OwnerId, OwnerECClassId, FileInfoId, FileInfoECClassId) VALUES(?,?,?,?)"))
                 return ERROR;
 
-            ECSchemaList schemas;
+            bvector<ECN::ECSchemaCP> schemas;
             GetECDb().Schemas().GetECSchemas(schemas, true);
             for (ECSchemaCP schema : schemas)
                 {
@@ -346,7 +346,7 @@ TEST_F(PerformanceECDbFileInfoTests, PurgeAfterDeletionOfOneInstancePerClass)
     ASSERT_EQ(SUCCESS, SetupTestECDb());
 
     int deletedCount = 0;
-    ECSchemaList schemas;
+    bvector<ECN::ECSchemaCP> schemas;
     GetECDb().Schemas().GetECSchemas(schemas, true);
     for (ECSchemaCP schema : schemas)
         {

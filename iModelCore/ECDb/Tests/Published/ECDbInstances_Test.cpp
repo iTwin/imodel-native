@@ -447,15 +447,13 @@ TEST_F(ECDbInstances, FindECInstances)
     ECValue v;
     int rows;
 
-    ECClassKeys classKeys;
-    db.Schemas().GetECClassKeys(classKeys, "StartupCompany");
-    for (ECClassKey ecClassKey : classKeys)
-        {
-        ECClassCP ecClass = db.Schemas().GetECClass(ecClassKey.GetECClassId());  // WIP_FNV: start taking ECSchemaName, ECClassName, instead
-        ASSERT_TRUE(ecClass != nullptr);
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "SELECT c.Name FROM ec.ECClassDef c JOIN ec.ECSchemaDef s ON s.Id=c.SchemaId AND s.Name='StartupCompany'"));
 
-        Utf8String className = ecClassKey.GetName();
-        if (className == "ClassWithPrimitiveProperties")
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        Utf8CP className = stmt.GetValueText(0);
+        if (strcmp(className, "ClassWithPrimitiveProperties") == 0)
             {
             SqlPrintfString ecSql("SELECT * FROM [StartupCompany].[ClassWithPrimitiveProperties] WHERE intProp > 0");
             ECSqlStatement ecStatement;
@@ -475,7 +473,7 @@ TEST_F(ECDbInstances, FindECInstances)
             LOG.infov(L"Returned %d rows for '(intProp > 0)'", rows);
             ASSERT_EQ(rows, 3);
             }
-        else if (className == "AAA")
+        else if (strcmp(className,"AAA") == 0)
             {
             SqlPrintfString ecSql("SELECT * FROM [StartupCompany].[AAA] WHERE l = 123456789");
             ECSqlStatement ecStatement;
@@ -494,7 +492,7 @@ TEST_F(ECDbInstances, FindECInstances)
             LOG.infov(L"Returned %d rows for '(l = 123456789)'", rows);
             ASSERT_EQ(rows, 3);
             }
-        else if (className == "AAFoo")
+        else if (strcmp(className,"AAFoo") == 0)
             {
             SqlPrintfString ecSql("SELECT * FROM ONLY [StartupCompany].[AAFoo] WHERE doubleAAFoo BETWEEN 0 AND 100");
             ECSqlStatement ecStatement;
