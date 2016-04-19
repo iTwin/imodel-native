@@ -914,7 +914,9 @@ void DgnQueryView::_DoHeal(HealContext& context)
     if (!m_scene.IsValid() || m_scene->m_complete) // if the scene is "complete", we don't need to draw any other elements to heal
        return;
 
-    BeAssert(m_scene->m_progressiveTotal > 0);
+    if (m_scene->m_progressiveTotal == 0) // temporary
+        return;
+
     HEAL_PRINTF("begin heal ");
 
     NonSceneQuery query(*this, context.GetFrustum(), *context.GetViewport());

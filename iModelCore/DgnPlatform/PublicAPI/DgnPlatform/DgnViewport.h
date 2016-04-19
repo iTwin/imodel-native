@@ -81,6 +81,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnViewport : RefCounted<NonCopyableClass>
     typedef bpair<Render::GraphicSet, ElementAlignedBox3d> GraphicSetRangePair; //!< @private
     typedef bmap<DgnGeometryPartId, GraphicSetRangePair> PartGraphicMap;        //!< @private
     typedef std::deque<Utf8String> ViewStateStack;
+    typedef bvector<ProgressiveTaskPtr> ProgressiveTasks;
 
     struct SyncFlags
     {
@@ -118,7 +119,6 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnViewport : RefCounted<NonCopyableClass>
     };
 
 protected:
-
     mutable SyncFlags m_sync;
     bool            m_zClipAdjusted = false;    // were the view z clip planes adjusted due to front/back clipping off?
     bool            m_is3dView = false;         // view is of a 3d model
@@ -140,8 +140,8 @@ protected:
     double          m_frustFraction;
     Utf8String      m_viewTitle;
     ViewControllerPtr m_viewController;
-    bvector<ProgressiveTaskPtr> m_elementProgressiveTasks;
-    bvector<ProgressiveTaskPtr> m_terrainProgressiveTasks;
+    ProgressiveTasks m_elementProgressiveTasks;
+    ProgressiveTasks m_terrainProgressiveTasks;
     DPoint3d        m_viewCmdTargetCenter;
     Utf8String      m_currentBaseline;
     ViewStateStack  m_forwardStack;
