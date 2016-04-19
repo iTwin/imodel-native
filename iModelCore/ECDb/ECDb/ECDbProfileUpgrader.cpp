@@ -15,6 +15,82 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle        04/2016
 //+---------------+---------------+---------------+---------------+---------------+--------
+/*DbResult ECDbProfileUpgrader_3400::UpgradeBriefcaseIdSequences(ECDbCR ecdb) const
+{
+Statement stmt;
+if (BE_SQLITE_OK != stmt.Prepare(ecdb, "SELECT Name, Val FROM be_Local WHERE Name LIKE 'ec_%sequence'"))
+{
+LOG.errorv("ECDb profile upgrade failed: Updating ECDb sequences failed: %s", ecdb.GetLastError().c_str());
+return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+
+}
+
+Statement updateStmt;
+if (BE_SQLITE_OK != updateStmt.Prepare(ecdb, "UPDATE be_Local SET Val=? WHERE Name=?"))
+{
+LOG.errorv("ECDb profile upgrade failed: Updating ECDb sequences failed: %s", ecdb.GetLastError().c_str());
+return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+}
+
+int sequenceCount = 0;
+while (BE_SQLITE_ROW == stmt.Step())
+{
+Utf8CP sequenceName = stmt.GetValueText(0);
+
+BeAssert(stmt.GetColumnBytes(1) <= (int) sizeof(int64_t));
+int64_t val = INT64_C(-1);
+void const* blob = stmt.GetValueBlob(1);
+memcpy(&val, blob, sizeof(val));
+
+if (BE_SQLITE_OK != updateStmt.BindInt64(1, val) || BE_SQLITE_OK != updateStmt.BindText(2, sequenceName, Statement::MakeCopy::No))
+{
+LOG.errorv("ECDb profile upgrade failed: Updating ECDb sequences failed: %s", ecdb.GetLastError().c_str());
+return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+}
+
+if (BE_SQLITE_DONE != updateStmt.Step() || ecdb.GetModifiedRowCount() != 1)
+{
+LOG.error("ECDb profile upgrade failed: Updating ECDb sequences failed.");
+return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+}
+
+updateStmt.Reset();
+updateStmt.ClearBindings();
+sequenceCount++;
+}
+
+if (sequenceCount != 11)
+{
+LOG.errorv("ECDb profile upgrade failed: Unexpected number of ECDb sequences were updated. Expected: 11. Found: %d", sequenceCount);
+return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+}
+
+return BE_SQLITE_OK;
+}*/
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle        04/2016
+//+---------------+---------------+---------------+---------------+---------------+--------
+DbResult ECDbProfileUpgrader_3302::_Upgrade(ECDbR ecdb) const
+    {
+    Utf8String sql;
+    sql.Sprintf("UPDATE ec_Class SET Modifier=%d WHERE Name IN ('ExternalFileInfo', 'FileInfoOwnership') AND SchemaId=(SELECT Id FROM ec_Schema WHERE Name = 'ECDb_FileInfo')",
+                Enum::ToInt(ECClassModifier::None));
+
+    if (BE_SQLITE_OK != ecdb.ExecuteSql(sql.c_str()))
+        {
+        LOG.errorv("ECDb profile upgrade failed: Unsealing ECClasses 'ExternalFileInfo' and 'FileInfoOwnership' in ECSchema 'ECDb_FileInfo' failed: %s",
+                  ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    LOG.debug("ECDb profile upgrade: Unsealed ECClasses 'ExternalFileInfo' and 'FileInfoOwnership' in ECSchema 'ECDb_FileInfo'.");
+    return BE_SQLITE_OK;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle        04/2016
+//+---------------+---------------+---------------+---------------+---------------+--------
 DbResult ECDbProfileUpgrader_3300::_Upgrade(ECDbR ecdb) const
     {
     if (BE_SQLITE_OK != ecdb.ExecuteSql("ALTER TABLE ec_Class ADD COLUMN CustomAttributeContainerType INTEGER;"))
