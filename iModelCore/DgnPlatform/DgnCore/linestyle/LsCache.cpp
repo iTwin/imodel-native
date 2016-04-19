@@ -73,6 +73,7 @@ static LsComponent* cacheLoadComponent(LsLocationCR location)
 //---------------------------------------------------------------------------------------
 void LsComponent::UpdateLsOkayForTextureGeneration(LsOkayForTextureGeneration&current, LsOkayForTextureGeneration const&newValue)
     {
+    //  The larger the value the worse it is (NotAllowed > ChangeRequired).  We want to record the worst value.
     if (newValue > current)
         current = newValue;
     }
@@ -544,7 +545,7 @@ double              offset
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JimBartlett     11/98
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       LsCompoundComponent::_DoStroke (ViewContextP context, DPoint3dCP inPoints, int nPoints, LineStyleSymbCP modifiers) const
+StatusInt       LsCompoundComponent::_DoStroke (LineStyleContextR context, DPoint3dCP inPoints, int nPoints, LineStyleSymbCP modifiers) const
     {
     DVec3d    normal;
     RotMatrix matrix;
@@ -646,7 +647,7 @@ LsInternalComponent::LsInternalComponent (LsLocation const *pLocation) :
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   03/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       LsInternalComponent::_DoStroke (ViewContextP context, DPoint3dCP inPoints, int nPoints, LineStyleSymbCP modifiers) const
+StatusInt       LsInternalComponent::_DoStroke (LineStyleContextR context, DPoint3dCP inPoints, int nPoints, LineStyleSymbCP modifiers) const
     {
 #if defined (WIP_LINESTYLE)
     if (GetLocation ()->IsInternalDefault ())

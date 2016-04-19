@@ -269,6 +269,7 @@ StrokeComponentForRange(DgnDbR dgndb, LsComponentR component) : ComponentStroker
 #endif
     return;
     }
+};
 
 //=======================================================================================
 //! Used to generate a texture based on a line style.
@@ -405,11 +406,16 @@ Render::TexturePtr LsDefinition::GenerateTexture(ViewContextR viewContext, LineS
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     //  Assume the caller already knows this is something that must be converted but does not know it can be converted.
     BeAssert(m_lsComp->GetComponentType() != LsComponentType::RasterImage);
+
+    //  A component may cache information used from running texture generation for another component.
+    //  If so, reset it now.  _StartTextureGeneration also traverses the children.
     m_lsComp->_StartTextureGeneration();
 
     if (m_lsComp->_IsOkayForTextureGeneration() == Dgn::LsOkayForTextureGeneration::NotAllowed)
         return 0;
 
+    //  Something in the component tree may be modified for texture generation.  For example, the size of an iteration
+    //  may be expanded to accomodate a symbol that overflows.
     LsComponentPtr  comp = m_lsComp->_GetForTextureGeneration();
     if (comp.IsNull())
         return 0;
