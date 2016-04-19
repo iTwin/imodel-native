@@ -151,7 +151,7 @@ struct CachingDataSource :
         WSCACHE_EXPORT CacheTransaction StartCacheTransaction() override;
         WSCACHE_EXPORT WorkerThreadPtr GetCacheAccessThread() override;
 
-        WSCACHE_EXPORT ECSchemaList GetRepositorySchemas(CacheTransactionCR txn) override;
+        WSCACHE_EXPORT bvector<ECN::ECSchemaCP> GetRepositorySchemas(CacheTransactionCR txn) override;
         WSCACHE_EXPORT bvector<SchemaKey> GetRepositorySchemaKeys(CacheTransactionCR txn) override;
         WSCACHE_EXPORT WSInfo GetServerInfo(CacheTransactionCR txn) override;
 

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Cache/ServerQueryHelper.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -32,7 +32,7 @@ struct ServerQueryHelper
         WSCACHE_EXPORT ServerQueryHelper(const ISelectProvider& selectProvider);
 
         //! Returns empty when selecting all classes
-        WSCACHE_EXPORT bset<Utf8String> GetAllSelectedProperties(const ECSchemaList& ecSchemas) const;
+        WSCACHE_EXPORT bset<Utf8String> GetAllSelectedProperties(const bvector<ECN::ECSchemaCP>& ecSchemas) const;
         WSCACHE_EXPORT Utf8String GetSelect(ECClassCR ecClass) const;
     };
 

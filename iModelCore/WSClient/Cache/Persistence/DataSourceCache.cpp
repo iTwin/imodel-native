@@ -38,7 +38,7 @@ std::shared_ptr<ECDbDebugInfoHolder> CreateLoggerHolder(WSCacheState& state, Utf
         return nullptr;
         }
 
-    ECSchemaList schemas;
+    bvector<ECN::ECSchemaCP> schemas;
     state.GetECDbAdapter().GetECDb().Schemas().GetECSchemas(schemas);
 
     return std::make_shared<ECDbDebugInfoHolder>(state.GetECDbAdapter().GetECDb(), schemas, "DataSourceCache debug information", context);
@@ -339,7 +339,7 @@ BentleyStatus DataSourceCache::Reset()
         }
 
     // Remove all data
-    ECSchemaList ecSchemas;
+    bvector<ECN::ECSchemaCP> ecSchemas;
     if (SUCCESS != m_db.Schemas().GetECSchemas(ecSchemas))
         {
         BeAssert(false);

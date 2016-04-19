@@ -59,7 +59,7 @@ Utf8StringCR ecExpression
 TEST_F(ServerQueryHelperTests, GetAllSelectedProperties_EmptyOptions_ReturnsEmpty)
     {
     auto schema = GetTestSchema();
-    ECSchemaList schemas;
+    bvector<ECN::ECSchemaCP> schemas;
     schemas.push_back(schema.get());
 
     DataReadOptions options;
@@ -69,7 +69,7 @@ TEST_F(ServerQueryHelperTests, GetAllSelectedProperties_EmptyOptions_ReturnsEmpt
 TEST_F(ServerQueryHelperTests, GetAllSelectedProperties_AllClassesSelected_ReturnsEmpty)
     {
     auto schema = GetTestSchema();
-    ECSchemaList schemas;
+    bvector<ECN::ECSchemaCP> schemas;
     schemas.push_back(schema.get());
 
     DataReadOptions options;
@@ -81,7 +81,7 @@ TEST_F(ServerQueryHelperTests, GetAllSelectedProperties_AllClassesSelected_Retur
 TEST_F(ServerQueryHelperTests, GetAllSelectedProperties_MultipleClassesSelected_ReturnsEmpty)
     {
     auto schema = GetTestSchema();
-    ECSchemaList schemas;
+    bvector<ECN::ECSchemaCP> schemas;
     schemas.push_back(schema.get());
 
     DataReadOptions options;
@@ -94,7 +94,7 @@ TEST_F(ServerQueryHelperTests, GetAllSelectedProperties_MultipleClassesSelected_
 TEST_F(ServerQueryHelperTests, GetAllSelectedProperties_MultiplePropertiesSelectedFromClasses_ReturnsProperties)
     {
     auto schema = GetTestSchema();
-    ECSchemaList schemas;
+    bvector<ECN::ECSchemaCP> schemas;
     schemas.push_back(schema.get());
 
     DataReadOptions options;
@@ -112,7 +112,7 @@ TEST_F(ServerQueryHelperTests, GetAllSelectedProperties_MultiplePropertiesSelect
 TEST_F(ServerQueryHelperTests, GetAllSelectedProperties_DataSourceRemoteIdAndECInstanceIdPropertiesAdded_ExcludesCacheProperties)
     {
     auto schema = GetTestSchema();
-    ECSchemaList schemas;
+    bvector<ECN::ECSchemaCP> schemas;
     schemas.push_back(schema.get());
 
     DataReadOptions options;
@@ -138,7 +138,7 @@ TEST_F(ServerQueryHelperTests, GetAllSelectedProperties_ECExpressionHasInvalidPr
     DataReadOptions options;
     options.SelectClassAndProperty("TestSchema.Table", "Name");
 
-    ECSchemaList schemas;
+    bvector<ECN::ECSchemaCP> schemas;
     schemas.push_back(schema.get());
 
     auto properties = ServerQueryHelper(options).GetAllSelectedProperties(schemas);
@@ -155,7 +155,7 @@ TEST_F(ServerQueryHelperTests, GetAllSelectedProperties_PropertyWithECExpression
     DataReadOptions options;
     options.SelectClassAndProperty("TestSchema.Table", "Name");
 
-    ECSchemaList schemas;
+    bvector<ECN::ECSchemaCP> schemas;
     schemas.push_back(schema.get());
 
     auto properties = ServerQueryHelper(options).GetAllSelectedProperties(schemas);

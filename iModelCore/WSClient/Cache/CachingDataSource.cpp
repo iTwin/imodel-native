@@ -406,12 +406,12 @@ AsyncTaskPtr<CachingDataSource::Result> CachingDataSource::UpdateSchemas(ICancel
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaList CachingDataSource::GetRepositorySchemas(CacheTransactionCR txn)
+bvector<ECN::ECSchemaCP> CachingDataSource::GetRepositorySchemas(CacheTransactionCR txn)
     {
-    ECSchemaList schemas;
+    bvector<ECN::ECSchemaCP> schemas;
     for (SchemaKeyCR schemaKey : GetRepositorySchemaKeys(txn))
         {
-        ECSchemaCP schema = txn.GetCache().GetAdapter().GetECSchema(Utf8String(schemaKey.m_schemaName));
+        ECSchemaCP schema = txn.GetCache().GetAdapter().GetECSchema(schemaKey.m_schemaName.c_str());
         if (nullptr == schema)
             {
             BeAssert(false);

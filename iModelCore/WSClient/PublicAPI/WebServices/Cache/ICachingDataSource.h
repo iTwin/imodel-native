@@ -117,7 +117,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
 
         //! Load whole schemas that were synced from remote repository. Will be slow if schemas are large.
         //! If classes are not needed, consider using GetRepositorySchemaKeys
-        virtual ECSchemaList GetRepositorySchemas(CacheTransactionCR txn) = 0;
+        virtual bvector<ECN::ECSchemaCP> GetRepositorySchemas(CacheTransactionCR txn) = 0;
 
         //! Get schema keys for schemas that were synced from remote repository.
         virtual bvector<SchemaKey> GetRepositorySchemaKeys(CacheTransactionCR txn) = 0;
