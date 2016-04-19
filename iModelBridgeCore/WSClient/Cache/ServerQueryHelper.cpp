@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/ServerQueryHelper.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -46,7 +46,7 @@ bset<ECPropertyCP> ServerQueryHelper::GetRequiredProperties(ECPropertyCP ecPrope
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-bset<Utf8String> ServerQueryHelper::GetAllSelectedProperties(const ECSchemaList& ecSchemas) const
+bset<Utf8String> ServerQueryHelper::GetAllSelectedProperties(const bvector<ECN::ECSchemaCP>& ecSchemas) const
     {
     bset<Utf8String> properties;
 

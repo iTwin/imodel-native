@@ -496,7 +496,7 @@ TEST_F(CachingDataSourceTests, DISABLED_OpenOrCreate_WSG2eBPluginProductionRepos
             };
 
         a = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
-        ECSchemaList eschemas;
+        bvector<ECN::ECSchemaCP> eschemas;
         txn.GetCache().GetECDb().Schemas().GetECSchemas(eschemas);
         b = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
         BeDebugLog(Utf8PrintfString("GetECSchemas  took:%lld ms rels:%d", b - a).c_str());

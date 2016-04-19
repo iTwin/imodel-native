@@ -79,7 +79,7 @@ struct MockCachingDataSource : public ICachingDataSource
         MOCK_METHOD0 (GetCacheAccessThread,
             WorkerThreadPtr ());
         MOCK_METHOD1 (GetRepositorySchemas,
-            ECSchemaList (CacheTransactionCR));
+                      bvector<ECN::ECSchemaCP>(CacheTransactionCR));
         MOCK_METHOD1 (GetRepositorySchemaKeys, 
             bvector<SchemaKey> (CacheTransactionCR txn));
         MOCK_METHOD1 (GetServerInfo,
