@@ -2,7 +2,7 @@
 |
 |     $Source: ThreeMxSchema/MRMesh/MRMeshCache.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "..\ThreeMxSchemaInternal.h"
@@ -507,7 +507,6 @@ MRMeshCacheManager::RequestStatus ProcessRequests ()
                 {
                 MRMeshUtil::DisplayNodeFailureWarning (fileName.c_str());
                 curr->first->m_parent->RemoveChild (curr->first);
-                curr = m_requests.erase (curr);
                 break;
                 }
 

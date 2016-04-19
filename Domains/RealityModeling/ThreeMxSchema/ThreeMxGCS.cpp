@@ -26,7 +26,10 @@ BentleyStatus ThreeMxGCS::GetProjectionTransform (TransformR transform, S3SceneI
         transform = Transform::From (DPoint3d::FromXYZ (sceneInfo.SRSOrigin[0], sceneInfo.SRSOrigin[1], sceneInfo.SRSOrigin[2]));
 
     if (sceneInfo.SRS.empty())
+        {
+        transform = Transform::FromIdentity();
         return SUCCESS;         // No GCS...
+        }
 
     int                     epsgCode;
     WString                 warningMsg;
