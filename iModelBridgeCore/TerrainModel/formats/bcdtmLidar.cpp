@@ -2,7 +2,7 @@
 |
 |     $Source: formats/bcdtmLidar.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "TerrainModel/Formats/Formats.h"
@@ -577,7 +577,11 @@ BENTLEYDTMFORMATS_EXPORT DTMStatusInt bcdtmFormatLidar_importLasFileFeaturesDtmO
 
         bool isWithheld = false;
         LidarImporter::Classification classification;
-        if (pPHB.PointDataFormatID < 6)
+        if (pPHB.VersionMajor == 1 && pPHB.VersionMinor == 0)
+            {
+            classification = ConvertOldClassification(format.Format0.Classification.ClassificationValue);
+            }
+        else if (pPHB.PointDataFormatID < 6)
             {
             isWithheld = format.Format0.Classification.Withheld;
             classification = ConvertOldClassification(format.Format0.Classification.ClassificationValue);
@@ -692,7 +696,11 @@ BENTLEYDTMFORMATS_EXPORT DTMStatusInt bcdtmFormatLidar_getLasFileFeatureTypes (W
 
         bool isWithheld = false;
         LidarImporter::Classification classification;
-        if (pPHB.PointDataFormatID < 6)
+        if (pPHB.VersionMajor == 1 && pPHB.VersionMinor == 0)
+            {
+            classification = ConvertOldClassification(format.Format0.Classification.ClassificationValue);
+            }
+        else if (pPHB.PointDataFormatID < 6)
             {
             isWithheld = format.Format0.Classification.Withheld;
             classification = ConvertOldClassification (format.Format0.Classification.ClassificationValue);
