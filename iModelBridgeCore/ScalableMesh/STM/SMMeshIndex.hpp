@@ -2377,7 +2377,15 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
 //=======================================================================================
     template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::TextureFromRasterRecursive(HIMMosaic* sourceRasterP)
     {
-    TextureFromRaster(sourceRasterP);
+    if (IsLeaf())
+        {
+        TextureFromRaster(sourceRasterP);
+        }
+    else RunOnNextAvailableThread(std::bind([] (SMMeshIndexNode<POINT, EXTENT>* node, HIMMosaic* rasterP, size_t threadId) ->void
+        {
+        node->TextureFromRaster(rasterP);
+        SetThreadAvailableAsync(threadId);
+        }, this, sourceRasterP, std::placeholders::_1));
     if (m_pSubNodeNoSplit != NULL && !m_pSubNodeNoSplit->IsVirtualNode())
         {
         dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(m_pSubNodeNoSplit)->TextureFromRasterRecursive(sourceRasterP);
@@ -2390,7 +2398,12 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
                 {
                 auto mesh = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(m_apSubNodes[indexNodes]);
                 assert(mesh != nullptr);
-                mesh->TextureFromRasterRecursive(sourceRasterP);
+                if (m_nodeHeader.m_level+1 == m_SMIndex->GetTerrainDepth())
+                    {
+                    std::thread t(&SMMeshIndexNode<POINT, EXTENT>::TextureFromRasterRecursive,mesh.GetPtr(), sourceRasterP);
+                    t.detach();
+                    }
+                else mesh->TextureFromRasterRecursive(sourceRasterP);
                 }
             }
         }
@@ -3254,6 +3267,7 @@ template<class POINT, class EXTENT>  void  SMMeshIndex<POINT, EXTENT>::TextureFr
         }
     if (sourceRasterP == nullptr || sourceRasterP->GetEffectiveShape() == nullptr || sourceRasterP->GetEffectiveShape()->IsEmpty()) return;
     if (m_pRootNode != NULL)   dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(m_pRootNode)->TextureFromRasterRecursive(sourceRasterP);
+    WaitForThreadStop();
     }
 
 template<class POINT, class EXTENT>  void  SMMeshIndex<POINT, EXTENT>::PerformClipAction(ClipAction action, uint64_t clipId, DRange3d& extent, bool setToggledWhenIDIsOn)

@@ -11,12 +11,12 @@ class SMNodeGroupMasterHeader;
 #include <ScalableMesh\IScalableMesh.h>
 #include <ScalableMesh\IScalableMeshNodeCreator.h>
 #include <ScalableMesh\ScalableMeshLib.h>
-#undef static_assert
+/*#undef static_assert
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #include <ImagePP\all\h\HCDPacket.h>
 #include <ImagePP\all\h\HCDCodecZlib.h>
 #include "..\STM\ScalableMeshQuery.h"
-#undef static_assert
+#undef static_assert*/
 #include <iostream>
 #include <TerrainModel/Core/DTMIterators.h>
 #include "..\STM\LogUtils.h"
@@ -285,6 +285,8 @@ void RunPrecisionTest(WString& stmFileName)
     DRange3d range;
 
     meshP->GetRange(range);
+   // range.low.x += (range.XLength() / 2);
+   // range.low.y += (range.YLength() / 2);
     range.ScaleAboutCenter(range, 0.5);
     std::random_device rd;
 
@@ -304,7 +306,7 @@ void RunPrecisionTest(WString& stmFileName)
         tmpPoint.x = val_x(e1);
         tmpPoint.y = val_y(e1);
         draping->DrapePoint(&tmpPoint.z, NULL, NULL, NULL, &drapeType, tmpPoint);
-        allTestPts.push_back(tmpPoint);
+        if(tmpPoint.z != DBL_MAX) allTestPts.push_back(tmpPoint);
         }
     for (size_t i = 0; i < nbResolutions - 1; ++i)
         {
@@ -324,8 +326,11 @@ void RunPrecisionTest(WString& stmFileName)
                     if (dtm.get() != nullptr)
                         {
                         node->GetBcDTM()->DrapePoint(&z, NULL, NULL, NULL, &drapeType, &tmpPoint);
-                        precisionVals[i] += fabs(z - tmpPoint.z);
-                        nVals[i]++;
+                        if (z != DBL_MAX)
+                            {
+                            precisionVals[i] += fabs(z - tmpPoint.z);
+                            nVals[i]++;
+                            }
                         }
                     break;
                     }
@@ -343,7 +348,7 @@ void RunPrecisionTest(WString& stmFileName)
 
 void RunWriteTileTest(WString& stmFileName, const wchar_t* tileID)
     {
-    LOG_SET_PATH_W("E:\\output\\scmesh\\2016-04-15\\")
+ /*   LOG_SET_PATH_W("E:\\output\\scmesh\\2016-04-15\\")
     StatusInt status;
     ScalableMesh::IScalableMeshPtr meshP = ScalableMesh::IScalableMesh::GetFor(stmFileName.c_str(), true, true, status);
     wchar_t *end;
@@ -372,7 +377,7 @@ void RunWriteTileTest(WString& stmFileName, const wchar_t* tileID)
                     break;
                 }
             }
-        }
+        }*/
     }
 
 void RunDTMTriangulateTest()
@@ -572,15 +577,15 @@ struct  SMHost : ScalableMesh::ScalableMeshLib::Host
         }
     bcdtmObject_triangulateStmTrianglesDtmObject(bcdtm->GetTinHandle());
 #endif
-#if 0
+
     WString stmFileName(argv[1]);
     RunPrecisionTest(stmFileName);
-#endif
+
 
     //RunDTMClipTest();
     //RunDTMTriangulateTest();
-    WString stmFileName(argv[1]);
-    RunWriteTileTest(stmFileName, argv[2]);
+    /*WString stmFileName(argv[1]);
+    RunWriteTileTest(stmFileName, argv[2]);*/
     std::cout << "THE END" << std::endl;
     return 0;
 }
