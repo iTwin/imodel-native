@@ -304,25 +304,6 @@ BentleyStatus ECDbSchemaManager::BatchImportECSchemas(SchemaImportContext& conte
     }
 
 /*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        03/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaManager::CompareECSchemas(Utf8StringR differences, ECN::ECSchemaCR lhs, ECN::ECSchemaCR rhs) const
-    {
-    ECSchemaList lhsSchemas, rhsSchemas;
-    lhsSchemas.push_back(&lhs);
-    rhsSchemas.push_back(&rhs);
-
-    ECSchemaComparer sc;
-    ECSchemaChanges changes;
-    if (SUCCESS != sc.Compare(changes, lhsSchemas, rhsSchemas))
-        return ERROR;
-
-    changes.Optimize();
-    changes.WriteToString(differences);
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaCP ECDbSchemaManager::GetECSchema(Utf8CP schemaName, bool ensureAllClassesLoaded) const
