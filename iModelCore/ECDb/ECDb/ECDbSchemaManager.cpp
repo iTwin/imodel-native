@@ -136,7 +136,7 @@ void BuildDependencyOrderedSchemaList(bvector<ECSchemaP>& schemas, ECSchemaP ins
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                     06/2012
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDbSchemaManager::ImportECSchemas(ECSchemaCacheR cache, ImportOptions const& options) const
+BentleyStatus ECDbSchemaManager::ImportECSchemas(ECSchemaCacheR cache) const
     {
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin ECDbSchemaManager::ImportECSchemas");
 
@@ -160,7 +160,7 @@ BentleyStatus ECDbSchemaManager::ImportECSchemas(ECSchemaCacheR cache, ImportOpt
     if (SUCCESS != context.Initialize(m_map.GetDbSchemaR(), m_ecdb))
         return ERROR;
 
-    if (SUCCESS != BatchImportECSchemas(context, cache, options))
+    if (SUCCESS != BatchImportECSchemas(context, cache))
         return ERROR;
 
     ECSchemaCompareContext& compareContext = context.GetECSchemaCompareContext();
@@ -199,7 +199,7 @@ BentleyStatus ECDbSchemaManager::ImportECSchemas(ECSchemaCacheR cache, ImportOpt
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                   Affan.Khan        29/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaManager::BatchImportECSchemas(SchemaImportContext& context, ECSchemaCacheR schemaCache, ImportOptions const& options) const
+BentleyStatus ECDbSchemaManager::BatchImportECSchemas(SchemaImportContext& context, ECSchemaCacheR schemaCache) const
     {
     bvector<ECSchemaP> schemas;
     schemaCache.GetSchemas(schemas);
@@ -232,7 +232,7 @@ BentleyStatus ECDbSchemaManager::BatchImportECSchemas(SchemaImportContext& conte
             primarySchemas.push_back(schema);
         }
 
-    if (!suppSchemas.empty() && options.DoSupplementation())
+    if (!suppSchemas.empty())
         {
         for (ECSchemaP primarySchema : primarySchemas)
             {
@@ -300,25 +300,6 @@ BentleyStatus ECDbSchemaManager::BatchImportECSchemas(SchemaImportContext& conte
             return ERROR;
         }
 
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        03/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaManager::CompareECSchemas(Utf8StringR differences, ECN::ECSchemaCR lhs, ECN::ECSchemaCR rhs) const
-    {
-    ECSchemaList lhsSchemas, rhsSchemas;
-    lhsSchemas.push_back(&lhs);
-    rhsSchemas.push_back(&rhs);
-
-    ECSchemaComparer sc;
-    ECSchemaChanges changes;
-    if (SUCCESS != sc.Compare(changes, lhsSchemas, rhsSchemas))
-        return ERROR;
-
-    changes.Optimize();
-    changes.WriteToString(differences);
     return SUCCESS;
     }
 
@@ -520,30 +501,6 @@ BentleyStatus ECDbSchemaManager::CreateECClassViewsInDb() const
     {
     return m_map.CreateECClassViewsInDb();
     }
-
-//*********************************************************************************
-// ECDbSchemaManager::ImportOptions
-//*********************************************************************************
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Krischan.Eberle   04/2014
-//---------------------------------------------------------------------------------------
-ECDbSchemaManager::ImportOptions::ImportOptions()
-    : m_doSupplementation(true)
-    {}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Krischan.Eberle   04/2014
-//---------------------------------------------------------------------------------------
-ECDbSchemaManager::ImportOptions::ImportOptions(bool doSupplementation)
-    : m_doSupplementation(doSupplementation)
-    {}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Krischan.Eberle   04/2014
-//---------------------------------------------------------------------------------------
-bool ECDbSchemaManager::ImportOptions::DoSupplementation() const { return m_doSupplementation; }
-
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
 

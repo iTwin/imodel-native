@@ -403,7 +403,7 @@ bool InstanceCRUDTests::importSchema (WString schemaNameWithoutVerionAndExtensio
                 LOG1.infov ("[SRF] Schema Read Failed :%s", entry.GetNameUtf8 ().c_str());
             }
         }
-    auto importSchemaStatus = m_db.Schemas ().ImportECSchemas (*cache, ECDbSchemaManager::ImportOptions ());
+    auto importSchemaStatus = m_db.Schemas ().ImportECSchemas (*cache);
     if (importSchemaStatus == SUCCESS)
         {
         LOG1.infov("[SIS] Schema Import successful: %s \n", Utf8String(m_schemaFullPath).c_str());

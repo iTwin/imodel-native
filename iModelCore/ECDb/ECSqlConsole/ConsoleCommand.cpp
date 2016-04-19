@@ -271,20 +271,22 @@ void CreateCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> const&
         return;
         }
 
-    auto const& ecdbFileName = args.at(1);
-    BeFileName beECDbFile(ecdbFileName.c_str(), true);
-    if (beECDbFile.DoesPathExist())
+    BeFileName ecdbFileName(args[1].c_str(), true);
+    if (ecdbFileName.DoesPathExist())
         {
-        Console::WriteErrorLine("Cannot create ECDb file %s as it already exists.", beECDbFile.GetNameUtf8().c_str());
+        Console::WriteErrorLine("Cannot create ECDb file %s as it already exists.", ecdbFileName.GetNameUtf8().c_str());
         return;
         }
-    auto createNewDbStatus = session.GetECDbR ().CreateNewDb(ecdbFileName.c_str());
-    if (createNewDbStatus != BE_SQLITE_OK, BentleyStatus::SUCCESS)
+    
+    const DbResult stat = session.GetECDbR().CreateNewDb(ecdbFileName);
+    if (BE_SQLITE_OK != stat)
         {
-        Console::WriteErrorLine("Failed to create ECDb file %s", ecdbFileName.c_str());
+        Console::WriteErrorLine("Failed to create ECDb file %s. See log for details.", ecdbFileName.GetNameUtf8().c_str());
+        session.GetECDbR().AbandonChanges();
+        return;
         }
 
-    Console::WriteLine("Successfully created ECDb file %s and loaded it in read/write mode", ecdbFileName.c_str());
+    Console::WriteLine("Successfully created ECDb file %s and loaded it in read/write mode", ecdbFileName.GetNameUtf8().c_str());
     session.GetECDbR ().SaveChanges();
     }
 
@@ -360,7 +362,7 @@ void CommitCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> const&
         return;
         }
 
-    auto stat = session.GetECDbR ().SaveChanges();
+    DbResult stat = session.GetECDbR ().SaveChanges();
     if (stat != BE_SQLITE_OK)
         Console::WriteErrorLine("Commit failed: %s", session.GetECDb().GetLastError().c_str());
     else
@@ -389,7 +391,7 @@ Utf8String RollbackCommand::_GetUsage() const
 //---------------------------------------------------------------------------------------
 void RollbackCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> const& args) const
     {
-    const auto argCount = args.size();
+    const size_t argCount = args.size();
     if (argCount != 1)
         {
         Console::WriteErrorLine("Usage: %s", GetUsage().c_str());
@@ -397,9 +399,7 @@ void RollbackCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> cons
         }
 
     if (!session.HasECDb(true))
-        {
         return;
-        }
 
     if (session.GetECDb().IsReadonly())
         {
@@ -413,7 +413,7 @@ void RollbackCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> cons
         return;
         }
 
-    auto stat = session.GetECDbR ().AbandonChanges();
+    DbResult stat = session.GetECDbR ().AbandonChanges();
     if (stat != BE_SQLITE_OK)
         Console::WriteErrorLine("Rollback failed: %s", session.GetECDb().GetLastError().c_str());
     else
@@ -458,9 +458,7 @@ void ImportCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> const&
         }
 
     if (!session.HasECDb(true))
-        {
         return;
-        }
 
     if (session.GetECDb().IsReadonly())
         {
@@ -522,7 +520,7 @@ void ImportCommand::RunImportSchema(ECSqlConsoleSession& session, BeFileNameCR e
     Utf8CP schemaStr = isFolder ? "ECSchemas in folder" : "ECSchema";
 
     Savepoint savepoint(session.GetECDbR(), "import ecschema");
-    if (SUCCESS == session.GetECDb().Schemas().ImportECSchemas(context->GetCache(), ECDbSchemaManager::ImportOptions()))
+    if (SUCCESS == session.GetECDb().Schemas().ImportECSchemas(context->GetCache()))
         {
         savepoint.Commit(nullptr);
         Console::WriteLine("Successfully imported %s '%s'.", schemaStr, ecschemaPath.GetNameUtf8().c_str());

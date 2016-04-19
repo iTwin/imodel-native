@@ -167,11 +167,12 @@ ECSqlStatus SystemPropertyECSqlBinder::_BindInt64(int64_t value)
     if (!stat.IsSuccess())
         return stat;
 
-    if (auto ehs = GetOnBindEventHandlers())
+    std::vector<IECSqlBinder*>* ehs = GetOnBindEventHandlers();
+    if (ehs != nullptr)
         {
-        for (auto eh : *ehs)
+        for (IECSqlBinder* eh : *ehs)
             {
-            auto es = eh->BindInt64(value);
+            ECSqlStatus es = eh->BindInt64(value);
             if (es != ECSqlStatus::Success)
                 return es;
             }
@@ -180,7 +181,7 @@ ECSqlStatus SystemPropertyECSqlBinder::_BindInt64(int64_t value)
     if (!IsNoop())
         {
         BeAssert(m_sqliteIndex > 0);
-        const auto sqliteStat = GetSqliteStatementR ().BindInt64(m_sqliteIndex, value);
+        const DbResult sqliteStat = GetSqliteStatementR ().BindInt64(m_sqliteIndex, value);
         if (sqliteStat != BE_SQLITE_OK)
             return ReportError(sqliteStat, "ECSqlStatement::BindInt64");
         }
@@ -206,9 +207,10 @@ ECSqlStatus SystemPropertyECSqlBinder::_BindText(Utf8CP value, IECSqlBinder::Mak
         return ECSqlStatus::Error;
         }
 
-    if (auto ehs = GetOnBindEventHandlers())
+    std::vector<IECSqlBinder*>* ehs = GetOnBindEventHandlers();
+    if (ehs != nullptr)
         {
-        for (auto eh : *ehs)
+        for (IECSqlBinder* eh : *ehs)
             {
             auto es = eh->BindText(value, makeCopy, byteCount);
             if (es != ECSqlStatus::Success)

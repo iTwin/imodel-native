@@ -11,7 +11,7 @@
 #include <ECDb/IECSqlValue.h>
 #include <ECDb/IECSqlBinder.h>
 #include <ECDb/ECInstanceId.h>
-
+#include <list>
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //=======================================================================================
@@ -394,6 +394,8 @@ public:
 
 typedef ECSqlStatement const& ECSqlStatementCR;
 
+struct ECSqlStatementCache;
+
 //=======================================================================================
 //! A reference-counted ECSqlStatement. ECSqlStatement is freed when last reference is released.
 //! @remarks Its main purpose is to be used in a statement cache. Caching a statement allows to reuse an already prepared
@@ -408,17 +410,22 @@ typedef ECSqlStatement const& ECSqlStatementCR;
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE CachedECSqlStatement : ECSqlStatement
     {
+    friend struct ECSqlStatementCache;
+
 private:
-    mutable uint32_t m_refCount;
+    mutable BeAtomic<uint32_t> m_refCount;
+    bool m_isInCache;
+    ECSqlStatementCache const& m_cache;
+
+    explicit CachedECSqlStatement(ECSqlStatementCache const& cache) : ECSqlStatement(), m_isInCache(true), m_cache(cache) {}
 
 public:
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 
-    CachedECSqlStatement() : ECSqlStatement(), m_refCount(0) {}
     ~CachedECSqlStatement() {}
 
-    uint32_t AddRef() const {return ++m_refCount;}
-    uint32_t GetRefCount() const {return m_refCount;}
+    uint32_t AddRef() const { return m_refCount.IncrementAtomicPre(); }
+    uint32_t GetRefCount() const { return m_refCount.load(); }
     ECDB_EXPORT uint32_t Release();
     };
 
@@ -447,20 +454,22 @@ typedef RefCountedPtr<CachedECSqlStatement> CachedECSqlStatementPtr;
 struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatementCache : NonCopyableClass
     {
 private:
+    friend struct CachedECSqlStatement;
+
     mutable BeDbMutex m_mutex;
     Utf8String m_name;
-    mutable bvector<CachedECSqlStatementPtr> m_entries;
-    size_t m_maxSize;
+    mutable std::list<CachedECSqlStatementPtr> m_entries;
+    uint32_t m_maxSize;
 
     CachedECSqlStatement* FindEntry(Utf8CP ecsql) const;
-    CachedECSqlStatement* AddStatement(ECDbCR ecdb, Utf8CP ecsql) const;
+    void AddStatement(CachedECSqlStatementPtr&, ECDbCR, Utf8CP ecsql) const;
 
 public:
     //! Initializes a new ECSqlStatementCache of the specified size.
     //! @param [in] maxSize Maximum number of statements the cache can hold. If a new statement is added
     //! to a full cache, the oldest statement is removed.
     //! @param [in] name Name for the cache in case apps use multiple caches and need to tell between them
-    ECDB_EXPORT explicit ECSqlStatementCache(size_t maxSize, Utf8CP name = nullptr);
+    ECDB_EXPORT explicit ECSqlStatementCache(uint32_t maxSize, Utf8CP name = nullptr);
     ~ECSqlStatementCache() {Empty();}
     
     //! Gets a cached and prepared statement for the specified ECSQL.
@@ -477,7 +486,7 @@ public:
     bool IsEmpty() const {return m_entries.empty();}
     //! Returns number of currently cached statements
     //! @return Number of currently cached statements
-    size_t Size() const {return m_entries.size();}
+    uint32_t Size() const {return (uint32_t) m_entries.size();}
     //! Empties the cache, thus releasing any cached statements
     ECDB_EXPORT void Empty();
 

@@ -179,7 +179,7 @@ BentleyStatus ECDbTestProject::ImportECSchema (ECN::ECSchemaPtr& schema, WCharCP
     if (schema == nullptr)
         return ERROR;
 
-    if (SUCCESS != GetECDbCR().Schemas().ImportECSchemas(schemaReadContext->GetCache(), ECDbSchemaManager::ImportOptions()))
+    if (SUCCESS != GetECDbCR().Schemas().ImportECSchemas(schemaReadContext->GetCache()))
         return ERROR;
 
     GetECDb().SaveChanges();

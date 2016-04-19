@@ -111,42 +111,13 @@ typedef bvector<ECN::ECSchemaCP> ECSchemaList;
 //+===============+===============+===============+===============+===============+======
 struct ECDbSchemaManager : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCopyableClass
     {
-    public:
-        //=======================================================================================
-       //! Options for importing an ECSchema into an ECDb file.
-       //! @see ECDbSchemaManager::ImportECSchemas
-       // @bsiclass                                                Krischan.Eberle      04/2014
-       //+===============+===============+===============+===============+===============+======
-        struct ImportOptions : NonCopyableClass
-            {
-            private:
-                bool m_doSupplementation;
-
-            public:
-                //! Initializes an ImportOptions object with default settings:
-                //!     - ImportOptions::DoSupplementation : true
-                ECDB_EXPORT ImportOptions();
-
-                //! Initializes an ImportOptions object
-                //! @param[in] doSupplementation Normally true. If the list of schemas to be imported contain supplemental ECSchemas, use 
-                //!                         them to supplement primary ECSchemas in the list of schemas to be imported.
-                //!                         Otherwise, supplemental ECSchemas will be ignored
-                ECDB_EXPORT explicit ImportOptions(bool doSupplementation);
-
-                //! Gets a value indicating whether supplementation should be performed or not.
-                //! If the list of schemas to be imported contain supplemental ECSchemas, use
-                //! them to supplement primary ECSchemas in the list of schemas to be imported.
-                //! Otherwise, supplemental ECSchemas will be ignored        
-                ECDB_EXPORT bool DoSupplementation() const;
-            };
-
     private:
         ECDb const& m_ecdb;
         ECDbMap& m_map;
         ECDbSchemaReader* m_schemaReader;
         mutable BeMutex m_criticalSection;
 
-        BentleyStatus BatchImportECSchemas(SchemaImportContext&, ECN::ECSchemaCacheR, ImportOptions const&) const;
+        BentleyStatus BatchImportECSchemas(SchemaImportContext&, ECN::ECSchemaCacheR) const;
 
         ECN::ECSchemaCP GetECSchema(ECN::ECSchemaId, bool ensureAllClassesLoaded) const;
         //! Ensure that all direct subclasses of @p ecClass are loaded. Subclasses of its subclasses are not loaded
@@ -175,10 +146,9 @@ struct ECDbSchemaManager : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCopya
         //!                     If the referenced ECSchemas are known to have already been imported, they are not required, but it does no harm to include them again
         //!                     (the method detects that they are already imported, and simply skips them)
         //!                     All schemas should be read from a single ECN::ECSchemaReadContext. 
-        //!                     If any dublicates are found in @p schemaCache an error will returned.
-        //! @param[in] options Schema import options
+        //!                     If any duplicates are found in @p schemaCache an error will returned.
         //! @return BentleyStatus::SUCCESS or BentleyStatus::ERROR (error details are being logged)
-        ECDB_EXPORT BentleyStatus ImportECSchemas(ECN::ECSchemaCacheR schemaCache, ImportOptions const& options = ImportOptions()) const;
+        ECDB_EXPORT BentleyStatus ImportECSchemas(ECN::ECSchemaCacheR schemaCache) const;
 
         //! Checks whether the ECDb file contains the ECSchema with the specified name or not.
         //! @param[in] schemaName Name of the ECSchema to check for
@@ -257,12 +227,6 @@ struct ECDbSchemaManager : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCopya
         //! No code should depend on these views.
         //! @return SUCCESS OR ERROR
         ECDB_EXPORT BentleyStatus CreateECClassViewsInDb() const;
-        //! Compare two schema and return readable difference as string
-        //! @param[out] differences Contain text in human readable for contain differences of two schemas;
-        //! @param[in] lhs Existing or older schema then rhs
-        //! @param[in] rhs Modified or newer schema then lhs
-        //! @return SUCCESS OR ERROR
-        ECDB_EXPORT BentleyStatus CompareECSchemas(Utf8StringR differences, ECN::ECSchemaCR lhs, ECN::ECSchemaCR rhs) const;
 #if !defined (DOCUMENTATION_GENERATOR)    
         //! For cases where we are working with an ECClass in a referenced ECSchema that is a duplicate of one already persisted
         //! and therefore doesn't have the persistent ECClassId set. Generally, we would prefer that the primary ECSchema had
