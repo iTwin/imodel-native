@@ -9,6 +9,7 @@
 #include <DgnPlatform/ImageUtilities.h>
 #include <DgnPlatform/RealityDataCache.h>
 
+#define DEBUG_MERCATOR
 #ifdef DEBUG_MERCATOR
 #   define DEBUG_PRINTF THREADLOG.debugv
 #   define DEBUG_ERRORLOG THREADLOG.errorv
@@ -91,8 +92,8 @@ struct TiledRaster : IRealityData<TiledRaster, BeSQLiteRealityDataStorage, HttpR
     private:
         RgbImageInfo m_expectedImageInfo;
     public:
-        RequestOptions() : RealityDataCacheOptions(false,false) {DEFINE_BENTLEY_REF_COUNTED_MEMBER_INIT}
-        RequestOptions(RgbImageInfo const& expectedImageInfo) : m_expectedImageInfo(expectedImageInfo), RealityDataCacheOptions(true, true) {DEFINE_BENTLEY_REF_COUNTED_MEMBER_INIT}
+        RequestOptions() : RealityDataCacheOptions(false,false) {}
+        RequestOptions(RgbImageInfo const& expectedImageInfo) : m_expectedImageInfo(expectedImageInfo), RealityDataCacheOptions(true, true) {}
         RgbImageInfo const& GetExpectedImageInfo() const {return m_expectedImageInfo;}
     };
 
@@ -112,7 +113,7 @@ protected:
     virtual Utf8CP _GetId() const override {return m_url.c_str();}
     virtual bool _IsExpired() const override;
     virtual BentleyStatus _InitFrom(IRealityDataBase const& self, RealityDataCacheOptions const&) override;
-    virtual BentleyStatus _InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> const& header, bvector<Byte> const& body, HttpRealityDataSource::RequestOptions const& options) override;
+    virtual BentleyStatus _InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> const& header, ByteStream const& body, HttpRealityDataSource::RequestOptions const& options) override;
     virtual BentleyStatus _InitFrom(BeSQLite::Db& db, BeMutex& cs, Utf8CP key, BeSQLiteRealityDataStorage::SelectOptions const& options) override;
     virtual BentleyStatus _Persist(BeSQLite::Db& db, BeMutex& cs) const override;
     virtual BeSQLiteRealityDataStorage::DatabasePrepareAndCleanupHandlerPtr _GetDatabasePrepareAndCleanupHandler() const override;
@@ -182,7 +183,6 @@ static double s_minLatitude  =  -85.05112878;
 static double s_maxLatitude  =   85.05112878;
 static double s_minLongitude = -180.0;
 static double s_maxLongitude =  180.0;
-
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   03/16
@@ -278,7 +278,7 @@ protected:
     bool m_preferFinerResolution = false;                       //!< Download and display more tiles, in order to get the best resolution? Else, go with 1/4 as many tiles and be satisfied with slightly fuzzy resolution.
     double m_originLatitudeInRadians;
     bmap<LatLongPoint, DPoint3d> m_latLngToMeters;
-    ByteStream m_rgbBuffer;
+    Render::Image m_image;
 
 public:
     bool IsValid() const {return nullptr != m_units.GetDgnGCS();}
@@ -290,7 +290,6 @@ public:
     static uint8_t GetZoomLevels() {return (uint8_t)(MAX_ZOOM_LEVEL - MIN_ZOOM_LEVEL);}
     bool ComputeZoomLevel(DgnViewportR);
     void GetTileIds(TileList& tileids, uint8_t desiredZoomLevel);
-    Render::TexturePtr DefineTexture(RgbImageInfo const& imageInfo, RenderContext& context);
     Render::TextureP GetCachedTexture(RgbImageInfo& cachedImageInfo, TileIdCR);
     void DrawTile(RenderContext&, TileIdCR tileid, RgbImageInfo const& imageInfo, Render::TextureR texture, double bias);
     void DrawAndCacheTile(RenderContext& context, TileIdCR tileid, TiledRaster& realityData);
@@ -510,17 +509,6 @@ Render::TextureP WebMercatorDisplay::GetCachedTexture(RgbImageInfo& cachedImageI
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-Render::TexturePtr WebMercatorDisplay::DefineTexture(RgbImageInfo const& imageInfo, RenderContext& context)
-    {
-    BeAssert(!imageInfo.m_isBGR);
-    
-    Render::ImagePtr image = new Render::Image(imageInfo.m_width, imageInfo.m_height, imageInfo.m_hasAlpha ? Render::Image::Format::Rgba : Render::Image::Format::Rgb, m_rgbBuffer.GetData(), m_rgbBuffer.GetSize());
-    return context.GetTargetR().CreateTileSection(*image, false);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      10/14
-+---------------+---------------+---------------+---------------+---------------+------*/
 void WebMercatorDisplay::DrawTile(RenderContext& context, TileIdCR tileid, RgbImageInfo const& imageInfo, Render::TextureR texture, double bias)
     {
     // Get 4 corners in this order:
@@ -553,29 +541,24 @@ void WebMercatorDisplay::DrawAndCacheTile(RenderContext& context, TileIdCR tilei
     RgbImageInfo imageInfo = realityData.GetImageInfo();
     Utf8String const& contentType = realityData.GetContentType();
     
-    BentleyStatus status;
-
-    m_rgbBuffer.Clear(); // reuse the same buffer, in order to minimize mallocs
+    m_image.Invalidate(); // reuse the same buffer, in order to minimize mallocs
 
     if (contentType.Equals("image/png"))
         {
-        status = imageInfo.ReadImageFromPngBuffer(m_rgbBuffer, data.GetData(), data.GetSize());
+        imageInfo.ReadImageFromPngBuffer(m_image, data.GetData(), data.GetSize());
         }
     else if (contentType.Equals("image/jpeg"))
         {
-        status = imageInfo.ReadImageFromJpgBuffer(m_rgbBuffer, data.GetData(), data.GetSize());
-        }
-    else
-        {
-        status = ERROR;
-        BeAssert(false && "Unsupported image type");
+        imageInfo.ReadImageFromJpgBuffer(m_image, data.GetData(), data.GetSize());
         }
 
-    if (SUCCESS != status)
+    if (!m_image.IsValid())
         return;
 
-    auto texture = DefineTexture(imageInfo, context);
+    BeAssert(!imageInfo.m_isBGR);
+    auto texture = context.GetTargetR().CreateTexture(m_image, false);
     m_model.GetTextureCache().Insert(tileid, imageInfo, *texture);
+
     DrawTile(context, tileid, imageInfo, *texture, m_model.GetGroundBias());
     }
 
@@ -742,11 +725,6 @@ bool WebMercatorDisplay::GetCachedTiles(bvector<TileDisplayImageData>& tileDispl
 +---------------+---------------+---------------+---------------+---------------+------*/
 void WebMercatorModel::_AddTerrainGraphics(TerrainContextR context) const
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    if (context.GetViewport()->IsCameraOn())    // *** TBD: Not sure if we can support tiled raster in a perspective view or not. 
-        return;                                 // ***      I would at least have to figure out how to compute what portions of the earth are in the view.
-#endif
-
     RefCountedPtr<WebMercatorDisplay> display = new WebMercatorDisplay(*this, *context.GetViewport());
     display->DrawView(context);
     }
@@ -802,7 +780,7 @@ void WebMercatorDisplay::DrawView(TerrainContextR context)
         DEBUG_PRINTF("%d missing tiles", m_missingTilesToBeRequested.size());
         m_waitTime = 100;
         m_nextRetryTime = BeTimeUtilities::GetCurrentTimeAsUnixMillis() + m_waitTime;
-        context.GetViewport()->ScheduleProgressiveTask(*this);
+        context.GetViewport()->ScheduleTerrainProgressiveTask(*this);
         }
     }
 
@@ -815,7 +793,7 @@ ProgressiveTask::Completion WebMercatorDisplay::_DoProgressive(ProgressiveContex
     if (BeTimeUtilities::GetCurrentTimeAsUnixMillis() < m_nextRetryTime)
         return Completion::Aborted;
 
-    auto& realityCache = T_HOST.GetRealityDataAdmin().GetCache();
+    RealityDataCache& realityCache = m_model.GetRealityDataCache();
 
     // First, see if the RealityDataCache has the missing tiles. If so, draw them. If not, request downloads.
     // NOTE: It might take more than one pass to do this for each missing tile.
@@ -1139,6 +1117,22 @@ void WebMercatorModel::_ReadJsonProperties(Json::Value const& val)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+RealityDataCache& WebMercatorModel::GetRealityDataCache() const
+    {
+    if (m_realityDataCache.IsNull())
+        {
+        RealityDataCachePtr cache = RealityDataCache::Create(100);
+        BeFileName storageFileName = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName();
+        storageFileName.AppendToPath(WString(m_properties.m_mapService.c_str(), true).c_str());
+        cache->RegisterStorage(*BeSQLiteRealityDataStorage::Create(storageFileName));
+        cache->RegisterSource(*HttpRealityDataSource::Create(8));
+        }
+    return *m_realityDataCache;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TiledRaster::_IsExpired() const 
@@ -1164,14 +1158,14 @@ struct TiledRasterPrepareAndCleanupHandler : BeSQLiteRealityDataStorage::Databas
         {
         if (db.TableExists(TABLE_NAME_TiledRaster))
             {
-            s_isPrepared = true;
+            s_isPrepared.store(true);
             return SUCCESS;
             }
 
         Utf8CP ddl = "Url CHAR PRIMARY KEY,Raster BLOB,RasterSize INT,RasterInfo CHAR,ContentType CHAR,Created BIGINT,Expires BIGINT,ETag CHAR";
         if (BeSQLite::BE_SQLITE_OK == db.CreateTable(TABLE_NAME_TiledRaster, ddl))
             {
-            s_isPrepared = true;
+            s_isPrepared.store(true);
             return SUCCESS;
             }
         return ERROR;
@@ -1180,32 +1174,24 @@ struct TiledRasterPrepareAndCleanupHandler : BeSQLiteRealityDataStorage::Databas
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                     Grigas.Petraitis           03/2015
     +---------------+---------------+---------------+---------------+---------------+--*/
-    virtual BentleyStatus _CleanupDatabase(BeSQLite::Db& db, double percentage) const override
+    virtual BentleyStatus _CleanupDatabase(BeSQLite::Db& db) const override
         {
-        CachedStatementPtr sumStatement;
-        if (BeSQLite::BE_SQLITE_OK != db.GetCachedStatement(sumStatement, "SELECT sum(RasterSize) FROM " TABLE_NAME_TiledRaster))
-            return ERROR;
+        static uint64_t allowedSize = 1024 * 1024 * 1024; // 1 GB
 
-        if (BeSQLite::BE_SQLITE_ROW != sumStatement->Step()) 
-            return ERROR;
-            
-        auto rasterSize = sumStatement->GetValueInt(0);         
-        uint64_t overHead = (uint64_t)(rasterSize * percentage) / 100;
-    
         CachedStatementPtr selectStatement;
         if (BeSQLite::BE_SQLITE_OK != db.GetCachedStatement(selectStatement, "SELECT RasterSize,Created FROM " TABLE_NAME_TiledRaster " ORDER BY Created ASC"))
             return ERROR;
     
-        uint64_t runningSum = 0;
-        while ((runningSum < overHead) &&(BeSQLite::BE_SQLITE_ROW == selectStatement->Step()))
-            runningSum += selectStatement->GetValueInt(0);
+        uint64_t accumulatedSize = 0;
+        while ((accumulatedSize < allowedSize) && (BeSQLite::BE_SQLITE_ROW == selectStatement->Step()))
+            accumulatedSize += selectStatement->GetValueUInt64(0);
+        uint64_t date = selectStatement->GetValueUInt64(1);
             
-        CachedStatementPtr deleteStatement;
-        uint64_t creationDate = selectStatement->GetValueInt64(1);
+        CachedStatementPtr deleteStatement;        
         if (BeSQLite::BE_SQLITE_OK != db.GetCachedStatement(deleteStatement, "DELETE FROM " TABLE_NAME_TiledRaster " WHERE Created  <= ? "))
             return ERROR;
 
-        deleteStatement->BindInt64(1, creationDate);
+        deleteStatement->BindUInt64(1, date);
         if (BeSQLite::BE_SQLITE_DONE != deleteStatement->Step())
             return ERROR;
             
@@ -1239,12 +1225,11 @@ BentleyStatus TiledRaster::_InitFrom(IRealityDataBase const& self, RealityDataCa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TiledRaster::_InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> const& header, bvector<Byte> const& body, HttpRealityDataSource::RequestOptions const& requestOptions) 
+BentleyStatus TiledRaster::_InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> const& header, ByteStream const& body, HttpRealityDataSource::RequestOptions const& requestOptions) 
     {
     BeAssert(nullptr != dynamic_cast<RequestOptions const*>(&requestOptions));
     RequestOptions const& options = static_cast<RequestOptions const&>(requestOptions);
     
-
     m_url.AssignOrClear(url);
     m_creationDate = DateTime::GetCurrentTime();
 
@@ -1255,7 +1240,7 @@ BentleyStatus TiledRaster::_InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> co
     m_contentType = contentTypeIter->second.c_str();
     m_rasterInfo = options.GetExpectedImageInfo();
 
-    m_data.SaveData(&body.front(), (uint32_t) body.size());
+    m_data = body;
 
     return BSISUCCESS;
     }
@@ -1320,7 +1305,6 @@ BentleyStatus TiledRaster::_Persist(Db& db, BeMutex& cs) const
     int64_t expirationDate = 0;
     if (SUCCESS != GetExpirationDate().ToUnixMilliseconds(expirationDate))
         return ERROR;
-
 
     CachedStatementPtr selectStatement;
     if (BeSQLite::BE_SQLITE_OK != db.GetCachedStatement(selectStatement, "SELECT Url FROM " TABLE_NAME_TiledRaster " WHERE Url=?"))

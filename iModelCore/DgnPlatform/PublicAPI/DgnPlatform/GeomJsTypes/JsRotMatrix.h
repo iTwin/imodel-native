@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/GeomJsTypes/JsRotMatrix.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
@@ -68,6 +68,32 @@ public:
             );
          return new JsRotMatrix(a);
     }
+/**
+ @description Returns a (rotation) that is a right-handed signed permutation of axes.
+<ul>
+<li>The transform is described by directing the local u and v axes along positive or negative direction of any combination 
+     of global axes.
+<li>(0,1,0,1) creates an identity -- u along positive x, v along positive y.
+<li>)0,1,2,-1) points u axis along x, v axis along negative z.  {w=u cross v} is positive y.
+<li>if the uAxisId and vAxisId are identical, the result is invalid (but will have u along that direction, v along the cyclic successor)
+<ul>
+ @param [in] uAxisId the id (0,1,2) of the axis where the local u column points.
+ @param [in] uAxisSign Any positive number to point the u column in the forward direction of uAxisId, negative to point backward.
+ @param [in] vAxisId the id (0,1,2) of the axis where the local v column points.
+ @param [in] vAxisSign Any positive number to point the v column in the forward direction of xAxisId, negative to point backward.
+ */
+    static JsRotMatrixP CreateXYAxisSelection (double uAxisId, double uAxisSign, double vAxisId, double vAxisSign)
+        {
+        auto matrix = RotMatrix::FromPrimaryAxisDirections (
+                    (int)floor (uAxisId), uAxisSign >= 0 ? 1 : -1,
+                    (int)floor (vAxisId), vAxisSign >= 0 ? 1 : -1
+                    );
+        if (matrix.IsValid ())
+            return new JsRotMatrix (matrix);
+        else
+            return nullptr;
+        }
+
     // TODO: square and normalize !!!
     
     static JsRotMatrixP Create1Vector (JsDVector3dP direction, double axisIndex)

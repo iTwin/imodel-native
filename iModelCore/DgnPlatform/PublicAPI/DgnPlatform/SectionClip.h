@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/SectionClip.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -17,21 +17,17 @@ DGNPLATFORM_REF_COUNTED_PTR(IViewClipObject)
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-/*=================================================================================**//**
- @addtogroup SectionClip
-
+/*
  SectionClip holds information associated with the clip volume tool which inturn is
  used to limit the displayed volume for a view to the region within a clipping element.
 
  Using the APIs here, one can perform various functions like decide the clip volume dimensions, 
  set the points along which clipping can take place and define and set the rotation matrix of the clip element.
- */
+*/
 
-/*=====================================================================================*/
 /*==============================================**//**
  Possible options to define sizes of the clipped element from the clipped part.
  There are four possible sizes.
- @ingroup SectionClip
 =====================================*/
 
 enum ClipVolumeSizeProp
@@ -48,7 +44,6 @@ enum ClipVolumeSizeProp
 
  Considering the clip element to be having 6 possible sides, 
  each side is identified using integers ranging from 0 to 5.
- @ingroup SectionClip
 ===================================*/
 enum ClipVolumeCropProp
     {
@@ -67,7 +62,6 @@ typedef bvector<DPoint3d> DPoint3dVector;
 //! An IViewClipObject is an interface that can be adopted
 //! to access the data which describes a clip volume
 //! and perform certain manipulations on the same.
-//! @addtogroup IViewClipObject
 //=======================================================================================
 struct     IViewClipObject : public RefCountedBase
 {

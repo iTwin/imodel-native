@@ -423,11 +423,11 @@ void DgnPlatformLib::Host::ScriptAdmin::_OnHostTermination(bool px)
     {
     for (auto &entry : m_importers)
         {
-        TERMINATE_HOST_OBJECT(entry.second.first, px);
+        ON_HOST_TERMINATE(entry.second.first, px);
         }
 
     if (nullptr != m_notificationHandler)
-        TERMINATE_HOST_OBJECT(m_notificationHandler, px);
+        ON_HOST_TERMINATE(m_notificationHandler, px);
 
     delete this;
     }

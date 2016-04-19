@@ -45,11 +45,13 @@ static DgnDbStatus createSpatialModel(SpatialModelPtr& catalogModel, DgnDbR db, 
 /*=================================================================================**//**
 * @bsimethod                                    Sam.Wilson                      04/2013
 +===============+===============+===============+===============+===============+======*/
-struct DetectJsErrors : DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler
+namespace 
+{
+struct ComponentModelTest_DetectJsErrors : DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler
     {
     void _HandleScriptError(BeJsContextR, Category category, Utf8CP description, Utf8CP details) override
         {
-        FAIL() << (Utf8CP)Utf8PrintfString("JS error %x: %s , %s", (int)category, description, details);
+        FAIL() << Utf8PrintfString("JS error %x: %s , %s", (int)category, description, details).c_str();
         }
 
     void _HandleLogMessage(Utf8CP category, DgnPlatformLib::Host::ScriptAdmin::LoggingSeverity sev, Utf8CP msg) override
@@ -58,6 +60,7 @@ struct DetectJsErrors : DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHan
         printf ("%s\n", msg);
         }
     };
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2013
@@ -231,9 +234,9 @@ AutoCloseComponentDb(ComponentModelTest& t) : m_test(t) {;}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-ComponentModelTest::ComponentModelTest()
+ComponentModelTest::ComponentModelTest() : m_host(ScopedDgnHost::Options::DisableRepositoryManager)
     {
-    T_HOST.GetScriptAdmin().RegisterScriptNotificationHandler(*new DetectJsErrors);
+    T_HOST.GetScriptAdmin().RegisterScriptNotificationHandler(*new ComponentModelTest_DetectJsErrors);
     m_host.SetFetchScriptCallback(this);
     }
 

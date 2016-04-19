@@ -14,9 +14,9 @@
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-/**  @addtogroup DgnViewGroup
+/**  @addtogroup GROUP_DgnView DgnView Module
 
- A View is an abstract term to describe the way that applications display contents from a \ref DgnDbGroup on a device like a screen. 
+ A View is an abstract term to describe the way that applications display contents from a DgnDb on a device like a screen. 
  <p>There are different types of views to show different types of DgnModels in application-specific ways.
  <p>A ViewController provides persistence and behavior to a type of view.
  <p>A DgnViewport has a reference-counted-pointer to a ViewController that controls it.
@@ -71,7 +71,7 @@ enum class ViewportResizeMode
  local copies of the current state). So, viewing tools that wish to change camera location or other viewing state, must call 
  DgnViewport::SynchWithViewController before the changes are visible to the user.
 */
-//! @ingroup DgnViewGroup
+//! @ingroup GROUP_DgnView
 //! @nosubgrouping
 //  @bsiclass                                                     KeithBentley    10/02
 //=======================================================================================
@@ -81,6 +81,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnViewport : RefCounted<NonCopyableClass>
     typedef bpair<Render::GraphicSet, ElementAlignedBox3d> GraphicSetRangePair; //!< @private
     typedef bmap<DgnGeometryPartId, GraphicSetRangePair> PartGraphicMap;        //!< @private
     typedef std::deque<Utf8String> ViewStateStack;
+    typedef bvector<ProgressiveTaskPtr> ProgressiveTasks;
 
     struct SyncFlags
     {
@@ -118,7 +119,6 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnViewport : RefCounted<NonCopyableClass>
     };
 
 protected:
-
     mutable SyncFlags m_sync;
     bool            m_zClipAdjusted = false;    // were the view z clip planes adjusted due to front/back clipping off?
     bool            m_is3dView = false;         // view is of a 3d model
@@ -140,7 +140,8 @@ protected:
     double          m_frustFraction;
     Utf8String      m_viewTitle;
     ViewControllerPtr m_viewController;
-    bvector<ProgressiveTaskPtr> m_progressiveTasks;
+    ProgressiveTasks m_elementProgressiveTasks;
+    ProgressiveTasks m_terrainProgressiveTasks;
     DPoint3d        m_viewCmdTargetCenter;
     Utf8String      m_currentBaseline;
     ViewStateStack  m_forwardStack;
@@ -148,6 +149,7 @@ protected:
     mutable PartGraphicMap m_partGraphics;
 
     DGNPLATFORM_EXPORT void DestroyViewport();
+    DGNPLATFORM_EXPORT void SuspendViewport();
     DGNPLATFORM_EXPORT virtual void _AdjustZPlanesToModel(DPoint3dR origin, DVec3dR delta, ViewControllerCR) const;
     virtual bool _IsVisible() const {return true;}
     DGNPLATFORM_EXPORT virtual void _CallDecorators(DecorateContextR);
@@ -156,15 +158,18 @@ protected:
     virtual void _AdjustFencePts(RotMatrixCR viewRot, DPoint3dCR oldOrg, DPoint3dCR newOrg) const {}
     virtual void _SynchViewTitle() {}
     virtual void _Destroy() {DestroyViewport();}
+    virtual void _Suspend() {SuspendViewport();}
     DGNPLATFORM_EXPORT virtual void _AdjustAspectRatio(ViewControllerR, bool expandView);
     DGNPLATFORM_EXPORT virtual int _GetIndexedLineWidth(int index) const;
     DGNPLATFORM_EXPORT static void StartRenderThread();
     DMap4d CalcNpcToView();
     void QueueDrawFrame();
+    void ShowChanges(ViewManagerCR);
     void CalcTargetNumElements(UpdatePlan const& plan, bool isForProgressive);
     void CreateTerrain(UpdatePlan const& plan);
     StatusInt CreateScene(UpdatePlan const& plan);
     DGNPLATFORM_EXPORT void SaveViewUndo();
+    ProgressiveTask::Completion ProcessProgressiveTaskList(ProgressiveTask::WantShow& showFrame, ProgressiveContext& context, bvector<ProgressiveTaskPtr>& tasks);
 
 public:
     DgnViewport(Render::TargetP target) : m_renderTarget(target) {}
@@ -183,9 +188,11 @@ public:
     Render::Plan::AntiAliasPref WantAntiAliasText() const {return _WantAntiAliasText();}
     void AlignWithRootZ();
     ProgressiveTask::Completion DoProgressiveTasks();
-    void ClearProgressiveTasks() {m_progressiveTasks.clear();}
+    void ClearAllProgressiveTasks() {m_elementProgressiveTasks.clear(); m_terrainProgressiveTasks.clear();}
+    void ClearElementProgressiveTasks() { m_elementProgressiveTasks.clear();}
     DGNPLATFORM_EXPORT void InvalidateScene() const;
-    DGNPLATFORM_EXPORT void ScheduleProgressiveTask(ProgressiveTask& pd);
+    DGNPLATFORM_EXPORT void ScheduleElementProgressiveTask(ProgressiveTask& pd);
+    DGNPLATFORM_EXPORT void ScheduleTerrainProgressiveTask(ProgressiveTask& pd);
     DGNPLATFORM_EXPORT double GetFocusPlaneNpc();
     DGNPLATFORM_EXPORT StatusInt RootToNpcFromViewDef(DMap4d&, double&, CameraInfo const*, DPoint3dCR, DPoint3dCR, RotMatrixCR) const;
     DGNPLATFORM_EXPORT static int32_t GetMaxDisplayPriority();
@@ -210,7 +217,9 @@ public:
     Point2d GetScreenOrigin() const {return m_renderTarget->GetScreenOrigin();}
     DGNPLATFORM_EXPORT double PixelsFromInches(double inches) const;
     DGNVIEW_EXPORT void ForceHeal();
+    void ValidateQuery(UpdatePlan const&);
     StatusInt HealViewport(UpdatePlan const&);
+    StatusInt SynchronizeViewport(UpdatePlan const&);
     bool GetNeedsHeal() {return m_sync.IsValidScene();}
     DGNVIEW_EXPORT void ForceHealImmediate(uint32_t timeout=500); // default 1/2 second
     DGNVIEW_EXPORT void SuspendForBackground();

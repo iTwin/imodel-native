@@ -139,6 +139,7 @@ protected:
     virtual void _OnElementInserted(DgnElementId id) = 0;
     virtual void _OnModelInserted(DgnModelId id) = 0;
     virtual RepositoryStatus _RefreshFromRepository() = 0;
+    virtual void _OnDgnDbDestroyed() { }
 
     DGNPLATFORM_EXPORT IRepositoryManagerP GetRepositoryManager() const;
     DGNPLATFORM_EXPORT bool LocksRequired() const;
@@ -286,9 +287,7 @@ public:
     DgnDbStatus OnModelInsert(DgnModelCR model); //!< @private
     DgnDbStatus OnModelUpdate(DgnModelCR model); //!< @private
     DgnDbStatus OnModelDelete(DgnModelCR model); //!< @private
-//__PUBLISH_SECTION_END__
-    DGNPLATFORM_EXPORT static void BackDoor_SetEnabled(bool enable);
-//__PUBLISH_SECTION_START__
+    void OnDgnDbDestroyed() { _OnDgnDbDestroyed(); } //!< @private
 };
 
 /*=====================================================================================*/
@@ -374,14 +373,14 @@ ENUM_IS_FLAGS(IBriefcaseManager::Resources);
 namespace RepositoryJson
 {
     DGNPLATFORM_EXPORT bool BriefcaseIdFromJson(BeSQLite::BeBriefcaseId& id, JsonValueCR value);
-    DGNPLATFORM_EXPORT bool BeInt64IdFromJson(BeSQLite::BeInt64Id& id, JsonValueCR value);
+    DGNPLATFORM_EXPORT bool BeInt64IdFromJson(BeInt64Id& id, JsonValueCR value);
     DGNPLATFORM_EXPORT bool LockLevelFromJson(LockLevel& level, JsonValueCR value);
     DGNPLATFORM_EXPORT bool LockableTypeFromJson(LockableType& type, JsonValueCR value);
     DGNPLATFORM_EXPORT bool RepositoryStatusFromJson(RepositoryStatus& status, JsonValueCR value);
     DGNPLATFORM_EXPORT bool ResponseOptionsFromJson(IBriefcaseManager::ResponseOptions& options, JsonValueCR value);
 
     DGNPLATFORM_EXPORT void BriefcaseIdToJson(JsonValueR value, BeSQLite::BeBriefcaseId id);
-    DGNPLATFORM_EXPORT void BeInt64IdToJson(JsonValueR value, BeSQLite::BeInt64Id id);
+    DGNPLATFORM_EXPORT void BeInt64IdToJson(JsonValueR value, BeInt64Id id);
     DGNPLATFORM_EXPORT void LockLevelToJson(JsonValueR value, LockLevel level);
     DGNPLATFORM_EXPORT void LockableTypeToJson(JsonValueR value, LockableType type);
     DGNPLATFORM_EXPORT void RepositoryStatusToJson(JsonValueR value, RepositoryStatus status);

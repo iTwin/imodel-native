@@ -146,7 +146,7 @@ DgnDbStatus DgnElement::_DeleteInDb() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClassCP DgnElement::GetElementClass() const
     {
-    return GetDgnDb().Schemas().GetECClass(GetElementClassId().GetValue());
+    return GetDgnDb().Schemas().GetECClass(GetElementClassId());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -329,8 +329,9 @@ DgnDbStatus DgnElement::_OnUpdate(DgnElementCR original)
 struct OnUpdatedCaller
     {
     DgnElementCR m_updated, m_original;
-    OnUpdatedCaller(DgnElementCR updated, DgnElementCR original) : m_updated(updated), m_original(original){}
-    DgnElement::AppData::DropMe operator()(DgnElement::AppData& app, DgnElementCR el) const {return app._OnUpdated(m_updated, m_original);}
+    bool m_isOriginal;
+    OnUpdatedCaller(DgnElementCR updated, DgnElementCR original, bool isOriginal) : m_updated(updated), m_original(original), m_isOriginal(isOriginal){}
+    DgnElement::AppData::DropMe operator()(DgnElement::AppData& app, DgnElementCR el) const {return app._OnUpdated(m_updated, m_original, m_isOriginal);}
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -340,10 +341,10 @@ void DgnElement::_OnUpdated(DgnElementCR original) const
     {
     // We need to call the events on both sets of AppData. Start by calling the appdata on this (the replacement)
     // element. NOTE: This is where Aspects, etc. actually update the database.
-    CallAppData(OnUpdatedCaller(*this, original));
+    CallAppData(OnUpdatedCaller(*this, original, false));
 
     // All done. This gives appdata on the *original* element a notification that the update has happened
-    original.CallAppData(OnUpdatedCaller(*this, original));
+    original.CallAppData(OnUpdatedCaller(*this, original, true));
 
     // now tell the model that one of its elements has been changed.
     GetModel()->_OnUpdatedElement(*this, original);
@@ -840,6 +841,17 @@ void DgnElement::_CopyFrom(DgnElementCR other)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElement::CopyAppDataFrom(DgnElementCR source) const
+    {
+    for (auto a : source.m_appData)
+        {
+        AddAppData(*a.first, a.second.get());
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      08/15
++---------------+---------------+---------------+---------------+---------------+------*/
 void DgnCode::RelocateToDestinationDb(DgnImportContext& importer)
     {
     m_authority = importer.RemapAuthorityId(m_authority);
@@ -1154,8 +1166,8 @@ void InstanceUpdater::Update(DgnElementCR el)
         {
         IECInstancePtr instance = adapter.GetInstance();
         BeAssert(instance.IsValid());
-        Utf8Char idStrBuffer[ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH];
-        ECInstanceIdHelper::ToString(idStrBuffer, ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH, el.GetElementId());
+        Utf8Char idStrBuffer[BeInt64Id::ID_STRINGBUFFER_LENGTH];
+        el.GetElementId().ToString(idStrBuffer);
         ECN::StandaloneECInstancePtr targetInstance = targetClass->GetDefaultStandaloneEnabler()->CreateInstance();
         targetInstance->SetInstanceId(idStrBuffer);
         targetInstance->CopyValues(*instance.get());
@@ -1534,7 +1546,7 @@ DgnElement::AppData::DropMe DgnElement::Aspect::_OnInserted(DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElement::AppData::DropMe DgnElement::Aspect::_OnUpdated(DgnElementCR modified, DgnElementCR original)
+DgnElement::AppData::DropMe DgnElement::Aspect::_OnUpdated(DgnElementCR modified, DgnElementCR original, bool isOriginal)
     {
     if (ChangeType::None == m_changeType)
         return DropMe::Yes;     // Was just a cached instance? Drop it now, so that it does not become stale.
@@ -1547,7 +1559,7 @@ DgnElement::AppData::DropMe DgnElement::Aspect::_OnUpdated(DgnElementCR modified
         {
         DgnDbR db = modified.GetDgnDb();
         ECInstanceKey existing = _QueryExistingInstanceKey(modified);
-        if (existing.IsValid() && (existing.GetECClassId() != GetECClassId(db).GetValue()))
+        if (existing.IsValid() && (existing.GetECClassId() != GetECClassId(db)))
             {
             _DeleteInstance(modified);
             existing = ECInstanceKey();  //  trigger an insert below
@@ -1608,7 +1620,7 @@ struct MultiAspectMux : DgnElement::AppData
 
     MultiAspectMux(ECClassCR cls) : m_ecclass(cls) {;}
     DropMe _OnInserted(DgnElementCR el) override;
-    DropMe _OnUpdated(DgnElementCR modified, DgnElementCR original) override;
+    DropMe _OnUpdated(DgnElementCR modified, DgnElementCR original, bool isOriginal) override;
 };
 
 END_BENTLEY_DGN_NAMESPACE
@@ -1651,10 +1663,10 @@ DgnElement::AppData::DropMe MultiAspectMux::_OnInserted(DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElement::AppData::DropMe MultiAspectMux::_OnUpdated(DgnElementCR modified, DgnElementCR original)
+DgnElement::AppData::DropMe MultiAspectMux::_OnUpdated(DgnElementCR modified, DgnElementCR original, bool isOriginal)
     {
     for (auto aspect : m_instances)
-        aspect->_OnUpdated(modified, original);
+        aspect->_OnUpdated(modified, original, isOriginal);
 
     return DropMe::Yes; // all scheduled changes have been processed, so remove them.
     }
@@ -1665,7 +1677,7 @@ DgnElement::AppData::DropMe MultiAspectMux::_OnUpdated(DgnElementCR modified, Dg
 DgnDbStatus DgnElement::MultiAspect::_DeleteInstance(DgnElementCR el)
     {
     // I am assuming that the ElementOwnsAspects ECRelationship is either just a foreign key column on the aspect or that ECSql somehow deletes the relationship instance automatically.
-    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("DELETE FROM %s WHERE(ECInstanceId=?)", GetFullEcSqlClassName().c_str()));
+    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("DELETE FROM %s WHERE(ECInstanceId=?)", GetFullEcSqlClassName().c_str()).c_str());
     stmt->BindId(1, m_instanceId);
     BeSQLite::DbResult status = stmt->Step();
     return (BeSQLite::BE_SQLITE_DONE == status) ? DgnDbStatus::Success : DgnDbStatus::WriteError;
@@ -1676,7 +1688,7 @@ DgnDbStatus DgnElement::MultiAspect::_DeleteInstance(DgnElementCR el)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::MultiAspect::_InsertInstance(DgnElementCR el)
     {
-    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("INSERT INTO %s ([ElementId]) VALUES (?)", GetFullEcSqlClassName().c_str()));
+    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("INSERT INTO %s ([ElementId]) VALUES (?)", GetFullEcSqlClassName().c_str()).c_str());
     stmt->BindId(1, el.GetElementId());
 
     ECInstanceKey key;
@@ -1749,7 +1761,7 @@ void DgnElement::MultiAspect::AddAspect(DgnElementR el, MultiAspect& aspect)
 ECInstanceKey DgnElement::MultiAspect::_QueryExistingInstanceKey(DgnElementCR el)
     {
     // My m_instanceId field is valid if and only if I was just inserted or was loaded from an existing instance.
-    return ECInstanceKey(GetECClassId(el.GetDgnDb()).GetValue(), m_instanceId);
+    return ECInstanceKey(GetECClassId(el.GetDgnDb()), m_instanceId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1856,7 +1868,7 @@ DgnElement::UniqueAspect* DgnElement::UniqueAspect::Load(DgnElementCR el, DgnCla
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::UniqueAspect::_InsertInstance(DgnElementCR el)
     {
-    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("INSERT INTO %s (ECInstanceId) VALUES(?)", GetFullEcSqlClassName().c_str()));
+    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("INSERT INTO %s (ECInstanceId) VALUES(?)", GetFullEcSqlClassName().c_str()).c_str());
     stmt->BindId(1, GetAspectInstanceId(el));
     DbResult status = stmt->Step();
     return (BE_SQLITE_DONE == status) ? DgnDbStatus::Success : DgnDbStatus::WriteError;
@@ -1868,7 +1880,7 @@ DgnDbStatus DgnElement::UniqueAspect::_InsertInstance(DgnElementCR el)
 DgnDbStatus DgnElement::UniqueAspect::_DeleteInstance(DgnElementCR el)
     {
     // I am assuming that the ElementOwnsAspects ECRelationship is either just a foreign key column on the aspect or that ECSql somehow deletes the relationship instance automatically.
-    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("DELETE FROM %s WHERE(ECInstanceId=?)", GetFullEcSqlClassName().c_str()));
+    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("DELETE FROM %s WHERE(ECInstanceId=?)", GetFullEcSqlClassName().c_str()).c_str());
     stmt->BindId(1, GetAspectInstanceId(el));
     DbResult status = stmt->Step();
     return (BE_SQLITE_DONE == status) ? DgnDbStatus::Success : DgnDbStatus::WriteError;
@@ -1882,13 +1894,13 @@ ECInstanceKey DgnElement::UniqueAspect::_QueryExistingInstanceKey(DgnElementCR e
     // We know what the class and the ID of an instance *would be* if it exists. See if such an instance actually exists.
     DgnClassId classId = GetECClassId(el.GetDgnDb());
 
-    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT ECInstanceId FROM %s WHERE(ECInstanceId=?)", GetFullEcSqlClassName().c_str()));
+    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT ECInstanceId FROM %s WHERE(ECInstanceId=?)", GetFullEcSqlClassName().c_str()).c_str());
     stmt->BindId(1, el.GetElementId());
     if (BE_SQLITE_ROW != stmt->Step())
         return ECInstanceKey();
 
     // And we know the ID. See if such an instance actually exists.
-    return ECInstanceKey(classId.GetValue(), GetAspectInstanceId(el));
+    return ECInstanceKey(classId, GetAspectInstanceId(el));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1935,7 +1947,7 @@ struct UnhandledProps : DgnElement::AppData
     ECN::IECInstancePtr m_instance;
 
     virtual DropMe _OnInserted(DgnElementCR el){UpdateModifiedProperties(el); return DropMe::Yes;}
-    virtual DropMe _OnUpdated(DgnElementCR modified, DgnElementCR original) {UpdateModifiedProperties(original); return DropMe::Yes;}
+    virtual DropMe _OnUpdated(DgnElementCR modified, DgnElementCR original, bool isOriginal) {UpdateModifiedProperties(original); return DropMe::Yes;}
     virtual DropMe _OnReversedUpdate(DgnElementCR original, DgnElementCR modified) {return DropMe::Yes;}
     virtual DropMe _OnDeleted(DgnElementCR el) {return DropMe::Yes;}
 
@@ -1981,7 +1993,7 @@ ECN::IECInstancePtr UnhandledProps::GetInstance(DgnElementCR elem)
         }
 
     EC::ECSqlStatement stmt;
-    stmt.Prepare(elem.GetDgnDb(), Utf8PrintfString("SELECT %s FROM %s.%s WHERE ECInstanceId=%lld", props.c_str(), elem.GetElementClass()->GetSchema().GetName().c_str(), elem.GetElementClass()->GetName().c_str(), elem.GetElementId().GetValue()));
+    stmt.Prepare(elem.GetDgnDb(), Utf8PrintfString("SELECT %s FROM %s.%s WHERE ECInstanceId=%lld", props.c_str(), elem.GetElementClass()->GetSchema().GetName().c_str(), elem.GetElementClass()->GetName().c_str(), elem.GetElementId().GetValue()).c_str());
     if (stmt.Step() != BE_SQLITE_ROW)
         return nullptr;
 
@@ -1992,8 +2004,49 @@ ECN::IECInstancePtr UnhandledProps::GetInstance(DgnElementCR elem)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::GetUnhandledPropertyValue(ECN::ECValueR value, Utf8CP name) const
+DgnDbStatus DgnElement::_GetProperty(ECN::ECValueR value, Utf8CP name) const
     {
+    /*
+    auto ecprop = GetElementClass()->GetPropertyP(name);
+    if (nullptr == ecprop)
+        return DgnDbStatus::NotFound;
+    */
+
+    if (0 == strcmp("Code", name))
+        {
+        //Json::Value json(Json::objectValue);
+        //GetCode().ToJson(json);
+        //value.SetUtf8CP(Json::FastWriter::ToString(json).c_str());
+        //return DgnDbStatus::Success;
+        // *** TBD: Create a IECInstance from the dgn.Code struct class and return it
+        return DgnDbStatus::BadRequest;
+        }
+    if (0 == strcmp("Id", name))
+        {
+        value.SetLong(GetElementId().GetValueUnchecked());
+        return DgnDbStatus::Success;
+        }
+    if (0 == strcmp("ModelId", name))
+        {
+        value.SetLong(GetModelId().GetValueUnchecked());
+        return DgnDbStatus::Success;
+        }
+    if (0 == strcmp("ParentId", name))
+        {
+        value.SetLong(GetParentId().GetValueUnchecked());
+        return DgnDbStatus::Success;
+        }
+    if (0 == strcmp("Label", name))
+        {
+        value.SetUtf8CP(GetLabel());
+        return DgnDbStatus::Success;
+        }
+    if (0 == strcmp("LastMod", name))
+        {
+        value.SetDateTime(QueryTimeStamp());
+        return DgnDbStatus::Success;
+        }
+
     ECN::IECInstancePtr inst = UnhandledProps::Get(*this).GetInstance(*this);
     if (!inst.IsValid())
         return DgnDbStatus::NotFound;
@@ -2003,8 +2056,41 @@ DgnDbStatus DgnElement::GetUnhandledPropertyValue(ECN::ECValueR value, Utf8CP na
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::SetUnhandledPropertyValue(Utf8CP name, ECN::ECValueCR value)
+DgnDbStatus DgnElement::_SetProperty(Utf8CP name, ECN::ECValueCR value)
     {
+    if (0 == strcmp("Code", name))
+        {
+        //Json::Value json(Json::objectValue);
+        //if (!Json::Reader::Parse(value.ToString(), json))
+        //    return DgnDbStatus::BadArg;
+        //DgnCode code;
+        //code.FromJson(json);
+        //return SetCode(code);
+        return DgnDbStatus::BadRequest;
+        }
+    if (0 == strcmp("Id", name))
+        {
+        return DgnDbStatus::ReadOnly;
+        }
+    if (0 == strcmp("ModelId", name))
+        {
+        return DgnDbStatus::ReadOnly;
+        }
+    if (0 == strcmp("ParentId", name))
+        {
+        return SetParentId(DgnElementId((uint64_t)value.GetLong()));
+        }
+    if (0 == strcmp("Label", name))
+        {
+        SetLabel(value.ToString().c_str());
+        return DgnDbStatus::Success;
+        }
+    if (0 == strcmp("LastMod", name))
+        {
+        return DgnDbStatus::BadRequest;
+        }
+
+
     UnhandledProps& props = UnhandledProps::Get(*this);
     
     ECN::IECInstancePtr inst = props.GetInstance(*this);
@@ -2021,12 +2107,110 @@ DgnDbStatus DgnElement::SetUnhandledPropertyValue(Utf8CP name, ECN::ECValueCR va
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus GeometricElement3d::_GetProperty(ECN::ECValueR value, Utf8CP name) const
+    {
+    if (0 == strcmp(name, "GeometryStream"))
+        {
+        return DgnDbStatus::BadRequest;//  => Use GeometryCollection interface
+        }
+    if (0 == strcmp(name, "CategoryId"))
+        {
+        value.SetLong(GetCategoryId().GetValueUnchecked());
+        return DgnDbStatus::Success;
+        }
+    if (0 == strcmp(name, "InSpatialIndex"))
+        {
+        auto gmodel = GetModel()->ToGeometricModel();
+        if (nullptr == gmodel)
+            value.SetBoolean(false);
+        else
+            value.SetBoolean(CoordinateSpace::World == gmodel->GetCoordinateSpace());
+        return DgnDbStatus::Success;
+        }
+    DgnDbStatus res = GetPlacementProperty(value, name);
+    if (DgnDbStatus::NotFound != res)
+        return res;
+
+    return T_Super::_GetProperty(value, name);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus GeometricElement3d::_SetProperty(Utf8CP name, ECN::ECValueCR value)
+    {
+    if (0 == strcmp(name, "GeometryStream"))
+        return DgnDbStatus::BadRequest;//  => Use ElementGeometryBuilder
+    if (0 == strcmp(name, "CategoryId"))
+        return SetCategoryId(DgnCategoryId((uint64_t)value.GetLong()));
+    if (0 == strcmp(name, "InSpatialIndex"))
+        return DgnDbStatus::ReadOnly;
+    DgnDbStatus res = SetPlacementProperty(name, value);
+    if (DgnDbStatus::NotFound != res)
+        return res;
+
+    return T_Super::_SetProperty(name, value);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus GeometricElement3d::GetPlacementProperty(ECN::ECValueR value, Utf8CP name) const
+    {
+    bool isplcprop;
+    if ((isplcprop = (0 == strcmp(name, "Origin"))))
+        value.SetPoint3D(GetPlacement().GetOrigin());
+    else if ((isplcprop = (0 == strcmp(name, "Yaw"))))
+        value.SetDouble(GetPlacement().GetAngles().GetYaw().Degrees());
+    else if ((isplcprop = (0 == strcmp(name, "Pitch"))))
+        value.SetDouble(GetPlacement().GetAngles().GetPitch().Degrees());
+    else if ((isplcprop = (0 == strcmp(name, "Roll"))))
+        value.SetDouble(GetPlacement().GetAngles().GetRoll().Degrees());
+    else if ((isplcprop = (0 == strcmp(name, "BBoxLow"))))
+        value.SetPoint3D(GetPlacement().GetElementBox().low);
+    else if ((isplcprop = (0 == strcmp(name, "BBoxHigh"))))
+        value.SetPoint3D(GetPlacement().GetElementBox().high);
+        
+    return isplcprop? DgnDbStatus::Success: DgnDbStatus::NotFound;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus GeometricElement3d::SetPlacementProperty(Utf8CP name, ECN::ECValueCR value)
+    {
+    Placement3d plc;
+    bool isplcprop;
+
+    if ((isplcprop = (0 == strcmp(name, "Origin"))))
+        (plc = GetPlacement()).GetOriginR() = value.GetPoint3D();
+    else if ((isplcprop = (0 == strcmp(name, "Yaw"))))
+        (plc = GetPlacement()).GetAnglesR().SetYaw(AngleInDegrees::FromRadians(value.GetDouble()));
+    else if ((isplcprop = (0 == strcmp(name, "Pitch"))))
+        (plc = GetPlacement()).GetAnglesR().SetPitch(AngleInDegrees::FromRadians(value.GetDouble()));
+    else if ((isplcprop = (0 == strcmp(name, "Roll"))))
+        (plc = GetPlacement()).GetAnglesR().SetRoll(AngleInDegrees::FromRadians(value.GetDouble()));
+    else if ((isplcprop = (0 == strcmp(name, "BBoxLow"))))
+        (plc = GetPlacement()).GetElementBoxR().low = value.GetPoint3D();
+    else if ((isplcprop = (0 == strcmp(name, "BBoxHigh"))))
+        (plc = GetPlacement()).GetElementBoxR().high = value.GetPoint3D();
+        
+   if (!isplcprop)
+       return DgnDbStatus::NotFound;
+   
+   SetPlacement(plc);
+   return DgnDbStatus::Success;
+   }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus UnhandledProps::UpdateModifiedProperties(DgnElementCR elem)
     {
     if (!m_instance.IsValid() || m_pendingEdits.empty())
         return DgnDbStatus::Success;
     
-    m_instance->SetInstanceId(Utf8PrintfString("%lld", elem.GetElementId().GetValue()));
+    m_instance->SetInstanceId(Utf8PrintfString("%lld", elem.GetElementId().GetValue()).c_str());
 
     EC::ECInstanceUpdater updater(elem.GetDgnDb(), *m_instance);
     return updater.Update(*m_instance) == BSISUCCESS? DgnDbStatus::Success: DgnDbStatus::WriteError;
@@ -2143,8 +2327,10 @@ uint64_t DgnElement::RestrictedAction::Parse(Utf8CP name)
         };
 
     for (auto const& pair : s_pairs)
+        {
         if (0 == BeStringUtilities::Stricmp(name, pair.name))
             return pair.action;
+        }
 
     return T_Super::Parse(name);
     }
@@ -2152,9 +2338,9 @@ uint64_t DgnElement::RestrictedAction::Parse(Utf8CP name)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::_OnChildInsert(DgnElementCR) const { return GetElementHandler()._IsRestrictedAction(RestrictedAction::InsertChild) ? DgnDbStatus::ParentBlockedChange : DgnDbStatus::Success; }
-DgnDbStatus DgnElement::_OnChildUpdate(DgnElementCR, DgnElementCR) const { return GetElementHandler()._IsRestrictedAction(RestrictedAction::UpdateChild) ? DgnDbStatus::ParentBlockedChange : DgnDbStatus::Success; }
-DgnDbStatus DgnElement::_OnChildDelete(DgnElementCR) const { return GetElementHandler()._IsRestrictedAction(RestrictedAction::DeleteChild) ? DgnDbStatus::ParentBlockedChange : DgnDbStatus::Success; }
+DgnDbStatus DgnElement::_OnChildInsert(DgnElementCR) const {return GetElementHandler()._IsRestrictedAction(RestrictedAction::InsertChild) ? DgnDbStatus::ParentBlockedChange : DgnDbStatus::Success;}
+DgnDbStatus DgnElement::_OnChildUpdate(DgnElementCR, DgnElementCR) const {return GetElementHandler()._IsRestrictedAction(RestrictedAction::UpdateChild) ? DgnDbStatus::ParentBlockedChange : DgnDbStatus::Success;}
+DgnDbStatus DgnElement::_OnChildDelete(DgnElementCR) const {return GetElementHandler()._IsRestrictedAction(RestrictedAction::DeleteChild) ? DgnDbStatus::ParentBlockedChange : DgnDbStatus::Success;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
@@ -2541,6 +2727,64 @@ DgnDbStatus GeometricElement::_OnUpdate(DgnElementCR el)
     {
     auto stat = Validate();
     return DgnDbStatus::Success == stat ? T_Super::_OnUpdate(el) : stat;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometricElement::_OnInserted(DgnElementP copiedFrom) const 
+    {
+    T_Super::_OnInserted(copiedFrom);
+    T_HOST.GetTxnAdmin()._OnGraphicElementAdded(m_elementId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void  GeometricElement::_OnDeleted() const 
+    {
+    T_Super::_OnDeleted();
+    if (m_graphics.IsEmpty())
+        return;
+        
+    T_HOST.GetTxnAdmin()._OnGraphicsRemoved(m_graphics);
+    m_graphics.Clear();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometricElement::_OnReversedAdd() const 
+    {
+    T_Super::_OnReversedAdd();
+    if (m_graphics.IsEmpty())
+        return;
+        
+    T_HOST.GetTxnAdmin()._OnGraphicsRemoved(m_graphics);
+    m_graphics.Clear();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometricElement::_OnReversedDelete() const 
+    {
+    T_Super::_OnReversedDelete();
+    T_HOST.GetTxnAdmin()._OnGraphicElementAdded(m_elementId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometricElement::_OnUpdateFinished() const 
+    {
+    T_Super::_OnUpdateFinished(); 
+    T_HOST.GetTxnAdmin()._OnGraphicElementAdded(m_elementId);
+
+    if (m_graphics.IsEmpty())
+        return;
+    T_HOST.GetTxnAdmin()._OnGraphicsRemoved(m_graphics);
+    m_graphics.Clear();
     }
 
 /*---------------------------------------------------------------------------------**//**

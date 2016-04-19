@@ -17,7 +17,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 void DgnChangeSummary::FindChangedRelationshipEndIds(ECInstanceIdSet& endInstanceIds, Utf8CP relationshipSchemaName, Utf8CP relationshipClassName, ECRelationshipEnd relationshipEnd)
     {
     ECN::ECClassId relationshipClassId = m_dgndb.Schemas().GetECClassId(relationshipSchemaName, relationshipClassName);
-    BeAssert(relationshipClassId);
+    BeAssert(relationshipClassId.IsValid());
 
     Utf8CP endInstanceIdAccessStr = (relationshipEnd == ECRelationshipEnd_Source) ? "SourceECInstanceId" : "TargetECInstanceId";
 
@@ -78,7 +78,7 @@ void DgnChangeSummary::FindChangedRelationshipEndIds(ECInstanceIdSet& endInstanc
 void DgnChangeSummary::FindUpdatedInstanceIds(ECInstanceIdSet& updatedInstanceIds, Utf8CP schemaName, Utf8CP className)
     {
     ECN::ECClassId classId = m_dgndb.Schemas().GetECClassId(schemaName, className);
-    BeAssert(classId);
+    BeAssert(classId.IsValid());
 
     bmap<ECInstanceId, ChangeSummary::Instance> changes;
     QueryByClass(changes, classId, true, ChangeSummary::QueryDbOpcode::Update);
@@ -123,129 +123,6 @@ void DgnChangeSummary::GetChangedElements(DgnElementIdSet& elementIds, ChangeSum
         DgnElementId elementId(iter->first.GetValueUnchecked());
         elementIds.insert(elementId);
         }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   11/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnChangeSummary::ModelIterator::ModelIterator(DgnChangeSummary const& summary, DgnChangeSummary::QueryDbOpcode opcodes)
-    : Iterator(summary, summary.GetDgnDb().Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Model), opcodes)
-    {
-    //
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   11/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnChangeSummary::ElementIterator::ElementIterator(DgnChangeSummary const& summary, DgnChangeSummary::QueryDbOpcode opcodes)
-    : Iterator(summary, summary.GetDgnDb().Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Element), opcodes)
-    {
-    //
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   11/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelId DgnChangeSummary::ElementEntry::GetModelId(bool old) const
-    {
-    auto instance = GetImpl().GetInstance();
-    DgnModelId modelId;
-    if (instance.ContainsValue("ModelId"))
-        {
-        DbDupValue value = (old ? instance.GetOldValue("ModelId") : instance.GetNewValue("ModelId"));
-        if (value.IsValid())
-            modelId = value.GetValueId<DgnModelId>();
-        }
-    else if (DbOpcode::Delete != GetDbOpcode())
-        {
-        static const Utf8CP s_selectModelId { "SELECT ModelId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?" };
-        DgnDbR dgndb = static_cast<DgnChangeSummary const&>(GetImpl().GetChangeSummary()).GetDgnDb();
-        CachedStatementPtr stmt = dgndb.Elements().GetStatement(s_selectModelId);
-        stmt->BindId(1, instance.GetInstanceId());
-        if (BE_SQLITE_ROW == stmt->Step())
-            modelId = stmt->GetValueId<DgnModelId>(0);
-        }
-
-    return modelId;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   11/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T> static DgnCode getOriginalCode(T const& entry, DbOpcode op)
-    {
-    DgnCode code, currentCode;
-    switch (op)
-        {
-        case DbOpcode::Insert:
-            return code; // no original code...
-        case DbOpcode::Update:
-            currentCode = entry.GetCurrentCode();
-            break;
-        }
-
-    auto instance = entry.GetImpl().GetInstance();
-    DbDupValue oldAuthId = instance.GetOldValue("Code.AuthorityId"),
-               oldNamespace = instance.GetOldValue("Code.Namespace"),
-               oldValue = instance.GetOldValue("Code.Value");
-
-    if (DbOpcode::Delete == op)
-        {
-        if (oldAuthId.IsValid() && oldNamespace.IsValid() && oldValue.IsValid())
-            code.From(oldAuthId.GetValueId<DgnAuthorityId>(), oldValue.GetValueText(), oldNamespace.GetValueText());
-        }
-    else
-        {
-        if (oldAuthId.IsValid() || oldNamespace.IsValid() || oldValue.IsValid())
-            {
-            DgnAuthorityId authId = oldAuthId.IsValid() ? oldAuthId.GetValueId<DgnAuthorityId>() : currentCode.GetAuthority();
-            Utf8String nameSpace = oldNamespace.IsValid() ? oldNamespace.GetValueText() : currentCode.GetNamespace();
-            Utf8String value = oldValue.IsValid() ? oldValue.GetValueText() : currentCode.GetValue();
-            code.From(authId, value, nameSpace);
-            }
-        else
-            {
-            code = currentCode;
-            }
-        }
-
-    return code;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   11/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode DgnChangeSummary::ElementEntry::GetCode(bool old) const
-    {
-    auto op = GetDbOpcode();
-    if (old)
-        return getOriginalCode(*this, op);
-
-    if (DbOpcode::Delete == op)
-        return DgnCode(); // no new code...
-
-    DgnDbR db = static_cast<DgnChangeSummary const&>(GetImpl().GetChangeSummary()).GetDgnDb();
-    auto elem = db.Elements().GetElement(GetElementId());
-    BeAssert(elem.IsValid());
-    return elem.IsValid() ? elem->GetCode() : DgnCode();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   11/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode DgnChangeSummary::ModelEntry::GetCode(bool old) const
-    {
-    auto op = GetDbOpcode();
-    if (old)
-        return getOriginalCode(*this, op);
-
-    if (DbOpcode::Delete == op)
-        return DgnCode();
-
-    DgnDbR db = static_cast<DgnChangeSummary const&>(GetImpl().GetChangeSummary()).GetDgnDb();
-    auto model = db.Models().GetModel(GetModelId());
-    BeAssert(model.IsValid());
-    return model.IsValid() ? model->GetCode() : DgnCode();
     }
 
 //---------------------------------------------------------------------------------------
@@ -339,112 +216,6 @@ void DgnChangeSummary::GetElementsWithGeometryUpdates(DgnElementIdSet& elementId
 #else
     elementIds.clear();
 #endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void insertCode(DgnCodeSet& into, DgnCode const& code, DgnCodeSet& ifNotIn)
-    {
-    if (code.IsEmpty() || !code.IsValid())
-        return;
-
-    // At most, we can expect one discard and one assign per unique code.
-    BeAssert(into.end() == into.find(code));
-
-    auto existing = ifNotIn.find(code);
-    if (ifNotIn.end() != existing)
-        {
-        // Code was discarded by one and assigned to another within the same changeset...so no net change
-        ifNotIn.erase(existing);
-        return;
-        }
-
-    into.insert(code);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T> static void collectCodes(DgnCodeSet& assigned, DgnCodeSet& discarded, T& collection)
-    {
-    for (auto const& entry : collection)
-        {
-        if (entry.IsIndirectChange())
-            continue;
-
-        auto oldCode = entry.GetOriginalCode(),
-             newCode = entry.GetCurrentCode();
-
-        if (oldCode == newCode)
-            continue;
-
-        insertCode(discarded, oldCode, assigned);
-        insertCode(assigned, newCode, discarded);
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsistruct                                                    Paul.Connelly   02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct GeometryPartEntry : DgnChangeSummary::Entry<GeometryPartEntry>
-{
-    explicit GeometryPartEntry(Impl const& impl) : Entry(impl) { }
-
-    DgnCode GetCode(bool before) const;
-    DgnGeometryPartId GetPartId() const { return DgnGeometryPartId(GetImpl().GetInstanceId().GetValue()); }
-    DgnCode GetOriginalCode() const { return GetCode(true); }
-    DgnCode GetCurrentCode() const { return GetCode(false); }
-};
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode GeometryPartEntry::GetCode(bool old) const
-    {
-    auto op = GetDbOpcode();
-    if (old)
-        return getOriginalCode(*this, op);
-
-    if (DbOpcode::Delete == op)
-        return DgnCode();
-
-    DgnDbR db = static_cast<DgnChangeSummary const&>(GetImpl().GetChangeSummary()).GetDgnDb();
-    auto geompart = db.GeometryParts().LoadGeometryPart(GetPartId());
-    return geompart.IsValid() ? geompart->GetCode() : DgnCode();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsistruct                                                    Paul.Connelly   02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct GeometryPartIterator : DgnChangeSummary::Iterator<GeometryPartEntry>
-{
-    explicit GeometryPartIterator(DgnChangeSummary const& summary)
-        : Iterator(summary, summary.GetDgnDb().Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_GeometryPart), DgnChangeSummary::QueryDbOpcode::All) { }
-};
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnChangeSummary::GetCodes(DgnCodeSet& assigned, DgnCodeSet& discarded) const
-    {
-    assigned.clear();
-    discarded.clear();
-
-    auto elems = MakeElementIterator();
-    collectCodes(assigned, discarded, elems);
-    auto models = MakeModelIterator();
-    collectCodes(assigned, discarded, models);
-    GeometryPartIterator geomparts(*this);
-    collectCodes(assigned, discarded, geomparts);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnChangeSummary::GetLocks(LockRequestR locks) const
-    {
-    locks.FromChangeSummary(*this);
     }
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

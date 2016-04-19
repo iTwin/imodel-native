@@ -14,11 +14,9 @@ DGNPLATFORM_REF_COUNTED_PTR(AnnotationTextBlockDraw);
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-//! @addtogroup Annotations
-//! @beginGroup
-
 //=======================================================================================
 //! Used to draw an AnnotationTextBlock.
+//! @ingroup GROUP_Annotation
 // @bsiclass                                                    Jeff.Marker     05/2014
 //=======================================================================================
 struct AnnotationTextBlockDraw : public RefCountedBase
@@ -46,7 +44,5 @@ public:
 
     DGNPLATFORM_EXPORT BentleyStatus Draw(Render::GraphicR, ViewContextR, Render::GeometryParamsR) const;
 };
-
-//! @endGroup
 
 END_BENTLEY_DGN_NAMESPACE

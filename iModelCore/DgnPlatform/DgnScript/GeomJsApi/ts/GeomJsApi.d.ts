@@ -512,9 +512,13 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
         
 /** Create a matrix that scales along a specified direction. The scale factor can be negative; for instance scale of -1.0 (negative one) is a mirror. */
         static CreateDirectionalScale (direction : DVector3dP, scale : cxx_double) : RotMatrixP;
-        // TODO: square and normalize !!!
-        
-/** Create a matrix with the indicated column in the (normalized) direction, and the other two columns perpendicular. All columns are normalized */
+/** Create a matrix with the indicated column in the (normalized) direction, and the other two columns perpendicular. All columns are normalized.
+<ul>
+<li>The direction vector is normalized and appears in column axisIndex
+<li>If the direction vector is not close to Z, the "next" column ((axisIndex + 1) mod 3) will be in the XY plane in the direction of (direction cross Z)
+<li>If the dirction vector is close to Z, the "next" column ((axisIndex + 1) mode 3) will be in the direction of (direction cross Y)
+</ul>
+*/
         static Create1Vector (direction : DVector3dP, axisIndex : cxx_double) : RotMatrixP;
         static CreateFromXYVectors (vectorX : DVector3dP, vectorY : DVector3dP, axisIndex : cxx_double) : RotMatrixP;
 /** Multiply the matrix * vector, i.e. the vector is a column vector on the right. 
@@ -619,6 +623,15 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
         static CreateRotationAroundRay (ray : DRay3dP, angle : AngleP) : TransformP;                
         
+        /** Create a normalized frame.
+        <ul>
+        <li>The given origin is the translation part of the transform.
+        <li>The unit vector from origin towards target appears as the axisIndex column.
+        <li>the other two columns are perpendicular to that, as described in RotMatix.Create1Vector
+        </ul>
+        */
+        static CreateNormalizedFrameOriginTarget (origin : DPoint3dP, target : DPoint3dP, axisIndex : cxx_double) : TransformP;
+
         
         MultiplyPoint (Point : DPoint3dP) : DPoint3dP;
             
@@ -745,6 +758,24 @@ Clone (): GeometryP;
 type GeometryP = cxx_pointer<Geometry>;
    
 /**
+@description Data bundle describing fractional and xyz coordinates of a point on a CurvePrimitive
+*/
+class CurveLocationDetail implements BeJsProjection_SuppressConstructor
+{
+/*** NATIVE_TYPE_NAME = JsCurveLocationDetail ***/
+/** Fractional position along the curve. */
+Fraction:cxx_double;
+/** point coordinates */
+Point: DPoint3dP;
+/** the curve primitive */
+Curve: CurvePrimitiveP;
+/** a numeric field with context-specific meaning.*/
+A:cxx_double; 
+
+}
+
+type CurveLocationDetailP = cxx_pointer<CurveLocationDetail>;
+/**
 @description Intermediate base class for various curve types.
 <ul>
 <li>LineSegment
@@ -766,6 +797,14 @@ class CurvePrimitive extends Geometry implements BeJsProjection_SuppressConstruc
     /*** NATIVE_TYPE_NAME = JsCurvePrimitive ***/ 
     Clone(): CurvePrimitiveP;
     CurvePrimitiveType(): cxx_double;
+/** Return a frenet frame at a fractional position.
+<ul>
+<li> x axis is forward along the curve (tangent)
+<li> y axis is towards the center of curvature.
+<li> z axis is x cross y
+</ul>
+*/
+FrenetFrameAtFraction (f : cxx_double) : TransformP;
     /** return the point at fractional position along the curve. */
     PointAtFraction(f: cxx_double): DPoint3dP; 
     /** return the point and unit tangent at fractional position along the curve. */
@@ -776,7 +815,9 @@ class CurvePrimitive extends Geometry implements BeJsProjection_SuppressConstruc
     /** return start point of the primitive.  Equivalent to PointAtFraction (0.0); */
     GetStartPoint () : DPoint3dP;
 /** return end point of the primitive.  Equivalent to PointAtFraction (1.0); */
-    GetEndPoint () : DPoint3dP;  
+    GetEndPoint () : DPoint3dP; 
+/** Find the closest point within the curve */
+    ClosestPointBounded (spacePoint: DPoint3dP) : CurveLocationDetailP;
     }
 
     type CurvePrimitiveP = cxx_pointer<CurvePrimitive>;
@@ -827,6 +868,23 @@ This property is extremely convenient for passing ellipses through viewing trans
         constructor(center: DPoint3dP, vector0: DVector3dP, vector90: DVector3dP, startAngle: AngleP, sweepAngle : AngleP);
         static CreateCircleStartMidEnd (startPoint: DPoint3dP, interiorPoint: DPoint3dP, endPoint: DPoint3dP) : EllipticArcP;
         static CreateCircleXY (center: DPoint3dP, radius: cxx_double) : EllipticArcP;
+        /** Create a circular arc that fillets (replaces pointB) in the path pointA to pointB to pointC. The radius is given,
+                so the tangency point can be outside the distance to pointA or pointC */
+        static CreateFilletAtMiddlePoint (pointA: DPoint3dP, pointB: DPoint3dP, pointC: DPoint3dP, radius: cxx_double) : EllipticArcP;
+        /** Create the largest arc that fillets the corner at pointB and has tangencies no further away than pointA and pointC */
+        static CreateLargestFilletAtMiddlePoint (pointA: DPoint3dP, pointB: DPoint3dP, pointC: DPoint3dP) : EllipticArcP;
+
+        /** Create a circular arc from a start point, initial direction, and plane normal vector. */
+        static CreateStartTangentNormalRadiusSweep (
+                startPoint: DPoint3dP, 
+                startTangent: DVector3dP,
+                planeNormal: DVector3dP,
+                radius: cxx_double,
+                sweep: AngleP
+                ) : EllipticArcP;
+        //! Return the frenet frame of the arc fraction, but with translation to arc center.
+        CenterFrameAtFraction (fraction : cxx_double) : TransformP;
+
         GetCenter (): DPoint3dP;
         GetVector0 (): DVector3dP;
         GetVector90 (): DVector3dP;
@@ -837,7 +895,7 @@ This property is extremely convenient for passing ellipses through viewing trans
         CloneWithPerpendicularAxes () :EllipticArcP;
         /** Return center, Vector0 and Vector90 as a basis plane. Note that these are not unit vectors. */
         GetBasisPlane () : DPoint3dDVector3dDVector3dP;
-        /** Test if the ellipse is circular. */
+        /** Test if the ellipse is circular.   (If so, the radius is GetVector0 ().Magnitude ()) */
         IsCircular () : cxx_bool
     }
 
@@ -1309,6 +1367,12 @@ type DgnBoxP = cxx_pointer<DgnBox>;
             capped: cxx_bool
             ): DgnTorusPipeP;
 
+        static CreateFromArc(
+            arc: EllipticArcP,
+            minorRadius: cxx_double,
+            capped: cxx_bool
+            ): DgnTorusPipeP;
+
     }
 
 type DgnTorusPipeP=cxx_pointer<DgnTorusPipe>;
@@ -1359,6 +1423,60 @@ type DgnRotationalSweepP=cxx_pointer<DgnRotationalSweep>;
     }
 
 type DgnRuledSweepP=cxx_pointer<DgnRuledSweep>;
+
+
+
+//! A wrapper for an array of partial curve detail pairs such as returned from curve-curve intersection methods
+//!<ul>
+//! <li>Each detail pair has an "A" curve and "B" curve.
+//! <li>curve, start fraction, and end fraction can be indpendently accessed for each pair.
+//! <li>each pair can be tested to see if it is a single point (e.g. simple intersection) or not (e.g. colinear sections of lines)
+//!</ul>
+class PartialCurveDetailPairArray implements IDisposable, BeJsProjection_SuppressConstructor
+    {
+        /*** NATIVE_TYPE_NAME = JsPartialCurveDetailPairArray ***/
+
+    //! @return the curve object for the "A" curve
+    GetCurveA (index: cxx_double) : CurvePrimitiveP;
+    //! @return the "start fraction" for the "A" curve of indexed detail.
+    GetFractionA0 (index: cxx_double) : cxx_double;
+    //! @return the "end fraction" for the "A" curve of indexed detail.
+    GetFractionA1 (index: cxx_double) : cxx_double;
+
+    //! @return the curve object for the "B" curve
+    GetCurveB (index: cxx_double) : CurvePrimitiveP;
+    //! @return the "start fraction" for the "B" curve of indexed detail.
+    GetFractionB0 (index: cxx_double) : cxx_double;
+    //! @return the "end fraction" for the "B" curve of indexed detail.
+    GetFractionB1 (index: cxx_double) : cxx_double;
+    //! test if the indexed detail is a single point (simple curve intersection).
+    IsSinglePointPair (index: cxx_double) : cxx_bool;
+
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+type PartialCurveDetailPairArrayP=cxx_pointer<PartialCurveDetailPairArray>;
+
+
+//! A static class for operations involving two curves.
+class CurveCurve implements IDisposable, BeJsProjection_SuppressConstructor
+    {
+    /*** NATIVE_TYPE_NAME = JsCurveCurve ***/
+    //! Compute all intersections among curves, as viewed in XY.  (Intersctions may be single point or overlap of curve sections)
+    //! @return array of descriptions of intersections.
+    IntersectPrimitivesXY (
+                curveA: CurvePrimitiveP,
+                curveB: CurvePrimitiveP,
+                extend: cxx_bool
+                ): PartialCurveDetailPairArrayP;
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+type CurveCurveP=cxx_pointer<CurveCurve>;
 
 
 

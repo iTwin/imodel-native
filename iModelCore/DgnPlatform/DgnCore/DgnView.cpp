@@ -461,8 +461,8 @@ template<typename T_Desired> static bool isEntryOfClass(ViewDefinition::Entry co
     if (nullptr == db)
         return false;
 
-    auto entryClass = db->Schemas().GetECClass(entry.GetClassId().GetValue());
-    auto desiredClass = db->Schemas().GetECClass(T_Desired::QueryClassId(*db).GetValue());
+    auto entryClass = db->Schemas().GetECClass(entry.GetClassId());
+    auto desiredClass = db->Schemas().GetECClass(T_Desired::QueryClassId(*db));
     return nullptr != entryClass && nullptr != desiredClass && entryClass->Is(desiredClass);
     }
 

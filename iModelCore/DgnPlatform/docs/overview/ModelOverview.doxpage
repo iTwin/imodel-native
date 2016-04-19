@@ -1,0 +1,51 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: docs/overview/ModelOverview.doxpage $
+|
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+//__PUBLISH_SECTION_START__
+
+BEGIN_BENTLEY_DGN_NAMESPACE
+
+/** @page PAGE_ModelOverview Model Overview
+
+A DgnModel is a container that owns and organizes %DgnElements to represent a <i>model</i> of something.
+A DgnModel can contain spatial elements to geometrically model physical objects in a given domain, graphical elements to represent a drawing, or definition elements to capture project styles and templates.
+Basically, %DgnModels are used to partition the virtual world.
+
+@tableofcontents
+
+<!-- ---------------------------------------------------------------------------------- -->
+@section SECTION_ModelOverview1 Required include files
+
+__PUBLISH_INSERT_FILE__ Model_Includes.sampleCode
+
+<hr>
+<!-- ---------------------------------------------------------------------------------- -->
+@section SECTION_ModelOverview2 Create and insert a DgnModel
+
+The model classes provided by the DgnPlatform can be used directly.
+The following code sample demonstrates creating a standard SpatialModel using a name passed in as a parameter:
+
+__PUBLISH_INSERT_FILE__ Model_CreateAndInsert.sampleCode
+
+<hr>
+<!-- ---------------------------------------------------------------------------------- -->
+@section SECTION_ModelOverview3 Query a DgnModel by name
+
+The following code sample demonstrates querying for a SpatialModel by name:
+
+__PUBLISH_INSERT_FILE__ Model_QueryByName.sampleCode
+
+<hr>
+<!-- ---------------------------------------------------------------------------------- -->
+@section SECTION_ModelOverviewSeeAlso See Also
+
+@see GROUP_DgnModel
+@see @ref PAGE_CustomModel
+
+*/
+
+END_BENTLEY_DGN_NAMESPACE

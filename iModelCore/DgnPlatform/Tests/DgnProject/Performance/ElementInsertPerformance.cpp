@@ -149,7 +149,7 @@ TEST_F (PerformanceElementTestFixture, ElementInsertInDbWithSingleInsertApproach
         ASSERT_TRUE (insertStmt != nullptr);
         CachedECSqlStatement& stmt = *insertStmt;
 
-        const ECInstanceId id (i+10);
+        const ECInstanceId id ((uint64_t) (i+10));
         stmt.BindId (1, id);
         stmt.BindId (2, modelId);
         stmt.BindId (3, s_codeAuthorityId);
@@ -222,7 +222,7 @@ TEST_F (PerformanceElementTestFixture, ElementInsertInDbWithInsertUpdateApproach
         ASSERT_TRUE (updateStmt != nullptr);
         updateStmts.push_back (updateStmt);
 
-        const ECInstanceId id (i + 10);
+        const ECInstanceId id((uint64_t) (i + 10));
         insertStmt->BindId (1, id);
         insertStmt->BindId (2, modelId);
         insertStmt->BindId (3, s_codeAuthorityId);
@@ -283,7 +283,7 @@ TEST_F (PerformanceElementTestFixture, ElementInsertInDbWithSingleInsertApproach
 
         CachedECSqlStatement& stmt = *insertStmt;
 
-        const ECInstanceId id (i + 10);
+        const ECInstanceId id((uint64_t) (i + 10));
         stmt.BindId (stmt.GetParameterIndex ("ecinstanceid"), id);
         stmt.BindId (stmt.GetParameterIndex ("modelid"), modelId);
         stmt.BindId (stmt.GetParameterIndex ("authorityid"), s_codeAuthorityId);

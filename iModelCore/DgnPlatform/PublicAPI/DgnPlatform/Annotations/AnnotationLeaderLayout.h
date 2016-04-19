@@ -14,11 +14,9 @@ DGNPLATFORM_REF_COUNTED_PTR(AnnotationLeaderLayout);
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-//! @addtogroup Annotations
-//! @beginGroup
-
 //=======================================================================================
 //! Computes size, geometry, and layout information for AnnotationLeader.
+//! @ingroup GROUP_Annotation
 // @bsiclass                                                    Jeff.Marker     06/2014
 //=======================================================================================
 struct AnnotationLeaderLayout : public RefCountedBase
@@ -59,7 +57,5 @@ public:
     TransformCR GetTerminatorTransform() const { const_cast<AnnotationLeaderLayoutP>(this)->Update(); return m_terminatorTransform; }
     CurveVectorCR GetTerminatorGeometry() const { const_cast<AnnotationLeaderLayoutP>(this)->Update(); return *m_terminatorGeometry; }
 };
-
-//! @endGroup
 
 END_BENTLEY_DGN_NAMESPACE

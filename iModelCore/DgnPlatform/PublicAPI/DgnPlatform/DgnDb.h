@@ -15,15 +15,6 @@
 #include "UpdatePlan.h"
 #include <Bentley/BeFileName.h>
 
-/** @addtogroup DgnDbGroup
-
-Classes for creating and opening a DgnDb.
-
-A DgnDb is a BeSQLite::Db that holds data based on the Dgn schema. A DgnDb object is used to access the database.
-
-@ref PAGE_DgnPlatform
-*/
-
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 //=======================================================================================
@@ -34,7 +25,14 @@ enum DgnDbSchemaValues : int32_t
     DGNDB_CURRENT_VERSION_Major = 6,
     DGNDB_CURRENT_VERSION_Minor = 0,
     DGNDB_CURRENT_VERSION_Sub1  = 1,
-    DGNDB_CURRENT_VERSION_Sub2  = 0,
+    DGNDB_CURRENT_VERSION_Sub2  = 2,
+//__PUBLISH_SECTION_END__
+    //------------------------------
+    // Schema change history
+    //------------------------------
+    // 6.0.1.1 - Remove ON DELETE RESTRICT, ON UPDATE RESTRICT
+    // 6.0.1.2 - Introduce MinimumSharedColumnCount for dgn_GeometricElement2d=8 and dgn_GeometricElement3d=16
+//__PUBLISH_SECTION_START__
 
     DGNDB_SUPPORTED_VERSION_Major = 6,  // oldest version of the schema supported by the current api
     DGNDB_SUPPORTED_VERSION_Minor = 0,
@@ -97,7 +95,6 @@ struct DgnVersion : BeSQLite::SchemaVersion
 
 //=======================================================================================
 //! A DgnDb is an in-memory object to access the information in a DgnDb file.
-//! @ingroup DgnDbGroup
 // @bsiclass
 //=======================================================================================
 struct DgnDb : RefCounted<BeSQLite::EC::ECDb>
@@ -116,29 +113,6 @@ struct DgnDb : RefCounted<BeSQLite::EC::ECDb>
         DGNPLATFORM_EXPORT virtual BeSQLite::DbResult _DoUpgrade(DgnDbR, DgnVersion& from) const;
     };
 
-    //=======================================================================================
-    // Used internally as a local cache for serer-issued data like codes and locks.
-    //! @private
-    // @bsiclass                                                    Paul.Connelly   01/16
-    //=======================================================================================
-    struct LocalStateDb
-    {
-        friend struct DgnDb;
-    private:
-        enum class DbState { New, Ready, Invalid };
-
-        BeSQLite::Db    m_db;
-        DbState         m_state;
-
-        LocalStateDb() : m_state(DbState::New) { }
-        ~LocalStateDb() { Destroy(); }
-
-        bool Validate(DgnDbR dgndb);
-        void Destroy();
-    public:
-        BeSQLite::Db& GetDb() { return m_db; }
-        bool IsValid() const { return DbState::Ready == m_state; }
-    };
 private:
     void Destroy();
 
@@ -164,7 +138,6 @@ protected:
     mutable RevisionManagerP m_revisionManager;
     BeSQLite::EC::ECSqlStatementCache m_ecsqlCache;
     DgnQueryQueue m_queryQueue;
-    LocalStateDb    m_localStateDb;
 
     DGNPLATFORM_EXPORT virtual BeSQLite::DbResult _VerifySchemaVersion(BeSQLite::Db::OpenParams const& params) override;
     DGNPLATFORM_EXPORT virtual void _OnDbClose() override;
@@ -225,7 +198,6 @@ public:
     MemoryManager& Memory() const { return const_cast<MemoryManager&>(m_memoryManager);} //!< Manages memory associated with this DgnDb.
     DGNPLATFORM_EXPORT IBriefcaseManager& BriefcaseManager(); //!< Manages this briefcase's held locks and codes
     DgnQueryQueue& GetQueryQueue() const {return const_cast<DgnQueryQueue&>(m_queryQueue);}
-    LocalStateDb& GetLocalStateDb(); //!< @private
 
     //! Gets a cached and prepared ECSqlStatement.
     DGNPLATFORM_EXPORT BeSQLite::EC::CachedECSqlStatementPtr GetPreparedECSqlStatement(Utf8CP ecsql) const;

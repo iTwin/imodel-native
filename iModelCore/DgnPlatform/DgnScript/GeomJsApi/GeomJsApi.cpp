@@ -162,7 +162,7 @@ JsCurveVectorP JsCurveVector::MemberAsCurveVector (double doubleIndex) const
 //=======================================================================================
 //                                                                      Eariln.Lutz     12/15
 //=======================================================================================
-JsCurvePrimitiveP JsCurvePrimitive::StronglyTypedJsCurvePrimitive (ICurvePrimitivePtr &data, bool nullifyCurveVector)
+JsCurvePrimitiveP JsCurvePrimitive::StronglyTypedJsCurvePrimitive (ICurvePrimitivePtr const &data, bool nullifyCurveVector)
     {
     if (!data.IsValid ())
         return nullptr;
@@ -228,6 +228,14 @@ JsGeometryP JsGeometry::CreateStronglyTypedJsGeometry (IGeometryPtr geometry)
 */
         }
     return nullptr;
+    }
+
+// Per forward declaration ..
+JsCurveLocationDetailP JsCurvePrimitive::ClosestPointBounded (JsDPoint3dP spacePoint)
+    {
+    CurveLocationDetail detail;
+    m_curvePrimitive->ClosestPointBounded (spacePoint->Get (), detail);
+    return new JsCurveLocationDetail (detail);
     }
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

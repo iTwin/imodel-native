@@ -751,15 +751,15 @@ TEST_F(DgnElementTests, TestUnhandledProperties)
 
         //  No unhandled properties yet
         ECN::ECValue checkValue;
-        EXPECT_EQ(DgnDbStatus::Success, el.GetUnhandledPropertyValue(checkValue, "StringProperty"));
+        EXPECT_EQ(DgnDbStatus::Success, el._GetProperty(checkValue, "StringProperty"));
         EXPECT_TRUE(checkValue.IsNull());
 
         //  Set unhandled property (in memory)
-        ASSERT_EQ(DgnDbStatus::Success, el.SetUnhandledPropertyValue("StringProperty", ECN::ECValue("initial value")));
+        ASSERT_EQ(DgnDbStatus::Success, el._SetProperty("StringProperty", ECN::ECValue("initial value")));
 
         //      ... check that we see the pending value
         checkValue.Clear();
-        EXPECT_EQ(DgnDbStatus::Success, el.GetUnhandledPropertyValue(checkValue, "StringProperty"));
+        EXPECT_EQ(DgnDbStatus::Success, el._GetProperty(checkValue, "StringProperty"));
         EXPECT_STREQ("initial value", checkValue.ToString().c_str());
 
         //  Insert the element
@@ -770,7 +770,7 @@ TEST_F(DgnElementTests, TestUnhandledProperties)
 
     // Check that we see the stored value
     ECN::ECValue checkValue;
-    EXPECT_EQ(DgnDbStatus::Success, persistentEl->GetUnhandledPropertyValue(checkValue, "StringProperty"));
+    EXPECT_EQ(DgnDbStatus::Success, persistentEl->_GetProperty(checkValue, "StringProperty"));
     EXPECT_STREQ("initial value", checkValue.ToString().c_str());
 
     if (true)
@@ -780,20 +780,20 @@ TEST_F(DgnElementTests, TestUnhandledProperties)
 
         //      ... initially we still see the initial/stored value
         checkValue.Clear();
-        EXPECT_EQ(DgnDbStatus::Success, editEl->GetUnhandledPropertyValue(checkValue, "StringProperty"));
+        EXPECT_EQ(DgnDbStatus::Success, editEl->_GetProperty(checkValue, "StringProperty"));
         EXPECT_STREQ("initial value", checkValue.ToString().c_str());
 
         //  Set a new value (in memory)
-        EXPECT_EQ(DgnDbStatus::Success, editEl->SetUnhandledPropertyValue("StringProperty", ECN::ECValue("changed value")));
+        EXPECT_EQ(DgnDbStatus::Success, editEl->_SetProperty("StringProperty", ECN::ECValue("changed value")));
 
         //      ... check that we now see the pending value on the edited copy ...
         checkValue.Clear();
-        EXPECT_EQ(DgnDbStatus::Success, editEl->GetUnhandledPropertyValue(checkValue, "StringProperty"));
+        EXPECT_EQ(DgnDbStatus::Success, editEl->_GetProperty(checkValue, "StringProperty"));
         EXPECT_STREQ("changed value", checkValue.ToString().c_str());
 
         //      ... but no change on the persistent element
         checkValue.Clear();
-        EXPECT_EQ(DgnDbStatus::Success, persistentEl->GetUnhandledPropertyValue(checkValue, "StringProperty"));
+        EXPECT_EQ(DgnDbStatus::Success, persistentEl->_GetProperty(checkValue, "StringProperty"));
         EXPECT_STREQ("initial value", checkValue.ToString().c_str());
 
         //  Update the element
@@ -802,7 +802,7 @@ TEST_F(DgnElementTests, TestUnhandledProperties)
 
     // Check that the stored value was changed
     checkValue.Clear();
-    EXPECT_EQ(DgnDbStatus::Success, persistentEl->GetUnhandledPropertyValue(checkValue, "StringProperty"));
+    EXPECT_EQ(DgnDbStatus::Success, persistentEl->_GetProperty(checkValue, "StringProperty"));
     EXPECT_STREQ("changed value", checkValue.ToString().c_str());
     }
 

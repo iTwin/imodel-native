@@ -22,6 +22,11 @@
 %endif
 %endif
 
+%if defined (BENTLEYCONFIG_OPENCASCADE)
+dirToSearch = $(BuildContext)VendorAPI/opencascade/
+%include cincapnd.mki
+%endif
+
 #-----------------------------------------------------------
 # Root DgnPlatform directory
 #-----------------------------------------------------------
@@ -60,6 +65,10 @@ AnnotationsPrivateApi           = $(DgnPlatformInternalDir)DgnCore/Annotations/
 AnnotationsApi                  = $(DgnPlatformAPISrc)Annotations/
 
 BaseGeoCoordAPISrc              = $(BuildContext)PublicAPI/GeoCoord/
+
+DgnBRepSrc                      = $(SrcDgnPlatform)DgnBRep/
+DgnBRepApi                      = $(DgnPlatformAPISrc)DgnBRep/
+
 #-----------------------------------------------------------
 # BuildContext
 #-----------------------------------------------------------
@@ -85,7 +94,7 @@ ASSEMBLY_STRONGNAME             = 1
 
 contextDepends                  = $(DgnPlatformAPISrc)ViewContext.h $(DgnPlatformAPISrc)Render.h $(DgnPlatformAPISrc)DgnViewport.h
 
-VewControllerDepends            = $(DgnPlatformAPISrc)ViewController.h $(DgnPlatformAPISrc)ViewContext.h
+ViewControllerDepends           = $(DgnPlatformAPISrc)ViewController.h $(DgnPlatformAPISrc)ViewContext.h
 
 HandlerDepends                  = $(DgnPlatformAPISrc)ElementHandler.h $(contextDepends)
 
@@ -168,6 +177,8 @@ CPchOpts            = $(UsePrecompiledHeaderOptions)
 
 MultiCompileDepends =$(_MakeFileSpec)
 %include MultiCppCompileRule.mki
+
+$(CoreObjs)GraphiteResourceURI$(oext) :             $(DgnCoreDir)GraphiteResourceURI.cpp ${MultiCompileDepends} 
 
 $(CoreObjs)DgnElement$(oext) :                      $(DgnCoreDir)DgnElement.cpp ${MultiCompileDepends} $(DgnFileIOPubH)  $(toolsHeaders)
 
@@ -359,18 +370,38 @@ $(CoreObjs)RegionUtil$(oext) :                      $(DgnHandlersDir)RegionUtil.
 
 $(CoreObjs)ScopedDgnHost$(oext) :                   $(DgnHandlersDir)ScopedDgnHost.cpp  ${MultiCompileDepends}
 
-$(CoreObjs)DgnChangeSummary$(oext) :                $(DgnHandlersDir)DgnChangeSummary.cpp $(DgnPlatformAPISrc)DgnChangeSummary.h ${MultiCompileDepends}
+$(CoreObjs)AnnotationTable$(oext) :                 $(DgnCoreDir)AnnotationTable.cpp $(DgnPlatformAPISrc)AnnotationTable.h ${MultiCompileDepends}
 
-$(CoreObjs)DgnECSymbolProvider$(oext) :             $(DgnHandlersDir)DgnECSymbolProvider.cpp $(DgnPlatformAPISrc)DgnECSymbolProvider.h ${MultiCompileDepends}
+$(CoreObjs)AnnotationTableStroker$(oext) :          $(DgnCoreDir)AnnotationTableStroker.cpp $(DgnPlatformAPISrc)AnnotationTable.h ${MultiCompileDepends}
 
-$(coreObjs)AnnotationTable$(oext) :                 $(DgnCoreDir)AnnotationTable.cpp $(DgnPlatformAPISrc)AnnotationTable.h ${MultiCompileDepends}
+$(CoreObjs)DimensionStyle$(oext) :                  $(DgnCoreDir)Dimension/DimensionStyle.cpp $(DgnPlatformAPISrc)Dimension/Dimension.h ${MultiCompileDepends}
 
-$(coreObjs)AnnotationTableStroker$(oext) :          $(DgnCoreDir)AnnotationTableStroker.cpp $(DgnPlatformAPISrc)AnnotationTable.h ${MultiCompileDepends}
+$(CoreObjs)LinearDimension$(oext) :                 $(DgnCoreDir)Dimension/LinearDimension.cpp $(DgnPlatformAPISrc)Dimension/Dimension.h ${MultiCompileDepends}
+
+$(CoreObjs)LinearDimensionStroker$(oext) :          $(DgnCoreDir)Dimension/LinearDimensionStroker.cpp $(DgnPlatformAPISrc)Dimension/Dimension.h ${MultiCompileDepends}
 
 $(o)ECUtils$(oext) :                                $(DgnCoreDir)ECUtils.cpp $(DgnPlatformAPISrc)ECUtils.h ${MultiCompileDepends}
 
 $(o)RenderMaterial$(oext) :                         $(DgnCoreDir)RenderMaterial.cpp $(DgnPlatformAPISrc)RenderMaterial.h ${MultiCompileDepends}
 
+$(o)DgnChangeIterator$(oext) :                      $(DgnCoreDir)DgnChangeIterator.cpp $(DgnCoreDir)DgnChangeIterator.h ${MultiCompileDepends}
+
+
+#----------------------------------------------------------------------
+#   DgnBRep
+#----------------------------------------------------------------------
+
+$(CoreObjs)SolidKernelUtil$(oext) :                 $(DgnBRepSrc)SolidKernelUtil.cpp $(DgnPlatformAPISrc)SolidKernel.h ${MultiCompileDepends}
+
+%if defined (BENTLEYCONFIG_OPENCASCADE)
+
+$(CoreObjs)OCBRepCreate$(oext) :                    $(DgnBRepSrc)OCBRepCreate.cpp $(DgnBRepApi)OCBRep.h ${MultiCompileDepends}
+
+$(CoreObjs)OCBRepMesh$(oext) :                      $(DgnBRepSrc)OCBRepMesh.cpp $(DgnBRepApi)OCBRep.h ${MultiCompileDepends}
+
+$(CoreObjs)OCBRepUtil$(oext) :                      $(DgnBRepSrc)OCBRepUtil.cpp $(DgnBRepApi)OCBRep.h ${MultiCompileDepends}
+
+%endif
 
 #----------------------------------------------------------------------
 #   DgnGeoCoord
@@ -435,6 +466,31 @@ $(o)DgnScriptStubbedOut$(oext) :                    $(dgnScriptDir)DgnScriptStub
 $(o)w32tools$(oext) :                               $(ToolsDir)nonport/winnt/w32tools.cpp  ${MultiCompileDepends}
 
 %endif
+
+#----------------------------------------------------------------------
+#   DgnEC
+#----------------------------------------------------------------------
+DgnECDepends = \
+    $(DgnPlatformAPISrc)DgnChangeSummary.h \
+    $(DgnPlatformAPISrc)DgnECSymbolProvider.h \
+    $(DgnPlatformAPISrc)DgnECTypes.h \
+    $(DgnPlatformAPISrc)DgnECPersistence.h \
+    $(DgnHandlersDir)DgnECTypeAdapters.h \
+    $(DgnHandlersDir)DgnECInteropStringFormatter.h \
+
+ 
+$(CoreObjs)DgnChangeSummary$(oext) : $(DgnHandlersDir)DgnChangeSummary.cpp $(DgnECDepends) ${MultiCompileDepends}
+
+$(CoreObjs)DgnECSymbolProvider$(oext) : $(DgnHandlersDir)DgnECSymbolProvider.cpp $(DgnECDepends) ${MultiCompileDepends}
+
+$(CoreObjs)DgnECTypes$(oext) : $(DgnHandlersDir)DgnECTypes.cpp $(DgnECDepends) ${MultiCompileDepends}
+
+$(CoreObjs)DgnECTypeAdapters$(oext) : $(DgnHandlersDir)DgnECTypeAdapters.cpp $(DgnECDepends) ${MultiCompileDepends}
+
+$(CoreObjs)DgnECInteropStringFormatter$(oext) : $(DgnHandlersDir)DgnECInteropStringFormatter.cpp $(DgnECDepends) ${MultiCompileDepends}
+
+$(CoreObjs)DgnECPersistence$(oext) : $(DgnHandlersDir)DgnECPersistence.cpp $(DgnECDepends) ${MultiCompileDepends}
+
 
 #----------------------------------------------------------------------
 #   Annotations
@@ -581,6 +637,30 @@ LINKER_LIBRARIES        =   $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext
                             $(ContextSubpartsLibs)$(libprefix)freetype2$(libext) \
                             $(ContextSubpartsLibs)$(libprefix)BeIcu4c$(libext)
 
+%if defined (BENTLEYCONFIG_OPENCASCADE)
+# FoundationClasses
+LINKER_LIBRARIES_DELAYLOADED = \
+    $(ContextSubPartsLibs)TKernel.lib \
+    $(ContextSubPartsLibs)TKMath.lib
+
+# ModelingData
+LINKER_LIBRARIES_DELAYLOADED + \
+    $(ContextSubPartsLibs)TKG2d.lib \
+    $(ContextSubPartsLibs)TKG3d.lib \
+    $(ContextSubPartsLibs)TKBrep.lib \
+    $(ContextSubPartsLibs)TKGeomBase.lib
+
+# ModelingAlgorithms (also TKHLR TKFillet TKFeat TKXMesh TKShHealing)
+LINKER_LIBRARIES_DELAYLOADED + \
+    $(ContextSubPartsLibs)TKBool.lib \
+    $(ContextSubPartsLibs)TKBO.lib \
+    $(ContextSubPartsLibs)TKOffset.lib \
+    $(ContextSubPartsLibs)TKPrim.lib \
+    $(ContextSubPartsLibs)TKMesh.lib \
+    $(ContextSubPartsLibs)TKGeomAlgo.lib \
+    $(ContextSubPartsLibs)TKTopAlgo.lib
+%endif
+
 %if $(TARGET_PLATFORM)!="WinRT"
     # The "Casablanca" library is used on WinRT instead
     LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeCurl$(libext)
@@ -602,14 +682,18 @@ LINKER_LIBRARIES        =   $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext
 %ifndef BENTLEYCONFIG_NO_JAVASCRIPT
     LINKER_LIBRARIES +    $(ContextSubpartsLibs)$(libprefix)BeJavaScript$(stlibext)
     %if $(TARGET_PLATFORM) == "Windows"
-        %ifndef NDEBUG
-            %if defined (BEJAVASCRIPT_FORCE_JSRT_EDGE_MODE) && (" " != $[@findstring "[Version 10.", $[@readstdout ver]])
-                LINKER_LIBRARIES + chakrart.lib
-            %else
-                LINKER_LIBRARIES + jsrt.lib
-            %endif
+        %if defined (BEJAVASCRIPT_USE_CHAKRACORE)
+            LINKER_LIBRARIES + $(ContextSubpartsLibs)ChakraCore.lib
         %else
-            LINKER_LIBRARIES + $(ContextSubpartsLibs)libv8.lib
+            %if !defined (NDEBUG) && !defined (DGNCLIENTFXJS_WINDOWS_FORCE_V8_ENGINE)
+                %if defined (BEJAVASCRIPT_FORCE_JSRT_EDGE_MODE) && (" " != $[@findstring "[Version 10.", $[@readstdout ver]])
+                    LINKER_LIBRARIES + chakrart.lib
+                %else
+                    LINKER_LIBRARIES + jsrt.lib
+                %endif
+            %else
+                LINKER_LIBRARIES + $(ContextSubpartsLibs)libv8.lib
+            %endif
         %endif
     %elif $(TARGET_PLATFORM) == "WinRT"
         %if $(MSVC_VERSION) >= 1900

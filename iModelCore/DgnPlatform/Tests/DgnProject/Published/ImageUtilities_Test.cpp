@@ -87,7 +87,7 @@ TEST (ImageUtilities_Tests, PngReadFromBuffer)
 
     ASSERT_TRUE( info.WriteImageToPngFile(pngFile, testImage) == BSISUCCESS);
 
-    ByteStream imageRead;
+    Render::Image imageRead;
     ::RgbImageInfo infoRead;
     pngFile.Close();
     ASSERT_TRUE( pngFile.Open(pngFileName, BeFileAccess::Read) == BeFileStatus::Success );
@@ -99,7 +99,7 @@ TEST (ImageUtilities_Tests, PngReadFromBuffer)
     ASSERT_EQ( infoRead.m_height, info.m_height );
     ASSERT_EQ( infoRead.m_hasAlpha, info.m_hasAlpha );
     ASSERT_TRUE( infoRead.m_isTopDown ); // PNG is always top-down
-    ASSERT_TRUE( 0==memcmp(imageRead.GetDataP(), testImage.GetDataP(), imageRead.GetSize()) ); // Since our input was RGBA, there was no transformation on the way out to the file.
+    ASSERT_TRUE( 0==memcmp(imageRead.GetByteStream().GetDataP(), testImage.GetDataP(), imageRead.GetByteStream().GetSize()) ); // Since our input was RGBA, there was no transformation on the way out to the file.
     }
 
 //---------------------------------------------------------------------------------------
@@ -138,7 +138,7 @@ TEST (ImageUtilities_Tests, JPG)
     ASSERT_TRUE(SUCCESS == info.WriteImageToJpgBuffer(jpegData, testImage, 100));
     ASSERT_TRUE(BeFileStatus::Success == pngFile.Write(NULL, &jpegData[0], (uint32_t)jpegData.size()));
 
-    ByteStream imageRead;
+    Render::Image imageRead;
     RgbImageInfo infoRead = info;
     pngFile.Close();
     ASSERT_TRUE(pngFile.Open(pngFileName, BeFileAccess::Read) == BeFileStatus::Success);
@@ -150,7 +150,7 @@ TEST (ImageUtilities_Tests, JPG)
     ASSERT_EQ(infoRead.m_height, info.m_height);
     ASSERT_EQ(infoRead.m_hasAlpha, info.m_hasAlpha);
     ASSERT_TRUE(infoRead.m_isTopDown); // PNG is always top-down
-    EXPECT_EQ(imageRead.GetSize(), testImage.GetSize());
+    EXPECT_EQ(imageRead.GetByteStream().GetSize(), testImage.GetSize());
     // Why image is not same , qaulity was 100 so it should transform or change any thing
     //ASSERT_TRUE(imageRead == testImage); // Since our input was RGBA, there was no transformation on the way out to the file.
     }

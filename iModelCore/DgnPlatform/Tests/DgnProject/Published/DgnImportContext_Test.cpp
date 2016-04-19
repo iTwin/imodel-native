@@ -22,6 +22,8 @@ USING_NAMESPACE_BENTLEY_DPTEST
 //----------------------------------------------------------------------------------------
 struct ImportTest : DgnDbTestFixture
 {
+    ImportTest() : DgnDbTestFixture(ScopedDgnHost::Options::DisableRepositoryManager) { }
+
     void InsertElement(DgnDbR, DgnModelId, bool is3d, bool expectSuccess);
 };
 
@@ -453,7 +455,7 @@ TEST_F(ImportTest, ImportElementAndCategory1)
         for (int i=0; i<32; ++i)
             {
             // Insert another category into the destination DB, just to make sure that IDs don't line up
-            ASSERT_TRUE( createCategory(*destDb, Utf8PrintfString("Unrelated%d",i), DgnCategory::Scope::Any, createAppearance(ColorDef(7,8,9,10))).IsValid() );
+            ASSERT_TRUE( createCategory(*destDb, Utf8PrintfString("Unrelated%d",i).c_str(), DgnCategory::Scope::Any, createAppearance(ColorDef(7,8,9,10))).IsValid() );
             }
 
         SpatialModelPtr destmod = createSpatialModel(*destDb, "destmod");

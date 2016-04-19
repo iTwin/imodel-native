@@ -2,7 +2,7 @@
 |
 |     $Source: docs/samplecode/Model.sample.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__PUBLISH_EXTRACT_START__ Model_Includes.sampleCode
@@ -17,13 +17,27 @@ USING_NAMESPACE_BENTLEY_DGN
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   BentleySystems
 //---------------------------------------------------------------------------------------
-SpatialModelPtr createAndInsertSpatialModel(DgnDbR db, Utf8CP name)
+SpatialModelPtr createAndInsertSpatialModel(DgnDbR db, Utf8CP modelName)
     {
     ModelHandlerR handler = dgn_ModelHandler::Spatial::GetHandler();
     DgnClassId modelClassId = db.Domains().GetClassId(handler);
-    DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, modelClassId, DgnModel::CreateModelCode(name)));
+    DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, modelClassId, DgnModel::CreateModelCode(modelName)));
 
     return (DgnDbStatus::Success == model->Insert()) ? model->ToSpatialModelP()  : nullptr;
+    }
+
+//__PUBLISH_EXTRACT_END__
+//__PUBLISH_EXTRACT_START__ Model_QueryByName.sampleCode
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   BentleySystems
+//---------------------------------------------------------------------------------------
+SpatialModelPtr querySpatialModelByName(DgnDbR db, Utf8CP modelName)
+    {
+    DgnModelId modelId = db.Models().QueryModelId(DgnModel::CreateModelCode(modelName));
+    if (!modelId.IsValid())
+        return nullptr;
+
+    return db.Models().Get<SpatialModel>(modelId);
     }
 
 //__PUBLISH_EXTRACT_END__

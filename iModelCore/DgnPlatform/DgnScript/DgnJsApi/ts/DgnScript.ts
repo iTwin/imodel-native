@@ -23,10 +23,19 @@
 
     /** The alias of the dgn schema namespace */
     export var DGN_ECSCHEMA_NAME = "dgn";
+    /** The alias of the Generic schema namespace */
+    export var GENERIC_ECSCHEMA_NAME = "Generic";
 
-    /** The names of classes in the dgn schema. */
+    /** The name of the GeometricElement class in the dgn schema. */
+    export var DGN_CLASSNAME_GeometricElement = "GeometricElement";
+    /** The name of the GeometricElement3d class in the dgn schema. */
+    export var DGN_CLASSNAME_GeometricElement3d = "GeometricElement3d";
+    /** The name of the SpatialElement class in the dgn schema. */
     export var DGN_CLASSNAME_SpatialElement = "SpatialElement";
+    /** The name of the PhysicalElement class in the dgn schema. */
     export var DGN_CLASSNAME_PhysicalElement = "PhysicalElement";
+    /** The name of the PhysicalObject class in the Generic schema. */
+    export var GENERIC_CLASSNAME_PhysicalObject = "PhysicalObject";
 
     /**
      * Options that are passed to a model solver.
@@ -43,6 +52,14 @@
     export function DGN_SCHEMA(name: string): string
     {
         return DGN_ECSCHEMA_NAME + "." + name;
+    }
+
+    /**
+     * Returns the fully qualified ECSQL name of the specified ECClass in the generic schema. 
+     */
+    export function GENERIC_SCHEMA(name: string): string
+    {
+        return GENERIC_ECSCHEMA_NAME + "." + name;
     }
 
     /**

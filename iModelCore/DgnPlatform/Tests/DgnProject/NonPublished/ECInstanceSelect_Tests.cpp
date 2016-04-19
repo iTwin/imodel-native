@@ -30,7 +30,7 @@ void ECInstanceSelectTests::VerifyInstanceCounts(WCharCP fileName, bmap<Utf8Stri
     ASSERT_EQ(SUCCESS, DgnDbTestDgnManager::GetTestDataOut(outFileName, fileName, testProjFile, __FILE__));
 
     OpenDb(m_db, outFileName, mode);
-    ECSchemaList schemaList;
+    bvector<ECN::ECSchemaCP> schemaList;
     ECSqlStatement stmt;
 
     bmap<Utf8String, int> classList;
@@ -44,26 +44,29 @@ void ECInstanceSelectTests::VerifyInstanceCounts(WCharCP fileName, bmap<Utf8Stri
 
         if (schemasToCheck.end() != iter)
             {
-            Utf8StringCR schemaPrefix = schema->GetNamespacePrefix();
+            Utf8String query;
             for (ECN::ECClassCP const& ecClass : schema->GetClasses())
                 {
-                if (ecClass->IsEntityClass() == false)
+                if (ecClass->IsEntityClass() == false || ECN::ECClassModifier::Abstract == ecClass->GetClassModifier())
                     continue;
-                Utf8String ClassName = ecClass->GetName().c_str();
-                Utf8String query = "SELECT COUNT(*) FROM ONLY ";
-                query.append(schemaPrefix);
-                query.append(".[");
-                query.append(ClassName);
-                query.append("]");
+                if (!Utf8String::IsNullOrEmpty(query.c_str()))
+                    query.append(" UNION ALL ");
 
-                ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_db, query.c_str())) << "Statement prepare failed for " << query.c_str();
-                ASSERT_EQ(stmt.Step(), DbResult::BE_SQLITE_ROW);
+                query.append("SELECT COUNT(*), '").append(ecClass->GetName()).append("' FROM ONLY ").append(ecClass->GetECSqlName());
+                }
+
+            if (query.empty())
+                continue;
+
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_db, query.c_str())) << "Statement prepare failed for " << query.c_str();
+            while (DbResult::BE_SQLITE_ROW == stmt.Step())
+                {
                 int count = stmt.GetValueInt(0);
                 if (0 != count)
-                    classList[ClassName] = stmt.GetValueInt(0);
-                stmt.Finalize();
-                query.clear();
+                    classList[stmt.GetValueText(1)] = stmt.GetValueInt(0);
                 }
+            stmt.Finalize();
+            query.clear();
             }
         }
     if (classList.size() != benchMark.size())
@@ -375,33 +378,34 @@ TEST_F (ECInstanceSelectTests, VerifyInstanceCountFor04Plant)
     VerifyInstanceCounts(L"04_Plant.i.idgndb", benchMark, schemasToCheck);
     }
 
-TEST_F(ECInstanceSelectTests, VerifyInstanceCountFor79Main)
-    {
-    bmap<Utf8String, int> benchMark;
-
-    benchMark["TriformaCommon"] = 91;
-    benchMark["EQUIP_MEQP"] = 16;
-    benchMark["EQUIP_PNOZ"] = 58;
-    benchMark["ILPIP_ILPP"] = 30;
-    benchMark["PIPE_OPLT"] = 5;
-    benchMark["PIPE_PBRN"] = 28;
-    benchMark["PIPE_PCAP"] = 3;
-    benchMark["PIPE_PCRD"] = 25;
-    benchMark["PIPE_PELB"] = 148;
-    benchMark["PIPE_PERD"] = 11;
-    benchMark["PIPE_PFLG"] = 128;
-    benchMark["PIPE_PFLR"] = 5;
-    benchMark["PIPE_PGKT"] = 131;
-    benchMark["PIPE_PIPE"] = 177;
-    benchMark["PIPE_PNOT"] = 2;
-    benchMark["PIPE_PNPL"] = 4;
-    benchMark["PIPE_PVLV"] = 45;
-
-    bvector<Utf8String> schemasToCheck;
-    schemasToCheck.push_back("BuildingDataGroup");
-    schemasToCheck.push_back("ams");
-    VerifyInstanceCounts(L"79_Main.i.idgndb", benchMark, schemasToCheck);
-    }
+// CGM - Unfortunately, this test takes over 11 seconds to run
+//TEST_F(ECInstanceSelectTests, VerifyInstanceCountFor79Main)
+//    {
+//    bmap<Utf8String, int> benchMark;
+//
+//    benchMark["TriformaCommon"] = 91;
+//    benchMark["EQUIP_MEQP"] = 16;
+//    benchMark["EQUIP_PNOZ"] = 58;
+//    benchMark["ILPIP_ILPP"] = 30;
+//    benchMark["PIPE_OPLT"] = 5;
+//    benchMark["PIPE_PBRN"] = 28;
+//    benchMark["PIPE_PCAP"] = 3;
+//    benchMark["PIPE_PCRD"] = 25;
+//    benchMark["PIPE_PELB"] = 148;
+//    benchMark["PIPE_PERD"] = 11;
+//    benchMark["PIPE_PFLG"] = 128;
+//    benchMark["PIPE_PFLR"] = 5;
+//    benchMark["PIPE_PGKT"] = 131;
+//    benchMark["PIPE_PIPE"] = 177;
+//    benchMark["PIPE_PNOT"] = 2;
+//    benchMark["PIPE_PNPL"] = 4;
+//    benchMark["PIPE_PVLV"] = 45;
+//
+//    bvector<Utf8String> schemasToCheck;
+//    schemasToCheck.push_back("BuildingDataGroup");
+//    schemasToCheck.push_back("ams");
+//    VerifyInstanceCounts(L"79_Main.i.idgndb", benchMark, schemasToCheck);
+//    }
 
 TEST_F(ECInstanceSelectTests, VerifyInstanceCountForBGRSubset)
     {
@@ -441,32 +445,33 @@ TEST_F(ECInstanceSelectTests, VerifyinstanceCountsForfacilities_secondary)
     VerifyInstanceCounts(L"facilities_secondaryinstances.idgndb", benchMark, schemasToCheck);
     }
 
-TEST_F(ECInstanceSelectTests, VerifyInstanceCountsForMain)
-    {
-    bmap<Utf8String, int> benchMark;
-
-    benchMark["TriformaCommon"] = 91;
-    benchMark["EQUIP_PNOZ"] = 46;
-    benchMark["ILPIP_ILPP"] = 30;
-    benchMark["PIPE_OPLT"] = 5;
-    benchMark["PIPE_PBRN"] = 28;
-    benchMark["PIPE_PCAP"] = 3;
-    benchMark["PIPE_PCRD"] = 25;
-    benchMark["PIPE_PELB"] = 148;
-    benchMark["PIPE_PERD"] = 11;
-    benchMark["PIPE_PFLG"] = 128;
-    benchMark["PIPE_PFLR"] = 5;
-    benchMark["PIPE_PGKT"] = 131;
-    benchMark["PIPE_PIPE"] = 177;
-    benchMark["PIPE_PNOT"] = 2;
-    benchMark["PIPE_PNPL"] = 4;
-    benchMark["PIPE_PVLV"] = 45;
-
-    bvector<Utf8String> schemasToCheck;
-    schemasToCheck.push_back("BuildingDataGroup");
-    schemasToCheck.push_back("ams");
-    VerifyInstanceCounts(L"Main.idgndb", benchMark, schemasToCheck);
-    }
+// CGM - Unfortunately, this test takes over 8 seconds to run
+//TEST_F(ECInstanceSelectTests, VerifyInstanceCountsForMain)
+//    {
+//    bmap<Utf8String, int> benchMark;
+//
+//    benchMark["TriformaCommon"] = 91;
+//    benchMark["EQUIP_PNOZ"] = 46;
+//    benchMark["ILPIP_ILPP"] = 30;
+//    benchMark["PIPE_OPLT"] = 5;
+//    benchMark["PIPE_PBRN"] = 28;
+//    benchMark["PIPE_PCAP"] = 3;
+//    benchMark["PIPE_PCRD"] = 25;
+//    benchMark["PIPE_PELB"] = 148;
+//    benchMark["PIPE_PERD"] = 11;
+//    benchMark["PIPE_PFLG"] = 128;
+//    benchMark["PIPE_PFLR"] = 5;
+//    benchMark["PIPE_PGKT"] = 131;
+//    benchMark["PIPE_PIPE"] = 177;
+//    benchMark["PIPE_PNOT"] = 2;
+//    benchMark["PIPE_PNPL"] = 4;
+//    benchMark["PIPE_PVLV"] = 45;
+//
+//    bvector<Utf8String> schemasToCheck;
+//    schemasToCheck.push_back("BuildingDataGroup");
+//    schemasToCheck.push_back("ams");
+//    VerifyInstanceCounts(L"Main.idgndb", benchMark, schemasToCheck);
+//    }
 
 TEST_F(ECInstanceSelectTests, VerifyInstanceCountsForMobileDgn_test)
     {

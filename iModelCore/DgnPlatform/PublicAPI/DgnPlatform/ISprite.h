@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/ISprite.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -18,33 +18,26 @@ BEGIN_BENTLEY_RENDER_NAMESPACE
 struct ISprite;
 typedef RefCountedPtr<ISprite> ISpritePtr;
 
-/*=================================================================================**//**
- @addtogroup Sprites
- Sprites are (typically) small raster images that are drawn "on top" of Viewports by an IViewDecoration.
- Their purpose is to draw the user's attention to something of importance.
-
- There are two classes in the Sprites subsystem: ISprite (a Sprite Definition) and SpriteLocation.
- Sprite Definitions are the images that define the way a type of sprite looks and are generally
- loaded one time and saved for the rest of a session. A SpriteLocation defines the current
- position of a single Sprite in a DgnViewport.
-
- A SpriteLocation can be either active or inactive. It becomes active by specifying a location
- (an x,y point) and a Sprite Definition to draw at that point. It should be obvious that a single Sprite
- Definition can be used many times by many Sprite Locations and that a single Sprite Location can
- change both position and which Sprite Definition is shown at that position over time.
-
- Sprites can be of varying sizes and color depths and can have both opaque and transparent pixels. 
- 
- Element Manipulator handles and the Accusnap indicators are examples of  use of Sprites.
- @note It is also possible to draw an ISprite onto a DgnViewport directly (via calls to IViewDraw::DrawSprite)
- without ever using a SpritLocation. SpriteLocations are merely provided as a convenience.
- @beginGroup
- @bsiclass
-+===============+===============+===============+===============+===============+======*/
-
-/*=================================================================================**//**
- @bsiinterface
-+===============+===============+===============+===============+===============+======*/
+//=======================================================================================
+//! Sprites are (typically) small raster images that are drawn "on top" of Viewports by an IViewDecoration.
+//! Their purpose is to draw the user's attention to something of importance.
+//! <p>
+//! There are two classes in the Sprites subsystem: ISprite (a Sprite Definition) and SpriteLocation.
+//! Sprite Definitions are the images that define the way a type of sprite looks and are generally
+//! loaded one time and saved for the rest of a session. A SpriteLocation defines the current
+//! position of a single Sprite in a DgnViewport.
+//! <p>
+//! A SpriteLocation can be either active or inactive. It becomes active by specifying a location
+//! (an x,y point) and a Sprite Definition to draw at that point. It should be obvious that a single Sprite
+//! Definition can be used many times by many Sprite Locations and that a single Sprite Location can
+//! change both position and which Sprite Definition is shown at that position over time.
+//! <p>
+//! Sprites can be of varying sizes and color depths and can have both opaque and transparent pixels. 
+//! <p>
+//! Element Manipulator handles and the Accusnap indicators are examples of  use of Sprites.
+//! @note It is also possible to draw an ISprite onto a DgnViewport directly (via calls to IViewDraw::DrawSprite)
+//! without ever using a SpritLocation. SpriteLocations are merely provided as a convenience.
+//=======================================================================================
 struct ISprite : IRefCounted
 {
     //__PUBLISH_SECTION_END__
@@ -69,14 +62,13 @@ struct ISprite : IRefCounted
     virtual Point2d _GetSize() = 0;
 };
 
-/*=================================================================================**//**
- A Sprite Location. Sprites generally move around on the screen and this object holds the current location
- and current Sprite Definition for an image of a sprite within a DgnViewport. SpriteLocations can be either
- inactive (not visible) or active.
- <p>A SpriteLocation can also specify that a Sprite Definition should be drawn partially transparent so that
- you can "see through" the Sprite.
- @bsiinterface
-+===============+===============+===============+===============+===============+======*/
+//=======================================================================================
+//! A Sprite Location. Sprites generally move around on the screen and this object holds the current location
+//! and current Sprite Definition for an image of a sprite within a DgnViewport. SpriteLocations can be either
+//! inactive (not visible) or active.
+//! <p>A SpriteLocation can also specify that a Sprite Definition should be drawn partially transparent so that
+//! you can "see through" the Sprite.
+//=======================================================================================
 struct  SpriteLocation : RefCountedBase
 {
 private:
@@ -118,5 +110,4 @@ public:
     ISpriteP GetSprite() {return m_sprite;}
 };
 
-/** @endGroup */
 END_BENTLEY_RENDER_NAMESPACE

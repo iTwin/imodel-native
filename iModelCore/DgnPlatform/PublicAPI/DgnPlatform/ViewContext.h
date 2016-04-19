@@ -17,11 +17,10 @@
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-/*=================================================================================**//**
- @addtogroup ViewContext
- A ViewContext holds the <i>current state</i> of an operation on a DgnViewport. A ViewContext must be first attached to a DgnViewport.
- @beginGroup 
-+===============+===============+===============+===============+===============+======*/
+/**
+* @addtogroup GROUP_ViewContext ViewContext Module
+* A ViewContext holds the <i>current state</i> of an operation on a DgnViewport. A ViewContext must be first attached to a DgnViewport.
+*/
 
 //=======================================================================================
 // @bsiclass
@@ -55,7 +54,6 @@ struct RangeNodeCheck
     virtual ScanCriteria::Result _CheckNodeRange(ScanCriteriaCR, DRange3dCR, bool is3d) = 0;
 };
 
-
 //=======================================================================================
 //! Interface to supply additional topology information that describes the subsequent geometry.
 //! The ViewContext's current IElemTopology will be cloned and saved as part of the HitDetail
@@ -82,6 +80,7 @@ struct IElemTopology : IRefCounted
 DEFINE_REF_COUNTED_PTR(IElemTopology)
 
 //=======================================================================================
+//! @ingroup GROUP_ViewContext
 // @bsiclass                                                     KeithBentley    04/01
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ViewContext : NonCopyableClass, CheckStop, RangeNodeCheck
@@ -167,12 +166,12 @@ protected:
     DGNPLATFORM_EXPORT ViewContext();
 
 public:
-    StatusInt VisitElement(DgnElementId elementId, bool allowLoad);
+    DGNPLATFORM_EXPORT StatusInt VisitElement(DgnElementId elementId, bool allowLoad);
     DMap4dCR GetWorldToView() const {return m_worldToView;}
     DMap4dCR GetWorldToNpc() const {return m_worldToNpc;}
     bool GetWantMaterials() {return m_wantMaterials;};
-    void SetSubRectFromViewRect(BSIRectCP viewRect);
-    DGNPLATFORM_EXPORT void SetSubRectNpc(DRange3dCR subRect);
+    DGNPLATFORM_EXPORT void SetSubRectFromViewRect(BSIRectCP viewRect);
+    void SetSubRectNpc(DRange3dCR subRect);
     void SetWantMaterials(bool wantMaterials) {m_wantMaterials = wantMaterials;}
     bool IsUndisplayed(GeometrySourceCR source);
     bool ValidateScanRange() {return m_scanRangeValid ? true : _ScanRangeFromPolyhedron();}
@@ -180,7 +179,8 @@ public:
     bool VisitAllModelElements() {return _VisitAllModelElements();}
     DGNPLATFORM_EXPORT bool VisitAllViewElements(BSIRectCP updateRect=nullptr);
     StatusInt InitContextForView() {return _InitContextForView();}
-    DGNPLATFORM_EXPORT bool IsPointVisible(DPoint3dCR worldPoint, bool boresite);
+    enum class WantBoresite : bool {Yes=true, No=false};
+    DGNPLATFORM_EXPORT bool IsPointVisible(DPoint3dCR worldPoint, WantBoresite boresite, double toerance=1.0e-8);
     DGNPLATFORM_EXPORT Frustum GetFrustum();
     Render::FrustumPlanes const& GetFrustumPlanes() const {return m_frustumPlanes;}
     ScanCriteriaCP GetScanCriteria() const {return &m_scanCriteria;}
@@ -197,9 +197,8 @@ public:
     StatusInt VisitGeometry(GeometrySourceCR elem) {return _VisitGeometry(elem);}
     StatusInt VisitHit(HitDetailCR hit) {return _VisitHit(hit);}
 
-    /// @name Coordinate Query and Conversion
-    //@{
-
+/** @name Coordinate Query and Conversion */
+/** @{ */
     //! Transform an array of points in DgnCoordSystem::Npc into DgnCoordSystem::View.
     //! @param[out]     viewPts     An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
     //! @param[in]      npcPts      Input array in DgnCoordSystem::Npc.
@@ -255,11 +254,6 @@ public:
     //! @return the length, in the current coordinate system units, of a unit bvector in the x direction in DgnCoordSystem::View, starting at \c origin.
     DGNPLATFORM_EXPORT double GetPixelSizeAtPoint(DPoint3dCP origin) const;
 
-    //@}
-
-    /// @name Query Methods
-    //@{
-
     //! Get the current state of the ViewFlags for this context
     //! When a ViewContext is first attached to a DgnViewport, the ViewFlags are initialized
     //! from the DgnViewport's viewflags. However, during the course of an operation,
@@ -285,10 +279,10 @@ public:
 
     bool Is3dView() const {return m_is3dView;}
     DGNPLATFORM_EXPORT bool IsCameraOn() const;
-    //@}
+/** @} */
 
-    /// @name Get/Set Current Display Parameters
-    //@{
+/** @name Get/Set Current Display Parameters */
+/** @{ */
     //! Modify the supplied "natural" GeometryParams by resolving effective symbology as required by the context.
     //! Initializes the supplied GraphicParams from the resolved GeometryParams.
     void CookGeometryParams(Render::GeometryParamsR geomParams, Render::GraphicParamsR graphicParams) {_CookGeometryParams(geomParams, graphicParams);}
@@ -300,11 +294,10 @@ public:
     //! Get the IPickGeom interface for this ViewContext. Only contexts that are specific to picking will return a non-nullptr value.
     //! @return the IPickGeom interface for this context. May return nullptr.
     IPickGeomP GetIPickGeom() {return _GetIPickGeom();}
+/** @} */
 
-    //@}
-
-    /// @name Identifying element "topology".
-    //@{
+/** @name Identifying element "topology". */
+/** @{ */
     //! Query the current IElemTopology.
     //! @return An object that holds additional information about the graphics that are currently being drawn.
     IElemTopologyCP GetElemTopology() const {return (m_currElemTopo.IsValid() ? m_currElemTopo.get() : nullptr);}
@@ -318,15 +311,13 @@ public:
 
     //! Get a reference to the current GeometryStreamEntryId to modify.
     GeometryStreamEntryId& GetGeometryStreamEntryIdR() {return m_currGeometryStreamEntryId;}
-
-    //@}
+/** @} */
 
     DGNPLATFORM_EXPORT bool WantAreaPatterns();
     DGNPLATFORM_EXPORT void DrawAreaPattern(ClipStencil& boundary);
 
-    /** @name Draw Geometry Using Current Linestyle */
-    /** @{ */
-
+/** @name Draw Geometry Using Current Linestyle */
+/** @{ */
     //! Draw a 2D linestring using the current Linestyle, if any. If there is no current Linestyle, draw a solid linestring.
     //! @param[in]      nPts        Number of vertices in \c pts.
     //! @param[in]      pts         Array of points in linestring.
@@ -353,6 +344,7 @@ public:
     //! @param        curve       curve geometry
     //! @param[in]    zDepth      Z depth value.
     DGNPLATFORM_EXPORT void DrawStyledCurveVector2d(CurveVectorCR curve, double zDepth);
+/** @} */
 
     //! Draw a text string and any adornments such as background shape, underline, overline, etc. Sets up current GeometryParams for TextString symbology.
     void AddTextString(TextStringCR textString) {_AddTextString(textString);}
@@ -361,6 +353,7 @@ public:
 }; // ViewContext
 
 //=======================================================================================
+//! @ingroup GROUP_ViewContext
 // @bsiclass                                                    Keith.Bentley   12/15
 //=======================================================================================
 struct RenderContext : ViewContext
@@ -387,6 +380,7 @@ public:
 };
 
 //=======================================================================================
+//! @ingroup GROUP_ViewContext
 // @bsiclass                                                    Keith.Bentley   02/16
 //=======================================================================================
 struct RenderListContext : RenderContext
@@ -395,25 +389,30 @@ struct RenderListContext : RenderContext
     friend struct DgnQueryView;
 
 protected:
+    bool m_wantStroke = true;
     int32_t m_checkStopInterval;
     int32_t m_checkStopElementSkip = 10;
     int32_t m_checkStopElementCount = 0;
     uint64_t m_nextCheckStop;
-    Render::GraphicListR m_list;
+    Render::GraphicListPtr m_list;
     UpdateAbort m_abortReason = UpdateAbort::None;
     UpdatePlan const& m_plan;
+
+    Render::GraphicPtr _StrokeGeometry(GeometrySourceCR source, double pixelSize) override {return m_wantStroke ? T_Super::_StrokeGeometry(source,pixelSize) : nullptr;}
     void _OutputGraphic(Render::GraphicR graphic, GeometrySourceCP) override;
     bool _CheckStop() override;
     int AccumulateMotion();
     bool DoCheckStop();
 
 public:    
+    void EnableCheckStop(int stopInterval, int const* motionTolerance);
+    void SetNoStroking(bool val) {m_wantStroke=!val;}
     UpdatePlan const& GetUpdatePlan() const {return m_plan;}
-    RenderListContext(DgnViewportR vp, DrawPurpose purpose, Render::GraphicListR list, UpdatePlan const& plan) : RenderContext(vp, purpose), m_list(list), m_plan(plan) {}
+    RenderListContext(DgnViewportR vp, DrawPurpose purpose, Render::GraphicList* list, UpdatePlan const& plan);
 };
 
-
 //=======================================================================================
+//! @ingroup GROUP_ViewContext
 // @bsiclass                                                    Keith.Bentley   10/15
 //=======================================================================================
 struct SceneContext : RenderListContext
@@ -422,37 +421,60 @@ struct SceneContext : RenderListContext
     friend struct DgnQueryView;
 
 private:
-    bool m_wantStroke = true;
     bool _CheckStop() override;
-    void SetNoStroking(bool val) {m_wantStroke=!val;}
-    Render::GraphicPtr _StrokeGeometry(GeometrySourceCR source, double pixelSize) override {return m_wantStroke ? T_Super::_StrokeGeometry(source,pixelSize) : nullptr;}
-    void EnableCheckStop(int stopInterval, int const* motionTolerance);
 
 public:
     SceneContext(DgnViewportR vp, Render::GraphicListR scene, UpdatePlan const& plan);
 };
 
 //=======================================================================================
+//! @ingroup GROUP_ViewContext
+// @bsiclass                                                    Keith.Bentley   03/16
+//=======================================================================================
+struct RedrawContext : RenderListContext
+{
+    DEFINE_T_SUPER(RenderListContext);
+public:
+    RedrawContext(DgnViewportR vp, Render::GraphicListR draws, UpdatePlan const& plan) : RenderListContext(vp, DrawPurpose::Redraw, &draws, plan) {}
+};
+
+//=======================================================================================
+//! @ingroup GROUP_ViewContext
 // @bsiclass                                                    Keith.Bentley   10/15
 //=======================================================================================
 struct ProgressiveContext : RenderListContext
 {
     DEFINE_T_SUPER(RenderListContext);
 public:
-    ProgressiveContext(DgnViewportR vp, Render::GraphicListR scene, UpdatePlan const& plan) : RenderListContext(vp, DrawPurpose::Progressive, scene, plan) {}
+    ProgressiveContext(DgnViewportR vp, Render::GraphicListR scene, UpdatePlan const& plan) : RenderListContext(vp, DrawPurpose::Progressive, &scene, plan) {}
 };
 
 //=======================================================================================
+//! @ingroup GROUP_ViewContext
+// @bsiclass                                                    Keith.Bentley   10/15
+//=======================================================================================
+struct HealContext : RenderListContext
+{
+    DEFINE_T_SUPER(RenderListContext);
+    void Flush(bool restart);
+public:
+    virtual void _HealElement(DgnElementId);
+    HealContext(DgnViewportR vp, BSIRectCR, UpdatePlan const& plan);
+};
+
+//=======================================================================================
+//! @ingroup GROUP_ViewContext
 // @bsiclass                                                    Keith.Bentley   02/16
 //=======================================================================================
 struct TerrainContext : RenderListContext
 {
     DEFINE_T_SUPER(RenderListContext);
 public:
-    TerrainContext(DgnViewportR vp, Render::GraphicListR terrain, UpdatePlan const& plan) : RenderListContext(vp, DrawPurpose::CreateTerrain, terrain, plan) {}
+    TerrainContext(DgnViewportR vp, Render::GraphicListR terrain, UpdatePlan const& plan) : RenderListContext(vp, DrawPurpose::CreateTerrain, &terrain, plan) {}
 };
 
 //=======================================================================================
+//! @ingroup GROUP_ViewContext
 // @bsiclass                                                    Keith.Bentley   12/15
 //=======================================================================================
 struct DynamicsContext : RenderContext
@@ -472,6 +494,7 @@ public:
 };
 
 //=======================================================================================
+//! @ingroup GROUP_ViewContext
 // @bsiclass                                                    Keith.Bentley   12/15
 //=======================================================================================
 struct DecorateContext : RenderContext
@@ -505,7 +528,5 @@ public:
     //! @private
     DGNPLATFORM_EXPORT void DrawStandardGrid(DPoint3dR gridOrigin, RotMatrixR rMatrix, DPoint2d spacing, uint32_t gridsPerRef, bool isoGrid=false, Point2dCP fixedRepetitions=nullptr);
 };  
-
-/** @endGroup */
 
 END_BENTLEY_DGN_NAMESPACE

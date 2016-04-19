@@ -21,7 +21,7 @@ typedef RefCountedPtr<GeometricPrimitive> GeometricPrimitivePtr;
 //=======================================================================================
 //! Class for multiple RefCounted geometry types: ICurvePrimitive, CurveVector, 
 //! ISolidPrimitive, MSBsplineSurface, PolyfaceHeader, ISolidKernelEntity.
-//! @ingroup GeometricPrimitiveGroup
+//! @ingroup GROUP_Geometry
 //=======================================================================================
 struct GeometricPrimitive : RefCountedBase
 {
@@ -94,28 +94,31 @@ struct GeometryStreamIO
 {
     enum class OpCode : uint32_t
     {
-        Invalid             = 0,
-        Header              = 1,    //!< Required to be first opcode
+        Invalid                 = 0,
+        Header                  = 1,    //!< Required to be first opcode
         GeometryPartInstance    = 3,    //!< Draw referenced geometry part
-        BasicSymbology      = 4,    //!< Set symbology for subsequent geometry that doesn't follow subCategory appearance
-        PointPrimitive      = 5,    //!< Simple lines, line strings, shapes, point strings, etc.
-        PointPrimitive2d    = 6,    //!< Simple 2d lines, line strings, shapes, point strings, etc.
-        ArcPrimitive        = 7,    //!< Single arc/ellipse
-        CurveVector         = 8,    //!< CurveVector
-        Polyface            = 9,    //!< PolyfaceQueryCarrier
-        CurvePrimitive      = 10,   //!< Single CurvePrimitive
-        SolidPrimitive      = 11,   //!< SolidPrimitive
-        BsplineSurface      = 12,   //!< BSpline surface
-        ParasolidBRep       = 13,   //!< Parasolid body
-        BRepPolyface        = 14,   //!< PolyfaceQueryCarrier from Parasolid BRep
-        BRepPolyfaceExact   = 15,   //!< PolyfaceQueryCarrier from Parasolid BRep with only straight edges and planar faces
-        BRepEdges           = 16,   //!< CurveVector from Parasolid body edges (Not created/necessary for BRepPolyfaceExact)
-        BRepFaceIso         = 17,   //!< CurveVector from Parasolid body face iso lines (Not created/necessary for BRepPolyfaceExact)
-        AreaFill            = 19,   //!< Opaque and gradient fills
-        Pattern             = 20,   //!< Hatch, cross-hatch, and area pattern
-        Material            = 21,   //!< Render material
-        TextString          = 22,   //!< TextString (single-line/single-format run of characters)
-        LineStyleModifiers  = 23,   //!< Specifies line style overrides to populate a LineStyleParams structure
+        BasicSymbology          = 4,    //!< Set symbology for subsequent geometry that doesn't follow subCategory appearance
+        PointPrimitive          = 5,    //!< Simple lines, line strings, shapes, point strings, etc.
+        PointPrimitive2d        = 6,    //!< Simple 2d lines, line strings, shapes, point strings, etc.
+        ArcPrimitive            = 7,    //!< Single arc/ellipse
+        CurveVector             = 8,    //!< CurveVector
+        Polyface                = 9,    //!< PolyfaceQueryCarrier
+        CurvePrimitive          = 10,   //!< Single CurvePrimitive
+        SolidPrimitive          = 11,   //!< SolidPrimitive
+        BsplineSurface          = 12,   //!< BSpline surface
+#if defined (DGNPLATFORM_WIP_PARASOLID)
+        ParasolidBRep           = 13,   //!< Parasolid body
+        BRepPolyface            = 14,   //!< PolyfaceQueryCarrier from Parasolid BRep
+        BRepPolyfaceExact       = 15,   //!< PolyfaceQueryCarrier from Parasolid BRep with only straight edges and planar faces
+        BRepEdges               = 16,   //!< CurveVector from Parasolid body edges (Not created/necessary for BRepPolyfaceExact)
+        BRepFaceIso             = 17,   //!< CurveVector from Parasolid body face iso lines (Not created/necessary for BRepPolyfaceExact)
+#endif
+        AreaFill                = 19,   //!< Opaque and gradient fills
+        Pattern                 = 20,   //!< Hatch, cross-hatch, and area pattern
+        Material                = 21,   //!< Render material
+        TextString              = 22,   //!< TextString (single-line/single-format run of characters)
+        LineStyleModifiers      = 23,   //!< Specifies line style overrides to populate a LineStyleParams structure
+        OpenCascadeBRep         = 24,   //!< Open Cascade TopoDS_Shape
     };
 
     //=======================================================================================
@@ -171,7 +174,7 @@ struct GeometryStreamIO
         void Append(PolyfaceQueryCR, OpCode opCode = OpCode::Polyface);
         void Append(ISolidPrimitiveCR);
         void Append(MSBsplineSurfaceCR);
-        void Append(ISolidKernelEntityCR); // Adds multiple op-codes for when PSolid is un-available...
+        void Append(ISolidKernelEntityCR);
         void Append(GeometricPrimitiveCR);
         void Append(DgnGeometryPartId, TransformCP geomToElem);
         void Append(Render::GeometryParamsCR, bool ignoreSubCategory); // Adds multiple op-codes...
@@ -249,7 +252,7 @@ struct GeometryStreamIO
         const_iterator begin() const {return const_iterator(m_data, m_dataSize);}
         const_iterator end() const {return const_iterator();}
         void GetGeometryPartIds(IdSet<DgnGeometryPartId>&, DgnDbR) const;
-        void Draw(Render::GraphicR, ViewContextR, Render::GeometryParamsR, bool activateParams=true) const;
+        void Draw(Render::GraphicR, ViewContextR, Render::GeometryParamsR, bool activateParams=true, DgnElementCP=nullptr) const;
     };
 
     //=======================================================================================
@@ -277,10 +280,11 @@ struct GeometryStreamIO
 
 //=======================================================================================
 //! GeometryCollection provides iterator for a Geometric Element's GeometryStream.
-//! @ingroup GeometricPrimitiveGroup
+//! @ingroup GROUP_Geometry
 //=======================================================================================
 struct GeometryCollection
 {
+#if defined (DGNPLATFORM_WIP_PARASOLID)
     enum class BRepOutput
     {
         None    = 0,       //!< Output nothing.
@@ -290,10 +294,11 @@ struct GeometryCollection
         Edges   = 1 << 3,  //!< Output CurveVector representation of edge geometry.
         FaceIso = 1 << 4,  //!< Output CurveVector representation for face hatch geometry.
     };
+#endif
 
     //=======================================================================================
     //! Iterator
-    //! @ingroup GeometricPrimitiveGroup
+    //! @ingroup GROUP_Geometry
     //=======================================================================================
     struct Iterator : std::iterator<std::forward_iterator_tag, uint8_t const*>
     {
@@ -310,8 +315,10 @@ struct GeometryCollection
             Polyface            = 6,  //!< Polyface
             SolidKernelEntity   = 7,  //!< SolidKernelEntity
             TextString          = 8,  //!< TextString
+#if defined (DGNPLATFORM_WIP_PARASOLID)
             BRepPolyface        = 9,  //!< BRep surface mesh (from BRepOutput::Auto when Parasolid not available or if requested by BRepOutput::Mesh)
             BRepCurveVector     = 10, //!< BRep edge/face curves (when requested by BRepOutput::Edges | BRepOutput::FaceIso)
+#endif
         };
 
         struct CurrentState
@@ -323,14 +330,18 @@ struct GeometryCollection
             Transform               m_geomToWorld;
             GeometricPrimitivePtr   m_geometry;
             GeometryStreamEntryId   m_geomStreamEntryId;
+#if defined (DGNPLATFORM_WIP_PARASOLID)
             BRepOutput              m_bRepOutput;
+#endif
 
             CurrentState(DgnDbR dgnDb) : m_dgnDb(dgnDb)
             {
                 m_sourceToWorld = Transform::FromIdentity();
                 m_geomToSource  = Transform::FromIdentity();
                 m_geomToWorld   = Transform::FromIdentity();
+#if defined (DGNPLATFORM_WIP_PARASOLID)
                 m_bRepOutput    = BRepOutput::Auto;
+#endif
             }
         };
 
@@ -385,9 +396,11 @@ public:
     const_iterator begin() const {return const_iterator(m_data, m_dataSize, m_state);}
     const_iterator end() const {return const_iterator();}
 
+#if defined (DGNPLATFORM_WIP_PARASOLID)
     //! Override the default BRep handling option, BRepOutput::Auto. For example, an application can set to BRepOutput::BRep to
     //! detect when BReps are present in the GeometryStream to avoid modifications when Parasolid is not available.
     void SetBRepOutput(BRepOutput bRep) {m_state.m_bRepOutput = bRep;}
+#endif
 
     //! Iterate a GeometryStream for a DgnGeometryPart using the current GeometryParams and geometry to world transform
     //! for of part instance as found when iterating a GeometrySource with a part reference.
@@ -405,7 +418,9 @@ public:
 
 typedef RefCountedPtr<GeometryBuilder> GeometryBuilderPtr;
 
+#if defined (DGNPLATFORM_WIP_PARASOLID)
 ENUM_IS_FLAGS(GeometryCollection::BRepOutput)
+#endif
 
 //=======================================================================================
 //! GeometryBuilder provides methods for setting up an element's GeometryStream and Placement(2d/3d).
@@ -428,7 +443,7 @@ ENUM_IS_FLAGS(GeometryCollection::BRepOutput)
 //! For repeated geometry that can be shared in a single GeometryStream or by multiple GeometryStreams, a DgnGeometryPart should be
 //! created. When appending a DgnGeometryPartId you specify the part geometry to element transform in order to position the 
 //! part's geometry relative to the other geometry/parts display by the element.
-//! @ingroup GeometricPrimitiveGroup
+//! @ingroup GROUP_Geometry
 //=======================================================================================
 struct GeometryBuilder : RefCountedBase
 {
@@ -469,7 +484,9 @@ public:
 
     DGNPLATFORM_EXPORT bool Append (DgnSubCategoryId);
     DGNPLATFORM_EXPORT bool Append (Render::GeometryParamsCR);
-    DGNPLATFORM_EXPORT bool Append (DgnGeometryPartId, TransformCR geomToElement); //! Placement must already be specified, not valid for CreateWorld.
+    DGNPLATFORM_EXPORT bool Append (DgnGeometryPartId, TransformCR geomToElement); //! Relative placement, not valid for CreateWorld.
+    DGNPLATFORM_EXPORT bool Append (DgnGeometryPartId, DPoint3dCR origin, YawPitchRollAngles const& angles = YawPitchRollAngles()); //! Relative placement, not valid for CreateWorld.
+    DGNPLATFORM_EXPORT bool Append (DgnGeometryPartId, DPoint2dCR origin, AngleInDegrees const& angle = AngleInDegrees()); //! Relative placement, not valid for CreateWorld.
     DGNPLATFORM_EXPORT bool Append (GeometricPrimitiveCR);
     DGNPLATFORM_EXPORT bool Append (ICurvePrimitiveCR);
     DGNPLATFORM_EXPORT bool Append (CurveVectorCR);

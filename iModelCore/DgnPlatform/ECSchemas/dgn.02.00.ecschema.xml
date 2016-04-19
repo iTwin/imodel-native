@@ -4,6 +4,29 @@
     <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" prefix="bsca"/>
     <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap"/>
 
+    <ECCustomAttributes>
+        <RelatedItemsDisplaySpecifications xmlns="Bentley_Standard_CustomAttributes.01.09">
+            <Specifications>
+                <RelatedItemsDisplaySpecification>
+                    <ParentClass>GeometricElement2d</ParentClass>
+                    <RelationshipPath>GeometricElement2dIsInCategory:0:Category</RelationshipPath>
+                </RelatedItemsDisplaySpecification>
+                <RelatedItemsDisplaySpecification>
+                    <ParentClass>GeometricElement3d</ParentClass>
+                    <RelationshipPath>GeometricElement3dIsInCategory:0:Category</RelationshipPath>
+                </RelatedItemsDisplaySpecification>
+                <RelatedItemsDisplaySpecification>
+                    <ParentClass>Element</ParentClass>
+                    <RelationshipPath>ModelContainsElements:1:Model</RelationshipPath>
+                </RelatedItemsDisplaySpecification>
+                <RelatedItemsDisplaySpecification>
+                    <ParentClass>Element</ParentClass>
+                    <RelationshipPath>Generic:ElementOwnsMultiAspect:0:Generic:MultiAspect</RelationshipPath>
+                </RelatedItemsDisplaySpecification>
+            </Specifications>
+        </RelatedItemsDisplaySpecifications>
+    </ECCustomAttributes>
+
     <!-- Applied to an ECClass to indicate that a subclass of DgnDomain::Handler will be supplied for it at run-time.
          It must be applied to any ECClass if the application/domain registers a Handler for that ECClass.
          It should not be applied to any other ECClass.
@@ -130,9 +153,7 @@
     <ECRelationshipClass typeName="AuthorityIssuesElementCode" description="Element has a code which was issued by the given authority" strength="referencing">
         <ECCustomAttributes>
             <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-                <!-- Cannot delete an Authority or update its AuthorityId if it is referenced by an Element -->
-                <OnDeleteAction>Restrict</OnDeleteAction>
-                <OnUpdateAction>Restrict</OnUpdateAction>
+                <OnDeleteAction>NoAction</OnDeleteAction>
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
         <Source cardinality="(1,1)" roleLabel="issues code" polymorphic="false">
@@ -149,9 +170,7 @@
     <ECRelationshipClass typeName="AuthorityIssuesModelCode" description="Model has a code which was issued by the given authority" strength="referencing">
         <ECCustomAttributes>
             <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-                <!-- Cannot delete an Authority or update its AuthorityId if it is referenced by a Model -->
-                <OnDeleteAction>Restrict</OnDeleteAction>
-                <OnUpdateAction>Restrict</OnUpdateAction>
+                <OnDeleteAction>NoAction</OnDeleteAction>
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
         <Source cardinality="(1,1)" roleLabel="issues code" polymorphic="false">
@@ -168,15 +187,13 @@
     <ECRelationshipClass typeName="AuthorityIssuesGeometryPartCode" description="GeometryPart has a code which was issued by the given authority" strength="referencing">
         <ECCustomAttributes>
             <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-                <!-- Cannot delete an Authority or update its AuthorityId if it is referenced by a GeometryPart -->
-                <OnDeleteAction>Restrict</OnDeleteAction>
-                <OnUpdateAction>Restrict</OnUpdateAction>
+                <OnDeleteAction>NoAction</OnDeleteAction>
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
         <Source cardinality="(1,1)" roleLabel="issues code" polymorphic="false">
             <Class class="Authority"/>
         </Source>
-        <Target cardinality="(0,N)" roleLabel="has N codes" polymorphic="true">
+        <Target cardinality="(0,N)" roleLabel="has N codes" polymorphic="false">
             <Class class="GeometryPart">
                 <Key>
                     <Property name="Code.AuthorityId"/>
@@ -309,9 +326,7 @@
     <ECRelationshipClass typeName="ModelContainsElements" description="Associates elements with a model" strength="embedding">
         <ECCustomAttributes>
             <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-                <!-- Cannot delete a Model or update its ModelId if it is referenced by an Element -->
-                <OnDeleteAction>Restrict</OnDeleteAction>
-                <OnUpdateAction>Restrict</OnUpdateAction>
+                <OnDeleteAction>NoAction</OnDeleteAction>
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
         <Source cardinality="(1,1)" roleLabel="is on 1 model" polymorphic="true">
@@ -395,6 +410,7 @@
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
                     <Options>SharedColumnsForSubclasses</Options>
+                    <MinimumSharedColumnCount>16</MinimumSharedColumnCount>
                 </MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
@@ -421,6 +437,7 @@
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
                     <Options>SharedColumnsForSubclasses</Options>
+                    <MinimumSharedColumnCount>16</MinimumSharedColumnCount>
                 </MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
@@ -465,6 +482,7 @@
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
                     <Options>SharedColumnsForSubclasses</Options>
+                    <MinimumSharedColumnCount>8</MinimumSharedColumnCount>
                 </MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
@@ -784,6 +802,38 @@
         </Target>
     </ECRelationshipClass>
 
+    <ECEntityClass typeName="DimensionStyle">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00"/>
+        </ECCustomAttributes>
+        <BaseClass>DictionaryElement</BaseClass>
+        <ECProperty propertyName="TextStyleId" typeName="long"/>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="LinearDimension">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="StyleId" typeName="long"/>
+        <ECProperty propertyName="Points" typeName="binary" description="Location of dimension points"/>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="LinearDimension2d">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00"/>
+        </ECCustomAttributes>
+        <BaseClass>AnnotationElement2d</BaseClass>
+        <BaseClass>LinearDimension</BaseClass>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="LinearDimension3d">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00"/>
+        </ECCustomAttributes>
+        <BaseClass>GraphicalElement3d</BaseClass>
+        <BaseClass>LinearDimension</BaseClass>
+    </ECEntityClass>
+
     <ECEntityClass typeName="ViewAttachment">
         <!-- A reference to a ViewDefinition, placed onto a sheet -->
         <ECCustomAttributes>
@@ -798,9 +848,7 @@
     <ECRelationshipClass typeName="ViewIsAttached" strength="embedding">
         <ECCustomAttributes>
             <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-                <!-- Cannot delete a ViewDefinition or update its ViewId if it is referenced by a ViewAttachment -->
-                <OnDeleteAction>Restrict</OnDeleteAction> 
-                <OnUpdateAction>Restrict</OnUpdateAction>
+                <OnDeleteAction>NoAction</OnDeleteAction>
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
         <Source cardinality="(1,1)" roleLabel="is referenced by" polymorphic="true">
@@ -814,8 +862,8 @@
     <ECRelationshipClass typeName="ElementOwnsChildElements" strength="embedding">
         <ECCustomAttributes>
             <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-                <!-- OnDelete=Restrict to allow ElementHandlers to decide if delete is legal. If legal, the Element API will perform the equivalent of OnDelete=Cascade. -->
-                <OnDeleteAction>Restrict</OnDeleteAction>
+                <!-- The Element API will handle cascading the delete -->
+                <OnDeleteAction>NoAction</OnDeleteAction>
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
         <Source cardinality="(0,1)" roleLabel="is on 1 element" polymorphic="true">
@@ -1010,9 +1058,7 @@
     <ECRelationshipClass typeName="GeometricElement2dIsInCategory" description="Element is in Category" strength="referencing" strengthDirection="Backward">
         <ECCustomAttributes>
             <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-                <!-- Cannot delete a Category or update its CategoryId if there is an element in that Category -->
-                <OnDeleteAction>Restrict</OnDeleteAction>
-                <OnUpdateAction>Restrict</OnUpdateAction>
+                <OnDeleteAction>NoAction</OnDeleteAction>
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
         <Source cardinality="(0,N)" roleLabel="is in category" polymorphic="true">
@@ -1025,9 +1071,7 @@
     <ECRelationshipClass typeName="GeometricElement3dIsInCategory" description="Element is in Category" strength="referencing" strengthDirection="Backward">
         <ECCustomAttributes>
             <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-                <!-- Cannot delete a Category or update its CategoryId if there is an element in that Category -->
-                <OnDeleteAction>Restrict</OnDeleteAction>
-                <OnUpdateAction>Restrict</OnUpdateAction>
+                <OnDeleteAction>NoAction</OnDeleteAction>
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
         <Source cardinality="(0,N)" roleLabel="is in category" polymorphic="true">
@@ -1161,9 +1205,7 @@
     <ECRelationshipClass typeName="BaseModelForView" strength="embedding">
         <ECCustomAttributes>
             <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-                <!-- Cannot delete a Model or update its ModelId if it is referenced by a ViewDefinition -->
-                <OnDeleteAction>Restrict</OnDeleteAction>
-                <OnUpdateAction>Restrict</OnUpdateAction>
+                <OnDeleteAction>NoAction</OnDeleteAction>
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
         <Source cardinality="(1,1)" roleLabel="is base model for view" polymorphic="true">

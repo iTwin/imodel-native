@@ -34,7 +34,7 @@ struct DgnDbTestFixture : ::testing::Test
     DgnCategoryId               m_defaultCategoryId;
     DgnModelPtr                 m_defaultModelP;
 public:
-    DgnDbTestFixture()
+    explicit DgnDbTestFixture(ScopedDgnHost::Options hostOptions = ScopedDgnHost::Options::None) : m_host(hostOptions)
     {
         DgnDomains::RegisterDomain(DPTest::DgnPlatformTestDomain::GetDomain());
     }
@@ -65,6 +65,6 @@ public:
     DgnElementId InsertElementUsingGeometryPart(DgnGeometryPartId gpId, DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId(), DgnCode elementCode = DgnCode());
     DgnElementId InsertElementUsingGeometryPart2d(DgnCodeCR gpCode, DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId(), DgnCode elementCode = DgnCode());
 
-    void SetUpSpatialView(DgnDbR dgnDb, DgnModelR model, ElementAlignedBox3d elementBox, DgnCategoryId categoryId);
+    static void SetUpSpatialView(DgnDbR dgnDb, DgnModelR model, ElementAlignedBox3d elementBox, DgnCategoryId categoryId);
 };
 

@@ -45,17 +45,14 @@ DGNPLATFORM_REF_COUNTED_PTR(AnnotationTable);
 #define DGN_CLASSNAME_AnnotationTableSymbology  "AnnotationTableSymbology"
 #define DGN_CLASSNAME_AnnotationTableEdgeRun    "AnnotationTableEdgeRun"
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 typedef std::shared_ptr<CellContentHolder>  CellContentHolderPtr;
 
-//! @addtogroup Annotations
-//! @beginGroup
-
-/*=================================================================================**//**
-* Specifies a <row, col> position within a table.
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
+//=======================================================================================
+//! Specifies a <row, col> position within a table.
+//! @ingroup GROUP_Annotation
+//=======================================================================================
 struct AnnotationTableCellIndex
 {
 private:
@@ -119,12 +116,11 @@ public:
     DGNPLATFORM_EXPORT static   BentleyStatus  ColumnIndexFromString   (uint32_t&, Utf8CP);
 };
 
-/*=================================================================================**//**
-* This enum represents the distinct regions within a TextTable.  A table can hold
-* a unique TextStyle for each region that will be used when adding text to an empty
-* cell.
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
+//=======================================================================================
+//! This enum represents the distinct regions within a TextTable.  A table can hold
+//! a unique TextStyle for each region that will be used when adding text to an empty cell.
+//! @ingroup GROUP_Annotation
+//=======================================================================================
 enum class AnnotationTableRegion
     {
     Body            = 0,
@@ -135,20 +131,20 @@ enum class AnnotationTableRegion
     FooterColumn    = 5,
     };
 
-/*=================================================================================**//**
-* Used by TextTable::InsertRow and TextTable::InsertColumn.
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
+//=======================================================================================
+//! Used by TextTable::InsertRow and TextTable::InsertColumn.
+//! @ingroup GROUP_Annotation
+//=======================================================================================
 enum class TableInsertDirection
     {
     Before          = 0,
     After           = 1,
     };
 
-/*=================================================================================**//**
-* Describes how a table is broken up to be displayed as sub tables.
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
+//=======================================================================================
+//! Describes how a table is broken up to be displayed as sub tables.
+//! @ingroup GROUP_Annotation
+//=======================================================================================
 enum class TableBreakType
     {
     None            = 0,
@@ -156,10 +152,10 @@ enum class TableBreakType
     Vertical        = 2,
     };
 
-/*=================================================================================**//**
-* Describes how each sub table is positioned relative to the previous sub table.
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
+//=======================================================================================
+//! Describes how each sub table is positioned relative to the previous sub table.
+//! @ingroup GROUP_Annotation
+//=======================================================================================
 enum class TableBreakPosition
     {
     Right           = 0,
@@ -169,10 +165,10 @@ enum class TableBreakPosition
     Manual          = 4,
     };
 
-/*=================================================================================**//**
-* Describes how text will be positioned within a table cell.
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
+//=======================================================================================
+//! Describes how text will be positioned within a table cell.
+//! @ingroup GROUP_Annotation
+//=======================================================================================
 enum class TableCellAlignment
     {
     LeftTop         = 0,
@@ -186,10 +182,10 @@ enum class TableCellAlignment
     RightBottom     = 8,
     };
 
-/*=================================================================================**//**
-* Describes how text within a cell will be rotated relative to the table.
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
+//=======================================================================================
+//! Describes how text within a cell will be rotated relative to the table.
+//! @ingroup GROUP_Annotation
+//=======================================================================================
 enum class TableCellOrientation
     {
     Horizontal      = 0,
@@ -198,10 +194,10 @@ enum class TableCellOrientation
     Vertical        = 3,
     };
 
-/*=================================================================================**//**
-* Describes the type of a table row or column.
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
+//=======================================================================================
+//! Describes the type of a table row or column.
+//! @ingroup GROUP_Annotation
+//=======================================================================================
 enum class TableHeaderFooterType
     {
     Title           = 0,
@@ -210,10 +206,10 @@ enum class TableHeaderFooterType
     Footer          = 3,
     };
 
-/*=================================================================================**//**
-* Describes the various edge lines that surround a group of one or more table cells.
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
+//=======================================================================================
+//! Describes the various edge lines that surround a group of one or more table cells.
+//! @ingroup GROUP_Annotation
+//=======================================================================================
 enum TableCellListEdges
     {
     Top                   = 0,
@@ -227,10 +223,10 @@ enum TableCellListEdges
     All                   = 50,
     };
 
-/*=================================================================================**//**
-* Used to specify the default fill of a table row.
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
+//=======================================================================================
+//! Used to specify the default fill of a table row.
+//! @ingroup GROUP_Annotation
+//=======================================================================================
 enum class TableRows
     {
     Odd             = 0,
@@ -238,10 +234,10 @@ enum class TableRows
     All             = 50,
     };
 
-/*=================================================================================**//**
-* Used to specify the minimum gap between a cell's contents and its edges.
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
+//=======================================================================================
+//! Used to specify the minimum gap between a cell's contents and its edges.
+//! @ingroup GROUP_Annotation
+//=======================================================================================
 struct TableCellMarginValues
 {
 double  m_top;      ///<    Minimum distance between the top edge of a cell and its contents.
@@ -250,19 +246,19 @@ double  m_left;     ///<    Minimum distance between the left edge of a cell and
 double  m_right;    ///<    Minimum distance between the right edge of a cell and its contents.
 };
 
-/*=================================================================================**//**
-* Used to query and modify the color, style and weight of table edge lines and fills.
-* TableSymbologyValues objects optionally hold the following values.
-* - bool     line visible
-* - UInt32   line color
-* - Int32    line style
-* - UInt32   line weight
-* - bool     fill visible
-* - UInt32   fill color
-*
-* For each value you can a) query if the value exists and b) get the value and c).add or change the value.
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
+//=======================================================================================
+//! Used to query and modify the color, style and weight of table edge lines and fills.
+//! TableSymbologyValues objects optionally hold the following values.
+//! - bool     line visible
+//! - UInt32   line color
+//! - Int32    line style
+//! - UInt32   line weight
+//! - bool     fill visible
+//! - UInt32   fill color
+//!
+//! For each value you can a) query if the value exists and b) get the value and c).add or change the value.
+//! @ingroup GROUP_Annotation
+//=======================================================================================
 struct AnnotationTableSymbologyValues
 {
 private:
@@ -312,10 +308,9 @@ public:
     DGNPLATFORM_EXPORT  void        Clear             ();               //!< Reset this object so that it specifies no values.
 };
 
-/*=================================================================================**//**
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
+//=======================================================================================
 //! @private
+//=======================================================================================
 enum class SizeLockAction
     {
     TurnOn      = 1,
@@ -323,10 +318,9 @@ enum class SizeLockAction
     NoChange    = 3,
     };
 
-/*=================================================================================**//**
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
+//=======================================================================================
 //! @private
+//=======================================================================================
 struct          AnnotationTableSerializer
     {
 private:
@@ -355,9 +349,8 @@ public:
     };
 
 //=======================================================================================
-// @bsiclass
-//=======================================================================================
 //! @private
+//=======================================================================================
 template<class T_Primitive> class TableValue
 {
 private:
@@ -386,9 +379,8 @@ typedef TableValue<double>      TableDoubleValue;   //!< @private
 typedef TableValue<bool>        TableBoolValue;     //!< @private
 
 //=======================================================================================
-// @bsiclass
-//=======================================================================================
 //! @private
+//=======================================================================================
 enum class AnnotationTableAspectType
     {
     Header      = 0,
@@ -402,9 +394,8 @@ enum class AnnotationTableAspectType
     };
 
 //=======================================================================================
-// @bsiclass
-//=======================================================================================
 //! @private
+//=======================================================================================
 struct AnnotationTableAspectDescr
 {
 AnnotationTableAspectType   m_type;
@@ -414,9 +405,8 @@ uint64_t                    m_aspectId;
 };
 
 //=======================================================================================
-// @bsiclass
-//=======================================================================================
 //! @private
+//=======================================================================================
 struct PropertyDescr
     {
     int     m_propIndex;
@@ -424,9 +414,8 @@ struct PropertyDescr
     };
 
 //=======================================================================================
-// @bsiclass
-//=======================================================================================
 //! @private
+//=======================================================================================
 struct PropertyNames : bvector <Utf8String>
 {
     // This serves to ensure that the property name strings are correlated
@@ -444,9 +433,8 @@ struct PropertyNames : bvector <Utf8String>
 };
 
 //=======================================================================================
-// @bsiclass
-//=======================================================================================
 //! @private
+//=======================================================================================
 struct AspectTypeData
     {
     AnnotationTableAspectType   m_type;
@@ -464,7 +452,7 @@ struct AspectTypeData
     };
 
 //=======================================================================================
-// @bsiclass
+//! @ingroup GROUP_Annotation
 //=======================================================================================
 struct AnnotationTableAspect
 {
@@ -530,10 +518,9 @@ public:
 
 };
 
-/*=================================================================================**//**
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
+//=======================================================================================
 //! @private
+//=======================================================================================
 struct MergeEntry : AnnotationTableAspect
 {
 private:
@@ -580,10 +567,9 @@ public:
 //! @private
 typedef Bstdcxx::bstdmap<AnnotationTableCellIndex, MergeEntry>    MergeMap;
 
-/*=================================================================================**//**
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
+//=======================================================================================
 //! @private
+//=======================================================================================
 struct MergeDictionary : MergeMap
 {
 public:
@@ -600,13 +586,12 @@ public:
 
 };
 
-/*=================================================================================**//**
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
+//=======================================================================================
+//! @ingroup GROUP_Annotation
+//=======================================================================================
 struct AnnotationTableFillRun
 {
 private:
-
     uint32_t        m_hostIndex;
     uint32_t        m_startIndex;
     uint32_t        m_span;
@@ -641,17 +626,17 @@ public:
     void            SetVerticalSpan     (uint32_t);
 };
 
-/*=================================================================================**//**
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
+//=======================================================================================
+//! @ingroup GROUP_Annotation
+//=======================================================================================
 struct IFillRunInitializer
     {
     virtual AnnotationTableFillRun CreateNewRun (AnnotationTableFillRunCP seed) const = 0;
     };
 
-/*=================================================================================**//**
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
+//=======================================================================================
+//! @ingroup GROUP_Annotation
+//=======================================================================================
 struct FillRuns : bvector<AnnotationTableFillRun>
 {
 FillRuns::iterator  CreateGap (FillRunsP removedRuns, uint32_t gapStartIndex, uint32_t gapSpan);
@@ -662,10 +647,9 @@ void                MergeRedundantRuns (AnnotationTableP);
 void                ApplyRun (uint32_t fillKey, uint32_t verticalSpan, uint32_t startIndex, uint32_t span);
 };
 
-/*=================================================================================**//**
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
+//=======================================================================================
 //! @private
+//=======================================================================================
 struct SymbologyEntry : AnnotationTableAspect
 {
 private:
@@ -741,10 +725,9 @@ public:
 //! @private
 typedef Bstdcxx::bstdmap<uint32_t, SymbologyEntry>    SymbologyMap;
 
-/*=================================================================================**//**
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
+//=======================================================================================
 //! @private
+//=======================================================================================
 struct SymbologyDictionary : SymbologyMap
 {
 public:
@@ -758,10 +741,9 @@ public:
     uint32_t                        FindOrAddSymbology (SymbologyEntryR entry);
 };
 
-/*=================================================================================**//**
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
+//=======================================================================================
 //! @private
+//=======================================================================================
 enum class EdgeRunHostType
     {
     Top       = 0,
@@ -770,10 +752,9 @@ enum class EdgeRunHostType
     Column    = 3,
     };
 
-/*=================================================================================**//**
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
+//=======================================================================================
 //! @private
+//=======================================================================================
 struct AnnotationTableEdgeRun : AnnotationTableAspect
 {
 private:
@@ -840,19 +821,17 @@ public:
     void                 SetSymbologyKey     (uint32_t v)         { m_symbologyKey = v; SetHasChanges(); }
 };
 
-/*=================================================================================**//**
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
+//=======================================================================================
 //! @private
+//=======================================================================================
 struct IEdgeRunInitializer
     {
     virtual AnnotationTableEdgeRun CreateNewRun (AnnotationTableEdgeRun const* seed) const = 0;
     };
 
-/*=================================================================================**//**
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
+//=======================================================================================
 //! @private
+//=======================================================================================
 struct EdgeRuns : bvector<AnnotationTableEdgeRun>
 {
 DGNPLATFORM_EXPORT Utf8String   ToString() const;
@@ -966,7 +945,7 @@ static  double          ComputeDescenderAdjustment (AnnotationTextBlockLayoutCR)
 
 //__PUBLISH_SECTION_START__
 //=======================================================================================
-// @bsiclass
+//! @ingroup GROUP_Annotation
 //=======================================================================================
 struct AnnotationTableCell : AnnotationTableAspect
 {
@@ -1148,7 +1127,7 @@ DGNPLATFORM_EXPORT  void                        Unmerge ();
 };
 
 //=======================================================================================
-// @bsiclass
+//! @ingroup GROUP_Annotation
 //=======================================================================================
 struct AnnotationTableRow : AnnotationTableAspect
 {
@@ -1249,7 +1228,7 @@ DGNPLATFORM_EXPORT  BentleyStatus               SetHeaderFooterType (TableHeader
 };
 
 //=======================================================================================
-// @bsiclass
+//! @ingroup GROUP_Annotation
 //=======================================================================================
 struct AnnotationTableColumn : AnnotationTableAspect
 {
@@ -1348,9 +1327,8 @@ DGNPLATFORM_EXPORT  BentleyStatus               SetHeaderFooterType (TableHeader
 };
 
 //=======================================================================================
-// @bsiclass
-//=======================================================================================
 //! @private
+//=======================================================================================
 struct TableHeaderAspect : AnnotationTableAspect
 {
 friend AnnotationTable;
@@ -1479,10 +1457,11 @@ public:
 
 struct AnnotationTableCellCollection;
 
-/*=================================================================================**//**
-* An iterator that can step through the set of cells in a table.
-* See AnnotationTable::GetCellCollection
-+===============+===============+===============+===============+===============+======*/
+//=======================================================================================
+//! An iterator that can step through the set of cells in a table.
+//! @see AnnotationTable::GetCellCollection
+//! @ingroup GROUP_Annotation
+//=======================================================================================
 struct      AnnotationTableCellIterator : RefCountedBase, std::iterator<std::forward_iterator_tag, AnnotationTableCell>
 {
 private:
@@ -1500,11 +1479,11 @@ public:
     DGNPLATFORM_EXPORT AnnotationTableCellR GetCurrent () const;                                        //!< Get the current item
 };
 
-/*=================================================================================**//**
-* A collection that can iterate through the set of cells in a table.
-* See AnnotationTable::GetCellCollection
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
+//=======================================================================================
+//! A collection that can iterate through the set of cells in a table.
+//! See AnnotationTable::GetCellCollection
+//! @ingroup GROUP_Annotation
+//=======================================================================================
 struct      AnnotationTableCellCollection
 {
 private:
@@ -1525,7 +1504,7 @@ public:
 };
 
 //=======================================================================================
-// @bsiclass
+//! @ingroup GROUP_Annotation
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE AnnotationTable : AnnotationElement2d
 {
@@ -2113,6 +2092,4 @@ public:
 };
 
 //__PUBLISH_SECTION_START__
-//! @endGroup
-
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

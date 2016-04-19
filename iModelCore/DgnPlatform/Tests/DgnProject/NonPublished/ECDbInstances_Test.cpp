@@ -968,14 +968,8 @@ BentleyStatus DgnECInstanceTests::SetECInstanceId (ECN::IECInstanceR instance, E
     if (!ecInstanceId.IsValid ())
         return ERROR;
 
-    WChar instanceIdStr[ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH];
-    if (!ECInstanceIdHelper::ToString (instanceIdStr, ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH, ecInstanceId))
-        {
-        LOG.errorv ("Could not set ECInstanceId %lld on the ECInstanceId. Conversion to string failed.", ecInstanceId.GetValue ());
-        BeAssert (false && "Could not set ECInstanceId %lld on the ECInstanceId. Conversion to string failed.");
-        return ERROR;
-        }
-
+    Utf8Char instanceIdStr[BeInt64Id::ID_STRINGBUFFER_LENGTH];
+    ecInstanceId.ToString (instanceIdStr)
     const auto ecstat = instance.SetInstanceId (instanceIdStr);
     return ecstat == ECOBJECTS_STATUS_Success ? SUCCESS : ERROR;
     }

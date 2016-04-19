@@ -8,11 +8,6 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
-/** @addtogroup DgnElementGroup
-
-Classes for working with %DgnElements in memory.
-@ref PAGE_ElementOverview
-*/
 BENTLEY_NAMESPACE_TYPEDEFS(HeapZone);
 #include <Bentley/BeAssert.h>
 #include "DgnAuthority.h"
@@ -35,6 +30,7 @@ struct GraphicSet
     DGNPLATFORM_EXPORT void DropFor(DgnViewportCR viewport);
     void Save(Render::Graphic& graphic) {m_graphics.insert(&graphic);}
     void Clear() {m_graphics.clear();}
+    bool IsEmpty() const {return m_graphics.empty();}
 };
 END_BENTLEY_RENDER_NAMESPACE
 
@@ -87,7 +83,7 @@ public:
 };
 
 //=======================================================================================
-//! Context used by elements when they clone themselves
+//! Context used by elements when they are cloned
 //=======================================================================================
 struct DgnCloneContext
 {
@@ -249,20 +245,22 @@ public:
                 virtual Utf8CP _GetECClassName() const override {return MyECClassName();}\
                 virtual Utf8CP _GetSuperECClassName() const override {return T_Super::_GetECClassName();}
 
+/**
+* @addtogroup GROUP_DgnElement DgnElement Module
+* Types related to working with %DgnElements
+* @see @ref PAGE_ElementOverview
+* @see @ref PAGE_CustomElement
+*/
+
 //=======================================================================================
 //! An instance of a DgnElement in memory. 
 //!
 //!  <h2>Properties</h2>
 //!  On any given element, there may be the following kinds of properties:
-//!  * Properties that are defined by the ECClass 
-//!          * Properties that are controlled by a C++ element subclass
-//!              * You must use methods on that class to access them
-//!          * Properties that are not controlled by the C++ element class – “Unhandled Properties”
-//!              * You must use the Get/SetUnhandledPropertyValue functions to access them
-//!  * Properties that are not defined by the ECClass but are added by the user – “User Properties”
-//!          * You must use the GetUserProperties methods to access them
+//!  * Properties that are defined by the ECClass - use _GetProperty and _SetProperty. Various subclasses may also have their own strongly typed property access functions.
+//!  * Properties that are not defined by the ECClass but are added by the user use GetUserProperties
 //!
-//! @ingroup DgnElementGroup
+//! @ingroup GROUP_DgnElement
 // @bsiclass                                                     KeithBentley    10/13
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DgnElement : NonCopyableClass, ICodedEntity
@@ -349,7 +347,7 @@ public:
 
         //! Called after the element was Inserted.
         //! @param[in]  el the new persistent DgnElement that was Inserted
-        //! @return true to drop this appData, false to leave it attached to the DgnElement.
+        //! @return DropMe::Yes to drop this appData, DropMe::No to leave it attached to the DgnElement.
         //! @note el will not be the writable element onto which this AppData was attached. It will be the new persistent copy of that element.
         //! If you wish for your AppData to reside on the new element, call el.AddAppData(key,this) inside this method.
         virtual DropMe _OnInserted(DgnElementCR el){return DropMe::No;}
@@ -357,20 +355,21 @@ public:
         //! Called after the element was Updated.
         //! @param[in] modified the modified DgnElement
         //! @param[in] original the original DgnElement
-        //! @return true to drop this appData, false to leave it attached to the DgnElement.
+        //! @param[in] isOriginal If true, this AppData is on the original element, else it's on the modified element.
+        //! @return DropMe::Yes to drop this appData, DropMe::No to leave it attached to the DgnElement.
         //! @note This method is called for @b all AppData on both the original and the modified DgnElements.
-        virtual DropMe _OnUpdated(DgnElementCR modified, DgnElementCR original) {return DropMe::No;}
+        virtual DropMe _OnUpdated(DgnElementCR modified, DgnElementCR original, bool isOriginal) {return isOriginal? DropMe::Yes: DropMe::No;}
 
         //! Called after an update to the element was reversed by undo.
         //! @param[in] original the original DgnElement (after undo)
         //! @param[in] modified the modified DgnElement (before undo)
-        //! @return true to drop this appData, false to leave it attached to the DgnElement.
+        //! @return DropMe::Yes to drop this appData, DropMe::No to leave it attached to the DgnElement.
         //! @note This method is called for @b all AppData on both the original and the modified DgnElements.
         virtual DropMe _OnReversedUpdate(DgnElementCR original, DgnElementCR modified) {return DropMe::Yes;}
 
         //! Called after the element was Deleted.
         //! @param[in]  el the DgnElement that was deleted
-        //! @return true to drop this appData, false to leave it attached to the DgnElement.
+        //! @return DropMe::Yes to drop this appData, DropMe::No to leave it attached to the DgnElement.
         virtual DropMe _OnDeleted(DgnElementCR el) {return DropMe::Yes;}
     };
 
@@ -386,7 +385,7 @@ public:
     {
     private:
         DGNPLATFORM_EXPORT DropMe _OnInserted(DgnElementCR el) override final;
-        DGNPLATFORM_EXPORT DropMe _OnUpdated(DgnElementCR modified, DgnElementCR original) override final;
+        DGNPLATFORM_EXPORT DropMe _OnUpdated(DgnElementCR modified, DgnElementCR original, bool isOriginal) override final;
         friend struct MultiAspectMux;
 
     protected:
@@ -523,7 +522,7 @@ public:
         };
 
         //! Get the Id of this aspect. The aspect's Id is always the same as the host element's Id. This is a convenience function that converts from DgnElementId to ECInstanceId.
-        BeSQLite::EC::ECInstanceId GetAspectInstanceId(DgnElementCR el) const {return el.GetElementId();}
+        BeSQLite::EC::ECInstanceId GetAspectInstanceId(DgnElementCR el) const {return BeSQLite::EC::ECInstanceId(el.GetElementId().GetValueUnchecked());}
 
         //! Prepare to insert or update an Aspect for the specified element
         //! @param el   The host element
@@ -603,16 +602,15 @@ protected:
     };
 
     mutable BeAtomic<uint32_t> m_refCount;
-    DgnDbR          m_dgndb;
-    DgnElementId    m_elementId;
-    DgnElementId    m_parentId;
-    DgnModelId      m_modelId;
-    DgnClassId      m_classId;
-    DgnCode         m_code;
-    Utf8String      m_label;
+    DgnDbR        m_dgndb;
+    DgnElementId  m_elementId;
+    DgnElementId  m_parentId;
+    DgnModelId    m_modelId;
+    DgnClassId    m_classId;
+    DgnCode       m_code;
+    Utf8String    m_label;
+    mutable Flags m_flags;
     mutable ECN::AdHocJsonContainerP m_userProperties;
-
-    mutable Flags   m_flags;
     mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
 
     virtual Utf8CP _GetECClassName() const {return MyECClassName();}
@@ -966,6 +964,10 @@ public:
     //! @param[in] key The key for the AppData of interest.
     //! @return the AppData for key \a key, or nullptr.
     DGNPLATFORM_EXPORT AppData* FindAppData(AppData::Key const& key) const;
+
+    //! @private
+    DGNPLATFORM_EXPORT void CopyAppDataFrom(DgnElementCR source) const;
+
     //! @}
 
     //! Get the DgnModelId of this DgnElement.
@@ -986,7 +988,7 @@ public:
 
     //! Get the ECInstanceKey (the element DgnClassId and DgnElementId) of this DgnElement
     //! @see GetElementClassId, GetElementId
-    BeSQLite::EC::ECInstanceKey GetECInstanceKey() const {return BeSQLite::EC::ECInstanceKey(GetElementClassId().GetValue(), GetElementId());}
+    BeSQLite::EC::ECInstanceKey GetECInstanceKey() const {return BeSQLite::EC::ECInstanceKey(GetElementClassId(), BeSQLite::EC::ECInstanceId(GetElementId().GetValue()));}
 
     //! Get a pointer to the ECClass of this DgnElement.
     DGNPLATFORM_EXPORT ECN::ECClassCP GetElementClass() const;
@@ -1017,41 +1019,42 @@ public:
     //! @see GetLabel, GetCode, _GetDisplayLabel
     Utf8String GetDisplayLabel() const {return _GetDisplayLabel();}
 
-    //! Get a user property on this DgnElement
-    //! @param[in] name Get a user property value by name
+    //! Query the DgnDb for the children of this DgnElement.
+    //! @return DgnElementIdSet containing the DgnElementIds of all child elements of this DgnElement. Will be empty if no children.
+    DGNPLATFORM_EXPORT DgnElementIdSet QueryChildren() const;
+
+    //! @name Properties 
+    //! @{
+
+    //! Get the user property on this DgnElement to get or set it's value
+    //! @param[in] name Name of the user property
     //! @remarks The element needs to be held in memory to access the returned property value. 
     DGNPLATFORM_EXPORT ECN::AdHocJsonPropertyValue GetUserProperty(Utf8CP name) const;
 
     //! Returns true if the Element contains the user property
-    //! @param[in] name Get a user property value by name
+    //! @param[in] name Name of the user property
     DGNPLATFORM_EXPORT bool ContainsUserProperty(Utf8CP name) const;
 
     //! Get a user property on this DgnElement
-    //! @param[in] name Get a user property value by name
+    //! @param[in] name Name of the user property
     DGNPLATFORM_EXPORT void RemoveUserProperty(Utf8CP name);
 
     //! Clear all the user properties on this DgnElement
     DGNPLATFORM_EXPORT void ClearUserProperties();
 
-    //! Query the DgnDb for the children of this DgnElement.
-    //! @return DgnElementIdSet containing the DgnElementIds of all child elements of this DgnElement. Will be empty if no children.
-    DGNPLATFORM_EXPORT DgnElementIdSet QueryChildren() const;
-
-    //! @name Unhandled properties 
-    //! @{
-
-    //! Get the value of an unhandled property
+    //! Get the value of a property
     //! @param value The returned value
-    //! @param name The name of the unhandled property
-    //! @return non-zero error status if this element has no such unhandled property
-    DGNPLATFORM_EXPORT DgnDbStatus GetUnhandledPropertyValue(ECN::ECValueR value, Utf8CP name) const;
+    //! @param name The name of the property
+    //! @return DgnDbStatus::NotFound if this element has no such property or if the subclass has chosen not to expose it via this function
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _GetProperty(ECN::ECValueR value, Utf8CP name) const;
     
-    //! Set the value of an unhandled property. @note you must call Update in order to write the modified property to the DgnDb.
+    //! Set the value of a property. @note you must call Update in order to write the modified property to the DgnDb.
     //! @param value The returned value
-    //! @param name The name of the unhandled property
-    //! @return non-zero error status if this element has no such unhandled property
-    DGNPLATFORM_EXPORT DgnDbStatus SetUnhandledPropertyValue(Utf8CP name, ECN::ECValueCR value);
+    //! @param name The name of the property
+    //! @return non-zero error status if this element has no such property, if the value is illegal, or if the subclass has chosen not to expose the property via this function
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _SetProperty(Utf8CP name, ECN::ECValueCR value);
 
+    //! @private
     DGNPLATFORM_EXPORT void ComputeUnhandledProperties(bvector<ECN::ECPropertyCP>&) const;
     
     //! @}
@@ -1059,7 +1062,7 @@ public:
 
 //=======================================================================================
 //! A stream of geometry, stored on a DgnElement, created by an GeometryBuilder.
-//! @ingroup GeometricPrimitiveGroup
+//! @ingroup GROUP_Geometry
 // @bsiclass                                                    Keith.Bentley   12/14
 //=======================================================================================
 struct GeometryStream : ByteStream
@@ -1254,7 +1257,7 @@ public:
 
 //=======================================================================================
 //! Base class for elements with geometry.
-//! @ingroup DgnElementGroup
+//! @ingroup GROUP_DgnElement
 // @bsiclass                                                    Paul.Connelly   02/16
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE GeometricElement : DgnElement
@@ -1301,9 +1304,14 @@ protected:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _InsertInDb() override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _UpdateInDb() override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
+    DGNPLATFORM_EXPORT virtual void _OnInserted(DgnElementP copiedFrom) const override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnUpdate(DgnElementCR) override;
+    DGNPLATFORM_EXPORT virtual void _OnDeleted() const override;
+    DGNPLATFORM_EXPORT virtual void _OnReversedAdd() const override;
+    DGNPLATFORM_EXPORT virtual void _OnReversedDelete() const override;
+    DGNPLATFORM_EXPORT virtual void _OnUpdateFinished() const override;
     DGNPLATFORM_EXPORT virtual void _RemapIds(DgnImportContext&) override;
-    virtual uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() + static_cast<uint32_t>(sizeof(m_categoryId) + sizeof(m_geom)) + m_geom.GetAllocSize();}
+    virtual uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() + static_cast<uint32_t>(sizeof(m_categoryId) + sizeof(m_geom)) + sizeof(m_graphics) + m_geom.GetAllocSize();}
 
     static void AddBaseClassParams(ECSqlClassParams& params);
     DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& stmt);
@@ -1318,13 +1326,16 @@ protected:
 //=======================================================================================
 //! Base class for elements with 3d geometry.
 //! GeometricElement3d elements are not inherently spatially located, but can be spatially located.
-//! @ingroup DgnElementGroup
+//! @ingroup GROUP_DgnElement
 // @bsiclass                                                    Paul.Connelly   02/16
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE GeometricElement3d : GeometricElement, GeometrySource3d
 {
     DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_GeometricElement3d, GeometricElement)
     friend struct dgn_ElementHandler::Geometric3d;
+
+    DGNPLATFORM_EXPORT DgnDbStatus GetPlacementProperty(ECN::ECValueR value, Utf8CP name) const;
+    DGNPLATFORM_EXPORT DgnDbStatus SetPlacementProperty(Utf8CP name, ECN::ECValueCR value);
 
 public:
     //! Parameters for constructing a 3d geometric element
@@ -1370,7 +1381,6 @@ protected:
     virtual GeometryStreamCR _GetGeometryStream() const override final {return m_geom;}
     virtual Placement3dCR _GetPlacement() const override final {return m_placement;}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetPlacement(Placement3dCR placement) override;
-    virtual void _OnUpdateFinished() const override {T_Super::_OnUpdateFinished(); m_graphics.Clear();}
     DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR) override;
     DGNPLATFORM_EXPORT virtual void _AdjustPlacementForImport(DgnImportContext const&) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
@@ -1380,11 +1390,14 @@ protected:
     DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement&);
 public:
     DGNPLATFORM_EXPORT static void AddClassParams(ECSqlClassParams& params);
-};
+
+    DGNPLATFORM_EXPORT DgnDbStatus _GetProperty(ECN::ECValueR value, Utf8CP name) const override;
+    DGNPLATFORM_EXPORT DgnDbStatus _SetProperty(Utf8CP name, ECN::ECValueCR value) override;
+    };
 
 //=======================================================================================
 //! Base class for elements with 2d geometry
-//! @ingroup DgnElementGroup
+//! @ingroup GROUP_DgnElement
 // @bsiclass                                                    Paul.Connelly   02/16
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE GeometricElement2d : GeometricElement, GeometrySource2d
@@ -1437,7 +1450,6 @@ protected:
     virtual Placement2dCR _GetPlacement() const override final {return m_placement;}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetPlacement(Placement2dCR placement) override;
     virtual Render::GraphicSet& _Graphics() const override final {return m_graphics;}
-    virtual void _OnUpdateFinished() const override {T_Super::_OnUpdateFinished(); m_graphics.Clear();}
     DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR) override;
     DGNPLATFORM_EXPORT virtual void _AdjustPlacementForImport(DgnImportContext const&) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
@@ -1452,7 +1464,7 @@ public:
 //=======================================================================================
 //! A 3-dimensional geometric element that is used to convey information in 3-dimensional graphical presentations.
 //! It is common for the GeometryStream of a GraphicalElement3d to contain display-oriented metadata such as symbology overrides, styles, etc.
-//! @ingroup DgnElementGroup
+//! @ingroup GROUP_DgnElement
 // @bsiclass                                                    Shaun.Sewall    02/16
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE GraphicalElement3d : GeometricElement3d
@@ -1466,7 +1478,7 @@ protected:
 //! An abstract base class for elements that occupy real world 3-dimensional space
 //! It is uncommon for the GeometryStream of a SpatialElement to contain display-oriented metadata. 
 //! Instead, display-oriented settings should come from the SubCategories that classify the geometry in the GeometryStream.
-//! @ingroup DgnElementGroup
+//! @ingroup GROUP_DgnElement
 // @bsiclass                                                    Shaun.Sewall    12/15
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE SpatialElement : GeometricElement3d
@@ -1479,7 +1491,7 @@ protected:
 //=======================================================================================
 //! A PhysicalElement is a SpatialElement that has mass and can be physically "touched".
 //! Examples (which would be subclasses) include pumps, walls, and light posts.
-//! @ingroup DgnElementGroup
+//! @ingroup GROUP_DgnElement
 // @bsiclass                                                    Keith.Bentley   04/15
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE PhysicalElement : SpatialElement
@@ -1492,7 +1504,7 @@ protected:
 //=======================================================================================
 //! A SpatialElement that identifies a "tracked" real word 3-dimensional location but has no mass and cannot be "touched".
 //! Examples include grid lines, parcel boundaries, and work areas.
-//! @ingroup DgnElementGroup
+//! @ingroup GROUP_DgnElement
 // @bsiclass                                                    Shaun.Sewall    12/15
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE SpatialLocationElement : SpatialElement
@@ -1504,7 +1516,7 @@ protected:
 
 //=======================================================================================
 //! A 2-dimensional geometric element that is used to convey information within graphical presentations (like drawings).
-//! @ingroup DgnElementGroup
+//! @ingroup GROUP_DgnElement
 // @bsiclass                                                    Shaun.Sewall    02/16
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE GraphicalElement2d : GeometricElement2d
@@ -1516,7 +1528,7 @@ protected:
 
 //=======================================================================================
 //! A 2-dimensional geometric element used to annotate drawings and sheets.
-//! @ingroup DgnElementGroup
+//! @ingroup GROUP_DgnElement
 // @bsiclass                                                    Paul.Connelly   12/15
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE AnnotationElement2d : GraphicalElement2d
@@ -1534,7 +1546,7 @@ protected:
 
 //=======================================================================================
 //! A 2-dimensional geometric element used in drawings
-//! @ingroup DgnElementGroup
+//! @ingroup GROUP_DgnElement
 // @bsiclass                                                    Paul.Connelly   12/15
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DrawingGraphic : GraphicalElement2d
@@ -1571,7 +1583,7 @@ public:
 //=======================================================================================
 //! Base interface to query a group (element) that has other elements as members
 //! @see IElementGroupOf
-//! @ingroup DgnElementGroup
+//! @ingroup GROUP_DgnElement
 // @bsiclass                                                    Shaun.Sewall    11/15
 //=======================================================================================
 struct IElementGroup
@@ -1595,7 +1607,7 @@ public:
 //! members of the group in a type-safe way.
 //! @note Template type T must be a subclass of DgnElement.
 //! @note The class that implements this interface must also be an element.
-//! @ingroup DgnElementGroup
+//! @ingroup GROUP_DgnElement
 // @bsiclass                                                    Shaun.Sewall    10/15
 //=======================================================================================
 template<class T> class IElementGroupOf : public IElementGroup
@@ -1669,7 +1681,7 @@ public:
 };
 
 //=======================================================================================
-//! @ingroup DgnElementGroup
+//! @ingroup GROUP_DgnElement
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE InformationElement : DgnElement
 {
@@ -1681,7 +1693,7 @@ protected:
 
 //=======================================================================================
 //! A DefinitionElement which resides in (and only in) a DefinitionModel.
-//! @ingroup DgnElementGroup
+//! @ingroup GROUP_DgnElement
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DefinitionElement : InformationElement
 {
@@ -1696,7 +1708,7 @@ protected:
 //! A DefinitionElement which resides in (and only in) the dictionary model.
 //! Typically represents a style or similar resource used by other elements throughout
 //! the DgnDb.
-//! @ingroup DgnElementGroup
+//! @ingroup GROUP_DgnElement
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DictionaryElement : DefinitionElement
 {
@@ -1736,7 +1748,7 @@ protected:
 //! and may be "reclaimed" later if/when it is needed again. The memory held by DgnElements is not actually freed until
 //! their reference count goes to 0 and the cache is subsequently purged.
 //! @see DgnDb::Elements
-//! @ingroup DgnElementGroup
+//! @ingroup GROUP_DgnElement
 //=======================================================================================
 struct DgnElements : DgnDbTable, IMemoryConsumer
 {
@@ -1769,17 +1781,37 @@ struct DgnElements : DgnDbTable, IMemoryConsumer
         uint32_t m_purged;         //! number of garbage elements that were purged
     };
 
+    struct CachedSelectStatement : BeSQLite::EC::ECSqlStatement
+    {
+        friend struct DgnElements;
+    private:
+        mutable BeAtomic<uint32_t>  m_refCount;
+        bool                        m_isInCache;
+        BeSQLite::BeDbMutex&        m_mutex;
+
+        CachedSelectStatement(BeSQLite::BeDbMutex& mutex, bool inCache) : m_mutex(mutex), m_isInCache(inCache) { }
+    public:
+        DEFINE_BENTLEY_NEW_DELETE_OPERATORS
+
+        ~CachedSelectStatement() { }
+
+        uint32_t AddRef() const { return m_refCount.IncrementAtomicPre(); }
+        uint32_t GetRefCount() const { return m_refCount.load(); }
+        DGNPLATFORM_EXPORT uint32_t Release();
+    };
+
+    typedef RefCountedPtr<CachedSelectStatement> CachedSelectStatementPtr;
 private:
     struct ElementSelectStatement
     {
-        BeSQLite::EC::CachedECSqlStatementPtr m_statement;
+        CachedSelectStatementPtr m_statement;
         ECSqlClassParamsCR m_params;
-        ElementSelectStatement(BeSQLite::EC::CachedECSqlStatement* stmt, ECSqlClassParamsCR params) : m_statement(stmt), m_params(params) {}
+        ElementSelectStatement(CachedSelectStatement* stmt, ECSqlClassParamsCR params) : m_statement(stmt), m_params(params) {}
     };
 
     struct ClassInfo : ECSqlClassInfo
     {
-        BeSQLite::EC::CachedECSqlStatementPtr m_selectStmt;
+        CachedSelectStatementPtr    m_selectStmt;
     };
 
     typedef bmap<DgnClassId, ClassInfo> ClassInfoMap;
@@ -1835,6 +1867,11 @@ public:
     //! Query the DgnModelId of the specified DgnElementId.
     DGNPLATFORM_EXPORT DgnModelId QueryModelId(DgnElementId elementId) const;
 
+//__PUBLISH_SECTION_END__
+    // Function to allow apps such as Navigator to try to resolve URIs created in Graphite05 for things like issues and clashes.
+    DGNPLATFORM_EXPORT DgnElementId QueryElementIdGraphiteURI(Utf8CP uri) const;
+//__PUBLISH_SECTION_START__
+
     //! Query for the DgnElementId of the element that has the specified code
     DGNPLATFORM_EXPORT DgnElementId QueryElementIdByCode(DgnCode const& code) const;
 
@@ -1867,7 +1904,7 @@ public:
 
     //! Get an editable copy of an element by DgnElementId.
     //! @return Invalid if the element does not exist, or if it cannot be edited.
-    template<class T> RefCountedPtr<T> GetForEdit(DgnElementId id) const {RefCountedCPtr<T> orig=Get<T>(id); return orig.IsValid() ?(T*)orig->CopyForEdit().get() : nullptr;}
+    template<class T> RefCountedPtr<T> GetForEdit(DgnElementId id) const {RefCountedCPtr<T> orig=Get<T>(id); return orig.IsValid() ? (T*)orig->CopyForEdit().get() : nullptr;}
 
     //! Insert a copy of the supplied DgnElement into this DgnDb.
     //! @param[in] element The DgnElement to insert.

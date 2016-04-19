@@ -19,7 +19,7 @@ module ComponentModelTest
     var TEST_THING_COMPONENT_NAME = "Thing";
 
     //  Utility function that sets up the geometry of the specified element as a slab
-    function makeBox(element: be.PhysicalElement, origin: be.DPoint3d, angles: be.YawPitchRollAngles, xsize: number, ysize: number, zsize: number): void
+    function makeBox(element: be.GeometricElement3d, origin: be.DPoint3d, angles: be.YawPitchRollAngles, xsize: number, ysize: number, zsize: number): void
     {
         var boxSize = new be.DVector3d (xsize, ysize, zsize);
         var box = be.DgnBox.CreateCenteredBox (new be.DPoint3d(0,0,0), boxSize, true); // NB: the *geometry* is always defined in an LCS w/ origin 0,0,0. The placement below puts where we want it.
@@ -29,10 +29,10 @@ module ComponentModelTest
         builder.SetGeometryStreamAndPlacement(element);
     }
 
-    //  Utility function that creates a new (non-persistent) PhysicalElement object in memory and assigns it to the correct category 
-    function makeElement(model: be.DgnModel, cdef: be.ComponentDef): be.PhysicalElement
+    //  Utility function that creates a new (non-persistent) GeometricElement3d object in memory and assigns it to the correct category 
+    function makeElement(model: be.DgnModel, cdef: be.ComponentDef): be.GeometricElement3d
     {
-        return be.PhysicalElement.Create(model, cdef.Category.CategoryId, '');
+        return be.GeometricElement3d.CreateGeometricElement3d(model, cdef.Category.CategoryId, be.GENERIC_SCHEMA(be.GENERIC_CLASSNAME_PhysicalObject));
     }
 
     /**
@@ -88,6 +88,7 @@ module ComponentModelTest
             element.Insert();
 
 
+            /* WIP -- why am I calling Update on a new element?? That will always fail!
             var element3 = makeElement(componentModel, cdef);
 
             var builder = new be.GeometryBuilder(element, new be.DPoint3d(0,0,0), angles);
@@ -95,6 +96,7 @@ module ComponentModelTest
             builder.AppendGeometry(new be.LineSegment (new be.DPoint3d (0,0,0), new be.DPoint3d(1,0,0)));
             builder.SetGeometryStreamAndPlacement(element3);
             element3.Update ();
+            */
 
             return 0;
         }

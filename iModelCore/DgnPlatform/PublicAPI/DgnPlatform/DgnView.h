@@ -20,11 +20,11 @@
 #define DGN_CLASSNAME_SheetViewDefinition "SheetViewDefinition"
 #define DGN_CLASSNAME_RedlineViewDefinition "RedlineViewDefinition"
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 //=======================================================================================
 //! The source for the creation a ViewDefinition.
-//! @ingroup DgnViewGroup
+//! @ingroup GROUP_DgnView
 //=======================================================================================
 enum class DgnViewSource
 {
@@ -35,7 +35,7 @@ enum class DgnViewSource
 
 //=======================================================================================
 //! Holds the definition of a view.
-//! @ingroup DgnViewGroup
+//! @ingroup GROUP_DgnView
 // @bsiclass                                                      Paul.Connelly   10/15
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ViewDefinition : DictionaryElement
@@ -528,5 +528,5 @@ public:
 
 ENUM_IS_FLAGS(ViewDefinition::Iterator::Options::Source);
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 

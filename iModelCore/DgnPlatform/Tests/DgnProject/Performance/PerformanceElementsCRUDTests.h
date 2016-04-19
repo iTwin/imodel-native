@@ -265,10 +265,10 @@ struct PerformanceElementsCRUDTestFixture : public DgnDbTestFixture
     private:
         static const int s_initialInstanceCount = 1000000;
         static const int s_opCount = 50000;
-        static const int64_t s_firstElementId = INT64_C(6);
+        static const uint64_t s_firstElementId = UINT64_C(6);
         static Utf8CP const s_testSchemaXml;
         //we need to explicitly supply ElementId in case of insertion using Sql and ECSql otherwise we will get Unique_Constraint_Error
-        static int64_t s_elementId;
+        static uint64_t s_elementId;
 
         void SetUpTestDgnDb(WCharCP destFileName, Utf8CP testClassName, int initialInstanceCount);
 

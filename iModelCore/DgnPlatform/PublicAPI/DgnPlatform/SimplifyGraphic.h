@@ -12,11 +12,9 @@
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-/// @addtogroup GeometryCollectors
-/// @beginGroup
-
 //=======================================================================================
 //! Re-interpret complex geometry types as simple types
+//! @ingroup GROUP_Geometry
 // @bsiclass                                                      Brien.Bastings  06/05
 //=======================================================================================
 struct SimplifyGraphic : Render::Graphic
@@ -36,34 +34,33 @@ protected:
     Render::GraphicParams   m_currGraphicParams;
     Render::GeometryParams  m_currGeometryParams;
 
-    DGNPLATFORM_EXPORT virtual void _ActivateGraphicParams(Render::GraphicParamsCR graphicParams, Render::GeometryParamsCP geomParams) override;
-    DGNPLATFORM_EXPORT virtual void _AddLineString(int numPoints, DPoint3dCP points) override;
-    DGNPLATFORM_EXPORT virtual void _AddLineString2d(int numPoints, DPoint2dCP points, double zDepthe) override;
-    DGNPLATFORM_EXPORT virtual void _AddPointString(int numPoints, DPoint3dCP points) override;
-    DGNPLATFORM_EXPORT virtual void _AddPointString2d(int numPoints, DPoint2dCP points, double zDepthe) override;
-    DGNPLATFORM_EXPORT virtual void _AddShape(int numPoints, DPoint3dCP points, bool filled) override;
-    DGNPLATFORM_EXPORT virtual void _AddShape2d(int numPoints, DPoint2dCP points, bool filled, double zDepth) override;
-    DGNPLATFORM_EXPORT virtual void _AddTriStrip(int numPoints, DPoint3dCP points, int32_t usageFlags) override;
-    DGNPLATFORM_EXPORT virtual void _AddTriStrip2d(int numPoints, DPoint2dCP points, int32_t usageFlags, double zDepth) override;
-    DGNPLATFORM_EXPORT virtual void _AddArc(DEllipse3dCR ellipse, bool isEllipse, bool filled) override;
-    DGNPLATFORM_EXPORT virtual void _AddArc2d(DEllipse3dCR ellipse, bool isEllipse, bool filled, double zDepth) override;
-    DGNPLATFORM_EXPORT virtual void _AddBSplineCurve(MSBsplineCurveCR curve, bool filled) override;
-    DGNPLATFORM_EXPORT virtual void _AddBSplineCurve2d(MSBsplineCurveCR curve, bool filled, double zDepth) override;
-    DGNPLATFORM_EXPORT virtual void _AddCurveVector(CurveVectorCR curves, bool isFilled) override;
-    DGNPLATFORM_EXPORT virtual void _AddCurveVector2d(CurveVectorCR curves, bool isFilled, double zDepth) override;
-    DGNPLATFORM_EXPORT virtual void _AddSolidPrimitive(ISolidPrimitiveCR primitive) override;
-    DGNPLATFORM_EXPORT virtual void _AddBSplineSurface(MSBsplineSurfaceCR) override;
-    DGNPLATFORM_EXPORT virtual void _AddPolyface(PolyfaceQueryCR meshData, bool filled = false) override;
-    DGNPLATFORM_EXPORT virtual void _AddBody(ISolidKernelEntityCR entity, double pixelSize = 0.0) override;
-    DGNPLATFORM_EXPORT virtual void _AddTextString(TextStringCR text) override;
-    DGNPLATFORM_EXPORT virtual void _AddTextString2d(TextStringCR text, double zDepth) override;
-    DGNPLATFORM_EXPORT virtual void _AddTile(Render::TextureCR tile, DPoint3dCP corners) override;
-    DGNPLATFORM_EXPORT virtual void _AddRaster(DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels) override;
-    DGNPLATFORM_EXPORT virtual void _AddRaster2d(DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, double zDepth) override;
-    DGNPLATFORM_EXPORT virtual void _AddDgnOle(Render::DgnOleDraw*) override;
-    DGNPLATFORM_EXPORT virtual void _AddPointCloud(Render::PointCloudDraw* drawParams) override;
-    DGNPLATFORM_EXPORT virtual void _AddSubGraphic(Render::GraphicR, TransformCR, Render::GraphicParamsCR) override;
-    DGNPLATFORM_EXPORT virtual Render::GraphicPtr _CreateSubGraphic(TransformCR) const override;
+    DGNPLATFORM_EXPORT void _ActivateGraphicParams(Render::GraphicParamsCR graphicParams, Render::GeometryParamsCP geomParams) override;
+    DGNPLATFORM_EXPORT void _AddLineString(int numPoints, DPoint3dCP points) override;
+    DGNPLATFORM_EXPORT void _AddLineString2d(int numPoints, DPoint2dCP points, double zDepthe) override;
+    DGNPLATFORM_EXPORT void _AddPointString(int numPoints, DPoint3dCP points) override;
+    DGNPLATFORM_EXPORT void _AddPointString2d(int numPoints, DPoint2dCP points, double zDepthe) override;
+    DGNPLATFORM_EXPORT void _AddShape(int numPoints, DPoint3dCP points, bool filled) override;
+    DGNPLATFORM_EXPORT void _AddShape2d(int numPoints, DPoint2dCP points, bool filled, double zDepth) override;
+    DGNPLATFORM_EXPORT void _AddTriStrip(int numPoints, DPoint3dCP points, int32_t usageFlags) override;
+    DGNPLATFORM_EXPORT void _AddTriStrip2d(int numPoints, DPoint2dCP points, int32_t usageFlags, double zDepth) override;
+    DGNPLATFORM_EXPORT void _AddArc(DEllipse3dCR ellipse, bool isEllipse, bool filled) override;
+    DGNPLATFORM_EXPORT void _AddArc2d(DEllipse3dCR ellipse, bool isEllipse, bool filled, double zDepth) override;
+    DGNPLATFORM_EXPORT void _AddBSplineCurve(MSBsplineCurveCR curve, bool filled) override;
+    DGNPLATFORM_EXPORT void _AddBSplineCurve2d(MSBsplineCurveCR curve, bool filled, double zDepth) override;
+    DGNPLATFORM_EXPORT void _AddCurveVector(CurveVectorCR curves, bool isFilled) override;
+    DGNPLATFORM_EXPORT void _AddCurveVector2d(CurveVectorCR curves, bool isFilled, double zDepth) override;
+    DGNPLATFORM_EXPORT void _AddSolidPrimitive(ISolidPrimitiveCR primitive) override;
+    DGNPLATFORM_EXPORT void _AddBSplineSurface(MSBsplineSurfaceCR) override;
+    DGNPLATFORM_EXPORT void _AddPolyface(PolyfaceQueryCR meshData, bool filled = false) override;
+    DGNPLATFORM_EXPORT void _AddTriMesh(TriMeshArgs const&) override;
+    DGNPLATFORM_EXPORT void _AddBody(ISolidKernelEntityCR entity, double pixelSize = 0.0) override;
+    DGNPLATFORM_EXPORT void _AddTextString(TextStringCR text) override;
+    DGNPLATFORM_EXPORT void _AddTextString2d(TextStringCR text, double zDepth) override;
+    DGNPLATFORM_EXPORT void _AddTile(Render::TextureCR tile, DPoint3dCP corners) override;
+    DGNPLATFORM_EXPORT void _AddDgnOle(Render::DgnOleDraw*) override;
+    DGNPLATFORM_EXPORT void _AddPointCloud(Render::PointCloudDraw* drawParams) override;
+    DGNPLATFORM_EXPORT void _AddSubGraphic(Render::GraphicR, TransformCR, Render::GraphicParamsCR) override;
+    DGNPLATFORM_EXPORT Render::GraphicPtr _CreateSubGraphic(TransformCR) const override;
 
 public:
     DGNPLATFORM_EXPORT explicit SimplifyGraphic(Render::Graphic::CreateParams const& params, IGeometryProcessorR, ViewContextR);
@@ -135,9 +132,10 @@ public:
 
 }; // SimplifyGraphic
 
-/*=================================================================================**//**
-* @bsiclass                                                     Brien.Bastings  12/15
-+===============+===============+===============+===============+===============+======*/
+//=======================================================================================
+//! @ingroup GROUP_Geometry
+// @bsiclass                                                    Brien.Bastings  12/15
+//=======================================================================================
 struct IGeometryProcessor
 {
 public:
@@ -218,12 +216,13 @@ virtual void _OutputGraphics(ViewContextR context) {}
 
 ENUM_IS_FLAGS(IGeometryProcessor::UnhandledPreference)
 
-/*=================================================================================**//**
-* Provides an implementation of a ViewContext and Render::Graphic suitable for 
-* collecting a "picture" of an element's graphics. The element handler's Draw method is 
-* called and the output is sent to the supplied IGeometryProcessor.
-* @bsiclass                                                     Brien.Bastings  06/2009
-+===============+===============+===============+===============+===============+======*/
+//=======================================================================================
+//! Provides an implementation of a ViewContext and Render::Graphic suitable for 
+//! collecting a "picture" of an element's graphics. The element handler's Draw method is 
+//! called and the output is sent to the supplied IGeometryProcessor.
+//! @ingroup GROUP_Geometry
+// @bsiclass                                                    Brien.Bastings  06/2009
+//=======================================================================================
 struct GeometryProcessor
 {
 //! Visit the supplied element and send it's Draw output to the supplied processor.
@@ -237,7 +236,5 @@ DGNPLATFORM_EXPORT static void Process(IGeometryProcessorR processor, GeometrySo
 DGNPLATFORM_EXPORT static void Process(IGeometryProcessorR processor, DgnDbR dgnDb);
 
 }; // GeometryProcessor
-
-/** @endGroup */
 
 END_BENTLEY_DGN_NAMESPACE

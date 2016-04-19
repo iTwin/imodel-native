@@ -641,6 +641,12 @@
     <ClInclude Include="DgnGeoCoord\GeoCoordElement.h">
       <Filter>DgnGeoCoord</Filter>
     </ClInclude>
+    <ClInclude Include="PublicAPI\DgnPlatform\RepositoryManager.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DgnPlatform\Render.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="PublicAPI\DgnPlatform\DesktopTools\pagalloc.fdf">

@@ -2,13 +2,15 @@
 |
 |     $Source: PublicAPI/DgnPlatform/SolidKernel.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
 
 #include "Render.h"
+
+class TopoDS_Shape;
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -89,13 +91,15 @@ enum KernelEntityType
 protected:
 
 //! @private
-virtual bool _IsEqual (ISolidKernelEntityCR) const = 0;
+virtual bool _IsEqual(ISolidKernelEntityCR) const = 0;
 //! @private
-virtual KernelEntityType _GetEntityType () const = 0;
+virtual KernelEntityType _GetEntityType() const = 0;
 //! @private
-virtual TransformCR _GetEntityTransform () const = 0;
+virtual DRange3d _GetEntityRange() const = 0;
 //! @private
-virtual void _SetEntityTransform (TransformCR) = 0;
+virtual Transform _GetEntityTransform() const = 0;
+//! @private
+virtual void _SetEntityTransform(TransformCR) = 0;
 //! @private
 virtual IFaceMaterialAttachmentsCP _GetFaceMaterialAttachments() const = 0;
 //! @private
@@ -113,6 +117,10 @@ bool IsEqual (ISolidKernelEntityCR entity) const {return _IsEqual(entity);}
 //! @return The solid kernel entity type.
 KernelEntityType GetEntityType() const {return _GetEntityType();}
 
+//! Get the axis aligned bounding box for this entity.
+//! @return The axis aligned bounding box for the entity.
+DRange3d GetEntityRange() const {return _GetEntityRange();}
+
 //! Get the body to uor transform for this entity. This transform can have
 //! translation, rotation, and scale. A distance of 1.0 in solid kernel coordinates
 //! represents 1 meter, how many uors this represents is determined by the transform scale.
@@ -124,7 +132,7 @@ KernelEntityType GetEntityType() const {return _GetEntityType();}
 //! allows for a solid that will typically have a basis point of 0,0,0 to be displayed at 
 //! any uor location in a dgn model.
 //! @return The solid kernel to uor transform for the entity.
-TransformCR GetEntityTransform() const {return _GetEntityTransform();}
+Transform GetEntityTransform() const {return _GetEntityTransform();}
 
 //! Changes the solid to uor transform for the entity.
 //! @param[in] transform The new solid to uor transform.
@@ -275,5 +283,16 @@ IFacetOptionsCR                 facetOptions
 }; // IFacetTopologyTable
 
 typedef RefCountedPtr<IFacetTopologyTable> IFacetTopologyTablePtr;
+
+//=======================================================================================
+//! SolidKernelUtil is intended as a bridge between DgnPlatform and Open CASCADE so
+//! that the entire set of Open CASCADE includes isn't required for the published api.
+//=======================================================================================
+struct SolidKernelUtil
+{
+DGNPLATFORM_EXPORT static ISolidKernelEntityPtr CreateNewEntity(TopoDS_Shape const&);
+DGNPLATFORM_EXPORT static TopoDS_Shape const* GetShape(ISolidKernelEntityCR);
+DGNPLATFORM_EXPORT static TopoDS_Shape* GetShapeP(ISolidKernelEntityR);
+};
 
 END_BENTLEY_DGN_NAMESPACE

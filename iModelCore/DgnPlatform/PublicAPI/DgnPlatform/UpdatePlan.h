@@ -74,43 +74,48 @@ struct ProgressiveTask : RefCounted<NonCopyableClass>
 +===============+===============+===============+===============+===============+======*/
 struct StopEvents
     {
-    bool    m_keystrokes;
-    bool    m_wheel;
-    bool    m_button;
-    bool    m_buttonUp;
-    bool    m_paint;
-    bool    m_focus;
-    bool    m_modifierKeyTransition;
-    bool    m_sensor;
-    bool    m_abortUpdateRequest;
-    bool    m_touchMotion;          //  Ignored unless the motion exceeds range.
-    bool    m_anyEvent;
+    bool m_keystrokes;
+    bool m_wheel;
+    bool m_button;
+    bool m_buttonUp;
+    bool m_reset;
+    bool m_resetUp;
+    bool m_paint;
+    bool m_focus;
+    bool m_modifierKeyTransition;
+    bool m_sensor;
+    bool m_abortUpdateRequest;
+    bool m_touchMotion;          //  Ignored unless the motion exceeds range.
+    bool m_anyEvent;
     uint32_t m_touchLimit;
     uint32_t m_numTouches;
     BentleyApi::Point2d m_touches[3];
 
     enum StopMask
         {
-        None        = 0,
+        None          = 0,
         OnKeystrokes  = 1<<0,
-        OnWheel       = 1<<2,
-        OnButton      = 1<<3,
-        OnPaint       = 1<<4,
-        OnFocus       = 1<<5,
-        OnModifierKey = 1<<6,
-        OnTouch       = 1<<7,
-        OnAbortUpdate = 1<<8,
-        OnSensor      = 1<<9,   //  GPS, Gyro
-        OnButtonUp    = 1<<10,
-        AnyEvent      = 1<<11,   //  includes all of the other events plus unknown events
+        OnWheel       = 1<<1,
+        OnButton      = 1<<2,
+        OnButtonUp    = 1<<3,
+        OnReset       = 1<<4,
+        OnResetUp     = 1<<5,
+        OnPaint       = 1<<6,
+        OnFocus       = 1<<7,
+        OnModifierKey = 1<<8,
+        OnTouch       = 1<<9,
+        OnAbortUpdate = 1<<10,
+        OnSensor      = 1<<11,   //  GPS, Gyro
+        AnyEvent      = 1<<12,   //  includes all of the other events plus unknown events
 
-        ForFullUpdate  = OnWheel | OnAbortUpdate,             // doesn't stop on keystrokes, buttons, or touch
+        ForFullUpdate  = OnWheel | OnAbortUpdate | OnReset, // doesn't stop on keystrokes, data buttons, or touch
         ForQuickUpdate = ForFullUpdate | OnKeystrokes | OnButton | OnTouch,
         };
 
     void Clear()
         {
-        m_keystrokes = m_wheel = m_button = m_paint = m_focus = m_modifierKeyTransition = m_abortUpdateRequest = m_touchMotion = m_anyEvent = false;
+        m_keystrokes = m_wheel = m_button = m_buttonUp = m_reset = m_resetUp = false;
+        m_paint = m_focus = m_modifierKeyTransition = m_sensor = m_abortUpdateRequest = m_touchMotion = m_anyEvent = false;
         m_touchLimit = 0;
         }
 
@@ -119,17 +124,20 @@ struct StopEvents
         if (mask & AnyEvent)
             mask = -1;
 
-        m_keystrokes = TO_BOOL(mask & OnKeystrokes);
-        m_wheel      = TO_BOOL(mask & OnWheel);
-        m_button     = TO_BOOL(mask & OnButton);
-        m_buttonUp   = TO_BOOL(mask & OnButtonUp);
-        m_paint      = TO_BOOL(mask & OnPaint);
-        m_focus      = TO_BOOL(mask & OnFocus);
-        m_sensor     = TO_BOOL(mask & OnSensor);
+        m_keystrokes            = TO_BOOL(mask & OnKeystrokes);
+        m_wheel                 = TO_BOOL(mask & OnWheel);
+        m_button                = TO_BOOL(mask & OnButton);
+        m_buttonUp              = TO_BOOL(mask & OnButtonUp);
+        m_reset                 = TO_BOOL(mask & OnReset);
+        m_resetUp               = TO_BOOL(mask & OnResetUp);
+        m_paint                 = TO_BOOL(mask & OnPaint);
+        m_focus                 = TO_BOOL(mask & OnFocus);
         m_modifierKeyTransition = TO_BOOL(mask & OnModifierKey);
-        m_touchMotion = TO_BOOL(mask & OnTouch);
-        m_abortUpdateRequest = TO_BOOL(mask & OnAbortUpdate);
-        m_anyEvent   = TO_BOOL(mask & AnyEvent);
+        m_sensor                = TO_BOOL(mask & OnSensor);
+        m_abortUpdateRequest    = TO_BOOL(mask & OnAbortUpdate);
+        m_touchMotion           = TO_BOOL(mask & OnTouch);
+        m_anyEvent              = TO_BOOL(mask & AnyEvent);
+
         m_touchLimit = 0;
         }
 
@@ -146,12 +154,12 @@ struct UpdatePlan
 {
     struct Query
     {
-        uint32_t    m_maxTime = 2000;    // maximum time query should run (milliseconds)
-        double      m_frustumScale = 1.25;
-        bool        m_onlyAlwaysDrawn = false;
+        uint32_t m_maxTime = 2000;    // maximum time query should run (milliseconds)
+        double m_frustumScale = 1.0;
+        bool m_onlyAlwaysDrawn = false;
         mutable bool m_wait = false;
-        uint32_t    m_minElements = 3;
-        uint32_t    m_maxElements = 50000;
+        uint32_t m_minElements = 3;
+        uint32_t m_maxElements = 50000;
         mutable uint32_t m_delayAfter = 0;
         mutable uint32_t m_targetNumElements = 0;
 
@@ -196,8 +204,8 @@ struct UpdatePlan
         bool WantMotionAbort() const {return 0 != m_motion.GetTolerance();}
     };
 
-    double      m_targetFPS = 20.0; // Frames Per second
-    uint32_t    m_timeout = 0; // seconds
+    double      m_targetFPS = 10.0; // target Frames Per Second
+    uint32_t    m_timeout = 0; // in milliseconds
     Query       m_query;
     AbortFlags  m_abortFlags;
 

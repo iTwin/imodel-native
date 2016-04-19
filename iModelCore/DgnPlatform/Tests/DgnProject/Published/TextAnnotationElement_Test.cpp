@@ -3,8 +3,7 @@
 //  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
 
-#include "DgnHandlersTests.h"
-#include <DgnPlatform/Annotations/Annotations.h>
+#include "AnnotationTestFixture.h"
 #include <DgnPlatform/Annotations/TextAnnotationElement.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -74,7 +73,7 @@ TEST(TextAnnotation2dTest, BasicCrud)
 
         textStyleId = ensureAnnotationTextStyle1(*db);
         ASSERT_TRUE(textStyleId.IsValid());
-
+        
         TextAnnotation annotation(*db);
         annotation.SetText(AnnotationTextBlock::Create(*db, textStyleId, ANNOTATION_TEXT_1).get());
         ASSERT_TRUE(nullptr != annotation.GetTextCP());
@@ -140,11 +139,24 @@ TEST(TextAnnotation2dTest, BasicCrud)
         
         ASSERT_TRUE(AnnotationRunType::Text == existingRuns[0]->GetType());
         EXPECT_TRUE(0 == strcmp(ANNOTATION_TEXT_1, ((AnnotationTextRunCP)existingRuns[0].get())->GetContent().c_str()));
-        
-        // Update with different text.
+
+        // Update Annotation Element ( update text, and frame and leader )
         //.........................................................................................
+        AnnotationFrameStylePtr frameStyle = AnnotationTestFixture::createAnnotationFrameStyle(*db, "TestFrameStyle");
+        AnnotationFramePtr frame = AnnotationFrame::Create(*db, frameStyle->GetElementId());
+        ASSERT_TRUE(frame.IsValid());
+
+        AnnotationLeaderStylePtr leaderStyle = AnnotationTestFixture::createAnnotationLeaderStyle(*db, "TestLeaderStyle");
+        AnnotationLeaderPtr leader = AnnotationLeader::Create(*db, leaderStyle->GetElementId());
+        leader->SetTargetAttachmentType(AnnotationLeaderTargetAttachmentType::PhysicalPoint);
+        leader->SetSourceAttachmentType(AnnotationLeaderSourceAttachmentType::Id);
+        ASSERT_TRUE(leader.IsValid());
+
         TextAnnotation annotation(*db);
         annotation.SetText(AnnotationTextBlock::Create(*db, textStyleId, ANNOTATION_TEXT_2).get());
+        annotation.SetFrame(frame.get());
+        ASSERT_TRUE(nullptr != annotation.GetFrameP());
+        annotation.m_leaders.push_back(leader);
 
         TextAnnotation2dPtr annotationElement = TextAnnotation2d::GetForEdit(*db, insertedElementId);
         ASSERT_TRUE(annotationElement.IsValid());
@@ -172,8 +184,8 @@ TEST(TextAnnotation2dTest, BasicCrud)
         // Spot check some properties; rely on other TextAnnotation tests to more fully test serialization, which should be relatively pass/fail on the element itself.
         TextAnnotationCP existingAnnotation = annotationElementC->GetAnnotation();
         ASSERT_TRUE(nullptr != existingAnnotation);
-        EXPECT_TRUE(nullptr == existingAnnotation->GetFrameCP());
-        EXPECT_TRUE(0 == existingAnnotation->GetLeaders().size());
+        EXPECT_TRUE(nullptr != existingAnnotation->GetFrameCP());
+        EXPECT_TRUE(1 == existingAnnotation->GetLeaders().size());
 
         AnnotationTextBlockCP existingText = existingAnnotation->GetTextCP();
         ASSERT_TRUE(nullptr != existingText);
@@ -252,7 +264,7 @@ TEST(TextAnnotation3dTest, BasicCrud)
 
         textStyleId = ensureAnnotationTextStyle1(*db);
         ASSERT_TRUE(textStyleId.IsValid());
-
+        
         TextAnnotation annotation(*db);
         annotation.SetText(AnnotationTextBlock::Create(*db, textStyleId, ANNOTATION_TEXT_1).get());
         ASSERT_TRUE(nullptr != annotation.GetTextCP());
@@ -319,10 +331,23 @@ TEST(TextAnnotation3dTest, BasicCrud)
         ASSERT_TRUE(AnnotationRunType::Text == existingRuns[0]->GetType());
         EXPECT_TRUE(0 == strcmp(ANNOTATION_TEXT_1, ((AnnotationTextRunCP)existingRuns[0].get())->GetContent().c_str()));
         
-        // Update with different text.
+        // Update Annotation Element ( update text, and frame and leader )
         //.........................................................................................
+        AnnotationFrameStylePtr frameStyle = AnnotationTestFixture::createAnnotationFrameStyle(*db, "TestFrameStyle");
+        AnnotationFramePtr frame = AnnotationFrame::Create(*db, frameStyle->GetElementId());
+        ASSERT_TRUE(frame.IsValid());
+
+        AnnotationLeaderStylePtr leaderStyle = AnnotationTestFixture::createAnnotationLeaderStyle(*db, "TestLeaderStyle");
+        AnnotationLeaderPtr leader = AnnotationLeader::Create(*db, leaderStyle->GetElementId());
+        leader->SetTargetAttachmentType(AnnotationLeaderTargetAttachmentType::PhysicalPoint);
+        leader->SetSourceAttachmentType(AnnotationLeaderSourceAttachmentType::Id);
+        ASSERT_TRUE(leader.IsValid());
+
         TextAnnotation annotation(*db);
         annotation.SetText(AnnotationTextBlock::Create(*db, textStyleId, ANNOTATION_TEXT_2).get());
+        annotation.SetFrame(frame.get());
+        ASSERT_TRUE(nullptr != annotation.GetFrameP());
+        annotation.m_leaders.push_back(leader);
 
         TextAnnotation3dPtr annotationElement = TextAnnotation3d::GetForEdit(*db, insertedElementId);
         ASSERT_TRUE(annotationElement.IsValid());
@@ -350,8 +375,8 @@ TEST(TextAnnotation3dTest, BasicCrud)
         // Spot check some properties; rely on other TextAnnotation tests to more fully test serialization, which should be relatively pass/fail on the element itself.
         TextAnnotationCP existingAnnotation = annotationElementC->GetAnnotation();
         ASSERT_TRUE(nullptr != existingAnnotation);
-        EXPECT_TRUE(nullptr == existingAnnotation->GetFrameCP());
-        EXPECT_TRUE(0 == existingAnnotation->GetLeaders().size());
+        EXPECT_TRUE(nullptr != existingAnnotation->GetFrameCP());
+        EXPECT_TRUE(1 == existingAnnotation->GetLeaders().size());
 
         AnnotationTextBlockCP existingText = existingAnnotation->GetTextCP();
         ASSERT_TRUE(nullptr != existingText);

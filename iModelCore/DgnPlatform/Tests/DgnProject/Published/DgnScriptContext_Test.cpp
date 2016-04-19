@@ -172,7 +172,7 @@ TEST_F(DgnScriptTest, TestEga)
         parms["Z"] = parms["Z"].asDouble() + 1;
         }
     timeIt.Stop();
-    BeTest::Log("DgnScriptTest", BeTest::LogPriority::PRIORITY_ERROR, Utf8PrintfString("%d / %lf seconds = %lf/second\n", niters, timeIt.GetElapsedSeconds(), niters/timeIt.GetElapsedSeconds()));
+    BeTest::Log("DgnScriptTest", BeTest::LogPriority::PRIORITY_ERROR, Utf8PrintfString("%d / %lf seconds = %lf/second\n", niters, timeIt.GetElapsedSeconds(), niters/timeIt.GetElapsedSeconds()).c_str());
 
     // Check that attempting to call a non-registered function fails with a non-zero xstatus
     if (true)
@@ -200,13 +200,15 @@ TEST_F(DgnScriptTest, TestEga)
 /*=================================================================================**//**
 * @bsimethod                                    Sam.Wilson                      04/2013
 +===============+===============+===============+===============+===============+======*/
-struct DetectJsErrors : DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler
+namespace 
+{
+struct DgnScriptTest_DetectJsErrors : DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler
     {
     void _HandleScriptError(BeJsContextR, Category category, Utf8CP description, Utf8CP details) override
         {
         //enum class Category {ReportedByScript, ParseError, Exception, Other};
         static char const* s_errTypes[] = {"ReportedByScript", "ParseError", "Exception", "Other"};
-        FAIL() << (Utf8CP)Utf8PrintfString("JavaScript error %s: %s, %s", s_errTypes[(int)category], description, details);
+        FAIL() << Utf8PrintfString("JavaScript error %s: %s, %s", s_errTypes[(int)category], description, details).c_str();
         }
 
     void _HandleLogMessage(Utf8CP category, DgnPlatformLib::Host::ScriptAdmin::LoggingSeverity sev, Utf8CP msg) override
@@ -216,13 +218,14 @@ struct DetectJsErrors : DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHan
         }
 
     };
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnScriptTest, RunScripts)
     {
-    T_HOST.GetScriptAdmin().RegisterScriptNotificationHandler(*new DetectJsErrors);
+    T_HOST.GetScriptAdmin().RegisterScriptNotificationHandler(*new DgnScriptTest_DetectJsErrors);
 
     BeFileName jsFileName;
     BeTest::GetHost().GetDgnPlatformAssetsDirectory(jsFileName);
@@ -247,6 +250,9 @@ TEST_F(DgnScriptTest, RunScripts)
     int retstatus = 0;
     DgnScript::ExecuteDgnDbScript(retstatus, *project, "DgnScriptTests.TestDgnDbScript", parms);
     ASSERT_EQ(0, retstatus);
+    // undefined function
+    DgnScript::ExecuteDgnDbScript(retstatus, *project, "DgnScriptTests.SomeUndefinedFunction", parms);
+    ASSERT_NE(0, retstatus);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -273,7 +279,7 @@ TEST_F(DgnScriptTest, CRUD)
     DgnDbP project = tdm.GetDgnProjectP();
     ASSERT_TRUE(project != NULL);
 
-    T_HOST.GetScriptAdmin().RegisterScriptNotificationHandler(*new DetectJsErrors);
+    T_HOST.GetScriptAdmin().RegisterScriptNotificationHandler(*new DgnScriptTest_DetectJsErrors);
 
     BeFileName jsFileName;
     BeTest::GetHost().GetDgnPlatformAssetsDirectory(jsFileName);

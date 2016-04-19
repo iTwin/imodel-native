@@ -1280,6 +1280,7 @@ public:
     DGNPLATFORM_EXPORT static uint32_t GetAttributes (Json::Value& lsDefinition);
     DGNPLATFORM_EXPORT static LsComponentId GetComponentId (Json::Value& lsDefinition);
 
+    DGNPLATFORM_EXPORT LsDefinition* Clone ();
     DGNPLATFORM_EXPORT static void Destroy (LsDefinitionP);
 
     virtual ~LsDefinition ();
@@ -1298,7 +1299,7 @@ public:
     void CheckForContinuous (LsStrokePatternComponentCP);
     void PostProcessComponentLoad (DgnModelP modelRef);
     void ClearPostProcess ();
-    void SetName (Utf8CP name);
+    DGNPLATFORM_EXPORT void SetName (Utf8CP name);
     void SetAttributes (uint32_t attr) {m_attributes = attr;}
     void SetStyleId (DgnStyleId number) { m_styleId = number; }
     DgnStyleId GetStyleId () { return m_styleId; }

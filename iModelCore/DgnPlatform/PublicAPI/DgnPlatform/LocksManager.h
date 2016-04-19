@@ -37,18 +37,18 @@ enum class LockableType
 struct LockableId
 {
 private:
-    BeSQLite::BeInt64Id m_id;
+    BeInt64Id m_id;
     LockableType m_type;
 public:
     LockableId() : m_type(LockableType::Element) { } //!< Constructs an invalid LockableId.
     explicit LockableId(DgnElementId id) : m_id(id), m_type(LockableType::Element) { } //!< Constructs a LockableId for an element
     explicit LockableId(DgnModelId id) : m_id(id), m_type(LockableType::Model) { } //!< Constructs a LockableId for a model
-    LockableId(LockableType type, BeSQLite::BeInt64Id id) : m_id(id), m_type(type) { } //!< Constructs a LockableId of the specified type and ID
+    LockableId(LockableType type, BeInt64Id id) : m_id(id), m_type(type) { } //!< Constructs a LockableId of the specified type and ID
     DGNPLATFORM_EXPORT explicit LockableId(DgnDbCR db); //!< Constructs a LockableId for a DgnDb
     DGNPLATFORM_EXPORT explicit LockableId(DgnModelCR model); //!< Constructs a LockableId for a model
     DGNPLATFORM_EXPORT explicit LockableId(DgnElementCR element); //!< Constructs a LockableId for an element
 
-    BeSQLite::BeInt64Id GetId() const { return m_id; } //!< The ID of the lockable object
+    BeInt64Id GetId() const { return m_id; } //!< The ID of the lockable object
     LockableType GetType() const { return m_type; } //!< The type of the lockable object
     bool IsValid() const { return m_id.IsValid(); } //!< Determine if this LockableId refers to a valid object
     void Invalidate() { m_id.Invalidate(); } //!< Invalidates this LockableId
@@ -122,7 +122,7 @@ public:
     DgnLock(DgnModelId modelId, LockLevel level) : m_id(modelId), m_level(level) { } //!< Constructs a lock for a model
     DgnLock(DgnDbCR db, LockLevel level) : m_id(db), m_level(level) { } //!< Constructs a lock for a DgnDb
 
-    BeSQLite::BeInt64Id GetId() const { return m_id.GetId(); } //!< The ID of the lockable object
+    BeInt64Id GetId() const { return m_id.GetId(); } //!< The ID of the lockable object
     LockLevel GetLevel() const { return m_level; } //!< The level of the lock
     LockableType GetType() const { return m_id.GetType(); } //!< The type of the lockable object
     LockableId GetLockableId() const { return m_id; } //!< The ID and type of the lockable object
@@ -325,7 +325,7 @@ public:
     DGNPLATFORM_EXPORT void ToJson(JsonValueR value) const; //!< Convert to JSON representation
     DGNPLATFORM_EXPORT bool FromJson(JsonValueCR value); //!< Attempt to initialize from JSON representation
 
-    void FromChangeSummary(DgnChangeSummary const& changes, bool stopOnFirst=false); //!< @private
+    void FromChangeSet(DgnDbCR dgndb, BeSQLite::IChangeSet& changeSet, bool stopOnFirst=false); //!< @private
     void ExtractLockSet(DgnLockSet& locks); //!< @private
     DGNPLATFORM_EXPORT void FromRevision(DgnRevision& revision); //!< @private
 };

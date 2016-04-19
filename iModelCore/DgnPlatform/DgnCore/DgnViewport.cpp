@@ -12,12 +12,27 @@
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewport::DestroyViewport()
     {
-    m_progressiveTasks.clear();
+    m_elementProgressiveTasks.clear();
+    m_terrainProgressiveTasks.clear();
+    RenderQueue().WaitForIdle();
     if (m_viewController.IsValid())
         {
-        m_viewController->GetDgnDb().Elements().DropGraphicsForViewport(*this);
+        m_viewController->GetDgnDb().Models().DropGraphicsForViewport(*this);
+        m_viewController->GetDgnDb().Elements().DropGraphicsForViewport(*this);        
         m_viewController = nullptr;
         }
+
+    m_renderTarget = nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    04/2016
+//---------------------------------------------------------------------------------------
+void DgnViewport::SuspendViewport()
+    {
+    m_elementProgressiveTasks.clear();
+    m_terrainProgressiveTasks.clear();
+    RenderQueue().WaitForIdle();
 
     m_renderTarget = nullptr;
     }
@@ -896,7 +911,7 @@ int DgnViewport::GetDefaultIndexedLineWidth(int index)
 +---------------+---------------+---------------+---------------+---------------+------*/
 int DgnViewport::_GetIndexedLineWidth(int index) const
     {
-    return DgnViewport::GetDefaultIndexedLineWidth(index);
+    return GetDefaultIndexedLineWidth(index);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -989,7 +1004,6 @@ double DgnViewport::GetPixelSizeAtPoint(DPoint3dCP rootPtP, DgnCoordSystem coord
     viewPts[1].x += viewPts[1].w;
 
     DPoint3d    rootPts[2];
-
     ViewToWorld(rootPts, viewPts, 2);
 
     switch (coordSys)
@@ -1097,7 +1111,7 @@ bool DgnViewport::UseClipVolume(DgnModelCP modelRef) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RichardTrefz    08/02
+* @bsimethod                                                    RayBentley  10/06
 +---------------+---------------+---------------+---------------+---------------+------*/
 ColorDef DgnViewport::GetContrastToBackgroundColor() const
     {
@@ -1139,11 +1153,21 @@ ColorDef DgnViewport::GetBackgroundColor() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      10/14
+* @bsimethod                                    Keith.Bentley                   03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::ScheduleProgressiveTask(ProgressiveTask& task)
+void DgnViewport::ScheduleElementProgressiveTask(ProgressiveTask& task)
     {
-    m_progressiveTasks.push_back(&task);
+    DgnDb::VerifyClientThread(); // this may only be called from the client thread.
+    m_elementProgressiveTasks.push_back(&task);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    04/2016
+//---------------------------------------------------------------------------------------
+void DgnViewport::ScheduleTerrainProgressiveTask(ProgressiveTask& task)
+    {
+    DgnDb::VerifyClientThread(); // this may only be called from the client thread.
+    m_terrainProgressiveTasks.push_back(&task);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1202,7 +1226,10 @@ void DgnViewport::ClearUndo()
 void DgnViewport::ChangeViewController(ViewControllerR viewController)
     {
     if (m_viewController.IsValid())
-        m_viewController->GetDgnDb().Elements().DropGraphicsForViewport(*this);
+        {
+        m_viewController->GetDgnDb().Models().DropGraphicsForViewport(*this);
+        m_viewController->GetDgnDb().Elements().DropGraphicsForViewport(*this);        
+        }
 
     m_partGraphics.clear();
 

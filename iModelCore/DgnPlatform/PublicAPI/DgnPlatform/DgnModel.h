@@ -48,11 +48,10 @@ struct DgnElementMap : bmap<DgnElementId, DgnElementCPtr>
             }
         Insert(id, &el);
         }
+    bool Contains(DgnElementId id) const {return end() != find(id);}
+    uint32_t GetCount() const {return (uint32_t) size();}
     };
 
-/** @addtogroup DgnModelGroup DgnModels
-@ref PAGE_ModelOverview
-*/
 
 #define DGNMODEL_DECLARE_MEMBERS(__ECClassName__,__superclass__)\
     private: typedef __superclass__ T_Super;\
@@ -60,9 +59,16 @@ struct DgnElementMap : bmap<DgnElementId, DgnElementCPtr>
     protected:  virtual Utf8CP _GetECClassName() const override {return MyECClassName();}\
                 virtual Utf8CP _GetSuperECClassName() const override {return T_Super::_GetECClassName();}
 
+/**
+* @addtogroup GROUP_DgnModel DgnModel Module
+* Types related to working with %DgnModels
+* @see @ref PAGE_ModelOverview
+* @see @ref PAGE_CustomModel
+*/
+
 //=======================================================================================
 //! A DgnModel represents a model in memory and may hold references to elements that belong to it.
-//! @ingroup DgnModelGroup
+//! @ingroup GROUP_DgnModel
 // @bsiclass                                                     KeithBentley    10/00
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase, ICodedEntity
@@ -123,7 +129,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase, ICodedEntity
 
     //=======================================================================================
     //! Parameters to create a new instances of a DgnModel.
-    //! @ingroup DgnModelGroup
+    //! @ingroup GROUP_DgnModel
     //=======================================================================================
     struct CreateParams
     {
@@ -396,6 +402,8 @@ protected:
     virtual DgnRangeTree* _GetRangeIndexP(bool create) const {return nullptr;}
     virtual void _OnValidate() { }
 
+    virtual void _DropGraphicsForViewport(DgnViewportCR viewport) {};
+
     virtual DgnCode const& _GetCode() const override final { return m_code; }
     virtual DgnDbR _GetDgnDb() const override final { return m_dgndb; }
     virtual DgnModelCP _ToDgnModel() const override final { return this; }
@@ -605,7 +613,7 @@ public:
 
 //=======================================================================================
 //! A DgnModel that contains geometric DgnElements.
-//! @ingroup DgnModelGroup
+//! @ingroup GROUP_DgnModel
 // @bsiclass                                                    Keith.Bentley   03/15
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE GeometricModel : DgnModel
@@ -617,7 +625,7 @@ public:
     //=======================================================================================
     //! The DisplayInfo for a DgnModel. These are stored within a "DisplayInfo"
     //! node of the JSON value that's serialized as a string in "Properties" column of the DgnModel table.
-    //! @ingroup DgnModelGroup
+    //! @ingroup GROUP_DgnModel
     //=======================================================================================
     struct DisplayInfo
     {
@@ -804,7 +812,7 @@ public:
 
 //=======================================================================================
 //! A DgnModel that contains only 3-dimensional DgnElements.
-//! @ingroup DgnModelGroup
+//! @ingroup GROUP_DgnModel
 // @bsiclass                                                    Keith.Bentley   03/15
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE GeometricModel3d : GeometricModel
@@ -821,7 +829,7 @@ public:
 
 //=======================================================================================
 //! A GeometricModel2d is a infinite planar model that contains only 2-dimensional DgnElements. Coordinates values are X,Y.
-//! @ingroup DgnModelGroup
+//! @ingroup GROUP_DgnModel
 // @bsiclass                                                    Keith.Bentley   10/11
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE GeometricModel2d : GeometricModel
@@ -839,7 +847,7 @@ public:
 
 //=======================================================================================
 //! A GraphicalModel2d contains 2-dimensional geometric elements for graphical presentation purposes (as opposed to analytical purposes).
-//! @ingroup DgnModelGroup
+//! @ingroup GROUP_DgnModel
 // @bsiclass                                                    Shaun.Sewall    02/16
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE GraphicalModel2d : GeometricModel2d
@@ -854,7 +862,7 @@ public:
 //! A GeometricModel3d that occupies physical space in the DgnDb. All SpatialModels in a DgnDb have the same coordinate
 //! space (CoordinateSpace::World), aka "Physical Space".
 //! DgnElements from SpatialModels are indexed in the persistent range tree of the DgnDb (the DGN_VTABLE_SpatialIndex).
-//! @ingroup DgnModelGroup
+//! @ingroup GROUP_DgnModel
 // @bsiclass                                                    Keith.Bentley   10/11
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE SpatialModel : GeometricModel3d
@@ -870,7 +878,7 @@ public:
 
 //=======================================================================================
 //! A model which contains only definitions.
-//! @ingroup DgnModelGroup
+//! @ingroup GROUP_DgnModel
 // @bsiclass                                                    Paul.Connelly   09/15
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DefinitionModel : DgnModel
@@ -893,7 +901,7 @@ public:
 //! The dictionary model cannot be copied or deleted. In general, dictionary elements
 //! are copied from one dictionary model to another, often indirectly as the result of
 //! copying another element which depends upon them.
-//! @ingroup DgnModelGroup
+//! @ingroup GROUP_DgnModel
 // @bsiclass                                                    Paul.Connelly   10/15
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DictionaryModel : DefinitionModel
@@ -1263,7 +1271,7 @@ public:
 };
 
 //=======================================================================================
-//! @ingroup DgnModelGroup
+//! @ingroup GROUP_DgnModel
 // @bsiclass                                                    Shaun.Sewall    02/16
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DrawingModel : GraphicalModel2d
@@ -1291,7 +1299,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DrawingModel : GraphicalModel2d
 //! plane according to some rules. These elements are called "reverse graphics". Lastly, the SectionDrawingModel may contain
 //! elements that are pure annotation placed by the user or created by other rules.
 //! @note Any (2d) point on a SectionDrawingModel corresponds to a single point in physical space.
-//! @ingroup DgnModelGroup
+//! @ingroup GROUP_DgnModel
 // @bsiclass                                                    Keith.Bentley   10/11
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE SectionDrawingModel : DrawingModel
@@ -1308,7 +1316,7 @@ public:
 //! A sheet model is a GraphicalModel2d that has the following characteristics:
 //!     - Has fixed extents (is not infinite), specified in meters.
 //!     - Can contain @b views of other models, like pictures pasted on a photo album.
-//! @ingroup DgnModelGroup
+//! @ingroup GROUP_DgnModel
 // @bsiclass                                                    Keith.Bentley   10/11
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE SheetModel : GraphicalModel2d

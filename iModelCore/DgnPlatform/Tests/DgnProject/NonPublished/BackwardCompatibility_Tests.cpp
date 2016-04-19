@@ -13,12 +13,12 @@
 enum class CompatibilityStatus
     {
     Success,
-    Error,
-    BadElement,
-    BadModel,
-    ModelInsertFailed,
-    ElementInsertFailed,
-    ModelFillFailed
+    ERROR_FileOpeningFailed,
+    ERROR_BadElement,
+    ERROR_BadModel,
+    ERROR_ModelInsertFailed,
+    ERROR_ElementInsertFailed,
+    ERROR_ModelFillFailed
     };
 
 struct BackwardsCompatibilityTests : public DgnDbTestFixture
@@ -29,6 +29,7 @@ struct BackwardsCompatibilityTests : public DgnDbTestFixture
 
     protected:
         CompatibilityStatus VerifyElementsAndModels();
+        Utf8CP getCompatibilityStatusString(CompatibilityStatus num);
     };
 
 //---------------------------------------------------------------------------------------
@@ -50,18 +51,14 @@ StatusInt BackwardsCompatibilityTests::CreateArbitraryElement(DgnElementPtr& out
 
     geomElement->SetCategoryId(categoryId);
 
-#ifdef WIP_MERGE_0600 // Must create elements differently in BIS.
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(*geomElement);
+    GeometryBuilderPtr builder = GeometryBuilder::CreateWorld(*geomElement);
     ICurvePrimitivePtr line = ICurvePrimitive::CreateLine(DSegment3d::From(DPoint3d::FromZero(), DPoint3d::From(1, 0, 0)));
     builder->Append(*line);
-    if (SUCCESS != builder->SetGeomStreamAndPlacement(*geomElement))
+    if (SUCCESS != builder->SetGeometryStreamAndPlacement(*geomElement))
         return ERROR;
 
     out = element;
     return SUCCESS;
-#else
-    return ERROR;
-#endif
     }
 
 //---------------------------------------------------------------------------------------
@@ -72,7 +69,7 @@ CompatibilityStatus BackwardsCompatibilityTests::insertTestElement()
     DgnClassId mclassId = DgnClassId(m_db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel));
     SpatialModelPtr model = new SpatialModel(SpatialModel::CreateParams(*m_db, mclassId, DgnModel::CreateModelCode("newModel")));
     if (DgnDbStatus::Success != model->Insert()) /* Insert the new model into the DgnDb */
-        return CompatibilityStatus::ModelInsertFailed;
+        return CompatibilityStatus::ERROR_ModelInsertFailed;
 
     DgnElementPtr element;
     DgnDbStatus insertStatus;
@@ -82,7 +79,7 @@ CompatibilityStatus BackwardsCompatibilityTests::insertTestElement()
 
         model->GetDgnDb().Elements().Insert(*element, &insertStatus);
         if (DgnDbStatus::Success != insertStatus)
-            return CompatibilityStatus::ElementInsertFailed;
+            return CompatibilityStatus::ERROR_ElementInsertFailed;
         }
 
     return CompatibilityStatus::Success;
@@ -102,13 +99,13 @@ CompatibilityStatus BackwardsCompatibilityTests::VerifyElementsAndModels()
         //printf("modelName: %s \n", model->GetCode().GetValue().c_str());
         if (!model.IsValid())
             {
-            status = CompatibilityStatus::BadModel;
+            status = CompatibilityStatus::ERROR_BadModel;
             break;
             }
         model->FillModel();
         if (!model->IsFilled())
             {
-            status = CompatibilityStatus::ModelFillFailed;
+            status = CompatibilityStatus::ERROR_ModelFillFailed;
             break;
             }
 
@@ -120,12 +117,46 @@ CompatibilityStatus BackwardsCompatibilityTests::VerifyElementsAndModels()
             DgnElementCPtr elementCPtr = m_db->Elements().GetElement(elementId);
             if (!elementCPtr.IsValid())
                 {
-                status = CompatibilityStatus::BadElement;
+                status = CompatibilityStatus::ERROR_BadElement;
                 break;
                 }
             }
         }
     return status;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Muhammad Hassan                  04/16
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8CP BackwardsCompatibilityTests::getCompatibilityStatusString(CompatibilityStatus stat)
+    {
+    switch (stat)
+        {
+            case CompatibilityStatus::Success:
+                return "SUCCESS";
+                break;
+            case CompatibilityStatus::ERROR_FileOpeningFailed:
+                return "ERROR_FileOpeningFailed";
+                break;
+            case CompatibilityStatus::ERROR_BadElement:
+                return "ERROR_BadElement";
+                break;
+            case CompatibilityStatus::ERROR_BadModel:
+                return "ERROR_BadModel";
+                break;
+            case CompatibilityStatus::ERROR_ModelInsertFailed:
+                return "ERROR_ModelInsertFailed";
+                break;
+            case CompatibilityStatus::ERROR_ElementInsertFailed:
+                return "ERROR_ElementInsertFailed";
+                break;
+            case CompatibilityStatus::ERROR_ModelFillFailed:
+                return "ERROR_ModelFillFailed";
+                break;
+            default:
+                return "Bad Enum Value";
+                break;
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -137,18 +168,23 @@ TEST_F(BackwardsCompatibilityTests, OpenDgndbInCurrent)
     BeTest::GetHost().GetDocumentsRoot(srcFilesPath);
     srcFilesPath.AppendToPath(L"DgnDb");
     srcFilesPath.AppendToPath(L"CompatibilityRoot");
-    srcFilesPath.AppendToPath(L"DgnDb0601");
+    srcFilesPath.AppendToPath(L"DgnDb06");
     srcFilesPath.AppendToPath(L"*.idgndb");
 
     BeFileName outputRoot;
     BeTest::GetHost().GetOutputRoot(outputRoot);
 
     BeFileName resultsFilePath = outputRoot;
-    resultsFilePath.AppendToPath(L"CompatibilityResults_06.txt");
+    resultsFilePath.AppendToPath(L"CompatibilityResults_0601.csv");
 
     FILE *f;
     f = fopen(resultsFilePath.GetNameUtf8().c_str(), "a");
-    fprintf(f, "Test Files Stream: DgnDb0601 \n");
+    if (f != NULL)
+        {
+        fprintf(f, "FileName, PublishedThrough, TestedIn, FileOpeningStatus\n");
+        }
+    else
+        ASSERT_TRUE(false)<<"Error opening csv file";
 
     BeFileListIterator filesIterator(srcFilesPath, false);
     BeFileName dbName;
@@ -177,16 +213,16 @@ TEST_F(BackwardsCompatibilityTests, OpenDgndbInCurrent)
                 }
             else
                 {
-                stat = CompatibilityStatus::Error;
+                stat = CompatibilityStatus::ERROR_FileOpeningFailed;
                 writeStatus = false;
                 }
 
             if (writeStatus)
-                fprintf(f, "SUCCESS: %ls \n", outputFilePath.GetFileNameAndExtension().c_str());
+                fprintf(f, "%ls, DgnDb06, DgnDb0601, %s\n", outputFilePath.GetFileNameAndExtension().c_str(), getCompatibilityStatusString(stat));
             else
-                fprintf(f, "ERROR: %ls Description: %d \n", outputFilePath.GetFileNameAndExtension().c_str(), stat);
+                fprintf(f, "%ls, DgnDb06, DgnDb0601, %s\n", outputFilePath.GetFileNameAndExtension().c_str(), getCompatibilityStatusString(stat));
             }
         else
-            fprintf(f, "FileCopyERROR: %ls \n", dbName.GetFileNameAndExtension().c_str());
+            fprintf(f, "%ls, DgnDb06, DgnDb0601, %s\n", dbName.GetFileNameAndExtension().c_str(), "Error Copying File");
         }
     }

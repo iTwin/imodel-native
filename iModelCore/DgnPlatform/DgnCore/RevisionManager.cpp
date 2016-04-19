@@ -8,6 +8,7 @@
 #include <DgnPlatformInternal.h>
 #include <BeSQLite/SHA1.h>
 #include <DgnPlatform/DgnChangeSummary.h>
+#include "DgnChangeIterator.h"
 
 USING_NAMESPACE_BENTLEY_SQLITE
 
@@ -440,22 +441,80 @@ void DgnRevision::IncludeChangeGroupData(ChangeGroup& changeGroup, Include inclu
     if (Include::None == include)
         return;
 
-    // NEEDSWORK? We can't create a useful ChangeStream from the ChangeGroup, even though it has a FromChangeGroup() function?
-    // Would like to avoid having to read from disk here...
-    ChangeStreamFileReader stream(GetChangeStreamFile(), db);
-    DgnChangeSummary summary(db);
-    if (SUCCESS != summary.FromChangeSet(stream))
+    AbortOnConflictChangeSet changeSet;
+    if (BE_SQLITE_OK != changeSet.FromChangeGroup(changeGroup))
+        {
+        BeAssert(false);
         return;
+        }
 
     if (Include::Locks == (include & Include::Locks))
         {
         LockRequest lockRequest;
-        lockRequest.FromChangeSummary(summary, false);
+        lockRequest.FromChangeSet(db, changeSet, false);
         lockRequest.ExtractLockSet(m_usedLocks);
         }
     
     if (Include::Codes == (include & Include::Codes))
-        summary.GetCodes(m_assignedCodes, m_discardedCodes);
+        {
+        CollectCodesFromChangeSet(db, changeSet);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static void insertCode(DgnCodeSet& into, DgnCode const& code, DgnCodeSet& ifNotIn)
+    {
+    if (code.IsEmpty() || !code.IsValid())
+        return;
+
+    // At most, we can expect one discard and one assign per unique code.
+    BeAssert(into.end() == into.find(code));
+
+    auto existing = ifNotIn.find(code);
+    if (ifNotIn.end() != existing)
+        {
+        // Code was discarded by one and assigned to another within the same changeset...so no net change
+        ifNotIn.erase(existing);
+        return;
+        }
+
+    into.insert(code);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename T> static void collectCodes(DgnCodeSet& assigned, DgnCodeSet& discarded, T& collection)
+    {
+    for (auto const& entry : collection)
+        {
+        auto oldCode = entry.GetOldCode(),
+             newCode = entry.GetNewCode();
+
+        if (oldCode == newCode)
+            continue;
+
+        insertCode(discarded, oldCode, assigned);
+        insertCode(assigned, newCode, discarded);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnRevision::CollectCodesFromChangeSet(DgnDbCR dgndb, IChangeSet& changeSet)
+    {
+    m_assignedCodes.clear();
+    m_discardedCodes.clear();
+
+    auto elems = DgnChangeIterator::MakeElementChangeIterator(dgndb, changeSet);
+    collectCodes(m_assignedCodes, m_discardedCodes, elems);
+    auto models = DgnChangeIterator::MakeModelChangeIterator(dgndb, changeSet);
+    collectCodes(m_assignedCodes, m_discardedCodes, models);
+    auto geomparts = DgnChangeIterator::MakeGeometryPartChangeIterator(dgndb, changeSet);
+    collectCodes(m_assignedCodes, m_discardedCodes, geomparts);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -627,8 +686,7 @@ DgnRevisionPtr RevisionManager::CreateRevisionObject(RevisionStatus* outStatus, 
 
     revision->SetInitialParentId(GetInitialParentRevisionId());
     revision->SetDateTime(DateTime::GetCurrentTimeUtc());
-    // NEEDSWORK: We have to write the change group to the file, then read it back out...revision->IncludeChangeGroupData(changeGroup, include, m_dgndb);
-
+    
     return revision;
     }
 

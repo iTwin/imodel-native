@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/DgnLight_Test.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../TestFixture/BlankDgnDbTestFixture.h"
@@ -48,14 +48,28 @@ TEST_F(DgnLightsTest, CRUD)
     LightDefinition lt(params);
     LightDefinitionCPtr persistent = lt.Insert();
     ASSERT_TRUE(persistent.IsValid());
+    DgnCode lightCode = persistent->GetCode();
+    DgnLightId lightId = persistent->GetLightId();
 
     Compare(lt, *persistent);
 
     lt.SetDescr("new description");
     lt.SetValue("value:4321");
 
+    // Update 
     LightDefinitionCPtr updatedLt = lt.Update();
     ASSERT_TRUE(updatedLt.IsValid());
     Compare(lt, *updatedLt);
+
+    // Query 
+    LightDefinitionCPtr toFind = LightDefinition::QueryLightDefinition(lightId, *m_db);
+    Compare(*updatedLt, *toFind);
+
+    DgnLightId idToFind = LightDefinition::QueryLightId("Light1", *m_db);
+    EXPECT_TRUE(lightId == idToFind);
+
+    idToFind = LightDefinition::QueryLightId(lightCode, *m_db);
+    EXPECT_TRUE(lightId == idToFind);
+
     }
 

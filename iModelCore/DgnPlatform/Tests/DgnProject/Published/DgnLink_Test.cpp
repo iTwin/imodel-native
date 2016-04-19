@@ -19,10 +19,38 @@
 //=======================================================================================
 class DgnLinkTest : public GenericDgnModelTestFixture
 {
-    public: DgnLinkTest () : GenericDgnModelTestFixture (__FILE__, false /*2D*/, false /*needBriefcase*/) {}
+public: 
+    DgnLinkTest () : GenericDgnModelTestFixture (__FILE__, false /*2D*/, false /*needBriefcase*/) {}
+    DgnElementCPtr InsertAnnotationElement();
 
 }; // DgnLinkTest
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Umar.Hayat     02/2016
+//---------------------------------------------------------------------------------------
+DgnElementCPtr DgnLinkTest::InsertAnnotationElement()
+    {
+    
+    DgnDbR db = *m_testDgnManager.GetDgnProjectP();
+    DgnModelId modelId = db.Models().QueryFirstModelId();
+    if(!modelId.IsValid())
+        return nullptr;
 
+    DgnModelPtr modelP = db.Models().GetModel(modelId);
+    if(!modelP.IsValid())
+        return nullptr;
+
+    DgnCategoryId categoryId = DgnCategory::QueryFirstCategoryId(db);
+    if(!categoryId.IsValid())
+        return nullptr;
+
+    DgnClassId elementClassId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_AnnotationElement2d));
+    if(!elementClassId.IsValid())
+        return nullptr;
+    AnnotationElement2dPtr elementPtr = AnnotationElement2d::Create(AnnotationElement2d::CreateParams(db, modelId, elementClassId, categoryId));
+    if(!elementPtr.IsValid())
+        return nullptr;
+    return db.Elements().Insert(*elementPtr);
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     02/2015
 //---------------------------------------------------------------------------------------
@@ -32,21 +60,7 @@ TEST_F(DgnLinkTest, RoundTripUrlLink)
     ASSERT_TRUE(NULL != m_testDgnManager.GetDgnProjectP());
     DgnDbR db = *m_testDgnManager.GetDgnProjectP();
 
-    DgnModelId modelId = db.Models().QueryFirstModelId();
-    ASSERT_TRUE(modelId.IsValid());
-
-    DgnModelPtr modelP = db.Models().GetModel(modelId);
-    ASSERT_TRUE(modelP.IsValid());
-
-    DgnCategoryId categoryId = DgnCategory::QueryFirstCategoryId(db);
-    ASSERT_TRUE(categoryId.IsValid());
-
-    DgnClassId elementClassId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_AnnotationElement2d));
-    ASSERT_TRUE(elementClassId.IsValid());
-
-    AnnotationElement2dPtr elementPtr = AnnotationElement2d::Create(AnnotationElement2d::CreateParams(db, modelId, elementClassId, categoryId));
-    ASSERT_TRUE(elementPtr.IsValid());
-    DgnElementCPtr result = db.Elements().Insert(*elementPtr);
+    DgnElementCPtr result = InsertAnnotationElement();
     ASSERT_TRUE(result.IsValid());
     
     static const Utf8CP LINK1_DISPLAY_LABEL = "Url Link 1";
@@ -81,21 +95,7 @@ TEST_F(DgnLinkTest, Iterator)
     ASSERT_TRUE(NULL != m_testDgnManager.GetDgnProjectP());
     DgnDbR db = *m_testDgnManager.GetDgnProjectP();
 
-    DgnModelId modelId = db.Models().QueryFirstModelId();
-    ASSERT_TRUE(modelId.IsValid());
-
-    DgnModelPtr modelP = db.Models().GetModel(modelId);
-    ASSERT_TRUE(modelP.IsValid());
-
-    DgnCategoryId categoryId = DgnCategory::QueryFirstCategoryId(db);
-    ASSERT_TRUE(categoryId.IsValid());
-
-    DgnClassId elementClassId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_AnnotationElement2d));
-    ASSERT_TRUE(elementClassId.IsValid());
-
-    AnnotationElement2dPtr elementPtr = AnnotationElement2d::Create(AnnotationElement2d::CreateParams(db, modelId, elementClassId, categoryId));
-    ASSERT_TRUE(elementPtr.IsValid());
-    DgnElementCPtr result = db.Elements().Insert(*elementPtr);
+    DgnElementCPtr result = InsertAnnotationElement();
     ASSERT_TRUE(result->GetElementId().IsValid());
     
     //.............................................................................................
@@ -162,26 +162,10 @@ TEST_F(DgnLinkTest, OtherIterators)
     ASSERT_TRUE(NULL != m_testDgnManager.GetDgnProjectP());
     DgnDbR db = *m_testDgnManager.GetDgnProjectP();
 
-    DgnModelId modelId = db.Models().QueryFirstModelId();
-    ASSERT_TRUE(modelId.IsValid());
-
-    DgnModelPtr modelP = db.Models().GetModel(modelId);
-    ASSERT_TRUE(modelP.IsValid());
-
-    DgnCategoryId categoryId = DgnCategory::QueryFirstCategoryId(db);
-    ASSERT_TRUE(categoryId.IsValid());
-
-    DgnClassId elementClassId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_AnnotationElement2d));
-    ASSERT_TRUE(elementClassId.IsValid());
-
-    AnnotationElement2dPtr element1 = AnnotationElement2d::Create(AnnotationElement2d::CreateParams(db, modelId, elementClassId, categoryId));
-    ASSERT_TRUE(element1.IsValid());
-    DgnElementCPtr result1 = db.Elements().Insert(*element1);
+    DgnElementCPtr result1 = InsertAnnotationElement();
     ASSERT_TRUE(result1.IsValid());
 
-    AnnotationElement2dPtr element2 = AnnotationElement2d::Create(AnnotationElement2d::CreateParams(db, modelId, elementClassId, categoryId));
-    ASSERT_TRUE(element2.IsValid());
-    DgnElementCPtr result2 = db.Elements().Insert(*element2);
+    DgnElementCPtr result2 = InsertAnnotationElement();
     ASSERT_TRUE(result2.IsValid());
 
     DgnLinkPtr link1 = DgnLink::Create(db); link1->SetDisplayLabel("link1"); link1->SetEmbeddedDocumentName("EmbeddedDocumentName1");
@@ -202,9 +186,241 @@ TEST_F(DgnLinkTest, OtherIterators)
     
     checkIteratorCount(db.Links().MakeOnElementIterator(elementId1), 2);
     checkIteratorCount(db.Links().MakeOnElementIterator(elementId2), 3);
+    for (DgnLinks::OnElementIterator::Entry entry : db.Links().MakeOnElementIterator(elementId1))
+        {
+        if (link1->GetId() == entry.GetId())
+            {
+            EXPECT_STREQ( "link1" , entry.GetDisplayLabel());
+            EXPECT_EQ(DgnLinkType::EmbeddedFile, entry.GetType());
+            }
+        else if (link2->GetId() == entry.GetId())
+            {
+            EXPECT_STREQ("link2", entry.GetDisplayLabel());
+            EXPECT_EQ(DgnLinkType::EmbeddedFile, entry.GetType());
+            }
+        }
 
     checkIteratorCount(db.Links().MakeReferencesLinkIterator(link1->GetId()), 1);
     checkIteratorCount(db.Links().MakeReferencesLinkIterator(link2->GetId()), 2);
     checkIteratorCount(db.Links().MakeReferencesLinkIterator(link3->GetId()), 1);
     checkIteratorCount(db.Links().MakeReferencesLinkIterator(link4->GetId()), 1);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Umar.Hayat          02/16
+//---------------------------------------------------------------------------------------
+TEST_F(DgnLinkTest, ExternalFileLink)
+    {
+    //.............................................................................................
+    ASSERT_TRUE(NULL != m_testDgnManager.GetDgnProjectP());
+    DgnDbR db = *m_testDgnManager.GetDgnProjectP();
+
+    DgnElementCPtr result = InsertAnnotationElement();
+    ASSERT_TRUE(result.IsValid());
+    
+    static const Utf8CP LINK1_DISPLAY_LABEL = "External File Link";
+    static const Utf8CP LINK1_EXTERNAL_FILE_PATH = "http://www.google.com"; 
+    
+    DgnLinkPtr link1 = DgnLink::Create(db);
+    link1->SetDisplayLabel(LINK1_DISPLAY_LABEL);
+    link1->SetExternalFilePaths(nullptr,LINK1_EXTERNAL_FILE_PATH,nullptr);
+
+    EXPECT_TRUE(DgnLinkType::ExternalFile == link1->GetType());
+    EXPECT_FALSE(link1->GetId().IsValid());
+    ASSERT_TRUE(SUCCESS == db.Links().InsertOnElement(result->GetElementId(), *link1));
+    ASSERT_TRUE(link1->GetId().IsValid());
+
+    DgnLinkPtr link1b = db.Links().QueryById(link1->GetId());
+    ASSERT_TRUE(link1b.IsValid());
+    EXPECT_TRUE(link1b->GetId() == link1->GetId());
+    ASSERT_TRUE(DgnLinkType::ExternalFile == link1b->GetType());
+    EXPECT_TRUE(0 == strcmp(link1b->GetDisplayLabel().c_str(), LINK1_DISPLAY_LABEL));
+    
+    Utf8String link1NameDMS;
+    Utf8String link1NamePortable;
+    Utf8String link1NameLastKnownLocation;
+    EXPECT_TRUE(SUCCESS == link1b->GetExternalFilePaths(&link1NameDMS, &link1NamePortable, &link1NameLastKnownLocation));
+    EXPECT_TRUE(0 == strcmp(link1NamePortable.c_str(), LINK1_EXTERNAL_FILE_PATH));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Umar.Hayat          02/16
+//---------------------------------------------------------------------------------------
+TEST_F(DgnLinkTest, EmbeddedFileLink)
+    {
+    //.............................................................................................
+    ASSERT_TRUE(NULL != m_testDgnManager.GetDgnProjectP());
+    DgnDbR db = *m_testDgnManager.GetDgnProjectP();
+
+    DgnElementCPtr result = InsertAnnotationElement();
+    ASSERT_TRUE(result.IsValid());
+    
+    static const Utf8CP LINK1_DISPLAY_LABEL = "External File Link";
+    static const Utf8CP LINK1_EMBEDDED_FILE_NAME = "SomeEmbeddedDocument.pdf"; 
+    
+    DgnLinkPtr link1 = DgnLink::Create(db);
+    link1->SetDisplayLabel(LINK1_DISPLAY_LABEL);
+    link1->SetEmbeddedDocumentName(LINK1_EMBEDDED_FILE_NAME);
+
+    EXPECT_TRUE(DgnLinkType::EmbeddedFile == link1->GetType());
+    EXPECT_FALSE(link1->GetId().IsValid());
+    ASSERT_TRUE(SUCCESS == db.Links().InsertOnElement(result->GetElementId(), *link1));
+    ASSERT_TRUE(link1->GetId().IsValid());
+
+    DgnLinkPtr link1b = db.Links().QueryById(link1->GetId());
+    ASSERT_TRUE(link1b.IsValid());
+    EXPECT_TRUE(link1b->GetId() == link1->GetId());
+    ASSERT_TRUE(DgnLinkType::EmbeddedFile == link1b->GetType());
+    EXPECT_TRUE(0 == strcmp(link1b->GetDisplayLabel().c_str(), LINK1_DISPLAY_LABEL));
+    
+    Utf8String link1DocName;
+    EXPECT_TRUE(SUCCESS == link1b->GetEmbeddedDocumentName(link1DocName));
+    EXPECT_TRUE(0 == strcmp(link1DocName.c_str(), LINK1_EMBEDDED_FILE_NAME));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Umar.Hayat          02/16
+//---------------------------------------------------------------------------------------
+TEST_F(DgnLinkTest, ViewLink)
+    {
+    //.............................................................................................
+    ASSERT_TRUE(NULL != m_testDgnManager.GetDgnProjectP());
+    DgnDbR db = *m_testDgnManager.GetDgnProjectP();
+
+    DgnElementCPtr result = InsertAnnotationElement();
+    ASSERT_TRUE(result.IsValid());
+    
+    static const Utf8CP LINK1_DISPLAY_LABEL = "View Link";
+    DgnViewId   viewId(2LLU);
+    
+    DgnLinkPtr link1 = DgnLink::Create(db);
+    link1->SetDisplayLabel(LINK1_DISPLAY_LABEL);
+    link1->SetViewId(viewId);
+
+    EXPECT_TRUE(DgnLinkType::View == link1->GetType());
+    EXPECT_FALSE(link1->GetId().IsValid());
+    ASSERT_TRUE(SUCCESS == db.Links().InsertOnElement(result->GetElementId(), *link1));
+    ASSERT_TRUE(link1->GetId().IsValid());
+
+    DgnLinkPtr link1b = db.Links().QueryById(link1->GetId());
+    ASSERT_TRUE(link1b.IsValid());
+    EXPECT_TRUE(link1b->GetId() == link1->GetId());
+    ASSERT_TRUE(DgnLinkType::View == link1b->GetType());
+    EXPECT_TRUE(0 == strcmp(link1b->GetDisplayLabel().c_str(), LINK1_DISPLAY_LABEL));
+    
+    DgnViewId viewIdb;
+    EXPECT_TRUE(SUCCESS == link1b->GetViewId(viewIdb));
+    EXPECT_TRUE(viewIdb == viewId);
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Umar.Hayat     02/2016
+//---------------------------------------------------------------------------------------
+TEST_F(DgnLinkTest, Update)
+    {
+    //.............................................................................................
+    ASSERT_TRUE(NULL != m_testDgnManager.GetDgnProjectP());
+    DgnDbR db = *m_testDgnManager.GetDgnProjectP();
+
+    DgnElementCPtr result = InsertAnnotationElement();
+    ASSERT_TRUE(result.IsValid());
+    
+    static const Utf8CP LINK1_DISPLAY_LABEL = "Url Link 1";
+    static const Utf8CP LINK1_URL = "http://www.google.com";
+    
+    DgnLinkPtr link1 = DgnLink::Create(db);
+    link1->SetDisplayLabel(LINK1_DISPLAY_LABEL);
+    link1->SetUrl(LINK1_URL);
+    
+    EXPECT_TRUE(DgnLinkType::Url == link1->GetType());
+    EXPECT_FALSE(link1->GetId().IsValid());
+    ASSERT_TRUE(SUCCESS == db.Links().InsertOnElement(result->GetElementId(), *link1));
+    ASSERT_TRUE(link1->GetId().IsValid());
+
+    DgnLinkPtr link1b = db.Links().QueryById(link1->GetId());
+    ASSERT_TRUE(link1b.IsValid());
+    EXPECT_TRUE(link1b->GetId() == link1->GetId());
+    ASSERT_TRUE(DgnLinkType::Url == link1b->GetType());
+    EXPECT_TRUE(0 == strcmp(link1b->GetDisplayLabel().c_str(), LINK1_DISPLAY_LABEL));
+    Utf8String link1bUrl;
+    EXPECT_TRUE(SUCCESS == link1b->GetUrl(link1bUrl));
+    EXPECT_TRUE(0 == strcmp(link1bUrl.c_str(), LINK1_URL));
+
+    // Update
+    link1->SetDisplayLabel("Url Link 2");
+    link1->SetUrl("http://www.outlook.com");
+    ASSERT_TRUE(SUCCESS == db.Links().Update(*link1));
+    link1b = db.Links().QueryById(link1->GetId());
+    EXPECT_STREQ("Url Link 2", link1b->GetDisplayLabel().c_str());
+    EXPECT_TRUE(SUCCESS == link1b->GetUrl(link1bUrl));
+    EXPECT_STREQ("http://www.outlook.com" , link1bUrl.c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Umar.Hayat          02/16
+//---------------------------------------------------------------------------------------
+TEST_F(DgnLinkTest, Clone)
+    {
+    //.............................................................................................
+    ASSERT_TRUE(NULL != m_testDgnManager.GetDgnProjectP());
+    DgnDbR db = *m_testDgnManager.GetDgnProjectP();
+
+    DgnElementCPtr result = InsertAnnotationElement();
+    ASSERT_TRUE(result.IsValid());
+    
+    static const Utf8CP LINK1_DISPLAY_LABEL = "View Link";
+    DgnViewId   viewId(2LLU);
+    
+    DgnLinkPtr link1 = DgnLink::Create(db);
+    link1->SetDisplayLabel(LINK1_DISPLAY_LABEL);
+    link1->SetViewId(viewId);
+
+    EXPECT_TRUE(DgnLinkType::View == link1->GetType());
+    EXPECT_FALSE(link1->GetId().IsValid());
+    ASSERT_TRUE(SUCCESS == db.Links().InsertOnElement(result->GetElementId(), *link1));
+    ASSERT_TRUE(link1->GetId().IsValid());
+    
+    DgnLinkPtr link1b = link1->Clone();
+    ASSERT_TRUE(link1b.IsValid());
+    EXPECT_TRUE(link1b->GetId() != link1->GetId());
+    EXPECT_TRUE(DgnLinkType::View == link1b->GetType());
+    EXPECT_STREQ(link1b->GetDisplayLabel().c_str(), LINK1_DISPLAY_LABEL);
+    
+    DgnViewId viewIdb;
+    EXPECT_TRUE(SUCCESS == link1b->GetViewId(viewIdb));
+    EXPECT_TRUE(viewIdb == viewId);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Umar.Hayat          02/16
+//---------------------------------------------------------------------------------------
+TEST_F(DgnLinkTest, Assignment)
+    {
+    //.............................................................................................
+    ASSERT_TRUE(NULL != m_testDgnManager.GetDgnProjectP());
+    DgnDbR db = *m_testDgnManager.GetDgnProjectP();
+
+    DgnElementCPtr result = InsertAnnotationElement();
+    ASSERT_TRUE(result.IsValid());
+    
+    static const Utf8CP LINK1_DISPLAY_LABEL = "View Link";
+    DgnViewId   viewId(2LLU);
+    
+    DgnLinkPtr link1 = DgnLink::Create(db);
+    link1->SetDisplayLabel(LINK1_DISPLAY_LABEL);
+    link1->SetViewId(viewId);
+
+    EXPECT_TRUE(DgnLinkType::View == link1->GetType());
+    EXPECT_FALSE(link1->GetId().IsValid());
+    ASSERT_TRUE(SUCCESS == db.Links().InsertOnElement(result->GetElementId(), *link1));
+    ASSERT_TRUE(link1->GetId().IsValid());
+    
+    DgnLinkPtr link1b = link1;
+    ASSERT_TRUE(link1b.IsValid());
+    EXPECT_TRUE(link1b->GetId() == link1->GetId());
+    EXPECT_TRUE(DgnLinkType::View == link1b->GetType());
+    EXPECT_STREQ(link1b->GetDisplayLabel().c_str(), LINK1_DISPLAY_LABEL);
+    
+    DgnViewId viewIdb;
+    EXPECT_TRUE(SUCCESS == link1b->GetViewId(viewIdb));
+    EXPECT_TRUE(viewIdb == viewId);
     }

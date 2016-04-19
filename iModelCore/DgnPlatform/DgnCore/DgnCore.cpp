@@ -330,7 +330,6 @@ void DgnPlatformLib::Host::InitializeDgnCore()
     BeAssert(NULL == m_exceptionHandler); m_exceptionHandler = &_SupplyExceptionHandler();
     // establish the NotificationAdmin first, in case other _Supply methods generate errors
     BeAssert(NULL == m_notificationAdmin); m_notificationAdmin = &_SupplyNotificationAdmin();
-    BeAssert(NULL == m_realityDataAdmin); m_realityDataAdmin = &_SupplyRealityDataAdmin();
     BeAssert (NULL == m_geoCoordAdmin); m_geoCoordAdmin = &_SupplyGeoCoordinationAdmin();
 
     BeStringUtilities::Initialize(m_knownLocationsAdmin->GetDgnPlatformAssetsDirectory());
@@ -368,18 +367,17 @@ void DgnPlatformLib::Host::TerminateDgnCore(bool onProgramExit)
         return;
         }
 
-    TERMINATE_HOST_OBJECT(m_txnAdmin, onProgramExit);
-    TERMINATE_HOST_OBJECT(m_acsManager, onProgramExit);
-    TERMINATE_HOST_OBJECT(m_realityDataAdmin, onProgramExit);
+    ON_HOST_TERMINATE(m_txnAdmin, onProgramExit);
+    ON_HOST_TERMINATE(m_acsManager, onProgramExit);
 
     for (ObjEntry& obj : m_hostObj)
-        TERMINATE_HOST_OBJECT(obj.m_val, onProgramExit);
+        ON_HOST_TERMINATE(obj.m_val, onProgramExit);
 
     m_hostObj.clear();
     m_hostVar.clear();
 
-    TERMINATE_HOST_OBJECT(m_exceptionHandler, onProgramExit);
-    TERMINATE_HOST_OBJECT(m_knownLocationsAdmin, onProgramExit);
+    ON_HOST_TERMINATE(m_exceptionHandler, onProgramExit);
+    ON_HOST_TERMINATE(m_knownLocationsAdmin, onProgramExit);
 
     ForgetHost();
     BeAssert(NULL == DgnPlatformLib::QueryHost());
@@ -389,13 +387,14 @@ void DgnPlatformLib::Host::TerminateDgnCore(bool onProgramExit)
     BeAssert(NULL == m_rasterAttachmentAdmin);
     BeAssert(NULL == m_pointCloudAdmin);
     BeAssert(NULL == m_notificationAdmin);
+#if defined (BENTLEYCONFIG_PARASOLIDS)
     BeAssert(NULL == m_solidsKernelAdmin);
+#endif
     BeAssert(NULL == m_geoCoordAdmin);
     BeAssert(NULL == m_txnAdmin);
     BeAssert(NULL == m_acsManager);
     BeAssert(NULL == m_formatterAdmin);
     BeAssert(NULL == m_scriptingAdmin);
-    BeAssert(NULL == m_realityDataAdmin);
     BeAssert(NULL == m_exceptionHandler);
     BeAssert(NULL == m_knownLocationsAdmin);
     BeAssert(NULL == m_repositoryAdmin);
@@ -436,13 +435,14 @@ bool DgnPlatformLib::Host::LineStyleAdmin::_GetLocalLineStylePaths(WStringR path
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  07/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
+#if defined (BENTLEYCONFIG_PARASOLIDS)
 DgnPlatformLib::Host::SolidsKernelAdmin&     DgnPlatformLib::Host::_SupplySolidsKernelAdmin()     {return *new SolidsKernelAdmin();}
+#endif
 DgnPlatformLib::Host::FontAdmin&             DgnPlatformLib::Host::_SupplyFontAdmin()             {return *new FontAdmin();}
 DgnPlatformLib::Host::NotificationAdmin&     DgnPlatformLib::Host::_SupplyNotificationAdmin()     {return *new NotificationAdmin();}
 DgnPlatformLib::Host::LineStyleAdmin&        DgnPlatformLib::Host::_SupplyLineStyleAdmin()        {return *new LineStyleAdmin();}
 DgnPlatformLib::Host::TxnAdmin& DgnPlatformLib::Host::_SupplyTxnAdmin() {return *new TxnAdmin();}
 DgnPlatformLib::Host::FormatterAdmin&        DgnPlatformLib::Host::_SupplyFormatterAdmin()        {return *new FormatterAdmin();}
-DgnPlatformLib::Host::RealityDataAdmin&      DgnPlatformLib::Host::_SupplyRealityDataAdmin()      {return *new RealityDataAdmin();}
 DgnPlatformLib::Host::ScriptAdmin&           DgnPlatformLib::Host::_SupplyScriptingAdmin()        {return *new ScriptAdmin();}
 DgnPlatformLib::Host::RepositoryAdmin&       DgnPlatformLib::Host::_SupplyRepositoryAdmin()       {return *new RepositoryAdmin();}
 

@@ -241,7 +241,7 @@ public:
 
 //=======================================================================================
 //! Displays a RedlineModel
-//! @ingroup DgnViewGroup
+//! @ingroup GROUP_DgnView
 // @bsiclass                                                    Keith.Bentley   03/12
 //=======================================================================================
 struct RedlineViewController : SheetViewController
@@ -300,7 +300,7 @@ public:
 //! in order to change the SpatialRedlineViewController's target model.
 //!
 //! @see @ref DgnMarkupProjectGroup_SpatialRedlines
-//! @ingroup DgnViewGroup
+//! @ingroup GROUP_DgnView
 // @bsiclass                                                    Keith.Bentley   03/12
 //=======================================================================================
 struct SpatialRedlineViewController : SpatialViewController
@@ -331,6 +331,7 @@ protected:
     virtual void _AdjustAspectRatio(double , bool expandView) override;
     virtual DPoint3d _GetTargetPoint() const override;
     virtual bool _Allow3dManipulations() const override;
+    // WIP_MERGE_John_Patterns - virtual double _GetPatternZOffset (ViewContextR, ElementHandleCR) const override;
     virtual AxisAlignedBox3d _GetViewedExtents() const override;
     virtual ColorDef _GetBackgroundColor() const override;
     virtual bool _IsSnapAdjustmentRequired(DgnViewportR vp, bool snapLockEnabled) const override {return true;} // Always project snap to ACS plane...

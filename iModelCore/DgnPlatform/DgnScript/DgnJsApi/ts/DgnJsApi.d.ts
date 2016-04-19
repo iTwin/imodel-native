@@ -8,11 +8,11 @@
 /** @namespace Bentley::Dgn Types defined by the Bentley DgnPlatform TypeScript/JavaScript API
 */
 
-declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ 
-{
+declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
     /*** BEGIN_FORWARD_DECLARATIONS ***/
     class Transform { /*** NATIVE_TYPE_NAME = JsTransform ***/ }
     class DPoint3d { /*** NATIVE_TYPE_NAME = JsDPoint3d ***/ }
+    class DRange3d { /*** NATIVE_TYPE_NAME = JsDRange3d ***/ }
     class YawPitchRollAngles { /*** NATIVE_TYPE_NAME = JsYawPitchRollAngles ***/ }
     class SolidPrimitive extends Geometry { /*** NATIVE_TYPE_NAME = JsSolidPrimitive ***/ }
     class DgnSphere extends SolidPrimitive {/*** NATIVE_TYPE_NAME = JsDgnSphere ***/ }
@@ -23,6 +23,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type TransformP = cxx_pointer<Transform>;
     type DPoint3dP = cxx_pointer<DPoint3d>;
+    type DRange3dP = cxx_pointer<DRange3d>;
     type YawPitchRollAnglesP = cxx_pointer<YawPitchRollAngles>;
     type SolidPrimitiveP = cxx_pointer<SolidPrimitive>;
     type DgnSphereP = cxx_pointer<DgnSphere>;
@@ -32,12 +33,13 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     enum ECPropertyPrimitiveType { }
 
+    enum BeSQLiteDbResult { }
+
     //! Logging serverity level.
     enum LoggingSeverity { }
 
     /** Access to the message log */
-    class Logging implements BeJsProjection_SuppressConstructor
-    {
+    class Logging implements BeJsProjection_SuppressConstructor {
 
         /**
         * Set the severity level for the specified category
@@ -63,8 +65,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
     }
 
     /** A 3-D placement */
-    class Placement3d implements IDisposable, BeJsProjection_SuppressConstructor, BeJsProjection_RefCounted
-    {
+    class Placement3d implements IDisposable, BeJsProjection_SuppressConstructor, BeJsProjection_RefCounted {
         /*** NATIVE_TYPE_NAME = JsPlacement3d ***/
         constructor(origin: DPoint3dP, angles: YawPitchRollAnglesP);
 
@@ -72,6 +73,12 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
         Origin: DPoint3dP;
         /** The angles of the placement */
         Angles: YawPitchRollAnglesP;
+        /** Get the ElementAlignedBox3d of this Placement3d. */
+        ElementBox: DRange3dP;
+        /** Calculate the AxisAlignedBox3d of this Placement3d. */
+        CalculateRange(): DRange3dP;
+        /** Convert the origin and YawPitchRollAngles of this Placement3d into a Transform. */
+        Transform: TransformP;
 
         OnDispose(): void;
         Dispose(): void;
@@ -80,8 +87,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
     type Placement3dP = cxx_pointer<Placement3d>;
 
     /** Script Management Utilities */
-    class Script implements BeJsProjection_SuppressConstructor
-    {
+    class Script implements BeJsProjection_SuppressConstructor {
 
         /**
          * Make sure that the specified script is loaded.
@@ -107,14 +113,204 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
         static ReportError(description: Bentley_Utf8String): void;
     }
 
+    /** An ECSql Value
+    */
+    class ECSqlValue implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
+    {
+        /*** NATIVE_TYPE_NAME = JsECSqlValue ***/
+        /**
+         * Get the value as a string
+         */
+        GetText(): Bentley_Utf8String;
+        /**
+         * Get the value as an integer
+         */
+        GetInt(): cxx_int32_t;
+        /**
+         * Get the value as a double
+         */
+        GetDouble(): cxx_double;
+        /**
+         * Get the value as a DgnObjectId
+         */
+        GetId(): DgnObjectIdP;
+        /**
+         * Get the value as a DPoint3d
+         */
+        GetDPoint3d(): DPoint3dP;
+        /**
+         * Get the value as a DateTime string
+         */
+        GetDateTime(): Bentley_Utf8String;
+        /**
+         * Get the value as an Array
+         */
+        GetArray(): cxx_pointer<ECSqlArrayValue>;
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+    
+    type ECSqlValueP = cxx_pointer<ECSqlValue>;
+
+    /** Used when iterating over a ECSqlArrayValue */
+    class ECSqlArrayValueIterator implements IDisposable, BeJsProjection_SuppressConstructor, BeJsProjection_RefCounted
+    {
+        /*** NATIVE_TYPE_NAME = JsECSqlArrayValueIterator ***/
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type ECSqlArrayValueIteratorP = cxx_pointer<ECSqlArrayValueIterator>;
+
+    /** An ECSql Array Value
+    */
+    class ECSqlArrayValue implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
+    {
+        /*** NATIVE_TYPE_NAME = JsECSqlArrayValue ***/
+        /** Get an iterator positioned at the start of the array. */
+        Begin(): ECSqlArrayValueIteratorP;
+        /** Query if the iterator is at a valid position in the array. @param iter The iterator. @return true if the iterator's position is valid.   */
+        IsValid(iter: ECSqlArrayValueIteratorP): cxx_bool;
+        /** Move the iterator to the next position in the array. @param iter The iterator @return true if the new position is valid. */
+        ToNext(iter: ECSqlArrayValueIteratorP): cxx_bool;
+        /** Get the value to which the iterator points in the set. @param iter The iterator @return The current ID value. */
+        GetValue(iter: ECSqlArrayValueIteratorP): ECSqlValueP;
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+    
+    type ECSqlArrayValueP = cxx_pointer<ECSqlArrayValue>;
+
+    /** A prepared ECSqlStatement 
+    */
+    class PreparedECSqlStatement implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
+    {
+        /*** NATIVE_TYPE_NAME = JsPreparedECSqlStatement ***/
+
+        /**
+          * Bind a DgnObjectId value to the specified parameter
+          * @param parameterIndex Parameter index
+          * @param value Value to bind.
+          */
+        BindId(parameterIndex: cxx_int32_t, value: DgnObjectIdP): void;
+
+        /**
+          * Bind a string value to the specified parameter
+          * @param parameterIndex Parameter index
+          * @param value Value to bind.
+          */
+        BindText(parameterIndex: cxx_int32_t, value: Bentley_Utf8String): void;
+
+        /**
+          * Bind an integer value to the specified parameter
+          * @param parameterIndex Parameter index
+          * @param value Value to bind.
+          */
+        BindInt(parameterIndex: cxx_int32_t, value: cxx_int32_t): void;
+
+        /**
+          * Bind a double value to the specified parameter
+          * @param parameterIndex Parameter index
+          * @param value Value to bind.
+          */
+        BindDouble(parameterIndex: cxx_int32_t, value: cxx_double): void;
+
+        /**
+          * Bind a DPoint3d value to the specified parameter
+          * @param parameterIndex Parameter index
+          * @param value Value to bind.
+          */
+        BindDPoint3d(parameterIndex: cxx_int32_t, value: DPoint3dP): void;
+
+        /**
+          * Bind a DRange3d value to the specified parameter
+          * @param parameterIndex Parameter index
+          * @param value Value to bind.
+          */
+        BindDRange3d(parameterIndex: cxx_int32_t, value: DRange3dP): void;
+
+        /**
+         * Step the statement to the next row.
+         * @return false if the query is done.
+         */
+        Step(): cxx_enum_class_uint32_t<BeSQLiteDbResult>;
+
+        /**
+         * Return the index of an SQL parameter given its name. The index value returned is suitable for use 
+         * as the second parameter to one of the Bind functions. A zero is returned if no matching parameter is found. 
+         * @note a named parameter is a placeholder in a WHERE clause that is identified by a name, rather than by a simple ?
+         * @param parameterName   parameterName Name of the binding parameter
+         */
+        GetParameterIndex(parameterName: Bentley_Utf8String): cxx_int32_t;
+
+        /**
+         * Get the value of the specified column as a string
+         * @param columnIndex Index of ECSQL column in result set (0-based)
+         */
+        GetValueText(columnIndex: cxx_int32_t): Bentley_Utf8String;
+        /**
+         * Get the value of the specified column as an integer
+         * @param columnIndex Index of ECSQL column in result set (0-based)
+         */
+        GetValueInt(columnIndex: cxx_int32_t): cxx_int32_t;
+        /**
+         * Get the value of the specified column as a double
+         * @param columnIndex Index of ECSQL column in result set (0-based)
+         */
+        GetValueDouble(columnIndex: cxx_int32_t): cxx_double;
+        /**
+         * Get the value of the specified column as a DgnObjectId
+         * @param columnIndex Index of ECSQL column in result set (0-based)
+         */
+        GetValueId(columnIndex: cxx_int32_t): DgnObjectIdP;
+        /**
+         * Get the value of the specified column as a DPoint3d
+         * @param columnIndex Index of ECSQL column in result set (0-based)
+         */
+        GetValueDPoint3d(columnIndex: cxx_int32_t): DPoint3dP;
+        /**
+         * Get the value of the specified column as a DRange3d
+         * @param columnIndex Index of ECSQL column in result set (0-based)
+         */
+        GetValueDRange3d(columnIndex: cxx_int32_t): DRange3dP;
+        /**
+         * Get the value of the specified column as a DateTime string
+         * @param columnIndex Index of ECSQL column in result set (0-based)
+         */
+        GetValueDateTime(columnIndex: cxx_int32_t): Bentley_Utf8String;
+        /**
+         * Get the value of the specified column as an Array
+         * @param columnIndex Index of ECSQL column in result set (0-based)
+         */
+        GetValueArray(columnIndex: cxx_int32_t): ECSqlArrayValueP;
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type PreparedECSqlStatementP = cxx_pointer<PreparedECSqlStatement>;
+
     /** DgnDb - Projection of BentleyApi::Dgn::DgnDb */
     class DgnDb implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
     {
         /*** NATIVE_TYPE_NAME = JsDgnDb ***/
-        /** The collection of models in the DgnDb */
+        /** The collection of models in this DgnDb */
         Models: DgnModelsP;
-        /** The collection of ECSchemas in the DgnDb */
+        /** The collection of ECSchemas in this DgnDb */
         Schemas: SchemaManagerP;
+        /** The collection of DgnElements in this DgnDb */
+        Elements: DgnElementsP;
+
+        /** Get a prepared ECSqlStatement for selecting rows from this DgnDb
+          * @param ecsql    The body of the ECSql SELECT statement that is to be executed. 
+          * @return a prepared ECSql statement or null if the SQL statement is invalid.
+          * @see ECClass::ECSqlName
+          * @note Only SELECT statements can be prepared. If you do not specify the SELECT keyword, it will be prepended automatically.
+          */
+        GetPreparedECSqlSelectStatement(ecsql: Bentley_Utf8String): PreparedECSqlStatementP;
+
         OnDispose(): void;
         Dispose(): void;
     }
@@ -125,10 +321,23 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
     class DgnObjectId implements IDisposable, BeJsProjection_SuppressConstructor, BeJsProjection_RefCounted
     {
         /*** NATIVE_TYPE_NAME = JsDgnObjectId ***/
+
+        constructor();
+
         /** Tests if the ID is valid */
         IsValid(): cxx_bool;
         /** Tests if the ID matches another ID @param id The other ID */
         Equals(id: DgnObjectIdP): cxx_bool;
+        /**
+         * Gets the value of the ID as a string
+         */
+        ToString(): Bentley_Utf8String;
+        /**
+         * Sets the value of the ID from a string
+         * @param str   The new value as a string
+         */
+        FromString(str: Bentley_Utf8String): void;
+
         OnDispose(): void;
         Dispose(): void;
     }
@@ -195,6 +404,42 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type DgnModelsP = cxx_pointer<DgnModels>;
 
+    /** DgnElements - Projection of BentleyApi::Dgn::DgnElements */
+    class DgnElements implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor {
+        /*** NATIVE_TYPE_NAME = JsDgnElements ***/
+
+        /** The DgnDb that contains this collection of elements */
+        DgnDb: DgnDbP;
+
+        /**
+         * Look up an element in the pool of loaded elements for this DgnDb.
+         * @return A pointer to the element, or nullptr if the is not in the pool.
+         * @note This method will return null if the element is not currently loaded. That does not mean the element doesn't exist in the database.
+         */
+        FindElement(id: DgnObjectIdP): DgnElementP;
+
+        /** Look for the element that has the specified code 
+          * @param codeAuthorityName    The name of the CodeAuthority
+          * @param codeValue            The name portion of the Code
+          * @param nameSpace            The namespace portion of the Code
+          * @return the DgnElementId of the element found or null if no element with that specified code was found
+          */
+        QueryElementIdByCode(codeAuthorityName: Bentley_Utf8String, codeValue: Bentley_Utf8String, nameSpace: Bentley_Utf8String): DgnObjectIdP;
+
+        /**
+         * Get a DgnElement from the DgnDb by its DgnElementId.
+         * @param elementId             The element's DgnElementId
+         * @remarks The element is loaded from the database if necessary.
+         * @return Invalid if the element does not exist.
+         */
+        GetElement(elementId: DgnObjectIdP): DgnElementP;
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type DgnElementsP = cxx_pointer<DgnElements>;
+
     /** DgnCategory - Projection of BentleyApi::Dgn::DgnCategory */
     class DgnCategory implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
     {
@@ -222,13 +467,8 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
     /** DgnElement - Projection of BentleyApi::Dgn::DgnElement
      *  <h2>Properties</h2>
      *  On any given element, there may be the following kinds of properties:
-     *  * Properties that are defined by the ECClass 
-     *          * Properties that are controlled by the C++ element class
-     *              * You must use methods on that class to access them
-     *          * Properties that are not controlled by the C++ element class – “Unhandled Properties”
-     *              * You must use the Get/SetUnhandledProperty functions to access them
-     *  * Properties that are not defined by the ECClass but are added by the user – “User Properties”
-     *          * You must use the UserProperties.Get/SetValueEC methods to access them
+     *  * Properties that are defined by the ECClass -> Use GetProperty and SetProperty
+     *  * Properties that are not defined by the ECClass but are added by the user – “User Properties” - use GetUserProperty and SetUserProperty
      */
     class DgnElement implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
     {
@@ -249,21 +489,19 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
         SetParent(parent: cxx_pointer<DgnElement>): void;
 
         /**
-         * Get the value of a property that is not controlled by the element's class.
-         * @note A handled property must be accessed using the API provided by the class that defines it.
+         * Get the value of a property that is defined by the element's class.
          * @param name The name of property
-         * @return the value of the property or null if the property is not found or is handled
+         * @return the value of the property or null if the property is not found
          */
-        GetUnhandledProperty(name: Bentley_Utf8String): ECValueP;
+        GetProperty(name: Bentley_Utf8String): ECValueP;
 
         /**
-         * Set the value of a property that is not controlled by the element's class
-         * @note A handled property must be accessed using the API provided by the class that defines it.
+         * Set the value of a property that is defined by the element's class
          * @param name      The name of property
          * @param value     The new value for the property
-         * @return non-zero error status if the property is not found or is handled
+         * @return non-zero error status if the property is not found
          */
-        SetUnhandledProperty(name: Bentley_Utf8String, value: ECValueP): cxx_int32_t;
+        SetProperty(name: Bentley_Utf8String, value: ECValueP): cxx_int32_t;
 
         /**
          * Get a handle to a user property on this element. 
@@ -282,11 +520,28 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
          */
         ContainsUserProperty(name: Bentley_Utf8String): cxx_bool;
 
-
         /** Remove the specified user property from this element
          * @param name  The name of the property
          */
         RemoveUserProperty(name: Bentley_Utf8String): void;
+
+        /** Cast this element to GeometrySource if possible */
+        ToGeometrySource(): GeometrySourceP;
+
+        /** Cast this element to GeometrySource3d if possible */
+        ToGeometrySource3d(): GeometrySource3dP;
+
+        /** Cast this element to GeometrySource2d if possible */
+        ToGeometrySource2d(): GeometrySource2dP;
+
+        /**
+         * Create a new DgnElement
+         * @param model The model that is to contain the new element
+         * @param elementClassName The name of the element's ECClass. 
+         * @return a new, non-persistent DgnElement or null if one of the parameters is invalid
+         * @see Insert
+        */
+        static Create(model: DgnModelP, elementClassName: Bentley_Utf8String): DgnElementP;
 
         OnDispose(): void;
         Dispose(): void;
@@ -294,10 +549,49 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type DgnElementP = cxx_pointer<DgnElement>;
 
-    /** PhysicalElement - Projection of BentleyApi::Dgn::PhysicalElement */
-    class PhysicalElement extends DgnElement implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
-    {
-        /*** NATIVE_TYPE_NAME = JsPhysicalElement ***/
+    /** GeometrySource */
+    class GeometrySource implements BeJsProjection_IsInterface, IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor {
+        /*** NATIVE_TYPE_NAME = JsGeometrySource ***/
+        /* This is a projection of a C++ interface -- no instance is ever created -- it's always an alias for an instance of a concrete class, such as GeometricElement3d */
+
+        /** Get the element's DgnCategoryId */
+        CategoryId: DgnObjectIdP;
+    
+        /** The element's geometry (read-only) */
+        Geometry: GeometryCollectionP;
+
+        /** Cast this element to DgnElement */
+        ToDgnElement(): DgnElementP;
+
+        ToGeometrySource2d(): GeometrySource2dP;
+        ToGeometrySource3d(): GeometrySource3dP;
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type GeometrySourceP = cxx_pointer<GeometrySource>;
+
+    /** GeometrySource2d */
+    class GeometrySource2d extends GeometrySource implements BeJsProjection_IsInterface, IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor {
+        /*** NATIVE_TYPE_NAME = JsGeometrySource2d ***/
+        /* This is a projection of a C++ interface -- no instance is ever created -- it's always an alias for an instance of a concrete class, such as GeometricElement2d */
+
+        // *** TBD
+
+        ToGeometrySource2d(): GeometrySource2dP;
+        ToGeometrySource2d(): GeometrySource2dP;
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type GeometrySource2dP = cxx_pointer<GeometrySource2d>;
+
+    /** GeometrySource3d */
+    class GeometrySource3d extends GeometrySource implements BeJsProjection_IsInterface, IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor {
+        /*** NATIVE_TYPE_NAME = JsGeometrySource3d ***/
+        /* This is a projection of a C++ interface -- no instance is ever created -- it's always an alias for an instance of a concrete class, such as GeometricElement3d */
 
         /** Get the placement of this element */
         Placement: Placement3dP;
@@ -308,24 +602,68 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
         */
         Transform(transform: TransformP): cxx_int32_t;
 
+        ToGeometrySource2d(): GeometrySource2dP;
+        ToGeometrySource3d(): GeometrySource3dP;
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type GeometrySource3dP = cxx_pointer<GeometrySource3d>;
+
+    class GeometricElement extends DgnElement implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor {
+        /*** NATIVE_TYPE_NAME = JsGeometricElement ***/
+
         /** Get the element's DgnCategoryId */
         CategoryId: DgnObjectIdP;
     
         /** The element's geometry (read-only) */
         Geometry: GeometryCollectionP;
 
-        /**
-         * Create a new PhysicalElement
-         * @param model The model that is to contain the new element
-         * @param categoryId The ID of the category to assign to the new element
-         * @param elementClassName Optional. The name of the element's ECClass. If not specified, then dgn.PhysicalElement is used
-         * @return a new, non-persistent PhysicalElement or null if one of the parameters is invalid
-         * @see Insert
-        */
-        static Create(model: DgnModelP, categoryId: DgnObjectIdP, elementClassName: Bentley_Utf8String): PhysicalElementP;
+        /** Cast this element to DgnElement */
+        ToDgnElement(): DgnElementP;
+
+        OnDispose(): void;
+        Dispose(): void;
     }
 
-    type PhysicalElementP = cxx_pointer<PhysicalElement>;
+    type GeometricElementP = cxx_pointer<GeometricElement>;
+
+    class GeometricElement3d extends GeometricElement implements GeometrySource3d, IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor {
+        /*** NATIVE_TYPE_NAME = JsGeometricElement3d ***/
+
+        /** Get the placement of this element */
+        Placement: Placement3dP;
+
+        /** Cast this element to GeometrySource */
+        ToGeometrySource(): GeometrySourceP;
+
+        /** Cast this element to GeometrySource3d */
+        ToGeometrySource3d(): GeometrySource3dP;
+
+        ToGeometrySource2d(): GeometrySource2dP;
+
+        /** Transform the element's Placement 
+         * @param transform The transform to apply to the element's Placement. The transform must be pure rotation and/or translation.
+         * @return non-zero error status if the element could not be transformed or if \a transform is invalid.
+        */
+        Transform(transform: TransformP): cxx_int32_t;
+
+        /**
+         * Create a new GeometricElement3d
+         * @param model The model that is to contain the new element
+         * @param categoryId The new element's DgnCategoryId
+         * @param elementClassName The name of the element's ECClass. Must be a subclass of GeometricElement3d.
+         * @return a new, non-persistent GeometricElement3d or null if one of the parameters is invalid
+         * @see Insert
+        */
+        static CreateGeometricElement3d(model: DgnModelP, categoryId: DgnObjectIdP, elementClassName: Bentley_Utf8String): GeometricElement3dP;
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type GeometricElement3dP = cxx_pointer<GeometricElement3d>;
 
     /** DgnModel - Projection of BentleyApi::Dgn::DgnModel */
     class DgnModel implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
@@ -670,7 +1008,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
          * @param angles The placement angles
          * @see SetGeometryStreamAndPlacement for how to copy the geometry in this builder to an element.
         */
-        constructor(el: DgnElementP, o: DPoint3dP, angles: YawPitchRollAnglesP);
+        constructor(el: GeometrySourceP, o: DPoint3dP, angles: YawPitchRollAnglesP);
 
         /**
          * Construct a new GeometryBuilder to prepare geometry for the specified element. 
@@ -681,7 +1019,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
          * @return a GeometryBuilder object
          * @see CreateForModel
          */
-        static CreateForElement(el: DgnElementP, o: DPoint3dP, angles: YawPitchRollAnglesP): GeometryBuilderP;
+        static CreateForElement(el: GeometrySourceP, o: DPoint3dP, angles: YawPitchRollAnglesP): GeometryBuilderP;
 
         /**
          * Construct a new GeometryBuilder to prepare geometry for elements in the specified model and category
@@ -692,6 +1030,25 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
          * @return a GeometryBuilder object
          */
         static CreateForModel(model: DgnModelP, catid: DgnObjectIdP, o: DPoint3dP, angles: YawPitchRollAnglesP): GeometryBuilderP;
+
+        /**
+         * Construct a new GeometryBuilder to prepare geometry for the specified element. 
+         * @note This is just a short cut for calling CreateForModel.
+         * @param el    The element to which this geometry will be attached
+         * @param transform     The placement transform (origin and axes)
+         * @return a GeometryBuilder object
+         * @see CreateForModel
+         */
+        static CreateForElementWithTransform(el: GeometrySourceP, transform: TransformP): GeometryBuilderP;
+
+        /**
+         * Construct a new GeometryBuilder to prepare geometry for elements in the specified model and category
+         * @param model The model where the geometry will ultimatley be stored
+         * @param catid The category of the element that will will ultimatley contain the geometry
+         * @param transform The placement transform (origin and axes)
+         * @return a GeometryBuilder object
+         */
+        static CreateForModelWithTransform(model: DgnModelP, catid: DgnObjectIdP, transform: TransformP): GeometryBuilderP;
 
         /**
          * Construct a new GeometryBuilder to prepare geometry for a DgnGeometryPart
@@ -748,7 +1105,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
          * @param element   The element
          * @return non-zero error status if \a element is invalid or if this geometry stream is invalid
          */
-        SetGeometryStreamAndPlacement(element: DgnElementP): cxx_int32_t;
+        SetGeometryStreamAndPlacement(element: GeometrySourceP): cxx_int32_t;
 
         /**
          * Copy the geometry in this builder to a DgnGeometryPart.
@@ -772,7 +1129,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
         /*** NATIVE_TYPE_NAME = JsHitDetail ***/ 
 
         /** The element that was picked */
-        Element: PhysicalElementP;
+        Element: GeometrySource3dP;
 
         /** The point at which the element was picked */
         TestPoint: DPoint3dP;
@@ -798,7 +1155,10 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
     class SchemaManager implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
     {
         /*** NATIVE_TYPE_NAME = JsECDbSchemaManager ***/
+        /** Look up an ECClass by its name */
         GetECClass(schemaNameOrPrefix: Bentley_Utf8String, className: Bentley_Utf8String): ECClassP;
+        /** Look up an ECClass by its ECClassId */
+        GetECClassById(ecclassid: DgnObjectIdP): ECClassP;
         OnDispose(): void;
         Dispose(): void;
     }
@@ -827,8 +1187,17 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
     {
         /*** NATIVE_TYPE_NAME = JsECClass ***/ 
 
-        /** The name of the class */
+        /** The ID of this class */
+        ECClassId: DgnObjectIdP;
+
+        /** The name of this class */
         Name: Bentley_Utf8String;
+
+        /** The ECSql name of this class */
+        ECSqlName: Bentley_Utf8String;
+
+        /** The schema to which this class belongs */
+        Schema: ECSchemaP;
 
         /** The base classes of this class */
         BaseClasses: ECClassCollectionP;

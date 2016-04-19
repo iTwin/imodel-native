@@ -21,11 +21,9 @@ DGNPLATFORM_REF_COUNTED_PTR(AnnotationTextStyle);
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-//! @addtogroup Annotations
-//! @beginGroup
-
 //=======================================================================================
 //! This enumerates all possible annotation text stacked fraction types.
+//! @ingroup GROUP_Annotation
 // @bsiclass                                                    Jeff.Marker     05/2014
 //=======================================================================================
 enum class AnnotationStackedFractionType
@@ -37,6 +35,7 @@ enum class AnnotationStackedFractionType
 //=======================================================================================
 //! This enumerates all possible AnnotationTextStyle property keys.
 //! @note Unless dealing with style overrides, you will not typically use this enumeration directly. While AnnotationTextStyle provides high-level accessors to its properties, overrides are expressed directly via AnnotationTextStylePropertyBag and AnnotationTextStyleProperty.
+//! @ingroup GROUP_Annotation
 // @bsiclass                                                    Jeff.Marker     05/2014
 //=======================================================================================
 enum class AnnotationTextStyleProperty
@@ -69,6 +68,7 @@ enum class AnnotationTextStyleProperty
 //! Unlike the higher-level AnnotationTextStyle, this collection deals directly with property keys and their underlying values. You must know a property's data type when using this class. The AnnotationTextStyleProperty enumeration describes each property's data type.
 //! When created, this collection has no properties in it; their values are assumed to be default. In other words, this only stores deltas from defaults. In the case of overrides, it only stores the properties that are overridden, even if overridden with the same value.
 //! @note Unless dealing with style overrides, you will not typically use this enumeration directly. While AnnotationTextStyle provides high-level accessors to its properties, overrides are expressed directly via AnnotationTextStylePropertyBag and AnnotationTextStyleProperty.
+//! @ingroup GROUP_Annotation
 // @bsiclass                                                    Jeff.Marker     05/2014
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE AnnotationTextStylePropertyBag : AnnotationPropertyBag
@@ -96,12 +96,14 @@ public:
 };
 
 //! As an element, AnnotationTextStyle IDs are inherently DgnElementId, but create a typedef so that argument types are more obvious/natural.
+//! @ingroup GROUP_Annotation
 typedef DgnElementId AnnotationTextStyleId;
 
 //=======================================================================================
 //! This is used to provide style properties when creating an AnnotationTextBlock.
 //! AnnotationTextBlock has different components, such as the block itself, paragraphs, and runs. Different properties of a style affect different components of the AnnotationTextBlock. AnnotationTextStyleProperty indicates which components the properties affect.
 //! @note When creating an AnnotationTextBlock, the typical work flow is to create and store the style, and then create the AnnotationTextBlock with the stored style's ID.
+//! @ingroup GROUP_Annotation
 // @bsiclass                                                    Jeff.Marker     05/2014
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE AnnotationTextStyle : DictionaryElement
@@ -185,6 +187,7 @@ public:
     AnnotationTextStyleCPtr Update() { return GetDgnDb().Elements().Update<AnnotationTextStyle>(*this); }
 
     //=======================================================================================
+    //! @ingroup GROUP_Annotation
     // @bsiclass                                                    Jeff.Marker     11/2014
     //=======================================================================================
     struct Entry : ECSqlStatementEntry
@@ -213,7 +216,6 @@ namespace dgn_ElementHandler
 {
     //=======================================================================================
     //! The handler for annotation text styles
-    //! @bsistruct                                                  Paul.Connelly   10/15
     //=======================================================================================
     struct AnnotationTextStyleHandler : Element
     {
@@ -223,7 +225,5 @@ namespace dgn_ElementHandler
         DGNPLATFORM_EXPORT virtual void _GetClassParams(ECSqlClassParams&) override;
     };
 }
-
-//! @endGroup
 
 END_BENTLEY_DGN_NAMESPACE

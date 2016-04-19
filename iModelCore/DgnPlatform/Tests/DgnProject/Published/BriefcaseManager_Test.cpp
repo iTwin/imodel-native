@@ -920,14 +920,16 @@ struct RepositoryManagerTest : public ::testing::Test, DgnPlatformLib::Host::Rep
 
     RepositoryManagerTest()
         {
-        m_host.SetRepositoryAdmin(this);
-        BackDoor::IBriefcaseManager::SetEnabled(true);
+        RegisterServer();
         }
 
     ~RepositoryManagerTest()
         {
-        BackDoor::IBriefcaseManager::SetEnabled(false);
+        UnregisterServer();
         }
+
+    void RegisterServer() { m_host.SetRepositoryAdmin(this); }
+    void UnregisterServer() { m_host.SetRepositoryAdmin(nullptr); }   // GetRepositoryManager() => nullptr; Attempts to contact server => RepositoryStatus::ServerUnavailable
 
     virtual IRepositoryManagerP _GetRepositoryManager(DgnDbR) const override { return &m_server; }
 
@@ -1293,6 +1295,72 @@ TEST_F(SingleBriefcaseLocksTest, LocallyCreatedObjects)
     ExpectLevel(*newModel, LockLevel::Exclusive);
     ExpectLevel(*newElem, LockLevel::Exclusive);
     ExpectLevel(db, LockLevel::Shared);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Test that locks + codes acquired while connected are retained when disconnected.
+* @bsimethod                                                    Paul.Connelly   04/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SingleBriefcaseLocksTest, DisconnectedWorkflow)
+    {
+    BeFileName filename;
+    DgnModelId newModelId;
+        {
+        SetupDb(L"DisconnectedWorkflow.dgndb", m_bcId);
+
+        DgnDbR db = *m_db;
+        DgnModelPtr pModel = db.Models().GetModel(m_modelId);
+        DgnElementCPtr cpEl = db.Elements().GetElement(m_elemId);
+
+        // Acquire locks with server available
+        EXPECT_TRUE(nullptr != T_HOST.GetRepositoryAdmin()._GetRepositoryManager(db));
+        ExpectAcquire(*cpEl, LockLevel::Exclusive);
+        ExpectLevel(db, LockLevel::Shared);
+        ExpectLevel(*pModel, LockLevel::Shared);
+        ExpectLevel(*cpEl, LockLevel::Exclusive);
+
+        // Create a new model (implicitly exclusively locked)
+        DgnModelPtr newModel = CreateModel("NewModel");
+        newModelId = newModel->GetModelId();
+        ExpectLevel(*newModel, LockLevel::Exclusive);
+
+        // Close the db and unregister the server
+        filename = m_db->GetFileName();
+        pModel = nullptr;
+        newModel = nullptr;
+        cpEl = nullptr;
+        m_db->SaveChanges();
+        m_db->CloseDb();
+        m_db = nullptr;
+        UnregisterServer();
+        }
+
+    // Reopen the db and expect that the locks we acquired remain acquired
+        {
+        m_db = DgnDb::OpenDgnDb(nullptr, filename, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
+        ASSERT_TRUE(m_db.IsValid());
+        EXPECT_EQ(nullptr, T_HOST.GetRepositoryAdmin()._GetRepositoryManager(*m_db));
+
+        DgnModelPtr pModel = m_db->Models().GetModel(m_modelId);
+        DgnElementCPtr cpEl = m_db->Elements().GetElement(m_elemId);
+        ASSERT_TRUE(pModel.IsValid());
+        ASSERT_TRUE(cpEl.IsValid());
+
+        ExpectLevel(*m_db, LockLevel::Shared);
+        ExpectLevel(*pModel, LockLevel::Shared);
+        ExpectLevel(*cpEl, LockLevel::Exclusive);
+
+        // Expect we cannot acquire new locks due to unavailability of server
+        EXPECT_EQ(RepositoryStatus::ServerUnavailable, Acquire(*pModel, LockLevel::Exclusive));
+
+        // Expect that we implicitly acquire locks for locally-created objects despite unavailability of server
+        DgnModelPtr pNewModel = m_db->Models().GetModel(newModelId);
+        ASSERT_TRUE(pNewModel.IsValid());
+        ExpectLevel(*pNewModel, LockLevel::Exclusive);
+        DgnElementCPtr newElem = CreateElement(*pNewModel);
+        ASSERT_TRUE(newElem.IsValid());
+        ExpectLevel(*newElem, LockLevel::Exclusive);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
