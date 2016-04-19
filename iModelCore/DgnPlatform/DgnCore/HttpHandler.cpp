@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/HttpHandler.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
@@ -122,7 +122,7 @@ HttpRequestStatus HttpHandler::Request(HttpResponsePtr& response, HttpRequest co
     CurlHolder curl;
 
     bmap<Utf8String, Utf8String> responseHeader;
-    bvector<Byte> responseBody;
+    ByteStream responseBody;
     curl_easy_setopt(curl.Get(), CURLOPT_URL, request.GetUrl().c_str());
     curl_easy_setopt(curl.Get(), CURLOPT_WRITEFUNCTION, &HttpHandler::HttpBodyParser);
     curl_easy_setopt(curl.Get(), CURLOPT_WRITEDATA, &responseBody);
@@ -167,17 +167,3 @@ HttpRequestStatus HttpHandler::Request(HttpResponsePtr& response, HttpRequest co
 #endif
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-HttpResponseStatus HttpResponse::GetStatus() const {return m_status;}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-bmap<Utf8String, Utf8String> const& HttpResponse::GetHeader() const {return m_header;}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-bvector<Byte> const& HttpResponse::GetBody() const {return m_body;}

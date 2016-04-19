@@ -541,6 +541,7 @@ enum class SnapMode
     AllOrdinary             = (Nearest | NearestKeypoint | MidPoint | Center | Origin | Bisector | Intersection | MultiSnaps),
     AllConstraint           = (Tangency | TangentPoint | Perpendicular | PerpendicularPoint | Parallel | PointOn),
     IntersectionCandidate   = (Intersection | Nearest),
+    NumSnapModes            = 16,
     };
 
 ENUM_IS_FLAGS (SnapMode)

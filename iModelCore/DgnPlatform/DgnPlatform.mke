@@ -418,6 +418,8 @@ $(o)GeoCoordServices$(oext) :                       $(DgnGeoCoordDir)GeoCoordSer
 
 $(o)findfile$(oext) :                               $(ToolsDir)fileutil/findfile.cpp ${MultiCompileDepends}
 
+$(o)CsvFile$(oext) :                                $(ToolsDir)fileutil/CsvFile.cpp $(DgnDesktopToolsAPISrc)CsvFile.h ${MultiCompileDepends}
+
 $(o)ConfigurationManager$(oext) :                   $(ConfigToolsDir)ConfigurationManager.cpp ${MultiCompileDepends}
 
 $(o)MacroConfigurationAdmin$(oext) :                $(ConfigToolsDir)MacroConfigurationAdmin.cpp ${MultiCompileDepends}

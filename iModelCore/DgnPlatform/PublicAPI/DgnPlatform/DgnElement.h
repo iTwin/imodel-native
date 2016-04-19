@@ -1781,17 +1781,37 @@ struct DgnElements : DgnDbTable, IMemoryConsumer
         uint32_t m_purged;         //! number of garbage elements that were purged
     };
 
+    struct CachedSelectStatement : BeSQLite::EC::ECSqlStatement
+    {
+        friend struct DgnElements;
+    private:
+        mutable BeAtomic<uint32_t>  m_refCount;
+        bool                        m_isInCache;
+        BeSQLite::BeDbMutex&        m_mutex;
+
+        CachedSelectStatement(BeSQLite::BeDbMutex& mutex, bool inCache) : m_mutex(mutex), m_isInCache(inCache) { }
+    public:
+        DEFINE_BENTLEY_NEW_DELETE_OPERATORS
+
+        ~CachedSelectStatement() { }
+
+        uint32_t AddRef() const { return m_refCount.IncrementAtomicPre(); }
+        uint32_t GetRefCount() const { return m_refCount.load(); }
+        DGNPLATFORM_EXPORT uint32_t Release();
+    };
+
+    typedef RefCountedPtr<CachedSelectStatement> CachedSelectStatementPtr;
 private:
     struct ElementSelectStatement
     {
-        BeSQLite::EC::CachedECSqlStatementPtr m_statement;
+        CachedSelectStatementPtr m_statement;
         ECSqlClassParamsCR m_params;
-        ElementSelectStatement(BeSQLite::EC::CachedECSqlStatement* stmt, ECSqlClassParamsCR params) : m_statement(stmt), m_params(params) {}
+        ElementSelectStatement(CachedSelectStatement* stmt, ECSqlClassParamsCR params) : m_statement(stmt), m_params(params) {}
     };
 
     struct ClassInfo : ECSqlClassInfo
     {
-        BeSQLite::EC::CachedECSqlStatementPtr m_selectStmt;
+        CachedSelectStatementPtr    m_selectStmt;
     };
 
     typedef bmap<DgnClassId, ClassInfo> ClassInfoMap;
@@ -1960,6 +1980,21 @@ public:
     //!                             will either be the parent of the source element or the element to which the source parent has been remapped. See DgnCloneContext.
     //! @return a new element if successful
     DGNPLATFORM_EXPORT DgnElementCPtr MakeCopy(DgnDbStatus* stat, DgnModelR targetModel, DgnElementCR sourceElement, DgnCode const& code, DgnElementId newParentId = DgnElementId());
+};
+
+//=======================================================================================
+//! Utility methods for working with element assemblies.
+// @bsiclass                                                BentleySystems
+//=======================================================================================
+struct ElementAssemblyUtil
+{
+    //! Get the top-level parent DgnElementId of the assembly for which the input DgnElement is a member.
+    //! @return DgnElementId of top-level parent. Will be invalid if there is no parent.
+    DGNPLATFORM_EXPORT static DgnElementId GetAssemblyParentId(DgnElementCR el);
+
+    //! Query the DgnDb for all members of the assembly for which the input DgnElement is a member.
+    //! @return DgnElementIdSet containing the DgnElementIds of all assembly elements. Will be empty if not an assembly.
+    DGNPLATFORM_EXPORT static DgnElementIdSet GetAssemblyElementIdSet(DgnElementCR el);
 };
 
 //=======================================================================================
