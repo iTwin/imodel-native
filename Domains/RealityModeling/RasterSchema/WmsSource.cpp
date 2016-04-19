@@ -39,7 +39,7 @@ struct WmsTileData : IRealityData<WmsTileData, BeSQLiteRealityDataStorage, HttpR
 
 private:
     Utf8String      m_url;
-    bvector<Byte>   m_data;
+    ByteStream      m_data;
     DateTime        m_creationDate;
     Utf8String      m_contentType;
 
@@ -52,14 +52,14 @@ protected:
     virtual Utf8CP _GetId() const override {return m_url.c_str();}
     virtual bool _IsExpired() const override;
     virtual BentleyStatus _InitFrom(IRealityDataBase const& self, RealityDataCacheOptions const&) override;
-    virtual BentleyStatus _InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> const& header, bvector<Byte> const& body, HttpRealityDataSource::RequestOptions const& options) override;
+    virtual BentleyStatus _InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> const& header, ByteStream const& body, HttpRealityDataSource::RequestOptions const& options) override;
     virtual BentleyStatus _InitFrom(BeSQLite::Db& db, BeMutex& cs, Utf8CP key, BeSQLiteRealityDataStorage::SelectOptions const& options) override;
     virtual BentleyStatus _Persist(BeSQLite::Db& db, BeMutex& cs) const override;
     virtual BeSQLiteRealityDataStorage::DatabasePrepareAndCleanupHandlerPtr _GetDatabasePrepareAndCleanupHandler() const override;
 
 public:
     static RefCountedPtr<WmsTileData> Create() {return new WmsTileData();}    
-    bvector<Byte> const& GetData() const  {return m_data;}
+    ByteStream const& GetData() const  {return m_data;}
     DateTime GetCreationDate() const  {return m_creationDate;}
     Utf8String GetContentType() const  {return m_contentType;}
     };
@@ -179,7 +179,7 @@ BentleyStatus WmsTileData::_InitFrom(IRealityDataBase const& self, RealityDataCa
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  6/2015
 //----------------------------------------------------------------------------------------
-BentleyStatus WmsTileData::_InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> const& header, bvector<Byte> const& body, HttpRealityDataSource::RequestOptions const& requestOptions) 
+BentleyStatus WmsTileData::_InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> const& header, ByteStream const& body, HttpRealityDataSource::RequestOptions const& requestOptions) 
     {
     BeAssert(nullptr != dynamic_cast<RequestOptions const*>(&requestOptions));
    // RequestOptions const& options = static_cast<RequestOptions const&>(requestOptions);
@@ -420,7 +420,7 @@ WmsSource::WmsSource(WmsMap const& mapInfo)
     DPoint3d translation = DPoint3d::From(m_mapInfo.m_boundingBox.low); // z == 0
     DPoint3d scale = DPoint3d::From((m_mapInfo.m_boundingBox.high.x - m_mapInfo.m_boundingBox.low.x) / m_mapInfo.m_metaWidth,  
                                     (m_mapInfo.m_boundingBox.high.y - m_mapInfo.m_boundingBox.low.y) / m_mapInfo.m_metaHeight, 
-                                    0);
+                                    0);                                         
 
     DMatrix4d mapTransfo = DMatrix4d::FromScaleAndTranslation(scale, translation);
 
@@ -475,11 +475,11 @@ Render::Image WmsSource::_QueryTile(TileId const& id, bool& alphaBlend)
 
     if (contentType.EqualsI (CONTENT_TYPE_PNG))
         {
-        status = actualImageInfo.ReadImageFromPngBuffer(image, data.data(), data.size());
+        status = actualImageInfo.ReadImageFromPngBuffer(image, data.GetData(), data.GetSize());
         }
     else if (contentType.EqualsI (CONTENT_TYPE_JPEG))
         {
-        status = actualImageInfo.ReadImageFromJpgBuffer(image, data.data(), data.size());
+        status = actualImageInfo.ReadImageFromJpgBuffer(image, data.GetData(), data.GetSize());
         }
     else
         {
@@ -515,7 +515,7 @@ Utf8String WmsSource::BuildTileUrl(TileId const& tileId)
     double maxX = tileCorners[1].x;
     double maxY = tileCorners[1].y;
 
-    if(m_reverseAxis)
+    if (m_reverseAxis)
         {
         std::swap(minX, minY);
         std::swap(maxX, maxY);

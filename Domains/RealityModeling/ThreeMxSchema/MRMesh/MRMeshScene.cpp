@@ -20,22 +20,30 @@ Scene::Scene(DgnDbR db, SceneInfo const& sceneInfo, BeFileNameCR fileName) : m_d
         m_srsOrigin.InitFromArray(&sceneInfo.m_SRSOrigin.front());
     else
         m_srsOrigin.Zero();
+
+    m_cache = RealityDataCache::Create(100);
+
+    BeFileName storageFileName = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName();
+    storageFileName.AppendToPath(BeFileName(GetSceneName()));
+
+    m_cache->RegisterStorage(*BeSQLiteRealityDataStorage::Create(storageFileName));
+    m_cache->RegisterSource(*FileRealityDataSource::Create(4));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus Scene::Load(SceneInfo const& sceneInfo, LoadContextCR loadContext)
+BentleyStatus Scene::Load(SceneInfo const& sceneInfo)
     {
     BeFileName scenePath(BeFileName::DevAndDir, m_fileName.c_str());
     for (auto const& child : sceneInfo.m_meshChildren)
         {
         NodePtr childNode = new Node(NodeInfo(), nullptr);
 
-        if (SUCCESS != CacheManager::GetManager().SynchronousRead(*childNode, Util::ConstructNodeName(child, &scenePath), loadContext))
+        if (SUCCESS != SynchronousRead(*childNode, Util::ConstructNodeName(child, &scenePath)))
             return ERROR;
 
-        childNode->LoadUntilDisplayable(loadContext);
+        childNode->LoadUntilDisplayable(*this);
         m_children.push_back(childNode);
         }
 
@@ -120,6 +128,9 @@ size_t Scene::GetMeshCount() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Scene::FlushStale(uint64_t staleTime)
     {
+    if (!m_requests.empty())
+        return;
+
     for (auto& child : m_children)
         child->FlushStale(staleTime);
     }
@@ -227,26 +238,15 @@ BentleyStatus Scene::GetProjectionTransform()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Scene::Draw(RenderContextR context, LoadContextCR meshContext)
+bool Scene::Draw(RenderContextR context)
     {
     bool childrenScheduled=false;
     for (auto const& child : m_children)
         {
-        childrenScheduled |= child->Draw(context, meshContext);
+        childrenScheduled |= child->Draw(context, *this);
         if (context.CheckStop())
             break;
         }
     return childrenScheduled;
     }
 
-#if defined (NEEDS_WORK_RENDER_SYSTEM)
-/*-----------------------------------------------------------------------------------**//**
-* @bsimethod                                                Nicholas.Woodfield     01/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Scene::GetTiles(TileCallback& callback, double resolution) const
-    {
-    for (auto const& child : m_children)
-        child->GetTiles(callback, resolution);
-    }
-
-#endif
