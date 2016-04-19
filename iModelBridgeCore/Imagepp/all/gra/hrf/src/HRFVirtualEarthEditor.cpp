@@ -296,8 +296,8 @@ bool HRFVirtualEarthEditor::QueryTileSubstitute(Byte* pOutput, uint64_t blockPos
         rasterStatus = pSubResolutionEditor->QueryTile(m_pSubTileData.get(), subTile_PixelPosX, subTile_PixelPosY);
         if (ReadTileStatus::Success == rasterStatus)
             {
-            size_t srcOffsetX = (subPixelPosX - subTile_PixelPosX);
-            size_t srcOffsetY = (subPixelPosY - subTile_PixelPosY);
+            size_t srcOffsetX = (size_t)(subPixelPosX - subTile_PixelPosX);
+            size_t srcOffsetY = (size_t)(subPixelPosY - subTile_PixelPosY);
             MagnifyTile(pOutput, m_pSubTileData.get(), srcOffsetX, srcOffsetY, pSubResolutionEditor->GetResolutionIndex());
             break;  // we found a valid tile.
             }
