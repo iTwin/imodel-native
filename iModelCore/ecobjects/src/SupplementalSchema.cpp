@@ -392,7 +392,7 @@ bool createCopyOfSupplementalCustomAttribute
     if (SupplementedSchemaStatus::Success != status)
         return status;
 
-    if (1 > supplementalSchemaList.size())
+    if (1 > schemasByPrecedence.size() && 1 > localizationSchemas.size())
         return status;
 
     SupplementalSchemaInfoPtr info = SupplementalSchemaInfo::Create(primarySchema.GetFullSchemaName().c_str(), m_supplementalSchemaNamesAndPurposes);
