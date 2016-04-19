@@ -2998,6 +2998,10 @@ uint32_t CachedStatement::Release()
 void StatementCache::Empty()
     {
     BeDbMutexHolder _v_v(m_mutex);
+
+    for (auto& entry : m_entries)
+        entry->m_inCache = false;
+
     m_entries.clear();
     }
 
