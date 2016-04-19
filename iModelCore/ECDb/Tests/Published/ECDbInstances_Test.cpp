@@ -445,10 +445,10 @@ TEST_F(ECDbInstances, FindECInstances)
 
     IECInstancePtr resultInstance = nullptr;
     ECValue v;
-    int rows;
+    int rows = 0;
 
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "SELECT c.Name FROM ec.ECClassDef c JOIN ec.ECSchemaDef s ON s.Id=c.SchemaId AND s.Name='StartupCompany'"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "SELECT c.Name FROM ec.ECClassDef c JOIN ec.ECSchemaDef s USING ec.SchemaOwnsClasses WHERE s.Name='StartupCompany'"));
 
     while (BE_SQLITE_ROW == stmt.Step())
         {
