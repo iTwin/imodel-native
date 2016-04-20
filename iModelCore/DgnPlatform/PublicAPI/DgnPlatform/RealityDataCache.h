@@ -1374,7 +1374,7 @@ struct EXPORT_VTABLE_ATTRIBUTE HttpRealityDataSource : AsyncRealityDataSource<Ht
             using IRealityDataSource::Data::_InitFrom;
             void SetExpirationDate(DateTime const& date) {m_expirationDate = date;}
             void SetEntityTag(Utf8CP eTag) {m_entityTag = eTag;}
-            virtual BentleyStatus _InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> const& header, bvector<Byte> const& body, RequestOptions const& options) = 0;
+            virtual BentleyStatus _InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> const& header, ByteStream const& body, RequestOptions const& options) = 0;
         public:
             DateTime const& GetExpirationDate() const {return m_expirationDate;}
             Utf8CP GetEntityTag() const {return m_entityTag.c_str();}

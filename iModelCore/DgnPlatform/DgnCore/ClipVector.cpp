@@ -101,7 +101,7 @@ ClipVectorPtr ClipVector::CreateFromCurveVector(CurveVectorCR curveVector, doubl
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClipVectorPtr   ClipVector::CreateCopy(ClipVectorCR inputVector)
     {
-    ClipVectorP   clipVector = new ClipVector();
+    ClipVectorP clipVector = new ClipVector();
     clipVector->AppendCopy(inputVector);
     return clipVector;
     }
@@ -114,7 +114,6 @@ void    ClipVector::AppendCopy(ClipVectorCR clip)
     for (ClipPrimitivePtr const& primitive: clip)
         push_back(ClipPrimitive::CreateCopy(*primitive));
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
@@ -152,7 +151,6 @@ BentleyStatus    ClipVector::AppendShape(ClipVectorPtr& clip, DPoint2dCP points,
 
     return SUCCESS;
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
@@ -437,10 +435,3 @@ bool ClipVector::IsCompletelyContained(MSBsplineCurveCR arc)
         }
     return fractionSum >= TARGET_FRACTION_SUM;
     }
-
-
-
-
-
-
-                                                                         

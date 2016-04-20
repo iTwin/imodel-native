@@ -1529,7 +1529,7 @@ void FenceParams::PushClip(ViewContextP context, DgnViewportP vp, bool displayCu
         }
     else
         {
-        ClipVectorPtr       transformedClip = ClipVector::CreateCopy(*m_clip);
+        ClipVectorPtr transformedClip = ClipVector::CreateCopy(*m_clip);
         transformedClip->TransformInPlace(inverse);
 
         transformedClip->SetInvisible(!displayCut);
