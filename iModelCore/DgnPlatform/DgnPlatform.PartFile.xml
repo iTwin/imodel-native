@@ -492,6 +492,8 @@
     </Part>
 
     <Product Name="iOSXCTest-DgnPlatform-TestCollection-NoView" >
+        <!-- *** TRICKY: Must depend on a part in begtest repository, in order to use a productdirectorylist from there. -->
+        <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
         <SubPart PartName="iOSXCTest-TestCollection-NoView" LibType="Static"/>
         <Directories DirectoryListName="iOSXCTestProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
