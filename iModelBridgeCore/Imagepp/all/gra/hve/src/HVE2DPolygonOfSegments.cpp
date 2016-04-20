@@ -175,9 +175,6 @@ public:
     return(pResultShape);
     }
 
-//-----------------------------------------------------------------------------
-// private inline method
-//-----------------------------------------------------------------------------
 
 
 //-----------------------------------------------------------------------------
@@ -189,7 +186,7 @@ public:
 // This method is equivalent to CalculateSpatialPositionOfPositionSegment
 // however will not make errors and will process multi-flirting segments.
 //-----------------------------------------------------------------------------
-inline HVE2DShape::SpatialPosition HVE2DPolygonOfSegments::CalculateSpatialPositionOfPositionSegment2(const HGF2DLiteExtent& pi_rSelfLiteExtent,
+HVE2DShape::SpatialPosition HVE2DPolygonOfSegments::CalculateSpatialPositionOfPositionSegment2(const HGF2DLiteExtent& pi_rSelfLiteExtent,
         const HGF2DPosition&   pi_rStartPoint,
         const HGF2DPosition&   pi_rEndPoint,
         double                pi_Tolerance) const
@@ -245,9 +242,7 @@ inline HVE2DShape::SpatialPosition HVE2DPolygonOfSegments::CalculateSpatialPosit
 
     return(MyPartPosition);
     }
-//-----------------------------------------------------------------------------
-// end private inline method
-//-----------------------------------------------------------------------------
+
 
 
 
@@ -397,18 +392,14 @@ bool HVE2DPolygonOfSegments::RepresentsARectangle() const
     if (m_PolySegment.GetSize() == 5)
         {
         // The polygon has 5 points
-        HGF2DPositionCollection::const_iterator Itr = m_PolySegment.GetPoints().begin();
-        HGF2DPositionCollection::const_iterator NextItr = Itr;
-        NextItr++;
-
         // Check if all segments are alligned to the axes
         bool AllSegmentsAreAligned = true;
 
-        for (; NextItr != m_PolySegment.GetPoints().end() && AllSegmentsAreAligned ; ++NextItr)
+        for (size_t index = 0 ; (index < m_PolySegment.GetSize() - 1) && AllSegmentsAreAligned ; index++)
             {
             // Check if points are colinear
-            HGFBearing SegmentBearing = (HGF2DLocation(*NextItr, GetCoordSys()) -
-                                         HGF2DLocation(*Itr, GetCoordSys())).CalculateBearing();
+            HGFBearing SegmentBearing = (HGF2DLocation(m_PolySegment.GetPosition(index + 1), GetCoordSys()) -
+                                         HGF2DLocation(m_PolySegment.GetPosition(index), GetCoordSys())).CalculateBearing();
 
             // Obtain trigonometric value of bearing
             double TrigoBearing = SegmentBearing.CalculateTrigoAngle();
@@ -418,14 +409,12 @@ bool HVE2DPolygonOfSegments::RepresentsARectangle() const
                                       HDOUBLE_EQUAL_EPSILON(TrigoBearing, PI) ||
                                       HDOUBLE_EQUAL_EPSILON(TrigoBearing, 3 * PI/2) ||
                                       HDOUBLE_EQUAL_EPSILON(TrigoBearing, 2 * PI));
-
-
-            // Advance iterator
-            Itr = NextItr;
             }
 
         // If all segments were aligned, then it is a rectangle
         DoesRepresentARectangle = AllSegmentsAreAligned;
+
+
         }
 
     return(DoesRepresentARectangle);
@@ -440,85 +429,7 @@ void HVE2DPolygonOfSegments::Simplify()
     {
     HINVARIANTS;
 
-    double x1;
-    double y1;
-    double x2;
-    double y2;
-
-    // x0*(y1-y2) - y0*(x1-x2) + ((x1*y2) - (x2*y1))
-
-    // The first and last points must be equal (WITHOUT EPSILON)
-    HPRECONDITION(m_PolySegment.GetPoints()[0] == m_PolySegment.GetPoints()[m_PolySegment.GetSize() - 1]);
-
-    // The polygon of segments is not empty
-    // First stage is to eliminate all colinear consecutive segments
-    // The polygon of segments is not empty ... it has at least three points
-    // For every segment, check if two consecutive form a single segments
-    HGF2DPositionCollection::iterator Itr = m_PolySegment.GetPoints().begin();
-    HGF2DPositionCollection::iterator NextItr = Itr;
-    ++NextItr;
-    HGF2DPositionCollection::iterator SecondNextItr = NextItr;
-    ++SecondNextItr;
-    for (; SecondNextItr != m_PolySegment.GetPoints().end() ; ++SecondNextItr)
-        {
-        x1 = NextItr->GetX() - Itr->GetX();
-        y1 = NextItr->GetY() - Itr->GetY();
-        x2 = SecondNextItr->GetX() - Itr->GetX();
-        y2 = SecondNextItr->GetY() - Itr->GetY();
-
-        double Det = ((x1*y2) - (x2*y1)); // Determinant is 2 times the area of the triangle formed by three points.
-
-        double Length1 = sqrt (x1*x1 + y1*y1);
-        double Length2 = sqrt (x2*x2 + y2*y2);
-
-        double MaxLength = MAX(Length1, Length2);
-
-        double AreaTolerance = MaxLength * GetTolerance();
-
-        if (HNumeric<double>::EQUAL (Det, 0.0, AreaTolerance))
-            {
-            // Points are colinear ...
-            // Middle one will be removed
-            NextItr = m_PolySegment.GetPoints().erase(NextItr);
-
-            SecondNextItr = NextItr;
-            }
-        else
-            {
-            // Advance iterators
-            Itr = NextItr;
-            NextItr = SecondNextItr;
-            }
-        }
-
-    // There is still the first triplet to check
-    // Get last point (different from start ... this is next to last point)
-    HGF2DPositionCollection::reverse_iterator LastItr = m_PolySegment.GetPoints().rbegin();
-    ++LastItr;
-    NextItr = m_PolySegment.GetPoints().begin();
-    SecondNextItr = NextItr;
-    ++SecondNextItr;
-
-    // Check if points are colinear (They should not be equal)
-    if ((((HGF2DLocation(*SecondNextItr, GetCoordSys()) -
-           HGF2DLocation(*NextItr, GetCoordSys())).CalculateBearing().IsEqualTo
-          ((HGF2DLocation(*NextItr, GetCoordSys()) -
-            HGF2DLocation(*LastItr, GetCoordSys())).CalculateBearing()))))
-        {
-        // Points are colinear ...
-        // first one will be removed
-        m_PolySegment.GetPoints().erase(NextItr);
-
-        // Set last point to new first point
-        m_PolySegment.GetPoints().back() = m_PolySegment.GetPoints()[0];
-
-        m_PolySegment.SetLinearStartPoint(HGF2DLocation(m_PolySegment.GetPoints().front(), GetCoordSys()));
-
-        m_PolySegment.SetLinearEndPoint(m_PolySegment.GetStartPoint());
-        }
-
-    HPOSTCONDITION(m_PolySegment.GetPoints()[0] == m_PolySegment.GetPoints()[m_PolySegment.GetSize() - 1]);
-
+    m_PolySegment.Simplify(true);
 
     }
 
@@ -724,18 +635,11 @@ HVE2DPolygonOfSegments::HVE2DPolygonOfSegments(const HGF2DPolygonOfSegments&  pi
     HGF2DPositionCollection::const_iterator CoordItr = rCoordCollection.begin();
 
     // Pre-allocate points
-    m_PolySegment.GetPoints().reserve(rCoordCollection.size());
+    m_PolySegment.Reserve(rCoordCollection.size());
 
     // For every point
     for ( ; CoordItr != rCoordCollection.end() ; ++CoordItr)
-        {
-        // Copy point
-        m_PolySegment.GetPoints().push_back(HGF2DPosition(CoordItr->GetX(), CoordItr->GetY()));
-        }
-
-    // Adjust start and end points
-    m_PolySegment.SetLinearStartPoint(HGF2DLocation(m_PolySegment.GetPoints()[0], pi_rpCoordSys));
-    m_PolySegment.SetLinearEndPoint(HGF2DLocation (m_PolySegment.GetPoints()[m_PolySegment.GetPoints().size() - 1], pi_rpCoordSys));
+        m_PolySegment.AppendPosition(*CoordItr);
 
     // Adjust tolerance if needed
     ResetTolerance();
@@ -1032,18 +936,7 @@ void HVE2DPolygonOfSegments::Scale(double              pi_ScaleFactorX,
     HPRECONDITION(pi_ScaleFactorX != 0.0);
     HPRECONDITION(pi_ScaleFactorY != 0.0);
 
-    // Obtain scale origin in self coordinate system
-    HGF2DLocation   ScaleOrigin(pi_rScaleOrigin, GetCoordSys());
-    double ScaleOriginX = ScaleOrigin.GetX();
-    double ScaleOriginY = ScaleOrigin.GetY();
-
-    // For every part ... scale
-    for(size_t Index = 0 ; Index < m_PolySegment.GetSize() ; Index++)
-        {
-        m_PolySegment.GetPoints()[Index][HGF2DPosition::X] += pi_ScaleFactorX * (ScaleOriginX - m_PolySegment.GetPosition(Index)[HGF2DPosition::X]);
-        m_PolySegment.GetPoints()[Index][HGF2DPosition::Y] += pi_ScaleFactorY * (ScaleOriginY - m_PolySegment.GetPosition(Index)[HGF2DPosition::Y]);
-        }
-
+    m_PolySegment.Scale(pi_ScaleFactorX, pi_ScaleFactorY, pi_rScaleOrigin);
     // Reset tolerance
     ResetTolerance();
 
@@ -1103,6 +996,8 @@ bool HVE2DPolygonOfSegments::IsConvex() const
     HINVARIANTS;
 
     bool Result = true;
+
+// &&AR TO WORK
 
     // Check if there are at least 3 points
     if (m_PolySegment.GetSize() > 3)
@@ -2130,8 +2025,7 @@ HVE2DShape* HVE2DPolygonOfSegments::DifferentiateFromCrossingPolygonSCS(const HV
     // Perform decomposition process
     bool haveDecomposeException = Decompose(pi_rPolygon, pi_rPoly1, pi_rPoly2, HVE2DPolygonOfSegments::DIFFFROM, MyListOfPolygons);
 
-    //&&AR TODO haveDecomposeException. for now return void.
- 
+
     // In the case of a differentiation, all the different shapes returned are disjoint
     if (haveDecomposeException || MyListOfPolygons.size() == 0)
         {
@@ -3333,12 +3227,12 @@ bool HVE2DPolygonOfSegments::SuperScan(const HVE2DPolygonOfSegments&  pi_rGiven,
 
                 // Append this linear to our new linear if it follows some conditions
                 // Check if there are already two points in result
-                if (pMyNewPoly->m_PolySegment.GetPoints().size() >= 2)
+                if (pMyNewPoly->m_PolySegment.GetSize() >= 2)
                     {
                     // There are more than 2 points ... verify
                     // that current point is different from next before last
                     if (CurrentPoint.IsEqualTo(
-                            pMyNewPoly->m_PolySegment.GetPoints()[pMyNewPoly->m_PolySegment.GetPoints().size() - 2],
+                            pMyNewPoly->m_PolySegment.GetPoints()[pMyNewPoly->m_PolySegment.GetSize() - 2],
                             Tolerance))
                         {
                         // We have a backtrack ... this occurs rarely for minuscule segments
@@ -3357,8 +3251,8 @@ bool HVE2DPolygonOfSegments::SuperScan(const HVE2DPolygonOfSegments&  pi_rGiven,
                 // polgygon produce this kind of error, so we will go to
                 // process irregular shapes.
                 IrregularShapes = IrregularShapes ||
-                                  (pMyNewPoly->m_PolySegment.GetPoints().size() > MaximumNumberOfPointsPerShape);
-//              HASSERTDUMP2(pMyNewPoly->m_PolySegment.GetPoints().size() <= MaximumNumberOfPointsPerShape,
+                                  (pMyNewPoly->m_PolySegment.GetSize() > MaximumNumberOfPointsPerShape);
+//              HASSERTDUMP2(pMyNewPoly->m_PolySegment.GetSize() <= MaximumNumberOfPointsPerShape,
 //                             *this,
 //                             pi_rGiven);
 
@@ -3370,7 +3264,7 @@ bool HVE2DPolygonOfSegments::SuperScan(const HVE2DPolygonOfSegments&  pi_rGiven,
                 {
                 // Check if there are any points in result ... yes this may occur
                 // If it is empty we do not add it ...
-                if (pMyNewPoly->m_PolySegment.GetPoints().size() > 2)
+                if (pMyNewPoly->m_PolySegment.GetSize() > 2)
                     {
                     // Check if points are exactly equal ... DO NOT USE EPSILON
 
@@ -3738,12 +3632,12 @@ bool HVE2DPolygonOfSegments::SuperScan2(const HVE2DPolygonOfSegments&  pi_rGiven
 
                 // Append this linear to our new linear if it follows some conditions
                 // Check if there are already two points in result
-                if (pMyNewPoly->m_PolySegment.GetPoints().size() >= 2)
+                if (pMyNewPoly->m_PolySegment.GetSize() >= 2)
                     {
                     // There are more than 2 points ... verify
                     // that current point is different from next before last
                     if (CurrentPoint.IsEqualTo(
-                            pMyNewPoly->m_PolySegment.GetPoints()[pMyNewPoly->m_PolySegment.GetPoints().size() - 2],
+                            pMyNewPoly->m_PolySegment.GetPoints()[pMyNewPoly->m_PolySegment.GetSize() - 2],
                             Tolerance))
                         {
                         // We have a backtrack ... this occurs rarely for minuscule segments
@@ -3757,7 +3651,7 @@ bool HVE2DPolygonOfSegments::SuperScan2(const HVE2DPolygonOfSegments&  pi_rGiven
                 pMyNewPoly->m_PolySegment.GetPoints().push_back(CurrentPoint);
 
                 // The number of points may not be greater than the maximum allowed
-                HASSERTDUMP2(pMyNewPoly->m_PolySegment.GetPoints().size() <= MaximumNumberOfPointsPerShape,
+                HASSERTDUMP2(pMyNewPoly->m_PolySegment.GetSize() <= MaximumNumberOfPointsPerShape,
                              *this,
                              pi_rGiven);
 
@@ -3817,7 +3711,7 @@ bool HVE2DPolygonOfSegments::SuperScan2(const HVE2DPolygonOfSegments&  pi_rGiven
 
             // Check if there are any points in result ... yes this may occur
             // If it is empty we do not add it ...
-            if (pMyNewPoly->m_PolySegment.GetPoints().size() > 2)
+            if (pMyNewPoly->m_PolySegment.GetSize() > 2)
                 {
                 // Check if points are exactly equal ... DO NOT USE EPSILON
                 //!!!! MICROSOFT VISUAL C++ ON ALPHA : Workaround for a compiler bug
@@ -4464,14 +4358,8 @@ void HVE2DPolygonOfSegments::Drop(HGF2DLocationCollection* po_pPoints,
         // Reserve space for all points
         po_pPoints->reserve(m_PolySegment.GetSize());
 
-        // Create iterator
-        HGF2DPositionCollection::const_iterator Itr = m_PolySegment.GetPoints().begin();
-
-        // Add points
-        for ( ; Itr != m_PolySegment.GetPoints().end() ; Itr++)
-            {
-            po_pPoints->push_back(HGF2DLocation(*Itr, GetCoordSys()));
-            }
+        for (size_t index = 0 ; index < m_PolySegment.GetSize() ; index++)
+            po_pPoints->push_back(HGF2DLocation(m_PolySegment.GetPosition(index), GetCoordSys()));
         }
     }
 
@@ -4609,11 +4497,10 @@ HVE2DShape::SpatialPosition HVE2DPolygonOfSegments::CalculateSpatialPositionOfNo
         // Obtain position of points until something
         // else that ON is returned.
 
-        HGF2DPositionCollection::const_iterator Itr = pi_rPolygon.m_PolySegment.GetPoints().begin();
-
-        // Obtain the position of each point until IN or OUT is obtained
-        for (ThePosition = HVE2DShape::S_ON; Itr != pi_rPolygon.m_PolySegment.GetPoints().end() && ThePosition == HVE2DShape::S_ON ; ++Itr)
-            ThePosition = CalculateSpatialPositionOfPosition(*Itr, Tolerance);
+        size_t index = 0;
+        for (ThePosition = HVE2DShape::S_ON; index < pi_rPolygon.m_PolySegment.GetSize() && ThePosition == HVE2DShape::S_ON ; index++)
+            ThePosition = CalculateSpatialPositionOfPosition(pi_rPolygon.m_PolySegment.GetPosition(index));
+            
 
         // Check that this point is not ON
         if (ThePosition == HVE2DShape::S_ON)
@@ -4621,10 +4508,9 @@ HVE2DShape::SpatialPosition HVE2DPolygonOfSegments::CalculateSpatialPositionOfNo
             // Since all points are ON we cannot conclude ... we must analyse the position of self
             // relative to given polygon of segments
             // Obtain the position of each point until IN or OUT is obtained
-            HGF2DPositionCollection::const_iterator Itr = m_PolySegment.GetPoints().begin();
-            for (; Itr != m_PolySegment.GetPoints().end() && ThePosition == HVE2DShape::S_ON ; ++Itr)
-                ThePosition = pi_rPolygon.CalculateSpatialPositionOfPosition(*Itr, Tolerance);
-
+            for (size_t index2 = 0 ; index2 < m_PolySegment.GetSize() && ThePosition == HVE2DShape::S_ON ; index2++)
+                ThePosition = pi_rPolygon.CalculateSpatialPositionOfPosition(m_PolySegment.GetPosition(index2), Tolerance); 
+            
             // Check that this point is not ON
             if (ThePosition != HVE2DShape::S_ON)
                 {
@@ -4777,7 +4663,7 @@ HVE2DShape* HVE2DPolygonOfSegments::AllocateComplexShapeFromAutoContiguousPolySe
 
 
     // For debugging purposes ... see below for condition
-    HDEBUGCODE(size_t MaxNumberOfPoints = pi_rPolySegment.GetPoints().size() * 3);
+    HDEBUGCODE(size_t MaxNumberOfPoints = pi_rPolySegment.GetSize() * 3);
 
     // First we search for a section of the polysegment which is not auto
     // contiguous to any other parts. The nature of the polysegment implies
@@ -4802,7 +4688,7 @@ HVE2DShape* HVE2DPolygonOfSegments::AllocateComplexShapeFromAutoContiguousPolySe
     HArrayAutoPtr<PointUsage> Flags(InsertAutoContiguousPoints(WorkPolySegment));
 
     // Create and initialize flags
-    size_t NumberOfFlags = WorkPolySegment.GetPoints().size();
+    size_t NumberOfFlags = WorkPolySegment.GetSize();
 
     // Since last point is a duplicate ... we desactivate
     Flags[NumberOfFlags - 1] = USED;
@@ -4820,12 +4706,12 @@ HVE2DShape* HVE2DPolygonOfSegments::AllocateComplexShapeFromAutoContiguousPolySe
     // Until all segments have been processed or are contiguous ...
     do
         {
-        CurrentPoint = WorkPolySegment.GetPoints()[Index];
+        CurrentPoint = WorkPolySegment.GetPosition(Index);
 
         if (Index == 0)
-            PreviousPoint = WorkPolySegment.GetPoints()[WorkPolySegment.GetPoints().size() - 2];
+            PreviousPoint = WorkPolySegment.GetPosition(WorkPolySegment.GetSize() - 2);
         else
-            PreviousPoint = WorkPolySegment.GetPoints()[Index - 1];
+            PreviousPoint = WorkPolySegment.GetPosition(Index - 1);
 
         // Save start point
         HGF2DPosition StartPoint = PreviousPoint;
@@ -4834,8 +4720,8 @@ HVE2DShape* HVE2DPolygonOfSegments::AllocateComplexShapeFromAutoContiguousPolySe
         HVE2DPolySegment NewPolySegment(WorkPolySegment.GetCoordSys());
 
         // Append start segment
-        NewPolySegment.GetPoints().push_back(PreviousPoint);
-        NewPolySegment.GetPoints().push_back(CurrentPoint);
+        NewPolySegment.AppendPosition(PreviousPoint);
+        NewPolySegment.AppendPosition(CurrentPoint);
         Flags[Index] = USED;
 
         do
@@ -4846,10 +4732,10 @@ HVE2DShape* HVE2DPolygonOfSegments::AllocateComplexShapeFromAutoContiguousPolySe
             PreviousPoint = CurrentPoint;
 
             // Adjust index for passage out of valid range
-            if (Index >= WorkPolySegment.GetPoints().size() - 1)
+            if (Index >= WorkPolySegment.GetSize() - 1)
                 Index = 0;
 
-            CurrentPoint = WorkPolySegment.GetPoints()[Index];
+            CurrentPoint = WorkPolySegment.GetPosition(Index);
 
             if (Flags[Index] == ON_POINT)
                 {
@@ -4859,39 +4745,39 @@ HVE2DShape* HVE2DPolygonOfSegments::AllocateComplexShapeFromAutoContiguousPolySe
                 // Find the linear which has current point as start point
                 for (Index = 0;
                      ((PrevIndex == Index) ||
-                      (Index < WorkPolySegment.GetPoints().size() &&
-                       !PreviousPoint.IsEqualTo(WorkPolySegment.GetPoints()[Index], Tolerance)));
+                      (Index < WorkPolySegment.GetSize() &&
+                       !PreviousPoint.IsEqualTo(WorkPolySegment.GetPosition(Index), Tolerance)));
                      Index++)
                     ;
 
                 // Make sure a valid point was found
-                HASSERTDUMP2(Index < WorkPolySegment.GetPoints().size(), *this, pi_rPolySegment);
+                HASSERTDUMP2(Index < WorkPolySegment.GetSize(), *this, pi_rPolySegment);
 
                 // Adjust index for overflow (we want point next to one found)
-                if (Index >= WorkPolySegment.GetPoints().size() - 2)
+                if (Index >= WorkPolySegment.GetSize() - 2)
                     {
                     // Index overflow ... we take first point
-                    CurrentPoint = WorkPolySegment.GetPoints()[0];
-                    PrevIndex = WorkPolySegment.GetPoints().size() - 2;
+                    CurrentPoint = WorkPolySegment.GetPosition(0);
+                    PrevIndex = WorkPolySegment.GetSize() - 2;
                     Index = 0;
                     }
                 else
                     {
                     // No overflow ... take next point
-                    CurrentPoint = WorkPolySegment.GetPoints()[Index+1];
+                    CurrentPoint = WorkPolySegment.GetPosition(Index+1);
                     PrevIndex = Index;
                     Index++;
                     }
                 }
 
             // Add new point in polysegment
-            NewPolySegment.GetPoints().push_back(CurrentPoint);
+            NewPolySegment.AppendPosition(CurrentPoint);
 
             // Indicate this part has been processed (discarded)
             Flags[Index] = USED;
 
             // Check if we are not in an infinite loop
-            HASSERTDUMP(MaxNumberOfPoints > NewPolySegment.GetPoints().size(), pi_rPolySegment);
+            HASSERTDUMP(MaxNumberOfPoints > NewPolySegment.GetSize(), pi_rPolySegment);
 
             }
         while (!CurrentPoint.IsEqualTo(StartPoint, Tolerance));
@@ -4899,13 +4785,14 @@ HVE2DShape* HVE2DPolygonOfSegments::AllocateComplexShapeFromAutoContiguousPolySe
 
         // We have a new polysegment
         // Set start and end point.
-        NewPolySegment.SetLinearStartPoint(HGF2DLocation(NewPolySegment.GetPoints()[0], NewPolySegment.GetCoordSys()));
-        NewPolySegment.SetLinearEndPoint(HGF2DLocation(NewPolySegment.GetPoints()[0], NewPolySegment.GetCoordSys()));
+        NewPolySegment.SetLinearStartPoint(HGF2DLocation(NewPolySegment.GetPosition(0), NewPolySegment.GetCoordSys()));
+        NewPolySegment.SetLinearEndPoint(HGF2DLocation(NewPolySegment.GetPosition(0), NewPolySegment.GetCoordSys()));
 
         // The end point must be approximatively equal to start point (within tolerance)
-        HASSERT(NewPolySegment.GetPoints()[0].IsEqualTo(NewPolySegment.GetPoints()[NewPolySegment.GetPoints().size() - 1], Tolerance));
+        HASSERT(NewPolySegment.GetPosition(0).IsEqualTo(NewPolySegment.GetPosition(NewPolySegment.GetSize() - 1), Tolerance));
 
-        NewPolySegment.GetPoints()[NewPolySegment.GetPoints().size() - 1] = NewPolySegment.GetPoints()[0];
+// &&AR Remove GetPoints()
+        NewPolySegment.GetPoints()[NewPolySegment.GetSize() - 1] = NewPolySegment.GetPosition(0);
 
         // Reset tolerance
         NewPolySegment.SetAutoToleranceActive(pi_rPolySegment.IsAutoToleranceActive());
@@ -4913,7 +4800,7 @@ HVE2DShape* HVE2DPolygonOfSegments::AllocateComplexShapeFromAutoContiguousPolySe
         NewPolySegment.ResetTolerance();
 
 
-        HASSERTDUMP(NewPolySegment.GetPoints().size() > 3, pi_rPolySegment);
+        HASSERTDUMP(NewPolySegment.GetSize() > 3, pi_rPolySegment);
 
         // Add new polysegment to complex shape
         pResultComplex->AddShape(HVE2DPolygonOfSegments(NewPolySegment));
@@ -4983,13 +4870,13 @@ HVE2DPolygonOfSegments::PointUsage* HVE2DPolygonOfSegments::InsertAutoContiguous
     vector<PointUsage> MyPointsUsage;
 
     // Reserve some space
-    MyPointsUsage.reserve(pio_rPolySegment.GetPoints().size());
+    MyPointsUsage.reserve(pio_rPolySegment.GetSize());
     vector<PointUsage>::iterator MyPointsUsageItr;
     vector<PointUsage>::iterator MyOtherPointsUsageItr;
 
     // Insert and initialize all points usage to UNKNOWN
     size_t MyPointsUsageIndex = 0;
-    for (; MyPointsUsageIndex < pio_rPolySegment.GetPoints().size(); ++MyPointsUsageIndex)
+    for (; MyPointsUsageIndex < pio_rPolySegment.GetSize(); ++MyPointsUsageIndex)
         {
         MyPointsUsage.push_back(UNKNOWN);
         }
@@ -5155,7 +5042,7 @@ HVE2DPolygonOfSegments::PointUsage* HVE2DPolygonOfSegments::InsertAutoContiguous
         }
 
     // The first point flag is a copy of last point flag
-    MyPointsUsage[0] = MyPointsUsage[pio_rPolySegment.GetPoints().size() - 1];
+    MyPointsUsage[0] = MyPointsUsage[pio_rPolySegment.GetSize() - 1];
 
     // Copy point usage to array of usage
     HArrayAutoPtr<PointUsage> aFlags(new PointUsage[MyPointsUsage.size()]);
@@ -5503,7 +5390,7 @@ void HVE2DPolygonOfSegments::Rasterize(HGFScanLines& pio_rScanlines) const
     HASSERT(pio_rScanlines.GetScanlinesCoordSys() == GetCoordSys());
 
     // Check if shape is not empty
-    if (m_PolySegment.GetPoints().size() >= 3)
+    if (m_PolySegment.GetSize() >= 3)
         {
         if (!pio_rScanlines.LimitsAreSet())
             {

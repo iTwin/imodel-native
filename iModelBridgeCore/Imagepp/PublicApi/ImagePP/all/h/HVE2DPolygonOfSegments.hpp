@@ -52,12 +52,6 @@ inline HVE2DPolygonOfSegments::HVE2DPolygonOfSegments(const HVE2DPolygonOfSegmen
 inline HVE2DPolygonOfSegments::~HVE2DPolygonOfSegments()
     {
     HINVARIANTS;
-
-#if (0)
-	// &&AR Unnecessary!
-    // Clear list of points
-    m_PolySegment.GetPoints().clear();
-#endif
     }
 
 //-----------------------------------------------------------------------------

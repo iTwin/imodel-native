@@ -173,10 +173,6 @@ public:
     return(pResultShape);
     }
 
-//-----------------------------------------------------------------------------
-// private inline method
-//-----------------------------------------------------------------------------
-
 
 //-----------------------------------------------------------------------------
 // CalculateSpatialPositionOfPositionSegment2
@@ -187,7 +183,7 @@ public:
 // This method is equivalent to CalculateSpatialPositionOfPositionSegment
 // however will not make errors and will process multi-flirting segments.
 //-----------------------------------------------------------------------------
-inline HGF2DShape::SpatialPosition HGF2DPolygonOfSegments::CalculateSpatialPositionOfPositionSegment2(const HGF2DLiteExtent& pi_rSelfLiteExtent,
+HGF2DShape::SpatialPosition HGF2DPolygonOfSegments::CalculateSpatialPositionOfPositionSegment2(const HGF2DLiteExtent& pi_rSelfLiteExtent,
         const HGF2DPosition&   pi_rStartPoint,
         const HGF2DPosition&   pi_rEndPoint,
         double                pi_Tolerance) const
@@ -243,9 +239,6 @@ inline HGF2DShape::SpatialPosition HGF2DPolygonOfSegments::CalculateSpatialPosit
 
     return(MyPartPosition);
     }
-//-----------------------------------------------------------------------------
-// end private inline method
-//-----------------------------------------------------------------------------
 
 
 

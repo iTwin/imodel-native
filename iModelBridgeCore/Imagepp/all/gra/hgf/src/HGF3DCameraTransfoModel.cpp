@@ -2,10 +2,10 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGF3DCameraTransfoModel.cpp $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
-// Class : KGI3DCameraTransfoModel (inline methods)
+// Class : KGI3DCameraTransfoModel 
 //-----------------------------------------------------------------------------
 
 #include "hstdcpp.h"

@@ -188,6 +188,23 @@ bool HVE2DPolySegment::IsAutoContiguous() const
     return GetPolySegmentPeer().IsAutoContiguous();
     }
 
+//-----------------------------------------------------------------------------
+// Constructor (by provided peer)
+//-----------------------------------------------------------------------------
+HVE2DPolySegment::HVE2DPolySegment(HGF2DPolySegment* peerPolySegment, const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys)
+: HVE2DBasicLinear(pi_rpCoordSys),
+  m_ExtentUpToDate(false),
+  m_Extent(pi_rpCoordSys)
+    {
+    m_VolatilePeer = false;
+    m_Peer = peerPolySegment;
+    SetLinearStartPoint(HGF2DLocation(peerPolySegment->GetStartPoint(), pi_rpCoordSys));
+    SetLinearEndPoint(HGF2DLocation(peerPolySegment->GetEndPoint(), pi_rpCoordSys));
+
+    SetAutoToleranceActive(peerPolySegment->IsAutoToleranceActive());
+    SetTolerance(peerPolySegment->GetTolerance());
+    HINVARIANTS;
+    }
 
 //-----------------------------------------------------------------------------
 // Constructor (by list of positions)
@@ -344,7 +361,7 @@ HGFBearing HVE2DPolySegment::CalculateBearing(const HGF2DLocation& pi_rPoint,
 // GetExtent
 // Returns the extent of the polysegment
 //-----------------------------------------------------------------------------
-inline HGF2DExtent HVE2DPolySegment::GetExtent() const
+HGF2DExtent HVE2DPolySegment::GetExtent() const
     {
     HINVARIANTS;
 
@@ -385,6 +402,34 @@ void HVE2DPolySegment::Scale(double pi_ScaleFactor, const HGF2DLocation& pi_rSca
 
     }
 
+
+//-----------------------------------------------------------------------------
+// Scale
+// This method scales the polygon by the specified scaling factor
+// around the given location
+//-----------------------------------------------------------------------------
+void HVE2DPolySegment::Scale(double              pi_ScaleFactorX,
+                             double              pi_ScaleFactorY,
+                             const HGF2DLocation& pi_rScaleOrigin)
+    {
+    HINVARIANTS;
+
+    // The given scale factors must be different from 0.0
+    HPRECONDITION(pi_ScaleFactorX != 0.0);
+    HPRECONDITION(pi_ScaleFactorY != 0.0);
+
+    GetPolySegmentPeer().Scale(pi_ScaleFactorX, pi_ScaleFactorY, pi_rScaleOrigin.ExpressedIn(GetCoordSys()).GetPosition());
+
+    SetLinearStartPoint(HGF2DLocation(GetPolySegmentPeer().GetStartPoint(), GetCoordSys()));
+    SetLinearEndPoint(HGF2DLocation(GetPolySegmentPeer().GetEndPoint(), GetCoordSys())); 
+
+    // Indicate extent is not up to date anymore
+    m_ExtentUpToDate = false;
+
+    // Adjust tolerance
+    ResetTolerance();   
+
+    }
 
 //-----------------------------------------------------------------------------
 // SetCoordSysImplementation
@@ -1086,92 +1131,13 @@ HVE2DVector* HVE2DPolySegment::AllocateCopyInCoordSys(const HFCPtr<HGF2DCoordSys
         }
     else
         {
-// &&AR #if (USING_PEER)
-#if (1)
+
         HFCPtr<HGF2DTransfoModel> pModel = GetCoordSys()->GetTransfoModelTo(pi_rpCoordSys);
     
         HFCPtr<HGF2DPolySegment> newPolySegment = GetPolySegmentPeer().AllocPolySegmentTransformDirect(*pModel);
         
         pMyResultVector.reset(new HVE2DPolySegment(new HGF2DPolySegment(*newPolySegment), pi_rpCoordSys));
-#else
-        // Check if this model between coordinate systems is linearity preserving
-        if (GetCoordSys()->HasLinearityPreservingRelationTo(pi_rpCoordSys))
-            {
-            // The model preserves linearity ... we can transform the points directly
 
-            // We will compute the appropriate tolerance on the fly (default is global epsilon)
-            double Tolerance = HGLOBAL_EPSILON;
-
-            // Create recipient polysegment
-            HAutoPtr<HVE2DPolySegment> pMyResultPolySegment(new HVE2DPolySegment(pi_rpCoordSys));
-
-            // For all points ...
-            HGF2DPositionCollection::const_iterator Itr(GetPoints().begin());
-            while (Itr != GetPoints().end())
-                {
-                // Transform position to a location
-                HGF2DLocation Point(*Itr, GetCoordSys());
-                ++Itr;
-
-                // Transform point
-                Point.ChangeCoordSys(pi_rpCoordSys);
-
-                Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(Point.GetX()));
-                Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(Point.GetY()));
-
-                // HChk MR
-                // We apply the currently calculated Tolerance when comparing two
-                // positions together. This is better than using the default Epsilon,
-                // but I'm not sure that it's OK.
-
-                // Add point to new PolySegment IFF it is not a double point
-                if (pMyResultPolySegment->GetPoints().size() == 0)
-                    {
-                    pMyResultPolySegment->GetPoints().push_back(Point.GetPosition());
-                    }
-                else
-                    {
-                    if (Point.GetPosition().IsEqualTo(*pMyResultPolySegment->GetPoints().rbegin(), Tolerance))
-                        {
-                        if (Itr == GetPoints().end())
-                            {
-                            // Special case: Points are equal, but we can't remove the last
-                            // point. Therefore, we remove the one just before.
-                            pMyResultPolySegment->GetPoints().pop_back();
-                            pMyResultPolySegment->GetPoints().push_back(Point.GetPosition());
-                            }
-                        }
-                    else
-                        {
-                        pMyResultPolySegment->GetPoints().push_back(Point.GetPosition());
-                        }
-                    }
-                }
-
-            // Transform start and end points
-            pMyResultPolySegment->SetLinearStartPoint(GetStartPoint().ExpressedIn(pi_rpCoordSys));
-            pMyResultPolySegment->SetLinearEndPoint(GetEndPoint().ExpressedIn(pi_rpCoordSys));
-            pMyResultPolySegment->GetPolySegmentPeer().SetLinearStartPoint(pMyResultPolySegment->GetStartPoint().GetPosition());
-            pMyResultPolySegment->GetPolySegmentPeer().SetLinearEndPoint(pMyResultPolySegment->GetEndPoint().GetPosition());
-
-            // Reset tolerance of new polysegment
-            pMyResultPolySegment->SetTolerance(MIN(HMAX_EPSILON, Tolerance));
-
-            // Activate auto tolerance determination
-            pMyResultPolySegment->SetAutoToleranceActive(true);
-
-            // Move result polysegment to return variable
-            pMyResultVector.reset(pMyResultPolySegment.release());
-            }
-        else
-            {
-            // The model does not preserve linearity
-            // We process more completely
-            pMyResultVector.reset(AllocateCopyInComplexCoordSys(pi_rpCoordSys));
-            }
-
-        pMyResultVector->SetStrokeTolerance(m_pStrokeTolerance);
-#endif
         }
 
     return(pMyResultVector.release());
@@ -1300,7 +1266,6 @@ void HVE2DPolySegment::Shorten(double startRelativePos, double endRelativePos)
     {
     HINVARIANTS;
     
-    // &&AR TBD FindSegmentContainingPosition should be also used in HGF version
     GetPolySegmentPeer().Shorten(startRelativePos, endRelativePos);
     SetLinearStartPoint(HGF2DLocation(GetPolySegmentPeer().GetStartPoint(), GetCoordSys()));
     SetLinearEndPoint(HGF2DLocation(GetPolySegmentPeer().GetEndPoint(), GetCoordSys()));
@@ -2492,7 +2457,7 @@ HVE2DVector* HVE2DPolySegment::AllocateCopyInComplexCoordSys(const HFCPtr<HGF2DC
 // PRIVATE method
 // Recalculates the tolerance if needed and permitted
 //-----------------------------------------------------------------------------
-inline void HVE2DPolySegment::ResetTolerance()
+void HVE2DPolySegment::ResetTolerance()
     {
 
     GetPolySegmentPeer().ResetTolerance();
@@ -2578,10 +2543,25 @@ void HVE2DPolySegment::PrintState(ostream& po_rOutput) const
 #endif
     }
 
+//-----------------------------------------------------------------------------
+// Simplify()
+// PRIVATE METHOD
+// Simplifies the linear
+//-----------------------------------------------------------------------------
+void HVE2DPolySegment::Simplify(bool processAsClosed)
+    {
+    HINVARIANTS;
+
+    GetPolySegmentPeer().Simplify(processAsClosed);
+
+    // Make sure that start and end point are still equal
+    SetLinearStartPoint(HGF2DLocation(GetPolySegmentPeer().GetStartPoint(), GetCoordSys()));
+    SetLinearEndPoint(HGF2DLocation(GetPolySegmentPeer().GetEndPoint(), GetCoordSys()));
+    }
 
 
 // &&AR IS IT NEEDED?
-
+#if (1)
 
 //-----------------------------------------------------------------------------
 // SplitIntoNonAutoCrossing
@@ -2918,3 +2898,4 @@ void HVE2DPolySegment::SortPointsAccordingToRelativePosition(HGF2DLocationCollec
         }
     }
 
+#endif

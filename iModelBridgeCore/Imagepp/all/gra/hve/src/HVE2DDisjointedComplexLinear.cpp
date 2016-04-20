@@ -489,7 +489,7 @@ HVE2DDisjointedComplexLinear& HVE2DDisjointedComplexLinear::operator=(const HVE2
 // Returns the description of linear in the form of raw location
 // segments
 //-----------------------------------------------------------------------------
-inline void HVE2DDisjointedComplexLinear::Drop(HGF2DLocationCollection* po_pPoints,
+void HVE2DDisjointedComplexLinear::Drop(HGF2DLocationCollection* po_pPoints,
                                                double                   pi_Tolerance,
                                                EndPointProcessing       pi_EndPointProcessing) const
     {

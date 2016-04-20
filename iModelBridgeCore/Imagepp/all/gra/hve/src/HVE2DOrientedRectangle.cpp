@@ -977,7 +977,7 @@ HVE2DShape::SpatialPosition HVE2DOrientedRectangle::CalculateSpatialPositionOfNo
 // AreAdjacent
 // This method checks if the rectangle is adjacent with given vector.
 //-----------------------------------------------------------------------------
-inline bool HVE2DOrientedRectangle::AreAdjacent(const HVE2DVector& pi_rVector) const
+bool HVE2DOrientedRectangle::AreAdjacent(const HVE2DVector& pi_rVector) const
     {
     return (HVE2DSegment(HGF2DLocation(m_XMin, m_YMin, GetCoordSys()), HGF2DLocation(m_XMin, m_YMax, GetCoordSys())).AreAdjacent(pi_rVector) ||
             HVE2DSegment(HGF2DLocation(m_XMin, m_YMax, GetCoordSys()), HGF2DLocation(m_XMax, m_YMax, GetCoordSys())).AreAdjacent(pi_rVector) ||
@@ -989,7 +989,7 @@ inline bool HVE2DOrientedRectangle::AreAdjacent(const HVE2DVector& pi_rVector) c
 // AreContiguous
 // This method checks if the rectangle is contiguous with given vector.
 //-----------------------------------------------------------------------------
-inline bool HVE2DOrientedRectangle::AreContiguous(const HVE2DVector& pi_rVector) const
+bool HVE2DOrientedRectangle::AreContiguous(const HVE2DVector& pi_rVector) const
     {
     return (HVE2DSegment(HGF2DLocation(m_XMin, m_YMin, GetCoordSys()), HGF2DLocation(m_XMin, m_YMax, GetCoordSys())).AreContiguous(pi_rVector) ||
             HVE2DSegment(HGF2DLocation(m_XMin, m_YMax, GetCoordSys()), HGF2DLocation(m_XMax, m_YMax, GetCoordSys())).AreContiguous(pi_rVector) ||

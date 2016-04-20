@@ -1472,7 +1472,7 @@ bool HVE2DComplexLinear::AutoCrosses() const
 // Finds and returns all auto intersection points of linear
 // INCOMPLETE ????
 //-----------------------------------------------------------------------------
-inline int32_t HVE2DComplexLinear::AutoIntersect(HGF2DLocationCollection* po_pPoints) const
+int32_t HVE2DComplexLinear::AutoIntersect(HGF2DLocationCollection* po_pPoints) const
     {
     HPRECONDITION(po_pPoints);
 
@@ -2618,9 +2618,9 @@ void HVE2DComplexLinear::PrintState(ostream& po_rOutput) const
 // Returns the description of linear in the form of raw location
 // segments
 //-----------------------------------------------------------------------------
-inline void HVE2DComplexLinear::Drop(HGF2DLocationCollection* po_pPoints,
-                                     double                   pi_Tolerance,
-                                     EndPointProcessing       pi_EndPointProcessing) const
+void HVE2DComplexLinear::Drop(HGF2DLocationCollection* po_pPoints,
+                              double                   pi_Tolerance,
+                              EndPointProcessing       pi_EndPointProcessing) const
     {
     HPRECONDITION(po_pPoints != 0);
 

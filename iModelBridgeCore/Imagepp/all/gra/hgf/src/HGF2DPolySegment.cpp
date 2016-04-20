@@ -1355,7 +1355,7 @@ HGFBearing HGF2DPolySegment::CalculateBearing(const HGF2DPosition& pi_rPoint,
 // GetExtent
 // Returns the extent of the polysegment
 //-----------------------------------------------------------------------------
-inline HGF2DLiteExtent HGF2DPolySegment::GetExtent() const
+HGF2DLiteExtent HGF2DPolySegment::GetExtent() const
     {
     HINVARIANTS;
 
@@ -1482,7 +1482,41 @@ void HGF2DPolySegment::Scale(double pi_ScaleFactor, const HGF2DPosition& pi_rSca
     }
 
 
+//-----------------------------------------------------------------------------
+// Scale
+// This method scales the polygon by the specified scaling factor
+// around the given location
+//-----------------------------------------------------------------------------
+void HGF2DPolySegment::Scale(double                pi_ScaleFactorX,
+                             double                pi_ScaleFactorY,
+                             const HGF2DPosition&  pi_rScaleOrigin)
+    {
+    HINVARIANTS;
 
+    // The given scale factors must be different from 0.0
+    HPRECONDITION(pi_ScaleFactorX != 0.0);
+    HPRECONDITION(pi_ScaleFactorY != 0.0);
+
+    // Obtain scale origin in self coordinate system
+    double ScaleOriginX = pi_rScaleOrigin.GetX();
+    double ScaleOriginY = pi_rScaleOrigin.GetY();
+
+    // For every part ... scale
+    for(size_t Index = 0 ; Index < m_Points.size() ; Index++)
+        {
+        m_Points[Index][HGF2DPosition::X] += pi_ScaleFactorX * (ScaleOriginX - m_Points[Index][HGF2DPosition::X]);
+        m_Points[Index][HGF2DPosition::Y] += pi_ScaleFactorY * (ScaleOriginY - m_Points[Index][HGF2DPosition::Y]);
+        }
+
+    SetLinearStartPoint(m_Points[0]);
+    SetLinearEndPoint(m_Points.back());
+
+    // Indicate extent in no more up to date
+    m_ExtentUpToDate = false;
+
+    // Calculate tolerance
+    ResetTolerance();
+    }
 
 //-----------------------------------------------------------------------------
 // AppendPoint
@@ -4898,7 +4932,7 @@ void HGF2DPolySegment::ObtainContiguousnessPointsWithPolySegmentAt(const HGF2DPo
 // PRIVATE method
 // Recalculates the tolerance if needed and permitted
 //-----------------------------------------------------------------------------
-inline void HGF2DPolySegment::ResetTolerance()
+void HGF2DPolySegment::ResetTolerance()
     {
     HINVARIANTS;
 
@@ -6155,4 +6189,103 @@ void HGF2DPolySegment::TransformAndAppendSegment(const HGF2DLiteSegment& pi_rSeg
 
     HINVARIANTS;
 
+    }
+
+
+//-----------------------------------------------------------------------------
+// Simplify()
+// PRIVATE METHOD
+// Simplifies the linear
+//-----------------------------------------------------------------------------
+void HGF2DPolySegment::Simplify(bool processAsClosed)
+    {
+    HINVARIANTS;
+
+    double x1;
+    double y1;
+    double x2;
+    double y2;
+
+    // x0*(y1-y2) - y0*(x1-x2) + ((x1*y2) - (x2*y1))
+
+    // The first and last points must be equal (WITHOUT EPSILON) if closed processing is to be performed
+    HPRECONDITION(!processAsClosed || GetStartPoint() == GetEndPoint());
+
+    // First stage is to eliminate all colinear consecutive segments
+    // The polygon of segments is not empty ... it has at least three points
+
+    if (m_Points.size() >= 3)
+        {
+        // For every segment, check if two consecutive form a single segments
+        HGF2DPositionCollection::iterator Itr = m_Points.begin();
+        HGF2DPositionCollection::iterator NextItr = Itr;
+        ++NextItr;
+        HGF2DPositionCollection::iterator SecondNextItr = NextItr;
+        ++SecondNextItr;
+
+        // Till second next point is last ...
+        for (; SecondNextItr != m_Points.end() ; ++SecondNextItr)
+            {
+            x1 = NextItr->GetX() - Itr->GetX();
+            y1 = NextItr->GetY() - Itr->GetY();
+            x2 = SecondNextItr->GetX() - Itr->GetX();
+            y2 = SecondNextItr->GetY() - Itr->GetY();
+
+            double Det = ((x1*y2) - (x2*y1)); // Determinant is 2 times the area of the triangle formed by three points.
+
+            double Length1 = sqrt (x1*x1 + y1*y1);
+            double Length2 = sqrt (x2*x2 + y2*y2);
+
+            double MaxLength = MAX(Length1, Length2);
+
+            double AreaTolerance = MaxLength * GetTolerance();
+
+            if (HNumeric<double>::EQUAL (Det, 0.0, AreaTolerance))
+                {
+                // Points are colinear ...
+                // Middle one will be removed
+                NextItr = m_Points.erase(NextItr);
+
+                SecondNextItr = NextItr;
+                }
+            else
+                {
+                // Advance iterators
+                Itr = NextItr;
+                NextItr = SecondNextItr;
+                }
+            }
+
+        // At this point all colinear segments have been removed except possibly the first and last is closed processing is requested.
+        if (processAsClosed)
+            {
+            // There is still the first triplet to check
+            // Get last point (different from start ... this is next to last point)
+            HGF2DPositionCollection::reverse_iterator LastItr = m_Points.rbegin();
+            ++LastItr;
+            NextItr = m_Points.begin();
+            SecondNextItr = NextItr;
+            ++SecondNextItr;
+
+            // Check if points are colinear (They should not be equal)
+            // Notice that here we did not use the matricial method
+            // &&AR Why did we not use the previous method.
+            if (((*SecondNextItr) - (*NextItr)).CalculateBearing().IsEqualTo(((*NextItr) - (*LastItr)).CalculateBearing()))
+                {
+                // Points are colinear ...
+                // first one will be removed
+                m_Points.erase(NextItr);
+
+                SetLinearStartPoint(m_Points.front());
+
+                // Set last point to new first point
+                m_Points.back() = m_Points[0];
+                SetLinearEndPoint(GetStartPoint());
+
+                }
+            }   
+        }
+
+    // If closed processing was requested then the first and last points must still be equal
+    HPRECONDITION(!processAsClosed || GetStartPoint() == GetEndPoint());
     }

@@ -88,7 +88,7 @@ inline HGF2DPolySegment& HGF2DPolySegment::operator=(const HGF2DPolySegment& pi_
 //-----------------------------------------------------------------------------
 inline HGF2DPosition HGF2DPolySegment::GetPoint(size_t pi_Index) const
     {
-    HINVARIANTS;
+    // &&AR TOO MANY HINVARIANTS;
 
     // The given index must be valid
     HPRECONDITION((pi_Index >= 0) && (pi_Index < m_Points.size()));
@@ -105,7 +105,8 @@ inline HGF2DPosition HGF2DPolySegment::GetPoint(size_t pi_Index) const
 //-----------------------------------------------------------------------------
 inline size_t HGF2DPolySegment::GetSize() const
     {
-    HINVARIANTS;
+    // &&AR Too many invariants
+    // HINVARIANTS;
 
     return m_Points.size();
     }

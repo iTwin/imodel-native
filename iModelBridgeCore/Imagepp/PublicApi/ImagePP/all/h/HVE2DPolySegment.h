@@ -44,6 +44,9 @@ public:
     IMAGEPP_EXPORT HVE2DPolySegment(const HGF2DPositionCollection& pi_rListOfPoints,
                      const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys);
     HVE2DPolySegment(const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys);
+    HVE2DPolySegment(HGF2DPolySegment* peerPolySegment, const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys);
+
+
     IMAGEPP_EXPORT                    HVE2DPolySegment(size_t  pi_BufferLength,
                                                double pi_aBuffer[],
                                                const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys);
@@ -55,10 +58,12 @@ public:
     // Setting and extracting
     IMAGEPP_EXPORT void               AppendPoint(const HGF2DLocation& pi_rNewPoint);
     IMAGEPP_EXPORT void               AppendPosition(const HGF2DPosition& pi_rNewPoint);
-    HGF2DLocation      GetPoint(size_t pi_Index) const;
-    HGF2DPosition      GetPosition(size_t pi_Index) const;
-    size_t             GetSize() const;
-    void               RemovePoint(size_t pi_Index);
+    HGF2DLocation       GetPoint(size_t pi_Index) const;
+    HGF2DPosition       GetPosition(size_t pi_Index) const;
+    size_t              GetSize() const;
+    void                RemovePoint(size_t pi_Index);
+
+    void                Simplify(bool processAsClosed);
 
     // Parallel Copy
     HVE2DPolySegment*  AllocateParallelCopy(double                             pi_Offset,
@@ -156,6 +161,11 @@ public:
     IMAGEPP_EXPORT virtual void       Scale(double pi_ScaleFactor,
                                     const HGF2DLocation& pi_rScaleOrigin);
 
+
+    IMAGEPP_EXPORT void Scale(double               pi_ScaleFactorX,
+                              double               pi_ScaleFactorY,
+                              const HGF2DLocation& pi_rScaleOrigin);
+
     // From HPMPersistentObject
     IMAGEPP_EXPORT virtual HPMPersistentObject*
                               Clone() const;
@@ -167,26 +177,11 @@ protected:
 
     IMAGEPP_EXPORT virtual void       SetCoordSysImplementation(const HFCPtr<HGF2DCoordSys>& pi_pCoordSys);
 
-// &&AR Move to CPP some of these!
-    HVE2DPolySegment(HGF2DPolySegment* peerPolySegment, const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys)
-    : HVE2DBasicLinear(pi_rpCoordSys),
-      m_ExtentUpToDate(false),
-      m_Extent(pi_rpCoordSys)
-        {
-        m_VolatilePeer = false;
-	    m_Peer = peerPolySegment;
-        SetLinearStartPoint(HGF2DLocation(peerPolySegment->GetStartPoint(), pi_rpCoordSys));
-        SetLinearEndPoint(HGF2DLocation(peerPolySegment->GetEndPoint(), pi_rpCoordSys));
-
-        SetAutoToleranceActive(peerPolySegment->IsAutoToleranceActive());
-        SetTolerance(peerPolySegment->GetTolerance());
-        HINVARIANTS;
-        }
 
     HGF2DPolySegment&  GetPolySegmentPeer() const
-                        {
-                        return (*static_cast<HGF2DPolySegment*>(&(GetPeer())));
-                        }
+        {
+        return (*static_cast<HGF2DPolySegment*>(&(GetPeer())));
+        }
                         
     void CreatePolySegmentPeer(const HGF2DPositionCollection& m_Points)
         {
@@ -255,55 +250,37 @@ private:
     IMAGEPP_EXPORT void               MakeEmpty();
     void                      ResetTolerance();
     bool IsContiguousToPolySegmentSCS(const HVE2DPolySegment& pi_rPolySegment) const;
-    bool IsContiguousToPolySegmentLRCS(const HVE2DPolySegment& pi_rPolySegment) const;
     bool IsContiguousToSegmentSCS(const HVE2DSegment& pi_rSegment) const;
-    bool IsContiguousToSegmentLRCS(const HVE2DSegment& pi_rSegment) const;
     bool IsContiguousToPolySegment(const HVE2DPolySegment& pi_rPolySegment) const;
     bool IsContiguousToSegment(const HVE2DSegment& pi_rSegment) const;
     bool IsContiguousToPolySegmentAtSCS(const HVE2DPolySegment& pi_rPolySegment,
                                          const HGF2DLocation&    pi_rPoint) const;
-    bool IsContiguousToPolySegmentAtLRCS(const HVE2DPolySegment& pi_rPolySegment,
-                                          const HGF2DLocation&    pi_rPoint) const;
     bool IsContiguousToSegmentAtSCS(const HVE2DSegment&  pi_rSegment,
                                      const HGF2DLocation& pi_rPoint) const;
-    bool IsContiguousToSegmentAtLRCS(const HVE2DSegment&  pi_rSegment,
-                                      const HGF2DLocation& pi_rPoint) const;
     bool IsContiguousToPolySegmentAt(const HVE2DPolySegment& pi_rPolySegment,
                                       const HGF2DLocation&    pi_rPoint) const;
     bool IsContiguousToSegmentAt(const HVE2DSegment&  pi_rSegment,
                                   const HGF2DLocation& pi_rPoint) const;
     bool CrossesPolySegmentSCS(const HVE2DPolySegment& pi_rPolySegment) const;
-    bool CrossesPolySegmentDPCS(const HVE2DPolySegment& pi_rPolySegment) const;
     bool CrossesSegmentSCS(const HVE2DSegment& pi_rSegment) const;
-    bool CrossesSegmentDPCS(const HVE2DSegment& pi_rSegment) const;
     bool CrossesPolySegment(const HVE2DPolySegment& pi_rPolySegment) const;
     bool CrossesSegment(const HVE2DSegment& pi_rSegment) const;
     bool IsAdjacentToPolySegmentSCS(const HVE2DPolySegment& pi_rPolySegment) const;
-    bool IsAdjacentToPolySegmentLRCS(const HVE2DPolySegment& pi_rPolySegment) const;
     bool IsAdjacentToSegmentSCS(const HVE2DSegment& pi_rSegment) const;
-    bool IsAdjacentToSegmentLRCS(const HVE2DSegment& pi_rSegment) const;
     bool IsAdjacentToPolySegment(const HVE2DPolySegment& pi_rPolySegment) const;
     bool IsAdjacentToSegment(const HVE2DSegment& pi_rSegment) const;
     size_t IntersectSegmentSCS(const HVE2DSegment& pi_rSegment,
                                HGF2DLocationCollection* po_pCrossPoints) const;
-    size_t IntersectSegmentDPCS(const HVE2DSegment& pi_rSegment,
-                                HGF2DLocationCollection* po_pCrossPoints) const;
     size_t IntersectPolySegmentSCS(const HVE2DPolySegment& pi_rPolySegment,
                                    HGF2DLocationCollection* po_pCrossPoints) const;
-    size_t IntersectPolySegmentDPCS(const HVE2DPolySegment& pi_rPolySegment,
-                                    HGF2DLocationCollection* po_pCrossPoints) const;
     size_t IntersectSegment(const HVE2DSegment& pi_rSegment,
                             HGF2DLocationCollection* po_pCrossPoints) const;
     size_t IntersectPolySegment(const HVE2DPolySegment& pi_rPolySegment,
                                 HGF2DLocationCollection* po_pCrossPoints) const;
     size_t ObtainContiguousnessPointsWithSegmentSCS(const HVE2DSegment&  pi_rSegment,
                                                     HGF2DLocationCollection* po_pContiguousnessPoints) const;
-    size_t ObtainContiguousnessPointsWithSegmentLRCS(const HVE2DSegment&  pi_rSegment,
-                                                     HGF2DLocationCollection* po_pContiguousnessPoints) const;
     size_t ObtainContiguousnessPointsWithPolySegmentSCS(const HVE2DPolySegment&  pi_rPolySegment,
                                                         HGF2DLocationCollection* po_pContiguousnessPoints) const;
-    size_t ObtainContiguousnessPointsWithPolySegmentLRCS(const HVE2DPolySegment&  pi_rPolySegment,
-                                                         HGF2DLocationCollection* po_pContiguousnessPoints) const;
     size_t ObtainContiguousnessPointsWithPolySegment(const HVE2DPolySegment&  pi_rPolySegment,
                                                      HGF2DLocationCollection* po_pContiguousnessPoints) const;
     size_t ObtainContiguousnessPointsWithSegment(const HVE2DSegment&  pi_rSegment,
@@ -312,18 +289,10 @@ private:
                                                     const HGF2DLocation& pi_rPoint,
                                                     HGF2DLocation* po_pFirstContiguousnessPoint,
                                                     HGF2DLocation* po_pSecondContiguousnessPoint) const;
-    void ObtainContiguousnessPointsWithSegmentAtLRCS(const HVE2DSegment&  pi_rSegment,
-                                                     const HGF2DLocation& pi_rPoint,
-                                                     HGF2DLocation* po_pFirstContiguousnessPoint,
-                                                     HGF2DLocation* po_pSecondContiguousnessPoint) const;
     void ObtainContiguousnessPointsWithPolySegmentAtSCS(const HVE2DPolySegment&  pi_rPolySegment,
                                                         const HGF2DLocation& pi_rPoint,
                                                         HGF2DLocation* po_pFirstContiguousnessPoint,
                                                         HGF2DLocation* po_pSecondContiguousnessPoint) const;
-    void ObtainContiguousnessPointsWithPolySegmentAtLRCS(const HVE2DPolySegment&  pi_rPolySegment,
-                                                         const HGF2DLocation& pi_rPoint,
-                                                         HGF2DLocation* po_pFirstContiguousnessPoint,
-                                                         HGF2DLocation* po_pSecondContiguousnessPoint) const;
     void ObtainContiguousnessPointsWithPolySegmentAt(const HVE2DPolySegment&  pi_rPolySegment,
                                                      const HGF2DLocation& pi_rPoint,
                                                      HGF2DLocation* po_pFirstContiguousnessPoint,

@@ -49,10 +49,12 @@ public:
     HGF2DPolySegment&  operator=(const HGF2DPolySegment& pi_rObj);
 
     // Setting and extracting
-    void               AppendPoint(const HGF2DPosition& pi_rNewPoint);
-    HGF2DPosition      GetPoint(size_t pi_Index) const;
-    size_t             GetSize() const;
-    void               RemovePoint(size_t pi_Index);
+    void                AppendPoint(const HGF2DPosition& pi_rNewPoint);
+    HGF2DPosition       GetPoint(size_t pi_Index) const;
+    size_t              GetSize() const;
+    void                RemovePoint(size_t pi_Index);
+    void                Simplify(bool processAsClosed);
+
 
     // Parallel Copy
     HGF2DPolySegment*  AllocateParallelCopy(double pi_rOffset,
@@ -71,7 +73,7 @@ public:
     bool               SplitIntoNonAutoCrossing(list<HFCPtr<HGF2DPolySegment> >* pio_pListOfResultPolySegments,
                                                 bool pi_ProcessClosed = false) const;
 
-// HChk AR : Should be moved to HGF2DLinear
+// HChk &&AR : Should be moved to HGF2DLinear
     void               SortPointsAccordingToRelativePosition(HGF2DPositionCollection* pio_pListOfPointsOnLinear) const;
 
     // Geometry
@@ -139,6 +141,10 @@ public:
     IMAGEPP_EXPORT virtual void         Scale(double pi_ScaleFactor,
                                               const HGF2DPosition& pi_rScaleOrigin);
 
+    IMAGEPP_EXPORT void Scale(double               pi_ScaleFactorX,
+                              double               pi_ScaleFactorY,
+                              const HGF2DPosition& pi_rScaleOrigin);
+
     // From HPMPersistentObject
     IMAGEPP_EXPORT virtual HGF2DVector*     Clone() const;
 
@@ -169,6 +175,9 @@ private:
 #ifdef HVERIFYCONTRACT
     void               ValidateInvariants() const
         {
+        if (!(m_Points.size() == 0 || (GetStartPoint() == m_Points[0] && GetEndPoint() == m_Points.back())))
+            HASSERT(0);
+
         HASSERT(m_Points.size() == 0 || (GetStartPoint() == m_Points[0] && GetEndPoint() == m_Points.back()));
         }
 #endif

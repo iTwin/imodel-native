@@ -681,7 +681,7 @@ bool HVE2DVectorGroup::AreContiguousAt(const HVE2DVector& pi_rVector,
 // IsAtAnExtremity
 // Determines if the given point is located at an extremity
 //-----------------------------------------------------------------------------
-inline bool HVE2DVectorGroup::IsAtAnExtremity(const HGF2DLocation& pi_rLocation,
+bool HVE2DVectorGroup::IsAtAnExtremity(const HGF2DLocation& pi_rLocation,
                                                double pi_Tolerance) const
     {
     bool   AtExtremity = false;
@@ -775,7 +775,7 @@ void HVE2DVectorGroup::SetStrokeTolerance(const HFCPtr<HGFTolerance> & pi_Tolera
 // SetAutoToleranceActive
 // Sets the auto tolerance active to the components
 //-----------------------------------------------------------------------------
-inline void HVE2DVectorGroup::SetAutoToleranceActive(bool pi_AutoToleranceActive)
+void HVE2DVectorGroup::SetAutoToleranceActive(bool pi_AutoToleranceActive)
     {
     // Set tolerance of every component
     HVE2DVectorGroup::VectorList::iterator  MyIterator;

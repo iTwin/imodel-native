@@ -148,7 +148,7 @@ inline HGF2DLocation HVE2DPolySegment::GetPoint(size_t pi_Index) const
 //-----------------------------------------------------------------------------
 inline HGF2DPosition HVE2DPolySegment::GetPosition(size_t pi_Index) const
     {
-    HINVARIANTS;
+    // &&AR TO MANY HINVARIANTS;
 
     // The given index must be valid
     HPRECONDITION((pi_Index >= 0) && (pi_Index < GetPoints().size()));
@@ -166,7 +166,8 @@ inline HGF2DPosition HVE2DPolySegment::GetPosition(size_t pi_Index) const
 //-----------------------------------------------------------------------------
 inline size_t HVE2DPolySegment::GetSize() const
     {
-    HINVARIANTS;
+   // &&AR Too many
+//  HINVARIANTS;
     return GetPolySegmentPeer().GetSize();
     }
 

@@ -494,7 +494,7 @@ StatusInt HGF2DComplexTransfoModel::ConvertInverse(size_t pi_NumLoc, double* pio
 //-----------------------------------------------------------------------------
 // IsIdentity
 //-----------------------------------------------------------------------------
-inline bool   HGF2DComplexTransfoModel::IsIdentity () const
+bool   HGF2DComplexTransfoModel::IsIdentity () const
     {
     bool   ReturnValue = true;
 
@@ -514,7 +514,7 @@ inline bool   HGF2DComplexTransfoModel::IsIdentity () const
 // This askes all the component model if they are stretchable. All must
 // answer affirmative for the result to be true
 //-----------------------------------------------------------------------------
-inline bool   HGF2DComplexTransfoModel::IsStretchable (double pi_AngleTolerance) const
+bool   HGF2DComplexTransfoModel::IsStretchable (double pi_AngleTolerance) const
     {
     bool   ReturnValue = true;
 
@@ -531,7 +531,7 @@ inline bool   HGF2DComplexTransfoModel::IsStretchable (double pi_AngleTolerance)
 //-----------------------------------------------------------------------------
 // GetStretchParams
 //-----------------------------------------------------------------------------
-inline void    HGF2DComplexTransfoModel::GetStretchParams (double*  po_pScaleFactorX,
+void    HGF2DComplexTransfoModel::GetStretchParams (double*  po_pScaleFactorX,
                                                            double*  po_pScaleFactorY,
                                                            HGF2DDisplacement* po_pDisplacement) const
     {
