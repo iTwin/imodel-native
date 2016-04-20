@@ -11,9 +11,9 @@
 #include "SMStreamingTileStore.h"
 
 bool s_save_grouped_store = false;
-bool s_stream_from_disk = true;
+bool s_stream_from_disk = false;
 bool s_stream_from_file_server = false;
-bool s_stream_from_grouped_store = false;
+bool s_stream_from_grouped_store = true;
 uint32_t s_max_number_nodes_in_group = 100;
 size_t s_max_group_size = 256 << 10; // 256 KB
 size_t s_max_group_depth = 5;

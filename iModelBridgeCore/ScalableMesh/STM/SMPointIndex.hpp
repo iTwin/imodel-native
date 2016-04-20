@@ -8020,7 +8020,7 @@ This method saves the mesh for streaming.
 
 @param
 -----------------------------------------------------------------------------*/
-template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveCloudReady(const WString pi_pOutputDirPath, HFCPtr<SMNodeGroupMasterHeader> pi_pGroupMasterHeader, bool pi_pCompress) const
+template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveCloudReady(const WString pi_pOutputDirPath, bool groupNodeHeaders, bool pi_pCompress) const
     {
     if (0 == CreateDirectoryW(pi_pOutputDirPath.c_str(), NULL))
         {
@@ -8028,22 +8028,27 @@ template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveC
         }
 
     auto rootNode = GetRootNode();
-    if (pi_pGroupMasterHeader)
+    if (groupNodeHeaders)
         {
         HFCPtr<SMNodeGroup> group = new SMNodeGroup(pi_pOutputDirPath, 0, 0);
 
+        HFCPtr<SMNodeGroupMasterHeader> groupMasterHeader(new SMNodeGroupMasterHeader());
+        SMPointIndexHeader<EXTENT> oldMasterHeader;
+        this->GetStore()->LoadMasterHeader(&oldMasterHeader, sizeof(oldMasterHeader));
+        groupMasterHeader->SetOldMasterHeaderData(oldMasterHeader);
+        
         // Add first group
-        pi_pGroupMasterHeader->AddGroup(0);
+        groupMasterHeader->AddGroup(0);
 
         rootNode->AddOpenGroup(0, group);
 
-        rootNode->SaveCloudReadyNode(group, pi_pGroupMasterHeader);
+        rootNode->SaveCloudReadyNode(group, groupMasterHeader);
 
         // Handle all open groups 
         rootNode->SaveAllOpenGroups();
 
         // Save group info file which contains info about all the generated groups (groupID and blockID)
-        pi_pGroupMasterHeader->SaveToFile(pi_pOutputDirPath);
+        groupMasterHeader->SaveToFile(pi_pOutputDirPath);
         }
     else 
         {

@@ -18,12 +18,18 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
             public:
                 Texture()
                     : m_IsLoaded(false),
-                      m_IsLoading(false)
+                      m_IsLoading(false),
+                      m_stream_store(nullptr)
                     {}
 
                 void SetDataSource(const WString& pi_DataSource)
                     {
                     m_DataSource = pi_DataSource;
+                    }
+
+                void SetStore(const scalable_mesh::azure::Storage& pi_Store)
+                    {
+                    m_stream_store = &pi_Store;
                     }
 
                 void Load(uint32_t m_pID)
@@ -126,28 +132,20 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
 
                 void LoadFromAzure(const wstring& m_pFilename)
                     {
-                    assert(false); // Not implemented yet
-                    // stream from azure
-                    /*bool blobDownloaded = false;
-                    m_stream_store.DownloadBlob(filename.c_str(), [this, &points, &blobDownloaded](scalable_mesh::azure::Storage::point_buffer_type& buffer)
+                    assert(m_stream_store != nullptr);
+                    bool blobDownloaded = false;
+                    m_stream_store->DownloadBlob(m_pFilename.c_str(), [this, &blobDownloaded](scalable_mesh::azure::Storage::point_buffer_type& buffer)
                     {
                     assert(!buffer.empty());
-                    //assert(buffer.size() == sizeDataLocal);
-                    //assert(0 == memcmp(&buffer[0], dataArrayTmp, sizeDataLocal));
-                    uint32_t UncompressedSize = reinterpret_cast<uint32_t&>(buffer[0]);
-                    uint32_t sizeData = (uint32_t)buffer.size() - sizeof(uint32_t);
+                    size_t UncompressedSize = reinterpret_cast<size_t&>(buffer[0]);
+                    uint32_t compressedSize = (uint32_t)buffer.size() - sizeof(size_t);
 
-                    HCDPacket uncompressedPacket, compressedPacket;
-                    compressedPacket.SetBuffer(&buffer[0] + sizeof(uint32_t), sizeData);
-                    compressedPacket.SetDataSize(sizeData);
-                    uncompressedPacket.SetDataSize(UncompressedSize);
-                    LoadCompressedPacket(compressedPacket, uncompressedPacket);
-                    assert(UncompressedSize == uncompressedPacket.GetDataSize());
-                    points.resize(UncompressedSize);
-                    memcpy(points.data(), uncompressedPacket.GetBufferAddress(), uncompressedPacket.GetDataSize());
+                    auto DataTypeArray = new uint8_t[UncompressedSize];
+                    memcpy(DataTypeArray, &buffer[0] + sizeof(size_t), compressedSize);
+                    this->DecompressTexture(DataTypeArray, compressedSize, (uint32_t)UncompressedSize);
                     blobDownloaded = true;
                     });
-                    assert(blobDownloaded);*/
+                    assert(blobDownloaded);
 
                     }
 
@@ -180,6 +178,7 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
                 WString m_DataSource;
                 condition_variable m_TextureCV;
                 mutex m_TextureMutex;
+                const scalable_mesh::azure::Storage* m_stream_store;
             };
 
         void OpenOrCreateBeFile(BeFile& file, HPMBlockID blockID)
@@ -204,6 +203,7 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
                 else
                     {
                     texture.SetDataSource(m_path);
+                    texture.SetStore(m_stream_store);
                     texture.Load(blockID.m_integerID);
                     }
                 }
@@ -212,7 +212,9 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
             }
 
         StreamingTextureTileStore(WCharCP directory)
-            : m_path(directory)
+            : m_path(directory),
+            m_stream_store(L"DefaultEndpointsProtocol=https;AccountName=pcdsustest;AccountKey=3EQ8Yb3SfocqbYpeIUxvwu/aEdiza+MFUDgQcIkrxkp435c7BxV8k2gd+F+iK/8V2iho80kFakRpZBRwFJh8wQ=="
+                         , L"scalablemeshtest")
             {
             if (s_stream_from_disk)
                 {
@@ -372,4 +374,6 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
     private:
         WString m_path;
         mutable map<uint32_t, Texture> m_textureCache;
+        // NEEDS_WORK_SM_STREAMING: should only have one stream store for all data types
+        scalable_mesh::azure::Storage m_stream_store;
     };

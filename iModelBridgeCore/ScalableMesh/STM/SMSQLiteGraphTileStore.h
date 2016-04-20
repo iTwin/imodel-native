@@ -1,5 +1,5 @@
 #pragma once
-#include <ScalableMesh/IScalableMeshDataStore.h>
+#include "IScalableMeshDataStore.h"
 #include "SMPointTileStore.h"
 #include <Mtg/MtgStructs.h>
 #include "SMSQLiteFile.h"
