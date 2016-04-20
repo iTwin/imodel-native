@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/stdcxx/bvector.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -146,6 +146,8 @@ public:
     typedef typename allocator_type::difference_type  difference_type;
     typedef typename allocator_type::reference        reference;
     typedef typename allocator_type::const_reference  const_reference;
+// *** BENTLEY_CHANGE support rvalue references
+    typedef _TypeT&&                                  rvalue_reference;
     typedef typename allocator_type::pointer          pointer;
     typedef typename allocator_type::const_pointer    const_pointer;
 
@@ -231,6 +233,7 @@ public:
 // *** BENTLEY_CHANGE
     bvector (bvector&& rhs) : _C_alloc ((allocator_type const&)(rhs._C_alloc))
         {
+// *** BENTLEY_CHANGE move is more efficient than std::copy()
         *this = std::move (rhs);    // invokes my operator=(&&)
         }
 
@@ -667,8 +670,9 @@ erase (iterator __it)
 
     const iterator __next = __it + 1;
 
+// *** BENTLEY_CHANGE move is more efficient than std::copy()
     if (__next != end ()) 
-        std::copy (__next, end (), __it);
+        std::move (__next, end (), __it);
 
     _C_alloc.destroy (_C_alloc._C_end - 1);
     --_C_alloc._C_end;
@@ -685,7 +689,8 @@ erase (iterator __first, iterator __last)
     _RWSTD_ASSERT_RANGE (__first, __last);
     _RWSTD_ASSERT_RANGE (begin (), __first);
 
-    _C_destroy (std::copy (__last, end (), __first));
+// *** BENTLEY_CHANGE
+    _C_destroy (std::move (__last, end (), __first));
 
     return __first;
 }

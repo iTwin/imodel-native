@@ -105,8 +105,14 @@ public:
                 return (allocate(_Count));
                 }
 
+        template<class = typename std::enable_if<std::is_copy_constructible<_Ty>::value>::type>
         void construct(pointer _Ptr, const _Ty& _Val)
                 {       // construct object at _Ptr with value _Val
+                new((void*)_Ptr)_Ty(_Val);
+                }
+
+        void construct(pointer _Ptr, _Ty&& _Val)
+                {       // move-construct object at _Ptr from value _Val
                 new((void*)_Ptr)_Ty(_Val);
                 }
 

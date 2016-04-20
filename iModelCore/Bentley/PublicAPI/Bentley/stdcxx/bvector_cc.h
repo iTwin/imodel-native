@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/stdcxx/bvector_cc.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -201,7 +201,8 @@ _C_insert_1 (const iterator &__it, const_reference __x)
 
             // move the remaining elements from the range above one slot
             // toward the end starting with the last element
-            std::copy_backward (__it, end () - 2, __end);
+// *** BENTLEY_CHANGE move is more efficient than std::copy()
+            std::move_backward (__it, end () - 2, __end);
 
             // overwrite the element at the given position
             *__it = __x;
@@ -320,7 +321,8 @@ _C_insert_n (const iterator &__it, size_type __n, const_reference __x)
 
         // copy elements the will be overwritten below
         // over the range of elements moved above
-        std::copy_backward (__movbeg, __ucpbeg, __ucpend);
+// *** BENTLEY_CHANGE move is more efficient than std::copy()
+        std::move_backward (__movbeg, __ucpbeg, __ucpend);
     }
     else {
 
@@ -636,7 +638,8 @@ _C_insert_range (iterator __it, _FwdIter __first, _FwdIter __last,
             __last = __mid;
         }
 
-        std::copy (__first, __last, __movbeg);
+// *** BENTLEY_CHANGE move is more efficient than std::copy()
+        std::move (__first, __last, __movbeg);
     }
     else {
         // 23.2.4.3, p1: If an exception is thrown other than by the copy
