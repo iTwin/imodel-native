@@ -720,34 +720,7 @@ HGF2DShape* HGF2DComplexShape::IntersectShape(const HGF2DShape& pi_rShape) const
             // Check if result is empty
             if (!(pThisPartIntersection->IsEmpty()))
                 {
-#if (0)
-                // Check if current result is empty
-                if (pMyResultShape->IsEmpty())
-                    {
-                    // Current result is empty ... copy this part
-                    delete pMyResultShape;
 
-                    pMyResultShape = (HGF2DShape*)pThisPartIntersection->Clone();
-                    }
-                else
-                    {
-                    // Current result is not empty ... is it a complex shape
-                    if (!pMyResultShape->IsComplex())
-                        {
-                        // Current result is not complex, but is not empty ...
-                        // We transform it into a complex shape
-                        HGF2DComplexShape* pNewComplexShape = new HGF2DComplexShape(*pMyResultShape);
-
-                        // Destroy previous result
-                        delete pMyResultShape;
-
-                        pMyResultShape = pNewComplexShape;
-                        }
-
-                    // It is a complex shape ... we add this part
-                    ((HGF2DComplexShape*)pMyResultShape)->AddShape(*pThisPartIntersection);
-                    }
-#else
 
                 // Save pointer to previous result
                 HGF2DShape* pMyPreviousResult = pMyResultShape;
@@ -757,7 +730,7 @@ HGF2DShape* HGF2DComplexShape::IntersectShape(const HGF2DShape& pi_rShape) const
 
                 // delete the previous result
                 delete pMyPreviousResult;
-#endif
+
                 }
 
             delete pThisPartIntersection;

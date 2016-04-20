@@ -1376,7 +1376,6 @@ bool HVE2DComplexLinear::Crosses(const HVE2DVector& pi_rVector) const
 //-----------------------------------------------------------------------------
 bool HVE2DComplexLinear::AutoCrosses() const
     {
-#if (1)
     bool   IsCrossing = false;
 
     // For every linear part of the self complex ...
@@ -1460,51 +1459,10 @@ bool HVE2DComplexLinear::AutoCrosses() const
         }
 
     return (IsCrossing);
-#else
-    return(Crosses(*this));
-#endif
 
     }
 
-#if (0)
-//-----------------------------------------------------------------------------
-// AutoIntersect
-// Finds and returns all auto intersection points of linear
-// INCOMPLETE ????
-//-----------------------------------------------------------------------------
-int32_t HVE2DComplexLinear::AutoIntersect(HGF2DLocationCollection* po_pPoints) const
-    {
-    HPRECONDITION(po_pPoints);
 
-    // For every linear part of the self complex ...
-    HVE2DComplexLinear::LinearList::const_iterator MySelfIterator = m_LinearList.begin();
-
-    while ((MySelfIterator != m_LinearList.end()))
-        {
-        // Check if the linear crosses itself
-        (*MySelfIterator)->AutoIntersect(po_pPoints);
-
-        // We only check the parts after itself
-        HVE2DComplexLinear::LinearList::const_iterator MyOtherIterator (MySelfIterator);
-
-        // Advance one element
-        MyOtherIterator++;
-
-        // For remaining parts ... find intersection points
-        while (MyOtherIterator != m_LinearList.end())
-            {
-            (*MySelfIterator)->Intersect(**MyOtherIterator, po_pPoints);
-
-            MyOtherIterator++;
-            }
-
-        // Advance to next component
-        MySelfIterator++;
-        }
-
-    return(po_pPoints->size());
-    }
-#endif
 
 //-----------------------------------------------------------------------------
 // IsPointOn
@@ -2311,35 +2269,7 @@ bool HVE2DComplexLinear::AreContiguousAt(const HVE2DVector& pi_rVector,
 
 
 
-#if (0)
-//-----------------------------------------------------------------------------
-// Flirts
-// Indicates if the linear is flirts the given
-// INCOMPLETE ?????
-//-----------------------------------------------------------------------------
-bool HVE2DComplexLinear::Flirts(const HVE2DVector& pi_rVector) const
-    {
-    bool   DoAreFlirting = false;
 
-    // A flirting linear may not cross
-    if (!Crosses(pi_rVector))
-        {
-        // Create an iterator
-        HVE2DComplexLinear::LinearList::const_iterator   MyIterator = m_LinearList.begin();
-
-        // For every linear in complex
-        while (MyIterator != m_LinearList.end() && !DoAreFlirting)
-            {
-            // Check if components flirt
-            DoAreFlirting = (*MyIterator)->Flirts(pi_rVector);
-
-            MyIterator++;
-            }
-        }
-
-    return(DoAreFlirting);
-    }
-#endif
 
 
 /** -----------------------------------------------------------------------------

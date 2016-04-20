@@ -755,35 +755,7 @@ void HGF2DPolySegment::RemoveAutoContiguousNeedles(bool pi_ClosedProcessing)
         ++MiddleItr;
 
 
-#if (0)
-        for (; HeadItr != m_Points.end() ; ++HeadItr , ++MiddleItr)
-            {
 
-            // Set head segment to represent consecutive segments
-            TheHeadSegment.SetStartPoint(*MiddleItr);
-            TheHeadSegment.SetEndPoint(*HeadItr);
-
-            if (TheHeadSegment.AreContiguous(TheBackSegment))
-                {
-                // Two consecutive segments are contiguous ... we have a needle
-                // We remove the shortest segment by deleting the middle point
-
-                // Set the back segment (By setting the head)
-                TheHeadSegment.SetStartPoint(TheBackSegment.GetStartPoint());
-
-                // Delete point
-                HeadItr = m_Points.erase(MiddleItr);
-
-                // Reset the middle iterator to current back point
-                MiddleItr = HeadItr;
-                --MiddleItr;
-
-                }
-
-            // The head segment becomes the back segment
-            TheBackSegment = TheHeadSegment;
-            }
-#else
         for (; m_Points.size() >= 3 && HeadItr != m_Points.end() ; ++HeadItr , ++MiddleItr)
             {
 
@@ -818,7 +790,6 @@ void HGF2DPolySegment::RemoveAutoContiguousNeedles(bool pi_ClosedProcessing)
                 TheBackSegment = TheHeadSegment;
                 }
             }
-#endif
 
         // Check if the polysegment should be considered closed (and there at least 2 segments)
         if (pi_ClosedProcessing && (m_Points.size() >= 3))
@@ -837,40 +808,7 @@ void HGF2DPolySegment::RemoveAutoContiguousNeedles(bool pi_ClosedProcessing)
             TheBackSegment.SetStartPoint(*NextToEndItr);
             TheBackSegment.SetEndPoint(*MiddleItr);
 
-#if (0)
-            if (TheHeadSegment.AreContiguous(TheBackSegment))
-                {
-                // The first and last segments are contiguous ... we remove start/end point
-                m_Points.erase(MiddleItr);
-                m_Points.pop_back();
 
-                // Check if next to end and second points (now first and last) are identical
-                EndItr = m_Points.rbegin();
-                HeadItr = m_Points.begin();
-                if (EndItr->IsEqualTo(*HeadItr, Tolerance))
-                    {
-                    // The two points are equal (to a tolerance)
-                    // Check if they are exactly equal ...
-                    // NO TOLERANCE APPLICATION FOR THIS
-                    if (*EndItr != *HeadItr)
-                        {
-                        // They are very close but not equal ... set last point
-                        *EndItr = *HeadItr;
-                        }
-                    }
-                else
-                    {
-                    // The start and end points are not equal ...
-                    // we must force this fact
-                    m_Points.push_back(*HeadItr);
-                    }
-
-                // Set start and end point
-                SetLinearStartPoint(HGF2DPosition(*(m_Points.begin())));
-                SetLinearEndPoint(GetStartPoint());
-                ResetTolerance();
-                }
-#else
             while (m_Points.size() >= 3 && TheHeadSegment.AreContiguous(TheBackSegment))
                 {
                 // The first and last segments are contiguous ... we remove start/end point
@@ -919,7 +857,6 @@ void HGF2DPolySegment::RemoveAutoContiguousNeedles(bool pi_ClosedProcessing)
                     }
 
                 }
-#endif
             }
         }
 
@@ -3533,7 +3470,6 @@ bool HGF2DPolySegment::CrossesPolySegment(const HGF2DPolySegment& pi_rPolySegmen
                     }
                 }
 
-#if (1)
             // Check if they did cross ...
             if (!Answer)
                 {
@@ -3591,12 +3527,6 @@ bool HGF2DPolySegment::CrossesPolySegment(const HGF2DPolySegment& pi_rPolySegmen
                     FirstPoint = SecondPoint;
                     }
                 }
-#else
-            if (!Answer)
-                {
-                Answer = IntersectsAtAnySplitPointWithPolySegment(pi_rPolySegment);
-                }
-#endif
             }
         }
 
@@ -3836,11 +3766,6 @@ bool HGF2DPolySegment::IsAdjacentToSegment(const HGF2DSegment& pi_rSegment) cons
     {
     HINVARIANTS;
 
-#if (0)
-    // For the moment, we consider contiguous segments as adjacent.
-    //HChk AR ????
-    return(IsContiguousToSegment(pi_rSegment));
-#else
 
     // Declare answer variable
     bool Answer = false;
@@ -3917,7 +3842,6 @@ bool HGF2DPolySegment::IsAdjacentToSegment(const HGF2DSegment& pi_rSegment) cons
 
     return(Answer);
 
-#endif
     }
 
 
@@ -4736,58 +4660,7 @@ void HGF2DPolySegment::ObtainContiguousnessPointsWithPolySegmentAt(const HGF2DPo
             // Check if point is located on current segment
             if (PolySegment.IsPointOn(ThePoint))
                 {
-#if (0)
-                // For every segment of given polysegment
-                HGF2DPositionCollection::const_iterator GivenItr(pi_rPolySegment.m_Points.begin());
-                HGF2DPositionCollection::const_iterator PreviousGivenItr(GivenItr);
-                ++GivenItr;
-                for (; (!Found) && GivenItr != pi_rPolySegment.m_Points.end() ; ++GivenItr , ++PreviousGivenItr)
-                    {
-                    // Check if current self segment and current given segment may interact
-                    Result = (HDOUBLE_GREATER_OR_EQUAL(SelfXMax, MIN(GivenItr->GetX(), PreviousGivenItr->GetX()), Tolerance) &&
-                              HDOUBLE_SMALLER_OR_EQUAL(SelfXMin, MAX(GivenItr->GetX(), PreviousGivenItr->GetX()), Tolerance) &&
-                              HDOUBLE_GREATER_OR_EQUAL(SelfYMax, MIN(GivenItr->GetY(), PreviousGivenItr->GetY()), Tolerance) &&
-                              HDOUBLE_SMALLER_OR_EQUAL(SelfYMin, MAX(GivenItr->GetY(), PreviousGivenItr->GetY()), Tolerance)
-                             );
 
-
-                    if (Result)
-                        {
-                        // The self segment and given poly segment may interact ...
-
-                        // Create given segment
-                        HGF2DLiteSegment GivenSegment(*PreviousGivenItr, *GivenItr, Tolerance);
-
-                        // Check if point is located on current segment
-                        if (GivenSegment.IsPointOn(ThePoint))
-                            {
-                            // The point is on current segment ...
-                            // Check if contiguous
-                            if (PolySegment.AreContiguous(GivenSegment))
-                                {
-                                // These two segments are effectively contiguous
-
-                                // Declare a position collection to receive contiguousness points
-                                HGF2DPositionCollection NewContiguousnessPositions;
-
-                                // Obtain contiguousness points
-                                PolySegment.ObtainContiguousnessPoints(GivenSegment, &NewContiguousnessPositions);
-
-                                // There must be exactly 2 points
-                                HASSERT(NewContiguousnessPositions.size() == 2);
-
-
-                                // Copy to recipient list
-                                FirstContiguousnessPosition = NewContiguousnessPositions[0];
-                                SecondContiguousnessPosition = NewContiguousnessPositions[1];
-
-                                // Indicate we have found the original contiguousness region
-                                Found = true;
-                                }
-                            }
-                        }
-                    }
-#else
                 // Create a full fledged segment
                 HGF2DSegment FullPolySegment(*PreviousItr, *Itr);
                 FullPolySegment.SetAutoToleranceActive(false);
@@ -4806,7 +4679,6 @@ void HGF2DPolySegment::ObtainContiguousnessPointsWithPolySegmentAt(const HGF2DPo
                     Found = true;
 
                     }
-#endif
                 }
             }
         }
@@ -5168,34 +5040,7 @@ bool HGF2DPolySegment::IntersectsAtAnySplitPointWithPolySegment(const HGF2DPolyS
                         {
                         HGF2DLiteSegment GivenSegment(*PreviousGivenItr, *GivenItr);
 
-#if (0)
-                        // Check if current previous is equal to previous given
-                        if (PreviousItr->IsEqualTo(*PreviousGivenItr))
-                            {
-                            Answer = IntersectsAtSplitPoint(pi_rPolySegment,
-                                                            *PreviousItr,
-                                                            *Itr,
-                                                            false);
-                            }
-                        else if (GivenSegment.IsPointOn(*PreviousItr) &&
-                                 TheLiteSegment.AreContiguous(GivenSegment))
-                            {
-                            Answer = IntersectsAtSplitPoint(pi_rPolySegment,
-                                                            *PreviousItr,
-                                                            *Itr),
-                                                            false);
-//                                                            *Itr,
-//                                                            true);
-                            }
-                        else if (TheLiteSegment.IsPointOn(*PreviousGivenItr) &&
-                                 TheLiteSegment.AreContiguous(GivenSegment))
-                            {
-                            Answer = IntersectsAtSplitPoint(pi_rPolySegment,
-                                                            *PreviousGivenItr,
-                                                            *GivenItr,
-                                                            false);
-                            }
-#else
+
                         // Check if segments are contiguous
                         if (TheLiteSegment.AreContiguous(GivenSegment))
                             {
@@ -5305,9 +5150,6 @@ bool HGF2DPolySegment::IntersectsAtAnySplitPointWithPolySegment(const HGF2DPolyS
                                                             *Itr,
                                                             false);
                             }
-
-#endif
-
                         }
                     }
                 }
@@ -6089,15 +5931,6 @@ HFCPtr<HGF2DPolySegment> HGF2DPolySegment::AllocPolySegmentTransformDirectNonLin
     // Append start point first
     pNewPolySegment->m_Points.push_back(TransStartPoint);
 
-#if (0)
-// HChk AR DOUBTFUL!
-    pNewPolySegment->SetAutoToleranceActive(true);
-    pNewPolySegment->ResetTolerance();
-    pNewPolySegment->SetAutoToleranceActive(false);
-
-    // Compute tolerance
-    pNewPolySegment->SetTolerance(pNewPolySegment->GetTolerance() * 1000.0);
-#endif
 
     // For every segment of self polysegment
     HGF2DPositionCollection::const_iterator Itr = m_Points.begin();

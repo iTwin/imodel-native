@@ -514,30 +514,7 @@ void HVE2DHoledShape::ObtainContiguousnessPointsAt(const HVE2DVector& pi_rVector
 
 
 
-#if (0)
-//-----------------------------------------------------------------------------
-// Flirts
-// This method checks if the holed shape flirts with given vector.
-//-----------------------------------------------------------------------------
-bool HVE2DHoledShape::Flirts(const HVE2DVector& pi_rVector) const
-    {
-    // Find if the vector flirts the outter boundary
-    bool           DoesFlirt(m_pBaseShape->Flirts(pi_rVector));
 
-    // If they do not flirt ... check with holes
-    if (!DoesFlirt)
-        {
-        // For each hole in holed polygon
-        HVE2DShape::HoleList::const_iterator   MyIterator = m_HoleList.begin();
-
-        // Loop till all holes have been processed or one flirts
-        while (MyIterator != m_HoleList.end() && !(DoesFlirt = (*MyIterator)->Flirts(pi_rVector)))
-            ++MyIterator;
-        }
-
-    return (DoesFlirt);
-    }
-#endif
 
 
 //-----------------------------------------------------------------------------

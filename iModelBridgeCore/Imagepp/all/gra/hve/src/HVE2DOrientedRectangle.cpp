@@ -534,18 +534,7 @@ HVE2DShape* HVE2DOrientedRectangle::IntersectRectangleSCS(const HVE2DOrientedRec
     }
 
 
-#if (0)
-//-----------------------------------------------------------------------------
-// Flirts
-// This method checks if the rectangle flirts with given vector.
-//-----------------------------------------------------------------------------
-bool HVE2DOrientedRectangle::Flirts(const HVE2DVector& pi_rVector) const
-    {
-    // Since flirting computations are so complicated, we tel HVE2DPolygonOfSegments to perform
-    // the operation
-    return (HVE2DPolygonOfSegments(*this).Flirts(pi_rVector));
-    }
-#endif
+
 
 //-----------------------------------------------------------------------------
 // Crosses

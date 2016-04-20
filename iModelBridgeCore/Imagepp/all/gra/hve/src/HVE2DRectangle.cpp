@@ -619,7 +619,6 @@ bool HVE2DRectangle::Flirts(const HVE2DVector& pi_rVector) const
 //-----------------------------------------------------------------------------
 bool HVE2DRectangle::Crosses(const HVE2DVector& pi_rVector) const
     {
-#if (1)
     bool Answer = false;
 
     // Obtain vector extent
@@ -726,11 +725,6 @@ bool HVE2DRectangle::Crosses(const HVE2DVector& pi_rVector) const
         }
 
     return(Answer);
-#else
-    // Since crossing computations are so complicated, we tel HVE2DPolygonOfSegments to perform
-    // the operation
-    return (HVE2DPolygonOfSegments(*this).Crosses(pi_rVector));
-#endif
     }
 
 //-----------------------------------------------------------------------------

@@ -342,25 +342,7 @@ bool HVE2DComplexShape::AreContiguousAt(const HVE2DVector& pi_rVector,
     return (DoAreContiguous);
     }
 
-#if (0)
-//-----------------------------------------------------------------------------
-// Flirts
-// This method checks if the complex shape flirts with given vector.
-//-----------------------------------------------------------------------------
-bool HVE2DComplexShape::Flirts(const HVE2DVector& pi_rVector) const
-    {
-    bool           DoesFlirt = false;
 
-    // For each shape in complex shape
-    HVE2DShape::ShapeList::const_iterator   MyIterator = m_ShapeList.begin();
-
-    // Loop till all shapes have been processed or one flirts
-    while (MyIterator != m_ShapeList.end() && !(DoesFlirt = (*MyIterator)->Flirts(pi_rVector)))
-        ++MyIterator;
-
-    return (DoesFlirt);
-    }
-#endif
 
 //-----------------------------------------------------------------------------
 // Intersect
@@ -877,34 +859,7 @@ HVE2DShape* HVE2DComplexShape::IntersectShapeSCS(const HVE2DShape& pi_rShape) co
             // Check if result is empty
             if (!(pThisPartIntersection->IsEmpty()))
                 {
-#if (0)
-                // Check if current result is empty
-                if (pMyResultShape->IsEmpty())
-                    {
-                    // Current result is empty ... copy this part
-                    delete pMyResultShape;
 
-                    pMyResultShape = (HVE2DShape*)pThisPartIntersection->Clone();
-                    }
-                else
-                    {
-                    // Current result is not empty ... is it a complex shape
-                    if (!pMyResultShape->IsComplex())
-                        {
-                        // Current result is not complex, but is not empty ...
-                        // We transform it into a complex shape
-                        HVE2DComplexShape* pNewComplexShape = new HVE2DComplexShape(*pMyResultShape);
-
-                        // Destroy previous result
-                        delete pMyResultShape;
-
-                        pMyResultShape = pNewComplexShape;
-                        }
-
-                    // It is a complex shape ... we add this part
-                    ((HVE2DComplexShape*)pMyResultShape)->AddShape(*pThisPartIntersection);
-                    }
-#else
 
                 // Save pointer to previous result
                 HVE2DShape* pMyPreviousResult = pMyResultShape;
@@ -914,7 +869,6 @@ HVE2DShape* HVE2DComplexShape::IntersectShapeSCS(const HVE2DShape& pi_rShape) co
 
                 // delete the previous result
                 delete pMyPreviousResult;
-#endif
                 }
 
             delete pThisPartIntersection;

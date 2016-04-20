@@ -1002,6 +1002,54 @@ bool HVE2DPolygonOfSegments::IsConvex() const
     // Check if there are at least 3 points
     if (m_PolySegment.GetSize() > 3)
         {
+#if (1)
+        size_t index = 0;
+
+        int16_t Direction = 0;
+
+        // Check for possible winding side change
+        while (Result && index < m_PolySegment.GetSize() - 2)
+            {
+            HGF2DPosition firstPoint = m_PolySegment.GetPosition(index);
+            HGF2DPosition secondPoint = m_PolySegment.GetPosition(index + 1);
+            HGF2DPosition thirdPoint = m_PolySegment.GetPosition(index + 2);
+
+            double TempResult = ((firstPoint.GetX() - secondPoint.GetX()) * (secondPoint.GetY() - thirdPoint.GetY())) -
+                                 ((firstPoint.GetY() - secondPoint.GetY()) * (secondPoint.GetX() - thirdPoint.GetX()));
+            if (HDOUBLE_GREATER(TempResult, 0.0, GetTolerance()))
+                {
+                if (Direction < 0)  // -1
+                    Result = false;
+                else if (Direction == 0)
+                    Direction = 1;
+                }
+            else if (HDOUBLE_SMALLER(TempResult, 0.0, GetTolerance()))
+                {
+                if (Direction > 0)  // 1
+                    Result = false;
+                else if (Direction == 0)
+                    Direction = -1;
+                }
+
+            ++index;
+            }
+
+        if (Result)
+            {
+            // The previous loop didn't check the direction of the first segment
+            // relative to the last segment. Check now...
+            HGF2DPosition firstPoint = m_PolySegment.GetPosition(m_PolySegment.GetSize() - 2);
+            HGF2DPosition secondPoint = m_PolySegment.GetPosition(m_PolySegment.GetSize() - 1);
+            HGF2DPosition thirdPoint = m_PolySegment.GetPosition(1);
+
+            double TempResult = ((firstPoint.GetX() - secondPoint.GetX()) * (secondPoint.GetY() - thirdPoint.GetY())) -
+                                 ((firstPoint.GetY() - secondPoint.GetY()) * (secondPoint.GetX() - thirdPoint.GetX()));
+
+            if ((HDOUBLE_GREATER(TempResult, 0.0, GetTolerance()) && Direction < 0) ||
+                (HDOUBLE_SMALLER(TempResult, 0.0, GetTolerance()) && Direction > 0))
+                Result = false;
+            }
+#else
         HGF2DPositionCollection::const_iterator FirstItr(m_PolySegment.GetPoints().begin());
         HGF2DPositionCollection::const_iterator SecondItr(FirstItr);
         ++SecondItr;
@@ -1046,6 +1094,7 @@ bool HVE2DPolygonOfSegments::IsConvex() const
                 (HDOUBLE_SMALLER(TempResult, 0.0, GetTolerance()) && Direction > 0))
                 Result = false;
             }
+#endif
         }
 
     return Result;

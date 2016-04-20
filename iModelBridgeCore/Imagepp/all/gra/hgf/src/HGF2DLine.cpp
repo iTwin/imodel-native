@@ -633,45 +633,7 @@ HGF2DLocation HGF2DLine::CalculateClosestPoint(const HGF2DLocation& pi_rPoint) c
     HGF2DLocation       ReturnPoint(m_pCoordSys);
 
 
-#if (0)
 
-
-    if (m_InvertSlope)
-        {
-        // The slope is inverted ...
-
-        // is intercept in X and Y of given point
-        ReturnPoint.SetX(m_Intercept);
-        ReturnPoint.SetY(TempPoint.GetY());
-        }
-    else
-        {
-        // The line is not vertical
-        // Check if we have inverted slope
-        if (m_InvertSlope)
-            {
-            HGF2DLocation       InterceptPoint(m_Intercept, 0.0, m_pCoordSys);
-            HGFBearing          LineBearing(CalculateBearing());
-            LineBearing += PI / 2;
-            HGF2DDisplacement   PointToIntercept(TempPoint - InterceptPoint);
-
-            HGF2DDisplacement tempDisplacement;
-            tempDisplacement.SetByBearing(LineBearing, cos(LineBearing - PointToIntercept.CalculateBearing()) * PointToIntercept.CalculateLength()
-            ReturnPoint = InterceptPoint + tempDisplacement;
-            }
-        else
-            {
-            HGF2DLocation       InterceptPoint(0.0, m_Intercept, m_pCoordSys);
-            HGFBearing          LineBearing(CalculateBearing());
-            HGF2DDisplacement   PointToIntercept(TempPoint - InterceptPoint);
-
-
-            HGF2DDisplacement tempDisplacement;
-            tempDisplacement.SetByBearing(LineBearing, cos(LineBearing - PointToIntercept.CalculateBearing()) * PointToIntercept.CalculateLength()
-            ReturnPoint = InterceptPoint +tempDisplacement;
-            }
-        }
-#else
 
     HGF2DLocation APoint(GetCoordSys());
 
@@ -711,7 +673,7 @@ HGF2DLocation HGF2DLine::CalculateClosestPoint(const HGF2DLocation& pi_rPoint) c
     ReturnPoint.SetX(ResultX);
     ReturnPoint.SetY(ResultY);
 
-#endif
+
 
     return(ReturnPoint);
 
@@ -806,11 +768,6 @@ HGF2DLine::CrossState HGF2DLine::IntersectLine(const HGF2DLine& pi_rLine, HGF2DL
         {
 
         // They do have the same coordinate system ... check that lines are not parallel
-#if (0)
-        TheState = ((((m_Vertical) && (m_Vertical == pi_rLine.m_Vertical)) ||
-                     ((!m_Vertical && !pi_rLine.m_Vertical) && (HDOUBLE_EQUAL(m_Slope, pi_rLine.m_Slope, HGLOBAL_EPSILON / 100.0)))) ?
-                    PARALLEL : CROSS_FOUND);
-#else
         TheState = (
                        (
                            m_InvertSlope == pi_rLine.m_InvertSlope &&
@@ -825,7 +782,7 @@ HGF2DLine::CrossState HGF2DLine::IntersectLine(const HGF2DLine& pi_rLine, HGF2DL
                        PARALLEL : CROSS_FOUND
                    );
 
-#endif
+
 
         if (TheState == CROSS_FOUND)
             {

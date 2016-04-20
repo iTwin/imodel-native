@@ -633,41 +633,15 @@ HGF2DPolygonOfSegments::HGF2DPolygonOfSegments(size_t  pi_BufferLength,
     // Preset tolerance activity
     m_PolySegment.SetAutoToleranceActive(IsAutoToleranceActive());
 
-#if (0)
-    // Check if auto tolerance is active
-    if (IsAutoToleranceActive())
-        {
-        double Tolerance = HGLOBAL_EPSILON;
 
-        // Copy points
-        for (size_t Index = 0 ; Index < pi_BufferLength ; Index += 2)
-            {
-            m_PolySegment.AppendPoint(HGF2DPosition(pi_aBuffer[Index], pi_aBuffer[Index + 1]));
-
-            // Adjust tolerance
-            Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(pi_aBuffer[Index]));
-            Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(pi_aBuffer[Index+1]));
-            }
-
-        SetTolerance(Tolerance);
-        }
-    else
-        {
-        // Copy points
-        for (size_t Index = 0 ; Index < pi_BufferLength ; Index += 2)
-            {
-            m_PolySegment.m_Points.push_back(HGF2DPosition(pi_aBuffer[Index], pi_aBuffer[Index + 1]));
-            }
-        }
-
-#else
     // Copy points
     for (size_t Index = 0 ; Index < pi_BufferLength ; Index += 2)
         {
         m_PolySegment.AppendPoint(HGF2DPosition(pi_aBuffer[Index], pi_aBuffer[Index + 1]));
         }
 
-#endif
+
+
 
     // Check if given points represent an auto-closed shape
     if (pi_aBuffer[pi_BufferLength - 2] != pi_aBuffer[0] || pi_aBuffer[pi_BufferLength - 1] != pi_aBuffer[1])
@@ -675,6 +649,8 @@ HGF2DPolygonOfSegments::HGF2DPolygonOfSegments(size_t  pi_BufferLength,
         // The given points do not close ... add initial point
         m_PolySegment.AppendPoint(HGF2DPosition(pi_aBuffer[0], pi_aBuffer[1]));
         }
+
+
 
     // Make sure tolerances are synchronized
     HGF2DVector::SetTolerance(m_PolySegment.GetTolerance());
@@ -721,23 +697,7 @@ HFCPtr<HGF2DLinear> HGF2DPolygonOfSegments::GetLinear() const
     // Create returned linear
     HGF2DPolySegment*      ReturnedComplex = new HGF2DPolySegment(m_PolySegment);
 
-#if (0)
-    // Check if there are any points in list
-    if (m_PolySegment.GetSize() > 0)
-        {
-        HGF2DPosition   StartPoint(m_PolySegment.GetPoint(0));
-        // For each and every point
 
-        for (size_t Index = 1 ; Index < m_PolySegment.GetSize() ; Index++)
-            {
-            // Create segment and append to complex
-            ReturnedComplex.AppendLinear(HGF2DSegment(StartPoint, m_PolySegment.GetPoint(Index)));
-
-            // Save start point of next segment
-            StartPoint = m_PolySegment.GetPoint(Index);
-            }
-        }
-#endif
 
     // Set returned complex tolerance
     ReturnedComplex->SetAutoToleranceActive(IsAutoToleranceActive());
@@ -746,92 +706,7 @@ HFCPtr<HGF2DLinear> HGF2DPolygonOfSegments::GetLinear() const
     return (ReturnedComplex);
     }
 
-#if (0)
-/** -----------------------------------------------------------------------------
-    This method sets the spatial definition of the polygon of segments.
-    The given linear must be complex, not auto-intersect,
-    must auto-close and only be constituted of HGF2DSegment objects.
 
-    @param pi_rLinear The complex linear that contains the new polygon
-                      path definition.
-
-    Example
-    @code
-    @end
-
-    @see GetLinear()
-    -----------------------------------------------------------------------------
-*/
-void HGF2DPolygonOfSegments::SetLinear(const HGF2DLinear& pi_rLinear)
-    {
-    HINVARIANTS;
-
-    // The shape forming a polygon may not cross its own path
-//    HPRECONDITION(!pi_rLinear.AutoCrosses());
-
-    // A linear forming a polygon must close on itself
-    HPRECONDITION(pi_rLinear.GetStartPoint() == pi_rLinear.GetEndPoint());
-
-    // The given must be a complex linear
-    HPRECONDITION(pi_rLinear.IsComplex());
-
-    // We empty current list of points
-    m_PolySegment.MakeEmpty();
-
-    // Reset tolerance to polysegment
-    HGF2DVector::SetTolerance(m_PolySegment.GetTolerance());
-
-    // Cast into a complex linear
-    HGFComplexLinear*  pTheComplex = (HGFComplexLinear*)&pi_rLinear;
-
-    // Insert first point
-    m_PolySegment.AppendPoint(pTheComplex->GetStartPoint());
-
-
-    // We copy the end point of all segments of the given complex
-    HGFComplexLinear::LinearList::const_iterator  Itr;
-    for (Itr = pTheComplex->GetLinearList().begin() ; Itr != pTheComplex->GetLinearList().end() ; Itr++)
-        {
-        // The current component must be a segment or a polysegment
-        // The linear must be a basic linear
-        HASSERT((*Itr)->IsABasicLinear());
-
-        // The linear must be a segment or polysegment
-        HASSERT( ((static_cast<HGF2DBasicLinear*>(*Itr))->GetBasicLinearType() == HGF2DSegment::CLASS_ID) ||
-                 ((static_cast<HGF2DBasicLinear*>(*Itr))->GetBasicLinearType() == HGF2DSegment::CLASS_ID) );
-
-        // Check if it is a segment
-        if ((static_cast<HGF2DBasicLinear*>(*Itr))->GetBasicLinearType() == HGF2DSegment::CLASS_ID)
-            {
-            // Extract location expressed in current coordinate system
-            HGF2DPosition   TheCurrentPoint((*Itr)->GetEndPoint());
-
-            // Extract and save end point
-            m_PolySegment.AppendPoint(TheCurrentPoint);
-
-            }
-        else
-            {
-            // The linear is a polysegment
-            HGF2DPolySegment* pPolySegment = static_cast<HGF2DPolySegment*>(*Itr);
-
-            size_t Index;
-            for (Index = 1; Index < pPolySegment->GetSize() ; Index++)
-                {
-                // Extract location expressed in current coordinate system
-                m_PolySegment.AppendPoint(pPolySegment->GetPoint(Index));
-                }
-            }
-        }
-
-    // Synchronize tolerance
-    HGF2DVector::SetTolerance(m_PolySegment.GetTolerance());
-
-    // Indicate rotation direction is dirty
-    m_RotationDirectionUpToDate = false;
-    }
-
-#endif
 
 
 //-----------------------------------------------------------------------------

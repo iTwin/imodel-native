@@ -88,8 +88,6 @@ inline HGF2DPolySegment& HGF2DPolySegment::operator=(const HGF2DPolySegment& pi_
 //-----------------------------------------------------------------------------
 inline HGF2DPosition HGF2DPolySegment::GetPoint(size_t pi_Index) const
     {
-    // &&AR TOO MANY HINVARIANTS;
-
     // The given index must be valid
     HPRECONDITION((pi_Index >= 0) && (pi_Index < m_Points.size()));
 
@@ -105,9 +103,6 @@ inline HGF2DPosition HGF2DPolySegment::GetPoint(size_t pi_Index) const
 //-----------------------------------------------------------------------------
 inline size_t HGF2DPolySegment::GetSize() const
     {
-    // &&AR Too many invariants
-    // HINVARIANTS;
-
     return m_Points.size();
     }
 
@@ -117,8 +112,6 @@ inline size_t HGF2DPolySegment::GetSize() const
 //-----------------------------------------------------------------------------
 inline HGF2DBasicLinearTypeId HGF2DPolySegment::GetBasicLinearType() const
     {
-    HINVARIANTS;
-
     return (HGF2DPolySegment::CLASS_ID);
     }
 
@@ -132,8 +125,6 @@ inline double
 HGF2DPolySegment::CalculateAngularAcceleration(const HGF2DPosition& pi_rPoint,
                                              HGF2DVector::ArbitraryDirection pi_Direction) const
     {
-    HINVARIANTS;
-
     // The point must be located on polysegment
     HPRECONDITION(IsPointOn(pi_rPoint));
 
@@ -161,8 +152,6 @@ inline HGF2DVector* HGF2DPolySegment::Clone() const
 //-----------------------------------------------------------------------------
 inline bool HGF2DPolySegment::IsNull() const
     {
-    HINVARIANTS;
-
     return ((m_Points.size() < 2) || (CalculateLength() == 0.0));
     }
 
