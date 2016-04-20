@@ -113,7 +113,7 @@ protected:
     virtual Utf8CP _GetId() const override {return m_url.c_str();}
     virtual bool _IsExpired() const override;
     virtual BentleyStatus _InitFrom(IRealityDataBase const& self, RealityDataCacheOptions const&) override;
-    virtual BentleyStatus _InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> const& header, bvector<Byte> const& body, HttpRealityDataSource::RequestOptions const& options) override;
+    virtual BentleyStatus _InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> const& header, ByteStream const& body, HttpRealityDataSource::RequestOptions const& options) override;
     virtual BentleyStatus _InitFrom(BeSQLite::Db& db, BeMutex& cs, Utf8CP key, BeSQLiteRealityDataStorage::SelectOptions const& options) override;
     virtual BentleyStatus _Persist(BeSQLite::Db& db, BeMutex& cs) const override;
     virtual BeSQLiteRealityDataStorage::DatabasePrepareAndCleanupHandlerPtr _GetDatabasePrepareAndCleanupHandler() const override;
@@ -1225,12 +1225,11 @@ BentleyStatus TiledRaster::_InitFrom(IRealityDataBase const& self, RealityDataCa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TiledRaster::_InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> const& header, bvector<Byte> const& body, HttpRealityDataSource::RequestOptions const& requestOptions) 
+BentleyStatus TiledRaster::_InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> const& header, ByteStream const& body, HttpRealityDataSource::RequestOptions const& requestOptions) 
     {
     BeAssert(nullptr != dynamic_cast<RequestOptions const*>(&requestOptions));
     RequestOptions const& options = static_cast<RequestOptions const&>(requestOptions);
     
-
     m_url.AssignOrClear(url);
     m_creationDate = DateTime::GetCurrentTime();
 
@@ -1241,7 +1240,7 @@ BentleyStatus TiledRaster::_InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> co
     m_contentType = contentTypeIter->second.c_str();
     m_rasterInfo = options.GetExpectedImageInfo();
 
-    m_data.SaveData(&body.front(), (uint32_t) body.size());
+    m_data = body;
 
     return BSISUCCESS;
     }

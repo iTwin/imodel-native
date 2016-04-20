@@ -30,7 +30,7 @@ void ECInstanceSelectTests::VerifyInstanceCounts(WCharCP fileName, bmap<Utf8Stri
     ASSERT_EQ(SUCCESS, DgnDbTestDgnManager::GetTestDataOut(outFileName, fileName, testProjFile, __FILE__));
 
     OpenDb(m_db, outFileName, mode);
-    ECSchemaList schemaList;
+    bvector<ECN::ECSchemaCP> schemaList;
     ECSqlStatement stmt;
 
     bmap<Utf8String, int> classList;

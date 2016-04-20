@@ -907,7 +907,6 @@ struct Graphic : RefCounted<NonCopyableClass>
         FPoint2d const* m_textureUV= nullptr;
         Texture* m_texture = 0;
         int32_t m_flags = 1; // QV_QTMESH_GENNORMALS
-
         DGNPLATFORM_EXPORT PolyfaceHeaderPtr ToPolyface() const;
     };
 

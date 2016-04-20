@@ -2614,6 +2614,75 @@ DgnDbStatus DgnEditElementCollector::Write()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/16
++---------------+---------------+---------------+---------------+---------------+------*/
+static void getChildElementIdSet(DgnElementIdSet& assemblyIdSet, DgnElementId parentId, DgnDbR dgnDb)
+    {
+    DgnElementCPtr  parentEl = dgnDb.Elements().GetElement(parentId);
+
+    if (!parentEl.IsValid())
+        return;
+
+    DgnElementIdSet parentIdSet = parentEl->QueryChildren();
+
+    assemblyIdSet.insert(parentIdSet.begin(), parentIdSet.end());
+
+    for (DgnElementId childId : parentIdSet)
+        getChildElementIdSet(assemblyIdSet, childId, dgnDb);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementId ElementAssemblyUtil::GetAssemblyParentId(DgnElementCR el)
+    {
+    DgnElementId parentId = el.GetParentId();
+
+    if (!parentId.IsValid())
+        return DgnElementId();
+
+    DgnElementId thisParentId;
+
+    do
+        {
+        DgnElementCPtr parentEl = el.GetDgnDb().Elements().GetElement(parentId);
+
+        if (!parentEl.IsValid())
+            return DgnElementId(); // Missing parent???
+
+        // NOTE: For plant applications, it might be a good idea to stop at the first non-geometric parent to avoid selecting the entire plant with assembly lock???
+        thisParentId = parentEl->GetParentId();
+
+        if (thisParentId.IsValid())
+            parentId = thisParentId;
+
+        } while (thisParentId.IsValid());
+
+    return parentId;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementIdSet ElementAssemblyUtil::GetAssemblyElementIdSet(DgnElementCR el)
+    {
+    DgnElementId parentId = GetAssemblyParentId(el);
+
+    if (!parentId.IsValid())
+        parentId = el.GetElementId();
+
+    DgnElementIdSet assemblyIdSet;
+
+    assemblyIdSet.insert(parentId); // Include parent...
+    getChildElementIdSet(assemblyIdSet, parentId, el.GetDgnDb());
+
+    if (assemblyIdSet.size() < 2)
+        assemblyIdSet.clear();
+
+    return assemblyIdSet;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus GeometricElement::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
