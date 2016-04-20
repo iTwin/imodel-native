@@ -46,12 +46,28 @@ protected:
     //! @param[in] matchingColumnNamesWithOldNames Comma-separated list of the same columns as in @p allColumnNamesAfter but with their names before the modification.
     //!               Pass nullptr if the modifications don't include a column rename.
     //! @return BE_SQLITE_OK in case of success. Error codes otherwise.
-    static DbResult AlterColumns(ECDbR ecdb, Utf8CP tableName, Utf8CP newDdlBody, bool recreateIndices, Utf8CP allColumnNamesAfter, Utf8CP matchingColumnNamesWithOldNames = nullptr);
+    static DbResult AlterColumns(ECDbR, Utf8CP tableName, Utf8CP newDdlBody, bool recreateIndices, Utf8CP allColumnNamesAfter, Utf8CP matchingColumnNamesWithOldNames = nullptr);
 
+//    static DbResult AlterTables(ECDbR, bvector<Utf8String> alterTableSqls);
+//    static BentleyStatus CheckIntegrity(ECDbCR);
 public:
     virtual ~ECDbProfileUpgrader() {}
     DbResult Upgrade(ECDbR ecdb) const { return _Upgrade(ecdb); }
     };
+
+//=======================================================================================
+// @bsiclass                                                 Krischan.Eberle      04/2016
+//+===============+===============+===============+===============+===============+======
+/*struct ECDbProfileUpgrader_3400 : ECDbProfileUpgrader
+    {
+    //intentionally use compiler generated ctor, dtor, copy ctor and copy assignment op
+    private:
+        virtual DbResult _Upgrade(ECDbR) const override;
+
+        DbResult UpgradeBriefcaseIdSequences(ECDbCR) const;
+    };*/
+
+//no upgrader required to upgrade to 3.3.0.3. 
 
 //=======================================================================================
 // @bsiclass                                                 Krischan.Eberle      04/2016
@@ -63,16 +79,7 @@ private:
     virtual DbResult _Upgrade(ECDbR) const override;
     };
 
-//=======================================================================================
-// @bsiclass                                                 Krischan.Eberle      04/2016
-//+===============+===============+===============+===============+===============+======
-struct ECDbProfileUpgrader_3301 : ECDbProfileUpgrader
-    {
-    //intentionally use compiler generated ctor, dtor, copy ctor and copy assignment op
-    private:
-        //Just there to trigger a reimport of the system schemas.
-        virtual DbResult _Upgrade(ECDbR) const override { return BE_SQLITE_OK; }
-    };
+//no upgrader required to upgrade to 3.3.0.1 as this step only requires the schemas to be reimported.
 
 //=======================================================================================
 // @bsiclass                                                 Krischan.Eberle      04/2016
