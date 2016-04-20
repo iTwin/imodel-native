@@ -52,13 +52,13 @@
         <ECEnumerator value="3" displayLabel="LocalStateFolder" />
     </ECEnumeration>
     
-    <ECEntityClass typeName="ExternalFileInfo" description="Attributes of a file stored external to the repository." displayLabel="External File Info" modifier="Sealed">
+    <ECEntityClass typeName="ExternalFileInfo" description="Attributes of a file stored external to the repository." displayLabel="External File Info">
         <BaseClass>FileInfo</BaseClass>
         <ECProperty propertyName="RootFolder" typeName="StandardRootFolderType" description="Discrete set of root folders defined by the application. The DgnClientFx's standard root folders are reserved folders. Custom root folders must use ids other than the ones used for the standard root folders." />
         <ECProperty propertyName="RelativePath" typeName="string" description="File path relative to root folder"/>
     </ECEntityClass>
     
-    <ECEntityClass typeName="FileInfoOwnership" modifier="Sealed">
+    <ECEntityClass typeName="FileInfoOwnership">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00.01">
                 <MapStrategy/>

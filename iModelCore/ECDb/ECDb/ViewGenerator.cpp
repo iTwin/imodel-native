@@ -117,7 +117,7 @@ BentleyStatus ViewGenerator::CreateNullView(NativeSqlBuilder& viewSql, ECSqlPrep
 //+---------------+---------------+---------------+---------------+---------------+--------
 BentleyStatus ViewGenerator::GetRootClasses(std::vector<ClassMap const*>& rootClasses, ECDbCR db)
     {
-    ECSchemaList schemas;
+    bvector<ECN::ECSchemaCP> schemas;
     if (db.Schemas().GetECSchemas(schemas, true) != SUCCESS)
         return ERROR;
 

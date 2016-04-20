@@ -229,7 +229,10 @@ void ECDbProfileManager::GetUpgraderSequence(std::vector<std::unique_ptr<ECDbPro
     if (currentProfileVersion < SchemaVersion(3, 3, 0, 1))
         upgraders.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3301()));
 
-    BeAssert(GetExpectedVersion() == SchemaVersion(3, 3, 0, 1) && "ExpectedVersion and latest upgrader don't match.");
+    if (currentProfileVersion < SchemaVersion(3, 3, 0, 2))
+        upgraders.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3302()));
+
+    BeAssert(GetExpectedVersion() == SchemaVersion(3, 3, 0, 2) && "ExpectedVersion and latest upgrader don't match.");
     }
 
 //-----------------------------------------------------------------------------------------

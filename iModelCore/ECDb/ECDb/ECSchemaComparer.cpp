@@ -175,7 +175,7 @@ BentleyStatus Binary::CopyFrom(ECValueCR value)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSchemaComparer::Compare(ECSchemaChanges& changes, ECSchemaList const& lhs, ECSchemaList const& rhs)
+BentleyStatus ECSchemaComparer::Compare(ECSchemaChanges& changes, bvector<ECN::ECSchemaCP> const& lhs, bvector<ECN::ECSchemaCP> const& rhs)
     {
     std::map<Utf8CP, ECSchemaCP, CompareIUtf8Ascii> lhsMap, rhsMap, allSchemasMap;
     for (ECSchemaCP schema : lhs)

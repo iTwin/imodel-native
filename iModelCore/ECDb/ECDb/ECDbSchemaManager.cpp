@@ -37,17 +37,24 @@ ECDbSchemaManager::~ECDbSchemaManager()
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                   Affan.Khan        06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaManager::GetECSchemas(ECSchemaList& schemas, bool ensureAllClassesLoaded) const
+BentleyStatus ECDbSchemaManager::GetECSchemas(bvector<ECN::ECSchemaCP>& schemas, bool ensureAllClassesLoaded) const
     {
-    ECSchemaKeys schemaKeys;
-    auto stat = GetECSchemaKeys(schemaKeys);
-    if (stat != SUCCESS)
-        return stat;
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT Id FROM ec_Schema");
+    if (stmt == nullptr)
+        return ERROR;
+
+    std::vector<ECSchemaId> schemaIds;
+    while (BE_SQLITE_ROW == stmt->Step())
+        {
+        schemaIds.push_back(stmt->GetValueId<ECSchemaId>(0));
+        }
+
+    stmt = nullptr; // in case the child call needs to reuse this statement
 
     schemas.clear();
-    for (ECSchemaKey const& schemaKey : schemaKeys)
+    for (ECSchemaId schemaId : schemaIds)
         {
-        ECSchemaCP out = GetECSchema(schemaKey.GetECSchemaId(), ensureAllClassesLoaded);
+        ECSchemaCP out = GetECSchema(schemaId, ensureAllClassesLoaded);
         if (out == nullptr)
             return ERROR;
 
@@ -384,24 +391,6 @@ ECDerivedClassesList const& ECDbSchemaManager::GetDerivedECClasses(ECClassCR bas
 ECEnumerationCP ECDbSchemaManager::GetECEnumeration(Utf8CP schemaName, Utf8CP enumName) const
     {
     return m_schemaReader->GetECEnumeration(schemaName, enumName);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        07/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaManager::GetECSchemaKeys(ECSchemaKeys& keys) const
-    {
-    return ECDbSchemaPersistenceHelper::GetECSchemaKeys(keys, m_ecdb);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        07/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaManager::GetECClassKeys(ECClassKeys& keys, Utf8CP schemaName) const
-    {
-    PRECONDITION(schemaName != nullptr && "schemaName parameter cannot be null", ERROR);
-    ECSchemaId schemaId = ECDbSchemaPersistenceHelper::GetECSchemaId(m_ecdb, schemaName);
-    return ECDbSchemaPersistenceHelper::GetECClassKeys(keys, schemaId, m_ecdb);
     }
 
 /*---------------------------------------------------------------------------------------

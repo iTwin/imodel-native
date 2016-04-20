@@ -22,24 +22,6 @@ bool ECDbSchemaPersistenceHelper::ContainsECClass(ECDbCR db, ECClassCR ecClass)
     return classId.IsValid();
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    01/2016
-//---------------------------------------------------------------------------------------
-bool ECDbSchemaPersistenceHelper::TryGetECSchemaKey(SchemaKey& key, ECDbCR ecdb, ECSchemaId schemaId)
-    {
-    CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != ecdb.GetCachedStatement(stmt, "SELECT Name, VersionDigit1, VersionDigit2, VersionDigit3 FROM ec_Schema WHERE Id=?"))
-        return false;
-
-    if (BE_SQLITE_OK != stmt->BindId(1, schemaId))
-        return false;
-
-    if (stmt->Step() != BE_SQLITE_ROW)
-        return false;
-
-    key = SchemaKey(stmt->GetValueText(0), stmt->GetValueInt(1), stmt->GetValueInt(2), stmt->GetValueInt(3));
-    return true;
-    }
 
 
 //---------------------------------------------------------------------------------------
@@ -59,26 +41,6 @@ bool ECDbSchemaPersistenceHelper::TryGetECSchemaKey(SchemaKey& key, ECDbCR ecdb,
 
     key = SchemaKey(stmt->GetValueText(0), stmt->GetValueInt(1), stmt->GetValueInt(2), stmt->GetValueInt(3));
     return true;
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        07/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaPersistenceHelper::GetECSchemaKeys(ECSchemaKeys& keys, ECDbCR db)
-    {
-    keys.clear();
-    CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != db.GetCachedStatement(stmt, "SELECT Id, Name, VersionDigit1, VersionDigit2, VersionDigit3, DisplayLabel FROM ec_Schema ORDER BY Name"))
-        return ERROR;
-
-    while (stmt->Step() == BE_SQLITE_ROW)
-        {
-        keys.push_back(ECSchemaKey(stmt->GetValueId<ECSchemaId>(0), stmt->GetValueText(1),
-            (uint32_t) stmt->GetValueInt(2), (uint32_t) stmt->GetValueInt(3), (uint32_t) stmt->GetValueInt(4),
-                                   stmt->IsColumnNull(5) ? (Utf8CP)nullptr : stmt->GetValueText(5)));
-        }
-
-    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------------
@@ -122,29 +84,6 @@ ECSchemaId ECDbSchemaPersistenceHelper::GetECSchemaId(ECDbCR db, Utf8CP schemaNa
         return ECSchemaId();
 
     return stmt->GetValueId<ECSchemaId>(0);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        07/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaPersistenceHelper::GetECClassKeys(ECClassKeys& keys, ECSchemaId schemaId, ECDbCR db)
-    {
-    keys.clear();
-    CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != db.GetCachedStatement(stmt, "SELECT Id, Name, DisplayLabel FROM ec_Class WHERE SchemaId = ? ORDER BY Name"))
-        return ERROR;
-
-    stmt->BindId(1, schemaId);
-    while (stmt->Step() == BE_SQLITE_ROW)
-        {
-        keys.push_back(
-            ECClassKey(
-                stmt->GetValueId<ECClassId>(0),
-                stmt->GetValueText(1),
-                (stmt->IsColumnNull(2) ? (Utf8CP)nullptr : stmt->GetValueText(2))));
-        }
-
-    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------

@@ -1117,7 +1117,7 @@ struct ECSchemaComparer
         //BentleyStatus CompareKindOfQuantities(ECKindOfQuantityChanges& changes, KindOfQuantityContainerCR a, KindOfQuantityContainerCR b);
 
     public:
-        BentleyStatus Compare(ECSchemaChanges& changes, ECSchemaList const& existingSet, ECSchemaList const& newSet);
+        BentleyStatus Compare(ECSchemaChanges& changes, bvector<ECN::ECSchemaCP> const& existingSet, bvector<ECN::ECSchemaCP> const& newSet);
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

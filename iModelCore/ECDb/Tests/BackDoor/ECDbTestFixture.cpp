@@ -190,7 +190,7 @@ BentleyStatus ECDbTestFixture::Populate(ECDbCR ecdb, int instanceCountPerClass)
     {
     if (instanceCountPerClass > 0)
         {
-        ECSchemaList schemas;
+        bvector<ECN::ECSchemaCP> schemas;
         if (SUCCESS != ecdb.Schemas().GetECSchemas(schemas, true))
             return ERROR;
 

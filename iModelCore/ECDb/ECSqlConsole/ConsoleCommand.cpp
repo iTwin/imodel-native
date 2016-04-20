@@ -628,7 +628,7 @@ void ExportCommand::RunExportTables(ECSqlConsoleSession& session, Utf8CP jsonFil
 void ExportCommand::RunExportSchema(ECSqlConsoleSession& session, Utf8CP outFolderStr, bool useECXmlV2) const
     {
     auto const& schemaManager = session.GetECDbR ().Schemas();
-    ECSchemaList schemas;
+    bvector<ECN::ECSchemaCP> schemas;
     auto status = schemaManager.GetECSchemas(schemas, true);
     if (status != SUCCESS)
         {
@@ -772,7 +772,7 @@ void PopulateCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> cons
         return;
         }
 
-    ECSchemaList schemaList;
+    bvector<ECN::ECSchemaCP> schemaList;
     if (argCount == 2)
         {
         Utf8CP schemaName = args[1].c_str();

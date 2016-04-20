@@ -29,7 +29,7 @@ private:
     static DbResult AssignProfileVersion(ECDbR);
 
     //! Expected version of the ECDb profile for this version of the ECDb API.
-    static SchemaVersion GetExpectedVersion() { return SchemaVersion(3, 3, 0, 1); }
+    static SchemaVersion GetExpectedVersion() { return SchemaVersion(3, 3, 0, 2); }
     //! Minimum version of the ECDb profile which can still be auto-upgraded to the latest profile version.
     static SchemaVersion GetMinimumSupportedVersion() { return SchemaVersion(3, 0, 0, 0); }
 
