@@ -2704,7 +2704,9 @@ protected:
         uint64_t firstStrip = MAX(0, region.GetYMin() / m_tiledRaster.GetTileSizeY());
         uint64_t lastStrip = MIN(region.GetYMax() / m_tiledRaster.GetTileSizeY(), m_tiledRaster.GetNumberOfTileY()-1);
 
-        HRAPacketRleSurfacePtr pSurfaceRle = HRAPacketRleSurface::CreateSurface((uint32_t)width64, (uint32_t)MIN((lastStrip+1)*m_tiledRaster.GetTileSizeY(), height64), GetPixelType(), (uint32_t)m_tiledRaster.GetTileSizeY());
+        uint64_t lastStripPixelPos = MIN((lastStrip + 1)*m_tiledRaster.GetTileSizeY(), height64);
+
+        HRAPacketRleSurfacePtr pSurfaceRle = HRAPacketRleSurface::CreateSurface((uint32_t)width64, (uint32_t)(lastStripPixelPos - firstStrip*m_tiledRaster.GetTileSizeY()), GetPixelType(), (uint32_t)m_tiledRaster.GetTileSizeY());
 
         for (uint64_t strip = firstStrip; strip <= lastStrip; ++strip)
             {
