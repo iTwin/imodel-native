@@ -473,7 +473,7 @@
                 </BooleanDisplay>
             </ECCustomAttributes>
         </ECProperty>
-        <ECProperty propertyName="WantSpots" typeName="boolean" displayLabel="Triangle Vertices">
+        <ECProperty propertyName="WantSpots" typeName="boolean" displayLabel="Spots">
             <ECCustomAttributes>
                 <Category xmlns="EditorCustomAttributes.01.00">
                     <Name>CalculatedFeaturesDisplay</Name>
@@ -668,7 +668,7 @@
                 </BooleanDisplay>
             </ECCustomAttributes>
         </ECProperty>
-        <ECProperty propertyName="WantSpotFeatures" typeName="boolean" displayLabel="Spots">
+        <ECProperty propertyName="WantSpotFeatures" typeName="boolean" displayLabel="Feature Spots">
             <ECCustomAttributes>
                 <Category xmlns="EditorCustomAttributes.01.00">
                     <Name>SourceFeaturesDisplay</Name>
