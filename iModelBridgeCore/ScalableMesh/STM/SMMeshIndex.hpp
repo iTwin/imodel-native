@@ -2257,8 +2257,9 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
         *pPixel++ = pixelBufferPRGBA[i * 4 + 1];
         *pPixel++ = pixelBufferPRGBA[i * 4 + 2];
         }
-    PushTexture(pixelBufferP, 3 * sizeof(int) + textureWidthInPixels * textureHeightInPixels * 3);     
-    
+    PushTexture(pixelBufferP, 3 * sizeof(int) + textureWidthInPixels * textureHeightInPixels * 3);   
+    m_nodeHeader.m_textureID.resize(1);
+    m_nodeHeader.m_textureID[0] = GetBlockID().m_integerID;
     RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> existingFaces(GetPtsIndicePtr());
 
     if (existingFaces->size() >= 4)
