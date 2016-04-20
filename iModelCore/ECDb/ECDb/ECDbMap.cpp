@@ -114,6 +114,18 @@ MappingStatus ECDbMap::MapSchemas(SchemaImportContext& schemaImportContext)
         return MappingStatus::Error;
         }
 
+    if (GetSchemaImportContext()->GetECSchemaCompareContext().RequiresUpdate())
+        {
+        //Following step is simply done to process navigation properties for classMap loaded via above step where we sync index information.
+        //If we do not do following then we must clear cache in case of schema upgrade which we like to avoid.
+        if (SUCCESS != GetSchemaImportContext()->GetClassMapLoadContext().Postprocess(*this))
+            {
+            ClearCache();
+            m_schemaImportContext = nullptr;
+            return MappingStatus::Error;
+            }
+        }
+
     ECDbMapAnalyser mapAnalyser(*this);
     if (mapAnalyser.Analyse(true /*apply changes*/) != SUCCESS)
         {
@@ -280,6 +292,8 @@ MappingStatus ECDbMap::DoMapSchemas()
         if (SUCCESS != kvpair.first->CreateUserProvidedIndexes(*GetSchemaImportContext(), kvpair.second->GetIndexInfos()))
             return MappingStatus::Error;
         }
+
+
 
     //now create class id cols for the relationship classes, and ensure shared col min count
     if (SUCCESS != FinishTableDefinitions())
@@ -484,13 +498,13 @@ ClassMap const* ECDbMap::GetClassMap(ECN::ECClassCR ecClass) const
         {
         ClassMapLoadContext ctx;
         ClassMapPtr classMap = nullptr;
-    if (SUCCESS != TryGetClassMap(classMap, ctx, ecClass))
-        {
-        BeAssert(false && "Error during TryGetClassMap");
-        return nullptr;
-        }
+        if (SUCCESS != TryGetClassMap(classMap, ctx, ecClass))
+            {
+            BeAssert(false && "Error during TryGetClassMap");
+            return nullptr;
+            }
 
-    if (classMap == nullptr)
+        if (classMap == nullptr)
             return nullptr;
 
         if (SUCCESS != ctx.Postprocess(*this))

@@ -564,7 +564,10 @@ BentleyStatus ClassMap::_Load(std::set<ClassMap const*>& loadGraph, ClassMapLoad
     std::set<DbTable*> joinedTables;
 
     if (allPropertyMappings.empty())
+        {
         SetTable(*const_cast<DbTable*>(GetECDbMap().GetDbSchema().GetNullTable()));
+        return SUCCESS;
+        }
     else
         {
         for (PropertyDbMapping const* propMapping : allPropertyMappings)
@@ -1193,7 +1196,7 @@ PropertyMapSet::Ptr PropertyMapSet::Create(ClassMap const& classMap)
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Krischan.Eberle    01/2016
 //------------------------------------------------------------------------------------------
-BentleyStatus ClassMapLoadContext::Postprocess(ECDbMapCR ecdbMap) const
+BentleyStatus ClassMapLoadContext::Postprocess(ECDbMapCR ecdbMap) 
     {
     for (ECN::ECClassCP constraintClass : m_constraintClasses)
         {
@@ -1211,6 +1214,8 @@ BentleyStatus ClassMapLoadContext::Postprocess(ECDbMapCR ecdbMap) const
             return ERROR;
         }
 
+    m_constraintClasses.clear();
+    m_navPropMaps.clear();
     return SUCCESS;
     }
 
