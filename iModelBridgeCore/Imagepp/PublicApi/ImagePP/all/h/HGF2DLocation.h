@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DLocation.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGF2DLocation
@@ -151,10 +151,9 @@ public:
     HGF2DPosition      GetPosition() const;
 
     IMAGEPP_EXPORT HGF2DLocation   operator+(const HGF2DDisplacement& pi_rOffset) const;
-    friend HGF2DLocation   operator+(const HGF2DDisplacement& pi_rOffset,
-              const HGF2DLocation& pi_rLocation);
+    friend HGF2DLocation   operator+(const HGF2DDisplacement& pi_rOffset, const HGF2DLocation& pi_rLocation);
     IMAGEPP_EXPORT HGF2DDisplacement    operator-(const HGF2DLocation& pi_rLocation) const;
-    HGF2DLocation      operator-(const HGF2DDisplacement& pi_rOffset) const;
+    IMAGEPP_EXPORT HGF2DLocation      operator-(const HGF2DDisplacement& pi_rOffset) const;
 
     IMAGEPP_EXPORT HGF2DLocation&        operator+=(const HGF2DDisplacement& pi_rOffset);
     HGF2DLocation&     operator-=(const HGF2DDisplacement& pi_rOffset);

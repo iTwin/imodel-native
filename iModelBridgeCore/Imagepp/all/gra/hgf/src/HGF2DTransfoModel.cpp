@@ -55,6 +55,80 @@ HGF2DTransfoModel& HGF2DTransfoModel::operator=(const HGF2DTransfoModel& pi_rObj
     return (*this);
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod
+//----------------------------------------------------------------------------------------
+bool HGF2DTransfoModel::IsConvertDirectThreadSafe() const   { return _IsConvertDirectThreadSafe();}
+bool HGF2DTransfoModel::IsConvertInverseThreadSafe() const  { return _IsConvertInverseThreadSafe(); }
+
+StatusInt HGF2DTransfoModel::ConvertDirect(double* pio_pXInOut, double* pio_pYInOut) const { return _ConvertDirect(pio_pXInOut, pio_pYInOut); }
+
+StatusInt HGF2DTransfoModel::ConvertDirect(double  pi_YIn, double pi_XInStart, size_t pi_NumLoc, double pi_XInStep, double* po_aXOut, double* po_aYOut) const 
+    {
+    return _ConvertDirect(pi_YIn, pi_XInStart, pi_NumLoc, pi_XInStep, po_aXOut, po_aYOut);
+    }
+StatusInt HGF2DTransfoModel::ConvertDirect(double  pi_XIn, double pi_YIn, double* po_pXOut, double* po_pYOut) const
+    {
+    return _ConvertDirect(pi_XIn, pi_YIn, po_pXOut, po_pYOut);
+    }
+StatusInt HGF2DTransfoModel::ConvertDirect(size_t pi_NumLoc, double* pio_aXInOut, double* pio_aYInOut) const
+    {
+    return _ConvertDirect(pi_NumLoc, pio_aXInOut, pio_aYInOut);
+    }
+
+StatusInt HGF2DTransfoModel::ConvertInverse(double* pio_pXInOut, double* pio_pYInOut) const { return _ConvertInverse(pio_pXInOut, pio_pYInOut); }
+
+StatusInt HGF2DTransfoModel::ConvertInverse(double  pi_YIn, double pi_XInStart, size_t pi_NumLoc, double pi_XInStep, double* po_aXOut, double* po_aYOut) const
+    {
+    return _ConvertInverse(pi_YIn, pi_XInStart, pi_NumLoc, pi_XInStep, po_aXOut, po_aYOut);
+    }
+StatusInt HGF2DTransfoModel::ConvertInverse(double  pi_XIn, double pi_YIn, double* po_pXOut, double* po_pYOut) const
+    {
+    return _ConvertInverse(pi_XIn, pi_YIn, po_pXOut, po_pYOut);
+    }
+StatusInt HGF2DTransfoModel::ConvertInverse(size_t pi_NumLoc, double* pio_aXInOut, double* pio_aYInOut) const
+    {
+    return _ConvertInverse(pi_NumLoc, pio_aXInOut, pio_aYInOut);
+    }
+
+bool HGF2DTransfoModel::IsIdentity() const {return _IsIdentity();}
+bool HGF2DTransfoModel::IsStretchable(double pi_AngleTolerance) const { return _IsStretchable(pi_AngleTolerance); }
+void HGF2DTransfoModel::GetStretchParams(double* po_pScaleFactorX, double* po_pScaleFactorY, HGF2DDisplacement* po_pDisplacement) const { return _GetStretchParams(po_pScaleFactorX, po_pScaleFactorY, po_pDisplacement); }
+
+bool               HGF2DTransfoModel::HasDomain() const { return _HasDomain(); }
+HFCPtr<HGF2DShape> HGF2DTransfoModel::GetDirectDomain() const { return _GetDirectDomain(); }
+HFCPtr<HGF2DShape> HGF2DTransfoModel::GetInverseDomain() const { return _GetInverseDomain(); }
+
+HGF2DTransfoModel* HGF2DTransfoModel::Clone() const {return _Clone();}
+
+HFCPtr<HGF2DTransfoModel> HGF2DTransfoModel::ComposeInverseWithDirectOf(const HGF2DTransfoModel& pi_rModel) const { return _ComposeInverseWithDirectOf(pi_rModel); }
+HFCPtr<HGF2DTransfoModel> HGF2DTransfoModel::ComposeInverseWithInverseOf(const HGF2DTransfoModel& pi_rModel) const { return _ComposeInverseWithInverseOf(pi_rModel); }
+
+bool                      HGF2DTransfoModel::CanBeRepresentedByAMatrix() const { return _CanBeRepresentedByAMatrix(); }
+HFCMatrix<3, 3>           HGF2DTransfoModel::GetMatrix() const { return _GetMatrix(); }
+
+HFCPtr<HGF2DTransfoModel> HGF2DTransfoModel::CreateSimplifiedModel() const { return _CreateSimplifiedModel(); }
+
+bool HGF2DTransfoModel::PreservesLinearity() const { return _PreservesLinearity(); }
+bool HGF2DTransfoModel::PreservesParallelism() const { return _PreservesParallelism(); }
+bool HGF2DTransfoModel::PreservesShape() const { return _PreservesShape(); }
+bool HGF2DTransfoModel::PreservesDirection() const { return _PreservesDirection(); }
+
+void HGF2DTransfoModel::Reverse() { _Reverse(); }
+
+/** -----------------------------------------------------------------------------
+This method reverses the current transformation model. The operation of
+reversing implies that results produced by the ConvertDirect() method will
+from now on be produced by ConvertInverse() and vice-versa. The different
+parameters related to the model are modified. The units used for the direct
+and inverse output channels are also swapped.
+
+-----------------------------------------------------------------------------
+*/
+void HGF2DTransfoModel::_Reverse() 
+    {
+    Prepare();
+    }
 
 /** -----------------------------------------------------------------------------
     This method creates a new transformation model as a composition of the
@@ -74,7 +148,7 @@ HGF2DTransfoModel& HGF2DTransfoModel::operator=(const HGF2DTransfoModel& pi_rObj
 
     -----------------------------------------------------------------------------
 */
-HFCPtr<HGF2DTransfoModel>  HGF2DTransfoModel::ComposeInverseWithDirectOf (const HGF2DTransfoModel& pi_rModel) const
+HFCPtr<HGF2DTransfoModel>  HGF2DTransfoModel::_ComposeInverseWithDirectOf (const HGF2DTransfoModel& pi_rModel) const
     {
     // All models unknown ask other for composition
     return(CallComposeOf(pi_rModel));
@@ -107,7 +181,7 @@ HFCPtr<HGF2DTransfoModel>  HGF2DTransfoModel::ComposeInverseWithDirectOf (const 
     @see ConvertInverse()
     -----------------------------------------------------------------------------
 */
-StatusInt HGF2DTransfoModel::ConvertDirect(double   pi_XIn,
+StatusInt HGF2DTransfoModel::_ConvertDirect(double   pi_XIn,
                                            double   pi_YIn,
                                            double*  po_pXOut,
                                            double*  po_pYOut) const
@@ -154,7 +228,7 @@ StatusInt HGF2DTransfoModel::ConvertDirect(double   pi_XIn,
     @see ConvertInverse()
     -----------------------------------------------------------------------------
 */
-StatusInt HGF2DTransfoModel::ConvertDirect(double    pi_YIn,
+StatusInt HGF2DTransfoModel::_ConvertDirect(double    pi_YIn,
                                            double    pi_XInStart,
                                            size_t    pi_NumLoc,
                                            double    pi_XInStep,
@@ -205,7 +279,7 @@ StatusInt HGF2DTransfoModel::ConvertDirect(double    pi_YIn,
                        values. This array must have at least pi_NumLoc elements.
     -----------------------------------------------------------------------------
 */
-StatusInt HGF2DTransfoModel::ConvertDirect(size_t    pi_NumLoc,
+StatusInt HGF2DTransfoModel::_ConvertDirect(size_t    pi_NumLoc,
                                            double*   pio_aXInOut,
                                            double*   pio_aYInOut) const
     {
@@ -253,7 +327,7 @@ StatusInt HGF2DTransfoModel::ConvertDirect(size_t    pi_NumLoc,
     @see ConvertDirect()
     -----------------------------------------------------------------------------
 */
-StatusInt HGF2DTransfoModel::ConvertInverse(double  pi_XIn,
+StatusInt HGF2DTransfoModel::_ConvertInverse(double  pi_XIn,
                                             double  pi_YIn,
                                             double* po_pXOut,
                                            double* po_pYOut) const
@@ -323,7 +397,7 @@ StatusInt HGF2DTransfoModel::ConvertPosDirect(HGF2DPosition* pio_rpCoord) const
     @see ConvertDirect()
     -----------------------------------------------------------------------------
 */
-StatusInt HGF2DTransfoModel::ConvertInverse (double    pi_YIn,
+StatusInt HGF2DTransfoModel::_ConvertInverse (double    pi_YIn,
                                              double    pi_XInStart,
                                              size_t    pi_NumLoc,
                                              double    pi_XInStep,
@@ -375,7 +449,7 @@ StatusInt HGF2DTransfoModel::ConvertInverse (double    pi_YIn,
                        values. This array must have at least pi_NumLoc elements.
     -----------------------------------------------------------------------------
 */
-StatusInt HGF2DTransfoModel::ConvertInverse(size_t    pi_NumLoc,
+StatusInt HGF2DTransfoModel::_ConvertInverse(size_t    pi_NumLoc,
                                             double*   pio_aXInOut,
                                             double*   pio_aYInOut) const
     {
@@ -420,49 +494,6 @@ StatusInt HGF2DTransfoModel::ConvertPosInverse(HGF2DPosition* pio_rpCoord) const
     }
 
 /** -----------------------------------------------------------------------------
-    This method returns true if the present instance of the transformation model
-    can be represented by a stretch. This implies that the model only contains a
-    translation component and scaling factors. If not overridden this method
-    always returns false.
-    The optional angle tolerance parameter when provided indicates that some small
-    specified amount of rotation can be disregarded in the determination of
-    stretcheability of the model.
-
-    @param pi_AngleTolerance IN OPTIONAL An angular tolerance interpreted in
-                              radians. The default value is 0 meaning that no
-                              rotation is acceptable.
-
-    @return A Boolean value. true if the model can be represented completely by
-            a stretch, and false otherwise.
-
-    @see GetStretchParams()
-    @see CanBeRepresentedByAMatrix()
-    -----------------------------------------------------------------------------
-*/
-bool HGF2DTransfoModel::IsStretchable (double pi_AngleTolerance) const
-    {
-    return (false);
-    }
-
-/** -----------------------------------------------------------------------------
-    This method returns true if the present instance of the transformation model
-    can be represented by an identity transformation model. This implies that
-    the model contains no transformation. If not overridden this method always
-    returns false.
-
-    @return A Boolean value. true if the model can be represented completely by
-            an identity, and false otherwise
-
-    @see GetStretchParams()
-    @see CanBeRepresentedByAMatrix()
-    -----------------------------------------------------------------------------
-*/
-bool HGF2DTransfoModel::IsIdentity () const
-    {
-    return (false);
-    }
-
-/** -----------------------------------------------------------------------------
     This method creates a new transformation model as a composition of the
     present model, and the given one. The returned model is always a new one.
     The returned model is the simplest possible, and can be of a completely
@@ -481,7 +512,7 @@ bool HGF2DTransfoModel::IsIdentity () const
     @see ComposeInverseWithDirectOf()
     -----------------------------------------------------------------------------
 */
-HFCPtr<HGF2DTransfoModel>  HGF2DTransfoModel::ComposeInverseWithInverseOf (const HGF2DTransfoModel& pi_rModel) const
+HFCPtr<HGF2DTransfoModel>  HGF2DTransfoModel::_ComposeInverseWithInverseOf (const HGF2DTransfoModel& pi_rModel) const
     {
     // Make a duplicate of given
     HAutoPtr<HGF2DTransfoModel> pNewModel(pi_rModel.Clone());
@@ -503,7 +534,7 @@ HFCPtr<HGF2DTransfoModel>  HGF2DTransfoModel::ComposeInverseWithInverseOf (const
 // know the type of given, a complex transformation model is constructed and
 // returned.
 //-----------------------------------------------------------------------------
-HFCPtr<HGF2DTransfoModel>  HGF2DTransfoModel::ComposeYourself (const HGF2DTransfoModel& pi_rModel) const
+HFCPtr<HGF2DTransfoModel>  HGF2DTransfoModel::_ComposeYourself (const HGF2DTransfoModel& pi_rModel) const
     {
     // The model is of an unknown type --> create complex
     // Allocate new complex transformation model
@@ -515,23 +546,6 @@ HFCPtr<HGF2DTransfoModel>  HGF2DTransfoModel::ComposeYourself (const HGF2DTransf
 
     return((HFCPtr<HGF2DTransfoModel>&)pMyComplex);
     }
-
-
-/** -----------------------------------------------------------------------------
-    This method attempts to create a new transformation model that is a simplified,
-    more efficient form of the current model. If this is not possible, a null
-    pointer will be returned.
-
-    @return A smart pointer to the new simplified model, or null if the model
-            is already in its simplest form.
-    -----------------------------------------------------------------------------
-*/
-HFCPtr<HGF2DTransfoModel> HGF2DTransfoModel::CreateSimplifiedModel() const
-    {
-    // By default, the model cannot be simplified.
-    return 0;
-    }
-
 
 /** -----------------------------------------------------------------------------
     This method permits to extract the stretch parameters at a specific location
@@ -784,26 +798,11 @@ void HGF2DTransfoModel::StudyReversibilityPrecisionOver
 
     }
 
-
-
-
-
-
 /** -----------------------------------------------------------------------------
     @bsimethod                                         Alain Robert 2014/06
     -----------------------------------------------------------------------------
 */
-bool  HGF2DTransfoModel::HasDomain() const
-    {
-    // Default implementation has no domain
-    return false;
-    }
-
-/** -----------------------------------------------------------------------------
-    @bsimethod                                         Alain Robert 2014/06
-    -----------------------------------------------------------------------------
-*/
-HFCPtr<HGF2DShape>  HGF2DTransfoModel::GetDirectDomain() const
+HFCPtr<HGF2DShape>  HGF2DTransfoModel::_GetDirectDomain() const
     {
     // Default implementation has no domain implying there is no limit
     return new HGF2DUniverse();
@@ -814,7 +813,7 @@ HFCPtr<HGF2DShape>  HGF2DTransfoModel::GetDirectDomain() const
     @bsimethod                                         Alain Robert 2014/06
     -----------------------------------------------------------------------------
 */
-HFCPtr<HGF2DShape>  HGF2DTransfoModel::GetInverseDomain() const
+HFCPtr<HGF2DShape>  HGF2DTransfoModel::_GetInverseDomain() const
     {
     // Default implementation has no domain implying there is no limit
     return new HGF2DUniverse();

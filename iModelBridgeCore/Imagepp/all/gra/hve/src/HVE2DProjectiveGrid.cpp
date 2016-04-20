@@ -275,7 +275,7 @@ HVE2DProjectectiveGrid& HVE2DProjectectiveGrid::operator=(const HVE2DProjectecti
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-void HVE2DProjectectiveGrid::ConvertDirect(double* pio_pXInOut,
+void HVE2DProjectectiveGrid::_ConvertDirect(double* pio_pXInOut,
                                            double* pio_pYInOut) const
     {
     HINVARIANTS;
@@ -291,7 +291,7 @@ void HVE2DProjectectiveGrid::ConvertDirect(double* pio_pXInOut,
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-void HVE2DProjectectiveGrid::ConvertDirect(double pi_XIn,
+void HVE2DProjectectiveGrid::_ConvertDirect(double pi_XIn,
                                            double pi_YIn,
                                            double* po_pXOut,
                                            double* po_pYOut) const
@@ -308,7 +308,7 @@ void HVE2DProjectectiveGrid::ConvertDirect(double pi_XIn,
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-void HVE2DProjectectiveGrid::ConvertDirect(double    pi_YIn,
+void HVE2DProjectectiveGrid::_ConvertDirect(double    pi_YIn,
                                            double    pi_XInStart,
                                            uint32_t   pi_NumLoc,
                                            double    pi_XInStep,
@@ -335,7 +335,7 @@ void HVE2DProjectectiveGrid::ConvertDirect(double    pi_YIn,
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-void HVE2DProjectectiveGrid::ConvertDirect(uint32_t  pi_NumLoc,
+void HVE2DProjectectiveGrid::_ConvertDirect(uint32_t  pi_NumLoc,
                                            double*   pio_aXInOut,
                                            double*   pio_aYInOut) const
     {
@@ -353,7 +353,7 @@ void HVE2DProjectectiveGrid::ConvertDirect(uint32_t  pi_NumLoc,
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-void HVE2DProjectectiveGrid::ConvertInverse(double* pio_pXInOut,
+void HVE2DProjectectiveGrid::_ConvertInverse(double* pio_pXInOut,
                                             double* pio_pYInOut) const
     {
     HINVARIANTS;
@@ -368,7 +368,7 @@ void HVE2DProjectectiveGrid::ConvertInverse(double* pio_pXInOut,
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-void HVE2DProjectectiveGrid::ConvertInverse(double pi_XIn,
+void HVE2DProjectectiveGrid::_ConvertInverse(double pi_XIn,
                                             double pi_YIn,
                                             double* po_pXOut,
                                             double* po_pYOut) const
@@ -385,7 +385,7 @@ void HVE2DProjectectiveGrid::ConvertInverse(double pi_XIn,
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-void HVE2DProjectectiveGrid::ConvertInverse(double    pi_YIn,
+void HVE2DProjectectiveGrid::_ConvertInverse(double    pi_YIn,
                                             double    pi_XInStart,
                                             uint32_t   pi_NumLoc,
                                             double    pi_XInStep,
@@ -412,7 +412,7 @@ void HVE2DProjectectiveGrid::ConvertInverse(double    pi_YIn,
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-void HVE2DProjectectiveGrid::ConvertInverse(uint32_t  pi_NumLoc,
+void HVE2DProjectectiveGrid::_ConvertInverse(uint32_t  pi_NumLoc,
                                             double*   pio_aXInOut,
                                             double*   pio_aYInOut) const
     {
@@ -431,7 +431,7 @@ void HVE2DProjectectiveGrid::ConvertInverse(uint32_t  pi_NumLoc,
 // PreservesLinearity
 // Indicate if the transformation model preserves linearity
 //-----------------------------------------------------------------------------
-bool   HVE2DProjectectiveGrid::PreservesLinearity () const
+bool   HVE2DProjectectiveGrid::_PreservesLinearity () const
     {
     HINVARIANTS;
 
@@ -442,7 +442,7 @@ bool   HVE2DProjectectiveGrid::PreservesLinearity () const
 // PreservesParallelism
 // Indicate if the transformation model preserves parallelism
 //-----------------------------------------------------------------------------
-bool   HVE2DProjectectiveGrid::PreservesParallelism() const
+bool   HVE2DProjectectiveGrid::_PreservesParallelism() const
     {
     HINVARIANTS;
 
@@ -453,7 +453,7 @@ bool   HVE2DProjectectiveGrid::PreservesParallelism() const
 // PreservesShape
 // Indicate if the transformation model preserves the shape
 //-----------------------------------------------------------------------------
-bool   HVE2DProjectectiveGrid::PreservesShape() const
+bool   HVE2DProjectectiveGrid::_PreservesShape() const
     {
     HINVARIANTS;
 
@@ -464,7 +464,7 @@ bool   HVE2DProjectectiveGrid::PreservesShape() const
 // PreservesDirection
 // Indicate if the transformation model preserves directions
 //-----------------------------------------------------------------------------
-bool   HVE2DProjectectiveGrid::PreservesDirection() const
+bool   HVE2DProjectectiveGrid::_PreservesDirection() const
     {
     HINVARIANTS;
 
@@ -476,7 +476,7 @@ bool   HVE2DProjectectiveGrid::PreservesDirection() const
 // CanBeRepresentedByAMatrix
 // Indicates if the model can be represented by a transformation matrix
 //-----------------------------------------------------------------------------
-bool HVE2DProjectectiveGrid::CanBeRepresentedByAMatrix() const
+bool HVE2DProjectectiveGrid::_CanBeRepresentedByAMatrix() const
     {
     HINVARIANTS;
     return(false);
@@ -487,7 +487,7 @@ bool HVE2DProjectectiveGrid::CanBeRepresentedByAMatrix() const
 //  IsIdentity
 //  Returns true if the model contains no transformation
 //-----------------------------------------------------------------------------
-bool HVE2DProjectectiveGrid::IsIdentity () const
+bool HVE2DProjectectiveGrid::_IsIdentity () const
     {
     HINVARIANTS;
 
@@ -498,7 +498,7 @@ bool HVE2DProjectectiveGrid::IsIdentity () const
 //  IsStetchable
 //  Returns true if the model contains only scaling and translation
 //-----------------------------------------------------------------------------
-bool HVE2DProjectectiveGrid::IsStretchable (double pi_AngleTolerance) const
+bool HVE2DProjectectiveGrid::_IsStretchable (double pi_AngleTolerance) const
     {
     HINVARIANTS;
 
@@ -510,7 +510,7 @@ bool HVE2DProjectectiveGrid::IsStretchable (double pi_AngleTolerance) const
 //  GetStetchParams
 //  Returns the stretch parameters
 //-----------------------------------------------------------------------------
-void HVE2DProjectectiveGrid::GetStretchParams(double* po_pScaleFactorX,
+void HVE2DProjectectiveGrid::_GetStretchParams(double* po_pScaleFactorX,
                                               double* po_pScaleFactorY,
                                               HGF2DDisplacement* po_pDisplacement) const
     {
@@ -548,7 +548,7 @@ void HVE2DProjectectiveGrid::GetStretchParams(double* po_pScaleFactorX,
 //  GetMatrix
 //  Gets the components of the projective by matrix
 //-----------------------------------------------------------------------------
-HFCMatrix<3, 3> HVE2DProjectectiveGrid::GetMatrix() const
+HFCMatrix<3, 3> HVE2DProjectectiveGrid::_GetMatrix() const
     {
     HINVARIANTS;
 
@@ -565,7 +565,7 @@ HFCMatrix<3, 3> HVE2DProjectectiveGrid::GetMatrix() const
 // Reverse
 // This method reverses the transformation model
 //-----------------------------------------------------------------------------
-void    HVE2DProjectectiveGrid::Reverse()
+void    HVE2DProjectectiveGrid::_Reverse()
     {
     HINVARIANTS;
 
@@ -605,7 +605,7 @@ void    HVE2DProjectectiveGrid::Reverse()
 
     // Invoque reversing of ancester
     // This call will in turn invoque Prepare()
-    HGF2DTransfoModelAdapter::Reverse();
+    HGF2DTransfoModelAdapter::_Reverse();
     }
 
 
@@ -614,7 +614,7 @@ void    HVE2DProjectectiveGrid::Reverse()
 // ComposeInverseWithDirectOf
 // Composes a new transformation model as a combination of self and given
 //-----------------------------------------------------------------------------
-HFCPtr<HGF2DTransfoModel>  HVE2DProjectectiveGrid::ComposeInverseWithDirectOf (const HGF2DTransfoModel& pi_rModel) const
+HFCPtr<HGF2DTransfoModel>  HVE2DProjectectiveGrid::_ComposeInverseWithDirectOf (const HGF2DTransfoModel& pi_rModel) const
     {
     HINVARIANTS;
 
@@ -649,7 +649,7 @@ HFCPtr<HGF2DTransfoModel>  HVE2DProjectectiveGrid::ComposeInverseWithDirectOf (c
 // This method allocates a copy of self. The caller is responsible for
 // the deletion of this object.
 //-----------------------------------------------------------------------------
-HGF2DTransfoModel* HVE2DProjectectiveGrid::Clone () const
+HGF2DTransfoModel* HVE2DProjectectiveGrid::_Clone() const
     {
     HINVARIANTS;
 
@@ -662,7 +662,7 @@ HGF2DTransfoModel* HVE2DProjectectiveGrid::Clone () const
 // ComposeYourself
 // PRIVATE
 //-----------------------------------------------------------------------------
-HFCPtr<HGF2DTransfoModel>  HVE2DProjectectiveGrid::ComposeYourself (const HGF2DTransfoModel& pi_rModel) const
+HFCPtr<HGF2DTransfoModel>  HVE2DProjectectiveGrid::_ComposeYourself (const HGF2DTransfoModel& pi_rModel) const
     {
     HINVARIANTS;
 
@@ -695,7 +695,7 @@ HFCPtr<HGF2DTransfoModel>  HVE2DProjectectiveGrid::ComposeYourself (const HGF2DT
         {
         // Type is not known ... build a complex
         // To do this we call the ancester ComposeYourself
-        pResultModel = HGF2DTransfoModel::ComposeYourself(pi_rModel);
+        pResultModel = HGF2DTransfoModel::_ComposeYourself(pi_rModel);
         }
 
     return (pResultModel);
@@ -709,13 +709,13 @@ HFCPtr<HGF2DTransfoModel>  HVE2DProjectectiveGrid::ComposeYourself (const HGF2DT
 //  This methods prepares the conversion parameters from the basic
 //  model attribute
 //-----------------------------------------------------------------------------
-void HVE2DProjectectiveGrid::Prepare ()
+void HVE2DProjectectiveGrid::_Prepare()
     {
     // Obtain conversion ratio for direct X to inverse X units
 
 
     // Invoque preparation of ancester (required)
-    HGF2DTransfoModelAdapter::Prepare();
+    HGF2DTransfoModelAdapter::_Prepare();
 
 
     }
@@ -759,7 +759,7 @@ void HVE2DProjectectiveGrid::Copy(const HVE2DProjectectiveGrid& pi_rObj)
 //-----------------------------------------------------------------------------
 // CreateSimplifiedModel
 //-----------------------------------------------------------------------------
-HFCPtr<HGF2DTransfoModel> HVE2DProjectectiveGrid::CreateSimplifiedModel() const
+HFCPtr<HGF2DTransfoModel> HVE2DProjectectiveGrid::_CreateSimplifiedModel() const
     {
     HINVARIANTS;
 

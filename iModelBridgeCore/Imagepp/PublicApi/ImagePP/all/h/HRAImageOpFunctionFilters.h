@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRAImageOpFunctionFilters.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -27,13 +27,13 @@ struct HRAImageOpPixelReplacerFilter : public HRAImageOp
 public:
     //! Create a pixel replacer. This operation will induce a pixel conversion to 'pixeltype' if source is of a different pixeltype.
     //! Pixel values must be provided in 'pixeltype' space.
-    static HRAImageOpPixelReplacerFilterPtr CreatePixelReplacer(HRPPixelType const& pixeltype);
+    IMAGEPPTEST_EXPORT static HRAImageOpPixelReplacerFilterPtr CreatePixelReplacer(HRPPixelType const& pixeltype);
 
     //! Set the value that will be replaced. 'size' must match the pixelsize of 'pixeltype'.
-    void SetValue(void const* pValue, size_t size);
+    IMAGEPPTEST_EXPORT void SetValue(void const* pValue, size_t size);
 
     //! Set new value.
-    void SetNewValue(void const* pValue, size_t size);
+    IMAGEPPTEST_EXPORT void SetNewValue(void const* pValue, size_t size);
 
 protected:
     virtual ImagePPStatus _GetAvailableInputPixelType(HFCPtr<HRPPixelType>& pixelType, uint32_t index, const HFCPtr<HRPPixelType> pixelTypeToMatch) override;
@@ -66,7 +66,7 @@ public:
     typedef bvector<HGFLUVCube> LUVCubeList;
 
     //! Create a color replacer filter. 
-    static HRAImageOpPtr CreateColorReplacerFilter(const Byte pi_newRGBColor[3], const RGBSetList& selectedRGBSet, const RGBSetList& selectedRemoveRGBSet);
+    IMAGEPPTEST_EXPORT static HRAImageOpPtr CreateColorReplacerFilter(const Byte pi_newRGBColor[3], const RGBSetList& selectedRGBSet, const RGBSetList& selectedRemoveRGBSet);
 
 protected:
     virtual ImagePPStatus _GetAvailableInputPixelType(HFCPtr<HRPPixelType>& pixelType, uint32_t index, const HFCPtr<HRPPixelType> pixelTypeToMatch) override;
@@ -106,7 +106,7 @@ struct HRAImageOpColortwistFilter : public HRAImageOp
 {
 public:
     //! Create a colortwist filter. Matrix must hold normalized values.
-    static HRAImageOpPtr CreateColortwistFilter(const double matrix[4][4]);
+    IMAGEPPTEST_EXPORT static HRAImageOpPtr CreateColortwistFilter(const double matrix[4][4]);
 
 protected:
     virtual ImagePPStatus _GetAvailableInputPixelType(HFCPtr<HRPPixelType>& pixelType, uint32_t index, const HFCPtr<HRPPixelType> pixelTypeToMatch) override;
@@ -131,7 +131,7 @@ struct HRAImageOpAlphaReplacerFilter: public HRAImageOp
 {
 public:
     //! Create an AlphaReplacer filter. 
-    static HRAImageOpPtr CreateAlphaReplacerFilter(Byte defaultAlpha, const VectorHRPAlphaRange& pi_rRanges);
+    IMAGEPPTEST_EXPORT static HRAImageOpPtr CreateAlphaReplacerFilter(Byte defaultAlpha, const VectorHRPAlphaRange& pi_rRanges);
 
 protected:
     virtual ImagePPStatus _GetAvailableInputPixelType(HFCPtr<HRPPixelType>& pixelType, uint32_t index, const HFCPtr<HRPPixelType> pixelTypeToMatch) override;
@@ -156,7 +156,7 @@ struct HRAImageOpAlphaComposerFilter: public HRAImageOp
 {
 public:
     //! Create an AlphaComposer filter. 
-    static HRAImageOpPtr CreateAlphaComposerFilter(Byte defaultAlpha, const VectorHRPAlphaRange& pi_rRanges);
+    IMAGEPPTEST_EXPORT static HRAImageOpPtr CreateAlphaComposerFilter(Byte defaultAlpha, const VectorHRPAlphaRange& pi_rRanges);
 
 protected:
     virtual ImagePPStatus _GetAvailableInputPixelType(HFCPtr<HRPPixelType>& pixelType, uint32_t index, const HFCPtr<HRPPixelType> pixelTypeToMatch) override;

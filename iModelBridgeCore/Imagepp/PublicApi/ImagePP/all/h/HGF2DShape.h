@@ -239,7 +239,7 @@ public:
         @see UnifyShape
         -----------------------------------------------------------------------------
     */
-    IMAGEPP_EXPORT virtual HGF2DShape*       DifferentiateFromShape(const HGF2DShape& pi_rShape) const = 0;
+    virtual HGF2DShape*       DifferentiateFromShape(const HGF2DShape& pi_rShape) const = 0;
     /** -----------------------------------------------------------------------------
         This method returns a pointer to a dynamically allocated shape that
         defines an area containing the area defined by one shape which is
@@ -269,7 +269,7 @@ public:
         @see UnifyShape
         -----------------------------------------------------------------------------
     */
-    IMAGEPP_EXPORT virtual HGF2DShape*       DifferentiateShape(const HGF2DShape& pi_rShape) const = 0;
+    virtual HGF2DShape*       DifferentiateShape(const HGF2DShape& pi_rShape) const = 0;
 
     /** -----------------------------------------------------------------------------
         These methods returns a pointer to a dynamically allocated shape that
@@ -296,7 +296,7 @@ public:
         @see UnifyShape()
         -----------------------------------------------------------------------------
     */
-    IMAGEPP_EXPORT virtual HGF2DShape*       IntersectShape(const HGF2DShape& pi_rShape) const = 0;
+    virtual HGF2DShape*       IntersectShape(const HGF2DShape& pi_rShape) const = 0;
 
     /** -----------------------------------------------------------------------------
         This methods returns a pointer to a dynamically allocated
@@ -323,7 +323,7 @@ public:
         @see UnifyShape()
         -----------------------------------------------------------------------------
     */
-    IMAGEPP_EXPORT virtual HGF2DShape*       UnifyShape(const HGF2DShape& pi_rShape) const = 0;
+    virtual HGF2DShape*       UnifyShape(const HGF2DShape& pi_rShape) const = 0;
 
 
     // Geometric properties and information
@@ -451,10 +451,10 @@ public:
         AllocTransformDirect() instead when more than one shape is involved.
         -----------------------------------------------------------------------------
     */
-    virtual HFCPtr<HGF2DShape>              AllocTransformInverse(const HGF2DTransfoModel& pi_rModel) const;
+    IMAGEPP_EXPORT virtual HFCPtr<HGF2DShape>              AllocTransformInverse(const HGF2DTransfoModel& pi_rModel) const;
 
     //Convex Hull and minimum bounding box methods see .cpp file for documentation
-    virtual void                                    GetConvexHull(HGF2DPositionCollection* p_points, HGF2DPositionCollection* po_pConvexHull) const;
+    IMAGEPP_EXPORT virtual void                     GetConvexHull(HGF2DPositionCollection* p_points, HGF2DPositionCollection* po_pConvexHull) const;
     virtual void                                    GetBestOrientedExtent(HGF2DPositionCollection* po_pMinimalBoxCorners,
                                                                           HGF2DPositionCollection* po_pConvexHull) const = 0;
 

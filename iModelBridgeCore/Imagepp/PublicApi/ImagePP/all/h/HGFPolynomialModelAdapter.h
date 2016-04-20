@@ -99,83 +99,86 @@ public:
     double                              GetStepX() const {return m_StepX;}
     double                              GetStepY() const {return m_StepY;}
 
+    IMAGEPP_EXPORT StatusInt            GetMeanError(double* po_pMeanError, double* po_pMaxError, HGF2DPosition* po_pMaxErrorPosition,
+                                                     double* po_pMinError, HGF2DPosition* po_pMinErrorPosition);
+    IMAGEPP_EXPORT bool HasEnoughTiePoints() { return m_EnoughTiePoints; }
+
+protected:
+
+    virtual bool _IsConvertDirectThreadSafe() const override;
+    virtual bool _IsConvertInverseThreadSafe() const override;
+
     // Conversion interface
-    virtual StatusInt                   ConvertDirect(double*   pio_pXInOut,
+    virtual StatusInt                   _ConvertDirect(double*   pio_pXInOut,
                                                       double*   pio_pYInOut) const override;
 
-    virtual StatusInt                   ConvertDirect(double    pi_YIn,
+    virtual StatusInt                   _ConvertDirect(double    pi_YIn,
                                                       double    pi_XInStart,
                                                       size_t    pi_NumLoc,
                                                       double    pi_XInStep,
                                                       double*   po_pXOut,
                                                       double*   po_pYOut) const override;
 
-    virtual StatusInt                   ConvertDirect(double    pi_XIn,
+    virtual StatusInt                   _ConvertDirect(double    pi_XIn,
                                                       double    pi_YIn,
                                                       double*   po_pXOut,
                                                       double*   po_pYOut) const override;
 
-    virtual StatusInt                   ConvertDirect(size_t    pi_NumLoc,
+    virtual StatusInt                   _ConvertDirect(size_t    pi_NumLoc,
                                                       double*   pio_aXInOut,
                                                       double*   pio_aYInOut) const override;
 
-    virtual StatusInt                   ConvertInverse(double*   pio_pXInOut,
+    virtual StatusInt                   _ConvertInverse(double*   pio_pXInOut,
                                                        double*   pio_pYInOut) const override;
 
-    virtual StatusInt                   ConvertInverse(double    pi_YIn,
+    virtual StatusInt                   _ConvertInverse(double    pi_YIn,
                                                        double    pi_XInStart,
                                                        size_t    pi_NumLoc,
                                                        double    pi_XInStep,
                                                        double*   po_pXOut,
                                                        double*   po_pYOut) const override;
 
-    virtual StatusInt                   ConvertInverse(double    pi_XIn,
+    virtual StatusInt                   _ConvertInverse(double    pi_XIn,
                                                        double    pi_YIn,
                                                        double*   po_pXOut,
                                                        double*   po_pYOut) const override;
 
-    virtual StatusInt                   ConvertInverse(size_t    pi_NumLoc,
+    virtual StatusInt                   _ConvertInverse(size_t    pi_NumLoc,
                                                        double*   pio_aXInOut,
                                                        double*   pio_aYInOut) const override;
 #if __USE_COMPOSE_OPTIMISATION__
-    virtual HFCPtr<HGF2DTransfoModel>   ComposeInverseWithDirectOf(const HGF2DTransfoModel& pi_rModel) const;
-    virtual HFCPtr<HGF2DTransfoModel>   ComposeYourself (const HGF2DTransfoModel& pi_rModel) const;
+    virtual HFCPtr<HGF2DTransfoModel>   _ComposeInverseWithDirectOf(const HGF2DTransfoModel& pi_rModel) const override;
+    virtual HFCPtr<HGF2DTransfoModel>   _ComposeYourself (const HGF2DTransfoModel& pi_rModel) const override;
 #endif
 
     // Miscalenious
-    virtual bool                        IsIdentity      () const {return false;}
-    virtual bool                        IsStretchable   (double pi_AngleTolerance = 0) const {return false;}
-    virtual void                        GetStretchParams(double*           po_pScaleFactorX,
+    virtual bool                        _IsIdentity      () const override {return false;}
+    virtual bool                        _IsStretchable   (double pi_AngleTolerance) const override {return false;}
+    virtual void                        _GetStretchParams(double*           po_pScaleFactorX,
                                                          double*           po_pScaleFactorY,
-                                                         HGF2DDisplacement* po_pDisplacement) const;
+                                                         HGF2DDisplacement* po_pDisplacement) const override;
 
-    virtual HGF2DTransfoModel*          Clone () const override;
+    virtual HGF2DTransfoModel*          _Clone () const override;
 
 
     // Model definition
     // Model definition
-    virtual bool                        CanBeRepresentedByAMatrix() const {return false;}
-    virtual HFCMatrix<3, 3>             GetMatrix() const;
+    virtual bool                        _CanBeRepresentedByAMatrix() const override {return false;}
+    virtual HFCMatrix<3, 3>             _GetMatrix() const override;
 
     // Geometric properties
-    virtual bool                        PreservesLinearity() const {return false;}
-    virtual bool                        PreservesParallelism() const {return false;}
-    virtual bool                        PreservesShape() const {return false;}
-    virtual bool                        PreservesDirection() const {return false;}
+    virtual bool                        _PreservesLinearity() const override {return false;}
+    virtual bool                        _PreservesParallelism() const override {return false;}
+    virtual bool                        _PreservesShape() const override {return false;}
+    virtual bool                        _PreservesDirection() const override {return false;}
 
     // Operations
-    virtual void                        Reverse ();
+    virtual void                        _Reverse ()override;
 
-    IMAGEPP_EXPORT StatusInt            GetMeanError(double* po_pMeanError, double* po_pMaxError, HGF2DPosition* po_pMaxErrorPosition,
-                                                     double* po_pMinError, HGF2DPosition* po_pMinErrorPosition);
 
-    virtual bool IsConvertDirectThreadSafe() const override;
-    virtual bool IsConvertInverseThreadSafe() const override;
-
-    IMAGEPP_EXPORT bool HasEnoughTiePoints() {return m_EnoughTiePoints;}
+    virtual HFCPtr<HGF2DTransfoModel> _CreateSimplifiedModel() const override { return nullptr; };
 
 private:
-
 #ifdef HVERIFYCONTRACT
     void               ValidateInvariants() const
         {

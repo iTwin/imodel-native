@@ -34,8 +34,12 @@ void VirtualEarthTileQuery::_Run()
     if(contentTypeItr == response->GetHeader().end())
         return;
 
-    // We can tell from the header response if the tile is a missing tile(Kodak) or the real thing.
-    // ("X-VE-Tile-Info", "no-tile")     
+    auto tileInfoItr = response->GetHeader().find("X-VE-Tile-Info");
+    if (tileInfoItr != response->GetHeader().end())
+        {
+        // We can tell from the header response if the tile is a missing tile(Kodak) or the real thing.
+        m_isNoTile = tileInfoItr->second.EqualsI("no-tile");
+        } 
        
     if(contentTypeItr->second.EqualsI("image/png"))
         {
@@ -111,18 +115,37 @@ HRFVirtualEarthEditor::~HRFVirtualEarthEditor()
 //-----------------------------------------------------------------------------
 // Read a block of data
 //-----------------------------------------------------------------------------
-HSTATUS HRFVirtualEarthEditor::ReadBlock(uint64_t             pi_PosBlockX,
-                                         uint64_t             pi_PosBlockY,
-                                         Byte*                po_pData)
+HSTATUS HRFVirtualEarthEditor::ReadBlock(uint64_t pi_PosBlockX, uint64_t pi_PosBlockY, Byte* po_pData)
     {
     HPRECONDITION(m_AccessMode.m_HasReadAccess);
     HPRECONDITION(po_pData != 0);
     HPRECONDITION(m_pResolutionDescriptor->GetBlockType() == HRFBlockType::TILE);
-    HPRECONDITION(m_AccessMode.m_HasReadAccess);
-    HPRECONDITION(po_pData != 0);
 
-    HSTATUS Status = H_ERROR;
+    ReadTileStatus readStatus = QueryTile(po_pData, pi_PosBlockX, pi_PosBlockY);
+    if (ReadTileStatus::Success == readStatus)
+        return H_SUCCESS;
 
+    if (ReadTileStatus::NoTile == readStatus)
+        {
+        // No tile data(aka Kodak/cameras), attempt to generate one using sub-resolution otherwise we return the original data.
+        QueryTileSubstitute(po_pData, pi_PosBlockX, pi_PosBlockY);
+        return H_SUCCESS;
+        }
+
+    // If the connection failed or whatever...
+    // Clear output and return SUCCESS anyway because HRFObjectStore will add an empty tile to the pool and 
+    // every CopyFrom will failed to copy pixels which will leave the destination with uninitialized pixels.
+    // Lets hope we can improve this behavior in the future. e.g. do not add it to the pool and try again next time.
+    memset(po_pData, 0, GetResolutionDescriptor()->GetBlockSizeInBytes());
+
+    return H_SUCCESS;
+    }
+
+//-----------------------------------------------------------------------------
+// Read a block of data
+//-----------------------------------------------------------------------------
+HRFVirtualEarthEditor::ReadTileStatus HRFVirtualEarthEditor::QueryTile(Byte* po_pData, uint64_t pi_PosBlockX, uint64_t pi_PosBlockY)
+    {
     // check if the tile is already in the pool
     uint64_t TileID = m_TileIDDescriptor.ComputeID(pi_PosBlockX, pi_PosBlockY, m_Resolution);
 
@@ -140,10 +163,13 @@ HSTATUS HRFVirtualEarthEditor::ReadBlock(uint64_t             pi_PosBlockX,
         for(uint64_t i=0; i < GetResolutionDescriptor()->GetBlockWidth()*GetResolutionDescriptor()->GetBlockHeight(); ++i)
             po_pData[i*3] = 255;
         
-        return H_SUCCESS;
+        return ReadTileStatus::Success;
 #else
         // Tile was not in lookAHead create a request.
         pTileQuery = new VirtualEarthTileQuery(TileID, BuildTileUri(TileID), rasterFile);
+
+        // Add to the query map so QueryTileSubstitute can reuse them when possible.
+        rasterFile.m_tileQueryMap.insert({TileID, pTileQuery});
 
         WorkerPool& pool = rasterFile.GetWorkerPool();
         pool.Enqueue(*pTileQuery, true/*atFront*/); 
@@ -156,24 +182,128 @@ HSTATUS HRFVirtualEarthEditor::ReadBlock(uint64_t             pi_PosBlockX,
 
     pTileQuery->Wait();
 
-    if (!pTileQuery->m_tileData.empty())
-        {
-        BeAssert(pTileQuery->m_tileData.size() == GetResolutionDescriptor()->GetBlockSizeInBytes());
-        memcpy(po_pData, pTileQuery->m_tileData.data(), GetResolutionDescriptor()->GetBlockSizeInBytes());
-        Status = H_SUCCESS;
-        }
-    else
-        {
-        // If the connection failed or whatever...
-        // Clear output and return SUCCESS anyway because HRFObjectStore will add an empty tile to the pool and 
-        // every CopyFrom will failed to copy pixels which will leave the destination with uninitialized pixels.
-        // Lets hope we can improve this behavior in the future. e.g. do not add it to the pool and try again next time.
-        memset(po_pData, 0, GetResolutionDescriptor()->GetBlockSizeInBytes()); 
+    if (pTileQuery->m_tileData.empty())
+        return ReadTileStatus::Error;
 
-        Status = H_SUCCESS;
+    BeAssert(pTileQuery->m_tileData.size() == GetResolutionDescriptor()->GetBlockSizeInBytes());
+    memcpy(po_pData, pTileQuery->m_tileData.data(), GetResolutionDescriptor()->GetBlockSizeInBytes());
+
+    return pTileQuery->m_isNoTile ? ReadTileStatus::NoTile : ReadTileStatus::Success;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  4/2016
+//----------------------------------------------------------------------------------------
+void HRFVirtualEarthEditor::MagnifyTile(Byte* pOutput, Byte const* pSource, size_t srcOffsetX, size_t srcOffsetY, uint32_t srcResolution)
+    {
+    BeAssert(srcResolution > GetResolutionIndex());
+
+    const size_t tilePitch = 256 * 3;
+    Byte const* pSrc = pSource + (srcOffsetY*tilePitch) + (srcOffsetX * 3);
+
+    uint32_t resolutionDelta = srcResolution - GetResolutionIndex();
+
+    static bool s_nearest = false;
+    if (s_nearest)
+        {
+        for (size_t line = 0; line < 256; ++line)
+            {
+            Byte* pOutLine = pOutput + line * tilePitch;
+            Byte const* pSrcLine = pSrc + ((line >> resolutionDelta) * tilePitch);
+            for (uint32_t pixel = 0; pixel < 256; ++pixel)
+                {
+                memcpy(pOutLine + pixel * 3, pSrcLine + (pixel >> resolutionDelta) * 3, 3);
+                }
+            }
+        }
+    else // bilinear
+        {
+        BeAssert(srcOffsetX <= 256 && srcOffsetY <= 256);
+
+        size_t xMax = (256 - srcOffsetX) - 1;
+        size_t yMax = (256 - srcOffsetY) - 1;
+
+        for (size_t line = 0; line < 256; ++line)
+            {
+            Byte* pOutLine = pOutput + line * tilePitch;
+
+            float srcY = (line + 0.5f) / (1 << resolutionDelta);
+            uint32_t   srcPixelY = (uint32_t) srcY;
+
+            Byte const* pSrcLine0 = pSrc + (srcPixelY * tilePitch);
+            Byte const* pSrcLine1 = pSrc + (MIN(srcPixelY + 1, yMax) * tilePitch);
+
+            float fy = srcY - srcPixelY;
+            float fy1 = 1.0f - fy;
+
+            for (size_t pixel = 0; pixel < 256; ++pixel)
+                {
+                float srcX = (pixel + 0.5f) / (1 << resolutionDelta);
+                uint32_t   srcPixelX = (uint32_t) srcX;
+
+                // Calculate the weights for each pixel  
+                float fx = srcX - srcPixelX;
+                float fx1 = 1.0f - fx;
+                float w1 = fx1 * fy1;
+                float w2 = fx  * fy1;
+                float w3 = fx1 * fy;
+                float w4 = fx  * fy;
+
+                for (size_t channel = 0; channel < 3; ++channel)
+                    {
+                    pOutLine[pixel * 3 + channel] = (Byte) (pSrcLine0[srcPixelX * 3 + channel] * w1 +
+                                                            pSrcLine0[MIN(srcPixelX + 1, xMax) * 3 + channel] * w2 +
+                                                            pSrcLine1[srcPixelX * 3 + channel] * w3 +
+                                                            pSrcLine1[MIN(srcPixelX + 1, xMax) * 3 + channel] * w4);
+                    }
+                }
+            }
+        }
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  4/2016
+//----------------------------------------------------------------------------------------
+bool HRFVirtualEarthEditor::QueryTileSubstitute(Byte* pOutput, uint64_t blockPosX, uint64_t blockPosY)
+    {
+    uint64_t subPixelPosX = blockPosX;
+    uint64_t subPixelPosY = blockPosY;
+
+    if (m_pSubTileData.get() == nullptr)
+        m_pSubTileData.reset(new Byte[GetResolutionDescriptor()->GetBlockSizeInBytes()]);
+
+    HRFVirtualEarthFile& rasterFile = static_cast<HRFVirtualEarthFile&>(*GetRasterFile());
+
+    ReadTileStatus rasterStatus = ReadTileStatus::Error;
+
+    for (uint16_t subResolution = GetResolutionIndex() + 1; subResolution < rasterFile.GetPageDescriptor(m_Page)->CountResolutions(); ++subResolution)
+        {
+        HRFVirtualEarthEditor* pSubResolutionEditor = (HRFVirtualEarthEditor*) rasterFile.GetResolutionEditor(subResolution);
+        if (nullptr == pSubResolutionEditor)
+            break;
+
+        // Compute position in next sub-res.
+        subPixelPosX = subPixelPosX >> 1;
+        subPixelPosY = subPixelPosY >> 1;
+
+        // snap to sub-res tile boundary
+        uint64_t subTilePosX = subPixelPosX / 256;
+        uint64_t subTilePosY = subPixelPosY / 256;
+
+        uint64_t subTile_PixelPosX = subTilePosX * 256;
+        uint64_t subTile_PixelPosY = subTilePosY * 256;
+
+        rasterStatus = pSubResolutionEditor->QueryTile(m_pSubTileData.get(), subTile_PixelPosX, subTile_PixelPosY);
+        if (ReadTileStatus::Success == rasterStatus)
+            {
+            size_t srcOffsetX = (size_t)(subPixelPosX - subTile_PixelPosX);
+            size_t srcOffsetY = (size_t)(subPixelPosY - subTile_PixelPosY);
+            MagnifyTile(pOutput, m_pSubTileData.get(), srcOffsetX, srcOffsetY, pSubResolutionEditor->GetResolutionIndex());
+            break;  // we found a valid tile.
+            }
         }
 
-    return Status;
+    return ReadTileStatus::Success == rasterStatus ? true : false;
     }
 
 //-----------------------------------------------------------------------------

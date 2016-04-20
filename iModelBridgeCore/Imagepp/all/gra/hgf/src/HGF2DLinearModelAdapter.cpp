@@ -357,7 +357,7 @@ HGF2DLinearModelAdapter& HGF2DLinearModelAdapter::operator=(const HGF2DLinearMod
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DLinearModelAdapter::ConvertDirect(double* pio_pXInOut,
+StatusInt HGF2DLinearModelAdapter::_ConvertDirect(double* pio_pXInOut,
                                                  double* pio_pYInOut) const
     {
     HINVARIANTS;
@@ -372,7 +372,7 @@ StatusInt HGF2DLinearModelAdapter::ConvertDirect(double* pio_pXInOut,
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DLinearModelAdapter::ConvertDirect(double pi_XIn,
+StatusInt HGF2DLinearModelAdapter::_ConvertDirect(double pi_XIn,
                                                  double pi_YIn,
                                                  double* po_pXOut,
                                                  double* po_pYOut) const
@@ -389,7 +389,7 @@ StatusInt HGF2DLinearModelAdapter::ConvertDirect(double pi_XIn,
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DLinearModelAdapter::ConvertDirect(double    pi_YIn,
+StatusInt HGF2DLinearModelAdapter::_ConvertDirect(double    pi_YIn,
                                                  double    pi_XInStart,
                                                  size_t     pi_NumLoc,
                                                  double    pi_XInStep,
@@ -408,7 +408,7 @@ StatusInt HGF2DLinearModelAdapter::ConvertDirect(double    pi_YIn,
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DLinearModelAdapter::ConvertDirect(size_t pi_NumLoc,
+StatusInt HGF2DLinearModelAdapter::_ConvertDirect(size_t pi_NumLoc,
                                                  double* pio_aXInOut,
                                                  double* pio_aYInOut) const
     {
@@ -425,7 +425,7 @@ StatusInt HGF2DLinearModelAdapter::ConvertDirect(size_t pi_NumLoc,
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DLinearModelAdapter::ConvertInverse(double* pio_pXInOut,
+StatusInt HGF2DLinearModelAdapter::_ConvertInverse(double* pio_pXInOut,
                                                   double* pio_pYInOut) const
     {
     HINVARIANTS;
@@ -440,7 +440,7 @@ StatusInt HGF2DLinearModelAdapter::ConvertInverse(double* pio_pXInOut,
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DLinearModelAdapter::ConvertInverse(double pi_XIn,
+StatusInt HGF2DLinearModelAdapter::_ConvertInverse(double pi_XIn,
                                                   double pi_YIn,
                                                   double* po_pXOut,
                                                   double* po_pYOut) const
@@ -456,7 +456,7 @@ StatusInt HGF2DLinearModelAdapter::ConvertInverse(double pi_XIn,
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DLinearModelAdapter::ConvertInverse(double    pi_YIn,
+StatusInt HGF2DLinearModelAdapter::_ConvertInverse(double    pi_YIn,
                                                   double    pi_XInStart,
                                                   size_t    pi_NumLoc,
                                                   double    pi_XInStep,
@@ -476,7 +476,7 @@ StatusInt HGF2DLinearModelAdapter::ConvertInverse(double    pi_YIn,
 //-----------------------------------------------------------------------------
 // Converter (Inverse)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DLinearModelAdapter::ConvertInverse(size_t pi_NumLoc,
+StatusInt HGF2DLinearModelAdapter::_ConvertInverse(size_t pi_NumLoc,
                                                   double* pio_aXInOut,
                                                   double* pio_aYInOut) const
     {
@@ -494,7 +494,7 @@ StatusInt HGF2DLinearModelAdapter::ConvertInverse(size_t pi_NumLoc,
 // PreservesLinearity
 // Indicate if the transformation model preserves linearity
 //-----------------------------------------------------------------------------
-bool   HGF2DLinearModelAdapter::PreservesLinearity() const
+bool   HGF2DLinearModelAdapter::_PreservesLinearity() const
     {
     HINVARIANTS;
 
@@ -505,7 +505,7 @@ bool   HGF2DLinearModelAdapter::PreservesLinearity() const
 // PreservesParallelism
 // Indicate if the transformation model preserves parallelism
 //-----------------------------------------------------------------------------
-bool   HGF2DLinearModelAdapter::PreservesParallelism() const
+bool   HGF2DLinearModelAdapter::_PreservesParallelism() const
     {
     HINVARIANTS;
 
@@ -516,7 +516,7 @@ bool   HGF2DLinearModelAdapter::PreservesParallelism() const
 // PreservesShape
 // Indicate if the transformation model preserves the shape
 //-----------------------------------------------------------------------------
-bool   HGF2DLinearModelAdapter::PreservesShape() const
+bool   HGF2DLinearModelAdapter::_PreservesShape() const
     {
     HINVARIANTS;
 
@@ -527,7 +527,7 @@ bool   HGF2DLinearModelAdapter::PreservesShape() const
 // PreservesDirection
 // Indicate if the transformation model preserves directions
 //-----------------------------------------------------------------------------
-bool   HGF2DLinearModelAdapter::PreservesDirection() const
+bool   HGF2DLinearModelAdapter::_PreservesDirection() const
     {
     HINVARIANTS;
 
@@ -539,7 +539,7 @@ bool   HGF2DLinearModelAdapter::PreservesDirection() const
 // CanBeRepresentedByAMatrix
 // Indicates if the model can be represented by a transformation matrix
 //-----------------------------------------------------------------------------
-bool HGF2DLinearModelAdapter::CanBeRepresentedByAMatrix() const
+bool HGF2DLinearModelAdapter::_CanBeRepresentedByAMatrix() const
     {
     HINVARIANTS;
 
@@ -551,7 +551,7 @@ bool HGF2DLinearModelAdapter::CanBeRepresentedByAMatrix() const
 //  IsIdentity
 //  Returns true if the model contains no transformation
 //-----------------------------------------------------------------------------
-bool HGF2DLinearModelAdapter::IsIdentity() const
+bool HGF2DLinearModelAdapter::_IsIdentity() const
     {
     HINVARIANTS;
 
@@ -562,7 +562,7 @@ bool HGF2DLinearModelAdapter::IsIdentity() const
 //  IsStetchable
 //  Returns true if the model contains only scaling and translation
 //-----------------------------------------------------------------------------
-bool HGF2DLinearModelAdapter::IsStretchable(double pi_AngleTolerance) const
+bool HGF2DLinearModelAdapter::_IsStretchable(double pi_AngleTolerance) const
     {
     HINVARIANTS;
 
@@ -574,7 +574,7 @@ bool HGF2DLinearModelAdapter::IsStretchable(double pi_AngleTolerance) const
 //  GetStetchParams
 //  Returns the stretch parameters
 //-----------------------------------------------------------------------------
-void HGF2DLinearModelAdapter::GetStretchParams(double* po_pScaleFactorX,
+void HGF2DLinearModelAdapter::_GetStretchParams(double* po_pScaleFactorX,
                                                double* po_pScaleFactorY,
                                                HGF2DDisplacement* po_pDisplacement) const
     {
@@ -594,7 +594,7 @@ void HGF2DLinearModelAdapter::GetStretchParams(double* po_pScaleFactorX,
 //  GetMatrix
 //  Gets the components of the model by matrix
 //-----------------------------------------------------------------------------
-HFCMatrix<3, 3> HGF2DLinearModelAdapter::GetMatrix() const
+HFCMatrix<3, 3> HGF2DLinearModelAdapter::_GetMatrix() const
     {
     HINVARIANTS;
 
@@ -607,7 +607,7 @@ HFCMatrix<3, 3> HGF2DLinearModelAdapter::GetMatrix() const
 // Reverse
 // This method reverses the transformation model
 //-----------------------------------------------------------------------------
-void    HGF2DLinearModelAdapter::Reverse()
+void    HGF2DLinearModelAdapter::_Reverse()
     {
     HINVARIANTS;
 
@@ -626,7 +626,7 @@ void    HGF2DLinearModelAdapter::Reverse()
 
     // Invoque reversing of ancester
     // This call will in turn invoque Prepare()
-    HGF2DTransfoModelAdapter::Reverse();
+    HGF2DTransfoModelAdapter::_Reverse();
     }
 
 
@@ -635,7 +635,7 @@ void    HGF2DLinearModelAdapter::Reverse()
 // ComposeInverseWithDirectOf
 // Composes a new transformation model as a combination of self and given
 //-----------------------------------------------------------------------------
-HFCPtr<HGF2DTransfoModel>  HGF2DLinearModelAdapter::ComposeInverseWithDirectOf(const HGF2DTransfoModel& pi_rModel) const
+HFCPtr<HGF2DTransfoModel>  HGF2DLinearModelAdapter::_ComposeInverseWithDirectOf(const HGF2DTransfoModel& pi_rModel) const
     {
     HINVARIANTS;
 
@@ -673,7 +673,7 @@ HFCPtr<HGF2DTransfoModel>  HGF2DLinearModelAdapter::ComposeInverseWithDirectOf(c
 // This method allocates a copy of self. The caller is responsible for
 // the deletion of this object.
 //-----------------------------------------------------------------------------
-HGF2DTransfoModel* HGF2DLinearModelAdapter::Clone() const
+HGF2DTransfoModel* HGF2DLinearModelAdapter::_Clone() const
     {
     HINVARIANTS;
 
@@ -686,7 +686,7 @@ HGF2DTransfoModel* HGF2DLinearModelAdapter::Clone() const
 // ComposeYourself
 // PRIVATE
 //-----------------------------------------------------------------------------
-HFCPtr<HGF2DTransfoModel>  HGF2DLinearModelAdapter::ComposeYourself(const HGF2DTransfoModel& pi_rModel) const
+HFCPtr<HGF2DTransfoModel>  HGF2DLinearModelAdapter::_ComposeYourself(const HGF2DTransfoModel& pi_rModel) const
     {
     HINVARIANTS;
 
@@ -789,7 +789,7 @@ HFCPtr<HGF2DTransfoModel>  HGF2DLinearModelAdapter::ComposeYourself(const HGF2DT
         {
         // Type is not known ... build a complex
         // To do this we call the ancester ComposeYourself
-        pResultModel = HGF2DTransfoModel::ComposeYourself(pi_rModel);
+        pResultModel = HGF2DTransfoModel::_ComposeYourself(pi_rModel);
         }
 
     return (pResultModel);
@@ -803,12 +803,12 @@ HFCPtr<HGF2DTransfoModel>  HGF2DLinearModelAdapter::ComposeYourself(const HGF2DT
 //  This methods prepares the conversion parameters from the basic
 //  model attribute
 //-----------------------------------------------------------------------------
-void HGF2DLinearModelAdapter::Prepare()
+void HGF2DLinearModelAdapter::_Prepare()
     {
     // Obtain conversion ratio for direct X to inverse X units
 
     // Invoque preparation of ancester (required)
-    HGF2DTransfoModelAdapter::Prepare();
+    HGF2DTransfoModelAdapter::_Prepare();
 
     }
 
@@ -835,7 +835,7 @@ void HGF2DLinearModelAdapter::Copy(const HGF2DLinearModelAdapter& pi_rObj)
 //-----------------------------------------------------------------------------
 // CreateSimplifiedModel
 //-----------------------------------------------------------------------------
-HFCPtr<HGF2DTransfoModel> HGF2DLinearModelAdapter::CreateSimplifiedModel() const
+HFCPtr<HGF2DTransfoModel> HGF2DLinearModelAdapter::_CreateSimplifiedModel() const
     {
     HINVARIANTS;
 

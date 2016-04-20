@@ -326,7 +326,7 @@ HGF2DTransfoModel* HGF2DComplexTransfoModel::GetModel (size_t modelNumber)
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DComplexTransfoModel::ConvertDirect(double* pio_pXInOut,
+StatusInt HGF2DComplexTransfoModel::_ConvertDirect(double* pio_pXInOut,
                                                   double* pio_pYInOut) const
     {
     // Make sure recipient variables are provided
@@ -356,7 +356,7 @@ StatusInt HGF2DComplexTransfoModel::ConvertDirect(double* pio_pXInOut,
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DComplexTransfoModel::ConvertDirect (double pi_YIn, double pi_XInStart, size_t pi_NumLoc, double pi_XInStep, 
+StatusInt HGF2DComplexTransfoModel::_ConvertDirect (double pi_YIn, double pi_XInStart, size_t pi_NumLoc, double pi_XInStep, 
                                                    double* po_aXOut, double* po_aYOut) const
     {
     StatusInt status = SUCCESS;
@@ -383,7 +383,7 @@ StatusInt HGF2DComplexTransfoModel::ConvertDirect (double pi_YIn, double pi_XInS
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DComplexTransfoModel::ConvertDirect(double pi_XIn, double pi_YIn, double* po_pXOut, double* po_pYOut) const
+StatusInt HGF2DComplexTransfoModel::_ConvertDirect(double pi_XIn, double pi_YIn, double* po_pXOut, double* po_pYOut) const
     {
         *po_pXOut = pi_XIn;
         *po_pYOut = pi_YIn;
@@ -394,7 +394,7 @@ StatusInt HGF2DComplexTransfoModel::ConvertDirect(double pi_XIn, double pi_YIn, 
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DComplexTransfoModel::ConvertDirect(size_t pi_NumLoc, double* pio_aXInOut, double* pio_aYInOut) const
+StatusInt HGF2DComplexTransfoModel::_ConvertDirect(size_t pi_NumLoc, double* pio_aXInOut, double* pio_aYInOut) const
     {
     StatusInt status = SUCCESS;
 
@@ -412,7 +412,7 @@ StatusInt HGF2DComplexTransfoModel::ConvertDirect(size_t pi_NumLoc, double* pio_
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DComplexTransfoModel::ConvertInverse(double* pio_pXInOut,
+StatusInt HGF2DComplexTransfoModel::_ConvertInverse(double* pio_pXInOut,
                                                      double* pio_pYInOut) const
     {
     // Make sure the recipient variables are provided
@@ -441,7 +441,7 @@ StatusInt HGF2DComplexTransfoModel::ConvertInverse(double* pio_pXInOut,
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DComplexTransfoModel::ConvertInverse (double pi_YIn, double pi_XInStart, size_t pi_NumLoc, double pi_XInStep, 
+StatusInt HGF2DComplexTransfoModel::_ConvertInverse (double pi_YIn, double pi_XInStart, size_t pi_NumLoc, double pi_XInStep, 
                                                     double* po_aXOut, double* po_aYOut) const
     {
     StatusInt status = SUCCESS;
@@ -466,7 +466,7 @@ StatusInt HGF2DComplexTransfoModel::ConvertInverse (double pi_YIn, double pi_XIn
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DComplexTransfoModel::ConvertInverse(double pi_XIn, double pi_YIn, double* po_pXOut, double* po_pYOut) const
+StatusInt HGF2DComplexTransfoModel::_ConvertInverse(double pi_XIn, double pi_YIn, double* po_pXOut, double* po_pYOut) const
     {
         *po_pXOut = pi_XIn;
         *po_pYOut = pi_YIn;
@@ -476,7 +476,7 @@ StatusInt HGF2DComplexTransfoModel::ConvertInverse(double pi_XIn, double pi_YIn,
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DComplexTransfoModel::ConvertInverse(size_t pi_NumLoc, double* pio_aXInOut, double* pio_aYInOut) const
+StatusInt HGF2DComplexTransfoModel::_ConvertInverse(size_t pi_NumLoc, double* pio_aXInOut, double* pio_aYInOut) const
     {
     StatusInt status = SUCCESS;
 
@@ -494,7 +494,7 @@ StatusInt HGF2DComplexTransfoModel::ConvertInverse(size_t pi_NumLoc, double* pio
 //-----------------------------------------------------------------------------
 // IsIdentity
 //-----------------------------------------------------------------------------
-bool   HGF2DComplexTransfoModel::IsIdentity () const
+bool   HGF2DComplexTransfoModel::_IsIdentity () const
     {
     bool   ReturnValue = true;
 
@@ -514,7 +514,7 @@ bool   HGF2DComplexTransfoModel::IsIdentity () const
 // This askes all the component model if they are stretchable. All must
 // answer affirmative for the result to be true
 //-----------------------------------------------------------------------------
-bool   HGF2DComplexTransfoModel::IsStretchable (double pi_AngleTolerance) const
+bool   HGF2DComplexTransfoModel::_IsStretchable (double pi_AngleTolerance) const
     {
     bool   ReturnValue = true;
 
@@ -531,7 +531,7 @@ bool   HGF2DComplexTransfoModel::IsStretchable (double pi_AngleTolerance) const
 //-----------------------------------------------------------------------------
 // GetStretchParams
 //-----------------------------------------------------------------------------
-void    HGF2DComplexTransfoModel::GetStretchParams (double*  po_pScaleFactorX,
+void    HGF2DComplexTransfoModel::_GetStretchParams (double*  po_pScaleFactorX,
                                                            double*  po_pScaleFactorY,
                                                            HGF2DDisplacement* po_pDisplacement) const
     {
@@ -566,7 +566,7 @@ void    HGF2DComplexTransfoModel::GetStretchParams (double*  po_pScaleFactorX,
 // Reverse
 // This method reverses the transformation model
 //-----------------------------------------------------------------------------
-void    HGF2DComplexTransfoModel::Reverse()
+void    HGF2DComplexTransfoModel::_Reverse()
     {
     // Create copy of list of models
     List_TransfoModel  TempListOfModels (m_ListOfModels);
@@ -601,7 +601,7 @@ void    HGF2DComplexTransfoModel::Reverse()
         }
 
     // Invoque reverse of ancester, wich will reverse the inverse and direct units
-    HGF2DTransfoModel::Reverse();
+    HGF2DTransfoModel::_Reverse();
 
     }
 
@@ -609,7 +609,7 @@ void    HGF2DComplexTransfoModel::Reverse()
 // ComposeInverseWithDirectOf
 // Composes a new transformation model as a combination of self and given
 //-----------------------------------------------------------------------------
-HFCPtr<HGF2DTransfoModel>  HGF2DComplexTransfoModel::ComposeInverseWithDirectOf (const HGF2DTransfoModel& pi_rModel) const
+HFCPtr<HGF2DTransfoModel>  HGF2DComplexTransfoModel::_ComposeInverseWithDirectOf (const HGF2DTransfoModel& pi_rModel) const
     {
     // Recipient
     HFCPtr<HGF2DTransfoModel> pResultModel;
@@ -668,7 +668,7 @@ HFCPtr<HGF2DTransfoModel>  HGF2DComplexTransfoModel::ComposeInverseWithDirectOf 
 // know the type of given, a complex transformation model is constructed and
 // returned.
 //-----------------------------------------------------------------------------
-HFCPtr<HGF2DTransfoModel>  HGF2DComplexTransfoModel::ComposeYourself (const HGF2DTransfoModel& pi_rModel) const
+HFCPtr<HGF2DTransfoModel>  HGF2DComplexTransfoModel::_ComposeYourself (const HGF2DTransfoModel& pi_rModel) const
     {
     // Recipient
     HFCPtr<HGF2DTransfoModel> pResultModel;
@@ -707,7 +707,7 @@ HFCPtr<HGF2DTransfoModel>  HGF2DComplexTransfoModel::ComposeYourself (const HGF2
 //  Clone
 //  This method dynamically allocates a copy of this
 //-----------------------------------------------------------------------------
-HGF2DTransfoModel* HGF2DComplexTransfoModel::Clone() const
+HGF2DTransfoModel* HGF2DComplexTransfoModel::_Clone() const
     {
     return (new HGF2DComplexTransfoModel (*this));
     }
@@ -739,7 +739,7 @@ void HGF2DComplexTransfoModel::Copy(const HGF2DComplexTransfoModel& pi_rObj)
 //  Prepare
 //  Copy method
 //-----------------------------------------------------------------------------
-void HGF2DComplexTransfoModel::Prepare()
+void HGF2DComplexTransfoModel::_Prepare()
     {
     // This method is only called for a change of units
     // It insures that the units are matched one to another for the
@@ -763,7 +763,7 @@ void HGF2DComplexTransfoModel::Prepare()
 // PreservesLinearity
 // Indicate if the transformation model preserves linearity
 //-----------------------------------------------------------------------------
-bool   HGF2DComplexTransfoModel::PreservesLinearity () const
+bool   HGF2DComplexTransfoModel::_PreservesLinearity () const
     {
     bool   ReturnValue = true;
 
@@ -781,7 +781,7 @@ bool   HGF2DComplexTransfoModel::PreservesLinearity () const
 // PreservesParallelism
 // Indicate if the transformation model preserves parallelism
 //-----------------------------------------------------------------------------
-bool   HGF2DComplexTransfoModel::PreservesParallelism() const
+bool   HGF2DComplexTransfoModel::_PreservesParallelism() const
     {
     bool   ReturnValue = true;
 
@@ -799,7 +799,7 @@ bool   HGF2DComplexTransfoModel::PreservesParallelism() const
 // PreservesShape
 // Indicate if the transformation model preserves the shape
 //-----------------------------------------------------------------------------
-bool   HGF2DComplexTransfoModel::PreservesShape() const
+bool   HGF2DComplexTransfoModel::_PreservesShape() const
     {
     bool   ReturnValue = true;
 
@@ -817,7 +817,7 @@ bool   HGF2DComplexTransfoModel::PreservesShape() const
 // PreservesDirection
 // Indicate if the transformation model preserves directions
 //-----------------------------------------------------------------------------
-bool   HGF2DComplexTransfoModel::PreservesDirection() const
+bool   HGF2DComplexTransfoModel::_PreservesDirection() const
     {
     bool   ReturnValue = true;
 
@@ -836,7 +836,7 @@ bool   HGF2DComplexTransfoModel::PreservesDirection() const
 // CanBeRepresentedByAMatrix
 // Indicates if the model can be represented by a transformation matrix
 //-----------------------------------------------------------------------------
-bool HGF2DComplexTransfoModel::CanBeRepresentedByAMatrix() const
+bool HGF2DComplexTransfoModel::_CanBeRepresentedByAMatrix() const
     {
     return false;
     }
@@ -846,7 +846,7 @@ bool HGF2DComplexTransfoModel::CanBeRepresentedByAMatrix() const
 //  GetMatrix
 //  Gets the components of the affine by matrix
 //-----------------------------------------------------------------------------
-HFCMatrix<3, 3> HGF2DComplexTransfoModel::GetMatrix() const
+HFCMatrix<3, 3> HGF2DComplexTransfoModel::_GetMatrix() const
     {
     // A complex transformation model cannot be represented as a matrix
     HASSERT(0);
@@ -855,22 +855,9 @@ HFCMatrix<3, 3> HGF2DComplexTransfoModel::GetMatrix() const
     }
 
 //-----------------------------------------------------------------------------
-//  GetMatrix
-//  Gets the components of the affine by matrix
-//-----------------------------------------------------------------------------
-HFCMatrix<3, 3>& HGF2DComplexTransfoModel::GetMatrix(HFCMatrix<3, 3>& po_rRecipient) const
-    {
-    // A complex transformation model cannot be represented as a matrix
-    HASSERT(0);
-
-    return(po_rRecipient);
-    }
-
-
-//-----------------------------------------------------------------------------
 // CreateSimplifiedModel
 //-----------------------------------------------------------------------------
-HFCPtr<HGF2DTransfoModel> HGF2DComplexTransfoModel::CreateSimplifiedModel() const
+HFCPtr<HGF2DTransfoModel> HGF2DComplexTransfoModel::_CreateSimplifiedModel() const
     {
     HFCPtr<HGF2DTransfoModel> pResult;
 
@@ -959,7 +946,7 @@ HFCPtr<HGF2DTransfoModel> HGF2DComplexTransfoModel::CreateSimplifiedModel() cons
     @bsimethod                                         Alain Robert 2014/06
     -----------------------------------------------------------------------------
 */
-bool  HGF2DComplexTransfoModel::HasDomain() const
+bool  HGF2DComplexTransfoModel::_HasDomain() const
     {
     return m_hasDomain;
     }
@@ -968,7 +955,7 @@ bool  HGF2DComplexTransfoModel::HasDomain() const
     @bsimethod                                         Alain Robert 2014/06
     -----------------------------------------------------------------------------
 */
-HFCPtr<HGF2DShape>  HGF2DComplexTransfoModel::GetDirectDomain() const
+HFCPtr<HGF2DShape>  HGF2DComplexTransfoModel::_GetDirectDomain() const
     {
     // Default implementation has no domain implying there is no limit
     if (m_hasDomain)
@@ -982,7 +969,7 @@ HFCPtr<HGF2DShape>  HGF2DComplexTransfoModel::GetDirectDomain() const
     @bsimethod                                         Alain Robert 2014/06
     -----------------------------------------------------------------------------
 */
-HFCPtr<HGF2DShape>  HGF2DComplexTransfoModel::GetInverseDomain() const
+HFCPtr<HGF2DShape>  HGF2DComplexTransfoModel::_GetInverseDomain() const
     {
     // Default implementation has no domain implying there is no limit
     if (m_hasDomain)
@@ -991,7 +978,7 @@ HFCPtr<HGF2DShape>  HGF2DComplexTransfoModel::GetInverseDomain() const
         return new HGF2DUniverse();
     }
 
-bool HGF2DComplexTransfoModel::IsConvertDirectThreadSafe() const
+bool HGF2DComplexTransfoModel::_IsConvertDirectThreadSafe() const
     {
     bool isThreadSafe = true;
     for (auto itr = m_ListOfModels.begin(); (isThreadSafe && itr != m_ListOfModels.end()); ++itr)
@@ -1001,7 +988,7 @@ bool HGF2DComplexTransfoModel::IsConvertDirectThreadSafe() const
     return isThreadSafe;
     }
 
-bool HGF2DComplexTransfoModel::IsConvertInverseThreadSafe() const
+bool HGF2DComplexTransfoModel::_IsConvertInverseThreadSafe() const
     {
     bool isThreadSafe = true;
     for (auto itr = m_ListOfModels.begin(); (isThreadSafe && itr != m_ListOfModels.end()); ++itr)

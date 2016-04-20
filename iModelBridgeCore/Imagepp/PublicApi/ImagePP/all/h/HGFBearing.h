@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGFBearing.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -109,20 +109,19 @@ public:
     bool           IsEqualToAutoEpsilon(const HGFBearing& pi_rObj) const;
 
     // Other compare operations
-    bool           IsBearingWithinSweep(double pi_Sweep,
-                                        const HGFBearing& pi_rBearing) const;
+    IMAGEPPTEST_EXPORT bool IsBearingWithinSweep(double pi_Sweep, const HGFBearing& pi_rBearing) const;
 
     // Value related methods
     double          GetAngle() const;
     void            SetAngle(double pi_Angle);
 
-    double         CalculateTrigoAngle() const;
+    IMAGEPPTEST_EXPORT double CalculateTrigoAngle() const;
 
 
     // Arithmetic operations
     HGFBearing      operator+(double pi_Angle) const;
     HGFBearing      operator-(double pi_Angle) const;
-    double          operator-(const HGFBearing& pi_rObj) const;
+    IMAGEPPTEST_EXPORT double operator-(const HGFBearing& pi_rObj) const;
     HGFBearing&     operator+=(double pi_Angle);
     HGFBearing&     operator-=(double pi_Angle);
 

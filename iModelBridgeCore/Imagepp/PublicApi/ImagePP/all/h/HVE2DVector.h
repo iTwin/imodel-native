@@ -415,7 +415,7 @@ public:
         @see ObtainContiguousnessPoints()
         -----------------------------------------------------------------------------
     */
-    IMAGEPP_EXPORT virtual bool      AreContiguous(const HVE2DVector& pi_rVector) const = 0;
+    virtual bool      AreContiguous(const HVE2DVector& pi_rVector) const = 0;
 
     /** -----------------------------------------------------------------------------
         This method determines if the two vectors are adjacent to each
@@ -438,7 +438,7 @@ public:
         @see CalculateBearing()
         -----------------------------------------------------------------------------
     */
-    IMAGEPP_EXPORT virtual bool      AreAdjacent(const HVE2DVector& pi_rVector) const = 0;
+    virtual bool      AreAdjacent(const HVE2DVector& pi_rVector) const = 0;
 
 
     /** -----------------------------------------------------------------------------

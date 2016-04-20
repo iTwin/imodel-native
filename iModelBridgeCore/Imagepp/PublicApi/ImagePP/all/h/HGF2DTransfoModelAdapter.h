@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DTransfoModelAdapter.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -54,9 +54,6 @@ public:
                                        double*               po_pMeanError,
                                        double*               po_pMaxError) const;
 
-    void            Reverse();
-
-
 protected:
 
     HGF2DTransfoModelAdapter(const HGF2DTransfoModel& pi_rAdaptedTransfoModel);
@@ -65,7 +62,8 @@ protected:
 
     HFCPtr<HGF2DTransfoModel> m_pAdaptedTransfoModel;
 
-    virtual void    Prepare ();
+    virtual void   _Prepare () override;
+    virtual void   _Reverse() override;
 
 #ifdef HVERIFYCONTRACT
     void               ValidateInvariants() const

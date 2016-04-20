@@ -322,10 +322,10 @@ struct HRFRasterFileCreator
     IMAGEPP_EXPORT virtual HCLASS_ID             GetRasterFileClassID() const;
 
     // Identification information
-    IMAGEPP_EXPORT virtual Utf8String               GetLabel() const = 0;
-    IMAGEPP_EXPORT virtual Utf8String               GetSchemes() const = 0;
+    virtual Utf8String               GetLabel() const = 0;
+    virtual Utf8String               GetSchemes() const = 0;
     IMAGEPP_EXPORT virtual Utf8String               GetDefaultExtension() const;
-    IMAGEPP_EXPORT virtual Utf8String               GetExtensions() const = 0;
+    virtual Utf8String               GetExtensions() const = 0;
 
     // Get the supported access mode for this file - logic const function
     IMAGEPP_EXPORT virtual HFCAccessMode         GetSupportedAccessMode() const;

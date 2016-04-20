@@ -1421,7 +1421,6 @@ LINKER_LIBRARIES =  $(BeLibJpegTurbo) \
         LINKER_LIBRARIES_DELAYLOADED   + $(ContextSubpartsLibs)lti_dsdk.lib $(ContextSubpartsLibs)lti_dsdk_cdll.lib 
 %endif
 
-%if !defined(IPP_OBJ_ONLY)
 %include $(sharedMki)linkLibrary.mki
 
 #----------------------------------------------------------------------
@@ -1439,7 +1438,7 @@ SQLANG_CHeader      = $(ippPublicAPISrc)h/ImagePPExceptionMessages.xliff.h
 SQLANG_Xliff        = $(o)xliffs/ImagePPExceptionMessages_en.xliff
 
 %include $(sharedMki)CHeaderToXliff.mki
-%endif
+
 
 
 

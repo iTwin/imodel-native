@@ -307,7 +307,7 @@ HGF2DLocalProjectiveGrid& HGF2DLocalProjectiveGrid::operator=(const HGF2DLocalPr
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DLocalProjectiveGrid::ConvertDirect(double* pio_pXInOut,
+StatusInt HGF2DLocalProjectiveGrid::_ConvertDirect(double* pio_pXInOut,
                                                   double* pio_pYInOut) const
     {
     HINVARIANTS;
@@ -329,7 +329,7 @@ StatusInt HGF2DLocalProjectiveGrid::ConvertDirect(double* pio_pXInOut,
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DLocalProjectiveGrid::ConvertDirect(double pi_XIn,
+StatusInt HGF2DLocalProjectiveGrid::_ConvertDirect(double pi_XIn,
                                                   double pi_YIn,
                                                   double* po_pXOut,
                                                   double* po_pYOut) const
@@ -352,7 +352,7 @@ StatusInt HGF2DLocalProjectiveGrid::ConvertDirect(double pi_XIn,
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DLocalProjectiveGrid::ConvertDirect(double    pi_YIn,
+StatusInt HGF2DLocalProjectiveGrid::_ConvertDirect(double    pi_YIn,
                                                   double    pi_XInStart,
                                                   size_t    pi_NumLoc,
                                                   double    pi_XInStep,
@@ -386,7 +386,7 @@ StatusInt HGF2DLocalProjectiveGrid::ConvertDirect(double    pi_YIn,
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DLocalProjectiveGrid::ConvertDirect(size_t pi_NumLoc, 
+StatusInt HGF2DLocalProjectiveGrid::_ConvertDirect(size_t pi_NumLoc, 
                                                   double* pio_aXInOut,
                                                   double* pio_aYInOut) const
     {
@@ -411,7 +411,7 @@ StatusInt HGF2DLocalProjectiveGrid::ConvertDirect(size_t pi_NumLoc,
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DLocalProjectiveGrid::ConvertInverse(double* pio_pXInOut,
+StatusInt HGF2DLocalProjectiveGrid::_ConvertInverse(double* pio_pXInOut,
                                                    double* pio_pYInOut) const
     {
     HINVARIANTS;
@@ -433,7 +433,7 @@ StatusInt HGF2DLocalProjectiveGrid::ConvertInverse(double* pio_pXInOut,
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DLocalProjectiveGrid::ConvertInverse(double   pi_XIn,
+StatusInt HGF2DLocalProjectiveGrid::_ConvertInverse(double   pi_XIn,
                                                    double   pi_YIn,
                                                    double*  po_pXOut,
                                                    double*  po_pYOut) const
@@ -456,7 +456,7 @@ StatusInt HGF2DLocalProjectiveGrid::ConvertInverse(double   pi_XIn,
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DLocalProjectiveGrid::ConvertInverse(double    pi_YIn,
+StatusInt HGF2DLocalProjectiveGrid::_ConvertInverse(double    pi_YIn,
                                                    double    pi_XInStart,
                                                    size_t    pi_NumLoc,
                                                    double    pi_XInStep,
@@ -490,7 +490,7 @@ StatusInt HGF2DLocalProjectiveGrid::ConvertInverse(double    pi_YIn,
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DLocalProjectiveGrid::ConvertInverse(size_t pi_NumLoc, 
+StatusInt HGF2DLocalProjectiveGrid::_ConvertInverse(size_t pi_NumLoc, 
                                                    double* pio_aXInOut,
                                                    double* pio_aYInOut) const
     {
@@ -516,7 +516,7 @@ StatusInt HGF2DLocalProjectiveGrid::ConvertInverse(size_t pi_NumLoc,
 //  IsIdentity
 //  Returns true if the model contains no transformation
 //-----------------------------------------------------------------------------
-bool HGF2DLocalProjectiveGrid::IsIdentity () const
+bool HGF2DLocalProjectiveGrid::_IsIdentity () const
     {
     HINVARIANTS;
 
@@ -527,7 +527,7 @@ bool HGF2DLocalProjectiveGrid::IsIdentity () const
 //  IsStetchable
 //  Returns true if the model contains only scaling and translation
 //-----------------------------------------------------------------------------
-bool HGF2DLocalProjectiveGrid::IsStretchable (double pi_AngleTolerance) const
+bool HGF2DLocalProjectiveGrid::_IsStretchable (double pi_AngleTolerance) const
     {
     HINVARIANTS;
 
@@ -538,7 +538,7 @@ bool HGF2DLocalProjectiveGrid::IsStretchable (double pi_AngleTolerance) const
 //  GetStetchParams
 //  Returns the stretch parameters
 //-----------------------------------------------------------------------------
-void HGF2DLocalProjectiveGrid::GetStretchParams(double*           po_pScaleFactorX,
+void HGF2DLocalProjectiveGrid::_GetStretchParams(double*           po_pScaleFactorX,
                                                 double*           po_pScaleFactorY,
                                                 HGF2DDisplacement* po_pDisplacement) const
     {
@@ -574,7 +574,7 @@ void HGF2DLocalProjectiveGrid::GetStretchParams(double*           po_pScaleFacto
 // This method allocates a copy of self. The caller is responsible for
 // the deletion of this object.
 //-----------------------------------------------------------------------------
-HGF2DTransfoModel* HGF2DLocalProjectiveGrid::Clone () const
+HGF2DTransfoModel* HGF2DLocalProjectiveGrid::_Clone() const
     {
     HINVARIANTS;
 
@@ -586,7 +586,7 @@ HGF2DTransfoModel* HGF2DLocalProjectiveGrid::Clone () const
 // ComposeInverseWithDirectOf
 // Composes a new transformation model as a combination of self and given
 //-----------------------------------------------------------------------------
-HFCPtr<HGF2DTransfoModel>  HGF2DLocalProjectiveGrid::ComposeInverseWithDirectOf(const HGF2DTransfoModel& pi_rModel) const
+HFCPtr<HGF2DTransfoModel>  HGF2DLocalProjectiveGrid::_ComposeInverseWithDirectOf(const HGF2DTransfoModel& pi_rModel) const
     {
     HINVARIANTS;
 
@@ -595,7 +595,7 @@ HFCPtr<HGF2DTransfoModel>  HGF2DLocalProjectiveGrid::ComposeInverseWithDirectOf(
 
     if (GetAdaptedTransfoModel()->IsCompatibleWith(HGF2DIdentity::CLASS_ID))
         {
-        pResultModel = HGF2DTransfoModelAdapter::ComposeInverseWithDirectOf(pi_rModel);
+        pResultModel = HGF2DTransfoModelAdapter::_ComposeInverseWithDirectOf(pi_rModel);
         }
     else
         {
@@ -657,7 +657,7 @@ HFCPtr<HGF2DTransfoModel>  HGF2DLocalProjectiveGrid::ComposeInverseWithDirectOf(
 // CanBeRepresentedByAMatrix
 // Indicates if the model can be represented by a transformation matrix
 //-----------------------------------------------------------------------------
-bool HGF2DLocalProjectiveGrid::CanBeRepresentedByAMatrix() const
+bool HGF2DLocalProjectiveGrid::_CanBeRepresentedByAMatrix() const
     {
     HINVARIANTS;
     return(false);
@@ -667,7 +667,7 @@ bool HGF2DLocalProjectiveGrid::CanBeRepresentedByAMatrix() const
 //  GetMatrix
 //  Gets the components of the projective by matrix
 //-----------------------------------------------------------------------------
-HFCMatrix<3, 3> HGF2DLocalProjectiveGrid::GetMatrix() const
+HFCMatrix<3, 3> HGF2DLocalProjectiveGrid::_GetMatrix() const
     {
     HINVARIANTS;
 
@@ -683,7 +683,7 @@ HFCMatrix<3, 3> HGF2DLocalProjectiveGrid::GetMatrix() const
 //-----------------------------------------------------------------------------
 // CreateSimplifiedModel
 //-----------------------------------------------------------------------------
-HFCPtr<HGF2DTransfoModel> HGF2DLocalProjectiveGrid::CreateSimplifiedModel() const
+HFCPtr<HGF2DTransfoModel> HGF2DLocalProjectiveGrid::_CreateSimplifiedModel() const
     {
     HINVARIANTS;
 
@@ -699,7 +699,7 @@ HFCPtr<HGF2DTransfoModel> HGF2DLocalProjectiveGrid::CreateSimplifiedModel() cons
 // PreservesLinearity
 // Indicate if the transformation model preserves linearity
 //-----------------------------------------------------------------------------
-bool   HGF2DLocalProjectiveGrid::PreservesLinearity () const
+bool   HGF2DLocalProjectiveGrid::_PreservesLinearity () const
     {
     HINVARIANTS;
 
@@ -710,7 +710,7 @@ bool   HGF2DLocalProjectiveGrid::PreservesLinearity () const
 // PreservesParallelism
 // Indicate if the transformation model preserves parallelism
 //-----------------------------------------------------------------------------
-bool   HGF2DLocalProjectiveGrid::PreservesParallelism() const
+bool   HGF2DLocalProjectiveGrid::_PreservesParallelism() const
     {
     HINVARIANTS;
 
@@ -721,7 +721,7 @@ bool   HGF2DLocalProjectiveGrid::PreservesParallelism() const
 // PreservesShape
 // Indicate if the transformation model preserves the shape
 //-----------------------------------------------------------------------------
-bool   HGF2DLocalProjectiveGrid::PreservesShape() const
+bool   HGF2DLocalProjectiveGrid::_PreservesShape() const
     {
     HINVARIANTS;
 
@@ -732,7 +732,7 @@ bool   HGF2DLocalProjectiveGrid::PreservesShape() const
 // PreservesDirection
 // Indicate if the transformation model preserves directions
 //-----------------------------------------------------------------------------
-bool   HGF2DLocalProjectiveGrid::PreservesDirection() const
+bool   HGF2DLocalProjectiveGrid::_PreservesDirection() const
     {
     HINVARIANTS;
 
@@ -744,15 +744,15 @@ bool   HGF2DLocalProjectiveGrid::PreservesDirection() const
 // Reverse
 // This method reverses the transformation model
 //-----------------------------------------------------------------------------
-void    HGF2DLocalProjectiveGrid::Reverse()
+void    HGF2DLocalProjectiveGrid::_Reverse()
     {
     HINVARIANTS;
     m_Direct = !m_Direct;
 
     // Invoque reversing of ancester
     // This call will in turn invoque Prepare()
-    // HCHK: Here we bypass HGF2DTransfoModelAdapter::Reverse
-    HGF2DTransfoModel::Reverse();
+    // HCHK: Here we bypass HGF2DTransfoModelAdapter::_Reverse
+    HGF2DTransfoModel::_Reverse();
     }
 
 
@@ -761,20 +761,20 @@ void    HGF2DLocalProjectiveGrid::Reverse()
 //  This methods prepares the conversion parameters from the basic
 //  model attribute
 //-----------------------------------------------------------------------------
-void HGF2DLocalProjectiveGrid::Prepare ()
+void HGF2DLocalProjectiveGrid::_Prepare()
     {
     // Obtain conversion ratio for direct X to inverse X units
 
 
     // Invoque preparation of ancester (required)
-    HGF2DTransfoModelAdapter::Prepare();
+    HGF2DTransfoModelAdapter::_Prepare();
     }
 
 //-----------------------------------------------------------------------------
 // ComposeYourself
 // PRIVATE
 //-----------------------------------------------------------------------------
-HFCPtr<HGF2DTransfoModel>  HGF2DLocalProjectiveGrid::ComposeYourself (const HGF2DTransfoModel& pi_rModel) const
+HFCPtr<HGF2DTransfoModel>  HGF2DLocalProjectiveGrid::_ComposeYourself (const HGF2DTransfoModel& pi_rModel) const
     {
     HINVARIANTS;
 
@@ -783,7 +783,7 @@ HFCPtr<HGF2DTransfoModel>  HGF2DLocalProjectiveGrid::ComposeYourself (const HGF2
 
     if (GetAdaptedTransfoModel()->IsCompatibleWith(HGF2DIdentity::CLASS_ID))
         {
-        pResultModel = HGF2DTransfoModelAdapter::ComposeYourself(pi_rModel);
+        pResultModel = HGF2DTransfoModelAdapter::_ComposeYourself(pi_rModel);
         }
     else if (m_Direct)
         {
@@ -816,7 +816,7 @@ HFCPtr<HGF2DTransfoModel>  HGF2DLocalProjectiveGrid::ComposeYourself (const HGF2
             {
             // Type is not known ... build a complex
             // To do this we call the ancester ComposeYourself
-            pResultModel = HGF2DTransfoModel::ComposeYourself(pi_rModel);
+            pResultModel = HGF2DTransfoModel::_ComposeYourself(pi_rModel);
             }
         }
     else
@@ -855,7 +855,7 @@ HFCPtr<HGF2DTransfoModel>  HGF2DLocalProjectiveGrid::ComposeYourself (const HGF2
             {
             // Type is not known ... build a complex
             // To do this we call the ancester ComposeYourself
-            pResultModel = HGF2DTransfoModel::ComposeYourself(pi_rModel);
+            pResultModel = HGF2DTransfoModel::_ComposeYourself(pi_rModel);
             }
         }
 

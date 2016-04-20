@@ -270,7 +270,7 @@ HGF2DProjective& HGF2DProjective::operator=(const HGF2DProjective& pi_rObj)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Alexandre.Gariepy               06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool HGF2DProjective::IsConvertDirectThreadSafe() const 
+bool HGF2DProjective::_IsConvertDirectThreadSafe() const 
     { 
     return true; 
     }
@@ -278,7 +278,7 @@ bool HGF2DProjective::IsConvertDirectThreadSafe() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Alexandre.Gariepy               06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool HGF2DProjective::IsConvertInverseThreadSafe() const 
+bool HGF2DProjective::_IsConvertInverseThreadSafe() const 
     { 
     return true; 
     }
@@ -286,7 +286,7 @@ bool HGF2DProjective::IsConvertInverseThreadSafe() const
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DProjective::ConvertDirect(double* pio_pXInOut,
+StatusInt HGF2DProjective::_ConvertDirect(double* pio_pXInOut,
                                     double* pio_pYInOut) const
     {
     HINVARIANTS;
@@ -316,7 +316,7 @@ StatusInt HGF2DProjective::ConvertDirect(double* pio_pXInOut,
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DProjective::ConvertDirect(double    pi_YIn,
+StatusInt HGF2DProjective::_ConvertDirect(double    pi_YIn,
                                          double    pi_XInStart,
                                          size_t    pi_NumLoc,
                                          double    pi_XInStep,
@@ -363,7 +363,7 @@ StatusInt HGF2DProjective::ConvertDirect(double    pi_YIn,
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DProjective::ConvertDirect(size_t    pi_NumLoc,
+StatusInt HGF2DProjective::_ConvertDirect(size_t    pi_NumLoc,
                                          double*   pio_aXInOut,
                                          double*   pio_aYInOut) const
     {
@@ -412,7 +412,7 @@ StatusInt HGF2DProjective::ConvertDirect(size_t    pi_NumLoc,
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DProjective::ConvertDirect(double   pi_XIn,
+StatusInt HGF2DProjective::_ConvertDirect(double   pi_XIn,
                                          double   pi_YIn,
                                          double*  po_pXOut,
                                          double*  po_pYOut) const
@@ -442,7 +442,7 @@ StatusInt HGF2DProjective::ConvertDirect(double   pi_XIn,
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DProjective::ConvertInverse(double* pio_pXInOut,
+StatusInt HGF2DProjective::_ConvertInverse(double* pio_pXInOut,
                                           double* pio_pYInOut) const
     {
     HINVARIANTS;
@@ -473,7 +473,7 @@ StatusInt HGF2DProjective::ConvertInverse(double* pio_pXInOut,
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DProjective::ConvertInverse(double    pi_YIn,
+StatusInt HGF2DProjective::_ConvertInverse(double    pi_YIn,
                                           double    pi_XInStart,
                                           size_t    pi_NumLoc,
                                           double    pi_XInStep,
@@ -521,7 +521,7 @@ StatusInt HGF2DProjective::ConvertInverse(double    pi_YIn,
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DProjective::ConvertInverse(size_t    pi_NumLoc,
+StatusInt HGF2DProjective::_ConvertInverse(size_t    pi_NumLoc,
                                           double*   pio_aXInOut,
                                           double*   pio_aYInOut) const
     {
@@ -569,7 +569,7 @@ StatusInt HGF2DProjective::ConvertInverse(size_t    pi_NumLoc,
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DProjective::ConvertInverse(double  pi_XIn,
+StatusInt HGF2DProjective::_ConvertInverse(double  pi_XIn,
                                           double  pi_YIn,
                                           double* po_pXOut,
                                           double* po_pYOut) const
@@ -601,7 +601,7 @@ StatusInt HGF2DProjective::ConvertInverse(double  pi_XIn,
 // PreservesLinearity
 // Indicate if the transformation model preserves linearity
 //-----------------------------------------------------------------------------
-bool   HGF2DProjective::PreservesLinearity () const
+bool   HGF2DProjective::_PreservesLinearity () const
     {
     HINVARIANTS;
 
@@ -612,7 +612,7 @@ bool   HGF2DProjective::PreservesLinearity () const
 // PreservesParallelism
 // Indicate if the transformation model preserves parallelism
 //-----------------------------------------------------------------------------
-bool   HGF2DProjective::PreservesParallelism() const
+bool   HGF2DProjective::_PreservesParallelism() const
     {
     HINVARIANTS;
 
@@ -625,7 +625,7 @@ bool   HGF2DProjective::PreservesParallelism() const
 // PreservesShape
 // Indicate if the transformation model preserves the shape
 //-----------------------------------------------------------------------------
-bool   HGF2DProjective::PreservesShape() const
+bool   HGF2DProjective::_PreservesShape() const
     {
     HINVARIANTS;
 
@@ -639,7 +639,7 @@ bool   HGF2DProjective::PreservesShape() const
 // PreservesDirection
 // Indicate if the transformation model preserves directions
 //-----------------------------------------------------------------------------
-bool   HGF2DProjective::PreservesDirection() const
+bool   HGF2DProjective::_PreservesDirection() const
     {
     HINVARIANTS;
 
@@ -655,7 +655,7 @@ bool   HGF2DProjective::PreservesDirection() const
 // CanBeRepresentedByAMatrix
 // Indicates if the model can be represented by a transformation matrix
 //-----------------------------------------------------------------------------
-bool HGF2DProjective::CanBeRepresentedByAMatrix() const
+bool HGF2DProjective::_CanBeRepresentedByAMatrix() const
     {
     HINVARIANTS;
 
@@ -667,7 +667,7 @@ bool HGF2DProjective::CanBeRepresentedByAMatrix() const
 //  IsIdentity
 //  Returns true if the model contains no transformation
 //-----------------------------------------------------------------------------
-bool HGF2DProjective::IsIdentity () const
+bool HGF2DProjective::_IsIdentity () const
     {
     HINVARIANTS;
 
@@ -680,7 +680,7 @@ bool HGF2DProjective::IsIdentity () const
 //  IsStetchable
 //  Returns true if the model contains only scaling and translation
 //-----------------------------------------------------------------------------
-bool HGF2DProjective::IsStretchable (double pi_AngleTolerance) const
+bool HGF2DProjective::_IsStretchable (double pi_AngleTolerance) const
     {
     HINVARIANTS;
 
@@ -697,7 +697,7 @@ bool HGF2DProjective::IsStretchable (double pi_AngleTolerance) const
 //  GetStetchParams
 //  Returns the stretch parameters
 //-----------------------------------------------------------------------------
-void HGF2DProjective::GetStretchParams (double* po_pScaleFactorX,
+void HGF2DProjective::_GetStretchParams (double* po_pScaleFactorX,
                                         double* po_pScaleFactorY,
                                         HGF2DDisplacement* po_pDisplacement) const
     {
@@ -943,7 +943,7 @@ void HGF2DProjective::SetByMatrix(const HFCMatrix<3, 3>& pi_rMatrix)
 //  GetMatrix
 //  Gets the components of the projective by matrix
 //-----------------------------------------------------------------------------
-HFCMatrix<3, 3> HGF2DProjective::GetMatrix() const
+HFCMatrix<3, 3> HGF2DProjective::_GetMatrix() const
     {
     HINVARIANTS;
 
@@ -960,27 +960,6 @@ HFCMatrix<3, 3> HGF2DProjective::GetMatrix() const
     Matrix[2][2] = m_M22;
 
     return(Matrix);
-    }
-
-//-----------------------------------------------------------------------------
-//  GetMatrix
-//  Gets the components of the projective by matrix
-//-----------------------------------------------------------------------------
-HFCMatrix<3, 3>& HGF2DProjective::GetMatrix(HFCMatrix<3, 3>& po_rRecipient) const
-    {
-    HINVARIANTS;
-
-    po_rRecipient[0][0] = m_M00;
-    po_rRecipient[0][1] = m_M01;
-    po_rRecipient[0][2] = m_M02;
-    po_rRecipient[1][0] = m_M10;
-    po_rRecipient[1][1] = m_M11;
-    po_rRecipient[1][2] = m_M12;
-    po_rRecipient[2][0] = m_M20;
-    po_rRecipient[2][1] = m_M21;
-    po_rRecipient[2][2] = m_M22;
-
-    return(po_rRecipient);
     }
 
 /** -----------------------------------------------------------------------------
@@ -1317,7 +1296,7 @@ void HGF2DProjective::AddVerticalFlip (double pi_YMirrorPos)
 // Reverse
 // This method reverses the transformation model
 //-----------------------------------------------------------------------------
-void    HGF2DProjective::Reverse()
+void    HGF2DProjective::_Reverse()
     {
     HINVARIANTS;
 
@@ -1348,7 +1327,7 @@ void    HGF2DProjective::Reverse()
 
     // Invoque reversing of ancester
     // This call will in turn invoque Prepare()
-    HGF2DTransfoModel::Reverse();
+    HGF2DTransfoModel::_Reverse();
     }
 
 
@@ -1357,7 +1336,7 @@ void    HGF2DProjective::Reverse()
 // ComposeInverseWithDirectOf
 // Composes a new transformation model as a combination of self and given
 //-----------------------------------------------------------------------------
-HFCPtr<HGF2DTransfoModel>  HGF2DProjective::ComposeInverseWithDirectOf (const HGF2DTransfoModel& pi_rModel) const
+HFCPtr<HGF2DTransfoModel>  HGF2DProjective::_ComposeInverseWithDirectOf (const HGF2DTransfoModel& pi_rModel) const
     {
     HINVARIANTS;
 
@@ -1393,7 +1372,7 @@ HFCPtr<HGF2DTransfoModel>  HGF2DProjective::ComposeInverseWithDirectOf (const HG
 // This method allocates a copy of self. The caller is responsible for
 // the deletion of this object.
 //-----------------------------------------------------------------------------
-HGF2DTransfoModel* HGF2DProjective::Clone () const
+HGF2DTransfoModel* HGF2DProjective::_Clone() const
     {
     HINVARIANTS;
 
@@ -1411,7 +1390,7 @@ HGF2DTransfoModel* HGF2DProjective::Clone () const
 // returned. The major difference with the Compose() method, is that the order
 // of composition is reversed,
 //-----------------------------------------------------------------------------
-HFCPtr<HGF2DTransfoModel>  HGF2DProjective::ComposeYourself (const HGF2DTransfoModel& pi_rModel) const
+HFCPtr<HGF2DTransfoModel>  HGF2DProjective::_ComposeYourself (const HGF2DTransfoModel& pi_rModel) const
     {
     HINVARIANTS;
 
@@ -1438,7 +1417,7 @@ HFCPtr<HGF2DTransfoModel>  HGF2DProjective::ComposeYourself (const HGF2DTransfoM
         {
         // Type is not known ... build a complex
         // To do this we call the ancester ComposeYourself
-        pResultModel = HGF2DTransfoModel::ComposeYourself (pi_rModel);
+        pResultModel = HGF2DTransfoModel::_ComposeYourself (pi_rModel);
         }
 
     return (pResultModel);
@@ -1450,7 +1429,7 @@ HFCPtr<HGF2DTransfoModel>  HGF2DProjective::ComposeYourself (const HGF2DTransfoM
 //  This methods prepares the conversion parameters from the basic
 //  model attribute
 //-----------------------------------------------------------------------------
-void HGF2DProjective::Prepare ()
+void HGF2DProjective::_Prepare()
     {
     // Direct matrix
     m_D00 = m_M00;
@@ -1532,7 +1511,7 @@ void HGF2DProjective::Copy(const HGF2DProjective& pi_rObj)
 //-----------------------------------------------------------------------------
 // CreateSimplifiedModel
 //-----------------------------------------------------------------------------
-HFCPtr<HGF2DTransfoModel> HGF2DProjective::CreateSimplifiedModel() const
+HFCPtr<HGF2DTransfoModel> HGF2DProjective::_CreateSimplifiedModel() const
     {
     HINVARIANTS;
 

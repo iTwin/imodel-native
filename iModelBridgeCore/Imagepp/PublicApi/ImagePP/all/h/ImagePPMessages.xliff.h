@@ -237,7 +237,7 @@ BENTLEY_TRANSLATABLE_STRINGS_START(ImagePPMessages,ImagePPMessages)
     L10N_STRING(HTIFF_CannotWriteDirLink)                // =="cannot write directory link"==
     L10N_STRING(HTIFF_NegativeValueForRational)          // =="cannot write the negative value %g as unsigned RATIONAL (tag : %s)"==
     L10N_STRING(HTIFF_HMRDirAlreadyExist)                // =="HMR directory already exists for the page"==
-    L10N_STRING(HTIFF_CannotWritePWBlob)                 // =="cannot write the ProjectWise blob (offset : %0I64x, lenght : %I64d)"==
+    L10N_STRING(HTIFF_CannotWritePWBlob)                 // =="cannot write the ProjectWise blob (offset : %0I64x, length : %I64d)"==
     L10N_STRING(HTIFF_CannotOpenFile)                    // =="cannot open file"==
     L10N_STRING(HTIFF_CannotReadHeader)                  // =="cannot read the header"==
     L10N_STRING(HTIFF_BadMagicNumber)                    // =="the following TIFF file's magic number is incorrect : 0x%x"==

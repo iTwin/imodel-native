@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRAImageOpMapFilters.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -67,7 +67,7 @@ struct HRAImageOpGammaFilter : public HRAImageOpMapFilter
 {
 public:
     //! Create a gamma filter. A gamma of 0 is illegal.
-    static HRAImageOpPtr CreateGammaFilter(double gamma);
+    IMAGEPPTEST_EXPORT static HRAImageOpPtr CreateGammaFilter(double gamma);
 
 protected: 
     virtual bool _SetupMapFilter(MapFilter& mapFilter, HRPPixelType const& pixelType) override;
@@ -91,7 +91,7 @@ struct HRAImageOpBrightnessFilter : public HRAImageOpMapFilter
 {
 public:
     //! Create a brightness filter. The range of values is [-1, 1]. Where 0 is no brightness.
-    static HRAImageOpPtr CreateBrightnessFilter(double brightness);
+    IMAGEPPTEST_EXPORT static HRAImageOpPtr CreateBrightnessFilter(double brightness);
 
 protected: 
     virtual bool _SetupMapFilter(MapFilter& mapFilter, HRPPixelType const& pixelType) override;
@@ -112,7 +112,7 @@ struct HRAImageOpContrastFilter : public HRAImageOpMapFilter
 {
 public:
     //! Create a contrast filter. The range of values is [-1, 1]. Where 0 is no contrast.
-    static HRAImageOpPtr CreateContrastFilter(double contrast);
+    IMAGEPPTEST_EXPORT static HRAImageOpPtr CreateContrastFilter(double contrast);
 
 protected: 
     virtual bool _SetupMapFilter(MapFilter& mapFilter, HRPPixelType const& pixelType) override;
@@ -138,23 +138,23 @@ struct HRAImageOpContrastStretchFilter : public HRAImageOpMapFilter
 public:
     //! Create a contrast stretch filter. Interval values must be provided in 'intervalPixelType' space.
     //! @remark for now, only 8bit/16bit unsigned values are supported.
-    static HRAImageOpContrastStretchFilterPtr CreateContrastStretchFilter(HRPPixelType const& intervalPixelType);
+    IMAGEPPTEST_EXPORT static HRAImageOpContrastStretchFilterPtr CreateContrastStretchFilter(HRPPixelType const& intervalPixelType);
 
     //! Internal value must be provided in 'intervalPixelType'. 
     //!  8 bits range is [0, 256]. 
     //! 16 bits range is [0, 65535].
-    void GetInterval(uint16_t channelIndex, uint16_t& minValue, uint16_t& maxValue) const;
-    void SetInterval(uint16_t channelIndex, uint16_t minValue, uint16_t maxValue);
+    IMAGEPPTEST_EXPORT void GetInterval(uint16_t channelIndex, uint16_t& minValue, uint16_t& maxValue) const;
+    IMAGEPPTEST_EXPORT void SetInterval(uint16_t channelIndex, uint16_t minValue, uint16_t maxValue);
 
     //! Internal value must be provided in 'intervalPixelType'. 
     //!  8 bits range is [0, 256]. 
     //! 16 bits range is [0, 65535].
-    void GetContrastInterval(uint16_t channelIndex, uint16_t& minContrastValue, uint16_t& maxContrastValue) const;
-    void SetContrastInterval(uint16_t channelIndex, uint16_t minContrastValue, uint16_t maxContrastValue);
+    IMAGEPPTEST_EXPORT void GetContrastInterval(uint16_t channelIndex, uint16_t& minContrastValue, uint16_t& maxContrastValue) const;
+    IMAGEPPTEST_EXPORT void SetContrastInterval(uint16_t channelIndex, uint16_t minContrastValue, uint16_t maxContrastValue);
 
     //! Gamma factor. Default is 0.0 which is no gamma.
-    double GetGammaFactor(uint16_t channelIndex) const;
-    void SetGammaFactor(uint16_t channelIndex, double gammaFactor);
+    IMAGEPPTEST_EXPORT double GetGammaFactor(uint16_t channelIndex) const;
+    IMAGEPPTEST_EXPORT void SetGammaFactor(uint16_t channelIndex, double gammaFactor);
     
 protected: 
     virtual bool _SetupMapFilter(MapFilter& mapFilter, HRPPixelType const& pixelType) override;
@@ -196,7 +196,7 @@ struct HRAImageOpInvertFilter : public HRAImageOpMapFilter
 {
 public:
     //! Create an invert filter.
-    static HRAImageOpPtr CreateInvertFilter();
+    IMAGEPPTEST_EXPORT static HRAImageOpPtr CreateInvertFilter();
 
 protected: 
     virtual bool _SetupMapFilter(MapFilter& mapFilter, HRPPixelType const& pixelType) override;
@@ -215,7 +215,7 @@ struct HRAImageOpTintFilter : public HRAImageOpMapFilter
 {
 public:
     //! Create a tint filter. No tint would be (255,255,255)
-    static HRAImageOpPtr CreateTintFilter(Byte const* pRgbColor);
+    IMAGEPPTEST_EXPORT static HRAImageOpPtr CreateTintFilter(Byte const* pRgbColor);
 
 protected: 
     virtual bool _SetupMapFilter(MapFilter& mapFilter, HRPPixelType const& pixelType) override;

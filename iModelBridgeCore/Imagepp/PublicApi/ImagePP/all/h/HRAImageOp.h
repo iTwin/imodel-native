@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRAImageOp.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -56,7 +56,7 @@ struct HRAImageBuffer : public RefCountedBase
 {
 public:
     //! Get a read/write access to the first scanline of an image,
-    Byte* GetDataP(size_t& pitch);
+    IMAGEPPTEST_EXPORT Byte* GetDataP(size_t& pitch);
 
     //! Get a read only access to the first scanline.
     Byte const* GetDataCP(size_t& pitch) const {return const_cast<HRAImageBuffer*>(this)->GetDataP(pitch);}
@@ -87,7 +87,7 @@ struct HRAImageBufferMemory : public HRAImageBuffer
 {
 public:
     //! Allocate a new memory buffer. May return IMAGEPP_STATUS_OutOfMemory
-    static HRAImageBufferPtr CreateMemoryBuffer(ImagePPStatus& status, size_t sizeInBytes, size_t pitch, IImageAllocatorR allocator);
+    IMAGEPPTEST_EXPORT static HRAImageBufferPtr CreateMemoryBuffer(ImagePPStatus& status, size_t sizeInBytes, size_t pitch, IImageAllocatorR allocator);
 
 protected:
     HRAImageBufferMemory(Byte* pData, size_t bufferSize, size_t pitch, IImageAllocatorR allocator);
@@ -105,8 +105,8 @@ public:
     //! Allocate a new memory buffer. May return IMAGEPP_STATUS_OutOfMemory
     static HRAImageBufferPtr CreateRleBuffer(ImagePPStatus& status, uint32_t width, uint32_t height, IImageAllocatorR allocator);
 
-    size_t GetLineDataSize(uint32_t line) const;
-    void SetLineDataSize(uint32_t line, size_t dataSize);
+    IMAGEPPTEST_EXPORT size_t GetLineDataSize(uint32_t line) const;
+    IMAGEPPTEST_EXPORT void SetLineDataSize(uint32_t line, size_t dataSize);
 
     void ComputeDataSize(uint32_t line, uint32_t width);
 protected:
@@ -136,19 +136,19 @@ struct HRAImageSample : public RefCountedBase, public NonCopyableClass
 {
 public:
     //! Create a new sample using the speficied allocator.
-    static HRAImageSamplePtr CreateSample(ImagePPStatus& status, uint32_t width, uint32_t height, HFCPtr<HRPPixelType> pixelType, IImageAllocatorR allocator);
+    IMAGEPPTEST_EXPORT static HRAImageSamplePtr CreateSample(ImagePPStatus& status, uint32_t width, uint32_t height, HFCPtr<HRPPixelType> pixelType, IImageAllocatorR allocator);
 
     //! The width in pixels.
-    uint32_t GetWidth() const;
+    IMAGEPPTEST_EXPORT uint32_t GetWidth() const;
 
     //! The height in pixels.
-    uint32_t GetHeight() const;
+    IMAGEPPTEST_EXPORT uint32_t GetHeight() const;
 
-    HRAImageBufferRleP GetBufferRleP();
+    IMAGEPPTEST_EXPORT HRAImageBufferRleP GetBufferRleP();
     HRAImageBufferRleCP GetBufferRleCP() const {return const_cast<HRAImageSample*>(this)->GetBufferRleP();}
 
     //! Retrieve image data. May be NULL.
-    HRAImageBufferP GetBufferP();
+    IMAGEPPTEST_EXPORT HRAImageBufferP GetBufferP();
 
     //! Retrieve image data. May be NULL.
     HRAImageBufferCP GetBufferCP() const {return const_cast<HRAImageSample*>(this)->GetBufferP();}
@@ -159,7 +159,7 @@ public:
     //! Worst-case buffer size requirement.
     size_t GetMaxScanlineSize() const;  
 
-    HRPPixelType const& GetPixelType() const;
+    IMAGEPPTEST_EXPORT HRPPixelType const& GetPixelType() const;
 
     HFCPtr<HRPPixelType>& GetPixelTypePtr();
 
@@ -168,12 +168,12 @@ public:
 #endif
    
     // Do not call. we expose it because we need it in our unit tests.
-    void internal_SetBuffer(HRAImageBufferPtr& buffer){ SetBuffer(buffer); }
+    IMAGEPPTEST_EXPORT void internal_SetBuffer(HRAImageBufferPtr& buffer){ SetBuffer(buffer); }
 
     //! Used by packet surface that reference outside data.
-    static HRAImageSamplePtr internal_CreateSampleFromBuffer(ImagePPStatus& status, uint32_t width, uint32_t height, HFCPtr<HRPPixelType> pixelType, HRAImageBufferR buffer);
+    IMAGEPPTEST_EXPORT static HRAImageSamplePtr internal_CreateSampleFromBuffer(ImagePPStatus& status, uint32_t width, uint32_t height, HFCPtr<HRPPixelType> pixelType, HRAImageBufferR buffer);
 
-    bool ValidateIntegrity() const;
+    IMAGEPPTEST_EXPORT bool ValidateIntegrity() const;
 
 protected:
 
@@ -267,13 +267,13 @@ struct HRAImageOp : public RefCountedBase, public NonCopyableClass
         };
 
     //! The current input pixeltype or NULL is not set. 
-    HRPPixelType* GetInputPixelType() const;
+    IMAGEPPTEST_EXPORT HRPPixelType* GetInputPixelType() const;
 
     //! The current output pixeltype or NULL is not set.
-    HRPPixelType* GetOutputPixelType() const;
+    IMAGEPPTEST_EXPORT HRPPixelType* GetOutputPixelType() const;
 
     //! the pixel neighbourhood required by this operation. Use to provide the appropriate amount of input data.
-    HRPPixelNeighbourhood const& GetNeighbourhood() const;
+    IMAGEPPTEST_EXPORT HRPPixelNeighbourhood const& GetNeighbourhood() const;
 
     //! Retrieve supported intput pixelType. 'index' is zero-based and will be incremented to request to next available pixeltype.
     //! Available pixel type must be returned in order of preference. 
@@ -285,7 +285,7 @@ struct HRAImageOp : public RefCountedBase, public NonCopyableClass
     //! @return IMAGEPP_STATUS_Success  
     //!         IMAGEPP_STATUS_UnknownError               Unknown error.
     //!         IMAGEOP_STATUS_NoMorePixelType     We reach the end of available pixeltype list.
-    ImagePPStatus GetAvailableInputPixelType(HFCPtr<HRPPixelType>& pixelType, uint32_t index, const HFCPtr<HRPPixelType> pixelTypeToMatch);
+    IMAGEPPTEST_EXPORT ImagePPStatus GetAvailableInputPixelType(HFCPtr<HRPPixelType>& pixelType, uint32_t index, const HFCPtr<HRPPixelType> pixelTypeToMatch);
     
     //! Retrieve supported output pixelType. 'index' is zero-based and will be incremented to request to next available pixeltype.
     //! Available pixel type must be returned in order of preference. 
@@ -297,19 +297,19 @@ struct HRAImageOp : public RefCountedBase, public NonCopyableClass
     //! @return IMAGEPP_STATUS_Success  
     //!         IMAGEPP_STATUS_UnknownError               Unknown error.
     //!         IMAGEOP_STATUS_NoMorePixelType     We reach the end of available pixeltype list.
-    ImagePPStatus GetAvailableOutputPixelType(HFCPtr<HRPPixelType>& pixelType, uint32_t index, const HFCPtr<HRPPixelType> pixelTypeToMatch);
+    IMAGEPPTEST_EXPORT ImagePPStatus GetAvailableOutputPixelType(HFCPtr<HRPPixelType>& pixelType, uint32_t index, const HFCPtr<HRPPixelType> pixelTypeToMatch);
 
     //! Set the current input pixel type of this operation. If type is not supported, return IMAGEOP_STATUS_InvalidPixelType.
     //! The pixel type can be NULL. In this case, the methods clears the pixel type and every member dependent on the pixel type.
-    ImagePPStatus SetInputPixelType(HFCPtr<HRPPixelType> pixelType);
+    IMAGEPPTEST_EXPORT ImagePPStatus SetInputPixelType(HFCPtr<HRPPixelType> pixelType);
 
     //! Set the current output pixel type of this operation. If type is not supported, return IMAGEOP_STATUS_InvalidPixelType
     //! The pixel type can be NULL. In this case, the methods clears the pixel type and every member dependent on the pixel type.
-    ImagePPStatus SetOutputPixelType(HFCPtr<HRPPixelType> pixelType);
+    IMAGEPPTEST_EXPORT ImagePPStatus SetOutputPixelType(HFCPtr<HRPPixelType> pixelType);
 
     //! Process pixels here. This is where performance is important. You can assert(debug) for valid input/output but otherwise assumed that everything is valid.
     //! Image sample size may differ but will never exceed the max sample size.
-    ImagePPStatus Process(HRAImageSampleR out, HRAImageSampleCR inputData, ImagepOpParams& params);
+    IMAGEPPTEST_EXPORT ImagePPStatus Process(HRAImageSampleR out, HRAImageSampleCR inputData, ImagepOpParams& params);
 
 #if 0 
     // &&Backlog EN:
@@ -390,12 +390,12 @@ struct HRAImageOpPipeLine
 public:
     typedef ImageOpList::iterator  ImageOpItr;
 
-    HRAImageOpPipeLine();
-    ~HRAImageOpPipeLine();
+    IMAGEPPTEST_EXPORT HRAImageOpPipeLine();
+    IMAGEPPTEST_EXPORT ~HRAImageOpPipeLine();
 
     //! Adds and image operation at the end of the pipeline.
     //! After adding an image operation, the pipe-line is considered un-prepared.
-    ImagePPStatus AddImageOp(HRAImageOpPtr imageOp, bool atFront);
+    IMAGEPPTEST_EXPORT ImagePPStatus AddImageOp(HRAImageOpPtr imageOp, bool atFront);
 
     //! Removes all image operations from the pipeline.
     //! After adding an image operation, the pipe-line is considered un-prepared.
@@ -410,7 +410,7 @@ public:
     //! This method performs the pipeline preparation based on the information provided. 
     //! The preparation here is applicable to many process calls. It will include computation 
     //! of neighborhood size and pixel type handshaking.
-    ImagePPStatus Prepare(HFCPtr<HRPPixelType> inputPixelType, HFCPtr<HRPPixelType> outputPixelType);
+    IMAGEPPTEST_EXPORT ImagePPStatus Prepare(HFCPtr<HRPPixelType> inputPixelType, HFCPtr<HRPPixelType> outputPixelType);
     
     //! This method performs the actual process of applying the pipeline operations.
     //! Upon calling the Process() method the input and output image are provided.
@@ -426,7 +426,7 @@ public:
     
     bool IsReady() const { return m_prepared; }
 
-    ImageOpList const& GetImageOps() const;
+    IMAGEPPTEST_EXPORT ImageOpList const& GetImageOps() const;
 
     //! Reset all ImageOPs input/output pixeltype, remove PixelConverters and mark the pipeline as not prepared. 
     // *** Not sure it is good idea to remove PixelConverters they might have been added by the caller. 

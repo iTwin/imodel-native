@@ -49,7 +49,7 @@ public:
     HGF2DPolySegment&  operator=(const HGF2DPolySegment& pi_rObj);
 
     // Setting and extracting
-    void                AppendPoint(const HGF2DPosition& pi_rNewPoint);
+    IMAGEPP_EXPORT void               AppendPoint(const HGF2DPosition& pi_rNewPoint);
     HGF2DPosition       GetPoint(size_t pi_Index) const;
     size_t              GetSize() const;
     void                RemovePoint(size_t pi_Index);
@@ -175,9 +175,6 @@ private:
 #ifdef HVERIFYCONTRACT
     void               ValidateInvariants() const
         {
-        if (!(m_Points.size() == 0 || (GetStartPoint() == m_Points[0] && GetEndPoint() == m_Points.back())))
-            HASSERT(0);
-
         HASSERT(m_Points.size() == 0 || (GetStartPoint() == m_Points[0] && GetEndPoint() == m_Points.back()));
         }
 #endif

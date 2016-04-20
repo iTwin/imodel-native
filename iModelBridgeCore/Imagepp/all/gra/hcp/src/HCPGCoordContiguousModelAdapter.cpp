@@ -69,9 +69,9 @@ void HCPGCoordContiguousModelAdapter::Copy (const HCPGCoordContiguousModelAdapte
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Alexandre.Gariepy   08/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void HCPGCoordContiguousModelAdapter::Reverse ()
+void HCPGCoordContiguousModelAdapter::_Reverse ()
     {
-    HGF2DTransfoModelAdapter::Reverse();
+    HGF2DTransfoModelAdapter::_Reverse();
     double temp = m_MinXLongDirect;
     m_MinXLongDirect = m_MinXLongInverse;
     m_MinXLongInverse = temp;
@@ -80,7 +80,7 @@ void HCPGCoordContiguousModelAdapter::Reverse ()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Alexandre.Gariepy   08/15
 //+---------------+---------------+---------------+---------------+---------------+------
-StatusInt HCPGCoordContiguousModelAdapter::ConvertDirect(double* pio_pXInOut, double* pio_pYInOut) const
+StatusInt HCPGCoordContiguousModelAdapter::_ConvertDirect(double* pio_pXInOut, double* pio_pYInOut) const
     {
     StatusInt status = m_pAdaptedTransfoModel->ConvertDirect(pio_pXInOut, pio_pYInOut);
 
@@ -96,7 +96,7 @@ StatusInt HCPGCoordContiguousModelAdapter::ConvertDirect(double* pio_pXInOut, do
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Alexandre.Gariepy   08/15
 //+---------------+---------------+---------------+---------------+---------------+------
-StatusInt HCPGCoordContiguousModelAdapter::ConvertDirect(double pi_YIn, double pi_XInStart, size_t pi_NumLoc, double pi_XInStep,
+StatusInt HCPGCoordContiguousModelAdapter::_ConvertDirect(double pi_YIn, double pi_XInStart, size_t pi_NumLoc, double pi_XInStep,
                                                          double* po_pXOut, double* po_pYOut) const
     {
     uint32_t Index;
@@ -115,7 +115,7 @@ StatusInt HCPGCoordContiguousModelAdapter::ConvertDirect(double pi_YIn, double p
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Alexandre.Gariepy   08/15
 //+---------------+---------------+---------------+---------------+---------------+------
-StatusInt HCPGCoordContiguousModelAdapter::ConvertDirect(double pi_XIn, double pi_YIn, double* po_pXOut, double* po_pYOut) const
+StatusInt HCPGCoordContiguousModelAdapter::_ConvertDirect(double pi_XIn, double pi_YIn, double* po_pXOut, double* po_pYOut) const
     {
     *po_pXOut = pi_XIn;
     *po_pYOut = pi_YIn;
@@ -134,7 +134,7 @@ StatusInt HCPGCoordContiguousModelAdapter::ConvertDirect(double pi_XIn, double p
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Alexandre.Gariepy   08/15
 //+---------------+---------------+---------------+---------------+---------------+------
-StatusInt HCPGCoordContiguousModelAdapter::ConvertDirect(size_t pi_NumLoc, double* pio_aXInOut, double* pio_aYInOut) const
+StatusInt HCPGCoordContiguousModelAdapter::_ConvertDirect(size_t pi_NumLoc, double* pio_aXInOut, double* pio_aYInOut) const
     {
     StatusInt status = SUCCESS;
     for(size_t i = 0; i < pi_NumLoc; ++i)
@@ -149,7 +149,7 @@ StatusInt HCPGCoordContiguousModelAdapter::ConvertDirect(size_t pi_NumLoc, doubl
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Alexandre.Gariepy   08/15
 //+---------------+---------------+---------------+---------------+---------------+------
-StatusInt HCPGCoordContiguousModelAdapter::ConvertInverse(double* pio_pXInOut, double* pio_pYInOut) const
+StatusInt HCPGCoordContiguousModelAdapter::_ConvertInverse(double* pio_pXInOut, double* pio_pYInOut) const
     {
     StatusInt status = m_pAdaptedTransfoModel->ConvertInverse(pio_pXInOut, pio_pYInOut);
 
@@ -165,7 +165,7 @@ StatusInt HCPGCoordContiguousModelAdapter::ConvertInverse(double* pio_pXInOut, d
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Alexandre.Gariepy   08/15
 //+---------------+---------------+---------------+---------------+---------------+------
-StatusInt HCPGCoordContiguousModelAdapter::ConvertInverse(double pi_YIn, double pi_XInStart, size_t pi_NumLoc, double pi_XInStep,
+StatusInt HCPGCoordContiguousModelAdapter::_ConvertInverse(double pi_YIn, double pi_XInStart, size_t pi_NumLoc, double pi_XInStep,
                                                           double* po_pXOut, double* po_pYOut) const
     {
     uint32_t Index;
@@ -184,7 +184,7 @@ StatusInt HCPGCoordContiguousModelAdapter::ConvertInverse(double pi_YIn, double 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Alexandre.Gariepy   08/15
 //+---------------+---------------+---------------+---------------+---------------+------
-StatusInt HCPGCoordContiguousModelAdapter::ConvertInverse(double pi_XIn, double pi_YIn, double* po_pXOut, double* po_pYOut) const
+StatusInt HCPGCoordContiguousModelAdapter::_ConvertInverse(double pi_XIn, double pi_YIn, double* po_pXOut, double* po_pYOut) const
     {
     *po_pXOut = pi_XIn;
     *po_pYOut = pi_YIn;
@@ -217,7 +217,7 @@ StatusInt HCPGCoordContiguousModelAdapter::ConvertInverse(double pi_XIn, double 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Alexandre.Gariepy   08/15
 //+---------------+---------------+---------------+---------------+---------------+------
-StatusInt HCPGCoordContiguousModelAdapter::ConvertInverse(size_t pi_NumLoc, double* pio_aXInOut, double* pio_aYInOut) const
+StatusInt HCPGCoordContiguousModelAdapter::_ConvertInverse(size_t pi_NumLoc, double* pio_aXInOut, double* pio_aYInOut) const
     {
     StatusInt status = SUCCESS;
     for(size_t i = 0; i < pi_NumLoc; ++i)
@@ -263,18 +263,18 @@ StatusInt HCPGCoordContiguousModelAdapter::ConvertInverse(size_t pi_NumLoc, doub
         //}
     //}
 
-void HCPGCoordContiguousModelAdapter::GetStretchParams(double* po_pScaleFactorX, double* po_pScaleFactorY, HGF2DDisplacement* po_pDisplacement) const
+void HCPGCoordContiguousModelAdapter::_GetStretchParams(double* po_pScaleFactorX, double* po_pScaleFactorY, HGF2DDisplacement* po_pDisplacement) const
     {
     HGF2DTransfoModel::GetStretchParamsAt(po_pScaleFactorX, po_pScaleFactorY, po_pDisplacement, 0.0, 0.0);
     }
 
-HFCMatrix<3, 3> HCPGCoordContiguousModelAdapter::GetMatrix() const
+HFCMatrix<3, 3> HCPGCoordContiguousModelAdapter::_GetMatrix() const
     {
     HFCMatrix<3, 3> m;
     return m;
     }
 
-HGF2DTransfoModel* HCPGCoordContiguousModelAdapter::Clone () const
+HGF2DTransfoModel* HCPGCoordContiguousModelAdapter::_Clone () const
     {
-    return(new HCPGCoordContiguousModelAdapter(*this));
+    return new HCPGCoordContiguousModelAdapter(*this);
     }

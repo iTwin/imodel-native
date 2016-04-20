@@ -25,7 +25,7 @@ class HRFVirtualEarthEditor;
 struct VirtualEarthTileQuery : public WorkerPool::Task
 {
     VirtualEarthTileQuery(uint64_t tileId, Utf8StringCR tileUri, HRFVirtualEarthFile& rasterFile) 
-    :m_tileId(tileId), m_tileUri(tileUri), m_rasterFile(rasterFile) 
+    :m_tileId(tileId), m_tileUri(tileUri), m_rasterFile(rasterFile), m_isNoTile(false)
         {}
 
     virtual ~VirtualEarthTileQuery(){};
@@ -35,6 +35,7 @@ struct VirtualEarthTileQuery : public WorkerPool::Task
     uint64_t                    m_tileId;
     Utf8String                  m_tileUri;
     bvector<Byte>               m_tileData;
+    bool                        m_isNoTile;    // Bing returns a kodak/camera when tile data is not available at the requested resolution.
     HRFVirtualEarthFile&        m_rasterFile;  // Do not hold a HRFVirtualEarthEditor since it might be destroyed while query are still running. 
 };
 
@@ -84,7 +85,21 @@ protected:
     virtual void                    RequestLookAhead(const HGFTileIDList& pi_rTileIDList);       
 
 private:
-    HGFTileIDDescriptor m_TileIDDescriptor;
+    enum class ReadTileStatus
+        {
+        Success,
+        Error,
+        NoTile,
+        };
+
+    ReadTileStatus QueryTile(Byte* po_pData, uint64_t pi_PosBlockX, uint64_t pi_PosBlockY);
+
+    bool QueryTileSubstitute(Byte* pOutput, uint64_t blockPosX, uint64_t blockPosY);
+    void MagnifyTile(Byte* pOutput, Byte const* pSource, size_t srcOffsetX, size_t srcOffsetY, uint32_t srcResolution);
+
+
+    HGFTileIDDescriptor     m_TileIDDescriptor;
+    std::unique_ptr<Byte[]> m_pSubTileData;
 
 //-----------------------------------------------------------------------------//
 //                         Extern - VirtualEarthTileSystem API                 //

@@ -72,7 +72,7 @@ HCPGCoordLatLongModel& HCPGCoordLatLongModel::operator=(const HCPGCoordLatLongMo
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-StatusInt HCPGCoordLatLongModel::ConvertDirect
+StatusInt HCPGCoordLatLongModel::_ConvertDirect
 (
  double* pio_pXInOut,
  double* pio_pYInOut
@@ -95,7 +95,7 @@ StatusInt HCPGCoordLatLongModel::ConvertDirect
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-StatusInt HCPGCoordLatLongModel::ConvertDirect
+StatusInt HCPGCoordLatLongModel::_ConvertDirect
 (
  double  pi_XIn,
  double  pi_YIn,
@@ -114,7 +114,7 @@ StatusInt HCPGCoordLatLongModel::ConvertDirect
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-StatusInt HCPGCoordLatLongModel::ConvertDirect
+StatusInt HCPGCoordLatLongModel::_ConvertDirect
 (
  double    pi_YIn,
  double    pi_XInStart,
@@ -151,7 +151,7 @@ StatusInt HCPGCoordLatLongModel::ConvertDirect
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-StatusInt HCPGCoordLatLongModel::ConvertDirect
+StatusInt HCPGCoordLatLongModel::_ConvertDirect
 (
  size_t pi_NumLoc, 
  double* pio_aXInOut,
@@ -181,7 +181,7 @@ StatusInt HCPGCoordLatLongModel::ConvertDirect
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-StatusInt HCPGCoordLatLongModel::ConvertInverse
+StatusInt HCPGCoordLatLongModel::_ConvertInverse
 (
  double* pio_pXInOut,
  double* pio_pYInOut
@@ -201,7 +201,7 @@ StatusInt HCPGCoordLatLongModel::ConvertInverse
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-StatusInt HCPGCoordLatLongModel::ConvertInverse
+StatusInt HCPGCoordLatLongModel::_ConvertInverse
 (
  double pi_XIn,
  double pi_YIn,
@@ -220,7 +220,7 @@ StatusInt HCPGCoordLatLongModel::ConvertInverse
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-StatusInt HCPGCoordLatLongModel::ConvertInverse
+StatusInt HCPGCoordLatLongModel::_ConvertInverse
 (
  double    pi_YIn,
  double    pi_XInStart,
@@ -257,7 +257,7 @@ StatusInt HCPGCoordLatLongModel::ConvertInverse
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-StatusInt HCPGCoordLatLongModel::ConvertInverse
+StatusInt HCPGCoordLatLongModel::_ConvertInverse
 (
  size_t pi_NumLoc, 
  double* pio_aXInOut,
@@ -288,7 +288,7 @@ StatusInt HCPGCoordLatLongModel::ConvertInverse
 // PreservesLinearity
 // Indicate if the transformation model preserves linearity
 //-----------------------------------------------------------------------------
-bool   HCPGCoordLatLongModel::PreservesLinearity () const
+bool   HCPGCoordLatLongModel::_PreservesLinearity () const
     {
     HINVARIANTS;
 
@@ -299,7 +299,7 @@ bool   HCPGCoordLatLongModel::PreservesLinearity () const
 // PreservesParallelism
 // Indicate if the transformation model preserves parallelism
 //-----------------------------------------------------------------------------
-bool   HCPGCoordLatLongModel::PreservesParallelism () const
+bool   HCPGCoordLatLongModel::_PreservesParallelism () const
     {
     HINVARIANTS;
 
@@ -310,7 +310,7 @@ bool   HCPGCoordLatLongModel::PreservesParallelism () const
 // PreservesShape
 // Indicate if the transformation model preserves the shape
 //-----------------------------------------------------------------------------
-bool   HCPGCoordLatLongModel::PreservesShape () const
+bool   HCPGCoordLatLongModel::_PreservesShape () const
     {
     HINVARIANTS;
 
@@ -321,7 +321,7 @@ bool   HCPGCoordLatLongModel::PreservesShape () const
 // PreservesDirection
 // Indicate if the transformation model preserves directions
 //-----------------------------------------------------------------------------
-bool   HCPGCoordLatLongModel::PreservesDirection () const
+bool   HCPGCoordLatLongModel::_PreservesDirection () const
     {
     HINVARIANTS;
 
@@ -333,7 +333,7 @@ bool   HCPGCoordLatLongModel::PreservesDirection () const
 // CanBeRepresentedByAMatrix
 // Indicates if the model can be represented by a transformation matrix
 //-----------------------------------------------------------------------------
-bool HCPGCoordLatLongModel::CanBeRepresentedByAMatrix () const
+bool HCPGCoordLatLongModel::_CanBeRepresentedByAMatrix () const
     {
     HINVARIANTS;
 
@@ -345,7 +345,7 @@ bool HCPGCoordLatLongModel::CanBeRepresentedByAMatrix () const
 //  IsIdentity
 //  Returns true if the model contains no transformation
 //-----------------------------------------------------------------------------
-bool HCPGCoordLatLongModel::IsIdentity () const
+bool HCPGCoordLatLongModel::_IsIdentity () const
     {
     HINVARIANTS;
 
@@ -356,7 +356,7 @@ bool HCPGCoordLatLongModel::IsIdentity () const
 //  IsStetchable
 //  Returns true if the model contains only scaling and translation
 //-----------------------------------------------------------------------------
-bool HCPGCoordLatLongModel::IsStretchable (double pi_AngleTolerance) const
+bool HCPGCoordLatLongModel::_IsStretchable (double pi_AngleTolerance) const
     {
     HINVARIANTS;
 
@@ -368,7 +368,7 @@ bool HCPGCoordLatLongModel::IsStretchable (double pi_AngleTolerance) const
 //  GetStetchParams
 //  Returns the stretch parameters
 //-----------------------------------------------------------------------------
-void HCPGCoordLatLongModel::GetStretchParams
+void HCPGCoordLatLongModel::_GetStretchParams
 (
  double* po_pScaleFactorX,
  double* po_pScaleFactorY,
@@ -395,7 +395,7 @@ void HCPGCoordLatLongModel::GetStretchParams
 //  GetMatrix
 //  Gets the components of the projective by matrix
 //-----------------------------------------------------------------------------
-HFCMatrix<3, 3> HCPGCoordLatLongModel::GetMatrix () const
+HFCMatrix<3, 3> HCPGCoordLatLongModel::_GetMatrix() const
     {
     HINVARIANTS;
 
@@ -411,7 +411,7 @@ HFCMatrix<3, 3> HCPGCoordLatLongModel::GetMatrix () const
 // Reverse
 // This method reverses the transformation model
 //-----------------------------------------------------------------------------
-void    HCPGCoordLatLongModel::Reverse ()
+void    HCPGCoordLatLongModel::_Reverse()
     {
     HINVARIANTS;
 
@@ -419,7 +419,7 @@ void    HCPGCoordLatLongModel::Reverse ()
 
     // Invoque reversing of ancester
     // This call will in turn invoque Prepare()
-    HGF2DTransfoModel::Reverse ();
+    HGF2DTransfoModel::_Reverse();
     }
 
 
@@ -428,7 +428,7 @@ void    HCPGCoordLatLongModel::Reverse ()
 // ComposeInverseWithDirectOf
 // Composes a new transformation model as a combination of self and given
 //-----------------------------------------------------------------------------
-HFCPtr<HGF2DTransfoModel>  HCPGCoordLatLongModel::ComposeInverseWithDirectOf (const HGF2DTransfoModel& pi_rModel) const
+HFCPtr<HGF2DTransfoModel>  HCPGCoordLatLongModel::_ComposeInverseWithDirectOf (const HGF2DTransfoModel& pi_rModel) const
     {
     HINVARIANTS;
 
@@ -458,7 +458,7 @@ HFCPtr<HGF2DTransfoModel>  HCPGCoordLatLongModel::ComposeInverseWithDirectOf (co
 // This method allocates a copy of self. The caller is responsible for
 // the deletion of this object.
 //-----------------------------------------------------------------------------
-HGF2DTransfoModel* HCPGCoordLatLongModel::Clone () const
+HGF2DTransfoModel* HCPGCoordLatLongModel::_Clone() const
     {
     HINVARIANTS;
 
@@ -471,7 +471,7 @@ HGF2DTransfoModel* HCPGCoordLatLongModel::Clone () const
 // ComposeYourself
 // PRIVATE
 //-----------------------------------------------------------------------------
-HFCPtr<HGF2DTransfoModel>  HCPGCoordLatLongModel::ComposeYourself (const HGF2DTransfoModel& pi_rModel) const
+HFCPtr<HGF2DTransfoModel>  HCPGCoordLatLongModel::_ComposeYourself (const HGF2DTransfoModel& pi_rModel) const
     {
     HINVARIANTS;
 
@@ -480,7 +480,7 @@ HFCPtr<HGF2DTransfoModel>  HCPGCoordLatLongModel::ComposeYourself (const HGF2DTr
 
     // Type is not known ... build a complex
     // To do this we call the ancester ComposeYourself
-    pResultModel = HGF2DTransfoModel::ComposeYourself (pi_rModel);
+    pResultModel = HGF2DTransfoModel::_ComposeYourself (pi_rModel);
 
     return (pResultModel);
     }
@@ -493,7 +493,7 @@ HFCPtr<HGF2DTransfoModel>  HCPGCoordLatLongModel::ComposeYourself (const HGF2DTr
 //  This methods prepares the conversion parameters from the basic
 //  model attribute
 //-----------------------------------------------------------------------------
-void HCPGCoordLatLongModel::Prepare ()
+void HCPGCoordLatLongModel::_Prepare()
     {
     }
 
@@ -513,7 +513,7 @@ void HCPGCoordLatLongModel::Copy (const HCPGCoordLatLongModel& pi_rObj)
 //-----------------------------------------------------------------------------
 // CreateSimplifiedModel
 //-----------------------------------------------------------------------------
-HFCPtr<HGF2DTransfoModel> HCPGCoordLatLongModel::CreateSimplifiedModel () const
+HFCPtr<HGF2DTransfoModel> HCPGCoordLatLongModel::_CreateSimplifiedModel () const
     {
     HINVARIANTS;
 
@@ -624,7 +624,7 @@ StatusInt HCPGCoordLatLongModel::ComputeDomain () const
 //-----------------------------------------------------------------------------
 // 
 //-----------------------------------------------------------------------------
-bool HCPGCoordLatLongModel::HasDomain() const
+bool HCPGCoordLatLongModel::_HasDomain() const
     {
     return true;
     }
@@ -633,7 +633,7 @@ bool HCPGCoordLatLongModel::HasDomain() const
 //-----------------------------------------------------------------------------
 // 
 //-----------------------------------------------------------------------------
-HFCPtr<HGF2DShape> HCPGCoordLatLongModel::GetDirectDomain() const
+HFCPtr<HGF2DShape> HCPGCoordLatLongModel::_GetDirectDomain() const
     {
     ComputeDomain();
 
@@ -643,7 +643,7 @@ HFCPtr<HGF2DShape> HCPGCoordLatLongModel::GetDirectDomain() const
 //-----------------------------------------------------------------------------
 // CreateSimplifiedModel
 //-----------------------------------------------------------------------------
-HFCPtr<HGF2DShape> HCPGCoordLatLongModel::GetInverseDomain () const
+HFCPtr<HGF2DShape> HCPGCoordLatLongModel::_GetInverseDomain () const
     {
     StatusInt status = SUCCESS;
 

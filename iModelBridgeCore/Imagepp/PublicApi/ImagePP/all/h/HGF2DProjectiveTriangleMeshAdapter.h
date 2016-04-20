@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DProjectiveTriangleMeshAdapter.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGF2DProjectiveTriangleMeshAdapter
@@ -66,7 +66,7 @@ public:
 
 
     // From HGF2DTransfoModel
-    virtual void    ConvertDirect(double    pi_YIn,
+    virtual void    _ConvertDirect(double    pi_YIn,
                                   double    pi_XInStart,
                                   uint32_t   pi_NumLoc,
                                   double    pi_XInStep,
@@ -74,7 +74,7 @@ public:
                                   double*   po_pYOut) const override;
 
 
-    virtual void    ConvertInverse(double    pi_YIn,
+    virtual void    _ConvertInverse(double    pi_YIn,
                                    double    pi_XInStart,
                                    uint32_t   pi_NumLoc,
                                    double    pi_XInStep,
@@ -84,17 +84,16 @@ public:
 
 
     virtual HFCPtr<HGF2DTransfoModel>
-    ComposeInverseWithDirectOf (const HGF2DTransfoModel& pi_rModel) const;
+    _ComposeInverseWithDirectOf (const HGF2DTransfoModel& pi_rModel) const override;
 
 
 
 
-    virtual HGF2DTransfoModel* Clone () const override;
+    virtual HGF2DTransfoModel* _Clone () const override;
 
 protected:
 
-    virtual HFCPtr<HGF2DTransfoModel>
-    ComposeYourself (const HGF2DTransfoModel& pi_rModel) const;
+    virtual HFCPtr<HGF2DTransfoModel> _ComposeYourself (const HGF2DTransfoModel& pi_rModel) const override;
 
 
 
@@ -110,7 +109,7 @@ protected:
 
 
 
-    virtual bool    CreateModels() const;
+    virtual bool    _CreateModels() const override;
 
     void            CheckInvariants() const
         {

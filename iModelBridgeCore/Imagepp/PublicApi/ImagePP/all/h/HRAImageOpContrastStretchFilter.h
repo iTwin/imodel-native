@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRAImageOpContrastStretchFilter.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -27,20 +27,20 @@ public:
         };
 
     //! Create a generic ContrastStretchFilter
-    static HRAImageOpLightnessContrastStretchFilterPtr CreateLightnessContrastStretchFilter();
+    IMAGEPPTEST_EXPORT static HRAImageOpLightnessContrastStretchFilterPtr CreateLightnessContrastStretchFilter();
 
     // Get/Set methods
     // MinValue and MaxValue are in the interval [0.0, 100.0]
-    void GetInterval(float& MinValue, float& MaxValue) const;
-    void SetInterval(float  MinValue, float  MaxValue);
+    IMAGEPPTEST_EXPORT void GetInterval(float& MinValue, float& MaxValue) const;
+    IMAGEPPTEST_EXPORT void SetInterval(float  MinValue, float  MaxValue);
 
     // MinContrastValue and MaxContrastValue are in the interval [0.0, 100.0]
-    void GetContrastInterval(float& MinContrastValue, float& MaxContrastValue) const;
-    void SetContrastInterval(float  MinContrastValue, float  MaxContrastValue);
+    IMAGEPPTEST_EXPORT void GetContrastInterval(float& MinContrastValue, float& MaxContrastValue) const;
+    IMAGEPPTEST_EXPORT void SetContrastInterval(float  MinContrastValue, float  MaxContrastValue);
 
     // GammaFactor is in the interval ]0.0, 10.0] (notice the exclusion of 0.0)
-    void GetGammaFactor(double& GammaFactor) const;
-    void SetGammaFactor(double GammaFactor);
+    IMAGEPPTEST_EXPORT void GetGammaFactor(double& GammaFactor) const;
+    IMAGEPPTEST_EXPORT void SetGammaFactor(double GammaFactor);
 
 protected:
     virtual ImagePPStatus _GetAvailableInputPixelType(HFCPtr<HRPPixelType>& pixelType, uint32_t index, const HFCPtr<HRPPixelType> pixelTypeToMatch) override;

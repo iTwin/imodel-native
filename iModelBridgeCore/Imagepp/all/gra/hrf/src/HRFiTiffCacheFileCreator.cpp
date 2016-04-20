@@ -316,6 +316,11 @@ bool HRFiTiffCacheFileCreator::HasCacheFor(const HFCPtr<HFCURL>& pi_rForRasterFi
                                              pi_Offset,
                                              pi_Page);
 
+    //TFS#298710; In this particular case, the cache filename created is too long a we cannot create a valid URL from it (see BeFileName::FixPathName).
+    //            We must return error more elegantly for that. In the meantime, this will prevent the crash...
+    if (pCacheURL == NULL)
+        return false;
+
     HFCStat CacheFileStat(pCacheURL);
     // Check if the Cache file exist.
     if (CacheFileStat.IsExistent() &&

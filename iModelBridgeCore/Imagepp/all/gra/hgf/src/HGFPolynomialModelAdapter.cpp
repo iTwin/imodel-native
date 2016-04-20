@@ -81,7 +81,7 @@ HGFPolynomialModelAdapter& HGFPolynomialModelAdapter::operator=(const HGFPolynom
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Alexandre.Gariepy               06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool HGFPolynomialModelAdapter::IsConvertDirectThreadSafe() const
+bool HGFPolynomialModelAdapter::_IsConvertDirectThreadSafe() const
     {
     // The polynomial is thread safe, but not the transform that uses gcoord
     return m_UsePolynomialForDirect;
@@ -90,7 +90,7 @@ bool HGFPolynomialModelAdapter::IsConvertDirectThreadSafe() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Alexandre.Gariepy               06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool HGFPolynomialModelAdapter::IsConvertInverseThreadSafe() const
+bool HGFPolynomialModelAdapter::_IsConvertInverseThreadSafe() const
     {
     // The polynomial is thread safe, but not the transform that uses gcoord
     return !m_UsePolynomialForDirect;
@@ -99,7 +99,7 @@ bool HGFPolynomialModelAdapter::IsConvertInverseThreadSafe() const
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-StatusInt HGFPolynomialModelAdapter::ConvertDirect(double* pio_pXInOut, double* pio_pYInOut) const
+StatusInt HGFPolynomialModelAdapter::_ConvertDirect(double* pio_pXInOut, double* pio_pYInOut) const
     {
     ConvertDirect(*pio_pXInOut, *pio_pYInOut, pio_pXInOut, pio_pYInOut);
     return SUCCESS;
@@ -108,7 +108,7 @@ StatusInt HGFPolynomialModelAdapter::ConvertDirect(double* pio_pXInOut, double* 
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-StatusInt HGFPolynomialModelAdapter::ConvertDirect(double pi_YIn, double pi_XInStart, size_t pi_NumLoc, double pi_XInStep, double* po_pXOut,
+StatusInt HGFPolynomialModelAdapter::_ConvertDirect(double pi_YIn, double pi_XInStart, size_t pi_NumLoc, double pi_XInStep, double* po_pXOut,
                                                    double* po_pYOut) const
     {
     static bool s_forceExactModel = false;
@@ -133,7 +133,7 @@ StatusInt HGFPolynomialModelAdapter::ConvertDirect(double pi_YIn, double pi_XInS
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-StatusInt HGFPolynomialModelAdapter::ConvertDirect(double pi_XIn, double pi_YIn, double* po_pXOut, double* po_pYOut) const
+StatusInt HGFPolynomialModelAdapter::_ConvertDirect(double pi_XIn, double pi_YIn, double* po_pXOut, double* po_pYOut) const
     {
     static bool s_forceExactModel = false;
     if (m_UsePolynomialForDirect && !s_forceExactModel)
@@ -150,7 +150,7 @@ StatusInt HGFPolynomialModelAdapter::ConvertDirect(double pi_XIn, double pi_YIn,
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-StatusInt HGFPolynomialModelAdapter::ConvertDirect(size_t pi_NumLoc, double* pio_aXInOut, double* pio_aYInOut) const
+StatusInt HGFPolynomialModelAdapter::_ConvertDirect(size_t pi_NumLoc, double* pio_aXInOut, double* pio_aYInOut) const
     {
     for (uint32_t i = 0; i < pi_NumLoc; i++)
         {
@@ -162,7 +162,7 @@ StatusInt HGFPolynomialModelAdapter::ConvertDirect(size_t pi_NumLoc, double* pio
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-StatusInt HGFPolynomialModelAdapter::ConvertInverse(double* pio_pXInOut, double* pio_pYInOut) const
+StatusInt HGFPolynomialModelAdapter::_ConvertInverse(double* pio_pXInOut, double* pio_pYInOut) const
     {
     ConvertInverse(*pio_pXInOut, *pio_pYInOut, pio_pXInOut, pio_pYInOut);
     return SUCCESS;
@@ -171,7 +171,7 @@ StatusInt HGFPolynomialModelAdapter::ConvertInverse(double* pio_pXInOut, double*
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-StatusInt HGFPolynomialModelAdapter::ConvertInverse(double pi_YIn, double pi_XInStart, size_t pi_NumLoc, double pi_XInStep, double* po_pXOut,
+StatusInt HGFPolynomialModelAdapter::_ConvertInverse(double pi_YIn, double pi_XInStart, size_t pi_NumLoc, double pi_XInStep, double* po_pXOut,
                                                     double* po_pYOut) const
     {
     static bool s_forceExactModel = false;
@@ -196,7 +196,7 @@ StatusInt HGFPolynomialModelAdapter::ConvertInverse(double pi_YIn, double pi_XIn
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-StatusInt HGFPolynomialModelAdapter::ConvertInverse(double pi_XIn, double pi_YIn, double* po_pXOut, double* po_pYOut) const
+StatusInt HGFPolynomialModelAdapter::_ConvertInverse(double pi_XIn, double pi_YIn, double* po_pXOut, double* po_pYOut) const
     {
     static bool s_forceExactModel = false;
     if (!m_UsePolynomialForDirect && !s_forceExactModel)
@@ -213,7 +213,7 @@ StatusInt HGFPolynomialModelAdapter::ConvertInverse(double pi_XIn, double pi_YIn
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-StatusInt HGFPolynomialModelAdapter::ConvertInverse(size_t pi_NumLoc, double* pio_aXInOut, double* pio_aYInOut) const
+StatusInt HGFPolynomialModelAdapter::_ConvertInverse(size_t pi_NumLoc, double* pio_aXInOut, double* pio_aYInOut) const
     {
     for (uint32_t i = 0; i < pi_NumLoc; i++)
         {
@@ -394,7 +394,7 @@ void HGFPolynomialModelAdapter::Copy(const HGFPolynomialModelAdapter& pi_rObj)
 // This method allocates a copy of self. The caller is responsible for
 // the deletion of this object.
 //-----------------------------------------------------------------------------
-HGF2DTransfoModel* HGFPolynomialModelAdapter::Clone() const
+HGF2DTransfoModel* HGFPolynomialModelAdapter::_Clone() const
     {
     HINVARIANTS;
 
@@ -405,9 +405,9 @@ HGF2DTransfoModel* HGFPolynomialModelAdapter::Clone() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Alexandre.Gariepy   08/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void HGFPolynomialModelAdapter::Reverse()
+void HGFPolynomialModelAdapter::_Reverse()
     {
-    HGF2DTransfoModelAdapter::Reverse();
+    HGF2DTransfoModelAdapter::_Reverse();
     m_UsePolynomialForDirect = !m_UsePolynomialForDirect;
     }
 
@@ -415,7 +415,7 @@ void HGFPolynomialModelAdapter::Reverse()
 //  GetStetchParams
 //  Returns the stretch parameters
 //-----------------------------------------------------------------------------
-void HGFPolynomialModelAdapter::GetStretchParams(double* po_pScaleFactorX, double* po_pScaleFactorY, HGF2DDisplacement* po_pDisplacement) const
+void HGFPolynomialModelAdapter::_GetStretchParams(double* po_pScaleFactorX, double* po_pScaleFactorY, HGF2DDisplacement* po_pDisplacement) const
     {
     HGF2DTransfoModel::GetStretchParamsAt(po_pScaleFactorX, po_pScaleFactorY, po_pDisplacement, 0.0, 0.0);
     }
@@ -424,7 +424,7 @@ void HGFPolynomialModelAdapter::GetStretchParams(double* po_pScaleFactorX, doubl
 //  GetMatrix
 //  Gets the components of the affine by matrix
 //-----------------------------------------------------------------------------
-HFCMatrix<3, 3> HGFPolynomialModelAdapter::GetMatrix() const
+HFCMatrix<3, 3> HGFPolynomialModelAdapter::_GetMatrix() const
     {
     HFCMatrix<3, 3> m;
     return m;
@@ -656,7 +656,7 @@ StatusInt HGFPolynomialModelAdapter::GetMeanError(double* po_pMeanError, double*
 // ComposeInverseWithDirectOf
 // Composes a new transformation model as a combination of self and given
 //-----------------------------------------------------------------------------
-HFCPtr<HGF2DTransfoModel>  HGFPolynomialModelAdapter::ComposeInverseWithDirectOf(const HGF2DTransfoModel& pi_rModel) const
+HFCPtr<HGF2DTransfoModel>  HGFPolynomialModelAdapter::_ComposeInverseWithDirectOf(const HGF2DTransfoModel& pi_rModel) const
     {
     // Recipient
     HFCPtr<HGF2DTransfoModel> pResultModel;
@@ -706,7 +706,7 @@ HFCPtr<HGF2DTransfoModel>  HGFPolynomialModelAdapter::ComposeInverseWithDirectOf
 // returned. The major difference with the Compose() method, is that the order
 // of composition is reversed,
 //-----------------------------------------------------------------------------
-HFCPtr<HGF2DTransfoModel>  HGFPolynomialModelAdapter::ComposeYourself(const HGF2DTransfoModel& pi_rModel) const
+HFCPtr<HGF2DTransfoModel>  HGFPolynomialModelAdapter::_ComposeYourself(const HGF2DTransfoModel& pi_rModel) const
     {
     // Recipient
     HFCPtr<HGF2DTransfoModel> pResultModel;
@@ -742,7 +742,7 @@ HFCPtr<HGF2DTransfoModel>  HGFPolynomialModelAdapter::ComposeYourself(const HGF2
         {
         // Type is not known ... build a complex
         // To do this we call the ancester ComposeYourself
-        pResultModel = HGF2DTransfoModel::ComposeYourself(pi_rModel);
+        pResultModel = HGF2DTransfoModel::_ComposeYourself(pi_rModel);
         }
 
     return (pResultModel);

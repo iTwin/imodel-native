@@ -232,7 +232,7 @@ HGF2DProjectiveMeshAdapter& HGF2DProjectiveMeshAdapter::operator=(const HGF2DPro
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-void HGF2DProjectiveMeshAdapter::ConvertDirect(double* pio_pXInOut,
+void HGF2DProjectiveMeshAdapter::_ConvertDirect(double* pio_pXInOut,
                                                double* pio_pYInOut) const
     {
     HINVARIANTS;
@@ -352,7 +352,7 @@ void HGF2DProjectiveMeshAdapter::ConvertDirect(double* pio_pXInOut,
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-void HGF2DProjectiveMeshAdapter::ConvertDirect(double pi_XIn,
+void HGF2DProjectiveMeshAdapter::_ConvertDirect(double pi_XIn,
                                                double pi_YIn,
                                                double* po_pXOut,
                                                double* po_pYOut) const
@@ -373,7 +373,7 @@ void HGF2DProjectiveMeshAdapter::ConvertDirect(double pi_XIn,
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-void HGF2DProjectiveMeshAdapter::ConvertDirect(double    pi_YIn,
+void HGF2DProjectiveMeshAdapter::_ConvertDirect(double    pi_YIn,
                                                double    pi_XInStart,
                                                uint32_t   pi_NumLoc,
                                                double    pi_XInStep,
@@ -417,7 +417,7 @@ void HGF2DProjectiveMeshAdapter::ConvertDirect(double    pi_YIn,
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-void HGF2DProjectiveMeshAdapter::ConvertDirect(uint32_t  pi_NumLoc,
+void HGF2DProjectiveMeshAdapter::_ConvertDirect(uint32_t  pi_NumLoc,
                                                double*   pio_aXInOut,
                                                double*   pio_aYInOut) const
     {
@@ -435,7 +435,7 @@ void HGF2DProjectiveMeshAdapter::ConvertDirect(uint32_t  pi_NumLoc,
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-void HGF2DProjectiveMeshAdapter::ConvertInverse(double* pio_pXInOut,
+void HGF2DProjectiveMeshAdapter::_ConvertInverse(double* pio_pXInOut,
                                                 double* pio_pYInOut) const
     {
     HINVARIANTS;
@@ -555,7 +555,7 @@ void HGF2DProjectiveMeshAdapter::ConvertInverse(double* pio_pXInOut,
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-void HGF2DProjectiveMeshAdapter::ConvertInverse(double pi_XIn,
+void HGF2DProjectiveMeshAdapter::_ConvertInverse(double pi_XIn,
                                                 double pi_YIn,
                                                 double* po_pXOut,
                                                 double* po_pYOut) const
@@ -576,7 +576,7 @@ void HGF2DProjectiveMeshAdapter::ConvertInverse(double pi_XIn,
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-void HGF2DProjectiveMeshAdapter::ConvertInverse(double    pi_YIn,
+void HGF2DProjectiveMeshAdapter::_ConvertInverse(double    pi_YIn,
                                                 double    pi_XInStart,
                                                 uint32_t   pi_NumLoc,
                                                 double    pi_XInStep,
@@ -620,7 +620,7 @@ void HGF2DProjectiveMeshAdapter::ConvertInverse(double    pi_YIn,
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-void HGF2DProjectiveMeshAdapter::ConvertInverse(uint32_t  pi_NumLoc,
+void HGF2DProjectiveMeshAdapter::_ConvertInverse(uint32_t  pi_NumLoc,
                                                 double*   pio_aXInOut,
                                                 double*   pio_aYInOut) const
     {
@@ -641,7 +641,7 @@ void HGF2DProjectiveMeshAdapter::ConvertInverse(uint32_t  pi_NumLoc,
 // PreservesLinearity
 // Indicate if the transformation model preserves linearity
 //-----------------------------------------------------------------------------
-bool   HGF2DProjectiveMeshAdapter::PreservesLinearity () const
+bool   HGF2DProjectiveMeshAdapter::_PreservesLinearity () const
     {
     HINVARIANTS;
 
@@ -652,7 +652,7 @@ bool   HGF2DProjectiveMeshAdapter::PreservesLinearity () const
 // PreservesParallelism
 // Indicate if the transformation model preserves parallelism
 //-----------------------------------------------------------------------------
-bool   HGF2DProjectiveMeshAdapter::PreservesParallelism() const
+bool   HGF2DProjectiveMeshAdapter::_PreservesParallelism() const
     {
     HINVARIANTS;
 
@@ -663,7 +663,7 @@ bool   HGF2DProjectiveMeshAdapter::PreservesParallelism() const
 // PreservesShape
 // Indicate if the transformation model preserves the shape
 //-----------------------------------------------------------------------------
-bool   HGF2DProjectiveMeshAdapter::PreservesShape() const
+bool   HGF2DProjectiveMeshAdapter::_PreservesShape() const
     {
     HINVARIANTS;
 
@@ -674,7 +674,7 @@ bool   HGF2DProjectiveMeshAdapter::PreservesShape() const
 // PreservesDirection
 // Indicate if the transformation model preserves directions
 //-----------------------------------------------------------------------------
-bool   HGF2DProjectiveMeshAdapter::PreservesDirection() const
+bool   HGF2DProjectiveMeshAdapter::_PreservesDirection() const
     {
     HINVARIANTS;
 
@@ -686,7 +686,7 @@ bool   HGF2DProjectiveMeshAdapter::PreservesDirection() const
 // CanBeRepresentedByAMatrix
 // Indicates if the model can be represented by a transformation matrix
 //-----------------------------------------------------------------------------
-bool HGF2DProjectiveMeshAdapter::CanBeRepresentedByAMatrix() const
+bool HGF2DProjectiveMeshAdapter::_CanBeRepresentedByAMatrix() const
     {
     HINVARIANTS;
 
@@ -698,7 +698,7 @@ bool HGF2DProjectiveMeshAdapter::CanBeRepresentedByAMatrix() const
 //  IsIdentity
 //  Returns true if the model contains no transformation
 //-----------------------------------------------------------------------------
-bool HGF2DProjectiveMeshAdapter::IsIdentity() const
+bool HGF2DProjectiveMeshAdapter::_IsIdentity() const
     {
     HINVARIANTS;
 
@@ -709,7 +709,7 @@ bool HGF2DProjectiveMeshAdapter::IsIdentity() const
 //  IsStetchable
 //  Returns true if the model contains only scaling and translation
 //-----------------------------------------------------------------------------
-bool HGF2DProjectiveMeshAdapter::IsStretchable(double pi_AngleTolerance) const
+bool HGF2DProjectiveMeshAdapter::_IsStretchable(double pi_AngleTolerance) const
     {
     HINVARIANTS;
 
@@ -721,7 +721,7 @@ bool HGF2DProjectiveMeshAdapter::IsStretchable(double pi_AngleTolerance) const
 //  GetStetchParams
 //  Returns the stretch parameters
 //-----------------------------------------------------------------------------
-void HGF2DProjectiveMeshAdapter::GetStretchParams(double* po_pScaleFactorX,
+void HGF2DProjectiveMeshAdapter::_GetStretchParams(double* po_pScaleFactorX,
                                                   double* po_pScaleFactorY,
                                                   HGF2DDisplacement* po_pDisplacement) const
     {
@@ -764,7 +764,7 @@ void HGF2DProjectiveMeshAdapter::GetStretchParams(double* po_pScaleFactorX,
 //  GetMatrix
 //  Gets the components of the projective by matrix
 //-----------------------------------------------------------------------------
-HFCMatrix<3, 3> HGF2DProjectiveMeshAdapter::GetMatrix() const
+HFCMatrix<3, 3> HGF2DProjectiveMeshAdapter::_GetMatrix() const
     {
     HINVARIANTS;
 
@@ -780,7 +780,7 @@ HFCMatrix<3, 3> HGF2DProjectiveMeshAdapter::GetMatrix() const
 // Reverse
 // This method reverses the transformation model
 //-----------------------------------------------------------------------------
-void    HGF2DProjectiveMeshAdapter::Reverse()
+void    HGF2DProjectiveMeshAdapter::_Reverse()
     {
     HINVARIANTS;
 
@@ -815,7 +815,7 @@ void    HGF2DProjectiveMeshAdapter::Reverse()
     // This reverses the adapted model
     // Invoque reversing of ancester
     // This call will in turn invoque Prepare()
-    HGF2DTransfoModelAdapter::Reverse();
+    HGF2DTransfoModelAdapter::_Reverse();
 
     HINVARIANTS;
     }
@@ -826,7 +826,7 @@ void    HGF2DProjectiveMeshAdapter::Reverse()
 // ComposeInverseWithDirectOf
 // Composes a new transformation model as a combination of self and given
 //-----------------------------------------------------------------------------
-HFCPtr<HGF2DTransfoModel>  HGF2DProjectiveMeshAdapter::ComposeInverseWithDirectOf(const HGF2DTransfoModel& pi_rModel) const
+HFCPtr<HGF2DTransfoModel>  HGF2DProjectiveMeshAdapter::_ComposeInverseWithDirectOf(const HGF2DTransfoModel& pi_rModel) const
     {
     HINVARIANTS;
 
@@ -877,7 +877,7 @@ HFCPtr<HGF2DTransfoModel>  HGF2DProjectiveMeshAdapter::ComposeInverseWithDirectO
 // This method allocates a copy of self. The caller is responsible for
 // the deletion of this object.
 //-----------------------------------------------------------------------------
-HGF2DTransfoModel* HGF2DProjectiveMeshAdapter::Clone () const
+HGF2DTransfoModel* HGF2DProjectiveMeshAdapter::_Clone() const
     {
     HINVARIANTS;
 
@@ -890,7 +890,7 @@ HGF2DTransfoModel* HGF2DProjectiveMeshAdapter::Clone () const
 // ComposeYourself
 // PRIVATE
 //-----------------------------------------------------------------------------
-HFCPtr<HGF2DTransfoModel>  HGF2DProjectiveMeshAdapter::ComposeYourself (const HGF2DTransfoModel& pi_rModel) const
+HFCPtr<HGF2DTransfoModel>  HGF2DProjectiveMeshAdapter::_ComposeYourself (const HGF2DTransfoModel& pi_rModel) const
     {
     HINVARIANTS;
 
@@ -964,7 +964,7 @@ HFCPtr<HGF2DTransfoModel>  HGF2DProjectiveMeshAdapter::ComposeYourself (const HG
         {
         // Type is not known ... build a complex
         // To do this we call the ancester ComposeYourself
-        pResultModel = HGF2DTransfoModel::ComposeYourself(pi_rModel);
+        pResultModel = HGF2DTransfoModel::_ComposeYourself(pi_rModel);
         }
 
     return (pResultModel);
@@ -978,12 +978,12 @@ HFCPtr<HGF2DTransfoModel>  HGF2DProjectiveMeshAdapter::ComposeYourself (const HG
 //  This methods prepares the conversion parameters from the basic
 //  model attribute
 //-----------------------------------------------------------------------------
-void HGF2DProjectiveMeshAdapter::Prepare()
+void HGF2DProjectiveMeshAdapter::_Prepare()
     {
     // Obtain conversion ratio for direct X to inverse X units
 
     // Invoque preparation of ancester (required)
-    HGF2DTransfoModelAdapter::Prepare();
+    HGF2DTransfoModelAdapter::_Prepare();
     }
 
 
@@ -1017,7 +1017,7 @@ void HGF2DProjectiveMeshAdapter::Copy(const HGF2DProjectiveMeshAdapter& pi_rObj)
 //-----------------------------------------------------------------------------
 // CreateSimplifiedModel
 //-----------------------------------------------------------------------------
-HFCPtr<HGF2DTransfoModel> HGF2DProjectiveMeshAdapter::CreateSimplifiedModel() const
+HFCPtr<HGF2DTransfoModel> HGF2DProjectiveMeshAdapter::_CreateSimplifiedModel() const
     {
     HINVARIANTS;
 

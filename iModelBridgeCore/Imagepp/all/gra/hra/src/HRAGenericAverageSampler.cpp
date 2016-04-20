@@ -249,7 +249,7 @@ void const* HRAGenericAverageSampler<T, TS>::GetPixel(double pi_PosX, double pi_
         *pOut++ = (T)(pChannelsSum[ChannelInd] / NumberOfPixels);
         }
 
-    delete pChannelsSum;
+    delete[] pChannelsSum;
 
     return m_pTempData;
     }
@@ -332,7 +332,7 @@ void HRAGenericAverageSampler<T, TS>::GetPixels(const double* pi_pPositionsX,
         ++pi_pPositionsY;
         }
 
-    delete pChannelsSum;
+    delete[] pChannelsSum;
     }
 
 

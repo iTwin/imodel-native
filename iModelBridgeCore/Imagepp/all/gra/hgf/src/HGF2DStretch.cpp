@@ -118,7 +118,7 @@ HGF2DStretch& HGF2DStretch::operator=(const HGF2DStretch& pi_rObj)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Alexandre.Gariepy               06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool HGF2DStretch::IsConvertDirectThreadSafe() const
+bool HGF2DStretch::_IsConvertDirectThreadSafe() const
     {
     return true;
     }
@@ -126,7 +126,7 @@ bool HGF2DStretch::IsConvertDirectThreadSafe() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Alexandre.Gariepy               06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool HGF2DStretch::IsConvertInverseThreadSafe() const
+bool HGF2DStretch::_IsConvertInverseThreadSafe() const
     {
     return true;
     }
@@ -134,7 +134,7 @@ bool HGF2DStretch::IsConvertInverseThreadSafe() const
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DStretch::ConvertDirect(double* pio_pXInOut,
+StatusInt HGF2DStretch::_ConvertDirect(double* pio_pXInOut,
                                  double* pio_pYInOut) const
     {
     // Make sure that recipient variables are provided
@@ -155,7 +155,7 @@ StatusInt HGF2DStretch::ConvertDirect(double* pio_pXInOut,
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DStretch::ConvertDirect (double    pi_YIn,
+StatusInt HGF2DStretch::_ConvertDirect (double    pi_YIn,
                                        double    pi_XInStart,
                                        size_t    pi_NumLoc,
                                        double    pi_XInStep,
@@ -187,7 +187,7 @@ StatusInt HGF2DStretch::ConvertDirect (double    pi_YIn,
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DStretch::ConvertDirect (size_t    pi_NumLoc,
+StatusInt HGF2DStretch::_ConvertDirect (size_t    pi_NumLoc,
                                        double*   pio_aXInOut,
                                        double*   pio_aYInOut) const
     {
@@ -218,7 +218,7 @@ StatusInt HGF2DStretch::ConvertDirect (size_t    pi_NumLoc,
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DStretch::ConvertDirect(double   pi_XIn,
+StatusInt HGF2DStretch::_ConvertDirect(double   pi_XIn,
                                       double   pi_YIn,
                                       double*  po_pXOut,
                                       double*  po_pYOut) const
@@ -238,7 +238,7 @@ StatusInt HGF2DStretch::ConvertDirect(double   pi_XIn,
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DStretch::ConvertInverse(double* pio_pXInOut,
+StatusInt HGF2DStretch::_ConvertInverse(double* pio_pXInOut,
                                        double* pio_pYInOut) const
     {
     // Make sure that recipient variables are provided
@@ -259,7 +259,7 @@ StatusInt HGF2DStretch::ConvertInverse(double* pio_pXInOut,
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DStretch::ConvertInverse (double    pi_YIn,
+StatusInt HGF2DStretch::_ConvertInverse (double    pi_YIn,
                                         double    pi_XInStart,
                                         size_t    pi_NumLoc,
                                         double    pi_XInStep,
@@ -291,7 +291,7 @@ StatusInt HGF2DStretch::ConvertInverse (double    pi_YIn,
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DStretch::ConvertInverse (size_t    pi_NumLoc,
+StatusInt HGF2DStretch::_ConvertInverse (size_t    pi_NumLoc,
                                         double*   pio_aXInOut,
                                         double*   pio_aYInOut) const
     {
@@ -322,7 +322,7 @@ StatusInt HGF2DStretch::ConvertInverse (size_t    pi_NumLoc,
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DStretch::ConvertInverse(double  pi_XIn,
+StatusInt HGF2DStretch::_ConvertInverse(double  pi_XIn,
                                        double  pi_YIn,
                                        double* po_pXOut,
                                        double* po_pYOut) const
@@ -345,7 +345,7 @@ StatusInt HGF2DStretch::ConvertInverse(double  pi_XIn,
 //  IsStetchable
 //  Returns true if the model contains only scaling and translation
 //-----------------------------------------------------------------------------
-bool HGF2DStretch::IsStretchable (double pi_AngleTolerance) const
+bool HGF2DStretch::_IsStretchable (double pi_AngleTolerance) const
     {
     return(true);
     }
@@ -356,7 +356,7 @@ bool HGF2DStretch::IsStretchable (double pi_AngleTolerance) const
 // PreservesLinearity
 // Indicate if the transformation model preserves linearity
 //-----------------------------------------------------------------------------
-bool   HGF2DStretch::PreservesLinearity () const
+bool   HGF2DStretch::_PreservesLinearity () const
     {
     return (true);
     }
@@ -365,7 +365,7 @@ bool   HGF2DStretch::PreservesLinearity () const
 // PreservesParallelism
 // Indicate if the transformation model preserves parallelism
 //-----------------------------------------------------------------------------
-bool   HGF2DStretch::PreservesParallelism() const
+bool   HGF2DStretch::_PreservesParallelism() const
     {
     return (true);
     }
@@ -374,7 +374,7 @@ bool   HGF2DStretch::PreservesParallelism() const
 // PreservesShape
 // Indicate if the transformation model preserves the shape
 //-----------------------------------------------------------------------------
-bool   HGF2DStretch::PreservesShape() const
+bool   HGF2DStretch::_PreservesShape() const
     {
     // Shape is preserved only if there is no anisotropic scaling implied
     return (m_ScaleX == m_ScaleY);
@@ -384,7 +384,7 @@ bool   HGF2DStretch::PreservesShape() const
 // PreservesDirection
 // Indicate if the transformation model preserves directions
 //-----------------------------------------------------------------------------
-bool   HGF2DStretch::PreservesDirection() const
+bool   HGF2DStretch::_PreservesDirection() const
     {
     // Direction is preserved only if there is no anisotropic scaling implied
     return (m_ScaleX == m_ScaleY);
@@ -395,7 +395,7 @@ bool   HGF2DStretch::PreservesDirection() const
 // CanBeRepresentedByAMatrix
 // Indicates if the model can be represented by a transformation matrix
 //-----------------------------------------------------------------------------
-bool HGF2DStretch::CanBeRepresentedByAMatrix() const
+bool HGF2DStretch::_CanBeRepresentedByAMatrix() const
     {
     return true;
     }
@@ -404,39 +404,28 @@ bool HGF2DStretch::CanBeRepresentedByAMatrix() const
 //  GetMatrix
 //  Gets the components of the model by matrix
 //-----------------------------------------------------------------------------
-HFCMatrix<3, 3> HGF2DStretch::GetMatrix() const
+HFCMatrix<3, 3> HGF2DStretch::_GetMatrix() const
     {
     HFCMatrix<3, 3> ReturnedMatrix;
 
-    return(GetMatrix(ReturnedMatrix));
+    ReturnedMatrix[0][2] = m_XTranslation;
+    ReturnedMatrix[1][2] = m_YTranslation;
+    ReturnedMatrix[0][0] = m_ScaleX;
+    ReturnedMatrix[0][1] = 0.0;
+    ReturnedMatrix[1][0] = 0.0;
+    ReturnedMatrix[1][1] = m_ScaleY;
+    ReturnedMatrix[2][0] = 0.0;
+    ReturnedMatrix[2][1] = 0.0;
+    ReturnedMatrix[2][2] = 1.0;
+
+    return ReturnedMatrix;
     }
-
-//-----------------------------------------------------------------------------
-//  GetMatrix
-//  Gets the components of the model by matrix
-//-----------------------------------------------------------------------------
-HFCMatrix<3, 3>& HGF2DStretch::GetMatrix(HFCMatrix<3, 3>& po_rRecipient) const
-    {
-    po_rRecipient[0][2] = m_XTranslation;
-    po_rRecipient[1][2] = m_YTranslation;
-    po_rRecipient[0][0] = m_ScaleX;
-    po_rRecipient[0][1] = 0.0;
-    po_rRecipient[1][0] = 0.0;
-    po_rRecipient[1][1] = m_ScaleY;
-    po_rRecipient[2][0] = 0.0;
-    po_rRecipient[2][1] = 0.0;
-    po_rRecipient[2][2] = 1.0;
-
-    return(po_rRecipient);
-    }
-
-
 
 //-----------------------------------------------------------------------------
 //  IsIdentity
 //  Returns true if the model contains no transformation
 //-----------------------------------------------------------------------------
-bool HGF2DStretch::IsIdentity () const
+bool HGF2DStretch::_IsIdentity () const
     {
 
     return ((m_XTranslation == 0.0) &&
@@ -452,7 +441,7 @@ bool HGF2DStretch::IsIdentity () const
 //  GetStetchParams
 //  Returns the stretch parameters
 //-----------------------------------------------------------------------------
-void HGF2DStretch::GetStretchParams (double* po_pScaleFactorX,
+void HGF2DStretch::_GetStretchParams (double* po_pScaleFactorX,
                                      double* po_pScaleFactorY,
                                      HGF2DDisplacement* po_pDisplacement) const
     {
@@ -706,7 +695,7 @@ void HGF2DStretch::AddAnisotropicScaling (double pi_ScaleX,
 // Reverse
 // This method reverses the transformation model
 //-----------------------------------------------------------------------------
-void    HGF2DStretch::Reverse()
+void    HGF2DStretch::_Reverse()
     {
     m_ScaleX = 1/m_ScaleX;
     m_ScaleY = 1/m_ScaleY;
@@ -714,7 +703,7 @@ void    HGF2DStretch::Reverse()
     m_YTranslation = m_YTranslationInverse;
 
     // Invoque reversing of ancester
-    HGF2DTransfoModel::Reverse();
+    HGF2DTransfoModel::_Reverse();
 
     Prepare();
     }
@@ -725,7 +714,7 @@ void    HGF2DStretch::Reverse()
 // ComposeInverseWithDirectOf
 // Composes a new transformation model as a combination of self and given
 //-----------------------------------------------------------------------------
-HFCPtr<HGF2DTransfoModel>  HGF2DStretch::ComposeInverseWithDirectOf (const HGF2DTransfoModel& pi_rModel) const
+HFCPtr<HGF2DTransfoModel>  HGF2DStretch::_ComposeInverseWithDirectOf (const HGF2DTransfoModel& pi_rModel) const
     {
     // Recipient
     HFCPtr<HGF2DTransfoModel> pResultModel;
@@ -839,7 +828,7 @@ HFCPtr<HGF2DTransfoModel>  HGF2DStretch::ComposeInverseWithDirectOf (const HGF2D
 // This method allocates a copy of self. The caller is responsible for
 // the deletion of this object.
 //-----------------------------------------------------------------------------
-HGF2DTransfoModel* HGF2DStretch::Clone () const
+HGF2DTransfoModel* HGF2DStretch::_Clone() const
     {
     // Allocate object as copy and return
     return (new HGF2DStretch (*this));
@@ -855,7 +844,7 @@ HGF2DTransfoModel* HGF2DStretch::Clone () const
 // returned. The major difference with the Compose() method, is that the order
 // of composition is reversed,
 //-----------------------------------------------------------------------------
-HFCPtr<HGF2DTransfoModel>  HGF2DStretch::ComposeYourself (const HGF2DTransfoModel& pi_rModel) const
+HFCPtr<HGF2DTransfoModel>  HGF2DStretch::_ComposeYourself (const HGF2DTransfoModel& pi_rModel) const
     {
     // Recipient
     HFCPtr<HGF2DTransfoModel> pResultModel;
@@ -952,7 +941,7 @@ HFCPtr<HGF2DTransfoModel>  HGF2DStretch::ComposeYourself (const HGF2DTransfoMode
         {
         // Type is not known ... build a complex
         // To do this we call the ancester ComposeYourself
-        pResultModel = HGF2DTransfoModel::ComposeYourself (pi_rModel);
+        pResultModel = HGF2DTransfoModel::_ComposeYourself (pi_rModel);
         }
 
     return (pResultModel);
@@ -966,7 +955,7 @@ HFCPtr<HGF2DTransfoModel>  HGF2DStretch::ComposeYourself (const HGF2DTransfoMode
 //  This methods prepares the conversion parameters from the basic
 //  model attribute
 //-----------------------------------------------------------------------------
-void HGF2DStretch::Prepare ()
+void HGF2DStretch::_Prepare()
     {
     double             InvScaleX;
     double             InvScaleY;
@@ -1028,7 +1017,7 @@ void HGF2DStretch::Copy(const HGF2DStretch& pi_rObj)
 //-----------------------------------------------------------------------------
 // CreateSimplifiedModel
 //-----------------------------------------------------------------------------
-HFCPtr<HGF2DTransfoModel> HGF2DStretch::CreateSimplifiedModel() const
+HFCPtr<HGF2DTransfoModel> HGF2DStretch::_CreateSimplifiedModel() const
     {
     if (m_ScaleX == 1.0 && m_ScaleY == 1.0)
         {

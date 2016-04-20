@@ -87,7 +87,7 @@ HGF2DTranslation& HGF2DTranslation::operator=(const HGF2DTranslation& pi_rObj)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Alexandre.Gariepy               06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool HGF2DTranslation::IsConvertDirectThreadSafe() const 
+bool HGF2DTranslation::_IsConvertDirectThreadSafe() const 
     { 
     return true; 
     }
@@ -95,7 +95,7 @@ bool HGF2DTranslation::IsConvertDirectThreadSafe() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Alexandre.Gariepy               06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool HGF2DTranslation::IsConvertInverseThreadSafe() const 
+bool HGF2DTranslation::_IsConvertInverseThreadSafe() const 
     { 
     return true; 
     }
@@ -103,7 +103,7 @@ bool HGF2DTranslation::IsConvertInverseThreadSafe() const
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DTranslation::ConvertDirect(double* pio_pXInOut,
+StatusInt HGF2DTranslation::_ConvertDirect(double* pio_pXInOut,
                                           double* pio_pYInOut) const
     {
     // Check variables are provided
@@ -120,7 +120,7 @@ StatusInt HGF2DTranslation::ConvertDirect(double* pio_pXInOut,
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DTranslation::ConvertDirect (double    pi_YIn,
+StatusInt HGF2DTranslation::_ConvertDirect (double    pi_YIn,
                                            double    pi_XInStart,
                                            size_t    pi_NumLoc,
                                            double    pi_XInStep,
@@ -151,7 +151,7 @@ StatusInt HGF2DTranslation::ConvertDirect (double    pi_YIn,
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DTranslation::ConvertDirect (size_t    pi_NumLoc,
+StatusInt HGF2DTranslation::_ConvertDirect (size_t    pi_NumLoc,
                                            double*   pio_aXInOut,
                                            double*   pio_aYInOut) const
     {
@@ -177,7 +177,7 @@ StatusInt HGF2DTranslation::ConvertDirect (size_t    pi_NumLoc,
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DTranslation::ConvertDirect(double   pi_XIn,
+StatusInt HGF2DTranslation::_ConvertDirect(double   pi_XIn,
                                           double   pi_YIn,
                                           double*  po_pXOut,
                                           double*  po_pYOut) const
@@ -198,7 +198,7 @@ StatusInt HGF2DTranslation::ConvertDirect(double   pi_XIn,
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DTranslation::ConvertInverse(double* pio_pXInOut,
+StatusInt HGF2DTranslation::_ConvertInverse(double* pio_pXInOut,
                                            double* pio_pYInOut) const
     {
     // Check vars are provided
@@ -216,7 +216,7 @@ StatusInt HGF2DTranslation::ConvertInverse(double* pio_pXInOut,
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DTranslation::ConvertInverse (double    pi_YIn,
+StatusInt HGF2DTranslation::_ConvertInverse (double    pi_YIn,
                                             double    pi_XInStart,
                                             size_t    pi_NumLoc,
                                             double    pi_XInStep,
@@ -247,7 +247,7 @@ StatusInt HGF2DTranslation::ConvertInverse (double    pi_YIn,
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DTranslation::ConvertInverse (size_t    pi_NumLoc,
+StatusInt HGF2DTranslation::_ConvertInverse (size_t    pi_NumLoc,
                                             double*   pio_aXInOut,
                                             double*   pio_aYInOut) const
     {
@@ -273,7 +273,7 @@ StatusInt HGF2DTranslation::ConvertInverse (size_t    pi_NumLoc,
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-StatusInt HGF2DTranslation::ConvertInverse(double  pi_XIn,
+StatusInt HGF2DTranslation::_ConvertInverse(double  pi_XIn,
                                            double  pi_YIn,
                                            double* po_pXOut,
                                            double* po_pYOut) const
@@ -295,7 +295,7 @@ StatusInt HGF2DTranslation::ConvertInverse(double  pi_XIn,
 // PreservesLinearity
 // Indicate if the transformation model preserves linearity
 //-----------------------------------------------------------------------------
-bool HGF2DTranslation::PreservesLinearity () const
+bool HGF2DTranslation::_PreservesLinearity () const
     {
     return (true);
     }
@@ -304,7 +304,7 @@ bool HGF2DTranslation::PreservesLinearity () const
 // PreservesParallelism
 // Indicate if the transformation model preserves parallelism
 //-----------------------------------------------------------------------------
-bool HGF2DTranslation::PreservesParallelism() const
+bool HGF2DTranslation::_PreservesParallelism() const
     {
     return (true);
     }
@@ -313,7 +313,7 @@ bool HGF2DTranslation::PreservesParallelism() const
 // PreservesShape
 // Indicate if the transformation model preserves the shape
 //-----------------------------------------------------------------------------
-bool HGF2DTranslation::PreservesShape() const
+bool HGF2DTranslation::_PreservesShape() const
     {
     return (true);
     }
@@ -322,7 +322,7 @@ bool HGF2DTranslation::PreservesShape() const
 // PreservesDirection
 // Indicate if the transformation model preserves directions
 //-----------------------------------------------------------------------------
-bool HGF2DTranslation::PreservesDirection() const
+bool HGF2DTranslation::_PreservesDirection() const
     {
     return (true);
     }
@@ -332,7 +332,7 @@ bool HGF2DTranslation::PreservesDirection() const
 // CanBeRepresentedByAMatrix
 // Indicates if the model can be represented by a transformation matrix
 //-----------------------------------------------------------------------------
-bool HGF2DTranslation::CanBeRepresentedByAMatrix() const
+bool HGF2DTranslation::_CanBeRepresentedByAMatrix() const
     {
     return true;
     }
@@ -341,7 +341,7 @@ bool HGF2DTranslation::CanBeRepresentedByAMatrix() const
 //  GetMatrix
 //  Gets the components of the model by matrix
 //-----------------------------------------------------------------------------
-HFCMatrix<3, 3> HGF2DTranslation::GetMatrix() const
+HFCMatrix<3, 3> HGF2DTranslation::_GetMatrix() const
     {
     HFCMatrix<3, 3> ReturnedMatrix;
 
@@ -359,29 +359,10 @@ HFCMatrix<3, 3> HGF2DTranslation::GetMatrix() const
     }
 
 //-----------------------------------------------------------------------------
-//  GetMatrix
-//  Gets the components of the model by matrix
-//-----------------------------------------------------------------------------
-HFCMatrix<3, 3>& HGF2DTranslation::GetMatrix(HFCMatrix<3, 3>& po_rRecipient) const
-    {
-    po_rRecipient[0][0] = 1.0;
-    po_rRecipient[0][1] = 0.0;
-    po_rRecipient[0][2] = m_XTranslation;
-    po_rRecipient[1][0] = 0.0;
-    po_rRecipient[1][1] = 1.0;
-    po_rRecipient[1][2] = m_YTranslation;
-    po_rRecipient[2][0] = 0.0;
-    po_rRecipient[2][1] = 0.0;
-    po_rRecipient[2][2] = 1.0;
-
-    return(po_rRecipient);
-    }
-
-//-----------------------------------------------------------------------------
 //  IsIdentity
 //  Returns true if the model contains no transformation
 //-----------------------------------------------------------------------------
-bool HGF2DTranslation::IsIdentity () const
+bool HGF2DTranslation::_IsIdentity () const
     {
     return ((m_XTranslation == 0.0) &&
             (m_YTranslation == 0.0));
@@ -391,7 +372,7 @@ bool HGF2DTranslation::IsIdentity () const
 //  IsStetchable
 //  Returns true if the model contains only scaling and translation
 //-----------------------------------------------------------------------------
-bool HGF2DTranslation::IsStretchable (double pi_AngleTolerance) const
+bool HGF2DTranslation::_IsStretchable (double pi_AngleTolerance) const
     {
     return (true);
     }
@@ -402,7 +383,7 @@ bool HGF2DTranslation::IsStretchable (double pi_AngleTolerance) const
 //  GetStetchParams
 //  Returns the stretch parameters
 //-----------------------------------------------------------------------------
-void HGF2DTranslation::GetStretchParams (double* po_pScaleFactorX,
+void HGF2DTranslation::_GetStretchParams (double* po_pScaleFactorX,
                                          double* po_pScaleFactorY,
                                          HGF2DDisplacement* po_pDisplacement) const
     {
@@ -448,14 +429,14 @@ void HGF2DTranslation::SetTranslation (const HGF2DDisplacement& pi_rTranslation)
 // Reverse
 // This method reverses the transfomation model
 //-----------------------------------------------------------------------------
-void    HGF2DTranslation::Reverse()
+void    HGF2DTranslation::_Reverse()
     {
     // Reverse transformation parameters
     m_XTranslation = m_XTranslationInverse;
     m_YTranslation = m_YTranslationInverse;
 
     // Invoque reversing of ancester
-    HGF2DTransfoModel::Reverse();
+    HGF2DTransfoModel::_Reverse();
 
     // Prepare
     Prepare();
@@ -466,7 +447,7 @@ void    HGF2DTranslation::Reverse()
 // ComposeInverseWithDirectOf
 // Composes a new transformation model as a combination of self and given
 //-----------------------------------------------------------------------------
-HFCPtr<HGF2DTransfoModel>  HGF2DTranslation::ComposeInverseWithDirectOf (const HGF2DTransfoModel& pi_rModel) const
+HFCPtr<HGF2DTransfoModel>  HGF2DTranslation::_ComposeInverseWithDirectOf (const HGF2DTransfoModel& pi_rModel) const
     {
     // Recipient
     HFCPtr<HGF2DTransfoModel> pResultModel;
@@ -519,7 +500,7 @@ HFCPtr<HGF2DTransfoModel>  HGF2DTranslation::ComposeInverseWithDirectOf (const H
 // This method allocates a copy of self. The caller is responsible for
 // the deletion of this object.
 //-----------------------------------------------------------------------------
-HGF2DTransfoModel* HGF2DTranslation::Clone () const
+HGF2DTransfoModel* HGF2DTranslation::_Clone() const
     {
     // Allocate object as copy and return
     return (new HGF2DTranslation (*this));
@@ -535,7 +516,7 @@ HGF2DTransfoModel* HGF2DTranslation::Clone () const
 // returned. The major difference with the Compose() method, is that the order
 // of composition is reversed,
 //-----------------------------------------------------------------------------
-HFCPtr<HGF2DTransfoModel>  HGF2DTranslation::ComposeYourself (const HGF2DTransfoModel& pi_rModel) const
+HFCPtr<HGF2DTransfoModel>  HGF2DTranslation::_ComposeYourself (const HGF2DTransfoModel& pi_rModel) const
     {
     // Recipient
     HFCPtr<HGF2DTransfoModel> pResultModel;
@@ -554,7 +535,7 @@ HFCPtr<HGF2DTransfoModel>  HGF2DTranslation::ComposeYourself (const HGF2DTransfo
         {
         // Type is not known ... build a complex
         // To do this we call the ancester ComposeYourself
-        pResultModel = HGF2DTransfoModel::ComposeYourself (pi_rModel);
+        pResultModel = HGF2DTransfoModel::_ComposeYourself (pi_rModel);
         }
 
     return (pResultModel);
@@ -568,7 +549,7 @@ HFCPtr<HGF2DTransfoModel>  HGF2DTranslation::ComposeYourself (const HGF2DTransfo
 //  This methods prepares the conversion parameters from the basic
 //  model attribute
 //-----------------------------------------------------------------------------
-void HGF2DTranslation::Prepare ()
+void HGF2DTranslation::_Prepare()
     {
 
     // Convert direct translation to inverse translation (negative value)
@@ -615,7 +596,7 @@ void HGF2DTranslation::Copy(const HGF2DTranslation& pi_rObj)
 //-----------------------------------------------------------------------------
 // CreateSimplifiedModel
 //-----------------------------------------------------------------------------
-HFCPtr<HGF2DTransfoModel> HGF2DTranslation::CreateSimplifiedModel() const
+HFCPtr<HGF2DTransfoModel> HGF2DTranslation::_CreateSimplifiedModel() const
     {
     if ((m_XTranslation == 0.0) &&
         (m_YTranslation == 0.0))

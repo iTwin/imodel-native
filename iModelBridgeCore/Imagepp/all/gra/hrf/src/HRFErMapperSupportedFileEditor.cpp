@@ -446,7 +446,7 @@ struct ECWReadInfoStruct
     HFCPtr<HRFRasterFile>           m_pSourceFile;
     HFCPtr<HRFRasterFile>           m_pDestinationFile;
     HFCPtr<HGF2DTransfoModel>       m_pDestModel;           // Precompute the model to solve threading problem with Gcoord host.
-#if 0 //DMx ECW SDK 5.0 support Geotiff Tag
+#if 0 //DMx ECW SDK 5.0 support Geotiff Tag --> Version 3
     HFCPtr<HCPGeoTiffKeys>          m_pGeotiffKeys;
 #endif
 
@@ -506,7 +506,7 @@ bool HRFEcwCreator::_HandleExportToFile(HFCPtr<HRFRasterFile>& pDestinationFile,
     //If some geocoding information is available, get the transformation in the units specified by the geocoding information
     if (pBaseGCS != nullptr && pBaseGCS->IsValid()) 
         {
-#if 0 //DMx ECW SDK 5.0 support Geotiff Tag
+#if 0 //DMx ECW SDK 5.0 support Geotiff Tag --> Version 3
         ReadInfoStruct.m_pGeotiffKeys = new HCPGeoTiffKeys();
         baseGCS->SetGeoTiffKeys(ReadInfoStruct.m_pGeotiffKeys);
 #endif
@@ -549,10 +549,13 @@ class ErMapperLibrary
             {
             if (!m_ErMapperInitalized)
                 {
-                NCSecwInit();
-            CharCP pCompanyName = "Bentley Systems";
-            CharCP pKey = "042f071624305b224c9b4e9f6490590fcb2c7d0605076f4e1438d0ffdf730e57039aef6331b83848d8131eaa024207615329f44b800e348677f67ccf352ed042";
-            NCSEcwCompressSetOEMKey(const_cast<CharP>(pCompanyName), const_cast<CharP>(pKey));
+#if 0           // Key for version 5_0 ???
+                CharCP pCompanyName = "Bentley Systems";
+                CharCP pKey = "042f071624305b224c9b4e9f6490590fcb2c7d0605076f4e1438d0ffdf730e57039aef6331b83848d8131eaa024207615329f44b800e348677f67ccf352ed042";
+                NCSEcwCompressSetOEMKey(const_cast<CharP>(pCompanyName), const_cast<CharP>(pKey));
+#endif
+                NCSecwInit();           // SDK 5.2.1 key
+                NCSEcwCompressSetOEMKey("Bentley Systems, Inc.", "53d8f77acc8c1cb537ce52a0e148348f7d2f7372a5ca286fda98a7d4dd334d6f8b0feae42d7ce8e88e14e7dfc05e9f369467944abcfb4282a0abf9c3e482885a");
                 m_ErMapperInitalized = true;
                 }
             };
@@ -614,7 +617,7 @@ class ERMapperExporter
                 uint64_t NbBlocks((uint64_t)ceil((double)(m_pCompressClient->nInOutSizeY)/(double)(m_rCompressReadInfo.m_StripHeight)));
                     HUTExportProgressIndicator::GetInstance()->Restart(NbBlocks);
 
-#if 0 //DMx ECW SDK 5.0 support Geotiff Tag
+#if 0 //DMx ECW SDK 5.0 support Geotiff Tag --> Version 3
                     IGeoTiffKeysList::GeoKeyItem GeoTiffKey;
                     if (m_rCompressReadInfo.m_pGeotiffKeys->GetFirstKey(&GeoTiffKey) == true)
                         {
@@ -756,7 +759,7 @@ class ERMapperExporter
                 m_pCompressClient->pCancelCallback = CancelCallback;
 
                 m_pCompressClient->nFormatVersion = m_rCompressReadInfo.m_ECWVersion;
-#if 1 //DMx ECW SDK 5.0 support Geotiff Tag
+#if 1 //DMx ECW SDK 5.0 support Geotiff Tag --> Version 2
 
                 if (m_rCompressReadInfo.m_pDestModel->IsStretchable())
                     {

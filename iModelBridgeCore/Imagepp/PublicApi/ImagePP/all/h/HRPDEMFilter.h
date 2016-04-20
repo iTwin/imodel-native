@@ -153,8 +153,8 @@ public:
         virtual void _ProcessPixelsWithShading(HRAImageSampleR outData, HRAImageSampleCR inputData, double scalingX, double scalingY) = 0;
         };
 
-    static HRAImageOpDEMFilterPtr CreateDEMFilter(HRPDEMFilter::Style style, HRPDEMFilter::UpperRangeValues const& upperRangeValues,
-                                                  double unitSizeX, double unitSizeY, HGF2DTransfoModel const& orientation);
+    IMAGEPPTEST_EXPORT  static HRAImageOpDEMFilterPtr CreateDEMFilter(HRPDEMFilter::Style style, HRPDEMFilter::UpperRangeValues const& upperRangeValues,
+                                                                       double unitSizeX, double unitSizeY, HGF2DTransfoModel const& orientation);
         
     // DEM filter settings.
     Byte const* GetDefaultRGBA() const;
