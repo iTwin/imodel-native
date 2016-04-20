@@ -101,7 +101,7 @@ void HTIFFFile::_PrintCurrentDirectory (FILE* po_pOutput, uint32_t pi_Flag)
     uint64_t Val64;
     HFCMonitor Monitor(m_Key);
 
-    fprintf(po_pOutput, "TIFF Directory at offset (0x%jx)\n", DirectoryOffset(m_CurDir));
+    fprintf(po_pOutput, "TIFF Directory at offset (0x%" PRIx64 ")\n", DirectoryOffset(m_CurDir));
 
     if (m_pCurDir->TagIsPresent(SUBFILETYPE))
         {
@@ -973,7 +973,7 @@ void HTIFFFile::_PrintCurrentDirectory (FILE* po_pOutput, uint32_t pi_Flag)
         if (m_pFile->m_IsTiff64)
             {
             GetField (HMR_IMAGEINFORMATION, &Val64);
-            fprintf(po_pOutput, "  %s: 0x%jx\n", GetTagNameString(HMR_IMAGEINFORMATION), Val64);
+            fprintf(po_pOutput, "  %s: 0x%" PRIx64 "\n", GetTagNameString(HMR_IMAGEINFORMATION), Val64);
             }
         else
             {
@@ -986,7 +986,7 @@ void HTIFFFile::_PrintCurrentDirectory (FILE* po_pOutput, uint32_t pi_Flag)
         if (m_pFile->m_IsTiff64)
             {
             GetField (HMR2_IMAGEINFORMATION, &Val64);
-            fprintf(po_pOutput, "  %s: 0x%jx\n", GetTagNameString(HMR2_IMAGEINFORMATION), Val64);
+            fprintf(po_pOutput, "  %s: 0x%" PRIx64 "\n", GetTagNameString(HMR2_IMAGEINFORMATION), Val64);
             }
         else
             {
@@ -1306,7 +1306,7 @@ void HTIFFFile::_PrintCurrentDirectory (FILE* po_pOutput, uint32_t pi_Flag)
 
                 fprintf(po_pOutput, "  %u DataBlocks:\n", DataSize/2);
                 for (uint32_t i = 0; i<DataSize; i+=2)
-                    fprintf(po_pOutput, "    %10u: [%10ju, %10ju]\n",(i/2), pData[i], pData[i+1]);
+                    fprintf(po_pOutput, "    %10u: [%10" PRIu64 ", %10" PRIu64 "]\n",(i/2), pData[i], pData[i+1]);
                 }
             else
                 {
@@ -1391,7 +1391,7 @@ void HTIFFFile::_PrintCurrentDirectory (FILE* po_pOutput, uint32_t pi_Flag)
             {
             if (m_pFile->m_IsTiff64)
                 for (uint32_t i = 0; i<NbEntry; i++)
-                    fprintf(po_pOutput, "    %8u: [%20ju, %20ju]\n",i, pOffset64[i], pCount64[i]);
+                    fprintf(po_pOutput, "    %8u: [%20" PRIu64 ", %20" PRIu64 "]\n",i, pOffset64[i], pCount64[i]);
             else
                 for (uint32_t i = 0; i<NbEntry; i++)
                     fprintf(po_pOutput, "    %3u: [%8u, %8u]\n",i, pOffset32[i], pCount32[i]);
@@ -1408,7 +1408,7 @@ void HTIFFFile::_PrintCurrentDirectory (FILE* po_pOutput, uint32_t pi_Flag)
                 fprintf(po_pOutput, "    %u Tiles:\n", m_NbData32);
 
             for (uint32_t i = 0; i<m_NbData32; i++)
-                fprintf(po_pOutput, "      %3u: [%8ju, %8u]\n",i, GetOffset(i), GetCount(i));
+                fprintf(po_pOutput, "      %3u: [%8" PRIu64 ", %8u]\n",i, GetOffset(i), GetCount(i));
 
             }
         }
@@ -1445,7 +1445,7 @@ void HTIFFFile::PrintEXIFDefinedGPSTags(uint32_t pi_PageDirInd,
         vector<Byte>   ByteVec;
         vector<double> DblVec;
 
-        fprintf(po_pOutput, "\nEXIF Related GPS Info Directory at offset 0x%jx\n", GPSIFDOffset64);
+        fprintf(po_pOutput, "\nEXIF Related GPS Info Directory at offset 0x%" PRIx64 "\n", GPSIFDOffset64);
 
         HAutoPtr<HTIFFDirectory> pGPSDir(new HTIFFDirectory(m_rTagInfo, &m_ByteOrder, IsTiff64()));
 

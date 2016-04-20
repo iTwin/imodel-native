@@ -1548,8 +1548,36 @@ TEST_F(EditorN1Tester, EditorN1TesterTest)
     ClearPixelsTest();
     }
 
-#else
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  4/2016
+//----------------------------------------------------------------------------------------
+TEST(RleEditorTester, MaxRleRunSetPixels)
+    {
+    uint16_t pSrcRun []= {32767, 0, 11241};     // 44008 pixels
+    uint16_t pNewline []= {200, 100, 200};      // 500 pixels
+    
+    SamplerTestBufferAllocator allocator;
+    ImagePPStatus status;
+    HRAImageSamplePtr pRleSample = HRAImageSample::CreateSample(status, 44008, 1, new HRPPixelTypeI1R8G8B8RLE(), allocator);
+    
+    ImageEditorSampleRle editor(*pRleSample);
+    editor.SetPixels(0, 0, 44008, (Byte const*) pSrcRun, sizeof(pSrcRun));
 
-#pragma message("Warining: Disabling HRAImageSamplerTester because TEST_P/INSTANTIATE_TEST_CASE_P are not available")
+    editor.SetPixels(0, 0, 500, (Byte const*) pNewline, sizeof(pNewline));
+
+    size_t datasize = 0;
+    uint16_t const* pOut = (uint16_t const*) editor.GetPixels(datasize, 0, 0, 44008);
+
+    ASSERT_EQ(5, datasize);
+
+    ASSERT_EQ(200,   pOut[0]);
+    ASSERT_EQ(100,   pOut[1]);
+    ASSERT_EQ(32767, pOut[2]);
+    ASSERT_EQ(0,     pOut[3]);
+    ASSERT_EQ(10941, pOut[4]);
+    }
+
+#else
+#pragma message("Warning: Disabling HRAImageSamplerTester because TEST_P/INSTANTIATE_TEST_CASE_P are not available")
 
 #endif

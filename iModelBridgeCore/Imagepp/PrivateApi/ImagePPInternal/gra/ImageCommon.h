@@ -328,7 +328,9 @@ void CopyPixelsN8_T(uint32_t outWidth, uint32_t outHeight, Byte* pOutData, size_
         memcpy(pOutLine, pPrevOutLine, outWidth*PixelSize_T);
         }
 
+#ifndef NDEBUG
     VALIDATE_COPY_PIXELS(outWidth, outHeight, pOutData, outPitch, inWidth, inHeight, pInData, inPitch, PixelSize_T, offset);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -679,7 +681,7 @@ inline uint32_t WriteLastRun(uint32_t idx, uint16_t* pBuf, uint32_t count)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   Mathieu.Marchand  1/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ValidateLineIntegrity(uint16_t const* pLine, uint32_t width, size_t dataSize);
+IMAGEPPTEST_EXPORT bool ValidateLineIntegrity(uint16_t const* pLine, uint32_t width, size_t dataSize);
     
 } // Rle1Manip
 
