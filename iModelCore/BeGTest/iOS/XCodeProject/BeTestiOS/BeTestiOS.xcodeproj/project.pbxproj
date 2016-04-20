@@ -16,6 +16,7 @@
 		217D92EF174D342E00447CD9 /* AssetsLibrary.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 217D92EE174D342E00447CD9 /* AssetsLibrary.framework */; };
 		217D92F0174D345B00447CD9 /* AssetsLibrary.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 217D92EE174D342E00447CD9 /* AssetsLibrary.framework */; };
 		217D92F2174D349200447CD9 /* MobileCoreServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 217D92F1174D349200447CD9 /* MobileCoreServices.framework */; };
+		21F58F5F1CC7CA5F00CF9914 /* SenTest_BaseClass.mm in Sources */ = {isa = PBXBuildFile; fileRef = 21F58F5E1CC7CA5F00CF9914 /* SenTest_BaseClass.mm */; };
 		233AE3EB1A7F8BBD002FB4A0 /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 23856D051A7F7A38006F6A5F /* Security.framework */; };
 		23856D061A7F7A38006F6A5F /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 23856D051A7F7A38006F6A5F /* Security.framework */; };
 		50646D92168C7F4400167BDC /* BeTestGLView.m in Sources */ = {isa = PBXBuildFile; fileRef = 50646D91168C7F4400167BDC /* BeTestGLView.m */; };
@@ -55,6 +56,8 @@
 		217D92EE174D342E00447CD9 /* AssetsLibrary.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AssetsLibrary.framework; path = System/Library/Frameworks/AssetsLibrary.framework; sourceTree = SDKROOT; };
 		217D92F1174D349200447CD9 /* MobileCoreServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MobileCoreServices.framework; path = System/Library/Frameworks/MobileCoreServices.framework; sourceTree = SDKROOT; };
 		21B9D929174FE2F80081E08A /* DgnClientFxAssets.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; path = DgnClientFxAssets.bundle; sourceTree = "<group>"; };
+		21F58F5D1CC7CA5F00CF9914 /* SenTest_BaseClass.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SenTest_BaseClass.h; path = /Users/sam.wilson/DgnDb0601/out/iOSARM64/static/build/NoViewTests/XCodeProject/BeTestiOSTests/../../../../../../../source/BeGTest/iOS/XCodeProject/BeTestiOS/BeTestiOS/SenTest_BaseClass.h; sourceTree = "<absolute>"; };
+		21F58F5E1CC7CA5F00CF9914 /* SenTest_BaseClass.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = SenTest_BaseClass.mm; path = /Users/sam.wilson/DgnDb0601/out/iOSARM64/static/build/NoViewTests/XCodeProject/BeTestiOSTests/../../../../../../../source/BeGTest/iOS/XCodeProject/BeTestiOS/BeTestiOS/SenTest_BaseClass.mm; sourceTree = "<absolute>"; };
 		23856D051A7F7A38006F6A5F /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
 		23DDFB6E17B10D96003F8EF8 /* BeTestiOSAppData.xcappdata */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = BeTestiOSAppData.xcappdata; sourceTree = "<group>"; };
 		50646D90168C7F4400167BDC /* BeTestGLView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BeTestGLView.h; sourceTree = "<group>"; };
@@ -194,6 +197,8 @@
 		88FA905514F584D70028AB2E /* BeTestiOSTests */ = {
 			isa = PBXGroup;
 			children = (
+				21F58F5D1CC7CA5F00CF9914 /* SenTest_BaseClass.h */,
+				21F58F5E1CC7CA5F00CF9914 /* SenTest_BaseClass.mm */,
 				88C129EE1521E1B700843485 /* Source */,
 				88FA905B14F584D70028AB2E /* BeTestiOSTests.h */,
 				88FA905614F584D70028AB2E /* Supporting Files */,
@@ -329,6 +334,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				21F58F5F1CC7CA5F00CF9914 /* SenTest_BaseClass.mm in Sources */,
 				50A4611C16A6AA1C00851447 /* UnitTests.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -507,8 +513,8 @@
 					CoreMotion,
 					"-framework",
 					CoreLocation,
-                    "-framework",
-                    XCTest,
+					"-framework",
+					XCTest,
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "Bentley.${PRODUCT_NAME:rfc1034identifier}";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -538,8 +544,8 @@
 					CoreMotion,
 					"-framework",
 					CoreLocation,
-                    "-framework",
-                    XCTest,
+					"-framework",
+					XCTest,
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "Bentley.${PRODUCT_NAME:rfc1034identifier}";
 				PRODUCT_NAME = "$(TARGET_NAME)";
