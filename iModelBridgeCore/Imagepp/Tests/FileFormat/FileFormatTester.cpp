@@ -372,11 +372,11 @@ TEST_P(ExportTester, ExportToiTiffBestOptions)
     }
 
 
-//:>--------------------------------------------------------------------------------------+
-//
-// Test the load of the rasters. Reading test.
-//                                                Laurent.Robert-Veillette            04/2016
-//:>+--------------------------------------------------------------------------------------
+////:>--------------------------------------------------------------------------------------+
+////
+//// Test the load of the rasters. Reading test.
+////                                                Laurent.Robert-Veillette            04/2016
+////:>+--------------------------------------------------------------------------------------
 //TEST_P(ExportTester, LoadingRasters)
 //    {
 //    ++s_nbOfLoadedFiles;

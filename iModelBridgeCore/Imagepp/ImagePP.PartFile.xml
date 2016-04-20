@@ -208,7 +208,7 @@
     
     <Part Name="Tests">
         <SubPart PartName="UnitTests-NonPublished"/>
-        <SubPart PartName="UnitTests-FileFormat"/>
+        <!--<SubPart PartName="UnitTests-FileFormat"/>-->
     </Part>
    
     <Product Name="ImagePP-Tests">

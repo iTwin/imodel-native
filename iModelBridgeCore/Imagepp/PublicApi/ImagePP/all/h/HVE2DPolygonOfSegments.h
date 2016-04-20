@@ -107,7 +107,7 @@ public:
     HVE2DPolygonOfSegments(const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys);
     IMAGEPP_EXPORT             HVE2DPolygonOfSegments(const HGF2DPolygonOfSegments& pi_rShape,
                                               const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys);
-    HVE2DPolygonOfSegments(const HVE2DComplexLinear& pi_rComplex);
+    IMAGEPP_EXPORT HVE2DPolygonOfSegments(const HVE2DComplexLinear& pi_rComplex);
     IMAGEPP_EXPORT                    HVE2DPolygonOfSegments(const HVE2DPolySegment& pi_rPolySegment);
     HVE2DPolygonOfSegments(const HVE2DRectangle& pi_rRectangle);
     IMAGEPP_EXPORT             HVE2DPolygonOfSegments(size_t  pi_BufferLength,

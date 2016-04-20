@@ -7,3 +7,5 @@
 #HGF2DPolySegmentTester.*                        
 #HGF2DUniverseTester.LinearTest
 #*ExportTester.ExportToiTiffBestOptions/162*
+
+HVEShapeTester.IntersectFailWithComplexLinear
