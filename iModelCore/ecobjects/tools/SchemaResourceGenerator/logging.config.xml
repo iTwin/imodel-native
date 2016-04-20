@@ -64,7 +64,7 @@
     <category name="ECObjectsNative">   <priority value="debug"/></category>
 
     <root>                            
-        <priority value="debug" />
+        <priority value="info" />
         <appender-ref ref="Console"/>
         <!--appender-ref ref="OutputDebugStringAppender" /-->
         <!-- appender-ref ref="RollingFileAppender" /-->

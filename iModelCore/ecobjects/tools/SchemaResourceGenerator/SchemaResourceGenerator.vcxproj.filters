@@ -17,4 +17,7 @@
   <ItemGroup>
     <Text Include="usage.txt" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="SchemaResourceGenerator.h" />
+  </ItemGroup>
 </Project>
