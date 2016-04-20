@@ -41,10 +41,19 @@
 * associated redline view is a SheetViewController.
 */
 
+#define MARKUP_SCHEMA_NAME "Markup"
+#define MARKUP_SCHEMA_PATH L"ECSchemas/Dgn/Markup.01.00.ecschema.xml"
+#define MARKUP_SCHEMA(name) MARKUP_SCHEMA_NAME "." name
+
+#define MARKUP_CLASSNAME_MarkupExternalLink  "MarkupExternalLink"
+#define MARKUP_CLASSNAME_RedlineModel        "RedlineModel"
+#define MARKUP_CLASSNAME_SpatialRedlineModel "SpatialRedlineModel"
+
 DGNPLATFORM_REF_COUNTED_PTR(RedlineModel)
 DGNPLATFORM_REF_COUNTED_PTR(SpatialRedlineModel)
 DGNPLATFORM_REF_COUNTED_PTR(RedlineViewController)
 DGNPLATFORM_REF_COUNTED_PTR(SpatialRedlineViewController)
+DGNPLATFORM_REF_COUNTED_PTR(MarkupExternalLink)
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -62,6 +71,17 @@ enum DgnMarkupProjectSchemaValues
     MARKUP_DGNDB_SUPPORTED_VERSION_Minor = MARKUP_DGNDB_CURRENT_VERSION_Minor,
     MARKUP_DGNDB_SUPPORTED_VERSION_Sub1  = 0,
     MARKUP_DGNDB_SUPPORTED_VERSION_Sub2  = 0,
+    };
+
+//=======================================================================================
+//! The DgnDomain for the markup schema.
+// @bsiclass                                            Ramanujam.Raman      04/16
+//=======================================================================================
+struct MarkupDomain : Dgn::DgnDomain
+    {
+    DOMAIN_DECLARE_MEMBERS(MarkupDomain, DGNPLATFORM_EXPORT)
+    public:
+        MarkupDomain();
     };
 
 //! Information about a DgnDb that can be used to save and check on markup-project association. See DgnMarkupProject::GetAssociation
@@ -455,7 +475,8 @@ private:
     BeSQLite::DbResult ConvertToMarkupProject(BeFileNameCR fileName, CreateDgnDbParams const& params);
 
     BentleyStatus QueryPropertyAsJson(JsonValueR json, DgnMarkupProjectProperty::ProjectProperty const& propSpec, uint64_t id=0) const;
-    void SavePropertyFromJson(DgnMarkupProjectProperty::ProjectProperty const& propSpec, JsonValueCR json, uint64_t id=0);
+    void SavePropertyFromJson(DgnMarkupProjectProperty::ProjectProperty const& propSpec, JsonValueCR json, uint64_t id = 0);
+    DgnDbStatus ImportMarkupSchema();
 
 public:
     BentleyStatus CheckIsOpen();
@@ -574,19 +595,76 @@ public:
 
 };
 
-namespace dgn_ModelHandler
+namespace dgn_ElementHandler { struct MarkupExternalLinkHandler; }
+
+//=======================================================================================
+//! @ingroup GROUP_DgnElement
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE MarkupExternalLink : LinkElement
 {
-    //! The ModelHandler for RedlineModel.
-    struct Redline : Sheet
+DGNELEMENT_DECLARE_MEMBERS(MARKUP_CLASSNAME_MarkupExternalLink, LinkElement)
+friend struct dgn_ElementHandler::MarkupExternalLinkHandler;
+
+//! Parameters used to construct a MarkupExternalLink
+struct CreateParams : T_Super::CreateParams
     {
-        MODELHANDLER_DECLARE_MEMBERS("RedlineModel", RedlineModel, Redline, Sheet,)
+    DEFINE_T_SUPER(MarkupExternalLink::T_Super::CreateParams);
+
+    DgnElementId m_linkedElementId;
+
+    explicit CreateParams(Dgn::DgnElement::CreateParams const& params, DgnElementId linkedElementId = DgnElementId()) : T_Super(params), m_linkedElementId(linkedElementId) {}
+
+    CreateParams(DgnDbR db, DgnModelId modelId, DgnElementId linkedElementId = DgnElementId()) : T_Super(db, modelId, MarkupExternalLink::QueryClassId(db))
+        {}
     };
 
-    //! The ModelHandler for SpatialRedlineModel.
-    struct SpatialRedline : Spatial
-    {
-        MODELHANDLER_DECLARE_MEMBERS("SpatialRedlineModel", SpatialRedlineModel, SpatialRedline, Spatial,)
-    };
+private:
+    DgnElementId m_linkedElementId;
+
+    static void AddClassParams(ECSqlClassParamsR params);
+    
+public:
+    //! Constructor
+    explicit MarkupExternalLink(CreateParams const& params) : T_Super(params), m_linkedElementId(params.m_linkedElementId) {}
+
+    //! Create a MarkupExternalLink
+    static MarkupExternalLinkPtr Create(CreateParams const& params) { return new MarkupExternalLink(params); }
+
+    //! Set the linked element id
+    void SetLinkedElementId(DgnElementId linkedElementId) { m_linkedElementId = linkedElementId; }
+
+    //! Get the linked element id
+    DgnElementId GetLinkedElementId() const { return m_linkedElementId; }
+
+    //! Query the DgnClassId of the MarkupExternalLink ECClass in the specified DgnDb.
+    //! @note This is a static method that always returns the DgnClassId of the markup.MarkupExternalLink class - it does @em not return the class of a specific instance.
+    static Dgn::DgnClassId QueryClassId(Dgn::DgnDbCR dgndb) { return Dgn::DgnClassId(dgndb.Schemas().GetECClassId(MARKUP_SCHEMA_NAME, MARKUP_CLASSNAME_MarkupExternalLink)); }
 };
+
+namespace dgn_ElementHandler
+{
+//! The handler for MarkupExternalLinkHandler elements
+struct EXPORT_VTABLE_ATTRIBUTE MarkupExternalLinkHandler : Element
+    {
+    ELEMENTHANDLER_DECLARE_MEMBERS(MARKUP_CLASSNAME_MarkupExternalLink, MarkupExternalLink, MarkupExternalLinkHandler, Element, DGNPLATFORM_EXPORT)
+
+    virtual void _GetClassParams(ECSqlClassParamsR params) override { T_Super::_GetClassParams(params); MarkupExternalLink::AddClassParams(params); }
+    };
+}
+
+namespace dgn_ModelHandler
+{
+//! The ModelHandler for RedlineModel.
+struct Redline : Sheet
+    {
+    MODELHANDLER_DECLARE_MEMBERS("RedlineModel", RedlineModel, Redline, Sheet, )
+    };
+
+//! The ModelHandler for SpatialRedlineModel.
+struct SpatialRedline : Spatial
+    {
+    MODELHANDLER_DECLARE_MEMBERS("SpatialRedlineModel", SpatialRedlineModel, SpatialRedline, Spatial, )
+    };
+}
 
 END_BENTLEY_DGN_NAMESPACE

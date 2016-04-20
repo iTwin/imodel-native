@@ -1692,6 +1692,17 @@ protected:
 };
 
 //=======================================================================================
+//! @ingroup GROUP_DgnElement
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE LinkElement : InformationElement
+    {
+    DEFINE_T_SUPER(InformationElement);
+
+    protected:
+        explicit LinkElement(CreateParams const& params) : T_Super(params) {}
+    };
+
+//=======================================================================================
 //! A DefinitionElement which resides in (and only in) a DefinitionModel.
 //! @ingroup GROUP_DgnElement
 //=======================================================================================
