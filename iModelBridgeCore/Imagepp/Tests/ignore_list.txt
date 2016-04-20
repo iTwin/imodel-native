@@ -9,3 +9,17 @@
 #*ExportTester.ExportToiTiffBestOptions/162*
 
 HVEShapeTester.IntersectFailWithComplexLinear
+
+#Really painfully long exports
+*ExportTester.ExportToiTiffBestOptions/313
+*ExportTester.ExportToiTiffBestOptions/401
+*ExportTester.ExportToiTiffBestOptions/411
+*ExportTester.ExportToiTiffBestOptions/2447
+*ExportTester.ExportToiTiffBestOptions/2494
+*ExportTester.ExportToiTiffBestOptions/2745
+*ExportTester.ExportToiTiffBestOptions/2768
+*ExportTester.ExportToiTiffBestOptions/2780
+*ExportTester.ExportToiTiffBestOptions/2793
+*ExportTester.ExportToiTiffBestOptions/2845
+*ExportTester.ExportToiTiffBestOptions/2860
+
