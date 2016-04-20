@@ -159,7 +159,7 @@ struct TxnRelationshipLinkTables
     friend struct dgn_TxnTable::MultiRelationshipLinkTable;
   private:
     TxnManager& m_txnMgr;
-    bool m_changes;
+    // unused - bool m_changes;
     BeSQLite::CachedStatementPtr m_stmt;
     TxnRelationshipLinkTables(TxnManagerR t);
     BeSQLite::DbResult Insert(BeSQLite::EC::ECInstanceId relid, ECN::ECClassId relclsid, DgnElementId srcelemid, DgnElementId tgtelemid, TxnTable::ChangeType changeType);
