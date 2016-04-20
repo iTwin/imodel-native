@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/BeSQLiteDb_Test.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "BeSQLiteNonPublishedTests.h"
@@ -171,8 +171,8 @@ void AssertProfile(Db& besqliteDb, bool embedFileTableExists, bool lastModifiedC
 Utf8String CopyTestFile(WCharCP fileName)
     {
     BeFileName sourceDir;
-    BeTest::GetHost().GetDocumentsRoot(sourceDir);
-    sourceDir.AppendToPath(L"DgnDb");
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(sourceDir);
+    sourceDir.AppendToPath(L"BeSQLiteTestData");
 
     BeFileName targetDir;
     BeTest::GetHost().GetOutputRoot(targetDir);
@@ -228,8 +228,8 @@ TEST (BeSQLiteDb, ProfileTest)
         ASSERT_EQ (BE_SQLITE_OK, stat) << "Opening test file " << testFilePath.c_str() << " failed.";
 
         BeFileName testFile;
-        BeTest::GetHost().GetDocumentsRoot(testFile);
-        testFile.AppendToPath(L"ECDb").AppendToPath(L"StartupCompany.json");
+        BeTest::GetHost().GetDgnPlatformAssetsDirectory(testFile);
+        testFile.AppendToPath(L"BeSQLiteTestData").AppendToPath(L"StartupCompany.json");
 
         stat = db.EmbeddedFiles().Import("test", testFile.GetNameUtf8().c_str(), ".json");
         ASSERT_EQ (BE_SQLITE_OK, stat) << "Embedding test file failed.";
@@ -272,8 +272,8 @@ TEST (BeSQLiteDb, ProfileTest)
         ASSERT_EQ (BE_SQLITE_OK, stat) << "Opening test file " << testFilePath.c_str() << " failed.";
 
         BeFileName testFile;
-        BeTest::GetHost().GetDocumentsRoot(testFile);
-        testFile.AppendToPath(L"ECDb").AppendToPath(L"StartupCompany.json");
+        BeTest::GetHost().GetDgnPlatformAssetsDirectory(testFile);
+        testFile.AppendToPath(L"BeSQLiteTestData").AppendToPath(L"StartupCompany.json");
 
         stat = db.EmbeddedFiles().Import("test", testFile.GetNameUtf8().c_str(), ".json");
         ASSERT_EQ (BE_SQLITE_OK, stat) << "Embedding test file failed.";
