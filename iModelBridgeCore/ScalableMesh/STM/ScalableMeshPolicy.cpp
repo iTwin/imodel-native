@@ -488,7 +488,7 @@ GCSFactory CreateGCSFactory ()
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   08/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-BENTLEYSTM_EXPORT const Memory::MemoryAllocator& GetMemoryAllocator ()
+BENTLEY_SM_EXPORT const Memory::MemoryAllocator& GetMemoryAllocator ()
     {
     static const ImportMemoryAllocator MEMORY_ALLOCATOR_INSTANCE;
     return MEMORY_ALLOCATOR_INSTANCE;
@@ -498,7 +498,7 @@ BENTLEYSTM_EXPORT const Memory::MemoryAllocator& GetMemoryAllocator ()
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   08/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-BENTLEYSTM_EXPORT Foundations::Log& GetLog ()
+BENTLEY_SM_EXPORT Foundations::Log& GetLog ()
     {
     static ImportWarningLog WARNING_LOG;
     return WARNING_LOG;
@@ -508,7 +508,7 @@ BENTLEYSTM_EXPORT Foundations::Log& GetLog ()
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   08/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-BENTLEYSTM_EXPORT const GeoCoords::GCSFactory& GetGCSFactory ()
+BENTLEY_SM_EXPORT const GeoCoords::GCSFactory& GetGCSFactory ()
     {
     static const GCSFactory INSTANCE (CreateGCSFactory());
     return INSTANCE;
@@ -528,7 +528,7 @@ const GeoCoords::ReprojectionFactory& GetReprojectionFactory ()
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   08/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-BENTLEYSTM_EXPORT const Import::SourceFactory& GetSourceFactory ()
+BENTLEY_SM_EXPORT const Import::SourceFactory& GetSourceFactory ()
     {
     static const SourceFactory INSTANCE(CreateSourceFactory());
     return INSTANCE;

@@ -27,9 +27,9 @@
 #endif //!BEGIN_BENTLEY_MRDTM_IMPORT_NAMESPACE
 
 #ifdef __BENTLEYSTM_BUILD__ 
-    #define BENTLEYSTM_EXPORT __declspec(dllexport)
+    #define BENTLEY_SM_EXPORT __declspec(dllexport)
 #else
-    #define BENTLEYSTM_EXPORT __declspec(dllimport)
+    #define BENTLEY_SM_EXPORT __declspec(dllimport)
 #endif
     
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
@@ -142,9 +142,11 @@ virtual DTMStatusInt _ComputeVolumeCutAndFill(PolyfaceHeaderPtr& terrainMesh, do
 //virtual DTMStatusInt _ComputeCutFillVolume(double* cut, double* fill, double* volume, PolyfaceHeaderCP mesh) = 0;
 
 public:
-//BENTLEYDTM_EXPORT DTMStatusInt ComputeCutFillVolume(double* cut, double* fill, double* volume, PolyfaceHeaderCP mesh);
-BENTLEYSTM_EXPORT DTMStatusInt ComputeVolumeCutAndFill(double& cut, double& fill, double& area, PolyfaceHeader& intersectingMeshSurface, DRange3d& meshRange, bvector<PolyfaceHeaderPtr>& volumeMeshVector);
-BENTLEYSTM_EXPORT DTMStatusInt ComputeVolumeCutAndFill(PolyfaceHeaderPtr& terrainMesh, double& cut, double& fill, PolyfaceHeader& mesh, bool is2d, bvector<PolyfaceHeaderPtr>& volumeMeshVector);
+
+//BENTLEY_SM_EXPORT DTMStatusInt ComputeCutFillVolume(double* cut, double* fill, double* volume, PolyfaceHeaderCP mesh);
+BENTLEY_SM_EXPORT DTMStatusInt ComputeVolumeCutAndFill(double& cut, double& fill, double& area, PolyfaceHeader& intersectingMeshSurface, DRange3d& meshRange, bvector<PolyfaceHeaderPtr>& volumeMeshVector);
+BENTLEY_SM_EXPORT DTMStatusInt ComputeVolumeCutAndFill(PolyfaceHeaderPtr& terrainMesh, double& cut, double& fill, PolyfaceHeader& mesh, bool is2d, bvector<PolyfaceHeaderPtr>& volumeMeshVector);
+
 };*/
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

@@ -3,9 +3,11 @@
 #include <Bentley/RefCounted.h>
 #include <BeSQLite\BeSQLite.h>
 #include <ScalableMesh/import/DataSQLite.h>
+#include "ScalableMeshDb.h"
 
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT
+USING_NAMESPACE_BENTLEY_SCALABLEMESH
 
 using namespace std;
 
@@ -29,7 +31,7 @@ struct SQLiteNodeHeader
     bool        m_totalCountDefined;         // Indicates if the total count of objects in node and subnode is up to date
     uint64_t      m_totalCount;                // This value indicates the total number of points in node all recursively all sub-nodes.
     bool        m_arePoints3d;               //Indicates if the node contains 3D points or 2.5D points only. 
-    bool        m_areTextured;               // Indicates if the node contains Texture or not
+    bool        m_isTextured;               // Indicates if the node contains Texture or not
     int  m_parentNodeID; //Required when loading 
     std::vector<int>  m_apSubNodeID;
     int  m_SubNodeNoSplitID;
@@ -74,6 +76,7 @@ struct SQLiteIndexHeader
     size_t                  m_depth;                        // Cached (maximum) number of levels in the tree.
     int              m_rootNodeBlockID;
     size_t                  m_terrainDepth;                 //Maximum number of LODs for terrain(mesh) data, set at generation time
+    bool                    m_isTerrain;                    //can the Scalable Mesh be used as a terrain, e.g. for design applications
     };
 
 struct SQLiteSourcesData
@@ -160,7 +163,7 @@ public:
 
     bool m_autocommit = true;
 private:
-    BeSQLite::Db* m_database;
+    ScalableMeshDb* m_database;
 
     // string table name
     const std::string m_sMasterHeaderTable = "SMMasterHeader";

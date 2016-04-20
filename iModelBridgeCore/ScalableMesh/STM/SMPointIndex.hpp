@@ -89,7 +89,7 @@ template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointInde
     m_createdNodeMap = createdNodeMap;
     m_nodeHeader.m_filtered = false;
     m_nodeHeader.m_nbFaceIndexes = 0;
-    m_nodeHeader.m_areTextured = false;
+    m_nodeHeader.m_isTextured = false;
     m_nodeHeader.m_nbTextures = 0;
     m_nodeHeader.m_nbUvIndexes = 0;    
     m_nodeHeader.m_numberOfMeshComponents = 0;
@@ -158,7 +158,7 @@ template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointInde
     m_filter = pi_rpParentNode->GetFilter();
     m_nodeHeader.m_filtered = false;
     m_nodeHeader.m_nbFaceIndexes = 0;
-    m_nodeHeader.m_areTextured = false;
+    m_nodeHeader.m_isTextured = false;
     m_nodeHeader.m_nbTextures = 0;
     m_nodeHeader.m_nbUvIndexes = 0;
     m_nodeHeader.m_numberOfMeshComponents = 0;
@@ -235,6 +235,9 @@ template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointInde
     m_filter = pi_rpParentNode->GetFilter();
     m_nodeHeader.m_filtered = false;
     m_nodeHeader.m_nbFaceIndexes = 0;
+    m_nodeHeader.m_isTextured = false;
+    m_nodeHeader.m_nbTextures = 0;
+    m_nodeHeader.m_nbUvIndexes = 0;
     m_nodeHeader.m_numberOfMeshComponents = 0;
     m_nodeHeader.m_meshComponents = nullptr;    
     m_nodeHeader.m_arePoints3d = pi_rpParentNode->m_nodeHeader.m_arePoints3d;
@@ -4282,7 +4285,7 @@ bool SMPointIndexNode<POINT, EXTENT>::IsTextured() const
     if(!IsLoaded())
         Load();
     
-	return(m_nodeHeader.m_areTextured);
+	return(m_nodeHeader.m_isTextured);
     }
 
 
@@ -7018,7 +7021,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveCl
                                                                                              HFCPtr<StreamingIndiceStoreType> pi_pIndiceStore,
                                                                                              HFCPtr<StreamingUVStoreType> pi_pUVStore,
                                                                                              HFCPtr<StreamingIndiceStoreType> pi_pUVIndiceStore,
-                                                                                             HFCPtr<StreamingTextureTileStoreType> pi_pTextureStore) const
+                                                                                             HFCPtr<StreamingTextureTileStoreType> pi_pTextureStore)
     {
     assert(!pi_pIndiceStore && !pi_pUVStore && !pi_pUVIndiceStore && !pi_pTextureStore);
 
@@ -7882,7 +7885,7 @@ template<class POINT, class EXTENT> SMPointIndex<POINT, EXTENT>::SMPointIndex(HF
     m_indexHeader.m_numberOfSubNodesOnSplit = 8;
 
     m_indexHeaderDirty = true;
-
+    m_indexHeader.m_isTerrain = false;
     HINVARIANTS;
     m_indexHeader.m_SplitTreshold = pi_SplitTreshold;
     m_indexHeader.m_HasMaxExtent = false;

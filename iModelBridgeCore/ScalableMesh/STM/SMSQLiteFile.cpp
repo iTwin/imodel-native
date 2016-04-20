@@ -40,8 +40,8 @@ m_database->SaveChanges();
 }
 bool SMSQLiteFile::Open(BENTLEY_NAMESPACE_NAME::Utf8CP filename, bool openReadOnly)
 {
-    if (m_database == nullptr)
-        m_database = new BeSQLite::Db();
+if (m_database == nullptr)
+m_database = new ScalableMeshDb();
     DbResult result;
     if (m_database->IsDbOpen())
         m_database->CloseDb();
@@ -72,8 +72,8 @@ SMSQLiteFilePtr SMSQLiteFile::Open(const WString& filename, bool openReadOnly, S
 
 bool SMSQLiteFile::Create(BENTLEY_NAMESPACE_NAME::Utf8CP filename)
 {
-    if (m_database == nullptr)
-        m_database = new BeSQLite::Db();
+if (m_database == nullptr)
+m_database = new ScalableMeshDb();
     DbResult result;
     result = m_database->CreateNewDb(filename);
 
@@ -88,6 +88,7 @@ bool SMSQLiteFile::Create(BENTLEY_NAMESPACE_NAME::Utf8CP filename)
         "IsTextured INTEGER,"
         "SingleFile INTEGER,"
         "TerrainDepth INTEGER,"
+        "IsTerrain INTEGER,"
         "GCS STRING,"
         "LastModifiedTime INTEGER,"
         "LastSyncTime INTEGER,"
@@ -234,11 +235,11 @@ bool SMSQLiteFile::SetMasterHeader(const SQLiteIndexHeader& newHeader)
     CachedStatementPtr stmt;
     if (nRows == 0)
     {
-        m_database->GetCachedStatement(stmt, "INSERT INTO SMMasterHeader (MasterHeaderId, Balanced, RootNodeId, SplitTreshold, Depth, TerrainDepth, IsTextured) VALUES(?,?,?,?,?,?,?)");
+        m_database->GetCachedStatement(stmt, "INSERT INTO SMMasterHeader (MasterHeaderId, Balanced, RootNodeId, SplitTreshold, Depth, TerrainDepth, IsTextured, IsTerrain) VALUES(?,?,?,?,?,?,?,?)");
     }
     else
     {
-        m_database->GetCachedStatement(stmt, "UPDATE SMMasterHeader SET MasterHeaderId=?, Balanced=?, RootNodeId=?, SplitTreshold=?, Depth=?, TerrainDepth=?, IsTextured=?"
+        m_database->GetCachedStatement(stmt, "UPDATE SMMasterHeader SET MasterHeaderId=?, Balanced=?, RootNodeId=?, SplitTreshold=?, Depth=?, TerrainDepth=?, IsTextured=?, IsTerrain=?"
             " WHERE MasterHeaderId=?");
     }
     stmt->BindInt64(1, id);
@@ -248,9 +249,10 @@ bool SMSQLiteFile::SetMasterHeader(const SQLiteIndexHeader& newHeader)
     stmt->BindInt64(5, newHeader.m_depth);
     stmt->BindInt64(6, newHeader.m_terrainDepth);
     stmt->BindInt(7, newHeader.m_textured ? 1 : 0);
+    stmt->BindInt(8, newHeader.m_isTerrain ? 1 : 0);
     //stmt->BindInt(7, newHeader.m_singleFile ? 1 : 0);
     if (nRows != 0)
-        stmt->BindInt64(8, id);
+        stmt->BindInt64(9, id);
     DbResult status = stmt->Step();
     assert(status == BE_SQLITE_DONE);
     return status == BE_SQLITE_DONE;
@@ -297,7 +299,8 @@ bool SMSQLiteFile::SetNodeHeader(const SQLiteNodeHeader& newNodeHeader)
         size_t texID = SQLiteNodeHeader::NO_NODEID;
         stmt->BindInt64(16, texID);
         }
-    stmt->BindInt(17, newNodeHeader.m_areTextured ? 1 : 0); 
+
+    stmt->BindInt(17, newNodeHeader.m_isTextured ? 1 : 0); 
     stmt->BindInt(18, (int)newNodeHeader.m_nodeCount);
     DbResult status = stmt->Step();
     stmt->ClearBindings();
@@ -310,7 +313,7 @@ bool SMSQLiteFile::SetNodeHeader(const SQLiteNodeHeader& newNodeHeader)
 bool SMSQLiteFile::GetMasterHeader(SQLiteIndexHeader& header)
     {
     CachedStatementPtr stmt;
-    m_database->GetCachedStatement(stmt, "SELECT Balanced, RootNodeId, SplitTreshold, Depth,IsTextured, SingleFile, TerrainDepth FROM SMMasterHeader WHERE MasterHeaderId = ?");
+    m_database->GetCachedStatement(stmt, "SELECT Balanced, RootNodeId, SplitTreshold, Depth,IsTextured, SingleFile, TerrainDepth, IsTerrain FROM SMMasterHeader WHERE MasterHeaderId = ?");
     size_t id = 0;
     stmt->BindInt64(1, id);
     DbResult status = stmt->Step();
@@ -323,6 +326,7 @@ bool SMSQLiteFile::GetMasterHeader(SQLiteIndexHeader& header)
     header.m_textured = stmt->GetValueInt(4) ? true : false;
     header.m_singleFile = stmt->GetValueInt(5) ? true : false;
     header.m_terrainDepth = stmt->GetValueInt64(6);
+    header.m_isTerrain = stmt->GetValueInt(7) ? true : false;
     return true;
     }
 
@@ -385,8 +389,8 @@ bool SMSQLiteFile::GetNodeHeader(SQLiteNodeHeader& nodeHeader)
     nodeHeader.m_clipSetsID = std::vector<int>();
     nodeHeader.m_numberOfSubNodesOnSplit = nodeHeader.m_apSubNodeID.size();
     int64_t texIdx = stmt->GetValueInt64(14);
-    nodeHeader.m_areTextured = stmt->GetValueInt(15) ? true : false;
-    if (texIdx != SQLiteNodeHeader::NO_NODEID && nodeHeader.m_areTextured)
+    nodeHeader.m_isTextured = stmt->GetValueInt(15) ? true : false;
+    if (texIdx != SQLiteNodeHeader::NO_NODEID && nodeHeader.m_isTextured)
         {
         nodeHeader.m_textureID.resize(1);
         nodeHeader.m_textureID[0] = texIdx;

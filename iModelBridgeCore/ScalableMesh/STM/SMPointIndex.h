@@ -625,7 +625,7 @@ public:
                                             HFCPtr<StreamingIndiceStoreType> pi_pIndiceStore,
                                             HFCPtr<StreamingUVStoreType> pi_pUVStore,
                                             HFCPtr<StreamingIndiceStoreType> pi_pUVIndiceStore,
-                                            HFCPtr<StreamingTextureTileStoreType> pi_pTextureStore) const;
+                                            HFCPtr<StreamingTextureTileStoreType> pi_pTextureStore);
     virtual void         SaveCloudReadyNode(SMNodeGroup* pi_pNodes, SMNodeGroupMasterHeader* pi_pGroupsHeader) const;
 
 #ifdef INDEX_DUMPING_ACTIVATED
@@ -1419,6 +1419,17 @@ public:
 
     bool IsSingleFile() const;
     void SetSingleFile(bool singleFile);
+
+    void SetIsTerrain(bool isTerrain)
+        {
+        m_indexHeader.m_isTerrain = isTerrain;
+        m_indexHeaderDirty = true;
+        }
+
+    bool IsTerrain() const
+        {
+        return m_indexHeader.m_isTerrain;
+        }
 
 
     /**----------------------------------------------------------------------------

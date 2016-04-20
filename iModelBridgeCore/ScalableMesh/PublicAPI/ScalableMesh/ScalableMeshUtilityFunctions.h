@@ -31,12 +31,12 @@
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 
-BENTLEYSTM_EXPORT int GetShapeInFrontOfProjectivePlane(vector<DPoint3d>&       shapeInFrontOfProjectivePlane, 
+BENTLEY_SM_EXPORT int GetShapeInFrontOfProjectivePlane(vector<DPoint3d>&       shapeInFrontOfProjectivePlane, 
                                                  double&                 ratioShapeInFrontToTile,
                                                  const vector<DPoint3d>& tileborderPoints, 
                                                  const double            rootToViewMatrix[][4]);
 
-BENTLEYSTM_EXPORT bool GetVisibleAreaForView(DPoint3d**   fencePt, 
+BENTLEY_SM_EXPORT bool GetVisibleAreaForView(DPoint3d**   fencePt, 
                                             int&           nbPts, 
                                             const DPoint3d viewBox[],                                         
                                             DRange3d&      dtmRange, 
@@ -94,30 +94,30 @@ template<class EXTENT> bool GetVisibleExtent(EXTENT&        po_rVisibleExtent,
     return isVisible;  
     }
 
-BENTLEYSTM_EXPORT int CreateBcDTM(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& dtmPtr);
+BENTLEY_SM_EXPORT int CreateBcDTM(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& dtmPtr);
 
-BENTLEYSTM_EXPORT int SetClipsToDTM (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& dtmPtr,
+BENTLEY_SM_EXPORT int SetClipsToDTM (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& dtmPtr,
                                const DRange3d&                      dtmRange,
                                const IScalableMeshClipContainerPtr&        clips);
 
-BENTLEYSTM_EXPORT int SetClipsToDTM (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& dtmPtr,
+BENTLEY_SM_EXPORT int SetClipsToDTM (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& dtmPtr,
                                const DRange3d&                      dtmRange,
                                const vector<DPoint3d>&              regionPoints,
                                const IScalableMeshClipContainerPtr&        clips);
 
-BENTLEYSTM_EXPORT int TriangulateDTM(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr&                     dtmPtr, 
+BENTLEY_SM_EXPORT int TriangulateDTM(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr&                     dtmPtr, 
                                const BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshQueryParametersPtr& scmQueryParamsPtr);
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    AlainRobert  07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-BENTLEYSTM_EXPORT bool GCSMathematicalDomainsOverlap(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& sourceGCSPtr,
+BENTLEY_SM_EXPORT bool GCSMathematicalDomainsOverlap(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& sourceGCSPtr,
                                                BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCSPtr);
 
 typedef vector<DPoint3d> MaskPoints;
 typedef list<MaskPoints> MaskList;
 
-BENTLEYSTM_EXPORT bool AddExtentAndTestMatch(bool&           shouldAddMatchedCachedTile,
+BENTLEY_SM_EXPORT bool AddExtentAndTestMatch(bool&           shouldAddMatchedCachedTile,
                                        MaskList&       maskList,
                                        bool            reset,                                        
                                        const DRange2d& extentToCover,
@@ -132,13 +132,13 @@ typedef int (*addLinearsForPresentationModeFP)(const BENTLEY_NAMESPACE_NAME::Ter
                                 
 addLinearsForPresentationModeFP GetLinearsForPresentationModeCallback();
 
-BENTLEYSTM_EXPORT bool SetLinearsForPresentationModeCallback(addLinearsForPresentationModeFP callbackFP);
+BENTLEY_SM_EXPORT bool SetLinearsForPresentationModeCallback(addLinearsForPresentationModeFP callbackFP);
 
 #ifdef SCALABLE_MESH_ATP
 
 //NEEDS_WORK_SM_IMPORTER : Duplicated from DcStmCore\ScalableMeshUtil.h, removed DcStmCore version.
-BENTLEYSTM_EXPORT double GetGroundDetectionDuration();
-BENTLEYSTM_EXPORT void   SetGroundDetectionDuration(double t);
-BENTLEYSTM_EXPORT void   AddGroundDetectionDuration(double t);
+BENTLEY_SM_EXPORT double GetGroundDetectionDuration();
+BENTLEY_SM_EXPORT void   SetGroundDetectionDuration(double t);
+BENTLEY_SM_EXPORT void   AddGroundDetectionDuration(double t);
 
 #endif

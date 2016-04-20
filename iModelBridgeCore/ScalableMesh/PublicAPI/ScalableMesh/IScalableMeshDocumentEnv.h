@@ -6,7 +6,7 @@
 |       $Date: 2011/08/02 15:00:33 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -39,8 +39,8 @@ public:
     DocumentEnv&                        operator=                          (const DocumentEnv&      rhs);
 
 
-    BENTLEYSTM_EXPORT const WString&     GetCurrentDir                      () const;
-    BENTLEYSTM_EXPORT const WChar*          GetCurrentDirCStr                  () const;
+    BENTLEY_SM_EXPORT const WString&     GetCurrentDir                      () const;
+    BENTLEY_SM_EXPORT const WChar*          GetCurrentDirCStr                  () const;
 
     // TDORAY: Add a search paths accessors (storing stuff like MS_REFDIR)
 

@@ -431,7 +431,7 @@ public:
             bool        m_totalCountDefined;         // Indicates if the total count of objects in node and subnode is up to date
             uint64_t      m_totalCount;                // This value indicates the total number of points in node all recursively all sub-nodes.
             bool        m_arePoints3d;               //Indicates if the node contains 3D points or 2.5D points only. 
-            bool        m_areTextured;               // Indicates if the node contains Texture or not
+            bool        m_isTextured;               // Indicates if the node contains Texture or not
 
 
             //INFORMATION NOT PERSISTED
@@ -474,6 +474,7 @@ public:
             size_t                  m_numberOfSubNodesOnSplit;      // Control value that hold either 4 or 8 to indicate if a quadtree or octtree is used.
             size_t                  m_depth;                        // Cached (maximum) number of levels in the tree.
             size_t                  m_terrainDepth;                 //Maximum number of LODs for terrain(mesh) data, set at generation time
+            bool                    m_isTerrain;
         };
 
 #define MAX_NEIGHBORNODES_COUNT 26
@@ -514,7 +515,7 @@ public:
     SMPointNodeHeader<EXTENT>& operator=(const SQLiteNodeHeader& nodeHeader)
         {
         m_arePoints3d = nodeHeader.m_arePoints3d;
-        m_areTextured = nodeHeader.m_areTextured;
+        m_isTextured = nodeHeader.m_isTextured;
         m_contentExtentDefined = nodeHeader.m_contentExtentDefined;
         m_contentExtent = ExtentOp<EXTENT>::Create(nodeHeader.m_contentExtent.low.x, nodeHeader.m_contentExtent.low.y, nodeHeader.m_contentExtent.low.z,
                                                    nodeHeader.m_contentExtent.high.x, nodeHeader.m_contentExtent.high.y, nodeHeader.m_contentExtent.high.z);
@@ -561,7 +562,7 @@ public:
         {
         SQLiteNodeHeader header;
         header.m_arePoints3d = m_arePoints3d;
-        header.m_areTextured = m_areTextured;
+        header.m_isTextured = m_isTextured;
         header.m_contentExtentDefined = m_contentExtentDefined;
         header.m_contentExtent = DRange3d::From(ExtentOp<EXTENT>::GetXMin(m_contentExtent), ExtentOp<EXTENT>::GetYMin(m_contentExtent), ExtentOp<EXTENT>::GetZMin(m_contentExtent),
                                                 ExtentOp<EXTENT>::GetXMax(m_contentExtent), ExtentOp<EXTENT>::GetYMax(m_contentExtent), ExtentOp<EXTENT>::GetZMax(m_contentExtent));
@@ -623,6 +624,7 @@ public:
         m_singleFile = indexHeader.m_singleFile;
         m_SplitTreshold = indexHeader.m_SplitTreshold;
         m_textured = indexHeader.m_textured;
+        m_isTerrain = indexHeader.m_isTerrain;
         return *this;
         }
 
@@ -641,6 +643,7 @@ public:
         header.m_singleFile = m_singleFile;
         header.m_SplitTreshold = m_SplitTreshold;
         header.m_textured = m_textured;
+        header.m_isTerrain = m_isTerrain;
         return header;
         }
     };

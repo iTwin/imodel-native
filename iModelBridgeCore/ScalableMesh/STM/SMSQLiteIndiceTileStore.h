@@ -32,8 +32,8 @@ template <class EXTENT> class SMSQLiteIndiceTileStore : public SMPointTileStore<
 
             // initialize codec
             HFCPtr<HCDCodec> pCodec = new HCDCodecZlib(pi_compressedPacket.GetDataSize());
-            pi_uncompressedPacket.SetBufferOwnership(true);
-            pi_uncompressedPacket.SetBuffer(new Byte[pi_uncompressedPacket.GetDataSize()], pi_uncompressedPacket.GetDataSize() * sizeof(Byte));
+            /*pi_uncompressedPacket.SetBufferOwnership(true);
+            pi_uncompressedPacket.SetBuffer(new Byte[pi_uncompressedPacket.GetDataSize()], pi_uncompressedPacket.GetDataSize() * sizeof(Byte));*/
             const size_t compressedDataSize = pCodec->DecompressSubset(pi_compressedPacket.GetBufferAddress(), pi_compressedPacket.GetDataSize() * sizeof(Byte), pi_uncompressedPacket.GetBufferAddress(), pi_uncompressedPacket.GetBufferSize() * sizeof(Byte));
             pi_uncompressedPacket.SetDataSize(compressedDataSize);
 
@@ -140,9 +140,10 @@ template <class EXTENT> class SMSQLiteIndiceTileStore : public SMPointTileStore<
             HCDPacket pi_uncompressedPacket, pi_compressedPacket;
             pi_compressedPacket.SetBuffer(&ptData[0], ptData.size());
             pi_compressedPacket.SetDataSize(ptData.size());
-            pi_uncompressedPacket.SetDataSize(uncompressedSize); 
+            pi_uncompressedPacket.SetBuffer(DataTypeArray, maxCountData*sizeof(int32_t));
+            pi_uncompressedPacket.SetBufferOwnership(false);
             LoadCompressedPacket(pi_compressedPacket, pi_uncompressedPacket);
-            memcpy(DataTypeArray, pi_uncompressedPacket.GetBufferAddress(), std::min(uncompressedSize, maxCountData*sizeof(int32_t)));
+            //memcpy(DataTypeArray, pi_uncompressedPacket.GetBufferAddress(), std::min(uncompressedSize, maxCountData*sizeof(int32_t)));
             return std::min(uncompressedSize, maxCountData*sizeof(int32_t));
             }
 

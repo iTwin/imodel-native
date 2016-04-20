@@ -61,7 +61,7 @@ template <typename DataType, typename MasterHeaderType, typename TileHeaderType>
         virtual size_t LoadHeader(TileHeaderType* header, HPMBlockID blockID) = 0;
 
 
-        // IHPMDataStore implementation
+        // IScalableMeshDataStore implementation
 
         virtual void Close() = 0;
 
@@ -74,5 +74,4 @@ template <typename DataType, typename MasterHeaderType, typename TileHeaderType>
         virtual size_t LoadBlock(DataType* DataTypeArray, size_t maxCountData, HPMBlockID blockID) = 0;
 
         virtual bool DestroyBlock(HPMBlockID blockID) = 0;
-
     };

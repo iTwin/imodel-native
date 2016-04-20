@@ -6,7 +6,7 @@
 |       $Date: 2011/11/09 18:10:59 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -23,10 +23,10 @@
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 namespace Plugin { namespace V0 {
 
-BENTLEYSTM_EXPORT Import::Plugin::V0::SourceBase*         CreateCivilDTMSource               (BcDTMR dtm, 
+BENTLEY_SM_EXPORT Import::Plugin::V0::SourceBase*         CreateCivilDTMSource               (BcDTMR dtm, 
                                                                                               Import::Log& log);
 
-BENTLEYSTM_EXPORT Import::Plugin::V0::SourceBase*         CreateCivilDTMSource               (BcDTMR dtm,
+BENTLEY_SM_EXPORT Import::Plugin::V0::SourceBase*         CreateCivilDTMSource               (BcDTMR dtm,
                                                                                               const GeoCoords::GCS&           gcs,
                                                                                               Import::Log&                    log);
 

@@ -376,9 +376,9 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
                     }
                 
                 if (faceIndexes.size() > 0)
-                    node->PushPtsIndices(0, /*meshP->GetFaceIndexes()*/&faceIndexes[0], node->m_nodeHeader.m_nbFaceIndexes);
+                    node->PushPtsIndices(/*meshP->GetFaceIndexes()*/&faceIndexes[0], node->m_nodeHeader.m_nbFaceIndexes);
                 else
-                    node->ClearPtsIndices(0);
+                    node->ClearPtsIndices();
                 
                 //NEEDS_WORK_SM Avoid some assert                            
                 //delete [] pPiggyBackMeshIndexes; 
@@ -1422,10 +1422,6 @@ std::vector<EXTENT> stitchedNeighborsExtents;
 
 addedMask = meshGraph.GrabMask();
 //std::string s;
-if (!(ExtentOp<EXTENT>::GetXMin(ext) > TILE_X || ExtentOp<EXTENT>::GetXMax(ext) < TILE_X || ExtentOp<EXTENT>::GetYMin(ext) > TILE_Y || ExtentOp<EXTENT>::GetYMax(ext) < TILE_Y))
-    {
-    //GetGraphExteriorBoundary(meshGraph, boundary, &nodePoints[0]);
-    }
 for (size_t& neighborInd : neighborIndices)
     {
     size_t idx = &neighborInd - &neighborIndices[0];
@@ -1461,13 +1457,13 @@ for (size_t& neighborInd : neighborIndices)
                   
                     //node->m_apNeighborNodes[neighborInd][neighborSubInd]->Pin();
                    // s += " CURRENT N OF POINTS TO STITCH " + std::to_string(stitchedPoints.size()) + "\n";
-                    if (node->m_nodeHeader.m_apAreNeighborNodesStitched[neighborInd] == false)
+                    if (node->m_apNeighborNodes[neighborInd][neighborSubInd]->m_nodeHeader.m_apAreNeighborNodesStitched[nodeIndicesInNeighbor[idx]] == false)
                         SelectPointsToStitch(stitchedPoints, static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*node->m_apNeighborNodes[neighborInd][neighborSubInd]), &meshGraphNeighbor, node->GetContentExtent(), nullptr);
                     else
                          SelectPointsBasedOnBox(stitchedPoints, static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*node->m_apNeighborNodes[neighborInd][neighborSubInd]), node->GetNodeExtent());
                    // SelectPointsToStitch(stitchedPoints, static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*node->m_apNeighborNodes[neighborInd][neighborSubInd]), &meshGraphNeighbor, node->GetContentExtent(), nullptr);
                    // s += " CURRENT N OF POINTS TO STITCH " + std::to_string(stitchedPoints.size()) + "\n";
-                    if (node->m_nodeHeader.m_apAreNeighborNodesStitched[neighborInd] == false)
+                    if (node->m_apNeighborNodes[neighborInd][neighborSubInd]->m_nodeHeader.m_apAreNeighborNodesStitched[nodeIndicesInNeighbor[idx]] == false)
                         {
                         bvector<bvector<DPoint3d>> b;
                         if(s_useThreadsInStitching) node->m_apNeighborNodes[neighborInd][neighborSubInd]->LockPts();
@@ -1503,13 +1499,14 @@ for (size_t& neighborInd : neighborIndices)
                         delete[] pts;
                         }
                     //node->m_apNeighborNodes[neighborInd][neighborSubInd]->UnPin();
-                    node->m_apNeighborNodes[neighborInd][neighborSubInd]->m_nodeHeader.m_apAreNeighborNodesStitched[nodeIndicesInNeighbor[idx]] = true;
+                    //node->m_apNeighborNodes[neighborInd][neighborSubInd]->m_nodeHeader.m_apAreNeighborNodesStitched[nodeIndicesInNeighbor[idx]] = true;
                     
                 }          
-            node->m_nodeHeader.m_apAreNeighborNodesStitched[neighborInd] = true;
+            //node->m_nodeHeader.m_apAreNeighborNodesStitched[neighborInd] = true;
             }
 
         }
+    node->m_nodeHeader.m_apAreNeighborNodesStitched[neighborInd] = true;
     }
     GetGraphExteriorBoundary(&meshGraph, boundary, &nodePoints[0], true);
     //mesh aggregated points
@@ -1942,7 +1939,7 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
     if (node->m_nodeHeader.m_nbFaceIndexes > 0)
         {
         node->push_back(&newNodePointData[0], stitchedPoints.size());
-        node->ReplacePtsIndices(0, (int32_t*)&newNodePointData[stitchedPoints.size()], node->m_nodeHeader.m_nbFaceIndexes);
+        node->ReplacePtsIndices((int32_t*)&newNodePointData[stitchedPoints.size()], node->m_nodeHeader.m_nbFaceIndexes);
 
         //node->setNbPointsUsedForMeshIndex(arraySize-stitchedPoints.size());
         if (node->IsLeaf()) node->m_nodeHeader.m_totalCount = stitchedPoints.size();
@@ -2084,7 +2081,7 @@ return true;
                 memcpy(node->m_nodeHeader.m_meshComponents, componentPointsId.data(), componentPointsId.size()*sizeof(int));
                 }
           
-            node->PushPtsIndices(0, &faceIndexes[0], node->m_nodeHeader.m_nbFaceIndexes);            
+            node->PushPtsIndices(&faceIndexes[0], node->m_nodeHeader.m_nbFaceIndexes);            
             
             assert(node->size() == nodePts.size());
             if (node->IsLeaf() && node->size() != node->m_nodeHeader.m_totalCount)
