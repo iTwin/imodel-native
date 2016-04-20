@@ -178,6 +178,8 @@
 				88FA904114F584D60028AB2E /* BeTestiOSAppDelegate.m */,
 				50646D90168C7F4400167BDC /* BeTestGLView.h */,
 				50646D91168C7F4400167BDC /* BeTestGLView.m */,
+				21F58F5D1CC7CA5F00CF9914 /* SenTest_BaseClass.h */,
+				21F58F5E1CC7CA5F00CF9914 /* SenTest_BaseClass.mm */,
 				88FA903814F584D60028AB2E /* Supporting Files */,
 			);
 			path = BeTestiOS;
@@ -197,8 +199,6 @@
 		88FA905514F584D70028AB2E /* BeTestiOSTests */ = {
 			isa = PBXGroup;
 			children = (
-				21F58F5D1CC7CA5F00CF9914 /* SenTest_BaseClass.h */,
-				21F58F5E1CC7CA5F00CF9914 /* SenTest_BaseClass.mm */,
 				88C129EE1521E1B700843485 /* Source */,
 				88FA905B14F584D70028AB2E /* BeTestiOSTests.h */,
 				88FA905614F584D70028AB2E /* Supporting Files */,
