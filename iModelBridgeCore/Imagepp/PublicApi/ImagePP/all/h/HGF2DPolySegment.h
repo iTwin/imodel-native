@@ -52,18 +52,18 @@ public:
     IMAGEPP_EXPORT void               AppendPoint(const HGF2DPosition& pi_rNewPoint);
     HGF2DPosition       GetPoint(size_t pi_Index) const;
     size_t              GetSize() const;
-    void                RemovePoint(size_t pi_Index);
+    IMAGEPPTEST_EXPORT void                RemovePoint(size_t pi_Index);
     void                Simplify(bool processAsClosed);
 
 
     // Parallel Copy
-    HGF2DPolySegment*  AllocateParallelCopy(double pi_rOffset,
+    IMAGEPPTEST_EXPORT HGF2DPolySegment*  AllocateParallelCopy(double pi_rOffset,
                                           HGF2DVector::ArbitraryDirection
                                           pi_DirectionToRight = HGF2DVector::BETA,
                                           const HGF2DLiteLine* pi_pFirstPointAlignment = 0,
                                           const HGF2DLiteLine* pi_pLastPointAlignment = 0) const;
 
-    HGF2DSegment       GetClosestSegment(const HGF2DPosition& pi_rLocation) const;
+    IMAGEPPTEST_EXPORT HGF2DSegment       GetClosestSegment(const HGF2DPosition& pi_rLocation) const;
 
     // Remove autocontiguousness points
     IMAGEPP_EXPORT void                RemoveAutoContiguousNeedles(bool pi_ClosedProcessing = false);
@@ -74,7 +74,7 @@ public:
                                                 bool pi_ProcessClosed = false) const;
 
 // HChk &&AR : Should be moved to HGF2DLinear
-    void               SortPointsAccordingToRelativePosition(HGF2DPositionCollection* pio_pListOfPointsOnLinear) const;
+    IMAGEPPTEST_EXPORT void               SortPointsAccordingToRelativePosition(HGF2DPositionCollection* pio_pListOfPointsOnLinear) const;
 
     // Geometry
     IMAGEPP_EXPORT virtual void       Rotate(double pi_Angle,
@@ -197,7 +197,7 @@ private:
     // Private methods
     IMAGEPP_EXPORT void               Reserve(size_t pi_PointsToPreAllocate);
     IMAGEPP_EXPORT void               MakeEmpty();
-    void               ResetTolerance();
+    IMAGEPPTEST_EXPORT void               ResetTolerance();
     bool IsContiguousToPolySegment(const HGF2DPolySegment& pi_rPolySegment) const;
     bool IsContiguousToSegment(const HGF2DSegment& pi_rSegment) const;
     bool IsContiguousToPolySegmentAt(const HGF2DPolySegment& pi_rPolySegment,

@@ -6,7 +6,6 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#ifdef TEST_DLL_NOT_NOT
 #include "../imagepptestpch.h"
 #include "EnvironnementTest.h"
 #include "HGF2DPolySegmentTester.h"
@@ -5817,4 +5816,3 @@ TEST_F (HGF2DPolySegmentTester, IsAutoContiguous3Test2)
     ASSERT_FALSE(AddPolySegment1.IsAutoContiguous() || NewPolySegment.IsAutoContiguous());
 
     }
-#endif

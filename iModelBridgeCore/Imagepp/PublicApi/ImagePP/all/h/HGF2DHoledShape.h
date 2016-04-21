@@ -40,7 +40,7 @@ class HGF2DHoledShape : public HGF2DShape
 public:
 
     // Primary methods
-                                HGF2DHoledShape();
+    IMAGEPPTEST_EXPORT                            HGF2DHoledShape();
                                 HGF2DHoledShape(const HGF2DSimpleShape& pi_rSimpleShape);
                                 HGF2DHoledShape(const HGF2DHoledShape&   pi_rObject);
     virtual                     ~HGF2DHoledShape();
@@ -48,14 +48,14 @@ public:
     HGF2DHoledShape&            operator=(const HGF2DHoledShape& pi_rObj);
 
     // Setting and management
-    void                        AddHole(const HGF2DSimpleShape& pi_rSimpleShape);
-    virtual void                SetBaseShape(const HGF2DSimpleShape& pi_rComplex);
-    virtual const HGF2DSimpleShape&
+    IMAGEPPTEST_EXPORT void                        AddHole(const HGF2DSimpleShape& pi_rSimpleShape);
+    IMAGEPPTEST_EXPORT virtual void                SetBaseShape(const HGF2DSimpleShape& pi_rComplex);
+    IMAGEPPTEST_EXPORT virtual const HGF2DSimpleShape&
                                 GetBaseShape() const;
 
     // From HGF2DShape
 
-    virtual void                Rasterize(HGFScanLines& pio_rScanlines) const;
+    IMAGEPPTEST_EXPORT virtual void                Rasterize(HGFScanLines& pio_rScanlines) const;
 
     virtual bool                IsSimple() const;
     virtual bool                IsComplex() const;
@@ -67,66 +67,66 @@ public:
     virtual bool                HasHoles() const;
     virtual const HGF2DShape::HoleList&
                                 GetHoleList() const;
-    virtual HGF2DShape*         DifferentiateShape(const HGF2DShape& pi_rShape) const;
-    virtual HGF2DShape*         DifferentiateFromShape(const HGF2DShape& pi_rShape) const;
-    virtual HGF2DShape*         IntersectShape(const HGF2DShape& pi_rShape) const;
-    virtual HGF2DShape*         UnifyShape(const HGF2DShape& pi_rShape) const;
+    IMAGEPPTEST_EXPORT virtual HGF2DShape*         DifferentiateShape(const HGF2DShape& pi_rShape) const;
+    IMAGEPPTEST_EXPORT virtual HGF2DShape*         DifferentiateFromShape(const HGF2DShape& pi_rShape) const;
+    IMAGEPPTEST_EXPORT virtual HGF2DShape*         IntersectShape(const HGF2DShape& pi_rShape) const;
+    IMAGEPPTEST_EXPORT virtual HGF2DShape*         UnifyShape(const HGF2DShape& pi_rShape) const;
 
-    virtual double              CalculateArea() const;
-    virtual double              CalculatePerimeter() const;
-    virtual bool                IsPointIn(const HGF2DPosition& pi_rPoint, double pi_Tolerance = HGF_USE_INTERNAL_EPSILON) const;
-    void                        MakeEmpty();
-    virtual HGF2DShape::SpatialPosition
+    IMAGEPPTEST_EXPORT virtual double              CalculateArea() const;
+    IMAGEPPTEST_EXPORT virtual double              CalculatePerimeter() const;
+    IMAGEPPTEST_EXPORT virtual bool                IsPointIn(const HGF2DPosition& pi_rPoint, double pi_Tolerance = HGF_USE_INTERNAL_EPSILON) const;
+    IMAGEPPTEST_EXPORT void                        MakeEmpty();
+    IMAGEPPTEST_EXPORT virtual HGF2DShape::SpatialPosition
                                 CalculateSpatialPositionOfSingleComponentVector(const HGF2DVector& pi_rVector) const;
 
-    virtual void                Drop(HGF2DPositionCollection* po_pPoint,
+    IMAGEPPTEST_EXPORT virtual void                Drop(HGF2DPositionCollection* po_pPoint,
                                      double                   pi_rTolerance) const;
 
 
     // From HGF2DVector
-    virtual HGF2DPosition       CalculateClosestPoint(const HGF2DPosition& pi_rPoint) const;
-    virtual size_t              Intersect(const HGF2DVector& pi_rVector,
+    IMAGEPPTEST_EXPORT virtual HGF2DPosition       CalculateClosestPoint(const HGF2DPosition& pi_rPoint) const;
+    IMAGEPPTEST_EXPORT virtual size_t              Intersect(const HGF2DVector& pi_rVector,
                                           HGF2DPositionCollection* po_pCrossPoints) const;
-    virtual size_t              ObtainContiguousnessPoints(const HGF2DVector& pi_rVector,
+    IMAGEPPTEST_EXPORT virtual size_t              ObtainContiguousnessPoints(const HGF2DVector& pi_rVector,
                                                            HGF2DPositionCollection* po_pContiguousnessPoints) const;
-    virtual void                ObtainContiguousnessPointsAt(const HGF2DVector& pi_rVector,
+    IMAGEPPTEST_EXPORT virtual void                ObtainContiguousnessPointsAt(const HGF2DVector& pi_rVector,
                                                              const HGF2DPosition& pi_rPoint,
                                                              HGF2DPosition* pi_pFirstContiguousnessPoint,
                                                              HGF2DPosition* pi_pSecondContiguousnessPoint) const;
     virtual HGF2DVector*        Clone() const;
-    virtual bool                Crosses(const HGF2DVector& pi_rVector) const;
-    virtual bool                AreContiguous(const HGF2DVector& pi_rVector) const;
-    virtual bool                AreAdjacent(const HGF2DVector& pi_rVector) const;
-    virtual bool                IsPointOn(const HGF2DPosition& pi_rTestPoint,
+    IMAGEPPTEST_EXPORT virtual bool                Crosses(const HGF2DVector& pi_rVector) const;
+    IMAGEPPTEST_EXPORT virtual bool                AreContiguous(const HGF2DVector& pi_rVector) const;
+    IMAGEPPTEST_EXPORT virtual bool                AreAdjacent(const HGF2DVector& pi_rVector) const;
+    IMAGEPPTEST_EXPORT virtual bool                IsPointOn(const HGF2DPosition& pi_rTestPoint,
                                           HGF2DVector::ExtremityProcessing
                                           pi_ExtremityProcessing = HGF2DVector::INCLUDE_EXTREMITIES,
                                           double pi_Tolerance = HGF_USE_INTERNAL_EPSILON) const;
-    virtual bool                AreContiguousAt(const HGF2DVector& pi_rVector,
+    IMAGEPPTEST_EXPORT virtual bool                AreContiguousAt(const HGF2DVector& pi_rVector,
                                                 const HGF2DPosition& pi_rPoint) const;
-    virtual HGFBearing          CalculateBearing(const HGF2DPosition& pi_rPositionPoint,
+    IMAGEPPTEST_EXPORT virtual HGFBearing          CalculateBearing(const HGF2DPosition& pi_rPositionPoint,
                                                  HGF2DVector::ArbitraryDirection
                                                  pi_Direction = HGF2DVector::BETA) const;
-    virtual double              CalculateAngularAcceleration(const HGF2DPosition& pi_rPositionPoint,
+    IMAGEPPTEST_EXPORT virtual double              CalculateAngularAcceleration(const HGF2DPosition& pi_rPositionPoint,
                                                              HGF2DVector::ArbitraryDirection
                                                              pi_Direction = HGF2DVector::BETA) const;
 
 
     // From HGF2DVector
-    virtual HGF2DLiteExtent     GetExtent() const;
-    virtual void                Move(const HGF2DDisplacement& pi_rDisplacement);
-    virtual void                Scale(double pi_ScaleFactor,
+    IMAGEPPTEST_EXPORT virtual HGF2DLiteExtent     GetExtent() const;
+    IMAGEPPTEST_EXPORT virtual void                Move(const HGF2DDisplacement& pi_rDisplacement);
+    IMAGEPPTEST_EXPORT virtual void                Scale(double pi_ScaleFactor,
                                       const HGF2DPosition& pi_rScaleOrigin);
 
-    virtual void                SetAutoToleranceActive(bool pi_ActiveAutoTolerance);
-    virtual void                SetTolerance(double pi_Tolerance);
-    virtual void                SetStrokeTolerance(const HFCPtr<HGFLiteTolerance> & pi_Tolerance);
+    IMAGEPPTEST_EXPORT virtual void                SetAutoToleranceActive(bool pi_ActiveAutoTolerance);
+    IMAGEPPTEST_EXPORT virtual void                SetTolerance(double pi_Tolerance);
+    IMAGEPPTEST_EXPORT virtual void                SetStrokeTolerance(const HFCPtr<HGFLiteTolerance> & pi_Tolerance);
 
-    virtual void                PrintState(ostream& po_rOutput) const;
+    IMAGEPPTEST_EXPORT virtual void                PrintState(ostream& po_rOutput) const;
 
 
-    virtual HFCPtr<HGF2DShape>  AllocTransformDirect(const HGF2DTransfoModel& pi_rModel) const override;
+    IMAGEPPTEST_EXPORT virtual HFCPtr<HGF2DShape>  AllocTransformDirect(const HGF2DTransfoModel& pi_rModel) const override;
 
-    virtual void                GetBestOrientedExtent(HGF2DPositionCollection* po_pMinimalBoxCorners,
+    IMAGEPPTEST_EXPORT virtual void                GetBestOrientedExtent(HGF2DPositionCollection* po_pMinimalBoxCorners,
                                                       HGF2DPositionCollection* po_pConvexHull) const override;
 
 protected:

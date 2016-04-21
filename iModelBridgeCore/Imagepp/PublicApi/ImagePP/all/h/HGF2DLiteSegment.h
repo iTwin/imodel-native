@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DLiteSegment.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -75,7 +75,7 @@ public:
                             ~HGF2DLiteSegment();
 
     HGF2DLiteSegment&       operator=(const HGF2DLiteSegment& pi_rObj);
-    bool                    operator==(const HGF2DLiteSegment& pi_rObj) const;
+    IMAGEPPTEST_EXPORT bool                    operator==(const HGF2DLiteSegment& pi_rObj) const;
 
     // Setting
     void                    SetStartPoint(const HGF2DPosition& pi_rNewStartPoint);
@@ -88,35 +88,35 @@ public:
     void                    SetTolerance(double pi_Tolerance);
 
     // Geometric properties and behavior
-    HGF2DLiteSegment::CrossState
+    IMAGEPPTEST_EXPORT HGF2DLiteSegment::CrossState
                             IntersectSegment(const HGF2DLiteSegment& pi_rSegment,
                                              HGF2DPosition* po_pPoint) const;
 
-    HGF2DLiteSegment::CrossState
+    IMAGEPPTEST_EXPORT HGF2DLiteSegment::CrossState
                             IntersectSegmentExtremityIncluded(const HGF2DLiteSegment& pi_rSegment,
                                       HGF2DPosition* po_pPoint,
                                       bool* po_pCrossesAtExtremity = NULL) const;
 
 
-    size_t                  ObtainContiguousnessPoints(const HGF2DLiteSegment& pi_rSegment,
+    IMAGEPPTEST_EXPORT size_t                  ObtainContiguousnessPoints(const HGF2DLiteSegment& pi_rSegment,
                                                        HGF2DPositionCollection* po_pContiguousnessPoints) const;
 
-    bool                    LinksTo(const HGF2DLiteSegment& pi_rSegment) const;
-    bool                    Crosses(const HGF2DLiteSegment& pi_rSegment) const;
-    bool                    AreContiguous(const HGF2DLiteSegment& pi_rSegment) const;
-    bool                    AreAdjacent(const HGF2DLiteSegment& pi_rSegment) const;
-    bool                    AreParallel(const HGF2DLiteSegment& pi_rSegment,
+    IMAGEPPTEST_EXPORT bool                    LinksTo(const HGF2DLiteSegment& pi_rSegment) const;
+    IMAGEPPTEST_EXPORT bool                    Crosses(const HGF2DLiteSegment& pi_rSegment) const;
+    IMAGEPPTEST_EXPORT bool                    AreContiguous(const HGF2DLiteSegment& pi_rSegment) const;
+    IMAGEPPTEST_EXPORT bool                    AreAdjacent(const HGF2DLiteSegment& pi_rSegment) const;
+    IMAGEPPTEST_EXPORT bool                    AreParallel(const HGF2DLiteSegment& pi_rSegment,
                                          double pi_SlopeTolerance = 0.0) const;
-    bool                    IsPointOn(const HGF2DPosition& pi_rTestPoint, ExtremityProcessing pi_ExtremityProcessing = INCLUDE_EXTREMITIES) const;
-    bool                    ArePointsOnDifferentSides(const HGF2DPosition& pi_rPoint1, const HGF2DPosition& pi_rPoint2) const;
+    IMAGEPPTEST_EXPORT bool                    IsPointOn(const HGF2DPosition& pi_rTestPoint, ExtremityProcessing pi_ExtremityProcessing = INCLUDE_EXTREMITIES) const;
+    IMAGEPPTEST_EXPORT bool                    ArePointsOnDifferentSides(const HGF2DPosition& pi_rPoint1, const HGF2DPosition& pi_rPoint2) const;
 
-    bool                    IntersectsAtSplitPoint(const HGF2DLiteSegment& pi_rFirstSegment,
+    IMAGEPPTEST_EXPORT bool                    IntersectsAtSplitPoint(const HGF2DLiteSegment& pi_rFirstSegment,
                                                    const HGF2DLiteSegment& pi_rSecondSegment) const;
 
 
     HGF2DPosition           CalculateClosestPoint(const HGF2DPosition& pi_rPoint) const;
 
-    bool                    IsPointOnLineOnSegment(const HGF2DPosition& pi_rTestPoint) const;
+    IMAGEPPTEST_EXPORT bool                    IsPointOnLineOnSegment(const HGF2DPosition& pi_rTestPoint) const;
 
     double                  CalculateLength() const;
 

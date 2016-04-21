@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVE2DPolygon.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HVE2DPolygon
@@ -77,11 +77,11 @@ public:
         @see HVE2DComplexLinear
         -----------------------------------------------------------------------------
     */
-    HVE2DPolygon();
-    HVE2DPolygon(const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys);
-    HVE2DPolygon(const HVE2DComplexLinear& pi_rComplex);
-    HVE2DPolygon(const HVE2DRectangle& pi_rRectangle);
-    HVE2DPolygon(const HVE2DPolygon&   pi_rObject);
+    IMAGEPPTEST_EXPORT HVE2DPolygon();
+    IMAGEPPTEST_EXPORT HVE2DPolygon(const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys);
+    IMAGEPPTEST_EXPORT HVE2DPolygon(const HVE2DComplexLinear& pi_rComplex);
+    IMAGEPPTEST_EXPORT HVE2DPolygon(const HVE2DRectangle& pi_rRectangle);
+    IMAGEPPTEST_EXPORT HVE2DPolygon(const HVE2DPolygon&   pi_rObject);
     virtual            ~HVE2DPolygon();
 
     HVE2DPolygon&      operator=(const HVE2DPolygon& pi_rObj);

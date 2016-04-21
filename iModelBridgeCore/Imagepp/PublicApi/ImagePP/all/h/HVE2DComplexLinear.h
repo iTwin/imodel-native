@@ -54,12 +54,12 @@ public:
                        GetLinearList() const;
 
     // Complex linear building
-    virtual void       InsertLinear(const HVE2DLinear& pi_rLinear);
-    virtual void       AppendLinear(const HVE2DLinear& pi_rLinear);
-    virtual void       InsertComplexLinear(const HVE2DComplexLinear& pi_rComplexLinear);
-    virtual void       AppendComplexLinear(const HVE2DComplexLinear& pi_rComplexLinear);
-    virtual void       InsertLinearPtrSCS(HVE2DLinear* pi_pLinear);
-    virtual void       AppendLinearPtrSCS(HVE2DLinear* pi_pLinear);
+    IMAGEPPTEST_EXPORT virtual void       InsertLinear(const HVE2DLinear& pi_rLinear);
+    IMAGEPPTEST_EXPORT virtual void       AppendLinear(const HVE2DLinear& pi_rLinear);
+    IMAGEPPTEST_EXPORT virtual void       InsertComplexLinear(const HVE2DComplexLinear& pi_rComplexLinear);
+    IMAGEPPTEST_EXPORT virtual void       AppendComplexLinear(const HVE2DComplexLinear& pi_rComplexLinear);
+    IMAGEPPTEST_EXPORT virtual void       InsertLinearPtrSCS(HVE2DLinear* pi_pLinear);
+    IMAGEPPTEST_EXPORT virtual void       AppendLinearPtrSCS(HVE2DLinear* pi_pLinear);
 
 
     // Component extraction
@@ -68,9 +68,9 @@ public:
 
     // Miscalenious
     IMAGEPP_EXPORT void        MakeEmpty();
-    void               SplitAtAllIntersectionPoints(const HVE2DVector& pi_rVector);
-    void               SplitAtAllOnPoints(const HGF2DLocationCollection& pi_rPoints);
-    void               SplitAtAllOnPointsSCS(const HGF2DLocationCollection& pi_rPoints);
+    IMAGEPPTEST_EXPORT void               SplitAtAllIntersectionPoints(const HVE2DVector& pi_rVector);
+    IMAGEPPTEST_EXPORT void               SplitAtAllOnPoints(const HGF2DLocationCollection& pi_rPoints);
+    IMAGEPPTEST_EXPORT void               SplitAtAllOnPointsSCS(const HGF2DLocationCollection& pi_rPoints);
 
     // From HVE2DLinear
     virtual bool       IsABasicLinear() const;

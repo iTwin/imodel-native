@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DRectangle.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGF2DRectangle
@@ -98,9 +98,9 @@ public:
     double                              GetXMax() const;
     double                              GetYMax() const;
 
-    void                                SetRectangle(const HGF2DPosition& pi_rFirstPoint,
+    IMAGEPPTEST_EXPORT void                                SetRectangle(const HGF2DPosition& pi_rFirstPoint,
                                                      const HGF2DPosition& pi_rSecondPoint);
-    void                                SetRectangle(double pi_XMin,
+    IMAGEPPTEST_EXPORT void                                SetRectangle(double pi_XMin,
                                                      double pi_YMin,
                                                      double pi_XMax,
                                                      double pi_YMax);
@@ -110,7 +110,7 @@ public:
                                                      double* po_pYMin,
                                                      double* po_pXMax,
                                                      double* po_pYMax) const;
-    bool                                Overlaps(const HGF2DShape& pi_rShape) const;
+    IMAGEPPTEST_EXPORT bool                                Overlaps(const HGF2DShape& pi_rShape) const;
 
     // Misc
     IMAGEPP_EXPORT virtual void          Scale(double              pi_ScaleFactorX,

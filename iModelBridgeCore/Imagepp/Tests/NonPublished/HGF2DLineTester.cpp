@@ -6,7 +6,6 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#ifdef TEST_DLL_NOT_NOT
 #include "../imagepptestpch.h"
 #include "HGF2DLineTester.h"
 
@@ -301,4 +300,3 @@ TEST_F (HGF2DLineTester, CoordSysTest)
 
     }
 
-#endif

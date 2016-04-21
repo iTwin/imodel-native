@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DLine.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGF2DLine
@@ -72,42 +72,42 @@ public:
         };
 
     // Primary methods
-    HGF2DLine (const HGF2DLocation& pi_rFirstPoint,
+    IMAGEPPTEST_EXPORT HGF2DLine (const HGF2DLocation& pi_rFirstPoint,
                const HGF2DLocation& pi_rSecondPoint);
-    HGF2DLine (const HGF2DLocation& pi_rRefPoint,
+    IMAGEPPTEST_EXPORT HGF2DLine (const HGF2DLocation& pi_rRefPoint,
                const HGFBearing&    pi_rBearing);
-    HGF2DLine (const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys,
+    IMAGEPPTEST_EXPORT HGF2DLine (const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys,
                double                       pi_Slope,
                double                       pi_rIntercept);
-    HGF2DLine (const HGF2DLine&    pi_rObject);
+    IMAGEPPTEST_EXPORT HGF2DLine (const HGF2DLine&    pi_rObject);
     virtual         ~HGF2DLine();
 
     HGF2DLine&      operator=(const HGF2DLine& pi_rObj);
 
     // Compare operators
-    bool           operator== (const HGF2DLine& pi_rObject) const;
-    bool           operator!= (const HGF2DLine& pi_rObject) const;
+    IMAGEPPTEST_EXPORT bool           operator== (const HGF2DLine& pi_rObject) const;
+    IMAGEPPTEST_EXPORT bool           operator!= (const HGF2DLine& pi_rObject) const;
 
     // Compare operators
-    bool           IsEqualTo(const HGF2DLine& pi_rObject) const;
-    bool           IsEqualTo(const HGF2DLine& pi_rObject, double pi_Epsilon) const;
-    bool           IsEqualToAutoEpsilon(const HGF2DLine& pi_rObject) const;
+    IMAGEPPTEST_EXPORT bool           IsEqualTo(const HGF2DLine& pi_rObject) const;
+    IMAGEPPTEST_EXPORT bool           IsEqualTo(const HGF2DLine& pi_rObject, double pi_Epsilon) const;
+    IMAGEPPTEST_EXPORT bool           IsEqualToAutoEpsilon(const HGF2DLine& pi_rObject) const;
 
 
     // Operations on lines
-    HGFBearing      CalculateBearing() const;
-    HGF2DLocation   CalculateClosestPoint(const HGF2DLocation& pi_rPoint) const;
-    double          CalculateShortestDistance(const HGF2DLocation& pi_rPoint) const;
-    HGF2DLine::CrossState    IntersectLine(const HGF2DLine& pi_rLine,HGF2DLocation* po_pPoint)const;
-    double         GetIntercept() const;
-    double         GetSlope () const;
-    bool           IsParallelTo(const HGF2DLine& pi_rLine) const;
-    bool           IsVertical() const;
+    IMAGEPPTEST_EXPORT HGFBearing      CalculateBearing() const;
+    IMAGEPPTEST_EXPORT HGF2DLocation   CalculateClosestPoint(const HGF2DLocation& pi_rPoint) const;
+    IMAGEPPTEST_EXPORT double          CalculateShortestDistance(const HGF2DLocation& pi_rPoint) const;
+    IMAGEPPTEST_EXPORT HGF2DLine::CrossState    IntersectLine(const HGF2DLine& pi_rLine,HGF2DLocation* po_pPoint)const;
+    IMAGEPPTEST_EXPORT double         GetIntercept() const;
+    IMAGEPPTEST_EXPORT double         GetSlope () const;
+    IMAGEPPTEST_EXPORT bool           IsParallelTo(const HGF2DLine& pi_rLine) const;
+    IMAGEPPTEST_EXPORT bool           IsVertical() const;
 
     // Coordinate system management
-    void            ChangeCoordSys(const HFCPtr<HGF2DCoordSys>&    pi_rpCoordSys);
-    const HFCPtr<HGF2DCoordSys>&     GetCoordSys() const;
-    void            SetCoordSys(const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys);
+    IMAGEPPTEST_EXPORT void            ChangeCoordSys(const HFCPtr<HGF2DCoordSys>&    pi_rpCoordSys);
+    IMAGEPPTEST_EXPORT const HFCPtr<HGF2DCoordSys>&     GetCoordSys() const;
+    IMAGEPPTEST_EXPORT void            SetCoordSys(const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys);
 
 
 protected:

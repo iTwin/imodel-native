@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DExtent.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGF2DExtent
@@ -73,23 +73,23 @@ public:
 
     // Primary methods
     IMAGEPP_EXPORT                    HGF2DExtent();
-    IMAGEPP_EXPORT                     HGF2DExtent(const HFCPtr<HGF2DCoordSys>&  pi_rpCoordSys);
-    IMAGEPP_EXPORT                     HGF2DExtent(const HGF2DLocation&          pi_rOrigin,
-                                           const HGF2DLocation&          pi_rCorner);
-    IMAGEPP_EXPORT                     HGF2DExtent(double pi_XMin,
-                                           double pi_YMin,
-                                           double pi_XMax,
-                                           double pi_YMax,
-                                           const HFCPtr<HGF2DCoordSys>&  pi_rpCoordSys);
-    HGF2DExtent(string&                      pi_rSerializationString,
-                const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys);
+    IMAGEPP_EXPORT                    HGF2DExtent(const HFCPtr<HGF2DCoordSys>&  pi_rpCoordSys);
+    IMAGEPP_EXPORT                    HGF2DExtent(const HGF2DLocation&          pi_rOrigin,
+                                                  const HGF2DLocation&          pi_rCorner);
+    IMAGEPP_EXPORT                    HGF2DExtent(double pi_XMin,
+                                                  double pi_YMin,
+                                                  double pi_XMax,
+                                                  double pi_YMax,
+                                                  const HFCPtr<HGF2DCoordSys>&  pi_rpCoordSys);
+    IMAGEPPTEST_EXPORT                HGF2DExtent(string&                      pi_rSerializationString,
+                                                  const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys);
     IMAGEPP_EXPORT                     HGF2DExtent(const HGF2DExtent& pi_rObj);
     IMAGEPP_EXPORT  virtual            ~HGF2DExtent();
     IMAGEPP_EXPORT  HGF2DExtent&       operator=(const HGF2DExtent& pi_rObj);
 
     // Compare methods
     IMAGEPP_EXPORT  bool               operator==(const HGF2DExtent& pi_rObj) const;
-    bool                       operator!=(const HGF2DExtent& pi_rObj) const;
+    bool                               operator!=(const HGF2DExtent& pi_rObj) const;
 
     // Compare methods with epsilon
     IMAGEPP_EXPORT bool              IsEqualTo(const HGF2DExtent& pi_rObj) const;
@@ -112,10 +112,10 @@ public:
     IMAGEPP_EXPORT  void       SetXMax(double    pi_XMax);
     IMAGEPP_EXPORT  void       SetYMax(double    pi_YMax);
 
-    HGF2DLocation      GetOrigin() const;
-    HGF2DLocation      GetCorner() const;
-    void               SetOrigin(const HGF2DLocation& pi_rNewOrigin);
-    void               SetCorner(const HGF2DLocation& pi_rNewCorner);
+    IMAGEPPTEST_EXPORT HGF2DLocation      GetOrigin() const;
+    IMAGEPPTEST_EXPORT HGF2DLocation      GetCorner() const;
+    IMAGEPPTEST_EXPORT void               SetOrigin(const HGF2DLocation& pi_rNewOrigin);
+    IMAGEPPTEST_EXPORT void               SetCorner(const HGF2DLocation& pi_rNewCorner);
 
     HGF2DLocation      GetLowerLeft() const;
     HGF2DLocation      GetLowerRight() const;
@@ -134,42 +134,42 @@ public:
 
 
     void               Move(const HGF2DDisplacement& pi_rOffset);
-    HGF2DExtent        operator+(const HGF2DDisplacement& pi_rOffset) const;
-    HGF2DExtent        operator-(const HGF2DDisplacement& pi_rOffset) const;
-    HGF2DExtent&       operator+=(const HGF2DDisplacement& pi_rOffset);
-    HGF2DExtent&       operator-=(const HGF2DDisplacement& pi_rOffset);
+    IMAGEPPTEST_EXPORT HGF2DExtent        operator+(const HGF2DDisplacement& pi_rOffset) const;
+    IMAGEPPTEST_EXPORT HGF2DExtent        operator-(const HGF2DDisplacement& pi_rOffset) const;
+    IMAGEPPTEST_EXPORT HGF2DExtent&       operator+=(const HGF2DDisplacement& pi_rOffset);
+    IMAGEPPTEST_EXPORT HGF2DExtent&       operator-=(const HGF2DDisplacement& pi_rOffset);
 
 
-    IMAGEPP_EXPORT  void               Add (const HGF2DLocation& pi_rLocation);
-    IMAGEPP_EXPORT  void               Add (const HGF2DExtent& pi_rExtent);
+    IMAGEPP_EXPORT  void        Add (const HGF2DLocation& pi_rLocation);
+    IMAGEPP_EXPORT  void        Add (const HGF2DExtent& pi_rExtent);
 
     // Union ...
-    void                      Union (const HGF2DExtent& pi_rObj);
-    IMAGEPP_EXPORT  void       Intersect (const HGF2DExtent& pi_rObj);
-    void                      Differentiate (const HGF2DExtent& pi_rObj);
-    IMAGEPP_EXPORT  bool       DoTheyOverlap (const HGF2DExtent& pi_rObj) const;
+    IMAGEPP_EXPORT void        Union (const HGF2DExtent& pi_rObj);
+    IMAGEPP_EXPORT void        Intersect (const HGF2DExtent& pi_rObj);
+    IMAGEPP_EXPORT void        Differentiate (const HGF2DExtent& pi_rObj);
+    IMAGEPP_EXPORT bool        DoTheyOverlap (const HGF2DExtent& pi_rObj) const;
 
-    IMAGEPP_EXPORT  bool       OutterOverlaps(const HGF2DExtent& pi_rObj) const;
-    bool                      OutterOverlaps(const HGF2DExtent& pi_rObj,
+    IMAGEPP_EXPORT bool        OutterOverlaps(const HGF2DExtent& pi_rObj) const;
+    IMAGEPP_EXPORT bool        OutterOverlaps(const HGF2DExtent& pi_rObj,
                                              double pi_Epsilon) const;
 
-    bool                      InnerOverlaps(const HGF2DExtent& pi_rObj) const;
-    bool                      InnerOverlaps(const HGF2DExtent& pi_rObj,
+    IMAGEPP_EXPORT bool        InnerOverlaps(const HGF2DExtent& pi_rObj) const;
+    IMAGEPP_EXPORT bool        InnerOverlaps(const HGF2DExtent& pi_rObj,
+                                             double pi_Epsilon) const;
+
+    IMAGEPP_EXPORT bool        Contains(const HGF2DExtent& pi_rObj) const;
+
+    IMAGEPP_EXPORT bool        InnerContains(const HGF2DExtent& pi_rObj) const;
+    IMAGEPP_EXPORT bool        InnerContains(const HGF2DExtent& pi_rObj,
                                             double pi_Epsilon) const;
 
-    bool                      Contains(const HGF2DExtent& pi_rObj) const;
-
-    IMAGEPP_EXPORT  bool       InnerContains(const HGF2DExtent& pi_rObj) const;
-    bool                      InnerContains(const HGF2DExtent& pi_rObj,
-                                            double pi_Epsilon) const;
-
-    IMAGEPP_EXPORT  bool       OuterContains(const HGF2DExtent& pi_rObj) const;
-    bool                      OuterContains(const HGF2DExtent& pi_rObj,
-                                            double pi_Epsilon) const;
+    IMAGEPP_EXPORT bool        OuterContains(const HGF2DExtent& pi_rObj) const;
+    IMAGEPP_EXPORT bool        OuterContains(const HGF2DExtent& pi_rObj,
+                                             double pi_Epsilon) const;
 
     IMAGEPP_EXPORT HGF2DExtent CalculateApproxExtentIn(const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys);
 
-    string                    Serialize();
+    IMAGEPP_EXPORT string                    Serialize();
 
     static uint32_t           GetSerializationStrSize();
 

@@ -6,7 +6,6 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#ifdef TEST_DLL_NOT_NOT
 #include "../imagepptestpch.h"
 #include "EnvironnementTest.h"
 #include "HVE2DHoledShapeTester.h"
@@ -1495,4 +1494,3 @@ TEST_F (HVE2DHoledShapeTester, ModifyShapeTest5)
     ASSERT_DOUBLE_EQ(90000.0, NewShape->CalculateArea());
 
     }
-#endif

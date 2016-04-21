@@ -133,15 +133,15 @@ public:
 
     // Miscalenous
     HGF2DLine          CalculateLine() const;
-    CrossState         IntersectLine(const HGF2DLine& pi_rLine,
+    IMAGEPPTEST_EXPORT CrossState         IntersectLine(const HGF2DLine& pi_rLine,
                                      HGF2DLocation*   po_pPoint,
                                      double pi_Tolerance = HVE_USE_INTERNAL_EPSILON)const;
-    CrossState         IntersectSegment(const HVE2DSegment& pi_rSegment,
+    IMAGEPPTEST_EXPORT CrossState         IntersectSegment(const HVE2DSegment& pi_rSegment,
                                         HGF2DLocation* po_pPoint)const;
     IMAGEPP_EXPORT CrossState  IntersectSegmentSCS(const HVE2DSegment& pi_rSegment,
                                            HGF2DLocation* po_pPoint)const;
 
-    CrossState         IntersectSegmentExtremityIncludedSCS(const HVE2DSegment& pi_rSegment,
+    IMAGEPPTEST_EXPORT CrossState         IntersectSegmentExtremityIncludedSCS(const HVE2DSegment& pi_rSegment,
                                                             HGF2DLocation* po_pPoint,
                                                             bool* po_pIntersectsAtExtremity = NULL)const;
 
@@ -149,7 +149,7 @@ public:
     bool               IsParallelTo(const HGF2DLine& pi_rLine) const;
 
     // Geometry
-    void               Rotate(double  pi_Angle,
+    IMAGEPPTEST_EXPORT void               Rotate(double  pi_Angle,
                               const HGF2DLocation& pi_rOrigin);
 
     // From HVE2DBasicLinear

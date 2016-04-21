@@ -6,7 +6,6 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#ifdef TEST_DLL_NOT_NOT
 
 #include "../imagepptestpch.h"
 #include "EnvironnementTest.h"
@@ -1583,4 +1582,3 @@ TEST_F (HGF2DRectangleTest, FailedTestWithIntersect)
     }
 
 
-#endif

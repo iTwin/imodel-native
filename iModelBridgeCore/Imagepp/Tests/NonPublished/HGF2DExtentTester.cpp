@@ -6,7 +6,7 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#ifdef TEST_DLL_NOT_NOT
+#if (1)
 #include "../imagepptestpch.h"
 #include "HGF2DExtentTester.h"
 

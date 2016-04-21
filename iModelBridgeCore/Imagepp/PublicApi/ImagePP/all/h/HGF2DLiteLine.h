@@ -71,36 +71,36 @@ public:
         };
 
     // Primary methods
-    HGF2DLiteLine (const HGF2DPosition& pi_rFirstPoint,
+    IMAGEPPTEST_EXPORT HGF2DLiteLine (const HGF2DPosition& pi_rFirstPoint,
                    const HGF2DPosition& pi_rSecondPoint);
-    HGF2DLiteLine (const HGF2DPosition& pi_rRefPoint,
+    IMAGEPPTEST_EXPORT HGF2DLiteLine (const HGF2DPosition& pi_rRefPoint,
                    const HGFBearing&    pi_rBearing);
-    HGF2DLiteLine (double               pi_Slope,
+    IMAGEPPTEST_EXPORT HGF2DLiteLine (double               pi_Slope,
                    double               pi_rIntercept);
-    HGF2DLiteLine (const HGF2DLiteLine&    pi_rObject);
+    IMAGEPPTEST_EXPORT HGF2DLiteLine (const HGF2DLiteLine&    pi_rObject);
     virtual         ~HGF2DLiteLine();
 
     HGF2DLiteLine&      operator=(const HGF2DLiteLine& pi_rObj);
 
     // Compare operators
-    bool           operator== (const HGF2DLiteLine& pi_rObject) const;
+    IMAGEPPTEST_EXPORT bool           operator== (const HGF2DLiteLine& pi_rObject) const;
     bool           operator!= (const HGF2DLiteLine& pi_rObject) const;
 
     // Compare operators
-    bool           IsEqualTo(const HGF2DLiteLine& pi_rObject) const;
-    bool           IsEqualTo(const HGF2DLiteLine& pi_rObject, double pi_Epsilon) const;
-    bool           IsEqualToAutoEpsilon(const HGF2DLiteLine& pi_rObject) const;
+    IMAGEPPTEST_EXPORT bool           IsEqualTo(const HGF2DLiteLine& pi_rObject) const;
+    IMAGEPPTEST_EXPORT bool           IsEqualTo(const HGF2DLiteLine& pi_rObject, double pi_Epsilon) const;
+    IMAGEPPTEST_EXPORT bool           IsEqualToAutoEpsilon(const HGF2DLiteLine& pi_rObject) const;
 
 
     // Operations on lines
-    HGFBearing          CalculateBearing() const;
-    HGF2DPosition       CalculateClosestPoint(const HGF2DPosition& pi_rPoint) const;
-    double              CalculateShortestDistance(const HGF2DPosition& pi_rPoint) const;
-    HGF2DLiteLine::CrossState     IntersectLine(const HGF2DLiteLine& pi_rLine, HGF2DPosition* po_pPoint) const;
-    double              GetIntercept() const;
-    double              GetSlope () const;
-    bool                IsParallelTo(const HGF2DLiteLine& pi_rLine) const;
-    bool                IsVertical() const;
+    IMAGEPPTEST_EXPORT HGFBearing          CalculateBearing() const;
+    IMAGEPPTEST_EXPORT HGF2DPosition       CalculateClosestPoint(const HGF2DPosition& pi_rPoint) const;
+    IMAGEPPTEST_EXPORT double              CalculateShortestDistance(const HGF2DPosition& pi_rPoint) const;
+    IMAGEPPTEST_EXPORT HGF2DLiteLine::CrossState     IntersectLine(const HGF2DLiteLine& pi_rLine, HGF2DPosition* po_pPoint) const;
+    IMAGEPPTEST_EXPORT double              GetIntercept() const;
+    IMAGEPPTEST_EXPORT double              GetSlope () const;
+    IMAGEPPTEST_EXPORT bool                IsParallelTo(const HGF2DLiteLine& pi_rLine) const;
+    IMAGEPPTEST_EXPORT bool                IsVertical() const;
     void                Rotate(double pi_Angle, const HGF2DPosition& pi_rOrigin);
 
 

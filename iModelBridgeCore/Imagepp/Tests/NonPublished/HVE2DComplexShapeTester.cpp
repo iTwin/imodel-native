@@ -6,7 +6,6 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#ifdef TEST_DLL_NOT_NOT
 #include "../imagepptestpch.h"
 #include "EnvironnementTest.h"
 #include "HVE2DComplexShapeTester.h"
@@ -1484,4 +1483,3 @@ TEST_F (HVE2DComplexShapeTester, UnifyShapeSCSTest)
 
     }
 
-#endif

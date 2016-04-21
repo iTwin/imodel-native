@@ -98,43 +98,43 @@ public:
         @see HGF2DPosition
         -----------------------------------------------------------------------------
     */
-                        HGF2DSegment();
-                        HGF2DSegment(const HGF2DPosition& pi_rStartPoint,
+     IMAGEPPTEST_EXPORT                   HGF2DSegment();
+     IMAGEPPTEST_EXPORT                   HGF2DSegment(const HGF2DPosition& pi_rStartPoint,
                                      const HGF2DPosition& pi_rEndPoint);
-                        HGF2DSegment(const HGF2DPosition& pi_rStartPoint,
+     IMAGEPPTEST_EXPORT                   HGF2DSegment(const HGF2DPosition& pi_rStartPoint,
                                      const HGF2DDisplacement& pi_rDisplacement);
-                        HGF2DSegment(const HGF2DSegment&    pi_rObject);
+     IMAGEPPTEST_EXPORT                   HGF2DSegment(const HGF2DSegment&    pi_rObject);
     virtual             ~HGF2DSegment();
 
     HGF2DSegment&       operator=(const HGF2DSegment& pi_rObj);
 
     // Setting
-    void                SetStartPoint(const HGF2DPosition& pi_rNewStartPoint);
-    void                SetEndPoint(const HGF2DPosition& pi_rNewEndPoint);
-    void                SetRawStartPoint(double pi_X, double pi_Y);
-    void                SetRawEndPoint(double pi_X, double pi_Y);
+    IMAGEPPTEST_EXPORT void                SetStartPoint(const HGF2DPosition& pi_rNewStartPoint);
+    IMAGEPPTEST_EXPORT void                SetEndPoint(const HGF2DPosition& pi_rNewEndPoint);
+    IMAGEPPTEST_EXPORT void                SetRawStartPoint(double pi_X, double pi_Y);
+    IMAGEPPTEST_EXPORT void                SetRawEndPoint(double pi_X, double pi_Y);
 
 
     // Miscalenous
-    HGF2DLiteLine       CalculateLine() const;
-    CrossState          IntersectLine(const HGF2DLiteLine& pi_rLine,
+    IMAGEPPTEST_EXPORT HGF2DLiteLine       CalculateLine() const;
+    IMAGEPPTEST_EXPORT CrossState          IntersectLine(const HGF2DLiteLine& pi_rLine,
                                       HGF2DPosition*   po_pPoint,
                                       double pi_Tolerance = HGF_USE_INTERNAL_EPSILON)const;
-    CrossState          IntersectSegment(const HGF2DSegment& pi_rSegment,
+    IMAGEPPTEST_EXPORT CrossState          IntersectSegment(const HGF2DSegment& pi_rSegment,
                                          HGF2DPosition* po_pPoint)const;
     IMAGEPP_EXPORT CrossState  
                         IntersectSegmentSCS(const HGF2DSegment& pi_rSegment,
                                             HGF2DPosition* po_pPoint)const;
 
-    CrossState          IntersectSegmentExtremityIncluded(const HGF2DSegment& pi_rSegment,
+    IMAGEPPTEST_EXPORT CrossState          IntersectSegmentExtremityIncluded(const HGF2DSegment& pi_rSegment,
                                                           HGF2DPosition* po_pPoint,
                                                           bool* po_pIntersectsAtExtremity = NULL)const;
 
-    bool                IsParallelTo(const HGF2DSegment& pi_rSegment) const;
-    bool                IsParallelTo(const HGF2DLiteLine& pi_rLine) const;
+    IMAGEPPTEST_EXPORT bool                IsParallelTo(const HGF2DSegment& pi_rSegment) const;
+    IMAGEPPTEST_EXPORT bool                IsParallelTo(const HGF2DLiteLine& pi_rLine) const;
 
     // Geometry
-    void                Rotate(double pi_Angle,
+    IMAGEPPTEST_EXPORT void                Rotate(double pi_Angle,
                                const HGF2DPosition& pi_rOrigin);
 
     // From HGF2DBasicLinear
@@ -144,22 +144,22 @@ public:
     // From HGF2DLinear
     IMAGEPP_EXPORT virtual double    
                         CalculateLength() const;
-    virtual HGF2DPosition    
+    IMAGEPPTEST_EXPORT virtual HGF2DPosition    
                         CalculateRelativePoint(double pi_RelativePos) const;
-    virtual double      CalculateRelativePosition(const HGF2DPosition& pi_rPointOnLinear) const;
-    virtual double      CalculateRayArea(const HGF2DPosition& pi_rPoint) const;
-    virtual void        Shorten(double pi_StartRelativePos, double pi_EndRelativePos);
-    virtual void        Shorten(const HGF2DPosition& pi_rNewStartPoint,
+    IMAGEPPTEST_EXPORT virtual double      CalculateRelativePosition(const HGF2DPosition& pi_rPointOnLinear) const;
+    IMAGEPPTEST_EXPORT virtual double      CalculateRayArea(const HGF2DPosition& pi_rPoint) const;
+    IMAGEPPTEST_EXPORT virtual void        Shorten(double pi_StartRelativePos, double pi_EndRelativePos);
+    IMAGEPPTEST_EXPORT virtual void        Shorten(const HGF2DPosition& pi_rNewStartPoint,
                                 const HGF2DPosition& pi_rNewEndPoint);
-    virtual void        ShortenTo(const HGF2DPosition& pi_rNewEndPoint);
-    virtual void        ShortenTo(double pi_EndRelativePosition);
-    virtual void        ShortenFrom(const HGF2DPosition& pi_rNewStartPoint);
-    virtual void        ShortenFrom(double pi_StartRelativePosition);
-    virtual bool        AutoCrosses() const;
-    virtual void        AdjustStartPointTo(const HGF2DPosition& pi_rPoint);
-    virtual void        AdjustEndPointTo(const HGF2DPosition& pi_rPoint);
+    IMAGEPPTEST_EXPORT virtual void        ShortenTo(const HGF2DPosition& pi_rNewEndPoint);
+    IMAGEPPTEST_EXPORT virtual void        ShortenTo(double pi_EndRelativePosition);
+    IMAGEPPTEST_EXPORT virtual void        ShortenFrom(const HGF2DPosition& pi_rNewStartPoint);
+    IMAGEPPTEST_EXPORT virtual void        ShortenFrom(double pi_StartRelativePosition);
+    IMAGEPPTEST_EXPORT virtual bool        AutoCrosses() const;
+    IMAGEPPTEST_EXPORT virtual void        AdjustStartPointTo(const HGF2DPosition& pi_rPoint);
+    IMAGEPPTEST_EXPORT virtual void        AdjustEndPointTo(const HGF2DPosition& pi_rPoint);
 
-    virtual void        Drop(HGF2DPositionCollection* po_pPoint,
+    IMAGEPPTEST_EXPORT virtual void        Drop(HGF2DPositionCollection* po_pPoint,
                              double                   pi_Tolerance,
                              EndPointProcessing pi_EndPointProcessing = INCLUDE_END_POINT) const;
 
@@ -193,16 +193,16 @@ public:
     IMAGEPP_EXPORT virtual bool     
                         AreContiguousAt(const HGF2DVector& pi_rVector,
                                         const HGF2DPosition& pi_rPoint) const;
-    virtual HGFBearing  CalculateBearing(const HGF2DPosition& pi_rPositionPoint,
+    IMAGEPPTEST_EXPORT virtual HGFBearing  CalculateBearing(const HGF2DPosition& pi_rPositionPoint,
                                          HGF2DVector::ArbitraryDirection
                                          pi_Direction = HGF2DVector::BETA) const;
-    virtual double      CalculateAngularAcceleration(const HGF2DPosition& pi_rPositionPoint,
+    IMAGEPPTEST_EXPORT virtual double      CalculateAngularAcceleration(const HGF2DPosition& pi_rPositionPoint,
                                                      HGF2DVector::ArbitraryDirection
                                                      pi_Direction = HGF2DVector::BETA) const;
-    virtual bool        IsNull() const;
+    IMAGEPPTEST_EXPORT virtual bool        IsNull() const;
 
     // From HGF2DVector
-    virtual HGF2DLiteExtent    
+    IMAGEPPTEST_EXPORT virtual HGF2DLiteExtent    
                         GetExtent() const;
 
     IMAGEPP_EXPORT virtual bool    

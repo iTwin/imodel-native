@@ -6,7 +6,6 @@
 ////:>
 ////:>+--------------------------------------------------------------------------------------
 
-#ifdef TEST_DLL_NOT_NOT
 #include "../imagepptestpch.h"
 #include "EnvironnementTest.h"
 #include "HVE2DPolygonOfSegmentsTester.h"
@@ -9466,4 +9465,3 @@ TEST_F(HVE2DPolygonOfSegmentsTester,  IntersectShapeWhoFailed2)
         
     }
 
-#endif

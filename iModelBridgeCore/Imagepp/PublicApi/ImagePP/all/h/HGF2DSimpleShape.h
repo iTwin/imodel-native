@@ -144,7 +144,7 @@ public:
     virtual void                    Drop(HGF2DPositionCollection* po_pPoint,
                                          double                   pi_rTolerance) const;
 
-    virtual void                     GetBestOrientedExtent(HGF2DPositionCollection* po_pMinimalBoxCorners, 
+    IMAGEPPTEST_EXPORT virtual void                     GetBestOrientedExtent(HGF2DPositionCollection* po_pMinimalBoxCorners, 
                                                            HGF2DPositionCollection* po_pConvexHull) const override;
 
     // Debugging

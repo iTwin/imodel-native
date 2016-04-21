@@ -105,13 +105,13 @@ public:
                                     HGF2DPolygonOfSegments();
                                     HGF2DPolygonOfSegments(const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys);
     IMAGEPP_EXPORT                   HGF2DPolygonOfSegments(const HGF2DPolySegment& pi_rPolySegment);
-                                    HGF2DPolygonOfSegments(const HGF2DRectangle& pi_rRectangle);
+     IMAGEPPTEST_EXPORT              HGF2DPolygonOfSegments(const HGF2DRectangle& pi_rRectangle);
     IMAGEPP_EXPORT                   HGF2DPolygonOfSegments(size_t  pi_BufferLength,
                                                            double pi_aBuffer[]);
     IMAGEPP_EXPORT                   HGF2DPolygonOfSegments(const HGF2DPolygonOfSegments&   pi_rObject);
     IMAGEPP_EXPORT virtual           ~HGF2DPolygonOfSegments();
 
-    HGF2DPolygonOfSegments&         operator=(const HGF2DPolygonOfSegments& pi_rObj);
+    IMAGEPPTEST_EXPORT HGF2DPolygonOfSegments&         operator=(const HGF2DPolygonOfSegments& pi_rObj);
 
     virtual HGF2DSimpleShape::RotationDirection    
                                     CalculateRotationDirection() const;
@@ -133,7 +133,7 @@ public:
     IMAGEPP_EXPORT HGF2DRectangle*   GenerateCorrespondingRectangle() const;
     IMAGEPP_EXPORT bool              RepresentsARectangle() const;
 
-    bool                             IsConvex() const;
+    IMAGEPPTEST_EXPORT bool          IsConvex() const;
 
     // Misc
     IMAGEPP_EXPORT virtual void      Rotate(double pi_Angle,
@@ -218,10 +218,10 @@ public:
     IMAGEPP_EXPORT virtual void      PrintState(ostream& po_rOutput) const;
 
     // THIS METHOD IS PUBLIC FOR DEBUG PURPOSES ONLY ... DO NOT CALL!!!!
-    HGF2DShape*                      AllocateComplexShapeFromAutoContiguousPolySegment(const HGF2DPolySegment& pi_rPolySegment) const;
+    IMAGEPPTEST_EXPORT HGF2DShape*                      AllocateComplexShapeFromAutoContiguousPolySegment(const HGF2DPolySegment& pi_rPolySegment) const;
 
 
-    virtual HFCPtr<HGF2DShape>       AllocTransformDirect(const HGF2DTransfoModel& pi_rModel) const override;
+    IMAGEPPTEST_EXPORT virtual HFCPtr<HGF2DShape>       AllocTransformDirect(const HGF2DTransfoModel& pi_rModel) const override;
 
     
     // Helper functions

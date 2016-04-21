@@ -6,7 +6,6 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#ifdef TEST_DLL_NOT_NOT
 #include "../imagepptestpch.h"
 #include "HGF2DLiteExtentTester.h"
 
@@ -474,4 +473,3 @@ TEST_F (HGF2DLiteExtentTester, ContainsTest)
 
     }
 
-#endif

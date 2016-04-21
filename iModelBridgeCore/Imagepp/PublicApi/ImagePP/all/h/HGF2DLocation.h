@@ -126,7 +126,7 @@ public:
     IMAGEPP_EXPORT                    HGF2DLocation  (const HGF2DLocation& pi_rObj);
     IMAGEPP_EXPORT                    ~HGF2DLocation ();
 
-    HGF2DLocation&     operator=(const HGF2DLocation& pi_rObj);
+    IMAGEPPTEST_EXPORT HGF2DLocation&     operator=(const HGF2DLocation& pi_rObj);
 
     // Compare operations
     IMAGEPP_EXPORT bool       operator==(const HGF2DLocation& pi_rObj) const;
@@ -156,7 +156,7 @@ public:
     IMAGEPP_EXPORT HGF2DLocation      operator-(const HGF2DDisplacement& pi_rOffset) const;
 
     IMAGEPP_EXPORT HGF2DLocation&        operator+=(const HGF2DDisplacement& pi_rOffset);
-    HGF2DLocation&     operator-=(const HGF2DDisplacement& pi_rOffset);
+    IMAGEPP_EXPORT HGF2DLocation&     operator-=(const HGF2DDisplacement& pi_rOffset);
 
     // Coord system management
     IMAGEPP_EXPORT void               ChangeCoordSys(const HFCPtr<HGF2DCoordSys>& pi_rpSystem);

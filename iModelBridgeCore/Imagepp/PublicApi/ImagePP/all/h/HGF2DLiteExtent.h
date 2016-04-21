@@ -22,23 +22,23 @@ class HGF2DLiteExtent
 public:
 
     // Primary methods
-    HGF2DLiteExtent();
-    HGF2DLiteExtent(const HGF2DPosition&          pi_rOrigin,
+    IMAGEPPTEST_EXPORT HGF2DLiteExtent();
+    IMAGEPPTEST_EXPORT HGF2DLiteExtent(const HGF2DPosition&          pi_rOrigin,
                     const HGF2DPosition&          pi_rCorner);
-    HGF2DLiteExtent(double pi_X1,
+    IMAGEPPTEST_EXPORT HGF2DLiteExtent(double pi_X1,
                     double pi_Y1,
                     double pi_X2,
                     double pi_Y2);
-    HGF2DLiteExtent(const HGF2DLiteExtent& pi_rObj);
+    IMAGEPPTEST_EXPORT HGF2DLiteExtent(const HGF2DLiteExtent& pi_rObj);
     virtual            ~HGF2DLiteExtent();
     HGF2DLiteExtent&       operator=(const HGF2DLiteExtent& pi_rObj);
 
     // Compare methods
-    bool              operator==(const HGF2DLiteExtent& pi_rObj) const;
+    IMAGEPPTEST_EXPORT bool              operator==(const HGF2DLiteExtent& pi_rObj) const;
     bool              operator!=(const HGF2DLiteExtent& pi_rObj) const;
 
     // Compare methods with epsilon
-    bool              IsEqualTo(const HGF2DLiteExtent& pi_rObj) const;
+    IMAGEPPTEST_EXPORT bool              IsEqualTo(const HGF2DLiteExtent& pi_rObj) const;
     bool              IsEqualTo(const HGF2DLiteExtent& pi_rObj, double pi_Epsilon) const;
 
     // Information
@@ -50,24 +50,24 @@ public:
     bool              IsPointOutterIn(const HGF2DPosition& pi_rPoint, double pi_Tolerance) const;
 
     // Coordinate management
-    double            GetXMin() const;
-    double            GetYMin() const;
-    double            GetXMax() const;
-    double            GetYMax() const;
+    IMAGEPPTEST_EXPORT double            GetXMin() const;
+    IMAGEPPTEST_EXPORT double            GetYMin() const;
+    IMAGEPPTEST_EXPORT double            GetXMax() const;
+    IMAGEPPTEST_EXPORT double            GetYMax() const;
 
-    void              SetXMin(double    pi_XMin);
-    void              SetYMin(double    pi_YMin);
-    void              SetXMax(double    pi_XMax);
-    void              SetYMax(double    pi_YMax);
+    IMAGEPPTEST_EXPORT void              SetXMin(double    pi_XMin);
+    IMAGEPPTEST_EXPORT void              SetYMin(double    pi_YMin);
+    IMAGEPPTEST_EXPORT void              SetXMax(double    pi_XMax);
+    IMAGEPPTEST_EXPORT void              SetYMax(double    pi_YMax);
 
-    HGF2DPosition     GetOrigin() const;
-    HGF2DPosition     GetCorner() const;
+    IMAGEPPTEST_EXPORT HGF2DPosition     GetOrigin() const;
+    IMAGEPPTEST_EXPORT HGF2DPosition     GetCorner() const;
 
     double            GetWidth() const;
     double            GetHeight() const;
 
-    void              SetOrigin(const HGF2DPosition& pi_rNewOrigin);
-    void              SetCorner(const HGF2DPosition& pi_rNewCorner);
+    IMAGEPPTEST_EXPORT void              SetOrigin(const HGF2DPosition& pi_rNewOrigin);
+    IMAGEPPTEST_EXPORT void              SetCorner(const HGF2DPosition& pi_rNewCorner);
 
     void              Set(double pi_X1,
                           double pi_Y1,
@@ -80,26 +80,26 @@ public:
 
     // Union ...
     void              Union (const HGF2DLiteExtent& pi_rObj);
-    void              Intersect (const HGF2DLiteExtent& pi_rObj);
+    IMAGEPPTEST_EXPORT void              Intersect (const HGF2DLiteExtent& pi_rObj);
 
     // Overlap determination
-    bool              Overlaps(const HGF2DLiteExtent& pi_rObj) const;
-    bool              OutterOverlaps(const HGF2DLiteExtent& pi_rObj) const;
-    bool              OutterOverlaps(const HGF2DLiteExtent& pi_rObj,
+    IMAGEPPTEST_EXPORT bool              Overlaps(const HGF2DLiteExtent& pi_rObj) const;
+    IMAGEPPTEST_EXPORT bool              OutterOverlaps(const HGF2DLiteExtent& pi_rObj) const;
+   IMAGEPPTEST_EXPORT  bool              OutterOverlaps(const HGF2DLiteExtent& pi_rObj,
                                       double pi_Epsilon) const;
-    bool              InnerOverlaps(const HGF2DLiteExtent& pi_rObj) const;
-    bool              InnerOverlaps(const HGF2DLiteExtent& pi_rObj,
+    IMAGEPPTEST_EXPORT bool              InnerOverlaps(const HGF2DLiteExtent& pi_rObj) const;
+    IMAGEPPTEST_EXPORT bool              InnerOverlaps(const HGF2DLiteExtent& pi_rObj,
                                      double pi_Epsilon) const;
 
 
-    bool              Contains(const HGF2DLiteExtent& pi_rObj) const;
+    IMAGEPPTEST_EXPORT bool              Contains(const HGF2DLiteExtent& pi_rObj) const;
 
-    bool              InnerContains(const HGF2DLiteExtent& pi_rObj) const;
-    bool              InnerContains(const HGF2DLiteExtent& pi_rObj,
+    IMAGEPPTEST_EXPORT bool              InnerContains(const HGF2DLiteExtent& pi_rObj) const;
+    IMAGEPPTEST_EXPORT bool              InnerContains(const HGF2DLiteExtent& pi_rObj,
                                      double pi_Epsilon) const;
 
-    bool              OuterContains(const HGF2DLiteExtent& pi_rObj) const;
-    bool              OuterContains(const HGF2DLiteExtent& pi_rObj,
+    IMAGEPPTEST_EXPORT bool              OuterContains(const HGF2DLiteExtent& pi_rObj) const;
+    IMAGEPPTEST_EXPORT bool              OuterContains(const HGF2DLiteExtent& pi_rObj,
                                      double pi_Epsilon) const;
 
     // linker warning LNK4221

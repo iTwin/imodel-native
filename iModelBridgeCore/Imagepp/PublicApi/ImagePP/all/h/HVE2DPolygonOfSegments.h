@@ -103,22 +103,22 @@ public:
         @see HVE2DComplexLinear
         -----------------------------------------------------------------------------
     */
-    HVE2DPolygonOfSegments();
-    HVE2DPolygonOfSegments(const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys);
+    IMAGEPPTEST_EXPORT HVE2DPolygonOfSegments();
+    IMAGEPPTEST_EXPORT HVE2DPolygonOfSegments(const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys);
     IMAGEPP_EXPORT             HVE2DPolygonOfSegments(const HGF2DPolygonOfSegments& pi_rShape,
                                               const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys);
-    HVE2DPolygonOfSegments(const HVE2DComplexLinear& pi_rComplex);
+    IMAGEPPTEST_EXPORT HVE2DPolygonOfSegments(const HVE2DComplexLinear& pi_rComplex);
     IMAGEPP_EXPORT                    HVE2DPolygonOfSegments(const HVE2DPolySegment& pi_rPolySegment);
-    HVE2DPolygonOfSegments(const HVE2DRectangle& pi_rRectangle);
+    IMAGEPPTEST_EXPORT HVE2DPolygonOfSegments(const HVE2DRectangle& pi_rRectangle);
     IMAGEPP_EXPORT             HVE2DPolygonOfSegments(size_t  pi_BufferLength,
                                               double pi_aBuffer[],
                                               const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys);
     IMAGEPP_EXPORT                    HVE2DPolygonOfSegments(const HVE2DPolygonOfSegments&   pi_rObject);
     IMAGEPP_EXPORT virtual            ~HVE2DPolygonOfSegments();
 
-    HVE2DPolygonOfSegments&      operator=(const HVE2DPolygonOfSegments& pi_rObj);
+    IMAGEPPTEST_EXPORT HVE2DPolygonOfSegments&      operator=(const HVE2DPolygonOfSegments& pi_rObj);
 
-    virtual HVE2DSimpleShape::RotationDirection
+    IMAGEPPTEST_EXPORT virtual HVE2DSimpleShape::RotationDirection
     CalculateRotationDirection() const;
 
     // Parallel Copy
@@ -133,7 +133,7 @@ public:
     IMAGEPP_EXPORT HVE2DRectangle*    GenerateCorrespondingRectangle() const;
     IMAGEPP_EXPORT bool              RepresentsARectangle() const;
 
-    bool              IsConvex() const;
+    IMAGEPPTEST_EXPORT bool              IsConvex() const;
 
     // Misc
     IMAGEPP_EXPORT virtual void       Rotate(double               pi_Angle,
@@ -168,7 +168,7 @@ public:
     IMAGEPP_EXPORT virtual void         Drop(HGF2DLocationCollection* po_pPoint,
                                      double                   pi_Tolerance) const;
 
-    virtual HGF2DShape*         GetLightShape() const;
+    IMAGEPPTEST_EXPORT virtual HGF2DShape*         GetLightShape() const;
 
     // Special
 
@@ -218,7 +218,7 @@ public:
     IMAGEPP_EXPORT virtual void       PrintState(ostream& po_rOutput) const;
 
     // THIS METHOD IS PUBLIC FOR DEBUG PURPOSES ONLY ... DO NOT CALL!!!!
-    HVE2DShape*        AllocateComplexShapeFromAutoContiguousPolySegment(const HVE2DPolySegment& pi_rPolySegment) const;
+    IMAGEPPTEST_EXPORT HVE2DShape*        AllocateComplexShapeFromAutoContiguousPolySegment(const HVE2DPolySegment& pi_rPolySegment) const;
 
     // Helper functions
     // Although, neither input nor result is directly related to HVE2DPolygonOfSegments
