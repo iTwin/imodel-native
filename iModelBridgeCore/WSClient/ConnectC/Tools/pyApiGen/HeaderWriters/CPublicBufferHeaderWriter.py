@@ -23,7 +23,7 @@ class CPublicBufferHeaderWriter(HeaderWriter):
 
     def __write_header_comment(self):
         self._write_header_comments(True)
-        self._file.write('\n#include <WebServices\ConnectC\{0}GenPublic.h>\n'.format(self._api.get_upper_api_acronym()))
+        self._file.write('\n#include <WebServices/ConnectC/{0}GenPublic.h>\n'.format(self._api.get_upper_api_acronym()))
 
     def __write_using_directives(self):
         self._file.write('using namespace std;')
