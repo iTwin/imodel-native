@@ -159,7 +159,7 @@
             <Assemblies ProductDirectoryName="WSClientAssemblies">Delivery/$(libprefix)ConnectWebServicesClientC$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
-
+<!--
     <Part Name="ConnectWebServicesClientC-Library-Android" BentleyBuildMakeFile="CWSClientCLib.mke" OnlyPlatforms="Android*">
         <SubPart PartName="WebServicesClient" />
         <SubPart PartName="DgnClientFxLibrary-Android"    PartFile="DgnClientFx" Repository="DgnClientFx" />
@@ -168,7 +168,7 @@
             <Assemblies ProductDirectoryName="WSClientAssemblies">Delivery/$(libprefix)ConnectWebServicesClientC.so</Assemblies>
         </Bindings>
     </Part>
-	
+-->
     <!-- //////////////////////////////////////////////////////////////////////////// -->
     <!-- // L10N                                                                   // -->
     <!-- //////////////////////////////////////////////////////////////////////////// -->
