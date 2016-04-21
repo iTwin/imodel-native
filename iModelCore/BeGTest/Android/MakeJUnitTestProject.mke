@@ -194,6 +194,10 @@ DLM_OBJECT_FILES   + $[@wildcard $(unitTestsDir)/*$(oext)]
 %ifdef shared_libraries_full_path
     LINKER_LIBRARIES   = $(shared_libraries_full_path)
 %endif
+%ifdef static_libraries_full_path
+    LINKER_LIBRARIES   = $(BENTLEY_ANDROID_LINK_OpenGLLibraries)  
+%endif
+
 # Note: gcclink automatically links with $(BENTLEY_ANDROID_ANDROID_LIBSTL_STATIC)
 
 %include dlmlink.mki
