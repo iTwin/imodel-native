@@ -35,9 +35,9 @@ private :
     DMatrix4d   m_localToViewTransformation;    
     DPoint3d    m_low;
     DPoint3d    m_high;
-
 public : 
 
+    int m_currentQuery;
     bvector<BentleyG06::ScalableMesh::IScalableMeshCachedDisplayNodePtr> m_meshNodes;
     bvector<BentleyG06::ScalableMesh::IScalableMeshCachedDisplayNodePtr> m_overviewNodes;
 
@@ -141,6 +141,8 @@ struct ScalableMeshModel : IMeshSpatialModel
         //! A DgnDb can have only one terrain. 
         SCALABLEMESH_SCHEMA_EXPORT static IMeshSpatialModelP GetTerrainModelP(BentleyApi::Dgn::DgnDbCR dgnDb);
 
+        SCALABLEMESH_SCHEMA_EXPORT static void GetAllScalableMeshes(BentleyApi::Dgn::DgnDbCR dgnDb, bvector<IMeshSpatialModelP>& models);
+
         SCALABLEMESH_SCHEMA_EXPORT static WString GetTerrainModelPath(BentleyApi::Dgn::DgnDbCR dgnDb);
 
         SCALABLEMESH_SCHEMA_EXPORT IScalableMesh* GetScalableMesh();
@@ -150,6 +152,8 @@ struct ScalableMeshModel : IMeshSpatialModel
         SCALABLEMESH_SCHEMA_EXPORT void SetActiveClipSets(bset<uint64_t>& activeClips, bset<uint64_t>& previouslyActiveClips);
 
         SCALABLEMESH_SCHEMA_EXPORT void GetClipSetIds(bvector<uint64_t>& allShownIds);
+
+        SCALABLEMESH_SCHEMA_EXPORT bool IsTerrain();
 
 
     };

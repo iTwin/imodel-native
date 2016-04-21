@@ -98,6 +98,12 @@ BentleyStatus ScalableMeshModel::_StopClipMaskBulkInsert()
     {
     if (nullptr == m_smPtr.get()) return ERROR;
     m_smPtr->SetIsInsertingClips(false);
+    bvector<uint64_t> currentlyShown;
+    bset<uint64_t> ids;
+    GetClipSetIds(currentlyShown);
+    for (auto elem : currentlyShown)
+        ids.insert(elem);
+    SetActiveClipSets(ids, ids);
     return SUCCESS;
     }
 
@@ -497,7 +503,7 @@ virtual Completion _Process(ViewContextR viewContext) override
 
     if (m_currentDrawingInfoPtr->m_overviewNodes.size() > 0)
         {                    
-        int queryId = m_currentDrawingInfoPtr->GetViewNumber();
+        int queryId = m_currentDrawingInfoPtr->m_currentQuery;
 
         if (m_progressiveQueryEngine->IsQueryComplete(queryId))
             {
@@ -605,7 +611,7 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
         return;
          
     ScalableMeshDrawingInfoPtr nextDrawingInfoPtr(new ScalableMeshDrawingInfo(&context));
-
+    nextDrawingInfoPtr->m_currentQuery = (int)((GetModelId().GetValue() - GetModelId().GetBriefcaseId().GetValue()) & 0xFFFF);
     if ((m_currentDrawingInfoPtr != nullptr) &&
         (m_currentDrawingInfoPtr->GetDrawPurpose() != DrawPurpose::UpdateDynamic))
         {
@@ -621,7 +627,7 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
         }        
     BentleyStatus status;
 
-    status = m_progressiveQueryEngine->StopQuery(nextDrawingInfoPtr->GetViewNumber()); 
+    status = m_progressiveQueryEngine->StopQuery(/*nextDrawingInfoPtr->GetViewNumber()*/nextDrawingInfoPtr->m_currentQuery);
     assert(status == SUCCESS);
                                    
     m_currentDrawingInfoPtr = nextDrawingInfoPtr;
@@ -688,8 +694,8 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
     viewDependentQueryParams->SetViewClipVector(clipVectorCopy);
                           
     m_currentDrawingInfoPtr->m_overviewNodes.clear();
-    int queryId = nextDrawingInfoPtr->GetViewNumber();                 
-    
+    int queryId = (int)((GetModelId().GetValue() - GetModelId().GetBriefcaseId().GetValue()) & 0xFFFF);//nextDrawingInfoPtr->GetViewNumber();                 
+    m_currentDrawingInfoPtr->m_currentQuery = queryId;
     bvector<bool> clips;
     /*NEEDS_WORK_SM : Get clips
     m_DTMDataRef->GetVisibleClips(clips);
@@ -754,6 +760,18 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
         }
 
     }                 
+
+
+void ScalableMeshModel::GetAllScalableMeshes(BentleyApi::Dgn::DgnDbCR dgnDb, bvector<IMeshSpatialModelP>& models)
+    {
+    DgnClassId classId(dgnDb.Schemas().GetECClassId("ScalableMesh", "ScalableMeshModel"));
+    BeAssert(classId.IsValid());
+
+    for (auto& model : dgnDb.Models().GetLoadedModels())
+        {
+        if (model.second->GetClassId() == classId) models.push_back(dynamic_cast<IMeshSpatialModelP>(model.second.get()));
+        }
+    }
 
 //NEEDS_WORK_SM : Should be at application level
 void GetScalableMeshTerrainFileName(BeFileName& smtFileName, const BeFileName& dgnDbFileName)
@@ -845,9 +863,9 @@ ScalableMeshModel::ScalableMeshModel(BentleyApi::Dgn::DgnModel::CreateParams con
     m_tryOpen = false;               
     m_forceRedraw = false;
 
-    ScalableMeshTerrainModelAppData* appData = ScalableMeshTerrainModelAppData::Get(params.m_dgndb);
-    appData->m_smTerrainPhysicalModelP = this;
-    appData->m_modelSearched = true;
+   // ScalableMeshTerrainModelAppData* appData = ScalableMeshTerrainModelAppData::Get(params.m_dgndb);
+   // appData->m_smTerrainPhysicalModelP = this;
+   // appData->m_modelSearched = true;
     }
 
 //----------------------------------------------------------------------------------------
@@ -868,7 +886,15 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
     m_smPtr = IScalableMesh::GetFor(smFilename.GetWCharCP(), false, true);
 
     assert(m_smPtr != 0);
-
+    if (m_smPtr->IsTerrain())
+        {
+         ScalableMeshTerrainModelAppData* appData = ScalableMeshTerrainModelAppData::Get(m_dgndb);
+         if (appData->m_smTerrainPhysicalModelP == nullptr)
+             {
+             appData->m_smTerrainPhysicalModelP = this;
+             appData->m_modelSearched = true;
+             }
+        }
     if (m_progressiveQueryEngine == nullptr)
         {
         m_displayNodesCache = new ScalableMeshDisplayCacheManager(dgnProject);
@@ -911,7 +937,7 @@ ScalableMeshModelP ScalableMeshModel::CreateModel(BentleyApi::Dgn::DgnDbR dgnDb)
     DgnClassId classId(dgnDb.Schemas().GetECClassId("ScalableMesh","ScalableMeshModel"));
     BeAssert(classId.IsValid());
 
-    ScalableMeshModelP model = new ScalableMeshModel(DgnModel::CreateParams(dgnDb, classId, DgnModel::CreateModelCode("scalableTerrain")));
+    ScalableMeshModelP model = new ScalableMeshModel(DgnModel::CreateParams(dgnDb, classId, DgnModel::CreateModelCode("terrain")));
     
     BeFileName terrainDefaultFileName(ScalableMeshModel::GetTerrainModelPath(dgnDb));
     model->OpenFile(terrainDefaultFileName, dgnDb);
@@ -983,6 +1009,15 @@ void ScalableMeshModel::SetActiveClipSets(bset<uint64_t>& activeClips, bset<uint
     }
 
 //----------------------------------------------------------------------------------------
+// @bsimethod                                                 Elenie.Godzaridis     4/2016
+//----------------------------------------------------------------------------------------
+bool ScalableMeshModel::IsTerrain()
+    {
+    if (m_smPtr.get() == nullptr) return false;
+    return m_smPtr->IsTerrain();
+    }
+
+//----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     3/2016
 //----------------------------------------------------------------------------------------
 void ScalableMeshModel::GetClipSetIds(bvector<uint64_t>& allShownIds)
@@ -999,22 +1034,39 @@ IMeshSpatialModelP ScalableMeshModelHandler::AttachTerrainModel(DgnDbR db, Utf8S
     if (!smtFileName.GetDirectoryName().DoesPathExist())
         BeFileName::CreateNewDirectory(smtFileName.GetDirectoryName().c_str());
         */
-
-    
+    Utf8String nameToSet = modelName;
     DgnClassId classId(db.Schemas().GetECClassId("ScalableMesh", "ScalableMeshModel"));
     BeAssert(classId.IsValid());        
          
-    RefCountedPtr<ScalableMeshModel> model(new ScalableMeshModel(DgnModel::CreateParams(db, classId, DgnModel::CreateModelCode(modelName))));
+    ScalableMeshTerrainModelAppData* appData(ScalableMeshTerrainModelAppData::Get(db));
+
+    if (appData->m_smTerrainPhysicalModelP != nullptr)
+        nameToSet = Utf8String(smFilename.GetFileNameWithoutExtension().c_str());
+
+    RefCountedPtr<ScalableMeshModel> model(new ScalableMeshModel(DgnModel::CreateParams(db, classId, DgnModel::CreateModelCode(nameToSet))));
 
     model->OpenFile(smFilename, db);
 
     //After Insert model pointer is handled by DgnModels.
     model->Insert();
-                    
-    ScalableMeshTerrainModelAppData* appData(ScalableMeshTerrainModelAppData::Get(db));        
+    
+    if (model->IsTerrain())
+        {
+        ScalableMeshTerrainModelAppData* appData(ScalableMeshTerrainModelAppData::Get(db));
 
-    appData->m_smTerrainPhysicalModelP = model.get();
-    appData->m_modelSearched = true;
+        if (appData->m_smTerrainPhysicalModelP == nullptr)
+            {
+            appData->m_smTerrainPhysicalModelP = model.get();
+            appData->m_modelSearched = true;
+            }
+        }
+    else
+        {
+        nameToSet = Utf8String(smFilename.GetFileNameWithoutExtension().c_str());
+        DgnCode newModelCode(model->GetCode().GetAuthority(), nameToSet, NULL);
+        model->SetCode(newModelCode);
+        model->Update();
+        }
 
     db.SaveChanges();
         
