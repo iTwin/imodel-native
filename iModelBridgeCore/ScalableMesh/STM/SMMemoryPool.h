@@ -23,7 +23,7 @@ enum class SMPoolDataTypeDesc
     {
     Point = 0,
     TriPtIndices,    
-    UVIndices, 
+    TriUvIndices, 
     DiffSet, 
     Graph,
     Texture,
