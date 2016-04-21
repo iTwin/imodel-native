@@ -78,7 +78,6 @@ void SchemaImportContext::CacheClassMapInfo(ClassMap const& classMap, std::uniqu
     m_classMapInfoCache[&classMap] = std::move(info);
     }
 
-
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -227,13 +226,10 @@ BentleyStatus ECSchemaCompareContext::Prepare(ECDbSchemaManager const& schemaMan
             else
                 ++existingItor;
             }
-
         }
 
     m_prepared = true;
     return SUCCESS;
     }
-
-
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

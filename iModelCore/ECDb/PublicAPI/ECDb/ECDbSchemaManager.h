@@ -11,10 +11,12 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
+#if !defined (DOCUMENTATION_GENERATOR)
 struct ECDbMap;
 struct ECDbSchemaReader;
 struct ECDbSchemaWriter;
 struct SchemaImportContext;
+#endif
 
 //=======================================================================================
 //! The ECDbSchemaManager manages @ref ECN::ECSchema "ECSchemas" in the @ref ECDbFile "ECDb file". 
