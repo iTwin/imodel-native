@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/bvector_test.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -1093,3 +1093,112 @@ TEST (BVectorTests, InitializerList)
     EXPECT_TRUE(3 == numbers[3]);
     EXPECT_TRUE(5 == numbers[4]);
     }
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   04/16
+//=======================================================================================
+struct MoveOnlyType
+{
+private:
+    bool    m_valid;
+
+    MoveOnlyType(MoveOnlyType const&);
+    MoveOnlyType& operator=(MoveOnlyType const&);
+public:
+    MoveOnlyType() : m_valid(true) { }
+    MoveOnlyType(MoveOnlyType&& rhs) : m_valid(rhs.m_valid) { rhs.m_valid = false; }
+    MoveOnlyType& operator=(MoveOnlyType&& rhs) { m_valid = rhs.m_valid; rhs.m_valid = false; return *this; }
+
+    bool WasMovedFrom() const { return !m_valid; }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST (BVectorTests, MoveSemantics)
+    {
+    MoveOnlyType m1;
+    EXPECT_FALSE(m1.WasMovedFrom());
+    MoveOnlyType m2(std::move(m1));
+    EXPECT_TRUE(m1.WasMovedFrom());
+    EXPECT_FALSE(m2.WasMovedFrom());
+
+    bvector<MoveOnlyType> vec;
+    vec.push_back(MoveOnlyType());
+    vec.push_back(std::move(m2));
+
+    EXPECT_TRUE(m2.WasMovedFrom());
+    EXPECT_FALSE(vec.back().WasMovedFrom());
+    EXPECT_FALSE(vec.front().WasMovedFrom());
+
+    vec.erase(vec.begin());
+
+    vec.reserve(vec.size() * 2);
+
+    typedef std::unique_ptr<int32_t> int_ptr;
+    bvector<int_ptr> ptrs;
+    ptrs.reserve(2);
+    ptrs.push_back(int_ptr(new int32_t(1)));
+    int_ptr ptr(new int32_t(2));
+    auto p = ptr.get();
+    EXPECT_TRUE(nullptr != p);
+    ptrs.insert(ptrs.begin(), std::move(ptr));
+    EXPECT_TRUE(nullptr == ptr.get());
+    EXPECT_EQ(ptrs.front().get(), p);
+    EXPECT_TRUE(nullptr != ptrs.back().get());
+
+    ptrs.insert(ptrs.begin()+1, int_ptr(new int32_t(3)));
+    EXPECT_TRUE(nullptr != ptrs.front().get());
+    EXPECT_TRUE(nullptr != (*(ptrs.begin()+1)).get());
+    EXPECT_TRUE(nullptr != ptrs.back().get());
+    EXPECT_EQ(**ptrs.begin(), 2);
+    EXPECT_EQ(**(ptrs.begin()+1), 3);
+    EXPECT_EQ(**(ptrs.begin()+2), 1);
+    }
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   04/16
+//=======================================================================================
+struct MemberType
+{
+    int32_t m_i;
+
+    MemberType(int32_t i = 0) : m_i(i) { }
+    MemberType(int32_t w, int32_t h) : m_i(w*h) { }
+    MemberType(MemberType const* pOther) : m_i(pOther ? pOther->m_i : 0) { }
+
+    template<typename T> MemberType(T const& t) : m_i(static_cast<int32_t>(t) * -2) { }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST (BVectorTests, Emplace)
+    {
+    bvector<MemberType> vec;
+    vec.emplace_back(1);
+    vec.emplace_back(2, 3);
+    MemberType src(4);
+    MemberType const* pSrc = &src;
+    vec.emplace_back(pSrc);
+    vec.emplace(vec.begin()+1, -1, 5);
+    vec.emplace_back();
+
+    EXPECT_EQ(5, vec.size());
+    EXPECT_EQ(vec[0].m_i, 1);
+    EXPECT_EQ(vec[1].m_i, -5);
+    EXPECT_EQ(vec[2].m_i, 6);
+    EXPECT_EQ(vec[3].m_i, 4);
+    EXPECT_EQ(vec[4].m_i, 0);
+
+    vec.emplace_back(12.1);
+    int32_t x = 5;
+    int32_t& y = x;
+    vec.emplace(vec.begin(), x);
+    vec.emplace(vec.begin()+1, y);
+    EXPECT_EQ(8, vec.size());
+    EXPECT_EQ(vec[7].m_i, -24);
+    EXPECT_EQ(vec[0].m_i, x);
+    EXPECT_EQ(vec[1].m_i, x);
+    }
+
