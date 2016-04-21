@@ -12,6 +12,18 @@
         </ECCustomAttributes>
         <BaseClass>dgn:PhysicalElement</BaseClass>
         <ECProperty propertyName="TestElementProperty" typeName="string" />
+        <ECProperty propertyName="IntegerProperty1" typeName="integer" />
+        <ECProperty propertyName="IntegerProperty2" typeName="integer" />
+        <ECProperty propertyName="IntegerProperty3" typeName="integer" />
+        <ECProperty propertyName="IntegerProperty4" typeName="integer" />
+        <ECProperty propertyName="DoubleProperty1"  typeName="double" />
+        <ECProperty propertyName="DoubleProperty2"  typeName="double" />
+        <ECProperty propertyName="DoubleProperty3"  typeName="double" />
+        <ECProperty propertyName="DoubleProperty4"  typeName="double" />
+        <ECProperty propertyName="PointProperty1"   typeName="Point3d" />
+        <ECProperty propertyName="PointProperty2"   typeName="Point3d" />
+        <ECProperty propertyName="PointProperty3"   typeName="Point3d" />
+        <ECProperty propertyName="PointProperty4"   typeName="Point3d" />
     </ECClass>
 
     <ECClass typeName="TestElement2d" isDomainClass="True">
