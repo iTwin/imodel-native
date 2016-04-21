@@ -25,7 +25,7 @@
         <SubPart PartName="WebServicesClient-PublicAPI"/>
         <SubPart PartName="WebServicesCache-PublicAPI"/>
         <SubPart PartName="DgnDbServerClient-PublicAPI"/>
-		<SubPart PartName="ConnectWebServicesClientC-PublicAPI"/>
+        <!--<SubPart PartName="ConnectWebServicesClientC-PublicAPI"/>-->
         <Bindings>
             <Directory SourceName="Delivery/PublishedApi" SubPartDirectory="PublishedApi/WSClient" />
         </Bindings>
@@ -134,7 +134,7 @@
         </Bindings>
     </Part>
 
-	<!-- //////////////////////////////////////////////////////////////////////////// -->
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
     <!-- // ConnectWebServicesClientC lib                                              // -->
     <!-- //////////////////////////////////////////////////////////////////////////// -->
 
