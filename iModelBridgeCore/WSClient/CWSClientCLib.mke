@@ -1,0 +1,88 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: CWSClientCLib.mke $
+#
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+# this is only used if compiling for the WinRT target.
+ENABLE_CPP_CX_EXTENSIONS    = 1
+
+%include mdl.mki
+
+CWSClientCSourceDirectory       = $(_MakeFilePath)
+CWSClientCPublicApiDirectory    = $(_MakeFilePath)PublicAPI/WebServices/
+BuildContextLibsDirectory       = $(BuildContext)SubParts/Libs/
+
+o = $(OutputRootDir)build/WSClient/ConnectC/
+always:
+    !~@mkdir $(o)
+
+
+#--------------------------------------------------------------------------------------
+#   Building the ConnectWebServicesClientC library
+#--------------------------------------------------------------------------------------
+nameToDefine = __CWSCC_DLL_BUILD__
+%include cdefapnd.mki
+
+#--------------------------------------------------------------------------------------
+#   iOS-specific
+#--------------------------------------------------------------------------------------
+AppleCppFileTypeControl = $(AppleCppFileTypeControl_ObjCpp)
+# Ignore unknown pragmas
+LLVMCommonCompOpts + -Wno-unknown-pragmas
+
+#--------------------------------------------------------------------------------------
+#   Compile
+#--------------------------------------------------------------------------------------
+dirToSearch = $(_MakeFilePath)PublicAPI/
+%include cincapnd.mki
+
+always:
+    @echo $(cDefs)
+
+%include ConnectC/ConnectC.mki
+
+%include MultiCppCompileGo.mki
+CWSClientCObjectList = $(MultiCompileObjectList)
+
+#--------------------------------------------------------------------------------------
+#   Link the library
+#--------------------------------------------------------------------------------------
+DLM_NAME                    = ConnectWebServicesClientC
+DLM_OBJECT_FILES            = $(CWSClientCObjectList)
+DLM_OBJECT_DEST             = $(o)
+DLM_OBJECT_PCH              = $(o)CWSCCInternal$(oext) 
+DLM_DEST                    = $(o)
+DLM_NOMSBUILTINS            = 1
+DLM_EXPORT_DEST             = $(o)
+DLM_NOENTRY                 = 1
+DLM_NO_DLS                  = 1
+DLM_NO_DEF                  = 1
+DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
+DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+
+# DgnClientFx library name
+%if $(TARGET_PLATFORM)=="WinRT"
+    %include $(SrcRoot)Bentley/PublicMki/BentleyApi.mki
+    _dgnclientfxLibraryName = Bentley$(BENTLEY_API_NAME).DgnClientFx.Win8$(stlibext)
+%elif $(TARGET_PLATFORM)=="Android"
+    _dgnclientfxLibraryName = $(libprefix)DgnClientFx$(shlibext)
+%else
+    _dgnclientfxLibraryName = $(libprefix)DgnClientFx$(stlibext)
+%endif
+
+%if $(TARGET_PLATFORM)=="Android"
+    LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(_dgnclientfxLibraryName)
+    LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)WebServicesClient$(shlibext)
+    %include dlmlink.mki
+%else
+    LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(_dgnclientfxLibraryName)
+    LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeJsonCpp$(stlibext)
+    LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeSQLite$(stlibext)
+    LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeSQLiteEC$(stlibext)
+    LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)Bentley$(stlibext)
+    LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)WebServicesClient$(stlibext)
+    %include $(sharedMki)LinkLibrary.mki
+%endif
