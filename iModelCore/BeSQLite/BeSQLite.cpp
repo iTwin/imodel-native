@@ -2063,6 +2063,26 @@ static DbResult isValidDbFile(Utf8CP filename, Utf8CP& vfs)
     return BE_SQLITE_OK;
     }
 
+#ifdef TRACE_ALL_SQLITE_STATEMENTS
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+static void tracefunc(void*, char const* stmt)
+    {
+    printf("SQL>%s\n", stmt);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+static void printLog(void *pArg, int iErrCode, Utf8CP zMsg)
+    {
+    char const* sev = (iErrCode == SQLITE_NOTICE)? "trace": 
+                      (iErrCode == SQLITE_WARNING)? "warn": "error";
+    printf("SQL %s %d %s\n", sev, iErrCode, zMsg);
+    }
+#endif
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2080,6 +2100,11 @@ DbResult Db::DoOpenDb(Utf8CP dbName, OpenParams const& params)
     rc = (DbResult) sqlite3_open_v2(dbName, &sqlDb, (int) params.m_openMode, vfs);
     if (BE_SQLITE_OK != rc)
         return  rc;
+
+    #ifdef TRACE_ALL_SQLITE_STATEMENTS
+    sqlite3_config(SQLITE_CONFIG_LOG, printLog, nullptr);
+    sqlite3_trace(sqlDb, tracefunc, nullptr);
+    #endif
 
     m_dbFile = new DbFile(sqlDb, params.m_busyRetry, (BeSQLiteTxnMode) params.m_startDefaultTxn);
     m_dbFile->m_flags.m_readonly = ((int) params.m_openMode & (int) OpenMode::Readonly)==(int)OpenMode::Readonly;
