@@ -10,6 +10,15 @@
     <ClCompile Include="NonPublished\BeSQLiteDb_Test.cpp">
       <Filter>NonPublished</Filter>
     </ClCompile>
+    <ClCompile Include="NonPublished\CompressionTests.cpp">
+      <Filter>NonPublished</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\FullTextSearch_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\MultiFileCommit_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Published">
