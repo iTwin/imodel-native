@@ -1,5 +1,5 @@
-from py.Helpers.CBufferStruct import CBufferStruct
-from py.HeaderWriters.HeaderWriter import HeaderWriter
+from Helpers.CBufferStruct import CBufferStruct
+from HeaderWriters.HeaderWriter import HeaderWriter
 
 
 class CBufferHeaderWriter(HeaderWriter):

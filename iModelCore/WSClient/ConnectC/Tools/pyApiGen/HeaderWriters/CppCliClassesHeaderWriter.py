@@ -1,5 +1,5 @@
-from py.Helpers.CppCliStruct import CppCliStruct
-from py.HeaderWriters.HeaderWriter import HeaderWriter
+from Helpers.CppCliStruct import CppCliStruct
+from HeaderWriters.HeaderWriter import HeaderWriter
 
 
 class CppCliClassesHeaderWriter(HeaderWriter):

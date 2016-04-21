@@ -1,6 +1,6 @@
-from py.Helpers.CBufferStruct import CBufferStruct
-from py.SourceWriters.SourceWriter import SourceWriter
-from py.PropertyTypeError import PropertyTypeError
+from Helpers.CBufferStruct import CBufferStruct
+from SourceWriters.SourceWriter import SourceWriter
+from PropertyTypeError import PropertyTypeError
 
 
 class CBufferSourceWriter(SourceWriter):
