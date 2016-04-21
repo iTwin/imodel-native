@@ -18,9 +18,10 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //+===============+===============+===============+===============+===============+======
 struct ECSchemaCompareContext
     {
+    typedef bvector<ECN::ECSchemaCP> ECSchemaList;
 private:
-    bvector<ECN::ECSchemaCP> m_existingSchemas;
-    bvector<ECN::ECSchemaCP> m_importingSchemas;
+    ECSchemaList m_existingSchemaList;
+    ECSchemaList m_importedSchemaList;
     ECSchemaChanges m_changes;
     bool m_prepared;
 
@@ -31,11 +32,11 @@ public:
     ~ECSchemaCompareContext() {}
 
     BentleyStatus Prepare(ECDbSchemaManager const& schemaManager, bvector<ECN::ECSchemaP> const& dependencyOrderedPrimarySchemas);
-    bvector<ECN::ECSchemaCP> const& GetImportingSchemas() const { return m_importingSchemas; }
+    ECSchemaList const& GetImportingSchemas() const { return m_importedSchemaList; }
     ECN::ECSchemaCP FindExistingSchema(Utf8CP schemaName) const;
     bool IsPrepared() const { return m_prepared; }
     ECSchemaChanges& GetChanges() { return m_changes; }
-    bool HasNoSchemasToImport() const { return m_importingSchemas.empty(); }
+    bool HasNoSchemasToImport() const { return m_importedSchemaList.empty(); }
     bool RequiresUpdate() const;
 
     BentleyStatus ReloadECSchemaIfRequired(ECDbSchemaManager const&);

@@ -509,7 +509,6 @@ TEST_F(ECDbSchemaUpgradeTests, AddNewCAOnSchema_AddNewClass)
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
         "   <ECEntityClass typeName='TestClass' modifier='None' />"
         "</ECSchema>");
 
@@ -731,6 +730,7 @@ TEST_F(ECDbSchemaUpgradeTests, MinimumSharedColumnsCount_AddProperty)
     bool asserted = false;
     AssertSchemaImport(asserted, ecdb, editedSchemaItem);
     ASSERT_FALSE(asserted);
+    ecdb.SaveChanges();
 
     //Verify number of columns after upgrade
     testItems.clear();
@@ -884,7 +884,7 @@ TEST_F(ECDbSchemaUpgradeTests, MinimumSharedColumnsCountWithJoinedTable_AddPrope
 
     //Verify number of columns after upgrade
     testItems.clear();
-    testItems.push_back(std::make_pair("ts_Parent", 4));
+    testItems.push_back(std::make_pair("ts_Parent", 3));
     testItems.push_back(std::make_pair("ts_Sub1", 8));
     AssertColumnCount(ecdb, testItems, "MinimumSharedColumnsWithJoinedTable");
     }

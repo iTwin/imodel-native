@@ -159,11 +159,17 @@ public:
 //+===============+===============+===============+===============+===============+======
 struct ECChange : RefCountedBase
     {
+    enum class Status
+        {
+        Pending,
+        Done,
+        };
+
     private:
         SystemId m_systemId;
         Utf8String m_customId;
         ChangeState m_state;
-        bool m_applied;
+        Status m_status;
         ECChange const* m_parent;
 
         virtual void _WriteToString(Utf8StringR str, int currentIndex, int indentSize) const = 0;
@@ -190,8 +196,8 @@ struct ECChange : RefCountedBase
         bool IsEmpty() const { return _IsEmpty(); }
         bool IsValid() const { return !IsEmpty(); }
         void Optimize() { _Optimize(); }
-        bool IsApplied() const { return m_applied; }
-        void SetIsApplied() { BeAssert(m_applied == false); m_applied = true; }
+        Status GetStatus() { return m_status; }
+        void SetStatus(Status status) { m_status = status; }
         void WriteToString(Utf8StringR str, int initIndex = 0, int indentSize = INDENT_SIZE) const { _WriteToString(str, initIndex, indentSize); }
     };
 
@@ -519,7 +525,7 @@ struct ECPrimitiveChange : ECChange
 
         virtual ~ECPrimitiveChange() {}
         Nullable<T> const& GetNew() const { return m_new; }
-        Nullable<T> const& GetOld() const { return m_new; }
+        Nullable<T> const& GetOld() const { return m_old; }
         Utf8String ToString(ValueId id) const { return _ToString(id); }
 
         //---------------------------------------------------------------------------------------

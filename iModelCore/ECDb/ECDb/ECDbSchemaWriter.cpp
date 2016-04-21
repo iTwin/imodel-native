@@ -26,6 +26,22 @@ BentleyStatus ECDbSchemaWriter::Fail(Utf8CP fmt, ...) const
 
     return ERROR;
     }
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    Affan.Khan        03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECDbSchemaWriter::Warn(Utf8CP fmt, ...) const
+    {
+    va_list args;
+    va_start(args, fmt);
+
+    Utf8String formattedMessage;
+    formattedMessage.VSprintf(fmt, args);
+
+    //Utf8String a;a.VSprintf
+    m_ecdb.GetECDbImplR().GetIssueReporter()
+        .Report(ECDbIssueSeverity::Warning, formattedMessage.c_str());
+
+    }
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
@@ -193,16 +209,21 @@ BentleyStatus ECDbSchemaWriter::ReplaceCAEntry(IECInstanceP customAttribute, ECC
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECDbSchemaWriter::UpdateECProperty(ECPropertyChange& propertyChange, ECPropertyCR oldProperty, ECPropertyCR newProperty)
     {
-    if (propertyChange.IsApplied())
+    if (propertyChange.GetStatus() == ECChange::Status::Done)
         return SUCCESS;
 
-    auto propertyId = ECDbSchemaManager::GetPropertyIdForECPropertyFromDuplicateECSchema(m_ecdb, newProperty);
-    if (!propertyId.IsValid())
+    ECPropertyId propertyId;
+    if (!newProperty.HasId())
         {
-        BeAssert(false && "Failed to resolve ecclass id");
-        return ERROR;
+        propertyId = ECDbSchemaManager::GetPropertyIdForECPropertyFromDuplicateECSchema(m_ecdb, newProperty);
+        if (!propertyId.IsValid())
+            {
+            BeAssert(false && "Failed to resolve ecclass id");
+            return ERROR;
+            }
         }
-
+    else
+        propertyId = newProperty.GetId();
     SqlUpdater updater("ec_Property");
     if (propertyChange.GetTypeName().IsValid())
         {
@@ -306,7 +327,7 @@ BentleyStatus ECDbSchemaWriter::UpdateECProperty(ECPropertyChange& propertyChang
 BentleyStatus ECDbSchemaWriter::UpdateECRelationshipConstraint(ECContainerId containerId, SqlUpdater& sqlUpdater, ECRelationshipConstraintChange& constraintChange, ECRelationshipConstraintCR oldConstraint, ECRelationshipConstraintCR newConstraint, bool isSource, Utf8CP relationshipName)
     {
     Utf8CP constraintType = isSource ? "Source" : "Target";
-    if (constraintChange.IsApplied())
+    if (constraintChange.GetStatus() == ECChange::Status::Done)
         return SUCCESS;
 
     if (constraintChange.GetCardinality().IsValid())
@@ -353,13 +374,13 @@ BentleyStatus ECDbSchemaWriter::TryParseId(Utf8StringR schemaName, Utf8StringR c
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECDbSchemaWriter::UpdateECCustomAttributes(ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType containerType, ECContainerId containerId, ECInstanceChanges& instanceChanges, IECCustomAttributeContainerCR oldContainer, IECCustomAttributeContainerCR newContainer)
     {
-    if (instanceChanges.Empty() || instanceChanges.IsApplied())
+    if (instanceChanges.Empty() || instanceChanges.GetStatus() == ECChange::Status::Done)
         return SUCCESS;
 
     for (size_t i = 0; i < instanceChanges.Count(); i++)
         {
         ECPropertyValueChange& change = instanceChanges.At(i);
-        if (change.IsApplied())
+        if (change.GetStatus() == ECChange::Status::Done)
             continue;
 
         Utf8String schemaName;
@@ -369,6 +390,7 @@ BentleyStatus ECDbSchemaWriter::UpdateECCustomAttributes(ECDbSchemaPersistenceHe
 
         if (change.GetState() == ChangeState::New)
             {
+           
             IECInstancePtr ca = newContainer.GetCustomAttribute(schemaName, className);
             BeAssert(ca.IsValid());
             if (ca.IsNull())
@@ -408,10 +430,10 @@ BentleyStatus ECDbSchemaWriter::UpdateECCustomAttributes(ECDbSchemaPersistenceHe
                 return ERROR;
             }
 
-        change.SetIsApplied();
+        change.SetStatus(ECChange::Status::Done);
         }
 
-    instanceChanges.SetIsApplied();
+    instanceChanges.SetStatus(ECChange::Status::Done);
     return SUCCESS;
     }
 
@@ -420,17 +442,21 @@ BentleyStatus ECDbSchemaWriter::UpdateECCustomAttributes(ECDbSchemaPersistenceHe
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECDbSchemaWriter::UpdateECClass(ECClassChange& classChange, ECClassCR oldClass, ECClassCR newClass)
     {
-    if (classChange.IsApplied())
+    if (classChange.GetStatus() == ECChange::Status::Done)
         return SUCCESS;
 
-    auto classId = ECDbSchemaManager::GetClassIdForECClassFromDuplicateECSchema(m_ecdb, newClass);
-    if (!classId.IsValid())
+    ECClassId classId;
+    if (!newClass.HasId())
         {
-        BeAssert(false && "Failed to resolve ecclass id");
-        return ERROR;
+        classId = ECDbSchemaManager::GetClassIdForECClassFromDuplicateECSchema(m_ecdb, newClass);
+        if (!classId.IsValid())
+            {
+            BeAssert(false && "Failed to resolve ecclass id");
+            return ERROR;
+            }
         }
-
-
+    else
+        classId = newClass.GetId();
     SqlUpdater updater("ec_Class");
 
     if (classChange.GetClassModifier().IsValid())
@@ -575,21 +601,204 @@ BentleyStatus ECDbSchemaWriter::UpdateECClass(ECClassChange& classChange, ECClas
 
     return UpdateECCustomAttributes(ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Class, classId, classChange.CustomAttributes(), oldClass, newClass);
     }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECDbSchemaWriter::UpdateECSchemaReferences(ReferenceChanges& referenceChanges, ECSchemaCR oldSchema, ECSchemaCR newSchema)
+    {
+    if (!referenceChanges.IsValid())
+        return SUCCESS;
+
+    for (size_t i = 0; i < referenceChanges.Count(); i++)
+        {
+        auto& change = referenceChanges.At(i);
+        if (change.GetState() == ChangeState::Deleted)
+            {
+            SchemaKey oldRef;
+            if (SchemaKey::ParseSchemaFullName(oldRef, change.GetOld().Value().c_str()) != ECObjectsStatus::Success)
+                return Fail("ECSCHEMA-UPGRADE: Failed to parse old reference schema fullname from difference. Failed on ECSchema %s.",
+                            oldSchema.GetFullSchemaName().c_str());
+
+
+            ECSchemaId referenceSchemaId = ECDbSchemaPersistenceHelper::GetECSchemaId(m_ecdb, oldRef.GetName().c_str());
+            Statement stmt;
+            if (stmt.Prepare(m_ecdb, "DELETE FROM ec_SchemaReference WHERE SchemaId = ? AND ReferencedSchemaId = ?") != BE_SQLITE_OK)
+                return ERROR;
+
+            stmt.BindId(1, oldSchema.GetId());
+            stmt.BindId(2, referenceSchemaId);
+
+            if (stmt.Step() != BE_SQLITE_DONE)
+                return Fail("ECSCHEMA-UPGRADE: Failed to remove schema reference %s. Failed on ECSchema %s.",
+                            oldRef.GetFullSchemaName().c_str(), oldSchema.GetFullSchemaName().c_str());
+            }
+        else if (change.GetState() == ChangeState::New)
+            {
+            SchemaKey newRef, existingRef;
+            if (SchemaKey::ParseSchemaFullName(newRef, change.GetNew().Value().c_str()) != ECObjectsStatus::Success)
+                return Fail("ECSCHEMA-UPGRADE: Failed to parse new reference schema fullname from difference. Failed on ECSchema %s.",
+                            oldSchema.GetFullSchemaName().c_str());
+
+            //Ensure schema exist
+            if (!ECDbSchemaPersistenceHelper::TryGetECSchemaKey(existingRef, m_ecdb, newRef.GetName().c_str()))
+                {
+                return Fail("ECSCHEMA-UPGRADE: Failed to find schema reference in ECDb with name %s. Failed on ECSchema %s.",
+                            newRef.GetFullSchemaName().c_str(), oldSchema.GetFullSchemaName().c_str());
+                }
+
+            //Schema must exist with that or greater version
+            if (!existingRef.Matches(newRef, SchemaMatchType::LatestCompatible))
+                {
+                return Fail("ECSCHEMA-UPGRADE: Could not find compitable reference schema for %s. Failed on ECSchema %s.",
+                            newRef.GetFullSchemaName().c_str(), oldSchema.GetFullSchemaName().c_str());
+                }
+
+            ECSchemaId referenceSchemaId = ECDbSchemaPersistenceHelper::GetECSchemaId(m_ecdb, newRef.GetName().c_str());
+            Statement stmt;
+            if (stmt.Prepare(m_ecdb, "INSERT INTO ec_SchemaReference (SchemaId, ReferencedSchemaId) VALUES (?, ?)") != BE_SQLITE_OK)
+                return ERROR;
+
+            stmt.BindId(1, oldSchema.GetId());
+            stmt.BindId(2, referenceSchemaId);
+
+            if (stmt.Step() != BE_SQLITE_DONE)
+                return Fail("ECSCHEMA-UPGRADE: Failed to add new schema reference %s. Failed on ECSchema %s.",
+                            newRef.GetFullSchemaName().c_str(), oldSchema.GetFullSchemaName().c_str());
+            }
+        else if (change.GetState() == ChangeState::Modified)
+            {
+            SchemaKey oldRef, newRef, existingRef;
+            if (SchemaKey::ParseSchemaFullName(oldRef, change.GetOld().Value().c_str()) != ECObjectsStatus::Success)
+                return Fail("ECSCHEMA-UPGRADE: Failed to parse old reference schema fullname from difference. Failed on ECSchema %s.",
+                            oldSchema.GetFullSchemaName().c_str());
+
+            if (SchemaKey::ParseSchemaFullName(newRef, change.GetNew().Value().c_str()) != ECObjectsStatus::Success)
+                return Fail("ECSCHEMA-UPGRADE: Failed to parse new reference schema fullname from difference. Failed on ECSchema %s.",
+                            oldSchema.GetFullSchemaName().c_str());
+
+            //Ensure schema exist and also get updated version number.
+            if (!ECDbSchemaPersistenceHelper::TryGetECSchemaKey(existingRef, m_ecdb, oldRef.GetName().c_str()))
+                {
+                return Fail("ECSCHEMA-UPGRADE: Failed to find schema reference in ECDb with name %s. Failed on ECSchema %s.",
+                            oldRef.GetFullSchemaName().c_str(), oldSchema.GetFullSchemaName().c_str());
+                }
+
+            //Schema must exist with that or greater version
+            if (!existingRef.Matches(newRef, SchemaMatchType::LatestCompatible))
+                {
+                return Fail("ECSCHEMA-UPGRADE: Could not find compitable reference schema for %s. Failed on ECSchema %s.",
+                            newRef.GetFullSchemaName().c_str(), oldSchema.GetFullSchemaName().c_str());
+                }
+            }
+
+        change.SetStatus(ECChange::Status::Done);
+        }
+
+    return SUCCESS;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECDbSchemaWriter::UpdateECClasses(ECClassChanges& classChanges, ECSchemaCR oldSchema, ECSchemaCR newSchema)
+    {
+    if (!classChanges.IsValid())
+        return SUCCESS;
+
+    for (size_t i = 0; i < classChanges.Count(); i++)
+        {
+        auto& change = classChanges.At(i);
+        if (change.GetState() == ChangeState::Deleted)
+            {
+            return Fail("ECSCHEMA-UPGRADE: Deleting ECClass is not supported. Failed on ECSchema %s.",
+                        oldSchema.GetFullSchemaName().c_str());
+            }
+        else if (change.GetState() == ChangeState::New)
+            {
+            ECClassCP newClass = newSchema.GetClassCP(change.GetName().GetNew().Value().c_str());
+            if (newClass == nullptr)
+                {
+                BeAssert(false && "Failed to find the class");
+                return ERROR;
+                }
+
+            if (ImportECClass(*newClass) == ERROR)
+                return ERROR;
+            }
+        else if (change.GetState() == ChangeState::Modified)
+            {
+            ECClassCP oldClass = oldSchema.GetClassCP(change.GetId());
+            ECClassCP newClass = newSchema.GetClassCP(change.GetId());
+            if (oldClass == nullptr)
+                {
+                BeAssert(false && "Failed to find class");
+                return ERROR;
+                }
+            if (newClass == nullptr)
+                {
+                BeAssert(false && "Failed to find class");
+                return ERROR;
+                }
+
+            if (UpdateECClass(change, *oldClass, *newClass) != SUCCESS)
+                return ERROR;
+            }
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECDbSchemaWriter::UpdateECEnumerations(ECEnumerationChanges& enumChanges, ECSchemaCR oldSchema, ECSchemaCR newSchema)
+    {
+    if (!enumChanges.IsValid())
+        return SUCCESS;
+
+    for (size_t i = 0; i < enumChanges.Count(); i++)
+        {
+
+        auto& change = enumChanges.At(i);
+        if (change.GetState() == ChangeState::Deleted)
+            {
+            return Fail("ECSCHEMA-UPGRADE: Deleting enumeration is not supported. Failed on ECSchema %s.",
+                        oldSchema.GetFullSchemaName().c_str());
+            }
+        else if (change.GetState() == ChangeState::New)
+            {
+            return Fail("ECSCHEMA-UPGRADE: Adding new enumeration is not supported. Failed on ECSchema %s.",
+                        oldSchema.GetFullSchemaName().c_str());
+            }
+        else if (change.GetState() == ChangeState::Modified)
+            {
+            return Fail("ECSCHEMA-UPGRADE: Modifying enumeration is not supported. Failed on ECSchema %s.",
+                        oldSchema.GetFullSchemaName().c_str());
+            }
+        }
+
+    return SUCCESS;
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECDbSchemaWriter::UpdateECSchema(ECSchemaChange& schemaChange, ECSchemaCR oldSchema, ECSchemaCR newSchema)
     {
-    if (schemaChange.IsApplied())
+    if (schemaChange.GetStatus() == ECChange::Status::Done)
         return SUCCESS;
 
-    auto schemaId = ECDbSchemaManager::GetSchemaIdForECSchemaFromDuplicateECSchema(m_ecdb, newSchema);
-    if (!schemaId.IsValid())
+    ECSchemaId schemaId;
+    if (!newSchema.HasId())
         {
-        BeAssert(false && "Failed to resolve ecshema id");
-        return ERROR;
+        schemaId = ECDbSchemaManager::GetSchemaIdForECSchemaFromDuplicateECSchema(m_ecdb, newSchema);
+        if (!schemaId.IsValid())
+            {
+            BeAssert(false && "Failed to resolve ecshema id");
+            return ERROR;
+            }
         }
+    else
+        schemaId = newSchema.GetId();
 
     SqlUpdater updater("ec_Schema");
     if (schemaChange.GetName().IsValid())
@@ -613,8 +822,6 @@ BentleyStatus ECDbSchemaWriter::UpdateECSchema(ECSchemaChange& schemaChange, ECS
         {
         return Fail("ECSCHEMA-UPGRADE: Any change to ECSchema::VersionMajor is not supported. Failed on ECSchema %s.",
                     oldSchema.GetFullSchemaName().c_str());
-        //VersionDigit1
-        return ERROR;
         }
 
     if (schemaChange.GetVersionWrite().IsValid())
@@ -623,8 +830,6 @@ BentleyStatus ECDbSchemaWriter::UpdateECSchema(ECSchemaChange& schemaChange, ECS
             {
             return Fail("ECSCHEMA-UPGRADE: Cannot downgrade ECSchema::VersionWrite. Failed on ECSchema %s.",
                         oldSchema.GetFullSchemaName().c_str());
-
-            return ERROR;
             }
 
         updater.Set("VersionDigit2", schemaChange.GetVersionWrite().GetNew().Value());
@@ -636,8 +841,6 @@ BentleyStatus ECDbSchemaWriter::UpdateECSchema(ECSchemaChange& schemaChange, ECS
             {
             return Fail("ECSCHEMA-UPGRADE: Cannot downgrade ECSchema::VersionMinor. Failed on ECSchema %s.",
                         oldSchema.GetFullSchemaName().c_str());
-
-            return ERROR;
             }
 
         updater.Set("VersionDigit3", schemaChange.GetVersionMinor().GetNew().Value());
@@ -663,101 +866,16 @@ BentleyStatus ECDbSchemaWriter::UpdateECSchema(ECSchemaChange& schemaChange, ECS
     if (updater.Apply(m_ecdb) != SUCCESS)
         return ERROR;
 
-    schemaChange.SetIsApplied();
+    schemaChange.SetStatus(ECChange::Status::Done);
 
-    if (schemaChange.References().IsValid())
-        {
-        for (size_t i = 0; i < schemaChange.References().Count(); i++)
-            {
-            auto& change = schemaChange.References().At(i);
-            if (change.GetState() == ChangeState::Deleted)
-                {
-                return Fail("ECSCHEMA-UPGRADE: Deleting references is not supported. Failed on ECSchema %s.",
-                            oldSchema.GetFullSchemaName().c_str());
-                }
-            else if (change.GetState() == ChangeState::New)
-                {
-                //Ensure schema exist
-                //INSERT INTO ec_SchemaReference (SchemaId, ReferencedSchemaId) VALUES (?, ?) 
-                return Fail("ECSCHEMA-UPGRADE: Adding new references is not supported. Failed on ECSchema %s.",
-                            oldSchema.GetFullSchemaName().c_str());
-                }
-            else if (change.GetState() == ChangeState::Modified)
-                {
-                return Fail("ECSCHEMA-UPGRADE: Modifing references is not supported. Failed on ECSchema %s.",
-                            oldSchema.GetFullSchemaName().c_str());
-                }
-            }
-        }
+    if (UpdateECSchemaReferences(schemaChange.References(), oldSchema, newSchema) == ERROR)
+        return ERROR;
 
-    if (schemaChange.Classes().IsValid())
-        {
-        for (size_t i = 0; i < schemaChange.Classes().Count(); i++)
-            {
-            auto& change = schemaChange.Classes().At(i);
-            if (change.GetState() == ChangeState::Deleted)
-                {
-                return Fail("ECSCHEMA-UPGRADE: Deleting ECClass is not supported. Failed on ECSchema %s.",
-                            oldSchema.GetFullSchemaName().c_str());
-                }
-            else if (change.GetState() == ChangeState::New)
-                {
-                ECClassCP newClass = newSchema.GetClassCP(change.GetName().GetNew().Value().c_str());
-                if (newClass == nullptr)
-                    {
-                    BeAssert(false && "Failed to find the class");
-                    return ERROR;
-                    }
+    if (UpdateECEnumerations(schemaChange.Enumerations(), oldSchema, newSchema) == ERROR)
+        return ERROR;
 
-                if (ImportECClass(*newClass) == ERROR)
-                    return ERROR;
-                }
-            else if (change.GetState() == ChangeState::Modified)
-                {
-                ECClassCP oldClass = oldSchema.GetClassCP(change.GetId());
-                ECClassCP newClass = newSchema.GetClassCP(change.GetId());
-                if (oldClass == nullptr)
-                    {
-                    BeAssert(false && "Failed to find class");
-                    return ERROR;
-                    }
-                if (newClass == nullptr)
-                    {
-                    BeAssert(false && "Failed to find class");
-                    return ERROR;
-                    }
-
-                if (UpdateECClass(change, *oldClass, *newClass) != SUCCESS)
-                    return ERROR;
-                }
-            }
-
-        return SUCCESS;
-        }
-
-    if (schemaChange.Enumerations().IsValid())
-        {
-        for (size_t i = 0; i < schemaChange.Enumerations().Count(); i++)
-            {
-
-            auto& change = schemaChange.Enumerations().At(i);
-            if (change.GetState() == ChangeState::Deleted)
-                {
-                return Fail("ECSCHEMA-UPGRADE: Deleting enumeration is not supported. Failed on ECSchema %s.",
-                            oldSchema.GetFullSchemaName().c_str());
-                }
-            else if (change.GetState() == ChangeState::New)
-                {
-                return Fail("ECSCHEMA-UPGRADE: Adding new enumeration is not supported. Failed on ECSchema %s.",
-                            oldSchema.GetFullSchemaName().c_str());
-                }
-            else if (change.GetState() == ChangeState::Modified)
-                {
-                return Fail("ECSCHEMA-UPGRADE: Modifying enumeration is not supported. Failed on ECSchema %s.",
-                            oldSchema.GetFullSchemaName().c_str());
-                }
-            }
-        }
+    if (UpdateECClasses(schemaChange.Classes(), oldSchema, newSchema) == ERROR)
+        return ERROR;
 
     return UpdateECCustomAttributes(ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Schema, schemaId, schemaChange.CustomAttributes(), oldSchema, newSchema);
     }
@@ -773,7 +891,7 @@ BentleyStatus ECDbSchemaWriter::Import(ECSchemaCompareContext& ctx, ECN::ECSchem
         {
         if (schemaChange->GetState() == ChangeState::Modified)
             {
-            if (schemaChange->IsApplied())
+            if (schemaChange->GetStatus() == ECChange::Status::Done)
                 return SUCCESS;
 
             ECSchemaCP existingSchema = ctx.FindExistingSchema(schemaChange->GetId());
@@ -785,10 +903,10 @@ BentleyStatus ECDbSchemaWriter::Import(ECSchemaCompareContext& ctx, ECN::ECSchem
             }
         else if (schemaChange->GetState() == ChangeState::Deleted)
             {
-            if (schemaChange->IsApplied())
+            if (schemaChange->GetStatus() == ECChange::Status::Done)
                 return SUCCESS;
 
-            schemaChange->SetIsApplied();
+            schemaChange->SetStatus(ECChange::Status::Done);
             Fail("ECSCHEMA-UPGRADE: Deleting ECSchema is not supported. Failed while deleting ECSchema %s.",
                  ecSchema.GetFullSchemaName().c_str());
 
@@ -796,7 +914,7 @@ BentleyStatus ECDbSchemaWriter::Import(ECSchemaCompareContext& ctx, ECN::ECSchem
             }
         else
             {
-            if (schemaChange->IsApplied())
+            if (schemaChange->GetStatus() == ECChange::Status::Done)
                 return SUCCESS;
             }
         }

@@ -663,7 +663,7 @@ BentleyStatus SingleColumnPropertyMap::DoFindOrCreateColumnsInTable(ClassMap con
     DbColumn::Constraint::Collation collation = DbColumn::Constraint::Collation::Default;
     if (SUCCESS != DetermineColumnInfo(colName, isNullable, isUnique, collation, classMap.GetECDbMap().GetECDb()))
         return ERROR;
-
+    
     DbColumn* col = classMap.GetColumnFactory().CreateColumn(*this, colName.c_str(), colType, !isNullable, isUnique, collation);
     if (col == nullptr)
         {

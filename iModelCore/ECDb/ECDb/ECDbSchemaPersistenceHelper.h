@@ -56,10 +56,13 @@ public:
     static ECEnumerationId GetECEnumerationId(ECDbCR, Utf8CP schemaName, Utf8CP enumName);
     static ECPropertyId GetECPropertyId(ECDbCR, Utf8CP schemaName, Utf8CP className, Utf8CP propertyName);
 
+    static bool TryGetECSchemaKey(SchemaKey&, ECDbCR, Utf8CP schemaName);
+
     static BentleyStatus SerializeRelationshipKeyProperties(Utf8StringR jsonStr, bvector<Utf8String> const& keyPropNames);
     static BentleyStatus DeserializeRelationshipKeyProperties(ECRelationshipConstraintClassR, Utf8CP jsonStr);
     static BentleyStatus SerializeECEnumerationValues(Utf8StringR jsonStr, ECEnumerationCR);
     static BentleyStatus DeserializeECEnumerationValues(ECEnumerationR, Utf8CP jsonStr);
+    
     static bool ContainsECSchemaWithNamespacePrefix(ECDbCR db, Utf8CP namespacePrefix);
     };
 

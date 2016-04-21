@@ -66,7 +66,12 @@ private:
     BentleyStatus UpdateECClass(ECClassChange&, ECClassCR oldClass, ECClassCR newClass);
     BentleyStatus UpdateECProperty(ECPropertyChange&, ECPropertyCR oldProperty, ECPropertyCR newProperty);
     BentleyStatus UpdateECSchema(ECSchemaChange&, ECSchemaCR oldSchema, ECSchemaCR newSchema);
+    BentleyStatus UpdateECSchemaReferences(ReferenceChanges& referenceChanges, ECSchemaCR oldSchema, ECSchemaCR newSchema);
+    BentleyStatus UpdateECClasses(ECClassChanges& classChanges, ECSchemaCR oldSchema, ECSchemaCR newSchema);
+    BentleyStatus UpdateECEnumerations(ECEnumerationChanges& enumChanges, ECSchemaCR oldSchema, ECSchemaCR newSchema);
+
     BentleyStatus Fail(Utf8CP fmt, ...) const;
+    void Warn(Utf8CP fmt, ...) const;
     BentleyStatus TryParseId(Utf8StringR schemaName, Utf8StringR className, Utf8StringCR id) const;
 
 public:

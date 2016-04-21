@@ -35,7 +35,7 @@ public:
         m_navPropMaps.push_back(&propMap); 
         }
 
-    BentleyStatus Postprocess(ECDbMapCR) const;
+    BentleyStatus Postprocess(ECDbMapCR);
     };
 
 
