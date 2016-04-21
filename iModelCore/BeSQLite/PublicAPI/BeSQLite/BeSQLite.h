@@ -1857,9 +1857,6 @@ struct DbFile
     friend struct Statement;
     friend struct Savepoint;
 
-private:
-    size_t  m_briefcaseIdRlvIndex;
-
 protected:
     typedef RefCountedPtr<struct ChangeTracker> ChangeTrackerPtr;
 
