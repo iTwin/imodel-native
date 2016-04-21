@@ -1179,7 +1179,8 @@ TEST (BVectorTests, Emplace)
     vec.emplace_back(1);
     vec.emplace_back(2, 3);
     MemberType src(4);
-    vec.emplace_back(&src);
+    MemberType const* pSrc = &src;
+    vec.emplace_back(pSrc);
     vec.emplace(vec.begin()+1, -1, 5);
     vec.emplace_back();
 
@@ -1192,9 +1193,12 @@ TEST (BVectorTests, Emplace)
 
     vec.emplace_back(12.1);
     int32_t x = 5;
+    int32_t& y = x;
     vec.emplace(vec.begin(), x);
-    EXPECT_EQ(7, vec.size());
-    EXPECT_EQ(vec[6].m_i, -24);
+    vec.emplace(vec.begin()+1, y);
+    EXPECT_EQ(8, vec.size());
+    EXPECT_EQ(vec[7].m_i, -24);
     EXPECT_EQ(vec[0].m_i, x);
+    EXPECT_EQ(vec[1].m_i, x);
     }
 
