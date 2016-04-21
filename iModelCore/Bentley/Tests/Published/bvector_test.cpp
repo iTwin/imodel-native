@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/bvector_test.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -1093,3 +1093,66 @@ TEST (BVectorTests, InitializerList)
     EXPECT_TRUE(3 == numbers[3]);
     EXPECT_TRUE(5 == numbers[4]);
     }
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   04/16
+//=======================================================================================
+struct MoveOnlyType
+{
+private:
+    bool    m_valid;
+
+    MoveOnlyType(MoveOnlyType const&);
+    MoveOnlyType& operator=(MoveOnlyType const&);
+public:
+    MoveOnlyType() : m_valid(true) { }
+    MoveOnlyType(MoveOnlyType&& rhs) : m_valid(rhs.m_valid) { rhs.m_valid = false; }
+    MoveOnlyType& operator=(MoveOnlyType&& rhs) { m_valid = rhs.m_valid; rhs.m_valid = false; return *this; }
+
+    bool WasMovedFrom() const { return !m_valid; }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST (BVectorTests, MoveSemantics)
+    {
+    MoveOnlyType m1;
+    EXPECT_FALSE(m1.WasMovedFrom());
+    MoveOnlyType m2(std::move(m1));
+    EXPECT_TRUE(m1.WasMovedFrom());
+    EXPECT_FALSE(m2.WasMovedFrom());
+
+    bvector<MoveOnlyType> vec;
+    vec.push_back(MoveOnlyType());
+    vec.push_back(std::move(m2));
+
+    EXPECT_TRUE(m2.WasMovedFrom());
+    EXPECT_FALSE(vec.back().WasMovedFrom());
+    EXPECT_FALSE(vec.front().WasMovedFrom());
+
+    vec.erase(vec.begin());
+
+    vec.reserve(vec.size() * 2);
+
+    typedef std::unique_ptr<int32_t> int_ptr;
+    bvector<int_ptr> ptrs;
+    ptrs.reserve(2);
+    ptrs.push_back(int_ptr(new int32_t(1)));
+    int_ptr ptr(new int32_t(2));
+    auto p = ptr.get();
+    EXPECT_TRUE(nullptr != p);
+    ptrs.insert(ptrs.begin(), std::move(ptr));
+    EXPECT_TRUE(nullptr == ptr.get());
+    EXPECT_EQ(ptrs.front().get(), p);
+    EXPECT_TRUE(nullptr != ptrs.back().get());
+
+    ptrs.insert(ptrs.begin()+1, int_ptr(new int32_t(3)));
+    EXPECT_TRUE(nullptr != ptrs.front().get());
+    EXPECT_TRUE(nullptr != (*(ptrs.begin()+1)).get());
+    EXPECT_TRUE(nullptr != ptrs.back().get());
+    EXPECT_EQ(**ptrs.begin(), 2);
+    EXPECT_EQ(**(ptrs.begin()+1), 3);
+    EXPECT_EQ(**(ptrs.begin()+2), 1);
+    }
+

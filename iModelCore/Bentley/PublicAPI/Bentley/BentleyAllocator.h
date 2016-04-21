@@ -113,7 +113,7 @@ public:
 
         void construct(pointer _Ptr, _Ty&& _Val)
                 {       // move-construct object at _Ptr from value _Val
-                new((void*)_Ptr)_Ty(_Val);
+                new((void*)_Ptr)_Ty(std::move(_Val));
                 }
 
         void destroy(pointer _Ptr)

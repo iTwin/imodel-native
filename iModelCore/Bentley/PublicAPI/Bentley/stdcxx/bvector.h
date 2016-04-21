@@ -233,7 +233,6 @@ public:
 // *** BENTLEY_CHANGE
     bvector (bvector&& rhs) : _C_alloc ((allocator_type const&)(rhs._C_alloc))
         {
-// *** BENTLEY_CHANGE move is more efficient than std::copy()
         *this = std::move (rhs);    // invokes my operator=(&&)
         }
 
@@ -383,6 +382,9 @@ public:
 
     void push_back (const_reference);
     
+// *** BENTLEY_CHANGE
+    void push_back (rvalue_reference);
+
     void pop_back () {
         _RWSTD_ASSERT (!empty ());
         _C_alloc.destroy (_C_alloc._C_end - 1);
@@ -390,6 +392,7 @@ public:
     }
 
     iterator insert (iterator, const_reference);
+    iterator insert (iterator, rvalue_reference);
 
     template <class _InputIter>
     void insert (iterator __it, _InputIter __first, _InputIter __last) {
@@ -418,11 +421,20 @@ public:
 
 private:
 
+    static constexpr bool _is_noexcept_move_constructible()
+        {   // return true if _Ty is not copy-constructible or if _Ty has a noexcept move constructor
+        return std::is_nothrow_move_constructible<_TypeT>::value || !std::is_copy_constructible<_TypeT>::value;
+        }
+
     // implements assign with repetition
     void _C_assign_n (size_type, const_reference);
 
     // implements a single-element insert
     void _C_insert_1 (const iterator&, const_reference);
+
+// *** BENTLEY_CHANGE
+    // implements a single-element insert
+    void _C_insert_1 (const iterator&, rvalue_reference);
 
     // implements insert with repetition
     void _C_insert_n (const iterator&, size_type, const_reference);
@@ -489,12 +501,32 @@ private:
         ++_C_alloc._C_end;
     }
 
+// *** BENTLEY_CHANGE
+    // constructs a copy at the end and grows the size of container
+    void _C_push_back (rvalue_reference __x) {
+        _RWSTD_ASSERT (_C_alloc._C_end != _C_alloc._C_bufend);
+        _C_alloc.construct (_C_alloc._C_end, std::move_if_noexcept(__x));
+        ++_C_alloc._C_end;
+    }
+
     // destroys elements from the iterator to the end of the bvector
     // and resets end() to point to the iterator
     void _C_destroy (iterator);
 
     // implements swap for objects with unequal allocator
-    void _C_unsafe_swap (bvector&);
+    void _C_unsafe_swap (bvector&, int);
+    // implements swap for objects with unequal allocator
+    void _C_unsafe_swap (bvector&, void*);
+
+    // moves a range of elements backwards, with strong exception safety guarantee for copyable or no-throw-movable types
+    iterator _move_range (iterator __f, iterator __l, iterator __d) { return _C_move_range (__f, __l, __d, _RWSTD_DISPATCH_BOOL(_is_noexcept_move_constructible())); }
+    // moves a range of elements backwards, with strong exception safety guarantee for copyable or no-throw-movable types
+    iterator _move_range_backward (iterator __f, iterator __l, iterator __d) { return _C_move_range_backward (__f, __l, __d, _RWSTD_DISPATCH_BOOL(_is_noexcept_move_constructible())); }
+
+    iterator _C_move_range (iterator __f, iterator __l, iterator __d, int) { return std::move (__f, __l, __d); }
+    iterator _C_move_range (iterator __f, iterator __l, iterator __d, void*) { return std::copy (__f, __l, __d); }
+    iterator _C_move_range_backward (iterator __f, iterator __l, iterator __d, int) { return std::move_backward (__f, __l, __d); }
+    iterator _C_move_range_backward (iterator __f, iterator __l, iterator __d, void*) { return std::copy_backward (__f, __l, __d); }
 
     struct _C_VectorAlloc: allocator_type {
 
@@ -641,6 +673,17 @@ push_back (const_reference __x)
         _C_push_back (__x);
 }
 
+// *** BENTLEY_CHANGE
+template <class _TypeT, class _Allocator>
+inline void
+bvector<_TypeT, _Allocator>::
+push_back (rvalue_reference __x)
+{
+    if (_C_alloc._C_end == _C_alloc._C_bufend)
+        _C_insert_1 (end (), std::move_if_noexcept(__x));
+    else
+        _C_push_back (std::move_if_noexcept(__x));
+}
 
 template <class _TypeT, class _Allocator>
 inline typename bvector<_TypeT, _Allocator>::iterator
@@ -659,6 +702,22 @@ insert (iterator __it, const_reference __x)
     return begin () + __off;
 }
 
+template <class _TypeT, class _Allocator>
+inline typename bvector<_TypeT, _Allocator>::iterator
+bvector<_TypeT, _Allocator>::
+insert (iterator __it, rvalue_reference __x)
+{
+    _RWSTD_ASSERT_RANGE (__it, end ());
+
+    const difference_type __off = __it - begin ();
+
+    if (end () == __it)
+        push_back (std::move_if_noexcept(__x));
+    else
+        _C_insert_1 (__it, std::move_if_noexcept(__x));
+
+    return begin () + __off;
+}
 
 template <class _TypeT, class _Allocator>
 inline typename bvector<_TypeT, _Allocator>::iterator
@@ -670,9 +729,8 @@ erase (iterator __it)
 
     const iterator __next = __it + 1;
 
-// *** BENTLEY_CHANGE move is more efficient than std::copy()
     if (__next != end ()) 
-        std::move (__next, end (), __it);
+        _move_range (__next, end (), __it);
 
     _C_alloc.destroy (_C_alloc._C_end - 1);
     --_C_alloc._C_end;
@@ -689,8 +747,7 @@ erase (iterator __first, iterator __last)
     _RWSTD_ASSERT_RANGE (__first, __last);
     _RWSTD_ASSERT_RANGE (begin (), __first);
 
-// *** BENTLEY_CHANGE
-    _C_destroy (std::move (__last, end (), __first));
+    _C_destroy (_move_range (__last, end (), __first));
 
     return __first;
 }
@@ -724,7 +781,7 @@ swap (bvector &__other)
     }
     else {
         // not exception-safe
-        _C_unsafe_swap (__other);
+        _C_unsafe_swap (__other, _RWSTD_DISPATCH_BOOL(std::is_copy_constructible<_TypeT>::value));
     }
 }
 
