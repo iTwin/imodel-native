@@ -52,8 +52,10 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
     /*__PUBLISH_CLASS_VIRTUAL__*/
     protected:                         
 
-        //Methods for the public interface.        
+        //Methods for the public interface.       
         virtual __int64          _GetPointCount() = 0;
+
+        virtual bool          _IsTerrain() = 0;
 
         virtual DTMStatusInt     _GetRange(DRange3dR range) = 0;
 
@@ -153,6 +155,8 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
         void TextureFromRaster(BENTLEY_NAMESPACE_NAME::ImagePP::HIMMosaic* mosaicP);
 
         BENTLEY_SM_EXPORT __int64          GetPointCount();
+
+        BENTLEY_SM_EXPORT bool          IsTerrain();
 
         BENTLEY_SM_EXPORT DTMStatusInt     GetRange(DRange3dR range);
 

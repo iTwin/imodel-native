@@ -147,6 +147,11 @@ _int64 IScalableMesh::GetPointCount()
     return _GetPointCount();
     }
 
+bool IScalableMesh::IsTerrain()
+    {
+    return _IsTerrain();
+    }
+
 DTMStatusInt IScalableMesh::GetRange(DRange3dR range)
     {
     return _GetRange(range);
@@ -1300,6 +1305,17 @@ template <class POINT> __int64 ScalableMesh<POINT>::_GetPointCount()
     return nbPoints;
     }
 
+template <class POINT> bool ScalableMesh<POINT>::_IsTerrain()
+    {
+
+    if (m_scmIndexPtr != 0)
+        {
+        return m_scmIndexPtr->IsTerrain();
+        }
+    return false;
+
+    }
+
 template <class POINT> void ScalableMesh<POINT>::_TextureFromRaster(HIMMosaic* mosaicP)
     {
     auto nextID = m_scmIndexPtr->GetStore()->GetNextID();
@@ -1940,6 +1956,11 @@ template <class POINT> void ScalableMeshSingleResolutionPointIndexView<POINT>::_
 template <class POINT> __int64 ScalableMeshSingleResolutionPointIndexView<POINT>::_GetPointCount()
     {
     return m_scmIndexPtr->GetNbObjectsAtLevel(m_resolutionIndex);
+    }
+
+template <class POINT> bool ScalableMeshSingleResolutionPointIndexView<POINT>::_IsTerrain()
+    {
+    return false;
     }
 
 

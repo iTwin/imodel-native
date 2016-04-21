@@ -245,6 +245,8 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         virtual void                               _TextureFromRaster(HIMMosaic* mosaicP) override;
  
         virtual __int64          _GetPointCount() override;
+
+        virtual bool          _IsTerrain() override;
         
 
         virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*  _GetDTMInterface() override;
@@ -348,6 +350,8 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
 
         // Inherited from IDTM   
         virtual __int64          _GetPointCount() override;
+
+        virtual bool          _IsTerrain() override;
 
         virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*  _GetDTMInterface() override;
 
