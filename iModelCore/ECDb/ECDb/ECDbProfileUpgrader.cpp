@@ -12,99 +12,22 @@ using namespace std;
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //*************************************** ECDbProfileUpgrader_XXX *********************************
-
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle        04/2016
 //+---------------+---------------+---------------+---------------+---------------+--------
-/*DbResult ECDbProfileUpgrader_3400::_Upgrade(ECDbR ecdb) const
-    {
-    bvector<Utf8CP> alterTableSqls;
-    alterTableSqls.push_back("UPDATE sqlite_master SET sql="
-                             "'CREATE TABLE ec_Schema("
-                             "Id INTEGER PRIMARY KEY,"
-                             "Name TEXT NOT NULL COLLATE NOCASE,"
-                             "DisplayLabel TEXT,"
-                             "Description TEXT,"
-                             "NamespacePrefix TEXT COLLATE NOCASE,"
-                             "VersionDigit1 INTEGER NOT NULL,"
-                             "VersionDigit2 INTEGER NOT NULL,"
-                             "VersionDigit3 INTEGER NOT NULL)'"
-                             " WHERE name='ec_Schema' AND type='table'");
-
-    alterTableSqls.push_back("UPDATE sqlite_master SET sql='CREATE UNIQUE INDEX uix_ec_Schema_Name ON ec_Schema(Name)'"
-                             "WHERE name='uix_ec_Schema_Name' AND type='index'");
-
-    alterTableSqls.push_back("UPDATE sqlite_master SET sql='CREATE UNIQUE INDEX uix_ec_Schema_NamespacePrefix ON ec_Schema(NamespacePrefix)'"
-                             "WHERE name='uix_ec_Schema_NamespacePrefix' AND type='index'");
-
-    alterTableSqls.push_back("UPDATE sqlite_master SET sql="
-                        "'CREATE TABLE ec_Class("
-                        "Id INTEGER PRIMARY KEY,"
-                        "SchemaId INTEGER NOT NULL REFERENCES ec_Schema(Id) ON DELETE CASCADE,"
-                        "Name TEXT NOT NULL COLLATE NOCASE,"
-                        "DisplayLabel TEXT,"
-                        "Description TEXT,"
-                        "Type INTEGER NOT NULL,"
-                        "Modifier INTEGER NOT NULL,"
-                        "RelationshipStrength INTEGER,"
-                        "RelationshipStrengthDirection INTEGER,"
-                        "CustomAttributeContainerType INTEGER)'"
-                        " WHERE name='ec_Class' AND type='table'");
-
-    alterTableSqls.push_back("UPDATE sqlite_master SET sql="
-                             "'CREATE TABLE ec_Enumeration("
-                            "Id INTEGER PRIMARY KEY,"
-                            "SchemaId INTEGER NOT NULL REFERENCES ec_Schema(Id) ON DELETE CASCADE,"
-                            "Name TEXT NOT NULL COLLATE NOCASE,"
-                            "DisplayLabel TEXT,"
-                            "Description TEXT,"
-                            "UnderlyingPrimitiveType INTEGER NOT NULL,"
-                            "IsStrict BOOLEAN NOT NULL CHECK(IsStrict IN (0,1)),"
-                            "EnumValues TEXT NOT NULL)'"
-                             " WHERE name='ec_Enumeration' AND type='table'");
-
-    alterTableSqls.push_back("UPDATE sqlite_master SET sql="
-                             "'CREATE TABLE ec_Property("
-                             "Id INTEGER PRIMARY KEY,"
-                             "ClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE,"
-                             "Name TEXT NOT NULL COLLATE NOCASE,"
-                             "DisplayLabel TEXT,"
-                             "Description TEXT,"
-                             "IsReadonly BOOLEAN NOT NULL CHECK (IsReadonly IN (0,1)),"
-                             "Kind INTEGER NOT NULL,"
-                             "Ordinal INTEGER,"
-                             "PrimitiveType INTEGER,"
-                             "NonPrimitiveType INTEGER REFERENCES ec_Class(Id) ON DELETE CASCADE,"
-                             "ExtendedType TEXT,"
-                             "Enumeration INTEGER REFERENCES ec_Enumeration(Id) ON DELETE CASCADE,"
-                             "ArrayMinOccurs INTEGER,"
-                             "ArrayMaxOccurs INTEGER,"
-                             "NavigationPropertyDirection INTEGER)'"
-                             " WHERE name='ec_Property' AND type='table'");
-
-    DbResult stat = UpgradeBriefcaseIdSequences(ecdb);
-    if (BE_SQLITE_OK != stat)
-        return stat;
-
-
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle        04/2016
-//+---------------+---------------+---------------+---------------+---------------+--------
-DbResult ECDbProfileUpgrader_3400::UpgradeBriefcaseIdSequences(ECDbCR ecdb) const
+DbResult ECDbProfileUpgrader_3400::_Upgrade(ECDbR ecdb) const
     {
     Statement stmt;
     if (BE_SQLITE_OK != stmt.Prepare(ecdb, "SELECT Name, Val FROM be_Local WHERE Name LIKE 'ec_%sequence'"))
         {
-        LOG.errorv("ECDb profile upgrade failed: Updating ECDb sequences in table 'be_Local' failed: %s", ecdb.GetLastError().c_str());
+        LOG.errorv("ECDb profile upgrade failed: Updating format of ECDb sequences in table 'be_Local' failed: %s", ecdb.GetLastError().c_str());
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
 
     Statement updateStmt;
     if (BE_SQLITE_OK != updateStmt.Prepare(ecdb, "UPDATE be_Local SET Val=? WHERE Name=?"))
         {
-        LOG.errorv("ECDb profile upgrade failed: Updating ECDb sequences in table 'be_Local' failed: %s", ecdb.GetLastError().c_str());
+        LOG.errorv("ECDb profile upgrade failed: Updating format of ECDb sequences in table 'be_Local' failed: %s", ecdb.GetLastError().c_str());
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
 
@@ -113,20 +36,22 @@ DbResult ECDbProfileUpgrader_3400::UpgradeBriefcaseIdSequences(ECDbCR ecdb) cons
         {
         Utf8CP sequenceName = stmt.GetValueText(0);
 
-        BeAssert(stmt.GetColumnBytes(1) <= (int) sizeof(int64_t));
-        int64_t val = INT64_C(-1);
+        //the old format was persisted as blob by taking the pointer address of the local integral variable. So we must read out the value that way
+        //and then it can be readded using directly SQLite's appropriate bind overload
+        BeAssert(stmt.GetColumnBytes(1) <= (int) sizeof(uint64_t));
+        uint64_t val = 0;
         void const* blob = stmt.GetValueBlob(1);
         memcpy(&val, blob, sizeof(val));
 
-        if (BE_SQLITE_OK != updateStmt.BindInt64(1, val) || BE_SQLITE_OK != updateStmt.BindText(2, sequenceName, Statement::MakeCopy::No))
+        if (BE_SQLITE_OK != updateStmt.BindUInt64(1, val) || BE_SQLITE_OK != updateStmt.BindText(2, sequenceName, Statement::MakeCopy::No))
             {
-            LOG.errorv("ECDb profile upgrade failed: Updating ECDb sequences in table 'be_Local' failed: %s", ecdb.GetLastError().c_str());
+            LOG.errorv("ECDb profile upgrade failed: Updating format of ECDb sequences in table 'be_Local' failed: %s", ecdb.GetLastError().c_str());
             return BE_SQLITE_ERROR_ProfileUpgradeFailed;
             }
 
         if (BE_SQLITE_DONE != updateStmt.Step() || ecdb.GetModifiedRowCount() != 1)
             {
-            LOG.error("ECDb profile upgrade failed: Updating ECDb sequences in table 'be_Local' failed.");
+            LOG.error("ECDb profile upgrade failed: Updating format of ECDb sequences in table 'be_Local' failed.");
             return BE_SQLITE_ERROR_ProfileUpgradeFailed;
             }
 
@@ -137,14 +62,14 @@ DbResult ECDbProfileUpgrader_3400::UpgradeBriefcaseIdSequences(ECDbCR ecdb) cons
 
     if (sequenceCount != 11)
         {
-        LOG.errorv("ECDb profile upgrade failed: Unexpected number of ECDb sequences  in table 'be_Local' were updated. Expected: 11. Found: %d", sequenceCount);
+        LOG.errorv("ECDb profile upgrade failed: Unexpected number of ECDb sequences in table 'be_Local' were updated. Expected: 11. Found: %d", sequenceCount);
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
 
-    LOG.debug("ECDb profile upgrade: Updated ECDb sequences in be_Local.");
+    LOG.debug("ECDb profile upgrade: Updated format of ECDb sequences format in table 'be_Local'.");
     return BE_SQLITE_OK;
     }
-    */
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle        04/2016
 //+---------------+---------------+---------------+---------------+---------------+--------
@@ -459,16 +384,7 @@ DbResult ECDbProfileUpgrader_3100::_Upgrade(ECDbR ecdb) const
     sql.Sprintf("UPDATE ec_Column SET ColumnKind=%d WHERE ColumnKind & %d=%d AND Type=%d AND TableId IN (SELECT t.Id FROM ec_Table t WHERE t.Type<>%d)", Enum::ToInt(DbColumn::Kind::SharedDataColumn),
                 dataColKindInt, dataColKindInt, Enum::ToInt(DbColumn::Type::Any), Enum::ToInt(DbTable::Type::Existing));
 
-    Statement stmt;
-    DbResult stat = stmt.Prepare(ecdb, sql.c_str());
-    if (stat != BE_SQLITE_OK)
-        {
-        LOG.errorv("ECDb profile upgrade failed: Preparing SQL '%s' failed: %s", sql.c_str(), ecdb.GetLastError().c_str());
-        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
-        }
-
-    stat = stmt.Step();
-    if (stat != BE_SQLITE_DONE)
+    if (BE_SQLITE_OK != ecdb.ExecuteSql(sql.c_str()))
         {
         LOG.errorv("ECDb profile upgrade failed: Executing SQL '%s' failed: %s", sql.c_str(), ecdb.GetLastError().c_str());
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;

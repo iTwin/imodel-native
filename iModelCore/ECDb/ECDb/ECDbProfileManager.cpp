@@ -17,7 +17,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //static
 DbResult ECDbProfileManager::CreateECProfile(ECDbR ecdb)
     {
-    LOG.debugv("Creating %s profile in %s...", PROFILENAME, ecdb.GetDbFileName());
+    LOG.debugv("Creating " PROFILENAME " profile in %s...", ecdb.GetDbFileName());
 
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin CreateECProfile");
 
@@ -25,7 +25,7 @@ DbResult ECDbProfileManager::CreateECProfile(ECDbR ecdb)
     DbResult stat = CreateECProfileTables(ecdb);
     if (stat != BE_SQLITE_OK)
         {
-        LOG.errorv("Failed to create %s profile in %s: %s", PROFILENAME, ecdb.GetDbFileName(), ecdb.GetLastError().c_str());
+        LOG.errorv("Failed to create " PROFILENAME " profile in %s: %s", ecdb.GetDbFileName(), ecdb.GetLastError().c_str());
         ecdb.AbandonChanges();
         return stat;
         }
@@ -41,8 +41,8 @@ DbResult ECDbProfileManager::CreateECProfile(ECDbR ecdb)
     if (stat != BE_SQLITE_OK)
         {
         ecdb.AbandonChanges();
-        LOG.errorv("Failed to create %s profile in file '%s'. Could not assign new profile version. %s",
-                   PROFILENAME, ecdb.GetDbFileName(), ecdb.GetLastError().c_str());
+        LOG.errorv("Failed to create " PROFILENAME " profile in file '%s'. Could not assign new profile version. %s",
+                   ecdb.GetDbFileName(), ecdb.GetLastError().c_str());
         return stat;
         }
 
@@ -50,7 +50,7 @@ DbResult ECDbProfileManager::CreateECProfile(ECDbR ecdb)
     timer.Stop();
 
     if (LOG.isSeverityEnabled(NativeLogging::LOG_INFO))
-        LOG.infov("Created %s profile (in %.4lf msecs) in '%s'.", PROFILENAME, timer.GetElapsedSeconds() * 1000.0, ecdb.GetDbFileName());
+        LOG.infov("Created " PROFILENAME " profile (in %.4lf msecs) in '%s'.", timer.GetElapsedSeconds() * 1000.0, ecdb.GetDbFileName());
 
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("End CreateECProfile");
 
@@ -108,7 +108,7 @@ DbResult ECDbProfileManager::UpgradeECProfile(ECDbR ecdb, Db::OpenParams const& 
     //if ECDb file is readonly, reopen it in read-write mode
     if (!openParams._ReopenForSchemaUpgrade(ecdb))
         {
-        LOG.errorv("Upgrade of file's %s profile failed because file could not be re-opened in read-write mode.", PROFILENAME);
+        LOG.errorv("Upgrade of file's " PROFILENAME " profile failed because file could not be re-opened in read-write mode.");
         return BE_SQLITE_ERROR_ProfileUpgradeFailedCannotOpenForWrite;
         }
 
@@ -141,15 +141,15 @@ DbResult ECDbProfileManager::UpgradeECProfile(ECDbR ecdb, Db::OpenParams const& 
     if (stat != BE_SQLITE_OK)
         {
         ecdb.AbandonChanges();
-        LOG.errorv("Failed to upgrade %s profile in file '%s'. Could not assign new profile version. %s",
-                   PROFILENAME, ecdb.GetDbFileName(), ecdb.GetLastError().c_str());
+        LOG.errorv("Failed to upgrade " PROFILENAME " profile in file '%s'. Could not assign new profile version. %s",
+                   ecdb.GetDbFileName(), ecdb.GetLastError().c_str());
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
 
     if (LOG.isSeverityEnabled(NativeLogging::LOG_INFO))
         {
-        LOG.infov("Upgraded %s profile from version %s to version %s (in %.4lf seconds) in file '%s'.",
-                  PROFILENAME, actualProfileVersion.ToString().c_str(), expectedVersion.ToString().c_str(),
+        LOG.infov("Upgraded " PROFILENAME " profile from version %s to version %s (in %.4lf seconds) in file '%s'.",
+                  actualProfileVersion.ToString().c_str(), expectedVersion.ToString().c_str(),
                   timer.GetElapsedSeconds(), ecdb.GetDbFileName());
         }
 
@@ -163,11 +163,11 @@ DbResult ECDbProfileManager::UpgradeECProfile(ECDbR ecdb, Db::OpenParams const& 
 DbResult ECDbProfileManager::AssignProfileVersion(ECDbR ecdb, bool onProfileCreation)
     {
     //Save the profile version as string (JSON format)
-    const Utf8String profileVersionStr = GetExpectedVersion().ToJson();
+    Utf8String profileVersionStr = GetExpectedVersion().ToJson();
 
     if (onProfileCreation)
         {
-        DbResult stat = ecdb.SavePropertyString(PropertySpec("InitialSchemaVersion", "ec_Db"), profileVersionStr);
+        DbResult stat = ecdb.SavePropertyString(GetInitialProfileVersionPropertySpec(), profileVersionStr);
         if (BE_SQLITE_OK != stat)
             return stat;
         }
@@ -238,6 +238,12 @@ void ECDbProfileManager::GetUpgraderSequence(std::vector<std::unique_ptr<ECDbPro
 
     if (currentProfileVersion < SchemaVersion(3, 3, 0, 2))
         upgraders.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3302()));
+
+    //No upgrader needed to upgrade to 3.3.0.3 as this step is not a hornswaggle and would be too much effort to implement
+
+    if (currentProfileVersion < SchemaVersion(3, 4, 0, 0))
+        upgraders.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3400()));
+
     }
 
 //-----------------------------------------------------------------------------------------

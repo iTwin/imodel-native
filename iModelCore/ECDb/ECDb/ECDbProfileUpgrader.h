@@ -58,14 +58,12 @@ public:
 //=======================================================================================
 // @bsiclass                                                 Krischan.Eberle      04/2016
 //+===============+===============+===============+===============+===============+======
-/*struct ECDbProfileUpgrader_3400 : ECDbProfileUpgrader
+struct ECDbProfileUpgrader_3400 : ECDbProfileUpgrader
     {
-    //intentionally use compiler generated ctor, dtor, copy ctor and copy assignment op
-    private:
-        virtual DbResult _Upgrade(ECDbR) const override;
-
-        DbResult UpgradeBriefcaseIdSequences(ECDbCR) const;
-    };*/
+//intentionally use compiler generated ctor, dtor, copy ctor and copy assignment op
+private:
+    virtual DbResult _Upgrade(ECDbR) const override;
+    };
 
 //no upgrader required to upgrade to 3.3.0.3. 
 
