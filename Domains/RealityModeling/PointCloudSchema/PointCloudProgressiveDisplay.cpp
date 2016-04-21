@@ -34,8 +34,7 @@ PointCloudProgressiveDisplay::PointCloudProgressiveDisplay (PointCloudModel cons
      m_lastTentativeStopped(false)
     {
     m_tentativeId = 0;
-    DRange3d pcRange = m_model.GetSceneRange();
-    m_model.GetSceneToWorld().Multiply(m_sceneRangeWorld, pcRange);
+    m_model.GetRange(m_sceneRangeWorld, PointCloudModel::Unit::World);
     }
 
 //----------------------------------------------------------------------------------------
