@@ -4900,7 +4900,7 @@ void HGF2DPolySegment::ObtainContiguousnessPointsWithPolySegmentAt(const HGF2DPo
 // PRIVATE method
 // Recalculates the tolerance if needed and permitted
 //-----------------------------------------------------------------------------
-inline void HGF2DPolySegment::ResetTolerance()
+void HGF2DPolySegment::ResetTolerance()
     {
     HINVARIANTS;
 
