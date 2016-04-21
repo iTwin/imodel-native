@@ -12,7 +12,7 @@
 #include <WebServices\ConnectC\CWSCCGenBufferPublic.h>
 
 /************************************************************************************//**
-* \addtogroup ConnectWebServicesClientCAPIFunctions ConnectWebServicesClient API Function Declarations
+* \addtogroup ConnectWebServicesClientCAPIFunctions ConnectWebServicesClientC API Function Declarations
 * \{
 ****************************************************************************************/
 	
