@@ -107,6 +107,9 @@ static DRange3d ToDRange3d(Bnd_Box const& box) {DRange3d range; box.Get(range.lo
 // static DEllipse3d ToDEllipse3d(gp_Elips const& gpEllipse, double start, double end);
 // static DEllipse3d ToDEllipse3d(gp_Elips2d const& gpEllipse, double start, double end);
 
+DGNPLATFORM_EXPORT static BentleyStatus ClipTopoShape(bvector<TopoDS_Shape>& output, bool& clipped, TopoDS_Shape const& shape, ClipVectorCR clip) {return ERROR;} // NEEDSWORK...
+DGNPLATFORM_EXPORT static BentleyStatus ClipCurveVector(bvector<CurveVectorPtr>& output, CurveVectorCR input, ClipVectorCR clip, TransformCP localToWorld) {return ERROR;} // NEEDSWORK...
+
 DGNPLATFORM_EXPORT static PolyfaceHeaderPtr IncrementalMesh(TopoDS_Shape const&, IFacetOptionsR);
 
 //! Support for the creation of new bodies from other types of geometry.

@@ -1048,7 +1048,7 @@ virtual ~FaceAttachmentRuleCollector() {}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual UnhandledPreference _GetUnhandledPreference(ISolidKernelEntityCR) const override {return UnhandledPreference::Curve;}
+virtual UnhandledPreference _GetUnhandledPreference(ISolidKernelEntityCR, SimplifyGraphic&) const override {return UnhandledPreference::Curve;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   06/15

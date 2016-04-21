@@ -7,6 +7,9 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/DgnRscFontStructures.h>
+#if defined (BENTLEYCONFIG_OPENCASCADE)
+#include <DgnPlatform/DgnBRep/OCBRep.h>
+#endif
 
 /*=================================================================================**//**
 * @bsiclass                                                     Brien.Bastings  12/15
@@ -573,7 +576,7 @@ void SimplifyGraphic::ClipAndProcessCurveVector(CurveVectorCR geom, bool filled)
             return;
         }
 
-    IGeometryProcessor::UnhandledPreference unhandled = m_processor._GetUnhandledPreference(geom);
+    IGeometryProcessor::UnhandledPreference unhandled = m_processor._GetUnhandledPreference(geom, *this);
     bool isAutoClipPref = false;
 
     if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::Auto & unhandled))
@@ -581,9 +584,9 @@ void SimplifyGraphic::ClipAndProcessCurveVector(CurveVectorCR geom, bool filled)
         if (geom.IsAnyRegionType())
             {
             if (!geom.ContainsNonLinearPrimitive())
-                unhandled = IGeometryProcessor::UnhandledPreference::Facet; // Parasolid is expensive - facets will represent this geometry exactly.
+                unhandled = IGeometryProcessor::UnhandledPreference::Facet; // BRep is expensive - facets will represent this geometry exactly.
             else
-                unhandled = IGeometryProcessor::UnhandledPreference::BRep | IGeometryProcessor::UnhandledPreference::Facet; // Try Parasolid first...
+                unhandled = IGeometryProcessor::UnhandledPreference::BRep | IGeometryProcessor::UnhandledPreference::Facet; // Try BRep first...
 
             isAutoClipPref = doClipping;
             }
@@ -601,6 +604,16 @@ void SimplifyGraphic::ClipAndProcessCurveVector(CurveVectorCR geom, bool filled)
             bvector<CurveVectorPtr> insideCurves;
 
             if (SUCCESS == T_HOST.GetSolidsKernelAdmin()._ClipCurveVector(insideCurves, geom, *GetCurrentClip(), &m_localToWorldTransform))
+                {
+                for (CurveVectorPtr tmpCurves : insideCurves)
+                    m_processor._ProcessCurveVector(*tmpCurves, filled, *this);
+
+                return;
+                }
+#elif defined (BENTLEYCONFIG_OPENCASCADE)
+            bvector<CurveVectorPtr> insideCurves;
+
+            if (SUCCESS == OCBRep::ClipCurveVector(insideCurves, geom, *GetCurrentClip(), &m_localToWorldTransform))
                 {
                 for (CurveVectorPtr tmpCurves : insideCurves)
                     m_processor._ProcessCurveVector(*tmpCurves, filled, *this);
@@ -632,6 +645,36 @@ void SimplifyGraphic::ClipAndProcessCurveVector(CurveVectorCR geom, bool filled)
                     }
                 else if (!m_processor._ProcessCurveVector(geom, filled, *this))
                     {
+                    m_processor._ProcessBody(*entityPtr, *this);
+                    }
+                return;
+                }
+#elif defined (BENTLEYCONFIG_OPENCASCADE)
+            TopoDS_Shape shape;
+
+            if (SUCCESS == OCBRep::Create::TopoShapeFromCurveVector(shape, geom))
+                {
+                if (!doClipping)
+                    {
+                    ISolidKernelEntityPtr entityPtr = SolidKernelUtil::CreateNewEntity(shape);
+                    m_processor._ProcessBody(*entityPtr, *this);
+                    return;
+                    }
+
+                bool clipped;
+                bvector<TopoDS_Shape> clipResults;
+
+                if (SUCCESS == OCBRep::ClipTopoShape(clipResults, clipped, shape, *GetCurrentClip()) && clipped)
+                    {
+                    for (TopoDS_Shape clipShape : clipResults)
+                        {
+                        ISolidKernelEntityPtr entityPtr = SolidKernelUtil::CreateNewEntity(clipShape);
+                        m_processor._ProcessBody(*entityPtr, *this);
+                        }
+                    }
+                else if (!m_processor._ProcessCurveVector(geom, filled, *this))
+                    {
+                    ISolidKernelEntityPtr entityPtr = SolidKernelUtil::CreateNewEntity(shape);
                     m_processor._ProcessBody(*entityPtr, *this);
                     }
                 return;
@@ -706,14 +749,14 @@ void SimplifyGraphic::ClipAndProcessSolidPrimitive(ISolidPrimitiveCR geom)
             return;
         }
 
-    IGeometryProcessor::UnhandledPreference unhandled = m_processor._GetUnhandledPreference(geom);
+    IGeometryProcessor::UnhandledPreference unhandled = m_processor._GetUnhandledPreference(geom, *this);
 
     if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::Auto & unhandled))
         {
         if (!geom.HasCurvedFaceOrEdge())
-            unhandled = IGeometryProcessor::UnhandledPreference::Facet; // Parasolid is expensive - facets will represent this geometry exactly.
+            unhandled = IGeometryProcessor::UnhandledPreference::Facet; // BRep is expensive - facets will represent this geometry exactly.
         else
-            unhandled = IGeometryProcessor::UnhandledPreference::BRep | IGeometryProcessor::UnhandledPreference::Facet; // Try Parasolid first...
+            unhandled = IGeometryProcessor::UnhandledPreference::BRep | IGeometryProcessor::UnhandledPreference::Facet; // Try BRep first...
         }
 
     if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::BRep & unhandled))
@@ -739,6 +782,36 @@ void SimplifyGraphic::ClipAndProcessSolidPrimitive(ISolidPrimitiveCR geom)
                 }
             else if (!m_processor._ProcessSolidPrimitive(geom, *this))
                 {
+                m_processor._ProcessBody(*entityPtr, *this);
+                }
+            return;
+            }
+#elif defined (BENTLEYCONFIG_OPENCASCADE)
+        TopoDS_Shape shape;
+
+        if (SUCCESS == OCBRep::Create::TopoShapeFromSolidPrimitive(shape, geom))
+            {
+            if (!doClipping)
+                {
+                ISolidKernelEntityPtr entityPtr = SolidKernelUtil::CreateNewEntity(shape);
+                m_processor._ProcessBody(*entityPtr, *this);
+                return;
+                }
+
+            bool clipped;
+            bvector<TopoDS_Shape> clipResults;
+
+            if (SUCCESS == OCBRep::ClipTopoShape(clipResults, clipped, shape, *GetCurrentClip()) && clipped)
+                {
+                for (TopoDS_Shape clipShape : clipResults)
+                    {
+                    ISolidKernelEntityPtr entityPtr = SolidKernelUtil::CreateNewEntity(clipShape);
+                    m_processor._ProcessBody(*entityPtr, *this);
+                    }
+                }
+            else if (!m_processor._ProcessSolidPrimitive(geom, *this))
+                {
+                ISolidKernelEntityPtr entityPtr = SolidKernelUtil::CreateNewEntity(shape);
                 m_processor._ProcessBody(*entityPtr, *this);
                 }
             return;
@@ -823,14 +896,14 @@ void SimplifyGraphic::ClipAndProcessSurface(MSBsplineSurfaceCR geom)
             return;
         }
 
-    IGeometryProcessor::UnhandledPreference unhandled = m_processor._GetUnhandledPreference(geom);
+    IGeometryProcessor::UnhandledPreference unhandled = m_processor._GetUnhandledPreference(geom, *this);
 
     if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::Auto & unhandled))
         {
         if (geom.IsPlanarBilinear())
-            unhandled = IGeometryProcessor::UnhandledPreference::Facet; // Parasolid is expensive - facets will represent this geometry exactly.
+            unhandled = IGeometryProcessor::UnhandledPreference::Facet; // BRep is expensive - facets will represent this geometry exactly.
         else
-            unhandled = IGeometryProcessor::UnhandledPreference::BRep | IGeometryProcessor::UnhandledPreference::Facet; // Try Parasolid first...
+            unhandled = IGeometryProcessor::UnhandledPreference::BRep | IGeometryProcessor::UnhandledPreference::Facet; // Try BRep first...
         }
 
     if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::BRep & unhandled))
@@ -856,6 +929,36 @@ void SimplifyGraphic::ClipAndProcessSurface(MSBsplineSurfaceCR geom)
                 }
             else if (!m_processor._ProcessSurface(geom, *this))
                 {
+                m_processor._ProcessBody(*entityPtr, *this);
+                }
+            return;
+            }
+#elif defined (BENTLEYCONFIG_OPENCASCADE)
+        TopoDS_Shape shape;
+
+        if (SUCCESS == OCBRep::Create::TopoShapeFromBSurface(shape, geom))
+            {
+            if (!doClipping)
+                {
+                ISolidKernelEntityPtr entityPtr = SolidKernelUtil::CreateNewEntity(shape);
+                m_processor._ProcessBody(*entityPtr, *this);
+                return;
+                }
+
+            bool clipped;
+            bvector<TopoDS_Shape> clipResults;
+
+            if (SUCCESS == OCBRep::ClipTopoShape(clipResults, clipped, shape, *GetCurrentClip()) && clipped)
+                {
+                for (TopoDS_Shape clipShape : clipResults)
+                    {
+                    ISolidKernelEntityPtr entityPtr = SolidKernelUtil::CreateNewEntity(clipShape);
+                    m_processor._ProcessBody(*entityPtr, *this);
+                    }
+                }
+            else if (!m_processor._ProcessSurface(geom, *this))
+                {
+                ISolidKernelEntityPtr entityPtr = SolidKernelUtil::CreateNewEntity(shape);
                 m_processor._ProcessBody(*entityPtr, *this);
                 }
             return;
@@ -940,7 +1043,7 @@ void SimplifyGraphic::ClipAndProcessPolyface(PolyfaceQueryCR geom, bool filled)
             return;
         }
 
-    IGeometryProcessor::UnhandledPreference unhandled = m_processor._GetUnhandledPreference(geom);
+    IGeometryProcessor::UnhandledPreference unhandled = m_processor._GetUnhandledPreference(geom, *this);
 
     if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::Auto & unhandled))
         unhandled = IGeometryProcessor::UnhandledPreference::Facet;
@@ -968,6 +1071,36 @@ void SimplifyGraphic::ClipAndProcessPolyface(PolyfaceQueryCR geom, bool filled)
                 }
             else if (!m_processor._ProcessPolyface(geom, filled, *this))
                 {
+                m_processor._ProcessBody(*entityPtr, *this);
+                }
+            return;
+            }
+#elif defined (BENTLEYCONFIG_OPENCASCADE)
+        TopoDS_Shape shape;
+
+        if (SUCCESS == OCBRep::Create::TopoShapeFromPolyface(shape, geom))
+            {
+            if (!doClipping)
+                {
+                ISolidKernelEntityPtr entityPtr = SolidKernelUtil::CreateNewEntity(shape);
+                m_processor._ProcessBody(*entityPtr, *this);
+                return;
+                }
+
+            bool clipped;
+            bvector<TopoDS_Shape> clipResults;
+
+            if (SUCCESS == OCBRep::ClipTopoShape(clipResults, clipped, shape, *GetCurrentClip()) && clipped)
+                {
+                for (TopoDS_Shape clipShape : clipResults)
+                    {
+                    ISolidKernelEntityPtr entityPtr = SolidKernelUtil::CreateNewEntity(clipShape);
+                    m_processor._ProcessBody(*entityPtr, *this);
+                    }
+                }
+            else if (!m_processor._ProcessPolyface(geom, filled, *this))
+                {
+                ISolidKernelEntityPtr entityPtr = SolidKernelUtil::CreateNewEntity(shape);
                 m_processor._ProcessBody(*entityPtr, *this);
                 }
             return;
@@ -1131,7 +1264,7 @@ void SimplifyGraphic::ClipAndProcessBody(ISolidKernelEntityCR geom)
             return;
         }
 
-    IGeometryProcessor::UnhandledPreference unhandled = m_processor._GetUnhandledPreference(geom);
+    IGeometryProcessor::UnhandledPreference unhandled = m_processor._GetUnhandledPreference(geom, *this);
 
     if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::Auto & unhandled))
         unhandled = IGeometryProcessor::UnhandledPreference::BRep;
@@ -1146,6 +1279,27 @@ void SimplifyGraphic::ClipAndProcessBody(ISolidKernelEntityCR geom)
             {
             for (ISolidKernelEntityPtr entityOut : clippedBodies)
                 m_processor._ProcessBody(*entityOut, *this);
+            }
+        else
+            {
+            m_processor._ProcessBody(geom, *this);
+            }
+#elif defined (BENTLEYCONFIG_OPENCASCADE)
+        TopoDS_Shape const* shape = SolidKernelUtil::GetShape(geom);
+
+        if (nullptr == shape)
+            return;
+
+        bool clipped;
+        bvector<TopoDS_Shape> clipResults;
+
+        if (SUCCESS == OCBRep::ClipTopoShape(clipResults, clipped, *shape, *GetCurrentClip()) && clipped)
+            {
+            for (TopoDS_Shape clipShape : clipResults)
+                {
+                ISolidKernelEntityPtr entityPtr = SolidKernelUtil::CreateNewEntity(clipShape);
+                m_processor._ProcessBody(*entityPtr, *this);
+                }
             }
         else
             {
@@ -1279,6 +1433,31 @@ void SimplifyGraphic::ClipAndProcessBodyAsPolyface(ISolidKernelEntityCR geom)
         {
         m_processor._ProcessPolyface(*polyface, false, static_cast<SimplifyGraphic&> (*graphic));
         }
+#elif defined (BENTLEYCONFIG_OPENCASCADE)
+    TopoDS_Shape const* shape = SolidKernelUtil::GetShape(geom);
+
+    if (nullptr == shape)
+        return;
+
+    PolyfaceHeaderPtr polyface = OCBRep::IncrementalMesh(*shape, *m_facetOptions);
+
+    if (!polyface.IsValid())
+        return;
+
+    polyface->SetTwoSided(ISolidKernelEntity::EntityType_Solid != geom.GetEntityType());
+
+    SimplifyPolyfaceClipper polyfaceClipper;
+    bvector<PolyfaceHeaderPtr>& clipResults = polyfaceClipper.ClipPolyface(*polyface, *GetCurrentClip(), m_facetOptions->GetMaxPerFace() <= 3);
+
+    if (0 != clipResults.size())
+        {
+        for (PolyfaceHeaderPtr clipPolyface : clipResults)
+            m_processor._ProcessPolyface(*clipPolyface, false, *this);
+        }
+    else
+        {
+        m_processor._ProcessPolyface(*polyface, false, *this);
+        }
 #endif
     }
 
@@ -1301,7 +1480,7 @@ void SimplifyGraphic::ClipAndProcessText(TextStringCR text)
             return;
         }
 
-    IGeometryProcessor::UnhandledPreference unhandled = m_processor._GetUnhandledPreference(text);
+    IGeometryProcessor::UnhandledPreference unhandled = m_processor._GetUnhandledPreference(text, *this);
 
     if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::Box & unhandled))
         {
@@ -1742,7 +1921,7 @@ void SimplifyGraphic::_AddBSplineSurface(MSBsplineSurfaceCR geom)
 void SimplifyGraphic::_AddPolyface(PolyfaceQueryCR geom, bool filled)
     {
     // Modify this polyface to conform to the processor's facet options...
-    if (IGeometryProcessor::UnhandledPreference::Ignore != ((IGeometryProcessor::UnhandledPreference::Auto | IGeometryProcessor::UnhandledPreference::Facet) & m_processor._GetUnhandledPreference(geom)))
+    if (IGeometryProcessor::UnhandledPreference::Ignore != ((IGeometryProcessor::UnhandledPreference::Auto | IGeometryProcessor::UnhandledPreference::Facet) & m_processor._GetUnhandledPreference(geom, *this)))
         {
         size_t maxPerFace;
 
