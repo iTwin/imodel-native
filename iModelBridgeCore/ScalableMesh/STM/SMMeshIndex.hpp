@@ -2482,9 +2482,9 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
         Pin();            
         PinUV();
 
-        PinUVsIndices(j-1);
+        PinUVsIndices(0);
         
-        Clipper clipNode(&points[0], size(), (int32_t*)&(*ptIndices)[0], ptIndices->size(), nodeRange, GetUVPtr(), GetUVsIndicesPtr(j-1));
+        Clipper clipNode(&points[0], size(), (int32_t*)&(*ptIndices)[0], ptIndices->size(), nodeRange, GetUVPtr(), GetUVsIndicesPtr(0));
         bvector<bvector<PolyfaceHeaderPtr>> polyfaces;
         auto nodePtr = HFCPtr<SMPointIndexNode<POINT, EXTENT>>(static_cast<SMPointIndexNode<POINT, EXTENT>*>(const_cast<SMMeshIndexNode<POINT, EXTENT>*>(this)));
         IScalableMeshNodePtr nodeP(new ScalableMeshNode<POINT>(nodePtr));
@@ -2505,7 +2505,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
        // m_nbClips = 0;
         UnPin();    
         UnPinUV();
-        UnPinUVsIndices(j-1);
+        UnPinUVsIndices(0);
 
         if (!hasClip) continue;
         bvector<bvector<PolyfaceHeaderPtr>> skirts;
