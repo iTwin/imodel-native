@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/BePointCloud/PointCloudTypes.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -12,9 +12,6 @@
 // 
 // Common defines
 //
-#define UOR_PER_METER           1.0
-#define TO_BOOL(x)              (0 != (x))
-
 #include <BePointCloud/BePointCloudCommon.h>
 #include <BePointCloud/ExportMacros.h>
 
