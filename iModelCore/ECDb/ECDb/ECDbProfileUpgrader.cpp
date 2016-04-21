@@ -12,62 +12,139 @@ using namespace std;
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //*************************************** ECDbProfileUpgrader_XXX *********************************
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle        04/2016
 //+---------------+---------------+---------------+---------------+---------------+--------
-/*DbResult ECDbProfileUpgrader_3400::UpgradeBriefcaseIdSequences(ECDbCR ecdb) const
-{
-Statement stmt;
-if (BE_SQLITE_OK != stmt.Prepare(ecdb, "SELECT Name, Val FROM be_Local WHERE Name LIKE 'ec_%sequence'"))
-{
-LOG.errorv("ECDb profile upgrade failed: Updating ECDb sequences failed: %s", ecdb.GetLastError().c_str());
-return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+/*DbResult ECDbProfileUpgrader_3400::_Upgrade(ECDbR ecdb) const
+    {
+    bvector<Utf8CP> alterTableSqls;
+    alterTableSqls.push_back("UPDATE sqlite_master SET sql="
+                             "'CREATE TABLE ec_Schema("
+                             "Id INTEGER PRIMARY KEY,"
+                             "Name TEXT NOT NULL COLLATE NOCASE,"
+                             "DisplayLabel TEXT,"
+                             "Description TEXT,"
+                             "NamespacePrefix TEXT COLLATE NOCASE,"
+                             "VersionDigit1 INTEGER NOT NULL,"
+                             "VersionDigit2 INTEGER NOT NULL,"
+                             "VersionDigit3 INTEGER NOT NULL)'"
+                             " WHERE name='ec_Schema' AND type='table'");
 
-}
+    alterTableSqls.push_back("UPDATE sqlite_master SET sql='CREATE UNIQUE INDEX uix_ec_Schema_Name ON ec_Schema(Name)'"
+                             "WHERE name='uix_ec_Schema_Name' AND type='index'");
 
-Statement updateStmt;
-if (BE_SQLITE_OK != updateStmt.Prepare(ecdb, "UPDATE be_Local SET Val=? WHERE Name=?"))
-{
-LOG.errorv("ECDb profile upgrade failed: Updating ECDb sequences failed: %s", ecdb.GetLastError().c_str());
-return BE_SQLITE_ERROR_ProfileUpgradeFailed;
-}
+    alterTableSqls.push_back("UPDATE sqlite_master SET sql='CREATE UNIQUE INDEX uix_ec_Schema_NamespacePrefix ON ec_Schema(NamespacePrefix)'"
+                             "WHERE name='uix_ec_Schema_NamespacePrefix' AND type='index'");
 
-int sequenceCount = 0;
-while (BE_SQLITE_ROW == stmt.Step())
-{
-Utf8CP sequenceName = stmt.GetValueText(0);
+    alterTableSqls.push_back("UPDATE sqlite_master SET sql="
+                        "'CREATE TABLE ec_Class("
+                        "Id INTEGER PRIMARY KEY,"
+                        "SchemaId INTEGER NOT NULL REFERENCES ec_Schema(Id) ON DELETE CASCADE,"
+                        "Name TEXT NOT NULL COLLATE NOCASE,"
+                        "DisplayLabel TEXT,"
+                        "Description TEXT,"
+                        "Type INTEGER NOT NULL,"
+                        "Modifier INTEGER NOT NULL,"
+                        "RelationshipStrength INTEGER,"
+                        "RelationshipStrengthDirection INTEGER,"
+                        "CustomAttributeContainerType INTEGER)'"
+                        " WHERE name='ec_Class' AND type='table'");
 
-BeAssert(stmt.GetColumnBytes(1) <= (int) sizeof(int64_t));
-int64_t val = INT64_C(-1);
-void const* blob = stmt.GetValueBlob(1);
-memcpy(&val, blob, sizeof(val));
+    alterTableSqls.push_back("UPDATE sqlite_master SET sql="
+                             "'CREATE TABLE ec_Enumeration("
+                            "Id INTEGER PRIMARY KEY,"
+                            "SchemaId INTEGER NOT NULL REFERENCES ec_Schema(Id) ON DELETE CASCADE,"
+                            "Name TEXT NOT NULL COLLATE NOCASE,"
+                            "DisplayLabel TEXT,"
+                            "Description TEXT,"
+                            "UnderlyingPrimitiveType INTEGER NOT NULL,"
+                            "IsStrict BOOLEAN NOT NULL CHECK(IsStrict IN (0,1)),"
+                            "EnumValues TEXT NOT NULL)'"
+                             " WHERE name='ec_Enumeration' AND type='table'");
 
-if (BE_SQLITE_OK != updateStmt.BindInt64(1, val) || BE_SQLITE_OK != updateStmt.BindText(2, sequenceName, Statement::MakeCopy::No))
-{
-LOG.errorv("ECDb profile upgrade failed: Updating ECDb sequences failed: %s", ecdb.GetLastError().c_str());
-return BE_SQLITE_ERROR_ProfileUpgradeFailed;
-}
+    alterTableSqls.push_back("UPDATE sqlite_master SET sql="
+                             "'CREATE TABLE ec_Property("
+                             "Id INTEGER PRIMARY KEY,"
+                             "ClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE,"
+                             "Name TEXT NOT NULL COLLATE NOCASE,"
+                             "DisplayLabel TEXT,"
+                             "Description TEXT,"
+                             "IsReadonly BOOLEAN NOT NULL CHECK (IsReadonly IN (0,1)),"
+                             "Kind INTEGER NOT NULL,"
+                             "Ordinal INTEGER,"
+                             "PrimitiveType INTEGER,"
+                             "NonPrimitiveType INTEGER REFERENCES ec_Class(Id) ON DELETE CASCADE,"
+                             "ExtendedType TEXT,"
+                             "Enumeration INTEGER REFERENCES ec_Enumeration(Id) ON DELETE CASCADE,"
+                             "ArrayMinOccurs INTEGER,"
+                             "ArrayMaxOccurs INTEGER,"
+                             "NavigationPropertyDirection INTEGER)'"
+                             " WHERE name='ec_Property' AND type='table'");
 
-if (BE_SQLITE_DONE != updateStmt.Step() || ecdb.GetModifiedRowCount() != 1)
-{
-LOG.error("ECDb profile upgrade failed: Updating ECDb sequences failed.");
-return BE_SQLITE_ERROR_ProfileUpgradeFailed;
-}
+    DbResult stat = UpgradeBriefcaseIdSequences(ecdb);
+    if (BE_SQLITE_OK != stat)
+        return stat;
 
-updateStmt.Reset();
-updateStmt.ClearBindings();
-sequenceCount++;
-}
 
-if (sequenceCount != 11)
-{
-LOG.errorv("ECDb profile upgrade failed: Unexpected number of ECDb sequences were updated. Expected: 11. Found: %d", sequenceCount);
-return BE_SQLITE_ERROR_ProfileUpgradeFailed;
-}
+    }
 
-return BE_SQLITE_OK;
-}*/
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle        04/2016
+//+---------------+---------------+---------------+---------------+---------------+--------
+DbResult ECDbProfileUpgrader_3400::UpgradeBriefcaseIdSequences(ECDbCR ecdb) const
+    {
+    Statement stmt;
+    if (BE_SQLITE_OK != stmt.Prepare(ecdb, "SELECT Name, Val FROM be_Local WHERE Name LIKE 'ec_%sequence'"))
+        {
+        LOG.errorv("ECDb profile upgrade failed: Updating ECDb sequences in table 'be_Local' failed: %s", ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
 
+    Statement updateStmt;
+    if (BE_SQLITE_OK != updateStmt.Prepare(ecdb, "UPDATE be_Local SET Val=? WHERE Name=?"))
+        {
+        LOG.errorv("ECDb profile upgrade failed: Updating ECDb sequences in table 'be_Local' failed: %s", ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    int sequenceCount = 0;
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        Utf8CP sequenceName = stmt.GetValueText(0);
+
+        BeAssert(stmt.GetColumnBytes(1) <= (int) sizeof(int64_t));
+        int64_t val = INT64_C(-1);
+        void const* blob = stmt.GetValueBlob(1);
+        memcpy(&val, blob, sizeof(val));
+
+        if (BE_SQLITE_OK != updateStmt.BindInt64(1, val) || BE_SQLITE_OK != updateStmt.BindText(2, sequenceName, Statement::MakeCopy::No))
+            {
+            LOG.errorv("ECDb profile upgrade failed: Updating ECDb sequences in table 'be_Local' failed: %s", ecdb.GetLastError().c_str());
+            return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+            }
+
+        if (BE_SQLITE_DONE != updateStmt.Step() || ecdb.GetModifiedRowCount() != 1)
+            {
+            LOG.error("ECDb profile upgrade failed: Updating ECDb sequences in table 'be_Local' failed.");
+            return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+            }
+
+        updateStmt.Reset();
+        updateStmt.ClearBindings();
+        sequenceCount++;
+        }
+
+    if (sequenceCount != 11)
+        {
+        LOG.errorv("ECDb profile upgrade failed: Unexpected number of ECDb sequences  in table 'be_Local' were updated. Expected: 11. Found: %d", sequenceCount);
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    LOG.debug("ECDb profile upgrade: Updated ECDb sequences in be_Local.");
+    return BE_SQLITE_OK;
+    }
+    */
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle        04/2016
 //+---------------+---------------+---------------+---------------+---------------+--------
@@ -431,6 +508,116 @@ DbResult ECDbProfileUpgrader::AlterColumns(ECDbR ecdb, Utf8CP tableName, Utf8CP 
     return AlterColumnsInTable(ecdb, tableName, newDdlBody, recreateIndices, allColumnNamesAfter, matchingColumnNamesWithOldNames);
     }
 
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle    04/2016
+//+---------------+---------------+---------------+---------------+---------------+--------
+//static
+/*DbResult ECDbProfileUpgrader::AlterTable(ECDbR ecdb, Utf8CP alterTableSqlScript)
+    {
+    Savepoint* defaultTrans = ecdb.GetDefaultTransaction();
+    if (defaultTrans == nullptr)
+        {
+        LOG.error("ECDb profile upgrade failed: No default transaction available for the ECDb connection.");
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    if (defaultTrans->IsActive())
+        {
+        if (BE_SQLITE_OK != defaultTrans->Commit(nullptr))
+            {
+            LOG.errorv("ECDb profile upgrade failed: Could not commit default transaction before doing DB schema changes: %s", ecdb.GetLastError().c_str());
+            return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+            }
+        }
+    else
+        {
+        if (BE_SQLITE_OK != defaultTrans->Begin(BeSQLiteTxnMode::Immediate))
+            {
+            LOG.errorv("ECDb profile upgrade failed: Could not begin default transaction needed for doing DB schema changes: %s", ecdb.GetLastError().c_str());
+            return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+            }
+        }
+
+    Statement stmt;
+    if (BE_SQLITE_OK != stmt.Prepare(ecdb, "PRAGMA schema_version"))
+        {
+        LOG.errorv("ECDb profile upgrade failed: Could not read DB schema version: %s", ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    if (BE_SQLITE_ROW != stmt.Step())
+        {
+        LOG.errorv("ECDb profile upgrade failed: Could not read DB schema version: %s", ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    const int64_t dbSchemaVersion = stmt.GetValueInt64(0);
+    stmt.Finalize();
+
+    if (BE_SQLITE_OK != ecdb.ExecuteSql("PRAGMA writable_schema=1"))
+        {
+        LOG.errorv("ECDb profile upgrade failed: Could not execute 'PRAGMA writable_schema=1': %s", ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    if (BE_SQLITE_OK != ecdb.ExecuteSql(alterTableSqlScript))
+        {
+        LOG.errorv("ECDb profile upgrade failed: Could not execute script '%s': %s", alterTableSqlScript, ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    Utf8String setNewDbSchemaVersionSql;
+    setNewDbSchemaVersionSql.Sprintf("PRAGMA schema_version=%" PRId64, (int64_t) (dbSchemaVersion + 1));
+
+    if (BE_SQLITE_OK != ecdb.ExecuteSql(setNewDbSchemaVersionSql.c_str()))
+        {
+        LOG.errorv("ECDb profile upgrade failed: Could not execute '%s': %s", setNewDbSchemaVersionSql.c_str(), ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    if (BE_SQLITE_OK != ecdb.ExecuteSql("PRAGMA writable_schema=0"))
+        {
+        LOG.errorv("ECDb profile upgrade failed: Could not execute 'PRAGMA writable_schema=0': %s", ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    if (SUCCESS != CheckIntegrity(ecdb))
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+
+    if (BE_SQLITE_OK != defaultTrans->Commit(nullptr))
+        {
+        LOG.errorv("ECDb profile upgrade failed: Could not commit default transaction after doing DB schema changes: %s", ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    return BE_SQLITE_OK;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle    04/2016
+//+---------------+---------------+---------------+---------------+---------------+--------
+//static
+BentleyStatus ECDbProfileUpgrader::CheckIntegrity(ECDbCR ecdb)
+    {
+    Statement stmt;
+    if (BE_SQLITE_OK != stmt.Prepare(ecdb, "PRAGMA integrity_check"))
+        {
+        LOG.errorv("ECDb profile upgrade failed: Could not execute 'PRAGMA integrity_check': %s", ecdb.GetLastError().c_str());
+        return ERROR;
+        }
+
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        Utf8CP result = stmt.GetValueText(0);
+        if (BeStringUtilities::StricmpAscii(result, "ok") == 0)
+            return SUCCESS;
+
+        LOG.errorv("ECDb profile upgrade failed. Integrity check error: %s", result);
+        }
+
+    return ERROR;
+    }
+    */
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle    07/2013
 //+---------------+---------------+---------------+---------------+---------------+--------

@@ -37,7 +37,7 @@ DbResult ECDbProfileManager::CreateECProfile(ECDbR ecdb)
         return stat;
         }
 
-    stat = AssignProfileVersion(ecdb);
+    stat = AssignProfileVersion(ecdb, true);
     if (stat != BE_SQLITE_OK)
         {
         ecdb.AbandonChanges();
@@ -135,7 +135,7 @@ DbResult ECDbProfileManager::UpgradeECProfile(ECDbR ecdb, Db::OpenParams const& 
         }
 
     //after upgrade procedure set new profile version in ECDb file
-    stat = AssignProfileVersion(ecdb);
+    stat = AssignProfileVersion(ecdb, false);
 
     timer.Stop();
     if (stat != BE_SQLITE_OK)
@@ -160,10 +160,18 @@ DbResult ECDbProfileManager::UpgradeECProfile(ECDbR ecdb, Db::OpenParams const& 
 // @bsimethod                                                    Affan.Khan        07/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-DbResult ECDbProfileManager::AssignProfileVersion(ECDbR ecdb)
+DbResult ECDbProfileManager::AssignProfileVersion(ECDbR ecdb, bool onProfileCreation)
     {
     //Save the profile version as string (JSON format)
     const Utf8String profileVersionStr = GetExpectedVersion().ToJson();
+
+    if (onProfileCreation)
+        {
+        DbResult stat = ecdb.SavePropertyString(PropertySpec("InitialSchemaVersion", "ec_Db"), profileVersionStr);
+        if (BE_SQLITE_OK != stat)
+            return stat;
+        }
+
     return ecdb.SavePropertyString(GetProfileVersionPropertySpec(), profileVersionStr);
     }
 
@@ -226,13 +234,10 @@ void ECDbProfileManager::GetUpgraderSequence(std::vector<std::unique_ptr<ECDbPro
     if (currentProfileVersion < SchemaVersion(3, 3, 0, 0))
         upgraders.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3300()));
 
-    if (currentProfileVersion < SchemaVersion(3, 3, 0, 1))
-        upgraders.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3301()));
+    //No upgrader needed to upgrade to 3.3.0.1 as this step only requires the schemas to be reimported
 
     if (currentProfileVersion < SchemaVersion(3, 3, 0, 2))
         upgraders.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3302()));
-
-    BeAssert(GetExpectedVersion() == SchemaVersion(3, 3, 0, 2) && "ExpectedVersion and latest upgrader don't match.");
     }
 
 //-----------------------------------------------------------------------------------------
@@ -244,21 +249,13 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
     //ec_Schema
     DbResult stat = ecdb.ExecuteSql("CREATE TABLE ec_Schema("
                                     "Id INTEGER PRIMARY KEY,"
-                                    "Name TEXT NOT NULL,"
+                                    "Name TEXT UNIQUE NOT NULL COLLATE NOCASE,"
                                     "DisplayLabel TEXT,"
                                     "Description TEXT,"
-                                    "NamespacePrefix TEXT,"
+                                    "NamespacePrefix TEXT UNIQUE NOT NULL COLLATE NOCASE,"
                                     "VersionDigit1 INTEGER NOT NULL,"
                                     "VersionDigit2 INTEGER NOT NULL,"
                                     "VersionDigit3 INTEGER NOT NULL)");
-    if (BE_SQLITE_OK != stat)
-        return stat;
-
-    stat = ecdb.ExecuteSql("CREATE UNIQUE INDEX uix_ec_Schema_Name ON ec_Schema(Name COLLATE NOCASE)");
-    if (BE_SQLITE_OK != stat)
-        return stat;
-
-    stat = ecdb.ExecuteSql("CREATE UNIQUE INDEX uix_ec_Schema_NamespacePrefix ON ec_Schema(NamespacePrefix COLLATE NOCASE)");
     if (BE_SQLITE_OK != stat)
         return stat;
 
@@ -277,7 +274,7 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
     stat = ecdb.ExecuteSql("CREATE TABLE ec_Class("
                            "Id INTEGER PRIMARY KEY,"
                            "SchemaId INTEGER NOT NULL REFERENCES ec_Schema(Id) ON DELETE CASCADE,"
-                           "Name TEXT NOT NULL,"
+                           "Name TEXT NOT NULL COLLATE NOCASE,"
                            "DisplayLabel TEXT,"
                            "Description TEXT,"
                            "Type INTEGER NOT NULL,"
@@ -318,7 +315,7 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
     stat = ecdb.ExecuteSql("CREATE TABLE ec_Enumeration("
                            "Id INTEGER PRIMARY KEY,"
                            "SchemaId INTEGER NOT NULL REFERENCES ec_Schema(Id) ON DELETE CASCADE,"
-                           "Name TEXT NOT NULL,"
+                           "Name TEXT NOT NULL COLLATE NOCASE,"
                            "DisplayLabel TEXT,"
                            "Description TEXT,"
                            "UnderlyingPrimitiveType INTEGER NOT NULL,"
@@ -335,7 +332,7 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
     stat = ecdb.ExecuteSql("CREATE TABLE ec_Property("
                            "Id INTEGER PRIMARY KEY,"
                            "ClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE,"
-                           "Name TEXT NOT NULL,"
+                           "Name TEXT NOT NULL COLLATE NOCASE,"
                            "DisplayLabel TEXT,"
                            "Description TEXT,"
                            "IsReadonly BOOLEAN NOT NULL CHECK (IsReadonly IN (0,1)),"
@@ -360,7 +357,7 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
     stat = ecdb.ExecuteSql("CREATE Table ec_PropertyPath("
                            "Id INTEGER PRIMARY KEY,"
                            "RootPropertyId INTEGER NOT NULL REFERENCES ec_Property(Id) ON DELETE CASCADE,"
-                           "AccessString TEXT NOT NULL)");
+                           "AccessString TEXT NOT NULL COLLATE NOCASE)");
     if (BE_SQLITE_OK != stat)
         return stat;
 
@@ -437,7 +434,7 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
     stat = ecdb.ExecuteSql("CREATE TABLE ec_Table("
                            "Id INTEGER PRIMARY KEY,"
                            "BaseTableId INTEGER REFERENCES ec_Table(Id) ON DELETE CASCADE,"
-                           "Name TEXT NOT NULL COLLATE NOCASE,"
+                           "Name TEXT UNIQUE NOT NULL COLLATE NOCASE,"
                            "Type INTEGER NOT NULL,"
                            "IsVirtual BOOLEAN NOT NULL CHECK (IsVirtual IN (0,1)))");
     if (BE_SQLITE_OK != stat)
@@ -457,8 +454,8 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
                            "Ordinal INTEGER NOT NULL,"
                            "NotNullConstraint BOOLEAN,"
                            "UniqueConstraint BOOLEAN,"
-                           "CheckConstraint TEXT,"
-                           "DefaultConstraint TEXT,"
+                           "CheckConstraint TEXT COLLATE NOCASE,"
+                           "DefaultConstraint TEXT COLLATE NOCASE,"
                            "CollationConstraint INTEGER,"
                            "OrdinalInPrimaryKey INTEGER,"
                            "ColumnKind INTEGER)");
@@ -472,7 +469,7 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
     //ec_Index
     stat = ecdb.ExecuteSql("CREATE TABLE ec_Index("
                            "Id INTEGER PRIMARY KEY,"
-                           "Name TEXT NOT NULL COLLATE NOCASE,"
+                           "Name TEXT UNIQUE NOT NULL COLLATE NOCASE,"
                            "TableId INTEGER NOT NULL REFERENCES ec_Table(Id) ON DELETE CASCADE,"
                            "IsUnique BOOLEAN NOT NULL CHECK (IsUnique IN (0,1)),"
                            "AddNotNullWhereExp BOOLEAN NOT NULL CHECK (AddNotNullWhereExp IN (0,1)), "
@@ -482,7 +479,7 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    stat = ecdb.ExecuteSql("CREATE UNIQUE INDEX uix_ec_Index_TableId_Name ON ec_Index(TableId,Name)");
+    stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_Index_TableId ON ec_Index(TableId)");
     if (BE_SQLITE_OK != stat)
         return stat;
 
