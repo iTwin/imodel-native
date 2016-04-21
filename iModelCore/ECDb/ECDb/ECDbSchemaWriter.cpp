@@ -822,8 +822,6 @@ BentleyStatus ECDbSchemaWriter::UpdateECSchema(ECSchemaChange& schemaChange, ECS
         {
         return Fail("ECSCHEMA-UPGRADE: Any change to ECSchema::VersionMajor is not supported. Failed on ECSchema %s.",
                     oldSchema.GetFullSchemaName().c_str());
-        //VersionDigit1
-        return ERROR;
         }
 
     if (schemaChange.GetVersionWrite().IsValid())
@@ -832,8 +830,6 @@ BentleyStatus ECDbSchemaWriter::UpdateECSchema(ECSchemaChange& schemaChange, ECS
             {
             return Fail("ECSCHEMA-UPGRADE: Cannot downgrade ECSchema::VersionWrite. Failed on ECSchema %s.",
                         oldSchema.GetFullSchemaName().c_str());
-
-            return ERROR;
             }
 
         updater.Set("VersionDigit2", schemaChange.GetVersionWrite().GetNew().Value());
@@ -845,8 +841,6 @@ BentleyStatus ECDbSchemaWriter::UpdateECSchema(ECSchemaChange& schemaChange, ECS
             {
             return Fail("ECSCHEMA-UPGRADE: Cannot downgrade ECSchema::VersionMinor. Failed on ECSchema %s.",
                         oldSchema.GetFullSchemaName().c_str());
-
-            return ERROR;
             }
 
         updater.Set("VersionDigit3", schemaChange.GetVersionMinor().GetNew().Value());
