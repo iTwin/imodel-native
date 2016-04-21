@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/Utils/WSClientBaseTest.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "WSClientBaseTest.h"
@@ -15,34 +15,41 @@ USING_NAMESPACE_BENTLEY_MOBILEDGN
 USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 USING_NAMESPACE_WSCLIENT_UNITTESTS
 
-BeFileName s_l10nSubPath (L"sqlang\\BeGTest_en-US.sqlang.db3");
+BeFileName s_l10nSubPath(L"sqlang\\BeGTest_en-US.sqlang.db3");
+std::shared_ptr<TestAppPathProvider>  WSClientBaseTest::s_pathProvider;
 
 void WSClientBaseTest::SetUp()
     {
-    InitLogging();
-    MobileDgnCommon::SetApplicationPathsProvider(&m_pathProvider);
-    InitLibraries();
+    SetUpTestCase();
     }
 
 void WSClientBaseTest::TearDown()
     {
-    MobileDgnCommon::SetApplicationPathsProvider(nullptr);
+    TearDownTestCase();
     }
 
 void WSClientBaseTest::SetUpTestCase()
-    {}
+    {
+    s_pathProvider = std::make_shared<TestAppPathProvider>();
+    InitLogging();
+    MobileDgnCommon::SetApplicationPathsProvider(s_pathProvider.get());
+    InitLibraries();
+    }
 
 void WSClientBaseTest::TearDownTestCase()
-    {}
+    {
+    MobileDgnCommon::SetApplicationPathsProvider(nullptr);
+    s_pathProvider = nullptr;
+    }
 
 void WSClientBaseTest::InitLibraries()
     {
-    BeFileName::CreateNewDirectory(m_pathProvider.GetTemporaryDirectory());
+    BeFileName::CreateNewDirectory(s_pathProvider->GetTemporaryDirectory());
 
-    BeSQLiteLib::Initialize(m_pathProvider.GetTemporaryDirectory());
-    BeSQLite::EC::ECDb::Initialize(m_pathProvider.GetTemporaryDirectory(), &m_pathProvider.GetAssetsRootDirectory());
+    BeSQLiteLib::Initialize(s_pathProvider->GetTemporaryDirectory());
+    BeSQLite::EC::ECDb::Initialize(s_pathProvider->GetTemporaryDirectory(), &s_pathProvider->GetAssetsRootDirectory());
 
-    L10N::SqlangFiles sqlangFiles(BeFileName(m_pathProvider.GetAssetsRootDirectory()).AppendToPath(s_l10nSubPath));
+    L10N::SqlangFiles sqlangFiles(BeFileName(s_pathProvider->GetAssetsRootDirectory()).AppendToPath(s_l10nSubPath));
     MobileDgnL10N::ReInitialize(sqlangFiles, sqlangFiles);
     }
 

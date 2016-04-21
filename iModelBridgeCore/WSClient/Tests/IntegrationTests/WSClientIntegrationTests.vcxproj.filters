@@ -60,6 +60,9 @@
     <ClCompile Include="Examples\ExampleTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Cache\RepositorySchemaUpgradeTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Repository\WorkspaceTests.h">
@@ -105,6 +108,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Examples\ExampleTests.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Cache\RepositorySchemaUpgradeTests.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

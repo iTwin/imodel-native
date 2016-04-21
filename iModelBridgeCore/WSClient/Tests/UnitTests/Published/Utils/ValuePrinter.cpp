@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/Utils/ValuePrinter.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ValuePrinter.h"
@@ -327,6 +327,50 @@ std::ostream& operator << (std::ostream &o, WSError::Id errorId)
 std::ostream& operator << (std::ostream &o, ObjectIdCR id)
     {
     o << id.ToString();
+    return o;
+    }
+
+std::ostream& operator << (std::ostream &o, BeFileNameStatus errorId)
+    {
+    static std::map<BeFileNameStatus, Utf8String> names
+        {
+        TO_VALUE_STRING_PAIR(BeFileNameStatus::AccessViolation),
+        TO_VALUE_STRING_PAIR(BeFileNameStatus::AlreadyExists),
+        TO_VALUE_STRING_PAIR(BeFileNameStatus::CantCreate),
+        TO_VALUE_STRING_PAIR(BeFileNameStatus::CantDeleteDir),
+        TO_VALUE_STRING_PAIR(BeFileNameStatus::CantDeleteFile),
+        TO_VALUE_STRING_PAIR(BeFileNameStatus::FileNotFound),
+        TO_VALUE_STRING_PAIR(BeFileNameStatus::IllegalName),
+        TO_VALUE_STRING_PAIR(BeFileNameStatus::Success),
+        TO_VALUE_STRING_PAIR(BeFileNameStatus::UnknownError)
+    };
+
+    Utf8String name = names[errorId];
+    BeAssert(!name.empty() && "Add missing value");
+    o << name;
+
+    return o;
+    }
+
+std::ostream& operator << (std::ostream &o, BeFileStatus errorId)
+    {
+    static std::map<BeFileStatus, Utf8String> names
+        {
+        TO_VALUE_STRING_PAIR(BeFileStatus::AccessViolationError),
+        TO_VALUE_STRING_PAIR(BeFileStatus::FileNotFoundError),
+        TO_VALUE_STRING_PAIR(BeFileStatus::FileNotOpenError),
+        TO_VALUE_STRING_PAIR(BeFileStatus::NotLockedError),
+        TO_VALUE_STRING_PAIR(BeFileStatus::ReadError),
+        TO_VALUE_STRING_PAIR(BeFileStatus::SharingViolationError),
+        TO_VALUE_STRING_PAIR(BeFileStatus::Success),
+        TO_VALUE_STRING_PAIR(BeFileStatus::TooManyOpenFilesError),
+        TO_VALUE_STRING_PAIR(BeFileStatus::UnknownError)
+    };
+
+    Utf8String name = names[errorId];
+    BeAssert(!name.empty() && "Add missing value");
+    o << name;
+
     return o;
     }
 
