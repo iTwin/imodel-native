@@ -405,6 +405,18 @@
     <ClCompile Include="Ims\SolrClient.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ConnectC\CWSCC.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ConnectC\CWSCCGen.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ConnectC\CWSCCGenBuffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ConnectC\CWSCCInternal.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Client\WebApi\WebApi.h">
@@ -890,6 +902,27 @@
     <ClInclude Include="PublicAPI\WebServices\Ims\SolrClient.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ConnectC\CWSCCGenBuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ConnectC\CWSCCInternal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ConnectC\CWSCCPrivate.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ConnectC\WSLocalState.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\ConnectC\CWSCCGenBufferPublic.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\ConnectC\CWSCCGenPublic.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\ConnectC\CWSCCPublic.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Xml Include="WSClient.PartFile.xml" />
@@ -932,5 +965,8 @@
     <None Include="Azure\Azure.mki" />
     <None Include="DgnDbServerClient\DgnDbServerClient.mki" />
     <None Include="Ims\Ims.mki" />
+    <None Include="ConnectC\ConnectC.mki" />
+    <None Include="CWSClientCLib.mke" />
+    <None Include="CWSClientCPrewire.mke" />
   </ItemGroup>
 </Project>

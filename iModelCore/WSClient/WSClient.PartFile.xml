@@ -25,6 +25,7 @@
         <SubPart PartName="WebServicesClient-PublicAPI"/>
         <SubPart PartName="WebServicesCache-PublicAPI"/>
         <SubPart PartName="DgnDbServerClient-PublicAPI"/>
+		<SubPart PartName="ConnectWebServicesClientC-PublicAPI"/>
         <Bindings>
             <Directory SourceName="Delivery/PublishedApi" SubPartDirectory="PublishedApi/WSClient" />
         </Bindings>
@@ -96,7 +97,6 @@
         </Bindings>
     </Part>
     
-    
     <!-- //////////////////////////////////////////////////////////////////////////// -->
     <!-- // DgnDbServerClient lib                                                        // -->
     <!-- //////////////////////////////////////////////////////////////////////////// -->
@@ -134,6 +134,41 @@
         </Bindings>
     </Part>
 
+	<!-- //////////////////////////////////////////////////////////////////////////// -->
+    <!-- // ConnectWebServicesClientC lib                                              // -->
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+
+    <Part Name="ConnectWebServicesClientC">
+        <SubPart PartName="ConnectWebServicesClientC-PublicAPI" />
+        <SubPart PartName="ConnectWebServicesClientC-Library" />
+        <SubPart PartName="ConnectWebServicesClientC-Library-Android" />
+    </Part>
+
+    <Part Name="ConnectWebServicesClientC-PublicAPI" BentleyBuildMakeFile="CWSClientCPrewire.mke">
+        <Bindings>
+            <PublicAPI Domain="WebServices" />
+        </Bindings>
+    </Part>
+
+    <Part Name="ConnectWebServicesClientC-Library" BentleyBuildMakeFile="CWSClientCLib.mke" ExcludePlatforms="Android*" ApiNumber="G06">
+        <SubPart PartName="WebServicesClient" />
+        <SubPart PartName="DgnClientFxLibrary"            PartFile="DgnClientFx" Repository="DgnClientFx" />
+        <SubPart PartName="DgnClientFxLibrary-WinRT"      PartFile="DgnClientFx" Repository="DgnClientFx" />
+        <Bindings>
+            <Libs ProductDirectoryName="WSClientLibs" Required="false">Delivery/$(libprefix)ConnectWebServicesClientC$(libext)</Libs>
+            <Assemblies ProductDirectoryName="WSClientAssemblies">Delivery/$(libprefix)ConnectWebServicesClientC$(ApiNumber)$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+
+    <Part Name="ConnectWebServicesClientC-Library-Android" BentleyBuildMakeFile="CWSClientCLib.mke" OnlyPlatforms="Android*">
+        <SubPart PartName="WebServicesClient" />
+        <SubPart PartName="DgnClientFxLibrary-Android"    PartFile="DgnClientFx" Repository="DgnClientFx" />
+        <Bindings>
+            <Libs ProductDirectoryName="WSClientLibs" Required="false">Delivery/$(libprefix)ConnectWebServicesClientC.so</Libs>
+            <Assemblies ProductDirectoryName="WSClientAssemblies">Delivery/$(libprefix)ConnectWebServicesClientC.so</Assemblies>
+        </Bindings>
+    </Part>
+	
     <!-- //////////////////////////////////////////////////////////////////////////// -->
     <!-- // L10N                                                                   // -->
     <!-- //////////////////////////////////////////////////////////////////////////// -->
