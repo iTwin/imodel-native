@@ -1284,7 +1284,10 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
         /*** NATIVE_TYPE_NAME = JsECValue ***/
 
         static FromDouble(v: cxx_double): ECValueP;
+        static FromInteger(v: cxx_int32_t): ECValueP;
         static FromString(v: Bentley_Utf8String): ECValueP;
+        static FromDateTime(v: Bentley_Utf8String): ECValueP;
+        static FromPoint3d(v: DPoint3dP): ECValueP;
 
         IsNull: cxx_bool;
         IsPrimitive: cxx_bool;
@@ -1292,6 +1295,8 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
         GetString(): Bentley_Utf8String;
         GetInteger(): cxx_int32_t;
         GetDouble(): cxx_double;
+        GetPoint3d(): DPoint3dP;
+        GetDateTime(): Bentley_Utf8String;
 
         OnDispose(): void;
         Dispose(): void;
