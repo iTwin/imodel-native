@@ -573,7 +573,7 @@ void SimplifyGraphic::ClipAndProcessCurveVector(CurveVectorCR geom, bool filled)
             return;
         }
 
-    IGeometryProcessor::UnhandledPreference unhandled = m_processor._GetUnhandledPreference(geom);
+    IGeometryProcessor::UnhandledPreference unhandled = m_processor._GetUnhandledPreference(geom, *this);
     bool isAutoClipPref = false;
 
     if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::Auto & unhandled))
@@ -581,9 +581,9 @@ void SimplifyGraphic::ClipAndProcessCurveVector(CurveVectorCR geom, bool filled)
         if (geom.IsAnyRegionType())
             {
             if (!geom.ContainsNonLinearPrimitive())
-                unhandled = IGeometryProcessor::UnhandledPreference::Facet; // Parasolid is expensive - facets will represent this geometry exactly.
+                unhandled = IGeometryProcessor::UnhandledPreference::Facet; // BRep is expensive - facets will represent this geometry exactly.
             else
-                unhandled = IGeometryProcessor::UnhandledPreference::BRep | IGeometryProcessor::UnhandledPreference::Facet; // Try Parasolid first...
+                unhandled = IGeometryProcessor::UnhandledPreference::BRep | IGeometryProcessor::UnhandledPreference::Facet; // Try BRep first...
 
             isAutoClipPref = doClipping;
             }
@@ -706,14 +706,14 @@ void SimplifyGraphic::ClipAndProcessSolidPrimitive(ISolidPrimitiveCR geom)
             return;
         }
 
-    IGeometryProcessor::UnhandledPreference unhandled = m_processor._GetUnhandledPreference(geom);
+    IGeometryProcessor::UnhandledPreference unhandled = m_processor._GetUnhandledPreference(geom, *this);
 
     if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::Auto & unhandled))
         {
         if (!geom.HasCurvedFaceOrEdge())
-            unhandled = IGeometryProcessor::UnhandledPreference::Facet; // Parasolid is expensive - facets will represent this geometry exactly.
+            unhandled = IGeometryProcessor::UnhandledPreference::Facet; // BRep is expensive - facets will represent this geometry exactly.
         else
-            unhandled = IGeometryProcessor::UnhandledPreference::BRep | IGeometryProcessor::UnhandledPreference::Facet; // Try Parasolid first...
+            unhandled = IGeometryProcessor::UnhandledPreference::BRep | IGeometryProcessor::UnhandledPreference::Facet; // Try BRep first...
         }
 
     if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::BRep & unhandled))
@@ -823,14 +823,14 @@ void SimplifyGraphic::ClipAndProcessSurface(MSBsplineSurfaceCR geom)
             return;
         }
 
-    IGeometryProcessor::UnhandledPreference unhandled = m_processor._GetUnhandledPreference(geom);
+    IGeometryProcessor::UnhandledPreference unhandled = m_processor._GetUnhandledPreference(geom, *this);
 
     if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::Auto & unhandled))
         {
         if (geom.IsPlanarBilinear())
-            unhandled = IGeometryProcessor::UnhandledPreference::Facet; // Parasolid is expensive - facets will represent this geometry exactly.
+            unhandled = IGeometryProcessor::UnhandledPreference::Facet; // BRep is expensive - facets will represent this geometry exactly.
         else
-            unhandled = IGeometryProcessor::UnhandledPreference::BRep | IGeometryProcessor::UnhandledPreference::Facet; // Try Parasolid first...
+            unhandled = IGeometryProcessor::UnhandledPreference::BRep | IGeometryProcessor::UnhandledPreference::Facet; // Try BRep first...
         }
 
     if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::BRep & unhandled))
@@ -940,7 +940,7 @@ void SimplifyGraphic::ClipAndProcessPolyface(PolyfaceQueryCR geom, bool filled)
             return;
         }
 
-    IGeometryProcessor::UnhandledPreference unhandled = m_processor._GetUnhandledPreference(geom);
+    IGeometryProcessor::UnhandledPreference unhandled = m_processor._GetUnhandledPreference(geom, *this);
 
     if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::Auto & unhandled))
         unhandled = IGeometryProcessor::UnhandledPreference::Facet;
@@ -1131,7 +1131,7 @@ void SimplifyGraphic::ClipAndProcessBody(ISolidKernelEntityCR geom)
             return;
         }
 
-    IGeometryProcessor::UnhandledPreference unhandled = m_processor._GetUnhandledPreference(geom);
+    IGeometryProcessor::UnhandledPreference unhandled = m_processor._GetUnhandledPreference(geom, *this);
 
     if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::Auto & unhandled))
         unhandled = IGeometryProcessor::UnhandledPreference::BRep;
@@ -1301,7 +1301,7 @@ void SimplifyGraphic::ClipAndProcessText(TextStringCR text)
             return;
         }
 
-    IGeometryProcessor::UnhandledPreference unhandled = m_processor._GetUnhandledPreference(text);
+    IGeometryProcessor::UnhandledPreference unhandled = m_processor._GetUnhandledPreference(text, *this);
 
     if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::Box & unhandled))
         {
@@ -1742,7 +1742,7 @@ void SimplifyGraphic::_AddBSplineSurface(MSBsplineSurfaceCR geom)
 void SimplifyGraphic::_AddPolyface(PolyfaceQueryCR geom, bool filled)
     {
     // Modify this polyface to conform to the processor's facet options...
-    if (IGeometryProcessor::UnhandledPreference::Ignore != ((IGeometryProcessor::UnhandledPreference::Auto | IGeometryProcessor::UnhandledPreference::Facet) & m_processor._GetUnhandledPreference(geom)))
+    if (IGeometryProcessor::UnhandledPreference::Ignore != ((IGeometryProcessor::UnhandledPreference::Auto | IGeometryProcessor::UnhandledPreference::Facet) & m_processor._GetUnhandledPreference(geom, *this)))
         {
         size_t maxPerFace;
 

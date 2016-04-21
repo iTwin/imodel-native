@@ -134,15 +134,20 @@ void GeometrySource::_GetInfoString(HitDetailCR hit, Utf8StringR descr, Utf8CP d
         return;
         }
 
+    Utf8String  labelStr = el->GetDisplayLabel();
+
     modelStr.assign(DgnCoreL10N::GetString(DgnCoreL10N::DISPLAY_INFO_MessageID_Model()).c_str()).append(el->GetModel()->GetCode().GetValue());
 
-    descr = el->GetCode().GetValue();
+    if (!labelStr.empty())
+        {
+        descr = labelStr.c_str();
+        descr.append(delimiter).append(categoryStr.c_str());
+        descr.append(delimiter).append(modelStr.c_str());
+        return;
+        }
 
-    if (el->HasLabel())
-        descr.append(delimiter).append(el->GetLabel());
-
+    descr = categoryStr.c_str();
     descr.append(delimiter).append(modelStr.c_str());
-    descr.append(delimiter).append(categoryStr.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**

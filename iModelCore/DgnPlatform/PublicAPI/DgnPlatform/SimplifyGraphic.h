@@ -176,12 +176,12 @@ virtual bool _IncludeWireframeEdges() {return true;}
 virtual bool _IncludeWireframeFaceIso() {return true;}
 
 //! Determine how geometry not specifically handled the geometry _Process method should be treated.
-virtual UnhandledPreference _GetUnhandledPreference(CurveVectorCR) const {return UnhandledPreference::Ignore;}
-virtual UnhandledPreference _GetUnhandledPreference(ISolidPrimitiveCR) const {return UnhandledPreference::Ignore;}
-virtual UnhandledPreference _GetUnhandledPreference(MSBsplineSurfaceCR) const {return UnhandledPreference::Ignore;}
-virtual UnhandledPreference _GetUnhandledPreference(PolyfaceQueryCR) const {return UnhandledPreference::Ignore;}
-virtual UnhandledPreference _GetUnhandledPreference(ISolidKernelEntityCR) const {return UnhandledPreference::Ignore;}
-virtual UnhandledPreference _GetUnhandledPreference(TextStringCR) const {return UnhandledPreference::Ignore;}
+virtual UnhandledPreference _GetUnhandledPreference(CurveVectorCR, SimplifyGraphic&) const {return UnhandledPreference::Ignore;}
+virtual UnhandledPreference _GetUnhandledPreference(ISolidPrimitiveCR, SimplifyGraphic&) const {return UnhandledPreference::Ignore;}
+virtual UnhandledPreference _GetUnhandledPreference(MSBsplineSurfaceCR, SimplifyGraphic&) const {return UnhandledPreference::Ignore;}
+virtual UnhandledPreference _GetUnhandledPreference(PolyfaceQueryCR, SimplifyGraphic&) const {return UnhandledPreference::Ignore;}
+virtual UnhandledPreference _GetUnhandledPreference(ISolidKernelEntityCR, SimplifyGraphic&) const {return UnhandledPreference::Ignore;}
+virtual UnhandledPreference _GetUnhandledPreference(TextStringCR, SimplifyGraphic&) const {return UnhandledPreference::Ignore;}
 
 //! Call SimplifyGraphic::ProcessAsLinearSegments to output a CurveVector as strokes calling this method.
 virtual bool _ProcessLinearSegments(DPoint3dCP points, size_t numPoints, bool closed, bool filled, SimplifyGraphic&) {return false;}

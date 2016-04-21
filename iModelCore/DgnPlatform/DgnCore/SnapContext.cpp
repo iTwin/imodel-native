@@ -332,11 +332,11 @@ protected:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual IGeometryProcessor::UnhandledPreference _GetUnhandledPreference(ISolidPrimitiveCR) const override {return IGeometryProcessor::UnhandledPreference::Curve;}
-virtual IGeometryProcessor::UnhandledPreference _GetUnhandledPreference(MSBsplineSurfaceCR) const override {return IGeometryProcessor::UnhandledPreference::Curve;}
-virtual IGeometryProcessor::UnhandledPreference _GetUnhandledPreference(PolyfaceQueryCR) const {return IGeometryProcessor::UnhandledPreference::Curve;}
-virtual IGeometryProcessor::UnhandledPreference _GetUnhandledPreference(ISolidKernelEntityCR) const override {return IGeometryProcessor::UnhandledPreference::Curve;}
-virtual IGeometryProcessor::UnhandledPreference _GetUnhandledPreference(TextStringCR) const override {return IGeometryProcessor::UnhandledPreference::Box;}
+virtual IGeometryProcessor::UnhandledPreference _GetUnhandledPreference(ISolidPrimitiveCR, SimplifyGraphic&) const override {return IGeometryProcessor::UnhandledPreference::Curve;}
+virtual IGeometryProcessor::UnhandledPreference _GetUnhandledPreference(MSBsplineSurfaceCR, SimplifyGraphic&) const override {return IGeometryProcessor::UnhandledPreference::Curve;}
+virtual IGeometryProcessor::UnhandledPreference _GetUnhandledPreference(PolyfaceQueryCR, SimplifyGraphic&) const {return IGeometryProcessor::UnhandledPreference::Curve;}
+virtual IGeometryProcessor::UnhandledPreference _GetUnhandledPreference(ISolidKernelEntityCR, SimplifyGraphic&) const override {return IGeometryProcessor::UnhandledPreference::Curve;}
+virtual IGeometryProcessor::UnhandledPreference _GetUnhandledPreference(TextStringCR, SimplifyGraphic&) const override {return IGeometryProcessor::UnhandledPreference::Box;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/13
