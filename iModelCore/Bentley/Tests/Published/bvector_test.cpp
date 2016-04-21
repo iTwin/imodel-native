@@ -1156,3 +1156,45 @@ TEST (BVectorTests, MoveSemantics)
     EXPECT_EQ(**(ptrs.begin()+2), 1);
     }
 
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   04/16
+//=======================================================================================
+struct MemberType
+{
+    int32_t m_i;
+
+    MemberType(int32_t i = 0) : m_i(i) { }
+    MemberType(int32_t w, int32_t h) : m_i(w*h) { }
+    MemberType(MemberType const* pOther) : m_i(pOther ? pOther->m_i : 0) { }
+
+    template<typename T> MemberType(T const& t) : m_i(static_cast<int32_t>(t) * -2) { }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST (BVectorTests, Emplace)
+    {
+    bvector<MemberType> vec;
+    vec.emplace_back(1);
+    vec.emplace_back(2, 3);
+    MemberType src(4);
+    vec.emplace_back(&src);
+    vec.emplace(vec.begin()+1, -1, 5);
+    vec.emplace_back();
+
+    EXPECT_EQ(5, vec.size());
+    EXPECT_EQ(vec[0].m_i, 1);
+    EXPECT_EQ(vec[1].m_i, -5);
+    EXPECT_EQ(vec[2].m_i, 6);
+    EXPECT_EQ(vec[3].m_i, 4);
+    EXPECT_EQ(vec[4].m_i, 0);
+
+    vec.emplace_back(12.1);
+    int32_t x = 5;
+    vec.emplace(vec.begin(), x);
+    EXPECT_EQ(7, vec.size());
+    EXPECT_EQ(vec[6].m_i, -24);
+    EXPECT_EQ(vec[0].m_i, x);
+    }
+
