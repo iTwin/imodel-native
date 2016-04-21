@@ -642,6 +642,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     template<class POINT, class EXTENT> class SMMeshIndex : public SMPointIndex < POINT, EXTENT >
     {
+    friend class SMMeshIndexNode < POINT, EXTENT > ;
     public:
         SMMeshIndex(SMMemoryPoolPtr& smMemoryPool,    
                      HFCPtr<HPMCountLimitedPool<POINT> > pool, 
@@ -772,6 +773,9 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         HFCPtr<IScalableMeshDataStore<DifferenceSet, Byte, Byte>> m_clipStore;
         HFCPtr<ClipRegistry> m_clipRegistry;
         HFCPtr<HPMIndirectCountLimitedPool<DifferenceSet>> m_clipPool;
+
+        std::vector<std::future<bool>> m_textureWorkerTasks;
+
     };
 
         template <class POINT, class EXTENT> class SMIndexNodeVirtual<POINT, EXTENT, SMMeshIndexNode<POINT, EXTENT>> : public SMMeshIndexNode<POINT, EXTENT>

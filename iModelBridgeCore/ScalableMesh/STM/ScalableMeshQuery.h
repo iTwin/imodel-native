@@ -1382,8 +1382,6 @@ template<class POINT> class ScalableMeshCachedMeshNode : public virtual IScalabl
 
             ScalableMeshCachedMeshNode() {};
 
-            void LoadMesh(bool loadGraph, const bvector<bool>& clipsToShow, bool applyAllClips=false);
-
             void LoadMesh(bool loadGraph, const bset<uint64_t>& clipsToShow);
 
             virtual StatusInt _GetCachedMesh(SmCachedDisplayMesh*& cachedMesh) const override {return ERROR;}
@@ -1449,8 +1447,6 @@ template<class POINT> class ScalableMeshCachedDisplayNode : public virtual IScal
                     assert(status == SUCCESS);                    
                     }
                 }
-            
-            void LoadMesh(bool loadGraph, const bvector<bool>& clipsToShow, IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr, bool loadTexture, bool applyAllClips = false);
 
             void LoadMesh(bool loadGraph, const bset<uint64_t>& clipsToShow, IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr, bool loadTexture);
 
