@@ -16,7 +16,7 @@
 // </auto-generated>
 //--------------------------------------------------------------------------------------+
 
-#include <WebServices\ConnectC\CWSCCGenPublic.h>
+#include <WebServices/ConnectC/CWSCCGenPublic.h>
 
 using namespace std;
 /************************************************************************************//**
