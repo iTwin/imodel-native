@@ -144,7 +144,7 @@ TransformCR PointCloudModel::GetSceneToWorld() const    { return m_properties.m_
 void PointCloudModel::SetSceneToWorld(TransformCR trans){ m_properties.m_sceneToWorld = trans;}
 
 float PointCloudModel::GetViewDensity() const       { return m_properties.m_density; }
-void PointCloudModel::SetViewDensity(float density) { m_properties.m_density = density; }
+void PointCloudModel::SetViewDensity(float density) { BeAssert(IN_RANGE(density, 0.0f, 1.0f)); m_properties.m_density = BOUND(density, 0.0f, 1.0f);}
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     4/2015

@@ -135,7 +135,7 @@ bool PointCloudProgressiveDisplay::DrawPointCloud(int64_t& pointsToLoad, Dgn::Re
             {          
             MyPointCloudDraw pointCloudDraw;
             pointCloudDraw.m_ptCP = queryBuffers->GetXyzChannel()->GetChannelBuffer();
-            pointCloudDraw.m_pRgb = (ColorDef const*)queryBuffers->GetRgbChannel()->GetChannelBuffer();
+            pointCloudDraw.m_pRgb = queryBuffers->HasRgb() ? (ColorDef const*) queryBuffers->GetRgbChannel()->GetChannelBuffer() : nullptr;
             pointCloudDraw.m_ptCount = queryBuffers->GetNumPoints();
 
             pGraphic->AddPointCloud(&pointCloudDraw);
@@ -215,7 +215,7 @@ ProgressiveTask::Completion PointCloudProgressiveDisplay::_DoProgressive(Dgn::Pr
 
     wantShow = WantShow::Yes; // Would like to show only when we have a good amount of new pts but we do not have that info.
 
-    static float density = 1.0F;
+    static float density = m_model.GetViewDensity();
     static PtQueryDensity densityType = PtQueryDensity::QUERY_DENSITY_VIEW; // Get only points in memory for a view representation. Points still on disk will get loaded at a later time.
 
     int64_t pointsToLoad = 0;
