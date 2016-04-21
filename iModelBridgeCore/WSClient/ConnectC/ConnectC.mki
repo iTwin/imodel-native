@@ -1,0 +1,54 @@
+#---------------------------------------------------------------------------------------+
+#
+#     $Source: ConnectC/ConnectC.mki $
+#
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#
+#---------------------------------------------------------------------------------------+
+
+ConnectCMkiPublicApiDir = $(CWSClientCPublicApiDirectory)ConnectC/
+ConnectCMkiSourceDir = $(CWSClientCSourceDirectory)ConnectC/
+
+#--------------------------------------------------------------------------------------
+#   Set up build dependencies
+#--------------------------------------------------------------------------------------
+ConnectCMkiHeaders = $(ConnectCMkiPublicApiDir)CWSCCPublic.h            \
+                     $(ConnectCMkiPublicApiDir)CWSCCGenBufferPublic.h   \
+                     $(ConnectCMkiPublicApiDir)CWSCCGenPublic.h         \
+                     $(ConnectCMkiSourceDir)CWSCCGenBuffer.h            \
+                     $(ConnectCMkiSourceDir)CWSCCInternal.h             \
+                     $(ConnectCMkiSourceDir)CWSCCPrivate.h              \
+                     $(ConnectCMkiSourceDir)WSLocalState.h
+
+#----------------------------------------------------------------------
+#   Make sure that CWSCCInternal.pch is up-to-date.
+#----------------------------------------------------------------------
+PchCompiland        = $(ConnectCMkiSourceDir)CWSCCInternal.cpp
+PchOutputDir        = $(o)
+PchExtraOptions     = -Zm160 -D__CWSCC_DLL_BUILD__
+PchExplicitDepends  = $(ConnectCMkiHeaders)
+
+%if defined (winNT) && $(BUILD_TOOLSET) == "GCC"
+    # Avoid internal compiler error in GCC using windows ndk toolchain
+    GCC_NO_PRE_COMPILED_HEADER = 1
+%endif
+
+# Keep this even if GCC_NO_PRE_COMPILED_HEADER is defined. When GCC_NO_PRE_COMPILED_HEADER
+# is defined this step alters the command line to make the line including <CWSCCInternal.h>
+# work properly.
+%include $(SharedMki)PreCompileHeader.mki
+
+CCPchOpts = $(UsePrecompiledHeaderOptions)
+CPchOpts  = $(UsePrecompiledHeaderOptions)
+
+MultiCompileDepends=$(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+                
+#---------------------------------------------------------------------------------------+
+#   Files to compile 
+#---------------------------------------------------------------------------------------+
+$(o)CWSCCGen$(oext)         : $(ConnectCMkiSourceDir)CWSCCGen.cpp $(ConnectCMkiHeaders) ${MultiCompileDepends}
+
+$(o)CWSCCGenBuffer$(oext)   : $(ConnectCMkiSourceDir)CWSCCGenBuffer.cpp $(ConnectCMkiHeaders) ${MultiCompileDepends}
+
+$(o)CWSCC$(oext)            : $(ConnectCMkiSourceDir)CWSCC.cpp $(ConnectCMkiHeaders) ${MultiCompileDepends}
