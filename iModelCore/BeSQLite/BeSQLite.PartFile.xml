@@ -104,8 +104,8 @@
         </Bindings>
     </Part>
 
-    <Product Name="BeSQLite-AndroidJUnit " >
-        <SubPart PartName="AndroidJUnit " LibType="Static"/>
+    <Product Name="BeSQLite-AndroidJUnit" >
+        <SubPart PartName="AndroidJUnit" LibType="Static"/>
         <Directories DirectoryListName="AndroidJUnitProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
 
