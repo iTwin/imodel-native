@@ -1,6 +1,6 @@
-from py.Helpers.CBufferStruct import CBufferStruct
-from py.HeaderWriters.HeaderWriter import HeaderWriter
-from py.PropertyTypeError import PropertyTypeError
+from Helpers.CBufferStruct import CBufferStruct
+from HeaderWriters.HeaderWriter import HeaderWriter
+from PropertyTypeError import PropertyTypeError
 
 
 class CPublicBufferHeaderWriter(HeaderWriter):

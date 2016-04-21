@@ -1,5 +1,5 @@
-from py.Helpers.CppCliStruct import CppCliStruct
-from py.SourceWriters.SourceWriter import SourceWriter
+from Helpers.CppCliStruct import CppCliStruct
+from SourceWriters.SourceWriter import SourceWriter
 
 
 class CppCliClassesSourceWriter(SourceWriter):

@@ -1,5 +1,5 @@
-from py.Helpers.CApiStruct import CApiStruct
-from py.SourceWriters.SourceWriter import SourceWriter
+from Helpers.CApiStruct import CApiStruct
+from SourceWriters.SourceWriter import SourceWriter
 
 
 class CApiSourceWriter(SourceWriter):

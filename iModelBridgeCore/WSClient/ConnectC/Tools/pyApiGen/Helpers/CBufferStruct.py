@@ -1,5 +1,5 @@
 from CStruct import CStruct
-from py.PropertyTypeError import PropertyTypeError
+from PropertyTypeError import PropertyTypeError
 
 
 class CBufferStruct(CStruct):

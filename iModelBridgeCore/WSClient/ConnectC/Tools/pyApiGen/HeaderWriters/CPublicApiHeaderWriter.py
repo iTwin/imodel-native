@@ -1,5 +1,5 @@
-from py.Helpers.CApiStruct import CApiStruct
-from py.HeaderWriters.HeaderWriter import HeaderWriter
+from Helpers.CApiStruct import CApiStruct
+from HeaderWriters.HeaderWriter import HeaderWriter
 
 
 class CallStatus:

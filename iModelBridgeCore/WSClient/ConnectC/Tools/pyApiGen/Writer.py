@@ -33,7 +33,7 @@ class Writer(object):
 
     _COMMENT_Copyright = "/*--------------------------------------------------------------------------------------+\n" \
                          "|\n"                                                                                         \
-                         "|     $Source: ConnectC/Tools/pyApiGen/py/Writer.py $\n"                                                                      \
+                         "|     $Source: ConnectC/Tools/pyApiGen/Writer.py $\n"                                                                      \
                          "|\n"                                                                                         \
                          "|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $\n"              \
                          "|\n"                                                                                         \
