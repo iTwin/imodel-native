@@ -331,6 +331,10 @@ protected:
             memcpy(pOutLine, pInLine, inDataSize);
             return inDataSize;            
             }         
+
+        // Happen in some cases, code below cannot handle that, it will read beyond the source.
+        if (0 == pixelCount)
+            return 0;
        
         uint32_t lineIndex = 0;
         uint32_t position = pInLine[0];

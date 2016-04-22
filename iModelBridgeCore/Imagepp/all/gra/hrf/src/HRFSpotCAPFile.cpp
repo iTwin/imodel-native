@@ -65,6 +65,19 @@
 #define FOURTH_CORNER_LONG  22
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool isAscii(char const* p)
+    {
+    for (; 0 != *p; ++p)
+        {
+        if (0 != (*p & 0x80))
+            return false;
+        }
+    return true;
+    }
+
 //-----------------------------------------------------------------------------
 // HRFSpotCAPBlockCapabilities
 //-----------------------------------------------------------------------------
@@ -243,7 +256,7 @@ bool HRFSpotCAPCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     Header = new char[15 + 1];
     Header[15] = '\0';
     pFile->SeekToBegin();
-    if (pFile->Read(Header, 15) != 15)
+    if (pFile->Read(Header, 15) != 15 || !isAscii(Header))
         goto WRAPUP;
 
     BeStringUtilities::Strupr(Header);

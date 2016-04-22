@@ -3701,7 +3701,7 @@ void HCDCodecCCITTFax4::DecompressSubsetToRLE(const void* pi_pInData, size_t pi_
 
         // RLE runs are encoded by line and always start and end with a black state so the current state should be a white state.
         HASSERT((m_CCITT4State.GetRLEBufferDataSize() >> 1) % 2 == 1);
-        HASSERT(m_CCITT4State.GetG4Error() == GP4_NOERROR);
+        BeDataAssert(m_CCITT4State.GetG4Error() == GP4_NOERROR);
 
         // Reset RLE buffer for next line.
         m_CCITT4State.SetRLEBuffer((uint16_t*)pWorkLineBuffer.get(), WorkLineBufferSize);

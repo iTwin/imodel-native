@@ -434,7 +434,7 @@ bool HRFxChCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
                 {
                 // Validate main node presence       
                 BeXmlNodeP pMainNode = pDom->GetRootElement();
-                if (NULL != pMainNode && BeStringUtilities::Stricmp(pMainNode->GetName(), "MultiChannelImageFileFormat"))
+                if (NULL != pMainNode && BeStringUtilities::Stricmp(pMainNode->GetName(), "MultiChannelImageFileFormat") == 0)
                 {
                     bResult = true;
 

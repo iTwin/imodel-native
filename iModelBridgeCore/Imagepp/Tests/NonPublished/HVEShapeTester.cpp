@@ -458,3 +458,45 @@ TEST_F (HVEShapeTester, ScaleTest)
     ASSERT_TRUE(Shape9.IsPointOn(HGF2DLocation(35.0, 70.0, pWorld)));
 
     }
+
+//==================================================================================
+// SPECIAL TEST
+// We realised the following intersection of shapes crashed during the export of a raster
+//                                           Laurent Robert-Veillette       04/2016
+//==================================================================================
+
+TEST_F(HVEShapeTester, IntersectFailWithComplexLinear)
+    {
+    HFCPtr<HGF2DCoordSys> pWorld = new HGF2DCoordSys();
+
+    HVE2DSegment      Segment1(HGF2DLocation(1609.2135406054849, 16896.000000003725, pWorld), HGF2DLocation(16912.999999999767, 16711.139186670978, pWorld));
+    HVE2DSegment      Segment2(HGF2DLocation(16912.999999999767, 16711.139186670978, pWorld), HGF2DLocation(16912.140680122164, 16640.000000003725, pWorld));
+    HVE2DSegment      Segment3(HGF2DLocation(16912.140680122164, 16640.000000003725, pWorld), HGF2DLocation(198.56313258072259, 16640.000000003725, pWorld));
+    HVE2DSegment      Segment4(HGF2DLocation(198.56313258072259, 16640.000000003725, pWorld), HGF2DLocation(201.65546324926382, 16896.000000003725, pWorld));
+    HVE2DSegment      Segment5(HGF2DLocation(201.65546324926382, 16896.000000003725, pWorld), HGF2DLocation(1609.2135406054849, 16896.000000003725, pWorld));
+
+    HVE2DComplexLinear MyLinear(pWorld);
+    MyLinear.AppendLinear(Segment1);
+    MyLinear.AppendLinear(Segment2);
+    MyLinear.AppendLinear(Segment3);
+    MyLinear.AppendLinear(Segment4);
+    MyLinear.AppendLinear(Segment5);
+
+    HVE2DPolygonOfSegments PolyFromLinear(MyLinear);
+
+    HVE2DSegment      Segment1B(HGF2DLocation(201.86081333272159, 16913.000000000000, pWorld), HGF2DLocation(16912.999999999767, 16711.139186667253, pWorld));
+    HVE2DSegment      Segment2B(HGF2DLocation(16912.999999999767, 16711.139186667253, pWorld), HGF2DLocation(16711.139186667013, 7.0940586738288403e-10, pWorld));
+    HVE2DSegment      Segment3B(HGF2DLocation(16711.139186667013, 7.0940586738288403e-10, pWorld), HGF2DLocation(-3.2997604648699053e-11, 201.86081333345646, pWorld));
+    HVE2DSegment      Segment4B(HGF2DLocation(-3.2997604648699053e-11, 201.86081333345646, pWorld), HGF2DLocation(201.86081333272159, 16913.000000000000, pWorld));
+
+    HVE2DComplexLinear MyLinear2(pWorld);
+    MyLinear2.AppendLinear(Segment1B);
+    MyLinear2.AppendLinear(Segment2B);
+    MyLinear2.AppendLinear(Segment3B);
+    MyLinear2.AppendLinear(Segment4B);
+
+    HVE2DPolygonOfSegments PolyFromLinear2(MyLinear2);
+
+    ASSERT_NO_THROW(PolyFromLinear2.IntersectShapeSCS(PolyFromLinear));
+    //TO DO : After fixing the error, look for what the result must be and assert it with Google macro.
+    }

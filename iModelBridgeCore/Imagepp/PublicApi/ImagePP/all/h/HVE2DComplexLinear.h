@@ -55,7 +55,7 @@ public:
 
     // Complex linear building
     virtual void       InsertLinear(const HVE2DLinear& pi_rLinear);
-    virtual void       AppendLinear(const HVE2DLinear& pi_rLinear);
+    IMAGEPP_EXPORT virtual void       AppendLinear(const HVE2DLinear& pi_rLinear);
     virtual void       InsertComplexLinear(const HVE2DComplexLinear& pi_rComplexLinear);
     virtual void       AppendComplexLinear(const HVE2DComplexLinear& pi_rComplexLinear);
     virtual void       InsertLinearPtrSCS(HVE2DLinear* pi_pLinear);

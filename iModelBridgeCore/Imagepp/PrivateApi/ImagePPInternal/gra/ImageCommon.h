@@ -681,7 +681,7 @@ inline uint32_t WriteLastRun(uint32_t idx, uint16_t* pBuf, uint32_t count)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   Mathieu.Marchand  1/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ValidateLineIntegrity(uint16_t const* pLine, uint32_t width, size_t dataSize);
+IMAGEPPTEST_EXPORT bool ValidateLineIntegrity(uint16_t const* pLine, uint32_t width, size_t dataSize);
     
 } // Rle1Manip
 
