@@ -498,7 +498,7 @@ static int besqliteBusyHandler(void* retry, int count) {return ((BusyRetry const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbFile::DbFile(SqlDbP sqlDb, BusyRetry* retry, BeSQLiteTxnMode defaultTxnMode) : m_sqlDb(sqlDb), m_cachedProps(nullptr), m_rlvCache(*this),
+DbFile::DbFile(SqlDbP sqlDb, BusyRetry* retry, BeSQLiteTxnMode defaultTxnMode) : m_sqlDb(sqlDb), m_cachedProps(nullptr), m_blvCache(*this),
             m_defaultTxn(*this, "default", defaultTxnMode), m_statements(10)
     {
     m_inCommit = false;
@@ -513,7 +513,7 @@ DbFile::DbFile(SqlDbP sqlDb, BusyRetry* retry, BeSQLiteTxnMode defaultTxnMode) :
         }
     }
 
-BriefcaseLocalValueCache& DbFile::GetRLVCache() {return m_rlvCache;}
+BriefcaseLocalValueCache& DbFile::GetBLVCache() {return m_blvCache;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/12
@@ -576,7 +576,7 @@ DbResult DbFile::StartSavepoint(Savepoint& txn, BeSQLiteTxnMode txnMode)
     if (m_txns.size() > 0)
         {
         SaveCachedProperties(true);
-        SaveCachedRlvs(true);
+        SaveCachedBlvs(true);
         }
 
     void* old = sqlite3_commit_hook(m_sqlDb, savepointCommitHook, this);
@@ -633,7 +633,7 @@ DbResult DbFile::StopSavepoint(Savepoint& txn, bool isCommit, Utf8CP operation)
         }
 
     SaveCachedProperties(isCommit);
-    SaveCachedRlvs(isCommit);
+    SaveCachedBlvs(isCommit);
 
     m_inCommit = true;
 
@@ -860,16 +860,16 @@ void DbFile::SaveCachedProperties(bool isCommit)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DbFile::SaveCachedRlvs(bool isCommit)
+void DbFile::SaveCachedBlvs(bool isCommit)
     {
     if (!isCommit)
         {
-        m_rlvCache.Clear();
+        m_blvCache.Clear();
         return; // only clear cached RLVs on cancel, not commit
         }
 
     CachedStatementPtr stmt;
-    for (CachedRLV const& rlv : m_rlvCache.m_cache)
+    for (CachedBLV const& rlv : m_blvCache.m_cache)
         {
         if (!rlv.IsUnset() && rlv.IsDirty())
             {
@@ -1648,7 +1648,7 @@ DbResult BriefcaseLocalValueCache::Register(size_t& index, Utf8CP name)
     if (TryGetIndex(existingIndex, name))
         return BE_SQLITE_ERROR;
 
-    m_cache.push_back(CachedRLV(name));
+    m_cache.push_back(CachedBLV(name));
     index = m_cache.size() - 1;
     return BE_SQLITE_OK;
     }
@@ -1676,7 +1676,7 @@ bool BriefcaseLocalValueCache::TryGetIndex(size_t& index, Utf8CP name)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BriefcaseLocalValueCache::Clear()
     {
-    for (CachedRLV& val : m_cache)
+    for (CachedBLV& val : m_cache)
         val.Reset();
     }
 
@@ -1700,7 +1700,7 @@ DbResult BriefcaseLocalValueCache::QueryValue(uint64_t& value, size_t rlvIndex)
     if (rlvIndex >= m_cache.size())
         return BE_SQLITE_NOTFOUND;
 
-    CachedRLV* cachedRlv = nullptr;
+    CachedBLV* cachedRlv = nullptr;
     if (!TryQuery(cachedRlv, rlvIndex))
         return BE_SQLITE_ERROR;
 
@@ -1713,7 +1713,7 @@ DbResult BriefcaseLocalValueCache::QueryValue(uint64_t& value, size_t rlvIndex)
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult BriefcaseLocalValueCache::IncrementValue(uint64_t& newValue, size_t rlvIndex)
     {
-    CachedRLV* cachedRlv = nullptr;
+    CachedBLV* cachedRlv = nullptr;
     if (!TryQuery(cachedRlv, rlvIndex))
         return BE_SQLITE_ERROR;
 
@@ -1724,12 +1724,12 @@ DbResult BriefcaseLocalValueCache::IncrementValue(uint64_t& newValue, size_t rlv
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   07/14
 //+---------------+---------------+---------------+---------------+---------------+------
-bool BriefcaseLocalValueCache::TryQuery(CachedRLV*& value, size_t rlvIndex)
+bool BriefcaseLocalValueCache::TryQuery(CachedBLV*& value, size_t rlvIndex)
     {
     if (rlvIndex >= m_cache.size())
         return false;
 
-    CachedRLV& cachedRlv = m_cache[rlvIndex];
+    CachedBLV& cachedRlv = m_cache[rlvIndex];
     if (cachedRlv.IsUnset())
         {
         Statement stmt;
@@ -1754,7 +1754,7 @@ bool BriefcaseLocalValueCache::TryQuery(CachedRLV*& value, size_t rlvIndex)
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult Db::DeleteBriefcaseLocalValues()
     {
-    m_dbFile->m_rlvCache.Clear();
+    m_dbFile->m_blvCache.Clear();
     return TruncateTable(BEDB_TABLE_Local);
     }
 
@@ -1900,7 +1900,7 @@ DbFile::~DbFile()
     m_defaultTxn.m_depth = -1;  // just in case commit failed. Otherwise destructor will attempt to access this DbFile.
     m_statements.Empty();       // No more statements will be prepared and cached.
     DeleteCachedPropertyMap();
-    m_rlvCache.Clear();
+    m_blvCache.Clear();
 
     BeAssert(m_txns.empty());
     BeAssert(m_statements.IsEmpty());
@@ -2262,7 +2262,7 @@ DbResult Db::AbandonChanges()
 void Db::_OnDbChangedByOtherConnection()
     {
     m_dbFile->DeleteCachedPropertyMap();
-    m_dbFile->m_rlvCache.Clear();
+    m_dbFile->m_blvCache.Clear();
     }
 
 //---------------------------------------------------------------------------------------

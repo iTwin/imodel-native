@@ -178,7 +178,7 @@ TEST(BeSQLiteDb, ChangeBriefcaseId)
     //prepare test dgn db
     {
     Db db;
-    auto stat = SetupDb(db, L"changerepoid.idgndb");
+    auto stat = SetupDb(db, L"changebriefcaseid.db");
     ASSERT_EQ(BE_SQLITE_OK, stat) << "Creation of test BeSQLite DB failed.";
     dbPath.assign(db.GetDbFileName());
 
@@ -189,28 +189,28 @@ TEST(BeSQLiteDb, ChangeBriefcaseId)
         {
         int val = localValues[i];
         size_t keyIndex = 0;
-        ASSERT_EQ(BE_SQLITE_OK, db.GetRLVCache().Register(keyIndex, localValueNames[i].c_str())) << "Registration of RLV " << localValueNames[i].c_str() << " is expected to succeed.";
-        auto result = db.GetRLVCache().SaveValue(keyIndex, val);
-        ASSERT_EQ(BE_SQLITE_OK, result) << "Saving test RLV '" << localValueNames[i].c_str() << "=" << val << "' failed";
+        ASSERT_EQ(BE_SQLITE_OK, db.GetBLVCache().Register(keyIndex, localValueNames[i].c_str())) << "Registration of RLV " << localValueNames[i].c_str() << " is expected to succeed.";
+        auto result = db.GetBLVCache().SaveValue(keyIndex, val);
+        ASSERT_EQ(BE_SQLITE_OK, result) << "Saving test BLV '" << localValueNames[i].c_str() << "=" << val << "' failed";
         }
 
     ASSERT_EQ(BE_SQLITE_OK, db.SaveChanges()) << "Committing briefcase local values failed.";
     db.CloseDb();
     }
 
-    //reopen DgnDb again, change repo id and close again (to avoid that caches linger around)
-    BeBriefcaseId expectedRepoId;
-    expectedRepoId.Invalidate();
+    //reopen DgnDb again, change briefcase id and close again (to avoid that caches linger around)
+    BeBriefcaseId expectedBriefcaseId;
+    expectedBriefcaseId.Invalidate();
 
     {
     Db db;
     DbResult stat = db.OpenBeSQLiteDb(dbPath.c_str(), Db::OpenParams(Db::OpenMode::ReadWrite));
     ASSERT_EQ(BE_SQLITE_OK, stat) << "Reopening test DgnDb '" << dbPath.c_str() << "' failed.";
 
-    //now change briefcase id. This should truncate be_local and reinsert the new repo id
-    const BeBriefcaseId currentRepoId = db.GetBriefcaseId();
-    expectedRepoId = currentRepoId.GetNextBriefcaseId();
-    stat = db.ChangeBriefcaseId(expectedRepoId);
+    //now change briefcase id. This should truncate be_local and reinsert the new briefcase id
+    const BeBriefcaseId currentBriefcaseId = db.GetBriefcaseId();
+    expectedBriefcaseId = currentBriefcaseId.GetNextBriefcaseId();
+    stat = db.ChangeBriefcaseId(expectedBriefcaseId);
     ASSERT_EQ(BE_SQLITE_OK, stat) << "Changing the briefcase id is not expected to fail.";
     }
 
