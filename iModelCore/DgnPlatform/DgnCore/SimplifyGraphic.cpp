@@ -1954,7 +1954,7 @@ void SimplifyGraphic::_AddTriMesh(TriMeshArgs const& args)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::_AddBody(ISolidKernelEntityCR geom, double pixelSize)
+void SimplifyGraphic::_AddBody(ISolidKernelEntityCR geom)
     {
     ClipAndProcessBody(geom);
     }
