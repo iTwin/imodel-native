@@ -23,14 +23,7 @@ cDefs +% -D__BE_SQLITE_HOST_DLL__
     cDefs + -D__BE_SQLITE_WINRT__
 %endif
 
-# Make 7z single threaded on everything other than Windows.
-%if $(TARGET_PLATFORM) != "Windows"
-    cDefs + -D_7ZIP_ST
-%endif
-
 baseDir                 = $(_MakeFilePath)
-sevenDir                = $(baseDir)seven/
-snappyDir               = $(baseDir)snappy/
 SQLiteDir               = $(baseDir)SQLite/
 SubpartLibs             = $(BuildContext)SubParts/Libs/
 o                       = $(OutBuildDir)BeSQLite/

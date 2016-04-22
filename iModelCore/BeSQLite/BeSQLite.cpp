@@ -8,9 +8,9 @@
 #define ZLIB_INTERNAL
 
 // lzma stuff includes Windows.h! Include it first!
-#include "lzma/Types.h"
-#include "lzma/Lzma2Enc.h"
-#include "lzma/Lzma2Dec.h"
+#include "liblzma/Types.h"
+#include "liblzma/Lzma2Enc.h"
+#include "liblzma/Lzma2Dec.h"
 #undef min
 #undef max
 
