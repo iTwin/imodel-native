@@ -120,7 +120,7 @@ BeFileName GetPreviousOutputPath(Utf8StringCR testName, Utf8StringCR repositoryI
     return path;
     }
 
-TEST_P(RepositorySchemaUpgradeTests, Create)
+TEST_P(RepositorySchemaUpgradeTests, DISABLED_Create)
     {
     Utf8String serverUrl = GetParam().url->Get();
     Utf8String repositoryId = GetParam().id;
@@ -142,7 +142,7 @@ TEST_P(RepositorySchemaUpgradeTests, Create)
     ASSERT_TRUE(createResult.IsSuccess());
     }
 
-TEST_P(RepositorySchemaUpgradeTests, Upgrade)
+TEST_P(RepositorySchemaUpgradeTests, DISABLED_Upgrade)
     {
     Utf8String serverUrl = GetParam().url->Get();
     Utf8String repositoryId = GetParam().id;
