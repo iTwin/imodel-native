@@ -45,38 +45,8 @@ always:
 # Generate build version header (so we can embed as a property for diagnostic purposes).
 %include $(SharedMki)CreateBuildVersionHeader.mki
 
-MultiCompileDepends     = $(_MakeFileSpec)
-%include MultiCppCompileRule.mki
-
-$(o)LzmaEnc$(oext)      : $(sevenDir)LzmaEnc.c ${MultiCompileDepends}
-
-$(o)LzmaDec$(oext)      : $(sevenDir)LzmaDec.c ${MultiCompileDepends}
-
-$(o)Lzma2Enc$(oext)     : $(sevenDir)Lzma2Enc.c ${MultiCompileDepends}
-
-$(o)Lzma2Dec$(oext)     : $(sevenDir)Lzma2Dec.c ${MultiCompileDepends}
-
-$(o)LzFind$(oext)       : $(sevenDir)LzFind.c ${MultiCompileDepends}
-
-$(o)md5$(oext)          : $(baseDir)Crypt/md5.cpp ${MultiCompileDepends}
-
-$(o)sha1$(oext)         : $(baseDir)Crypt/sha1.cpp ${MultiCompileDepends}
-
-%if $(TARGET_PLATFORM) == "Windows"
-    $(o)MtCoder$(oext)      : $(sevenDir)MtCoder.c ${MultiCompileDepends}
-
-    $(o)LzFindMt$(oext)     : $(sevenDir)LzFindMt.c ${MultiCompileDepends}
-
-    $(o)Threads$(oext)      : $(sevenDir)Threads.c ${MultiCompileDepends}
-%endif
-
-%include MultiCppCompileGo.mki
-objs =% $(MultiCompileObjectList)
-
 MultiCompileDepends=$(_MakeFileSpec)
 %include MultiCppCompileRule.mki
-
-$(o)snappy$(oext)       : $(snappyDir)snappy.cpp ${MultiCompileDepends}
 
 $(o)BeSQLite$(oext)     : $(baseDir)BeSQLite.cpp $(baseDir)/PublicAPI/BeSQLite/BeSQLite.h  $(baseDir)/PublicAPI/BeSQLite/DownloadAdmin.h ${MultiCompileDepends}
 
@@ -110,6 +80,10 @@ $(o)SQLite$(oext): $(SQLiteDir)sqlite3-all.c $(SQLiteDir)sqlite3-1.c $(SQLiteDir
 
 objs + $(o)SQLite$(oext)
 
+BeSQLiteRequiredLibs = $(BuildContext)SubParts/Libs/$(stlibprefix)BeZlib$(stlibext)
+BeSQLiteRequiredLibs + $(BuildContext)SubParts/Libs/$(stlibprefix)snappy$(stlibext)
+BeSQLiteRequiredLibs + $(BuildContext)SubParts/Libs/$(stlibprefix)lzma$(stlibext)
+
 DLM_OBJECT_FILES    = $(objs)
 DLM_NAME            = $(appName)
 DLM_DEST            = $(o)
@@ -122,7 +96,18 @@ DLM_NOENTRY         = 1
 DLM_OBJECT_DEST     = $(o)
 ASSEMBLY_STRONGNAME = 1
 
-LINKER_LIBRARIES    =  $(SubpartLibs)$(libprefix)BeZlib$(stlibext)
+LINKER_LIBRARIES    =  $(BeSQLiteRequiredLibs)
 
 # We support shared or static linking.
 %include $(sharedMki)linkLibrary.mki
+
+always:
+    >$(o)BeSQLiteRequiredLibs.mki
+    %if defined (CREATE_STATIC_LIBRARIES)
+    BeSQLiteRequiredLibs = $(BeSQLiteRequiredLibs)
+    %endif
+    <
+
+$(BuildContext)Delivery/mki/BeSQLiteRequiredLibs.mki : $(o)BeSQLiteRequiredLibs.mki
+    $(LinkFirstDepToFirstTarget)
+

@@ -8,7 +8,6 @@
             <PublicAPI Domain="BeSQLite" />
             <VendorNotices>
                 Delivery/sqlite-license.txt
-                Delivery/snappy-license.txt
             </VendorNotices>
         </Bindings>
     </Part>
@@ -18,9 +17,12 @@
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="BentleyDll" PartFile="Bentley" Repository="Bentley" />
         <SubPart PartName="Zlib" PartFile="Zlib" Repository="Libsrc-Compress" />
+        <SubPart PartName="snappy" PartFile="Zlib" Repository="Libsrc-Compress" />
+        <SubPart PartName="lzma" PartFile="Zlib" Repository="Libsrc-Compress" />
         <Bindings>
             <Libs>Delivery/$(libprefix)BeSQLite$(libext)</Libs>
             <Assemblies ProductDirectoryName="BentleyNativeAssemblies">Delivery/$(libprefix)BeSQLite$(ApiNumber)$(shlibext)</Assemblies>
+            <Files Required="false" SubPartDirectory="mki">Delivery/mki/BeSQLiteRequiredLibs.mki</Files>
         </Bindings>
     </Part>
 

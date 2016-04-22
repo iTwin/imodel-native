@@ -7,6 +7,8 @@
 #----------------------------------------------------------------------------------------
 %include mdl.mki
 
+%include $(BuildContext)SubParts/mki/BeSQLiteRequiredLibs.mki
+
 srcDir              = $(_MakeFilePath)
 o                   = $(OutputRootDir)Build/IModelExtractor/
 appName             = imodel
@@ -27,7 +29,7 @@ EXE_OBJS            = $(MultiCompileObjectList)
 EXE_LOPT1           = -entry:wmainCRTStartup
 
 LINKER_LIBRARIES    = $(ContextSubpartsLibs)Bentley.lib
-LINKER_LIBRARIES    + $(ContextSubpartsLibs)BeSQLite.lib $(ContextSubpartsLibs)BeZlib$(libext)
+LINKER_LIBRARIES    + $(ContextSubpartsLibs)BeSQLite.lib $(BeSQLiteRequiredLibs)
 LINKER_LIBRARIES    + $(ContextSubpartsLibs)BeIcu4c.lib
 LINKER_LIBRARIES    + $(CLibs)
 

@@ -12,6 +12,3 @@ $(BuildContext)PublicAPI/BeSQLite : $(_MakeFilePath)PublicAPI/BeSQLite
 
 $(BuildContext)Delivery/sqlite-license.txt : $(_MakeFilePath)SQLite/sqlite-notice.txt
     $(LinkFirstDepToFirstTarget)
-
-$(BuildContext)Delivery/snappy-license.txt : $(_MakeFilePath)snappy/snappy-notice.txt
-    $(LinkFirstDepToFirstTarget)

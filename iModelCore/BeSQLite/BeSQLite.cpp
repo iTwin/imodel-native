@@ -7,6 +7,13 @@
 +--------------------------------------------------------------------------------------*/
 #define ZLIB_INTERNAL
 
+// lzma stuff includes Windows.h! Include it first!
+#include "lzma/Types.h"
+#include "lzma/Lzma2Enc.h"
+#include "lzma/Lzma2Dec.h"
+#undef min
+#undef max
+
 #include <BeSQLite/ChangeSet.h>
 #include "SQLite/sqlite3.h"
 #include <Bentley/BeFileName.h>
@@ -23,11 +30,6 @@
 #include <BeSQLite/DownloadAdmin.h>
 #include "BeSQLiteProfileManager.h"
 #include <prg.h>
-#include "seven/Types.h"
-#include "seven/Lzma2Enc.h"
-#include "seven/Lzma2Dec.h"
-#undef min
-#undef max
 
 #define LOG (*NativeLogging::LoggingManager::GetLogger(L"BeSQLite"))
 
@@ -4697,13 +4699,7 @@ ZipErrors BeFileLzmaInStream::_Read(void* data, uint32_t size, uint32_t& actuall
 
     if (BeFileStatus::Success != result)
         {
-#if defined (BENTLEYCONFIG_OS_WINDOWS)
-        HRESULT hr = ::GetLastError();
-#endif
-        LOG.errorv("BeFileLzmaInStream::_Read result = %d, m_bytesRead = %lld, filesize = %lld", result, m_bytesRead, m_fileSize);
-#if defined (BENTLEYCONFIG_OS_WINDOWS)
-        LOG.errorv("    HRESULT = %d", hr);
-#endif
+        LOG.errorv("BeFileLzmaInStream::_Read result = %d, m_bytesRead = %lld, filesize = %lld, error = %x", result, m_bytesRead, m_fileSize, m_file.GetLastError());
         }
 
     return BeFileStatus::Success != result ? ZIP_ERROR_READ_ERROR : ZIP_SUCCESS;

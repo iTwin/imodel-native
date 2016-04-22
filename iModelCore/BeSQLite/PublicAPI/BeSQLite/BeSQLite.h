@@ -172,6 +172,10 @@ BESQLITE_TYPEDEFS(DbFile);
 BESQLITE_TYPEDEFS(Statement);
 BESQLITE_TYPEDEFS(NamedParams);
 
+#ifndef __LZMA2_ENC_H
+typedef struct _CLzma2EncProps CLzma2EncProps;
+#endif
+
 #if !defined (DOCUMENTATION_GENERATOR)
 #ifndef GUID_DEFINED
 #define GUID_DEFINED
@@ -184,8 +188,6 @@ typedef struct _GUID
 } GUID;
 #endif
 
-typedef struct _CLzma2EncProps CLzma2EncProps;
-typedef struct _CLzmaEncProps CLzmaEncProps;
 typedef struct sqlite3_blob* SqlDbBlobP;
 typedef struct sqlite3* SqlDbP;
 typedef struct sqlite3& SqlDbR;
