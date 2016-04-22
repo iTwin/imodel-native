@@ -277,7 +277,7 @@ namespace scalable_mesh
                 s_parallelCalls += 1;
 
                 s_consoleMutex.lock();
-                printf("Threads in DownloadBlob : %i      blob name: %s \r\n", (int)s_parallelCalls, blob_name.c_str());
+                wprintf(L"Threads in DownloadBlob : %i      blob name: %s \r\n", (int)s_parallelCalls, blob_name.c_str());
                 //BeConsole::Printf("Threads in DownloadBlob : %i      blob name: %s \r\n", s_parallelCalls);
                 //BeConsole::WPrintf(L"blob name : %s \r\n", blob_name.c_str());
                 s_consoleMutex.unlock();
