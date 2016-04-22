@@ -714,7 +714,7 @@ class ScalableMeshMesh : public IScalableMeshMesh
               size_t GetNbFaceIndexes() const {return m_nbFaceIndexes;}
         const int32_t* GetFaceIndexes() const {return m_faceIndexes;}
 
-        int AppendMesh(size_t nbPoints, DPoint3d* points, size_t nbFaceIndexes, const int32_t* faceIndexes, size_t normalCount, DVec3d* pNormal, int32_t* pNormalIndex, size_t uvCount, DPoint2d* pUv, int32_t* pUvIndex);
+        int AppendMesh(size_t nbPoints, DPoint3d* points, size_t nbFaceIndexes, const int32_t* faceIndexes, size_t normalCount, DVec3d* pNormal, int32_t* pNormalIndex, size_t uvCount, DPoint2d* pUv, const int32_t* pUvIndex);
 
         void ApplyDifferenceSet(const DifferenceSet& d);
 
@@ -1382,8 +1382,6 @@ template<class POINT> class ScalableMeshCachedMeshNode : public virtual IScalabl
 
             ScalableMeshCachedMeshNode() {};
 
-            void LoadMesh(bool loadGraph, const bvector<bool>& clipsToShow, bool applyAllClips=false);
-
             void LoadMesh(bool loadGraph, const bset<uint64_t>& clipsToShow);
 
             virtual StatusInt _GetCachedMesh(SmCachedDisplayMesh*& cachedMesh) const override {return ERROR;}
@@ -1449,8 +1447,6 @@ template<class POINT> class ScalableMeshCachedDisplayNode : public virtual IScal
                     assert(status == SUCCESS);                    
                     }
                 }
-            
-            void LoadMesh(bool loadGraph, const bvector<bool>& clipsToShow, IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr, bool loadTexture, bool applyAllClips = false);
 
             void LoadMesh(bool loadGraph, const bset<uint64_t>& clipsToShow, IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr, bool loadTexture);
 

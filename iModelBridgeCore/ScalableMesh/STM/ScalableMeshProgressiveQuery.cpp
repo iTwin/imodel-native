@@ -112,6 +112,7 @@ void IScalableMeshProgressiveQueryEngine::SetActiveClips(const bset<uint64_t>& a
     }
 
 
+
 BentleyStatus IScalableMeshProgressiveQueryEngine::StartQuery(int                                                                      queryId,
                                                               IScalableMeshViewDependentMeshQueryParamsPtr                             queryParam,
                                                               const bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& startingNodes,
@@ -127,6 +128,7 @@ BentleyStatus IScalableMeshProgressiveQueryEngine::StopQuery(int queryId)
     {
     return _StopQuery(queryId);
     }
+
 
 bool IScalableMeshProgressiveQueryEngine::IsQueryComplete(int queryId)
     {
@@ -1662,9 +1664,6 @@ void ScalableMeshProgressiveQueryEngine::StartNewQuery(RequestedQuery& newQuery,
                     if (!s_LoadQVDuringQuery)
                         {
                         ScalableMeshCachedMeshNode<DPoint3d>* meshNode(new ScalableMeshCachedMeshNode<DPoint3d>(node, newQuery.m_loadTexture));                        
-                        if(m_activeClips.size() == 0)
-                            meshNode->LoadMesh(false, newQuery.m_clipVisibilities);
-                        else
                             meshNode->LoadMesh(false, m_activeClips);
                         meshNodePtr = meshNode;
                         }
@@ -1688,9 +1687,6 @@ void ScalableMeshProgressiveQueryEngine::StartNewQuery(RequestedQuery& newQuery,
                 if (!s_LoadQVDuringQuery)
                     {
                     ScalableMeshCachedMeshNode<DPoint3d>* meshNode(new ScalableMeshCachedMeshNode<DPoint3d>(node, newQuery.m_loadTexture));   
-                    if (m_activeClips.size() == 0)
-                        meshNode->LoadMesh(false, newQuery.m_clipVisibilities);
-                    else
                         meshNode->LoadMesh(false, m_activeClips);
                     meshNodePtr = meshNode;
                     }
@@ -1716,10 +1712,6 @@ void ScalableMeshProgressiveQueryEngine::StartNewQuery(RequestedQuery& newQuery,
                 if (!s_LoadQVDuringQuery)
                     {
                     ScalableMeshCachedMeshNode<DPoint3d>* meshNode(new ScalableMeshCachedMeshNode<DPoint3d>(node, newQuery.m_loadTexture));
-                    bvector<bool> clipsToShow;
-                    if (m_activeClips.size() == 0)
-                        meshNode->LoadMesh(false, clipsToShow);
-                    else
                         meshNode->LoadMesh(false, m_activeClips);
                     meshNodePtr = meshNode;
                     }

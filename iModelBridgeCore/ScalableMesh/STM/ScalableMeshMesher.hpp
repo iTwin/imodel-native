@@ -529,7 +529,6 @@ For this algorithm nodes provided in input should have duplicated points (includ
     delete[] pPiggyBackMeshIndexes;
     return true;
     }
-//#pragma optimize("", on)
 
 /**----------------------------------------------------------------------------
 Initiates the stitching of the mesh present in neighbor nodes.
@@ -1131,7 +1130,7 @@ POINT* pts = nullptr;
         f.close();*/
         }
     }
-//#pragma optimize("", off)
+
     
     //NEEDS_WORK_SM: Provide a specialization for this taking into account that POINT and DPoint3d are now the same
 template<class POINT, class EXTENT> size_t ScalableMesh2DDelaunayMesher<POINT, EXTENT>::UpdateMeshNodeFromIndexLists(HFCPtr<SMMeshIndexNode<POINT, EXTENT> > node, POINT** newMesh, vector<vector<int32_t>>& indices, vector<std::vector<DPoint3d>>& pts, int& nFaces, DPoint3d& minPt, DPoint3d& maxPt) const
@@ -1971,7 +1970,6 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
         }
 //return false;
 //    }
-//#pragma optimize("", on)  
 
     void Create3dDelaunayMesh (DPoint3dCP points, int numPoints, int (*draw) (DTMFeatureType dtmFeatureType, int numTriangles, int numMeshPts, DPoint3d *meshPtsP, DPoint3d *meshVectorsP, int numMeshFaces, long *meshFacesP, void *userP), void* userP, MTGGraph* graphP, bool tetGen, double trimLength = -1);
 
@@ -2373,7 +2371,7 @@ return true;
         }
     meshGraph->DropMask(visitedMask);
     }
-//#pragma optimize("", on)
+
 /**----------------------------------------------------------------------------
 Initiates the stitching of the mesh present in neighbor nodes. 
 -----------------------------------------------------------------------------*/

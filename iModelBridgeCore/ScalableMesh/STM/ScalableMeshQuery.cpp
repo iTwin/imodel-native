@@ -1201,7 +1201,7 @@ ScalableMeshMesh::~ScalableMeshMesh()
         }
     }
 
-int ScalableMeshMesh::AppendMesh(size_t nbPoints, DPoint3d* points, size_t nbFaceIndexes, const int32_t* faceIndexes, size_t normalCount, DVec3d* pNormal, int32_t* pNormalIndex, size_t uvCount, DPoint2d* pUv, int32_t* pUvIndex)
+int ScalableMeshMesh::AppendMesh(size_t nbPoints, DPoint3d* points, size_t nbFaceIndexes, const int32_t* faceIndexes, size_t normalCount, DVec3d* pNormal, int32_t* pNormalIndex, size_t uvCount, DPoint2d* pUv, const int32_t* pUvIndex)
     {
     //NEEDS_WORK_SM - Not Supported yet
     assert(normalCount == 0 && pNormal == 0 && pNormalIndex == 0);
@@ -2018,11 +2018,7 @@ void ScalableMeshMesh::ApplyClipMesh(const DifferenceSet& d)
         stats.close();
     }
 #endif
-
-    ApplyClipDiffSetToMesh(m_points, m_nbPoints, 
-                           m_faceIndexes, m_nbFaceIndexes, 
-                           m_pUv, m_pUvIndex, m_uvCount, d);
-
+  
 #if SM_TRACE_CLIPS_GETMESH
     if (m_uvCount > 0 && m_pUvIndex && d.addedFaces.size() >= 3)
         {

@@ -66,7 +66,7 @@ class Preserve25DCost : public SMS::LindstromTurk_cost < ECM_ >
         MTGNodeId v1v0 = (MTGNodeId)profile.v1_v0();
 
 
-        if (FastCountNodesAroundFace(profile.surface().graphP, v0v1) > 3)
+     /*   if (FastCountNodesAroundFace(profile.surface().graphP, v0v1) > 3)
             {
             int indices[3];
             DPoint3d triangle[3];
@@ -104,7 +104,7 @@ class Preserve25DCost : public SMS::LindstromTurk_cost < ECM_ >
                 triSeg.ProjectPointXY(closestPt, param, triangle[2]);
                 if (!closestPt.AlmostEqualXY(triangle[2])) return result_type(std::numeric_limits<double>::max());
                 }
-            }
+            }*/
         std::vector<std::array<MTGNodeId, 3>> facets;
         facets.reserve(20);
         MTGGraph* graphP = profile.surface().graphP;
