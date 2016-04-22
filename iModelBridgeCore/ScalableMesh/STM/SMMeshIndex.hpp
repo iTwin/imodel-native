@@ -2425,11 +2425,11 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
 #else
     {
     if (m_differenceSets.size() == 0) return;
-    //std::cout << "Merging clips for " << GetBlockID().m_integerID << " we have " << m_differenceSets.size() << "clips"<<std::endl;
     for (auto& diffSet : m_differenceSets)
         {
         if (diffSet.clientID == (uint64_t)-1 && diffSet.upToDate) return;
         }
+    //std::cout << "Merging clips for " << GetBlockID().m_integerID << " we have " << m_differenceSets.size() << "clips" << std::endl;
     vector<DPoint3d> points(size());
 
     std::transform(begin(), end(), &points[0], PtToPtConverter());
@@ -2851,6 +2851,7 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::Modify
                     }
 
 #else
+            //std::cout << " updating clip " << clipId << " to node " << GetBlockID().m_integerID << " toggle is "<<setToggledWhenIdIsOn<< std::endl;
             *it = DifferenceSet();
             it->clientID = clipId;
             it->toggledForID = setToggledWhenIdIsOn;
