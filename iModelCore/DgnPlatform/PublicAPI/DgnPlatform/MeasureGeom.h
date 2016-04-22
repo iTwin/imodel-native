@@ -68,9 +68,9 @@ mutable DPoint3d    m_centroidSum; // Holds computed result...
 virtual DrawPurpose _GetProcessPurpose() const override {return DrawPurpose::Measure;}
 virtual IFacetOptionsP _GetFacetOptionsP() override;
 
-virtual UnhandledPreference _GetUnhandledPreference(CurveVectorCR) const override {return UnhandledPreference::Auto;}
-virtual UnhandledPreference _GetUnhandledPreference(ISolidPrimitiveCR) const override {return UnhandledPreference::Auto;}
-virtual UnhandledPreference _GetUnhandledPreference(MSBsplineSurfaceCR) const override {return UnhandledPreference::Auto;}
+virtual UnhandledPreference _GetUnhandledPreference(CurveVectorCR, SimplifyGraphic&) const override {return UnhandledPreference::Auto;}
+virtual UnhandledPreference _GetUnhandledPreference(ISolidPrimitiveCR, SimplifyGraphic&) const override {return UnhandledPreference::Auto;}
+virtual UnhandledPreference _GetUnhandledPreference(MSBsplineSurfaceCR, SimplifyGraphic&) const override {return UnhandledPreference::Auto;}
 
 virtual bool _ProcessCurveVector (CurveVectorCR, bool isFilled, SimplifyGraphic&) override;
 virtual bool _ProcessSolidPrimitive (ISolidPrimitiveCR, SimplifyGraphic&) override;

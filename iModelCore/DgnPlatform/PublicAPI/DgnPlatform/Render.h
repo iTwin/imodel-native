@@ -940,7 +940,7 @@ protected:
     virtual void _AddBSplineSurface(MSBsplineSurfaceCR surface) = 0;
     virtual void _AddPolyface(PolyfaceQueryCR meshData, bool filled = false) = 0;
     virtual void _AddTriMesh(TriMeshArgs const& args) = 0;
-    virtual void _AddBody(ISolidKernelEntityCR, double pixelSize = 0.0) = 0;
+    virtual void _AddBody(ISolidKernelEntityCR) = 0;
     virtual void _AddTextString(TextStringCR text) = 0;
     virtual void _AddTextString2d(TextStringCR text, double zDepth) = 0;
     virtual void _AddTile(TextureCR tile, DPoint3dCP corners) = 0;
@@ -1060,7 +1060,7 @@ public:
     void AddTriMesh(TriMeshArgs const& args) {_AddTriMesh(args);}
 
     //! Draw a BRep surface/solid entity from the solids kernel.
-    void AddBody(ISolidKernelEntityCR entity, double pixelSize = 0.0) {_AddBody(entity, pixelSize);}
+    void AddBody(ISolidKernelEntityCR entity) {_AddBody(entity);}
 
     //! Draw a series of Glyphs.
     //! @param[in]          text        Text drawing parameters

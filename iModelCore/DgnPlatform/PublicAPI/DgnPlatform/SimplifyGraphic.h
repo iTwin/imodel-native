@@ -53,7 +53,7 @@ protected:
     DGNPLATFORM_EXPORT void _AddBSplineSurface(MSBsplineSurfaceCR) override;
     DGNPLATFORM_EXPORT void _AddPolyface(PolyfaceQueryCR meshData, bool filled = false) override;
     DGNPLATFORM_EXPORT void _AddTriMesh(TriMeshArgs const&) override;
-    DGNPLATFORM_EXPORT void _AddBody(ISolidKernelEntityCR entity, double pixelSize = 0.0) override;
+    DGNPLATFORM_EXPORT void _AddBody(ISolidKernelEntityCR entity) override;
     DGNPLATFORM_EXPORT void _AddTextString(TextStringCR text) override;
     DGNPLATFORM_EXPORT void _AddTextString2d(TextStringCR text, double zDepth) override;
     DGNPLATFORM_EXPORT void _AddTile(Render::TextureCR tile, DPoint3dCP corners) override;
@@ -176,12 +176,12 @@ virtual bool _IncludeWireframeEdges() {return true;}
 virtual bool _IncludeWireframeFaceIso() {return true;}
 
 //! Determine how geometry not specifically handled the geometry _Process method should be treated.
-virtual UnhandledPreference _GetUnhandledPreference(CurveVectorCR) const {return UnhandledPreference::Ignore;}
-virtual UnhandledPreference _GetUnhandledPreference(ISolidPrimitiveCR) const {return UnhandledPreference::Ignore;}
-virtual UnhandledPreference _GetUnhandledPreference(MSBsplineSurfaceCR) const {return UnhandledPreference::Ignore;}
-virtual UnhandledPreference _GetUnhandledPreference(PolyfaceQueryCR) const {return UnhandledPreference::Ignore;}
-virtual UnhandledPreference _GetUnhandledPreference(ISolidKernelEntityCR) const {return UnhandledPreference::Ignore;}
-virtual UnhandledPreference _GetUnhandledPreference(TextStringCR) const {return UnhandledPreference::Ignore;}
+virtual UnhandledPreference _GetUnhandledPreference(CurveVectorCR, SimplifyGraphic&) const {return UnhandledPreference::Ignore;}
+virtual UnhandledPreference _GetUnhandledPreference(ISolidPrimitiveCR, SimplifyGraphic&) const {return UnhandledPreference::Ignore;}
+virtual UnhandledPreference _GetUnhandledPreference(MSBsplineSurfaceCR, SimplifyGraphic&) const {return UnhandledPreference::Ignore;}
+virtual UnhandledPreference _GetUnhandledPreference(PolyfaceQueryCR, SimplifyGraphic&) const {return UnhandledPreference::Ignore;}
+virtual UnhandledPreference _GetUnhandledPreference(ISolidKernelEntityCR, SimplifyGraphic&) const {return UnhandledPreference::Ignore;}
+virtual UnhandledPreference _GetUnhandledPreference(TextStringCR, SimplifyGraphic&) const {return UnhandledPreference::Ignore;}
 
 //! Call SimplifyGraphic::ProcessAsLinearSegments to output a CurveVector as strokes calling this method.
 virtual bool _ProcessLinearSegments(DPoint3dCP points, size_t numPoints, bool closed, bool filled, SimplifyGraphic&) {return false;}

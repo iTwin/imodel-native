@@ -19,6 +19,8 @@
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
+size_t JsDgnElement::s_count;
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -438,6 +440,23 @@ JsPreparedECSqlStatementP JsDgnDb::GetPreparedECSqlSelectStatement(Utf8StringCR 
         return nullptr;
         }
     return new JsPreparedECSqlStatement(*stmt);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      04/16
+//---------------------------------------------------------------------------------------
+int32_t JsDgnDb::SaveChanges()
+    {
+    DGNJSAPI_VALIDATE_ARGS(IsValid(), -1);
+    auto res = (int32_t)m_db->SaveChanges();
+    m_db->Memory().Purge(0);
+    if (JsDgnElement::s_count > 1000)
+        {
+        LOG.warningv("DgnJsApi - element count is %d. Call Dispose to free objects.", JsDgnElement::s_count);
+        }
+    //printf("saved and purged:");
+    //getchar();
+    return res;
     }
 
 //---------------------------------------------------------------------------------------

@@ -232,7 +232,7 @@ WChar       separator   /* => IN field separator character */
     WCharCP currentChar = valueIn;
     bool    needQuotes = false;
 
-    if (NULL != wcschr (valueIn, separator))
+    if (NULL != ::wcschr (valueIn, separator))
         needQuotes = true;
 
     if (needQuotes)

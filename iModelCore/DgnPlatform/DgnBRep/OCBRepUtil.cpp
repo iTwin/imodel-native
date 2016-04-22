@@ -205,3 +205,42 @@ gp_Elips OCBRep::ToGpElips(double& start, double& end, DEllipse3dCR ellipse)
     
     return gp_Elips(gp_Ax2(ToGpPnt(center), ToGpDir(zVec), ToGpDir(xVec)), r0, r1);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool OCBRep::HasCurvedFaceOrEdge(TopoDS_Shape const& shape)
+    {
+    for (TopExp_Explorer ex(shape, TopAbs_FACE); ex.More(); ex.Next())
+        {
+        TopoDS_Face const& face = TopoDS::Face(ex.Current()); 
+        TopLoc_Location location;
+        Handle(Geom_Surface) const& surface = BRep_Tool::Surface(face, location);
+
+        if (surface.IsNull())
+            continue;
+
+        if (!surface->IsKind(STANDARD_TYPE(Geom_Plane)))
+            return true;
+        }
+
+    TopTools_IndexedMapOfShape edgeMap;
+
+    TopExp::MapShapes(shape, TopAbs_EDGE, edgeMap);
+
+    for (int iEdge=1; iEdge <= edgeMap.Extent(); iEdge++)
+        {
+        TopoDS_Edge const& edge = TopoDS::Edge(edgeMap(iEdge));
+        TopLoc_Location location;
+        Standard_Real first, last;
+        Handle(Geom_Curve) const& curve = BRep_Tool::Curve(edge, location, first, last);
+
+        if (curve.IsNull())
+            continue;
+
+        if (!curve->IsKind(STANDARD_TYPE(Geom_Line)))
+            return true;
+        }
+
+    return false;
+    }
