@@ -228,7 +228,7 @@ TEST(BeSQLiteDb, ChangeBriefcaseId)
         rowCount++;
         Utf8CP name = statement.GetValueText(0);
         // NB: "repository" here really means "briefcase", but we don't want to break existing DgnDbs.
-        ASSERT_STREQ("be_repositoryId", name) << "be_local after a briefcase id change should only contain the briefcase id.";
+        ASSERT_STREQ("be_repositoryid", name) << "be_local after a briefcase id change should only contain the briefcase id.";
         //don't mimick the blob deserialization here. Just test that the column is not null. Use the API to check the actual repo id later
         ASSERT_FALSE(statement.IsColumnNull(1)) << "Val column of briefcase id row in be_local after a briefcase id change must not be null.";
         }
