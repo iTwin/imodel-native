@@ -52,7 +52,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <NMakeOutput>$(OutRoot)Winx64\product\BeGTest\bin\BeGTest.exe</NMakeOutput>
+    <NMakeOutput>$(OutRoot)Winx64\product\BeSQLite-GTest\BeSQLiteTest.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN32;BENTLEY_WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <NMakeIncludeSearchPath>$(OutRoot)\Winx64\BuildContexts\BeSQLite\PublicAPI\;$(OutRoot)\Winx64\BuildContexts\BeSQLite\VendorAPI\;$(OutRoot)\Winx64\build\UnitTests\BeSQLite\PublishedBeSQLiteUnitTests\PublicAPI\;$(ProjectDir)\NonPublished\PublicApi\NonPublished\BeSQLite\;$(ProjectDir)\NonPublished\;$(OutRoot)\Winx64\build\UnitTests\BeSQLite\NonPublishedBeSQLiteUnitTests\PublicAPI\;$(ProjectDir)\Published\;$(ProjectDir);$(VCInstallDir)INCLUDE\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
     <NMakeBuildCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -v4  re BeSQLiteUnitTests:*UnitTests* BeGTestExe</NMakeBuildCommandLine>

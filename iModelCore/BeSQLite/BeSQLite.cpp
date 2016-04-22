@@ -47,6 +47,10 @@ extern "C" int checkNoActiveStatements(SqlDbP db);
 #endif
 
 BEGIN_BENTLEY_SQLITE_NAMESPACE
+
+// NB: "repository" here really means "briefcase", but we don't want to break existing DgnDbs.
+#define BEDB_BRIEFCASELOCALVALUE_BriefcaseId "be_repositoryid"
+
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   12/12
 //=======================================================================================
@@ -496,7 +500,7 @@ static int besqliteBusyHandler(void* retry, int count) {return ((BusyRetry const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbFile::DbFile(SqlDbP sqlDb, BusyRetry* retry, BeSQLiteTxnMode defaultTxnMode) : m_sqlDb(sqlDb), m_cachedProps(nullptr), m_rlvCache(*this),
+DbFile::DbFile(SqlDbP sqlDb, BusyRetry* retry, BeSQLiteTxnMode defaultTxnMode) : m_sqlDb(sqlDb), m_cachedProps(nullptr), m_blvCache(*this),
             m_defaultTxn(*this, "default", defaultTxnMode), m_statements(10)
     {
     m_inCommit = false;
@@ -509,12 +513,9 @@ DbFile::DbFile(SqlDbP sqlDb, BusyRetry* retry, BeSQLiteTxnMode defaultTxnMode) :
         m_retry = retry;
         sqlite3_busy_handler(sqlDb, besqliteBusyHandler, m_retry.get());
         }
-
-    // NB: "repository" here really means "briefcase", but we don't want to break existing DgnDbs.
-    m_rlvCache.Register(m_briefcaseIdRlvIndex, "be_repositoryId");
     }
 
-BriefcaseLocalValueCache& DbFile::GetRLVCache() {return m_rlvCache;}
+BriefcaseLocalValueCache& DbFile::GetBLVCache() {return m_blvCache;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/12
@@ -577,7 +578,7 @@ DbResult DbFile::StartSavepoint(Savepoint& txn, BeSQLiteTxnMode txnMode)
     if (m_txns.size() > 0)
         {
         SaveCachedProperties(true);
-        SaveCachedRlvs(true);
+        SaveCachedBlvs(true);
         }
 
     void* old = sqlite3_commit_hook(m_sqlDb, savepointCommitHook, this);
@@ -634,7 +635,7 @@ DbResult DbFile::StopSavepoint(Savepoint& txn, bool isCommit, Utf8CP operation)
         }
 
     SaveCachedProperties(isCommit);
-    SaveCachedRlvs(isCommit);
+    SaveCachedBlvs(isCommit);
 
     m_inCommit = true;
 
@@ -861,16 +862,16 @@ void DbFile::SaveCachedProperties(bool isCommit)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DbFile::SaveCachedRlvs(bool isCommit)
+void DbFile::SaveCachedBlvs(bool isCommit)
     {
     if (!isCommit)
         {
-        m_rlvCache.Clear();
+        m_blvCache.Clear();
         return; // only clear cached RLVs on cancel, not commit
         }
 
     CachedStatementPtr stmt;
-    for (CachedRLV const& rlv : m_rlvCache.m_cache)
+    for (CachedBLV const& rlv : m_blvCache.m_cache)
         {
         if (!rlv.IsUnset() && rlv.IsDirty())
             {
@@ -882,12 +883,14 @@ void DbFile::SaveCachedRlvs(bool isCommit)
                 }
 
             stmt->BindText(1, rlv.GetName(), Statement::MakeCopy::No);
-
-            int64_t int64Val = rlv.GetValue();
-            stmt->BindBlob(2, &int64Val, (int) sizeof (int64Val), Statement::MakeCopy::No);
+            const uint64_t val = rlv.GetValue();
+            stmt->BindUInt64(2, val);
             DbResult rc = stmt->Step();
             if (BE_SQLITE_DONE != rc)
-                { BeAssert(false); }
+                { 
+                BeAssert(false); 
+                }
+
             stmt->Reset();
             rlv.SetIsNotDirty();
             }
@@ -1310,7 +1313,17 @@ DbResult Db::SaveBriefcaseId()
     if (!m_dbFile->m_briefcaseId.IsValid())
         m_dbFile->m_briefcaseId = BeBriefcaseId(BeBriefcaseId::Master());
 
-    return m_dbFile->m_rlvCache.SaveValue(m_dbFile->m_briefcaseIdRlvIndex, m_dbFile->m_briefcaseId.GetValue());
+    //To not break old DBs we need to use the old way to read/write briefcase ids from/to the be_Local table.
+    //So we cannot use the official briefcase local value APIs.
+    Statement stmt;
+    DbResult stat = stmt.Prepare(*this, "INSERT OR REPLACE INTO " BEDB_TABLE_Local "(Name,Val) VALUES('" BEDB_BRIEFCASELOCALVALUE_BriefcaseId "',?)");
+    if (BE_SQLITE_OK != stat)
+        return stat;
+
+    int64_t briefcaseId = m_dbFile->m_briefcaseId.GetValue();
+    stmt.BindBlob(1, &briefcaseId, (int) sizeof(briefcaseId), Statement::MakeCopy::No);
+    stat = stmt.Step();
+    return stat == BE_SQLITE_DONE ? BE_SQLITE_OK : stat;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1637,7 +1650,7 @@ DbResult BriefcaseLocalValueCache::Register(size_t& index, Utf8CP name)
     if (TryGetIndex(existingIndex, name))
         return BE_SQLITE_ERROR;
 
-    m_cache.push_back(CachedRLV(name));
+    m_cache.push_back(CachedBLV(name));
     index = m_cache.size() - 1;
     return BE_SQLITE_OK;
     }
@@ -1665,7 +1678,7 @@ bool BriefcaseLocalValueCache::TryGetIndex(size_t& index, Utf8CP name)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BriefcaseLocalValueCache::Clear()
     {
-    for (CachedRLV& val : m_cache)
+    for (CachedBLV& val : m_cache)
         val.Reset();
     }
 
@@ -1689,7 +1702,7 @@ DbResult BriefcaseLocalValueCache::QueryValue(uint64_t& value, size_t rlvIndex)
     if (rlvIndex >= m_cache.size())
         return BE_SQLITE_NOTFOUND;
 
-    CachedRLV* cachedRlv = nullptr;
+    CachedBLV* cachedRlv = nullptr;
     if (!TryQuery(cachedRlv, rlvIndex))
         return BE_SQLITE_ERROR;
 
@@ -1702,7 +1715,7 @@ DbResult BriefcaseLocalValueCache::QueryValue(uint64_t& value, size_t rlvIndex)
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult BriefcaseLocalValueCache::IncrementValue(uint64_t& newValue, size_t rlvIndex)
     {
-    CachedRLV* cachedRlv = nullptr;
+    CachedBLV* cachedRlv = nullptr;
     if (!TryQuery(cachedRlv, rlvIndex))
         return BE_SQLITE_ERROR;
 
@@ -1713,12 +1726,12 @@ DbResult BriefcaseLocalValueCache::IncrementValue(uint64_t& newValue, size_t rlv
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   07/14
 //+---------------+---------------+---------------+---------------+---------------+------
-bool BriefcaseLocalValueCache::TryQuery(CachedRLV*& value, size_t rlvIndex)
+bool BriefcaseLocalValueCache::TryQuery(CachedBLV*& value, size_t rlvIndex)
     {
     if (rlvIndex >= m_cache.size())
         return false;
 
-    CachedRLV& cachedRlv = m_cache[rlvIndex];
+    CachedBLV& cachedRlv = m_cache[rlvIndex];
     if (cachedRlv.IsUnset())
         {
         Statement stmt;
@@ -1729,11 +1742,7 @@ bool BriefcaseLocalValueCache::TryQuery(CachedRLV*& value, size_t rlvIndex)
         if (rc != BE_SQLITE_ROW)
             return false;
 
-        BeAssert(!stmt.IsColumnNull(0));
-        void const* blob = stmt.GetValueBlob(0);
-        int64_t val = INT64_C(-1);
-        memcpy(&val, blob, sizeof(val));
-        BeAssert(stmt.GetColumnBytes(0) <= (int) sizeof (int64_t));
+        const uint64_t val = stmt.GetValueUInt64(0);
         cachedRlv.ChangeValue(val, true);
         }
 
@@ -1747,7 +1756,7 @@ bool BriefcaseLocalValueCache::TryQuery(CachedRLV*& value, size_t rlvIndex)
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult Db::DeleteBriefcaseLocalValues()
     {
-    m_dbFile->m_rlvCache.Clear();
+    m_dbFile->m_blvCache.Clear();
     return TruncateTable(BEDB_TABLE_Local);
     }
 
@@ -1893,7 +1902,7 @@ DbFile::~DbFile()
     m_defaultTxn.m_depth = -1;  // just in case commit failed. Otherwise destructor will attempt to access this DbFile.
     m_statements.Empty();       // No more statements will be prepared and cached.
     DeleteCachedPropertyMap();
-    m_rlvCache.Clear();
+    m_blvCache.Clear();
 
     BeAssert(m_txns.empty());
     BeAssert(m_statements.IsEmpty());
@@ -2255,7 +2264,7 @@ DbResult Db::AbandonChanges()
 void Db::_OnDbChangedByOtherConnection()
     {
     m_dbFile->DeleteCachedPropertyMap();
-    m_dbFile->m_rlvCache.Clear();
+    m_dbFile->m_blvCache.Clear();
     }
 
 //---------------------------------------------------------------------------------------
@@ -2365,12 +2374,20 @@ DbResult Db::QueryDbIds()
     if (BE_SQLITE_ROW != rc)
         return  BE_SQLITE_ERROR_NoPropertyTable;
 
-    uint64_t repoId;
-    rc = m_dbFile->m_rlvCache.QueryValue(repoId, m_dbFile->m_briefcaseIdRlvIndex);
-    if (BE_SQLITE_OK != rc)
-        return BE_SQLITE_ERROR_NoPropertyTable;
+    //To not break old DBs we need to use the old way to read/write briefcase ids from/to the be_Local table.
+    //So we cannot use the official briefcase local value APIs.
+    Statement stmt;
+    rc = stmt.Prepare(*this, "SELECT Val FROM " BEDB_TABLE_Local " WHERE Name='" BEDB_BRIEFCASELOCALVALUE_BriefcaseId "'");
+    if (BE_SQLITE_OK != rc || BE_SQLITE_ROW != stmt.Step())
+        return BE_SQLITE_ERROR;
 
-    m_dbFile->m_briefcaseId = BeBriefcaseId((int32_t) repoId);
+    BeAssert(!stmt.IsColumnNull(0));
+    void const* blob = stmt.GetValueBlob(0);
+    int64_t val = INT64_C(0);
+    memcpy(&val, blob, sizeof(val));
+    BeAssert(stmt.GetColumnBytes(0) <= (int) sizeof(int64_t));
+
+    m_dbFile->m_briefcaseId = BeBriefcaseId((uint32_t) val);
     return BE_SQLITE_OK;
     }
 

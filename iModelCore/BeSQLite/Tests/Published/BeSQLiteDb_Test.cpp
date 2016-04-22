@@ -597,26 +597,26 @@ TEST_F(BeSQLiteDbTests, BriefcaseLocalValues)
     int val = -1345;
     Utf8CP testPropValueName = "TestProp";
     size_t rlvIndex = 0;
-    ASSERT_EQ (BE_SQLITE_OK, m_db.GetRLVCache().Register(rlvIndex, testPropValueName));
-    m_result = m_db.GetRLVCache().SaveValue(rlvIndex, val);
+    ASSERT_EQ (BE_SQLITE_OK, m_db.GetBLVCache().Register(rlvIndex, testPropValueName));
+    m_result = m_db.GetBLVCache().SaveValue(rlvIndex, val);
     EXPECT_EQ (BE_SQLITE_OK, m_result) << "SaveBriefcaseLocalValue failed";
 
     uint64_t actualVal = -1LL;
-    m_result = m_db.GetRLVCache().QueryValue(actualVal, rlvIndex);
+    m_result = m_db.GetBLVCache().QueryValue(actualVal, rlvIndex);
     EXPECT_EQ (BE_SQLITE_OK, m_result);
     EXPECT_EQ (val, (int) actualVal);
 
     m_db.SaveChanges();
 
     actualVal = -1LL;
-    m_result = m_db.GetRLVCache().QueryValue(actualVal, rlvIndex);
+    m_result = m_db.GetBLVCache().QueryValue(actualVal, rlvIndex);
     EXPECT_EQ (BE_SQLITE_OK, m_result);
     EXPECT_EQ (val, (int) actualVal);
 
-    ASSERT_TRUE (m_db.GetRLVCache().TryGetIndex(rlvIndex, testPropValueName));
-    ASSERT_FALSE (m_db.GetRLVCache().TryGetIndex(rlvIndex, "GarbageProp"));
+    ASSERT_TRUE (m_db.GetBLVCache().TryGetIndex(rlvIndex, testPropValueName));
+    ASSERT_FALSE (m_db.GetBLVCache().TryGetIndex(rlvIndex, "GarbageProp"));
 
-    ASSERT_EQ (BE_SQLITE_ERROR, m_db.GetRLVCache().Register(rlvIndex, testPropValueName));
+    ASSERT_EQ (BE_SQLITE_ERROR, m_db.GetBLVCache().Register(rlvIndex, testPropValueName));
 
     //Work with RLVs directly
     Utf8CP testProp2 = "TestProp2";

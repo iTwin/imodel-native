@@ -1770,7 +1770,7 @@ struct BusyRetry : RefCountedBase
 // Cached "briefcase local values"
 // @bsiclass                                                    Keith.Bentley   12/12
 //=======================================================================================
-struct CachedRLV
+struct CachedBLV
     {
 private:
     Utf8String   m_name;
@@ -1779,7 +1779,7 @@ private:
     uint64_t     m_value;
 
 public:
-    explicit CachedRLV(Utf8CP name) : m_name(name) {BeAssert(!Utf8String::IsNullOrEmpty(name)); Reset();}
+    explicit CachedBLV(Utf8CP name) : m_name(name) {BeAssert(!Utf8String::IsNullOrEmpty(name)); Reset();}
     Utf8CP GetName() const {return m_name.c_str();}
     uint64_t GetValue() const {BeAssert(!m_isUnset); return m_value;}
     void ChangeValue(uint64_t value, bool initializing = false) {m_isUnset=false; m_dirty=!initializing; m_value=value;}
@@ -1787,12 +1787,12 @@ public:
     bool IsUnset() const { return m_isUnset; }
     bool IsDirty() const {BeAssert(!m_isUnset); return m_dirty;}
     void SetIsNotDirty() const {BeAssert(!m_isUnset); m_dirty = false;}
-    void Reset() {m_isUnset=true; m_dirty=false; m_value=-1LL;}
+    void Reset() {m_isUnset=true; m_dirty=false; m_value=0;}
     };
 
 //=======================================================================================
-// Cache for int64_t BriefcaseLocalValues. This is for RLV's that are of type int64_t and are frequently
-// accessed and/or modified. The RLVs are identified in the cache by "registering" their name are thereafter
+// Cache for uint64_t BriefcaseLocalValues. This is for BLV's that are of type uint64_t and are frequently
+// accessed and/or modified. The BLVs are identified in the cache by "registering" their name are thereafter
 // accessed by index. The cache is held in memory for performance. It is automatically saved whenever a transaction is committed.
 // @bsiclass                                                    Krischan.Eberle     07/14
 //=======================================================================================
@@ -1801,11 +1801,11 @@ struct BriefcaseLocalValueCache : NonCopyableClass
 private:
     friend struct DbFile;
     friend struct Db;
-    bvector<CachedRLV> m_cache;
+    bvector<CachedBLV> m_cache;
     DbFile& m_dbFile;
 
     void Clear();
-    bool TryQuery(CachedRLV*&, size_t rlvIndex);
+    bool TryQuery(CachedBLV*&, size_t rlvIndex);
 
 public:
     BriefcaseLocalValueCache(DbFile& dbFile) : m_dbFile(dbFile) {}
@@ -1859,9 +1859,6 @@ struct DbFile
     friend struct Statement;
     friend struct Savepoint;
 
-private:
-    size_t  m_briefcaseIdRlvIndex;
-
 protected:
     typedef RefCountedPtr<struct ChangeTracker> ChangeTrackerPtr;
 
@@ -1873,7 +1870,7 @@ protected:
     uint64_t        m_dataVersion; // for detecting changes from another process
     RefCountedPtr<BusyRetry> m_retry;
     mutable void*   m_cachedProps;
-    BriefcaseLocalValueCache m_rlvCache;
+    BriefcaseLocalValueCache m_blvCache;
     BeGuid          m_dbGuid;
     Savepoint       m_defaultTxn;
     BeBriefcaseId  m_briefcaseId;
@@ -1903,7 +1900,7 @@ protected:
     void DeleteCachedPropertyMap();
     void SaveCachedProperties(bool isCommit);
     Utf8String GetLastError(DbResult* lastResult) const;
-    void SaveCachedRlvs(bool isCommit);
+    void SaveCachedBlvs(bool isCommit);
 public:
 #if !defined (DOCUMENTATION_GENERATOR)
     Utf8String ExplainQuery(Utf8CP sql, bool explainPlan, bool suppressDiagnostics) const;
@@ -1926,7 +1923,7 @@ protected:
     BE_SQLITE_EXPORT int AddFunction(DbFunction& function) const;
     BE_SQLITE_EXPORT int AddRTreeMatchFunction(RTreeMatchFunction& function) const;
     BE_SQLITE_EXPORT int RemoveFunction(DbFunction&) const;
-    BE_SQLITE_EXPORT BriefcaseLocalValueCache& GetRLVCache();
+    BE_SQLITE_EXPORT BriefcaseLocalValueCache& GetBLVCache();
 };
 
 //=======================================================================================
@@ -2410,17 +2407,17 @@ public:
     //! BriefcaseLocalValues are stored is not change tracked or change merged.
 
     //! Get a reference to the BriefcaseLocalValueCache for this Db.
-    BriefcaseLocalValueCache& GetRLVCache() {return m_dbFile->GetRLVCache();}
+    BriefcaseLocalValueCache& GetBLVCache() {return m_dbFile->GetBLVCache();}
 
     //! Query the current value of a Briefcase Local Value of type string.
-    //! @param[in] name The name of the RLV.
-    //! @param[out] value On success, the value of the RLV.
+    //! @param[in] name The name of the BLV.
+    //! @param[out] value On success, the value of the BLV.
     //! @return BE_SQLITE_ROW if the value exists and value is valid, error status otherwise.
     BE_SQLITE_EXPORT DbResult QueryBriefcaseLocalValue(Utf8CP name, Utf8StringR value) const;
 
     //! Save a new value of a Briefcase Local Value of type string. If the RLC already exists, its value is replaced.
-    //! @param[in] name The name of the RLV.
-    //! @param[in] value The new value for RLV name.
+    //! @param[in] name The name of the BLV.
+    //! @param[in] value The new value for BLV name.
     //! @return BE_SQLITE_DONE if the value was saved, error status otherwise.
     BE_SQLITE_EXPORT DbResult SaveBriefcaseLocalValue(Utf8CP name, Utf8StringCR value);
     //! @}

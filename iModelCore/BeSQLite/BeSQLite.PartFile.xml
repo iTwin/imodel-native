@@ -122,7 +122,7 @@
         </Bindings>
     </Part>
 
-    <Product Name="WSClient-iOSXCTest" >
+    <Product Name="BeSQLite-iOSXCTest" >
         <SubPart PartName="iOSXCTest" LibType="Static"/>
         <Directories DirectoryListName="iOSXCTestProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
