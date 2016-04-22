@@ -272,7 +272,7 @@
     <!--                ********************** -->
     <!--                **** AndroidJUnit **** -->
     <!--                ********************** -->
-    <Part Name="AndroidJUnit-TestCollection" BentleyBuildMakeFile="${SrcRoot}BeGTest/Android/MakeJUnitTestProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=ImagePPTests -dTEST_COLLECTION_PRODUCT=ImagePP-TestCollection -dUSE_STATIC_LIBRARIES=1 -dTEST_ANDROID_MIN_SDK_VERSION=19" OnlyPlatforms="Android*">
+    <Part Name="AndroidJUnit-TestCollection" BentleyBuildMakeFile="${SrcRoot}BeGTest/Android/MakeJUnitTestProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=ImagePPTests -dTEST_COLLECTION_PRODUCT=ImagePP-TestCollection -dTEST_FRAMEWORK_SQLANG=ImagePP_en.sqlang.db3 -dUSE_STATIC_LIBRARIES=1 -dTEST_ANDROID_MIN_SDK_VERSION=19" OnlyPlatforms="Android*">
         <SubProduct ProductName="ImagePP-TestCollection"/>
         <SubPart PartName="AndroidJUnitTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
@@ -289,7 +289,7 @@
     <!--                ********************** -->
     <!--                **** iOSXCTest ******* -->
     <!--                ********************** -->
-    <Part Name="iOSXCTest-TestCollection" BentleyBuildMakeFile="${SrcRoot}BeGTest/iOS/MakeXCTestProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=ImagePPTests -dTEST_COLLECTION_PRODUCT=ImagePP-TestCollection -dUSE_STATIC_LIBRARIES=1" OnlyPlatforms="iOS*">
+    <Part Name="iOSXCTest-TestCollection" BentleyBuildMakeFile="${SrcRoot}BeGTest/iOS/MakeXCTestProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=ImagePPTests -dTEST_COLLECTION_PRODUCT=ImagePP-TestCollection -dTEST_FRAMEWORK_SQLANG=ImagePP_en.sqlang.db3 -dUSE_STATIC_LIBRARIES=1" OnlyPlatforms="iOS*">
         <SubProduct ProductName="ImagePP-TestCollection"/>
         <SubPart PartName="iOSXCTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
