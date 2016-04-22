@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/CompressionTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //  #include "LzmaTests.h"
@@ -33,15 +33,18 @@ static void runCompressFileTest()
     BeFileName  nameOriginalFile;
     BeFileName  nameCompressedFile;
 
-    BeTest::GetHost().GetDocumentsRoot (nameOriginalFile);
-    nameOriginalFile.AppendToPath(L"DgnDb");
-    nameOriginalFile.AppendToPath(L"SubStation_NoFence.i.idgndb");
+    // First need to create a new db
+    BeTest::GetHost().GetOutputRoot(nameOriginalFile);
+    nameOriginalFile.AppendToPath(L"CompressTest");
+    BeFileName::CreateNewDirectory(nameOriginalFile.GetName());
+    nameOriginalFile.AppendToPath(L"compressSeed.db");
+    BeSQLite::Db db;
+    db.CreateNewDb(nameOriginalFile);
+    db.CloseDb();
 
     BeTest::GetHost().GetOutputRoot(nameCompressedFile);
-    nameCompressedFile.AppendToPath(L"DgnDb");
     nameCompressedFile.AppendToPath(L"CompressTest");
-    BeFileName::CreateNewDirectory(nameCompressedFile.GetName());
-    nameCompressedFile.AppendToPath(L"SubStation_NoFence.imodel");
+    nameCompressedFile.AppendToPath(L"compressSeed.imodel");
 
     BeSQLite::LzmaEncoder   encoder(2 * 1024 * 1024);
     BeSQLite::ZipErrors result = encoder.CompressDgnDb(nameCompressedFile, nameOriginalFile, &abortTracker, true);
@@ -51,9 +54,8 @@ static void runCompressFileTest()
 
     BeFileName nameUncompressedFile;
     BeTest::GetHost().GetOutputRoot(nameUncompressedFile);
-    nameUncompressedFile.AppendToPath(L"DgnDb");
     nameUncompressedFile.AppendToPath(L"CompressTest");
-    nameUncompressedFile.AppendToPath(L"SubStation_NoFence.i.idgndb");
+    nameUncompressedFile.AppendToPath(L"uncompress.db");
 
     BeSQLite::LzmaDecoder decoder;
     result = decoder.UncompressDgnDb(nameUncompressedFile, nameCompressedFile, &abortTracker);
@@ -488,11 +490,15 @@ TEST(CompressionTests, CreateZipFile)
     BeTest::GetHost().GetTempDir (zipFileName);
     zipFileName.AppendToPath (L"CompressionTests_CreateZipFile.zip");
 
+    // First need to create a new db
     BeFileName  fileToZip;
-    BeTest::GetHost().GetDocumentsRoot (fileToZip);
-    fileToZip.AppendToPath (L"DgnDb");
-    fileToZip.AppendToPath (L"SiteLayout.i.idgndb");
-    EXPECT_TRUE (fileToZip.DoesPathExist());
+    BeTest::GetHost().GetOutputRoot(fileToZip);
+    fileToZip.AppendToPath(L"CompressTest");
+    BeFileName::CreateNewDirectory(fileToZip.GetName());
+    fileToZip.AppendToPath(L"compressZipSeed.db");
+    BeSQLite::Db db;
+    db.CreateNewDb(fileToZip);
+    db.CloseDb();
 
     Utf8String nameInZip = BeFileName(BeFileName::NameAndExt, fileToZip.GetName()).GetNameUtf8();
 
