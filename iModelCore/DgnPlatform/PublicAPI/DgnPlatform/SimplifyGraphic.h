@@ -53,7 +53,7 @@ protected:
     DGNPLATFORM_EXPORT void _AddBSplineSurface(MSBsplineSurfaceCR) override;
     DGNPLATFORM_EXPORT void _AddPolyface(PolyfaceQueryCR meshData, bool filled = false) override;
     DGNPLATFORM_EXPORT void _AddTriMesh(TriMeshArgs const&) override;
-    DGNPLATFORM_EXPORT void _AddBody(ISolidKernelEntityCR entity, double pixelSize = 0.0) override;
+    DGNPLATFORM_EXPORT void _AddBody(ISolidKernelEntityCR entity) override;
     DGNPLATFORM_EXPORT void _AddTextString(TextStringCR text) override;
     DGNPLATFORM_EXPORT void _AddTextString2d(TextStringCR text, double zDepth) override;
     DGNPLATFORM_EXPORT void _AddTile(Render::TextureCR tile, DPoint3dCP corners) override;
