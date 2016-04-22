@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/Utils/ValuePrinter.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -48,6 +48,9 @@ std::ostream& operator << (std::ostream &o, DbResult value);
 std::ostream& operator << (std::ostream &o, ECSqlStatus status);
 std::ostream& operator << (std::ostream &o, ECSqlStepStatus status);
 std::ostream& operator << (std::ostream &o, const ECInstanceKeyMultiMap::value_type& pair);
+
+std::ostream& operator << (std::ostream &o, BeFileNameStatus value);
+std::ostream& operator << (std::ostream &o, BeFileStatus value);
 
 namespace rapidjson
     {

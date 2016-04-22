@@ -69,6 +69,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Cache\CachingDataSourceTests.cpp" />
+    <ClCompile Include="Cache\RepositorySchemaUpgradeTests.cpp" />
     <ClCompile Include="Configuration\BuddiClientTests.cpp" />
     <ClCompile Include="Examples\ExampleTests.cpp" />
     <ClCompile Include="Repository\Extensions\HierarchicalSearchTests.cpp" />
@@ -86,6 +87,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Cache\CachingDataSourceTests.h" />
+    <ClInclude Include="Cache\RepositorySchemaUpgradeTests.h" />
     <ClInclude Include="Configuration\BuddiClientTests.h" />
     <ClInclude Include="Examples\ExampleTests.h" />
     <ClInclude Include="Repository\Extensions\HierarchicalSearchTests.h" />
