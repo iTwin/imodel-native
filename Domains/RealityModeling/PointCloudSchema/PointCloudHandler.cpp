@@ -20,6 +20,8 @@ static Utf8CP PROPERTYJSON_SceneToWorld = "SceneToWorld";
 static Utf8CP PROPERTYJSON_Description = "Description";
 static Utf8CP PROPERTYJSON_Wkt = "Wkt";
 static Utf8CP PROPERTYJSON_Density = "Density";
+static Utf8CP PROPERTYJSON_Color = "Color";
+static Utf8CP PROPERTYJSON_Weight = "Weight";
 
 //----------------------------------------------------------------------------------------
 //                                  PointCloudModel::JsonUtils
@@ -145,6 +147,13 @@ void PointCloudModel::SetSceneToWorld(TransformCR trans){ m_properties.m_sceneTo
 
 float PointCloudModel::GetViewDensity() const       { return m_properties.m_density; }
 void PointCloudModel::SetViewDensity(float density) { BeAssert(IN_RANGE(density, 0.0f, 1.0f)); m_properties.m_density = BOUND(density, 0.0f, 1.0f);}
+
+ColorDef PointCloudModel::GetColor() const              {return m_properties.m_color;}
+void PointCloudModel::SetColor(ColorDef const& newColor){m_properties.m_color = newColor;}
+
+uint32_t PointCloudModel::GetWeight() const                { return m_properties.m_weight; }
+void PointCloudModel::SetWeight(uint32_t const& newWeight) { m_properties.m_weight = newWeight; }
+
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     4/2015
@@ -290,6 +299,8 @@ PointCloudModel::Properties::Properties()
     {
     m_sceneToWorld.InitIdentity();
     m_density = 1.0;
+    m_color = ColorDef::White();
+    m_weight = 0;
     }
 
 //----------------------------------------------------------------------------------------
@@ -308,6 +319,9 @@ void PointCloudModel::Properties::ToJson(Json::Value& v) const
         v[PROPERTYJSON_Wkt] = m_wkt.c_str();
 
     v[PROPERTYJSON_Density] = m_density;
+    
+    v[PROPERTYJSON_Color] = m_color.GetValue();
+    v[PROPERTYJSON_Weight] = m_weight;
     }
 
 //----------------------------------------------------------------------------------------
@@ -321,6 +335,9 @@ void PointCloudModel::Properties::FromJson(Json::Value const& v)
     JsonUtils::TransformFromJson(m_sceneToWorld, v[PROPERTYJSON_SceneToWorld]);
     m_wkt = v[PROPERTYJSON_Wkt].asString();
     m_density = v[PROPERTYJSON_Density].asFloat();
+
+    m_color = ColorDef(v[PROPERTYJSON_Color].asUInt());
+    m_weight = v[PROPERTYJSON_Weight].asUInt();
     }
 
 //----------------------------------------------------------------------------------------

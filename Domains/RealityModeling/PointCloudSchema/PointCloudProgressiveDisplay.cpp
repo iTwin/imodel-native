@@ -97,7 +97,7 @@ bool PointCloudProgressiveDisplay::DrawPointCloud(int64_t& pointsToLoad, Dgn::Re
     // POINTCLOUD_WIP_GR06_PointCloudDisplay - to do change density(or whatever they did in v8i) when DrawPurpose::UpdateDynamic.
     //PtVortex::DynamicFrameRate(displayParams.fps);
     PointCloudVortex::SetQueryDensity(queryHandle->GetHandle(), densityType, density);
-
+    
     uint32_t channelFlags = (uint32_t) PointCloudChannelId::Xyz;
     if (m_model.GetPointCloudSceneP()->_HasRGBChannel())
         channelFlags |= (uint32_t) PointCloudChannelId::Rgb;
@@ -109,9 +109,9 @@ bool PointCloudProgressiveDisplay::DrawPointCloud(int64_t& pointsToLoad, Dgn::Re
 
     Render::GraphicPtr pGraphic = context.CreateGraphic(Render::Graphic::CreateParams(context.GetViewport(), m_model.GetSceneToWorld()));
     Render::GraphicParams graphicParams;
-    graphicParams.SetLineColor(ColorDef::White());
-    graphicParams.SetFillColor(ColorDef::White());
-    graphicParams.SetWidth(1);
+    graphicParams.SetLineColor(m_model.GetColor());
+    graphicParams.SetFillColor(m_model.GetColor());
+    graphicParams.SetWidth(context.GetViewport()->GetIndexedLineWidth(m_model.GetWeight()));
     pGraphic->ActivateGraphicParams(graphicParams);
 
     uint32_t buffersCount = 0;

@@ -66,6 +66,9 @@ public:
         Utf8String      m_wkt;
         float           m_density;
 
+        ColorDef        m_color;
+        uint32_t        m_weight;
+        
         void ToJson(Json::Value&) const;
         void FromJson(Json::Value const&);
         };
@@ -141,6 +144,12 @@ public:
     //! Sets the density of a point cloud. This represents the density of points displayed for this point cloud. Default is 1.0.
     //! @param[in]  density  The view density expressed as percentage (a float value between 0.0 and 1.0).
     POINTCLOUDSCHEMA_EXPORT void SetViewDensity(float density);
+
+    POINTCLOUDSCHEMA_EXPORT ColorDef GetColor() const;
+    POINTCLOUDSCHEMA_EXPORT void SetColor(ColorDef const& newColor);
+
+    POINTCLOUDSCHEMA_EXPORT uint32_t GetWeight() const;
+    POINTCLOUDSCHEMA_EXPORT void SetWeight(uint32_t const& newWeight);
 
     //! Query the DgnClassId of the PointCloudModel ECClass in the specified DgnDb.
     //! @note This is a static method that always returns the DgnClassId of the PointCloudModel class - it does @em not return the class of a specific instance.
