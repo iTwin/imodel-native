@@ -1692,17 +1692,6 @@ protected:
 };
 
 //=======================================================================================
-//! @ingroup GROUP_DgnElement
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE LinkElement : InformationElement
-    {
-    DEFINE_T_SUPER(InformationElement);
-
-    protected:
-        explicit LinkElement(CreateParams const& params) : T_Super(params) {}
-    };
-
-//=======================================================================================
 //! A DefinitionElement which resides in (and only in) a DefinitionModel.
 //! @ingroup GROUP_DgnElement
 //=======================================================================================
@@ -1714,6 +1703,17 @@ protected:
     virtual DefinitionElementCP _ToDefinitionElement() const override final {return this;}
     explicit DefinitionElement(CreateParams const& params) : T_Super(params) {}
 };
+
+//=======================================================================================
+//! @ingroup GROUP_DgnElement
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE LinkElement : DefinitionElement
+    {
+    DEFINE_T_SUPER(DefinitionElement);
+
+    protected:
+        explicit LinkElement(CreateParams const& params) : T_Super(params) {}
+    };
 
 //=======================================================================================
 //! A DefinitionElement which resides in (and only in) the dictionary model.

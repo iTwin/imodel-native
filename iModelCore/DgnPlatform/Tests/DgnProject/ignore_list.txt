@@ -40,5 +40,6 @@ DgnLineStyleTest.InsertAndQueryWithoutCacheReLoad       # Unable to query line s
 ECInstanceSelectTests.ImportSchema			# This test doesn't really do anything and it takes 40 seconds to run
 
 DgnLinkTest.* # Need to figure the BIS hierarchy for DgnLinks - Shaun
+DgnDbECInstanceChangeEventSourceTests.* # Need to figure the BIS hierarchy for DgnLinks - Shaun
 DgnECNavigatorTest.DgnLinksElementInfo # Need to figure the BIS hierarchy for DgnLinks - Shaun
 DgnECNavigatorTest.IfcElementInfo # Need to add support for RelatedItemsDisplaySpecification - Carole

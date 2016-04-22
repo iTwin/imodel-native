@@ -34,6 +34,65 @@ namespace dgn_ModelHandler
 namespace dgn_ElementHandler
     {
     HANDLER_DEFINE_MEMBERS(MarkupExternalLinkHandler)
+    HANDLER_DEFINE_MEMBERS(MarkupExternalLinkGroupHandler)
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    04/2016
+//---------------------------------------------------------------------------------------
+DgnDbStatus MarkupExternalLink::_BindInsertParams(BeSQLite::EC::ECSqlStatement& statement)
+    {
+    DgnDbStatus stat = BindParams(statement);
+    if (DgnDbStatus::Success != stat)
+        return stat;
+    return T_Super::_BindInsertParams(statement);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    01/2016
+//---------------------------------------------------------------------------------------
+DgnDbStatus MarkupExternalLink::_BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement)
+    {
+    DgnDbStatus stat = BindParams(statement);
+    if (DgnDbStatus::Success != stat)
+        return stat;
+    return T_Super::_BindUpdateParams(statement);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    04/2016
+//---------------------------------------------------------------------------------------
+DgnDbStatus MarkupExternalLink::BindParams(BeSQLite::EC::ECSqlStatement& stmt)
+    {
+    if (ECSqlStatus::Success != stmt.BindId(stmt.GetParameterIndex(MARKUPEXTERNALLINK_LinkedElementId), m_linkedElementId))
+        return DgnDbStatus::BadArg;
+
+    return DgnDbStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    04/2016
+//---------------------------------------------------------------------------------------
+DgnDbStatus MarkupExternalLink::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
+    {
+    DgnDbStatus status = T_Super::_ReadSelectParams(stmt, params);
+    if (DgnDbStatus::Success != status)
+        return status;
+
+    m_linkedElementId = stmt.GetValueId<DgnElementId>(params.GetSelectIndex(MARKUPEXTERNALLINK_LinkedElementId));
+    return DgnDbStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    04/2016
+//---------------------------------------------------------------------------------------
+void MarkupExternalLink::_CopyFrom(DgnElementCR other)
+    {
+    T_Super::_CopyFrom(other);
+
+    MarkupExternalLinkCP otherLink = dynamic_cast<MarkupExternalLinkCP> (&other);
+    if (otherLink)
+        m_linkedElementId = otherLink->m_linkedElementId;
     }
 
 //---------------------------------------------------------------------------------------

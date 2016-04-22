@@ -11,6 +11,13 @@
         </ECCustomAttributes>
         <ECProperty propertyName="LinkedElementId" typeName="long"/>
     </ECEntityClass>
+    
+    <ECClass typeName="MarkupExternalLinkGroup" isDomainClass="True">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00" />
+        </ECCustomAttributes>
+        <BaseClass>dgn:LinkElement</BaseClass>
+    </ECClass>
 
     <ECEntityClass typeName="RedlineModel">
         <ECCustomAttributes>

@@ -45,15 +45,19 @@
 #define MARKUP_SCHEMA_PATH L"ECSchemas/Dgn/Markup.01.00.ecschema.xml"
 #define MARKUP_SCHEMA(name) MARKUP_SCHEMA_NAME "." name
 
-#define MARKUP_CLASSNAME_MarkupExternalLink  "MarkupExternalLink"
-#define MARKUP_CLASSNAME_RedlineModel        "RedlineModel"
-#define MARKUP_CLASSNAME_SpatialRedlineModel "SpatialRedlineModel"
+#define MARKUP_CLASSNAME_MarkupExternalLink         "MarkupExternalLink"
+#define MARKUP_CLASSNAME_MarkupExternalLinkGroup    "MarkupExternalLinkGroup"
+#define MARKUP_CLASSNAME_RedlineModel               "RedlineModel"
+#define MARKUP_CLASSNAME_SpatialRedlineModel        "SpatialRedlineModel"
 
 DGNPLATFORM_REF_COUNTED_PTR(RedlineModel)
 DGNPLATFORM_REF_COUNTED_PTR(SpatialRedlineModel)
 DGNPLATFORM_REF_COUNTED_PTR(RedlineViewController)
 DGNPLATFORM_REF_COUNTED_PTR(SpatialRedlineViewController)
 DGNPLATFORM_REF_COUNTED_PTR(MarkupExternalLink)
+DGNPLATFORM_TYPEDEFS(MarkupExternalLink)
+DGNPLATFORM_REF_COUNTED_PTR(MarkupExternalLinkGroup)
+DGNPLATFORM_TYPEDEFS(MarkupExternalLinkGroup)
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -84,7 +88,9 @@ struct MarkupDomain : Dgn::DgnDomain
         MarkupDomain();
     };
 
+//=======================================================================================
 //! Information about a DgnDb that can be used to save and check on markup-project association. See DgnMarkupProject::GetAssociation
+//=======================================================================================
 struct DgnProjectAssociationData
     {
 private:
@@ -113,7 +119,9 @@ public:
         };
     };
 
+//=======================================================================================
 //! Information about a view in a DgnDb that can be used to save and check on redline-view association. See RedlineModel::GetAssociation
+//=======================================================================================
 struct DgnViewAssociationData : DgnProjectAssociationData
     {
     DEFINE_T_SUPER(DgnProjectAssociationData);
@@ -596,18 +604,19 @@ public:
 
 };
 
-namespace dgn_ElementHandler { struct MarkupExternalLinkHandler; }
+namespace dgn_ElementHandler { struct MarkupExternalLinkHandler; struct MarkupExternalLinkGroupHandler; }
 
 //=======================================================================================
+//! Captures a link to an element in the external DgnDb referenced from the markup DgnDb
 //! @ingroup GROUP_DgnElement
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE MarkupExternalLink : LinkElement
 {
-DGNELEMENT_DECLARE_MEMBERS(MARKUP_CLASSNAME_MarkupExternalLink, LinkElement)
-friend struct dgn_ElementHandler::MarkupExternalLinkHandler;
+    DGNELEMENT_DECLARE_MEMBERS(MARKUP_CLASSNAME_MarkupExternalLink, LinkElement)
+    friend struct dgn_ElementHandler::MarkupExternalLinkHandler;
 
-//! Parameters used to construct a MarkupExternalLink
-struct CreateParams : T_Super::CreateParams
+    //! Parameters used to construct a MarkupExternalLink
+    struct CreateParams : T_Super::CreateParams
     {
     DEFINE_T_SUPER(MarkupExternalLink::T_Super::CreateParams);
 
@@ -615,7 +624,7 @@ struct CreateParams : T_Super::CreateParams
 
     explicit CreateParams(Dgn::DgnElement::CreateParams const& params, DgnElementId linkedElementId = DgnElementId()) : T_Super(params), m_linkedElementId(linkedElementId) {}
 
-    CreateParams(DgnDbR db, DgnModelId modelId, DgnElementId linkedElementId = DgnElementId()) : T_Super(db, modelId, MarkupExternalLink::QueryClassId(db))
+    CreateParams(DgnDbR db, DgnModelId modelId, DgnElementId linkedElementId = DgnElementId()) : T_Super(db, modelId, MarkupExternalLink::QueryClassId(db)), m_linkedElementId(linkedElementId)
         {}
     };
 
@@ -623,7 +632,14 @@ private:
     DgnElementId m_linkedElementId;
 
     static void AddClassParams(ECSqlClassParamsR params);
-    
+    Dgn::DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& statement);
+
+protected:
+    DGNPLATFORM_EXPORT virtual void _CopyFrom(Dgn::DgnElementCR source) override;
+    DGNPLATFORM_EXPORT virtual Dgn::DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement&) override;
+    DGNPLATFORM_EXPORT virtual Dgn::DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement) override;
+    DGNPLATFORM_EXPORT virtual Dgn::DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, Dgn::ECSqlClassParams const& selectParams) override;
+
 public:
     //! Constructor
     explicit MarkupExternalLink(CreateParams const& params) : T_Super(params), m_linkedElementId(params.m_linkedElementId) {}
@@ -642,14 +658,51 @@ public:
     static Dgn::DgnClassId QueryClassId(Dgn::DgnDbCR dgndb) { return Dgn::DgnClassId(dgndb.Schemas().GetECClassId(MARKUP_SCHEMA_NAME, MARKUP_CLASSNAME_MarkupExternalLink)); }
 };
 
+//=======================================================================================
+// Group of markup external links for assignment of activities to multiple reference elements
+//=======================================================================================
+struct MarkupExternalLinkGroup : LinkElement, IElementGroupOf < MarkupExternalLink >
+{
+    DGNELEMENT_DECLARE_MEMBERS(MARKUP_CLASSNAME_MarkupExternalLinkGroup, LinkElement)
+    friend struct dgn_ElementHandler::MarkupExternalLinkGroupHandler;
+
+    //! Parameters used to construct a MarkupExternalLinkGroup
+    struct CreateParams : T_Super::CreateParams
+        {
+        DEFINE_T_SUPER(MarkupExternalLinkGroup::T_Super::CreateParams);
+
+        explicit CreateParams(Dgn::DgnElement::CreateParams const& params) : T_Super(params) {}
+        CreateParams(DgnDbR db, DgnModelId modelId) : T_Super(db, modelId, MarkupExternalLink::QueryClassId(db)) {}
+        };
+
+private:
+    virtual DgnElementCP _ToGroupElement() const override { return this; }
+
+public:
+    explicit MarkupExternalLinkGroup(CreateParams const& params) : T_Super(params) {}
+
+    static MarkupExternalLinkGroupPtr Create(CreateParams const& params) { return new MarkupExternalLinkGroup(params); }
+
+    //! Query the DgnClassId of the MarkupExternalLinkGroup ECClass in the specified DgnDb.
+    //! @note This is a static method that always returns the DgnClassId of the markup.MarkupExternalLinkGroup class - it does @em not return the class of a specific instance.
+    static Dgn::DgnClassId QueryClassId(Dgn::DgnDbR db) { return Dgn::DgnClassId(db.Schemas().GetECClassId(MARKUP_SCHEMA_NAME, MARKUP_CLASSNAME_MarkupExternalLinkGroup)); }
+};
+
+
 namespace dgn_ElementHandler
 {
-//! The handler for MarkupExternalLinkHandler elements
+//! The handler for MarkupExternalLink elements
 struct EXPORT_VTABLE_ATTRIBUTE MarkupExternalLinkHandler : Element
     {
     ELEMENTHANDLER_DECLARE_MEMBERS(MARKUP_CLASSNAME_MarkupExternalLink, MarkupExternalLink, MarkupExternalLinkHandler, Element, DGNPLATFORM_EXPORT)
 
     virtual void _GetClassParams(ECSqlClassParamsR params) override { T_Super::_GetClassParams(params); MarkupExternalLink::AddClassParams(params); }
+    };
+
+//! The handler for MarkupExternalLinkGroup elements
+struct EXPORT_VTABLE_ATTRIBUTE MarkupExternalLinkGroupHandler : MarkupExternalLinkHandler
+    {
+    ELEMENTHANDLER_DECLARE_MEMBERS(MARKUP_CLASSNAME_MarkupExternalLinkGroup, MarkupExternalLinkGroup, MarkupExternalLinkGroupHandler, Element, DGNPLATFORM_EXPORT)
     };
 }
 

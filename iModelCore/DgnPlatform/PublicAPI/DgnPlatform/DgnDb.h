@@ -25,14 +25,13 @@ enum DgnDbSchemaValues : int32_t
     DGNDB_CURRENT_VERSION_Major = 6,
     DGNDB_CURRENT_VERSION_Minor = 0,
     DGNDB_CURRENT_VERSION_Sub1  = 1,
-    DGNDB_CURRENT_VERSION_Sub2  = 3,
+    DGNDB_CURRENT_VERSION_Sub2  = 2,
 //__PUBLISH_SECTION_END__
     //------------------------------
     // Schema change history
     //------------------------------
     // 6.0.1.1 - Remove ON DELETE RESTRICT, ON UPDATE RESTRICT
     // 6.0.1.2 - Introduce MinimumSharedColumnCount for dgn_GeometricElement2d=8 and dgn_GeometricElement3d=16
-    // 6.0.1.3 - Removed dgn:Link. Moved RedlineViewDefinition, RedlineModel, SpatialRedlineModel from dgn to markup schema.
 //__PUBLISH_SECTION_START__
 
     DGNDB_SUPPORTED_VERSION_Major = 6,  // oldest version of the schema supported by the current api
