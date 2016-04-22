@@ -44,7 +44,7 @@ TEST_F(ECDbTestFixture, ECDbProfile)
         EXPECT_EQ  (BE_SQLITE_ERROR, db.QueryProperty (profileVersion, PROFILEVERSION_PROPSPEC)) << L"BeSQLite file is not expected to contain the ECDb profile version.";
 
         size_t sequenceIndex = 0;
-        ASSERT_FALSE (db.GetRLVCache().TryGetIndex(sequenceIndex, ECINSTANCEIDSEQUENCE_KEY));
+        ASSERT_FALSE (db.GetBLVCache().TryGetIndex(sequenceIndex, ECINSTANCEIDSEQUENCE_KEY));
         db.CloseDb ();
         }
 
@@ -60,10 +60,10 @@ TEST_F(ECDbTestFixture, ECDbProfile)
         EXPECT_TRUE (EXPECTED_PROFILEVERSION == actualProfileVersion) << "Unexpected ECDb profile version of new ECDb file. Actual version: " << actualProfileVersionStr.c_str();
 
         size_t sequenceIndex = 0;
-        ASSERT_TRUE (ecdb.GetRLVCache().TryGetIndex (sequenceIndex, ECINSTANCEIDSEQUENCE_KEY));
+        ASSERT_TRUE (ecdb.GetBLVCache().TryGetIndex (sequenceIndex, ECINSTANCEIDSEQUENCE_KEY));
 
         uint64_t lastECInstanceId = -1LL;
-        EXPECT_EQ (BE_SQLITE_OK, ecdb.GetRLVCache().QueryValue(lastECInstanceId, sequenceIndex)) << L"ECInstanceId sequence not found in ECDb file which was newly created";
+        EXPECT_EQ (BE_SQLITE_OK, ecdb.GetBLVCache().QueryValue(lastECInstanceId, sequenceIndex)) << L"ECInstanceId sequence not found in ECDb file which was newly created";
         }
     }
 
