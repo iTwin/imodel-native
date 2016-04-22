@@ -27,36 +27,7 @@
 #include <Imagepp/all/h/HRPPixelTypeV32R8G8B8A8.h>
 #include <Imagepp/all/h/HCDCodecZlib.h>
 
-static uint32_t s_nbOfLoadedFiles = 0;
-static uint32_t s_nbOfExportedAllOptionsFiles = 0;
-static uint32_t s_nbOfFilesToBestiTiff = 0;
-static uint32_t s_nbOfFiles24BitsJPEG = 0;
-static uint32_t s_nbOfFiles32BitsDeflate = 0;
-
 USING_NAMESPACE_IMAGEPP
-
-/*=================================================================================**//**
-* Define a MACRO to display messages while testing the export.
-*           PRINTF(" Hello World! \n");
-*                                                   Laurent.Robert-Veillette    04/2016
-+===============+===============+===============+===============+===============+======*/
-namespace testing
-    {
-    namespace internal
-        {
-        enum GTestColor
-            {
-            COLOR_DEFAULT,
-            COLOR_RED,
-            COLOR_GREEN,
-            COLOR_YELLOW
-            };
-
-        extern void ColoredPrintf(GTestColor color, const char* fmt, ...);
-        }
-    }
-#define PRINTF(...)  do { testing::internal::ColoredPrintf(testing::internal::COLOR_GREEN, "[          ] "); testing::internal::ColoredPrintf(testing::internal::COLOR_YELLOW, __VA_ARGS__); } while(0)
-
 
 /*=================================================================================**//**
 * @bsiclass                                         Laurent.Robert-Veillette    04/2016
@@ -114,14 +85,17 @@ static vector<std::wstring> s_GetFileNameVector()
         if (!actualName.Contains(L"NITF\\PasSupportees") &&
             !actualName.Contains(L"ErdasImg\\ImagesInvalides") &&
             !actualName.Contains(L"iTIFF\\xFileNotSupported") &&
+            !actualName.Contains(L"TIF\\xFileNotSupported") &&
+            !actualName.Contains(L"Pict\\xFileNotSupported") &&
+            !actualName.Contains(L"CAL\\xFileNotSupported (Type2-tiled)") &&
+            !actualName.Contains(L"BMP\\xFileNotSupported") &&
+            !actualName.Contains(L"Bil\\xFileNotSupported") &&
             !actualName.IsDirectory())
             directoryList.push_back(actualName.GetName());
         });
 
     return directoryList;
     }
-
-static const size_t s_nbTotalOfFiles = s_GetFileNameVector().size();
 
 
 /*---------------------------------------------------------------------------------**//**
@@ -149,8 +123,8 @@ static const size_t s_nbTotalOfFiles = s_GetFileNameVector().size();
 //                return L"A";
 //                break;
 //            default:
-//                return L"BlockTypeUnknown";
-//                break;
+//                BeAssert(!"Should not get here");
+//                return L"";
 //        }
 //    }
 //
@@ -296,6 +270,76 @@ static const size_t s_nbTotalOfFiles = s_GetFileNameVector().size();
 //    return BeFileName(ComposedFilename);
 //    }
 
+/*---------------------------------------------------------------------------------**//**
+@description  Depending on the image format of the input file, it makes required
+*               modifications for known issues with certain formats.
+*
+* see ..\HugeDataTest\src\Apps\ImagePP\Wrapper\TestFile.cpp
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool s_UpdateTiffHistogramTimestamp(HFCPtr<HFCURL> const& pUrl)
+    {
+    if (!pUrl->IsCompatibleWith(HFCURLFile::CLASS_ID))
+        return false;
+
+    HAutoPtr<HTIFFFile> pTiffFile(new HTIFFFile(static_cast<HFCURLFile*>(pUrl.GetPtr())->GetAbsoluteFileName(), HFC_READ_WRITE));
+
+    HTIFFError* pErr = NULL;
+    if (pErr != NULL && pErr->IsFatal())
+        return false;
+
+    AString value("9999:99:99 99:99:99");
+
+    //Standard Directories
+    unsigned int standardDirectoryNb = pTiffFile->NumberOfDirectory(HTIFFFile::STANDARD);
+
+    bool NeedSave = false;
+
+    for (unsigned int i = 0; standardDirectoryNb > i; ++i)
+        {
+        pTiffFile->SetDirectory(HTIFFFile::MakeDirectoryID(HTIFFFile::STANDARD, i));
+
+        if (pTiffFile->TagIsPresent(ImagePP::DATETIME))
+            {
+            pTiffFile->SetFieldA(ImagePP::DATETIME, value.c_str());
+            NeedSave = true;
+            }
+
+        if (pTiffFile->TagIsPresent(ImagePP::HMR_HISTOGRAMDATETIME))
+            {
+            pTiffFile->SetFieldA(ImagePP::HMR_HISTOGRAMDATETIME, value.c_str());
+            NeedSave = true;
+            }
+        }
+
+    //HMR directories
+    unsigned int hmrDirectoryNb = pTiffFile->NumberOfDirectory(HTIFFFile::HMR);
+
+    for (unsigned int i = 0; hmrDirectoryNb > i; ++i)
+        {
+        pTiffFile->SetDirectory(HTIFFFile::MakeDirectoryID(HTIFFFile::HMR, i));
+
+        if (pTiffFile->TagIsPresent(ImagePP::DATETIME))
+            {
+            pTiffFile->SetFieldA(ImagePP::DATETIME, value.c_str());
+            NeedSave = true;
+            }
+
+        if (pTiffFile->TagIsPresent(ImagePP::HMR_HISTOGRAMDATETIME))
+            {
+            pTiffFile->SetFieldA(ImagePP::HMR_HISTOGRAMDATETIME, value.c_str());
+            NeedSave = true;
+            }
+        }
+
+    if (NeedSave)
+        pTiffFile->Save();
+
+    pTiffFile = 0;
+
+    return true;
+    }
+
 //:>--------------------------------------------------------------------------------------+
 //
 // Test the export from a raster file to iTiff file with the best possible options.
@@ -303,8 +347,6 @@ static const size_t s_nbTotalOfFiles = s_GetFileNameVector().size();
 //:>+--------------------------------------------------------------------------------------
 TEST_P(ExportTester, ExportToiTiffBestOptions)
     {
-    ++s_nbOfFilesToBestiTiff;
-    PRINTF("Trying to export file to best iTiff %u out of %u\n", s_nbOfFilesToBestiTiff, s_nbTotalOfFiles);
     //Test that the source paths is not empty
     ASSERT_FALSE(GetParam().empty());
 
@@ -316,7 +358,9 @@ TEST_P(ExportTester, ExportToiTiffBestOptions)
 
     try
         {
-        HRFRasterFileCreator const* pSrcCreator = HRFRasterFileFactory::GetInstance()->FindCreator(UrlSource, HFC_READ_ONLY | HFC_SHARE_READ_WRITE, 0, false, false);
+        //N.B. We set the 4th parameter ScanCreatorIfNotFound = true because some files do not have the good extension. 
+        //Hence we cannot rely only on the extension to find the appropriate creator.
+        HRFRasterFileCreator const* pSrcCreator = HRFRasterFileFactory::GetInstance()->FindCreator(UrlSource, HFC_READ_ONLY | HFC_SHARE_READ_WRITE, 0, true, false);
         if (pSrcCreator == nullptr)
             return;
 
@@ -337,18 +381,14 @@ TEST_P(ExportTester, ExportToiTiffBestOptions)
         // Use BestMatchSelectedValues for exportation
         ASSERT_NO_THROW(exporter->BestMatchSelectedValues());
 
-        // Export image to specified output path
-        //BeFileName inputFileName(GetParam().c_str());
-        //BeFileName outputFilePath;
-        //BeTest::GetHost().GetOutputRoot(outputFilePath);
-        //HFCPtr<HFCURL> pURL = new HFCURLFile(HFCURLFile::s_SchemeName() + "://" + outputFilePath.GetNameUtf8() + Utf8String(inputFileName.GetFileNameWithoutExtension()));
-        //exporter->SelectExportFilename(pURL);
-
-        //Construct the output file path
-        BeFileName sourceFileName(GetParam().c_str());
+        //Construct the output file path to fit the one from the old baseline
         BeFileName outputFilePath;
         BeTest::GetHost().GetOutputRoot(outputFilePath);
-        outputFilePath.AppendToPath(sourceFileName.GetExtension().c_str());
+        auto positionStart = GetParam().find(L"Images\\");
+        auto positionEnd = GetParam().find(L"\\", positionStart + 7);
+        WString folderNameToAppend(GetParam().substr(positionStart, positionEnd - positionStart).c_str());
+        outputFilePath.AppendToPath(folderNameToAppend.c_str());
+        outputFilePath.AppendToPath(L"Default");
 
         //Create the ouput folder if not already created
         if (!outputFilePath.DoesPathExist())
@@ -357,13 +397,22 @@ TEST_P(ExportTester, ExportToiTiffBestOptions)
             ASSERT_TRUE(BeFileNameStatus::Success == status);
             }
 
-        outputFilePath.AppendToPath(sourceFileName.GetFileNameWithoutExtension().c_str());
+        auto pos = GetParam().find(L"Images");
+        WString newNameFile(GetParam().substr(pos).c_str());
+        newNameFile.ReplaceAll(L"\\", L"_");
+        outputFilePath.AppendToPath(newNameFile.c_str());
 
-        HFCPtr<HFCURL> pURL = new HFCURLFile(HFCURLFile::s_SchemeName() + "://" + outputFilePath.GetNameUtf8());
+        HFCPtr<HFCURL> pURL = new HFCURLFile(HFCURLFile::s_SchemeName() + "://" + outputFilePath.GetNameUtf8() + ".itiff");
         exporter->SelectExportFilename(pURL);
 
         HFCPtr<HRFRasterFile> pFile = exporter->StartExport();
         ASSERT_TRUE(pFile.GetPtr() != nullptr);
+
+        //Close the RasterFile in order to be able to open it again after
+        pFile = nullptr;
+
+        //Adjust the time stamp to "9999:99:99 99:99:99"       
+        ASSERT_TRUE(s_UpdateTiffHistogramTimestamp(pURL));
         }
     catch (...)
         {
@@ -371,17 +420,13 @@ TEST_P(ExportTester, ExportToiTiffBestOptions)
         }
     }
 
-
-////:>--------------------------------------------------------------------------------------+
-////
-//// Test the load of the rasters. Reading test.
-////                                                Laurent.Robert-Veillette            04/2016
-////:>+--------------------------------------------------------------------------------------
+//:>--------------------------------------------------------------------------------------+
+//
+// Test the load of the rasters. Reading test.
+//                                                Laurent.Robert-Veillette            04/2016
+//:>+--------------------------------------------------------------------------------------
 //TEST_P(ExportTester, LoadingRasters)
 //    {
-//    ++s_nbOfLoadedFiles;
-//    PRINTF("Trying to read file %u out of %u\n", s_nbOfLoadedFiles, s_nbTotalOfFiles);
-//    PRINTF("%s\n", Utf8String(GetParam().c_str()));
 //    //Test that the source paths is not empty
 //    ASSERT_FALSE(GetParam().empty());
 //
@@ -391,7 +436,10 @@ TEST_P(ExportTester, ExportToiTiffBestOptions)
 //    try
 //        {
 //        HFCPtr<HFCURL> UrlSource = new HFCURLFile(HFCURLFile::s_SchemeName() + "://" + Utf8String(GetParam().c_str()));
-//        HRFRasterFileCreator const* pSrcCreator = HRFRasterFileFactory::GetInstance()->FindCreator(UrlSource, HFC_READ_ONLY | HFC_SHARE_READ_WRITE, 0, false, false);
+//
+//        //N.B. We set the 4th parameter ScanCreatorIfNotFound = true because some files do not have the good extension. 
+//        //Hence we cannot rely only on the extension to find the appropriate creator.
+//        HRFRasterFileCreator const* pSrcCreator = HRFRasterFileFactory::GetInstance()->FindCreator(UrlSource, HFC_READ_ONLY | HFC_SHARE_READ_WRITE, 0, true, false);
 //        if (pSrcCreator == nullptr)
 //            return;
 //
@@ -422,8 +470,6 @@ TEST_P(ExportTester, ExportToiTiffBestOptions)
 ////:>+--------------------------------------------------------------------------------------
 //TEST_P(ExportTester, ExportToiTiff24BitsJPEG)
 //    {
-//    ++s_nbOfFiles24BitsJPEG;
-//    PRINTF("Trying to export file to iTiff 24 bits - JPEG %u out of %u\n", s_nbOfFiles24BitsJPEG, s_nbTotalOfFiles);
 //    //Test that the source paths is not empty
 //    ASSERT_FALSE(GetParam().empty());
 //
@@ -434,7 +480,9 @@ TEST_P(ExportTester, ExportToiTiffBestOptions)
 //
 //    try
 //        {
-//        HRFRasterFileCreator const* pSrcCreator = HRFRasterFileFactory::GetInstance()->FindCreator(UrlSource, HFC_READ_ONLY | HFC_SHARE_READ_WRITE, 0, false, false);
+//        //N.B. We set the 4th parameter ScanCreatorIfNotFound = true because some files do not have the good extension. 
+//        //Hence we cannot rely only on the extension to find the appropriate creator.
+//        HRFRasterFileCreator const* pSrcCreator = HRFRasterFileFactory::GetInstance()->FindCreator(UrlSource, HFC_READ_ONLY | HFC_SHARE_READ_WRITE, 0, true, false);
 //        if (pSrcCreator == nullptr)
 //            return;
 //
@@ -525,8 +573,6 @@ TEST_P(ExportTester, ExportToiTiffBestOptions)
 ////:>+--------------------------------------------------------------------------------------
 //TEST_P(ExportTester, ExportToiTiff32BitsDeflate)
 //    {
-//    ++s_nbOfFiles32BitsDeflate;
-//    PRINTF("Trying to export file to iTiff 32 bits - Deflate %u out of %u\n", s_nbOfFiles32BitsDeflate, s_nbTotalOfFiles);
 //    //Test that the source paths is not empty
 //    ASSERT_FALSE(GetParam().empty());
 //
@@ -537,7 +583,9 @@ TEST_P(ExportTester, ExportToiTiffBestOptions)
 //
 //    try
 //        {
-//        HRFRasterFileCreator const* pSrcCreator = HRFRasterFileFactory::GetInstance()->FindCreator(UrlSource, HFC_READ_ONLY | HFC_SHARE_READ_WRITE, 0, false, false);
+//        //N.B. We set the 4th parameter ScanCreatorIfNotFound = true because some files do not have the good extension. 
+//        //Hence we cannot rely only on the extension to find the appropriate creator.
+//        HRFRasterFileCreator const* pSrcCreator = HRFRasterFileFactory::GetInstance()->FindCreator(UrlSource, HFC_READ_ONLY | HFC_SHARE_READ_WRITE, 0, true, false);
 //        if (pSrcCreator == nullptr)
 //            return;
 //
@@ -629,8 +677,6 @@ TEST_P(ExportTester, ExportToiTiffBestOptions)
 ////:>+--------------------------------------------------------------------------------------
 //TEST_P(ExportTester, FromFileToiTiffExportAllOptions)
 //    {
-//    ++s_nbOfExportedAllOptionsFiles;
-//    PRINTF("Trying to export to all options file %u out of %zu\n", s_nbOfExportedAllOptionsFiles, s_nbTotalOfFiles);
 //    ASSERT_FALSE(GetParam().empty());   // Test that the source paths is not empty
 //
 //    HRFiTiffCreator* creator = HRFiTiffCreator::GetInstance();
@@ -640,7 +686,9 @@ TEST_P(ExportTester, ExportToiTiffBestOptions)
 //
 //    try
 //        {
-//        HRFRasterFileCreator const* pSrcCreator = HRFRasterFileFactory::GetInstance()->FindCreator(UrlSource, HFC_READ_ONLY | HFC_SHARE_READ_WRITE, 0, false, false);
+//        //N.B. We set the 4th parameter ScanCreatorIfNotFound = true because some files do not have the good extension. 
+//        //Hence we cannot rely only on the extension to find the appropriate creator.
+//        HRFRasterFileCreator const* pSrcCreator = HRFRasterFileFactory::GetInstance()->FindCreator(UrlSource, HFC_READ_ONLY | HFC_SHARE_READ_WRITE, 0, true, false);
 //        //&&MM find a way to ignore some file extension? ex: world file?? if it throws that generates a failure
 //        // even if we were able to ignore exceptions we might be ignoring a real exception
 //        if (pSrcCreator == nullptr)
