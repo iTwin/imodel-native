@@ -567,7 +567,7 @@ LINKER_LIBRARIES     =  \
 %else
     $(ContextSubpartsStaticLibs)$(stlibprefix)glew$(stlibext) \
     $(ContextSubpartsLibs)$(stlibprefix)wildmagic$(stlibext) \
-    $(ContextSubpartsLibs)$(stlibprefix)scz_compress_VC11$(stlibext) \
+    $(ContextSubpartsLibs)$(stlibprefix)scz_compress$(stlibext) \
     $(ContextSubpartsLibs)$(stlibprefix)libboost_thread-vc140-mt-1_57$(stlibext)\
     $(ContextSubpartsLibs)$(stlibprefix)libboost_system-vc140-mt-1_57$(stlibext)
 %endif
