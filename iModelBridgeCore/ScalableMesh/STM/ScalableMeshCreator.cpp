@@ -620,7 +620,7 @@ int IScalableMeshCreator::Impl::CreateScalableMesh(bool isSingleFile)
 +---------------+---------------+---------------+---------------+---------------+------*/
 
 
-StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<IndexType>&                                    pDataIndex, 
+StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&                                    pDataIndex, 
 
                                                        HPMMemoryMgrReuseAlreadyAllocatedBlocksWithAlignment& myMemMgr,
                                                        bool needBalancing) 
@@ -694,17 +694,13 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<IndexType>&       
             pStreamingUVsIndicesTileStore = new SMStreamingPointTaggedTileStore< int32_t, PointIndexExtentType>(uvIndice_store_path, WString(), (SCM_COMPRESSION_DEFLATE == m_compressionType));
             pStreamingTextureTileStore = new StreamingTextureTileStore(texture_store_path.c_str());
             
-            pDataIndex = new IndexType(ScalableMeshMemoryPools<PointType>::Get()->GetGenericPool(),
+            pDataIndex = new MeshIndexType(ScalableMeshMemoryPools<PointType>::Get()->GetGenericPool(),
                                        ScalableMeshMemoryPools<PointType>::Get()->GetPointPool(),
-                                       &*pStreamingTileStore,
-                                       ScalableMeshMemoryPools<PointType>::Get()->GetPtsIndicePool(),
+                                       &*pStreamingTileStore,                                       
                                        &*pStreamingIndiceTileStore,
                                        ScalableMeshMemoryPools<PointType>::Get()->GetGraphPool(),
                                        pGraphTileStore = new SMSQLiteGraphTileStore(m_smSQLitePtr),                                       
-                                       &*pStreamingTextureTileStore,
-                                       ScalableMeshMemoryPools<PointType>::Get()->GetUVPool(),
-                                       //pUVTileStore,
-                                       //new UVTileStore<PointType>(filePtr, 0),
+                                       &*pStreamingTextureTileStore,                                                                              
                                        &*pStreamingUVTileStore,                                       
                                        &*pStreamingUVsIndicesTileStore,
                                        10000,
@@ -741,18 +737,13 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<IndexType>&       
             pGraphTileStore = new SMSQLiteGraphTileStore(m_smSQLitePtr);
 
             //pIndiceTileStore = new TileStoreType(filePtr, (SCM_COMPRESSION_DEFLATE == m_compressionType));
-            pDataIndex = new IndexType(ScalableMeshMemoryPools<PointType>::Get()->GetGenericPool(),
+            pDataIndex = new MeshIndexType(ScalableMeshMemoryPools<PointType>::Get()->GetGenericPool(),
                                        ScalableMeshMemoryPools<PointType>::Get()->GetPointPool(),
-                                       &*pFinalTileStore,
-                                       ScalableMeshMemoryPools<PointType>::Get()->GetPtsIndicePool(),
+                                       &*pFinalTileStore,                                       
                                        &*pIndiceTileStore,
                                        ScalableMeshMemoryPools<PointType>::Get()->GetGraphPool(),
                                        pGraphTileStore,                                       
-                                       &*pTextureTileStore,
-                                       //new TextureTileStore(filePtr, n),
-                                       ScalableMeshMemoryPools<PointType>::Get()->GetUVPool(),
-                                       //pUVTileStore,
-                                       //new UVTileStore<PointType>(filePtr, 0),
+                                       &*pTextureTileStore,                                       
                                        &*pUVTileStore,                                       
                                        &*pUVsIndicesTileStore,
                                        10000,

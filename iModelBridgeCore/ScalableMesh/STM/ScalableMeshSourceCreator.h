@@ -71,11 +71,11 @@ struct IScalableMeshSourceCreator::Impl : public IScalableMeshCreator::Impl, pub
                                                                               const Import::ScalableMeshData&         targetScalableMeshData);
 
 
-        StatusInt                           ApplyEditsFromSources(HFCPtr<IndexType>& pIndex);
+        StatusInt                           ApplyEditsFromSources(HFCPtr<MeshIndexType>& pIndex);
 
         StatusInt                           GetRasterSources(HFCPtr<HIMMosaic>& pMosaicP);
 
-        StatusInt                           ImportRasterSourcesTo(HFCPtr<IndexType>& pIndex);
+        StatusInt                           ImportRasterSourcesTo(HFCPtr<MeshIndexType>& pIndex);
 
         StatusInt                           ImportSourcesTo(Import::Sink*                           sinkP);
 

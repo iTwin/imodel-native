@@ -732,15 +732,13 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                     pStreamingUVTileStore = new SMStreamingPointTaggedTileStore< DPoint2d, YProtPtExtentType>(uv_store_path, groupedStreamingFilePath, AreDataCompressed());
                     pStreamingUVsIndicesTileStore = new SMStreamingPointTaggedTileStore<int32_t, YProtPtExtentType >(uvIndice_store_path, groupedStreamingFilePath, AreDataCompressed());
                     pStreamingTextureTileStore = new StreamingTextureTileStore(texture_store_path.c_str());
-                    m_scmIndexPtr = new PointIndexType(ScalableMeshMemoryPools<POINT>::Get()->GetGenericPool(),
+                    m_scmIndexPtr = new MeshIndexType(ScalableMeshMemoryPools<POINT>::Get()->GetGenericPool(),
                                                        ScalableMeshMemoryPools<POINT>::Get()->GetPointPool(),
-                                                       &*pStreamingTileStore,
-                                                            ScalableMeshMemoryPools<POINT>::Get()->GetPtsIndicePool(),
+                                                       &*pStreamingTileStore,                                                            
                                                             &*pStreamingIndiceTileStore,
                                                             ScalableMeshMemoryPools<POINT>::Get()->GetGraphPool(),
                                                             new SMSQLiteGraphTileStore((dynamic_cast<SMSQLitePointTileStore<POINT, YProtPtExtentType>*>(pTileStore.GetPtr()))->GetDbConnection()),                                                            
-                                                            &*pStreamingTextureTileStore,
-                                                            ScalableMeshMemoryPools<POINT>::Get()->GetUVPool(),
+                                                            &*pStreamingTextureTileStore,                                                            
                                                             &*pStreamingUVTileStore,                                                            
                                                             &*pStreamingUVsIndicesTileStore,
                                                             10000,
@@ -769,17 +767,15 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                     pGraphTileStore = new SMSQLiteGraphTileStore((dynamic_cast<SMSQLitePointTileStore<POINT, YProtPtExtentType>*>(pTileStore.GetPtr()))->GetDbConnection());
 
 
-                    m_scmIndexPtr = new PointIndexType(//pMemoryPool, 
+                    m_scmIndexPtr = new MeshIndexType(//pMemoryPool, 
                                                        ScalableMeshMemoryPools<POINT>::Get()->GetGenericPool(),
                                                        ScalableMeshMemoryPools<POINT>::Get()->GetPointPool(),
-                                                       &*pTileStore,
-                                                       ScalableMeshMemoryPools<POINT>::Get()->GetPtsIndicePool(),
+                                                       &*pTileStore,                                                       
                                                        &*pIndiceTileStore,
                                                        ScalableMeshMemoryPools<POINT>::Get()->GetGraphPool(),
                                                        //new HPMIndirectCountLimitedPool<MTGGraph>(new HPMMemoryMgrReuseAlreadyAllocatedBlocksWithAlignment(100, 2000*sizeof(POINT)), 600000000),
                                                        &*pGraphTileStore,                                                       
-                                                       &*pTextureTileStore,
-                                                       ScalableMeshMemoryPools<POINT>::Get()->GetUVPool(),
+                                                       &*pTextureTileStore,                                                       
                                                        &*pUVTileStore,                                                       
                                                        &*pUVsIndicesTileStore,
                                                        10000,
@@ -893,7 +889,7 @@ template <class POINT> int ScalableMesh<POINT>::Close
     }
 
 template <class POINT>
-DRange3d ScalableMesh<POINT>::ComputeTotalExtentFor   (const PointIndexType*   pointIndexP)
+DRange3d ScalableMesh<POINT>::ComputeTotalExtentFor   (const MeshIndexType*   pointIndexP)
     {
     typedef ExtentOp<YProtPtExtentType>         PtExtentOpType;
 
