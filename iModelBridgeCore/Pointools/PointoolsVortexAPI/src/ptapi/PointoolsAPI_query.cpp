@@ -2040,7 +2040,7 @@ public:
 
 	inline QueueNode *getFirst(void)
 	{
-		return &(priorityQueue.top());
+		return const_cast<QueueNode *>(&(priorityQueue.top()));
 	}
 
 	inline void pop(void)

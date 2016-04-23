@@ -189,7 +189,7 @@ public:
 		addServerMethod(PTRMI::Name(DATA_SOURCE_METHOD_CLOSE_AND_DELETE), &Super::receiveAuto<bool, &DataSource::closeAndDelete>);
 
 		addServerMethod(PTRMI::Name(DATA_SOURCE_METHOD_READ_BYTES), &Super::receiveAuto<Size, PS<Out<ArrayDirect<>>>, PS<In<Size>>, &DataSource::readBytes>);
-		addServerMethod(PTRMI::Name(DATA_SOURCE_METHOD_WRITE_BYTES), &Super::receiveAuto<Size, PS<In<Array<>>>, PS<In<Size>>, &DataSource::writeBytes>);
+//		addServerMethod(PTRMI::Name(DATA_SOURCE_METHOD_WRITE_BYTES), &Super::receiveAuto<Size, PS<In<Array<>>>, PS<In<Size>>, &DataSource::writeBytes>);
 
 		addServerMethod(PTRMI::Name(DATA_SOURCE_METHOD_READ_BYTES_FROM), &Super::receiveAuto<Size, PS<Out<ArrayDirect<>>>, PS<In<DataPointer>>, PS<In<Size>>, &DataSource::readBytesFrom>);
 //		addServerMethod(PTRMI::Name(L"writeBytesT"), &Super::receiveAuto<Size, PS<In<Array<>>>, PS<In<Size>>, &DataSource::writeBytesT>);

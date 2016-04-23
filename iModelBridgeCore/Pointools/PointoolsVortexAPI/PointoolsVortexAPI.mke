@@ -558,15 +558,22 @@ LINKER_LIBRARIES     =  \
     $(ContextSubpartsLibs)$(stlibprefix)scz_compress_VC8$(stlibext) \
     $(ContextSubpartsLibs)$(stlibprefix)libboost_thread-vc80-mt-1_57$(stlibext)\
     $(ContextSubpartsLibs)$(stlibprefix)libboost_system-vc80-mt-1_57$(stlibext)
-%else
+%elif $(BUILD_TOOLSET) == "VC11"
     $(ContextSubpartsStaticLibs)$(stlibprefix)glew_VC11$(stlibext) \
     $(ContextSubpartsLibs)$(stlibprefix)wildmagic_VC11$(stlibext) \
     $(ContextSubpartsLibs)$(stlibprefix)scz_compress_VC11$(stlibext) \
     $(ContextSubpartsLibs)$(stlibprefix)libboost_thread-vc110-mt-1_57$(stlibext)\
     $(ContextSubpartsLibs)$(stlibprefix)libboost_system-vc110-mt-1_57$(stlibext)
+%else
+    $(ContextSubpartsStaticLibs)$(stlibprefix)glew_VC11$(stlibext) \
+    $(ContextSubpartsLibs)$(stlibprefix)wildmagic$(stlibext) \
+    $(ContextSubpartsLibs)$(stlibprefix)scz_compress_VC11$(stlibext) \
+    $(ContextSubpartsLibs)$(stlibprefix)libboost_thread-vc140-mt-1_57$(stlibext)\
+    $(ContextSubpartsLibs)$(stlibprefix)libboost_system-vc140-mt-1_57$(stlibext)
 %endif
 
 CLinkOpts + -nodefaultlib:libc.lib
 CLinkOpts + -nodefaultlib:%(IgnoreSpecificDefaultLibraries)
+CLinkOpts + -d_SILENCE_STDEXT_HASH_DEPRECATION_WARNINGS
 
 %include $(sharedMki)linkLibrary.mki

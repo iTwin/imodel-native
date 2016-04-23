@@ -26,6 +26,10 @@ pointoolsVortexAPIVendorAPI     = $(OutBuildContexts)PointoolsVortexAPI/VendorAP
 nameToDefine = __PointoolsVortexAPI_BUILD__
 %include cdefapnd.mki
 
+nameToDefine = _SILENCE_STDEXT_HASH_DEPRECATION_WARNINGS
+%include cdefapnd.mki
+
+
 dirToSearch=$(PointoolsVortexAPIInclude)
 %include cincapnd.mki
 
