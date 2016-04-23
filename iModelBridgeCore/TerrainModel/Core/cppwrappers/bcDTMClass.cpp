@@ -1442,13 +1442,13 @@ bool BcDTM::_ProjectPoint(DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, DPoint3dCR t
 bool BcDTM::_DrapeAlongVector(DPoint3d* endPt, double *slope, double *aspect, DPoint3d triangle[3], int *drapedType, DPoint3dCR point, double directionOfVector, double slopeOfVector)
     {
     long startFlag, endFlag;
-    return (DTM_SUCCESS == _ShotVector(slope, aspect, triangle, drapedType, &startFlag, &endFlag, endPt, &const_cast<DPoint3dR>(point), directionOfVector, slopeOfVector) && endFlag == 0);
+    return (DTM_SUCCESS == _ShotVector(slope, aspect, triangle, drapedType, &startFlag, &endFlag, endPt, &const_cast<DPoint3dR>(point), directionOfVector, slopeOfVector) && (endFlag == 0 || endFlag==2));
     }
 
 bool BcDTM::_FastDrapeAlongVector(DPoint3d* endPt, double *slope, double *aspect, DPoint3d triangle[3], int *drapedType, DPoint3dCR point, double directionOfVector, double slopeOfVector)
     {
     long startFlag, endFlag;
-    return (DTM_SUCCESS == _ShotVector(slope, aspect, triangle, drapedType, &startFlag, &endFlag, endPt, &const_cast<DPoint3dR>(point), directionOfVector, slopeOfVector) && endFlag == 0);
+    return (DTM_SUCCESS == _ShotVector(slope, aspect, triangle, drapedType, &startFlag, &endFlag, endPt, &const_cast<DPoint3dR>(point), directionOfVector, slopeOfVector) && (endFlag == 0 || endFlag == 2));
     }
 
 /*----------------------------------------------------------------------+

@@ -7546,7 +7546,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_addVoidsToInternalDtmObject (BC_DTM_OBJ* dtmP)
         do
             {
             // Check if there is a valid link here
-            if (nodeAddrP (dtmP, pnt)->hPtr == linePnt)
+            if (nodeAddrP(dtmP, pnt)->hPtr == linePnt || nodeAddrP(dtmP, linePnt)->hPtr == pnt)
                 {
                 // Not this link.
                 }
