@@ -2635,6 +2635,7 @@ template <class POINT> int ScalableMeshNodeRayQuery<POINT>::_Query(IScalableMesh
                                                                                  ray, 
                                                                                  params->Get2d(), 
                                                                                  params->GetDepth(), 
+                                                                                 params->GetUseUnboundedRay(),
                                                                                  params->Get2d() ? ScalableMeshQuadTreeLevelIntersectIndexQuery<POINT, YProtPtExtentType>::RaycastOptions::FIRST_INTERSECT : ScalableMeshQuadTreeLevelIntersectIndexQuery<POINT, YProtPtExtentType>::RaycastOptions::LAST_INTERSECT);
     m_scmIndexPtr->Query(&query, currentNodeP);
     if (currentNodeP == nullptr) return ERROR;
@@ -2657,6 +2658,7 @@ template <class POINT> int ScalableMeshNodeRayQuery<POINT>::_Query(bvector<IScal
                                                                                  ray, 
                                                                                  params->Get2d(), 
                                                                                  params->GetDepth(), 
+                                                                                 params->GetUseUnboundedRay(),
                                                                                  ScalableMeshQuadTreeLevelIntersectIndexQuery<POINT, YProtPtExtentType>::RaycastOptions::ALL_INTERSECT);
     m_scmIndexPtr->Query(&query, nodesP);
 

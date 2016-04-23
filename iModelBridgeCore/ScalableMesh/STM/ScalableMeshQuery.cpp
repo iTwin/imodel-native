@@ -1649,7 +1649,7 @@ DTMStatusInt ScalableMeshMesh::_GetAsBcDTM(BcDTMPtr& bcdtm)
     status = bcdtmObject_triangulateStmTrianglesDtmObject(bcdtm->GetTinHandle());
     assert(status == SUCCESS);
 
-    bvector<DTMFeatureId> listIds;
+    /*bvector<DTMFeatureId> listIds;
     DTMFeatureCallback browseVoids = [] (DTMFeatureType dtmFeatureType, DTMUserTag userTag, DTMFeatureId featureId, DPoint3d *points, size_t numPoints, void* userArg) ->int
         {
         if (dtmFeatureType == DTMFeatureType::Void && numPoints <= 4)
@@ -1660,7 +1660,8 @@ DTMStatusInt ScalableMeshMesh::_GetAsBcDTM(BcDTMPtr& bcdtm)
         };
 
     bcdtm->BrowseFeatures(DTMFeatureType::Void, 20, &listIds, browseVoids);
-    for (auto& id : listIds) bcdtm->DeleteFeatureById(id);
+    for (auto& id : listIds) bcdtm->DeleteFeatureById(id);*/
+    //bcdtm->DeleteFeaturesByType(DTMFeatureType::Void);
     return status == SUCCESS? DTM_SUCCESS : DTM_ERROR;
     }
 

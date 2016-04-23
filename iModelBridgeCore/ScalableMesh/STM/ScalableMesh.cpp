@@ -672,7 +672,6 @@ static bool s_dropNodes = false;
 static bool s_checkHybridNodeState = false;
 template <class POINT> int ScalableMesh<POINT>::Open()
     {
-    m_scalableMeshDTM = ScalableMeshDTM::Create(this);
 
     try 
         {
@@ -873,7 +872,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                        
 
         m_contentExtent = ComputeTotalExtentFor(&*m_scmIndexPtr);
-
+        m_scalableMeshDTM = ScalableMeshDTM::Create(this);
         return BSISUCCESS;  
         }
     catch(...)
