@@ -37,9 +37,9 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT,EXTENT>::SMMeshIndexN
                  ISMPointIndexMesher<POINT, EXTENT>* mesher3d,
                  CreatedNodeMap*                      createdNodeMap)
                  : SMPointIndexNode<POINT, EXTENT>(pi_SplitTreshold, pi_rExtent, pool, store, filter, balanced, propagateDataDown, createdNodeMap),
-                 m_graphVec(meshIndex->GetGraphPool(), meshIndex->GetGraphStore()),
+                 m_graphVec(meshIndex->GetGraphPool(), meshIndex->GetGraphStore()),                 
                  m_triIndicesPoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
-                 m_uvVec(meshIndex->GetUVPool(), meshIndex->GetUVStore()),                 
+                 m_uvCoordsPoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
                  m_triUvIndicesPoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
                  m_texturePoolItemId(SMMemoryPool::s_UndefinedPoolItemId)                 
     {
@@ -49,10 +49,8 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT,EXTENT>::SMMeshIndexN
     m_isGraphLoaded = false;
     m_graphVec.SetDirty(false);
     m_graphVec.SetDiscarded(true);
-    m_isPtsIndiceLoaded = false;            
-    m_isUVLoaded = false;
-    m_isUVsIndicesLoaded = false;    
-    m_uvVec.SetDirty(false);    
+                 
+         
 
     m_nodeHeader.m_graphID = IDTMFile::GetNullNodeID();
     m_nodeHeader.m_ptsIndiceID.resize(1);
@@ -79,9 +77,9 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
                 const HFCPtr<SMMeshIndexNode<POINT, EXTENT> >& pi_rpParentNode)
                 : SMPointIndexNode<POINT, EXTENT>(pi_SplitTreshold, pi_rExtent, dynamic_cast<SMPointIndexNode*>(pi_rpParentNode.GetPtr())),
                 m_graphVec(dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(pi_rpParentNode->m_SMIndex)->GetGraphPool(), dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(pi_rpParentNode->m_SMIndex)->GetGraphStore()),
-                m_triIndicesPoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
-                m_uvVec(dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(pi_rpParentNode->m_SMIndex)->GetUVPool(), dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(pi_rpParentNode->m_SMIndex)->GetUVStore()),                
+                m_triIndicesPoolItemId(SMMemoryPool::s_UndefinedPoolItemId),                
                 m_triUvIndicesPoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
+                m_uvCoordsPoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
                 m_texturePoolItemId(SMMemoryPool::s_UndefinedPoolItemId)                 
     {
     m_SMIndex = pi_rpParentNode->m_SMIndex;
@@ -90,11 +88,9 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_isGraphLoaded = false;    
     m_graphVec.SetDirty(false);
     m_graphVec.SetDiscarded(true);
-    m_isPtsIndiceLoaded = false;
-    m_isUVLoaded = false;
-    m_isUVsIndicesLoaded = false;        
-    m_uvVec.SetDirty(false);    
-
+     
+         
+    
     m_nbClips = 0;
     m_differenceSets.SetDirty(false);
     m_differenceSets.SetStore(dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetClipStore());
@@ -122,9 +118,9 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
                                                                                      bool IsUnsplitSubLevel)
                                                                                      : SMPointIndexNode<POINT, EXTENT>(pi_SplitTreshold, pi_rExtent, dynamic_cast<SMPointIndexNode*>(pi_rpParentNode.GetPtr()), IsUnsplitSubLevel),
                                                                                      m_graphVec(dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(pi_rpParentNode->m_SMIndex)->GetGraphPool(), dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(pi_rpParentNode->m_SMIndex)->GetGraphStore()),
-                                                                                     m_triIndicesPoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
-                  m_uvVec(dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(pi_rpParentNode->m_SMIndex)->GetUVPool(), dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(pi_rpParentNode->m_SMIndex)->GetUVStore()),                  
+                                                                                     m_triIndicesPoolItemId(SMMemoryPool::s_UndefinedPoolItemId),                  
                   m_triUvIndicesPoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
+                  m_uvCoordsPoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
                   m_texturePoolItemId(SMMemoryPool::s_UndefinedPoolItemId)                 
     {
     m_SMIndex = pi_rpParentNode->m_SMIndex;
@@ -133,10 +129,8 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_isGraphLoaded = false;
     m_graphVec.SetDirty(false);
     m_graphVec.SetDiscarded(true);
-    m_isPtsIndiceLoaded = false;
-    m_isUVLoaded = false;
-    m_isUVsIndicesLoaded = false;    
-    m_uvVec.SetDirty(false);    
+     
+         
     
     m_nbClips = 0;
     m_differenceSets.SetDirty(false);
@@ -173,9 +167,9 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
                  CreatedNodeMap*                      createdNodeMap)
                  : SMPointIndexNode<POINT, EXTENT>(blockID, static_pcast<SMPointIndexNode<POINT, EXTENT>, SMMeshIndexNode<POINT, EXTENT>>(parent), pool, store, filter, balanced, propagateDataDown, createdNodeMap),
                   m_graphVec(meshIndex->GetGraphPool(), meshIndex->GetGraphStore()),
-                  m_triIndicesPoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
-                  m_uvVec(meshIndex->GetUVPool(), meshIndex->GetUVStore()),
+                  m_triIndicesPoolItemId(SMMemoryPool::s_UndefinedPoolItemId),                  
                   m_triUvIndicesPoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
+                  m_uvCoordsPoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
                   m_texturePoolItemId(SMMemoryPool::s_UndefinedPoolItemId)                 
                  
     {
@@ -185,11 +179,8 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_isGraphLoaded = false;
     m_graphVec.SetDirty(false);
     m_graphVec.SetDiscarded(true);
-    m_isPtsIndiceLoaded = false;
-    m_isUVLoaded = false;
-    
-    m_uvVec.SetDirty(false);
-    m_isUVsIndicesLoaded = false;    
+     
+                 
 
     m_nbClips = 0;
     m_differenceSets.SetDirty(false);
@@ -227,9 +218,9 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
                  CreatedNodeMap* createdNodeMap)
                  : SMPointIndexNode<POINT, EXTENT>(blockID, pool, store, filter, balanced, propagateDataDown, createdNodeMap),
                  m_graphVec(meshIndex->GetGraphPool(), meshIndex->GetGraphStore()),
-                 m_triIndicesPoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
-                 m_uvVec(meshIndex->GetUVPool(), meshIndex->GetUVStore()),
+                 m_triIndicesPoolItemId(SMMemoryPool::s_UndefinedPoolItemId),                 
                  m_triUvIndicesPoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
+                 m_uvCoordsPoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
                  m_texturePoolItemId(SMMemoryPool::s_UndefinedPoolItemId)                 
 
     {
@@ -239,10 +230,8 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_isGraphLoaded = false;
     m_graphVec.SetDirty(false);
     m_graphVec.SetDiscarded(true);
-    m_isPtsIndiceLoaded = false;
-    m_isUVLoaded = false;
-    m_isUVsIndicesLoaded = false;            
-    m_uvVec.SetDirty(false);
+     
+         
 
     m_nbClips = 0;
     m_differenceSets.SetDirty(false);
@@ -282,9 +271,7 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_isGraphLoaded = false;
     m_graphVec.SetDirty(false);
     m_graphVec.SetDiscarded(true);
-    m_isUVLoaded = false;
-    m_isUVsIndicesLoaded = false;    
-    m_uvVec.SetDirty(false);    
+         
     m_nodeHeader.m_graphID = IDTMFile::GetNullNodeID();
     m_nodeHeader.m_ptsIndiceID.resize(1);
     m_nodeHeader.m_ptsIndiceID[0] = IDTMFile::GetNullNodeID();
@@ -321,10 +308,8 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_isGraphLoaded = false;
     m_graphVec.SetDirty(false);
     m_graphVec.SetDiscarded(true);
-    m_isPtsIndiceLoaded = false;
-    m_isUVLoaded = false;
-    m_isUVsIndicesLoaded = false;    
-    m_uvVec.SetDirty(false);    
+     
+         
 //    m_indiceVec.SetDiscarded(true);
     m_nodeHeader.m_graphID = IDTMFile::GetNullNodeID();
     m_nodeHeader.m_ptsIndiceID.resize(1);
@@ -365,11 +350,8 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_isGraphLoaded = false;
     m_graphVec.SetDirty(false);
     m_graphVec.SetDiscarded(true);
-    m_isPtsIndiceLoaded = false;
-    m_isUVLoaded = false;
-    m_isUVsIndicesLoaded = false;    
-    m_uvVec.SetDirty(false);    
-
+     
+         
     m_nbClips = 0;
     m_differenceSets.SetDirty(false);
     m_differenceSets.SetStore(dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetClipStore());
@@ -416,12 +398,8 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::~SMMeshInde
             GetMemoryPool()->RemoveItem(m_texturePoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::Texture);                        
 
             GetMemoryPool()->RemoveItem(m_triUvIndicesPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::TriUvIndices);                                    
-            
-            if(m_uvVec.IsDirty())
-                {
-                if(IsUVLoaded()) StoreUV();
-                else m_uvVec.SetDirty(false);
-                }
+
+            GetMemoryPool()->RemoveItem(m_uvCoordsPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::UvCoords);
             }
         }
     }
@@ -478,14 +456,11 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Destroy
         
         GetMemoryPool()->RemoveItem(m_triUvIndicesPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::TriUvIndices);                                    
         dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetUVsIndicesStore()->DestroyBlock(GetBlockID());                
+
+        GetMemoryPool()->RemoveItem(m_uvCoordsPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::UvCoords);                                    
+        dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetUVStore()->DestroyBlock(GetBlockID());                        
         }
-    
-    m_uvVec.SetDirty(false);
-
-    m_isUVLoaded = false;
-    if (m_uvVec.GetBlockID().IsValid())
-        dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetUVStore()->DestroyBlock(m_uvVec.GetBlockID());
-
+                
     HINVARIANTS;
 
     return true;
@@ -561,17 +536,15 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Discard
 
         if(!m_SMIndex->m_useSTMFormat)
         if (m_nodeHeader.m_ptsIndiceID.size() > 0 && m_nodeHeader.m_ptsIndiceID[0].IsValid() && m_nodeHeader.m_ptsIndiceID[0] != IDTMFile::GetNullNodeID()) SetBlockID(m_nodeHeader.m_ptsIndiceID[0]);
-                
-        if (!m_uvVec.Discarded() && m_uvVec.IsDirty()) StoreUV();
-        else if (m_uvVec.GetBlockID().IsValid())  m_nodeHeader.m_uvID = m_uvVec.GetBlockID();
-
+                        
         GetMemoryPool()->RemoveItem(m_texturePoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::Texture);                    
 
         GetMemoryPool()->RemoveItem(m_triUvIndicesPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::TriUvIndices);                                    
+
+        GetMemoryPool()->RemoveItem(m_uvCoordsPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::UvCoords);                                    
         
         if (IsLoaded()) returnValue = SMPointIndexNode<POINT, EXTENT>::Discard();
-            else returnValue = HPMStoredPooledVector<POINT>::Discard();
-        //returnValue = SMPointIndexNode<POINT, EXTENT>::Discard();
+            else returnValue = HPMStoredPooledVector<POINT>::Discard();        
         }
     HINVARIANTS;
 
@@ -602,13 +575,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Load() 
     assert(m_triIndicesPoolItemId == SMMemoryPool::s_UndefinedPoolItemId);
     assert(m_texturePoolItemId == SMMemoryPool::s_UndefinedPoolItemId);
     assert(m_triUvIndicesPoolItemId == SMMemoryPool::s_UndefinedPoolItemId);
-                    
-    m_uvVec.SetStore(dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetUVStore());
-    if (m_uvVec.GetPool() == NULL) m_uvVec.SetPool(dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetUVPool());
-    m_uvVec.SetBlockID(m_nodeHeader.m_uvID);
-    if (m_uvVec.GetBlockID().IsValid())
-        m_uvVec.SetDiscarded(true);
-    m_uvVec.SetDirty(false);    
+    assert(m_uvCoordsPoolItemId == SMMemoryPool::s_UndefinedPoolItemId);                                        
     }
 
 template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::SaveCloudReadyNode(HFCPtr<StreamingPointStoreType> pi_pPointStore,
@@ -635,14 +602,22 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::SaveClo
     if (m_nodeHeader.m_isTextured)
         {
         // Save UVs
-        auto count = this->GetUVStore()->GetBlockDataCount(m_uvVec.GetBlockID());
-        if (count > 0) pi_pUVStore->StoreBlock(const_cast<DPoint2d*>(&m_uvVec[0]), count, m_uvVec.GetBlockID());
+        RefCountedPtr<SMMemoryPoolVectorItem<DPoint2d>> uvCoordsPtr(GetUVCoordsPtr());
+        
+        if (uvCoordsPtr.IsValid()) 
+            {
+            assert(uvCoordsPtr->size() > 0);
+            pi_pUVStore->StoreBlock(const_cast<DPoint2d*>(&(*uvCoordsPtr)[0]), uvCoordsPtr->size(), GetBlockID());
+            }
 
         // Save UVIndices
         RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> uvIndicePtr(GetUVsIndicesPtr());
             
-        if (uvIndicePtr->size() > 0)
+        if (uvIndicePtr.IsValid())
+            {
+            assert(uvIndicePtr->size() > 0);
             pi_pUVIndiceStore->StoreBlock(const_cast<int*>(&(*uvIndicePtr)[0]), uvIndicePtr->size(), GetBlockID());    
+            }
         
         // Save texture
         auto textureStore = static_cast<IScalableMeshDataStore<uint8_t, float, float>*>(GetTextureStore());
@@ -957,11 +932,6 @@ template <class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::StoreG
         m_nodeHeader.m_graphID = m_graphVec.GetBlockID();
     }
 
-template <class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::IsPtsIndiceLoaded() const
-    {
-    return m_isPtsIndiceLoaded;
-    }
-
 template <class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::PushPtsIndices(const int32_t* indices, size_t size)
     {    
     RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> ptsIndicePtr = GetPtsIndicePtr();
@@ -983,32 +953,12 @@ template <class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::ClearP
     ptsIndicePtr->clear();    
     }
 
-template <class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::IsUVLoaded() const
+template <class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::PushUV( const DPoint2d* uv, size_t size) 
     {
-    return m_isUVLoaded;
-    }
-
-template <class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::PushUV( const DPoint2d* uv, size_t size) const
-    {
-    if (!m_SMIndex->m_useSTMFormat)
-        {
-        m_uvVec.SetBlockID(GetBlockID());
-        }
-        m_uvVec.push_back(uv, size);
-    }
-
-template <class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::StoreUV() const
-    {
-    if(m_uvVec.IsDirty() && !m_uvVec.Discarded()) m_uvVec.Discard();
-    if (m_uvVec.GetBlockID().IsValid())
-        {
-        m_nodeHeader.m_uvID = m_uvVec.GetBlockID();
-        }
-    }
-
-template <class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::ClearUV() const
-    {
-    m_uvVec.clear();
+    RefCountedPtr<SMMemoryPoolVectorItem<DPoint2d>> uvCoordsPtr = GetUVCoordsPtr();    
+    bool result = uvCoordsPtr->push_back(uv, size);
+    assert(result);    
+    m_nodeHeader.m_uvID = GetBlockID();    
     }
 
 template <class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::PushTexture(const Byte* texture, size_t size)
@@ -2186,29 +2136,27 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
             {
             DPoint3d face[3];
             int32_t idx[3] = { (*existingFaces)[i], (*existingFaces)[i + 1], (*existingFaces)[i + 2] };
-            DPoint2d uvs[3];
+            DPoint2d uvCoords[3];
             for (size_t i = 0; i < 3; ++i)
                 {
                 face[i] = points[idx[i] - 1];
-                uvs[i].x = max(0.0,min((face[i].x - contentExtent.low.x) / (contentExtent.XLength()),1.0));
-                uvs[i].y = max(0.0, min((face[i].y - contentExtent.low.y) / (contentExtent.YLength()), 1.0));
-                //if (uvs[i].x == 0.0) uvs[i].x = 0.004;
-                //if (uvs[i].y == 0.0) uvs[i].y = 0.004;
+                uvCoords[i].x = max(0.0,min((face[i].x - contentExtent.low.x) / (contentExtent.XLength()),1.0));
+                uvCoords[i].y = max(0.0, min((face[i].y - contentExtent.low.y) / (contentExtent.YLength()), 1.0));
+                //if (uvCoords[i].x == 0.0) uvCoords[i].x = 0.004;
+                //if (uvCoords[i].y == 0.0) uvCoords[i].y = 0.004;
                 }
             indicesOfTexturedRegion.push_back(idx[0]);
             indicesOfTexturedRegion.push_back(idx[1]);
             indicesOfTexturedRegion.push_back(idx[2]);
-            uvsOfTexturedRegion[idx[0] - 1] = uvs[0];
-            uvsOfTexturedRegion[idx[1] - 1] = uvs[1];
-            uvsOfTexturedRegion[idx[2] - 1] = uvs[2];
+            uvsOfTexturedRegion[idx[0] - 1] = uvCoords[0];
+            uvsOfTexturedRegion[idx[1] - 1] = uvCoords[1];
+            uvsOfTexturedRegion[idx[2] - 1] = uvCoords[2];
             }
 
         ClearPtsIndices();    
         PushPtsIndices(&indicesOfTexturedRegion[0], indicesOfTexturedRegion.size());
         PushUV(/*texId + 1,*/ &uvsOfTexturedRegion[0], uvsOfTexturedRegion.size());
-        PushUVsIndices(0, &indicesOfTexturedRegion[0], indicesOfTexturedRegion.size());
-        SetUVDirty(/*texId + 1*/);        
-        StoreUV();        
+        PushUVsIndices(0, &indicesOfTexturedRegion[0], indicesOfTexturedRegion.size());        
         }
 
     SetDirty(true);
@@ -2388,12 +2336,12 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
             continue;
             }
 
-        Pin();            
-        PinUV();
+        Pin();                    
 
         RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> uvIndexes = GetUVsIndicesPtr();
+        RefCountedPtr<SMMemoryPoolVectorItem<DPoint2d>> uvCoords = GetUVCoordsPtr();
         
-        Clipper clipNode(&points[0], size(), (int32_t*)&(*ptIndices)[0], ptIndices->size(), nodeRange, GetUVPtr(), &(*uvIndexes)[0]);
+        Clipper clipNode(&points[0], size(), (int32_t*)&(*ptIndices)[0], ptIndices->size(), nodeRange, &(*uvCoords)[0], &(*uvIndexes)[0]);
         bvector<bvector<PolyfaceHeaderPtr>> polyfaces;
         auto nodePtr = HFCPtr<SMPointIndexNode<POINT, EXTENT>>(static_cast<SMPointIndexNode<POINT, EXTENT>*>(const_cast<SMMeshIndexNode<POINT, EXTENT>*>(this)));
         IScalableMeshNodePtr nodeP(new ScalableMeshNode<POINT>(nodePtr));
@@ -2413,7 +2361,6 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
        // m_differenceSets.clear();
        // m_nbClips = 0;
         UnPin();    
-        UnPinUV();
 
         if (!hasClip) continue;
         bvector<bvector<PolyfaceHeaderPtr>> skirts;
@@ -3008,13 +2955,11 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Propag
 
 template <class POINT, class EXTENT> SMMeshIndex<POINT, EXTENT>::SMMeshIndex(SMMemoryPoolPtr& smMemoryPool,    
                                                                                HFCPtr<HPMCountLimitedPool<POINT> > pool,
-                                                                               HFCPtr<SMPointTileStore<POINT, EXTENT> > store,
-                                                                               HFCPtr<HPMCountLimitedPool<int32_t>> ptsIndicesPool,
+                                                                               HFCPtr<SMPointTileStore<POINT, EXTENT> > store,                                                                               
                                                                                HFCPtr<SMPointTileStore<int32_t, EXTENT> > ptsIndicesStore,
                                                                                HFCPtr<HPMIndirectCountLimitedPool<MTGGraph> > graphPool,
                                                                                HFCPtr<IScalableMeshDataStore<MTGGraph, Byte, Byte>> graphStore,                                                                               
-                                                                               HFCPtr<IScalableMeshDataStore<Byte, float, float>> texturesStore,
-                                                                               HFCPtr<HPMCountLimitedPool<DPoint2d>> uvPool,
+                                                                               HFCPtr<IScalableMeshDataStore<Byte, float, float>> texturesStore,                                                                               
                                                                                HFCPtr<SMPointTileStore<DPoint2d, EXTENT>> uvStore,                                                                               
                                                                                HFCPtr<SMPointTileStore<int32_t, EXTENT>> uvIndicesStore,
                                                                                size_t SplitTreshold,
@@ -3026,7 +2971,7 @@ template <class POINT, class EXTENT> SMMeshIndex<POINT, EXTENT>::SMMeshIndex(SMM
                                                                                ISMPointIndexMesher<POINT, EXTENT>* mesher3d)
                                                                                : SMPointIndex<POINT, EXTENT>(pool, store, SplitTreshold, filter, balanced, propagatesDataDown, false), m_graphPool(graphPool), m_graphStore(graphStore),
                                                                                m_smMemoryPool(smMemoryPool), m_ptsIndicesStore(ptsIndicesStore),
-                                                                               m_uvPool(uvPool), m_uvStore(uvStore),
+                                                                               m_uvStore(uvStore),
                                                                                m_uvsIndicesStore(uvIndicesStore),
                                                                                m_texturesStore(texturesStore)
     {

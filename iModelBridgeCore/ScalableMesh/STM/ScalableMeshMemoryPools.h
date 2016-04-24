@@ -19,16 +19,12 @@ template <typename POINT> class ScalableMeshMemoryPools
     {
     private:
         size_t m_pointPoolSize;
-        size_t m_graphPoolSize;
-        size_t m_ptsIndicePoolSize;
-        size_t m_uvPoolSize;        
+        size_t m_graphPoolSize;                
         size_t m_featurePoolSize;
         size_t m_diffSetPoolSize;
         size_t m_genericPoolSize;
         HFCPtr<HPMCountLimitedPool<POINT>> m_pointPool;
-        HFCPtr<HPMIndirectCountLimitedPool<MTGGraph>> m_graphPool;        
-        HFCPtr<HPMCountLimitedPool<int32_t>> m_ptsIndicePool;
-        HFCPtr<HPMCountLimitedPool<DPoint2d>> m_uvPool;        
+        HFCPtr<HPMIndirectCountLimitedPool<MTGGraph>> m_graphPool;                        
         HPMMemoryMgrReuseAlreadyAllocatedBlocksWithAlignment * m_myMemMgr;
         HFCPtr<HPMCountLimitedPool<int32_t>> m_featurePool;
         HFCPtr<HPMIndirectCountLimitedPool<DifferenceSet>> m_diffSetPool;
@@ -39,11 +35,8 @@ template <typename POINT> class ScalableMeshMemoryPools
 
     public:
         static ScalableMeshMemoryPools* Get();
-        HFCPtr<HPMCountLimitedPool<POINT>> GetPointPool();
-        HFCPtr<HPMCountLimitedPool<int32_t>> GetPtsIndicePool();
-        HFCPtr<HPMIndirectCountLimitedPool<MTGGraph>> GetGraphPool();        
-        //HPMCountLimitedPool<POINT> *GetIndicePool();
-        HFCPtr<HPMCountLimitedPool<DPoint2d>> GetUVPool();        
+        HFCPtr<HPMCountLimitedPool<POINT>> GetPointPool();        
+        HFCPtr<HPMIndirectCountLimitedPool<MTGGraph>> GetGraphPool();                
         HFCPtr<HPMCountLimitedPool<int32_t>> GetFeaturePool();
         HFCPtr<HPMIndirectCountLimitedPool<DifferenceSet>> GetDiffSetPool();
         SMMemoryPoolPtr& GetGenericPool();
@@ -53,17 +46,13 @@ template <typename POINT> ScalableMeshMemoryPools<POINT>::ScalableMeshMemoryPool
     {
     m_myMemMgr = new HPMMemoryMgrReuseAlreadyAllocatedBlocksWithAlignment(100, 2000 * sizeof(POINT));
     m_pointPoolSize = 20000000;
-    m_featurePoolSize = 10000000;
-    m_ptsIndicePoolSize = 20000000;
+    m_featurePoolSize = 10000000;    
     m_diffSetPoolSize = 4000000;
-    m_graphPoolSize = 600000000;    
-    m_uvPoolSize = 2000000;    
+    m_graphPoolSize = 600000000;        
     //m_genericPoolSize = 100000000;
     m_genericPoolSize = 600000000;
-    m_pointPool = new HPMCountLimitedPool<POINT>(/*m_myMemMgr,*/ m_pointPoolSize);
-    m_ptsIndicePool = new HPMCountLimitedPool<int32_t>(/*m_myMemMgr,*/m_ptsIndicePoolSize);
-    m_graphPool = new HPMIndirectCountLimitedPool<MTGGraph>(m_graphPoolSize);    
-    m_uvPool = new HPMCountLimitedPool<DPoint2d>(/*m_myMemMgr,*/ m_uvPoolSize);    
+    m_pointPool = new HPMCountLimitedPool<POINT>(/*m_myMemMgr,*/ m_pointPoolSize);    
+    m_graphPool = new HPMIndirectCountLimitedPool<MTGGraph>(m_graphPoolSize);        
     m_featurePool = new HPMCountLimitedPool<int32_t>(m_featurePoolSize);
     m_diffSetPool = new HPMIndirectCountLimitedPool<DifferenceSet>(m_diffSetPoolSize);
     m_genericPool = SMMemoryPool::GetInstance();
@@ -85,19 +74,9 @@ template <typename POINT> HFCPtr<HPMCountLimitedPool<POINT>>  ScalableMeshMemory
     return m_pointPool;
     }
 
-template <typename POINT> HFCPtr<HPMCountLimitedPool<int32_t>>  ScalableMeshMemoryPools<POINT>::GetPtsIndicePool()
-    {
-    return m_ptsIndicePool;
-    }
-
 template <typename POINT> HFCPtr<HPMIndirectCountLimitedPool<MTGGraph>>  ScalableMeshMemoryPools<POINT>::GetGraphPool()
     {
     return m_graphPool;
-    }
-
-template <typename POINT> HFCPtr<HPMCountLimitedPool<DPoint2d>> ScalableMeshMemoryPools<POINT>::GetUVPool()
-    {
-    return m_uvPool;
     }
 
 template <typename POINT> HFCPtr<HPMCountLimitedPool<int32_t>>   ScalableMeshMemoryPools<POINT>::GetFeaturePool()

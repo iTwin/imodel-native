@@ -1082,11 +1082,7 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMesh(IS
         m_meshNode->ReleaseGraph();
         }
     else
-        {        
-        if (flags->ShouldLoadTexture())
-            {
-            m_meshNode->PinUV();            
-            }
+        {               
         //NEEDS_WORK_SM_PROGRESSIF : Node header loaded unexpectingly
         if (m_node->size() > 0)
             {
@@ -1103,32 +1099,17 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMesh(IS
                 }*/
 
             int status = meshPtr->AppendMesh(m_node->size(), &dataPoints[0],0,0, 0, 0, 0, 0, 0,0);
-            if (flags->ShouldLoadTexture())
-                {
-                m_meshNode->PinUV();
-                }
-                       
+                                   
             RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> faceIndexes(m_meshNode->GetPtsIndicePtr());
             RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> uvIndexes(m_meshNode->GetUVsIndicesPtr());
-                                            
-            DPoint2d* pUv = flags->ShouldLoadTexture() ? m_meshNode->GetUVPtr() : nullptr;
-                
-            status = meshPtr->AppendMesh(0, 0, faceIndexes->size(), &(*faceIndexes)[0], 0, 0, 0, flags->ShouldLoadTexture() ? m_meshNode->GetNbUVs() : 0, 
-                                         flags->ShouldLoadTexture() ? pUv : 0, 
+            RefCountedPtr<SMMemoryPoolVectorItem<DPoint2d>> uvCoords(m_meshNode->GetUVCoordsPtr());
+                                                                        
+            status = meshPtr->AppendMesh(0, 0, faceIndexes->size(), &(*faceIndexes)[0], 0, 0, 0, flags->ShouldLoadTexture() ? uvCoords->size() : 0, 
+                                         flags->ShouldLoadTexture() ? &(*uvCoords)[0] : 0, 
                                          flags->ShouldLoadTexture() ? &(*uvIndexes)[0] : 0);
-
-            if (flags->ShouldLoadTexture())
-                {
-                m_meshNode->UnPinUV();
-                }
-
+            
             if (meshPtr->GetNbFaces() == 0)
-                {
-                if (flags->ShouldLoadTexture())
-                    {                    
-                    m_meshNode->UnPinUV();
-                    }
-
+                {              
                 m_node->UnPin();
                 //if (isStreaming) s_streamingMutex.unlock();
                 return nullptr;
@@ -1170,12 +1151,8 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMesh(IS
                 meshPtr->ApplyDifferenceSet(diffs);
 #else
                 if (m_meshNode->m_nbClips > 0)
-                    {
-                    if (flags->ShouldLoadTexture())
-                        m_meshNode->PinUV();
-                    meshPtr->ApplyClipMesh(diffs);
-                    if (flags->ShouldLoadTexture())
-                        m_meshNode->UnPinUV();
+                    {                    
+                    meshPtr->ApplyClipMesh(diffs);                    
                     }
 #endif
                 }
@@ -1341,20 +1318,19 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMeshByP
             dataPoints[pointInd] = converter.operator()(m_node->operator[](pointInd));
             }
 
-        int status = meshPtr->AppendMesh(m_node->size(), &dataPoints[0], 0, 0, 0, 0, 0, 0, 0, 0);
-        
-        m_meshNode->PinUV();            
+        int status = meshPtr->AppendMesh(m_node->size(), &dataPoints[0], 0, 0, 0, 0, 0, 0, 0, 0);                
         
         RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> faceIndexes = m_meshNode->GetPtsIndicePtr();       
-        RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> uvIndexes = m_meshNode->GetUVsIndicesPtr();
-
-        DPoint2d* pUv = m_meshNode->GetUVPtr();
-        if (faceIndexes->size() > 0)
-            status = meshPtr->AppendMesh(0, 0, faceIndexes->size(), &(*faceIndexes)[0], 0, 0, 0, m_meshNode->GetNbUVs(), pUv, &(*uvIndexes)[0]);
-
-        // release all                    
-        m_meshNode->UnPinUV();
         
+
+        if (faceIndexes->size() > 0)
+            {
+            RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> uvIndexes = m_meshNode->GetUVsIndicesPtr();
+            RefCountedPtr<SMMemoryPoolVectorItem<DPoint2d>> uvCoords = m_meshNode->GetUVCoordsPtr();        
+
+            status = meshPtr->AppendMesh(0, 0, faceIndexes->size(), &(*faceIndexes)[0], 0, 0, 0, uvCoords->size(), &(*uvCoords)[0], &(*uvIndexes)[0]);
+            }
+                
         if (meshPtr->GetNbFaces() == 0)
             {            
             m_node->UnPin();
@@ -1372,22 +1348,15 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMeshByP
             meshPtr->ApplyDifferenceSet(diffs);
 #else
             if (m_meshNode->m_nbClips > 0)
-                {
-                m_meshNode->PinUV();
-                meshPtr->ApplyClipMesh(diffs);
-                //DRange3d range = GetNodeExtent();
-                //NEEDS_WORK_SM: Only works when UVs can be calculated from point coordinates e.g. when not using atlas. Need to make sure UVs are properly interpolated for atlas.
-                // if (m_meshNode->GetNbUVs() > 0) meshPtr->RecalculateUVs(range);
-                m_meshNode->UnPinUV();
+                {                
+                meshPtr->ApplyClipMesh(diffs);                
                 }
 #endif
             }
         assert(status == SUCCESS || m_node->size() == 0);
 
         meshP = meshPtr.get();        
-        }
-        
-        m_meshNode->UnPinUV();        
+        }                
 
     m_node->UnPin();
     //if (isStreaming) s_streamingMutex.unlock();
@@ -1422,22 +1391,19 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMeshByP
             dataPoints[pointInd] = converter.operator()(m_node->operator[](pointInd));
             }
 
-        int status = meshPtr->AppendMesh(m_node->size(), &dataPoints[0], 0, 0, 0, 0, 0, 0, 0, 0);
-       
-        m_meshNode->PinUV();            
+        int status = meshPtr->AppendMesh(m_node->size(), &dataPoints[0], 0, 0, 0, 0, 0, 0, 0, 0);               
         
-        RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> faceIndexes = m_meshNode->GetPtsIndicePtr();
-        RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> uvIndexes = m_meshNode->GetUVsIndicesPtr();
+        RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> faceIndexes = m_meshNode->GetPtsIndicePtr();        
 
         if (faceIndexes->size() > 0)
             {
-            DPoint2d* pUv = m_meshNode->GetUVPtr();
-            status = meshPtr->AppendMesh(0, 0, faceIndexes->size(), &(*faceIndexes)[0], 0, 0, 0, m_meshNode->GetNbUVs(), pUv, &(*uvIndexes)[0]);
+            RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> uvIndexes = m_meshNode->GetUVsIndicesPtr();
+            RefCountedPtr<SMMemoryPoolVectorItem<DPoint2d>> uvCoords = m_meshNode->GetUVCoordsPtr();        
+
+            status = meshPtr->AppendMesh(0, 0, faceIndexes->size(), &(*faceIndexes)[0], 0, 0, 0, uvCoords->size(), &(*uvCoords)[0], &(*uvIndexes)[0]);
             }
 
-        // release all                    
-        m_meshNode->UnPinUV();
-       
+        // release all                                   
         if (meshPtr->GetNbFaces() == 0)
             {            
             m_node->UnPin();
@@ -1455,13 +1421,8 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMeshByP
             meshPtr->ApplyDifferenceSet(diffs);
 #else
             if (m_meshNode->m_nbClips > 0)
-                {
-                m_meshNode->PinUV();
-                meshPtr->ApplyClipMesh(diffs);
-                //DRange3d range = GetNodeExtent();
-                //NEEDS_WORK_SM: Only works when UVs can be calculated from point coordinates e.g. when not using atlas. Need to make sure UVs are properly interpolated for atlas.
-                // if (m_meshNode->GetNbUVs() > 0) meshPtr->RecalculateUVs(range);
-                m_meshNode->UnPinUV();
+                {                
+                meshPtr->ApplyClipMesh(diffs);                
                 }
 #endif
             }
@@ -1469,9 +1430,7 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMeshByP
 
         meshP = meshPtr.get();        
         }
-    
-    m_meshNode->UnPinUV();    
-
+        
     m_node->UnPin();
     //if (isStreaming) s_streamingMutex.unlock();
     if (meshP != nullptr && meshP->GetNbFaces() == 0) return nullptr;
@@ -1690,7 +1649,7 @@ inline void ApplyClipDiffSetToMesh(FloatXYZ*& points, size_t& nbPoints,
                                    FloatXY*& pUv, const int32_t*& pUvIndex, size_t& uvCount,
                                    FloatXYZ const* inPoints, size_t inNbPoints, 
                                    int32_t const*  inFaceIndexes, size_t inNbFaceIndexes, 
-                                   DPoint2d* pInUv, const int32_t* pInUvIndex, size_t inUvCount, 
+                                   const DPoint2d* pInUv, const int32_t* pInUvIndex, size_t inUvCount, 
                                    const DifferenceSet& d, 
                                    const DPoint3d& ptTranslation)
     {       
@@ -1871,20 +1830,27 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
                 assert(status == SUCCESS);
                 }
 
-            DPoint2d*       uvPtr = 0;
+            const DPoint2d* uvPtr = 0;
             size_t          nbUvs = 0;
             const int32_t*  uvIndicesP = 0;
+
             RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> uvIndicesPtr;
+            RefCountedPtr<SMMemoryPoolVectorItem<DPoint2d>> uvCoordsPtr;
 
             if (m_cachedDisplayTexture != 0)
-                {
-                meshNode->PinUV();
-                uvPtr = meshNode->GetUVPtr();
-                nbUvs = meshNode->GetNbUVs();
-                
+                {                                                                
                 uvIndicesPtr = meshNode->GetUVsIndicesPtr();
+
                 if (uvIndicesPtr.IsValid() && uvIndicesPtr->size() > 0)
                     uvIndicesP = &(*uvIndicesPtr)[0];
+
+                uvCoordsPtr = meshNode->GetUVCoordsPtr();
+
+                if (uvCoordsPtr.IsValid() && uvCoordsPtr->size() > 0)
+                    {
+                    nbUvs = uvCoordsPtr->size();
+                    uvPtr = &(*uvCoordsPtr)[0];
+                    }                
                 }
 
             DifferenceSet clipDiffSet;
@@ -1989,9 +1955,7 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
                 finalUVPtr = (float*)newUVs.data();
                 finalPointNb = newPoints.size();
                 finalIndexPtr = newIndices.data();
-                finalIndexNb = newIndices.size();    
-
-                meshNode->UnPinUV();                
+                finalIndexNb = newIndices.size();                    
                 }
 
             if (s_deactivateTexture)
@@ -2304,6 +2268,7 @@ template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddTexturedMesh(b
         nodePts[pointInd].y = vertices[pointInd].y;
         nodePts[pointInd].z = vertices[pointInd].z;
         }
+
     m_meshNode->push_back(&nodePts[0], nodePts.size());
     m_meshNode->PushUV(&uv[0], uv.size());
 
@@ -2323,7 +2288,7 @@ template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddTexturedMesh(b
         
         indicesLine.insert(indicesLine.end(), ptsIndices[i+1].begin(), ptsIndices[i+1].end());
         }
-    m_meshNode->SetUVDirty();
+    
     bvector<int> componentPointsId;
     if (NULL == m_meshNode->GetGraphPtr()) m_meshNode->CreateGraph();
 
@@ -2347,8 +2312,7 @@ template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddTexturedMesh(b
     m_meshNode->m_nodeHeader.m_nbFaceIndexes = indicesLine.size();
     m_meshNode->m_nodeHeader.m_nbUvIndexes = uv.size();
     m_meshNode->IncreaseTotalCount(m_meshNode->size());
-
-    m_meshNode->StoreUV();
+    
     m_meshNode->SetDirty(true);
 
     return BSISUCCESS;
@@ -2492,12 +2456,12 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNodeWithReprojection<POI
         dataPoints[pointInd] = converter.operator()(m_node->operator[](pointInd));
         }
     m_reprojectFunction.Reproject(&dataPoints[0], m_node->size(), &dataPoints[0]);
-    DPoint2d* pUv = m_meshNode->GetUVPtr();
-
+   
+    RefCountedPtr<SMMemoryPoolVectorItem<DPoint2d>> uvCoords(m_meshNode->GetUVCoordsPtr());
     RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> ptsIndices(m_meshNode->GetPtsIndicePtr());
     RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> uvIndexes = m_meshNode->GetUVsIndicesPtr();
                 
-    int status = meshPtr->AppendMesh(m_node->size(), &dataPoints[0], m_node->m_nodeHeader.m_nbFaceIndexes, &(*ptsIndices)[0], 0, 0, 0, m_meshNode->GetNbUVs(), pUv, &(*uvIndexes)[0]);
+    int status = meshPtr->AppendMesh(m_node->size(), &dataPoints[0], m_node->m_nodeHeader.m_nbFaceIndexes, &(*ptsIndices)[0], 0, 0, 0, uvCoords->size(), &(*uvCoords)[0], &(*uvIndexes)[0]);
 
     assert(status == SUCCESS);
 
@@ -2519,12 +2483,12 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNodeWithReprojection<POI
         dataPoints[pointInd] = converter.operator()(m_node->operator[](pointInd));
         }
     m_reprojectFunction.Reproject(&dataPoints[0], m_node->size(), &dataPoints[0]);
-    DPoint2d* pUv = m_meshNode->GetUVPtr();
-
+    
     RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> ptsIndices = m_meshNode->GetPtsIndicePtr();
     RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> uvIndexes = m_meshNode->GetUVsIndicesPtr();
+    RefCountedPtr<SMMemoryPoolVectorItem<DPoint2d>> uvCoords = m_meshNode->GetUVCoordsPtr();
 
-    int status = meshPtr->AppendMesh(m_node->size(), &dataPoints[0], m_node->m_nodeHeader.m_nbFaceIndexes, &(*ptsIndices)[0], 0, 0, 0, m_meshNode->GetNbUVs(), pUv, &(*uvIndexes)[0]);
+    int status = meshPtr->AppendMesh(m_node->size(), &dataPoints[0], m_node->m_nodeHeader.m_nbFaceIndexes, &(*ptsIndices)[0], 0, 0, 0, uvCoords->size(), &(*uvCoords)[0], &(*uvIndexes)[0]);
 
     assert(status == SUCCESS);
 
