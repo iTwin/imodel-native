@@ -94,9 +94,12 @@ CPchOpts  = $(UsePrecompiledHeaderOptions)
 #----------------------------------------------------------------------
 
 %include MultiCppCompileRule.mki
+
+%if defined (POINTOOLS_BENTLEY_LICENSING)
 $(o)PointoolsBentleyLicense$(oext)       : $(basedir)\src\ptlic\PointoolsBentleyLicense.cpp                       $(basedir)\include\ptlic\PointoolsBentleyLicense.h                ${MultiCompileDepends}
 
 $(o)PointoolsBentleyLicenseAPI$(oext)    : $(basedir)\src\ptlic\PointoolsBentleyLicenseAPI.cpp                    $(basedir)\include\ptlic\PointoolsBentleyLicenseAPI.h             ${MultiCompileDepends}
+%endif
 
 $(o)OBBox$(oext)                         : $(basedir)\src\pt\OBBox.cpp                                            $(basedir)\include\pt\OBBox.h                                     ${MultiCompileDepends}
 
@@ -529,7 +532,9 @@ DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
 DLM_CREATE_LIB_CONTEXT_LINK = 1
 DLM_SPECIAL_LINKOPT     + -def:$(baseDir)api.def
 DLM_SPECIAL_LINKOPT     + -NODEFAULTLIB:LIBCMT
+%if defined (POINTOOLS_BENTLEY_LICENSING)
 LINKER_LIBRARIES_DELAYLOADED = $(ContextSubpartsLibs)$(stlibprefix)Bentley.liclib.10$(stlibext)
+%endif
 
 ContextSubpartsStaticLibs = $(BuildContext)SubParts/StaticLibs/
 
@@ -551,7 +556,9 @@ LINKER_LIBRARIES     =  \
     shlwapi.lib\
     wsock32.lib\
     Ws2_32.lib\
+%if defined (POINTOOLS_BENTLEY_LICENSING)
     $(ContextSubpartsLibs)$(stlibprefix)Bentley.liclib.10$(stlibext)\
+%endif
 %if $(BUILD_TOOLSET) == "VC8"
     $(ContextSubpartsStaticLibs)$(stlibprefix)glew_VC8$(stlibext) \
     $(ContextSubpartsLibs)$(stlibprefix)wildmagic_VC8$(stlibext) \

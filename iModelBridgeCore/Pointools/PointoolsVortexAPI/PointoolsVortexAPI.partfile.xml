@@ -146,7 +146,7 @@
     <RequiredRepository>PointoolsCommon</RequiredRepository>	
     <SubPart PartName="EncryptShaders" />
     <SubPart PartName="Base" PartFile="Bentley" Repository="Bentley" />
-    <SubPart PartName="LicenseSDK8.11" PartFile="${SrcRoot}bsicommon/CvsPartfiles/bsibin" Repository="bsibin-licensesdk" /> 
+    <!-- <SubPart PartName="LicenseSDK8.11" PartFile="${SrcRoot}bsicommon/CvsPartfiles/bsibin" Repository="bsibin-licensesdk" />  -->
     <SubPart PartName="PointoolsLibsVortex" />
     <Directories DirectoryListName="PointoolsVortexAPI_DLL_List"/>
     <Bindings>

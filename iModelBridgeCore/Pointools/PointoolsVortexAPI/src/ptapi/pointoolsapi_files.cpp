@@ -3,7 +3,9 @@
 #include <commdlg.h>
 #define POINTOOLS_API_BUILD_DLL
 
+#ifdef POINTOOLS_BENTLEY_LICENSING
 #include <ptlic/PointoolsBentleyLicenseAPI.h>
+#endif
 
 #include <gl/glew.h>
 #include <ptapi/PointoolsVortexAPI.h>
@@ -722,6 +724,7 @@ PTbool PTAPI ptInitialize(const PTubyte* licenseData)
 			else g_timeOut = -1;
 		}
 
+#ifdef POINTOOLS_BENTLEY_LICENSING
 		// Check for special users that do not require a SELECT license and allow these to skip the SELECT license check in startLicenseBentley().
 		// Note that any ditribution of Vortex that uses SELECT licensing now requires the bentley licensing DLLs to be distributed with it
 		// or startLicenseBentley() will fail when unable to load Bentley.liblib.DLL. 
@@ -737,7 +740,7 @@ PTbool PTAPI ptInitialize(const PTubyte* licenseData)
 				return PT_FALSE;		
 			}
 		}
-
+#endif
 		PTRMI::initialize();
 															// Initialize server data sources with PTRMI
 		PTRMI::getManager().newMetaInterface<ptds::DataSourceServer>(L"DataSourceServer");
