@@ -130,8 +130,21 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
         /** explicitly close the file */
         Close(): void;
 
-        /** Reads the next line of text. @return the next line of text or null if at end of file. */
+        /** check if the next read position is at the end of the file. If so, do not attempt to read from the file. */
+        Feof(): cxx_bool;
+
+        /** Reads the next line of text. 
+          * @return the next line of text.
+          * @note This function throws an exception if you try to read past the end of the file. Call Feof before calling this function.
+          */
         ReadLine(): Bentley_Utf8String;
+
+        /**
+         * Writes a line of text at the current write position.
+         * @param line  The line of text to write
+         * @return non-zero if write failed.
+         */
+        WriteLine(line: Bentley_Utf8String): cxx_int32_t;
 
         OnDispose(): void;
         Dispose(): void;

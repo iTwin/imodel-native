@@ -1387,12 +1387,16 @@ struct JsFile : RefCountedBaseWithCreate
     {
     FILE* m_fp;
 
-    JsFile(FILE* fp) : m_fp() {;}
+    JsFile(FILE* fp) : m_fp(fp) {;}
     ~JsFile() {if (m_fp) fclose(m_fp);}
 
-    static JsFile* Fopen(Utf8StringCR name, Utf8StringCR mode) {auto fp = fopen(name.c_str(), mode.c_str()); return (nullptr == fp)? new JsFile(fp): nullptr;}
+    bool IsValid() const {return nullptr != m_fp;}
+
+    static JsFile* Fopen(Utf8StringCR name, Utf8StringCR mode);
     void Close() {if (m_fp) fclose(m_fp); m_fp = nullptr;}
-    Utf8String ReadLine() {char buf[4096]; return fgets(buf, sizeof(buf), m_fp);}
+    bool Feof();
+    Utf8String ReadLine();
+    int32_t WriteLine(Utf8StringCR line);
 };
 
 //=======================================================================================
