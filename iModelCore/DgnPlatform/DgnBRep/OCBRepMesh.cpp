@@ -60,15 +60,13 @@ bool operator < (EdgeIndices const& other) const
 static double restrictAngleTol (double radians, double defaultRadians, double minRadians, double maxRadians)
     {
     if (radians <= 0.0)
-        radians = defaultRadians;
-
+        return defaultRadians;
     else if (radians < minRadians)
-        radians = minRadians;
-
+        return minRadians;
     else if (radians > maxRadians)
-        radians = maxRadians;
-
-    return radians;
+        return maxRadians;
+    else
+        return radians;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -79,10 +77,19 @@ PolyfaceHeaderPtr OCBRep::IncrementalMesh(TopoDS_Shape const& shape, IFacetOptio
     if (shape.IsNull())
         return nullptr;
 
-    double angleTol = restrictAngleTol(facetOptions.GetAngleTolerance(), s_defaultFacetAngleTol, s_minFacetAngleTol, s_maxFacetAngleTol);
-    IPolyfaceConstructionPtr polyfaceBuilder = IPolyfaceConstruction::Create(facetOptions);
+    double angularDeflection = restrictAngleTol(facetOptions.GetAngleTolerance(), s_defaultFacetAngleTol, s_minFacetAngleTol, s_maxFacetAngleTol);
+    double linearDeflection = facetOptions.GetChordTolerance();
 
-    BRepMesh_IncrementalMesh(shape, facetOptions.GetChordTolerance(), false, angleTol, true);
+    if (linearDeflection <= 0.0)
+        {
+        BeAssert(false && "Chord tolerance required - BRepMesh_IncrementalMesh behaves poorly/slowly otherwise.");
+        return nullptr;
+        }
+
+    IPolyfaceConstructionPtr polyfaceBuilder = IPolyfaceConstruction::Create(facetOptions);
+    bool isInParallel = false;
+
+    BRepMesh_IncrementalMesh(shape, linearDeflection, false, angularDeflection, isInParallel);
 
     if (facetOptions.GetNormalsRequired())
         BRepLib::EnsureNormalConsistency(shape, Angle::DegreesToRadians(DEFAULT_CREASE_DEGREES), true);
