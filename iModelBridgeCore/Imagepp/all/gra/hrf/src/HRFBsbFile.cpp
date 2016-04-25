@@ -141,6 +141,7 @@ HRFBsbCapabilities::HRFBsbCapabilities()
     pGeocodingCapability->AddSupportedKey(GeographicType);
 
     Add((HFCPtr<HRFCapability>&)pGeocodingCapability);
+    Add(new HRFTagCapability(HFC_READ_ONLY, new HRFAttributeVerticalUnitRatioToMeter));
     }
 
 

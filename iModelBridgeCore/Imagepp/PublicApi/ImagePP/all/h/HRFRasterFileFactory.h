@@ -71,7 +71,8 @@ public:
     IMAGEPP_EXPORT const HRFRasterFileCreator*   FindCreator(const HFCPtr<HFCURL>&  pi_rpURL,
                                                              HFCAccessMode          pi_AccessMode = HFC_READ_WRITE,
                                                              uint64_t               pi_Offset = 0,
-                                                             bool                   pi_ScanCreatorIfNotFound = false) const;
+                                                             bool                   pi_ScanCreatorIfNotFound = false,
+                                                             bool                   pi_throwIfNotFound = true) const;
 
     // Obtains the creators list - logic const function
     // HFC_READ_ONLY  : obtains the formats that can read data
