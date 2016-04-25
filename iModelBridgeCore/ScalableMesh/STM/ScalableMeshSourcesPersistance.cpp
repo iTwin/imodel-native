@@ -133,10 +133,10 @@ SourcesSaver::SourcesSaver(const DocumentEnv&  sourceEnv)
 bool SourcesSaver::SaveRoot(const IDTMSourceCollection&     sources,
                             SourcesDataSQLite&              sourcesData)
 {
-    sourcesData.SetSerializedSourceFormatVersion(CURRENT_FORMAT_VERSIONS.serializedSource);
+    /*sourcesData.SetSerializedSourceFormatVersion(CURRENT_FORMAT_VERSIONS.serializedSource);
     sourcesData.SetContentConfigFormatVersion(CURRENT_FORMAT_VERSIONS.contentConfig);
     sourcesData.SetImportSequenceFormatVersion(CURRENT_FORMAT_VERSIONS.importSequence);
-    sourcesData.SetImportConfigFormatVersion(CURRENT_FORMAT_VERSIONS.importConfig);
+    sourcesData.SetImportConfigFormatVersion(CURRENT_FORMAT_VERSIONS.importConfig);*/
 
     return Save(sources, sourcesData);
 }
@@ -157,6 +157,29 @@ bool SourcesSaver::SaveRoot    (const IDTMSourceCollection&     sources,
     return Save(sources, sourcesStorage);
     }
 
+//This saves the appropriate metadata for differently-reachable sources
+template <class SourceType> void SaveSourceMetadata(const SourceType& source, SourceDataSQLite& sourceData)
+    {
+    }
+
+template <> void SaveSourceMetadata<IDTMDgnLevelSource>(const IDTMDgnLevelSource& source, SourceDataSQLite& sourceData)
+    {
+    sourceData.SetLevelID(source.GetLevelID());
+    sourceData.SetLevelName(source.GetLevelName());
+    }
+
+template <>void  SaveSourceMetadata<IDTMDgnModelSource>(const IDTMDgnModelSource& source, SourceDataSQLite& sourceData)
+    {
+    sourceData.SetModelID(source.GetModelID());
+    sourceData.SetModelName(source.GetModelName());
+    }
+
+template <>void SaveSourceMetadata<IDTMDgnReferenceSource>(const IDTMDgnReferenceSource& source, SourceDataSQLite& sourceData)
+    {
+    sourceData.SetRootToRefPersistentPath(source.GetRootToRefPersistentPath());
+    sourceData.SetReferenceName(source.GetReferenceName());
+    sourceData.SetReferenceModelName(source.GetReferenceModelName());
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @description 
@@ -171,7 +194,7 @@ bool SourcesSaver::Save(const IDTMSource& source,
 
 
     // Serializing source
-    {
+    /*{
         m_serializationStream.str(bstring());
         assert(m_serializationStream.good());
 
@@ -184,7 +207,22 @@ bool SourcesSaver::Save(const IDTMSource& source,
 
         m_serializedSource = m_serializationStream.str();
         m_serializedSourcePacket.Wrap(&m_serializedSource[0], m_serializedSource.size());
-    }
+    }*/
+    //common info
+    m_sourceData.SetSourceType(source.GetSourceType());
+    m_sourceData.SetMonikerString(source.GetPath());
+
+    const IDTMDgnLevelSource* dgnLevelSource = dynamic_cast<const IDTMDgnLevelSource*>(&source);
+    if (nullptr != dgnLevelSource)
+        SaveSourceMetadata(*dgnLevelSource, m_sourceData);
+
+    const IDTMDgnModelSource* dgnModelSource = dynamic_cast<const IDTMDgnModelSource*>(&source);
+    if (nullptr != dgnModelSource)
+        SaveSourceMetadata(*dgnModelSource, m_sourceData);
+
+    const IDTMDgnReferenceSource* dgnRefSource = dynamic_cast<const IDTMDgnReferenceSource*>(&source);
+    if (nullptr != dgnRefSource)
+        SaveSourceMetadata(*dgnRefSource, m_sourceData);
 
     // Serializing content config
     {
@@ -539,7 +577,7 @@ void SourcesLoader::LoadRoot(IDTMSourceCollection&   sources,
     SourcesDataSQLite&       sourcesData)
 {
     // Load file format versions
-    m_fileFormatVersions.serializedSource = sourcesData.GetSerializedSourceFormatVersion();
+    /*m_fileFormatVersions.serializedSource = sourcesData.GetSerializedSourceFormatVersion();
     m_fileFormatVersions.contentConfig = sourcesData.GetContentConfigFormatVersion();
     m_fileFormatVersions.importSequence = sourcesData.GetImportSequenceFormatVersion();
     m_fileFormatVersions.importConfig = sourcesData.GetImportConfigFormatVersion();
@@ -551,7 +589,7 @@ void SourcesLoader::LoadRoot(IDTMSourceCollection&   sources,
         CURRENT_FORMAT_VERSIONS.importConfig < m_fileFormatVersions.importConfig)
     {
         throw runtime_error("Found more recent format version. Driver cannot be forward compatible!");
-    }
+    }*/
 
     Load(sources, sourcesData);
 }

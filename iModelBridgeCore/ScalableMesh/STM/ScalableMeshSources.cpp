@@ -173,6 +173,9 @@ DTMSourceDataType IDTMSource::GetSourceType () const
     return m_implP->m_sourceDataType;
     }
 
+
+
+
 /*----------------------------------------------------------------------------+
 |IDTMSource::GetLastModified
 +----------------------------------------------------------------------------*/

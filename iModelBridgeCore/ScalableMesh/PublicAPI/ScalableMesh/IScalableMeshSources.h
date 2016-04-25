@@ -124,6 +124,9 @@ struct IDTMSource : public RefCountedBase
 
 /*__PUBLISH_SECTION_END__*/
     public:
+
+
+
         struct                              Impl;
 
         void                                RegisterEditListener       (EditListener&               listener);
@@ -138,6 +141,7 @@ struct IDTMSource : public RefCountedBase
         
         virtual void                        _Accept                    (IDTMSourceVisitor&          visitor) const = 0;
         virtual IDTMSource*                 _Clone                     () const = 0;
+
     protected:
         explicit                            IDTMSource                 (Impl*                       implP);
 

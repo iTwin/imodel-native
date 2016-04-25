@@ -92,11 +92,7 @@ m_database = new ScalableMeshDb();
         "GCS STRING,"
         "LastModifiedTime INTEGER,"
         "LastSyncTime INTEGER,"
-        "CheckTime INTEGER,"
-        "SerializedSourceFormatVersion INTEGER,"
-        "ContentConfigFormatVersion INTEGER,"
-        "ImportSequenceFormatVersion INTEGER,"
-        "ImportConfigFormatVersion INTEGER");
+        "CheckTime INTEGER");
         assert(result == BE_SQLITE_OK);
 
 
@@ -1429,7 +1425,7 @@ bool SMSQLiteFile::SaveSource(SourcesDataSQLite& sourcesData)
         DbResult status = stmt->Step();
         assert((status == BE_SQLITE_DONE) || (status == BE_SQLITE_ROW));
         m_database->SaveChanges();
-    }
+   }
     CachedStatementPtr stmtTest;
     m_database->GetCachedStatement(stmtTest, "SELECT COUNT(MasterHeaderId) FROM SMMasterHeader WHERE MasterHeaderId=?");
     size_t id = 0;
@@ -1439,33 +1435,31 @@ bool SMSQLiteFile::SaveSource(SourcesDataSQLite& sourcesData)
     CachedStatementPtr stmt;
     if (nRows == 0)
     {
-        /*Savepoint insertTransaction(*m_database, "insert");*/
+
         m_database->GetCachedStatement(stmt, "INSERT INTO SMMasterHeader (MasterHeaderId, LastModifiedTime, LastSyncTime, CheckTime,"
-            "SerializedSourceFormatVersion, ContentConfigFormatVersion, ImportSequenceFormatVersion, ImportConfigFormatVersion, RootNodeId) VALUES(?,?,?,?,?,?,?,?,?)");
-        /*stmt.Prepare(*m_database, "INSERT INTO SMMasterHeader (MasterHeaderId, LastModifiedTime, LastSyncTime, CheckTime,"
-            "SerializedSourceFormatVersion, ContentConfigFormatVersion, ImportSequenceFormatVersion, ImportConfigFormatVersion) VALUES(?,?,?,?,?,?,?,?)");*/
+            "RootNodeId) VALUES(?,?,?,?,?)");
+
     }
     else
     {
-        /*Savepoint insertTransaction(*m_database, "update");*/
+
         m_database->GetCachedStatement(stmt, "UPDATE SMMasterHeader SET MasterHeaderId=?, LastModifiedTime=?, LastSyncTime=?, CheckTime=?,"
-            "SerializedSourceFormatVersion=?, ContentConfigFormatVersion=?, ImportSequenceFormatVersion=?, ImportConfigFormatVersion=? WHERE MasterHeaderId=?");
-        /*stmt.Prepare(*m_database, "UPDATE SMMasterHeader SET MasterHeaderId=?, LastModifiedTime=?, LastSyncTime=?, CheckTime=?,"
-            "SerializedSourceFormatVersion=?, ContentConfigFormatVersion=?, ImportSequenceFormatVersion=?, ImportConfigFormatVersion=? WHERE MasterHeaderId=?");*/
+            " WHERE MasterHeaderId=?");
+
     }
     
     stmt->BindInt64(1, id);
     stmt->BindInt64(2, sourcesData.GetLastModifiedCheckTime());
     stmt->BindInt64(3, sourcesData.GetLastModifiedTime());
     stmt->BindInt64(4, sourcesData.GetLastSyncTime());
-    stmt->BindInt64(5, sourcesData.GetSerializedSourceFormatVersion());
+    /*stmt->BindInt64(5, sourcesData.GetSerializedSourceFormatVersion());
     stmt->BindInt64(6, sourcesData.GetContentConfigFormatVersion());
     stmt->BindInt64(7, sourcesData.GetImportSequenceFormatVersion());
-    stmt->BindInt64(8, sourcesData.GetImportConfigFormatVersion());
+    stmt->BindInt64(8, sourcesData.GetImportConfigFormatVersion());*/
     if (nRows != 0)
-        stmt->BindInt64(9, id);
+        stmt->BindInt64(5, id);
     else
-        stmt->BindInt64(9, SQLiteNodeHeader::NO_NODEID);
+        stmt->BindInt64(5, SQLiteNodeHeader::NO_NODEID);
     DbResult status = stmt->Step();
     m_database->SaveChanges();
     assert((status == BE_SQLITE_DONE) || (status == BE_SQLITE_ROW));
@@ -1585,8 +1579,8 @@ bool SMSQLiteFile::LoadSources(SourcesDataSQLite& sourcesData)
     }
 
     CachedStatementPtr stmt2;
-    m_database->GetCachedStatement(stmt2, "SELECT LastModifiedTime, LastSyncTime, CheckTime,"
-        "SerializedSourceFormatVersion, ContentConfigFormatVersion, ImportSequenceFormatVersion, ImportConfigFormatVersion FROM SMMasterHeader WHERE MasterHEaderId=?");
+    m_database->GetCachedStatement(stmt2, "SELECT LastModifiedTime, LastSyncTime, CheckTime"
+        " FROM SMMasterHeader WHERE MasterHEaderId=?");
     size_t id = 0;
     stmt2->BindInt64(1, id);
     stmt2->Step();
@@ -1594,10 +1588,6 @@ bool SMSQLiteFile::LoadSources(SourcesDataSQLite& sourcesData)
     sourcesData.SetLastModifiedCheckTime(stmt->GetValueInt64(0));
     sourcesData.SetLastModifiedTime(stmt->GetValueInt64(1));
     sourcesData.SetLastSyncTime(stmt->GetValueInt64(2));
-    sourcesData.SetSerializedSourceFormatVersion(stmt->GetValueInt64(3));
-    sourcesData.SetContentConfigFormatVersion(stmt->GetValueInt64(4));
-    sourcesData.SetImportSequenceFormatVersion(stmt->GetValueInt64(5));
-    sourcesData.SetImportConfigFormatVersion(stmt->GetValueInt64(6));
 
     return true;
 }
