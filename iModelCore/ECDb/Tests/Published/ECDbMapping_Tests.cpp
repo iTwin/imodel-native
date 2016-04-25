@@ -795,7 +795,7 @@ TEST_F(ECDbMappingTestFixture, ExistingTableCATests)
 
 
     {
-    ECDbR ecdb = SetupECDb("existingtablecatests.ecdb");
+    ECDbCR ecdb = SetupECDb("existingtablecatests.ecdb");
 
     bmap<Utf8String, bool> testDataset;
     testDataset["SELECT * FROM ecdbf.ExternalFileInfo"] = true;
@@ -825,6 +825,27 @@ TEST_F(ECDbMappingTestFixture, ExistingTableCATests)
         else
             ASSERT_EQ(ECSqlStatus::InvalidECSql, stat) << ecsql;
         }
+
+    ECClassCP testClass = ecdb.Schemas().GetECClass("MetaSchema", "ECClassDef");
+    ASSERT_TRUE(testClass != nullptr);
+
+    {
+    ECInstanceInserter inserter(ecdb, *testClass);
+    ASSERT_FALSE(inserter.IsValid());
+    ECInstanceUpdater updater(ecdb, *testClass);
+    ASSERT_FALSE(updater.IsValid());
+    ECInstanceDeleter deleter(ecdb, *testClass);
+    ASSERT_FALSE(deleter.IsValid());
+    }
+
+    {
+    JsonInserter inserter(ecdb, *testClass);
+    ASSERT_FALSE(inserter.IsValid());
+    JsonUpdater updater(ecdb, *testClass);
+    ASSERT_FALSE(updater.IsValid());
+    JsonDeleter deleter(ecdb, *testClass);
+    ASSERT_FALSE(deleter.IsValid());
+    }
     }
     }
 
