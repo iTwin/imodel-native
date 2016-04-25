@@ -12,7 +12,9 @@
 +---------------+---------------+---------------+---------------+---------------+------*/
 Node::~Node()
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     CacheManager::GetManager().RemoveRequest(*this);
+#endif
     }
 
 /*-----------------------------------------------------------------------------------**//**
@@ -39,12 +41,12 @@ void Node::PushNode(NodeInfo const& nodeInfo)
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Node::AddGeometry(int32_t nodeId, Graphic::TriMeshArgs& args, int32_t textureIndex, LoadContextCR loadContext)
+void Node::AddGeometry(int32_t nodeId, Graphic::TriMeshArgs& args, int32_t textureIndex, SceneR scene)
     {
     ByteStream* jpeg = GetTextureData(textureIndex);
     if (nullptr == jpeg)
         {
-        BeAssert(false); // ???
+//        BeAssert(false); // ???
         return;
         }
 
@@ -54,14 +56,14 @@ void Node::AddGeometry(int32_t nodeId, Graphic::TriMeshArgs& args, int32_t textu
         return;
 
     Render::TexturePtr texture;
-    if (loadContext.m_system)
+    if (scene.m_target)
         {
-        texture = loadContext.m_system->_CreateTexture(rgba, imageInfo.m_hasAlpha);
+        texture = scene.m_target->_CreateTexture(rgba, imageInfo.m_hasAlpha);
         jpeg->Clear(); // we no longer need the jpeg data
         }
 
     args.m_texture = texture.get();
-    m_meshes.push_back(new Geometry(args, loadContext));
+    m_meshes.push_back(new Geometry(args, scene));
     }
 
 /*-----------------------------------------------------------------------------------**//**
@@ -75,7 +77,7 @@ BeFileName Node::GetFileName() const
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus Node::Load(LoadContextCR loadContext)
+BentleyStatus Node::Load(SceneR scene)
     {
     if (!m_dir.empty())
         return SUCCESS;         // Already loaded.
@@ -86,7 +88,7 @@ BentleyStatus Node::Load(LoadContextCR loadContext)
         return ERROR;
         }
 
-    if (SUCCESS != CacheManager::GetManager().SynchronousRead(*this, GetFileName(), loadContext))
+    if (SUCCESS != scene.SynchronousRead(*this, GetFileName()))
         {
         Util::DisplayNodeFailureWarning(GetFileName().c_str());
         m_dir.clear();
@@ -99,14 +101,14 @@ BentleyStatus Node::Load(LoadContextCR loadContext)
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus Node::LoadUntilDisplayable(LoadContextCR loadContext)
+BentleyStatus Node::LoadUntilDisplayable(SceneR scene)
     {
     static uint32_t s_sleepMillis = 20;
 
     while (!LoadedUntilDisplayable())
         {
-        CacheManager::GetManager().ProcessRequests();
-        RequestLoadUntilDisplayable(loadContext);
+        scene.ProcessRequests();
+        RequestLoadUntilDisplayable(scene);
         BeThreadUtilities::BeSleep(s_sleepMillis);
 
 #ifdef NEEDS_WORK_LOAD_NOTIFY
@@ -158,7 +160,7 @@ bool Node::LoadedUntilDisplayable() const
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Node::RequestLoadUntilDisplayable(LoadContextCR context)
+void Node::RequestLoadUntilDisplayable(SceneR scene)
     {
     if (IsLoaded() && !IsDisplayable())
         {
@@ -167,12 +169,12 @@ void Node::RequestLoadUntilDisplayable(LoadContextCR context)
         if (!m_childrenRequested)
             {
             m_childrenRequested = true;
-            CacheManager::GetManager().QueueChildLoad(m_children, nullptr, context);
+            scene.QueueChildLoad(m_children, nullptr);
             }
         else
             {
             for (auto const& child : m_children)
-                child->RequestLoadUntilDisplayable(context);
+                child->RequestLoadUntilDisplayable(scene);
             }
         }
     }
@@ -222,9 +224,9 @@ bool Node::IsCached() const
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Node::AreVisibleChildrenLoaded(MeshNodes& unloadedVisibleChildren, ViewContextR viewContext, LoadContextCR meshContext) const
+bool Node::AreVisibleChildrenLoaded(MeshNodes& unloadedVisibleChildren, ViewContextR viewContext, SceneR scene) const
     {
-    if (meshContext.GetLoadSynchronous())
+    if (scene.GetLoadSynchronous())
         {
         // If the LOD filter is off we assume that this is an application that is interested in full detail (and isn't going to wait for nodes to load.
         // We synchronously load unloaded but visible nodes and release non-visible nodes.
@@ -233,7 +235,7 @@ bool Node::AreVisibleChildrenLoaded(MeshNodes& unloadedVisibleChildren, ViewCont
             if (child->IsDisplayable())
                 {
                 if (viewContext.IsPointVisible(child->m_info.m_center, ViewContext::WantBoresite::No, child->m_info.m_radius))
-                    child->Load(meshContext);
+                    child->Load(scene);
                 else if (!child->m_primary)
                     child->Clear();
                 }
@@ -300,14 +302,14 @@ void Node::DrawMeshes(Render::GraphicR graphic, TransformCR transform)
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Node::TestVisibility(bool& isUnderMaximumSize, ViewContextR viewContext, LoadContextCR meshContext)
+bool Node::TestVisibility(bool& isUnderMaximumSize, ViewContextR viewContext, SceneR scene)
     {
     if (!viewContext.IsPointVisible(m_info.m_center, ViewContext::WantBoresite::No, m_info.m_radius))
         return false;
 
-    if (meshContext.UseFixedResolution())
+    if (scene.UseFixedResolution())
         {
-        isUnderMaximumSize = (m_info.m_radius / meshContext.GetFixedResolution()) < m_info.m_dMax;
+        isUnderMaximumSize = (m_info.m_radius / scene.GetFixedResolution()) < m_info.m_dMax;
         }
     else
         {
@@ -326,12 +328,12 @@ bool Node::TestVisibility(bool& isUnderMaximumSize, ViewContextR viewContext, Lo
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Node::Draw(RenderContextR context, LoadContextCR meshContext)
+bool Node::Draw(RenderContextR context, SceneR scene)
     {
     bool childrenScheduled = false;
     bool isUnderMaximumSize = false, childrenNeedLoading = false;
 
-    if (!TestVisibility(isUnderMaximumSize, context, meshContext) || !IsLoaded())
+    if (!TestVisibility(isUnderMaximumSize, context, scene) || !IsLoaded())
         return childrenScheduled;
 
     m_lastUsed = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
@@ -340,18 +342,18 @@ bool Node::Draw(RenderContextR context, LoadContextCR meshContext)
 
     if ((!isUnderMaximumSize || !IsDisplayable()) &&
         !m_children.empty() &&
-        !(childrenNeedLoading = !AreVisibleChildrenLoaded(unloadedVisibleChildren, context, meshContext)))
+        !(childrenNeedLoading = !AreVisibleChildrenLoaded(unloadedVisibleChildren, context, scene)))
         {
         for (auto const& child : m_children)
-            childrenScheduled |= child->Draw(context, meshContext);
+            childrenScheduled |= child->Draw(context, scene);
 
         return childrenScheduled;
         }
 
     DrawMeshes(context);
 
-    if (meshContext.GetLoadSynchronous() &&         // If we just are exporting fixed resolution clear here to mimimize memory usage.
-        meshContext.UseFixedResolution() &&
+    if (scene.GetLoadSynchronous() &&         // If we just are exporting fixed resolution clear here to mimimize memory usage.
+        scene.UseFixedResolution() &&
         !m_primary)
         Clear();
 
@@ -571,80 +573,3 @@ void Node::FlushStale(uint64_t staleTime)
         }
     }
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-/*-----------------------------------------------------------------------------------**//**
-* @bsimethod                                                Nicholas.Woodfield     01/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Node::GetTiles(TileCallback& callback, double resolution)
-    {
-    bool isUnderMaximumSize = resolution < m_info.m_dMax;
-    bool hasNoDisplayableChildren = true;
-
-    //Some levels of detail have multiple files and thus we get a node with multiple children that all correspond to the same tile...need to handle getting that geometry and returning it all in a single list
-    //rather than separate tiles
-    if (!m_primary && m_children.size() > 1)
-        {
-        hasNoDisplayableChildren = true;
-        }
-    else
-        {
-        for (auto const& child : m_children)
-            {
-            if (resolution >= child->m_info.m_dMax && !child->m_info.m_children.empty())
-                {
-                //Load children up front, if we have one that has meshes keep loading
-                child->Load();
-                if (child->GetMeshCount() > 0)
-                    hasNoDisplayableChildren = false;
-                }
-            }
-        }
-
-    if (m_meshes.size() > 0 && !m_info.m_children.empty() && (isUnderMaximumSize || hasNoDisplayableChildren))
-        {
-        uint32_t tileX, tileY;
-        if (Util::ParseTileId(m_info.m_children[0], tileX, tileY) == SUCCESS)
-            {
-            bvector<bpair<PolyfaceHeaderPtr, int>> geom;
-            geom.reserve(m_meshes.size());
-
-
-            for (auto const& mesh : m_meshes)
-                {
-                PolyfaceHeaderPtr polyface = mesh->GetPolyface();
-                PolyfaceHeaderPtr copy = PolyfaceHeader::CreateVariableSizeIndexed();
-                copy->CopyFrom(*polyface);
-
-                int texId = mesh->GetTextureId();
-                geom.push_back(bpair<PolyfaceHeaderPtr, int>(copy, texId));
-                }
-
-            bvector<bpair<Byte*, Point2d>> textures;
-            for (auto const& tex : m_textures)
-                {
-                ByteCP texData = tex->GetData();
-                Point2d size = tex->GetSize();
-
-                Byte* copy = new Byte[size.x * size.y * 4];
-                memcpy(copy, texData, size.x * size.y * 4);
-
-                textures.push_back(bpair<Byte*, Point2d>(copy, size));
-                }
-
-            callback._OnTile(tileX, tileY, geom, textures);
-
-            geom.clear();
-            textures.clear();
-            }
-        }
-    else
-        {
-        for (auto const& child : m_children)
-            child->GetTiles(callback, resolution);
-        }
-
-    //Clear all non-primary nodes as we go so we don't load too much and potentially run out of memory
-    if (!m_primary)
-        Clear();
-    }
-#endif

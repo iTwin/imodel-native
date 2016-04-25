@@ -20,9 +20,6 @@
 #include <PointCloudSchema/PointCloudSchemaCommon.h>
 #include <PointCloudSchema/PointCloudDomain.h>
 
-//-----------------------------------------------------------------------------------------
-// ECSchema macros
-//-----------------------------------------------------------------------------------------
-#define POINTCLOUD_SCHEMA_NAME                              "PointCloud"
-#define POINTCLOUD_SCHEMA_PATH                              L"ECSchemas/Domain/PointCloud.01.00.ecschema.xml"
-#define POINTCLOUD_SCHEMA(className)                        POINTCLOUD_SCHEMA_NAME "." className
+#define POINTCLOUD_SCHEMA_NAME "PointCloud"
+#define POINTCLOUD_SCHEMA_FILE L"PointCloud.01.00.ecschema.xml"
+#define POINTCLOUD_SCHEMA(className) POINTCLOUD_SCHEMA_NAME "." className

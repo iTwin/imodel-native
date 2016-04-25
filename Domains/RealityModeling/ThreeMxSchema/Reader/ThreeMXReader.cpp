@@ -126,9 +126,12 @@ static bool readBytes(MxStreamBuffer& in, void* buf, uint32_t size)
     ByteCP start = in.GetCurrent();
     ByteCP end   = in.Advance(size);
     if (nullptr == end)
+        {
+        BeAssert(false);
         return false;
+        }
 
-    memcpy (buf, start, size);
+    memcpy(buf, start, size);
     return true;
     }
 
@@ -143,7 +146,7 @@ static CTMuint ctmReadFunc(void* buf, CTMuint count, void* userData)
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus Node::Read3MXB(MxStreamBuffer& in, LoadContextCR loadContext)
+BentleyStatus Node::Read3MXB(MxStreamBuffer& in, SceneR scene)
     {
     bmap<Utf8String, int>  textureIds;
     bmap<Utf8String, int>  nodeIds;
@@ -275,7 +278,7 @@ BentleyStatus Node::Read3MXB(MxStreamBuffer& in, LoadContextCR loadContext)
                 trimesh.m_numPoints = ctmGetInteger(context, CTM_VERTEX_COUNT);
                 trimesh.m_points = (FPoint3d const*)ctmGetFloatArray(context, CTM_VERTICES);
                 trimesh.m_normals = (ctmGetInteger(context, CTM_HAS_NORMALS) == CTM_TRUE) ? (FPoint3d const*)ctmGetFloatArray(context, CTM_NORMALS) : nullptr;
-                trimesh.m_numIndices = 3 *  ctmGetInteger(context, CTM_TRIANGLE_COUNT);
+                trimesh.m_numIndices = 3 * ctmGetInteger(context, CTM_TRIANGLE_COUNT);
                 trimesh.m_vertIndex = (int32_t const*)ctmGetIntegerArray(context, CTM_INDICES);
 
                 unsigned int nbTexCoordsArrays = ctmGetInteger(context, CTM_UV_MAP_COUNT);
@@ -295,7 +298,7 @@ BentleyStatus Node::Read3MXB(MxStreamBuffer& in, LoadContextCR loadContext)
                         textureIndex = textureIds[texName];
                         }
                     }
-                AddGeometry(nodeId, trimesh, textureIndex, loadContext);
+                AddGeometry(nodeId, trimesh, textureIndex, scene);
                 ctmFreeContext(context);
                 }//end CTM
             else 
@@ -313,7 +316,7 @@ BentleyStatus Node::Read3MXB(MxStreamBuffer& in, LoadContextCR loadContext)
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus Node::Read3MXB(BeFileNameCR filename, LoadContextCR loadContext)
+BentleyStatus Node::Read3MXB(BeFileNameCR filename, SceneR scene)
     {
     SetDirectory(BeFileName(BeFileName::DevAndDir, filename.c_str()));
     BeFile file;
@@ -327,7 +330,7 @@ BentleyStatus Node::Read3MXB(BeFileNameCR filename, LoadContextCR loadContext)
     file.ReadEntireFile(buf);
     file.Close();
 
-    return Read3MXB(buf, loadContext);
+    return Read3MXB(buf, scene);
     }
 
 /*-----------------------------------------------------------------------------------**//**

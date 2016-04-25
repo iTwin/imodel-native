@@ -14,9 +14,9 @@
 #define END_BENTLEY_THREEMX_NAMESPACE        } END_BENTLEY_NAMESPACE
 #define USING_NAMESPACE_BENTLEY_THREEMX      using namespace BentleyApi::ThreeMx;
 
-#define BENTLEY_THREEMX_SCHEMA_NAME "ThreeMx"
-#define BENTLEY_THREEMX_SCHEMA_PATH L"ECSchemas/Domain/ThreeMx.01.00.ecschema.xml"
-#define THREEMX_SCHEMA(className)   BENTLEY_THREEMX_SCHEMA_NAME "." className
+#define THREEMX_SCHEMA_NAME "ThreeMx"
+#define THREEMX_SCHEMA_FILE L"ThreeMx.01.00.ecschema.xml"
+#define THREEMX_SCHEMA(className)   THREEMX_SCHEMA_NAME "." className
 
 #ifdef __THREEMX_BUILD__
 #define THREEMX_EXPORT EXPORT_ATTRIBUTE
@@ -28,9 +28,7 @@ BEGIN_BENTLEY_THREEMX_NAMESPACE
 
 DEFINE_POINTER_SUFFIX_TYPEDEFS(CacheManager)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Geometry)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(LoadContext)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Node)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(Scene)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Scene)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(ThreeMxModel)
 
@@ -49,6 +47,8 @@ struct MxStreamBuffer : ByteStream
     Dgn::ByteCP GetCurrent() const {return (m_currPos > GetSize()) ? nullptr : GetData() + m_currPos;}
     Dgn::ByteCP Advance(uint32_t size) {m_currPos += size; return GetCurrent();} // returns nullptr if advanced past end.
     void SetPos(uint32_t pos) {m_currPos=pos;}
+    MxStreamBuffer() {}
+    MxStreamBuffer(ByteStream const& other) : ByteStream(other) {}
     };
 
 /*=================================================================================**//**
@@ -76,7 +76,7 @@ struct SceneInfo
     Utf8String m_sceneName;
     Utf8String m_SRS;
     bvector<double> m_SRSOrigin;
-Utf8String m_navigationMode;
+    Utf8String m_navigationMode;
     bvector<Utf8String> m_meshChildren;
 
     BentleyStatus Read3MX(MxStreamBuffer&);
@@ -96,7 +96,7 @@ private:
     Dgn::Render::GraphicPtr m_graphic;
 
 public:
-    Geometry(Dgn::Render::Graphic::TriMeshArgs const&, LoadContextCR);
+    Geometry(Dgn::Render::Graphic::TriMeshArgs const&, SceneR);
     PolyfaceHeaderPtr GetPolyface() const;
     void Draw(Dgn::RenderContextR);
     DRange3d GetRange() const;
@@ -105,6 +105,7 @@ public:
     bool IsCached() const {return m_graphic.IsValid();}
 };
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*=================================================================================**//**
 * @bsiclass                                                     Ray.Bentley     03/2015
 +===============+===============+===============+===============+===============+======*/
@@ -125,11 +126,11 @@ struct LoadContext
     bool UseFixedResolution()const {return m_useFixedResolution;}
     double GetFixedResolution() const {return m_fixedResolution;}
 };
-
+#endif
 /*=================================================================================**//**
 * @bsiclass                                                     Ray.Bentley     03/2015
 +===============+===============+===============+===============+===============+======*/
-struct Node :  RefCountedBase, NonCopyableClass
+struct Node : RefCountedBase, NonCopyableClass
 {
     typedef bvector<NodePtr>  MeshNodes;
     NodeInfo m_info;
@@ -147,26 +148,26 @@ public:
     ~Node();
 
     void SetDirectory(BeFileNameCR dir) {m_dir = dir;}
-    void AddGeometry(int32_t nodeId, Dgn::Render::Graphic::TriMeshArgs& args, int32_t textureIndex, LoadContextCR);
+    void AddGeometry(int32_t nodeId, Dgn::Render::Graphic::TriMeshArgs& args, int32_t textureIndex, SceneR);
     void PushNode(const NodeInfo& nodeInfo) ;
 
-    BentleyStatus Read3MXB(MxStreamBuffer&, LoadContextCR);
-    BentleyStatus Read3MXB(BeFileNameCR filename, LoadContextCR);
+    BentleyStatus Read3MXB(MxStreamBuffer&, SceneR);
+    BentleyStatus Read3MXB(BeFileNameCR filename, SceneR);
 
     BeFileName GetFileName() const;
-    BentleyStatus Load(LoadContextCR);
-    BentleyStatus LoadUntilDisplayable(LoadContextCR);
-    void RequestLoadUntilDisplayable(LoadContextCR);
+    BentleyStatus Load(SceneR);
+    BentleyStatus LoadUntilDisplayable(SceneR);
+    void RequestLoadUntilDisplayable(SceneR);
     bool LoadedUntilDisplayable() const;
     void Dump(Utf8StringCR prefix);
-    bool Draw(Dgn::RenderContextR, LoadContextCR );
+    bool Draw(Dgn::RenderContextR, SceneR);
     void DrawMeshes(Dgn::RenderContextR);
     void DrawBoundingSphere(Dgn::RenderContextR) const;
     DRange3d GetRange() const;
     DRange3d GetSphereRange() const;
     bool IsLoaded() const {return !m_dir.empty();}
     bool AreChildrenLoaded() const;
-    bool AreVisibleChildrenLoaded(MeshNodes& visibleChildren, Dgn::ViewContextR viewContext, LoadContextCR meshContext) const;
+    bool AreVisibleChildrenLoaded(MeshNodes& visibleChildren, Dgn::ViewContextR viewContext, SceneR) const;
     bool IsDisplayable() const {return m_info.m_dMax > 0.0;}
     ByteStream* GetTextureData(int textureIndex) {return textureIndex >= 0 && textureIndex < (int) m_jpegTextures.size() ? &m_jpegTextures[textureIndex] : nullptr;}
     size_t GetTextureMemorySize() const;
@@ -175,7 +176,7 @@ public:
     size_t GetNodeCount() const;
     size_t GetMeshCount() const;
     size_t GetMaxDepth() const;
-    bool TestVisibility(bool& isUnderMaximumSize, Dgn::ViewContextR viewContext, LoadContextCR meshContext);
+    bool TestVisibility(bool& isUnderMaximumSize, Dgn::ViewContextR viewContext, SceneR);
     void RemoveChild(NodeP child);
     void Clone(Node const& other);
     void ClearGraphics();
@@ -194,7 +195,20 @@ public:
 +===============+===============+===============+===============+===============+======*/
 struct Scene : RefCountedBase, NonCopyableClass
 {
+    friend struct Node;
+    friend struct Geometry;
 private:
+    struct   NodeRequest
+    {
+        bset<Dgn::DgnViewportP> m_viewports;
+        NodeRequest() {}
+        NodeRequest(Dgn::DgnViewportP viewport) {m_viewports.insert(viewport);}
+    };
+    typedef bmap<NodeP, NodeRequest> RequestMap;
+
+    bool m_loadSynchronous = false;
+    bool m_useFixedResolution = false;
+    double m_fixedResolution = 0.0;
     Dgn::DgnDbR m_db;
     Utf8String m_sceneName;
     Utf8String m_srs;
@@ -202,12 +216,20 @@ private:
     DPoint3d m_srsOrigin;
     Transform m_placement;
     bvector<NodePtr> m_children;
+    Dgn::RealityDataCachePtr m_cache;
+    Dgn::Render::SystemP m_target = nullptr;
+    RequestMap m_requests;
+
     BentleyStatus GetProjectionTransform();
+    void QueueChildLoad(Node::MeshNodes const& children, Dgn::DgnViewportP viewport);
+    BentleyStatus SynchronousRead(NodeR node, BeFileNameCR fileName);
+    void RemoveRequest(NodeR node);
+    Dgn::RealityDataCacheResult RequestData(Node* node, BeFileNameCR path, bool synchronous);
 
 public:
     Scene(Dgn::DgnDbR, SceneInfo const& sceneInfo, BeFileNameCR fileName);
-    BentleyStatus Load(SceneInfo const& sceneInfo, LoadContextCR);
-    bool Draw(Dgn::RenderContextR, LoadContextCR);
+    BentleyStatus Load(SceneInfo const& sceneInfo);
+    bool Draw(Dgn::RenderContextR);
     DRange3d GetRange() const;
     DRange3d GetSphereRange() const;
     void DrawBoundingSpheres(Dgn::RenderContextR);
@@ -218,9 +240,17 @@ public:
     size_t GetNodeCount() const;
     size_t GetMaxDepth() const;
     void FlushStale(uint64_t staleTime);
+    bool GetLoadSynchronous() const {return m_loadSynchronous;}
+    bool UseFixedResolution()const {return m_useFixedResolution;}
+    double GetFixedResolution() const {return m_fixedResolution;}
     TransformCR GetPlacement() const {return m_placement;}
+    Utf8StringCR GetSceneName() {return m_sceneName;}
+
+    enum class RequestStatus {Finished, None, Processed};
+    RequestStatus ProcessRequests();
 };
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*=================================================================================**//**
 * @bsiclass                                                     Ray.Bentley     03/2015
 +===============+===============+===============+===============+===============+======*/
@@ -241,6 +271,7 @@ struct  CacheManager
     enum class RequestStatus {Finished, None, Processed};
     RequestStatus ProcessRequests();
 };
+#endif
 
 /*=================================================================================**//**
 * @bsiclass                                                     Ray.Bentley     03/2015
@@ -267,16 +298,6 @@ public:
     THREEMX_EXPORT ThreeMxDomain();
 };
 
-#if defined (NEEDS_WORK_RENDER_SYSTEM)
-//=======================================================================================
-// @bsiclass                                                    Ray.Bentley     09/2015
-//=======================================================================================
-struct TileCallback
-{
-    virtual void _OnTile(uint32_t x, uint32_t y, bvector<bpair<PolyfaceHeaderPtr, int>>& meshes, bvector<bpair<Byte*, Point2d>>& textures) = 0;
-};
-#endif
-
 //=======================================================================================
 // @bsiclass                                                    Ray.Bentley     09/2015
 //=======================================================================================
@@ -290,7 +311,7 @@ private:
     ScenePtr m_scene;
 
     DRange3d GetSceneRange();
-    static ScenePtr ReadScene(BeFileNameCR fileName, Dgn::DgnDbR db, LoadContextCR);
+    static ScenePtr ReadScene(BeFileNameCR fileName, Dgn::DgnDbR db);
 
 public:
     ThreeMxModel(CreateParams const& params) : T_Super(params) {}

@@ -20,8 +20,8 @@
 //-----------------------------------------------------------------------------------------
 // ECSchema macros
 //-----------------------------------------------------------------------------------------
-#define RASTER_SCHEMA_NAME                                  "Raster"
-#define RASTER_SCHEMA_PATH                                  L"ECSchemas/Domain/Raster.01.00.ecschema.xml"
-#define RASTER_SCHEMA(className)                            RASTER_SCHEMA_NAME "." className
+#define RASTER_SCHEMA_NAME  "Raster"
+#define RASTER_SCHEMA_FILE  L"Raster.01.00.ecschema.xml"
+#define RASTER_SCHEMA(className)   RASTER_SCHEMA_NAME "." className
 
 
