@@ -271,9 +271,8 @@
         </Target>
     </ECRelationshipClass>
 
-
     <ECRelationshipClass typeName="CachedFileInfoToFileInfo" strength="holding">
-        <Source cardinality="(1,1)" polymorphic="false">
+        <Source cardinality="(0,1)" polymorphic="false">
             <Class class="CachedFileInfo"/>
         </Source>
         <Target cardinality="(0,1)" polymorphic="false">
@@ -282,7 +281,7 @@
     </ECRelationshipClass>
 
     <ECRelationshipClass typeName="CachedFileInfoToFileInfoOwnership" strength="holding">
-        <Source cardinality="(1,1)" polymorphic="false">
+        <Source cardinality="(0,1)" polymorphic="false">
             <Class class="CachedFileInfo"/>
         </Source>
         <Target cardinality="(0,1)" polymorphic="false">
