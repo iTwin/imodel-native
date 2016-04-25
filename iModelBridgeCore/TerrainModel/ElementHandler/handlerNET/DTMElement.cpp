@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/handlerNET/DTMElement.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "StdAfx.h"
@@ -1555,6 +1555,6 @@ END_BENTLEY_TERRAINMODELNET_ELEMENT_NAMESPACE
 EXPORT_ATTRIBUTE void registerManagedElementHandler()
     {
     DGNET::Elements::ManagedElementFactoryExtension::RegisterExtension (DTMElementHandler::GetInstance(), *new DGNET::Elements::ManagedElementFactory (gcnew DGNET::Elements::ElementFactoryDelegate (&Bentley::TerrainModelNET::Element::DTMElement::GetDTMElement)));
-    DGNET::Elements::ManagedElementFactoryExtension::RegisterExtension (TMOverrideSymbologyManager::GetInstance(), *new DGNET::Elements::ManagedElementFactory (gcnew DGNET::Elements::ElementFactoryDelegate (&Bentley::TerrainModelNET::Element::DTMElement::GetDTMElement)));
+    DGNET::Elements::ManagedElementFactoryExtension::RegisterExtension (TMSymbologyOverrideHandler::GetInstance(), *new DGNET::Elements::ManagedElementFactory (gcnew DGNET::Elements::ElementFactoryDelegate (&Bentley::TerrainModelNET::Element::DTMElement::GetDTMElement)));
     }
 

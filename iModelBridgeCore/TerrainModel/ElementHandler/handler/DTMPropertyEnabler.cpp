@@ -4485,7 +4485,7 @@ void    registerECExtension ()
     extension = DTMELEMENTECExtension::Create();
     ElementECExtension::RegisterExtension (DTMElementHandler::GetInstance (), *extension);
     extension = DTMELEMENTECExtension::Create ();
-    ElementECExtension::RegisterExtension (TMOverrideSymbologyManager::GetInstance (), *extension);
+    ElementECExtension::RegisterExtension (TMSymbologyOverrideHandler::GetInstance (), *extension);
 
 
     DgnECExtendedType::GetByName (L"TMElementTemplate").SetTypeAdapter (*TMElementTemplateTypeAdapter::Create ());

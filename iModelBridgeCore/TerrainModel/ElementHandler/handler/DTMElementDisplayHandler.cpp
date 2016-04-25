@@ -178,30 +178,7 @@ struct DTMElementHandlerTransformManipulatorExtension : public ITransformManipul
 virtual ITransformManipulatorPtr _GetITransformManipulator(ElementHandleCR elHandle, AgendaOperation opType, AgendaModify modify, DisplayPathCP path) override;
 };
 
-// ToDo
-struct DTMElementHandlerMaterialPropertiesExtension : public CommonMaterialPropertiesExtension
-    {
-    virtual bool _SupportsSubEntityAttachments (ElementHandleCR eh) const override { return false;}
-
-    virtual bool _HasSubEntityAttachments (ElementHandleCR eh) const  override { return false;}
-
-    virtual BentleyStatus _GetSubEntityAttachments (ElementHandleCR eh, MaterialSubEntityAttachments& attachments) const  override 
-        {
-        return ERROR;
-        }
-
-    virtual BentleyStatus _AttachSubEntityMaterial (EditElementHandleR eeh, bvector<WString>& subEntities, MaterialIdCR materialId) override 
-        {
-        return ERROR;
-        }
-
-    virtual BentleyStatus _DetachSubEntityMaterial (EditElementHandleR eeh, bvector<WString>& subEntities) override 
-        {
-        return ERROR;
-        }
-};
-
-/*=================================================================================**//**
+/*=================================================================================-----*
 * @bsiclass                 MrDTMTransformManipulator                                               
 +===============+===============+===============+===============+===============+======*/
  struct MrDTMTransformManipulator : RefCounted <ITransformManipulator>
@@ -210,7 +187,7 @@ struct DTMElementHandlerMaterialPropertiesExtension : public CommonMaterialPrope
      AgendaOperation         m_opType;
      AgendaModify            m_modify;
 
-    /*---------------------------------------------------------------------------------**//**
+    /*--------------------------------------------------------------------------------------*
     // @bsimethod                                                   Chantal.Poulin 06/11
     +---------------+---------------+---------------+---------------+---------------+------*/
     MrDTMTransformManipulator::MrDTMTransformManipulator
@@ -225,7 +202,7 @@ struct DTMElementHandlerMaterialPropertiesExtension : public CommonMaterialPrope
         m_modify    = modify;
         }
 
-    /*---------------------------------------------------------------------------------**//**
+    /*--------------------------------------------------------------------------------------*
     // @bsimethod                                                   Chantal.Poulin 06/11
     +---------------+---------------+---------------+---------------+---------------+------*/
     MrDTMTransformManipulator::~MrDTMTransformManipulator ()
@@ -233,7 +210,7 @@ struct DTMElementHandlerMaterialPropertiesExtension : public CommonMaterialPrope
         m_Handler = NULL;
         }
 
-    /*---------------------------------------------------------------------------------**//**
+    /*--------------------------------------------------------------------------------------*
     // @bsimethod                                                   Chantal.Poulin 06/11
     +---------------+---------------+---------------+---------------+---------------+------*/
     bool MrDTMTransformManipulator::_AcceptElement
@@ -252,7 +229,7 @@ struct DTMElementHandlerMaterialPropertiesExtension : public CommonMaterialPrope
         return false;
         }
 
-    /*---------------------------------------------------------------------------------**//**
+    /*--------------------------------------------------------------------------------------*
     // @bsimethod                                                   Chantal.Poulin 06/11
     +---------------+---------------+---------------+---------------+---------------+------*/
     bool MrDTMTransformManipulator::_IsTransformGraphics (ElementHandleCR eh, TransformInfoCR trans) const override
@@ -260,7 +237,7 @@ struct DTMElementHandlerMaterialPropertiesExtension : public CommonMaterialPrope
         return m_Handler->IsTransformGraphics(eh, trans);
         }
 
-    /*---------------------------------------------------------------------------------**//**
+    /*--------------------------------------------------------------------------------------*
     // @bsimethod                                                   Chantal.Poulin 04/11
     +---------------+---------------+---------------+---------------+---------------+------*/
     StatusInt MrDTMTransformManipulator::_OnTransform (EditElementHandleR eeh, TransformInfoCR tInfo, ViewContextP context) override
@@ -270,7 +247,7 @@ struct DTMElementHandlerMaterialPropertiesExtension : public CommonMaterialPrope
         return status;
         }
 
-    /*---------------------------------------------------------------------------------**//**
+    /*--------------------------------------------------------------------------------------*
     // @bsimethod                                                   Chantal.Poulin 04/11
     +---------------+---------------+---------------+---------------+---------------+------*/
     static MrDTMTransformManipulator* Create (DisplayHandler* handler, AgendaOperation opType, AgendaModify modify)
@@ -279,7 +256,7 @@ struct DTMElementHandlerMaterialPropertiesExtension : public CommonMaterialPrope
         }
     };
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------*
 // @bsimethod                                                   Chantal.Poulin 04/11
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct MrDTMElementTransformManipulatorExtension : public ITransformManipulatorExtension
@@ -321,12 +298,12 @@ virtual ITransformManipulatorPtr _GetITransformManipulator (ElementHandleCR eh, 
     }
 };
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------*
 * @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct MrDTMElementIModelPublishExtension : public IIModelPublishExtension
 {
-    /*---------------------------------------------------------------------------------**//**
+    /*--------------------------------------------------------------------------------------*
     * @bsimethod                                                   Chantal.Poulin 09/11
     +---------------+---------------+---------------+---------------+---------------+------*/
     virtual StatusInt _HandleIModelPublish (EditElementHandleR outputEh, EditElementHandleCR inputEh, DgnModelCP destinationModel, bool forceRePublish) override
@@ -535,13 +512,13 @@ ReprojectStatus DTMElementDisplayHandler::_OnGeoCoordinateReprojection (EditElem
         {
         DPoint3d origin;
 
-        DTMElementDisplayHandler::GetInstance().GetTransformOrigin (element, origin);
+        ELEMENTHANDLER_INSTANCE (DTMElementDisplayHandler).GetTransformOrigin (element, origin);
 
         TransformInfo   transform;
         transform.SetOptions (TRANSFORM_OPTIONS_ApplyAnnotationScale);
         if (geo.GetLocalTransform (&transform.GetTransformR(), origin, NULL, true, true) == SUCCESS)
             {
-            if (DTMElementDisplayHandler::GetInstance().ApplyTransform (element, transform) == SUCCESS)
+            if (ELEMENTHANDLER_INSTANCE (DTMElementDisplayHandler).ApplyTransform (element, transform) == SUCCESS)
                 return REPROJECT_Success;
             }
 
@@ -583,7 +560,7 @@ struct DTMElementHandlerTransformManipulator : RefCounted<ITransformManipulator>
      AgendaOperation         m_opType;
      AgendaModify            m_modify;
 
-    /*---------------------------------------------------------------------------------**//**
+    /*--------------------------------------------------------------------------------------*
     // @bsimethod                                                   Daryl.Holmwood 08/11
     +---------------+---------------+---------------+---------------+---------------+------*/
     DTMElementHandlerTransformManipulator
@@ -598,7 +575,7 @@ struct DTMElementHandlerTransformManipulator : RefCounted<ITransformManipulator>
         m_modify = modify;
         }
 
-    /*---------------------------------------------------------------------------------**//**
+    /*--------------------------------------------------------------------------------------*
     // @bsimethod                                                   Daryl.Holmwood 08/11
     +---------------+---------------+---------------+---------------+---------------+------*/
     ~DTMElementHandlerTransformManipulator ()
@@ -606,7 +583,7 @@ struct DTMElementHandlerTransformManipulator : RefCounted<ITransformManipulator>
         m_handler = NULL;
         }
 
-    /*---------------------------------------------------------------------------------**//**
+    /*--------------------------------------------------------------------------------------*
     // @bsimethod                                                   Daryl.Holmwood 08/11
     +---------------+---------------+---------------+---------------+---------------+------*/
     virtual bool _IsTransformGraphics (ElementHandleCR elHandle, TransformInfoCR tInfo) const
@@ -614,7 +591,7 @@ struct DTMElementHandlerTransformManipulator : RefCounted<ITransformManipulator>
         return m_handler->IsTransformGraphics (elHandle, tInfo);
         }
 
-    /*---------------------------------------------------------------------------------**//**
+    /*--------------------------------------------------------------------------------------*
     // @bsimethod                                                   Daryl.Holmwood 08/11
     +---------------+---------------+---------------+---------------+---------------+------*/
     virtual StatusInt _OnTransform (EditElementHandleR element, TransformInfoCR tInfo, ViewContextP context) 
@@ -657,7 +634,7 @@ struct DTMElementHandlerTransformManipulator : RefCounted<ITransformManipulator>
         return ret;
         }
 
-    /*---------------------------------------------------------------------------------**//**
+    /*--------------------------------------------------------------------------------------*
     // @bsimethod                                                   Daryl.Holmwood 08/11
     +---------------+---------------+---------------+---------------+---------------+------*/
     virtual bool _AcceptElement (ElementHandleCR elHandle, WStringP cantAcceptReasonP, ElementAgendaP agenda)
@@ -687,24 +664,6 @@ ITransformManipulatorPtr DTMElementHandlerTransformManipulatorExtension::_GetITr
     return DTMElementHandlerTransformManipulator::Create (elHandle.GetDisplayHandler(), opType, modify);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsiclass
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct DTMElementIModelPublishExtension : public IIModelPublishExtension
-{
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                                   Chantal.Poulin 09/11
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    virtual StatusInt _HandleIModelPublish (EditElementHandleR outputEh, EditElementHandleCR inputEh, DgnModelCP destinationModel, bool forceRePublish) override
-        {
-        DgnModelP nonConstDestinationModel = const_cast<DgnModelP>(destinationModel);
-        ElementCopyContext cc (nonConstDestinationModel);
-
-        outputEh.SetElementRef (inputEh.GetElementRef(), inputEh.GetModelRef());
-        cc.DoCopy (outputEh);
-        return ERROR;
-        }
-};
 //=======================================================================================
 // @bsimethod                                                   Daryl.Holmwood
 //=======================================================================================
@@ -1571,7 +1530,7 @@ void DTMElementDisplayHandler::_GetPathDescription (ElementHandleCR element, WSt
                     HitPathLazyDTMDrawingInfoProvider ldip (element, DTMDataRef.get(), *hitPath);
                     WString subString;
 
-                    DTMElementDisplayHandler::GetInstance().GetDescription (element, string, 100);  // start with element's description
+                    ELEMENTHANDLER_INSTANCE (DTMElementDisplayHandler).GetDescription (element, string, 100);  // start with element's description
                     hand->_GetPathDescription (symbologyEl, iter, ldip, subString, *hitPath, levelStr, modelStr, groupStr, delimiterStr);
                     string.append(delimiterStr).append (subString);
                     if (levelStr && '\0' != levelStr[0]) string.append(delimiterStr).append(levelStr);
@@ -1582,7 +1541,7 @@ void DTMElementDisplayHandler::_GetPathDescription (ElementHandleCR element, WSt
                 }
             }
         }
-    DTMElementDisplayHandler::GetInstance().GetDescription (element, string, 100);  // start with element's description
+    ELEMENTHANDLER_INSTANCE (DTMElementDisplayHandler).GetDescription (element, string, 100);  // start with element's description
     if (levelStr && '\0' != levelStr[0]) string.append(delimiterStr).append(levelStr);
     if (modelStr && '\0' != modelStr[0]) string.append(delimiterStr).append(modelStr);
     if (groupStr && '\0' != groupStr[0]) string.append(delimiterStr).append(groupStr);
@@ -1786,7 +1745,7 @@ void DTMElementDisplayHandler::_OnConvertTo2d (EditElementHandleR eeh, Transform
 
     // This is to force the lines in drop to be 3d and not 2d.
 //    eeh.SetModelRef (nullptr);
-    if (SUCCESS != DTMElementDisplayHandler::GetInstance().Drop (eeh, out, info) || out.size() == 0)
+    if (SUCCESS != ELEMENTHANDLER_INSTANCE (DTMElementDisplayHandler).Drop (eeh, out, info) || out.size() == 0)
         return;
 
     //// Need to delete all DTM Data.
@@ -2306,7 +2265,7 @@ void DTMElement107Handler::_OnDeleted(ElementHandleP element)
 // ToDo        }
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------*
 * @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
 class TMDeleteManipulator : public Bentley::RefCounted <IDeleteManipulator>
@@ -2332,7 +2291,7 @@ public: static _classname_*& _Instance (void) {static _classname_* s_inst = 0; r
         static void ReleaseInstance (void) \
             { delete _Instance(); _Instance() = 0;}
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------*
 * @bsiclass                                     Piotr.Slowinski                 09/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct TMHandlerDeleteManipulatorExtension : IDeleteManipulatorExtension
@@ -2344,6 +2303,7 @@ struct TMHandlerDeleteManipulatorExtension : IDeleteManipulatorExtension
     //=======================================================================================
     virtual IDeleteManipulatorPtr _GetIDeleteManipulator (ElementHandleCR elHandle, AgendaOperation opType, AgendaModify modify, DisplayPathCP path) override
         {
+        DgnAttachment
         return TMDeleteManipulator::Create ();
         }
     }; // End TMHandlerDeleteManipulatorExtension struct
@@ -2369,16 +2329,16 @@ ELEMENTHANDLER_DEFINE_MEMBERS (MrDTMElementDisplayHandler);
 void Initializations ()
     {
     ElementHandlerManager::RegisterHandler (s_DTMElementDisplayHandlerSingleton.GetElemHandlerId(), ELEMENTHANDLER_INSTANCE (DTMElementDisplayHandler));
-    ElementHandlerManager::RegisterHandler (s_DTMElement107HandlerSingleton.GetElemHandlerId(), ELEMENTHANDLER_INSTANCE (DTMElement107Handler));
-    ITransformManipulatorExtension::RegisterExtension (DTMElementDisplayHandler::GetInstance(), *new DTMElementHandlerTransformManipulatorExtension());
-    IMaterialPropertiesExtension::RegisterExtension (DTMElementDisplayHandler::GetInstance(), *new DTMElementHandlerMaterialPropertiesExtension());
-    IDeleteManipulatorExtension::RegisterExtension (DTMElementDisplayHandler::GetInstance (), TMHandlerDeleteManipulatorExtension::GetInstance ());
-    IDeleteManipulatorExtension::DropExtension (DTMElement107Handler::GetInstance ());
-    IIModelPublishExtension::RegisterExtension (DTMElementDisplayHandler::GetInstance (), *new DTMElementIModelPublishExtension ());
+    ITransformManipulatorExtension::RegisterExtension (ELEMENTHANDLER_INSTANCE (DTMElementDisplayHandler), *new DTMElementHandlerTransformManipulatorExtension());
+    IDeleteManipulatorExtension::RegisterExtension(ELEMENTHANDLER_INSTANCE(DTMElementDisplayHandler), TMHandlerDeleteManipulatorExtension::GetInstance());
+
+    ElementHandlerManager::RegisterHandler(s_DTMElement107HandlerSingleton.GetElemHandlerId(), ELEMENTHANDLER_INSTANCE(DTMElement107Handler));
+    IDeleteManipulatorExtension::DropExtension(ELEMENTHANDLER_INSTANCE(DTMElement107Handler));
 
     ElementHandlerManager::RegisterHandler (s_MrDTMElementDisplayHandlerSingleton.GetElemHandlerId(), ELEMENTHANDLER_INSTANCE (MrDTMElementDisplayHandler));
-    ITransformManipulatorExtension::RegisterExtension (MrDTMElementDisplayHandler::GetInstance(), *new MrDTMElementTransformManipulatorExtension());
-    IIModelPublishExtension::RegisterExtension (MrDTMElementDisplayHandler::GetInstance(), *new MrDTMElementIModelPublishExtension());
+    ITransformManipulatorExtension::RegisterExtension(ELEMENTHANDLER_INSTANCE(MrDTMElementDisplayHandler), *new MrDTMElementTransformManipulatorExtension());
+    IIModelPublishExtension::RegisterExtension(ELEMENTHANDLER_INSTANCE(MrDTMElementDisplayHandler), *new MrDTMElementIModelPublishExtension());
+
     }
 
 END_BENTLEY_TERRAINMODEL_ELEMENT_NAMESPACE
