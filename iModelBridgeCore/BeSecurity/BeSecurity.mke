@@ -1,0 +1,83 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: BeSecurity.mke $
+#
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+%include mdl.mki
+
+CompileOptionsMki = $(SrcRoot)BeSecurity/BeSecurityCompileOptions.mki
+%include $(CompileOptionsMki)
+#--------------------------------------------------------------------------------------
+#   Building the BeSecurity library
+#--------------------------------------------------------------------------------------
+baseDir                     = $(_MakeFilePath)
+BeSecuritySourceDir         = $(baseDir)
+BeSecurityPublicApiDir      = $(baseDir)PublicAPI/BeSecurity/
+VendorAPIDir                = $(baseDir)VendorAPI/
+BuildContext                = $(OutputRootDir)BuildContexts/BeSecurity/
+BuildContextLibsDirectory   = $(BuildContext)SubParts/Libs/
+
+#---------------------------------------------------------------------------------------+
+# Paths
+#---------------------------------------------------------------------------------------+
+BeSecurityHeaders       = $(BeSecurityPublicApiDir)SecureStore.h    
+
+o = $(OutputRootDir)build/BeSecurity/
+always:
+    !~@mkdir $(o)
+
+#----------------------------------------------------------------------
+# Use multi-compile
+#----------------------------------------------------------------------
+%include MultiCppCompileRule.mki
+
+$(o)SecureStore$(oext)                      : $(BeSecuritySourceDir)SecureStore.cpp $(BeSecurityHeaders) ${MultiCompileDepends}
+
+#---------------------------------------------------------------------------------------+
+#   iOS-specific
+#---------------------------------------------------------------------------------------+
+%if $(TARGET_PLATFORM) == "iOS"
+
+CCPchOpts = 
+CPchOpts =
+
+$(o)SecureStoreIos$(oext)                   : $(BeSecuritySourceDir)SecureStoreIos.mm $(BeSecurityHeaders) ${MultiCompileDepends}
+
+_llvm_no_arc_option = -fno-objc-arc
+LLVMSpecialCompOpts + $(_llvm_no_arc_option)
+
+_llvm_no_arc_option = 
+
+# Recipes for .mm don't put the objs to MultiCompileObjectList so do that manually 
+MultiCompileObjectList + $(o)SecureStoreIos$(oext)      
+                              
+%endif
+
+%include MultiCppCompileGo.mki
+
+#----------------------------------------------------------------------
+#   Create the BeSecurity DLL
+#----------------------------------------------------------------------
+DLM_NAME                    = BeSecurity
+DLM_OBJECT_FILES            = $(MultiCompileObjectList)
+DLM_EXPORT_OBJS             = $(MultiCompileObjectList)
+DLM_OBJECT_DEST             = $(o)
+DLM_DEST                    = $(o)
+DLM_NOMSBUILTINS            = 1
+DLM_EXPORT_DEST             = $(o)
+DLM_NOENTRY                 = 1
+DLM_NO_DLS                  = 1
+DLM_NO_DEF                  = 1
+DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
+DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+
+LINKER_LIBRARIES = $(BuildContextLibsDirectory)$(libprefix)BeJsonCpp$(stlibext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeOpenSSL$(stlibext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)Bentley$(stlibext)
+%if $(TARGET_PLATFORM) == "Windows"
+    LINKER_LIBRARIES + crypt32.lib
+%endif
+%include $(sharedMki)linkLibrary.mki

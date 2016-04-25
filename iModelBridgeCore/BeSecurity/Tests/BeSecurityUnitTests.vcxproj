@@ -1,0 +1,198 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="NonPublished\bentleylogging_test.cpp" />
+    <ClCompile Include="NonPublished\consoleatp.cpp" />
+    <ClCompile Include="NonPublished\fileatp.cpp" />
+    <ClCompile Include="NonPublished\SecureStoreTests.cpp" />
+    <ClCompile Include="Published\Base64UtilitiesTests.cpp" />
+    <ClCompile Include="Published\BeFileIterator_Tests.cpp" />
+    <ClCompile Include="Published\BeFileName_test.cpp" />
+    <ClCompile Include="Published\BeFile_Test.cpp" />
+    <ClCompile Include="Published\BeNumerical_Test.cpp" />
+    <ClCompile Include="Published\BeStringUtilities_tests.cpp" />
+    <ClCompile Include="Published\BeTextFile_Test.cpp" />
+    <ClCompile Include="Published\BeThread_Tests.cpp" />
+    <ClCompile Include="Published\BeTimeUtilities_test.cpp" />
+    <ClCompile Include="Published\bmap_test.cpp" />
+    <ClCompile Include="Published\bset_test.cpp" />
+    <ClCompile Include="Published\bvector_test.cpp" />
+    <ClCompile Include="Published\Cpp_Test.cpp" />
+    <ClCompile Include="Published\DateTimeTestDataset.cpp" />
+    <ClCompile Include="Published\DateTimeTestHelpers.cpp" />
+    <ClCompile Include="Published\DateTime_DstAnalysis.cpp" />
+    <ClCompile Include="Published\DateTime_Tests.cpp" />
+    <ClCompile Include="Published\DirectoryObserverTests.cpp" />
+    <ClCompile Include="Published\FSTest.cpp" />
+    <ClCompile Include="Published\Http\AuthenticationHandlerTests.cpp" />
+    <ClCompile Include="Published\Http\BaseMockHttpHandlerTest.cpp" />
+    <ClCompile Include="Published\Http\HttpBody\HttpFileBodyTests.cpp" />
+    <ClCompile Include="Published\Http\HttpBody\HttpMultipartBodyTests.cpp" />
+    <ClCompile Include="Published\Http\HttpBody\HttpRangeBodyTests.cpp" />
+    <ClCompile Include="Published\Http\HttpBody\HttpStringBodyTests.cpp" />
+    <ClCompile Include="Published\Http\HttpClientTests.cpp" />
+    <ClCompile Include="Published\Http\HttpHeadersTests.cpp" />
+    <ClCompile Include="Published\Http\MockHttpHandler.cpp" />
+    <ClCompile Include="Published\Http\ProxyHttpHandlerTests.cpp" />
+    <ClCompile Include="Published\Http\WebTestsHelper.cpp" />
+    <ClCompile Include="Published\OsEnvUnitTests.cpp" />
+    <ClCompile Include="Published\printf_test.cpp" />
+    <ClCompile Include="Published\printf_test2.cpp" />
+    <ClCompile Include="Published\RefCounted_test.cpp" />
+    <ClCompile Include="Published\scanf_test.cpp" />
+    <ClCompile Include="Published\shared_mutex.cpp" />
+    <ClCompile Include="Published\Tasks\AsyncResultTests.cpp" />
+    <ClCompile Include="Published\Tasks\AsyncTaskTests.cpp" />
+    <ClCompile Include="Published\Tasks\CancellationTokenTests.cpp" />
+    <ClCompile Include="Published\Tasks\LimitingTaskQueueTests.cpp" />
+    <ClCompile Include="Published\Tasks\UniqueTaskHolderTests.cpp" />
+    <ClCompile Include="Published\Tasks\UniqueTasksHolderTests.cpp" />
+    <ClCompile Include="Published\Tasks\WorkerThreadTests.cpp" />
+    <ClCompile Include="Published\TestsHelper.cpp" />
+    <ClCompile Include="Published\Threading\AsyncResultTests.cpp" />
+    <ClCompile Include="Published\Threading\AsyncTaskTests.cpp" />
+    <ClCompile Include="Published\Threading\CancellationTokenTests.cpp" />
+    <ClCompile Include="Published\Threading\LimitingTaskQueueTests.cpp" />
+    <ClCompile Include="Published\Threading\UniqueTaskHolderTests.cpp" />
+    <ClCompile Include="Published\Threading\UniqueTasksHolderTests.cpp" />
+    <ClCompile Include="Published\Threading\WorkerThreadTests.cpp" />
+    <ClCompile Include="Published\Utf8String_test.cpp" />
+    <ClCompile Include="Published\valueformat_test.cpp" />
+    <ClCompile Include="Published\ValuePrinter.cpp" />
+    <ClCompile Include="Published\VersionTests.cpp" />
+    <ClCompile Include="Published\WString_test.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="NonPublished\SecureStoreTests.h" />
+    <ClInclude Include="NonPublished\StubLocalState.h" />
+    <ClInclude Include="Published\Base64UtilitiesTests.h" />
+    <ClInclude Include="Published\bunique_ptr_test.h" />
+    <ClInclude Include="Published\DateTimeTestDataset.h" />
+    <ClInclude Include="Published\DateTimeTestHelpers.h" />
+    <ClInclude Include="Published\DirectoryObserverTests.h" />
+    <ClInclude Include="Published\FSTest.h" />
+    <ClInclude Include="Published\Http\AuthenticationHandlerTests.h" />
+    <ClInclude Include="Published\Http\BaseMockHttpHandlerTest.h" />
+    <ClInclude Include="Published\Http\HttpBody\HttpFileBodyTests.h" />
+    <ClInclude Include="Published\Http\HttpBody\HttpMultipartBodyTests.h" />
+    <ClInclude Include="Published\Http\HttpBody\HttpRangeBodyTests.h" />
+    <ClInclude Include="Published\Http\HttpBody\HttpStringBodyTests.h" />
+    <ClInclude Include="Published\Http\HttpClientTests.h" />
+    <ClInclude Include="Published\Http\HttpHeadersTests.h" />
+    <ClInclude Include="Published\Http\MockAuthenticationHandler.h" />
+    <ClInclude Include="Published\Http\MockHttpHandler.h" />
+    <ClInclude Include="Published\Http\ProxyHttpHandlerTests.h" />
+    <ClInclude Include="Published\Http\WebTestsHelper.h" />
+    <ClInclude Include="Published\shared_mutex.h" />
+    <ClInclude Include="Published\Tasks\AsyncResultTests.h" />
+    <ClInclude Include="Published\Tasks\AsyncTaskTests.h" />
+    <ClInclude Include="Published\Tasks\CancellationTokenTests.h" />
+    <ClInclude Include="Published\Tasks\LimitingTaskQueueTests.h" />
+    <ClInclude Include="Published\Tasks\MockCancellationListener.h" />
+    <ClInclude Include="Published\Tasks\TasksTestsHelper.h" />
+    <ClInclude Include="Published\Tasks\UniqueTaskHolderTests.h" />
+    <ClInclude Include="Published\Tasks\UniqueTasksHolderTests.h" />
+    <ClInclude Include="Published\Tasks\WorkerThreadTests.h" />
+    <ClInclude Include="Published\TestsHelper.h" />
+    <ClInclude Include="Published\Threading\AsyncResultTests.h" />
+    <ClInclude Include="Published\Threading\AsyncTaskTests.h" />
+    <ClInclude Include="Published\Threading\CancellationTokenTests.h" />
+    <ClInclude Include="Published\Threading\LimitingTaskQueueTests.h" />
+    <ClInclude Include="Published\Threading\MockCancellationListener.h" />
+    <ClInclude Include="Published\Threading\ThreadingTestsHelper.h" />
+    <ClInclude Include="Published\Threading\UniqueTaskHolderTests.h" />
+    <ClInclude Include="Published\Threading\UniqueTasksHolderTests.h" />
+    <ClInclude Include="Published\Threading\WorkerThreadTests.h" />
+    <ClInclude Include="Published\ValuePrinter.h" />
+    <ClInclude Include="Published\VersionTests.h" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{2A274498-4DEC-4BAA-828E-05DEB6056F24}</ProjectGuid>
+    <Keyword>MakeFileProj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <NMakeOutput>$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\product\BeGTest\bin\BeGTest.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN32;_DEBUG;BENTLEY_WIN32;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakeIncludeSearchPath>$(OutRoot)\Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\Bentley\PublicAPI\;$(OutRoot)\Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\build\UnitTests\Bentley\PublishedBentleyUnitTests\PublicAPI\;$(OutRoot)\Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\Bentley\VendorAPI\;$(ProjectDir)\NonPublished\;$(OutRoot)\Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\build\UnitTests\Bentley\NonPublishedBentleyUnitTests\PublicAPI\;$(ProjectDir)\Published\;$(OutRoot)\Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\BentleyUnitTests\PublicAPI\;$(VCInstallDir)INCLUDE\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <NMakeBuildCommandLine>bb -v4  re -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE) BentleyUnitTests BeGTestExe</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>bb -v4 re -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE) BentleyUnitTests BeGTestExe -c &amp; bb -v4  re -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE) BentleyUnitTests BeGTestExe</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb -v4 re -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE) BentleyUnitTests BeGTestExe -c</NMakeCleanCommandLine>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <NMakeOutput>$(OutRoot)Winx64\Product\BeSecurity-Gtest\BeSecurityTest.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions>_DEBUG;BENTLEY_WIN32;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakeIncludeSearchPath>$(OutRoot)Winx64\BuildContexts\BeSecurity\PublicAPI\;$(OutRoot)Winx64\BuildContexts\BeSecurity\VendorAPI\;$(OutRoot)Winx64\build\UnitTests\BeSecurity\BackDoorUnitTests\PublicAPI\;$(SrcRoot)BeSecurity\PublicAPI\;$(OutRoot)Winx64\BuildContexts\BeGTest\VendorAPI\</NMakeIncludeSearchPath>
+    <NMakeBuildCommandLine>bb -ax64 -r BeSecurity -p BeSecurity:RunGtest b</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>bb -ax64 -r BeSecurity -p BeSecurity:RunGtest re BeSecurity:UnitTest* BeSecurity:GTest</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb -ax64 -r BeSecurity -p BeSecurity:RunGtest re BeSecurity:UnitTest* BeSecurity:GTest -c</NMakeCleanCommandLine>
+    <IncludePath>$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <NMakeOutput>BentleyUnitTests.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <NMakeOutput>BentleyUnitTests.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
