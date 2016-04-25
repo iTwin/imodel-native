@@ -130,6 +130,15 @@ ECDbPolicy ECDbPolicyManager::DoGetClassPolicy(ClassMap const& classMap, IsValid
                     }
                 }
 
+            if (classMap.GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::ExistingTable)
+                {
+                Utf8String notSupportedMessage;
+                notSupportedMessage.Sprintf("ECClass '%s' is mapped to an existing table not owned by ECDb. Therefore only ECSQL SELECT statements can be used against the class.",
+                                            className.c_str());
+
+                return ECDbPolicy::CreateNotSupported(notSupportedMessage.c_str());
+                }
+
             if (ecsqlType == ECSqlType::Insert)
                 {
                 //Inserting into abstract classes is not possible (by definition of abstractness)

@@ -14,7 +14,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //+---------------+---------------+---------------+---------------+---------------+-
 DbResult BeBriefcaseBasedIdSequence::Initialize() const
     {
-    const DbResult stat = m_db.GetRLVCache().Register(m_briefcaseLocalValueIndex, m_briefcaseLocalValueName.c_str());
+    const DbResult stat = m_db.GetBLVCache().Register(m_briefcaseLocalValueIndex, m_briefcaseLocalValueName.c_str());
     if (stat != BE_SQLITE_OK)
         {
         LOG.errorv("Could not register BriefcaseLocalValue for BeBriefcaseBasedIdSequence '%s'. The sequence was already registered with file '%s'.", m_briefcaseLocalValueName.c_str(), m_db.GetDbFileName());
@@ -35,7 +35,7 @@ DbResult BeBriefcaseBasedIdSequence::Reset(BeBriefcaseId briefcaseId) const
     //set the sequence start value (first id generated should be 1 for the given repo id.
     //Therefore call GetValueUnchecked as the stored last value is not a valid id yet.
     const BeBriefcaseBasedId initialId(briefcaseId, 0);
-    const DbResult stat = m_db.GetRLVCache().SaveValue(m_briefcaseLocalValueIndex, initialId.GetValueUnchecked());
+    const DbResult stat = m_db.GetBLVCache().SaveValue(m_briefcaseLocalValueIndex, initialId.GetValueUnchecked());
     if (stat != BE_SQLITE_OK)
         {
         LOG.errorv("Could not save initial sequence value or BeBriefcaseBasedIdSequence '%s' in file '%s'.", m_briefcaseLocalValueName.c_str(), m_db.GetDbFileName());
@@ -54,7 +54,7 @@ DbResult BeBriefcaseBasedIdSequence::GetNextInt64Value(uint64_t& nextValue) cons
         return BE_SQLITE_READONLY;
 
     uint64_t deserializedLastValue = INT64_C(0);
-    const DbResult stat = m_db.GetRLVCache().IncrementValue(deserializedLastValue, m_briefcaseLocalValueIndex);
+    const DbResult stat = m_db.GetBLVCache().IncrementValue(deserializedLastValue, m_briefcaseLocalValueIndex);
     if (stat != BE_SQLITE_OK)
         {
         LOG.fatalv("Could not increment sequence value for BeBriefcaseBasedIdSequence '%s'.", m_briefcaseLocalValueName.c_str());

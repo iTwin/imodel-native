@@ -295,7 +295,7 @@ TEST_F(PerformanceECDbFileInfoTests, PurgeAfterSingleDeletion)
 
     BentleyStatus purgeStat = SUCCESS;
     StopWatch timer(true);
-    purgeStat = GetECDb().Purge(ECDb::PurgeMode::OrphanedFileInfos);
+    purgeStat = GetECDb().Purge(ECDb::PurgeMode::FileInfoOwnerships);
     timer.Stop();
     ASSERT_EQ(SUCCESS, purgeStat);
 
@@ -325,7 +325,7 @@ TEST_F(PerformanceECDbFileInfoTests, PurgeAfterDeletionOfAllInstancesOfSingleCla
 
     BentleyStatus purgeStat = SUCCESS;
     StopWatch timer(true);
-    purgeStat = GetECDb().Purge(ECDb::PurgeMode::OrphanedFileInfos);
+    purgeStat = GetECDb().Purge(ECDb::PurgeMode::FileInfoOwnerships);
     timer.Stop();
     ASSERT_EQ(SUCCESS, purgeStat);
 
@@ -370,7 +370,7 @@ TEST_F(PerformanceECDbFileInfoTests, PurgeAfterDeletionOfOneInstancePerClass)
 
     BentleyStatus purgeStat = SUCCESS;
     StopWatch timer(true);
-    purgeStat = GetECDb().Purge(ECDb::PurgeMode::OrphanedFileInfos);
+    purgeStat = GetECDb().Purge(ECDb::PurgeMode::FileInfoOwnerships);
     timer.Stop();
     ASSERT_EQ(SUCCESS, purgeStat);
 

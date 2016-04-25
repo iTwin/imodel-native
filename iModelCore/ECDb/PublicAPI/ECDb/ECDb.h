@@ -45,9 +45,9 @@ public:
     //+===============+===============+===============+===============+===============+======
     enum class PurgeMode
         {
-        OrphanedFileInfos = 1, //!< Purges orphaned FileInfo instances (see also @ref ECDbFileInfo)
+        FileInfoOwnerships = 1, //!< Purges FileInfoOwnership instances (see also @ref ECDbFileInfo)
         HoldingRelationships = 2, //!< Purges all holding relationship ends.
-        All = OrphanedFileInfos | HoldingRelationships
+        All = FileInfoOwnerships | HoldingRelationships
         };
 
     struct Impl;

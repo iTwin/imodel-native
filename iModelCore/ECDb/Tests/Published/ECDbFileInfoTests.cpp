@@ -181,16 +181,7 @@ TEST_F(ECDbFileInfoTests, ECFEmbeddedFileBackedInstanceSupport)
     ASSERT_EQ(1, stmt.GetValueInt(0)) << "FileInfoOwnership is expected to still contain the ownership for the deleted Foo instance";
     stmt.Finalize();
 
-    //now delete the file info
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "DELETE FROM ONLY ecdbf.EmbeddedFileInfo WHERE ECInstanceId=?"));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, embeddedFileId));
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
-    stmt.Finalize();
-
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT count(*) FROM ecdbf.FileInfoOwnership WHERE OwnerId=?"));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fooKey.GetECInstanceId()));
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-    ASSERT_EQ(1, stmt.GetValueInt(0)) << "FileInfoOwnership is not expected to be deleted if FileInfo is deleted";
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(ecdb, "DELETE FROM ONLY ecdbf.EmbeddedFileInfo WHERE ECInstanceId=?")) << "Deletion not allowed for ECClasses that map to existing tables";
     stmt.Finalize();
     }
 
@@ -572,15 +563,9 @@ TEST_F(ECDbFileInfoTests, Purge)
     AssertPurge(ecdb, expectedOwnerships, expectedFileInfos);
 
     //Scenario 1: Delete owners and purge
-    //Purge which should delete file infos created as orphans by setup of test
-    //->ownerships remains unchanged, but file info class is purged
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("ECDbFileInfo Purge> START");
-    ASSERT_EQ(SUCCESS, ecdb.Purge(ECDb::PurgeMode::OrphanedFileInfos));
+    ASSERT_EQ(SUCCESS, ecdb.Purge(ECDb::PurgeMode::FileInfoOwnerships));
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("ECDbFileInfo Purge> END");
-    expectedFileInfos.clear();
-    expectedFileInfos.push_back(fooExternalFileInfoKey);
-    expectedFileInfos.push_back(gooExternalFileInfoKey);
-    expectedFileInfos.push_back(fooChildEmbeddedFileInfoKey);
 
     AssertPurge(ecdb, expectedOwnerships, expectedFileInfos);
     
@@ -590,15 +575,11 @@ TEST_F(ECDbFileInfoTests, Purge)
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fooKey.GetECInstanceId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << ecdb.GetLastError().c_str();
     stmt.Finalize();
-    ASSERT_EQ(SUCCESS, ecdb.Purge(ECDb::PurgeMode::OrphanedFileInfos));
+    ASSERT_EQ(SUCCESS, ecdb.Purge(ECDb::PurgeMode::FileInfoOwnerships));
 
     expectedOwnerships.clear();
     expectedOwnerships.push_back(std::make_pair(fooChildKey, fooChildEmbeddedFileInfoKey));
     expectedOwnerships.push_back(std::make_pair(gooKey, gooExternalFileInfoKey));
-
-    expectedFileInfos.clear();
-    expectedFileInfos.push_back(gooExternalFileInfoKey);
-    expectedFileInfos.push_back(fooChildEmbeddedFileInfoKey);
 
     AssertPurge(ecdb, expectedOwnerships, expectedFileInfos);
 
@@ -607,13 +588,10 @@ TEST_F(ECDbFileInfoTests, Purge)
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fooChildKey.GetECInstanceId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << ecdb.GetLastError().c_str();
     stmt.Finalize();
-    ASSERT_EQ(SUCCESS, ecdb.Purge(ECDb::PurgeMode::OrphanedFileInfos));
+    ASSERT_EQ(SUCCESS, ecdb.Purge(ECDb::PurgeMode::FileInfoOwnerships));
 
     expectedOwnerships.clear();
     expectedOwnerships.push_back(std::make_pair(gooKey, gooExternalFileInfoKey));
-
-    expectedFileInfos.clear();
-    expectedFileInfos.push_back(gooExternalFileInfoKey);
 
     AssertPurge(ecdb, expectedOwnerships, expectedFileInfos);
 
@@ -622,22 +600,25 @@ TEST_F(ECDbFileInfoTests, Purge)
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, gooKey.GetECInstanceId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << ecdb.GetLastError().c_str();
     stmt.Finalize();
-    ASSERT_EQ(SUCCESS, ecdb.Purge(ECDb::PurgeMode::OrphanedFileInfos));
+    ASSERT_EQ(SUCCESS, ecdb.Purge(ECDb::PurgeMode::FileInfoOwnerships));
 
     expectedOwnerships.clear();
-    expectedFileInfos.clear();
     AssertPurge(ecdb, expectedOwnerships, expectedFileInfos);
 
     ASSERT_EQ(BE_SQLITE_OK, ecdb.AbandonChanges());
 
     //Scenario 2: Delete fileinfos and purge
     //delete EmbeddedFiles
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "DELETE FROM ONLY ecdbf.EmbeddedFileInfo WHERE ECInstanceId=?"));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fooChildEmbeddedFileInfoKey.GetECInstanceId()));
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << ecdb.GetLastError().c_str();
-    stmt.Finalize();
-    ASSERT_EQ(SUCCESS, ecdb.Purge(ECDb::PurgeMode::OrphanedFileInfos));
-    ecdb.SaveChanges();
+    //Embedded files cannot be deleted via ECSQL because they map to an existing table.
+    //EmbeddedFile API cannot be used either as it does not allow deleting by id.
+    //Therefore use SQLite directly which is not a problem for this test.
+    Statement sqliteStmt;
+    ASSERT_EQ(BE_SQLITE_OK, sqliteStmt.Prepare(ecdb, "DELETE FROM " BEDB_TABLE_EmbeddedFile " WHERE Id=?"));
+    ASSERT_EQ(BE_SQLITE_OK, sqliteStmt.BindId(1, fooChildEmbeddedFileInfoKey.GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_DONE, sqliteStmt.Step());
+    sqliteStmt.Finalize();
+
+    ASSERT_EQ(SUCCESS, ecdb.Purge(ECDb::PurgeMode::FileInfoOwnerships));
     expectedOwnerships.clear();
     expectedOwnerships.push_back(std::make_pair(fooKey, fooExternalFileInfoKey));
     expectedOwnerships.push_back(std::make_pair(gooKey, gooExternalFileInfoKey));
@@ -645,6 +626,7 @@ TEST_F(ECDbFileInfoTests, Purge)
     expectedFileInfos.clear();
     expectedFileInfos.push_back(fooExternalFileInfoKey);
     expectedFileInfos.push_back(gooExternalFileInfoKey);
+    expectedFileInfos.push_back(orphanEmbeddedFileInfoKey);
 
     AssertPurge(ecdb, expectedOwnerships, expectedFileInfos);
 
@@ -653,13 +635,14 @@ TEST_F(ECDbFileInfoTests, Purge)
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << ecdb.GetLastError().c_str();
     stmt.Reset();
     stmt.ClearBindings();
-    ASSERT_EQ(SUCCESS, ecdb.Purge(ECDb::PurgeMode::OrphanedFileInfos));
+    ASSERT_EQ(SUCCESS, ecdb.Purge(ECDb::PurgeMode::FileInfoOwnerships));
 
     expectedOwnerships.clear();
     expectedOwnerships.push_back(std::make_pair(gooKey, gooExternalFileInfoKey));
 
     expectedFileInfos.clear();
     expectedFileInfos.push_back(gooExternalFileInfoKey);
+    expectedFileInfos.push_back(orphanEmbeddedFileInfoKey);
 
     AssertPurge(ecdb, expectedOwnerships, expectedFileInfos);
 
@@ -667,10 +650,11 @@ TEST_F(ECDbFileInfoTests, Purge)
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << ecdb.GetLastError().c_str();
     stmt.Reset();
     stmt.ClearBindings();
-    ASSERT_EQ(SUCCESS, ecdb.Purge(ECDb::PurgeMode::OrphanedFileInfos));
+    ASSERT_EQ(SUCCESS, ecdb.Purge(ECDb::PurgeMode::FileInfoOwnerships));
 
     expectedOwnerships.clear();
     expectedFileInfos.clear();
+    expectedFileInfos.push_back(orphanEmbeddedFileInfoKey);
 
     AssertPurge(ecdb, expectedOwnerships, expectedFileInfos);
     ecdb.AbandonChanges();
