@@ -1,1 +1,1 @@
-#import "SenTest_BaseClass.h"
+#import "../BeTestiOS/SenTest_BaseClass.h"

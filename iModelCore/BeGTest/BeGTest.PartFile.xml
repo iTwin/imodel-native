@@ -87,6 +87,8 @@
         <ProductDirectory Name="WSClientAssemblies"                 Deliver="false" LibType="static"/>
         <ProductDirectory Name="BeCasablancaAssemblies"             Path="Assemblies"/>
         <ProductDirectory Name="BeCasablancaAssemblies"             Deliver="false" LibType="static"/>
+        <ProductDirectory Name="ChakraCoreAssemblies"               Path="Assemblies"/>
+        <ProductDirectory Name="ChakraCoreAssemblies"               Deliver="false" LibType="static"/>
 
         <ProductDirectory Name="Libs"                               Path="Libs"/>
         <ProductDirectory Name="Libs"                               Path="Libs" LibType="static"/>
@@ -139,6 +141,9 @@
         <ProductDirectory Name="PlanningLibs"                       Path="Libs" LibType="static"/>
         <ProductDirectory Name="UnitTests-GeomLibsTestData"         Path="Assets/GeomLibsTestData"/>
         <ProductDirectory Name="UnitTests-GeomLibsTestData"         Path="Assets/GeomLibsTestData" LibType="static"/>
+
+        <ProductDirectory Name="UnitTests-BeSQLiteTestData"         Path="Assets/BeSQLiteTestData"/>
+        <ProductDirectory Name="UnitTests-BeSQLiteTestData"         Path="Assets/BeSQLiteTestData" LibType="static"/>
 
         <ProductDirectory Name="DgnClientFxJavaScript"                Path="Assets/js/"/>
         <ProductDirectory Name="DgnClientFxJavaScript"                Path="Assets/js/" LibType="static"/>

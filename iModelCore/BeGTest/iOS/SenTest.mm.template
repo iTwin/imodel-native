@@ -26,14 +26,14 @@ IMPLEMENTATION_BEGIN
 #define SETUP_METHOD    - (void)setUp { [super setUp]; [__FIXTURE__ begtest_initialize]; }
 SETUP_METHOD
 
-#define TEARDOWN_METHOD - (void)tearDown { [super tearDown]; [__FIXTURE__ begtest_uninitialize]; }
+#define TEARDOWN_METHOD - (void)tearDown { [super tearDown];  }
 TEARDOWN_METHOD
 
 // Define Objective-C setup and teardown functions that are detected by the UnitTest framework 
 #undef  BE_TEST_SETUP
 #define BE_TEST_SETUP(TC)       + (void)setUp { [__FIXTURE__ begtest_initialize]; setUpTestCase_##TC (); }   
 #undef  BE_TEST_TEARDOWN
-#define BE_TEST_TEARDOWN(TC)    + (void)tearDown { tearDownTestCase_##TC (); [__FIXTURE__ begtest_uninitialize]; }
+#define BE_TEST_TEARDOWN(TC)    + (void)tearDown { tearDownTestCase_##TC (); }
 
 // Define Objective-C functions that are detected by the UnitTest framework and that call the test runner functions
 #undef  BE_TEST_RUNNER
