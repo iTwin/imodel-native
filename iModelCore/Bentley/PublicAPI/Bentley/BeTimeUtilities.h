@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/BeTimeUtilities.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -23,7 +23,7 @@ struct tm;
 BEGIN_BENTLEY_NAMESPACE
 
 /** 
-* @addtogroup BeTimeGroup 
+* @addtogroup GROUP_Time Dates and Time Module 
 * Cross-platform utilities for working with dates and times.
 */
 
@@ -31,12 +31,12 @@ BEGIN_BENTLEY_NAMESPACE
 //! Functions to get the current time and to convert time values between different bases and formats.
 //! @section UnixTimeMillis
 //! A "Unix time in milliseconds" is expressed as milliseconds since 1/1/1970 UTC
-//! @ingroup BeTimeGroup
+//! @ingroup GROUP_Time
 //=======================================================================================    
 struct BeTimeUtilities
     {
-    /// @name Elapsed time
-    /// @{
+    //! @name Elapsed time
+    //! @{
 
     //! Get a value that represents elapsed time since some /i unspecified start time, expressed as a 1/1000th of a second.
     //! @return a number of clock ticks in 1/1000ths of a second

@@ -1,3 +1,4 @@
+
 /*--------------------------------------------------------------------------------------+
 |
 |  $Source: Tests/Published/BeStringUtilities_tests.cpp $
@@ -1234,10 +1235,10 @@ TEST (BeStringUtilitiesTests, Wcslwr)
     wchar_t str3[] = L"Dgn V8";
     EXPECT_STREQ(L"dgn v8", BeStringUtilities::Wcslwr(str3));
 
-    // Start with a non-ascii string. In this case, it has no lower-case version.
+    // Start with a non-ascii string. In this case, it has no lower-case version. So, lwr should do nothing.
     WCharCP nonasc = L"\u20AC"; // this is the Euro symbol
-    WChar nonasc_lwr[2] = {L'\u20AC', L'\0'};
-    EXPECT_STREQ(nonasc, BeStringUtilities::Wcslwr(nonasc_lwr)); // s/ be a nop
+    WChar nonasc_buf[2] = {L'\u20AC', L'\0'};
+    EXPECT_STREQ(nonasc, BeStringUtilities::Wcslwr(nonasc_buf));
     }
 //---------------------------------------------------------------------------------------
 // @betest                                      Umar.Hayat                    02/16
@@ -1251,11 +1252,10 @@ TEST (BeStringUtilitiesTests, Wcsupr)
     wchar_t str3[] = L"Dgn v8";
     EXPECT_STREQ(L"DGN V8", BeStringUtilities::Wcsupr(str3));
 
-    // Start with a non-ascii string. In this case, it has no lower-case version.
+    // Start with a non-ascii string. In this case, it has no upper-case version. So, upr should do nothing.
     WCharP nonasc = L"\u20AC"; // this is the Euro symbol
-    //  Convert to UTF8 and lowercase it
-    WString nonasc_wchar (nonasc);    // s/ be E2 82 AC 00
-    EXPECT_STREQ(nonasc, BeStringUtilities::Wcslwr(nonasc)); // s/ be a nop
+    WChar nonasc_buf[2] = {L'\u20AC', L'\0'};
+    EXPECT_STREQ(nonasc, BeStringUtilities::Wcsupr(nonasc_buf));
     }
 //---------------------------------------------------------------------------------------
 // @betest                                     Umar.Hayat                  02/16
@@ -1292,4 +1292,45 @@ TEST(BeStringUtilitiesTests, WCharUtf16Roundtrip)
 
     EXPECT_EQ(0, wcscmp(expected.c_str(), strWString.c_str()));
 
+    }
+
+#define ASSERT_SPRINTF_SSCANF(number,stringifiedNumber,Type,printfFormat,scanfFormat)\
+        {\
+        Type num = (Type) number;\
+        Utf8String actualStr;\
+        actualStr.Sprintf(printfFormat, num);\
+        actualStr.ToLower();\
+        ASSERT_STREQ(stringifiedNumber, actualStr.c_str()) << "Utf8String::Sprintf with " << #Type;\
+        Type actualNumber = (Type) 0;\
+        BE_STRING_UTILITIES_UTF8_SSCANF(stringifiedNumber, scanfFormat, &actualNumber);\
+        ASSERT_EQ(number, actualNumber) << "BE_STRING_UTILITIES_UTF8_SSCANF with " << #Type;\
+        }
+
+//---------------------------------------------------------------------------------------
+// @betest                                     Krischan.Eberle                  04/16
+//---------------------------------------------------------------------------------------
+TEST(BeStringUtilitiesTests, SprintfSscanf)
+    {
+    ASSERT_SPRINTF_SSCANF(-8, "-8", int8_t, "%" PRId8, "%" SCNd8);
+    ASSERT_SPRINTF_SSCANF(8, "8", uint8_t, "%" PRIu8, "%" SCNu8);
+    ASSERT_SPRINTF_SSCANF(8, "8", uint8_t, "%" PRIx8, "%" SCNx8);
+
+    ASSERT_SPRINTF_SSCANF(-1616, "-1616", int16_t, "%" PRId16, "%" SCNd16);
+    ASSERT_SPRINTF_SSCANF(1616, "1616", uint16_t, "%" PRIu16, "%" SCNu16);
+    ASSERT_SPRINTF_SSCANF(1616, "650", uint16_t, "%" PRIx16, "%" SCNx16);
+
+    ASSERT_SPRINTF_SSCANF(-323232, "-323232", int32_t, "%" PRId32, "%" SCNd32);
+    ASSERT_SPRINTF_SSCANF(323232, "323232", uint32_t, "%" PRIu32, "%" SCNu32);
+    ASSERT_SPRINTF_SSCANF(323232,"4eea0", uint32_t, "%" PRIx32, "%" SCNx32);
+
+    ASSERT_SPRINTF_SSCANF(-64646464, "-64646464", int64_t, "%" PRId64, "%" SCNd64);
+    ASSERT_SPRINTF_SSCANF(64646464, "64646464", uint64_t, "%" PRIu64, "%" SCNu64);
+    ASSERT_SPRINTF_SSCANF(64646464, "3da6d40", uint64_t, "%" PRIx64, "%" SCNx64);
+
+    ASSERT_SPRINTF_SSCANF(-12345, "-12345", int, "%d", "%d");
+    ASSERT_SPRINTF_SSCANF(123, "123", unsigned, "%u", "%u");
+    ASSERT_SPRINTF_SSCANF(123, "7b", unsigned, "%x", "%x");
+    ASSERT_SPRINTF_SSCANF(-12345, "-12345", long long, "%lld", "%lld");
+    ASSERT_SPRINTF_SSCANF(12345, "12345", unsigned long long, "%llu", "%llu");
+    ASSERT_SPRINTF_SSCANF(12345, "3039", unsigned long long, "%llx", "%llx");
     }

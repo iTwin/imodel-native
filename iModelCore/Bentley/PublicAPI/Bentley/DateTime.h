@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/DateTime.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -17,7 +17,7 @@ BEGIN_BENTLEY_NAMESPACE
 //! A DateTime also holds additional metadata about the actual date time in its DateTime::Info member.
 //!
 //! A DateTime's accuracy is 100's of nanoseconds (i.e hecto-nanoseconds, i.e. 1e-7 seconds)
-//! @ingroup BeTimeGroup
+//! @ingroup GROUP_Time
 //! @nosubgrouping
 //=======================================================================================    
 struct DateTime

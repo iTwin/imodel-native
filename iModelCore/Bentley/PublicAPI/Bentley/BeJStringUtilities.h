@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/BeJStringUtilities.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -21,8 +21,8 @@ BEGIN_BENTLEY_NAMESPACE
 
 //=======================================================================================
 //! Convert to/from Android/JNI JStrings.
-//! @ingroup BeStringGroup
-//! @ingroup AndroidPlatformGroup
+//! @ingroup GROUP_String
+//! @ingroup GROUP_DgnClientFxAndroid
 //  @bsiclass                                                   Shaun.Sewall     08/2011
 //=======================================================================================
 struct BeJStringUtilities : public NonCopyableClass

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/BeDirectoryIterator.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -16,7 +16,7 @@ BEGIN_BENTLEY_NAMESPACE
 struct DirectoryWalkerImpl;
 
 //! Parses and matches file wildcard expressions. Expressions are expected to follow the Unix 'glob' rules, i.e., * and ?
-//! @ingroup BeFileGroup
+//! @ingroup GROUP_File
 struct FileNamePattern
     {
     //! Call this to parse an expression that might contain a combination of a filepath and a wildcard expression
@@ -26,7 +26,7 @@ struct FileNamePattern
     };
 
 //! Iterates the entries in a specified directory
-//! @ingroup BeFileGroup
+//! @ingroup GROUP_File
 struct BeDirectoryIterator
     {
 private:

@@ -8,17 +8,9 @@
 // __PUBLISH_SECTION_START__
 
 //=======================================================================================
-// Add link from the BeStringGroup module to the overview page
-//=======================================================================================
-/**
-@addtogroup BeStringGroup
-@see @ref Overview_Strings
-*/
-
-//=======================================================================================
 // Define strings overview page
 //=======================================================================================
-/** @page Overview_Strings Working with strings
+/** @page PAGE_Utf8StringOverview Working with strings
 
 The DgnDb technology stack includes a portability layer for working in CPP across multiple
 platforms.  The Utf8String and WString classes are used for working with strings in CPP
@@ -29,7 +21,7 @@ technology stack.
 
 @tableofcontents
 
-@see BeStringGroup
+@see GROUP_String
 @see BentleyApi::Utf8String
 @see BentleyApi::Utf8PrintfString
 @see BentleyApi::WString

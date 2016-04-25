@@ -24,7 +24,7 @@
 BEGIN_BENTLEY_NAMESPACE
 
 //! The possible status returns for the BeFile methods.
-//! @ingroup BeFileGroup
+//! @ingroup GROUP_File
 enum class BeFileStatus
     {
     Success                      = SUCCESS,  //!< The file operation was successful.
@@ -40,7 +40,7 @@ enum class BeFileStatus
     };
 
 //! The possible file access values for the Open method.
-//! @ingroup BeFileGroup
+//! @ingroup GROUP_File
 enum class BeFileAccess
     {
     Read  = 1,       //!< Open for read access.
@@ -51,7 +51,7 @@ enum class BeFileAccess
 ENUM_IS_FLAGS(BeFileAccess)
 
 //! Possible origin modes for the SetPosition method.
-//! @ingroup BeFileGroup
+//! @ingroup GROUP_File
 enum class BeFileSeekOrigin
     {
     Begin      = 0,    //!< The specified position is relative to the beginning of the file.
@@ -63,7 +63,7 @@ enum class BeFileSeekOrigin
 //! BeFile represents a file in the native file system. BeFile has functions to open a file 
 //! and to access its contents and attributes. BeFile reads and writes binary data. It
 //! does not transform stored data to/from text. I/O operations are un-buffered.
-//! @ingroup BeFileGroup
+//! @ingroup GROUP_File
 //=======================================================================================
 struct BeFile
 {
