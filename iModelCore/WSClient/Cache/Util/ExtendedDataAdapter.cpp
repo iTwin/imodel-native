@@ -38,7 +38,8 @@ ExtendedData ExtendedDataAdapter::GetData(ECInstanceKeyCR ownerKey)
         return ExtendedData();
         }
 
-    auto statement = m_statementCache.GetPreparedStatement("GetData", [&]
+    Utf8PrintfString key("GetData:%llu:%llu", edClass->GetId().GetValue(), edRelClass->GetId().GetValue());
+    auto statement = m_statementCache.GetPreparedStatement(key, [&]
         {
         return
             "SELECT data.ECInstanceId, data.[" CLASS_ExtendedData_PROPERTY_Content "] "
@@ -86,7 +87,8 @@ BentleyStatus ExtendedDataAdapter::UpdateData(ExtendedData& data)
 
     if (data.m_extendedDataKey.IsValid())
         {
-        auto statement = m_statementCache.GetPreparedStatement("UpdateData", [&]
+        Utf8PrintfString key("UpdateData:%llu", edClass->GetId().GetValue());
+        auto statement = m_statementCache.GetPreparedStatement(key, [&]
             {
             return
                 "UPDATE ONLY " + edClass->GetECSqlName() + " "
@@ -105,7 +107,8 @@ BentleyStatus ExtendedDataAdapter::UpdateData(ExtendedData& data)
         return SUCCESS;
         }
 
-    auto statement = m_statementCache.GetPreparedStatement("InsertData", [&]
+    Utf8PrintfString key("InsertData:%llu", edClass->GetId().GetValue());
+    auto statement = m_statementCache.GetPreparedStatement(key, [&]
         {
         return "INSERT INTO " + edClass->GetECSqlName() + " ([" CLASS_ExtendedData_PROPERTY_Content "]) VALUES (?) ";
         });
