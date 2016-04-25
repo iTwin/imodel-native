@@ -207,7 +207,7 @@
     </Part>
     
     <Part Name="Tests">
-        <!--<SubPart PartName="UnitTests-NonPublished"/>-->
+        <SubPart PartName="UnitTests-NonPublished"/>
         <SubPart PartName="UnitTests-FileFormat"/>
     </Part>
    

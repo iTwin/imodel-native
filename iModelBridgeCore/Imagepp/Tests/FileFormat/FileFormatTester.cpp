@@ -55,6 +55,7 @@ class ExportTester : public ::testing::TestWithParam< std::wstring >
             // Required for sqlang stuff....
             BeFileName tempDir;
             BeTest::GetHost().GetTempDir(tempDir);
+            BeFileName::CreateNewDirectory(tempDir.c_str());
             BeSQLite::BeSQLiteLib::Initialize(tempDir);
 
             //Initialize host
@@ -74,7 +75,8 @@ static vector<std::wstring> s_GetFileNameVector()
     {
     vector<std::wstring> directoryList;
     bvector<BeFileName> fileList;
-    BeFileName sourcePath("C:\\Users\\Laurent.Robert-Veill\\Desktop\\Images");
+    BeFileName sourcePath("D:\\Image_Dataset\\Images");
+
     const WString glob = L"*";
 
     BeDirectoryIterator::WalkDirsAndMatch(fileList, sourcePath, glob.c_str(), true);
@@ -82,15 +84,16 @@ static vector<std::wstring> s_GetFileNameVector()
     //Using a lambda to scan all the fileList and skipping not supported rasters and folders
     for_each(begin(fileList), end(fileList), [&] (auto &actualName)
         {
-        if (!actualName.Contains(L"NITF\\PasSupportees") &&
+        if (!actualName.IsDirectory() &&
+            !actualName.Contains(L"NITF\\PasSupportees") &&
             !actualName.Contains(L"ErdasImg\\ImagesInvalides") &&
             !actualName.Contains(L"iTIFF\\xFileNotSupported") &&
             !actualName.Contains(L"TIF\\xFileNotSupported") &&
             !actualName.Contains(L"Pict\\xFileNotSupported") &&
             !actualName.Contains(L"CAL\\xFileNotSupported (Type2-tiled)") &&
             !actualName.Contains(L"BMP\\xFileNotSupported") &&
-            !actualName.Contains(L"Bil\\xFileNotSupported") &&
-            !actualName.IsDirectory())
+            !actualName.Contains(L"Bil\\xFileNotSupported")
+            )
             directoryList.push_back(actualName.GetName());
         });
 
@@ -352,7 +355,7 @@ TEST_P(ExportTester, ExportToiTiffBestOptions)
 
     // ExportToBestiTiff
     HFCPtr<HGF2DWorldCluster> worldCluster = new HGFHMRStdWorldCluster();
-    HPMPool pPool(64 * 1024, nullptr);
+    HPMPool pPool(200 * 1024, nullptr);
 
     HFCPtr<HFCURL> UrlSource = new HFCURLFile(HFCURLFile::s_SchemeName() + "://" + Utf8String(GetParam().c_str()));
 
@@ -360,7 +363,9 @@ TEST_P(ExportTester, ExportToiTiffBestOptions)
         {
         //N.B. We set the 4th parameter ScanCreatorIfNotFound = true because some files do not have the good extension. 
         //Hence we cannot rely only on the extension to find the appropriate creator.
-        HRFRasterFileCreator const* pSrcCreator = HRFRasterFileFactory::GetInstance()->FindCreator(UrlSource, HFC_READ_ONLY | HFC_SHARE_READ_WRITE, 0, true, false);
+        //>>> &&MM turning it OFF for now. It is slow. fill fix file extention once we have validated the baseline.
+        bool scanCreator = true;
+        HRFRasterFileCreator const* pSrcCreator = HRFRasterFileFactory::GetInstance()->FindCreator(UrlSource, HFC_READ_ONLY | HFC_SHARE_READ_WRITE, 0, scanCreator, false);
         if (pSrcCreator == nullptr)
             return;
 
@@ -368,7 +373,12 @@ TEST_P(ExportTester, ExportToiTiffBestOptions)
         //Verify that the Rasterfile created is valid
         ASSERT_FALSE(nullptr == pRasterFileSource);
 
+#if 1   // Old base line was created with file to file and that will copy extra meta data information. we need them to compare with old baseline.
+        std::unique_ptr<HUTImportFromFileExportToFile> exporter(new HUTImportFromFileExportToFile(worldCluster));
+        exporter->SelectExportFileFormat(HRFiTiffCreator::GetInstance());
+        exporter->SetImportRasterFile(pRasterFileSource);
 
+#else        
         HFCPtr<HGF2DCoordSys> pLogical = worldCluster->GetCoordSysReference(pRasterFileSource->GetPageWorldIdentificator(0));
         HFCPtr<HRSObjectStore> pStore = new HRSObjectStore(&pPool, pRasterFileSource, 0, pLogical);
         ASSERT_TRUE(pStore != nullptr);
@@ -376,12 +386,17 @@ TEST_P(ExportTester, ExportToiTiffBestOptions)
         ASSERT_TRUE(pRaster != nullptr);
 
         std::unique_ptr<HUTImportFromRasterExportToFile> exporter(new HUTImportFromRasterExportToFile(pRaster, *pRaster->GetEffectiveShape(), worldCluster));
-        exporter->SelectExportFileFormat((HRFRasterFileCreator*) HRFiTiffCreator::GetInstance());
+        exporter->SelectExportFileFormat(HRFiTiffCreator::GetInstance());
+
+#endif
 
         // Use BestMatchSelectedValues for exportation
         ASSERT_NO_THROW(exporter->BestMatchSelectedValues());
 
         //Construct the output file path to fit the one from the old baseline
+        /// >> &&MM chage to whatever once we have validated the baseline.
+        //     and make a unique directory per specific test to avoid clash.
+        //     and do what we can during test setup.
         BeFileName outputFilePath;
         BeTest::GetHost().GetOutputRoot(outputFilePath);
         auto positionStart = GetParam().find(L"Images\\");
@@ -408,14 +423,18 @@ TEST_P(ExportTester, ExportToiTiffBestOptions)
         HFCPtr<HRFRasterFile> pFile = exporter->StartExport();
         ASSERT_TRUE(pFile.GetPtr() != nullptr);
 
+        //&&MM what kind of post validation can we do?
+
         //Close the RasterFile in order to be able to open it again after
         pFile = nullptr;
 
+        //&&MM can we do that while we export instead of reopening the file afterward?
         //Adjust the time stamp to "9999:99:99 99:99:99"       
         ASSERT_TRUE(s_UpdateTiffHistogramTimestamp(pURL));
         }
     catch (...)
         {
+        //&&MM extract exception message and display it 
         FAIL();
         }
     }
