@@ -33,6 +33,21 @@ module DgnScriptTests {
     //---------------------------------------------------------------------------------------
     // @bsimethod                                   
     //---------------------------------------------------------------------------------------
+    function testFile(filename: string) {
+        var file = be.File.Fopen(filename, "r");
+        while (true) {
+            var line = file.ReadLine();
+            if (file.Feof())
+                break;
+            be.Logging.Message('DgnScriptTest', be.LoggingSeverity.Info, line);
+        }
+
+        file.Close();
+     }
+
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                   
+    //---------------------------------------------------------------------------------------
     function testEcSql_selectLastInstanceOf(db: be.DgnDb, cls: be.ECClass, minGenericObjectsExpected: number): be.DgnObjectId {
         var lastelid: be.DgnObjectId;
 
@@ -680,6 +695,8 @@ module DgnScriptTests {
 
         //  Test ECSql API
         testEcSql(db, 2);
+
+        //testFile("d:/tmp/xx.txt");
 
         return 0;
     }
