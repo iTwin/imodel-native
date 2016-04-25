@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/handler/DTMFlowArrowsDisplayHandler.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <stdafx.h>
@@ -322,7 +322,10 @@ WCharCP                           delimiterStr
     WCharCP delim = delimiterStr ? delimiterStr : L",";
 
     dgnModel_getGlobalOrigin (path.GetRoot()->GetDgnModelP(), &globalOrigin);
-    wElevString = DistanceFormatter::Create(*path.GetRoot ()->GetDgnModelP())->ToString (pt.z - globalOrigin.z);        // includeUnits ?? 
+    DistanceFormatterPtr formatter = DistanceFormatter::Create(*path.GetRoot()->GetDgnModelP());
+    formatter->SetUnitLabelFlag(true);   
+    wElevString = formatter->ToString(pt.z - globalOrigin.z);        // includeUnits ?? 
+
     WString::Sprintf (wSlopeString, L"%.2f", slope);
     WString::Sprintf (wAspectString, L"%.2f", aspect);
 

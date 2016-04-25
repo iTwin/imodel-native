@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/handler/DTMContourDisplayHandler.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <stdafx.h>
@@ -331,6 +331,7 @@ protected: void SmartPreLabelling (DPoint3dCR pt)
         m_drawingInfo.FullStorageToUors (uorPt);
 
         DistanceFormatterPtr formatter = DistanceFormatter::Create (*m_viewContext->GetCurrentModel ()->GetDgnModelP ());
+        formatter->SetUnitLabelFlag(true);
         formatter->SetPrecision (DoubleFormatter::ToPrecisionEnum (PrecisionType::Decimal, (byte)m_dp.GetContourLabelPrecision ()));
         m_buffer = formatter->ToString (uorPt.z - m_ptGO.z);        // includeUnits ?? 
 
@@ -891,6 +892,7 @@ WCharCP                           delimiterStr
         {
         DTMElementContoursHandler::DisplayParams displayParams (xAttr);
         DistanceFormatterPtr formatter = DistanceFormatter::Create (*path.GetRoot ()->GetDgnModelP ());
+        formatter->SetUnitLabelFlag(true);
         formatter->SetPrecision (DoubleFormatter::ToPrecisionEnum (PrecisionType::Decimal, (byte)displayParams.GetContourLabelPrecision ()));
         wElevString = formatter->ToString (pt.z - globalOrigin.z);        // includeUnits ?? 
         }
