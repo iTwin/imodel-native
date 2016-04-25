@@ -66,6 +66,43 @@ struct JsonUpdaterTests : SchemaImportTestFixture
     };
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                   04/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(JsonUpdaterTests, InvalidInput)
+    {
+    ECDbCR ecdb = SetupECDb("jsonupdatertests.ecdb");
+
+    ECClassCP testClass = ecdb.Schemas().GetECClass("ECDb_FileInfo", "ExternalFileInfo");
+    ASSERT_TRUE(testClass != nullptr);
+
+    ECInstanceKey key;
+        {
+        JsonInserter inserter(ecdb, *testClass);
+        ASSERT_TRUE(inserter.IsValid());
+
+        Json::Value val;
+        val["Name"] = "test.txt";
+
+        ASSERT_EQ(SUCCESS, inserter.Insert(key, val));
+        }
+
+    JsonUpdater updater(ecdb, *testClass);
+    ASSERT_TRUE(updater.IsValid());
+
+    Json::Value val;
+    ASSERT_EQ(ERROR, updater.Update(val)) << "Empty JSON value";
+
+    val["Name"] = "test2.txt";
+    ASSERT_EQ(ERROR, updater.Update(val)) << "JSON value without $ECInstanceId member";
+
+    val["$ECInstanceId"] = BeJsonUtilities::StringValueFromInt64(key.GetECInstanceId().GetValue() + 1);
+    ASSERT_EQ(SUCCESS, updater.Update(val)) << "JSON value with not-existing $ECInstanceId member";
+
+    val["$ECInstanceId"] = BeJsonUtilities::StringValueFromInt64(key.GetECInstanceId().GetValue());
+    ASSERT_EQ(SUCCESS, updater.Update(val)) << "JSON value without $ECInstanceId member";
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   10/15
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (JsonUpdaterTests, UpdateRelationshipProperty)

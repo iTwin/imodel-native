@@ -185,8 +185,8 @@ public:
 
     //! Updates the data in the ECDb file that corresponds to the specified ECInstance.
     //! @param[in] instance ECInstance for which the corresponding row is to be updated.
-    //! @return SUCCESS in case of successful update. ERROR if no ECInstance existed in 
-    //! the ECDb file for the specified @p instance or in case of other errors.
+    //! @return SUCCESS in case of successful execution of the underlying ECSQL UPDATE. This means,
+    //! SUCCESS is also returned if the specified ECInstance does not exist in the file. ERROR otherwise.
     ECDB_EXPORT BentleyStatus Update(ECN::IECInstanceCR instance) const;
     };
 
@@ -224,14 +224,14 @@ public:
 
     //! Deletes the ECInstance with the specified ECInstanceId.
     //! @param[in] ecInstanceId Id of the ECInstance to delete
-    //! @return SUCCESS in case of successful deletion. ERROR if no ECInstance existed for
-    //! the specified @p ecInstanceId or in case of other errors.
+    //! @return SUCCESS in case of successful execution of the underlying ECSQL. This means,
+    //! SUCCESS is also returned if the specified ECInstance does not exist in the file. ERROR otherwise.
     ECDB_EXPORT BentleyStatus Delete(ECInstanceId const& ecInstanceId) const;
 
     //! Deletes the given ECInstance.
     //! @param[in] ecInstance ECInstance to delete
-    //! @return SUCCESS in case of successful deletion. ERROR if no ECInstance existed for
-    //! the specified @p ecInstance or in case of other errors.
+    //! @return SUCCESS in case of successful execution of the underlying ECSQL. This means,
+    //! SUCCESS is also returned if the specified ECInstance does not exist in the file. ERROR otherwise.
     ECDB_EXPORT BentleyStatus Delete(ECN::IECInstanceCR ecInstance) const;
     };
 END_BENTLEY_SQLITE_EC_NAMESPACE
