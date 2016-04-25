@@ -60,6 +60,9 @@
     <ClCompile Include="Examples\ExampleTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Cache\RepositorySchemaUpgradeTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="Cache\ECDbAdapterTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -113,7 +116,6 @@
     <ClInclude Include="Examples\ExampleTests.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Cache\ECDbAdapterTests.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Ims\SolrClientTests.h">

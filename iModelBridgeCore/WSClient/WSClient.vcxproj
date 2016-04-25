@@ -10,6 +10,9 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <PropertyGroup>
+    <ShowAllFiles>true</ShowAllFiles>
+  </PropertyGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{90E274E0-6D7E-4D78-B592-0CD9CB9BEA52}</ProjectGuid>
     <Keyword>MakeFileProj</Keyword>

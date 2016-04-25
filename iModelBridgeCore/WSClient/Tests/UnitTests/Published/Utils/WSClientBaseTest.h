@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/Utils/WSClientBaseTest.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -18,11 +18,11 @@ BEGIN_WSCLIENT_UNITTESTS_NAMESPACE
 struct WSClientBaseTest : ::testing::Test
     {
     private:
-        TestAppPathProvider m_pathProvider;
+        static std::shared_ptr<TestAppPathProvider> s_pathProvider;
 
     private:
-        void InitLibraries();
-        void InitLogging();
+        static void InitLibraries();
+        static void InitLogging();
 
     public:
         virtual void SetUp() override;
