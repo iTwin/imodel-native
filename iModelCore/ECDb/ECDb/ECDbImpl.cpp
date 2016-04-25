@@ -204,7 +204,7 @@ std::vector<BeBriefcaseBasedIdSequence const*> ECDb::Impl::GetSequences() const
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECDb::Impl::Purge(ECDb::PurgeMode mode) const
     {
-    if (Enum::Contains(mode, ECDb::PurgeMode::OrphanedFileInfos))
+    if (Enum::Contains(mode, ECDb::PurgeMode::FileInfoOwnerships))
         if (SUCCESS != PurgeFileInfos())
             return ERROR;
 
@@ -219,7 +219,6 @@ BentleyStatus ECDb::Impl::Purge(ECDb::PurgeMode mode) const
     }
 
 #define ECDBF_FILEINFOOWNERSHIP_FULLCLASSNAME "ecdbf.FileInfoOwnership"
-#define ECDBF_FILEINFO_FULLCLASSNAME "ecdbf.FileInfo"
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  11/2015
@@ -239,8 +238,7 @@ BentleyStatus ECDb::Impl::PurgeFileInfos() const
     }
 
     //Step 1: Purge ownership class from records for which owner doesn't exist anymore
-    {
-    Utf8String purgeOwnershipByOwnersECSql("DELETE FROM ONLY " ECDBF_FILEINFOOWNERSHIP_FULLCLASSNAME " WHERE ");
+    Utf8String purgeOwnershipByOwnersECSql("DELETE FROM " ECDBF_FILEINFOOWNERSHIP_FULLCLASSNAME " WHERE ");
     bool isFirstOwnerClassId = true;
     for (ECClassId ownerClassId : ownerClassIds)
         {
@@ -267,29 +265,14 @@ BentleyStatus ECDb::Impl::PurgeFileInfos() const
 
     if (BE_SQLITE_DONE != stmt.Step())
         return ERROR;
-    }
+    
+    stmt.Finalize();
 
     //Step 2: Purge ownership class from records for which file info doesn't exist anymore
-    {
-    ECSqlStatement stmt;
-    if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, "DELETE FROM ONLY " ECDBF_FILEINFOOWNERSHIP_FULLCLASSNAME " WHERE FileInfoId NOT IN (SELECT ECInstanceId FROM " ECDBF_FILEINFO_FULLCLASSNAME ")"))
+    if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, "DELETE FROM " ECDBF_FILEINFOOWNERSHIP_FULLCLASSNAME " WHERE FileInfoId NOT IN (SELECT ECInstanceId FROM ecdbf.FileInfo)"))
         return ERROR;
 
-    if (BE_SQLITE_DONE != stmt.Step())
-        return ERROR;
-    }
-
-    //Step 3: Purge file info class from records for which no ownership exists anymore
-    {
-    ECSqlStatement stmt;
-    if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, "DELETE FROM " ECDBF_FILEINFO_FULLCLASSNAME " WHERE ECInstanceId NOT IN (SELECT FileInfoId FROM ONLY " ECDBF_FILEINFOOWNERSHIP_FULLCLASSNAME ")"))
-        return ERROR;
-
-    if (BE_SQLITE_DONE != stmt.Step())
-        return ERROR;
-    }
-
-    return SUCCESS;
+    return BE_SQLITE_DONE == stmt.Step() ? SUCCESS : ERROR;
     }
 
 //---------------------------------------------------------------------------------------
