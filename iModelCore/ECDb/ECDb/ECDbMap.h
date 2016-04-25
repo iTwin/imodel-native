@@ -10,7 +10,6 @@
 #include "ClassMap.h"
 #include "SchemaImportContext.h"
 #include "DbSchema.h"
-
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 struct StorageDescription;
@@ -112,7 +111,7 @@ private:
     ClassMapsByTable GetClassMapsByTable() const;
     BentleyStatus GetClassMapsFromRelationshipEnd(std::set<ClassMap const*>&, ECN::ECClassCR, bool recursive) const;
     std::vector<ECClassCP> GetBaseClassesNotAlreadyMapped(ECClassCR ecclass) const;
-    void VisitRoot(ECClassCR ecclass, std::set<ECClassCP>& doneList, std::set<ECClassCP>& rootClassSet, std::vector<ECClassCP>& rootClassList, std::vector<ECRelationshipClassCP>& rootRelationshipList) const;
+    static void GatherRootClasses(ECClassCR ecclass, std::set<ECClassCP>& doneList, std::set<ECClassCP>& rootClassSet, std::vector<ECClassCP>& rootClassList, std::vector<ECRelationshipClassCP>& rootRelationshipList);
 
 public:
     explicit ECDbMap(ECDbCR ecdb);

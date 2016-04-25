@@ -955,36 +955,6 @@ TEST_F(ECDbSchemaUpgradeTests, ImportMultipleSchemaVersions_AddNewProperty)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSchemaUpgradeTests, UpdatingSchemaShouldNotDeleteExistingRelationshipsOrIndexes)
-    {
-    ECDbTestFixture::Initialize();
-    ECDbR ecdb = SetupECDb("schemaupgradetest.ecdb", BeFileName(L"DSCacheSchema.01.03.ecschema.xml"));
-    ecdb.SaveChanges();
-
-    ASSERT_EQ(ecdb.ColumnExists("DSC_CachedFileInfo", "ForeignECInstanceId_DSC_CachedFileInfoRelationship"), true);
-
-    ASSERT_EQ(ecdb.ColumnExists("DSC_CachedInstanceInfo", "ForeignECInstanceId_DSC_CachedInstanceInfoRelationship"), true);
-
-    ASSERT_EQ(ecdb.ColumnExists("DSCJS_RootRelationship", "SourceECInstanceId"), true);
-    ASSERT_EQ(ecdb.ColumnExists("DSCJS_RootRelationship", "TargetECInstanceId"), true);
-    ASSERT_EQ(ecdb.ColumnExists("DSCJS_RootRelationship", "TargetECClassId"), true);
-
-    ASSERT_EQ(ecdb.ColumnExists("DSCJS_NavigationBaseRelationship", "SourceECInstanceId"), true);
-    ASSERT_EQ(ecdb.ColumnExists("DSCJS_NavigationBaseRelationship", "TargetECInstanceId"), true);
-    ASSERT_EQ(ecdb.ColumnExists("DSCJS_NavigationBaseRelationship", "TargetECClassId"), true);
-
-    auto ecsql = "SELECT s.* FROM ONLY [DSC].[CachedInstanceInfo] s JOIN ONLY [DSC].[NavigationBase] t USING [DSCJS].[CachedInstanceInfoRelationship] FORWARD WHERE t.ECInstanceId = 8 LIMIT 1";
-
-    ECSqlStatement stmt;
-    auto prepareStatus = stmt.Prepare(ecdb, ecsql);
-    ASSERT_TRUE(prepareStatus == ECSqlStatus::Success);
-    auto stepStatus = stmt.Step();
-    ASSERT_TRUE(stepStatus == BE_SQLITE_ROW);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Muhammad Hassan                     04/16
-//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbSchemaUpgradeTests, UpdateMultipleSchemasInDb)
     {
     ECDbTestFixture::Initialize();
@@ -995,8 +965,8 @@ TEST_F(ECDbSchemaUpgradeTests, UpdateMultipleSchemasInDb)
 
     ECDbTestUtility::ReadECSchemaFromDisk(ecSchema, schemaContext, L"DSCacheSchema.01.03.ecschema.xml");
     BentleyStatus schemaStatus = ecdb.Schemas().ImportECSchemas(schemaContext->GetCache());
-    ASSERT_EQ(SUCCESS, schemaStatus);
-
+    ASSERT_EQ(ERROR, schemaStatus) << "Deleting ECProperty is not supported";
+    /*
     ECDbTestUtility::ReadECSchemaFromDisk(ecSchema, schemaContext, L"RSComponents.01.00.ecschema.xml");
     schemaStatus = ecdb.Schemas().ImportECSchemas(schemaContext->GetCache());
     ASSERT_EQ(SUCCESS, schemaStatus);
@@ -1006,5 +976,6 @@ TEST_F(ECDbSchemaUpgradeTests, UpdateMultipleSchemasInDb)
     ecSchema->SetVersionMinor(22);
     schemaStatus = ecdb.Schemas().ImportECSchemas(schemaContext->GetCache());
     ASSERT_EQ(SUCCESS, schemaStatus);
+    */
     }
 END_ECDBUNITTESTS_NAMESPACE

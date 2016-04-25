@@ -389,6 +389,7 @@
     <ClInclude Include="ClassMappingInfo.h">
       <Filter>ECDbMap</Filter>
     </ClInclude>
+    <ClInclude Include="DebugWriter.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ECDb.mke">
@@ -710,6 +711,7 @@
     <ClCompile Include="ECDbProfileUpgrader.cpp">
       <Filter>ECDbProfile</Filter>
     </ClCompile>
+    <ClCompile Include="ECDbMapDebugInfo.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Xml Include="ECSchemas\ECDb_FileInfo.02.00.ecschema.xml">

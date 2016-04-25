@@ -194,5 +194,22 @@ struct ECDbSchemaManager : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCopya
 typedef ECDbSchemaManager const& ECDbSchemaManagerCR;
 
 
+#if !defined (DOCUMENTATION_GENERATOR)
+//=======================================================================================
+//! Unpublished helper that provide map information
+//=======================================================================================
+struct ECDbMapDebugInfo
+    {
+    private:
+        ECDbMapDebugInfo();
+        ~ECDbMapDebugInfo();
 
+    public:
+        ECDB_EXPORT static BentleyStatus GetMapInfoForSchema (Utf8StringR info, ECDbCR ecdb, Utf8CP ecSchemaName, bool skipUnmappedClasses);
+        ECDB_EXPORT static BentleyStatus GetMapInfoForClass(Utf8StringR info, ECDbCR ecdb, Utf8CP ecClassName);
+        ECDB_EXPORT static BentleyStatus GetMapInfoForAllClasses (Utf8StringR info, ECDbCR ecdb, bool skipUnmappedClasses);
+
+    };
+
+#endif
 END_BENTLEY_SQLITE_EC_NAMESPACE

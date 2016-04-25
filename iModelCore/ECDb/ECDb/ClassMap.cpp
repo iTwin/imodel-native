@@ -28,6 +28,56 @@ ClassMap::ClassMap(Type type, ECClassCR ecClass, ECDbMapCR ecDbMap, ECDbMapStrat
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                      04/2016
+//---------------------------------------------------------------------------------------
+void ClassMap::_WriteDebugInfo(DebugWriter& writer) const
+    {
+    Utf8String typeStr;
+    switch (m_type)
+        {
+            case Type::Class: typeStr = "Class"; break;
+            case Type::RelationshipEndTable:typeStr = "RelationshipEndTable"; break;
+            case Type::RelationshipLinkTable:typeStr = "RelationshipLinkTable"; break;
+            case Type::Unmapped:typeStr = "Unmapped"; break;
+        }
+
+    writer.AppendLine("%s : %s, [Id=%" PRId64 "], [MapId=%" PRId64 "], [Type=%s], [AutoGenECId=%s], [Dirty=%s]",
+                      GetClass().IsRelationshipClass() ? "ECRelationshipClass" : "ECClass",
+                      GetClass().GetFullName(),
+                      GetClass().GetId().GetValue(),
+                      m_id.GetValue(),
+                      typeStr.c_str(),
+                      m_isECInstanceIdAutogenerationDisabled ? "true" : "false",
+                      m_isDirty ? "true" : "false"
+                      );
+    if (auto b0 = writer.CreateIndentBlock())
+        {
+        writer.AppendLine("MapStrategy : %s", m_mapStrategy.ToString().c_str());
+        writer.AppendLine("Tables [Count=%d]", m_tables.size());
+        if (auto b1 = writer.CreateIndentBlock())
+            {
+            for (auto table : m_tables)
+                {
+                writer.AppendLine("Table : %s, [Id=%" PRId64 "], [Virtual=%s], [Kind=%s], [BaseTable=%s]",
+                                  table->GetName().c_str(),
+                                  table->GetId().GetValue(),
+                                  table->GetPersistenceType() == PersistenceType::Virtual ? "true" : "false",
+                                  (table->GetType() == DbTable::Type::Existing ? "Existing" : (table->GetType() == DbTable::Type::Joined ? "Joined" : "Primary")),
+                                  table->GetParentOfJoinedTable() != nullptr ? table->GetParentOfJoinedTable()->GetName().c_str() : "null"
+                                  );
+                }
+            } //b1
+
+
+        writer.AppendLine("PropertyMaps [Count=%d]", GetPropertyMaps().Size());
+        if (auto b1 = writer.CreateIndentBlock())
+            {
+            for (auto& propertyMap : GetPropertyMaps())
+                propertyMap->WriteDebugInfo(writer);
+            }
+        }
+    }
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      06/2013
 //---------------------------------------------------------------------------------------
 MappingStatus ClassMap::Map(SchemaImportContext& schemaImportContext, ClassMappingInfo const& mapInfo)

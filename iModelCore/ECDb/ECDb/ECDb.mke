@@ -332,6 +332,9 @@ $(o)ECDbExpressionSymbolProvider$(oext):                    $(baseDir)ECDbExpres
 
 $(o)ECSchemaComparer$(oext):                                $(baseDir)ECSchemaComparer.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
+$(o)ECDbMapDebugInfo$(oext):                                $(baseDir)ECDbMapDebugInfo.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+
 %include MultiCppCompileGo.mki
 cppObjects=%$(MultiCompileObjectList) 
 CCPchOpts =

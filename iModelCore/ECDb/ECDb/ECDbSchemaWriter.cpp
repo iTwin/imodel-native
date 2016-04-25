@@ -457,8 +457,8 @@ BentleyStatus ECDbSchemaWriter::UpdateECClass(ECClassChange& classChange, ECClas
         }
     else
         classId = newClass.GetId();
-    SqlUpdater updater("ec_Class");
 
+    SqlUpdater updater("ec_Class");
     if (classChange.GetClassModifier().IsValid())
         {
         return Fail("ECSCHEMA-UPGRADE: Changing ECClass::Modifier is not supported. Failed on ECClass %s.",
@@ -547,6 +547,7 @@ BentleyStatus ECDbSchemaWriter::UpdateECClass(ECClassChange& classChange, ECClas
                 {
                 return Fail("ECSCHEMA-UPGRADE: Adding new BaseClass is not supported. Failed on ECClass %s.",
                             oldClass.GetFullName());
+                //Determin index
                 }
             else if (change.GetState() == ChangeState::Modified)
                 {

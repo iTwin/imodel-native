@@ -97,7 +97,50 @@ PropertyMapPtr PropertyMapFactory::ClonePropertyMap(ECDbMapCR ecdbMap, PropertyM
     }
 
 //******************************** PropertyMap *****************************************
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Affan.Khan        04/2016
+//---------------------------------------------------------------------------------------
+void PropertyMap::_WriteDebugInfo(DebugWriter& writer) const
+    {
 
+    writer.AppendLine("ECProperty : %s, [Id=%" PRId64 "], [ECClass=%s], [Type=%s]",
+                      GetProperty().GetName().c_str(),
+                      GetProperty().GetId().GetValue(),
+                      GetProperty().GetClass().GetName().c_str(),
+                      GetProperty().GetTypeName().c_str()
+                      );
+
+
+    if (!m_children.IsEmpty())
+        {
+        if (auto b0 = writer.CreateIndentBlock())
+            {
+            for (auto propertyMap : m_children)
+                {
+                propertyMap->WriteDebugInfo(writer);
+                }
+            }
+        }
+    else
+        {
+        if (auto b0 = writer.CreateIndentBlock())
+            {
+            std::vector<DbColumn const*> columns;
+            GetColumns(columns);
+            for (auto column : columns)
+                {
+                writer.AppendLine("Column : %s, [Id=%" PRId64 "], [Table=%s], [Type=%s], [Virtual=%s], [Kind=%s] ",
+                                  column->GetName().c_str(),
+                                  column->GetId(),
+                                  column->GetTable().GetName().c_str(),
+                                  column->TypeToSql(column->GetType()),
+                                  column->GetPersistenceType() == PersistenceType::Persisted ? "false" : "true",
+                                  DbColumn::KindToString(column->GetKind())
+                                  );
+                }
+            }
+        }
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle     01/2016
 //---------------------------------------------------------------------------------------
