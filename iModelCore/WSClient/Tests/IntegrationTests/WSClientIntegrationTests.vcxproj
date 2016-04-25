@@ -10,6 +10,11 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <PropertyGroup>
+    <ShowAllFiles>true</ShowAllFiles>
+    <LocalDebuggerCommandArguments>--gtest_repeat=1 --gtest_filter=*</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{6C910554-8927-4C81-B80B-EABE83C35FEB}</ProjectGuid>
     <Keyword>MakeFileProj</Keyword>
@@ -69,6 +74,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Cache\CachingDataSourceTests.cpp" />
+    <ClCompile Include="Cache\RepositorySchemaUpgradeTests.cpp" />
     <ClCompile Include="Cache\ECDbAdapterTests.cpp" />
     <ClCompile Include="Configuration\BuddiClientTests.cpp" />
     <ClCompile Include="Examples\ExampleTests.cpp" />
@@ -89,6 +95,7 @@
   <ItemGroup>
     <ClInclude Include="Cache\CachingDataSourceTests.h" />
     <ClInclude Include="Cache\ECDbAdapterTests.h" />
+    <ClInclude Include="Cache\RepositorySchemaUpgradeTests.h" />
     <ClInclude Include="Configuration\BuddiClientTests.h" />
     <ClInclude Include="Examples\ExampleTests.h" />
     <ClInclude Include="Repository\Extensions\HierarchicalSearchTests.h" />

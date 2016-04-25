@@ -288,6 +288,11 @@
   <ItemGroup>
     <Text Include="ignore_list.txt" />
   </ItemGroup>
+  <PropertyGroup>
+    <ShowAllFiles>true</ShowAllFiles>
+    <LocalDebuggerCommandArguments>--gtest_repeat=1 --gtest_filter=*</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{962EAE8A-23AA-4992-B5BA-ABB8E8536306}</ProjectGuid>
     <Keyword>MakeFileProj</Keyword>

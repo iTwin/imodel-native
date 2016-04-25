@@ -15,23 +15,31 @@ USING_NAMESPACE_BENTLEY_DGNCLIENTFX
 USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 USING_NAMESPACE_WSCLIENT_UNITTESTS
 
+std::shared_ptr<TestAppPathProvider>  WSClientBaseTest::s_pathProvider;
+
 void WSClientBaseTest::SetUp()
     {
-    InitLogging();
-    DgnClientFxCommon::SetApplicationPathsProvider(&m_pathProvider);
-    InitLibraries();
+    SetUpTestCase();
     }
 
 void WSClientBaseTest::TearDown()
     {
-    DgnClientFxCommon::SetApplicationPathsProvider(nullptr);
+    TearDownTestCase();
     }
 
 void WSClientBaseTest::SetUpTestCase()
-    {}
+    {
+    s_pathProvider = std::make_shared<TestAppPathProvider>();
+    InitLogging();
+    MobileDgnCommon::SetApplicationPathsProvider(s_pathProvider.get());
+    InitLibraries();
+    }
 
 void WSClientBaseTest::TearDownTestCase()
-    {}
+    {
+    MobileDgnCommon::SetApplicationPathsProvider(nullptr);
+    s_pathProvider = nullptr;
+    }
 
 // *** NEEDS WORK: This is a work-around. The WSClient tests seem to require localized strings from the DgnClientFx sqlang db.
 // ***              However, these tests do not initialize DgnClientUi properly and so they cannot call DgnClientFxL10N::GetDefaultFrameworkSqlangFiles.
@@ -55,10 +63,10 @@ static BeFileName getDgnClientFxSqlangFile()
 
 void WSClientBaseTest::InitLibraries()
     {
-    BeFileName::CreateNewDirectory(m_pathProvider.GetTemporaryDirectory());
+    BeFileName::CreateNewDirectory(s_pathProvider->GetTemporaryDirectory());
 
-    BeSQLiteLib::Initialize(m_pathProvider.GetTemporaryDirectory());
-    BeSQLite::EC::ECDb::Initialize(m_pathProvider.GetTemporaryDirectory(), &m_pathProvider.GetAssetsRootDirectory());
+    BeSQLiteLib::Initialize(s_pathProvider->GetTemporaryDirectory());
+    BeSQLite::EC::ECDb::Initialize(s_pathProvider->GetTemporaryDirectory(), &s_pathProvider->GetAssetsRootDirectory());
 
     L10N::SqlangFiles sqlangFiles(getDgnClientFxSqlangFile());
     DgnClientFxL10N::ReInitialize(sqlangFiles, sqlangFiles);
