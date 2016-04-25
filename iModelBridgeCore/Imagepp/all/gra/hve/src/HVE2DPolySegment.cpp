@@ -8041,7 +8041,7 @@ HVE2DVector* HVE2DPolySegment::AllocateCopyInComplexCoordSys(const HFCPtr<HGF2DC
 // PRIVATE method
 // Recalculates the tolerance if needed and permitted
 //-----------------------------------------------------------------------------
-inline void HVE2DPolySegment::ResetTolerance()
+void HVE2DPolySegment::ResetTolerance()
     {
     HINVARIANTS;
 

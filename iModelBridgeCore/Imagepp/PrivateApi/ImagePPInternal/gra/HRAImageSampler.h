@@ -33,7 +33,10 @@ struct HRAPacketRleSurface;
 struct SingleBlockAllocator
 {
 public:
-    SingleBlockAllocator() : m_size(0), m_isAvailable(true)
+    SingleBlockAllocator() : m_size(0)
+#if defined(__HMR_DEBUG)
+    , m_isAvailable(true)
+#endif
         {
         }
     ~SingleBlockAllocator()
@@ -69,7 +72,9 @@ private:
 
     unique_ptr<Byte[]> m_buf;
     size_t m_size;
+#if defined(__HMR_DEBUG) // otherwise flagged as unused
     bool m_isAvailable;
+#endif
 };
 
 //----------------------------------------------------------------------------------------
