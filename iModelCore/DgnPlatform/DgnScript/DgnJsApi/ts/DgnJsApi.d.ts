@@ -113,6 +113,32 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
         static ReportError(description: Bentley_Utf8String): void;
     }
 
+    /** A wrapper for fopen/fgets */
+    class File implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor {
+        /*** NATIVE_TYPE_NAME = JsFile ***/
+
+        /** a wrapper for fopen.
+         * @param name  The full path to the file. 
+         * @param mode  The usual fopen model specifier
+         * @return an opened File object if successful, or null if the file cannot be opened
+         * @note Use only text mode, as there is currently no support for reading the contents of binary files.
+         * @note on mobile devices, only the temp, local state, and documents directories are accessible. It is up to the caller to supply these
+         * directory root paths to the script.
+        */
+        static Fopen(name: Bentley_Utf8String, mode: Bentley_Utf8String): FileP;
+
+        /** explicitly close the file */
+        Close(): void;
+
+        /** Reads the next line of text. @return the next line of text or null if at end of file. */
+        ReadLine(): Bentley_Utf8String;
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type FileP = cxx_pointer<File>;
+
     /** An ECSql Value
     */
     class ECSqlValue implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor

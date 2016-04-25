@@ -1353,6 +1353,9 @@ struct JsECInstance : RefCountedBaseWithCreate
 
 typedef JsECInstance* JsECInstanceP;
 
+//=======================================================================================
+// @bsiclass                                                    Sam.Wilson      06/15
+//=======================================================================================
 struct JsAdhocPropertyQuery : RefCountedBaseWithCreate
     {
     JsECInstanceP m_host;
@@ -1376,6 +1379,21 @@ struct JsAdhocPropertyQuery : RefCountedBaseWithCreate
     STUB_OUT_SET_METHOD(Host,JsECInstanceP)
     STUB_OUT_SET_METHOD(Count,uint32_t)
     };
+
+//=======================================================================================
+// @bsiclass                                                    Sam.Wilson      06/15
+//=======================================================================================
+struct JsFile : RefCountedBaseWithCreate
+    {
+    FILE* m_fp;
+
+    JsFile(FILE* fp) : m_fp() {;}
+    ~JsFile() {if (m_fp) fclose(m_fp);}
+
+    static JsFile* Fopen(Utf8StringCR name, Utf8StringCR mode) {auto fp = fopen(name.c_str(), mode.c_str()); return (nullptr == fp)? new JsFile(fp): nullptr;}
+    void Close() {if (m_fp) fclose(m_fp); m_fp = nullptr;}
+    Utf8String ReadLine() {char buf[4096]; return fgets(buf, sizeof(buf), m_fp);}
+};
 
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      06/15
