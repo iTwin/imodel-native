@@ -63,6 +63,8 @@
         <ProductDirectory Name="BeCurlAssemblies"                   Deliver="false" LibType="static"/>
         <ProductDirectory Name="BeHttpNativeAssemblies"             Path="Assemblies"/>
         <ProductDirectory Name="BeHttpNativeAssemblies"             Deliver="false" LibType="static"/>
+        <ProductDirectory Name="BeSecurityNativeAssemblies"         Path="Assemblies"/>
+        <ProductDirectory Name="BeSecurityNativeAssemblies"         Deliver="false" LibType="static"/>
         <ProductDirectory Name="ConstructionAssemblies"             Path="Assemblies"/>
         <ProductDirectory Name="ConstructionAssemblies"             Deliver="false" LibType="static"/>
         <ProductDirectory Name="ECObjectsNativeAssemblies"          Path="Assemblies"/>
@@ -90,6 +92,8 @@
         <ProductDirectory Name="Libs"                               Path="Libs" LibType="static"/>
         <ProductDirectory Name="BentleyLibs"                        Path="Libs"/>
         <ProductDirectory Name="BentleyLibs"                        Path="Libs" LibType="static"/>
+        <ProductDirectory Name="BeSecurityLibs"                     Path="Libs"/>
+        <ProductDirectory Name="BeSecurityLibs"                     Path="Libs" LibType="static"/>
         <ProductDirectory Name="WSClientLibs"                       Path="Libs"/>
         <ProductDirectory Name="WSClientLibs"                       Path="Libs" LibType="static"/>
         <ProductDirectory Name="BeHttpLibs"                         Path="Libs"/>
