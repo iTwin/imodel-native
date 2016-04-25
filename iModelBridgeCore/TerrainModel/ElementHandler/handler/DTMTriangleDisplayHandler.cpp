@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/handler/DTMTriangleDisplayHandler.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <stdafx.h>
@@ -1342,7 +1342,9 @@ WCharCP                           delimiterStr
 
 
     dgnModel_getGlobalOrigin (path.GetRoot ()->GetDgnModelP(), &globalOrigin);
-    wElevString = DistanceFormatter::Create(*path.GetRoot ()->GetDgnModelP())->ToString (pt.z - globalOrigin.z);        // includeUnits ??
+    DistanceFormatterPtr distanceFormatter = DistanceFormatter::Create(*path.GetRoot()->GetDgnModelP());
+    distanceFormatter->SetUnitLabelFlag(true);
+    wElevString = distanceFormatter->ToString (pt.z - globalOrigin.z);        // includeUnits ??
 
     wSlopeString.Sprintf (L"%.2f", slope);
     wAspectString.Sprintf (L"%.2f", aspect);

@@ -2303,7 +2303,6 @@ struct TMHandlerDeleteManipulatorExtension : IDeleteManipulatorExtension
     //=======================================================================================
     virtual IDeleteManipulatorPtr _GetIDeleteManipulator (ElementHandleCR elHandle, AgendaOperation opType, AgendaModify modify, DisplayPathCP path) override
         {
-        DgnAttachment
         return TMDeleteManipulator::Create ();
         }
     }; // End TMHandlerDeleteManipulatorExtension struct
