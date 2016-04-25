@@ -18,6 +18,14 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //+---------------+---------------+---------------+---------------+---------------+------
 struct ECDbSchemaUpgradeTests : public SchemaImportTestFixture
     {
+    void CloseReOpenECDb()
+        {
+        Utf8CP dbFileName = GetECDb().GetDbFileName();
+        GetECDb().CloseDb();
+        ASSERT_FALSE(GetECDb().IsDbOpen());
+        ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().OpenBeSQLiteDb(dbFileName, Db::OpenParams(Db::OpenMode::Readonly)));
+        ASSERT_TRUE(GetECDb().IsDbOpen());
+        }
     };
 
 #ifdef NotUsedYet
@@ -87,9 +95,9 @@ TEST_F(ECDbSchemaUpgradeTests, UpdateECSchemaAttributes)
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Test Schema' description='This is Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "</ECSchema>");
 
-    ECDbR ecdb = SetupECDb("schemaupgrade.ecdb", schemaItem);
-    ASSERT_TRUE(ecdb.IsDbOpen());
-    ecdb.SaveChanges();
+    SetupECDb("schemaupgrade.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
     //Upgrade with some attributes and import schema
     SchemaItem editedSchemaItem(
@@ -97,15 +105,25 @@ TEST_F(ECDbSchemaUpgradeTests, UpdateECSchemaAttributes)
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts_modified' displayLabel='Modified Test Schema' description='modified test schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "</ECSchema>");
     bool asserted = false;
-    AssertSchemaImport(asserted, ecdb, editedSchemaItem);
+    AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
     ASSERT_FALSE(asserted);
 
     //Verify Schema attributes upgraded successfully
-    ECSchemaCP testSchema = ecdb.Schemas().GetECSchema("TestSchema");
+    ECSchemaCP testSchema = GetECDb().Schemas().GetECSchema("TestSchema");
     ASSERT_TRUE(testSchema != nullptr);
     ASSERT_TRUE(testSchema->GetNamespacePrefix() == "ts_modified");
     ASSERT_TRUE(testSchema->GetDisplayLabel() == "Modified Test Schema");
     ASSERT_TRUE(testSchema->GetDescription() == "modified test schema");
+
+    CloseReOpenECDb();
+
+    //Verify attributes via ECSql using MataSchema
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description, NameSpacePrefix FROM ec.ECSchemaDef WHERE Name='TestSchema'"));
+    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
+    ASSERT_STREQ("Modified Test Schema", statement.GetValueText(0));
+    ASSERT_STREQ("modified test schema", statement.GetValueText(1));
+    ASSERT_STREQ("ts_modified", statement.GetValueText(2));
     }
 
 //---------------------------------------------------------------------------------------
@@ -119,9 +137,9 @@ TEST_F(ECDbSchemaUpgradeTests, UpdateECClassAttributes)
         "   <ECEntityClass typeName='TestClass' displayLabel='Test Class' description='This is test Class' modifier='None' />"
         "</ECSchema>");
 
-    ECDbR ecdb = SetupECDb("schemaupgrade.ecdb", schemaItem);
-    ASSERT_TRUE(ecdb.IsDbOpen());
-    ecdb.SaveChanges();
+    SetupECDb("schemaupgrade.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
     //import edited schema with some changes.
     SchemaItem editedSchemaItem(
@@ -130,11 +148,11 @@ TEST_F(ECDbSchemaUpgradeTests, UpdateECClassAttributes)
         "   <ECEntityClass typeName='TestClass' displayLabel='Modified Test Class' description='modified test class' modifier='None' />"
         "</ECSchema>");
     bool asserted = false;
-    AssertSchemaImport(asserted, ecdb, editedSchemaItem);
+    AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
     ASSERT_FALSE(asserted);
 
     //Verify Schema and Class attributes upgraded successfully
-    ECSchemaCP testSchema = ecdb.Schemas().GetECSchema("TestSchema");
+    ECSchemaCP testSchema = GetECDb().Schemas().GetECSchema("TestSchema");
     ASSERT_TRUE(testSchema != nullptr);
     ASSERT_TRUE(testSchema->GetNamespacePrefix() == "ts_modified");
     ASSERT_TRUE(testSchema->GetDisplayLabel() == "Modified Test Schema");
@@ -144,6 +162,27 @@ TEST_F(ECDbSchemaUpgradeTests, UpdateECClassAttributes)
     ASSERT_TRUE(testClass != nullptr);
     ASSERT_TRUE(testClass->GetDisplayLabel() == "Modified Test Class");
     ASSERT_TRUE(testClass->GetDescription() == "modified test class");
+
+    CloseReOpenECDb();
+
+    //Verify attributes via ECSql using MataSchema
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description, NameSpacePrefix FROM ec.ECSchemaDef WHERE Name='TestSchema'"));
+    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
+    ASSERT_STREQ("Modified Test Schema", statement.GetValueText(0));
+    ASSERT_STREQ("modified test schema", statement.GetValueText(1));
+    ASSERT_STREQ("ts_modified", statement.GetValueText(2));
+
+    statement.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description FROM ec.ECClassDef WHERE Name='TestClass'"));
+    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
+    ASSERT_STREQ("Modified Test Class", statement.GetValueText(0));
+    ASSERT_STREQ("modified test class", statement.GetValueText(1));
+
+    //verify class is accessible using new ECSchemaPrefix
+    statement.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT * FROM ts_modified.TestClass"));
+    ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
     }
 
 //---------------------------------------------------------------------------------------
@@ -159,9 +198,9 @@ TEST_F(ECDbSchemaUpgradeTests, UpdateECPropertyAttributes)
         "   </ECEntityClass>"
         "</ECSchema>");
 
-    ECDbR ecdb = SetupECDb("schemaupgrade.ecdb", schemaItem);
-    ASSERT_TRUE(ecdb.IsDbOpen());
-    ecdb.SaveChanges();
+    SetupECDb("schemaupgrade.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
     //import edited schema with some changes.
     SchemaItem editedSchemaItem(
@@ -172,11 +211,11 @@ TEST_F(ECDbSchemaUpgradeTests, UpdateECPropertyAttributes)
         "   </ECEntityClass>"
         "</ECSchema>");
     bool asserted = false;
-    AssertSchemaImport(asserted, ecdb, editedSchemaItem);
+    AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
     ASSERT_FALSE(asserted);
 
     //Verify Schema, Class and property attributes upgraded successfully
-    ECSchemaCP testSchema = ecdb.Schemas().GetECSchema("TestSchema");
+    ECSchemaCP testSchema = GetECDb().Schemas().GetECSchema("TestSchema");
     ASSERT_TRUE(testSchema != nullptr);
     ASSERT_TRUE(testSchema->GetNamespacePrefix() == "ts_modified");
     ASSERT_TRUE(testSchema->GetDisplayLabel() == "Modified Test Schema");
@@ -191,6 +230,33 @@ TEST_F(ECDbSchemaUpgradeTests, UpdateECPropertyAttributes)
     ASSERT_TRUE(testProperty != nullptr);
     ASSERT_TRUE(testProperty->GetDisplayLabel() == "Modified Test Property");
     ASSERT_TRUE(testProperty->GetDescription() == "this is modified property");
+
+    CloseReOpenECDb();
+
+    //Verify attributes via ECSql using MataSchema
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description, NameSpacePrefix FROM ec.ECSchemaDef WHERE Name='TestSchema'"));
+    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
+    ASSERT_STREQ("Modified Test Schema", statement.GetValueText(0));
+    ASSERT_STREQ("modified test schema", statement.GetValueText(1));
+    ASSERT_STREQ("ts_modified", statement.GetValueText(2));
+
+    statement.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description FROM ec.ECClassDef WHERE Name='TestClass'"));
+    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
+    ASSERT_STREQ("Modified Test Class", statement.GetValueText(0));
+    ASSERT_STREQ("modified test class", statement.GetValueText(1));
+
+    statement.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description FROM ec.ECPropertyDef WHERE Name='TestProperty'"));
+    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
+    ASSERT_STREQ("Modified Test Property", statement.GetValueText(0));
+    ASSERT_STREQ("this is modified property", statement.GetValueText(1));
+
+    //Verify class and Property accessible using new ECSchemaPrefix
+    statement.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT TestProperty FROM ts_modified.TestClass"));
+    ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
     }
 
 //---------------------------------------------------------------------------------------
@@ -213,9 +279,9 @@ TEST_F(ECDbSchemaUpgradeTests, UpdateCAProperties)
         "   </ECEntityClass>"
         "</ECSchema>");
 
-    ECDbR ecdb = SetupECDb("schemaupgrade.ecdb", schemaItem);
-    ASSERT_TRUE(ecdb.IsDbOpen());
-    ecdb.SaveChanges();
+    SetupECDb("schemaupgrade.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
     //import edited schema with some changes.
     SchemaItem editedSchemaItem(
@@ -234,11 +300,11 @@ TEST_F(ECDbSchemaUpgradeTests, UpdateCAProperties)
         "   </ECEntityClass>"
         "</ECSchema>");
     bool asserted = false;
-    AssertSchemaImport(asserted, ecdb, editedSchemaItem);
+    AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
     ASSERT_FALSE(asserted);
 
     //Verify Schema, Class, property and CAClassProperties attributes upgraded successfully
-    ECSchemaCP testSchema = ecdb.Schemas().GetECSchema("TestSchema");
+    ECSchemaCP testSchema = GetECDb().Schemas().GetECSchema("TestSchema");
     ASSERT_TRUE(testSchema != nullptr);
     ASSERT_TRUE(testSchema->GetNamespacePrefix() == "ts_modified");
     ASSERT_TRUE(testSchema->GetDisplayLabel() == "Modified Test Schema");
@@ -254,14 +320,43 @@ TEST_F(ECDbSchemaUpgradeTests, UpdateCAProperties)
     ASSERT_TRUE(testProperty->GetDisplayLabel() == "Modified Test Property");
     ASSERT_TRUE(testProperty->GetDescription() == "this is modified property");
 
+    CloseReOpenECDb();
+
+    //Verify attributes via ECSql using MataSchema
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description, NameSpacePrefix FROM ec.ECSchemaDef WHERE Name='TestSchema'"));
+    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
+    ASSERT_STREQ("Modified Test Schema", statement.GetValueText(0));
+    ASSERT_STREQ("modified test schema", statement.GetValueText(1));
+    ASSERT_STREQ("ts_modified", statement.GetValueText(2));
+
+    statement.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description FROM ec.ECClassDef WHERE Name='TestClass'"));
+    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
+    ASSERT_STREQ("Modified Test Class", statement.GetValueText(0));
+    ASSERT_STREQ("modified test class", statement.GetValueText(1));
+
+    statement.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description FROM ec.ECPropertyDef WHERE Name='TestProperty'"));
+    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
+    ASSERT_STREQ("Modified Test Property", statement.GetValueText(0));
+    ASSERT_STREQ("this is modified property", statement.GetValueText(1));
+
+    //Verify class and Property accessible using new ECSchemaPrefix
+    statement.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT TestProperty FROM ts_modified.TestClass"));
+    ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
+
     //verify CA changes
+    testProperty = GetECDb().Schemas().GetECSchema("TestSchema")->GetClassCP("TestClass")->GetPropertyP("TestProperty");
+    ASSERT_TRUE(testProperty != nullptr);
     IECInstancePtr propertyMapCA = testProperty->GetCustomAttribute("PropertyMap");
     ASSERT_TRUE(propertyMapCA != nullptr);
     ECValue val;
     ASSERT_EQ(ECObjectsStatus::Success, propertyMapCA->GetValue(val, "IsNullable"));
     ASSERT_FALSE(val.GetBoolean());
-    val.Clear();
 
+    val.Clear();
     ASSERT_EQ(ECObjectsStatus::Success, propertyMapCA->GetValue(val, "ColumnName"));
     ASSERT_STREQ("TestProperty1", val.GetUtf8CP());
     }
@@ -276,28 +371,43 @@ TEST_F(ECDbSchemaUpgradeTests, AddNewEntityClass)
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "</ECSchema>");
 
-    ECDbR ecdb = SetupECDb("schemaupgrade.ecdb", schemaItem);
-    ASSERT_TRUE(ecdb.IsDbOpen());
-    ecdb.SaveChanges();
+    SetupECDb("schemaupgrade.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
     //Upgrade with some attributes and import schema
     SchemaItem editedSchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts'  version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECEntityClass typeName='TestClass' displayLabel='Test Class' description='This is test Class' modifier='None' />"
         "</ECSchema>");
     bool asserted = false;
-    AssertSchemaImport(asserted, ecdb, editedSchemaItem);
+    AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
     ASSERT_FALSE(asserted);
 
-    //Verify Newly Added Entity Class exists
-    ECSchemaCP testSchema = ecdb.Schemas().GetECSchema("TestSchema");
+    //Verify Schema attributes upgraded successfully
+    ECSchemaCP testSchema = GetECDb().Schemas().GetECSchema("TestSchema");
     ASSERT_TRUE(testSchema != nullptr);
 
+    //Verify Newly Added Entity Class exists
     ECClassCP entityClass = testSchema->GetClassCP("TestClass");
     ASSERT_TRUE(entityClass != nullptr);
     ASSERT_TRUE(entityClass->GetDisplayLabel() == "Test Class");
     ASSERT_TRUE(entityClass->GetDescription() == "This is test Class");
+
+    CloseReOpenECDb();
+
+    //Verify attributes via ECSql using MataSchema
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description FROM ec.ECClassDef WHERE Name='TestClass'"));
+    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
+    ASSERT_STREQ("Test Class", statement.GetValueText(0));
+    ASSERT_STREQ("This is test Class", statement.GetValueText(1));
+
+    //Query newly added Entity Class
+    statement.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT * FROM ts.TestClass"));
+    ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
     }
 
 //---------------------------------------------------------------------------------------
@@ -320,9 +430,9 @@ TEST_F(ECDbSchemaUpgradeTests, AddNewClassModifyAllExistingAttributes)
         "   </ECEntityClass>"
         "</ECSchema>");
 
-    ECDbR ecdb = SetupECDb("schemaupgrade.ecdb", schemaItem);
-    ASSERT_TRUE(ecdb.IsDbOpen());
-    ecdb.SaveChanges();
+    SetupECDb("schemaupgrade.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
     //import edited schema with some changes.
     SchemaItem editedSchemaItem(
@@ -342,11 +452,11 @@ TEST_F(ECDbSchemaUpgradeTests, AddNewClassModifyAllExistingAttributes)
         "   <ECEntityClass typeName='NewTestClass' displayLabel='New Test Class' description='This is New test Class' modifier='None' />"
         "</ECSchema>");
     bool asserted = false;
-    AssertSchemaImport(asserted, ecdb, editedSchemaItem);
+    AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
     ASSERT_FALSE(asserted);
 
     //Verify Schema, Class, property and CAClassProperties attributes upgraded successfully
-    ECSchemaCP testSchema = ecdb.Schemas().GetECSchema("TestSchema");
+    ECSchemaCP testSchema = GetECDb().Schemas().GetECSchema("TestSchema");
     ASSERT_TRUE(testSchema != nullptr);
     ASSERT_TRUE(testSchema->GetNamespacePrefix() == "ts_modified");
     ASSERT_TRUE(testSchema->GetDisplayLabel() == "Modified Test Schema");
@@ -362,7 +472,51 @@ TEST_F(ECDbSchemaUpgradeTests, AddNewClassModifyAllExistingAttributes)
     ASSERT_TRUE(testProperty->GetDisplayLabel() == "Modified Test Property");
     ASSERT_TRUE(testProperty->GetDescription() == "this is modified property");
 
+    //verify newly added Entity Class exists
+    ECClassCP newTestClass = testSchema->GetClassCP("NewTestClass");
+    ASSERT_TRUE(newTestClass != nullptr);
+    ASSERT_TRUE(newTestClass->GetDisplayLabel() == "New Test Class");
+    ASSERT_TRUE(newTestClass->GetDescription() == "This is New test Class");
+
+    CloseReOpenECDb();
+
+    //Verify attributes via ECSql using MataSchema
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description, NameSpacePrefix FROM ec.ECSchemaDef WHERE Name='TestSchema'"));
+    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
+    ASSERT_STREQ("Modified Test Schema", statement.GetValueText(0));
+    ASSERT_STREQ("modified test schema", statement.GetValueText(1));
+    ASSERT_STREQ("ts_modified", statement.GetValueText(2));
+
+    statement.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description FROM ec.ECClassDef WHERE Name='TestClass'"));
+    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
+    ASSERT_STREQ("Modified Test Class", statement.GetValueText(0));
+    ASSERT_STREQ("modified test class", statement.GetValueText(1));
+
+    statement.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description From ec.ECClassDef WHERE Name='NewTestClass'"));
+    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
+    ASSERT_STREQ("New Test Class", statement.GetValueText(0));
+    ASSERT_STREQ("This is New test Class", statement.GetValueText(1));
+
+    statement.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description FROM ec.ECPropertyDef WHERE Name='TestProperty'"));
+    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
+    ASSERT_STREQ("Modified Test Property", statement.GetValueText(0));
+    ASSERT_STREQ("this is modified property", statement.GetValueText(1));
+
+    //Query existing and newly added Entity Classes
+    statement.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT TestProperty FROM ts_modified.TestClass"));
+    ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
+
+    statement.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT * FROM ts_modified.NewTestClass"));
+    ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
+
     //verify CA changes
+    testProperty = GetECDb().Schemas().GetECSchema("TestSchema")->GetClassCP("TestClass")->GetPropertyP("TestProperty");
     IECInstancePtr propertyMapCA = testProperty->GetCustomAttribute("PropertyMap");
     ASSERT_TRUE(propertyMapCA != nullptr);
     ECValue val;
@@ -372,12 +526,6 @@ TEST_F(ECDbSchemaUpgradeTests, AddNewClassModifyAllExistingAttributes)
     val.Clear();
     ASSERT_EQ(ECObjectsStatus::Success, propertyMapCA->GetValue(val, "ColumnName"));
     ASSERT_STREQ("TestProperty1", val.GetUtf8CP());
-
-    //verify newly added Entity Class exists
-    ECClassCP newTestClass = testSchema->GetClassCP("NewTestClass");
-    ASSERT_TRUE(newTestClass != nullptr);
-    ASSERT_TRUE(newTestClass->GetDisplayLabel() == "New Test Class");
-    ASSERT_TRUE(newTestClass->GetDescription() == "This is New test Class");
     }
 
 //---------------------------------------------------------------------------------------
@@ -392,9 +540,9 @@ TEST_F(ECDbSchemaUpgradeTests, AddNewProperty)
         "   </ECEntityClass>"
         "</ECSchema>");
 
-    ECDbR ecdb = SetupECDb("schemaupgrade.ecdb", schemaItem);
-    ASSERT_TRUE(ecdb.IsDbOpen());
-    ecdb.SaveChanges();
+    SetupECDb("schemaupgrade.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
     //import edited schema with some changes.
     SchemaItem editedSchemaItem(
@@ -405,11 +553,11 @@ TEST_F(ECDbSchemaUpgradeTests, AddNewProperty)
         "   </ECEntityClass>"
         "</ECSchema>");
     bool asserted = false;
-    AssertSchemaImport(asserted, ecdb, editedSchemaItem);
+    AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
     ASSERT_FALSE(asserted);
 
     //Verify newly added property exists
-    ECSchemaCP testSchema = ecdb.Schemas().GetECSchema("TestSchema");
+    ECSchemaCP testSchema = GetECDb().Schemas().GetECSchema("TestSchema");
     ASSERT_TRUE(testSchema != nullptr);
 
     ECClassCP testClass = testSchema->GetClassCP("TestClass");
@@ -419,6 +567,19 @@ TEST_F(ECDbSchemaUpgradeTests, AddNewProperty)
     ASSERT_TRUE(testProperty != nullptr);
     ASSERT_TRUE(testProperty->GetDisplayLabel() == "Test Property");
     ASSERT_TRUE(testProperty->GetDescription() == "this is property");
+
+    CloseReOpenECDb();
+
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description FROM ec.ECPropertyDef WHERE Name='TestProperty'"));
+    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
+    ASSERT_STREQ("Test Property", statement.GetValueText(0));
+    ASSERT_STREQ("this is property", statement.GetValueText(1));
+
+    //Query newly added Property
+    statement.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT TestProperty FROM ts.TestClass"));
+    ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
     }
 
 //---------------------------------------------------------------------------------------
@@ -441,9 +602,9 @@ TEST_F(ECDbSchemaUpgradeTests, AddNewPropertyModifyAllExistingAttributes)
         "   </ECEntityClass>"
         "</ECSchema>");
 
-    ECDbR ecdb = SetupECDb("schemaupgrade.ecdb", schemaItem);
-    ASSERT_TRUE(ecdb.IsDbOpen());
-    ecdb.SaveChanges();
+    SetupECDb("schemaupgrade.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
     //import edited schema with some changes.
     SchemaItem editedSchemaItem(
@@ -463,11 +624,11 @@ TEST_F(ECDbSchemaUpgradeTests, AddNewPropertyModifyAllExistingAttributes)
         "   </ECEntityClass>"
         "</ECSchema>");
     bool asserted = false;
-    AssertSchemaImport(asserted, ecdb, editedSchemaItem);
+    AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
     ASSERT_FALSE(asserted);
 
     //Verify Schema, Class, property and CAClassProperties attributes upgraded successfully
-    ECSchemaCP testSchema = ecdb.Schemas().GetECSchema("TestSchema");
+    ECSchemaCP testSchema = GetECDb().Schemas().GetECSchema("TestSchema");
     ASSERT_TRUE(testSchema != nullptr);
     ASSERT_TRUE(testSchema->GetNamespacePrefix() == "ts_modified");
     ASSERT_TRUE(testSchema->GetDisplayLabel() == "Modified Test Schema");
@@ -483,7 +644,48 @@ TEST_F(ECDbSchemaUpgradeTests, AddNewPropertyModifyAllExistingAttributes)
     ASSERT_TRUE(testProperty->GetDisplayLabel() == "Modified Test Property");
     ASSERT_TRUE(testProperty->GetDescription() == "this is modified property");
 
+    //verify newly added Property exists
+    ECPropertyCP newTestProperty = testClass->GetPropertyP("NewTestProperty");
+    ASSERT_TRUE(newTestProperty != nullptr);
+    ASSERT_TRUE(newTestProperty->GetDisplayLabel() == "New Test Property");
+    ASSERT_TRUE(newTestProperty->GetDescription() == "this is new property");
+
+    CloseReOpenECDb();
+
+    //Verify attributes via ECSql using MataSchema
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description, NameSpacePrefix FROM ec.ECSchemaDef WHERE Name='TestSchema'"));
+    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
+    ASSERT_STREQ("Modified Test Schema", statement.GetValueText(0));
+    ASSERT_STREQ("modified test schema", statement.GetValueText(1));
+    ASSERT_STREQ("ts_modified", statement.GetValueText(2));
+
+    statement.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description FROM ec.ECClassDef WHERE Name='TestClass'"));
+    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
+    ASSERT_STREQ("Modified Test Class", statement.GetValueText(0));
+    ASSERT_STREQ("modified test class", statement.GetValueText(1));
+
+    statement.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description FROM ec.ECPropertyDef WHERE Name='TestProperty'"));
+    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
+    ASSERT_STREQ("Modified Test Property", statement.GetValueText(0));
+    ASSERT_STREQ("this is modified property", statement.GetValueText(1));
+
+    statement.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description FROM ec.ECPropertyDef WHERE Name='NewTestProperty'"));
+    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
+    ASSERT_STREQ("New Test Property", statement.GetValueText(0));
+    ASSERT_STREQ("this is new property", statement.GetValueText(1));
+
+    //Query existing and newly added Entity Classes
+    statement.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT TestProperty, NewTestProperty FROM ts_modified.TestClass"));
+    ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
+
     //verify CA changes
+    testProperty = GetECDb().Schemas().GetECClass("TestSchema", "TestClass", EC::ResolveSchema::BySchemaName)->GetPropertyP("TestProperty");
+    ASSERT_TRUE(testProperty != nullptr);
     IECInstancePtr propertyMapCA = testProperty->GetCustomAttribute("PropertyMap");
     ASSERT_TRUE(propertyMapCA != nullptr);
     ECValue val;
@@ -493,12 +695,6 @@ TEST_F(ECDbSchemaUpgradeTests, AddNewPropertyModifyAllExistingAttributes)
 
     ASSERT_EQ(ECObjectsStatus::Success, propertyMapCA->GetValue(val, "ColumnName"));
     ASSERT_STREQ("TestProperty1", val.GetUtf8CP());
-
-    //verify newly added Property exists
-    ECPropertyCP newTestProperty = testClass->GetPropertyP("NewTestProperty");
-    ASSERT_TRUE(newTestProperty != nullptr);
-    ASSERT_TRUE(newTestProperty->GetDisplayLabel() == "New Test Property");
-    ASSERT_TRUE(newTestProperty->GetDescription() == "this is new property");
     }
 
 //---------------------------------------------------------------------------------------
@@ -508,45 +704,86 @@ TEST_F(ECDbSchemaUpgradeTests, AddNewCAOnSchema_AddNewClass)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECEntityClass typeName='TestClass' modifier='None' />"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Test Schema' description='This is Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECEntityClass typeName='TestClass' displayLabel='Test Class' description='This is test Class' modifier='None' />"
         "</ECSchema>");
 
-    ECDbR ecdb = SetupECDb("schemaupgrade.ecdb", schemaItem);
-    ASSERT_TRUE(ecdb.IsDbOpen());
-    ecdb.SaveChanges();
+    SetupECDb("schemaupgrade.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
     //Upgrade with some attributes and import schema
     SchemaItem editedSchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Modified Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts_modified' displayLabel='Modified Test Schema' description='modified test schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
         "        <ECCustomAttributes>"
         "            <SchemaMap xmlns='ECDbMap.01.01'>"
         "                <TablePrefix>myownprefix</TablePrefix>"
         "            </SchemaMap>"
         "        </ECCustomAttributes>"
-        "   <ECEntityClass typeName='TestClass' displayLabel='Modified Test Class' modifier='None' />"
+        "   <ECEntityClass typeName='TestClass' displayLabel='Modified Test Class' description='modified test class' modifier='None' />"
         "   <ECEntityClass typeName='NewTestClass' displayLabel='New Test Class' modifier='None' />"
         "</ECSchema>");
     bool asserted = false;
-    AssertSchemaImport(asserted, ecdb, editedSchemaItem);
+    AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
     ASSERT_FALSE(asserted);
 
-    ECSchemaCP testSchema = ecdb.Schemas().GetECSchema("TestSchema");
+    ECSchemaCP testSchema = GetECDb().Schemas().GetECSchema("TestSchema");
     ASSERT_TRUE(testSchema != nullptr);
-    ASSERT_TRUE(testSchema->GetNamespacePrefix() == "ts");
+    ASSERT_TRUE(testSchema->GetNamespacePrefix() == "ts_modified");
     ASSERT_TRUE(testSchema->GetDisplayLabel() == "Modified Test Schema");
+    ASSERT_TRUE(testSchema->GetDescription() == "modified test schema");
 
     ECClassCP testClass = testSchema->GetClassCP("TestClass");
     ASSERT_TRUE(testClass != nullptr);
     ASSERT_TRUE(testClass->GetDisplayLabel() == "Modified Test Class");
+    ASSERT_TRUE(testClass->GetDescription() == "modified test class");
 
     //verify tables
-    ASSERT_FALSE(ecdb.TableExists("myownprefix_TestClass"));
-    ASSERT_TRUE(ecdb.TableExists("ts_TestClass"));
-    //new class should be added with new schema prefix
-    ASSERT_TRUE(ecdb.TableExists("myownprefix_NewTestClass"));
+    ASSERT_FALSE(GetECDb().TableExists("myownprefix_TestClass"));
+    ASSERT_TRUE(GetECDb().TableExists("ts_TestClass"));
+    //new class should be added with new tableprefix
+    ASSERT_TRUE(GetECDb().TableExists("myownprefix_NewTestClass"));
+
+    CloseReOpenECDb();
+
+    //Verify attributes via ECSql using MataSchema
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description, NameSpacePrefix FROM ec.ECSchemaDef WHERE Name='TestSchema'"));
+    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
+    ASSERT_STREQ("Modified Test Schema", statement.GetValueText(0));
+    ASSERT_STREQ("modified test schema", statement.GetValueText(1));
+    ASSERT_STREQ("ts_modified", statement.GetValueText(2));
+
+    statement.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description FROM ec.ECClassDef WHERE Name='TestClass'"));
+    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
+    ASSERT_STREQ("Modified Test Class", statement.GetValueText(0));
+    ASSERT_STREQ("modified test class", statement.GetValueText(1));
+
+    statement.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel FROM ec.ECClassDef WHERE Name='TestClass'"));
+    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
+    ASSERT_STREQ("Modified Test Class", statement.GetValueText(0));
+
+    statement.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT * FROM ts_modified.TestClass"));
+    ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
+
+    statement.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT * FROM ts_modified.NewTestClass"));
+    ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
+
+    //Verify newly added CA
+    testSchema = GetECDb().Schemas().GetECSchema("TestSchema");
+    ASSERT_TRUE(testSchema != nullptr);
+    IECInstancePtr schemaMapCA = testSchema->GetCustomAttribute("SchemaMap");
+    ASSERT_TRUE(schemaMapCA != nullptr);
+
+    ECValue val;
+    ASSERT_EQ(ECObjectsStatus::Success, schemaMapCA->GetValue(val, "TablePrefix"));
+    ASSERT_STREQ("myownprefix", val.GetUtf8CP());
     }
 
 //---------------------------------------------------------------------------------------
@@ -557,13 +794,12 @@ TEST_F(ECDbSchemaUpgradeTests, AddNewCAOnClass)
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Test Schema' description='This is Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
         "   <ECEntityClass typeName='TestClass' displayLabel='Test Class' description='This is test Class' modifier='None' />"
         "</ECSchema>");
 
-    ECDbR ecdb = SetupECDb("schemaupgrade.ecdb", schemaItem);
-    ASSERT_TRUE(ecdb.IsDbOpen());
-    ecdb.SaveChanges();
+    SetupECDb("schemaupgrade.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
     //import edited schema with some changes.
     SchemaItem editedSchemaItem(
@@ -582,11 +818,11 @@ TEST_F(ECDbSchemaUpgradeTests, AddNewCAOnClass)
         "   </ECEntityClass>"
         "</ECSchema>");
     bool asserted = false;
-    AssertSchemaImport(asserted, ecdb, editedSchemaItem);
+    AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
     ASSERT_FALSE(asserted);
 
     //Verify Schema and Class attributes upgraded successfully
-    ECSchemaCP testSchema = ecdb.Schemas().GetECSchema("TestSchema");
+    ECSchemaCP testSchema = GetECDb().Schemas().GetECSchema("TestSchema");
     ASSERT_TRUE(testSchema != nullptr);
     ASSERT_TRUE(testSchema->GetNamespacePrefix() == "ts_modified");
     ASSERT_TRUE(testSchema->GetDisplayLabel() == "Modified Test Schema");
@@ -597,7 +833,25 @@ TEST_F(ECDbSchemaUpgradeTests, AddNewCAOnClass)
     ASSERT_TRUE(testClass->GetDisplayLabel() == "Modified Test Class");
     ASSERT_TRUE(testClass->GetDescription() == "modified test class");
 
+    CloseReOpenECDb();
+
+    //Verify attributes via ECSql using MataSchema
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description, NameSpacePrefix FROM ec.ECSchemaDef WHERE Name='TestSchema'"));
+    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
+    ASSERT_STREQ("Modified Test Schema", statement.GetValueText(0));
+    ASSERT_STREQ("modified test schema", statement.GetValueText(1));
+    ASSERT_STREQ("ts_modified", statement.GetValueText(2));
+
+    statement.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description FROM ec.ECClassDef WHERE Name='TestClass'"));
+    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
+    ASSERT_STREQ("Modified Test Class", statement.GetValueText(0));
+    ASSERT_STREQ("modified test class", statement.GetValueText(1));
+
     //Verify newly added CA
+    testClass = GetECDb().Schemas().GetECSchema("TestSchema")->GetClassCP("TestClass");
+    ASSERT_TRUE(testClass != nullptr);
     IECInstancePtr classMapCA = testClass->GetCustomAttribute("ClassMap");
     ASSERT_TRUE(classMapCA != nullptr);
     ECValue val;
@@ -623,9 +877,9 @@ TEST_F(ECDbSchemaUpgradeTests, AddNewCAOnProperty)
         "   </ECEntityClass>"
         "</ECSchema>");
 
-    ECDbR ecdb = SetupECDb("schemaupgrade.ecdb", schemaItem);
-    ASSERT_TRUE(ecdb.IsDbOpen());
-    ecdb.SaveChanges();
+    SetupECDb("schemaupgrade.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
     //import edited schema with some changes.
     SchemaItem editedSchemaItem(
@@ -643,11 +897,11 @@ TEST_F(ECDbSchemaUpgradeTests, AddNewCAOnProperty)
         "   </ECEntityClass>"
         "</ECSchema>");
     bool asserted = false;
-    AssertSchemaImport(asserted, ecdb, editedSchemaItem);
+    AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
     ASSERT_FALSE(asserted);
 
     //Verify Schema, Class and property attributes upgraded successfully
-    ECSchemaCP testSchema = ecdb.Schemas().GetECSchema("TestSchema");
+    ECSchemaCP testSchema = GetECDb().Schemas().GetECSchema("TestSchema");
     ASSERT_TRUE(testSchema != nullptr);
     ASSERT_TRUE(testSchema->GetNamespacePrefix() == "ts_modified");
     ASSERT_TRUE(testSchema->GetDisplayLabel() == "Modified Test Schema");
@@ -663,7 +917,36 @@ TEST_F(ECDbSchemaUpgradeTests, AddNewCAOnProperty)
     ASSERT_TRUE(testProperty->GetDisplayLabel() == "Modified Test Property");
     ASSERT_TRUE(testProperty->GetDescription() == "this is modified property");
 
+    CloseReOpenECDb();
+
+    //Verify attributes via ECSql using MataSchema
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description, NameSpacePrefix FROM ec.ECSchemaDef WHERE Name='TestSchema'"));
+    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
+    ASSERT_STREQ("Modified Test Schema", statement.GetValueText(0));
+    ASSERT_STREQ("modified test schema", statement.GetValueText(1));
+    ASSERT_STREQ("ts_modified", statement.GetValueText(2));
+
+    statement.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description FROM ec.ECClassDef WHERE Name='TestClass'"));
+    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
+    ASSERT_STREQ("Modified Test Class", statement.GetValueText(0));
+    ASSERT_STREQ("modified test class", statement.GetValueText(1));
+
+    statement.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description FROM ec.ECPropertyDef WHERE Name='TestProperty'"));
+    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
+    ASSERT_STREQ("Modified Test Property", statement.GetValueText(0));
+    ASSERT_STREQ("this is modified property", statement.GetValueText(1));
+
+    //Query Property
+    statement.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT TestProperty FROM ts_modified.TestClass"));
+    ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
+
     //verify newly added CA on Property
+    testProperty = GetECDb().Schemas().GetECSchema("TestSchema")->GetClassCP("TestClass")->GetPropertyP("TestProperty");
+    ASSERT_TRUE(testProperty != nullptr);
     IECInstancePtr propertyMapCA = testProperty->GetCustomAttribute("PropertyMap");
     ASSERT_TRUE(propertyMapCA != nullptr);
     ECValue val;
@@ -695,14 +978,14 @@ TEST_F(ECDbSchemaUpgradeTests, MinimumSharedColumnsCount_AddProperty)
         "   </ECEntityClass>"
         "</ECSchema>");
 
-    ECDbR ecdb = SetupECDb("schemaupgrade.ecdb", schemaItem);
-    ASSERT_TRUE(ecdb.IsDbOpen());
-    ecdb.SaveChanges();
+    SetupECDb("schemaupgrade.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
     //Verify number of columns
     std::vector<std::pair<Utf8String, int>> testItems;
     testItems.push_back(std::make_pair("ts_Parent", 7));
-    AssertColumnCount(ecdb, testItems, "MinimumSharedColumns");
+    AssertColumnCount(GetECDb(), testItems, "MinimumSharedColumns");
 
     SchemaItem editedSchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -728,14 +1011,15 @@ TEST_F(ECDbSchemaUpgradeTests, MinimumSharedColumnsCount_AddProperty)
         "   </ECEntityClass>"
         "</ECSchema>");
     bool asserted = false;
-    AssertSchemaImport(asserted, ecdb, editedSchemaItem);
+    AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
     ASSERT_FALSE(asserted);
-    ecdb.SaveChanges();
+
+    CloseReOpenECDb();
 
     //Verify number of columns after upgrade
     testItems.clear();
     testItems.push_back(std::make_pair("ts_Parent", 8));
-    AssertColumnCount(ecdb, testItems, "MinimumSharedColumns");
+    AssertColumnCount(GetECDb(), testItems, "MinimumSharedColumns");
     }
 
 //---------------------------------------------------------------------------------------
@@ -766,14 +1050,14 @@ TEST_F(ECDbSchemaUpgradeTests, MinimumSharedColumnsCountForSubClasses_AddPropert
         "    </ECEntityClass>"
         "</ECSchema>");
 
-    ECDbR ecdb = SetupECDb("schemaupgrade.ecdb", schemaItem);
-    ASSERT_TRUE(ecdb.IsDbOpen());
-    ecdb.SaveChanges();
+    SetupECDb("schemaupgrade.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
     //Verify number of columns
     std::vector<std::pair<Utf8String, int>> testItems;
     testItems.push_back(std::make_pair("ts_Parent", 8));
-    AssertColumnCount(ecdb, testItems, "MinimumSharedColumnsForSubClasses");
+    AssertColumnCount(GetECDb(), testItems, "MinimumSharedColumnsForSubClasses");
 
     SchemaItem editedSchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -804,13 +1088,15 @@ TEST_F(ECDbSchemaUpgradeTests, MinimumSharedColumnsCountForSubClasses_AddPropert
         "    </ECEntityClass>"
         "</ECSchema>");
     bool asserted = false;
-    AssertSchemaImport(asserted, ecdb, editedSchemaItem);
+    AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
     ASSERT_FALSE(asserted);
+
+    CloseReOpenECDb();
 
     //Verify number of columns after upgrade
     testItems.clear();
     testItems.push_back(std::make_pair("ts_Parent", 10));
-    AssertColumnCount(ecdb, testItems, "MinimumSharedColumnsForSubClasses");
+    AssertColumnCount(GetECDb(), testItems, "MinimumSharedColumnsForSubClasses");
     }
 
 //---------------------------------------------------------------------------------------
@@ -841,15 +1127,15 @@ TEST_F(ECDbSchemaUpgradeTests, MinimumSharedColumnsCountWithJoinedTable_AddPrope
         "    </ECEntityClass>"
         "</ECSchema>");
 
-    ECDbR ecdb = SetupECDb("schemaupgrade.ecdb", schemaItem);
-    ASSERT_TRUE(ecdb.IsDbOpen());
-    ecdb.SaveChanges();
+    SetupECDb("schemaupgrade.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
     //Verify number of columns
     std::vector<std::pair<Utf8String, int>> testItems;
     testItems.push_back(std::make_pair("ts_Parent", 3));
     testItems.push_back(std::make_pair("ts_Sub1", 7));
-    AssertColumnCount(ecdb, testItems, "MinimumSharedColumnsWithJoinedTable");
+    AssertColumnCount(GetECDb(), testItems, "MinimumSharedColumnsWithJoinedTable");
 
     SchemaItem editedSchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -879,14 +1165,16 @@ TEST_F(ECDbSchemaUpgradeTests, MinimumSharedColumnsCountWithJoinedTable_AddPrope
         "    </ECEntityClass>"
         "</ECSchema>");
     bool asserted = false;
-    AssertSchemaImport(asserted, ecdb, editedSchemaItem);
+    AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
     ASSERT_FALSE(asserted);
+
+    CloseReOpenECDb();
 
     //Verify number of columns after upgrade
     testItems.clear();
     testItems.push_back(std::make_pair("ts_Parent", 3));
     testItems.push_back(std::make_pair("ts_Sub1", 8));
-    AssertColumnCount(ecdb, testItems, "MinimumSharedColumnsWithJoinedTable");
+    AssertColumnCount(GetECDb(), testItems, "MinimumSharedColumnsWithJoinedTable");
     }
 
 //---------------------------------------------------------------------------------------
@@ -901,9 +1189,9 @@ TEST_F(ECDbSchemaUpgradeTests, ImportMultipleSchemaVersions_AddNewProperty)
         "   </ECEntityClass>"
         "</ECSchema>");
 
-    ECDbR ecdb = SetupECDb("schemaupgrade.ecdb", schemaItem);
-    ASSERT_TRUE(ecdb.IsDbOpen());
-    ecdb.SaveChanges();
+    SetupECDb("schemaupgrade.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
     //import edited schema with lower minor version with some changes.
     SchemaItem editedSchemaItem(
@@ -914,11 +1202,11 @@ TEST_F(ECDbSchemaUpgradeTests, ImportMultipleSchemaVersions_AddNewProperty)
         "   </ECEntityClass>"
         "</ECSchema>", false, "Schema upgrade with lower minor version not allowed");
     bool asserted = false;
-    AssertSchemaImport(asserted, ecdb, editedSchemaItem);
+    AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
     ASSERT_FALSE(asserted);
 
     //Verify newly added property must not exist at this point
-    ECSchemaCP testSchema = ecdb.Schemas().GetECSchema("TestSchema");
+    ECSchemaCP testSchema = GetECDb().Schemas().GetECSchema("TestSchema");
     ASSERT_TRUE(testSchema != nullptr);
 
     ECClassCP testClass = testSchema->GetClassCP("TestClass");
@@ -936,11 +1224,11 @@ TEST_F(ECDbSchemaUpgradeTests, ImportMultipleSchemaVersions_AddNewProperty)
         "   </ECEntityClass>"
         "</ECSchema>");
     asserted = false;
-    AssertSchemaImport(asserted, ecdb, editedSchemaItem1);
+    AssertSchemaImport(asserted, GetECDb(), editedSchemaItem1);
     ASSERT_FALSE(asserted);
 
     //Verify newly added property must exist after third schema import
-    testSchema = ecdb.Schemas().GetECSchema("TestSchema");
+    testSchema = GetECDb().Schemas().GetECSchema("TestSchema");
     ASSERT_TRUE(testSchema != nullptr);
 
     testClass = testSchema->GetClassCP("TestClass");
@@ -950,11 +1238,24 @@ TEST_F(ECDbSchemaUpgradeTests, ImportMultipleSchemaVersions_AddNewProperty)
     ASSERT_TRUE(testProperty != nullptr);
     ASSERT_TRUE(testProperty->GetDisplayLabel() == "Test Property");
     ASSERT_TRUE(testProperty->GetDescription() == "this is property");
+
+    CloseReOpenECDb();
+
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description FROM ec.ECPropertyDef WHERE Name='TestProperty'"));
+    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
+    ASSERT_STREQ("Test Property", statement.GetValueText(0));
+    ASSERT_STREQ("this is property", statement.GetValueText(1));
+
+    statement.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT TestProperty FROM ts.TestClass"));
+    ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
+#ifdef WIP
 TEST_F(ECDbSchemaUpgradeTests, UpdatingSchemaShouldNotDeleteExistingRelationshipsOrIndexes)
     {
     ECDbTestFixture::Initialize();
@@ -1007,4 +1308,5 @@ TEST_F(ECDbSchemaUpgradeTests, UpdateMultipleSchemasInDb)
     schemaStatus = ecdb.Schemas().ImportECSchemas(schemaContext->GetCache());
     ASSERT_EQ(SUCCESS, schemaStatus);
     }
+#endif // WIP
 END_ECDBUNITTESTS_NAMESPACE
