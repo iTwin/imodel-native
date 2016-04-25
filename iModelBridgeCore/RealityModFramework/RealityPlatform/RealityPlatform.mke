@@ -34,6 +34,9 @@ nameToDefine=__REALITYPLATFORM_BUILD__
 nameToDefine=__WMSPARSER_BUILD__
 %include cdefapnd.mki
 
+dirToSearch=$(OutBuildContexts)RealityModFramework/VendorAPI/PointoolsVortexAPI_DLL
+%include cincapnd.mki 
+
 #----------------------------------------------------------------------
 #       Build source files
 #----------------------------------------------------------------------
