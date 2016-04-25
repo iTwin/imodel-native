@@ -730,10 +730,7 @@ void DgnQueryView::RangeQuery::AddAlwaysDrawn(DgnQueryViewCR view)
             continue;
 
         Frustum box(geom->CalculateRange3d());
-        if (RTreeMatchFunction::Within::Outside == (RTreeMatchFunction::Within) m_planes.Contains(box))
-            continue;
-
-        if (TestElement(curr))
+        if (RTreeMatchFunction::Within::Outside != (RTreeMatchFunction::Within) m_planes.Contains(box))
             m_results->m_scores.Insert(10.0, curr); // value just has to be higher than max occlusion score which is really 2.0
         }
     }
