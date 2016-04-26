@@ -441,11 +441,6 @@ public:
 
 private:
 
-    static constexpr bool _is_noexcept_move_constructible()
-        {   // return true if _Ty is not copy-constructible or if _Ty has a noexcept move constructor
-        return std::is_nothrow_move_constructible<_TypeT>::value || !std::is_copy_constructible<_TypeT>::value;
-        }
-
     // implements assign with repetition
     void _C_assign_n (size_type, const_reference);
 
@@ -546,9 +541,9 @@ private:
     void _C_unsafe_swap (bvector&, void*);
 
     // moves a range of elements backwards, with strong exception safety guarantee for copyable or no-throw-movable types
-    iterator _move_range (iterator __f, iterator __l, iterator __d) { return _C_move_range (__f, __l, __d, _RWSTD_DISPATCH_BOOL(_is_noexcept_move_constructible())); }
+    iterator _move_range (iterator __f, iterator __l, iterator __d) { return _C_move_range (__f, __l, __d, _RWSTD_DISPATCH_IS_NOEXCEPT_MOVE_CONSTRUCTIBLE(_TypeT)); }
     // moves a range of elements backwards, with strong exception safety guarantee for copyable or no-throw-movable types
-    iterator _move_range_backward (iterator __f, iterator __l, iterator __d) { return _C_move_range_backward (__f, __l, __d, _RWSTD_DISPATCH_BOOL(_is_noexcept_move_constructible())); }
+    iterator _move_range_backward (iterator __f, iterator __l, iterator __d) { return _C_move_range_backward (__f, __l, __d, _RWSTD_DISPATCH_IS_NOEXCEPT_MOVE_CONSTRUCTIBLE(_TypeT)); }
 
     iterator _C_move_range (iterator __f, iterator __l, iterator __d, int) { return std::move (__f, __l, __d); }
     iterator _C_move_range (iterator __f, iterator __l, iterator __d, void*) { return std::copy (__f, __l, __d); }

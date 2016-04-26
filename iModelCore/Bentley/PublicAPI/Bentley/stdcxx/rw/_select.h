@@ -72,6 +72,8 @@ struct __rw_select_bool<true>
 
 #define _RWSTD_DISPATCH_BOOL(iter) (typename BC__RW::__rw_select_bool<iter>::_SelectT (1L))
 
+#define _RWSTD_DISPATCH_IS_NOEXCEPT_MOVE_CONSTRUCTIBLE(_TypeT) _RWSTD_DISPATCH_BOOL(std::is_nothrow_move_constructible<_TypeT>::value || !std::is_copy_constructible<_TypeT>::value)
+
 template <class _TypeT>
 struct __rw_select_int
 {
