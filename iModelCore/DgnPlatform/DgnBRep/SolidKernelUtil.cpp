@@ -261,3 +261,60 @@ ISolidKernelEntityPtr SolidKernelUtil::CreateNewEntity(TopoDS_Shape const& shape
     return nullptr;
 #endif
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+PolyfaceHeaderPtr SolidKernelUtil::FacetEntity(ISolidKernelEntityCR entity, double pixelSize, DRange1dP pixelSizeRange)
+    {
+    TopoDS_Shape const* shape = SolidKernelUtil::GetShape(entity);
+
+    if (nullptr == shape)
+        return nullptr;
+
+    if (nullptr != pixelSizeRange)
+        pixelSizeRange->InitNull();
+
+    IFacetOptionsPtr facetOptions = IFacetOptions::Create();
+
+    facetOptions->SetNormalsRequired(true);
+    facetOptions->SetParamsRequired(true);
+
+    if (!OCBRep::HasCurvedFaceOrEdge(*shape))
+        {
+        facetOptions->SetAngleTolerance(Angle::PiOver2()); // Shouldn't matter...use max angle tolerance...
+        facetOptions->SetChordTolerance(1.0); // Shouldn't matter...avoid expense of getting AABB...
+        }
+    else
+        {
+        Bnd_Box box;
+        Standard_Real maxDimension = 0.0;
+
+        BRepBndLib::Add(*shape, box);
+        BRepMesh_ShapeTool::BoxMaxDimension(box, maxDimension);
+
+        if (0.0 >= pixelSize)
+            {
+            facetOptions->SetAngleTolerance(0.2); // ~11 degrees
+            facetOptions->SetChordTolerance(0.1 * maxDimension);
+            }
+        else
+            {
+            static double sizeDependentRatio = 5.0;
+            static double pixelToChordRatio = 0.5;
+            static double minRangeRelTol = 1.0e-4;
+            double minChordTol = minRangeRelTol * maxDimension;
+
+            facetOptions->SetAngleTolerance(Angle::PiOver2()); // Use max angle tolerance...mesh coarseness dictated by pixel size based chord...
+            facetOptions->SetChordTolerance(pixelToChordRatio * pixelSize);
+
+            if (facetOptions->GetChordTolerance() < minChordTol)
+                facetOptions->SetChordTolerance(minChordTol); // Don't allow chord to get too small relative to shape size...
+
+            if (nullptr != pixelSizeRange)
+                *pixelSizeRange = DRange1d::FromLowHigh(facetOptions->GetChordTolerance() / sizeDependentRatio, facetOptions->GetChordTolerance() * sizeDependentRatio);
+            }
+        }
+
+    return OCBRep::IncrementalMesh(*shape, *facetOptions);
+    }

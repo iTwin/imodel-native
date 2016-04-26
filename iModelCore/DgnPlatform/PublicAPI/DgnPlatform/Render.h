@@ -977,6 +977,11 @@ public:
     double GetPixelSize() const {return m_pixelSize;}
     void GetPixelSizeRange(double& min, double& max) const {min = m_minSize; max = m_maxSize;}
     void SetPixelSizeRange(double min, double max) {m_minSize = min; m_maxSize = max;}
+    void UpdatePixelSizeRange(double newMin, double newMax) //! Update min/max only if more restrictive than current value.
+        {
+        m_minSize = (0.0 == m_minSize ? newMin : DoubleOps::Max(m_minSize, newMin));
+        m_maxSize = (0.0 == m_maxSize ? newMax : DoubleOps::Min(m_maxSize, newMax));
+        }
 
     //! Set an GraphicParams to be the "active" GraphicParams for this Render::Graphic.
     //! @param[in]          graphicParams   The new active GraphicParams. All geometry drawn via calls to this Render::Graphic will
