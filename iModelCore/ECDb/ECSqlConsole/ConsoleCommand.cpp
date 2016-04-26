@@ -90,13 +90,13 @@ Utf8String HelpCommand::_GetUsage() const
 //---------------------------------------------------------------------------------------
 void HelpCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> const& args) const
     {
-    BeAssert(m_commandMap.size() == 26 && "Command was added or removed, please update the HelpCommand accordingly.");
+    BeAssert(m_commandMap.size() == 27 && "Command was added or removed, please update the HelpCommand accordingly.");
     Console::WriteLine(m_commandMap.at(".help")->GetUsage().c_str());
     Console::WriteLine();
     Console::WriteLine(m_commandMap.at(".open")->GetUsage().c_str());
     Console::WriteLine(m_commandMap.at(".close")->GetUsage().c_str());
     Console::WriteLine(m_commandMap.at(".create")->GetUsage().c_str());
-    Console::WriteLine(m_commandMap.at(".path")->GetUsage().c_str());
+    Console::WriteLine(m_commandMap.at(".fileinfo")->GetUsage().c_str());
     Console::WriteLine();
     Console::WriteLine(m_commandMap.at(".ecsql")->GetUsage().c_str());
     Console::WriteLine(m_commandMap.at(".metadata")->GetUsage().c_str());
@@ -292,30 +292,46 @@ void CreateCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> const&
     session.GetECDbR ().SaveChanges();
     }
 
-//******************************* PathCommand ******************
+//******************************* FileInfoCommand ******************
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-Utf8String PathCommand::_GetName() const
+Utf8String FileInfoCommand::_GetName() const
     {
-    return ".path";
+    return ".fileinfo";
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-Utf8String PathCommand::_GetUsage() const
+Utf8String FileInfoCommand::_GetUsage() const
     {
-    return " .path                          Displays full path of the open ECDb file";
+    return " .fileinfo                      Displays information about the open ECDb file";
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-void PathCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> const& args) const
+void FileInfoCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> const& args) const
     {
-    if (session.HasECDb(true))
-        Console::WriteLine("Current ECDb file is '%s'", session.GetECDbPath());
+    if (!session.HasECDb(true))
+        return;
+
+    Statement stmt;
+    if (BE_SQLITE_OK != stmt.Prepare(session.GetECDb(), "SELECT StrData FROM be_Prop WHERE Namespace='ec_Db' AND Name='SchemaVersion'") ||
+        BE_SQLITE_ROW != stmt.Step())
+        {
+        Console::WriteErrorLine("Could not execute SQL to retrieve ECDb profile version.");
+        return;
+        }
+
+    SchemaVersion profileVersion(stmt.GetValueText(0));
+    stmt.Finalize();
+
+    Console::WriteLine("Current file: ");
+    Console::WriteLine("  %s", session.GetECDbPath());
+    Console::WriteLine("  BriefcaseId: %" PRIu32, session.GetECDb().GetBriefcaseId().GetValue());
+    Console::WriteLine("  ECDb profile version: %s", profileVersion.ToString().c_str());
     }
 
 //******************************* CommitCommand ******************
@@ -1081,8 +1097,9 @@ void ParseCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> const& 
         }
     else
         {
-        auto ecsql = ConcatArgs(1, args);
-        Utf8String expTree, ecsqlFromExpTree;
+        Utf8String ecsql = ConcatArgs(1, args);
+        Utf8String ecsqlFromExpTree;
+        Json::Value expTree;
         if (SUCCESS != ECSqlParseTreeFormatter::ParseAndFormatECSqlExpTree(expTree, ecsqlFromExpTree, session.GetECDbR(), ecsql.c_str()))
             {
             if (session.GetIssues().HasIssue())
@@ -1095,7 +1112,31 @@ void ParseCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> const& 
         Console::WriteLine("ECSQL from expression tree: %s", ecsqlFromExpTree.c_str());
         Console::WriteLine();
         Console::WriteLine("ECSQL expression tree:");
-        Console::WriteLine("%s", expTree.c_str());
+
+        Utf8String expTreeStr;
+        ExpTreeToString(expTreeStr, expTree, 0);
+        Console::WriteLine("%s", expTreeStr.c_str());
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      04/2016
+//---------------------------------------------------------------------------------------
+//static
+void ParseCommand::ExpTreeToString(Utf8StringR expTreeStr, JsonValueCR expTree, int indentLevel)
+    {
+    for (int i = 0; i < indentLevel; i++)
+        expTreeStr.append("   ");
+
+    expTreeStr.append(expTree["Exp"].asCString()).append("\r\n");
+
+    if (!expTree.isMember("Children"))
+        return;
+
+    indentLevel++;
+    for (JsonValueCR child : expTree["Children"])
+        {
+        ExpTreeToString(expTreeStr, child, indentLevel);
         }
     }
 

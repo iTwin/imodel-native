@@ -85,7 +85,7 @@ void ECSqlConsole::Setup()
     AddCommand(make_shared<OpenCommand>());
     AddCommand(make_shared<CloseCommand>());
     AddCommand(make_shared<CreateCommand>());
-    AddCommand(make_shared<PathCommand>());
+    AddCommand(make_shared<FileInfoCommand>());
 
     AddCommand(make_shared<ECSqlCommand>());
 

@@ -50,9 +50,9 @@ DbResult ECDbProfileUpgrader_3500::_Upgrade(ECDbR ecdb) const
 
             JsonValueCR oldVal = oldArrayElement[0];
             if (oldVal.isInt())
-                newArrayElement["IntValue"] = oldVal;
+                newArrayElement[METASCHEMA_ECENUMERATOR_PROPERTY_IntValue] = oldVal;
             else if (oldVal.isString())
-                newArrayElement["StringValue"] = oldVal;
+                newArrayElement[METASCHEMA_ECENUMERATOR_PROPERTY_StringValue] = oldVal;
             else
                 {
                 LOG.errorv("ECDb profile upgrade failed: Updating JSON format in column 'EnumValues' of table 'ec_Enumeration' failed: %s", ecdb.GetLastError().c_str());
@@ -61,7 +61,7 @@ DbResult ECDbProfileUpgrader_3500::_Upgrade(ECDbR ecdb) const
 
             const Json::ArrayIndex size = oldArrayElement.size();
             if (size == 2)
-                newArrayElement["DisplayLabel"] = oldArrayElement[1];
+                newArrayElement[METASCHEMA_ECENUMERATOR_PROPERTY_DisplayLabel] = oldArrayElement[1];
 
             newJson.append(newArrayElement);
             }

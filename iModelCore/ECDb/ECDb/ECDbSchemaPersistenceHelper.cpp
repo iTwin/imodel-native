@@ -231,9 +231,9 @@ BentleyStatus ECDbSchemaPersistenceHelper::SerializeECEnumerationValues(Utf8Stri
 
         Json::Value val;
         if (enumValue->IsInteger())
-            enumValueJson["IntValue"] = Json::Value(enumValue->GetInteger());
+            enumValueJson[METASCHEMA_ECENUMERATOR_PROPERTY_IntValue] = Json::Value(enumValue->GetInteger());
         else if (enumValue->IsString())
-            enumValueJson["StringValue"] = Json::Value(enumValue->GetString().c_str());
+            enumValueJson[METASCHEMA_ECENUMERATOR_PROPERTY_StringValue] = Json::Value(enumValue->GetString().c_str());
         else
             {
             BeAssert(false && "Code needs to be updated as ECEnumeration seems to support types other than int and string.");
@@ -241,7 +241,7 @@ BentleyStatus ECDbSchemaPersistenceHelper::SerializeECEnumerationValues(Utf8Stri
             }
 
         if (enumValue->GetIsDisplayLabelDefined())
-            enumValueJson["DisplayLabel"] = Json::Value(enumValue->GetDisplayLabel().c_str());
+            enumValueJson[METASCHEMA_ECENUMERATOR_PROPERTY_DisplayLabel] = Json::Value(enumValue->GetDisplayLabel().c_str());
 
         enumValuesJson.append(enumValueJson);
         }
@@ -270,20 +270,20 @@ BentleyStatus ECDbSchemaPersistenceHelper::DeserializeECEnumerationValues(ECEnum
     for (JsonValueCR enumValueJson : enumValuesJson)
         {
         BeAssert(enumValueJson.isObject());
-        BeAssert(enumValueJson.isMember("IntValue") || enumValueJson.isMember("StringValue"));
+        BeAssert(enumValueJson.isMember(METASCHEMA_ECENUMERATOR_PROPERTY_IntValue) || enumValueJson.isMember(METASCHEMA_ECENUMERATOR_PROPERTY_StringValue));
 
         ECEnumeratorP enumValue = nullptr;
 
-        if (enumValueJson.isMember("IntValue"))
+        if (enumValueJson.isMember(METASCHEMA_ECENUMERATOR_PROPERTY_IntValue))
             {
-            JsonValueCR intVal = enumValueJson["IntValue"];
+            JsonValueCR intVal = enumValueJson[METASCHEMA_ECENUMERATOR_PROPERTY_IntValue];
             BeAssert(intVal.isInt());
             if (ECObjectsStatus::Success != ecEnum.CreateEnumerator(enumValue, intVal.asInt()))
                 return ERROR;
             }
-        else if (enumValueJson.isMember("StringValue"))
+        else if (enumValueJson.isMember(METASCHEMA_ECENUMERATOR_PROPERTY_StringValue))
             {
-            JsonValueCR stringVal = enumValueJson["StringValue"];
+            JsonValueCR stringVal = enumValueJson[METASCHEMA_ECENUMERATOR_PROPERTY_StringValue];
             BeAssert(stringVal.isString());
             if (ECObjectsStatus::Success != ecEnum.CreateEnumerator(enumValue, stringVal.asCString()))
                 return ERROR;
@@ -294,9 +294,9 @@ BentleyStatus ECDbSchemaPersistenceHelper::DeserializeECEnumerationValues(ECEnum
             return ERROR;
             }
 
-        if (enumValueJson.isMember("DisplayLabel"))
+        if (enumValueJson.isMember(METASCHEMA_ECENUMERATOR_PROPERTY_DisplayLabel))
             {
-            Utf8CP displayLabel = enumValueJson["DisplayLabel"].asCString();
+            Utf8CP displayLabel = enumValueJson[METASCHEMA_ECENUMERATOR_PROPERTY_DisplayLabel].asCString();
             enumValue->SetDisplayLabel(displayLabel);
             }
         }
