@@ -367,28 +367,6 @@ std::ostream& operator << (std::ostream &o, ObjectIdCR id)
     return o;
     }
 
-std::ostream& operator << (std::ostream &o, BeFileNameStatus errorId)
-    {
-    static std::map<BeFileNameStatus, Utf8String> names
-        {
-        TO_VALUE_STRING_PAIR(BeFileNameStatus::AccessViolation),
-        TO_VALUE_STRING_PAIR(BeFileNameStatus::AlreadyExists),
-        TO_VALUE_STRING_PAIR(BeFileNameStatus::CantCreate),
-        TO_VALUE_STRING_PAIR(BeFileNameStatus::CantDeleteDir),
-        TO_VALUE_STRING_PAIR(BeFileNameStatus::CantDeleteFile),
-        TO_VALUE_STRING_PAIR(BeFileNameStatus::FileNotFound),
-        TO_VALUE_STRING_PAIR(BeFileNameStatus::IllegalName),
-        TO_VALUE_STRING_PAIR(BeFileNameStatus::Success),
-        TO_VALUE_STRING_PAIR(BeFileNameStatus::UnknownError)
-    };
-
-    Utf8String name = names[errorId];
-    BeAssert(!name.empty() && "Add missing value");
-    o << name;
-
-    return o;
-    }
-
 std::ostream& operator << (std::ostream &o, BeFileStatus errorId)
     {
     static std::map<BeFileStatus, Utf8String> names
