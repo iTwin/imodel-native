@@ -6,13 +6,14 @@
 |       $Date: 2011/07/20 20:22:14 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
 
 #include <ScalableMesh/Import/ImportSequence.h>
 #include <ScalableMesh/Import/Command/Base.h>
+#include <ScalableMesh\Type\IScalableMeshPoint.h>
 
 
 BEGIN_BENTLEY_SCALABLEMESH_IMPORT_NAMESPACE
@@ -121,6 +122,11 @@ void ImportSequence::Accept (IImportSequenceVisitor& pi_rVisitor) const
     std::for_each(m_pImpl->m_commands.begin(), m_pImpl->m_commands.end(), AcceptVisitor(pi_rVisitor));
     }
 
+bvector<ImportCommand>& ImportSequence::GetCommands() const
+    {
+    return m_pImpl->m_commands;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   05/2011
@@ -193,12 +199,57 @@ void ImportCommand::Accept (IImportSequenceVisitor& visitor) const
     m_basePtr->_Accept(visitor);
     }
 
+uint32_t                                 ImportCommand::GetSourceLayer() const
+    {
+    return m_basePtr->m_sourceLayer;
+    }
+
+uint32_t                                 ImportCommand::GetTargetLayer() const
+    {
+    return m_basePtr->m_targetLayer;
+    }
+
+const DataTypeFamily&                    ImportCommand::GetSourceType() const
+    {
+    return m_basePtr->m_sourceType;
+    }
+
+const DataTypeFamily&                    ImportCommand::GetTargetType() const
+    {
+    return m_basePtr->m_targetType;
+    }
+
+bool                                 ImportCommand::IsSourceLayerSet() const
+    {
+    return m_basePtr->m_sourceLayerSet;
+    }
+
+bool                                 ImportCommand::IsTargetLayerSet() const
+    {
+    return m_basePtr->m_targetLayerSet;
+    }
+
+bool                                 ImportCommand::IsSourceTypeSet() const
+    {
+    return m_basePtr->m_sourceTypeSet;
+    }
+
+bool                                 ImportCommand::IsTargetTypeSet() const
+    {
+    return m_basePtr->m_targetTypeSet;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   04/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ImportCommandBase::ImportCommandBase ()
+ImportCommandBase::ImportCommandBase ():
+m_sourceType(PointTypeFamilyCreator().Create()), m_targetType(PointTypeFamilyCreator().Create())
     {
+    m_sourceTypeSet = false;
+    m_targetTypeSet = false;
+    m_sourceLayerSet = false;
+    m_targetLayerSet = false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -214,6 +265,9 @@ ImportCommandBase::~ImportCommandBase ()
 * @bsimethod                                                  Raymond.Gauthier   05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 ImportCommandBase::ImportCommandBase (const ImportCommandBase& rhs)
+    :
+    m_sourceType(rhs.m_sourceType), m_targetType(rhs.m_targetType), m_sourceLayer(rhs.m_sourceLayer), m_targetLayer(rhs.m_targetLayer), m_sourceTypeSet(rhs.m_sourceTypeSet),
+    m_targetTypeSet(rhs.m_targetTypeSet), m_sourceLayerSet(rhs.m_sourceLayerSet), m_targetLayerSet(rhs.m_targetLayerSet)
     {
     }
 

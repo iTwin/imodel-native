@@ -22,8 +22,6 @@
 #include <ScalableMesh/Import/DataTypeFamily.h>
 #include <ScalableMesh/Import/SourceReferenceVisitor.h>
 
-#include <ScalableMesh/Import/ImportSequenceVisitor.h>
-#include <ScalableMesh/Import/Command/All.h>
 
 #include "../Import/Sink.h"
 
@@ -221,99 +219,16 @@ namespace {
 ImportSequence              CreateAttachmentImportSequence                 (const ImportSequence&           sequence,
                                                                             uint32_t                            parentLayer)
     {
-    class CommandVisitor : public IImportSequenceVisitor
+    ImportSequence seq;
+    for (auto& command : sequence.GetCommands())
         {
-        const uint32_t                      m_parentLayer;
-        ImportSequence                  m_sequence;
-
-        virtual void                    _Visit                     (const ImportAllCommand&                     command) override
+        if (command.IsSourceLayerSet())
             {
-            m_sequence.push_back(command);
+            if (parentLayer == command.GetSourceLayer()) seq.push_back(command);
             }
-        virtual void                    _Visit                     (const ImportAllToLayerCommand&              command) override
-            {
-            m_sequence.push_back(command);
-            }
-        virtual void                    _Visit                     (const ImportAllToLayerTypeCommand&          command) override
-            {
-            m_sequence.push_back(command);
-            }
-        virtual void                    _Visit                     (const ImportAllToTypeCommand&               command) override
-            {
-            m_sequence.push_back(command);
-            }
-
-        virtual void                    _Visit                     (const ImportLayerCommand&                   command) override
-            {
-            if (m_parentLayer == command.GetSourceLayer())
-                m_sequence.push_back(ImportAllCommand());
-            }
-        virtual void                    _Visit                     (const ImportLayerToLayerCommand&            command) override
-            {
-            if (m_parentLayer == command.GetSourceLayer())
-                m_sequence.push_back(ImportAllToLayerCommand(command.GetTargetLayer()));
-            }
-        virtual void                    _Visit                     (const ImportLayerToLayerTypeCommand&        command) override
-            {
-            if (m_parentLayer == command.GetSourceLayer())
-                m_sequence.push_back(ImportAllToLayerTypeCommand(command.GetTargetLayer(), command.GetTargetType()));
-            }
-        virtual void                    _Visit                     (const ImportLayerToTypeCommand&             command) override
-            {
-            if (m_parentLayer == command.GetSourceLayer())
-                m_sequence.push_back(ImportAllToTypeCommand(command.GetTargetType()));
-            }
-
-        virtual void                    _Visit                     (const ImportLayerTypeCommand&               command) override
-            {
-            if (m_parentLayer == command.GetSourceLayer())
-                m_sequence.push_back(ImportTypeCommand(command.GetSourceType()));
-            }
-        virtual void                    _Visit                     (const ImportLayerTypeToLayerCommand&        command) override
-            {
-            if (m_parentLayer == command.GetSourceLayer())
-                m_sequence.push_back(ImportTypeToLayerCommand(command.GetSourceType(), command.GetTargetLayer()));
-            }
-        virtual void                    _Visit                     (const ImportLayerTypeToLayerTypeCommand&    command) override
-            {
-            if (m_parentLayer == command.GetSourceLayer())
-                m_sequence.push_back(ImportTypeToLayerTypeCommand(command.GetSourceType(), command.GetTargetLayer(), command.GetTargetType()));
-            }
-        virtual void                    _Visit                     (const ImportLayerTypeToTypeCommand&         command) override
-            {
-            if (m_parentLayer == command.GetSourceLayer())
-                m_sequence.push_back(ImportTypeToTypeCommand(command.GetSourceType(), command.GetTargetType()));
-            }
-
-        virtual void                    _Visit                     (const ImportTypeCommand&                    command) override
-            {
-            return m_sequence.push_back(command);
-            }
-        virtual void                    _Visit                     (const ImportTypeToLayerCommand&             command) override
-            {
-            return m_sequence.push_back(command);
-            }
-        virtual void                    _Visit                     (const ImportTypeToLayerTypeCommand&         command) override
-            {
-            return m_sequence.push_back(command);
-            }
-        virtual void                    _Visit                     (const ImportTypeToTypeCommand&              command) override
-            {
-            return m_sequence.push_back(command);
-            }
-
-    public:
-        explicit                        CommandVisitor             (uint32_t                                        parentLayer)
-            :   m_parentLayer(parentLayer)
-            {
-            }
-
-        const ImportSequence&           GetSequence                () const { return m_sequence; }
-        };
-
-    CommandVisitor visitor(parentLayer);
-    sequence.Accept(visitor);
-    return visitor.GetSequence();
+        else seq.push_back(command);
+        }
+    return seq;
     }
 }
 
@@ -325,7 +240,7 @@ void SourcesImporter::Impl::AddAttachments (const Source&       source,
                                             SourceItem&   sourceItem,
                                             SourcesImporter&    attachmentsImporter)
     {
-    struct LocalFileRefVisitor : SourceRefVisitor
+   /* struct LocalFileRefVisitor : SourceRefVisitor
         {
         const LocalFileSourceRef* m_sourceRefP;
 
@@ -345,7 +260,7 @@ void SourcesImporter::Impl::AddAttachments (const Source&       source,
             if (0 != localFileRefP)
                 m_sourceRefP = localFileRefP;
             }
-        };
+        };*/
 
     // NTERAY: This is a bad way to do it. We should either let the importer import attachments or
     // visit the source's importSequence in order to generate the attachment's import sequence.
@@ -371,11 +286,12 @@ void SourcesImporter::Impl::AddAttachments (const Source&       source,
             using namespace rel_ops;
 
             // Make sure STM and source are not the same.
-            LocalFileRefVisitor visitor;
-            attachmentIt->GetSourceRef().Accept(visitor);
-            
-            if (0 != visitor.m_sourceRefP && 
-                *visitor.m_sourceRefP == m_sinkSourceRef)
+            //LocalFileRefVisitor visitor;
+            //attachmentIt->GetSourceRef().Accept(visitor);
+            LocalFileSourceRef* refP = dynamic_cast<LocalFileSourceRef*>(attachmentIt->GetSourceRef().m_basePtr.get());
+
+            if (0 != refP &&
+                *refP == m_sinkSourceRef)
                 continue;
 
             attachmentsImporter.AddSource(attachmentIt->GetSourceRef(), sourceItem.m_contentConfig, sourceItem.m_importConfig, attachmentImportSequence, *sourceItem.m_sourceImportConf);

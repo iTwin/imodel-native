@@ -1,8 +1,39 @@
 #pragma once
 #include <ScalableMesh/Import/Definitions.h>
 #include <ScalableMesh/Import/ScalableMeshData.h>
+#include <ScalableMesh/Import/ImportSequence.h>
 
 BEGIN_BENTLEY_SCALABLEMESH_IMPORT_NAMESPACE
+
+uint32_t OutputTypeID(const DataTypeFamily&type);
+struct ImportCommandData
+    {
+    uint32_t sourceLayerID;
+    uint32_t sourceTypeID;
+    uint32_t targetLayerID;
+    uint32_t targetTypeID;
+    uint8_t sourceLayerSet;
+    uint8_t targetLayerSet;
+    uint8_t sourceTypeSet;
+    uint8_t targetTypeSet;
+    ImportCommandData() {
+        sourceLayerSet = false;
+        targetLayerSet = false;
+        sourceTypeSet = false;
+        targetTypeSet = false;
+        }
+    ImportCommandData(const ImportCommand& command)
+        {
+        sourceLayerSet = command.IsSourceLayerSet();
+        if (sourceLayerSet) sourceLayerID = command.GetSourceLayer();
+        targetLayerSet = command.IsTargetLayerSet();
+        if (targetLayerSet) targetLayerID = command.GetTargetLayer();
+        sourceTypeSet = command.IsSourceTypeSet();
+        if (sourceTypeSet) sourceTypeID = OutputTypeID(command.GetSourceType());
+        targetTypeSet = command.IsTargetTypeSet();
+        if (targetTypeSet) targetTypeID = OutputTypeID(command.GetTargetType());
+        }
+    };
 
 class SourceDataSQLite
 {
@@ -91,6 +122,7 @@ public:
     IMPORT_DLLE byte GetMonikerType();
     IMPORT_DLLE WString GetMonikerString();
 
+    /*
     void SetCommandCount(uint32_t);
 
     uint32_t GetCommandCount();
@@ -100,6 +132,9 @@ public:
 
     std::vector<byte>& GetCommandID();
     byte PopCommandID();
+    */
+    bvector<ImportCommandData>& GetOrderedCommands();
+    void SetOrderedCommands(const bvector<ImportCommandData>& data);
 
 
     void SetTimeLastModified(time_t time);
@@ -108,28 +143,11 @@ public:
 
     void SetGroupID(uint32_t id);
     uint32_t GetGroupID();
-    /*typedef HPU::Packet                  Packet;
-    typedef Packet                      SerializedSourcePacket;
-    typedef Packet                      ContentConfigPacket;
-    typedef Packet                      ImportSequencePacket;
-    typedef Packet                      ImportConfigPacket;
 
-    typedef HTGFF::PacketIndexSubDir    SerializedSourcesDir;
-    SerializedSourcesDir*               m_pSerializedSources;
-    typedef HTGFF::PacketIndexSubDir    ContentConfigsDir;
-    ContentConfigsDir*                  m_pContentConfigs;
-    typedef HTGFF::PacketIndexSubDir    ImportSequencesDir;
-    ImportSequencesDir*                 m_pImportSequences;
-    typedef HTGFF::PacketIndexSubDir    ImportConfigsDir;
-    ImportConfigsDir*                   m_pImportConfigs;*/
 
     std::vector<time_t>                 m_lastModifiedTimeStamps;
 
-    /*bool AddSource(time_t pi_lastModified, const SerializedSourcePacket& pi_rSerializedSource,
-    const ContentConfigPacket& pi_rContentConfig, const ImportSequencePacket& pi_rImportSequence);
-    bool  AddSource(time_t pi_lastModified, const SerializedSourcePacket&   pi_rSerializedSource,
-    const ContentConfigPacket& pi_rContentConfig, const ImportSequencePacket& pi_rImportSequence,
-    const ImportConfigPacket& pi_rImportConfig);*/
+
 
 };
 
@@ -156,18 +174,18 @@ public:
     void SetLastModifiedCheckTime(time_t    pi_checkTime) { m_checkTime = pi_checkTime; }
     void SetLastModifiedTime(time_t pi_lastModifiedTime) { m_lastModifiedTime = pi_lastModifiedTime; }
     void SetLastSyncTime(time_t pi_lastSyncTime) { m_lastSyncTime = pi_lastSyncTime; }
-    void SetSerializedSourceFormatVersion(uint32_t pi_version) { m_serializedSourceFormatVersion = pi_version; }
+   /* void SetSerializedSourceFormatVersion(uint32_t pi_version) { m_serializedSourceFormatVersion = pi_version; }
     void SetContentConfigFormatVersion(uint32_t pi_version) { m_contentConfigFormatVersion = pi_version; }
     void SetImportSequenceFormatVersion(uint32_t pi_version) { m_importSequenceFormatVersion = pi_version; }
-    void SetImportConfigFormatVersion(uint32_t pi_version) { m_importConfigFormatVersion = pi_version; }
+    void SetImportConfigFormatVersion(uint32_t pi_version) { m_importConfigFormatVersion = pi_version; }*/
 
     time_t GetLastModifiedCheckTime() { return m_checkTime; }
     time_t GetLastModifiedTime() { return m_lastModifiedTime; }
     time_t GetLastSyncTime() { return m_lastSyncTime; }
-    uint32_t GetSerializedSourceFormatVersion() { return m_serializedSourceFormatVersion; }
+    /*uint32_t GetSerializedSourceFormatVersion() { return m_serializedSourceFormatVersion; }
     uint32_t GetContentConfigFormatVersion() { return m_contentConfigFormatVersion; }
     uint32_t GetImportSequenceFormatVersion() { return m_importSequenceFormatVersion; }
-    uint32_t GetImportConfigFormatVersion() { return m_importConfigFormatVersion; }
+    uint32_t GetImportConfigFormatVersion() { return m_importConfigFormatVersion; }*/
 
     void SetIsGroup(bool group) { m_isGroup = group; }
     bool IsGroup() { return m_isGroup; }

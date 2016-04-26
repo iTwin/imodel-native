@@ -158,12 +158,15 @@ bool SourcesSaver::SaveRoot    (const IDTMSourceCollection&     sources,
     }
 
 //This saves the appropriate metadata for differently-reachable sources
-template <class SourceType> void SaveSourceMetadata(const SourceType& source, SourceDataSQLite& sourceData)
+template <class SourceType> void SaveSourceMetadata(const SourceType& source, SourceDataSQLite& sourceData)   
     {
+
+    sourceData.SetDTMSourceID(DTMSourceId::DTM_SOURCE_ID_LOCAL_FILE_V0);
     }
 
 template <> void SaveSourceMetadata<IDTMDgnLevelSource>(const IDTMDgnLevelSource& source, SourceDataSQLite& sourceData)
     {
+    sourceData.SetDTMSourceID(DTMSourceId::DTM_SOURCE_ID_DGN_LEVEL_V1);
     sourceData.SetLevelID(source.GetLevelID());
     sourceData.SetLevelName(source.GetLevelName());
     }
@@ -179,6 +182,13 @@ template <>void SaveSourceMetadata<IDTMDgnReferenceSource>(const IDTMDgnReferenc
     sourceData.SetRootToRefPersistentPath(source.GetRootToRefPersistentPath());
     sourceData.SetReferenceName(source.GetReferenceName());
     sourceData.SetReferenceModelName(source.GetReferenceModelName());
+    }
+
+template <> void SaveSourceMetadata<IDTMDgnReferenceLevelSource>(const IDTMDgnReferenceLevelSource& source, SourceDataSQLite& sourceData)
+    {
+    sourceData.SetDTMSourceID(DTMSourceId::DTM_SOURCE_ID_DGN_REFERENCE_LEVEL_V1);
+    sourceData.SetLevelID(source.GetLevelID());
+    sourceData.SetLevelName(source.GetLevelName());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -212,6 +222,8 @@ bool SourcesSaver::Save(const IDTMSource& source,
     m_sourceData.SetSourceType(source.GetSourceType());
     m_sourceData.SetMonikerString(source.GetPath());
 
+    SaveSourceMetadata(source, m_sourceData);
+
     const IDTMDgnLevelSource* dgnLevelSource = dynamic_cast<const IDTMDgnLevelSource*>(&source);
     if (nullptr != dgnLevelSource)
         SaveSourceMetadata(*dgnLevelSource, m_sourceData);
@@ -223,6 +235,11 @@ bool SourcesSaver::Save(const IDTMSource& source,
     const IDTMDgnReferenceSource* dgnRefSource = dynamic_cast<const IDTMDgnReferenceSource*>(&source);
     if (nullptr != dgnRefSource)
         SaveSourceMetadata(*dgnRefSource, m_sourceData);
+
+    const IDTMDgnReferenceLevelSource* dgnRefLSource = dynamic_cast<const IDTMDgnReferenceLevelSource*>(&source);
+    if (nullptr != dgnRefLSource)
+        SaveSourceMetadata(*dgnRefLSource, m_sourceData);
+
 
     // Serializing content config
     {

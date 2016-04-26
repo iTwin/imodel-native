@@ -134,12 +134,12 @@ bool ParseTestType(BeXmlNodeP pRootNode, TestType& t)
             t = TEST_STREAMING;
         else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"drapeRandom"))
             t = TEST_RANDOM_DRAPE;
-        else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"exportLine"))
+      /*  else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"exportLine"))
             t = EXPORT_LINE;
         else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"exportVolume"))
             t = EXPORT_VOLUME;
         else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"importVolume"))
-            t = IMPORT_VOLUME;
+            t = IMPORT_VOLUME;*/
         else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"addTextures"))
             t = ADD_TEXTURES_TO_MESH;
         else return false;
@@ -281,7 +281,7 @@ bool RunTestPlan(BeFileName& testPlanPath)
                 PerformConstraintTest(pTestNode, pResultFile);
                 break;
             case TEST_SDK_MESH:
-                PerformSDKCreationTexturedMeshNode(pTestNode, pResultFile);
+              //  PerformSDKCreationTexturedMeshNode(pTestNode, pResultFile);
                 break;
             case TEST_STREAMING:
                 PerformStreaming(pTestNode, pResultFile);

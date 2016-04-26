@@ -382,7 +382,7 @@ SourcePtr SourceFactory::Create    (const SourceRef&        sourceRef,
                                     Status&                 status,
                                     StatusInt&              statusEx) const
     {
-    class SourceCreator : public SourceRefVisitor
+    /*class SourceCreator : public SourceRefVisitor
         {
         virtual void    _Visit             (const LocalFileSourceRef&       sourceRef) override
             {
@@ -420,7 +420,20 @@ SourcePtr SourceFactory::Create    (const SourceRef&        sourceRef,
     sourceRef.Accept(sourceCreator);
 
     if (sourceCreator.m_foundSpecialization)
-        return sourceCreator.m_sourcePtr;
+        return sourceCreator.m_sourcePtr;*/
+    if (sourceRef.m_basePtr.get() != nullptr)
+        {
+        auto* dgnElementSource = dynamic_cast<DGNElementSourceRef*>(sourceRef.m_basePtr.get());
+        if (dgnElementSource != nullptr)
+            {
+            return m_pImpl->CreateSourceFor(*dgnElementSource, status, statusEx);
+            }
+        auto* localFileSource = dynamic_cast<LocalFileSourceRef*>(sourceRef.m_basePtr.get());
+        if (localFileSource != nullptr)
+            {
+            return m_pImpl->CreateSourceFor(*localFileSource, status, statusEx);
+            }
+        }
 
     return m_pImpl->CreateSourceFor(sourceRef, status, statusEx);
     }

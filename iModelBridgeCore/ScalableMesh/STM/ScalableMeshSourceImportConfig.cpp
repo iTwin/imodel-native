@@ -145,6 +145,8 @@ void                        AppendImportLayerCommandsToExistingSequence    (cons
                                                                             uint32_t                            importedLayer,
                                                                             ImportSequence&                 sequence)
     {
+    assert(!" Are we calling this?");
+#if 0
     class CommandVisitor : public IImportSequenceVisitor
         {
         const uint32_t                      m_importedLayer;
@@ -241,7 +243,7 @@ void                        AppendImportLayerCommandsToExistingSequence    (cons
 
     CommandVisitor visitor(importedLayer, sequence);
     templateCommands.Accept(visitor);
-
+#endif
     }
 }
 

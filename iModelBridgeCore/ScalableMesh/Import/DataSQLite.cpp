@@ -1,6 +1,10 @@
 #include <ScalableMeshPCH.h>
 #include "../STM/ImagePPHeaders.h"
 #include <ScalableMesh/Import/DataSQLite.h>
+#include <ScalableMesh/Type/IScalableMeshLinear.h>
+#include <ScalableMesh/Type/IScalableMeshPoint.h>
+#include <ScalableMesh/Type/IScalableMeshTIN.h>
+#include <ScalableMesh/Type/IScalableMeshMesh.h>
 
 #ifdef VANCOUVER_API
 #define WSTRING_FROM_CSTR(cstr) WString(cstr)
@@ -8,7 +12,39 @@
 #define WSTRING_FROM_CSTR(cstr) WString(cstr, BentleyCharEncoding::Utf8)
 #endif
 
+
 BEGIN_BENTLEY_SCALABLEMESH_IMPORT_NAMESPACE
+
+enum TypeFamilyID
+    {
+    TFID_POINT,
+    TFID_LINEAR,
+    TFID_TIN,
+    TFID_MESH,
+
+    TFID_QTY,
+    };
+
+uint32_t  OutputTypeID(const DataTypeFamily&                       type)
+    {
+    static const DataTypeFamily POINT_TYPE_FAMILY(PointTypeFamilyCreator().Create());
+    static const DataTypeFamily LINEAR_TYPE_FAMILY(LinearTypeFamilyCreator().Create());
+    static const DataTypeFamily TIN_TYPE_FAMILY(TINTypeFamilyCreator().Create());
+    static const DataTypeFamily MESH_TYPE_FAMILY(MeshTypeFamilyCreator().Create());
+
+
+    if (POINT_TYPE_FAMILY == type)
+        return static_cast<byte>(TFID_POINT);
+    else if (LINEAR_TYPE_FAMILY == type)
+        return static_cast<byte>(TFID_LINEAR);
+    else if (TIN_TYPE_FAMILY == type)
+        return static_cast<byte>(TFID_TIN);
+    else if (MESH_TYPE_FAMILY == type)
+        return static_cast<byte>(TFID_MESH);
+    else
+        return UINT_MAX;
+
+    }
 
 struct SourceDataSQLite::Impl : public ShareableObjectTypeTrait<Impl>::type
     {
@@ -20,6 +56,7 @@ struct SourceDataSQLite::Impl : public ShareableObjectTypeTrait<Impl>::type
         uint32_t m_orgCount;
         uint32_t m_layer;
         uint32_t m_componentCount;
+        bvector<ImportCommandData> m_commands;
         std::vector<uint32_t> m_dimensionCount;
         std::vector<std::vector<byte>> m_dimensionType; // maybe vector of vector (one dim for orgField one for Dimension Field
         std::vector<std::vector<byte>> m_dimensionRole; // maybe vector of vector (one dim for orgField one for Dimension Field
@@ -43,8 +80,8 @@ struct SourceDataSQLite::Impl : public ShareableObjectTypeTrait<Impl>::type
 
         std::vector<byte> m_configComponentID;
 
-        uint32_t m_commandCount;
-        std::vector<byte> m_commandID;
+        //uint32_t m_commandCount;
+        //std::vector<byte> m_commandID;
 
         time_t m_timeLastModified;
 
@@ -75,8 +112,8 @@ struct SourceDataSQLite::Impl : public ShareableObjectTypeTrait<Impl>::type
             m_monikerType = 0;
             m_monikerString = WSTRING_FROM_CSTR("");
             m_configComponentID = std::vector<byte>();
-            m_commandCount = 0;
-            m_commandID = std::vector<byte>();
+            //m_commandCount = 0;
+            //m_commandID = std::vector<byte>();
             m_timeLastModified = 0;
             m_groupID = 0;
         }
@@ -135,8 +172,9 @@ SourceDataSQLite::SourceDataSQLite(const SourceDataSQLite& rhs)
     m_implP->m_monikerString = rhs.m_implP->m_monikerString;
 
     m_implP->m_timeLastModified = rhs.m_implP->m_timeLastModified;
-    m_implP->m_commandCount = rhs.m_implP->m_commandCount;
-    m_implP->m_commandID = rhs.m_implP->m_commandID;
+    //m_implP->m_commandCount = rhs.m_implP->m_commandCount;
+    //m_implP->m_commandID = rhs.m_implP->m_commandID;
+    m_implP->m_commands = rhs.m_implP->m_commands;
 
     m_implP->m_configComponentID = rhs.m_implP->m_configComponentID;
 
@@ -417,7 +455,7 @@ WString SourceDataSQLite::GetMonikerString()
 }
 
 
-void SourceDataSQLite::SetCommandCount(uint32_t commandCount)
+/*void SourceDataSQLite::SetCommandCount(uint32_t commandCount)
 {
     m_implP->m_commandCount = commandCount;
 }
@@ -425,7 +463,7 @@ void SourceDataSQLite::SetCommandCount(uint32_t commandCount)
 uint32_t SourceDataSQLite::GetCommandCount()
 {
     return m_implP->m_commandCount;
-}
+}*/
 
 
 void SourceDataSQLite::SetTimeLastModified(time_t time)
@@ -438,6 +476,7 @@ time_t SourceDataSQLite::GetTimeLastModified() const
     return m_implP->m_timeLastModified;
 }
 
+/*
 byte SourceDataSQLite::PopCommandID()
 {
     byte tmp = m_implP->m_commandID.back();
@@ -448,9 +487,9 @@ byte SourceDataSQLite::PopCommandID()
 void SourceDataSQLite::AddCommandID(byte id)
 {
     m_implP->m_commandID.push_back(id);
-}
+}*/
 
-void SourceDataSQLite::SetCommandID(std::vector<byte>& vecID)
+/*void SourceDataSQLite::SetCommandID(std::vector<byte>& vecID)
 {
     m_implP->m_commandID = vecID;
 }
@@ -458,7 +497,7 @@ void SourceDataSQLite::SetCommandID(std::vector<byte>& vecID)
 std::vector<byte>& SourceDataSQLite::GetCommandID()
 {
     return m_implP->m_commandID;
-}
+}*/
 
 void SourceDataSQLite::SetGroupID(uint32_t id)
 {
@@ -476,6 +515,16 @@ uint32_t SourceDataSQLite::GetGroupID()
     m_sourcesNodes.push_back(sourceNodeData);
     //return m_sourcesNodes[m_sourcesNodes.size() - 1];
 }
+
+void SourceDataSQLite::SetOrderedCommands(const bvector<ImportCommandData>& commands)
+    {
+    m_implP->m_commands = commands;
+    }
+
+bvector<ImportCommandData>& SourceDataSQLite::GetOrderedCommands()
+    {
+    return m_implP->m_commands;
+    }
 
 std::vector<SourceDataSQLite>& SourcesDataSQLite::GetSourceDataSQLite()
 {

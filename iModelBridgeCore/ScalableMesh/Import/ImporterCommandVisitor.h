@@ -22,7 +22,7 @@ namespace Internal {
 
 
 class Config;
-
+#if 0
 /*---------------------------------------------------------------------------------**//**
 * @description  
 * @bsiclass                                                  Raymond.Gauthier   05/2011
@@ -109,6 +109,6 @@ public:
                                                                 const Config&                               config);
     };  
 
-
+#endif
 } // END namespace Internal
 END_BENTLEY_SCALABLEMESH_IMPORT_NAMESPACE

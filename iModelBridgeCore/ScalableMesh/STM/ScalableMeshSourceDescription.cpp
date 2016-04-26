@@ -20,9 +20,8 @@
 #include <ScalableMesh/Import/Exceptions.h>
 
 #include <ScalableMesh/Import/Error/Source.h>
-#include <ScalableMesh/Import/ImportSequenceVisitor.h>
 #include <ScalableMesh/Import/ImportSequence.h>
-#include <ScalableMesh/Import/Command/All.h>
+#include <ScalableMesh/Import/Command/Base.h>
 
 #include <ScalableMesh/IScalableMeshSources.h>
 #include <ScalableMesh/IScalableMeshPolicy.h>
@@ -177,84 +176,19 @@ struct SourceDescriptor::Impl
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SourceDescriptor::Impl::InitSingleLayerSelection (const ImportSequence&  importSequence)
     {
-    class SingleLayerSelectionVisitor : public IImportSequenceVisitor
+    for (auto& command : importSequence.GetCommands())
         {
-        const LayerDescriptor&          m_layerDesc;
-        bool                            m_selected;
-        
-
-        void                            SelectAll                  ()
-            { m_selected = true; }
-
-        void                            Select                     (const uint32_t                                  layerID)
-            { m_selected = m_selected || 0 == layerID; }
-
-        void                            SelectIfHasType            (const uint32_t                                  layerID,
-                                                                    const DataTypeFamily&                       type)
+        if (m_layerSelection.size() > 0) break;
+        if (command.IsSourceLayerSet())
             {
-            m_selected = m_selected || 
-                         (0 == layerID && m_layerDesc.TypesEnd() != m_layerDesc.FindTypeFor(type));
+            if (command.GetSourceLayer() != 0) continue;
             }
-
-        void                            SelectAllWithType          (const DataTypeFamily&                       type)
-            { m_selected = m_selected || m_layerDesc.TypesEnd() != m_layerDesc.FindTypeFor(type); }
-
-        virtual void                    _Visit                     (const ImportAllCommand&                     command) override
-            { SelectAll(); }
-        virtual void                    _Visit                     (const ImportAllToLayerCommand&              command) override
-            { SelectAll(); }
-        virtual void                    _Visit                     (const ImportAllToLayerTypeCommand&          command) override
-            { SelectAll(); }
-        virtual void                    _Visit                     (const ImportAllToTypeCommand&               command) override
-            { SelectAll(); }
-
-        virtual void                    _Visit                     (const ImportLayerCommand&                   command) override
-            { Select(command.GetSourceLayer()); }
-        virtual void                    _Visit                     (const ImportLayerToLayerCommand&            command) override
-            { Select(command.GetSourceLayer()); }
-        virtual void                    _Visit                     (const ImportLayerToLayerTypeCommand&        command) override
-            { Select(command.GetSourceLayer()); }
-        virtual void                    _Visit                     (const ImportLayerToTypeCommand&             command) override
-            { Select(command.GetSourceLayer()); }
-
-        virtual void                    _Visit                     (const ImportLayerTypeCommand&               command) override
-            { SelectIfHasType(command.GetSourceLayer(), command.GetSourceType()); }
-        virtual void                    _Visit                     (const ImportLayerTypeToLayerCommand&        command) override
-            { SelectIfHasType(command.GetSourceLayer(), command.GetSourceType()); }
-        virtual void                    _Visit                     (const ImportLayerTypeToLayerTypeCommand&    command) override
-            { SelectIfHasType(command.GetSourceLayer(), command.GetSourceType()); }
-        virtual void                    _Visit                     (const ImportLayerTypeToTypeCommand&         command) override
-            { SelectIfHasType(command.GetSourceLayer(), command.GetSourceType()); }
-
-        virtual void                    _Visit                     (const ImportTypeCommand&                    command) override
-            { SelectAllWithType(command.GetSourceType()); }
-        virtual void                    _Visit                     (const ImportTypeToLayerCommand&             command) override
-            { SelectAllWithType(command.GetSourceType()); }
-        virtual void                    _Visit                     (const ImportTypeToLayerTypeCommand&         command) override
-            { SelectAllWithType(command.GetSourceType()); }
-        virtual void                    _Visit                     (const ImportTypeToTypeCommand&              command) override
-            { SelectAllWithType(command.GetSourceType()); }
-
-    public:
-        void                            CopyTo                     (vector<SourceLayerDescriptorHolder>&        selection) const
+        if (command.IsSourceTypeSet())
             {
-            if (m_selected)
-                selection.push_back(SourceLayerDescriptorHolder(0, m_layerDesc));
+            if (m_descriptor.LayersBegin()->TypesEnd() == m_descriptor.LayersBegin()->FindTypeFor(command.GetSourceType())) continue;
             }
-
-        explicit                        SingleLayerSelectionVisitor      (ContentDescriptor&                          descriptor)
-            :   m_layerDesc(*descriptor.LayersBegin()),
-                m_selected(false)
-            {
-            assert(1 == descriptor.GetLayerCount());
-            }
-        };
-
-    SingleLayerSelectionVisitor visitor(m_descriptor);
-    importSequence.Accept(visitor);
-
-
-    visitor.CopyTo(m_layerSelection);
+            m_layerSelection.push_back(SourceLayerDescriptorHolder(0, *m_descriptor.LayersBegin()));
+        }
     }
 
 
@@ -264,125 +198,25 @@ void SourceDescriptor::Impl::InitSingleLayerSelection (const ImportSequence&  im
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SourceDescriptor::Impl::InitMultipleLayerSelection (const ImportSequence&  importSequence)
     {
-    class MultipleLayerSelectionVisitor : public IImportSequenceVisitor
+    uint32_t layerID = 0;
+    for (ContentDescriptor::const_iterator layerIt = m_descriptor.LayersBegin();
+         m_descriptor.LayersEnd() != layerIt;
+         ++layerIt,  ++layerID)
         {
-        typedef vector<bool>         SelectedList;
-
-        typedef ContentDescriptor::const_iterator
-                                        LayerDescCIter;
-
-        const LayerDescCIter            m_layersBegin;
-        const LayerDescCIter            m_layersEnd;
-        SelectedList                    m_selected;
-        
-
-        void                            SelectAll                  ()
+        for (auto& command : importSequence.GetCommands())
             {
-            fill(m_selected.begin(), m_selected.end(), true);
-            }
-
-        void                            Select                     (const uint32_t                                  layerID)
-            {
-            if (layerID >= m_selected.size())
-                return;
-
-            m_selected[layerID] = true;
-            }
-
-        void                            SelectIfHasType            (const uint32_t                                  layerID,
-                                                                    const DataTypeFamily&                       type)
-            {
-            const LayerDescCIter layerIt(m_layersBegin + layerID);
-            if (m_layersEnd <= layerIt)
-                return;
-
-            if (layerIt->TypesEnd() == layerIt->FindTypeFor(type))
-                return;
-
-            m_selected[layerID] = true;
-            }
-
-        void                            SelectAllWithType          (const DataTypeFamily&                       type)
-            {
-            struct SelectLayer
+            if (command.IsSourceLayerSet())
                 {
-                const DataTypeFamily& m_type;
-                explicit SelectLayer (const DataTypeFamily& type) : m_type(type) {}
-
-                bool operator () (bool alreadySelected, const LayerDescriptor& layer) const 
-                    { return alreadySelected || layer.TypesEnd() != layer.FindTypeFor(m_type); } 
-                };
-
-            std::transform(m_selected.begin(), m_selected.end(), 
-                           m_layersBegin, 
-                           m_selected.begin(), 
-                           SelectLayer(type));
-            }
-
-        virtual void                    _Visit                     (const ImportAllCommand&                     command) override
-            { SelectAll(); }
-        virtual void                    _Visit                     (const ImportAllToLayerCommand&              command) override
-            { SelectAll(); }
-        virtual void                    _Visit                     (const ImportAllToLayerTypeCommand&          command) override
-            { SelectAll(); }
-        virtual void                    _Visit                     (const ImportAllToTypeCommand&               command) override
-            { SelectAll(); }
-
-        virtual void                    _Visit                     (const ImportLayerCommand&                   command) override
-            { Select(command.GetSourceLayer()); }
-        virtual void                    _Visit                     (const ImportLayerToLayerCommand&            command) override
-            { Select(command.GetSourceLayer()); }
-        virtual void                    _Visit                     (const ImportLayerToLayerTypeCommand&        command) override
-            { Select(command.GetSourceLayer()); }
-        virtual void                    _Visit                     (const ImportLayerToTypeCommand&             command) override
-            { Select(command.GetSourceLayer()); }
-
-        virtual void                    _Visit                     (const ImportLayerTypeCommand&               command) override
-            { SelectIfHasType(command.GetSourceLayer(), command.GetSourceType()); }
-        virtual void                    _Visit                     (const ImportLayerTypeToLayerCommand&        command) override
-            { SelectIfHasType(command.GetSourceLayer(), command.GetSourceType()); }
-        virtual void                    _Visit                     (const ImportLayerTypeToLayerTypeCommand&    command) override
-            { SelectIfHasType(command.GetSourceLayer(), command.GetSourceType()); }
-        virtual void                    _Visit                     (const ImportLayerTypeToTypeCommand&         command) override
-            { SelectIfHasType(command.GetSourceLayer(), command.GetSourceType()); }
-
-        virtual void                    _Visit                     (const ImportTypeCommand&                    command) override
-            { SelectAllWithType(command.GetSourceType()); }
-        virtual void                    _Visit                     (const ImportTypeToLayerCommand&             command) override
-            { SelectAllWithType(command.GetSourceType()); }
-        virtual void                    _Visit                     (const ImportTypeToLayerTypeCommand&         command) override
-            { SelectAllWithType(command.GetSourceType()); }
-        virtual void                    _Visit                     (const ImportTypeToTypeCommand&              command) override
-            { SelectAllWithType(command.GetSourceType()); }
-
-    public:
-        void                            CopyTo                     (vector<SourceLayerDescriptorHolder>&        selection) const
-            {
-            SelectedList::const_iterator selectedIt = m_selected.begin();
-            uint32_t layerID = 0;
-
-            for (ContentDescriptor::const_iterator layerIt = m_layersBegin;
-                 m_layersEnd != layerIt;
-                 ++layerIt, ++selectedIt, ++layerID)
-                {
-                if (*selectedIt)
-                    selection.push_back(SourceLayerDescriptorHolder(layerID, *layerIt));
+                if (command.GetSourceLayer() != layerID) continue;
                 }
+            if (command.IsSourceTypeSet())
+                {
+                if (m_descriptor.LayersBegin()->TypesEnd() == layerIt->FindTypeFor(command.GetSourceType())) continue;
+                }
+            m_layerSelection.push_back(SourceLayerDescriptorHolder(layerID, *layerIt));
+            break;
             }
-
-        explicit                        MultipleLayerSelectionVisitor      (ContentDescriptor&                          descriptor)
-            :   m_layersBegin(descriptor.LayersBegin()),
-                m_layersEnd(descriptor.LayersEnd()),
-                m_selected(std::distance(m_layersBegin, m_layersEnd), false)
-            {
-            }
-        };
-
-    MultipleLayerSelectionVisitor visitor(m_descriptor);
-    importSequence.Accept(visitor);
-
-
-    visitor.CopyTo(m_layerSelection);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
