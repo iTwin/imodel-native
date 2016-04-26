@@ -1242,6 +1242,21 @@ int EXP_LVL3 CScs2WktEx (char *csWktBufr,size_t bufrSize,enum ErcWktFlavor flavo
 			}
 			else
 			{
+#ifdef GEOCOORD_ENHANCEMENT
+                /* CSMAP did not extract el_def if needed
+                */
+                if (el_def == NULL)
+                {
+		            elDefPtr = CS_eldef (cs_def->elp_knm);
+		            if (elDefPtr == NULL)
+		            {
+				        /* Couldn't get an ellipsoid to reference!!! */
+				        CS_erpt (cs_NO_REFERNCE);
+				        goto error;
+		            }
+                    el_def = elDefPtr;
+                }
+#endif
 				/* Convert the parameter from CS-MAP form to EPSG form. */
 				e_sq = el_def->ecent * el_def->ecent;
 				e_rad = el_def->e_rad * cs_def->scl_red;
