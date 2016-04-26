@@ -18,7 +18,6 @@ struct ECSchemaChange;
 struct ECClassChange;
 struct ECEnumerationChange;
 //struct KindOfQuantityChange;
-struct ECPropertyValueChange;
 struct StringChange;
 struct ECPropertyChange;
 struct ECRelationshipConstraintClassChange;
@@ -622,6 +621,36 @@ struct ECPrimitiveChange : ECChange
             m_new = std::move(valueNew);
             return SUCCESS;
             }
+        ////---------------------------------------------------------------------------------------
+        //// @bsimethod                                                    Affan.Khan  03/2016
+        ////+---------------+---------------+---------------+---------------+---------------+------
+        //BentleyStatus SetValue(Nullable<T> const&& valueOld, nullptr_t valueNew)
+        //    {
+        //    if (GetState() != ChangeState::Modified)
+        //        {
+        //        BeAssert(false && "Cannot set both OLD and NEW for change that is not makred as MODIFIED");
+        //        return ERROR;
+        //        }
+
+        //    m_old = std::move(valueOld);
+        //    m_new = nullptr;
+        //    return SUCCESS;
+        //    }
+        ////---------------------------------------------------------------------------------------
+        //// @bsimethod                                                    Affan.Khan  03/2016
+        ////+---------------+---------------+---------------+---------------+---------------+------
+        //BentleyStatus SetValue(nullptr_t valueOld, Nullable<T> const&& valueNew)
+        //    {
+        //    if (GetState() != ChangeState::Modified)
+        //        {
+        //        BeAssert(false && "Cannot set both OLD and NEW for change that is not makred as MODIFIED");
+        //        return ERROR;
+        //        }
+
+        //    m_old = nullptr;
+        //    m_new = std::move(valueNew);
+        //    return SUCCESS;
+        //    }
     };
 
 //=======================================================================================
@@ -712,20 +741,7 @@ struct DateTimeChange: ECPrimitiveChange<DateTime>
             {}
         virtual ~DateTimeChange() {}
     };
-//=======================================================================================
-// @bsiclass                                                Affan.Khan            03/2016
-//+===============+===============+===============+===============+===============+======
-struct ECValueChange : ECPrimitiveChange<ECValue>
-    {
-    private:
-        virtual Utf8String _ToString(ValueId id) const override;
 
-    public:
-        ECValueChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
-            : ECPrimitiveChange<ECValue>(state, systemId, parent, customId)
-            {}
-        virtual ~ECValueChange() {}
-    };
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
@@ -812,15 +828,15 @@ struct StrengthDirectionChange : ECPrimitiveChange<ECN::ECRelatedInstanceDirecti
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
-struct ModifierChange :ECPrimitiveChange<ECN::ECClassModifier>
+struct ClassModifierChange :ECPrimitiveChange<ECN::ECClassModifier>
     {
     private:
         virtual Utf8String _ToString(ValueId id) const override;
     public:
-        ModifierChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+        ClassModifierChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
             : ECPrimitiveChange<ECN::ECClassModifier>(state, systemId, parent, customId)
             {}
-        virtual ~ModifierChange() {}
+        virtual ~ClassModifierChange() {}
     };
 
 //=======================================================================================
@@ -893,20 +909,143 @@ struct ECEnumerationChange :ECObjectChange
 struct ECPropertyValueChange : ECChange
     {
     private:
-        std::unique_ptr<ECValueChange> m_value;
+        std::unique_ptr<ECChange> m_value;
         std::unique_ptr<ECChangeArray<ECPropertyValueChange>> m_children;
+        ECN::PrimitiveType m_type;
 
     private:
         virtual void _WriteToString(Utf8StringR str, int currentIndex, int indentSize) const override;
         virtual bool _IsEmpty() const override;
         virtual void _Optimize();
+        BentleyStatus InitValue(PrimitiveType type)
+            {
+            if (m_type == type)
+                return SUCCESS;
+
+            if (type == static_cast<PrimitiveType>(0))
+                {
+                m_value = nullptr;
+                return SUCCESS;
+                }
+
+            switch (type)
+                {
+                    case PRIMITIVETYPE_Binary:
+                        m_value = std::unique_ptr<ECChange>(new BinaryChange(GetState(), SystemId::PropertyValue, this, GetId())); break;
+                    case PRIMITIVETYPE_Boolean:
+                        m_value = std::unique_ptr<ECChange>(new BooleanChange(GetState(), SystemId::PropertyValue, this, GetId())); break;
+                    case PRIMITIVETYPE_DateTime:
+                        m_value = std::unique_ptr<ECChange>(new DateTimeChange(GetState(), SystemId::PropertyValue, this, GetId())); break;
+                    case PRIMITIVETYPE_Double:
+                        m_value = std::unique_ptr<ECChange>(new DoubleChange(GetState(), SystemId::PropertyValue, this, GetId())); break;
+                    case PRIMITIVETYPE_IGeometry:
+                        {
+                        BeAssert(false && "Geometry type is not supported");
+                        return ERROR;
+                        }
+                    case PRIMITIVETYPE_Integer:
+                        m_value = std::unique_ptr<ECChange>(new Int32Change(GetState(), SystemId::PropertyValue, this, GetId())); break;
+                    case PRIMITIVETYPE_Long:
+                        m_value = std::unique_ptr<ECChange>(new Int64Change(GetState(), SystemId::PropertyValue, this, GetId())); break;
+                    case PRIMITIVETYPE_Point2D:
+                        m_value = std::unique_ptr<ECChange>(new Point2DChange(GetState(), SystemId::PropertyValue, this, GetId())); break;
+                    case PRIMITIVETYPE_Point3D:
+                        m_value = std::unique_ptr<ECChange>(new Point3DChange(GetState(), SystemId::PropertyValue, this, GetId())); break;
+                    case PRIMITIVETYPE_String:
+                        m_value = std::unique_ptr<ECChange>(new StringChange(GetState(), SystemId::PropertyValue, this, GetId())); break;
+                    default:
+                        BeAssert(false && "Unexpected value for PrimitiveType");
+                        return ERROR;
+                }
+
+            m_type = type;
+            return SUCCESS;
+            }
+
+        template< typename T >
+        class Converter
+            {
+            template< bool cond, typename U >
+            using resolvedType = Nullable<typename std::enable_if< cond, U >::type>;
+
+            public:
+                template< typename U = T >
+                static resolvedType< std::is_same<U, Binary>::value, U > Copy(ECValueCR v)
+                    {
+                    if (v.IsNull()) return Nullable<T>();
+                    Nullable<T> t;
+                    Binary bin;
+                    bin.CopyFrom(v);
+                    t = bin;
+                    return t;
+                    }
+
+                template< typename U = T >
+                static resolvedType<std::is_same<U, int32_t>::value, U > Copy(ECValueCR v)
+                    {
+                    if (v.IsNull()) return Nullable<T>();
+                    return v.GetInteger();
+                    }
+                template< typename U = T >
+                static resolvedType< std::is_same<U, int64_t>::value, U > Copy(ECValueCR v)
+                    {
+                    if (v.IsNull()) return Nullable<T>();
+                    return v.GetLong();
+                    }
+                template< typename U = T >
+                static resolvedType< std::is_same<U, DateTime>::value, U > Copy(ECValueCR v)
+                    {
+                    if (v.IsNull()) return Nullable<T>();
+                    return v.GetDateTime();
+                    }
+                template< typename U = T >
+                static resolvedType< std::is_same<U, Utf8String>::value, U > Copy(ECValueCR v)
+                    {
+                    if (v.IsNull()) return Nullable<T>();
+                    return v.GetUtf8CP();
+                    }
+                template< typename U = T >
+                static resolvedType< std::is_same<U, DPoint2d>::value, U > Copy(ECValueCR v)
+                    {
+                    if (v.IsNull()) return Nullable<T>();
+                    return v.GetPoint2D();
+                    }
+                template< typename U = T >
+                static resolvedType< std::is_same<U, DPoint3d>::value, U > Copy(ECValueCR v)
+                    {
+                    if (v.IsNull()) return Nullable<T>();
+                    return v.GetPoint3D();
+                    }
+                template< typename U = T >
+                static resolvedType< std::is_same<U, double>::value, U > Copy(ECValueCR v)
+                    {
+                    if (v.IsNull()) return Nullable<T>();
+                    return v.GetDouble();
+                    }
+                template< typename U = T >
+                static resolvedType< std::is_same<U, bool>::value, U > Copy(ECValueCR v)
+                    {
+                    if (v.IsNull()) return Nullable<T>();
+                    return v.GetBoolean();
+                    }
+            };
 
     public:
         ECPropertyValueChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr);
         bool HasValue() const;
         bool HasChildren() const;
-
-        ECPrimitiveChange<ECValue>& GetPropertyValue();
+        PrimitiveType GetValueType() const { return m_type; }
+        StringChange* GetString() const { BeAssert(m_type == PRIMITIVETYPE_String); if (m_type != PRIMITIVETYPE_String) return nullptr; return static_cast<StringChange*>(m_value.get()); }
+        BooleanChange* GetBoolean() const { BeAssert(m_type == PRIMITIVETYPE_Boolean); if (m_type != PRIMITIVETYPE_Boolean) return nullptr; return static_cast<BooleanChange*>(m_value.get()); }
+        DateTimeChange* GetDateTime() const { BeAssert(m_type == PRIMITIVETYPE_DateTime); if (m_type != PRIMITIVETYPE_DateTime) return nullptr; return static_cast<DateTimeChange*>(m_value.get()); }
+        DoubleChange* GetDouble() const { BeAssert(m_type == PRIMITIVETYPE_Double); if (m_type != PRIMITIVETYPE_Double) return nullptr; return static_cast<DoubleChange*>(m_value.get()); }
+        Int32Change* GetInteger() const { BeAssert(m_type == PRIMITIVETYPE_Integer); if (m_type != PRIMITIVETYPE_Integer) return nullptr; return static_cast<Int32Change*>(m_value.get()); }
+        Int64Change* GetLong() const { BeAssert(m_type == PRIMITIVETYPE_Long); if (m_type != PRIMITIVETYPE_Long) return nullptr; return static_cast<Int64Change*>(m_value.get()); }
+        Point2DChange* GetPoint2D() const { BeAssert(m_type == PRIMITIVETYPE_Point2D); if (m_type != PRIMITIVETYPE_Point2D) return nullptr; return static_cast<Point2DChange*>(m_value.get()); }
+        Point3DChange* GetPoint3D() const { BeAssert(m_type == PRIMITIVETYPE_Point3D); if (m_type != PRIMITIVETYPE_Point3D) return nullptr; return static_cast<Point3DChange*>(m_value.get()); }
+        BinaryChange* GetBinary() const { BeAssert(m_type == PRIMITIVETYPE_Binary); if (m_type != PRIMITIVETYPE_Binary) return nullptr; return static_cast<BinaryChange*>(m_value.get()); }
+        BentleyStatus SetValue(ValueId id, ECValueCR value);
+        BentleyStatus SetValue(ECValueCR oldValue, ECValueCR newValue);
         ECChangeArray<ECPropertyValueChange>& GetChildren();
         ECPropertyValueChange& GetOrCreate(ChangeState stat, std::vector<Utf8String> const& path);
         virtual ~ECPropertyValueChange() {}
@@ -999,7 +1138,7 @@ struct ECClassChange :ECObjectChange
         StringChange& GetName() { return Get<StringChange>(SystemId::Name); }
         StringChange& GetDisplayLabel() { return Get<StringChange>(SystemId::DisplayLabel); }
         StringChange& GetDescription() { return Get<StringChange>(SystemId::Description); }
-        ModifierChange& GetClassModifier() { return Get<ModifierChange>(SystemId::ClassModifier); }
+        ClassModifierChange& GetClassModifier() { return Get<ClassModifierChange>(SystemId::ClassModifier); }
         BooleanChange& IsCustomAttributeClass() { return Get<BooleanChange>(SystemId::IsCustomAttributeClass); }
         BooleanChange& IsEntityClass() { return Get<BooleanChange>(SystemId::IsEntityClass); }
         BooleanChange& IsStructClass() { return Get<BooleanChange>(SystemId::IsStructClass); }

@@ -28,6 +28,7 @@ private:
 
 public:
     Nullable() : m_value(T()), m_isNull(true) {}
+    Nullable(nullptr_t) : m_value(T()), m_isNull(true) {}
     Nullable(T const& value) : m_value(value), m_isNull(false) {}
     Nullable(Nullable<T> const& rhs) : m_value(rhs.m_value), m_isNull(rhs.m_isNull) {}
     Nullable(Nullable<T>&& rhs) : m_value(std::move(rhs.m_value)), m_isNull(std::move(rhs.m_isNull)) {}

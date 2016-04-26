@@ -9,7 +9,7 @@
 //__BENTLEY_INTERNAL_ONLY__
 #include "PropertyMap.h"
 #include <Bentley/NonCopyableClass.h>
-
+#include "DebugWriter.h"
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //=======================================================================================
@@ -158,7 +158,7 @@ struct ClassMap : RefCountedBase
     private:
         BentleyStatus InitializeDisableECInstanceIdAutogeneration();
         BentleyStatus CreateCurrentTimeStampTrigger(ECN::ECPropertyCR);
-
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
         virtual MappingStatus _OnInitialized() { return MappingStatus::Success; }
 
     protected:
@@ -168,7 +168,7 @@ struct ClassMap : RefCountedBase
         virtual MappingStatus _MapPart2(SchemaImportContext&, ClassMappingInfo const&, ClassMap const* parentClassMap);
         virtual BentleyStatus _Load(std::set<ClassMap const*>& loadGraph, ClassMapLoadContext&, ClassDbMapping const&, ClassMap const* parentClassMap);
         virtual BentleyStatus _Save(std::set<ClassMap const*>& savedGraph);
-
+        virtual void _WriteDebugInfo(DebugWriter& writer) const;
         MappingStatus AddPropertyMaps(ClassMapLoadContext&, ClassMap const* parentClassMap, ClassDbMapping const* loadInfo, ClassMappingInfo const* classMapInfo);
         void SetTable(DbTable& newTable, bool append = false);
         PropertyMapCollection& GetPropertyMapsR() { return m_propertyMaps; }
@@ -235,6 +235,7 @@ struct ClassMap : RefCountedBase
 
         static BentleyStatus DetermineTableName(Utf8StringR tableName, ECN::ECClassCR, Utf8CP tablePrefix = nullptr);
         static bool IsAnyClass(ECN::ECClassCR ecclass) { return ecclass.GetSchema().IsStandardSchema() && ecclass.GetName().Equals("AnyClass"); }
+        void WriteDebugInfo(DebugWriter& writer) const { _WriteDebugInfo(writer); }
     };
 
 

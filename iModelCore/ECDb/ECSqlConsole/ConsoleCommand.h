@@ -435,3 +435,19 @@ public:
     DbSchemaCommand() : ConsoleCommand() {}
     ~DbSchemaCommand() {}
     };
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                                   Affan.Khan    10/2013
+//---------------------------------------------------------------------------------------
+struct MapInfoCommand : public ConsoleCommand, NonCopyableClass
+    {
+    private:
+        virtual Utf8String _GetName() const override;
+        virtual Utf8String _GetUsage() const override;
+        virtual void _Run(ECSqlConsoleSession& session, std::vector<Utf8String> const& args) const override;
+
+
+    public:
+        MapInfoCommand() : ConsoleCommand() {}
+        ~MapInfoCommand() {}
+    };

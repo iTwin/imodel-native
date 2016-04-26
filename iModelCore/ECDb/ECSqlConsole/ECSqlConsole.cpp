@@ -108,7 +108,8 @@ void ECSqlConsole::Setup()
 
     AddCommand(make_shared<SqliteCommand>());
     AddCommand(make_shared<DbSchemaCommand>());
-
+    AddCommand(make_shared<MapInfoCommand>());
+    
     AddCommand(make_shared<HistoryCommand>());
     auto exitCommand = make_shared<ExitCommand>();
     AddCommand(exitCommand);

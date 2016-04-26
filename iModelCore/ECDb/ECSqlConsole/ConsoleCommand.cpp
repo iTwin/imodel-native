@@ -109,6 +109,8 @@ void HelpCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> const& a
     Console::WriteLine();
     Console::WriteLine(m_commandMap.at(".diff")->GetUsage().c_str());
     Console::WriteLine();
+    Console::WriteLine(m_commandMap.at(".mapinfo")->GetUsage().c_str());
+    Console::WriteLine();
     Console::WriteLine(m_commandMap.at(".set")->GetUsage().c_str());
     Console::WriteLine();
     Console::WriteLine(m_commandMap.at(".sql")->GetUsage().c_str());
@@ -1548,4 +1550,89 @@ void DbSchemaCommand::Search(ECDbCR ecdb, Utf8CP searchTerm) const
         Console::WriteLine(" %s [%s]", stmt.GetValueText(0), stmt.GetValueText(1));
         }
     while (BE_SQLITE_ROW == stmt.Step());
+    }
+
+
+//******************************* MapInfoCommand ******************
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle     04/2016
+//---------------------------------------------------------------------------------------
+Utf8String MapInfoCommand::_GetName() const
+    {
+    return ".mapinfo";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle     04/2016
+//---------------------------------------------------------------------------------------
+Utf8String MapInfoCommand::_GetUsage() const
+    {
+    return " .mapinfo * | ecschema <schemaName> | ecclass <schemaNameOrPrefix>.<classname>\r\n"
+           "                                Return mapping info for the specified facet.";
+
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle     04/2016
+//---------------------------------------------------------------------------------------
+void MapInfoCommand::_Run(ECSqlConsoleSession& session, std::vector<Utf8String> const& args) const
+    {
+    if (args.size() < 2)
+        {
+        Console::WriteErrorLine("Usage: %s", GetUsage().c_str());
+        return;
+        }
+
+    Utf8StringCR switchArg = args[1];
+    Utf8String info;
+
+    if (switchArg.EqualsI("*"))
+        {
+        if (ECDbMapDebugInfo::GetMapInfoForAllClasses(info, session.GetECDb(), false) == ERROR)
+            {
+            Console::WriteErrorLine("Failed to reterive mapinfo");
+            }
+        else
+            Console::WriteLine("%s", info.c_str());
+
+        return;
+        }
+    else if (switchArg.EqualsI("ecschema"))
+        {
+        if (args.size() < 3)
+            {
+            Console::WriteErrorLine("Usage: %s", GetUsage().c_str());
+            return;
+            }
+
+        if (ECDbMapDebugInfo::GetMapInfoForSchema(info, session.GetECDb(), args[2].c_str(), false) == ERROR)
+            {
+            Console::WriteErrorLine("Failed to reterive mapinfo");
+            }
+        else
+            Console::WriteLine("%s", info.c_str());
+
+        return;
+
+        }
+    else if (switchArg.EqualsI("ecclass"))
+        {
+        if (args.size() < 3)
+            {
+            Console::WriteErrorLine("Usage: %s", GetUsage().c_str());
+            return;
+            }
+
+        if (ECDbMapDebugInfo::GetMapInfoForClass(info, session.GetECDb(), args[2].c_str()) == ERROR)
+            {
+            Console::WriteErrorLine("Failed to reterive mapinfo");
+            }
+        else
+            Console::WriteLine("%s", info.c_str());
+
+        return;
+
+        }
+
+    Console::WriteErrorLine("Usage: %s", GetUsage().c_str());
     }

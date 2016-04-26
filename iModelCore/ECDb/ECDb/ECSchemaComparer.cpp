@@ -750,15 +750,15 @@ BentleyStatus ECSchemaComparer::CompareCustomAttribute(ECPropertyValueChange& ch
         if (existInA && existInB)
             {
             if (!itorA->second.Equals(itorB->second))
-                changes.GetOrCreate(ChangeState::Modified, Split(u)).GetPropertyValue().SetValue(itorA->second, itorB->second);
+                changes.GetOrCreate(ChangeState::Modified, Split(u)).SetValue(itorA->second, itorB->second);
             }
         else if (existInA && !existInB)
             {
-            changes.GetOrCreate(ChangeState::Deleted, Split(u)).GetPropertyValue().SetValue(ValueId::Deleted, itorA->second);
+            changes.GetOrCreate(ChangeState::Deleted, Split(u)).SetValue(ValueId::Deleted, itorA->second);
             }
         else if (!existInA && existInB)
             {
-            changes.GetOrCreate(ChangeState::New, Split(u)).GetPropertyValue().SetValue(ValueId::New, itorB->second);
+            changes.GetOrCreate(ChangeState::New, Split(u)).SetValue(ValueId::New, itorB->second);
             }
         }
 
@@ -781,7 +781,7 @@ BentleyStatus ECSchemaComparer::AppendCustomAttribute(ECInstanceChanges& changes
 
     auto& change = changes.Add(state, v.GetClass().GetFullName());
     for (auto& key : map)
-        change.GetOrCreate(state, Split(key.first)).GetPropertyValue().SetValue(appendType, key.second);
+        change.GetOrCreate(state, Split(key.first)).SetValue(appendType, key.second);
 
     return SUCCESS;
     }
@@ -1786,24 +1786,6 @@ Utf8String DateTimeChange::_ToString(ValueId id) const
     }
 
 //======================================================================================>
-//ECValueChange
-//======================================================================================>
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-Utf8String ECValueChange::_ToString(ValueId id) const
-    {
-    auto& v = GetValue(id);
-    if (v.IsNull())
-        return NULL_TEXT;
-
-    if (v.Value().IsNull())
-        return NULL_TEXT;
-
-    return v.Value().ToString();
-    }
-
-//======================================================================================>
 //Point2DChange
 //======================================================================================>
 //---------------------------------------------------------------------------------------
@@ -1903,12 +1885,12 @@ Utf8String StrengthDirectionChange::_ToString(ValueId id) const
     }
 
 //======================================================================================>
-//ModifierChange
+//ClassModifierChange
 //======================================================================================>
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8String ModifierChange::_ToString(ValueId id) const 
+Utf8String ClassModifierChange::_ToString(ValueId id) const 
     {
     Utf8String str;
     auto& v = GetValue(id);
@@ -1926,10 +1908,112 @@ Utf8String ModifierChange::_ToString(ValueId id) const
         }
     return str;
     }
-
 //======================================================================================>
 //ECPropertyValueChange
 //======================================================================================>
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECPropertyValueChange::SetValue(ValueId id, ECValueCR value)
+    {
+    if (!value.IsPrimitive())
+        return ERROR;
+
+    if (InitValue(value.GetPrimitiveType()) != SUCCESS)
+        return ERROR;
+
+    if (value.IsNull())
+        return SUCCESS;
+
+    switch (m_type)
+        {
+            case PRIMITIVETYPE_IGeometry:
+                {
+                BeAssert(false && "Gemoetry not supported type");
+                return ERROR;
+                }
+            case PRIMITIVETYPE_Binary:
+                {
+                Binary v;
+                v.CopyFrom(value);
+                return GetBinary()->SetValue(id, std::move(v));
+                }
+            case PRIMITIVETYPE_Boolean:
+                return GetBoolean()->SetValue(id, value.GetBoolean());
+            case PRIMITIVETYPE_DateTime:
+                return GetDateTime()->SetValue(id, value.GetDateTime());
+            case PRIMITIVETYPE_Double:
+                return GetDouble()->SetValue(id, value.GetDouble());
+            case PRIMITIVETYPE_Integer:
+                return GetInteger()->SetValue(id, value.GetInteger());
+            case PRIMITIVETYPE_Long:
+                return GetLong()->SetValue(id, value.GetLong());
+            case PRIMITIVETYPE_Point2D:
+                return GetPoint2D()->SetValue(id, value.GetPoint2D());
+            case PRIMITIVETYPE_Point3D:
+                return GetPoint3D()->SetValue(id, value.GetPoint3D());
+            case PRIMITIVETYPE_String:
+                return GetString()->SetValue(id, value.GetUtf8CP());
+        }
+
+    return ERROR;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECPropertyValueChange::SetValue(ECValueCR oldValue, ECValueCR newValue)
+    {
+    const PrimitiveType NullType = static_cast<PrimitiveType>(0);
+    PrimitiveType oldType = NullType;
+    PrimitiveType newType = NullType;
+    if (oldValue.IsPrimitive())
+        oldType = oldValue.GetPrimitiveType();
+
+    if (newValue.IsPrimitive())
+        oldType = oldValue.GetPrimitiveType();
+
+    if (oldType == NullType && newType == NullType)
+        return ERROR;
+
+    if (oldType == NullType)
+        oldType = newType;
+
+    if (newType == NullType)
+        newType = oldType;
+
+    if (InitValue(oldType) != SUCCESS)
+        return ERROR;
+
+    switch (m_type)
+        {
+            case PRIMITIVETYPE_IGeometry:
+                {
+                BeAssert(false && "Gemoetry not supported type");
+                return ERROR;
+                }
+            case PRIMITIVETYPE_Binary:
+                return GetBinary()->SetValue(Converter<Binary>::Copy(oldValue), Converter<Binary>::Copy(newValue));
+            case PRIMITIVETYPE_Boolean:
+                return GetBoolean()->SetValue(Converter<bool>::Copy(oldValue), Converter<bool>::Copy(newValue));
+            case PRIMITIVETYPE_DateTime:
+                return GetDateTime()->SetValue(Converter<DateTime>::Copy(oldValue), Converter<DateTime>::Copy(newValue));
+            case PRIMITIVETYPE_Double:
+                return GetDouble()->SetValue(Converter<double>::Copy(oldValue), Converter<double>::Copy(newValue));
+            case PRIMITIVETYPE_Integer:
+                return GetInteger()->SetValue(Converter<int>::Copy(oldValue), Converter<int>::Copy(newValue));
+            case PRIMITIVETYPE_Long:
+                return GetLong()->SetValue(Converter<int64_t>::Copy(oldValue), Converter<int64_t>::Copy(newValue));
+            case PRIMITIVETYPE_Point2D:
+                return GetPoint2D()->SetValue(Converter<DPoint2d>::Copy(oldValue), Converter<DPoint2d>::Copy(newValue));
+            case PRIMITIVETYPE_Point3D:
+                return GetPoint3D()->SetValue(Converter<DPoint3d>::Copy(oldValue), Converter<DPoint3d>::Copy(newValue));
+            case PRIMITIVETYPE_String:
+                return GetString()->SetValue(Converter<Utf8String>::Copy(oldValue), Converter<Utf8String>::Copy(newValue));
+        }
+
+    return ERROR;
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1990,7 +2074,7 @@ void ECPropertyValueChange::_Optimize()
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
 ECPropertyValueChange::ECPropertyValueChange(ChangeState state, SystemId systemId, ECChange const* parent, Utf8CP customId)
-    : ECChange(state, SystemId::PropertyValue, parent, customId)
+    : ECChange(state, SystemId::PropertyValue, parent, customId),m_type(static_cast<PrimitiveType>(0))
     {
     BeAssert(systemId == GetSystemId());
     }
@@ -2002,16 +2086,7 @@ bool ECPropertyValueChange::HasValue() const { return m_value != nullptr; }
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
 bool ECPropertyValueChange::HasChildren() const { return m_children != nullptr; }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-ECPrimitiveChange<ECValue>& ECPropertyValueChange::GetPropertyValue()
-    {
-    if (m_value == nullptr)
-        m_value = std::unique_ptr<ECValueChange>(new ECValueChange(GetState(), SystemId::PropertyValue, this, GetId()));
 
-    return *m_value;
-    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------

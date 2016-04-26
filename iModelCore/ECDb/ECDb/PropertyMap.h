@@ -9,7 +9,7 @@
 #include "ECDbInternalTypes.h"
 #include "ClassMappingInfo.h"
 #include "DbSchema.h"
-
+#include "DebugWriter.h"
 #include "ECDbSystemSchemaHelper.h"
 #include "ECSql/NativeSqlBuilder.h"
 
@@ -101,7 +101,7 @@ private:
     virtual ECClassIdRelationshipConstraintPropertyMap const* _GetAsECClassIdRelationshipConstraintPropertyMapRelationship() const { return nullptr; }
 
     virtual Utf8String _ToString() const = 0;
-
+    virtual void _WriteDebugInfo(DebugWriter& writer) const;
 protected:
     PropertyMap(ECN::ECPropertyCR ecProperty, Utf8CP propertyAccessString, PropertyMapCP parentPropertyMap) : m_ecProperty(ecProperty), m_propertyAccessString(propertyAccessString), m_parentPropertyMap(parentPropertyMap) {}
     PropertyMap(PropertyMapCR rhs, PropertyMapCP parentPropertyMap) : m_ecProperty(rhs.m_ecProperty), m_parentPropertyMap(parentPropertyMap), m_propertyAccessString(rhs.m_propertyAccessString),
@@ -168,6 +168,7 @@ public:
     Utf8String ToString() const { return _ToString(); }
 
     static BentleyStatus DetermineColumnInfo(Utf8StringR columnName, bool& isNullable, bool& isUnique, DbColumn::Constraint::Collation&, ECDbCR, ECN::ECPropertyCR, Utf8CP propAccessString);
+    void WriteDebugInfo(DebugWriter& writer) const { _WriteDebugInfo(writer); }
     };
 
 //=======================================================================================
