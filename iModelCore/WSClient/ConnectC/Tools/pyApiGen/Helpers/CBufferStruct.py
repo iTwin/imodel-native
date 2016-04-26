@@ -10,11 +10,9 @@ class CBufferStruct(CStruct):
         if not self.does_contain_property_type(property_type):
             raise PropertyTypeError("Property type {0} not accepted".format(property_type))
         if property_type is 'StringLength':
-            accessor_str = "{0}_EXPORT CALLSTATUS ".format(self._api.get_upper_api_acronym()) \
-                           + self.get_lower_name() + "GetStringLength\n"
+            accessor_str = "CALLSTATUS " + self.get_lower_name() + "GetStringLength\n"
         else:
-            accessor_str = "{0}_EXPORT CALLSTATUS ".format(self._api.get_upper_api_acronym()) \
-                           + self.get_lower_name() + "Get" + property_type.title() + "Property\n"
+            accessor_str = "CALLSTATUS " + self.get_lower_name() + "Get" + property_type.title() + "Property\n"
         accessor_str += "(\n"
         accessor_str += "H{0}BUFFER buf,\n".format(self._api.get_api_acronym())
         accessor_str += "int bufferProperty,\n"
