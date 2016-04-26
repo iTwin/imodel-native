@@ -1002,7 +1002,7 @@ struct ECPropertyValueChange : ECChange
                 static resolvedType< std::is_same<U, Utf8String>::value, U > Copy(ECValueCR v)
                     {
                     if (v.IsNull()) return Nullable<T>();
-                    return v.GetUtf8CP();
+                    return Nullable<T>(v.GetUtf8CP());
                     }
                 template< typename U = T >
                 static resolvedType< std::is_same<U, DPoint2d>::value, U > Copy(ECValueCR v)

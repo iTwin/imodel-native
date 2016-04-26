@@ -131,7 +131,7 @@ void PropertyMap::_WriteDebugInfo(DebugWriter& writer) const
                 {
                 writer.AppendLine("Column : %s, [Id=%" PRId64 "], [Table=%s], [Type=%s], [Virtual=%s], [Kind=%s] ",
                                   column->GetName().c_str(),
-                                  column->GetId(),
+                                  column->GetId().GetValue(),
                                   column->GetTable().GetName().c_str(),
                                   column->TypeToSql(column->GetType()),
                                   column->GetPersistenceType() == PersistenceType::Persisted ? "false" : "true",
