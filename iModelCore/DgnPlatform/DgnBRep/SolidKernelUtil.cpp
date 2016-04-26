@@ -267,6 +267,7 @@ ISolidKernelEntityPtr SolidKernelUtil::CreateNewEntity(TopoDS_Shape const& shape
 +---------------+---------------+---------------+---------------+---------------+------*/
 PolyfaceHeaderPtr SolidKernelUtil::FacetEntity(ISolidKernelEntityCR entity, double pixelSize, DRange1dP pixelSizeRange)
     {
+#if defined (BENTLEYCONFIG_OPENCASCADE)
     TopoDS_Shape const* shape = SolidKernelUtil::GetShape(entity);
 
     if (nullptr == shape)
@@ -317,4 +318,7 @@ PolyfaceHeaderPtr SolidKernelUtil::FacetEntity(ISolidKernelEntityCR entity, doub
         }
 
     return OCBRep::IncrementalMesh(*shape, *facetOptions);
+#else
+    return nullptr;
+#endif
     }
