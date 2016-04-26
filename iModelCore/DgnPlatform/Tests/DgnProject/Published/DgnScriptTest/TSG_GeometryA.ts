@@ -367,8 +367,21 @@ module DgnScriptTests {
         geometry1.push (LoopFromPoints (RegularXYPolygonPoints (new Bentley.Dgn.DPoint3d (0,0,0), 4, 1.0, false)));
         var geometry2 = CloneAndTransformGeometryArray (geometry1, Bentley.Dgn.Transform.CreateTranslationXYZ (1,0,3));
         }
-    t_polyfaceMeshA ();  
 
+    function t_regularPolygon ()
+        {
+        var nut =
+            Bentley.Dgn.DgnExtrusion.Create
+                    (
+                    Bentley.Dgn.Loop.CreateRegularPolygonXY (
+                        new Bentley.Dgn.DPoint3d (1,1,3),
+                        2.0, 6, true),
+                    new Bentley.Dgn.DVector3d (0,0,1),
+                    true
+                    );
+        }
+    t_polyfaceMeshA ();  
+    t_regularPolygon ();
     logMessage('Test1 Z');
 }
 

@@ -1151,18 +1151,18 @@ void InstanceUpdater::Update(DgnElementCR el)
     if (!updater.IsValid())
         return;
 
-    SqlPrintfString ecSql("SELECT * FROM [%s].[%s] WHERE ECInstanceId = ?", Utf8String(targetClass->GetSchema().GetName()).c_str(), Utf8String(targetClass->GetName()).c_str());
-    ECSqlStatement ecStatement;
-    ECSqlStatus status = ecStatement.Prepare(m_importer.GetSourceDb(), ecSql.GetUtf8CP());
-    if (ECSqlStatus::Success != status)
+    Utf8PrintfString ecSql("SELECT * FROM [%s].[%s] WHERE ECInstanceId = ?", Utf8String(targetClass->GetSchema().GetName()).c_str(), Utf8String(targetClass->GetName()).c_str());
+    CachedECSqlStatementPtr ecStatement = m_importer.GetSourceDb().GetPreparedECSqlStatement(ecSql.c_str());
+
+    if (!ecStatement.IsValid())
         {
         // log error?
         return;
         }
 
-    ecStatement.BindId(1, m_sourceElementId);
-    ECInstanceECSqlSelectAdapter adapter(ecStatement);
-    while (BE_SQLITE_ROW == ecStatement.Step())
+    ecStatement->BindId(1, m_sourceElementId);
+    ECInstanceECSqlSelectAdapter adapter(*ecStatement);
+    while (BE_SQLITE_ROW == ecStatement->Step())
         {
         IECInstancePtr instance = adapter.GetInstance();
         BeAssert(instance.IsValid());
@@ -1243,7 +1243,7 @@ DgnElementPtr DgnElement::Clone(DgnDbStatus* stat, DgnElement::CreateParams cons
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometricElement2d::_AdjustPlacementForImport(DgnImportContext const& importer)
     {
-    m_placement.GetOriginR().Add(importer.GetOriginOffset());
+    m_placement.GetOriginR().Add(DPoint2d::From(importer.GetOriginOffset()));
     m_placement.GetAngleR() = (m_placement.GetAngle() + importer.GetYawAdjustment());
     }
 
@@ -1252,7 +1252,7 @@ void GeometricElement2d::_AdjustPlacementForImport(DgnImportContext const& impor
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometricElement3d::_AdjustPlacementForImport(DgnImportContext const& importer)
     {
-    m_placement.GetOriginR().Add(DPoint3d::From(importer.GetOriginOffset()));
+    m_placement.GetOriginR().Add(importer.GetOriginOffset());
     m_placement.GetAnglesR().AddYaw(importer.GetYawAdjustment());
     }
 
