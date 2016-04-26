@@ -1035,7 +1035,7 @@ ImagePPStatus OutputMergerProcessorOptimizedN8<Surface_T, InputEditor_T, NeedCom
             Scanline const& currentScanline = m_scanLines[(uint32_t)(scanLine-scanlineOffset)];
             for (auto runItr : currentScanline)
                 {
-                if (runItr.first > endPixel) 
+                if (runItr.first >= endPixel) 
                     break; // this run and the subsequent runs are not overlapping
 
                 //&&OPTIMIZATION:  We should be looking for the first scanline in separate loop and then test only the exit condition in the process loop. 
@@ -1045,23 +1045,27 @@ ImagePPStatus OutputMergerProcessorOptimizedN8<Surface_T, InputEditor_T, NeedCom
                 const int64_t beginRun = MAX(firstPixel, runItr.first);
                 const int64_t endRun = MIN(endPixel, runItr.first + runItr.second);
 
-                BeAssert((beginRun - inOffset.x) + (endRun - beginRun)/*pixelToCopy*/ <= inputData.GetWidth());
-                BeAssert((beginRun - outOffset.x) + (endRun - beginRun)/*pixelToCopy*/ <= m_outEditor.GetWidth());
-
-                if (NeedCompose_T)  // *** Will be resolve at compile time
+                uint32_t pixelToCopy = (uint32_t)(endRun - beginRun);
+                if (pixelToCopy > 0)
                     {
-                    m_converter.Compose(inEditor.GetPixels((uint32_t)(beginRun - inOffset.x), (uint32_t)(scanLine - inOffset.y), (uint32_t)(endRun - beginRun)),
-                                          m_outEditor.LockPixels((uint32_t)(beginRun - outOffset.x), (uint32_t)(scanLine - outOffset.y), (uint32_t)(endRun - beginRun)),
-                                          (uint32_t)(endRun - beginRun));
-                    }
-                else
-                    {
-                    m_converter.Convert(inEditor.GetPixels((uint32_t)(beginRun - inOffset.x), (uint32_t)(scanLine - inOffset.y), (uint32_t)(endRun - beginRun)),
-                                          m_outEditor.LockPixels((uint32_t)(beginRun - outOffset.x), (uint32_t)(scanLine - outOffset.y), (uint32_t)(endRun - beginRun)),
-                                          (uint32_t)(endRun - beginRun));
-                    }
+                    BeAssert((beginRun - inOffset.x) + pixelToCopy <= inputData.GetWidth());
+                    BeAssert((beginRun - outOffset.x) + pixelToCopy <= m_outEditor.GetWidth());
 
-                m_outEditor.UnLockPixels();
+                    if (NeedCompose_T)  // *** Will be resolve at compile time
+                        {
+                        m_converter.Compose(inEditor.GetPixels((uint32_t) (beginRun - inOffset.x), (uint32_t) (scanLine - inOffset.y), pixelToCopy),
+                                            m_outEditor.LockPixels((uint32_t) (beginRun - outOffset.x), (uint32_t) (scanLine - outOffset.y), pixelToCopy),
+                                            pixelToCopy);
+                        }
+                    else
+                        {
+                        m_converter.Convert(inEditor.GetPixels((uint32_t) (beginRun - inOffset.x), (uint32_t) (scanLine - inOffset.y), pixelToCopy),
+                                            m_outEditor.LockPixels((uint32_t) (beginRun - outOffset.x), (uint32_t) (scanLine - outOffset.y), pixelToCopy),
+                                            pixelToCopy);
+                        }
+
+                    m_outEditor.UnLockPixels();
+                    }
                 // N8 optimized code:
 //                 m_converter.Convert(pInBuffer + (scanLine - inOffset.y)*inPitch + (beginRun - inOffset.x)*inBytesPerPixel,
 //                                       pOutBuffer + (scanLine - outOffset.y)*outPitch + (beginRun - outOffset.x)*outBytesPerPixel, 
@@ -1153,7 +1157,7 @@ ImagePPStatus OutputMergerProcessorNormal<Surface_T, InputEditor_T, NeedCompose_
             
             for (auto runItr : m_scanLines[(uint32_t)(scanLine-scanlineOffset)])
                 {
-                if (runItr.first > endPixel)
+                if (runItr.first >= endPixel)
                     break; // this run and the subsequent runs are not overlapping
                 if ((runItr.first + runItr.second) < firstPixel)
                     continue; // this run is not overlapping, but maybe next runs will...
@@ -1161,23 +1165,27 @@ ImagePPStatus OutputMergerProcessorNormal<Surface_T, InputEditor_T, NeedCompose_
                 const int64_t beginRun = MAX(firstPixel, runItr.first);
                 const int64_t endRun = MIN(endPixel, runItr.first + runItr.second);
 
-                BeAssert((beginRun - inOffset.x) + (endRun - beginRun)/*pixelToCopy*/ <= inputData.GetWidth());
-                BeAssert((beginRun - outOffset.x) + (endRun - beginRun)/*pixelToCopy*/ <= m_outEditor.GetWidth());
-                
-                if (NeedCompose_T)  // *** Will be resolve at compile time
+                uint32_t pixelToCopy = (uint32_t) (endRun - beginRun);
+                if (pixelToCopy > 0)
                     {
-                    m_converter.Compose(inEditor.GetPixels((uint32_t)(beginRun - inOffset.x), (uint32_t)(scanLine - inOffset.y), (uint32_t)(endRun - beginRun)),
-                                          m_outEditor.LockPixels((uint32_t)(beginRun - outOffset.x), (uint32_t)(scanLine - outOffset.y), (uint32_t)(endRun - beginRun)),
-                                          (uint32_t)(endRun - beginRun));
+                    BeAssert((beginRun - inOffset.x) + pixelToCopy <= inputData.GetWidth());
+                    BeAssert((beginRun - outOffset.x) + pixelToCopy <= m_outEditor.GetWidth());
 
-                    m_outEditor.UnLockPixels();
-                    }
-                else
-                    {
-                    m_converter.Convert(inEditor.GetPixels((uint32_t)(beginRun - inOffset.x), (uint32_t)(scanLine - inOffset.y), (uint32_t)(endRun - beginRun)),
-                                          pWorkingBuffer.get(), (uint32_t)(endRun - beginRun));
+                    if (NeedCompose_T)  // *** Will be resolve at compile time
+                        {
+                        m_converter.Compose(inEditor.GetPixels((uint32_t) (beginRun - inOffset.x), (uint32_t) (scanLine - inOffset.y), pixelToCopy),
+                                            m_outEditor.LockPixels((uint32_t) (beginRun - outOffset.x), (uint32_t) (scanLine - outOffset.y), pixelToCopy),
+                                            pixelToCopy);
 
-                    m_outEditor.SetPixels((uint32_t)(beginRun - outOffset.x), (uint32_t)(scanLine - outOffset.y), (uint32_t)(endRun - beginRun), pWorkingBuffer.get());
+                        m_outEditor.UnLockPixels();
+                        }
+                    else
+                        {
+                        m_converter.Convert(inEditor.GetPixels((uint32_t) (beginRun - inOffset.x), (uint32_t) (scanLine - inOffset.y), pixelToCopy),
+                                            pWorkingBuffer.get(), pixelToCopy);
+
+                        m_outEditor.SetPixels((uint32_t) (beginRun - outOffset.x), (uint32_t) (scanLine - outOffset.y), pixelToCopy, pWorkingBuffer.get());
+                        }
                     }
                 }
             }
