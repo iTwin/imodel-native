@@ -72,7 +72,7 @@ static double restrictAngleTol (double radians, double defaultRadians, double mi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-PolyfaceHeaderPtr OCBRep::IncrementalMesh(TopoDS_Shape const& shape, IFacetOptionsR facetOptions)
+PolyfaceHeaderPtr OCBRep::IncrementalMesh(TopoDS_Shape const& shape, IFacetOptionsR facetOptions, bool cleanShape)
     {
     if (shape.IsNull())
         return nullptr;
@@ -193,7 +193,8 @@ PolyfaceHeaderPtr OCBRep::IncrementalMesh(TopoDS_Shape const& shape, IFacetOptio
             }
         }
 
-    BRepTools::Clean(shape); // Don't leave triangulation on shape...
+    if (cleanShape)
+        BRepTools::Clean(shape); // Don't leave triangulation on shape...
 
     return polyfaceBuilder->GetClientMeshPtr();
     }
