@@ -541,7 +541,6 @@ class LayerCfgVisitor : public ILayerConfigVisitor
     virtual void                    _Visit                     (const GCSExtendedConfig&            config) override;
     virtual void                    _Visit                     (const TypeConfig&                   config) override;
     virtual void                    _Visit                     (const ScalableMeshConfig&           config) override;
-    virtual void                    _Visit                     (const GCSLocalAdjustmentConfig&     config) override;
 
 public:
     explicit                        LayerCfgVisitor            (LayerDescriptorImpl&                layerDescImpl) : m_implP(&layerDescImpl) {}
@@ -674,15 +673,6 @@ void LayerCfgVisitor::_Visit(const ScalableMeshConfig& config)
         m_implP->m_scalableMeshData = data;
 }
 
-/*---------------------------------------------------------------------------------**//**
-* @description  
-* @bsimethod                                                  Raymond.Gauthier   09/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-void LayerCfgVisitor::_Visit (const GCSLocalAdjustmentConfig& config)
-    {
-    if (GCS::S_SUCCESS != m_implP->m_gcs.AppendLocalTransform(config.GetTransform()))
-        throw CustomException(L"Could not locally adjust existing GCS!");
-    }
 
 
 /*---------------------------------------------------------------------------------**//**
@@ -703,8 +693,6 @@ class ContentCfgVisitor : public IContentConfigVisitor
     virtual void                    _Visit                     (const ScalableMeshConfig&           config) override;
 
     virtual void                    _Visit                     (const LayerConfig&                  config) override;
-
-    virtual void                    _Visit                     (const GCSLocalAdjustmentConfig&     config) override;
 
     template <typename ConfigT>
     void                            PropagateToAllLayers       (const ConfigT&                      config);
@@ -789,15 +777,6 @@ void ContentCfgVisitor::_Visit(const ScalableMeshConfig& config)
 {
     PropagateToAllLayers(config);
 }
-
-/*---------------------------------------------------------------------------------**//**
-* @description  
-* @bsimethod                                                  Raymond.Gauthier   09/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ContentCfgVisitor::_Visit (const GCSLocalAdjustmentConfig& config)
-    {
-    PropagateToAllLayers(config);
-    }
 
 }
 

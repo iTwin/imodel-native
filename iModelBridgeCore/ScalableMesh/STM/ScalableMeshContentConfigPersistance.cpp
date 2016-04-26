@@ -60,7 +60,6 @@ enum ConfigComponentSerializationID
     CCSID_GCS_ExtendedV0,
     CCSID_GCS_ExtendedV2,
     CCSID_GCS_ExtendedV1,
-    CCSID_GCS_LocalAdjustment,
     CCSID_ScalableMeshConfig,
     CCSID_QTY,
     };
@@ -318,30 +317,6 @@ public:
 
 
 
-const struct GCSLocalAdjustmentConfigComponentSerializer : public ComponentSerializerMixinBase<GCSLocalAdjustmentConfig>
-    {
-private:
-
-    virtual bool                _Serialize(const GCSLocalAdjustmentConfig&     component,
-        SourceDataSQLite&                      sourceData) const override
-    {
-        //Not sure what it was used for, but now that some of our software has been released with 
-        //knowledge of CCSID_GCS_LocalAdjustment we cannot do anything with this (i.e. : must recreate a new config 
-        //if we eventually want to persist what this serializer was meant to persist. 
-        assert(!"Never implemented!");
-        return false;
-    }
-
-
-public:
-
-    virtual                     ConfigComponentSerializationID GetSerializationID() const override
-        {
-        return CCSID_GCS_LocalAdjustment;
-        }
-
-    } s_GCSLocalAdjustmentConfigComponentSerializer;
-
 
 struct TypeConfigComponentSerializer : public ComponentSerializerMixinBase<TypeConfig>
     {
@@ -435,10 +410,6 @@ class LayerCfgVisitor : public ILayerConfigVisitor
         m_commands.push_back(SerializeCommand(s_ScalableMeshConfigComponentSerializer, config));
     }
 
-    virtual void                    _Visit                     (const GCSLocalAdjustmentConfig&         config) override
-        {
-        m_commands.push_back(SerializeCommand(s_GCSLocalAdjustmentConfigComponentSerializer, config));
-        }
 
 public:
     const SerializeCommandList&     GetSerializeCommands       () const { return m_commands; }
@@ -493,10 +464,6 @@ class ContentCfgVisitor : public IContentConfigVisitor
         m_commands.push_back(SerializeCommand(s_LayerConfigComponentSerializer, config));
         }
 
-    virtual void                    _Visit                     (const GCSLocalAdjustmentConfig&             config) override
-        {
-        m_commands.push_back(SerializeCommand(s_GCSLocalAdjustmentConfigComponentSerializer, config));
-        }
 
 public:
     const SerializeCommandList&     GetSerializeCommands       ()  
@@ -793,21 +760,6 @@ const struct GCSExtendedConfigCreatorV2 : public ComponentCreator
     } s_GCSExtendedConfigCreatorV2;
 
 
-/*---------------------------------------------------------------------------------**//**
-* @description  
-* @bsiclass                                                  Raymond.Gauthier   09/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-const struct GCSLocalAdjustmentConfigCreator : public ComponentCreator
-    {
-
-        virtual Component*          _Create(SourceDataSQLite&      sourceData) const override
-        {
-            assert(!"Implement!"); //TDORAY: Implement
-            return 0;
-        }
-
-    } s_GCSLocalAdjustmentConfigCreator;
-
 
 /*---------------------------------------------------------------------------------**//**
 * @description  
@@ -915,7 +867,6 @@ const ComponentFactory::CreatorItem* ComponentFactory::GetCreatorIndex ()
         &s_GCSOverrideConfigCreatorV0,
         &s_GCSExtendedConfigCreatorV2,
         &s_GCSExtendedConfigCreatorV1,
-        &s_GCSLocalAdjustmentConfigCreator,
         &s_ScalableMeshConfigCreator,
         };
     

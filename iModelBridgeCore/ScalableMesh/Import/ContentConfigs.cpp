@@ -85,40 +85,6 @@ GCSExtendedConfig::~GCSExtendedConfig ()
     }
 
 
-GCSLocalAdjustmentConfig::ClassID GCSLocalAdjustmentConfig::s_GetClassID ()  { return super_class::s_GetClassID(); }
-   
-
-/*---------------------------------------------------------------------------------**//**
-* @description  
-* @bsiclass                                                    Raymond.Gauthier  09/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-GCSLocalAdjustmentConfig::GCSLocalAdjustmentConfig (const GCSLocalAdjustmentConfig& rhs)
-    :   m_transform(rhs.m_transform),
-        m_flags(rhs.m_flags),
-        m_implP(0)
-    {
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @description  
-* @bsiclass                                                    Raymond.Gauthier  09/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-GCSLocalAdjustmentConfig::GCSLocalAdjustmentConfig (const LocalTransform&   transform)
-    :   m_transform(transform),
-        m_flags(0),
-        m_implP(0)
-    {
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @description  
-* @bsiclass                                                    Raymond.Gauthier  09/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-GCSLocalAdjustmentConfig::~GCSLocalAdjustmentConfig ()
-    {
-    }
-
-
 TypeConfig::ClassID TypeConfig::s_GetClassID () { return super_class::s_GetClassID(); }
 
 /*---------------------------------------------------------------------------------**//**

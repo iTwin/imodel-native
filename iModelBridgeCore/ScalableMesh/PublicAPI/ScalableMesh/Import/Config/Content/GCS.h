@@ -6,7 +6,7 @@
 |       $Date: 2011/11/22 21:58:01 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -96,33 +96,6 @@ public:
     };
 
 
-/*---------------------------------------------------------------------------------**//**
-* @description  
-* @bsiclass                                                  Raymond.Gauthier   05/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct GCSLocalAdjustmentConfig : public ContentConfigComponentMixinBase<GCSLocalAdjustmentConfig>
-    {
-private:
-    LocalTransform                      m_transform;
-    uint32_t                              m_flags;
-
-    void*                               m_implP; // Reserve some space for further use
-
-
-public:
-    
-
-    IMPORT_DLLE static ClassID          s_GetClassID                       ();
-
-    IMPORT_DLLE explicit                GCSLocalAdjustmentConfig           (const LocalTransform&               transform);
-
-
-    IMPORT_DLLE virtual                 ~GCSLocalAdjustmentConfig          ();
-
-    IMPORT_DLLE                         GCSLocalAdjustmentConfig           (const GCSLocalAdjustmentConfig&     rhs);
-
-    const LocalTransform&               GetTransform                       () const;
-    };
 
 
 
@@ -148,9 +121,6 @@ inline bool GCSExtendedConfig::IsExistingPreservedIfGeoreferenced () const
 inline bool GCSExtendedConfig::IsExistingPreservedIfLocalCS () const
     { return HasBitsOn(m_flags, FLAG_PRESERVE_EXISTING_IF_LOCAL_CS); }
 
-
-inline const LocalTransform& GCSLocalAdjustmentConfig::GetTransform () const
-    { return m_transform; }
 
 
 

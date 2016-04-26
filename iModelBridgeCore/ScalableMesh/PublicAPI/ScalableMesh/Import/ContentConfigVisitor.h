@@ -6,7 +6,7 @@
 |       $Date: 2011/11/18 15:51:22 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -27,7 +27,6 @@ struct GCSConfig;
 struct GCSExtendedConfig;
 struct TypeConfig;
 struct ScalableMeshConfig;
-struct GCSLocalAdjustmentConfig;
 
 /*---------------------------------------------------------------------------------**//**
 * @description  
@@ -45,7 +44,6 @@ struct IContentConfigVisitor
     virtual void                _Visit                         (const GCSExtendedConfig&            config) = 0;
     virtual void                _Visit                         (const TypeConfig&                   config) = 0;
     virtual void                _Visit                           (const ScalableMeshConfig&           config) = 0;
-    virtual void                _Visit                         (const GCSLocalAdjustmentConfig&     config) = 0;
     };
 
 
@@ -62,7 +60,6 @@ struct ContentConfigVisitor : public IContentConfigVisitor
     virtual void                _Visit                         (const GCSExtendedConfig&            config) override { /* Do nothing*/ }
     virtual void                _Visit                         (const TypeConfig&                   config) override { /* Do nothing*/ }
     virtual void                _Visit                           (const ScalableMeshConfig&           config) override { /* Do nothing*/ }
-    virtual void                _Visit                         (const GCSLocalAdjustmentConfig&     config) override { /* Do nothing*/ }
     };
 
 
@@ -80,7 +77,6 @@ struct ILayerConfigVisitor
     virtual void                _Visit                         (const GCSExtendedConfig&            config) = 0;
     virtual void                _Visit                         (const TypeConfig&                   config) = 0;
     virtual void                _Visit                           (const ScalableMeshConfig&           config) = 0;
-    virtual void                _Visit                         (const GCSLocalAdjustmentConfig&     config) = 0;
     };
 
 
@@ -96,7 +92,6 @@ struct LayerConfigVisitor : public ILayerConfigVisitor
     virtual void                _Visit                         (const GCSExtendedConfig&            config) override { /* Do nothing*/ }
     virtual void                _Visit                         (const TypeConfig&                   config) override { /* Do nothing*/ }
     virtual void                _Visit                           (const ScalableMeshConfig&           config) override { /* Do nothing*/ }
-    virtual void                _Visit                         (const GCSLocalAdjustmentConfig&     config) override { /* Do nothing*/ }
     };
 
 END_BENTLEY_SCALABLEMESH_IMPORT_NAMESPACE
