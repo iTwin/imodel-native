@@ -131,7 +131,7 @@
 -->
 <!--
 ********************************************************************************************************
-* PointoolsVortexAPI Default Compiler Parts
+* PointoolsVortexAPI Default Compiler Parts (does not build PointoolsIO)
 ********************************************************************************************************
 -->
   <Part Name="PointoolsVortexAPI" OnlyPlatforms="x86,x64" PrgOutputDir="PointoolsVortexAPI" >
