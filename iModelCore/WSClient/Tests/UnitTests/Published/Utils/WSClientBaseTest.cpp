@@ -31,13 +31,13 @@ void WSClientBaseTest::SetUpTestCase()
     {
     s_pathProvider = std::make_shared<TestAppPathProvider>();
     InitLogging();
-    MobileDgnCommon::SetApplicationPathsProvider(s_pathProvider.get());
+    DgnClientFxCommon::SetApplicationPathsProvider(s_pathProvider.get());
     InitLibraries();
     }
 
 void WSClientBaseTest::TearDownTestCase()
     {
-    MobileDgnCommon::SetApplicationPathsProvider(nullptr);
+    DgnClientFxCommon::SetApplicationPathsProvider(nullptr);
     s_pathProvider = nullptr;
     }
 
