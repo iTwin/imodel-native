@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/stdcxx/rw/_config-msvc.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -67,6 +67,10 @@
 #    define _RWSTD_NO_STRING_NPOS_TYPE
 #  endif   // _RWSTD_NO_STRING_NPOS_TYPE
 #endif   // MSVC <= 7.0
+
+#if _MSC_VER <= 1800    // MSVC <= 2013
+#define _RWSTD_NO_VARIADIC_TEMPLATES
+#endif
 
 // disable "Same type qualifier used more than once"
 #pragma warning (disable: 4114)

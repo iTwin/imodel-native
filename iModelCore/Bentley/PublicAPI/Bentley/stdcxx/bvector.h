@@ -385,6 +385,7 @@ public:
 // *** BENTLEY_CHANGE
     void push_back (rvalue_reference);
 
+#ifndef _RWSTD_NO_VARIADIC_TEMPLATES
     template <typename... _Args>
     void emplace_back (_Args... __args) {
         if (_C_alloc._C_end == _C_alloc._C_bufend)
@@ -392,6 +393,7 @@ public:
         else
             _C_emplace_back (std::forward<_Args>(__args)...);
     }
+#endif
 
     void pop_back () {
         _RWSTD_ASSERT (!empty ());
@@ -402,6 +404,7 @@ public:
     iterator insert (iterator, const_reference);
     iterator insert (iterator, rvalue_reference);
 
+#ifndef _RWSTD_NO_VARIADIC_TEMPLATES
     template<typename... _Args>
     iterator emplace (iterator __it, _Args... __args) {
         _RWSTD_ASSERT_RANGE (__it, end ());
@@ -413,6 +416,7 @@ public:
 
         return begin () + __off;
     }
+#endif
 
     template <class _InputIter>
     void insert (iterator __it, _InputIter __first, _InputIter __last) {
@@ -524,12 +528,14 @@ private:
         ++_C_alloc._C_end;
     }
 
+#ifndef _RWSTD_NO_VARIADIC_TEMPLATES
     template <typename... _Args>
     void _C_emplace_back (_Args... __args) {
         _RWSTD_ASSERT (_C_alloc._C_end != _C_alloc._C_bufend);
         _C_alloc.construct (_C_alloc._C_end, std::forward<_Args>(__args)...);
         ++_C_alloc._C_end;
     }
+#endif
 
     // destroys elements from the iterator to the end of the bvector
     // and resets end() to point to the iterator
