@@ -109,6 +109,8 @@ void HelpCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> const& a
     Console::WriteLine();
     Console::WriteLine(m_commandMap.at(".diff")->GetUsage().c_str());
     Console::WriteLine();
+    Console::WriteLine(m_commandMap.at(".mapinfo")->GetUsage().c_str());
+    Console::WriteLine();
     Console::WriteLine(m_commandMap.at(".set")->GetUsage().c_str());
     Console::WriteLine();
     Console::WriteLine(m_commandMap.at(".sql")->GetUsage().c_str());

@@ -763,12 +763,9 @@ BentleyStatus ECDbMap::CreateOrUpdateRequiredTables() const
     int nUpdated = 0;
     int nSkipped = 0;
 
-    //WIP_FOR_AFFAN: Why can't we use GetSQLManager().GetDbSchema().GetTables() instead
-    //of creating a local bmap with class map information we don't need here?
-    const ClassMapsByTable classMapsByTable = GetClassMapsByTable();
-    for (bpair<DbTable*, bset<ClassMap*>> const& kvPair : classMapsByTable)
+    for (auto& pair : GetDbSchemaR().GetTables())
         {
-        DbTable* table = kvPair.first;
+        DbTable* table = pair.second.get();
         if (table->GetPersistenceType() == PersistenceType::Virtual || table->GetType() == DbTable::Type::Existing)
             continue;
 
