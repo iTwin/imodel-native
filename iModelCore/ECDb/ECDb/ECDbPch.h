@@ -72,5 +72,5 @@
 #include "DbSchema.h"
 #include "DbSchemaPersistenceManager.h"
 #include "ECSchemaComparer.h"
-
+#include "DebugWriter.h"
 

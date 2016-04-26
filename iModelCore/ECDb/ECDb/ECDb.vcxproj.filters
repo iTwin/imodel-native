@@ -712,6 +712,7 @@
       <Filter>ECDbProfile</Filter>
     </ClCompile>
     <ClCompile Include="ECDbMapDebugInfo.cpp" />
+    <ClCompile Include="DebugWriter.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Xml Include="ECSchemas\ECDb_FileInfo.02.00.ecschema.xml">

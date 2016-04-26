@@ -469,7 +469,7 @@ BentleyStatus ECDbSchemaWriter::UpdateECClass(ECClassChange& classChange, ECClas
         return Fail("ECSCHEMA-UPGRADE: Changing ECClass::IsEntityClass is not supported. Failed on ECClass %s.",
                     oldClass.GetFullName());
         }
-    if (classChange.IsStructClass().IsValid())
+    if (classChange.IsStructClass().IsValid())                                          
         {
         return Fail("ECSCHEMA-UPGRADE: Changing ECClass::IsStructClass is not supported. Failed on ECClass %s.",
                     oldClass.GetFullName());

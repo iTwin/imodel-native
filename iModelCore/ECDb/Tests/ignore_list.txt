@@ -6,12 +6,6 @@ InstanceCRUDTests.* 	# No need to run with the build, used by testing after buil
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
-
-#TFS 178486 will address these (Affan): (ECSchema Update not working in 06 yet.)
-ECDbSchemaUpgradeTests.UpdatingSchemaShouldNotDeleteExistingRelationshipsOrIndexes
-ECDbSchemaUpgradeTests.UpdateMultipleSchemasInDb
-#TFS 390515
-
 #TFS268976 will address this (Affan)
 ECDbMappingTestFixture.MismatchDataTypesInExistingTable
 ECDbMappingTestFixture.PropertiesWithoutColumnsInExistingTable

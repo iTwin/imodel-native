@@ -16,6 +16,7 @@
     <ClCompile Include="ClassMappingInfo.cpp" />
     <ClCompile Include="DbSchema.cpp" />
     <ClCompile Include="DbSchemaPersistenceManager.cpp" />
+    <ClCompile Include="DebugWriter.cpp" />
     <ClCompile Include="docs\samplecode\ECDb.sample.cpp" />
     <ClCompile Include="docs\samplecode\ECDbCRUD.sample.cpp" />
     <ClCompile Include="docs\samplecode\ECDbCRUDAdapters.sample.cpp" />

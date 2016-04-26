@@ -34,7 +34,7 @@ BentleyStatus ECDbMapDebugInfo::GetMapInfoForSchema(Utf8StringR info, ECDbCR ecd
         return ERROR;
 
     DebugWriter writer;
-    writer.AppendLine("ECSchema : %s", schema->GetFullSchemaName());
+    writer.AppendLine("ECSchema : %s", schema->GetFullSchemaName().c_str());
     if (auto s0 = writer.CreateIndentBlock())
         {
         for (auto ecClass : schema->GetClasses())
@@ -108,7 +108,7 @@ BentleyStatus ECDbMapDebugInfo::GetMapInfoForAllClasses(Utf8StringR info, ECDbCR
     writer.AppendLine("ECSchemas [Count=%d]", schemas.size());
     for (auto schema : schemas)
         {
-        writer.AppendLine("ECSchema : %s", schema->GetFullSchemaName());
+        writer.AppendLine("ECSchema : %s", schema->GetFullSchemaName().c_str());
         writer.Indent();
         for (auto ecclass : schema->GetClasses())
             {
