@@ -104,6 +104,7 @@ MarkupDomain::MarkupDomain() : DgnDomain(MARKUP_SCHEMA_NAME, "Markup Domain", 1)
     RegisterHandler(dgn_ModelHandler::SpatialRedline::GetHandler());
     RegisterHandler(dgn_ElementHandler::RedlineViewDef::GetHandler());
     RegisterHandler(dgn_ElementHandler::MarkupExternalLinkHandler::GetHandler());
+    RegisterHandler(dgn_ElementHandler::MarkupExternalLinkGroupHandler::GetHandler());
     }
 
 /*---------------------------------------------------------------------------------**//**

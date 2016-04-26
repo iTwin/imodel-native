@@ -4,20 +4,20 @@
     <ECSchemaReference name="dgn" version="02.00" prefix="dgn"/>
     <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap"/>
 
-    <ECEntityClass typeName="MarkupExternalLink" isDomainClass="False" >
-        <BaseClass>dgn:LinkElement</BaseClass>
+    <ECEntityClass typeName="MarkupExternalLink">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
+        <BaseClass>dgn:LinkElement</BaseClass>
         <ECProperty propertyName="LinkedElementId" typeName="long"/>
     </ECEntityClass>
-    
-    <ECClass typeName="MarkupExternalLinkGroup" isDomainClass="True">
+
+    <ECEntityClass typeName="MarkupExternalLinkGroup">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
         <BaseClass>dgn:LinkElement</BaseClass>
-    </ECClass>
+    </ECEntityClass>
 
     <ECEntityClass typeName="RedlineModel">
         <ECCustomAttributes>

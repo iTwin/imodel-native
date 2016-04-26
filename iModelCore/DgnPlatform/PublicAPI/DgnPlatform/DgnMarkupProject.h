@@ -615,6 +615,7 @@ struct EXPORT_VTABLE_ATTRIBUTE MarkupExternalLink : LinkElement
     DGNELEMENT_DECLARE_MEMBERS(MARKUP_CLASSNAME_MarkupExternalLink, LinkElement)
     friend struct dgn_ElementHandler::MarkupExternalLinkHandler;
 
+public:
     //! Parameters used to construct a MarkupExternalLink
     struct CreateParams : T_Super::CreateParams
     {
@@ -666,17 +667,19 @@ struct MarkupExternalLinkGroup : LinkElement, IElementGroupOf < MarkupExternalLi
     DGNELEMENT_DECLARE_MEMBERS(MARKUP_CLASSNAME_MarkupExternalLinkGroup, LinkElement)
     friend struct dgn_ElementHandler::MarkupExternalLinkGroupHandler;
 
+public:
     //! Parameters used to construct a MarkupExternalLinkGroup
     struct CreateParams : T_Super::CreateParams
         {
         DEFINE_T_SUPER(MarkupExternalLinkGroup::T_Super::CreateParams);
 
         explicit CreateParams(Dgn::DgnElement::CreateParams const& params) : T_Super(params) {}
-        CreateParams(DgnDbR db, DgnModelId modelId) : T_Super(db, modelId, MarkupExternalLink::QueryClassId(db)) {}
+        CreateParams(DgnDbR db, DgnModelId modelId) : T_Super(db, modelId, MarkupExternalLinkGroup::QueryClassId(db)) { BeAssert(m_classId.IsValid()); }
         };
 
 private:
     virtual DgnElementCP _ToGroupElement() const override { return this; }
+    virtual Dgn::IElementGroupCP _ToIElementGroup() const override { return this; }
 
 public:
     explicit MarkupExternalLinkGroup(CreateParams const& params) : T_Super(params) {}
@@ -700,7 +703,7 @@ struct EXPORT_VTABLE_ATTRIBUTE MarkupExternalLinkHandler : Element
     };
 
 //! The handler for MarkupExternalLinkGroup elements
-struct EXPORT_VTABLE_ATTRIBUTE MarkupExternalLinkGroupHandler : MarkupExternalLinkHandler
+struct EXPORT_VTABLE_ATTRIBUTE MarkupExternalLinkGroupHandler : Element
     {
     ELEMENTHANDLER_DECLARE_MEMBERS(MARKUP_CLASSNAME_MarkupExternalLinkGroup, MarkupExternalLinkGroup, MarkupExternalLinkGroupHandler, Element, DGNPLATFORM_EXPORT)
     };
