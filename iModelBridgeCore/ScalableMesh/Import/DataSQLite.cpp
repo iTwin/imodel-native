@@ -270,10 +270,10 @@ uint32_t SourceDataSQLite::GetOrgCount()
     return m_implP->m_orgCount;
 }
 
-uint32_t SourceDataSQLite::GetLayer()
+/*uint32_t SourceDataSQLite::GetLayer()
 {
     return m_implP->m_layer;
-}
+}*/
 
 uint32_t SourceDataSQLite::GetDimensionCount(size_t orgIdx)
 {

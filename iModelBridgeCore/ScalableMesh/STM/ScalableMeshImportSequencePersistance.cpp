@@ -111,11 +111,11 @@ protected:
         }
     }
 
-    uint32_t                        LoadLayer(SourceDataSQLite&      sourceData) const
+   /* uint32_t                        LoadLayer(SourceDataSQLite&      sourceData) const
     {
         uint32_t layerField = sourceData.GetLayer();
         return layerField;
-    }
+    }*/
 
 
     static const uint32_t           INVALID_LAYER;

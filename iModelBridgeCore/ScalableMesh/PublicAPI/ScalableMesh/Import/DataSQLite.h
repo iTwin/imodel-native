@@ -77,7 +77,7 @@ public:
     WString GetGCS();
     uint32_t GetFlags();
     uint32_t GetOrgCount();
-    uint32_t GetLayer();
+    //uint32_t GetLayer();
     uint32_t GetDimensionCount(size_t orgIdx);
     std::vector<uint32_t>& GetVecDimensionCount();
     byte GetDimensionType(size_t orgIdx, size_t dimIdx);

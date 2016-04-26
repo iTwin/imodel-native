@@ -1348,7 +1348,7 @@ bool SMSQLiteFile::SaveSource(SourcesDataSQLite& sourcesData)
         CachedStatementPtr stmt;
         //Savepoint insertTransaction(*m_database, "replace");
         m_database->GetCachedStatement(stmt, "REPLACE INTO SMSources (SourceId, SourceType, DTMSourceID, GroupID, ModelId, ModelName, LevelId, LevelName, RootToRefPersistentPath, "
-            "ReferenceName, ReferenceModelName, GCS, Flags, TypeFamilyID, OrgCount, Layer, ComponentCount, ConfigComponentID, MonikerType, MonikerString, TimeLastModified, "
+            "ReferenceName, ReferenceModelName, GCS, Flags, TypeFamilyID, OrgCount, ComponentCount, ConfigComponentID, MonikerType, MonikerString, TimeLastModified, "
             "SizeExtent, Extent, UpToDateState, Time, IsRepresenting3dData, IsGroundDetection, IsGISData, ElevationProperty, LinearFeatureType, PolygonFeatureType, IsGridData,"
             "DimensionCount, DimensionType, DimensionRole, DimensionName) "
             "VALUES(?,?,?,?,?,"
@@ -1357,7 +1357,7 @@ bool SMSQLiteFile::SaveSource(SourcesDataSQLite& sourcesData)
             "?,?,?,?,?,"
             "?,?,?,?,?,"
             "?,?,?,?,?,"
-            "?,?,?,"
+            "?,?,"
             "?,?,?)");
         stmt->BindInt64(1, sourceData.GetSourceID());
         stmt->BindInt(2, sourceData.GetSourceType());
@@ -1374,34 +1374,34 @@ bool SMSQLiteFile::SaveSource(SourcesDataSQLite& sourcesData)
         stmt->BindInt64(13, sourceData.GetFlags());
         stmt->BindInt64(14, sourceData.GetTypeFamilyID());
         stmt->BindInt64(15, sourceData.GetOrgCount());
-        stmt->BindInt64(16, sourceData.GetLayer());
-        stmt->BindInt64(17, sourceData.GetComponentCount());
+       // stmt->BindInt64(16, sourceData.GetLayer());
+        stmt->BindInt64(16, sourceData.GetComponentCount());
         
-        stmt->BindBlob(18, &sourceData.GetConfigComponentID()[0], sizeof(byte)*(int)(sourceData.GetComponentCount()), MAKE_COPY_YES);
+        stmt->BindBlob(17, &sourceData.GetConfigComponentID()[0], sizeof(byte)*(int)(sourceData.GetComponentCount()), MAKE_COPY_YES);
 
-        stmt->BindInt(19, sourceData.GetMonikerType());
-        BIND_VALUE_STR(stmt, 20, monikerStringUtf8String, MAKE_COPY_NO);
+        stmt->BindInt(18, sourceData.GetMonikerType());
+        BIND_VALUE_STR(stmt, 19, monikerStringUtf8String, MAKE_COPY_NO);
         /*stmt->BindInt64(21, sourceData.GetCommandCount());
 
         stmt->BindBlob(22, &sourceData.GetCommandID()[0], sizeof(byte)*(int)(sourceData.GetCommandCount()), MAKE_COPY_YES);*/
 
-        stmt->BindInt64(21, sourceData.GetTimeLastModified());
-        stmt->BindInt64(22, smData.GetExtent().size());
+        stmt->BindInt64(20, sourceData.GetTimeLastModified());
+        stmt->BindInt64(21, smData.GetExtent().size());
         //if(smData.GetExtent().size()>0)
         {
-            stmt->BindBlob(23, &smData.GetExtent()[0], sizeof(DRange3d)*(int)smData.GetExtent().size(), MAKE_COPY_YES);
+            stmt->BindBlob(22, &smData.GetExtent()[0], sizeof(DRange3d)*(int)smData.GetExtent().size(), MAKE_COPY_YES);
         }
-        stmt->BindInt(24, smData.GetUpToDateState());
-        stmt->BindInt64(25, smData.GetTimeFile());
-        stmt->BindInt(26, (int)smData.IsRepresenting3dData());
-        stmt->BindInt(27, smData.IsGroundDetection() ? 1 : 0);
-        stmt->BindInt(28, smData.IsGISDataType() ? 1 : 0);
-        BIND_VALUE_STR(stmt, 29, ElevationPropertyNameUtf8String, MAKE_COPY_NO);
-        stmt->BindInt(30, (int)smData.GetLinearFeatureType());
-        stmt->BindInt(31, (int)smData.GetPolygonFeatureType());
-        stmt->BindInt(32, smData.IsGridData() ? 1 : 0);
+        stmt->BindInt(23, smData.GetUpToDateState());
+        stmt->BindInt64(24, smData.GetTimeFile());
+        stmt->BindInt(25, (int)smData.IsRepresenting3dData());
+        stmt->BindInt(26, smData.IsGroundDetection() ? 1 : 0);
+        stmt->BindInt(27, smData.IsGISDataType() ? 1 : 0);
+        BIND_VALUE_STR(stmt, 28, ElevationPropertyNameUtf8String, MAKE_COPY_NO);
+        stmt->BindInt(29, (int)smData.GetLinearFeatureType());
+        stmt->BindInt(30, (int)smData.GetPolygonFeatureType());
+        stmt->BindInt(31, smData.IsGridData() ? 1 : 0);
         size_t size = sourceData.GetVecDimensionCount().size();
-        stmt->BindBlob(33, &sourceData.GetVecDimensionCount()[0], sizeof(uint32_t)*(int)(size), MAKE_COPY_YES);
+        stmt->BindBlob(32, &sourceData.GetVecDimensionCount()[0], sizeof(uint32_t)*(int)(size), MAKE_COPY_YES);
         int sizeTot = 0;
         for (int i = 0; i < size; i++) sizeTot += sourceData.GetDimensionCount(i);
         byte* ptrType = new byte[sizeTot];
@@ -1417,9 +1417,9 @@ bool SMSQLiteFile::SaveSource(SourcesDataSQLite& sourcesData)
         /*stmt->BindBlob(36, &sourceData.GetVecDimensionType()[0][0], sizeof(byte)*(int)(sizeTot), MAKE_COPY_YES);
         stmt->BindBlob(37, &sourceData.GetVecDimensionRole()[0][0], sizeof(byte)*(int)(sizeTot), MAKE_COPY_YES);
         stmt->BindBlob(38, &sourceData.GetVecDimensionName()[0][0], sizeof(WString)*(int)(sizeTot), MAKE_COPY_YES);*/
-        stmt->BindBlob(34, &ptrType[0], sizeof(byte)*(int)(sizeTot), MAKE_COPY_YES);
-        stmt->BindBlob(35, &ptrRole[0], sizeof(byte)*(int)(sizeTot), MAKE_COPY_YES);
-        stmt->BindBlob(36, &ptrName[0], sizeof(WString)*(int)(sizeTot), MAKE_COPY_YES);
+        stmt->BindBlob(33, &ptrType[0], sizeof(byte)*(int)(sizeTot), MAKE_COPY_YES);
+        stmt->BindBlob(34, &ptrRole[0], sizeof(byte)*(int)(sizeTot), MAKE_COPY_YES);
+        stmt->BindBlob(35, &ptrName[0], sizeof(WString)*(int)(sizeTot), MAKE_COPY_YES);
         delete[] ptrType;
         delete[] ptrRole;
         delete[] ptrName;
@@ -1508,7 +1508,7 @@ bool SMSQLiteFile::LoadSources(SourcesDataSQLite& sourcesData)
 {
     CachedStatementPtr stmt;
     m_database->GetCachedStatement(stmt, "SELECT SourceId, SourceType, DTMSourceID, GroupID, ModelId, ModelName, LevelId, LevelName, RootToRefPersistentPath, "
-        "ReferenceName, ReferenceModelName, GCS, Flags, TypeFamilyID, OrgCount, Layer, ComponentCount, ConfigComponentID, MonikerType, MonikerString, TimeLastModified, "
+        "ReferenceName, ReferenceModelName, GCS, Flags, TypeFamilyID, OrgCount, ComponentCount, ConfigComponentID, MonikerType, MonikerString, TimeLastModified, "
         "SizeExtent, Extent, UpToDateState, Time, IsRepresenting3dData, IsGroundDetection, IsGISData, ElevationProperty, LinearFeatureType, PolygonFeatureType, IsGridData, "
         "DimensionCount, DimensionType, DimensionRole, DimensionName FROM SMSources");
     while (stmt->Step() == BE_SQLITE_ROW)
@@ -1529,45 +1529,45 @@ bool SMSQLiteFile::LoadSources(SourcesDataSQLite& sourcesData)
         sourceData.SetFlags(stmt->GetValueInt64(12));
         sourceData.SetTypeFamilyID(stmt->GetValueInt64(13));
         sourceData.SetOrgCount(stmt->GetValueInt64(14));
-        sourceData.SetLayer(stmt->GetValueInt64(15));
-        sourceData.SetComponentCount(stmt->GetValueInt64(16));
+       // sourceData.SetLayer(stmt->GetValueInt64(15));
+        sourceData.SetComponentCount(stmt->GetValueInt64(15));
 
         std::vector<byte> configComponentID(sourceData.GetComponentCount());
-        std::memcpy(&configComponentID[0], stmt->GetValueBlob(17), sizeof(byte) * (int)sourceData.GetComponentCount());
+        std::memcpy(&configComponentID[0], stmt->GetValueBlob(16), sizeof(byte) * (int)sourceData.GetComponentCount());
         sourceData.SetConfigComponentID(configComponentID);
 
-        sourceData.SetMonikerType(stmt->GetValueInt(18));
-        sourceData.SetMonikerString(WSTRING_FROM_CSTR(Utf8String(GET_VALUE_STR(stmt, 19)).c_str()));
+        sourceData.SetMonikerType(stmt->GetValueInt(17));
+        sourceData.SetMonikerString(WSTRING_FROM_CSTR(Utf8String(GET_VALUE_STR(stmt, 18)).c_str()));
         /*sourceData.SetCommandCount(stmt->GetValueInt64(20));
 
         std::vector<byte> commandID(sourceData.GetCommandCount());
         std::memcpy(&commandID[0], stmt->GetValueBlob(21), sizeof(byte) * (int)sourceData.GetCommandCount());
         sourceData.SetCommandID(commandID);*/
 
-        sourceData.SetTimeLastModified(stmt->GetValueInt64(20));
+        sourceData.SetTimeLastModified(stmt->GetValueInt64(19));
 
         ScalableMeshData smData(ScalableMeshData::GetNull());
-        size_t nLayer = stmt->GetValueInt64(21);
+        size_t nLayer = stmt->GetValueInt64(20);
         //if(nLayer>0)
         {
             //stmt->BindBlob(21, reinterpret_cast<const byte*>(&smData.GetExtent()[0]), sizeof(DRange3d)*(int)smData.GetExtent().size(), MAKE_COPY_YES);
             std::vector<DRange3d> extents(nLayer);
-            std::memcpy(&extents[0], stmt->GetValueBlob(22), sizeof(DRange3d)*(int)nLayer);
+            std::memcpy(&extents[0], stmt->GetValueBlob(21), sizeof(DRange3d)*(int)nLayer);
             smData.SetExtents(extents);
         }
-        smData.SetUpToDateState(UpToDateState(stmt->GetValueInt(23)));
-        smData.SetTimeFile(stmt->GetValueInt64(24));
-        smData.SetRepresenting3dData(SMis3D(stmt->GetValueInt(25)));
-        smData.SetIsGroundDetection(stmt->GetValueInt(26) ? true : false);
-        smData.SetIsGISDataType(stmt->GetValueInt(27) ? true : false);
-        WString tmp = WSTRING_FROM_CSTR(Utf8String(GET_VALUE_STR(stmt, 28)).c_str());
+        smData.SetUpToDateState(UpToDateState(stmt->GetValueInt(22)));
+        smData.SetTimeFile(stmt->GetValueInt64(23));
+        smData.SetRepresenting3dData(SMis3D(stmt->GetValueInt(24)));
+        smData.SetIsGroundDetection(stmt->GetValueInt(25) ? true : false);
+        smData.SetIsGISDataType(stmt->GetValueInt(26) ? true : false);
+        WString tmp = WSTRING_FROM_CSTR(Utf8String(GET_VALUE_STR(stmt, 27)).c_str());
         smData.SetElevationPropertyName(tmp);
-        smData.SetLinearFeatureType(DTMFeatureType(stmt->GetValueInt(29)));
-        smData.SetPolygonFeatureType(DTMFeatureType(stmt->GetValueInt(30)));
-        smData.SetIsGridData(stmt->GetValueInt(31) ? true : false);
+        smData.SetLinearFeatureType(DTMFeatureType(stmt->GetValueInt(28)));
+        smData.SetPolygonFeatureType(DTMFeatureType(stmt->GetValueInt(29)));
+        smData.SetIsGridData(stmt->GetValueInt(30) ? true : false);
 
         std::vector<uint32_t> dimensionCount(sourceData.GetOrgCount());
-        std::memcpy(&dimensionCount[0], stmt->GetValueBlob(32), sizeof(uint32_t) * (int)sourceData.GetOrgCount());
+        std::memcpy(&dimensionCount[0], stmt->GetValueBlob(31), sizeof(uint32_t) * (int)sourceData.GetOrgCount());
         sourceData.SetDimensionCount(dimensionCount);
 
         std::vector<std::vector<byte>> dimensionType(sourceData.GetOrgCount());
@@ -1582,13 +1582,13 @@ bool SMSQLiteFile::LoadSources(SourcesDataSQLite& sourcesData)
         byte* ptrRole = new byte[sizeTot];
         WString* ptrName = new WString[sizeTot];
 
-        std::memcpy(&ptrType[0], stmt->GetValueBlob(33), sizeof(byte) * (int)sizeTot);
+        std::memcpy(&ptrType[0], stmt->GetValueBlob(32), sizeof(byte) * (int)sizeTot);
         std::vector<std::vector<byte>> dimensionRole (sourceData.GetOrgCount());
         for (int i = 0; i < dimensionRole.size(); i++) dimensionRole[i].resize(sourceData.GetDimensionCount(i));
-        std::memcpy(&ptrRole[0], stmt->GetValueBlob(34), sizeof(byte) * (int)sizeTot);
+        std::memcpy(&ptrRole[0], stmt->GetValueBlob(33), sizeof(byte) * (int)sizeTot);
         std::vector<std::vector<WString>> dimensionName(sourceData.GetOrgCount());
         for (int i = 0; i < dimensionName.size(); i++) dimensionName[i].resize(sourceData.GetDimensionCount(i));
-        std::memcpy(&ptrName[0], stmt->GetValueBlob(35), sizeof(WString) * (int)sizeTot);
+        std::memcpy(&ptrName[0], stmt->GetValueBlob(34), sizeof(WString) * (int)sizeTot);
 
         for (size_t i = 0; i < dimensionType.size(); i++)
             for (size_t j = 0; j < dimensionType[i].size(); j++)
