@@ -62,6 +62,7 @@ private:
     public:
     IMPORT_DLLE                     ImportCommandBase                  ();
     IMPORT_DLLE                     ImportCommandBase                  (const ImportCommandBase&            rhs);
+    IMPORT_DLLE                     ImportCommandBase(const ImportCommand&            cmd);
 
 
     IMPORT_DLLE virtual                     ~ImportCommandBase() ;

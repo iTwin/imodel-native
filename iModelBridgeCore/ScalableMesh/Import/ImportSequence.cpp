@@ -252,6 +252,36 @@ m_sourceType(PointTypeFamilyCreator().Create()), m_targetType(PointTypeFamilyCre
     m_targetLayerSet = false;
     }
 
+ImportCommandBase::ImportCommandBase(const ImportCommand& cmd) :
+m_sourceType(PointTypeFamilyCreator().Create()), m_targetType(PointTypeFamilyCreator().Create())
+    {
+    if (cmd.IsSourceLayerSet())
+        {
+        m_sourceLayerSet = true;
+        m_sourceLayer = cmd.GetSourceLayer();
+        }
+    else m_sourceLayerSet = false;
+    if (cmd.IsTargetLayerSet())
+        {
+        m_targetLayerSet = true;
+        m_targetLayer = cmd.GetTargetLayer();
+        }
+    else m_targetLayerSet = false;
+
+    if (cmd.IsSourceTypeSet())
+        {
+        m_sourceTypeSet = true;
+        m_sourceType = cmd.GetSourceType();
+        }
+    else m_sourceLayerSet = false;
+    if (cmd.IsTargetLayerSet())
+        {
+        m_targetTypeSet = true;
+        m_targetType = cmd.GetTargetType();
+        }
+    else m_targetTypeSet = false;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   04/2011

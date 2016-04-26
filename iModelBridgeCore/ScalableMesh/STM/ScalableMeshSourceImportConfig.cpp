@@ -17,8 +17,7 @@
 #include <ScalableMesh/Import/ContentConfig.h>
 #include <ScalableMesh/Import/ImportSequence.h>
 
-#include <ScalableMesh/Import/Command/All.h>
-#include <ScalableMesh/Import/ImportSequenceVisitor.h>
+#include <ScalableMesh/Import/Command/Base.h>
 
 #include <ScalableMesh/Import/Config/Content/All.h>
 
@@ -145,105 +144,13 @@ void                        AppendImportLayerCommandsToExistingSequence    (cons
                                                                             uint32_t                            importedLayer,
                                                                             ImportSequence&                 sequence)
     {
-    assert(!" Are we calling this?");
-#if 0
-    class CommandVisitor : public IImportSequenceVisitor
+    for (auto& command : templateCommands.GetCommands())
         {
-        const uint32_t                      m_importedLayer;
-        ImportSequence&                 m_sequence;
+        ImportCommandBase commandWithLayer = command;
+        if (!command.IsSourceLayerSet()) commandWithLayer.SetSourceLayer(importedLayer);
+        if (!command.IsSourceLayerSet() || command.GetSourceLayer() == importedLayer) sequence.push_back(commandWithLayer);
+        }
 
-        virtual void                    _Visit                     (const ImportAllCommand&                     command) override
-            {
-            m_sequence.push_back(ImportLayerCommand(m_importedLayer));
-            }
-        virtual void                    _Visit                     (const ImportAllToLayerCommand&              command) override
-            {
-            m_sequence.push_back(ImportLayerToLayerCommand(m_importedLayer, command.GetTargetLayer()));
-            }
-        virtual void                    _Visit                     (const ImportAllToLayerTypeCommand&          command) override
-            {
-            m_sequence.push_back(ImportLayerToLayerTypeCommand(m_importedLayer, command.GetTargetLayer(), command.GetTargetType()));
-            }
-        virtual void                    _Visit                     (const ImportAllToTypeCommand&               command) override
-            {
-            m_sequence.push_back(ImportLayerToTypeCommand(m_importedLayer, command.GetTargetType()));
-            }
-
-        virtual void                    _Visit                     (const ImportLayerCommand&                   command) override
-            {
-            if (m_importedLayer == command.GetSourceLayer())
-                m_sequence.push_back(command);
-            }
-        virtual void                    _Visit                     (const ImportLayerToLayerCommand&            command) override
-            {
-            if (m_importedLayer == command.GetSourceLayer())
-                m_sequence.push_back(command);
-            }
-        virtual void                    _Visit                     (const ImportLayerToLayerTypeCommand&        command) override
-            {
-            if (m_importedLayer == command.GetSourceLayer())
-                m_sequence.push_back(command);
-            }
-        virtual void                    _Visit                     (const ImportLayerToTypeCommand&             command) override
-            {
-            if (m_importedLayer == command.GetSourceLayer())
-                m_sequence.push_back(command);
-            }
-
-        virtual void                    _Visit                     (const ImportLayerTypeCommand&               command) override
-            {
-            if (m_importedLayer == command.GetSourceLayer())
-                m_sequence.push_back(command);
-            }
-        virtual void                    _Visit                     (const ImportLayerTypeToLayerCommand&        command) override
-            {
-            if (m_importedLayer == command.GetSourceLayer())
-                m_sequence.push_back(command);
-            }
-        virtual void                    _Visit                     (const ImportLayerTypeToLayerTypeCommand&    command) override
-            {
-            if (m_importedLayer == command.GetSourceLayer())
-                m_sequence.push_back(command);
-            }
-        virtual void                    _Visit                     (const ImportLayerTypeToTypeCommand&         command) override
-            {
-            if (m_importedLayer == command.GetSourceLayer())
-                m_sequence.push_back(command);
-            }
-
-        virtual void                    _Visit                     (const ImportTypeCommand&                    command) override
-            {
-            return m_sequence.push_back(ImportLayerTypeCommand(m_importedLayer, command.GetSourceType()));
-            }
-        virtual void                    _Visit                     (const ImportTypeToLayerCommand&             command) override
-            {
-            return m_sequence.push_back(ImportLayerTypeToLayerCommand(m_importedLayer, command.GetSourceType(), 
-                                                                      command.GetTargetLayer()));
-            }
-        virtual void                    _Visit                     (const ImportTypeToLayerTypeCommand&         command) override
-            {
-            return m_sequence.push_back(ImportLayerTypeToLayerTypeCommand(m_importedLayer, command.GetSourceType(), 
-                                                                          command.GetTargetLayer(), command.GetTargetType()));
-            }
-        virtual void                    _Visit                     (const ImportTypeToTypeCommand&              command) override
-            {
-            return m_sequence.push_back(ImportLayerTypeToTypeCommand(m_importedLayer, command.GetSourceType(), 
-                                                                     command.GetTargetType()));
-            }
-
-    public:
-        explicit                        CommandVisitor             (uint32_t                                        importedLayer,
-                                                                    ImportSequence&                             sequence)
-            :   m_importedLayer(importedLayer),
-                m_sequence(sequence)
-            {
-            }
-
-        };
-
-    CommandVisitor visitor(importedLayer, sequence);
-    templateCommands.Accept(visitor);
-#endif
     }
 }
 
