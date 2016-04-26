@@ -244,6 +244,8 @@ void ECDbProfileManager::GetUpgraderSequence(std::vector<std::unique_ptr<ECDbPro
     if (currentProfileVersion < SchemaVersion(3, 4, 0, 0))
         upgraders.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3400()));
 
+    if (currentProfileVersion < SchemaVersion(3, 5, 0, 0))
+        upgraders.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3500()));
     }
 
 //-----------------------------------------------------------------------------------------

@@ -500,7 +500,7 @@ public:
 
 #if !defined (DOCUMENTATION_GENERATOR)
 //=======================================================================================
-//! Unpublished helper that parses an ECSQL and formats the result to a string.
+//! Helper that parses an ECSQL and formats the result to a string.
 //=======================================================================================
 struct ECSqlParseTreeFormatter
     {
