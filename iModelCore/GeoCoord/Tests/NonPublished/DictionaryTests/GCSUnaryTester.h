@@ -22,4 +22,6 @@ public:
 
     GCSUnaryTester();
     ~GCSUnaryTester() {};
+
+    GeoCoordinates::BaseGCSPtr m_LL84GCS;
     };
