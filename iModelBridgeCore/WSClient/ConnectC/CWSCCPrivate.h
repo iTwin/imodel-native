@@ -9,7 +9,7 @@
 //__BENTLEY_INTERNAL_ONLY__
 
 #include <DgnClientFx/DgnClientFxL10N.h>
-#include <BeSQLite\BeSQLite.h>
+#include <BeSQLite/BeSQLite.h>
 #include <BeSQLite/L10N.h>
 #include <WebServices/Client/WSClient.h>
 #include <WebServices/Client/WSRepositoryClient.h>
