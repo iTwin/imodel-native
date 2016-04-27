@@ -19,7 +19,7 @@ class CBufferHeaderWriter(HeaderWriter):
                 self.__buffer_structs.append(CBufferStruct(ecclass, api, self._status_codes))
 
     def write_header(self):
-        self.__write_header_comments()
+        self.__write_header_comment()
         self._write_spacing()
         self.__write_includes()
         self._write_spacing()
@@ -32,8 +32,8 @@ class CBufferHeaderWriter(HeaderWriter):
         self.__write_internal_buffers()
         self._close_file()
 
-    def __write_header_comments(self):
-        self._write_header_comments()
+    def __write_header_comment(self):
+        self._write_header_comments(True)
 
     def __write_includes(self):
         self._file.write('#include <WebServices/ConnectC/{0}Public.h>\n'.format(self._api.get_api_acronym()))
@@ -50,9 +50,9 @@ class CBufferHeaderWriter(HeaderWriter):
     def __write_parent_buffer(self):
         self._file.write('typedef struct _{0}BUFFER\n'.format(self._api.get_api_acronym()))
         self._file.write('   {\n')
-        self._file.write('   LONG   lCount;\n')
-        self._file.write('   LONG   lType;\n')
-        self._file.write('   LPVOID lpItems;\n')
+        self._file.write('   uint32_t   lCount;\n')
+        self._file.write('   uint32_t   lType;\n')
+        self._file.write('   ULONG_PTR lpItems;\n')
         self._file.write('   }} {0}BUFFER, *LP{0}BUFFER;\n\n'.format(self._api.get_api_acronym()))
         self._file.write('typedef LP{0}BUFFER H{0}BUFFER;'.format(self._api.get_api_acronym()))
 

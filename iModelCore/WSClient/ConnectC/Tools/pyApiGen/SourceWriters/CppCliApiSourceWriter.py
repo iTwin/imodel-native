@@ -29,11 +29,9 @@ class CppCliApiSourceWriter(SourceWriter):
         self._file.write('#include "stdafx.h"\n')
 
     def _write_utility_functions(self):
-        self._file.write('LPGUID managedGuidToUnmanagedGuid(Guid guid)\n')
+        self._file.write('WCharP managedGuidToUnmanagedGuid(Guid guid)\n')
         self._file.write('    {\n')
-        self._file.write('    cli::array<Byte>^ guidData = guid.ToByteArray();\n')
-        self._file.write('    pin_ptr<Byte> data = &(guidData[0]);\n')
-        self._file.write('    return (LPGUID) data;\n')
+        self._file.write('    return guid.ToString();\n')
         self._file.write('    }\n')
 
     def __write_api_ctor_dtor(self):

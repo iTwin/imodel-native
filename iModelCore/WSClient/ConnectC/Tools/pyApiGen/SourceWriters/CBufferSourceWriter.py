@@ -28,8 +28,6 @@ class CBufferSourceWriter(SourceWriter):
         self._file.write('#include "{0}Internal.h"\n'.format(self._api.get_upper_api_acronym()))
 
     def __write_utility_functions(self):
-        self._write_guid_from_string_function()
-        self._write_spacing()
         self._write_string_to_wstring_function()
 
     def __write_buffer_stuffer_functions(self):
@@ -63,29 +61,29 @@ class CBufferSourceWriter(SourceWriter):
 
     def __write_api_buffer_free_function(self):
         self._file.write(self._COMMENT_BsiMethod)
-        self._file.write("{0}_EXPORT VOID {1}_DataBufferFree\n".format(self._api.get_upper_api_acronym(),
+        self._file.write("{0}_EXPORT void {1}_DataBufferFree\n".format(self._api.get_upper_api_acronym(),
                                                                        self._api.get_api_name()))
         self._file.write("(\n")
         self._file.write("{0}DATABUFHANDLE dataBuffer\n".format(self._api.get_upper_api_acronym()))
         self._file.write(")\n")
         self._file.write("    {\n")
-        self._file.write("    if (NULL == dataBuffer)\n")
+        self._file.write("    if (nullptr == dataBuffer)\n")
         self._file.write("        return;\n\n")
         self._file.write("    H{0}BUFFER buf = (H{0}BUFFER)dataBuffer;\n".format(self._api.get_api_acronym()))
-        self._file.write("    if(buf->lpItems != NULL)\n")
+        self._file.write("    if(buf->lpItems != nullptr)\n")
         self._file.write("        free(buf->lpItems);\n")
         self._file.write("    free(buf);\n")
         self._file.write("    }\n")
 
     def __write_api_buffer_count_function(self):
         self._file.write(self._COMMENT_BsiMethod)
-        self._file.write("{0}_EXPORT LONG {1}_DataBufferGetCount\n".format(self._api.get_upper_api_acronym(),
-                                                                           self._api.get_api_name()))
+        self._file.write("{0}_EXPORT uint32_t {1}_DataBufferGetCount\n".format(self._api.get_upper_api_acronym(),
+                                                                               self._api.get_api_name()))
         self._file.write("(\n")
         self._file.write("{0}DATABUFHANDLE dataBuffer\n".format(self._api.get_upper_api_acronym()))
         self._file.write(")\n")
         self._file.write("    {\n")
-        self._file.write("    if (NULL == dataBuffer)\n")
+        self._file.write("    if (nullptr == dataBuffer)\n")
         self._file.write('        return 0;\n\n')
         self._file.write("    H{0}BUFFER buf = (H{0}BUFFER)dataBuffer;\n".format(self._api.get_api_acronym()))
         self._file.write("    return buf->lCount;\n")
@@ -177,32 +175,32 @@ class CBufferSourceWriter(SourceWriter):
                                                                                          self._api.get_api_name(), property_type.title())
         accessor_str += "(\n"
         accessor_str += "{0}DATABUFHANDLE dataBuffer,\n".format(self._api.get_upper_api_acronym())
-        accessor_str += "int bufferProperty,\n"
-        accessor_str += "int index,\n"
+        accessor_str += "int16_t bufferProperty,\n"
+        accessor_str += "int16_t index,\n"
         if property_type == "string":
-            accessor_str += "LPWSTR str,\n"
-            accessor_str += "UINT32 strLength\n"
+            accessor_str += "WCharP str,\n"
+            accessor_str += "uint32_t strLength\n"
         elif property_type == "StringLength":
             accessor_str += "size_t* outStringSize\n"
         elif property_type == "guid":
-            accessor_str += "LPGUID guid\n"
+            accessor_str += "WCharP guid\n"
         elif property_type == "boolean":
             accessor_str += "bool* boolean\n"
         elif property_type == "int":
-            accessor_str += "int* integer\n"
+            accessor_str += "int16_t* integer\n"
         elif property_type == "double":
             accessor_str += "double* pDouble\n"
         elif property_type == "long":
-            accessor_str += "long* pLong\n"
+            accessor_str += "int32_t* pLong\n"
         else:
             raise PropertyTypeError("Property type {0} not accepted".format(property_type))
         accessor_str += ")\n"
         accessor_str += "    {\n"
-        accessor_str += "    if(NULL == dataBuffer)\n"
+        accessor_str += "    if(nullptr == dataBuffer)\n"
         accessor_str += '        return CALLSTATUS {{{0}, "{1}", "{2}"}};\n\n'\
             .format("INVALID_PARAMETER",
                     self._status_codes["INVALID_PARAMETER"].message,
-                    "The dataBuffer passed into the property get function is NULL.")
+                    "The dataBuffer passed into the property get function is a nullptr.")
         accessor_str += "    H{0}BUFFER buf = (H{0}BUFFER) dataBuffer;\n\n".format(self._api.get_api_acronym())
         accessor_str += "    switch (buf->lType)\n"
         accessor_str += "        {\n"

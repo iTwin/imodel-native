@@ -11,7 +11,7 @@ class CppCliClassesHeaderWriter(HeaderWriter):
                 self.__cpp_cli_structs.append(CppCliStruct(ecclass, api, self._status_codes))
 
     def write_header(self):
-        self._write_header_comments()
+        self._write_header_comments(True)
         self._write_spacing()
         self.__write_includes()
         self._write_spacing()

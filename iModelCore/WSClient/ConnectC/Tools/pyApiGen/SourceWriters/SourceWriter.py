@@ -11,37 +11,15 @@ class SourceWriter(Writer):
     def __init__(self, ecclasses, filename, api, status_codes, excluded_classes):
         super(SourceWriter, self).__init__(ecclasses, filename, api, status_codes, excluded_classes)
 
-    def _write_guid_from_string_function(self):
-        self._file.write(self._COMMENT_BsiMethod)
-        self._file.write('GUID guidFromString(const std::wstring& guidStr)\n')
-        self._file.write('    {\n')
-        self._file.write('    //FROM "Essentials of COM" on PluralSight\n')
-        self._file.write('    GUID parsed;\n')
-        self._file.write('    HRESULT result = CLSIDFromString(guidStr.c_str(), &parsed);\n')
-        self._file.write('    if (result != NOERROR)\n')
-        self._file.write('        return GUID();\n')
-        self._file.write('    return parsed;\n')
-        self._file.write('    }\n')
-
-    def _write_guid_to_wstring_function(self):
-        self._file.write(self._COMMENT_BsiMethod)
-        self._file.write('static std::wstring guidToString(LPCGUID guid)\n')
-        self._file.write('    {\n')
-        self._file.write('    WCHAR stringBuf[4096];\n')
-        self._file.write('    if (0 == StringFromGUID2(*guid, stringBuf, _countof(stringBuf)))\n')
-        self._file.write('        return std::wstring();\n')
-        self._file.write('    return std::wstring(stringBuf, _countof(stringBuf) - 1);\n')
-        self._file.write('    }\n')
-
     def _write_string_to_wstring_function(self):
         self._file.write(self._COMMENT_BsiMethod)
-        self._file.write('std::wstring stringToWString(const std::string &str)\n')
+        self._file.write('WString stringToWString(const Utf8String &str)\n')
         self._file.write('    {\n')
-        self._file.write('    if (str.empty()) return std::wstring();\n')
-        self._file.write('    int size_needed = MultiByteToWideChar(CP_UTF8, 0, &str[0], (int) str.size(), NULL, 0);\n')
-        self._file.write('    std::wstring wstrTo(size_needed, 0);\n')
-        self._file.write('    MultiByteToWideChar(CP_UTF8, 0, &str[0], (int) str.size(), &wstrTo[0], size_needed);\n')
-        self._file.write('    return wstrTo;\n')
+        self._file.write('    Utf16Buffer _16buf;\n')
+        self._file.write('    BeStringUtilities::Utf8ToUtf16(_16buf, str.c_str());\n')
+        self._file.write('    WString outStr;\n')
+        self._file.write('    BeStringUtilities::Utf16ToWChar(outStr, _16buf.data());\n')
+        self._file.write('    return outStr;\n')
         self._file.write('    }\n')
 
     def _write_resolve_wserror_function(self):
