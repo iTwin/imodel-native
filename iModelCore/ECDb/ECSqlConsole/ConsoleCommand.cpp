@@ -306,7 +306,7 @@ Utf8String FileInfoCommand::_GetName() const
 //---------------------------------------------------------------------------------------
 Utf8String FileInfoCommand::_GetUsage() const
     {
-    return " .fileinfo                      Displays information about the open ECDb file";
+    return " .fileinfo                      Displays information about the open file";
     }
 
 //---------------------------------------------------------------------------------------
@@ -317,21 +317,82 @@ void FileInfoCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> cons
     if (!session.HasECDb(true))
         return;
 
-    Statement stmt;
-    if (BE_SQLITE_OK != stmt.Prepare(session.GetECDb(), "SELECT StrData FROM be_Prop WHERE Namespace='ec_Db' AND Name='SchemaVersion'") ||
-        BE_SQLITE_ROW != stmt.Step())
-        {
-        Console::WriteErrorLine("Could not execute SQL to retrieve ECDb profile version.");
-        return;
-        }
-
-    SchemaVersion profileVersion(stmt.GetValueText(0));
-    stmt.Finalize();
-
     Console::WriteLine("Current file: ");
     Console::WriteLine("  %s", session.GetECDbPath());
     Console::WriteLine("  BriefcaseId: %" PRIu32, session.GetECDb().GetBriefcaseId().GetValue());
-    Console::WriteLine("  ECDb profile version: %s", profileVersion.ToString().c_str());
+
+    Statement stmt;
+    if (BE_SQLITE_OK != stmt.Prepare(session.GetECDb(), "SELECT StrData FROM be_Prop WHERE Namespace='ec_Db' AND Name='InitialSchemaVersion'"))
+        {
+        Console::WriteErrorLine("Could not execute SQL to retrieve profile versions.");
+        return;
+        }
+
+    SchemaVersion initialECDbProfileVersion(0, 0, 0, 0);
+    if (BE_SQLITE_ROW == stmt.Step())
+        {
+        initialECDbProfileVersion = SchemaVersion(stmt.GetValueText(0));
+        }
+
+    stmt.Finalize();
+
+    if (BE_SQLITE_OK != stmt.Prepare(session.GetECDb(), "SELECT Namespace, StrData FROM be_Prop WHERE Name='SchemaVersion' ORDER BY Namespace"))
+        {
+        Console::WriteErrorLine("Could not execute SQL to retrieve profile versions.");
+        return;
+        }
+
+    bmap<KnownProfile, Utf8String> knownProfileInfos;
+    std::vector<Utf8String> otherProfileInfos;
+    Utf8CP profileFormat = "    %s: %s";
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        SchemaVersion profileVersion(stmt.GetValueText(1));
+        Utf8CP profileName = stmt.GetValueText(0);
+
+        KnownProfile knownProfile = KnownProfile::Unknown;
+
+        Utf8String profileInfo;
+        Utf8String addendum;
+
+        //use human readable names for core profiles
+        if (BeStringUtilities::StricmpAscii(profileName, "be_Db") == 0)
+            {
+            profileName = "BeSQLite";
+            knownProfile = KnownProfile::BeSQLite;
+            }
+        else if (BeStringUtilities::StricmpAscii(profileName, "ec_Db") == 0)
+            {
+            profileName = "ECDb";
+            knownProfile = KnownProfile::ECDb;
+
+            if (!initialECDbProfileVersion.IsEmpty())
+                addendum.Sprintf(" (Creation version: %s)", initialECDbProfileVersion.ToString().c_str());
+            }
+        else if (BeStringUtilities::StricmpAscii(profileName, "dgn_Proj") == 0)
+            {
+            profileName = "DgnDb";
+            knownProfile = KnownProfile::DgnDb;
+            }
+
+        profileInfo.Sprintf(profileFormat, profileName, profileVersion.ToString().c_str());
+        if (!addendum.empty())
+            profileInfo.append(addendum);
+
+        if (knownProfile == KnownProfile::Unknown)
+            otherProfileInfos.push_back(profileInfo);
+        else
+            knownProfileInfos[knownProfile] = profileInfo;
+        }
+
+    Console::WriteLine("  Profiles:");
+    Console::WriteLine(knownProfileInfos[KnownProfile::BeSQLite].c_str());
+    Console::WriteLine(knownProfileInfos[KnownProfile::ECDb].c_str());
+    Console::WriteLine(knownProfileInfos[KnownProfile::DgnDb].c_str());
+    for (Utf8StringCR otherProfileInfo : otherProfileInfos)
+        {
+        Console::WriteLine(otherProfileInfo.c_str());
+        }
     }
 
 //******************************* CommitCommand ******************

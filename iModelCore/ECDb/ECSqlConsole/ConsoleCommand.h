@@ -128,6 +128,14 @@ public:
 struct FileInfoCommand : public ConsoleCommand, NonCopyableClass
     {
 private:
+    enum class KnownProfile
+        {
+        BeSQLite,
+        ECDb,
+        DgnDb,
+        Unknown
+        };
+
     virtual Utf8String _GetName () const override;
     virtual Utf8String _GetUsage () const override;
     virtual void _Run (ECSqlConsoleSession& session, std::vector<Utf8String> const& args) const override;
