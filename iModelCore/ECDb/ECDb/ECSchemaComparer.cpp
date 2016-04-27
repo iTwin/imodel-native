@@ -175,8 +175,9 @@ BentleyStatus Binary::CopyFrom(ECValueCR value)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSchemaComparer::Compare(ECSchemaChanges& changes, bvector<ECN::ECSchemaCP> const& lhs, bvector<ECN::ECSchemaCP> const& rhs)
+BentleyStatus ECSchemaComparer::Compare(ECSchemaChanges& changes, bvector<ECN::ECSchemaCP> const& lhs, bvector<ECN::ECSchemaCP> const& rhs, Options options)
     {
+    m_options = options;
     std::map<Utf8CP, ECSchemaCP, CompareIUtf8Ascii> lhsMap, rhsMap, allSchemasMap;
     for (ECSchemaCP schema : lhs)
         lhsMap[schema->GetName().c_str()] = schema;
@@ -275,18 +276,11 @@ BentleyStatus ECSchemaComparer::CompareECClass(ECClassChange& change, ECClassCR 
     if (a.GetClassModifier() != b.GetClassModifier())
         change.GetClassModifier().SetValue(a.GetClassModifier(), b.GetClassModifier());
 
-    if (a.IsCustomAttributeClass() != b.IsCustomAttributeClass())
-        change.IsCustomAttributeClass().SetValue(a.IsCustomAttributeClass(), b.IsCustomAttributeClass());
-
-    if (a.IsStructClass() != b.IsStructClass())
-        change.IsStructClass().SetValue(a.IsStructClass(), b.IsStructClass());
-
-    if (a.IsEntityClass() != b.IsEntityClass())
-        change.IsEntityClass().SetValue(a.IsEntityClass(), b.IsEntityClass());
+    if (a.GetClassType() != b.GetClassType())
+        change.ClassType().SetValue(a.GetClassType(), b.GetClassType());
 
     if (a.IsRelationshipClass() != b.IsRelationshipClass())
         {
-        change.IsRelationshipClass().SetValue(a.IsRelationshipClass(), b.IsRelationshipClass());
         if (a.IsRelationshipClass())
             {
             if (AppendECRelationshipClass(change.GetRelationship(), *a.GetRelationshipClassCP(), ValueId::Deleted) != SUCCESS)
@@ -1094,6 +1088,10 @@ BentleyStatus ECSchemaComparer::AppendECSchema(ECSchemaChanges& changes, ECSchem
     change.GetVersionMinor().SetValue(appendType, v.GetVersionMinor());
     change.GetVersionWrite().SetValue(appendType, v.GetVersionWrite());
 
+    if ((appendType == ValueId::Deleted && m_options.GetSchemaDeleteDetailLevel() == AppendDetailLevel::Partial) ||
+        (appendType == ValueId::New && m_options.GetSchemaNewDetailLevel() == AppendDetailLevel::Partial))
+        return SUCCESS;
+
     for (ECClassCP classCP : v.GetClasses())
         if (AppendECClass(change.Classes(), *classCP, appendType) == ERROR)
             return ERROR;
@@ -1124,15 +1122,12 @@ BentleyStatus ECSchemaComparer::AppendECClass(ECClassChanges& changes, ECClassCR
     change.GetDisplayLabel().SetValue(appendType, v.GetDisplayLabel());
     change.GetDescription().SetValue(appendType, v.GetDescription());
     change.GetClassModifier().SetValue(appendType, v.GetClassModifier());
-    change.IsCustomAttributeClass().SetValue(appendType, v.IsCustomAttributeClass());
-    change.IsEntityClass().SetValue(appendType, v.IsEntityClass());
-    change.IsStructClass().SetValue(appendType, v.IsStructClass());
+    change.ClassType().SetValue(appendType, v.GetClassType());
 
     for (ECPropertyCP propertyCP : v.GetProperties(false))
         if (AppendECProperty(change.Properties(), *propertyCP, appendType) == ERROR)
             return ERROR;
 
-    change.IsRelationshipClass().SetValue(appendType, v.GetRelationshipClassCP() != nullptr);
     if (v.GetRelationshipClassCP() != nullptr)
         {
         if (AppendECRelationshipClass(change.GetRelationship(), *v.GetRelationshipClassCP(), appendType) == ERROR)
@@ -1480,13 +1475,10 @@ SystemId ECChange::StringToSystemId(Utf8CP idString)
     if (strcmp(idString, "Instance") == 0) return SystemId::Instance;
     if (strcmp(idString, "Instances") == 0) return SystemId::Instances;
     if (strcmp(idString, "Integer") == 0) return SystemId::Integer;
-    if (strcmp(idString, "IsCustomAttributeClass") == 0) return SystemId::IsCustomAttributeClass;
-    if (strcmp(idString, "IsEntityClass") == 0) return SystemId::IsEntityClass;
+    if (strcmp(idString, "ClassType") == 0) return SystemId::ClassType;
     if (strcmp(idString, "IsPolymorphic") == 0) return SystemId::IsPolymorphic;
     if (strcmp(idString, "IsReadonly") == 0) return SystemId::IsReadonly;
-    if (strcmp(idString, "IsRelationshipClass") == 0) return SystemId::IsRelationshipClass;
     if (strcmp(idString, "IsStrict") == 0) return SystemId::IsStrict;
-    if (strcmp(idString, "IsStructClass") == 0) return SystemId::IsStructClass;
     if (strcmp(idString, "IsStruct") == 0) return SystemId::IsStruct;
     if (strcmp(idString, "IsStructArray") == 0) return SystemId::IsStructArray;
     if (strcmp(idString, "IsPrimitive") == 0) return SystemId::IsPrimitive;
@@ -1566,13 +1558,10 @@ Utf8CP ECChange::SystemIdToString(SystemId id)
             case SystemId::Instance: return "Instance";
             case SystemId::Instances: return "Instances";
             case SystemId::Integer: return "Integer";
-            case SystemId::IsCustomAttributeClass: return "IsCustomAttributeClass";
-            case SystemId::IsEntityClass: return "IsEntityClass";
+            case SystemId::ClassType: return "ClassType";
             case SystemId::IsPolymorphic: return "IsPolymorphic";
             case SystemId::IsReadonly: return "IsReadonly";
-            case SystemId::IsRelationshipClass: return "IsRelationshipClass";
             case SystemId::IsStrict: return "IsStrict";
-            case SystemId::IsStructClass: return "IsStructClass";
             case SystemId::IsStruct: return "IsStruct";
             case SystemId::IsStructArray: return "IsStructArray";
             case SystemId::IsPrimitive: return "IsPrimitive";
@@ -1905,6 +1894,29 @@ Utf8String ClassModifierChange::_ToString(ValueId id) const
         else if (v.Value() == ECN::ECClassModifier::Sealed)
             str = "Sealed";
 
+        }
+    return str;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String ClassTypeChange::_ToString(ValueId id) const
+    {
+    Utf8String str;
+    auto& v = GetValue(id);
+    if (v.IsNull())
+        str = NULL_TEXT;
+    else
+        {
+        if (v.Value() == ECClassType::CustomAttribute)
+            str = "CustomAttribute";
+        else if (v.Value() == ECClassType::Entity)
+            str = "Entity";
+        else if (v.Value() == ECClassType::Relationship)
+            str = "Relationship";
+        else if (v.Value() == ECClassType::Struct)
+            str = "Struct";
         }
     return str;
     }

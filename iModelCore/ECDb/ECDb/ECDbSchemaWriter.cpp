@@ -388,6 +388,14 @@ BentleyStatus ECDbSchemaWriter::UpdateECCustomAttributes(ECDbSchemaPersistenceHe
         if (TryParseId(schemaName, className, change.GetId()) == ERROR)
             return ERROR;
 
+        if (change.GetParent()->GetState() != ChangeState::New)
+            {
+            if (schemaName.EqualsI( "ECDbMap"))
+                {
+                return Fail("ECSCHEMA-UPGRADE: Changing or adding ECDbMap customAttributes on exisiting schema/class/property/relationshipConstraint are not allowed.");
+                }
+            }
+
         if (change.GetState() == ChangeState::New)
             {
            
@@ -404,7 +412,6 @@ BentleyStatus ECDbSchemaWriter::UpdateECCustomAttributes(ECDbSchemaPersistenceHe
             }
         else if (change.GetState() == ChangeState::Deleted)
             {
-            //DELETE FROM ec_CustomAttribute WHERE ECContainerId =? AND ECContainerType = ? AND ECClassId =?
             IECInstancePtr ca = oldContainer.GetCustomAttribute(schemaName, className);
             BeAssert(ca.IsValid());
             if (ca.IsNull())
@@ -464,25 +471,11 @@ BentleyStatus ECDbSchemaWriter::UpdateECClass(ECClassChange& classChange, ECClas
         return Fail("ECSCHEMA-UPGRADE: Changing ECClass::Modifier is not supported. Failed on ECClass %s.",
                     oldClass.GetFullName());
         }
-    if (classChange.IsEntityClass().IsValid())
+
+    if (classChange.ClassType().IsValid())
         {
-        return Fail("ECSCHEMA-UPGRADE: Changing ECClass::IsEntityClass is not supported. Failed on ECClass %s.",
-                    oldClass.GetFullName());
-        }
-    if (classChange.IsStructClass().IsValid())                                          
-        {
-        return Fail("ECSCHEMA-UPGRADE: Changing ECClass::IsStructClass is not supported. Failed on ECClass %s.",
-                    oldClass.GetFullName());
-        }
-    if (classChange.IsCustomAttributeClass().IsValid())
-        {
-        return Fail("ECSCHEMA-UPGRADE: Changing ECClass::IsCustomAttributeClass is not supported. Failed on ECClass %s.",
-                    oldClass.GetFullName());
-        }
-    if (classChange.IsRelationshipClass().IsValid())
-        {
-        return Fail("ECSCHEMA-UPGRADE: Changing ECClass::IsRelationshipClass is not supported. Failed on ECClass %s.",
-                    oldClass.GetFullName());
+        return Fail("ECSCHEMA-UPGRADE: Changing ECClass::ClassType is not supported. Change was [%s]'. Failed on ECClass %s.",
+                    classChange.GetString().c_str(), oldClass.GetFullName());
         }
 
     if (classChange.GetName().IsValid())
@@ -493,14 +486,17 @@ BentleyStatus ECDbSchemaWriter::UpdateECClass(ECClassChange& classChange, ECClas
 
         updater.Set("Name", classChange.GetName().GetNew().Value());
         }
+
     if (classChange.GetDisplayLabel().IsValid())
         {
         updater.Set("DisplayLabel", classChange.GetDisplayLabel().GetNew().Value());
         }
+
     if (classChange.GetDescription().IsValid())
         {
         updater.Set("Description", classChange.GetDescription().GetNew().Value());
         }
+
     if (classChange.GetRelationship().IsValid())
         {
         auto& relationshipChange = classChange.GetRelationship();

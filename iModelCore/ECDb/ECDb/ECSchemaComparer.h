@@ -24,7 +24,7 @@ struct ECRelationshipConstraintClassChange;
 struct ECEnumeratorChange;
 struct ECPropertyValueChange;
 struct ECObjectChange;
-
+struct ClassTypeChange;
 //=======================================================================================
 // @bsienum                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
@@ -58,6 +58,7 @@ enum class SystemId
     Classes,
     ClassFullName,
     ClassModifier,
+    ClassType,
     ConstantKey,
     Constraint,
     ConstraintClass,
@@ -75,13 +76,9 @@ enum class SystemId
     Instance,
     Instances,
     Integer,
-    IsCustomAttributeClass,
-    IsEntityClass,
     IsPolymorphic,
     IsReadonly,
-    IsRelationshipClass,
     IsStrict,
-    IsStructClass,
     IsStruct,
     IsStructArray,
     IsPrimitive,
@@ -198,6 +195,12 @@ struct ECChange : RefCountedBase
         Status GetStatus() { return m_status; }
         void SetStatus(Status status) { m_status = status; }
         void WriteToString(Utf8StringR str, int initIndex = 0, int indentSize = INDENT_SIZE) const { _WriteToString(str, initIndex, indentSize); }
+        Utf8String GetString() const 
+            {
+            Utf8String str;
+            WriteToString(str);
+            return str;
+            }
     };
 
 typedef RefCountedPtr<ECChange> ECChangePtr;
@@ -842,6 +845,20 @@ struct ClassModifierChange :ECPrimitiveChange<ECN::ECClassModifier>
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
+struct ClassTypeChange :ECPrimitiveChange<ECClassType>
+    {
+    private:
+        virtual Utf8String _ToString(ValueId id) const override;
+    public:
+        ClassTypeChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+            : ECPrimitiveChange<ECClassType>(state, systemId, parent, customId)
+            {}
+        virtual ~ClassTypeChange() {}
+    };
+
+//=======================================================================================
+// @bsiclass                                                Affan.Khan            03/2016
+//+===============+===============+===============+===============+===============+======
 struct ECSchemaChange : ECObjectChange
     {
     public:
@@ -1139,10 +1156,7 @@ struct ECClassChange :ECObjectChange
         StringChange& GetDisplayLabel() { return Get<StringChange>(SystemId::DisplayLabel); }
         StringChange& GetDescription() { return Get<StringChange>(SystemId::Description); }
         ClassModifierChange& GetClassModifier() { return Get<ClassModifierChange>(SystemId::ClassModifier); }
-        BooleanChange& IsCustomAttributeClass() { return Get<BooleanChange>(SystemId::IsCustomAttributeClass); }
-        BooleanChange& IsEntityClass() { return Get<BooleanChange>(SystemId::IsEntityClass); }
-        BooleanChange& IsStructClass() { return Get<BooleanChange>(SystemId::IsStructClass); }
-        BooleanChange& IsRelationshipClass() {return Get<BooleanChange>(SystemId::IsRelationshipClass);}
+        ClassTypeChange& ClassType() {return Get<ClassTypeChange>(SystemId::ClassType);}
         BaseClassChanges& BaseClasses() { return Get<BaseClassChanges>(SystemId::BaseClasses); }
         ECPropertyChanges& Properties() { return Get<ECPropertyChanges>(SystemId::Properties); }
         ECInstanceChanges& CustomAttributes() { return Get<ECInstanceChanges>(SystemId::CustomAttributes); }
@@ -1216,6 +1230,27 @@ struct ECPropertyChange :ECObjectChange
 //+===============+===============+===============+===============+===============+======
 struct ECSchemaComparer
     {
+    enum class AppendDetailLevel
+        {
+        Full,
+        Partial
+        };
+
+    struct Options
+        {
+        private:
+            AppendDetailLevel m_schemaDeleteDetailLevel;
+            AppendDetailLevel m_schemaNewDetailLevel;
+        public:
+            Options(AppendDetailLevel schemDeleteDetailLevel = AppendDetailLevel::Full, AppendDetailLevel schemaNewDetailLevel = AppendDetailLevel::Full)
+                :m_schemaDeleteDetailLevel(schemDeleteDetailLevel), m_schemaNewDetailLevel(schemaNewDetailLevel)
+                {}
+
+            AppendDetailLevel GetSchemaDeleteDetailLevel() const { return m_schemaDeleteDetailLevel; }
+            AppendDetailLevel GetSchemaNewDetailLevel() const { return m_schemaNewDetailLevel; }
+        };
+    private :
+        Options m_options;
     private:
         BentleyStatus CompareECSchema(ECSchemaChange& change, ECSchemaCR a, ECSchemaCR b);
         BentleyStatus CompareECClass(ECClassChange& change, ECClassCR a, ECClassCR b);
@@ -1256,7 +1291,9 @@ struct ECSchemaComparer
         //BentleyStatus CompareKindOfQuantities(ECKindOfQuantityChanges& changes, KindOfQuantityContainerCR a, KindOfQuantityContainerCR b);
 
     public:
-        BentleyStatus Compare(ECSchemaChanges& changes, bvector<ECN::ECSchemaCP> const& existingSet, bvector<ECN::ECSchemaCP> const& newSet);
+        ECSchemaComparer(){}
+        ~ECSchemaComparer(){}
+        BentleyStatus Compare(ECSchemaChanges& changes, bvector<ECN::ECSchemaCP> const& existingSet, bvector<ECN::ECSchemaCP> const& newSet, Options options = Options());
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
