@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/stdcxx/rw/_select.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -58,6 +58,21 @@ NAMESPACE_BENTLEY_BC__RW_BEGIN  //  BENTLEY_CHANGE
 struct __rw_false_t { enum { _C_val }; };
 struct __rw_true_t { enum { _C_val = 1 }; };
 
+template <bool>
+struct __rw_select_bool
+{
+    typedef void* _SelectT;
+};
+
+_RWSTD_SPECIALIZED_CLASS
+struct __rw_select_bool<true>
+{
+    typedef int _SelectT;
+};
+
+#define _RWSTD_DISPATCH_BOOL(iter) (typename BC__RW::__rw_select_bool<iter>::_SelectT (1L))
+
+#define _RWSTD_DISPATCH_IS_NOEXCEPT_MOVE_CONSTRUCTIBLE(_TypeT) _RWSTD_DISPATCH_BOOL(std::is_nothrow_move_constructible<_TypeT>::value || !std::is_copy_constructible<_TypeT>::value)
 
 template <class _TypeT>
 struct __rw_select_int
@@ -70,7 +85,6 @@ struct __rw_select_int
 
 #endif   // SunPro
 };
-
 
 #define _RWSTD_SPECIALIZE_IS_INT(T)    \
     _RWSTD_SPECIALIZED_CLASS           \

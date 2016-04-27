@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/stdcxx/bvector.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -146,6 +146,8 @@ public:
     typedef typename allocator_type::difference_type  difference_type;
     typedef typename allocator_type::reference        reference;
     typedef typename allocator_type::const_reference  const_reference;
+// *** BENTLEY_CHANGE support rvalue references
+    typedef _TypeT&&                                  rvalue_reference;
     typedef typename allocator_type::pointer          pointer;
     typedef typename allocator_type::const_pointer    const_pointer;
 
@@ -380,6 +382,19 @@ public:
 
     void push_back (const_reference);
     
+// *** BENTLEY_CHANGE
+    void push_back (rvalue_reference);
+
+#ifndef _RWSTD_NO_VARIADIC_TEMPLATES
+    template <typename... _Args>
+    void emplace_back (_Args... __args) {
+        if (_C_alloc._C_end == _C_alloc._C_bufend)
+            _C_insert_1 (end (), _TypeT (std::forward<_Args>(__args)...));
+        else
+            _C_emplace_back (std::forward<_Args>(__args)...);
+    }
+#endif
+
     void pop_back () {
         _RWSTD_ASSERT (!empty ());
         _C_alloc.destroy (_C_alloc._C_end - 1);
@@ -387,6 +402,21 @@ public:
     }
 
     iterator insert (iterator, const_reference);
+    iterator insert (iterator, rvalue_reference);
+
+#ifndef _RWSTD_NO_VARIADIC_TEMPLATES
+    template<typename... _Args>
+    iterator emplace (iterator __it, _Args... __args) {
+        _RWSTD_ASSERT_RANGE (__it, end ());
+        const difference_type __off = __it - begin ();
+        if (end () == __it)
+            emplace_back (std::forward<_Args>(__args)...);
+        else
+            _C_insert_1 (__it, _TypeT (std::forward<_Args>(__args)...));
+
+        return begin () + __off;
+    }
+#endif
 
     template <class _InputIter>
     void insert (iterator __it, _InputIter __first, _InputIter __last) {
@@ -420,6 +450,10 @@ private:
 
     // implements a single-element insert
     void _C_insert_1 (const iterator&, const_reference);
+
+// *** BENTLEY_CHANGE
+    // implements a single-element insert
+    void _C_insert_1 (const iterator&, rvalue_reference);
 
     // implements insert with repetition
     void _C_insert_n (const iterator&, size_type, const_reference);
@@ -486,12 +520,41 @@ private:
         ++_C_alloc._C_end;
     }
 
+// *** BENTLEY_CHANGE
+    // constructs a copy at the end and grows the size of container
+    void _C_push_back (rvalue_reference __x) {
+        _RWSTD_ASSERT (_C_alloc._C_end != _C_alloc._C_bufend);
+        _C_alloc.construct (_C_alloc._C_end, std::move_if_noexcept(__x));
+        ++_C_alloc._C_end;
+    }
+
+#ifndef _RWSTD_NO_VARIADIC_TEMPLATES
+    template <typename... _Args>
+    void _C_emplace_back (_Args... __args) {
+        _RWSTD_ASSERT (_C_alloc._C_end != _C_alloc._C_bufend);
+        _C_alloc.construct (_C_alloc._C_end, std::forward<_Args>(__args)...);
+        ++_C_alloc._C_end;
+    }
+#endif
+
     // destroys elements from the iterator to the end of the bvector
     // and resets end() to point to the iterator
     void _C_destroy (iterator);
 
     // implements swap for objects with unequal allocator
-    void _C_unsafe_swap (bvector&);
+    void _C_unsafe_swap (bvector&, int);
+    // implements swap for objects with unequal allocator
+    void _C_unsafe_swap (bvector&, void*);
+
+    // moves a range of elements backwards, with strong exception safety guarantee for copyable or no-throw-movable types
+    iterator _move_range (iterator __f, iterator __l, iterator __d) { return _C_move_range (__f, __l, __d, _RWSTD_DISPATCH_IS_NOEXCEPT_MOVE_CONSTRUCTIBLE(_TypeT)); }
+    // moves a range of elements backwards, with strong exception safety guarantee for copyable or no-throw-movable types
+    iterator _move_range_backward (iterator __f, iterator __l, iterator __d) { return _C_move_range_backward (__f, __l, __d, _RWSTD_DISPATCH_IS_NOEXCEPT_MOVE_CONSTRUCTIBLE(_TypeT)); }
+
+    iterator _C_move_range (iterator __f, iterator __l, iterator __d, int) { return std::move (__f, __l, __d); }
+    iterator _C_move_range (iterator __f, iterator __l, iterator __d, void*) { return std::copy (__f, __l, __d); }
+    iterator _C_move_range_backward (iterator __f, iterator __l, iterator __d, int) { return std::move_backward (__f, __l, __d); }
+    iterator _C_move_range_backward (iterator __f, iterator __l, iterator __d, void*) { return std::copy_backward (__f, __l, __d); }
 
     struct _C_VectorAlloc: allocator_type {
 
@@ -638,6 +701,17 @@ push_back (const_reference __x)
         _C_push_back (__x);
 }
 
+// *** BENTLEY_CHANGE
+template <class _TypeT, class _Allocator>
+inline void
+bvector<_TypeT, _Allocator>::
+push_back (rvalue_reference __x)
+{
+    if (_C_alloc._C_end == _C_alloc._C_bufend)
+        _C_insert_1 (end (), std::move_if_noexcept(__x));
+    else
+        _C_push_back (std::move_if_noexcept(__x));
+}
 
 template <class _TypeT, class _Allocator>
 inline typename bvector<_TypeT, _Allocator>::iterator
@@ -656,6 +730,22 @@ insert (iterator __it, const_reference __x)
     return begin () + __off;
 }
 
+template <class _TypeT, class _Allocator>
+inline typename bvector<_TypeT, _Allocator>::iterator
+bvector<_TypeT, _Allocator>::
+insert (iterator __it, rvalue_reference __x)
+{
+    _RWSTD_ASSERT_RANGE (__it, end ());
+
+    const difference_type __off = __it - begin ();
+
+    if (end () == __it)
+        push_back (std::move_if_noexcept(__x));
+    else
+        _C_insert_1 (__it, std::move_if_noexcept(__x));
+
+    return begin () + __off;
+}
 
 template <class _TypeT, class _Allocator>
 inline typename bvector<_TypeT, _Allocator>::iterator
@@ -668,7 +758,7 @@ erase (iterator __it)
     const iterator __next = __it + 1;
 
     if (__next != end ()) 
-        std::copy (__next, end (), __it);
+        _move_range (__next, end (), __it);
 
     _C_alloc.destroy (_C_alloc._C_end - 1);
     --_C_alloc._C_end;
@@ -685,7 +775,7 @@ erase (iterator __first, iterator __last)
     _RWSTD_ASSERT_RANGE (__first, __last);
     _RWSTD_ASSERT_RANGE (begin (), __first);
 
-    _C_destroy (std::copy (__last, end (), __first));
+    _C_destroy (_move_range (__last, end (), __first));
 
     return __first;
 }
@@ -719,7 +809,7 @@ swap (bvector &__other)
     }
     else {
         // not exception-safe
-        _C_unsafe_swap (__other);
+        _C_unsafe_swap (__other, _RWSTD_DISPATCH_BOOL(std::is_copy_constructible<_TypeT>::value));
     }
 }
 
