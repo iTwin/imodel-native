@@ -41,9 +41,9 @@ class CppCliStruct(CStruct):
         if self.does_contain_guid():
             ctor_str += '        wchar_t guid[4096] = {0};\n'
         if self.does_contain_int():
-            ctor_str += '        int16_t integer;\n'
+            ctor_str += '        int64_t integer;\n'
         if self.does_contain_long():
-            ctor_str += '        int32_t pLong;\n'
+            ctor_str += '        int64_t pLong;\n'
         for ecproperty in self.get_properties():
             property_type = ecproperty.attributes["typeName"].value
             ctor_str += '        status = {0}_DataBufferGet{1}Property('.format(self._api.get_api_name(), property_type.title())
