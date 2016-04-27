@@ -198,41 +198,67 @@ static TextAnnotationDataP cloneData(DgnElementCR oldElem, DgnElementR newElem)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     04/2016
 //---------------------------------------------------------------------------------------
-DgnElementPtr clone(DgnElementCR oldElem, DgnDbStatus* status, DgnElement::CreateParams const* params, std::function<DgnElementPtr (DgnDbStatus*, DgnElement::CreateParams const*)> superCall)
+DgnElementPtr TextAnnotation2d::_Clone(DgnDbStatus* status, DgnElement::CreateParams const* params) const
     {
     DgnDbStatus _status;
     if (nullptr == status)
         status = &_status;
 
-    DgnElementPtr newElem = superCall(status, params);
+    DgnElementPtr newElem = T_Super::_Clone(status, params);
     if (!newElem.IsValid() || (DgnDbStatus::Success != *status))
         return newElem;
     
-    cloneData(oldElem, *newElem);
+    cloneData(*this, *newElem);
 
     return newElem;
     }
-DgnElementPtr TextAnnotation2d::_Clone(DgnDbStatus* status, DgnElement::CreateParams const* params) const { return clone(*this, status, params, [&](DgnDbStatus* status, DgnElement::CreateParams const* params) { return T_Super::_Clone(status, params); }); }
-DgnElementPtr TextAnnotation3d::_Clone(DgnDbStatus* status, DgnElement::CreateParams const* params) const { return clone(*this, status, params, [&](DgnDbStatus* status, DgnElement::CreateParams const* params) { return T_Super::_Clone(status, params); }); }
+DgnElementPtr TextAnnotation3d::_Clone(DgnDbStatus* status, DgnElement::CreateParams const* params) const
+    {
+    DgnDbStatus _status;
+    if (nullptr == status)
+        status = &_status;
+
+    DgnElementPtr newElem = T_Super::_Clone(status, params);
+    if (!newElem.IsValid() || (DgnDbStatus::Success != *status))
+        return newElem;
+    
+    cloneData(*this, *newElem);
+
+    return newElem;
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     04/2016
 //---------------------------------------------------------------------------------------
-DgnElementPtr cloneForImport(DgnElementCR oldElem, DgnDbStatus* status, DgnModelR destModel, DgnImportContext& context, std::function<DgnElementPtr (DgnDbStatus*, DgnModelR, DgnImportContext&)> superCall)
+DgnElementPtr TextAnnotation2d::_CloneForImport(DgnDbStatus* status, DgnModelR destModel, DgnImportContext& context) const
     {
     DgnDbStatus _status;
     if (nullptr == status)
         status = &_status;
 
-    DgnElementPtr newElem = superCall(status, destModel, context);
+    DgnElementPtr newElem = T_Super::_CloneForImport(status, destModel, context);
     if (!newElem.IsValid() || (DgnDbStatus::Success != *status))
         return newElem;
     
-    TextAnnotationDataP newData = cloneData(oldElem, *newElem);
+    TextAnnotationDataP newData = cloneData(*this, *newElem);
     if ((nullptr != newData) && context.IsBetweenDbs())
         newData->RemapIds(context);
 
     return newElem;
     }
-DgnElementPtr TextAnnotation2d::_CloneForImport(DgnDbStatus* status, DgnModelR destModel, DgnImportContext& context) const { return cloneForImport(*this, status, destModel, context, [&](DgnDbStatus* status, DgnModelR destModel, DgnImportContext& context) { return T_Super::_CloneForImport(status, destModel, context); }); }
-DgnElementPtr TextAnnotation3d::_CloneForImport(DgnDbStatus* status, DgnModelR destModel, DgnImportContext& context) const { return cloneForImport(*this, status, destModel, context, [&](DgnDbStatus* status, DgnModelR destModel, DgnImportContext& context) { return T_Super::_CloneForImport(status, destModel, context); }); }
+DgnElementPtr TextAnnotation3d::_CloneForImport(DgnDbStatus* status, DgnModelR destModel, DgnImportContext& context) const
+    {
+    DgnDbStatus _status;
+    if (nullptr == status)
+        status = &_status;
+
+    DgnElementPtr newElem = T_Super::_CloneForImport(status, destModel, context);
+    if (!newElem.IsValid() || (DgnDbStatus::Success != *status))
+        return newElem;
+    
+    TextAnnotationDataP newData = cloneData(*this, *newElem);
+    if ((nullptr != newData) && context.IsBetweenDbs())
+        newData->RemapIds(context);
+
+    return newElem;
+    }

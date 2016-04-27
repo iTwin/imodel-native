@@ -121,6 +121,8 @@ void ViewAttachmentTest::AddTextToDrawing(DgnModelId drawingId, Utf8CP text, dou
         {
         AnnotationTextStyle style(db);
         style.SetName("MyTextStyle");
+        style.SetFontId(db.Fonts().AcquireId(DgnFontManager::GetLastResortTrueTypeFont()));
+        style.SetHeight(1.0);
         style.Insert();
         m_textStyleId = style.GetElementId();
         EXPECT_TRUE(m_textStyleId.IsValid());
