@@ -463,7 +463,7 @@ double* Longitude,
 bool* LocationIsUsingLatLong,
 WCharCP RegisteredDate,
 WCharCP TimeZoneLocation,
-int16_t* Status,
+int32_t* Status,
 WCharCP PWDMInvitationId
 )
     {
@@ -561,7 +561,7 @@ double* Longitude,
 bool* LocationIsUsingLatLong,
 WCharCP RegisteredDate,
 WCharCP TimeZoneLocation,
-int16_t* Status,
+int32_t* Status,
 WCharCP PWDMInvitationId
 )
     {
@@ -678,7 +678,7 @@ double* Longitude,
 bool* LocationIsUsingLatLong,
 WCharCP RegisteredDate,
 WCharCP TimeZoneLocation,
-int16_t* Status,
+int32_t* Status,
 WCharCP PWDMInvitationId
 )
     {
@@ -776,7 +776,7 @@ double* Longitude,
 bool* LocationIsUsingLatLong,
 WCharCP RegisteredDate,
 WCharCP TimeZoneLocation,
-int16_t* Status,
+int32_t* Status,
 WCharCP PWDMInvitationId
 )
     {
@@ -1048,7 +1048,7 @@ CWSCC_EXPORT CALLSTATUS ConnectWebServicesClientC_CreateProjectMRUDetail
 (
 CWSCCHANDLE apiHandle,
 bool* IsFavorite,
-int32_t* LastAccessedByUser,
+int64_t* LastAccessedByUser,
 WCharCP Name,
 WCharCP Number,
 WCharCP OrganizationId,
@@ -1062,7 +1062,7 @@ double* Longitude,
 bool* LocationIsUsingLatLong,
 WCharCP RegisteredDate,
 WCharCP TimeZoneLocation,
-int16_t* Status,
+int32_t* Status,
 WCharCP PWDMInvitationId
 )
     {
@@ -1150,7 +1150,7 @@ CWSCC_EXPORT CALLSTATUS ConnectWebServicesClientC_UpdateProjectMRUDetail
 CWSCCHANDLE apiHandle,
 WCharCP projectmrudetailId,
 bool* IsFavorite,
-int32_t* LastAccessedByUser,
+int64_t* LastAccessedByUser,
 WCharCP Name,
 WCharCP Number,
 WCharCP OrganizationId,
@@ -1164,7 +1164,7 @@ double* Longitude,
 bool* LocationIsUsingLatLong,
 WCharCP RegisteredDate,
 WCharCP TimeZoneLocation,
-int16_t* Status,
+int32_t* Status,
 WCharCP PWDMInvitationId
 )
     {
@@ -1283,7 +1283,7 @@ double* Longitude,
 bool* LocationIsUsingLatLong,
 WCharCP RegisteredDate,
 WCharCP TimeZoneLocation,
-int16_t* Status
+int32_t* Status
 )
     {
     VERIFY_API
@@ -1379,7 +1379,7 @@ double* Longitude,
 bool* LocationIsUsingLatLong,
 WCharCP RegisteredDate,
 WCharCP TimeZoneLocation,
-int16_t* Status
+int32_t* Status
 )
     {
     VERIFY_API

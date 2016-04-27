@@ -52,7 +52,7 @@ class CBufferHeaderWriter(HeaderWriter):
         self._file.write('   {\n')
         self._file.write('   uint32_t   lCount;\n')
         self._file.write('   uint32_t   lType;\n')
-        self._file.write('   ULONG_PTR lpItems;\n')
+        self._file.write('   void       *lpItems;\n')
         self._file.write('   }} {0}BUFFER, *LP{0}BUFFER;\n\n'.format(self._api.get_api_acronym()))
         self._file.write('typedef LP{0}BUFFER H{0}BUFFER;'.format(self._api.get_api_acronym()))
 

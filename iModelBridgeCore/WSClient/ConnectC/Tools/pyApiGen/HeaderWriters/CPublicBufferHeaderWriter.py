@@ -176,7 +176,7 @@ class CPublicBufferHeaderWriter(HeaderWriter):
         accessor_str += "(\n"
         accessor_str += "{0}DATABUFHANDLE dataBuffer,\n".format(self._api.get_upper_api_acronym())
         accessor_str += "int16_t bufferProperty,\n"
-        accessor_str += "int16_t index,\n"
+        accessor_str += "uint32_t index,\n"
         if property_type == "string":
             accessor_str += "WCharP str,\n"
             accessor_str += "uint32_t strLength\n"
@@ -187,11 +187,11 @@ class CPublicBufferHeaderWriter(HeaderWriter):
         elif property_type == "boolean":
             accessor_str += "bool* boolean\n"
         elif property_type == "int":
-            accessor_str += "int16_t* integer\n"
+            accessor_str += "int32_t* integer\n"
         elif property_type == "double":
             accessor_str += "double* pDouble\n"
         elif property_type == "long":
-            accessor_str += "int32_t* pLong\n"
+            accessor_str += "int64_t* pLong\n"
         else:
             raise PropertyTypeError("Property type {0} not accepted".format(property_type))
         accessor_str += ");\n"

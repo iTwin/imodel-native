@@ -200,7 +200,7 @@ CWSCC_EXPORT CALLSTATUS ConnectWebServicesClientC_DataBufferGetIntProperty
 CWSCCDATABUFHANDLE dataBuffer,
 int16_t bufferProperty,
 int16_t index,
-int16_t* integer
+int32_t* integer
 )
     {
     if(nullptr == dataBuffer)
@@ -262,7 +262,7 @@ CWSCC_EXPORT CALLSTATUS ConnectWebServicesClientC_DataBufferGetLongProperty
 CWSCCDATABUFHANDLE dataBuffer,
 int16_t bufferProperty,
 int16_t index,
-int32_t* pLong
+int64_t* pLong
 )
     {
     if(nullptr == dataBuffer)
@@ -287,7 +287,7 @@ CALLSTATUS connectuserGetStringProperty
 (
 HCWSCCBUFFER buf,
 int16_t bufferProperty,
-int16_t index,
+uint32_t index,
 WCharP str,
 uint32_t strLength
 )
@@ -349,7 +349,7 @@ CALLSTATUS organizationGetStringProperty
 (
 HCWSCCBUFFER buf,
 int16_t bufferProperty,
-int16_t index,
+uint32_t index,
 WCharP str,
 uint32_t strLength
 )
@@ -384,7 +384,7 @@ CALLSTATUS projectGetStringProperty
 (
 HCWSCCBUFFER buf,
 int16_t bufferProperty,
-int16_t index,
+uint32_t index,
 WCharP str,
 uint32_t strLength
 )
@@ -527,7 +527,7 @@ CALLSTATUS projectfavoriteGetStringProperty
 (
 HCWSCCBUFFER buf,
 int16_t bufferProperty,
-int16_t index,
+uint32_t index,
 WCharP str,
 uint32_t strLength
 )
@@ -643,7 +643,7 @@ CALLSTATUS projectmruGetStringProperty
 (
 HCWSCCBUFFER buf,
 int16_t bufferProperty,
-int16_t index,
+uint32_t index,
 WCharP str,
 uint32_t strLength
 )
@@ -696,7 +696,7 @@ CALLSTATUS projectmrudetailGetStringProperty
 (
 HCWSCCBUFFER buf,
 int16_t bufferProperty,
-int16_t index,
+uint32_t index,
 WCharP str,
 uint32_t strLength
 )
@@ -839,7 +839,7 @@ CALLSTATUS projecttemplateGetStringProperty
 (
 HCWSCCBUFFER buf,
 int16_t bufferProperty,
-int16_t index,
+uint32_t index,
 WCharP str,
 uint32_t strLength
 )
@@ -974,7 +974,7 @@ CALLSTATUS connectuserGetStringLength
 (
 HCWSCCBUFFER buf,
 int16_t bufferProperty,
-int16_t index,
+uint32_t index,
 size_t* outStringSize
 )
     {
@@ -1035,7 +1035,7 @@ CALLSTATUS organizationGetStringLength
 (
 HCWSCCBUFFER buf,
 int16_t bufferProperty,
-int16_t index,
+uint32_t index,
 size_t* outStringSize
 )
     {
@@ -1069,7 +1069,7 @@ CALLSTATUS projectGetStringLength
 (
 HCWSCCBUFFER buf,
 int16_t bufferProperty,
-int16_t index,
+uint32_t index,
 size_t* outStringSize
 )
     {
@@ -1211,7 +1211,7 @@ CALLSTATUS projectfavoriteGetStringLength
 (
 HCWSCCBUFFER buf,
 int16_t bufferProperty,
-int16_t index,
+uint32_t index,
 size_t* outStringSize
 )
     {
@@ -1326,7 +1326,7 @@ CALLSTATUS projectmruGetStringLength
 (
 HCWSCCBUFFER buf,
 int16_t bufferProperty,
-int16_t index,
+uint32_t index,
 size_t* outStringSize
 )
     {
@@ -1378,7 +1378,7 @@ CALLSTATUS projectmrudetailGetStringLength
 (
 HCWSCCBUFFER buf,
 int16_t bufferProperty,
-int16_t index,
+uint32_t index,
 size_t* outStringSize
 )
     {
@@ -1520,7 +1520,7 @@ CALLSTATUS projecttemplateGetStringLength
 (
 HCWSCCBUFFER buf,
 int16_t bufferProperty,
-int16_t index,
+uint32_t index,
 size_t* outStringSize
 )
     {
@@ -1654,7 +1654,7 @@ CALLSTATUS connectuserGetGuidProperty
 (
 HCWSCCBUFFER buf,
 int16_t bufferProperty,
-int16_t index,
+uint32_t index,
 WCharP guid
 )
     {
@@ -1688,7 +1688,7 @@ CALLSTATUS organizationGetGuidProperty
 (
 HCWSCCBUFFER buf,
 int16_t bufferProperty,
-int16_t index,
+uint32_t index,
 WCharP guid
 )
     {
@@ -1723,7 +1723,7 @@ CALLSTATUS projectGetBooleanProperty
 (
 HCWSCCBUFFER buf,
 int16_t bufferProperty,
-int16_t index,
+uint32_t index,
 bool* boolean
 )
     {
@@ -1775,7 +1775,7 @@ CALLSTATUS projectfavoriteGetBooleanProperty
 (
 HCWSCCBUFFER buf,
 int16_t bufferProperty,
-int16_t index,
+uint32_t index,
 bool* boolean
 )
     {
@@ -1827,7 +1827,7 @@ CALLSTATUS projectmrudetailGetBooleanProperty
 (
 HCWSCCBUFFER buf,
 int16_t bufferProperty,
-int16_t index,
+uint32_t index,
 bool* boolean
 )
     {
@@ -1888,7 +1888,7 @@ CALLSTATUS projecttemplateGetBooleanProperty
 (
 HCWSCCBUFFER buf,
 int16_t bufferProperty,
-int16_t index,
+uint32_t index,
 bool* boolean
 )
     {
@@ -1941,8 +1941,8 @@ CALLSTATUS projectGetIntProperty
 (
 HCWSCCBUFFER buf,
 int16_t bufferProperty,
-int16_t index,
-int16_t* integer
+uint32_t index,
+int32_t* integer
 )
     {
     if (buf == nullptr || bufferProperty == 0 || integer == nullptr)
@@ -1975,8 +1975,8 @@ CALLSTATUS projectfavoriteGetIntProperty
 (
 HCWSCCBUFFER buf,
 int16_t bufferProperty,
-int16_t index,
-int16_t* integer
+uint32_t index,
+int32_t* integer
 )
     {
     if (buf == nullptr || bufferProperty == 0 || integer == nullptr)
@@ -2009,8 +2009,8 @@ CALLSTATUS projectmrudetailGetIntProperty
 (
 HCWSCCBUFFER buf,
 int16_t bufferProperty,
-int16_t index,
-int16_t* integer
+uint32_t index,
+int32_t* integer
 )
     {
     if (buf == nullptr || bufferProperty == 0 || integer == nullptr)
@@ -2043,8 +2043,8 @@ CALLSTATUS projecttemplateGetIntProperty
 (
 HCWSCCBUFFER buf,
 int16_t bufferProperty,
-int16_t index,
-int16_t* integer
+uint32_t index,
+int32_t* integer
 )
     {
     if (buf == nullptr || bufferProperty == 0 || integer == nullptr)
@@ -2078,7 +2078,7 @@ CALLSTATUS projectGetDoubleProperty
 (
 HCWSCCBUFFER buf,
 int16_t bufferProperty,
-int16_t index,
+uint32_t index,
 double* pDouble
 )
     {
@@ -2121,7 +2121,7 @@ CALLSTATUS projectfavoriteGetDoubleProperty
 (
 HCWSCCBUFFER buf,
 int16_t bufferProperty,
-int16_t index,
+uint32_t index,
 double* pDouble
 )
     {
@@ -2164,7 +2164,7 @@ CALLSTATUS projectmrudetailGetDoubleProperty
 (
 HCWSCCBUFFER buf,
 int16_t bufferProperty,
-int16_t index,
+uint32_t index,
 double* pDouble
 )
     {
@@ -2207,7 +2207,7 @@ CALLSTATUS projecttemplateGetDoubleProperty
 (
 HCWSCCBUFFER buf,
 int16_t bufferProperty,
-int16_t index,
+uint32_t index,
 double* pDouble
 )
     {
@@ -2251,8 +2251,8 @@ CALLSTATUS projectmrudetailGetLongProperty
 (
 HCWSCCBUFFER buf,
 int16_t bufferProperty,
-int16_t index,
-int32_t* pLong
+uint32_t index,
+int64_t* pLong
 )
     {
     if (buf == nullptr || bufferProperty == 0 || pLong == nullptr)

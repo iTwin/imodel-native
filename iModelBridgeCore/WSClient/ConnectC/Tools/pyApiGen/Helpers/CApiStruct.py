@@ -230,9 +230,9 @@ class CApiStruct(CStruct):
             elif property_type == "boolean":
                 property_str += "bool* "
             elif property_type == "int":
-                property_str += "int16_t* "
-            elif property_type == "long":
                 property_str += "int32_t* "
+            elif property_type == "long":
+                property_str += "int64_t* "
             else:
                 property_str += ecproperty.attributes["typeName"].value + "* "
             property_str += ecproperty.attributes["propertyName"].value

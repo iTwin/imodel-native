@@ -187,11 +187,11 @@ class CBufferSourceWriter(SourceWriter):
         elif property_type == "boolean":
             accessor_str += "bool* boolean\n"
         elif property_type == "int":
-            accessor_str += "int16_t* integer\n"
+            accessor_str += "int32_t* integer\n"
         elif property_type == "double":
             accessor_str += "double* pDouble\n"
         elif property_type == "long":
-            accessor_str += "int32_t* pLong\n"
+            accessor_str += "int64_t* pLong\n"
         else:
             raise PropertyTypeError("Property type {0} not accepted".format(property_type))
         accessor_str += ")\n"
