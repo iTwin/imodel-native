@@ -22,9 +22,9 @@ static int      s_currentVersion;
 
 public:
 
-virtual              ~GradientSettings() {}
+virtual             ~GradientSettings() {}
 
-DGNPLATFORM_EXPORT       GradientSettings ();
+DGNPLATFORM_EXPORT  GradientSettings ();
 
                 void Init () {;}
 
@@ -57,7 +57,7 @@ StatusInt   SetKeys (const ColorDef* pColors, const double* pValues, uint16_t nK
     }
 
 GradientMode*   GetModeP ()  { return &m_mode; }
-uint16_t*         GetFlagsP () { return &m_flags; }
+uint16_t*       GetFlagsP () { return &m_flags; }
 double*         GetAngleP () { return &m_angle; }
 double*         GetTintP ()  { return &m_tint; }
 double*         GetShiftP () { return &m_shift; }

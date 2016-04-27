@@ -23,8 +23,10 @@
 #include <IFSelect_ReturnStatus.hxx>
 #include <Poly_Triangulation.hxx>
 #include <TopoDS.hxx>
+#include <TopExp.hxx>
 #include <TopExp_Explorer.hxx>
 #include <TopoDS_Shape.hxx>
+#include <Standard_TypeDef.hxx>
 #include <gp_Ax2.hxx>
 #include <gp_Lin.hxx>
 #include <gp_Circ.hxx>
@@ -33,10 +35,12 @@
 #include <gp_Elips2d.hxx>
 #include <gp_GTrsf.hxx>
 #include <Geom_Ellipse.hxx>
+#include <Geom_Line.hxx>
 #include <GeomAdaptor_HCurve.hxx>
 #include <Geom_BSplineCurve.hxx>
 #include <Geom2d_BSplineCurve.hxx>
 #include <Geom_BSplineSurface.hxx>
+#include <Geom_Plane.hxx>
 #include <TopoDS_Wire.hxx>
 #include <TopTools_ListOfShape.hxx>
 #include <BRepAlgoAPI_BuilderAlgo.hxx>
@@ -101,13 +105,15 @@ static DVec3d ToDVec3d(gp_Dir2d const& dir) {return DVec3d::From(dir.X(), dir.Y(
 static Transform ToTransform(gp_Trsf const& trsf) {return Transform::From(ToRotMatrix(trsf.VectorialPart()), ToDPoint3d(trsf.TranslationPart()));}
 static RotMatrix ToRotMatrix(gp_Mat const& mat) {RotMatrix rMatrix; for (int i=1; i <= 3; i++) for (int j=1; j <= 3; j++) rMatrix.form3d[i-1][j-1] = mat.Value(i, j); return rMatrix;}
 static DRange3d ToDRange3d(Bnd_Box const& box) {DRange3d range; box.Get(range.low.x, range.low.y, range.low.z, range.high.x, range.high.y, range.high.z); return range;}
+static DEllipse3d ToDEllipse3d(gp_Circ const& gpCirc, double start, double end) {return DEllipse3d::FromScaledVectors(ToDPoint3d(gpCirc.Location()), ToDVec3d(gpCirc.XAxis().Direction()), ToDVec3d(gpCirc.YAxis().Direction()), gpCirc.Radius(), gpCirc.Radius(), start, end - start);}
+static DEllipse3d ToDEllipse3d(gp_Circ2d const& gpCirc, double start, double end) {return DEllipse3d::FromScaledVectors(ToDPoint3d(gpCirc.Location()), ToDVec3d(gpCirc.XAxis().Direction()), ToDVec3d(gpCirc.YAxis().Direction()), gpCirc.Radius(), gpCirc.Radius(), start, end - start);}
+static DEllipse3d ToDEllipse3d(gp_Elips const& gpElips, double start, double end) {return DEllipse3d::FromScaledVectors(ToDPoint3d(gpElips.Location()), ToDVec3d(gpElips.XAxis().Direction()), ToDVec3d(gpElips.YAxis().Direction()), gpElips.MajorRadius(), gpElips.MinorRadius(), start, end - start);}
+static DEllipse3d ToDEllipse3d(gp_Elips2d const& gpElips, double start, double end) {return DEllipse3d::FromScaledVectors(ToDPoint3d(gpElips.Location()), ToDVec3d(gpElips.XAxis().Direction()), ToDVec3d(gpElips.YAxis().Direction()), gpElips.MajorRadius(), gpElips.MinorRadius(), start, end - start);}
 
-// static DEllipse3d ToDEllipse3d(gp_Circ const& gpEllipse, double start, double end);
-// static DEllipse3d ToDEllipse3d(gp_Circ2d const& gpEllipse, double start, double end);
-// static DEllipse3d ToDEllipse3d(gp_Elips const& gpEllipse, double start, double end);
-// static DEllipse3d ToDEllipse3d(gp_Elips2d const& gpEllipse, double start, double end);
-
-DGNPLATFORM_EXPORT static PolyfaceHeaderPtr IncrementalMesh(TopoDS_Shape const&, IFacetOptionsR);
+DGNPLATFORM_EXPORT static bool HasCurvedFaceOrEdge(TopoDS_Shape const&);
+DGNPLATFORM_EXPORT static PolyfaceHeaderPtr IncrementalMesh(TopoDS_Shape const&, IFacetOptionsR, bool cleanShape=true); //! BRepTools::Clean is called after meshing when cleanShape is true
+DGNPLATFORM_EXPORT static BentleyStatus ClipTopoShape(bvector<TopoDS_Shape>& output, bool& clipped, TopoDS_Shape const& shape, ClipVectorCR clip) {return ERROR;} // NEEDSWORK...
+DGNPLATFORM_EXPORT static BentleyStatus ClipCurveVector(bvector<CurveVectorPtr>& output, CurveVectorCR input, ClipVectorCR clip, TransformCP localToWorld) {return ERROR;} // NEEDSWORK...
 
 //! Support for the creation of new bodies from other types of geometry.
 struct Create

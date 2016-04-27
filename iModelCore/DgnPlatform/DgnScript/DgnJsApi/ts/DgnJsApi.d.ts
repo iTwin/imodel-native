@@ -113,6 +113,45 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
         static ReportError(description: Bentley_Utf8String): void;
     }
 
+    /** A wrapper for fopen/fgets */
+    class File implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor {
+        /*** NATIVE_TYPE_NAME = JsFile ***/
+
+        /** a wrapper for fopen.
+         * @param name  The full path to the file. 
+         * @param mode  The usual fopen model specifier
+         * @return an opened File object if successful, or null if the file cannot be opened
+         * @note Use only text mode, as there is currently no support for reading the contents of binary files.
+         * @note on mobile devices, only the temp, local state, and documents directories are accessible. It is up to the caller to supply these
+         * directory root paths to the script.
+        */
+        static Fopen(name: Bentley_Utf8String, mode: Bentley_Utf8String): FileP;
+
+        /** explicitly close the file */
+        Close(): void;
+
+        /** check if the next read position is at the end of the file. If so, do not attempt to read from the file. */
+        Feof(): cxx_bool;
+
+        /** Reads the next line of text. 
+          * @return the next line of text.
+          * @note This function throws an exception if you try to read past the end of the file. Call Feof before calling this function.
+          */
+        ReadLine(): Bentley_Utf8String;
+
+        /**
+         * Writes a line of text at the current write position.
+         * @param line  The line of text to write
+         * @return non-zero if write failed.
+         */
+        WriteLine(line: Bentley_Utf8String): cxx_int32_t;
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type FileP = cxx_pointer<File>;
+
     /** An ECSql Value
     */
     class ECSqlValue implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
@@ -310,6 +349,9 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
           * @note Only SELECT statements can be prepared. If you do not specify the SELECT keyword, it will be prepended automatically.
           */
         GetPreparedECSqlSelectStatement(ecsql: Bentley_Utf8String): PreparedECSqlStatementP;
+
+        /** Save changes to the DgnDb, marking the end of a transaction. If undo/redo is enabled, this creates an undo point. @return non-zero if the insert failed. */
+        SaveChanges(): cxx_int32_t;
 
         OnDispose(): void;
         Dispose(): void;
@@ -1281,7 +1323,10 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
         /*** NATIVE_TYPE_NAME = JsECValue ***/
 
         static FromDouble(v: cxx_double): ECValueP;
+        static FromInteger(v: cxx_int32_t): ECValueP;
         static FromString(v: Bentley_Utf8String): ECValueP;
+        static FromDateTime(v: Bentley_Utf8String): ECValueP;
+        static FromPoint3d(v: DPoint3dP): ECValueP;
 
         IsNull: cxx_bool;
         IsPrimitive: cxx_bool;
@@ -1289,6 +1334,8 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
         GetString(): Bentley_Utf8String;
         GetInteger(): cxx_int32_t;
         GetDouble(): cxx_double;
+        GetPoint3d(): DPoint3dP;
+        GetDateTime(): Bentley_Utf8String;
 
         OnDispose(): void;
         Dispose(): void;

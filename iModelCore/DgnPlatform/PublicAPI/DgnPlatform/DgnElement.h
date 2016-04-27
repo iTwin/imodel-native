@@ -106,14 +106,14 @@ struct DgnImportContext : DgnCloneContext
 {
 private:
     bool            m_areCompatibleDbs;
-    DPoint2d        m_xyOffset;
+    DPoint3d        m_xyzOffset;
     AngleInDegrees  m_yawAdj;
     DgnDbR          m_sourceDb;
     DgnDbR          m_destDb;
     bmap<LsComponentId, uint32_t> m_importedComponents;
     mutable bmap<ECN::ECClassCP, BeSQLite::EC::ECInstanceUpdater*> m_updaterCache;
 
-    void ComputeGcsAdjustment();
+    void ComputeGcsAndGOadjustment();
 
 public:
     //! Construct a DgnImportContext object.
@@ -188,7 +188,7 @@ public:
     //! Check if the source and destination GCSs are compatible, such that elements can be copied between them.
     DgnDbStatus CheckCompatibleGCS() const {return m_areCompatibleDbs? DgnDbStatus::Success: DgnDbStatus::MismatchGcs;}
     //! When copying between different DgnDbs, X and Y coordinates may need to be offset
-    DPoint2d GetOriginOffset() const {return m_xyOffset;}
+    DPoint3d GetOriginOffset() const {return m_xyzOffset;}
     //! When copying between different DgnDbs, the Yaw angle may need to be adjusted.
     AngleInDegrees GetYawAdjustment() const {return m_yawAdj;}
     //! @}
@@ -1980,6 +1980,21 @@ public:
     //!                             will either be the parent of the source element or the element to which the source parent has been remapped. See DgnCloneContext.
     //! @return a new element if successful
     DGNPLATFORM_EXPORT DgnElementCPtr MakeCopy(DgnDbStatus* stat, DgnModelR targetModel, DgnElementCR sourceElement, DgnCode const& code, DgnElementId newParentId = DgnElementId());
+};
+
+//=======================================================================================
+//! Utility methods for working with element assemblies.
+// @bsiclass                                                BentleySystems
+//=======================================================================================
+struct ElementAssemblyUtil
+{
+    //! Get the top-level parent DgnElementId of the assembly for which the input DgnElement is a member.
+    //! @return DgnElementId of top-level parent. Will be invalid if there is no parent.
+    DGNPLATFORM_EXPORT static DgnElementId GetAssemblyParentId(DgnElementCR el);
+
+    //! Query the DgnDb for all members of the assembly for which the input DgnElement is a member.
+    //! @return DgnElementIdSet containing the DgnElementIds of all assembly elements. Will be empty if not an assembly.
+    DGNPLATFORM_EXPORT static DgnElementIdSet GetAssemblyElementIdSet(DgnElementCR el);
 };
 
 //=======================================================================================

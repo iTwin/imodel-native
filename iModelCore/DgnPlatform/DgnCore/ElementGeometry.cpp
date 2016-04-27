@@ -2894,28 +2894,6 @@ static bool IsGeometryVisible(ViewContextR context, Render::GeometryParamsCR geo
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  02/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void UpdatePixelSizeRange(Render::GraphicR graphic, double newMin, double newMax)
-    {
-    double min, max;
-
-    graphic.GetPixelSizeRange(min, max);
-
-    if (0.0 == min)
-        min = newMin;
-    else
-        min = DoubleOps::Max(min, newMin);
-
-    if (0.0 == max)
-        max = newMax;
-    else
-        max = DoubleOps::Min(max, newMax);
-
-    graphic.SetPixelSizeRange(min, max);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 static ISolidKernelEntityPtr GetCachedSolidKernelEntity(ViewContextR context, DgnElementCP element, GeometryStreamEntryIdCR entryId)
@@ -3042,7 +3020,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                 double partMin, partMax;
 
                 partGraphic->GetPixelSizeRange(partMin, partMax);
-                DrawHelper::UpdatePixelSizeRange(graphic, partMin, partMax);
+                graphic.UpdatePixelSizeRange(partMin, partMax);
                 break;
                 }
 
@@ -3387,12 +3365,12 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                         {
                         DgnBoxDetail boxDetail(range.low, DPoint3d::From(range.low.x, range.low.y, range.high.z), DVec3d::From(1.0, 0.0, 0.0), DVec3d::From(0.0, 1.0, 0.0), xLen, yLen, xLen, yLen, true);
                         graphic.AddSolidPrimitive(*ISolidPrimitive::CreateDgnBox(boxDetail));
-                        DrawHelper::UpdatePixelSizeRange(graphic, maxLen/pixelThreshold, DBL_MAX);
+                        graphic.UpdatePixelSizeRange(maxLen/pixelThreshold, DBL_MAX);
                         break;
                         }
                     else
                         {
-                        DrawHelper::UpdatePixelSizeRange(graphic, 0.0, maxLen/pixelThreshold);
+                        graphic.UpdatePixelSizeRange(0.0, maxLen/pixelThreshold);
                         }
                     }
 
