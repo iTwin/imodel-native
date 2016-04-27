@@ -61,7 +61,7 @@
      The root category will be used to specify the options for any category or option not
      explicitly specifed in a category node.
 -->
-    <category name="ECObjectsNative">   <priority value="debug"/></category>
+    <category name="ECObjectsNative">   <priority value="info"/></category>
 
     <root>                            
         <priority value="info" />

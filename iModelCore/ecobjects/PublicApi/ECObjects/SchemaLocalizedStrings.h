@@ -8,6 +8,7 @@
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
 #include <ECObjects/ECInstance.h>
+#include <ECObjects/SchemaResourceKeyHelper.h>
 //#include "apr_sha1.h"
 
 EC_TYPEDEFS(SchemaLocalizedStrings);
@@ -22,7 +23,6 @@ private:
     bool m_empty;
 
     Utf8StringCR GetLocalizedString(Utf8CP labelKey, Utf8StringCR invariantString) const;
-    Utf8String ComputeHash(Utf8StringCR invariantString) const;
 
     bool TryConstructStringMaps(bmap<Utf8String, bpair<size_t, Utf8String> >& caStrings, ECSchemaCP localizationSupplemental);
 

@@ -54,6 +54,7 @@ capture this information.
 #include <ECObjects/ECEnabler.h>
 #include <ECObjects/ECInstance.h>
 #include <ECObjects/ECSchema.h>
+#include <ECObjects/SchemaResourceKeyHelper.h>
 #include <ECObjects/ECSchemaConverter.h>
 #include <ECObjects/SupplementalSchema.h>
 #include <ECObjects/ECContext.h>

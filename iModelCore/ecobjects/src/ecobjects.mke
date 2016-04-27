@@ -61,6 +61,7 @@ ECObjectsHeaders    =           $(ecobjectsPublicAPISrc)ECObjects.h \
                                 $(baseDir)DateTimeInfoAccessor.h \
                                 $(ecobjectsPublicAPISrc)ECDiff.h \
                                 $(ecobjectsPublicAPISrc)SchemaLocalizedStrings.h \
+                                $(ecobjectsPublicAPISrc)SchemaResourceKeyHelper.h \
                                 $(ecobjectsPublicAPISrc)AdHocJsonContainer.h \
                                 $(ecobjectsPublicAPISrc)ECJsonUtilities.h \
                                 $(ecobjectsPublicAPISrc)ECRelationshipPath.h
@@ -170,6 +171,8 @@ $(o)PresentationMetadataHelper$(oext)                      : $(baseDir)Presentat
 $(o)ECDiff$(oext)                                          : $(baseDir)ECDiff.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
 $(o)SchemaLocalizedStrings$(oext)                          : $(baseDir)SchemaLocalizedStrings.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
+
+$(o)SchemaResourceKeyHelper$(oext)                         : $(baseDir)SchemaResourceKeyHelper.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
 $(o)AdHocJsonContainer$(oext)                              : $(baseDir)AdHocJsonContainer.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
