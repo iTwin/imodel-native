@@ -197,13 +197,13 @@ public:
     //! Convert the filename into a null-terminated multibyte string according to the current locale (ACP).
     //! @param[out] name The buffer into which the conversion is made. Must be of size MAX_PATH.
     //! @private
-    BENTLEYDLL_EXPORT void GetNameA (char name[MAX_PATH]) const;
+    BENTLEYDLL_EXPORT void GetNameA(char name[MAX_PATH]) const;
 
     //! Convert the filename into a null-terminated multibyte string according to the current locale (ACP).
     //! @param[out] name The buffer into which the conversion is made. Must be numChars bytes.
     //! @param[in] numBytes Number of bytes in name.
     //! @private
-    BENTLEYDLL_EXPORT void GetNameA (CharP name, size_t numBytes) const;
+    BENTLEYDLL_EXPORT void GetNameA(CharP name, size_t numBytes) const;
 
     //! Get the UTF8 encoded name from this BeFileName.
     BENTLEYDLL_EXPORT Utf8String GetNameUtf8() const;
@@ -213,7 +213,7 @@ public:
 
     //! Change the value of this BeFileName using a multibyte null terminated string in the current locale.
     //! @private
-    BENTLEYDLL_EXPORT void SetNameA (CharCP name);
+    BENTLEYDLL_EXPORT void SetNameA(CharCP name);
 
     //! Change the value of this BeFileName using a UTF8 encoded string.
     void SetNameUtf8(Utf8String name) {SetNameUtf8(name.c_str());}
