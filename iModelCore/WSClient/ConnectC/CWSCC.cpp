@@ -12,7 +12,7 @@
 * Constructor.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-CWSCC_EXPORT CWSCCHANDLE ConnectWebServicesClientC_InitializeApiWithToken(LPCWSTR wAuthenticatedToken, uint32_t productId)
+CWSCC_EXPORT CWSCCHANDLE ConnectWebServicesClientC_InitializeApiWithToken(WCharCP wAuthenticatedToken, uint32_t productId)
     {
     Utf8String authenticatedToken;
     BeStringUtilities::WCharToUtf8(authenticatedToken, wAuthenticatedToken);
@@ -26,7 +26,7 @@ CWSCC_EXPORT CWSCCHANDLE ConnectWebServicesClientC_InitializeApiWithToken(LPCWST
 * Constructor.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-CWSCC_EXPORT CWSCCHANDLE ConnectWebServicesClientC_InitializeApiWithCredentials(LPCWSTR wUsername, LPCWSTR wPassword, uint32_t productId)
+CWSCC_EXPORT CWSCCHANDLE ConnectWebServicesClientC_InitializeApiWithCredentials(WCharCP wUsername, WCharCP wPassword, uint32_t productId)
     {
     Utf8String username, password;
     BeStringUtilities::WCharToUtf8(username, wUsername);

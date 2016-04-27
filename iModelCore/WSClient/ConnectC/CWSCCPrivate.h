@@ -8,7 +8,6 @@
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
 
-#include "Rpc.h"
 #include <DgnClientFx/DgnClientFxL10N.h>
 #include <BeSQLite\BeSQLite.h>
 #include <BeSQLite/L10N.h>
