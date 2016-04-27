@@ -181,7 +181,7 @@ bool RealityDataDownload::Perform()
         return true;
 
     int still_running; /* keep number of running handles */
-    int repeats = 0;    
+    int repeats = 0;
 
     do
         {
@@ -302,30 +302,31 @@ bool RealityDataDownload::SetupCurlandFile(size_t pi_index)
 
     pCurl = curl_easy_init();
     if (pCurl)
-    {
+        {
         curl_easy_setopt(pCurl, CURLOPT_URL, m_pEntries[pi_index].url);
-
-        curl_easy_setopt(pCurl, CURLOPT_TIMEOUT, 0L); //Timeout for the complete download.
-        curl_easy_setopt(pCurl, CURLOPT_FTP_RESPONSE_TIMEOUT, 80L);
-
-        curl_easy_setopt(pCurl, CURLOPT_HEADER, 0L);
-        curl_easy_setopt(pCurl, CURLOPT_FAILONERROR, 1L);
-        curl_easy_setopt(pCurl, CURLOPT_FOLLOWLOCATION, 1L);
-
         if (!WString::IsNullOrEmpty(m_certPath.c_str()))
             {
             curl_easy_setopt(pCurl, CURLOPT_SSL_VERIFYPEER, 1);
             curl_easy_setopt(pCurl, CURLOPT_CAINFO, Utf8String(m_certPath));
             }
-
+        curl_easy_setopt(pCurl, CURLOPT_HEADER, 0L);
+        curl_easy_setopt(pCurl, CURLOPT_FAILONERROR, 1L);
+        curl_easy_setopt(pCurl, CURLOPT_FOLLOWLOCATION, 1L);
+        if (!m_proxyUrl.empty())
+            {
+            curl_easy_setopt(pCurl, CURLOPT_PROXY, m_proxyUrl.c_str());
+            if (!m_proxyCreds.empty())
+                {
+                curl_easy_setopt(pCurl, CURLOPT_PROXYUSERPWD, m_proxyCreds.c_str());
+                }
+            }
+        curl_easy_setopt(pCurl, CURLOPT_TIMEOUT, 0L);
+        curl_easy_setopt(pCurl, CURLOPT_FTP_RESPONSE_TIMEOUT, 80L);
 
         /* Define our callback to get called when there's data to be written */
         curl_easy_setopt(pCurl, CURLOPT_WRITEFUNCTION, callback_fwrite_func);
         /* Set a pointer to our struct to pass to the callback */
         curl_easy_setopt(pCurl, CURLOPT_WRITEDATA, &(m_pEntries[pi_index]));
-
-//        curl_easy_setopt(pCurl, CURLOPT_FTPPORT, "-");    // FTP active
-
         /* Switch on full protocol/debug output set 1L*/
         curl_easy_setopt(pCurl, CURLOPT_VERBOSE, 0L);
 
@@ -340,7 +341,7 @@ bool RealityDataDownload::SetupCurlandFile(size_t pi_index)
         m_pEntries[pi_index].progressStep = m_progressStep;
 
         curl_multi_add_handle((CURLM*)m_pCurlHandle, pCurl);
-    }
+        }
 
     return (pCurl != NULL);
 }

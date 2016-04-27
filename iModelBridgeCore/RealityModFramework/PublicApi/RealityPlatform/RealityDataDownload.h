@@ -85,6 +85,9 @@ public:
     REALITYDATAPLATFORM_EXPORT static void ExtractFileName(WString& pio_rFileName, const AString& pi_Url);
     REALITYDATAPLATFORM_EXPORT static bool UnZipFile(WString& pi_strSrc, WString& pi_strDest);
 
+    //! Set proxy informations
+    REALITYDATAPLATFORM_EXPORT void SetProxyUrlAndCredentials(Utf8StringCR proxyUrl, Utf8StringCR proxyCreds) { m_proxyUrl = proxyUrl; m_proxyCreds = proxyCreds; };
+
     //! Set certificate path for https download.
     REALITYDATAPLATFORM_EXPORT void SetCertificatePath(WStringCR certificatePath) { m_certPath = certificatePath; };
 
@@ -108,10 +111,11 @@ private:
     void*                       m_pCurlHandle;
     size_t                      m_nbEntry;
     size_t                      m_curEntry;
-//    HArrayAutoPtr<FileTransfer> m_pEntries;
     FileTransfer                *m_pEntries;
 
     WString                                 m_certPath;
+    Utf8String                              m_proxyUrl;
+    Utf8String                              m_proxyCreds;
     RealityDataDownload_ProgressCallBack    m_pProgressFunc;
     float                                   m_progressStep;
     RealityDataDownload_StatusCallBack      m_pStatusFunc;
