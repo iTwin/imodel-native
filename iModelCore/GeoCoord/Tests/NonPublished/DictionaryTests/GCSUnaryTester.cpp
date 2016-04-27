@@ -195,8 +195,17 @@ TEST_P (GCSUnaryTester, UserDomainConvertionTest)
     double maxUsefulLatitude = toto->GetMaximumUsefulLatitude();
     
       
+    // Danish coordinate systems cannot be validated since their mathematical domain is smaller (and not square) to their user domain
+    auto projectionCode = toto->GetProjectionCode();
+
+    if (projectionCode == GeoCoordinates::BaseGCS::pcvTransverseMercatorDenmarkSys34  ||
+        projectionCode == GeoCoordinates::BaseGCS::pcvTransverseMercatorDenmarkSys3499 ||
+        projectionCode == GeoCoordinates::BaseGCS::pcvTransverseMercatorDenmarkSys3401)
+        return;
+
     
-    if (toto->GetProjectionCode() == GeoCoordinates::BaseGCS::pcvUnity)
+    
+    if (projectionCode == GeoCoordinates::BaseGCS::pcvUnity)
         {
 #if (0)
         // Lat/long based store user domain differently we will deal later.
@@ -208,9 +217,12 @@ TEST_P (GCSUnaryTester, UserDomainConvertionTest)
         {
         double latitudeStep = (maxUsefulLatitude - minUsefulLatitude) / 10.1;
         double longitudeStep = (maxUsefulLongitude - minUsefulLongitude) / 10.1;
-        for (double latitude = minUsefulLatitude ; latitude < maxUsefulLatitude ; latitude += latitudeStep)
+        // Note that the tolerance added serves to prevent user domain error that may result from floating point rounding errors
+        // as some projection methods validate on the exact same value we use but using a different computational path
+        // that injects different rounding errors. The tolerance is 0.001 second of arc (or a max of 3 centimeters)
+        for (double latitude = minUsefulLatitude + 0.0000028; latitude < maxUsefulLatitude - 0.0000028 ; latitude += latitudeStep)
             {
-            for (double longitude = minUsefulLongitude ; longitude < maxUsefulLongitude; longitude += longitudeStep)
+            for (double longitude = minUsefulLongitude + 0.0000028 ; longitude < maxUsefulLongitude - 0.0000028; longitude += longitudeStep)
                 {
                 GeoPoint latLongPoint;
                 latLongPoint.longitude = longitude;
