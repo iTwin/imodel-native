@@ -7,7 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
-#include "JsonUtils.h"
 
 static Utf8CP DGNPROPERTYJSON_LinearUnitMode        = "linMode";
 static Utf8CP DGNPROPERTYJSON_LinearPrecType        = "linType";

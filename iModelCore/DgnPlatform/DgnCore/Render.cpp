@@ -35,7 +35,7 @@ void Render::Target::Debug::SaveSceneTarget(int val) {s_sceneTarget=val; Show();
 void Render::Target::Debug::SaveProgressiveTarget(int val) {s_progressiveTarget=val; Show();}
 void Render::Target::Debug::Show()
     {
-#if defined(RENDER_LOGGING) 
+#if defined (RENDER_LOGGING) 
     NativeLogging::LoggingManager::GetLogger("GPS")->debugv("GPS=%d, Scene=%d, PD=%d", s_gps, s_sceneTarget, s_progressiveTarget);
 #endif
     }
@@ -367,7 +367,7 @@ FrustumPlanes::Contained FrustumPlanes::Contains(DPoint3dCP points, int nPts, do
         int nOutside = 0;
         for (int j=0; j < nPts; ++j)
             {
-            if (plane.EvaluatePoint(points[j]) < tolerance)
+            if (plane.EvaluatePoint(points[j]) + tolerance < 0.0)
                 {
                 ++nOutside;
                 allInside = false;
@@ -443,17 +443,26 @@ PolyfaceHeaderPtr Graphic::TriMeshArgs::ToPolyface() const
 
     for (; pIndex < pEnd; )
         *pOut++ = 1 + *pIndex++;
-    
-    polyFace->Point().resize(m_numPoints);
-    floatToDouble(&polyFace->Point().front().x, &m_points->x, 3 * m_numPoints);
 
-    polyFace->Normal().resize(m_numPoints);
-    floatToDouble(&polyFace->Normal().front().x, &m_normals->x, 3 * m_numPoints);
-    polyFace->NormalIndex() = pointIndex;
-    
-    polyFace->Param().resize(m_numPoints);
-    floatToDouble(&polyFace->Param().front().x, &m_textureUV->x, 2 * m_numPoints);
-    polyFace->ParamIndex() = pointIndex;
+    if (nullptr != m_points)
+        {
+        polyFace->Point().resize(m_numPoints);
+        floatToDouble(&polyFace->Point().front().x, &m_points->x, 3 * m_numPoints);
+        }
+
+    if (nullptr != m_normals)
+        {
+        polyFace->Normal().resize(m_numPoints);
+        floatToDouble(&polyFace->Normal().front().x, &m_normals->x, 3 * m_numPoints);
+        polyFace->NormalIndex() = pointIndex;
+        }
+
+    if (nullptr != m_textureUV)
+        {
+        polyFace->Param().resize(m_numPoints);
+        floatToDouble(&polyFace->Param().front().x, &m_textureUV->x, 2 * m_numPoints);
+        polyFace->ParamIndex() = pointIndex;
+        }
 
     return polyFace;
     }

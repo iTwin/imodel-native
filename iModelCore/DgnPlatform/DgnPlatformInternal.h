@@ -48,7 +48,7 @@
 #include <Bentley/BeThreadLocalStorage.h>
 #include <DgnPlatform/DgnProgressMeter.h>
 #include <ECObjects/ECSchema.h>
-#include "DgnCore/JsonUtils.h"
+#include <DgnPlatform/JsonUtils.h>
 #include <DgnPlatform/DgnHandlersAPI.h>
 #include <DgnPlatform/RegionUtil.h>
 #include <Logging/bentleylogging.h>

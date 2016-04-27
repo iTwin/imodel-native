@@ -1148,8 +1148,8 @@ bool TiledRaster::_IsExpired() const
 //=======================================================================================
 struct TiledRasterPrepareAndCleanupHandler : BeSQLiteRealityDataStorage::DatabasePrepareAndCleanupHandler
     {
-    static BeAtomic<bool> s_isPrepared;
-    virtual bool _IsPrepared() const override {return s_isPrepared;}
+    mutable BeAtomic<bool> m_isPrepared;
+    virtual bool _IsPrepared() const override {return m_isPrepared;}
 
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                     Grigas.Petraitis           03/2015
@@ -1158,14 +1158,14 @@ struct TiledRasterPrepareAndCleanupHandler : BeSQLiteRealityDataStorage::Databas
         {
         if (db.TableExists(TABLE_NAME_TiledRaster))
             {
-            s_isPrepared.store(true);
+            m_isPrepared.store(true);
             return SUCCESS;
             }
 
         Utf8CP ddl = "Url CHAR PRIMARY KEY,Raster BLOB,RasterSize INT,RasterInfo CHAR,ContentType CHAR,Created BIGINT,Expires BIGINT,ETag CHAR";
         if (BeSQLite::BE_SQLITE_OK == db.CreateTable(TABLE_NAME_TiledRaster, ddl))
             {
-            s_isPrepared.store(true);
+            m_isPrepared.store(true);
             return SUCCESS;
             }
         return ERROR;
@@ -1198,7 +1198,6 @@ struct TiledRasterPrepareAndCleanupHandler : BeSQLiteRealityDataStorage::Databas
         return SUCCESS;
         }
     };
-BeAtomic<bool> TiledRasterPrepareAndCleanupHandler::s_isPrepared;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               03/2015

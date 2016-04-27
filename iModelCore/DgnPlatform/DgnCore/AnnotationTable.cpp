@@ -1,8 +1,10 @@
-//-------------------------------------------------------------------------------------- 
-//     $Source: DgnCore/AnnotationTable.cpp $
-//  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
-//-------------------------------------------------------------------------------------- 
-
+/*--------------------------------------------------------------------------------------+
+|
+|  $Source: DgnCore/AnnotationTable.cpp $
+|
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h> 
 #include <DgnPlatform/AnnotationTable.h>
 #include <DgnPlatformInternal/DgnCore/Annotations/AnnotationTextBlockPersistence.h>

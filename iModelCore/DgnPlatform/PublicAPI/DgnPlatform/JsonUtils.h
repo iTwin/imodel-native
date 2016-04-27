@@ -1,11 +1,12 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: DgnCore/JsonUtils.h $
+|     $Source: PublicAPI/DgnPlatform/JsonUtils.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
+//__PUBLISH_SECTION_START__
 
 #include <BeJsonCpp/BeJsonUtilities.h>
 #include <DgnPlatform/ClipVector.h>
@@ -21,7 +22,7 @@ struct JsonUtils
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     09/12
 //---------------------------------------------------------------------------------------
-static void DPoint3dFromJson (DPoint3dR point, Json::Value const& inValue)
+static void DPoint3dFromJson(DPoint3dR point, Json::Value const& inValue)
     {
     point.x = inValue[0].asDouble();
     point.y = inValue[1].asDouble();
@@ -31,7 +32,7 @@ static void DPoint3dFromJson (DPoint3dR point, Json::Value const& inValue)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     09/12
 //---------------------------------------------------------------------------------------
-static void DPoint3dToJson (JsonValueR outValue, DPoint3dCR point)
+static void DPoint3dToJson(JsonValueR outValue, DPoint3dCR point)
     {
     outValue[0] = point.x;
     outValue[1] = point.y;
@@ -41,7 +42,7 @@ static void DPoint3dToJson (JsonValueR outValue, DPoint3dCR point)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     09/12
 //---------------------------------------------------------------------------------------
-static void Point2dFromJson (Point2dR point, JsonValueCR inValue)
+static void Point2dFromJson(Point2dR point, JsonValueCR inValue)
     {
     point.x = inValue[0].asInt();
     point.y = inValue[1].asInt();
@@ -50,7 +51,7 @@ static void Point2dFromJson (Point2dR point, JsonValueCR inValue)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     09/12
 //---------------------------------------------------------------------------------------
-static void Point2dToJson (JsonValueR outValue, Point2dCR point)
+static void Point2dToJson(JsonValueR outValue, Point2dCR point)
     {
     outValue[0] = point.x;
     outValue[1] = point.y;
@@ -59,7 +60,7 @@ static void Point2dToJson (JsonValueR outValue, Point2dCR point)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     09/12
 //---------------------------------------------------------------------------------------
-static void DPoint2dFromJson (DPoint2dR point, JsonValueCR inValue)
+static void DPoint2dFromJson(DPoint2dR point, JsonValueCR inValue)
     {
     point.x = inValue[0].asDouble();
     point.y = inValue[1].asDouble();
@@ -68,7 +69,7 @@ static void DPoint2dFromJson (DPoint2dR point, JsonValueCR inValue)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     09/12
 //---------------------------------------------------------------------------------------
-static void DPoint2dToJson (JsonValueR outValue, DPoint2dCR point)
+static void DPoint2dToJson(JsonValueR outValue, DPoint2dCR point)
     {
     outValue[0] = point.x;
     outValue[1] = point.y;
@@ -77,57 +78,57 @@ static void DPoint2dToJson (JsonValueR outValue, DPoint2dCR point)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     09/12
 //---------------------------------------------------------------------------------------
-static void DVec2dFromJson (DVec2dR vec, JsonValueCR inValue)
+static void DVec2dFromJson(DVec2dR vec, JsonValueCR inValue)
     {
-    DPoint2dFromJson ((DPoint2dR)vec, inValue);
+    DPoint2dFromJson((DPoint2dR)vec, inValue);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     09/12
 //---------------------------------------------------------------------------------------
-static void DVec2dToJson (JsonValueR outValue, DVec2dCR vec)
+static void DVec2dToJson(JsonValueR outValue, DVec2dCR vec)
     {
-    DPoint2dToJson (outValue, (DPoint2dCR)vec);
+    DPoint2dToJson(outValue, (DPoint2dCR)vec);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     09/12
 //---------------------------------------------------------------------------------------
-static void DVec3dFromJson (DVec3dR vec, JsonValueCR inValue)
+static void DVec3dFromJson(DVec3dR vec, JsonValueCR inValue)
     {
-    DPoint3dFromJson ((DPoint3dR)vec, inValue);
+    DPoint3dFromJson((DPoint3dR)vec, inValue);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     09/12
 //---------------------------------------------------------------------------------------
-static void DVec3dToJson (JsonValueR outValue, DVec3dCR vec)
+static void DVec3dToJson(JsonValueR outValue, DVec3dCR vec)
     {
-    DPoint3dToJson (outValue, (DPoint3dCR)vec);
+    DPoint3dToJson(outValue, (DPoint3dCR)vec);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     09/12
 //---------------------------------------------------------------------------------------
-static void DRange3dFromJson (DRange3dR range, JsonValueCR inValue)
+static void DRange3dFromJson(DRange3dR range, JsonValueCR inValue)
     {
-    DPoint3dFromJson (range.low, inValue["low"]);
-    DPoint3dFromJson (range.high, inValue["high"]);
+    DPoint3dFromJson(range.low, inValue["low"]);
+    DPoint3dFromJson(range.high, inValue["high"]);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     09/12
 //---------------------------------------------------------------------------------------
-static void DRange3dToJson (JsonValueR outValue, DRange3dCR range)
+static void DRange3dToJson(JsonValueR outValue, DRange3dCR range)
     {
-    DPoint3dToJson (outValue["low"], range.low);
-    DPoint3dToJson (outValue["high"], range.high);
+    DPoint3dToJson(outValue["low"], range.low);
+    DPoint3dToJson(outValue["high"], range.high);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     12/12
 //---------------------------------------------------------------------------------------
-static void MatrixRowFromJson (double* row, JsonValueCR inValue)
+static void MatrixRowFromJson(double* row, JsonValueCR inValue)
     {
     for (int y = 0; y < 3; ++y)
         row[y] = inValue[y].asDouble();
@@ -136,7 +137,7 @@ static void MatrixRowFromJson (double* row, JsonValueCR inValue)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     12/12
 //---------------------------------------------------------------------------------------
-static void MatrixRowToJson (JsonValueR outValue, double const* row)
+static void MatrixRowToJson(JsonValueR outValue, double const* row)
     {
     for (int y = 0; y < 3; ++y)
         outValue[y] = row[y];
@@ -145,25 +146,25 @@ static void MatrixRowToJson (JsonValueR outValue, double const* row)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     09/12
 //---------------------------------------------------------------------------------------
-static void RotMatrixFromJson (RotMatrixR rotation, JsonValueCR inValue)
+static void RotMatrixFromJson(RotMatrixR rotation, JsonValueCR inValue)
     {
     for (int x = 0; x < 3; ++x)
-        MatrixRowFromJson (rotation.form3d[x], inValue[x]);
+        MatrixRowFromJson(rotation.form3d[x], inValue[x]);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     09/12
 //---------------------------------------------------------------------------------------
-static void RotMatrixToJson (JsonValueR outValue, RotMatrixCR rotation)
+static void RotMatrixToJson(JsonValueR outValue, RotMatrixCR rotation)
     {
     for (int x = 0; x < 3; ++x)
-        MatrixRowToJson (outValue[x], rotation.form3d[x]);
+        MatrixRowToJson(outValue[x], rotation.form3d[x]);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson     02/14
 //---------------------------------------------------------------------------------------
-static void TransformRowFromJson (double* row, JsonValueCR inValue)
+static void TransformRowFromJson(double* row, JsonValueCR inValue)
     {
     for (int y = 0; y < 4; ++y)
         row[y] = inValue[y].asDouble();
@@ -172,7 +173,7 @@ static void TransformRowFromJson (double* row, JsonValueCR inValue)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson     02/14
 //---------------------------------------------------------------------------------------
-static void TransformRowToJson (JsonValueR outValue, double const* row)
+static void TransformRowToJson(JsonValueR outValue, double const* row)
     {
     for (int y = 0; y < 4; ++y)
         outValue[y] = row[y];
@@ -181,27 +182,27 @@ static void TransformRowToJson (JsonValueR outValue, double const* row)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson     02/14
 //---------------------------------------------------------------------------------------
-static void TransformFromJson (TransformR trans, JsonValueCR inValue)
+static void TransformFromJson(TransformR trans, JsonValueCR inValue)
     {
     for (int x = 0; x < 3; ++x)
-        TransformRowFromJson (trans.form3d[x], inValue[x]);
+        TransformRowFromJson(trans.form3d[x], inValue[x]);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson     02/14
 //---------------------------------------------------------------------------------------
-static void TransformToJson (JsonValueR outValue, TransformCR trans)
+static void TransformToJson(JsonValueR outValue, TransformCR trans)
     {
     for (int x = 0; x < 3; ++x)
-        TransformRowToJson (outValue[x], trans.form3d[x]);
+        TransformRowToJson(outValue[x], trans.form3d[x]);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson     02/14
 //---------------------------------------------------------------------------------------
-static void ClipPlaneToJson (JsonValueR outValue, ClipPlaneCR clipPlane)
+static void ClipPlaneToJson(JsonValueR outValue, ClipPlaneCR clipPlane)
     {
-    DVec3dToJson (outValue["normal"], clipPlane.m_normal);
+    DVec3dToJson(outValue["normal"], clipPlane.m_normal);
     outValue["distance"] = clipPlane.m_distance;
     if (clipPlane.GetIsInterior())
         outValue["interior"] = true;
@@ -212,45 +213,45 @@ static void ClipPlaneToJson (JsonValueR outValue, ClipPlaneCR clipPlane)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson     02/14
 //---------------------------------------------------------------------------------------
-static ClipPlane ClipPlaneFromJson (JsonValueCR inValue)
+static ClipPlane ClipPlaneFromJson(JsonValueCR inValue)
     {
     ClipPlane clipPlane;
-    DVec3dFromJson (clipPlane.m_normal, inValue["normal"]);
-    clipPlane.m_distance = GetDouble (inValue["distance"], 0.0);
-    bool invisible = inValue.isMember ("invisible");
-    bool interior = inValue.isMember ("interior");
-    clipPlane.SetFlags (invisible, interior);
+    DVec3dFromJson(clipPlane.m_normal, inValue["normal"]);
+    clipPlane.m_distance = GetDouble(inValue["distance"], 0.0);
+    bool invisible = inValue.isMember("invisible");
+    bool interior = inValue.isMember("interior");
+    clipPlane.SetFlags(invisible, interior);
     return clipPlane;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson     02/14
 //---------------------------------------------------------------------------------------
-static void ClipPlanesToJson (JsonValueR outValue, T_ClipPlanes const& planes)
+static void ClipPlanesToJson(JsonValueR outValue, T_ClipPlanes const& planes)
     {
     for (size_t i=0; i<planes.size(); ++i)
         {
-        ClipPlaneToJson (outValue[(Json::ArrayIndex)i], planes[i]);
+        ClipPlaneToJson(outValue[(Json::ArrayIndex)i], planes[i]);
         }
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson     02/14
 //---------------------------------------------------------------------------------------
-static void ClipPlanesFromJson (T_ClipPlanes& planes, JsonValueCR inValue)
+static void ClipPlanesFromJson(T_ClipPlanes& planes, JsonValueCR inValue)
     {
     if (!inValue.isArray())
         return;
     for (Json::ArrayIndex i=0; i<inValue.size(); ++i)
         {
-        planes.push_back (ClipPlaneFromJson (inValue[(int)i]));
+        planes.push_back(ClipPlaneFromJson(inValue[(int)i]));
         }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.wilson      3/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void ClipVectorToJson (Json::Value& val, ClipVector const& clipVector)
+static void ClipVectorToJson(Json::Value& val, ClipVector const& clipVector)
     {
     Json::ArrayIndex i = 0;
     for (auto clipPrimitive : clipVector)
@@ -265,7 +266,7 @@ static void ClipVectorToJson (Json::Value& val, ClipVector const& clipVector)
             Json::ArrayIndex j = 0;
             for (auto convexSet : *clipPlaneSet)
                 {
-                JsonUtils::ClipPlanesToJson (clipPrimitiveJson[j++], convexSet);
+                JsonUtils::ClipPlanesToJson(clipPrimitiveJson[j++], convexSet);
                 }
             }
         }
@@ -274,7 +275,7 @@ static void ClipVectorToJson (Json::Value& val, ClipVector const& clipVector)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.wilson      3/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void ClipVectorFromJson (ClipVector& clipVector, Json::Value const& val)
+static void ClipVectorFromJson(ClipVector& clipVector, Json::Value const& val)
     {
     for (Json::ArrayIndex i = 0; i < val.size(); ++i)
         {
@@ -284,42 +285,42 @@ static void ClipVectorFromJson (ClipVector& clipVector, Json::Value const& val)
         for (Json::ArrayIndex j = 0; j < clipPrimitiveJson.size(); ++j)
             {
             ConvexClipPlaneSet convexSet;
-            JsonUtils::ClipPlanesFromJson (convexSet, clipPrimitiveJson[j]);
-            clipPlaneSet.push_back (convexSet);
+            JsonUtils::ClipPlanesFromJson(convexSet, clipPrimitiveJson[j]);
+            clipPlaneSet.push_back(convexSet);
             }
 
-        clipVector.push_back (ClipPrimitive::CreateFromClipPlanes (clipPlaneSet));
+        clipVector.push_back(ClipPrimitive::CreateFromClipPlanes(clipPlaneSet));
         }
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     09/12
 //---------------------------------------------------------------------------------------
-static double GetDouble (JsonValueCR inValue, double defaultValue) {return inValue.isNull() ? defaultValue : inValue.asDouble();}
+static double GetDouble(JsonValueCR inValue, double defaultValue) {return inValue.isNull() ? defaultValue : inValue.asDouble();}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson     02/14
 //---------------------------------------------------------------------------------------
-static void DPoint3dVectorToJson (JsonValueR outValue, bvector<DPoint3d> const& points)
+static void DPoint3dVectorToJson(JsonValueR outValue, bvector<DPoint3d> const& points)
     {
     for (size_t i=0; i<points.size(); ++i)
         {
-        DPoint3dToJson (outValue[(Json::ArrayIndex)i], points[i]);
+        DPoint3dToJson(outValue[(Json::ArrayIndex)i], points[i]);
         }
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson     02/14
 //---------------------------------------------------------------------------------------
-static void DPoint3dVectorFromJson (bvector<DPoint3d>& points, JsonValueCR inValue)
+static void DPoint3dVectorFromJson(bvector<DPoint3d>& points, JsonValueCR inValue)
     {
     if (!inValue.isArray())
         return;
     for (Json::ArrayIndex i=0; i<inValue.size(); ++i)
         {
         DPoint3d pt;
-        DPoint3dFromJson (pt, inValue[(int)i]);
-        points.push_back (pt);
+        DPoint3dFromJson(pt, inValue[(int)i]);
+        points.push_back(pt);
         }
     }
 };
