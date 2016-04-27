@@ -66,7 +66,7 @@ CWSCC_EXPORT CALLSTATUS ConnectWebServicesClientC_DataBufferGetStringProperty
 (
 CWSCCDATABUFHANDLE dataBuffer,
 int16_t bufferProperty,
-int16_t index,
+uint32_t index,
 WCharP str,
 uint32_t strLength
 )
@@ -104,7 +104,7 @@ CWSCC_EXPORT CALLSTATUS ConnectWebServicesClientC_DataBufferGetStringLength
 (
 CWSCCDATABUFHANDLE dataBuffer,
 int16_t bufferProperty,
-int16_t index,
+uint32_t index,
 size_t* outStringSize
 )
     {
@@ -141,7 +141,7 @@ CWSCC_EXPORT CALLSTATUS ConnectWebServicesClientC_DataBufferGetGuidProperty
 (
 CWSCCDATABUFHANDLE dataBuffer,
 int16_t bufferProperty,
-int16_t index,
+uint32_t index,
 WCharP guid
 )
     {
@@ -168,7 +168,7 @@ CWSCC_EXPORT CALLSTATUS ConnectWebServicesClientC_DataBufferGetBooleanProperty
 (
 CWSCCDATABUFHANDLE dataBuffer,
 int16_t bufferProperty,
-int16_t index,
+uint32_t index,
 bool* boolean
 )
     {
@@ -199,7 +199,7 @@ CWSCC_EXPORT CALLSTATUS ConnectWebServicesClientC_DataBufferGetIntProperty
 (
 CWSCCDATABUFHANDLE dataBuffer,
 int16_t bufferProperty,
-int16_t index,
+uint32_t index,
 int32_t* integer
 )
     {
@@ -230,7 +230,7 @@ CWSCC_EXPORT CALLSTATUS ConnectWebServicesClientC_DataBufferGetDoubleProperty
 (
 CWSCCDATABUFHANDLE dataBuffer,
 int16_t bufferProperty,
-int16_t index,
+uint32_t index,
 double* pDouble
 )
     {
@@ -261,7 +261,7 @@ CWSCC_EXPORT CALLSTATUS ConnectWebServicesClientC_DataBufferGetLongProperty
 (
 CWSCCDATABUFHANDLE dataBuffer,
 int16_t bufferProperty,
-int16_t index,
+uint32_t index,
 int64_t* pLong
 )
     {

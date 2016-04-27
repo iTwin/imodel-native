@@ -176,7 +176,7 @@ class CBufferSourceWriter(SourceWriter):
         accessor_str += "(\n"
         accessor_str += "{0}DATABUFHANDLE dataBuffer,\n".format(self._api.get_upper_api_acronym())
         accessor_str += "int16_t bufferProperty,\n"
-        accessor_str += "int16_t index,\n"
+        accessor_str += "uint32_t index,\n"
         if property_type == "string":
             accessor_str += "WCharP str,\n"
             accessor_str += "uint32_t strLength\n"
