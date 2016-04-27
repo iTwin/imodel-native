@@ -8,8 +8,6 @@
 #ifndef __CWSCINTERNAL_H__
 #define __CWSCINTERNAL_H__
 
-#pragma once
-
 #include "WSLocalState.h"
 #include "CWSCCPrivate.h"
 #include "CWSCCGenBuffer.h"

@@ -8,8 +8,8 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
-#include <WebServices\ConnectC\CWSCCGenPublic.h>
-#include <WebServices\ConnectC\CWSCCGenBufferPublic.h>
+#include <WebServices/ConnectC/CWSCCGenPublic.h>
+#include <WebServices/ConnectC/CWSCCGenBufferPublic.h>
 
 /************************************************************************************//**
 * \addtogroup ConnectWebServicesClientCAPIFunctions ConnectWebServicesClientC API Function Declarations
