@@ -295,7 +295,7 @@ uint32_t strLength
     if (buf == nullptr || bufferProperty == 0 || str == nullptr || strLength == 0)
         return CALLSTATUS {INVALID_PARAMETER, "Invalid parameter passed to function", "An invalid buffer pointer or invalid property pointer was passed into the get property function."};
 
-    if(index < 0 || index >= buf->lCount)
+    if(index >= buf->lCount)
         return CALLSTATUS {INVALID_PARAMETER, "Invalid parameter passed to function", "The index parameter passed into the get property function is out of bounds."};
 
     LPCWSCCCONNECTUSERBUFFER connectuserBuf = (LPCWSCCCONNECTUSERBUFFER) buf->lpItems;
@@ -357,7 +357,7 @@ uint32_t strLength
     if (buf == nullptr || bufferProperty == 0 || str == nullptr || strLength == 0)
         return CALLSTATUS {INVALID_PARAMETER, "Invalid parameter passed to function", "An invalid buffer pointer or invalid property pointer was passed into the get property function."};
 
-    if(index < 0 || index >= buf->lCount)
+    if(index >= buf->lCount)
         return CALLSTATUS {INVALID_PARAMETER, "Invalid parameter passed to function", "The index parameter passed into the get property function is out of bounds."};
 
     LPCWSCCORGANIZATIONBUFFER organizationBuf = (LPCWSCCORGANIZATIONBUFFER) buf->lpItems;
@@ -392,7 +392,7 @@ uint32_t strLength
     if (buf == nullptr || bufferProperty == 0 || str == nullptr || strLength == 0)
         return CALLSTATUS {INVALID_PARAMETER, "Invalid parameter passed to function", "An invalid buffer pointer or invalid property pointer was passed into the get property function."};
 
-    if(index < 0 || index >= buf->lCount)
+    if(index >= buf->lCount)
         return CALLSTATUS {INVALID_PARAMETER, "Invalid parameter passed to function", "The index parameter passed into the get property function is out of bounds."};
 
     LPCWSCCPROJECTBUFFER projectBuf = (LPCWSCCPROJECTBUFFER) buf->lpItems;
@@ -535,7 +535,7 @@ uint32_t strLength
     if (buf == nullptr || bufferProperty == 0 || str == nullptr || strLength == 0)
         return CALLSTATUS {INVALID_PARAMETER, "Invalid parameter passed to function", "An invalid buffer pointer or invalid property pointer was passed into the get property function."};
 
-    if(index < 0 || index >= buf->lCount)
+    if(index >= buf->lCount)
         return CALLSTATUS {INVALID_PARAMETER, "Invalid parameter passed to function", "The index parameter passed into the get property function is out of bounds."};
 
     LPCWSCCPROJECTFAVORITEBUFFER projectfavoriteBuf = (LPCWSCCPROJECTFAVORITEBUFFER) buf->lpItems;
@@ -651,7 +651,7 @@ uint32_t strLength
     if (buf == nullptr || bufferProperty == 0 || str == nullptr || strLength == 0)
         return CALLSTATUS {INVALID_PARAMETER, "Invalid parameter passed to function", "An invalid buffer pointer or invalid property pointer was passed into the get property function."};
 
-    if(index < 0 || index >= buf->lCount)
+    if(index >= buf->lCount)
         return CALLSTATUS {INVALID_PARAMETER, "Invalid parameter passed to function", "The index parameter passed into the get property function is out of bounds."};
 
     LPCWSCCPROJECTMRUBUFFER projectmruBuf = (LPCWSCCPROJECTMRUBUFFER) buf->lpItems;
@@ -704,7 +704,7 @@ uint32_t strLength
     if (buf == nullptr || bufferProperty == 0 || str == nullptr || strLength == 0)
         return CALLSTATUS {INVALID_PARAMETER, "Invalid parameter passed to function", "An invalid buffer pointer or invalid property pointer was passed into the get property function."};
 
-    if(index < 0 || index >= buf->lCount)
+    if(index >= buf->lCount)
         return CALLSTATUS {INVALID_PARAMETER, "Invalid parameter passed to function", "The index parameter passed into the get property function is out of bounds."};
 
     LPCWSCCPROJECTMRUDETAILBUFFER projectmrudetailBuf = (LPCWSCCPROJECTMRUDETAILBUFFER) buf->lpItems;
@@ -847,7 +847,7 @@ uint32_t strLength
     if (buf == nullptr || bufferProperty == 0 || str == nullptr || strLength == 0)
         return CALLSTATUS {INVALID_PARAMETER, "Invalid parameter passed to function", "An invalid buffer pointer or invalid property pointer was passed into the get property function."};
 
-    if(index < 0 || index >= buf->lCount)
+    if(index >= buf->lCount)
         return CALLSTATUS {INVALID_PARAMETER, "Invalid parameter passed to function", "The index parameter passed into the get property function is out of bounds."};
 
     LPCWSCCPROJECTTEMPLATEBUFFER projecttemplateBuf = (LPCWSCCPROJECTTEMPLATEBUFFER) buf->lpItems;
@@ -981,7 +981,7 @@ size_t* outStringSize
     if (buf == nullptr || bufferProperty == 0 || outStringSize == nullptr)
         return CALLSTATUS {INVALID_PARAMETER, "Invalid parameter passed to function", "An invalid buffer pointer or invalid property pointer was passed into the get property function."};
 
-    if(index < 0 || index >= buf->lCount)
+    if(index >= buf->lCount)
         return CALLSTATUS {INVALID_PARAMETER, "Invalid parameter passed to function", "The index parameter passed into the get property function is out of bounds."};
 
     LPCWSCCCONNECTUSERBUFFER connectuserBuf = (LPCWSCCCONNECTUSERBUFFER) buf->lpItems;
@@ -1042,7 +1042,7 @@ size_t* outStringSize
     if (buf == nullptr || bufferProperty == 0 || outStringSize == nullptr)
         return CALLSTATUS {INVALID_PARAMETER, "Invalid parameter passed to function", "An invalid buffer pointer or invalid property pointer was passed into the get property function."};
 
-    if(index < 0 || index >= buf->lCount)
+    if(index >= buf->lCount)
         return CALLSTATUS {INVALID_PARAMETER, "Invalid parameter passed to function", "The index parameter passed into the get property function is out of bounds."};
 
     LPCWSCCORGANIZATIONBUFFER organizationBuf = (LPCWSCCORGANIZATIONBUFFER) buf->lpItems;
@@ -1076,7 +1076,7 @@ size_t* outStringSize
     if (buf == nullptr || bufferProperty == 0 || outStringSize == nullptr)
         return CALLSTATUS {INVALID_PARAMETER, "Invalid parameter passed to function", "An invalid buffer pointer or invalid property pointer was passed into the get property function."};
 
-    if(index < 0 || index >= buf->lCount)
+    if(index >= buf->lCount)
         return CALLSTATUS {INVALID_PARAMETER, "Invalid parameter passed to function", "The index parameter passed into the get property function is out of bounds."};
 
     LPCWSCCPROJECTBUFFER projectBuf = (LPCWSCCPROJECTBUFFER) buf->lpItems;
@@ -1218,7 +1218,7 @@ size_t* outStringSize
     if (buf == nullptr || bufferProperty == 0 || outStringSize == nullptr)
         return CALLSTATUS {INVALID_PARAMETER, "Invalid parameter passed to function", "An invalid buffer pointer or invalid property pointer was passed into the get property function."};
 
-    if(index < 0 || index >= buf->lCount)
+    if(index >= buf->lCount)
         return CALLSTATUS {INVALID_PARAMETER, "Invalid parameter passed to function", "The index parameter passed into the get property function is out of bounds."};
 
     LPCWSCCPROJECTFAVORITEBUFFER projectfavoriteBuf = (LPCWSCCPROJECTFAVORITEBUFFER) buf->lpItems;
@@ -1333,7 +1333,7 @@ size_t* outStringSize
     if (buf == nullptr || bufferProperty == 0 || outStringSize == nullptr)
         return CALLSTATUS {INVALID_PARAMETER, "Invalid parameter passed to function", "An invalid buffer pointer or invalid property pointer was passed into the get property function."};
 
-    if(index < 0 || index >= buf->lCount)
+    if(index >= buf->lCount)
         return CALLSTATUS {INVALID_PARAMETER, "Invalid parameter passed to function", "The index parameter passed into the get property function is out of bounds."};
 
     LPCWSCCPROJECTMRUBUFFER projectmruBuf = (LPCWSCCPROJECTMRUBUFFER) buf->lpItems;
@@ -1385,7 +1385,7 @@ size_t* outStringSize
     if (buf == nullptr || bufferProperty == 0 || outStringSize == nullptr)
         return CALLSTATUS {INVALID_PARAMETER, "Invalid parameter passed to function", "An invalid buffer pointer or invalid property pointer was passed into the get property function."};
 
-    if(index < 0 || index >= buf->lCount)
+    if(index >= buf->lCount)
         return CALLSTATUS {INVALID_PARAMETER, "Invalid parameter passed to function", "The index parameter passed into the get property function is out of bounds."};
 
     LPCWSCCPROJECTMRUDETAILBUFFER projectmrudetailBuf = (LPCWSCCPROJECTMRUDETAILBUFFER) buf->lpItems;
@@ -1527,7 +1527,7 @@ size_t* outStringSize
     if (buf == nullptr || bufferProperty == 0 || outStringSize == nullptr)
         return CALLSTATUS {INVALID_PARAMETER, "Invalid parameter passed to function", "An invalid buffer pointer or invalid property pointer was passed into the get property function."};
 
-    if(index < 0 || index >= buf->lCount)
+    if(index >= buf->lCount)
         return CALLSTATUS {INVALID_PARAMETER, "Invalid parameter passed to function", "The index parameter passed into the get property function is out of bounds."};
 
     LPCWSCCPROJECTTEMPLATEBUFFER projecttemplateBuf = (LPCWSCCPROJECTTEMPLATEBUFFER) buf->lpItems;
@@ -1661,7 +1661,7 @@ WCharP guid
     if (buf == nullptr || bufferProperty == 0 || guid == nullptr)
         return CALLSTATUS {INVALID_PARAMETER, "Invalid parameter passed to function", "An invalid buffer pointer or invalid property pointer was passed into the get property function."};
 
-    if(index < 0 || index >= buf->lCount)
+    if(index >= buf->lCount)
         return CALLSTATUS {INVALID_PARAMETER, "Invalid parameter passed to function", "The index parameter passed into the get property function is out of bounds."};
 
     LPCWSCCCONNECTUSERBUFFER connectuserBuf = (LPCWSCCCONNECTUSERBUFFER) buf->lpItems;
@@ -1695,7 +1695,7 @@ WCharP guid
     if (buf == nullptr || bufferProperty == 0 || guid == nullptr)
         return CALLSTATUS {INVALID_PARAMETER, "Invalid parameter passed to function", "An invalid buffer pointer or invalid property pointer was passed into the get property function."};
 
-    if(index < 0 || index >= buf->lCount)
+    if(index >= buf->lCount)
         return CALLSTATUS {INVALID_PARAMETER, "Invalid parameter passed to function", "The index parameter passed into the get property function is out of bounds."};
 
     LPCWSCCORGANIZATIONBUFFER organizationBuf = (LPCWSCCORGANIZATIONBUFFER) buf->lpItems;
@@ -1730,7 +1730,7 @@ bool* boolean
     if (buf == nullptr || bufferProperty == 0 || boolean == nullptr)
         return CALLSTATUS {INVALID_PARAMETER, "Invalid parameter passed to function", "An invalid buffer pointer or invalid property pointer was passed into the get property function."};
 
-    if(index < 0 || index >= buf->lCount)
+    if(index >= buf->lCount)
         return CALLSTATUS {INVALID_PARAMETER, "Invalid parameter passed to function", "The index parameter passed into the get property function is out of bounds."};
 
     LPCWSCCPROJECTBUFFER projectBuf = (LPCWSCCPROJECTBUFFER) buf->lpItems;
@@ -1782,7 +1782,7 @@ bool* boolean
     if (buf == nullptr || bufferProperty == 0 || boolean == nullptr)
         return CALLSTATUS {INVALID_PARAMETER, "Invalid parameter passed to function", "An invalid buffer pointer or invalid property pointer was passed into the get property function."};
 
-    if(index < 0 || index >= buf->lCount)
+    if(index >= buf->lCount)
         return CALLSTATUS {INVALID_PARAMETER, "Invalid parameter passed to function", "The index parameter passed into the get property function is out of bounds."};
 
     LPCWSCCPROJECTFAVORITEBUFFER projectfavoriteBuf = (LPCWSCCPROJECTFAVORITEBUFFER) buf->lpItems;
@@ -1834,7 +1834,7 @@ bool* boolean
     if (buf == nullptr || bufferProperty == 0 || boolean == nullptr)
         return CALLSTATUS {INVALID_PARAMETER, "Invalid parameter passed to function", "An invalid buffer pointer or invalid property pointer was passed into the get property function."};
 
-    if(index < 0 || index >= buf->lCount)
+    if(index >= buf->lCount)
         return CALLSTATUS {INVALID_PARAMETER, "Invalid parameter passed to function", "The index parameter passed into the get property function is out of bounds."};
 
     LPCWSCCPROJECTMRUDETAILBUFFER projectmrudetailBuf = (LPCWSCCPROJECTMRUDETAILBUFFER) buf->lpItems;
@@ -1895,7 +1895,7 @@ bool* boolean
     if (buf == nullptr || bufferProperty == 0 || boolean == nullptr)
         return CALLSTATUS {INVALID_PARAMETER, "Invalid parameter passed to function", "An invalid buffer pointer or invalid property pointer was passed into the get property function."};
 
-    if(index < 0 || index >= buf->lCount)
+    if(index >= buf->lCount)
         return CALLSTATUS {INVALID_PARAMETER, "Invalid parameter passed to function", "The index parameter passed into the get property function is out of bounds."};
 
     LPCWSCCPROJECTTEMPLATEBUFFER projecttemplateBuf = (LPCWSCCPROJECTTEMPLATEBUFFER) buf->lpItems;
@@ -1948,7 +1948,7 @@ int32_t* integer
     if (buf == nullptr || bufferProperty == 0 || integer == nullptr)
         return CALLSTATUS {INVALID_PARAMETER, "Invalid parameter passed to function", "An invalid buffer pointer or invalid property pointer was passed into the get property function."};
 
-    if(index < 0 || index >= buf->lCount)
+    if(index >= buf->lCount)
         return CALLSTATUS {INVALID_PARAMETER, "Invalid parameter passed to function", "The index parameter passed into the get property function is out of bounds."};
 
     LPCWSCCPROJECTBUFFER projectBuf = (LPCWSCCPROJECTBUFFER) buf->lpItems;
@@ -1982,7 +1982,7 @@ int32_t* integer
     if (buf == nullptr || bufferProperty == 0 || integer == nullptr)
         return CALLSTATUS {INVALID_PARAMETER, "Invalid parameter passed to function", "An invalid buffer pointer or invalid property pointer was passed into the get property function."};
 
-    if(index < 0 || index >= buf->lCount)
+    if(index >= buf->lCount)
         return CALLSTATUS {INVALID_PARAMETER, "Invalid parameter passed to function", "The index parameter passed into the get property function is out of bounds."};
 
     LPCWSCCPROJECTFAVORITEBUFFER projectfavoriteBuf = (LPCWSCCPROJECTFAVORITEBUFFER) buf->lpItems;
@@ -2016,7 +2016,7 @@ int32_t* integer
     if (buf == nullptr || bufferProperty == 0 || integer == nullptr)
         return CALLSTATUS {INVALID_PARAMETER, "Invalid parameter passed to function", "An invalid buffer pointer or invalid property pointer was passed into the get property function."};
 
-    if(index < 0 || index >= buf->lCount)
+    if(index >= buf->lCount)
         return CALLSTATUS {INVALID_PARAMETER, "Invalid parameter passed to function", "The index parameter passed into the get property function is out of bounds."};
 
     LPCWSCCPROJECTMRUDETAILBUFFER projectmrudetailBuf = (LPCWSCCPROJECTMRUDETAILBUFFER) buf->lpItems;
@@ -2050,7 +2050,7 @@ int32_t* integer
     if (buf == nullptr || bufferProperty == 0 || integer == nullptr)
         return CALLSTATUS {INVALID_PARAMETER, "Invalid parameter passed to function", "An invalid buffer pointer or invalid property pointer was passed into the get property function."};
 
-    if(index < 0 || index >= buf->lCount)
+    if(index >= buf->lCount)
         return CALLSTATUS {INVALID_PARAMETER, "Invalid parameter passed to function", "The index parameter passed into the get property function is out of bounds."};
 
     LPCWSCCPROJECTTEMPLATEBUFFER projecttemplateBuf = (LPCWSCCPROJECTTEMPLATEBUFFER) buf->lpItems;
@@ -2085,7 +2085,7 @@ double* pDouble
     if (buf == nullptr || bufferProperty == 0 || pDouble == nullptr)
         return CALLSTATUS {INVALID_PARAMETER, "Invalid parameter passed to function", "An invalid buffer pointer or invalid property pointer was passed into the get property function."};
 
-    if(index < 0 || index >= buf->lCount)
+    if(index >= buf->lCount)
         return CALLSTATUS {INVALID_PARAMETER, "Invalid parameter passed to function", "The index parameter passed into the get property function is out of bounds."};
 
     LPCWSCCPROJECTBUFFER projectBuf = (LPCWSCCPROJECTBUFFER) buf->lpItems;
@@ -2128,7 +2128,7 @@ double* pDouble
     if (buf == nullptr || bufferProperty == 0 || pDouble == nullptr)
         return CALLSTATUS {INVALID_PARAMETER, "Invalid parameter passed to function", "An invalid buffer pointer or invalid property pointer was passed into the get property function."};
 
-    if(index < 0 || index >= buf->lCount)
+    if(index >= buf->lCount)
         return CALLSTATUS {INVALID_PARAMETER, "Invalid parameter passed to function", "The index parameter passed into the get property function is out of bounds."};
 
     LPCWSCCPROJECTFAVORITEBUFFER projectfavoriteBuf = (LPCWSCCPROJECTFAVORITEBUFFER) buf->lpItems;
@@ -2171,7 +2171,7 @@ double* pDouble
     if (buf == nullptr || bufferProperty == 0 || pDouble == nullptr)
         return CALLSTATUS {INVALID_PARAMETER, "Invalid parameter passed to function", "An invalid buffer pointer or invalid property pointer was passed into the get property function."};
 
-    if(index < 0 || index >= buf->lCount)
+    if(index >= buf->lCount)
         return CALLSTATUS {INVALID_PARAMETER, "Invalid parameter passed to function", "The index parameter passed into the get property function is out of bounds."};
 
     LPCWSCCPROJECTMRUDETAILBUFFER projectmrudetailBuf = (LPCWSCCPROJECTMRUDETAILBUFFER) buf->lpItems;
@@ -2214,7 +2214,7 @@ double* pDouble
     if (buf == nullptr || bufferProperty == 0 || pDouble == nullptr)
         return CALLSTATUS {INVALID_PARAMETER, "Invalid parameter passed to function", "An invalid buffer pointer or invalid property pointer was passed into the get property function."};
 
-    if(index < 0 || index >= buf->lCount)
+    if(index >= buf->lCount)
         return CALLSTATUS {INVALID_PARAMETER, "Invalid parameter passed to function", "The index parameter passed into the get property function is out of bounds."};
 
     LPCWSCCPROJECTTEMPLATEBUFFER projecttemplateBuf = (LPCWSCCPROJECTTEMPLATEBUFFER) buf->lpItems;
@@ -2258,7 +2258,7 @@ int64_t* pLong
     if (buf == nullptr || bufferProperty == 0 || pLong == nullptr)
         return CALLSTATUS {INVALID_PARAMETER, "Invalid parameter passed to function", "An invalid buffer pointer or invalid property pointer was passed into the get property function."};
 
-    if(index < 0 || index >= buf->lCount)
+    if(index >= buf->lCount)
         return CALLSTATUS {INVALID_PARAMETER, "Invalid parameter passed to function", "The index parameter passed into the get property function is out of bounds."};
 
     LPCWSCCPROJECTMRUDETAILBUFFER projectmrudetailBuf = (LPCWSCCPROJECTMRUDETAILBUFFER) buf->lpItems;
