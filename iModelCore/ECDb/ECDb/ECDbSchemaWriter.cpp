@@ -268,7 +268,12 @@ BentleyStatus ECDbSchemaWriter::UpdateECProperty(ECPropertyChange& propertyChang
         }
     if (propertyChange.IsNavigation().IsValid())
         {
-        return Fail("ECSCHEMA-UPGRADE: Changing ECProperty::IsNavigation is not supported. Failed on ECProperty %s.%s.",
+        return Fail("ECSCHEMA-UPGRADE: Changing ECProperty::ExtendedTypeName is not supported. Failed on ECProperty %s.%s.",
+                    oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
+        }
+    if (propertyChange.IsReadonly().IsValid())
+        {
+        return Fail("ECSCHEMA-UPGRADE: Changing ECProperty::ExtendedTypeName is not supported. Failed on ECProperty %s.%s.",
                     oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
         }
     if (propertyChange.GetArray().IsValid())
@@ -291,10 +296,6 @@ BentleyStatus ECDbSchemaWriter::UpdateECProperty(ECPropertyChange& propertyChang
 
         if (navigationChange.Direction().IsValid())
             return Fail("ECSCHEMA-UPGRADE: Changing ECProperty::Navigation.Direction is not supported. Failed on ECProperty %s.%s.",
-                        oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
-
-        if (navigationChange.GetRelationshipClassName().IsValid())
-            return Fail("ECSCHEMA-UPGRADE: Changing ECProperty::Navigation.RelationshipClassName is not supported. Failed on ECProperty %s.%s.",
                         oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
         }
     if (propertyChange.GetName().IsValid())

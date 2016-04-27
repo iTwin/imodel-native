@@ -414,6 +414,31 @@ TEST_F(ECDbSchemaUpgradeTests, UpdateCAProperties)
     ASSERT_EQ(ECObjectsStatus::Success, propertyMapCA->GetValue(val, "ColumnName"));
     ASSERT_STREQ("TestProperty1", val.GetUtf8CP());
     }
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                   AFfan Khan                     03/16
+    //+---------------+---------------+---------------+---------------+---------------+------
+    TEST_F(ECDbSchemaUpgradeTests, SqlSchemaChangeIsNotSupportedOnClientBriefcase)
+        {
+        SchemaItem schemaItem(
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+            "</ECSchema>");
+
+        SetupECDb("schemaupgrade.ecdb", schemaItem);
+        ASSERT_TRUE(GetECDb().IsDbOpen());
+        ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+        BeBriefcaseId newClientSideBriefcaseId = GetECDb().GetBriefcaseId().GetNextBriefcaseId();
+        GetECDb().ChangeBriefcaseId(newClientSideBriefcaseId);
+        //Upgrade with some attributes and import schema
+        SchemaItem editedSchemaItem(
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+            "   <ECEntityClass typeName='TestClass' displayLabel='Test Class' description='This is test Class' modifier='None' />"
+            "</ECSchema>", false);
+        bool asserted = false;
+        AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
+        ASSERT_FALSE(asserted);
+        }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     03/16

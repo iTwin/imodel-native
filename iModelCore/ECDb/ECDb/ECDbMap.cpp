@@ -773,6 +773,13 @@ BentleyStatus ECDbMap::CreateOrUpdateRequiredTables() const
             {
             if (DbSchemaPersistenceManager::IsTableChanged(m_ecdb, *table))
                 {
+                if(!m_ecdb.GetBriefcaseId().IsMasterId())
+                    {
+                    m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Any change to sqlite database schema (excluding constraints) is only allowed for client side breifcase [BriefcaseId = %d].",
+                                                                    m_ecdb.GetBriefcaseId().GetValue());
+                    return ERROR;
+                    }
+
                 if (DbSchemaPersistenceManager::CreateOrUpdateTable(m_ecdb, *table) != SUCCESS)
                     return ERROR;
 
@@ -783,6 +790,13 @@ BentleyStatus ECDbMap::CreateOrUpdateRequiredTables() const
             }
         else
             {
+            if (!m_ecdb.GetBriefcaseId().IsMasterId())
+                {
+                m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Any change to sqlite database schema (excluding constraints) is only allowed for client side breifcase [BriefcaseId = %d].",
+                                                                m_ecdb.GetBriefcaseId().GetValue());
+                return ERROR;
+                }
+
             if (DbSchemaPersistenceManager::CreateTable(m_ecdb, *table) != SUCCESS)
                 return ERROR;
 
