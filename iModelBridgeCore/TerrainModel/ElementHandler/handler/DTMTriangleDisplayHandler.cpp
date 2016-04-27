@@ -404,7 +404,17 @@ struct DTMStrokeForCacheShadedTriangles : IDTMStrokeForCache
                     }
                 else if (m_doRegions)   //Display all regions
                     {
-                    bcDTM->BrowseFeatures(DTMFeatureType::Region, DTMFenceParams(fenceType, DTMFenceOption::Overlap, (DPoint3d*)fencePts, nbPts), 10000, this, LoadFunc);
+                    DTMFenceParams fence(fenceType, DTMFenceOption::Overlap, (DPoint3d*)fencePts, nbPts);
+                    DTMMeshEnumeratorPtr en = DTMMeshEnumerator::Create(*bcDTM);
+                    en->SetFence(fence);
+                    en->SetMaxTriangles(126000 / 3);
+                    en->SetExcludeAllRegions();
+                    en->SetFilterRegionByUserTag(m_tag);
+                    for (PolyfaceQueryP info : *en)
+                        {
+                        context.GetIDrawGeom().DrawPolyface(*info);
+                        m_nbPointsDrawn += (int)info->GetPointCount();
+                        }
                     }
                 else
                     {

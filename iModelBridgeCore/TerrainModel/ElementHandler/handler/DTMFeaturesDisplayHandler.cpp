@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/handler/DTMFeaturesDisplayHandler.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <stdafx.h>
@@ -85,7 +85,7 @@ public:
             DTMFeatureType typeMap[] =
                 {
                 DTMFeatureType::Breakline,
-                DTMFeatureType::Region,
+                DTMFeatureType::Hole,
                 DTMFeatureType::Island,
                 DTMFeatureType::Void,
                 DTMFeatureType::Hull,
