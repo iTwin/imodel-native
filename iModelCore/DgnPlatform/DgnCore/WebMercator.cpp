@@ -1121,14 +1121,15 @@ void WebMercatorModel::_ReadJsonProperties(Json::Value const& val)
 +---------------+---------------+---------------+---------------+---------------+------*/
 RealityDataCache& WebMercatorModel::GetRealityDataCache() const
     {
-    if (m_realityDataCache.IsNull())
+    if (!m_realityDataCache.IsValid())
         {
-        RealityDataCachePtr cache = RealityDataCache::Create(100);
+        m_realityDataCache = RealityDataCache::Create(100);
         BeFileName storageFileName = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName();
         storageFileName.AppendToPath(WString(m_properties.m_mapService.c_str(), true).c_str());
-        cache->RegisterStorage(*BeSQLiteRealityDataStorage::Create(storageFileName));
-        cache->RegisterSource(*HttpRealityDataSource::Create(8));
+        m_realityDataCache->RegisterStorage(*BeSQLiteRealityDataStorage::Create(storageFileName));
+        m_realityDataCache->RegisterSource(*HttpRealityDataSource::Create(8));
         }
+
     return *m_realityDataCache;
     }
 
