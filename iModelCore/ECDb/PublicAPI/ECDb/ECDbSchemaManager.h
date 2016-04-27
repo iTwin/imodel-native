@@ -198,7 +198,7 @@ typedef ECDbSchemaManager const& ECDbSchemaManagerCR;
 
 #if !defined (DOCUMENTATION_GENERATOR)
 //=======================================================================================
-//! Unpublished helper that provide map information
+//! Helper that provide map information
 //=======================================================================================
 struct ECDbMapDebugInfo
     {

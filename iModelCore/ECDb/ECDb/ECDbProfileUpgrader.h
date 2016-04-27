@@ -58,6 +58,16 @@ public:
 //=======================================================================================
 // @bsiclass                                                 Krischan.Eberle      04/2016
 //+===============+===============+===============+===============+===============+======
+struct ECDbProfileUpgrader_3500 : ECDbProfileUpgrader
+    {
+    //intentionally use compiler generated ctor, dtor, copy ctor and copy assignment op
+    private:
+        virtual DbResult _Upgrade(ECDbR) const override;
+    };
+
+//=======================================================================================
+// @bsiclass                                                 Krischan.Eberle      04/2016
+//+===============+===============+===============+===============+===============+======
 struct ECDbProfileUpgrader_3400 : ECDbProfileUpgrader
     {
 //intentionally use compiler generated ctor, dtor, copy ctor and copy assignment op

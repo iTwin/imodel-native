@@ -14,9 +14,9 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      03/2013
 //---------------------------------------------------------------------------------------
-BentleyStatus ECSqlParseTreeFormatter::ParseAndFormatECSqlParseNodeTree (Utf8StringR parseNodeTreeString, ECDbCR ecdb, Utf8CP ecsql)
+BentleyStatus ECSqlParseTreeFormatter::ParseAndFormatECSqlParseNodeTree(Utf8StringR parseNodeTreeString, ECDbCR ecdb, Utf8CP ecsql)
     {
-    if (Utf8String::IsNullOrEmpty (ecsql))
+    if (Utf8String::IsNullOrEmpty(ecsql))
         return ERROR;
 
     OSQLParser parser(com::sun::star::lang::XMultiServiceFactory::CreateInstance());
@@ -34,12 +34,12 @@ BentleyStatus ECSqlParseTreeFormatter::ParseAndFormatECSqlParseNodeTree (Utf8Str
     return SUCCESS;
     }
 
-void GenerateExpTree (Utf8StringR expTree, Exp const& exp, int indentLevel);
+void GenerateExpTree(Json::Value& expTree, Exp const& exp);
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      03/2013
 //---------------------------------------------------------------------------------------
-BentleyStatus ECSqlParseTreeFormatter::ParseAndFormatECSqlExpTree(Utf8StringR expTree, Utf8StringR expTreeToECSql, ECDbCR ecdb, Utf8CP ecsql)
+BentleyStatus ECSqlParseTreeFormatter::ParseAndFormatECSqlExpTree(Json::Value& expTree, Utf8StringR ecsqlFromExpTree, ECDbCR ecdb, Utf8CP ecsql)
     {
     if (Utf8String::IsNullOrEmpty(ecsql))
         return ERROR;
@@ -49,26 +49,29 @@ BentleyStatus ECSqlParseTreeFormatter::ParseAndFormatECSqlExpTree(Utf8StringR ex
     if (exp == nullptr)
         return ERROR;
 
-    expTreeToECSql = exp->ToECSql();
-    GenerateExpTree(expTree, *exp, 0);
+    ecsqlFromExpTree = exp->ToECSql();
+    GenerateExpTree(expTree, *exp);
     return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
-void GenerateExpTree (Utf8StringR expTree, Exp const& exp, int indentLevel)
+void GenerateExpTree(Json::Value& expTree, Exp const& exp)
     {
-    for (int i = 0; i < indentLevel; i++)
-        expTree.append ("   ");
-    
-    expTree.append (exp.ToString ().c_str ()).append ("\r\n");
+    expTree = Json::Value(Json::objectValue);
+    expTree["Exp"] = Json::Value(exp.ToString());
 
-    indentLevel++;
-    for (Exp const* child : exp.GetChildren ())
+    if (exp.GetChildrenCount() == 0)
+        return;
+
+    Json::Value& children = expTree["Children"] = Json::Value(Json::arrayValue);
+    for (Exp const* childExp : exp.GetChildren())
         {
-        BeAssert(child != nullptr);
-        GenerateExpTree (expTree, *child, indentLevel);
+        BeAssert(childExp != nullptr);
+        Json::Value child;
+        GenerateExpTree(child, *childExp);
+        children.append(child);
         }
     }
 

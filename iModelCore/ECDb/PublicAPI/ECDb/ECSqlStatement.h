@@ -12,6 +12,8 @@
 #include <ECDb/IECSqlBinder.h>
 #include <ECDb/ECInstanceId.h>
 #include <list>
+#include <json/json.h>
+
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //=======================================================================================
@@ -500,7 +502,7 @@ public:
 
 #if !defined (DOCUMENTATION_GENERATOR)
 //=======================================================================================
-//! Unpublished helper that parses an ECSQL and formats the result to a string.
+//! Helper that parses an ECSQL and formats the result to a string.
 //=======================================================================================
 struct ECSqlParseTreeFormatter
     {
@@ -510,7 +512,14 @@ private:
 
 public:
     ECDB_EXPORT static BentleyStatus ParseAndFormatECSqlParseNodeTree(Utf8StringR parseNodeTree, ECDbCR, Utf8CP ecsql);
-    ECDB_EXPORT static BentleyStatus ParseAndFormatECSqlExpTree(Utf8StringR expTree, Utf8StringR expTreeToECSql, ECDbCR, Utf8CP ecsql);
+    //!@param[out] expTree Expression tree as JSON value of this format:
+    //!                    {"Exp":"<exp as string>",
+    //!                     "Children": [{"Exp":"<exp as string>",
+    //!                                   "Children": [....]},
+    //!                                   {"Exp":"<exp as string>",
+    //!                                   "Children": [....]},
+    //!                                   ...]}
+    ECDB_EXPORT static BentleyStatus ParseAndFormatECSqlExpTree(Json::Value& expTree, Utf8StringR ecsqlFromExpTree, ECDbCR, Utf8CP ecsql);
     };
 
 #endif

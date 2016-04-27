@@ -15,6 +15,90 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle        04/2016
 //+---------------+---------------+---------------+---------------+---------------+--------
+DbResult ECDbProfileUpgrader_3500::_Upgrade(ECDbR ecdb) const
+    {
+    Statement stmt;
+    if (BE_SQLITE_OK != stmt.Prepare(ecdb, "SELECT Id, EnumValues FROM ec_Enumeration"))
+        {
+        LOG.errorv("ECDb profile upgrade failed: Updating JSON format in column 'EnumValues' of table 'ec_Enumeration' failed: %s", ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    //Old: [ [1,"Foo"], [2,"Goo"] ]
+    //New: [ {"IntValue":1, "DisplayLabel":"Foo"}, {"IntValue":2, "DisplayLabel":"Goo"}]
+
+    std::vector<std::pair<ECEnumerationId, Utf8String>> newValues;
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        ECEnumerationId id = stmt.GetValueId<ECEnumerationId>(0);
+        Json::Value newJson;
+        Utf8CP oldJsonStr = stmt.GetValueText(1);
+        Json::Value oldJson;
+        Json::Reader reader;
+        if (!reader.Parse(oldJsonStr, oldJson, false))
+            {
+            LOG.errorv("ECDb profile upgrade failed: Updating JSON format in column 'EnumValues' of table 'ec_Enumeration' failed: %s", ecdb.GetLastError().c_str());
+            return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+            }
+
+        BeAssert(oldJson.isArray());
+        for (JsonValueCR oldArrayElement : oldJson)
+            {
+            BeAssert(oldArrayElement.isArray());
+
+            Json::Value newArrayElement;
+
+            JsonValueCR oldVal = oldArrayElement[0];
+            if (oldVal.isInt())
+                newArrayElement[METASCHEMA_ECENUMERATOR_PROPERTY_IntValue] = oldVal;
+            else if (oldVal.isString())
+                newArrayElement[METASCHEMA_ECENUMERATOR_PROPERTY_StringValue] = oldVal;
+            else
+                {
+                LOG.errorv("ECDb profile upgrade failed: Updating JSON format in column 'EnumValues' of table 'ec_Enumeration' failed: %s", ecdb.GetLastError().c_str());
+                return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+                }
+
+            const Json::ArrayIndex size = oldArrayElement.size();
+            if (size == 2)
+                newArrayElement[METASCHEMA_ECENUMERATOR_PROPERTY_DisplayLabel] = oldArrayElement[1];
+
+            newJson.append(newArrayElement);
+            }
+
+        Json::FastWriter writer;
+        newValues.push_back(std::make_pair(id, writer.write(newJson)));
+        }
+
+    stmt.Finalize();
+
+    if (BE_SQLITE_OK != stmt.Prepare(ecdb, "UPDATE ec_Enumeration SET EnumValues=? WHERE Id=?"))
+        {
+        LOG.errorv("ECDb profile upgrade failed: Updating JSON format in column 'EnumValues' of table 'ec_Enumeration' failed: %s", ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    for (std::pair<ECEnumerationId, Utf8String> const& newValue : newValues)
+        {
+        if (BE_SQLITE_OK != stmt.BindText(1, newValue.second.c_str(), Statement::MakeCopy::No) ||
+            BE_SQLITE_OK != stmt.BindId(2, newValue.first) ||
+            BE_SQLITE_DONE != stmt.Step())
+            {
+            LOG.errorv("ECDb profile upgrade failed: Updating JSON format in column 'EnumValues' of table 'ec_Enumeration' failed: %s", ecdb.GetLastError().c_str());
+            return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+            }
+
+        stmt.Reset();
+        stmt.ClearBindings();
+        }
+
+    LOG.debug("ECDb profile upgrade: Updated JSON format in column 'EnumValues' of table 'ec_Enumeration'.");
+    return BE_SQLITE_OK;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle        04/2016
+//+---------------+---------------+---------------+---------------+---------------+--------
 DbResult ECDbProfileUpgrader_3400::_Upgrade(ECDbR ecdb) const
     {
     Statement stmt;

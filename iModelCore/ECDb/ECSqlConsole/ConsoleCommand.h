@@ -125,19 +125,27 @@ public:
 //---------------------------------------------------------------------------------------
 // @bsiclass                                                   Krischan.Eberle    10/2013
 //---------------------------------------------------------------------------------------
-struct PathCommand : public ConsoleCommand, NonCopyableClass
+struct FileInfoCommand : public ConsoleCommand, NonCopyableClass
     {
 private:
+    enum class KnownProfile
+        {
+        BeSQLite,
+        ECDb,
+        DgnDb,
+        Unknown
+        };
+
     virtual Utf8String _GetName () const override;
     virtual Utf8String _GetUsage () const override;
     virtual void _Run (ECSqlConsoleSession& session, std::vector<Utf8String> const& args) const override;
 
 public:
-    PathCommand () 
+    FileInfoCommand () 
         : ConsoleCommand () 
         {}
 
-    ~PathCommand() {}
+    ~FileInfoCommand() {}
     };
 
 //---------------------------------------------------------------------------------------
@@ -333,6 +341,8 @@ private:
     virtual Utf8String _GetName () const override;
     virtual Utf8String _GetUsage () const override;
     virtual void _Run (ECSqlConsoleSession& session, std::vector<Utf8String> const& args) const override;
+
+    static void ExpTreeToString(Utf8StringR expTree, JsonValueCR exp, int indentLevel);
 
 public:
     ParseCommand () 
