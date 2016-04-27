@@ -65,7 +65,7 @@ class CBufferStruct(CStruct):
             .format("INVALID_PARAMETER",
                     self._status_codes["INVALID_PARAMETER"].message,
                     "An invalid buffer pointer or invalid property pointer was passed into the get property function.")
-        accessor_str += '    if(index < 0 || index >= buf->lCount)\n'
+        accessor_str += '    if(index >= buf->lCount)\n'
         accessor_str += '        return CALLSTATUS {{{0}, "{1}", "{2}"}};\n\n' \
             .format("INVALID_PARAMETER",
                     self._status_codes["INVALID_PARAMETER"].message,
