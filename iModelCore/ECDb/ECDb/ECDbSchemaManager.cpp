@@ -193,9 +193,7 @@ BentleyStatus ECDbSchemaManager::ImportECSchemas(ECSchemaCacheR cache) const
         return ERROR;
     }
 
-    //only clear cache if its not been cleared before by ReloadECSchemaIfRequired()
-    if (!compareContext.RequiresUpdate())
-        m_ecdb.ClearECDbCache();
+    m_ecdb.ClearECDbCache();
 
     timer.Stop();
     LOG.infov("Imported ECSchemas in %.4f msecs.", timer.GetElapsedSeconds() * 1000.0);
