@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: PublicAPI/DgnPlatform/Annotations/AnnotationTextBlockDraw.h $
-//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
 #pragma once
 
@@ -29,9 +29,9 @@ private:
     AnnotationTextBlockLayoutCP m_layout;
 
     DGNPLATFORM_EXPORT void CopyFrom(AnnotationTextBlockDrawCR);
-    BentleyStatus DrawTextRun(AnnotationLayoutRunCR, ViewContextR) const;
-    BentleyStatus DrawFractionRun(AnnotationLayoutRunCR, ViewContextR) const;
-    BentleyStatus DrawLineBreakRun(AnnotationLayoutRunCR, ViewContextR) const;
+    BentleyStatus DrawTextRun(AnnotationLayoutRunCR, AnnotationLayoutLineCR, ViewContextR) const;
+    BentleyStatus DrawFractionRun(AnnotationLayoutRunCR, AnnotationLayoutLineCR, ViewContextR) const;
+    BentleyStatus DrawLineBreakRun(AnnotationLayoutRunCR, AnnotationLayoutLineCR, ViewContextR) const;
 
 public:
     DGNPLATFORM_EXPORT explicit AnnotationTextBlockDraw(AnnotationTextBlockLayoutCR);

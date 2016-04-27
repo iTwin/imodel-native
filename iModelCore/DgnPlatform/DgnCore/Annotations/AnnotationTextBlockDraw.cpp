@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/Annotations/AnnotationTextBlockDraw.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h> 
@@ -29,15 +29,36 @@ void AnnotationTextBlockDraw::CopyFrom(AnnotationTextBlockDrawCR rhs)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     04/2016
+//---------------------------------------------------------------------------------------
+static AnnotationTextStylePtr createEffectiveRunStyle(AnnotationRunBaseCR textRun, AnnotationLayoutLineCR layoutLine, AnnotationTextBlockCR textDoc)
+    {
+    DgnDbR db = textRun.GetDbR();
+    AnnotationTextStyleCPtr runStyle = AnnotationTextStyle::Get(db, textRun.GetStyleId());
+    BeAssert(runStyle.IsValid());
+
+    AnnotationParagraphCR textPar = layoutLine.GetSeedParagraph();
+    BeAssert(&textPar.GetDbR() == &textRun.GetDbR());
+    AnnotationTextStyleCPtr parStyle = AnnotationTextStyle::Get(db, textPar.GetStyleId());
+    BeAssert(parStyle.IsValid());
+
+    BeAssert(&textDoc.GetDbR() == &textRun.GetDbR());
+    AnnotationTextStyleCPtr docStyle = AnnotationTextStyle::Get(db, textDoc.GetStyleId());
+    BeAssert(docStyle.IsValid());
+
+    return AnnotationTextStyle::CreateEffectiveStyle(*docStyle, textDoc.GetStyleOverrides(), *parStyle, textPar.GetStyleOverrides(), *runStyle, textRun.GetStyleOverrides());
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-static void adjustForSubOrSuperScript(TextStringR ts, AnnotationTextRunCR textRun)
+static void adjustForSubOrSuperScript(TextStringR ts, AnnotationTextRunCR textRun, AnnotationLayoutLineCR layoutLine, AnnotationTextBlockCR textDoc)
     {
     // Completely ignore if neither or both.
     if (AnnotationTextRunSubSuperScript::Neither == textRun.GetSubSuperScript())
         return;
 
-    AnnotationTextStylePtr style = textRun.CreateEffectiveStyle();
+    AnnotationTextStylePtr style = createEffectiveRunStyle(textRun, layoutLine, textDoc);
 
     double offsetFactor = (textRun.IsSubScript() ? style->GetSubScriptOffsetFactor() : style->GetSuperScriptOffsetFactor());
     double scale = (textRun.IsSubScript() ? style->GetSubScriptScale() : style->GetSuperScriptScale());
@@ -55,7 +76,7 @@ static void adjustForSubOrSuperScript(TextStringR ts, AnnotationTextRunCR textRu
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-BentleyStatus AnnotationTextBlockDraw::DrawTextRun(AnnotationLayoutRunCR layoutRun, ViewContextR context) const
+BentleyStatus AnnotationTextBlockDraw::DrawTextRun(AnnotationLayoutRunCR layoutRun, AnnotationLayoutLineCR layoutLine, ViewContextR context) const
     {
     AnnotationTextRunCR run = (AnnotationTextRunCR)layoutRun.GetSeedRun();
     
@@ -67,10 +88,10 @@ BentleyStatus AnnotationTextBlockDraw::DrawTextRun(AnnotationLayoutRunCR layoutR
     Utf8String text = run.GetContent().substr(layoutRun.GetCharOffset(), layoutRun.GetNumChars());
     ts.SetText(text.c_str());
     
-    AnnotationTextStylePtr effectiveStyle = run.CreateEffectiveStyle();
+    AnnotationTextStylePtr effectiveStyle = createEffectiveRunStyle(run, layoutLine, m_layout->GetDocument());
     TextStyleInterop::AnnotationToTextString(ts.GetStyleR(), *effectiveStyle);
     
-    adjustForSubOrSuperScript(ts, run);
+    adjustForSubOrSuperScript(ts, run, layoutLine, m_layout->GetDocument());
     
     context.GetCurrentDisplayParams().ResetAppearance();
 
@@ -91,7 +112,7 @@ BentleyStatus AnnotationTextBlockDraw::DrawTextRun(AnnotationLayoutRunCR layoutR
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-BentleyStatus AnnotationTextBlockDraw::DrawFractionRun(AnnotationLayoutRunCR layoutRun, ViewContextR context) const
+BentleyStatus AnnotationTextBlockDraw::DrawFractionRun(AnnotationLayoutRunCR layoutRun, AnnotationLayoutLineCR layoutLine, ViewContextR context) const
     {
     AnnotationFractionRunCR run = (AnnotationFractionRunCR)layoutRun.GetSeedRun();
     
@@ -104,7 +125,7 @@ BentleyStatus AnnotationTextBlockDraw::DrawFractionRun(AnnotationLayoutRunCR lay
     DRange2d numeratorRange;
     POSTCONDITION(SUCCESS == layoutRun.GetSubRange(numeratorRange, AnnotationLayoutRun::SubRange::FractionNumerator), ERROR);
     
-    AnnotationTextStylePtr effectiveStyle = run.CreateEffectiveStyle();
+    AnnotationTextStylePtr effectiveStyle = createEffectiveRunStyle(run, layoutLine, m_layout->GetDocument());
     
     DPoint2d fontSize = DPoint2d::From(effectiveStyle->GetHeight() * effectiveStyle->GetWidthFactor(), effectiveStyle->GetHeight());
     fontSize.Scale(effectiveStyle->GetStackedFractionScale());
@@ -171,7 +192,7 @@ BentleyStatus AnnotationTextBlockDraw::DrawFractionRun(AnnotationLayoutRunCR lay
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-BentleyStatus AnnotationTextBlockDraw::DrawLineBreakRun(AnnotationLayoutRunCR, ViewContextR) const
+BentleyStatus AnnotationTextBlockDraw::DrawLineBreakRun(AnnotationLayoutRunCR, AnnotationLayoutLineCR, ViewContextR) const
     {
     return SUCCESS;
     }
@@ -203,9 +224,9 @@ BentleyStatus AnnotationTextBlockDraw::Draw(ViewContextR context) const
 
             switch (run->GetSeedRun().GetType())
                 {
-                case AnnotationRunType::Text: runStatus = DrawTextRun(*run, context); break;
-                case AnnotationRunType::Fraction: runStatus = DrawFractionRun(*run, context); break;
-                case AnnotationRunType::LineBreak: runStatus = DrawLineBreakRun(*run, context); break;
+                case AnnotationRunType::Text: runStatus = DrawTextRun(*run, *line, context); break;
+                case AnnotationRunType::Fraction: runStatus = DrawFractionRun(*run, *line, context); break;
+                case AnnotationRunType::LineBreak: runStatus = DrawLineBreakRun(*run, *line, context); break;
 
                 default:
                     BeAssert(false); // Unknown/unexpected AnnotationRunType.

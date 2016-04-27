@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/Annotations/AnnotationTextStyle.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -277,6 +277,47 @@ AnnotationTextStylePtr AnnotationTextStyle::CreateEffectiveStyle(AnnotationTextS
     copy->m_data.MergeWith(overrides);
 
     return copy;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     11/2015
+//---------------------------------------------------------------------------------------
+AnnotationTextStylePtr AnnotationTextStyle::CreateEffectiveStyle(
+                                                                 AnnotationTextStyleCR docStyle, AnnotationTextStylePropertyBagCR docOverrides,
+                                                                 AnnotationTextStyleCR parStyle, AnnotationTextStylePropertyBagCR parOverrides,
+                                                                 AnnotationTextStyleCR runStyle, AnnotationTextStylePropertyBagCR runOverrides
+                                                                 )
+    {
+    // Intelligently merge multiple levels of styles and overrides, where the effective value comes from the relevant level.
+
+    BeAssert(&docStyle.GetDgnDb() == &parStyle.GetDgnDb());
+    BeAssert(&docStyle.GetDgnDb() == &runStyle.GetDgnDb());
+
+    AnnotationTextStylePtr effectiveStyle = AnnotationTextStyle::Create(docStyle.GetDgnDb());
+
+    // Document
+    effectiveStyle->SetHeight(docOverrides.HasProperty(AnnotationTextStyleProperty::Height) ? docOverrides.GetRealProperty(AnnotationTextStyleProperty::Height) : docStyle.GetHeight());
+    effectiveStyle->SetLineSpacingFactor(docOverrides.HasProperty(AnnotationTextStyleProperty::LineSpacingFactor) ? docOverrides.GetRealProperty(AnnotationTextStyleProperty::LineSpacingFactor) : docStyle.GetLineSpacingFactor());
+    effectiveStyle->SetWidthFactor(docOverrides.HasProperty(AnnotationTextStyleProperty::WidthFactor) ? docOverrides.GetRealProperty(AnnotationTextStyleProperty::WidthFactor) : docStyle.GetWidthFactor());
+
+    // Paragraph
+    //  --
+
+    // Run
+    effectiveStyle->SetColorType(runOverrides.HasProperty(AnnotationTextStyleProperty::ColorType) ? (AnnotationColorType)runOverrides.GetIntegerProperty(AnnotationTextStyleProperty::ColorType) : runStyle.GetColorType());
+    effectiveStyle->SetColorValue(runOverrides.HasProperty(AnnotationTextStyleProperty::ColorValue) ? ColorDef((uint32_t)runOverrides.GetIntegerProperty(AnnotationTextStyleProperty::ColorValue)) : runStyle.GetColorValue());
+    effectiveStyle->SetFontId(runOverrides.HasProperty(AnnotationTextStyleProperty::FontId) ? DgnFontId((uint64_t)runOverrides.GetIntegerProperty(AnnotationTextStyleProperty::FontId)) : runStyle.GetFontId());
+    effectiveStyle->SetIsBold(runOverrides.HasProperty(AnnotationTextStyleProperty::IsBold) ? (0 != runOverrides.GetIntegerProperty(AnnotationTextStyleProperty::IsBold)) : runStyle.IsBold());
+    effectiveStyle->SetIsItalic(runOverrides.HasProperty(AnnotationTextStyleProperty::IsItalic) ? (0 != runOverrides.GetIntegerProperty(AnnotationTextStyleProperty::IsItalic)) : runStyle.IsItalic());
+    effectiveStyle->SetIsUnderlined(runOverrides.HasProperty(AnnotationTextStyleProperty::IsUnderlined) ? (0 != runOverrides.GetIntegerProperty(AnnotationTextStyleProperty::IsUnderlined)) : runStyle.IsUnderlined());
+    effectiveStyle->SetStackedFractionScale(runOverrides.HasProperty(AnnotationTextStyleProperty::StackedFractionScale) ? runOverrides.GetRealProperty(AnnotationTextStyleProperty::StackedFractionScale) : runStyle.GetStackedFractionScale());
+    effectiveStyle->SetStackedFractionType(runOverrides.HasProperty(AnnotationTextStyleProperty::StackedFractionType) ? (AnnotationStackedFractionType)runOverrides.GetIntegerProperty(AnnotationTextStyleProperty::StackedFractionType) : runStyle.GetStackedFractionType());
+    effectiveStyle->SetSubScriptOffsetFactor(runOverrides.HasProperty(AnnotationTextStyleProperty::SubScriptOffsetFactor) ? runOverrides.GetRealProperty(AnnotationTextStyleProperty::SubScriptOffsetFactor) : runStyle.GetSubScriptOffsetFactor());
+    effectiveStyle->SetSubScriptScale(runOverrides.HasProperty(AnnotationTextStyleProperty::SubScriptScale) ? runOverrides.GetRealProperty(AnnotationTextStyleProperty::SubScriptScale) : runStyle.GetSubScriptScale());
+    effectiveStyle->SetSuperScriptOffsetFactor(runOverrides.HasProperty(AnnotationTextStyleProperty::SuperScriptOffsetFactor) ? runOverrides.GetRealProperty(AnnotationTextStyleProperty::SuperScriptOffsetFactor) : runStyle.GetSuperScriptOffsetFactor());
+    effectiveStyle->SetSuperScriptScale(runOverrides.HasProperty(AnnotationTextStyleProperty::SuperScriptScale) ? runOverrides.GetRealProperty(AnnotationTextStyleProperty::SuperScriptScale) : runStyle.GetSuperScriptScale());
+
+    return effectiveStyle;
     }
 
 //---------------------------------------------------------------------------------------

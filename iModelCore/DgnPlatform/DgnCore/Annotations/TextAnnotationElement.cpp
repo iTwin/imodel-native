@@ -111,6 +111,15 @@ void TextAnnotationData::GenerateElementGeometry(GeometrySourceR source, Generat
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     04/2016
+//---------------------------------------------------------------------------------------
+void TextAnnotationData::CopyFrom(TextAnnotationData const& rhs)
+    {
+    SetAnnotation(rhs.m_annotation.get());
+    m_isGeometrySuppressed = rhs.m_isGeometrySuppressed;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     12/2015
 //---------------------------------------------------------------------------------------
 void TextAnnotationData::RemapIds(DgnImportContext& context)
@@ -169,3 +178,61 @@ DgnDbStatus TextAnnotation2d::_OnInsert() { return updateGeometryOnChange(T_Supe
 DgnDbStatus TextAnnotation3d::_OnInsert() { return updateGeometryOnChange(T_Super::_OnInsert(), *this, GetItemCP(), DgnElement::UniqueAspect::GenerateReason::Insert); }
 DgnDbStatus TextAnnotation2d::_OnUpdate(DgnElementCR el) { return updateGeometryOnChange(T_Super::_OnUpdate(el), *this, GetItemCP(), DgnElement::UniqueAspect::GenerateReason::Update); }
 DgnDbStatus TextAnnotation3d::_OnUpdate(DgnElementCR el) { return updateGeometryOnChange(T_Super::_OnUpdate(el), *this, GetItemCP(), DgnElement::UniqueAspect::GenerateReason::Update); }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     04/2016
+//---------------------------------------------------------------------------------------
+static TextAnnotationDataP cloneData(DgnElementCR oldElem, DgnElementR newElem)
+    {
+    TextAnnotationDataCP oldData = TextAnnotationData::GetCP(oldElem);
+    if (nullptr == oldData)
+        return nullptr;
+
+    TextAnnotationDataP newData = new TextAnnotationData();
+    newData->CopyFrom(*oldData);
+    TextAnnotationData::SetAspect(newElem, *newData);
+
+    return newData;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     04/2016
+//---------------------------------------------------------------------------------------
+DgnElementPtr clone(DgnElementCR oldElem, DgnDbStatus* status, DgnElement::CreateParams const* params, std::function<DgnElementPtr (DgnDbStatus*, DgnElement::CreateParams const*)> superCall)
+    {
+    DgnDbStatus _status;
+    if (nullptr == status)
+        status = &_status;
+
+    DgnElementPtr newElem = superCall(status, params);
+    if (!newElem.IsValid() || (DgnDbStatus::Success != *status))
+        return newElem;
+    
+    cloneData(oldElem, *newElem);
+
+    return newElem;
+    }
+DgnElementPtr TextAnnotation2d::_Clone(DgnDbStatus* status, DgnElement::CreateParams const* params) const { return clone(*this, status, params, [&](DgnDbStatus* status, DgnElement::CreateParams const* params) { return T_Super::_Clone(status, params); }); }
+DgnElementPtr TextAnnotation3d::_Clone(DgnDbStatus* status, DgnElement::CreateParams const* params) const { return clone(*this, status, params, [&](DgnDbStatus* status, DgnElement::CreateParams const* params) { return T_Super::_Clone(status, params); }); }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     04/2016
+//---------------------------------------------------------------------------------------
+DgnElementPtr cloneForImport(DgnElementCR oldElem, DgnDbStatus* status, DgnModelR destModel, DgnImportContext& context, std::function<DgnElementPtr (DgnDbStatus*, DgnModelR, DgnImportContext&)> superCall)
+    {
+    DgnDbStatus _status;
+    if (nullptr == status)
+        status = &_status;
+
+    DgnElementPtr newElem = superCall(status, destModel, context);
+    if (!newElem.IsValid() || (DgnDbStatus::Success != *status))
+        return newElem;
+    
+    TextAnnotationDataP newData = cloneData(oldElem, *newElem);
+    if ((nullptr != newData) && context.IsBetweenDbs())
+        newData->RemapIds(context);
+
+    return newElem;
+    }
+DgnElementPtr TextAnnotation2d::_CloneForImport(DgnDbStatus* status, DgnModelR destModel, DgnImportContext& context) const { return cloneForImport(*this, status, destModel, context, [&](DgnDbStatus* status, DgnModelR destModel, DgnImportContext& context) { return T_Super::_CloneForImport(status, destModel, context); }); }
+DgnElementPtr TextAnnotation3d::_CloneForImport(DgnDbStatus* status, DgnModelR destModel, DgnImportContext& context) const { return cloneForImport(*this, status, destModel, context, [&](DgnDbStatus* status, DgnModelR destModel, DgnImportContext& context) { return T_Super::_CloneForImport(status, destModel, context); }); }
