@@ -122,8 +122,12 @@ Importer::Status Importer::Import  (const ImportSequence&   sequence,
     {
     try
         {
+        //Config importConfig;
+        //config.Accept(importConfig);
         Config importConfig;
-        config.Accept(importConfig);
+        //config.Accept(importConfig);
+        const Config* cfgImpl = dynamic_cast<const Config*>(&config);
+        if (cfgImpl != nullptr) importConfig = *cfgImpl;
 
         m_pImpl->Import(sequence, importConfig);
         return S_SUCCESS;
@@ -161,7 +165,9 @@ Importer::Status Importer::Import  (const ImportCommand&    command,
     try
         {
         Config importConfig;
-        config.Accept(importConfig);
+        //config.Accept(importConfig);
+        const Config* cfgImpl = dynamic_cast<const Config*>(&config);
+        if (cfgImpl != nullptr) importConfig = *cfgImpl;
 
         m_pImpl->Import(command, importConfig);
         return S_SUCCESS;

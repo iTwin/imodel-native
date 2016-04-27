@@ -42,13 +42,13 @@ struct SourcesImporter::Impl
         {
         SourceRef                   m_sourceRef;
         ContentConfig               m_contentConfig;
-        ImportConfig                m_importConfig;
+        RefCountedPtr<const ImportConfig>                m_importConfig;
         ImportSequence              m_importSequence;
         SourceImportConfig*         m_sourceImportConf;
 
         explicit                    SourceItem                         (const SourceRef&                        sourceRef,
                                                                         const ContentConfig&                    contentConfig,
-                                                                        const ImportConfig&                     importConfig,
+                                                                        const ImportConfig*                     importConfig,
                                                                         const ImportSequence&                   importSequence,
                                                                         SourceImportConfig&                     sourceImportConf)
             :   m_sourceRef(sourceRef),
@@ -112,7 +112,7 @@ SourcesImporter::~SourcesImporter ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SourcesImporter::AddSource    (const SourceRef&        sourceRef,
                                     const ContentConfig&    contentConfig,
-                                    const ImportConfig&     config,
+                                    const ImportConfig*     config,
                                     const ImportSequence&   sequence,
                                     SourceImportConfig&     sourceImportConf)
     {
@@ -196,7 +196,7 @@ SourcesImporter::Status SourcesImporter::Impl::ImportSource   (SourceItem&    so
         return S_ERROR;
 
     const Importer::Status importStatus = importerPtr->Import(sourceItem.m_importSequence, 
-                                                              sourceItem.m_importConfig);
+                                                              *sourceItem.m_importConfig);
 
     sourceItem.m_sourceImportConf = sourcePtr->GetSourceImportConfig();
 
@@ -294,7 +294,7 @@ void SourcesImporter::Impl::AddAttachments (const Source&       source,
                 *refP == m_sinkSourceRef)
                 continue;
 
-            attachmentsImporter.AddSource(attachmentIt->GetSourceRef(), sourceItem.m_contentConfig, sourceItem.m_importConfig, attachmentImportSequence, *sourceItem.m_sourceImportConf);
+            attachmentsImporter.AddSource(attachmentIt->GetSourceRef(), sourceItem.m_contentConfig, sourceItem.m_importConfig.get(), attachmentImportSequence, *sourceItem.m_sourceImportConf);
             }
         }
     }

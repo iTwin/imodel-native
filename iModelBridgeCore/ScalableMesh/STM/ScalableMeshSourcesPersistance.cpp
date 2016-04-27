@@ -631,11 +631,11 @@ IDTMSourcePtr SourcesLoader::CreateSource(SourceDataSQLite& sourceData)
     IDTMSourcePtr dataSourcePtr;
     // Deserialize source
     {
-        m_serializationStream.str(bstring());
+        /*m_serializationStream.str(bstring());
         assert(m_serializationStream.good());
 
         copy(m_serializedSourcePacket.Begin(), m_serializedSourcePacket.End(),
-            ostreambuf_iterator<byte>(m_serializationStream));
+            ostreambuf_iterator<byte>(m_serializationStream));*/
 
         static const SourceSerializer DESERIALIZER;
         dataSourcePtr = DESERIALIZER.Deserialize(sourceData, m_sourceEnv, m_fileFormatVersions.serializedSource);
@@ -650,10 +650,10 @@ IDTMSourcePtr SourcesLoader::CreateSource(SourceDataSQLite& sourceData)
     // Deserialize content config
     //if (!m_serializedContentConfigPacket.IsEmpty())
     {
-        m_serializationStream.str(bstring());
+       /* m_serializationStream.str(bstring());
 
         copy(m_serializedContentConfigPacket.Begin(), m_serializedContentConfigPacket.End(),
-            ostreambuf_iterator<byte>(m_serializationStream));
+            ostreambuf_iterator<byte>(m_serializationStream));*/
 
         ContentConfig config;
 
@@ -667,10 +667,10 @@ IDTMSourcePtr SourcesLoader::CreateSource(SourceDataSQLite& sourceData)
     // Deserialize import sequence
     //if (!m_serializedImportSequencePacket.IsEmpty())
     {
-        m_serializationStream.str(bstring());
+        /*m_serializationStream.str(bstring());
 
         copy(m_serializedImportSequencePacket.Begin(), m_serializedImportSequencePacket.End(),
-            ostreambuf_iterator<byte>(m_serializationStream));
+            ostreambuf_iterator<byte>(m_serializationStream));*/
 
         ImportSequence sequence;
 

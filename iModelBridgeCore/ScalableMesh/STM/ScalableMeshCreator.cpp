@@ -36,8 +36,6 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #include <ScalableMesh/Import/Source.h>
 #include <ScalableMesh/Import/Importer.h>
 
-#include <ScalableMesh/Import/Config/All.h>
-
 #include <ScalableMesh/Import/Error/Source.h>
 
 #include "../Import/Sink.h"

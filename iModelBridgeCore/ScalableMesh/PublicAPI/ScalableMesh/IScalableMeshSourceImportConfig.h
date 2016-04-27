@@ -58,7 +58,7 @@ public:
 
     void                                        SetInternalContentConfig   (const Import::ContentConfig&                config);
     void                                        SetInternalSequence        (const Import::ImportSequence&               sequence);
-    void                                        SetInternalConfig          (const Import::ImportConfig&                 config);
+    void                                        SetInternalConfig          (const Import::ImportConfig*                 config);
 
     void                                        RegisterEditListener       (EditListener&                               listener);
     void                                        UnregisterEditListener     (const EditListener&                         listener);
@@ -70,14 +70,14 @@ public:
      */
     BENTLEY_SM_EXPORT const Import::ContentConfig&    GetContentConfig           () const;
     BENTLEY_SM_EXPORT const Import::ImportSequence&   GetSequence                () const;
-    BENTLEY_SM_EXPORT const Import::ImportConfig&     GetConfig                  () const;
+    BENTLEY_SM_EXPORT Import::ImportConfig*     GetConfig                  () const;
 
     /*
      * NTERAY: Exported in order to be able to continue development in Descartes. Use with care and only on last resort.
      */
     BENTLEY_SM_EXPORT void                            SetContentConfig           (const Import::ContentConfig&                config);
     BENTLEY_SM_EXPORT void                            SetSequence                (const Import::ImportSequence&               sequence);
-    BENTLEY_SM_EXPORT void                            SetConfig                  (const Import::ImportConfig&                 config);
+    BENTLEY_SM_EXPORT void                            SetConfig                  (const Import::ImportConfig*                 config);
 
 
     /*

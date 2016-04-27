@@ -27,7 +27,7 @@
 #include <ScalableMesh/Type/IScalableMeshPoint.h>
 #include <ScalableMesh/Type/IScalableMeshTIN.h>
 #include <ScalableMesh/Type/IScalableMeshMesh.h>
-
+#include "..\Import\InternalImporterConfig.h"
 #include "ScalableMeshEditListener.h"
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT
@@ -43,7 +43,7 @@ struct SourceImportConfig::Impl
     {
     EditListener*                   m_editListenerP;
     ImportSequence                  m_sequence;
-    ImportConfig                    m_config;
+    RefCountedPtr<ImportConfig>                    m_config;
     ContentConfig                   m_contentConfig;
     
 
@@ -53,6 +53,7 @@ struct SourceImportConfig::Impl
     explicit                        Impl                   (const ImportSequence&       defaultSequence)
         :   m_editListenerP(0),
             m_sequence(defaultSequence),
+            m_config(new Internal::Config()),
             m_defaultSequence(defaultSequence),
             m_userSpecifiedSequence(false)
         {
@@ -61,7 +62,7 @@ struct SourceImportConfig::Impl
     explicit                        Impl                   (const Impl&                 rhs)
         :   m_editListenerP(0),
             m_sequence(rhs.m_sequence),
-            m_config(rhs.m_config),
+            m_config(rhs.m_config.get()),
             m_contentConfig(rhs.m_contentConfig),
             m_defaultSequence(rhs.m_defaultSequence),
             m_userSpecifiedSequence(rhs.m_userSpecifiedSequence)
@@ -275,9 +276,9 @@ const GCS& SourceImportConfig::GetReplacementGCS ()
 * @description  
 * @bsimethod                                                    Raymond.Gauthier  05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-const ImportConfig& SourceImportConfig::GetConfig () const
+ImportConfig* SourceImportConfig::GetConfig () const
     {
-    return m_implP->m_config;
+    return m_implP->m_config.get();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -326,11 +327,11 @@ void SourceImportConfig::SetSequence (const ImportSequence& sequence)
 * @description  
 * @bsimethod                                                    Raymond.Gauthier  06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SourceImportConfig::SetConfig (const ImportConfig& config)
+void SourceImportConfig::SetConfig (const ImportConfig* config)
     {
     m_implP->OnPublicEdit();
 
-    m_implP->m_config = config;
+    m_implP->m_config = const_cast<ImportConfig*>(config);
     }
 
 
@@ -358,9 +359,9 @@ void SourceImportConfig::SetInternalSequence (const Import::ImportSequence& sequ
 * @description  
 * @bsimethod                                                    Raymond.Gauthier  06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SourceImportConfig::SetInternalConfig (const Import::ImportConfig& config)
+void SourceImportConfig::SetInternalConfig (const Import::ImportConfig* config)
     {
-    m_implP->m_config = config;
+    m_implP->m_config = const_cast<Import::ImportConfig*>(config);
     }
 
 
