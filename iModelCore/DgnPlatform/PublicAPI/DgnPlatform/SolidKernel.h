@@ -293,6 +293,7 @@ struct SolidKernelUtil
 DGNPLATFORM_EXPORT static ISolidKernelEntityPtr CreateNewEntity(TopoDS_Shape const&);
 DGNPLATFORM_EXPORT static TopoDS_Shape const* GetShape(ISolidKernelEntityCR);
 DGNPLATFORM_EXPORT static TopoDS_Shape* GetShapeP(ISolidKernelEntityR);
+DGNPLATFORM_EXPORT static PolyfaceHeaderPtr FacetEntity(ISolidKernelEntityCR, double pixelSize=0.0, DRange1dP pixelSizeRange=nullptr);
 };
 
 END_BENTLEY_DGN_NAMESPACE

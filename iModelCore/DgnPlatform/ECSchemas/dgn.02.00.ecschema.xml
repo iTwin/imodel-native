@@ -298,11 +298,14 @@
         </ECCustomAttributes>
         <BaseClass>GeometricModel3d</BaseClass>
     </ECEntityClass>
+    <ECEntityClass typeName="InformationModel" modifier="Abstract">
+        <BaseClass>Model</BaseClass>
+    </ECEntityClass>
     <ECEntityClass typeName="DefinitionModel">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
-        <BaseClass>Model</BaseClass>
+        <BaseClass>InformationModel</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="DictionaryModel">
         <ECCustomAttributes>

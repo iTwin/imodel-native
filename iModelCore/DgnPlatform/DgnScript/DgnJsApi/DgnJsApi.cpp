@@ -19,6 +19,8 @@
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
+size_t JsDgnElement::s_count;
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -438,6 +440,23 @@ JsPreparedECSqlStatementP JsDgnDb::GetPreparedECSqlSelectStatement(Utf8StringCR 
         return nullptr;
         }
     return new JsPreparedECSqlStatement(*stmt);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      04/16
+//---------------------------------------------------------------------------------------
+int32_t JsDgnDb::SaveChanges()
+    {
+    DGNJSAPI_VALIDATE_ARGS(IsValid(), -1);
+    auto res = (int32_t)m_db->SaveChanges();
+    m_db->Memory().Purge(0);
+    if (JsDgnElement::s_count > 1000)
+        {
+        LOG.warningv("DgnJsApi - element count is %d. Call Dispose to free objects.", JsDgnElement::s_count);
+        }
+    //printf("saved and purged:");
+    //getchar();
+    return res;
     }
 
 //---------------------------------------------------------------------------------------
@@ -866,6 +885,74 @@ int32_t JsPreparedECSqlStatement::GetParameterIndex(Utf8StringCR colName)
     if (-1 == i)
         DGNJSAPI_DGNSCRIPT_THROW("ECSql", "NamedParameterNotFound");
     return (int32_t)i;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      06/15
+//---------------------------------------------------------------------------------------
+JsFile* JsFile::Fopen(Utf8StringCR name, Utf8StringCR mode)
+    {
+    BeFileName fn(name.c_str());
+    auto fp = fopen(fn.GetNameUtf8().c_str(), mode.c_str());
+    if (nullptr == fp)
+        {
+        perror("Fopen failed");
+        return nullptr;
+        }
+    return new JsFile(fp);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      06/15
+//---------------------------------------------------------------------------------------
+bool JsFile::Feof()
+    {
+    DGNJSAPI_VALIDATE_ARGS(IsValid(), true); 
+    return 0 != feof(m_fp);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      06/15
+//---------------------------------------------------------------------------------------
+Utf8String JsFile::ReadLine()
+    {
+    DGNJSAPI_VALIDATE_ARGS(IsValid(), ""); 
+
+    if (ferror(m_fp))
+        {
+        DGNJSAPI_DGNSCRIPT_THROW("FERROR", "");
+        return "";
+        }
+
+    char buf[4096];
+    buf[0] = '\0';
+    auto res = fgets(buf, sizeof(buf), m_fp);
+    if (nullptr == res)
+        {
+        DGNJSAPI_DGNSCRIPT_THROW("EOF", "");
+        return "";
+        }
+    return buf;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      06/15
+//---------------------------------------------------------------------------------------
+int32_t JsFile::WriteLine(Utf8StringCR line)
+    {
+    DGNJSAPI_VALIDATE_ARGS(IsValid(), -1); 
+    if (ferror(m_fp))
+        {
+        DGNJSAPI_DGNSCRIPT_THROW("FERROR", "");
+        return -1;
+        }
+    auto res = fputs(line.c_str(), m_fp);
+    if (EOF == res)
+        {
+        DGNJSAPI_DGNSCRIPT_THROW("FERROR", "");
+        return -1;
+        }
+    return 0;
     }
 
 //---------------------------------------------------------------------------------------
