@@ -696,7 +696,7 @@ module DgnScriptTests {
         //  Test ECSql API
         testEcSql(db, 2);
 
-        testFile("d:/tmp/xx.txt");
+        //testFile("d:/tmp/xx.txt");
 
         return 0;
     }

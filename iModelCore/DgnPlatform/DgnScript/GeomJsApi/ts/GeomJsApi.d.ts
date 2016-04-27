@@ -1065,6 +1065,14 @@ class PlanarRegion extends CurveVector implements BeJsProjection_SuppressConstru
         static Create1 (curve: CurvePrimitiveP) : LoopP;
         /** Create a loop with a two initial curves.  Additional curves can be added later. */
         static Create2 (curve1: CurvePrimitiveP, curve2: CurvePrimitiveP) : LoopP;
+        /** Create a regular polygon in a plane parallel to the xy plane
+        @param center [in] center of polygon
+        @param xDistance [in] x-direction distance from center to a polygon point.
+        @param numEdges [in] number of edges (and vertices)
+        @param isOuterRadius [in] if true, the xDistance is the outer radius, i.e. there is vertex on the x axis point.
+               If false, xDistance is the inner radius, i.e. there is Y-direction edge crossing the x axis point.
+        */
+        static CreateRegularPolygonXY (center: DPoint3dP, xDistance: cxx_double, numEdges: cxx_double, isOuterRadius: cxx_bool) : LoopP;
     }
 
     type LoopP = cxx_pointer<Loop>;
