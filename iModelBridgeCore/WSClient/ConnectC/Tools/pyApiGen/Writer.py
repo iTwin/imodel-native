@@ -52,9 +52,10 @@ class Writer(object):
     def _write_spacing(self):
         self._file.write('\n')
 
-    def _write_header_comments(self, should_include_in_api=None):
+    def _write_header_comments(self, is_header=False, should_include_in_api=None):
         self._file.write(self._COMMENT_Copyright)
-        self._file.write('#pragma once\n')
+        if is_header:
+            self._file.write('#pragma once\n')
         if should_include_in_api is True:
             self._file.write('//__PUBLISH_SECTION_START__\n')
         elif should_include_in_api is False:

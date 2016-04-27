@@ -30,14 +30,14 @@ class CPublicApiHeaderWriter(HeaderWriter):
         self._close_file()
 
     def __write_header_comment(self):
-        self._write_header_comments(True)
+        self._write_header_comments(True, True)
 
     def __write_defines(self):
         self._file.write('// define __{0}_DLL_BUILD__ when consuming header.\n'.format(self._api.get_upper_api_acronym()))
         self._file.write('#ifdef __{0}_DLL_BUILD__\n'.format(self._api.get_upper_api_acronym()))
-        self._file.write('#define {0}_EXPORT extern "C" __declspec(dllexport)\n'.format(self._api.get_upper_api_acronym()))
+        self._file.write('#define {0}_EXPORT EXPORT_ATTRIBUTE\n'.format(self._api.get_upper_api_acronym()))
         self._file.write('#else\n')
-        self._file.write('#define {0}_EXPORT extern "C" __declspec(dllimport)\n'.format(self._api.get_upper_api_acronym()))
+        self._file.write('#define {0}_EXPORT IMPORT_ATTRIBUTE\n'.format(self._api.get_upper_api_acronym()))
         self._file.write('#endif\n')
 
     def __write_status_codes(self):
@@ -61,9 +61,9 @@ class CPublicApiHeaderWriter(HeaderWriter):
                                  .format(self._api.get_api_name())))
         self._file.write("typedef struct _CALLSTATUS\n")
         self._file.write("    {\n")
-        self._file.write("    int32_t id;\n")
-        self._file.write("    LPCSTR message;\n")
-        self._file.write("    LPCSTR description;\n")
+        self._file.write("    int16_t id;\n")
+        self._file.write("    CharCP message;\n")
+        self._file.write("    CharCP description;\n")
         self._file.write("    } CALLSTATUS, *LPCALLSTATUS;\n")
         self._file.write(self._COMMENT_GroupEnd)
 

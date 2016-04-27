@@ -15,23 +15,23 @@ class CBufferStruct(CStruct):
             accessor_str = "CALLSTATUS " + self.get_lower_name() + "Get" + property_type.title() + "Property\n"
         accessor_str += "(\n"
         accessor_str += "H{0}BUFFER buf,\n".format(self._api.get_api_acronym())
-        accessor_str += "int bufferProperty,\n"
-        accessor_str += "int index,\n"
+        accessor_str += "int16_t bufferProperty,\n"
+        accessor_str += "int16_t index,\n"
         if property_type == "string":
-            accessor_str += "LPWSTR str,\n"
-            accessor_str += "UINT32 strLength\n"
+            accessor_str += "WCharP str,\n"
+            accessor_str += "uint32_t strLength\n"
         elif property_type == "StringLength":
             accessor_str += "size_t* outStringSize\n"
         elif property_type == "guid":
-            accessor_str += "LPGUID guid\n"
+            accessor_str += "WCharP guid\n"
         elif property_type == "boolean":
             accessor_str += "bool* boolean\n"
         elif property_type == "int":
-            accessor_str += "int* integer\n"
+            accessor_str += "int16_t* integer\n"
         elif property_type == "double":
             accessor_str += "double* pDouble\n"
         elif property_type == "long":
-            accessor_str += "long* pLong\n"
+            accessor_str += "int32_t* pLong\n"
         else:
             raise PropertyTypeError("Property type {0} not accepted".format(property_type))
         accessor_str += ")"
@@ -43,21 +43,21 @@ class CBufferStruct(CStruct):
     def get_accessor_function_implementation(self, property_type):
         accessor_str = self.__get_accessor_functions_definition(property_type) + "\n"
         accessor_str += "    {\n"
-        accessor_str += "    if (buf == NULL || bufferProperty == 0"
+        accessor_str += "    if (buf == nullptr || bufferProperty == 0"
         if property_type == "string":
-            accessor_str += " || str == NULL || strLength == 0"
+            accessor_str += " || str == nullptr || strLength == 0"
         elif property_type == "StringLength":
-            accessor_str += " || outStringSize == NULL"
+            accessor_str += " || outStringSize == nullptr"
         elif property_type == "guid":
-            accessor_str += " || guid == NULL"
+            accessor_str += " || guid == nullptr"
         elif property_type == "boolean":
-            accessor_str += " || boolean == NULL"
+            accessor_str += " || boolean == nullptr"
         elif property_type == "int":
-            accessor_str += " || integer == NULL"
+            accessor_str += " || integer == nullptr"
         elif property_type == "double":
-            accessor_str += " || pDouble == NULL"
+            accessor_str += " || pDouble == nullptr"
         elif property_type == "long":
-            accessor_str += " || pLong == NULL"
+            accessor_str += " || pLong == nullptr"
         else:
             raise PropertyTypeError("Property type {0} not accepted".format(property_type))
         accessor_str += ")\n"
@@ -109,7 +109,7 @@ class CBufferStruct(CStruct):
                 property_access_str += '            }}\n'
 
                 if property_type == "string":
-                    property_access_str += "        wcscpy_s(str, strLength, {0}Buf->{1}.c_str());\n"
+                    property_access_str += "        wcscpy(str, {0}Buf->{1}.c_str());\n"
                 elif property_type == "StringLength":
                     property_access_str += "        *outStringSize = {0}Buf->{1}.length();\n"
                 elif property_type == "guid":
@@ -148,15 +148,19 @@ class CBufferStruct(CStruct):
         struct_str = 'typedef struct _' + self._api.get_api_acronym() + '_'
         struct_str += self._ecclass.attributes["typeName"].value.upper() + '_BUFFER \n'
         struct_str += '    {\n'
-        struct_str += '    bmap<std::wstring, bool> IsSet;\n'
+        struct_str += '    bmap<WString, bool> IsSet;\n'
         for ecproperty in self.get_properties():
             property_type = ecproperty.attributes["typeName"].value
             if property_type == "string":
-                struct_str += "    std::wstring "
+                struct_str += "    WString "
             elif property_type == "guid":
-                struct_str += "    GUID "
+                struct_str += "    WString "
             elif property_type == "boolean":
                 struct_str += "    bool "
+            elif property_type == "int":
+                struct_str += "    int16_t "
+            elif property_type == "long":
+                struct_str += "    int32_t "
             else:
                 struct_str += "    " + ecproperty.attributes["typeName"].value + " "
             struct_str += ecproperty.attributes["propertyName"].value + ";\n"
@@ -204,7 +208,7 @@ class CBufferStruct(CStruct):
             elif property_type == "guid":
                 stuffer_str += '    if(properties.HasMember("{0}") && properties["{0}"].IsString())\n'\
                     .format(ecproperty.attributes["propertyName"].value)
-                stuffer_str += '        {0}Buf->{1} = guidFromString(stringToWString(properties["{1}"].GetString()));\n'\
+                stuffer_str += '        {0}Buf->{1} = stringToWString(properties["{1}"].GetString());\n'\
                     .format(self.get_lower_name(), ecproperty.attributes["propertyName"].value)
                 stuffer_str += '    {0}Buf->IsSet[stringToWString("{1}")] = (properties.HasMember("{1}") && properties["{1}"].IsString());\n'\
                     .format(self.get_lower_name(), ecproperty.attributes["propertyName"].value)

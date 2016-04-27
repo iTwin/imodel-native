@@ -8,7 +8,7 @@ class CppCliStruct(CStruct):
     def get_property_declarations(self):
         properties_str = "        public:\n"
         properties_str += "            {0}();\n".format(self.get_name())
-        properties_str += "            {0}({1}DATABUFHANDLE dataBuffer, int index);\n".format(self.get_name(), self._api.get_upper_api_acronym())
+        properties_str += "            {0}({1}DATABUFHANDLE dataBuffer, int16_t index);\n".format(self.get_name(), self._api.get_upper_api_acronym())
         for ecproperty in self.get_properties():
             property_type = ecproperty.attributes["typeName"].value
             if property_type == "guid":
@@ -27,9 +27,9 @@ class CppCliStruct(CStruct):
 
     def get_constructor_implementation(self):
         ctor_str = '    {0}::{0}() {{}}\n'.format(self.get_name())
-        ctor_str += '    {0}::{0}({1}DATABUFHANDLE dataBuffer, int index)\n'.format(self.get_name(), self._api.get_upper_api_acronym())
+        ctor_str += '    {0}::{0}({1}DATABUFHANDLE dataBuffer, int16_t index)\n'.format(self.get_name(), self._api.get_upper_api_acronym())
         ctor_str += '        {\n'
-        ctor_str += '        if(dataBuffer == NULL)\n'
+        ctor_str += '        if(dataBuffer == nullptr)\n'
         ctor_str += '            throw gcnew ArgumentException("Null dataBuffer passed into constructor");\n\n'
         ctor_str += '        CALLSTATUS status;\n'.format(self._api.get_upper_api_name())
         if self.does_contain_string():
@@ -39,11 +39,11 @@ class CppCliStruct(CStruct):
         if self.does_contain_double():
             ctor_str += '        double pDouble;\n'
         if self.does_contain_guid():
-            ctor_str += '        GUID guid = {0};\n'
+            ctor_str += '        wchar_t guid[4096] = {0};\n'
         if self.does_contain_int():
-            ctor_str += '        int integer;\n'
+            ctor_str += '        int16_t integer;\n'
         if self.does_contain_long():
-            ctor_str += '        long pLong;\n'
+            ctor_str += '        int32_t pLong;\n'
         for ecproperty in self.get_properties():
             property_type = ecproperty.attributes["typeName"].value
             ctor_str += '        status = {0}_DataBufferGet{1}Property('.format(self._api.get_api_name(), property_type.title())
@@ -92,7 +92,7 @@ class CppCliStruct(CStruct):
         read_list_str += '        if (SUCCESS != status.id)\n'.format(self._api.get_upper_api_name())
         read_list_str += '            return gcnew CallStatus(status);\n'\
             .format(self._api.get_api_name())
-        read_list_str += '        LONG bufferCount = {0}_DataBufferGetCount(dataBuffer);\n'.format(self._api.get_api_name())
+        read_list_str += '        uint64_t bufferCount = {0}_DataBufferGetCount(dataBuffer);\n'.format(self._api.get_api_name())
         read_list_str += '        if (bufferCount == 0)\n'
         read_list_str += '            return gcnew CallStatus(status);\n'\
             .format(self._api.get_api_name())
@@ -118,7 +118,7 @@ class CppCliStruct(CStruct):
                     .format(self.get_lower_name(), ecproperty.attributes["propertyName"].value,
                             ecproperty.attributes["propertyName"].value.lower())
             elif property_type == "guid":
-                create_str += '        LPGUID {2} = managedGuidToUnmanagedGuid(*{0}->{1});\n'\
+                create_str += '        WCharP {2} = managedGuidToUnmanagedGuid(*{0}->{1});\n'\
                     .format(self.get_lower_name(), ecproperty.attributes["propertyName"].value,
                             ecproperty.attributes["propertyName"].value.lower())
             elif property_type == "boolean":
@@ -160,7 +160,7 @@ class CppCliStruct(CStruct):
         read_str += '        if (SUCCESS != readStatus.id)\n'.format(self._api.get_upper_api_name())
         read_str += '            return gcnew CallStatus(readStatus);\n'\
             .format(self._api.get_api_name())
-        read_str += '        LONG bufferCount = {0}_DataBufferGetCount(dataBuffer);\n'.format(self._api.get_api_name())
+        read_str += '        uint64_t bufferCount = {0}_DataBufferGetCount(dataBuffer);\n'.format(self._api.get_api_name())
         read_str += '        if (bufferCount != 1)\n'
         read_str += '            return gcnew CallStatus(readStatus);\n'\
             .format(self._api.get_api_name())
@@ -187,7 +187,7 @@ class CppCliStruct(CStruct):
                     .format(self.get_lower_name(), ecproperty.attributes["propertyName"].value,
                             ecproperty.attributes["propertyName"].value.lower())
             elif property_type == "guid":
-                update_str += '        LPGUID {2} = managedGuidToUnmanagedGuid(*{0}->{1});\n' \
+                update_str += '        WCharP {2} = managedGuidToUnmanagedGuid(*{0}->{1});\n' \
                     .format(self.get_lower_name(), ecproperty.attributes["propertyName"].value,
                             ecproperty.attributes["propertyName"].value.lower())
             elif property_type == "boolean":

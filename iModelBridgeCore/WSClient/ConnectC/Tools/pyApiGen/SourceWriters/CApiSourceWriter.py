@@ -25,8 +25,6 @@ class CApiSourceWriter(SourceWriter):
         self._file.write('#include "{0}Internal.h"\n'.format(self._api.get_upper_api_acronym()))
 
     def __write_utility_functions(self):
-        self._write_guid_to_wstring_function()
-        self._write_spacing()
         self._write_resolve_wserror_function()
 
     def __write_api_function_definitions(self):
@@ -39,11 +37,11 @@ class CApiSourceWriter(SourceWriter):
         self._file.write('CALLSTATUS {1}_FreeApi({0}HANDLE apiHandle)\n'.format(self._api.get_upper_api_acronym(),
                                                                                            self._api.get_api_name()))
         self._file.write('    {\n')
-        self._file.write('    if (NULL == apiHandle)\n')
+        self._file.write('    if (nullptr == apiHandle)\n')
         self._file.write('        return CALLSTATUS {{{0}, "{1}", "{2}"}};\n\n'
                          .format("INVALID_PARAMETER".format(self._api.get_upper_api_name()),
                                  self._status_codes["INVALID_PARAMETER"].message,
-                                 "The apiHandle passed into the function is NULL."))
+                                 "The apiHandle passed into the function is a nullptr."))
         self._file.write('    LP{0} api = (LP{0}) apiHandle;\n'.format(self._api.get_upper_api_acronym()))
         self._file.write('    free(api);\n')
         self._file.write('    return CALLSTATUS {{{0}, "{1}", "{2}"}};\n'

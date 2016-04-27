@@ -22,11 +22,11 @@ class CApiStruct(CStruct):
         get_request_str = self.__get_api_gws_read_list_funtion_def() + "\n"
         get_request_str += "    {\n"
         get_request_str += "    VERIFY_API\n\n"
-        get_request_str += "    if ({0}Buffer == NULL)\n".format(self.get_lower_name())
+        get_request_str += "    if ({0}Buffer == nullptr)\n".format(self.get_lower_name())
         get_request_str += '        return CALLSTATUS {{{0}, "{1}", "{2}"}};\n\n'\
             .format("INVALID_PARAMETER",
                     self._status_codes["INVALID_PARAMETER"].message,
-                    "{0}Buffer is NULL.".format(self.get_lower_name()))
+                    "{0}Buffer is a nullptr.".format(self.get_lower_name()))
         get_request_str += '    auto result = api->m_wsRepositoryClientPtr->SendQueryRequest(WSQuery("{0}", "{1}"))->GetResult();\n'\
             .format(self.__ecschema_name, self.get_name())
         get_request_str += "    if (!result.IsSuccess())\n"
@@ -46,7 +46,7 @@ class CApiStruct(CStruct):
         get_request_str += "        {0}BufferStuffer(bufToFill, instance.GetProperties());\n".format(self.get_name())
         get_request_str += "        }\n\n"
         get_request_str += "    {0}BUFFER* buf = ({0}BUFFER*) calloc(1, sizeof({0}BUFFER));\n".format(self._api.get_api_acronym())
-        get_request_str += "    if (buf == NULL)\n"
+        get_request_str += "    if (buf == nullptr)\n"
         get_request_str += "        {\n"
         get_request_str += "        free({0}Buf);\n".format(self.get_lower_name())
         get_request_str += '        return CALLSTATUS {{{0}, "{1}", "{2}"}};\n'\
@@ -104,7 +104,7 @@ class CApiStruct(CStruct):
                                                                         self._api.get_api_name(), self.get_name())
         read_request_str += "(\n"
         read_request_str += "{0}HANDLE apiHandle,\n".format(self._api.get_upper_api_acronym())
-        read_request_str += "LPCWSTR {0}Id,\n".format(self.get_lower_name())
+        read_request_str += "WCharCP {0}Id,\n".format(self.get_lower_name())
         read_request_str += "{0}DATABUFHANDLE* {1}Buffer\n".format(self._api.get_upper_api_acronym(), self.get_lower_name())
         read_request_str += ")"
         return read_request_str
@@ -116,10 +116,10 @@ class CApiStruct(CStruct):
         get_request_str = self.__get_api_gws_read_function_def() + "\n"
         get_request_str += "    {\n"
         get_request_str += "    VERIFY_API\n\n"
-        get_request_str += "    if ({0}Buffer == NULL || {0}Id == NULL || wcslen({0}Id) == 0)\n".format(self.get_lower_name())
+        get_request_str += "    if ({0}Buffer == nullptr || {0}Id == nullptr || wcslen({0}Id) == 0)\n".format(self.get_lower_name())
         get_request_str += '        return CALLSTATUS {{{0}, "{1}", "{2}"}};\n\n'\
             .format("INVALID_PARAMETER", self._status_codes["INVALID_PARAMETER"].message,
-                    "{0}Buffer is NULL or {0}Id is NULL or empty.".format(self.get_lower_name()))
+                    "{0}Buffer is a nullptr or {0}Id is nullptr or empty.".format(self.get_lower_name()))
         get_request_str += '    auto result = api->m_wsRepositoryClientPtr->'
         get_request_str += 'SendGetObjectRequest({{"{0}", "{1}", Utf8String({2}Id)}})->GetResult();\n'\
             .format(self.__ecschema_name, self.get_name(), self.get_lower_name())
@@ -132,7 +132,7 @@ class CApiStruct(CStruct):
         get_request_str += "    {0}BufferStuffer({1}Buf, (*result.GetValue().GetInstances().begin()).GetProperties());\n\n"\
             .format(self.get_name(), self.get_lower_name())
         get_request_str += "    {0}BUFFER* buf = ({0}BUFFER*) calloc(1, sizeof({0}BUFFER));\n".format(self._api.get_api_acronym())
-        get_request_str += "    if (buf == NULL)\n"
+        get_request_str += "    if (buf == nullptr)\n"
         get_request_str += "        {\n"
         get_request_str += "        free({0}Buf);\n".format(self.get_lower_name())
         get_request_str += '        return CALLSTATUS {{{0}, "{1}", "{2}"}};\n' \
@@ -156,7 +156,7 @@ class CApiStruct(CStruct):
                                                                             self._api.get_api_name(), self.get_name())
         update_request_str += "(\n"
         update_request_str += "{0}HANDLE apiHandle,\n".format(self._api.get_upper_api_acronym())
-        update_request_str += "LPCWSTR {0}Id".format(self.get_lower_name())
+        update_request_str += "WCharCP {0}Id".format(self.get_lower_name())
         update_request_str += self.__get_gws_properties_for_function_def()
         update_request_str += "\n)"
         return update_request_str
@@ -187,7 +187,7 @@ class CApiStruct(CStruct):
                                                                             self._api.get_api_name(), self.get_name())
         delete_request_str += "(\n"
         delete_request_str += "{0}HANDLE apiHandle,\n".format(self._api.get_upper_api_acronym())
-        delete_request_str += "LPCWSTR {0}Id\n".format(self.get_lower_name())
+        delete_request_str += "WCharCP {0}Id\n".format(self.get_lower_name())
         delete_request_str += ")"
         return delete_request_str
 
@@ -198,10 +198,10 @@ class CApiStruct(CStruct):
         delete_request_str = self.__get_api_gws_delete_function_def() + "\n"
         delete_request_str += "    {\n"
         delete_request_str += "    VERIFY_API\n\n"
-        delete_request_str += "    if ({0}Id == NULL || wcslen({0}Id) == 0)\n".format(self.get_lower_name())
+        delete_request_str += "    if ({0}Id == nullptr || wcslen({0}Id) == 0)\n".format(self.get_lower_name())
         delete_request_str += '        return CALLSTATUS {{{0}, "{1}", "{2}"}};\n\n'\
             .format("INVALID_PARAMETER",self._status_codes["INVALID_PARAMETER"].message,
-                    "{0}Id is NULL or empty.".format(self.get_lower_name()))
+                    "{0}Id is a nullptr or empty.".format(self.get_lower_name()))
         delete_request_str += '    auto result = api->m_wsRepositoryClientPtr->'
         delete_request_str += 'SendDeleteObjectRequest({{"{0}", "{1}", Utf8String({2}Id)}})->GetResult();\n' \
             .format(self.__ecschema_name, self.get_name(), self.get_lower_name())
@@ -224,11 +224,15 @@ class CApiStruct(CStruct):
             property_str += ',\n'
             property_type = ecproperty.attributes["typeName"].value
             if property_type == "string":
-                property_str += "LPCWSTR "
+                property_str += "WCharCP "
             elif property_type == "guid":
-                property_str += "LPGUID "
+                property_str += "WCharP "
             elif property_type == "boolean":
                 property_str += "bool* "
+            elif property_type == "int":
+                property_str += "int16_t* "
+            elif property_type == "long":
+                property_str += "int32_t* "
             else:
                 property_str += ecproperty.attributes["typeName"].value + "* "
             property_str += ecproperty.attributes["propertyName"].value
@@ -239,10 +243,10 @@ class CApiStruct(CStruct):
         for ecproperty in self.get_properties():
             if ecproperty.hasAttribute("readOnly") and ecproperty.attributes["readOnly"].value:
                 continue
-            properties_str += "    if ({0} != NULL) ".format(ecproperty.attributes["propertyName"].value)
+            properties_str += "    if ({0} != nullptr) ".format(ecproperty.attributes["propertyName"].value)
             property_type = ecproperty.attributes["typeName"].value
             if property_type == "guid":
-                properties_str += 'propertiesJson["{0}"] = *guidToString({0}).c_str();\n' \
+                properties_str += 'propertiesJson["{0}"] = Utf8String({0});\n' \
                     .format(ecproperty.attributes["propertyName"].value)
             elif property_type == "string":
                 properties_str += 'propertiesJson["{0}"] = Utf8String({0});\n' \

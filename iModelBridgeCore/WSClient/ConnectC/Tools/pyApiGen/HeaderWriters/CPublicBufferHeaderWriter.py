@@ -22,7 +22,7 @@ class CPublicBufferHeaderWriter(HeaderWriter):
         self._close_file()
 
     def __write_header_comment(self):
-        self._write_header_comments(True)
+        self._write_header_comments(True, True)
         self._file.write('\n#include <WebServices/ConnectC/{0}GenPublic.h>\n'.format(self._api.get_upper_api_acronym()))
 
     def __write_using_directives(self):
@@ -48,7 +48,7 @@ class CPublicBufferHeaderWriter(HeaderWriter):
         self._file.write(self._COMMENT_GroupBriefLong
                          .format("Get a count of the number of items in a data buffer",
                                  "\param[in] dataBuffer Data buffer\n* \\return Object count"))
-        self._file.write("{0}_EXPORT LONG {1}_DataBufferGetCount\n".format(self._api.get_upper_api_acronym(), self._api.get_api_name()))
+        self._file.write("{0}_EXPORT uint32_t {1}_DataBufferGetCount\n".format(self._api.get_upper_api_acronym(), self._api.get_api_name()))
         self._file.write("(\n")
         self._file.write("{0}DATABUFHANDLE dataBuffer\n".format(self._api.get_upper_api_acronym()))
         self._file.write(");\n")
@@ -57,7 +57,7 @@ class CPublicBufferHeaderWriter(HeaderWriter):
         self._file.write(self._COMMENT_GroupBriefLong
                          .format("Free an allocated data buffer",
                                  "\param[in] dataBuffer Data buffer"))
-        self._file.write("{0}_EXPORT VOID {1}_DataBufferFree\n".format(self._api.get_upper_api_acronym(), self._api.get_api_name()))
+        self._file.write("{0}_EXPORT void {1}_DataBufferFree\n".format(self._api.get_upper_api_acronym(), self._api.get_api_name()))
         self._file.write("(\n")
         self._file.write("{0}DATABUFHANDLE dataBuffer\n".format(self._api.get_upper_api_acronym()))
         self._file.write(");\n")
@@ -151,7 +151,7 @@ class CPublicBufferHeaderWriter(HeaderWriter):
         elif property_type == "StringLength":
             comment_str += "* \param[out] outStringSize Pointer to store the string length\n"
         elif property_type == "guid":
-            comment_str += "* \param[out] guid Pointer to GUID to store property\n"
+            comment_str += "* \param[out] guid Pointer to buffer to store GUID property\n"
         elif property_type == "boolean":
             comment_str += "* \param[out] boolean Pointer to bool to store property\n"
         elif property_type == "int":
@@ -175,23 +175,23 @@ class CPublicBufferHeaderWriter(HeaderWriter):
                                                                                          property_type.title())
         accessor_str += "(\n"
         accessor_str += "{0}DATABUFHANDLE dataBuffer,\n".format(self._api.get_upper_api_acronym())
-        accessor_str += "int bufferProperty,\n"
-        accessor_str += "int index,\n"
+        accessor_str += "int16_t bufferProperty,\n"
+        accessor_str += "int16_t index,\n"
         if property_type == "string":
-            accessor_str += "LPWSTR str,\n"
-            accessor_str += "UINT32 strLength\n"
+            accessor_str += "WCharP str,\n"
+            accessor_str += "uint32_t strLength\n"
         elif property_type == "StringLength":
             accessor_str += "size_t* outStringSize\n"
         elif property_type == "guid":
-            accessor_str += "LPGUID guid\n"
+            accessor_str += "WCharP guid\n"
         elif property_type == "boolean":
             accessor_str += "bool* boolean\n"
         elif property_type == "int":
-            accessor_str += "int* integer\n"
+            accessor_str += "int16_t* integer\n"
         elif property_type == "double":
             accessor_str += "double* pDouble\n"
         elif property_type == "long":
-            accessor_str += "long* pLong\n"
+            accessor_str += "int32_t* pLong\n"
         else:
             raise PropertyTypeError("Property type {0} not accepted".format(property_type))
         accessor_str += ");\n"
