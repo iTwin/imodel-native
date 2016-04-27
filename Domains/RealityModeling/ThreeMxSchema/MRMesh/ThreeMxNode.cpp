@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ThreeMxSchema/MRMesh/MRMeshNode.cpp $
+|     $Source: ThreeMxSchema/MRMesh/ThreeMxNode.cpp $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -32,7 +32,7 @@ void Node::Clear()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Node::PushNode(NodeInfo const& nodeInfo)
     {
-    if (nodeInfo.m_children.empty())
+    if (nodeInfo.GetChildren().empty())
         return;
 
     m_children.push_back(new Node(nodeInfo, this));
@@ -44,25 +44,22 @@ void Node::PushNode(NodeInfo const& nodeInfo)
 void Node::AddGeometry(int32_t nodeId, Graphic::TriMeshArgs& args, int32_t textureIndex, SceneR scene)
     {
     ByteStream* jpeg = GetTextureData(textureIndex);
-    if (nullptr == jpeg)
+    if (nullptr != jpeg)
         {
-//        BeAssert(false); // ???
-        return;
+        RgbImageInfo imageInfo;
+        Render::Image rgba;
+        if (SUCCESS != imageInfo.ReadImageFromJpgBuffer(rgba, jpeg->GetData(), jpeg->GetSize()))
+            return;
+
+        Render::TexturePtr texture;
+        if (scene.m_renderSystem)
+            {
+            texture = scene.m_renderSystem->_CreateTexture(rgba, imageInfo.m_hasAlpha);
+            jpeg->Clear(); // we no longer need the jpeg data
+            }
+        args.m_texture = texture.get();
         }
 
-    RgbImageInfo imageInfo;
-    Render::Image rgba;
-    if (SUCCESS != imageInfo.ReadImageFromJpgBuffer(rgba, jpeg->GetData(), jpeg->GetSize()))
-        return;
-
-    Render::TexturePtr texture;
-    if (scene.m_target)
-        {
-        texture = scene.m_target->_CreateTexture(rgba, imageInfo.m_hasAlpha);
-        jpeg->Clear(); // we no longer need the jpeg data
-        }
-
-    args.m_texture = texture.get();
     m_meshes.push_back(new Geometry(args, scene));
     }
 
@@ -71,7 +68,7 @@ void Node::AddGeometry(int32_t nodeId, Graphic::TriMeshArgs& args, int32_t textu
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeFileName Node::GetFileName() const
     {
-    return m_info.m_children.empty() ? BeFileName() : Util::ConstructNodeName(m_info.m_children.front(), nullptr == m_parent ? nullptr : &m_parent->m_dir);
+    return m_info.GetChildren().empty() ? BeFileName() : Scene::ConstructNodeName(m_info.GetChildren().front(), nullptr == m_parent ? nullptr : &m_parent->m_dir);
     }
 
 /*-----------------------------------------------------------------------------------**//**
@@ -82,7 +79,7 @@ BentleyStatus Node::Load(SceneR scene)
     if (!m_dir.empty())
         return SUCCESS;         // Already loaded.
 
-    if (1 != m_info.m_children.size())
+    if (1 != m_info.GetChildren().size())
         {
         BeAssert(false);
         return ERROR;
@@ -90,7 +87,7 @@ BentleyStatus Node::Load(SceneR scene)
 
     if (SUCCESS != scene.SynchronousRead(*this, GetFileName()))
         {
-        Util::DisplayNodeFailureWarning(GetFileName().c_str());
+        scene.DisplayNodeFailureWarning(GetFileName());
         m_dir.clear();
         return ERROR;
         }
@@ -234,7 +231,7 @@ bool Node::AreVisibleChildrenLoaded(MeshNodes& unloadedVisibleChildren, ViewCont
             {
             if (child->IsDisplayable())
                 {
-                if (viewContext.IsPointVisible(child->m_info.m_center, ViewContext::WantBoresite::No, child->m_info.m_radius))
+                if (viewContext.IsPointVisible(scene.GetNodeCenter(child->m_info), ViewContext::WantBoresite::No, scene.GetNodeRadius(child->m_info)))
                     child->Load(scene);
                 else if (!child->m_primary)
                     child->Clear();
@@ -245,7 +242,7 @@ bool Node::AreVisibleChildrenLoaded(MeshNodes& unloadedVisibleChildren, ViewCont
 
     for (auto const& child : m_children)
         {
-        if (!child->IsLoaded() && child->IsDisplayable() && viewContext.IsPointVisible(child->m_info.m_center, ViewContext::WantBoresite::No, child->m_info.m_radius))
+        if (!child->IsLoaded() && child->IsDisplayable() && viewContext.IsPointVisible(scene.GetNodeCenter(child->m_info), ViewContext::WantBoresite::No, scene.GetNodeRadius(child->m_info)))
             unloadedVisibleChildren.push_back(child);
         }
 
@@ -270,11 +267,11 @@ void Node::DrawMeshes(RenderContextR context)
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Node::DrawBoundingSphere(RenderContextR context) const
+void Node::DrawBoundingSphere(RenderContextR context, SceneCR scene) const
     {
     Render::GraphicPtr graphic = context.CreateGraphic(Render::Graphic::CreateParams());
 
-    graphic->AddSolidPrimitive(*ISolidPrimitive::CreateDgnSphere(DgnSphereDetail(m_info.m_center, m_info.m_radius)));
+    graphic->AddSolidPrimitive(*ISolidPrimitive::CreateDgnSphere(DgnSphereDetail(scene.GetNodeCenter(m_info), scene.GetNodeRadius(m_info))));
     graphic->Close();
     context.OutputGraphic(*graphic, nullptr);
     }
@@ -304,24 +301,24 @@ void Node::DrawMeshes(Render::GraphicR graphic, TransformCR transform)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Node::TestVisibility(bool& isUnderMaximumSize, ViewContextR viewContext, SceneR scene)
     {
-    if (!viewContext.IsPointVisible(m_info.m_center, ViewContext::WantBoresite::No, m_info.m_radius))
+    if (!IsDisplayable())
+        return true; // this seems wierd, but "is displayable" really means its a root node with no graphics. That means we need to draw its children.
+
+    DPoint3d center = scene.GetNodeCenter(m_info);
+    double radius = scene.GetNodeRadius(m_info);
+    if (!viewContext.IsPointVisible(center, ViewContext::WantBoresite::No, radius))
         return false;
 
     if (scene.UseFixedResolution())
         {
-        isUnderMaximumSize = (m_info.m_radius / scene.GetFixedResolution()) < m_info.m_dMax;
+        isUnderMaximumSize = (radius / scene.GetFixedResolution()) < m_info.GetMaxDiameter();
         }
     else
         {
-#if defined (BENTLEYCONFIG_OS_WINDOWS) && !defined (BENTLEY_WINRT)
-        double pixelSize  =  m_info.m_radius / viewContext.GetPixelSizeAtPoint(&m_info.m_center);
-
-        isUnderMaximumSize = pixelSize < Util::CalculateResolutionRatio() * m_info.m_dMax;
-#else
-        // WIP_NONPORT
-        isUnderMaximumSize = true;
-#endif
+        double pixelSize  =  radius / viewContext.GetPixelSizeAtPoint(&center);
+        isUnderMaximumSize = pixelSize < Scene::CalculateResolutionRatio() * m_info.GetMaxDiameter();
         }
+
     return true;
     }
 
@@ -527,31 +524,33 @@ void  Node::GetDepthMap(bvector<size_t>& map, bvector <bset<BeFileName>>& fileNa
         child->GetDepthMap(map, fileNames, depth+1);
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Daryl.Holmwood     04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-DRange3d Node::GetSphereRange() const
+DRange3d Node::GetSphereRange(SceneCR scene) const
     {
     DRange3d range;
-    range.InitFrom(m_info.m_center);
-    range.Extend(m_info.m_radius);
+    range.InitFrom(scene.GetNodeCenter(m_info));
+    range.Extend(scene.GetNodeRadius(m_info));
     return range;
     }
+#endif
 
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-DRange3d Node::GetRange() const
+DRange3d Node::GetRange(TransformCR trans) const
     {
     DRange3d range = DRange3d::NullRange();
 
     for (auto const& child : m_children)     // Prefer the more accurate child range...
-        range.UnionOf(range, child->GetRange());
+        range.UnionOf(range, child->GetRange(trans));
 
     if (range.IsNull())
         {
         for (auto const& mesh : m_meshes)
-            range.UnionOf(range, mesh->GetRange());
+            range.UnionOf(range, mesh->GetRange(trans));
         }
 
     return range;

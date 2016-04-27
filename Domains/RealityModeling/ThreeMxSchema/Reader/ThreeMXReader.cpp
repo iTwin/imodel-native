@@ -46,7 +46,7 @@ template<typename T> bool readVectorEntry(JsonValueCR pt, Utf8StringCR tag, bvec
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool readNodeInfo(JsonValueCR pt, NodeInfo& nodeInfo, Utf8String& nodeName, bvector<Utf8String>& nodeResources)
+bool NodeInfo::Read(JsonValueCR pt, Utf8String& nodeName, bvector<Utf8String>& nodeResources)
     {
     nodeName = pt.get("id", "").asCString();
 
@@ -85,8 +85,8 @@ static bool readNodeInfo(JsonValueCR pt, NodeInfo& nodeInfo, Utf8String& nodeNam
         sphereCenter[i] = (bbMin[i] + bbMax[i])*0.5;
         sphereDiameter += (bbMax[i] - bbMin[i])*(bbMax[i] - bbMin[i]);
         }
-    nodeInfo.m_radius = 0.5 * sqrt(sphereDiameter);
-    nodeInfo.m_center = DPoint3d::FromArray(&sphereCenter.front());
+    m_radius = 0.5 * sqrt(sphereDiameter);
+    m_center = DPoint3d::FromArray(&sphereCenter.front());
 
     Json::Value val = pt["maxScreenDiameter"];
     if (val.empty())
@@ -94,14 +94,15 @@ static bool readNodeInfo(JsonValueCR pt, NodeInfo& nodeInfo, Utf8String& nodeNam
         LOG_ERROR("Cannot find \"maxScreenDiameter\" entry");
         return false;
         }
-    nodeInfo.m_dMax = val.asDouble();
+
+    m_maxScreenDiameter = val.asDouble();
     if (!readVectorEntry(pt, "resources", nodeResources))
         {
         LOG_ERROR("Cannot find \"resources\" entry");
         return false;
         }
 
-    if (!readVectorEntry(pt, "children", nodeInfo.m_children))
+    if (!readVectorEntry(pt, "children", m_children))
         return false;
 
     return true;
@@ -201,7 +202,7 @@ BentleyStatus Node::Read3MXB(MxStreamBuffer& in, SceneR scene)
             Utf8String nodeName;
             bvector<Utf8String> nodeResources;
 
-            if (!readNodeInfo(entry[i], nodeInfo, nodeName, nodeResources))
+            if (!nodeInfo.Read(entry[i], nodeName, nodeResources))
                 return (BentleyStatus)ERROR;
 
             nodeIds[nodeName] = nodeCount++;
@@ -313,6 +314,7 @@ BentleyStatus Node::Read3MXB(MxStreamBuffer& in, SceneR scene)
     return SUCCESS;
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -332,11 +334,12 @@ BentleyStatus Node::Read3MXB(BeFileNameCR filename, SceneR scene)
 
     return Read3MXB(buf, scene);
     }
+#endif
 
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SceneInfo::Read3MX(MxStreamBuffer& buffer) 
+BentleyStatus SceneInfo::Read(MxStreamBuffer& buffer) 
     {
     Json::Value pt;
     Json::Reader reader;
@@ -386,15 +389,15 @@ BentleyStatus SceneInfo::Read3MX(MxStreamBuffer& buffer)
                 return ERROR;
                 }
             m_meshChildren.push_back(meshPath);
-            m_SRS = childPt.get("SRS", "").asCString();
-            if (!m_SRS.empty())
+            m_reprojectionSystem = childPt.get("SRS", "").asCString();
+            if (!m_reprojectionSystem.empty())
                 {
-                if (!readVectorEntry(childPt, "SRSOrigin", m_SRSOrigin))
+                if (!readVectorEntry(childPt, "SRSOrigin", m_origin))
                     {
                     LOG_ERROR("Could not find the SRS origin");
                     return ERROR;
                     }
-                if (m_SRSOrigin.size() != 3)
+                if (m_origin.size() != 3)
                     {
                     LOG_ERROR("Malformed SRS origin");
                     return ERROR;
@@ -405,6 +408,7 @@ BentleyStatus SceneInfo::Read3MX(MxStreamBuffer& buffer)
     return SUCCESS;
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -423,3 +427,4 @@ BentleyStatus SceneInfo::Read3MX(BeFileNameCR filename)
 
     return Read3MX(buf);
     }
+#endif
