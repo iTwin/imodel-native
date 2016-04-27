@@ -22,7 +22,7 @@
 * \param[in] productId used for usage tracking
 * \return WSAPIHANDLE API object
 ****************************************************************************************/
-CWSCC_EXPORT CWSCCHANDLE ConnectWebServicesClientC_InitializeApiWithToken(LPCWSTR authenticatedToken, uint32_t productId);
+CWSCC_EXPORT CWSCCHANDLE ConnectWebServicesClientC_InitializeApiWithToken(WCharCP authenticatedToken, uint32_t productId);
 
 /************************************************************************************//**
 * \brief Initialize the API with user credentials
@@ -31,7 +31,7 @@ CWSCC_EXPORT CWSCCHANDLE ConnectWebServicesClientC_InitializeApiWithToken(LPCWST
 * \param[in] productId used for usage tracking
 * \return WSAPIHANDLE API object
 ****************************************************************************************/
-CWSCC_EXPORT CWSCCHANDLE ConnectWebServicesClientC_InitializeApiWithCredentials(LPCWSTR username, LPCWSTR password, uint32_t productId);
+CWSCC_EXPORT CWSCCHANDLE ConnectWebServicesClientC_InitializeApiWithCredentials(WCharCP username, WCharCP password, uint32_t productId);
 
 /************************************************************************************//**
 * \brief Generic REST utility

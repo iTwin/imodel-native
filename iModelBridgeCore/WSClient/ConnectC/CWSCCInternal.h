@@ -10,8 +10,6 @@
 
 #pragma once
 
-#include <objbase.h> //UuidToString
-
 #include "WSLocalState.h"
 #include "CWSCCPrivate.h"
 #include "CWSCCGenBuffer.h"
