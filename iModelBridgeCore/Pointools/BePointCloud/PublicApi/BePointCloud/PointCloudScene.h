@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/BePointCloud/PointCloudScene.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -52,7 +52,7 @@ struct PointCloudScene : public RefCounted<IPointCloudFileEdit>
         BEPOINTCLOUD_EXPORT     PThandle                GetMetadataHandle () const;
         BEPOINTCLOUD_EXPORT     PThandle                GetSceneHandle () const;
         BEPOINTCLOUD_EXPORT     PThandle                GetColorChannelHandle() const;
-        BEPOINTCLOUD_EXPORT     void                    GetRange (DRange3d& range, bool convertToUor) const;
+        BEPOINTCLOUD_EXPORT     void                    GetRange (DRange3d& range) const;
 
         BEPOINTCLOUD_EXPORT     void                    SetFrustumQueryHandle(PointCloudQueryHandleP handle);  
         BEPOINTCLOUD_EXPORT     PointCloudQueryHandleP  GetFrustumQueryHandle() const;

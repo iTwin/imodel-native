@@ -2,10 +2,12 @@
 |
 |     $Source: PointCloudScene.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <BePointCloudInternal.h>
+
+#define TO_BOOL(x)              (0 != (x))
 
 USING_NAMESPACE_BENTLEY_BEPOINTCLOUD
 
@@ -147,25 +149,20 @@ PThandle PointCloudScene::GetColorChannelHandle () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    StephanePoulin  09/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PointCloudScene::GetRange (DRange3d& range, bool convertToUor) const
+void PointCloudScene::GetRange (DRange3d& range) const
     {
     //  Get the Pointools range
     range.low.x  = range.low.y  = range.low.z  = DBL_MAX;
     range.high.x = range.high.y = range.high.z = -DBL_MAX;
 
     float lower [3], upper [3];
-    ptSceneBounds (GetSceneHandle(), lower, upper);
-
-    double multFactor = 1.0;
-    if (convertToUor)
-        multFactor = UOR_PER_METER;
-        
-    range.low.x  = lower [0] * multFactor;
-    range.low.y  = lower [1] * multFactor;
-    range.low.z  = lower [2] * multFactor;
-    range.high.x = upper [0] * multFactor;
-    range.high.y = upper [1] * multFactor;
-    range.high.z = upper [2] * multFactor;
+    ptSceneBounds (GetSceneHandle(), lower, upper);        
+    range.low.x = lower[0];
+    range.low.y = lower[1];
+    range.low.z = lower[2];
+    range.high.x = upper[0];
+    range.high.y = upper[1];
+    range.high.z = upper[2];
     }
 
 /*---------------------------------------------------------------------------------**//**
