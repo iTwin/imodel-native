@@ -56,9 +56,19 @@ public:
 
     struct Properties
         {
-        DRange3d            m_range;        //! Point Cloud range
-        Utf8String          m_fileId;       //! File id provided by the application. Used to resolve the local file name.
+        Properties();
+        ~Properties() {}
 
+        Utf8String      m_fileId;           //! File id provided by the application. Used to resolve the local file name.
+        Utf8String      m_description;
+
+        Transform       m_sceneToWorld;     //! Including reprojection transformation if any.
+        Utf8String      m_wkt;
+        float           m_density;
+
+        ColorDef        m_color;
+        uint32_t        m_weight;
+        
         void ToJson(Json::Value&) const;
         void FromJson(Json::Value const&);
         };
@@ -66,7 +76,6 @@ public:
 private:
     mutable LoadStatus                          m_loadSceneStatus;
     mutable BePointCloud::PointCloudScenePtr    m_pointCloudScenePtr;
-    mutable Transform                           m_sceneToWorld;
     mutable std::map<DgnViewportCP, RefCountedPtr<PtViewport>> m_cachedPtViewport;
 
     //! May return nullptr when we reach the limit.
@@ -77,6 +86,10 @@ private:
         {
         static void DPoint3dToJson(JsonValueR outValue, DPoint3dCR point);
         static void DPoint3dFromJson(DPoint3dR point, Json::Value const& inValue);
+        static void TransformRowFromJson(double* row, JsonValueCR inValue);
+        static void TransformRowToJson(JsonValueR outValue, double const* row);
+        static void TransformFromJson(TransformR trans, JsonValueCR inValue);
+        static void TransformToJson(JsonValueR outValue, TransformCR trans);
         };
 
 protected:
@@ -88,28 +101,56 @@ protected:
     //! Destruct a PointCloudModel object.
     ~PointCloudModel();
 
+    virtual void _AddSceneGraphics(Dgn::SceneContextR) const override;
+    virtual void _OnFitView(Dgn::FitContextR) override;
+    virtual void _DropGraphicsForViewport(Dgn::DgnViewportCR viewport) override;
+    virtual void _WriteJsonProperties(Json::Value&) const override;
+    virtual void _ReadJsonProperties(Json::Value const&) override;
+    virtual Dgn::AxisAlignedBox3d _QueryModelRange() const override;
 public:
-
     //! Create a new PointCloudModel object, in preparation for loading it from the DgnDb.
     PointCloudModel(CreateParams const& params);
     PointCloudModel(CreateParams const& params, PointCloudModel::Properties const& properties) ;
 
-    virtual void _AddSceneGraphics(Dgn::SceneContextR) const override;
-
-    virtual void _OnFitView(Dgn::FitContextR) override;
-    
-    virtual void _DropGraphicsForViewport(Dgn::DgnViewportCR viewport) override;
-
-    virtual void _WriteJsonProperties(Json::Value&) const override;
-    virtual void _ReadJsonProperties(Json::Value const&) override;
-    virtual Dgn::AxisAlignedBox3d _QueryModelRange() const override;
     BePointCloud::PointCloudSceneP GetPointCloudSceneP () const;
-    DRange3dCR GetRange() const {return m_properties.m_range;}
-    DRange3dR GetRangeR() {return m_properties.m_range;}
-    DRange3d GetSceneRange() const;
-
-    TransformCR GetSceneToWorld() const {return m_sceneToWorld;}
     
+    enum class Unit { Scene = 1, World = 2 };
+
+    //! Return true is successful. Will fail if we cannot open the point cloud.
+    bool GetRange(DRange3dR, Unit const&) const;
+
+    POINTCLOUDSCHEMA_EXPORT Utf8StringCR GetSpatialReferenceWkt() const;
+    POINTCLOUDSCHEMA_EXPORT void SetSpatialReferenceWkt(Utf8CP wktString);
+
+    //! Gets the description of the point cloud.
+    //! @return         Description of the point cloud.
+    POINTCLOUDSCHEMA_EXPORT Utf8StringCR GetDescription() const;
+    
+    //! Sets the description of the point cloud.
+    //! @param[in]      description     Description of the point cloud.
+    POINTCLOUDSCHEMA_EXPORT void SetDescription(Utf8CP description);
+
+    //! Gets the transformation matrix. 
+    //! @return         A transformation matrix.
+    POINTCLOUDSCHEMA_EXPORT TransformCR GetSceneToWorld() const;
+
+    //! Set the transformation matrix.
+    POINTCLOUDSCHEMA_EXPORT void SetSceneToWorld(TransformCR trans);
+
+    //! Gets the density of a point cloud. This represents the density of points displayed for this point cloud.
+    //! @return    The density (a float value between 0.0 and 1.0).
+    POINTCLOUDSCHEMA_EXPORT float GetViewDensity() const;
+
+    //! Sets the density of a point cloud. This represents the density of points displayed for this point cloud. Default is 1.0.
+    //! @param[in]  density  The view density expressed as percentage (a float value between 0.0 and 1.0).
+    POINTCLOUDSCHEMA_EXPORT void SetViewDensity(float density);
+
+    POINTCLOUDSCHEMA_EXPORT ColorDef GetColor() const;
+    POINTCLOUDSCHEMA_EXPORT void SetColor(ColorDef const& newColor);
+
+    POINTCLOUDSCHEMA_EXPORT uint32_t GetWeight() const;
+    POINTCLOUDSCHEMA_EXPORT void SetWeight(uint32_t const& newWeight);
+
     //! Query the DgnClassId of the PointCloudModel ECClass in the specified DgnDb.
     //! @note This is a static method that always returns the DgnClassId of the PointCloudModel class - it does @em not return the class of a specific instance.
     static Dgn::DgnClassId QueryClassId(Dgn::DgnDbCR dgndb) { return Dgn::DgnClassId(dgndb.Schemas().GetECClassId(POINTCLOUD_SCHEMA_NAME, POINTCLOUD_CLASSNAME_PointCloudModel)); }

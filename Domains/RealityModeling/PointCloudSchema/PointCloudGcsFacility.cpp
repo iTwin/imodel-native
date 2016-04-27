@@ -13,36 +13,29 @@ USING_NAMESPACE_BENTLEY_POINTCLOUDSCHEMA
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Stephane.Poulin                 11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnGCSPtr PointCloudGcsFacility::CreateGcsFromWkt(WStringCR spatialReferenceWkt, DgnDbR dgnDb, bool reprojectElevation)
+GeoCoordinates::BaseGCSPtr PointCloudGcsFacility::CreateGcsFromWkt(WStringCR spatialReferenceWkt)
     {
-    DgnGCSPtr sceneGcs;
-//    WString spatialReferenceWktStr(spatialReferenceWkt);
+    if (spatialReferenceWkt.empty())
+        return nullptr;
 
-    if (!spatialReferenceWkt.empty())
-        {
-        StatusInt warning;
-        WString   warningErrorMsg;
+    StatusInt warning;
+    WString   warningErrorMsg;
         
-        WString            wktWithoutFlavor;
-        GeoCoordinates::BaseGCS::WktFlavor wktFlavor = PointCloudGcsFacility::GetWKTFlavor(&wktWithoutFlavor, spatialReferenceWkt);
+    WString wktWithoutFlavor;
+    GeoCoordinates::BaseGCS::WktFlavor wktFlavor = PointCloudGcsFacility::GetWKTFlavor(&wktWithoutFlavor, spatialReferenceWkt);
 
-        // Create a GCS from the point cloud Wkt string
-        GeoCoordinates::BaseGCSPtr pSrcBaseGcs = GeoCoordinates::BaseGCS::CreateGCS();
-        if(pSrcBaseGcs.IsValid())
-            {
-            pSrcBaseGcs->InitFromWellKnownText(&warning, &warningErrorMsg, wktFlavor, wktWithoutFlavor.GetWCharCP());
-            if(pSrcBaseGcs->IsValid())
-                // POINTCLOUD_WIP_GR06_GCS - Dont create DgnGCS; keep the base, because PC exposes a baseGCS, not a DgnGCS
-                sceneGcs = DgnGCS::CreateGCS(pSrcBaseGcs.get(), dgnDb);
-            }
-        }
+    // Create a GCS from the point cloud Wkt string
+    GeoCoordinates::BaseGCSPtr pSrcBaseGcs = GeoCoordinates::BaseGCS::CreateGCS();
+    if (!pSrcBaseGcs.IsValid())
+        return nullptr;
 
-    if (sceneGcs.IsNull() || !sceneGcs->IsValid())
-        return NULL;
+    pSrcBaseGcs->InitFromWellKnownText(&warning, &warningErrorMsg, wktFlavor, wktWithoutFlavor.GetWCharCP());
+    if (pSrcBaseGcs.IsNull() || !pSrcBaseGcs->IsValid())
+        return nullptr;
 
-    sceneGcs->SetReprojectElevation(reprojectElevation);
+    pSrcBaseGcs->SetReprojectElevation(true);
 
-    return sceneGcs;
+    return pSrcBaseGcs;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -135,57 +128,40 @@ BentleyStatus PointCloudGcsFacility::ComputeLocalTransform(DRange3dCR range, Dgn
     }
 
 //----------------------------------------------------------------------------------------
-// Get transformation from native point cloud coordinates to UOR. The transformation required
-// for the reprojection to the local coordinate system is included in the output Transform.
-// 
-// @bsimethod                                                       Eric.Paquet     2/2015
+// @bsimethod                                                   Mathieu.Marchand  4/2016
 //----------------------------------------------------------------------------------------
-BentleyStatus PointCloudGcsFacility::GetTransformToUor(TransformR transform, WString wktStringGeoreference, DRange3dCR rangeUOR, DgnDbR dgnDb)
+BentleyStatus PointCloudGcsFacility::ComputeSceneToWorldTransform(TransformR sceneToWorld, WStringCR spatialReferenceWkt, DRange3dCR range, DgnDbR dgnDb)
     {
-    // Transformation to UOR
-    Transform sceneToUor;
-    sceneToUor.InitIdentity ();
-    sceneToUor.ScaleMatrixColumns(UOR_PER_METER, UOR_PER_METER, UOR_PER_METER);
+    //  *** Not required UOR_PER_METER == 1
+    //     Transform sceneToUor;
+    //     sceneToUor.InitIdentity();
+    //     sceneToUor.ScaleMatrixColumns(UOR_PER_METER, UOR_PER_METER, UOR_PER_METER);
+    sceneToWorld.InitIdentity();
 
-    // Include transformation for the coordinate system if required
-    Transform reproTrf;
-    if (SUCCESS != GetLocalTransformForReprojection(reproTrf, wktStringGeoreference, rangeUOR, dgnDb))
-        {
-        // No reprojection to the local coordinate system occurred.
-        reproTrf.InitIdentity ();
-        }
+    if (spatialReferenceWkt.empty())
+        return SUCCESS;
 
-    transform.InitProduct (reproTrf, sceneToUor);
-    return BSISUCCESS;
-    }
+    // Scene GCS
+    GeoCoordinates::BaseGCSPtr pSceneGcs = PointCloudGcsFacility::CreateGcsFromWkt(spatialReferenceWkt);
+    if (pSceneGcs.IsNull() || !pSceneGcs->IsValid())
+        return SUCCESS; // Assumed to be coincident.
 
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                       Eric.Paquet     2/2015
-//----------------------------------------------------------------------------------------
-BentleyStatus PointCloudGcsFacility::GetLocalTransformForReprojection(TransformR transform, WString wktStringGeoreference, DRange3dCR rangeUOR, DgnDbR dgnDb)
-    {
-    transform.InitIdentity ();
-
-    // Must be able to create a valid GCS
+    // Dgn GCS
     DgnGCSP pDstGcs = dgnDb.Units().GetDgnGCS();
-
     if (pDstGcs == NULL || !pDstGcs->IsValid())
-        return ERROR;
+        return SUCCESS; // Assumed to be coincident.    
 
-    //&&ep PointCloud gcs must be a BaseGcs and not a DgnGcs. What about gcs unit???
-    // Must be able to create a valid GCS
-    DgnGCSPtr pSrcGcs = PointCloudGcsFacility::CreateGcsFromWkt(wktStringGeoreference, dgnDb, true);
-    if (pSrcGcs.IsNull() || !pSrcGcs->IsValid())
-        return ERROR;
+    // POINTCLOUD_WIP_GR06_GCS - Dont create DgnGCS; keep the base, because PC exposes a baseGCS, not a DgnGCS
+    // Review the need to transform range with UnitsFromMeters if we stop using DgnGcs.
+    DgnGCSPtr pSrcGcs = DgnGCS::CreateGCS(pSceneGcs.get(), dgnDb);
 
     // If the wkt are equals, nothing to do
     if (pSrcGcs->IsEquivalent(*pDstGcs))
-        return ERROR;
+        return SUCCESS;
 
-    BentleyStatus status = SUCCESS;
     bool originalElevationValue = pDstGcs->SetReprojectElevation(true);
-    if(SUCCESS != PointCloudGcsFacility::ComputeLocalTransform(rangeUOR, *pSrcGcs, *pDstGcs, transform))
-        status = ERROR;
+
+    BentleyStatus status = PointCloudGcsFacility::ComputeLocalTransform(range, *pSrcGcs, *pDstGcs, sceneToWorld);
 
     // Restore original value
     pDstGcs->SetReprojectElevation(originalElevationValue);
