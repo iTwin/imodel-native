@@ -145,7 +145,7 @@ Exp::FinalizeParseStatus InsertStatementExp::Validate (ECSqlParseContext& ctx) c
         PropertyNameExp const* propertyNameExp = propertyNameListExp->GetPropertyNameExp(i);
 
         Utf8String errorMessage;
-        if (!propertyNameExp->GetTypeInfo().Matches(valueExp->GetTypeInfo(), &errorMessage))
+        if (!propertyNameExp->GetTypeInfo().CanCompare(valueExp->GetTypeInfo(), &errorMessage))
             {
             ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch in INSERT statement: %s", errorMessage.c_str());
             return FinalizeParseStatus::Error;

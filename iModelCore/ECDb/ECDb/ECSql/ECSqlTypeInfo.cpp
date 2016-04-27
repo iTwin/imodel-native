@@ -22,64 +22,63 @@ ECSqlTypeInfo::ECSqlTypeInfo(ECSqlTypeInfo::Kind kind)
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-ECSqlTypeInfo::ECSqlTypeInfo (ECN::PrimitiveType primitiveType, DateTimeInfo const* dateTimeInfo /*= nullptr*/) 
-    : m_structType (nullptr), m_propertyMap (nullptr)
+ECSqlTypeInfo::ECSqlTypeInfo(ECN::PrimitiveType primitiveType, DateTimeInfo const* dateTimeInfo /*= nullptr*/)
+    : m_structType(nullptr), m_propertyMap(nullptr)
     {
-    Populate (false, &primitiveType, nullptr, 0, 0, dateTimeInfo);
+    Populate(false, &primitiveType, nullptr, 0, 0, dateTimeInfo);
     }
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-ECSqlTypeInfo::ECSqlTypeInfo (ECN::PrimitiveType primitiveType, uint32_t minOccurs, uint32_t maxOccurs, DateTimeInfo const* dateTimeInfo /*= nullptr*/)
-: m_structType (nullptr), m_propertyMap (nullptr)
+ECSqlTypeInfo::ECSqlTypeInfo(ECN::PrimitiveType primitiveType, uint32_t minOccurs, uint32_t maxOccurs, DateTimeInfo const* dateTimeInfo /*= nullptr*/)
+    : m_structType(nullptr), m_propertyMap(nullptr)
     {
-    Populate (true, &primitiveType, nullptr, minOccurs, maxOccurs, dateTimeInfo);
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                     08/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-ECSqlTypeInfo::ECSqlTypeInfo (ECN::ECClassCR structType) 
-: m_structType (nullptr), m_propertyMap (nullptr), m_primitiveType (static_cast<ECN::PrimitiveType>(0))
-    {
-    Populate (false, nullptr, &structType, 0, 0, nullptr);
+    Populate(true, &primitiveType, nullptr, minOccurs, maxOccurs, dateTimeInfo);
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-ECSqlTypeInfo::ECSqlTypeInfo (ECN::ECClassCR structType, uint32_t minOccurs, uint32_t maxOccurs)
-: m_structType (nullptr), m_propertyMap (nullptr), m_primitiveType (static_cast<ECN::PrimitiveType>(0))
+ECSqlTypeInfo::ECSqlTypeInfo(ECN::ECClassCR structType)
+    : m_structType(nullptr), m_propertyMap(nullptr), m_primitiveType(static_cast<ECN::PrimitiveType>(0))
     {
-    Populate (true, nullptr, &structType, minOccurs, maxOccurs, nullptr);
+    Populate(false, nullptr, &structType, 0, 0, nullptr);
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                     08/2013
+//+---------------+---------------+---------------+---------------+---------------+--------
+ECSqlTypeInfo::ECSqlTypeInfo(ECN::ECClassCR structType, uint32_t minOccurs, uint32_t maxOccurs)
+    : m_structType(nullptr), m_propertyMap(nullptr), m_primitiveType(static_cast<ECN::PrimitiveType>(0))
+    {
+    Populate(true, nullptr, &structType, minOccurs, maxOccurs, nullptr);
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     04/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
-ECSqlTypeInfo::ECSqlTypeInfo (ECN::ECPropertyCR ecProperty)
-: m_structType (nullptr), m_primitiveType (static_cast<ECN::PrimitiveType>(0))
+ECSqlTypeInfo::ECSqlTypeInfo(ECN::ECPropertyCR ecProperty)
+    : m_structType(nullptr), m_primitiveType(static_cast<ECN::PrimitiveType>(0))
     {
-    DetermineTypeInfo (ecProperty);
+    DetermineTypeInfo(ecProperty);
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     09/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-ECSqlTypeInfo::ECSqlTypeInfo (PropertyMapCR propertyMap)
-: m_structType (nullptr), m_propertyMap (&propertyMap), m_primitiveType (static_cast<ECN::PrimitiveType>(0))
+ECSqlTypeInfo::ECSqlTypeInfo(PropertyMapCR propertyMap)
+    : m_structType(nullptr), m_propertyMap(&propertyMap), m_primitiveType(static_cast<ECN::PrimitiveType>(0))
     {
-    DetermineTypeInfo (propertyMap.GetProperty ());
+    DetermineTypeInfo(propertyMap.GetProperty());
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-ECSqlTypeInfo::ECSqlTypeInfo (ECSqlTypeInfo const& rhs) 
-    : m_kind (rhs.m_kind), m_primitiveType (rhs.m_primitiveType), m_dateTimeInfo (rhs.m_dateTimeInfo), m_structType (rhs.m_structType),
-     m_minOccurs (rhs.m_minOccurs), m_maxOccurs (rhs.m_maxOccurs), m_propertyMap (rhs.m_propertyMap)
-    {
-    }
+ECSqlTypeInfo::ECSqlTypeInfo(ECSqlTypeInfo const& rhs)
+    : m_kind(rhs.m_kind), m_primitiveType(rhs.m_primitiveType), m_dateTimeInfo(rhs.m_dateTimeInfo), m_structType(rhs.m_structType),
+    m_minOccurs(rhs.m_minOccurs), m_maxOccurs(rhs.m_maxOccurs), m_propertyMap(rhs.m_propertyMap)
+    {}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     08/2013
@@ -103,11 +102,10 @@ ECSqlTypeInfo& ECSqlTypeInfo::operator= (ECSqlTypeInfo const& rhs)
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-ECSqlTypeInfo::ECSqlTypeInfo (ECSqlTypeInfo&& rhs) 
-    : m_kind (std::move (rhs.m_kind)), m_primitiveType (std::move (rhs.m_primitiveType)), m_dateTimeInfo (std::move (rhs.m_dateTimeInfo)), m_structType (std::move (rhs.m_structType)), 
-    m_minOccurs (std::move (rhs.m_minOccurs)), m_maxOccurs (std::move (rhs.m_maxOccurs)), m_propertyMap (std::move (rhs.m_propertyMap))
-    {
-    }
+ECSqlTypeInfo::ECSqlTypeInfo(ECSqlTypeInfo&& rhs)
+    : m_kind(std::move(rhs.m_kind)), m_primitiveType(std::move(rhs.m_primitiveType)), m_dateTimeInfo(std::move(rhs.m_dateTimeInfo)), m_structType(std::move(rhs.m_structType)),
+    m_minOccurs(std::move(rhs.m_minOccurs)), m_maxOccurs(std::move(rhs.m_maxOccurs)), m_propertyMap(std::move(rhs.m_propertyMap))
+    {}
 
 
 //-----------------------------------------------------------------------------------------
@@ -117,13 +115,13 @@ ECSqlTypeInfo& ECSqlTypeInfo::operator= (ECSqlTypeInfo&& rhs)
     {
     if (this != &rhs)
         {
-        m_kind = std::move (rhs.m_kind);
-        m_primitiveType = std::move (rhs.m_primitiveType);
-        m_dateTimeInfo = std::move (rhs.m_dateTimeInfo);
-        m_structType = std::move (rhs.m_structType);
-        m_minOccurs = std::move (rhs.m_minOccurs);
-        m_maxOccurs = std::move (rhs.m_maxOccurs);
-        m_propertyMap = std::move (rhs.m_propertyMap);
+        m_kind = std::move(rhs.m_kind);
+        m_primitiveType = std::move(rhs.m_primitiveType);
+        m_dateTimeInfo = std::move(rhs.m_dateTimeInfo);
+        m_structType = std::move(rhs.m_structType);
+        m_minOccurs = std::move(rhs.m_minOccurs);
+        m_maxOccurs = std::move(rhs.m_maxOccurs);
+        m_propertyMap = std::move(rhs.m_propertyMap);
         }
 
     return *this;
@@ -132,7 +130,7 @@ ECSqlTypeInfo& ECSqlTypeInfo::operator= (ECSqlTypeInfo&& rhs)
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     09/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-void ECSqlTypeInfo::Populate (bool isArray, ECN::PrimitiveType const* primitiveType, ECN::ECClassCP structType, uint32_t minOccurs, uint32_t maxOccurs, DateTimeInfo const* dateTimeInfo)
+void ECSqlTypeInfo::Populate(bool isArray, ECN::PrimitiveType const* primitiveType, ECN::ECClassCP structType, uint32_t minOccurs, uint32_t maxOccurs, DateTimeInfo const* dateTimeInfo)
     {
     if (primitiveType != nullptr)
         {
@@ -161,10 +159,18 @@ void ECSqlTypeInfo::Populate (bool isArray, ECN::PrimitiveType const* primitiveT
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     09/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-bool ECSqlTypeInfo::Matches (ECSqlTypeInfo const& rhs, Utf8String* errorMessage) const
+bool ECSqlTypeInfo::Equals(ECSqlTypeInfo const& rhs) const
     {
-    const auto lhsKind = GetKind ();
-    const auto rhsKind = rhs.GetKind ();
+    return m_kind == rhs.m_kind && m_primitiveType == rhs.m_primitiveType && m_structType == rhs.m_structType;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                     09/2013
+//+---------------+---------------+---------------+---------------+---------------+--------
+bool ECSqlTypeInfo::CanCompare(ECSqlTypeInfo const& rhs, Utf8String* errorMessage) const
+    {
+    const Kind lhsKind = GetKind();
+    const Kind rhsKind = rhs.GetKind();
     //if unset or varies, types are not comparable. If one is NULL it is always comparable.
     //In the remaining cases, the kind needs to be the same.
     if (lhsKind == Kind::Unset || rhsKind == Kind::Unset ||
@@ -175,46 +181,47 @@ bool ECSqlTypeInfo::Matches (ECSqlTypeInfo const& rhs, Utf8String* errorMessage)
     if (lhsKind == Kind::Null || rhsKind == Kind::Null)
         return true;
 
-    //now detail checks
-    auto canCompare = false;
+    //now detail checks (kinds are equal on both sides)
+
+    bool canCompare = false;
     //struct check
     if (lhsKind == Kind::Struct || lhsKind == Kind::StructArray)
         {
         canCompare = GetStructType().GetId() == rhs.GetStructType().GetId();
         if (!canCompare && errorMessage != nullptr)
-            *errorMessage = "Left and right side of expression must both be of same ECStruct type.";
+            *errorMessage = "Left and right side of expression must both be of same Struct or StructArray type.";
 
         return canCompare;
         }
 
     //primitive or primitive array checks
-    const PrimitiveType lhsType = GetPrimitiveType ();
-    const PrimitiveType rhsType = rhs.GetPrimitiveType ();
+    const PrimitiveType lhsType = GetPrimitiveType();
+    const PrimitiveType rhsType = rhs.GetPrimitiveType();
 
-    if (lhsType == PRIMITIVETYPE_DateTime || rhsType == PRIMITIVETYPE_DateTime)
+    //DateTime only matches if their DateTimeInfo matches too (for primitive and primitive array props)
+    if (lhsType == PRIMITIVETYPE_DateTime && rhsType == PRIMITIVETYPE_DateTime)
         {
-        if (lhsType == rhsType)
-            {
-            canCompare = DateTimeInfoMatches (rhs.GetDateTimeInfo ());
-            if (!canCompare && errorMessage != nullptr)
-                *errorMessage = "DateTime metadata of left and right side of expression do not match.";
+        canCompare = DateTimeInfoMatches(rhs.GetDateTimeInfo());
+        if (!canCompare && errorMessage != nullptr)
+            *errorMessage = "DateTime metadata of left and right side of expression do not match.";
 
-            return canCompare;
-            }
-        else
-            {
-            //DateTimes must be on both sides. No implicit conversion
-            if (errorMessage != nullptr)
-                *errorMessage = "Left and right side of expression must both have DateTime type.";
+        return canCompare;
+        }
 
-            return false;
-            }
+    //prim array check
+    if (lhsKind == Kind::PrimitiveArray)
+        {
+        canCompare = lhsType == rhsType;
+        if (!canCompare && errorMessage != nullptr)
+            *errorMessage = "Left and right side of expression must both be of same primitive array type.";
+
+        return canCompare;
         }
 
     //Points / IGeometry must be same on both sides, too. For all other cases, do what SQLite does with it
     canCompare = (lhsType != PRIMITIVETYPE_Point2D && rhsType != PRIMITIVETYPE_Point2D &&
-            lhsType != PRIMITIVETYPE_Point3D && rhsType != PRIMITIVETYPE_Point3D &&
-            lhsType != PRIMITIVETYPE_IGeometry && rhsType != PRIMITIVETYPE_IGeometry) || lhsType == rhsType;
+                  lhsType != PRIMITIVETYPE_Point3D && rhsType != PRIMITIVETYPE_Point3D &&
+                  lhsType != PRIMITIVETYPE_IGeometry && rhsType != PRIMITIVETYPE_IGeometry) || lhsType == rhsType;
 
     if (!canCompare && errorMessage != nullptr)
         *errorMessage = "Left and right side of expression must both have Point2D / Point3D / IGeometry type.";
@@ -223,169 +230,46 @@ bool ECSqlTypeInfo::Matches (ECSqlTypeInfo const& rhs, Utf8String* errorMessage)
     }
 
 //-----------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                     10/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-bool ECSqlTypeInfo::Equals (ECSqlTypeInfo const& rhs, bool ignoreDateTimeInfo) const
-    {
-    return m_kind == rhs.m_kind && 
-        m_primitiveType == rhs.m_primitiveType && 
-        (ignoreDateTimeInfo || m_dateTimeInfo == rhs.m_dateTimeInfo) &&
-        m_structType == rhs.m_structType;
-    }
-
-//-----------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-ECSqlTypeInfo::Kind ECSqlTypeInfo::GetKind () const
+bool ECSqlTypeInfo::DateTimeInfoMatches(DateTimeInfo const& rhs) const
     {
-    return m_kind;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                     08/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-bool ECSqlTypeInfo::IsPrimitive() const
-    {
-    return m_kind == Kind::Primitive;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                     08/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-bool ECSqlTypeInfo::IsNumeric() const
-    {
-    return IsExactNumeric () || IsApproximateNumeric ();
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                     08/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-bool ECSqlTypeInfo::IsExactNumeric () const
-    {
-    return IsPrimitive () && (GetPrimitiveType () == ECN::PRIMITIVETYPE_Integer || GetPrimitiveType () == ECN::PRIMITIVETYPE_Long);
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                     08/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-bool ECSqlTypeInfo::IsApproximateNumeric() const
-    {
-    return IsPrimitive () && (GetPrimitiveType () == ECN::PRIMITIVETYPE_Double);
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                     04/2015
-//+---------------+---------------+---------------+---------------+---------------+--------
-bool ECSqlTypeInfo::IsBoolean() const
-    {
-    return IsPrimitive() && (GetPrimitiveType() == ECN::PRIMITIVETYPE_Boolean);
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                     06/2015
-//+---------------+---------------+---------------+---------------+---------------+--------
-bool ECSqlTypeInfo::IsString() const
-    {
-    return IsPrimitive() && (GetPrimitiveType() == ECN::PRIMITIVETYPE_String);
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                     09/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-bool ECSqlTypeInfo::IsDateTime () const
-    {
-    return IsPrimitive () && (GetPrimitiveType () == ECN::PRIMITIVETYPE_DateTime);
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                     06/2015
-//+---------------+---------------+---------------+---------------+---------------+--------
-bool ECSqlTypeInfo::IsBinary() const
-    {
-    return IsPrimitive() && (GetPrimitiveType() == ECN::PRIMITIVETYPE_Binary);
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                     08/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-bool ECSqlTypeInfo::IsPoint() const
-    {
-    return IsPrimitive () && (GetPrimitiveType () == ECN::PRIMITIVETYPE_Point2D || GetPrimitiveType () == ECN::PRIMITIVETYPE_Point3D);
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                     11/2014
-//+---------------+---------------+---------------+---------------+---------------+--------
-bool ECSqlTypeInfo::IsGeometry () const
-    {
-    return IsPrimitive () && (GetPrimitiveType () == ECN::PRIMITIVETYPE_IGeometry);
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                     08/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-bool ECSqlTypeInfo::IsStruct() const
-    {
-    return m_kind == Kind::Struct;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                     08/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-bool ECSqlTypeInfo::IsArray() const
-    {
-    return m_kind == Kind::PrimitiveArray || m_kind == Kind::StructArray;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                     08/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-bool ECSqlTypeInfo::DateTimeInfoMatches (DateTimeInfo const& rhs) const
-    {
-    DateTime::Info rhsMetadata = rhs.GetInfo (true);
-    const auto rhsKind = rhsMetadata.GetKind ();
-    const auto rhsComponent = rhsMetadata.GetComponent ();
-    return DateTimeInfoMatches (rhs.IsKindNull () ? nullptr : &rhsKind,
-        rhs.IsComponentNull () ? nullptr : &rhsComponent);
+    DateTime::Info rhsMetadata = rhs.GetInfo(true);
+    const auto rhsKind = rhsMetadata.GetKind();
+    const auto rhsComponent = rhsMetadata.GetComponent();
+    return DateTimeInfoMatches(rhs.IsKindNull() ? nullptr : &rhsKind,
+                               rhs.IsComponentNull() ? nullptr : &rhsComponent);
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     07/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
-bool ECSqlTypeInfo::DateTimeInfoMatches (DateTime::Info const* rhs) const
+bool ECSqlTypeInfo::DateTimeInfoMatches(DateTime::Info const* rhs) const
     {
     if (rhs == nullptr)
-        return DateTimeInfoMatches (nullptr, nullptr);
+        return DateTimeInfoMatches(nullptr, nullptr);
 
-    const auto rhsKind = rhs->GetKind ();
-    const auto rhsComponent = rhs->GetComponent ();
-    return DateTimeInfoMatches (&rhsKind, &rhsComponent);
+    const auto rhsKind = rhs->GetKind();
+    const auto rhsComponent = rhs->GetComponent();
+    return DateTimeInfoMatches(&rhsKind, &rhsComponent);
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     07/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
-bool ECSqlTypeInfo::DateTimeInfoMatches (DateTime::Kind const* rhsKind, DateTime::Component const* rhsComponent) const
+bool ECSqlTypeInfo::DateTimeInfoMatches(DateTime::Kind const* rhsKind, DateTime::Component const* rhsComponent) const
     {
-    auto const& lhsDtInfo = GetDateTimeInfo ();
-    auto lhsRawDtInfo = lhsDtInfo.GetInfo (true);
+    auto const& lhsDtInfo = GetDateTimeInfo();
+    auto lhsRawDtInfo = lhsDtInfo.GetInfo(true);
 
     //We allow date-only to interact with datetimes of any kind
-    if ((!lhsDtInfo.IsComponentNull () && lhsRawDtInfo.GetComponent () == DateTime::Component::Date) ||
+    if ((!lhsDtInfo.IsComponentNull() && lhsRawDtInfo.GetComponent() == DateTime::Component::Date) ||
         (rhsComponent != nullptr && *rhsComponent == DateTime::Component::Date))
         return true;
 
     //if kind (or component) is null on one side, the kind (or component) on the other side is ignored
-    return (lhsDtInfo.IsKindNull () || rhsKind == nullptr || lhsRawDtInfo.GetKind () == *rhsKind) &&
-        (lhsDtInfo.IsComponentNull () || rhsComponent == nullptr || lhsRawDtInfo.GetComponent () == *rhsComponent);
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                     08/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-ECN::ArrayKind ECSqlTypeInfo::GetArrayKind () const
-    {
-    return (m_structType != nullptr) ? ECN::ARRAYKIND_Struct : ECN::ARRAYKIND_Primitive;
+    return (lhsDtInfo.IsKindNull() || rhsKind == nullptr || lhsRawDtInfo.GetKind() == *rhsKind) &&
+        (lhsDtInfo.IsComponentNull() || rhsComponent == nullptr || lhsRawDtInfo.GetComponent() == *rhsComponent);
     }
 
 //-----------------------------------------------------------------------------------------

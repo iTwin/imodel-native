@@ -170,7 +170,7 @@ using namespace connectivity;
 %token <pParseNode> SQL_TOKEN_MATCH SQL_TOKEN_ECSQLOPTIONS
 
 //EC data types
-%token <pParseNode> SQL_TOKEN_BINARY SQL_TOKEN_BOOLEAN SQL_TOKEN_DOUBLE SQL_TOKEN_INTEGER SQL_TOKEN_INT SQL_TOKEN_INT32 SQL_TOKEN_LONG SQL_TOKEN_INT64 SQL_TOKEN_STRING SQL_TOKEN_DATE SQL_TOKEN_TIMESTAMP SQL_TOKEN_DATETIME SQL_TOKEN_POINT2D SQL_TOKEN_POINT3D 
+%token <pParseNode> SQL_TOKEN_BINARY SQL_TOKEN_BOOLEAN SQL_TOKEN_DOUBLE SQL_TOKEN_INTEGER SQL_TOKEN_INT SQL_TOKEN_LONG SQL_TOKEN_INT64 SQL_TOKEN_STRING SQL_TOKEN_DATE SQL_TOKEN_TIMESTAMP SQL_TOKEN_DATETIME 
 
 /* operators */
 %left SQL_TOKEN_NAME
@@ -206,7 +206,7 @@ using namespace connectivity;
 %type <pParseNode> insert_statement values_or_query_spec
 %type <pParseNode> rollback_statement select_statement_into opt_all_distinct
 %type <pParseNode> assignment_commalist assignment
-%type <pParseNode> update_statement_searched target_commalist target opt_where_clause ec_data_type
+%type <pParseNode> update_statement_searched target_commalist target opt_where_clause
 %type <pParseNode> single_select_statement selection table_exp from_clause table_ref_commalist table_ref
 %type <pParseNode> where_clause opt_group_by_clause opt_having_clause
 %type <pParseNode> search_condition predicate comparison_predicate comparison_predicate_part_2 between_predicate between_predicate_part_2
@@ -220,10 +220,9 @@ using namespace connectivity;
 %type <pParseNode> position_exp extract_exp length_exp general_value_spec
 %type <pParseNode> general_set_fct set_fct_type joined_table ecrelationship_join op_relationship_direction
 %type <pParseNode> row_value_constructor_commalist row_value_constructor  row_value_constructor_elem
-/* %type <pParseNode> row_value_const_list*/
 %type <pParseNode> qualified_join value_exp join_type outer_join_type join_condition boolean_term unary_predicate
 %type <pParseNode> boolean_factor truth_value boolean_test boolean_primary named_columns_join join_spec
-%type <pParseNode> cast_operand cast_target factor datetime_value_exp /*interval_value_exp*/ datetime_term datetime_factor
+%type <pParseNode> cast_operand cast_target factor datetime_value_exp datetime_term datetime_factor
 %type <pParseNode> datetime_primary datetime_value_fct /*time_zone time_zone_specifier interval_term */ interval_qualifier
 %type <pParseNode> start_field non_second_datetime_field end_field single_datetime_field extract_field datetime_field /*time_zone_field opt_with_or_without_time_zone*/
 %type <pParseNode> char_length_exp octet_length_exp bit_length_exp select_sublist string_value_exp
@@ -2367,26 +2366,22 @@ scalar_subquery:
 cast_operand:
         value_exp
     ;
-cast_target:
-    ec_data_type
-    ;
 
-ec_data_type:
+cast_target:
     SQL_TOKEN_BINARY 
     | SQL_TOKEN_BOOLEAN
     | SQL_TOKEN_DOUBLE
     | SQL_TOKEN_INTEGER
     | SQL_TOKEN_INT
-    | SQL_TOKEN_INT32
     | SQL_TOKEN_LONG
     | SQL_TOKEN_INT64
     | SQL_TOKEN_STRING
     | SQL_TOKEN_DATETIME
     | SQL_TOKEN_DATE
     | SQL_TOKEN_TIMESTAMP
-    | SQL_TOKEN_POINT2D
-    | SQL_TOKEN_POINT3D
-    ;
+    | SQL_TOKEN_NAME
+  ;
+
 cast_spec:
       SQL_TOKEN_CAST '(' cast_operand SQL_TOKEN_AS cast_target ')'
       {
@@ -2520,11 +2515,7 @@ datetime_value_fct:
             $$ = SQL_NEW_RULE;
             $$->append($1);
         }
-/* time not supported in ECSQL      | SQL_TOKEN_CURRENT_TIME
-        {
-            $$ = SQL_NEW_RULE;
-            $$->append($1);
-        } */
+
       | SQL_TOKEN_CURRENT_TIMESTAMP
         {
             $$ = SQL_NEW_RULE;
@@ -3498,7 +3489,6 @@ exact_numeric_type:
          SQL_TOKEN_INTEGER
     |    SQL_TOKEN_INT
     |    SQL_TOKEN_LONG
-    |    SQL_TOKEN_INT32
     |    SQL_TOKEN_INT64
 
 
