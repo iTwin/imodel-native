@@ -2,7 +2,7 @@
 |
 |     $Source: Client/WebApi/WebApiV2.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -11,7 +11,7 @@
 
 #define HEADER_SkipToken "SkipToken"
 
-const BeVersion WebApiV2::s_maxTestedWebApi(2, 3);
+const BeVersion WebApiV2::s_maxTestedWebApi(2, 4);
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
