@@ -538,17 +538,17 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereMatchTests(ECSqlType ecsqlType, EC
         //on the rhs must be a geometric function as defined in SQLite
         Utf8String ecsql;
         ecsql.Sprintf("%s WHERE ECInstanceId MATCH random()", testClassECSqlStub.c_str());
-        ECSqlTestFrameworkHelper::AddStepFailingNonSelect(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid);
+        ECSqlTestFrameworkHelper::AddStepFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid);
 
         ecsql.Sprintf("%s WHERE ECInstanceId NOT MATCH random()", testClassECSqlStub.c_str());
-        ECSqlTestFrameworkHelper::AddStepFailingNonSelect(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid);
+        ECSqlTestFrameworkHelper::AddStepFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid);
 
         ecsql.Sprintf("%s WHERE I MATCH random()", testClassECSqlStub.c_str());
-        ECSqlTestFrameworkHelper::AddStepFailingNonSelect(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid);
+        ECSqlTestFrameworkHelper::AddStepFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid);
 
         //even though SQLite expects the LHS to be a column, we allow a value exp in the ECSQL grammar.
         ecsql.Sprintf("%s WHERE (I + L) MATCH random()", testClassECSqlStub.c_str());
-        ECSqlTestFrameworkHelper::AddStepFailingNonSelect(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid);
+        ECSqlTestFrameworkHelper::AddStepFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid);
 
         ecsql.Sprintf("%s WHERE ECInstanceId MATCH '123'", testClassECSqlStub.c_str());
         ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid);

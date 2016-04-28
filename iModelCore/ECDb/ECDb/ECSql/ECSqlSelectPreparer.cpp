@@ -149,12 +149,12 @@ ECSqlStatus ECSqlSelectPreparer::Prepare(ECSqlPrepareContext& ctx, SelectStateme
 
     for (size_t i = 0; i < rhs->GetChildrenCount(); i++)
         {
-        auto rhsP = static_cast <DerivedPropertyExp const*>(rhs->GetChildren()[i]);
-        auto lhsP = static_cast <DerivedPropertyExp const*>(lhs->GetChildren()[i]);
+        DerivedPropertyExp const* rhsDerivedPropExp = rhs->GetChildren().Get<DerivedPropertyExp>(i);
+        DerivedPropertyExp const* lhsDerivedPropExp = lhs->GetChildren().Get<DerivedPropertyExp>(i);
 
-        if (!rhsP->GetExpression()->GetTypeInfo().Equals(lhsP->GetExpression()->GetTypeInfo()))
+        if (!rhsDerivedPropExp->GetExpression()->GetTypeInfo().CanCompare(lhsDerivedPropExp->GetExpression()->GetTypeInfo()))
             {
-            ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type of expression %s in UNION/EXCEPT/INTERSECT is not same as respective expression %s", lhsP->ToECSql().c_str(), rhs->ToECSql().c_str());
+            ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type of expression %s in LHS of UNION/EXCEPT/INTERSECT is not same as respective expression %s in RHS.", lhsDerivedPropExp->ToECSql().c_str(), rhsDerivedPropExp->ToECSql().c_str());
             return ECSqlStatus::Error;
             }
         }

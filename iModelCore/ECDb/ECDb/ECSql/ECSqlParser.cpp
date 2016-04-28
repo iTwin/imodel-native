@@ -687,51 +687,28 @@ BentleyStatus ECSqlParser::ParseCastSpec(unique_ptr<ValueExp>& exp, OSQLParseNod
         return ERROR;
         }
 
-    auto cast_operand = parseNode->getChild(2);
-    auto cast_target = parseNode->getChild(4);
+    OSQLParseNode const* castOperandNode = parseNode->getChild(2);
+    OSQLParseNode const* castTargetNode = parseNode->getChild(4);
 
-    unique_ptr<ValueExp> cast_operand_expr = nullptr;
-    BentleyStatus stat = ParseValueExp(cast_operand_expr, cast_operand);
+    unique_ptr<ValueExp> castOperandExp = nullptr;
+    BentleyStatus stat = ParseValueExp(castOperandExp, castOperandNode);
     if (SUCCESS != stat)
         return stat;
 
-    Utf8CP sqlType = nullptr;
-    switch (cast_target->getTokenID())
+    Utf8CP castTargetType = nullptr;
+    if (SQL_NODE_KEYWORD == castTargetNode->getNodeType())
+        castTargetType = DataTypeTokenIdToString(castTargetNode->getTokenID());
+    else
+        castTargetType = castTargetNode->getTokenValue().c_str();
+    
+    if (Utf8String::IsNullOrEmpty(castTargetType))
         {
-            case SQL_TOKEN_BINARY:
-                sqlType = "BINARY"; break;
-            case SQL_TOKEN_BOOLEAN:
-                sqlType = "BOOLEAN"; break;
-            case SQL_TOKEN_DOUBLE:
-                sqlType = "DOUBLE"; break;
-            case SQL_TOKEN_INT:
-                sqlType = "INT"; break;
-            case SQL_TOKEN_INTEGER:
-                sqlType = "INTEGER"; break;
-            case SQL_TOKEN_INT32:
-                sqlType = "INT32"; break;
-            case SQL_TOKEN_LONG:
-                sqlType = "LONG"; break;
-            case SQL_TOKEN_INT64:
-                sqlType = "INT64"; break;
-            case SQL_TOKEN_STRING:
-                sqlType = "STRING"; break;
-            case SQL_TOKEN_DATE:
-                sqlType = "DATE"; break;
-            case SQL_TOKEN_TIMESTAMP:
-                sqlType = "TIMESTAMP"; break;
-            case SQL_TOKEN_DATETIME:
-                sqlType = "DATETIME"; break;
-            case SQL_TOKEN_POINT2D:
-                sqlType = "POINT2D"; break;
-            case SQL_TOKEN_POINT3D:
-                sqlType = "POINT3D"; break;
-            default:
-                BeAssert(false && "Unknown cast target type");
-                return ERROR;
+        BeAssert(false && "Invalid grammer. Target of CAST expression must not be empty or ECSqlParser::DataTypeTokenIdToString must be changed to handle it.");
+        LOG.fatal("Invalid grammer. Target of CAST expression must not be empty or ECSqlParser::DataTypeTokenIdToString must be changed to handle it.");
+        return ERROR;
         }
 
-    exp = unique_ptr<ValueExp>(new CastExp(move(cast_operand_expr), sqlType));
+    exp = unique_ptr<ValueExp>(new CastExp(move(castOperandExp), castTargetType));
     return SUCCESS;
     }
 
@@ -1942,6 +1919,42 @@ BentleyStatus ECSqlParser::ParseSearchCondition(unique_ptr<BooleanExp>& exp, OSQ
 
     BeAssert(false && "Invalid grammar");
     return ERROR;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle 04/2016
+//+---------------+---------------+---------------+---------------+---------------+--------
+//static
+Utf8CP ECSqlParser::DataTypeTokenIdToString(sal_uInt32 tokenId)
+    {
+    switch (tokenId)
+        {
+            case SQL_TOKEN_BINARY:
+                return "BINARY";
+            case SQL_TOKEN_BOOLEAN:
+                return "BOOLEAN";
+            case SQL_TOKEN_DATE:
+                return "DATE";
+            case SQL_TOKEN_DATETIME:
+                return "DATETIME";
+            case SQL_TOKEN_DOUBLE:
+                return "DOUBLE";
+            case SQL_TOKEN_INTEGER:
+                return "INTEGER";
+            case SQL_TOKEN_INT:
+                return "INT";
+            case SQL_TOKEN_INT64:
+                return "INT64";
+            case SQL_TOKEN_LONG:
+                return "LONG";
+            case SQL_TOKEN_STRING:
+                return "STRING";
+            case SQL_TOKEN_TIMESTAMP:
+                return "TIMESTAMP";
+            default:
+                BeAssert(false && "TokenId unhandled by ECSqlParser::DataTypeTokenIdToString");
+                return "";
+        }
     }
 
 //-----------------------------------------------------------------------------------------

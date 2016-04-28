@@ -22,7 +22,7 @@ BentleyStatus ExpHelper::ToPrimitiveType (PrimitiveType& primitiveType, Utf8Stri
         primitiveType = PRIMITIVETYPE_Double;
     else if (type.EqualsI("long") || type.EqualsI("int64") || type.EqualsI("bigint"))
         primitiveType = PRIMITIVETYPE_Long;
-    else if (type.EqualsI("string"))
+    else if (type.EqualsI("string") || type.EqualsI("text"))
         primitiveType = PRIMITIVETYPE_String;
     else if (type.EqualsI("timestamp") || type.EqualsI("datetime") || type.EqualsI("date"))
         primitiveType = PRIMITIVETYPE_DateTime;
@@ -34,7 +34,7 @@ BentleyStatus ExpHelper::ToPrimitiveType (PrimitiveType& primitiveType, Utf8Stri
         primitiveType = PRIMITIVETYPE_Point3D;
     else if (type.EqualsI("boolean") || type.EqualsI("bool"))
         primitiveType = PRIMITIVETYPE_Boolean;
-    else if (type.EqualsI("geometry"))
+    else if (type.EqualsI("geometry") || type.EqualsI("igeometry"))
         primitiveType = PRIMITIVETYPE_IGeometry;
     else
         return ERROR;

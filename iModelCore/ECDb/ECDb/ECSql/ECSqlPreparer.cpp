@@ -370,6 +370,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareCastExp(NativeSqlBuilder::List& nativeSqlSn
     switch (targetType)
         {
             case PRIMITIVETYPE_Binary:
+            case PRIMITIVETYPE_IGeometry:
                 castFormat = "CAST(%s AS BLOB)";
                 break;
             case PRIMITIVETYPE_Boolean:

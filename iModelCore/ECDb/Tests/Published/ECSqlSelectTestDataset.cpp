@@ -249,10 +249,10 @@ ECSqlTestDataset ECSqlSelectTestDataset::CastTests( int rowCountPerClass )
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 1, rowCountPerClass);
 
     ecsql = "SELECT CAST (B AS BOOL) FROM ecsql.PSA";
-    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "Only keyword BOOLEAN supported.");
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
 
     ecsql = "SELECT CAST (Bi AS TIMESTAMP) FROM ecsql.PSA";
-    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
 
     ecsql = "SELECT CAST (Dt AS TIMESTAMP) FROM ecsql.PSA";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 1, rowCountPerClass);
@@ -282,25 +282,25 @@ ECSqlTestDataset ECSqlSelectTestDataset::CastTests( int rowCountPerClass )
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 1, rowCountPerClass);
 
     ecsql = "SELECT CAST (D AS TIMESTAMP) FROM ecsql.PSA";
-    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
 
     ecsql = "SELECT CAST (123425 AS DATETIME) FROM ecsql.PSA";
-    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
 
     ecsql = "SELECT CAST (123425.2343 AS TIMESTAMP) FROM ecsql.PSA";
-    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
 
     ecsql = "SELECT CAST (True AS DATE) FROM ecsql.PSA";
-    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
 
     ecsql = "SELECT CAST (123425.123 AS DATE) FROM ecsql.PSA";
-    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
 
     ecsql = "SELECT CAST (S AS DATE) FROM ecsql.PSA";
-    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
 
     ecsql = "SELECT CAST (P2D AS TIMESTAMP) FROM ecsql.PSA";
-    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
 
     ecsql = "SELECT CAST (P3D AS TIMESTAMP) FROM ecsql.PSA";
     ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
@@ -319,7 +319,7 @@ ECSqlTestDataset ECSqlSelectTestDataset::CastTests( int rowCountPerClass )
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 1, rowCountPerClass);
 
     ecsql = "SELECT CAST (Dt AS DOUBLE) FROM ecsql.PSA";
-    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
 
     ecsql = "SELECT CAST (P2D AS DOUBLE) FROM ecsql.PSA";
     ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
@@ -397,7 +397,7 @@ ECSqlTestDataset ECSqlSelectTestDataset::CastTests( int rowCountPerClass )
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 1, rowCountPerClass);
 
     ecsql = "SELECT CAST (Dt AS STRING) FROM ecsql.PSA";
-    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
 
     ecsql = "SELECT CAST (L AS STRING) FROM ecsql.PSA";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 1, rowCountPerClass);
@@ -415,7 +415,7 @@ ECSqlTestDataset ECSqlSelectTestDataset::CastTests( int rowCountPerClass )
     ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
 
     ecsql = "SELECT CAST (L AS TEXT) FROM ecsql.PSA";
-    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "TEXT is SQLite specific datatype which is not supported by SQLite.");
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
 
     ecsql = "SELECT CAST (NULL AS STRING) FROM ecsql.PSA";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 1, rowCountPerClass);
@@ -486,19 +486,17 @@ ECSqlTestDataset ECSqlSelectTestDataset::CastTests( int rowCountPerClass )
     ecsql = "SELECT CAST (NULL AS ecsql.PStruct) FROM ecsql.PSA";
     ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::NotYetSupported);
 
-
-    //Support for geometry is not fleshed out yet. Possible type names are tested here
     ecsql = "SELECT CAST (I AS IGeometry) FROM ecsql.PSA";
-    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
+    ECSqlTestFrameworkHelper::AddStepFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
 
     ecsql = "SELECT CAST (I AS Geometry) FROM ecsql.PSA";
-    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
+    ECSqlTestFrameworkHelper::AddStepFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
 
     ecsql = "SELECT CAST (NULL AS IGeometry) FROM ecsql.PSA";
-    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
 
     ecsql = "SELECT CAST (NULL AS Geometry) FROM ecsql.PSA";
-    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
 
 
     ecsql = "SELECT CAST (S AS I) FROM ecsql.PSA";
@@ -2896,12 +2894,12 @@ ECSqlTestDataset ECSqlSelectTestDataset::SubqueryTests( int rowCountPerClass )
     ecsql = "SELECT * FROM ecsql.P WHERE B = (SELECT * FROM ecsql.P)";
     ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "Outer clause expecting a single value whereas inner returns multiple.");
 
-    ecsql = "SELECT * FROM ecsql.PSA WHERE B = (SELECT DateOnly FROM ecsql.P)";
-    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "Left and right of the expression should have the same data type.");
+    ecsql = "SELECT I FROM ecsql.PSA WHERE B = (SELECT DateOnly FROM ecsql.P)";
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, 0);
 
-    ecsql = "SELECT * FROM ecsql.PSA WHERE B IN (SELECT DateOnly FROM ecsql.P)";
-    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "Left and right of the expression should have the same data type.");
-    
+    ecsql = "SELECT I FROM ecsql.PSA WHERE B IN (SELECT DateOnly FROM ecsql.P)";
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, 0);
+
     ecsql = "SELECT * FROM (SELECT I FROM ecsql.P WHERE COUNT(S)>1)";
     ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "WHERE clause can't be used with aggregate functions.");
 
@@ -2939,9 +2937,17 @@ ECSqlTestDataset ECSqlSelectTestDataset::UnionTests(int rowCountPerClass)
     ecsql = "SELECT ECClassId, Name, COUNT(*) FROM (SELECT GetECClassId() ECClassId, ECInstanceId, 'PSA' Name FROM ecsql.PSA UNION ALL SELECT GetECClassId() ECClassId, ECInstanceId, 'SA' Name FROM ecsql.SA) GROUP BY ECClassId, Name";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 3, 2);
 
+    ecsql = "SELECT S, NULL FROM ecsql.PSA UNION ALL SELECT NULL, I FROM ecsql.P";
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 2, rowCountPerClass * 2);
 
-    ecsql = "SELECT S FROM ecsql.P UNION SELECT Dt FROM ecsql.PSA";
-    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
+    ecsql = "SELECT NULL, I FROM ecsql.PSA UNION ALL SELECT S, NULL FROM ecsql.P";
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 2, rowCountPerClass * 2);
+
+    ecsql = "SELECT S FROM ecsql.P UNION ALL SELECT Dt FROM ecsql.PSA";
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass * 2);
+
+    ecsql = "SELECT S, 2.34 FROM ecsql.P UNION ALL SELECT I, S FROM ecsql.PSA";
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 2, rowCountPerClass * 2);
 
     ecsql = "SELECT Bi FROM ecsql.P UNION SELECT I_Array FROM ecsql.PSA";
     ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
@@ -2953,7 +2959,7 @@ ECSqlTestDataset ECSqlSelectTestDataset::UnionTests(int rowCountPerClass)
     ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
 
     ecsql = "SELECT S FROM ecsql.P UNION SELECT * FROM ecsql.PSA";
-    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "Number and Type of properties should be same in all the select clauses.");
+    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "Number of properties should be same in all the select clauses.");
 
     ecsql = "SELECT B FROM ecsql.P UNION SELECT B_Array FROM ecsql.PSA";
     ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);

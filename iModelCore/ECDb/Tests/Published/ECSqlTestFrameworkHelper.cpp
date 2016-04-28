@@ -70,7 +70,7 @@ ECSqlTestItem& ECSqlTestFrameworkHelper::AddPrepareFailing (ECSqlTestDataset& da
 // @bsimethod                                     Krischan.Eberle                  12/13
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlTestItem& ECSqlTestFrameworkHelper::AddStepFailingNonSelect(ECSqlTestDataset& dataset, Utf8CP ecsql, ECSqlExpectedResult::Category failureCategory, Utf8CP description /*= nullptr*/, bool rollbackAfterwards /* = false*/)
+ECSqlTestItem& ECSqlTestFrameworkHelper::AddStepFailing(ECSqlTestDataset& dataset, Utf8CP ecsql, ECSqlExpectedResult::Category failureCategory, Utf8CP description /*= nullptr*/, bool rollbackAfterwards /* = false*/)
     {
     ECSqlTestItem testItem(ecsql, rollbackAfterwards);
     //In order to have the test prepare the statement before we can test the step, we need to add an expected success result for the preparation

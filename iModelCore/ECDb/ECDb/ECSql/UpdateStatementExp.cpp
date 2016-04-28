@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/UpdateStatementExp.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -141,7 +141,7 @@ Exp::FinalizeParseStatus AssignmentExp::_FinalizeParsing(ECSqlParseContext& ctx,
                 {
                 Utf8String errorMessage;
                 ValueExp const* valueExp = GetValueExp();
-                if (!valueExp->IsParameterExp() && !GetPropertyNameExp()->GetTypeInfo().Matches(valueExp->GetTypeInfo(), &errorMessage))
+                if (!valueExp->IsParameterExp() && !GetPropertyNameExp()->GetTypeInfo().CanCompare(valueExp->GetTypeInfo(), &errorMessage))
                     {
                     ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch in SET clause of UPDATE statement: %s", errorMessage.c_str());
                     return FinalizeParseStatus::Error;

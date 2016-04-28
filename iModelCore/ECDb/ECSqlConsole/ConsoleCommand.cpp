@@ -1019,24 +1019,23 @@ void MetadataCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> cons
     Console::WriteLine("===============");
     Console::WriteLine("Index   Name/PropertyPath                   DisplayLabel                        Type           Root class                     Root class alias");
     Console::WriteLine("----------------------------------------------------------------------------------------------------------------------------------------------");
-    auto columnCount = stmt.GetColumnCount();
+    const int columnCount = stmt.GetColumnCount();
     for (int i = 0; i < columnCount; i++)
         {
-        auto const& columnInfo = stmt.GetColumnInfo(i);
+        ECSqlColumnInfo const& columnInfo = stmt.GetColumnInfo(i);
         bool isGeneratedProp = columnInfo.IsGeneratedProperty();
         ECN::ECPropertyCP prop = columnInfo.GetProperty();
         ECSqlPropertyPathCR propPath = columnInfo.GetPropertyPath();
-        Utf8String propPathStr = isGeneratedProp ? Utf8String(prop->GetDisplayLabel()) : propPath.ToString();
-        Utf8String displayLabel(prop->GetDisplayLabel());
+        Utf8String propPathStr = isGeneratedProp ? prop->GetDisplayLabel() : propPath.ToString();
 
         Utf8String typeName(prop->GetTypeName());
         if (prop->GetIsArray())
             typeName.append("[]");
 
-        Utf8String rootClassName = isGeneratedProp? "generated" : Utf8String(columnInfo.GetRootClass().GetFullName());
+        Utf8CP rootClassName = isGeneratedProp? "generated" : columnInfo.GetRootClass().GetFullName();
         Utf8CP rootClassAlias = columnInfo.GetRootClassAlias();
 
-        Console::WriteLine("%3d     %-35s %-35s %-14s %-30s %s", i, propPathStr.c_str(), displayLabel.c_str(), typeName.c_str(), rootClassName.c_str(), rootClassAlias);
+        Console::WriteLine("%3d     %-35s %-35s %-14s %-30s %s", i, propPathStr.c_str(), prop->GetDisplayLabel(), typeName.c_str(), rootClassName, rootClassAlias);
         }
 
     Console::WriteLine();

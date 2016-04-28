@@ -510,12 +510,12 @@ ECSqlTestDataset ECSqlInsertTestDataset::MiscTests (ECDbR ecdb)
     ecsql = "INSERT INTO ecsql.P (ECInstanceId) VALUES (123)";
     ECSqlTestFrameworkHelper::AddNonSelect (dataset, ecsql, false);
     //provoke pk constraint violation as instance with id 123 already exists
-    ECSqlTestFrameworkHelper::AddStepFailingNonSelect (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
+    ECSqlTestFrameworkHelper::AddStepFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
 
     ecsql = "INSERT INTO ecsql.TH2 (ECInstanceId) VALUES (412313)";//table per hierarchy mapping->class id must be populated
     ECSqlTestFrameworkHelper::AddNonSelect (dataset, ecsql, false);
     //provoke pk constraint violation as instance with id 412313 already exists
-    ECSqlTestFrameworkHelper::AddStepFailingNonSelect (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
+    ECSqlTestFrameworkHelper::AddStepFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
 
     //*******************************************************
     // Class aliases
@@ -926,7 +926,7 @@ ECSqlTestDataset ECSqlInsertTestDataset::RelationshipEndTableMappingTests (ECDbR
     Utf8String ecsqlStr;
     ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasP (SourceECInstanceId, TargetECInstanceId) VALUES (%llu, %llu);",
         thBaseECInstanceId.GetValue (), pECInstanceId.GetValue ());
-    ECSqlTestFrameworkHelper::AddStepFailingNonSelect(dataset, ecsqlStr.c_str(), ECSqlExpectedResult::Category::Invalid);
+    ECSqlTestFrameworkHelper::AddStepFailing(dataset, ecsqlStr.c_str(), ECSqlExpectedResult::Category::Invalid);
     }
 
     {
@@ -934,7 +934,7 @@ ECSqlTestDataset ECSqlInsertTestDataset::RelationshipEndTableMappingTests (ECDbR
     Utf8String ecsqlStr;
     ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasP (SourceECInstanceId, TargetECInstanceId) VALUES (%llu, %llu);",
         psaECInstanceId.GetValue (), thBaseECInstanceId.GetValue ());
-    ECSqlTestFrameworkHelper::AddStepFailingNonSelect (dataset, ecsqlStr.c_str (), ECSqlExpectedResult::Category::Invalid);
+    ECSqlTestFrameworkHelper::AddStepFailing (dataset, ecsqlStr.c_str (), ECSqlExpectedResult::Category::Invalid);
     }
 
     {
@@ -942,7 +942,7 @@ ECSqlTestDataset ECSqlInsertTestDataset::RelationshipEndTableMappingTests (ECDbR
     Utf8String ecsqlStr;
     ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasP (SourceECInstanceId, TargetECInstanceId) VALUES (%llu, %llu);",
     psaECInstanceId.GetValue (), p2ECInstanceId.GetValue ());
-    ECSqlTestFrameworkHelper::AddStepFailingNonSelect (dataset, ecsqlStr.c_str (), ECSqlExpectedResult::Category::Invalid);
+    ECSqlTestFrameworkHelper::AddStepFailing (dataset, ecsqlStr.c_str (), ECSqlExpectedResult::Category::Invalid);
     }
 
     {
@@ -965,7 +965,7 @@ ECSqlTestDataset ECSqlInsertTestDataset::RelationshipEndTableMappingTests (ECDbR
     Utf8String ecsqlStr;
     ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasP (SourceECInstanceId, SourceECClassId, TargetECInstanceId) VALUES (%llu, ?, %llu);",
         psaECInstanceId.GetValue (), pECInstanceId.GetValue ());
-    ECSqlTestFrameworkHelper::AddStepFailingNonSelect (dataset, ecsqlStr.c_str (), ECSqlExpectedResult::Category::Invalid);
+    ECSqlTestFrameworkHelper::AddStepFailing (dataset, ecsqlStr.c_str (), ECSqlExpectedResult::Category::Invalid);
     }
 
     {
@@ -988,7 +988,7 @@ ECSqlTestDataset ECSqlInsertTestDataset::RelationshipEndTableMappingTests (ECDbR
     Utf8String ecsqlStr;
     ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasP (SourceECInstanceId, TargetECInstanceId, TargetECClassId) VALUES (%llu, %llu, ?);",
         psaECInstanceId.GetValue (), pECInstanceId.GetValue ());
-    ECSqlTestFrameworkHelper::AddStepFailingNonSelect (dataset, ecsqlStr.c_str (), ECSqlExpectedResult::Category::Invalid);
+    ECSqlTestFrameworkHelper::AddStepFailing (dataset, ecsqlStr.c_str (), ECSqlExpectedResult::Category::Invalid);
     }
 
     {
@@ -1072,7 +1072,7 @@ ECSqlTestDataset ECSqlInsertTestDataset::RelationshipEndTableMappingTests (ECDbR
     Utf8String ecsqlStr;
     ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasTHBase_0N (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (%llu, ?, %llu, ?);",
         psaECInstanceId.GetValue (), thBaseECInstanceId.GetValue ());
-    auto& testItem = ECSqlTestFrameworkHelper::AddStepFailingNonSelect (dataset, ecsqlStr.c_str (), ECSqlExpectedResult::Category::Invalid);
+    auto& testItem = ECSqlTestFrameworkHelper::AddStepFailing (dataset, ecsqlStr.c_str (), ECSqlExpectedResult::Category::Invalid);
     testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue (psaClassId.GetValue())));
     }
 
@@ -1581,7 +1581,7 @@ ECSqlTestDataset ECSqlInsertTestDataset::RelationshipWithParametersTests (ECDbR 
     Utf8String ecsqlStr;
     ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasTHBase_0N (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (%llu, ?, %llu, ?);",
         psaECInstanceId.GetValue (), thBaseECInstanceId.GetValue ());
-    ECSqlTestFrameworkHelper::AddStepFailingNonSelect (dataset, ecsqlStr.c_str (), ECSqlExpectedResult::Category::Invalid);
+    ECSqlTestFrameworkHelper::AddStepFailing (dataset, ecsqlStr.c_str (), ECSqlExpectedResult::Category::Invalid);
     }
 
     {
@@ -1589,7 +1589,7 @@ ECSqlTestDataset ECSqlInsertTestDataset::RelationshipWithParametersTests (ECDbR 
     Utf8String ecsqlStr;
     ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasTHBase_0N (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (%llu, ?, %llu, ?);",
         psaECInstanceId.GetValue (), thBaseECInstanceId.GetValue ());
-    auto& testItem = ECSqlTestFrameworkHelper::AddStepFailingNonSelect (dataset, ecsqlStr.c_str (), ECSqlExpectedResult::Category::Invalid);
+    auto& testItem = ECSqlTestFrameworkHelper::AddStepFailing (dataset, ecsqlStr.c_str (), ECSqlExpectedResult::Category::Invalid);
     testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue (psaClassId.GetValue())));
     }
 
@@ -1617,7 +1617,7 @@ ECSqlTestDataset ECSqlInsertTestDataset::RelationshipWithParametersTests (ECDbR 
     Utf8String ecsqlStr;
     ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasOnlyTHBase_NN (SourceECInstanceId, SourceECClassId, TargetECInstanceId) VALUES (%llu, ?, %llu);",
         psaECInstanceId.GetValue (), thBaseECInstanceId.GetValue ());
-    ECSqlTestFrameworkHelper::AddStepFailingNonSelect (dataset, ecsqlStr.c_str (), ECSqlExpectedResult::Category::Invalid);
+    ECSqlTestFrameworkHelper::AddStepFailing (dataset, ecsqlStr.c_str (), ECSqlExpectedResult::Category::Invalid);
     }
 
     {
@@ -1633,7 +1633,7 @@ ECSqlTestDataset ECSqlInsertTestDataset::RelationshipWithParametersTests (ECDbR 
     Utf8String ecsqlStr;
     ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasOnlyTHBase_NN (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (%llu, ?, %llu, ?);",
         psaECInstanceId.GetValue (), thBaseECInstanceId.GetValue ());
-    ECSqlTestFrameworkHelper::AddStepFailingNonSelect (dataset, ecsqlStr.c_str (), ECSqlExpectedResult::Category::Invalid);
+    ECSqlTestFrameworkHelper::AddStepFailing (dataset, ecsqlStr.c_str (), ECSqlExpectedResult::Category::Invalid);
     }
 
     //Link table mapping - class id not optional

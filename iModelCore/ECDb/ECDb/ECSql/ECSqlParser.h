@@ -188,6 +188,8 @@ private:
 
     IssueReporter const& GetIssueReporter() const { BeAssert(m_context != nullptr); return m_context->GetIssueReporter(); }
 
+    static Utf8CP DataTypeTokenIdToString(sal_uInt32 tokenId);
+
     static bool IsPredicate(connectivity::OSQLParseNode const& parseNode);
     static connectivity::OSQLParser& GetSharedParser();
 

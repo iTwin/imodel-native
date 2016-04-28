@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ComputedExp.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -175,7 +175,7 @@ Exp::FinalizeParseStatus BinaryBooleanExp::CanCompareTypes(ECSqlParseContext& ct
 
     //first check whether types on both sides match generally for comparisons
     Utf8String canCompareErrorMessage;
-    if (!lhsIsParameter && !rhsIsParameter && !lhsTypeInfo.Matches(rhsTypeInfo, &canCompareErrorMessage))
+    if (!lhsIsParameter && !rhsIsParameter && !lhsTypeInfo.CanCompare(rhsTypeInfo, &canCompareErrorMessage))
         {
         if (canCompareErrorMessage.empty())
             ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch in expression '%s'.", ToECSql().c_str());

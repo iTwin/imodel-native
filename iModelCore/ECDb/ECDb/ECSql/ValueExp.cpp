@@ -208,10 +208,11 @@ Exp::FinalizeParseStatus CastExp::_FinalizeParsing(ECSqlParseContext& ctx, Final
 
     if (castOperandTypeInfo.GetPrimitiveType() != expectedTypeInfo.GetPrimitiveType())
         {
+        //primitives can be cast except for points because they map to multiple columns
         vector<ECSqlTypeInfo const*> typeInfos {&expectedTypeInfo, &castOperandTypeInfo};
         for (ECSqlTypeInfo const* typeInfo : typeInfos)
             {
-            if (!typeInfo->IsNumeric() && !typeInfo->IsBoolean() && !typeInfo->IsBinary() && !typeInfo->IsString())
+            if (typeInfo->IsPoint())
                 {
                 ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Casting from '%s' to '%s' is not supported", ExpHelper::ToString(castOperandTypeInfo.GetPrimitiveType()), ExpHelper::ToString(expectedTypeInfo.GetPrimitiveType()));
                 return FinalizeParseStatus::Error;
@@ -228,8 +229,7 @@ Exp::FinalizeParseStatus CastExp::_FinalizeParsing(ECSqlParseContext& ctx, Final
 bool CastExp::NeedsCasting() const
     {
     BeAssert(IsComplete());
-    //DateTimeInfo is ignored as any date time value can be cast to another date time type
-    return !GetCastOperand()->GetTypeInfo().Equals(GetTypeInfo(), true);
+    return !GetCastOperand()->GetTypeInfo().Equals(GetTypeInfo());
     }
 
 //-----------------------------------------------------------------------------------------
