@@ -424,7 +424,15 @@ DbResult ECDbProfileUpgrader_3200::_Upgrade(ECDbR ecdb) const
     while (BE_SQLITE_ROW == stmt.Step())
         {
         //cache names in a vector as DROP TABLE doesn't work if SELECT is still active
-        structArrayTableNames.push_back(stmt.GetValueText(0));
+        Utf8CP structArrayTableName = stmt.GetValueText(0);
+        if (!ecdb.TableExists(structArrayTableName))
+            {
+            LOG.warningv("ECDb profile upgrade for '%s': Tried to delete struct array table '%s' but it did not exist although it was listed in the ec_Table.",
+                         ecdb.GetDbFileName(), structArrayTableName);
+            continue;
+            }
+
+        structArrayTableNames.push_back(structArrayTableName);
         }
 
     stmt.Finalize();
