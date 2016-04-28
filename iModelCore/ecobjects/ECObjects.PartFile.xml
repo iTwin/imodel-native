@@ -184,6 +184,38 @@
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
     </Part>
 
+    <!-- ********************** -->
+    <!-- **** AndroidJUnit **** -->
+    <!-- ********************** -->
+    <Part Name="AndroidJUnit" BentleyBuildMakeFile="${SrcRoot}BeGTest/Android/MakeJUnitTestProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=ECObjects -dTEST_COLLECTION_PRODUCT=ECObjects-Tests -dUSE_STATIC_LIBRARIES=1 -dTEST_ANDROID_MIN_SDK_VERSION=19" OnlyPlatforms="Android*">
+        <SubProduct ProductName="ECObjects-Tests"/>
+        <SubPart PartName="AndroidJUnitTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Directory ProductDirectoryName="AndroidJUnit-Project" SourceName="Delivery/ANJU/ECObjects/Project" />
+        </Bindings>
+    </Part>
+
+    <Product Name="ECObjects-AndroidJUnit" >
+        <SubPart PartName="AndroidJUnit" LibType="Static"/>
+        <Directories DirectoryListName="AndroidJUnitProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+
+    <!-- ********************** -->
+    <!-- **** iOSXCTest **** -->
+    <!-- ********************** -->
+    <Part Name="iOSXCTest" BentleyBuildMakeFile="${SrcRoot}BeGTest/iOS/MakeXCTestProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=ECObjects -dTEST_COLLECTION_PRODUCT=ECObjects-Tests -dUSE_STATIC_LIBRARIES=1" OnlyPlatforms="iOS*">
+        <SubProduct ProductName="ECObjects-Tests"/>
+        <SubPart PartName="iOSXCTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Directory ProductDirectoryName="iOSXCTestProject" SourceName="Delivery/iOSXCTest/ECObjects/Project" />
+        </Bindings>
+    </Part>
+
+    <Product Name="ECObjects-iOSXCTest" >
+        <SubPart PartName="iOSXCTest" LibType="Static"/>
+        <Directories DirectoryListName="iOSXCTestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+
     <!-- Define a gtest program to run the PerformanceTests. -->
     <Product Name="ECObjects-PerformanceTests">
         <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />

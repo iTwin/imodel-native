@@ -173,10 +173,8 @@ public:
     //! Constructor that takes a PrimitiveType
     ECTypeDescriptor (PrimitiveType primitiveType) : m_typeKind (VALUEKIND_Primitive), m_primitiveType (primitiveType) { };
 
-/*__PUBLISH_SECTION_END__*/
     ECTypeDescriptor () : m_typeKind ((ValueKind) 0), m_primitiveType ((PrimitiveType) 0) { };
     ECTypeDescriptor (ValueKind valueKind, short valueKindQualifier) : m_typeKind (valueKind), m_primitiveType ((PrimitiveType)valueKindQualifier) { };
-/*__PUBLISH_SECTION_START__*/
 
     bool operator==(ECTypeDescriptor const& rhs) const { return m_typeKind == rhs.m_typeKind && m_primitiveType == rhs.m_primitiveType; }
     bool operator!=(ECTypeDescriptor const& rhs) const { return !(*this == rhs); }
@@ -197,9 +195,7 @@ public:
     inline bool                 IsStructArray() const       { return (GetTypeKind() == VALUEKIND_Array ) && (GetArrayKind() == ARRAYKIND_Struct); }
     //! Returns the primitive type of the ECProperty, if the property is a Primitive type
     inline PrimitiveType        GetPrimitiveType() const    { return m_primitiveType; }
-/*__PUBLISH_SECTION_END__*/
     inline short                GetTypeKindQualifier() const   { return m_primitiveType; }
-/*__PUBLISH_SECTION_START__*/
 };
 
 //=======================================================================================

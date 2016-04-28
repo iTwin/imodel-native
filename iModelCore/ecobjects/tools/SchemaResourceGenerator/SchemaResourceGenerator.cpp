@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECObjects/ECObjectsAPI.h>
+#include <BeXml/BeXml.h>
 #include <Logging/bentleylogging.h>
 #if defined (BENTLEY_WIN32)
 // WIP_BEFILENAME_PORTABILITY - need better way of setting temp directory
@@ -16,32 +17,322 @@ USING_NAMESPACE_BENTLEY_EC
 
 BentleyApi::NativeLogging::ILogger* s_logger = BentleyApi::NativeLogging::LoggingManager::GetLogger("SchemaConverter");
 
+#pragma region Commandline Parameters
 struct Options
     {
-    BeFileName          InputFile;
-    BeFileName          OutputFile;
+    bvector<BeFileName> InputFiles;
+    Utf8String CultureName;
+    BeFileName OutDirectory;
+    bvector<BeFileName> ReferencePaths;
+    Utf8String OutputFileName;
+    int Precendence = 9900;
+    bool NoSupplementation = false;
     };
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   BentleySystems
 //---------------------------------------------------------------------------------------
-static void ShowUsage(char* str)
+static void ShowUsage()
     {
     const char *usage =
 #include "usage.txt"
+#include "SchemaResourceGenerator.h"
         ;
 
     printf(usage);
     }
 
+enum class InputParserState
+    {
+    InputFiles,
+    Precedence,
+    CultureName,
+    ReferencePaths,
+    OutDirectory,
+    OutFile,
+    NoSupplementation,
+    Help,
+    ExpectingSwitch
+    };
+
+static bmap<Utf8String, InputParserState> CreateSwitchMap()
+    {
+    bmap<Utf8String, InputParserState> m;
+    m["/?"] = InputParserState::Help;
+    m["-p"] = InputParserState::Precedence;
+    m["-c"] = InputParserState::CultureName;
+    m["-r"] = InputParserState::ReferencePaths;
+    m["-o"] = InputParserState::OutDirectory;
+    m["-of"] = InputParserState::OutFile;
+    m["-ns"] = InputParserState::NoSupplementation;
+    return m;
+    };
+
+static bmap<Utf8String, InputParserState> const ConsoleSwitches = CreateSwitchMap();
+
 static bool TryParseInput(int argc, char** argv, Options& options)
     {
-    if (argc < 5)
+    if (argc < 2)
+        {
+        ShowUsage();
         return false;
+        }
 
-    return true;
+    InputParserState currentState = InputParserState::InputFiles;
+    bset<InputParserState> usedSwitches;
+    for (int i = 1; i < argc; i++)
+        {
+        Utf8CP arg = argv[i];
+        InputParserState currentSwitch = InputParserState::InputFiles;
+        auto const csw = ConsoleSwitches.find(arg);
+        bool isSwitch = csw != ConsoleSwitches.end();
+
+        if (isSwitch)
+            {
+            currentSwitch = csw->second;
+            if (usedSwitches.find(currentSwitch) != usedSwitches.end())
+                {
+                s_logger->errorv("Switch %s is specified multiple times.", arg);
+                return false;
+                }
+
+            usedSwitches.insert(currentSwitch);
+            }
+
+        switch (currentState)
+            {
+                case InputParserState::InputFiles: //still reading input files
+                    if (!isSwitch)
+                        {
+                        s_logger->infov("Input File #%d: %s", i, arg);
+                        BeFileName file;
+                        file.AssignUtf8(arg);
+                        if(!file.DoesPathExist())
+                            { 
+                            s_logger->errorv("Input file %s does not exist.", arg);
+                            return false;
+                            }
+
+                        if (file.IsDirectory())
+                            {
+                            s_logger->errorv("Input file %s points to a directory, expected a file.", arg);
+                            return false;
+                            }
+
+                        options.InputFiles.push_back(file);
+                        continue;
+                        }
+
+                    if (options.InputFiles.size() <= 0)
+                        {
+                        s_logger->error("No input files specified.");
+                        return false;
+                        }
+                    break;
+
+                case InputParserState::CultureName:
+                    options.CultureName = arg;
+                    s_logger->infov("Culture: %s", arg);
+                    currentState = InputParserState::ExpectingSwitch;
+                    continue;
+
+                case InputParserState::OutDirectory:
+                    options.OutDirectory = BeFileName(arg, true);
+                    s_logger->infov("Output Directory: %s", arg);
+                    currentState = InputParserState::ExpectingSwitch;
+                    continue;
+
+                case InputParserState::ReferencePaths:
+                    if (!isSwitch)
+                        {
+                        s_logger->infov("Reference Path #%d: %s", options.ReferencePaths.size(), arg);
+                        BeFileName file;
+                        file.AssignUtf8(arg);
+
+                        if (!file.DoesPathExist())
+                            {
+                            s_logger->errorv("Reference path %s does not exist, ignoring it.", arg);
+                            continue;
+                            }
+
+                        if (!file.IsDirectory())
+                            {
+                            s_logger->errorv("Reference path %s is not a directory, ignoring it.", arg);
+                            continue;
+                            }
+
+                        options.ReferencePaths.push_back(file);
+                        continue;
+                        }
+
+                    if (options.ReferencePaths.size() <= 0)
+                        {
+                        s_logger->error("No reference paths specified.");
+                        return false;
+                        }
+                    break;
+
+                case InputParserState::OutFile:
+                    options.OutputFileName = arg;
+                    s_logger->infov("Output File: %s", arg);
+                    currentState = InputParserState::ExpectingSwitch;
+                    continue;
+
+                case InputParserState::Precedence:
+                    Utf8P end = nullptr;
+                    uint32_t p = strtoul(arg, &end, 10);
+                    if (end == arg)
+                        {
+                        s_logger->errorv("Invalid Precedence. '%s' is not a number.", arg);
+                        return false;
+                        }
+
+                    if (p < 9900 || p > 9999)
+                        {
+                        s_logger->errorv("Invalid Precedence: %d. Value must be between 9900 and 9999.", p);
+                        return false;
+                        }
+
+                    options.Precendence = p;
+                    s_logger->infov("Precedence: %d", p);
+                    currentState = InputParserState::ExpectingSwitch;
+                    continue;
+            }
+
+        if (!isSwitch)
+            {
+            s_logger->errorv("Unrecognized parameter: %s", arg);
+            return false;
+            }
+
+        if (currentSwitch == InputParserState::NoSupplementation)
+            {
+            options.NoSupplementation = true;
+            s_logger->info("No supplementation.");
+            currentState = InputParserState::ExpectingSwitch;
+            continue;
+            }
+
+        if (currentSwitch == InputParserState::Help)
+            {
+            ShowUsage();
+            return false;
+            }
+
+        currentState = currentSwitch;
+        }
+
+    if (currentState == InputParserState::InputFiles || currentState == InputParserState::ExpectingSwitch)
+        return true;
+
+    if (currentState == InputParserState::ReferencePaths && options.ReferencePaths.size() > 0)
+        {
+        return true;
+        }
+
+    s_logger->error("Invalid call. The last console switch requires a following parameter.");
+    return false;
     }
 
+static bool PathPointsToSchema(BeFileName const& file)
+    {
+    return file.EndsWithI(L".ecschema.xml");
+    }
+
+static bool PathPointsToXliff(BeFileName const& file)
+    {
+    return file.EndsWithI(L".xliff");
+    }
+#pragma endregion
+
+#pragma region Xliff Output
+static void WriteResource(BeXmlWriter& writer, Utf8CP key, Utf8CP value)
+    {
+    writer.WriteElementStart("trans-unit");
+    writer.WriteAttribute("id", key);
+    writer.WriteAttribute("resname", key);
+
+    writer.WriteElementStart("source");
+    writer.WriteAttribute("xml:space", "preserve");
+    writer.WriteText(value);
+    writer.WriteElementEnd();//source
+
+    writer.WriteElementEnd();//trans-unit
+    }
+
+static bool WriteXliff(Options const& options)
+    {
+    BeFileName outFile(L"C:\\test\\schemaOut.xliff");
+    s_logger->infov("Writing output file %s", outFile.GetNameUtf8().c_str());
+    BeXmlWriterPtr xmlWriter = BeXmlWriter::CreateFileWriter(outFile.GetName());
+
+    xmlWriter->SetIndentation(4);
+    xmlWriter->WriteDocumentStart(XML_CHAR_ENCODING_UTF8);
+    xmlWriter->WriteElementStart("xliff");
+    //Using attributes to write namespaces seems somewhat hacky, but it's the only way to make BeXml produce valid xliff that looks exactly like our other xliff files.
+    xmlWriter->WriteAttribute("xmlns", "urn:oasis:names:tc:xliff:document:1.2");
+    xmlWriter->WriteAttribute("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
+    xmlWriter->WriteAttribute("xsi:schemaLocation", "urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-strict.xsd");
+
+    auto context = ECSchemaReadContext::CreateContext(true);
+    for (auto const& refPath : options.ReferencePaths)
+        {
+        context->AddSchemaPath(refPath.GetName());
+        }
+
+    for (auto& inputFile : options.InputFiles)
+        {
+        Utf8String fileName(inputFile.GetFileNameAndExtension());
+        s_logger->infov("Processing %s...", fileName.c_str());
+        
+        ECSchemaPtr schema;
+        auto status = ECSchema::ReadFromXmlFile(schema, inputFile.GetName(), *context);
+        if (status != SchemaReadStatus::Success)
+            {
+            s_logger->infov("Failed to load schema, return code was %d.", status);
+            continue;
+            }
+
+        xmlWriter->WriteElementStart("file");
+        xmlWriter->WriteAttribute("datatype", "plaintext");
+
+        xmlWriter->WriteAttribute("original", fileName.c_str());
+        xmlWriter->WriteAttribute("source-language", "en");
+        xmlWriter->WriteElementStart("body");
+
+        if (schema->GetClassCount() > 0)
+            {
+            xmlWriter->WriteElementStart("group");
+            xmlWriter->WriteAttribute("resname", "Classes");
+            for (auto const c : schema->GetClasses())
+                {
+                Utf8PrintfString key("%s_DisplayLabel", c->GetName().c_str());
+                WriteResource(*xmlWriter, key.c_str(), c->GetInvariantDisplayLabel().c_str());
+                }
+            
+            xmlWriter->WriteElementEnd();//group
+            }
+
+        xmlWriter->WriteElementEnd();//body
+        xmlWriter->WriteElementEnd();//file
+        s_logger->infov("Finished processing %s.", fileName.c_str());
+        }
+
+    xmlWriter->WriteElementEnd();//xliff
+    return true;
+    }
+#pragma endregion
+
+#pragma region Sqlang Output
+
+static bool WriteSqlang(Options const& options)
+    {
+    s_logger->error("Writing to sqlang is not yet supported by this application.");
+    return false;
+    }
+#pragma endregion
+
+#pragma region Main
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   BentleySystems
 //---------------------------------------------------------------------------------------
@@ -56,26 +347,43 @@ int main(int argc, char** argv)
         }
 
     BeFileName exePath(exePathW);
-    BeFileName workingDirectory(exePath.GetDirectoryName());
-    BeFileName logFilePath(workingDirectory);
+    BeFileName exeDirectory(exePath.GetDirectoryName());
+    BeFileName logFilePath(exeDirectory);
     logFilePath.AppendToPath(L"SchemaConverter.logging.config.xml");
     logFilePath.BeGetFullPathName();
     BentleyApi::NativeLogging::LoggingConfig::SetOption(CONFIG_OPTION_CONFIG_FILE, logFilePath);
     BentleyApi::NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::LOG4CXX_LOGGING_PROVIDER);
+    ECSchemaReadContext::Initialize(exeDirectory);
 #endif
 
     Options options;
     if (!TryParseInput(argc, argv, options))
         {
-        ShowUsage(argv[0]);
         return -1;
         }
     
-    ECSchemaReadContext::Initialize(workingDirectory);
-    s_logger->infov(L"Initializing ECSchemaReadContext to '%ls'", workingDirectory);
+    auto const& firstFile = options.InputFiles[0]; //TryParse made sure there is at least one input file
+    bool inputPointsToSchemas = PathPointsToSchema(firstFile);
+    if(inputPointsToSchemas)
+        {
+        if (!std::all_of(options.InputFiles.begin(), options.InputFiles.end(), [] (BeFileName const& f) { return PathPointsToSchema(f); }))
+            {
+            s_logger->error("Invalid call. All input files are expected to be ECSchemas, if the first is one.");
+            return -2;
+            }
+        }
+    else
+        {
+        if (!std::all_of(options.InputFiles.begin(), options.InputFiles.end(), [] (BeFileName const& f) { return PathPointsToXliff(f); }))
+            {
+            s_logger->error("Invalid call. All input files are expected to be Xliff, if the first is one.");
+            return -2;
+            }
+        }
 
-    return 0;
+    if (inputPointsToSchemas)
+        return WriteXliff(options) ? 0 : -3;
+        
+    return WriteSqlang(options) ? 0 : -4;
     }
-
-
-
+#pragma endregion

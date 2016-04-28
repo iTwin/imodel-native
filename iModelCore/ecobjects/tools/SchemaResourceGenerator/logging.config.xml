@@ -35,7 +35,7 @@
 
     <appender name="Console" class="org.apache.log4j.ConsoleAppender">
         <layout class="org.apache.log4j.PatternLayout">
-            <param name="ConversionPattern" value="+++ LOG> %-5p %c - %m%n"/>
+            <param name="ConversionPattern" value="%-5p %c - %m%n"/>
         </layout>
     </appender>
 
@@ -64,7 +64,7 @@
     <category name="ECObjectsNative">   <priority value="debug"/></category>
 
     <root>                            
-        <priority value="debug" />
+        <priority value="info" />
         <appender-ref ref="Console"/>
         <!--appender-ref ref="OutputDebugStringAppender" /-->
         <!-- appender-ref ref="RollingFileAppender" /-->
