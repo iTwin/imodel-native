@@ -608,13 +608,14 @@ bool GeometryStreamIO::Operation::IsGeometryOp() const
         case OpCode::CurvePrimitive:
         case OpCode::SolidPrimitive:
         case OpCode::BsplineSurface:
-        case OpCode::OpenCascadeBRep:
 #if defined (DGNPLATFORM_WIP_PARASOLID)
         case OpCode::ParasolidBRep:
         case OpCode::BRepPolyface:
         case OpCode::BRepPolyfaceExact:
         case OpCode::BRepEdges:
         case OpCode::BRepFaceIso:
+#elif defined (BENTLEYCONFIG_OPENCASCADE)
+        case OpCode::OpenCascadeBRep:
 #endif
         case OpCode::TextString:
             return true;
@@ -2022,17 +2023,6 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, GeometricPrimitivePtr&
             return true;
             }
 
-        case GeometryStreamIO::OpCode::OpenCascadeBRep:
-            {
-            ISolidKernelEntityPtr entityPtr;
-
-            if (!Get(egOp, entityPtr))
-                break;
-
-            elemGeom = GeometricPrimitive::Create(entityPtr);
-            return true;
-            }
-
 #if defined (BENTLEYCONFIG_PARASOLIDS)
         case GeometryStreamIO::OpCode::ParasolidBRep:
             {
@@ -2068,6 +2058,17 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, GeometricPrimitivePtr&
                 break;
 
             elemGeom = GeometricPrimitive::Create(curvePtr);
+            return true;
+            }
+#elif defined (BENTLEYCONFIG_OPENCASCADE)
+        case GeometryStreamIO::OpCode::OpenCascadeBRep:
+            {
+            ISolidKernelEntityPtr entityPtr;
+
+            if (!Get(egOp, entityPtr))
+                break;
+
+            elemGeom = GeometricPrimitive::Create(entityPtr);
             return true;
             }
 #endif
@@ -2565,12 +2566,6 @@ void GeometryStreamIO::Debug(IDebugOutput& output, GeometryStreamCR stream, DgnD
                 break;
                 }
 
-            case GeometryStreamIO::OpCode::OpenCascadeBRep:
-                {
-                output._DoOutputLine(Utf8PrintfString("OpCode::OpenCascadeBRep\n").c_str());
-                break;
-                }
-
 #if defined (BENTLEYCONFIG_PARASOLIDS)
             case GeometryStreamIO::OpCode::ParasolidBRep:
                 {
@@ -2599,6 +2594,12 @@ void GeometryStreamIO::Debug(IDebugOutput& output, GeometryStreamCR stream, DgnD
             case GeometryStreamIO::OpCode::BRepFaceIso:
                 {
                 output._DoOutputLine(Utf8PrintfString("OpCode::BRepFaceIso\n").c_str());
+                break;
+                }
+#elif defined (BENTLEYCONFIG_OPENCASCADE)
+            case GeometryStreamIO::OpCode::OpenCascadeBRep:
+                {
+                output._DoOutputLine(Utf8PrintfString("OpCode::OpenCascadeBRep\n").c_str());
                 break;
                 }
 #endif
@@ -3291,28 +3292,6 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                 break;
                 }
 
-            case GeometryStreamIO::OpCode::OpenCascadeBRep:
-                {
-                entryId.Increment();
-
-                if (!DrawHelper::IsGeometryVisible(context, geomParams))
-                    break;
-
-                ISolidKernelEntityPtr entityPtr = DrawHelper::GetCachedSolidKernelEntity(context, element, entryId);
-
-                if (!entityPtr.IsValid())
-                    {
-                    if (!reader.Get(egOp, entityPtr))
-                        break;
-
-                    DrawHelper::SaveSolidKernelEntity(context, element, entryId, *entityPtr);
-                    }
-
-                DrawHelper::CookGeometryParams(context, geomParams, graphic, geomParamsChanged);
-                graphic.AddBody(*entityPtr);
-                break;
-                }
-
 #if defined (BENTLEYCONFIG_PARASOLIDS)
             case GeometryStreamIO::OpCode::ParasolidBRep:
                 {
@@ -3443,6 +3422,28 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
 
                 DrawHelper::CookGeometryParams(context, geomParams, graphic, geomParamsChanged);
                 graphic.AddCurveVector(*curvePtr, false);
+                break;
+                }
+#elif defined (BENTLEYCONFIG_OPENCASCADE)
+            case GeometryStreamIO::OpCode::OpenCascadeBRep:
+                {
+                entryId.Increment();
+
+                if (!DrawHelper::IsGeometryVisible(context, geomParams))
+                    break;
+
+                ISolidKernelEntityPtr entityPtr = DrawHelper::GetCachedSolidKernelEntity(context, element, entryId);
+
+                if (!entityPtr.IsValid())
+                    {
+                    if (!reader.Get(egOp, entityPtr))
+                        break;
+
+                    DrawHelper::SaveSolidKernelEntity(context, element, entryId, *entityPtr);
+                    }
+
+                DrawHelper::CookGeometryParams(context, geomParams, graphic, geomParamsChanged);
+                graphic.AddBody(*entityPtr);
                 break;
                 }
 #endif
@@ -3691,9 +3692,6 @@ GeometryCollection::Iterator::EntryType GeometryCollection::Iterator::GetEntryTy
         case GeometryStreamIO::OpCode::BsplineSurface:
             return EntryType::BsplineSurface;
 
-        case GeometryStreamIO::OpCode::OpenCascadeBRep:
-            return EntryType::SolidKernelEntity;
-
 #if defined (DGNPLATFORM_WIP_PARASOLID)
         case GeometryStreamIO::OpCode::ParasolidBRep:
             return EntryType::SolidKernelEntity;
@@ -3705,6 +3703,9 @@ GeometryCollection::Iterator::EntryType GeometryCollection::Iterator::GetEntryTy
         case GeometryStreamIO::OpCode::BRepEdges:
         case GeometryStreamIO::OpCode::BRepFaceIso:
             return EntryType::BRepCurveVector;
+#elif defined (BENTLEYCONFIG_OPENCASCADE)
+        case GeometryStreamIO::OpCode::OpenCascadeBRep:
+            return EntryType::SolidKernelEntity;
 #endif
 
         case GeometryStreamIO::OpCode::TextString:
@@ -3786,14 +3787,14 @@ bool GeometryCollection::Iterator::IsSurface() const
 
             return (ISolidKernelEntity::EntityType_Sheet == ((ISolidKernelEntity::KernelEntityType) ppfb->brepType()));
             }
-#endif
-
+#elif defined (BENTLEYCONFIG_OPENCASCADE)
         case GeometryStreamIO::OpCode::OpenCascadeBRep:
             {
             auto ppfb = flatbuffers::GetRoot<FB::OCBRepData>(m_egOp.m_data);
 
             return (ISolidKernelEntity::EntityType_Sheet == ((ISolidKernelEntity::KernelEntityType) ppfb->brepType()));
             }
+#endif
 
         default:
             return false;
@@ -3832,14 +3833,14 @@ bool GeometryCollection::Iterator::IsSolid() const
 
             return (ISolidKernelEntity::EntityType_Solid == ((ISolidKernelEntity::KernelEntityType) ppfb->brepType()));
             }
-#endif
-
+#elif defined (BENTLEYCONFIG_OPENCASCADE)
         case GeometryStreamIO::OpCode::OpenCascadeBRep:
             {
             auto ppfb = flatbuffers::GetRoot<FB::OCBRepData>(m_egOp.m_data);
 
             return (ISolidKernelEntity::EntityType_Solid == ((ISolidKernelEntity::KernelEntityType) ppfb->brepType()));
             }
+#endif
 
         default:
             return false;
