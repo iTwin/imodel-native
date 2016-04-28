@@ -1452,3 +1452,24 @@ TEST(AStringTest, Util)
     VERIFY( str == cc );
     VERIFY( str.length() == 5 );
     }
+
+//---------------------------------------------------------------------------------------
+// @betest                                      Umar.Hayat                          04/16
+//---------------------------------------------------------------------------------------
+static void VerifyVSPrintf (WCharCP expectedStr, WCharCP fmt, ...)
+    {
+    va_list args;
+    va_start(args, fmt);
+    WString str;
+    EXPECT_TRUE( SUCCESS == str.VSprintf(fmt, args));
+    va_end(args);
+    EXPECT_TRUE(str.Equals(expectedStr))<<"Expected: "<<expectedStr<<"\nActual: "<<str.c_str();
+    }
+//---------------------------------------------------------------------------------------
+// @betest                                      Umar.Hayat                          04/16
+//---------------------------------------------------------------------------------------
+TEST(WStringTest, VSprintf)
+    {
+    VerifyVSPrintf(L"Test", L"Test");
+    VerifyVSPrintf(L"Test no. 5", L"%ls no. %d", L"Test", 5);
+    }
