@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/stdcxx/bvector_cc.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -119,7 +119,7 @@ _C_realloc (size_type __n)
     // elements (by invoking the temporary's dtor)
     for (pointer __ptr = _C_alloc._C_begin; !(__ptr == _C_alloc._C_end);
          ++__ptr) {
-        __tmp._C_push_back (*__ptr);
+        __tmp._C_push_back (std::move_if_noexcept(*__ptr));
     }
 
     // swap *this with the temporary, having its dtor clean up
@@ -137,10 +137,9 @@ _C_destroy (iterator __first)
         _C_alloc.destroy (--_C_alloc._C_end);
 }
 
-
 template <class _TypeT, class _Allocator>
 void bvector<_TypeT, _Allocator>::
-_C_unsafe_swap (bvector &__other)
+_C_unsafe_swap (bvector &__other, int)
 {
     // called only from bvector::swap() for unequal allocators
     _RWSTD_ASSERT (!(get_allocator () == __other.get_allocator ()));
@@ -161,6 +160,32 @@ _C_unsafe_swap (bvector &__other)
     __other.swap (__tmp);
 }
 
+template <class _TypeT, class _Allocator>
+void bvector<_TypeT, _Allocator>::
+_C_unsafe_swap (bvector &__other, void*)
+{
+    // called only from bvector::swap() for unequal allocators
+    _RWSTD_ASSERT (!(get_allocator () == __other.get_allocator ()));
+
+    // avoid passing the whole object to other bvector member
+    // functions (i.e., assign()) in case they are implemented
+    // in terms of swap(); use iterators instead
+
+    bvector __tmp (__other.get_allocator ());
+
+    // assert that the copy of the allocator compares equal
+    // to the original (otherwise the swap() below will cause
+    // a recursive call)
+    _RWSTD_ASSERT (__tmp.get_allocator () == __other.get_allocator ());
+
+     for (auto __i = begin(); __i != end(); ++__i)
+         __tmp.push_back(std::move_if_noexcept(*__i));
+ 
+     for (auto __i = __other.begin(); __i != __other.end(); ++__i)
+         push_back(std::move_if_noexcept(*__i));
+
+    __other.swap (__tmp);
+}
 
 template <class _TypeT, class _Allocator>
 void bvector<_TypeT, _Allocator>::
@@ -197,11 +222,11 @@ _C_insert_1 (const iterator &__it, const_reference __x)
             // construct a copy of the last element in the range [it, end)
             // in the uninitialized slot just past the end of the range
             // and bump up end()
-            _C_push_back (*(_C_alloc._C_end - difference_type (1)));
+            _C_push_back (std::move_if_noexcept(*(_C_alloc._C_end - difference_type (1))));
 
             // move the remaining elements from the range above one slot
             // toward the end starting with the last element
-            std::copy_backward (__it, end () - 2, __end);
+            _move_range_backward (__it, end () - 2, __end);
 
             // overwrite the element at the given position
             *__it = __x;
@@ -217,6 +242,73 @@ _C_insert_1 (const iterator &__it, const_reference __x)
     }
 }
 
+// *** BENTLEY_CHANGE
+template <class _TypeT, class _Allocator>
+void bvector<_TypeT, _Allocator>::
+_C_insert_1 (const iterator &__it, rvalue_reference __x)
+{
+    _RWSTD_ASSERT_RANGE (begin (), __it);
+
+    if (size () < capacity ()) {
+
+        if (__it < end ()) {
+
+            const pointer __end = _C_alloc._C_end;
+
+            // construct a copy of the last element in the range [it, end)
+            // in the uninitialized slot just past the end of the range
+            // and bump up end()
+            _C_push_back (std::move_if_noexcept(*(_C_alloc._C_end - difference_type (1))));
+
+            // move the remaining elements from the range above one slot
+            // toward the end starting with the last element
+            _move_range_backward (__it, end () - 2, __end);
+
+            // overwrite the element at the given position
+            *__it = std::move_if_noexcept(__x);
+        }
+        else {
+            // move-construct a copy of the value to be inserted
+            //  in the uninitialized slot
+            _C_push_back (std::move_if_noexcept(__x));
+        }
+    }
+    else {
+        // allocate a temporary bvector large enough to hold all elements
+        const size_type __size2 = size () + size_type (1);
+        bvector __tmp (get_allocator ());
+        __tmp.reserve (__size2);
+
+        _RWSTD_ASSERT (!(pointer () == __tmp._C_alloc._C_end));
+
+        iterator __i;
+
+        // copy the initial range prior to `it' as if by a call to
+        // uninitialized_copy (begin (), __it, __tmp._C_alloc._C_begin);
+        for (__i = begin (); !(__i == __it); ++__i) {
+
+            _RWSTD_ASSERT (!(   __tmp._C_alloc._C_end
+                             == __tmp._C_alloc._C_bufend));
+
+            __tmp._C_push_back (std::move_if_noexcept(*__i));
+        }
+
+        // insert __x just past the initial range
+        __tmp._C_push_back (std::move_if_noexcept (__x));
+
+        // copy the final range of elements starting with 'it'
+        for (__i = __it; !(__i == end ()); ++__i) {
+
+            _RWSTD_ASSERT (!(   __tmp._C_alloc._C_end
+                             == __tmp._C_alloc._C_bufend));
+
+            __tmp._C_push_back (std::move_if_noexcept(*__i));
+        }
+
+        // swap the sequences controlled by the temporary bvector and *this
+        __tmp.swap (*this);
+    }
+}
 
 template <class _TypeT, class _Allocator>
 void bvector<_TypeT, _Allocator>::
@@ -320,7 +412,7 @@ _C_insert_n (const iterator &__it, size_type __n, const_reference __x)
 
         // copy elements the will be overwritten below
         // over the range of elements moved above
-        std::copy_backward (__movbeg, __ucpbeg, __ucpend);
+        _move_range_backward (__movbeg, __ucpbeg, __ucpend);
     }
     else {
 

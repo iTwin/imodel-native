@@ -55,7 +55,7 @@ struct AString : public bastring
 //! A string class that has many of the same capabilities as std::string, plus
 //! additional functions such as conversion from UTF-8, UTF-16, and local-encoded strings,
 //! case-insensitive compare, trimming, padding, and others.
-//! @ingroup BeStringGroup
+//! @ingroup GROUP_String
 //  @bsiclass                                                   Keith.Bentley   03/11
 //=======================================================================================
 struct WString : public bwstring
@@ -291,7 +291,7 @@ public:
     };
 
 //=======================================================================================
-//! @ingroup BeStringGroup
+//! @ingroup GROUP_String
 //  @bsiclass                                                   Keith.Bentley   11/11
 //=======================================================================================
 struct WPrintfString : WString
@@ -309,7 +309,7 @@ struct WPrintfString : WString
 //! Contains a UTF-8 encoded string. This class has many of the capabilities of std::string,
 //! except that it is intended to hold only UTF-8 encoded strings.
 //! This class also defines utility functions for constructing and manipulating the string.
-//! @ingroup BeStringGroup
+//! @ingroup GROUP_String
 //  @bsiclass                                                   Keith.Bentley   04/11
 //=======================================================================================
 struct Utf8String : public bastring
@@ -480,7 +480,7 @@ struct Utf8String : public bastring
 
 //=======================================================================================
 //! Construct a Utf8String by creating a formatted string.
-//! @ingroup BeStringGroup
+//! @ingroup GROUP_String
 //  @bsiclass                                                   Keith.Bentley   11/11
 //=======================================================================================
 struct Utf8PrintfString : Utf8String

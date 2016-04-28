@@ -7,22 +7,12 @@
 +--------------------------------------------------------------------------------------*/
 // __PUBLISH_SECTION_START__
 
-/** @cond BENTLEY_SDK_DgnClient */
-
 BEGIN_BENTLEY_NAMESPACE
-
-//=======================================================================================
-// Add link from the BeFileGroup module to the overview page
-//=======================================================================================
-/**
-@addtogroup BeFileGroup
-@see @ref Overview_BeFileName
-*/
 
 //=======================================================================================
 // Define files overview page
 //=======================================================================================
-/** @page Overview_BeFileName Working with file names
+/** @page PAGE_BeFileNameOverview Working with file names
 
 The DgnDb technology stack includes a portability layer for working in CPP across multiple
 platforms.  The BeFileName class and related types are used for working with file names and 
@@ -58,6 +48,3 @@ __PUBLISH_INSERT_FILE__ Overview_BeFileName_WritingToFile.sampleCode
 */
 
 END_BENTLEY_NAMESPACE
-
-/** @endcond */
-

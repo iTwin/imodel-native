@@ -71,6 +71,7 @@
     <ClInclude Include="..\PublicAPI\Bentley\BeThread.h" />
     <ClInclude Include="..\PublicAPI\Bentley\BeThreadLocalStorage.h" />
     <ClInclude Include="..\PublicAPI\Bentley\BeTimeUtilities.h" />
+    <ClInclude Include="..\PublicAPI\Bentley\BeVersion.h" />
     <ClInclude Include="..\PublicAPI\Bentley\bmap.h" />
     <ClInclude Include="..\PublicAPI\Bentley\bset.h" />
     <ClInclude Include="..\PublicAPI\Bentley\bvector.h" />

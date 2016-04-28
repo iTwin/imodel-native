@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/BeFileListIterator.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -36,7 +36,7 @@ BEGIN_BENTLEY_NAMESPACE
 * @note: This class does NOT accept environment or configuration variables in the list.
 * @note It returns only filenames that actually exist. So, if the list is just the full name of a file which is not present,
 *       this iterator will return ERROR without returning anything. 
-* @ingroup BeFileGroup
+* @ingroup GROUP_File
 * @bsiclass                                                     Keith.Bentley   02/09
 +===============+===============+===============+===============+===============+======*/
 class BeFileListIterator

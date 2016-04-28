@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/btree/btree_set.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -64,7 +64,7 @@ you should use bstdset.
 <p>
 To understand the @c bset class, consult the documentation for @c std::set.
 @see http://www.cplusplus.com/reference/set/set/
-@ingroup BeCollectionsGroup
+@ingroup GROUP_Collection
 */
 template <typename Key, typename Compare = std::less<Key>, uint16_t EntriesPerNode = 32,
           typename Alloc = BentleyApi::BentleyAllocator<Key> >

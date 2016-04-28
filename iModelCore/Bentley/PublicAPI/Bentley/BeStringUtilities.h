@@ -36,8 +36,9 @@ enum class HexFormatOptions
     };
 
 /**
-* @addtogroup BeStringGroup
-* Cross-platform utilities for working with strings.
+* @addtogroup GROUP_String Text String Module
+* Cross-platform utilities for working with text strings.
+* @see @ref PAGE_Utf8StringOverview
 */
 
 //=======================================================================================
@@ -70,7 +71,7 @@ enum class HexFormatOptions
 //!     * tmpfile/tmpname           - DgnPlatformLib::QueryHost()->GetIKnownLocationsAdmin
 //!     * get/setenv                - Not portable and must not be used at all. Must provide DgnPlatformLib::Host-based admins for specific needs.
 //!     * malloc                    - Should rarely be used. Instead, use bvector, ScopedArray, and C++ new
-//! @ingroup BeStringGroup
+//! @ingroup GROUP_String
 //=======================================================================================
 struct BeStringUtilities : public NonCopyableClass
 {

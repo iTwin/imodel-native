@@ -10,7 +10,9 @@
 
 #include "Bentley.h"
 #include "WString.h"
+#include "BeStringUtilities.h"
 #include "BeAssert.h"
+#include <limits>
 
 BEGIN_BENTLEY_NAMESPACE
 
@@ -20,6 +22,10 @@ BEGIN_BENTLEY_NAMESPACE
 //=======================================================================================
 struct BeInt64Id
     {
+public:
+    //! @see BeInt64Id::ToString(Utf8Char*)
+    static const size_t ID_STRINGBUFFER_LENGTH = std::numeric_limits<uint64_t>::digits + 1; //+1 for the trailing 0 character
+
 protected:
     uint64_t m_id;
 
@@ -64,7 +70,30 @@ public:
     //! Set this BeInt64Id to an invalid value (0).
     void Invalidate() { m_id = 0; }
 
-    Utf8String ToString() const { Utf8String str; str.Sprintf("%" PRIu64, m_id); return str; }
+    //! Converts this BeInt64Id to its string representation.
+    //! 
+    //! Typical example:
+    //!
+    //!     Utf8Char idStrBuffer[BeInt64Id::ID_STRINGBUFFER_LENGTH];
+    //!     myId.ToString(idStrBuffer);
+    //!
+    //! @remarks The method does not have any checks that the buffer is large enough. Callers
+    //! must ensure this to avoid unexpected behavior. 
+    //!
+    //! @param[in,out] stringBuffer The output buffer for the id string. Must be large enough
+    //! to hold the maximal number of decimal digits of UInt64 plus the trailing 0 character.
+    //! You can use BeInt64Id::ID_STRINGBUFFER_LENGTH to allocate the @p stringBuffer.
+    void ToString(Utf8P stringBuffer) const { BeStringUtilities::FormatUInt64(stringBuffer, m_id); } //BeStringUtilities::FormatUInt64 is faster than sprintf.
+
+    //! Converts this BeInt64Id to its string representation.
+    //! @remarks Consider the overload BeInt64Id::ToString(Utf8Char*) if you want
+    //! to avoid allocating Utf8Strings.
+    Utf8String ToString() const
+        {
+        Utf8Char idStrBuffer[ID_STRINGBUFFER_LENGTH];
+        ToString(idStrBuffer);
+        return Utf8String(idStrBuffer); 
+        }
     };
 
 #define BEINT64_ID_DECLARE_MEMBERS(classname,superclass) \
