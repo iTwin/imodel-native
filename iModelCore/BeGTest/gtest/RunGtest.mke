@@ -2,7 +2,7 @@
 #
 #     $Source: gtest/RunGtest.mke $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %include mdl.mki
@@ -42,7 +42,7 @@ always:
 
 %if $(TARGET_PLATFORM)=="Windows"
     
-    RunPrefix=start \/WAIT
+    RunPrefix=start \/WAIT \/MIN
     # Must fix up directory separators
     exeName = $[@realpath $(GTEST_EXE)]
 

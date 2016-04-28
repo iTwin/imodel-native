@@ -64,9 +64,11 @@ struct BeTestHost : RefCounted<BeTest::Host>
     
     virtual void _GetFrameworkSqlangFiles(BeFileName& path) override
     {
+#if defined (TEST_FRAMEWORK_SQLANG)
     GetDgnPlatformAssetsDirectory(path);
     path.AppendToPath(L"sqlang");
     path.AppendToPath(TEST_FRAMEWORK_SQLANG); // This macro is defined by MakeXCTestProject.mke
+#endif
     }
     
     virtual void*  _InvokeP (char const* function, void* args) override
