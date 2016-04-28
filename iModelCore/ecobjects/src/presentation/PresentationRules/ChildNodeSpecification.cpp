@@ -66,7 +66,7 @@ bool ChildNodeSpecification::ReadXml (BeXmlNodeP xmlNode)
         m_hideIfNoChildren = false;
 
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_extendedData, CHILD_NODE_SPECIFICATION_XML_ATTRIBUTE_EXTENDEDDATA))
-        m_extendedData = L"";
+        m_extendedData = "";
 
     if (BEXML_Success != xmlNode->GetAttributeBooleanValue (m_doNotSort, SORTING_RULE_XML_ATTRIBUTE_DONOTSORT))
         m_doNotSort = false;
@@ -164,7 +164,7 @@ void ChildNodeSpecification::SetHideIfNoChildren (bool value) { m_hideIfNoChildr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR ChildNodeSpecification::GetExtendedData (void) const
+Utf8StringCR ChildNodeSpecification::GetExtendedData (void) const
     {
     return m_extendedData;
     }
@@ -172,7 +172,7 @@ WStringCR ChildNodeSpecification::GetExtendedData (void) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ChildNodeSpecification::SetExtendedData (WStringCR extendedData)
+void ChildNodeSpecification::SetExtendedData (Utf8StringCR extendedData)
     {
     m_extendedData = extendedData;
     }

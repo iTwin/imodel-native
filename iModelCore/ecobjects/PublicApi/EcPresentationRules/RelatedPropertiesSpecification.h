@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/RelatedPropertiesSpecification.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -72,8 +72,10 @@ struct RelatedPropertiesSpecification : PresentationRuleSpecification
         ECOBJECTS_EXPORT Utf8StringCR                 GetPropertyNames (void) const;
 
         //! Nested related properties, that will be shown next to ECInstance proerties (the same row for example).
-        ECOBJECTS_EXPORT RelatedPropertiesSpecificationList& GetNestedRelatedProperties (void);
-
+        ECOBJECTS_EXPORT RelatedPropertiesSpecificationList const& GetNestedRelatedProperties() const;
+        
+        //! Nested related properties, that will be shown next to ECInstance proerties (the same row for example).
+        ECOBJECTS_EXPORT RelatedPropertiesSpecificationList& GetNestedRelatedPropertiesR();
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE

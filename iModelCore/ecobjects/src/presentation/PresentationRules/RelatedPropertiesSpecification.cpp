@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/RelatedPropertiesSpecification.cpp $
 |
-|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -114,4 +114,9 @@ Utf8StringCR RelatedPropertiesSpecification::GetPropertyNames (void) const { ret
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-RelatedPropertiesSpecificationList& RelatedPropertiesSpecification::GetNestedRelatedProperties (void) { return m_nestedRelatedPropertiesSpecification; }
+RelatedPropertiesSpecificationList const& RelatedPropertiesSpecification::GetNestedRelatedProperties() const { return m_nestedRelatedPropertiesSpecification; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+RelatedPropertiesSpecificationList& RelatedPropertiesSpecification::GetNestedRelatedPropertiesR() { return m_nestedRelatedPropertiesSpecification; }

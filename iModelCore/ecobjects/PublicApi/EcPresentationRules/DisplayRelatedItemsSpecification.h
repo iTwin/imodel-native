@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/DisplayRelatedItemsSpecification.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -22,7 +22,7 @@ struct DisplayRelatedItemsSpecification : PresentationRuleSpecification
     private:
         bool                    m_logicalChildren;
         int                     m_nestingDepth;
-        WString                 m_relationshipClasses;
+        Utf8String                 m_relationshipClasses;
 
     /*__PUBLISH_SECTION_START__*/
     public:
@@ -39,7 +39,7 @@ struct DisplayRelatedItemsSpecification : PresentationRuleSpecification
         ECOBJECTS_EXPORT DisplayRelatedItemsSpecification ();
 
         //! Constructor.
-        ECOBJECTS_EXPORT DisplayRelatedItemsSpecification (bool logicalChildren, int nestingDepth, WStringCR relationshipClasses);
+        ECOBJECTS_EXPORT DisplayRelatedItemsSpecification (bool logicalChildren, int nestingDepth, Utf8StringCR relationshipClasses);
 
         //! Only include logical children of selected items.
         ECOBJECTS_EXPORT bool           GetLogicalChildren (void) const;
@@ -48,7 +48,7 @@ struct DisplayRelatedItemsSpecification : PresentationRuleSpecification
         ECOBJECTS_EXPORT int            GetNestingDepth (void) const;
 
         //! Supported relationsip classes.
-        ECOBJECTS_EXPORT WStringCR      GetRelationshipClasses (void) const;
+        ECOBJECTS_EXPORT Utf8StringCR      GetRelationshipClasses (void) const;
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE

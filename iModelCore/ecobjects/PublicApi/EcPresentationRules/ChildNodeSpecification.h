@@ -30,7 +30,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ChildNodeSpecification : PresentationRuleSpecific
         bool               m_hideNodesInHierarchy;
         bool               m_hideIfNoChildren;
         bool               m_doNotSort;
-        WString            m_extendedData;
+        Utf8String            m_extendedData;
         ChildNodeRuleList  m_nestedRules;
 
         static int GetNewSpecificationId ();
@@ -96,10 +96,10 @@ struct EXPORT_VTABLE_ATTRIBUTE ChildNodeSpecification : PresentationRuleSpecific
         ECOBJECTS_EXPORT void                         SetHideIfNoChildren (bool value);
 
         //! Returns a string that represents extended data that will be passed to ECQuery for this particular specification.
-        ECOBJECTS_EXPORT WStringCR                    GetExtendedData (void) const;
+        ECOBJECTS_EXPORT Utf8StringCR                    GetExtendedData (void) const;
 
         //! Sets a string that represents extended data that will be passed to ECQuery for this particular specification.
-        ECOBJECTS_EXPORT void                         SetExtendedData (WStringCR extendedData);
+        ECOBJECTS_EXPORT void                         SetExtendedData (Utf8StringCR extendedData);
 
         //! Identifies whether ECInstances sort or not returned by specification. If true, then ECInstances will be listed
         //! in the order they were stored, or the order PersistenceProvider returns them.

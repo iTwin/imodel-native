@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/ContentRule.cpp $
 |
-|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -80,7 +80,12 @@ void ContentRule::_WriteXml (BeXmlNodeP xmlNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentSpecificationList& ContentRule::GetSpecifications (void) { return m_specifications; }
+ContentSpecificationList const& ContentRule::GetSpecifications (void) const { return m_specifications; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                04/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+ContentSpecificationList& ContentRule::GetSpecificationsR() {return m_specifications;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Andrius.Zonys                   09/2013

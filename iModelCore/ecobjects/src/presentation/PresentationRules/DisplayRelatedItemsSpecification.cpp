@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/DisplayRelatedItemsSpecification.cpp $
 |
-|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -24,7 +24,7 @@ DisplayRelatedItemsSpecification::DisplayRelatedItemsSpecification ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    dmitrijus.tiazlovas              11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-DisplayRelatedItemsSpecification::DisplayRelatedItemsSpecification (bool logicalChildren, int nestingDepth, WStringCR relationshipClasses)
+DisplayRelatedItemsSpecification::DisplayRelatedItemsSpecification (bool logicalChildren, int nestingDepth, Utf8StringCR relationshipClasses)
     : m_logicalChildren (logicalChildren), m_nestingDepth (nestingDepth), m_relationshipClasses (relationshipClasses)
     {
     }
@@ -46,7 +46,7 @@ bool DisplayRelatedItemsSpecification::ReadXml (BeXmlNodeP xmlNode)
         m_logicalChildren = true;
 
     if (BEXML_Success != xmlNode->GetAttributeStringValue  (m_relationshipClasses, DISPLAYRELATEDITEMS_SPECIFICATION_XML_ATTRIBUTE_RELATIONSHIPCLASSES))
-        m_relationshipClasses = L"";
+        m_relationshipClasses = "";
 
     return true;
     }
@@ -76,4 +76,4 @@ int DisplayRelatedItemsSpecification::GetNestingDepth (void) const { return m_ne
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    dmitrijus.tiazlovas              11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR DisplayRelatedItemsSpecification::GetRelationshipClasses (void) const { return m_relationshipClasses; }
+Utf8StringCR DisplayRelatedItemsSpecification::GetRelationshipClasses (void) const { return m_relationshipClasses; }

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/SelectedNodeInstancesSpecification.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -22,8 +22,8 @@ struct SelectedNodeInstancesSpecification : public ContentSpecification
     {
     /*__PUBLISH_SECTION_END__*/
     private:
-        WString  m_acceptableSchemaName;
-        WString  m_acceptableClassNames;
+        Utf8String  m_acceptableSchemaName;
+        Utf8String  m_acceptableClassNames;
         bool     m_acceptablePolymorphically;
         bool     m_onlyIfNotHandled;
 
@@ -46,7 +46,7 @@ struct SelectedNodeInstancesSpecification : public ContentSpecification
         ECOBJECTS_EXPORT SelectedNodeInstancesSpecification ();
 
         //! Constructor.
-        ECOBJECTS_EXPORT SelectedNodeInstancesSpecification (int priority, bool onlyIfNotHandled, WStringCR acceptableSchemaName, WStringCR acceptableClassNames, bool acceptablePolymorphically);
+        ECOBJECTS_EXPORT SelectedNodeInstancesSpecification (int priority, bool onlyIfNotHandled, Utf8StringCR acceptableSchemaName, Utf8StringCR acceptableClassNames, bool acceptablePolymorphically);
 
         //! Returns true if this rule should be executed only in the case where there are no other higher priority rules for this particular cotext.
         ECOBJECTS_EXPORT bool                         GetOnlyIfNotHandled (void) const;
@@ -55,16 +55,16 @@ struct SelectedNodeInstancesSpecification : public ContentSpecification
         ECOBJECTS_EXPORT void                         SetOnlyIfNotHandled (bool value);
 
         //! Acceptable schema name of ECInstances that will be shown in the content.
-        ECOBJECTS_EXPORT WStringCR                    GetAcceptableSchemaName (void) const;
+        ECOBJECTS_EXPORT Utf8StringCR                    GetAcceptableSchemaName (void) const;
 
         //! Sets the acceptable schema name of the specification.
-        ECOBJECTS_EXPORT void                         SetAcceptableSchemaName (WStringCR value);
+        ECOBJECTS_EXPORT void                         SetAcceptableSchemaName (Utf8StringCR value);
 
         //! Acceptable class names of ECInstances that will be shown in the content.
-        ECOBJECTS_EXPORT WStringCR                    GetAcceptableClassNames (void) const;
+        ECOBJECTS_EXPORT Utf8StringCR                    GetAcceptableClassNames (void) const;
 
         //! Sets the acceptable class names of the specification.
-        ECOBJECTS_EXPORT void                         SetAcceptableClassNames (WStringCR value);
+        ECOBJECTS_EXPORT void                         SetAcceptableClassNames (Utf8StringCR value);
 
         //! Identifies whether AcceptableClasses should be check polymorphically.
         ECOBJECTS_EXPORT bool                         GetAcceptablePolymorphically (void) const;

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/ContentRule.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -49,7 +49,10 @@ struct ContentRule : public PresentationRule
         ECOBJECTS_EXPORT                                ~ContentRule (void);
 
         //! Collection ContentSpecifications that will be used to provide content.
-        ECOBJECTS_EXPORT ContentSpecificationList&      GetSpecifications (void);
+        ECOBJECTS_EXPORT ContentSpecificationList const& GetSpecifications(void) const;
+        
+        //! Collection ContentSpecifications that will be used to provide content.
+        ECOBJECTS_EXPORT ContentSpecificationList&      GetSpecificationsR();
 
         //! Returns display type of custom control which should display content of this rule.
         ECOBJECTS_EXPORT Utf8StringCR                      GetCustomControl (void);

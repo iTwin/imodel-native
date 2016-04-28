@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/ContentSpecification.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -64,7 +64,10 @@ public:
     ECOBJECTS_EXPORT void                                 SetPriority (int value);
 
     //! Related properties of acceptable ECInstances, that will be shown next to ECInstance proerties (the same row for example).
-    ECOBJECTS_EXPORT RelatedPropertiesSpecificationList&   GetRelatedProperties (void);
+    ECOBJECTS_EXPORT RelatedPropertiesSpecificationList const&   GetRelatedProperties(void) const;
+    
+    //! Related properties of acceptable ECInstances, that will be shown next to ECInstance proerties (the same row for example).
+    ECOBJECTS_EXPORT RelatedPropertiesSpecificationList&   GetRelatedPropertiesR(void);
 
     //! Include related items with current instances when display commands are executed.
     ECOBJECTS_EXPORT DisplayRelatedItemsSpecificationList& GetDisplayRelatedItems (void);
