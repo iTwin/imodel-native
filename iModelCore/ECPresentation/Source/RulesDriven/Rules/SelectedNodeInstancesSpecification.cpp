@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/SelectedNodeInstancesSpecification.cpp $
 |
-|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -32,8 +32,8 @@ SelectedNodeInstancesSpecification::SelectedNodeInstancesSpecification
 (
 int priority,
 bool onlyIfNotHandled,
-WStringCR acceptableSchemaName,
-WStringCR acceptableClassNames,
+Utf8StringCR acceptableSchemaName,
+Utf8StringCR acceptableClassNames,
 bool acceptablePolymorphically
 ) :
 ContentSpecification (priority),
@@ -67,10 +67,10 @@ bool SelectedNodeInstancesSpecification::_ReadXml (BeXmlNodeP xmlNode)
         m_onlyIfNotHandled = false;
 
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_acceptableSchemaName, SELECTED_NODE_INSTANCES_SPECIFICATION_XML_ATTRIBUTE_ACCEPTABLESCHEMANAME))
-        m_acceptableSchemaName = L"";
+        m_acceptableSchemaName = "";
 
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_acceptableClassNames, SELECTED_NODE_INSTANCES_SPECIFICATION_XML_ATTRIBUTE_ACCEPTABLECLASSNAMES))
-        m_acceptableClassNames = L"";
+        m_acceptableClassNames = "";
 
     if (BEXML_Success != xmlNode->GetAttributeBooleanValue (m_acceptablePolymorphically, SELECTED_NODE_INSTANCES_SPECIFICATION_XML_ATTRIBUTE_ACCEPTABLEPOLYMORPHICALLY))
         m_acceptablePolymorphically = false;
@@ -100,7 +100,7 @@ bool SelectedNodeInstancesSpecification::GetOnlyIfNotHandled (void) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR SelectedNodeInstancesSpecification::GetAcceptableSchemaName (void) const
+Utf8StringCR SelectedNodeInstancesSpecification::GetAcceptableSchemaName (void) const
     {
     return m_acceptableSchemaName;
     }
@@ -108,7 +108,7 @@ WStringCR SelectedNodeInstancesSpecification::GetAcceptableSchemaName (void) con
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR SelectedNodeInstancesSpecification::GetAcceptableClassNames (void) const
+Utf8StringCR SelectedNodeInstancesSpecification::GetAcceptableClassNames (void) const
     {
     return m_acceptableClassNames;
     }
@@ -132,7 +132,7 @@ void SelectedNodeInstancesSpecification::SetOnlyIfNotHandled(bool value)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SelectedNodeInstancesSpecification::SetAcceptableSchemaName(WStringCR value)
+void SelectedNodeInstancesSpecification::SetAcceptableSchemaName(Utf8StringCR value)
     {
     m_acceptableSchemaName = value;
     }
@@ -140,7 +140,7 @@ void SelectedNodeInstancesSpecification::SetAcceptableSchemaName(WStringCR value
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SelectedNodeInstancesSpecification::SetAcceptableClassNames(WStringCR value)
+void SelectedNodeInstancesSpecification::SetAcceptableClassNames(Utf8StringCR value)
     {
     m_acceptableClassNames = value;
     }

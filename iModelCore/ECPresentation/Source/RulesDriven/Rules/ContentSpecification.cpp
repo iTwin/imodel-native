@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/ContentSpecification.cpp $
 |
-|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -80,7 +80,12 @@ void ContentSpecification::SetPriority (int value) { m_priority = value; }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-RelatedPropertiesSpecificationList& ContentSpecification::GetRelatedProperties (void) { return m_relatedPropertiesSpecification; }
+RelatedPropertiesSpecificationList& ContentSpecification::GetRelatedPropertiesR() {return m_relatedPropertiesSpecification;}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+RelatedPropertiesSpecificationList const& ContentSpecification::GetRelatedProperties() const {return m_relatedPropertiesSpecification;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
