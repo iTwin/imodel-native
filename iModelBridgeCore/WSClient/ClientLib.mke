@@ -2,7 +2,7 @@
 #
 #     $Source: ClientLib.mke $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 PolicyFile = $(SrcRoot)WSClient/ClientLibPolicy.mki
@@ -21,6 +21,7 @@ always:
 #--------------------------------------------------------------------------------------
 
 %include Client/Client.mki
+%include Azure/Azure.mki
 %include Configuration/Configuration.mki
 %include Connect/Connect.mki
 %include Licensing/Licensing.mki
