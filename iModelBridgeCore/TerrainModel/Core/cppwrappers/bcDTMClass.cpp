@@ -286,8 +286,8 @@ class TriangleMeshCallbackTransformHelper
             TriangleMeshCallbackTransformHelper* data = (TriangleMeshCallbackTransformHelper*)userP;
 
             if (data->m_helper)
-                return data->m_callBackFunctP (featureType, numTriangles, numMeshPoints, data->m_helper->copyPointsFromDTM (meshPointsP, numMeshFaces), numMeshFaces, meshFacesP, userP);
-            return data->m_callBackFunctP (featureType, numTriangles, numMeshPoints, meshPointsP, numMeshFaces, meshFacesP, userP);
+                return data->m_callBackFunctP (featureType, numTriangles, numMeshPoints, data->m_helper->copyPointsFromDTM (meshPointsP, numMeshFaces), numMeshFaces, meshFacesP, data->m_userP);
+            return data->m_callBackFunctP(featureType, numTriangles, numMeshPoints, meshPointsP, numMeshFaces, meshFacesP, data->m_userP);
             }
     };
 
