@@ -1573,7 +1573,7 @@ public:
     //__PUBLISH_SECTION_END__
     //! Create the Embedded file table if it doesn't exist
     DbResult CreateTable() const;
-    static bool HasLastModifiedColumn(DbR db);
+
     //__PUBLISH_SECTION_START__
 };
 

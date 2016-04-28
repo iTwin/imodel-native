@@ -3642,19 +3642,16 @@ static DbResult embedFileWithoutCompressing(Db& db, uint64_t&filesize, uint32_t 
 +---------------+---------------+---------------+---------------+---------------+------*/
 static DbResult addEmbedFile(Db& db, Utf8CP name, Utf8CP type, Utf8CP description, BeBriefcaseBasedId id, uint64_t fileSize, DateTime const* lastModified, uint32_t chunkSize)
     {
-    const bool hasLastModifiedColumn = DbEmbeddedFileTable::HasLastModifiedColumn(db);
-
     Statement stmt;
-    stmt.Prepare(db, hasLastModifiedColumn ?
-                  "INSERT INTO " BEDB_TABLE_EmbeddedFile " (Name,Descr,Type,Id,Size,Chunk,LastModified) VALUES(?,?,?,?,?,?,?)" :
-                  "INSERT INTO " BEDB_TABLE_EmbeddedFile " (Name,Descr,Type,Id,Size,Chunk) VALUES(?,?,?,?,?,?)");
+    stmt.Prepare(db, "INSERT INTO " BEDB_TABLE_EmbeddedFile " (Name,Descr,Type,Id,Size,Chunk,LastModified) VALUES(?,?,?,?,?,?,?)");
+
     stmt.BindText(1, name, Statement::MakeCopy::No);
     stmt.BindText(2, description, Statement::MakeCopy::No);
     stmt.BindText(3, type, Statement::MakeCopy::No);
     stmt.BindId(4, id);
     stmt.BindInt64(5, fileSize);
     stmt.BindInt(6, chunkSize);
-    if (hasLastModifiedColumn && lastModified != nullptr && lastModified->IsValid())
+    if (lastModified != nullptr && lastModified->IsValid())
         {
         if (lastModified->GetInfo().GetKind() == DateTime::Kind::Local)
             LOG.warningv("LastModified date of file '%s' to embed must not be in local time. Only DateTime::Kind::Utc or DateTime::Kind::Unspecified is supported. LastModified will be ignored.",
@@ -3773,7 +3770,7 @@ DbResult DbEmbeddedFileTable::AddEntry(Utf8CP name, Utf8CP type, Utf8CP descript
 +---------------+---------------+---------------+---------------+---------------+------*/
 static DbResult updateEmbedFile(Db& db, BeBriefcaseBasedId id, uint64_t fileSize, DateTime const* lastModified, uint32_t chunkSize)
     {
-    const bool updateLastModified = DbEmbeddedFileTable::HasLastModifiedColumn(db) && lastModified != nullptr && lastModified->IsValid();
+    const bool updateLastModified = lastModified != nullptr && lastModified->IsValid();
 
     Statement stmt;
     Utf8CP sql = updateLastModified ? "UPDATE " BEDB_TABLE_EmbeddedFile " SET Size=?,Chunk=?,LastModified=? WHERE Id=?" : "UPDATE " BEDB_TABLE_EmbeddedFile " SET Size=?,Chunk=? WHERE Id=?";
@@ -4036,12 +4033,8 @@ BeBriefcaseBasedId DbEmbeddedFileTable::QueryFile(Utf8CP name, uint64_t* size, u
     if (!m_db.TableExists(BEDB_TABLE_EmbeddedFile))
         return BeBriefcaseBasedId(); // invalid id indicates an error
 
-    Utf8CP sql = DbEmbeddedFileTable::HasLastModifiedColumn(m_db) ?
-        "SELECT Descr,Type,Id,Size,Chunk,LastModified FROM " BEDB_TABLE_EmbeddedFile " WHERE Name=?" :
-        "SELECT Descr,Type,Id,Size,Chunk, NULL AS LastModified FROM " BEDB_TABLE_EmbeddedFile" WHERE Name=?";
-
     Statement stmt;
-    stmt.Prepare(m_db, sql);
+    stmt.Prepare(m_db, "SELECT Descr,Type,Id,Size,Chunk,LastModified FROM " BEDB_TABLE_EmbeddedFile " WHERE Name=?");
     stmt.BindText(1, name, Statement::MakeCopy::No);
 
     DbResult rc = stmt.Step();
@@ -4110,24 +4103,6 @@ DbResult DbEmbeddedFileTable::CreateTable() const
             " WHERE Namespace=\"" BEDB_PROPSPEC_NAMESPACE "\" AND NAME=\"" BEDB_PROPSPEC_EMBEDBLOB_NAME "\" AND Id=OLD.Id; END");
     }
 
-//-------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                  11/14
-//+---------------+---------------+---------------+---------------+---------------+----
-//static
-bool DbEmbeddedFileTable::HasLastModifiedColumn(DbR db)
-    {
-    const SchemaVersion firstVersionWithLastModifiedColumn(3, 1, 0, 1);
-
-    SchemaVersion actualVersion(0,0,0,0);
-    if (BE_SQLITE_OK != BeSQLiteProfileManager::ReadProfileVersion(actualVersion, db))
-        {
-        BeAssert(false && "Could not read BeSQLite profile version.");
-        return false;
-        }
-
-    return actualVersion.CompareTo(firstVersionWithLastModifiedColumn) >= 0;
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -4138,9 +4113,7 @@ DbEmbeddedFileTable::Iterator::Entry DbEmbeddedFileTable::Iterator::begin() cons
         if (!m_db->TableExists(BEDB_TABLE_EmbeddedFile))
             return Entry(nullptr, false);
 
-        Utf8String sqlString = MakeSqlString(DbEmbeddedFileTable::HasLastModifiedColumn(*m_db) ?
-                                              "SELECT Name,Descr,Type,Id,Size,Chunk,LastModified FROM " BEDB_TABLE_EmbeddedFile :
-                                              "SELECT Name,Descr,Type,Id,Size,Chunk, NULL AS LastModified FROM " BEDB_TABLE_EmbeddedFile);
+        Utf8String sqlString = MakeSqlString("SELECT Name,Descr,Type,Id,Size,Chunk,LastModified FROM " BEDB_TABLE_EmbeddedFile);
 
         m_db->GetCachedStatement(m_stmt, sqlString.c_str());
         m_params.Bind(*m_stmt);
@@ -4160,9 +4133,6 @@ uint64_t DbEmbeddedFileTable::Iterator::Entry::GetFileSize() const {return m_sql
 uint32_t DbEmbeddedFileTable::Iterator::Entry::GetChunkSize() const {return m_sql->GetValueInt(5);}
 DateTime DbEmbeddedFileTable::Iterator::Entry::GetLastModified() const
     {
-    if (m_sql->IsColumnNull(6))
-        return DateTime();
-
     DateTime lastModified;
     DateTime::FromJulianDay(lastModified, m_sql->GetValueDouble(6), DateTime::Info(DateTime::Kind::Utc, DateTime::Component::DateAndTime));
     return lastModified;
