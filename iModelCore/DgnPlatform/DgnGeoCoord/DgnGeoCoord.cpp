@@ -4837,7 +4837,7 @@ DgnDbR          cache
 //          char    errorMsg[512];
 //          CSMap::CS_errmsg (errorMsg, DIM(errorMsg));
 //          printf ("ERROR: %s trying to create from saved type 66 parameters\n", errorMsg);
-            assert(false);
+            BeAssert(false);
             return NULL;
             }
         }
