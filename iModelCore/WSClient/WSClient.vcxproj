@@ -57,6 +57,7 @@
     </BuildLog>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Azure\AzureBlobStorageClient.cpp" />
     <ClCompile Include="Cache\CacheNavigationTask.cpp" />
     <ClCompile Include="Cache\CachingDataSource.cpp" />
     <ClCompile Include="Cache\CachingTaskBase.cpp" />
@@ -225,6 +226,7 @@
     <ClInclude Include="Client\ClientConfiguration.h" />
     <ClInclude Include="Client\ClientConnection.h" />
     <ClInclude Include="Configuration\BuddiError.xliff.h" />
+    <ClInclude Include="PublicAPI\WebServices\Azure\AzureBlobStorageClient.h" />
     <ClInclude Include="PublicAPI\WebServices\Cache\CachingDataSource.h" />
     <ClInclude Include="PublicAPI\WebServices\Cache\ICachingDataSource.h" />
     <ClInclude Include="PublicAPI\WebServices\Cache\IQueryProvider.h" />
@@ -339,6 +341,7 @@
     </Xml>
   </ItemGroup>
   <ItemGroup>
+    <None Include="Azure\Azure.mki" />
     <None Include="BentleyDesktopClientCCApi.prewire.mke" />
     <None Include="CacheLib.mke" />
     <None Include="CacheLibPolicy.mki" />

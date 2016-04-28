@@ -366,6 +366,9 @@
     <ClCompile Include="Connect\ImsClient.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Azure\AzureBlobStorageClient.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Client\WebApi\WebApi.h">
@@ -806,6 +809,9 @@
     <ClInclude Include="PublicAPI\WebServices\Connect\ImsClient.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\Azure\AzureBlobStorageClient.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Xml Include="WSClient.PartFile.xml" />
@@ -836,5 +842,7 @@
     <None Include="l10n-WSClient.mke" />
     <None Include="CacheSchemasDelivery.mke" />
     <None Include="UnZip.py" />
+    <None Include="BentleyDesktopClientCCApi.prewire.mke" />
+    <None Include="Azure\Azure.mki" />
   </ItemGroup>
 </Project>
