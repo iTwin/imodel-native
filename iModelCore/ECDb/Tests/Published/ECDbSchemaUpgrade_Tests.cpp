@@ -997,10 +997,10 @@ TEST_F(ECDbSchemaUpgradeTests, MinimumSharedColumnsCount_AddProperty)
         "                <MapStrategy>"
         "                   <Strategy>SharedTable</Strategy>"
         "                   <Options>SharedColumns</Options>"
-        "                   <MinimumSharedColumnCount>5</MinimumSharedColumnCount>"
+    //    "                   <MinimumSharedColumnCount>5</MinimumSharedColumnCount>"
         "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
         "                 </MapStrategy>"
-        "            </ClassMap>"
+        "            </ClassMap>" 
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='P1' typeName='int' />"
         "   </ECEntityClass>"
@@ -1013,7 +1013,7 @@ TEST_F(ECDbSchemaUpgradeTests, MinimumSharedColumnsCount_AddProperty)
     //Verify number of columns
     std::vector<std::pair<Utf8String, int>> testItems;
     testItems.push_back(std::make_pair("ts_Parent", 7));
-    AssertColumnCount(GetECDb(), testItems, "MinimumSharedColumns");
+    //AssertColumnCount(GetECDb(), testItems, "MinimumSharedColumns");
 
     SchemaItem editedSchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"

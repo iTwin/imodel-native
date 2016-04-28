@@ -370,6 +370,7 @@ BentleyStatus ECDbSchemaWriter::TryParseId(Utf8StringR schemaName, Utf8StringR c
     className = id.substr(n + 1);
     return SUCCESS;
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -391,9 +392,10 @@ BentleyStatus ECDbSchemaWriter::UpdateECCustomAttributes(ECDbSchemaPersistenceHe
 
         if (change.GetParent()->GetState() != ChangeState::New)
             {
-            if (schemaName.EqualsI( "ECDbMap"))
+            if (GetCustomAttributeValidator().HasAnyRuleForSchema(schemaName.c_str()))
                 {
-                return Fail("ECSCHEMA-UPGRADE: Changing or adding ECDbMap customAttributes on exisiting schema/class/property/relationshipConstraint are not allowed.");
+                if (GetCustomAttributeValidator().Validate(change) == CustomAttributeValidator::Policy::Reject)
+                    return Fail("ECSCHEMA-UPGRADE: Changing or adding %s customAttributes on exisiting schema/class/property/relationshipConstraint are not allowed.", schemaName.c_str());
                 }
             }
 
