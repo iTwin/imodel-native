@@ -115,11 +115,13 @@ public:
                 new((void*)_Ptr)_Ty(std::move(_Val));
                 }
 
+#ifndef _RWSTD_NO_VARIADIC_TEMPLATES
         template<typename... _Args>
         void construct(pointer _Ptr, _Args... _Vals)
             {           // construct object at _Ptr from arguments as parameter pack
             new((void*)_Ptr)_Ty(std::forward<_Args>(_Vals)...);
             }
+#endif
 
         void destroy(pointer _Ptr)
                 {       // destroy object at _Ptr

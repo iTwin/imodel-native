@@ -101,6 +101,10 @@ $(o)ValueFormat$(oext)          : $(nonportDir)ValueFormat.cpp $(BentleyAPISrc)V
 
 $(o)Base64Utilities$(oext)      : $(nonportDir)Base64Utilities.cpp $(BentleyAPISrc)Base64Utilities.h ${MultiCompileDepends}
 
+$(o)md5$(oext)                  : $(bentleyDir)md5.cpp ${MultiCompileDepends}
+
+$(o)sha1$(oext)                 : $(bentleyDir)sha1.cpp ${MultiCompileDepends}
+
 %if $(TARGET_PLATFORM)=="Windows"
     # Windows-specific COM-related utilities
     $(o)ReleaseMarshaller$(oext) : $(nonportDir)ReleaseMarshaller.cpp $(BentleyAPISrc)ReleaseMarshaller.h ${MultiCompileDepends}
