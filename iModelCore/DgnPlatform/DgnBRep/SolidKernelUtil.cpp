@@ -304,16 +304,29 @@ PolyfaceHeaderPtr SolidKernelUtil::FacetEntity(ISolidKernelEntityCR entity, doub
             static double sizeDependentRatio = 5.0;
             static double pixelToChordRatio = 0.5;
             static double minRangeRelTol = 1.0e-4;
+            static double maxRangeRelTol = 1.5e-2;
             double minChordTol = minRangeRelTol * maxDimension;
+            double maxChordTol = maxRangeRelTol * maxDimension;
+            double chordTol = pixelToChordRatio * pixelSize;
+            bool isMin = false, isMax = false;
 
+            if (isMin = (chordTol < minChordTol))
+                chordTol = minChordTol; // Don't allow chord to get too small relative to shape size...
+            else if (isMax = (chordTol > maxChordTol))
+                chordTol = maxChordTol; // Don't keep creating coarser and coarser graphics as you zoom out, at a certain point it just wastes memory/time...
+
+            facetOptions->SetChordTolerance(chordTol);
             facetOptions->SetAngleTolerance(Angle::PiOver2()); // Use max angle tolerance...mesh coarseness dictated by pixel size based chord...
-            facetOptions->SetChordTolerance(pixelToChordRatio * pixelSize);
-
-            if (facetOptions->GetChordTolerance() < minChordTol)
-                facetOptions->SetChordTolerance(minChordTol); // Don't allow chord to get too small relative to shape size...
 
             if (nullptr != pixelSizeRange)
-                *pixelSizeRange = DRange1d::FromLowHigh(facetOptions->GetChordTolerance() / sizeDependentRatio, facetOptions->GetChordTolerance() * sizeDependentRatio);
+                {
+                if (isMin)
+                    *pixelSizeRange = DRange1d::FromLowHigh(0.0, chordTol * sizeDependentRatio); // Finest tessellation, keep using this as we zoom in...
+                else if (isMax)
+                    *pixelSizeRange = DRange1d::FromLowHigh(chordTol / sizeDependentRatio, DBL_MAX); // Coarsest tessellation, keep using this as we zoom out...
+                else
+                    *pixelSizeRange = DRange1d::FromLowHigh(chordTol / sizeDependentRatio, chordTol * sizeDependentRatio);
+                }
             }
         }
 
