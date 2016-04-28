@@ -15,7 +15,7 @@
 
 USING_NAMESPACE_BENTLEY_EC
 
-BentleyApi::NativeLogging::ILogger* s_logger = BentleyApi::NativeLogging::LoggingManager::GetLogger("SchemaConverter");
+BentleyApi::NativeLogging::ILogger* s_logger = BentleyApi::NativeLogging::LoggingManager::GetLogger("SchemaResourceGenerator");
 
 #pragma region Commandline Parameters
 struct Options
@@ -427,7 +427,7 @@ int main(int argc, char** argv)
     BeFileName exePath(exePathW);
     BeFileName exeDirectory(exePath.GetDirectoryName());
     BeFileName logFilePath(exeDirectory);
-    logFilePath.AppendToPath(L"SchemaConverter.logging.config.xml");
+    logFilePath.AppendToPath(L"SchemaResourceGenerator.logging.config.xml");
     logFilePath.BeGetFullPathName();
     BentleyApi::NativeLogging::LoggingConfig::SetOption(CONFIG_OPTION_CONFIG_FILE, logFilePath);
     BentleyApi::NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::LOG4CXX_LOGGING_PROVIDER);
