@@ -1027,7 +1027,7 @@ protected:
     static bool         IsPropertyReadOnly_Default (DelegatedElementECInstanceCR instance, ICompoundECDelegateCR compound, IElementECDelegateCR primary, UInt32 propertyIndex)
         {
         DTMElementDataCache* data = dynamic_cast<DTMElementDataCache*> (instance.GetPerDelegateData ((ElementECDelegateCR)primary));
-        if (data->m_inActiveModel)
+        if (nullptr == data || data->m_inActiveModel)
             return primary.IsPropertyReadOnly (instance, propertyIndex);
         return data->m_symbologyReadOnly || !data->m_symbologyInActiveModel;
         }
