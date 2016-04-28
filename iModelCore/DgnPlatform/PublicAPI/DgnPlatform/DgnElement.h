@@ -1742,6 +1742,17 @@ protected:
 };
 
 //=======================================================================================
+//! Abstract base class for group-related information elements.
+// @bsiclass                                                    Shaun.Sewall    04/16
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE GroupInformationElement : InformationElement
+{
+    DEFINE_T_SUPER(InformationElement);
+protected:
+    explicit GroupInformationElement(CreateParams const& params) : T_Super(params) {}
+};
+
+//=======================================================================================
 //! The DgnElements for a DgnDb.
 //! This class holds a cache of reference-counted DgnElements. All in-memory DgnElements for a DgnDb are held in its DgnElements member.
 //! When the reference count of an element goes to zero, it is not immediately freed. Instead, it is held by this class
