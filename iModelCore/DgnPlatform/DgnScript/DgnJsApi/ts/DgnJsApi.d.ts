@@ -111,6 +111,16 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
          * @param description A description of the error
          */
         static ReportError(description: Bentley_Utf8String): void;
+
+        /** Begin a dispose context */
+        static BeginDisposeContext(): void;
+
+        /** End a dispose context. 
+          * This function calls Dispose on all JavaScript objects holding references to native objects that were created since the call to BeginDisposeContext.
+          * As a result, the native objects are freed and the corresponding JavaScript objects become invalid and should not be used.
+          * Freeing native objects reduces memory consumption and allows for more efficient management of native resources.
+          */
+        static EndDisposeContext(): void;
     }
 
     /** A wrapper for fopen/fgets */
