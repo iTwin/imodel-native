@@ -5171,6 +5171,16 @@ StatusInt       DgnGCS::SetPaperScale (double paperScale, DgnDbR project)
     }
 
 
+void DgnGCS::PublishedCreateGeoCoordType66(
+short*                  type66AppData,
+uint32_t&                 type66AppDataBytes, // <= set to sizeof of type66AppData in bytes
+DgnDbR             project,
+bool                    primary
+) const
+    {
+    CreateGeoCoordType66(type66AppData, type66AppDataBytes, project, primary);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
