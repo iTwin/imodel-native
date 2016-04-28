@@ -365,6 +365,7 @@ public:
 ENUM_IS_FLAGS(IBriefcaseManager::ResponseOptions);
 ENUM_IS_FLAGS(IBriefcaseManager::Resources);
 
+//__PUBLISH_SECTION_END__
 //=======================================================================================
 //! Utilities for converting IRepositoryManager-related values to/from JSON.
 //! See also To/FromJson() methods on classes like LockRequest, LockableId, etc.
@@ -386,6 +387,7 @@ namespace RepositoryJson
     DGNPLATFORM_EXPORT void RepositoryStatusToJson(JsonValueR value, RepositoryStatus status);
     DGNPLATFORM_EXPORT void ResponseOptionsToJson(JsonValueR value, IBriefcaseManager::ResponseOptions options);
 } // namespace RepositoryJson
+//__PUBLISH_SECTION_START__
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 

@@ -206,6 +206,10 @@ struct Script : RefCountedBaseWithCreate // ***  NEEDS WORK: It should not be ne
     static void ImportLibrary (Utf8StringCR libName);
 
     static void ReportError(Utf8StringCR description);
+
+    static void BeginDisposeContext();
+    static void EndDisposeContext();
+
 };
 
 //=======================================================================================
