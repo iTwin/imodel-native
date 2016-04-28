@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Client/WSError.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -70,8 +70,8 @@ struct WSError : public AsyncError
             };
 
     private:
-        Status              m_status;
-        Id                  m_id;
+        Status m_status = Status::None;
+        Id m_id = Id::Unknown;
 
     private:
         static bool IsValidErrorJson(JsonValueCR jsonError);
@@ -87,8 +87,11 @@ struct WSError : public AsyncError
 
     public:
         WSCLIENT_EXPORT WSError();
+        //! Handle supported server response
         WSCLIENT_EXPORT WSError(HttpResponseCR httpResponse);
-        // Do not use in production code, this is for testing purposes only
+        //! Handle generic HttpError, unknow error will map to Id::Unknown
+        WSCLIENT_EXPORT WSError(HttpErrorCR httpError);
+        //! Do not use in production code, this is for testing purposes only
         WSCLIENT_EXPORT WSError(Id errorId);
 
         WSCLIENT_EXPORT static WSError CreateServerNotSupportedError();
