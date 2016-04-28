@@ -6,7 +6,7 @@
 |       $Date: 2011/11/18 15:51:20 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -15,6 +15,7 @@
 /*__PUBLISH_SECTION_START__*/
 
 #include <ScalableMesh/Import/Definitions.h>
+#include <ScalableMesh/Import/Config/Content/All.h>
 
 BEGIN_BENTLEY_SCALABLEMESH_IMPORT_NAMESPACE
 
@@ -36,16 +37,13 @@ struct ContentConfig
     {
 private:
     struct Impl;
-    typedef SharedPtrTypeTrait<Impl>::type
+    typedef RefCountedPtr<Impl>
                                         ImplPtr;
+
     ImplPtr                             m_pImpl;
 
 public:
-    typedef ContentConfigComponent      value_type;
-    typedef const value_type&           const_reference;
-    typedef value_type&                 reference;
 
-    typedef const std::type_info*       ComponentClassID;
 
     IMPORT_DLLE explicit                ContentConfig                  ();
     IMPORT_DLLE                         ~ContentConfig                 ();
@@ -53,46 +51,20 @@ public:
     IMPORT_DLLE                         ContentConfig                  (const ContentConfig&                    rhs);
     IMPORT_DLLE ContentConfig&          operator=                      (const ContentConfig&                    rhs);
 
-    IMPORT_DLLE void                    push_back                      (const ContentConfigComponent&           config);
-    IMPORT_DLLE void                    push_back                      (const ContentConfigComponentBase&       config);
 
-    IMPORT_DLLE void                    Accept                         (IContentConfigVisitor&                   visitor) const;
-
-    IMPORT_DLLE bool                    IsEmpty                        () const;
-    IMPORT_DLLE size_t                  GetCount                       () const;
-
-    IMPORT_DLLE void                    RemoveAllOfType                (ComponentClassID                        classID);
-    };
-
-/*---------------------------------------------------------------------------------**//**
-* @description  
-* @bsiclass                                                  Raymond.Gauthier   04/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct ContentConfigComponent
-    {
-private:
-    typedef const std::type_info*           ClassID;
-    typedef SharedPtrTypeTrait<const ContentConfigComponentBase>::type       
-                                            BaseCPtr;
+    IMPORT_DLLE const GCSConfig&       GetGCSConfig() const;
+    IMPORT_DLLE const TypeConfig&       GetTypeConfig() const;
+    IMPORT_DLLE const ScalableMeshConfig&       GetScalableMeshConfig() const;
 
 
-    BaseCPtr                                m_basePtr;
-    ClassID                                 m_classID;
+    IMPORT_DLLE bool      IsEmpty() const
+        {
+        return !GetGCSConfig().IsSet() && !GetTypeConfig().IsSet() && !GetScalableMeshConfig().IsSet();
+        }
 
-public:
-    explicit                                ContentConfigComponent             (const ContentConfigComponentBase&           config);
-
-    IMPORT_DLLE                             ~ContentConfigComponent            ();
-
-    IMPORT_DLLE                             ContentConfigComponent             (const ContentConfigComponent&               rhs);    
-    IMPORT_DLLE ContentConfigComponent&     operator=                          (const ContentConfigComponent&               rhs);  
-
-    ClassID                                 GetClassID                         () const { return m_classID; }
-
-    IMPORT_DLLE void                        Accept                             (IContentConfigVisitor&                       visitor) const;
-    IMPORT_DLLE void                        Accept                             (ILayerConfigVisitor&                         visitor) const;
-
-
+    IMPORT_DLLE void       SetGCSConfig(const GCSConfig& gcsConfig);
+    IMPORT_DLLE void       SetTypeConfig(const TypeConfig& typeConfig);
+    IMPORT_DLLE void       SetScalableMeshConfig(const ScalableMeshConfig& scalableMeshConfig);
     };
 
 

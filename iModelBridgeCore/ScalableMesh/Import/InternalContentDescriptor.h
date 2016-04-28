@@ -23,7 +23,7 @@
 BEGIN_BENTLEY_SCALABLEMESH_IMPORT_NAMESPACE
 
 struct ContentDescriptor;
-struct LayerDescriptor;
+struct ILayerDescriptor;
 struct ExtractionConfig;
 
 namespace Internal {
@@ -49,9 +49,9 @@ class LayerDesc
 public:
     typedef const DataType*         TypeCIterator;
 
-                                    LayerDesc                  (const LayerDescriptor&      layerDesc);
+                                    LayerDesc                  (const ILayerDescriptor&      layerDesc);
 
-    explicit                        LayerDesc                  (const LayerDescriptor&      layerDesc,
+    explicit                        LayerDesc                  (const ILayerDescriptor&      layerDesc,
                                                                 uint32_t                        layerID);
 
     uint32_t                            GetID                      () const { return m_id; }

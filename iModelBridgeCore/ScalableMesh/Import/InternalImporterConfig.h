@@ -14,7 +14,6 @@
 
 #include <ScalableMesh/Import/Definitions.h>
 
-#include <ScalableMesh/Import/ContentConfigVisitor.h>
 
 #include <ScalableMesh/Import/DataType.h>
 #include <ScalableMesh/Import/ScalableMeshData.h>
@@ -38,7 +37,7 @@ namespace Internal {
 * @description  
 * @bsiclass                                                  Raymond.Gauthier   05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-    class Config : public ImportConfig//IImportConfigVisitor
+    class Config : public ImportConfig
     {
     CustomFilteringSequence         m_sourceFilters;
     CustomFilteringSequence         m_targetFilters;
@@ -58,16 +57,6 @@ namespace Internal {
     const ExtractionConfig*         m_extractionConfigP;
     const FilteringConfig*          m_filteringConfigP;
 
-   /* virtual void                    _Visit                     (const AttachmentsConfig&        config) override;
-    virtual void                    _Visit                     (const DefaultSourceGCSConfig&   config) override;
-    virtual void                    _Visit                     (const DefaultTargetGCSConfig&   config) override;
-    virtual void                    _Visit                     (const DefaultTargetLayerConfig& config) override;
-    virtual void                    _Visit                     (const DefaultTargetTypeConfig&  config) override;
-    virtual void            _Visit               (const DefaultTargetScalableMeshConfig& config) override;
-    virtual void                    _Visit                     (const ImportExtractionConfig&   config) override;
-    virtual void                    _Visit                     (const ImportFilteringConfig&    config) override;
-    virtual void                    _Visit                     (const SourceFiltersConfig&      config) override;
-    virtual void                    _Visit                     (const TargetFiltersConfig&      config) override;*/
 
     virtual void _SetAreAttachmentsImported(bool importAttachments) override
         {

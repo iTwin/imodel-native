@@ -49,7 +49,7 @@ struct SourceLayerDescriptorHolder
         { m_held = rhs; return *this; }
 
     explicit                        SourceLayerDescriptorHolder        (uint32_t                            layer,
-                                                                        const Import::LayerDescriptor&  descriptor)
+                                                                        const Import::ILayerDescriptor&  descriptor)
         :   m_held(layer, descriptor)
         {}
 
@@ -65,9 +65,9 @@ static_assert(sizeof(SourceLayerDescriptorHolder) == sizeof(SourceLayerDescripto
 * @bsimethod                                                  Raymond.Gauthier  12/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 SourceLayerDescriptor::SourceLayerDescriptor   (uint32_t                    layer,
-                                                const LayerDescriptor&  descriptor)
+                                                const ILayerDescriptor&  descriptor)
     :   m_id(layer),
-        m_descriptorP(&descriptor),
+    m_descriptorP(const_cast<ILayerDescriptor*>(&descriptor)),
         m_implP(0)
     {
     }
@@ -78,7 +78,7 @@ SourceLayerDescriptor::SourceLayerDescriptor   (uint32_t                    laye
 +---------------+---------------+---------------+---------------+---------------+------*/
 SourceLayerDescriptor::SourceLayerDescriptor (const SourceLayerDescriptor& rhs)
     :   m_id(rhs.m_id),
-        m_descriptorP(rhs.m_descriptorP),
+        m_descriptorP(rhs.m_descriptorP.get()),
         m_implP(0)
     {
     }
@@ -91,7 +91,7 @@ SourceLayerDescriptor& SourceLayerDescriptor::operator= (const SourceLayerDescri
 
     {
     m_id = rhs.m_id;
-    m_descriptorP = rhs.m_descriptorP;
+    m_descriptorP = rhs.m_descriptorP.get();
 
     return *this;
     }
@@ -111,14 +111,14 @@ uint32_t SourceLayerDescriptor::GetID () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 const WChar* SourceLayerDescriptor::GetName () const
     {
-    return m_descriptorP->GetNameCStr();
+    return m_descriptorP->GetName().c_str();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @description  
 * @bsimethod                                                  Raymond.Gauthier  12/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-const LayerDescriptor& SourceLayerDescriptor::GetDescriptor () const
+const ILayerDescriptor& SourceLayerDescriptor::GetDescriptor () const
     {
     return *m_descriptorP;
     }
@@ -185,9 +185,9 @@ void SourceDescriptor::Impl::InitSingleLayerSelection (const ImportSequence&  im
             }
         if (command.IsSourceTypeSet())
             {
-            if (m_descriptor.LayersBegin()->TypesEnd() == m_descriptor.LayersBegin()->FindTypeFor(command.GetSourceType())) continue;
+            if ((*m_descriptor.LayersBegin())->GetTypes().end() == std::find((*m_descriptor.LayersBegin())->GetTypes().begin(),(* m_descriptor.LayersBegin())->GetTypes().end(),(command.GetSourceType()))) continue;
             }
-            m_layerSelection.push_back(SourceLayerDescriptorHolder(0, *m_descriptor.LayersBegin()));
+            m_layerSelection.push_back(SourceLayerDescriptorHolder(0, **(m_descriptor.LayersBegin())));
         }
     }
 
@@ -211,9 +211,9 @@ void SourceDescriptor::Impl::InitMultipleLayerSelection (const ImportSequence&  
                 }
             if (command.IsSourceTypeSet())
                 {
-                if (m_descriptor.LayersBegin()->TypesEnd() == layerIt->FindTypeFor(command.GetSourceType())) continue;
+                if ((*m_descriptor.LayersBegin())->GetTypes().end() == std::find((*m_descriptor.LayersBegin())->GetTypes().begin(),(* m_descriptor.LayersBegin())->GetTypes().end(), (command.GetSourceType()))) continue;
                 }
-            m_layerSelection.push_back(SourceLayerDescriptorHolder(layerID, *layerIt));
+            m_layerSelection.push_back(SourceLayerDescriptorHolder(layerID, **layerIt));
             break;
             }
         }
@@ -229,13 +229,14 @@ void SourceDescriptor::Impl::InitLayersWithIncompleteTypes              ()
          layerIt != layerEnd;
          ++layerIt)
         {
-        if (layerIt->HoldsIncompleteTypes())
+        if ((*layerIt)->HoldsIncompleteTypes())
             {
-            for (LayerDescriptor::const_iterator typeIter = layerIt->TypesBegin(), typeEnd = layerIt->TypesEnd();
+            for (/*LayerDescriptor::const_iterator typeIter = layerIt->TypesBegin(), typeEnd = layerIt->TypesEnd();
                  typeIter != typeEnd;
-                 ++typeIter)
+                 ++typeIter*/
+                 auto& typeIter : (*layerIt)->GetTypes())
                 {
-                m_incompleteTypes.push_back(IncompleteType(m_descriptor.GetLayerIDFor(layerIt), typeIter->GetType()));
+                m_incompleteTypes.push_back(IncompleteType(m_descriptor.GetLayerIDFor(layerIt), typeIter.GetType()));
                 }
             }
         }

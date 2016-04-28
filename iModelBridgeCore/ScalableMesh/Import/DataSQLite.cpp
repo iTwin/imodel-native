@@ -53,14 +53,10 @@ struct SourceDataSQLite::Impl : public ShareableObjectTypeTrait<Impl>::type
         WString m_extendedWktStr;
         uint32_t m_flags;
         byte m_typeFamilyID;
-        uint32_t m_orgCount;
+        uint32_t m_typeID;
+       // uint32_t m_orgCount;
         uint32_t m_layer;
-        uint32_t m_componentCount;
         bvector<ImportCommandData> m_commands;
-        std::vector<uint32_t> m_dimensionCount;
-        std::vector<std::vector<byte>> m_dimensionType; // maybe vector of vector (one dim for orgField one for Dimension Field
-        std::vector<std::vector<byte>> m_dimensionRole; // maybe vector of vector (one dim for orgField one for Dimension Field
-        std::vector<std::vector<WString>> m_dimTypeName; // maybe vector of vector (one dim for orgField one for Dimension Field
 
         // LocalFileSource
         uint32_t m_sourceID;
@@ -93,13 +89,10 @@ struct SourceDataSQLite::Impl : public ShareableObjectTypeTrait<Impl>::type
         m_extendedWktStr = WSTRING_FROM_CSTR("");
             m_flags = 0;
             m_typeFamilyID = 0;
-            m_orgCount = 0;
+            m_typeID = 0;
+           // m_orgCount = 0;
             m_layer = 0;
-            m_componentCount = 0;
-            m_dimensionCount = std::vector<uint32_t>();
-            m_dimensionType = std::vector<std::vector<byte>>();
-            m_dimensionRole = std::vector<std::vector<byte>>();
-            m_dimTypeName = std::vector<std::vector<WString>>();
+
             m_sourceID = 0;
             m_DTMSourceID = 0;
             m_sourceType = 0;
@@ -111,7 +104,7 @@ struct SourceDataSQLite::Impl : public ShareableObjectTypeTrait<Impl>::type
             m_referenceModelName = WSTRING_FROM_CSTR("");
             m_monikerType = 0;
             m_monikerString = WSTRING_FROM_CSTR("");
-            m_configComponentID = std::vector<byte>();
+           // m_configComponentID = std::vector<byte>();
             //m_commandCount = 0;
             //m_commandID = std::vector<byte>();
             m_timeLastModified = 0;
@@ -149,13 +142,9 @@ SourceDataSQLite::SourceDataSQLite(const SourceDataSQLite& rhs)
     m_implP->m_extendedWktStr = rhs.m_implP->m_extendedWktStr;
     m_implP->m_flags = rhs.m_implP->m_flags;
     m_implP->m_typeFamilyID = rhs.m_implP->m_typeFamilyID;
-    m_implP->m_orgCount = rhs.m_implP->m_orgCount;
+    m_implP->m_typeID = rhs.m_implP->m_typeID;
+   // m_implP->m_orgCount = rhs.m_implP->m_orgCount;
     m_implP->m_layer = rhs.m_implP->m_layer;
-    m_implP->m_dimensionCount = rhs.m_implP->m_dimensionCount;
-    m_implP->m_dimensionType = rhs.m_implP->m_dimensionType;
-    m_implP->m_dimensionRole = rhs.m_implP->m_dimensionRole;
-    m_implP->m_dimTypeName = rhs.m_implP->m_dimTypeName;
-    m_implP->m_componentCount = rhs.m_implP->m_componentCount;
 
     m_implP->m_sourceID = rhs.m_implP->m_sourceID;
     m_implP->m_DTMSourceID = rhs.m_implP->m_DTMSourceID;
@@ -213,41 +202,10 @@ void SourceDataSQLite::SetTypeFamilyID(byte typeFamilyID)
     m_implP->m_typeFamilyID = typeFamilyID;
 }
 
-void SourceDataSQLite::SetOrgCount(uint32_t orgCount)
-{
-    m_implP->m_orgCount = orgCount;
-}
-
 void SourceDataSQLite::SetLayer(uint32_t layer)
 {
     m_implP->m_layer = layer;
 }
-
-void SourceDataSQLite::SetComponentCount(uint32_t componentCount)
-{
-    m_implP->m_componentCount = componentCount;
-}
-
-void SourceDataSQLite::AddDimensionCount(uint32_t dimensionCount)
-{
-    m_implP->m_dimensionCount.push_back(dimensionCount);
-}
-
-void SourceDataSQLite::AddDimensionType(size_t orgIdx, byte dimensionType)
-{
-    m_implP->m_dimensionType[orgIdx].push_back(dimensionType);
-}
-
-void SourceDataSQLite::AddDimensionRole(size_t orgIdx, byte dimensionRole)
-{
-    m_implP->m_dimensionRole[orgIdx].push_back(dimensionRole);
-}
-
-void SourceDataSQLite::AddDimTypeName(size_t orgIdx, WString name)
-{
-    m_implP->m_dimTypeName[orgIdx].push_back(name);
-} // maybe add ID and initialize vector, because if dimType is known, we didn't ask for name
-
 
 
 uint32_t SourceDataSQLite::GetTypeFamilyID()
@@ -265,72 +223,19 @@ uint32_t SourceDataSQLite::GetFlags()
     return m_implP->m_flags;
 }
 
-uint32_t SourceDataSQLite::GetOrgCount()
-{
-    return m_implP->m_orgCount;
-}
-
-/*uint32_t SourceDataSQLite::GetLayer()
-{
-    return m_implP->m_layer;
-}*/
-
-uint32_t SourceDataSQLite::GetDimensionCount(size_t orgIdx)
-{
-    return m_implP->m_dimensionCount[orgIdx];
-}
-
-byte SourceDataSQLite::GetDimensionType(size_t orgIdx, size_t dimIdx)
-{
-    return m_implP->m_dimensionType[orgIdx][dimIdx];
-}
-
-byte SourceDataSQLite::GetDimensionRole(size_t orgIdx, size_t dimIdx)
-{
-    return m_implP->m_dimensionRole[orgIdx][dimIdx];
-}
-
-WString SourceDataSQLite::GetDimensionTypeName(size_t orgIdx, size_t dimIdx)
-{
-    return m_implP->m_dimTypeName[orgIdx][dimIdx];
-}
-
-uint32_t SourceDataSQLite::GetComponentID(size_t id)
-{
-    return 0;
-}
-
-uint32_t SourceDataSQLite::GetComponentCount()
-{
-    return m_implP->m_componentCount;
-}
-
-byte SourceDataSQLite::PopConfigComponentID()
-{
-    byte tmp = m_implP->m_configComponentID.back();
-    m_implP->m_configComponentID.pop_back();
-    return tmp;
-}
-
-void SourceDataSQLite::AddConfigComponentID(byte id)
-{
-    m_implP->m_configComponentID.push_back(id);
-}
-
-void SourceDataSQLite::SetConfigComponentID(std::vector<byte>& vecID)
-{
-    m_implP->m_configComponentID = vecID;
-}
-
-std::vector<byte>& SourceDataSQLite::GetConfigComponentID()
-{
-    return m_implP->m_configComponentID;
-}
-
 ScalableMeshData SourceDataSQLite::GetScalableMeshData()
 {
     return m_implP->m_smData;
 }
+
+uint32_t SourceDataSQLite::GetTypeID()
+    {
+    return m_implP->m_typeID;
+    }
+void SourceDataSQLite::SetTypeID(uint32_t typeID)
+    {
+    m_implP->m_typeID = typeID;
+    }
 
 // LocalFileSource
 void SourceDataSQLite::SetSourceID(uint32_t sourceID)
@@ -476,28 +381,6 @@ time_t SourceDataSQLite::GetTimeLastModified() const
     return m_implP->m_timeLastModified;
 }
 
-/*
-byte SourceDataSQLite::PopCommandID()
-{
-    byte tmp = m_implP->m_commandID.back();
-    m_implP->m_commandID.pop_back();
-    return tmp;
-}
-
-void SourceDataSQLite::AddCommandID(byte id)
-{
-    m_implP->m_commandID.push_back(id);
-}*/
-
-/*void SourceDataSQLite::SetCommandID(std::vector<byte>& vecID)
-{
-    m_implP->m_commandID = vecID;
-}
-
-std::vector<byte>& SourceDataSQLite::GetCommandID()
-{
-    return m_implP->m_commandID;
-}*/
 
 void SourceDataSQLite::SetGroupID(uint32_t id)
 {
@@ -529,51 +412,6 @@ bvector<ImportCommandData>& SourceDataSQLite::GetOrderedCommands()
 std::vector<SourceDataSQLite>& SourcesDataSQLite::GetSourceDataSQLite()
 {
     return m_sourcesNodes;
-}
-
-void SourceDataSQLite::ResizeDimensions(size_t orgSize)
-{
-    m_implP->m_dimensionRole.resize(orgSize);
-    m_implP->m_dimensionType.resize(orgSize);
-    m_implP->m_dimTypeName.resize(orgSize);
-}
-
-std::vector<uint32_t>& SourceDataSQLite::GetVecDimensionCount()
-{
-    return m_implP->m_dimensionCount;
-}
-
-std::vector<std::vector<byte>>& SourceDataSQLite::GetVecDimensionType()
-{
-    return m_implP->m_dimensionType;
-}
-
-std::vector<std::vector<byte>>& SourceDataSQLite::GetVecDimensionRole()
-{
-    return m_implP->m_dimensionRole;
-}
-
-std::vector<std::vector<WString>>& SourceDataSQLite::GetVecDimensionName()
-{
-    return m_implP->m_dimTypeName;
-}
-
-
-void SourceDataSQLite::SetDimensionCount(std::vector<uint32_t>& vec)
-{
-    m_implP->m_dimensionCount = vec;
-}
-void SourceDataSQLite::SetDimensionType(std::vector<std::vector<byte>>& vec)
-{
-    m_implP->m_dimensionType = vec;
-}
-void SourceDataSQLite::SetDimensionRole(std::vector<std::vector<byte>>& vec)
-{
-    m_implP->m_dimensionRole = vec;
-}
-void SourceDataSQLite::SetDimensionName(std::vector<std::vector<WString>>& vec)
-{
-    m_implP->m_dimTypeName = vec;
 }
 
 

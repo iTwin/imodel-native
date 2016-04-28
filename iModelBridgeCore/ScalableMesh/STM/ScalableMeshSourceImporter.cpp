@@ -488,7 +488,7 @@ StatusInt IScalableMeshSourceImporter::Impl::ImportSourcesTo (Sink* sinkP)
     const ContentDescriptor& targetContentDescriptor(sinkPtr->GetDescriptor());
     assert(1 == targetContentDescriptor.GetLayerCount());
 
-    const GCS& targetGCS(targetContentDescriptor.LayersBegin()->GetGCS());
+    const GCS& targetGCS((*targetContentDescriptor.LayersBegin())->GetGCS());
     // NEEDS_WORK_SM : PARTIAL_UPDATE :remove
     const ScalableMeshData& targetScalableMeshData = ScalableMeshData::GetNull();
 

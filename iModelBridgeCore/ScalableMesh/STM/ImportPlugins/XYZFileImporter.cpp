@@ -126,7 +126,7 @@ private:
         return ContentDescriptor
             (
             L"",
-            LayerDescriptor(L"",
+            ILayerDescriptor::CreateLayerDescriptor(L"",
                             PointType3d64fCreator().Create(), 
                             GCS::GetNull(), 
                             0,

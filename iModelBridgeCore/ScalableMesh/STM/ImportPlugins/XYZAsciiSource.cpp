@@ -371,7 +371,7 @@ private:
             org.push_back(DimensionDef(BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::DimensionType::GetFloat64()));
         ScalableMeshData data = ScalableMeshData::GetNull();
 
-        LayerDescriptor desc(L"",
+        RefCountedPtr<ILayerDescriptor> desc = ILayerDescriptor::CreateLayerDescriptor(L"",
                              DataTypeFactory().Create(PointTypeFamilyCreator().Create(), org),
                              GCS::GetNull(),
                              0,
@@ -385,7 +385,9 @@ private:
             lines.push_back(fieldString);            
             }
 
-        desc.EditMetadataRecord().push_back(MetadataEntry(L"CONTENT_PREVIEW", lines));
+        MetadataRecord record;
+        record.push_back(MetadataEntry(L"CONTENT_PREVIEW", lines));
+        desc->SetMetadataRecord(record);
 
         return ContentDescriptor(L"",
                                  desc, 

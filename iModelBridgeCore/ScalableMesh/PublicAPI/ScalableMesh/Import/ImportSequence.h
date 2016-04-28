@@ -52,7 +52,6 @@ public:
     IMPORT_DLLE void                    push_back                      (const ImportCommand&                    command);
     IMPORT_DLLE void                    push_back                      (const ImportCommandBase&                command);
 
-    IMPORT_DLLE void                    Accept                         (IImportSequenceVisitor&                  visitor) const;
 
     IMPORT_DLLE bvector<ImportCommand>&  GetCommands                   () const;
 
@@ -83,7 +82,7 @@ public:
 
     IMPORT_DLLE ClassID                     GetClassID                         () const;
 
-    IMPORT_DLLE void                        Accept                             (IImportSequenceVisitor&              visitor) const;
+
 
     IMPORT_DLLE uint32_t                                 GetSourceLayer         () const;
     IMPORT_DLLE uint32_t                                 GetTargetLayer() const;

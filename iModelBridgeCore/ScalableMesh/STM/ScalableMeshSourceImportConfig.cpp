@@ -21,7 +21,6 @@
 
 #include <ScalableMesh/Import/Config/Content/All.h>
 
-#include <ScalableMesh/Import/ContentConfigVisitor.h>
 
 #include <ScalableMesh/Type/IScalableMeshLinear.h>
 #include <ScalableMesh/Type/IScalableMeshPoint.h>
@@ -174,19 +173,21 @@ void SourceImportConfig::AddImportedLayer (uint32_t layerID)
 void SourceImportConfig::SetReplacementType (const Import::DataType& type)
     {
     m_implP->OnPublicEdit();
-    m_implP->m_contentConfig.RemoveAllOfType(TypeConfig::s_GetClassID());
-    m_implP->m_contentConfig.push_back(TypeConfig(type));
+
+    m_implP->m_contentConfig.SetTypeConfig(TypeConfig(type));
     }
 
 void SourceImportConfig::SetReplacementSMData(const Import::ScalableMeshData& data)
 {
     m_implP->OnPublicEdit();
-    m_implP->m_contentConfig.RemoveAllOfType(ScalableMeshConfig::s_GetClassID());
-    m_implP->m_contentConfig.push_back(ScalableMeshConfig(data));
+
+    m_implP->m_contentConfig.SetScalableMeshConfig(ScalableMeshConfig(data));
+
 }
 
 const ScalableMeshData& SourceImportConfig::GetReplacementSMData() const
 {
+#if 0
     struct SMDataVisitor : ContentConfigVisitor
     {
         const ScalableMeshData*      m_foundSMData;
@@ -205,6 +206,8 @@ const ScalableMeshData& SourceImportConfig::GetReplacementSMData() const
 
     assert(0 != visitor.m_foundSMData);
     return *visitor.m_foundSMData;
+#endif
+    return m_implP->m_contentConfig.GetScalableMeshConfig().GetScalableMeshData();
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -214,10 +217,9 @@ const ScalableMeshData& SourceImportConfig::GetReplacementSMData() const
 void SourceImportConfig::SetReplacementGCS (const GCS& gcs)
     {
     m_implP->OnPublicEdit();
-    m_implP->m_contentConfig.RemoveAllOfType(GCSConfig::s_GetClassID());
-    m_implP->m_contentConfig.RemoveAllOfType(GCSExtendedConfig::s_GetClassID());
 
-    m_implP->m_contentConfig.push_back(GCSConfig(gcs));
+    GCSConfig config(gcs);
+    m_implP->m_contentConfig.SetGCSConfig(config);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -230,16 +232,12 @@ void SourceImportConfig::SetReplacementGCS (const GeoCoords::GCS&   gcs,
                                             bool                    preserveExistingIfLocalCS)
     {
     m_implP->OnPublicEdit();
-    m_implP->m_contentConfig.RemoveAllOfType(GCSConfig::s_GetClassID());
-    m_implP->m_contentConfig.RemoveAllOfType(GCSExtendedConfig::s_GetClassID());
 
-    //Always want to use the extented config for wktFlavor
-    m_implP->m_contentConfig.push_back
-        (
-        GCSExtendedConfig(gcs).PrependToExistingLocalTransform(prependToExistingLocalTransform).
-                               PreserveExistingIfGeoreferenced(preserveExistingIfGeoreferenced).
-                               PreserveExistingIfLocalCS(preserveExistingIfLocalCS)
-        );
+    GCSConfig config(gcs);
+    config.PrependToExistingLocalTransform(prependToExistingLocalTransform).
+        PreserveExistingIfGeoreferenced(preserveExistingIfGeoreferenced).
+        PreserveExistingIfLocalCS(preserveExistingIfLocalCS);
+    m_implP->m_contentConfig.SetGCSConfig(config);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -248,27 +246,8 @@ void SourceImportConfig::SetReplacementGCS (const GeoCoords::GCS&   gcs,
 +---------------+---------------+---------------+---------------+---------------+------*/
 const GCS& SourceImportConfig::GetReplacementGCS ()
     {
-    struct GCSVisitor : ContentConfigVisitor
-        {
-        const GCS*      m_foundGCSP;
-        explicit        GCSVisitor             ()   :   m_foundGCSP(&GCS::GetNull()) {}
 
-        virtual void    _Visit                  (const GCSConfig& config) override
-            {
-            m_foundGCSP = &config.GetGCS();
-            }
-        virtual void    _Visit                  (const GCSExtendedConfig& config) override
-            {
-            m_foundGCSP = &config.GetGCS();
-            }
-
-        };
-
-    GCSVisitor visitor;
-    m_implP->m_contentConfig.Accept(visitor);
-
-    assert(0 != visitor.m_foundGCSP);
-    return *visitor.m_foundGCSP;
+    return  m_implP->m_contentConfig.GetGCSConfig().GetGCS();
     }
 
 

@@ -17,12 +17,7 @@
 
 #include <ScalableMesh/GeoCoords/GCS.h>
 BEGIN_BENTLEY_SCALABLEMESH_IMPORT_NAMESPACE
-#if 0
-struct IImportConfigVisitor;
 
-struct ImportConfigComponent;
-struct ImportConfigComponentBase;
-#endif
 struct ContentDescriptor;
 struct LayerDescriptor;
 struct ExtractionConfig;
@@ -30,47 +25,7 @@ struct FilteringConfig;
 struct CustomFilteringSequence;
 //struct GCS;
 
-#if 0
-/*---------------------------------------------------------------------------------**//**
-* @description  Object used to store the configuration specifying how to import dtm
-*               data. 
-*               
-* NOTE : - Not designed to be used as a base class.
-*        - This is a copy on write implementation, so there is no cost copying instances
-*          of this object.
-* @bsiclass                                                  Raymond.Gauthier   10/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct ImportConfig
-    {
-private:
-    struct Impl;
-    typedef SharedPtrTypeTrait<Impl>::type
-                                        ImplPtr;
 
-    ImplPtr                             m_pImpl;
-
-public:
-    typedef ImportConfigComponent       value_type;
-    typedef const value_type&           const_reference;
-    typedef value_type&                 reference;
-
-    typedef const std::type_info*       ComponentClassID;
-
-    IMPORT_DLLE explicit                ImportConfig                   ();
-    IMPORT_DLLE                         ~ImportConfig                  ();
-
-    IMPORT_DLLE                         ImportConfig                   (const ImportConfig&                     rhs);
-    IMPORT_DLLE ImportConfig&           operator=                      (const ImportConfig&                     rhs);
-
-    IMPORT_DLLE void                    push_back                      (const ImportConfigComponent&            config);
-    IMPORT_DLLE void                    push_back                      (const ImportConfigComponentBase&        config);
-
-    IMPORT_DLLE void                    Accept                         (IImportConfigVisitor&                   visitor) const;
-
-    IMPORT_DLLE void                    RemoveAllOfType                (ComponentClassID                        classID);
-    };
-
-#endif
 
 struct ImportConfig : RefCountedBase
     {
@@ -142,37 +97,5 @@ struct ImportConfig : RefCountedBase
         IMPORT_DLLE RefCountedPtr<ImportConfig> Create();
     };
 
-#if 0
-/*---------------------------------------------------------------------------------**//**
-* @description  
-*                        
-* @see ImportConfig
-* @see ImportConfigComponentBase
-*
-* @bsiclass                                                  Raymond.Gauthier   04/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct ImportConfigComponent
-    {
-private:
-    typedef const std::type_info*       ClassID;
-    typedef SharedPtrTypeTrait<const ImportConfigComponentBase>::type       
-                                        BaseCPtr;
-    BaseCPtr                            m_basePtr;
-    ClassID                             m_classID;
-public:
-    explicit                            ImportConfigComponent          (const ImportConfigComponentBase&        config);
-
-    IMPORT_DLLE                         ~ImportConfigComponent         ();
-
-    IMPORT_DLLE                         ImportConfigComponent          (const ImportConfigComponent&            rhs);    
-    IMPORT_DLLE ImportConfigComponent&  operator=                      (const ImportConfigComponent&            rhs);  
-
-    ClassID                             GetClassID                     () const { return m_classID; }
-
-    IMPORT_DLLE void                    Accept                         (IImportConfigVisitor&                   visitor) const;
-
-    };
-
-#endif
 
 END_BENTLEY_SCALABLEMESH_IMPORT_NAMESPACE

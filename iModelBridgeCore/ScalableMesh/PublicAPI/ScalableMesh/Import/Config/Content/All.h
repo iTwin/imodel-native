@@ -6,12 +6,11 @@
 |       $Date: 2011/06/01 14:06:50 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
 #include <ScalableMesh/Import/Config/Content/GCS.h>
-#include <ScalableMesh/Import/Config/Content/Layer.h>
 #include <ScalableMesh/Import/Config/Content/Type.h>
 #include <ScalableMesh/Import/Config/Content/ScalableMeshConfig.h>

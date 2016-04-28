@@ -97,7 +97,7 @@ private:
         return ContentDescriptor
             (
             L"",
-            LayerDescriptor(L"",
+            ILayerDescriptor::CreateLayerDescriptor(L"",
                             storedTypes,
                             m_gcs, 
                             &range,

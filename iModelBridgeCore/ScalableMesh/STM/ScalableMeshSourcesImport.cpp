@@ -240,27 +240,6 @@ void SourcesImporter::Impl::AddAttachments (const Source&       source,
                                             SourceItem&   sourceItem,
                                             SourcesImporter&    attachmentsImporter)
     {
-   /* struct LocalFileRefVisitor : SourceRefVisitor
-        {
-        const LocalFileSourceRef* m_sourceRefP;
-
-        explicit LocalFileRefVisitor() 
-            : m_sourceRefP(0) 
-            {
-            }
-
-        virtual void _Visit(const LocalFileSourceRef&   sourceRef) override
-            {
-            m_sourceRefP = &sourceRef;
-            }
-
-        virtual void _Visit(const DGNElementSourceRef&     sourceRef) override
-            {
-            const LocalFileSourceRef* localFileRefP = sourceRef.GetLocalFileP();
-            if (0 != localFileRefP)
-                m_sourceRefP = localFileRefP;
-            }
-        };*/
 
     // NTERAY: This is a bad way to do it. We should either let the importer import attachments or
     // visit the source's importSequence in order to generate the attachment's import sequence.
@@ -277,7 +256,7 @@ void SourcesImporter::Impl::AddAttachments (const Source&       source,
         if (attachmentImportSequence.IsEmpty())
             continue; // Nothing to import
 
-        const AttachmentRecord& attachments = layerIt->GetAttachmentRecord();
+        const AttachmentRecord& attachments = (*layerIt)->GetAttachmentRecord();
 
         for (AttachmentRecord::const_iterator attachmentIt = attachments.begin(), attachmentsEnd = attachments.end();
              attachmentIt != attachmentsEnd;

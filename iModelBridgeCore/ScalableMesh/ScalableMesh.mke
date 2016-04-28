@@ -171,7 +171,6 @@ $(o)ContentConfig$(oext) : $(importDir)ContentConfig.cpp $(PCHHeaderDepends)  ${
 
 $(o)ImportSequence$(oext) : $(importDir)ImportSequence.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)ContentConfigs$(oext) : $(importDir)ContentConfigs.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 
 #-----------------------------------------------------------------------

@@ -382,45 +382,6 @@ SourcePtr SourceFactory::Create    (const SourceRef&        sourceRef,
                                     Status&                 status,
                                     StatusInt&              statusEx) const
     {
-    /*class SourceCreator : public SourceRefVisitor
-        {
-        virtual void    _Visit             (const LocalFileSourceRef&       sourceRef) override
-            {
-            m_sourcePtr = m_impl.CreateSourceFor(sourceRef, m_status, m_statusEx);
-            m_foundSpecialization = true;
-            }
-
-        virtual void    _Visit             (const DGNElementSourceRef&       sourceRef) override
-            {
-            m_sourcePtr = m_impl.CreateSourceFor(sourceRef, m_status, m_statusEx);
-            m_foundSpecialization = true;
-            }
-
-    public:
-        const SourceFactory::Impl&      
-                        m_impl;
-        SourcePtr       m_sourcePtr;
-        Status&         m_status;
-        StatusInt&      m_statusEx;
-        bool            m_foundSpecialization;
-
-        explicit        SourceCreator      (const SourceFactory::Impl&      impl,
-                                            Status&                         status,
-                                            StatusInt&                      statusEx)
-            :   m_impl(impl),
-                m_status(status),
-                m_statusEx(statusEx),
-                m_foundSpecialization(false)
-            {
-            
-            }
-        };
-
-    SourceCreator sourceCreator(*m_pImpl, status, statusEx);
-    sourceRef.Accept(sourceCreator);
-
-    if (sourceCreator.m_foundSpecialization)
-        return sourceCreator.m_sourcePtr;*/
     if (sourceRef.m_basePtr.get() != nullptr)
         {
         auto* dgnElementSource = dynamic_cast<DGNElementSourceRef*>(sourceRef.m_basePtr.get());

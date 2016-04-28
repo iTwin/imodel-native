@@ -280,7 +280,7 @@ bool SourcesSaver::Save(const IDTMSource& source,
 
     sourceData = m_sourceData;
     sourceData.SetTimeLastModified(GetCTimeFor(lastModified));
-    //sourceData.AddSource(GetCTimeFor(lastModified), m_serializedSourcePacket, m_serializedContentConfigPacket, m_serializedImportSequencePacket);
+
     return success;
     }
 
@@ -593,20 +593,6 @@ SourcesLoader::SourcesLoader(const DocumentEnv&  sourceEnv)
 void SourcesLoader::LoadRoot(IDTMSourceCollection&   sources,
     SourcesDataSQLite&       sourcesData)
 {
-    // Load file format versions
-    /*m_fileFormatVersions.serializedSource = sourcesData.GetSerializedSourceFormatVersion();
-    m_fileFormatVersions.contentConfig = sourcesData.GetContentConfigFormatVersion();
-    m_fileFormatVersions.importSequence = sourcesData.GetImportSequenceFormatVersion();
-    m_fileFormatVersions.importConfig = sourcesData.GetImportConfigFormatVersion();
-
-    // Check that format versions found are anterior or equal to current driver's
-    if (CURRENT_FORMAT_VERSIONS.serializedSource < m_fileFormatVersions.serializedSource ||
-        CURRENT_FORMAT_VERSIONS.contentConfig < m_fileFormatVersions.contentConfig ||
-        CURRENT_FORMAT_VERSIONS.importSequence < m_fileFormatVersions.importSequence ||
-        CURRENT_FORMAT_VERSIONS.importConfig < m_fileFormatVersions.importConfig)
-    {
-        throw runtime_error("Found more recent format version. Driver cannot be forward compatible!");
-    }*/
 
     Load(sources, sourcesData);
 }

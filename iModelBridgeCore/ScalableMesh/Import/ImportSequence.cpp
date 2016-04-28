@@ -101,27 +101,6 @@ void ImportSequence::push_back (const ImportCommandBase& pi_rConfig)
     }
 
 
-/*---------------------------------------------------------------------------------**//**
-* @description  
-* @bsimethod                                                  Raymond.Gauthier   10/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ImportSequence::Accept (IImportSequenceVisitor& pi_rVisitor) const
-    {
-    struct AcceptVisitor
-        {
-        IImportSequenceVisitor& m_rVisitor;
-
-        explicit AcceptVisitor (IImportSequenceVisitor& pi_rVisitor) : m_rVisitor(pi_rVisitor) {}
-
-        void operator () (const ImportCommand& pi_rConfig) const
-            {
-            pi_rConfig.Accept(m_rVisitor);
-            }
-        };
-
-    std::for_each(m_pImpl->m_commands.begin(), m_pImpl->m_commands.end(), AcceptVisitor(pi_rVisitor));
-    }
-
 bvector<ImportCommand>& ImportSequence::GetCommands() const
     {
     return m_pImpl->m_commands;
@@ -190,14 +169,6 @@ ImportCommand::ClassID ImportCommand::GetClassID () const
     return m_basePtr->_GetClassID();
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @description  
-* @bsimethod                                                  Raymond.Gauthier   04/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ImportCommand::Accept (IImportSequenceVisitor& visitor) const
-    {
-    m_basePtr->_Accept(visitor);
-    }
 
 uint32_t                                 ImportCommand::GetSourceLayer() const
     {

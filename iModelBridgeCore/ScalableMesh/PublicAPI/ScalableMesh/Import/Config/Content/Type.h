@@ -6,7 +6,7 @@
 |       $Date: 2011/11/22 21:58:02 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -14,41 +14,37 @@
 
 #include <ScalableMesh/Import/Definitions.h>
 
-#include <ScalableMesh/Import/Config/Content/Base.h>
 #include <ScalableMesh/Import/DataType.h>
 
 BEGIN_BENTLEY_SCALABLEMESH_IMPORT_NAMESPACE
 
+struct TypeConfigImpl;
 /*---------------------------------------------------------------------------------**//**
 * @description  
 * @bsiclass                                                  Raymond.Gauthier   04/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct TypeConfig : public ContentConfigComponentMixinBase<TypeConfig>
+struct TypeConfig 
     {
 public:  // OPERATOR_NEW_KLUDGE
-    void * operator new(size_t size) { return bentleyAllocator_allocateRefCounted (size); }
-    void operator delete(void *rawMemory, size_t size) { bentleyAllocator_deleteRefCounted (rawMemory, size); }
-    void * operator new [](size_t size) { return bentleyAllocator_allocateArrayRefCounted (size); }
-    void operator delete [] (void *rawMemory, size_t size) { bentleyAllocator_deleteArrayRefCounted (rawMemory, size); }
+
 
 private:
-    DataType                            m_type;
-    uint32_t                              m_flags;
-    void*                               m_implP; // Reserve some space for further use
-public:
-    IMPORT_DLLE static ClassID          s_GetClassID                       ();
+    RefCountedPtr<TypeConfigImpl>
+        m_pImpl;
 
+public:
+//    IMPORT_DLLE static ClassID          s_GetClassID                       ();
+    IMPORT_DLLE explicit                TypeConfig();
     IMPORT_DLLE explicit                TypeConfig                         (const DataType&             type);
-    IMPORT_DLLE virtual                 ~TypeConfig                        ();
+    IMPORT_DLLE virtual                 ~TypeConfig();
 
     IMPORT_DLLE                         TypeConfig                         (const TypeConfig&           rhs);
 
     const DataType&                     GetType                            () const;
+    bool                                IsSet()   const;
     };
 
 
-inline const DataType& TypeConfig::GetType () const
-    { return m_type; }
 
 
 END_BENTLEY_SCALABLEMESH_IMPORT_NAMESPACE
