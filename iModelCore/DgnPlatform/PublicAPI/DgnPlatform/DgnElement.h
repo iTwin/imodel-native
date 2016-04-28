@@ -1705,6 +1705,17 @@ protected:
 };
 
 //=======================================================================================
+//! @ingroup GROUP_DgnElement
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE LinkElement : DefinitionElement
+    {
+    DEFINE_T_SUPER(DefinitionElement);
+
+    protected:
+        explicit LinkElement(CreateParams const& params) : T_Super(params) {}
+    };
+
+//=======================================================================================
 //! A DefinitionElement which resides in (and only in) the dictionary model.
 //! Typically represents a style or similar resource used by other elements throughout
 //! the DgnDb.
