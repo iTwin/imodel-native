@@ -797,8 +797,6 @@
     </ECClass>
     <ECClass typeName="DTMElement" isDomainClass="True" displayLabel="Terrain Model Element">
         <BaseClass>dgnElem:GraphicalElement</BaseClass>
-        <BaseClass>baseElem:NamedGroupInfo</BaseClass>
-        <BaseClass>baseElem:MstnLockedElement</BaseClass>
         <BaseClass>DTMFeatureProperties</BaseClass>
         <BaseClass>DTMContourProperties</BaseClass>
         <BaseClass>DTMSourceProperties</BaseClass>
