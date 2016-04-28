@@ -252,7 +252,7 @@ class CrossingFeaturesCallbackTransformHelper
             data->m_helper->convertDistanceFromDTM (crossError.distance1);
             data->m_helper->convertElevationFromDTM (crossError.elevation1);
             data->m_helper->convertDistanceFromDTM (crossError.distance1);
-            return data->m_callBackFunctP (crossError, userP);
+            return data->m_callBackFunctP(crossError, data->m_userP);
             }
     };
 
