@@ -5,7 +5,9 @@
 #  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-%include $(SrcRoot)Pointools/PointoolsVortexAPI/mki/PointoolsVortexAPIPolicy.mki
+BUILD_NO_STACK_CHECK=1
+NOSTRICT=1
+
 %include mdl.mki
 
 #----------------------------------------------------------
@@ -22,6 +24,7 @@ appSrc              = $(_MakeFilePath)
 appPublicApi        = $(appSrc)PublicAPI/$(appName)/
 MultiCompileDepends = $(_MakeFileSpec) $(appSrc)/Include/PointoolsVortexAPIInternal.h
 HAVE_OPENGL         = 1
+
 always:
     !~@mkdir $(o)
     
@@ -65,6 +68,7 @@ always:
 %else
     CCompOpts + -D"WIN32"
 %endif
+
 dirToSearch=$(PointoolsVortexAPIInclude)
 %include cincapnd.mki
 
@@ -542,7 +546,6 @@ DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
 DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
 DLM_CREATE_LIB_CONTEXT_LINK = 1
 DLM_SPECIAL_LINKOPT     + -def:$(baseDir)api.def
-DLM_SPECIAL_LINKOPT     + -NODEFAULTLIB:LIBCMT
 
 ContextSubpartsStaticLibs = $(BuildContext)SubParts/StaticLibs/
 
@@ -561,9 +564,5 @@ LINKER_LIBRARIES =  \
 %if defined(HAVE_OPENGL)
     LINKER_LIBRARIES + opengl32.lib glu32.lib $(ContextSubpartsStaticLibs)$(stlibprefix)glew$(stlibext)
 %endif
-
-CLinkOpts + -nodefaultlib:libc.lib
-CLinkOpts + -nodefaultlib:%(IgnoreSpecificDefaultLibraries)
-CLinkOpts + -d_SILENCE_STDEXT_HASH_DEPRECATION_WARNINGS
 
 %include $(sharedMki)linkLibrary.mki

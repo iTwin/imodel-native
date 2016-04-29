@@ -11,11 +11,6 @@
 #include <pt/parametermap.h>
 #include <ptfs/filepath.H>
 
-#ifdef WIN32
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#endif
-
 using namespace pt;
 using namespace ptapp;
 

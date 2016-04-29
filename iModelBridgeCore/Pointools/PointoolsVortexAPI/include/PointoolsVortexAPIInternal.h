@@ -15,9 +15,6 @@
 #include <stdarg.h>
 #endif
 
-#include <gdiplus.h>
-#pragma comment (lib,"Gdiplus.lib")
-
 #include <shlwapi.h>
 #include <shlobj.h>
 #include <comutil.h>
@@ -61,7 +58,6 @@
 #include <string>
 #include <vector>
 #include <list>
-#include <hash_map>
 #include <queue>
 #include <deque>
 #include <algorithm>
