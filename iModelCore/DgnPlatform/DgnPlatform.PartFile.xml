@@ -437,6 +437,10 @@
         <Directories DirectoryListName="iOSXCTestProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
 
+    <Part Name="RuniOSXCTest" BentleyBuildMakeFile="${SrcRoot}BeGTest/iOS/RunXCTestProject.mke" BentleyBuildMakeOptions="-dXCTEST_PRODUCT=DgnPlatform-iOSXCTest" OnlyPlatforms="iOS*">
+        <SubProduct ProductName="DgnPlatform-iOSXCTest"/>
+    </Part>
+
     <!-- ******************************************************************************************* -->
     <!-- ******************* "NoView" Tests - all tests up through DgnPlatform ********************* -->
     <!-- ******************************************************************************************* -->
