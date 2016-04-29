@@ -1219,20 +1219,6 @@ char from_hex(char ch) {
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      08/2013
 //---------------------------------------------------------------------------------------
-bool BeStringUtilities::IsUriEncoded(Utf8CP str) 
-    {
-    while (*str)
-        {
-        if (!s_safeForUri[(uint8_t)*str])
-            return false;
-        str++;
-        }
-    return true;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Sam.Wilson      08/2013
-//---------------------------------------------------------------------------------------
 Utf8String BeStringUtilities::UriDecode(Utf8CP start, Utf8CP end) 
     {
     Utf8String decoded;
