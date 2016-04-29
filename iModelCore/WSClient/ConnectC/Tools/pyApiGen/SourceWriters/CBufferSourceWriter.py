@@ -70,14 +70,14 @@ class CBufferSourceWriter(SourceWriter):
         self._file.write("    if (nullptr == dataBuffer)\n")
         self._file.write("        return;\n\n")
         self._file.write("    H{0}BUFFER buf = (H{0}BUFFER)dataBuffer;\n".format(self._api.get_api_acronym()))
-        self._file.write("    if(buf->lpItems != nullptr)\n")
-        self._file.write("        free(buf->lpItems);\n")
+        self._file.write("    //if(buf->lItems != nullptr)\n")
+        self._file.write("        //free(buf->lItems);\n")
         self._file.write("    free(buf);\n")
         self._file.write("    }\n")
 
     def __write_api_buffer_count_function(self):
         self._file.write(self._COMMENT_BsiMethod)
-        self._file.write("{0}_EXPORT uint32_t {1}_DataBufferGetCount\n".format(self._api.get_upper_api_acronym(),
+        self._file.write("{0}_EXPORT uint64_t {1}_DataBufferGetCount\n".format(self._api.get_upper_api_acronym(),
                                                                                self._api.get_api_name()))
         self._file.write("(\n")
         self._file.write("{0}DATABUFHANDLE dataBuffer\n".format(self._api.get_upper_api_acronym()))

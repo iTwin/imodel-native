@@ -15,8 +15,6 @@ class CppCliApiSourceWriter(SourceWriter):
         self._write_spacing()
         self.__write_includes()
         self._write_spacing()
-        self._write_utility_functions()
-        self._write_spacing()
         self._file.write('namespace {0}Sharp\n'.format(self._api.get_api_name()))
         self._file.write('    {\n')
         self.__write_api_ctor_dtor()
@@ -27,12 +25,6 @@ class CppCliApiSourceWriter(SourceWriter):
 
     def __write_includes(self):
         self._file.write('#include "stdafx.h"\n')
-
-    def _write_utility_functions(self):
-        self._file.write('WCharP managedGuidToUnmanagedGuid(Guid guid)\n')
-        self._file.write('    {\n')
-        self._file.write('    return guid.ToString();\n')
-        self._file.write('    }\n')
 
     def __write_api_ctor_dtor(self):
         self._file.write(self._COMMENT_BsiMethod)

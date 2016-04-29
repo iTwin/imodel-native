@@ -19,8 +19,6 @@ class CppCliClassesSourceWriter(SourceWriter):
         self.__write_includes()
         self._write_spacing()
         self._write_spacing()
-        self.__write_utility_functions()
-        self._write_spacing()
         self._file.write("namespace {0}Sharp\n".format(self._api.get_api_name()))
         self._file.write("    {\n")
         self.__write_status_class_implementation()
@@ -33,11 +31,6 @@ class CppCliClassesSourceWriter(SourceWriter):
 
     def __write_includes(self):
         self._file.write('#include "stdafx.h"')
-
-    def __write_utility_functions(self):
-        self._write_string_to_wstring_function()
-        self._write_spacing()
-        self._write_guid_to_wstring_function()
 
     def __write_status_class_implementation(self):
         self._file.write(self._COMMENT_BsiMethod)
