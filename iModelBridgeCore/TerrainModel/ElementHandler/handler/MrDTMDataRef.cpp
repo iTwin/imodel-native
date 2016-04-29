@@ -10,6 +10,7 @@
 // It is important that this is the first file included
 #include <TerrainModel/ElementHandler/TerrainModelElementHandler.h>
 #include <DgnPlatform\Material.h>
+#include <Mstn\ElementPropertyUtils.h>
 
 #include <io.h>
 #include "time.h"
@@ -792,7 +793,10 @@ void MrDTMDataRef::ScheduleFromDtmFile (DgnModelRefP dgnModelRefP, EditElementHa
     (inTrfs).form3d[2][2] = 1.0;
        
     DTMElementHandlerManager::CheckAndCreateElementDescr (elem, nullptr, MrDTMDefaultElementHandler::GetElemHandlerId(), inTrfs, *dgnModelRefP);    
-                    
+        
+    // Apply active settings.
+    Bentley::MstnPlatform::Element::ElementPropertyUtils::ApplyActiveSettings(elem);
+
     elem.SetModelRef(dgnModelRefP);
     elem.AddToModel();            
 
