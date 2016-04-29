@@ -1308,7 +1308,7 @@ struct ECSchemaComparer
         ~ECSchemaComparer(){}
         BentleyStatus Compare(ECSchemaChanges& changes, bvector<ECN::ECSchemaCP> const& existingSet, bvector<ECN::ECSchemaCP> const& newSet, Options options = Options());
         static std::vector<Utf8String> Split(Utf8StringCR path);
-        static Utf8String ECSchemaComparer::Join(std::vector<Utf8String> const& paths, Utf8CP delimiter);
+        static Utf8String Join(std::vector<Utf8String> const& paths, Utf8CP delimiter);
     };
 
 //=======================================================================================
