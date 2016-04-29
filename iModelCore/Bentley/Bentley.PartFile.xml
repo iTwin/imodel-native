@@ -149,7 +149,7 @@
         <Directories DirectoryListName="iOSXCTestProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
 
-    <Part Name="RuniOSXCTest" BentleyBuildMakeFile="${SrcRoot}BeGTest/iOS/RunXCTestProject.mke" BentleyBuildMakeOptions="-dTEST_XCTEST_PRODUCT=Bentley-iOSXCTest" OnlyPlatforms="iOS*">
+    <Part Name="RuniOSXCTest" BentleyBuildMakeFile="${SrcRoot}BeGTest/iOS/RunXCTestProject.mke" BentleyBuildMakeOptions="-dXCTEST_PRODUCT=Bentley-iOSXCTest -dXCTEST_OUTPUT_DIR=$(OutputRootDir)build/Bentley" OnlyPlatforms="iOS*">
         <SubProduct ProductName="Bentley-iOSXCTest"/>
     </Part>
 
