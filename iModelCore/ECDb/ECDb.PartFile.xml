@@ -168,6 +168,10 @@
         <Directories DirectoryListName="iOSXCTestProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
 
+    <Part Name="RuniOSXCTest" BentleyBuildMakeFile="${SrcRoot}BeGTest/iOS/RunXCTestProject.mke" BentleyBuildMakeOptions="-dXCTEST_PRODUCT=ECDb-iOSXCTest" OnlyPlatforms="iOS*">
+        <SubProduct ProductName="ECDb-iOSXCTest"/>
+    </Part>
+
     <!-- Performance tests -->
     <Product Name="ECDb-Tests-Performance">
         <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
