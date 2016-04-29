@@ -2197,7 +2197,7 @@ ECPropertyValueChange* ECPropertyValueChange::GetValue(Utf8CP accessPath)
         auto m = c->GetChildren().Find(str.c_str());
         if (m == nullptr)
             {
-            return false;
+            return nullptr;
             }
         else
             c = m;
