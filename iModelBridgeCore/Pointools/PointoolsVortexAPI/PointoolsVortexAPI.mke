@@ -21,13 +21,11 @@ CompileOptionsMki               = $(SrcRoot)Pointools/PointoolsVortexAPI/mki/Poi
 #   Macros
 #--------------------------------------------------------------------------------------
 appSrc              = $(_MakeFilePath)
-appPublicApi        = $(appSrc)PublicAPI/$(appName)/
-MultiCompileDepends = $(_MakeFileSpec) $(appSrc)/Include/PointoolsVortexAPIInternal.h
+MultiCompileDepends = $(_MakeFileSpec) $(appSrc)Include/PointoolsVortexAPIInternal.h
 HAVE_OPENGL         = 1
 
 always:
-    !~@mkdir $(o)
-    
+    !~@mkdir $(o)    
 
 #----------------------------------------------------------------------
 # Encrypt GPU Shaders (Uses enc-shaders.exe part)
@@ -45,23 +43,6 @@ $(BuildContextSrc)pshader.vert.cpp: $(PointoolsVortexAPIShaderSrc)pshader.vert
 $(BuildContextSrc)pshader.frag.cpp: $(PointoolsVortexAPIShaderSrc)pshader.frag
 	$(ContextDeliveryDir)enc-shaders.exe $(PointoolsVortexAPIShaderSrc)  $(PointoolsVortexAPIShaderSrcEnc)
 
-# Wire in my own vendor header files.
-VendorAPIDir    = $(BuildContext)VendorAPI/$(appName)_DLL/
-
-always:
-    @CreateSymLinks.py   -f"$(VendorAPIDir)\vortexLicense.c"="$(appSrc)lic\vortexLicense.c"
-
-always:
-    @CreateSymLinks.py   -f"$(VendorAPIDir)\PTAPI\PointoolsVortexAPI_import.cpp=$(appSrc)src\ptapi\PointoolsVortexAPI_import.cpp"
-    @CreateSymLinks.py   -f"$(VendorAPIDir)\PTAPI\PointoolsVortexAPI_import.h=$(appSrc)include\ptapi\PointoolsVortexAPI_import.h"
-    @CreateSymLinks.py   -f"$(VendorAPIDir)\PTAPI\PointoolsVortexAPI_ResultCodes.h=$(appSrc)include\ptapi\PointoolsVortexAPI_ResultCodes.h"
-
-always:
-    @CreateSymLinks.py   -f"$(VendorAPIDir)\VortexObjects\IClashNode.h=$(appSrc)include\vortexobjects\IClashNode.h"
-    @CreateSymLinks.py   -f"$(VendorAPIDir)\VortexObjects\IClashObject.h=$(appSrc)include\vortexobjects\IClashObject.h"
-    @CreateSymLinks.py   -f"$(VendorAPIDir)\VortexObjects\IClashObjectManager.h=$(appSrc)include\vortexobjects\IClashObjectManager.h"
-    @CreateSymLinks.py   -f"$(VendorAPIDir)\VortexObjects\IClashTree.h=$(appSrc)include\vortexobjects\IClashTree.h"
-    @CreateSymLinks.py   -f"$(VendorAPIDir)\VortexObjects\VortexObjects_import.h=$(appSrc)include\vortexobjects\VortexObjects_import.h"
 
 %if $(TARGET_PROCESSOR_ARCHITECTURE) == "x64"
     CCompOpts + -D"WIN64"
@@ -148,8 +129,6 @@ $(o)renderFrameData$(oext)               : $(basedir)src\ptengine\renderFrameDat
 
 $(o)editNodeDef$(oext)                   : $(basedir)src\ptedit\editNodeDef.cpp                                  $(basedir)include\ptedit\editNodeDef.h                           ${MultiCompileDepends}
 
-$(o)renderDiagnostics$(oext)             : $(basedir)src\ptengine\renderDiagnostics.cpp                          $(basedir)include\ptengine\renderDiagnostics.h                   ${MultiCompileDepends}
-
 $(o)pointsExchanger$(oext)               : $(basedir)src\ptengine\pointsExchanger.cpp                            $(basedir)include\ptengine\pointsExchanger.h                     ${MultiCompileDepends}
 
 $(o)projAreaApproximation$(oext)         : $(basedir)src\ptengine\projAreaApproximation.cpp                      $(basedir)include\ptengine\projAreaApproximation.h               ${MultiCompileDepends}
@@ -229,9 +208,7 @@ $(o)Manager$(oext)                       : $(basedir)src\PTRMI\Manager.cpp      
 $(o)Host$(oext)                          : $(basedir)src\PTRMI\Host.cpp                                          $(basedir)include\PTRMI\Host.h                                   ${MultiCompileDepends}
                                                                                                                   
 $(o)editEvaluatedStackNode$(oext)        : $(basedir)src\ptedit\editEvaluatedStackNode.cpp                       $(basedir)include\ptedit\editEvaluatedStackNode.h                ${MultiCompileDepends}
-                                                                                                                  
-$(o)renderIntensityEffect$(oext)         : $(basedir)src\ptengine\renderIntensityEffect.cpp                      $(basedir)include\ptengine\renderIntensityEffect.h               ${MultiCompileDepends}
-                                                                                                                  
+                                                                                                                                                                                                                                    
 $(o)PipeManagerExt$(oext)                : $(basedir)src\PTRMI\PipeManagerExt.cpp                                $(basedir)include\PTRMI\PipeManagerExt.h                         ${MultiCompileDepends}
                                                                                                                   
 $(o)datachannel$(oext)                   : $(basedir)src\ptcloud2\datachannel.cpp                                $(basedir)include\ptcloud2\datachannel.h                         ${MultiCompileDepends}
@@ -503,6 +480,10 @@ $(o)renderPointsEffect$(oext)            : $(basedir)src\ptengine\renderPointsEf
 $(o)renderLayersEffect$(oext)            : $(basedir)src\ptengine\renderLayersEffect.cpp                         $(basedir)include\ptengine\renderLayersEffect.h                  ${MultiCompileDepends}
 
 $(o)renderPlaneEffect$(oext)             : $(basedir)src\ptengine\renderPlaneEffect.cpp                          $(basedir)include\ptengine\renderPlaneEffect.h                   ${MultiCompileDepends}
+
+$(o)renderDiagnostics$(oext)             : $(basedir)src\ptengine\renderDiagnostics.cpp                          $(basedir)include\ptengine\renderDiagnostics.h                   ${MultiCompileDepends}
+
+$(o)renderIntensityEffect$(oext)         : $(basedir)src\ptengine\renderIntensityEffect.cpp                      $(basedir)include\ptengine\renderIntensityEffect.h               ${MultiCompileDepends}
 
 %endif
 
