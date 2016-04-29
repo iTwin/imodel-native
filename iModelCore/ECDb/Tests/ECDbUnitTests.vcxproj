@@ -57,7 +57,6 @@
     <ClCompile Include="Published\ECSqlDeleteTestDataset.cpp" />
     <ClCompile Include="Published\ECSqlInsertTestDataset.cpp" />
     <ClCompile Include="Published\ECSqlInsertTests.cpp" />
-    <ClCompile Include="Published\ECSqlMetadataQueryTest.cpp" />
     <ClCompile Include="Published\ECSqlNavigationProps_Tests.cpp" />
     <ClCompile Include="Published\ECSqlRangeTree_Tests.cpp" />
     <ClCompile Include="Published\ECSqlCommonTestDataset.cpp" />
@@ -80,6 +79,7 @@
     <ClCompile Include="Published\JsonLibrary_Test.cpp" />
     <ClCompile Include="Published\JsonReaderTests.cpp" />
     <ClCompile Include="Published\JsonUpdaterTests.cpp" />
+    <ClCompile Include="Published\MetaSchemaECSqlTestFixture.cpp" />
     <ClCompile Include="Published\NestedStructArrayTestSchemaHelper.cpp" />
     <ClCompile Include="Published\RandomECInstanceGenerator.cpp" />
     <ClCompile Include="Published\SchemaImportTestFixture.cpp" />

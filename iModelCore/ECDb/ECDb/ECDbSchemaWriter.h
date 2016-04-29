@@ -45,8 +45,8 @@ private:
     ECDbCR m_ecdb;
     bmap<ECN::ECEnumerationCP, uint64_t> m_enumIdCache;
     BeMutex m_mutex;
-
-    private:
+    CustomAttributeValidator m_customAttributeValidator;
+private:
     BentleyStatus CreateECSchemaEntry(ECSchemaCR);
     BentleyStatus CreateBaseClassEntry(ECClassId, ECClassCR baseClass, int ordinal);
     BentleyStatus CreateECRelationshipConstraintEntry(ECClassId relationshipClassId, ECN::ECRelationshipConstraintR, ECRelationshipEnd);
@@ -73,9 +73,13 @@ private:
     BentleyStatus Fail(Utf8CP fmt, ...) const;
     void Warn(Utf8CP fmt, ...) const;
     BentleyStatus TryParseId(Utf8StringR schemaName, Utf8StringR className, Utf8StringCR id) const;
-
+    CustomAttributeValidator const& GetCustomAttributeValidator() const { return m_customAttributeValidator; }
 public:
-    explicit ECDbSchemaWriter(ECDbCR ecdb) : m_ecdb (ecdb) {}
+    explicit ECDbSchemaWriter(ECDbCR ecdb) : m_ecdb (ecdb) 
+        {
+        m_customAttributeValidator.Accept("ECDbMap:ClassMap.MapStrategy.MinimumSharedColumnCount");
+        m_customAttributeValidator.Reject("ECDbMap:*");
+        }
     BentleyStatus Import(ECSchemaCompareContext& ctx, ECSchemaCR);
     };
 END_BENTLEY_SQLITE_EC_NAMESPACE

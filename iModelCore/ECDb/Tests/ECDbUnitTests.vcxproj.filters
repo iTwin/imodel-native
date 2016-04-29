@@ -199,9 +199,6 @@
     <ClCompile Include="Published\ECSqlSelectTests.cpp">
       <Filter>Published\ECSql</Filter>
     </ClCompile>
-    <ClCompile Include="Published\ECSqlMetadataQueryTest.cpp">
-      <Filter>Published\ECSql</Filter>
-    </ClCompile>
     <ClCompile Include="Published\ECDbSymbolProviderTests.cpp">
       <Filter>Published</Filter>
     </ClCompile>
@@ -216,6 +213,9 @@
     </ClCompile>
     <ClCompile Include="Published\ECDbSchemaUpgrade_Tests.cpp">
       <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\MetaSchemaECSqlTestFixture.cpp">
+      <Filter>Published\ECSql</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
