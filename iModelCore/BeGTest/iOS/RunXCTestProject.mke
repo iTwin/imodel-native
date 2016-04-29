@@ -20,14 +20,14 @@
     %error Define XCTEST_PRODUCT as the name of the Product in the output directory that contains BeTestiOS.xcodeproj for the specified test suite.
 %endif
 
-%ifndef XCTEST_OUTPUT_DIR
-    %error Define XCTEST_OUTPUT_DIR as the name of the directory in which to create $(XCTEST_PRODUCT).log
-%endif
-
 XCODEPROJ=$(OutputRootDir)Product/$(XCTEST_PRODUCT)/BeTestiOS.xcodeproj
 
 %ifnofile $(XCODEPROJ)
     %error $(XCODEPROJ) not found.
+%endif
+
+%ifndef XCTEST_OUTPUT_DIR
+    XCTEST_OUTPUT_DIR=$(OutputRootDir)build/$(XCTEST_PRODUCT)/
 %endif
 
 logFile = ${XCTEST_OUTPUT_DIR}/$(XCTEST_PRODUCT).log
