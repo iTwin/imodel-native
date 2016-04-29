@@ -440,6 +440,10 @@
         <Directories DirectoryListName="iOSXCTestProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
 
+    <Part Name="RuniOSXCTest" BentleyBuildMakeFile="${SrcRoot}BeGTest/iOS/RunXCTestProject.mke" BentleyBuildMakeOptions="-dXCTEST_PRODUCT=WSClient-iOSXCTest" OnlyPlatforms="iOS*">
+        <SubProduct ProductName="WSClient-iOSXCTest"/>
+    </Part>
+
     <!-- //////////////////////////////////////////////////////////////////////////// -->
     <!-- // Integration Tests - used for debugging                                 // -->
     <!-- //////////////////////////////////////////////////////////////////////////// -->
