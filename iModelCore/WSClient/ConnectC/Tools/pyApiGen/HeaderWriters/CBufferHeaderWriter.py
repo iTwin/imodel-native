@@ -38,6 +38,7 @@ class CBufferHeaderWriter(HeaderWriter):
     def __write_includes(self):
         self._file.write('#include <WebServices/ConnectC/{0}Public.h>\n'.format(self._api.get_api_acronym()))
         self._file.write('#include <DgnClientFx/Utils/Http/ProxyHttpHandler.h>\n')
+        self._file.write('#include <Bentley/bvector.h>\n')
 
     def __write_defines(self):
         count = 1
@@ -50,9 +51,9 @@ class CBufferHeaderWriter(HeaderWriter):
     def __write_parent_buffer(self):
         self._file.write('typedef struct _{0}BUFFER\n'.format(self._api.get_api_acronym()))
         self._file.write('   {\n')
-        self._file.write('   uint32_t   lCount;\n')
-        self._file.write('   uint32_t   lType;\n')
-        self._file.write('   void       *lpItems;\n')
+        self._file.write('   uint32_t       lType;\n')
+        self._file.write('   uint64_t       lCount;\n')
+        self._file.write('   bvector<void*> lItems;\n')
         self._file.write('   }} {0}BUFFER, *LP{0}BUFFER;\n\n'.format(self._api.get_api_acronym()))
         self._file.write('typedef LP{0}BUFFER H{0}BUFFER;'.format(self._api.get_api_acronym()))
 

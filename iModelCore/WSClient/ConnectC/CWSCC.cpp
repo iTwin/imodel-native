@@ -88,7 +88,7 @@ ConnectWebServicesClientC_internal::ConnectWebServicesClientC_internal(Utf8Strin
 
     BeFileName dgnClientFxSqlangFile = m_pathProv.GetAssetsRootDirectory();
     dgnClientFxSqlangFile.AppendToPath(L"sqlang");
-#if defined (DEBUG)
+#if !defined (NDEBUG)
     dgnClientFxSqlangFile.AppendToPath(L"DgnClientFx_pseudo.sqlang.db3");
 #else
     dgnClientFxSqlangFile.AppendToPath(L"DgnClientFx_en.sqlang.db3");
@@ -100,7 +100,7 @@ ConnectWebServicesClientC_internal::ConnectWebServicesClientC_internal(Utf8Strin
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
     ConnectAuthenticationPersistence::CustomInitialize(&m_localState);
     auto bclient = make_shared<BuddiClient>(proxy);
-#if defined (DEBUG)
+#if !defined (NDEBUG)
     UrlProvider::Initialize(UrlProvider::Qa, UrlProvider::DefaultTimeout, &m_localState, bclient);
 #else
     UrlProvider::Initialize(UrlProvider::Release, UrlProvider::DefaultTimeout, &m_localState, bclient);
@@ -138,7 +138,7 @@ ConnectWebServicesClientC_internal::ConnectWebServicesClientC_internal(Utf8Strin
     
     BeFileName dgnClientFxSqlangFile = m_pathProv.GetAssetsRootDirectory();
     dgnClientFxSqlangFile.AppendToPath(L"sqlang");
-#if defined (DEBUG)
+#if !defined (NDEBUG)
     dgnClientFxSqlangFile.AppendToPath(L"DgnClientFx_pseudo.sqlang.db3");
 #else
     dgnClientFxSqlangFile.AppendToPath(L"DgnClientFx_en.sqlang.db3");
@@ -150,7 +150,7 @@ ConnectWebServicesClientC_internal::ConnectWebServicesClientC_internal(Utf8Strin
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
     ConnectAuthenticationPersistence::CustomInitialize(&m_localState);
     auto bclient = make_shared<BuddiClient>(proxy);
-#if defined (DEBUG)
+#if !defined (NDEBUG)
     UrlProvider::Initialize(UrlProvider::Qa, UrlProvider::DefaultTimeout, &m_localState, bclient);
 #else
     UrlProvider::Initialize(UrlProvider::Release, UrlProvider::DefaultTimeout, &m_localState, bclient);
