@@ -2912,16 +2912,16 @@ static bool IsGeometryVisible(ViewContextR context, Render::GeometryParamsCR geo
             break;
         }
 
-    if (nullptr != range && !range->IsNull())
-        {
-        ScanCriteriaCP sc = context.GetScanCriteria();
-
-        if (nullptr != sc && ScanCriteria::Result::Pass != sc->CheckRange(*range, context.Is3dView()))
-            return false; // Sub-graphic outside range...
-        }
-
     if (nullptr == context.GetViewport())
         return true;
+
+    if (nullptr != range && !range->IsNull())
+        {
+        Frustum box(*range);
+
+        if (!context.GetFrustumPlanes().Intersects(box))
+            return false; // Sub-graphic outside range...
+        }
 
     DgnSubCategory::Appearance appearance = context.GetViewport()->GetViewController().GetSubCategoryAppearance(geomParams.GetSubCategoryId());
 
