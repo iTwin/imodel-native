@@ -2,7 +2,7 @@
 |
 |     $Source: Core/cppwrappers/TMEditor.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -657,7 +657,7 @@ StatusInt BcDTMEdit::_SelectTrianglesByLine (const DPoint3d pts[], int numPts, b
         double x = drapePts[i].drapePt.x;
         double y = drapePts[i].drapePt.y;
 
-        if (drapePts[i].drapeFeatures.empty())
+        if (!drapePts[i].drapeFeatures.empty())
             break;
 
         if (i != (long)drapePts.size() - 1)
