@@ -26,7 +26,7 @@ def printProgress(procStdOutLine, status_len):
 #-------------------------------------------------------------------------------------------
 # bsimethod                                     Sam.Wilson              04/2016
 #-------------------------------------------------------------------------------------------
-def RunTest(xcodeprojpath, deviceName, okToRetry):
+def RunTest(xcodeprojpath, deviceName, okToRetry, logfile):
     mustRetry = False
     failureCount = 0
     testCount = 0
@@ -45,10 +45,12 @@ def RunTest(xcodeprojpath, deviceName, okToRetry):
             mustRetry = True
             break
         
-        if procStdOutLine.lower().find('error') != -1:
-            print '\n' + procStdOutLine
+        #if procStdOutLine.lower().find('error') != -1:
+        #    print '\n' + procStdOutLine
 
         printProgress(procStdOutLine, 132)
+
+        logfile.write(procStdOutLine)
 
         if procStdOutLine.startswith('Test Case'):
             testCount = testCount + 1
@@ -83,16 +85,18 @@ def RunTest(xcodeprojpath, deviceName, okToRetry):
 # bsimethod                                     Sam.Wilson              04/2016
 #-------------------------------------------------------------------------------------------
 def main():
-    if (len (sys.argv) < 3):
-        print "Syntax: ", sys.argv[0], " xcodeprojpath deviceName"
+    if (len (sys.argv) < 4):
+        print "Syntax: ", sys.argv[0], " xcodeprojpath deviceName logfilename"
         exit(1)
 
     xcodeprojpath = sys.argv[1]
     deviceName = sys.argv[2]
     if deviceName.startswith("'"):
         deviceName = deviceName.substr(1, len(deviceName)-2)
+    logfilename = sys.argv[3]
 
-    failureCount = RunTest(xcodeprojpath, deviceName, True)
+    with open (logfilename, 'w') as logfile:
+        failureCount = RunTest(xcodeprojpath, deviceName, True, logfile)
 
     exit (failureCount)
 
