@@ -1426,15 +1426,15 @@ TEST_F(SchemaDeserializationTest, TestDefaultElementOrder)
         "    <ECEnumeration typeName=\"DEF\" displayLabel=\"Enumeration DEF\" backingTypeName=\"int\" />"
         "</ECSchema>";
     ECSchemaPtr schema;
-    EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXML, *schemaContext));
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXML, *schemaContext));
 
     WString ecSchemaXmlString;
-    EXPECT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(ecSchemaXmlString, 3, 0));
+    ASSERT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(ecSchemaXmlString, 3, 0));
 
     size_t stringByteCount = ecSchemaXmlString.length() * sizeof(Utf8Char);
     BeXmlStatus xmlStatus;
     BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromString(xmlStatus, ecSchemaXmlString.c_str(), stringByteCount);
-    EXPECT_EQ(BEXML_Success, xmlStatus);
+    ASSERT_EQ(BEXML_Success, xmlStatus);
 
     // Enumerations (DEF) are serialized first, then classes (ABC, GHI)
     bvector<Utf8String> typeNames = {"DEF", "ABC", "GHI"};
