@@ -48,7 +48,7 @@ class CPublicBufferHeaderWriter(HeaderWriter):
         self._file.write(self._COMMENT_GroupBriefLong
                          .format("Get a count of the number of items in a data buffer",
                                  "\param[in] dataBuffer Data buffer\n* \\return Object count"))
-        self._file.write("{0}_EXPORT uint32_t {1}_DataBufferGetCount\n".format(self._api.get_upper_api_acronym(), self._api.get_api_name()))
+        self._file.write("{0}_EXPORT uint64_t {1}_DataBufferGetCount\n".format(self._api.get_upper_api_acronym(), self._api.get_api_name()))
         self._file.write("(\n")
         self._file.write("{0}DATABUFHANDLE dataBuffer\n".format(self._api.get_upper_api_acronym()))
         self._file.write(");\n")

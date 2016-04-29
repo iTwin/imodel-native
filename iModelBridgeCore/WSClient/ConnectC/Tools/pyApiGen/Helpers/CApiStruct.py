@@ -33,30 +33,24 @@ class CApiStruct(CStruct):
         get_request_str += "        return wsresultTo{0}Status(result.GetError().GetId(), result.GetError().GetDisplayMessage()," \
                            " result.GetError().GetDisplayDescription());\n\n"\
             .format(self._api.get_api_name())
-        get_request_str += "    int instanceCount = 0;\n"
-        get_request_str += "    for (WSObjectsReader::Instance instance : result.GetValue().GetInstances())\n"
-        get_request_str += "        instanceCount++;\n"
-        get_request_str += "    LP{0}{1}BUFFER {2}Buf = (LP{0}{1}BUFFER) calloc(instanceCount, sizeof({0}{1}BUFFER));\n"\
-            .format(self._api.get_api_acronym(), self.get_upper_name(), self.get_lower_name())
-        get_request_str += "    instanceCount = 0;\n"
-        get_request_str += "    for (WSObjectsReader::Instance instance : result.GetValue().GetInstances())\n"
-        get_request_str += "        {\n"
-        get_request_str += "        LP{0}{1}BUFFER bufToFill = {2}Buf + instanceCount++;\n"\
-            .format(self._api.get_api_acronym(), self.get_upper_name(), self.get_lower_name())
-        get_request_str += "        {0}BufferStuffer(bufToFill, instance.GetProperties());\n".format(self.get_name())
-        get_request_str += "        }\n\n"
         get_request_str += "    {0}BUFFER* buf = ({0}BUFFER*) calloc(1, sizeof({0}BUFFER));\n".format(self._api.get_api_acronym())
         get_request_str += "    if (buf == nullptr)\n"
         get_request_str += "        {\n"
-        get_request_str += "        free({0}Buf);\n".format(self.get_lower_name())
-        get_request_str += '        return CALLSTATUS {{{0}, "{1}", "{2}"}};\n'\
+        get_request_str += "        free(buf);\n"
+        get_request_str += '        return CALLSTATUS {{{0}, "{1}", "{2}"}};\n' \
             .format("INTERNAL_MEMORY_ERROR",
                     self._status_codes["INTERNAL_MEMORY_ERROR"].message,
                     "Failed to calloc memory for {0}BUFFER.".format(self._api.get_api_acronym()))
         get_request_str += "        }\n\n"
-        get_request_str += "    buf->lCount = instanceCount;\n"
+        get_request_str += "    for (WSObjectsReader::Instance instance : result.GetValue().GetInstances())\n"
+        get_request_str += "        {\n"
+        get_request_str += "        LP{0}{1}BUFFER bufToFill = new {0}{1}BUFFER;\n"\
+            .format(self._api.get_api_acronym(), self.get_upper_name(), self.get_lower_name())
+        get_request_str += "        {0}BufferStuffer(bufToFill, instance.GetProperties());\n".format(self.get_name())
+        get_request_str += "        buf->lItems.push_back(bufToFill);\n"
+        get_request_str += "        }\n\n"
+        get_request_str += "    buf->lCount = buf->lItems.size();\n"
         get_request_str += "    buf->lType = BUFF_TYPE_{0};\n".format(self.get_upper_name())
-        get_request_str += "    buf->lpItems = {0}Buf;\n\n".format(self.get_lower_name())
         get_request_str += "    *{0}Buffer = ({1}DATABUFHANDLE) buf;\n\n".format(self.get_lower_name(), self._api.get_upper_api_acronym())
         get_request_str += '    return CALLSTATUS {{{0}, "{1}", "{2}"}};\n'.format("SUCCESS",
                                                                                    self._status_codes["SUCCESS"].message,
@@ -127,7 +121,7 @@ class CApiStruct(CStruct):
         get_request_str += "        return wsresultTo{0}Status(result.GetError().GetId(), result.GetError().GetDisplayMessage()," \
                            " result.GetError().GetDisplayDescription());\n\n"\
             .format(self._api.get_api_name())
-        get_request_str += "    LP{0}{1}BUFFER {2}Buf = (LP{0}{1}BUFFER) calloc(1, sizeof({0}{1}BUFFER));\n" \
+        get_request_str += "    LP{0}{1}BUFFER {2}Buf = new {0}{1}BUFFER;\n" \
             .format(self._api.get_api_acronym(), self.get_upper_name(), self.get_lower_name())
         get_request_str += "    {0}BufferStuffer({1}Buf, (*result.GetValue().GetInstances().begin()).GetProperties());\n\n"\
             .format(self.get_name(), self.get_lower_name())
@@ -142,7 +136,7 @@ class CApiStruct(CStruct):
         get_request_str += "        }\n\n"
         get_request_str += "    buf->lCount = 1;\n"
         get_request_str += "    buf->lType = BUFF_TYPE_{0};\n".format(self.get_upper_name())
-        get_request_str += "    buf->lpItems = {0}Buf;\n\n".format(self.get_lower_name())
+        get_request_str += "    buf->lItems = {{{0}Buf}};\n".format(self.get_lower_name())
         get_request_str += "    *{0}Buffer = ({1}DATABUFHANDLE) buf;\n\n".format(self.get_lower_name(), self._api.get_upper_api_acronym())
         get_request_str += '    return CALLSTATUS {{{0}, "{1}", "{2}"}};\n'.format("SUCCESS",
                                                                                    self._status_codes["SUCCESS"].message,
@@ -226,7 +220,7 @@ class CApiStruct(CStruct):
             if property_type == "string":
                 property_str += "WCharCP "
             elif property_type == "guid":
-                property_str += "WCharP "
+                property_str += "WCharCP "
             elif property_type == "boolean":
                 property_str += "bool* "
             elif property_type == "int":

@@ -70,9 +70,8 @@ class CBufferStruct(CStruct):
             .format("INVALID_PARAMETER",
                     self._status_codes["INVALID_PARAMETER"].message,
                     "The index parameter passed into the get property function is out of bounds.")
-        accessor_str += "    LP{0}{1}BUFFER {2}Buf = (LP{0}{1}BUFFER) buf->lpItems;\n"\
+        accessor_str += "    LP{0}{1}BUFFER {2}Buf = (LP{0}{1}BUFFER) buf->lItems[index];\n"\
             .format(self._api.get_api_acronym(), self.get_upper_name(), self.get_lower_name())
-        accessor_str += "    {0}Buf = {0}Buf + index;\n\n".format(self.get_lower_name())
 
         is_first_property = True
         for ecproperty in self.get_properties():
@@ -86,8 +85,8 @@ class CBufferStruct(CStruct):
                     accessor_str += "    else if ({0}_BUFF_{1} == bufferProperty)\n".format(self.get_upper_name(),
                                                                                             ecproperty.attributes["propertyName"].value.upper())
                 accessor_str += "        {\n"
-                property_access_str = '        if ({0}Buf->IsSet.find(stringToWString("{1}")) == {0}Buf->IsSet.end() '
-                property_access_str += '|| {0}Buf->IsSet[stringToWString("{1}")] == false)\n'
+                property_access_str = '        if ({0}Buf->IsSet.find(WString("{1}", true)) == {0}Buf->IsSet.end() '
+                property_access_str += '|| {0}Buf->IsSet[WString("{1}", true)] == false)\n'
                 property_access_str += '            {{\n'
                 if property_type == "string":
                     property_access_str += '            str = nullptr;\n'
@@ -113,7 +112,7 @@ class CBufferStruct(CStruct):
                 elif property_type == "StringLength":
                     property_access_str += "        *outStringSize = {0}Buf->{1}.length();\n"
                 elif property_type == "guid":
-                    property_access_str += "        memcpy(guid, &({0}Buf->{1}), sizeof(GUID));\n"
+                    property_access_str += "        wcscpy(guid, {0}Buf->{1}.c_str());\n"
                 elif property_type == "boolean":
                     property_access_str += "        *boolean = {0}Buf->{1};\n"
                 elif property_type == "int":
@@ -201,37 +200,37 @@ class CBufferStruct(CStruct):
             if property_type == "string":
                 stuffer_str += '    if(properties.HasMember("{0}") && properties["{0}"].IsString())\n'\
                     .format(ecproperty.attributes["propertyName"].value)
-                stuffer_str += '        {0}Buf->{1} = stringToWString(properties["{1}"].GetString());\n'\
+                stuffer_str += '        {0}Buf->{1} = WString(properties["{1}"].GetString(), true);\n'\
                     .format(self.get_lower_name(), ecproperty.attributes["propertyName"].value)
-                stuffer_str += '    {0}Buf->IsSet[stringToWString("{1}")] = (properties.HasMember("{1}") && properties["{1}"].IsString());\n'\
+                stuffer_str += '    {0}Buf->IsSet[WString("{1}", true)] = (properties.HasMember("{1}") && properties["{1}"].IsString());\n'\
                     .format(self.get_lower_name(), ecproperty.attributes["propertyName"].value)
             elif property_type == "guid":
                 stuffer_str += '    if(properties.HasMember("{0}") && properties["{0}"].IsString())\n'\
                     .format(ecproperty.attributes["propertyName"].value)
-                stuffer_str += '        {0}Buf->{1} = stringToWString(properties["{1}"].GetString());\n'\
+                stuffer_str += '        {0}Buf->{1} = WString(properties["{1}"].GetString(), true);\n'\
                     .format(self.get_lower_name(), ecproperty.attributes["propertyName"].value)
-                stuffer_str += '    {0}Buf->IsSet[stringToWString("{1}")] = (properties.HasMember("{1}") && properties["{1}"].IsString());\n'\
+                stuffer_str += '    {0}Buf->IsSet[WString("{1}", true)] = (properties.HasMember("{1}") && properties["{1}"].IsString());\n'\
                     .format(self.get_lower_name(), ecproperty.attributes["propertyName"].value)
             elif property_type == "boolean":
                 stuffer_str += '    if(properties.HasMember("{0}") && properties["{0}"].IsBool())\n'\
                     .format(ecproperty.attributes["propertyName"].value)
                 stuffer_str += '        {0}Buf->{1} = properties["{1}"].GetBool();\n'\
                     .format(self.get_lower_name(), ecproperty.attributes["propertyName"].value)
-                stuffer_str += '    {0}Buf->IsSet[stringToWString("{1}")] = (properties.HasMember("{1}") && properties["{1}"].IsBool());\n'\
+                stuffer_str += '    {0}Buf->IsSet[WString("{1}", true)] = (properties.HasMember("{1}") && properties["{1}"].IsBool());\n'\
                     .format(self.get_lower_name(), ecproperty.attributes["propertyName"].value)
             elif property_type == "int" or property_type == "long":
                 stuffer_str += '    if(properties.HasMember("{0}") && properties["{0}"].IsInt())\n'\
                     .format(ecproperty.attributes["propertyName"].value)
                 stuffer_str += '        {0}Buf->{1} = properties["{1}"].GetInt();\n'\
                     .format(self.get_lower_name(), ecproperty.attributes["propertyName"].value)
-                stuffer_str += '    {0}Buf->IsSet[stringToWString("{1}")] = (properties.HasMember("{1}") && properties["{1}"].IsInt());\n'\
+                stuffer_str += '    {0}Buf->IsSet[WString("{1}", true)] = (properties.HasMember("{1}") && properties["{1}"].IsInt());\n'\
                     .format(self.get_lower_name(), ecproperty.attributes["propertyName"].value)
             elif property_type == "double":
                 stuffer_str += '    if(properties.HasMember("{0}") && properties["{0}"].IsDouble())\n'\
                     .format(ecproperty.attributes["propertyName"].value)
                 stuffer_str += '        {0}Buf->{1} = properties["{1}"].GetDouble();\n'\
                     .format(self.get_lower_name(), ecproperty.attributes["propertyName"].value)
-                stuffer_str += '    {0}Buf->IsSet[stringToWString("{1}")] = (properties.HasMember("{1}") && properties["{1}"].IsDouble());\n'\
+                stuffer_str += '    {0}Buf->IsSet[WString("{1}", true)] = (properties.HasMember("{1}") && properties["{1}"].IsDouble());\n'\
                     .format(self.get_lower_name(), ecproperty.attributes["propertyName"].value)
             else:
                 raise PropertyTypeError("Property type {0} not accepted".format(property_type))
