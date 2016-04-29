@@ -695,6 +695,25 @@ void GeometryStreamIO::Writer::Append(DPoint3dCP pts, size_t nPts, int8_t bounda
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometryStreamIO::Writer::Append(DRange3dCR range)
+    {
+    FlatBufferBuilder fbb;
+
+    auto coords = fbb.CreateVectorOfStructs((FB::DPoint3d*) &range.low, 6);
+
+    FB::PointPrimitiveBuilder builder(fbb);
+
+    builder.add_coords(coords);
+
+    auto mloc = builder.Finish();
+
+    fbb.Finish(mloc);
+    Append(Operation(OpCode::SubGraphicRange, (uint32_t) fbb.GetSize(), fbb.GetBufferPointer()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometryStreamIO::Writer::Append(DEllipse3dCR arc, int8_t boundary)
@@ -1448,6 +1467,24 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, DPoint3dCP& pts, int& 
     boundary = (int8_t) ppfb->boundary();
     nPts = (int) ppfb->coords()->Length();
     pts = (DPoint3dCP) ppfb->coords()->Data();
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  12/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+bool GeometryStreamIO::Reader::Get(Operation const& egOp, DRange3dR range) const
+    {
+    if (OpCode::SubGraphicRange != egOp.m_opCode)
+        return false;
+
+    auto ppfb = flatbuffers::GetRoot<FB::PointPrimitive>(egOp.m_data);
+
+    if (6 != ppfb->coords()->Length())
+        return false;
+
+    memcpy(&range, (DPoint3dCP) ppfb->coords()->Data(), sizeof(range));
 
     return true;
     }
@@ -2325,6 +2362,12 @@ void GeometryStreamIO::Debug(IDebugOutput& output, GeometryStreamCR stream, DgnD
                 break;
                 }
 
+            case GeometryStreamIO::OpCode::SubGraphicRange:
+                {
+                output._DoOutputLine(Utf8PrintfString("OpCode::SubGraphicRange\n").c_str());
+                break;
+                }
+
             case GeometryStreamIO::OpCode::GeometryPartInstance:
                 {
                 auto ppfb = flatbuffers::GetRoot<FB::GeometryPart>(egOp.m_data);
@@ -2847,7 +2890,7 @@ static void CookGeometryParams(ViewContextR context, Render::GeometryParamsR geo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool IsGeometryVisible(ViewContextR context, Render::GeometryParamsCR geomParams)
+static bool IsGeometryVisible(ViewContextR context, Render::GeometryParamsCR geomParams, DRange3dCP range)
     {
     ViewFlags   viewFlags = context.GetViewFlags();
 
@@ -2871,6 +2914,14 @@ static bool IsGeometryVisible(ViewContextR context, Render::GeometryParamsCR geo
 
     if (nullptr == context.GetViewport())
         return true;
+
+    if (nullptr != range && !range->IsNull())
+        {
+        Frustum box(*range);
+
+        if (!context.GetFrustumPlanes().Intersects(box))
+            return false; // Sub-graphic outside range...
+        }
 
     DgnSubCategory::Appearance appearance = context.GetViewport()->GetViewController().GetSubCategoryAppearance(geomParams.GetSubCategoryId());
 
@@ -2962,9 +3013,9 @@ static void SaveSolidKernelEntity(ViewContextR context, DgnElementCP element, Ge
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR context, Render::GeometryParamsR geomParams, bool activateParams, DgnElementCP element) const
+void GeometryStreamIO::Collection::Draw(Render::GraphicR mainGraphic, ViewContextR context, Render::GeometryParamsR geomParams, bool activateParams, DgnElementCP element) const
     {
-    bool isQVis = graphic.IsForDisplay();
+    bool isQVis = mainGraphic.IsForDisplay();
 #if defined (DGNPLATFORM_WIP_PARASOLID)
     bool isWireframe = (RenderMode::Wireframe == context.GetViewFlags().GetRenderMode());
     bool isQVWireframe = (isQVis && isWireframe);
@@ -2973,6 +3024,9 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
     bool useBRep = !(isQVis || isPick);
 #endif
     bool geomParamsChanged = activateParams || !isQVis; // NOTE: Don't always bake initial symbology into SubGraphics, it's activated before drawing QvElem...
+    DRange3d subGraphicRange = DRange3d::NullRange();
+    Render::GraphicPtr subGraphic;
+    Render::GraphicP currGraphic = &mainGraphic;
     GeometryStreamEntryId& entryId = context.GetGeometryStreamEntryIdR();
     GeometryStreamIO::Reader reader(context.GetDgnDb());
 
@@ -2999,6 +3053,22 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                 break;
                 }
 
+            case GeometryStreamIO::OpCode::SubGraphicRange:
+                {
+                currGraphic = &mainGraphic;
+                subGraphicRange = DRange3d::NullRange();
+
+                if (!reader.Get(egOp, subGraphicRange))
+                    break;
+
+                subGraphic = mainGraphic.CreateSubGraphic(Transform::FromIdentity());
+                currGraphic = subGraphic.get();
+
+                mainGraphic.GetLocalToWorldTransform().Multiply(subGraphicRange, subGraphicRange); // Range test needs world coords...
+                geomParamsChanged = false; // Don't bake into sub-graphic, needs to be supplied to AddSubGraphic anyway...
+                continue; // Next op code should be a geometry op code that will be added to this sub-graphic...
+                }
+
             case GeometryStreamIO::OpCode::GeometryPartInstance:
                 {
                 entryId.Increment();
@@ -3010,18 +3080,18 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                     break;
 
                 entryId.SetActiveGeometryPart(geomPartId);
-                Render::GraphicPtr partGraphic = context.AddSubGraphic(graphic, geomPartId, geomToSource, geomParams);
+                Render::GraphicPtr partGraphic = context.AddSubGraphic(mainGraphic, geomPartId, geomToSource, geomParams);
                 entryId.SetActiveGeometryPart(DgnGeometryPartId());
 
                 if (!partGraphic.IsValid())
                     break;
 
-                // NOTE: Main graphic controls what pixel range is used for all parts.
+                // NOTE: MainGraphic controls what pixel range is used for all parts.
                 //       Since we can't have independent pixel range for parts, choose most restrictive...
                 double partMin, partMax;
 
                 partGraphic->GetPixelSizeRange(partMin, partMax);
-                graphic.UpdatePixelSizeRange(partMin, partMax);
+                mainGraphic.UpdatePixelSizeRange(partMin, partMax);
                 break;
                 }
 
@@ -3029,7 +3099,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                 {
                 entryId.Increment();
 
-                if (!DrawHelper::IsGeometryVisible(context, geomParams))
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, isQVis ? nullptr : &subGraphicRange))
                     break;
 
                 int         nPts;
@@ -3039,20 +3109,20 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                 if (!reader.Get(egOp, pts, nPts, boundary))
                     break;
 
-                DrawHelper::CookGeometryParams(context, geomParams, graphic, geomParamsChanged);
+                DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
 
                 switch (boundary)
                     {
                     case FB::BoundaryType_None:
-                        graphic.AddPointString2d(nPts, pts, geomParams.GetNetDisplayPriority());
+                        currGraphic->AddPointString2d(nPts, pts, geomParams.GetNetDisplayPriority());
                         break;
 
                     case FB::BoundaryType_Open:
-                        graphic.AddLineString2d(nPts, pts, geomParams.GetNetDisplayPriority());
+                        currGraphic->AddLineString2d(nPts, pts, geomParams.GetNetDisplayPriority());
                         break;
 
                     case FB::BoundaryType_Closed:
-                        graphic.AddShape2d(nPts, pts, FillDisplay::Never != geomParams.GetFillDisplay(), geomParams.GetNetDisplayPriority());
+                        currGraphic->AddShape2d(nPts, pts, FillDisplay::Never != geomParams.GetFillDisplay(), geomParams.GetNetDisplayPriority());
                         break;
                     }
                 break;
@@ -3062,7 +3132,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                 {
                 entryId.Increment();
 
-                if (!DrawHelper::IsGeometryVisible(context, geomParams))
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, isQVis ? nullptr : &subGraphicRange))
                     break;
 
                 int         nPts;
@@ -3072,20 +3142,20 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                 if (!reader.Get(egOp, pts, nPts, boundary))
                     break;
 
-                DrawHelper::CookGeometryParams(context, geomParams, graphic, geomParamsChanged);
+                DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
 
                 switch (boundary)
                     {
                     case FB::BoundaryType_None:
-                        graphic.AddPointString(nPts, pts);
+                        currGraphic->AddPointString(nPts, pts);
                         break;
 
                     case FB::BoundaryType_Open:
-                        graphic.AddLineString(nPts, pts);
+                        currGraphic->AddLineString(nPts, pts);
                         break;
 
                     case FB::BoundaryType_Closed:
-                        graphic.AddShape(nPts, pts, FillDisplay::Never != geomParams.GetFillDisplay());
+                        currGraphic->AddShape(nPts, pts, FillDisplay::Never != geomParams.GetFillDisplay());
                         break;
                     }
                 break;
@@ -3095,7 +3165,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                 {
                 entryId.Increment();
 
-                if (!DrawHelper::IsGeometryVisible(context, geomParams))
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, isQVis ? nullptr : &subGraphicRange))
                     break;
 
                 DEllipse3d  arc;
@@ -3104,21 +3174,21 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                 if (!reader.Get(egOp, arc, boundary))
                     break;
 
-                DrawHelper::CookGeometryParams(context, geomParams, graphic, geomParamsChanged);
+                DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
 
                 if (!context.Is3dView())
                     {
                     if (FB::BoundaryType_Closed != boundary)
-                        graphic.AddArc2d(arc, false, false, geomParams.GetNetDisplayPriority());
+                        currGraphic->AddArc2d(arc, false, false, geomParams.GetNetDisplayPriority());
                     else
-                        graphic.AddArc2d(arc, true, FillDisplay::Never != geomParams.GetFillDisplay(), geomParams.GetNetDisplayPriority());
+                        currGraphic->AddArc2d(arc, true, FillDisplay::Never != geomParams.GetFillDisplay(), geomParams.GetNetDisplayPriority());
                     break;
                     }
 
                 if (FB::BoundaryType_Closed != boundary)
-                    graphic.AddArc(arc, false, false);
+                    currGraphic->AddArc(arc, false, false);
                 else
-                    graphic.AddArc(arc, true, FillDisplay::Never != geomParams.GetFillDisplay());
+                    currGraphic->AddArc(arc, true, FillDisplay::Never != geomParams.GetFillDisplay());
                 break;
                 }
 
@@ -3126,7 +3196,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                 {
                 entryId.Increment();
 
-                if (!DrawHelper::IsGeometryVisible(context, geomParams))
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, isQVis ? nullptr : &subGraphicRange))
                     break;
 
                 ICurvePrimitivePtr curvePrimitivePtr;
@@ -3134,18 +3204,18 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                 if (!reader.Get(egOp, curvePrimitivePtr))
                     break;
 
-                DrawHelper::CookGeometryParams(context, geomParams, graphic, geomParamsChanged);
+                DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
 
                 // A single curve primitive is always open (or none for a point string)...
                 CurveVectorPtr  curvePtr = CurveVector::Create(ICurvePrimitive::CURVE_PRIMITIVE_TYPE_PointString == curvePrimitivePtr->GetCurvePrimitiveType() ? CurveVector::BOUNDARY_TYPE_None : CurveVector::BOUNDARY_TYPE_Open, curvePrimitivePtr);
 
                 if (!context.Is3dView())
                     {
-                    graphic.AddCurveVector2d(*curvePtr, false, geomParams.GetNetDisplayPriority());
+                    currGraphic->AddCurveVector2d(*curvePtr, false, geomParams.GetNetDisplayPriority());
                     break;
                     }
 
-                graphic.AddCurveVector(*curvePtr, false);
+                currGraphic->AddCurveVector(*curvePtr, false);
                 break;
                 }
 
@@ -3153,7 +3223,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                 {
                 entryId.Increment();
 
-                if (!DrawHelper::IsGeometryVisible(context, geomParams))
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, isQVis ? nullptr : &subGraphicRange))
                     break;
 
                 CurveVectorPtr curvePtr;
@@ -3168,8 +3238,8 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                     {
                     ISolidKernelEntityPtr entityPtr = SolidKernelUtil::CreateNewEntity(shape);
 
-                    DrawHelper::CookGeometryParams(context, geomParams, graphic, geomParamsChanged);
-                    graphic.AddBody(*entityPtr);
+                    DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
+                    currGraphic->AddBody(*entityPtr);
                     break;
                     }
                 else
@@ -3178,15 +3248,15 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                     }
 #endif
 
-                DrawHelper::CookGeometryParams(context, geomParams, graphic, geomParamsChanged);
+                DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
 
                 if (!context.Is3dView())
                     {
-                    graphic.AddCurveVector2d(*curvePtr, curvePtr->IsAnyRegionType() && FillDisplay::Never != geomParams.GetFillDisplay(), geomParams.GetNetDisplayPriority());
+                    currGraphic->AddCurveVector2d(*curvePtr, curvePtr->IsAnyRegionType() && FillDisplay::Never != geomParams.GetFillDisplay(), geomParams.GetNetDisplayPriority());
                     break;
                     }
 
-                graphic.AddCurveVector(*curvePtr, curvePtr->IsAnyRegionType() && FillDisplay::Never != geomParams.GetFillDisplay());
+                currGraphic->AddCurveVector(*curvePtr, curvePtr->IsAnyRegionType() && FillDisplay::Never != geomParams.GetFillDisplay());
                 break;
                 }
 
@@ -3194,7 +3264,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                 {
                 entryId.Increment();
 
-                if (!DrawHelper::IsGeometryVisible(context, geomParams))
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, isQVis ? nullptr : &subGraphicRange))
                     break;
 
                 PolyfaceQueryCarrier meshData(0, false, 0, 0, nullptr, nullptr);
@@ -3209,8 +3279,8 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                     {
                     ISolidKernelEntityPtr entityPtr = SolidKernelUtil::CreateNewEntity(shape);
 
-                    DrawHelper::CookGeometryParams(context, geomParams, graphic, geomParamsChanged);
-                    graphic.AddBody(*entityPtr);
+                    DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
+                    currGraphic->AddBody(*entityPtr);
                     break;
                     }
                 else
@@ -3219,8 +3289,8 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                     }
 #endif
 
-                DrawHelper::CookGeometryParams(context, geomParams, graphic, geomParamsChanged);
-                graphic.AddPolyface(meshData, FillDisplay::Never != geomParams.GetFillDisplay());
+                DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
+                currGraphic->AddPolyface(meshData, FillDisplay::Never != geomParams.GetFillDisplay());
                 break;
                 };
 
@@ -3228,7 +3298,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                 {
                 entryId.Increment();
 
-                if (!DrawHelper::IsGeometryVisible(context, geomParams))
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, isQVis ? nullptr : &subGraphicRange))
                     break;
 
                 ISolidPrimitivePtr solidPtr;
@@ -3243,8 +3313,8 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                     {
                     ISolidKernelEntityPtr entityPtr = SolidKernelUtil::CreateNewEntity(shape);
 
-                    DrawHelper::CookGeometryParams(context, geomParams, graphic, geomParamsChanged);
-                    graphic.AddBody(*entityPtr);
+                    DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
+                    currGraphic->AddBody(*entityPtr);
                     break;
                     }
                 else
@@ -3253,8 +3323,8 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                     }
 #endif
 
-                DrawHelper::CookGeometryParams(context, geomParams, graphic, geomParamsChanged);
-                graphic.AddSolidPrimitive(*solidPtr);
+                DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
+                currGraphic->AddSolidPrimitive(*solidPtr);
                 break;
                 }
 
@@ -3262,7 +3332,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                 {
                 entryId.Increment();
 
-                if (!DrawHelper::IsGeometryVisible(context, geomParams))
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, isQVis ? nullptr : &subGraphicRange))
                     break;
 
                 MSBsplineSurfacePtr surfacePtr;
@@ -3277,8 +3347,8 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                     {
                     ISolidKernelEntityPtr entityPtr = SolidKernelUtil::CreateNewEntity(shape);
 
-                    DrawHelper::CookGeometryParams(context, geomParams, graphic, geomParamsChanged);
-                    graphic.AddBody(*entityPtr);
+                    DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
+                    currGraphic->AddBody(*entityPtr);
                     break;
                     }
                 else
@@ -3287,8 +3357,8 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                     }
 #endif
 
-                DrawHelper::CookGeometryParams(context, geomParams, graphic, geomParamsChanged);
-                graphic.AddBSplineSurface(*surfacePtr);
+                DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
+                currGraphic->AddBSplineSurface(*surfacePtr);
                 break;
                 }
 
@@ -3300,7 +3370,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                 if (!useBRep)
                     break;
 
-                if (!DrawHelper::IsGeometryVisible(context, geomParams))
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, isQVis ? nullptr : &subGraphicRange))
                     break;
 
                 ISolidKernelEntityPtr entityPtr;
@@ -3311,8 +3381,8 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                     break;
                     }
 
-                DrawHelper::CookGeometryParams(context, geomParams, graphic, geomParamsChanged);
-                graphic.AddBody(*entityPtr);
+                DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
+                currGraphic->AddBody(*entityPtr);
                 break;
                 }
 
@@ -3323,7 +3393,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                 if (useBRep)
                     break;
 
-                if (!DrawHelper::IsGeometryVisible(context, geomParams))
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, isQVis ? nullptr : &subGraphicRange))
                     break;
 
                 PolyfaceQueryCarrier meshData(0, false, 0, 0, nullptr, nullptr);
@@ -3331,7 +3401,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                 if (!BentleyGeometryFlatBuffer::BytesToPolyfaceQueryCarrier(egOp.m_data, meshData))
                     break;
 
-                DrawHelper::CookGeometryParams(context, geomParams, graphic, geomParamsChanged);
+                DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
 
                 if (isQVis && GeometryStreamIO::OpCode::BRepPolyface == egOp.m_opCode && meshData.GetPointCount() > 1000.0)
                     {
@@ -3343,13 +3413,13 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                     if ((maxLen / graphic.GetPixelSize()) < pixelThreshold)
                         {
                         DgnBoxDetail boxDetail(range.low, DPoint3d::From(range.low.x, range.low.y, range.high.z), DVec3d::From(1.0, 0.0, 0.0), DVec3d::From(0.0, 1.0, 0.0), xLen, yLen, xLen, yLen, true);
-                        graphic.AddSolidPrimitive(*ISolidPrimitive::CreateDgnBox(boxDetail));
-                        graphic.UpdatePixelSizeRange(maxLen/pixelThreshold, DBL_MAX);
+                        currGraphic->AddSolidPrimitive(*ISolidPrimitive::CreateDgnBox(boxDetail));
+                        currGraphic->UpdatePixelSizeRange(maxLen/pixelThreshold, DBL_MAX);
                         break;
                         }
                     else
                         {
-                        graphic.UpdatePixelSizeRange(0.0, maxLen/pixelThreshold);
+                        currGraphic->UpdatePixelSizeRange(0.0, maxLen/pixelThreshold);
                         }
                     }
 
@@ -3379,11 +3449,11 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                                                                  (FloatRgb const*) meshData.GetFloatColorCP(), (RgbFactor const*) meshData.GetDoubleColorCP(), meshData.GetIntColorCP(), meshData.GetColorTableCP(),
                                                                  meshData.GetIlluminationNameCP(), meshData.GetMeshStyle(), meshData.GetNumPerRow());
 
-                    graphic.AddPolyface(sourceData);
+                    currGraphic->AddPolyface(sourceData);
                     break;
                     }
 
-                graphic.AddPolyface(meshData);
+                currGraphic->AddPolyface(meshData);
                 break;
                 }
 
@@ -3393,7 +3463,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                 if (!(isSnap || isQVWireframe))
                     break;
 
-                if (!DrawHelper::IsGeometryVisible(context, geomParams))
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, isQVis ? nullptr : &subGraphicRange))
                     break;
 
                 CurveVectorPtr curvePtr = BentleyGeometryFlatBuffer::BytesToCurveVector(egOp.m_data);
@@ -3401,8 +3471,8 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                 if (!curvePtr.IsValid())
                     break;
 
-                DrawHelper::CookGeometryParams(context, geomParams, graphic, geomParamsChanged);
-                graphic.AddCurveVector(*curvePtr, false);
+                DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
+                currGraphic->AddCurveVector(*curvePtr, false);
                 break;
                 }
 
@@ -3412,7 +3482,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                 if (!(isSnap || isQVWireframe || (isPick && isWireframe))) // Need face hatch lines for wireframe locate...
                     break;
 
-                if (!DrawHelper::IsGeometryVisible(context, geomParams))
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, isQVis ? nullptr : &subGraphicRange))
                     break;
 
                 CurveVectorPtr curvePtr = BentleyGeometryFlatBuffer::BytesToCurveVector(egOp.m_data);
@@ -3420,8 +3490,8 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                 if (!curvePtr.IsValid())
                     break;
 
-                DrawHelper::CookGeometryParams(context, geomParams, graphic, geomParamsChanged);
-                graphic.AddCurveVector(*curvePtr, false);
+                DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
+                currGraphic->AddCurveVector(*curvePtr, false);
                 break;
                 }
 #elif defined (BENTLEYCONFIG_OPENCASCADE)
@@ -3429,7 +3499,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                 {
                 entryId.Increment();
 
-                if (!DrawHelper::IsGeometryVisible(context, geomParams))
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, isQVis ? nullptr : &subGraphicRange))
                     break;
 
                 ISolidKernelEntityPtr entityPtr = DrawHelper::GetCachedSolidKernelEntity(context, element, entryId);
@@ -3442,8 +3512,8 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                     DrawHelper::SaveSolidKernelEntity(context, element, entryId, *entityPtr);
                     }
 
-                DrawHelper::CookGeometryParams(context, geomParams, graphic, geomParamsChanged);
-                graphic.AddBody(*entityPtr);
+                DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
+                currGraphic->AddBody(*entityPtr);
                 break;
                 }
 #endif
@@ -3452,7 +3522,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                 {
                 entryId.Increment();
 
-                if (!DrawHelper::IsGeometryVisible(context, geomParams))
+                if (!DrawHelper::IsGeometryVisible(context, geomParams, isQVis ? nullptr : &subGraphicRange))
                     break;
 
                 TextString  text;
@@ -3461,20 +3531,40 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                     break;
 
                 geomParamsChanged = text.GetGlyphSymbology(geomParams); // Modify for glyph draw (do we need to restore afterwards???)
-                DrawHelper::CookGeometryParams(context, geomParams, graphic, geomParamsChanged);
+                DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
 
                 if (!context.Is3dView())
                     {
-                    graphic.AddTextString2d(text, geomParams.GetNetDisplayPriority());
+                    currGraphic->AddTextString2d(text, geomParams.GetNetDisplayPriority());
                     break;
                     }
 
-                graphic.AddTextString(text);
+                currGraphic->AddTextString(text);
                 break;
                 }
 
             default:
                 break;
+            }
+
+        if (subGraphic.IsValid())
+            {
+            // NOTE: Need to cook GeometryParams to get GraphicParams, but we don't want to activate and bake into our QvElem...
+            GraphicParams graphicParams;
+            context.CookGeometryParams(geomParams, graphicParams);
+
+            subGraphic->Close(); // Make sure graphic is closed...
+            mainGraphic.AddSubGraphic(*subGraphic, Transform::FromIdentity(), graphicParams);
+
+            // NOTE: Main graphic controls what pixel range is used for all sub-graphics.
+            //       Since we can't have independent pixel range for sub-graphics, choose most restrictive...
+            double subMin, subMax;
+
+            subGraphic->GetPixelSizeRange(subMin, subMax);
+            mainGraphic.UpdatePixelSizeRange(subMin, subMax);
+
+            currGraphic = &mainGraphic;
+            subGraphic = nullptr;
             }
 
         if (context.CheckStop())
@@ -4266,7 +4356,7 @@ bool GeometryBuilder::Append(DgnGeometryPartId geomPartId, TransformCR geomToEle
     if (!geomToElement.IsIdentity())
         geomToElement.Multiply(partRange, partRange);
 
-    OnNewGeom(partRange);
+    OnNewGeom(partRange, false); // Parts are already handled as sub-graphics...
     m_writer.Append(geomPartId, &geomToElement);
 
     return true;
@@ -4297,7 +4387,7 @@ bool GeometryBuilder::Append(DgnGeometryPartId geomPartId, DPoint2dCR origin, An
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometryBuilder::OnNewGeom(DRange3dCR localRange)
+void GeometryBuilder::OnNewGeom(DRange3dCR localRange, bool isSubGraphic)
     {
     if (m_is3d)
         m_placement3d.GetElementBoxR().Extend(localRange);
@@ -4309,6 +4399,9 @@ void GeometryBuilder::OnNewGeom(DRange3dCR localRange)
         m_writer.Append(m_elParams, m_isPartCreate);
         m_appearanceChanged = false;
         }
+
+    if (isSubGraphic && !m_isPartCreate)
+        m_writer.Append(localRange);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4380,7 +4473,7 @@ bool GeometryBuilder::AppendLocal(GeometricPrimitiveCR geom)
     if (!geom.GetRange(localRange))
         return false;
 
-    OnNewGeom(localRange);
+    OnNewGeom(localRange, m_appendAsSubGraphics);
 
     if (!m_writer.AppendSimplified(geom, m_is3d))
         m_writer.Append(geom);
@@ -4449,7 +4542,7 @@ bool GeometryBuilder::Append(ICurvePrimitiveCR geom)
         if (!getRange(geom, localRange, nullptr))
             return false;
 
-        OnNewGeom(localRange);
+        OnNewGeom(localRange, m_appendAsSubGraphics);
 
         if (!m_writer.AppendSimplified(geom, false, m_is3d))
             m_writer.Append(geom);
@@ -4474,7 +4567,7 @@ bool GeometryBuilder::Append(CurveVectorCR geom)
         if (!getRange(geom, localRange, nullptr))
             return false;
 
-        OnNewGeom(localRange);
+        OnNewGeom(localRange, m_appendAsSubGraphics);
 
         if (!m_writer.AppendSimplified(geom, m_is3d))
             m_writer.Append(geom);
@@ -4505,7 +4598,7 @@ bool GeometryBuilder::Append(ISolidPrimitiveCR geom)
         if (!getRange(geom, localRange, nullptr))
             return false;
 
-        OnNewGeom(localRange);
+        OnNewGeom(localRange, m_appendAsSubGraphics);
         m_writer.Append(geom);
 
         return true;
@@ -4534,7 +4627,7 @@ bool GeometryBuilder::Append(MSBsplineSurfaceCR geom)
         if (!getRange(geom, localRange, nullptr))
             return false;
 
-        OnNewGeom(localRange);
+        OnNewGeom(localRange, m_appendAsSubGraphics);
         m_writer.Append(geom);
 
         return true;
@@ -4563,7 +4656,7 @@ bool GeometryBuilder::Append(PolyfaceQueryCR geom)
         if (!getRange(geom, localRange, nullptr))
             return false;
 
-        OnNewGeom(localRange);
+        OnNewGeom(localRange, m_appendAsSubGraphics);
         m_writer.Append(geom);
 
         return true;
@@ -4612,7 +4705,7 @@ bool GeometryBuilder::Append(ISolidKernelEntityCR geom)
         if (!getRange(geom, localRange, nullptr))
             return false;
 
-        OnNewGeom(localRange);
+        OnNewGeom(localRange, m_appendAsSubGraphics);
         m_writer.Append(geom);
 
         return true;
@@ -4644,7 +4737,7 @@ bool GeometryBuilder::Append(TextStringCR text)
         if (!getRange(text, localRange, nullptr))
             return false;
 
-        OnNewGeom(localRange);
+        OnNewGeom(localRange, m_appendAsSubGraphics);
         m_writer.Append(text);
 
         return true;
@@ -4753,6 +4846,7 @@ GeometryBuilder::GeometryBuilder(DgnDbR dgnDb, DgnCategoryId categoryId, Placeme
     m_placement2d.GetElementBoxR().Init(); //throw away pre-existing bounding box...
     m_haveLocalGeom = m_havePlacement = true;
     m_appearanceChanged = false;
+    m_appendAsSubGraphics = false;
 
     if (!(m_isPartCreate = !categoryId.IsValid())) // Called from CreateGeometryPart with invalid category...
         m_elParams.SetCategoryId(categoryId);
@@ -4767,6 +4861,7 @@ GeometryBuilder::GeometryBuilder(DgnDbR dgnDb, DgnCategoryId categoryId, Placeme
     m_placement2d.GetElementBoxR().Init(); //throw away pre-existing bounding box...
     m_haveLocalGeom = m_havePlacement = true;
     m_appearanceChanged = false;
+    m_appendAsSubGraphics = false;
 
     if (!(m_isPartCreate = !categoryId.IsValid())) // Called from CreateGeometryPart with invalid category...
         m_elParams.SetCategoryId(categoryId);
@@ -4780,6 +4875,7 @@ GeometryBuilder::GeometryBuilder(DgnDbR dgnDb, DgnCategoryId categoryId, bool is
     m_haveLocalGeom = m_havePlacement = m_isPartCreate = false;
     m_elParams.SetCategoryId(categoryId);
     m_appearanceChanged = false;
+    m_appendAsSubGraphics = false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4796,6 +4892,9 @@ GeometryBuilderPtr GeometryBuilder::CreateGeometryPart(GeometryStreamCR stream, 
             {
             case GeometryStreamIO::OpCode::Header:
                 break; // Already have header....
+
+            case GeometryStreamIO::OpCode::SubGraphicRange:
+                break; // A part must produce a single sub-graphic...
 
             case GeometryStreamIO::OpCode::GeometryPartInstance:
                 return nullptr; // Nested parts aren't supported...
