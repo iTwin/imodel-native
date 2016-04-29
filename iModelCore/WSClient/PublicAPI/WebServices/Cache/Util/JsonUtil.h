@@ -1,11 +1,12 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Cache/Util/JsonUtil.h $
+|     $Source: PublicAPI/WebServices/Cache/Util/JsonUtil.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
+//__PUBLISH_SECTION_START__
 
 #include <WebServices/Cache/WebServicesCache.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
