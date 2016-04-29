@@ -27,6 +27,8 @@ def printProgress(procStdOutLine, status_len):
 # bsimethod                                     Sam.Wilson              04/2016
 #-------------------------------------------------------------------------------------------
 def RunTest(xcodeprojpath, deviceName, okToRetry, logfile):
+    status_len = 132
+
     mustRetry = False
     failureCount = 0
     testCount = 0
@@ -48,7 +50,7 @@ def RunTest(xcodeprojpath, deviceName, okToRetry, logfile):
         #if procStdOutLine.lower().find('error') != -1:
         #    print '\n' + procStdOutLine
 
-        printProgress(procStdOutLine, 132)
+        printProgress(procStdOutLine, status_len)
 
         logfile.write(procStdOutLine)
 
@@ -74,8 +76,10 @@ def RunTest(xcodeprojpath, deviceName, okToRetry, logfile):
             print '\nERROR Failed to copy resources to device'
             return 1
         else:
+            print '\nFailed to copy resources to device. Retrying...'
             testSuiteCount, testCount, failureCount = RunTest(walkRoot, dirName, deviceName, False)
 
+    printProgress(' ', status_len)
     print '{0} suites, {1} tests, {2} failures'.format(testSuiteCount, testCount, failureCount)
 
     # if any test fails to build or if any test does not succeed, the xcodebuild test command should return a non-zero status. 
