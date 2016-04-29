@@ -30,18 +30,22 @@ WString stringToWString(const Utf8String &str)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                    04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-CWSCC_EXPORT void ConnectWebServicesClientC_DataBufferFree
+CWSCC_EXPORT CALLSTATUS ConnectWebServicesClientC_DataBufferFree
 (
 CWSCCDATABUFHANDLE dataBuffer
 )
     {
     if (nullptr == dataBuffer)
-        return;
+        return CALLSTATUS {INVALID_PARAMETER, "Invalid parameter passed to function", "The dataBuffer passed into the property get function is a nullptr."};
 
     HCWSCCBUFFER buf = (HCWSCCBUFFER)dataBuffer;
-    //if(buf->lItems != nullptr)
-        //free(buf->lItems);
+    for (auto it = buf->lItems.begin(); it != buf->lItems.end(); it++)
+        {
+        if (it != nullptr)
+            delete *it;
+        }
     free(buf);
+    return CALLSTATUS {SUCCESS, "Successful operation", "CWSCC_DataBufferFree completed successfully."};
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -166,7 +166,7 @@ typedef enum
 * \brief Free an allocated data buffer
 * \param[in] dataBuffer Data buffer
 ****************************************************************************************/
-CWSCC_EXPORT void ConnectWebServicesClientC_DataBufferFree
+CWSCC_EXPORT CALLSTATUS ConnectWebServicesClientC_DataBufferFree
 (
 CWSCCDATABUFHANDLE dataBuffer
 );

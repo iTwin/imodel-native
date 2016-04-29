@@ -57,7 +57,7 @@ class CPublicBufferHeaderWriter(HeaderWriter):
         self._file.write(self._COMMENT_GroupBriefLong
                          .format("Free an allocated data buffer",
                                  "\param[in] dataBuffer Data buffer"))
-        self._file.write("{0}_EXPORT void {1}_DataBufferFree\n".format(self._api.get_upper_api_acronym(), self._api.get_api_name()))
+        self._file.write("{0}_EXPORT CALLSTATUS {1}_DataBufferFree\n".format(self._api.get_upper_api_acronym(), self._api.get_api_name()))
         self._file.write("(\n")
         self._file.write("{0}DATABUFHANDLE dataBuffer\n".format(self._api.get_upper_api_acronym()))
         self._file.write(");\n")
