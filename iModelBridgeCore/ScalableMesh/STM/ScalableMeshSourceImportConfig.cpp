@@ -187,26 +187,7 @@ void SourceImportConfig::SetReplacementSMData(const Import::ScalableMeshData& da
 
 const ScalableMeshData& SourceImportConfig::GetReplacementSMData() const
 {
-#if 0
-    struct SMDataVisitor : ContentConfigVisitor
-    {
-        const ScalableMeshData*      m_foundSMData;
-        explicit        SMDataVisitor() : m_foundSMData(&ScalableMeshData::GetNull()) {}
 
-        virtual void    _Visit(const ScalableMeshConfig& config) override
-        {
-            m_foundSMData = &config.GetScalableMeshData();
-        }
-
-    };
-
-    SMDataVisitor visitor;
-    if (m_implP.get() == nullptr) return ScalableMeshData::GetNull();
-    m_implP->m_contentConfig.Accept(visitor);
-
-    assert(0 != visitor.m_foundSMData);
-    return *visitor.m_foundSMData;
-#endif
     return m_implP->m_contentConfig.GetScalableMeshConfig().GetScalableMeshData();
 }
 

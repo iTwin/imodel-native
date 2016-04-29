@@ -733,7 +733,7 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<IndexType>&       
             dbFilePath.ReplaceI(L".stm", L".db");
             pFinalTileStore = new TileStoreType(m_smSQLitePtr);
             pIndiceTileStore = new SMSQLiteIndiceTileStore<YProtPtExtentType >(m_smSQLitePtr);
-            // SM_NEEDS_WORKS : layerID 
+
             pUVTileStore = new SMSQLiteUVTileStore<YProtPtExtentType >(m_smSQLitePtr);
             pUVsIndicesTileStore = new SMSQLiteUVIndiceTileStore<YProtPtExtentType >(m_smSQLitePtr);
             pTextureTileStore = new SMSQLiteTextureTileStore(m_smSQLitePtr);

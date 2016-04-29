@@ -684,7 +684,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
         if (!LoadGCSFrom())
             return BSIERROR; // Error loading layer gcs
 
-        bool hasPoints = m_smSQLitePtr->HasPoints(); // NEEDS_WORKS : add AddPOints To DataSQLite, and test if there are somes points in the database.
+        bool hasPoints = m_smSQLitePtr->HasPoints(); 
 
 
 
@@ -794,7 +794,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                                                        false,
                                                        false,
                                                        0,
-                                                       0);  //NEEDS_WORK_SM - Should we store mesher information in STM file like filter?
+                                                       0);  
                     }
 
                 m_scmIndexPtr->m_useSTMFormat = false;

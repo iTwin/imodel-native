@@ -1469,7 +1469,7 @@ template<class POINT> class ScalableMeshCachedDisplayNode : public virtual IScal
     };
        
 
-//NEEDS_WORK_SM : Should inherit from ScalableMeshNode instead
+
 template<class POINT> class ScalableMeshNodeEdit : public IScalableMeshNodeEdit, public ScalableMeshNode<POINT>
 
     {

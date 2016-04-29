@@ -380,8 +380,7 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
                 else
                     node->ClearPtsIndices();
                 
-                //NEEDS_WORK_SM Avoid some assert                            
-                //delete [] pPiggyBackMeshIndexes; 
+
                 if (node->IsLeaf() && node->size() != node->m_nodeHeader.m_totalCount)
                     {
                     node->m_nodeHeader.m_totalCount = node->size();
@@ -2067,7 +2066,7 @@ return true;
             MTGARRAY_END_SET_LOOP(edgeID, meshGraph)
                 meshGraph->ClearMask(visitedMask);
                 meshGraph->DropMask(visitedMask);*/
-            //NEEDS_WORK_SM - Bad name - should be nbFacesIndexes
+
             node->m_nodeHeader.m_nbFaceIndexes = faceIndexes.size();//meshP->GetNbFaceIndexes();
             if (componentPointsId.size() > 0)
                 {

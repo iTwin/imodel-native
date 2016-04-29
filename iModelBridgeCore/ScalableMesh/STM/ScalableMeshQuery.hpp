@@ -1304,10 +1304,7 @@ template <class POINT> void ScalableMeshNode<POINT>::ComputeDiffSet(DifferenceSe
         else
             {
 #endif
-            //NEEDS_WORK_SM_ELENIE : Remove shift, use full 64 bits
-            //uint64_t lowerId = (d.clientID << 32) >> 32;
-                        
-            //uint64_t upperId = (d.clientID >> 32);
+
             if (d.toggledForID && (d.clientID == 0 || (d.clientID < ((uint64_t)-1) && clipsToShow.count(d.clientID) == 0) && d.upToDate))
                 {
                 //meshPtr->ApplyDifferenceSet(d);
