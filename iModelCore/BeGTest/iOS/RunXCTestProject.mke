@@ -16,15 +16,23 @@
     %error This makefile should be used only when TARGET_PLATFORM is iOS
 %endif
 
-%ifndef TEST_XCTEST_PRODUCT
-    %error Define TEST_XCTEST_PRODUCT as the name of the Product in the output directory that contains BeTestiOS.xcodeproj for the specified test suite.
+%ifndef XCTEST_PRODUCT
+    %error Define XCTEST_PRODUCT as the name of the Product in the output directory that contains BeTestiOS.xcodeproj for the specified test suite.
 %endif
 
-XCODEPROJ=$(OutputRootDir)Product/$(TEST_XCTEST_PRODUCT)/BeTestiOS.xcodeproj
+%ifndef XCTEST_OUTPUT_DIR
+    %error Define XCTEST_OUTPUT_DIR as the name of the directory in which to create $(XCTEST_PRODUCT).log
+%endif
+
+XCODEPROJ=$(OutputRootDir)Product/$(XCTEST_PRODUCT)/BeTestiOS.xcodeproj
 
 %ifnofile $(XCODEPROJ)
     %error $(XCODEPROJ) not found.
 %endif
 
+logFile = ${XCTEST_OUTPUT_DIR}/$(XCTEST_PRODUCT).log
+
 always:
-    $(RunPrefix) python $(_MakeFilePath)RunXCTests.py $(XCODEPROJ) '$(BENTLEY_RUN_XCTEST_DEVICE_NAME)'
+    !~@mkdir ${XCTEST_OUTPUT_DIR}
+    |  See $(logFile) for details
+    $(RunPrefix) python $(_MakeFilePath)RunXCTests.py $(XCODEPROJ) '$(BENTLEY_RUN_XCTEST_DEVICE_NAME)' $(logFile)
