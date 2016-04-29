@@ -427,7 +427,7 @@ TEST_F(ECDbSchemaUpgradeTests, UpdateCAProperties)
         SetupECDb("schemaupgrade.ecdb", schemaItem);
         ASSERT_TRUE(GetECDb().IsDbOpen());
         ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
-        BeBriefcaseId newClientSideBriefcaseId = GetECDb().GetBriefcaseId().GetNextBriefcaseId();
+        BeBriefcaseId newClientSideBriefcaseId(123);
         GetECDb().ChangeBriefcaseId(newClientSideBriefcaseId);
         //Upgrade with some attributes and import schema
         SchemaItem editedSchemaItem(

@@ -763,6 +763,9 @@ BentleyStatus ECDbMap::CreateOrUpdateRequiredTables() const
     int nUpdated = 0;
     int nSkipped = 0;
 
+    BeBriefcaseId briefcaseId = m_ecdb.GetBriefcaseId();
+    bool allowSchemaChange = briefcaseId.IsMasterId() || briefcaseId.IsStandaloneId();
+
     for (auto& pair : GetDbSchemaR().GetTables())
         {
         DbTable* table = pair.second.get();
@@ -773,7 +776,7 @@ BentleyStatus ECDbMap::CreateOrUpdateRequiredTables() const
             {
             if (DbSchemaPersistenceManager::IsTableChanged(m_ecdb, *table))
                 {
-                if(!m_ecdb.GetBriefcaseId().IsMasterId())
+                if(!allowSchemaChange)
                     {
                     m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Any change to sqlite database schema (excluding constraints) is only allowed for client side breifcase [BriefcaseId = %d].",
                                                                     m_ecdb.GetBriefcaseId().GetValue());
@@ -790,7 +793,7 @@ BentleyStatus ECDbMap::CreateOrUpdateRequiredTables() const
             }
         else
             {
-            if (!m_ecdb.GetBriefcaseId().IsMasterId())
+            if (!allowSchemaChange)
                 {
                 m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Any change to sqlite database schema (excluding constraints) is only allowed for client side breifcase [BriefcaseId = %d].",
                                                                 m_ecdb.GetBriefcaseId().GetValue());
