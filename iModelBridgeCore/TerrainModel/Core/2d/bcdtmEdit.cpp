@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmEdit.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
@@ -3226,7 +3226,7 @@ BENTLEYDTM_Private int bcdtmEdit_resolveIslandsVoidsHolesDtmObject(BC_DTM_OBJ *d
 ** Triangulate The Data Object
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Triangulating DTM") ;
- // TODO: DH if( bcdtmExtObject_triangulateDtmObject(dtmP)) goto errexit ;
+ if( bcdtmObject_triangulateDtmObject(dtmP)) goto errexit ;
 /*
 ** Remove None Feature Hull Lines
 */
@@ -4100,9 +4100,7 @@ BENTLEYDTM_Private int bcdtmEdit_deleteInternalVoidPointsAndLinesAndRetriangulat
  if( dbg ) bcdtmWrite_message(0,0,0,"Before Triangulation ** voidDtmP->numPoints = %8ld",voidDtmP->numPoints ) ;
  if( dbg ) bcdtmWrite_toFileDtmObject(voidDtmP,L"untriangulatedVoid.dtm") ;
  bcdtmObject_setTriangulationParametersDtmObject(voidDtmP,dtmP->mppTol*10.0,dtmP->mppTol*10.0,1,0.0) ;
- //DTM_NORMALISE_OPTION = false ;
- //// TODO: DH if( bcdtmExtObject_triangulateDtmObject(voidDtmP)) goto errexit ;
- //DTM_NORMALISE_OPTION = true ;
+ if( bcdtmObject_triangulateDtmObject(voidDtmP,false)) goto errexit ;
  if( dbg ) bcdtmWrite_message(0,0,0,"After  Triangulation ** voidDtmP->numPoints = %8ld",voidDtmP->numPoints ) ;
 /*
 ** Remove Non Feature Hull Lines
