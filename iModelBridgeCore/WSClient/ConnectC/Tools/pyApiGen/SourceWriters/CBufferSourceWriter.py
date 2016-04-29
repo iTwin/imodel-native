@@ -61,18 +61,28 @@ class CBufferSourceWriter(SourceWriter):
 
     def __write_api_buffer_free_function(self):
         self._file.write(self._COMMENT_BsiMethod)
-        self._file.write("{0}_EXPORT void {1}_DataBufferFree\n".format(self._api.get_upper_api_acronym(),
-                                                                       self._api.get_api_name()))
+        self._file.write("{0}_EXPORT CALLSTATUS {1}_DataBufferFree\n".format(self._api.get_upper_api_acronym(),
+                                                                             self._api.get_api_name()))
         self._file.write("(\n")
         self._file.write("{0}DATABUFHANDLE dataBuffer\n".format(self._api.get_upper_api_acronym()))
         self._file.write(")\n")
         self._file.write("    {\n")
         self._file.write("    if (nullptr == dataBuffer)\n")
-        self._file.write("        return;\n\n")
+        self._file.write('        return CALLSTATUS {{{0}, "{1}", "{2}"}};\n\n'
+                         .format("INVALID_PARAMETER",
+                                 self._status_codes["INVALID_PARAMETER"].message,
+                                 "The dataBuffer passed into the property get function is a nullptr."))
         self._file.write("    H{0}BUFFER buf = (H{0}BUFFER)dataBuffer;\n".format(self._api.get_api_acronym()))
-        self._file.write("    //if(buf->lItems != nullptr)\n")
-        self._file.write("        //free(buf->lItems);\n")
+        self._file.write("    for (auto it = buf->lItems.begin(); it != buf->lItems.end(); it++)\n")
+        self._file.write("        {\n")
+        self._file.write("        if (it != nullptr)\n")
+        self._file.write("            delete *it;\n")
+        self._file.write("        }\n")
         self._file.write("    free(buf);\n")
+        self._file.write('    return CALLSTATUS {{{0}, "{1}", "{2}"}};\n'.format("SUCCESS", self._status_codes["SUCCESS"].message,
+                                                                                 "{0}_DataBufferFree completed successfully."
+                                                                                 .format(self._api.get_upper_api_acronym())))
+
         self._file.write("    }\n")
 
     def __write_api_buffer_count_function(self):
