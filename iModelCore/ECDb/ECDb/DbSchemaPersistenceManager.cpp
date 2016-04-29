@@ -1385,6 +1385,7 @@ void AssertPersistedEnumsAreUnchanged()
                   (int) CustomAttributeContainerType::RelationshipClass == 16 &&
                   (int) CustomAttributeContainerType::Schema == 1 &&
                   (int) CustomAttributeContainerType::SourceRelationshipConstraint == 1024 &&
+                  (int) CustomAttributeContainerType::StructProperty == 64 &&
                   (int) CustomAttributeContainerType::StructArrayProperty == 256 &&
                   (int) CustomAttributeContainerType::StructClass == 8 &&
                   (int) CustomAttributeContainerType::TargetRelationshipConstraint == 2048, "Persisted Enum has changed: ECN::CustomAttributeContainerType.");
@@ -1439,6 +1440,10 @@ void AssertPersistedEnumsAreUnchanged()
                   (int) ECPropertyKind::PrimitiveArray == 2 &&
                   (int) ECPropertyKind::Struct == 1 &&
                   (int) ECPropertyKind::StructArray == 3, "Persisted Enum has changed: ECPropertyKind.");
+
+    static_assert((int) StrengthType::Embedding == 2 &&
+                  (int) StrengthType::Holding == 1 &&
+                  (int) StrengthType::Referencing == 0, "Persisted Enum has changed: ECN::StrengthType.");
 
     static_assert((int) ECRelatedInstanceDirection::Backward == 2 &&
                   (int) ECRelatedInstanceDirection::Forward == 1, "Persisted Enum has changed: ECN::ECRelatedInstanceDirection.");
