@@ -2306,7 +2306,9 @@ TEST_F(PerformanceElementsCRUDTestFixture, DeleteApi)
     }
 
 // Uncomment this to profile ElementLocksPerformanceTest
-//#define PROFILE_ELEMENT_LOCKS_TEST 1
+// #define PROFILE_ELEMENT_LOCKS_TEST 1
+// Uncomment this to output timings of ElementLocksPerformanceTest runs
+// #define PRINT_ELEMENT_LOCKS_TEST 1
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   04/16
@@ -2339,7 +2341,7 @@ struct ElementLocksPerformanceTest : PerformanceElementsCRUDTestFixture
             }
 
         timer.Stop();
-#ifdef PROFILE_ELEMENT_LOCKS_TEST
+#ifdef PRINT_ELEMENT_LOCKS_TEST
         printf("%ls (%d): %f\n", dbName, m_db->GetBriefcaseId().GetValue(), timer.GetElapsedSeconds());
 #endif
 
