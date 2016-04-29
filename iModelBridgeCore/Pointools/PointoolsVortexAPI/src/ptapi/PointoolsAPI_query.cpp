@@ -435,7 +435,7 @@ namespace querydetail
 			currentVoxel = vox;
 
 			/* rgb */
-			boost::mutex::scoped_lock lock(vox->mutex()); ///!ToDo: can we put this inside a nested scope with some of the code below in order the relinquish the lock ASAP? I.e.,  { boost::mutex::scoped_lock lock(vox->mutex()); vortex::VoxelLoader load( doload ? vox : 0, amount, false, false); /* ... */ ; }  /* ... more code before end of function */
+            std::lock_guard<std::mutex> lock(vox->mutex()); ///!ToDo: can we put this inside a nested scope with some of the code below in order the relinquish the lock ASAP? I.e.,  { boost::mutex::scoped_lock lock(vox->mutex()); vortex::VoxelLoader load( doload ? vox : 0, amount, false, false); /* ... */ ; }  /* ... more code before end of function */
 			pointsengine::VoxelLoader load( doload ? vox : 0, amount, false, false); ///!Trac ticket #312 Here we feed in the overall density to be used per-voxel that can be tiny (truncate to integer zero) if the cloud is large and the query is small.
 
 			// get channels
@@ -781,8 +781,8 @@ namespace querydetail
 			if(!begin)
 				return true;
 
-															// Lock Voxel
-			boost::mutex::scoped_lock lock(vox->mutex());
+															
+            std::unique_lock<std::mutex> lock(vox->mutex());
 
 															// Calculate load details based on LODs and density settings
 			amount = calculateVoxelLoad(vox, doLoad);
@@ -969,9 +969,9 @@ namespace querydetail
 					Status::log(L"ReadPoints::processDeferredVoxels() iterator failed failed", L"");
 					return false;
 				}
-															// Lock Voxel
-				boost::mutex::scoped_lock lock(voxel->mutex());
 
+                std::lock_guard<std::mutex> lock(voxel->mutex());
+                
 															// Set the bounds
 				getNodeBounds(voxel, objCsBounds);
 				bool res = C->boundsCheck(objCsBounds);
@@ -1617,7 +1617,7 @@ namespace querydetail
 					{
 						CountPoints<Condition> counter( &C );
 					
-						boost::mutex::scoped_lock lock(v->mutex());
+                        std::lock_guard<std::mutex> lock(v->mutex());
 
 						// need to load to make this evaluation
 						pointsengine::VoxelLoader load( v, densityCoeff, false, false);
@@ -3652,7 +3652,7 @@ public:
 		{
 			currentVoxel = vox;
 
-			boost::mutex::scoped_lock lock(vox->mutex(), boost::try_to_lock);
+            std::unique_lock<std::mutex> lock(vox->mutex(), std::try_to_lock);
 			if (lock.owns_lock())
 			{
 				bool	doload = false;

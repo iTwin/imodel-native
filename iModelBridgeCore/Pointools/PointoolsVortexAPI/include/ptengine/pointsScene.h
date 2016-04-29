@@ -9,7 +9,6 @@
 #ifndef POINTOOLS_POINTCLOUD_SCENE
 #define POINTOOLS_POINTCLOUD_SCENE 1
 
-#include <boost/thread/mutex.hpp>
 
 #include <ptcloud2/scene.h>
 #include <ptengine/ptengine_api.h>
@@ -119,7 +118,7 @@ private:
 	/* remove file notification */ 
 	std::list< FileObserver * > _fileObs;
 
-	boost::try_mutex _mutex;
+    std::mutex _mutex;
 	int	_iteration;
 };
 }

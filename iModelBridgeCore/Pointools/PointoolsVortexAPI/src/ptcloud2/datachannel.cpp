@@ -16,18 +16,12 @@
 #include <ptcloud2\datachannel.h>
 #include <pt\geomtypes.h>
 
-#define BOOST_NO_LIMITS_COMPILE_TIME_CONSTANTS	1
-//#define BOOST_NO_MEMBER_TEMPLATE_FRIENDS	1
-#include <boost/random/random_number_generator.hpp>
-#include <boost/random/lagged_fibonacci.hpp>
-#ifndef POINTOOLS_POD_API
-#include <boost/thread/mutex.hpp>
-#endif
 
 #include <pt/ptstring.h>
 #include <pt\boundingbox.h>
 
 #include <pt/trace.h>
+#include <random>
 
 using namespace pcloud;
 using namespace pt;
@@ -323,10 +317,9 @@ void DataChannel::generateRandomIndex(std::vector<int> &index) const
 	for (int i=0; i<_count; i++) index.push_back(i);
 	
 	/*randomize order of points*/ 
-	static boost::lagged_fibonacci1279 _rng;
-	typedef boost::random_number_generator<boost::lagged_fibonacci1279> RNG;
-	RNG rng(_rng);
-	std::random_shuffle(index.begin(), index.end(), rng);
+    std::random_device rd;
+    std::mt19937 rng(rd());
+	std::shuffle(index.begin(), index.end(), rng);
 }
 //-----------------------------------------------------------------------------
 bool DataChannel::repositionByIndex(const std::vector<int> &index)

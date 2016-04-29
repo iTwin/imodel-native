@@ -146,7 +146,7 @@ namespace pcloud
 
 		/* node mutex for sync access, not used for POD Writer library to reduce dependencies */ 
 #ifndef POINTOOLS_POD_API
-		inline boost::try_mutex &mutex()  { return _mutex; }
+		inline std::mutex &mutex()  { return _mutex; }
 #endif
 		/* extent of last editing progress as number of points */ 
 		inline uint numPointsEdited() const		{ return _numPointsEdited; }
@@ -827,7 +827,10 @@ namespace pcloud
 
 		DataChannel*	_channels[MAX_CHANNELS];	// data channels
 #ifndef POINTOOLS_POD_API
-		boost::try_mutex _mutex;				// mutex for access, not required in POD Writer API
+        // Used to be boost::try_mutex: 
+        // From boost doc: "boost::try_mutex is a typedef to boost::mutex, provided for backwards compatibility with previous releases of boost. "
+        // So it is basically a std mutex.  Use _mutex.try_lock to get that behavior.
+        std::mutex _mutex;				// mutex for access, not required in POD Writer API
 #endif
 
 		// used at creation time to stratify points by reordering. Returns num of generated strata, last one contains remaining points

@@ -160,7 +160,7 @@ bool PointsPager::initialize()
 	PTTRACE("PointsPager::initialize"); 
 
 	Pager p;
-	pp.pager = new boost::thread(p);
+	pp.pager = new std::thread(p);
 	pp.live = false;
 
 	thePointsScene().addFileObserver( &g_pagerFileObserver );
@@ -379,7 +379,8 @@ void PointsPager::Pager::balanceMemoryLoad( int deltamb )
 					/* find voxels that are 64kb or larger */ 
 					if (j || vox->lodPointCount() > 32768)
 					{					
-						boost::mutex::scoped_lock vlock(vox->mutex());
+
+                        std::unique_lock<std::mutex> vlock(vox->mutex());
 						if (vlock.try_lock())
 						{
 							vox->flag( pcloud::OutOfCore, true );
@@ -414,7 +415,7 @@ void PointsPager::Pager::balanceMemoryLoad( int deltamb )
 			
 			if (vox->flag( pcloud::OutOfCore ))
 			{
-				boost::mutex::scoped_lock vlock(vox->mutex(), boost::try_to_lock);
+                std::unique_lock<std::mutex> vlock(vox->mutex(), std::try_to_lock);
 				if (!vlock.owns_lock()) continue;
 
 				vox->flag( pcloud::OutOfCore, false );
@@ -452,7 +453,7 @@ __int64 PointsPager::Pager::purgeData( int mb )
 		--i;
 		vox = *i;
 
-		boost::mutex::scoped_lock vlock(vox->mutex(), boost::try_to_lock);
+        std::unique_lock<std::mutex> vlock(vox->mutex(), std::try_to_lock);
 
 		if (vlock.owns_lock())
 		{
@@ -655,7 +656,7 @@ void PointsPager::Pager::processRequests(pointsengine::StreamManager &streamMana
 {		
 	PTTRACE("PointsPager::processRequests"); 
 
-	boost::mutex::scoped_lock pauseLock( pp.pausemutex );
+    std::unique_lock<std::mutex> pauseLock( pp.pausemutex );
 
 	/* locals */ 
 	pcloud::Voxel	*vox;
@@ -826,7 +827,7 @@ void PointsPager::Pager::processRequests(pointsengine::StreamManager &streamMana
 		/* unload */ 
 		if ((am >= 0 && ami < lod) || (!ooc && new_ooc)) 
 		{
-			boost::mutex::scoped_lock vlock( vox->mutex(), boost::try_to_lock );
+            std::unique_lock<std::mutex> vlock( vox->mutex(), std::try_to_lock );
 			if (vlock.owns_lock())
 			{
 				vox->flag( pcloud::OutOfCore, new_ooc );
@@ -842,7 +843,7 @@ void PointsPager::Pager::processRequests(pointsengine::StreamManager &streamMana
 		{
 			if (!checkFlags()) return;	//check for pause or quit flags
 
-			boost::mutex::scoped_lock vlock( vox->mutex(), boost::try_to_lock );
+            std::unique_lock<std::mutex> vlock( vox->mutex(), std::try_to_lock );
 			if (vlock.owns_lock())
 			{
 				vox->flag( pcloud::OutOfCore, new_ooc );
@@ -1023,7 +1024,7 @@ int VoxelLoader::loadVoxel(pcloud::Voxel *vox, float lodRead, bool full, bool lo
 		bool dofilter = pointsFilteringState().filterPagingByDisplay();
 		uint channelbit = 1;
 
-		boost::mutex::scoped_lock vlock(vox->mutex(), boost::defer_lock);
+		std::unique_lock<std::mutex> vlock(vox->mutex(), std::defer_lock);
 
 		try 
 		{
@@ -1166,7 +1167,7 @@ int VoxelLoader::unloadVoxel(pcloud::Voxel *vox, float amount, bool lock )
 		return 0;
 	}
 	
-	boost::mutex::scoped_lock vlock(vox->mutex(), boost::defer_lock);
+    std::unique_lock<std::mutex> vlock(vox->mutex(), std::defer_lock);
 	try { if (lock) vlock.lock(); }
 	catch(...) { }
 

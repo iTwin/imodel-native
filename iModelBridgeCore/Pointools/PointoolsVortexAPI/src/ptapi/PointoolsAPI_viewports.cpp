@@ -959,7 +959,7 @@ static float screenToActual(PTint sx, PTint sy, PTdouble *actual, PTfloat *depth
 		if (px < 16 && px >= 0)
 		{
 			double a[3];
-			double v[]= { sx,sy,usedepth[px] };
+			double v[]= { (double)sx, (double)sy,usedepth[px] };
 			vstore.unproject3v(a, v);
 			for (i=0; i<3; i++) actual[i] = (float)a[i];
 			return usedepth[px];

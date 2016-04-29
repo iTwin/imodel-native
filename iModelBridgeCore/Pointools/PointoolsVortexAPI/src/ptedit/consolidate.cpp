@@ -63,7 +63,7 @@ bool ConsolidateVisitor::visitNode( const pcloud::Node *node )
 				
 			if (!_doSelState && !isChannelComplete) return false;
 
-			boost::try_mutex::scoped_lock lock(_currentVoxel->mutex());
+            std::lock_guard<std::mutex> lock(_currentVoxel->mutex());
 			_currentVoxel->channel(pcloud::PCloud_Filter)->getval(_lyrstate, 0);
 
 			_selstate = _lyrstate & SELECTED_PNT_BIT ? true : false;

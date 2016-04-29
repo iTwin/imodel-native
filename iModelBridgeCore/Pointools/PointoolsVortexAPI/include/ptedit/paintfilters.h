@@ -419,7 +419,7 @@ namespace ptedit
 					rgb = _currentVoxel->channel(pcloud::PCloud_RGB);
 					if (!rgb) return false;
 
-					boost::try_mutex::scoped_lock lock(_currentVoxel->mutex());			
+					std::lock_guard<std::mutex> lock(_currentVoxel->mutex());
 					VoxFiltering::iteratePoints( _currentVoxel, *this, lst );
 					VoxFiltering::setPoint( _currentVoxel );
 					_currentVoxel->flag(pcloud::Painted, true);
@@ -484,7 +484,7 @@ namespace ptedit
 					rgb = _currentVoxel->channel(pcloud::PCloud_RGB);
 					if (!rgb) return false;
 
-					boost::try_mutex::scoped_lock lock(_currentVoxel->mutex());			
+                    std::lock_guard<std::mutex> lock(_currentVoxel->mutex());
 					VoxFiltering::iteratePoints( _currentVoxel, *this, lst );
 					VoxFiltering::setPoint( _currentVoxel );
 					

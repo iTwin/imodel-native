@@ -143,7 +143,7 @@ StreamHost::NumVoxels StreamHost::getNumVoxelsActiveInReadBudget(unsigned int ma
 															// Add number of reads required by voxel (one for each channel)
 		if(voxel = streamVoxel.getVoxel())
 		{
-			boost::mutex::scoped_lock vlock(voxel->mutex());
+            std::lock_guard<std::mutex> vlock(voxel->mutex());
 
 			numReads += voxel->getNumChannels();
 		}

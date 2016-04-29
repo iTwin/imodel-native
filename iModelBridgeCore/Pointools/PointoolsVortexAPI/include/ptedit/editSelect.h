@@ -368,7 +368,7 @@ private:
 				}
 			}
 
-			boost::try_mutex::scoped_lock lock(_currentVoxel->mutex());						// need a lock here, will block
+            std::lock_guard<std::mutex> lock(_currentVoxel->mutex());                   // need a lock here, will block
 
 			int selected = _didSelect;
 			VoxFiltering::iteratePoints( _currentVoxel, *this, cst );						// run selection test per point
@@ -475,7 +475,7 @@ private:
 				ubyte initial_val = 0;
 				if ( _currentVoxel->flag(pcloud::WholeSelected) ) initial_val |= SELECTED_PNT_BIT;
 				
-				boost::try_mutex::scoped_lock lock(_currentVoxel->mutex());
+                std::lock_guard<std::mutex> lock(_currentVoxel->mutex());
 
 				/* if currently fully selected, no filter channel will exist. We need to fill a channel with sel value */ 
 				_currentVoxel->buildEditChannel( initial_val );

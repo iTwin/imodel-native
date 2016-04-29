@@ -3,9 +3,7 @@
 #include <ptcmdppe/cmdstate.h>
 #include <ptcmdppe/cmdoutput.h>
 #include <windows.h>
-#ifndef POINTOOLS_POD_API
-#include <boost/thread/mutex.hpp>
-#endif
+
 
 using namespace ptapp;
 
@@ -13,7 +11,7 @@ namespace cmdppe_private
 {
 	CmdOutput *_output = 0;
 #ifndef POINTOOLS_POD_API
-	boost::mutex progress_mutex;
+	std::mutex progress_mutex;
 #endif
 }
 using namespace cmdppe_private;
@@ -40,7 +38,7 @@ CmdProgress::CmdProgress(const char *st, int mn, int mx, bool dedicated_win)
 	if (_output)
 	{
 #ifndef POINTOOLS_POD_API
-		boost::mutex::scoped_lock lock(progress_mutex);
+        std::lock_guard<std::mutex> lock(progress_mutex);
 #endif
 
 		_output->progressReset();
@@ -56,7 +54,7 @@ CmdProgress::~CmdProgress()
 	if (_output)
 	{
 #ifndef POINTOOLS_POD_API
-		boost::mutex::scoped_lock lock(progress_mutex);
+        std::lock_guard<std::mutex> lock(progress_mutex);
 #endif
 	/*unregister job;*/ 
 		_output->ready();
@@ -69,7 +67,7 @@ void CmdProgress::inc(int amount)
 	if (_output)
 	{	
 #ifndef POINTOOLS_POD_API
-		boost::mutex::scoped_lock lock(progress_mutex);
+        std::lock_guard<std::mutex> lock(progress_mutex);
 #endif
 		_output->progressInc(amount);
 		_output->flush();
@@ -80,7 +78,7 @@ void CmdProgress::inc()
 	if (_output)
 	{
 #ifndef POINTOOLS_POD_API
-		boost::mutex::scoped_lock lock(progress_mutex);
+        std::lock_guard<std::mutex>lock(progress_mutex);
 #endif
 		_output->progressInc();
 		_output->flush();
@@ -91,7 +89,7 @@ void CmdProgress::set(int amount)
 	if (_output)
 	{
 #ifndef POINTOOLS_POD_API
-		boost::mutex::scoped_lock lock(progress_mutex);
+        std::lock_guard<std::mutex> lock(progress_mutex);
 #endif
 		_output->progressSet(amount);
 		_output->flush();
@@ -103,7 +101,7 @@ void CmdProgress::status(const char* st)
 	if (_output)
 	{
 #ifndef POINTOOLS_POD_API
-		boost::mutex::scoped_lock lock(progress_mutex);
+        std::lock_guard<std::mutex> lock(progress_mutex);
 #endif
 		_output->progress(st);
 		_output->flush();

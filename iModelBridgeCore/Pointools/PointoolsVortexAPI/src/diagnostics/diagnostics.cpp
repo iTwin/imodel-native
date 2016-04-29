@@ -2,12 +2,15 @@
 #include <pt/os.h>
 #include <diagnostics/diagnostics.h>
 
+#ifdef HAVE_BOOST
 #define BOOST_DATE_TIME_NO_LIB
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/interprocess/ipc/message_queue.hpp>
+using namespace boost::interprocess;
+#endif
 
 using namespace ptdg;
-using namespace boost::interprocess;
+
 
 #define maxsize( A, B ) ((sizeof(A) > sizeof(B)) ? sizeof(A) : sizeof(B))
 
@@ -17,7 +20,9 @@ namespace ptdg {
 //-----------------------------------------------------------------------------
 Diagnostics::Diagnostics()
 {
+#ifdef HAVE_BOOST
 	m_ptmq = 0;
+#endif
 }
 Diagnostics *Diagnostics::instance()
 {
@@ -32,15 +37,18 @@ Diagnostics *Diagnostics::instance()
 //-----------------------------------------------------------------------------
 Diagnostics::~Diagnostics()
 {
+#ifdef HAVE_BOOST
 	if (m_ptmq) 
 	{
 		message_queue::remove("ptvortex");	
 		delete m_ptmq;
 	}
+#endif
 }
 //-----------------------------------------------------------------------------
 void Diagnostics::addMetric(ptdg::MetricTypeID id, ubyte *data, int size)
 {
+#ifdef HAVE_BOOST
 	if (!m_ptmq) return;
 
 	int idi = (int)id;
@@ -51,10 +59,12 @@ void Diagnostics::addMetric(ptdg::MetricTypeID id, ubyte *data, int size)
 
 	// Send data
 	m_ptmq->try_send( block, size+sizeof(int), 0 ); 
+#endif
 }
 //-----------------------------------------------------------------------------
 bool Diagnostics::initialise() 
 {
+#ifdef HAVE_BOOST
 	if (m_ptmq) return true;
 
 	char hasDiag[16]; 
@@ -88,5 +98,8 @@ bool Diagnostics::initialise()
 	}   
 	}
 	return true;
+#else
+    return false;
+#endif
 }
 //-----------------------------------------------------------------------------

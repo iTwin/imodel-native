@@ -4,9 +4,11 @@
 #include <pt/typedefs.h>
 #include <queue>
 
-//namespace boost { 	namespace interprocess { class message_queue; } }
+#ifdef HAVE_BOOST
+    namespace boost { 	namespace interprocess { class message_queue; } }
 
-#include <boost/interprocess/ipc/message_queue.hpp>
+    #include <boost/interprocess/ipc/message_queue.hpp>
+#endif
 
 namespace ptdg
 {
@@ -129,7 +131,10 @@ namespace ptdg
 		Diagnostics();
 
 		void addMetric( MetricTypeID id, ubyte* data, int size );
+        
+#ifdef HAVE_BOOST
 		boost::interprocess::message_queue	*m_ptmq;
+#endif
 
 	};
 

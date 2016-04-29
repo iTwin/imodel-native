@@ -221,7 +221,7 @@ int PointsRenderer::fillAndRenderPointsBuffers( RenderContext *context, bool dyn
 
 			if ( !vox->flag(pcloud::RenderDismiss) )
 			{
-				boost::mutex::scoped_lock lock(vox->mutex(), boost::try_to_lock);		// lock since
+                std::unique_lock<std::mutex> lock(vox->mutex(), std::try_to_lock);		// lock since
 				if (!lock.owns_lock()) continue;
 
 				if (!pass && vox->flag(pcloud::OutOfCore))	

@@ -1,7 +1,5 @@
 #include "PointoolsVortexAPIInternal.h"
 #include <pt/os.h>
-#include <boost/thread/thread.hpp>
-#include <boost/thread/xtime.hpp>
 #include <ptcloud2/Voxel.h>
 
 #include <ptengine/VisibilityEngine.h>
@@ -118,7 +116,7 @@ void VisibilityEngine::setFixedVisibility(float vis)
 
 	pause();
 	
-	boost::try_mutex::scoped_try_lock lock(m_mutex, boost::try_to_lock);
+    std::unique_lock<std::mutex> lock(m_mutex, std::try_to_lock);
 	if (!lock.owns_lock()) return;
 
 	/*do depth sort here in order to minimize cpu useage*/ 
@@ -643,7 +641,7 @@ struct CullOccluded : public PointsVisitor
 		
 			//if (occlusionFactor < 0.25f)
 			{
-				boost::mutex::scoped_lock vlock( voxel->mutex() );
+                std::lock_guard<std::mutex> vlock( voxel->mutex() );
 				float lod = voxel->getRequestLOD() * occlusionFactor;
 				if (lod < 0) lod = 0;
 				voxel->setRequestLOD( lod );
@@ -774,7 +772,7 @@ struct BudgetAdjustment : public PointsVisitor
 
 			rlod *= maxFactor;
 
-			boost::mutex::scoped_lock vlock( v->mutex() );
+            std::lock_guard<std::mutex> vlock( v->mutex() );
 
 			v->setRequestLOD( rlod );
 		}
@@ -987,7 +985,7 @@ struct VisibilityCompute : public PointsVisitor
 		if (n->isLeaf())
 		{
 			pcloud::Voxel *v = static_cast<pcloud::Voxel*>(n);
-			boost::mutex::scoped_lock vlock( v->mutex() );
+            std::lock_guard<std::mutex> vlock(v->mutex());
 			v->priority(priority);
 			v->setRequestLOD(lod);
 		}

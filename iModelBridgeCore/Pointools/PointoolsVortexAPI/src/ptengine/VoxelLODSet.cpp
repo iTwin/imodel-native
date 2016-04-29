@@ -67,7 +67,7 @@ VoxelLODSet::VoxelLODSet(void)
 
 void VoxelLODSet::clear(void)
 {
-	Mutex::scoped_lock	lock(getMutex());
+    std::lock_guard<std::recursive_mutex> lock(getMutex());
 
 	voxelLODSet.clear();
 
@@ -82,7 +82,7 @@ unsigned int VoxelLODSet::getNumEntries(void)
 
 VoxelLOD *VoxelLODSet::createVoxelLOD(ClientID id)
 {
-	Mutex::scoped_lock	lock(getMutex());
+    std::lock_guard<std::recursive_mutex> lock(getMutex());
 
 	voxelLODSet.push_back(VoxelLOD(id));
 
@@ -92,7 +92,7 @@ VoxelLOD *VoxelLODSet::createVoxelLOD(ClientID id)
 
 const VoxelLOD *VoxelLODSet::getVoxelLOD(ClientID id) const
 {
-	Mutex::scoped_lock	lock(mutex);
+    std::lock_guard<std::recursive_mutex> lock(mutex);
 
 	if(isValidClientID(id))
 	{
@@ -110,7 +110,7 @@ const VoxelLOD *VoxelLODSet::getVoxelLOD(ClientID id) const
 
 VoxelLOD *VoxelLODSet::getVoxelLOD(ClientID id)
 {
-	Mutex::scoped_lock	lock(getMutex());
+    std::lock_guard<std::recursive_mutex> lock(getMutex());
 
 	if(isValidClientID(id))
 	{
@@ -131,7 +131,7 @@ bool VoxelLODSet::setRequestLOD(ClientID id, LOD requestLOD)
 	VoxelLOD *	voxelLOD;
 	bool		updateMax = false;
 
-	Mutex::scoped_lock	lock(getMutex());
+    std::lock_guard<std::recursive_mutex> lock(getMutex());
 
 															// Validate client ID
 	if(isValidClientID(id) == false)
@@ -176,7 +176,7 @@ VoxelLODSet::LOD VoxelLODSet::getRequestLOD(ClientID id) const
 {
 	const VoxelLOD *voxelLOD;
 
-	Mutex::scoped_lock	lock(mutex);
+    std::lock_guard<std::recursive_mutex> lock(mutex);
 
 	if(isValidClientID(id))
 	{
@@ -204,7 +204,7 @@ void VoxelLODSet::setRequestLODMax(LOD lod)
 
 void VoxelLODSet::clipRequestLODMax(LOD maxLOD)
 {
-	Mutex::scoped_lock	lock(getMutex());
+    std::lock_guard<std::recursive_mutex> lock(getMutex());
 
 	bool clipped = false;
 
@@ -245,7 +245,7 @@ bool VoxelLODSet::remove(ClientID id)
 
 	bool updateMax = false;
 
-	Mutex::scoped_lock	lock(getMutex());
+    std::lock_guard<std::recursive_mutex> lock(getMutex());
 
 
 	if(isValidClientID(id))
@@ -281,7 +281,7 @@ void VoxelLODSet::updateRequestLODMax(void)
 {
 	LOD	max = LOD_Null;
 
-	Mutex::scoped_lock	lock(getMutex());
+    std::lock_guard<std::recursive_mutex> lock(getMutex());
 
 	VoxelLODArray::iterator begin, end, it;
 

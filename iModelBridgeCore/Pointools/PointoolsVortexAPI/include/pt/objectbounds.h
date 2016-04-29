@@ -2,7 +2,6 @@
 #define POINTOOLS_OBJECT_BOUNDS_H
 
 #include <pt\flags.h>
-#include <boost\function\function0.hpp>
 
 namespace pt
 {
@@ -16,8 +15,10 @@ namespace pt
 template<typename T> class Bounds3DBase
 {
 public:
-	Bounds3DBase() : m_boundsComputer(0), m_flags(BoundsDirty) {};
-	Bounds3DBase(const boost::function0<void> &compute) : m_boundsComputer(compute), m_flags(BoundsDirty) {};
+    typedef std::function<void()> ComputeFunction;
+
+	Bounds3DBase() : m_boundsComputer(), m_flags(BoundsDirty) {};
+	Bounds3DBase(ComputeFunction compute) : m_boundsComputer(compute), m_flags(BoundsDirty) {};
 	~Bounds3DBase(){};
 
 	void operator = (const Bounds3DBase<T> &b) 
@@ -94,7 +95,7 @@ protected:
 	BSphere<T>		m_bs;
 
 	Flags			m_flags;
-	boost::function0<void>	m_boundsComputer;
+    ComputeFunction	m_boundsComputer;
 };
 
 

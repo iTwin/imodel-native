@@ -11,7 +11,6 @@
 #include <iostream>
 #include <fstream>
 
-#include <boost/thread/mutex.hpp>
 
 //#define FILE_TRACE 1
 
@@ -56,11 +55,11 @@ namespace pt
 	};
 	struct CCLASSES_API FileTrace
 	{
-		static boost::mutex &mutex();  
+		static std::mutex &mutex();  
 		static std::wofstream &file();
 		template <class T> FileTrace &operator << (const T &d)
 		{ 
-			boost::mutex::scoped_lock lock(mutex());
+            std::lock_guard<std::mutex> lock(mutex());
 			file() << d << std::flush; return *this; 
 		};
 	};

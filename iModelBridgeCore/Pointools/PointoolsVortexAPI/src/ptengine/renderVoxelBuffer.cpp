@@ -1,6 +1,5 @@
 #include "PointoolsVortexAPIInternal.h"
 #include <ptengine/renderVoxelBuffer.h>
-#include <boost/thread/locks.hpp>
 
 using namespace pointsengine;
 using namespace pcloud;

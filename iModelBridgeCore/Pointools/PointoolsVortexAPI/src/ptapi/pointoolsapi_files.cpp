@@ -751,7 +751,7 @@ PTbool PTAPI ptInitialize(const PTubyte* licenseData)
 
 		clearLastError();
 
-		pod::s_ptlHandler = new ptl::BranchHandler("Point Clouds", _extractPODfromPTL, 0 );
+		pod::s_ptlHandler = new ptl::BranchHandler("Point Clouds", _extractPODfromPTL, ptl::BranchHandler::write_cb());
 	}
 	_initialized = true;
 

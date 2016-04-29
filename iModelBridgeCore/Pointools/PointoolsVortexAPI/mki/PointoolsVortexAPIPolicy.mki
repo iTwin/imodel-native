@@ -39,8 +39,6 @@ dirToSearch=$(pointoolsVortexAPIVendorAPI)glew
 dirToSearch=$(pointoolsVortexAPIVendorAPI)OpenGLExt
 %include cincapnd.mki
 
-dirToSearch=$(pointoolsVortexAPIVendorAPI)Boost_1_5_7_0
-%include cincapnd.mki
 
 dirToSearch=$(pointoolsVortexAPIVendorAPI)wildmagic/core
 %include cincapnd.mki
@@ -70,11 +68,9 @@ CCompOpts + -D"PTENG_DELAY_LOAD"
 CCompOpts + -D"PTLANG_ENGLISH"
 CCompOpts + -D"_CRT_SECURE_NO_DEPRECATE"
 CCompOpts + -D"_CRT_NON_CONFORMING_SWPRINTFS"
-CCompOpts + -D"BOOST_ALL_NO_LIB"
 CCompOpts + -D"DATATREE_NO_PARAMMAP"
 CCompOpts + -D"GLEW_STATIC"
 CCompOpts + -D"POINTOOLS_PTRMI_PIPE_MANAGER_EXT"
 CCompOpts + -D"VORTEX_OBJECTS_API"
 CCompOpts + -D"POINTOOLS_API"
-CCompOpts + -D"BOOST_DISABLE_UNKNOWN_COMPILER_VERSION_MESSAGE"
 CCompOpts + -wd4005							# Ignore macro redefinition warnings (conflicts between Boost and Microsoft librairies)

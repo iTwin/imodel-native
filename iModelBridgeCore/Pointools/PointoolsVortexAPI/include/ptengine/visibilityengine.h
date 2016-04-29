@@ -12,7 +12,6 @@
 #include <ptengine/ptengine_api.h>
 #include <pt/boundingbox.h>
 #include <pt/viewparams.h>
-#include <boost/thread/mutex.hpp>
 
 #include <ptengine/pointsscene.h>
 #include <ptgl/glfrustum.h>
@@ -113,7 +112,7 @@ public:
 	};
 private:
 
-	boost::try_mutex			m_mutex;
+    std::mutex                  m_mutex;
 	ptgl::Frustum				m_fr;
 	pt::ViewParams				m_view;
 

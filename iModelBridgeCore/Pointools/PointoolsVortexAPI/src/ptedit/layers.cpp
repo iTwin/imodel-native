@@ -29,7 +29,7 @@ bool CopyToLayerVisitor::visitNode( const pcloud::Node *n )
 			_currentVoxel = static_cast<pcloud::Voxel*>(node);
 			if (_currentVoxel->channel(pcloud::PCloud_Filter))
 			{
-				boost::try_mutex::scoped_lock lock(_currentVoxel->mutex());
+                std::lock_guard<std::mutex> lock(_currentVoxel->mutex());
 				VoxFiltering::iteratePoints( _currentVoxel, *this, lst );
 				VoxFiltering::setPoint( _currentVoxel );
 			}					
@@ -67,7 +67,7 @@ bool MoveToLayerVisitor::visitNode( const pcloud::Node *n )
 			_currentVoxel = static_cast<pcloud::Voxel*>(node);
 			if (_currentVoxel->channel(pcloud::PCloud_Filter))
 			{
-				boost::try_mutex::scoped_lock lock(_currentVoxel->mutex());
+                std::lock_guard<std::mutex> lock(_currentVoxel->mutex());
 				VoxFiltering::iteratePoints( _currentVoxel, *this, lst );
 				VoxFiltering::setPoint( _currentVoxel );
 			}					

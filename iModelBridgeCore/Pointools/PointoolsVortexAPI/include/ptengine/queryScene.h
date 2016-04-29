@@ -12,14 +12,14 @@
 #include <ptengine\pointsvisitor.h>
 #include <pt\plane.h>
 #include <pt\fence.h>
+#include <mutex>
 
 namespace pointsengine
 {
-	typedef boost::try_mutex::scoped_try_lock	TryLock;
-	typedef boost::try_mutex::scoped_lock		Lock;
+
 
 	struct NoLock {
-		inline NoLock(boost::mutex &m){};
+		inline NoLock(std::mutex &m){};
 		inline bool locked() const { return true; }
 	};
 	//

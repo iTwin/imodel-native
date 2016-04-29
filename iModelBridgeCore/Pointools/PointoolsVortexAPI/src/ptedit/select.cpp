@@ -81,7 +81,7 @@ bool ClearFlagVisitor::visitNode(const pcloud::Node *n)
 			_currentVoxel = static_cast<pcloud::Voxel*>(node);
 			if (_currentVoxel->channel(pcloud::PCloud_Filter))
 			{
-				boost::try_mutex::scoped_lock lock(_currentVoxel->mutex());
+				std::lock_guard<std::mutex> lock(_currentVoxel->mutex());
 				VoxFiltering::iteratePoints( _currentVoxel, *this, lst );
 				VoxFiltering::setPoint( _currentVoxel );
 			}
@@ -118,7 +118,7 @@ bool HidePointsVisitor::visitNode( const pcloud::Node *n )
 			_currentVoxel = static_cast<pcloud::Voxel*>(node);
 			if (_currentVoxel->channel(pcloud::PCloud_Filter))
 			{
-				boost::try_mutex::scoped_lock lock(_currentVoxel->mutex());
+                std::lock_guard<std::mutex> lock(_currentVoxel->mutex());
 				VoxFiltering::iteratePoints( _currentVoxel, *this, lst );
 				VoxFiltering::setPoint( _currentVoxel );
 			}					
@@ -154,7 +154,7 @@ bool DeselectAnyPointsVisitor::visitNode( const pcloud::Node *n )
 
 			if (_currentVoxel->channel(pcloud::PCloud_Filter))
 			{
-				boost::try_mutex::scoped_lock lock(_currentVoxel->mutex());
+                std::lock_guard<std::mutex> lock(_currentVoxel->mutex());
 				VoxFiltering::iteratePoints( _currentVoxel, *this, lst );
 				VoxFiltering::setPoint( _currentVoxel );
 			}					
@@ -236,7 +236,7 @@ bool DeselectPointsVisitor::visitNode( const pcloud::Node *n )
 
 				if (_currentVoxel->channel(pcloud::PCloud_Filter))
 				{
-					boost::try_mutex::scoped_lock lock(_currentVoxel->mutex());
+                    std::lock_guard<std::mutex> lock(_currentVoxel->mutex());
 					VoxFiltering::iteratePoints( _currentVoxel, *this, cst );
 					VoxFiltering::setPoint( _currentVoxel );
 				}	
@@ -272,7 +272,7 @@ bool SelectPointsVisitor::visitNode( const pcloud::Node *n )
 
 			if (_currentVoxel->channel(pcloud::PCloud_Filter))
 			{
-				boost::try_mutex::scoped_lock lock(_currentVoxel->mutex());
+                std::lock_guard<std::mutex> lock(_currentVoxel->mutex());
 				VoxFiltering::iteratePoints( _currentVoxel, *this, lst );
 				VoxFiltering::setPoint( _currentVoxel );
 			}					
@@ -306,7 +306,7 @@ bool DeselectHiddenVisitor::visitNode(const pcloud::Node *n)
 		pcloud::Voxel::LocalSpaceTransform lst;
 		_currentVoxel = static_cast<pcloud::Voxel*>(node);
 		
-		boost::try_mutex::scoped_lock lock(_currentVoxel->mutex());
+        std::lock_guard<std::mutex> lock(_currentVoxel->mutex());
 		VoxFiltering::iteratePoints( _currentVoxel, *this, lst );
 		VoxFiltering::setPoint( _currentVoxel );
 	}
@@ -354,7 +354,7 @@ bool InvertSelectionVisitor::visitNode(const pcloud::Node *n)
 			_currentVoxel = static_cast<pcloud::Voxel*>(node);
 			if (_currentVoxel->channel(pcloud::PCloud_Filter))
 			{
-				boost::try_mutex::scoped_lock lock(_currentVoxel->mutex());
+                std::lock_guard<std::mutex> lock(_currentVoxel->mutex());
 				VoxFiltering::iteratePoints( _currentVoxel, *this, lst );
 				VoxFiltering::setPoint( _currentVoxel );
 			}
@@ -392,7 +392,7 @@ bool IsolateSelectedVisitor::visitNode(const pcloud::Node *n)
 				_currentVoxel = static_cast<pcloud::Voxel*>(node);
 				if (_currentVoxel->channel(pcloud::PCloud_Filter))
 				{
-					boost::try_mutex::scoped_lock lock(_currentVoxel->mutex());
+                    std::lock_guard<std::mutex> lock(_currentVoxel->mutex());
 					VoxFiltering::iteratePoints( _currentVoxel, *this, lst );
 					VoxFiltering::setPoint( _currentVoxel );
 				}
@@ -412,7 +412,7 @@ bool IsolateSelectedVisitor::visitNode(const pcloud::Node *n)
 			_currentVoxel = static_cast<pcloud::Voxel*>(node);
 			if (_currentVoxel->channel(pcloud::PCloud_Filter))
 			{
-				boost::try_mutex::scoped_lock lock(_currentVoxel->mutex());
+                std::lock_guard<std::mutex> lock(_currentVoxel->mutex());
 				VoxFiltering::iteratePoints( _currentVoxel, *this, lst );
 				VoxFiltering::setPoint( _currentVoxel );
 			}
@@ -443,7 +443,7 @@ bool InvertVisibilityVisitor::visitNode(const pcloud::Node *n)
 			_currentVoxel = static_cast<pcloud::Voxel*>(node);
 			if (_currentVoxel->channel(pcloud::PCloud_Filter))
 			{
-				boost::try_mutex::scoped_lock lock(_currentVoxel->mutex());
+                std::lock_guard<std::mutex> lock(_currentVoxel->mutex());
 				VoxFiltering::iteratePoints( _currentVoxel, *this, lst );
 				VoxFiltering::setPoint( _currentVoxel );
 			}
@@ -476,7 +476,7 @@ bool UnhideVisitor::visitNode(const pcloud::Node *n)
 			_currentVoxel->destroyEditChannel();
 		else if (_currentVoxel->channel(pcloud::PCloud_Filter))
 		{
-			boost::try_mutex::scoped_lock lock(_currentVoxel->mutex());
+            std::lock_guard<std::mutex> lock(_currentVoxel->mutex());
 			VoxFiltering::iteratePoints( _currentVoxel, *this, lst );
 			VoxFiltering::setPoint( _currentVoxel );
 		}
@@ -556,7 +556,7 @@ bool DeselectPointsInLayerVisitor::visitNode( const pcloud::Node *n )
 
 				if (_currentVoxel->channel(pcloud::PCloud_Filter))
 				{
-					boost::try_mutex::scoped_lock lock(_currentVoxel->mutex());
+                    std::lock_guard<std::mutex> lock(_currentVoxel->mutex());
 					VoxFiltering::iteratePoints( _currentVoxel, *this, cst );
 					VoxFiltering::setPoint( _currentVoxel );
 				}	
@@ -590,7 +590,7 @@ bool SelectPointsInLayerVisitor::visitNode( const pcloud::Node *n )
 
 			if (_currentVoxel->channel(pcloud::PCloud_Filter))
 			{
-				boost::try_mutex::scoped_lock lock(_currentVoxel->mutex());
+                std::lock_guard<std::mutex> lock(_currentVoxel->mutex());
 				VoxFiltering::iteratePoints( _currentVoxel, *this, lst );
 				VoxFiltering::setPoint( _currentVoxel );
 			}					
@@ -635,7 +635,7 @@ bool DoesLayerHavePointsVisitor::visitNode(const pcloud::Node *n)
 			
 			if (v->channel(pcloud::PCloud_Filter) && !_approx)
 			{
-				boost::try_mutex::scoped_lock lock(v->mutex());
+                std::lock_guard<std::mutex> lock(v->mutex());
 
 				pcloud::Voxel::CoordinateSpaceTransform pst(const_cast<pcloud::PointCloud*>(v->pointCloud()), pt::ProjectSpace);
 				VoxFiltering::iteratePoints( v, *this, pst );
@@ -674,7 +674,7 @@ bool ComputeLayerBoundsVisitor::visitNode(const pcloud::Node *n)
 			
 			if (v->channel(pcloud::PCloud_Filter) && !_approx)
 			{
-				boost::try_mutex::scoped_lock lock(v->mutex());
+                std::lock_guard<std::mutex> lock(v->mutex());
 
 				pcloud::Voxel::CoordinateSpaceTransform pst(const_cast<pcloud::PointCloud*>(v->pointCloud()), pt::ProjectSpace);
 				VoxFiltering::iteratePoints( v, *this, pst );

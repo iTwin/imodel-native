@@ -1,8 +1,5 @@
 #pragma once
 
-#include <boost/thread/thread.hpp>
-#include <boost/thread/xtime.hpp>
-#include <boost/thread/shared_mutex.hpp>
 
 #include <ptapi/PointoolsVortexAPI.h>
 
@@ -11,6 +8,7 @@
 #include <ptengine/pointsScene.h>
 
 #include <PTRMI/URL.h>
+#include <mutex>
 
 namespace pointsengine
 {
@@ -110,7 +108,7 @@ public:
 struct GlobalPagerData
 {
 	PointsPager *			pointsPager;
-	boost::thread*			pager;
+	std::thread*			pager;
 
 	__int64					bytesLoaded;
 	__int64					weightedNumPntsLoaded;
@@ -138,7 +136,7 @@ struct GlobalPagerData
 	PointsScene::VOXELSLIST voxlist;
 	int						voxlistState;
 
-	boost::mutex			pausemutex;
+	std::mutex			pausemutex;
 
 
 	GlobalPagerData()

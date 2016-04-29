@@ -17,7 +17,6 @@
 #include <pt/ptmath.h>
 #include <pt/trace.h>
 
-#include <boost/bind.hpp>
 
 #include <map>
 #include <iostream>
@@ -52,8 +51,8 @@ namespace pt
 //-----------------------------------------------------------------------------
 Object3D::Object3D(const wchar_t *id, const Object3D* owner)  
 	: Object(id),  m_parent(0),
-	m_localBounds(boost::bind(&Object3D::computeBounds, this)),
-	m_projectBounds(boost::bind(&Object3D::computeBounds, this))
+	m_localBounds(std::bind(&Object3D::computeBounds, this)),
+	m_projectBounds(std::bind(&Object3D::computeBounds, this))
 {
 	parent(owner); 
 
@@ -149,7 +148,7 @@ void Group3D::_computeBounds()
 
 	/*traverse objects*/ 
 	int i=0;
-	Bounds3D b(0);
+	Bounds3D b(nullptr);
 	while (i<numObjects())
 	{
 		const Object3D* o = object(i++);

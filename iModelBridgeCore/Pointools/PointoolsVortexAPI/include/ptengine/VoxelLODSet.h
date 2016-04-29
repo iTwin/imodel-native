@@ -3,8 +3,6 @@
 
 #include <vector>
 
-#include <boost/thread/recursive_mutex.hpp>
-
 namespace pointsengine
 {
 
@@ -49,7 +47,7 @@ public:
 
 	typedef VoxelLOD::ClientID		ClientID;
 	typedef VoxelLOD::LOD			LOD;
-	typedef boost::recursive_mutex	Mutex;
+	typedef std::recursive_mutex	Mutex;
 
 protected:
 

@@ -27,6 +27,7 @@
 #include <ptengine/pointsscene.h>
 #include <ptengine/pointspager.h>
 #include <ptengine/globalpagerdata.h>
+#include <random>
 
 #ifndef POINTOOLS_POD_API
 extern pointsengine::GlobalPagerData pp;
@@ -34,15 +35,10 @@ extern pointsengine::GlobalPagerData pp;
 pointsengine::GlobalPagerData pp;
 #endif
 
-#define BOOST_NO_LIMITS_COMPILE_TIME_CONSTANTS	1
-//#define BOOST_NO_MEMBER_TEMPLATE_FRIENDS	1
-#include <boost/random.hpp>
-//#include <boost/random/lagged_fibonacci.hpp>
 
 #include <stdio.h>
 #include <math.h>
 
-#define DATAMUTEX (*const_cast<boost::try_mutex*>(&_mutex))
 
 #ifndef min
 #define min(a,b) (((a)<(b))?(a):(b))
@@ -1500,14 +1496,12 @@ struct ComputeLocalBounds
 int		Voxel::computeStrataIndex(std::vector<int> &index, int *strata/*[NUM_STRATA]*/, float strataSpacing)	
 {
 	/*randomize order of points*/ 
-	boost::mt11213b _rng;
+    std::random_device rd;
+    std::mt19937 _rng(rd());
 
 	for (int i=0; i<NUM_STRATA; i++)
 		strata[i] =0;
 
-	//static boost::lagged_fibonacci3217 _rng;
-	typedef boost::random_number_generator<boost::mt11213b> RNG;
-	RNG rng(_rng);
 
 	index.clear();
 	index.reserve(_pointCount);
@@ -1516,7 +1510,7 @@ int		Voxel::computeStrataIndex(std::vector<int> &index, int *strata/*[NUM_STRATA
 	// then stratification is not possible
 	if (_channels[PCloud_Geometry]->size() < _pointCount)
 	{
-		std::random_shuffle(index.begin(), index.end(), rng);	
+		std::shuffle(index.begin(), index.end(), _rng);
 		for (int i=0; i<_pointCount; i++) index.push_back(i);
 		strata[0] = index.size();
 		return 1;		// we need all points available to do stratification
@@ -1550,7 +1544,7 @@ int		Voxel::computeStrataIndex(std::vector<int> &index, int *strata/*[NUM_STRATA
 
 		if (!strata[i]) continue;
 
-		std::random_shuffle(uniform.strata[i].begin(), uniform.strata[i].end(), rng);
+		std::shuffle(uniform.strata[i].begin(), uniform.strata[i].end(), _rng);
 		index.insert( index.end(),	uniform.strata[i].begin(), uniform.strata[i].end() );
 	}
 

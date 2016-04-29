@@ -10,7 +10,6 @@
 #include <ptclash/clashObject.h>
 #include <ptfs/filepath.h>
 
-#include <boost/thread.hpp>
 #include <pt/timer.h>
 
 using namespace pt;
@@ -225,7 +224,7 @@ static void computeTreeGenerationParameters( const pcloud::Scene * scene, int &t
 //-----------------------------------------------------------------------------
 
 	int mt_progress_val[NUM_DIFFERENCING_THREADS];
-	boost::try_mutex mt_progress_mutex;
+	std::mutex mt_progress_mutex;
 }
 //-----------------------------------------------------------------------------
 struct DifferenceComputer // ala Signore Babbage
@@ -262,7 +261,7 @@ struct DifferenceComputer // ala Signore Babbage
 			
 			if (pos % 1000==0)
 			{
-				boost::try_mutex::scoped_lock lk(mt_progress_mutex);
+				std::lock_guard<std::mutex> lk(mt_progress_mutex);
 				mt_progress_val[m_threadid] = pos;
 			}
 			++pos;
@@ -273,7 +272,7 @@ struct DifferenceComputer // ala Signore Babbage
 			}
 		}
 		// final completion
-		boost::try_mutex::scoped_lock lk(mt_progress_mutex);
+        std::lock_guard<std::mutex> lk(mt_progress_mutex);
 		mt_progress_val[m_threadid] = pos;
 	}
 	int									m_threadid;
@@ -311,7 +310,7 @@ ClashTree	*ClashObject::compareTrees( const ClashObject *b, bool difference, Com
 		int thread_id = 0;
 		LeavesSet threadLeaves[NUM_DIFFERENCING_THREADS];
 		DifferenceComputer *diffComps[NUM_DIFFERENCING_THREADS];
-		boost::thread *diffThreads[NUM_DIFFERENCING_THREADS];
+		std::thread *diffThreads[NUM_DIFFERENCING_THREADS];
 
 		for (LeavesSet::const_iterator i=leaves.begin(); i!=leaves.end(); i++)
 		{
@@ -326,7 +325,7 @@ ClashTree	*ClashObject::compareTrees( const ClashObject *b, bool difference, Com
 		{
 			mt_progress_val[i]=0;
 			diffComps[i] = new DifferenceComputer(i,threadLeaves[i],b,func);
-			diffThreads[i] = new boost::thread(*diffComps[i]);
+			diffThreads[i] = new std::thread(*diffComps[i]);
 		}
 
 		// update progress bar in main thread
@@ -337,7 +336,7 @@ ClashTree	*ClashObject::compareTrees( const ClashObject *b, bool difference, Com
 		{
 			Sleep(100);
 			{
-				boost::try_mutex::scoped_lock lk(mt_progress_mutex);
+                std::lock_guard<std::mutex> lk(mt_progress_mutex);
 
 				total_processed = 0;
 

@@ -40,20 +40,6 @@
 #include <stdarg.h>
 
 
-#include <boost/thread.hpp>
-#include <boost/thread/thread.hpp>
-#include <boost/thread/xtime.hpp>
-#include <boost/thread/mutex.hpp>
-#include <boost/thread/shared_mutex.hpp>
-#include <boost/function/function0.hpp>
-#include <boost/function/function1.hpp>
-#include <boost/function/function2.hpp>
-#include <boost/function/function3.hpp>
-#include <boost/thread/recursive_mutex.hpp>
-#include <boost/filesystem/path.hpp>
-#include <boost/filesystem/operations.hpp>
-#include <boost/random.hpp>
-#include <boost/bind.hpp>
 
 #pragma warning ( disable : 4100 ) //unreferenced formal parameter
 
@@ -87,6 +73,8 @@
 #include <tchar.h>
 #include <strstream>
 #include <bitset>
+#include <mutex>
+#include <random>
 
 #include <omp.h>
 

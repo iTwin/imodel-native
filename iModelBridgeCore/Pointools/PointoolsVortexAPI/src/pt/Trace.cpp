@@ -7,7 +7,7 @@ namespace detail
 {
 pt::TraceContext *_tracecontext=0;
 std::wofstream *__logfs = 0;
-boost::mutex __mutex;
+std::mutex __mutex;
 }
 using namespace detail;
 
@@ -59,7 +59,7 @@ std::wofstream &pt::FileTrace::file()
 	}
 	return *__logfs;
 }
-boost::mutex &pt::FileTrace::mutex()
+std::mutex &pt::FileTrace::mutex()
 {
 	return __mutex;
 }

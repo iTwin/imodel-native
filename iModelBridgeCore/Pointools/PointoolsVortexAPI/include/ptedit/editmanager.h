@@ -8,7 +8,6 @@
 #include <pt/datatree.h>
 #include <pt/boundingbox.h>
 
-#include <boost/thread/mutex.hpp>
 
 #include <ptgl/glviewstore.h>
 #include <ptgl/glcamera.h>
@@ -150,7 +149,7 @@ private:
 
 	OperationStack		m_currentEdit;
 
-	boost::mutex		m_processMutex;
+	std::mutex		m_processMutex;
 
 	EditMap				m_edits;
 	pt::ViewParams		m_view;

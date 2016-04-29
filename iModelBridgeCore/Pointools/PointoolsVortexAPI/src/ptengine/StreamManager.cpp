@@ -110,7 +110,7 @@ int StreamManager::getVoxelReadInfo(PointsPager::Pager *pager, pcloud::Voxel *vo
 		bool dofilter = pointsFilteringState().filterPagingByDisplay();
 		uint channelbit = 1;
 
-		boost::mutex::scoped_lock vlock(vox->mutex(), boost::defer_lock);
+        std::lock_guard<std::mutex> vlock(vox->mutex(), std::defer_lock);
 
 		try 
 		{
@@ -562,7 +562,7 @@ bool StreamManager::loadLOD(Voxel *voxel, float ami, Voxel::LOD lod, bool ooc, b
 
 void StreamManager::unload(Voxel *voxel, bool new_ooc, float am, GlobalPagerData &globalPagerData, PointsPager::Pager &pager)
 {
-	boost::mutex::scoped_lock vlock( voxel->mutex(), boost::try_to_lock );
+    std::unique_lock<std::mutex>  vlock( voxel->mutex(), std::try_to_lock );
 
 	if (vlock.owns_lock())
 	{
@@ -581,7 +581,7 @@ void StreamManager::unload(Voxel *voxel, bool new_ooc, float am, GlobalPagerData
 
 void StreamManager::load(Voxel *voxel, bool new_ooc, float am, GlobalPagerData &globalPagerData, PointsPager::Pager &pager, float lodRead)
 {
-	boost::mutex::scoped_lock vlock(voxel->mutex(), boost::try_to_lock );
+    std::unique_lock<std::mutex> vlock(voxel->mutex(), std::try_to_lock );
 
 	if (vlock.owns_lock())
 	{

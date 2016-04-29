@@ -9,8 +9,7 @@
 #define PTLBLOCK_DEFINITION_HEADER	1
 
 #include <loki\assocvector.h>
-#include <boost\function\function0.hpp>
-#include <boost\function\function1.hpp>
+
 
 #define PTLBLOCK_DEL_AFTER_USE	1
 
@@ -237,8 +236,8 @@ struct id_cmp
 class Handler
 {
 public:
-	typedef boost::function0<Block *>				write_cb;
-	typedef boost::function1<bool, const Block *>	read_cb;
+	typedef std::function<Block *()>				write_cb;
+	typedef std::function<bool(const Block *)>	read_cb;
 
 	PTL_API Handler(const char *id, read_cb rcb, write_cb wcb, bool configuration = false, const char *descriptor=0);
 	PTL_API ~Handler();
@@ -248,6 +247,6 @@ public:
 	bool		configuration;
 	char		descriptor[32];
 };
-typedef boost::function0<void>	clear_cb;
+typedef std::function<void()>	clear_cb;
 } 
 #endif

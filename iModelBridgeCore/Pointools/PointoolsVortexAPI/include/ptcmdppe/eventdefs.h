@@ -60,10 +60,6 @@
 #define CPCUR_NESW		11
 #define CPCUR_NONE		12
 
-#include <boost\function\function0.hpp>
-#include <boost\function\function1.hpp>
-#include <boost\function\function2.hpp>
-#include <boost\function\function3.hpp>
 
 #ifdef PT_ORIGINAL_EVENTINFO
 struct EventInfo
@@ -95,11 +91,11 @@ struct EventInfo
 
 namespace ptapp
 {
-typedef boost::function0<std::string>						queryCB;
-typedef boost::function2<bool, const EventInfo &, void*>	eventCB;
-typedef boost::function0<void>								resetCB;
-typedef boost::function0<void>								functionCB;
-typedef boost::function2<bool, unsigned int, unsigned int>	envtestCB;
+typedef std::function<std::string()>					queryCB;
+typedef std::function<bool(const EventInfo &, void*)>	eventCB;
+typedef std::function<void()>							resetCB;
+typedef std::function<void()>							functionCB;
+typedef std::function<bool(unsigned int, unsigned int)>	envtestCB;
 }
 
 #endif

@@ -183,7 +183,8 @@ double PointCloud::findNearestPoint(const pt::vector3d &_pnt, pt::vector3d &near
 	if (leaf)
 	{
 		Voxel* V = static_cast<Voxel*>(leaf);
-		boost::mutex::scoped_lock lk(V->mutex(), boost::try_to_lock);
+        
+        std::unique_lock<std::mutex> lk(V->mutex(), std::try_to_lock);
 
 		if (lk.owns_lock())
 		{
@@ -237,7 +238,7 @@ double PointCloud::findIntersectingPoint(const pt::Rayf &ray, pt::vector3d &near
 	if (leaf)
 	{
 		Voxel* vox = static_cast<Voxel*>(leaf);
-		boost::mutex::scoped_lock lk(vox->mutex(), boost::try_to_lock);
+        std::unique_lock<std::mutex> lk(vox->mutex());
 
 		double t;
 		int pnt = vox->intersectRay(xray, t, tolerance);
@@ -469,7 +470,7 @@ void PointCloud::pushUserTransformation() const
 			{
 				Voxel *vox = const_cast<Voxel*>(_voxels[i]);
 				
-			//	boost::mutex::scoped_lock vlock(vox->mutex());
+			//	std::unique_lock<std::mutex> vlock(vox->mutex());
 			
 				vox->_worldExtents = vox->_origextents;
 				pt::vector3d trans(_userTransform.translation());

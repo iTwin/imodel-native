@@ -7,8 +7,6 @@
 #include <ptengine/pointsPager.h>
 #include <ptengine/engine.h>
 
-#include <boost/thread/mutex.hpp>
-#include <boost/thread/shared_mutex.hpp>
 #include <pt/timestamp.h>
 
 #include <ptengine/VoxelLODRemoveVisitor.h>
@@ -28,7 +26,10 @@ namespace ptscene
 	PointsScene::VOXELSLIST _rendervoxels;
 	std::vector<pcloud::Scene *> _scenes;
 
-	boost::shared_mutex _listusemutex;
+    //&&MM no shared_mutex in c++ 11 need to wait for c++ 17. Are we really loosing something?
+    // most of the lock are not shared.
+	std::mutex _listusemutex;
+
 	int _listuse = 0;
 	bool _sortrequest = false;
 	int _listvalid = 0;
@@ -115,7 +116,8 @@ PointsScene::UseDepthSortedVoxels::UseDepthSortedVoxels(VOXELSLIST &vlist, int &
 	static int viteration= -4785;
 	try 
 	{
-		hasLock = _listusemutex.try_lock_shared();
+        //&&&M _listusemutex.try_lock_shared()
+		hasLock = _listusemutex.try_lock();
 	}
 	catch(...) { hasLock = false; }
 	if (!hasLock) return;
@@ -147,7 +149,9 @@ PointsScene::UseDepthSortedVoxels::UseDepthSortedVoxels(VOXELSLIST &vlist, int &
 //-----------------------------------------------------------------------------
 PointsScene::UseDepthSortedVoxels::~UseDepthSortedVoxels() 
 {
-	if (hasLock) _listusemutex.unlock_shared();
+    //&&MM shared_lock
+	//if (hasLock) _listusemutex.unlock_shared();
+    if (hasLock) _listusemutex.unlock();
 }
 //-----------------------------------------------------------------------------
 PointsScene::UseSceneVoxels::~UseSceneVoxels()
@@ -169,19 +173,19 @@ int PointsScene::size()
 //-----------------------------------------------------------------------------
 PointsScene::VoxIterator PointsScene::voxbegin()
 { 
-	boost::mutex::scoped_lock lock(_mutex);
+    std::lock_guard<std::mutex> lock(_mutex);
 	return _voxels.begin(); 
 }
 //-----------------------------------------------------------------------------
 PointsScene::VoxIterator PointsScene::voxend() 
 { 
-	boost::mutex::scoped_lock lock(_mutex);
+    std::lock_guard<std::mutex> lock(_mutex);
 	return _voxels.end(); 
 }
 //-----------------------------------------------------------------------------
 const PointsScene::VOXELSLIST &PointsScene::voxels()
 { 
-	boost::mutex::scoped_lock lock(_mutex);
+    std::lock_guard<std::mutex> lock(_mutex);
 	return _voxels; 
 }
 //-----------------------------------------------------------------------------
@@ -227,8 +231,8 @@ void PointsScene::addScene(pcloud::Scene *sc)
 	for (i=0; i<sc->size(); i++) sc->cloud(i)->setKey(sc->key() + i + 1);
 	_sceneByKey.insert(std::pair<pt::ObjectKey, pcloud::Scene*>(sc->key(), sc));
 
-	boost::mutex::scoped_lock lock(_mutex);
-	boost::unique_lock<boost::shared_mutex> listlock(_listusemutex);
+    std::lock_guard<std::mutex> lock(_mutex);
+	std::unique_lock<std::mutex> listlock(_listusemutex);
 
 	for (i=0; i<_scenes.size(); i++) if (_scenes[i] == sc) return;
 
@@ -339,8 +343,8 @@ void PointsScene::removeScene(pcloud::Scene *sc, bool del)
 {
 	++_iteration;
 
-	boost::mutex::scoped_lock lock(_mutex);
-	boost::unique_lock<boost::shared_mutex> listlock(_listusemutex);
+    std::lock_guard<std::mutex> lock(_mutex);
+    std::unique_lock<std::mutex> listlock(_listusemutex);
 
 	/* remove from maps */ 
 	for (int c=0; c<sc->numObjects(); c++)
@@ -463,8 +467,8 @@ void PointsScene::getBounds(pt::BoundingBoxD &bb)
 //-----------------------------------------------------------------------------
 void PointsScene::clear(bool freeMemory)
 {
-	boost::mutex::scoped_lock lock(_mutex);
-	boost::unique_lock<boost::shared_mutex> listlock(_listusemutex);
+    std::lock_guard<std::mutex> lock(_mutex);
+    std::unique_lock<std::mutex> listlock(_listusemutex);
 
 	/* notify observers */ 
 	for (uint sc=0; sc<_scenes.size(); sc++)
@@ -491,8 +495,8 @@ void PointsScene::clear(bool freeMemory)
 //-----------------------------------------------------------------------------
 bool PointsScene::visitVoxels(PointsVisitor *visitor, bool load)
 {
-	boost::mutex::scoped_lock lock(_mutex);
-	boost::shared_lock<boost::shared_mutex> llock(_listusemutex);
+    std::lock_guard<std::mutex> lock(_mutex);
+    std::unique_lock<std::mutex> llock(_listusemutex);
 
 	pt::vector3d voxel2project(-pt::Project3D::project().registration().matrix()(3,0), 
 		-pt::Project3D::project().registration().matrix()(3,1), 

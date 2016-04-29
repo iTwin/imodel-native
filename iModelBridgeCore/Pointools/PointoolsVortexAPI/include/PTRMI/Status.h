@@ -18,7 +18,7 @@ namespace PTRMI
 
 		static pt::SimpleTimer		timer;
 
-		typedef enum Error
+		enum Error
 		{
 			Status_OK												= 1,
 			Status_Error_Failed										= 2,

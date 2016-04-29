@@ -3,6 +3,7 @@
 #include <ptcloud2\scene.h>
 #include <ptengine\pointsvisitor.h>
 #include <ptengine\queryDensity.h>
+#include <mutex>
 
 namespace pointsengine
 {
@@ -44,7 +45,7 @@ namespace pointsengine
 		template <class Receiver, class DensityPolicy>
 		void traverseVoxel( pcloud::Voxel *voxel, Receiver &R, DensityPolicy &D )
 		{
-			boost::mutex::scoped_lock lock(voxel->mutex(), boost::try_to_lock);
+            std::unique_lock<std::mutex> lock(voxel->mutex(), std::try_to_lock);
 			if (!lock.owns_lock()) return; //pause engine to avoid this
 
 			D.preQuery( voxel );
@@ -99,7 +100,7 @@ namespace pointsengine
 		{
 			pcloud::Voxel* non_const_voxel = const_cast<pcloud::Voxel*>(voxel);
 
-			boost::mutex::scoped_lock lock(non_const_voxel->mutex(), boost::try_to_lock);
+            std::unique_lock<std::mutex> lock(non_const_voxel->mutex(), std::try_to_lock);
 			if (!lock.owns_lock()) return; //pause engine to avoid this
 
 			D.preQuery( non_const_voxel );

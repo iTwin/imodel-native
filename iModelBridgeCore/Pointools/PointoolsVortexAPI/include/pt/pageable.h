@@ -10,7 +10,6 @@
 #define COMMONCLASSES_PAGEABLE_DEFINITION
 
 #include <pt\classes.h>
-#include <boost\thread\mutex.hpp>
 
 namespace pt
 {
@@ -42,7 +41,6 @@ public:
 	int		fileIndex() const			{ return (int)m_fileindex; }
 	void	fileIndex(int filei)		{ m_fileindex = (unsigned char)filei; }
 
-	boost::try_mutex	m_reqmutex;
 
 protected:
 	unsigned char m_frames_since_request;

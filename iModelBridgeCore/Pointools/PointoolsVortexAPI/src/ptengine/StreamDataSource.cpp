@@ -197,7 +197,7 @@ ptds::DataSize StreamDataSource::transferReadSetVoxelData(DataSourceReadSet &rea
 															// Get the buffer to copy read into (channel buffer)
 		if(dest = read->getBuffer())
 		{
-			boost::mutex::scoped_lock vlock(voxel->mutex());
+            std::lock_guard<std::mutex> lock(voxel->mutex());
 															// Copy from main source buffer to voxel channel buffer
 															// using read source Windowing if using cache
 			memcpy(dest, source, read->getSize());

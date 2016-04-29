@@ -10,15 +10,13 @@
 #include <ptl/block.h>
 #include <ptappdll/ptapp.h>
 
-#include <boost/filesystem/path.hpp>
-#include <boost/filesystem/operations.hpp>
+
 
 #include <ptl/dispatcher.h>
 #include <ptl/projecttool.h>
 
 #include <pt/datatreePrintf.h>
 
-#include <boost/bind.hpp>
 
 #include <set>
 #include <iostream>

@@ -28,7 +28,6 @@
 #include <fastdelegate/fastdelegate.h>
 #include <ptl/dispatcher.h>
 
-#include <boost/thread/thread.hpp>
 
 #include <stack>
 #include <map>
@@ -153,7 +152,7 @@ bool PointEditManager::restoreEdit( const pt::String name )
 /*****************************************************************************/
 void PointEditManager::removeEdit (const pt::String name )
 {
-	boost::mutex::scoped_lock lock( m_processMutex );
+    std::lock_guard<std::mutex> lock(m_processMutex);
 
 	EditMap::iterator i = m_edits.find(name);
 	if (i!= m_edits.end())
@@ -171,7 +170,7 @@ void PointEditManager::removeEdit (const pt::String name )
 /*****************************************************************************/
 void PointEditManager::removeAllEdits ()
 {
-	boost::mutex::scoped_lock lock( m_processMutex );
+    std::lock_guard<std::mutex> lock(m_processMutex);
 
 	EditMap::iterator i = m_edits.begin();
 	while (i!=m_edits.end())
