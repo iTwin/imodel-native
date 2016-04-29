@@ -132,7 +132,7 @@ DgnDbServerRepositoriesTaskPtr DgnDbClient::GetRepositories(ICancellationTokenPt
         {
         return CreateCompletedAsyncTask<DgnDbServerRepositoriesResult>(DgnDbServerRepositoriesResult::Error(DgnDbServerError::Id::CredentialsNotSet));
         }
-    DgnDbServerRepositoriesResultPtr finalResult = std::make_shared<DgnDbServerRepositoriesResult>();
+
     return GetRepositoriesByPlugin(ServerSchema::Plugin::Repository, cancellationToken)->Then<DgnDbServerRepositoriesResult>([=]
         (const WSRepositoriesResult& response)
         {
