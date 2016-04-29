@@ -216,6 +216,10 @@
         <Directories DirectoryListName="iOSXCTestProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
 
+    <Part Name="RuniOSXCTest" BentleyBuildMakeFile="${SrcRoot}BeGTest/iOS/RunXCTestProject.mke" BentleyBuildMakeOptions="-dXCTEST_PRODUCT=ECObjects-iOSXCTest" OnlyPlatforms="iOS*">
+        <SubProduct ProductName="ECObjects-iOSXCTest"/>
+    </Part>
+
     <!-- Define a gtest program to run the PerformanceTests. -->
     <Product Name="ECObjects-PerformanceTests">
         <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
