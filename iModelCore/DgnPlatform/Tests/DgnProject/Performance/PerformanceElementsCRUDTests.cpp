@@ -2317,8 +2317,6 @@ struct ElementLocksPerformanceTest : PerformanceElementsCRUDTestFixture
 {
     void TestInsert(bool asBriefcase, Utf8CP className, int numElems)
         {
-        ScopedDgnHost::ScopedRepositoryManagerDisabler V_V_V_(m_host);
-
         auto dbName = asBriefcase ? L"LocksBriefcase.idgndb" : L"LocksRepository.idgndb";
         SetUpTestDgnDb(dbName, className, 0);
         if (asBriefcase)

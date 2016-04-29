@@ -944,8 +944,11 @@ struct RepositoryManagerTest : public ::testing::Test, DgnPlatformLib::Host::Rep
         if (!db.IsValid())
             return nullptr;
 
-        TestDataManager::MustBeBriefcase(db, Db::OpenMode::ReadWrite);
-        db->ChangeBriefcaseId(bcId);
+        if (bcId.GetValue() != db->GetBriefcaseId().GetValue())
+            {
+            TestDataManager::MustBeBriefcase(db, Db::OpenMode::ReadWrite);
+            db->ChangeBriefcaseId(bcId);
+            }
 
         _OnSetupDb(*db);
 
@@ -1119,7 +1122,7 @@ struct SingleBriefcaseLocksTest : LocksManagerTest
         m_elemId = DgnCategory::QueryFirstCategoryId(db);
         }
 
-    SingleBriefcaseLocksTest() : m_bcId(1) { }
+    SingleBriefcaseLocksTest() : m_bcId(2) { }
     ~SingleBriefcaseLocksTest() {if (m_db.IsValid()) m_db->CloseDb();}
 
     DgnModelPtr CreateModel(Utf8CP name) { return T_Super::CreateModel(name, *m_db); }
@@ -1412,10 +1415,10 @@ struct DoubleBriefcaseTest : LocksManagerTest
         return false;
         }
 
-    void SetupDbs()
+    void SetupDbs(uint32_t baseBcId=2)
         {
-        m_dbA = SetupDb(L"DbA.dgndb", BeBriefcaseId(1), SeedFileName());
-        m_dbB = SetupDb(L"DbB.dgndb", BeBriefcaseId(2), SeedFileName());
+        m_dbA = SetupDb(L"DbA.dgndb", BeBriefcaseId(baseBcId), SeedFileName());
+        m_dbB = SetupDb(L"DbB.dgndb", BeBriefcaseId(baseBcId+1), SeedFileName());
 
         ASSERT_TRUE(m_dbA.IsValid());
         ASSERT_TRUE(m_dbB.IsValid());
@@ -1830,6 +1833,52 @@ TEST_F(DoubleBriefcaseTest, DemoteLocks)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* A 'standalone briefcase' is a transactable DgnDb which did not originate from a master
+* copy - i.e., it is not associated with a repository on a server somewhere. Generally
+* used for tests; for developer activities operating on local files; or for initializing
+* a DgnDb which will later become promoted to be the master DgnDb for a new repository
+* on a server.
+* TxnManager is enabled; no requirement to acquire locks/codes.
+* @bsimethod                                                    Paul.Connelly   04/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (DoubleBriefcaseTest, StandaloneBriefcase)
+    {
+    SetupDbs(BeBriefcaseId::Master());
+
+    DgnDbR master = *m_dbA; // master copy
+    DgnDbR brief  = *m_dbB; // standalone briefcase
+
+    EXPECT_TRUE(master.IsMasterCopy());
+
+    // Locks unconditionally granted for both...
+    ExpectLevel(master, LockLevel::Exclusive);
+    ExpectLevel(*GetElement(master, Elem2dId2()), LockLevel::Exclusive);
+    ExpectAcquire(*GetElement(master, Elem3dId2()), LockLevel::Exclusive);
+
+    ExpectLevel(brief, LockLevel::Exclusive);
+    ExpectLevel(*GetElement(brief, Elem2dId2()), LockLevel::Exclusive);
+    ExpectAcquire(*GetElement(brief, Elem3dId2()), LockLevel::Exclusive);
+
+    // So are codes...
+    AnnotationTextStyle style(master);
+    style.SetName("MyStyle");
+    DgnCode code = style.GetCode(); // the only reason we created the style...
+    EXPECT_EQ(RepositoryStatus::Success, master.BriefcaseManager().ReserveCode(code));
+    EXPECT_EQ(RepositoryStatus::Success, brief.BriefcaseManager().ReserveCode(code));
+
+    // TxnManager is ONLY enabled for briefcase...
+    EXPECT_TRUE(style.Insert().IsValid());
+    EXPECT_EQ(BE_SQLITE_OK, master.SaveChanges());
+    EXPECT_FALSE(master.Txns().IsUndoPossible());
+
+    AnnotationTextStyle briefStyle(brief);
+    briefStyle.SetName("MyStyle");
+    EXPECT_TRUE(briefStyle.Insert().IsValid());
+    EXPECT_EQ(BE_SQLITE_OK, brief.SaveChanges());
+    EXPECT_TRUE(brief.Txns().IsUndoPossible());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct ExtractLocksTest : SingleBriefcaseLocksTest
@@ -2063,7 +2112,7 @@ Utf8String CodesManagerTest::CommitRevision(DgnDbR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CodesManagerTest, ReserveQueryRelinquish)
     {
-    DgnDbPtr pDb = SetupDb(L"ReserveQueryRelinquish.dgndb", BeBriefcaseId(1));
+    DgnDbPtr pDb = SetupDb(L"ReserveQueryRelinquish.dgndb", BeBriefcaseId(2));
     DgnDbR db = *pDb;
     IBriefcaseManagerR mgr = db.BriefcaseManager();
 
@@ -2108,7 +2157,7 @@ TEST_F(CodesManagerTest, ReserveQueryRelinquish)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CodesManagerTest, AutoReserveCodes)
     {
-    DgnDbPtr pDb = SetupDb(L"AutoReserveCodes.dgndb", BeBriefcaseId(1));
+    DgnDbPtr pDb = SetupDb(L"AutoReserveCodes.dgndb", BeBriefcaseId(2));
     DgnDbR db = *pDb;
 
     // Simulate a pre-existing style having been committed in a previous revision
@@ -2161,7 +2210,7 @@ TEST_F(CodesManagerTest, AutoReserveCodes)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CodesManagerTest, CodesInRevisions)
     {
-    DgnDbPtr pDb = SetupDb(L"CodesInRevisions.dgndb", BeBriefcaseId(1));
+    DgnDbPtr pDb = SetupDb(L"CodesInRevisions.dgndb", BeBriefcaseId(2));
     DgnDbR db = *pDb;
     IBriefcaseManagerR mgr = db.BriefcaseManager();
 
@@ -2239,4 +2288,5 @@ TEST_F(CodesManagerTest, CodesInRevisions)
     ExpectState(MakeDiscarded(unusedCode, rev3), db);
     ExpectState(MakeDiscarded(usedCode, rev2), db);
     }
+
 
