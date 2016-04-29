@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Persistence/Instances/InstanceCacheHelper.cpp $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -14,7 +14,8 @@
 
 #include "../Core/CacheSchema.h"
 #include "../Hierarchy/HierarchyManager.h"
-#include "../../Util/JsonUtil.h"
+#include <WebServices/Cache/Util/JsonUtil.h>
+
 #include "../../Logging.h"
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
