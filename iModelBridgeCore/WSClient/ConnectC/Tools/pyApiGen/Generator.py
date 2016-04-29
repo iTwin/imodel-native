@@ -4,12 +4,12 @@ from HeaderWriters.CBufferHeaderWriter import CBufferHeaderWriter
 from HeaderWriters.CPublicApiHeaderWriter import CallStatus
 from HeaderWriters.CPublicApiHeaderWriter import CPublicApiHeaderWriter
 from HeaderWriters.CPublicBufferHeaderWriter import CPublicBufferHeaderWriter
-# from py.HeaderWriters.CppCliClassesHeaderWriter import CppCliClassesHeaderWriter
-# from py.HeaderWriters.CppCliApiHeaderWriter import CppCliApiHeaderWriter
+# from HeaderWriters.CppCliClassesHeaderWriter import CppCliClassesHeaderWriter
+# from HeaderWriters.CppCliApiHeaderWriter import CppCliApiHeaderWriter
 from SourceWriters.CApiSourceWriter import CApiSourceWriter
 from SourceWriters.CBufferSourceWriter import CBufferSourceWriter
-# from py.SourceWriters.CppCliClassesSourceWriter import CppCliClassesSourceWriter
-# from py.SourceWriters.CppCliApiSourceWriter import CppCliApiSourceWriter
+# from SourceWriters.CppCliClassesSourceWriter import CppCliClassesSourceWriter
+# from SourceWriters.CppCliApiSourceWriter import CppCliApiSourceWriter
 from Writer import Api
 
 
@@ -90,25 +90,29 @@ sourceWriter.write_source()
 # --------------------------CPP/CLI--------------------------------#
 # -----------------------------------------------------------------#
 # cppcliClassesHeaderWriter = CppCliClassesHeaderWriter(ecclasses,
-#                                                       '../CSharp/Headers/{0}GenClasses.h'.format(api.get_api_acronym()),
+#                                                       'C:/Users/David.Jones/Documents/Connect_Stuff/WSApi/WSApiSharp/{0}GenClasses.h'
+#                                                       .format(api.get_api_acronym()),
 #                                                       api,
 #                                                       status_codes,
 #                                                       excluded_classes)
 # cppcliClassesHeaderWriter.write_header()
 # cppcliClassesSourceWriter = CppCliClassesSourceWriter(ecclasses,
-#                                                       '../CSharp/Source/{0}GenClasses.cpp'.format(api.get_api_acronym()),
+#                                                       'C:/Users/David.Jones/Documents/Connect_Stuff/WSApi/WSApiSharp/{0}GenClasses.cpp'
+#                                                       .format(api.get_api_acronym()),
 #                                                       api,
 #                                                       status_codes,
 #                                                       excluded_classes)
 # cppcliClassesSourceWriter.write_source()
 # cppcliapiHeaderWriter = CppCliApiHeaderWriter(ecclasses,
-#                                               '../CSharp/Headers/{0}GenSharp.h'.format(api.get_api_acronym()),
+#                                               'C:/Users/David.Jones/Documents/Connect_Stuff/WSApi/WSApiSharp/{0}GenSharp.h'
+#                                               .format(api.get_api_acronym()),
 #                                               api,
 #                                               status_codes,
 #                                               excluded_classes)
 # cppcliapiHeaderWriter.write_header()
 # cppcliapiSourceWriter = CppCliApiSourceWriter(ecclasses,
-#                                               '../CSharp/Source/{0}GenSharp.cpp'.format(api.get_api_acronym()),
+#                                               'C:/Users/David.Jones/Documents/Connect_Stuff/WSApi/WSApiSharp/{0}GenSharp.cpp'
+#                                               .format(api.get_api_acronym()),
 #                                               api,
 #                                               status_codes,
 #                                               excluded_classes)

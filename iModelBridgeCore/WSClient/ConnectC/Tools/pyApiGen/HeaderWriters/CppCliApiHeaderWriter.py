@@ -23,7 +23,7 @@ class CppCliApiHeaderWriter(HeaderWriter):
         self._close_file()
 
     def __write_includes(self):
-        self._file.write('#include "{0}Public.h"\n'.format(self._api.get_api_acronym()))
+        self._file.write('#include <WebServices/ConnectC/{0}Public.h>\n'.format(self._api.get_api_acronym()))
 
     def __write_using_declarations(self):
         self._file.write('using namespace System;\n')

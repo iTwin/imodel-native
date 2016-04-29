@@ -20,6 +20,10 @@ class CppCliStruct(CStruct):
             elif property_type == "boolean":
                 properties_str += "            property {0:16} {1};\n".format("Nullable<bool>",
                                                                               ecproperty.attributes["propertyName"].value)
+            elif property_type == "long":
+                properties_str += "            property {0:16} {1};\n".format('Nullable<int64_t>',
+                                                                              ecproperty.attributes["propertyName"].value)
+
             else:
                 properties_str += "            property {0:16} {1};\n".format("Nullable<" + property_type + '>',
                                                                               ecproperty.attributes["propertyName"].value)
@@ -39,9 +43,9 @@ class CppCliStruct(CStruct):
         if self.does_contain_double():
             ctor_str += '        double pDouble;\n'
         if self.does_contain_guid():
-            ctor_str += '        wchar_t guid[4096] = {0};\n'
+            ctor_str += '        wchar_t guid[4096];\n'
         if self.does_contain_int():
-            ctor_str += '        int64_t integer;\n'
+            ctor_str += '        int32_t integer;\n'
         if self.does_contain_long():
             ctor_str += '        int64_t pLong;\n'
         for ecproperty in self.get_properties():
@@ -52,7 +56,7 @@ class CppCliStruct(CStruct):
                 ctor_str += ", stringBuf"
                 ctor_str += ", 4096);\n"
             elif property_type == "guid":
-                ctor_str += ", &guid);\n"
+                ctor_str += ", guid);\n"
             elif property_type == "boolean":
                 ctor_str += ", &boolean);\n"
             elif property_type == "int":
@@ -65,7 +69,7 @@ class CppCliStruct(CStruct):
             if property_type == "string":
                 ctor_str += "             {0} = gcnew String(stringBuf);\n".format(ecproperty.attributes["propertyName"].value)
             elif property_type == "guid":
-                ctor_str += "             {0} = gcnew Guid(gcnew String(guidToString(&guid).c_str()));\n"\
+                ctor_str += "             {0} = gcnew Guid(gcnew String(guid));\n"\
                     .format(ecproperty.attributes["propertyName"].value)
             elif property_type == "boolean":
                 ctor_str += "             {0} = boolean;\n".format(ecproperty.attributes["propertyName"].value)
@@ -118,11 +122,15 @@ class CppCliStruct(CStruct):
                     .format(self.get_lower_name(), ecproperty.attributes["propertyName"].value,
                             ecproperty.attributes["propertyName"].value.lower())
             elif property_type == "guid":
-                create_str += '        WCharP {2} = managedGuidToUnmanagedGuid(*{0}->{1});\n'\
+                create_str += '        pin_ptr<const wchar_t> {2} = PtrToStringChars({0}->{1}->ToString());\n'\
                     .format(self.get_lower_name(), ecproperty.attributes["propertyName"].value,
                             ecproperty.attributes["propertyName"].value.lower())
             elif property_type == "boolean":
                 create_str += '        bool {2} = {0}->{1}.GetValueOrDefault();\n'\
+                    .format(self.get_lower_name(), ecproperty.attributes["propertyName"].value,
+                            ecproperty.attributes["propertyName"].value.lower())
+            elif property_type == "long":
+                create_str += '        int64_t {2} = {0}->{1}.GetValueOrDefault();\n' \
                     .format(self.get_lower_name(), ecproperty.attributes["propertyName"].value,
                             ecproperty.attributes["propertyName"].value.lower())
             else:
@@ -187,11 +195,15 @@ class CppCliStruct(CStruct):
                     .format(self.get_lower_name(), ecproperty.attributes["propertyName"].value,
                             ecproperty.attributes["propertyName"].value.lower())
             elif property_type == "guid":
-                update_str += '        WCharP {2} = managedGuidToUnmanagedGuid(*{0}->{1});\n' \
+                update_str += '        pin_ptr<const wchar_t> {2} = PtrToStringChars({0}->{1}->ToString());\n' \
                     .format(self.get_lower_name(), ecproperty.attributes["propertyName"].value,
                             ecproperty.attributes["propertyName"].value.lower())
             elif property_type == "boolean":
                 update_str += '        bool {2} = {0}->{1}.GetValueOrDefault();\n' \
+                    .format(self.get_lower_name(), ecproperty.attributes["propertyName"].value,
+                            ecproperty.attributes["propertyName"].value.lower())
+            elif property_type == "long":
+                update_str += '        int64_t {2} = {0}->{1}.GetValueOrDefault();\n' \
                     .format(self.get_lower_name(), ecproperty.attributes["propertyName"].value,
                             ecproperty.attributes["propertyName"].value.lower())
             else:
