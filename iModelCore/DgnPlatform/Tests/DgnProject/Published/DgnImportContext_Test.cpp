@@ -22,7 +22,7 @@ USING_NAMESPACE_BENTLEY_DPTEST
 //----------------------------------------------------------------------------------------
 struct ImportTest : DgnDbTestFixture
 {
-    ImportTest() : DgnDbTestFixture(ScopedDgnHost::Options::DisableRepositoryManager) { }
+    ImportTest() { }
 
     void InsertElement(DgnDbR, DgnModelId, bool is3d, bool expectSuccess);
 };

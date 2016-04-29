@@ -41,7 +41,7 @@ protected:
     void UpdateDgnDbExtents();
 
 public:
-    ChangeTestFixture(WCharCP testFileName) : m_testHost(ScopedDgnHost::Options::DisableRepositoryManager), m_testFileName (testFileName) {}
+    ChangeTestFixture(WCharCP testFileName) : m_testFileName (testFileName) {}
     virtual ~ChangeTestFixture() {}
     virtual void SetUp() override {}
     virtual void TearDown() override { if (m_testDb.IsValid()) m_testDb->SaveChanges("Saving DgnDb at end of test"); }

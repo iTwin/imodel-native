@@ -31,19 +31,12 @@ struct ScopedDgnHost
         virtual DgnDbStatus _FetchScript(Utf8StringR, DgnScriptType&, DateTime& lmt, DgnDbR, Utf8CP, DgnScriptType) = 0;
         };
 
-    enum class Options
-    {
-        None = 0,
-        DisableRepositoryManager = 1 << 0,
-    };
-
-    DGNPLATFORM_EXPORT explicit ScopedDgnHost(Options options = Options::None);
+    DGNPLATFORM_EXPORT explicit ScopedDgnHost();
     DGNPLATFORM_EXPORT ~ScopedDgnHost();
 
     DGNPLATFORM_EXPORT void SetFetchScriptCallback(FetchScriptCallback* cb);
     DGNPLATFORM_EXPORT void SetRepositoryAdmin(DgnPlatformLib::Host::RepositoryAdmin* admin);
     DGNPLATFORM_EXPORT DgnPlatformLib::Host::RepositoryAdmin* GetRepositoryAdmin();
-    DGNPLATFORM_EXPORT static DgnPlatformLib::Host::RepositoryAdmin* GetUnconditionalRepositoryAdmin();
 
     //! Temporarily override the host's RepositoryAdmin
     struct ScopedRepositoryAdminOverride
@@ -65,16 +58,7 @@ struct ScopedDgnHost
             m_host.SetRepositoryAdmin(m_prevAdmin);
             }
     };
-
-    //! Temporarily override the host's RepositoryAdmin with one which unconditionally grants all lock + code requests.
-    struct ScopedRepositoryManagerDisabler : ScopedRepositoryAdminOverride
-    {
-    public:
-        ScopedRepositoryManagerDisabler(ScopedDgnHost& host) : ScopedRepositoryAdminOverride(host, ScopedDgnHost::GetUnconditionalRepositoryAdmin()) { }
-    };
 };
-
-ENUM_IS_FLAGS(ScopedDgnHost::Options);
 
 struct TestDataManager
 {
@@ -97,6 +81,7 @@ public:
     DGNPLATFORM_EXPORT BentleyStatus OpenTestFile (bool needBriefcase);
     DGNPLATFORM_EXPORT void CloseTestFile ();
 
+    // Ensures a transactable, standalone briefcase.
     DGNPLATFORM_EXPORT static void MustBeBriefcase(DgnDbPtr& db, DgnDb::OpenMode mode);
 };
 

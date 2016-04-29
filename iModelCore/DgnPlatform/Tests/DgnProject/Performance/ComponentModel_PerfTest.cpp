@@ -122,7 +122,7 @@ void PlaceElements(int ninstances, int boxCount, DPoint3d boxSize);
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-ComponentModelPerfTest::ComponentModelPerfTest() : m_host(ScopedDgnHost::Options::DisableRepositoryManager)
+ComponentModelPerfTest::ComponentModelPerfTest()
     {
     m_host.SetFetchScriptCallback(&m_scriptLibrary);// In this test, we redirect all requests for JS programs to our fake library
     }
