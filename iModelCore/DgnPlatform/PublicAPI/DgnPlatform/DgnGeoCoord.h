@@ -487,6 +487,15 @@ DgnDbR               cache
 );
 
 /*__PUBLISH_SECTION_START__*/
+
+DGNPLATFORM_EXPORT void PublishedCreateGeoCoordType66(
+short*                  type66AppData,
+uint32_t&                 type66AppDataBytes, // <= set to sizeof of type66AppData in bytes
+DgnDbR             project,
+bool                    primary
+) const;
+
+
 };
 
 /*__PUBLISH_SECTION_END__*/

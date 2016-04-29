@@ -118,7 +118,9 @@ struct GeometryStreamIO
         Material                = 21,   //!< Render material
         TextString              = 22,   //!< TextString (single-line/single-format run of characters)
         LineStyleModifiers      = 23,   //!< Specifies line style overrides to populate a LineStyleParams structure
+#if defined (BENTLEYCONFIG_OPENCASCADE)
         OpenCascadeBRep         = 24,   //!< Open Cascade TopoDS_Shape
+#endif
     };
 
     //=======================================================================================
