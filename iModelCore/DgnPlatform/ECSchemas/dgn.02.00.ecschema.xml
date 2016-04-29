@@ -424,7 +424,17 @@
     <ECEntityClass typeName="DictionaryElement" modifier="Abstract">
         <BaseClass>DefinitionElement</BaseClass>
     </ECEntityClass>
-    
+    <ECEntityClass typeName="GroupInformationElement" modifier="Abstract">
+        <BaseClass>InformationElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <MapStrategy>
+                    <Options>SharedColumnsForSubclasses</Options>
+                    <MinimumSharedColumnCount>8</MinimumSharedColumnCount>
+                </MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECEntityClass>
     <ECEntityClass typeName="GeometricElement" modifier="Abstract">
         <BaseClass>Element</BaseClass>
         <ECCustomAttributes>

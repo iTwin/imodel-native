@@ -723,6 +723,22 @@ void Script::ReportError (Utf8StringCR description)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      07/15
 //---------------------------------------------------------------------------------------
+void Script::BeginDisposeContext()
+    {
+    T_HOST.GetScriptAdmin().GetDgnScriptContext().BeginCallContext();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      07/15
+//---------------------------------------------------------------------------------------
+void Script::EndDisposeContext()
+    {
+    T_HOST.GetScriptAdmin().GetDgnScriptContext().EndCallContext();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      07/15
+//---------------------------------------------------------------------------------------
 void Logging::Message(Utf8StringCR category, LoggingSeverity severity, Utf8StringCR message)
     {
     T_HOST.GetScriptAdmin().HandleLogMessage(category.c_str(), (DgnPlatformLib::Host::ScriptAdmin::LoggingSeverity)severity, message.c_str());
