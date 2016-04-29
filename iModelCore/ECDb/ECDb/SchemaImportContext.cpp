@@ -196,8 +196,11 @@ BentleyStatus ECSchemaCompareContext::Prepare(ECDbSchemaManager const& schemaMan
     if (!m_existingSchemaList.empty())
         {
         ECSchemaComparer comparer;
-        if (comparer.Compare(m_changes, m_existingSchemaList, m_importedSchemaList) != SUCCESS)
+        //We do not require detail if schema is added or deleted the name and version suffice
+        ECSchemaComparer::Options options = ECSchemaComparer::Options(ECSchemaComparer::AppendDetailLevel::Partial, ECSchemaComparer::AppendDetailLevel::Partial);
+        if (comparer.Compare(m_changes, m_existingSchemaList, m_importedSchemaList, options) != SUCCESS)
             return ERROR;
+        
         /*
         Utf8String str;
         m_changes.WriteToString(str);

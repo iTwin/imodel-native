@@ -175,8 +175,9 @@ BentleyStatus Binary::CopyFrom(ECValueCR value)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSchemaComparer::Compare(ECSchemaChanges& changes, bvector<ECN::ECSchemaCP> const& lhs, bvector<ECN::ECSchemaCP> const& rhs)
+BentleyStatus ECSchemaComparer::Compare(ECSchemaChanges& changes, bvector<ECN::ECSchemaCP> const& lhs, bvector<ECN::ECSchemaCP> const& rhs, Options options)
     {
+    m_options = options;
     std::map<Utf8CP, ECSchemaCP, CompareIUtf8Ascii> lhsMap, rhsMap, allSchemasMap;
     for (ECSchemaCP schema : lhs)
         lhsMap[schema->GetName().c_str()] = schema;
@@ -275,18 +276,11 @@ BentleyStatus ECSchemaComparer::CompareECClass(ECClassChange& change, ECClassCR 
     if (a.GetClassModifier() != b.GetClassModifier())
         change.GetClassModifier().SetValue(a.GetClassModifier(), b.GetClassModifier());
 
-    if (a.IsCustomAttributeClass() != b.IsCustomAttributeClass())
-        change.IsCustomAttributeClass().SetValue(a.IsCustomAttributeClass(), b.IsCustomAttributeClass());
-
-    if (a.IsStructClass() != b.IsStructClass())
-        change.IsStructClass().SetValue(a.IsStructClass(), b.IsStructClass());
-
-    if (a.IsEntityClass() != b.IsEntityClass())
-        change.IsEntityClass().SetValue(a.IsEntityClass(), b.IsEntityClass());
+    if (a.GetClassType() != b.GetClassType())
+        change.ClassType().SetValue(a.GetClassType(), b.GetClassType());
 
     if (a.IsRelationshipClass() != b.IsRelationshipClass())
         {
-        change.IsRelationshipClass().SetValue(a.IsRelationshipClass(), b.IsRelationshipClass());
         if (a.IsRelationshipClass())
             {
             if (AppendECRelationshipClass(change.GetRelationship(), *a.GetRelationshipClassCP(), ValueId::Deleted) != SUCCESS)
@@ -1094,6 +1088,10 @@ BentleyStatus ECSchemaComparer::AppendECSchema(ECSchemaChanges& changes, ECSchem
     change.GetVersionMinor().SetValue(appendType, v.GetVersionMinor());
     change.GetVersionWrite().SetValue(appendType, v.GetVersionWrite());
 
+    if ((appendType == ValueId::Deleted && m_options.GetSchemaDeleteDetailLevel() == AppendDetailLevel::Partial) ||
+        (appendType == ValueId::New && m_options.GetSchemaNewDetailLevel() == AppendDetailLevel::Partial))
+        return SUCCESS;
+
     for (ECClassCP classCP : v.GetClasses())
         if (AppendECClass(change.Classes(), *classCP, appendType) == ERROR)
             return ERROR;
@@ -1124,15 +1122,12 @@ BentleyStatus ECSchemaComparer::AppendECClass(ECClassChanges& changes, ECClassCR
     change.GetDisplayLabel().SetValue(appendType, v.GetDisplayLabel());
     change.GetDescription().SetValue(appendType, v.GetDescription());
     change.GetClassModifier().SetValue(appendType, v.GetClassModifier());
-    change.IsCustomAttributeClass().SetValue(appendType, v.IsCustomAttributeClass());
-    change.IsEntityClass().SetValue(appendType, v.IsEntityClass());
-    change.IsStructClass().SetValue(appendType, v.IsStructClass());
+    change.ClassType().SetValue(appendType, v.GetClassType());
 
     for (ECPropertyCP propertyCP : v.GetProperties(false))
         if (AppendECProperty(change.Properties(), *propertyCP, appendType) == ERROR)
             return ERROR;
 
-    change.IsRelationshipClass().SetValue(appendType, v.GetRelationshipClassCP() != nullptr);
     if (v.GetRelationshipClassCP() != nullptr)
         {
         if (AppendECRelationshipClass(change.GetRelationship(), *v.GetRelationshipClassCP(), appendType) == ERROR)
@@ -1399,7 +1394,22 @@ std::vector<Utf8String> ECSchemaComparer::Split(Utf8StringCR path)
 
     return axis;
     }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String ECSchemaComparer::Join(std::vector<Utf8String> const& paths, Utf8CP delimiter)
+    {
+    Utf8String str;
+    for (auto itor = paths.begin(); itor != paths.end(); ++itor)
+        {
+        if (itor != paths.begin())
+            str.append(delimiter);
+        
+        str.append(*itor);
+        }
 
+    return str;
+    }
 //======================================================================================
 //ECChange
 //======================================================================================
@@ -1480,13 +1490,10 @@ SystemId ECChange::StringToSystemId(Utf8CP idString)
     if (strcmp(idString, "Instance") == 0) return SystemId::Instance;
     if (strcmp(idString, "Instances") == 0) return SystemId::Instances;
     if (strcmp(idString, "Integer") == 0) return SystemId::Integer;
-    if (strcmp(idString, "IsCustomAttributeClass") == 0) return SystemId::IsCustomAttributeClass;
-    if (strcmp(idString, "IsEntityClass") == 0) return SystemId::IsEntityClass;
+    if (strcmp(idString, "ClassType") == 0) return SystemId::ClassType;
     if (strcmp(idString, "IsPolymorphic") == 0) return SystemId::IsPolymorphic;
     if (strcmp(idString, "IsReadonly") == 0) return SystemId::IsReadonly;
-    if (strcmp(idString, "IsRelationshipClass") == 0) return SystemId::IsRelationshipClass;
     if (strcmp(idString, "IsStrict") == 0) return SystemId::IsStrict;
-    if (strcmp(idString, "IsStructClass") == 0) return SystemId::IsStructClass;
     if (strcmp(idString, "IsStruct") == 0) return SystemId::IsStruct;
     if (strcmp(idString, "IsStructArray") == 0) return SystemId::IsStructArray;
     if (strcmp(idString, "IsPrimitive") == 0) return SystemId::IsPrimitive;
@@ -1566,13 +1573,10 @@ Utf8CP ECChange::SystemIdToString(SystemId id)
             case SystemId::Instance: return "Instance";
             case SystemId::Instances: return "Instances";
             case SystemId::Integer: return "Integer";
-            case SystemId::IsCustomAttributeClass: return "IsCustomAttributeClass";
-            case SystemId::IsEntityClass: return "IsEntityClass";
+            case SystemId::ClassType: return "ClassType";
             case SystemId::IsPolymorphic: return "IsPolymorphic";
             case SystemId::IsReadonly: return "IsReadonly";
-            case SystemId::IsRelationshipClass: return "IsRelationshipClass";
             case SystemId::IsStrict: return "IsStrict";
-            case SystemId::IsStructClass: return "IsStructClass";
             case SystemId::IsStruct: return "IsStruct";
             case SystemId::IsStructArray: return "IsStructArray";
             case SystemId::IsPrimitive: return "IsPrimitive";
@@ -1908,6 +1912,29 @@ Utf8String ClassModifierChange::_ToString(ValueId id) const
         }
     return str;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String ClassTypeChange::_ToString(ValueId id) const
+    {
+    Utf8String str;
+    auto& v = GetValue(id);
+    if (v.IsNull())
+        str = NULL_TEXT;
+    else
+        {
+        if (v.Value() == ECClassType::CustomAttribute)
+            str = "CustomAttribute";
+        else if (v.Value() == ECClassType::Entity)
+            str = "Entity";
+        else if (v.Value() == ECClassType::Relationship)
+            str = "Relationship";
+        else if (v.Value() == ECClassType::Struct)
+            str = "Struct";
+        }
+    return str;
+    }
 //======================================================================================>
 //ECPropertyValueChange
 //======================================================================================>
@@ -2070,6 +2097,7 @@ void ECPropertyValueChange::_Optimize()
         if (m_children->IsEmpty())
             m_children = nullptr;
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -2077,6 +2105,31 @@ ECPropertyValueChange::ECPropertyValueChange(ChangeState state, SystemId systemI
     : ECChange(state, SystemId::PropertyValue, parent, customId),m_type(static_cast<PrimitiveType>(0))
     {
     BeAssert(systemId == GetSystemId());
+    if (ECChangeArray<ECPropertyValueChange> const* array = dynamic_cast <ECChangeArray<ECPropertyValueChange> const*>(parent))
+        {
+        if (ECPropertyValueChange const* p = dynamic_cast <ECPropertyValueChange const*>(array->GetParent()))
+            {
+            m_accessString.append(p->m_accessString).append(".");
+            }
+        }
+    m_accessString.append(GetId());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+void  ECPropertyValueChange::GetFlatListOfChildren(std::vector<ECPropertyValueChange*>& childrens)
+    {
+    if (HasChildren())
+        {
+        ECChangeArray<ECPropertyValueChange>& children = GetChildren();
+        for (size_t i = 0; i < children.Count(); i++)
+            {
+            children.At(i).GetFlatListOfChildren(childrens);
+            }
+        }
+    else
+        childrens.push_back(this);
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
@@ -2116,5 +2169,247 @@ ECPropertyValueChange& ECPropertyValueChange::GetOrCreate(ChangeState stat, std:
 
     return *c;
     }
-      
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+ECPropertyValueChange* ECPropertyValueChange::GetValue(Utf8CP accessPath) 
+    {
+    Utf8String ap = accessPath;
+    std::vector<Utf8String> path = ECSchemaComparer::Split(ap);
+    if (path.empty())
+        return nullptr;
+
+    if (ap.find(":") != Utf8String::npos)
+        {
+        if (path.front() != GetId())
+            return nullptr;
+
+        path.erase(path.begin());
+        }
+
+    ECPropertyValueChange* c = this;
+    for (auto& str : path)
+        {
+        if (!c->HasChildren())
+            return nullptr;
+
+        auto m = c->GetChildren().Find(str.c_str());
+        if (m == nullptr)
+            {
+            return false;
+            }
+        else
+            c = m;
+        }
+
+    return c;
+    }
+
+//======================================================================================>
+//CustomAttributeValidator::Rule
+//======================================================================================>
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+CustomAttributeValidator::Rule::Rule(Policy policy, Utf8CP pattren)
+    :m_policy(policy), m_pattren(ECSchemaComparer::Split(pattren))
+    {}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+bool CustomAttributeValidator::Rule::Match(std::vector<Utf8String> const& source) const
+    {
+    if (source.empty())
+        return false;
+
+    if (m_pattren.size() == 1)//Foo:*
+        if (m_pattren.front().EndsWith("*"))
+            return true;
+
+    auto sb = source.begin();
+    auto pb = m_pattren.begin();
+    auto se = source.end();
+    auto pe = m_pattren.end();
+    while (sb != se && pb != pe)
+        {
+        if (*sb == *pb)
+            {
+            ++sb;
+            ++pb;
+
+            if (sb == se && pb == pe) //both stream ended its a match
+                return true;
+
+            if (sb != se && pb == pe)
+                return false;
+
+            if (sb == se && pb != pe)
+                {
+                while (pb != pe && *pb == "*") ++pb;
+                if (pb == pe)
+                    return true;
+
+                return false;
+                }
+            }
+        else if (*pb == "*")
+            {
+            while (pb != pe && *pb == "*") ++pb; //skip *.*.*
+            if (pb == pe) //last token seen was a * which mean success
+                return true;
+            else
+                {
+                while (*sb != *pb) //last token is not a * which mean we need to find a token in source that matchs it
+                    {
+                    ++sb;
+                    if (sb == se)
+                        return false;
+                    }
+                //we found one
+                ++sb; //next token 
+                ++pb; //next token
+                if (sb == se && pb == pe) //both stream ended its a match
+                    return true;
+
+                if (sb != se && pb == pe)
+                    return false;
+
+                if (sb == se && pb != pe)
+                    {
+                    while (pb != pe && *pb == "*") ++pb;
+                    if (pb == pe)
+                        return true;
+
+                    return false;
+                    }
+                }
+            }
+        else
+            return false;
+        }
+
+    return true;
+    }
+
+//======================================================================================>
+//CustomAttributeValidator
+//======================================================================================>
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+CustomAttributeValidator::RuleList const& CustomAttributeValidator::GetRelaventRules(ECPropertyValueChange& change) const
+    {
+    if (!change.IsDefinition())
+        return m_rules.find(m_wilfCard)->second;
+
+    Utf8String prefix = GetPrefix(change.GetAccessString());
+    if (prefix.empty())
+        return m_rules.find(m_wilfCard)->second;;
+
+    auto itor = m_rules.find(prefix);
+    if (itor != m_rules.end())
+        return itor->second;
+
+    return m_rules.find(m_wilfCard)->second;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String CustomAttributeValidator::GetPrefix(Utf8StringCR path)
+    {
+    size_t i = path.find(':');
+    if (i == Utf8String::npos)
+        return Utf8String();
+
+    return path.substr(0, i);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+CustomAttributeValidator::Policy CustomAttributeValidator::Validate(ECPropertyValueChange& change) const
+    {
+    BeAssert(change.IsDefinition());
+    std::vector<ECPropertyValueChange*> flatListOfChanges = change.GetFlatListOfChildren();
+    RuleList const& rules = GetRelaventRules(change);
+    if (rules.empty())
+        return GetDefaultPolicy();
+
+    for (ECPropertyValueChange* v : flatListOfChanges)
+        {
+        if (v->HasChildren())
+            continue;
+
+        std::vector<Utf8String> path = ECSchemaComparer::Split(v->GetAccessString());
+        for (std::unique_ptr<Rule> const& rule : rules)
+            {
+            if (rule->Match(path))
+                {
+                if (rule->GetPolicy() == GetDefaultPolicy())
+                    break; //test next item
+                else
+                    {
+                    return GetDefaultPolicy() == Policy::Accept ? Policy::Reject : Policy::Accept;
+                    }
+                }
+            }
+        }
+
+    return GetDefaultPolicy();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+CustomAttributeValidator::CustomAttributeValidator()
+            :m_defaultPolicy(Policy::Accept), m_wilfCard("*")
+            {
+            Reset();
+            }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+void CustomAttributeValidator::Reset()
+    {
+    m_rules.clear();
+    m_rules[m_wilfCard] = RuleList();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+void CustomAttributeValidator::Accept(Utf8CP accessString)
+    {
+    Utf8String path = GetPrefix(Utf8String(accessString));
+    if (path.empty())
+        return;
+
+    m_rules[path].push_back(std::unique_ptr<Rule>(new Rule(Policy::Accept, accessString)));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+bool CustomAttributeValidator::HasAnyRuleForSchema(Utf8CP schemaName) const
+    {
+    return m_rules.find(schemaName) != m_rules.end();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+void CustomAttributeValidator::Reject(Utf8CP accessString)
+    {
+    Utf8String path = GetPrefix(Utf8String(accessString));
+    if (path.empty())
+        return;
+
+    m_rules[path].push_back(std::unique_ptr<Rule>(new Rule(Policy::Reject, accessString)));
+    }
+
+
 END_BENTLEY_SQLITE_EC_NAMESPACE
