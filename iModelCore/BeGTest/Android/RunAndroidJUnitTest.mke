@@ -1,6 +1,6 @@
 #--------------------------------------------------------------------------------------
 #
-#     $Source: Android/RunAndroidJUnit.mke $
+#     $Source: Android/RunAndroidJUnitTest.mke $
 #
 #  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
@@ -22,10 +22,6 @@
 
 ANDROIDJUNITPROJ=$(OutputRootDir)Product/$(ANDROIDJUNIT_PRODUCT)/project/
 
-%ifnofile $(ANDROIDJUNITPROJ)Scripts/installApk$(scriptExt)
-    %error $(ANDROIDJUNITPROJ)Scripts/installApk$(scriptExt) not found.
-%endif
-
 %ifndef ANDROIDJUNIT_OUTPUT_DIR
     ANDROIDJUNIT_OUTPUT_DIR=$(OutputRootDir)build/RunANJU/$(ANDROIDJUNIT_PRODUCT)/
 %endif
@@ -33,7 +29,7 @@ ANDROIDJUNITPROJ=$(OutputRootDir)Product/$(ANDROIDJUNIT_PRODUCT)/project/
 %if defined (BMAKE_DELETE_ALL_TARGETS)
 always:
     $(rmdirRecursiveCmd) ${ANDROIDJUNIT_OUTPUT_DIR}
-
+    $(rmdirRecursiveCmd) $(OutputRootDir)build/RunAndroidJUnitTest
     %return
 %endif
 
@@ -47,15 +43,26 @@ always:
     $(adbCmd) devices > ${ANDROIDJUNIT_OUTPUT_DIR}/devices
 
 %if $[@readfile ${ANDROIDJUNIT_OUTPUT_DIR}/devices]=="List of devices attached  "
-    %warn No Android device attached. Cannot run unit tests.
+    %error No Android device attached. Cannot run unit tests.
     %return
 %endif
 
 logFile = ${ANDROIDJUNIT_OUTPUT_DIR}/RunJUnit.log
 
+%if defined(winNT)
+%ifnofile $(OutputRootDir)build/RunAndroidJUnitTest/logcat.bat
 always:
-    $(ANDROIDJUNITPROJ)Scripts/installApk$(scriptExt)
-    $(ANDROIDJUNITPROJ)Scripts/runTests$(scriptExt)
+    >${ANDROIDJUNIT_OUTPUT_DIR}/logcat.bat
+adb logcat BeTestX:* doOpenChoice:* ICU_DATA_FILE:* TestRunner:I BeSQLiteDb:* BeSQLite:* ECDbMap:F ECObjectsNative:F test:F wpa_supplicant:F msm8660.gralloc:F libEGL:F com.samsung.app:F TODmobile:F TelephonyManager:F EmailWidget:F APNews:F PowerManagerService:F *:E
+    <
+    start ${ANDROIDJUNIT_OUTPUT_DIR}/logcat.bat
+%endif
+%endif
+
+always:
+    $(adbCmd) -d install -r ${ANDROIDJUNITPROJ}/project/app/build/outputs/apk/Test-debug.apk
+    $(adbCmd) -d install -r ${ANDROIDJUNITPROJ}/project/app/build/outputs/apk/Test-debug-androidTest-unaligned.apk
+    $(adbCmd) shell am instrument -w com.bentley.unittest\/com.bentley.unittest.BeInstrumentationTestRunner
     
 %message To run a single unit test:
 %message      $(ANDROIDJUNITPROJ)Scripts/runOneTest$(scriptExt)
