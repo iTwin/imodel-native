@@ -576,14 +576,17 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, Contex
             const int descrIx = 4;
             const int isReadonlyIx = 5;
             const int primTypeIx = 6;
-            const int nonPrimTypeIx = 7;
-            const int extendedTypeIx = 8;
-            const int enumIx = 9;
+            const int enumIx = 7;
+            const int nonPrimTypeIx = 8;
+            const int extendedTypeIx = 9;
             const int minOccursIx = 10;
             const int maxOccursIx = 11;
             const int navPropDirectionIx = 12;
 
-            CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT Id,Kind,Name,DisplayLabel,Description,IsReadonly,PrimitiveType,NonPrimitiveType,ExtendedType,Enumeration,ArrayMinOccurs,ArrayMaxOccurs,NavigationPropertyDirection FROM ec_Property WHERE ClassId=? ORDER BY Ordinal");
+            CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT Id,Kind,Name,DisplayLabel,Description,IsReadonly,"
+                                                              "PrimitiveType,Enumeration,NonPrimitiveType,ExtendedType,"
+                                                              "ArrayMinOccurs,ArrayMaxOccurs,NavigationPropertyDirection "
+                                                              "FROM ec_Property WHERE ClassId=? ORDER BY Ordinal");
             if (stmt == nullptr)
                 return ERROR;
 
@@ -606,16 +609,20 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, Contex
                 if (!stmt->IsColumnNull(isReadonlyIx))
                     rowInfo.m_isReadonly = stmt->GetValueInt(isReadonlyIx) != 0;
 
+                bool primTypeIsNull = false;
                 if (stmt->IsColumnNull(primTypeIx))
-                    {
-                    if (kind == ECPropertyKind::Primitive || kind == ECPropertyKind::PrimitiveArray)
-                        {
-                        BeAssert(false && "PrimitiveType column must not be NULL for primitive and prim array property");
-                        return ERROR;
-                        }
-                    }
+                    primTypeIsNull = true;
                 else
                     rowInfo.m_primType = stmt->GetValueInt(primTypeIx);
+
+                if (!stmt->IsColumnNull(enumIx))
+                    rowInfo.m_enumId = stmt->GetValueId<ECEnumerationId>(enumIx);
+
+                if ((kind == ECPropertyKind::Primitive || kind == ECPropertyKind::PrimitiveArray) && primTypeIsNull && !rowInfo.m_enumId.IsValid())
+                    {
+                    BeAssert(false && "Either PrimitiveType or Enumeration column must not be NULL for primitive and prim array property");
+                    return ERROR;
+                    }
 
                 if (stmt->IsColumnNull(nonPrimTypeIx))
                     {
@@ -630,18 +637,6 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, Contex
 
                 if (!stmt->IsColumnNull(extendedTypeIx))
                     rowInfo.m_extendedTypeName.assign(stmt->GetValueText(extendedTypeIx));
-
-                if (stmt->IsColumnNull(enumIx))
-                    {
-                    if (kind == ECPropertyKind::Enumeration)
-                        {
-                        BeAssert(false && "Enumeration column must not be NULL for enumeration property");
-                        return ERROR;
-                        }
-                    }
-                else
-                    rowInfo.m_enumId = stmt->GetValueId<ECEnumerationId>(enumIx);
-
 
                 if (stmt->IsColumnNull(minOccursIx) || stmt->IsColumnNull(maxOccursIx))
                     {
@@ -688,33 +683,24 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, Contex
             {
                 case ECPropertyKind::Primitive:
                 {
-                BeAssert(rowInfo.m_primType >= 0);
+                BeAssert(rowInfo.m_primType >= 0 || rowInfo.m_enumId.IsValid());
 
                 PrimitiveECPropertyP primProp = nullptr;
-                if (ECObjectsStatus::Success != ecClass->CreatePrimitiveProperty(primProp, rowInfo.m_name, (PrimitiveType) rowInfo.m_primType))
-                    return ERROR;
 
-                if (!rowInfo.m_extendedTypeName.empty())
+                if (rowInfo.m_enumId.IsValid())
                     {
-                    if (ECObjectsStatus::Success != primProp->SetExtendedTypeName(rowInfo.m_extendedTypeName.c_str()))
+                    ECEnumerationP ecenum = nullptr;
+                    if (SUCCESS != ReadECEnumeration(ecenum, ctx, rowInfo.m_enumId))
+                        return ERROR;
+
+                    if (ECObjectsStatus::Success != ecClass->CreateEnumerationProperty(primProp, rowInfo.m_name, *ecenum))
                         return ERROR;
                     }
-
-                prop = primProp;
-                break;
-                }
-
-                case ECPropertyKind::Enumeration:
-                {
-                BeAssert(rowInfo.m_enumId.IsValid());
-                ECEnumerationP ecenum = nullptr;
-
-                if (SUCCESS != ReadECEnumeration(ecenum, ctx, rowInfo.m_enumId))
-                    return ERROR;
-
-                PrimitiveECPropertyP primProp = nullptr;
-                if (ECObjectsStatus::Success != ecClass->CreateEnumerationProperty(primProp, rowInfo.m_name, *ecenum))
-                    return ERROR;
+                else
+                    {
+                    if (ECObjectsStatus::Success != ecClass->CreatePrimitiveProperty(primProp, rowInfo.m_name, (PrimitiveType) rowInfo.m_primType))
+                        return ERROR;
+                    }
 
                 if (!rowInfo.m_extendedTypeName.empty())
                     {

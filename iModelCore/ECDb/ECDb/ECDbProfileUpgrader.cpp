@@ -13,6 +13,87 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //*************************************** ECDbProfileUpgrader_XXX *********************************
 //-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle        05/2016
+//+---------------+---------------+---------------+---------------+---------------+--------
+DbResult ECDbProfileUpgrader_3600::_Upgrade(ECDbR ecdb) const
+    {
+    DbResult stat = UpdateECPropertyKindColumn(ecdb);
+    if (BE_SQLITE_OK != stat)
+        return stat;
+
+    return AddMissingIndexesOnFKColumns(ecdb);
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle        05/2016
+//+---------------+---------------+---------------+---------------+---------------+--------
+DbResult ECDbProfileUpgrader_3600::UpdateECPropertyKindColumn(ECDbR ecdb) const
+    {
+    //ECPropertyKind::Enumeration (value: 4) was removed, as enumeration props are primitive props, 
+    //and therefore ECPropertyKind::Navigation now has value 4.
+    //So old value 4 is changed to new value 0 (Primitive)
+    //And old value 5 (Navigation) is changed to 4 (Navigation)
+    Statement stmt;
+    if (BE_SQLITE_OK != stmt.Prepare(ecdb, "UPDATE ec_Property SET Kind=? WHERE Kind=?"))
+        {
+        LOG.errorv("ECDb profile upgrade failed: Preparing statement to update column 'Kind' in table 'ec_Property' to change in ECPropertyKind enum failed: %s", ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    if (BE_SQLITE_OK != stmt.BindInt(1, (int) ECPropertyKind::Primitive) || BE_SQLITE_OK != stmt.BindInt(2, 4) ||
+        BE_SQLITE_DONE != stmt.Step())
+        {
+        LOG.errorv("ECDb profile upgrade failed: Executing statement to update column 'Kind' in table 'ec_Property' to change in ECPropertyKind enum failed: %s", ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    if (BE_SQLITE_OK != stmt.BindInt(1, (int) ECPropertyKind::Navigation) || BE_SQLITE_OK != stmt.BindInt(2, 5) ||
+        BE_SQLITE_DONE != stmt.Step())
+        {
+        LOG.errorv("ECDb profile upgrade failed: Executing statement to update column 'Kind' in table 'ec_Property' to change in ECPropertyKind enum failed: %s", ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    LOG.debug("ECDb profile upgrade: Updated column 'Kind' in table 'ec_Property' to change in ECPropertyKind enum.");
+    return BE_SQLITE_OK;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle        05/2016
+//+---------------+---------------+---------------+---------------+---------------+--------
+DbResult ECDbProfileUpgrader_3600::AddMissingIndexesOnFKColumns(ECDbR ecdb) const
+    {
+    if (BE_SQLITE_OK != ecdb.ExecuteSql("CREATE INDEX ix_ec_SchemaReference_ReferencedSchemaId ON ec_SchemaReference(ReferencedSchemaId);"
+                                        "DROP INDEX ix_ec_Class_SchemaId;"
+                                        "CREATE UNIQUE INDEX uix_ec_Class_SchemaId_Name ON ec_Class(SchemaId,Name);"
+                                        "CREATE INDEX ix_ec_Property_Enumeration ON ec_Property(Enumeration);"
+                                        "CREATE INDEX ix_ec_Property_NonPrimitiveType ON ec_Property(NonPrimitiveType);"
+                                        "CREATE INDEX ix_ec_CustomAttribute_ClassId ON ec_CustomAttribute(ClassId);"
+                                        "CREATE INDEX ix_ec_ClassMap_ParentId ON ec_ClassMap(ParentId);"
+                                        "CREATE INDEX ix_ec_PropertyMap_PropertyPathId ON ec_PropertyMap(PropertyPathId);"
+                                        //This index is now already added during upgrade to 3.2. However if the file was created
+                                        //before the 3.2 upgrader was enhanced, the file wouldn't have the index. So attempt to create it here, too
+                                        "CREATE INDEX IF NOT EXISTS ix_ec_PropertyMap_ColumnId ON ec_PropertyMap(ColumnId);"
+                                        "CREATE INDEX ix_ec_Index_ClassId ON ec_Index(ClassId);"
+                                        "CREATE INDEX ix_ec_IndexColumn_ColumnId ON ec_IndexColumn(ColumnId);"
+                                        "CREATE INDEX ix_ec_ForeignKey_TableId ON ec_ForeignKey(TableId);"
+                                        "CREATE INDEX ix_ec_ForeignKey_ReferencedTableId ON ec_ForeignKey(ReferencedTableId);"
+                                        "CREATE INDEX ix_ec_ForeignKeyColumn_ForeignKeyId ON ec_ForeignKeyColumn(ForeignKeyId);"
+                                        "CREATE INDEX ix_ec_ForeignKeyColumn_ColumnId ON ec_ForeignKeyColumn(ColumnId);"
+                                        "CREATE INDEX ix_ec_ForeignKeyColumn_ReferencedColumnId ON ec_ForeignKeyColumn(ReferencedColumnId)"))
+        {
+        LOG.errorv("ECDb profile upgrade failed: Could not create indexes on foreign key columns: %s", ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    LOG.debug("ECDb profile upgrade: Created missing indexes on the foreign key columns of the ec_ tables.");
+    return BE_SQLITE_OK;
+    }
+
+//-----------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle        04/2016
 //+---------------+---------------+---------------+---------------+---------------+--------
 DbResult ECDbProfileUpgrader_3500::_Upgrade(ECDbR ecdb) const
@@ -387,6 +468,14 @@ DbResult ECDbProfileUpgrader_3200::_Upgrade(ECDbR ecdb) const
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
 
+    //This index was missing. Without it the below deletes would be very slow.
+    if (BE_SQLITE_OK != ecdb.ExecuteSql("CREATE INDEX ix_ec_PropertyMap_ColumnId ON ec_PropertyMap(ColumnId);"))
+        {
+        LOG.errorv("ECDb profile upgrade failed for '%s'. Failed to create index 'ix_ec_PropertyMap_ColulmnId': %s",
+                   ecdb.GetDbFileName(), ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+        
     std::vector<Utf8String> triggerNames;
     while (BE_SQLITE_ROW == stmt.Step())
         {
@@ -451,6 +540,7 @@ DbResult ECDbProfileUpgrader_3200::_Upgrade(ECDbR ecdb) const
 
     //delete entries in ec_Table. This also deletes respective entries in ec_Column, ec_PropertyMap and ec_PropertyPath (via FK)
     //Here we have to delete non-virtual tables, too, as we don't even have virtual tables for struct arrays anymore
+    StopWatch timer(true);
     if (BE_SQLITE_OK != ecdb.ExecuteSql("DELETE FROM ec_Table WHERE Type=" OBSOLETE_STRUCTARRAY_TABLETYPE))
         {
         LOG.errorv("ECDb profile upgrade failed for '%s'. Deleting struct array entries from ec_Table failed: %s",
@@ -458,7 +548,8 @@ DbResult ECDbProfileUpgrader_3200::_Upgrade(ECDbR ecdb) const
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
 
-    LOG.debugv("ECDb profile upgrade: Deleted struct array entries from ec_Table. Number of rows deleted: %d", ecdb.GetModifiedRowCount());
+    timer.Stop();
+    LOG.debugv("ECDb profile upgrade: Deleted struct array entries from ec_Table (%.4f msecs). Number of rows deleted: %d", timer.GetElapsedSeconds() * 1000.0, ecdb.GetModifiedRowCount());
     return BE_SQLITE_OK;
     }
 

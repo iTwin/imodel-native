@@ -16,6 +16,15 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //======================================================================================
 struct DbSchemaPersistenceManager : public NonCopyableClass
     {
+public:
+    enum class CreateOrUpdateTableResult
+        {
+        Created = 1,
+        Updated = 2,
+        WasUpToDate = 3,
+        Skipped = 4,
+        Error = 5
+        };
 private:
     DbSchemaPersistenceManager();
     ~DbSchemaPersistenceManager();
@@ -37,6 +46,10 @@ private:
     static DbResult InsertPropertyMapping(ECDbCR, PropertyDbMapping const&);
     static DbResult InsertPropertyPath(ECDbCR, PropertyDbMapping::Path const&);
 
+    static bool IsTableChanged(ECDbCR, DbTable const&);
+
+    static BentleyStatus CreateTable(ECDbCR, DbTable const&);
+    static BentleyStatus UpdateTable(ECDbCR, DbTable const&);
     static BentleyStatus AlterTable(ECDbCR, DbTable const&, std::vector<DbColumn const*> const& columnsToAdd);
 
     static BentleyStatus CreateTriggers(ECDbCR, DbTable const&, bool failIfExists);
@@ -52,14 +65,12 @@ private:
     static BentleyStatus BuildCreateIndexDdl(Utf8StringR ddl, Utf8StringR comparableIndexDef, ECDbCR, DbIndex const&);
     static BentleyStatus GenerateIndexWhereClause(Utf8StringR ddl, ECDbCR, DbIndex const&);
 
+
 public:
     static BentleyStatus Load(DbSchema&, ECDbCR, DbSchema::LoadState loadMode);
     static BentleyStatus Save(ECDbCR, DbSchema const&);
 
-    static BentleyStatus CreateTable(ECDbCR, DbTable const&);
-    static BentleyStatus CreateOrUpdateTable(ECDbCR, DbTable const&);
-    static bool IsTableChanged(ECDbCR, DbTable const&);
-
+    static CreateOrUpdateTableResult CreateOrUpdateTable(ECDbCR, DbTable const&);
     static BentleyStatus CreateOrUpdateIndexes(ECDbCR, DbSchema const&);
     };
 
