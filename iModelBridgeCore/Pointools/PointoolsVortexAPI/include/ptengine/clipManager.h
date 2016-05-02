@@ -9,8 +9,7 @@
 
 #include <pt/os.h>
 #include <pt/typedefs.h>
-#include <ptapi/PointoolsVortexAPI.h>
-#include <ptapi/PointoolsVortexAPI_ResultCodes.h>
+#include <Vortex/VortexAPI.h>
 #include <ptengine/clipPlane.h>
 #include <ptcloud2/node.h>
 #include <ptedit/isolationFilter.h>

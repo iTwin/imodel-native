@@ -6,7 +6,6 @@
 
 #include <gl/glew.h>
 #include <ptapi/PointoolsVortexAPI.h>
-#include <ptapi/PointoolsVortexAPI_ResultCodes.h>
 #include <ptapi/PointoolsAPI_handle.h>
 
 #include <ptengine/PointsScene.h>

@@ -4,7 +4,6 @@
 #define POINTOOLS_API_BUILD_DLL
 
 #include <ptapi/PointoolsVortexAPI.h>
-#include <ptapi/PointoolsVortexAPI_ResultCodes.h>
 
 #include <diagnostics/diagnosticCmds.h>
 #include <ptengine/PointsScene.h>

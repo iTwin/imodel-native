@@ -10,7 +10,6 @@
 
 #include <gl/glew.h>
 #include <ptapi/PointoolsVortexAPI.h>
-#include <ptapi/PointoolsVortexAPI_ResultCodes.h>
 
 #include <ptgl/glInvariant.h>
 #include <ptengine/renderContext.h>

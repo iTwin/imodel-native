@@ -6,8 +6,6 @@
 #include <ptedit/editState.h>
 #include <pt/datatreeIO.h>
 
-#include <ptapi/PointoolsVortexAPI_ResultCodes.h>
-
 #include <ptds/DataSource.h>
 
 using namespace pcloud;

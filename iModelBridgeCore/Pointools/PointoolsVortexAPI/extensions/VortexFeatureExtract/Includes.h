@@ -5,5 +5,5 @@
 #include <stdio.h>
 #include <assert.h>
 
-#include "../../include/ptapi/PointoolsVortexAPI_import.h"
+#include <Vortex/VortexAPI.h>
 #include "VortexFeatureExtract.h"

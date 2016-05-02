@@ -10,8 +10,6 @@
 #include <pt/os.h>
 #include <pt/typedefs.h>
 #include <ptapi/PointoolsVortexAPI.h>
-#include <ptapi/PointoolsVortexAPI_ResultCodes.h>
-
 
 namespace pointsengine
 {

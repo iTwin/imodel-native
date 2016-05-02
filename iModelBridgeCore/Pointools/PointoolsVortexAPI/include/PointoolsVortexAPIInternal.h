@@ -93,5 +93,6 @@
 #include <PTRMI/Manager.h>
 #include <ptengine/ClipManager.h>
 
+#include <ptapi/PointoolsVortexAPI.h>
 
 #endif

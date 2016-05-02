@@ -48,7 +48,6 @@ always:
 #----------------------------------------------------------------------
 headerDependencies = \
     $(basedir)\Includes.h\
-    $(PointoolsVortexAPIInclude)ptapi\PointoolsVortexAPI_import.h\
     $(basedir)\VortexFeatureExtract.h\
     $(basedir)\VortexFeatureExtractAPI.h\
     $(basedir)\GeomTypes.h\

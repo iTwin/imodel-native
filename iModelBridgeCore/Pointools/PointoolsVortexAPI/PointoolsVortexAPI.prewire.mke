@@ -17,14 +17,11 @@ srcDir          = $(_MakeFilePath)
 always:
    ~linkdir "$(PublicApiDir)Vortex=$(srcDir)PublicAPI/Vortex"
    
+# &&MM remove me.
 # Wire in my own vendor header files.
 #VendorAPIDir    = $(BuildContext)VendorAPI/$(appName)_DLL/
 #
 #always:
-#    @CreateSymLinks.py   -f"$(VendorAPIDir)vortexLicense.c"="$(srcDir)lic/vortexLicense.c"
-#    @CreateSymLinks.py   -f"$(VendorAPIDir)PTAPI/PointoolsVortexAPI_import.cpp=$(srcDir)src/ptapi/PointoolsVortexAPI_import.cpp"
-#    @CreateSymLinks.py   -f"$(VendorAPIDir)PTAPI/PointoolsVortexAPI_import.h=$(srcDir)include/ptapi/PointoolsVortexAPI_import.h"
-#    @CreateSymLinks.py   -f"$(VendorAPIDir)PTAPI/PointoolsVortexAPI_ResultCodes.h=$(srcDir)include/ptapi/PointoolsVortexAPI_ResultCodes.h"
 #    @CreateSymLinks.py   -f"$(VendorAPIDir)VortexObjects/IClashNode.h=$(srcDir)include/vortexobjects/IClashNode.h"
 #    @CreateSymLinks.py   -f"$(VendorAPIDir)VortexObjects/IClashObject.h=$(srcDir)include/vortexobjects/IClashObject.h"
 #    @CreateSymLinks.py   -f"$(VendorAPIDir)VortexObjects/IClashObjectManager.h=$(srcDir)include/vortexobjects/IClashObjectManager.h"
