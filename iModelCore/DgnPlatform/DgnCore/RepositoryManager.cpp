@@ -168,7 +168,7 @@ void BriefcaseManager::_OnDgnDbDestroyed()
 +---------------+---------------+---------------+---------------+---------------+------*/
 IBriefcaseManagerPtr DgnPlatformLib::Host::RepositoryAdmin::_CreateBriefcaseManager(DgnDbR db) const
     {
-    return db.IsMasterCopy() ? MasterBriefcaseManager::Create(db) : BriefcaseManager::Create(db);
+    return db.IsMasterCopy() || db.IsStandaloneBriefcase() ? MasterBriefcaseManager::Create(db) : BriefcaseManager::Create(db);
     }
 
 #define TABLE_Codes "Codes"

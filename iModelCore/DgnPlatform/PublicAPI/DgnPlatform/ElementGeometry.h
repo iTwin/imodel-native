@@ -96,6 +96,7 @@ struct GeometryStreamIO
     {
         Invalid                 = 0,
         Header                  = 1,    //!< Required to be first opcode
+        SubGraphicRange         = 2,    //!< Local range of next geometric primitive
         GeometryPartInstance    = 3,    //!< Draw referenced geometry part
         BasicSymbology          = 4,    //!< Set symbology for subsequent geometry that doesn't follow subCategory appearance
         PointPrimitive          = 5,    //!< Simple lines, line strings, shapes, point strings, etc.
@@ -181,6 +182,7 @@ struct GeometryStreamIO
         void Append(DgnGeometryPartId, TransformCP geomToElem);
         void Append(Render::GeometryParamsCR, bool ignoreSubCategory); // Adds multiple op-codes...
         void Append(TextStringCR);
+        void Append(DRange3dCR);
     };
 
     //=======================================================================================
@@ -208,6 +210,7 @@ struct GeometryStreamIO
         bool Get(Operation const&, DgnGeometryPartId&, TransformR) const;
         bool Get(Operation const&, Render::GeometryParamsR) const; // Updated by multiple op-codes, true if changed
         bool Get(Operation const&, TextStringR) const;
+        bool Get(Operation const&, DRange3dR) const;
     };
 
     //=======================================================================================
@@ -457,6 +460,7 @@ private:
     bool                     m_havePlacement;
     bool                     m_isPartCreate;
     bool                     m_is3d;
+    bool                     m_appendAsSubGraphics;
     Placement3d              m_placement3d;
     Placement2d              m_placement2d;
     DgnDbR                   m_dgnDb;
@@ -470,7 +474,7 @@ private:
     bool ConvertToLocal (GeometricPrimitiveR);
     bool AppendWorld (GeometricPrimitiveR);
     bool AppendLocal (GeometricPrimitiveCR);
-    void OnNewGeom (DRange3dCR localRange);
+    void OnNewGeom (DRange3dCR localRange, bool isSubGraphic);
 
 public:
 
@@ -484,6 +488,7 @@ public:
 
     DGNPLATFORM_EXPORT BentleyStatus SetGeometryStream (DgnGeometryPartR);
     DGNPLATFORM_EXPORT BentleyStatus SetGeometryStreamAndPlacement (GeometrySourceR);
+    void SetAppendAsSubGraphics() {m_appendAsSubGraphics = !m_isPartCreate;} //! Subsequent Append calls will produce sub-graphics with local ranges for picking. Not valid when creating a GeometryPart.
 
     DGNPLATFORM_EXPORT bool Append (DgnSubCategoryId);
     DGNPLATFORM_EXPORT bool Append (Render::GeometryParamsCR);

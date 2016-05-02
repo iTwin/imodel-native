@@ -210,6 +210,9 @@ public:
     //! Determine whether this DgnDb is a briefcase.
     bool IsBriefcase() const {return !IsMasterCopy();}
 
+    //! Determine whether this DgnDb is a stand-alone briefcase; that is, a transactable briefcase not associated with any master copy.
+    bool IsStandaloneBriefcase() const {return GetBriefcaseId().IsStandaloneId();}
+
     DGNPLATFORM_EXPORT DictionaryModelR GetDictionaryModel(); //!< Return the dictionary model for this DgnDb.
 
     //! Ids for DgnPlatform threads
