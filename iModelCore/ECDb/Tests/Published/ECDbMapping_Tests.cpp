@@ -791,6 +791,62 @@ TEST_F(ECDbMappingTestFixture, ExistingTableCATests)
         "    </ECEntityClass>"
         "</ECSchema>", false, "abc is not a valid MapStrategy Option"));
 
+    testItems.push_back(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECSchemaReference name='ECDbMap' version='01.00.01' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='BePropInfo' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>"
+        "                   <Strategy>ExistingTable</Strategy>"
+        "                 </MapStrategy>"
+        "                <TableName>be_Prop</TableName>"
+        "                <ECInstanceIdColumn>Id</ECInstanceIdColumn>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Namespace' typeName='string' />"
+        "        <ECProperty propertyName='PropNotMappedToAnExistingCol' typeName='int' />"
+        "    </ECEntityClass>"
+        "</ECSchema>", false, "Cannot add new column to existing table"));
+
+    testItems.push_back(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECSchemaReference name='ECDbMap' version='01.00.01' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='BePropInfo' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>"
+        "                   <Strategy>ExistingTable</Strategy>"
+        "                 </MapStrategy>"
+        "                <TableName>be_Prop</TableName>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Namespace' typeName='string' />"
+        "    </ECEntityClass>"
+        "</ECSchema>", false, "Cannot add ECInstanceId column to existing table"));
+
+    testItems.push_back(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECSchemaReference name='ECDb_FileInfo' version='02.00' prefix='ecdbf' />"
+        "    <ECEntityClass typeName='Parent' modifier='None'>"
+        "        <ECProperty propertyName='Price' typeName='double' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Parent' modifier='None'>"
+        "        <ECProperty propertyName='Price' typeName='double' />"
+        "    </ECEntityClass>"
+        "   <ECRelationshipClass typeName='ParentHasEmbeddedFile' strength='Referencing'>"
+        "      <Source cardinality='(0,1)' polymorphic='False'>"
+        "          <Class class ='Parent' />"
+        "      </Source>"
+        "      <Target cardinality='(0,N)' polymorphic='False'>"
+        "          <Class class ='ecdb.EmbeddedFileInfo' />"
+        "      </Target>"
+        "   </ECRelationshipClass>"
+        "</ECSchema>", false, "Cannot add FK column to existing table"));
+
     AssertSchemaImport(testItems, "existingtablecatests.ecdb");
 
 

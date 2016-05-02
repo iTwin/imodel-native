@@ -93,7 +93,6 @@ struct RelationshipClassMap : ClassMap
 
         virtual ReferentialIntegrityMethod _GetDataIntegrityEnforcementMethod() const = 0;
         virtual bool _RequiresJoin(ECN::ECRelationshipEnd) const;
-        virtual bool _IsReadonly() const { return false; }
     };
 
 /*=================================================================================**//**
@@ -178,7 +177,6 @@ struct RelationshipClassEndTableMap : RelationshipClassMap
         static ClassMapPtr Create(ECN::ECRelationshipClassCR ecRelClass, ECDbMapCR ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty) { return new RelationshipClassEndTableMap(ecRelClass, ecDbMap, mapStrategy, setIsDirty); }
         virtual ReferentialIntegrityMethod _GetDataIntegrityEnforcementMethod() const override;
         virtual bool _RequiresJoin(ECN::ECRelationshipEnd) const override;
-        virtual bool _IsReadonly() const override { return !IsMappedToSingleTable(); }
     };
 
 /*==========================================================================

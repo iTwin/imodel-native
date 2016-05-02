@@ -492,7 +492,7 @@ void JsonECSqlSelectAdapter::JsonFromCategory(JsonValueR jsonValue, IECInstanceP
     if (categoryCustomAttribute.IsValid())
         {
         bool status = GetStringValue(categoryName, *categoryCustomAttribute, "Name");
-        if (!EXPECTED_CONDITION (status))
+        if (!status)
             categoryName = "Miscellaneous";
         jsonValue["CategoryName"] = categoryName;
         

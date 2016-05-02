@@ -122,7 +122,7 @@ MappingStatus ClassMap::_MapPart1(SchemaImportContext& schemaImportContext, Clas
         DbTable* table = const_cast<ECDbMapR>(m_ecDbMap).FindOrCreateTable(&schemaImportContext, mapInfo.GetTableName(), tableType,
             mapInfo.IsMapToVirtualTable(), mapInfo.GetECInstanceIdColumnName(), primaryTable);
 
-        if (!EXPECTED_CONDITION(table != nullptr))
+        if (table == nullptr)
             return MappingStatus::Error;
 
         SetTable(*table, true /*append*/);
@@ -132,7 +132,9 @@ MappingStatus ClassMap::_MapPart1(SchemaImportContext& schemaImportContext, Clas
     BeAssert(tableType != DbTable::Type::Joined || parentClassMap != nullptr);
     if (parentClassMap != nullptr)
         {
-        PRECONDITION(!parentClassMap->GetMapStrategy().IsNotMapped(), MappingStatus::Error);
+        if (parentClassMap->GetMapStrategy().IsNotMapped())
+            return MappingStatus::Error;
+
         m_parentMapClassId = parentClassMap->GetClass().GetId();
         SetTable(parentClassMap->GetPrimaryTable());
 
@@ -959,7 +961,6 @@ DbColumn* ColumnFactory::ApplyDefaultStrategy(Utf8CP requestedColumnName, Proper
     if (!classId.IsValid())
         return nullptr;
 
-    //column already exists but doesn't match, therefore create a new one
     Utf8String resolvedColumnName, tmp;
     int retryCount = 0;
     if (SUCCESS != ResolveColumnName(tmp, requestedColumnName, classId, retryCount))
@@ -974,10 +975,6 @@ DbColumn* ColumnFactory::ApplyDefaultStrategy(Utf8CP requestedColumnName, Proper
             return nullptr;
         }
 
-    const bool canEdit = GetTable().GetEditHandle().CanEdit();
-    if (!canEdit)
-        GetTable().GetEditHandleR().BeginEdit();
-
     DbColumn* newColumn = GetTable().CreateColumn(resolvedColumnName.c_str(), colType, DbColumn::Kind::DataColumn, PersistenceType::Persisted);
     if (newColumn == nullptr)
         {
@@ -988,9 +985,6 @@ DbColumn* ColumnFactory::ApplyDefaultStrategy(Utf8CP requestedColumnName, Proper
     newColumn->GetConstraintR().SetIsNotNull(addNotNullConstraint);
     newColumn->GetConstraintR().SetIsUnique(addUniqueConstraint);
     newColumn->GetConstraintR().SetCollation(collation);
-
-    if (!canEdit)
-        GetTable().GetEditHandleR().EndEdit();
 
     return newColumn;
     }

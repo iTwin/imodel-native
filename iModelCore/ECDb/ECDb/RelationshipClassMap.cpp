@@ -323,7 +323,6 @@ MappingStatus RelationshipClassEndTableMap::_MapPart1(SchemaImportContext&, Clas
     BeAssert(GetClass().GetRelationshipClassCP() != nullptr && classMapInfo.GetMapStrategy().IsForeignKeyMapping());
     ECRelationshipClassCR relationshipClass = GetRelationshipClass();
 
-
     std::set<DbTable const*> foreignEndTables = GetForeignEnd() == ECRelationshipEnd_Source ? relationshipClassMapInfo.GetSourceTables() : relationshipClassMapInfo.GetTargetTables();
     ECRelationshipConstraintCR foreignEndConstraint = GetForeignEnd() == ECRelationshipEnd_Source ? relationshipClass.GetSource() : relationshipClass.GetTarget();
     ECRelationshipConstraintCR referencedEndConstraint = GetReferencedEnd() == ECRelationshipEnd_Source ? relationshipClass.GetSource() : relationshipClass.GetTarget();
