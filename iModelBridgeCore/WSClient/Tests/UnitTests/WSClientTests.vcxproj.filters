@@ -97,7 +97,7 @@
     <ClInclude Include="Published\WebServices\Client\WSInfoTests.h" />
     <ClInclude Include="Published\WebServices\Client\WSQueryTests.h" />
     <ClInclude Include="Published\WebServices\Client\WSRepositoryClientTests.h" />
-    <ClInclude Include="Published\WebServices\Licensing\MobileTrackingTests.h" />
+    <ClInclude Include="Published\WebServices\Licensing\UsageTrackingDataTests.h" />
     <ClInclude Include="Published\WebServices\Client\ClientInfoTests.h" />
     <ClInclude Include="Published\WebServices\Connect\StubSecureStore.h" />
     <ClInclude Include="Published\WebServices\Configuration\BuddiClientTests.h" />
@@ -285,7 +285,7 @@
     <ClCompile Include="Published\WebServices\Client\WSInfoTests.cpp" />
     <ClCompile Include="Published\WebServices\Client\WSQueryTests.cpp" />
     <ClCompile Include="Published\WebServices\Client\WSRepositoryClientTests.cpp" />
-    <ClCompile Include="Published\WebServices\Licensing\MobileTrackingTests.cpp" />
+    <ClCompile Include="Published\WebServices\Licensing\UsageTrackingDataTests.cpp" />
     <ClCompile Include="Published\WebServices\Client\ClientInfoTests.cpp" />
     <ClCompile Include="Published\WebServices\Configuration\BuddiClientTests.cpp" />
     <ClCompile Include="Published\WebServices\Configuration\UrlProviderTests.cpp" />

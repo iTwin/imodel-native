@@ -2,12 +2,12 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Licensing/UsageTrackingTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "UsageTrackingTests.h"
 #include <WebServices/Licensing/UsageTracking.h>
-#include <WebServices/Licensing/MobileTracking.h>
+#include <WebServices/Licensing/UsageTrackingData.h>
 #include <Bentley/Base64Utilities.h>
 
 #include <WebServices/Configuration/UrlProvider.h>
@@ -40,7 +40,7 @@ TEST_F (UsageTrackingTests, PostSingleUsage)
 
     DateTime dt (DateTime::GetCurrentTimeUtc ());
     auto status = UsageTracking::RegisterUserUsages ("2321DDDD-B37B-49AC-B4A8-591C4EBC9062",
-           "7409333D-EF73-4083-B377-22CFDF4ED4B7", "1654", "", dt, "5.3.1.11");
+           "7409333D-EF73-4083-B377-22CFDF4ED4B7", "2545", "", dt, "5.3.1.11");
 
     EXPECT_EQ (SUCCESS, status);
     }
@@ -58,11 +58,11 @@ TEST_F (UsageTrackingTests, PostMultipleUsage)
         });
 
     DateTime dt (DateTime::GetCurrentTimeUtc ());
-    MobileTracking mt1 ("2321DDDD-B37B-49AC-B4A8-591C4EBC9062", "7409333D-EF73-4083-B377-22CFDF4ED4B7", "1654", "", dt, "5.3.1.11");
-    MobileTracking mt2 ("2321DDDD-B37B-49AC-B4A8-591C4EBC9062", "7409333D-EF73-4083-B377-22CFDF4ED4B7", "1654", "", dt, "5.3.1.11");
-    bvector<MobileTracking> usages;
-    usages.push_back (mt1);
-    usages.push_back (mt2);
+    UsageTrackingData utd1 ("2321DDDD-B37B-49AC-B4A8-591C4EBC9062", "7409333D-EF73-4083-B377-22CFDF4ED4B7", "2545", "", dt, "5.3.1.11");
+    UsageTrackingData utd2 ("2321DDDD-B37B-49AC-B4A8-591C4EBC9062", "7409333D-EF73-4083-B377-22CFDF4ED4B7", "2545", "", dt, "5.3.1.11");
+    bvector<UsageTrackingData> usages;
+    usages.push_back (utd1);
+    usages.push_back (utd2);
 
     auto status = UsageTracking::RegisterUserUsages (usages);
     EXPECT_EQ (SUCCESS, status);
@@ -70,7 +70,7 @@ TEST_F (UsageTrackingTests, PostMultipleUsage)
 
 TEST_F (UsageTrackingTests, PostEmptyUsage)
     {
-    MobileTracking mt;
-    auto status = UsageTracking::RegisterUserUsages (mt);
+    UsageTrackingData utd;
+    auto status = UsageTracking::RegisterUserUsages (utd);
     EXPECT_EQ (UsageTracking::USAGE_NO_USAGES, status);
     }

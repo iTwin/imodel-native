@@ -136,7 +136,7 @@ TEST_F(ImsClientTests, Login_QaImsStsWithOldAppliesTo_RetrievesValidTokensForVal
     EXPECT_TRUE(result.GetValue()->IsSupported());
 
     // Navigator CONNECT Edition
-    result = client->RequestToken(credentials, "sso://wsfed_desktop/1654")->GetResult();
+    result = client->RequestToken(credentials, "sso://wsfed_desktop/2545")->GetResult();
     ASSERT_TRUE(result.IsSuccess());
     EXPECT_TRUE(result.GetValue()->IsSupported());
 

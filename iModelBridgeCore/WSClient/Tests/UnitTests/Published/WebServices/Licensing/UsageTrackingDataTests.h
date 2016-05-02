@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/UnitTests/Published/WebServices/Licensing/MobileTrackingTests.h $
+|     $Source: Tests/UnitTests/Published/WebServices/Licensing/UsageTrackingDataTests.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -10,6 +10,6 @@
 
 #include "../../Utils/WebServicesTestsHelper.h"
 
-class MobileTrackingTests : public BaseMockHttpHandlerTest
+class UsageTrackingDataTests : public BaseMockHttpHandlerTest
     {
     };

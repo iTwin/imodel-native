@@ -1,22 +1,22 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/UnitTests/Published/WebServices/Licensing/MobileTrackingTests.cpp $
+|     $Source: Tests/UnitTests/Published/WebServices/Licensing/UsageTrackingDataTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "MobileTrackingTests.h"
-#include <WebServices/Licensing/MobileTracking.h>
+#include "UsageTrackingDataTests.h"
+#include <WebServices/Licensing/UsageTrackingData.h>
 #include <Bentley/Base64Utilities.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
-TEST_F (MobileTrackingTests, ToJson_With_ProjectID)
+TEST_F (UsageTrackingDataTests, ToJson_With_ProjectID)
     {
     DateTime dt (DateTime::GetCurrentTimeUtc ());
-    MobileTracking mt ("device", "userId", "productId", "projectId", dt, "version");
-    Json::Value usage = mt.ToJson ();
+    UsageTrackingData utd ("device", "userId", "productId", "projectId", dt, "version");
+    Json::Value usage = utd.ToJson ();
     EXPECT_EQ ("device", usage["DeviceID"].asString ());
     EXPECT_EQ ("userid", usage["ImsUserID"].asString ());
     EXPECT_EQ ("productId", usage["ProductID"].asString ());
@@ -25,11 +25,11 @@ TEST_F (MobileTrackingTests, ToJson_With_ProjectID)
     EXPECT_EQ ("projectId", usage["ProjectID"].asString ());
     }
 
-TEST_F (MobileTrackingTests, ToJson_Without_ProjectID)
+TEST_F (UsageTrackingDataTests, ToJson_Without_ProjectID)
     {
     DateTime dt (DateTime::GetCurrentTimeUtc ());
-    MobileTracking mt ("device", "userId", "productId", "", dt, "version");
-    Json::Value usage = mt.ToJson ();
+    UsageTrackingData utd ("device", "userId", "productId", "", dt, "version");
+    Json::Value usage = utd.ToJson ();
     EXPECT_EQ ("device", usage["DeviceID"].asString ());
     EXPECT_EQ ("userid", usage["ImsUserID"].asString ());
     EXPECT_EQ ("productId", usage["ProductID"].asString ());
@@ -38,24 +38,24 @@ TEST_F (MobileTrackingTests, ToJson_Without_ProjectID)
     EXPECT_TRUE (usage["ProjectID"].asString ().empty ());
     }
 
-TEST_F (MobileTrackingTests, ToJson_EmptyUsage)
+TEST_F (UsageTrackingDataTests, ToJson_EmptyUsage)
     {
-    MobileTracking mt;
-    Json::Value usage = mt.ToJson ();
+    UsageTrackingData utd;
+    Json::Value usage = utd.ToJson ();
     EXPECT_TRUE (usage.isNull ());
     }
 
-TEST_F (MobileTrackingTests, IsEmpty_Empty)
+TEST_F (UsageTrackingDataTests, IsEmpty_Empty)
     {
-    MobileTracking mt;
-    EXPECT_TRUE (mt.IsEmpty ());
+    UsageTrackingData utd;
+    EXPECT_TRUE (utd.IsEmpty ());
     }
 
-TEST_F (MobileTrackingTests, IsEmpty_NotEmpty)
+TEST_F (UsageTrackingDataTests, IsEmpty_NotEmpty)
     {
     DateTime dt (DateTime::GetCurrentTimeUtc ());
-    MobileTracking mt ("device", "userId", "productId", "", dt, "version");
-    EXPECT_FALSE (mt.IsEmpty ());
+    UsageTrackingData utd ("device", "userId", "productId", "", dt, "version");
+    EXPECT_FALSE (utd.IsEmpty ());
     }
 
 
