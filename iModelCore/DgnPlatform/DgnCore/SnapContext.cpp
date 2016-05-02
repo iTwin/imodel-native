@@ -502,7 +502,7 @@ virtual void _OutputGraphics (ViewContextR context) override
             break; // Keep going, want to draw all matching geometry (ex. multi-symb BRep is Polyface per-symbology)...
             }
 
-        DgnGeometryPartPtr geomPart = iter.GetGeometryPartPtr();
+        DgnGeometryPartCPtr geomPart = iter.GetGeometryPartCPtr();
 
         if (!geomPart.IsValid())
             return; // Shouldn't happen...

@@ -345,7 +345,7 @@ Render::GraphicPtr ViewContext::_AddSubGraphic(Render::GraphicR graphic, DgnGeom
 
     if (!partGraphic.IsValid())
         {
-        DgnGeometryPartPtr partGeometry = GetDgnDb().GeometryParts().LoadGeometryPart(partId);
+        DgnGeometryPartCPtr partGeometry = GetDgnDb().Elements().Get<DgnGeometryPart>(partId);
 
         if (partGeometry.IsValid())
             {

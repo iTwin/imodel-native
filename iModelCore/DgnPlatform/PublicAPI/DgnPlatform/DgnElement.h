@@ -1070,8 +1070,12 @@ struct GeometryStream : ByteStream
 public:
     bool HasGeometry() const {return HasData();}  //!< return false if this GeometryStream is empty.
 
-    DgnDbStatus WriteGeometryStreamAndStep(BeSQLite::SnappyToBlob& snappy, DgnDbR dgnDb, Utf8CP table, Utf8CP colname, uint64_t rowId, BeSQLite::Statement& stmt, int stmtcolidx) const;
+    //! @private
     DgnDbStatus ReadGeometryStream(BeSQLite::SnappyFromMemory& snappy, DgnDbR dgnDb, void const* blob, int blobSize);
+    //! @private
+    static DgnDbStatus WriteGeometryStream(BeSQLite::SnappyToBlob&, DgnDbR, DgnElementId, Utf8CP tableName, Utf8CP columnName);
+    //! @private
+    DgnDbStatus BindGeometryStream(bool& multiChunkGeometryStream, BeSQLite::SnappyToBlob&, BeSQLite::EC::ECSqlStatement&, Utf8CP parameterName) const;
 };
 
 //=======================================================================================
@@ -1778,6 +1782,7 @@ struct DgnElements : DgnDbTable, IMemoryConsumer
     friend struct DgnElement;
     friend struct DgnModel;
     friend struct DgnModels;
+    friend struct DgnGeometryPart;
     friend struct ElementHandler;
     friend struct TxnManager;
     friend struct ProgressiveViewFilter;
@@ -1873,8 +1878,8 @@ private:
     virtual int64_t _CalculateBytesConsumed() const override {return GetTotalAllocated();}
     virtual int64_t _Purge(int64_t memTarget) override;
 
-    BeSQLite::SnappyFromMemory& GetSnappyFrom() {return m_snappyFrom;} // NB: Not to be used during loading of a geometric element!
-    BeSQLite::SnappyToBlob& GetSnappyTo() {return m_snappyTo;} // NB: Not to be used during insert or update of a geometric element!
+    BeSQLite::SnappyFromMemory& GetSnappyFrom() {return m_snappyFrom;} // NB: Not to be used during loading of a GeometricElement or GeometryPart!
+    BeSQLite::SnappyToBlob& GetSnappyTo() {return m_snappyTo;} // NB: Not to be used during insert or update of a GeometricElement or GeometryPart!
 
 public:
     DGNPLATFORM_EXPORT BeSQLite::CachedStatementPtr GetStatement(Utf8CP sql) const; //!< Get a statement from the element-specific statement cache for this DgnDb @private

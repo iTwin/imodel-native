@@ -379,7 +379,8 @@ struct GeometryCollection
         DGNPLATFORM_EXPORT bool IsSurface() const;          //!< closed curve, planar region, surface, and open mesh check that avoids creating GeometricPrimitivePtr when possible.
         DGNPLATFORM_EXPORT bool IsSolid() const;            //!< solid and volumetric mesh check that avoids creating GeometricPrimitivePtr when possible.
 
-        DgnGeometryPartPtr GetGeometryPartPtr() const {return m_state->m_dgnDb.GeometryParts().LoadGeometryPart(m_state->m_geomStreamEntryId.GetGeometryPartId());}
+        DgnGeometryPartPtr GetGeometryPartPtr() const {return m_state->m_dgnDb.Elements().GetForEdit<DgnGeometryPart>(m_state->m_geomStreamEntryId.GetGeometryPartId());}
+        DgnGeometryPartCPtr GetGeometryPartCPtr() const {return m_state->m_dgnDb.Elements().Get<DgnGeometryPart>(m_state->m_geomStreamEntryId.GetGeometryPartId());}
         DGNPLATFORM_EXPORT GeometricPrimitivePtr GetGeometryPtr() const;
 
         TransformCR GetSourceToWorld() const {return m_state->m_sourceToWorld;}
