@@ -513,10 +513,21 @@ BentleyStatus DbTable::RemoveConstraint(DbConstraint const& constraint)
 //---------------------------------------------------------------------------------------
 DbColumn* DbTable::CreateColumn(DbColumnId id, Utf8CP name, DbColumn::Type type, int position, DbColumn::Kind kind, PersistenceType persistenceType)
     {
-    if (GetEditHandleR().AssertNotInEditMode())
-        return nullptr;
+    if (!GetEditHandleR().CanEdit())
+        {
+        IssueReporter const& issues = m_dbSchema.GetECDb().GetECDbImplR().GetIssueReporter();
+        if (m_type == Type::Existing)
+            issues.Report(ECDbIssueSeverity::Error, "Cannot add columns to the existing table '%s' not owned by ECDb.", m_name.c_str());
+        else
+            {
+            BeAssert(false && "Cannot add columns to read-only table.");
+            issues.Report(ECDbIssueSeverity::Error, "Cannot add columns to the table '%s'. Table is not in edit mode.", m_name.c_str());
+            }
 
-    auto resolvePersistenceType = persistenceType;
+        return nullptr;
+        }
+
+    PersistenceType resolvePersistenceType = persistenceType;
     if (GetPersistenceType() == PersistenceType::Virtual)
         resolvePersistenceType = PersistenceType::Virtual;
 

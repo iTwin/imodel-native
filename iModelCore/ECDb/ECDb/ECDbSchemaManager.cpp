@@ -174,12 +174,6 @@ BentleyStatus ECDbSchemaManager::ImportECSchemas(ECSchemaCacheR cache) const
     if (compareContext.HasNoSchemasToImport())
         return SUCCESS;
 
-    //if (compareContext.RequiresUpdate())
-    //    {
-    //    m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to import ECSchemas. At least one of the schemas to import already exist and need to be updated in the file. ECSchema Update is not yet available though. But it will soon be.");
-    //    return ERROR;
-    //    }
-
     //See if cache need to be cleared. If compareContext.RequireECSchemaUpgrade() == true will clear the cache and reload imported schema.
     if (compareContext.ReloadECSchemaIfRequired(*this) == ERROR)
         return ERROR;

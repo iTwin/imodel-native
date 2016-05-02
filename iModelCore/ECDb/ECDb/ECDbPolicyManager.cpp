@@ -118,18 +118,6 @@ ECDbPolicy ECDbPolicyManager::DoGetClassPolicy(ClassMap const& classMap, IsValid
         const ECSqlType ecsqlType = assertion.GetECSqlType();
         if (ecsqlType == ECSqlType::Delete || ecsqlType == ECSqlType::Insert || ecsqlType == ECSqlType::Update)
             {
-            if (classMap.IsRelationshipClassMap())
-                {
-                RelationshipClassMapCP relClassMap = static_cast<RelationshipClassMapCP> (&classMap);
-                if (relClassMap->_IsReadonly())
-                    {
-                    Utf8String notSupportedMessage;
-                    notSupportedMessage.Sprintf("ECRelationshipClass '%s' is mapped to more than one table on its Foreign Key end. Therefore only ECSQL SELECT statements can be used against the relationship class.",
-                                                className.c_str());
-                    return ECDbPolicy::CreateNotSupported(notSupportedMessage.c_str());
-                    }
-                }
-
             if (classMap.GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::ExistingTable)
                 {
                 Utf8String notSupportedMessage;
@@ -137,6 +125,34 @@ ECDbPolicy ECDbPolicyManager::DoGetClassPolicy(ClassMap const& classMap, IsValid
                                             className.c_str());
 
                 return ECDbPolicy::CreateNotSupported(notSupportedMessage.c_str());
+                }
+
+            if (classMap.GetType() == ClassMap::Type::RelationshipEndTable)
+                {
+                if (!classMap.IsMappedToSingleTable())
+                    {
+                    Utf8String notSupportedMessage;
+                    notSupportedMessage.Sprintf("ECRelationshipClass '%s' is mapped to more than one table on its Foreign Key end. Therefore only ECSQL SELECT statements can be used against the relationship class.",
+                                                className.c_str());
+                    return ECDbPolicy::CreateNotSupported(notSupportedMessage.c_str());
+                    }
+
+                if (classMap.GetTables().empty())
+                    {
+                    BeAssert(false && "ClassMap.GetTables is not expected to be empty.");
+                    Utf8String notSupportedMessage;
+                    notSupportedMessage.Sprintf("Programmer error: ECRelationshipClass '%s' is not mapped to a table.",
+                                                className.c_str());
+                    return ECDbPolicy::CreateNotSupported(notSupportedMessage.c_str());
+                    }
+
+                if (classMap.GetTables()[0]->GetType() == DbTable::Type::Existing)
+                    {
+                    Utf8String notSupportedMessage;
+                    notSupportedMessage.Sprintf("ECRelationshipClass '%s' is mapped to an existing table on its Foreign Key end, not owned by ECDb. Therefore only ECSQL SELECT statements can be used against the relationship class.",
+                                                className.c_str());
+                    return ECDbPolicy::CreateNotSupported(notSupportedMessage.c_str());
+                    }
                 }
 
             if (ecsqlType == ECSqlType::Insert)

@@ -506,7 +506,7 @@ BentleyStatus JsonReader::ECRelatedItemsDisplaySpecificationsCache::ExtractFromC
 
             Utf8String derivedClassName(val.GetUtf8CP());
             ECClassCP derivedClass = ResolveClass(derivedClassName, classLocater, &customAttributeContainerSchema);
-            if (!EXPECTED_CONDITION(derivedClass != nullptr))
+            if (derivedClass == nullptr)
                 continue;
 
             ECRelationshipPath derivedPath = basePath;
