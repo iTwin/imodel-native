@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
  |
- |     $Source: PublicAPI/WebServices/Licensing/UsageTracking.h $
+ |     $Source: PublicAPI/WebServices/Licensing/FeatureTracking.h $
  |
  |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
@@ -10,7 +10,7 @@
 
 #include <DgnClientFx/Utils/Http/HttpClient.h>
 #include <WebServices/Client/WebServicesClient.h>
-#include <WebServices/Licensing/UsageTrackingData.h>
+#include <WebServices/Licensing/FeatureTrackingData.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
@@ -19,31 +19,31 @@ USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 /*--------------------------------------------------------------------------------------+
 * @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct UsageTracking
+struct FeatureTracking
     {
-    enum UsageStatus
+    enum FeatureTrackingStatus
         {
-        USAGE_SUCCESS = 0,
-        USAGE_ERROR,
-        USAGE_NO_USAGES
+        FEATURE_TRACKING_SUCCESS = 0,
+        FEATURE_TRACKING_ERROR,
+        FEATURE_TRACKING_NO_USAGES
         };
 
     private:
-        UsageTracking() {}
+        FeatureTracking() {}
         static Utf8String VerifyClientMobile(Utf8StringCR ims, Utf8StringCR dev);
         static Utf8String GetServiceUrl();
 
         //__PUBLISH_SECTION_END__
     public:
         //Only used for testing. Shouldn't be needed in apps
-        WSCLIENT_EXPORT static Json::Value GetUserUsages(Utf8StringCR userGuid, Utf8StringCR deviceId);
-        WSCLIENT_EXPORT static Json::Value GetUserUsages(Utf8StringCR userGuid, Utf8StringCR deviceId, Utf8StringCR date);
+        WSCLIENT_EXPORT static Json::Value GetUserFeatureUsages(Utf8StringCR userGuid, Utf8StringCR deviceId);
+        WSCLIENT_EXPORT static Json::Value GetUserFeatureUsages(Utf8StringCR userGuid, Utf8StringCR deviceId, Utf8StringCR date);
         //__PUBLISH_SECTION_START__
 
     public:
-        WSCLIENT_EXPORT static StatusInt RegisterUserUsages(Utf8StringCR dev, Utf8StringCR userId, Utf8StringCR prodId, Utf8StringCR projId, DateTimeCR usageDate, Utf8StringCR prodVer);
-        WSCLIENT_EXPORT static StatusInt RegisterUserUsages(bvector<UsageTrackingData> usages);
-        WSCLIENT_EXPORT static StatusInt RegisterUserUsages(UsageTrackingData usage);
+        WSCLIENT_EXPORT static StatusInt RegisterFeatureUsage(Utf8StringCR dev, Utf8StringCR userId, Utf8StringCR prodId, Utf8StringCR prodVer, Utf8StringCR projId, Utf8StringCR featureName, DateTimeCR usageStartDate, DateTimeCR usageEndDate);
+        WSCLIENT_EXPORT static StatusInt RegisterFeatureUsage(bvector<FeatureTrackingData> usages);
+        WSCLIENT_EXPORT static StatusInt RegisterFeatureUsage(FeatureTrackingData usage);
 
         WSCLIENT_EXPORT static void Initialize(std::shared_ptr<IHttpHandler> customHttpHandler = nullptr);
         WSCLIENT_EXPORT static void Uninitialize();

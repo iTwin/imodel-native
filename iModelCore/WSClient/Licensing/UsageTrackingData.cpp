@@ -1,19 +1,19 @@
 /*--------------------------------------------------------------------------------------+
  |
- |     $Source: Licensing/MobileTracking.cpp $
+ |     $Source: Licensing/UsageTrackingData.cpp $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
-#include <WebServices/Licensing/MobileTracking.h>
+#include <WebServices/Licensing/UsageTrackingData.h>
 
 USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    George.Rodier   02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-MobileTracking::MobileTracking() :
+UsageTrackingData::UsageTrackingData() :
 m_deviceID(""),
 m_imsUserID(""),
 m_productID(""),
@@ -25,7 +25,7 @@ m_version("")
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    George.Rodier   02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-MobileTracking::MobileTracking(Utf8StringCR device, Utf8StringCR userId, Utf8StringCR productId, Utf8StringCR projectId, DateTimeCR usageDate, Utf8StringCR version) :
+UsageTrackingData::UsageTrackingData(Utf8StringCR device, Utf8StringCR userId, Utf8StringCR productId, Utf8StringCR projectId, DateTimeCR usageDate, Utf8StringCR version) :
 m_deviceID(device),
 m_imsUserID(userId),
 m_productID(productId),
@@ -38,7 +38,7 @@ m_version(version)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    George.Rodier   02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value MobileTracking::ToJson()
+Json::Value UsageTrackingData::ToJson()
     {
     Json::Value usage = Json::objectValue;
 
@@ -65,7 +65,7 @@ Json::Value MobileTracking::ToJson()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    George.Rodier   02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool MobileTracking::IsEmpty()
+bool UsageTrackingData::IsEmpty()
     {
     return (Utf8String::IsNullOrEmpty(m_deviceID.c_str()) &&
             Utf8String::IsNullOrEmpty(m_imsUserID.c_str()) &&

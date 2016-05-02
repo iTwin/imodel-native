@@ -136,7 +136,7 @@
     <ClInclude Include="Published\Utils\Web\WebTestsHelper.h" />
     <ClInclude Include="Published\WebServices\Client\ChunkedUploadRequestTests.h" />
     <ClInclude Include="Published\WebServices\Connect\StubSecureStore.h" />
-    <ClInclude Include="Published\WebServices\Licensing\MobileTrackingTests.h" />
+    <ClInclude Include="Published\WebServices\Licensing\UsageTrackingDataTests.h" />
     <ClInclude Include="Published\WebServices\Client\MockServerInfoListener.h" />
     <ClInclude Include="Published\WebServices\Client\MockWSClient.h" />
     <ClInclude Include="Published\WebServices\Client\MockWSRepositoryClient.h" />
@@ -265,7 +265,7 @@
     <ClCompile Include="Published\ViewportTests.cpp" />
     <ClCompile Include="Published\UnitTests.cpp" />
     <ClCompile Include="Published\WebServices\Client\ChunkedUploadRequestTests.cpp" />
-    <ClCompile Include="Published\WebServices\Licensing\MobileTrackingTests.cpp" />
+    <ClCompile Include="Published\WebServices\Licensing\UsageTrackingDataTests.cpp" />
     <ClCompile Include="Published\WebServices\Client\ObjectIdTests.cpp" />
     <ClCompile Include="Published\WebServices\Connect\PassportTests.cpp" />
     <ClCompile Include="Published\WebServices\Client\Response\WSObjectsReaderV1Tests.cpp" />
