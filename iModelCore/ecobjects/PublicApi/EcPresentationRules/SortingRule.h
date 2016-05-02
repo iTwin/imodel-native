@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/SortingRule.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -19,7 +19,6 @@ will be sorted using natural (alphanumeric) sorting by default.
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct SortingRule : public PresentationRule
     {
-    /*__PUBLISH_SECTION_END__*/
     private:
         Utf8String m_schemaName;
         Utf8String m_className;
@@ -38,7 +37,6 @@ struct SortingRule : public PresentationRule
         //! Writes rule information to given XmlNode.
         ECOBJECTS_EXPORT virtual void     _WriteXml (BeXmlNodeP xmlNode) override;
 
-    /*__PUBLISH_SECTION_START__*/
     public:
         //! Constructor. It is used to initialize the rule with default settings.
         ECOBJECTS_EXPORT SortingRule ();

@@ -21,7 +21,6 @@ that can affect behavior of the hierarchy. These settings will be shown in UserS
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct UserSettingsGroup : public PresentationKey
     {
-    /*__PUBLISH_SECTION_END__*/
     private:
         Utf8String            m_categoryLabel;
         UserSettingsGroupList m_nestedSettings;
@@ -37,7 +36,6 @@ struct UserSettingsGroup : public PresentationKey
         //! Writes rule information to given XmlNode.
         ECOBJECTS_EXPORT virtual void    _WriteXml (BeXmlNodeP xmlNode);
 
-    /*__PUBLISH_SECTION_START__*/
     public:
         //! Constructor. It is used to initialize the rule with default settings.
         ECOBJECTS_EXPORT UserSettingsGroup ();
@@ -71,14 +69,12 @@ UserSettingsGroup.
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct UserSettingsItem
     {
-    /*__PUBLISH_SECTION_END__*/
     private:
         Utf8String  m_id;
         Utf8String  m_label;
         Utf8String  m_options;
         Utf8String  m_defaultValue;
 
-    /*__PUBLISH_SECTION_START__*/
     public:
         //! Constructor. It is used to initialize the rule with default settings.
         ECOBJECTS_EXPORT UserSettingsItem ();

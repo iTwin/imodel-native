@@ -21,7 +21,6 @@ Specification that creates content ECQueries for predefined ECClasses.
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct EXPORT_VTABLE_ATTRIBUTE  ContentInstancesOfSpecificClassesSpecification : public ContentSpecification
     {
-    /*__PUBLISH_SECTION_END__*/
     private:
         Utf8String  m_instanceFilter;
         Utf8String  m_classNames;
@@ -40,7 +39,6 @@ struct EXPORT_VTABLE_ATTRIBUTE  ContentInstancesOfSpecificClassesSpecification :
         //! Writes rule information to given XmlNode.
         ECOBJECTS_EXPORT virtual void                 _WriteXml (BeXmlNodeP xmlNode);
 
-    /*__PUBLISH_SECTION_START__*/
     public:
         //! Constructor. It is used to initialize the rule with default settings.
         ECOBJECTS_EXPORT ContentInstancesOfSpecificClassesSpecification ();

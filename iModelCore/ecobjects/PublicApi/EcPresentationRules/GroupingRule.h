@@ -45,7 +45,6 @@ Presentation rule for child nodes advanced grouping in the hierarchy.
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct GroupingRule : public PresentationRule
     {
-    /*__PUBLISH_SECTION_END__*/
     private:
         Utf8String            m_schemaName;
         Utf8String            m_className;
@@ -64,7 +63,6 @@ struct GroupingRule : public PresentationRule
         //! Writes rule information to given XmlNode.
         ECOBJECTS_EXPORT virtual void        _WriteXml (BeXmlNodeP xmlNode) override;
 
-    /*__PUBLISH_SECTION_START__*/
     public:
         //! Constructor. It is used to initialize the rule with default settings.
         ECOBJECTS_EXPORT GroupingRule ();
@@ -108,7 +106,6 @@ GroupSpecification that identifies parameters on how to group ECInstances
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct GroupSpecification
     {
-//__PUBLISH_SECTION_END__
 private:
     Utf8String  m_contextMenuLabel;
     Utf8String  m_defaultLabel;
@@ -132,8 +129,6 @@ protected:
     //! Allows the visitor to visit this group specification.
     virtual void _Accept(GroupingRuleSpecificationVisitor& visitor) const = 0;
 
-//__PUBLISH_CLASS_VIRTUAL__
-//__PUBLISH_SECTION_START__
 public:
     //! Virtual destructor.
     virtual ~GroupSpecification(){}
@@ -162,7 +157,6 @@ of the same label.
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct SameLabelInstanceGroup : public GroupSpecification
     {
-    /*__PUBLISH_SECTION_END__*/
     protected:
         //! Returns XmlElement name that is used to read/save this rule information.
         ECOBJECTS_EXPORT virtual CharCP           _GetXmlElementName ();
@@ -176,7 +170,6 @@ struct SameLabelInstanceGroup : public GroupSpecification
         //! Allows the visitor to visit this group specification.
         ECOBJECTS_EXPORT virtual void _Accept(GroupingRuleSpecificationVisitor& visitor) const override;
 
-    /*__PUBLISH_SECTION_START__*/
     public:
         //! Constructor. It is used to initialize the rule with default settings.
         ECOBJECTS_EXPORT SameLabelInstanceGroup ();
@@ -192,7 +185,6 @@ ClassGroup that identifies parameters on how to group ECInstances.
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct ClassGroup : public GroupSpecification
     {
-    /*__PUBLISH_SECTION_END__*/
     private:
         bool         m_createGroupForSingleItem;
         Utf8String   m_schemaName;
@@ -211,7 +203,6 @@ struct ClassGroup : public GroupSpecification
         //! Allows the visitor to visit this group specification.
         ECOBJECTS_EXPORT virtual void _Accept(GroupingRuleSpecificationVisitor& visitor) const override;
 
-    /*__PUBLISH_SECTION_START__*/
     public:
         //! Constructor. It is used to initialize the rule with default settings.
         ECOBJECTS_EXPORT ClassGroup ();
@@ -236,7 +227,6 @@ by a specific property.
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct PropertyGroup : public GroupSpecification
     {
-    /*__PUBLISH_SECTION_END__*/
     private:
         Utf8String              m_imageId;
         bool                    m_createGroupForSingleItem;
@@ -257,7 +247,6 @@ struct PropertyGroup : public GroupSpecification
         //! Allows the visitor to visit this group specification.
         ECOBJECTS_EXPORT virtual void _Accept(GroupingRuleSpecificationVisitor& visitor) const override;
 
-    /*__PUBLISH_SECTION_START__*/
     public:
         //! Constructor. It is used to initialize the rule with default settings.
         ECOBJECTS_EXPORT PropertyGroup ();
@@ -295,14 +284,12 @@ by a specific property.
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct PropertyRangeGroupSpecification
     {
-    /*__PUBLISH_SECTION_END__*/
     private:
         Utf8String  m_label;
         Utf8String  m_imageId;
         Utf8String  m_fromValue;
         Utf8String  m_toValue;
 
-    /*__PUBLISH_SECTION_START__*/
     public:
         //! Constructor. It is used to initialize the rule with default settings.
         ECOBJECTS_EXPORT PropertyRangeGroupSpecification ();

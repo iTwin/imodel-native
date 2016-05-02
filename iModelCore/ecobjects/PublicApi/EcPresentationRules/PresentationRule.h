@@ -29,7 +29,6 @@ Base class for all custom PresentationKeys. It represents any presentation confi
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct PresentationKey
     {
-//__PUBLISH_SECTION_END__
 private:
     int m_priority;
 
@@ -49,8 +48,6 @@ protected:
     //! Writes rule information to given XmlNode.
     ECOBJECTS_EXPORT virtual void           _WriteXml (BeXmlNodeP xmlNode) = 0;
 
-//__PUBLISH_CLASS_VIRTUAL__
-//__PUBLISH_SECTION_START__
 public:
     //! Virtual destructor.
     virtual ~PresentationKey(){}
@@ -72,7 +69,6 @@ Base class for all PresentationRules.
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct EXPORT_VTABLE_ATTRIBUTE PresentationRule : public PresentationKey
     {
-//__PUBLISH_SECTION_END__
 private:
     Utf8String   m_condition;
     bool      m_onlyIfNotHandled;
@@ -90,8 +86,6 @@ protected:
     //! Writes rule information to given XmlNode.
     ECOBJECTS_EXPORT virtual void           _WriteXml (BeXmlNodeP xmlNode);
 
-//__PUBLISH_CLASS_VIRTUAL__
-//__PUBLISH_SECTION_START__
 public:
     //! Condition is an ECExpression string, which will be evaluated against the given context in order to decide whether to apply this rule or not.
     ECOBJECTS_EXPORT Utf8StringCR              GetCondition (void) const;

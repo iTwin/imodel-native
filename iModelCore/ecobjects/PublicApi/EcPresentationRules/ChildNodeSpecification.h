@@ -22,7 +22,6 @@ Base class for all ChildNodeSpecifications.
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct EXPORT_VTABLE_ATTRIBUTE ChildNodeSpecification : PresentationRuleSpecification
     {
-//__PUBLISH_SECTION_END__
     private:
         int                m_priority;
         int                m_id;
@@ -51,8 +50,6 @@ struct EXPORT_VTABLE_ATTRIBUTE ChildNodeSpecification : PresentationRuleSpecific
         //! Writes rule information to given XmlNode.
         ECOBJECTS_EXPORT virtual void                 _WriteXml (BeXmlNodeP xmlNode) = 0;
 
-//__PUBLISH_CLASS_VIRTUAL__
-//__PUBLISH_SECTION_START__
     public:
         //! Destructor.
         ECOBJECTS_EXPORT virtual                      ~ChildNodeSpecification (void);

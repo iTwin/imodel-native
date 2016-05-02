@@ -21,7 +21,6 @@ related ECClasses of the selected node.
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct EXPORT_VTABLE_ATTRIBUTE ContentRelatedInstancesSpecification : public ContentSpecification
     {
-    /*__PUBLISH_SECTION_END__*/
     private:
         int                        m_skipRelatedLevel;
         Utf8String                 m_instanceFilter;
@@ -42,7 +41,6 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentRelatedInstancesSpecification : public Con
         //! Writes rule information to given XmlNode.
         ECOBJECTS_EXPORT virtual void                 _WriteXml (BeXmlNodeP xmlNode);
 
-    /*__PUBLISH_SECTION_START__*/
     public:
         //! Constructor. It is used to initialize the rule with default settings.
         ECOBJECTS_EXPORT ContentRelatedInstancesSpecification ();

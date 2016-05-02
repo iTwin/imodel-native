@@ -18,13 +18,11 @@ Specification for including related items into display commands.
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct DisplayRelatedItemsSpecification : PresentationRuleSpecification
     {
-    /*__PUBLISH_SECTION_END__*/
     private:
         bool                    m_logicalChildren;
         int                     m_nestingDepth;
         Utf8String                 m_relationshipClasses;
 
-    /*__PUBLISH_SECTION_START__*/
     public:
         //! Allows the visitor to visit this specification.
         ECOBJECTS_EXPORT virtual void _Accept(PresentationRuleSpecificationVisitor& visitor) const override;
