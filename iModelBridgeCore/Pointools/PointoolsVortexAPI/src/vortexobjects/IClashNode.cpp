@@ -1,8 +1,6 @@
 #include "PointoolsVortexAPIInternal.h"
 // IClashTree.cpp
 
-#include <ptapi/PointoolsVortexAPI_ResultCodes.h>
-#include <ptapi/PointoolsVortexAPI.h>
 #include <vortexobjects/IClashNode.h>
 
 

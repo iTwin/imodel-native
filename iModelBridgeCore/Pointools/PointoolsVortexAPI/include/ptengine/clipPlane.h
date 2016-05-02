@@ -12,7 +12,6 @@
 #include <ptcloud2/node.h>
 #include <ptcloud2/voxel.h>
 #include <ptapi/PointoolsVortexAPI.h>
-#include <ptapi/PointoolsVortexAPI_ResultCodes.h>
 #include <ptengine/clipObject.h>
 #include <ptengine/clipDefines.h>
 #include <pt/plane.h>

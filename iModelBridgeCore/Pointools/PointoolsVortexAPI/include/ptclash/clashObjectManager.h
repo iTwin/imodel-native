@@ -12,7 +12,7 @@
 
 #include <map>
 
-#include <ptapi/PointoolsVortexAPI_ResultCodes.h>
+#include <Vortex/VortexErrors.h>
 
 #include <ptclash/clashSet.h>
 

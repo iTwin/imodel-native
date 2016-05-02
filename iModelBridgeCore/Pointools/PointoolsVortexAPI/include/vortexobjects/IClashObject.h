@@ -2,9 +2,8 @@
 #ifndef ICLASHOBJECT_D812C84B_F4FD_4b3b_B2AC_F22966CBE251_H
 #define ICLASHOBJECT_D812C84B_F4FD_4b3b_B2AC_F22966CBE251_H
 
-//#include "PTAPI\PointoolsVortexAPI_import.h"
 #include "VortexObjects\VortexObjects_import.h"
-#include "PTAPI\PointoolsVortexAPI_ResultCodes.h"
+#include <Vortex/VortexErrors.h>
 namespace vortex
 {	
 	class IClashTree;

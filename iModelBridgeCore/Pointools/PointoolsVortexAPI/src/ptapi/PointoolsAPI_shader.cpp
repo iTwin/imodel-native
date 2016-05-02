@@ -3,7 +3,6 @@
 #define POINTOOLS_API_BUILD_DLL
 #include <gl/glew.h>
 #include <ptapi/PointoolsVortexAPI.h>
-#include <ptapi/PointoolsVortexAPI_ResultCodes.h>
 
 #include <ptengine/PointsFilter.h>
 #include <ptengine/RenderEngine.h>

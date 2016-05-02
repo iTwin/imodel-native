@@ -1,7 +1,6 @@
 #include "PointoolsVortexAPIInternal.h"
 // clashSet.cpp
 
-#include <ptapi/PointoolsVortexAPI_ResultCodes.h>
 #include <ptapi/PointoolsVortexAPI.h>
 #include <ptclash/clashSet.h>
 

@@ -1,7 +1,6 @@
 #include "PointoolsVortexAPIInternal.h"
 // clashObjectManager.cpp
 
-#include <ptapi/PointoolsVortexAPI_ResultCodes.h>
 #include <ptapi/PointoolsVortexAPI.h>
 #include <ptclash/clashObjectManager.h>
 #include <ptengine/engine.h>

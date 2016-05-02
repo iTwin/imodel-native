@@ -5,7 +5,6 @@
 #include <gl/glew.h>
 #include <pt/timer.h>
 #include <ptapi/PointoolsVortexAPI.h>
-#include <ptapi/PointoolsVortexAPI_ResultCodes.h>
 #include <math/matrix_math.h>
 #include <ptengine/PointsScene.h>
 #include <ptengine/PointsPager.h>

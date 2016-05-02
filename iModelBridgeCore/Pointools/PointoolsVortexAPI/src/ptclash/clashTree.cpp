@@ -1,7 +1,6 @@
 #include "PointoolsVortexAPIInternal.h"
 // clashTree.cpp
 
-#include <ptapi/PointoolsVortexAPI_ResultCodes.h>
 #include <ptapi/PointoolsVortexAPI.h>
 #include <ptclash/clashTree.h>
 #include <ptfs/filepath.h>
