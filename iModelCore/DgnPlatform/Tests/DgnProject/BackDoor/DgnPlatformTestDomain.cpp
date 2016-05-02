@@ -119,10 +119,24 @@ DgnDbStatus TestElement::_InsertInDb()
 DgnDbStatus TestElement::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
     {
     auto status = T_Super::_ReadSelectParams(stmt, params);
-    if (DgnDbStatus::Success == status)
-        m_testElemProperty = stmt.GetValueText(params.GetSelectIndex(DPTEST_TEST_ELEMENT_TestElementProperty));
+    if (DgnDbStatus::Success != status)
+        return status;
 
-    return status;
+    m_testElemProperty = stmt.GetValueText(params.GetSelectIndex(DPTEST_TEST_ELEMENT_TestElementProperty));
+    m_intProps[0] = stmt.GetValueInt(params.GetSelectIndex(DPTEST_TEST_ELEMENT_IntegerProperty1));
+    m_intProps[1] = stmt.GetValueInt(params.GetSelectIndex(DPTEST_TEST_ELEMENT_IntegerProperty2));
+    m_intProps[2] = stmt.GetValueInt(params.GetSelectIndex(DPTEST_TEST_ELEMENT_IntegerProperty3));
+    m_intProps[3] = stmt.GetValueInt(params.GetSelectIndex(DPTEST_TEST_ELEMENT_IntegerProperty4));
+    m_doubleProps[0] = stmt.GetValueDouble(params.GetSelectIndex(DPTEST_TEST_ELEMENT_DoubleProperty1));
+    m_doubleProps[1] = stmt.GetValueDouble(params.GetSelectIndex(DPTEST_TEST_ELEMENT_DoubleProperty2));
+    m_doubleProps[2] = stmt.GetValueDouble(params.GetSelectIndex(DPTEST_TEST_ELEMENT_DoubleProperty3));
+    m_doubleProps[3] = stmt.GetValueDouble(params.GetSelectIndex(DPTEST_TEST_ELEMENT_DoubleProperty4));
+    m_pointProps[0] = stmt.GetValuePoint3D(params.GetSelectIndex(DPTEST_TEST_ELEMENT_PointProperty1));
+    m_pointProps[1] = stmt.GetValuePoint3D(params.GetSelectIndex(DPTEST_TEST_ELEMENT_PointProperty2));
+    m_pointProps[2] = stmt.GetValuePoint3D(params.GetSelectIndex(DPTEST_TEST_ELEMENT_PointProperty3));
+    m_pointProps[3] = stmt.GetValuePoint3D(params.GetSelectIndex(DPTEST_TEST_ELEMENT_PointProperty4));
+
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -132,6 +146,18 @@ void TestElementHandler::_GetClassParams(ECSqlClassParams& params)
     {
     T_Super::_GetClassParams(params);
     params.Add(DPTEST_TEST_ELEMENT_TestElementProperty);
+    params.Add(DPTEST_TEST_ELEMENT_IntegerProperty1);
+    params.Add(DPTEST_TEST_ELEMENT_IntegerProperty2);
+    params.Add(DPTEST_TEST_ELEMENT_IntegerProperty3);
+    params.Add(DPTEST_TEST_ELEMENT_IntegerProperty4);
+    params.Add(DPTEST_TEST_ELEMENT_DoubleProperty1 );
+    params.Add(DPTEST_TEST_ELEMENT_DoubleProperty2 );
+    params.Add(DPTEST_TEST_ELEMENT_DoubleProperty3 );
+    params.Add(DPTEST_TEST_ELEMENT_DoubleProperty4 );
+    params.Add(DPTEST_TEST_ELEMENT_PointProperty1  );
+    params.Add(DPTEST_TEST_ELEMENT_PointProperty2  );
+    params.Add(DPTEST_TEST_ELEMENT_PointProperty3  );
+    params.Add(DPTEST_TEST_ELEMENT_PointProperty4  );
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -141,9 +167,29 @@ DgnDbStatus TestElement::_BindInsertParams(ECSqlStatement& stmt)
     {
     auto status = T_Super::_BindInsertParams(stmt);
     if (DgnDbStatus::Success == status)
-        stmt.BindText(stmt.GetParameterIndex(DPTEST_TEST_ELEMENT_TestElementProperty), m_testElemProperty.c_str(), IECSqlBinder::MakeCopy::No);
+        BindParams(stmt);
 
     return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void TestElement::BindParams(ECSqlStatement& stmt) const
+    {
+    stmt.BindText(stmt.GetParameterIndex(DPTEST_TEST_ELEMENT_TestElementProperty), m_testElemProperty.c_str(), IECSqlBinder::MakeCopy::No);
+    stmt.BindInt(stmt.GetParameterIndex(DPTEST_TEST_ELEMENT_IntegerProperty1), m_intProps[0]);
+    stmt.BindInt(stmt.GetParameterIndex(DPTEST_TEST_ELEMENT_IntegerProperty2), m_intProps[1]);
+    stmt.BindInt(stmt.GetParameterIndex(DPTEST_TEST_ELEMENT_IntegerProperty3), m_intProps[2]);
+    stmt.BindInt(stmt.GetParameterIndex(DPTEST_TEST_ELEMENT_IntegerProperty4), m_intProps[3]);
+    stmt.BindDouble(stmt.GetParameterIndex(DPTEST_TEST_ELEMENT_DoubleProperty1), m_doubleProps[0]);
+    stmt.BindDouble(stmt.GetParameterIndex(DPTEST_TEST_ELEMENT_DoubleProperty2), m_doubleProps[1]);
+    stmt.BindDouble(stmt.GetParameterIndex(DPTEST_TEST_ELEMENT_DoubleProperty3), m_doubleProps[2]);
+    stmt.BindDouble(stmt.GetParameterIndex(DPTEST_TEST_ELEMENT_DoubleProperty4), m_doubleProps[3]);
+    stmt.BindPoint3D(stmt.GetParameterIndex(DPTEST_TEST_ELEMENT_PointProperty1), m_pointProps[0]);
+    stmt.BindPoint3D(stmt.GetParameterIndex(DPTEST_TEST_ELEMENT_PointProperty2), m_pointProps[1]);
+    stmt.BindPoint3D(stmt.GetParameterIndex(DPTEST_TEST_ELEMENT_PointProperty3), m_pointProps[2]);
+    stmt.BindPoint3D(stmt.GetParameterIndex(DPTEST_TEST_ELEMENT_PointProperty4), m_pointProps[3]);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -153,7 +199,7 @@ DgnDbStatus TestElement::_BindUpdateParams(ECSqlStatement& stmt)
     {
     auto status = T_Super::_BindUpdateParams(stmt);
     if (DgnDbStatus::Success == status)
-        stmt.BindText(stmt.GetParameterIndex(DPTEST_TEST_ELEMENT_TestElementProperty), m_testElemProperty.c_str(), IECSqlBinder::MakeCopy::No);
+        BindParams(stmt);
 
     return status;
     }

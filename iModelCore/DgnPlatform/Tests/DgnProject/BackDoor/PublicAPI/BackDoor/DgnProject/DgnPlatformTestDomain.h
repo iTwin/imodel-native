@@ -24,6 +24,19 @@
 #define DPTEST_TEST_GROUP_CLASS_NAME                     "TestGroup"
 #define DPTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME    "TestElementDrivesElement"
 #define DPTEST_TEST_ELEMENT_TestElementProperty          "TestElementProperty"
+#define DPTEST_TEST_ELEMENT_IntegerProperty1 "TestIntegerProperty1"
+#define DPTEST_TEST_ELEMENT_IntegerProperty2 "TestIntegerProperty2"
+#define DPTEST_TEST_ELEMENT_IntegerProperty3 "TestIntegerProperty3"
+#define DPTEST_TEST_ELEMENT_IntegerProperty4 "TestIntegerProperty4"
+#define DPTEST_TEST_ELEMENT_DoubleProperty1 "TestDoubleProperty1" 
+#define DPTEST_TEST_ELEMENT_DoubleProperty2 "TestDoubleProperty2" 
+#define DPTEST_TEST_ELEMENT_DoubleProperty3 "TestDoubleProperty3" 
+#define DPTEST_TEST_ELEMENT_DoubleProperty4 "TestDoubleProperty4" 
+#define DPTEST_TEST_ELEMENT_PointProperty1 "TestPointProperty1"  
+#define DPTEST_TEST_ELEMENT_PointProperty2 "TestPointProperty2"  
+#define DPTEST_TEST_ELEMENT_PointProperty3 "TestPointProperty3"  
+#define DPTEST_TEST_ELEMENT_PointProperty4 "TestPointProperty4"  
+
 #define DPTEST_TEST_ELEMENT_WITHOUT_HANDLER_CLASS_NAME   "TestElementWithNoHandler"
 
 #ifdef WIP_ELEMENT_ITEM // *** pending redesign
@@ -63,8 +76,11 @@ public:
     TestElement(CreateParams const& params) : T_Super(params) {} 
 
 protected:
-    Utf8String m_testItemProperty;
-    Utf8String m_testElemProperty;
+    Utf8String  m_testItemProperty;
+    Utf8String  m_testElemProperty;
+    int32_t     m_intProps[4];
+    double      m_doubleProps[4];
+    DPoint3d    m_pointProps[4];
 
     virtual Dgn::DgnDbStatus _InsertInDb() override;
     virtual Dgn::DgnDbStatus _UpdateInDb() override;
@@ -75,6 +91,7 @@ protected:
     virtual Dgn::DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& stmt) override;
     virtual void _CopyFrom(Dgn::DgnElementCR el) override;
 
+    void BindParams(BeSQLite::EC::ECSqlStatement&) const;
 public:
     static Dgn::DgnClassId QueryClassId(Dgn::DgnDbR db) { return Dgn::DgnClassId(db.Schemas().GetECClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_CLASS_NAME)); }
     static ECN::ECClassCP GetTestElementECClass(Dgn::DgnDbR db) { return db.Schemas().GetECClass(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_CLASS_NAME); }
@@ -96,6 +113,14 @@ public:
     // Set get property value
     Utf8StringCR GetTestElementProperty() const { return m_testElemProperty; }
     void SetTestElementProperty(Utf8StringCR value) { m_testElemProperty = value; }
+
+    int32_t GetIntegerProperty(uint8_t which) const { BeAssert(4 > which); return m_intProps[which]; }
+    double GetDoubleProperty(uint8_t which) const { BeAssert(4 > which); return m_doubleProps[which]; }
+    DPoint3d GetPointProperty(uint8_t which) const { BeAssert(4 > which); return m_pointProps[which]; }
+
+    void SetIntegerProperty(uint8_t which, int32_t i) { if (4 > which) m_intProps[which] = i; }
+    void SetDoubleProperty(uint8_t which, double d) { if (4 > which) m_doubleProps[which] = d; }
+    void SetPointProperty(uint8_t which, DPoint3dCR p) { if (4 > which) m_pointProps[which] = p; }
 };
 
 typedef RefCountedPtr<TestElement> TestElementPtr;
