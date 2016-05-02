@@ -260,3 +260,4 @@ $(BuildContext)Delivery/ANJU/$(TEST_NAME)/Project : $(outputDir)project
 
 always:
     $(_bmake) $(baseDir)BuildApk.mke -dTEST_NAME=$(TEST_NAME)
+    ~linkdir "$(BuildContext)Delivery/ANJU/$(TEST_NAME)/Project/Scripts=$(outputDir)Scripts"
