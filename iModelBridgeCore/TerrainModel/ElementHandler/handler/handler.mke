@@ -145,6 +145,7 @@ LINKER_LIBRARIES             = 	$(ContextSubpartsLibs)$(libprefix)DgnView$(libex
                                 $(ContextSubpartsLibs)$(libprefix)IppGraLibs$(libext) \
                                 $(ContextSubpartsLibs)$(libprefix)IppImaging$(libext) \
                                 $(ContextSubpartsLibs)$(libprefix)IppUtlLibs$(libext) \
+                                $(ContextSubpartsLibs)$(libprefix)mdlbltin$(libext) \
                                 
 
 DLM_CONTEXT_LOCATION        = $(ContextDeliveryDir)/
