@@ -34,8 +34,7 @@ PointCloudProgressiveDisplay::PointCloudProgressiveDisplay (PointCloudModel cons
      m_lastTentativeStopped(false)
     {
     m_tentativeId = 0;
-    DRange3d pcRange = m_model.GetSceneRange();
-    m_model.GetSceneToWorld().Multiply(m_sceneRangeWorld, pcRange);
+    m_model.GetRange(m_sceneRangeWorld, PointCloudModel::Unit::World);
     }
 
 //----------------------------------------------------------------------------------------
@@ -97,7 +96,7 @@ bool PointCloudProgressiveDisplay::DrawPointCloud(int64_t& pointsToLoad, Dgn::Re
     // POINTCLOUD_WIP_GR06_PointCloudDisplay - to do change density(or whatever they did in v8i) when DrawPurpose::UpdateDynamic.
     //PtVortex::DynamicFrameRate(displayParams.fps);
     PointCloudVortex::SetQueryDensity(queryHandle->GetHandle(), densityType, density);
-
+    
     uint32_t channelFlags = (uint32_t) PointCloudChannelId::Xyz;
     if (m_model.GetPointCloudSceneP()->_HasRGBChannel())
         channelFlags |= (uint32_t) PointCloudChannelId::Rgb;
@@ -109,9 +108,9 @@ bool PointCloudProgressiveDisplay::DrawPointCloud(int64_t& pointsToLoad, Dgn::Re
 
     Render::GraphicPtr pGraphic = context.CreateGraphic(Render::Graphic::CreateParams(context.GetViewport(), m_model.GetSceneToWorld()));
     Render::GraphicParams graphicParams;
-    graphicParams.SetLineColor(ColorDef::White());
-    graphicParams.SetFillColor(ColorDef::White());
-    graphicParams.SetWidth(1);
+    graphicParams.SetLineColor(m_model.GetColor());
+    graphicParams.SetFillColor(m_model.GetColor());
+    graphicParams.SetWidth(context.GetViewport()->GetIndexedLineWidth(m_model.GetWeight()));
     pGraphic->ActivateGraphicParams(graphicParams);
 
     uint32_t buffersCount = 0;
@@ -135,7 +134,7 @@ bool PointCloudProgressiveDisplay::DrawPointCloud(int64_t& pointsToLoad, Dgn::Re
             {          
             MyPointCloudDraw pointCloudDraw;
             pointCloudDraw.m_ptCP = queryBuffers->GetXyzChannel()->GetChannelBuffer();
-            pointCloudDraw.m_pRgb = (ColorDef const*)queryBuffers->GetRgbChannel()->GetChannelBuffer();
+            pointCloudDraw.m_pRgb = queryBuffers->HasRgb() ? (ColorDef const*) queryBuffers->GetRgbChannel()->GetChannelBuffer() : nullptr;
             pointCloudDraw.m_ptCount = queryBuffers->GetNumPoints();
 
             pGraphic->AddPointCloud(&pointCloudDraw);
@@ -215,7 +214,7 @@ ProgressiveTask::Completion PointCloudProgressiveDisplay::_DoProgressive(Dgn::Pr
 
     wantShow = WantShow::Yes; // Would like to show only when we have a good amount of new pts but we do not have that info.
 
-    static float density = 1.0F;
+    static float density = m_model.GetViewDensity();
     static PtQueryDensity densityType = PtQueryDensity::QUERY_DENSITY_VIEW; // Get only points in memory for a view representation. Points still on disk will get loaded at a later time.
 
     int64_t pointsToLoad = 0;

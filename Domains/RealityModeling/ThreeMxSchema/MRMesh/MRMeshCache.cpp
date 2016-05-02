@@ -453,7 +453,6 @@ Scene::RequestStatus Scene::ProcessRequests()
                 {
                 Util::DisplayNodeFailureWarning(fileName.c_str());
                 curr->first->m_parent->RemoveChild(curr->first);
-                curr = m_requests.erase(curr);
                 break;
                 }
 

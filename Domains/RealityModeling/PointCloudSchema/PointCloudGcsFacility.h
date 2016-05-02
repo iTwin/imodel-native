@@ -17,24 +17,21 @@ BEGIN_BENTLEY_POINTCLOUDSCHEMA_NAMESPACE
 struct PointCloudGcsFacility
     {           
     private:
-            static BentleyStatus                                    GetLocalTransformForReprojection(TransformR transform, WString wktStringGeoreference, DRange3dCR rangeUOR, DgnDbR dgnDb);
-
-    public:
-
         enum WktFlavor
             {
-            WktFlavor_Oracle9 = 1, 
-            WktFlavor_Autodesk,             
-            WktFlavor_OGC,             
-            WktFlavor_End, 
+            WktFlavor_Oracle9 = 1,
+            WktFlavor_Autodesk,
+            WktFlavor_OGC,
+            WktFlavor_End,
             };
 
-        static GeoCoordinates::BaseGCS::WktFlavor                   GetWKTFlavor(WStringP wktStrWithoutFlavor, const WString& wktStr);       
-        static bool                                                 MapWktFlavorEnum(GeoCoordinates::BaseGCS::WktFlavor& baseGcsWktFlavor, PointCloudGcsFacility::WktFlavor wktFlavor);
-
-        static DgnGCSPtr                    CreateGcsFromWkt(WStringCR spatialReferenceWkt, DgnDbR dgnDb, bool reprojectElevation);
-        static BentleyStatus                ComputeLocalTransform(DRange3dCR range, DgnGCSR src, DgnGCSR dst, TransformR approxTransform);
-        static BentleyStatus                GetTransformToUor(TransformR transform, WString wktStringGeoreference, DRange3dCR rangeUOR, DgnDbR dgnDb);
+        static GeoCoordinates::BaseGCS::WktFlavor   GetWKTFlavor(WStringP wktStrWithoutFlavor, WStringCR wktStr);
+        static bool                                 MapWktFlavorEnum(GeoCoordinates::BaseGCS::WktFlavor& baseGcsWktFlavor, PointCloudGcsFacility::WktFlavor wktFlavor);
+        static GeoCoordinates::BaseGCSPtr           CreateGcsFromWkt(WStringCR spatialReferenceWkt);
+        static BentleyStatus                        ComputeLocalTransform(DRange3dCR range, DgnGCSR src, DgnGCSR dst, TransformR approxTransform);
+    public:      
+        
+        static BentleyStatus ComputeSceneToWorldTransform(TransformR sceneToWorld, WStringCR spatialReferenceWkt, DRange3dCR range, DgnDbR dgnDb);
     };
 
 

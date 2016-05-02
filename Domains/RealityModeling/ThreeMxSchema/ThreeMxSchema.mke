@@ -93,16 +93,6 @@ $(o)compressMG2$(oext)              : $(SrcOpenCtm)compressMG2.c ${threeMxSchema
 
 $(o)compressRAW$(oext)              : $(SrcOpenCtm)compressRAW.c ${threeMxSchemaDepends} ${MultiCompileDepends}
 
-$(o)Alloc$(oext)                    : $(SrcLibLzma)Alloc.c ${threeMxSchemaDepends} ${MultiCompileDepends}
-
-$(o)LzmaDec$(oext)                  : $(SrcLibLzma)LzmaDec.c ${threeMxSchemaDepends} ${MultiCompileDepends}
-
-$(o)LzmaEnc$(oext)                  : $(SrcLibLzma)LzmaEnc.c ${threeMxSchemaDepends} ${MultiCompileDepends}
-
-$(o)LzFind$(oext)                   : $(SrcLibLzma)LzFind.c ${threeMxSchemaDepends} ${MultiCompileDepends}
-
-$(o)LzmaLib$(oext)                  : $(SrcLibLzma)LzmaLib.c ${threeMxSchemaDepends} ${MultiCompileDepends}
-
 %include MultiCppCompileGo.mki
 nonportObjs=%$(MultiCompileObjectList)
 
@@ -134,7 +124,7 @@ LINKER_LIBRARIES            =   $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(l
                                 $(ContextSubpartsLibs)$(libprefix)ECObjects$(libext) \
                                 $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext) \
                                 $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext) \
-                                $(ContextSubpartsLibs)$(stlibprefix)BeJsonCpp$(stlibext)
-
+                                $(ContextSubpartsLibs)$(stlibprefix)BeJsonCpp$(stlibext) \
+                                $(ContextSubpartsLibs)$(stlibprefix)lzma$(stlibext)
 
 %include $(sharedMki)LinkLibrary.mki
