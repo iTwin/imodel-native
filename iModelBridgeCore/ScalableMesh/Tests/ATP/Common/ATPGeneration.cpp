@@ -406,11 +406,7 @@ WString GetMesherTypeName(ScalableMeshMesherType mesherType)
         {
         case SCM_MESHER_2D_DELAUNAY:
             return WString(L"2.5D_DELAUNAY");
-            break;
-
-        case SCM_MESHER_LMS_MARCHING_CUBE:
-            return WString(L"LMS_MARCHING_CUBE (i.e. : Merry)");
-            break;
+            break;        
 
         case SCM_MESHER_3D_DELAUNAY:
             return WString(L"3D_DELAUNAY");

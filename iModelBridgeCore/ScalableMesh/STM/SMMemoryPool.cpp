@@ -34,7 +34,7 @@ SMMemoryPoolItemBase::SMMemoryPoolItemBase(Byte* data, uint64_t size, uint64_t n
     m_nodeId = nodeId;
     m_dataType = dataType;
     m_data = data;
-    m_dirty = true;
+    m_dirty = false;
     }
 
 SMMemoryPoolItemBase::~SMMemoryPoolItemBase()
@@ -70,6 +70,8 @@ void SMMemoryPoolItemBase::NotifySizeChangePoolItem(int64_t sizeDelta)
     {
     SMMemoryPool::GetInstance()->NotifySizeChangePoolItem(this, sizeDelta);
     }
+
+static uint64_t s_initSize = 3000;
 
 SMMemoryPool::SMMemoryPool()                        
     {
@@ -198,7 +200,12 @@ SMMemoryPoolItemId SMMemoryPool::AddItem(SMMemoryPoolItemBasePtr& poolItem)
     if (itemInd == m_memPoolItems.size())
         {
         if (m_currentPoolSizeInBytes < m_maxPoolSizeInBytes)
-            {                                    
+            {                      
+            for (size_t itemId = 0; itemId < m_memPoolItemMutex.size(); itemId++)
+                {
+                m_memPoolItemMutex[itemId]->lock();                
+                }
+
             m_memPoolItems.resize((size_t)(m_memPoolItems.size() * 1.5));
             m_lastAccessTime.resize(m_memPoolItems.size());
 
@@ -208,6 +215,11 @@ SMMemoryPoolItemId SMMemoryPool::AddItem(SMMemoryPoolItemBasePtr& poolItem)
             for (size_t itemId = oldItemCount; itemId < m_memPoolItemMutex.size(); itemId++)
                 {
                 m_memPoolItemMutex[itemId] = new mutex;                
+                }
+
+            for (size_t itemId = 0; itemId < oldItemCount; itemId++)
+                {
+                m_memPoolItemMutex[itemId]->unlock();                
                 }
             }
         else

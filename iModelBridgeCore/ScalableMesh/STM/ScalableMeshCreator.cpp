@@ -127,7 +127,8 @@ inline const GCS& GetDefaultGCS ()
 }
 
 #ifdef SM_BESQL_FORMAT
-std::atomic<size_t> s_nextNodeID = 0;
+//NEEDS_WORK_SM : Should be part of the index instead to avoid having very big odd values.
+std::atomic<uint64_t> s_nextNodeID = 0;
 #endif
 
 
@@ -548,8 +549,7 @@ static ISMPointIndexMesher<POINT, EXTENT>* Create3dMesherFromType (ScalableMeshM
         {
         case SCM_MESHER_2D_DELAUNAY:
             return new ScalableMesh2DDelaunayMesher<POINT, EXTENT>();
-/*        case SCM_MESHER_LMS_MARCHING_CUBE:
-            return new ScalableMeshAPSSOutOfCoreMesher<POINT, EXTENT>();
+            /*        
         case SCM_MESHER_3D_DELAUNAY:
             return new ScalableMesh3DDelaunayMesher<POINT, EXTENT> (false);
         case SCM_MESHER_TETGEN:
@@ -575,8 +575,7 @@ ScalableMeshMesherType Get2_5dMesherType ()
 
 ScalableMeshMesherType Get3dMesherType ()
     {    
-    //return SCM_MESHER_2D_DELAUNAY;
-    //return SCM_MESHER_LMS_MARCHING_CUBE;
+    //return SCM_MESHER_2D_DELAUNAY;    
     //return SCM_MESHER_3D_DELAUNAY;
 #ifndef NO_3D_MESH
     return SCM_MESHER_TETGEN;
@@ -694,8 +693,7 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
             pStreamingUVsIndicesTileStore = new SMStreamingPointTaggedTileStore< int32_t, PointIndexExtentType>(uvIndice_store_path, WString(), (SCM_COMPRESSION_DEFLATE == m_compressionType));
             pStreamingTextureTileStore = new StreamingTextureTileStore(texture_store_path.c_str());
             
-            pDataIndex = new MeshIndexType(ScalableMeshMemoryPools<PointType>::Get()->GetGenericPool(),
-                                       ScalableMeshMemoryPools<PointType>::Get()->GetPointPool(),
+            pDataIndex = new MeshIndexType(ScalableMeshMemoryPools<PointType>::Get()->GetGenericPool(),                                       
                                        &*pStreamingTileStore,                                       
                                        &*pStreamingIndiceTileStore,
                                        ScalableMeshMemoryPools<PointType>::Get()->GetGraphPool(),
@@ -737,8 +735,7 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
             pGraphTileStore = new SMSQLiteGraphTileStore(m_smSQLitePtr);
 
             //pIndiceTileStore = new TileStoreType(filePtr, (SCM_COMPRESSION_DEFLATE == m_compressionType));
-            pDataIndex = new MeshIndexType(ScalableMeshMemoryPools<PointType>::Get()->GetGenericPool(),
-                                       ScalableMeshMemoryPools<PointType>::Get()->GetPointPool(),
+            pDataIndex = new MeshIndexType(ScalableMeshMemoryPools<PointType>::Get()->GetGenericPool(),                                       
                                        &*pFinalTileStore,                                       
                                        &*pIndiceTileStore,
                                        ScalableMeshMemoryPools<PointType>::Get()->GetGraphPool(),
@@ -765,11 +762,7 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
             ClipRegistry* registry = new ClipRegistry(clipFileDefPath);
             pDataIndex->SetClipRegistry(registry);
             }
-
-        pDataIndex->m_useSTMFormat = false;
-
-
-
+        
     return SUCCESS;
     }
 

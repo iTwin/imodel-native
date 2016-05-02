@@ -61,27 +61,6 @@ template<class POINT, class EXTENT> class ScalableMesh2DDelaunayMesher : public 
         void   SimplifyMesh(vector<int32_t>& indices, vector<POINT>& points, std::string& s) const;
     };
 
-template<class POINT, class EXTENT> class ScalableMeshAPSSOutOfCoreMesher : public ISMPointIndexMesher<POINT, EXTENT>
-{
-
-public:
-
-    // Primary methods
-    ScalableMeshAPSSOutOfCoreMesher() {};
-    virtual             ~ScalableMeshAPSSOutOfCoreMesher() {};
-
-    virtual bool        Init(const SMMeshIndex<POINT, EXTENT>& pointIndex) override;
-    virtual bool        Mesh(HFCPtr<SMMeshIndexNode<POINT, EXTENT> > node) const override;
-    virtual bool        Stitch(HFCPtr<SMMeshIndexNode<POINT, EXTENT> > node) const override;
-
-
-protected:
-
-    size_t m_totalPointCount; 
-    size_t m_numberOfLevels;
-};
-
-
 
     /** -----------------------------------------------------------------------------
 

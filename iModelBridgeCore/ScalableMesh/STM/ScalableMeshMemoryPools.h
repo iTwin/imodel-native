@@ -17,8 +17,7 @@
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 template <typename POINT> class ScalableMeshMemoryPools
     {
-    private:
-        size_t m_pointPoolSize;
+    private:        
         size_t m_graphPoolSize;                
         size_t m_featurePoolSize;
         size_t m_diffSetPoolSize;
@@ -34,8 +33,7 @@ template <typename POINT> class ScalableMeshMemoryPools
         static ScalableMeshMemoryPools* m_instance;
 
     public:
-        static ScalableMeshMemoryPools* Get();
-        HFCPtr<HPMCountLimitedPool<POINT>> GetPointPool();        
+        static ScalableMeshMemoryPools* Get();        
         HFCPtr<HPMIndirectCountLimitedPool<MTGGraph>> GetGraphPool();                
         HFCPtr<HPMCountLimitedPool<int32_t>> GetFeaturePool();
         HFCPtr<HPMIndirectCountLimitedPool<DifferenceSet>> GetDiffSetPool();
@@ -44,14 +42,12 @@ template <typename POINT> class ScalableMeshMemoryPools
 
 template <typename POINT> ScalableMeshMemoryPools<POINT>::ScalableMeshMemoryPools()
     {
-    m_myMemMgr = new HPMMemoryMgrReuseAlreadyAllocatedBlocksWithAlignment(100, 2000 * sizeof(POINT));
-    m_pointPoolSize = 20000000;
+    m_myMemMgr = new HPMMemoryMgrReuseAlreadyAllocatedBlocksWithAlignment(100, 2000 * sizeof(POINT));    
     m_featurePoolSize = 10000000;    
     m_diffSetPoolSize = 4000000;
     m_graphPoolSize = 600000000;        
     //m_genericPoolSize = 100000000;
-    m_genericPoolSize = 600000000;
-    m_pointPool = new HPMCountLimitedPool<POINT>(/*m_myMemMgr,*/ m_pointPoolSize);    
+    m_genericPoolSize = 1000000000;    
     m_graphPool = new HPMIndirectCountLimitedPool<MTGGraph>(m_graphPoolSize);        
     m_featurePool = new HPMCountLimitedPool<int32_t>(m_featurePoolSize);
     m_diffSetPool = new HPMIndirectCountLimitedPool<DifferenceSet>(m_diffSetPoolSize);
@@ -67,11 +63,6 @@ template <typename POINT> ScalableMeshMemoryPools<POINT>*  ScalableMeshMemoryPoo
         m_instance = new ScalableMeshMemoryPools();
         }
     return m_instance;
-    }
-
-template <typename POINT> HFCPtr<HPMCountLimitedPool<POINT>>  ScalableMeshMemoryPools<POINT>::GetPointPool()
-    {
-    return m_pointPool;
     }
 
 template <typename POINT> HFCPtr<HPMIndirectCountLimitedPool<MTGGraph>>  ScalableMeshMemoryPools<POINT>::GetGraphPool()

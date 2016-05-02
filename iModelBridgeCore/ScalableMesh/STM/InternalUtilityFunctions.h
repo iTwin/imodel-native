@@ -75,6 +75,8 @@ struct PtToPtConverter
     {        
     DPoint3d operator () (const DPoint3d& inputPt) const;
 
-    DPoint3d operator () (const HGF3DCoord<double>& inputPt) const;        
+    DPoint3d operator () (const HGF3DCoord<double>& inputPt) const;
+
+    static void Transform(DPoint3d* ptsOut, const DPoint3d* ptsIn, size_t nbPts);
     };
 
