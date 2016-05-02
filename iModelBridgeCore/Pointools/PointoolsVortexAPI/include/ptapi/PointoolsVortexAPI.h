@@ -2,7 +2,7 @@
 //  Pointools Vortex API   version:  1.5.1.1   ·  date July 2010
 //  -------------------------------------------------------------
 //  Header file for Pointools Vortex API
-//  For Build Use Only. Clients should use PointoolsVortexAPI_import.h
+//  For Build Use Only. Clients should use VortexAPI.h
 //  -------------------------------------------------------------
 //  Copyright (C) Pointools Ltd 2007-09 - All Rights Reserved
 // ***************************************************************

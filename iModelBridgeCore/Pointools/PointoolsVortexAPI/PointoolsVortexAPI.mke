@@ -6,7 +6,7 @@
 #
 #--------------------------------------------------------------------------------------
 BUILD_NO_STACK_CHECK=1
-NOSTRICT=1
+HAVE_PERMISSION_TO_COMPILE_AT_W3    = 1
 
 %include mdl.mki
 
@@ -533,7 +533,6 @@ ContextSubpartsStaticLibs = $(BuildContext)SubParts/StaticLibs/
 LINKER_LIBRARIES =  \
     Comdlg32.lib \
     Ws2_32.lib \
-    $(ContextSubpartsStaticLibs)$(stlibprefix)glew$(stlibext) \
     $(ContextSubpartsLibs)$(stlibprefix)wildmagic$(stlibext) \
     $(ContextSubpartsLibs)$(stlibprefix)scz_compress$(stlibext)
     

@@ -172,10 +172,7 @@ unsigned int Graph::getNumEntities(void)
 
 LRESULT CALLBACK Graph::windowMessageHandler(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
-	HDC				hDC;
-	PAINTSTRUCT		ps;
 	Graph		*	graph;
-
 
 	switch(Msg)
 	{
@@ -214,16 +211,18 @@ LRESULT CALLBACK Graph::windowMessageHandler(HWND hWnd, UINT Msg, WPARAM wParam,
 		return TRUE;
 
 	case WM_PAINT:
+        {
 
+    #ifdef HAVE_GDIPLUS
+        PAINTSTRUCT		ps;
+        HDC				hDC;
+        hDC = BeginPaint(hWnd, &ps);
 
-#ifdef HAVE_GDIPLUS
-		hDC = BeginPaint(hWnd, &ps);
+        graphManager.draw(hWnd, hDC, ps);
 
-		graphManager.draw(hWnd, hDC, ps);
-
-		EndPaint(hWnd, &ps);
-#endif
-
+        EndPaint(hWnd, &ps);
+    #endif
+        }
 		break;
 
 	case WM_DESTROY:
