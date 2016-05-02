@@ -263,8 +263,8 @@ static bool readBranch( ptds::DataSource * dataSrc, IOMeta &meta, Branch *root, 
 	uint32 num_subbranches;
 	uint32 num_nodes;
 	uint32 num_blocks;
-	uint8 level;
-	uint8 flags[4];
+	//uint8 level;
+	//uint8 flags[4];
 
 	// Branch meta
 	// write identifier	

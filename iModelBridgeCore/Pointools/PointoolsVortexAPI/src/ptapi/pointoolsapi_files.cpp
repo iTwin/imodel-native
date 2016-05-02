@@ -7,6 +7,7 @@
 #include <ptlic/PointoolsBentleyLicenseAPI.h>
 #endif
 
+#include <string>
 #include <gl/glew.h>
 #include <ptapi/PointoolsVortexAPI.h>
 #include <ptapi/PointoolsVortexAPI_ResultCodes.h>
@@ -293,7 +294,7 @@ int setLastErrorCode( int code )
 	 
 void PTAPI ptGetVersionNum(PTubyte *version)
 {
-	sscanf(str(VERSION), "%u.%u.%u.%u", &(version[0]), &(version[1]), &(version[2]), &(version[3]));
+	sscanf(str(VERSION), "%u.%u.%u.%u", (uint*)&(version[0]), (uint*)&(version[1]), (uint*)&(version[2]), (uint*)&(version[3]));
 }
 
 //-------------------------------------------------------------------------------
@@ -521,36 +522,43 @@ PTbool ptInitializeEnvVariables(void)
 const unsigned int COMPANY_NON_SELECT_LICENSES_NUM = 2;
 const unsigned int COMPANY_NON_SELECT_LICENSES_MAX_NAME_LENGTH = 64;
 
-char companyNonSELECTLicensesScrambled[COMPANY_NON_SELECT_LICENSES_NUM][COMPANY_NON_SELECT_LICENSES_MAX_NAME_LENGTH] =
-{
-	{'P'+100, 'o'+100+(1*7), 'i'+100+(2*7), 'n'+100+(3*7), 't'+100+(4*7), 'o'+100+(5*7), 'o'+100+(6*7), 'l'+100+(7*7), 's'+100+(8*7), ' '+100+(9*7), 'L'+100+(10*7), 't'+100+(11*7), 'd'+100+(12*7), 0x0+100+(13*7)},
-	{'S'+100, 'i'+100+(1*7), 'e'+100+(2*7), 'm'+100+(3*7), 'e'+100+(4*7), 'n'+100+(5*7), 's'+100+(6*7), 0x0+100+(7*7)}
-};
+auto scrambler = [](std::string toScramble) -> std::string 
+    {
+    int i = 0;
+    std::string out;
+    for (char& value : toScramble)
+        {
+        value += 100 + i*7;
+        }
+    out[toScramble.size()] = 100 + toScramble.size() * 7;
+    return out;
+    };
 
+std::string company1 = scrambler("Pointools Ltd");
+std::string company2 = scrambler("Siemens");
 
-void unScrambleString(std::string &str, std::string &out)
-{
-	char			c;
-	unsigned int	t = 0;
-
-	while((c = str[t] - 100 - (t * 7)) != 0x0 && t < COMPANY_NON_SELECT_LICENSES_MAX_NAME_LENGTH)
-	{
-		out += c;
-		t++;
-	}
-}
-
+std::string companyNonSELECTLicensesScrambled[COMPANY_NON_SELECT_LICENSES_NUM] = {{ company1 }, { company2 }};
 
 bool useSELECTLicense(std::string& company, std::string& module, std::string& type, const char* ex, std::string& expires)
 {
 	unsigned int c;
 
+    auto unscrambler = [](std::string &str, std::string &out)
+        {
+        char			c;
+        unsigned int	t = 0;
+        while ((c = str[t] - 100 - (t * 7)) != 0x0 && t < COMPANY_NON_SELECT_LICENSES_MAX_NAME_LENGTH)
+            {
+            out += c;
+            t++;
+            }
+        };
 	for(c = 0; c < COMPANY_NON_SELECT_LICENSES_NUM; c++)
 	{
 		std::string ptCompanyPlain;
 
 		std::string ptCompany(companyNonSELECTLicensesScrambled[c]);
-		unScrambleString(ptCompany, ptCompanyPlain);
+        unscrambler(ptCompany, ptCompanyPlain);
 
 		if(ptCompanyPlain == company)
 			return false;
@@ -1484,7 +1492,6 @@ void testCalls(ptds::FilePath &path)
 	bool						moved;
 	unsigned char				buffer[1024];
 	ptds::DataSource::DataSize	size;
-	ptds::DataSource::DataSize	sizeRead;
 	ptds::DataSource::DataSize	fileSize;
 
 

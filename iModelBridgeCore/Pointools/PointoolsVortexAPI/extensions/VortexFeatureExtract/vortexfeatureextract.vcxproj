@@ -1,0 +1,131 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{51FE9788-DEC9-4855-9225-863D8E463E9F}</ProjectGuid>
+    <Keyword>MakeFileProj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <IntermediateOutputPath>$(ProjectDir)</IntermediateOutputPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <IntermediateOutputPath>$(ProjectDir)</IntermediateOutputPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <IntermediateOutputPath>$(ProjectDir)</IntermediateOutputPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <IntermediateOutputPath>$(ProjectDir)</IntermediateOutputPath>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <NMakeBuildCommandLine>BentleyBuild.py -ax86 -p PointoolsVortexAPI_FeatureExtract_DLL -f $(ProjectDir)../../PointoolsVortexAPI re PointoolsVortexAPI_FeatureExtract_DLL</NMakeBuildCommandLine>
+    <NMakeCleanCommandLine>BentleyBuild.py -ax86 -p PointoolsVortexAPI_FeatureExtract_DLL -f $(ProjectDir)../../PointoolsVortexAPI re PointoolsVortexAPI_FeatureExtract_DLL -c</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>BentleyBuild.py -ax86 -p PointoolsVortexAPI_FeatureExtract_DLL -f $(ProjectDir)../../PointoolsVortexAPI re PointoolsVortexAPI_FeatureExtract_DLL -c 
+BentleyBuild.py -ax86 -p PointoolsVortexAPI_FeatureExtract_DLL -f $(ProjectDir)../../PointoolsVortexAPI re PointoolsVortexAPI_FeatureExtract_DLL</NMakeReBuildCommandLine>
+    <NMakePreprocessorDefinitions>WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakeIncludeSearchPath>$(ProjectDir)include;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <IntDir>$(SolutionDir)$(IntermediateOutputPath)</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <NMakeBuildCommandLine>BentleyBuild.py -ax86 -p PointoolsVortexAPI_FeatureExtract_DLL -f $(ProjectDir)../../PointoolsVortexAPI re PointoolsVortexAPI_FeatureExtract_DLL</NMakeBuildCommandLine>
+    <NMakeCleanCommandLine>BentleyBuild.py -ax86 -p PointoolsVortexAPI_FeatureExtract_DLL -f $(ProjectDir)../../PointoolsVortexAPI re PointoolsVortexAPI_FeatureExtract_DLL -c</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>BentleyBuild.py -ax86 -p PointoolsVortexAPI_FeatureExtract_DLL -f $(ProjectDir)../../PointoolsVortexAPI re PointoolsVortexAPI_FeatureExtract_DLL -c 
+	BentleyBuild.py -ax86 -p PointoolsVortexAPI_FeatureExtract_DLL -f $(ProjectDir)../../PointoolsVortexAPI re PointoolsVortexAPI_FeatureExtract_DLL</NMakeReBuildCommandLine>
+    <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakeIncludeSearchPath>$(ProjectDir)include;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <IntDir>$(SolutionDir)$(IntermediateOutputPath)</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <NMakeBuildCommandLine>BentleyBuild.py -ax64 -p PointoolsVortexAPI_FeatureExtract_DLL -f $(ProjectDir)../../PointoolsVortexAPI re PointoolsVortexAPI_FeatureExtract_DLL</NMakeBuildCommandLine>
+    <NMakeCleanCommandLine>BentleyBuild.py -ax64 -p PointoolsVortexAPI_FeatureExtract_DLL -f $(ProjectDir)../../PointoolsVortexAPI re PointoolsVortexAPI_FeatureExtract_DLL -c</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>BentleyBuild.py -ax64 -p PointoolsVortexAPI_FeatureExtract_DLL -f $(ProjectDir)../../PointoolsVortexAPI re PointoolsVortexAPI_FeatureExtract_DLL -c 
+BentleyBuild.py -ax64 -p PointoolsVortexAPI_FeatureExtract_DLL -f $(ProjectDir)../../PointoolsVortexAPI re PointoolsVortexAPI_FeatureExtract_DLL</NMakeReBuildCommandLine>
+    <NMakePreprocessorDefinitions>WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakeIncludeSearchPath>$(ProjectDir)include;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <IntDir>$(SolutionDir)$(Platform)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <NMakeBuildCommandLine>BentleyBuild.py -ax64 -p PointoolsVortexAPI_FeatureExtract_DLL -f $(ProjectDir)../../PointoolsVortexAPI re PointoolsVortexAPI_FeatureExtract_DLL</NMakeBuildCommandLine>
+    <NMakeCleanCommandLine>BentleyBuild.py -ax64 -p PointoolsVortexAPI_FeatureExtract_DLL -f $(ProjectDir)../../PointoolsVortexAPI re PointoolsVortexAPI_FeatureExtract_DLL -c</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>BentleyBuild.py -ax64 -p PointoolsVortexAPI_FeatureExtract_DLL -f $(ProjectDir)../../PointoolsVortexAPI re PointoolsVortexAPI_FeatureExtract_DLL -c 
+	BentleyBuild.py -ax64 -p PointoolsVortexAPI_FeatureExtract_DLL -f $(ProjectDir)../../PointoolsVortexAPI re PointoolsVortexAPI_FeatureExtract_DLL</NMakeReBuildCommandLine>
+    <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakeIncludeSearchPath>$(ProjectDir)include;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <IntDir>$(SolutionDir)$(Platform)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <Text Include="readme.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="ClusterAnalyser.h" />
+    <ClInclude Include="GeomTypes.h" />
+    <ClInclude Include="Includes.h" />
+    <ClInclude Include="Plane.h" />
+    <ClInclude Include="QueryBuffer.h" />
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="Sites.h" />
+    <ClInclude Include="stdafx.h" />
+    <ClInclude Include="VortexFeatureExtract.h" />
+    <ClInclude Include="VortexFeatureExtractAPI.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="clusteranalyser.cpp" />
+    <ClCompile Include="loadvortex.cpp" />
+    <ClCompile Include="QueryBuffer.cpp" />
+    <ClCompile Include="vortexfeatureextract.cpp" />
+    <ClCompile Include="VortexInitialize.cpp" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

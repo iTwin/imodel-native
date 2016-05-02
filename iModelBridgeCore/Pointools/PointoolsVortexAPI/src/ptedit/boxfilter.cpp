@@ -18,7 +18,7 @@ bool BoxSelect::writeState(pt::datatree::Branch *b) const
 
 bool BoxSelect::readState(const pt::datatree::Branch *b)
 {
-	return memcpy(&box, b->getBlob("box")->_data, sizeof(box));
+	return memcpy(&box, b->getBlob("box")->_data, sizeof(box)) != 0;
 
 	//memcpy(corners, b->getBlob("corners")->_data, sizeof(corners));
 	//memcpy(planes, b->getBlob("planes")->_data, sizeof(planes));

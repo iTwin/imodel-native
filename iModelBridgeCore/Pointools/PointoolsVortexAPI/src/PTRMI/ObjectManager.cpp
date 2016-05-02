@@ -300,7 +300,7 @@ Status ObjectManager::removeObjectServerInterface(ServerInterfaceBase *serverInt
 {
 	NameServerInterfaceMap::iterator		it;
 	unsigned int							items = 0;
-	ObjectInfo							*	objectInfo;
+	//ObjectInfo							*	objectInfo;
 	Status									status;
 
 	if(serverInterface == NULL)
@@ -569,7 +569,7 @@ ServerInterfaceBase * ObjectManager::newObjectAndServerInterface(const PTRMI::Na
 															// Increment reference count to object
 		objectInfo->incrementReferenceCounter();
 	}
-	catch(Status errorStatus)
+	catch(Status /*errorStatus*/)
 	{
 															// Failed, so delete server interface (and object)
 		if(serverInterface)

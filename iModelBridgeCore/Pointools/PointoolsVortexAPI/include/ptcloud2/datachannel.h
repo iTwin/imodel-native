@@ -71,13 +71,13 @@ namespace pcloud
 
 		void readNative(void *data, double tolerance);
 		void readStore(void *data);
-		void readEnd(void *data, int size);
+		void readEnd(void *data, uint size);
 
 		inline ubyte* data()				{ return _data; }
 		inline const ubyte* data() const	{ return _data; }
 
 		bool allocate(int count);
-		bool resize(int count);
+		bool resize(uint count);
 		void dump();
 		
 		/*access*/ 

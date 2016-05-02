@@ -453,7 +453,7 @@ public:
 	unsigned int classify(Types<double>::Vector3 &point, Types<double>::Extents &boundingBox, NodeHSet &result)
 	{
 		NodeH				node;
-		ChildIndex			numChildren;
+		//ChildIndex			numChildren;
 		ChildIndexSet		children;
 		NodeHSet			nodes[2];
 		unsigned int		t;
@@ -1069,7 +1069,7 @@ public:
 		{
 			double			minOffset[3];
 			double			cellSize[3];
-			int				cellPos[3];
+			uint				cellPos[3];
 															// Transform relative to centralized extents
 			minOffset[0] = point(0, 0) - extents.lower(0);
 			minOffset[1] = point(1, 0) - extents.lower(1);
@@ -1093,7 +1093,7 @@ public:
 			return getChildIndex(cellPos[0], cellPos[1], cellPos[2]);
 		}
 
-		bool inCell(Types<double>::Vector3 &cellPos, matrix<3, 1, int> &cell, Types<double>::Vector3 &overlapCellSpace)
+		bool inCell(Types<double>::Vector3 &cellPos, matrix<3, 1, uint> &cell, Types<double>::Vector3 &overlapCellSpace)
 		{
 			Types<double>::Vector3 boxMin;
 			Types<double>::Vector3 boxMax;
@@ -1111,7 +1111,7 @@ public:
 			return (cellPos >= boxMin) && (cellPos <= boxMax);
 		}
 
-		bool inGrid(matrix<3, 1, int> &cell)
+		bool inGrid(matrix<3, 1, uint> &cell)
 		{
 			return (cell(0, 0) >= 0 && cell(1, 0) >= 0 && cell(2, 0) >= 0) &&
 				   (cell(0, 0) < numCells[0] && cell(1, 0) < numCells[1] && cell(2, 0) < numCells[2]);
@@ -1134,9 +1134,8 @@ public:
 			Types<double>::Vector3	cellSize;
 			Types<double>::Vector3	cellPos;
 			Types<double>::Vector3	overlapCellSpace;
-			matrix<3, 1, int>		cellPosInt;
-			matrix<3, 1, int>		cell;
-			unsigned int t;
+			matrix<3, 1, uint>		cellPosInt;
+			matrix<3, 1, uint>		cell;
 
 															// Get cell size
 			cellSize(0, 0) = extents.size(0) / static_cast<double>(numCells[0]);

@@ -246,7 +246,7 @@ struct ParameterList
 	}//! Set parameter, returns success 
 	struct MakeVariant
 	{
-		Variant operator()(void *v) const {	return Variant((unsigned int)v);	}
+		Variant operator()(void *v) const {	return Variant((size_t)v);	}
 		template <class T>	Variant operator()(const T &v) const	{ return Variant(v); }
 	};
 	

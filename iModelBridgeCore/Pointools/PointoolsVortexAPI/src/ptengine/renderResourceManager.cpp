@@ -95,7 +95,7 @@ char*				RenderResourceManager::getShaderScript( const char* name )
 	char *spt = new char[ ctlen+512 ];
 	int i=0;
 
-	for (unsigned int p=0; p<ctlen; p++)
+	for (int p=0; p<ctlen; p++)
 		spt[i++] = ' ';//ct[p];
 
 	i=0;

@@ -56,7 +56,7 @@ namespace pointsengine
 		{
 			if (R.scene( scene ))
 			{
-				for (int pc=0;pc<scene->size(); pc++)
+				for (uint pc=0;pc<scene->size(); pc++)
 				{		
 					pcloud::PointCloud *cloud = scene->cloud(pc);					
 					traverseCloud(cloud, R, D );

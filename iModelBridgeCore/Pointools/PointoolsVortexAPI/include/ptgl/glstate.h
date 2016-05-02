@@ -122,7 +122,7 @@ namespace ptgl
 		inline void enable(const RenderClientState &rs)  { _clientstate |= rs; }
 		inline void disable(const RenderClientState &rs) { _clientstate &= ~rs; }
 
-		inline bool isSet(const RenderParam &rp) const	{ return _paramstate & rp; }
+		inline bool isSet(const RenderParam &rp) const	{ return (_paramstate & rp ) != 0; }
 		inline void set(const RenderParam &rp)		{ _paramstate |= rp; }
 		inline void unset(const RenderParam &rp)	{ _paramstate &= ~rp; }
 

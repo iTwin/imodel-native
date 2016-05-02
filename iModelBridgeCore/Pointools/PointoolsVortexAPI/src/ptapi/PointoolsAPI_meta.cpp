@@ -127,7 +127,7 @@ PThandle PTAPI	ptReadPODMeta( const PTstr filepath )
 			if (pcloud::PodIO::readVersion(job)
 				&& pcloud::PodIO::readHeader(job))
 			{
-				int i;
+				uint i;
 				for (i=0; i< scene->size(); i++)
 				{
 					pcloud::PointCloud *pc = scene->cloud(i);
@@ -344,7 +344,7 @@ PTres		PTAPI	ptWriteMetaTags( PThandle metadataHandle )
 		thePointsPager().closeSceneFile(scene);
 	}
 	
-	bool retval = setLastErrorCode( PTV_SUCCESS );
+	bool retval = setLastErrorCode( PTV_SUCCESS ) != 0;
 	
 	// reopen read write
 	ptds::DataSourcePtr dataSrc = ptds::DataSourceManager().openForReadWrite( &filepath );
@@ -360,12 +360,12 @@ PTres		PTAPI	ptWriteMetaTags( PThandle metadataHandle )
 		
 		if (!PodIO::writeMetaUpdate( pod, meta->mdata ))
 		{
-			retval = setLastErrorCode( PTV_FILE_WRITE_FAILURE );
+			retval = setLastErrorCode( PTV_FILE_WRITE_FAILURE ) != 0;
 		}
 		dataSrc->close();			
 	}
 	else 
-		retval = setLastErrorCode ( PTV_FILE_WRITE_FAILURE );
+		retval = setLastErrorCode ( PTV_FILE_WRITE_FAILURE ) != 0;
 	
 	if (scene)
 	{

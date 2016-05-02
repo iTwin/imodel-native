@@ -589,7 +589,7 @@ namespace querydetail
 
 			memset( uchannels, 0, sizeof(void*)*32);
 
-			for (int c=0;c<numPointChannels; c++)
+			for (uint c=0;c<numPointChannels; c++)
 			{
 				pointChannelsReq[c] = _pointChannelsReq[c];
 				pointChannels[c] = (PTubyte*)_pointChannels[c];
@@ -1137,7 +1137,7 @@ namespace querydetail
 			else if (cfilter) 
 				fchannel = cfilter->data();
 
-			int c = 0;
+			uint c = 0;
 			/* setup user channels for voxel */
 			for (c = 0; c<numPointChannels; c++)
 			{
@@ -1162,7 +1162,7 @@ namespace querydetail
 
 		void endChannels(pcloud::Voxel *vox, float amount) 
 		{
-			int c = 0;
+			uint c = 0;
 															// lock channels for OOC use
 			for (c = 0; c<numPointChannels; c++)
 			{
@@ -1194,7 +1194,7 @@ namespace querydetail
 			if (numPointChannels)
 			{
 				int ch = 0;
-				for (int c=0; c<numPointChannels; c++)
+				for (uint c=0; c<numPointChannels; c++)
 				{
 					if (uvchannel[c])
 					{
@@ -1215,7 +1215,7 @@ namespace querydetail
 			return false;
 		}
 		//---------------------------------------------------------------------
-		bool point(const vector3d &pnt, int index, ubyte &f)
+		bool point(const vector3d &pnt, uint index, ubyte &f)
 		{
 			if (rwPos.counter >= bufferSize) return false;
 
@@ -1318,7 +1318,7 @@ namespace querydetail
 					if (numPointChannels)
 					{
 						int ch = 0;
-						for (int c=0; c<numPointChannels; c++)
+						for (uint c=0; c<numPointChannels; c++)
 						{
 							if (uvchannel[c])
 								uvchannel[c]->getVal(index, &(pointChannels[ch++][channelBPP[c]*rwPos.counter]));
@@ -1427,10 +1427,10 @@ namespace querydetail
 			PTuint				counter;
 			PTuint				counterPotential;
 			Voxel*				continueFrom;				
-			PTint				continuePnt;				
+			PTuint				continuePnt;				
 			PTint				initialContinuePnt;
 			Voxel*				lastVoxel;					
-			PTint				lastPoint;
+			PTuint				lastPoint;
 
 			Voxel *				lastPartiallyIteratedVoxel;
 			Voxel::LOD			lastPartiallyIteratedVoxelUnloadLOD;
@@ -2612,7 +2612,7 @@ public:
 
 		setQueryLOD(queryLOD);
 
-		unsigned int	t;
+        PTint	t;
 															// Clear box ready for new sizing
 		queryBox.clear();
 
@@ -2636,7 +2636,7 @@ public:
 		k = initK;
 	}
 
-	PTint getK(void)
+    PTuint getK(void)
 	{
 		return k;
 	}
@@ -2721,13 +2721,11 @@ public:
 
 	// QueryPointSet must already be set up
 
-	float calculateNeighbourhood(PriorityQueueMiniMax &e, PriorityQueueMiniMin &result, int k)
+	float calculateNeighbourhood(PriorityQueueMiniMax &e, PriorityQueueMiniMin &result, PTuint k)
 	{
 		float							pruneDistance;
-		unsigned int					t;
 		PriorityQueueNodeMiniMax	*	h;
-		unsigned int					s;
-		pcloud::Node				*	node;
+		unsigned long					s;
 
 		unsigned int					totalPointCount;
 
@@ -2744,7 +2742,7 @@ public:
 			totalPointCount = 0;
 															// Include and refine until point count exceeds k
 															// (Important that the last item is included)
-			for(s = source->getSize(); s > 0 && totalPointCount < k; s--)
+			for(s = source->getSize(); s >= 0 && totalPointCount < k; s--)
 			{
 				h = source->getFirst();
 
@@ -2895,7 +2893,7 @@ h->extents = ext;
 
 	template<class T> inline void calculateSinglePointKNN2(KNNQueryPoint<T> &queryPoint, std::vector<PriorityQueueNodeMiniMin> &neighbourhood)
 	{
-		unsigned int					s, j;
+		unsigned int					s;
 		PriorityQueueNodeMiniMin	*	b;
 		VoxelPointNode<T, SortModeMax>	p;
 
@@ -2915,9 +2913,7 @@ h->extents = ext;
 	template<class T> void calculatePointKNNCoherent(PriorityQueueMiniMin &initNeighbourhood, int numResultSets, int bufferSize, PTuint *resultSetSize, T **geomBufferArray, ubyte **rgbBufferArray, PTshort **intensityArray)
 	{
 		unsigned int										s;
-		unsigned int										j;
 		unsigned int										m;
-		PriorityQueueNodeMiniMin						*	b;
 		KNNQueryPoint<PTfloat>							*	queryPoint;
 		std::vector<PriorityQueueNodeMiniMin>				neighbourhood;
 															// Copy neighbourhood to a vector

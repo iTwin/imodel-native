@@ -307,7 +307,6 @@ DataBuffer::DataSize DataBuffer::writeToBuffer(const Data *source, DataSize numB
 Status DataBuffer::readFileToBuffer(const wchar_t *filepath, bool limitFileSize)
 {
 	std::ifstream	fileIn;
-	DataSize		blockSize;
 	Status			status;
 
 															// Open binary file for read
@@ -321,7 +320,7 @@ Status DataBuffer::readFileToBuffer(const wchar_t *filepath, bool limitFileSize)
 
 															// Get file size
 	fileIn.seekg(0, std::ios::end);
-	int fileSize = fileIn.tellg();
+	unsigned long fileSize = fileIn.tellg();
 	fileIn.seekg(0);
 															// Check we have enough buffer allocated
 	if(fileSize > getInternalBufferSize())

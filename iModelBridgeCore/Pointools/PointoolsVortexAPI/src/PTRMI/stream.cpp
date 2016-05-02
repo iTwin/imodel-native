@@ -68,7 +68,6 @@ Status Stream::releaseCaller(void)
 PTRMI::Status Stream::beginClientMethod(const Name &methodName)
 {
 	Host					*	host;
-	ManagerInfo				*	managerInfo;
 	Message::MessageVersion		messageVersion;
 	Status						status;
 

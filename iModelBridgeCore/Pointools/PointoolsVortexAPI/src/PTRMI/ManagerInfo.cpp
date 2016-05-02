@@ -62,7 +62,6 @@ Status ManagerInfo::writeFile(const wchar_t *file) const
 void ManagerInfo::update(Manager &manager, unsigned int verboseLevel)
 {
 	PTubyte									version[4];
-	PTRMI::ObjectManager				*	objectManager;
 
 	ManagerInfoVariantGraph::KeyPath		path;
 	const PTRMI::GUID					&	managerGUID = getManager().getManagerGUID();

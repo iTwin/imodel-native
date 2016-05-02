@@ -207,7 +207,7 @@ bool DataSourceFile::closeAndDelete(void)
 {
 	close();
 
-	return DeleteFileW(filePath.path());
+	return DeleteFileW(filePath.path()) != 0;
 }
 
 DataSource::Size DataSourceFile::readBytes(Data *buffer, Size numBytes)

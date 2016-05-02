@@ -445,7 +445,7 @@ UserChannel *UserChannelManager::createChannelFromLayers( const pt::String &name
 			channel->addToChannel(scene);
 
 			// populate channel with scene  
-			for (int i=0; i<scene->size(); i++)
+			for (uint i=0; i<scene->size(); i++)
 			{
 				const pcloud::PointCloud *cloud = scene->cloud(i);
 
@@ -465,7 +465,7 @@ UserChannel *UserChannelManager::createChannelFromLayers( const pt::String &name
 						{
 							ubyte layerval=0;
 
-							for (int p=0;p<dc->size(); p++)
+							for (unsigned int p=0;p<dc->size(); p++)
 							{
 								dc->getval(layerval, p);		// get value from channel
 								layerval = layerval &~ SELECTED_PNT_BIT;
@@ -513,7 +513,7 @@ bool		UserChannelManager::applyChannelToLayers( const UserChannel *channel, pclo
 		}
 		
 		// populate channel with scene  
-		for (int i=0; i<scene->size(); i++)
+		for (uint i=0; i<scene->size(); i++)
 		{
 			pcloud::PointCloud *cloud = scene->cloud(i);
 
@@ -552,7 +552,7 @@ bool		UserChannelManager::applyChannelToLayers( const UserChannel *channel, pclo
 						dc->allocate(vdata->getNumPoints());
 						ubyte layerval=0;
 
-						for (int p=0;p<vdata->getNumPoints(); p++)
+						for (unsigned int p=0;p<vdata->getNumPoints(); p++)
 						{
 							vdata->getVal(p, &layerval);
 							dc->set(p, &layerval);

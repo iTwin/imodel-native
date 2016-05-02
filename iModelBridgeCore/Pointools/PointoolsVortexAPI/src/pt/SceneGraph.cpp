@@ -976,7 +976,7 @@ int Object3D::setProperty(const char *id, const Variant &v)
 	{
 		try {
 			m_displayInfo.visible(ttl::var::get<bool>(v)); return 1; }
-		catch (const ttl::var::exception &e) {}
+		catch (const ttl::var::exception &) {}
 		return 1;
 	}
 	return 0;

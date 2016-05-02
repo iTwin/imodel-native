@@ -183,7 +183,7 @@ void System::init() {
 
     System::initialized = true;
 
-    unsigned long eaxreg, ebxreg, ecxreg, edxreg;
+    //unsigned long eaxreg, ebxreg, ecxreg, edxreg;
 
     char cpuVendorTmp[13];
     (void)cpuVendorTmp;
@@ -303,7 +303,7 @@ void System::init() {
             arch = "Unknown";
         }
 
-        uint32 maxAddr = (uint32)systemInfo.lpMaximumApplicationAddress;
+        uint64 maxAddr = (uint64)systemInfo.lpMaximumApplicationAddress;
         _cpuArch = format(
                     "%d x %d-bit %s processor",
                     systemInfo.dwNumberOfProcessors,
@@ -390,7 +390,7 @@ void System::init() {
 
 
 void checkForCPUID() {
-        unsigned long bitChanged;
+        //unsigned long bitChanged;
 
         // We've to check if we can toggle the flag register bit 21.
         // If we can't the processor does not support the CPUID command.

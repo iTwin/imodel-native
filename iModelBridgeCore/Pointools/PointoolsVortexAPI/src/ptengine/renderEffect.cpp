@@ -129,9 +129,11 @@ void	RenderEffectsManager::endFrame(  const RenderContext *context, uint buffers
 
 	while (i != m_effects.end())
 	{
+        // RB_VORTEX_TODO: Not sure about the third part of this conditional... what was the intention???
+        // Before change, this was --> (buffersAvailable & (*i)->requiredBuffers() == (*i)->requiredBuffers()) (added parentheses)
 		if ((*i)->isEnabled( context->settings() ) 
 			&& (*i)->compatibleEnvironment( context->environment() )
-			&& (buffersAvailable & (*i)->requiredBuffers() == (*i)->requiredBuffers()))
+			&& ((buffersAvailable & (*i)->requiredBuffers()) == (*i)->requiredBuffers()))
 		{
 			if (!shader)
 				(*i)->endFixedFuncFrame( context );
@@ -157,9 +159,11 @@ void	RenderEffectsManager::endBuffer(  const RenderContext *context, uint buffer
 
 	while (i != m_effects.end())
 	{
+        // RB_VORTEX_TODO: Not sure about the third part of this conditional... what was the intention???
+        // Before change, this was --> (buffersAvailable & (*i)->requiredBuffers() == (*i)->requiredBuffers()) (added parentheses)
 		if ((*i)->isEnabled( context->settings() ) 
 			&& (*i)->compatibleEnvironment( context->environment() )
-			&& (buffersAvailable & (*i)->requiredBuffers() == (*i)->requiredBuffers()))
+			&& ((buffersAvailable & (*i)->requiredBuffers()) == (*i)->requiredBuffers()))
 		{
 			(*i)->endShaderBuffer( context, shader );
 		}

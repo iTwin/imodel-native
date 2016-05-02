@@ -68,10 +68,11 @@ void RenderPlaneEffectGL::startFixedFuncFrame( const RenderContext *context )
 		}
 	}
 	// texture coord generation
-	GLfloat params [] = {	settings->geomShaderParams()[0],
-							settings->geomShaderParams()[1],
-							settings->geomShaderParams()[2],
-							settings->geomShaderParams()[3] };
+    // RB_VORTEX_TODO: should we really narrow down parameters to floats???
+    GLfloat params [] = {	(GLfloat)settings->geomShaderParams()[0],
+							(GLfloat)settings->geomShaderParams()[1],
+							(GLfloat)settings->geomShaderParams()[2],
+							(GLfloat)settings->geomShaderParams()[3] };
 
 	// nice in theory but does not work because points might be in short values
 	// with decompress matrix. These tex coords get generate at the original point
@@ -109,10 +110,11 @@ void RenderPlaneEffectGL::startShaderFrame(  const RenderContext *context, Shade
 	{
 		const RenderSettings *settings = context->settings();
 
-		GLfloat params [] = {	settings->geomShaderParams()[0],
-								settings->geomShaderParams()[1],
-								settings->geomShaderParams()[2],
-								settings->geomShaderParams()[3] };
+        // RB_VORTEX_TODO: should we really narrow down parameters to floats???
+		GLfloat params [] = {	(GLfloat)settings->geomShaderParams()[0],
+								(GLfloat)settings->geomShaderParams()[1],
+								(GLfloat)settings->geomShaderParams()[2],
+								(GLfloat)settings->geomShaderParams()[3] };
 
 		shaderGL->setUniform1i( UNIFORM_PLANE_TEX, TEX_UNIT_PLANE );
 		shaderGL->setUniform4fv( UNIFORM_PLANE, 1, params );

@@ -402,8 +402,6 @@ bool Graph::calculateGraphFrustum(Vector2d &frustumMin, Vector2d &frustumMax, Ve
 
 	Vector2d	graphExtentsMin;
 	Vector2d	graphExtentsMax;
-	double		frustumAspectRatio;
-	double		extentsAspectRatio;
 
 
 	calculateMinMax(graphExtentsMin, graphExtentsMax);

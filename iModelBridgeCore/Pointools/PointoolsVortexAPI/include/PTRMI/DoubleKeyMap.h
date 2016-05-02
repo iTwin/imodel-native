@@ -221,7 +221,6 @@ protected:
 
 	template<typename M, typename K> Status deleteAll(M &map)
 	{
-		T		*	item;
 		Status		status;
 		K			key;
 		bool		terminate = false;

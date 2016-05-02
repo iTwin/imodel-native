@@ -111,7 +111,7 @@ StreamDataSource *StreamScheduler::addActiveDataSourceVoxel(DataSourcePtr dataSo
 		return NULL;
 	}
 															// Add active voxel (and possibly data source if not already added) to StreamHost
-	if(streamDataSource = streamHost->addActiveDataSourceVoxel(dataSource, voxel, streamDataSourceCreated));
+	if(streamDataSource = streamHost->addActiveDataSourceVoxel(dataSource, voxel, streamDataSourceCreated))
 	{
 															// Count number of active voxels
 		incrementNumVoxelsActive();

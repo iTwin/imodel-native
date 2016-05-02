@@ -272,7 +272,7 @@ pcloud::Scene::CreateSceneResult PointsPager::openScene(pcloud::Scene *scene)
 		/*store this handle*/ 
 		pp.files.push_back(iodata(scene, 0, job.filepath, false, PAGER_THREAD));
 
-		for (int i=0; i< scene->size(); i++)
+		for (uint i=0; i< scene->size(); i++)
 		{
 			pcloud::PointCloud *pc = scene->cloud(i);
 			if (!pcloud::PodIO::readCloudStructure(job, pc))
@@ -342,8 +342,8 @@ void PointsPager::Pager::balanceMemoryLoad( int deltamb )
 	PointsScene::VoxIterator i;
 
 	pcloud::Voxel *vox =0;
-	uint bytes, offset;
-	int pnts;
+	//uint bytes, offset;
+	//int pnts;
 #ifdef _VERBOSE
 	std::cout << "adjusting " << deltamb << "mb ";
 #endif
@@ -504,8 +504,8 @@ __int64 memoryUsage()
 	PointsScene::VoxIterator i;
 
 	pcloud::Voxel *vox =0;
-	uint bytes, offset;
-	int pnts;
+	//uint bytes, offset;
+	//int pnts;
 
 	__int64 bytesUsed = 0;
 
@@ -659,8 +659,8 @@ void PointsPager::Pager::processRequests(pointsengine::StreamManager &streamMana
     std::unique_lock<std::mutex> pauseLock( pp.pausemutex );
 
 	/* locals */ 
-	pcloud::Voxel	*vox;
-	int				lod, req;
+	//pcloud::Voxel	*vox;
+	//int				lod, req;
 	__int64			memAval;
 	bool			loading = false;
 

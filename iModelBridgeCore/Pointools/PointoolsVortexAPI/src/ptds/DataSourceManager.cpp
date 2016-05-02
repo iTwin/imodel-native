@@ -35,7 +35,7 @@ DataSourceManager::DataSourceManager(void)
 
 DataSourcePtr DataSourceManager::createDataSource(const FilePath *path, DataSource::Data *sourceBuffer, DataSource::DataSize sourceBufferSize)
 {
-	DataSourcePtr result;
+	//DataSourcePtr result;
 															// NOTE: Register and poll DataSource modules in future
 
 															// If path refers to a structured storage (Externally managed) create new data source

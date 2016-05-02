@@ -37,7 +37,7 @@ CSHA::CSHA()
 }
 
 //Update context to reflect the concatenation of another buffer of bytes.
-void CSHA::AddData(char const* pcData, int iDataLength)
+void CSHA::AddData(char const* pcData, uint iDataLength)
 {
 	if(iDataLength < 1)
 		throw runtime_error(string("FileCrypt ERROR: in CSHA::AddData(), Data Length should be > 0!"));

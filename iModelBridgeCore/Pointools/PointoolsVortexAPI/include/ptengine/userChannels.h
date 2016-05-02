@@ -50,8 +50,8 @@ struct OOCFile
 	~OOCFile();
 	void create( class UserChannel *uchannel );
 	void destroy();
-	bool writeVCD( class VoxelChannelData* vcd, int numPoints=0 );
-	bool readVCD( class VoxelChannelData* vcd, int numPoints=0 );
+	bool writeVCD( class VoxelChannelData* vcd, size_t numPoints=0 );
+	bool readVCD( class VoxelChannelData* vcd, size_t numPoints=0 );
 
 	static void setOOCFileFolder( const pt::String &folder );
 	static const pt::String &getOOCFileFolder();
@@ -103,13 +103,13 @@ public:
 	
 	/* set value */ 
 	template <class T>
-	bool setValR( int i, T &v )
+	bool setValR(uint i, T &v )
 	{
 		return setVal( i, &v );
 	}
 
 	template <class T>
-	bool setVal( int i, T *v )
+	bool setVal(uint i, T *v )
 	{
 		if (i >= numPoints) return false;
 		if (!data)

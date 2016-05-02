@@ -400,10 +400,10 @@ if(testFail)
 															// Return size of sent data
 		*sendSizeExt = pipeExt->getInternalSendBufferSize();
 	}
-	catch(Status error)
-	{
-
-	}
+    catch (Status /*error*/)
+        {
+        // RB_VORTEX_TODO: do something with error???
+        }
 
 															// Release caller supplied receive buffer
 	releaseExternalBuffer(*pipeExt);

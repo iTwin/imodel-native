@@ -420,8 +420,6 @@ DataSize DataSourceAnalyzer::getReadSizePerPeriod(Period targetPeriod, Period &u
 
 DataSize DataSourceAnalyzer::sampleLatency(Period targetPeriod, Period &usePeriod)
 {
-	DataSourceAnalyzerSeries *latencySeries;
-
 	usePeriod = targetPeriod;
 
 	timeLastLatencySample.start();
@@ -438,7 +436,6 @@ DataSize DataSourceAnalyzer::sampleBandwidth(Period targetPeriod, Period &usePer
 	DataSourceAnalyzerSeries::Point			latencyMean;
 	DataSourceAnalyzerSeries::Point			bandwidthMean;
 	DataSourceAnalyzerSeries::Point			bandwidthVector;
-	double									dataSizePerSecond;
 	DataSize								dataSize = 0;
 
 #ifndef NO_DATA_SOURCE_SERVER

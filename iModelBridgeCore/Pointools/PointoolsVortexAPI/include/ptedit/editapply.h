@@ -120,11 +120,11 @@ namespace ptedit
 		}
 		inline static bool wholeInLayer( pcloud::Node* n, uint layer )
 		{
-			return n->layers(0) & layer;
+			return (n->layers(0) & layer) != 0;
 		}
 		inline static bool partInLayer( pcloud::Node* n, uint layer )
 		{
-			return n->layers(1) & layer;
+			return (n->layers(1) & layer) != 0;
 		}	
 	};
 }

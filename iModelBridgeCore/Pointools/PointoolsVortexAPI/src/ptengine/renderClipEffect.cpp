@@ -42,7 +42,7 @@ void RenderClipEffectGL::startFixedFuncFrame( const RenderContext *context )
 /*****************************************************************************/
 void RenderClipEffectGL::endFixedFuncFrame( const RenderContext *context )
 {
-	for (int i=0; i<ClipManager::instance().getNumClippingPlanes(); i++)
+	for (unsigned int i=0; i<ClipManager::instance().getNumClippingPlanes(); i++)
 	{
 		glDisable(GL_CLIP_PLANE0+i);
 	}

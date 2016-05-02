@@ -5,9 +5,6 @@
 //-----------------------------------------------------------------------------------------------
 #pragma warning (disable : 4786 )
 
-#ifdef _DEBUG
-#define FILE_TRACE 1
-#endif
 #include "PointoolsVortexAPIInternal.h"
 #include <wildmagic/math/Wm5matrix3.h>
 #include <wildmagic/math/Wm5ApprPlaneFit3.h>
@@ -267,7 +264,7 @@ uint PointEditManager::numEdits() const
 const pt::String &PointEditManager::editName( uint index )
 {
 	EditMap::iterator i = m_edits.begin();
-	for (int id=0; (id<index && i!=m_edits.end()); id++)
+	for (uint id=0; (id<index && i!=m_edits.end()); id++)
 	{
 		++i;
 	}

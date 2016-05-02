@@ -209,7 +209,7 @@ DataSource::DataSize DataSourceStructuredStorage::getFileSize(void)
 	IMalloc	*	pMalloc;
 	STATSTG		statstg;
 
-	DataSize	size;
+	//DataSize	size;
 
 	if(FAILED(::CoGetMalloc(MEMCTX_TASK, &pMalloc)))
 		return 0;

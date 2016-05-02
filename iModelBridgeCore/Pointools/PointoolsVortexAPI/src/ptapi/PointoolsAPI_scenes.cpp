@@ -117,7 +117,7 @@ PTres  PTAPI ptSetSceneTransform( PThandle scene, const PTdouble *transform4x4, 
 	}
 
 	unsigned int numClouds = ptGetNumCloudsInScene(scene);
-	PThandle  cloudH;
+	//PThandle  cloudH;
 	unsigned int c;
 
 	mmatrix4d m;
@@ -264,9 +264,9 @@ PTbool	PTAPI ptSceneInfo(PThandle scene, PTstr name, PTint &clouds, PTuint &num_
 		visible = sc->displayInfo().visible();
 		loaded = sc->loaded();
 
-		return setLastErrorCode( PTV_SUCCESS );	
+		return setLastErrorCode( PTV_SUCCESS ) != 0;	
 	}
-	return setLastErrorCode( PTV_INVALID_HANDLE );
+	return setLastErrorCode( PTV_INVALID_HANDLE ) != 0;
 }
 //-------------------------------------------------------------------------------
 // ptUnloadScene

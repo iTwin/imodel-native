@@ -356,8 +356,6 @@ bool BitArray<Storage>::readFromBuffer(PTRMI::DataBuffer &buffer)
 	PTRMI::MutexScope mutexScope(mutex);
 
 	BitIndex	initNumBits;
-	BitMask		dummyBit;
-	BitIndex	numStorageEntries;
 
 															// Read number of bits in bit array
 	buffer >> initNumBits;

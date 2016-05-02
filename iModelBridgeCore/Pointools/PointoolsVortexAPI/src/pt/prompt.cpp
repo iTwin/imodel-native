@@ -385,7 +385,7 @@ static int guiPrompt(
     params.title    = windowTitle;
 
     HMODULE module = GetModuleHandle(0);
-    int ret = DialogBoxIndirectParam(module, dialogTemplate, NULL, (DLGPROC) PromptDlgProc, (DWORD)&params);
+    int ret = DialogBoxIndirectParam(module, dialogTemplate, NULL, (DLGPROC) PromptDlgProc, (LPARAM)&params);
 
 
     /*

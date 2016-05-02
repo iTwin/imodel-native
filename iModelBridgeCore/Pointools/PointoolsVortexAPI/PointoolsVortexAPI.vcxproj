@@ -1,0 +1,718 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{718788E0-7AE8-466E-BA50-80DBB1CDFD5D}</ProjectGuid>
+    <Keyword>MakeFileProj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <IntermediateOutputPath>$(ProjectDir)</IntermediateOutputPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <IntermediateOutputPath>$(ProjectDir)</IntermediateOutputPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <IntermediateOutputPath>$(ProjectDir)</IntermediateOutputPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <IntermediateOutputPath>$(ProjectDir)</IntermediateOutputPath>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <NMakePreprocessorDefinitions>WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakeIncludeSearchPath>$(ProjectDir)include</NMakeIncludeSearchPath>
+    <NMakeBuildCommandLine>BentleyBuild.py -ax86 -p PointoolsVortexAPI_DLL -f $(ProjectDir)PointoolsVortexAPI re PointoolsVortexAPI_DLL</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>BentleyBuild.py -ax86 -p PointoolsVortexAPI_DLL -f $(ProjectDir)PointoolsVortexAPI re PointoolsVortexAPI_DLL -c
+BentleyBuid.py -ax86 -p PointoolsVortexAPI -f $(ProjectDir)PointoolsVortexAPI re PointoolsVortexAPI</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>BentleyBuild.py -ax86 -p PointoolsVortexAPI_DLL -f $(ProjectDir)PointoolsVortexAPI re PointoolsVortexAPI_DLL -c</NMakeCleanCommandLine>
+    <NMakeOutput>$(OutRoot)Winx86\build\PointoolsVortexAPI\PointoolsVortexAPI.dll</NMakeOutput>
+    <IntDir>$(SolutionDir)$(IntermediateOutputPath)</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakeOutput>$(OutRoot)Winx86\build\PointoolsVortexAPI\PointoolsVortexAPI.dll</NMakeOutput>
+    <NMakeBuildCommandLine>BentleyBuild.py -ax86 -p PointoolsVortexAPI_DLL -f $(ProjectDir)PointoolsVortexAPI re PointoolsVortexAPI_DLL</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>BentleyBuild.py -ax86 -p PointoolsVortexAPI_DLL -f $(ProjectDir)PointoolsVortexAPI re PointoolsVortexAPI_DLL -c
+BentleyBuid.py -ax86 -p PointoolsVortexAPI_DLL -f $(ProjectDir)PointoolsVortexAPI re PointoolsVortexAPI_DLL</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>BentleyBuild.py -ax86 -p PointoolsVortexAPI_DLL -f $(ProjectDir)PointoolsVortexAPI re PointoolsVortexAPI_DLL -c</NMakeCleanCommandLine>
+    <NMakeIncludeSearchPath>$(ProjectDir)include</NMakeIncludeSearchPath>
+    <IntDir>$(SolutionDir)$(IntermediateOutputPath)</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <NMakeBuildCommandLine>BentleyBuild.py -ax64 -p PointoolsVortexAPI_DLL -f $(ProjectDir)PointoolsVortexAPI re PointoolsVortexAPI_DLL</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>BentleyBuild.py -ax64 -p PointoolsVortexAPI_DLL -f $(ProjectDir)PointoolsVortexAPI re PointoolsVortexAPI_DLL -c 
+BentleyBuild.py -ax64 -p PointoolsVortexAPI_DLL -f $(ProjectDir)PointoolsVortexAPI re PointoolsVortexAPI_DLL</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>BentleyBuild.py -ax64 -p PointoolsVortexAPI_DLL -f $(ProjectDir)PointoolsVortexAPI re PointoolsVortexAPI_DLL -c</NMakeCleanCommandLine>
+    <NMakeOutput>$(OutRoot)Winx64\build\PointoolsVortexAPI\PointoolsVortexAPI.dll</NMakeOutput>
+    <NMakeIncludeSearchPath>$(ProjectDir)include</NMakeIncludeSearchPath>
+    <IntDir>$(SolutionDir)$(Platform)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <NMakeOutput>$(OutRoot)Winx64\build\PointoolsVortexAPI\PointoolsVortexAPI.dll</NMakeOutput>
+    <NMakeBuildCommandLine>BentleyBuild.py -ax64 -p PointoolsVortexAPI_DLL -f $(ProjectDir)PointoolsVortexAPI re PointoolsVortexAPI_DLL</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>BentleyBuild.py -ax64 -p PointoolsVortexAPI_DLL -f $(ProjectDir)PointoolsVortexAPI re PointoolsVortexAPI_DLL -c
+BentleyBuild.py -ax64 -p PointoolsVortexAPI_DLL -f $(ProjectDir)PointoolsVortexAPI re PointoolsVortexAPI_DLL</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>BentleyBuild.py -ax64 -p PointoolsVortexAPI_DLL -f $(ProjectDir)PointoolsVortexAPI re PointoolsVortexAPI_DLL -c</NMakeCleanCommandLine>
+    <NMakeIncludeSearchPath>$(ProjectDir)include</NMakeIncludeSearchPath>
+    <IntDir>$(SolutionDir)$(Platform)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="src\diagnostics\diagnostics.cpp" />
+    <ClCompile Include="src\encryption\DoubleBuffering.cpp" />
+    <ClCompile Include="src\encryption\Method.cpp" />
+    <ClCompile Include="src\encryption\SHA.CPP" />
+    <ClCompile Include="src\encryption\TEA.cpp" />
+    <ClCompile Include="src\math\geom.c" />
+    <ClCompile Include="src\PointoolsVortexAPIInternal.cpp" />
+    <ClCompile Include="src\ptapi\PointoolsAPI_channels.cpp" />
+    <ClCompile Include="src\ptapi\PointoolsAPI_clipping.cpp" />
+    <ClCompile Include="src\ptapi\PointoolsAPI_edit.cpp" />
+    <ClCompile Include="src\ptapi\pointoolsapi_files.cpp" />
+    <ClCompile Include="src\ptapi\PointoolsAPI_imaging.cpp" />
+    <ClCompile Include="src\ptapi\PointoolsAPI_meta.cpp" />
+    <ClCompile Include="src\ptapi\PointoolsAPI_query.cpp" />
+    <ClCompile Include="src\ptapi\PointoolsAPI_render.cpp" />
+    <ClCompile Include="src\ptapi\PointoolsAPI_render_new.cpp" />
+    <ClCompile Include="src\ptapi\PointoolsAPI_scenes.cpp" />
+    <ClCompile Include="src\ptapi\PointoolsAPI_shader.cpp" />
+    <ClCompile Include="src\ptapi\PointoolsAPI_tuning.cpp" />
+    <ClCompile Include="src\ptapi\PointoolsAPI_unitTests.cpp" />
+    <ClCompile Include="src\ptapi\PointoolsAPI_viewports.cpp" />
+    <ClCompile Include="src\ptapi\PointoolsVortexAPI_import.cpp" />
+    <ClCompile Include="src\ptapi\ruby_binding\pointoolsapi_wrap.cxx" />
+    <ClCompile Include="src\ptapi\ruby_binding\pointoolsui_wrap.cxx" />
+    <ClCompile Include="src\ptappdll\functionality.cpp" />
+    <ClCompile Include="src\ptappdll\ptapp.cpp" />
+    <ClCompile Include="src\ptblock\PTLblock.cpp" />
+    <ClCompile Include="src\ptclash\clashObject.cpp" />
+    <ClCompile Include="src\ptclash\clashObjectManager.cpp" />
+    <ClCompile Include="src\ptclash\clashSet.cpp" />
+    <ClCompile Include="src\ptclash\clashTree.cpp" />
+    <ClCompile Include="src\ptcloud2\buildindex.cpp" />
+    <ClCompile Include="src\ptcloud2\compressor.cpp" />
+    <ClCompile Include="src\ptcloud2\datachannel.cpp" />
+    <ClCompile Include="src\ptcloud2\gradient.cpp" />
+    <ClCompile Include="src\ptcloud2\indexstream.cpp" />
+    <ClCompile Include="src\ptcloud2\metadata.cpp" />
+    <ClCompile Include="src\ptcloud2\metatags.cpp" />
+    <ClCompile Include="src\ptcloud2\node.cpp" />
+    <ClCompile Include="src\ptcloud2\pod.cpp" />
+    <ClCompile Include="src\ptcloud2\pointcloud.cpp" />
+    <ClCompile Include="src\ptcloud2\PointStreamFilter.cpp" />
+    <ClCompile Include="src\ptcloud2\scanimage.cpp" />
+    <ClCompile Include="src\ptcloud2\scene.cpp" />
+    <ClCompile Include="src\ptcloud2\scene_indexstream.cpp" />
+    <ClCompile Include="src\ptcloud2\SpatialPartitionGraph.cpp" />
+    <ClCompile Include="src\ptcloud2\voxel.cpp" />
+    <ClCompile Include="src\ptcmdppe\cmdprogress.cpp" />
+    <ClCompile Include="src\ptcmdppe\commandpipe.cpp" />
+    <ClCompile Include="src\ptds\DataCache.cpp" />
+    <ClCompile Include="src\ptds\DataCacheParallelRead.cpp" />
+    <ClCompile Include="src\ptds\DataSource.cpp" />
+    <ClCompile Include="src\ptds\DataSourceAnalyzer.cpp" />
+    <ClCompile Include="src\ptds\DataSourceBufferedWrite.cpp" />
+    <ClCompile Include="src\ptds\DataSourceCache.cpp" />
+    <ClCompile Include="src\ptds\DataSourceFile.cpp" />
+    <ClCompile Include="src\ptds\DataSourceManager.cpp" />
+    <ClCompile Include="src\ptds\DataSourceMemBlock.cpp" />
+    <ClCompile Include="src\ptds\DataSourceMemory.cpp" />
+    <ClCompile Include="src\ptds\DataSourceMultiRead.cpp" />
+    <ClCompile Include="src\ptds\DataSourceMultiReadSet.cpp" />
+    <ClCompile Include="src\ptds\DataSourceNull.cpp" />
+    <ClCompile Include="src\ptds\DataSourceRead.cpp" />
+    <ClCompile Include="src\ptds\DataSourceReadSet.cpp" />
+    <ClCompile Include="src\ptds\DataSourceServer.cpp" />
+    <ClCompile Include="src\ptds\DataSourceStructuredStorage.cpp" />
+    <ClCompile Include="src\ptds\FilePath.cpp" />
+    <ClCompile Include="src\ptds\GraphManager.cpp" />
+    <ClCompile Include="src\ptedit\boxfilter.cpp" />
+    <ClCompile Include="src\ptedit\cloudSelect.cpp" />
+    <ClCompile Include="src\ptedit\consolidate.cpp" />
+    <ClCompile Include="src\ptedit\constraints.cpp" />
+    <ClCompile Include="src\ptedit\editEvaluatedStackNode.cpp" />
+    <ClCompile Include="src\ptedit\editFilter.cpp" />
+    <ClCompile Include="src\ptedit\editFilters.cpp" />
+    <ClCompile Include="src\ptedit\editManager.cpp" />
+    <ClCompile Include="src\ptedit\editNodeDef.cpp" />
+    <ClCompile Include="src\ptedit\editStack.cpp" />
+    <ClCompile Include="src\ptedit\editStackState.cpp" />
+    <ClCompile Include="src\ptedit\editState.cpp" />
+    <ClCompile Include="src\ptedit\fencefilter.cpp" />
+    <ClCompile Include="src\ptedit\filterops.cpp" />
+    <ClCompile Include="src\ptedit\frustumfilter.cpp" />
+    <ClCompile Include="src\ptedit\isolationFilter.cpp" />
+    <ClCompile Include="src\ptedit\layers.cpp" />
+    <ClCompile Include="src\ptedit\paintfilters.cpp" />
+    <ClCompile Include="src\ptedit\planefilter.cpp" />
+    <ClCompile Include="src\ptedit\select.cpp" />
+    <ClCompile Include="src\ptengine\clipManager.cpp" />
+    <ClCompile Include="src\ptengine\clipObject.cpp" />
+    <ClCompile Include="src\ptengine\clipPlane.cpp" />
+    <ClCompile Include="src\ptengine\colourRamps.cpp" />
+    <ClCompile Include="src\ptengine\engine.cpp" />
+    <ClCompile Include="src\ptengine\filter.cpp" />
+    <ClCompile Include="src\ptengine\podCache.cpp" />
+    <ClCompile Include="src\ptengine\pointBoundsTree.cpp" />
+    <ClCompile Include="src\ptengine\pointsExchanger.cpp" />
+    <ClCompile Include="src\ptengine\pointsLayers.cpp" />
+    <ClCompile Include="src\ptengine\pointsPager.cpp" />
+    <ClCompile Include="src\ptengine\pointsRenderer.cpp" />
+    <ClCompile Include="src\ptengine\pointsScene.cpp" />
+    <ClCompile Include="src\ptengine\PointsSelect.cpp" />
+    <ClCompile Include="src\ptengine\projAreaApproximation.cpp" />
+    <ClCompile Include="src\ptengine\queryDensity.cpp" />
+    <ClCompile Include="src\ptengine\renderClipEffect.cpp" />
+    <ClCompile Include="src\ptengine\renderContext.cpp" />
+    <ClCompile Include="src\ptengine\renderDiagnostics.cpp" />
+    <ClCompile Include="src\ptengine\renderEffect.cpp" />
+    <ClCompile Include="src\ptengine\renderengine.cpp" />
+    <ClCompile Include="src\ptengine\renderFrameData.cpp" />
+    <ClCompile Include="src\ptengine\renderGLResouceAdaptor.cpp" />
+    <ClCompile Include="src\ptengine\renderIntensityEffect.cpp" />
+    <ClCompile Include="src\ptengine\renderLayersEffect.cpp" />
+    <ClCompile Include="src\ptengine\renderLightingEffectGL.cpp" />
+    <ClCompile Include="src\ptengine\renderMethodGLPoints.cpp" />
+    <ClCompile Include="src\ptengine\renderMethodGLVertexArray.cpp" />
+    <ClCompile Include="src\ptengine\renderPipeline.cpp" />
+    <ClCompile Include="src\ptengine\renderPipelineGLFixed.cpp" />
+    <ClCompile Include="src\ptengine\renderPipelineGLShader.cpp" />
+    <ClCompile Include="src\ptengine\renderPlaneEffect.cpp" />
+    <ClCompile Include="src\ptengine\renderPointsBuffer.cpp" />
+    <ClCompile Include="src\ptengine\renderPointsEffect.cpp" />
+    <ClCompile Include="src\ptengine\renderResourceManager.cpp" />
+    <ClCompile Include="src\ptengine\renderRGBEffect.cpp" />
+    <ClCompile Include="src\ptengine\renderSelectionBuffer.cpp" />
+    <ClCompile Include="src\ptengine\renderSettings.cpp" />
+    <ClCompile Include="src\ptengine\renderVoxelBuffer.cpp" />
+    <ClCompile Include="src\ptengine\selectionFilter.cpp" />
+    <ClCompile Include="src\ptengine\StreamDataSource.cpp" />
+    <ClCompile Include="src\ptengine\StreamHost.cpp" />
+    <ClCompile Include="src\ptengine\StreamHostManager.cpp" />
+    <ClCompile Include="src\ptengine\StreamManager.cpp" />
+    <ClCompile Include="src\ptengine\StreamManagerDataSource.cpp" />
+    <ClCompile Include="src\ptengine\StreamManagerDataSourceSet.cpp" />
+    <ClCompile Include="src\ptengine\StreamManagerParameters.cpp" />
+    <ClCompile Include="src\ptengine\StreamScheduler.cpp" />
+    <ClCompile Include="src\ptengine\StreamSchedulerSequential.cpp" />
+    <ClCompile Include="src\ptengine\StreamVoxel.cpp" />
+    <ClCompile Include="src\ptengine\userChannelManager.cpp" />
+    <ClCompile Include="src\ptengine\userChannels.cpp" />
+    <ClCompile Include="src\ptengine\visibilityEngine.cpp" />
+    <ClCompile Include="src\ptengine\VoxelLODRemoveVisitor.cpp" />
+    <ClCompile Include="src\ptengine\VoxelLODSet.cpp" />
+    <ClCompile Include="src\ptgeom\geom.c" />
+    <ClCompile Include="src\ptgeom\GeomAlgorithms.cpp" />
+    <ClCompile Include="src\ptgl\3dmath.cpp" />
+    <ClCompile Include="src\ptgl\glArcball.cpp" />
+    <ClCompile Include="src\ptgl\glCamera.cpp" />
+    <ClCompile Include="src\ptgl\glClipBox.cpp" />
+    <ClCompile Include="src\ptgl\glDraw.cpp" />
+    <ClCompile Include="src\ptgl\glEffects.cpp" />
+    <ClCompile Include="src\ptgl\glExtensions.cpp" />
+    <ClCompile Include="src\ptgl\glFont.cpp" />
+    <ClCompile Include="src\ptgl\glFrustum.cpp" />
+    <ClCompile Include="src\ptgl\glLight.cpp" />
+    <ClCompile Include="src\ptgl\glShader.cpp" />
+    <ClCompile Include="src\ptgl\glState.cpp" />
+    <ClCompile Include="src\ptgl\gltext.cpp" />
+    <ClCompile Include="src\ptgl\glVertexProgram.cpp" />
+    <ClCompile Include="src\ptgl\glViewport.cpp" />
+    <ClCompile Include="src\ptgl\glViewSetup.cpp" />
+    <ClCompile Include="src\ptgl\glViewStore.cpp" />
+    <ClCompile Include="src\ptgl\glvp\arb_vertex_program.cpp" />
+    <ClCompile Include="src\ptlic\pcg_license.cpp" />
+    <ClCompile Include="src\ptlic\PointoolsBentleyLicense.cpp" />
+    <ClCompile Include="src\ptlic\PointoolsBentleyLicenseAPI.cpp" />
+    <ClCompile Include="src\ptl\configurations.cpp" />
+    <ClCompile Include="src\ptl\dispatcher.cpp" />
+    <ClCompile Include="src\ptl\project.cpp" />
+    <ClCompile Include="src\ptl\projecttool.cpp" />
+    <ClCompile Include="src\ptmodm\modulesManager.cpp" />
+    <ClCompile Include="src\ptrmi\ClientInterface.cpp" />
+    <ClCompile Include="src\ptrmi\ClientInterfaceExtDataBentley.cpp" />
+    <ClCompile Include="src\ptrmi\ClientServerInterface.cpp" />
+    <ClCompile Include="src\ptrmi\DataBuffer.cpp" />
+    <ClCompile Include="src\ptrmi\Dispatcher.cpp" />
+    <ClCompile Include="src\ptrmi\DispatcherPTRMI.cpp" />
+    <ClCompile Include="src\ptrmi\GUID.cpp" />
+    <ClCompile Include="src\ptrmi\Host.cpp" />
+    <ClCompile Include="src\ptrmi\HostManager.cpp" />
+    <ClCompile Include="src\ptrmi\InterfaceBase.cpp" />
+    <ClCompile Include="src\ptrmi\Manager.cpp" />
+    <ClCompile Include="src\ptrmi\ManagerClientInterface.cpp" />
+    <ClCompile Include="src\ptrmi\ManagerInfo.cpp" />
+    <ClCompile Include="src\ptrmi\ManagerServerInterface.cpp" />
+    <ClCompile Include="src\ptrmi\Message.cpp" />
+    <ClCompile Include="src\ptrmi\Name.cpp" />
+    <ClCompile Include="src\ptrmi\ObjectManager.cpp" />
+    <ClCompile Include="src\ptrmi\Pipe.cpp" />
+    <ClCompile Include="src\ptrmi\pipeext.cpp" />
+    <ClCompile Include="src\ptrmi\PipeManager.cpp" />
+    <ClCompile Include="src\ptrmi\PipeManagerExt.cpp" />
+    <ClCompile Include="src\ptrmi\PipeManagerTCP.cpp" />
+    <ClCompile Include="src\ptrmi\PipeProtocolManager.cpp" />
+    <ClCompile Include="src\ptrmi\PipeTCP.cpp" />
+    <ClCompile Include="src\ptrmi\RemotePtr.cpp" />
+    <ClCompile Include="src\ptrmi\ServerInterface.cpp" />
+    <ClCompile Include="src\ptrmi\Status.cpp" />
+    <ClCompile Include="src\ptrmi\Stream.cpp" />
+    <ClCompile Include="src\ptrmi\T.cpp" />
+    <ClCompile Include="src\ptrmi\TestRMI.cpp" />
+    <ClCompile Include="src\ptrmi\URL.cpp" />
+    <ClCompile Include="src\ptrmi\VariantGraph.cpp" />
+    <ClCompile Include="src\pttool\tool.cpp" />
+    <ClCompile Include="src\pttool\tools.cpp" />
+    <ClCompile Include="src\ptuim\uiManager.cpp" />
+    <ClCompile Include="src\pt\BoundingBox.cpp" />
+    <ClCompile Include="src\pt\BoundingSphere.cpp" />
+    <ClCompile Include="src\pt\Color.cpp" />
+    <ClCompile Include="src\pt\Datatable.cpp" />
+    <ClCompile Include="src\pt\Datatree.cpp" />
+    <ClCompile Include="src\pt\datatreeBlob.cpp" />
+    <ClCompile Include="src\pt\datatreeBranch.cpp" />
+    <ClCompile Include="src\pt\datatreeIO.cpp" />
+    <ClCompile Include="src\pt\datatreeNode.cpp" />
+    <ClCompile Include="src\pt\debug.cpp" />
+    <ClCompile Include="src\pt\DebugAssert.cpp" />
+    <ClCompile Include="src\pt\format.cpp" />
+    <ClCompile Include="src\pt\Log.cpp" />
+    <ClCompile Include="src\pt\Matrix4.cpp" />
+    <ClCompile Include="src\pt\OBBox.cpp" />
+    <ClCompile Include="src\pt\ObjectRef.cpp" />
+    <ClCompile Include="src\pt\Plane.cpp" />
+    <ClCompile Include="src\pt\prompt.cpp" />
+    <ClCompile Include="src\pt\pterror.cpp" />
+    <ClCompile Include="src\pt\ptstring.cpp" />
+    <ClCompile Include="src\pt\Registry.cpp" />
+    <ClCompile Include="src\pt\SceneClassManager.cpp" />
+    <ClCompile Include="src\pt\SceneGraph.cpp" />
+    <ClCompile Include="src\pt\ss\Geometry.cpp" />
+    <ClCompile Include="src\pt\ss\Geometry_1_51.cpp" />
+    <ClCompile Include="src\pt\ss\Pageable.cpp" />
+    <ClCompile Include="src\pt\System.cpp" />
+    <ClCompile Include="src\pt\Timer.cpp" />
+    <ClCompile Include="src\pt\timestamp.cpp" />
+    <ClCompile Include="src\pt\Trace.cpp" />
+    <ClCompile Include="src\pt\utf.c" />
+    <ClCompile Include="src\vortexobjects\IClashNode.cpp" />
+    <ClCompile Include="src\vortexobjects\IClashObject.cpp" />
+    <ClCompile Include="src\vortexobjects\IClashObjectManager.cpp" />
+    <ClCompile Include="src\vortexobjects\IClashTree.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\debug.h" />
+    <ClInclude Include="include\diagnostics\diagnosticCmds.h" />
+    <ClInclude Include="include\diagnostics\diagnostics.h" />
+    <ClInclude Include="include\encryption\DoubleBuffering.h" />
+    <ClInclude Include="include\encryption\Method.h" />
+    <ClInclude Include="include\encryption\SHA.H" />
+    <ClInclude Include="include\encryption\TEA.h" />
+    <ClInclude Include="include\glh\glh_array.h" />
+    <ClInclude Include="include\glh\glh_combiners.h" />
+    <ClInclude Include="include\glh\glh_convenience.h" />
+    <ClInclude Include="include\glh\glh_cube_map.h" />
+    <ClInclude Include="include\glh\glh_glut.h" />
+    <ClInclude Include="include\glh\glh_glut2.h" />
+    <ClInclude Include="include\glh\glh_glut_callfunc.h" />
+    <ClInclude Include="include\glh\glh_glut_replay.h" />
+    <ClInclude Include="include\glh\glh_glut_text.h" />
+    <ClInclude Include="include\glh\glh_interactors.h" />
+    <ClInclude Include="include\glh\glh_linear.h" />
+    <ClInclude Include="include\glh\glh_mipmaps.h" />
+    <ClInclude Include="include\glh\glh_nveb.h" />
+    <ClInclude Include="include\glh\glh_obs.h" />
+    <ClInclude Include="include\glh\glh_text.h" />
+    <ClInclude Include="include\glh\NVEBGlutAPI.h" />
+    <ClInclude Include="include\math\geom.h" />
+    <ClInclude Include="include\math\matrix_math.h" />
+    <ClInclude Include="include\math\stats.h" />
+    <ClInclude Include="include\PointoolsVortexAPIInternal.h" />
+    <ClInclude Include="include\ptapi\PointoolsAPI_handle.h" />
+    <ClInclude Include="include\ptapi\PointoolsVortexAPI.h" />
+    <ClInclude Include="include\ptapi\PointoolsVortexAPI_import.h" />
+    <ClInclude Include="include\ptapi\PointoolsVortexAPI_ResultCodes.h" />
+    <ClInclude Include="include\ptappdll\functionality.h" />
+    <ClInclude Include="include\ptappdll\ptapp.h" />
+    <ClInclude Include="include\ptapp\pluginsmanager.h" />
+    <ClInclude Include="include\ptblock\comp.h" />
+    <ClInclude Include="include\ptblock\PTLblock.h" />
+    <ClInclude Include="include\ptclash\clashObject.h" />
+    <ClInclude Include="include\ptclash\clashObjectManager.h" />
+    <ClInclude Include="include\ptclash\clashSet.h" />
+    <ClInclude Include="include\ptclash\clashTree.h" />
+    <ClInclude Include="include\ptcloud2\binaryoctree.h" />
+    <ClInclude Include="include\ptcloud2\bit.h" />
+    <ClInclude Include="include\ptcloud2\bitvector.h" />
+    <ClInclude Include="include\ptcloud2\bitVoxelGrid.h" />
+    <ClInclude Include="include\ptcloud2\buildindex.h" />
+    <ClInclude Include="include\ptcloud2\compressor.h" />
+    <ClInclude Include="include\ptcloud2\datachannel.h" />
+    <ClInclude Include="include\ptcloud2\defs.h" />
+    <ClInclude Include="include\ptcloud2\gradient.h" />
+    <ClInclude Include="include\ptcloud2\indexstream.h" />
+    <ClInclude Include="include\ptcloud2\metadata.h" />
+    <ClInclude Include="include\ptcloud2\metatags.h" />
+    <ClInclude Include="include\ptcloud2\node.h" />
+    <ClInclude Include="include\ptcloud2\octreeIndexing.h" />
+    <ClInclude Include="include\ptcloud2\pageablememman.h" />
+    <ClInclude Include="include\ptcloud2\pcimage.h" />
+    <ClInclude Include="include\ptcloud2\pcloud.h" />
+    <ClInclude Include="include\ptcloud2\pod.h" />
+    <ClInclude Include="include\ptcloud2\pointcloud.h" />
+    <ClInclude Include="include\ptcloud2\PointStreamFilter.h" />
+    <ClInclude Include="include\ptcloud2\scanpos.h" />
+    <ClInclude Include="include\ptcloud2\scene.h" />
+    <ClInclude Include="include\ptcloud2\spatialPartitionGraph.h" />
+    <ClInclude Include="include\ptcloud2\voxel.h" />
+    <ClInclude Include="include\ptcmdppe\cmdoutput.h" />
+    <ClInclude Include="include\ptcmdppe\cmdprogress.h" />
+    <ClInclude Include="include\ptcmdppe\cmdstate.h" />
+    <ClInclude Include="include\ptcmdppe\commandpipe.h" />
+    <ClInclude Include="include\ptcmdppe\eventdefs.h" />
+    <ClInclude Include="include\ptcmdppe\interact.h" />
+    <ClInclude Include="include\ptds\BitArray.h" />
+    <ClInclude Include="include\ptds\DataCache.h" />
+    <ClInclude Include="include\ptds\DataCacheParallelRead.h" />
+    <ClInclude Include="include\ptds\DataSource.h" />
+    <ClInclude Include="include\ptds\DataSourceAnalyzer.h" />
+    <ClInclude Include="include\ptds\DataSourceBufferedWrite.h" />
+    <ClInclude Include="include\ptds\DataSourceCache.h" />
+    <ClInclude Include="include\ptds\DataSourceFile.h" />
+    <ClInclude Include="include\ptds\DataSourceManager.h" />
+    <ClInclude Include="include\ptds\DataSourceMemBlock.h" />
+    <ClInclude Include="include\ptds\DataSourceMemory.h" />
+    <ClInclude Include="include\ptds\DataSourceMultiRead.h" />
+    <ClInclude Include="include\ptds\DataSourceMultiReadSet.h" />
+    <ClInclude Include="include\ptds\DataSourceNull.h" />
+    <ClInclude Include="include\ptds\DataSourceRead.h" />
+    <ClInclude Include="include\ptds\DataSourceReadSet.h" />
+    <ClInclude Include="include\ptds\datasourceserver.h" />
+    <ClInclude Include="include\ptds\DataSourceStringIO.h" />
+    <ClInclude Include="include\ptds\DataSourceStructuredStorage.h" />
+    <ClInclude Include="include\ptds\fileIO_win32.h" />
+    <ClInclude Include="include\ptds\FilePath.h" />
+    <ClInclude Include="include\ptds\GraphManager.h" />
+    <ClInclude Include="include\ptds\ptds.h" />
+    <ClInclude Include="include\ptds\ptwin32_api.h" />
+    <ClInclude Include="include\ptedit\bitVoxelGrid.h" />
+    <ClInclude Include="include\ptedit\blendingModes.h" />
+    <ClInclude Include="include\ptedit\boxfilter.h" />
+    <ClInclude Include="include\ptedit\cloudselect.h" />
+    <ClInclude Include="include\ptedit\consolidatenode.h" />
+    <ClInclude Include="include\ptedit\constriants.h" />
+    <ClInclude Include="include\ptedit\edit.h" />
+    <ClInclude Include="include\ptedit\editapply.h" />
+    <ClInclude Include="include\ptedit\editevaluatedstacknode.h" />
+    <ClInclude Include="include\ptedit\editFilter.h" />
+    <ClInclude Include="include\ptedit\editfilters.h" />
+    <ClInclude Include="include\ptedit\editmanager.h" />
+    <ClInclude Include="include\ptedit\editNodeDef.h" />
+    <ClInclude Include="include\ptedit\editSelect.h" />
+    <ClInclude Include="include\ptedit\editSpatial.h" />
+    <ClInclude Include="include\ptedit\editstack.h" />
+    <ClInclude Include="include\ptedit\editstackstate.h" />
+    <ClInclude Include="include\ptedit\editstate.h" />
+    <ClInclude Include="include\ptedit\editToolbar.h" />
+    <ClInclude Include="include\ptedit\fencefilter.h" />
+    <ClInclude Include="include\ptedit\filter.h" />
+    <ClInclude Include="include\ptedit\filterops.h" />
+    <ClInclude Include="include\ptedit\frustumfilter.h" />
+    <ClInclude Include="include\ptedit\isolationFilter.h" />
+    <ClInclude Include="include\ptedit\paintfilters.h" />
+    <ClInclude Include="include\ptedit\planefilter.h" />
+    <ClInclude Include="include\ptedit\pointedit.h" />
+    <ClInclude Include="include\ptedit\pointvisitors.h" />
+    <ClInclude Include="include\ptedit\selectionFilter.h" />
+    <ClInclude Include="include\ptengine\clipDefines.h" />
+    <ClInclude Include="include\ptengine\clipManager.h" />
+    <ClInclude Include="include\ptengine\clipObject.h" />
+    <ClInclude Include="include\ptengine\clipPlane.h" />
+    <ClInclude Include="include\ptengine\colourRamps.h" />
+    <ClInclude Include="include\ptengine\engine.h" />
+    <ClInclude Include="include\ptengine\filters.h" />
+    <ClInclude Include="include\ptengine\globalpagerdata.h" />
+    <ClInclude Include="include\ptengine\importer.h" />
+    <ClInclude Include="include\ptengine\module.h" />
+    <ClInclude Include="include\ptengine\podCache.h" />
+    <ClInclude Include="include\ptengine\pointBoundsTree.h" />
+    <ClInclude Include="include\ptengine\pointLayers.h" />
+    <ClInclude Include="include\ptengine\pointsexchanger.h" />
+    <ClInclude Include="include\ptengine\pointsfilter.h" />
+    <ClInclude Include="include\ptengine\pointsIOdefs.h" />
+    <ClInclude Include="include\ptengine\pointspager.h" />
+    <ClInclude Include="include\ptengine\pointsRenderer.h" />
+    <ClInclude Include="include\ptengine\pointsScene.h" />
+    <ClInclude Include="include\ptengine\pointsSelect.h" />
+    <ClInclude Include="include\ptengine\pointsvisitor.h" />
+    <ClInclude Include="include\ptengine\projAreaApproximation.h" />
+    <ClInclude Include="include\ptengine\ptengine_api.h" />
+    <ClInclude Include="include\ptengine\queryBuffer.h" />
+    <ClInclude Include="include\ptengine\queryDensity.h" />
+    <ClInclude Include="include\ptengine\queryEngine.h" />
+    <ClInclude Include="include\ptengine\queryFilter.h" />
+    <ClInclude Include="include\ptengine\queryFilterGrid.h" />
+    <ClInclude Include="include\ptengine\queryfilterobb.h" />
+    <ClInclude Include="include\ptengine\queryPointsArray.h" />
+    <ClInclude Include="include\ptengine\queryScene.h" />
+    <ClInclude Include="include\ptengine\queryTraversal.h" />
+    <ClInclude Include="include\ptengine\queryTraversalOctree.h" />
+    <ClInclude Include="include\ptengine\RangeSet.h" />
+    <ClInclude Include="include\ptengine\renderClipEffect.h" />
+    <ClInclude Include="include\ptengine\renderContext.h" />
+    <ClInclude Include="include\ptengine\renderContextManager.h" />
+    <ClInclude Include="include\ptengine\renderDiagnostics.h" />
+    <ClInclude Include="include\ptengine\renderEffect.h" />
+    <ClInclude Include="include\ptengine\renderengine.h" />
+    <ClInclude Include="include\ptengine\renderEnvironment.h" />
+    <ClInclude Include="include\ptengine\renderFogEffect.h" />
+    <ClInclude Include="include\ptengine\renderFrameData.h" />
+    <ClInclude Include="include\ptengine\renderGLResourceAdaptor.h" />
+    <ClInclude Include="include\ptengine\renderIntensityEffect.h" />
+    <ClInclude Include="include\ptengine\renderLayersEffect.h" />
+    <ClInclude Include="include\ptengine\renderLightingEffect.h" />
+    <ClInclude Include="include\ptengine\renderMethodGLPoints.h" />
+    <ClInclude Include="include\ptengine\renderMethodGLVertexArray.h" />
+    <ClInclude Include="include\ptengine\renderPipelineGLFixed.h" />
+    <ClInclude Include="include\ptengine\renderPipelineGLShader.h" />
+    <ClInclude Include="include\ptengine\renderPlaneEffect.h" />
+    <ClInclude Include="include\ptengine\renderPointsBuffer.h" />
+    <ClInclude Include="include\ptengine\renderPointsEffect.h" />
+    <ClInclude Include="include\ptengine\renderPointsMethod.h" />
+    <ClInclude Include="include\ptengine\renderResourceManager.h" />
+    <ClInclude Include="include\ptengine\renderRGBEffect.h" />
+    <ClInclude Include="include\ptengine\renderSettings.h" />
+    <ClInclude Include="include\ptengine\renderShaderUniforms.h" />
+    <ClInclude Include="include\ptengine\renderVoxelBuffer.h" />
+    <ClInclude Include="include\ptengine\selectionFilter.h" />
+    <ClInclude Include="include\ptengine\StreamDataSource.h" />
+    <ClInclude Include="include\ptengine\StreamHost.h" />
+    <ClInclude Include="include\ptengine\StreamHostManager.h" />
+    <ClInclude Include="include\ptengine\StreamManager.h" />
+    <ClInclude Include="include\ptengine\StreamManagerDataSource.h" />
+    <ClInclude Include="include\ptengine\StreamManagerDataSourceSet.h" />
+    <ClInclude Include="include\ptengine\StreamManagerParameters.h" />
+    <ClInclude Include="include\ptengine\StreamScheduler.h" />
+    <ClInclude Include="include\ptengine\StreamSchedulerSequential.h" />
+    <ClInclude Include="include\ptengine\StreamVoxel.h" />
+    <ClInclude Include="include\ptengine\userChannels.h" />
+    <ClInclude Include="include\ptengine\visibilityengine.h" />
+    <ClInclude Include="include\ptengine\voxelLoader.h" />
+    <ClInclude Include="include\ptengine\VoxelLODRemoveVisitor.h" />
+    <ClInclude Include="include\ptengine\VoxelLODSet.h" />
+    <ClInclude Include="include\ptengine\VoxelPriorityQueue.h" />
+    <ClInclude Include="include\ptfs\ascii_export.h" />
+    <ClInclude Include="include\ptfs\ascii_import.h" />
+    <ClInclude Include="include\ptfs\filepath.h" />
+    <ClInclude Include="include\ptfs\iohelper.h" />
+    <ClInclude Include="include\ptgeom\geom.h" />
+    <ClInclude Include="include\ptgeom\GeomAlgorithms.h" />
+    <ClInclude Include="include\ptgl\3dmath.h" />
+    <ClInclude Include="include\ptgl\arb_vertex_program.h" />
+    <ClInclude Include="include\ptgl\color.h" />
+    <ClInclude Include="include\ptgl\glArcball.h" />
+    <ClInclude Include="include\ptgl\glBitmap.h" />
+    <ClInclude Include="include\ptgl\glCamera.h" />
+    <ClInclude Include="include\ptgl\glCg.h" />
+    <ClInclude Include="include\ptgl\glClipBox.h" />
+    <ClInclude Include="include\ptgl\glDraw.h" />
+    <ClInclude Include="include\ptgl\glEffects.h" />
+    <ClInclude Include="include\ptgl\glExtensions.h" />
+    <ClInclude Include="include\ptgl\glFBO.h" />
+    <ClInclude Include="include\ptgl\glfont.h" />
+    <ClInclude Include="include\ptgl\glfrustum.h" />
+    <ClInclude Include="include\ptgl\glInvariant.h" />
+    <ClInclude Include="include\ptgl\glLight.h" />
+    <ClInclude Include="include\ptgl\glShader.h" />
+    <ClInclude Include="include\ptgl\glstate.h" />
+    <ClInclude Include="include\ptgl\gltext.h" />
+    <ClInclude Include="include\ptgl\glVertexProgram.h" />
+    <ClInclude Include="include\ptgl\glViewport.h" />
+    <ClInclude Include="include\ptgl\glViewSetup.h" />
+    <ClInclude Include="include\ptgl\glviewstore.h" />
+    <ClInclude Include="include\ptgl\ptgl.h" />
+    <ClInclude Include="include\ptlic\PointoolsBentleyLicense.h" />
+    <ClInclude Include="include\ptlic\PointoolsBentleyLicenseAPI.h" />
+    <ClInclude Include="include\ptl\block.h" />
+    <ClInclude Include="include\ptl\branch.h" />
+    <ClInclude Include="include\ptl\dispatcher.h" />
+    <ClInclude Include="include\ptl\project.h" />
+    <ClInclude Include="include\ptl\projecttool.h" />
+    <ClInclude Include="include\ptmodm\module.h" />
+    <ClInclude Include="include\ptmodm\modulesManager.h" />
+    <ClInclude Include="include\ptrmi\Array.h" />
+    <ClInclude Include="include\ptrmi\ArrayDirect.h" />
+    <ClInclude Include="include\ptrmi\ClientInterface.h" />
+    <ClInclude Include="include\ptrmi\ClientInterfaceExtData.h" />
+    <ClInclude Include="include\ptrmi\ClientInterfaceExtDataBentley.h" />
+    <ClInclude Include="include\ptrmi\ClientServerInterface.h" />
+    <ClInclude Include="include\ptrmi\DataBuffer.h" />
+    <ClInclude Include="include\ptrmi\Dispatcher.h" />
+    <ClInclude Include="include\ptrmi\DoubleKeyMap.h" />
+    <ClInclude Include="include\ptrmi\Event.h" />
+    <ClInclude Include="include\ptrmi\GUID.h" />
+    <ClInclude Include="include\ptrmi\Host.h" />
+    <ClInclude Include="include\ptrmi\HostAddress.h" />
+    <ClInclude Include="include\ptrmi\HostManager.h" />
+    <ClInclude Include="include\ptrmi\InterfaceBase.h" />
+    <ClInclude Include="include\ptrmi\InterfaceParameter.h" />
+    <ClInclude Include="include\ptrmi\KeyKeyMap.h" />
+    <ClInclude Include="include\ptrmi\Manager.h" />
+    <ClInclude Include="include\ptrmi\ManagerClientInterface.h" />
+    <ClInclude Include="include\ptrmi\ManagerInfo.h" />
+    <ClInclude Include="include\ptrmi\ManagerInfoVariantGraph.h" />
+    <ClInclude Include="include\ptrmi\ManagerServerInterface.h" />
+    <ClInclude Include="include\ptrmi\Message.h" />
+    <ClInclude Include="include\ptrmi\MetaInterface.h" />
+    <ClInclude Include="include\ptrmi\Mutex.h" />
+    <ClInclude Include="include\ptrmi\Name.h" />
+    <ClInclude Include="include\ptrmi\NullObject.h" />
+    <ClInclude Include="include\ptrmi\ObjectInfo.h" />
+    <ClInclude Include="include\ptrmi\ObjectLockManager.h" />
+    <ClInclude Include="include\ptrmi\ObjectManager.h" />
+    <ClInclude Include="include\ptrmi\Pipe.h" />
+    <ClInclude Include="include\ptrmi\PipeExt.h" />
+    <ClInclude Include="include\ptrmi\PipeManager.h" />
+    <ClInclude Include="include\ptrmi\PipeManagerExt.h" />
+    <ClInclude Include="include\ptrmi\PipeManagerTCP.h" />
+    <ClInclude Include="include\ptrmi\PipeProtocolManager.h" />
+    <ClInclude Include="include\ptrmi\PipeTCP.h" />
+    <ClInclude Include="include\ptrmi\PTRMI.h" />
+    <ClInclude Include="include\ptrmi\referencecounter.h" />
+    <ClInclude Include="include\ptrmi\RemotePtr.h" />
+    <ClInclude Include="include\ptrmi\ServerInterface.h" />
+    <ClInclude Include="include\ptrmi\Status.h" />
+    <ClInclude Include="include\ptrmi\Stream.h" />
+    <ClInclude Include="include\ptrmi\TestPTRMI.h" />
+    <ClInclude Include="include\ptrmi\Thread.h" />
+    <ClInclude Include="include\ptrmi\URL.h" />
+    <ClInclude Include="include\ptrmi\VariantGraph.h" />
+    <ClInclude Include="include\pttool\pttool.h" />
+    <ClInclude Include="include\pttool\tool.h" />
+    <ClInclude Include="include\pttool\tools.h" />
+    <ClInclude Include="include\pt\Array.h" />
+    <ClInclude Include="include\pt\bitvector.h" />
+    <ClInclude Include="include\pt\boundingbox.h" />
+    <ClInclude Include="include\pt\boundingsphere.h" />
+    <ClInclude Include="include\pt\bounds.h" />
+    <ClInclude Include="include\pt\boundsTree.h" />
+    <ClInclude Include="include\pt\classes.h" />
+    <ClInclude Include="include\pt\color.h" />
+    <ClInclude Include="include\pt\datatable.h" />
+    <ClInclude Include="include\pt\datatree.h" />
+    <ClInclude Include="include\pt\datatreeArray.h" />
+    <ClInclude Include="include\pt\datatreeBlob.h" />
+    <ClInclude Include="include\pt\datatreeBranch.h" />
+    <ClInclude Include="include\pt\datatreeIO.h" />
+    <ClInclude Include="include\pt\datatreeMeta.h" />
+    <ClInclude Include="include\pt\datatreeNode.h" />
+    <ClInclude Include="include\pt\datatreePrintf.h" />
+    <ClInclude Include="include\pt\datatreeUtils.h" />
+    <ClInclude Include="include\pt\Debug.h" />
+    <ClInclude Include="include\pt\debugassert.h" />
+    <ClInclude Include="include\pt\debugprintf.h" />
+    <ClInclude Include="include\pt\DisplayInfo.h" />
+    <ClInclude Include="include\pt\fence.h" />
+    <ClInclude Include="include\pt\flags.h" />
+    <ClInclude Include="include\pt\format.h" />
+    <ClInclude Include="include\pt\geometry.h" />
+    <ClInclude Include="include\pt\geomtypes.h" />
+    <ClInclude Include="include\pt\guid.h" />
+    <ClInclude Include="include\pt\Log.h" />
+    <ClInclude Include="include\pt\matrix4.h" />
+    <ClInclude Include="include\pt\memrw.h" />
+    <ClInclude Include="include\pt\OBBox.h" />
+    <ClInclude Include="include\pt\objectbounds.h" />
+    <ClInclude Include="include\pt\ObjectIO.h" />
+    <ClInclude Include="include\pt\ObjectRef.h" />
+    <ClInclude Include="include\pt\objmodel.h" />
+    <ClInclude Include="include\pt\os.h" />
+    <ClInclude Include="include\pt\pageable.h" />
+    <ClInclude Include="include\pt\parametermap.h" />
+    <ClInclude Include="include\pt\plane.h" />
+    <ClInclude Include="include\pt\project.h" />
+    <ClInclude Include="include\pt\prompt.h" />
+    <ClInclude Include="include\pt\pterror.h" />
+    <ClInclude Include="include\pt\ptmath.h" />
+    <ClInclude Include="include\pt\ptstring.h" />
+    <ClInclude Include="include\pt\ptUnicode.h" />
+    <ClInclude Include="include\pt\rect.h" />
+    <ClInclude Include="include\pt\RefCount.h" />
+    <ClInclude Include="include\pt\registry.h" />
+    <ClInclude Include="include\pt\sceneclassmanager.h" />
+    <ClInclude Include="include\pt\scenegraph.h" />
+    <ClInclude Include="include\pt\SerializeParameterMap.h" />
+    <ClInclude Include="include\pt\singleton.h" />
+    <ClInclude Include="include\pt\System.h" />
+    <ClInclude Include="include\pt\timer.h" />
+    <ClInclude Include="include\pt\timestamp.h" />
+    <ClInclude Include="include\pt\trace.h" />
+    <ClInclude Include="include\pt\transform.h" />
+    <ClInclude Include="include\pt\typedefs.h" />
+    <ClInclude Include="include\pt\UnicodeConversion.h" />
+    <ClInclude Include="include\pt\units.h" />
+    <ClInclude Include="include\pt\utf.h" />
+    <ClInclude Include="include\pt\variant.h" />
+    <ClInclude Include="include\pt\ViewParams.h" />
+    <ClInclude Include="include\utility\ptstr.h" />
+    <ClInclude Include="include\vortexobjects\IClashNode.h" />
+    <ClInclude Include="include\vortexobjects\IClashObject.h" />
+    <ClInclude Include="include\vortexobjects\IClashObjectManager.h" />
+    <ClInclude Include="include\vortexobjects\IClashTree.h" />
+    <ClInclude Include="include\vortexobjects\VortexObjects_import.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="include\pt\ptmath.inl" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

@@ -20,7 +20,7 @@ public:
 	//CONSTRUCTOR
 	CSHA();
 	//Update context to reflect the concatenation of another buffer of bytes.
-	void AddData(char const* pcData, int iDataLength);
+	void AddData(char const* pcData, uint iDataLength);
 	//Final wrapup - pad to 64-byte boundary with the bit pattern 
 	//1 0*(64-bit count of bits processed, MSB-first)
 	void FinalDigest(char* pcDigest);
