@@ -229,6 +229,8 @@ double Group3D::findNearestPoint(const pt::vector3d &pnt, pt::vector3d &nearest,
 	};
 	return dist;
 }
+
+#ifdef HAVE_OPENGL
 //-----------------------------------------------------------------------------
 // drawGL | generic implementation
 //-----------------------------------------------------------------------------
@@ -255,6 +257,7 @@ void Group3D::drawGL(uint32 drawmode, int millisecs, const ptgl::Viewport *viewp
 	}
 #endif
 }
+#endif
 //-----------------------------------------------------------------------------
 // resetCoordinateSpace()
 /* resets all coorindate space manipulations (balancing)
@@ -889,6 +892,8 @@ Project3D &Project3D::project(){ return *_project; }
 void Project3D::initialize() {};
 void Project3D::destroy() { /*removeAllScenes();*/ };
 
+
+#ifdef HAVE_OPENGL
 void Project3D::drawGL(uint32 m, int millisecs, const ptgl::Viewport *viewport)
 {
 	CLASSMANAGERS::iterator i = _classmanagers.begin();
@@ -914,6 +919,7 @@ void Project3D::drawGL(uint32 m, int millisecs, const ptgl::Viewport *viewport)
 	//for (;i!=_classmanagers.end(); i++)
 	//	i->second->drawGL(m, millisecs , viewport);
 }
+#endif
 
 #define STRING_FROM_WCHAR(c) pt::String( Unicode2Ascii::convert(c).c_str() )
 //-----------------------------------------------------------------------------

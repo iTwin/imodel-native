@@ -890,6 +890,7 @@ bool PointsBoundsTree::buildTree( TreeNode *_node, bool preliminary, int target_
 	}
 	return true;
 }
+#ifdef HAVE_OPENGL
 //-----------------------------------------------------------------------------
 void PointsBoundsTree::drawBox( const OBBoxd &box )
 {
@@ -971,6 +972,7 @@ void PointsBoundsTree::drawNodes( int level )
 		}
 	}
 }
+#endif
 //-----------------------------------------------------------------------------
 void PointsBoundsTree::cullLargeLeaves( TreeNode *node, double max_dim )
 {

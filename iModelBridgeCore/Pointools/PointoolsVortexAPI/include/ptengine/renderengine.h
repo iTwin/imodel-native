@@ -158,9 +158,10 @@ public:
 	void materialGlossiness(const float &gloss) { _glossiness = gloss; }
 	float materialGlossiness() const { return _glossiness; }
 
-	void setLight(const ptgl::Light *light) { _light = light; }
+#ifdef HAVE_OPENGL
+    void setLight(const ptgl::Light *light) { _light = light; }
 	void setCamera(const ptgl::Camera *camera) { _camera = camera; }
-
+#endif
 	bool autoDynamicPointSize() const { return _autoPointSize; }
 	void autoDynamicPointSize(bool a) { _autoPointSize = a; }
 
@@ -426,9 +427,11 @@ private:
 	int			_frontvoxels;
 	float		_density;
 
-	/*render frame data*/ 
+#ifdef HAVE_OPENGL
+    /*render frame data*/
 	const ptgl::Camera *_camera;
 	const ptgl::Light  *_light;
+#endif
 	bool		_dynamic;
 
 	/*frame data*/ 

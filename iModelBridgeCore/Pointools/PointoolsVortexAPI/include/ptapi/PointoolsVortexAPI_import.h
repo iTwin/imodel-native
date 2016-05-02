@@ -314,14 +314,18 @@ typedef PTres	(__stdcall *PTGETLASTERRORCODE)(void);
 
 /* draw */ 
 typedef PTvoid  (__stdcall *PTOVERRIDEDRAWMODE)(PTenum mode);
+#ifdef HAVE_OPENGL
 typedef PTvoid	(__stdcall *PTDRAWGL)(PTbool dynamic);
 typedef PTvoid	(__stdcall *PTDRAWSCENEGL)(PThandle scene, PTbool dynamic);
 typedef PTvoid	(__stdcall *PTDRAWINTERACTIVEGL)(void);
+#endif
 typedef PTuint	(__stdcall *PTKBLOADED)(PTbool resetCounters);
 typedef PTuint	(__stdcall *PTWEIGHTEDPTSLOADED)(PTbool resetCounters);
 
+#ifdef HAVE_OPENGL
 typedef PTint64	(__stdcall *PTPTSLOADEDINVIEWPORTSINCEDRAW)( PThandle hScene );
 typedef	PTint64	(__stdcall *PTPTSTOLOADINVIEWPORT)( PThandle hScene, PTbool recompute );
+#endif
 typedef PTvoid  (__stdcall *PTENDDRAWFRAMEMETRICS)( void );
 typedef PTvoid  (__stdcall *PTSTARTDRAWFRAMEMETRICS)( void );
 
@@ -346,9 +350,10 @@ typedef PTvoid	(__stdcall *PTCAPTUREVIEWPORTINFO)();
 typedef PTvoid	(__stdcall *PTSTOREVIEW)();
 typedef PTint	(__stdcall *PTCURRENTVIEWPORT)();
 
+#ifdef HAVE_OPENGL
 typedef PTvoid* (__stdcall *PTCREATEBITMAPVIEWPORT)(int w, int h, const PTstr name);
 typedef PTvoid	(__stdcall *PTDESTROYBITMAPVIEWPORT)(const PTstr name);
-
+#endif
 
 typedef PTvoid	(__stdcall *PTENABLEVIEWPORT)(PTint index);
 typedef PTvoid	(__stdcall *PTDISABLEVIEWPORT)(PTint index);
@@ -589,10 +594,12 @@ typedef PTuint (__stdcall *PTGETQUERYPOINTSMULTID)( PThandle query, PTuint numRe
 typedef PTvoid	(__stdcall * PTSETCACHESIZEMB)( PTuint mb );
 typedef PTuint	(__stdcall * PTGETCACHESIZEMB)( void );
 typedef PTvoid	(__stdcall * PTAUTOCACHESIZE)( void );
+#ifdef HAVE_OPENGL
 typedef PTres	(__stdcall * PTSETLOADINGPRIORITYBIAS)( PTenum bias );
 typedef PTenum	(__stdcall * PTGETLOADINGPRIORITYBIAS)( void );
 typedef PTres	(__stdcall * PTSETTUNINGPARAMETERFV)( PTenum param, const PTfloat *values );
 typedef PTres	(__stdcall * PTGETTUNINGPARAMETERFV)( PTenum param, PTfloat *values );
+#endif
 
 /* user channels */ 
 typedef PThandle (__stdcall * PTCREATEPOINTCHANNEL)( PTstr name, PTenum typesize, PTuint multiple, 
@@ -751,13 +758,17 @@ extern PTISSCENEVISIBLE ptIsSceneVisible;
 extern PTISCLOUDVISIBLE ptIsCloudVisible;
 
 extern PTOVERRIDEDRAWMODE ptOverrideDrawMode;
+#ifdef HAVE_OPENGL
 extern PTDRAWGL ptDrawGL;
 extern PTDRAWSCENEGL ptDrawSceneGL;
 extern PTDRAWINTERACTIVEGL ptDrawInteractiveGL;
+#endif
 extern PTKBLOADED ptKbLoaded;
 extern PTWEIGHTEDPTSLOADED ptWeightedPtsLoaded;
+#ifdef HAVE_OPENGL
 extern PTPTSLOADEDINVIEWPORTSINCEDRAW ptPtsLoadedInViewportSinceDraw;
 extern PTPTSTOLOADINVIEWPORT ptPtsToLoadInViewport;
+#endif
 extern PTENDDRAWFRAMEMETRICS ptEndDrawFrameMetrics;
 extern PTSTARTDRAWFRAMEMETRICS ptStartDrawFrameMetrics;
 
@@ -821,8 +832,10 @@ extern PTCAPTUREVIEWPORTINFO ptCaptureViewportInfo;
 extern PTSTOREVIEW ptStoreView;
 extern PTCURRENTVIEWPORT ptCurrentViewport;
 
+#ifdef HAVE_OPENGL
 extern PTCREATEBITMAPVIEWPORT ptCreateBitmapViewport;
 extern PTDESTROYBITMAPVIEWPORT ptDestroyBitmapViewport;
+#endif
 
 extern PTENABLEVIEWPORT ptEnableViewport;
 extern PTDISABLEVIEWPORT ptDisableViewport;
@@ -988,10 +1001,12 @@ extern PTCOUNTAPPROXPOINTSINLAYER ptCountApproxPointsInLayer;
 extern PTSETCACHESIZEMB ptSetCacheSizeMb;
 extern PTGETCACHESIZEMB ptGetCacheSizeMb;
 extern PTAUTOCACHESIZE ptAutoCacheSize;
+#ifdef HAVE_OPENGL
 extern PTSETLOADINGPRIORITYBIAS ptSetLoadingPriorityBias;
 extern PTGETLOADINGPRIORITYBIAS ptGetLoadingPriorityBias;
 extern PTSETTUNINGPARAMETERFV ptSetTuningParameterfv;
 extern PTGETTUNINGPARAMETERFV ptGetTuningParameterfv;
+#endif
 
 /* user point channel */ 
 extern PTCREATEPOINTCHANNEL ptCreatePointChannel;

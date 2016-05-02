@@ -79,14 +79,17 @@ PTREMOVESCENE ptRemoveScene = 0;
 PTREMOVEALL ptRemoveAll = 0;
 
 PTOVERRIDEDRAWMODE ptOverrideDrawMode = 0;
+#ifdef HAVE_OPENGL
 PTDRAWGL ptDrawGL = 0;
 PTDRAWSCENEGL ptDrawSceneGL = 0;
 PTDRAWINTERACTIVEGL ptDrawInteractiveGL = 0;
+#endif
 PTKBLOADED ptKbLoaded = 0;
 PTWEIGHTEDPTSLOADED ptWeightedPtsLoaded= 0;
-
+#ifdef HAVE_OPENGL
 PTPTSLOADEDINVIEWPORTSINCEDRAW ptPtsLoadedInViewportSinceDraw = 0;
 PTPTSTOLOADINVIEWPORT ptPtsToLoadInViewport = 0;
+#endif
 PTENDDRAWFRAMEMETRICS ptEndDrawFrameMetrics = 0;
 PTSTARTDRAWFRAMEMETRICS ptStartDrawFrameMetrics = 0;
 
@@ -254,6 +257,7 @@ PTGETQUERYPOINTSMULTID ptGetQueryPointsMultid = 0;
 PTSETCACHESIZEMB ptSetCacheSizeMb = 0;
 PTGETCACHESIZEMB ptGetCacheSizeMb = 0;
 PTAUTOCACHESIZE ptAutoCacheSize = 0;
+#ifdef HAVE_OPENGL
 PTSETLOADINGPRIORITYBIAS ptSetLoadingPriorityBias = 0;
 PTGETLOADINGPRIORITYBIAS ptGetLoadingPriorityBias = 0;
 PTSETTUNINGPARAMETERFV ptSetTuningParameterfv = 0;
@@ -261,6 +265,7 @@ PTGETTUNINGPARAMETERFV ptGetTuningParameterfv = 0;
 
 PTCREATEBITMAPVIEWPORT ptCreateBitmapViewport = 0;
 PTDESTROYBITMAPVIEWPORT ptDestroyBitmapViewport = 0;
+#endif
 
 PTREADVIEWFROMGL ptReadViewFromGL = 0;
 
@@ -424,14 +429,18 @@ bool LoadVortex(HMODULE mod)
 		ptRemoveScene = (PTREMOVESCENE)GetAPIFunc("ptRemoveScene");
 		ptRemoveAll = (PTREMOVEALL)GetAPIFunc("ptRemoveAll");
 		ptOverrideDrawMode = (PTOVERRIDEDRAWMODE) GetAPIFunc("ptOverrideDrawMode"); 
-		ptDrawGL = (PTDRAWGL)GetAPIFunc("ptDrawGL");
+#ifdef HAVE_OPENGL
+        ptDrawGL = (PTDRAWGL)GetAPIFunc("ptDrawGL");
 		ptDrawSceneGL = (PTDRAWSCENEGL)GetAPIFunc("ptDrawSceneGL");
 		ptDrawInteractiveGL = (PTDRAWINTERACTIVEGL)GetAPIFunc("ptDrawInteractiveGL");
+#endif
 		ptKbLoaded= (PTKBLOADED)GetAPIFunc("ptKbLoaded");
 
 		ptWeightedPtsLoaded = (PTWEIGHTEDPTSLOADED)GetAPIFunc("ptWeightedPtsLoaded");
-		ptPtsLoadedInViewportSinceDraw = (PTPTSLOADEDINVIEWPORTSINCEDRAW) GetAPIFunc("ptPtsLoadedInViewportSinceDraw");
+#ifdef HAVE_OPENGL
+        ptPtsLoadedInViewportSinceDraw = (PTPTSLOADEDINVIEWPORTSINCEDRAW) GetAPIFunc("ptPtsLoadedInViewportSinceDraw");
 		ptPtsToLoadInViewport = (PTPTSTOLOADINVIEWPORT) GetAPIFunc("ptPtsToLoadInViewport");
+#endif
 
 		ptEndDrawFrameMetrics = (PTENDDRAWFRAMEMETRICS) GetAPIFunc("ptEndDrawFrameMetrics");
 		ptStartDrawFrameMetrics = (PTSTARTDRAWFRAMEMETRICS) GetAPIFunc("ptStartDrawFrameMetrics");
@@ -589,6 +598,7 @@ bool LoadVortex(HMODULE mod)
 		ptSetCacheSizeMb = (PTSETCACHESIZEMB) GetAPIFunc("ptSetCacheSizeMb"); 
 		ptGetCacheSizeMb = (PTGETCACHESIZEMB) GetAPIFunc("ptGetCacheSizeMb");
 		ptAutoCacheSize = (PTAUTOCACHESIZE) GetAPIFunc("ptAutoCacheSize");
+#ifdef HAVE_OPENGL
 		ptSetLoadingPriorityBias = (PTSETLOADINGPRIORITYBIAS) GetAPIFunc("ptSetLoadingPriorityBias");
 		ptGetLoadingPriorityBias = (PTGETLOADINGPRIORITYBIAS) GetAPIFunc("ptGetLoadingPriorityBias");
 		ptSetTuningParameterfv = (PTSETTUNINGPARAMETERFV) GetAPIFunc("ptSetTuningParameterfv");
@@ -597,6 +607,7 @@ bool LoadVortex(HMODULE mod)
 		/* bitmap viewport */ 
 		ptCreateBitmapViewport = (PTCREATEBITMAPVIEWPORT) GetAPIFunc("ptCreateBitmapViewport");
 		ptDestroyBitmapViewport = (PTDESTROYBITMAPVIEWPORT) GetAPIFunc("ptDestroyBitmapViewport");
+#endif
 
 		/* view setup */ 
 		ptReadViewFromGL = (PTREADVIEWFROMGL) GetAPIFunc("ptReadViewFromGL");

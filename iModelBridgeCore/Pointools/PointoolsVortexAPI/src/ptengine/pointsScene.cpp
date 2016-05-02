@@ -139,12 +139,14 @@ PointsScene::UseDepthSortedVoxels::UseDepthSortedVoxels(VOXELSLIST &vlist, int &
 		}
 		_depthlistvalid ++;
 	}
+#ifdef HAVE_OPENGL
 	/* sort if needed */ 
 	if (theVisibilityEngine().getIteration() != viteration)
 	{
 		iteration = theVisibilityEngine().getIteration();
 		_vlist.sort(voxsort); /* cause of issues, + not sure it helps performance */ 
 	}
+#endif
 }
 //-----------------------------------------------------------------------------
 PointsScene::UseDepthSortedVoxels::~UseDepthSortedVoxels() 

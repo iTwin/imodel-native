@@ -267,7 +267,9 @@ public:
 	virtual const char *objectClass() const			{ return "Group3D"; }
 	virtual const char *className() const			{ return "Group3D"; }
 
+#ifdef HAVE_OPENGL
 	virtual void drawGL(uint32 drawmode, int millisecs, const ptgl::Viewport *viewport);
+#endif
 	
 	virtual void projectBoundsTransform(const mmatrix4d &m);
 	virtual void resetCoordinateSpace();

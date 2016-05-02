@@ -56,12 +56,16 @@ namespace pointsengine
 		RenderContext	*getRenderContext( RenderEnvironment env, ContextID context=0 );
 		bool			destroyRenderContext( ContextID context );
 
-		RenderContext	*getOpenGLContext( ContextID cid, bool forceFixedFunc=false );
+#ifdef HAVE_OPENGL
+        RenderContext	*getOpenGLContext( ContextID cid, bool forceFixedFunc=false );
+#endif
 		RenderContext	*getDirect3DContext( ContextID cid );
 		RenderContext	*getOtherContext( ContextID cid );
 
 	private:
-		RenderContext	*createOpenGLContext( bool forceFixedFunc=false );
+#ifdef HAVE_OPENGL
+        RenderContext	*createOpenGLContext( bool forceFixedFunc=false );
+#endif
 		RenderContext	*createDirect3DContext();
 		RenderContext	*createOtherContext( ContextID cid );
 

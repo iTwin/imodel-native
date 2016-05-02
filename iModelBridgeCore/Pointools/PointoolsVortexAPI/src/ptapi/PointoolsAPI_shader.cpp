@@ -240,6 +240,7 @@ struct ShaderSetup
 };
 ShaderSetup	g_shaders[PT_MAX_VIEWPORTS];
 
+#ifdef HAVE_OPENGL
 extern ptgl::Light g_light;
 
 struct LightSetup
@@ -298,6 +299,7 @@ struct LightSetup
 };
 //-------------------------------------------------------------------------------
 LightSetup g_lights[PT_MAX_VIEWPORTS];
+#endif
 
 extern PTuint g_currentViewport;
 //-------------------------------------------------------------------------------
@@ -313,11 +315,13 @@ PTvoid _ptApplyShader(PTint viewport)
 {
 	g_shaders[viewport].apply();
 }
+#ifdef HAVE_OPENGL
 //-------------------------------------------------------------------------------
 PTvoid _ptApplyLight(PTint viewport)
 {
 	g_lights[viewport].apply();
 }
+#endif
 //-------------------------------------------------------------------------------
 // Enable shader option
 //-------------------------------------------------------------------------------
@@ -676,6 +680,7 @@ PTres	PTAPI ptGetShaderOptionf(PTenum shader_option, PTfloat *value)
 	}
 	return setLastErrorCode( PTV_SUCCESS );
 }
+#ifdef HAVE_OPENGL
 //-------------------------------------------------------------------------------
 // Default LIght
 //-------------------------------------------------------------------------------
@@ -819,6 +824,7 @@ PTvoid	PTAPI ptCopyLightSettingsToAll()
 		if (i!=g_currentViewport)
 			g_lights[i] = g_lights[g_currentViewport];
 }
+#endif
 //-------------------------------------------------------------------------------
 PTvoid PTAPI ptGlobalDensity(PTfloat den)
 {
@@ -832,7 +838,11 @@ PTfloat PTAPI ptGetGlobalDensity()
 //-------------------------------------------------------------------------------
 PTuint	PTAPI ptGetPerViewportDataSize()
 {
+#ifdef HAVE_OPENGL
 	return 4 + sizeof(ShaderSetup) + sizeof(LightSetup);
+#else
+    return 4 + sizeof(ShaderSetup);
+#endif
 }
 //-------------------------------------------------------------------------------
 PTuint	PTAPI ptGetPerViewportData( PTubyte *data )
@@ -841,11 +851,16 @@ PTuint	PTAPI ptGetPerViewportData( PTubyte *data )
 	data[1] = 0;
 	data[2] = 0;
 	data[3] = 0;
-	memcpy(&data[4], &g_shaders[g_currentViewport], sizeof(ShaderSetup));
-	memcpy(&data[4+sizeof(ShaderSetup)], &g_lights[g_currentViewport], sizeof(LightSetup));
 
-	return 4 + sizeof(ShaderSetup) + sizeof(LightSetup);
-}
+    memcpy(&data[4], &g_shaders[g_currentViewport], sizeof(ShaderSetup));
+
+#ifdef HAVE_OPENGL
+    memcpy(&data[4 + sizeof(ShaderSetup)], &g_lights[g_currentViewport], sizeof(LightSetup));
+    return 4 + sizeof(ShaderSetup) + sizeof(LightSetup);
+#else
+    return 4 + sizeof(ShaderSetup);
+#endif
+    }
 //-------------------------------------------------------------------------------
 PTres	PTAPI ptSetPerViewportData( const PTubyte *data )
 {
@@ -855,8 +870,9 @@ PTres	PTAPI ptSetPerViewportData( const PTubyte *data )
 	if (data[0] == 1 && data[1] == 0 && data[2] == 0&& data[3] == 0)
 	{
 		memcpy(&g_shaders[g_currentViewport], &data[4], sizeof(ShaderSetup));
-		memcpy(&g_lights[g_currentViewport], &data[4+ sizeof(LightSetup)], 
-			sizeof(LightSetup));
+#ifdef HAVE_OPENGL
+		memcpy(&g_lights[g_currentViewport], &data[4+ sizeof(LightSetup)], sizeof(LightSetup));
+#endif
 	}
 	else
 	{

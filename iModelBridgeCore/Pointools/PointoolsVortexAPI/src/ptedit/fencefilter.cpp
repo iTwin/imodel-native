@@ -47,6 +47,7 @@ void FenceSelect::buildFromScreenFence(const pt::Fence<int> &f, const pt::ViewPa
 	}
 	isValid = generateHullPlanes();
 }
+#ifdef HAVE_OPENGL
 /*****************************************************************************/
 /**
 * @brief
@@ -86,6 +87,7 @@ void FenceSelect::draw()
 		}
 	}
 }
+#endif
 /*****************************************************************************/
 /**
 * @brief

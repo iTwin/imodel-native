@@ -43,7 +43,9 @@ public:
 	const Object3D* object(int i) const { return m_scenesv[i]; }
 	Object3D* object(int i) { return m_scenesv[i]; }
 
-	void drawGL(uint32 drawmode, int millisecs, const ptgl::Viewport *viewport);
+#ifdef HAVE_OPENGL
+    void drawGL(uint32 drawmode, int millisecs, const ptgl::Viewport *viewport);
+#endif
 
 	virtual void diagnostic(Output *output, bool recursive) const;
 

@@ -101,9 +101,11 @@ PTREMOVESCENE ptRemoveScene = 0;
 PTREMOVEALL ptRemoveAll = 0;
 
 PTOVERRIDEDRAWMODE ptOverrideDrawMode = 0;
+#ifdef HAVE_OPENGL
 PTDRAWGL ptDrawGL = 0;
 PTDRAWSCENEGL ptDrawSceneGL = 0;
 PTDRAWINTERACTIVEGL ptDrawInteractiveGL = 0;
+#endif
 PTKBLOADED ptKbLoaded = 0;
 PTWEIGHTEDPTSLOADED ptWeightedPtsLoaded= 0;
 
@@ -300,6 +302,7 @@ PTGETQUERYPOINTSMULTID ptGetQueryPointsMultid = 0;
 PTSETCACHESIZEMB ptSetCacheSizeMb = 0;
 PTGETCACHESIZEMB ptGetCacheSizeMb = 0;
 PTAUTOCACHESIZE ptAutoCacheSize = 0;
+#ifdef HAVE_OPENGL
 PTSETLOADINGPRIORITYBIAS ptSetLoadingPriorityBias = 0;
 PTGETLOADINGPRIORITYBIAS ptGetLoadingPriorityBias = 0;
 PTSETTUNINGPARAMETERFV ptSetTuningParameterfv = 0;
@@ -307,6 +310,7 @@ PTGETTUNINGPARAMETERFV ptGetTuningParameterfv = 0;
 
 PTCREATEBITMAPVIEWPORT ptCreateBitmapViewport = 0;
 PTDESTROYBITMAPVIEWPORT ptDestroyBitmapViewport = 0;
+#endif
 
 PTREADVIEWFROMGL ptReadViewFromGL = 0;
 
@@ -499,9 +503,11 @@ bool LoadPointoolsDLL(const TCHAR*filepath)
 		ptRemoveScene = (PTREMOVESCENE)GetAPIFunc("ptRemoveScene");
 		ptRemoveAll = (PTREMOVEALL)GetAPIFunc("ptRemoveAll");
 		ptOverrideDrawMode = (PTOVERRIDEDRAWMODE) GetAPIFunc("ptOverrideDrawMode"); 
+#ifdef HAVE_OPENGL
 		ptDrawGL = (PTDRAWGL)GetAPIFunc("ptDrawGL");
 		ptDrawSceneGL = (PTDRAWSCENEGL)GetAPIFunc("ptDrawSceneGL");
 		ptDrawInteractiveGL = (PTDRAWINTERACTIVEGL)GetAPIFunc("ptDrawInteractiveGL");
+#endif
 		ptKbLoaded= (PTKBLOADED)GetAPIFunc("ptKbLoaded");
 
 		ptWeightedPtsLoaded = (PTWEIGHTEDPTSLOADED)GetAPIFunc("ptWeightedPtsLoaded");
@@ -688,6 +694,7 @@ bool LoadPointoolsDLL(const TCHAR*filepath)
 		ptSetCacheSizeMb = (PTSETCACHESIZEMB) GetAPIFunc("ptSetCacheSizeMb"); 
 		ptGetCacheSizeMb = (PTGETCACHESIZEMB) GetAPIFunc("ptGetCacheSizeMb");
 		ptAutoCacheSize = (PTAUTOCACHESIZE) GetAPIFunc("ptAutoCacheSize");
+#ifdef HAVE_OPENGL
 		ptSetLoadingPriorityBias = (PTSETLOADINGPRIORITYBIAS) GetAPIFunc("ptSetLoadingPriorityBias");
 		ptGetLoadingPriorityBias = (PTGETLOADINGPRIORITYBIAS) GetAPIFunc("ptGetLoadingPriorityBias");
 		ptSetTuningParameterfv = (PTSETTUNINGPARAMETERFV) GetAPIFunc("ptSetTuningParameterfv");
@@ -696,6 +703,7 @@ bool LoadPointoolsDLL(const TCHAR*filepath)
 		/* bitmap viewport */ 
 		ptCreateBitmapViewport = (PTCREATEBITMAPVIEWPORT) GetAPIFunc("ptCreateBitmapViewport");
 		ptDestroyBitmapViewport = (PTDESTROYBITMAPVIEWPORT) GetAPIFunc("ptDestroyBitmapViewport");
+#endif
 
 		/* view setup */ 
 		ptReadViewFromGL = (PTREADVIEWFROMGL) GetAPIFunc("ptReadViewFromGL");

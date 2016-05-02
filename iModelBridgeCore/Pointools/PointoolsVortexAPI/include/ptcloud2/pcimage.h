@@ -105,7 +105,9 @@ public:
 		*this = si;
 	}
 	ScanImage(const pt::String &filepath, const Calibration &callib);
+#ifdef HAVE_OPENGL
 	void drawGL();
+#endif
 	
 	static void pushGLstate();
 	static void popGLstate();

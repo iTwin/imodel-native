@@ -36,6 +36,7 @@ PTvoid	PTAPI ptAutoCacheSize()
 {
 	PointsPager::useAutoCacheSize();
 }
+#ifdef HAVE_OPENGL
 //-----------------------------------------------------------------------------
 PTres	PTAPI ptSetLoadingPriorityBias( PTenum bias )
 {
@@ -103,6 +104,7 @@ PTres	PTAPI ptGetTuningParameterfv( PTenum param, PTfloat *values )
 
 	return setLastErrorCode( PTV_SUCCESS );;
 }
+#endif
 
 extern pcloud::Scene *		sceneFromHandle(PThandle handle);
 extern pcloud::PointCloud*	cloudFromHandle(PThandle cloud);

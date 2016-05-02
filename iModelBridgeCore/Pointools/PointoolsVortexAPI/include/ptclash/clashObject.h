@@ -50,8 +50,10 @@ struct ClashObject : public vortex::IClashObject
 
 	bool							extendTree( const pt::OBBoxd &region );
 
-	// draw the objects bounds tree
+#ifdef HAVE_OPENGL
+    // draw the objects bounds tree
 	int								drawObjBoundsTree(int depth=-1);
+#endif
 
 	int								msPreparationTime() const		{ return m_timeToPrepare; }
 	int								maxTreeLeafDepth() const;

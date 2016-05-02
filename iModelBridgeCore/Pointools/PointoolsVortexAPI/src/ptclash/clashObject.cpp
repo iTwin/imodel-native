@@ -122,6 +122,7 @@ bool		ClashObject::prepareForTest( TreeFeedbackFunc feedback )
 
 	return false;
 }
+#ifdef HAVE_OPENGL
 //-----------------------------------------------------------------------------
 int	ClashObject::drawObjBoundsTree(int depth)
 {
@@ -137,6 +138,7 @@ int	ClashObject::drawObjBoundsTree(int depth)
 	}
 	return nodes;
 }
+#endif
 namespace 
 {
 #define NUM_DIFFERENCING_THREADS	8

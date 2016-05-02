@@ -4331,6 +4331,7 @@ inline static int voxzorder(const pcloud::Voxel *a, const pcloud::Voxel *b)
 {
 	return a->priority() > b->priority() ? 1 : 0;
 }
+#ifdef HAVE_OPENGL
 //-----------------------------------------------------------------------------
 struct FrustumQuery : public Query
 {
@@ -4530,7 +4531,9 @@ struct FrustumQuery : public Query
 	pt::CoordinateSpace cs;
 	std::vector<pcloud::Voxel *> voxels;
 };
-}
+#endif
+} // namespace::queryDetail
+#ifdef HAVE_OPENGL
 //-----------------------------------------------------------------------------
 // Frustum Points Query
 //-----------------------------------------------------------------------------
@@ -4550,6 +4553,7 @@ PThandle PTAPI ptCreateFrustumPointsQuery()
 	}
 	return h;
 }
+#endif
 //-----------------------------------------------------------------------------
 // Bounding Box Query
 //-----------------------------------------------------------------------------

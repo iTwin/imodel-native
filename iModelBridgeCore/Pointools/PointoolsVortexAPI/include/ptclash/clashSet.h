@@ -42,8 +42,10 @@ public:
 
 	int  getObjects( std::vector<PersistentObjectRef> &obj ) const;
 
-	// diagnostics
+#ifdef HAVE_OPENGL
+    // diagnostics
 	int  drawTrees(int depth);
+#endif
 
 	void getDiagnosticString( pt::String &str ) const;	
 
