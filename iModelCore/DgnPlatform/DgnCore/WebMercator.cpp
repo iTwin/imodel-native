@@ -543,16 +543,17 @@ void WebMercatorDisplay::DrawAndCacheTile(RenderContext& context, TileIdCR tilei
     
     m_image.Invalidate(); // reuse the same buffer, in order to minimize mallocs
 
+    BentleyStatus readStatus = ERROR;
     if (contentType.Equals("image/png"))
         {
-        imageInfo.ReadImageFromPngBuffer(m_image, data.GetData(), data.GetSize());
+        readStatus = imageInfo.ReadImageFromPngBuffer(m_image, data.GetData(), data.GetSize());
         }
     else if (contentType.Equals("image/jpeg"))
         {
-        imageInfo.ReadImageFromJpgBuffer(m_image, data.GetData(), data.GetSize());
+        readStatus = imageInfo.ReadImageFromJpgBuffer(m_image, data.GetData(), data.GetSize());
         }
 
-    if (!m_image.IsValid())
+    if (ERROR == readStatus || !m_image.IsValid())
         return;
 
     BeAssert(!imageInfo.m_isBGR);
@@ -1123,11 +1124,11 @@ RealityDataCache& WebMercatorModel::GetRealityDataCache() const
     {
     if (m_realityDataCache.IsNull())
         {
-        RealityDataCachePtr cache = RealityDataCache::Create(100);
+        m_realityDataCache = RealityDataCache::Create(100);
         BeFileName storageFileName = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName();
         storageFileName.AppendToPath(WString(m_properties.m_mapService.c_str(), true).c_str());
-        cache->RegisterStorage(*BeSQLiteRealityDataStorage::Create(storageFileName));
-        cache->RegisterSource(*HttpRealityDataSource::Create(8));
+        m_realityDataCache->RegisterStorage(*BeSQLiteRealityDataStorage::Create(storageFileName));
+        m_realityDataCache->RegisterSource(*HttpRealityDataSource::Create(8));
         }
     return *m_realityDataCache;
     }

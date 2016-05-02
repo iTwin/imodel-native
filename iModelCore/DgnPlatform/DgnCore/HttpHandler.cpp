@@ -57,8 +57,8 @@ HttpHandler& HttpHandler::Instance()
 size_t HttpHandler::HttpBodyParser(void* ptr, size_t size, size_t nmemb, void* userp)
     {
     size_t totalSize = size * nmemb;
-    auto buffer = (bvector<Byte>*) userp;
-    buffer->insert(buffer->end(),(Byte*) ptr,(Byte*) ptr + totalSize);
+    ByteStream* buffer = (ByteStream*) userp;
+    buffer->SaveData((uint8_t const*)ptr, (uint32_t)totalSize);
     return totalSize;
     }
 
