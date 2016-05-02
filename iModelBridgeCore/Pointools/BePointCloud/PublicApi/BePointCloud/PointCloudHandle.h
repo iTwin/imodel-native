@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/BePointCloud/PointCloudHandle.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------------------------+
@@ -12,7 +12,6 @@
 
 //__BENTLEY_INTERNAL_ONLY__
 
-#include <PointoolsVortexAPI_DLL/PTAPI/PointoolsVortexAPI_import.h>
 
 BEGIN_BENTLEY_BEPOINTCLOUD_NAMESPACE
 

@@ -2,15 +2,11 @@
 |
 |     $Source: BePointCloudApi.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <BePointCloudInternal.h>
-
-#include <PointoolsVortexAPI_DLL/vortexLicense.c>
-#include <PointoolsVortexAPI_DLL/PTAPI/PointoolsVortexAPI_import.h>
-#include <PointoolsVortexAPI_DLL/PTAPI/PointoolsVortexAPI_ResultCodes.h>
-#include <PointoolsVortexAPI_DLL/PTAPI/PointoolsVortexAPI_import.cpp>
+#include <Vortex/VortexLicenseCode.h>
 
 USING_NAMESPACE_BENTLEY_BEPOINTCLOUD
 
@@ -19,15 +15,7 @@ USING_NAMESPACE_BENTLEY_BEPOINTCLOUD
 //----------------------------------------------------------------------------------------
 void BePointCloudApi::Initialize()
     {
-    static bool s_loaded = false;
-    if(!s_loaded)
-        {
-        s_loaded = LoadPointoolsDLL ("PointoolsVortexAPI.dll");
-        }
-
     if(!ptIsInitialized())
-        {
-        ptInitialize(vortexLicCode);
-        }
+        ptInitialize(BentleyInternal_vortexLicCode);
     }
 
