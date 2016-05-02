@@ -1164,7 +1164,7 @@ PTvoid	PTAPI ptSetViewEyeLookAt( const PTdouble *eye, const PTdouble *target, co
 //-----------------------------------------------------------------------------
 // set view eye matrix
 //-----------------------------------------------------------------------------
-PTvoid	PTAPI ptSetViewEyeMatrix( PTdouble *matrix, bool row_major )
+PTvoid	PTAPI ptSetViewEyeMatrix( PTdouble const* matrix, bool row_major )
 {
 	PTTRACE_FUNC 
 

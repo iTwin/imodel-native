@@ -642,7 +642,7 @@ PTres	PTAPI ptShowCloud(PThandle cloud, PTbool visible)
 //-------------------------------------------------------------------------------
 // ptRemoveScene
 //-------------------------------------------------------------------------------
-PTres	PTAPI ptRemoveScene(PTint scene)
+PTres	PTAPI ptRemoveScene(PThandle scene)
 {
 	PTTRACE_FUNC_P1( scene )
 

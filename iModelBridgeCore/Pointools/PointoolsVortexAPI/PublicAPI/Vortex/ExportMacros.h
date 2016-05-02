@@ -19,6 +19,8 @@
 #else
     #error unknown compiler
 #endif
+#define BEGIN_EXTERN_C extern "C" {
+#define END_EXTERN_C              }
 
 #   if defined (__PointoolsVortexAPI_BUILD__)
 #       define VORTEX_EXPORT EXPORT_ATTRIBUTE

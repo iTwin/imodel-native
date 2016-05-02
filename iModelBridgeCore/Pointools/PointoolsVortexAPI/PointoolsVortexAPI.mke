@@ -526,7 +526,7 @@ DLM_NO_DEF                  = 1
 DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
 DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
 DLM_CREATE_LIB_CONTEXT_LINK = 1
-DLM_SPECIAL_LINKOPT     + -def:$(baseDir)api.def
+
 
 ContextSubpartsStaticLibs = $(BuildContext)SubParts/StaticLibs/
 
