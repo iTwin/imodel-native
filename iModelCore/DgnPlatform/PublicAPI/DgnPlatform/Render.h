@@ -256,6 +256,7 @@ public:
     uint32_t GetWidth() const {return m_width;}
     uint32_t GetHeight() const {return m_height;}
     Format GetFormat() const {return m_format;}
+    void SetFormat(Format f) {m_format=f;}
     bool IsValid() {return 0!=m_width && 0!=m_height;}
     ByteStream const& GetByteStream() const {return m_image;}
     ByteStream& GetByteStreamR() {return m_image;}
