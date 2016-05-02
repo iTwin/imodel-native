@@ -107,7 +107,7 @@ struct GeometryStreamIO
         CurvePrimitive          = 10,   //!< Single CurvePrimitive
         SolidPrimitive          = 11,   //!< SolidPrimitive
         BsplineSurface          = 12,   //!< BSpline surface
-#if defined (DGNPLATFORM_WIP_PARASOLID)
+#if defined (BENTLEYCONFIG_PARASOLIDS)
         ParasolidBRep           = 13,   //!< Parasolid body
         BRepPolyface            = 14,   //!< PolyfaceQueryCarrier from Parasolid BRep
         BRepPolyfaceExact       = 15,   //!< PolyfaceQueryCarrier from Parasolid BRep with only straight edges and planar faces
@@ -289,7 +289,7 @@ struct GeometryStreamIO
 //=======================================================================================
 struct GeometryCollection
 {
-#if defined (DGNPLATFORM_WIP_PARASOLID)
+#if defined (BENTLEYCONFIG_PARASOLIDS)
     enum class BRepOutput
     {
         None    = 0,       //!< Output nothing.
@@ -320,7 +320,7 @@ struct GeometryCollection
             Polyface            = 6,  //!< Polyface
             SolidKernelEntity   = 7,  //!< SolidKernelEntity
             TextString          = 8,  //!< TextString
-#if defined (DGNPLATFORM_WIP_PARASOLID)
+#if defined (BENTLEYCONFIG_PARASOLIDS)
             BRepPolyface        = 9,  //!< BRep surface mesh (from BRepOutput::Auto when Parasolid not available or if requested by BRepOutput::Mesh)
             BRepCurveVector     = 10, //!< BRep edge/face curves (when requested by BRepOutput::Edges | BRepOutput::FaceIso)
 #endif
@@ -335,7 +335,7 @@ struct GeometryCollection
             Transform               m_geomToWorld;
             GeometricPrimitivePtr   m_geometry;
             GeometryStreamEntryId   m_geomStreamEntryId;
-#if defined (DGNPLATFORM_WIP_PARASOLID)
+#if defined (BENTLEYCONFIG_PARASOLIDS)
             BRepOutput              m_bRepOutput;
 #endif
 
@@ -344,7 +344,7 @@ struct GeometryCollection
                 m_sourceToWorld = Transform::FromIdentity();
                 m_geomToSource  = Transform::FromIdentity();
                 m_geomToWorld   = Transform::FromIdentity();
-#if defined (DGNPLATFORM_WIP_PARASOLID)
+#if defined (BENTLEYCONFIG_PARASOLIDS)
                 m_bRepOutput    = BRepOutput::Auto;
 #endif
             }
@@ -401,7 +401,7 @@ public:
     const_iterator begin() const {return const_iterator(m_data, m_dataSize, m_state);}
     const_iterator end() const {return const_iterator();}
 
-#if defined (DGNPLATFORM_WIP_PARASOLID)
+#if defined (BENTLEYCONFIG_PARASOLIDS)
     //! Override the default BRep handling option, BRepOutput::Auto. For example, an application can set to BRepOutput::BRep to
     //! detect when BReps are present in the GeometryStream to avoid modifications when Parasolid is not available.
     void SetBRepOutput(BRepOutput bRep) {m_state.m_bRepOutput = bRep;}
@@ -423,7 +423,7 @@ public:
 
 typedef RefCountedPtr<GeometryBuilder> GeometryBuilderPtr;
 
-#if defined (DGNPLATFORM_WIP_PARASOLID)
+#if defined (BENTLEYCONFIG_PARASOLIDS)
 ENUM_IS_FLAGS(GeometryCollection::BRepOutput)
 #endif
 
