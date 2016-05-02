@@ -1,13 +1,13 @@
 /*--------------------------------------------------------------------------------------+
  |
- |     $Source: Licensing/UsageTracking.cpp $
+ |     $Source: Licensing/FeatureTracking.cpp $
  |
  |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
 #include <WebServices/Configuration/UrlProvider.h>
-#include <WebServices/Licensing/UsageTracking.h>
+#include <WebServices/Licensing/FeatureTracking.h>
 #include <Bentley/Base64Utilities.h>
 #include <DgnClientFx/Utils/Http/HttpClient.h>
 
@@ -18,63 +18,63 @@
 USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 static IHttpHandlerPtr s_httpHandler;
-static bool s_usageTrackingInitialized = false;
+static bool s_featureTrackingInitialized = false;
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    George.Rodier   02/2015
+* @bsimethod                                                    Wil.Maier       04/2106
 +---------------+---------------+---------------+---------------+---------------+------*/
-void UsageTracking::Initialize(std::shared_ptr<IHttpHandler> customHttpHandler)
+void FeatureTracking::Initialize(IHttpHandlerPtr customHttpHandler)
     {
-    if (!s_usageTrackingInitialized)
+    if (!s_featureTrackingInitialized)
         {
         s_httpHandler = UrlProvider::GetSecurityConfigurator(customHttpHandler);
-        s_usageTrackingInitialized = true;
+        s_featureTrackingInitialized = true;
         }
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    George.Rodier   02/2015
+* @bsimethod                                                    Wil.Maier       04/2106
 +---------------+---------------+---------------+---------------+---------------+------*/
-void UsageTracking::Uninitialize()
+void FeatureTracking::Uninitialize()
     {
     s_httpHandler = nullptr;
-    s_usageTrackingInitialized = false;
+    s_featureTrackingInitialized = false;
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    George.Rodier   02/2015
+* @bsimethod                                                    Wil.Maier       04/2106
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String UsageTracking::GetServiceUrl()
+Utf8String FeatureTracking::GetServiceUrl()
     {
-    return UrlProvider::Urls::UsageTracking.Get();
+    return UrlProvider::Urls::FeatureTracking.Get();
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    George.Rodier   02/2015
+* @bsimethod                                                    Wil.Maier       04/2106
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt UsageTracking::RegisterUserUsages(Utf8StringCR dev, Utf8StringCR userId, Utf8StringCR prodId, Utf8StringCR projId, DateTimeCR usageDate, Utf8StringCR prodVer)
+StatusInt FeatureTracking::RegisterFeatureUsage(Utf8StringCR dev, Utf8StringCR userId, Utf8StringCR prodId, Utf8StringCR prodVer, Utf8StringCR projId, Utf8StringCR featureId, DateTimeCR usageStartDate, DateTimeCR usageEndDate)
     {
-    UsageTrackingData utd(dev, userId, prodId, projId, usageDate, prodVer);
-    return RegisterUserUsages(utd);
+    FeatureTrackingData ftd(dev, userId, prodId, prodVer, projId, featureId, usageStartDate, usageEndDate);
+    return RegisterFeatureUsage(ftd);
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    George.Rodier   02/2015
+* @bsimethod                                                    Wil.Maier       04/2106
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt UsageTracking::RegisterUserUsages(bvector<UsageTrackingData> usages)
+StatusInt FeatureTracking::RegisterFeatureUsage(bvector<FeatureTrackingData> usages)
     {
     Json::Value usageList;
-    for (UsageTrackingData utd : usages)
+    for (FeatureTrackingData ftd : usages)
         {
-        if (!utd.IsEmpty())
+        if (!ftd.IsEmpty())
             {
-            usageList.append(utd.ToJson());
+            usageList.append(ftd.ToJson());
             }
         }
 
     if (0 >= usageList.size())
         {
-        return USAGE_NO_USAGES;
+        return FEATURE_TRACKING_NO_USAGES;
         }
 
     HttpClient client(nullptr, s_httpHandler);
@@ -89,26 +89,26 @@ StatusInt UsageTracking::RegisterUserUsages(bvector<UsageTrackingData> usages)
 
     if (httpResponse.GetConnectionStatus() != ConnectionStatus::OK)
         {
-        return USAGE_ERROR;
+        return FEATURE_TRACKING_ERROR;
         }
 
-    return USAGE_SUCCESS;
+    return FEATURE_TRACKING_SUCCESS;
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    George.Rodier   02/2015
+* @bsimethod                                                    Wil.Maier       04/2106
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt UsageTracking::RegisterUserUsages(UsageTrackingData usage)
+StatusInt FeatureTracking::RegisterFeatureUsage(FeatureTrackingData usage)
     {
-    bvector<UsageTrackingData> list;
+    bvector<FeatureTrackingData> list;
     list.push_back(usage);
-    return RegisterUserUsages(list);
+    return RegisterFeatureUsage(list);
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    George.Rodier   02/2015
+* @bsimethod                                                    Wil.Maier       04/2106
 +---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value UsageTracking::GetUserUsages(Utf8StringCR userGuid, Utf8StringCR deviceId)
+Json::Value FeatureTracking::GetUserFeatureUsages(Utf8StringCR userGuid, Utf8StringCR deviceId)
     {
     Utf8PrintfString user(userGuid.c_str());
     user.ToLower();
@@ -127,9 +127,9 @@ Json::Value UsageTracking::GetUserUsages(Utf8StringCR userGuid, Utf8StringCR dev
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    George.Rodier   02/2015
+* @bsimethod                                                    Wil.Maier       04/2106
 +---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value UsageTracking::GetUserUsages(Utf8StringCR userGuid, Utf8StringCR deviceId, Utf8StringCR date)
+Json::Value FeatureTracking::GetUserFeatureUsages(Utf8StringCR userGuid, Utf8StringCR deviceId, Utf8StringCR date)
     {
     Utf8PrintfString user(userGuid.c_str());
     user.ToLower();
@@ -196,9 +196,9 @@ static bool CalcSha1(Utf8StringCR input, Utf8StringR hash)
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    George.Rodier   02/2015
+* @bsimethod                                                    Wil.Maier       04/2106
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String UsageTracking::VerifyClientMobile(Utf8StringCR userGuid, Utf8StringCR deviceId)
+Utf8String FeatureTracking::VerifyClientMobile(Utf8StringCR userGuid, Utf8StringCR deviceId)
     {
     const int arrayLen = 20;
 

@@ -111,7 +111,13 @@
     <ClCompile Include="Connect\SamlToken.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Licensing\MobileTracking.cpp">
+    <ClCompile Include="Licensing\FeatureTrackingData.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Licensing\FeatureTracking.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Licensing\UsageTrackingData.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Licensing\UsageTracking.cpp">
@@ -530,7 +536,13 @@
     <ClInclude Include="PublicAPI\WebServices\Connect\SamlToken.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="PublicAPI\WebServices\Licensing\MobileTracking.h">
+    <ClInclude Include="PublicAPI\WebServices\Licensing\FeatureTrackingData.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\Licensing\FeatureTracking.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\Licensing\UsageTrackingData.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\WebServices\Licensing\UsageTracking.h">
