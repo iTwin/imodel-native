@@ -98,7 +98,7 @@ struct PointCloudVortex
         BEPOINTCLOUD_EXPORT static PThandle    CreateOrientedBoundingBoxQuery(double minx, double miny, double minz, double maxx,double maxy, double maxz, double posx, double posy, double posz, double ux, double uy, double uz, double vx, double vy, double vz);
         BEPOINTCLOUD_EXPORT static PThandle    CreateBoundingSphereQuery( double *cen, double radius );
         BEPOINTCLOUD_EXPORT static PThandle    CreateKrigSurfaceQuery (uint32_t numPoints, double *pnts );
-        BEPOINTCLOUD_EXPORT static PThandle    CreateFrustumPointsCache( uint32_t maxPoints );
+        //BEPOINTCLOUD_EXPORT static PThandle    CreateFrustumPointsCache( uint32_t maxPoints );
         BEPOINTCLOUD_EXPORT static PThandle    CreateFrustumPointsQuery();
         BEPOINTCLOUD_EXPORT static bool        ResetQuery( PThandle query );
         BEPOINTCLOUD_EXPORT static void        SetQueryRGBMode( PThandle query, PtQueryRgbMode mode );

@@ -13,7 +13,6 @@
 //                       and have no exported methods, of course. Reevealuate when we have ExternalModelHandler.
 
 #include <BePointCloud/IPointCloudFileEdit.h>
-#include <PointoolsVortexAPI_DLL/PTAPI/PointoolsVortexAPI_import.h>
 
 BEPOINTCLOUD_TYPEDEFS(PointCloudScene);
 

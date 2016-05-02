@@ -64,10 +64,13 @@ PThandle PointCloudVortex::CreateKrigSurfaceQuery (uint32_t numPoints, double *p
     {
     return ptCreateKrigSurfaceQuery(numPoints, pnts);
     }
-PThandle PointCloudVortex::CreateFrustumPointsCache( uint32_t maxPoints )
-    {
-    return ptCreateFrustumPointsCache(maxPoints);
-    }
+
+// No where to be found in pointools. How it worked before?
+// PThandle PointCloudVortex::CreateFrustumPointsCache( uint32_t maxPoints )
+//     {
+//     return ptCreateFrustumPointsCache(maxPoints);
+//     }
+
 PThandle PointCloudVortex::CreateFrustumPointsQuery()
     {
     return ptCreateFrustumPointsQuery();
