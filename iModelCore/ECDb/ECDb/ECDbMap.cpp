@@ -237,8 +237,6 @@ MappingStatus ECDbMap::DoMapSchemas()
     if (AssertIfIsNotImportingSchema())
         return MappingStatus::Error;
 
-    StopWatch timer(true);
-
     // Identify root classes/relationship-classes
     ECSchemaCompareContext& ctx = GetSchemaImportContext()->GetECSchemaCompareContext();
 
@@ -293,16 +291,9 @@ MappingStatus ECDbMap::DoMapSchemas()
             return MappingStatus::Error;
         }
 
-
-
     //now create class id cols for the relationship classes, and ensure shared col min count
     if (SUCCESS != FinishTableDefinitions())
         return MappingStatus::Error;
-
-    timer.Stop();
-    if (LOG.isSeverityEnabled(NativeLogging::LOG_DEBUG))
-        LOG.debugv("Mapped %" PRIu64 " ECSchemas containing %" PRIu64 " ECClasses and %" PRIu64 " ECRelationshipClasses to the database in %.4f seconds",
-        (uint64_t) ctx.GetImportingSchemas().size(), (uint64_t) rootClassList.size(), (uint64_t) rootRelationshipList.size(), timer.GetElapsedSeconds());
 
     return MappingStatus::Success;
     }
@@ -761,54 +752,37 @@ BentleyStatus ECDbMap::CreateOrUpdateRequiredTables() const
 
     int nCreated = 0;
     int nUpdated = 0;
-    int nSkipped = 0;
-
-    BeBriefcaseId briefcaseId = m_ecdb.GetBriefcaseId();
-    bool allowSchemaChange = briefcaseId.IsMasterId() || briefcaseId.IsStandaloneId();
+    int nWasUpToDate = 0;
 
     for (auto& pair : GetDbSchemaR().GetTables())
         {
         DbTable* table = pair.second.get();
-        if (table->GetPersistenceType() == PersistenceType::Virtual || table->GetType() == DbTable::Type::Existing)
-            continue;
-
-        if (GetECDb().TableExists(table->GetName().c_str()))
+        const DbSchemaPersistenceManager::CreateOrUpdateTableResult result = DbSchemaPersistenceManager::CreateOrUpdateTable(m_ecdb, *table);
+        switch (result)
             {
-            if (DbSchemaPersistenceManager::IsTableChanged(m_ecdb, *table))
-                {
-                if(!allowSchemaChange)
-                    {
-                    m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Any change to sqlite database schema (excluding constraints) is only allowed for client side breifcase [BriefcaseId = %d].",
-                                                                    m_ecdb.GetBriefcaseId().GetValue());
+                case DbSchemaPersistenceManager::CreateOrUpdateTableResult::Created:
+                    nCreated++;
+                    break;
+
+                case DbSchemaPersistenceManager::CreateOrUpdateTableResult::Updated:
+                    nUpdated++;
+                    break;
+
+                case DbSchemaPersistenceManager::CreateOrUpdateTableResult::WasUpToDate:
+                    nWasUpToDate++;
+                    break;
+
+                case DbSchemaPersistenceManager::CreateOrUpdateTableResult::Error:
                     return ERROR;
-                    }
 
-                if (DbSchemaPersistenceManager::CreateOrUpdateTable(m_ecdb, *table) != SUCCESS)
-                    return ERROR;
-
-                nUpdated++;
-                }
-            else
-                nSkipped++;
-            }
-        else
-            {
-            if (!allowSchemaChange)
-                {
-                m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Any change to sqlite database schema (excluding constraints) is only allowed for client side breifcase [BriefcaseId = %d].",
-                                                                m_ecdb.GetBriefcaseId().GetValue());
-                return ERROR;
-                }
-
-            if (DbSchemaPersistenceManager::CreateTable(m_ecdb, *table) != SUCCESS)
-                return ERROR;
-
-            nCreated++;
+                default:
+                case DbSchemaPersistenceManager::CreateOrUpdateTableResult::Skipped:
+                    continue;
             }
         }
 
     timer.Stop();
-    LOG.debugv("Created %d tables, skipped %d tables and updated %d table/view(s) in %.4f seconds", nCreated, nSkipped, nUpdated, timer.GetElapsedSeconds());
+    LOG.debugv("Created %d tables, updated %d tables, and %d tables were up-to-date (%.4f seconds).", nCreated, nUpdated, nWasUpToDate, timer.GetElapsedSeconds());
     return SUCCESS;
     }
 

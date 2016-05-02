@@ -246,6 +246,9 @@ void ECDbProfileManager::GetUpgraderSequence(std::vector<std::unique_ptr<ECDbPro
 
     if (currentProfileVersion < SchemaVersion(3, 5, 0, 0))
         upgraders.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3500()));
+
+    if (currentProfileVersion < SchemaVersion(3, 6, 0, 0))
+        upgraders.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3600()));
     }
 
 //-----------------------------------------------------------------------------------------
@@ -274,7 +277,8 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_SchemaReference_SchemaId ON ec_SchemaReference(SchemaId)");
+    stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_SchemaReference_SchemaId ON ec_SchemaReference(SchemaId);"
+                           "CREATE INDEX ix_ec_SchemaReference_ReferencedSchemaId ON ec_SchemaReference(ReferencedSchemaId)");
     if (BE_SQLITE_OK != stat)
         return stat;
 
@@ -293,11 +297,8 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_Class_Name ON ec_Class(Name)");
-    if (BE_SQLITE_OK != stat)
-        return stat;
-
-    stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_Class_SchemaId ON ec_Class(SchemaId)");
+    stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_Class_Name ON ec_Class(Name);"
+                           "CREATE UNIQUE INDEX uix_ec_Class_SchemaId_Name ON ec_Class(SchemaId,Name)");
     if (BE_SQLITE_OK != stat)
         return stat;
 
@@ -311,11 +312,8 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
         return stat;
 
     //index needed for fast look-ups of derived classes for a given ECClass
-    stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_BaseClass_BaseClassId ON ec_BaseClass(BaseClassId)");
-    if (BE_SQLITE_OK != stat)
-        return stat;
-
-    stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_BaseClass_ClassId_Ordinal ON ec_BaseClass(ClassId,Ordinal)");
+    stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_BaseClass_BaseClassId ON ec_BaseClass(BaseClassId);"
+                           "CREATE INDEX ix_ec_BaseClass_ClassId_Ordinal ON ec_BaseClass(ClassId,Ordinal)");
     if (BE_SQLITE_OK != stat)
         return stat;
 
@@ -347,9 +345,9 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
                            "Kind INTEGER NOT NULL,"
                            "Ordinal INTEGER,"
                            "PrimitiveType INTEGER,"
+                           "Enumeration INTEGER REFERENCES ec_Enumeration(Id) ON DELETE CASCADE,"
                            "NonPrimitiveType INTEGER REFERENCES ec_Class(Id) ON DELETE CASCADE,"
                            "ExtendedType TEXT,"
-                           "Enumeration INTEGER REFERENCES ec_Enumeration(Id) ON DELETE CASCADE,"
                            "ArrayMinOccurs INTEGER,"
                            "ArrayMaxOccurs INTEGER,"
                            "NavigationPropertyDirection INTEGER)");
@@ -357,7 +355,10 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_Property_Name ON ec_Property(Name); CREATE INDEX ix_ec_Property_ClassId_Ordinal ON ec_Property(ClassId,Ordinal);");
+    stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_Property_Name ON ec_Property(Name);"
+                           "CREATE INDEX ix_ec_Property_ClassId_Ordinal ON ec_Property(ClassId,Ordinal);"
+                           "CREATE INDEX ix_ec_Property_Enumeration ON ec_Property(Enumeration);"
+                           "CREATE INDEX ix_ec_Property_NonPrimitiveType ON ec_Property(NonPrimitiveType);");
     if (BE_SQLITE_OK != stat)
         return stat;
 
@@ -408,7 +409,8 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
         return stat;
 
 
-    stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_CustomAttribute_ContainerId_ContainerType_Ordinal ON ec_CustomAttribute(ContainerId,ContainerType,Ordinal)");
+    stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_CustomAttribute_ContainerId_ContainerType_Ordinal ON ec_CustomAttribute(ContainerId,ContainerType,Ordinal);"
+                           "CREATE INDEX ix_ec_CustomAttribute_ClassId ON ec_CustomAttribute(ClassId)");
     if (BE_SQLITE_OK != stat)
         return stat;
 
@@ -425,7 +427,8 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    stat = ecdb.ExecuteSql("CREATE UNIQUE INDEX uix_ec_ClassMap_ClassId_ParentId ON ec_ClassMap(ClassId, ParentId) WHERE ParentId IS NOT NULL");
+    stat = ecdb.ExecuteSql("CREATE UNIQUE INDEX uix_ec_ClassMap_ClassId_ParentId ON ec_ClassMap(ClassId, ParentId) WHERE ParentId IS NOT NULL;"
+                           "CREATE INDEX ix_ec_ClassMap_ParentId ON ec_ClassMap(ParentId)");
     if (BE_SQLITE_OK != stat)
         return stat;
 
@@ -435,6 +438,11 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
                            "PropertyPathId INTEGER NOT NULL REFERENCES ec_PropertyPath(Id) ON DELETE CASCADE,"
                            "ColumnId INTEGER NOT NULL REFERENCES ec_Column(Id) ON DELETE CASCADE,"
                            "PRIMARY KEY (ClassMapId, PropertyPathId, ColumnId))");
+    if (BE_SQLITE_OK != stat)
+        return stat;
+
+    stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_PropertyMap_PropertyPathId ON ec_PropertyMap(PropertyPathId);"
+                           "CREATE INDEX ix_ec_PropertyMap_ColumnId ON ec_PropertyMap(ColumnId);");
     if (BE_SQLITE_OK != stat)
         return stat;
 
@@ -487,7 +495,8 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_Index_TableId ON ec_Index(TableId)");
+    stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_Index_TableId ON ec_Index(TableId);"
+                           "CREATE INDEX ix_ec_Index_ClassId ON ec_Index(ClassId)");
     if (BE_SQLITE_OK != stat)
         return stat;
 
@@ -500,7 +509,8 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_IndexColumn_IndexId_Ordinal ON ec_IndexColumn(IndexId,Ordinal)");
+    stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_IndexColumn_IndexId_Ordinal ON ec_IndexColumn(IndexId,Ordinal);"
+                           "CREATE INDEX ix_ec_IndexColumn_ColumnId ON ec_IndexColumn(ColumnId)");
     if (BE_SQLITE_OK != stat)
         return stat;
 
@@ -515,11 +525,22 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
     if (BE_SQLITE_OK != stat)
         return stat;
 
+    stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_ForeignKey_TableId ON ec_ForeignKey(TableId);"
+                           "CREATE INDEX ix_ec_ForeignKey_ReferencedTableId ON ec_ForeignKey(ReferencedTableId)");
+    if (BE_SQLITE_OK != stat)
+        return stat;
+
     stat = ecdb.ExecuteSql("CREATE TABLE ec_ForeignKeyColumn("
                            "ForeignKeyId INTEGER NOT NULL REFERENCES ec_ForeignKey (Id) ON DELETE CASCADE,"
                            "ColumnId INTEGER NOT NULL REFERENCES ec_Column (Id) ON DELETE CASCADE,"
                            "ReferencedColumnId INTEGER NOT NULL REFERENCES ec_Column (Id) ON DELETE CASCADE,"
                            "Ordinal INTEGER NOT NULL)");
+    if (BE_SQLITE_OK != stat)
+        return stat;
+
+    stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_ForeignKeyColumn_ForeignKeyId ON ec_ForeignKeyColumn(ForeignKeyId);"
+                           "CREATE INDEX ix_ec_ForeignKeyColumn_ColumnId ON ec_ForeignKeyColumn(ColumnId);"
+                           "CREATE INDEX ix_ec_ForeignKeyColumn_ReferencedColumnId ON ec_ForeignKeyColumn(ReferencedColumnId)");
     if (BE_SQLITE_OK != stat)
         return stat;
 

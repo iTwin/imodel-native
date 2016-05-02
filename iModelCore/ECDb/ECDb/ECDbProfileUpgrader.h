@@ -56,6 +56,19 @@ public:
     };
 
 //=======================================================================================
+// @bsiclass                                                 Krischan.Eberle      05/2016
+//+===============+===============+===============+===============+===============+======
+struct ECDbProfileUpgrader_3600 : ECDbProfileUpgrader
+    {
+    //intentionally use compiler generated ctor, dtor, copy ctor and copy assignment op
+    private:
+        virtual DbResult _Upgrade(ECDbR) const override;
+
+        DbResult UpdateECPropertyKindColumn(ECDbR) const;
+        DbResult AddMissingIndexesOnFKColumns(ECDbR) const;
+    };
+
+//=======================================================================================
 // @bsiclass                                                 Krischan.Eberle      04/2016
 //+===============+===============+===============+===============+===============+======
 struct ECDbProfileUpgrader_3500 : ECDbProfileUpgrader

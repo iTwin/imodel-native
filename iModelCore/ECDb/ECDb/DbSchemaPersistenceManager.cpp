@@ -740,101 +740,47 @@ DbResult DbSchemaPersistenceManager::InsertPropertyPath(ECDbCR ecdb, PropertyDbM
     return stat == BE_SQLITE_DONE ? BE_SQLITE_OK : stat;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        10/2014
-//---------------------------------------------------------------------------------------
-//static
-bool DbSchemaPersistenceManager::IsTableChanged(ECDbCR ecdb, DbTable const& table)
-    {
-    bvector<Utf8String> namesOfExistingColumns;
-    if (!ecdb.GetColumns(namesOfExistingColumns, table.GetName().c_str()))
-        {
-        BeAssert(false && "Failed to get column list for table");
-        return true;
-        }
-
-    //Create a fast hash set of existing db column list
-    bset<Utf8String, CompareIUtf8Ascii> namesOfExistingColumnsSet;
-    for (Utf8StringCR name : namesOfExistingColumns)
-        {
-        namesOfExistingColumnsSet.insert(name);
-        }
-
-    for (DbColumn const* col : table.GetColumns())
-        {
-        if (namesOfExistingColumnsSet.find(col->GetName()) == namesOfExistingColumnsSet.end())
-            return true; //new column
-        }
-
-    //no columns were added. So difference in columns means that columns was deleted -> which also means that the table changed.
-    return table.GetColumns().size() != namesOfExistingColumns.size();
-    }
-
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        01/2015
 //---------------------------------------------------------------------------------------
 //static
-BentleyStatus DbSchemaPersistenceManager::CreateOrUpdateTable(ECDbCR ecdb, DbTable const& table)
+DbSchemaPersistenceManager::CreateOrUpdateTableResult DbSchemaPersistenceManager::CreateOrUpdateTable(ECDbCR ecdb, DbTable const& table)
     {
+    if (table.GetPersistenceType() == PersistenceType::Virtual || table.GetType() == DbTable::Type::Existing)
+        return CreateOrUpdateTableResult::Skipped;
+
     Utf8CP tableName = table.GetName().c_str();
-    DbSchema::EntityType type = DbSchema::GetEntityType(ecdb, tableName);
-    if (type == DbSchema::EntityType::None)
-        return CreateTable(ecdb, table);
+    BeBriefcaseId briefcaseId = ecdb.GetBriefcaseId();
+    const bool allowDbSchemaChange = briefcaseId.IsMasterId() || briefcaseId.IsStandaloneId();
 
-    if (table.GetPersistenceType() == PersistenceType::Virtual)
-        return ERROR;
+    CreateOrUpdateTableResult mode;
+    if (ecdb.TableExists(tableName))
+        mode = IsTableChanged(ecdb, table) ? CreateOrUpdateTableResult::Updated : CreateOrUpdateTableResult::WasUpToDate;
+    else
+        mode = CreateOrUpdateTableResult::Created;
 
-    //! Object type is view and exist in db. Action = DROP it and recreate it.
-    if (type == DbSchema::EntityType::View)
+    if (mode == CreateOrUpdateTableResult::WasUpToDate)
+        return mode;
+
+    if (!allowDbSchemaChange)
         {
-        Utf8String sql("DROP VIEW [");
-        sql.append(tableName).append("]");
-        auto r = ecdb.ExecuteSql(sql.c_str());
-        if (r != BE_SQLITE_OK)
-            {
-            ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to drop view '%s'", tableName);
-            return ERROR;
-            }
-
-        return CreateTable(ecdb, table);
+        ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to import ECSchemas: Imported ECSchemas would change the database schema. "
+                                                      "This is only allowed for standalone briefcases or the master briefcase. Briefcase id: %" PRIu32, briefcaseId.GetValue());
+        return CreateOrUpdateTableResult::Error;
         }
 
-    BeAssert(type == DbSchema::EntityType::Table);
-
-    bvector<Utf8String> existingColumnNamesInDb;
-    if (!ecdb.GetColumns(existingColumnNamesInDb, tableName))
+    BentleyStatus stat = SUCCESS;
+    if (mode == CreateOrUpdateTableResult::Created)
+        stat = CreateTable(ecdb, table);
+    else
         {
-        BeAssert(false && "Failed to get column list for table");
-        return ERROR;
+        BeAssert(mode == CreateOrUpdateTableResult::Updated);
+        stat = UpdateTable(ecdb, table);
         }
 
-    //Create a fast hash set of existing db column list
-    bset<Utf8String, CompareIUtf8Ascii> existingColumnNamesInDbSet;
-    for (Utf8StringCR existingDbColumn : existingColumnNamesInDb)
-        {
-        existingColumnNamesInDbSet.insert(existingDbColumn);
-        }
-
-    //Create a fast hash set of in-memory column list;
-    std::vector<DbColumn const*> columns;
-    table.GetFilteredColumnList(columns, PersistenceType::Persisted);
-
-    std::vector<DbColumn const*> newColumns;
-    //compute new columns;
-    for (DbColumn const* col : columns)
-        {
-        if (existingColumnNamesInDbSet.find(col->GetName().c_str()) == existingColumnNamesInDbSet.end())
-            newColumns.push_back(col);
-        }
-
-
-    if (SUCCESS != AlterTable(ecdb, table, newColumns))
-        return ERROR;
-
-    return CreateTriggers(ecdb, table, false);
+    return SUCCESS == stat ? mode : CreateOrUpdateTableResult::Error;
     }
-
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
@@ -848,18 +794,11 @@ BentleyStatus DbSchemaPersistenceManager::CreateTable(ECDbCR ecdb, DbTable const
         return ERROR;
         }
 
-    if (table.GetType() == DbTable::Type::Existing)
+    if (table.GetType() == DbTable::Type::Existing || table.GetPersistenceType() == PersistenceType::Virtual)
         {
-        BeAssert(false && "Existing Table cannot be created");
+        BeAssert(false && "CreateTable must not be called on virtual table or table not owned by ECDb");
         return ERROR;
         }
-
-    if (table.GetPersistenceType() == PersistenceType::Virtual)
-        {
-        BeAssert(false && "Virtual Table cannot be created");
-        return ERROR;
-        }
-
 
     std::vector<DbColumn const*> columns;
     table.GetFilteredColumnList(columns, PersistenceType::Persisted);
@@ -927,6 +866,76 @@ BentleyStatus DbSchemaPersistenceManager::CreateTable(ECDbCR ecdb, DbTable const
 // @bsimethod                                                    Affan.Khan        01/2015
 //---------------------------------------------------------------------------------------
 //static
+BentleyStatus DbSchemaPersistenceManager::UpdateTable(ECDbCR ecdb, DbTable const& table)
+    {
+    if (table.GetType() == DbTable::Type::Existing || table.GetPersistenceType() == PersistenceType::Virtual)
+        {
+        BeAssert(false && "UpdateTable must not be called on virtual table or table not owned by ECDb");
+        return ERROR;
+        }
+
+    Utf8CP tableName = table.GetName().c_str();
+    DbSchema::EntityType type = DbSchema::GetEntityType(ecdb, tableName);
+    if (type == DbSchema::EntityType::None)
+        {
+        BeAssert(false && "Table is expected to exist already");
+        return ERROR;
+        }
+
+    //! Object type is view and exist in db. Action = DROP it and recreate it.
+    if (type == DbSchema::EntityType::View)
+        {
+        Utf8String sql("DROP VIEW [");
+        sql.append(tableName).append("]");
+        auto r = ecdb.ExecuteSql(sql.c_str());
+        if (r != BE_SQLITE_OK)
+            {
+            ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to drop view '%s'", tableName);
+            return ERROR;
+            }
+
+        return CreateTable(ecdb, table);
+        }
+
+    BeAssert(type == DbSchema::EntityType::Table);
+
+    bvector<Utf8String> existingColumnNamesInDb;
+    if (!ecdb.GetColumns(existingColumnNamesInDb, tableName))
+        {
+        BeAssert(false && "Failed to get column list for table");
+        return ERROR;
+        }
+
+    //Create a fast hash set of existing db column list
+    bset<Utf8String, CompareIUtf8Ascii> existingColumnNamesInDbSet;
+    for (Utf8StringCR existingDbColumn : existingColumnNamesInDb)
+        {
+        existingColumnNamesInDbSet.insert(existingDbColumn);
+        }
+
+    //Create a fast hash set of in-memory column list;
+    std::vector<DbColumn const*> columns;
+    table.GetFilteredColumnList(columns, PersistenceType::Persisted);
+
+    std::vector<DbColumn const*> newColumns;
+    //compute new columns;
+    for (DbColumn const* col : columns)
+        {
+        if (existingColumnNamesInDbSet.find(col->GetName().c_str()) == existingColumnNamesInDbSet.end())
+            newColumns.push_back(col);
+        }
+
+
+    if (SUCCESS != AlterTable(ecdb, table, newColumns))
+        return ERROR;
+
+    return CreateTriggers(ecdb, table, false);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        01/2015
+//---------------------------------------------------------------------------------------
+//static
 BentleyStatus DbSchemaPersistenceManager::AlterTable(ECDbCR ecdb, DbTable const& table, std::vector<DbColumn const*> const& columnsToAdd)
     {
     if (columnsToAdd.empty())
@@ -969,6 +978,37 @@ BentleyStatus DbSchemaPersistenceManager::AlterTable(ECDbCR ecdb, DbTable const&
 
     return SUCCESS;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        10/2014
+//---------------------------------------------------------------------------------------
+//static
+bool DbSchemaPersistenceManager::IsTableChanged(ECDbCR ecdb, DbTable const& table)
+    {
+    bvector<Utf8String> namesOfExistingColumns;
+    if (!ecdb.GetColumns(namesOfExistingColumns, table.GetName().c_str()))
+        {
+        BeAssert(false && "Failed to get column list for table");
+        return true;
+        }
+
+    //Create a fast hash set of existing db column list
+    bset<Utf8String, CompareIUtf8Ascii> namesOfExistingColumnsSet;
+    for (Utf8StringCR name : namesOfExistingColumns)
+        {
+        namesOfExistingColumnsSet.insert(name);
+        }
+
+    for (DbColumn const* col : table.GetColumns())
+        {
+        if (namesOfExistingColumnsSet.find(col->GetName()) == namesOfExistingColumnsSet.end())
+            return true; //new column
+        }
+
+    //no columns were added. So difference in columns means that columns was deleted -> which also means that the table changed.
+    return table.GetColumns().size() != namesOfExistingColumns.size();
+    }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  08/2015
@@ -1434,8 +1474,7 @@ void AssertPersistedEnumsAreUnchanged()
                   (int) ECDbMapStrategy::Strategy::OwnTable == 1 &&
                   (int) ECDbMapStrategy::Strategy::SharedTable == 2, "Persisted Enum has changed: ECDbMapStrategy::Strategy.");
 
-    static_assert((int) ECPropertyKind::Enumeration == 4 &&
-                  (int) ECPropertyKind::Navigation == 5 &&
+    static_assert((int) ECPropertyKind::Navigation == 4 &&
                   (int) ECPropertyKind::Primitive == 0 &&
                   (int) ECPropertyKind::PrimitiveArray == 2 &&
                   (int) ECPropertyKind::Struct == 1 &&

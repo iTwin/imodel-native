@@ -24,8 +24,7 @@ enum class ECPropertyKind
     Struct = 1,
     PrimitiveArray = 2,
     StructArray = 3,
-    Enumeration = 4,
-    Navigation = 5
+    Navigation = 4
     };
 
 /*---------------------------------------------------------------------------------------

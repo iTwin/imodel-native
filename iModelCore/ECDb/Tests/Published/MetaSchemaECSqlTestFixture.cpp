@@ -429,8 +429,7 @@ void MetaSchemaECSqlTestFixture::AssertPropertyDefs(ECClassCR expectedClass)
 //+---------------+---------------+---------------+---------------+---------------+------
 void MetaSchemaECSqlTestFixture::AssertPropertyDef(ECPropertyCR expectedProp, ECSqlStatement const& actualPropertyDefRow)
     {
-    PrimitiveECPropertyCP primProp = expectedProp.GetIsPrimitive() && expectedProp.GetAsPrimitiveProperty()->GetEnumeration() == nullptr ? expectedProp.GetAsPrimitiveProperty() : nullptr;
-    PrimitiveECPropertyCP enumProp = expectedProp.GetIsPrimitive() && expectedProp.GetAsPrimitiveProperty()->GetEnumeration() != nullptr ? expectedProp.GetAsPrimitiveProperty() : nullptr;
+    PrimitiveECPropertyCP primProp = expectedProp.GetAsPrimitiveProperty();
     StructECPropertyCP structProp = expectedProp.GetAsStructProperty();
     ArrayECPropertyCP primArrayProp = expectedProp.GetIsPrimitiveArray() ? expectedProp.GetAsArrayProperty() : nullptr;
     StructArrayECPropertyCP structArrayProp = expectedProp.GetAsStructArrayProperty();
@@ -442,8 +441,7 @@ void MetaSchemaECSqlTestFixture::AssertPropertyDef(ECPropertyCR expectedProp, EC
         Struct = 1,
         PrimitiveArray = 2,
         StructArray = 3,
-        Enumeration = 4,
-        Navigation = 5
+        Navigation = 4
         };
 
     const int colCount = actualPropertyDefRow.GetColumnCount();
@@ -510,14 +508,11 @@ void MetaSchemaECSqlTestFixture::AssertPropertyDef(ECPropertyCR expectedProp, EC
             ECPropertyKind actualKind = (ECPropertyKind) val.GetInt();
             switch (actualKind)
                 {
-                    case ECPropertyKind::Enumeration:
-                        ASSERT_TRUE(enumProp != nullptr && enumProp->GetEnumeration() != nullptr) << "ECPropertyDef.Kind. Actual value: Enumeration for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
-                        break;
                     case ECPropertyKind::Navigation:
                         ASSERT_TRUE(navProp != nullptr) << "ECPropertyDef.Kind. Actual value: Navigation for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
                         break;
                     case ECPropertyKind::Primitive:
-                        ASSERT_TRUE(primProp != nullptr && primProp->GetEnumeration() == nullptr) << "ECPropertyDef.Kind. Actual value: Primitive for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+                        ASSERT_TRUE(primProp != nullptr) << "ECPropertyDef.Kind. Actual value: Primitive for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
                         break;
                     case ECPropertyKind::PrimitiveArray:
                         ASSERT_TRUE(primArrayProp != nullptr) << "ECPropertyDef.Kind. Actual value: PrimitiveArray for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
@@ -538,12 +533,25 @@ void MetaSchemaECSqlTestFixture::AssertPropertyDef(ECPropertyCR expectedProp, EC
 
         if (colName.EqualsI("PrimitiveType"))
             {
-            if (primProp != nullptr)
+            if (primProp != nullptr && primProp->GetEnumeration() == nullptr)
                 ASSERT_EQ((int) primProp->GetType(), val.GetInt()) << "ECPropertyDef.PrimitiveType for prim prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
             else if (primArrayProp != nullptr)
                 ASSERT_EQ((int) primArrayProp->GetPrimitiveElementType(), val.GetInt()) << "ECPropertyDef.PrimitiveType for prim array prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
             else
                 ASSERT_TRUE(val.IsNull()) << "ECPropertyDef.PrimitiveType for neither prim nor prim array prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+
+            continue;
+            }
+
+        if (colName.EqualsI("EnumerationId"))
+            {
+            if (primProp != nullptr && primProp->GetEnumeration() != nullptr)
+                {
+                //EnumerationId is not exposed in the API, so we cannot check more than that the actual id is a generally valid id
+                ASSERT_TRUE(val.GetId<BeInt64Id>().IsValid()) << "ECPropertyDef.EnumerationId for prim prop with enumeration for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+                }
+            else
+                ASSERT_TRUE(val.IsNull()) << "ECPropertyDef.EnumerationId for prim prop without enumeration or non-prim prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
 
             continue;
             }
@@ -556,13 +564,6 @@ void MetaSchemaECSqlTestFixture::AssertPropertyDef(ECPropertyCR expectedProp, EC
                     ASSERT_STREQ(primProp->GetExtendedTypeName().c_str(), val.GetText()) << "ECPropertyDef.ExtendedTypeName for prim prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
                 else
                     ASSERT_TRUE(val.IsNull()) << "ECPropertyDef.ExtendedTypeName for prim prop with unset extended type for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
-                }
-            if (enumProp != nullptr)
-                {
-                if (enumProp->HasExtendedType())
-                    ASSERT_STREQ(enumProp->GetExtendedTypeName().c_str(), val.GetText()) << "ECPropertyDef.ExtendedTypeName for enum prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
-                else
-                    ASSERT_TRUE(val.IsNull()) << "ECPropertyDef.ExtendedTypeName for enum prop with unset extended type for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
                 }
             else if (primArrayProp != nullptr)
                 {
@@ -591,19 +592,6 @@ void MetaSchemaECSqlTestFixture::AssertPropertyDef(ECPropertyCR expectedProp, EC
             continue;
             }
 
-        if (colName.EqualsI("EnumerationId"))
-            {
-            if (enumProp != nullptr)
-                {
-                //EnumerationId is not exposed in the API, so we cannot check more than that the actual id is a generally valid id
-                ASSERT_TRUE(val.GetId<BeInt64Id>().IsValid()) << "ECPropertyDef.EnumerationId for prim prop with enumeration for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
-                }
-            else
-                ASSERT_TRUE(val.IsNull()) << "ECPropertyDef.EnumerationId for prim prop without enumeration or non-prim prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
-
-            continue;
-
-            }
         if (colName.EqualsI("ArrayMinOccurs"))
             {
             ArrayECPropertyCP arrayProp = primArrayProp != nullptr ? primArrayProp : structArrayProp;
