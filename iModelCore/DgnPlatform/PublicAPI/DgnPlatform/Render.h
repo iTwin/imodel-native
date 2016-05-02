@@ -1392,4 +1392,115 @@ public:
     DGNPLATFORM_EXPORT void RecordFrameTime(uint32_t numGraphicsInScene, double seconds, bool isFromProgressiveDisplay);
 };
 
+/*=================================================================================**//**
+* View settings for the point cloud
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+#define POINTCLOUD_DEFAULT_VIEW_CONTRAST    (50.0)
+#define POINTCLOUD_DEFAULT_VIEW_BRIGHTNESS  (180.0)
+
+#define VIEWSETTINGS_RGB_MASK        (0x00000001)
+#define VIEWSETTINGS_INTENSITY_MASK  (0x00000002)
+#define VIEWSETTINGS_LIGHTNING_MASK  (0x00000004)
+#define VIEWSETTINGS_PLANE_MASK      (0x00000008)
+#define VIEWSETTINGS_FRONTBIAS_MASK  (0x00000010)
+
+struct PointCloudViewSettings
+    {
+    enum class DisplayStyle
+        {
+        None           = 0,
+        Intensity      = 1,
+        Classification = 2,
+        Location       = 3,
+        Custom         = 4, //New Display style in SS4
+        };
+
+protected:
+    uint32_t        m_flags;
+    double          m_contrast;
+    double          m_brightness;
+    double          m_distance;
+    double          m_offset;
+    int32_t         m_adaptivePointSize;
+    uint32_t        m_intensityRampIdx;
+    uint32_t        m_planeRampIdx;
+    uint32_t        m_planeAxis; //{x,y,z} index
+    DisplayStyle    m_displayStyle = DisplayStyle::None;
+    Utf8String      m_planeRamp;
+    Utf8String      m_intensityRamp;
+    bool            m_useACSAsPlaneAxis;
+
+    //Advanced Settings from SS4
+    bool            m_clampIntensity;
+    bool            m_needClassifBuffer;
+    Utf8String      m_displayStyleName;
+    int32_t         m_displayStyleIndex;
+
+public:
+    
+    DGNPLATFORM_EXPORT PointCloudViewSettings();
+    DGNPLATFORM_EXPORT void InitDefaults();
+    DGNPLATFORM_EXPORT bool AreSetToDefault() const;
+    DGNPLATFORM_EXPORT void FromJson(JsonValueCR);
+    DGNPLATFORM_EXPORT void ToJson(JsonValueR val) const;
+
+    DGNPLATFORM_EXPORT bool GetUseRgb() const;
+    DGNPLATFORM_EXPORT bool GetUseIntensity() const;
+    DGNPLATFORM_EXPORT bool GetUseLightning() const;
+    DGNPLATFORM_EXPORT bool GetUsePlane() const;
+    DGNPLATFORM_EXPORT bool GetUseFrontBias() const;
+
+    DGNPLATFORM_EXPORT uint32_t GetFlags() const;
+    DGNPLATFORM_EXPORT void SetFlags(uint32_t flags);
+
+    DGNPLATFORM_EXPORT double GetContrast() const;
+    DGNPLATFORM_EXPORT void SetContrast(double contrast);
+
+    DGNPLATFORM_EXPORT double GetBrightness() const;
+    DGNPLATFORM_EXPORT void SetBrightness(double brightness);
+
+    DGNPLATFORM_EXPORT double GetDistance() const;
+    DGNPLATFORM_EXPORT void SetDistance(double distance);
+
+    DGNPLATFORM_EXPORT double GetOffset() const;
+    DGNPLATFORM_EXPORT void SetOffset(double offset);
+
+    DGNPLATFORM_EXPORT int32_t GetAdaptivePointSize() const;
+    DGNPLATFORM_EXPORT void SetAdaptivePointSize(int32_t adaptivePointSize);
+
+    DGNPLATFORM_EXPORT uint32_t GetIntensityRampIdx() const;
+    DGNPLATFORM_EXPORT void SetIntensityRampIdx(uint32_t intensityRampIdx);
+
+    DGNPLATFORM_EXPORT uint32_t GetPlaneRampIdx() const;
+    DGNPLATFORM_EXPORT void SetPlaneRampIdx(uint32_t planeRampIdx);
+
+    DGNPLATFORM_EXPORT uint32_t GetPlaneAxis() const;
+    DGNPLATFORM_EXPORT void SetPlaneAxis(uint32_t planeAxis);
+
+    DGNPLATFORM_EXPORT DisplayStyle GetDisplayStyle() const;
+    DGNPLATFORM_EXPORT void SetDisplayStyle(DisplayStyle const& displayStyle);
+
+    DGNPLATFORM_EXPORT Utf8String GetPlaneRamp() const;
+    DGNPLATFORM_EXPORT void SetPlaneRamp(Utf8StringCR planeRamp);
+
+    DGNPLATFORM_EXPORT Utf8String GetIntensityRamp() const;
+    DGNPLATFORM_EXPORT void SetIntensityRamp(Utf8StringCR intensityRamp);
+
+    DGNPLATFORM_EXPORT bool GetUseACSAsPlaneAxis() const;
+    DGNPLATFORM_EXPORT void SetUseACSAsPlaneAxis(bool useACSAsPlaneAxis);
+
+    DGNPLATFORM_EXPORT bool GetClampIntensity() const;
+    DGNPLATFORM_EXPORT void SetClampIntensity(bool clampIntensity);
+
+    DGNPLATFORM_EXPORT bool GetNeedClassifBuffer() const;
+    DGNPLATFORM_EXPORT void SetNeedClassifBuffer(bool needClassifBuffer);
+
+    DGNPLATFORM_EXPORT Utf8String GetDisplayStyleName() const;
+    DGNPLATFORM_EXPORT void SetDisplayStyleName(Utf8StringCR displayStyleName);
+
+    DGNPLATFORM_EXPORT int32_t GetDisplayStyleIndex() const;
+    DGNPLATFORM_EXPORT void SetDisplayStyleIndex(int32_t displayStyleIndex);
+    };
+
 END_BENTLEY_RENDER_NAMESPACE
