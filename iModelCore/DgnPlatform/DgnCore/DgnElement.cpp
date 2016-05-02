@@ -3103,7 +3103,7 @@ DgnDbStatus GeometricElement::InsertGeomStream() const
     GeometryStreamIO::Collection(m_geom.GetData(), m_geom.GetSize()).GetGeometryPartIds(parts, db);
     for (DgnGeometryPartId const& partId : parts)
         {
-        if (BentleyStatus::SUCCESS != DgnGeometryPart::InsertElementGeomUsesParts(db, GetElementId(), partId))
+        if (BentleyStatus::SUCCESS != DgnGeometryPart::InsertElementUsesGeometryParts(db, GetElementId(), partId))
             status = DgnDbStatus::WriteError;
         }
 
@@ -3156,7 +3156,7 @@ DgnDbStatus GeometricElement::UpdateGeomStream() const
 
     for (DgnGeometryPartId const& partId : partsToAdd)
         {
-        if (BentleyStatus::SUCCESS != DgnGeometryPart::InsertElementGeomUsesParts(db, eid, partId))
+        if (BentleyStatus::SUCCESS != DgnGeometryPart::InsertElementUsesGeometryParts(db, eid, partId))
             status = DgnDbStatus::WriteError;
         }
 

@@ -47,8 +47,9 @@ private:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement&) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement&) override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _InsertInDb();
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _UpdateInDb();
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _InsertInDb() override;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _UpdateInDb() override;
+    DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR) override;
 
 protected:
     //! Only GeometryBuilder should have write access to the GeometryStream...
@@ -83,10 +84,10 @@ public:
     //! @return SUCCESS if the range was retrieved, or else ERROR if e.g. no DgnGeometryPart exists with the specified ID
     DGNPLATFORM_EXPORT static BentleyStatus QueryGeometryPartRange(DRange3dR range, DgnDbR db, DgnGeometryPartId geomPartId);
 
-    //! Insert the ElementGeomUsesParts relationship between an element and the geom parts it uses.
+    //! Insert the ElementUsesGeometryParts relationship between an element and the geom parts it uses.
     //! @note Most apps will not need to call this directly.
     //! @private
-    DGNPLATFORM_EXPORT static BentleyStatus InsertElementGeomUsesParts(DgnDbR db, DgnElementId elementId, DgnGeometryPartId geomPartId);
+    DGNPLATFORM_EXPORT static BentleyStatus InsertElementUsesGeometryParts(DgnDbR db, DgnElementId elementId, DgnGeometryPartId geomPartId);
 };
 
 namespace dgn_ElementHandler

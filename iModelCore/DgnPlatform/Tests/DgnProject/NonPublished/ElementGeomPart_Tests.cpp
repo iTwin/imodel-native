@@ -150,7 +150,7 @@ TEST_F(ElementGeomPartTests, GeomPartWithoutCode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Umar.Hayat      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ElementGeomPartTests, ElementGeomUsesParts)
+TEST_F(ElementGeomPartTests, ElementUsesGeometryParts)
     {
     SetupProject(L"3dMetricGeneral.idgndb", L"GeomParts.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
 
@@ -170,7 +170,7 @@ TEST_F(ElementGeomPartTests, ElementGeomUsesParts)
     DgnElementId elementId = InsertElement()->GetElementId();
     EXPECT_TRUE(elementId.IsValid());
 
-    EXPECT_EQ(SUCCESS, DgnGeometryPart::InsertElementGeomUsesParts(*m_db, elementId, existingPartId) );
+    EXPECT_EQ(SUCCESS, DgnGeometryPart::InsertElementUsesGeometryParts(*m_db, elementId, existingPartId) );
     DgnElementCPtr elem = m_db->Elements().GetElement(elementId);
     
     Statement stmt;
@@ -184,7 +184,7 @@ TEST_F(ElementGeomPartTests, ElementGeomUsesParts)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Umar.Hayat      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ElementGeomPartTests, ElementGeomUsesParts_DeleteGeomPart)
+TEST_F(ElementGeomPartTests, ElementUsesGeometryParts_DeleteGeomPart)
     {
     SetupProject(L"3dMetricGeneral.idgndb", L"GeomParts.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
 
@@ -204,7 +204,7 @@ TEST_F(ElementGeomPartTests, ElementGeomUsesParts_DeleteGeomPart)
     DgnElementId elementId = InsertElement()->GetElementId();
     EXPECT_TRUE(elementId.IsValid());
 
-    EXPECT_EQ(SUCCESS, DgnGeometryPart::InsertElementGeomUsesParts(*m_db, elementId, existingPartId));
+    EXPECT_EQ(SUCCESS, DgnGeometryPart::InsertElementUsesGeometryParts(*m_db, elementId, existingPartId));
     DgnElementCPtr elem = m_db->Elements().GetElement(elementId);
 
     // Delete Geom Part
@@ -217,7 +217,7 @@ TEST_F(ElementGeomPartTests, ElementGeomUsesParts_DeleteGeomPart)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Umar.Hayat      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ElementGeomPartTests, ElementGeomUsesParts_DeleteElement)
+TEST_F(ElementGeomPartTests, ElementUsesGeometryParts_DeleteElement)
     {
     SetupProject(L"3dMetricGeneral.idgndb", L"GeomParts.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
 
@@ -237,7 +237,7 @@ TEST_F(ElementGeomPartTests, ElementGeomUsesParts_DeleteElement)
     DgnElementId elementId = InsertElement()->GetElementId();
     EXPECT_TRUE(elementId.IsValid());
 
-    EXPECT_EQ(SUCCESS, DgnGeometryPart::InsertElementGeomUsesParts(*m_db, elementId, existingPartId) );
+    EXPECT_EQ(SUCCESS, DgnGeometryPart::InsertElementUsesGeometryParts(*m_db, elementId, existingPartId) );
     DgnElementCPtr elem = m_db->Elements().GetElement(elementId);
     m_db->SaveChanges ();
     // Delete Element

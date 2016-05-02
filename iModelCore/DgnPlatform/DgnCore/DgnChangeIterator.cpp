@@ -300,38 +300,6 @@ ModelChangeIterator::const_iterator ModelChangeIterator::end() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     03/2016
 //---------------------------------------------------------------------------------------
-GeometryPartChangeEntry::GeometryPartChangeEntry(GeometryPartChangeIterator const& parent, BeSQLite::Changes::Change sqlChange) : m_parent(parent), T_Super(parent, sqlChange)
-    {}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                              Ramanujam.Raman     03/2016
-//---------------------------------------------------------------------------------------
-GeometryPartChangeIterator::GeometryPartChangeIterator(DgnDbCR dgndb, IChangeSet& changeSet) : T_Super(dgndb, changeSet, *(dgndb.Schemas().GetECClass(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_GeometryPart)))
-    {}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                              Ramanujam.Raman     03/2016
-//---------------------------------------------------------------------------------------
-GeometryPartChangeIterator::const_iterator GeometryPartChangeIterator::begin() const
-    {
-    GeometryPartChangeEntry entry(*this, m_changes.begin());
-    entry.ExtractChanges();
-    return entry;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                              Ramanujam.Raman     03/2016
-//---------------------------------------------------------------------------------------
-GeometryPartChangeIterator::const_iterator GeometryPartChangeIterator::end() const
-    {
-    GeometryPartChangeEntry entry(*this, m_changes.end());
-    entry.ExtractChanges();
-    return entry;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                              Ramanujam.Raman     03/2016
-//---------------------------------------------------------------------------------------
 // static
 ElementChangeIterator DgnChangeIterator::MakeElementChangeIterator(DgnDbCR dgndb, IChangeSet& changeSet)
     {
@@ -347,17 +315,6 @@ ElementChangeIterator DgnChangeIterator::MakeElementChangeIterator(DgnDbCR dgndb
 ModelChangeIterator DgnChangeIterator::MakeModelChangeIterator(DgnDbCR dgndb, IChangeSet& changeSet)
     {
     ModelChangeIterator iter(dgndb, changeSet);
-    iter.Initialize();
-    return iter;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                              Ramanujam.Raman     03/2016
-//---------------------------------------------------------------------------------------
-// static
-GeometryPartChangeIterator DgnChangeIterator::MakeGeometryPartChangeIterator(DgnDbCR dgndb, IChangeSet& changeSet)
-    {
-    GeometryPartChangeIterator iter(dgndb, changeSet);
     iter.Initialize();
     return iter;
     }

@@ -73,7 +73,7 @@ DgnDbStatus DgnGeometryPart::_BindInsertParams(ECSqlStatement& statement)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnGeometryPart::_BindUpdateParams(ECSqlStatement& statement)
     {
-    DgnDbStatus status = T_Super::_BindInsertParams(statement);
+    DgnDbStatus status = T_Super::_BindUpdateParams(statement);
     if (DgnDbStatus::Success != status)
         return status;
 
@@ -120,6 +120,21 @@ DgnDbStatus DgnGeometryPart::WriteGeometryStream()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+void DgnGeometryPart::_CopyFrom(DgnElementCR element)
+    {
+    T_Super::_CopyFrom(element);
+
+    DgnGeometryPartCP otherPart = dynamic_cast<DgnGeometryPartCP>(&element);
+    if (nullptr != otherPart)
+        {
+        GetGeometryStreamR() = otherPart->GetGeometryStream();
+        SetBoundingBox(otherPart->GetBoundingBox());
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    05/16
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnGeometryPartId DgnGeometryPart::QueryGeometryPartId(DgnCode const& code, DgnDbR db)
     {
     return DgnGeometryPartId(db.Elements().QueryElementIdByCode(code).GetValueUnchecked());
@@ -128,7 +143,7 @@ DgnGeometryPartId DgnGeometryPart::QueryGeometryPartId(DgnCode const& code, DgnD
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    03/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus DgnGeometryPart::InsertElementGeomUsesParts(DgnDbR db, DgnElementId elementId, DgnGeometryPartId geomPartId)
+BentleyStatus DgnGeometryPart::InsertElementUsesGeometryParts(DgnDbR db, DgnElementId elementId, DgnGeometryPartId geomPartId)
     {
     if (!elementId.IsValid() || !geomPartId.IsValid())
         return BentleyStatus::ERROR;
