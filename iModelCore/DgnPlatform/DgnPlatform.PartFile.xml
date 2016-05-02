@@ -421,6 +421,10 @@
         <Directories DirectoryListName="AndroidJUnitProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
 
+    <Part Name="RunAndroidJUnitTest" BentleyBuildMakeFile="${SrcRoot}BeGTest/Android/RunAndroidJUnitTest.mke" BentleyBuildMakeOptions="-dANDROIDJUNIT_PRODUCT=DgnPlatform-AndroidJUnit" OnlyPlatforms="Android*">
+        <SubProduct ProductName="DgnPlatform-AndroidJUnit"/>
+    </Part>
+
     <!-- ********************** -->
     <!-- **** iOSXCTest **** -->
     <!-- ********************** -->
@@ -436,6 +440,10 @@
         <SubPart PartName="iOSXCTest" LibType="Static"/>
         <Directories DirectoryListName="iOSXCTestProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
+
+    <Part Name="RuniOSXCTest" BentleyBuildMakeFile="${SrcRoot}BeGTest/iOS/RunXCTestProject.mke" BentleyBuildMakeOptions="-dXCTEST_PRODUCT=DgnPlatform-iOSXCTest" OnlyPlatforms="iOS*">
+        <SubProduct ProductName="DgnPlatform-iOSXCTest"/>
+    </Part>
 
     <!-- ******************************************************************************************* -->
     <!-- ******************* "NoView" Tests - all tests up through DgnPlatform ********************* -->

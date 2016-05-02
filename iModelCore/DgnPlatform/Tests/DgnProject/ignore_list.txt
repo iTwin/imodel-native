@@ -43,17 +43,3 @@ DgnLinkTest.* # Need to figure the BIS hierarchy for DgnLinks - Shaun
 DgnECNavigatorTest.DgnLinksElementInfo # Need to figure the BIS hierarchy for DgnLinks - Shaun
 DgnECNavigatorTest.IfcElementInfo # Need to figure BIS schema for IFC - Shaun/Raman
 
-
-# These likely fail due to importing schemas in the briefcase. Affan/Sam/Paul need to take a look. 
-ElementDependencyGraph.CycleTest1
-ElementDependencyGraph.ChangeDepTest
-ChangeSummaryTestFixture.RelationshipChangesFromCurrentTransaction
-ComponentModelTest.SimulateDeveloperAndClient
-ComponentModelTest.SimulateDeveloperAndClientWithNestingSingleton
-ComponentModelTest.SimulateDeveloperAndClientWithNesting
-ImportTest.ImportGroups
-ImportTest.ImportElementsWithAuthorities
-ImportTest.ImportElementsWithDependencies
-SchemaImportTest.SelectAfterImport
-
-

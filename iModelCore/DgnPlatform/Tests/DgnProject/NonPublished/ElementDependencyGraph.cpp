@@ -110,7 +110,7 @@ END_UNNAMED_NAMESPACE
 //---------------------------------------------------------------------------------------
 BETEST_TC_SETUP(ElementDependencyGraph) 
     {
-    ScopedDgnHost tempHost(ScopedDgnHost::Options::DisableRepositoryManager);
+    ScopedDgnHost tempHost;
     ElementDependencyGraph::s_seedFileInfo = DgnDbTestUtils::GetSeedDb(DgnDbTestUtils::SeedDbId::OneSpatialModel, DgnDbTestUtils::SeedDbOptions(true, true));
     }
 
@@ -185,7 +185,7 @@ static bvector<ECInstanceId>::const_iterator findRelId(bvector<ECInstanceId> con
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementDependencyGraph::ElementDependencyGraph() : m_host(ScopedDgnHost::Options::DisableRepositoryManager)
+ElementDependencyGraph::ElementDependencyGraph()
     {
     // Must register my domain whenever I initialize a host
     DgnPlatformTestDomain::Register();
