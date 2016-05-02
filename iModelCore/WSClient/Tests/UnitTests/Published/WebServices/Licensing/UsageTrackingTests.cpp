@@ -24,7 +24,7 @@ void UsageTrackingTests::SetUp ()
 
 void UsageTrackingTests::TearDown ()
     {
-    UsageTracking::Uninintialize ();
+    UsageTracking::Uninitialize ();
     }
 
 TEST_F (UsageTrackingTests, PostSingleUsage)
