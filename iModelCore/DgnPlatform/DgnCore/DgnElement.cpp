@@ -606,38 +606,6 @@ GeometrySource3dCP DgnElement::ToGeometrySource3d() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GeometryStream::WriteGeometryStreamAndStep(SnappyToBlob& snappy, DgnDbR dgnDb, Utf8CP table, Utf8CP colname, uint64_t rowId, Statement& stmt, int stmtcolidx) const
-    {
-    snappy.Init();
-    if (0 < GetSize())
-        {
-        GeomBlobHeader header(*this);
-        snappy.Write((Byte const*) &header, sizeof(header));
-        snappy.Write(GetData(), GetSize());
-        }
-
-    uint32_t zipSize = snappy.GetCompressedSize();
-    if (0 < zipSize)
-        {
-        if (1 == snappy.GetCurrChunk())
-            stmt.BindBlob(stmtcolidx, snappy.GetChunkData(0), zipSize, Statement::MakeCopy::No);
-        else
-            stmt.BindZeroBlob(stmtcolidx, zipSize); // more than one chunk in geom stream
-        }
-
-    if (BE_SQLITE_DONE != stmt.Step())
-        return DgnDbStatus::WriteError;
-
-    if (1 >= snappy.GetCurrChunk())
-        return DgnDbStatus::Success;
-
-    StatusInt status = snappy.SaveToRow(dgnDb, table, colname, rowId);
-    return SUCCESS != status ? DgnDbStatus::WriteError : DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/15
-+---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus GeometryStream::ReadGeometryStream(SnappyFromMemory& snappy, DgnDbR dgnDb, void const* blob, int blobSize)
     {
     if (0 == blobSize && nullptr == blob)
@@ -2791,20 +2759,26 @@ DgnDbStatus GeometricElement::_BindUpdateParams(ECSqlStatement& stmt)
 DgnDbStatus GeometricElement::BindParams(ECSqlStatement& stmt)
     {
     stmt.BindId(stmt.GetParameterIndex(GEOM_Category), m_categoryId);
+    return m_geom.BindGeometryStream(m_multiChunkGeomStream, GetDgnDb().Elements().GetSnappyTo(), stmt, GEOM_GeometryStream);
+    }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus GeometryStream::BindGeometryStream(bool& multiChunkGeometryStream, SnappyToBlob& snappyTo, ECSqlStatement& stmt, Utf8CP parameterName) const
+    {
     // Compress the serialized GeomStream
-    m_multiChunkGeomStream = false;
-    SnappyToBlob& snappyTo = GetDgnDb().Elements().GetSnappyTo();
+    multiChunkGeometryStream = false;
     snappyTo.Init();
 
-    if (0 < m_geom.GetSize())
+    if (0 < GetSize())
         {
-        GeomBlobHeader header(m_geom);
+        GeomBlobHeader header(*this);
         snappyTo.Write((Byte const*)&header, sizeof(header));
-        snappyTo.Write(m_geom.GetData(), m_geom.GetSize());
+        snappyTo.Write(GetData(), GetSize());
         }
 
-    auto geomIndex = stmt.GetParameterIndex(GEOM_GeometryStream);
+    auto geomIndex = stmt.GetParameterIndex(parameterName);
     uint32_t zipSize = snappyTo.GetCompressedSize();
     if (0 < zipSize)
         {
@@ -2817,7 +2791,7 @@ DgnDbStatus GeometricElement::BindParams(ECSqlStatement& stmt)
         else
             {
             // More than one chunk in geom stream. Avoid expensive alloc+copy by deferring writing geom stream until ECSqlStatement executes.
-            m_multiChunkGeomStream = true;
+            multiChunkGeometryStream = true;
             stmt.BindNull(geomIndex);
             }
         }
@@ -3081,9 +3055,15 @@ DgnDbStatus GeometricElement::WriteGeomStream() const
         return DgnDbStatus::Success;
 
     m_multiChunkGeomStream = false;
+    DgnDbR db = GetDgnDb();
+    return GeometryStream::WriteGeometryStream(db.Elements().GetSnappyTo(), db, GetElementId(), _GetGeometryColumnTableName(), GEOM_GeometryStream);
+    }
 
-    DgnElements& pool = GetDgnDb().Elements();
-    SnappyToBlob& snappyTo = pool.GetSnappyTo();
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus GeometryStream::WriteGeometryStream(SnappyToBlob& snappyTo, DgnDbR db, DgnElementId elementId, Utf8CP tableName, Utf8CP columnName) const
+    {
     if (1 >= snappyTo.GetCurrChunk())
         {
         BeAssert(false);    // Somebody overwrote our data.
@@ -3092,17 +3072,19 @@ DgnDbStatus GeometricElement::WriteGeomStream() const
 
     // SaveToRow() requires a blob of the required size has already been allocated in the blob column.
     // Ideally we would do this in BindTo(), but ECSql does not support binding a zero blob.
-    Utf8CP tableName = _GetGeometryColumnTableName();
     Utf8String sql("UPDATE ");
     sql.append(tableName);
-    sql.append(" SET " GEOM_GeometryStream "=? WHERE ElementId=?");
-    CachedStatementPtr stmt = pool.GetStatement(sql.c_str());
-    stmt->BindId(2, GetElementId());
+    sql.append(" SET ");
+    sql.append(columnName);
+    sql.append("=? WHERE ElementId=?");
+
+    CachedStatementPtr stmt = db.Elements().GetStatement(sql.c_str());
+    stmt->BindId(2, elementId);
     stmt->BindZeroBlob(1, snappyTo.GetCompressedSize());
     if (BE_SQLITE_DONE != stmt->Step())
         return DgnDbStatus::WriteError;
 
-    StatusInt status = snappyTo.SaveToRow(GetDgnDb(), tableName, GEOM_GeometryStream, GetElementId().GetValue());
+    StatusInt status = snappyTo.SaveToRow(db, tableName, columnName, elementId.GetValue());
     return SUCCESS == status ? DgnDbStatus::Success : DgnDbStatus::WriteError;
     }
 
@@ -3121,7 +3103,7 @@ DgnDbStatus GeometricElement::InsertGeomStream() const
     GeometryStreamIO::Collection(m_geom.GetData(), m_geom.GetSize()).GetGeometryPartIds(parts, db);
     for (DgnGeometryPartId const& partId : parts)
         {
-        if (BentleyStatus::SUCCESS != db.GeometryParts().InsertElementGeomUsesParts(GetElementId(), partId))
+        if (BentleyStatus::SUCCESS != DgnGeometryPart::InsertElementGeomUsesParts(db, GetElementId(), partId))
             status = DgnDbStatus::WriteError;
         }
 
@@ -3174,7 +3156,7 @@ DgnDbStatus GeometricElement::UpdateGeomStream() const
 
     for (DgnGeometryPartId const& partId : partsToAdd)
         {
-        if (BentleyStatus::SUCCESS != db.GeometryParts().InsertElementGeomUsesParts(eid, partId))
+        if (BentleyStatus::SUCCESS != DgnGeometryPart::InsertElementGeomUsesParts(db, eid, partId))
             status = DgnDbStatus::WriteError;
         }
 

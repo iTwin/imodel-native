@@ -14,41 +14,47 @@
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
+namespace dgn_ElementHandler {struct GeometryPart;};
+
 //=======================================================================================
 //! A DgnGeometryPart stores geometry that can be shared between multiple elements.
 //! Use the GeometryBuilder to create the shared geometry.
 //! @see DgnGeometryParts
 //! @ingroup GROUP_Geometry
 //=======================================================================================
-struct DgnGeometryPart : RefCountedBase, ICodedEntity
+struct DgnGeometryPart : DictionaryElement
 {
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_GeometryPart, DictionaryElement);
+    friend struct dgn_ElementHandler::GeometryPart;
+
 //__PUBLISH_SECTION_END__
-    friend struct DgnGeometryParts;
     friend struct DgnImportContext;
     friend struct GeometryBuilder;
 
 //__PUBLISH_SECTION_START__
 private:
-    DgnDbR              m_db;
-    DgnGeometryPartId   m_id;       //!< Id of this geometry part.  Invalid until DgnGeometryParts::InsertGeometryPart is called or part is read from the DgnDb.
     GeometryStream      m_geometry; //!< Geometry of part
     ElementAlignedBox3d m_bbox;     //!< Bounding box of part geometry
-    DgnCode             m_code;     //!< Uniquely identifies this part
+    mutable bool        m_multiChunkGeomStream = false;
 
-    DgnGeometryPart(DgnDbR db, DgnCodeCR code) : m_db(db), m_code(code) { }
+    explicit DgnGeometryPart(CreateParams const& params) : T_Super(params) { }
+    static void GetClassParams(Dgn::ECSqlClassParams& params);
+    DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& statement);
+    DgnDbStatus WriteGeometryStream();
 
-    void SetId(DgnGeometryPartId id) {m_id = id;}
-
-    virtual DgnDbR _GetDgnDb() const override final { return m_db; }
     virtual bool _SupportsCodeAuthority(DgnAuthorityCR auth) const override final { return GeometryPartAuthority::GetGeometryPartAuthorityId() == auth.GetAuthorityId(); }
     virtual DgnCode _GenerateDefaultCode() const override final { return GeometryPartAuthority::CreateEmptyCode(); }
-    virtual DgnCode const& _GetCode() const override final { return m_code; }
-    virtual DgnDbStatus _SetCode(DgnCode const& code) override final { m_code = code; return DgnDbStatus::Success; }
-    virtual DgnGeometryPartCP _ToGeometryPart() const override final { return this; }
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement&) override;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement&) override;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _InsertInDb();
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _UpdateInDb();
+
 protected:
     //! Only GeometryBuilder should have write access to the GeometryStream...
     GeometryStreamR GetGeometryStreamR() {return m_geometry;}
     void SetBoundingBox(ElementAlignedBox3dCR box) {m_bbox = box;}
+
 public:
     //! Create a DgnGeometryPart
     //! @see DgnGeometryParts::InsertGeometryPart
@@ -56,7 +62,7 @@ public:
 
     //! Get the persistent Id of this DgnGeometryPart.
     //! @note Id will be invalid if not yet persisted.
-    DgnGeometryPartId GetId() const {return m_id;}
+    DgnGeometryPartId GetId() const {return DgnGeometryPartId(GetElementId().GetValue());}
 
     //! Get the geometry for this part (part local coordinates)
     GeometryStreamCR GetGeometryStream() const {return m_geometry;}
@@ -66,6 +72,32 @@ public:
 
     //! Create a DgnCode suitable for assigning to a DgnGeometryPart
     static DgnCode CreateCode(Utf8StringCR nameSpace, Utf8StringCR name) { return GeometryPartAuthority::CreateGeometryPartCode(nameSpace, name); }
+
+    //! Looks up a DgnGeometryPartId by its code.
+    DGNPLATFORM_EXPORT static DgnGeometryPartId QueryGeometryPartId(DgnCode const& code, DgnDbR db);
+
+    //! Query the range of a DgnGeometryPart by ID.
+    //! @param[out] range On successful return, holds the DgnGeometryPart's range
+    //! @param[in] db The DgnDb to query
+    //! @param[in] geomPartId The ID of the DgnGeometryPart to query
+    //! @return SUCCESS if the range was retrieved, or else ERROR if e.g. no DgnGeometryPart exists with the specified ID
+    DGNPLATFORM_EXPORT static BentleyStatus QueryGeometryPartRange(DRange3dR range, DgnDbR db, DgnGeometryPartId geomPartId);
+
+    //! Insert the ElementGeomUsesParts relationship between an element and the geom parts it uses.
+    //! @note Most apps will not need to call this directly.
+    //! @private
+    DGNPLATFORM_EXPORT static BentleyStatus InsertElementGeomUsesParts(DgnDbR db, DgnElementId elementId, DgnGeometryPartId geomPartId);
+};
+
+namespace dgn_ElementHandler
+{
+    //! @private
+    struct GeometryPart : Element
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_GeometryPart, DgnGeometryPart, GeometryPart, Element, DGNPLATFORM_EXPORT);
+    protected:
+        virtual void _GetClassParams(Dgn::ECSqlClassParams& params) override {T_Super::_GetClassParams(params); DgnGeometryPart::GetClassParams(params);}
+    };
 };
 
 END_BENTLEY_DGN_NAMESPACE

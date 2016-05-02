@@ -2704,7 +2704,7 @@ void GeometryStreamIO::Debug(IDebugOutput& output, GeometryStreamCR stream, DgnD
         {
         for (DgnGeometryPartId partId : parts)
             {
-            DgnGeometryPartPtr partGeometry = db.GeometryParts().LoadGeometryPart(partId);
+            DgnGeometryPartCPtr partGeometry = db.Elements().Get<DgnGeometryPart>(partId);
 
             if (!partGeometry.IsValid())
                 continue;
@@ -2730,7 +2730,7 @@ void GeometryStreamIO::Debug(IDebugOutput& output, GeometryStreamCR stream, DgnD
                 continue;
                 }
 
-            DgnGeometryPartPtr partGeom = iter.GetGeometryPartPtr();
+            DgnGeometryPartCPtr partGeom = iter.GetGeometryPartCPtr();
 
             if (!partGeom.IsValid())
                 continue;
@@ -3618,7 +3618,7 @@ Render::GraphicPtr GeometrySource::_StrokeHit(ViewContextR context, HitDetailCR 
                     break; // Keep going, want to draw all matching geometry (ex. multi-symb BRep is Polyface per-symbology)...
                     }
 
-                DgnGeometryPartPtr geomPart = iter.GetGeometryPartPtr();
+                DgnGeometryPartCPtr geomPart = iter.GetGeometryPartCPtr();
 
                 if (!geomPart.IsValid())
                     return nullptr; // Shouldn't happen...
@@ -4260,7 +4260,7 @@ bool GeometryBuilder::Append(DgnGeometryPartId geomPartId, TransformCR geomToEle
         return false; // geomToElement must be relative to an already defined placement (i.e. not computed placement from CreateWorld)...
 
     DRange3d partRange;
-    if (SUCCESS != m_dgnDb.GeometryParts().QueryGeometryPartRange(partRange, geomPartId))
+    if (SUCCESS != DgnGeometryPart::QueryGeometryPartRange(partRange, m_dgnDb, geomPartId))
         return false; // part probably doesn't exist...
 
     if (!geomToElement.IsIdentity())
