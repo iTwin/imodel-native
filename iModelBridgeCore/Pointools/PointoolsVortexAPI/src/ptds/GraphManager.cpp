@@ -215,11 +215,14 @@ LRESULT CALLBACK Graph::windowMessageHandler(HWND hWnd, UINT Msg, WPARAM wParam,
 
 	case WM_PAINT:
 
+
+#ifdef HAVE_GDIPLUS
 		hDC = BeginPaint(hWnd, &ps);
 
 		graphManager.draw(hWnd, hDC, ps);
 
 		EndPaint(hWnd, &ps);
+#endif
 
 		break;
 
@@ -237,6 +240,7 @@ LRESULT CALLBACK Graph::windowMessageHandler(HWND hWnd, UINT Msg, WPARAM wParam,
 
 void Graph::createWindow(const wchar_t *windowName, int posX, int posY, int width, int height)
 {
+#ifdef HAVE_GDIPLUS
 	PTRMI::MutexScope	mutexScope(mutex, GRAPH_MUTEX_TIMEOUT);
 	if(mutexScope.isLocked() == false)
 		return;
@@ -280,7 +284,7 @@ void Graph::createWindow(const wchar_t *windowName, int posX, int posY, int widt
 //	GdiplusShutdown(gdiplusToken);
 
 //	return static_cast<int>(Msg.wParam);
-
+#endif
 }
 
 
@@ -424,6 +428,7 @@ bool Graph::calculateEntityFrustum(GraphEntity *entity, Vector2d &frustumMin, Ve
 
 }
 
+#ifdef HAVE_GDIPLUS
 void Graph::drawAxisLines(HWND hWnd, HDC hDC, Gdiplus::Graphics &graphics, unsigned int windowWidth, unsigned int windowHeight)
 {
 	PTRMI::MutexScope	mutexScope(mutex, GRAPH_MUTEX_TIMEOUT);
@@ -535,7 +540,7 @@ bool Graph::draw(HWND hWnd, HDC hDC, PAINTSTRUCT &ps)
 
 	return result;
 }
-
+#endif // HAVE_GDIPLUS
 
 
 
@@ -814,7 +819,7 @@ bool GraphManager::addGraph(Graph *graph)
 	return true;
 }
 
-
+#ifdef HAVE_GDIPLUS
 void GraphManager::draw(HWND hWnd, HDC hDC, PAINTSTRUCT &ps)
 {
 	PTRMI::MutexScope	mutexScope(mutex, GRAPH_MUTEX_TIMEOUT);
@@ -829,6 +834,7 @@ void GraphManager::draw(HWND hWnd, HDC hDC, PAINTSTRUCT &ps)
 	}
 
 }
+#endif
 
 
 void GraphManager::update(void)

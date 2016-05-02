@@ -11,10 +11,6 @@
 #include <pt/parametermap.h>
 #include <ptfs/filepath.H>
 
-#ifdef WIN32
-#include <windows.h>
-#endif
-
 using namespace pt;
 using namespace ptapp;
 

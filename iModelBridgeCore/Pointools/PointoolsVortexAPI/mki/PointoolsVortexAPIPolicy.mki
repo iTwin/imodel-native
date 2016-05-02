@@ -26,10 +26,6 @@ pointoolsVortexAPIVendorAPI     = $(OutBuildContexts)PointoolsVortexAPI/VendorAP
 nameToDefine = __PointoolsVortexAPI_BUILD__
 %include cdefapnd.mki
 
-nameToDefine = _SILENCE_STDEXT_HASH_DEPRECATION_WARNINGS
-%include cdefapnd.mki
-
-
 dirToSearch=$(PointoolsVortexAPIInclude)
 %include cincapnd.mki
 
@@ -43,12 +39,8 @@ dirToSearch=$(pointoolsVortexAPIVendorAPI)OpenGLExt
 dirToSearch=$(pointoolsVortexAPIVendorAPI)wildmagic/core
 %include cincapnd.mki
 
-#dirToSearch=$(PointoolsLibsVendorAPI)
-#%include cincapnd.mki
-
 HAVE_PERMISSION_TO_COMPILE_AT_W3    = 1
 #warnLevel = -W1
-NO_LEAN_AND_MEAN=1
 BUILD_NO_STACK_CHECK=1
 
 #NOSTRICT=1
@@ -73,5 +65,3 @@ CCompOpts + -D"DATATREE_NO_PARAMMAP"
 CCompOpts + -D"GLEW_STATIC"
 CCompOpts + -D"POINTOOLS_PTRMI_PIPE_MANAGER_EXT"
 CCompOpts + -D"VORTEX_OBJECTS_API"
-CCompOpts + -D"POINTOOLS_API"
-#CCompOpts + -wd4005							# Ignore macro redefinition warnings (conflicts between Boost and Microsoft librairies)

@@ -2,8 +2,10 @@
 
 #include <Windows.h>
 
+#ifdef HAVE_GDIPLUS
 #include <gdiplus.h>
 #pragma comment (lib,"Gdiplus.lib")
+#endif
 
 #include <vector>
 #include <list>
@@ -295,8 +297,6 @@ namespace ptds
 		void					setExtentsMax					(Vector2d &maximum)											{extentsMax = maximum;}
 		Vector2d				getExtentsMax					(void)														{return extentsMax;}
 
-		virtual void			draw							(HWND hWnd, HDC hDC, Graph &graph, Gdiplus::Graphics &graphics, unsigned int &entityCounter, unsigned int windowWidth, unsigned int windowHeight, Vector2d &frustumMin, Vector2d &frustumMax, Vector2d &offset, Vector2d &scalar)	{}
-
 		virtual void			calculateMinMax					(Vector2d &minimum, Vector2d &maximum)						{}
 
 		void					setPreserveAspectRatioEnabled	(bool enabled)												{preserveAspectRatioEnabled = enabled;}
@@ -304,7 +304,10 @@ namespace ptds
 
 		virtual void			updateRandom					(void)														{}
 
-		virtual void			drawEntityLabel					(HWND hWnd, HDC hDC, Graph &graph, Gdiplus::Graphics &graphics, unsigned int entityCounter, unsigned int windowWidth, unsigned int windowHeight, Vector2d &frustumMin, Vector2d &frustumMax, Vector2d &offset, Vector2d &scalar);
+#ifdef HAVE_GDIPLUS
+        virtual void			draw                            (HWND hWnd, HDC hDC, Graph &graph, Gdiplus::Graphics &graphics, unsigned int &entityCounter, unsigned int windowWidth, unsigned int windowHeight, Vector2d &frustumMin, Vector2d &frustumMax, Vector2d &offset, Vector2d &scalar) {}
+        virtual void			drawEntityLabel					(HWND hWnd, HDC hDC, Graph &graph, Gdiplus::Graphics &graphics, unsigned int entityCounter, unsigned int windowWidth, unsigned int windowHeight, Vector2d &frustumMin, Vector2d &frustumMax, Vector2d &offset, Vector2d &scalar);
+#endif
 	};
 
 
@@ -370,10 +373,12 @@ namespace ptds
 
 		void							updateRandom					(void);
 
+#ifdef HAVE_GDIPLUS
 		void							draw							(HWND hWnd, HDC hDC, Graph &graph, Gdiplus::Graphics &graphics, unsigned int &entityCounter, unsigned int windowWidth, unsigned int windowHeight, Vector2d &frustumMin, Vector2d &frustumMax, Vector2d &offset, Vector2d &scalar);
 		void							drawAxisLines					(HWND hWnd, HDC hDC, Graph &graph, Gdiplus::Graphics &graphics, unsigned int windowWidth, unsigned int windowHeight, Vector2d &frustumMin, Vector2d &frustumMax, Vector2d &offset, Vector2d &scalar);
 		void							drawAxisText					(HWND hWnd, HDC hDC, Graph &graph, Gdiplus::Graphics &graphics, unsigned int entityCounter, unsigned int windowWidth, unsigned int windowHeight, Vector2d &frustumMin, Vector2d &frustumMax, Vector2d &offset, Vector2d &scalar);
 		virtual void					drawEntityLabel					(HWND hWnd, HDC hDC, Graph &graph, Gdiplus::Graphics &graphics, unsigned int entityCounter, unsigned int windowWidth, unsigned int windowHeight, Vector2d &frustumMin, Vector2d &frustumMax, Vector2d &offset, Vector2d &scalar);
+#endif
 	};
 
 
@@ -430,7 +435,9 @@ namespace ptds
 		unsigned int			getWindowWidth				(void)					{return windowWidth;}
 		unsigned int			getWindowHeight				(void)					{return windowHeight;}
 
+#ifdef HAVE_GDIPLUS
 		void					drawAxisLines				(HWND hWnd, HDC hDC, Gdiplus::Graphics &graphics, unsigned int windowWidth, unsigned int windowHeight);
+#endif
 
 		void					setWindowTimer				(unsigned int timer)	{windowTimer = timer;}
 		unsigned int			getWindowTimer				(void)					{return windowTimer;}
@@ -477,7 +484,9 @@ namespace ptds
 		void					calculateMinMax				(Vector2d &minimum, Vector2d &maximum);
 
 		void					createWindow				(const wchar_t *windowName, int posX, int posY, int width, int height);
+#ifdef HAVE_GDIPLUS
 		bool					draw						(HWND hWnd, HDC hDC, PAINTSTRUCT &ps);
+#endif
 
 		bool					calculateGraphFrustum		(Vector2d &frustumMin, Vector2d &frustumMax, Vector2d &offset, Vector2d &scalar);
 		bool					calculateEntityFrustum		(GraphEntity *entity, Vector2d &frustumMin, Vector2d &frustumMax, Vector2d &offset, Vector2d &scalar);
@@ -520,7 +529,9 @@ namespace ptds
 		Graph		*	getGraph				(Index graph);
 		Graph		*	getGraphWithWnd			(HWND hWnd);
 
+#ifdef HAVE_GDIPLUS
 		void			draw					(HWND hWnd, HDC hDC, PAINTSTRUCT &ps);
+#endif
 
 		void			update					(void);
 
@@ -1173,7 +1184,7 @@ namespace ptds
 		return r;
 	}
 
-
+#ifdef HAVE_GDIPLUS
 	inline void GraphEntity::drawEntityLabel(HWND hWnd, HDC hDC, Graph &graph, Gdiplus::Graphics &graphics, unsigned int entityCounter, unsigned int windowWidth, unsigned int windowHeight, Vector2d &frustumMin, Vector2d &frustumMax, Vector2d &offset, Vector2d &scalar)
 	{
 		PTRMI::MutexScope mutexScope(mutex, GRAPH_ENTITY_MUTEX_TIMEOUT);
@@ -1397,7 +1408,7 @@ namespace ptds
 
 		endStyle();
 	}
-
+#endif // HAVE_GDIPLUS
 
 	template<typename T, unsigned int dim>
 	inline VectorND<T, dim>::VectorND(T *init)
