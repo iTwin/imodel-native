@@ -12,6 +12,8 @@
 
 %include mdl.mki
 
+baseDir             = $(_MakeFilePath)
+
 %if $(TARGET_PLATFORM)!="Android"
     %error This makefile should be used only when TARGET_PLATFORM is Android
 %endif
@@ -47,7 +49,7 @@ always:
     %return
 %endif
 
-logFile = ${ANDROIDJUNIT_OUTPUT_DIR}/RunJUnit.log
+logFile = ${ANDROIDJUNIT_OUTPUT_DIR}/RunAndroidJUnitTest.log
 
 ${ANDROIDJUNIT_OUTPUT_DIR}/logcat$(scriptExt): $(_makefilespec)
     >$@
@@ -65,17 +67,20 @@ adb logcat BeTestX:* doOpenChoice:* ICU_DATA_FILE:* TestRunner:I BeSQLiteDb:* Be
     #$(adbCmd) -d install -r ${ANDROIDJUNITPROJ}/project/app/build/outputs/apk/Test-debug-androidTest-unaligned.apk
 
 always:
-    call $(ANDROIDJUNITPROJ)Scripts/installApk$(scriptExt)
-    call $(adbCmd) shell am instrument -w com.bentley.unittest\/com.bentley.unittest.BeInstrumentationTestRunner
+    $(ANDROIDJUNITPROJ)Scripts/installApk$(scriptExt)
+    python $(baseDir)RunAndroidJUnitTest.py $(logFile)
+      
+# $(adbCmd) shell am instrument -w com.bentley.unittest\/com.bentley.unittest.BeInstrumentationTestRunner
 
+# *** NEEDS WORK: having failures does not break the build!?
 
 # *** NEEDS WORK: bentleybuildmake.exe never returns unless we kill off the adb process.
-%if defined(winNT)
-always:
-    -taskkill \/f \/im adb.exe
-    -taskkill \/f \/im adb.exe
-    -taskkill \/f \/im adb.exe
-%endif
+#%if defined(winNT)
+#always:
+#    -taskkill \/f \/im adb.exe
+#    -taskkill \/f \/im adb.exe
+#    -taskkill \/f \/im adb.exe
+#%endif
 
 %message To run a single unit test:
 %message      $(ANDROIDJUNITPROJ)Scripts/runOneTest$(scriptExt)
