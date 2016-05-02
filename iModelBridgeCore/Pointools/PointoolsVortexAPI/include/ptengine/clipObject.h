@@ -7,7 +7,7 @@
 //----------------------------------------------------------------------------
 #pragma once
 
-#include <pt/os.h>
+
 #include <pt/typedefs.h>
 #include <ptapi/PointoolsVortexAPI.h>
 

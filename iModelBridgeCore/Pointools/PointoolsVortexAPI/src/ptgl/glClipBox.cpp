@@ -1,5 +1,5 @@
 #include "PointoolsVortexAPIInternal.h"
-#include <pt\os.h>
+
 #include <ptgl\glExtensions.h>
 #include <ptgl\glClipBox.h>
 

@@ -12,6 +12,9 @@
  */
 
 #include "PointoolsVortexAPIInternal.h"
+
+#ifdef NEEDS_WORK_VORTEX_DGNDB
+
 #include <pt/ptUnicode.h>
 #include <pt/debugAssert.h>
 #ifdef WIN32
@@ -309,3 +312,4 @@ void setAssertionHook(AssertionHook hook) {
 }; // namespace
 
 
+#endif

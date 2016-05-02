@@ -1,6 +1,6 @@
 #ifndef POINTOOLS_CLOUD_SELECTION_H
 #define POINTOOLS_CLOUD_SELECTION_H
-#include <pt/os.h>
+
 #include <ptengine/ptengine_api.h>
 #include <ptcloud2/voxel.h>
 #include <pt/rect.h>

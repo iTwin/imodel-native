@@ -10,7 +10,6 @@
 #include "PointoolsVortexAPIInternal.h"
 #include <map>
 
-#include <pt\os.h>
 
 #include <gl\glew.h>
 #include <ptcloud2\defs.h>

@@ -1,5 +1,5 @@
 #include "PointoolsVortexAPIInternal.h"
-#include <pt/os.h>
+
 #include <gl/glew.h>
 #include <ptedit/frustumfilter.h>
 #include <Winbase.h>

@@ -1,5 +1,5 @@
 #include "PointoolsVortexAPIInternal.h"
-#include <pt/os.h>
+
 #include <ptcloud2/Voxel.h>
 
 #include <ptengine/VisibilityEngine.h>

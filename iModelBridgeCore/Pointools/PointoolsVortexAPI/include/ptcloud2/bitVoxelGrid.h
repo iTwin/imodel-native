@@ -1,5 +1,5 @@
 #pragma once
-#include <pt/os.h>
+
 #include <ptcloud2/bitvector.h>
 #include <pt/boundingbox.h>
 

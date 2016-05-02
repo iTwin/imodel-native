@@ -5,7 +5,7 @@
 //May 14, 2002
 //*******************************************************************
 #include "PointoolsVortexAPIInternal.h"
-#include <pt/os.h>
+
 #include <GL/gl.h>
 
 #include <string>

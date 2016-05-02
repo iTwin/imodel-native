@@ -1,4 +1,4 @@
-#include <pt/os.h>
+
 #include <iostream>
 #include <pt/scenegraph.h>
 #include <ptengine/pointsSelect.h>

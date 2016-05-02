@@ -9,8 +9,6 @@
 #include "PointoolsVortexAPIInternal.h"
 #include <map>
 
-#include <pt\os.h>
-
 #include <ptcloud2\pointcloud.h>
 #include <ptcloud2\buildindex.h>
 

@@ -1,5 +1,4 @@
 #include "PointoolsVortexAPIInternal.h"
-#include <pt\os.h>
 #include <pt\geomtypes.h>
 
 #include <gl\gl.h>

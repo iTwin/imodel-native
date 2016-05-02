@@ -1,5 +1,11 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: src/pt/debug.cpp $
+|
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
 
-//file debug.cpp
 #ifdef _DEBUG
 #include <stdio.h>
 #include <stdarg.h>

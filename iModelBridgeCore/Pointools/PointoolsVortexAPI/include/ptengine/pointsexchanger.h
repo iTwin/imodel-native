@@ -1,6 +1,7 @@
 #ifndef POINTOOLS_PCLOUD2_POINTS_EXCHANGER
 #define POINTOOLS_PCLOUD2_POINTS_EXCHANGER
 
+#ifdef NEEDS_WORK_VORTEX_DGNDB
 #include <vector>
 #include <string>
 #include <map>
@@ -35,4 +36,5 @@ namespace pointsengine
 	};
 }
 
+#endif
 #endif

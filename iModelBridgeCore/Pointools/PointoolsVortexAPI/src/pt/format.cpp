@@ -39,46 +39,6 @@ std::string __cdecl format(const char* fmt,...) {
     return result;
 }
 
-#if defined(WIN32) &&  (_MSC_VER < 1300)
-// MSVC 6 uses the pre-C99 vsnprintf, which has different behavior
-std::string vformat(const char *fmt, va_list argPtr) {
-    // We draw the line at a 1MB string.
-    const int maxSize = 1000000;
-
-    // If the string is less than 161 characters,
-    // allocate it on the stack because this saves
-    // the malloc/free time.
-    const int bufSize = 161;
-	char stackBuffer[bufSize];
-
-    int attemptedSize = bufSize - 1;
-
-    int numChars = vsnprintf(stackBuffer, attemptedSize, fmt, argPtr);
-
-    if (numChars >= 0) {
-        // Got it on the first try.
-        return std::string(stackBuffer);
-    }
-
-    // Now use the heap.
-    char* heapBuffer = NULL;
-
-    while ((numChars == -1) && (attemptedSize < maxSize)) {
-        // Try a bigger size
-        attemptedSize *= 2;
-        heapBuffer = (char*)realloc(heapBuffer, attemptedSize + 1);
-        numChars = vsnprintf(heapBuffer, attemptedSize, fmt, argPtr);
-    }
-
-    std::string result(heapBuffer);
-
-    free(heapBuffer);
-
-    return result;
-
-}
-
-#else
 
 // glibc 2.1 and MSVC 7 have been updated to the C99 standard
 std::string vformat(const char* fmt, char* argPtr) {
@@ -113,7 +73,6 @@ std::string vformat(const char* fmt, char* argPtr) {
     }
 }
 
-#endif
 
 } // namespace
 

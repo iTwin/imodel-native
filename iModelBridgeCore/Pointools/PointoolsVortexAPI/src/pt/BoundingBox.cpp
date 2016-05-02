@@ -9,11 +9,6 @@
 #include <pt/BoundingBox.h>
 //#include <MGC/MgcIntr3DLinBox.h>
 
-#ifdef WIN32
-#include <windows.h>
-#include <gl\gl.h>
-#endif
-
 using namespace pt;
 
 // generates compile error

@@ -1,5 +1,6 @@
 #include "PointoolsVortexAPIInternal.h"
-#include <pt\os.h>
+
+#ifdef NEEDS_WORK_VORTEX_DGNDB
 #include <ptengine\pointsexchanger.h>
 
 using namespace pointsengine;
@@ -198,3 +199,4 @@ void PointsExchanger::exportTypes(std::vector<ptds::FileType> &ftypes)
 		}
 	}
 }
+#endif

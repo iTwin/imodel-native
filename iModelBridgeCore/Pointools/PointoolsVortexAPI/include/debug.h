@@ -1,6 +1,11 @@
+
+
+
 // file debug.h
 #ifndef __DEBUG_H__
 #define __DEBUG_H__
+
+#ifdef NEEDS_WORK_VORTEX_DGNDB
 #ifdef _DEBUG
 void _trace(char *fmt, ...);
 #define ASSERT(x) {if(!(x)) _asm{int 0x03}}
@@ -14,6 +19,8 @@ void _trace(char *fmt, ...);
 #else
 inline void _trace(LPCSTR fmt, ...) { }
 #define TRACE  1 ? (void)0 : _trace
+#endif
+
 #endif
 #endif // __DEBUG_H__
 

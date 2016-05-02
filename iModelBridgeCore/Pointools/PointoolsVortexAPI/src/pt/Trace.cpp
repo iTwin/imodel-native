@@ -1,5 +1,5 @@
 #include "PointoolsVortexAPIInternal.h"
-#include <pt/os.h>
+
 #include <pt/trace.h>
 #include <ptapi/PointoolsVortexAPI.h>
 

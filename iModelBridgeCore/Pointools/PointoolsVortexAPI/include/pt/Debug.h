@@ -4,8 +4,7 @@
 /*  (C) 2004 Copyright Pointools Ltd, UK | All Rights Reserved				*/  
 /*--------------------------------------------------------------------------*/ 
 
-#ifndef POINTOOLS_DEBUG_H
-#define POINTOOLS_DEBUG_H
+#pragma once
 
 #ifdef _WIN32
     #include <crtdbg.h>
@@ -15,22 +14,14 @@
 #include <pt/debugAssert.h>
 
 namespace pt {
-
-#ifdef WIN32
-    /* Turn off 64-bit warnings		*/ 
-    #pragma warning( disable : 4312)
-    #pragma warning( disable : 4267)
-    #pragma warning( disable : 4311)
-#endif
-
-
+    
 /**
  Useful for debugging purposes.  Note: On windows, 
  this will helpfully return "false" for a stack pointer.
  */
 inline bool isValidHeapPointer(const void* x) {
-    #ifdef WIN32
-        return (_CrtIsValidHeapPointer(x) != 0) && (x != (void*)0xcccccccc) && (x != (void*)0xdeadbeef) && (x != (void*)0xfeeefeee);
+    #ifdef _WIN32
+        return (_CrtIsValidHeapPointer(x) != 0) && ((INT_PTR) x != (INT_PTR)0xcccccccc) && ((INT_PTR) x != (INT_PTR) 0xdeadbeef) && ((INT_PTR) x != (INT_PTR) 0xfeeefeee);
     #else
         return x != NULL;
     #endif
@@ -42,19 +33,12 @@ inline bool isValidHeapPointer(const void* x) {
  Useful for debugging purposes.
  */
 inline bool isValidPointer(const void* x) {
-    #ifdef WIN32
-        return (_CrtIsValidPointer(x, 0, true) != 0) && (x != (void*)0xcccccccc) && (x != (void*)0xdeadbeef) && (x != (void*)0xfeeefeee);
+    #ifdef _WIN32
+        return (_CrtIsValidPointer(x, 0, true) != 0) && ((INT_PTR) x != (INT_PTR) 0xcccccccc) && ((INT_PTR) x != (INT_PTR) 0xdeadbeef) && ((INT_PTR) x != (INT_PTR)0xfeeefeee);
     #else
         return x != NULL;
     #endif
 }
 
-#ifdef WIN32
-    #pragma warning( default : 4312)
-    #pragma warning( default : 4267)
-    #pragma warning( default : 4311)
-#endif
-
 }
 
-#endif

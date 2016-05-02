@@ -7,6 +7,8 @@
 
 #ifndef POINTOOLS_PLUGING_MANAGER_TEMPLATE
 #define POINTOOLS_PLUGING_MANAGER_TEMPLATE
+
+#ifdef NEEDS_WORK_VORTEX_DGNDB
 #include <pt\trace.h>
 
 #include <map>
@@ -686,3 +688,4 @@ protected:
 #undef SYM9MARGS
 #endif
 
+#endif

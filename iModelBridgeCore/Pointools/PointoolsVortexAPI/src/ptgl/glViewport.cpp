@@ -5,7 +5,7 @@
 /*  Last Updated 12 Dec 2003 Faraz Ravi										*/
 /*--------------------------------------------------------------------------*/
 #include "PointoolsVortexAPIInternal.h"
-#include <pt\os.h>
+
 
 #include <ptgl\glViewport.h>
 #include <math\matrix_math.h>

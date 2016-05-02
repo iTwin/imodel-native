@@ -11,7 +11,7 @@
 #endif
 #define COUTTRACER
 
-#include <pt/os.h>
+
 #include <ptapp/uiparser/uiparser.h>
 #include <ptui/ptui_parser.h>
 #include <ptapp/application.h>

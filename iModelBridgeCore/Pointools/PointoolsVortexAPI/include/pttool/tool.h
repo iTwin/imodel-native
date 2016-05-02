@@ -7,7 +7,7 @@
 #ifndef POINTOOLS_TOOL_BASECLASS_HEADER
 #define POINTOOLS_TOOL_BASECLASS_HEADER
 
-#include <pt\os.h>
+
 #include <pt\geomtypes.h>
 #include <pttool\pttool.h>
 #include <ptcmdppe\eventdefs.h>

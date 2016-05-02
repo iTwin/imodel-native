@@ -1,7 +1,5 @@
 #pragma once
 
-#include <windows.h>
-
 #include <ptds/FilePath.h>
 #include <ptds/DataSource.h>
 #include <ptds/DataSourceNull.h>

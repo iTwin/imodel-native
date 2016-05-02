@@ -1,5 +1,5 @@
 #include "PointoolsVortexAPIInternal.h"
-#include <pt/os.h>
+
 #define POINTOOLS_API_BUILD_DLL
 
 #ifdef _DEBUG

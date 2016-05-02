@@ -6,6 +6,9 @@
 #
 #--------------------------------------------------------------------------------------
 
+HAVE_PERMISSION_TO_COMPILE_AT_W3    = 1
+BUILD_NO_STACK_CHECK=1
+
 %include $(SrcRoot)/Pointools/PointoolsCommon/mki/PolicyCommon.mki
 %include $(SrcRoot)/Pointools/PointoolsVortexAPI/mki/PointoolsVortexAPI_Version.mki
 
@@ -26,6 +29,9 @@ pointoolsVortexAPIVendorAPI     = $(OutBuildContexts)PointoolsVortexAPI/VendorAP
 nameToDefine = __PointoolsVortexAPI_BUILD__
 %include cdefapnd.mki
 
+nameToDefine = DATATREE_NO_PARAMMAP
+%include cdefapnd.mki
+
 dirToSearch=$(PointoolsVortexAPIInclude)
 %include cincapnd.mki
 
@@ -37,9 +43,6 @@ dirToSearch=$(pointoolsVortexAPIVendorAPI)OpenGLExt
 
 dirToSearch=$(pointoolsVortexAPIVendorAPI)wildmagic/core
 %include cincapnd.mki
-
-HAVE_PERMISSION_TO_COMPILE_AT_W3    = 1
-BUILD_NO_STACK_CHECK=1
 
 CCompOpts + -DREL_V=$(REL_V)
 CCompOpts + -DMAJ_V=$(MAJ_V)
@@ -56,9 +59,6 @@ CCompOpts + -D"POINTOOLS_API"
 CCompOpts + -D"POINTOOLS_API_INCLUDE"
 CCompOpts + -D"PTENG_DELAY_LOAD"
 CCompOpts + -D"PTLANG_ENGLISH"
-CCompOpts + -D"_CRT_SECURE_NO_DEPRECATE"
-CCompOpts + -D"_CRT_NON_CONFORMING_SWPRINTFS"
-CCompOpts + -D"DATATREE_NO_PARAMMAP"
 CCompOpts + -D"GLEW_STATIC"
 CCompOpts + -D"POINTOOLS_PTRMI_PIPE_MANAGER_EXT"
 CCompOpts + -D"VORTEX_OBJECTS_API"

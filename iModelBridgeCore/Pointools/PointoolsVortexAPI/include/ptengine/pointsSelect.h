@@ -9,7 +9,7 @@
 #ifndef POINTOOLS_POINTCLOUD_SELECT_FILTER
 #define POINTOOLS_POINTCLOUD_SELECT_FILTER 1
 
-#include <pt\os.h>
+
 #include <pt\scenegraph.h>
 
 #include <ptcloud2\voxel.h>

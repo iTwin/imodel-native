@@ -10,7 +10,7 @@
 #endif
 
 #include "PointoolsVortexAPIInternal.h"
-#include <pt\os.h>
+
 
 #include <ptcmdppe\CommandPipe.h>
 #include <ptcmdppe\CmdOutput.h>

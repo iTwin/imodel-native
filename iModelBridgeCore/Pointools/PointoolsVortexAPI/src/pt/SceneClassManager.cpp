@@ -1,8 +1,8 @@
 #include "PointoolsVortexAPIInternal.h"
-#include <pt/os.h>
+
+#ifdef NEEDS_WORK_VORTEX_DGNDB
 #include <pt/sceneclassmanager.h>
 #include <iostream>
-
 
 //
 // plugins manager
@@ -34,3 +34,4 @@ int SceneClassManager::loadSceneClassManagers()
 	}
 	return s_plugins.size();
 }
+#endif

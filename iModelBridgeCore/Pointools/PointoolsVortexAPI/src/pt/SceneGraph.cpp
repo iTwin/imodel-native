@@ -6,7 +6,7 @@
 /*  Last Updated 12 Oct 2003 Faraz Ravi										*/ 
 /*--------------------------------------------------------------------------*/ 
 #include "PointoolsVortexAPIInternal.h"
-#include <pt/os.h>
+
 //#define FILE_TRACE 1
 
 #include <pt/variant.h>

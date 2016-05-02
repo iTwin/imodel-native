@@ -1,5 +1,5 @@
 #include "PointoolsVortexAPIInternal.h"
-#include <pt/os.h>
+
 #undef _VERBOSE
 
 #ifdef _VERBOSE

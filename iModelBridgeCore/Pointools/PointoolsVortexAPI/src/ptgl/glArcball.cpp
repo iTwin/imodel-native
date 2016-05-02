@@ -11,7 +11,7 @@
 #endif
 
 #include "PointoolsVortexAPIInternal.h"
-#include <pt\os.h>
+
 
 #include <ptgl\glArcball.h>
 #include <gl\gl.h>

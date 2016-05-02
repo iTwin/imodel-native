@@ -23,6 +23,14 @@
  All rights reserved.
  */
 
+#ifndef NEEDS_WORK_VORTEX_DGNDB
+
+#define debugAssert(exp)            assert(exp)
+#define debugAssertM(exp, msg)      assert(exp);
+#define alwaysAssertM(exp, msg)     assert(exp);
+
+#else
+
 #ifndef PT_DEBUGASSERT_H
 #define PT_DEBUGASSERT_H
 
@@ -212,3 +220,4 @@ void CCLASSES_API  _restoreInputGrab_();
 
 #endif
 
+#endif

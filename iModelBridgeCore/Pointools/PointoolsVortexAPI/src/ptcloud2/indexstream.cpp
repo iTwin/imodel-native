@@ -9,7 +9,6 @@
 #undef _VERBOSE
 
 #include "PointoolsVortexAPIInternal.h"
-#include <pt/os.h>
 
 #include <ptcloud2/indexstream.h>
 #include <pt/timer.h>
