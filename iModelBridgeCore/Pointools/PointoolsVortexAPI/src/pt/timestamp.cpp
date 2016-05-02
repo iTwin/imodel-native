@@ -9,7 +9,7 @@ LARGE_INTEGER QPCfreq;
 
 bool TimeStamp::initialize()
 {
-	return (bool)QueryPerformanceFrequency(&QPCfreq);
+	return QueryPerformanceFrequency(&QPCfreq) != 0;
 }
 double TimeStamp::delta_s(const TimeStamp &t0, const TimeStamp &t1)
 {

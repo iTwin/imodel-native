@@ -485,11 +485,6 @@ PTRMI::Status StreamManager::processStreamDataSourceNonStreamed(StreamDataSource
 bool StreamManager::processRequestsStreamed(StreamManagerParameters &streamManagerParameters)
 {
 	StreamManagerDataSourceSet::iterator	i;
-	StreamDataSource					*	dataSourceStream;
-	pt::TimeStamp							t0;
-	DataSourcePtr							dataSource;
-	bool									processValid;
-	bool									result;
 	StreamScheduler						*	scheduler;
 
 															// If StreamScheduler does not exist, default to a Sequential stream scheduler
@@ -843,7 +838,6 @@ void StreamManager::incrementCurrentIteration(void)
 
 bool StreamManager::addStreamedVoxel(DataSourcePtr dataSource, Voxel *voxel)
 {
-	StreamDataSource	*	streamDataSource;
 	StreamScheduler		*	streamScheduler;
 
 	if(streamScheduler = getStreamScheduler())
@@ -870,7 +864,7 @@ bool StreamManager::raceLimitStreaming(unsigned int minTimeMilliseconds)
 
 	t.tick();
 
-	int lastRefresh = testLastRefresh.delta_ms(testLastRefresh, t);
+	uint lastRefresh = testLastRefresh.delta_ms(testLastRefresh, t);
 
 	if(lastRefresh < minTimeMilliseconds)
 		return false;

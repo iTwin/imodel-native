@@ -209,9 +209,9 @@ PTRMI::Status PipeTCP::receiveMessage(void)
 			endSend();
 		}
 	}
-	catch(Status error)
+	catch(Status /*error*/)
 	{
-
+    // RB_VORTEX_TODO: do something with error???
 	}
 															// Return status
 	return status;

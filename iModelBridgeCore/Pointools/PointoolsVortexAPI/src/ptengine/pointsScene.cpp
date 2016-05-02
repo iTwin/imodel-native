@@ -217,7 +217,7 @@ void PointsScene::depthSortVoxels()
 //------------------------------------------------------------
 void PointsScene::addScene(pcloud::Scene *sc)
 {
-	int i;
+	uint i;
 	++_iteration;
 
 	/* assign the handle to the scene and the point clouds within it*/ 
@@ -385,7 +385,7 @@ void PointsScene::removeScene(pcloud::Scene *sc, bool del)
 	for (VOXELSLIST::iterator it = _voxels.begin(); it != _voxels.end(); it++)
 		voxmap.insert(VOXMAP::value_type(*it, it));
 
-	for (int i=0; i<sc->size(); i++)
+	for (uint i=0; i<sc->size(); i++)
 	{
 		if ((*sc)[i]->root())
 		{
@@ -510,7 +510,7 @@ bool PointsScene::visitVoxels(PointsVisitor *visitor, bool load)
 
 		if (visitor->scene(_scenes[s]))
 		{
-			for (uint c=0; c<scene->numObjects(); c++)
+			for (int c=0; c<scene->numObjects(); c++)
 			{
 				pcloud::PointCloud *cloud = scene->cloud(c);
 				visitor->currentCloud = cloud;
@@ -548,7 +548,7 @@ void PointsScene::visitPointClouds( PointsVisitor *visitor )
 
 		if (visitor->scene(_scenes[s]))
 		{
-			for (uint c=0; c<scene->numObjects(); c++)
+			for (int c=0; c<scene->numObjects(); c++)
 			{
 				pcloud::PointCloud *cloud = scene->cloud(c);
 				visitor->currentCloud = cloud;

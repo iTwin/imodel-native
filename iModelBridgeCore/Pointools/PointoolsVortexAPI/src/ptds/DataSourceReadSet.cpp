@@ -128,7 +128,6 @@ void DataSourceReadSet::read(PTRMI::DataBuffer &buffer)
 	DataPointer				readPosition;
 	DataSize				readSize;
 	unsigned int			t;
-	const DataSourceRead *	read;
 
 															// Get total number of reads
 	buffer >> numReads;

@@ -138,7 +138,7 @@ protected:
 	{
 		if (strcmp(match_property, property) ==0)
 		{
-			try { val = ttl::var::get<T>(v); } catch (const ttl::var::exception &e) { return 0; }
+			try { val = ttl::var::get<T>(v); } catch (const ttl::var::exception &) { return 0; }
 			return 1;
 		}
 		return 0;

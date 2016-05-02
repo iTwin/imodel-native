@@ -52,7 +52,6 @@ Status DataSourceMultiReadSet::deleteAll(void)
 
 DataSourceMultiRead *DataSourceMultiReadSet::addMultiRead(DataSourceMultiRead &multiRead)
 {
-	DataSourceReadSet *	readSet;
 	Status				status;
 	DataSize			readSize = 0;
 
@@ -281,7 +280,7 @@ timer.start();
 			}
 		}
 	}
-	catch(Status s)
+	catch(Status)
 	{
 															// If buffer was allocated locally, delete it
 		if(bufferAllocated && buffer)

@@ -54,7 +54,7 @@ public:
 	{
 		return _visibleLayersBitMask & ~SELECTED_PNT_BIT;
 	}
-	int numLayers() const { return 7; }
+	uint numLayers() const { return 7; }
 
 	void	setLayerColorAlpha( uint layerMask, float a )
 	{

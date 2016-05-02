@@ -113,8 +113,8 @@ void VertexProgram::end()
 //--------------------------------------------------------------
 bool VertexProgram::initializeContext()
 {
-	_hasVP = glewIsSupported("GL_ARB_vertex_program");
-	_hasMT = glewIsSupported("GL_ARB_multitexture");
+	_hasVP = glewIsSupported("GL_ARB_vertex_program") != 0;
+	_hasMT = glewIsSupported("GL_ARB_multitexture") != 0;
 
 	glGetIntegerv(GL_MAX_TEXTURE_UNITS_ARB, &_maxTexelUnits);	
 	glGetIntegerv(GL_MAX_PROGRAM_MATRICES_ARB, &_maxMatrices);
@@ -240,7 +240,7 @@ char* VertexProgram::loadScript()
 			do { input.get(bf[i]); }
 			while (!input.eof() && (unsigned char)bf[i++] < 0xaa && i < 128);
 			
-			if ((unsigned char)bf[i-1] < 0xaa) bf[i] = 0xaa;
+			if ((unsigned char)bf[i-1] < 0xaa) bf[i] = (char)0xaa;
 			
 			_hash_in(bf);
 			buffer.push_back(bf);

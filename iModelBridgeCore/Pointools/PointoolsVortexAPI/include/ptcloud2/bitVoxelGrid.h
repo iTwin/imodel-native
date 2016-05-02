@@ -64,7 +64,7 @@ public:
 		if (!_grid) return 0;
 
 		__int64 count = 0;
-		for (int i=0;i<(_divx*_divy*_divz);i++)
+		for (unsigned int i=0;i<(_divx*_divy*_divz);i++)
 		{
 			if (_grid[i]) count += _grid[i]->count();
 		}
@@ -74,7 +74,7 @@ public:
 	{
 		if (!_grid) return;
 
-		for (int i=0;i<(_divx*_divy*_divz);i++)
+		for (unsigned int i=0;i<(_divx*_divy*_divz);i++)
 		{
 			if (_grid[i])
 			{
@@ -188,7 +188,7 @@ public:
 		if ( y > _y + _yd) return 0;
 		if ( z > _z + _zd) return 0;
 
-		int index = getIndex( x,y,z, pnt );
+		unsigned int index = getIndex( x,y,z, pnt );
 
 		if (index >= (_divx*_divy*_divz)) return 0;
 		if (index < 0) return 0;

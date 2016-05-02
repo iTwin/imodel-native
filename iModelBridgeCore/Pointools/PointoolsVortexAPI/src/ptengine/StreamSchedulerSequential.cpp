@@ -80,7 +80,6 @@ bool StreamSchedulerSequential::processStreamHosts(StreamManagerParameters &para
 bool StreamSchedulerSequential::processStreamHost(StreamManagerParameters &params, StreamHost &streamHost)
 {
 	ptds::DataSize				voxelBudgetTotal;
-	StreamHost::NumVoxels		numVoxels;
 	ptds::DataSize				streamHostBudgetTotal;
 	bool						result;
 

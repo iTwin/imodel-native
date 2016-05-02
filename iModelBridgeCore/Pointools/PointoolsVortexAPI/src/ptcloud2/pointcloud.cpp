@@ -113,10 +113,8 @@ const Voxel* PointCloud::findContainingVoxel(const pt::vector3d &seek_pnt, pt::C
 		m.vec3_multiply_mat4(seek_pnt, pnt);
 	}	
 
-	int  point_index;
 	const Voxel* vox=0;
 	double mindist = -1;
-	double d;
 	pt::vector3d check, nr;
 
 	/*check world space bounds*/ 

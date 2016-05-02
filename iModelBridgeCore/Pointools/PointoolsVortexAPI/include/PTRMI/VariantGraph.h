@@ -40,7 +40,7 @@ template<typename VT> class Variant
 
 public:
 
-	typedef unsigned int		DefaultIntType;
+	typedef size_t		DefaultIntType;
 
 	typedef std::wstring		VariantKeyName;
 	typedef std::wstring		VariantTypeName;
@@ -49,7 +49,7 @@ public:
 
 	typedef	Variant<VT>			thisType;
 
-	typedef unsigned int		DependencyCounter;
+	typedef size_t		DependencyCounter;
 
 public:
 

@@ -53,7 +53,7 @@ Scene::Scene(IndexStream *stream, int &error, float unform_filter_spacing )
 	_metadata.audit.import_settings.spatial_filtering = unform_filter_spacing;
 
 	/* check for empty stream */ 
-	uint g;
+	int g;
 
 	bool hasPnts = false;
 	for (g=0; g<stream->numGroups(); g++)
@@ -170,11 +170,11 @@ int Scene::buildCloudGroupFromStream(SceneBuildData *buildInfo)
 /*--------------------------------------------------------------------------*/ 
 int Scene::extractCloudsFromStream(SceneBuildData *buildInfo)
 {	
-	PTTRACE_FUNC
+PTTRACE_FUNC
 
-	/* insert clouds without data or structure	*/ 
-	/* this is header data						*/ 
-	uint i,g;
+/* insert clouds without data or structure	*/
+/* this is header data						*/
+    int i, g;
 
 	std::vector<pcloud::PointCloud *> gclouds;
 
@@ -355,7 +355,7 @@ int Scene::buildPreliminaryOctree( IncNode *root, int initial_depth, int target_
 	unsigned int numMerged		= 0;
 
 
-	for (int readIterations = 0; readIterations == 0 || (numSubdivided > 0 && readIterations < maxIterations); readIterations++)
+	for (uint readIterations = 0; readIterations == 0 || (numSubdivided > 0 && readIterations < maxIterations); readIterations++)
 	{
 		bool secondRun = readIterations ? true : false;
 
@@ -391,10 +391,10 @@ int Scene::buildPreliminaryOctree( IncNode *root, int initial_depth, int target_
 
 																				// 2M,	5M,		10M,	50M,	100M,	500M,	1Bn,	10Bn	Larger
 																				// 50k, 100k,	100k,	100k,	100k,	100k,	200k,	1M,		2M
-			const unsigned int numThresholds = 8;
 
-			int thresholds[numThresholds]	= { 2e6, 5e6, 1e7, 5e7, 1e8, 5e8, 1e9, 10e9 }; 
-			int points[numThresholds + 1]	= { 5e4, 1e5, 1e5, 1e5, 1e5, 1e5, 2e5, 1e6, 2e6 };
+            const unsigned int numThresholds = 8;
+            uint64_t thresholds[numThresholds]	= { 2_M, 5_M, 10_M, 50_M, 100_M, 500_M, 1_B, 10_B };
+			uint64_t points[numThresholds + 1]	= { 50_K, 100_K, 100_K, 100_K, 100_K, 100_K, 200_K, 1_M, 2_M };
 
 			int				i;
 			unsigned int	minPointsTarget = points[numThresholds];					// Default to largest target
@@ -431,7 +431,7 @@ int Scene::readMultiPass( SceneBuildData *buildInfo )
 	buildInfo->combine = buildInfo->cloudIndex < 0 ? true : false;
 
 	/* cloud counter */ 
-	uint C;	
+	int C;	
 
 	if (buildInfo->combine)
 	{
@@ -530,11 +530,11 @@ int Scene::readMultiPass( SceneBuildData *buildInfo )
 
 	/* now need to make this node-voxel tree and attatch to point cloud						*/ 
 	root->makeLeavesVoxels(pc->voxels(), 
-		spec & PCLOUD_CLOUD_RGB, 
-		spec & PCLOUD_CLOUD_INTENSITY, 
-		spec & PCLOUD_CLOUD_NORMAL, 
-		spec & PCLOUD_CLOUD_CLASSIFICATION, 
-		spec & PCLOUD_CLOUD_ORDERED, 
+		(spec & PCLOUD_CLOUD_RGB) != 0, 
+		(spec & PCLOUD_CLOUD_INTENSITY) != 0, 
+		(spec & PCLOUD_CLOUD_NORMAL) != 0, 
+		(spec & PCLOUD_CLOUD_CLASSIFICATION) != 0, 
+		(spec & PCLOUD_CLOUD_ORDERED) != 0, 
 		(compress ? Short16 : Float32), 
 		buildInfo->stream->group()->tolerance);
 
@@ -578,11 +578,10 @@ int Scene::writePointData( SceneBuildData *buildInfo, PointCloud *pc )
 	pt::vector3d pntd, pnt1d;
 	pt::vector3s normal;
 	short intensity;
-	uint gridpos, j;
 	ubyte rgb[3];
 	ubyte classification = 0 ;
 
-	__int64 writebuffsize = 1024 * 1024 * 100;
+	uint64_t writebuffsize = 1024 * 1024 * 100;
 
 	/*do write in manageable chunks (ie < MAX_WRITE_BYTES)*/ 
 	std::queue<Voxel*> voxels;
@@ -593,7 +592,7 @@ int Scene::writePointData( SceneBuildData *buildInfo, PointCloud *pc )
 	/* check how much memory is available */ 
 	MEMORYSTATUSEX mem;
 	mem.dwLength = sizeof(MEMORYSTATUSEX);
-	__int64 aval;
+    uint64_t aval;
 	int writebuffsizeMB;
 
 	UniformFilter uniFilter;
@@ -617,8 +616,9 @@ int Scene::writePointData( SceneBuildData *buildInfo, PointCloud *pc )
 		std::vector<Voxel*> processvoxels;
 		std::vector<unsigned long> voxread;
 
-		uint v, C, gridpos;
-		ULONGLONG pointbytes=0;
+		uint v, gridpos;
+        int C;
+        uint64_t pointbytes=0;
 
 		bb.clear();
 

@@ -218,7 +218,6 @@ bool StreamDataSource::verifyReadSet(PTRMI::DataBuffer::Data *buffer, DataSource
 {
 	DataSourcePtr	dataSource;
 	unsigned int	t;
-	unsigned int	i;
 
 	if((dataSource = getDataSource()) == NULL || buffer == NULL || readSet == NULL)
 		return false;

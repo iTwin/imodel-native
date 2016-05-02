@@ -70,7 +70,7 @@ namespace pcloud
 			return i == _cloudsByGUID.end() ? 0 : i->second;
 		}
 
-		inline int size() const							{ return (int)_clouds.size(); }
+		inline uint size() const							{ return _clouds.size(); }
 		void clear();
 		
 		const wchar_t *typeDescriptor() const	{ return L"Point Cloud"; }
@@ -120,6 +120,7 @@ namespace pcloud
 
 			IndexStream::CloudInfo *cloudInfo() { return stream->cloudInfo( cloudIndex ); }
 		};
+
 		int		readSinglePass( SceneBuildData *buildData );
 		int		readMultiPass( SceneBuildData *buildData );
 		
@@ -144,5 +145,20 @@ namespace pcloud
 		int										_instance;
 		int										_editStateID;
 	};
+
+    // Custom literals used by the scene
+    constexpr unsigned long long operator"" _K(unsigned long long val)
+        {
+        return val * 1000;
+        }
+    constexpr unsigned long long operator"" _M(unsigned long long val)
+        {
+        return val * 1000000;
+        }
+    constexpr unsigned long long operator"" _B(unsigned long long val)
+        {
+        return val * 1000000000;
+        }
+
 }
 #endif

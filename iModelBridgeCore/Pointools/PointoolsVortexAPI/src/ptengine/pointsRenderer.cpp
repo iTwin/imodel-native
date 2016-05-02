@@ -336,7 +336,7 @@ int PointsRenderer::numVoxelPointsToRender( const pcloud::Voxel * vox, float min
 
 		if (!editedSize) editedSize = reqSize;
 
-		int renderSize = min(reqSize, editedSize);
+		uint renderSize = min(reqSize, editedSize);
 		float renderProp = (float)renderSize / vox->fullPointCount();
 
 		if ( !vox->flag( pcloud::OutOfCore ) ) // don't check min available if ooc 

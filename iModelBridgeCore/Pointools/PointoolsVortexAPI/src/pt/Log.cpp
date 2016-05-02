@@ -117,7 +117,7 @@ void __cdecl Log::printf(const char* fmt, ...) {
 	va_start(arg_list, fmt);
 
     printHeader();
-    fprintf(logFile, "%s", vformat(fmt, arg_list));
+    fprintf(logFile, "%s", vformat(fmt, arg_list).c_str());
     va_end(arg_list);
 }
 

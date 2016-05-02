@@ -544,7 +544,7 @@ ptds::DataSize StreamHost::executeMultiReadSet(void)
 	ptds::DataSize				sizeRead;
 	StreamDataSource		*	streamDataSource;
 	DataSource				*	dataSource;
-	DataSourceMultiRead		*	firstMultiRead;
+	//DataSourceMultiRead		*	firstMultiRead;
 															// Get read set's total read size (in bytes)	
 	if((totalReadSize = multiReadSet.getTotalReadSize()) == 0)
 		return 0;

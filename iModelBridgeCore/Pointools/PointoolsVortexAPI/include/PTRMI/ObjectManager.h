@@ -300,8 +300,8 @@ inline typename ObjClientInfo<Obj>::I * ObjectManager::getFirstObjectClientInter
 template<typename I>
 inline unsigned int ObjectManager::getServerManagerClientInterfaces(const PTRMI::GUID &hostGUID, std::vector<I *> &result)
 {
-	ServerManagerClientInterfaceMap::Group	*	group;
-	ClientInterfaceBase						*	clientInterface;
+	//ServerManagerClientInterfaceMap::Group	*	group;
+	//ClientInterfaceBase						*	clientInterface;
 
 	MutexScope mutexScope(objectManagerMutex);
 

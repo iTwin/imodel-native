@@ -327,10 +327,10 @@ bool ClipManager::inside(int thread, const pt::vector3d &pnt)
 
 	// fully inside all the clip planes
 	if (numActivePlanes[thread] == numInside[thread])
-		return (clipStyle[thread] == PT_CLIP_OUTSIDE) ? ptedit::FullyInside : ptedit::FullyOutside; 
+		return ((clipStyle[thread] == PT_CLIP_OUTSIDE) ? ptedit::FullyInside : ptedit::FullyOutside) != 0; 
 
 	// if the node has been marked as totally outside any of the clip planes then it will be wholly clipped	
-	return (clipStyle[thread] == PT_CLIP_OUTSIDE) ? ptedit::FullyOutside : ptedit::FullyInside; 
+	return ((clipStyle[thread] == PT_CLIP_OUTSIDE) ? ptedit::FullyOutside : ptedit::FullyInside) != 0; 
 }
 
 /** Read the current clip manager state from the edit stack
@@ -346,7 +346,7 @@ bool ClipManager::readState(const pt::datatree::Branch* b)
 		PTuint numPlanes;
 		if (clipManagerBranch->getNode(NUM_CLIP_PLANES, numPlanes))
 		{
-			for (int i = 0; i < numPlanes; i++)
+			for (uint i = 0; i < numPlanes; i++)
 			{
 				if (i < getNumClippingPlanes())
 				{					

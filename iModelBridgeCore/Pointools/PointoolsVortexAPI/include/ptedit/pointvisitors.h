@@ -158,7 +158,7 @@ namespace ptedit
 				|| (_selstate && !(f & SELECTED_PNT_BIT)))  
 					_consolidateSel[t] = false;
 			
-			_hassel |= (f & SELECTED_PNT_BIT);
+			_hassel |= (f & SELECTED_PNT_BIT) != 0;
 		}
 
 		pcloud::Voxel *_currentVoxel;
@@ -390,7 +390,7 @@ namespace ptedit
 						// in the case that a channel was loaded
 						if (v->numPointsEdited()==0 && layers->size())
 						{
-							for (int i=0; i<layers->size();i++)
+							for (unsigned int i=0; i<layers->size();i++)
 							{
 								if (layers->data()[i] & _layers) 
 								{

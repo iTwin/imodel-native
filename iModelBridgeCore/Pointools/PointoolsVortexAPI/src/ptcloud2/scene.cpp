@@ -100,7 +100,7 @@ ScanPosition* Scene::addScanPosition(const mmatrix4d &mat)
 		if (mat == _scanpositions[i]->registration().matrix())
 			return _scanpositions[i];
 	}
-	swprintf(name, L"Scan Position %d", _scanpositions.size());
+	swprintf(name, L"Scan Position %zd", _scanpositions.size());
 	ScanPosition *sp = new ScanPosition(mat, name);
 
 	_scanpositions.push_back(sp);

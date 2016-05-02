@@ -201,11 +201,9 @@ Status DataCache::readStartEndPages(DataPointer start, DataPointer end, Data *de
 
 Status DataCache::readBytes(DataPointer start, Data *dest, DataSize numBytes, DataSourceCache *dataSourceCache, DataSize &numBytesRead)
 {
-	CachePageIndex		startPage, endPage, page;
-	CachePageIndex		firstNonResidentPage;
+	CachePageIndex		startPage, endPage;
 	CachePageIndex		numPagesRead;
 	DataPointer			end;
-	DataPointer			endPointer;
 	bool				complete;
 	Status				status;
 
@@ -239,7 +237,6 @@ Status DataCache::readBytes(DataPointer start, Data *dest, DataSize numBytes, Da
 
 Status DataCache::readPageRange(CachePageIndex startPage, CachePageIndex endPage, Data *dest, DataSourceCache *dataSourceCache, CachePageIndex &numPagesRead)
 {
-	CachePageState	pageState;
 	CachePageIndex	numPages;
 	CachePageIndex	page = startPage;
 	Status			status;
@@ -439,7 +436,6 @@ Status DataCache::closeCache(DataSourceCache *dataSourceCache)
 Status DataCache::readCacheStatusFile(const wchar_t *filePathCacheStatusFile, DataSourceCache *dataSourceCache)
 {
 	PTRMI::DataBuffer			buffer;
-	PTRMI::DataBuffer::DataSize	bufferSize;
 	FileHeaderStr				headerStr;
 	CacheFileVersion			version;
 	CachePageIndex				cachePagesResident;
@@ -567,7 +563,7 @@ DataCache::CachePageIndex DataCache::calculateNumPages(DataSize fullFileSize, Da
 
 	CachePageIndex	pages = fullFileSize / pageSize;
 
-	if(fullFileSize & pages > 0)
+	if((fullFileSize & pages) > 0)
 		++pages;
 
 	return pages;
@@ -753,7 +749,6 @@ Status DataCache::createPageBuffer(DataSize size)
 		return Status(Status::Status_Error_Bad_Parameter);
 	}
 
-	Data *buffer;
 															// If an existing buffer is smaller, reallocate a new larger buffer
 	if(pageBuffer == NULL || (pageBuffer && getCachePageSize() < size))
 	{
@@ -806,7 +801,6 @@ ptds::DataCache::DataPointer DataCache::getCachePageDataPointer(CachePageIndex p
 
 Status DataCache::readPageRangeContiguousState(CachePageIndex pageStart, CachePageIndex pageMax, Data *dest, DataSourceCache *dataSourceCache, CachePageIndex &numPagesRead)
 {
-	CachePageIndex		page;
 	CachePageIndex		pageRangeEnd;
 	CachePageState		state;
 	DataSource		*	dataSource;
@@ -1106,10 +1100,8 @@ bool DataCache::isCacheCompletable(void)
 
 Status DataCache::completeCache(DataSourceCache *dataSourceCache)
 {
-	CachePageState		state;
 	CachePageIndex		page;
 	CachePageIndex		numPages;
-	DataSource		*	dataSource;
 	Status				status;
 
 
@@ -1350,7 +1342,6 @@ bool DataCache::consumeRead(ParallelReadPriorityQueue &queue, DataCacheParallelR
 															// Get remaining cache page that has been read
 															// At start this may be partial, but after will be whole cache pages
 	DataSize		dataSizeRead;
-	unsigned int	numPointsRead;
 															// Useful data read is that remaining in cache page
 	dataSizeRead = getCachePageRemainder(parallelRead.getCurrentReadPosition());
 															// Add remaining cache page data
@@ -1409,7 +1400,6 @@ DataSize DataCache::getOutOfCachePageReadSet(CachePageIndexSet pageSet, DataSour
 {
 
 	CachePageIndexSet::iterator	start, end, i;
-	CachePageIndex				page;
 	CachePageIndex				firstPage, lastPage;
 	DataSize					readSize;
 	DataSize					totalReadSize = 0;
@@ -1460,7 +1450,6 @@ Status DataCache::readOutOfCachePageReadSet(DataSource &dataSourceFullFile, Data
 		return Status();
 
 	DataSize			readSize;
-	DataSize			resultReadsize;
 	Data			*	buffer;
 	Status				status;
 															// If no data to be read, exit

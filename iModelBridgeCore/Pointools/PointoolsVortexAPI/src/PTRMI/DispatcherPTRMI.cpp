@@ -209,7 +209,6 @@ PTRMI::Status Dispatcher::receiveAndDispatchReturn(Message &header, const Name &
 	Status					status;
 	ClientInterfaceBase *	receiver;
 	Stream				*	stream;
-	Host				*	host;
 
 															// Get receiver. If receiver not found, error occurred
 	if((receiver = getManager().getObjectManager().getObjectClientInterface(header.getReceiver())) == NULL)

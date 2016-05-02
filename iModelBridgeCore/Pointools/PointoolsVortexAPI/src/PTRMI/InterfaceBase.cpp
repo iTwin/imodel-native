@@ -130,7 +130,6 @@ double InterfaceBase::getIdleTimeSeconds(void)
 PTRMI::GUID InterfaceBase::getHostGUID(void)
 {
 	Stream			*	s;
-	Pipe			*	p;
 															// If Stream and Stream's Pipe are defined
 	if(s = getStream())
 	{

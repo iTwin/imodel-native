@@ -238,7 +238,7 @@ inline Status PTRMI::ServerInterface<I, Obj>::initializeInvoke(Stream &stream)
 SERVERINTERFACE_T
 inline Status PTRMI::ServerInterface<I, Obj>::isInvokeValid(Stream &stream)
 {
-	if(getServerObject() && stream.getStatus().isOK());
+	if(getServerObject() && stream.getStatus().isOK())
 	{
 		return Status();
 	}

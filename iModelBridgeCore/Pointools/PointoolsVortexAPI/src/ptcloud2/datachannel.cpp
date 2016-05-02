@@ -195,7 +195,7 @@ void DataChannel::readStore(void *d)
 	memcpy(_data, d, _typesize*_multiple*_count);
 }
 //-----------------------------------------------------------------------------
-void DataChannel::readEnd(void *d, int size)
+void DataChannel::readEnd(void *d, uint size)
 {
 	assert(d);
 	if (!d) return;
@@ -257,7 +257,7 @@ void DataChannel::copy(ubyte *d)
 	memcpy(_data, d, bytesize());
 }
 //-----------------------------------------------------------------------------
-bool DataChannel::resize(int sz)
+bool DataChannel::resize(uint sz)
 {
 	// sanity check
 	if (sz > 10e6) return false;
@@ -298,7 +298,7 @@ bool DataChannel::resize(int sz)
 	}
 	if (_data)
 	{
-		int transfer = _typesize * _multiple * (_count > sz ? sz : _count);
+		uint transfer = _typesize * _multiple * (_count > sz ? sz : _count);
 		memset(&d[transfer], 0, newsize - transfer);
 		memcpy(d, _data, transfer);
 		delete [] _data;
@@ -314,7 +314,7 @@ void DataChannel::generateRandomIndex(std::vector<int> &index) const
 	index.clear();
 	index.reserve(_count);
 
-	for (int i=0; i<_count; i++) index.push_back(i);
+	for (uint i=0; i<_count; i++) index.push_back(i);
 	
 	/*randomize order of points*/ 
     std::random_device rd;
@@ -339,9 +339,8 @@ bool DataChannel::repositionByIndex(const std::vector<int> &index)
 	catch(...) { return false; }
 
 	memcpy(temp,_data, objsize*_count);
-	int i;
 
-	for (i=0;i<_count;i++)
+	for (uint i=0;i<_count;i++)
 		memcpy(&_data[i*objsize], &temp[index[i]*objsize], objsize);
 
 	delete [] temp;

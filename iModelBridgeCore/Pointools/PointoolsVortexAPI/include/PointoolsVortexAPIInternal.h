@@ -39,6 +39,9 @@
 #include <memory.h>
 #include <stdarg.h>
 
+#ifdef _DEBUG
+#define FILE_TRACE 1
+#endif
 
 
 #pragma warning ( disable : 4100 ) //unreferenced formal parameter
@@ -93,4 +96,6 @@
 #include <math/matrix_math.h>
 #include <PTRMI/Manager.h>
 #include <ptengine/ClipManager.h>
+
+
 #endif

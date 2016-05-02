@@ -401,7 +401,7 @@ namespace pod
 			rb.read(numBoxes);
 
 			// Read the boxes, these are voxel IDs followed by 6 doubles representing a double bounding box, ux, lx, uy, ly, uz, lz
-			for (int i = 0; i < numBoxes; i++)
+			for (uint i = 0; i < numBoxes; i++)
 			{
 				rb.read(voxelID);
 				rb.read(ux);
@@ -560,7 +560,7 @@ bool PodIO::writeVersion(PodJob &job)
 	
 	/* only write a version 4 header if there are images, otherwise don't */ 
 	uint num_scanpos = job.scene->numScanPositions();
-	for (int i=0; i<num_scanpos; i++)
+	for (uint i=0; i<num_scanpos; i++)
 	{
 		const ScanPosition *sp = job.scene->scanPos(i);
 		if (sp->numImages()) 
@@ -595,7 +595,7 @@ bool PodIO::writeHeader(PodJob &job)
 	char buff[64];
 	memset(buff, 0, sizeof(buff));
 
-	int i = 0;
+	uint i = 0;
 
 	/*for each cloud			*/ 
 	for (i=0; i<num_clouds; i++)
@@ -693,7 +693,7 @@ bool PodIO::handlesVersion(ubyte *version)
 //-------------------------------------------------------------------------
 bool PodIO::writeStructure(PodJob &j)
 {
-	for (int i=0; i<j.scene->size(); i++)
+	for (uint i=0; i<j.scene->size(); i++)
 	{
 		writeCloudStructure(j, i);
 	}
@@ -705,7 +705,7 @@ bool PodIO::writeStructure(PodJob &j)
 bool PodIO::writeData(PodJob &job)
 {
 	/*write voxel datachannels*/ 
-	for (int i=0; i<job.scene->size(); i++)
+	for (uint i=0; i<job.scene->size(); i++)
 		writeCloudData(job, i);
 
 	return true;
@@ -948,7 +948,7 @@ bool PodIO::readHeader(pcloud::PodJob &job, bool skip)
 	if (!skip) job.scene->setIdentifier(ws.c_str());
 	pos += 64;
 
-	uint num_clouds, num_scanpos, num_tags;
+	uint num_clouds, num_scanpos;
 	rb.read(num_clouds);
 	pos += sizeof(uint);
 
@@ -1065,7 +1065,7 @@ bool PodIO::readHeader(pcloud::PodJob &job, bool skip)
 					return false;
 				}
 
-				for (int img=0;img<numImages;img++)
+				for (uint img=0;img<numImages;img++)
 				{
 					String filepath(readString(rb, 260).c_str());
 
@@ -1165,7 +1165,7 @@ bool PodIO::readCloudStructure(pcloud::PodJob &job, PointCloud *cloud, bool skip
 		block.read(n_count);
 
 		/*build partitions*/ 
-		int i;
+		uint i;
 		float v;
 		std::vector<Voxel*> *voxels = const_cast< std::vector<Voxel*>* >(&cloud->voxels());
 		std::vector<float> partitions;
@@ -1202,7 +1202,6 @@ bool PodIO::readCloudStructure(pcloud::PodJob &job, PointCloud *cloud, bool skip
 		for (i=0;i<n_count;i++)
 		{
 			float p[6];
-			uint buff;
 			ubyte hasQT = 0;
 			ubyte qt = 0;
 
@@ -1445,7 +1444,7 @@ bool PodIO::dumpHeader(pcloud::PodJob &job)
 	__int64 structure_pointer;
 	__int64 data_pointer;
 
-	for (int i=0; i<num_clouds; i++)
+	for (uint i=0; i<num_clouds; i++)
 	{
 		rb.read(guid, "Cloud GUID");
 		rb.read(structure_pointer, "Structure Pointer");
@@ -1521,7 +1520,7 @@ bool PodIO::dumpCloudStructure(pcloud::PodJob &job, PointCloud *cloud)
 		block.read(n_count, "Nodes");
 
 		/*build partitions*/ 
-		int i;
+		uint i;
 		float v;
 
 		for (i=0;i<p_count;i++)
@@ -1745,7 +1744,7 @@ bool PodBlockManager::read(ptds::ReadBlock& rb)
 	unsigned int numPodBlocks = 0;
 	rb.read(numPodBlocks);
 
-	for (int i = 0; i < numPodBlocks; i++)
+	for (uint i = 0; i < numPodBlocks; i++)
 	{
 		// Read the type of PodBlock then match it with a registered PodBlock handler
 		char type[5] = {0};

@@ -416,8 +416,6 @@ public:
 	{
 		T	result = 0;
 
-		T	aMin, aMax;
-		T	bMin, bMax;
 		T	delta;
 																// Calculate squared delta for X axis if ranges non overlapping
 		if(lower(0) > b.upper(0))

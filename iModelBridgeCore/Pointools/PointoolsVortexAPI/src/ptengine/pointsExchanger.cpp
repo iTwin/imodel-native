@@ -76,7 +76,7 @@ bool PointsExchanger::initialize()
 		std::vector<FileType> exi;
 		std::vector<FileType> exe;
 		
-		uint i;
+		int i;
 		for (i=0; i<count; i++)
 		{
 			s_plugins[i]->supportedImports(exi);
@@ -138,7 +138,7 @@ ImportResult PointsExchanger::importFile(const FilePath &path)
 		PTTRACEOUT << "Points Exchanger importing ." << path.extension() << " file";
 		PTTRACEOUT << "Searching " << s_plugins.size() << " plugins";
 
-		for (int i=0;i<s_plugins.size(); i++)
+		for (unsigned int i=0;i<s_plugins.size(); i++)
 		{
 			ImportResult res = s_plugins[i]->importFile(path);
 			if (res != ImportResult_NoHandler) return res;
@@ -156,7 +156,7 @@ ExportResult PointsExchanger::exportFile(const FilePath &path)
 	
 	if (path.extension())
 	{
-		for (int i=0;i<s_plugins.size(); i++)
+		for (unsigned int i=0;i<s_plugins.size(); i++)
 		{
 			ExportResult res = s_plugins[i]->exportFile(path);
 			if (res != ExportResult_NoHandler) return res;

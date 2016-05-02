@@ -46,11 +46,12 @@ dirToSearch=$(pointoolsVortexAPIVendorAPI)wildmagic/core
 #dirToSearch=$(PointoolsLibsVendorAPI)
 #%include cincapnd.mki
 
-warnLevel = -W1
+HAVE_PERMISSION_TO_COMPILE_AT_W3    = 1
+#warnLevel = -W1
 NO_LEAN_AND_MEAN=1
 BUILD_NO_STACK_CHECK=1
 
-NOSTRICT=1
+#NOSTRICT=1
 CCompOpts + -DREL_V=$(REL_V)
 CCompOpts + -DMAJ_V=$(MAJ_V)
 CCompOpts + -DMIN_V=$(MIN_V)
@@ -73,4 +74,4 @@ CCompOpts + -D"GLEW_STATIC"
 CCompOpts + -D"POINTOOLS_PTRMI_PIPE_MANAGER_EXT"
 CCompOpts + -D"VORTEX_OBJECTS_API"
 CCompOpts + -D"POINTOOLS_API"
-CCompOpts + -wd4005							# Ignore macro redefinition warnings (conflicts between Boost and Microsoft librairies)
+#CCompOpts + -wd4005							# Ignore macro redefinition warnings (conflicts between Boost and Microsoft librairies)

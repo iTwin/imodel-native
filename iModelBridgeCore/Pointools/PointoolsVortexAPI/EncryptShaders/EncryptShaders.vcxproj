@@ -1,0 +1,114 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{7AAFB668-4351-438D-BC35-905B067A22D4}</ProjectGuid>
+    <Keyword>MakeFileProj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <IntermediateOutputPath>$(ProjectDir)</IntermediateOutputPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <IntermediateOutputPath>$(ProjectDir)</IntermediateOutputPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <IntermediateOutputPath>$(ProjectDir)</IntermediateOutputPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <IntermediateOutputPath>$(ProjectDir)</IntermediateOutputPath>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <NMakePreprocessorDefinitions>WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakeIncludeSearchPath>$(ProjectDir)include</NMakeIncludeSearchPath>
+    <NMakeBuildCommandLine>BentleyBuild.py -ax86 -p EncryptShaders -f $(ProjectDir)../PointoolsVortexAPI re EncryptShaders</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>BentleyBuild.py -ax86 -p EncryptShaders -f $(ProjectDir)../PointoolsVortexAPI re EncryptShaders -c
+BentleyBuid.py -ax86 -p EncryptShaders -f $(ProjectDir)../PointoolsVortexAPI re EncryptShaders</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>BentleyBuild.py -ax86 -p EncryptShaders -f $(ProjectDir)../PointoolsVortexAPI re EncryptShaders -c</NMakeCleanCommandLine>
+    <NMakeOutput>$(OutRoot)Winx86\build\PointoolsVortexAPI\EncryptShaders.exe</NMakeOutput>
+    <IntDir>$(SolutionDir)$(IntermediateOutputPath)</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakeOutput>$(OutRoot)Winx86\build\PointoolsVortexAPI\EncryptShaders.exe</NMakeOutput>
+    <NMakeBuildCommandLine>BentleyBuild.py -ax86 -p EncryptShaders -f $(ProjectDir)../PointoolsVortexAPI re EncryptShaders</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>BentleyBuild.py -ax86 -p EncryptShaders -f $(ProjectDir)../PointoolsVortexAPI re EncryptShaders -c
+BentleyBuid.py -ax86 -p EncryptShaders -f $(ProjectDir)../PointoolsVortexAPI re EncryptShaders</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>BentleyBuild.py -ax86 -p EncryptShaders -f $(ProjectDir)../PointoolsVortexAPI re EncryptShaders -c</NMakeCleanCommandLine>
+    <NMakeIncludeSearchPath>$(ProjectDir)include</NMakeIncludeSearchPath>
+    <IntDir>$(SolutionDir)$(IntermediateOutputPath)</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <NMakeBuildCommandLine>BentleyBuild.py -ax64 -p EncryptShaders -f $(ProjectDir)../PointoolsVortexAPI re EncryptShaders</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>BentleyBuild.py -ax64 -p EncryptShaders -f $(ProjectDir)../PointoolsVortexAPI re EncryptShaders -c 
+BentleyBuild.py -ax64 -p EncryptShaders -f $(ProjectDir)../PointoolsVortexAPI re EncryptShaders</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>BentleyBuild.py -ax64 -p EncryptShaders -f $(ProjectDir)../PointoolsVortexAPI re EncryptShaders -c</NMakeCleanCommandLine>
+    <NMakeOutput>$(OutRoot)Winx64\build\PointoolsVortexAPI\EncryptShaders.exe</NMakeOutput>
+    <NMakeIncludeSearchPath>$(ProjectDir)include</NMakeIncludeSearchPath>
+    <IntDir>$(SolutionDir)$(Platform)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <NMakeOutput>$(OutRoot)Winx64\build\PointoolsVortexAPI\EncryptShaders.exe</NMakeOutput>
+    <NMakeBuildCommandLine>BentleyBuild.py -ax64 -p EncryptShaders -f $(ProjectDir)../PointoolsVortexAPI re EncryptShaders</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>BentleyBuild.py -ax64 -p EncryptShaders -f $(ProjectDir)../PointoolsVortexAPI re EncryptShaders -c
+BentleyBuild.py -ax64 -p EncryptShaders -f $(ProjectDir)../PointoolsVortexAPI re EncryptShaders</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>BentleyBuild.py -ax64 -p EncryptShaders -f $(ProjectDir)../PointoolsVortexAPI re EncryptShaders -c</NMakeCleanCommandLine>
+    <NMakeIncludeSearchPath>$(ProjectDir)include</NMakeIncludeSearchPath>
+    <IntDir>$(SolutionDir)$(Platform)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="EncryptShaders.cpp" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

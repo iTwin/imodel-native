@@ -28,9 +28,7 @@ DataSourcePtr DataSourceServer::createNew(const FilePath *path, const ptds::File
 {
 	PTRMI::Name							className(DATA_SOURCE_CLASS_SERVER);
 	PTRMI::Name							dataSourceServerName;
-	ClientInterfaceExtDataBentley	*	extData;
 	Status								status;
-	ClientInterfaceBase				*	clientInterface;
 
 	if(isValidPath(path) == false)
 		return NULL;

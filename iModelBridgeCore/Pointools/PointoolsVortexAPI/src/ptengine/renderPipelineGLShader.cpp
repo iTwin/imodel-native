@@ -73,8 +73,8 @@ void RenderPipeline_GLShader::setUpShaderForBuffer( const PointsBufferI *buffer,
 
 			if (Qs && Qo)
 			{
-				float offset[] = { Qo[0], Qo[1], Qo[2], 0 };
-				float scaler[] = { Qs[0], Qs[1], Qs[2], 1.0 };
+				float offset[] = { (float)Qo[0], (float)Qo[1], (float)Qo[2], 0 };
+                float scaler[] = { (float)Qs[0], (float)Qs[1], (float)Qs[2], 1.0 };
 
 				shader->setUniform4fv( UNIFORM_QUANTIZE_O, 1, offset );
 				shader->setUniform4fv( UNIFORM_QUANTIZE_S, 1, scaler );

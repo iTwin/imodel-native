@@ -34,7 +34,7 @@ bool VoxelChannelData::allocate()
 		data = new ubyte[bytesPerPoint * numPoints];
 		if (uniform_value)
 		{
-			for (int i=0; i<numPoints; i++)
+			for (unsigned int i=0; i<numPoints; i++)
 				memcpy( &data[i*bytesPerPoint], uniform_value, bytesPerPoint );
 		}
 	}
@@ -245,7 +245,7 @@ UserChannel::UserChannel(const pt::String &name, uint bitsize, uint multiple, vo
 	/* iterate clouds and enter this in */ 
 	if (scene)
 	{
-		for (int c=0;c<scene->size();c++)
+		for (uint c=0;c<scene->size();c++)
 			v.cloud( scene->cloud(c) );
 	}
 	else
@@ -599,7 +599,7 @@ UserChannel * UserChannel::createFromBranch( pt::datatree::Branch *branch )
 	UserChannel *userChannel = new UserChannel();
 
 	int version = 0;
-	int hasVal;
+	//int hasVal;
 	int numCHD = 0;
 	int num_clouds = 0;
 
@@ -722,7 +722,7 @@ UserChannel * UserChannel::createFromBranch( pt::datatree::Branch *branch )
 //-----------------------------------------------------------------------------
 void UserChannel::remFromChannel( const pcloud::Scene *scene )
 {
-	for (int i=0; i<scene->size(); i++)
+	for (uint i=0; i<scene->size(); i++)
 	{
 		const pcloud::PointCloud *pc = scene->cloud(i);
 
@@ -742,7 +742,7 @@ void UserChannel::remFromChannel( const pcloud::Scene *scene )
 //-----------------------------------------------------------------------------
 void UserChannel::addToChannel( const pcloud::Scene *scene )
 {
-	for (int i=0; i<scene->size(); i++)
+	for (uint i=0; i<scene->size(); i++)
 	{
 		const pcloud::PointCloud *cloud = scene->cloud(i);
 
@@ -823,7 +823,7 @@ void OOCFile::destroy()
 //-----------------------------------------------------------------------------
 // OOCFile: write the data to file
 //-----------------------------------------------------------------------------
-bool OOCFile::writeVCD( class VoxelChannelData* vcd, int numPoints )
+bool OOCFile::writeVCD( class VoxelChannelData* vcd, size_t numPoints )
 {
 	if (!vcd->isOOC()) return false;
 
@@ -872,7 +872,7 @@ bool OOCFile::writeVCD( class VoxelChannelData* vcd, int numPoints )
 //-----------------------------------------------------------------------------
 // OOCFile : read the data from file
 //-----------------------------------------------------------------------------
-bool OOCFile::readVCD( class VoxelChannelData* vcd, int numPoints )
+bool OOCFile::readVCD( class VoxelChannelData* vcd, size_t numPoints )
 {
 	if (!vcd->isOOC()) return false;	// only for OOC
 

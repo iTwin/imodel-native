@@ -1267,7 +1267,7 @@ int ShaderObject::load(const char* filename, const char *preprocessor)
 	unsigned int i=0;
 	
 	char	ppbuffer[256];
-	int		pplen = 0;
+	unsigned int pplen = 0;
 
 	// put in version number first, ATI enforces this
 	sprintf_s(ppbuffer, 256, "#version %s\n\r%s", GLSL_VERSION_NUM, preprocessor ? preprocessor : " ");
@@ -1294,7 +1294,7 @@ int ShaderObject::load(const char* filename, const char *preprocessor)
 		if (!p) continue;
 
 		if ((unsigned char)bf[p-1] < 0xaa) 
-			bf[p-1] = 0xaa;
+			bf[p-1] = (char)0xaa;
 		
 		_hash_in(bf);
 		

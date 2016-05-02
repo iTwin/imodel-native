@@ -117,7 +117,7 @@ int		VoxelInPlaceBuffer::getNumPoints() const
 	// validated number of points
 	if (!m_voxel) return 0;
 
-	int maxNum = m_numPoints;
+	uint maxNum = m_numPoints;
 	
 	// would not work for delayed channel loading
 	for (int i=1; i<PCloud_NumChannelTypes; i++)

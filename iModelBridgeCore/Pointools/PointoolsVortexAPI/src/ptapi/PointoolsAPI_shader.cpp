@@ -888,20 +888,21 @@ PTres	PTAPI ptSetOverrideColor( PThandle cloud_or_scene, const PTfloat *rgb3 )
 	pcloud::PointCloud *cloud = 0;
 	pcloud::Scene *scene = 0;
 
-	if (cloud = cloudFromHandle(cloud_or_scene))
+    typedef unsigned char ColorType;
+    if (cloud = cloudFromHandle(cloud_or_scene))
 	{
-		unsigned char rgb[] = { rgb3[0]*255, rgb3[1]*255, rgb3[2]*255 };
+    ColorType rgb[] = { (ColorType)(rgb3[0]*255), (ColorType)(rgb3[1]*255), (ColorType)(rgb3[2]*255) };
 		cloud->overrideColor( rgb );
 		cloud->enableOverrideColor(true);
 	}
 	// if its a scene we set the col for every cloud
 	else if (scene = sceneFromHandle(cloud_or_scene))
 	{
-		for (int i=0; i<scene->size(); i++)
+		for (uint i=0; i<scene->size(); i++)
 		{
 			cloud = scene->cloud(i);
-			unsigned char rgb[] = { rgb3[0]*255, rgb3[1]*255, rgb3[2]*255 };
-			cloud->overrideColor( rgb );
+            ColorType rgb[] = { (ColorType)(rgb3[0] * 255), (ColorType)(rgb3[1] * 255), (ColorType)(rgb3[2] * 255) };
+            cloud->overrideColor( rgb );
 			cloud->enableOverrideColor(true);
 		}
 	}
@@ -945,7 +946,7 @@ PTres	PTAPI ptRemoveOverrideColor( PThandle cloud_or_scene )
 	// if its a scene we set the col for every cloud
 	else if (scene = sceneFromHandle(cloud_or_scene))
 	{
-		for (int i=0; i<scene->size(); i++)
+		for (uint i=0; i<scene->size(); i++)
 		{
 			scene->cloud(i)->enableOverrideColor(false);
 		}

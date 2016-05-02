@@ -158,7 +158,7 @@ public:
 					matrix<2, 1, T>	result;
 					result.fill(0);
 
-					int	c = N;
+					unsigned int	c = N;
 					if (c > 2) c = 2;
 
 					for (unsigned int i = 0; i < c; i++) result(i,0) = (*this)(i,0);
