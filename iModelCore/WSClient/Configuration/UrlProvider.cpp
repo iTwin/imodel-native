@@ -131,6 +131,14 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::Passport(
     &s_urlRegistry
     );
 
+const UrlProvider::UrlDescriptor UrlProvider::Urls::FeatureTracking(
+    "Mobile.FeatureTracking",
+    "https://Licensexm.bentley.com/LicensingProxy/v2.3/Repositories/BentleyCONNECT--Main/FeatureTracking/AppState",
+    "https://Licensexm.bentley.com/LicensingProxy/v2.3/Repositories/BentleyCONNECT--Main/FeatureTracking/AppState",
+    "https://SELECTserver.bentley.com/LicensingProxy/v2.3/Repositories/BentleyCONNECT--Main/FeatureTracking/AppState",
+    &s_urlRegistry
+    );
+
 const UrlProvider::UrlDescriptor UrlProvider::Urls::UsageTracking(
     "Mobile.UsageTracking",
     "https://licenseXM.bentley.com/bss/ws/mobile",

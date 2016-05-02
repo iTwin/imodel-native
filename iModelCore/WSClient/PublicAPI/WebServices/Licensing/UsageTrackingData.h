@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
  |
- |     $Source: PublicAPI/WebServices/Licensing/MobileTracking.h $
+ |     $Source: PublicAPI/WebServices/Licensing/UsageTrackingData.h $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -17,7 +17,7 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 /*--------------------------------------------------------------------------------------+
 * @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct MobileTracking
+struct UsageTrackingData
     {
     private:
         Utf8String m_deviceID;
@@ -28,8 +28,8 @@ struct MobileTracking
         Utf8String m_version;
 
     public:
-        WSCLIENT_EXPORT MobileTracking();
-        WSCLIENT_EXPORT MobileTracking(Utf8StringCR device, Utf8StringCR userId, Utf8StringCR productId, Utf8StringCR projectId, DateTimeCR usageDate, Utf8StringCR version);
+        WSCLIENT_EXPORT UsageTrackingData();
+        WSCLIENT_EXPORT UsageTrackingData(Utf8StringCR device, Utf8StringCR userId, Utf8StringCR productId, Utf8StringCR projectId, DateTimeCR usageDate, Utf8StringCR version);
         WSCLIENT_EXPORT bool IsEmpty();
         WSCLIENT_EXPORT Json::Value ToJson();
     };
