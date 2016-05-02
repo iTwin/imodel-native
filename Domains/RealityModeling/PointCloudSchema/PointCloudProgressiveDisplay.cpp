@@ -56,13 +56,12 @@ void PointCloudProgressiveDisplay::SetupPtViewport(Dgn::RenderContextR context)
     // Changing the global density has no effect once points have been loaded. Instead, alter the display query density 
     PointCloudVortex::GlobalDensity(1.0f);
 
-    static bool s_frontBias = false;
-    PointCloudVortex::SetEnabledState(PtEnable::RGB_SHADER, true);
-    PointCloudVortex::SetEnabledState(PtEnable::FRONT_BIAS, s_frontBias);
+    PointCloudVortex::SetEnabledState(PtEnable::RGB_SHADER, context.GetViewport()->GetPointCloudViewSettingsR().GetUseRgb());
+    PointCloudVortex::SetEnabledState(PtEnable::FRONT_BIAS, context.GetViewport()->GetPointCloudViewSettingsR().GetUseFrontBias());
     PointCloudVortex::SetEnabledState(PtEnable::ADAPTIVE_POINT_SIZE, false);
-    PointCloudVortex::SetEnabledState(PtEnable::LIGHTING, false);
-    PointCloudVortex::SetEnabledState(PtEnable::INTENSITY_SHADER, false);
-    PointCloudVortex::SetEnabledState(PtEnable::PLANE_SHADER, false);
+    PointCloudVortex::SetEnabledState(PtEnable::LIGHTING, context.GetViewport()->GetPointCloudViewSettingsR().GetUseLightning());
+    PointCloudVortex::SetEnabledState(PtEnable::INTENSITY_SHADER, context.GetViewport()->GetPointCloudViewSettingsR().GetUseIntensity());
+    PointCloudVortex::SetEnabledState(PtEnable::PLANE_SHADER, context.GetViewport()->GetPointCloudViewSettingsR().GetUsePlane());
     }
 
 //----------------------------------------------------------------------------------------

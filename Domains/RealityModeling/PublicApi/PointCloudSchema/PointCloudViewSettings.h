@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/PointCloudSchema/PointCloudViewSettings.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------------------------+
@@ -19,16 +19,6 @@ BEGIN_BENTLEY_POINTCLOUDSCHEMA_NAMESPACE
 #define CLASSIFCATION_COUNT    (32)
 #define CLASSIFCATION_BIT_MASK (0x1F)
 #define CLASSIFCATION_MAXDISPLAYCOUNT 13
-
-#define POINTCLOUD_DEFAULT_VIEW_CONTRAST    (50.0f)
-#define POINTCLOUD_DEFAULT_VIEW_BRIGHTNESS  (180.0f)
-
-#define VIEWSETTINGS_RGB_MASK        (0x00000001)
-#define VIEWSETTINGS_INTENSITY_MASK  (0x00000002)
-#define VIEWSETTINGS_LIGHTNING_MASK  (0x00000004)
-#define VIEWSETTINGS_PLANE_MASK      (0x00000008)
-#define VIEWSETTINGS_FRONTBIAS_MASK  (0x00000010)
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                                    StephanePoulin  12/2009
