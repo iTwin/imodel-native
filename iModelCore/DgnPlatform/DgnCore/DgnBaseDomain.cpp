@@ -28,9 +28,7 @@ namespace dgn_ModelHandler
 HANDLER_DEFINE_MEMBERS(Model)
 HANDLER_DEFINE_MEMBERS(Spatial)
 HANDLER_DEFINE_MEMBERS(Component)
-HANDLER_DEFINE_MEMBERS(SpatialRedline)
 HANDLER_DEFINE_MEMBERS(Sheet)
-HANDLER_DEFINE_MEMBERS(Redline)
 HANDLER_DEFINE_MEMBERS(SectionDrawing)
 HANDLER_DEFINE_MEMBERS(StreetMap)
 HANDLER_DEFINE_MEMBERS(WebMercator)
@@ -89,8 +87,6 @@ DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain
     RegisterHandler(dgn_ModelHandler::Geometric2d::GetHandler());
     RegisterHandler(dgn_ModelHandler::Sheet::GetHandler());
     RegisterHandler(dgn_ModelHandler::SectionDrawing::GetHandler());
-    RegisterHandler(dgn_ModelHandler::Redline::GetHandler());
-    RegisterHandler(dgn_ModelHandler::SpatialRedline::GetHandler());
     RegisterHandler(dgn_ModelHandler::WebMercator::GetHandler());
     RegisterHandler(dgn_ModelHandler::StreetMap::GetHandler());
     RegisterHandler(dgn_ModelHandler::Definition::GetHandler());
@@ -126,7 +122,6 @@ DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain
     RegisterHandler(dgn_ElementHandler::CameraViewDef::GetHandler());
     RegisterHandler(dgn_ElementHandler::DrawingViewDef::GetHandler());
     RegisterHandler(dgn_ElementHandler::SheetViewDef::GetHandler());
-    RegisterHandler(dgn_ElementHandler::RedlineViewDef::GetHandler());
 
     RegisterHandler(dgn_ElementHandler::ViewAttachmentHandler::GetHandler());
 

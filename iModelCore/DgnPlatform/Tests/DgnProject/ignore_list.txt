@@ -30,14 +30,16 @@ VolumeElementTestFixture.QueryTest                      # FenceParams::AcceptEle
 #Uses the eb ECschema which has to be refactored for EC3 and ECDb06. Notified Raman
 JsonTests.FieldEngineerStructArray
 
-DgnLinkTest.Clone                                       # Defect 386016:- Does not copy member variables 
 ElementAspectTests.ImportElementsWithAspect             # Does not element import aspects
 FontTests.QueryFonts                                    # Defect 386022 - Does not find font
 TextStringTest.BoundingShape                            # UmarH WIP
 DateTimeFormatterTest.*                                 # UmarH fails randomly, need to investigate
 DgnLineStyleTest.InsertAndQueryWithoutCacheReLoad       # Unable to query line style unless we reload the file ( which will reload the cache )
 
-DgnECNavigatorTest.DgnLinksElementInfo # Need to add support for DgnLinks - JeffM
-DgnECNavigatorTest.IfcElementInfo # Need to add support for RelatedItemsDisplaySpecification - Carole
-
 ECInstanceSelectTests.ImportSchema			# This test doesn't really do anything and it takes 40 seconds to run
+
+DgnLinkTest.Clone                                       # Defect 386016:- Does not copy member variables 
+DgnLinkTest.* # Need to figure the BIS hierarchy for DgnLinks - Shaun
+DgnECNavigatorTest.DgnLinksElementInfo # Need to figure the BIS hierarchy for DgnLinks - Shaun
+DgnECNavigatorTest.IfcElementInfo # Need to figure BIS schema for IFC - Shaun/Raman
+

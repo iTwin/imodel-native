@@ -234,7 +234,7 @@ AutoCloseComponentDb(ComponentModelTest& t) : m_test(t) {;}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-ComponentModelTest::ComponentModelTest() : m_host(ScopedDgnHost::Options::DisableRepositoryManager)
+ComponentModelTest::ComponentModelTest()
     {
     T_HOST.GetScriptAdmin().RegisterScriptNotificationHandler(*new ComponentModelTest_DetectJsErrors);
     m_host.SetFetchScriptCallback(this);

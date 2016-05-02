@@ -206,6 +206,10 @@ struct Script : RefCountedBaseWithCreate // ***  NEEDS WORK: It should not be ne
     static void ImportLibrary (Utf8StringCR libName);
 
     static void ReportError(Utf8StringCR description);
+
+    static void BeginDisposeContext();
+    static void EndDisposeContext();
+
 };
 
 //=======================================================================================
@@ -1246,17 +1250,31 @@ struct JsECValue : RefCountedBaseWithCreate
 
     bool IsValid() const {return !m_value.IsNull();}
 
-    //static          FromDouble(v: cxx_double): ECValueP;
     static JsECValue* FromDouble(double v) {return new JsECValue(ECN::ECValue(v));}
-
-    //static FromString(v: Bentley_Utf8String): ECValueP;
+    static JsECValue* FromInteger(int32_t v) {return new JsECValue(ECN::ECValue(v));}
     static JsECValue* FromString(Utf8StringCR s) {return new JsECValue(ECN::ECValue(s.c_str()));}
+    static JsECValue* FromDateTime(Utf8StringCR s) 
+        {
+        DateTime dt;
+        if (BSISUCCESS != DateTime::FromString(dt, s.c_str()))
+            return nullptr;
+        return new JsECValue(ECN::ECValue(dt));
+        }
+    static JsECValue* FromPoint3d(JsDPoint3dP s) {DGNJSAPI_VALIDATE_ARGS_NULL(nullptr != s); return new JsECValue(ECN::ECValue(s->GetCR()));}
 
     JsECValue(ECN::ECValueCR v) : m_value(v) {;}
     bool GetIsPrimitive() const {return m_value.IsPrimitive();}
     bool GetIsNull() const {return m_value.IsNull();}
     ECPropertyPrimitiveType GetPrimitiveType() const {return (ECPropertyPrimitiveType)m_value.GetPrimitiveType();}
     Utf8String GetString() const {return m_value.IsNull()? "": m_value.ToString();}
+    JsDPoint3dP GetPoint3d() const {return m_value.IsNull()? nullptr: new JsDPoint3d(m_value.GetPoint3D());}
+    Utf8String GetDateTime() const 
+        {
+        if (m_value.IsNull())
+            return "";
+        auto dt = m_value.GetDateTime();
+        return dt.ToUtf8String();
+        }
     int32_t GetInteger() const {return m_value.IsNull()? 0: m_value.GetInteger();}
     double GetDouble() const {return m_value.IsNull()? 0.0: m_value.GetDouble();}
 
@@ -1339,6 +1357,9 @@ struct JsECInstance : RefCountedBaseWithCreate
 
 typedef JsECInstance* JsECInstanceP;
 
+//=======================================================================================
+// @bsiclass                                                    Sam.Wilson      06/15
+//=======================================================================================
 struct JsAdhocPropertyQuery : RefCountedBaseWithCreate
     {
     JsECInstanceP m_host;
@@ -1362,6 +1383,25 @@ struct JsAdhocPropertyQuery : RefCountedBaseWithCreate
     STUB_OUT_SET_METHOD(Host,JsECInstanceP)
     STUB_OUT_SET_METHOD(Count,uint32_t)
     };
+
+//=======================================================================================
+// @bsiclass                                                    Sam.Wilson      06/15
+//=======================================================================================
+struct JsFile : RefCountedBaseWithCreate
+    {
+    FILE* m_fp;
+
+    JsFile(FILE* fp) : m_fp(fp) {;}
+    ~JsFile() {if (m_fp) fclose(m_fp);}
+
+    bool IsValid() const {return nullptr != m_fp;}
+
+    static JsFile* Fopen(Utf8StringCR name, Utf8StringCR mode);
+    void Close() {if (m_fp) fclose(m_fp); m_fp = nullptr;}
+    bool Feof();
+    Utf8String ReadLine();
+    int32_t WriteLine(Utf8StringCR line);
+};
 
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      06/15

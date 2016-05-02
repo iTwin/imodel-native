@@ -24,6 +24,7 @@
             <Files ProductDirectoryName="ECSchemas" ProductSubDirectory="ECSchemas/Dgn" SubPartDirectory="ECSchemas/Dgn">
                 ECSchemas/dgn.02.00.ecschema.xml
                 ECSchemas/Generic.01.00.ecschema.xml
+                ECSchemas/Markup.01.00.ecschema.xml
             </Files>
             <Directory SourceName="Dox/Pages/DgnPlatform" SubPartDirectory="Dox/Pages/DgnPlatform"/>
         </Bindings>
@@ -48,7 +49,7 @@
         <SubPart PartName="BeLibJpegTurbo"      PartFile="BeLibJpegTurbo" Repository="Libsrc-libjpegturbo"/>
         <SubPart PartName="Headers"             PartFile="flatbuffers"  Repository="libsrc-flatbuffers"/>
         <SubPart PartName="GeoCoord"            PartFile="GeoCoord"     Repository="geocoord"/>
-        <SubPart PartName="OpenCASCADEShim"/>
+        <!-- <SubPart PartName="OpenCASCADEShim"/> -->
         <SubPart PartName="PublicApi"           PartFile="csmap"        Repository="libsrc-csmap"/>
         <SubPart PartName="GeoCoordDataMinimal" PartFile="csmap"        Repository="libsrc-csmap"/>
         <SubPart PartName="BeJavaScript"        PartFile="BePortableUi" Repository="BePortableUi"/>
@@ -385,7 +386,7 @@
         <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
     </Product>
 
-    <Part Name="Gtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=DgnPlatformTest -dTEST_COLLECTION_PRODUCT=DgnPlatform-Tests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+    <Part Name="Gtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=DgnPlatformTest -dTEST_COLLECTION_PRODUCT=DgnPlatform-Tests -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3" OnlyPlatforms="x86,x64,Linux*,MacOS*">
         <SubProduct ProductName="DgnPlatform-Tests"/>
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
@@ -402,6 +403,46 @@
     <Part Name="RunGtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/DgnPlatform-Gtest/DgnPlatformTest -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/DgnPlatform" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="DgnPlatform-Gtest" />
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+    </Part>
+
+    <!-- ********************** -->
+    <!-- **** AndroidJUnit **** -->
+    <!-- ********************** -->
+    <Part Name="AndroidJUnit" BentleyBuildMakeFile="${SrcRoot}BeGTest/Android/MakeJUnitTestProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=DgnPlatform -dTEST_COLLECTION_PRODUCT=DgnPlatform-Tests -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3 -dUSE_STATIC_LIBRARIES=1 -dTEST_ANDROID_MIN_SDK_VERSION=19" OnlyPlatforms="Android*">
+        <SubProduct ProductName="DgnPlatform-Tests"/>
+        <SubPart PartName="AndroidJUnitTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Directory ProductDirectoryName="AndroidJUnit-Project" SourceName="Delivery/ANJU/DgnPlatform/Project" />
+        </Bindings>
+    </Part>
+
+    <Product Name="DgnPlatform-AndroidJUnit" >
+        <SubPart PartName="AndroidJUnit" LibType="Static"/>
+        <Directories DirectoryListName="AndroidJUnitProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+
+    <Part Name="RunAndroidJUnitTest" BentleyBuildMakeFile="${SrcRoot}BeGTest/Android/RunAndroidJUnitTest.mke" BentleyBuildMakeOptions="-dANDROIDJUNIT_PRODUCT=DgnPlatform-AndroidJUnit" OnlyPlatforms="Android*">
+        <SubProduct ProductName="DgnPlatform-AndroidJUnit"/>
+    </Part>
+
+    <!-- ********************** -->
+    <!-- **** iOSXCTest **** -->
+    <!-- ********************** -->
+    <Part Name="iOSXCTest" BentleyBuildMakeFile="${SrcRoot}BeGTest/iOS/MakeXCTestProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=DgnPlatform -dTEST_COLLECTION_PRODUCT=DgnPlatform-Tests -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3 -dUSE_STATIC_LIBRARIES=1" OnlyPlatforms="iOS*">
+        <SubProduct ProductName="DgnPlatform-Tests"/>
+        <SubPart PartName="iOSXCTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Directory ProductDirectoryName="iOSXCTestProject" SourceName="Delivery/iOSXCTest/DgnPlatform/Project" />
+        </Bindings>
+    </Part>
+
+    <Product Name="DgnPlatform-iOSXCTest" >
+        <SubPart PartName="iOSXCTest" LibType="Static"/>
+        <Directories DirectoryListName="iOSXCTestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+
+    <Part Name="RuniOSXCTest" BentleyBuildMakeFile="${SrcRoot}BeGTest/iOS/RunXCTestProject.mke" BentleyBuildMakeOptions="-dXCTEST_PRODUCT=DgnPlatform-iOSXCTest" OnlyPlatforms="iOS*">
+        <SubProduct ProductName="DgnPlatform-iOSXCTest"/>
     </Part>
 
     <!-- ******************************************************************************************* -->
@@ -467,7 +508,7 @@
     <!--                ********************** -->
     <!--                **** AndroidJUnit **** -->
     <!--                ********************** -->
-    <Part Name="AndroidJUnit-TestCollection-NoView" BentleyBuildMakeFile="${SrcRoot}BeGTest/Android/MakeJUnitTestProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=NoViewTests -dTEST_COLLECTION_PRODUCT=DgnPlatform-TestCollection-NoView -dUSE_STATIC_LIBRARIES=1 -dTEST_ANDROID_MIN_SDK_VERSION=19" OnlyPlatforms="Android*">
+    <Part Name="AndroidJUnit-TestCollection-NoView" BentleyBuildMakeFile="${SrcRoot}BeGTest/Android/MakeJUnitTestProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=NoViewTests -dTEST_COLLECTION_PRODUCT=DgnPlatform-TestCollection-NoView -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3 -dUSE_STATIC_LIBRARIES=1 -dTEST_ANDROID_MIN_SDK_VERSION=19" OnlyPlatforms="Android*">
         <SubProduct ProductName="DgnPlatform-TestCollection-NoView"/>
         <SubPart PartName="AndroidJUnitTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
@@ -483,7 +524,7 @@
     <!--                ********************** -->
     <!--                **** iOSXCTest **** -->
     <!--                ********************** -->
-    <Part Name="iOSXCTest-TestCollection-NoView" BentleyBuildMakeFile="${SrcRoot}BeGTest/iOS/MakeXCTestProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=NoViewTests -dTEST_COLLECTION_PRODUCT=DgnPlatform-TestCollection-NoView -dUSE_STATIC_LIBRARIES=1" OnlyPlatforms="iOS*">
+    <Part Name="iOSXCTest-TestCollection-NoView" BentleyBuildMakeFile="${SrcRoot}BeGTest/iOS/MakeXCTestProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=NoViewTests -dTEST_COLLECTION_PRODUCT=DgnPlatform-TestCollection-NoView -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3 -dUSE_STATIC_LIBRARIES=1" OnlyPlatforms="iOS*">
         <SubProduct ProductName="DgnPlatform-TestCollection-NoView"/>
         <SubPart PartName="iOSXCTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
@@ -582,7 +623,7 @@
     <!--                ********************** -->
     <!--                **** AndroidJUnit **** -->
     <!--                ********************** -->
-    <Part Name="AndroidJUnit-TestCollection-Performance" BentleyBuildMakeFile="${SrcRoot}BeGTest/Android/MakeJUnitTestProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=DgnPerformance -dTEST_COLLECTION_PRODUCT=DgnPlatform-TestCollection-Performance -dUSE_STATIC_LIBRARIES=1  -dTEST_ANDROID_MIN_SDK_VERSION=19" OnlyPlatforms="Android*">
+    <Part Name="AndroidJUnit-TestCollection-Performance" BentleyBuildMakeFile="${SrcRoot}BeGTest/Android/MakeJUnitTestProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=DgnPerformance -dTEST_COLLECTION_PRODUCT=DgnPlatform-TestCollection-Performance -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3 -dUSE_STATIC_LIBRARIES=1  -dTEST_ANDROID_MIN_SDK_VERSION=19" OnlyPlatforms="Android*">
         <SubProduct ProductName="DgnPlatform-TestCollection-Performance"/>
         <SubPart PartName="AndroidJUnitTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
@@ -598,7 +639,7 @@
     <!--                ********************** -->
     <!--                **** iOSXCTest **** -->
     <!--                ********************** -->
-    <Part Name="iOSXCTest-TestCollection-Performance" BentleyBuildMakeFile="${SrcRoot}BeGTest/iOS/MakeXCTestProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=DgnPerformance -dTEST_COLLECTION_PRODUCT=DgnPlatform-TestCollection-Performance -dUSE_STATIC_LIBRARIES=1" OnlyPlatforms="iOS*">
+    <Part Name="iOSXCTest-TestCollection-Performance" BentleyBuildMakeFile="${SrcRoot}BeGTest/iOS/MakeXCTestProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=DgnPerformance -dTEST_COLLECTION_PRODUCT=DgnPlatform-TestCollection-Performance -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3 -dUSE_STATIC_LIBRARIES=1" OnlyPlatforms="iOS*">
         <SubProduct ProductName="DgnPlatform-TestCollection-Performance"/>
         <SubPart PartName="iOSXCTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>

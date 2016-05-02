@@ -1151,18 +1151,18 @@ void InstanceUpdater::Update(DgnElementCR el)
     if (!updater.IsValid())
         return;
 
-    SqlPrintfString ecSql("SELECT * FROM [%s].[%s] WHERE ECInstanceId = ?", Utf8String(targetClass->GetSchema().GetName()).c_str(), Utf8String(targetClass->GetName()).c_str());
-    ECSqlStatement ecStatement;
-    ECSqlStatus status = ecStatement.Prepare(m_importer.GetSourceDb(), ecSql.GetUtf8CP());
-    if (ECSqlStatus::Success != status)
+    Utf8PrintfString ecSql("SELECT * FROM [%s].[%s] WHERE ECInstanceId = ?", Utf8String(targetClass->GetSchema().GetName()).c_str(), Utf8String(targetClass->GetName()).c_str());
+    CachedECSqlStatementPtr ecStatement = m_importer.GetSourceDb().GetPreparedECSqlStatement(ecSql.c_str());
+
+    if (!ecStatement.IsValid())
         {
         // log error?
         return;
         }
 
-    ecStatement.BindId(1, m_sourceElementId);
-    ECInstanceECSqlSelectAdapter adapter(ecStatement);
-    while (BE_SQLITE_ROW == ecStatement.Step())
+    ecStatement->BindId(1, m_sourceElementId);
+    ECInstanceECSqlSelectAdapter adapter(*ecStatement);
+    while (BE_SQLITE_ROW == ecStatement->Step())
         {
         IECInstancePtr instance = adapter.GetInstance();
         BeAssert(instance.IsValid());
@@ -1243,7 +1243,7 @@ DgnElementPtr DgnElement::Clone(DgnDbStatus* stat, DgnElement::CreateParams cons
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometricElement2d::_AdjustPlacementForImport(DgnImportContext const& importer)
     {
-    m_placement.GetOriginR().Add(importer.GetOriginOffset());
+    m_placement.GetOriginR().Add(DPoint2d::From(importer.GetOriginOffset()));
     m_placement.GetAngleR() = (m_placement.GetAngle() + importer.GetYawAdjustment());
     }
 
@@ -1252,7 +1252,7 @@ void GeometricElement2d::_AdjustPlacementForImport(DgnImportContext const& impor
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometricElement3d::_AdjustPlacementForImport(DgnImportContext const& importer)
     {
-    m_placement.GetOriginR().Add(DPoint3d::From(importer.GetOriginOffset()));
+    m_placement.GetOriginR().Add(importer.GetOriginOffset());
     m_placement.GetAnglesR().AddYaw(importer.GetYawAdjustment());
     }
 
@@ -1965,6 +1965,64 @@ struct UnhandledProps : DgnElement::AppData
 
 UnhandledProps::Key UnhandledProps::s_key;
 
+//=======================================================================================
+// @bsiclass                                                     Sam.Wilson     04/16
+//=======================================================================================
+struct UnhandledPropsAdapterCache : DgnDb::AppData
+    {
+    private:
+        static Key s_key;
+        bmap<ECN::ECClassCP, ECInstanceUpdater*> m_updaterCache;
+
+    public:
+        static Key& GetKey() { return s_key; }
+        static UnhandledPropsAdapterCache& Get(DgnDbR);
+        ECInstanceUpdater& GetUpdater0(DgnElementCR);
+        static ECInstanceUpdater& GetUpdater(DgnElementCR el) {return Get(el.GetDgnDb()).GetUpdater0(el);}
+        ~UnhandledPropsAdapterCache();
+    };
+
+UnhandledPropsAdapterCache::Key UnhandledPropsAdapterCache::s_key;
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+UnhandledPropsAdapterCache::~UnhandledPropsAdapterCache()
+    {
+    for (auto v : m_updaterCache)
+        delete v.second;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+UnhandledPropsAdapterCache& UnhandledPropsAdapterCache::Get(DgnDbR db)
+    {
+    UnhandledPropsAdapterCache* upd = (UnhandledPropsAdapterCache*)db.FindAppData(s_key);
+    if (nullptr == upd)
+        db.AddAppData(s_key, upd = new UnhandledPropsAdapterCache);
+    return *upd;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ECInstanceUpdater& UnhandledPropsAdapterCache::GetUpdater0(DgnElementCR elem)
+    {
+    ECN::ECClassCP cls = elem.GetElementClass();
+    auto i = m_updaterCache.find(cls);
+    if (i != m_updaterCache.end())
+        return *(i->second);
+
+    bvector<ECN::ECPropertyCP> unhprops;
+    elem.ComputeUnhandledProperties(unhprops);
+
+    auto updater = new EC::ECInstanceUpdater(elem.GetDgnDb(), *cls, unhprops);
+
+    m_updaterCache[cls] = updater;
+    return *updater;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1973,17 +2031,20 @@ ECN::IECInstancePtr UnhandledProps::GetInstance(DgnElementCR elem)
     if (m_instance.IsValid())
         return m_instance;
 
+    auto cls = elem.GetElementClass();
+
     bvector<ECN::ECPropertyCP> unhandledProps;   // NEEDS WORK: This is the same for all instances of a given ECClass. It could be cached on a per-class basis.
     elem.ComputeUnhandledProperties(unhandledProps);
 
-    if (!elem.GetElementId().IsValid())
+    if (!elem.GetElementId().IsValid())         // Element is not yet persistent?
         {
-        m_instance = elem.GetElementClass()->GetDefaultStandaloneEnabler()->CreateInstance();
+        m_instance = cls->GetDefaultStandaloneEnabler()->CreateInstance();
         //for (auto prop : unhandledProps)
         //    m_instance->SetValue(prop->GetName().c_str(), ECValue());
         return m_instance;
         }
 
+    //  Select properties from persistent element
     Utf8String props;
     Utf8CP comma = "";
     for (auto prop : unhandledProps)
@@ -1992,13 +2053,21 @@ ECN::IECInstancePtr UnhandledProps::GetInstance(DgnElementCR elem)
         comma = ",";
         }
 
-    EC::ECSqlStatement stmt;
-    stmt.Prepare(elem.GetDgnDb(), Utf8PrintfString("SELECT %s FROM %s.%s WHERE ECInstanceId=%lld", props.c_str(), elem.GetElementClass()->GetSchema().GetName().c_str(), elem.GetElementClass()->GetName().c_str(), elem.GetElementId().GetValue()).c_str());
-    if (stmt.Step() != BE_SQLITE_ROW)
+    auto stmt = elem.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT %s FROM %s WHERE ECInstanceId=?", props.c_str(), cls->GetECSqlName().c_str()).c_str());
+    if (!stmt.IsValid())
+        {
+        BeAssert(false);
         return nullptr;
+        }
 
-    ECInstanceECSqlSelectAdapter adapter(stmt);
-    return m_instance = adapter.GetInstance();
+    stmt->BindId(1, elem.GetElementId());
+    if (BE_SQLITE_ROW == stmt->Step())
+        {
+        ECInstanceECSqlSelectAdapter adapter(*stmt);
+        m_instance = adapter.GetInstance();
+        }
+
+    return m_instance;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2212,8 +2281,7 @@ DgnDbStatus UnhandledProps::UpdateModifiedProperties(DgnElementCR elem)
     
     m_instance->SetInstanceId(Utf8PrintfString("%lld", elem.GetElementId().GetValue()).c_str());
 
-    EC::ECInstanceUpdater updater(elem.GetDgnDb(), *m_instance);
-    return updater.Update(*m_instance) == BSISUCCESS? DgnDbStatus::Success: DgnDbStatus::WriteError;
+    return UnhandledPropsAdapterCache::GetUpdater(elem).Update(*m_instance) == BSISUCCESS? DgnDbStatus::Success: DgnDbStatus::WriteError;
     }
 
 /*---------------------------------------------------------------------------------**//**

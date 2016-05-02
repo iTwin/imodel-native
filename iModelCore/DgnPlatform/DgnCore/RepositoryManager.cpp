@@ -56,7 +56,7 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct BriefcaseManager : IBriefcaseManager
+struct BriefcaseManager : IBriefcaseManager, TxnMonitor
 {
 private:
     enum class DbState { New, Ready, Invalid };
@@ -77,14 +77,36 @@ private:
     virtual void _OnModelInserted(DgnModelId) override;
     virtual void _OnDgnDbDestroyed() override;
 
-    BriefcaseManager(DgnDbR db) : IBriefcaseManager(db), m_localDbState(DbState::New) { }
+    void Save(TxnManager& mgr) { if (&mgr.GetDgnDb() == &GetDgnDb()) Save(); }
+    virtual void _OnCommit(TxnManager& mgr) override { Save(mgr); }
+    virtual void _OnReversedChanges(TxnManager& mgr) override { Save(mgr); }
+    virtual void _OnUndoRedo(TxnManager& mgr, TxnAction) override { Save(mgr); }
+
+    BriefcaseManager(DgnDbR db) : IBriefcaseManager(db), m_localDbState(DbState::New)
+        {
+        T_HOST.GetTxnAdmin().AddTxnMonitor(*this);
+        }
+    ~BriefcaseManager()
+        {
+        Save();
+        T_HOST.GetTxnAdmin().DropTxnMonitor(*this);
+        }
 
     DbR GetLocalDb();
     bool Validate(RepositoryStatus* status=nullptr);
     RepositoryStatus Initialize();
     RepositoryStatus Refresh();
     RepositoryStatus Pull();
-    DbResult Save() { return GetLocalDb().SaveChanges(); }
+    DbResult Save()
+        {
+        switch (m_localDbState)
+            {
+            case DbState::New:      return BE_SQLITE_OK;
+            case DbState::Ready:    return GetLocalDb().SaveChanges();
+            default:                return BE_SQLITE_ERROR;
+            }
+        }
+
     void Cull(Request& req) { Cull(req.Codes()); Cull(req.Locks().GetLockSet()); }
 
     // Codes...
@@ -146,7 +168,7 @@ void BriefcaseManager::_OnDgnDbDestroyed()
 +---------------+---------------+---------------+---------------+---------------+------*/
 IBriefcaseManagerPtr DgnPlatformLib::Host::RepositoryAdmin::_CreateBriefcaseManager(DgnDbR db) const
     {
-    return db.IsMasterCopy() ? MasterBriefcaseManager::Create(db) : BriefcaseManager::Create(db);
+    return db.IsMasterCopy() || db.IsStandaloneBriefcase() ? MasterBriefcaseManager::Create(db) : BriefcaseManager::Create(db);
     }
 
 #define TABLE_Codes "Codes"
@@ -282,6 +304,8 @@ RepositoryStatus BriefcaseManager::Pull()
     if (!codes.empty())
         Insert(codes);
 
+    Save();
+
     m_localDbState = DbState::Ready;
     return RepositoryStatus::Success;
     }
@@ -327,7 +351,7 @@ void BriefcaseManager::Insert(DgnCodeSet const& codes)
         stmt->Step();
         }
 
-    Save();
+    //Save();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -388,7 +412,7 @@ RepositoryStatus BriefcaseManager::Remove(DgnCodeSet const& codes)
     if (BE_SQLITE_OK != stmt->Step())
         return RepositoryStatus::SyncError;
 
-    Save();
+    //Save();
     return RepositoryStatus::Success;
     }
 
@@ -633,7 +657,7 @@ RepositoryStatus BriefcaseManager::AcquireLocks(LockRequestR locks, bool cull)
     if (RepositoryStatus::Success == result)
         {
         Insert(locks, true);
-        Save();
+        //Save();
         }
 
     return result;
@@ -704,7 +728,7 @@ IBriefcaseManager::Response BriefcaseManager::_ProcessRequest(Request& req)
         {
         Insert(req.Codes());
         Insert(req.Locks(), true);
-        Save();
+        //Save();
         }
 
     return response;
@@ -1018,8 +1042,12 @@ RepositoryStatus BriefcaseManager::_OnFinishRevision(DgnRevision const& rev)
         return RepositoryStatus::Success;
     else if (!Validate())
         return RepositoryStatus::SyncError;
-    else
-        return Remove(rev.GetAssignedCodes());
+
+    auto status = Remove(rev.GetAssignedCodes());
+    if (RepositoryStatus::Success == status)
+        Save();
+
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1030,7 +1058,7 @@ void BriefcaseManager::_OnElementInserted(DgnElementId id)
     if (LocksRequired() && Validate())
         {
         Insert(LockableId(id), LockLevel::Exclusive);
-        Save();
+        //Save();
         }
     }
 

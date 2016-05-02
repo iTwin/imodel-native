@@ -1,0 +1,43 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<ECSchema schemaName="Markup" nameSpacePrefix="markup" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
+
+    <ECSchemaReference name="dgn" version="02.00" prefix="dgn"/>
+    <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap"/>
+
+    <ECEntityClass typeName="MarkupExternalLink">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00" />
+        </ECCustomAttributes>
+        <BaseClass>dgn:LinkElement</BaseClass>
+        <ECProperty propertyName="LinkedElementId" typeName="long"/>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="MarkupExternalLinkGroup">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00" />
+        </ECCustomAttributes>
+        <BaseClass>dgn:LinkElement</BaseClass>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="RedlineModel">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00"/>
+        </ECCustomAttributes>
+        <BaseClass>dgn:SheetModel</BaseClass>
+    </ECEntityClass>
+    
+    <ECEntityClass typeName="SpatialRedlineModel">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00"/>
+        </ECCustomAttributes>
+        <BaseClass>dgn:SpatialModel</BaseClass>
+    </ECEntityClass>
+    
+    <ECEntityClass typeName="RedlineViewDefinition">
+        <BaseClass>dgn:SheetViewDefinition</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+
+</ECSchema>

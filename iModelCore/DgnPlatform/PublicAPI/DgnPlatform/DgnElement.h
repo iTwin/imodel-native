@@ -106,14 +106,14 @@ struct DgnImportContext : DgnCloneContext
 {
 private:
     bool            m_areCompatibleDbs;
-    DPoint2d        m_xyOffset;
+    DPoint3d        m_xyzOffset;
     AngleInDegrees  m_yawAdj;
     DgnDbR          m_sourceDb;
     DgnDbR          m_destDb;
     bmap<LsComponentId, uint32_t> m_importedComponents;
     mutable bmap<ECN::ECClassCP, BeSQLite::EC::ECInstanceUpdater*> m_updaterCache;
 
-    void ComputeGcsAdjustment();
+    void ComputeGcsAndGOadjustment();
 
 public:
     //! Construct a DgnImportContext object.
@@ -188,7 +188,7 @@ public:
     //! Check if the source and destination GCSs are compatible, such that elements can be copied between them.
     DgnDbStatus CheckCompatibleGCS() const {return m_areCompatibleDbs? DgnDbStatus::Success: DgnDbStatus::MismatchGcs;}
     //! When copying between different DgnDbs, X and Y coordinates may need to be offset
-    DPoint2d GetOriginOffset() const {return m_xyOffset;}
+    DPoint3d GetOriginOffset() const {return m_xyzOffset;}
     //! When copying between different DgnDbs, the Yaw angle may need to be adjusted.
     AngleInDegrees GetYawAdjustment() const {return m_yawAdj;}
     //! @}
@@ -1705,6 +1705,17 @@ protected:
 };
 
 //=======================================================================================
+//! @ingroup GROUP_DgnElement
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE LinkElement : DefinitionElement
+    {
+    DEFINE_T_SUPER(DefinitionElement);
+
+    protected:
+        explicit LinkElement(CreateParams const& params) : T_Super(params) {}
+    };
+
+//=======================================================================================
 //! A DefinitionElement which resides in (and only in) the dictionary model.
 //! Typically represents a style or similar resource used by other elements throughout
 //! the DgnDb.
@@ -1739,6 +1750,17 @@ protected:
     virtual DictionaryElementCP _ToDictionaryElement() const override final {return this;}
 
     explicit DictionaryElement(CreateParams const& params) : T_Super(params) {}
+};
+
+//=======================================================================================
+//! Abstract base class for group-related information elements.
+// @bsiclass                                                    Shaun.Sewall    04/16
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE GroupInformationElement : InformationElement
+{
+    DEFINE_T_SUPER(InformationElement);
+protected:
+    explicit GroupInformationElement(CreateParams const& params) : T_Super(params) {}
 };
 
 //=======================================================================================

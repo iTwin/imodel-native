@@ -388,9 +388,14 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <NMakeOutput>$(OutRoot)Winx64\Product\DgnClientFx-Gtest-Aggregate\DgnClientFxTests.exe</NMakeOutput>
+    <NMakeOutput>
+    </NMakeOutput>
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <NMakeIncludeSearchPath>$(OutRoot)Winx64\BuildContexts\DgnPlatform\PublicAPI\;$(OutRoot)Winx64\BuildContexts\DgnPlatform\VendorAPI\;$(ProjectDir)PrivateApi\;$(ProjectDir)\DgnCore\;$(ProjectDir)\DgnHandlers\;$(ProjectDir)\;$(ProjectDir)\PublicAPI\;$(ProjectDir)Tests\DgnProject\NonPublished\;$(ProjectDir)Tests\DgnProject\Performance\;$(ProjectDir)Tests\DgnProject\Published\;$(ProjectDir)Tests\DgnProject\BackDoor\PublicAPI\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <NMakeBuildCommandLine>bb -p DgnPlatformDLL -f DgnPlatform -r DgnPlatform re DgnPlatformDLL</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>bb -p DgnPlatformDLL -f DgnPlatform -r DgnPlatform re DgnPlatformDLL -c
+bb -p DgnPlatformDLL -f DgnPlatform -r DgnPlatform re DgnPlatformDLL</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb -p DgnPlatformDLL -f DgnPlatform -r DgnPlatform re DgnPlatformDLL -c</NMakeCleanCommandLine>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <NMakeOutput>DgnPlatform.exe</NMakeOutput>

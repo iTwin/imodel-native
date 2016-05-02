@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
-#include <BeSQLite/SHA1.h>
+#include <Bentley/SHA1.h>
 #include <DgnPlatform/DgnChangeSummary.h>
 #include "DgnChangeIterator.h"
 

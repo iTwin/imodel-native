@@ -940,7 +940,7 @@ protected:
     virtual void _AddBSplineSurface(MSBsplineSurfaceCR surface) = 0;
     virtual void _AddPolyface(PolyfaceQueryCR meshData, bool filled = false) = 0;
     virtual void _AddTriMesh(TriMeshArgs const& args) = 0;
-    virtual void _AddBody(ISolidKernelEntityCR, double pixelSize = 0.0) = 0;
+    virtual void _AddBody(ISolidKernelEntityCR) = 0;
     virtual void _AddTextString(TextStringCR text) = 0;
     virtual void _AddTextString2d(TextStringCR text, double zDepth) = 0;
     virtual void _AddTile(TextureCR tile, DPoint3dCP corners) = 0;
@@ -977,6 +977,11 @@ public:
     double GetPixelSize() const {return m_pixelSize;}
     void GetPixelSizeRange(double& min, double& max) const {min = m_minSize; max = m_maxSize;}
     void SetPixelSizeRange(double min, double max) {m_minSize = min; m_maxSize = max;}
+    void UpdatePixelSizeRange(double newMin, double newMax) //! Update min/max only if more restrictive than current value.
+        {
+        m_minSize = (0.0 == m_minSize ? newMin : DoubleOps::Max(m_minSize, newMin));
+        m_maxSize = (0.0 == m_maxSize ? newMax : DoubleOps::Min(m_maxSize, newMax));
+        }
 
     //! Set an GraphicParams to be the "active" GraphicParams for this Render::Graphic.
     //! @param[in]          graphicParams   The new active GraphicParams. All geometry drawn via calls to this Render::Graphic will
@@ -1060,7 +1065,7 @@ public:
     void AddTriMesh(TriMeshArgs const& args) {_AddTriMesh(args);}
 
     //! Draw a BRep surface/solid entity from the solids kernel.
-    void AddBody(ISolidKernelEntityCR entity, double pixelSize = 0.0) {_AddBody(entity, pixelSize);}
+    void AddBody(ISolidKernelEntityCR entity) {_AddBody(entity);}
 
     //! Draw a series of Glyphs.
     //! @param[in]          text        Text drawing parameters
