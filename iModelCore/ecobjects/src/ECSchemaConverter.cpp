@@ -878,7 +878,7 @@ IECInstanceR sourceCustomAttribute
     // Remove the old Custom Attribute and add the new one to the container
     if (!container.RemoveCustomAttribute(mapping.oldSchemaName, mapping.oldCustomAttributeName))
         {
-        LOG.errorv("Couldn't remove the CustomAttribute %s from %s", sourceCustomAttributeClass->GetName(), GetContainerName(container));
+        LOG.errorv("Couldn't remove the CustomAttribute %s from %s", sourceCustomAttributeClass->GetName().c_str(), GetContainerName(container).c_str());
         return ECObjectsStatus::Error;
         }
 
