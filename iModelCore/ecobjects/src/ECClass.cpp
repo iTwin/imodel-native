@@ -526,7 +526,8 @@ ECObjectsStatus ECClass::AddProperty (ECPropertyP& pProperty, bool resolveConfli
         {
         if (!resolveConflicts)
             {
-            LOG.errorv("Cannot create property '%s' because it already exists in this ECClass", pProperty->GetName().c_str());
+            LOG.errorv("Cannot create property '%s' because it already exists in this ECClass (%s:%s)", pProperty->GetName().c_str(), pProperty->GetClass().GetSchema().GetFullSchemaName().c_str(),
+                       pProperty->GetClass().GetName().c_str());
             return ECObjectsStatus::NamedItemAlreadyExists;
             }
         Utf8String newName;
@@ -1058,13 +1059,14 @@ ECObjectsStatus ECClass::_AddBaseClass(ECClassCR baseClass, bool insertAtBeginni
 
     if (ECClassModifier::Sealed == baseClass.m_modifier)
         {
-        LOG.errorv("Cannot add class '%s' as a base class to '%s' because it is declared as Sealed", baseClass.GetName().c_str(), GetName().c_str());
+        LOG.errorv("Cannot add class '%s' as a base class to '%s' because it is declared as Sealed", baseClass.GetFullName(), GetFullName());
         return ECObjectsStatus::BaseClassUnacceptable;
         }
 
     if (GetClassType() != baseClass.GetClassType())
         {
-        LOG.errorv("Cannot add class '%s' as a base class to '%s' because they are of differing class types", baseClass.GetName().c_str(), GetName().c_str());
+        if (!resolveConflicts)
+            LOG.errorv("Cannot add class '%s' as a base class to '%s' because they are of differing class types", baseClass.GetFullName(), GetFullName());
         return ECObjectsStatus::BaseClassUnacceptable;
         }
 
@@ -1073,7 +1075,7 @@ ECObjectsStatus ECClass::_AddBaseClass(ECClassCR baseClass, bool insertAtBeginni
         {
         if (*baseClassIterator == (ECClassP) &baseClass)
             {
-            LOG.errorv("Cannot add class '%s' as a base class to '%s' because it already exists as a base class", baseClass.GetName().c_str(), GetName().c_str());
+            LOG.errorv("Cannot add class '%s' as a base class to '%s' because it already exists as a base class", baseClass.GetFullName(), GetFullName());
             return ECObjectsStatus::NamedItemAlreadyExists;
             }
         }
@@ -1377,7 +1379,11 @@ SchemaReadStatus ECClass::_ReadXmlAttributes (BeXmlNodeR classNode)
     Utf8String     modifierString;
     BeXmlStatus modifierStatus = classNode.GetAttributeStringValue(modifierString, MODIFIER_ATTRIBUTE);
     if (BEXML_Success == modifierStatus)
-        ECXml::ParseModifierString(m_modifier, modifierString);
+        if (ECObjectsStatus::Success != ECXml::ParseModifierString(m_modifier, modifierString))
+            {
+            LOG.errorv("Class %s has an invalid modifier attribute value %s", this->GetName().c_str(), modifierString.c_str());
+            return SchemaReadStatus::InvalidECSchemaXml;
+            }
 
     return SchemaReadStatus::Success;
     }
@@ -1424,7 +1430,7 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadCo
         if (0 == strcmp (childNodeName, EC_PROPERTY_ELEMENT))
             {
             PrimitiveECPropertyP ecProperty = new PrimitiveECProperty(*this);
-            SchemaReadStatus status = _ReadPropertyFromXmlAndAddToClass (ecProperty, childNode, context, conversionSchema, childNodeName);
+            SchemaReadStatus status = _ReadPropertyFromXmlAndAddToClass (ecProperty, childNode, context, conversionSchema, childNodeName, ecXmlVersionMajor);
             if (SchemaReadStatus::Success != status)
                 return status;
 
@@ -1437,7 +1443,7 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadCo
             }
         else if (!isSchemaSupplemental && (0 == strcmp (childNodeName, EC_BASE_CLASS_ELEMENT)))
             {
-            SchemaReadStatus status = _ReadBaseClassFromXml(childNode, context);
+            SchemaReadStatus status = _ReadBaseClassFromXml(childNode, context, conversionSchema);
             if (SchemaReadStatus::Success != status)
                 return status;
 
@@ -1472,7 +1478,7 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadCo
                 }
                 else 
                     ecProperty = new ArrayECProperty(*this);
-            SchemaReadStatus status = _ReadPropertyFromXmlAndAddToClass (ecProperty, childNode, context, conversionSchema, childNodeName);
+            SchemaReadStatus status = _ReadPropertyFromXmlAndAddToClass (ecProperty, childNode, context, conversionSchema, childNodeName, ecXmlVersionMajor);
             if (SchemaReadStatus::Success != status)
                 return status;
 
@@ -1487,7 +1493,7 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadCo
         else if (0 == strcmp(childNodeName, EC_STRUCTARRAYPROPERTY_ELEMENT)) // technically, this only happens in EC3.0 and higher, but no harm in checking 2.0 schemas
             {
             ECPropertyP ecProperty = new StructArrayECProperty(*this);
-            SchemaReadStatus status = _ReadPropertyFromXmlAndAddToClass(ecProperty, childNode, context, conversionSchema, childNodeName);
+            SchemaReadStatus status = _ReadPropertyFromXmlAndAddToClass(ecProperty, childNode, context, conversionSchema, childNodeName, ecXmlVersionMajor);
             if (SchemaReadStatus::Success != status)
                 return status;
 
@@ -1502,7 +1508,7 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadCo
         else if (0 == strcmp (childNodeName, EC_STRUCTPROPERTY_ELEMENT))
             {
             ECPropertyP ecProperty = new StructECProperty (*this);
-            SchemaReadStatus status = _ReadPropertyFromXmlAndAddToClass (ecProperty, childNode, context, conversionSchema, childNodeName);
+            SchemaReadStatus status = _ReadPropertyFromXmlAndAddToClass (ecProperty, childNode, context, conversionSchema, childNodeName, ecXmlVersionMajor);
             if (SchemaReadStatus::Success != status)
                 return status;
             if (context.GetPreserveXmlComments())
@@ -1516,7 +1522,7 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadCo
         else if (0 == strcmp(childNodeName, EC_NAVIGATIONPROPERTY_ELEMENT)) // also EC3.0 only
             {
             NavigationECPropertyP ecProperty = new NavigationECProperty(*this);
-            SchemaReadStatus status = _ReadPropertyFromXmlAndAddToClass(ecProperty, childNode, context, conversionSchema, childNodeName);
+            SchemaReadStatus status = _ReadPropertyFromXmlAndAddToClass(ecProperty, childNode, context, conversionSchema, childNodeName, ecXmlVersionMajor);
             if (SchemaReadStatus::Success != status)
                 return status;
             navigationProperties.push_back(ecProperty);
@@ -1542,12 +1548,19 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadCo
         }
     
     // Add Custom Attributes
-    ReadCustomAttributes (classNode, context, GetSchema());
+    if (CustomAttributeReadStatus::InvalidCustomAttributes == ReadCustomAttributes(classNode, context, GetSchema(), ecXmlVersionMajor))
+        {
+        LOG.errorv("Failed to read class %s because one or more invalid custom attributes were applied to it.", this->GetName().c_str());
+        return SchemaReadStatus::InvalidECSchemaXml;
+        }
 
     return SchemaReadStatus::Success;
     }
 
-SchemaReadStatus ECClass::_ReadBaseClassFromXml (BeXmlNodeP childNode, ECSchemaReadContextR context)
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr            09/2012
+//---------------+---------------+---------------+---------------+---------------+-------
+SchemaReadStatus ECClass::_ReadBaseClassFromXml (BeXmlNodeP childNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema)
     {
     Utf8String qualifiedClassName;
     childNode->GetContent (qualifiedClassName);
@@ -1580,8 +1593,25 @@ SchemaReadStatus ECClass::_ReadBaseClassFromXml (BeXmlNodeP childNode, ECSchemaR
         return SchemaReadStatus::InvalidECSchemaXml;
         }
 
-    if (ECObjectsStatus::Success != AddBaseClass(*baseClass))
+    bool resolveConflicts = false;
+    if (nullptr != conversionSchema)
         {
+        ECClassCP conversionClass = conversionSchema->GetClassCP(GetName().c_str());
+        if (nullptr != conversionClass && conversionClass->GetCustomAttribute("IgnoreBaseClass").IsValid())
+            {
+            resolveConflicts = true;
+            }
+        }
+
+    if (ECObjectsStatus::Success != AddBaseClass(*baseClass, false, resolveConflicts))
+        {
+        if (resolveConflicts)
+            {
+            LOG.warningv("Ignoring incompatible base class '%s:%s' (%d) for '%s:%s' (%d) due to 'IgnoreBaseClass' override.",
+                         baseClass->GetSchema().GetFullSchemaName().c_str(), baseClass->GetName().c_str(), baseClass->GetClassType(),
+                         GetSchema().GetFullSchemaName().c_str(), GetName().c_str(), GetClassType());
+                return SchemaReadStatus::Success;
+            }
         LOG.errorv("Invalid ECSchemaXML: The ECClass '%s:%s' (%d) has a base class '%s:%s' (%d) but their types differ.",
                      GetSchema().GetFullSchemaName().c_str(), GetName().c_str(), GetClassType(),
                      baseClass->GetSchema().GetFullSchemaName().c_str(), baseClass->GetName().c_str(), baseClass->GetClassType());
@@ -1591,11 +1621,13 @@ SchemaReadStatus ECClass::_ReadBaseClassFromXml (BeXmlNodeP childNode, ECSchemaR
     return SchemaReadStatus::Success;
     }
 
-
-SchemaReadStatus ECClass::_ReadPropertyFromXmlAndAddToClass( ECPropertyP ecProperty, BeXmlNodeP& childNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, Utf8CP childNodeName )
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr            09/2012
+//---------------+---------------+---------------+---------------+---------------+-------
+SchemaReadStatus ECClass::_ReadPropertyFromXmlAndAddToClass( ECPropertyP ecProperty, BeXmlNodeP& childNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, Utf8CP childNodeName, int ecXmlVersionMajor)
     {
     // read the property data.
-    SchemaReadStatus status = ecProperty->_ReadXml (*childNode, context);
+    SchemaReadStatus status = ecProperty->_ReadXml (*childNode, context, ecXmlVersionMajor);
     if (status != SchemaReadStatus::Success)
         {
         LOG.errorv ("Invalid ECSchemaXML: Failed to read properties of ECClass '%s:%s'", this->GetSchema().GetName().c_str(), this->GetName().c_str());
@@ -1609,8 +1641,6 @@ SchemaReadStatus ECClass::_ReadPropertyFromXmlAndAddToClass( ECPropertyP ecPrope
 
     if (ECObjectsStatus::Success != this->AddProperty (ecProperty, resolveConflicts))
         {
-        LOG.errorv ("Invalid ECSchemaXML: Failed to read ECClass '%s:%s' because a problem occurred while adding ECProperty '%s'", 
-            this->GetName().c_str(), this->GetSchema().GetName().c_str(), childNodeName);
         delete ecProperty;
         return SchemaReadStatus::InvalidECSchemaXml;
         }
@@ -1902,7 +1932,7 @@ ECObjectsStatus ECEntityClass::CreateNavigationProperty(NavigationECPropertyP& e
 //---------------+---------------+---------------+---------------+---------------+-------
 ECCustomAttributeClass::ECCustomAttributeClass(ECSchemaCR schema) : ECClass(schema)
     {
-    m_containerType = static_cast<CustomAttributeContainerType>(0);
+    m_containerType = CustomAttributeContainerType::Any;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1933,7 +1963,13 @@ SchemaReadStatus ECCustomAttributeClass::_ReadXmlAttributes(BeXmlNodeR classNode
 
     Utf8String appliesTo;
     if (BEXML_Success == classNode.GetAttributeStringValue(appliesTo, CUSTOM_ATTRIBUTE_APPLIES_TO))
-        ECXml::ParseContainerString(this->m_containerType, appliesTo);
+        {
+        if (ECObjectsStatus::Success != ECXml::ParseContainerString(this->m_containerType, appliesTo))
+            {
+            LOG.errorv("appliesTo attribute value '%s' invalid on ECCustomAttributeClass %s:%s.  ", appliesTo.c_str(), this->GetSchema().GetName().c_str(), this->GetName().c_str());
+            return SchemaReadStatus::InvalidECSchemaXml;
+            }
+        }
     else
         m_containerType = CustomAttributeContainerType::Any;
 
@@ -2199,22 +2235,9 @@ RelationshipCardinalityCR RelationshipCardinality::OneMany
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECRelationshipConstraint::ECRelationshipConstraint
 (
-ECRelationshipClassP relationshipClass
-) :m_constraintClasses(relationshipClass)
-    {
-    m_relClass = relationshipClass;
-    m_cardinality = &s_zeroOneCardinality;
-    m_isPolymorphic = true;
-    }
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                02/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECRelationshipConstraint::ECRelationshipConstraint
-(
 ECRelationshipClassP relationshipClass, 
-bool isMultiple
-) :m_constraintClasses(relationshipClass,isMultiple)
+bool isSource
+) :m_constraintClasses(relationshipClass), m_isSource(isSource)
     {
     m_relClass = relationshipClass;
     m_cardinality = &s_zeroOneCardinality;
@@ -2322,7 +2345,7 @@ ECObjectsStatus ECRelationshipConstraint::ValidateCardinalityConstraint(uint32_t
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, ECSchemaReadContextR schemaContext)
+SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, ECSchemaReadContextR schemaContext, int ecXmlVersionMajor)
     {
     SchemaReadStatus status = SchemaReadStatus::Success;
     
@@ -2333,7 +2356,11 @@ SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, E
     READ_OPTIONAL_XML_ATTRIBUTE (constraintNode, CARDINALITY_ATTRIBUTE, this, Cardinality);
     
     // Add Custom Attributes
-    ReadCustomAttributes(constraintNode, schemaContext, m_relClass->GetSchema());
+    if (CustomAttributeReadStatus::InvalidCustomAttributes == ReadCustomAttributes(constraintNode, schemaContext, m_relClass->GetSchema(), ecXmlVersionMajor))
+        {
+        LOG.error("Failed to read relationship constraint because one or more invalid custom attributes were applied to it.");
+        return SchemaReadStatus::InvalidECSchemaXml;
+        }
 
     // For supplemental schemas, only read in the attributes and custom attributes
     if (Utf8String::npos != _GetContainerSchema()->GetName().find("_Supplemental"))
@@ -2494,7 +2521,7 @@ const ECConstraintClassesList ECRelationshipConstraint::GetClasses() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Muhammad.Zaighum                 11/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECRelationshipConstraintClassList::ECRelationshipConstraintClassList(ECRelationshipClassP relClass, bool isMultiple) :m_relClass(relClass)
+ECRelationshipConstraintClassList::ECRelationshipConstraintClassList(ECRelationshipClassP relClass) :m_relClass(relClass)
     {}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
@@ -2750,8 +2777,8 @@ OrderIdStorageMode ECRelationshipConstraint::GetOrderIdStorageMode () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECRelationshipClass::ECRelationshipClass (ECN::ECSchemaCR schema) : ECEntityClass (schema), m_strength( StrengthType::Referencing), m_strengthDirection(ECRelatedInstanceDirection::Forward) 
     {
-    m_source = new ECRelationshipConstraint(this, false);
-    m_target = new ECRelationshipConstraint(this, true);
+    m_source = new ECRelationshipConstraint(this, true);
+    m_target = new ECRelationshipConstraint(this, false);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2948,13 +2975,13 @@ SchemaReadStatus ECRelationshipClass::_ReadXmlContents (BeXmlNodeR classNode, EC
 
     BeXmlNodeP sourceNode = classNode.SelectSingleNode (EC_NAMESPACE_PREFIX ":" EC_SOURCECONSTRAINT_ELEMENT);
     if (NULL != sourceNode)
-        status = m_source->ReadXml (*sourceNode, context);
+        status = m_source->ReadXml (*sourceNode, context, ecXmlVersionMajor);
     if (status != SchemaReadStatus::Success)
         return status;
     
     BeXmlNodeP  targetNode = classNode.SelectSingleNode (EC_NAMESPACE_PREFIX ":" EC_TARGETCONSTRAINT_ELEMENT);
     if (NULL != targetNode)
-        status = m_target->ReadXml (*targetNode, context);
+        status = m_target->ReadXml (*targetNode, context, ecXmlVersionMajor);
     if (status != SchemaReadStatus::Success)
         return status;
         

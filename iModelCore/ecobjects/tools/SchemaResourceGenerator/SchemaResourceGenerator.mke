@@ -1,0 +1,42 @@
+#----------------------------------------------------------------------------------------
+#
+#  $Source: tools/SchemaResourceGenerator/SchemaResourceGenerator.mke $
+#
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+appName = SchemaResourceGenerator
+
+SrcDir = $(_MakeFilePath)
+
+%include mdl.mki
+#%include $(SrcRoot)ecobjects/mki/ECObjects.mki
+
+o = $(OutputRootDir)Build/SchemaResourceGenerator/
+always:
+    ~mkdir $(o)
+
+MultiCompileDepends = $(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)SchemaResourceGenerator.obj : $(SrcDir)SchemaResourceGenerator.cpp ${MultiCompileDepends}
+
+
+%include MultiCppCompileGo.mki
+
+EXE_NO_SIGN = 1
+EXE_DEST    = $(o)
+EXE_NAME    = $(appName)
+EXE_OBJS    = $(MultiCompileObjectList)
+
+LINKER_LIBRARIES            = $(BuildContext)SubParts/Libs/$(libprefix)Bentley$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeXml$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeLibxml2$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BentleyGeom$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BentleyGeomSerialization$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)ECObjects$(libext)   
+
+%include $(SharedMki)linktool.mki
+
+$(BuildContext)Delivery/$(appName).logging.config.xml : $(SrcDir)logging.config.xml
+    $(LinkFirstDepToFirstTarget)

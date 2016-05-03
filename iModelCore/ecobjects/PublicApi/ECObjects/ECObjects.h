@@ -167,6 +167,7 @@ enum class ECObjectsStatus
     Error,
     RelationshipConstraintsNotCompatible,
     CaseCollision,
+    CustomAttributeContainerTypesNotCompatible,
     };
 
 //! Result status for deserializing an ECSchema from Xml
@@ -189,6 +190,17 @@ enum class SchemaWriteStatus
     FailedToSaveXml,
     FailedToCreateXml,
     FailedToWriteFile,
+    };
+
+//! Result status for the deserialization of custom attributes applied to a custom attribute container
+enum class CustomAttributeReadStatus
+    {
+    //! Successfully deserialized and applied all custom attributes for the container
+    Success,
+    //! One or more custom attributes skipped, non fatal error
+    SkippedCustomAttributes,
+    //! One or more custom attributes found which were invalid for this container because their CustomAttributeContainerType did not match the actual container type, fatal error
+    InvalidCustomAttributes,
     };
 
 //! Result status of deserializing an IECInstance from Xml
@@ -468,7 +480,10 @@ enum class CustomAttributeContainerType
     StructArrayProperty     = (0x0001 << 8),
     NavigationProperty      = (0x0001 << 9),
     AnyProperty             = PrimitiveProperty | StructProperty | ArrayProperty | StructArrayProperty | NavigationProperty,
-    Any                     = Schema | AnyClass | AnyProperty 
+    SourceRelationshipConstraint    = (0x0001 << 10),
+    TargetRelationshipConstraint    = (0x0001 << 11),
+    AnyRelationshipConstraint       = SourceRelationshipConstraint | TargetRelationshipConstraint,
+    Any                     = Schema | AnyClass | AnyProperty | AnyRelationshipConstraint
     };
 
 ENUM_IS_FLAGS(CustomAttributeContainerType)

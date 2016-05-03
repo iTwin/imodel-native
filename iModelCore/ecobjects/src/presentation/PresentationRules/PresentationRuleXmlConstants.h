@@ -100,6 +100,7 @@
 
 #define GROUP_XML_ATTRIBUTE_IMAGEID                                                   "ImageId"
 #define GROUP_XML_ATTRIBUTE_CREATEGROUPFORSINGLEITEM                                  "CreateGroupForSingleItem"
+#define GROUP_XML_ATTRIBUTE_CREATEGROUPFORUNSPECIFIEDVALUES                           "CreateGroupForUnspecifiedValues"
 #define GROUP_XML_ATTRIBUTE_MENULABEL                                                 "ContextMenuLabel"
 #define GROUP_XML_ATTRIBUTE_DEFAULTLABEL                                              "DefaultGroupLabel"
 

@@ -114,7 +114,6 @@ IECInstancePtr GetInstanceForClass(Utf8CP className, ECSchemaR schema)
     return instance;
     }
 
-#ifdef NDEBUG // avoid assert eccustomattribute.cpp line 205 stopping build
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -127,9 +126,51 @@ TEST_F(CustomAttributeTest, ExpectFailureWhenSetNonCustomAttributeClass)
     ASSERT_TRUE (NULL != containerClass);
 
     IECInstancePtr instance = GetInstanceForClass("BaseClass", *schema);
-    EXPECT_EQ(ECObjectsStatus::NotCustomAttributeClass, containerClass->SetCustomAttribute(*instance));
+        {
+        DISABLE_ASSERTS
+        EXPECT_EQ(ECObjectsStatus::NotCustomAttributeClass, containerClass->SetCustomAttribute(*instance));
+        }
     }
-#endif
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                       Colin.Kerr 4/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CustomAttributeTest, ExpectFailureWhenContainerTypesNotCompatible)
+    {
+    ECSchemaPtr schema;
+    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "Test", "T111", 1, 1, 1));
+
+    ECCustomAttributeClassP caClass;
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateCustomAttributeClass(caClass, "CAClass"));
+    caClass->SetContainerType(CustomAttributeContainerType::EntityClass);
+
+    ECEntityClassP entityClass;
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(entityClass, "EntityClass"));
+
+    ECStructClassP structClass;
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateStructClass(structClass, "StructClass"));
+
+    IECInstancePtr caInstance = GetInstanceForClass("CAClass", *schema);
+    EXPECT_EQ(ECObjectsStatus::Success, entityClass->SetCustomAttribute(*caInstance)) << "Should have been able to set custom attribute on entity class because container types match";
+
+        {
+        DISABLE_ASSERTS
+        EXPECT_EQ(ECObjectsStatus::CustomAttributeContainerTypesNotCompatible, structClass->SetCustomAttribute(*caInstance)) << "Should not have been able to set custom attribute on struct class because contaienr types do not match";
+        }
+    
+    ECRelationshipClassP relClass;
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateRelationshipClass(relClass, "RelClass"));
+
+    caClass->SetContainerType(CustomAttributeContainerType::SourceRelationshipConstraint);
+
+    EXPECT_EQ(ECObjectsStatus::Success, relClass->GetSource().SetCustomAttribute(*caInstance)) << "Should have been able to set custom attribute on source constraint because container types match";
+
+        {
+        DISABLE_ASSERTS
+        EXPECT_EQ(ECObjectsStatus::CustomAttributeContainerTypesNotCompatible, relClass->GetTarget().SetCustomAttribute(*caInstance)) << "Should not have been able to set custom attribute on struct class because contaienr types do not match";
+        }
+    }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   
@@ -371,7 +412,6 @@ TEST_F(CustomAttributeTest, ExpectCanRemoveCustomAttribute)
 
     }
 
-#ifdef NDEBUG // avoid assert eccustomattribute.cpp line 205 stopping build
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -391,11 +431,14 @@ TEST_F(CustomAttributeTest, ExpectFailureWithUnreferencedCustomAttribute)
 
     IECInstancePtr instance = GetInstanceForClass("RefClass", *refSchema);
 
+    {
+    DISABLE_ASSERTS
     EXPECT_EQ(ECObjectsStatus::SchemaNotFound, containerClass->SetCustomAttribute(*instance));
+    }
     schema->AddReferencedSchema(*refSchema);
     EXPECT_EQ(ECObjectsStatus::Success, containerClass->SetCustomAttribute(*instance));
     }
-#endif
+
 
 #ifdef TEST_DEFECT_D_88458 
 //---------------------------------------------------------------------------------------
@@ -603,6 +646,78 @@ bool TestValue(CustomAttributeContainerType compareType, CustomAttributeContaine
     return false;
     }
 
+TEST_F(CustomAttributeTest, FailsToLoadSchemaWithInvalidCustomAttributes_EC3)
+    {
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr schema;
+
+    Utf8Char schemaXML[] = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+        "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"test\" version=\"01.00\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
+        "    <ECCustomAttributes>"
+        "        <AppliesToClass xmlns=\"TestSchema.01.00\"/>"
+        "    </ECCustomAttributes>"
+        "    <ECCustomAttributeClass typeName=\"AppliesToClass\" appliesTo=\"AnyClass\" />"
+        "</ECSchema>";
+
+    SchemaReadStatus status;
+    {
+    DISABLE_ASSERTS
+    status = ECSchema::ReadFromXmlString(schema, schemaXML, *schemaContext);
+    }
+    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status) << "Expected deserialization to fail when custom attribute is applied to a container that conflicts with the CAs appliesTo attribute";
+
+    Utf8Char schemaXML2[] = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+        "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"test\" version=\"01.00\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
+        "    <ECCustomAttributes>"
+        "        <DoesNotExist xmlns=\"TestSchema.01.00\"/>"
+        "    </ECCustomAttributes>"
+        "    <ECCustomAttributeClass typeName=\"AppliesToClass\" appliesTo=\"AnyClass\" />"
+        "</ECSchema>";
+    {
+    DISABLE_ASSERTS
+    status = ECSchema::ReadFromXmlString(schema, schemaXML2, *schemaContext);
+    }
+    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status) << "Expected deserialization to fail when custom attribute is applied but it's class cannot be found";
+    }
+
+TEST_F(CustomAttributeTest, CanLoadSchemaWithInvalidCustomAttributes_EC2)
+    {
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr schema;
+
+    Utf8Char schemaXML[] = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+        "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"test\" version=\"01.00\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        "    <ECCustomAttributes>"
+        "        <DoesNotExist xmlns=\"TestSchema.01.00\"/>"
+        "    </ECCustomAttributes>"
+        "    <ECClass typeName=\"AppliesToClass\"/>"
+        "</ECSchema>";
+
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXML, *schemaContext);
+    ASSERT_EQ(SchemaReadStatus::Success, status) << "Expected deserialization to succeed when custom attribute is applied but it's class cannot be found";
+    }
+
+TEST_F(CustomAttributeTest, InvalidContainerTypeDeserialization)
+    {
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr schema;
+
+    Utf8Char schemaXML[] = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+        "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"test\" version=\"01.00\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
+        "    <ECCustomAttributeClass typeName=\"AppliesToGarbage\" appliesTo=\"Bad\" />"
+        "</ECSchema>";
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXML, *schemaContext);
+    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status) << "Expected deserialization to fail when appliesTo attribute is an invalid value";
+
+
+    Utf8Char schemaXML2[] = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+        "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"test\" version=\"01.00\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
+        "    <ECCustomAttributeClass typeName=\"AppliesToGarbage\" appliesTo=\"\" />"
+        "</ECSchema>";
+    status = ECSchema::ReadFromXmlString(schema, schemaXML2, *schemaContext);
+    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status) << "Expected deserialization to fail when appliesTo attribute is an empty value";
+    }
+
 TEST_F(CustomAttributeTest, ContainerTypeSerialization)
     {
     Utf8Char schemaXML[] = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
@@ -612,46 +727,45 @@ TEST_F(CustomAttributeTest, ContainerTypeSerialization)
         "    <ECCustomAttributeClass typeName=\"AppliesToAny\" appliesTo=\"Any\" />"
         "    <ECCustomAttributeClass typeName=\"AppliesToSchemaAndEntity\" appliesTo=\"Schema,EntityClass\" />"
         "    <ECCustomAttributeClass typeName=\"AppliesToSchemaEntityClassPrimitiveProperty\" appliesTo=\"Schema,EntityClass,PrimitiveProperty\" />"
-        "    <ECCustomAttributeClass typeName=\"AppliesToGarbage\" appliesTo=\"Bad\" />"
+        "    <ECCustomAttributeClass typeName=\"AppliesToNotSet\" />"
         "</ECSchema>";
 
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
     ECSchemaPtr schema;
     SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXML, *schemaContext);
-    EXPECT_EQ(SchemaReadStatus::Success, status);
+    ASSERT_EQ(SchemaReadStatus::Success, status);
 
     ECCustomAttributeClassCP appliesToSchema = schema->GetClassCP("AppliesToSchema")->GetCustomAttributeClassCP();
     ECCustomAttributeClassCP appliesToAnyClass = schema->GetClassCP("AppliesToAnyClass")->GetCustomAttributeClassCP();
     ECCustomAttributeClassCP appliesToAny = schema->GetClassCP("AppliesToAny")->GetCustomAttributeClassCP();
     ECCustomAttributeClassCP appliesToSchemaAndEntity = schema->GetClassCP("AppliesToSchemaAndEntity")->GetCustomAttributeClassCP();
     ECCustomAttributeClassCP appliesToSchemaEntityClassPrimitiveProperty = schema->GetClassCP("AppliesToSchemaEntityClassPrimitiveProperty")->GetCustomAttributeClassCP();
-    ECCustomAttributeClassCP appliesToGarbage = schema->GetClassCP("AppliesToGarbage")->GetCustomAttributeClassCP();
+    ECCustomAttributeClassCP appliesToNotSet = schema->GetClassCP("AppliesToNotSet")->GetCustomAttributeClassCP();
 
-    ASSERT_TRUE(TestValue(CustomAttributeContainerType::Schema, appliesToSchema->GetContainerType()));
-    ASSERT_FALSE(TestValue(CustomAttributeContainerType::Any, appliesToSchema->GetContainerType()));
-    ASSERT_FALSE(TestValue(CustomAttributeContainerType::EntityClass, appliesToSchema->GetContainerType()));
+    EXPECT_TRUE(TestValue(CustomAttributeContainerType::Schema, appliesToSchema->GetContainerType()));
+    EXPECT_FALSE(TestValue(CustomAttributeContainerType::Any, appliesToSchema->GetContainerType()));
+    EXPECT_FALSE(TestValue(CustomAttributeContainerType::EntityClass, appliesToSchema->GetContainerType()));
 
-    ASSERT_TRUE(TestValue(CustomAttributeContainerType::AnyClass, appliesToAnyClass->GetContainerType()));
-    ASSERT_TRUE(TestValue(CustomAttributeContainerType::EntityClass, appliesToAnyClass->GetContainerType()));
-    ASSERT_TRUE(TestValue(CustomAttributeContainerType::RelationshipClass, appliesToAnyClass->GetContainerType()));
-    ASSERT_FALSE(TestValue(CustomAttributeContainerType::Schema, appliesToAnyClass->GetContainerType()));
+    EXPECT_TRUE(TestValue(CustomAttributeContainerType::AnyClass, appliesToAnyClass->GetContainerType()));
+    EXPECT_TRUE(TestValue(CustomAttributeContainerType::EntityClass, appliesToAnyClass->GetContainerType()));
+    EXPECT_TRUE(TestValue(CustomAttributeContainerType::RelationshipClass, appliesToAnyClass->GetContainerType()));
+    EXPECT_FALSE(TestValue(CustomAttributeContainerType::Schema, appliesToAnyClass->GetContainerType()));
 
-    ASSERT_TRUE(TestValue(CustomAttributeContainerType::Any, appliesToAny->GetContainerType()));
-    ASSERT_TRUE(TestValue(CustomAttributeContainerType::AnyClass, appliesToAny->GetContainerType()));
-    ASSERT_TRUE(TestValue(CustomAttributeContainerType::EntityClass, appliesToAny->GetContainerType()));
-    ASSERT_TRUE(TestValue(CustomAttributeContainerType::RelationshipClass, appliesToAny->GetContainerType()));
+    EXPECT_TRUE(TestValue(CustomAttributeContainerType::Any, appliesToAny->GetContainerType()));
+    EXPECT_TRUE(TestValue(CustomAttributeContainerType::AnyClass, appliesToAny->GetContainerType()));
+    EXPECT_TRUE(TestValue(CustomAttributeContainerType::EntityClass, appliesToAny->GetContainerType()));
+    EXPECT_TRUE(TestValue(CustomAttributeContainerType::RelationshipClass, appliesToAny->GetContainerType()));
 
-    ASSERT_TRUE(TestValue(CustomAttributeContainerType::Schema, appliesToSchemaAndEntity->GetContainerType()));
-    ASSERT_TRUE(TestValue(CustomAttributeContainerType::EntityClass, appliesToSchemaAndEntity->GetContainerType()));
-    ASSERT_FALSE(TestValue(CustomAttributeContainerType::RelationshipClass, appliesToSchemaAndEntity->GetContainerType()));
+    EXPECT_TRUE(TestValue(CustomAttributeContainerType::Schema, appliesToSchemaAndEntity->GetContainerType()));
+    EXPECT_TRUE(TestValue(CustomAttributeContainerType::EntityClass, appliesToSchemaAndEntity->GetContainerType()));
+    EXPECT_FALSE(TestValue(CustomAttributeContainerType::RelationshipClass, appliesToSchemaAndEntity->GetContainerType()));
 
-    ASSERT_TRUE(TestValue(CustomAttributeContainerType::Schema, appliesToSchemaEntityClassPrimitiveProperty->GetContainerType()));
-    ASSERT_TRUE(TestValue(CustomAttributeContainerType::EntityClass, appliesToSchemaEntityClassPrimitiveProperty->GetContainerType()));
-    ASSERT_TRUE(TestValue(CustomAttributeContainerType::PrimitiveProperty, appliesToSchemaEntityClassPrimitiveProperty->GetContainerType()));
-    ASSERT_FALSE(TestValue(CustomAttributeContainerType::RelationshipClass, appliesToSchemaEntityClassPrimitiveProperty->GetContainerType()));
+    EXPECT_TRUE(TestValue(CustomAttributeContainerType::Schema, appliesToSchemaEntityClassPrimitiveProperty->GetContainerType()));
+    EXPECT_TRUE(TestValue(CustomAttributeContainerType::EntityClass, appliesToSchemaEntityClassPrimitiveProperty->GetContainerType()));
+    EXPECT_TRUE(TestValue(CustomAttributeContainerType::PrimitiveProperty, appliesToSchemaEntityClassPrimitiveProperty->GetContainerType()));
+    EXPECT_FALSE(TestValue(CustomAttributeContainerType::RelationshipClass, appliesToSchemaEntityClassPrimitiveProperty->GetContainerType()));
 
-    ASSERT_FALSE(TestValue(CustomAttributeContainerType::Any, appliesToGarbage->GetContainerType()));
-    ASSERT_FALSE(TestValue(CustomAttributeContainerType::Schema, appliesToGarbage->GetContainerType()));
+    EXPECT_TRUE(TestValue(CustomAttributeContainerType::Any, appliesToNotSet->GetContainerType()));
 
     Utf8String serializedStr;
     SchemaWriteStatus status2 = schema->WriteToXmlString(serializedStr, 3, 0);

@@ -3326,6 +3326,8 @@ struct NamedAttributeDeserializer : ICustomAttributeDeserializer
         bool ClassExists (Utf8StringCR className, Utf8StringCR schemaName, ECSchemaReadContextR schemaContext)
             {
             ECSchemaPtr schema = GetSchema (schemaName, schemaContext);
+            if (!schema.IsValid())
+                return false;
             ECClassCP ecClass = schema->GetClassCP (className.c_str ());
             if (ecClass)
                 return true;

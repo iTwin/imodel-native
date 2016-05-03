@@ -173,10 +173,8 @@ public:
     //! Constructor that takes a PrimitiveType
     ECTypeDescriptor (PrimitiveType primitiveType) : m_typeKind (VALUEKIND_Primitive), m_primitiveType (primitiveType) { };
 
-/*__PUBLISH_SECTION_END__*/
     ECTypeDescriptor () : m_typeKind ((ValueKind) 0), m_primitiveType ((PrimitiveType) 0) { };
     ECTypeDescriptor (ValueKind valueKind, short valueKindQualifier) : m_typeKind (valueKind), m_primitiveType ((PrimitiveType)valueKindQualifier) { };
-/*__PUBLISH_SECTION_START__*/
 
     bool operator==(ECTypeDescriptor const& rhs) const { return m_typeKind == rhs.m_typeKind && m_primitiveType == rhs.m_primitiveType; }
     bool operator!=(ECTypeDescriptor const& rhs) const { return !(*this == rhs); }
@@ -197,9 +195,7 @@ public:
     inline bool                 IsStructArray() const       { return (GetTypeKind() == VALUEKIND_Array ) && (GetArrayKind() == ARRAYKIND_Struct); }
     //! Returns the primitive type of the ECProperty, if the property is a Primitive type
     inline PrimitiveType        GetPrimitiveType() const    { return m_primitiveType; }
-/*__PUBLISH_SECTION_END__*/
     inline short                GetTypeKindQualifier() const   { return m_primitiveType; }
-/*__PUBLISH_SECTION_START__*/
 };
 
 //=======================================================================================
@@ -261,7 +257,7 @@ protected:
     //! Does not check if the container's ECSchema references the requisite ECSchema(s). @see SupplementedSchemaBuilder::SetMergedCustomAttribute
     ECObjectsStatus                     SetSupplementedCustomAttribute(IECInstanceR customAttributeInstance);
 
-    InstanceReadStatus                  ReadCustomAttributes (BeXmlNodeR containerNode, ECSchemaReadContextR context, ECSchemaCR fallBackSchema);
+    CustomAttributeReadStatus           ReadCustomAttributes (BeXmlNodeR containerNode, ECSchemaReadContextR context, ECSchemaCR fallBackSchema, int ecXmlVersionMajor);
     SchemaWriteStatus                   WriteCustomAttributes(BeXmlWriterR xmlWriter) const;
     //! Only copies primary ones, not consolidated ones. Does not check if the container's ECSchema references the requisite ECSchema(s). @see SupplementedSchemaBuilder::SetMergedCustomAttribute
     ECObjectsStatus                     CopyCustomAttributesTo(IECCustomAttributeContainerR destContainer) const;
@@ -270,6 +266,7 @@ protected:
     void                                AddUniquePrimaryCustomAttributesToList(ECCustomAttributeCollection& returnList);
     virtual void                        _GetBaseContainers(bvector<IECCustomAttributeContainerP>& returnList) const;
     virtual ECSchemaCP                  _GetContainerSchema() const = 0;// {return NULL;};
+    virtual CustomAttributeContainerType _GetContainerType() const = 0;
 
     ECOBJECTS_EXPORT virtual ~IECCustomAttributeContainer();
 
@@ -490,7 +487,7 @@ Base class for an object which adapts the internal value of an ECProperty to a u
 +===============+===============+===============+===============+===============+======*/
 struct IECTypeAdapter : RefCountedBase
     {
-    typedef bvector<WString> StandardValuesCollection;
+    typedef bvector<Utf8String> StandardValuesCollection;
 /*__PUBLISH_SECTION_END__*/
     // Note that the implementation of the extended type system is implemented in DgnPlatform in IDgnECTypeAdapter, which subclasses IECTypeAdapter and makes
     // use of IDgnECTypeAdapterContext which provides dgn-specific context such as file, model, and element.
@@ -671,7 +668,7 @@ protected:
 
     ECObjectsStatus                     SetName (Utf8StringCR name);
 
-    virtual SchemaReadStatus            _ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext);
+    virtual SchemaReadStatus            _ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext, int ecXmlVersionMajor);
     virtual SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor);
     SchemaWriteStatus                   _WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName, int ecXmlVersionMajor, bvector<bpair<Utf8CP, Utf8CP>>* attributes=nullptr, bool writeType=true);
     virtual Utf8String                  _GetTypeNameForXml(int ecXmlVersionMajor) const { return GetTypeName(); }
@@ -891,7 +888,7 @@ private:
     PrimitiveECProperty(ECClassCR ecClass) : m_primitiveType(PRIMITIVETYPE_String), ExtendedTypeECProperty(ecClass), m_enumeration(nullptr) {};
 
 protected:
-    virtual SchemaReadStatus            _ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext) override;
+    virtual SchemaReadStatus            _ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext, int ecXmlVersionMajor) override;
     virtual SchemaWriteStatus           _WriteXml(BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) override;
     virtual bool                        _IsPrimitive () const override { return true;}
     virtual PrimitiveECPropertyCP       _GetAsPrimitivePropertyCP() const override { return this; }
@@ -903,6 +900,7 @@ protected:
     virtual CalculatedPropertySpecificationCP   _GetCalculatedPropertySpecification() const override;
     virtual bool                                _IsCalculated() const override;
     virtual bool                                _SetCalculatedPropertySpecification (IECInstanceP expressionAttribute) override;
+    virtual CustomAttributeContainerType        _GetContainerType() const override { return CustomAttributeContainerType::PrimitiveProperty; }
 
 public:
     //! Sets the PrimitiveType of this ECProperty.  The default type is ::PRIMITIVETYPE_String
@@ -931,7 +929,7 @@ private:
     StructECProperty (ECClassCR ecClass) : m_structType(NULL), ECProperty(ecClass) {};
 
 protected:
-    virtual SchemaReadStatus            _ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext) override;
+    virtual SchemaReadStatus            _ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext, int ecXmlVersionMajor) override;
     virtual SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) override;
     virtual bool                        _IsStruct () const override { return true;}
     virtual StructECPropertyCP          _GetAsStructPropertyCP() const override { return this; }
@@ -939,6 +937,7 @@ protected:
     virtual Utf8String                  _GetTypeName () const override;
     virtual ECObjectsStatus             _SetTypeName (Utf8StringCR typeName) override;
     virtual bool                        _CanOverride(ECPropertyCR baseProperty) const override;
+    virtual CustomAttributeContainerType _GetContainerType() const override { return CustomAttributeContainerType::StructProperty; }
 
 //__PUBLISH_SECTION_START__
 public:
@@ -976,7 +975,7 @@ protected:
     ECObjectsStatus                     SetMaxOccurs(Utf8StringCR maxOccurs);
 
 protected:
-    virtual SchemaReadStatus            _ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext) override;
+    virtual SchemaReadStatus            _ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext, int ecXmlVersionMajor) override;
     virtual SchemaWriteStatus           _WriteXml(BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) override;
     virtual bool                        _IsArray () const override { return true;}
     virtual bool                        _IsPrimitiveArray() const override { return ARRAYKIND_Primitive == m_arrayKind; }
@@ -988,6 +987,7 @@ protected:
     virtual CalculatedPropertySpecificationCP   _GetCalculatedPropertySpecification() const override;
     virtual bool                                _IsCalculated() const override;
     virtual bool                                _SetCalculatedPropertySpecification (IECInstanceP expressionAttribute) override;
+    virtual CustomAttributeContainerType        _GetContainerType() const override { return CustomAttributeContainerType::ArrayProperty; }
 
 /*__PUBLISH_SECTION_END__*/
 public:
@@ -1042,6 +1042,7 @@ protected:
     virtual StructArrayECPropertyCP     _GetAsStructArrayPropertyCP() const override { return this; }
     virtual StructArrayECPropertyP      _GetAsStructArrayPropertyP()        override { return this; }
     virtual bool                        _CanOverride(ECPropertyCR baseProperty) const override;
+    virtual CustomAttributeContainerType _GetContainerType() const override { return CustomAttributeContainerType::StructArrayProperty; }
 
 public:
     //! Sets the ECClass to be used for the array's struct elements
@@ -1076,7 +1077,7 @@ protected:
     Utf8String                      GetRelationshipClassName() const;
 
 protected:
-    virtual SchemaReadStatus        _ReadXml(BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext) override;
+    virtual SchemaReadStatus        _ReadXml(BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext, int ecXmlVersionMajor) override;
     virtual SchemaWriteStatus       _WriteXml(BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) override;
 
     virtual bool                    _IsNavigation() const override { return true; }
@@ -1088,6 +1089,7 @@ protected:
     virtual ECObjectsStatus         _SetTypeName(Utf8StringCR typeName) override { return ECObjectsStatus::OperationNotSupported; }
 
     virtual bool                    _CanOverride(ECPropertyCR baseProperty) const override;
+    virtual CustomAttributeContainerType _GetContainerType() const override { return CustomAttributeContainerType::NavigationProperty; }
 
 public:
     // !Gets the relationship class used to determine what related instance this navigation property points to
@@ -1289,8 +1291,8 @@ protected:
 
     void _ReadCommentsInSameLine(BeXmlNodeR childNode, bvector<Utf8String>& comments);
 
-    SchemaReadStatus                    _ReadBaseClassFromXml (BeXmlNodeP childNode, ECSchemaReadContextR context);
-    SchemaReadStatus                    _ReadPropertyFromXmlAndAddToClass( ECPropertyP ecProperty, BeXmlNodeP& childNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, Utf8CP childNodeName );
+    SchemaReadStatus                    _ReadBaseClassFromXml (BeXmlNodeP childNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema);
+    SchemaReadStatus                    _ReadPropertyFromXmlAndAddToClass( ECPropertyP ecProperty, BeXmlNodeP& childNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, Utf8CP childNodeName, int ecXmlVersionMajor);
 
     virtual SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) const;
     SchemaWriteStatus                   _WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor, Utf8CP elementName, bmap<Utf8CP, Utf8CP>* additionalAttributes, bool doElementEnd) const;
@@ -1813,6 +1815,7 @@ protected:
     virtual ECEntityClassCP _GetEntityClassCP() const override {return this;}
     virtual ECEntityClassP _GetEntityClassP() override { return this; }
     virtual ECClassType _GetClassType() const override { return ECClassType::Entity;}
+    virtual CustomAttributeContainerType _GetContainerType() const override { return CustomAttributeContainerType::EntityClass; }
 
 public:
     //! Creates a navigation property object using the relationship class and direction.  To succeed the relationship class, direction and name must all be valid.
@@ -1852,6 +1855,7 @@ protected:
     ECClassType _GetClassType() const override { return ECClassType::CustomAttribute;}
     ECCustomAttributeClassCP _GetCustomAttributeClassCP() const override { return this;}
     ECCustomAttributeClassP _GetCustomAttributeClassP() override { return this; }
+    virtual CustomAttributeContainerType _GetContainerType() const override { return CustomAttributeContainerType::CustomAttributeClass; }
 
 public:
     CustomAttributeContainerType GetContainerType() const { return m_containerType; }
@@ -1859,6 +1863,10 @@ public:
     //! Sets the container type which this custom attribute can be applied to. Use this carefully as it might render existing instances invalid!
     // @param[in]   containerType   The new container type to apply
     void SetContainerType(CustomAttributeContainerType containerType) { m_containerType = containerType; }
+
+    //! Returns true if the containerType is compatible with the CustomAttributeContainerType of this ECCustomAttributeClass
+    //@param[in]    containerType   The type of the container you wish to apply an instance of this class to
+    bool CanBeAppliedTo(CustomAttributeContainerType containerType) const { return 0 != static_cast<int>(m_containerType & containerType); } // Compare to 0 instead of containerType so comparisons like Class & Any return true
 };
 
 //---------------------------------------------------------------------------------------
@@ -1886,6 +1894,7 @@ protected:
     virtual ECClassType _GetClassType() const override { return ECClassType::Struct;}
     virtual ECStructClassCP _GetStructClassCP() const override { return this;}
     virtual ECStructClassP _GetStructClassP() override { return this; }
+    virtual CustomAttributeContainerType _GetContainerType() const override { return CustomAttributeContainerType::StructClass; }
 
 };
 
@@ -2024,7 +2033,7 @@ struct ECRelationshipConstraintClassList : NonCopyableClass
         ECRelationshipClassP m_relClass;
    //__PUBLISH_SECTION_START__
     public:
-        ECRelationshipConstraintClassList(ECRelationshipClassP relClass, bool isMultiple = false);
+        ECRelationshipConstraintClassList(ECRelationshipClassP relClass);
         ECOBJECTS_EXPORT iterator begin() const;    //!< Returns the beginning of the iterator
         ECOBJECTS_EXPORT iterator end() const;      //!< Returns the end of the iterator
         ECOBJECTS_EXPORT ECRelationshipConstraintClassCP operator[](size_t x)const; //!< Array operator overloaded
@@ -2065,24 +2074,22 @@ private:
     bool                        m_isPolymorphic;
     RelationshipCardinality*    m_cardinality;
     ECRelationshipClassP        m_relClass;
+    bool                        m_isSource;
 
     ECObjectsStatus             SetCardinality(uint32_t& lowerLimit, uint32_t& upperLimit);
 
     SchemaWriteStatus           WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName) const;
-    SchemaReadStatus            ReadXml (BeXmlNodeR constraintNode, ECSchemaReadContextR schemaContext);
+    SchemaReadStatus            ReadXml (BeXmlNodeR constraintNode, ECSchemaReadContextR schemaContext, int ecXmlVersionMajor);
 
     ECObjectsStatus             ValidateClassConstraint(ECEntityClassCR constraintClass) const;
     ECObjectsStatus             ValidateCardinalityConstraint(uint32_t& lowerLimit, uint32_t& upperLimit) const;
 
 protected:
     virtual ECSchemaCP          _GetContainerSchema() const override;
-
-    //! Initializes a new instance of the ECRelationshipConstraint class.
-    //! IsPolymorphic defaults to true and IsMultiple defaults to false
-    ECRelationshipConstraint(ECRelationshipClassP relationshipClass);  // WIP_CEM... should not be public... create a factory method
+    virtual CustomAttributeContainerType _GetContainerType() const override { return m_isSource ? CustomAttributeContainerType::SourceRelationshipConstraint : CustomAttributeContainerType::TargetRelationshipConstraint; }
 
     //! Initializes a new instance of the ECRelationshipConstraint class
-    ECRelationshipConstraint(ECRelationshipClassP relationshipClass, bool isMultiple); // WIP_CEM... should not be public... create a factory method
+    ECRelationshipConstraint(ECRelationshipClassP relationshipClass, bool isSource); // WIP_CEM... should not be public... create a factory method
 
 /*__PUBLISH_SECTION_START__*/
 public:
@@ -2200,6 +2207,7 @@ protected:
     virtual ECRelationshipClassP        _GetRelationshipClassP ()  override {return this;};
     virtual ECClassType                 _GetClassType() const override { return ECClassType::Relationship; }
     virtual ECObjectsStatus             _AddBaseClass(ECClassCR baseClass, bool insertAtBeginning, bool resolveConflicts = false) override;
+    virtual CustomAttributeContainerType _GetContainerType() const override { return CustomAttributeContainerType::RelationshipClass; }
 
 //__PUBLISH_SECTION_START__
 public:
@@ -2243,10 +2251,46 @@ enum class SchemaMatchType
     LatestMajorCompatible,
     };
 
-/*=================================================================================**//**
-* Fully defines a schema with its name, major and minor versions, and a checksum
-* @bsistruct
-+===============+===============+===============+===============+===============+======*/
+//=======================================================================================
+//! Fully defines a schema with its name, major and minor versions, and a checksum
+//! 
+//! The following table shows how schema version changes over time
+//! 
+//! |                             | Changes Write Compatible | Changes Read Compatible | Version Number |
+//! |-----------------------------|--------------------------|-------------------------|----------------|
+//! | Initial schema release      | N/A                      | N/A                     | 1.0.0          |
+//! | Additions to schema         | Yes                      | Yes                     | 1.0.1          |
+//! | Additions to schema         | Yes                      | Yes                     | 1.0.2          |
+//! | Additions to schema         | No                       | Yes                     | 1.1.0          |
+//! | Additions to schema         | Yes                      | Yes                     | 1.1.1          |
+//! | Additions to schema         | Yes                      | Yes                     | 1.1.2          |
+//! | Additions to schema         | Yes                      | Yes                     | 1.1.3          |
+//! | Additions to schema         | Yes                      | Yes                     | 1.2.0          |
+//! | Significant schema revision | No                       | No                      | 2.0.0          |
+//! 
+//! The general logic for an application written for a particular version of a schema working with a repository that potentially
+//! has a different version of the schema would be:
+//!   -	If schema in the repository is newer (or same):
+//!       -	If first digit matches, app can safely read
+//!       -	If first two digits match, app can safely write (and read)
+//!   -	If schema in the repository is older:
+//!       -	If first two digits match, app can upgrade repository schema without breaking read or write for other apps
+//!       -	If only first digit matches, app can upgrade repository, but upgrade will prevent some older apps from writing
+//! 
+//! For traditional EC developers it may be difficult to envision when a schema change would require a change
+//! to the middle version number. Consider in schema 1 that we have a Student class that stores grades and has (double) properties:
+//!   -	Language
+//!   -	Math
+//!   -	Science
+//!   -	Music
+//!   -	Overall GPA (an average of the previous 4 properties)
+//! 
+//! If schema 2 adds to Student a double property Psychology, the meaning of Overall GPA changes slightly and hence, applications written for Schema 1:
+//!   -	Can still safely read all the values that were in schema 1
+//!   -	Cannot modify any values that were in schema 1 because they will likely set Overall GPA incorrectly.
+//! 
+// @bsiclass                                                
+//=======================================================================================
 struct SchemaKey
     {
     Utf8String    m_schemaName;
@@ -2270,6 +2314,20 @@ struct SchemaKey
 
     //! Default constructor
     SchemaKey () : m_versionMajor(DEFAULT_VERSION_MAJOR), m_versionWrite(DEFAULT_VERSION_WRITE), m_versionMinor(DEFAULT_VERSION_MINOR), m_checkSum(0) {}
+
+    Utf8StringCR GetName() const { return m_schemaName; }
+
+    //! Gets the major schema version. Identifies the generation of the schema that guarantees that newer schemas can be
+    //! read by older software.
+    //! Example: 
+    uint32_t GetVersionMajor() const { return m_versionMajor; };
+
+    //! Gets the major for write version. This is less significant than the major version. It identifies the generation of the schema
+    //! that guarantees that newer schemas can be written by older software.
+    uint32_t GetVersionWrite() const { return m_versionWrite; };
+
+    //! Least significant version number that increments with read/write compatible additions.
+    uint32_t GetVersionMinor() const { return m_versionMinor; };
 
     //! Given a full schema name (which includes the version information), will return a SchemaKey with the schema name and version information set
     //! @param[out] key             A SchemaKey with the schema's name and version set
@@ -2368,11 +2426,6 @@ struct SchemaKey
 
     //! Returns whether this SchemaKey's checksum is less than the target SchemaKey's.
     bool operator < (SchemaKeyCR rhs) const { return LessThan (rhs, SchemaMatchType::Identical); }
-
-    Utf8StringCR GetName() const {return m_schemaName;}
-    uint32_t GetVersionMajor() const { return m_versionMajor; };
-    uint32_t GetVersionWrite() const { return m_versionWrite; };
-    uint32_t GetVersionMinor() const { return m_versionMinor; };
     };
 
 //---------------------------------------------------------------------------------------
@@ -2934,6 +2987,7 @@ public:
 
 //=======================================================================================
 //! The in-memory representation of a schema as defined by ECSchemaXML
+//! For information about schema versioning please check SchemaKey class documentation.
 //! @bsiclass
 //=======================================================================================
 struct ECSchema : RefCountedBase, IECCustomAttributeContainer
@@ -2998,6 +3052,7 @@ private:
 
 protected:
     virtual ECSchemaCP                  _GetContainerSchema() const override;
+    virtual CustomAttributeContainerType _GetContainerType() const override { return CustomAttributeContainerType::Schema; }
 
 /*__PUBLISH_SECTION_END__*/
 public:
@@ -3045,17 +3100,17 @@ public:
     ECOBJECTS_EXPORT Utf8StringCR       GetDisplayLabel() const;
     //! Gets the invariant display label for this ECSchema.
     ECOBJECTS_EXPORT Utf8StringCR       GetInvariantDisplayLabel() const;
-    //! Sets the major version of this schema
+    //! Sets the major version of this schema, check SchemaKey doc for detailed description.
     ECOBJECTS_EXPORT ECObjectsStatus    SetVersionMajor(uint32_t value);
-    //! Gets the major version of this schema
+    //! Gets the major version of this schema, check SchemaKey doc for detailed description.
     ECOBJECTS_EXPORT uint32_t           GetVersionMajor() const;
-    //! Sets the write compatibility version of this schema (major version for read compatibility)
+    //! Sets the write compatibility version of this schema, check SchemaKey doc for detailed description.
     ECOBJECTS_EXPORT ECObjectsStatus    SetVersionWrite(uint32_t value);
-    //! Gets the write compatibility version of this schema (major version for read compatibility)
+    //! Gets the write compatibility version of this schema, check SchemaKey doc for detailed description.
     ECOBJECTS_EXPORT uint32_t           GetVersionWrite() const;
-    //! Sets the minor version of this schema
+    //! Sets the minor version of this schema, check SchemaKey doc for detailed description.
     ECOBJECTS_EXPORT ECObjectsStatus    SetVersionMinor(uint32_t value);
-    //! Gets the minor version of this schema
+    //! Gets the minor version of this schema, check SchemaKey doc for detailed description.
     ECOBJECTS_EXPORT uint32_t           GetVersionMinor() const;
     //! Returns an iterable container of ECClasses sorted by name. For unsorted called overload.
     ECOBJECTS_EXPORT ECClassContainerCR GetClasses() const;

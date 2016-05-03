@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/StandaloneECRelationshipInstance.h $
 |
-|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -27,11 +27,8 @@ typedef RefCountedPtr<StandaloneECRelationshipInstance> StandaloneECRelationship
 //! two IECInstances
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE StandaloneECRelationshipInstance : IECRelationshipInstance
-    //__PUBLISH_SECTION_END__
     , MemoryECInstanceBase
-    //__PUBLISH_SECTION_START__
     {
-    //__PUBLISH_SECTION_END__
     friend struct StandaloneECRelationshipEnabler;
 
 private:
@@ -76,7 +73,6 @@ protected:
     // MemoryECInstanceBase
     ECOBJECTS_EXPORT virtual IECInstanceP            _GetAsIECInstance () const;
 
-//__PUBLISH_SECTION_START__
 public:
     //! Returns the RelationshipEnabler for the RelationshipClass that this RelationshipInstance represents
     ECOBJECTS_EXPORT StandaloneECRelationshipEnablerCR  GetRelationshipEnabler() const;  

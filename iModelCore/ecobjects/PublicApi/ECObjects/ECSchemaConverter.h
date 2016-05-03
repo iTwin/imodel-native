@@ -39,9 +39,6 @@ private:
     bool m_convertedOK = true;
     bmap<Utf8String, IECCustomAttributeConverterPtr> m_converterMap;
 
-        
-    static Utf8String GetQualifiedClassName(Utf8StringCR schemaName, Utf8StringCR className) { return schemaName + ":" + className; }
-
     void ProcessCustomAttributeInstance(ECCustomAttributeInstanceIterable iterable, IECCustomAttributeContainerR container, Utf8String containerName);
     void ConvertSchemaLevel(ECSchemaR schema);
     void ConvertClassLevel(ECSchemaR schema);
@@ -68,8 +65,7 @@ private:
     // @bsimethod                                    Basanta.Kharel                  01/2016
     //---------------+---------------+---------------+---------------+---------------+------/
     template <typename T>
-    static void SortClassesByHierarchy(bvector<T>& ecClasses);
-        
+    static void SortClassesByHierarchy(bvector<T>& ecClasses);        
     static bvector<ECClassP> GetDerivedAndBaseClasses(ECClassCR ecClass);
 
 /*__PUBLISH_SECTION_START__*/
@@ -84,6 +80,12 @@ public:
     //! @param[in] converter The converter that is to be called when schemaName:customAtrributeName is found
     //! @remarks   Overwrites converter if schemaName+customAttribute name already exists. 
     ECOBJECTS_EXPORT static ECObjectsStatus AddConverter(Utf8StringCR schemaName, Utf8StringCR customAttributeName, IECCustomAttributeConverterPtr& converter);
+
+	//! Adds the supplied IECCustomAttributeConverterP which will be later called when ECSchemaConverter::Convert is run
+	//! @param[in] customAttributeQualifiedName Key used to retrieve converter
+	//! @param[in] converter The converter that is to be called when schemaName:customAtrributeName is found
+	//! @remarks   Overwrites converter if key already exists. 
+	ECOBJECTS_EXPORT static ECObjectsStatus AddConverter(Utf8StringCR customAttributeQualifiedName, IECCustomAttributeConverterPtr& converter);
 
     //! Removes a custom attribute from the ecProperty including its base and child ecProperties
     //! @param[in] ecProperty               The ecProperty whose custom attribute is being removed
@@ -129,6 +131,8 @@ public:
     //! @param[in] baseClass The class that is supposed to be a base class
     //! @returns bool        True if baseClass is infact baseClass of ecClass
     ECOBJECTS_EXPORT static bool IsBaseClass(ECClassCP ecClass, ECClassCP baseClass);
+
+	static Utf8String GetQualifiedClassName(Utf8StringCR schemaName, Utf8StringCR className) { return schemaName + ":" + className; }
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE

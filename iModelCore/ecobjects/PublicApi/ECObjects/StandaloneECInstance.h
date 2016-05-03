@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/StandaloneECInstance.h $
 |
-|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -38,7 +38,6 @@ enum MemoryInstanceUsageBitmask ENUM_UNDERLYING_TYPE(uint32_t)
 
 typedef int StructValueIdentifier;
 
-//__PUBLISH_SECTION_END__
 struct StructArrayEntry
     {
     StructArrayEntry (StructValueIdentifier structValueId, IECInstancePtr const& instancePtr)
@@ -52,7 +51,6 @@ struct StructArrayEntry
     };
 
 typedef bvector<StructArrayEntry> StructInstanceVector;
-//__PUBLISH_SECTION_START__
 
 struct PerPropertyFlagsHolder
     {
@@ -70,8 +68,6 @@ struct PerPropertyFlagsHolder
 +===============+===============+===============+===============+===============+======*/
 struct MemoryECInstanceBase : ECDBuffer
 {
-//__PUBLISH_SECTION_END__
-
 friend struct IECInstance;
 private:
     PerPropertyFlagsHolder  m_perPropertyFlagsHolder;
@@ -134,12 +130,8 @@ public:
     ECOBJECTS_EXPORT IECInstanceP               GetAsIECInstanceP();
     ECOBJECTS_EXPORT uint32_t                   GetPerPropertyFlagsSize () const;
 
-//__PUBLISH_SECTION_START__
-
 public:
-//__PUBLISH_SECTION_END__
    // These must be public so that ECXInstanceEnabler can get at the guts of StandaloneECInstance to copy it into an XAttribute
-//__PUBLISH_SECTION_START__
 
     //! It is use to set ECD buffer for instance.
     //! @remarks This api should not be used in normal circumstances instead use CreateSharedInstance() to create instance from existing buffer.
@@ -155,14 +147,10 @@ public:
     //! @return  the number of bytes used by the internal data buffer
     ECOBJECTS_EXPORT uint32_t                 GetBytesUsed () const;
 
-//__PUBLISH_SECTION_END__
-    // This is only published because published tests use it...
-//__PUBLISH_SECTION_START__
     //! Merges the property values of the specified IECInstance into this MemoryECInstanceBase
     //! @param[in]      fromNativeInstance The IECInstance supplying property values to be merged
     //! @return ECObjectsStatus::Success if property values were successfully merged, otherwise an error status
     ECOBJECTS_EXPORT ECObjectsStatus          MergePropertiesFromInstance (ECN::IECInstanceCR fromNativeInstance);
-//__PUBLISH_SECTION_END__
     ECOBJECTS_EXPORT ECObjectsStatus          RemoveStructArrayElements (PropertyLayoutCR propertyLayout, uint32_t removeIndex, uint32_t removeCount);
     ECOBJECTS_EXPORT ECObjectsStatus          IsPerPropertyBitSet (bool& isSet, uint8_t bitIndex, uint32_t propertyIndex) const;
     ECOBJECTS_EXPORT ECObjectsStatus          IsAnyPerPropertyBitSet (bool& isSet, uint8_t bitIndex) const;
@@ -187,7 +175,6 @@ public:
     ECOBJECTS_EXPORT void                     SetUsageBitmask (uint16_t mask);
     ECOBJECTS_EXPORT void                     SetPartiallyLoaded (bool set);
     ECOBJECTS_EXPORT bool                     IsPartiallyLoaded () const;
-//__PUBLISH_SECTION_START__
 };
 
 /** @endcond */
@@ -203,12 +190,8 @@ typedef RefCountedPtr<StandaloneECInstance>  StandaloneECInstancePtr;
 //! laid out according to the ClassLayout.
 //! @see IECInstance
 //=======================================================================================
-struct StandaloneECInstance : IECInstance
-//__PUBLISH_SECTION_END__
-                            , MemoryECInstanceBase
-//__PUBLISH_SECTION_START__
+struct StandaloneECInstance : IECInstance, MemoryECInstanceBase
     {
-//__PUBLISH_SECTION_END__
 friend struct StandaloneECEnabler;
 private:
     Utf8String              m_instanceId;
@@ -254,7 +237,6 @@ public:
 
     // For cases in which we want the lifetime of the ECSchema bound to that of the IECInstance.
     ECOBJECTS_EXPORT         void                   BindSchema();
-//__PUBLISH_SECTION_START__
 public:
     //! Creates an in-memory duplicate of an instance, making deep copies of its ECValues.
     //! @param[in]  instance    The instance to be duplicated.
@@ -269,7 +251,6 @@ public:
 //=======================================================================================
 struct IECWipRelationshipInstance : StandaloneECInstance
     {
-//__PUBLISH_SECTION_END__
     protected:
         ECOBJECTS_EXPORT IECWipRelationshipInstance (StandaloneECEnablerR enabler) : StandaloneECInstance (enabler, 0){}
 
@@ -277,7 +258,6 @@ struct IECWipRelationshipInstance : StandaloneECInstance
         virtual BentleyStatus  _SetSourceOrderId (int64_t sourceOrderId) = 0;
         virtual BentleyStatus  _SetTargetOrderId (int64_t targetOrderId) = 0;
 
-//__PUBLISH_SECTION_START__
     public:
         ECOBJECTS_EXPORT BentleyStatus  SetName (Utf8CP name);
         ECOBJECTS_EXPORT BentleyStatus  SetSourceOrderId (int64_t sourceOrderId);
@@ -291,7 +271,6 @@ struct IECWipRelationshipInstance : StandaloneECInstance
 //=======================================================================================
 struct StandaloneECEnabler : public ECEnabler
    {
-//__PUBLISH_SECTION_END__
 private:
     ClassLayoutPtr          m_classLayout;
 
@@ -308,7 +287,6 @@ protected:
     virtual uint32_t                    _GetParentPropertyIndex (uint32_t childIndex) const override;
     virtual ECObjectsStatus             _GetPropertyIndices (bvector<uint32_t>& indices, uint32_t parentIndex) const override;
     virtual bool                        _IsPropertyReadOnly (uint32_t propertyIndex) const override;
-//__PUBLISH_SECTION_START__
 public:
     //! if structStandaloneEnablerLocater is NULL, we'll use GetDefaultStandaloneEnabler for embedded structs
     //! Creates a StandaloneECEnabler for the specified ECClass
@@ -317,9 +295,7 @@ public:
     //! @param[in]      structStandaloneEnablerLocater An object capable of locating StandaloneECEnablers for struct properties. If NULL, ECClass::GetDefaultStandaloneEnabler() will be used.
     //! @return A StandaloneECEnabler, or nullptr if the enabler could not be created
     ECOBJECTS_EXPORT static StandaloneECEnablerPtr  CreateEnabler (ECClassCR ecClass, ClassLayoutR classLayout, IStandaloneEnablerLocaterP structStandaloneEnablerLocater);
-//__PUBLISH_SECTION_END__
     ECOBJECTS_EXPORT StandaloneECInstanceP          CreateSharedInstance (Byte * data, uint32_t size);
-//__PUBLISH_SECTION_START__
 
     //! Creates a StandaloneECInstance
     //! @param[in]      minimumInitialSize The number of bytes to allocate in the buffer. Typically useful only when preparing to copy values from another StandaloneECInstance with a known allocation.

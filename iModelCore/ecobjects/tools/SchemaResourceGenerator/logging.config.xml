@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--!DOCTYPE log4j:configuration SYSTEM "log4j.dtd"-->
+
+<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/">
+
+    <appender name="Console" class="org.apache.log4j.ConsoleAppender">
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%-5p %c - %m%n"/>
+        </layout>
+    </appender>
+
+    <!--
+    Establishing a category for a logger allows you to customize the output
+    settings for the log output. The 'name' attribute needs to correspond to
+    a logger established via the LoggerRegistry::getLogger() method.
+    
+    If you do not choose to establish a category for a logger, log output
+    configuration is handled by the 'root' configuration file element.
+
+    Possible priorities: all, debug, info, warn, error, fatal, off
+
+    <category name="catname">                     <priority value="all"/></category>
+    -->
+    <category name="ECObjectsNative">   <priority value="warn"/></category>
+
+    <root>                            
+        <priority value="info" />
+        <appender-ref ref="Console"/>
+    </root>
+</log4j:configuration>

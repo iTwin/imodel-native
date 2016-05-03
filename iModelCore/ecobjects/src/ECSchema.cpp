@@ -947,7 +947,6 @@ ECClassCR sourceClass
         status = this->CreateStructClass(newStructClass, sourceClass.GetName());
         if (ECObjectsStatus::Success != status)
             return status;
-        // ECX_WIP: Set struct class properties
         targetClass = newStructClass;
         }
     else if (nullptr != sourceAsCAClass)
@@ -956,7 +955,7 @@ ECClassCR sourceClass
         status = this->CreateCustomAttributeClass(newCAClass, sourceClass.GetName());
         if (ECObjectsStatus::Success != status)
             return status;
-        // ECX_WIP: Set CA class properties
+        newCAClass->SetContainerType(sourceAsCAClass->GetContainerType());
         targetClass = newCAClass;
         }
     else
@@ -1946,12 +1945,14 @@ SchemaReadStatus ECSchema::ReadFromXmlFile (ECSchemaPtr& schemaOut, WCharCP ecSc
 
     SchemaXmlReader reader(schemaContext, *xmlDom.get());
     status = reader.Deserialize(schemaOut, checkSum);
-    if (SchemaReadStatus::DuplicateSchema == status)
-        return status; // already logged
 
     if (SchemaReadStatus::Success != status)
         {
-        LOG.errorv(L"Failed to read XML file: %ls", ecSchemaXmlFile);
+        if (SchemaReadStatus::DuplicateSchema == status)
+            LOG.errorv(L"Failed to read XML file: %ls.  \nSchema already loaded.  Use ECSchemaReadContext::LocateSchema to load schema", ecSchemaXmlFile);
+        else
+            LOG.errorv(L"Failed to read XML file: %ls", ecSchemaXmlFile);
+        
         schemaContext.RemoveSchema(*schemaOut);
         schemaOut = nullptr;
         }
@@ -1995,16 +1996,19 @@ ECSchemaReadContextR schemaContext
     uint32_t checkSum = CheckSumHelper::ComputeCheckSumForString (ecSchemaXml, stringByteCount);
     SchemaXmlReader reader(schemaContext, *xmlDom.get());
     status = reader.Deserialize(schemaOut, checkSum);
-    if (SchemaReadStatus::DuplicateSchema == status)
-        return status; // already logged
 
     if (SchemaReadStatus::Success != status)
         {
         Utf8Char first200Bytes[201];
-
-        BeStringUtilities::Strncpy (first200Bytes, ecSchemaXml, 200);
+        BeStringUtilities::Strncpy(first200Bytes, ecSchemaXml, 200);
         first200Bytes[200] = '\0';
-        LOG.errorv ("Failed to read XML from string (1st 200 characters approx.): %s", first200Bytes);
+        if (SchemaReadStatus::DuplicateSchema == status)
+            LOG.errorv(L"Failed to read XML from string(1st 200 characters approx.): %s.  \nSchema already loaded.  Use ECSchemaReadContext::LocateSchema to load schema", first200Bytes);
+        else
+            {
+            LOG.errorv("Failed to read XML from string (1st 200 characters approx.): %s", first200Bytes);
+            }
+
         schemaContext.RemoveSchema(*schemaOut);
         schemaOut = nullptr;
         }
@@ -2047,15 +2051,18 @@ ECSchemaReadContextR schemaContext
     uint32_t checkSum = CheckSumHelper::ComputeCheckSumForString(ecSchemaXml, stringSize);
     SchemaXmlReader reader(schemaContext, *xmlDom.get());
     status = reader.Deserialize(schemaOut, checkSum);
-    if (SchemaReadStatus::DuplicateSchema == status)
-        return status; // already logged
 
     if (SchemaReadStatus::Success != status)
         {
         WChar first200Characters[201];
-        wcsncpy (first200Characters, ecSchemaXml, 200);
+        wcsncpy(first200Characters, ecSchemaXml, 200);
         first200Characters[200] = L'\0';
-        LOG.errorv (L"Failed to read XML from string (1st 200 characters): %ls", first200Characters);
+        if (SchemaReadStatus::DuplicateSchema == status)
+            LOG.errorv(L"Failed to read XML from string(1st 200 characters approx.): %s.  \nSchema already loaded.  Use ECSchemaReadContext::LocateSchema to load schema", first200Characters);
+        else
+            {
+            LOG.errorv(L"Failed to read XML from string (1st 200 characters): %ls", first200Characters);
+            }
         schemaContext.RemoveSchema(*schemaOut);
         schemaOut = nullptr;
         }
@@ -2815,7 +2822,16 @@ ECObjectsStatus SchemaKey::ParseSchemaFullName (Utf8StringR schemaName, uint32_t
 
     schemaName.assign (fullName, nameLen);
 
-    return ParseVersionString (versionMajor, versionWrite, versionMinor, firstDot+1);
+    ECObjectsStatus stat = ParseVersionString(versionMajor, versionWrite, versionMinor, firstDot + 1);
+    if (ECObjectsStatus::Success != stat)
+        return stat;
+
+    // There are some schemas out there that reference the non-existent Unit_Attributes.1.1 schema.  We need to deliver 1.0, which does not match our criteria
+    // for LatestCompatible.
+    if (0 == schemaName.CompareTo("Unit_Attributes") && 1 == versionMajor && 1 == versionMinor)
+        versionMinor = 0;
+
+    return stat;
     }
 
 /*---------------------------------------------------------------------------------**//**

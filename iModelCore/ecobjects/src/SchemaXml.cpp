@@ -504,14 +504,16 @@ void SchemaXmlReader2::DetermineClassTypeAndModifier(Utf8StringCR className, ECS
     else
         classModifier = ECClassModifier::None;
 
-    if (1 < sum)
-        LOG.warningv("Class '%s' in schema '%s' has more than one type flag set to true: isStruct(%d) isDomainClass(%d) isCustomAttributeClass(%d).  Only one is allowed, defaulting to %s.  "
+    if (!m_conversionSchema.IsValid())
+        {
+        if (1 < sum)
+            LOG.warningv("Class '%s' in schema '%s' has more than one type flag set to true: isStruct(%d) isDomainClass(%d) isCustomAttributeClass(%d).  Only one is allowed, defaulting to %s.  "
                      "Modify the schema or use the ECv3ConversionAttributes in a conversion schema named '%s' to force a different class type.",
                      className.c_str(), schemaOut->GetFullSchemaName().c_str(), isStruct, isDomain, isCA, isStruct ? "Struct" : "CustomAttribute",
                      schemaOut->GetFullSchemaName().insert(schemaOut->GetName().length(), "_V3Conversion").c_str());
 
-    if (!m_conversionSchema.IsValid())
         return;
+        }
 
     ECClassCP ecClass = m_conversionSchema->GetClassCP(className.c_str());
     if (nullptr == ecClass)
@@ -532,6 +534,12 @@ void SchemaXmlReader2::DetermineClassTypeAndModifier(Utf8StringCR className, ECS
         WriteLogMessage(ecClass, "ECClass", "StructClass");
         classType = ECClassType::Struct;
         }
+    else if (1 < sum)
+        LOG.warningv("Class '%s' in schema '%s' has more than one type flag set to true: isStruct(%d) isDomainClass(%d) isCustomAttributeClass(%d).  Only one is allowed, defaulting to %s.  "
+                     "Modify the schema or use the ECv3ConversionAttributes in a conversion schema named '%s' to force a different class type.",
+                     className.c_str(), schemaOut->GetFullSchemaName().c_str(), isStruct, isDomain, isCA, isStruct ? "Struct" : "CustomAttribute",
+                     schemaOut->GetFullSchemaName().insert(schemaOut->GetName().length(), "_V3Conversion").c_str());
+
 
     if (ecClass->IsDefined("ForceAbstract"))
         {
@@ -613,7 +621,11 @@ bool SchemaXmlReader3::ReadClassNode(ECClassP &ecClass, BeXmlNodeR classNode, EC
     ECClassModifier modifier;
     if (BEXML_Success == classNode.GetAttributeStringValue(modifierStr, MODIFIER_ATTRIBUTE))
         {
-        ECXml::ParseModifierString(modifier, modifierStr);
+        if (ECObjectsStatus::Success != ECXml::ParseModifierString(modifier, modifierStr))
+            {
+            LOG.errorv("Class %s has an invalid modifier attribute value %s", ecClass->GetName().c_str(), modifierStr.c_str());
+            return false;
+            }
         ecClass->SetClassModifier(modifier);
         }
     return true;
@@ -899,7 +911,12 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
     LOG.tracev("Reading class contents for %s took %.4lf seconds\n", schemaOut->GetFullSchemaName().c_str(), readingClassContents.GetElapsedSeconds());
 
     StopWatch readingCustomAttributes("Reading custom attributes", true);
-    schemaOut->ReadCustomAttributes(*schemaNode, m_schemaContext, *schemaOut);
+    if (CustomAttributeReadStatus::InvalidCustomAttributes == schemaOut->ReadCustomAttributes(*schemaNode, m_schemaContext, *schemaOut, ecXmlMajorVersion))
+        {
+        LOG.errorv("Failed to read schema because one or more invalid custom attributes were applied to it.", schemaOut->GetName().c_str());
+        return SchemaReadStatus::InvalidECSchemaXml;
+        }
+    
     readingCustomAttributes.Stop();
     LOG.tracev("Reading custom attributes for %s took %.4lf seconds\n", schemaOut->GetFullSchemaName().c_str(), readingCustomAttributes.GetElapsedSeconds());
 

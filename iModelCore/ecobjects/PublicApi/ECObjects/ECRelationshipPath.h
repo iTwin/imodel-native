@@ -112,11 +112,12 @@ private:
 
     void CopyFrom(ECRelationshipPath const& other);
     bool ValidateConstraint(ECN::ECRelationshipConstraintCR constraint, ECN::ECClassCP checkClass) const;
-    bvector<ECRelatedClassSpecifier>::const_iterator FindLastRelatedClass(const bvector<ECRelatedClassSpecifier>& relatedSpecifiers, ECN::ECClassCP ecClass);
     Utf8String FindNextAvailableAlias(ECClassCR ecClass, bvector<Utf8String>& allClassAliases) const;
     void SetupAliases() const;
 
     static bool IsAnyClass(ECClassCR);
+    static bool AreInSameHierarchy(ECN::ECClassCP& moreDerivedClass, ECN::ECClassCP inClass1, ECN::ECClassCP inClass2);
+    static bool FindLastMatchingClass(ECN::ECClassCP& foundClass, bvector<ECRelatedClassSpecifier>::const_iterator& foundIter, ECRelationshipPath const& searchPath, ECN::ECClassCP searchClass);
 
 public:
     //! Constructs an empty relationship path
@@ -245,10 +246,10 @@ public:
     ECOBJECTS_EXPORT BentleyStatus Combine(ECRelationshipPath const& pathToCombine);
 
     //! Set the end class of the relationship path
-    void SetEndClass(ECClassCR, End);
+    ECOBJECTS_EXPORT void SetEndClass(ECClassCR, End);
 
     //! Validates the specified relationship path
-    bool Validate() const;
+    ECOBJECTS_EXPORT bool Validate() const;
 
 #if 0
     // TODO: Remove these methods after ensuring they are not needed -- wait until Navigator is 
@@ -273,25 +274,6 @@ public:
     ECOBJECTS_EXPORT BentleyStatus ReplaceAnyClassAtEnd(ECN::ECClassCR replacementClass, End end);
 #endif
 
-};
-
-//======================================================================================
-// @bsiclass                                             Ramanujam.Raman      01 / 2014
-//===============+===============+===============+===============+===============+======
-struct ECRelatedItemsDisplaySpecificationsCache
-{
-private:
-    bmap<ECN::ECClassCP, bvector<ECRelationshipPath>> m_pathsByClass;
-
-    BentleyStatus ExtractFromCustomAttribute(IECInstanceCR customAttributeSpecification, IECClassLocater&, ECSchemaCR customAttributeContainerSchema);
-    void AddPathToCache(ECRelationshipPath const& path);
-
-public:
-    explicit ECRelatedItemsDisplaySpecificationsCache() {}
-    ~ECRelatedItemsDisplaySpecificationsCache() {}
-
-    ECOBJECTS_EXPORT BentleyStatus Initialize(bvector<ECSchemaCP> const&, IECClassLocater&);
-    ECOBJECTS_EXPORT bool TryGetRelatedPaths(bvector<ECRelationshipPath>&, ECClassCR) const;
 };
 
 END_BENTLEY_ECOBJECT_NAMESPACE

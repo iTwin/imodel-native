@@ -430,10 +430,24 @@ bool requireSchemaReference
 )
     {
     ECClassCR classDefinition = customAttributeInstance.GetClass();
-    if (!classDefinition.IsCustomAttributeClass())
+    ECCustomAttributeClassCP caClass = classDefinition.GetCustomAttributeClassCP();
+    if (nullptr == caClass)
         {
         BeAssert (false);
+        LOG.errorv("Cannot add instance of class %s:%s as a custom attribute because the class is not a custom attribute class",
+                   classDefinition.GetSchema().GetName().c_str(), classDefinition.GetName().c_str());
         return ECObjectsStatus::NotCustomAttributeClass;
+        }
+
+    CustomAttributeContainerType containerType = _GetContainerType();
+    if (!caClass->CanBeAppliedTo(containerType))
+        {
+        BeAssert(false);
+        Utf8String caContainerTypeString = ECXml::ContainerTypeToString(caClass->GetContainerType());
+        Utf8String containerTypeString = ECXml::ContainerTypeToString(containerType);
+        LOG.errorv("Cannot add custom attribute of class %s:%s to a container of type %s because the custom attribute has an incompatible 'appliesTo' attribute of %s",
+                   classDefinition.GetSchema().GetName().c_str(), classDefinition.GetName().c_str(), containerTypeString.c_str(), caContainerTypeString.c_str());
+        return ECObjectsStatus::CustomAttributeContainerTypesNotCompatible;
         }
 
     // first need to verify that this custom attribute instance is from either the current schema or a referenced schema
@@ -574,9 +588,9 @@ ECClassCR classDefinition
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                06/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceReadStatus IECCustomAttributeContainer::ReadCustomAttributes (BeXmlNodeR containerNode, ECSchemaReadContextR schemaContext, ECSchemaCR fallBackSchema)
+CustomAttributeReadStatus IECCustomAttributeContainer::ReadCustomAttributes (BeXmlNodeR containerNode, ECSchemaReadContextR schemaContext, ECSchemaCR fallBackSchema, int ecXmlVersionMajor)
     {
-    InstanceReadStatus status = InstanceReadStatus::Success;
+    CustomAttributeReadStatus status = CustomAttributeReadStatus::Success;
 
     // allow for multiple <ECCustomAttributes> nodes, even though we only ever write one.
     for (BeXmlNodeP customAttributeNode = containerNode.GetFirstChild (); NULL != customAttributeNode; customAttributeNode = customAttributeNode->GetNextSibling ())
@@ -599,12 +613,17 @@ InstanceReadStatus IECCustomAttributeContainer::ReadCustomAttributes (BeXmlNodeR
                 thisStatus = IECInstance::ReadFromBeXmlNode (customAttributeInstance, *customAttributeClassNode, *context);
             if (InstanceReadStatus::Success != thisStatus && InstanceReadStatus::CommentOnly != thisStatus)
                 {
-                // skip this attribute, but continue processing any remaining.
-                if (InstanceReadStatus::Success == status)
-                    status = thisStatus;
+                // In EC3 we will fail to load the schema if any invalid custom attributes are found, for EC2 schemas we will skip the invalid attributes and continue to load the schema
+                if (ecXmlVersionMajor >= 3)
+                    status = CustomAttributeReadStatus::InvalidCustomAttributes;
+                else if (CustomAttributeReadStatus::Success == status) 
+                    status = CustomAttributeReadStatus::SkippedCustomAttributes;
                 }
             if (customAttributeInstance.IsValid())
-                SetCustomAttribute (*customAttributeInstance);
+                if (ECObjectsStatus::CustomAttributeContainerTypesNotCompatible == SetCustomAttribute(*customAttributeInstance))
+                    {
+                    status = CustomAttributeReadStatus::InvalidCustomAttributes;
+                    }
             }
         }
     return status;

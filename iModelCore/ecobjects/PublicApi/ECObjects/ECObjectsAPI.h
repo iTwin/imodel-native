@@ -54,6 +54,7 @@ capture this information.
 #include <ECObjects/ECEnabler.h>
 #include <ECObjects/ECInstance.h>
 #include <ECObjects/ECSchema.h>
+#include <ECObjects/SchemaResourceKeyHelper.h>
 #include <ECObjects/ECSchemaConverter.h>
 #include <ECObjects/SupplementalSchema.h>
 #include <ECObjects/ECContext.h>
@@ -77,11 +78,6 @@ capture this information.
 // This define is checked from the ECObjects Published ATPs to ensure that they are building against the published header files.
 #define NON_PUBLISHED_HEADER_INCLUDED
 
-#if defined (NDEBUG) && !defined (ANDROID)
-    #define EC_INLINE inline
-#else
-    #define EC_INLINE
-#endif
 /*__PUBLISH_SECTION_START__*/
 
 /** @endcond */

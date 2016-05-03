@@ -392,10 +392,16 @@ bool createCopyOfSupplementalCustomAttribute
     if (SupplementedSchemaStatus::Success != status)
         return status;
 
-    status = MergeSchemasIntoSupplementedSchema(primarySchema, schemasByPrecedence);
-    primarySchema.SetIsSupplemented(true);
+    if (1 > schemasByPrecedence.size() && 1 > localizationSchemas.size())
+        return status;
+
     SupplementalSchemaInfoPtr info = SupplementalSchemaInfo::Create(primarySchema.GetFullSchemaName().c_str(), m_supplementalSchemaNamesAndPurposes);
     primarySchema.SetSupplementalSchemaInfo(info.get());
+    status = MergeSchemasIntoSupplementedSchema(primarySchema, schemasByPrecedence);
+    if (SupplementedSchemaStatus::Success != status)
+        primarySchema.SetSupplementalSchemaInfo(nullptr); // NEEDS_WORK: Should probably attempt to rollback partial changes
+
+    primarySchema.SetIsSupplemented(true);
 
     ApplyLocalizationSupplementals(primarySchema, locale, localizationSchemas);
     

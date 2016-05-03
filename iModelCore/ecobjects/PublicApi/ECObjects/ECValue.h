@@ -294,6 +294,9 @@ public:
     //! @param[in] dateTime Date time value to set.
     ECOBJECTS_EXPORT explicit ECValue (DateTimeCR dateTime);
 
+    bool operator==(ECValueCR rhs) const { return Equals(rhs); }
+    bool operator!=(ECValueCR rhs) const { return !(*this == rhs); }
+
     //! Sets whether this ECValue is read-only
     //! @param[in] isReadOnly Sets the read-only status of the ECValue
     ECOBJECTS_EXPORT void           SetIsReadOnly(bool isReadOnly);
@@ -545,13 +548,11 @@ public:
     //! Returns the IGeometry, if this ECValue holds a geometry value
     ECOBJECTS_EXPORT IGeometryPtr   GetIGeometry () const;
 
-    /*__PUBLISH_SECTION_END__*/
     //! Returns the binary value of the IGeometry
     //! @param[in]  size    The size of the binary data
     ECOBJECTS_EXPORT const Byte *   GetIGeometry (size_t& size) const;
     //! Sets the value of this ECValue to the given IGeometry, using a serialized byte array
     ECOBJECTS_EXPORT BentleyStatus  SetIGeometry (const Byte * data, size_t size, bool holdADuplicate = false);
-    /*__PUBLISH_SECTION_START__*/
 
     ECOBJECTS_EXPORT BentleyStatus  SetIGeometry (IGeometryCR geometry);
 

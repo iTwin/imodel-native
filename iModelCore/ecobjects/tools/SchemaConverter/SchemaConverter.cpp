@@ -60,7 +60,7 @@ struct ConversionOptions
 
     bool                ChangeVersion = false;
     uint32_t            MajorVersion = 0;
-	uint32_t			WriteVersion = 0;
+    uint32_t            WriteVersion = 0;
     uint32_t            MinorVersion = 0;
     };
 
@@ -78,7 +78,7 @@ ConversionOptions   options
     if (options.ChangeVersion)
         {
         schema.SetVersionMajor(options.MajorVersion);
-		schema.SetVersionWrite(options.WriteVersion);
+        schema.SetVersionWrite(options.WriteVersion);
         schema.SetVersionMinor(options.MinorVersion);
         }
     if (options.TargetECXmlVersion == 2)
@@ -151,7 +151,13 @@ static int ConvertSchema(ConversionOptions& options, BeFileName& inputFile, ECSc
     {
     s_logger->infov(L"Reading schema '%ls'", inputFile.GetName());
     ECSchemaPtr schema;
-    ECSchema::ReadFromXmlFile(schema, inputFile, context);
+    if (SchemaReadStatus::DuplicateSchema == ECSchema::ReadFromXmlFile(schema, inputFile.GetName(), context))
+        {
+        Utf8String fullName(inputFile.GetFileNameAndExtension());
+        SchemaKey key;
+        SchemaKey::ParseSchemaFullName(key, fullName.c_str());
+        schema = context.LocateSchema(key, SchemaMatchType::Exact);
+        }
     if (!schema.IsValid())
         {
         s_logger->errorv(L"Failed to read schema '%ls'", inputFile.GetName());
@@ -171,10 +177,9 @@ ConversionOptions options
     {
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext(true);
 
-	if (options.TargetECXmlVersion == 3)
-		context->SetPreserveElementOrder(true);
+    if (options.TargetECXmlVersion == 3)
+        context->SetPreserveElementOrder(true);
 
-    context->AddSchemaPath(options.InputFile.GetDirectoryName().GetName());
     for (auto const& refDir: options.ReferenceDirectories)
         context->AddSchemaPath(refDir.GetName());
 
@@ -183,6 +188,7 @@ ConversionOptions options
 
     if (options.InputFile.IsDirectory())
         {
+        context->AddSchemaPath(options.InputFile.GetName());
         BeFileName schemaPath(options.InputFile);
         schemaPath.AppendToPath(L"*.ecschema.xml");
         BeFileListIterator fileList(schemaPath.GetName(), false);
@@ -194,6 +200,7 @@ ConversionOptions options
         }
     else
         {
+        context->AddSchemaPath(options.InputFile.GetDirectoryName().GetName());
         return ConvertSchema(options, options.InputFile, *context);
         }
     return 0;
@@ -232,18 +239,18 @@ static bool TryParseInput(int argc, char** argv, ConversionOptions& options)
 
             ++i;
 
-			if (CreateDirectory(argv[i], NULL) ||
-				ERROR_ALREADY_EXISTS == GetLastError())
-				{
-				outputDefined = true;
-				options.OutputDirectory.AssignUtf8(argv[i]);
-				}
+            if (CreateDirectory(argv[i], NULL) ||
+                ERROR_ALREADY_EXISTS == GetLastError())
+                {
+                outputDefined = true;
+                options.OutputDirectory.AssignUtf8(argv[i]);
+                }
 
-			if (!options.OutputDirectory.Contains(L"\\"))
-				{
-				fprintf(stderr, "-o should be followed by a directory");
-				return false;
-				}
+            if (!options.OutputDirectory.Contains(L"\\"))
+                {
+                fprintf(stderr, "-o should be followed by a directory");
+                return false;
+                }
             }
         else if (0 == strcmp(argv[i], "-v") || 0 == strcmp(argv[i], "--ver"))
             {
@@ -251,23 +258,23 @@ static bool TryParseInput(int argc, char** argv, ConversionOptions& options)
                 return false;
 
             ++i;
-			bvector<Utf8String> tokens;
-			BeStringUtilities::Split((Utf8CP)argv[i], ".", tokens);
+            bvector<Utf8String> tokens;
+            BeStringUtilities::Split((Utf8CP)argv[i], ".", tokens);
             options.ChangeVersion = true;
 
-			options.MajorVersion = atoi(tokens[0].c_str());
-			if (tokens.size() == 3)
-				{
-				options.WriteVersion = atoi(tokens[1].c_str());
-				options.MinorVersion = atoi(tokens[2].c_str());
-				}
-			else if (tokens.size() == 2)
-				options.MinorVersion = atoi(tokens[1].c_str());
-			else
-				{
-				fprintf(stderr, "Incorrect format for the schema version!!");
-				return false;
-				}
+            options.MajorVersion = atoi(tokens[0].c_str());
+            if (tokens.size() == 3)
+                {
+                options.WriteVersion = atoi(tokens[1].c_str());
+                options.MinorVersion = atoi(tokens[2].c_str());
+                }
+            else if (tokens.size() == 2)
+                options.MinorVersion = atoi(tokens[1].c_str());
+            else
+                {
+                fprintf(stderr, "Incorrect format for the schema version!!");
+                return false;
+                }
             }
         else if (0 == strcmp(argv[i], "-a") || 0 == strcmp(argv[i], "--all"))
             options.IncludeAll = true;

@@ -11,9 +11,7 @@
 
 #include "ECObjects.h"
 
-/*__PUBLISH_SECTION_END__*/
 #define N_FINAL_STRING_PROPS_IN_FAKE_CLASS 48
-/*__PUBLISH_SECTION_START__*/
 
 EC_TYPEDEFS(ECDBuffer);
 
@@ -24,14 +22,11 @@ typedef uint16_t ClassIndex;
 typedef uint16_t SchemaIndex;
 typedef RefCountedPtr<ClassLayout> ClassLayoutPtr;
 
-/*__PUBLISH_SECTION_END__*/
 
 typedef uint32_t SecondaryOffset;
 typedef uint32_t ArrayCount;
 
 #define NULLFLAGS_BITMASK_AllOn     0xFFFFFFFF
-
-/*__PUBLISH_SECTION_START__*/
 
 enum ArrayModifierFlags ENUM_UNDERLYING_TYPE (uint32_t)
     {
@@ -48,7 +43,6 @@ enum ArrayModifierFlags ENUM_UNDERLYING_TYPE (uint32_t)
 +===============+===============+===============+===============+===============+======*/      
 struct PropertyLayout
     {
-/*__PUBLISH_SECTION_END__*/
 friend struct ClassLayout;
 private:
     Utf8String              m_accessString;
@@ -69,7 +63,6 @@ public:
         m_accessString(accessString), m_parentStructIndex (psi), m_typeDescriptor(typeDescriptor), m_offset(offset), m_nullflagsOffset(nullflagsOffset),
         m_nullflagsBitmask (nullflagsBitmask), m_modifierFlags (modifierFlags), m_modifierData (modifierData) { }; //, m_property(property) {};
 
-/*__PUBLISH_SECTION_START__*/
 private:
     PropertyLayout (){}
 
@@ -299,7 +292,6 @@ typedef bvector<ClassLayoutPtr>     ClassLayoutVector;
 +===============+===============+===============+===============+===============+======*/
 struct SchemaLayout
 {
-/*__PUBLISH_SECTION_END__*/
 private:
     SchemaIndex             m_schemaIndex;
     ClassLayoutVector       m_classLayouts;
@@ -310,7 +302,6 @@ public:
     ClassLayoutP                            GetClassLayoutP (ClassIndex classIndex) { return const_cast<ClassLayoutP>(GetClassLayout(classIndex)); }
 
     ECOBJECTS_EXPORT ClassLayoutCP           FindClassLayout (Utf8CP className, ClassIndex* classIndex) const;
-/*__PUBLISH_SECTION_START__*/
 private:
     SchemaLayout (){}
 
@@ -367,7 +358,6 @@ public:
     ECOBJECTS_EXPORT static SchemaLayoutP   Create (SchemaIndex index);
 };
 
-/*__PUBLISH_SECTION_END__*/
 
 //! An internal helper used by ECDBuffer to resize (add/remove elements) array property values
 struct      ArrayResizer
@@ -493,7 +483,6 @@ public:
 
 typedef ECDHeader_v0 ECDHeader;
 
-/*__PUBLISH_SECTION_START__*/
 //=======================================================================================
 //! Base class for ECN::IECInstance implementations that get/set values from a block of memory,
 //! e.g. StandaloneECInstance and ECXInstance
@@ -506,8 +495,6 @@ struct ECDBuffer
 private:
     mutable bool        m_allowWritingDirectlyToInstanceMemory;
     mutable bool        m_allPropertiesCalculated;
-
-/*__PUBLISH_SECTION_END__*/
 
     uint32_t            GetOffsetToPropertyData() const;
 
@@ -742,7 +729,6 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus        SetIsPersistentlyReadOnly (bool readOnly);
     ECOBJECTS_EXPORT bool                   IsHidden() const;
     ECOBJECTS_EXPORT ECObjectsStatus        SetIsHidden (bool hidden);
-/*__PUBLISH_SECTION_START__*/  
 public:
     //! Returns true if the buffer is empty (all values are null and all arrays are empty)
     ECOBJECTS_EXPORT bool                   IsEmpty() const;
@@ -752,8 +738,6 @@ public:
     //! @param[in] source The ECDBuffer to copy values from
     ECOBJECTS_EXPORT ECObjectsStatus        CopyFromBuffer (ECDBufferCR source);
     };
-
-/*__PUBLISH_SECTION_END__*/
 
 /*---------------------------------------------------------------------------------**//**
 * "Pins" the internal memory buffer used by the ECDBuffer such that:
@@ -804,7 +788,6 @@ public:
     ECOBJECTS_EXPORT Utf8String    DumpData (uint8_t numBytesPerLine = 0xff) const;
     };
 
-/*__PUBLISH_SECTION_START__*/
 /** @endGroup */
 END_BENTLEY_ECOBJECT_NAMESPACE
 

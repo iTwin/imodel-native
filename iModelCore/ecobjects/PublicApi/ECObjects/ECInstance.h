@@ -442,7 +442,6 @@ public:
     //! @returns ECObjectsStatus::Success if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus     IsPropertyNull (bool& isNull, uint32_t propertyIndex, uint32_t arrayIndex) const;
 
-/*__PUBLISH_SECTION_END__*/
     ECOBJECTS_EXPORT ECObjectsStatus    GetIsPropertyNull (bool& isNull, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const;
     ECOBJECTS_EXPORT ECObjectsStatus    SetInternalValue (uint32_t propertyIndex, ECValueCR v, uint32_t arrayIndex);
     ECOBJECTS_EXPORT ECObjectsStatus    SetInternalValue (uint32_t propertyIndex, ECValueCR v);
@@ -459,7 +458,6 @@ public:
 
     // Copy any properties which are common to both IECInstances, skip the rest.
     ECOBJECTS_EXPORT ECObjectsStatus    CopyCommonValues (ECN::IECInstanceCR source);
-    /*__PUBLISH_SECTION_START__*/
     //! Attempts to copy all property values from one instance to this instance.
     //! It is expected that the source instance is of the same class as this instance.
     //! @param[in] source   Instance to copy values from.

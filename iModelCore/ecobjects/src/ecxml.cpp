@@ -238,18 +238,20 @@ Utf8CP ECXml::ModifierToString(ECClassModifier modifier)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            10/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-void ECXml::ParseModifierString(ECClassModifier& modifier, Utf8StringCR modifierString)
+ECObjectsStatus ECXml::ParseModifierString(ECClassModifier& modifier, Utf8StringCR modifierString)
     {
     if (0 == modifierString.CompareToI(ECXML_MODIFIER_ABSTRACT))
         modifier = ECClassModifier::Abstract;
     else if (0 == modifierString.CompareToI(ECXML_MODIFIER_SEALED))
         modifier = ECClassModifier::Sealed;
+    else if (0 == modifierString.CompareToI(ECXML_MODIFIER_NONE))
+        modifier = ECClassModifier::None;
     else
         {
-        if (0 != modifierString.CompareToI(ECXML_MODIFIER_NONE))
-            LOG.warningv("Invalid value for Modifier attribute: %s. Defaulting to None", modifierString.c_str());
-        modifier = ECClassModifier::None;
+        LOG.errorv("Invalid value for Modifier attribute: %s.", modifierString.c_str());
+        return ECObjectsStatus::ParseError;
         }
+    return ECObjectsStatus::Success;
     }
 
 void SetOrAppendValue(Utf8StringR str, Utf8CP val)
@@ -297,6 +299,12 @@ Utf8String ECXml::ContainerTypeToString(CustomAttributeContainerType containerTy
         SetOrAppendValue(str, "StructArrayProperty");
     if (TestValue(CustomAttributeContainerType::AnyProperty, containerType))
         SetOrAppendValue(str, "AnyProperty");
+    if (TestValue(CustomAttributeContainerType::SourceRelationshipConstraint, containerType))
+        SetOrAppendValue(str, "SourceRelationshipConstraint");
+    if (TestValue(CustomAttributeContainerType::TargetRelationshipConstraint, containerType))
+        SetOrAppendValue(str, "TargetRelationshipConstraint");
+    if (TestValue(CustomAttributeContainerType::AnyRelationshipConstraint, containerType))
+        SetOrAppendValue(str, "AnyRelationshipConstraint");
     if (TestValue(CustomAttributeContainerType::Any, containerType))
         str = "Any";
 
@@ -308,8 +316,16 @@ Utf8String ECXml::ContainerTypeToString(CustomAttributeContainerType containerTy
 //---------------+---------------+---------------+---------------+---------------+-------
 ECObjectsStatus ECXml::ParseContainerString(CustomAttributeContainerType& containerType, Utf8StringCR typeString)
     {
+    if (Utf8String::IsNullOrEmpty(typeString.c_str()))
+        {
+        LOG.error("Unable to parse CustomAttributeContianerType from input string because it is empty");
+        return ECObjectsStatus::ParseError;
+        }
+
     bvector<Utf8String> typeTokens;
     BeStringUtilities::Split(typeString.c_str(), ",;|", typeTokens);
+    
+    containerType = static_cast<CustomAttributeContainerType>(0);
 
     for (Utf8StringCR typeToken : typeTokens)
         {
@@ -338,6 +354,12 @@ ECObjectsStatus ECXml::ParseContainerString(CustomAttributeContainerType& contai
             containerType = containerType | CustomAttributeContainerType::StructArrayProperty;
         else if (typeToken.EqualsI("AnyProperty"))
             containerType = containerType | CustomAttributeContainerType::AnyProperty;
+        else if (typeToken.EqualsI("SourceRelationshipConstraint"))
+            containerType = containerType | CustomAttributeContainerType::SourceRelationshipConstraint;
+        else if (typeToken.EqualsI("TargetRelationshipConstraint"))
+            containerType = containerType | CustomAttributeContainerType::TargetRelationshipConstraint;
+        else if (typeToken.EqualsI("AnyRelationshipConstraint"))
+            containerType = containerType | CustomAttributeContainerType::AnyRelationshipConstraint;
         else if (typeToken.EqualsI("Any"))
             containerType = CustomAttributeContainerType::Any;
         else
@@ -348,75 +370,6 @@ ECObjectsStatus ECXml::ParseContainerString(CustomAttributeContainerType& contai
         }
     return ECObjectsStatus::Success;
     }
-
-#if defined (DONT_THINK_WE_NEED)
-
-void FormatXmlNode (MSXML2::IXMLDOMNode& domNode, uint32_t indentLevel)
-    {
-    MSXML2::IXMLDOMTextPtr textPtr = NULL;
-    if (domNode.nodeType == NODE_TEXT)
-        return;
-    
-    bool textOnly = true;
-    if (domNode.hasChildNodes())
-        {
-        MSXML2::IXMLDOMNodeListPtr xmlNodeListPtr = domNode.childNodes;
-        MSXML2::IXMLDOMNodePtr xmlNodePtr;
-        while (NULL != (xmlNodePtr = xmlNodeListPtr->nextNode()) && textOnly)
-            {
-            if (xmlNodePtr->nodeType != NODE_TEXT)
-                textOnly = false;
-            }
-        }
-        
-    if (domNode.hasChildNodes())
-        {
-        // Add a newline before the children
-        if (!textOnly)
-            {
-            textPtr = domNode.ownerDocument->createTextNode("\n");
-            domNode.insertBefore(textPtr, _variant_t(domNode.firstChild.GetInterfacePtr()));
-            }
-            
-        // Format the children
-        MSXML2::IXMLDOMNodeListPtr xmlNodeListPtr = domNode.childNodes;
-        MSXML2::IXMLDOMNodePtr xmlNodePtr;
-        while (NULL != (xmlNodePtr = xmlNodeListPtr->nextNode()))
-            {
-            FormatXmlNode(*xmlNodePtr, indentLevel + 4);
-            }
-        }
-        
-    // Format this element
-    if (indentLevel > 0)
-        {
-        char *spaces = new char[indentLevel+1];
-        for (uint32_t i = 0; i < indentLevel; i++)
-            spaces[i] = ' ';
-        spaces[indentLevel] = '\0';
-        // Indent before this element
-        textPtr = domNode.ownerDocument->createTextNode(spaces);
-        domNode.parentNode->insertBefore(textPtr, _variant_t(&domNode));
-
-        // Indent after the last child node
-        if (!textOnly)
-            {
-            textPtr = domNode.ownerDocument->createTextNode(spaces);
-            domNode.appendChild(textPtr);
-            }
-        
-        textPtr = domNode.ownerDocument->createTextNode("\n");
-        IXMLDOMNodePtr sibling = domNode.nextSibling;
-        if (NULL == sibling)
-            domNode.parentNode->appendChild(textPtr);
-        else
-            domNode.parentNode->insertBefore(textPtr, _variant_t(sibling.GetInterfacePtr()));
-        delete spaces;
-        }    
-    }
-    
-#endif // defined (_WIN32) // WIP_NONPORT 
-
 
 void ECXml::FormatXml (BeXmlDomR pXmlDoc)
     {

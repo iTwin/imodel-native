@@ -20,12 +20,14 @@
         <SubPart PartName="GeomlibsSerialization" PartFile="geomlibs" Repository="GeomLibs" />
         <SubPart PartName="BeXmlDll"        PartFile="BeLibxml2"    Repository="libsrc-libxml2" />
         <SubPart PartName="StandardSchemas" PartFile="ECStandards"  Repository="ECStandards"/>
+        <SubPart PartName="StandardSchemasV3" PartFile="ECStandards" Repository="ECStandards" />
         <SubPart PartName="V3ConversionSchemas" PartFile="ECStandards" Repository="ECStandards"/>
         <SubPart PartName="BeJsonCpp"           PartFile="BeJsonCpp"    Repository="Libsrc-JsonCpp"/>
         <SubPart PartName="rapidjson"       PartFile="rapidjson" Repository="Libsrc-RapidJson"/>       
         <Bindings>
             <Libs ProductDirectoryName="ECObjectsLibs" Required="false">Delivery/$(libprefix)ECObjects$(libext)</Libs>
             <Assemblies ProductDirectoryName="ECObjectsNativeAssemblies">Delivery/$(shlibprefix)ECObjects$(ApiNumber)$(shlibext)</Assemblies>
+            <Files ProductDirectoryName="PresentationRulesXsds" Required="false">Delivery/PresentationRuleSetSchema.xsd</Files>
         </Bindings>
     </Part>
 
@@ -57,7 +59,6 @@
     <!-- This part enables the ECObjects unit tests to be built into the set of unit tests that run on multiple platforms. -->
 
     <Part Name="ECObjectsTestsBasicDependencies">
-        <SubPart PartName="StandardSchemas"      PartFile="ECStandards"             Repository="ECStandards"/>
         <SubPart PartName="ECObjectsNative" />
     </Part>
 
@@ -183,6 +184,46 @@
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
     </Part>
 
+    <!-- ********************** -->
+    <!-- **** AndroidJUnit **** -->
+    <!-- ********************** -->
+    <Part Name="AndroidJUnit" BentleyBuildMakeFile="${SrcRoot}BeGTest/Android/MakeJUnitTestProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=ECObjects -dTEST_COLLECTION_PRODUCT=ECObjects-Tests -dUSE_STATIC_LIBRARIES=1 -dTEST_ANDROID_MIN_SDK_VERSION=19" OnlyPlatforms="Android*">
+        <SubProduct ProductName="ECObjects-Tests"/>
+        <SubPart PartName="AndroidJUnitTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Directory ProductDirectoryName="AndroidJUnit-Project" SourceName="Delivery/ANJU/ECObjects/Project" />
+        </Bindings>
+    </Part>
+
+    <Product Name="ECObjects-AndroidJUnit" >
+        <SubPart PartName="AndroidJUnit" LibType="Static"/>
+        <Directories DirectoryListName="AndroidJUnitProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+
+    <Part Name="RunAndroidJUnitTest" BentleyBuildMakeFile="${SrcRoot}BeGTest/Android/RunAndroidJUnitTest.mke" BentleyBuildMakeOptions="-dANDROIDJUNIT_PRODUCT=ECObjects-AndroidJUnit" OnlyPlatforms="Android*">
+        <SubProduct ProductName="ECObjects-AndroidJUnit"/>
+    </Part>
+
+    <!-- ********************** -->
+    <!-- **** iOSXCTest **** -->
+    <!-- ********************** -->
+    <Part Name="iOSXCTest" BentleyBuildMakeFile="${SrcRoot}BeGTest/iOS/MakeXCTestProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=ECObjects -dTEST_COLLECTION_PRODUCT=ECObjects-Tests -dUSE_STATIC_LIBRARIES=1" OnlyPlatforms="iOS*">
+        <SubProduct ProductName="ECObjects-Tests"/>
+        <SubPart PartName="iOSXCTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Directory ProductDirectoryName="iOSXCTestProject" SourceName="Delivery/iOSXCTest/ECObjects/Project" />
+        </Bindings>
+    </Part>
+
+    <Product Name="ECObjects-iOSXCTest" >
+        <SubPart PartName="iOSXCTest" LibType="Static"/>
+        <Directories DirectoryListName="iOSXCTestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+
+    <Part Name="RuniOSXCTest" BentleyBuildMakeFile="${SrcRoot}BeGTest/iOS/RunXCTestProject.mke" BentleyBuildMakeOptions="-dXCTEST_PRODUCT=ECObjects-iOSXCTest" OnlyPlatforms="iOS*">
+        <SubProduct ProductName="ECObjects-iOSXCTest"/>
+    </Part>
+
     <!-- Define a gtest program to run the PerformanceTests. -->
     <Product Name="ECObjects-PerformanceTests">
         <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
@@ -223,12 +264,22 @@
       <Directories DirectoryListName="ECObjects" />
     </Product>
 
-    <Part Name="SchemaConverter" BentleyBuildMakeFile="tools/SchemaConverter/SchemaConverter.mke" >
+    <Part Name="SchemaConverter" BentleyBuildMakeFile="tools/SchemaConverter/SchemaConverter.mke" ExcludePlatforms="Android*,Linux*,iOS*">
         <SubPart PartName="ECObjectsNative" />
         <Bindings>
             <Files ProductDirectoryName="SchemaConverterExe">
                 Delivery/SchemaConverter.exe
                 Delivery/SchemaConverter.logging.config.xml
+            </Files>
+        </Bindings>
+    </Part>
+    
+    <Part Name="SchemaResourceGenerator" BentleyBuildMakeFile="tools/SchemaResourceGenerator/SchemaResourceGenerator.mke" ExcludePlatforms="Android*,Linux*,iOS*">
+        <SubPart PartName="ECObjectsNative" />
+        <Bindings>
+            <Files ProductDirectoryName="SchemaResourceGeneratorExe">
+                Delivery/SchemaResourceGenerator.exe
+                Delivery/SchemaResourceGenerator.logging.config.xml
             </Files>
         </Bindings>
     </Part>
@@ -278,10 +329,16 @@
     <ProductDirectoryList ListName="SchemaConverter">
         <ProductDirectory Name="SchemaConverterExe"     Path="Runtime"/>
     </ProductDirectoryList>
+    
+    <ProductDirectoryList ListName="SchemaResourceGenerator">
+        <ProductDirectory Name="SchemaResourceGeneratorExe"     Path="Runtime"/>
+    </ProductDirectoryList>
     <Product Name="ECObjectsTools">
         <SubPart    PartName="SchemaConverter" />
+        <SubPart    PartName="SchemaResourceGenerator" />
         <SubProduct ProductName="ECObjects"/>
         <Directories DirectoryListName="SchemaConverter" />
+        <Directories DirectoryListName="SchemaResourceGenerator" />
         <Directories DirectoryListName="ECObjects" />
     </Product>
     

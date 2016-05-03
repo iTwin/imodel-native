@@ -1998,6 +1998,7 @@ MergeStatus ECSchemaMergeTool::MergeClass (ECDiffNodeR diff, ECClassCP defaultCl
         }
     else if (isCAClass)
         {
+        // TODO: Merge appliesTo attribute.
         ECCustomAttributeClassP newClass;
         if (GetMerged().CreateCustomAttributeClass(newClass, defaultClass->GetName()) != ECObjectsStatus::Success)
             return MergeStatus::ErrorMergeClassAlreadyExist;
@@ -2110,7 +2111,7 @@ MergeStatus ECSchemaMergeTool::MergeRelationship (ECDiffNodeP diff, ECRelationsh
             mergedClass.SetStrength (defaultRelationshipClass->GetStrength());
 
 
-    if ((v = GetMergeValue (*diff, DiffNodeId::StrengthDirection)) == NULL)
+    if ((v = GetMergeValue (*diff, DiffNodeId::StrengthDirection)) != NULL)
         {
         ECRelatedInstanceDirection strengthDirection;
         if (! ECDiffValueHelper::TryParseRelatedStrengthDirection (strengthDirection, v->GetValueString()))

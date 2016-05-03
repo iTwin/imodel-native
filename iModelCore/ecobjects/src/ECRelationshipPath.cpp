@@ -24,20 +24,20 @@ ECClassCP ResolveClass(Utf8StringCR possiblyQualifiedClassName, IECClassLocaterR
     return classLocater.LocateClass(defaultSchema->GetName().c_str(), className.c_str());
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ramanujam.Raman                 01/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Ramanujam.Raman                 01/2014
+//---------------------------------------------------------------------------------------
 ECRelatedClassSpecifier::ECRelatedClassSpecifier() : m_relationshipClass(nullptr), m_relatedClass(nullptr), m_direction(ECRelatedInstanceDirection::Forward) {}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ramanujam.Raman                 01/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Ramanujam.Raman                 01/2014
+//---------------------------------------------------------------------------------------
 ECRelatedClassSpecifier::ECRelatedClassSpecifier(ECRelationshipClassCR relationshipClass, ECClassCR relatedClass, ECRelatedInstanceDirection direction)
     : m_relationshipClass(&relationshipClass), m_relatedClass(&relatedClass), m_direction(direction) {}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ramanujam.Raman                 01/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Ramanujam.Raman                 01/2014
+//---------------------------------------------------------------------------------------
 BentleyStatus ECRelatedClassSpecifier::InitFromString(Utf8StringCR relatedSpecifierString, IECClassLocaterR classLocater, ECSchemaCP defaultSchema)
     {
     // [SchemaName:]RelationshipClassName:ForwardOrBackwardInt:[[SchemaName:]RelatedClassName]
@@ -70,9 +70,9 @@ BentleyStatus ECRelatedClassSpecifier::InitFromString(Utf8StringCR relatedSpecif
     return SUCCESS;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ramanujam.Raman                 01/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Ramanujam.Raman                 01/2014
+//---------------------------------------------------------------------------------------
 Utf8String ECRelatedClassSpecifier::ToString() const
     {
     Utf8String relatedClassString(m_relationshipClass->GetFullName());
@@ -86,17 +86,17 @@ Utf8String ECRelatedClassSpecifier::ToString() const
 ///////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ramanujam.Raman                 01/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Ramanujam.Raman                 01/2014
+//---------------------------------------------------------------------------------------
 ECRelationshipPath::ECRelationshipPath (ECRelationshipPath const& other)
     {
     CopyFrom (other);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ramanujam.Raman                 01/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Ramanujam.Raman                 01/2014
+//---------------------------------------------------------------------------------------
 ECRelationshipPath& ECRelationshipPath::operator= (ECRelationshipPath const& other)
     {
     if (this != &other)
@@ -104,27 +104,27 @@ ECRelationshipPath& ECRelationshipPath::operator= (ECRelationshipPath const& oth
     return *this;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ramanujam.Raman                 01/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Ramanujam.Raman                 01/2014
+//---------------------------------------------------------------------------------------
 void ECRelationshipPath::CopyFrom (ECRelationshipPath const& other)
     {
     m_rootClass = other.m_rootClass;
     m_relatedClassSpecifiers = other.m_relatedClassSpecifiers;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ramanujam.Raman                 01/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Ramanujam.Raman                 01/2014
+//---------------------------------------------------------------------------------------
 void ECRelationshipPath::Clear() 
     {
     m_rootClass = nullptr;
     m_relatedClassSpecifiers.clear();
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ramanujam.Raman                 01/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Ramanujam.Raman                 01/2014
+//---------------------------------------------------------------------------------------
 bool ECRelationshipPath::IsEmpty() const
     {
     return m_rootClass == nullptr && m_relatedClassSpecifiers.empty();
@@ -132,9 +132,9 @@ bool ECRelationshipPath::IsEmpty() const
 
 #if 0
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ramanujam.Raman                 01/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Ramanujam.Raman                 01/2014
+//---------------------------------------------------------------------------------------
 bool ECRelationshipPath::IsAnyClassAtEnd (End end) const
     {
     ECClassCP endClass = GetEndClass (end);
@@ -143,9 +143,9 @@ bool ECRelationshipPath::IsAnyClassAtEnd (End end) const
     return IsAnyClass(*endClass);
     }
     
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ramanujam.Raman                 08/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Ramanujam.Raman                 08/2015
+//---------------------------------------------------------------------------------------
 BentleyStatus ECRelationshipPath::TrimLeafEnd(size_t relatedClassSpecifierIndex)
     {
     if (relatedClassSpecifierIndex >= m_relatedClassSpecifiers.size())
@@ -160,9 +160,9 @@ BentleyStatus ECRelationshipPath::TrimLeafEnd(size_t relatedClassSpecifierIndex)
 
 #endif
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ramanujam.Raman                 01/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Ramanujam.Raman                 01/2014
+//---------------------------------------------------------------------------------------
 ECClassCP ECRelationshipPath::GetEndClass (End end) const
     {
     if (end == End::Root)
@@ -173,18 +173,18 @@ ECClassCP ECRelationshipPath::GetEndClass (End end) const
     }
     
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ramanujam.Raman                 01/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Ramanujam.Raman                 01/2014
+//---------------------------------------------------------------------------------------
 //static
 bool ECRelationshipPath::IsAnyClass(ECClassCR ecClass)
     {
     return ecClass.GetSchema().IsStandardSchema() && ecClass.GetName().Equals("AnyClass");
     }
     
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ramanujam.Raman                 10/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Ramanujam.Raman                 10/2014
+//---------------------------------------------------------------------------------------
 Utf8String ECRelationshipPath::FindNextAvailableAlias (ECClassCR ecClass, bvector<Utf8String>& allClassAliases) const
     {
     Utf8String classAlias(ecClass.GetName());
@@ -201,10 +201,10 @@ Utf8String ECRelationshipPath::FindNextAvailableAlias (ECClassCR ecClass, bvecto
     return classAlias;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* Setup aliases for all the classes in case there are self-joins
-* @bsimethod                                    Ramanujam.Raman                 10/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// Setup aliases for all the classes in case there are self-joins
+// @bsimethod                                    Ramanujam.Raman                 10/2014
+//---------------------------------------------------------------------------------------
 void ECRelationshipPath::SetupAliases() const
     {
     bvector<Utf8String> allClassAliases;
@@ -217,9 +217,9 @@ void ECRelationshipPath::SetupAliases() const
         }
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ramanujam.Raman                 01/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Ramanujam.Raman                 01/2014
+//---------------------------------------------------------------------------------------
 BentleyStatus ECRelationshipPath::GenerateECSql(Utf8StringR fromClause, Utf8StringR joinClause, ECRelationshipPath::GeneratedEndInfo& rootInfo, ECRelationshipPath::GeneratedEndInfo& leafInfo, bool isPolymorphic) const
     {
     fromClause = joinClause = "";
@@ -331,9 +331,9 @@ BentleyStatus ECRelationshipPath::GenerateECSql(Utf8StringR fromClause, Utf8Stri
     return SUCCESS;
     }
     
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ramanujam.Raman                 05/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Ramanujam.Raman                 05/2014
+//---------------------------------------------------------------------------------------
 bool ECRelationshipPath::ValidateConstraint (ECRelationshipConstraintCR constraint, ECClassCP checkClass) const
     {
     if (IsAnyClass (*checkClass))
@@ -353,9 +353,9 @@ bool ECRelationshipPath::ValidateConstraint (ECRelationshipConstraintCR constrai
     return isValid;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ramanujam.Raman                 05/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Ramanujam.Raman                 05/2014
+//---------------------------------------------------------------------------------------
 bool ECRelationshipPath::Validate() const
     {
     ECClassCP previousClass = m_rootClass;
@@ -381,9 +381,9 @@ bool ECRelationshipPath::Validate() const
     return true;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ramanujam.Raman                 01/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Ramanujam.Raman                 01/2014
+//---------------------------------------------------------------------------------------
 Utf8String ECRelationshipPath::ToString() const
     {
     Utf8String relationshipPathString(m_rootClass->GetFullName());
@@ -395,9 +395,9 @@ Utf8String ECRelationshipPath::ToString() const
     return relationshipPathString;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ramanujam.Raman                 01/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Ramanujam.Raman                 01/2014
+//---------------------------------------------------------------------------------------
 void ECRelationshipPath::Reverse (ECRelationshipPath& reversedPath) const
     {
     reversedPath.Clear();
@@ -424,9 +424,9 @@ void ECRelationshipPath::Reverse (ECRelationshipPath& reversedPath) const
         }
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ramanujam.Raman                 01/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Ramanujam.Raman                 01/2014
+//---------------------------------------------------------------------------------------
 BentleyStatus ECRelationshipPath::InitFromString(Utf8StringCR relationshipPath, IECClassLocaterR classLocater, ECSchemaCP defaultSchema)
     {
     Clear();
@@ -464,9 +464,9 @@ BentleyStatus ECRelationshipPath::InitFromString(Utf8StringCR relationshipPath, 
     return SUCCESS;
     }
     
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ramanujam.Raman                 01/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Ramanujam.Raman                 01/2014
+//---------------------------------------------------------------------------------------
 void ECRelationshipPath::SetEndClass (ECN::ECClassCR endClass, End end)
     {
     if (end == End::Root)
@@ -486,9 +486,9 @@ void ECRelationshipPath::SetEndClass (ECN::ECClassCR endClass, End end)
     
 #if 0
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ramanujam.Raman                 01/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Ramanujam.Raman                 01/2014
+//---------------------------------------------------------------------------------------
 BentleyStatus ECRelationshipPath::ReplaceAnyClassAtEnd(ECClassCR replacementClass, End end)
     {
     PRECONDITION (IsAnyClassAtEnd (end) && "Can only replace AnyClass at the end", ERROR);
@@ -498,27 +498,75 @@ BentleyStatus ECRelationshipPath::ReplaceAnyClassAtEnd(ECClassCR replacementClas
     
 #endif
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ramanujam.Raman                 05/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-bvector<ECRelatedClassSpecifier>::const_iterator ECRelationshipPath::FindLastRelatedClass (const bvector<ECRelatedClassSpecifier>& relatedSpecifiers, ECClassCP ecClass)
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Ramanujam.Raman                 01/2014
+//---------------------------------------------------------------------------------------
+// static
+bool ECRelationshipPath::AreInSameHierarchy(ECClassCP& moreDerivedClass, ECClassCP inClass1, ECClassCP inClass2)
+    {
+    if (inClass1 == inClass2)
+        {
+        moreDerivedClass = inClass1;
+        return true;
+        }
+
+    if (inClass1->Is(inClass2))
+        {
+        moreDerivedClass = inClass1;
+        return true;
+        }
+
+    if (inClass2->Is(inClass1))
+        {
+        moreDerivedClass = inClass2;
+        return true;
+        }
+
+    return false;
+    }
+
+//---------------------------------------------------------------------------------------
+// Finds the last location in the the search path that matches the supplied search class - a match is found when the classes are the same or in the same hierarchy.
+// @param foundClass [out] The class that was matched - if the classes are not the same, but in the same hierarchy, this returns the more derived class. 
+// @param foundIter [out] The iterator location in the searchPath *next* to the location that was found
+// @param searchPath [in] The path to be searched
+// @param searchClass [in] The class to be searched
+// @return true if a match was found. false otherwise. 
+// @bsimethod                                    Ramanujam.Raman                 05/2014
+//---------------------------------------------------------------------------------------
+// static
+bool ECRelationshipPath::FindLastMatchingClass(ECClassCP& foundClass, bvector<ECRelatedClassSpecifier>::const_iterator& foundIter, ECRelationshipPath const& searchPath, ECClassCP searchClass)
     {
     // Note: Attempted to use const_reverse_iterator here, but for some reason couldn't get that to work - 
     // perhaps it's an issue with bvector (as opposed to std::vector). 
-    bvector<ECRelatedClassSpecifier>::const_iterator found_it = relatedSpecifiers.end();
-    bvector<ECRelatedClassSpecifier>::const_iterator it = relatedSpecifiers.begin();
-    while (it != relatedSpecifiers.end())
+    bvector<ECRelatedClassSpecifier>::const_iterator combineFromIter = searchPath.m_relatedClassSpecifiers.end();
+    bvector<ECRelatedClassSpecifier>::const_iterator it = searchPath.m_relatedClassSpecifiers.begin();
+    while (it != searchPath.m_relatedClassSpecifiers.end())
         {
-        if (it->GetRelatedClass() == ecClass)
-            found_it = it;
+        if (AreInSameHierarchy(foundClass, it->GetRelatedClass(), searchClass))
+            foundIter = it;
         it++;
         }
-    return found_it;
+
+    if (combineFromIter != searchPath.m_relatedClassSpecifiers.end())
+        {
+        foundIter++;
+        return true;
+        }
+
+    if (AreInSameHierarchy(foundClass, searchPath.m_rootClass, searchClass))
+        {
+        foundIter = searchPath.m_relatedClassSpecifiers.begin();
+        return true;
+        }
+
+    return false;
     }
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ramanujam.Raman                 01/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Ramanujam.Raman                 01/2014
+//---------------------------------------------------------------------------------------
 BentleyStatus ECRelationshipPath::Combine(ECRelationshipPath const& pathToCombine)
     {
     /* 
@@ -548,26 +596,22 @@ BentleyStatus ECRelationshipPath::Combine(ECRelationshipPath const& pathToCombin
     IFC2x3:IfcRelDefinesProperties_RelatedObjects:0:IFC2x3:IfcWindow
     */
 
-    ECClassCP relatedClass1;
+    ECClassCP relatedClass1, foundClass;
     bvector<ECRelatedClassSpecifier>::iterator it1;
     bvector<ECRelatedClassSpecifier>::const_iterator it2;
 
-    // Start with the root class in this path, and find the last matching related class in the other path
-    // If there's a match, combine the paths right after that match. 
+    /*
+     * Start with the root class in this path, and find the last matching related class in the other path
+     * If there's a match, i.e., the classes are in the same hierarchy, combine the paths right after that match, 
+     * replacing the class at the match with the "more" derived class. 
+     */
+
     relatedClass1 = m_rootClass;
-    if (relatedClass1 == pathToCombine.m_rootClass)
+    if (FindLastMatchingClass(foundClass, it2, pathToCombine, relatedClass1))
         {
+        m_rootClass = foundClass;
         m_relatedClassSpecifiers.clear();
-        m_relatedClassSpecifiers.insert (m_relatedClassSpecifiers.end(), 
-            pathToCombine.m_relatedClassSpecifiers.begin(), pathToCombine.m_relatedClassSpecifiers.end());
-        return SUCCESS;
-        }
-    it2 = FindLastRelatedClass (pathToCombine.m_relatedClassSpecifiers, relatedClass1);
-    if (it2 != pathToCombine.m_relatedClassSpecifiers.end())
-        {
-        m_relatedClassSpecifiers.clear();
-        m_relatedClassSpecifiers.insert (m_relatedClassSpecifiers.end(), 
-            it2 + 1, pathToCombine.m_relatedClassSpecifiers.end());
+        m_relatedClassSpecifiers.insert(m_relatedClassSpecifiers.end(), it2, pathToCombine.m_relatedClassSpecifiers.end());
         return SUCCESS;
         }
 
@@ -575,19 +619,12 @@ BentleyStatus ECRelationshipPath::Combine(ECRelationshipPath const& pathToCombin
     while (it1 != m_relatedClassSpecifiers.end())
         {
         relatedClass1 = it1->GetRelatedClass();
-        if (relatedClass1 == pathToCombine.m_rootClass)
+        if (FindLastMatchingClass(foundClass, it2, pathToCombine, relatedClass1))
             {
-            m_relatedClassSpecifiers.erase (it1 + 1, m_relatedClassSpecifiers.end());
-            m_relatedClassSpecifiers.insert (m_relatedClassSpecifiers.end(), 
-                pathToCombine.m_relatedClassSpecifiers.begin(), pathToCombine.m_relatedClassSpecifiers.end());
-            return SUCCESS;
-            }
-        it2 = FindLastRelatedClass (pathToCombine.m_relatedClassSpecifiers, relatedClass1);
-        if (it2 != pathToCombine.m_relatedClassSpecifiers.end())
-            {
-            m_relatedClassSpecifiers.erase (it1 + 1, m_relatedClassSpecifiers.end());
-            m_relatedClassSpecifiers.insert (m_relatedClassSpecifiers.end(), 
-                it2 + 1, pathToCombine.m_relatedClassSpecifiers.end());
+            ECRelatedClassSpecifier replaceSpecifier(*it1->GetRelationshipClass(), *foundClass, it1->GetDirection());
+            m_relatedClassSpecifiers.erase(it1, m_relatedClassSpecifiers.end());
+            m_relatedClassSpecifiers.push_back(replaceSpecifier);
+            m_relatedClassSpecifiers.insert(m_relatedClassSpecifiers.end(), it2, pathToCombine.m_relatedClassSpecifiers.end());
             return SUCCESS;
             }
 
@@ -596,164 +633,6 @@ BentleyStatus ECRelationshipPath::Combine(ECRelationshipPath const& pathToCombin
 
     EXPECTED_CONDITION (false && "The root end of the pathToCombine must match the leaf end of this path");
     return ERROR;
-    }
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Ramanujam.Raman                 05 / 2014
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECRelatedItemsDisplaySpecificationsCache::Initialize(bvector<ECSchemaCP> const& schemaList, IECClassLocater& classLocater)
-    {
-    ECClassCP ecClass = classLocater.LocateClass("Bentley_Standard_CustomAttributes", "RelatedItemsDisplaySpecifications");
-    if (ecClass != nullptr)
-        {
-        BeAssert(false);
-        return ERROR;
-        }
-
-    ECCustomAttributeClassCP relatedItemDisplaySpecCA = ecClass->GetCustomAttributeClassCP();
-    if (relatedItemDisplaySpecCA != nullptr)
-        {
-        BeAssert(false);
-        return ERROR;
-        }
-
-    BentleyStatus status = SUCCESS;
-    for (ECSchemaCP schema : schemaList)
-        {
-        IECInstancePtr customAttribute = schema->GetCustomAttribute(*relatedItemDisplaySpecCA);
-        if (customAttribute.IsNull())
-            continue;
-
-        ECValue specificationsValue;
-        if (ECObjectsStatus::Success != customAttribute->GetValue(specificationsValue, "Specifications"))
-            continue;
-
-        ArrayInfo arrayInfo = specificationsValue.GetArrayInfo();
-        for (int ii = 0; ii < (int) arrayInfo.GetCount(); ii++)
-            {
-            ECValue specificationValue;
-            customAttribute->GetValue(specificationValue, "Specifications", ii);
-            IECInstancePtr specificationInstance = specificationValue.GetStruct();
-            if (specificationInstance.IsNull())
-                continue;
-
-            if (SUCCESS != ExtractFromCustomAttribute(*specificationInstance, classLocater, *schema))
-                {
-                status = ERROR;
-                continue; // best effort
-                }
-            }
-        }
-
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Ramanujam.Raman                 01 / 2014
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECRelatedItemsDisplaySpecificationsCache::ExtractFromCustomAttribute(IECInstanceCR customAttributeSpecification, IECClassLocater& classLocater, ECSchemaCR customAttributeContainerSchema)
-    {
-    // Construct "end-to-end" relationship paths that prepends the ParentClass to the specified RelationshipPath. 
-    Utf8String relationshipPathString;
-
-    // Find parent or "root" class
-    ECValue ecValueParentClass;
-    ECObjectsStatus ecStatus = customAttributeSpecification.GetValue(ecValueParentClass, "ParentClass");
-    PRECONDITION(ECObjectsStatus::Success == ecStatus && !ecValueParentClass.IsNull(), ERROR);
-
-    // Append parent or "root" class
-    relationshipPathString.append(ecValueParentClass.GetUtf8CP());
-
-    // Append relationship path string
-    ECValue ecValueRelationshipPath;
-    ecStatus = customAttributeSpecification.GetValue(ecValueRelationshipPath, "RelationshipPath");
-    PRECONDITION(ECObjectsStatus::Success == ecStatus && !ecValueRelationshipPath.IsNull(), ERROR);
-    relationshipPathString.append(".");
-    relationshipPathString.append(ecValueRelationshipPath.GetUtf8CP());
-
-    // Create relationship path from string (contains the base class as the leaf class)
-    ECRelationshipPath basePath;
-    if (SUCCESS != basePath.InitFromString(relationshipPathString, classLocater, &customAttributeContainerSchema))
-        return ERROR;
-    if (!basePath.Validate())
-        return ERROR;
-    AddPathToCache(basePath);
-
-    // Create a relationship path for every DerivedClass specified
-    ECValue derivedClassesValue;
-    ecStatus = customAttributeSpecification.GetValue(derivedClassesValue, "DerivedClasses");
-    if (ecStatus != ECObjectsStatus::Success)
-        return SUCCESS;
-
-    BentleyStatus status = SUCCESS;
-    ArrayInfo arrayInfo = derivedClassesValue.GetArrayInfo();
-    for (int ii = 0; ii < (int) arrayInfo.GetCount(); ii++)
-        {
-        ECValue val;
-        customAttributeSpecification.GetValue(val, "DerivedClasses", ii);
-        if (val.IsNull())
-            continue;
-
-        Utf8String derivedClassName(val.GetUtf8CP());
-        ECClassCP derivedClass = ResolveClass(derivedClassName, classLocater, &customAttributeContainerSchema);
-        if (!EXPECTED_CONDITION(derivedClass != nullptr))
-            continue;
-
-        ECRelationshipPath derivedPath = basePath;
-        derivedPath.SetEndClass(*derivedClass, ECRelationshipPath::End::Leaf);
-
-        if (!derivedPath.Validate())
-            {
-            status = ERROR;
-            continue;
-            }
-
-        AddPathToCache(derivedPath);
-        }
-
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Ramanujam.Raman                 05 / 2014
-//+---------------+---------------+---------------+---------------+---------------+------
-void ECRelatedItemsDisplaySpecificationsCache::AddPathToCache(ECRelationshipPath const& path)
-    {
-    ECClassCP parentClass = path.GetEndClass(ECRelationshipPath::End::Root);
-
-    auto it = m_pathsByClass.find(parentClass);
-    bvector<ECRelationshipPath>* pathVector = nullptr;
-    if (it != m_pathsByClass.end())
-        pathVector = &it->second;
-    else
-        pathVector = &m_pathsByClass[parentClass];
-
-    BeAssert(pathVector != nullptr);
-
-    // Check for duplicate entries!!
-    for (ECRelationshipPath& existingPath : *pathVector)
-        {
-        Utf8String existingPathStr = existingPath.ToString();
-        Utf8String currentPathStr = path.ToString();
-        if (existingPathStr.Equals(currentPathStr))
-            return;
-        }
-
-    pathVector->push_back(path);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Ramanujam.Raman                 05 / 2014
-//+---------------+---------------+---------------+---------------+---------------+------
-bool ECRelatedItemsDisplaySpecificationsCache::TryGetRelatedPaths(bvector<ECRelationshipPath>& relationshipPathVec, ECClassCR ecClass) const
-    {
-    auto it = m_pathsByClass.find(&ecClass);
-    if (it == m_pathsByClass.end())
-        return false;
-
-    relationshipPathVec = it->second;
-    return !relationshipPathVec.empty();
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

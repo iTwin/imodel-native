@@ -164,7 +164,7 @@ public:
     static ECObjectsStatus ParseDirectionString (ECRelatedInstanceDirection& direction, Utf8StringCR directionString);
     static ECObjectsStatus ParseCardinalityString (uint32_t& lowerLimit, uint32_t& upperLimit, Utf8StringCR cardinalityString);
     static Utf8CP ModifierToString(ECClassModifier modifier);
-    static void ParseModifierString(ECClassModifier& modifier, Utf8StringCR modifierString);
+    static ECObjectsStatus ParseModifierString(ECClassModifier& modifier, Utf8StringCR modifierString);
     static Utf8String ContainerTypeToString(CustomAttributeContainerType containerType);
     static ECObjectsStatus ParseContainerString(CustomAttributeContainerType& containerType, Utf8StringCR typeString);
     static void FormatXml(BeXmlDomR xmlDom);
