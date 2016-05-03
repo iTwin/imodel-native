@@ -162,10 +162,11 @@ std::vector<ECSchemaPtr>& schemasOut
             return ERROR;
             }
 
-        if (SUCCESS != FixLegacySchema(*schema, *context))
-            {
-            return ERROR;
-            }
+//        FIXME: Satyakam: Temporary commenting out to avoid crash.
+//        if (SUCCESS != FixLegacySchema(*schema, *context))
+//            {
+//            return ERROR;
+//            }
 
         schemasOut.push_back(schema);
         }
