@@ -252,7 +252,7 @@ public:
 //=======================================================================================
 // @bsiclass                                                    Ray.Bentley     09/2015
 //=======================================================================================
-struct ThreeMxDomain : Dgn::DgnDomain
+struct EXPORT_VTABLE_ATTRIBUTE ThreeMxDomain : Dgn::DgnDomain
 {
     DOMAIN_DECLARE_MEMBERS(ThreeMxDomain, THREEMX_EXPORT)
 
