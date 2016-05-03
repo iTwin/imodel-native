@@ -7921,7 +7921,7 @@ template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveC
 
         HFCPtr<SMNodeGroupMasterHeader> groupMasterHeader(new SMNodeGroupMasterHeader());
         SMPointIndexHeader<EXTENT> oldMasterHeader;
-        this->GetStore()->LoadMasterHeader(&oldMasterHeader, sizeof(oldMasterHeader));
+        this->GetPointsStore()->LoadMasterHeader(&oldMasterHeader, sizeof(oldMasterHeader));
         groupMasterHeader->SetOldMasterHeaderData(oldMasterHeader);
         
         // Add first group
