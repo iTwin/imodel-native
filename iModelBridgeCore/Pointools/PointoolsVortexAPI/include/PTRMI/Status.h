@@ -311,7 +311,7 @@ namespace PTRMI
 					setLogEnabled(true);
 
 #ifndef NO_DATA_SOURCE_SERVER
-					DeleteFile(filePath);
+					DeleteFileW(filePath);
 					log(L"Log started ", L"");
 #endif
 				}

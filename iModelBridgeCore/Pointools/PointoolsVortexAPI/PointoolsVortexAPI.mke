@@ -46,12 +46,6 @@ $(BuildContextSrc)pshader.frag.cpp: $(PointoolsVortexAPIShaderSrc)pshader.frag
 
 %endif
 
-%if $(TARGET_PROCESSOR_ARCHITECTURE) == "x64"
-    CCompOpts + -D"WIN64"
-%else
-    CCompOpts + -D"WIN32"
-%endif
-
 dirToSearch=$(PointoolsVortexAPIInclude)
 %include cincapnd.mki
 

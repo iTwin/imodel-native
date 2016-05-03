@@ -4,7 +4,7 @@
 /*																			*/ 
 /*  Last Updated 14 Oct 2003 Faraz Ravi										*/ 
 /*--------------------------------------------------------------------------*/ 
-#ifdef WIN32
+#ifdef _WIN32
 #pragma warning (disable : 4786)
 #pragma warning (disable : 4251)
 #endif

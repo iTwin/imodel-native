@@ -18,7 +18,7 @@
 #include <pt/System.h>
 #include <algorithm>
 
-#ifdef WIN32
+#ifdef _WIN32
     #include <new.h>
 #endif
 

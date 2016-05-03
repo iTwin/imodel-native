@@ -21,36 +21,36 @@ namespace pt {
 
 Log* Log::commonLog = NULL;
 
-Log::Log(const std::tstring& filename, int stripFromStackBottom) : 
+Log::Log(const std::wstring& filename, int stripFromStackBottom) : 
     stripFromStackBottom(stripFromStackBottom) {
 
     this->filename = filename;
 
-    logFile = _tfopen(filename.c_str(), _T("w"));
+    logFile = _wfopen(filename.c_str(), L"w");
 
     if (logFile == NULL) {
-        std::tstring drive, base, ext;
+        std::wstring drive, base, ext;
 
 		//std::vector<std::string> path;
 		//ptds:FilePath::parseFilename(filename, drive, path, base, ext);
 
   //      std::string logName = base + ((ext != "") ? ("." + ext) : ""); 
-		std::tstring logName;
+		std::wstring logName;
 
         // Write time is greater than 1ms.  This may be a network drive.... try another file.
-        #ifdef WIN32
+        #ifdef _WIN32
 			if (ptds::FilePath::checkExists(L"c:/tmp")) {
-                logName = std::tstring(_T("c:/tmp/")) + logName;
+                logName = std::wstring(L"c:/tmp/") + logName;
             } else if (ptds::FilePath::checkExists(L"c:/temp")) { 
-                logName = std::tstring(_T("c:/temp/")) + logName;
+                logName = std::wstring(L"c:/temp/") + logName;
             } else {
-                logName = std::tstring(_T("c:/")) + logName;
+                logName = std::wstring(L"c:/") + logName;
             }
         #else
             logName = std::string("/tmp/") + logName;
         #endif
 
-        logFile = _tfopen(logName.c_str(), _T("w"));
+        logFile = _wfopen(logName.c_str(), L"w");
     }
 
     // Turn off buffering.
@@ -69,8 +69,8 @@ Log::Log(const std::tstring& filename, int stripFromStackBottom) :
 
 
 Log::~Log() {
-    section(_T("Shutdown"));
-    println(_T("Closing log file"));
+    section(L"Shutdown");
+    println(L"Closing log file");
     
     // Make sure we don't leave a dangling pointer
     if (Log::commonLog == this) {
@@ -93,14 +93,14 @@ Log* Log::common() {
 }
 
 
-std::tstring Log::getCommonLogFilename() {
+std::wstring Log::getCommonLogFilename() {
     return common()->filename;
 }
 
 
-void Log::section(const std::tstring& s) {
-    _ftprintf(logFile, _T("_____________________________________________________\n"));
-    _ftprintf(logFile, _T("\n    ###    %s    ###\n\n"), s.c_str());
+void Log::section(const std::wstring& s) {
+    fwprintf(logFile, L"_____________________________________________________\n");
+    fwprintf(logFile, L"\n    ###    %s    ###\n\n", s.c_str());
 }
 
 
@@ -115,15 +115,15 @@ void __cdecl Log::printf(const char* fmt, ...) {
 }
 
 
-void Log::print(const std::tstring& s) {
+void Log::print(const std::wstring& s) {
     printHeader();
-    _ftprintf(logFile, _T("%s"), s.c_str());
+    fwprintf(logFile, L"%s", s.c_str());
 }
 
 
-void Log::println(const std::tstring& s) {
+void Log::println(const std::wstring& s) {
     printHeader();
-    _ftprintf(logFile, _T("%s\n"), s.c_str());
+    fwprintf(logFile, L"%s\n", s.c_str());
 }
 
 
@@ -136,7 +136,7 @@ static std::string getBacktrace(
     int maxFrames,
     int stripFromTop = 0,
     int stripFromBottom = 0) {
-#ifndef WIN64
+#ifndef _WIN64
     #ifdef _MSC_VER
 
         Array<std::string> trace;
@@ -214,7 +214,7 @@ void Log::printHeader() {
         */
 
     } else {
-        println(_T("[Error getting time]"));
+        println(L"[Error getting time]");
     }
 }
 

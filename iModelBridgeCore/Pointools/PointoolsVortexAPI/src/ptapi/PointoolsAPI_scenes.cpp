@@ -240,11 +240,8 @@ PTbool	PTAPI ptSceneInfo(PThandle scene, PTstr name, PTint &clouds, PTuint &num_
 	const pcloud::Scene *sc = sceneFromHandle(scene);
 	if (sc)
 	{
-#ifdef UNICODE
 		wcscpy(name, sc->identifier());
-#else
-		wcscpy(name, pt::Unicode2Ascii::convert(sc->identifier()).c_str());
-#endif
+
 		clouds = sc->size();
 		num_points = 0;
 		

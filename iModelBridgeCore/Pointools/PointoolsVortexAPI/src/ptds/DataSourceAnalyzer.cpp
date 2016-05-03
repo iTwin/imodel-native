@@ -52,7 +52,7 @@ void DataSourceAnalyzer::initializeGraphs(int positionOffsetX, int positionOffse
 	Graph	*	graph;
 
 
-	if(::GetEnvironmentVariable(L"PTVORTEX_PW_GRAPH", graphEnvValue, 256) > 0)
+	if(::GetEnvironmentVariableW(L"PTVORTEX_PW_GRAPH", graphEnvValue, 256) > 0)
 	{
 		setEnableGraphs(false);
 

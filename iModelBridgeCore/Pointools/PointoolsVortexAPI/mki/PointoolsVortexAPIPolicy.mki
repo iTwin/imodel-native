@@ -49,12 +49,8 @@ CCompOpts + -DMAJ_V=$(MAJ_V)
 CCompOpts + -DMIN_V=$(MIN_V)
 CCompOpts + -DSUBMIN_V=$(SUBMIN_V)
 CCompOpts + -DVERSION=$(REL_V).$(MAJ_V).$(MIN_V).$(SUBMIN_V)
-CCompOpts + -D"UNICODE"
-CCompOpts + -D"_UNICODE"
 CCompOpts + -D"PTRMI_LOGGING"
 CCompOpts + -D"_TEST"
-CCompOpts + -D"_WINDOWS"
-CCompOpts + -D"_USRDLL"
 CCompOpts + -D"POINTOOLS_API"
 CCompOpts + -D"POINTOOLS_API_INCLUDE"
 CCompOpts + -D"PTENG_DELAY_LOAD"

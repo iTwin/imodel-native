@@ -1,7 +1,6 @@
 #pragma once
 #include <string>
 #include <Shlwapi.h>
-#include <tchar.h>
 #ifdef _MFC_VER
 
 /**
@@ -465,7 +464,7 @@ protected:
 
 #endif
 
-typedef std::basic_string<TCHAR> stdstring;
+typedef std::wstring stdstring;
 
 class CRegStdBase
 {
@@ -476,16 +475,16 @@ public:	//methods
 	 * HKCU\Software\Company\Product key in the registry.
 	 * \return ERROR_SUCCESS or an nonzero errorcode. Use FormatMessage() to get an error description.
 	 */
-	DWORD removeKey() { RegOpenKeyEx(m_base, m_path.c_str(), 0, KEY_WRITE, &m_hKey); return SHDeleteKey(m_base, m_path.c_str()); }
+	DWORD removeKey() { RegOpenKeyExW(m_base, m_path.c_str(), 0, KEY_WRITE, &m_hKey); return SHDeleteKeyW(m_base, m_path.c_str()); }
 	/**
 	 * Removes the value of the registry object. If you set the registry entry to
 	 * be HKCU\Software\Company\Product\key\value there will only be
 	 * HKCU\Software\Company\Product\key\ in the registry.
 	 * \return ERROR_SUCCESS or an nonzero errorcode. Use FormatMessage() to get an error description.
 	 */
-	LONG removeValue() { RegOpenKeyEx(m_base, m_path.c_str(), 0, KEY_WRITE, &m_hKey); return RegDeleteValue(m_hKey, m_key.c_str()); }
+	LONG removeValue() { RegOpenKeyExW(m_base, m_path.c_str(), 0, KEY_WRITE, &m_hKey); return RegDeleteValueW(m_hKey, m_key.c_str()); }
 
-	BOOL exists() { BOOL res = (RegOpenKeyEx(m_base, m_path.c_str(), 0, KEY_READ, &m_hKey)) == ERROR_SUCCESS ? true : false; RegCloseKey(m_hKey); return res; }
+	BOOL exists() { BOOL res = (RegOpenKeyExW(m_base, m_path.c_str(), 0, KEY_READ, &m_hKey)) == ERROR_SUCCESS ? true : false; RegCloseKey(m_hKey); return res; }
 
 public:	//members
 	HKEY m_base;		///< handle to the registry base
@@ -554,7 +553,7 @@ public:
 	 * \param force set to TRUE if no cache should be used, i.e. always read and write directly from/to registry
 	 * \param base a predefined base key like HKEY_LOCAL_MACHINE. see the SDK documentation for more information.
 	 */
-	CRegStdString(stdstring key, stdstring def = _T(""), BOOL force = FALSE, HKEY base = HKEY_CURRENT_USER, DWORD readLocation = KEY_WOW64_64KEY );
+	CRegStdString(stdstring key, stdstring def = L"", BOOL force = FALSE, HKEY base = HKEY_CURRENT_USER, DWORD readLocation = KEY_WOW64_64KEY );
 	~CRegStdString(void);
 	
 	stdstring read();						///< reads the value from the registry
@@ -564,7 +563,7 @@ public:
 	CRegStdString& operator=(stdstring s);
 //	CRegStdString& operator+=(stdstring s) { return *this = (stdstring)*this + s; }
 	CRegStdString& operator+=(stdstring s) { return *this = (*reinterpret_cast<stdstring *>(this)) + s;}
-	operator LPCTSTR();
+	operator wchar_t const*();
 	
 	
 protected:

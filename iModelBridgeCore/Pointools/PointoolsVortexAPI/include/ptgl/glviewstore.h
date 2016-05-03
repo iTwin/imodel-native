@@ -7,7 +7,7 @@
 #ifndef POINTOOLS_VIEWSTORE_DEFINITION
 #define POINTOOLS_VIEWSTORE_DEFINITION
 
-#ifdef WIN32
+#ifdef _WIN32
 #include <windows.h>
 #endif
 
@@ -122,7 +122,7 @@ public:
 	GLdouble	depth_range[2];
 	pt::vector4d matrix[4];
 
-#ifdef WIN32
+#ifdef _WIN32
 	HDC			dc;
 #endif
 };

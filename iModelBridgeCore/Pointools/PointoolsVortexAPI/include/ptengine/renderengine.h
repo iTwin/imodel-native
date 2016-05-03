@@ -418,7 +418,7 @@ private:
 	void setupLighting();
 
 	bool loadRamps();
-	void loadRamp( const TCHAR* );
+	void loadRamp( const wchar_t* );
 	bool initializeGL();
 
 	float		_multiplier;

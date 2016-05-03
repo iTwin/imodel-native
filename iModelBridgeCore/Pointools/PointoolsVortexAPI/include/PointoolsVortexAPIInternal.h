@@ -11,7 +11,7 @@
 // Windows Header Files:
 #include <windows.h>
 #include <Commdlg.h>
-#include <tchar.h>
+//#include <tchar.h>
 
 // C header files
 #include <assert.h>

@@ -1186,7 +1186,7 @@ void DataCache::outputStatusToLog(void)
 {
 	wchar_t	message[2048];
 
-	wsprintf(message, L"Cache Pages: %d %d %d", getNumCachePages(), getNumCachePagesResident(), getPercentageCachePagesResident());
+	wsprintfW(message, L"Cache Pages: %d %d %d", getNumCachePages(), getNumCachePagesResident(), getPercentageCachePagesResident());
 
 	Status::log(message, L"");
 }

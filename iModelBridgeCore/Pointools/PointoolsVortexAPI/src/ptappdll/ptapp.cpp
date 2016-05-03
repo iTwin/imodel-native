@@ -42,20 +42,20 @@ static void determineVersion()
 	static bool init = false;
 	if (!init)
 	{
-		TCHAR path[MAX_PATH];
-		::GetModuleFileName(NULL, path, sizeof(path));
+		char path[MAX_PATH];
+		::GetModuleFileNameA(NULL, path, sizeof(path));
 
-		if (_tcscmp(&path[_tcslen(path)-13],_T("PTViewPro.exe"))==0)
+		if (strcmp(&path[strlen(path)-13],"PTViewPro.exe")==0)
 		{
 			strcpy(_appString, "Pointools View 1.6 Pro");
 			_version = PTVIEW_PRO_VERSION;
 		}
-		else if (_tcscmp(&path[_tcslen(path)-11],_T("Cyclops.exe"))==0)
+		else if (strcmp(&path[strlen(path)-11],"Cyclops.exe")==0)
 		{
 			strcpy(_appString, "Cyclops 1.1");
 			_version = PTVIEW_CYCLOPS_VERSION;
 		}
-		else if (_tcscmp(&path[_tcslen(path)-10],_T("PTView.exe"))==0)
+		else if (strcmp(&path[strlen(path)-10],"PTView.exe")==0)
 		{
 			strcpy(_appString, "Pointools View 1.6");
 			_version = PTVIEW_STD_VERSION;
@@ -138,10 +138,5 @@ void ptapp::setAppPathW(const wchar_t *path)
 	_pathinit = true;
 	_apppathA = Unicode2Ascii::convert(_apppath.path());	
 }
-#ifdef UNICODE
-	const wchar_t* ptapp::apppath() { return apppathW(); }
-	void ptapp::setAppPath(const wchar_t *path) { setAppPathW(path); }
-#else
-	const char* ptapp::apppath() { return apppathA(); }
-	void ptapp::setAppPath(const char *path) { setAppPathA(path); }
-#endif
+const wchar_t* ptapp::apppath() { return apppathW(); }
+void ptapp::setAppPath(const wchar_t *path) { setAppPathW(path); }

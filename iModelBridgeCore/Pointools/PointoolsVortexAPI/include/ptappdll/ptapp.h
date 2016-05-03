@@ -25,13 +25,9 @@ namespace ptapp
 	void setAppPathA(const char *path);
 	void setAppPathW(const wchar_t *path);
 
-#ifdef UNICODE
 	const wchar_t* apppath();
 	void setAppPath(const wchar_t *path);
-#else
-	const wchar_t* apppath();
-	void setAppPath(const char *path);
-#endif
+
 	void absolutePath(char *path, const char* rel);
 
 	pt::ParameterMap *env();

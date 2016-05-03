@@ -22,7 +22,7 @@
 #include <pt/debugPrintf.h>
 #include <pt/Log.h>
 
-#ifdef WIN32
+#ifdef _WIN32
     // disable: "C++ exception handler used"
     #pragma warning (disable : 4530)
 #endif
@@ -39,7 +39,7 @@ AssertionHook _debugHook = _handleDebugAssert_;
 #endif
 
 
-#ifdef WIN32
+#ifdef _WIN32
 static void postToClipboard(const TCHAR *text) {
     if (OpenClipboard(NULL)) {
         HGLOBAL hMem = GlobalAlloc(GHND | GMEM_DDESHARE, _tcslen(text) + 1);
@@ -72,7 +72,7 @@ static void createErrorMessage(
     std::tstring le = _T("");
     TCHAR* newline = _T("\n");
 
-    #ifdef WIN32
+    #ifdef _WIN32
         newline = _T("\r\n");
 
         // The last error value.  (Which is preserved across the call).
@@ -142,7 +142,7 @@ bool _handleDebugAssert_(
 
     createErrorMessage(expression, message, filename, lineNumber, dialogTitle, dialogText);
 
-    #ifdef WIN32
+    #ifdef _WIN32
         DWORD lastErr = GetLastError();
         postToClipboard(dialogText.c_str());
     #endif
@@ -159,7 +159,7 @@ bool _handleDebugAssert_(
 
     int result = pt::prompt(dialogTitle.c_str(), dialogText.c_str(), (const TCHAR**)choices, 4, useGuiPrompt);
 
-    #ifdef WIN32
+    #ifdef _WIN32
         // Put the incoming last error back.
         SetLastError(lastErr);
     #endif
@@ -221,7 +221,7 @@ void _handleErrorCheck_(
 }
 
 
-#ifdef WIN32
+#ifdef _WIN32
 static HCURSOR oldCursor;
 static RECT    oldCursorRect;
 static POINT   oldCursorPos;
@@ -229,7 +229,7 @@ static int     oldShowCursorCount;
 #endif
 
 void _releaseInputGrab_() {
-    #ifdef WIN32
+    #ifdef _WIN32
 
         GetCursorPos(&oldCursorPos);
 
@@ -273,7 +273,7 @@ void _releaseInputGrab_() {
 
 
 void _restoreInputGrab_() {
-    #ifdef WIN32
+    #ifdef _WIN32
 
         // Restore the old clipping region
         ClipCursor(&oldCursorRect);

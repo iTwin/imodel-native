@@ -1,11 +1,10 @@
 #pragma once
 
-#include <tchar.h>
 
-#ifndef tstring
+/*#ifndef tstring
 	#ifdef UNICODE
 		#define tstring wstring
 	#else
 		#define tstring string
 	#endif
-#endif
+#endif*/

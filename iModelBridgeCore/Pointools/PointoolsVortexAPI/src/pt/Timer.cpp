@@ -31,7 +31,7 @@ const Timer* Timer::instance()
     return &s_timer;
 }
 
-#ifdef WIN32
+#ifdef _WIN32
 
     #include <fcntl.h>
     #include <windows.h>

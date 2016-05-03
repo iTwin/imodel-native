@@ -119,7 +119,7 @@ unsigned char	_nonDemoCode =0;
 
 PTenum			g_autoBaseMethod = PT_AUTO_BASE_DISABLED;
 
-TCHAR			g_lastError[1024];
+wchar_t			g_lastError[1024];
 PTres			g_lastErrorCode = PTV_SUCCESS;
 
 PTenum PTAPI ptGetAutoBaseMethod()
@@ -136,14 +136,14 @@ PTvoid PTAPI ptSetAutoBaseMethod( PTenum method )
 
 static char teakey [] = { -43, 20, -56, -12, 2, -103, -87, 95, 2, 39, 74, 8, 82, 17, -61, 97 };
 static const char* txt_any = "any";
-static const PTstr txt_licModuleFailure = _T("Not licensed for use with this module");
-static const PTstr txt_expired = _T("License has expired");
-static const PTstr txt_setback = _T("Clock setback detected");
+static const PTstr txt_licModuleFailure = L"Not licensed for use with this module";
+static const PTstr txt_expired = L"License has expired";
+static const PTstr txt_setback = L"Clock setback detected";
 static const char* txt_restricted = "restricted";
 static const char* txt_demo = "demo";
-static const PTstr txt_licDemoTimeFailure = _T("Not yet available for demo re-use, please try again");
-static std::wstring lastrunKey = _T("Software\\Pointools\\Vortex\\LastRun");
-static std::wstring lastrunKeySetback = _T("Software\\Pointools\\Vortex\\lr");
+static const PTstr txt_licDemoTimeFailure = L"Not yet available for demo re-use, please try again";
+static std::wstring lastrunKey = L"Software\\Pointools\\Vortex\\LastRun";
+static std::wstring lastrunKeySetback = L"Software\\Pointools\\Vortex\\lr";
 static bool _hasPSTimeOut = true;
 
 //-----------------------------------------------------------------------------
@@ -212,56 +212,56 @@ bool checkPreSessionTimeOut()
 //-------------------------------------------------------------------------------
 PTstr PTAPI ptGetLastErrorString(void)
 {
-	switch (g_lastErrorCode)
-	{
-		case PTV_SUCCESS: return _T("No error");
+    switch (g_lastErrorCode)
+        {
+        case PTV_SUCCESS: return L"No error";
 
-		// File Errors
-		case PTV_FILE_NOT_EXIST: return _T("File does not exist");
-		case PTV_FILE_NOT_ACCESSIBLE : return _T("File is not accessible");
-		case PTV_FILE_WRONG_TYPE :	return _T("Wrong file type");
-		case PTV_FILE_COM_ERROR	:	return _T("COM error");
-		case PTV_FILE_USER_CANCELLED :	return _T("User cancelled file operation");
-		case PTV_FILE_ALREADY_OPENED :	return _T("File is already opened");
-		case PTV_FILE_NOTHING_TO_WRITE : return _T("Nothing to write");
-		case PTV_FILE_WRITE_FAILURE :	return _T("General write failure");
-		case PTV_FILE_READ_FAILURE :	return _T("General read failure");
-		case PTV_FILE_FAILED_TO_CREATE : return _T("Failed to create file");
-		case PTV_FILE_INVALID_POD	:	return _T("POD file invalid or corrupt");
-		case PTV_FILE_VERSION_NOT_HANDLED: return _T("POD version not handled");
+            // File Errors
+        case PTV_FILE_NOT_EXIST: return L"File does not exist";
+        case PTV_FILE_NOT_ACCESSIBLE: return L"File is not accessible";
+        case PTV_FILE_WRONG_TYPE:	return L"Wrong file type";
+        case PTV_FILE_COM_ERROR:	return L"COM error";
+        case PTV_FILE_USER_CANCELLED:	return L"User cancelled file operation";
+        case PTV_FILE_ALREADY_OPENED:	return L"File is already opened";
+        case PTV_FILE_NOTHING_TO_WRITE: return L"Nothing to write";
+        case PTV_FILE_WRITE_FAILURE:	return L"General write failure";
+        case PTV_FILE_READ_FAILURE:	return L"General read failure";
+        case PTV_FILE_FAILED_TO_CREATE: return L"Failed to create file";
+        case PTV_FILE_INVALID_POD:	return L"POD file invalid or corrupt";
+        case PTV_FILE_VERSION_NOT_HANDLED: return L"POD version not handled";
 
-		// Generic Errors
-		case PTV_UNKNOWN_ERROR :	return _T("Unknown error");
-		case PTV_INVALID_PARAMETER :	return _T("Invalid parameter");
-		case PTV_VALUE_OUT_OF_RANGE	:	return _T("Value out of range");
-		case PTV_INVALID_OPTION	:	return _T("Invalid option");
-		case PTV_INVALID_VALUE_FOR_PARAMETER :	return _T("Invalid value for parameter");
-		case PTV_VOID_POINTER :		return _T("Null pointer used");
-		case PTV_NOT_INITIALIZED :	return _T("Library not initialised, did you forgot to call ptInitialise ?");
-		case PTV_NOT_IMPLEMENTED_IN_VERSION : return _T("Function called has not been implemented in this version");
-		case PTV_OUT_OF_MEMORY :	return _T("Out of memory");
+            // Generic Errors
+        case PTV_UNKNOWN_ERROR:	return L"Unknown error";
+        case PTV_INVALID_PARAMETER:	return L"Invalid parameter";
+        case PTV_VALUE_OUT_OF_RANGE:	return L"Value out of range";
+        case PTV_INVALID_OPTION:	return L"Invalid option";
+        case PTV_INVALID_VALUE_FOR_PARAMETER:	return L"Invalid value for parameter";
+        case PTV_VOID_POINTER:		return L"Null pointer used";
+        case PTV_NOT_INITIALIZED:	return L"Library not initialised, did you forgot to call ptInitialise ?";
+        case PTV_NOT_IMPLEMENTED_IN_VERSION: return L"Function called has not been implemented in this version";
+        case PTV_OUT_OF_MEMORY:	return L"Out of memory";
 
-		// Licensing
-		case PTV_LICENSE_EXPIRY	:	return _T("Licence has expired");
-		case PTV_LICENSE_MODULE_ERROR : return _T("Not licensed for this client module");
-		case PTV_LICENSE_CORRUPT : return _T("License is corrupted");
-		case PTV_NO_LICENSE_FOR_FEATURE: return _T("No license available for this feature");
-		case PTV_PRODUCT_LICENSE_NA: return _T("Pointools product license not available for license share");
-		
-		// Viewports
-		case PTV_MAXIMUM_VIEWPORTS_USED	: return _T("Max number of viewports used"); 
-		case PTV_MIN_OPENGL_VERSION_NA: return _T("Minimum OpenGL version (1.4) is not available on this machine");
+            // Licensing
+        case PTV_LICENSE_EXPIRY:	return L"Licence has expired";
+        case PTV_LICENSE_MODULE_ERROR: return L"Not licensed for this client module";
+        case PTV_LICENSE_CORRUPT: return L"License is corrupted";
+        case PTV_NO_LICENSE_FOR_FEATURE: return L"No license available for this feature";
+        case PTV_PRODUCT_LICENSE_NA: return L"Pointools product license not available for license share";
 
-		// IO Block errors
-		case PTV_INVALID_BLOCK_VERSION : return _T("Invalid block version for data type");
+            // Viewports
+        case PTV_MAXIMUM_VIEWPORTS_USED: return L"Max number of viewports used";
+        case PTV_MIN_OPENGL_VERSION_NA: return L"Minimum OpenGL version (1.4) is not available on this machine";
 
-		// Metadata
-		case PTV_METATAG_NOT_FOUND : return _T("Metatag not found");
-		case PTV_METATAG_EMPTY : return _T("Metatag is empty");
+            // IO Block errors
+        case PTV_INVALID_BLOCK_VERSION: return L"Invalid block version for data type";
 
-		default:
-			return _T("Unrecognised error code");
-	}
+            // Metadata
+        case PTV_METATAG_NOT_FOUND: return L"Metatag not found";
+        case PTV_METATAG_EMPTY: return L"Metatag is empty";
+
+        default:
+            return L"Unrecognised error code";
+        }
 }
 //-----------------------------------------------------------------------------
 PTres PTAPI ptGetLastErrorCode()
@@ -432,7 +432,7 @@ PTbool ptInitializeEnvVariables(void)
 {
 	wchar_t envValue[512];
 
-	if(::GetEnvironmentVariable(L"PTVORTEX_LOG", envValue, 512) > 0)
+	if(::GetEnvironmentVariableW(L"PTVORTEX_LOG", envValue, 512) > 0)
 	{
 		if(wcscmp(envValue, L"None") != 0 && wcscmp(envValue, L"none") != 0)
 		{
@@ -440,7 +440,7 @@ PTbool ptInitializeEnvVariables(void)
 		}
 	}
 
-	if(::GetEnvironmentVariable(L"PTVORTEX_STREAM_MAX_READS", envValue, 512) > 0)
+	if(::GetEnvironmentVariableW(L"PTVORTEX_STREAM_MAX_READS", envValue, 512) > 0)
 	{
 		if(wcscmp(envValue, L"") != 0)
 		{
@@ -453,7 +453,7 @@ PTbool ptInitializeEnvVariables(void)
 		}
 	}
 
-	if(::GetEnvironmentVariable(L"PTVORTEX_STREAM_MIN_VOXEL_BUDGET", envValue, 512) > 0)
+	if(::GetEnvironmentVariableW(L"PTVORTEX_STREAM_MIN_VOXEL_BUDGET", envValue, 512) > 0)
 	{
 		if(wcscmp(envValue, L"") != 0)
 		{
@@ -466,7 +466,7 @@ PTbool ptInitializeEnvVariables(void)
 		}
 	}
 
-	if(::GetEnvironmentVariable(L"PTVORTEX_STREAM_MIN_BUDGET", envValue, 512) > 0)
+	if(::GetEnvironmentVariableW(L"PTVORTEX_STREAM_MIN_BUDGET", envValue, 512) > 0)
 	{
 		if(wcscmp(envValue, L"") != 0)
 		{
@@ -480,7 +480,7 @@ PTbool ptInitializeEnvVariables(void)
 		}
 	}
 
-	if(::GetEnvironmentVariable(L"PTVORTEX_STREAM_MAX_BUDGET", envValue, 512) > 0)
+	if(::GetEnvironmentVariableW(L"PTVORTEX_STREAM_MAX_BUDGET", envValue, 512) > 0)
 	{
 		if(wcscmp(envValue, L"") != 0)
 		{
@@ -493,7 +493,7 @@ PTbool ptInitializeEnvVariables(void)
 		}
 	}
 
-	if(::GetEnvironmentVariable(L"PTVORTEX_STREAM_SCALAR", envValue, 512) > 0)
+	if(::GetEnvironmentVariableW(L"PTVORTEX_STREAM_SCALAR", envValue, 512) > 0)
 	{
 		if(wcscmp(envValue, L"") != 0)
 		{
@@ -693,14 +693,14 @@ PTbool PTAPI ptInitialize(const PTubyte* licenseData)
 
 				if (strnicmp(mod, module.c_str(), 64))
 				{
-					_tcscpy(g_lastError, txt_licModuleFailure);			
+					wcscpy(g_lastError, txt_licModuleFailure);			
 					_failed = true;
 					setLastErrorCode( PTV_LICENSE_MODULE_ERROR );
 				}
 			}
 			if (hasExpiry && (HAS_EXPIRED && !_failed)) 
 			{
-				_tcscpy(g_lastError, txt_expired); 
+                wcscpy(g_lastError, txt_expired);
 				_failed = true;
 				setLastErrorCode( PTV_LICENSE_EXPIRY );
 			}
@@ -708,7 +708,7 @@ PTbool PTAPI ptInitialize(const PTubyte* licenseData)
 	// Pip Option
 			//if ( hasExpiry && checkSetback() && t.wYear != 2100 && t.wYear != 2050 && !_failed) 
 			//{
-			//	_tcscpy(g_lastError, txt_setback); 
+			//	wcscpy(g_lastError, txt_setback); 
 			//	_failed = true;
 			//}
 
@@ -808,7 +808,7 @@ PTbool	PTAPI ptIsInitialized()
 //-------------------------------------------------------------------------------
 PTvoid PTAPI ptSetWorkingFolder(const PTstr folder)
 {
-	ptapp::setAppPath((const TCHAR*)folder);
+	ptapp::setAppPath(folder);
 }
 //-------------------------------------------------------------------------------
 // Set the working folder for the host application
@@ -862,9 +862,9 @@ PThandle PTAPI ptBrowseAndOpenPOD()
 		return 0;
 	}
 	// get file name first
-	TCHAR filename[4096];
+	wchar_t filename[4096];
 
-	OPENFILENAME ofn;       
+	OPENFILENAMEW ofn;       
 
 	/* Initialize OPENFILENAME*/ 
 	ZeroMemory(&ofn, sizeof(ofn));
@@ -878,7 +878,7 @@ PThandle PTAPI ptBrowseAndOpenPOD()
 	//
 	ofn.lpstrFile[0] = '\0'; 
 	ofn.nMaxFile = sizeof(filename);
-	ofn.lpstrFilter = _T("Pointools POD file(*.pod)\0*.pod\0Pointools PTL files(*.ptl)\0*.ptl\0");
+	ofn.lpstrFilter = L"Pointools POD file(*.pod)\0*.pod\0Pointools PTL files(*.ptl)\0*.ptl\0";
 	ofn.nFilterIndex = 1;
 	ofn.lpstrFileTitle = NULL;
 	ofn.nMaxFileTitle = 0;
@@ -891,7 +891,7 @@ PThandle PTAPI ptBrowseAndOpenPOD()
 		return 0;
 	}
 
-	if (!GetOpenFileName(&ofn))
+	if (!GetOpenFileNameW(&ofn))
 	{
 		DWORD err = CommDlgExtendedError();
 
@@ -900,8 +900,8 @@ PThandle PTAPI ptBrowseAndOpenPOD()
 		return PT_NULL;
 	}
 	
-	int len = _tcslen(filename);
-	if ( _tcsicmp(&filename[len-3], _T("ptl")) == 0 )
+	int len = wcslen(filename);
+	if ( wcsicmp(&filename[len-3], L"ptl") == 0 )
 	{
 		return ptOpenPTL(filename);
 	}
@@ -909,12 +909,12 @@ PThandle PTAPI ptBrowseAndOpenPOD()
 	{
 		//return ptOpenPOD(filename);
 
-		const TCHAR *strptr = filename;
-		TCHAR fpath[260];
-		TCHAR fname[260];
+		const wchar_t *strptr = filename;
+        wchar_t fpath[260];
+        wchar_t fname[260];
 
-		_tcscpy(fpath, strptr);
-		int pathlen = _tcslen(fpath);
+        wcscpy(fpath, strptr);
+		int pathlen = wcslen(fpath);
 
 		strptr += pathlen + 1;
 		int numscenes = 0;
@@ -1161,7 +1161,7 @@ PTbool PTAPI ptSetClientStreaming(PTuint min, PTuint max, PTuint refresh, PTdoub
 	bool useOverride = false;
 
 	wchar_t envValue[512];
-	if(::GetEnvironmentVariable(L"PTVORTEX_STREAM_OVERRIDE", envValue, 512) > 0)
+	if(::GetEnvironmentVariableW(L"PTVORTEX_STREAM_OVERRIDE", envValue, 512) > 0)
 	{
 		if(wcscmp(envValue, L"TRUE") == 0 || wcscmp(envValue, L"true") == 0)
 		{
