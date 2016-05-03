@@ -76,6 +76,8 @@
     #define BENTLEYCONFIG_GRAPHICS_OPENGL
     #define BENTLEYCONFIG_DISPLAY_WX
 
+#elif defined (__EMSCRIPTEN__)
+
 #else
     #error Unexpected OS configuration
 #endif
