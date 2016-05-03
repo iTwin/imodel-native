@@ -1646,6 +1646,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                 auto group = this->GetGroup(blockID);
                 auto node_header = group->GetNodeHeader(ConvertBlockID(blockID));
                 ReadNodeHeaderFromBinary(header, group->GetRawHeaders() + node_header.offset, node_header.size);
+                header->m_isTextured = !header->m_textureID.empty();
                 }
             else {
                 auto nodeHeader = this->GetNodeHeader(blockID);
