@@ -9,7 +9,7 @@
 #include "RepositorySchemaUpgradeTests.h"
 
 #include <WebServices/Cache/CachingDataSource.h>
-#include <MobileDgn/Utils/Http/ProxyHttpHandler.h>
+#include <DgnClientFx/Utils/Http/ProxyHttpHandler.h>
 #include <Bentley/BeFileListIterator.h>
 
 StubLocalState s_localState;
