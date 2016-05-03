@@ -1,9 +1,6 @@
 #include "PointoolsVortexAPIInternal.h"
-#include <windows.h>
-#include <ptcloud2\compressor.h>
 
-#include <vector>
-#include <algorithm>
+#include <ptcloud2/compressor.h>
 #include <mathimf.h>
 
 using namespace pcloud;

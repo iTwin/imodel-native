@@ -1,4 +1,4 @@
-#include <pt/os.h>
+
 #include <iostream>
 #include <pt/scenegraph.h>
 #include <ptengine/pointsSelect.h>
@@ -9,7 +9,7 @@
 
 #include <ptcmdppe/cmdstate.h>
 
-#include <pt\trace.h>
+#include <pt/trace.h>
 
 #define _VERBOSE	1
 

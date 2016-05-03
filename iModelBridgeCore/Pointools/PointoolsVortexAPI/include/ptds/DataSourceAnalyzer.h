@@ -1,7 +1,6 @@
 
 #pragma once
 
-#include <windows.h>
 #include <ptds/ptds.h>
 #include <pt/timestamp.h>
 

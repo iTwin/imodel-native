@@ -1,8 +1,6 @@
 #include "PointoolsVortexAPIInternal.h"
-#include <pt/os.h>
-#include <gl/glew.h>
+
 #include <ptedit/boxfilter.h>
-#include <Winbase.h>
 
 using namespace ptedit;
 using namespace pt;

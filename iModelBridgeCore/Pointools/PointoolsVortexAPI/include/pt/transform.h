@@ -1,8 +1,8 @@
 #ifndef POINTOOLS_TRANSFORM_H
 #define POINTOOLS_TRANSFORM_H
 
-#include <pt\flags.h>
-#include <math\matrix_math.h>
+#include <pt/flags.h>
+#include <math/matrix_math.h>
 
 namespace pt
 {

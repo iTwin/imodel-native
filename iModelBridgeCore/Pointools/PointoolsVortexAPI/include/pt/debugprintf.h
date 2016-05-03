@@ -21,12 +21,6 @@
 #include <pt/format.h>
 #include <string>
 
-#ifndef WIN32
-    #include <stdarg.h>
-#else
-	#include <windows.h>
-#endif
-
 namespace pt {
 
 /**
@@ -38,7 +32,7 @@ namespace pt {
   platforms, the string is printed to stderr.
  */
 
-#ifdef _DEBUG
+#if defined(_DEBUG) && defined(_WIN32)
 
     // This function is inlined so that it can be turned off depending
     // on the linked program's _DEBUG setting (not the _DEBUG setting

@@ -8,7 +8,6 @@
 #include <Wm5matrix3.h>
 #include <Wm5ApprPlaneFit3.h>
 
-#include <pt/os.h>
 
 #include <pt/trace.h>
 #include <ptengine/engine.h>

@@ -1,10 +1,7 @@
 #include "PointoolsVortexAPIInternal.h"
-#include <pt/os.h>
+
 #define POINTOOLS_API_BUILD_DLL
 
-#include <map>
-
-#include <gl/glew.h>
 #include <ptapi/PointoolsVortexAPI.h>
 #include <ptapi/PointoolsAPI_handle.h>
 

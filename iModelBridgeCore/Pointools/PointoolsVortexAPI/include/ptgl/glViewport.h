@@ -18,8 +18,6 @@
 #define word unsigned short
 #endif
 
-#include <pt/os.h>
-
 /*includes*/ 
 #include <gl/glew.h>
 #include <gl/glu.h>

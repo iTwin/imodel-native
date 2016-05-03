@@ -2,7 +2,7 @@
 #include <ptcmdppe/cmdprogress.h>
 #include <ptcmdppe/cmdstate.h>
 #include <ptcmdppe/cmdoutput.h>
-#include <windows.h>
+
 
 
 using namespace ptapp;

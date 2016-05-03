@@ -1,13 +1,14 @@
 #ifndef POINTOOLS_PCLOUD2_POINTS_EXCHANGER
 #define POINTOOLS_PCLOUD2_POINTS_EXCHANGER
 
+#ifdef NEEDS_WORK_VORTEX_DGNDB
 #include <vector>
 #include <string>
 #include <map>
-#include <ptcloud2\defs.h>
-#include <ptfs\filepath.h>
-#include <ptengine\ptengine_api.h>
-#include <ptengine\pointsIOdefs.h>
+#include <ptcloud2/defs.h>
+#include <ptfs/filepath.h>
+#include <ptengine/ptengine_api.h>
+#include <ptengine/pointsIOdefs.h>
 
 namespace pointsengine
 {
@@ -35,4 +36,5 @@ namespace pointsengine
 	};
 }
 
+#endif
 #endif

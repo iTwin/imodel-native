@@ -1,15 +1,11 @@
 #pragma once
 
-#include <windows.h>
 #include <string>
 #include <vector>
 #include <algorithm>
 
-#include <shlwapi.h>
-#include <shlobj.h>
-
-#include <pt\unicodeconversion.h>
-#include <pt\ptmath.h>
+#include <pt/unicodeconversion.h>
+#include <pt/ptmath.h>
 
 #ifndef NO_DATA_SOURCE_SERVER
 #include <PTRMI/Array.h>

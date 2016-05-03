@@ -1,7 +1,7 @@
 #ifndef POINTOOLS_MATRIX4_DEF
 #define POINTOOLS_MATRIX4_DEF
-#include <pt\classes.h>
-#include <pt\geomtypes.h>
+#include <pt/classes.h>
+#include <pt/geomtypes.h>
 namespace pt
 {
 /*--------------------------------------------------------------------------*/ 

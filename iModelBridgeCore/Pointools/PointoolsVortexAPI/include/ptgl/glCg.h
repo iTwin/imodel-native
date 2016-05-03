@@ -2,8 +2,8 @@
 #define POINTOOLS_GLCG_SUPPORT_HEADER
 #ifdef PTGL_USING_CG
 
-#include <ptgl\ptgl.h>
-#include <cg\cg.h>
+#include <ptgl/ptgl.h>
+#include <cg/cg.h>
 
 namespace ptgl
 {

@@ -1,7 +1,7 @@
 #ifndef POINTOOLS_POINTSENGINE_FILTERS
 #define POINTOOLS_POINTSENGINE_FILTERS
 
-#include <ptengine\pointsfilter.h>
+#include <ptengine/pointsfilter.h>
 
 namespace pointsengine
 {

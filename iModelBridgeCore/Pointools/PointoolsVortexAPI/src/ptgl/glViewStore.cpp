@@ -5,10 +5,10 @@
 /*  Last Updated 12 Dec 2003 Faraz Ravi										*/ 
 /*--------------------------------------------------------------------------*/ 
 #include "PointoolsVortexAPIInternal.h"
-#include <pt\os.h>
 
-#include <gl\glu.h>
-#include <ptgl\glviewstore.h>
+
+#include <gl/glu.h>
+#include <ptgl/glviewstore.h>
 
 using namespace ptgl;
  

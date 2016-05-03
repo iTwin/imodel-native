@@ -1,7 +1,7 @@
 #ifndef POINTOOLS_ROOT_PROJECT_NODE_H
 #define POINTOOLS_ROOT_PROJECT_NODE_H
 
-#include <pt\scenegraph.h>
+#include <pt/scenegraph.h>
 
 #include <map>
 

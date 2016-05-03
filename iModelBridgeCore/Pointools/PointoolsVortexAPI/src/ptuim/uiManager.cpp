@@ -11,7 +11,7 @@
 #endif
 #define COUTTRACER
 
-#include <pt/os.h>
+
 #include <ptapp/uiparser/uiparser.h>
 #include <ptui/ptui_parser.h>
 #include <ptapp/application.h>
@@ -23,11 +23,6 @@
 
 #include <fltk/ask.h>
 #include <fltk/run.h>
-
-#include <boost/bind.hpp>
-#include <boost/filesystem\path.hpp>
-#include <boost/filesystem\operations.hpp>
-#include <boost/tokenizer.hpp>
 
 #include <io.h>
 

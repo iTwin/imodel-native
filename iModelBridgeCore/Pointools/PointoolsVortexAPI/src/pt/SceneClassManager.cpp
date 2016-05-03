@@ -1,8 +1,8 @@
 #include "PointoolsVortexAPIInternal.h"
-#include <pt/os.h>
+
+#ifdef NEEDS_WORK_VORTEX_DGNDB
 #include <pt/sceneclassmanager.h>
 #include <iostream>
-
 
 //
 // plugins manager
@@ -15,7 +15,7 @@ typedef  bool			(*INITIALIZE)(void);
 #define FUNC1			INITIALIZE
 #define FUNC1IDENTIFIER	bool initialize
 
-#include <ptapp\pluginsmanager.h>
+#include <ptapp/pluginsmanager.h>
 static ptapp::PluginsManager s_plugins("getName");
 
 #undef INITIALIZE
@@ -34,3 +34,4 @@ int SceneClassManager::loadSceneClassManagers()
 	}
 	return s_plugins.size();
 }
+#endif

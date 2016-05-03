@@ -2,7 +2,7 @@
 
 #include <io.h>
 
-#include <ptds\FilePath.h>
+#include <ptds/FilePath.h>
 
 #ifndef NO_DATA_SOURCE_SERVER
 #include <PTRMI/DataBuffer.h>

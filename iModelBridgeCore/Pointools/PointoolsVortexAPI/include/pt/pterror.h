@@ -10,8 +10,9 @@
   All rights reserved.
  */
 
-#ifndef PT_ERROR_H
-#define PT_ERROR_H
+#pragma once
+
+#ifdef NEEDS_WORK_VORTEX_DGNDB
 
 #include <string>
 #include <pt/prompt.h>

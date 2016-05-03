@@ -19,8 +19,8 @@
 #define CMDPIPE_API __declspec(dllimport)
 #endif
 
-#include <pt\typedefs.h>
-#include <pt\datatable.h>
+#include <pt/typedefs.h>
+#include <pt/datatable.h>
 
 namespace pt
 {

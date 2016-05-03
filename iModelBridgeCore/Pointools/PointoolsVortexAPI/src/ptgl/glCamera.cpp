@@ -6,9 +6,7 @@
 /*--------------------------------------------------------------------------*/ 
 
 #include "PointoolsVortexAPIInternal.h"
-#ifdef WIN32
-#include <windows.h>
-#endif
+
 
 #include <GL/gl.h>
 #include <GL/glu.h>
@@ -19,10 +17,10 @@
 #include <ptgl/glCamera.h>
 
 #include <math/geom.h>
-#include <pt\Rect.h>
-#include <pt\trace.h>
+#include <pt/Rect.h>
+#include <pt/trace.h>
 
-#include <pt\datatree.h>
+#include <pt/datatree.h>
 
 using namespace pt;
 using namespace ptgl;

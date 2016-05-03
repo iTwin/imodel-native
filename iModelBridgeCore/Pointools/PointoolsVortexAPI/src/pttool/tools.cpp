@@ -9,9 +9,9 @@
 #pragma warning (disable : 4251)
 #endif
 
-#include <pt\typedefs.h>
-#include <pttool\Tool.h>
-#include <pttool\Tools.h>
+#include <pt/typedefs.h>
+#include <pttool/Tool.h>
+#include <pttool/Tools.h>
 
 #include <shlwapi.h>
 #include "cxr_inc.h"
@@ -59,7 +59,7 @@ typedef const char*	(*GETDESC)(void);
 #define FUNC2			GETDESC		
 #define FUNC2IDENTIFIER	const char* getDescription
 
-#include <ptapp\pluginsmanager.h>
+#include <ptapp/pluginsmanager.h>
 
 static ptapp::PluginsManager s_plugins("getPTToolDescriptor");
 //ICoClientProtectorPtr entrysys;

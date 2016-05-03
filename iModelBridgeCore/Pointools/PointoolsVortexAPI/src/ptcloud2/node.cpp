@@ -1,5 +1,5 @@
 #include "PointoolsVortexAPIInternal.h"
-#include <ptcloud2\node.h>
+#include <ptcloud2/node.h>
 #include <set>
 #include <assert.h>
 

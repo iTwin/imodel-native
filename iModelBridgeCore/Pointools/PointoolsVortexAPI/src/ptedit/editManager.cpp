@@ -9,7 +9,6 @@
 #include <wildmagic/math/Wm5matrix3.h>
 #include <wildmagic/math/Wm5ApprPlaneFit3.h>
 
-#include <pt/os.h>
 #include <pt/trace.h>
 
 #include <ptedit/EditManager.h>

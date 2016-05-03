@@ -11,7 +11,6 @@
 #include <assert.h>
 #include <stack>
 
-#include <pt/os.h>
 #include <ptcloud2/voxel.h>
 #include <ptcloud2/pointcloud.h>
 #include <pt/project.h>

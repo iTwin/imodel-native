@@ -1,5 +1,5 @@
 #include "PointoolsVortexAPIInternal.h"
-#include <pt/os.h>
+
 #define POINTOOLS_API_BUILD_DLL
 
 #ifdef _DEBUG
@@ -8,7 +8,6 @@
 
 #include <pt/trace.h>
 
-#include <gl/glew.h>
 #include <ptapi/PointoolsVortexAPI.h>
 
 #include <ptgl/glInvariant.h>

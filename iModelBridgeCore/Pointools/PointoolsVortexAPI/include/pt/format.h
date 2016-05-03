@@ -13,19 +13,7 @@
 #ifndef G3D_FORMAT_H
 #define G3D_FORMAT_H
 
-#include <string>
 #include <pt/ptunicode.h>
-#include <stdio.h>
-#include <cstdarg>
-#include <assert.h>
-#include <tchar.h>
-
-#ifndef WIN32
-    // Don't include varargs.h for some random
-    // gcc reason
-    //#include <varargs.h>
-    #include <stdarg.h>
-#endif
 
 #ifndef _MSC_VER
     #ifndef __cdecl

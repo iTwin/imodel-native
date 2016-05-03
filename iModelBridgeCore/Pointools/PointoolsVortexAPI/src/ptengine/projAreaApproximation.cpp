@@ -1,5 +1,4 @@
 #include "PointoolsVortexAPIInternal.h"
-#include <gl/glew.h>
 #include <pt/project.h>
 #include <pt/rect.h>
 #include <ptengine/projAreaApproximation.h>

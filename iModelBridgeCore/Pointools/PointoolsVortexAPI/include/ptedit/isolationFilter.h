@@ -11,7 +11,6 @@
 #include <pt/boundingbox.h>
 #include <ptedit/edit.h>
 
-#include <gl/glew.h>
 #include <math/matrix_math.h>
 #include <ptgl/3dmath.h>
 #include <fastdelegate/fastdelegate.h>

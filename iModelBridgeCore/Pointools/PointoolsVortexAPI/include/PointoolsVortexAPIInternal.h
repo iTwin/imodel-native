@@ -5,30 +5,20 @@
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#ifndef __POINTOOLSVORTEXAPIINTERNAL_H__
-#define __POINTOOLSVORTEXAPIINTERNAL_H__
+
+#pragma once
 
 // Windows Header Files:
-#ifdef WIN32
 #include <windows.h>
-#else
-#include <stdarg.h>
-#endif
-
-#include <shlwapi.h>
-#include <shlobj.h>
-#include <comutil.h>
+#include <Commdlg.h>
+#include <tchar.h>
 
 // C header files
 #include <assert.h>
 #include <cassert>
 #include <cstdarg>
 #include <stdio.h>
-#ifdef __INTEL_COMPILER
-#include <mathimf.h> //not platform independent
-#else
 #include <math.h>
-#endif
 #include <exception>
 #include <cstdio>
 #include <time.h>
@@ -40,12 +30,7 @@
 #define FILE_TRACE 1
 #endif
 
-
-#pragma warning ( disable : 4100 ) //unreferenced formal parameter
-
-#pragma warning(disable: 4512) // assignment operator could not be generated for pt::ValueToString
 #include <ttl/var/variant.hpp>
-#pragma warning(default:4512)
 
 #include <WildMagic/math/Wm5Quaternion.h>
 #include <WildMagic/math/Wm5matrix3.h>
@@ -69,8 +54,6 @@
 #include <set>
 #include <fstream>
 #include <stack>
-#include <tchar.h>
-#include <strstream>
 #include <bitset>
 #include <mutex>
 #include <random>
@@ -81,6 +64,7 @@
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <GL/glext.h>
+
 
 #include <ptengine/pointsScene.h>
 #include <ptengine/renderContext.h>
@@ -95,4 +79,3 @@
 
 #include <ptapi/PointoolsVortexAPI.h>
 
-#endif

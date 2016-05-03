@@ -1,7 +1,5 @@
 #pragma once
 
-#include <Windows.h>
-
 #ifdef HAVE_GDIPLUS
 #include <gdiplus.h>
 #pragma comment (lib,"Gdiplus.lib")

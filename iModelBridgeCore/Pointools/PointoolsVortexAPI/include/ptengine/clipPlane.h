@@ -7,7 +7,7 @@
 //----------------------------------------------------------------------------
 #pragma once
 
-#include <pt/os.h>
+
 #include <pt/typedefs.h>
 #include <ptcloud2/node.h>
 #include <ptcloud2/voxel.h>

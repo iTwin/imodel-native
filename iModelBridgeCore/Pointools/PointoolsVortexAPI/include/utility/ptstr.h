@@ -3,8 +3,8 @@
 
 #include <assert.h>
 #include <wchar.h>
-#include <pt\unicodeconversion.h>
-#include <pt\debugAssert.h>
+#include <pt/unicodeconversion.h>
+#include <pt/debugAssert.h>
 
 #define PT_DESCRIPTOR_SIZE 64
 #define PT_PATH_SIZE 260
@@ -26,7 +26,7 @@ struct ptstr
 
 		if (ls >= max_length)
 		{
-			debugAssertM(0, _T("string copy truncation"));
+			debugAssertM(0, "string copy truncation");
 			return false;
 		}
 		return true;
@@ -47,7 +47,7 @@ struct ptstr
 
 		if (ls >= max_length)
 		{
-			debugAssertM(0, _T("string copy truncation"));
+			debugAssertM(0, "string copy truncation");
 			return false;
 		}
 		return true;

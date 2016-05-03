@@ -69,8 +69,8 @@
 // Also note that much like runtime asserts that get conditionally compiled out during non-debug builds, this gets 'optimized' out
 // always (provided it doesn't generate a compiler error.)
 // --------------------------------------------------------------------------------------------------------------------------------
-#include <pt\ptmath.h>
-#include <gl\gl.h>
+#include <pt/ptmath.h>
+#include <gl/gl.h>
 
 #ifdef __INTEL_COMPILER
 template <bool B> struct templateAssert {};

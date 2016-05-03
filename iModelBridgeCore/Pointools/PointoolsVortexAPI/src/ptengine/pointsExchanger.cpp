@@ -1,6 +1,7 @@
 #include "PointoolsVortexAPIInternal.h"
-#include <pt\os.h>
-#include <ptengine\pointsexchanger.h>
+
+#ifdef NEEDS_WORK_VORTEX_DGNDB
+#include <ptengine/pointsexchanger.h>
 
 using namespace pointsengine;
 
@@ -44,8 +45,8 @@ typedef  int (*SUPPORTEDEXTFUNC)(std::vector<ptds::FileType> &);
 #define FUNC4ARGS		path
 
 //#define COUT_TRACE
-#include <pt\trace.h>
-#include <ptapp\pluginsmanager.h>
+#include <pt/trace.h>
+#include <ptapp/pluginsmanager.h>
 
 using namespace pt;
 static ptapp::PluginsManager s_plugins("getPointsIOPluginName");
@@ -198,3 +199,4 @@ void PointsExchanger::exportTypes(std::vector<ptds::FileType> &ftypes)
 		}
 	}
 }
+#endif

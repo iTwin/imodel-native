@@ -1,9 +1,8 @@
 #include "PointoolsVortexAPIInternal.h"
-#include <pt\os.h>
-#include <pt\geomtypes.h>
+#include <pt/geomtypes.h>
 
-#include <gl\gl.h>
-#include <ptgl\gldraw.h>
+#include <gl/gl.h>
+#include <ptgl/gldraw.h>
 
 using namespace ptgl;
 using namespace pt;

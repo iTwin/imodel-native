@@ -1,5 +1,5 @@
 #include "PointoolsVortexAPIInternal.h"
-#include <pt/os.h>
+
 #include <ptengine/renderSettings.h>
 
 using namespace pointsengine;

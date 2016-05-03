@@ -1,11 +1,6 @@
 /*  geometryc.h  26 September 2000  */
 
-#ifndef _GEOMETRY_C
-#define _GEOMETRY_C
-
-#if _MSC_VER > 1000
 #pragma once
-#endif // _MSC_VER > 1000
 
 #define ERROR        0
 #define I_MAX        2147483647
@@ -227,4 +222,3 @@ extern "C" {
  }
 #endif
 
-#endif

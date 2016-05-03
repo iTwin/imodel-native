@@ -8,10 +8,10 @@
 /*----------------------------------------------------------*/ 
 #ifndef POINTOOLS_POINTCLOUD_QUERY_SCENE
 #define POINTOOLS_POINTCLOUD_QUERY_SCENE 1
-#include <ptcloud2\pointcloud.h>
-#include <ptengine\pointsvisitor.h>
-#include <pt\plane.h>
-#include <pt\fence.h>
+#include <ptcloud2/pointcloud.h>
+#include <ptengine/pointsvisitor.h>
+#include <pt/plane.h>
+#include <pt/fence.h>
 #include <mutex>
 
 namespace pointsengine

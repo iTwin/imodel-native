@@ -31,6 +31,7 @@ always:
 # Encrypt GPU Shaders (Uses enc-shaders.exe part)
 #----------------------------------------------------------------------
 
+%if defined(HAVE_OPENGL)
 always:
     ~mkdir $(PointoolsVortexAPIShaderSrcEnc)
 
@@ -43,6 +44,7 @@ $(BuildContextSrc)pshader.vert.cpp: $(PointoolsVortexAPIShaderSrc)pshader.vert
 $(BuildContextSrc)pshader.frag.cpp: $(PointoolsVortexAPIShaderSrc)pshader.frag
 	$(ContextDeliveryDir)enc-shaders.exe $(PointoolsVortexAPIShaderSrc)  $(PointoolsVortexAPIShaderSrcEnc)
 
+%endif
 
 %if $(TARGET_PROCESSOR_ARCHITECTURE) == "x64"
     CCompOpts + -D"WIN64"
@@ -82,409 +84,416 @@ CPchOpts  = $(UsePrecompiledHeaderOptions)
 %include MultiCppCompileRule.mki
 
 %if defined (POINTOOLS_BENTLEY_LICENSING)
-$(o)PointoolsBentleyLicense$(oext)       : $(basedir)src\ptlic\PointoolsBentleyLicense.cpp                       $(basedir)include\ptlic\PointoolsBentleyLicense.h                ${MultiCompileDepends}
+$(o)PointoolsBentleyLicense$(oext)       : $(basedir)src/ptlic/PointoolsBentleyLicense.cpp                       $(basedir)include/ptlic/PointoolsBentleyLicense.h                ${MultiCompileDepends}
 
-$(o)PointoolsBentleyLicenseAPI$(oext)    : $(basedir)src\ptlic\PointoolsBentleyLicenseAPI.cpp                    $(basedir)include\ptlic\PointoolsBentleyLicenseAPI.h             ${MultiCompileDepends}
+$(o)PointoolsBentleyLicenseAPI$(oext)    : $(basedir)src/ptlic/PointoolsBentleyLicenseAPI.cpp                    $(basedir)include/ptlic/PointoolsBentleyLicenseAPI.h             ${MultiCompileDepends}
 %endif
 
-$(o)OBBox$(oext)                         : $(basedir)src\pt\OBBox.cpp                                            $(basedir)include\pt\OBBox.h                                     ${MultiCompileDepends}
+$(o)OBBox$(oext)                         : $(basedir)src/pt/OBBox.cpp                                            $(basedir)include/pt/OBBox.h                                     ${MultiCompileDepends}
 
-$(o)DebugAssert$(oext)                   : $(basedir)src\pt\DebugAssert.cpp                                      $(basedir)include\pt\DebugAssert.h                               ${MultiCompileDepends}
+$(o)DebugAssert$(oext)                   : $(basedir)src/pt/DebugAssert.cpp                                      $(basedir)include/pt/DebugAssert.h                               ${MultiCompileDepends}
 
-$(o)System$(oext)                        : $(basedir)src\pt\System.cpp                                           $(basedir)include\pt\System.h                                    ${MultiCompileDepends}
+$(o)System$(oext)                        : $(basedir)src/pt/System.cpp                                           $(basedir)include/pt/System.h                                    ${MultiCompileDepends}
 
-$(o)FilePath$(oext)                      : $(basedir)src\ptds\FilePath.cpp                                       $(basedir)include\ptds\FilePath.h                                ${MultiCompileDepends}
+$(o)FilePath$(oext)                      : $(basedir)src/ptds/FilePath.cpp                                       $(basedir)include/ptds/FilePath.h                                ${MultiCompileDepends}
 
-$(o)URL$(oext)                           : $(basedir)src\PTRMI\URL.cpp                                           $(basedir)include\PTRMI\URL.h                                    ${MultiCompileDepends}
+$(o)PointoolsAPI_imaging$(oext)          : $(basedir)src/ptapi/PointoolsAPI_imaging.cpp                                                                                            ${MultiCompileDepends}
 
-$(o)ServerInterface$(oext)               : $(basedir)src\PTRMI\ServerInterface.cpp                               $(basedir)include\PTRMI\ServerInterface.h                        ${MultiCompileDepends}
+$(o)metadata$(oext)                      : $(basedir)src/ptcloud2/metadata.cpp                                   $(basedir)include/ptcloud2/metadata.h                            ${MultiCompileDepends}
 
-$(o)PointoolsAPI_imaging$(oext)          : $(basedir)src\ptapi\PointoolsAPI_imaging.cpp                                                                                            ${MultiCompileDepends}
+$(o)boxfilter$(oext)                     : $(basedir)src/ptedit/boxfilter.cpp                                    $(basedir)include/ptedit/boxfilter.h                             ${MultiCompileDepends}
 
-$(o)metadata$(oext)                      : $(basedir)src\ptcloud2\metadata.cpp                                   $(basedir)include\ptcloud2\metadata.h                            ${MultiCompileDepends}
+$(o)PointoolsAPI_render_new$(oext)       : $(basedir)src/ptapi/PointoolsAPI_render_new.cpp                       $(basedir)include/ptgl/glInvariant.h                             ${MultiCompileDepends}
 
-$(o)boxfilter$(oext)                     : $(basedir)src\ptedit\boxfilter.cpp                                    $(basedir)include\ptedit\boxfilter.h                             ${MultiCompileDepends}
+$(o)pointsLayers$(oext)                  : $(basedir)src/ptengine/pointsLayers.cpp                                                                                                 ${MultiCompileDepends}
 
-$(o)PointoolsAPI_render_new$(oext)       : $(basedir)src\ptapi\PointoolsAPI_render_new.cpp                       $(basedir)include\ptgl\glInvariant.h                             ${MultiCompileDepends}
+$(o)TEA$(oext)                           : $(basedir)src/encryption/TEA.cpp                                      $(basedir)include/encryption/TEA.h                               ${MultiCompileDepends}
 
-$(o)pointsLayers$(oext)                  : $(basedir)src\ptengine\pointsLayers.cpp                                                                                                 ${MultiCompileDepends}
+$(o)datatreeBlob$(oext)                  : $(basedir)src/pt/datatreeBlob.cpp                                     $(basedir)include/pt/datatreeBlob.h                              ${MultiCompileDepends}
 
-$(o)TEA$(oext)                           : $(basedir)src\encryption\TEA.cpp                                      $(basedir)include\encryption\TEA.h                               ${MultiCompileDepends}
+$(o)colourRamps$(oext)                   : $(basedir)src/ptengine/colourRamps.cpp                                $(basedir)include/ptengine/colourRamps.h                         ${MultiCompileDepends}
 
-$(o)ObjectManager$(oext)                 : $(basedir)src\PTRMI\ObjectManager.cpp                                 $(basedir)include\PTRMI\ObjectManager.h                          ${MultiCompileDepends}
+$(o)project$(oext)                       : $(basedir)src/ptl/project.cpp                                         $(basedir)include/ptl/project.h                                  ${MultiCompileDepends}
 
-$(o)datatreeBlob$(oext)                  : $(basedir)src\pt\datatreeBlob.cpp                                     $(basedir)include\pt\datatreeBlob.h                              ${MultiCompileDepends}
+$(o)PointoolsAPI_scenes$(oext)           : $(basedir)src/ptapi/PointoolsAPI_scenes.cpp                                                                                             ${MultiCompileDepends}
 
-$(o)colourRamps$(oext)                   : $(basedir)src\ptengine\colourRamps.cpp                                $(basedir)include\ptengine\colourRamps.h                         ${MultiCompileDepends}
+$(o)node$(oext)                          : $(basedir)src/ptcloud2/node.cpp                                       $(basedir)include/ptcloud2/node.h                                ${MultiCompileDepends}
 
-$(o)project$(oext)                       : $(basedir)src\ptl\project.cpp                                         $(basedir)include\ptl\project.h                                  ${MultiCompileDepends}
+$(o)renderFrameData$(oext)               : $(basedir)src/ptengine/renderFrameData.cpp                            $(basedir)include/ptengine/renderFrameData.h                     ${MultiCompileDepends}
 
-$(o)PointoolsAPI_scenes$(oext)           : $(basedir)src\ptapi\PointoolsAPI_scenes.cpp                                                                                             ${MultiCompileDepends}
+$(o)editNodeDef$(oext)                   : $(basedir)src/ptedit/editNodeDef.cpp                                  $(basedir)include/ptedit/editNodeDef.h                           ${MultiCompileDepends}
 
-$(o)node$(oext)                          : $(basedir)src\ptcloud2\node.cpp                                       $(basedir)include\ptcloud2\node.h                                ${MultiCompileDepends}
+$(o)pointsExchanger$(oext)               : $(basedir)src/ptengine/pointsExchanger.cpp                            $(basedir)include/ptengine/pointsExchanger.h                     ${MultiCompileDepends}
 
-$(o)renderFrameData$(oext)               : $(basedir)src\ptengine\renderFrameData.cpp                            $(basedir)include\ptengine\renderFrameData.h                     ${MultiCompileDepends}
+$(o)projAreaApproximation$(oext)         : $(basedir)src/ptengine/projAreaApproximation.cpp                      $(basedir)include/ptengine/projAreaApproximation.h               ${MultiCompileDepends}
 
-$(o)editNodeDef$(oext)                   : $(basedir)src\ptedit\editNodeDef.cpp                                  $(basedir)include\ptedit\editNodeDef.h                           ${MultiCompileDepends}
+$(o)pointoolsapi_files$(oext)            : $(basedir)src/ptapi/pointoolsapi_files.cpp                            $(basedir)include/PTRMI/TestPTRMI.h                              ${MultiCompileDepends}
 
-$(o)pointsExchanger$(oext)               : $(basedir)src\ptengine\pointsExchanger.cpp                            $(basedir)include\ptengine\pointsExchanger.h                     ${MultiCompileDepends}
+$(o)Registry$(oext)                      : $(basedir)src/pt/Registry.cpp                                         $(basedir)include/pt/Registry.h                                  ${MultiCompileDepends}
 
-$(o)projAreaApproximation$(oext)         : $(basedir)src\ptengine\projAreaApproximation.cpp                      $(basedir)include\ptengine\projAreaApproximation.h               ${MultiCompileDepends}
+$(o)PointoolsAPI_shader$(oext)           : $(basedir)src/ptapi/PointoolsAPI_shader.cpp                                                                                             ${MultiCompileDepends}
 
-$(o)RemotePtr$(oext)                     : $(basedir)src\PTRMI\RemotePtr.cpp                                     $(basedir)include\PTRMI\RemotePtr.h                              ${MultiCompileDepends}
+$(o)datatreeIO$(oext)                    : $(basedir)src/pt/datatreeIO.cpp                                       $(basedir)include/pt/datatreeIO.h                                ${MultiCompileDepends}
 
-$(o)Registry$(oext)                      : $(basedir)src\pt\Registry.cpp                                         $(basedir)include\pt\Registry.h                                  ${MultiCompileDepends}
 
-$(o)PointoolsAPI_shader$(oext)           : $(basedir)src\ptapi\PointoolsAPI_shader.cpp                                                                                             ${MultiCompileDepends}
 
-$(o)datatreeIO$(oext)                    : $(basedir)src\pt\datatreeIO.cpp                                       $(basedir)include\pt\datatreeIO.h                                ${MultiCompileDepends}
 
-$(o)pointoolsapi_files$(oext)            : $(basedir)src\ptapi\pointoolsapi_files.cpp                            $(basedir)include\PTRMI\TestPTRMI.h                              ${MultiCompileDepends}
+$(o)ptstring$(oext)                      : $(basedir)src/pt/ptstring.cpp                                         $(basedir)include/pt/ptstring.h                                  ${MultiCompileDepends}
 
-$(o)VariantGraph$(oext)                  : $(basedir)src\PTRMI\VariantGraph.cpp                                  $(basedir)include\PTRMI\VariantGraph.h                           ${MultiCompileDepends}
 
-$(o)ptstring$(oext)                      : $(basedir)src\pt\ptstring.cpp                                         $(basedir)include\pt\ptstring.h                                  ${MultiCompileDepends}
+$(o)PointoolsAPI_query$(oext)            : $(basedir)src/ptapi/PointoolsAPI_query.cpp                                                                                              ${MultiCompileDepends}
 
-$(o)ManagerClientInterface$(oext)        : $(basedir)src\PTRMI\ManagerClientInterface.cpp                        $(basedir)include\PTRMI\ManagerClientInterface.h                 ${MultiCompileDepends}
+$(o)renderRGBEffect$(oext)               : $(basedir)src/ptengine/renderRGBEffect.cpp                            $(basedir)include/ptengine/renderRGBEffect.h                     ${MultiCompileDepends}
 
-$(o)PointoolsAPI_query$(oext)            : $(basedir)src\ptapi\PointoolsAPI_query.cpp                                                                                              ${MultiCompileDepends}
 
-$(o)renderRGBEffect$(oext)               : $(basedir)src\ptengine\renderRGBEffect.cpp                            $(basedir)include\ptengine\renderRGBEffect.h                     ${MultiCompileDepends}
+$(o)IClashObjectManager$(oext)           : $(basedir)src/vortexobjects/IClashObjectManager.cpp                   $(basedir)include/vortexobjects/IClashObjectManager.h            ${MultiCompileDepends}
 
-$(o)ClientServerInterface$(oext)         : $(basedir)src\PTRMI\ClientServerInterface.cpp                         $(basedir)include\PTRMI\ClientServerInterface.h                  ${MultiCompileDepends}
+$(o)Matrix4$(oext)                       : $(basedir)src/pt/Matrix4.cpp                                          $(basedir)include/pt/matrix4.h                                   ${MultiCompileDepends}
 
-$(o)IClashObjectManager$(oext)           : $(basedir)src\vortexobjects\IClashObjectManager.cpp                   $(basedir)include\vortexobjects\IClashObjectManager.h            ${MultiCompileDepends}
+$(o)Datatable$(oext)                     : $(basedir)src/pt/Datatable.cpp                                        $(basedir)include/pt/datatable.h                                 ${MultiCompileDepends}
 
-$(o)Matrix4$(oext)                       : $(basedir)src\pt\Matrix4.cpp                                          $(basedir)include\pt\matrix4.h                                   ${MultiCompileDepends}
+$(o)Log$(oext)                           : $(basedir)src/pt/Log.cpp                                              $(basedir)include/pt/Array.h                                     ${MultiCompileDepends}
 
-$(o)Datatable$(oext)                     : $(basedir)src\pt\Datatable.cpp                                        $(basedir)include\pt\datatable.h                                 ${MultiCompileDepends}
-
-$(o)Log$(oext)                           : $(basedir)src\pt\Log.cpp                                              $(basedir)include\pt\Array.h                                     ${MultiCompileDepends}
-
-$(o)StreamHost$(oext)                    : $(basedir)src\ptengine\StreamHost.cpp                                 $(basedir)include\ptengine\StreamHost.h                          ${MultiCompileDepends}
+$(o)StreamHost$(oext)                    : $(basedir)src/ptengine/StreamHost.cpp                                 $(basedir)include/ptengine/StreamHost.h                          ${MultiCompileDepends}
                                                                                                                   
-$(o)consolidate$(oext)                   : $(basedir)src\ptedit\consolidate.cpp                                                                                                    ${MultiCompileDepends}
+$(o)consolidate$(oext)                   : $(basedir)src/ptedit/consolidate.cpp                                                                                                    ${MultiCompileDepends}
                                                                                                                   
-$(o)renderPointsBuffer$(oext)            : $(basedir)src\ptengine\renderPointsBuffer.cpp                         $(basedir)include\ptengine\renderPointsBuffer.h                  ${MultiCompileDepends}
+$(o)renderPointsBuffer$(oext)            : $(basedir)src/ptengine/renderPointsBuffer.cpp                         $(basedir)include/ptengine/renderPointsBuffer.h                  ${MultiCompileDepends}
                                                                                                                   
-$(o)cloudSelect$(oext)                   : $(basedir)src\ptedit\cloudSelect.cpp                                  $(basedir)include\ptedit\cloudSelect.h                           ${MultiCompileDepends}
+$(o)cloudSelect$(oext)                   : $(basedir)src/ptedit/cloudSelect.cpp                                  $(basedir)include/ptedit/cloudSelect.h                           ${MultiCompileDepends}
                                                                                                                   
-$(o)DataSourceMultiRead$(oext)           : $(basedir)src\ptds\DataSourceMultiRead.cpp                            $(basedir)include\ptds\DataSourceMultiRead.h                     ${MultiCompileDepends}
+$(o)DataSourceMultiRead$(oext)           : $(basedir)src/ptds/DataSourceMultiRead.cpp                            $(basedir)include/ptds/DataSourceMultiRead.h                     ${MultiCompileDepends}
                                                                                                                   
-$(o)userChannels$(oext)                  : $(basedir)src\ptengine\userChannels.cpp                               $(basedir)include\ptengine\userChannels.h                        ${MultiCompileDepends}
-                                                                                                                  
-$(o)PipeExt$(oext)                       : $(basedir)src\PTRMI\PipeExt.cpp                                       $(basedir)include\PTRMI\PipeExt.h                                ${MultiCompileDepends}
-                                                                                                                  
-$(o)editState$(oext)                     : $(basedir)src\ptedit\editState.cpp                                    $(basedir)include\ptedit\editState.h                             ${MultiCompileDepends}
-                                                                                                                  
-$(o)Status$(oext)                        : $(basedir)src\PTRMI\Status.cpp                                        $(basedir)include\PTRMI\Status.h                                 ${MultiCompileDepends}
-                                                                                                                  
-$(o)PipeProtocolManager$(oext)           : $(basedir)src\PTRMI\PipeProtocolManager.cpp                           $(basedir)include\PTRMI\PipeProtocolManager.h                    ${MultiCompileDepends}
-                                                                                                                  
-$(o)userChannelManager$(oext)            : $(basedir)src\ptengine\userChannelManager.cpp                                                                                           ${MultiCompileDepends}
-                                                                                                                  
-$(o)queryDensity$(oext)                  : $(basedir)src\ptengine\queryDensity.cpp                               $(basedir)include\ptengine\queryDensity.h                        ${MultiCompileDepends}
-                                                                                                                  
-$(o)DataSourceFile$(oext)                : $(basedir)src\ptds\DataSourceFile.cpp                                 $(basedir)include\ptds\DataSourceFile.h                          ${MultiCompileDepends}
-                                                                                                                  
-$(o)DataSourceManager$(oext)             : $(basedir)src\ptds\DataSourceManager.cpp                              $(basedir)include\ptds\DataSourceManager.h                       ${MultiCompileDepends}
-                                                                                                                  
-$(o)pointsPager$(oext)                   : $(basedir)src\ptengine\pointsPager.cpp                                $(basedir)include\ptengine\pointsPager.h                         ${MultiCompileDepends}
-                                                                                                                  
-$(o)DataSourceStructuredStorage$(oext)   : $(basedir)src\ptds\DataSourceStructuredStorage.cpp                    $(basedir)include\ptds\DataSourceStructuredStorage.h             ${MultiCompileDepends}
-                                                                                                                  
-$(o)PipeManagerTCP$(oext)                : $(basedir)src\PTRMI\PipeManagerTCP.cpp                                $(basedir)include\PTRMI\PipeManagerTCP.h                         ${MultiCompileDepends}
-
-$(o)PipeTCP$(oext)                       : $(basedir)src\PTRMI\PipeTCP.cpp                                       $(basedir)include\PTRMI\PipeTCP.h                                ${MultiCompileDepends}
-                                                                                                                  
-$(o)Manager$(oext)                       : $(basedir)src\PTRMI\Manager.cpp                                       $(basedir)include\PTRMI\Manager.h                                ${MultiCompileDepends}
-                                                                                                                  
-$(o)Host$(oext)                          : $(basedir)src\PTRMI\Host.cpp                                          $(basedir)include\PTRMI\Host.h                                   ${MultiCompileDepends}
-                                                                                                                  
-$(o)editEvaluatedStackNode$(oext)        : $(basedir)src\ptedit\editEvaluatedStackNode.cpp                       $(basedir)include\ptedit\editEvaluatedStackNode.h                ${MultiCompileDepends}
+$(o)userChannels$(oext)                  : $(basedir)src/ptengine/userChannels.cpp                               $(basedir)include/ptengine/userChannels.h                        ${MultiCompileDepends}
+                                                                                                                                                                                                                                                                                                                                            
+$(o)editState$(oext)                     : $(basedir)src/ptedit/editState.cpp                                    $(basedir)include/ptedit/editState.h                             ${MultiCompileDepends}
                                                                                                                                                                                                                                     
-$(o)PipeManagerExt$(oext)                : $(basedir)src\PTRMI\PipeManagerExt.cpp                                $(basedir)include\PTRMI\PipeManagerExt.h                         ${MultiCompileDepends}
+$(o)userChannelManager$(oext)            : $(basedir)src/ptengine/userChannelManager.cpp                                                                                           ${MultiCompileDepends}
                                                                                                                   
-$(o)datachannel$(oext)                   : $(basedir)src\ptcloud2\datachannel.cpp                                $(basedir)include\ptcloud2\datachannel.h                         ${MultiCompileDepends}
+$(o)queryDensity$(oext)                  : $(basedir)src/ptengine/queryDensity.cpp                               $(basedir)include/ptengine/queryDensity.h                        ${MultiCompileDepends}
                                                                                                                   
-$(o)constraints$(oext)                   : $(basedir)src\ptedit\constraints.cpp                                                                                                    ${MultiCompileDepends}
+$(o)DataSourceFile$(oext)                : $(basedir)src/ptds/DataSourceFile.cpp                                 $(basedir)include/ptds/DataSourceFile.h                          ${MultiCompileDepends}
+                                                                                                                  
+$(o)DataSourceManager$(oext)             : $(basedir)src/ptds/DataSourceManager.cpp                              $(basedir)include/ptds/DataSourceManager.h                       ${MultiCompileDepends}
+                                                                                                                  
+$(o)pointsPager$(oext)                   : $(basedir)src/ptengine/pointsPager.cpp                                $(basedir)include/ptengine/pointsPager.h                         ${MultiCompileDepends}
+                                                                                                                  
+$(o)DataSourceStructuredStorage$(oext)   : $(basedir)src/ptds/DataSourceStructuredStorage.cpp                    $(basedir)include/ptds/DataSourceStructuredStorage.h             ${MultiCompileDepends}
+                                                                                                                  
+$(o)editEvaluatedStackNode$(oext)        : $(basedir)src/ptedit/editEvaluatedStackNode.cpp                       $(basedir)include/ptedit/editEvaluatedStackNode.h                ${MultiCompileDepends}
+                                                                                                                                                                                                                                                                                                                                                    
+$(o)datachannel$(oext)                   : $(basedir)src/ptcloud2/datachannel.cpp                                $(basedir)include/ptcloud2/datachannel.h                         ${MultiCompileDepends}
+                                                                                                                  
+$(o)constraints$(oext)                   : $(basedir)src/ptedit/constraints.cpp                                                                                                    ${MultiCompileDepends}
                                                                                                                                                                                                                                                                                                                                                   
-$(o)clashTree$(oext)                     : $(basedir)src\ptclash\clashTree.cpp                                   $(basedir)include\ptclash\clashTree.h                            ${MultiCompileDepends}
+$(o)clashTree$(oext)                     : $(basedir)src/ptclash/clashTree.cpp                                   $(basedir)include/ptclash/clashTree.h                            ${MultiCompileDepends}
                                                                                                                   
-$(o)indexstream$(oext)                   : $(basedir)src\ptcloud2\indexstream.cpp                                $(basedir)include\ptcloud2\indexstream.h                         ${MultiCompileDepends}
+$(o)indexstream$(oext)                   : $(basedir)src/ptcloud2/indexstream.cpp                                $(basedir)include/ptcloud2/indexstream.h                         ${MultiCompileDepends}
                                                                                                                   
-$(o)SceneClassManager$(oext)             : $(basedir)src\pt\SceneClassManager.cpp                                $(basedir)include\pt\SceneClassManager.h                         ${MultiCompileDepends}
+$(o)SceneClassManager$(oext)             : $(basedir)src/pt/SceneClassManager.cpp                                $(basedir)include/pt/SceneClassManager.h                         ${MultiCompileDepends}
                                                                                                                                                                                                                                    
-$(o)ObjectRef$(oext)                     : $(basedir)src\pt\ObjectRef.cpp                                        $(basedir)include\pt\ObjectRef.h                                 ${MultiCompileDepends}
-                                                                                                                                                                                                                                    
-$(o)PipeManager$(oext)                   : $(basedir)src\PTRMI\PipeManager.cpp                                   $(basedir)include\PTRMI\PipeManager.h                            ${MultiCompileDepends}
+$(o)ObjectRef$(oext)                     : $(basedir)src/pt/ObjectRef.cpp                                        $(basedir)include/pt/ObjectRef.h                                 ${MultiCompileDepends}
+                                                                                                                                                                                                                                                                                                                                                      
+$(o)fencefilter$(oext)                   : $(basedir)src/ptedit/fencefilter.cpp                                  $(basedir)include/ptedit/fencefilter.h                           ${MultiCompileDepends}
                                                                                                                   
-$(o)fencefilter$(oext)                   : $(basedir)src\ptedit\fencefilter.cpp                                  $(basedir)include\ptedit\fencefilter.h                           ${MultiCompileDepends}
+$(o)frustumfilter$(oext)                 : $(basedir)src/ptedit/frustumfilter.cpp                                $(basedir)include/ptedit/frustumfilter.h                         ${MultiCompileDepends}
                                                                                                                   
-$(o)frustumfilter$(oext)                 : $(basedir)src\ptedit\frustumfilter.cpp                                $(basedir)include\ptedit\frustumfilter.h                         ${MultiCompileDepends}
+$(o)PointStreamFilter$(oext)             : $(basedir)src/ptcloud2/PointStreamFilter.cpp                          $(basedir)include/ptcloud2/PointStreamFilter.h                   ${MultiCompileDepends}
                                                                                                                   
-$(o)PointStreamFilter$(oext)             : $(basedir)src\ptcloud2\PointStreamFilter.cpp                          $(basedir)include\ptcloud2\PointStreamFilter.h                   ${MultiCompileDepends}
+$(o)PointoolsAPI_clipping$(oext)         : $(basedir)src/ptapi/PointoolsAPI_clipping.cpp                                                                                           ${MultiCompileDepends}
                                                                                                                   
-$(o)PointoolsAPI_clipping$(oext)         : $(basedir)src\ptapi\PointoolsAPI_clipping.cpp                                                                                           ${MultiCompileDepends}
+$(o)editFilters$(oext)                   : $(basedir)src/ptedit/editFilters.cpp                                  $(basedir)include/ptedit/editFilters.h                           ${MultiCompileDepends}
                                                                                                                   
-$(o)editFilters$(oext)                   : $(basedir)src\ptedit\editFilters.cpp                                  $(basedir)include\ptedit\editFilters.h                           ${MultiCompileDepends}
+$(o)dispatcher$(oext)                    : $(basedir)src/ptl/dispatcher.cpp                                      $(basedir)include/ptl/dispatcher.h                               ${MultiCompileDepends}
                                                                                                                   
-$(o)dispatcher$(oext)                    : $(basedir)src\ptl\dispatcher.cpp                                      $(basedir)include\ptl\dispatcher.h                               ${MultiCompileDepends}
+$(o)select$(oext)                        : $(basedir)src/ptedit/select.cpp                                                                                                         ${MultiCompileDepends}
                                                                                                                   
-$(o)select$(oext)                        : $(basedir)src\ptedit\select.cpp                                                                                                         ${MultiCompileDepends}
-                                                                                                                  
-$(o)planeFilter$(oext)                   : $(basedir)src\ptedit\planeFilter.cpp                                  $(basedir)include\ptedit\planeFilter.h                           ${MultiCompileDepends}
+$(o)planeFilter$(oext)                   : $(basedir)src/ptedit/planeFilter.cpp                                  $(basedir)include/ptedit/planeFilter.h                           ${MultiCompileDepends}
                                                                                                                                                                                                                                    
-$(o)PointoolsAPI_edit$(oext)             : $(basedir)src\ptapi\PointoolsAPI_edit.cpp                                                                                               ${MultiCompileDepends}
+$(o)PointoolsAPI_edit$(oext)             : $(basedir)src/ptapi/PointoolsAPI_edit.cpp                                                                                               ${MultiCompileDepends}
                                                                                                                   
-$(o)DataSource$(oext)                    : $(basedir)src\ptds\DataSource.cpp                                     $(basedir)include\ptds\DataSource.h                              ${MultiCompileDepends}
-                                                                                                                  
-$(o)ManagerInfo$(oext)                   : $(basedir)src\PTRMI\ManagerInfo.cpp                                   $(basedir)include\PTRMI\ManagerInfo.h                            ${MultiCompileDepends}
-                                                                                                                  
-$(o)editStackState$(oext)                : $(basedir)src\ptedit\editStackState.cpp                               $(basedir)include\ptedit\editStackState.h                        ${MultiCompileDepends}
+$(o)DataSource$(oext)                    : $(basedir)src/ptds/DataSource.cpp                                     $(basedir)include/ptds/DataSource.h                              ${MultiCompileDepends}
+                                                                                                                                                                                                                                    
+$(o)editStackState$(oext)                : $(basedir)src/ptedit/editStackState.cpp                               $(basedir)include/ptedit/editStackState.h                        ${MultiCompileDepends}
                                                                                                                                                                                                                                    
-$(o)StreamSchedulerSequential$(oext)     : $(basedir)src\ptengine\StreamSchedulerSequential.cpp                  $(basedir)include\ptengine\StreamSchedulerSequential.h           ${MultiCompileDepends}
+$(o)StreamSchedulerSequential$(oext)     : $(basedir)src/ptengine/StreamSchedulerSequential.cpp                  $(basedir)include/ptengine/StreamSchedulerSequential.h           ${MultiCompileDepends}
                                                                                                                   
-$(o)DataSourceCache$(oext)               : $(basedir)src\ptds\DataSourceCache.cpp                                $(basedir)include\ptds\DataSourceCache.h                         ${MultiCompileDepends}
+$(o)DataSourceCache$(oext)               : $(basedir)src/ptds/DataSourceCache.cpp                                $(basedir)include/ptds/DataSourceCache.h                         ${MultiCompileDepends}
                                                                                                                                                                                                                                     
-$(o)editManager$(oext)                   : $(basedir)src\ptedit\editManager.cpp                                  $(basedir)include\ptedit\editManager.h                           ${MultiCompileDepends}
+$(o)editManager$(oext)                   : $(basedir)src/ptedit/editManager.cpp                                  $(basedir)include/ptedit/editManager.h                           ${MultiCompileDepends}
                                                                                                                   
-$(o)StreamManager$(oext)                 : $(basedir)src\ptengine\StreamManager.cpp                              $(basedir)include\ptengine\StreamManager.h                       ${MultiCompileDepends}
+$(o)StreamManager$(oext)                 : $(basedir)src/ptengine/StreamManager.cpp                              $(basedir)include/ptengine/StreamManager.h                       ${MultiCompileDepends}
                                                                                                                   
-$(o)PointoolsAPI_meta$(oext)             : $(basedir)src\ptapi\PointoolsAPI_meta.cpp                                                                                               ${MultiCompileDepends}
+$(o)PointoolsAPI_meta$(oext)             : $(basedir)src/ptapi/PointoolsAPI_meta.cpp                                                                                               ${MultiCompileDepends}
                                                                                                                   
-$(o)scanimage$(oext)                     : $(basedir)src\ptcloud2\scanimage.cpp                                                                                                    ${MultiCompileDepends}
+$(o)scanimage$(oext)                     : $(basedir)src/ptcloud2/scanimage.cpp                                                                                                    ${MultiCompileDepends}
                                                                                                                   
-$(o)PointoolsAPI_channels$(oext)         : $(basedir)src\ptapi\PointoolsAPI_channels.cpp                                                                                           ${MultiCompileDepends}
+$(o)PointoolsAPI_channels$(oext)         : $(basedir)src/ptapi/PointoolsAPI_channels.cpp                                                                                           ${MultiCompileDepends}
                                                                                                                   
-$(o)scene$(oext)                         : $(basedir)src\ptcloud2\scene.cpp                                      $(basedir)include\ptcloud2\scene.h                               ${MultiCompileDepends}
+$(o)scene$(oext)                         : $(basedir)src/ptcloud2/scene.cpp                                      $(basedir)include/ptcloud2/scene.h                               ${MultiCompileDepends}
                                                                                                                                                                                                                                     
-$(o)DataSourceAnalyzer$(oext)            : $(basedir)src\ptds\DataSourceAnalyzer.cpp                             $(basedir)include\ptds\DataSourceAnalyzer.h                      ${MultiCompileDepends}
+$(o)DataSourceAnalyzer$(oext)            : $(basedir)src/ptds/DataSourceAnalyzer.cpp                             $(basedir)include/ptds/DataSourceAnalyzer.h                      ${MultiCompileDepends}
                                                                                                                                                                                                                                     
-$(o)DataSourceMemBlock$(oext)            : $(basedir)src\ptds\DataSourceMemBlock.cpp                             $(basedir)include\ptds\DataSourceMemBlock.h                      ${MultiCompileDepends}
+$(o)DataSourceMemBlock$(oext)            : $(basedir)src/ptds/DataSourceMemBlock.cpp                             $(basedir)include/ptds/DataSourceMemBlock.h                      ${MultiCompileDepends}
                                                                                                                   
-$(o)Color$(oext)                         : $(basedir)src\pt\Color.cpp                                            $(basedir)include\pt\Color.h                                     ${MultiCompileDepends}
+$(o)Color$(oext)                         : $(basedir)src/pt/Color.cpp                                            $(basedir)include/pt/Color.h                                     ${MultiCompileDepends}
                                                                                                                   
-$(o)configurations$(oext)                : $(basedir)src\ptl\configurations.cpp                                                                                                    ${MultiCompileDepends}
+$(o)configurations$(oext)                : $(basedir)src/ptl/configurations.cpp                                                                                                    ${MultiCompileDepends}
                                                                                                                                                                                                                                     
-$(o)diagnostics$(oext)                   : $(basedir)src\diagnostics\diagnostics.cpp                             $(basedir)include\diagnostics\diagnostics.h                      ${MultiCompileDepends}
+$(o)diagnostics$(oext)                   : $(basedir)src/diagnostics/diagnostics.cpp                             $(basedir)include/diagnostics/diagnostics.h                      ${MultiCompileDepends}
                                                                                                                   
-$(o)Trace$(oext)                         : $(basedir)src\pt\Trace.cpp                                            $(basedir)include\pt\Trace.h                                     ${MultiCompileDepends}
+$(o)Trace$(oext)                         : $(basedir)src/pt/Trace.cpp                                            $(basedir)include/pt/Trace.h                                     ${MultiCompileDepends}
                                                                                                                   
-$(o)datatreeBranch$(oext)                : $(basedir)src\pt\datatreeBranch.cpp                                   $(basedir)include\pt\datatreeBranch.h                            ${MultiCompileDepends}
+$(o)datatreeBranch$(oext)                : $(basedir)src/pt/datatreeBranch.cpp                                   $(basedir)include/pt/datatreeBranch.h                            ${MultiCompileDepends}
+                                                                                                                                                                                                                                    
+$(o)renderSelectionBuffer$(oext)         : $(basedir)src/ptengine/renderSelectionBuffer.cpp                                                                                        ${MultiCompileDepends}
                                                                                                                   
-$(o)ClientInterface$(oext)               : $(basedir)src\PTRMI\ClientInterface.cpp                               $(basedir)include\PTRMI\ClientInterface.h                        ${MultiCompileDepends}
+$(o)SHA$(oext)                           : $(basedir)src/encryption/SHA.cpp                                      $(basedir)include/encryption/SHA.h                               ${MultiCompileDepends}
                                                                                                                   
-$(o)renderSelectionBuffer$(oext)         : $(basedir)src\ptengine\renderSelectionBuffer.cpp                                                                                        ${MultiCompileDepends}
+$(o)VoxelLODRemoveVisitor$(oext)         : $(basedir)src/ptengine/VoxelLODRemoveVisitor.cpp                      $(basedir)include/ptengine/VoxelLODRemoveVisitor.h               ${MultiCompileDepends}
                                                                                                                   
-$(o)SHA$(oext)                           : $(basedir)src\encryption\SHA.cpp                                      $(basedir)include\encryption\SHA.h                               ${MultiCompileDepends}
+$(o)DataSourceReadSet$(oext)             : $(basedir)src/ptds/DataSourceReadSet.cpp                              $(basedir)include/ptds/DataSourceReadSet.h                       ${MultiCompileDepends}
                                                                                                                   
-$(o)VoxelLODRemoveVisitor$(oext)         : $(basedir)src\ptengine\VoxelLODRemoveVisitor.cpp                      $(basedir)include\ptengine\VoxelLODRemoveVisitor.h               ${MultiCompileDepends}
+$(o)clashObjectManager$(oext)            : $(basedir)src/ptclash/clashObjectManager.cpp                          $(basedir)include/ptclash/clashObjectManager.h                   ${MultiCompileDepends}
+                                                                                                                     
+$(o)IClashNode$(oext)                    : $(basedir)src/vortexobjects/IClashNode.cpp                            $(basedir)include/vortexobjects/IClashNode.h                     ${MultiCompileDepends}
                                                                                                                   
-$(o)DataSourceReadSet$(oext)             : $(basedir)src\ptds\DataSourceReadSet.cpp                              $(basedir)include\ptds\DataSourceReadSet.h                       ${MultiCompileDepends}
+$(o)pod$(oext)                           : $(basedir)src/ptcloud2/pod.cpp                                        $(basedir)include/ptcloud2/pod.h                                 ${MultiCompileDepends}
                                                                                                                   
-$(o)clashObjectManager$(oext)            : $(basedir)src\ptclash\clashObjectManager.cpp                          $(basedir)include\ptclash\clashObjectManager.h                   ${MultiCompileDepends}
+$(o)DataSourceRead$(oext)                : $(basedir)src/ptds/DataSourceRead.cpp                                 $(basedir)include/ptds/DataSourceRead.h                          ${MultiCompileDepends}
                                                                                                                   
-$(o)Stream$(oext)                        : $(basedir)src\PTRMI\Stream.cpp                                        $(basedir)include\PTRMI\Stream.h                                 ${MultiCompileDepends}
+$(o)pointcloud$(oext)                    : $(basedir)src/ptcloud2/pointcloud.cpp                                 $(basedir)include/ptcloud2/pointcloud.h                          ${MultiCompileDepends}
                                                                                                                   
-$(o)Name$(oext)                          : $(basedir)src\PTRMI\Name.cpp                                          $(basedir)include\PTRMI\Name.h                                   ${MultiCompileDepends}
+$(o)scene_indexstream$(oext)             : $(basedir)src/ptcloud2/scene_indexstream.cpp                                                                                            ${MultiCompileDepends}
                                                                                                                   
-$(o)IClashNode$(oext)                    : $(basedir)src\vortexobjects\IClashNode.cpp                            $(basedir)include\vortexobjects\IClashNode.h                     ${MultiCompileDepends}
+$(o)DataSourceMultiReadSet$(oext)        : $(basedir)src/ptds/DataSourceMultiReadSet.cpp                         $(basedir)include/ptds/DataSourceMultiReadSet.h                  ${MultiCompileDepends}
+                                                                                                               
+$(o)VoxelLODSet$(oext)                   : $(basedir)src/ptengine/VoxelLODSet.cpp                                $(basedir)include/ptengine/VoxelLODSet.h                         ${MultiCompileDepends}
                                                                                                                   
-$(o)pod$(oext)                           : $(basedir)src\ptcloud2\pod.cpp                                        $(basedir)include\ptcloud2\pod.h                                 ${MultiCompileDepends}
+$(o)pointsScene$(oext)                   : $(basedir)src/ptengine/pointsScene.cpp                                $(basedir)include/ptengine/pointsScene.h                         ${MultiCompileDepends}
                                                                                                                   
-$(o)DataSourceRead$(oext)                : $(basedir)src\ptds\DataSourceRead.cpp                                 $(basedir)include\ptds\DataSourceRead.h                          ${MultiCompileDepends}
+$(o)DataCacheParallelRead$(oext)         : $(basedir)src/ptds/DataCacheParallelRead.cpp                          $(basedir)include/ptds/DataCacheParallelRead.h                   ${MultiCompileDepends}
                                                                                                                   
-$(o)pointcloud$(oext)                    : $(basedir)src\ptcloud2\pointcloud.cpp                                 $(basedir)include\ptcloud2\pointcloud.h                          ${MultiCompileDepends}
-                                                                                                                  
-$(o)scene_indexstream$(oext)             : $(basedir)src\ptcloud2\scene_indexstream.cpp                                                                                            ${MultiCompileDepends}
-                                                                                                                  
-$(o)DataSourceMultiReadSet$(oext)        : $(basedir)src\ptds\DataSourceMultiReadSet.cpp                         $(basedir)include\ptds\DataSourceMultiReadSet.h                  ${MultiCompileDepends}
-                                                                                                                  
-$(o)InterfaceBase$(oext)                 : $(basedir)src\PTRMI\InterfaceBase.cpp                                 $(basedir)include\PTRMI\InterfaceBase.h                          ${MultiCompileDepends}
-                                                                                                                  
-$(o)VoxelLODSet$(oext)                   : $(basedir)src\ptengine\VoxelLODSet.cpp                                $(basedir)include\ptengine\VoxelLODSet.h                         ${MultiCompileDepends}
-                                                                                                                  
-$(o)pointsScene$(oext)                   : $(basedir)src\ptengine\pointsScene.cpp                                $(basedir)include\ptengine\pointsScene.h                         ${MultiCompileDepends}
-                                                                                                                  
-$(o)DataCacheParallelRead$(oext)         : $(basedir)src\ptds\DataCacheParallelRead.cpp                          $(basedir)include\ptds\DataCacheParallelRead.h                   ${MultiCompileDepends}
-                                                                                                                  
-$(o)renderPipeline$(oext)                : $(basedir)src\ptengine\renderPipeline.cpp                                                                                               ${MultiCompileDepends}
-                                                                                                                  
-$(o)DataBuffer$(oext)                    : $(basedir)src\PTRMI\DataBuffer.cpp                                    $(basedir)include\PTRMI\DataBuffer.h                             ${MultiCompileDepends}
-                                                                                                                  
-$(o)renderEffect$(oext)                  : $(basedir)src\ptengine\renderEffect.cpp                               $(basedir)include\ptengine\renderEffect.h                        ${MultiCompileDepends}
+$(o)renderPipeline$(oext)                : $(basedir)src/ptengine/renderPipeline.cpp                                                                                               ${MultiCompileDepends}
+                                                                                                                                                                                                                                    
+$(o)renderEffect$(oext)                  : $(basedir)src/ptengine/renderEffect.cpp                               $(basedir)include/ptengine/renderEffect.h                        ${MultiCompileDepends}
                                                                                                                                                                                                                                   
-$(o)StreamDataSource$(oext)              : $(basedir)src\ptengine\StreamDataSource.cpp                           $(basedir)include\ptengine\StreamDataSource.h                    ${MultiCompileDepends}
+$(o)StreamDataSource$(oext)              : $(basedir)src/ptengine/StreamDataSource.cpp                           $(basedir)include/ptengine/StreamDataSource.h                    ${MultiCompileDepends}
                                                                                                                   
-$(o)timestamp$(oext)                     : $(basedir)src\pt\timestamp.cpp                                        $(basedir)include\pt\timestamp.h                                 ${MultiCompileDepends}
+$(o)timestamp$(oext)                     : $(basedir)src/pt/timestamp.cpp                                        $(basedir)include/pt/timestamp.h                                 ${MultiCompileDepends}
                                                                                                                   
-$(o)engine$(oext)                        : $(basedir)src\ptengine\engine.cpp                                     $(basedir)include\ptengine\engine.h                              ${MultiCompileDepends}
+$(o)engine$(oext)                        : $(basedir)src/ptengine/engine.cpp                                     $(basedir)include/ptengine/engine.h                              ${MultiCompileDepends}
                                                                                                                   
-$(o)paintFilters$(oext)                  : $(basedir)src\ptedit\paintFilters.cpp                                 $(basedir)include\ptedit\paintFilters.h                          ${MultiCompileDepends}
+$(o)paintFilters$(oext)                  : $(basedir)src/ptedit/paintFilters.cpp                                 $(basedir)include/ptedit/paintFilters.h                          ${MultiCompileDepends}
                                                                                                                   
-$(o)renderContext$(oext)                 : $(basedir)src\ptengine\renderContext.cpp                              $(basedir)include\ptengine\renderContext.h                       ${MultiCompileDepends}
-                                                                                                                  
-$(o)Pipe$(oext)                          : $(basedir)src\PTRMI\Pipe.cpp                                          $(basedir)include\PTRMI\Pipe.h                                   ${MultiCompileDepends}
-                                                                                                                  
-$(o)GUID$(oext)                          : $(basedir)src\PTRMI\GUID.cpp                                          $(basedir)include\PTRMI\GUID.h                                   ${MultiCompileDepends}
-                                                                                                                  
-$(o)Message$(oext)                       : $(basedir)src\PTRMI\Message.cpp                                       $(basedir)include\PTRMI\Message.h                                ${MultiCompileDepends}
-                                                                                                                  
-$(o)metatags$(oext)                      : $(basedir)src\ptcloud2\metatags.cpp                                   $(basedir)include\ptcloud2\metatags.h                            ${MultiCompileDepends}
+$(o)renderContext$(oext)                 : $(basedir)src/ptengine/renderContext.cpp                              $(basedir)include/ptengine/renderContext.h                       ${MultiCompileDepends}
                                                                                                                                                                                                                                     
-$(o)StreamManagerDataSourceSet$(oext)    : $(basedir)src\ptengine\StreamManagerDataSourceSet.cpp                 $(basedir)include\ptengine\StreamManagerDataSourceSet.h          ${MultiCompileDepends}
-                                                                                                                  
-$(o)prompt$(oext)                        : $(basedir)src\pt\prompt.cpp                                           $(basedir)include\pt\prompt.h                                    ${MultiCompileDepends}
-                                                                                                                  
-$(o)StreamVoxel$(oext)                   : $(basedir)src\ptengine\StreamVoxel.cpp                                $(basedir)include\ptengine\StreamVoxel.h                         ${MultiCompileDepends}
+$(o)metatags$(oext)                      : $(basedir)src/ptcloud2/metatags.cpp                                   $(basedir)include/ptcloud2/metatags.h                            ${MultiCompileDepends}
                                                                                                                                                                                                                                     
-$(o)PointoolsAPI_tuning$(oext)           : $(basedir)src\ptapi\PointoolsAPI_tuning.cpp                                                                                             ${MultiCompileDepends}
+$(o)StreamManagerDataSourceSet$(oext)    : $(basedir)src/ptengine/StreamManagerDataSourceSet.cpp                 $(basedir)include/ptengine/StreamManagerDataSourceSet.h          ${MultiCompileDepends}
                                                                                                                   
-$(o)PointoolsAPI_viewports$(oext)        : $(basedir)src\ptapi\PointoolsAPI_viewports.cpp                                                                                          ${MultiCompileDepends}
+$(o)prompt$(oext)                        : $(basedir)src/pt/prompt.cpp                                           $(basedir)include/pt/prompt.h                                    ${MultiCompileDepends}
                                                                                                                   
-$(o)IClashObject$(oext)                  : $(basedir)src\vortexobjects\IClashObject.cpp                          $(basedir)include\vortexobjects\IClashObject.h                   ${MultiCompileDepends}
-                                                                                                                  
-$(o)clashObject$(oext)                   : $(basedir)src\ptclash\clashObject.cpp                                 $(basedir)include\ptclash\clashObject.h                          ${MultiCompileDepends}
+$(o)StreamVoxel$(oext)                   : $(basedir)src/ptengine/StreamVoxel.cpp                                $(basedir)include/ptengine/StreamVoxel.h                         ${MultiCompileDepends}
                                                                                                                                                                                                                                     
-$(o)renderSettings$(oext)                : $(basedir)src\ptengine\renderSettings.cpp                             $(basedir)include\ptengine\renderSettings.h                      ${MultiCompileDepends}
+$(o)PointoolsAPI_tuning$(oext)           : $(basedir)src/ptapi/PointoolsAPI_tuning.cpp                                                                                             ${MultiCompileDepends}
                                                                                                                   
-$(o)editStack$(oext)                     : $(basedir)src\ptedit\editStack.cpp                                    $(basedir)include\ptedit\editStack.h                             ${MultiCompileDepends}
+$(o)PointoolsAPI_viewports$(oext)        : $(basedir)src/ptapi/PointoolsAPI_viewports.cpp                                                                                          ${MultiCompileDepends}
                                                                                                                   
-$(o)SpatialPartitionGraph$(oext)         : $(basedir)src\ptcloud2\SpatialPartitionGraph.cpp                      $(basedir)include\ptcloud2\SpatialPartitionGraph.h               ${MultiCompileDepends}
+$(o)IClashObject$(oext)                  : $(basedir)src/vortexobjects/IClashObject.cpp                          $(basedir)include/vortexobjects/IClashObject.h                   ${MultiCompileDepends}
                                                                                                                   
-$(o)DataSourceNull$(oext)                : $(basedir)src\ptds\DataSourceNull.cpp                                 $(basedir)include\ptds\DataSourceNull.h                          ${MultiCompileDepends}
-                                                                                                                  
-$(o)StreamScheduler$(oext)               : $(basedir)src\ptengine\StreamScheduler.cpp                            $(basedir)include\ptengine\StreamScheduler.h                     ${MultiCompileDepends}
-                                                                                                                  
-$(o)SceneGraph$(oext)                    : $(basedir)src\pt\SceneGraph.cpp                                       $(basedir)include\pt\SceneGraph.h                                ${MultiCompileDepends}
-                                                                                                                  
-$(o)buildindex$(oext)                    : $(basedir)src\ptcloud2\buildindex.cpp                                 $(basedir)include\ptcloud2\buildindex.h                          ${MultiCompileDepends}
-                                                                                                                  
-$(o)layers$(oext)                        : $(basedir)src\ptedit\layers.cpp                                                                                                         ${MultiCompileDepends}
+$(o)clashObject$(oext)                   : $(basedir)src/ptclash/clashObject.cpp                                 $(basedir)include/ptclash/clashObject.h                          ${MultiCompileDepends}
                                                                                                                                                                                                                                     
-$(o)DataSourceServer$(oext)              : $(basedir)src\ptds\DataSourceServer.cpp                               $(basedir)include\ptds\DataSourceServer.h                        ${MultiCompileDepends}
+$(o)renderSettings$(oext)                : $(basedir)src/ptengine/renderSettings.cpp                             $(basedir)include/ptengine/renderSettings.h                      ${MultiCompileDepends}
                                                                                                                   
-$(o)HostManager$(oext)                   : $(basedir)src\PTRMI\HostManager.cpp                                   $(basedir)include\PTRMI\HostManager.h                            ${MultiCompileDepends}
+$(o)editStack$(oext)                     : $(basedir)src/ptedit/editStack.cpp                                    $(basedir)include/ptedit/editStack.h                             ${MultiCompileDepends}
                                                                                                                   
-$(o)ManagerServerInterface$(oext)        : $(basedir)src\PTRMI\ManagerServerInterface.cpp                        $(basedir)include\PTRMI\ManagerServerInterface.h                 ${MultiCompileDepends}
+$(o)SpatialPartitionGraph$(oext)         : $(basedir)src/ptcloud2/SpatialPartitionGraph.cpp                      $(basedir)include/ptcloud2/SpatialPartitionGraph.h               ${MultiCompileDepends}
                                                                                                                   
-$(o)DataSourceMemory$(oext)              : $(basedir)src\ptds\DataSourceMemory.cpp                               $(basedir)include\ptds\DataSourceMemory.h                        ${MultiCompileDepends}
+$(o)DataSourceNull$(oext)                : $(basedir)src/ptds/DataSourceNull.cpp                                 $(basedir)include/ptds/DataSourceNull.h                          ${MultiCompileDepends}
                                                                                                                   
-$(o)DoubleBuffering$(oext)               : $(basedir)src\encryption\DoubleBuffering.cpp                          $(basedir)include\encryption\DoubleBuffering.h                   ${MultiCompileDepends}
+$(o)StreamScheduler$(oext)               : $(basedir)src/ptengine/StreamScheduler.cpp                            $(basedir)include/ptengine/StreamScheduler.h                     ${MultiCompileDepends}
                                                                                                                   
-$(o)DataCache$(oext)                     : $(basedir)src\ptds\DataCache.cpp                                      $(basedir)include\ptds\DataCache.h                               ${MultiCompileDepends}
+$(o)SceneGraph$(oext)                    : $(basedir)src/pt/SceneGraph.cpp                                       $(basedir)include/pt/SceneGraph.h                                ${MultiCompileDepends}
                                                                                                                   
-$(o)ptapp$(oext)                         : $(basedir)src\ptappdll\ptapp.cpp                                      $(basedir)include\ptappdll\ptapp.h                               ${MultiCompileDepends}
+$(o)buildindex$(oext)                    : $(basedir)src/ptcloud2/buildindex.cpp                                 $(basedir)include/ptcloud2/buildindex.h                          ${MultiCompileDepends}
                                                                                                                   
-$(o)DataSourceBufferedWrite$(oext)       : $(basedir)src\ptds\DataSourceBufferedWrite.cpp                        $(basedir)include\ptds\DataSourceBufferedWrite.h                 ${MultiCompileDepends}
-                                                                                                                  
-$(o)Method$(oext)                        : $(basedir)src\encryption\Method.cpp                                   $(basedir)include\encryption\Method.h                            ${MultiCompileDepends}
-                                                                                                                  
-$(o)DispatcherPTRMI$(oext)               : $(basedir)src\PTRMI\DispatcherPTRMI.cpp                                                                                                 ${MultiCompileDepends}
-                                                                                                                  
-$(o)pointsRenderer$(oext)                : $(basedir)src\ptengine\pointsRenderer.cpp                             $(basedir)include\ptengine\pointsRenderer.h                      ${MultiCompileDepends}
-                                                                                                                  
-$(o)renderResourceManager$(oext)         : $(basedir)src\ptengine\renderResourceManager.cpp                      $(basedir)include\ptengine\renderResourceManager.h               ${MultiCompileDepends}
-                                                                                                                  
-$(o)StreamManagerParameters$(oext)       : $(basedir)src\ptengine\StreamManagerParameters.cpp                    $(basedir)include\ptengine\StreamManagerParameters.h             ${MultiCompileDepends}
-                                                                                                                  
-$(o)Timer$(oext)                         : $(basedir)src\pt\Timer.cpp                                            $(basedir)include\pt\Timer.h                                     ${MultiCompileDepends}
+$(o)layers$(oext)                        : $(basedir)src/ptedit/layers.cpp                                                                                                         ${MultiCompileDepends}
                                                                                                                                                                                                                                     
-$(o)Datatree$(oext)                      : $(basedir)src\pt\Datatree.cpp                                         $(basedir)include\pt\Datatree.h                                  ${MultiCompileDepends}
+$(o)DataSourceServer$(oext)              : $(basedir)src/ptds/DataSourceServer.cpp                               $(basedir)include/ptds/DataSourceServer.h                        ${MultiCompileDepends}
+                                                                                                                                                                                                                                   
+$(o)DataSourceMemory$(oext)              : $(basedir)src/ptds/DataSourceMemory.cpp                               $(basedir)include/ptds/DataSourceMemory.h                        ${MultiCompileDepends}
                                                                                                                   
-$(o)cmdprogress$(oext)                   : $(basedir)src\ptcmdppe\cmdprogress.cpp                                $(basedir)include\ptcmdppe\cmdprogress.h                         ${MultiCompileDepends}
+$(o)DoubleBuffering$(oext)               : $(basedir)src/encryption/DoubleBuffering.cpp                          $(basedir)include/encryption/DoubleBuffering.h                   ${MultiCompileDepends}
                                                                                                                   
-$(o)GraphManager$(oext)                  : $(basedir)src\ptds\GraphManager.cpp                                   $(basedir)include\ptds\GraphManager.h                            ${MultiCompileDepends}
+$(o)DataCache$(oext)                     : $(basedir)src/ptds/DataCache.cpp                                      $(basedir)include/ptds/DataCache.h                               ${MultiCompileDepends}
                                                                                                                   
-$(o)renderVoxelBuffer$(oext)             : $(basedir)src\ptengine\renderVoxelBuffer.cpp                          $(basedir)include\ptengine\renderVoxelBuffer.h                   ${MultiCompileDepends}
+$(o)ptapp$(oext)                         : $(basedir)src/ptappdll/ptapp.cpp                                      $(basedir)include/ptappdll/ptapp.h                               ${MultiCompileDepends}
                                                                                                                   
-$(o)datatreeNode$(oext)                  : $(basedir)src\pt\datatreeNode.cpp                                     $(basedir)include\pt\datatreeNode.h                              ${MultiCompileDepends}
+$(o)DataSourceBufferedWrite$(oext)       : $(basedir)src/ptds/DataSourceBufferedWrite.cpp                        $(basedir)include/ptds/DataSourceBufferedWrite.h                 ${MultiCompileDepends}
                                                                                                                   
-$(o)gradient$(oext)                      : $(basedir)src\ptcloud2\gradient.cpp                                   $(basedir)include\ptcloud2\gradient.h                            ${MultiCompileDepends}
-                                                                                                                  
-$(o)IClashTree$(oext)                    : $(basedir)src\vortexobjects\IClashTree.cpp                            $(basedir)include\vortexobjects\IClashTree.h                     ${MultiCompileDepends}
-                                                                                                                  
-$(o)clashSet$(oext)                      : $(basedir)src\ptclash\clashSet.cpp                                    $(basedir)include\ptclash\clashSet.h                             ${MultiCompileDepends}
-                                                                                                                  
-$(o)pointBoundsTree$(oext)               : $(basedir)src\ptengine\pointBoundsTree.cpp                            $(basedir)include\ptengine\pointBoundsTree.h                     ${MultiCompileDepends}
-                                                                                                                  
-$(o)format$(oext)                        : $(basedir)src\pt\format.cpp                                           $(basedir)include\pt\format.h                                    ${MultiCompileDepends}
+$(o)Method$(oext)                        : $(basedir)src/encryption/Method.cpp                                   $(basedir)include/encryption/Method.h                            ${MultiCompileDepends}
                                                                                                                                                                                                                                     
-$(o)voxel$(oext)                         : $(basedir)src\ptcloud2\voxel.cpp                                      $(basedir)include\ptcloud2\voxel.h                               ${MultiCompileDepends}
+$(o)pointsRenderer$(oext)                : $(basedir)src/ptengine/pointsRenderer.cpp                             $(basedir)include/ptengine/pointsRenderer.h                      ${MultiCompileDepends}
                                                                                                                   
-$(o)ClientInterfaceExtDataBentley$(oext) : $(basedir)src\PTRMI\ClientInterfaceExtDataBentley.cpp                 $(basedir)include\PTRMI\ClientInterfaceExtDataBentley.h          ${MultiCompileDepends}
+$(o)renderResourceManager$(oext)         : $(basedir)src/ptengine/renderResourceManager.cpp                      $(basedir)include/ptengine/renderResourceManager.h               ${MultiCompileDepends}
+                                                                                                                  
+$(o)StreamManagerParameters$(oext)       : $(basedir)src/ptengine/StreamManagerParameters.cpp                    $(basedir)include/ptengine/StreamManagerParameters.h             ${MultiCompileDepends}
+                                                                                                                  
+$(o)Timer$(oext)                         : $(basedir)src/pt/Timer.cpp                                            $(basedir)include/pt/Timer.h                                     ${MultiCompileDepends}
+                                                                                                                                                                                                                                    
+$(o)Datatree$(oext)                      : $(basedir)src/pt/Datatree.cpp                                         $(basedir)include/pt/Datatree.h                                  ${MultiCompileDepends}
+                                                                                                                  
+$(o)cmdprogress$(oext)                   : $(basedir)src/ptcmdppe/cmdprogress.cpp                                $(basedir)include/ptcmdppe/cmdprogress.h                         ${MultiCompileDepends}
+                                                                                                                  
+$(o)GraphManager$(oext)                  : $(basedir)src/ptds/GraphManager.cpp                                   $(basedir)include/ptds/GraphManager.h                            ${MultiCompileDepends}
+                                                                                                                  
+$(o)renderVoxelBuffer$(oext)             : $(basedir)src/ptengine/renderVoxelBuffer.cpp                          $(basedir)include/ptengine/renderVoxelBuffer.h                   ${MultiCompileDepends}
+                                                                                                                  
+$(o)datatreeNode$(oext)                  : $(basedir)src/pt/datatreeNode.cpp                                     $(basedir)include/pt/datatreeNode.h                              ${MultiCompileDepends}
+                                                                                                                  
+$(o)gradient$(oext)                      : $(basedir)src/ptcloud2/gradient.cpp                                   $(basedir)include/ptcloud2/gradient.h                            ${MultiCompileDepends}
+                                                                                                                  
+$(o)IClashTree$(oext)                    : $(basedir)src/vortexobjects/IClashTree.cpp                            $(basedir)include/vortexobjects/IClashTree.h                     ${MultiCompileDepends}
+                                                                                                                  
+$(o)clashSet$(oext)                      : $(basedir)src/ptclash/clashSet.cpp                                    $(basedir)include/ptclash/clashSet.h                             ${MultiCompileDepends}
+                                                                                                                  
+$(o)pointBoundsTree$(oext)               : $(basedir)src/ptengine/pointBoundsTree.cpp                            $(basedir)include/ptengine/pointBoundsTree.h                     ${MultiCompileDepends}
+                                                                                                                  
+$(o)format$(oext)                        : $(basedir)src/pt/format.cpp                                           $(basedir)include/pt/format.h                                    ${MultiCompileDepends}
+                                                                                                                                                                                                                                    
+$(o)voxel$(oext)                         : $(basedir)src/ptcloud2/voxel.cpp                                      $(basedir)include/ptcloud2/voxel.h                               ${MultiCompileDepends}
+                                                                                                                  
+$(o)ClipObject$(oext)                    : $(basedir)src/ptengine/ClipObject.cpp                                 $(basedir)include/ptengine/ClipObject.h                          ${MultiCompileDepends}
 
-$(o)ClipObject$(oext)                    : $(basedir)src\ptengine\ClipObject.cpp                                 $(basedir)include\ptengine\ClipObject.h                          ${MultiCompileDepends}
+$(o)ClipPlane$(oext)                     : $(basedir)src/ptengine/ClipPlane.cpp                                  $(basedir)include/ptengine/ClipPlane.h                           ${MultiCompileDepends}
 
-$(o)ClipPlane$(oext)                     : $(basedir)src\ptengine\ClipPlane.cpp                                  $(basedir)include\ptengine\ClipPlane.h                           ${MultiCompileDepends}
+$(o)ClipManager$(oext)                   : $(basedir)src/ptengine/ClipManager.cpp                                $(basedir)include/ptengine/ClipManager.h                         ${MultiCompileDepends}
 
-$(o)ClipManager$(oext)                   : $(basedir)src\ptengine\ClipManager.cpp                                $(basedir)include\ptengine\ClipManager.h                         ${MultiCompileDepends}
+$(o)IsolationFilter$(oext)               : $(basedir)src/ptedit/IsolationFilter.cpp                              $(basedir)include/ptedit/IsolationFilter.h                       ${MultiCompileDepends}
 
-$(o)IsolationFilter$(oext)               : $(basedir)src\ptedit\IsolationFilter.cpp                              $(basedir)include\ptedit\IsolationFilter.h                       ${MultiCompileDepends}
+$(o)visibilityEngine$(oext)              : $(basedir)src/ptengine/visibilityEngine.cpp                           $(basedir)include/ptengine/visibilityEngine.h                    ${MultiCompileDepends}
 
-$(o)visibilityEngine$(oext)              : $(basedir)src\ptengine\visibilityEngine.cpp                           $(basedir)include\ptengine\visibilityEngine.h                    ${MultiCompileDepends}
-
-$(o)glFrustum$(oext)                     : $(basedir)src\ptgl\glFrustum.cpp                                      $(basedir)include\ptgl\glFrustum.h                               ${MultiCompileDepends}
+$(o)glFrustum$(oext)                     : $(basedir)src/ptgl/glFrustum.cpp                                      $(basedir)include/ptgl/glFrustum.h                               ${MultiCompileDepends}
 
 %if defined(HAVE_OPENGL)
-$(o)renderClipEffect$(oext)              : $(basedir)src\ptengine\renderClipEffect.cpp                           $(basedir)include\ptengine\renderClipEffect.h                    ${MultiCompileDepends}
+$(o)renderClipEffect$(oext)              : $(basedir)src/ptengine/renderClipEffect.cpp                           $(basedir)include/ptengine/renderClipEffect.h                    ${MultiCompileDepends}
                                                                                                                   
-$(o)PointoolsAPI_unitTests$(oext)        : $(basedir)src\ptapi\PointoolsAPI_unitTests.cpp                                                                                          ${MultiCompileDepends}
+$(o)PointoolsAPI_unitTests$(oext)        : $(basedir)src/ptapi/PointoolsAPI_unitTests.cpp                                                                                          ${MultiCompileDepends}
 
-$(o)glShader$(oext)                      : $(basedir)src\ptgl\glShader.cpp                                       $(basedir)include\ptgl\glShader.h                                ${MultiCompileDepends}
+$(o)glShader$(oext)                      : $(basedir)src/ptgl/glShader.cpp                                       $(basedir)include/ptgl/glShader.h                                ${MultiCompileDepends}
 
-$(o)gltext$(oext)                        : $(basedir)src\ptgl\gltext.cpp                                         $(basedir)include\ptgl\gltext.h                                  ${MultiCompileDepends}
+$(o)gltext$(oext)                        : $(basedir)src/ptgl/gltext.cpp                                         $(basedir)include/ptgl/gltext.h                                  ${MultiCompileDepends}
 
-$(o)glViewport$(oext)                    : $(basedir)src\ptgl\glViewport.cpp                                     $(basedir)include\ptgl\glViewport.h                              ${MultiCompileDepends}
+$(o)glViewport$(oext)                    : $(basedir)src/ptgl/glViewport.cpp                                     $(basedir)include/ptgl/glViewport.h                              ${MultiCompileDepends}
 
-$(o)renderGLResouceAdaptor$(oext)        : $(basedir)src\ptengine\renderGLResouceAdaptor.cpp                                                                                       ${MultiCompileDepends}
+$(o)renderGLResouceAdaptor$(oext)        : $(basedir)src/ptengine/renderGLResouceAdaptor.cpp                                                                                       ${MultiCompileDepends}
 
-$(o)glArcball$(oext)                     : $(basedir)src\ptgl\glArcball.cpp                                      $(basedir)include\ptgl\glArcball.h                               ${MultiCompileDepends}
+$(o)glArcball$(oext)                     : $(basedir)src/ptgl/glArcball.cpp                                      $(basedir)include/ptgl/glArcball.h                               ${MultiCompileDepends}
 
-$(o)renderPipelineGLFixed$(oext)         : $(basedir)src\ptengine\renderPipelineGLFixed.cpp                      $(basedir)include\ptengine\renderPipelineGLFixed.h               ${MultiCompileDepends}
+$(o)renderPipelineGLFixed$(oext)         : $(basedir)src/ptengine/renderPipelineGLFixed.cpp                      $(basedir)include/ptengine/renderPipelineGLFixed.h               ${MultiCompileDepends}
 
-$(o)3dmath$(oext)                        : $(basedir)src\ptgl\3dmath.cpp                                         $(basedir)include\ptgl\3dmath.h                                  ${MultiCompileDepends}
+$(o)3dmath$(oext)                        : $(basedir)src/ptgl/3dmath.cpp                                         $(basedir)include/ptgl/3dmath.h                                  ${MultiCompileDepends}
 
-$(o)glVertexProgram$(oext)               : $(basedir)src\ptgl\glVertexProgram.cpp                                $(basedir)include\ptgl\glVertexProgram.h                         ${MultiCompileDepends}
+$(o)glVertexProgram$(oext)               : $(basedir)src/ptgl/glVertexProgram.cpp                                $(basedir)include/ptgl/glVertexProgram.h                         ${MultiCompileDepends}
 
-$(o)glClipBox$(oext)                     : $(basedir)src\ptgl\glClipBox.cpp                                      $(basedir)include\ptgl\glClipBox.h                               ${MultiCompileDepends}
+$(o)glClipBox$(oext)                     : $(basedir)src/ptgl/glClipBox.cpp                                      $(basedir)include/ptgl/glClipBox.h                               ${MultiCompileDepends}
 
-$(o)renderLightingEffectGL$(oext)        : $(basedir)src\ptengine\renderLightingEffectGL.cpp                                                                                       ${MultiCompileDepends}
+$(o)renderLightingEffectGL$(oext)        : $(basedir)src/ptengine/renderLightingEffectGL.cpp                                                                                       ${MultiCompileDepends}
 
-$(o)glLight$(oext)                       : $(basedir)src\ptgl\glLight.cpp                                        $(basedir)include\ptgl\glLight.h                                 ${MultiCompileDepends}
+$(o)glLight$(oext)                       : $(basedir)src/ptgl/glLight.cpp                                        $(basedir)include/ptgl/glLight.h                                 ${MultiCompileDepends}
 
-$(o)glViewSetup$(oext)                   : $(basedir)src\ptgl\glViewSetup.cpp                                    $(basedir)include\ptgl\glViewSetup.h                             ${MultiCompileDepends}
+$(o)glViewSetup$(oext)                   : $(basedir)src/ptgl/glViewSetup.cpp                                    $(basedir)include/ptgl/glViewSetup.h                             ${MultiCompileDepends}
 
-$(o)renderMethodGLPoints$(oext)          : $(basedir)src\ptengine\renderMethodGLPoints.cpp                       $(basedir)include\ptengine\renderMethodGLPoints.h                ${MultiCompileDepends}
+$(o)renderMethodGLPoints$(oext)          : $(basedir)src/ptengine/renderMethodGLPoints.cpp                       $(basedir)include/ptengine/renderMethodGLPoints.h                ${MultiCompileDepends}
 
-$(o)glCamera$(oext)                      : $(basedir)src\ptgl\glCamera.cpp                                       $(basedir)include\ptgl\glCamera.h                                ${MultiCompileDepends}
+$(o)glCamera$(oext)                      : $(basedir)src/ptgl/glCamera.cpp                                       $(basedir)include/ptgl/glCamera.h                                ${MultiCompileDepends}
 
-$(o)glExtensions$(oext)                  : $(basedir)src\ptgl\glExtensions.cpp                                   $(basedir)include\ptgl\glExtensions.h                            ${MultiCompileDepends}
+$(o)glExtensions$(oext)                  : $(basedir)src/ptgl/glExtensions.cpp                                   $(basedir)include/ptgl/glExtensions.h                            ${MultiCompileDepends}
 
-$(o)glFont$(oext)                        : $(basedir)src\ptgl\glFont.cpp                                         $(basedir)include\ptgl\glFont.h                                  ${MultiCompileDepends}
+$(o)glFont$(oext)                        : $(basedir)src/ptgl/glFont.cpp                                         $(basedir)include/ptgl/glFont.h                                  ${MultiCompileDepends}
                                                                                                                   
-$(o)glState$(oext)                       : $(basedir)src\ptgl\glState.cpp                                        $(basedir)include\ptgl\glState.h                                 ${MultiCompileDepends}
+$(o)glState$(oext)                       : $(basedir)src/ptgl/glState.cpp                                        $(basedir)include/ptgl/glState.h                                 ${MultiCompileDepends}
 
-$(o)renderPipelineGLShader$(oext)        : $(basedir)src\ptengine\renderPipelineGLShader.cpp                     $(basedir)include\ptengine\renderPipelineGLShader.h              ${MultiCompileDepends}
+$(o)renderPipelineGLShader$(oext)        : $(basedir)src/ptengine/renderPipelineGLShader.cpp                     $(basedir)include/ptengine/renderPipelineGLShader.h              ${MultiCompileDepends}
 
-$(o)renderMethodGLVertexArray$(oext)     : $(basedir)src\ptengine\renderMethodGLVertexArray.cpp                  $(basedir)include\ptengine\renderMethodGLVertexArray.h           ${MultiCompileDepends}
+$(o)renderMethodGLVertexArray$(oext)     : $(basedir)src/ptengine/renderMethodGLVertexArray.cpp                  $(basedir)include/ptengine/renderMethodGLVertexArray.h           ${MultiCompileDepends}
 
-$(o)glDraw$(oext)                        : $(basedir)src\ptgl\glDraw.cpp                                         $(basedir)include\ptgl\glDraw.h                                  ${MultiCompileDepends}
+$(o)glDraw$(oext)                        : $(basedir)src/ptgl/glDraw.cpp                                         $(basedir)include/ptgl/glDraw.h                                  ${MultiCompileDepends}
 
-$(o)glViewStore$(oext)                   : $(basedir)src\ptgl\glViewStore.cpp                                    $(basedir)include\ptgl\glViewStore.h                             ${MultiCompileDepends}
+$(o)glViewStore$(oext)                   : $(basedir)src/ptgl/glViewStore.cpp                                    $(basedir)include/ptgl/glViewStore.h                             ${MultiCompileDepends}
 
-$(o)renderPointsEffect$(oext)            : $(basedir)src\ptengine\renderPointsEffect.cpp                         $(basedir)include\ptengine\renderPointsEffect.h                  ${MultiCompileDepends}
+$(o)renderPointsEffect$(oext)            : $(basedir)src/ptengine/renderPointsEffect.cpp                         $(basedir)include/ptengine/renderPointsEffect.h                  ${MultiCompileDepends}
 
-$(o)renderLayersEffect$(oext)            : $(basedir)src\ptengine\renderLayersEffect.cpp                         $(basedir)include\ptengine\renderLayersEffect.h                  ${MultiCompileDepends}
+$(o)renderLayersEffect$(oext)            : $(basedir)src/ptengine/renderLayersEffect.cpp                         $(basedir)include/ptengine/renderLayersEffect.h                  ${MultiCompileDepends}
 
-$(o)renderPlaneEffect$(oext)             : $(basedir)src\ptengine\renderPlaneEffect.cpp                          $(basedir)include\ptengine\renderPlaneEffect.h                   ${MultiCompileDepends}
+$(o)renderPlaneEffect$(oext)             : $(basedir)src/ptengine/renderPlaneEffect.cpp                          $(basedir)include/ptengine/renderPlaneEffect.h                   ${MultiCompileDepends}
 
-$(o)renderDiagnostics$(oext)             : $(basedir)src\ptengine\renderDiagnostics.cpp                          $(basedir)include\ptengine\renderDiagnostics.h                   ${MultiCompileDepends}
+$(o)renderDiagnostics$(oext)             : $(basedir)src/ptengine/renderDiagnostics.cpp                          $(basedir)include/ptengine/renderDiagnostics.h                   ${MultiCompileDepends}
 
-$(o)renderIntensityEffect$(oext)         : $(basedir)src\ptengine\renderIntensityEffect.cpp                      $(basedir)include\ptengine\renderIntensityEffect.h               ${MultiCompileDepends}
+$(o)renderIntensityEffect$(oext)         : $(basedir)src/ptengine/renderIntensityEffect.cpp                      $(basedir)include/ptengine/renderIntensityEffect.h               ${MultiCompileDepends}
 
 %endif
+
+#%if defined(NEEDS_WORK_VORTEX_DGNDB)
+$(o)Status$(oext)                        : $(basedir)src/PTRMI/Status.cpp                                        $(basedir)include/PTRMI/Status.h                                 ${MultiCompileDepends}
+                                                                                                                  
+$(o)PipeProtocolManager$(oext)           : $(basedir)src/PTRMI/PipeProtocolManager.cpp                           $(basedir)include/PTRMI/PipeProtocolManager.h                    ${MultiCompileDepends}
+
+$(o)URL$(oext)                           : $(basedir)src/PTRMI/URL.cpp                                           $(basedir)include/PTRMI/URL.h                                    ${MultiCompileDepends}
+
+$(o)ServerInterface$(oext)               : $(basedir)src/PTRMI/ServerInterface.cpp                               $(basedir)include/PTRMI/ServerInterface.h                        ${MultiCompileDepends}
+
+$(o)ObjectManager$(oext)                 : $(basedir)src/PTRMI/ObjectManager.cpp                                 $(basedir)include/PTRMI/ObjectManager.h                          ${MultiCompileDepends}
+
+$(o)VariantGraph$(oext)                  : $(basedir)src/PTRMI/VariantGraph.cpp                                  $(basedir)include/PTRMI/VariantGraph.h                           ${MultiCompileDepends}
+
+$(o)RemotePtr$(oext)                     : $(basedir)src/PTRMI/RemotePtr.cpp                                     $(basedir)include/PTRMI/RemotePtr.h                              ${MultiCompileDepends}
+
+$(o)ManagerClientInterface$(oext)        : $(basedir)src/PTRMI/ManagerClientInterface.cpp                        $(basedir)include/PTRMI/ManagerClientInterface.h                 ${MultiCompileDepends}
+
+$(o)ClientServerInterface$(oext)         : $(basedir)src/PTRMI/ClientServerInterface.cpp                         $(basedir)include/PTRMI/ClientServerInterface.h                  ${MultiCompileDepends}
+
+$(o)PipeExt$(oext)                       : $(basedir)src/PTRMI/PipeExt.cpp                                       $(basedir)include/PTRMI/PipeExt.h                                ${MultiCompileDepends}
+                                                                                                                  
+$(o)PipeManagerTCP$(oext)                : $(basedir)src/PTRMI/PipeManagerTCP.cpp                                $(basedir)include/PTRMI/PipeManagerTCP.h                         ${MultiCompileDepends}
+
+$(o)PipeTCP$(oext)                       : $(basedir)src/PTRMI/PipeTCP.cpp                                       $(basedir)include/PTRMI/PipeTCP.h                                ${MultiCompileDepends}
+                                                                                                                  
+$(o)Manager$(oext)                       : $(basedir)src/PTRMI/Manager.cpp                                       $(basedir)include/PTRMI/Manager.h                                ${MultiCompileDepends}
+                                                                                                                  
+$(o)Host$(oext)                          : $(basedir)src/PTRMI/Host.cpp                                          $(basedir)include/PTRMI/Host.h                                   ${MultiCompileDepends}
+
+$(o)PipeManagerExt$(oext)                : $(basedir)src/PTRMI/PipeManagerExt.cpp                                $(basedir)include/PTRMI/PipeManagerExt.h                         ${MultiCompileDepends}
+
+$(o)PipeManager$(oext)                   : $(basedir)src/PTRMI/PipeManager.cpp                                   $(basedir)include/PTRMI/PipeManager.h                            ${MultiCompileDepends}
+
+$(o)ManagerInfo$(oext)                   : $(basedir)src/PTRMI/ManagerInfo.cpp                                   $(basedir)include/PTRMI/ManagerInfo.h                            ${MultiCompileDepends}
+
+$(o)ClientInterface$(oext)               : $(basedir)src/PTRMI/ClientInterface.cpp                               $(basedir)include/PTRMI/ClientInterface.h                        ${MultiCompileDepends}
+                                                                                                               
+$(o)Stream$(oext)                        : $(basedir)src/PTRMI/Stream.cpp                                        $(basedir)include/PTRMI/Stream.h                                 ${MultiCompileDepends}
+                                                                                                                  
+$(o)Name$(oext)                          : $(basedir)src/PTRMI/Name.cpp                                          $(basedir)include/PTRMI/Name.h                                   ${MultiCompileDepends}
+
+$(o)InterfaceBase$(oext)                 : $(basedir)src/PTRMI/InterfaceBase.cpp                                 $(basedir)include/PTRMI/InterfaceBase.h                          ${MultiCompileDepends}
+
+$(o)DataBuffer$(oext)                    : $(basedir)src/PTRMI/DataBuffer.cpp                                    $(basedir)include/PTRMI/DataBuffer.h                             ${MultiCompileDepends}
+
+$(o)Pipe$(oext)                          : $(basedir)src/PTRMI/Pipe.cpp                                          $(basedir)include/PTRMI/Pipe.h                                   ${MultiCompileDepends}
+                                                                                                                  
+$(o)GUID$(oext)                          : $(basedir)src/PTRMI/GUID.cpp                                          $(basedir)include/PTRMI/GUID.h                                   ${MultiCompileDepends}
+                                                                                                                  
+$(o)Message$(oext)                       : $(basedir)src/PTRMI/Message.cpp                                       $(basedir)include/PTRMI/Message.h                                ${MultiCompileDepends}
+
+$(o)HostManager$(oext)                   : $(basedir)src/PTRMI/HostManager.cpp                                   $(basedir)include/PTRMI/HostManager.h                            ${MultiCompileDepends}
+                                                                                                                  
+$(o)ManagerServerInterface$(oext)        : $(basedir)src/PTRMI/ManagerServerInterface.cpp                        $(basedir)include/PTRMI/ManagerServerInterface.h                 ${MultiCompileDepends}
+
+$(o)DispatcherPTRMI$(oext)               : $(basedir)src/PTRMI/DispatcherPTRMI.cpp                                                                                                 ${MultiCompileDepends}
+
+$(o)ClientInterfaceExtDataBentley$(oext) : $(basedir)src/PTRMI/ClientInterfaceExtDataBentley.cpp                 $(basedir)include/PTRMI/ClientInterfaceExtDataBentley.h          ${MultiCompileDepends}
+#%endif
 
 #
 # Compile the above uniform set of dependency blocks in a single invocation of the Visual C compiler.
@@ -499,11 +508,11 @@ $(o)renderIntensityEffect$(oext)         : $(basedir)src\ptengine\renderIntensit
 # Objects that need to be built without the pre compiled headers
 nonUniformObjs = $(o)utf$(oext)
 
-$(o)utf$(oext) : $(basedir)src\pt\utf.c $(basedir)include\pt\utf.h
+$(o)utf$(oext) : $(basedir)src/pt/utf.c $(basedir)include/pt/utf.h
 
 %if defined(HAVE_OPENGL)
 
-$(o)arb_vertex_program$(oext) : $(basedir)src\ptgl\glvp\arb_vertex_program.cpp $(basedir)include\ptgl\arb_vertex_program.h
+$(o)arb_vertex_program$(oext) : $(basedir)src/ptgl/glvp/arb_vertex_program.cpp $(basedir)include/ptgl/arb_vertex_program.h
 
 nonUniformObjs + $(o)arb_vertex_program$(oext)
 

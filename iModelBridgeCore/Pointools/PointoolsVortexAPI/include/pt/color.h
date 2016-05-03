@@ -1,8 +1,8 @@
 /****************************************************************************\
 base on CColor by Christian Rodemeyer
 \****************************************************************************/
-#include <pt\ptstring.h>
-#include <pt\classes.h>
+#include <pt/ptstring.h>
+#include <pt/classes.h>
 
 #ifndef __COLOR_H
 #define __COLOR_H

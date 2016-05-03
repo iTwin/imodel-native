@@ -10,6 +10,8 @@
  */
 
 #include "PointoolsVortexAPIInternal.h"
+
+#ifdef NEEDS_WORK_VORTEX_DGNDB
 #include <pt/prompt.h>
 
 #include <stdio.h>
@@ -571,3 +573,4 @@ void msgBox(
 
 };// namespace
 
+#endif

@@ -1,7 +1,6 @@
 #ifndef POINTOOLS_GLCOLOR
 #define POINTOOLS_GLCOLOR
 
-#include <pt/os.h>
 
 namespace ptgl
 {

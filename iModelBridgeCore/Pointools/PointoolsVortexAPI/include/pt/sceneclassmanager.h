@@ -1,8 +1,8 @@
 #ifndef POINTOOLS_SCENE_CLASS_MANAGER_H
 #define POINTOOLS_SCENE_CLASS_MANAGER_H
 
-#include <pt\SceneGraph.h>
-#include <utility\ptstr.h>
+#include <pt/SceneGraph.h>
+#include <utility/ptstr.h>
 
 namespace ptgl { class Viewport; }
 namespace pt

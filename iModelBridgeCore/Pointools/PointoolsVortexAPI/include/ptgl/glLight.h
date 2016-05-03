@@ -1,8 +1,8 @@
 #ifndef POINTOOLS_GL_LIGHT
 #define POINTOOLS_GL_LIGHT
 
-#include <ptgl\ptgl.h>
-#include <pt\geomtypes.h>
+#include <ptgl/ptgl.h>
+#include <pt/geomtypes.h>
 
 namespace ptgl
 {

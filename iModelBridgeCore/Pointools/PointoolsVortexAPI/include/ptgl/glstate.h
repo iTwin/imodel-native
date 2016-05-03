@@ -1,7 +1,7 @@
 #ifndef POINTOOLS_GL_STATE_OBJECT
 #define POINTOOLS_GL_STATE_OBJECT
 
-#include <pt/os.h>
+
 #include <gl/glew.h>
 #include <gl/glext.h>
 #include <ptgl/ptgl.h>

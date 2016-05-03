@@ -1,6 +1,5 @@
 #pragma once
 
-#include <gl/glew.h>
 #include <pt/typedefs.h>
 
 namespace pointsengine

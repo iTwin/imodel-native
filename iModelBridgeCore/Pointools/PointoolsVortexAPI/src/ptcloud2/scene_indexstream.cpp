@@ -1,5 +1,5 @@
 #include "PointoolsVortexAPIInternal.h"
-#include <pt/os.h>
+
 #define _VERBOSE	
 //#define FILE_TRACE 1
 #include <pt/trace.h>

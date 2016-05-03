@@ -6,7 +6,7 @@
 /*--------------------------------------------------------------------------*/ 
 
 #include "PointoolsVortexAPIInternal.h"
-#include <pt/os.h>
+
 #include <ptgl/glfrustum.h>
 #include <gl/gl.h>
 

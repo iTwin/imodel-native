@@ -2,8 +2,8 @@
 #define GL_EXTENSIONS_HELPER_HEADER
 
 #include <windows.h>
-#include <gl\gl.h>
-#include <gl\glext.h>
+#include <gl/gl.h>
+#include <gl/glext.h>
 #include "ptgl.h"
 
 namespace ptgl

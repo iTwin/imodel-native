@@ -115,6 +115,7 @@ LINKER_LIBRARIES = \
     shlwapi.lib\
     wsock32.lib\
     Ws2_32.lib\
+    $(ContextSubpartsLibs)$(libprefix)PointoolsVortexAPI$(libext) \
 %if $(BUILD_TOOLSET) == "VC8"
     $(ContextSubpartsLibs)$(stlibprefix)wildmagic_VC8$(stlibext)
 %elif $(BUILD_TOOLSET) == "VC11"

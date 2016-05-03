@@ -1,5 +1,5 @@
 #include "PointoolsVortexAPIInternal.h"
-#include <pt/os.h>
+
 #undef _VERBOSE
 
 #ifdef _VERBOSE
@@ -38,7 +38,7 @@
 #define	POINTS_PAGER_SLEEP	250		// Sleep 0.25 seconds between running pager thread. This limits racing and gives more CPU time to main application threads
 
 
-#include <pt\trace.h>
+#include <pt/trace.h>
 
 #define		PAGER_THREAD 0
 #define		_MEMAVAL (__int64)(mem.dwAvailVirtual - ((1.0-pp.capacity) * mem.dwTotalVirtual))

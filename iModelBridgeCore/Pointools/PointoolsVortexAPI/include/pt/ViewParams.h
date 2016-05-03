@@ -1,5 +1,5 @@
 #pragma once
-#include <pt/os.h>
+
 #include <pt/geomtypes.h>
 
 namespace pt

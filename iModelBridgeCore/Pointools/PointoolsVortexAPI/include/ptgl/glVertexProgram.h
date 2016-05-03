@@ -7,7 +7,7 @@
 #ifndef POINTOOLS_PTGLVERTEX_PROGRAM_SUPPORT_HEADER
 #define POINTOOLS_PTGLVERTEX_PROGRAM_SUPPORT_HEADER
 
-#include <pt/os.h>
+
 #include <gl/glew.h>
 #include <ptgl/ptgl.h>
 

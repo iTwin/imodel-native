@@ -7,7 +7,7 @@
 /*--------------------------------------------------------------------------*/ 
 #pragma warning (disable : 4786)
 #include "PointoolsVortexAPIInternal.h"
-#include <pt\datatable.h>
+#include <pt/datatable.h>
 using namespace pt;
 
 static char _iobuffer[128];

@@ -6,8 +6,6 @@
 /*  Last Updated 16 Feb 2004 Faraz Ravi										*/ 
 /*--------------------------------------------------------------------------*/ 
 
-#include <windows.h>
-
 #include <pt/Plane.h>
 #include <Mgc/MgcCore3d.pkg>
 #include <Mgc/MgcIntersection3d.pkg>

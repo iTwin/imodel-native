@@ -1,7 +1,7 @@
 #include "PointoolsVortexAPIInternal.h"
-#include <pt/os.h>
+
 #define POINTOOLS_API_BUILD_DLL
-#include <gl/glew.h>
+
 
 #include <ptapi/PointoolsVortexAPI.h>
 #include <ptapi/PointoolsAPI_handle.h>
@@ -20,8 +20,6 @@
 #include <ptgl/gltext.h>
 
 #include <ptengine/queryScene.h> 
-
-#include <list>
 
 using namespace pt;
 using namespace pcloud;

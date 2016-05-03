@@ -1,5 +1,4 @@
 /*system stuff						*/ 
-#include <pt/os.h>
 #include <tchar.h>
 #include <pt/trace.h>
 

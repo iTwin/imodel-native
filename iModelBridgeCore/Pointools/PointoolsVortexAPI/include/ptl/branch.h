@@ -1,7 +1,7 @@
 #ifndef POINTOOLS_BRANCH_HANDLER_INC
 #define POINTOOLS_BRANCH_HANDLER_INC
 
-#include <pt\datatree.h>
+#include <pt/datatree.h>
 
 
 #ifdef PTL_EXPORTS

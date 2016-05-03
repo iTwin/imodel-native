@@ -9,20 +9,18 @@
 #ifndef POINTOOLS_SCENEGRAPH_H
 #define POINTOOLS_SCENEGRAPH_H
 
-#include <gl\glew.h>
+#include <pt/classes.h>
 
-#include <pt\classes.h>
-
-#include <pt\variant.h>
-#include <pt\BoundingBox.h>
-#include <pt\BoundingSphere.h>
-#include <pt\DisplayInfo.h>
-#include <pt\Transform.h>
-#include <pt\ObjectBounds.h>
-#include <pt\Flags.h>
+#include <pt/variant.h>
+#include <pt/BoundingBox.h>
+#include <pt/BoundingSphere.h>
+#include <pt/DisplayInfo.h>
+#include <pt/Transform.h>
+#include <pt/ObjectBounds.h>
+#include <pt/Flags.h>
 #include <pt/Guid.h>
 
-#include <ptfs\filepath.h>
+#include <ptfs/filepath.h>
 
 #include <set>
 #include <map>

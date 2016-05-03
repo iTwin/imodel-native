@@ -1,8 +1,6 @@
 #include "PointoolsVortexAPIInternal.h"
-#include <pt/os.h>
-#include <commdlg.h>
+
 #define POINTOOLS_API_BUILD_DLL
-#include <gl/glew.h>
 #include <pt/timer.h>
 #include <ptapi/PointoolsVortexAPI.h>
 #include <math/matrix_math.h>
@@ -16,8 +14,6 @@
 
 #include <utility/ptstr.h>
 #include <ptcloud2/pod.h>
-
-#include <iostream>
 
 #include <pt/trace.h>
 

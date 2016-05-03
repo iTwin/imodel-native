@@ -7,6 +7,7 @@
  @edited  2003-02-15
  */
 
+#ifdef NEEDS_WORK_VORTEX_DGNDB
 #include "G3D/g3derror.h"
 
 namespace G3D {
@@ -68,3 +69,4 @@ ErrorConstant _utility_error(const std::string &level, const std::string &messag
 
 } // namespace G3D
 
+#endif

@@ -5,15 +5,11 @@
 /*																			*/ 
 /*  Last Updated 12 Oct 2003 Faraz Ravi										*/ 
 /*--------------------------------------------------------------------------*/ 
-#include <windows.h>
+#include <pt/Geometry.h>
+#include <pt/memrw.h>
+#include <pt/ptmath.h>
 
-#include <pt\Geometry.h>
-#include <pt\memrw.h>
-#include <pt\ptmath.h>
-
-#include <list>
-#include <assert.h>
-#include <gl\gl.h>
+#include <gl/gl.h>
 
 using namespace pt;
 

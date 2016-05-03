@@ -7,15 +7,17 @@
 
 #ifndef POINTOOLS_PLUGING_MANAGER_TEMPLATE
 #define POINTOOLS_PLUGING_MANAGER_TEMPLATE
-#include <pt\trace.h>
+
+#ifdef NEEDS_WORK_VORTEX_DGNDB
+#include <pt/trace.h>
 
 #include <map>
 #include <vector>
 #include <string>
-#include <pt\typedefs.h>
+#include <pt/typedefs.h>
 #include <io.h>
-#include <ptappdll\ptapp.h>
-#include <utility\ptstr.h>
+#include <ptappdll/ptapp.h>
+#include <utility/ptstr.h>
 
 #ifdef WIN32
 #include <windows.h>
@@ -686,3 +688,4 @@ protected:
 #undef SYM9MARGS
 #endif
 
+#endif

@@ -9,8 +9,8 @@
 #ifndef COMMONCLASSESRECT_INTERFACE
 #define COMMONCLASSESRECT_INTERFACE
 
-#include <pt\bounds.h>
-#include <pt\geomtypes.h>
+#include <pt/bounds.h>
+#include <pt/geomtypes.h>
 
 namespace pt
 {

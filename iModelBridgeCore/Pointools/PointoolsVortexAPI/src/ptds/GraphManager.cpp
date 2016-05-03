@@ -1,8 +1,7 @@
 #include "PointoolsVortexAPIInternal.h"
-#include <Windows.h>
 
 #include <ptds/GraphManager.h>
-#include <algorithm>
+
 #include <ptds/DataSourceAnalyzer.h>
 
 #define GRAPH_MUTEX_TIMEOUT		(1000 * 10)

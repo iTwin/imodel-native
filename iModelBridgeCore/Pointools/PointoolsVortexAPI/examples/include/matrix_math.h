@@ -70,7 +70,7 @@
 // always (provided it doesn't generate a compiler error.)
 // --------------------------------------------------------------------------------------------------------------------------------
 #include <math.h>
-#include <gl\gl.h>
+#include <gl/gl.h>
 
 #ifdef __INTEL_COMPILER
 template <bool B> struct templateAssert {};
