@@ -116,6 +116,34 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_SchemasPassed_SuccessAndSchemasAccess
     EXPECT_TRUE(nullptr != cache.GetAdapter().GetECSchema("TestSchema2"));
     }
 
+// WIP06
+TEST_F(DataSourceCacheTests, UpdateSchema_RootInstanceCreated_ShouldNotDeleteRootInstance)
+    {
+    DataSourceCache cache;
+    cache.Create(StubFilePath("test.ecdb"), CacheEnvironment());
+
+    auto root1 = cache.FindOrCreateRoot("Foo");
+    ASSERT_TRUE(root1.IsValid());
+
+    cache.GetECDb().SaveChanges(); // wsc_Node has row
+
+    auto schema = ParseSchema(R"xml(
+        <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECClass typeName="TestClass">
+                <ECProperty propertyName="TestProperty" typeName="string" />
+            </ECClass>
+        </ECSchema>)xml");
+    ASSERT_EQ(SUCCESS, cache.UpdateSchemas(std::vector<ECSchemaPtr> {schema}));
+
+    cache.GetECDb().SaveChanges(); // wsc_Node has no rows
+
+    EXPECT_TRUE(nullptr != cache.GetAdapter().GetECSchema("TestSchema"));
+
+    auto root2 = cache.FindOrCreateRoot("Foo");
+    ASSERT_TRUE(root2.IsValid());
+    EXPECT_EQ(root1, root2);
+    }
+
 TEST_F(DataSourceCacheTests, UpdateSchemas_SchemasPassedToDataSourceCacheWithCachedStatements_SuccessAndSchemasAccessable)
     {
     DataSourceCache cache;
