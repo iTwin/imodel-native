@@ -1,18 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ECSchema schemaName="CAConverisonTest" nameSpacePrefix="dgn" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
+<ECSchema schemaName="CAConverisonTest" nameSpacePrefix="dgn" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
     <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" prefix="bsca"/>
 
-    <ECEntityClass typeName="TestClassB">
-        <ECProperty propertyName="gfdhgfshfsgh" typeName="dateTime">
-            <ECCustomAttributes>
-                <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.12">
-                    <DateTimeKind>Unspecified</DateTimeKind>
-                    <DateTimeComponent>Date</DateTimeComponent>
-                </DateTimeInfo>
-            </ECCustomAttributes>
-        </ECProperty>
-    </ECEntityClass>
-    <ECEntityClass typeName="TestClassA">
+    <ECClass typeName="TestClassA" isStruct="false" isCustomAttributeClass="false" isDomainClass="true">
         <ECProperty propertyName="LastMod" typeName="dateTime">
             <ECCustomAttributes>
                 <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.12">
@@ -21,16 +11,25 @@
                 </DateTimeInfo>
             </ECCustomAttributes>
         </ECProperty>
-    </ECEntityClass>
-    <ECEntityClass typeName="TestClassC">
-        <ECProperty propertyName="LastModDate" typeName="dateTime">
+    </ECClass >
+    <ECClass typeName="TestClassB" isStruct="false" isCustomAttributeClass="false" isDomainClass="true">
+        <ECProperty propertyName="NextMod" typeName="dateTime">
             <ECCustomAttributes>
                 <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.12">
-                    <DateTimeKind>Utc</DateTimeKind>
-                    <DateTimeComponent>DateTime</DateTimeComponent>
+                    <DateTimeKind>Unspecified</DateTimeKind>
+                    <DateTimeComponent>Date</DateTimeComponent>
                 </DateTimeInfo>
             </ECCustomAttributes>
         </ECProperty>
-    </ECEntityClass>
+    </ECClass>
+		<ECClass typeName="TestClassC" isStruct="false" isCustomAttributeClass="false" isDomainClass="true">
+			<ECCustomAttributes>
+					<ClassHasCurrentTimeStampProperty xmlns="Bentley_Standard_CustomAttributes.01.12">
+							<PropertyName>TimeStampProp</PropertyName>
+					</ClassHasCurrentTimeStampProperty>
+			</ECCustomAttributes>
+      <ECProperty propertyName="TimeStampProp" typeName="dateTime"/>
+    </ECClass>
+
 
 </ECSchema>
