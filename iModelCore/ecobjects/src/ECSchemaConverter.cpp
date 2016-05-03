@@ -859,7 +859,7 @@ ECObjectsStatus StandardCustomAttributeReferencesConverter::Convert(ECSchemaR sc
 
 	schema.AddReferencedSchema(*customAttributeSchema);
 
-	for (int i = 0; i < oldCustomAttributeClass->GetPropertyCount(); i++)
+	for (uint32_t i = 0; i < oldCustomAttributeClass->GetPropertyCount(); i++)
 	{
 		ECPropertyP propP = oldCustomAttributeClass->GetPropertyByIndex(i);
 		ECValue oldCAValue = ECValue();
