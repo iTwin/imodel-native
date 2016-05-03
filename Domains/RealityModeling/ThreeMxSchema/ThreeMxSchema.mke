@@ -10,12 +10,12 @@
 #-----------------------------------------------------------
 # Root directory
 #-----------------------------------------------------------
-SrcThreeMxSchema                 = $(_MakeFilePath)
+SrcThreeMxSchema = $(_MakeFilePath)
 
 #------------------------------------------------------
 # Header file locations in source tree
 #------------------------------------------------------
-ThreeMxPublicApiSrc        = $(SrcThreeMxSchema)../PublicAPI/ThreeMx/
+ThreeMxPublicApiSrc = $(SrcThreeMxSchema)../PublicAPI/ThreeMx/
 
 #-----------------------------------------------------------
 # Source directories
@@ -44,25 +44,17 @@ threeMxSchemaDepends         = $(_MakeFileSpec)   \
 MultiCompileDepends=$(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
-#----------------------------------------------------------------------
-#   ThreeMX Reader
-#----------------------------------------------------------------------
-$(o)ThreeMxReader$(oext)            : $(SrcThreeMxReader)ThreeMxReader.cpp ${threeMxSchemaDepends} ${MultiCompileDepends} 
+$(o)ThreeMxReader$(oext)  : $(SrcThreeMxReader)ThreeMxReader.cpp ${threeMxSchemaDepends} ${MultiCompileDepends} 
 
-#----------------------------------------------------------------------
-#   MRMesh
-#----------------------------------------------------------------------
-$(o)MrMeshCache$(oext)              : $(SrcMrMesh)MrMeshCache.cpp ${threeMxSchemaDepends}  ${MultiCompileDepends}
+$(o)ThreeMxCache$(oext)   : $(SrcMrMesh)ThreeMxCache.cpp ${threeMxSchemaDepends}  ${MultiCompileDepends}
 
-$(o)MrMeshNode$(oext)               : $(SrcMrMesh)MrMeshNode.cpp ${threeMxSchemaDepends} ${MultiCompileDepends} 
+$(o)ThreeMxNode$(oext)    : $(SrcMrMesh)ThreeMxNode.cpp ${threeMxSchemaDepends} ${MultiCompileDepends} 
 
-$(o)MRMeshGeometry$(oext)           : $(SrcMrMesh)MRMeshGeometry.cpp ${threeMxSchemaDepends} ${MultiCompileDepends} 
+$(o)ThreeMxGeometry$(oext) : $(SrcMrMesh)ThreeMxGeometry.cpp ${threeMxSchemaDepends} ${MultiCompileDepends} 
 
-$(o)MRMeshScene$(oext)              : $(SrcMrMesh)MRMeshScene.cpp ${threeMxSchemaDepends} ${MultiCompileDepends} 
+$(o)ThreeMxScene$(oext)   : $(SrcMrMesh)ThreeMxScene.cpp ${threeMxSchemaDepends} ${MultiCompileDepends} 
 
-$(o)MRMeshUtil$(oext)               : $(SrcMrMesh)MRMeshUtil.cpp ${threeMxSchemaDepends} ${MultiCompileDepends} 
-
-$(o)ThreeMxHandler$(oext)           : $(SrcThreeMxSchema)ThreeMxHandler.cpp ${threeMxSchemaDepends} ${MultiCompileDepends} 
+$(o)ThreeMxHandler$(oext) : $(SrcThreeMxSchema)ThreeMxHandler.cpp ${threeMxSchemaDepends} ${MultiCompileDepends} 
 
 %include MultiCppCompileGo.mki
 objs =% $(MultiCompileObjectList) 

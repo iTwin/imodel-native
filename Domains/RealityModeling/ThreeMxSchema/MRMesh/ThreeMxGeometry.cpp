@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ThreeMxSchema/MRMesh/MRMeshGeometry.cpp $
+|     $Source: ThreeMxSchema/MRMesh/ThreeMxGeometry.cpp $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -14,11 +14,11 @@ PolyfaceHeaderPtr Geometry::GetPolyface() const
     {
     Graphic::TriMeshArgs trimesh;
     trimesh.m_numIndices = (int32_t) m_indices.size();
-    trimesh.m_vertIndex = &m_indices.front();
+    trimesh.m_vertIndex = m_indices.empty() ? nullptr : &m_indices.front();
     trimesh.m_numPoints = (int32_t) m_points.size();
-    trimesh.m_points = &m_points.front();
-    trimesh.m_normals = &m_normals.front();
-    trimesh.m_textureUV = &m_textureUV.front();
+    trimesh.m_points = m_points.empty() ? nullptr : &m_points.front();
+    trimesh.m_normals = m_normals.empty() ? nullptr: &m_normals.front();
+    trimesh.m_textureUV = m_textureUV.empty() ? nullptr : &m_textureUV.front();
     return trimesh.ToPolyface();
     }
 
@@ -45,10 +45,11 @@ Geometry::Geometry(Graphic::TriMeshArgs const& args, SceneR scene)
         memcpy(&m_textureUV.front(), args.m_textureUV, args.m_numPoints * sizeof(FPoint2d));
         }
 
-    if (nullptr == scene.m_target)
+    if (nullptr == scene.GetRenderSystem() || !args.m_texture.IsValid())
         return;
 
-    m_graphic = scene.m_target->_CreateGraphic(Graphic::CreateParams(nullptr, scene.m_placement));
+    m_graphic = scene.GetRenderSystem()->_CreateGraphic(Graphic::CreateParams(nullptr, scene.m_location));
+    m_graphic->SetSymbology(ColorDef::White(), ColorDef::White(), 0);
     m_graphic->AddTriMesh(args);
     m_graphic->Close();
     }
@@ -58,9 +59,7 @@ Geometry::Geometry(Graphic::TriMeshArgs const& args, SceneR scene)
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t Geometry::GetMemorySize() const
     {
-    size_t size = m_points.size() * sizeof(FPoint3d) + 
-                  m_normals.size() * sizeof(FPoint3d) + 
-                  m_textureUV.size() * sizeof(FPoint2d);
+    size_t size = m_points.size() * sizeof(FPoint3d) + m_normals.size() * sizeof(FPoint3d) + m_textureUV.size() * sizeof(FPoint2d);
 
     if (m_graphic.IsValid())
         {
@@ -81,21 +80,17 @@ void Geometry::Draw(RenderContextR context)
         context.OutputGraphic(*m_graphic, nullptr);
     }
 
-/*-----------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     03/2015
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DRange3d Geometry::GetRange() const    
+DRange3d Geometry::GetRange(TransformCR trans) const    
     {
     DRange3d range = DRange3d::NullRange();
-    if (!m_graphic.IsValid())
-        return range;
 
-    PolyfaceHeaderPtr polyface = GetPolyface();
-    for (DPoint3dCP point = polyface->GetPointCP(), end = point + polyface->GetPointCount(); point < end; )
+    for (auto const &fPoint : m_points)
         {
-        DPoint3d    transformedPoint;
-        m_graphic->GetLocalToWorldTransform().Multiply(transformedPoint, *point++);
-        range.Extend(transformedPoint);
+        DPoint3d dPt = {fPoint.x, fPoint.y, fPoint.z};
+        range.Extend(trans, &dPt, 1);
         }
 
     return range;

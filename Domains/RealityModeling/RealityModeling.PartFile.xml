@@ -54,8 +54,8 @@
         <!-- Need full data to decode EPSG code -->
         <SubPart PartName="GeoCoordData"    PartFile="csmap"        Repository="libsrc-csmap"/>
         <Bindings>
-            <Assemblies ProductDirectoryName="PointCloudAssemblies">Delivery/PointCloudSchema.dll</Assemblies>
-            <Libs>Delivery/PointCloudSchema.lib</Libs>
+            <Assemblies ProductDirectoryName="PointCloudAssemblies">Delivery/PointCloudSchema$(shlibext)</Assemblies>
+            <Libs>Delivery/PointCloudSchema$(libext)</Libs>
         </Bindings>
     </Part>
 
@@ -82,7 +82,6 @@
             <Libs>Delivery/$(libprefix)RasterSchema$(libext)</Libs>
         </Bindings>
     </Part>    
-
 
     <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
     <!-- ////////////////////////////   ThreeMx       /////////////////////////////////// -->

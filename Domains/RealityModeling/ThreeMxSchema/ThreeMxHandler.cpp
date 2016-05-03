@@ -6,21 +6,22 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ThreeMxSchemaInternal.h"
+#include <DgnPlatform/JsonUtils.h>
 
 DOMAIN_DEFINE_MEMBERS(ThreeMxDomain)
 HANDLER_DEFINE_MEMBERS(ModelHandler)
 
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                                   Ray.Bentley       09/2015
-//-----------------------------------------------------------------------------------------
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   04/16
++---------------+---------------+---------------+---------------+---------------+------*/
 ThreeMxDomain::ThreeMxDomain() : DgnDomain(THREEMX_SCHEMA_NAME, "3MX Domain", 1) 
     {
     RegisterHandler(ModelHandler::GetHandler());
     }
  
-//========================================================================================
-// @bsiclass                                                        Ray.Bentley     09/2015
-//========================================================================================
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   04/16
+//=======================================================================================
 struct ThreeMxProgressive : ProgressiveTask
 {
     SceneR m_scene;
@@ -28,102 +29,76 @@ struct ThreeMxProgressive : ProgressiveTask
     Completion _DoProgressive(ProgressiveContext& context, WantShow&) override;
 };
 
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                      Ray.Bentley     09/2015
-//----------------------------------------------------------------------------------------
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   04/16
++---------------+---------------+---------------+---------------+---------------+------*/
 ProgressiveTask::Completion ThreeMxProgressive::_DoProgressive(ProgressiveContext& context, WantShow&) 
     {
-    m_scene.ProcessRequests();
-#if defined (NEEDS_WORK_RENDER_SYSTEM)
     switch (m_scene.ProcessRequests())
         {
-        default:
-        case CacheManager::RequestStatus::None:
-        case CacheManager::RequestStatus::Processed:
-            return Completion::HealRequired;
+        case Scene::RequestStatus::None:
+            return Completion::Aborted;
 
-        case CacheManager::RequestStatus::Finished:
-            return Completion::Finished;
+        case Scene::RequestStatus::Processed:
+            m_scene.Draw(context);
+            return Completion::Aborted;
         }
-#endif
+
     return Completion::Finished;
     }
 
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                      Ray.Bentley     09/2015
-//----------------------------------------------------------------------------------------
-ScenePtr ThreeMxModel::ReadScene(BeFileNameCR fileName, DgnDbR db) 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   04/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void ThreeMxModel::Load(Dgn::Render::SystemP renderSys) const
     {
-    SceneInfo sceneInfo;
-    if (SUCCESS != sceneInfo.Read3MX(fileName))
-        return nullptr;
+    if (m_scene.IsValid() && (nullptr==renderSys || m_scene->GetRenderSystem()==renderSys))
+        return;
 
-    ScenePtr scene = new Scene(db, sceneInfo, fileName);
-    return SUCCESS==scene->Load(sceneInfo) ? scene : nullptr;
+    // if we ask for the model with a different rendersys, we just throw the old one away. 
+    m_scene = new Scene(m_dgndb, m_location, GetName().c_str(), m_rootUrl.c_str(), renderSys);
+    m_scene->LoadScene();
     }
 
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                      Ray.Bentley     09/2015
-//----------------------------------------------------------------------------------------
-DgnModelId ModelHandler::CreateModel(DgnDbR db, Utf8CP modelName, Utf8CP sceneUrl)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   04/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnModelId ModelHandler::CreateModel(DgnDbR db, Utf8CP modelName, Utf8CP rootUrl, TransformCP trans)
     {
     DgnClassId classId(db.Schemas().GetECClassId(THREEMX_SCHEMA_NAME, "ThreeMxModel"));
     BeAssert(classId.IsValid());
 
-    BeFileName fileName(sceneUrl);
-
-    ScenePtr scene = ThreeMxModel::ReadScene(fileName, db);
-    if (!scene.IsValid())
-        return DgnModelId();
-
-    // Create model in DgnDb
     ThreeMxModelPtr model = new ThreeMxModel(DgnModel::CreateParams(db, classId, ThreeMxModel::CreateModelCode(modelName)));
     
-    model->SetSceneUrl(sceneUrl);
-//    model->SetScene(scene.get());
+    model->SetRootUrl(rootUrl);
+    if (trans)
+        model->SetLocation(*trans);
+
     model->Insert();
     return model->GetModelId();
     }
 
-#if defined (NEEDS_WORK_RENDER_SYSTEM)
-//----------------------------------------------------------------------------------------
-// @bsimethod                                               Nicholas.Woodfield     01/2016
-//----------------------------------------------------------------------------------------
-void ThreeMxModel::GetTiles(TileCallback& callback, double resolution) 
-    {
-    if (resolution < 0)
-        return;
-        
-    if (!m_scene.IsValid())
-        {
-        BeAssert(false);
-        return;
-        }
-  
-    m_scene->GetTiles(callback, resolution);
-    }
-#endif
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                      Ray.Bentley     09/2015
-//----------------------------------------------------------------------------------------
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   04/16
++---------------+---------------+---------------+---------------+---------------+------*/
 AxisAlignedBox3d ThreeMxModel::_QueryModelRange() const
     {
+    Load(nullptr);
     if (!m_scene.IsValid())
         {
         BeAssert(false);
         return AxisAlignedBox3d();
         }
 
-    return AxisAlignedBox3d(m_scene->GetRange());
+    return AxisAlignedBox3d(m_scene->GetRange(m_scene->GetLocation()));
     }   
 
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                      Ray.Bentley     09/2015
-//----------------------------------------------------------------------------------------
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   04/16
++---------------+---------------+---------------+---------------+---------------+------*/
 void ThreeMxModel::_AddTerrainGraphics(TerrainContextR context) const
     {
-    GetScene();
+    Load(&context.GetTargetR().GetSystem());
 
     if (!m_scene.IsValid())
         {
@@ -131,25 +106,35 @@ void ThreeMxModel::_AddTerrainGraphics(TerrainContextR context) const
         return;
         }
 
-    if (m_scene->Draw(context))
+    m_scene->Draw(context);
+
+    if (m_scene->HasPendingRequests())
         context.GetViewport()->ScheduleTerrainProgressiveTask(*new ThreeMxProgressive(*m_scene));
     }
 
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                      Ray.Bentley     09/2015
-//----------------------------------------------------------------------------------------
+#define JSON_ROOT_URL "RootUrl"
+#define JSON_LOCATION "Location"
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   04/16
++---------------+---------------+---------------+---------------+---------------+------*/
 void ThreeMxModel::_WriteJsonProperties(Json::Value& val) const
     {
     T_Super::_WriteJsonProperties(val);
-    val["SceneUrl"] = m_sceneUrl;
+
+    val[JSON_ROOT_URL] = m_rootUrl;
+    if (!m_location.IsIdentity())
+        JsonUtils::TransformToJson(val[JSON_LOCATION], m_location);
     }
 
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                      Ray.Bentley     09/2015
-//----------------------------------------------------------------------------------------
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   04/16
++---------------+---------------+---------------+---------------+---------------+------*/
 void ThreeMxModel::_ReadJsonProperties(Json::Value const& val)
     {
     T_Super::_ReadJsonProperties(val);
-    m_sceneUrl = val["SceneUrl"].asString();
+    m_rootUrl = val[JSON_ROOT_URL].asString();
+
+    if (val.isMember(JSON_LOCATION))
+        JsonUtils::TransformFromJson(m_location, val[JSON_LOCATION]);
     }
 
