@@ -372,3 +372,23 @@ TEST(Utf8StringTest, IsAscii)
     Utf8String inStr(utf8Str);
     EXPECT_FALSE(inStr.IsAscii());
     }
+//---------------------------------------------------------------------------------------
+// @betest                                      Umar.Hayat                          04/16
+//---------------------------------------------------------------------------------------
+static void VerifyVSPrintf (Utf8CP expectedStr, Utf8CP fmt, ...)
+    {
+    va_list args;
+    va_start(args, fmt);
+    Utf8String str;
+    str.VSprintf(fmt, args);
+    va_end(args);
+    EXPECT_TRUE(str.Equals(expectedStr))<<"Expected: "<<expectedStr<<"\nActual: "<<str.c_str();
+    }
+//---------------------------------------------------------------------------------------
+// @betest                                      Umar.Hayat                          04/16
+//---------------------------------------------------------------------------------------
+TEST(Utf8StringTest, VSprintf)
+    {
+    VerifyVSPrintf("Test", "Test");
+    VerifyVSPrintf("Test no. 5", "%s no. %d", "Test", 5);
+    }

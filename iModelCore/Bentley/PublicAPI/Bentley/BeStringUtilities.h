@@ -309,9 +309,6 @@ public:
     //! @return decoded string.
     BENTLEYDLL_EXPORT static Utf8String UriDecode (Utf8CP start, Utf8CP end);
 
-    //! Check that all characters in \a str are safe for a URI
-    BENTLEYDLL_EXPORT static bool IsUriEncoded (Utf8CP str);
-
     //! Format a string following the rules of sprintf.
     //! @param buffer           Where to write the formatted string
     //! @param numCharsInBuffer The maximum number of characters that may be written to \a buffer, including the trailing 0-terminator.
