@@ -201,14 +201,14 @@ float PointCloudVortex::GetDynamicFrameRate()
     {
     return ptGetDynamicFrameRate();
     }
-void PointCloudVortex::StaticOptimizer(float opt)
-    {
-    ptStaticOptimizer(opt);
-    }
-float PointCloudVortex::GetStaticOptimizer()
-    {
-    return ptGetStaticOptimizer();
-    }
+//void PointCloudVortex::StaticOptimizer(float opt)
+//    {
+//    ptStaticOptimizer(opt);
+//    }
+//float PointCloudVortex::GetStaticOptimizer()
+//    {
+//    return ptGetStaticOptimizer();
+//    }
 void PointCloudVortex::GlobalDensity(float opt)
     {
     ptGlobalDensity(opt);
@@ -237,10 +237,10 @@ void PointCloudVortex::EndDrawFrameMetrics()
     }
 
 // view
-bool PointCloudVortex::ReadViewFromGL()
-    {
-    return ptReadViewFromGL();
-    }
+//bool PointCloudVortex::ReadViewFromGL()
+//    {
+//    return ptReadViewFromGL();
+//    }
 void PointCloudVortex::SetViewProjectionOrtho( double l, double r, double b, double t, double n, double f )
     {
     ptSetViewProjectionOrtho(l, r, b, t, n, f);

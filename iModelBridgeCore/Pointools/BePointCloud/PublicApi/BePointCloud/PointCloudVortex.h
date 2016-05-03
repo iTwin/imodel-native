@@ -113,8 +113,8 @@ struct PointCloudVortex
         // options
         BEPOINTCLOUD_EXPORT static void        DynamicFrameRate(float fps);
         BEPOINTCLOUD_EXPORT static float       GetDynamicFrameRate();
-        BEPOINTCLOUD_EXPORT static void        StaticOptimizer(float opt);
-        BEPOINTCLOUD_EXPORT static float       GetStaticOptimizer();
+        //BEPOINTCLOUD_EXPORT static void        StaticOptimizer(float opt);
+        //BEPOINTCLOUD_EXPORT static float       GetStaticOptimizer();
         BEPOINTCLOUD_EXPORT static void        GlobalDensity(float opt);
         BEPOINTCLOUD_EXPORT static float       GetGlobalDensity();
 
@@ -143,7 +143,7 @@ struct PointCloudVortex
         BEPOINTCLOUD_EXPORT static StatusInt   AddCustomRamp(WCharCP name, int32_t numKeys, const float *positions, const Byte* colour3vals, bool interpolateInHSL);
 
         // view
-        BEPOINTCLOUD_EXPORT static bool        ReadViewFromGL();
+        //BEPOINTCLOUD_EXPORT static bool        ReadViewFromGL();
         BEPOINTCLOUD_EXPORT static void        SetViewProjectionOrtho( double l, double r, double b, double t, double n, double f );
         BEPOINTCLOUD_EXPORT static void        SetViewProjectionFrustum( double l, double r, double b, double t, double n, double f );
         BEPOINTCLOUD_EXPORT static void        SetViewProjectionMatrix( const double *matrix, bool row_major );
