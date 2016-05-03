@@ -1231,8 +1231,6 @@ void DgnViewport::ChangeViewController(ViewControllerR viewController)
         m_viewController->GetDgnDb().Elements().DropGraphicsForViewport(*this);        
         }
 
-    m_partGraphics.clear();
-
     ClearUndo();
 
     m_viewController = &viewController;

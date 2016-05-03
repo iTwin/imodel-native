@@ -24,6 +24,11 @@ static DVec2d s_yVec = DVec2d::From (0.0, 1.0);
 
     AnnotationTextStyleCPtr textStyle = AnnotationTextStyle::Get (m_dim.ToElement().GetDgnDb(), m_textStyleId);
     m_textHeight  = textStyle->GetHeight();
+
+    m_textMargin.x = 0.5 * m_textHeight;
+    m_textMargin.y = 0.5 * m_textHeight;
+
+    m_runningStackOffset = 0.0;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -86,9 +91,9 @@ double   LinearDimensionStroker::CalculateMeasureDistance (DPoint2dCR start, DPo
 +---------------+---------------+---------------+---------------+---------------+------*/
 void   LinearDimensionStroker::GenerateText (DPoint2dCR textPoint, DVec2dCR textDir, Utf8CP string)
     {
-    DEllipse3d  ellipse = DEllipse3d::FromCenterRadiusXY (DPoint3d::From (textPoint), m_textHeight / 5.0);
-    ICurvePrimitivePtr curve = ICurvePrimitive::CreateArc(ellipse);
-    m_geomBuilder.Append(*curve);
+    //DEllipse3d  ellipse = DEllipse3d::FromCenterRadiusXY (DPoint3d::From (textPoint), m_textHeight / 5.0);
+    //ICurvePrimitivePtr curve = ICurvePrimitive::CreateArc(ellipse);
+    //m_geomBuilder.Append(*curve);
 
     AnnotationTextBlockPtr  textBlock = AnnotationTextBlock::Create (GetDimension().ToElement().GetDgnDb(), m_textStyleId);
     AnnotationTextRunPtr    newRun = AnnotationTextRun::Create (textBlock->GetDbR(), m_textStyleId, string);
@@ -132,8 +137,6 @@ void   LinearDimensionStroker::GenerateTerminator (DPoint2dCR termPoint, DVec2dC
 +---------------+---------------+---------------+---------------+---------------+------*/
 void   LinearDimensionStroker::GenerateDimension (DPoint2dCR start, DPoint2dCR end)
     {
-    static const double textVerticalMargin = m_textHeight * 0.5;
-
     AppendDimensionLine (start, end);
 
     DVec2d      dimLineDir      = s_xVec;
@@ -142,7 +145,7 @@ void   LinearDimensionStroker::GenerateDimension (DPoint2dCR start, DPoint2dCR e
     Utf8String  dimString       = FormatDistanceString (distance);
     DPoint2d    textPoint       = DPoint2d::FromInterpolate (start, 0.5, end);
 
-    textPoint.SumOf (textPoint, dimLinePerpDir, textVerticalMargin);
+    textPoint.SumOf (textPoint, dimLinePerpDir, m_textMargin.y);
 
     GenerateText (textPoint, dimLineDir, dimString.c_str());
 
@@ -160,15 +163,18 @@ void   LinearDimensionStroker::GenerateDimension (DPoint2dCR start, DPoint2dCR e
 +---------------+---------------+---------------+---------------+---------------+------*/
 void   LinearDimensionStroker::GenerateSegment (uint32_t iSegment)
     {
-    static const double witOffset = m_textHeight * 0.2;
-    static const double witExtend = m_textHeight * 0.2;
+    static const double witOffset = m_textHeight * 0.5;
+    static const double witExtend = m_textHeight * 0.5;
     static const double dimHeight = m_textHeight * 5.0;
+    static const bool   stacked   = true;
 
-    DPoint2d    point0 = m_dimPoints[iSegment];
-    DPoint2d    point1 = m_dimPoints[iSegment + 1];
+    double  segmentHeight = dimHeight + m_runningStackOffset;
 
-    double      height0 = dimHeight - point0.y;
-    double      height1 = dimHeight - point1.y;
+    DPoint2d    point0 = m_dimPoints[stacked ? 0 : iSegment];;
+    DPoint2d    point1 = m_dimPoints[iSegment + 1];;
+
+    double      height0 = segmentHeight - point0.y;
+    double      height1 = segmentHeight - point1.y;
 
     DPoint2d    dimLinePoints[2];
 
@@ -179,16 +185,20 @@ void   LinearDimensionStroker::GenerateSegment (uint32_t iSegment)
 
     DPoint2d    witnessPoints[2];
 
-    if (0 == iSegment)
-        {
-        witnessPoints[0].SumOf (point0, s_yVec, witOffset);
-        witnessPoints[1].SumOf (point0, s_yVec, height0 + witExtend);
-        AppendWitness (witnessPoints[0], witnessPoints[1]);
-        }
+    witnessPoints[0].SumOf (point0, s_yVec, witOffset);
+    witnessPoints[1].SumOf (point0, s_yVec, height0 + witExtend);
+    AppendWitness (witnessPoints[0], witnessPoints[1]);
 
     witnessPoints[0].SumOf (point1, s_yVec, witOffset);
     witnessPoints[1].SumOf (point1, s_yVec, height1 + witExtend);
     AppendWitness (witnessPoints[0], witnessPoints[1]);
+
+    if (stacked)
+        {
+        double segmentStackOffset = m_textHeight + (3 * m_textMargin.y);  // NEEDSWORK: should be based on text range
+
+        m_runningStackOffset += segmentStackOffset;
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**

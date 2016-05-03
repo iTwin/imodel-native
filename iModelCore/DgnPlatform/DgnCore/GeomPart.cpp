@@ -124,7 +124,7 @@ void DgnGeometryPart::_CopyFrom(DgnElementCR element)
     {
     T_Super::_CopyFrom(element);
 
-    DgnGeometryPartCP otherPart = dynamic_cast<DgnGeometryPartCP>(&element);
+    DgnGeometryPartCP otherPart = element.ToGeometryPart();
     if (nullptr != otherPart)
         {
         GetGeometryStreamR() = otherPart->GetGeometryStream();

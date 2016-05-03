@@ -445,6 +445,9 @@ public:
     //! A newly created model before it is inserted, or a model after calling Delete, is not persistent.
     bool IsPersistent() const {return m_persistent;}
 
+    //! Get the name of this model
+    Utf8String GetName() const {return m_code.GetValue();}
+    
     //! Get the DgnClassId of this DgnModel
     DgnClassId GetClassId() const {return m_classId;}
 
@@ -1087,7 +1090,7 @@ struct ComponentDef : RefCountedBase
 
     ECN::ECClassCR GetECClass() const {return m_class;}
 
-    DGNPLATFORM_EXPORT Utf8String GetModelName() const;
+    DGNPLATFORM_EXPORT Utf8String GetComponentName() const;
     DGNPLATFORM_EXPORT ComponentModelR GetModel();
 
     DGNPLATFORM_EXPORT bool UsesTemporaryModel() const;

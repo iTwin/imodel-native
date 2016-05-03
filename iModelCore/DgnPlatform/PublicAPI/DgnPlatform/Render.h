@@ -252,7 +252,7 @@ public:
     Image(uint32_t width, uint32_t height, Format format, ByteStream&& data) : m_width(width), m_height(height), m_format(format), m_image(std::move(data)) {}
     void Invalidate() {m_width=m_height=0; ClearData();}
     void ClearData() {m_image.Clear();}
-    void Initialize(uint32_t width, uint32_t height, Format format=Format::Rgba) {m_height=height; m_width=width; m_format=format; ClearData();}
+    void Initialize(uint32_t width, uint32_t height, Format format) {m_height=height; m_width=width; m_format=format; ClearData();}
     uint32_t GetWidth() const {return m_width;}
     uint32_t GetHeight() const {return m_height;}
     Format GetFormat() const {return m_format;}
@@ -906,8 +906,8 @@ struct Graphic : RefCounted<NonCopyableClass>
         FPoint3d const* m_points= nullptr;
         FPoint3d const* m_normals= nullptr;
         FPoint2d const* m_textureUV= nullptr;
-        Texture* m_texture = 0;
-        int32_t m_flags = 1; // QV_QTMESH_GENNORMALS
+        TexturePtr m_texture;
+        int32_t m_flags = 0; // don't generate normals
         DGNPLATFORM_EXPORT PolyfaceHeaderPtr ToPolyface() const;
     };
 

@@ -33,9 +33,10 @@ struct DgnGeometryPart : DictionaryElement
 
 //__PUBLISH_SECTION_START__
 private:
-    GeometryStream      m_geometry; //!< Geometry of part
-    ElementAlignedBox3d m_bbox;     //!< Bounding box of part geometry
-    mutable bool        m_multiChunkGeomStream = false;
+    GeometryStream              m_geometry; //!< Geometry of part
+    ElementAlignedBox3d         m_bbox;     //!< Bounding box of part geometry
+    mutable Render::GraphicSet  m_graphics;
+    mutable bool                m_multiChunkGeomStream = false;
 
     explicit DgnGeometryPart(CreateParams const& params) : T_Super(params) { }
     static void GetClassParams(Dgn::ECSqlClassParams& params);
@@ -55,6 +56,8 @@ protected:
     //! Only GeometryBuilder should have write access to the GeometryStream...
     GeometryStreamR GetGeometryStreamR() {return m_geometry;}
     void SetBoundingBox(ElementAlignedBox3dCR box) {m_bbox = box;}
+    virtual uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() + (sizeof(*this) - sizeof(T_Super)) + m_geometry.GetAllocSize();}
+    virtual DgnGeometryPartCP _ToGeometryPart() const override final {return this;}
 
 public:
     //! Create a DgnGeometryPart
@@ -70,6 +73,9 @@ public:
 
     //! Get the bounding box for this part (part local coordinates)
     ElementAlignedBox3dCR GetBoundingBox() const {return m_bbox;}
+
+    //! Get the cached set of Render::Graphics for this DgnGeometryPart.
+    Render::GraphicSet& Graphics() const {return m_graphics;}
 
     //! Create a DgnCode suitable for assigning to a DgnGeometryPart
     static DgnCode CreateCode(Utf8StringCR nameSpace, Utf8StringCR name) { return GeometryPartAuthority::CreateGeometryPartCode(nameSpace, name); }
