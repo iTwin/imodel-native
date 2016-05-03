@@ -8,6 +8,7 @@
 #include "ChangeTestFixture.h"
 #include <DgnPlatform/DgnChangeSummary.h>
 #include <DgnPlatform/GenericDomain.h>
+#include <array>
 #include "../BackDoor/PublicAPI/BackDoor/DgnProject/DgnPlatformTestDomain.h"
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
@@ -510,6 +511,11 @@ TEST_F(RevisionTestFixture, Codes)
 //=======================================================================================
 struct TestElementDependency : TestElementDrivesElementHandler::Callback
 {
+    int32_t m_mostRecentValue = -1;
+
+    void Reset() { m_mostRecentValue = -1; }
+    int32_t GetMostRecentValue() const { return m_mostRecentValue; }
+
     virtual void _OnRootChanged(DgnDbR, ECInstanceId, DgnElementId, DgnElementId) override;
     virtual void _ProcessDeletedDependency(DgnDbR, dgn_TxnTable::ElementDep::DepRelData const&) override { }
 
@@ -567,7 +573,8 @@ void TestElementDependency::_OnRootChanged(DgnDbR db, ECInstanceId relId, DgnEle
     ASSERT_TRUE(root.IsValid() && dep.IsValid());
 
     uint8_t index = GetIndex(db, relId);
-    dep->SetIntegerProperty(index, root->GetIntegerProperty(0));
+    m_mostRecentValue = root->GetIntegerProperty(0);
+    dep->SetIntegerProperty(index, m_mostRecentValue);
     auto cpDep = db.Elements().Update(*dep);
     ASSERT_TRUE(cpDep.IsValid());
     EXPECT_EQ(cpDep->GetIntegerProperty(index), root->GetIntegerProperty(0));
@@ -583,6 +590,9 @@ struct DependencyRevisionTest : RevisionTestFixture
     TestElementDependency   m_dep;
 
     TestElementCPtr InsertElement(int32_t intProp1);
+    void UpdateRootProperty(int32_t intProp1, DgnElementId eId);
+    void VerifyDependentProperties(DgnElementId, std::array<int32_t, 4> const&);
+    void VerifyRootProperty(DgnElementId, int32_t);
 
     DependencyRevisionTest() : T_Super(L"DependencyRevisionTest.idgndb", true) { }
 };
@@ -598,6 +608,41 @@ TestElementCPtr DependencyRevisionTest::InsertElement(int32_t intProp1)
     auto cpEl = db.Elements().Insert(*el);
     EXPECT_TRUE(cpEl.IsValid());
     return cpEl;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DependencyRevisionTest::UpdateRootProperty(int32_t intProp1, DgnElementId eId)
+    {
+    auto el = m_testDb->Elements().GetForEdit<TestElement>(eId);
+    ASSERT_TRUE(el.IsValid());
+    el->SetIntegerProperty(0, intProp1);
+    ASSERT_TRUE(el->Update().IsValid());
+    VerifyRootProperty(eId, intProp1);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DependencyRevisionTest::VerifyRootProperty(DgnElementId eId, int32_t prop)
+    {
+    auto el = m_testDb->Elements().Get<TestElement>(eId);
+    ASSERT_TRUE(el.IsValid());
+    EXPECT_EQ(el->GetIntegerProperty(0), prop);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DependencyRevisionTest::VerifyDependentProperties(DgnElementId eId, std::array<int32_t, 4> const& props)
+    {
+    auto el = m_testDb->Elements().Get<TestElement>(eId);
+    ASSERT_TRUE(el.IsValid());
+    EXPECT_EQ(el->GetIntegerProperty(0), props[0]);
+    EXPECT_EQ(el->GetIntegerProperty(1), props[1]);
+    EXPECT_EQ(el->GetIntegerProperty(2), props[2]);
+    EXPECT_EQ(el->GetIntegerProperty(3), props[3]);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -642,4 +687,184 @@ TEST_F(DependencyRevisionTest, TestDependency)
     EXPECT_EQ(321, c->GetIntegerProperty(2));
     EXPECT_EQ(654, c->GetIntegerProperty(3));
     }
+
+/*---------------------------------------------------------------------------------**//**
+* Create a revision which includes indirect changes, then apply that revision.
+* @bsimethod                                                    Paul.Connelly   05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DependencyRevisionTest, SingleRevision)
+    {
+    CreateDgnDb();
+
+    DgnElementId aId, bId, cId;
+
+    // set up initial dependencies
+    aId = InsertElement(123)->GetElementId();
+    bId = InsertElement(456)->GetElementId();
+    cId = InsertElement(789)->GetElementId();
+
+    TestElementDependency::Insert(*m_testDb, aId, cId, 2);
+    TestElementDependency::Insert(*m_testDb, bId, cId, 3);
+
+    // Save initial state
+    m_testDb->SaveChanges();
+    VerifyDependentProperties(cId, { 789, 0, 123, 456 });
+    ASSERT_TRUE(CreateRevision().IsValid());
+    BackupTestFile();
+    VerifyDependentProperties(cId, { 789, 0, 123, 456 });
+
+    // Create a revision involving indirect changes
+    UpdateRootProperty(321, aId);
+    UpdateRootProperty(654, bId);
+    m_testDb->SaveChanges("Modify root properties");
+
+    VerifyDependentProperties(cId, { 789, 0, 321, 654 });
+    DgnRevisionPtr rev = CreateRevision();
+    ASSERT_TRUE(rev.IsValid());
+    DumpRevision(*rev);
+
+    // Restore the initial state of the db and apply the revision
+    RestoreTestFile();
+    VerifyDependentProperties(cId, { 789, 0, 123, 456 });
+    EXPECT_EQ(RevisionStatus::Success, m_testDb->Revisions().MergeRevision(*rev));
+    m_testDb->SaveChanges("Applied revision");
+    VerifyDependentProperties(cId, { 789, 0, 321, 654 });
+    VerifyRootProperty(aId, 321);
+    VerifyRootProperty(bId, 654);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Two revisions which indirectly modify the same element in different ways should
+* produce consistent results regardless of the order in which they are merged.
+* @bsimethod                                                    Paul.Connelly   05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DependencyRevisionTest, Merge)
+    {
+    CreateDgnDb();
+
+    DgnElementId aId, bId, cId;
+
+    // set up initial dependencies
+    aId = InsertElement(123)->GetElementId();
+    bId = InsertElement(456)->GetElementId();
+    cId = InsertElement(789)->GetElementId();
+
+    TestElementDependency::Insert(*m_testDb, aId, cId, 2);
+    TestElementDependency::Insert(*m_testDb, bId, cId, 3);
+
+    // Save initial state
+    m_testDb->SaveChanges();
+    VerifyDependentProperties(cId, { 789, 0, 123, 456 });
+    ASSERT_TRUE(CreateRevision().IsValid());
+    BackupTestFile();
+    VerifyDependentProperties(cId, { 789, 0, 123, 456 });
+
+    // Create a revision which modifies only element A
+    UpdateRootProperty(321, aId);
+    m_testDb->SaveChanges("Modify element A");
+    VerifyDependentProperties(cId, { 789, 0, 321, 456 });
+    DgnRevisionPtr revA = CreateRevision();
+    ASSERT_TRUE(revA.IsValid());
+    VerifyRootProperty(aId, 321);
+    DumpRevision(*revA);
+
+    // Restore initial state, merge in A, modify B, and save as revision AB
+    RestoreTestFile();
+    VerifyDependentProperties(cId, { 789, 0, 123, 456 });
+    VerifyRootProperty(aId, 123);
+    VerifyRootProperty(bId, 456);
+    EXPECT_EQ(RevisionStatus::Success, m_testDb->Revisions().MergeRevision(*revA));
+    m_testDb->SaveChanges("Merge A");
+    VerifyRootProperty(aId, 321);
+    VerifyDependentProperties(cId, { 789, 0, 321, 456 });
+    EXPECT_TRUE(m_testDb->Memory().Purge(0));
+    VerifyRootProperty(aId, 321);
+
+    UpdateRootProperty(654, bId);
+    m_testDb->SaveChanges("Modify element B");
+    VerifyDependentProperties(cId, { 789, 0, 321, 654 });
+    VerifyRootProperty(bId, 654);
+
+    DgnRevisionPtr revAB = CreateRevision();
+    ASSERT_TRUE(revAB.IsValid());
+
+    // Restore initial state, modify B, merge in A, and save as revision BA
+    RestoreTestFile();
+    UpdateRootProperty(654, bId);
+    m_testDb->SaveChanges("Modify element B");
+    VerifyDependentProperties(cId, { 789, 0, 123, 654 });
+    VerifyRootProperty(bId, 654);
+    VerifyRootProperty(aId, 123);
+
+    EXPECT_EQ(RevisionStatus::Success, m_testDb->Revisions().MergeRevision(*revA));
+    m_testDb->SaveChanges("Merge A");
+    VerifyDependentProperties(cId, { 789, 0, 321, 654 });
+    VerifyRootProperty(aId, 321);
+    VerifyRootProperty(bId, 654);
+
+    DgnRevisionPtr revBA = CreateRevision();
+    ASSERT_TRUE(revBA.IsValid());
+
+    // Restore initial state, merge in AB
+    RestoreTestFile();
+    EXPECT_EQ(RevisionStatus::Success, m_testDb->Revisions().MergeRevision(*revA));
+    EXPECT_EQ(RevisionStatus::Success, m_testDb->Revisions().MergeRevision(*revAB));
+    m_testDb->SaveChanges("Merge AB");
+    VerifyDependentProperties(cId, { 789, 0, 321, 654 });
+    VerifyRootProperty(aId, 321);
+    VerifyRootProperty(bId, 654);
+
+    // Restore initial state, merge in BA
+    RestoreTestFile();
+    EXPECT_EQ(RevisionStatus::Success, m_testDb->Revisions().MergeRevision(*revA));
+    EXPECT_EQ(RevisionStatus::Success, m_testDb->Revisions().MergeRevision(*revBA));
+    m_testDb->SaveChanges("Merge BA");
+    VerifyDependentProperties(cId, { 789, 0, 321, 654 });
+    VerifyRootProperty(aId, 321);
+    VerifyRootProperty(bId, 654);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Elements A and B both drive the same property of Element C. The results will be
+* ambiguous (whatever dependency is processed most recently will win).
+* @bsimethod                                                    Paul.Connelly   05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DependencyRevisionTest, Conflict)
+    {
+    CreateDgnDb();
+    DgnElementId aId = InsertElement(123)->GetElementId(),
+                 bId = InsertElement(456)->GetElementId(),
+                 cId = InsertElement(789)->GetElementId();
+
+    TestElementDependency::Insert(*m_testDb, aId, cId, 1);
+    TestElementDependency::Insert(*m_testDb, bId, cId, 1);
+
+    m_dep.Reset();
+    m_testDb->SaveChanges();
+    VerifyDependentProperties(cId, { 789, m_dep.GetMostRecentValue(), 0, 0 });
+    ASSERT_TRUE(CreateRevision().IsValid());
+    BackupTestFile();
+
+    m_dep.Reset();
+    UpdateRootProperty(321, aId);
+    m_testDb->SaveChanges("Modify A");
+    VerifyDependentProperties(cId, { 789, m_dep.GetMostRecentValue(), 0, 0 });
+    DgnRevisionPtr revA = CreateRevision();
+    ASSERT_TRUE(revA.IsValid());
+
+    m_dep.Reset();
+    RestoreTestFile();
+    UpdateRootProperty(654, bId);
+    m_testDb->SaveChanges("Modify B");
+    VerifyDependentProperties(cId, { 789, m_dep.GetMostRecentValue(), 0, 0 });
+
+    m_dep.Reset();
+    EXPECT_EQ(RevisionStatus::Success, m_testDb->Revisions().MergeRevision(*revA));
+    m_testDb->SaveChanges("Merge A");
+    VerifyRootProperty(aId, 321);
+    UpdateRootProperty(987, bId);
+    m_testDb->SaveChanges("Modify B again");
+    VerifyDependentProperties(cId, { 789, m_dep.GetMostRecentValue(), 0, 0 });
+    }
+
 

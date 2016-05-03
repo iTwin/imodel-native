@@ -456,12 +456,19 @@ ChangeTracker::OnCommitStatus TxnManager::CancelChanges(ChangeSet& changeset)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnManager::OnChangesetApplied(ChangeSet& changeset, TxnAction action)
     {
+    Changes changes(changeset);
+    OnChangesApplied(changes, action);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void TxnManager::OnChangesApplied(Changes const& changes, TxnAction action)
+    {
     m_action = action;
     Utf8String currTable;
     TxnTable* txnTable = 0;
     TxnManager& txns = m_dgndb.Txns();
-
-    Changes changes(changeset); // this is a "changeset iterator"
 
     // Walk through each changed row in the changeset. They are ordered by table, so we know that all changes to one table will be seen
     // before we see any changes to another table.
@@ -635,6 +642,8 @@ RevisionStatus TxnManager::MergeRevision(DgnRevisionCR revision)
 
     Changes changes(changeStream);
     AddChanges(changes);
+
+    OnChangesApplied(changes, TxnAction::Merge);
 
     if (SUCCESS != PropagateChanges())
         status = RevisionStatus::MergePropagationError;
