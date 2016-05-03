@@ -184,23 +184,6 @@
             </Class>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="AuthorityIssuesGeometryPartCode" description="GeometryPart has a code which was issued by the given authority" strength="referencing">
-        <ECCustomAttributes>
-            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-                <OnDeleteAction>NoAction</OnDeleteAction>
-            </ForeignKeyRelationshipMap>
-        </ECCustomAttributes>
-        <Source cardinality="(1,1)" roleLabel="issues code" polymorphic="false">
-            <Class class="Authority"/>
-        </Source>
-        <Target cardinality="(0,N)" roleLabel="has N codes" polymorphic="false">
-            <Class class="GeometryPart">
-                <Key>
-                    <Property name="Code.AuthorityId"/>
-                </Key>
-            </Class>
-        </Target>
-    </ECRelationshipClass>
 
     <ECEntityClass typeName="Model" modifier="Abstract">
         <ECCustomAttributes>
@@ -214,6 +197,8 @@
                 <MapStrategy>
                     <Strategy>SharedTable</Strategy>
                     <AppliesToSubclasses>True</AppliesToSubclasses>
+                    <Options>SharedColumnsForSubclasses</Options>
+                    <MinimumSharedColumnCount>8</MinimumSharedColumnCount>
                 </MapStrategy>
                 <Indexes>
                     <DbIndex>
@@ -280,29 +265,21 @@
         <BaseClass>GraphicalModel2d</BaseClass>
         <ECProperty propertyName="SheetSize" displayLabel="Sheet Size" typeName="point2d"/>
     </ECEntityClass>
-    <ECEntityClass typeName="RedlineModel">
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
-        </ECCustomAttributes>
-        <BaseClass>SheetModel</BaseClass>
-    </ECEntityClass>
-    <ECEntityClass typeName="SpatialRedlineModel">
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
-        </ECCustomAttributes>
-        <BaseClass>SpatialModel</BaseClass>
-    </ECEntityClass>
+
     <ECEntityClass typeName="ComponentModel">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
         <BaseClass>GeometricModel3d</BaseClass>
     </ECEntityClass>
+    <ECEntityClass typeName="InformationModel" modifier="Abstract">
+        <BaseClass>Model</BaseClass>
+    </ECEntityClass>
     <ECEntityClass typeName="DefinitionModel">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
-        <BaseClass>Model</BaseClass>
+        <BaseClass>InformationModel</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="DictionaryModel">
         <ECCustomAttributes>
@@ -404,6 +381,7 @@
             </ClassMap>
         </ECCustomAttributes>
     </ECEntityClass>
+    
     <ECEntityClass typeName="DefinitionElement" modifier="Abstract">
         <BaseClass>InformationElement</BaseClass>
         <ECCustomAttributes>
@@ -415,8 +393,32 @@
             </ClassMap>
         </ECCustomAttributes>
     </ECEntityClass>
+
+    <ECEntityClass typeName="LinkElement" modifier="Abstract">
+        <BaseClass>DefinitionElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <MapStrategy>
+                    <Options>SharedColumnsForSubclasses</Options>
+                    <MinimumSharedColumnCount>8</MinimumSharedColumnCount>
+                </MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECEntityClass>
+
     <ECEntityClass typeName="DictionaryElement" modifier="Abstract">
         <BaseClass>DefinitionElement</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="GroupInformationElement" modifier="Abstract">
+        <BaseClass>InformationElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <MapStrategy>
+                    <Options>SharedColumnsForSubclasses</Options>
+                    <MinimumSharedColumnCount>8</MinimumSharedColumnCount>
+                </MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass typeName="GeometricElement" modifier="Abstract">
         <BaseClass>Element</BaseClass>
@@ -802,6 +804,7 @@
         </Target>
     </ECRelationshipClass>
 
+    <!--
     <ECEntityClass typeName="DimensionStyle">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
@@ -833,6 +836,7 @@
         <BaseClass>GraphicalElement3d</BaseClass>
         <BaseClass>LinearDimension</BaseClass>
     </ECEntityClass>
+    -->
 
     <ECEntityClass typeName="ViewAttachment">
         <!-- A reference to a ViewDefinition, placed onto a sheet -->
@@ -1246,35 +1250,7 @@
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="RedlineViewDefinition">
-        <BaseClass>SheetViewDefinition</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
-        </ECCustomAttributes>
-    </ECEntityClass>
-
-    <ECEntityClass typeName="Link" description="Base class for links from elements to other objects (e.g. URLs and embedded files).">
-        <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00">
-                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
-            </ClassMap>
-        </ECCustomAttributes>
-        <ECProperty propertyName="Type" typeName="int" description="Type of style; see DGN_LINK_TYPE_*">
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00">
-                    <IsNullable>False</IsNullable>
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="DisplayLabel" typeName="string" description="Display label for this node">
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00">
-                    <IsNullable>False</IsNullable>
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="Data" typeName="binary" description="Encoded link properties"/>
-    </ECEntityClass>
+  
     <ECRelationshipClass typeName="ElementHasLinks" description="Associates links to an entity." strength="referencing">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
@@ -1289,7 +1265,7 @@
             <Class class="Element"/>
         </Source>
         <Target cardinality="(0,N)" roleLabel="is on 1 or more elements" polymorphic="false">
-            <Class class="Link"/>
+            <Class class="LinkElement"/>
         </Target>
     </ECRelationshipClass>
 
@@ -1316,23 +1292,10 @@
     </ECEntityClass>
 
     <ECEntityClass typeName="GeometryPart">
+        <BaseClass>DictionaryElement</BaseClass>
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00">
-                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
-                <Indexes>
-                    <DbIndex>
-                        <Name>ix_dgn_GeometryPart_Code</Name>
-                        <IsUnique>True</IsUnique>
-                        <Properties>
-                            <string>Code.AuthorityId</string>
-                            <string>Code.Namespace</string>
-                            <string>Code.Value</string>
-                        </Properties>
-                    </DbIndex>
-                </Indexes>
-            </ClassMap>
+            <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
-        <ECStructProperty propertyName="Code" typeName="AuthorityIssuedCode"/>
         <ECProperty propertyName="GeometryStream" typeName="binary">
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.01.00">

@@ -21,8 +21,8 @@ struct DPoint3d {x:double; y:double; z:double;}
 struct DPoint2d {x:double; y:double;}
 struct DVec3d {x:double; y:double; z:double;}
 struct Transform {x00:double; x01:double; x02:double; tx:double; x10:double; x11:double; x12:double; ty:double; x20:double; x21:double; x22:double; tz:double;}
-//struct FaceSymbology {useColor:ubyte; useMaterial:ubyte; color:uint; materialId:long; transparency:double; uv:DPoint2d;}
-//struct FaceSymbologyIndex {faceIndex:uint; symbIndex:uint;}
+struct FaceSymbology {useColor:ubyte; useMaterial:ubyte; color:uint; materialId:long; transparency:double; uv:DPoint2d;}
+struct FaceSymbologyIndex {faceIndex:uint; symbIndex:uint;}
 
 //=======================================================================================
 // @bsiclass                                                    
@@ -61,15 +61,15 @@ table ArcPrimitive
 //=======================================================================================
 // @bsiclass                                                    
 //=======================================================================================
-//table BRepData
-//    {
-//    entityTransform:Transform;
-//    brepType:BRepType;
-//    entityData:[ubyte];
-//    symbology:[FaceSymbology];
-//    symbologyIndex:[FaceSymbologyIndex];
-//
-//    } // BRepData
+table BRepData
+    {
+    entityTransform:Transform;
+    brepType:BRepType;
+    entityData:[ubyte];
+    symbology:[FaceSymbology];
+    symbologyIndex:[FaceSymbologyIndex];
+
+    } // BRepData
 
 //=======================================================================================
 // @bsiclass                                                    

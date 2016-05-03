@@ -261,3 +261,77 @@ ISolidKernelEntityPtr SolidKernelUtil::CreateNewEntity(TopoDS_Shape const& shape
     return nullptr;
 #endif
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+PolyfaceHeaderPtr SolidKernelUtil::FacetEntity(ISolidKernelEntityCR entity, double pixelSize, DRange1dP pixelSizeRange)
+    {
+#if defined (BENTLEYCONFIG_OPENCASCADE)
+    TopoDS_Shape const* shape = SolidKernelUtil::GetShape(entity);
+
+    if (nullptr == shape)
+        return nullptr;
+
+    if (nullptr != pixelSizeRange)
+        pixelSizeRange->InitNull();
+
+    IFacetOptionsPtr facetOptions = IFacetOptions::Create();
+
+    facetOptions->SetNormalsRequired(true);
+    facetOptions->SetParamsRequired(true);
+
+    if (!OCBRep::HasCurvedFaceOrEdge(*shape))
+        {
+        facetOptions->SetAngleTolerance(Angle::PiOver2()); // Shouldn't matter...use max angle tolerance...
+        facetOptions->SetChordTolerance(1.0); // Shouldn't matter...avoid expense of getting AABB...
+        }
+    else
+        {
+        Bnd_Box box;
+        Standard_Real maxDimension = 0.0;
+
+        BRepBndLib::Add(*shape, box);
+        BRepMesh_ShapeTool::BoxMaxDimension(box, maxDimension);
+
+        if (0.0 >= pixelSize)
+            {
+            facetOptions->SetAngleTolerance(0.2); // ~11 degrees
+            facetOptions->SetChordTolerance(0.1 * maxDimension);
+            }
+        else
+            {
+            static double sizeDependentRatio = 5.0;
+            static double pixelToChordRatio = 0.5;
+            static double minRangeRelTol = 1.0e-4;
+            static double maxRangeRelTol = 1.5e-2;
+            double minChordTol = minRangeRelTol * maxDimension;
+            double maxChordTol = maxRangeRelTol * maxDimension;
+            double chordTol = pixelToChordRatio * pixelSize;
+            bool isMin = false, isMax = false;
+
+            if (isMin = (chordTol < minChordTol))
+                chordTol = minChordTol; // Don't allow chord to get too small relative to shape size...
+            else if (isMax = (chordTol > maxChordTol))
+                chordTol = maxChordTol; // Don't keep creating coarser and coarser graphics as you zoom out, at a certain point it just wastes memory/time...
+
+            facetOptions->SetChordTolerance(chordTol);
+            facetOptions->SetAngleTolerance(Angle::PiOver2()); // Use max angle tolerance...mesh coarseness dictated by pixel size based chord...
+
+            if (nullptr != pixelSizeRange)
+                {
+                if (isMin)
+                    *pixelSizeRange = DRange1d::FromLowHigh(0.0, chordTol * sizeDependentRatio); // Finest tessellation, keep using this as we zoom in...
+                else if (isMax)
+                    *pixelSizeRange = DRange1d::FromLowHigh(chordTol / sizeDependentRatio, DBL_MAX); // Coarsest tessellation, keep using this as we zoom out...
+                else
+                    *pixelSizeRange = DRange1d::FromLowHigh(chordTol / sizeDependentRatio, chordTol * sizeDependentRatio);
+                }
+            }
+        }
+
+    return OCBRep::IncrementalMesh(*shape, *facetOptions);
+#else
+    return nullptr;
+#endif
+    }

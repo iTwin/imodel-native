@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnCoreAPI.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -45,12 +45,11 @@
 #include "DgnView.h"
 #include "ECSqlClassParams.h"
 
-
 //__PUBLISH_SECTION_END__
 #include "SnapContext.h"
 #include "LineStyleApi.h"
 #include "NullContext.h"
 #include "Sprites.h"
-
 //__PUBLISH_SECTION_START__
+
 #endif // DOCUMENTATION_GENERATOR

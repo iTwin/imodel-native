@@ -16,6 +16,7 @@
 #include <DgnPlatform/DgnProperties.h>
 
 DGNPLATFORM_TYPEDEFS(GeometricModel)
+DGNPLATFORM_TYPEDEFS(InformationModel)
 DGNPLATFORM_TYPEDEFS(DefinitionModel)
 DGNPLATFORM_TYPEDEFS(GeometricModel2d)
 DGNPLATFORM_TYPEDEFS(GeometricModel3d)
@@ -351,6 +352,7 @@ protected:
     /** @name Dynamic cast shortcuts for a DgnModel */
     /** @{ */
     virtual GeometricModelCP _ToGeometricModel() const {return nullptr;}
+    virtual InformationModelCP _ToInformationModel() const {return nullptr;}
     virtual DefinitionModelCP _ToDefinitionModel() const {return nullptr;}
     virtual GeometricModel2dCP _ToGeometricModel2d() const {return nullptr;}
     virtual GeometricModel3dCP _ToGeometricModel3d() const {return nullptr;}
@@ -382,7 +384,7 @@ protected:
     //! <p>
     //! A subclass implementation of _ImportECRelationshipsFrom should copy only the relationship subclasses that are defined by the 
     //! the ECSchema/DgnDomain of the subclass. For example, the base DgnModel implementation will handle the relationships defined in the 
-    //! base Dgn schema, including ElementDrivesElement, ElementGeomUsesParts, ElementGroupsMembers, and ElementUsesStyles.
+    //! base Dgn schema, including ElementDrivesElement, ElementUsesGeometryParts, ElementGroupsMembers, and ElementUsesStyles.
     //! <p>
     //! Both endpoints of an ECRelationship must be in the same DgnDb. Since the import operation can copy elements between DgnDbs, a subclass implementation
     //! must be careful about which ECRelationships to import. Normally, only ECRelationships between elements in the model should be copied. 
@@ -443,6 +445,9 @@ public:
     //! A newly created model before it is inserted, or a model after calling Delete, is not persistent.
     bool IsPersistent() const {return m_persistent;}
 
+    //! Get the name of this model
+    Utf8String GetName() const {return m_code.GetValue();}
+    
     //! Get the DgnClassId of this DgnModel
     DgnClassId GetClassId() const {return m_classId;}
 
@@ -465,6 +470,7 @@ public:
     //! @name Dynamic casting to DgnModel subclasses
     //@{
     GeometricModelCP ToGeometricModel() const {return _ToGeometricModel();} //!< more efficient substitute for dynamic_cast<GeometricModelCP>(model)
+    InformationModelCP ToInformationModel() const {return _ToInformationModel();} //!< more efficient substitute for dynamic_cast<InformationModelCP>(model)
     DefinitionModelCP ToDefinitionModel() const {return _ToDefinitionModel();} //!< more efficient substitute for dynamic_cast<DefinitionModelCP>(model)
     GeometricModel2dCP ToGeometricModel2d() const {return _ToGeometricModel2d();} //!< more efficient substitute for dynamic_cast<GeometricModel2dCP>(model)
     GeometricModel3dCP ToGeometricModel3d() const {return _ToGeometricModel3d();} //!< more efficient substitute for dynamic_cast<GeometricModel3dCP>(model)
@@ -472,6 +478,7 @@ public:
     SectionDrawingModelCP ToSectionDrawingModel() const {return _ToSectionDrawingModel();} //!< more efficient substitute for dynamic_cast<SectionDrawingModelCP>(model)
     SheetModelCP ToSheetModel() const {return _ToSheetModel();} //!< more efficient substitute for dynamic_cast<SheetModelCP>(model)
     GeometricModelP ToGeometricModelP() {return const_cast<GeometricModelP>(_ToGeometricModel());} //!< more efficient substitute for dynamic_cast<GeometricModelP>(model)
+    InformationModelP ToInformationModelP() {return const_cast<InformationModelP>(_ToInformationModel());} //!< more efficient substitute for dynamic_cast<InformationModelP>(model)
     DefinitionModelP ToDefinitionModelP() {return const_cast<DefinitionModelP>(_ToDefinitionModel());} //!< more efficient substitute for dynamic_cast<DefinitionModelP>(model)
     GeometricModel2dP ToGeometricModel2dP() {return const_cast<GeometricModel2dP>(_ToGeometricModel2d());} //!< more efficient substitute for dynamic_cast<GeometricModel2dP>(model)
     GeometricModel3dP ToGeometricModel3dP() {return const_cast<GeometricModel3dP>(_ToGeometricModel3d());} //!< more efficient substitute for dynamic_cast<GeometricModel3dP>(model)
@@ -483,6 +490,7 @@ public:
     bool IsSpatialModel() const { return nullptr != ToSpatialModel(); }
     bool Is2dModel() const { return nullptr != ToGeometricModel2d(); }
     bool Is3dModel() const { return nullptr != ToGeometricModel3d(); }
+    bool IsInformationModel() const { return nullptr != ToInformationModel(); }
     bool IsDefinitionModel() const { return nullptr != ToDefinitionModel(); }
     bool IsSheetModel() const { return nullptr != ToSheetModel(); }
     bool IsDictionaryModel() const { return DictionaryId() == GetModelId(); }
@@ -877,13 +885,25 @@ public:
 };
 
 //=======================================================================================
+//! @ingroup GROUP_DgnModel
+// @bsiclass                                                    Shaun.Sewall    04/16
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE InformationModel : DgnModel
+{
+    DEFINE_T_SUPER(DgnModel);
+protected:
+    InformationModelCP _ToInformationModel() const override final {return this;}
+    explicit InformationModel(CreateParams const& params) : T_Super(params) {}
+};
+
+//=======================================================================================
 //! A model which contains only definitions.
 //! @ingroup GROUP_DgnModel
 // @bsiclass                                                    Paul.Connelly   09/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DefinitionModel : DgnModel
+struct EXPORT_VTABLE_ATTRIBUTE DefinitionModel : InformationModel
 {
-    DGNMODEL_DECLARE_MEMBERS(DGN_CLASSNAME_DefinitionModel, DgnModel);
+    DGNMODEL_DECLARE_MEMBERS(DGN_CLASSNAME_DefinitionModel, InformationModel);
 protected:
     DefinitionModelCP _ToDefinitionModel() const override final {return this;}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
@@ -1070,7 +1090,7 @@ struct ComponentDef : RefCountedBase
 
     ECN::ECClassCR GetECClass() const {return m_class;}
 
-    DGNPLATFORM_EXPORT Utf8String GetModelName() const;
+    DGNPLATFORM_EXPORT Utf8String GetComponentName() const;
     DGNPLATFORM_EXPORT ComponentModelR GetModel();
 
     DGNPLATFORM_EXPORT bool UsesTemporaryModel() const;

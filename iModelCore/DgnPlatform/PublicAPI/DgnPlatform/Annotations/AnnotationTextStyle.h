@@ -57,9 +57,9 @@ enum class AnnotationTextStyleProperty
     WidthFactor = 15 //!< (real, per-document) @note Factor of height
 
 //__PUBLISH_SECTION_END__
-    // *********************************************************************************************
-    // **** ADDING MEMBERS? Consider updating: AnnotationTextStylePersistence, TextStyleInterop ****
-    // *********************************************************************************************
+    // ****************************************************************************************************************************************
+    // **** ADDING MEMBERS? Consider updating: AnnotationTextStylePersistence, TextStyleInterop, AnnotationTextStyle::CreateEffectiveStyle ****
+    // ****************************************************************************************************************************************
 //__PUBLISH_SECTION_START__
 };
 
@@ -176,6 +176,7 @@ public:
     DGNPLATFORM_EXPORT void SetWidthFactor(double);
 
     DGNPLATFORM_EXPORT AnnotationTextStylePtr CreateEffectiveStyle(AnnotationTextStylePropertyBagCR overrides) const;
+    DGNPLATFORM_EXPORT static AnnotationTextStylePtr CreateEffectiveStyle(AnnotationTextStyleCR docStyle, AnnotationTextStylePropertyBagCR docOverrides, AnnotationTextStyleCR parStyle, AnnotationTextStylePropertyBagCR parOverrides, AnnotationTextStyleCR runStyle, AnnotationTextStylePropertyBagCR runOverrides);
     DgnFontCR ResolveFont() const { return DgnFontManager::ResolveFont(m_dgndb.Fonts().FindFontById(GetFontId())); }
 
     static DgnElementId QueryId(DgnDbR db, Utf8CP name) { return db.Elements().QueryElementIdByCode(CreateCodeFromName(name)); }

@@ -9,7 +9,9 @@
 #include <DgnPlatform/DgnMarkupProject.h>
 #include <DgnPlatform/Annotations/TextAnnotationElement.h>
 #include <DgnPlatform/AnnotationTable.h>
+#if defined (NEEDSWORK_DIMENSION)
 #include <DgnPlatform/Dimension/Dimension.h>
+#endif
 #include <DgnPlatform/VolumeElement.h>
 
 BEGIN_BENTLEY_DGN_NAMESPACE
@@ -28,9 +30,7 @@ namespace dgn_ModelHandler
 HANDLER_DEFINE_MEMBERS(Model)
 HANDLER_DEFINE_MEMBERS(Spatial)
 HANDLER_DEFINE_MEMBERS(Component)
-HANDLER_DEFINE_MEMBERS(SpatialRedline)
 HANDLER_DEFINE_MEMBERS(Sheet)
-HANDLER_DEFINE_MEMBERS(Redline)
 HANDLER_DEFINE_MEMBERS(SectionDrawing)
 HANDLER_DEFINE_MEMBERS(StreetMap)
 HANDLER_DEFINE_MEMBERS(WebMercator)
@@ -44,6 +44,7 @@ namespace dgn_ElementHandler
 HANDLER_DEFINE_MEMBERS(Element)
 HANDLER_DEFINE_MEMBERS(Geometric2d)
 HANDLER_DEFINE_MEMBERS(Geometric3d)
+HANDLER_DEFINE_MEMBERS(GeometryPart)
 HANDLER_DEFINE_MEMBERS(Annotation2d)
 HANDLER_DEFINE_MEMBERS(DrawingGraphic)
 };
@@ -89,8 +90,6 @@ DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain
     RegisterHandler(dgn_ModelHandler::Geometric2d::GetHandler());
     RegisterHandler(dgn_ModelHandler::Sheet::GetHandler());
     RegisterHandler(dgn_ModelHandler::SectionDrawing::GetHandler());
-    RegisterHandler(dgn_ModelHandler::Redline::GetHandler());
-    RegisterHandler(dgn_ModelHandler::SpatialRedline::GetHandler());
     RegisterHandler(dgn_ModelHandler::WebMercator::GetHandler());
     RegisterHandler(dgn_ModelHandler::StreetMap::GetHandler());
     RegisterHandler(dgn_ModelHandler::Definition::GetHandler());
@@ -99,6 +98,7 @@ DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain
     RegisterHandler(dgn_ElementHandler::Element::GetHandler());
     RegisterHandler(dgn_ElementHandler::Geometric2d::GetHandler());
     RegisterHandler(dgn_ElementHandler::Geometric3d::GetHandler());
+    RegisterHandler(dgn_ElementHandler::GeometryPart::GetHandler());
     RegisterHandler(dgn_ElementHandler::Annotation2d::GetHandler());
     RegisterHandler(dgn_ElementHandler::DrawingGraphic::GetHandler());
     RegisterHandler(dgn_ElementHandler::VolumeElementHandler::GetHandler());
@@ -113,9 +113,11 @@ DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain
     RegisterHandler(dgn_ElementHandler::SubCategory::GetHandler());
     RegisterHandler(dgn_ElementHandler::TrueColor::GetHandler());
 
+#if defined (NEEDSWORK_DIMENSION)
     RegisterHandler(dgn_ElementHandler::DimensionStyleHandler::GetHandler());
     RegisterHandler(dgn_ElementHandler::LinearDimensionHandler2d::GetHandler());
     RegisterHandler(dgn_ElementHandler::LinearDimensionHandler3d::GetHandler());
+#endif
 
     RegisterHandler(dgn_ElementHandler::AnnotationTextStyleHandler::GetHandler());
     RegisterHandler(dgn_ElementHandler::AnnotationFrameStyleHandler::GetHandler());
@@ -126,7 +128,6 @@ DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain
     RegisterHandler(dgn_ElementHandler::CameraViewDef::GetHandler());
     RegisterHandler(dgn_ElementHandler::DrawingViewDef::GetHandler());
     RegisterHandler(dgn_ElementHandler::SheetViewDef::GetHandler());
-    RegisterHandler(dgn_ElementHandler::RedlineViewDef::GetHandler());
 
     RegisterHandler(dgn_ElementHandler::ViewAttachmentHandler::GetHandler());
 

@@ -40,7 +40,7 @@ static void setBriefcase(DgnDbPtr& db, DgnDb::OpenMode mode)
 
     BeFileName name(db->GetFileName());
 
-    db->ChangeBriefcaseId(BeBriefcaseId(1));
+    db->ChangeBriefcaseId(BeBriefcaseId(BeBriefcaseId::Standalone()));
     db->SaveChanges();
     db->CloseDb();
 

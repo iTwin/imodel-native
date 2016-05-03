@@ -27,11 +27,10 @@ protected:
     DgnCategoryId m_attachmentCatId;
     DgnViewId m_viewId;
     DgnElementId m_textStyleId;
-    ScopedDgnHost::ScopedRepositoryManagerDisabler m_disableRepositoryManager;
 public:
     DEFINE_T_SUPER(GenericDgnModelTestFixture);
 
-    ViewAttachmentTest() : T_Super(__FILE__, true, true), m_disableRepositoryManager(m_host) { }
+    ViewAttachmentTest() : T_Super(__FILE__, true, true) { }
 
     virtual void SetUp() override;
 
@@ -122,6 +121,8 @@ void ViewAttachmentTest::AddTextToDrawing(DgnModelId drawingId, Utf8CP text, dou
         {
         AnnotationTextStyle style(db);
         style.SetName("MyTextStyle");
+        style.SetFontId(db.Fonts().AcquireId(DgnFontManager::GetLastResortTrueTypeFont()));
+        style.SetHeight(1.0);
         style.Insert();
         m_textStyleId = style.GetElementId();
         EXPECT_TRUE(m_textStyleId.IsValid());

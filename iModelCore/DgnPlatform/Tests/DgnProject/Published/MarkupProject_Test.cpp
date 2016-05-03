@@ -31,6 +31,7 @@ void checkProjectAssociation (DgnDbR dgnProject, DgnMarkupProjectR markupProject
 TEST(DgnMarkupProjectTest, CreateDgnMarkupProject)
     {
     ScopedDgnHost  autoDgnHost;
+    DgnDomains::RegisterDomain(MarkupDomain::GetDomain());
 
     Utf8CP     markupProjectBasename = "CreateDgnMarkupProject.markupdb";
     BeFileName dgnProjectFileName;

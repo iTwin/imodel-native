@@ -39,7 +39,7 @@ void DgnDbTable::ReplaceInvalidCharacters(Utf8StringR str, Utf8CP invalidChars, 
 * @bsimethod                                    Keith.Bentley                   02/11
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDb::DgnDb() : m_schemaVersion(0,0,0,0), m_fonts(*this, DGN_TABLE_Font), m_domains(*this), m_styles(*this),
-                 m_geomParts(*this), m_units(*this), m_models(*this), m_elements(*this), 
+                 m_units(*this), m_models(*this), m_elements(*this), 
                  m_links(*this), m_authorities(*this), m_ecsqlCache(50, "DgnDb"), m_searchableText(*this), m_revisionManager(nullptr),
                  m_queryQueue(*this)
     {
@@ -423,15 +423,20 @@ DgnClassId DgnImportContext::RemapClassId(DgnClassId source)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnImportContext::ComputeGcsAdjustment()
+void DgnImportContext::ComputeGcsAndGOadjustment()
     {
     //  We may need to transform between source and destination GCS.
-    m_xyOffset = DPoint2d::FromZero();
+    m_xyzOffset = DPoint3d::FromZero();
     m_yawAdj = AngleInDegrees::FromDegrees(0);
     m_areCompatibleDbs = true;
 
     if (!IsBetweenDbs())
         return;
+
+    DPoint3dCR sourceGO(m_sourceDb.Units().GetGlobalOrigin());
+    DPoint3dCR destGO(m_destDb.Units().GetGlobalOrigin());
+
+    m_xyzOffset.DifferenceOf(destGO, sourceGO);
 
     DgnGCS* sourceGcs = m_sourceDb.Units().GetDgnGCS();
     DgnGCS* destGcs = m_destDb.Units().GetDgnGCS();
@@ -471,7 +476,7 @@ void DgnImportContext::ComputeGcsAdjustment()
         }
 
     //  We should be able to transform using a simple offset and rotation.
-    m_xyOffset = DPoint2d::From(destCoordinates.x, destCoordinates.y);
+    m_xyzOffset = DPoint3d::From(destCoordinates.x, destCoordinates.y, 0);
     m_yawAdj = AngleInDegrees::FromRadians(destGcs->GetAzimuth() - sourceGcs->GetAzimuth());
     }
 
@@ -487,7 +492,7 @@ DgnCloneContext::DgnCloneContext()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnImportContext::DgnImportContext(DgnDbR source, DgnDbR dest) : DgnCloneContext(), m_sourceDb(source), m_destDb(dest)
     {
-    ComputeGcsAdjustment();
+    ComputeGcsAndGOadjustment();
     }
 
 /*---------------------------------------------------------------------------------**//**

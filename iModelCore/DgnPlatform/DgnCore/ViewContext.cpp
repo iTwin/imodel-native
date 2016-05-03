@@ -340,29 +340,41 @@ StatusInt ViewContext::_OutputGeometry(GeometrySourceCR source)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Render::GraphicPtr ViewContext::_AddSubGraphic(Render::GraphicR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, Render::GeometryParamsR geomParams)
     {
-    ElementAlignedBox3d localRange;
-    Render::GraphicPtr  partGraphic = _GetCachedPartGraphic(partId, graphic.GetPixelSize(), localRange);
+    DgnGeometryPartCPtr partGeometry = GetDgnDb().Elements().Get<DgnGeometryPart>(partId);
+
+    if (!partGeometry.IsValid())
+        return nullptr;
+
+    bool isForDisplay = graphic.IsForDisplay();
+
+    if (!isForDisplay && m_viewport)
+        {
+        Transform partToWorld = Transform::FromProduct(graphic.GetLocalToWorldTransform(), subToGraphic);
+        ElementAlignedBox3d range = partGeometry->GetBoundingBox();
+
+        partToWorld.Multiply(range, range);
+        Frustum box(range);
+
+        if (!GetFrustumPlanes().Intersects(box))
+            return nullptr; // Part range doesn't overlap pick...
+        }
+
+    Render::GraphicPtr partGraphic = (isForDisplay ? partGeometry->Graphics().Find(*m_viewport, graphic.GetPixelSize()) : nullptr);
 
     if (!partGraphic.IsValid())
         {
-        DgnGeometryPartPtr partGeometry = GetDgnDb().GeometryParts().LoadGeometryPart(partId);
+        GeometryStreamIO::Collection collection(partGeometry->GetGeometryStream().GetData(), partGeometry->GetGeometryStream().GetSize());
 
-        if (partGeometry.IsValid())
-            {
-            GeometryStreamIO::Collection collection(partGeometry->GetGeometryStream().GetData(), partGeometry->GetGeometryStream().GetSize());
-
-            partGraphic = graphic.CreateSubGraphic(subToGraphic);
-            collection.Draw(*partGraphic, *this, geomParams, false);
+        partGraphic = graphic.CreateSubGraphic(subToGraphic);
+        collection.Draw(*partGraphic, *this, geomParams, false, partGeometry.get());
             
-            if (WasAborted()) // if we aborted, the graphic may not be complete, don't save it
-                return nullptr;
+        if (WasAborted()) // if we aborted, the graphic may not be complete, don't save it
+            return nullptr;
 
-            _SavePartGraphic(partId, *partGraphic, partGeometry->GetBoundingBox());
-            }
+        partGraphic->Close(); 
+        if (isForDisplay)
+            partGeometry->Graphics().Save(*partGraphic);
         }
-
-    if (!partGraphic.IsValid())
-        return nullptr;
 
     // NOTE: Need to cook GeometryParams to get GraphicParams, but we don't want to activate and bake into our QvElem...
     GraphicParams graphicParams;

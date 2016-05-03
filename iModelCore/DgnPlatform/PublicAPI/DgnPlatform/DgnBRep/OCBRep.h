@@ -26,6 +26,7 @@
 #include <TopExp.hxx>
 #include <TopExp_Explorer.hxx>
 #include <TopoDS_Shape.hxx>
+#include <Standard_TypeDef.hxx>
 #include <gp_Ax2.hxx>
 #include <gp_Lin.hxx>
 #include <gp_Circ.hxx>
@@ -110,7 +111,7 @@ static DEllipse3d ToDEllipse3d(gp_Elips const& gpElips, double start, double end
 static DEllipse3d ToDEllipse3d(gp_Elips2d const& gpElips, double start, double end) {return DEllipse3d::FromScaledVectors(ToDPoint3d(gpElips.Location()), ToDVec3d(gpElips.XAxis().Direction()), ToDVec3d(gpElips.YAxis().Direction()), gpElips.MajorRadius(), gpElips.MinorRadius(), start, end - start);}
 
 DGNPLATFORM_EXPORT static bool HasCurvedFaceOrEdge(TopoDS_Shape const&);
-DGNPLATFORM_EXPORT static PolyfaceHeaderPtr IncrementalMesh(TopoDS_Shape const&, IFacetOptionsR);
+DGNPLATFORM_EXPORT static PolyfaceHeaderPtr IncrementalMesh(TopoDS_Shape const&, IFacetOptionsR, bool cleanShape=true); //! BRepTools::Clean is called after meshing when cleanShape is true
 DGNPLATFORM_EXPORT static BentleyStatus ClipTopoShape(bvector<TopoDS_Shape>& output, bool& clipped, TopoDS_Shape const& shape, ClipVectorCR clip) {return ERROR;} // NEEDSWORK...
 DGNPLATFORM_EXPORT static BentleyStatus ClipCurveVector(bvector<CurveVectorPtr>& output, CurveVectorCR input, ClipVectorCR clip, TransformCP localToWorld) {return ERROR;} // NEEDSWORK...
 

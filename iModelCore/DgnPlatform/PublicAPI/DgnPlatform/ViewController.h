@@ -128,6 +128,8 @@ protected:
     ColorDef       m_backgroundColor;      // used only if bit set in flags
     RotMatrix      m_defaultDeviceOrientation;
     bool           m_defaultDeviceOrientationValid;
+    Render::PointCloudViewSettings m_pointCloudViewSettings;
+
     mutable bmap<DgnSubCategoryId,DgnSubCategory::Appearance> m_subCategories;
     mutable bmap<DgnSubCategoryId,DgnSubCategory::Override> m_subCategoryOverrides;
 
@@ -393,6 +395,12 @@ public:
 
     //! Gets a reference to the ViewFlags.
     Render::ViewFlags& GetViewFlagsR() {return m_viewFlags;}
+
+    //! Get the PointCloudViewSettings.
+    Render::PointCloudViewSettings GetPointCloudViewSettings() const {return m_pointCloudViewSettings;}
+
+    //! Get a reference to the PointCloudViewSettings.
+    Render::PointCloudViewSettings& GetPointCloudViewSettingsR() {return m_pointCloudViewSettings;}
 
     //! Gets the DgnViewId of this view.
     DgnViewId GetViewId() const {return m_viewId;}

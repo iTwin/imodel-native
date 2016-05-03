@@ -59,7 +59,6 @@
 #define DGN_CLASSNAME_SheetModel            "SheetModel"
 #define DGN_CLASSNAME_SpatialElement        "SpatialElement"
 #define DGN_CLASSNAME_SpatialIndex          "SpatialIndex"
-#define DGN_CLASSNAME_SpatialRedlineModel   "SpatialRedlineModel"
 #define DGN_CLASSNAME_TextAnnotationSeed    "TextAnnotationSeed"
 #define DGN_CLASSNAME_Texture               "Texture"
 #define DGN_CLASSNAME_TrueColor             "TrueColor"
@@ -388,61 +387,6 @@ public:
     //! no longer reflect its state.
     //! @param[in]      viewport The viewport for which to drop graphics
     DGNPLATFORM_EXPORT void DropGraphicsForViewport(DgnViewportCR viewport);
-};
-
-
-//=======================================================================================
-//! Each GeometryPart has a row in the DgnGeometryParts table
-//! @see DgnDb::GeometryParts
-//! @ingroup GROUP_Geometry
-//=======================================================================================
-struct DgnGeometryParts : DgnDbTable
-{
-    friend struct DgnDb;
-
-private:
-    explicit DgnGeometryParts(DgnDbR db) : DgnDbTable(db), m_snappyFrom(m_snappyFromBuffer, _countof(m_snappyFromBuffer)) {}
-    DgnGeometryPartId m_highestGeometryPartId; // 0 means not yet valid. Highest DgnGeometryPartId (for current briefcaseId)
-
-    Byte m_snappyFromBuffer[BeSQLite::SnappyReader::SNAPPY_UNCOMPRESSED_BUFFER_SIZE];
-    BeSQLite::SnappyFromMemory m_snappyFrom;
-    BeSQLite::SnappyFromMemory& GetSnappyFrom() {return m_snappyFrom;}
-
-public:
-    DgnGeometryPartId MakeNewGeometryPartId();
-
-public:
-    //! Load a geometry part by ID.
-    //! @param[in] geomPartId the ID of the geometry part to load
-    DGNPLATFORM_EXPORT DgnGeometryPartPtr LoadGeometryPart(DgnGeometryPartId geomPartId);
-
-    //! Query for a DgnGeometryPartId by code.
-    DGNPLATFORM_EXPORT DgnGeometryPartId QueryGeometryPartId(DgnCodeCR code);
-
-    //! Query the range of a DgnGeometryPart by ID.
-    //! @param[out]     range      On successful return, holds the DgnGeometryPart's range
-    //! @param[in]      geomPartId The ID of the DgnGeometryPart to query
-    //! @return SUCCESS if the range was retrieved, or else ERROR if e.g. no DgnGeometryPart exists with the specified ID
-    DGNPLATFORM_EXPORT BentleyStatus QueryGeometryPartRange(DRange3dR range, DgnGeometryPartId geomPartId);
-
-    //! Insert a geometry part into the DgnDb.
-    //! @param[in] geomPart geometry part to insert
-    //! @return The DgnGeometryPartId for the newly inserted part. Will be invalid if part could not be added.
-    //! @note This method will update the DgnGeometryPartId in geomPart.
-    DGNPLATFORM_EXPORT BentleyStatus InsertGeometryPart(DgnGeometryPartR geomPart);
-
-    //! Update an existing geometry part in the DgnDb.
-    //! @param[in] geomPart geometry part. Its ID identifies the existing geom part. Its geometry is written to the DgnDb.
-    //! @return non-zero error status if the geom part does not exist or if its ID is invalid
-    DGNPLATFORM_EXPORT BentleyStatus UpdateGeometryPart(DgnGeometryPartR geomPart);
-
-    //! Insert the ElementGeomUsesParts relationship between an element and the geom parts it uses.
-    //! @note Most apps will not need to call this directly.
-    //! @private
-    DGNPLATFORM_EXPORT BentleyStatus InsertElementGeomUsesParts(DgnElementId elementId, DgnGeometryPartId geomPartId);
-
-    //! Delete the geometry part associated with the specified ID
-    DGNPLATFORM_EXPORT BentleyStatus DeleteGeometryPart(DgnGeometryPartId);
 };
 
 //=======================================================================================

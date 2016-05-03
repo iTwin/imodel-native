@@ -8,8 +8,7 @@
 #pragma once
 /*
 These change iterators are only meant for internal use (extracting codes/locks from revisions) - 
-they provide a way to iterate over specific changes to Element (Code, ModelId), Model (Code) and 
-GeometryPart (Code) instances. 
+they provide a way to iterate over specific changes to Element (Code, ModelId) and Model (Code) instances. 
 
 The routines make simplifying assumptions about the mapping for these specific cases. 
 See ChangeSummary-s for a more extensive treatment. 
@@ -19,7 +18,6 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 struct BaseChangeIterator;
 struct ElementChangeIterator;
 struct ModelChangeIterator;
-struct GeometryPartChangeIterator;
 
 //=======================================================================================
 // @bsiclass                                                  Ramanujam.Raman   03/16
@@ -166,42 +164,6 @@ public:
     const_iterator end() const;
 };
 
-
-//=======================================================================================
-// @bsiclass                                                  Ramanujam.Raman   03/16
-//=======================================================================================
-struct GeometryPartChangeEntry : BaseChangeEntry
-{
-    DEFINE_T_SUPER(BaseChangeEntry);
-
-private:
-    GeometryPartChangeIterator const& m_parent;
-
-public:
-    GeometryPartChangeEntry(GeometryPartChangeIterator const& parent, BeSQLite::Changes::Change sqlChange);
-    DgnGeometryPartId GetGeometryPartId() const { return DgnGeometryPartId(m_instanceId.GetValueUnchecked()); }
-
-    GeometryPartChangeEntry& operator++() {T_Super::operator++(); return *this;}
-    GeometryPartChangeEntry const& operator* () const { return *this; }
-    bool operator!=(GeometryPartChangeEntry const& rhs) const { return m_sqlChange != rhs.m_sqlChange; }
-    bool operator==(GeometryPartChangeEntry const& rhs) const { return m_sqlChange == rhs.m_sqlChange; }
-};
-
-//=======================================================================================
-// @bsiclass                                                  Ramanujam.Raman   03/16
-//=======================================================================================
-struct GeometryPartChangeIterator : BaseChangeIterator
-{
-    DEFINE_T_SUPER(BaseChangeIterator);
-    typedef GeometryPartChangeEntry const_iterator;
-    typedef const_iterator iterator;
-
-public:
-    GeometryPartChangeIterator(DgnDbCR dgndb, IChangeSet& changeSet);
-    const_iterator begin() const;
-    const_iterator end() const;
-};
-
 //=======================================================================================
 // @bsiclass                                                  Ramanujam.Raman   03/16
 //=======================================================================================
@@ -210,7 +172,6 @@ struct DgnChangeIterator
 public:
     static ElementChangeIterator MakeElementChangeIterator(DgnDbCR dgndb, IChangeSet& changeSet);
     static ModelChangeIterator MakeModelChangeIterator(DgnDbCR dgndb, IChangeSet& changeSet);
-    static GeometryPartChangeIterator MakeGeometryPartChangeIterator(DgnDbCR dgndb, IChangeSet& changeSet);
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

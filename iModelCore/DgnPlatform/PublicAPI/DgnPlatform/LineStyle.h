@@ -471,7 +471,7 @@ private:
     bool                m_isModified;
 
     DgnGeometryPartId           m_geomPartId;
-    mutable DgnGeometryPartPtr  m_geomPart;
+    mutable DgnGeometryPartCPtr m_geomPart;
     double                      m_storedScale;              //
     double                      m_muDef;                    // Set to m_storedScale if it is non-zero. Otherwise, it is 1/uorPerMaster for the model ref used in the PostProcessLoad step;
     DPoint3d                    m_symSize;
@@ -516,7 +516,7 @@ public:
 
     void                SetGeometryPartId       (DgnGeometryPartId id) {m_geomPartId = id;}
     DgnGeometryPartId       GetGeometryPartId       () const {return m_geomPartId;}
-    DgnGeometryPartPtr      GetGeometryPart         () const;
+    DgnGeometryPartCPtr     GetGeometryPart         () const;
     DgnModelP           GetSymbolDgnModel   (ViewContextCP context) const;
     void                SetMuDef            (double mudef) {m_muDef = mudef;}
     void                SetSymSize          (DPoint3dCP sz){m_symSize = *sz;}

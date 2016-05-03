@@ -106,14 +106,14 @@ struct DgnImportContext : DgnCloneContext
 {
 private:
     bool            m_areCompatibleDbs;
-    DPoint2d        m_xyOffset;
+    DPoint3d        m_xyzOffset;
     AngleInDegrees  m_yawAdj;
     DgnDbR          m_sourceDb;
     DgnDbR          m_destDb;
     bmap<LsComponentId, uint32_t> m_importedComponents;
     mutable bmap<ECN::ECClassCP, BeSQLite::EC::ECInstanceUpdater*> m_updaterCache;
 
-    void ComputeGcsAdjustment();
+    void ComputeGcsAndGOadjustment();
 
 public:
     //! Construct a DgnImportContext object.
@@ -188,7 +188,7 @@ public:
     //! Check if the source and destination GCSs are compatible, such that elements can be copied between them.
     DgnDbStatus CheckCompatibleGCS() const {return m_areCompatibleDbs? DgnDbStatus::Success: DgnDbStatus::MismatchGcs;}
     //! When copying between different DgnDbs, X and Y coordinates may need to be offset
-    DPoint2d GetOriginOffset() const {return m_xyOffset;}
+    DPoint3d GetOriginOffset() const {return m_xyzOffset;}
     //! When copying between different DgnDbs, the Yaw angle may need to be adjusted.
     AngleInDegrees GetYawAdjustment() const {return m_yawAdj;}
     //! @}
@@ -839,6 +839,7 @@ protected:
     virtual DefinitionElementCP _ToDefinitionElement() const {return nullptr;}
     virtual DictionaryElementCP _ToDictionaryElement() const {return nullptr;}
     virtual IElementGroupCP _ToIElementGroup() const {return nullptr;}
+    virtual DgnGeometryPartCP _ToGeometryPart() const {return nullptr;}
 
     //! Construct a DgnElement from its params
     DGNPLATFORM_EXPORT explicit DgnElement(CreateParams const& params);
@@ -869,6 +870,7 @@ public:
     DGNPLATFORM_EXPORT GeometrySource2dCP ToGeometrySource2d() const;
     DGNPLATFORM_EXPORT GeometrySource3dCP ToGeometrySource3d() const;
 
+    DgnGeometryPartCP ToGeometryPart() const {return _ToGeometryPart();}                //!< more efficient substitute for dynamic_cast<DgnGeometryPartCP>(el)
     DefinitionElementCP ToDefinitionElement() const {return _ToDefinitionElement();}    //!< more efficient substitute for dynamic_cast<DefinitionElementCP>(el)
     DictionaryElementCP ToDictionaryElement() const {return _ToDictionaryElement();}    //!< more efficient substitute for dynamic_cast<DictionaryElementCP>(el)
     AnnotationElement2dCP ToAnnotationElement2d() const {return _ToAnnotationElement2d();} //!< more efficient substitute for dynamic_cast<AnnotationElement2dCP>(el)
@@ -879,6 +881,7 @@ public:
     GeometrySource2dP ToGeometrySource2dP() {return const_cast<GeometrySource2dP>(ToGeometrySource2d());} //!< more efficient substitute for dynamic_cast<GeometrySource2dP>(el)
     GeometrySource3dP ToGeometrySource3dP() {return const_cast<GeometrySource3dP>(ToGeometrySource3d());} //!< more efficient substitute for dynamic_cast<GeometrySource3dP>(el)
 
+    DgnGeometryPartP ToGeometryPartP() {return const_cast<DgnGeometryPartP>(_ToGeometryPart());}                //!< more efficient substitute for dynamic_cast<DgnGeometryPartCP>(el)
     DefinitionElementP ToDefinitionElementP() {return const_cast<DefinitionElementP>(_ToDefinitionElement());}  //!< more efficient substitute for dynamic_cast<DefinitionElementP>(el)
     DictionaryElementP ToDictionaryElementP() {return const_cast<DictionaryElementP>(_ToDictionaryElement());}  //!< more efficient substitute for dynamic_cast<DictionaryElementP>(el)
     AnnotationElement2dP ToAnnotationElement2dP() {return const_cast<AnnotationElement2dP>(_ToAnnotationElement2d());} //!< more efficient substitute for dynamic_cast<AnnotationElement2dP>(el)
@@ -1070,8 +1073,12 @@ struct GeometryStream : ByteStream
 public:
     bool HasGeometry() const {return HasData();}  //!< return false if this GeometryStream is empty.
 
-    DgnDbStatus WriteGeometryStreamAndStep(BeSQLite::SnappyToBlob& snappy, DgnDbR dgnDb, Utf8CP table, Utf8CP colname, uint64_t rowId, BeSQLite::Statement& stmt, int stmtcolidx) const;
+    //! @private
     DgnDbStatus ReadGeometryStream(BeSQLite::SnappyFromMemory& snappy, DgnDbR dgnDb, void const* blob, int blobSize);
+    //! @private
+    static DgnDbStatus WriteGeometryStream(BeSQLite::SnappyToBlob&, DgnDbR, DgnElementId, Utf8CP tableName, Utf8CP columnName);
+    //! @private
+    DgnDbStatus BindGeometryStream(bool& multiChunkGeometryStream, BeSQLite::SnappyToBlob&, BeSQLite::EC::ECSqlStatement&, Utf8CP parameterName) const;
 };
 
 //=======================================================================================
@@ -1311,7 +1318,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void _OnReversedDelete() const override;
     DGNPLATFORM_EXPORT virtual void _OnUpdateFinished() const override;
     DGNPLATFORM_EXPORT virtual void _RemapIds(DgnImportContext&) override;
-    virtual uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() + static_cast<uint32_t>(sizeof(m_categoryId) + sizeof(m_geom)) + sizeof(m_graphics) + m_geom.GetAllocSize();}
+    virtual uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() + (sizeof(*this) - sizeof(T_Super)) + m_geom.GetAllocSize();}
 
     static void AddBaseClassParams(ECSqlClassParams& params);
     DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& stmt);
@@ -1705,6 +1712,17 @@ protected:
 };
 
 //=======================================================================================
+//! @ingroup GROUP_DgnElement
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE LinkElement : DefinitionElement
+    {
+    DEFINE_T_SUPER(DefinitionElement);
+
+    protected:
+        explicit LinkElement(CreateParams const& params) : T_Super(params) {}
+    };
+
+//=======================================================================================
 //! A DefinitionElement which resides in (and only in) the dictionary model.
 //! Typically represents a style or similar resource used by other elements throughout
 //! the DgnDb.
@@ -1742,6 +1760,17 @@ protected:
 };
 
 //=======================================================================================
+//! Abstract base class for group-related information elements.
+// @bsiclass                                                    Shaun.Sewall    04/16
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE GroupInformationElement : InformationElement
+{
+    DEFINE_T_SUPER(InformationElement);
+protected:
+    explicit GroupInformationElement(CreateParams const& params) : T_Super(params) {}
+};
+
+//=======================================================================================
 //! The DgnElements for a DgnDb.
 //! This class holds a cache of reference-counted DgnElements. All in-memory DgnElements for a DgnDb are held in its DgnElements member.
 //! When the reference count of an element goes to zero, it is not immediately freed. Instead, it is held by this class
@@ -1756,6 +1785,7 @@ struct DgnElements : DgnDbTable, IMemoryConsumer
     friend struct DgnElement;
     friend struct DgnModel;
     friend struct DgnModels;
+    friend struct DgnGeometryPart;
     friend struct ElementHandler;
     friend struct TxnManager;
     friend struct ProgressiveViewFilter;
@@ -1851,8 +1881,8 @@ private:
     virtual int64_t _CalculateBytesConsumed() const override {return GetTotalAllocated();}
     virtual int64_t _Purge(int64_t memTarget) override;
 
-    BeSQLite::SnappyFromMemory& GetSnappyFrom() {return m_snappyFrom;} // NB: Not to be used during loading of a geometric element!
-    BeSQLite::SnappyToBlob& GetSnappyTo() {return m_snappyTo;} // NB: Not to be used during insert or update of a geometric element!
+    BeSQLite::SnappyFromMemory& GetSnappyFrom() {return m_snappyFrom;} // NB: Not to be used during loading of a GeometricElement or GeometryPart!
+    BeSQLite::SnappyToBlob& GetSnappyTo() {return m_snappyTo;} // NB: Not to be used during insert or update of a GeometricElement or GeometryPart!
 
 public:
     DGNPLATFORM_EXPORT BeSQLite::CachedStatementPtr GetStatement(Utf8CP sql) const; //!< Get a statement from the element-specific statement cache for this DgnDb @private

@@ -190,6 +190,15 @@ public:
 
     JsLoopP Clone () {return new JsLoop (m_curveVector->Clone ());} 
     void Add (JsCurvePrimitiveP primitive){m_curveVector->Add (primitive->GetICurvePrimitivePtr ());}
+    static JsLoopP CreateRegularPolygonXY (JsDPoint3dP center, double xDistance, double edgeCount, bool isOutsideRadius)
+        {
+        int numEdge = (int)edgeCount;
+        if (numEdge > 100)
+            numEdge = 100;
+        if (numEdge < 3)
+            numEdge = 3;
+        return new JsLoop (CurveVector::CreateRegularPolygonXY (center->Get (), xDistance, numEdge, isOutsideRadius));
+        }
 };
 
 

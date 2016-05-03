@@ -111,7 +111,56 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
          * @param description A description of the error
          */
         static ReportError(description: Bentley_Utf8String): void;
+
+        /** Begin a dispose context */
+        static BeginDisposeContext(): void;
+
+        /** End a dispose context. 
+          * This function calls Dispose on all JavaScript objects holding references to native objects that were created since the call to BeginDisposeContext.
+          * As a result, the native objects are freed and the corresponding JavaScript objects become invalid and should not be used.
+          * Freeing native objects reduces memory consumption and allows for more efficient management of native resources.
+          */
+        static EndDisposeContext(): void;
     }
+
+    /** A wrapper for fopen/fgets */
+    class File implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor {
+        /*** NATIVE_TYPE_NAME = JsFile ***/
+
+        /** a wrapper for fopen.
+         * @param name  The full path to the file. 
+         * @param mode  The usual fopen model specifier
+         * @return an opened File object if successful, or null if the file cannot be opened
+         * @note Use only text mode, as there is currently no support for reading the contents of binary files.
+         * @note on mobile devices, only the temp, local state, and documents directories are accessible. It is up to the caller to supply these
+         * directory root paths to the script.
+        */
+        static Fopen(name: Bentley_Utf8String, mode: Bentley_Utf8String): FileP;
+
+        /** explicitly close the file */
+        Close(): void;
+
+        /** check if the next read position is at the end of the file. If so, do not attempt to read from the file. */
+        Feof(): cxx_bool;
+
+        /** Reads the next line of text. 
+          * @return the next line of text.
+          * @note This function throws an exception if you try to read past the end of the file. Call Feof before calling this function.
+          */
+        ReadLine(): Bentley_Utf8String;
+
+        /**
+         * Writes a line of text at the current write position.
+         * @param line  The line of text to write
+         * @return non-zero if write failed.
+         */
+        WriteLine(line: Bentley_Utf8String): cxx_int32_t;
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type FileP = cxx_pointer<File>;
 
     /** An ECSql Value
     */
