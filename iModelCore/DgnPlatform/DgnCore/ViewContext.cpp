@@ -345,7 +345,21 @@ Render::GraphicPtr ViewContext::_AddSubGraphic(Render::GraphicR graphic, DgnGeom
     if (!partGeometry.IsValid())
         return nullptr;
 
-    Render::GraphicPtr partGraphic = (graphic.IsForDisplay() ? partGeometry->Graphics().Find(*m_viewport, graphic.GetPixelSize()) : nullptr);
+    bool isForDisplay = graphic.IsForDisplay();
+
+    if (!isForDisplay && m_viewport)
+        {
+        Transform partToWorld = Transform::FromProduct(graphic.GetLocalToWorldTransform(), subToGraphic);
+        ElementAlignedBox3d range = partGeometry->GetBoundingBox();
+
+        partToWorld.Multiply(range, range);
+        Frustum box(range);
+
+        if (!GetFrustumPlanes().Intersects(box))
+            return nullptr; // Part range doesn't overlap pick...
+        }
+
+    Render::GraphicPtr partGraphic = (isForDisplay ? partGeometry->Graphics().Find(*m_viewport, graphic.GetPixelSize()) : nullptr);
 
     if (!partGraphic.IsValid())
         {
@@ -358,7 +372,7 @@ Render::GraphicPtr ViewContext::_AddSubGraphic(Render::GraphicR graphic, DgnGeom
             return nullptr;
 
         partGraphic->Close(); 
-        if (graphic.IsForDisplay())
+        if (isForDisplay)
             partGeometry->Graphics().Save(*partGraphic);
         }
 
