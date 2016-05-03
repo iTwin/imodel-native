@@ -43,11 +43,60 @@ CWSCCDATABUFHANDLE dataBuffer
         api->SetStatusDescription("The dataBuffer passed into ConnectWebServicesClientC_DataBufferFree is invalid.");
         return INVALID_PARAMETER;
         }
+
     HCWSCCBUFFER buf = (HCWSCCBUFFER)dataBuffer;
-    for (auto it = buf->lItems.begin(); it != buf->lItems.end(); it++)
+    for (int index = 0; index < buf->lItems.size(); index++)
         {
-        if (it != nullptr)
-            delete *it;
+        if (buf->lItems[index] != nullptr)
+            {
+            switch(buf->lType)
+                {
+                case BUFF_TYPE_CONNECTUSER:
+                    {
+                    LPCWSCCCONNECTUSERBUFFER connectuserBuf = (LPCWSCCCONNECTUSERBUFFER) buf->lItems[index];
+                    delete connectuserBuf;
+                    }
+                    break;
+                case BUFF_TYPE_ORGANIZATION:
+                    {
+                    LPCWSCCORGANIZATIONBUFFER organizationBuf = (LPCWSCCORGANIZATIONBUFFER) buf->lItems[index];
+                    delete organizationBuf;
+                    }
+                    break;
+                case BUFF_TYPE_PROJECT:
+                    {
+                    LPCWSCCPROJECTBUFFER projectBuf = (LPCWSCCPROJECTBUFFER) buf->lItems[index];
+                    delete projectBuf;
+                    }
+                    break;
+                case BUFF_TYPE_PROJECTFAVORITE:
+                    {
+                    LPCWSCCPROJECTFAVORITEBUFFER projectfavoriteBuf = (LPCWSCCPROJECTFAVORITEBUFFER) buf->lItems[index];
+                    delete projectfavoriteBuf;
+                    }
+                    break;
+                case BUFF_TYPE_PROJECTMRU:
+                    {
+                    LPCWSCCPROJECTMRUBUFFER projectmruBuf = (LPCWSCCPROJECTMRUBUFFER) buf->lItems[index];
+                    delete projectmruBuf;
+                    }
+                    break;
+                case BUFF_TYPE_PROJECTMRUDETAIL:
+                    {
+                    LPCWSCCPROJECTMRUDETAILBUFFER projectmrudetailBuf = (LPCWSCCPROJECTMRUDETAILBUFFER) buf->lItems[index];
+                    delete projectmrudetailBuf;
+                    }
+                    break;
+                case BUFF_TYPE_PROJECTTEMPLATE:
+                    {
+                    LPCWSCCPROJECTTEMPLATEBUFFER projecttemplateBuf = (LPCWSCCPROJECTTEMPLATEBUFFER) buf->lItems[index];
+                    delete projecttemplateBuf;
+                    }
+                    break;
+                default:
+                    continue;
+                }
+            }
         }
     free(buf);
     api->SetStatusMessage("Successful operation");
@@ -86,7 +135,7 @@ WCharP str
     VERIFY_API
     if(nullptr == dataBuffer)
         {
-        api->SetStatusMessage("<HeaderWriters.CPublicApiHeaderWriter.CallStatus instance at 0x0281F940>");
+        api->SetStatusMessage("<HeaderWriters.CPublicApiHeaderWriter.CallStatus instance at 0x028D5288>");
         api->SetStatusDescription("The dataBuffer passed into ConnectWebServicesClientC data access function is invalid.");
         return INVALID_PARAMETER;
         }
@@ -110,7 +159,7 @@ WCharP str
         case BUFF_TYPE_PROJECTTEMPLATE:
             return projecttemplateGetStringProperty(api, buf, bufferProperty, index, strLength, str);
         default:
-        api->SetStatusMessage("<HeaderWriters.CPublicApiHeaderWriter.CallStatus instance at 0x0281F940>");
+        api->SetStatusMessage("<HeaderWriters.CPublicApiHeaderWriter.CallStatus instance at 0x028D5288>");
         api->SetStatusDescription("The buffer type passed in is invalid.");
         return INVALID_PARAMETER;
         }
@@ -131,7 +180,7 @@ size_t* outStringSize
     VERIFY_API
     if(nullptr == dataBuffer)
         {
-        api->SetStatusMessage("<HeaderWriters.CPublicApiHeaderWriter.CallStatus instance at 0x0281F940>");
+        api->SetStatusMessage("<HeaderWriters.CPublicApiHeaderWriter.CallStatus instance at 0x028D5288>");
         api->SetStatusDescription("The dataBuffer passed into ConnectWebServicesClientC data access function is invalid.");
         return INVALID_PARAMETER;
         }
@@ -155,7 +204,7 @@ size_t* outStringSize
         case BUFF_TYPE_PROJECTTEMPLATE:
             return projecttemplateGetStringLength(api, buf, bufferProperty, index, outStringSize);
         default:
-        api->SetStatusMessage("<HeaderWriters.CPublicApiHeaderWriter.CallStatus instance at 0x0281F940>");
+        api->SetStatusMessage("<HeaderWriters.CPublicApiHeaderWriter.CallStatus instance at 0x028D5288>");
         api->SetStatusDescription("The buffer type passed in is invalid.");
         return INVALID_PARAMETER;
         }
@@ -177,7 +226,7 @@ WCharP guid
     VERIFY_API
     if(nullptr == dataBuffer)
         {
-        api->SetStatusMessage("<HeaderWriters.CPublicApiHeaderWriter.CallStatus instance at 0x0281F940>");
+        api->SetStatusMessage("<HeaderWriters.CPublicApiHeaderWriter.CallStatus instance at 0x028D5288>");
         api->SetStatusDescription("The dataBuffer passed into ConnectWebServicesClientC data access function is invalid.");
         return INVALID_PARAMETER;
         }
@@ -191,7 +240,7 @@ WCharP guid
         case BUFF_TYPE_ORGANIZATION:
             return organizationGetGuidProperty(api, buf, bufferProperty, index, strLength, guid);
         default:
-        api->SetStatusMessage("<HeaderWriters.CPublicApiHeaderWriter.CallStatus instance at 0x0281F940>");
+        api->SetStatusMessage("<HeaderWriters.CPublicApiHeaderWriter.CallStatus instance at 0x028D5288>");
         api->SetStatusDescription("The buffer type passed in is invalid.");
         return INVALID_PARAMETER;
         }
@@ -212,7 +261,7 @@ bool* boolean
     VERIFY_API
     if(nullptr == dataBuffer)
         {
-        api->SetStatusMessage("<HeaderWriters.CPublicApiHeaderWriter.CallStatus instance at 0x0281F940>");
+        api->SetStatusMessage("<HeaderWriters.CPublicApiHeaderWriter.CallStatus instance at 0x028D5288>");
         api->SetStatusDescription("The dataBuffer passed into ConnectWebServicesClientC data access function is invalid.");
         return INVALID_PARAMETER;
         }
@@ -230,7 +279,7 @@ bool* boolean
         case BUFF_TYPE_PROJECTTEMPLATE:
             return projecttemplateGetBooleanProperty(api, buf, bufferProperty, index, boolean);
         default:
-        api->SetStatusMessage("<HeaderWriters.CPublicApiHeaderWriter.CallStatus instance at 0x0281F940>");
+        api->SetStatusMessage("<HeaderWriters.CPublicApiHeaderWriter.CallStatus instance at 0x028D5288>");
         api->SetStatusDescription("The buffer type passed in is invalid.");
         return INVALID_PARAMETER;
         }
@@ -251,7 +300,7 @@ int32_t* integer
     VERIFY_API
     if(nullptr == dataBuffer)
         {
-        api->SetStatusMessage("<HeaderWriters.CPublicApiHeaderWriter.CallStatus instance at 0x0281F940>");
+        api->SetStatusMessage("<HeaderWriters.CPublicApiHeaderWriter.CallStatus instance at 0x028D5288>");
         api->SetStatusDescription("The dataBuffer passed into ConnectWebServicesClientC data access function is invalid.");
         return INVALID_PARAMETER;
         }
@@ -269,7 +318,7 @@ int32_t* integer
         case BUFF_TYPE_PROJECTTEMPLATE:
             return projecttemplateGetIntProperty(api, buf, bufferProperty, index, integer);
         default:
-        api->SetStatusMessage("<HeaderWriters.CPublicApiHeaderWriter.CallStatus instance at 0x0281F940>");
+        api->SetStatusMessage("<HeaderWriters.CPublicApiHeaderWriter.CallStatus instance at 0x028D5288>");
         api->SetStatusDescription("The buffer type passed in is invalid.");
         return INVALID_PARAMETER;
         }
@@ -290,7 +339,7 @@ double* pDouble
     VERIFY_API
     if(nullptr == dataBuffer)
         {
-        api->SetStatusMessage("<HeaderWriters.CPublicApiHeaderWriter.CallStatus instance at 0x0281F940>");
+        api->SetStatusMessage("<HeaderWriters.CPublicApiHeaderWriter.CallStatus instance at 0x028D5288>");
         api->SetStatusDescription("The dataBuffer passed into ConnectWebServicesClientC data access function is invalid.");
         return INVALID_PARAMETER;
         }
@@ -308,7 +357,7 @@ double* pDouble
         case BUFF_TYPE_PROJECTTEMPLATE:
             return projecttemplateGetDoubleProperty(api, buf, bufferProperty, index, pDouble);
         default:
-        api->SetStatusMessage("<HeaderWriters.CPublicApiHeaderWriter.CallStatus instance at 0x0281F940>");
+        api->SetStatusMessage("<HeaderWriters.CPublicApiHeaderWriter.CallStatus instance at 0x028D5288>");
         api->SetStatusDescription("The buffer type passed in is invalid.");
         return INVALID_PARAMETER;
         }
@@ -329,7 +378,7 @@ int64_t* pLong
     VERIFY_API
     if(nullptr == dataBuffer)
         {
-        api->SetStatusMessage("<HeaderWriters.CPublicApiHeaderWriter.CallStatus instance at 0x0281F940>");
+        api->SetStatusMessage("<HeaderWriters.CPublicApiHeaderWriter.CallStatus instance at 0x028D5288>");
         api->SetStatusDescription("The dataBuffer passed into ConnectWebServicesClientC data access function is invalid.");
         return INVALID_PARAMETER;
         }
@@ -341,7 +390,7 @@ int64_t* pLong
         case BUFF_TYPE_PROJECTMRUDETAIL:
             return projectmrudetailGetLongProperty(api, buf, bufferProperty, index, pLong);
         default:
-        api->SetStatusMessage("<HeaderWriters.CPublicApiHeaderWriter.CallStatus instance at 0x0281F940>");
+        api->SetStatusMessage("<HeaderWriters.CPublicApiHeaderWriter.CallStatus instance at 0x028D5288>");
         api->SetStatusDescription("The buffer type passed in is invalid.");
         return INVALID_PARAMETER;
         }

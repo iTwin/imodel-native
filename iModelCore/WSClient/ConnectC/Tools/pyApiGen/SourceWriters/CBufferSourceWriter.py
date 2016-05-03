@@ -70,14 +70,28 @@ class CBufferSourceWriter(SourceWriter):
         self._file.write("    if (nullptr == dataBuffer)\n")
         self._file.write('        {\n')
         self._file.write('        api->SetStatusMessage("{1}");\n        api->SetStatusDescription("{2}");\n'
-                         '        return {0};\n        }}\n'.format("INVALID_PARAMETER", self._status_codes["INVALID_PARAMETER"].message,
-                                                                    "The dataBuffer passed into {0}_DataBufferFree is invalid."
-                                                                    .format(self._api.get_api_name())))
+                         '        return {0};\n        }}\n\n'.format("INVALID_PARAMETER", self._status_codes["INVALID_PARAMETER"].message,
+                                                                      "The dataBuffer passed into {0}_DataBufferFree is invalid."
+                                                                      .format(self._api.get_api_name())))
         self._file.write("    H{0}BUFFER buf = (H{0}BUFFER)dataBuffer;\n".format(self._api.get_api_acronym()))
-        self._file.write("    for (auto it = buf->lItems.begin(); it != buf->lItems.end(); it++)\n")
+        self._file.write("    for (int index = 0; index < buf->lItems.size(); index++)\n")
         self._file.write("        {\n")
-        self._file.write("        if (it != nullptr)\n")
-        self._file.write("            delete *it;\n")
+        self._file.write("        if (buf->lItems[index] != nullptr)\n")
+        self._file.write("            {\n")
+        self._file.write("            switch(buf->lType)\n")
+        self._file.write("                {\n")
+        for buffer_struct in self.__buffer_structs:
+            self._file.write("                case BUFF_TYPE_{0}:\n".format(buffer_struct.get_upper_name()))
+            self._file.write("                    {\n")
+            self._file.write("                    LP{0}{1}BUFFER {2}Buf = (LP{0}{1}BUFFER) buf->lItems[index];\n"
+                             .format(self._api.get_upper_api_acronym(), buffer_struct.get_upper_name(), buffer_struct.get_lower_name()))
+            self._file.write("                    delete {0}Buf;\n".format(buffer_struct.get_lower_name()))
+            self._file.write("                    }\n")
+            self._file.write("                    break;\n")
+        self._file.write("                default:\n")
+        self._file.write("                    continue;\n")
+        self._file.write("                }\n")
+        self._file.write("            }\n")
         self._file.write("        }\n")
         self._file.write("    free(buf);\n")
         self._file.write('    api->SetStatusMessage("{1}");\n    api->SetStatusDescription("{2}");\n'
