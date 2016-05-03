@@ -42,4 +42,3 @@ DgnLinkTest.Clone                                       # Defect 386016:- Does n
 DgnLinkTest.* # Need to figure the BIS hierarchy for DgnLinks - Shaun
 DgnECNavigatorTest.DgnLinksElementInfo # Need to figure the BIS hierarchy for DgnLinks - Shaun
 DgnECNavigatorTest.IfcElementInfo # Need to figure BIS schema for IFC - Shaun/Raman
-

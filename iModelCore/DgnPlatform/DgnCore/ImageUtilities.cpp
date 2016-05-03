@@ -147,7 +147,7 @@ template<typename READER> static BentleyStatus readPngToBuffer(ByteStream& outPi
 //---------------------------------------------------------------------------------------
 BentleyStatus RgbImageInfo::ReadImageFromPngBuffer(Render::Image& image, Byte const*inputBuffer, size_t numberBytes)
     {
-    image.Initialize(m_width, m_height); // zero...we haven't read the dimensions yet...
+    image.Initialize(0, 0, m_hasAlpha ? Render::Image::Format::Rgba : Render::Image::Format::Rgb); // zero...we haven't read the dimensions yet...
     PngReadData pngData(inputBuffer, numberBytes);
     auto status = readPngToBuffer(image.GetByteStreamR(), *this, pngData);
     if (SUCCESS == status)
@@ -165,7 +165,7 @@ BentleyStatus RgbImageInfo::ReadImageFromPngFile(ByteStream& rgbaBuffer, BeFile&
     return readPngToBuffer(rgbaBuffer, *this, pngFile);
     }
 
-namespace {
+BEGIN_UNNAMED_NAMESPACE
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson  10/13
 //=======================================================================================
@@ -201,12 +201,12 @@ struct BufferWriter
         app->m_pngBuffer.Append(data, (uint32_t) length);
         }
 };
-}
 
 struct Bgra {uint8_t b, g, r, a;};
 struct Bgr  {uint8_t b, g, r;};
-
 struct Rgba {uint8_t r, g, b, a;};
+
+END_UNNAMED_NAMESPACE
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson  10/2013
@@ -347,7 +347,7 @@ static BeJpegPixelType computePixelFormat(RgbImageInfo const& infoIn)
 //---------------------------------------------------------------------------------------
 static size_t computeBytesPerPixel(RgbImageInfo const& infoIn)
     {
-    return infoIn.m_hasAlpha? 4: 3;
+    return infoIn.m_hasAlpha ? 4 : 3;
     }
 
 //---------------------------------------------------------------------------------------
@@ -368,7 +368,7 @@ BentleyStatus RgbImageInfo::ReadImageFromJpgBuffer(Render::Image& image, Byte co
     if (SUCCESS != reader.ReadHeader(m_width, m_height, inputBuffer, inputBufferSize))
         return ERROR;
 
-    image.Initialize(m_width, m_height);
+    image.Initialize(m_width, m_height, m_hasAlpha ? Render::Image::Format::Rgba : Render::Image::Format::Rgb);
     ByteStream& rgbaBuffer = image.GetByteStreamR();
     rgbaBuffer.Resize((uint32_t) (m_width*m_height*computeBytesPerPixel(*this)));
     return reader.Decompress(rgbaBuffer.GetDataP(), rgbaBuffer.GetSize(), inputBuffer, inputBufferSize, computePixelFormat(*this));

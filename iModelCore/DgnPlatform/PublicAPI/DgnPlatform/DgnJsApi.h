@@ -813,7 +813,7 @@ struct JsDgnGeometryPart : RefCountedBaseWithCreate
         DGNJSAPI_VALIDATE_ARGS_NULL(DGNJSAPI_IS_VALID_JSOBJ(db));
         return new JsDgnGeometryPart(*DgnGeometryPart::Create(*db->m_db));
         }
-    BentleyStatus Insert() {return m_value->GetDgnDb().GeometryParts().InsertGeometryPart(*m_value);}
+    BentleyStatus Insert() {return m_value->GetDgnDb().Elements().Insert(*m_value).IsValid() ? BentleyStatus::SUCCESS : BentleyStatus::ERROR;}
 };
 
 typedef JsDgnGeometryPart* JsDgnGeometryPartP;

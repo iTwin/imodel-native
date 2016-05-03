@@ -90,6 +90,7 @@ struct AnnotationLayoutLine : public RefCountedBase
 private:
     DEFINE_T_SUPER(RefCountedBase)
     
+    AnnotationParagraphCP m_seedParagraph;
     AnnotationLayoutRunCollection m_runs;
 
     bool m_isValid;
@@ -102,12 +103,13 @@ private:
     DGNPLATFORM_EXPORT void Update();
 
 public:
-    DGNPLATFORM_EXPORT AnnotationLayoutLine();
+    DGNPLATFORM_EXPORT explicit AnnotationLayoutLine(AnnotationParagraphCR);
     AnnotationLayoutLine(AnnotationLayoutLineCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
     AnnotationLayoutLineR operator=(AnnotationLayoutLineCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
-    static AnnotationLayoutLinePtr Create() { return new AnnotationLayoutLine(); }
+    static AnnotationLayoutLinePtr Create(AnnotationParagraphCR seedParagraph) { return new AnnotationLayoutLine(seedParagraph); }
     AnnotationLayoutLinePtr Clone() const { return new AnnotationLayoutLine(*this); }
 
+    AnnotationParagraphCR GetSeedParagraph() const { return *m_seedParagraph; }
     DRange2dCR GetLayoutRange() const { const_cast<AnnotationLayoutLineP>(this)->Update(); return m_layoutRange; }
     DRange2dCR GetJustificationRange() const { const_cast<AnnotationLayoutLineP>(this)->Update(); return m_justificationRange; }
     DVec2dCR GetOffsetFromDocument() const { return m_offsetFromDocument; }
@@ -133,7 +135,8 @@ private:
     DRange2d m_layoutRange;
 
     DGNPLATFORM_EXPORT void CopyFrom(AnnotationTextBlockLayoutCR);
-    AnnotationLayoutLinePtr FlushLine(AnnotationLayoutLineR);
+    AnnotationLayoutLinePtr FlushLine(AnnotationLayoutLineR line) { return FlushLine(line, line.GetSeedParagraph()); }
+    AnnotationLayoutLinePtr FlushLine(AnnotationLayoutLineR, AnnotationParagraphCR nextLineSeedParagraph);
     void PopulateLines();
     void JustifyLines();
     void Invalidate() { m_isValid = false; }

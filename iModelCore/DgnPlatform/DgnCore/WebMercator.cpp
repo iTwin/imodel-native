@@ -108,6 +108,7 @@ private:
     static Utf8String SerializeRasterInfo(RgbImageInfo const&);
     static RgbImageInfo DeserializeRasterInfo(Utf8CP);
     TiledRaster(){}
+    virtual ~TiledRaster(){}
         
 protected:
     virtual Utf8CP _GetId() const override {return m_url.c_str();}
@@ -1122,14 +1123,15 @@ void WebMercatorModel::_ReadJsonProperties(Json::Value const& val)
 +---------------+---------------+---------------+---------------+---------------+------*/
 RealityDataCache& WebMercatorModel::GetRealityDataCache() const
     {
-    if (m_realityDataCache.IsNull())
+    if (!m_realityDataCache.IsValid())
         {
         m_realityDataCache = RealityDataCache::Create(100);
         BeFileName storageFileName = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName();
         storageFileName.AppendToPath(WString(m_properties.m_mapService.c_str(), true).c_str());
         m_realityDataCache->RegisterStorage(*BeSQLiteRealityDataStorage::Create(storageFileName));
-        m_realityDataCache->RegisterSource(*HttpRealityDataSource::Create(8));
+        m_realityDataCache->RegisterSource(*HttpRealityDataSource::Create(4));
         }
+
     return *m_realityDataCache;
     }
 
@@ -1142,15 +1144,14 @@ bool TiledRaster::_IsExpired() const
     return false; // never expire
     }
 
-
 #define TABLE_NAME_TiledRaster  "TiledRaster"
 //=======================================================================================
 // @bsiclass                                        Grigas.Petraitis            03/2015
 //=======================================================================================
 struct TiledRasterPrepareAndCleanupHandler : BeSQLiteRealityDataStorage::DatabasePrepareAndCleanupHandler
     {
-    static BeAtomic<bool> s_isPrepared;
-    virtual bool _IsPrepared() const override {return s_isPrepared;}
+    mutable BeAtomic<bool> m_isPrepared;
+    virtual bool _IsPrepared() const override {return m_isPrepared;}
 
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                     Grigas.Petraitis           03/2015
@@ -1159,14 +1160,14 @@ struct TiledRasterPrepareAndCleanupHandler : BeSQLiteRealityDataStorage::Databas
         {
         if (db.TableExists(TABLE_NAME_TiledRaster))
             {
-            s_isPrepared.store(true);
+            m_isPrepared.store(true);
             return SUCCESS;
             }
 
         Utf8CP ddl = "Url CHAR PRIMARY KEY,Raster BLOB,RasterSize INT,RasterInfo CHAR,ContentType CHAR,Created BIGINT,Expires BIGINT,ETag CHAR";
         if (BeSQLite::BE_SQLITE_OK == db.CreateTable(TABLE_NAME_TiledRaster, ddl))
             {
-            s_isPrepared.store(true);
+            m_isPrepared.store(true);
             return SUCCESS;
             }
         return ERROR;
@@ -1199,7 +1200,6 @@ struct TiledRasterPrepareAndCleanupHandler : BeSQLiteRealityDataStorage::Databas
         return SUCCESS;
         }
     };
-BeAtomic<bool> TiledRasterPrepareAndCleanupHandler::s_isPrepared;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               03/2015

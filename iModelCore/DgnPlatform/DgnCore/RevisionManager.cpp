@@ -525,8 +525,6 @@ void DgnRevision::CollectCodesFromChangeSet(DgnDbCR dgndb, IChangeSet& changeSet
     collectCodes(m_assignedCodes, m_discardedCodes, elems);
     auto models = DgnChangeIterator::MakeModelChangeIterator(dgndb, changeSet);
     collectCodes(m_assignedCodes, m_discardedCodes, models);
-    auto geomparts = DgnChangeIterator::MakeGeometryPartChangeIterator(dgndb, changeSet);
-    collectCodes(m_assignedCodes, m_discardedCodes, geomparts);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -24,6 +24,7 @@ static Utf8CP VIEW_SETTING_Origin                = "origin";
 static Utf8CP VIEW_SETTING_RotAngle              = "rotAngle";
 static Utf8CP VIEW_SETTING_Rotation              = "rotation";
 static Utf8CP VIEW_SETTING_SubCategories         = "subCategories";
+static Utf8CP VIEW_SETTING_PointCloud            = "pointCloud";
 static Utf8CP VIEW_SubCategoryId                 = "subCategoryId";
 
 static Utf8CP VIEWFLAG_construction              = "construct";
@@ -48,6 +49,24 @@ static Utf8CP VIEWFLAG_backClip                  = "backClip";
 static Utf8CP VIEWFLAG_noClipVolume              = "noClipVol";
 static Utf8CP VIEWFLAG_renderMode                = "renderMode";
 static Utf8CP VIEWFLAG_ignoreLighting            = "ignoreLighting";
+
+static Utf8CP SETTINGPOINTCLOUD_flags               = "flags";
+static Utf8CP SETTINGPOINTCLOUD_contrast            = "contrast";
+static Utf8CP SETTINGPOINTCLOUD_brightness          = "brightness";
+static Utf8CP SETTINGPOINTCLOUD_distance            = "distance";
+static Utf8CP SETTINGPOINTCLOUD_offset              = "offset";
+static Utf8CP SETTINGPOINTCLOUD_adaptivePointSize   = "adaptivePointSize";
+static Utf8CP SETTINGPOINTCLOUD_intensityRampIdx    = "intensityRampIdx";
+static Utf8CP SETTINGPOINTCLOUD_planeRampIdx        = "planeRampIdx";
+static Utf8CP SETTINGPOINTCLOUD_planeAxis           = "planeAxis";
+static Utf8CP SETTINGPOINTCLOUD_displayStyle        = "displayStyle";
+static Utf8CP SETTINGPOINTCLOUD_planeRamp           = "planeRamp";
+static Utf8CP SETTINGPOINTCLOUD_intensityRamp       = "intensityRamp";
+static Utf8CP SETTINGPOINTCLOUD_useACSAsPlaneAxis   = "useACSAsPlaneAxis";
+static Utf8CP SETTINGPOINTCLOUD_clampIntensity      = "clampIntensity";
+static Utf8CP SETTINGPOINTCLOUD_needClassifBuffer   = "needClassifBuffer";
+static Utf8CP SETTINGPOINTCLOUD_displayStyleName    = "displayStyleName";
+static Utf8CP SETTINGPOINTCLOUD_displayStyleIndex   = "displayStyleIndex";
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/14
@@ -129,6 +148,54 @@ void ViewFlags::To3dJson(JsonValueR val) const
     if (ignoreLighting) val[VIEWFLAG_ignoreLighting] = true;
 
     val[VIEWFLAG_renderMode] =(uint8_t) m_renderMode;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                   Eric.Paquet         4/2016
+//-----------------------------------------------------------------------------------------
+void PointCloudViewSettings::FromJson(JsonValueCR val)
+    {
+    m_flags                 = val[SETTINGPOINTCLOUD_flags].asUInt();
+    m_contrast              = val[SETTINGPOINTCLOUD_contrast].asDouble();
+    m_brightness            = val[SETTINGPOINTCLOUD_brightness].asDouble();
+    m_distance              = val[SETTINGPOINTCLOUD_distance].asDouble();
+    m_offset                = val[SETTINGPOINTCLOUD_offset].asDouble();
+    m_adaptivePointSize     = val[SETTINGPOINTCLOUD_adaptivePointSize].asInt();
+    m_intensityRampIdx      = val[SETTINGPOINTCLOUD_intensityRampIdx].asUInt();
+    m_planeRampIdx          = val[SETTINGPOINTCLOUD_planeRampIdx].asUInt();
+    m_planeAxis             = val[SETTINGPOINTCLOUD_planeAxis].asUInt();
+    m_displayStyle          = DisplayStyle(val[SETTINGPOINTCLOUD_displayStyle].asUInt());
+    m_planeRamp             = val[SETTINGPOINTCLOUD_planeRamp].asString();
+    m_intensityRamp         = val[SETTINGPOINTCLOUD_intensityRamp].asString();
+    m_useACSAsPlaneAxis     = val[SETTINGPOINTCLOUD_useACSAsPlaneAxis].asBool();
+    m_clampIntensity        = val[SETTINGPOINTCLOUD_clampIntensity].asBool();
+    m_needClassifBuffer     = val[SETTINGPOINTCLOUD_needClassifBuffer].asBool();
+    m_displayStyleName      = val[SETTINGPOINTCLOUD_displayStyleName].asString();
+    m_displayStyleIndex     = val[SETTINGPOINTCLOUD_displayStyleIndex].asInt();
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                   Eric.Paquet         4/2016
+//-----------------------------------------------------------------------------------------
+void PointCloudViewSettings::ToJson(JsonValueR val) const
+    {
+    val[SETTINGPOINTCLOUD_flags]                = m_flags;
+    val[SETTINGPOINTCLOUD_contrast]             = m_contrast;
+    val[SETTINGPOINTCLOUD_brightness]           = m_brightness;
+    val[SETTINGPOINTCLOUD_distance]             = m_distance;
+    val[SETTINGPOINTCLOUD_offset]               = m_offset;
+    val[SETTINGPOINTCLOUD_adaptivePointSize]    = m_adaptivePointSize;
+    val[SETTINGPOINTCLOUD_intensityRampIdx]     = m_intensityRampIdx;
+    val[SETTINGPOINTCLOUD_planeRampIdx]         = m_planeRampIdx;
+    val[SETTINGPOINTCLOUD_planeAxis]            = m_planeAxis;
+    val[SETTINGPOINTCLOUD_displayStyle]         = (uint32_t) m_displayStyle;
+    val[SETTINGPOINTCLOUD_planeRamp]            = m_planeRamp.c_str();
+    val[SETTINGPOINTCLOUD_intensityRamp]        = m_intensityRamp.c_str();
+    val[SETTINGPOINTCLOUD_useACSAsPlaneAxis]    = m_useACSAsPlaneAxis;
+    val[SETTINGPOINTCLOUD_clampIntensity]       = m_clampIntensity;
+    val[SETTINGPOINTCLOUD_needClassifBuffer]    = m_needClassifBuffer;
+    val[SETTINGPOINTCLOUD_displayStyleName]     = m_displayStyleName.c_str();
+    val[SETTINGPOINTCLOUD_displayStyleIndex]    = m_displayStyleIndex;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -233,6 +300,11 @@ void ViewController::_RestoreFromSettings(JsonValueCR settings)
     else
         m_viewFlags.FromBaseJson(settings[VIEW_SETTING_Flags]);
 
+    if (!settings.isMember(VIEW_SETTING_PointCloud))
+        m_pointCloudViewSettings.InitDefaults();
+    else
+        m_pointCloudViewSettings.FromJson(settings[VIEW_SETTING_PointCloud]);
+
     if (!settings.isMember(VIEW_SETTING_BackgroundColor))
         m_backgroundColor = ColorDef::Black();
     else
@@ -288,6 +360,10 @@ void ViewController::_SaveToSettings(JsonValueR settings) const
     // only save background color if it's not the default (black)...
     if (ColorDef::Black() != m_backgroundColor)
         settings[VIEW_SETTING_BackgroundColor] = m_backgroundColor.GetValue();
+
+    // Only save point cloud view settings if they're not set to default values
+    if (!m_pointCloudViewSettings.AreSetToDefault())
+        m_pointCloudViewSettings.ToJson(settings[VIEW_SETTING_PointCloud]);
 
     m_viewedCategories.ToJson(settings[VIEW_SETTING_Categories]);
     if (m_subCategoryOverrides.empty())
@@ -1610,6 +1686,117 @@ void ViewFlags::InitDefaults()
     materials = true;
     sceneLights = true;
     }
+
+//-----------------------------------------------------------------------------------------
+// Constructor
+// @bsimethod                                                   Eric.Paquet         4/2016
+//-----------------------------------------------------------------------------------------
+PointCloudViewSettings::PointCloudViewSettings()
+    {
+    InitDefaults();
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                   Eric.Paquet         4/2016
+//-----------------------------------------------------------------------------------------
+void PointCloudViewSettings::InitDefaults()
+    {
+    m_flags = (VIEWSETTINGS_FRONTBIAS_MASK);
+    m_contrast = POINTCLOUD_DEFAULT_VIEW_CONTRAST;
+    m_brightness = POINTCLOUD_DEFAULT_VIEW_BRIGHTNESS;
+    m_distance = 10.0f;
+    m_offset = 0;
+    m_adaptivePointSize = 0;
+    m_intensityRampIdx = 0;
+    m_planeRampIdx = 1;
+    m_planeAxis = 2;
+    m_useACSAsPlaneAxis = false;
+    m_displayStyle = DisplayStyle::None;
+    m_planeRamp     = "";
+    m_intensityRamp = "";
+
+    //Advanced Settings for SS4
+    m_clampIntensity = false;
+    m_needClassifBuffer = false;
+    m_displayStyleName = "";
+    m_displayStyleIndex = -1; //Set it to -1 it means display style none
+    }
+
+//-----------------------------------------------------------------------------------------
+// Verify if PointCloudViewSettings are equal to default settings
+// @bsimethod                                                   Eric.Paquet         5/2016
+//-----------------------------------------------------------------------------------------
+bool PointCloudViewSettings::AreSetToDefault() const
+    {
+    PointCloudViewSettings tmpViewSettings;
+
+    if (m_flags != tmpViewSettings.m_flags  ||
+        m_contrast != tmpViewSettings.m_contrast ||
+        m_brightness != tmpViewSettings.m_brightness ||
+        m_distance != tmpViewSettings.m_distance ||
+        m_offset != tmpViewSettings.m_offset ||
+        m_adaptivePointSize != tmpViewSettings.m_adaptivePointSize ||
+        m_intensityRampIdx != tmpViewSettings.m_intensityRampIdx ||
+        m_planeRampIdx != tmpViewSettings.m_planeRampIdx ||
+        m_planeAxis != tmpViewSettings.m_planeAxis ||
+        m_useACSAsPlaneAxis != tmpViewSettings.m_useACSAsPlaneAxis ||
+        m_displayStyle != tmpViewSettings.m_displayStyle ||
+        m_planeRamp != tmpViewSettings.m_planeRamp ||
+        m_intensityRamp != tmpViewSettings.m_intensityRamp ||
+        m_clampIntensity != tmpViewSettings.m_clampIntensity ||
+        m_needClassifBuffer != tmpViewSettings.m_needClassifBuffer ||
+        m_displayStyleName != tmpViewSettings.m_displayStyleName ||
+        m_displayStyleIndex != tmpViewSettings.m_displayStyleIndex)
+        {
+        return false;
+        }
+
+    return true;
+    }
+
+//-----------------------------------------------------------------------------------------
+// PointCloudViewSettings get/set methods
+// @bsimethod                                                   Eric.Paquet         5/2016
+//-----------------------------------------------------------------------------------------
+bool        PointCloudViewSettings::GetUseRgb() const               { return TO_BOOL(m_flags & VIEWSETTINGS_RGB_MASK); }
+bool        PointCloudViewSettings::GetUseIntensity() const         { return TO_BOOL(m_flags & VIEWSETTINGS_INTENSITY_MASK); }
+bool        PointCloudViewSettings::GetUseLightning() const         { return TO_BOOL(m_flags & VIEWSETTINGS_LIGHTNING_MASK); }
+bool        PointCloudViewSettings::GetUsePlane() const             { return TO_BOOL(m_flags & VIEWSETTINGS_PLANE_MASK); }
+bool        PointCloudViewSettings::GetUseFrontBias() const         { return TO_BOOL(m_flags & VIEWSETTINGS_FRONTBIAS_MASK); }
+uint32_t    PointCloudViewSettings::GetFlags() const                { return m_flags; }
+void        PointCloudViewSettings::SetFlags(uint32_t flags)        { m_flags = flags;}
+double      PointCloudViewSettings::GetContrast() const             { return m_contrast;}
+void        PointCloudViewSettings::SetContrast(double contrast)    { m_contrast = contrast;}
+double      PointCloudViewSettings::GetBrightness() const           { return m_brightness;}
+void        PointCloudViewSettings::SetBrightness(double brightness){ m_brightness = brightness; }
+double      PointCloudViewSettings::GetDistance() const             { return m_distance;}
+void        PointCloudViewSettings::SetDistance(double distance)    { m_distance = distance;}
+double      PointCloudViewSettings::GetOffset() const               { return m_offset;}
+void        PointCloudViewSettings::SetOffset(double offset)        { m_offset = offset;}
+int32_t     PointCloudViewSettings::GetAdaptivePointSize() const    { return m_adaptivePointSize;}
+void        PointCloudViewSettings::SetAdaptivePointSize(int32_t adaptivePointSize){ m_adaptivePointSize = adaptivePointSize;}
+uint32_t    PointCloudViewSettings::GetIntensityRampIdx() const     { return m_intensityRampIdx;}
+void        PointCloudViewSettings::SetIntensityRampIdx(uint32_t intensityRampIdx){ m_intensityRampIdx = intensityRampIdx;}
+uint32_t    PointCloudViewSettings::GetPlaneRampIdx() const         { return m_planeRampIdx;}
+void        PointCloudViewSettings::SetPlaneRampIdx(uint32_t planeRampIdx){ m_planeRampIdx = planeRampIdx;}
+uint32_t    PointCloudViewSettings::GetPlaneAxis() const            { return m_planeAxis;}
+void        PointCloudViewSettings::SetPlaneAxis(uint32_t planeAxis){ m_planeAxis = planeAxis;}
+Render::PointCloudViewSettings::DisplayStyle PointCloudViewSettings::GetDisplayStyle() const { return m_displayStyle;}
+void        PointCloudViewSettings::SetDisplayStyle(Render::PointCloudViewSettings::DisplayStyle const& displayStyle) { m_displayStyle = displayStyle;}
+Utf8String  PointCloudViewSettings::GetPlaneRamp() const            { return m_planeRamp;}
+void        PointCloudViewSettings::SetPlaneRamp(Utf8StringCR planeRamp){ m_planeRamp = planeRamp;}
+Utf8String  PointCloudViewSettings::GetIntensityRamp() const        { return m_intensityRamp;}
+void        PointCloudViewSettings::SetIntensityRamp(Utf8StringCR intensityRamp){ m_intensityRamp = intensityRamp;}
+bool        PointCloudViewSettings::GetUseACSAsPlaneAxis() const    { return m_useACSAsPlaneAxis;}
+void        PointCloudViewSettings::SetUseACSAsPlaneAxis(bool useACSAsPlaneAxis){ m_useACSAsPlaneAxis = useACSAsPlaneAxis;}
+bool        PointCloudViewSettings::GetClampIntensity() const       { return m_clampIntensity;}
+void        PointCloudViewSettings::SetClampIntensity(bool clampIntensity){ m_clampIntensity = clampIntensity;}
+bool        PointCloudViewSettings::GetNeedClassifBuffer() const    { return m_needClassifBuffer;}
+void        PointCloudViewSettings::SetNeedClassifBuffer(bool needClassifBuffer){ m_needClassifBuffer = needClassifBuffer;}
+Utf8String  PointCloudViewSettings::GetDisplayStyleName() const     { return m_displayStyleName;}
+void        PointCloudViewSettings::SetDisplayStyleName(Utf8StringCR displayStyleName){ m_displayStyleName = displayStyleName;}
+int32_t     PointCloudViewSettings::GetDisplayStyleIndex() const    { return m_displayStyleIndex;}
+void        PointCloudViewSettings::SetDisplayStyleIndex(int32_t displayStyleIndex){ m_displayStyleIndex = displayStyleIndex;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/10

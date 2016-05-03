@@ -421,6 +421,10 @@
         <Directories DirectoryListName="AndroidJUnitProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
 
+    <Part Name="RunAndroidJUnitTest" BentleyBuildMakeFile="${SrcRoot}BeGTest/Android/RunAndroidJUnitTest.mke" BentleyBuildMakeOptions="-dANDROIDJUNIT_PRODUCT=DgnPlatform-AndroidJUnit" OnlyPlatforms="Android*">
+        <SubProduct ProductName="DgnPlatform-AndroidJUnit"/>
+    </Part>
+
     <!-- ********************** -->
     <!-- **** iOSXCTest **** -->
     <!-- ********************** -->
