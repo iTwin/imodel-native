@@ -869,7 +869,7 @@ IECInstanceR sourceCustomAttribute
 
     schema.AddReferencedSchema(*customAttributeSchema);
 
-    for (int i = 0; i < sourceCustomAttributeClass->GetPropertyCount(); i++)
+    for (size_t i = 0; i < sourceCustomAttributeClass->GetPropertyCount(); i++)
         {
         ECPropertyP propP = sourceCustomAttributeClass->GetPropertyByIndex(i);
         ConvertPropertyValue(propP->GetName(), sourceCustomAttribute, *targetAttributeInstance);
