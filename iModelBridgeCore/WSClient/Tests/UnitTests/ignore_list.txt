@@ -45,9 +45,9 @@ ECDbAdapterTests.DeleteInstances_DeletingParentThatHoldsTwoChildrenThatHoldSubCh
 ECDbAdapterTests.DeleteInstances_DeletedInstanceIsInHoldingCircularRelationships_DeletesChildren
 
 # Need adjustments to 06 ECRelationship limitations in ECDb
-#CachingDataSourceTests.*
-#ChangeManagerTests.*
-#DataSourceCacheTests.*
+CachingDataSourceTests.*
+ChangeManagerTests.*
+DataSourceCacheTests.*
 
 # Waiting for ECDb implementation
 DataSourceCacheTests.UpdateSchemas_*
