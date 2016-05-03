@@ -132,7 +132,7 @@ void Node::DrawGeometry(RenderContextR context)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Node::Dump(Utf8CP header) const
     {
-    printf(header);
+    puts(header);
     printf("Children=%s, file=%s, nGeom=%d\n", m_info.m_childPath.c_str(), m_nodePath.c_str(), (int) m_geometry.size());
 
     Utf8String childHdr = Utf8String(header) + "  ";
@@ -187,9 +187,13 @@ bool Node::Draw(RenderContextR context, SceneR scene)
             }
         else
             {
+#if defined (BENTLEYCONFIG_OS_WINODWS) || defined(BENTLEYCONFIG_OS_WINRT)
             DPoint3d center = scene.GetNodeCenter(m_info);
             double pixelSize  =  radius / context.GetPixelSizeAtPoint(&center);
             tooCoarse = pixelSize > Scene::CalculateResolutionRatio() * m_info.GetMaxDiameter();
+#else
+                tooCoarse = false;
+#endif
             }
         }
 
