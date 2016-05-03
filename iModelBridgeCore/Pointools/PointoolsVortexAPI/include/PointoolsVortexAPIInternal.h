@@ -11,7 +11,6 @@
 // Windows Header Files:
 #include <windows.h>
 #include <Commdlg.h>
-//#include <tchar.h>
 
 // C header files
 #include <assert.h>
@@ -60,15 +59,16 @@
 
 #include <omp.h>
 
+#if defined(HAVE_OPENGL)
 #include <GL/glew.h>
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <GL/glext.h>
-
+#include <ptengine/renderengine.h>
+#endif
 
 #include <ptengine/pointsScene.h>
 #include <ptengine/renderContext.h>
-#include <ptengine/renderengine.h>
 #include <ptfs/filepath.h>
 #include <pt/geomtypes.h>
 #include <pt/ptmath.h>

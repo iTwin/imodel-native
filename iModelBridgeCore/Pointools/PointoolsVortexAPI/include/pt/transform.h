@@ -65,7 +65,10 @@ public:
 		m_imatrix = m_matrix; m_imatrix.invert();
 		m_tmatrix = m_matrix; m_tmatrix.transpose();
 	}
+
+#if defined (HAVE_OPENGL)
 	inline void pushGL() const { glPushMatrix(); glMultMatrixd((double*)&m_tmatrix); };
+#endif
 	
 	/* Coordinate space that is transformed FROM						*/ 
 	inline CoordinateSpace coordinateSpace() const { return m_cs; } 

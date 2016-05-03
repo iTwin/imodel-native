@@ -154,10 +154,11 @@ namespace pointsengine
 
 		bool			m_lightEnabled;
 		LightingMode	m_lightMode;
-		GLfloat			m_lightDiffuse[4];
-		GLfloat			m_lightSpecular[4];
-		GLfloat			m_lightAmbient[4];
-		GLfloat			m_lightGlossiness;
+
+		float			m_lightDiffuse[4];
+        float			m_lightSpecular[4];
+        float			m_lightAmbient[4];
+        float			m_lightGlossiness;
 
 		float			m_silhouetteTolerance;
 		bool			m_autoPointSize;

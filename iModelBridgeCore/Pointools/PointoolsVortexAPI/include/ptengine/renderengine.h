@@ -9,6 +9,7 @@
 #ifndef POINTOOLS_RENDER_ENGINE
 #define POINTOOLS_RENDER_ENGINE 1
 
+#ifdef HAVE_OPENGL
 
 #include <ptcloud2/defs.h>
 #include <ptgl/glcamera.h>
@@ -450,5 +451,5 @@ private:
 };
 
 }
-
+#endif
 #endif

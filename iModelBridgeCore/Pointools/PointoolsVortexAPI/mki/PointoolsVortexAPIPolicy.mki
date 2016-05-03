@@ -8,6 +8,7 @@
 
 HAVE_PERMISSION_TO_COMPILE_AT_W3    = 1
 BUILD_NO_STACK_CHECK=1
+#HAVE_OPENGL= 1
 
 %include $(SrcRoot)/Pointools/PointoolsCommon/mki/PolicyCommon.mki
 %include $(SrcRoot)/Pointools/PointoolsVortexAPI/mki/PointoolsVortexAPI_Version.mki
@@ -35,11 +36,13 @@ nameToDefine = DATATREE_NO_PARAMMAP
 dirToSearch=$(PointoolsVortexAPIInclude)
 %include cincapnd.mki
 
+%if defined(HAVE_OPENGL)
 dirToSearch=$(pointoolsVortexAPIVendorAPI)glew
 %include cincapnd.mki
 
 dirToSearch=$(pointoolsVortexAPIVendorAPI)OpenGLExt
 %include cincapnd.mki
+%endif
 
 dirToSearch=$(pointoolsVortexAPIVendorAPI)wildmagic/core
 %include cincapnd.mki

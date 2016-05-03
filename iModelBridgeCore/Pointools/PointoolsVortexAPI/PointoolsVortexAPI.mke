@@ -22,7 +22,6 @@ CompileOptionsMki               = $(SrcRoot)Pointools/PointoolsVortexAPI/mki/Poi
 #--------------------------------------------------------------------------------------
 appSrc              = $(_MakeFilePath)
 MultiCompileDepends = $(_MakeFileSpec) $(appSrc)Include/PointoolsVortexAPIInternal.h
-#HAVE_OPENGL         = 1
 
 always:
     !~@mkdir $(o)    
