@@ -78,8 +78,6 @@ enum class ViewportResizeMode
 struct EXPORT_VTABLE_ATTRIBUTE DgnViewport : RefCounted<NonCopyableClass>
 {
     friend struct ViewManager;
-    typedef bpair<Render::GraphicSet, ElementAlignedBox3d> GraphicSetRangePair; //!< @private
-    typedef bmap<DgnGeometryPartId, GraphicSetRangePair> PartGraphicMap;        //!< @private
     typedef std::deque<Utf8String> ViewStateStack;
     typedef bvector<ProgressiveTaskPtr> ProgressiveTasks;
 
@@ -146,7 +144,6 @@ protected:
     Utf8String      m_currentBaseline;
     ViewStateStack  m_forwardStack;
     ViewStateStack  m_backStack;
-    mutable PartGraphicMap m_partGraphics;
 
     DGNPLATFORM_EXPORT void DestroyViewport();
     DGNPLATFORM_EXPORT void SuspendViewport();
@@ -180,7 +177,6 @@ public:
     Byte GetDynamicsTransparency() const {return m_dynamicsTransparency;}
     void SetDynamicsTransparency(Byte val) {m_dynamicsTransparency = val;}
 
-    PartGraphicMap& GetPartGraphics() const {return m_partGraphics;}
     void SetRenderTarget(Render::Target* target) {m_renderTarget=target; m_sync.InvalidateFirstDrawComplete();}
     double GetFrustumFraction() const {return m_frustFraction;}
     bool IsVisible() {return _IsVisible();}

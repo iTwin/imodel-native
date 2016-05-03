@@ -2848,30 +2848,6 @@ static BRepCache* Get(DgnElementCR elem, bool addIfNotFound)
 BRepCache::Key BRepCache::s_key;
 
 /*=================================================================================**//**
-* @bsiclass                                                     Brien.Bastings  04/2016
-+===============+===============+===============+===============+===============+======*/
-struct PartBRepCache : Db::AppData
-{
-// NEEDSWORK_GEOMETRY_PART: Remove when parts are changed to elements and just use GetPartIndex with BRepCache... 
-static Key s_key;
-typedef bpair<DgnGeometryPartId, uint16_t> PartIndexPair; //!< @private
-typedef bmap<PartIndexPair, ISolidKernelEntityPtr> IndexedGeomMap;
-IndexedGeomMap m_map;
-
-static PartBRepCache* Get(DgnDbCR db, bool addIfNotFound)
-    {
-    PartBRepCache* cache = dynamic_cast<PartBRepCache*>(db.FindAppData(s_key));
-
-    if (nullptr == cache && addIfNotFound)
-        db.AddAppData(s_key, cache = new PartBRepCache);
-
-    return cache;
-    }
-};
-
-PartBRepCache::Key PartBRepCache::s_key;
-
-/*=================================================================================**//**
 * @bsiclass                                                     Brien.Bastings  02/2015
 +===============+===============+===============+===============+===============+======*/
 struct DrawHelper
@@ -2951,22 +2927,6 @@ static bool IsGeometryVisible(ViewContextR context, Render::GeometryParamsCR geo
 +---------------+---------------+---------------+---------------+---------------+------*/
 static ISolidKernelEntityPtr GetCachedSolidKernelEntity(ViewContextR context, DgnElementCP element, GeometryStreamEntryIdCR entryId)
     {
-    // NEEDSWORK_GEOMETRY_PART: Remove when parts are changed to elements and just use GetPartIndex with BRepCache... 
-    if (entryId.GetGeometryPartId().IsValid())
-        {
-        PartBRepCache* cache = PartBRepCache::Get(context.GetDgnDb(), false);
-
-        if (nullptr == cache)
-            return nullptr;
-
-        PartBRepCache::IndexedGeomMap::const_iterator found = cache->m_map.find(make_bpair(entryId.GetGeometryPartId(), entryId.GetPartIndex()));
-
-        if (found == cache->m_map.end())
-            return nullptr;
-
-        return found->second;
-        }
-
     if (nullptr == element)
         return nullptr;
 
@@ -2991,15 +2951,6 @@ static void SaveSolidKernelEntity(ViewContextR context, DgnElementCP element, Ge
     // Only save for auto-locate, display has Render::Graphic, and other callers of Stroke should be ok reading again...
     if (nullptr == context.GetIPickGeom())
         return;
-
-    // NEEDSWORK_GEOMETRY_PART: Remove when parts are changed to elements and just use GetPartIndex with BRepCache... 
-    if (entryId.GetGeometryPartId().IsValid())
-        {
-        PartBRepCache* cache = PartBRepCache::Get(context.GetDgnDb(), true);
-
-        cache->m_map[make_bpair(entryId.GetGeometryPartId(), entryId.GetPartIndex())] = &entity;
-        return;
-        }
 
     if (nullptr == element)
         return;
