@@ -245,12 +245,14 @@ void Scene::GetMemoryStatistics(size_t& memoryLoad, size_t& total, size_t& avail
     total      = (size_t) statex.ullTotalPhys;
     available  = (size_t) statex.ullAvailPhys;
     }
+#endif
 
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 double Scene::CalculateResolutionRatio()
     {
+#if defined (BENTLEYCONFIG_OS_WINDOWS) && !defined (BENTLEYCONFIG_OS_WINRT)
     MEMORYSTATUSEX statex;
     statex.dwLength = sizeof (statex);
     ::GlobalMemoryStatusEx(&statex);
@@ -264,6 +266,7 @@ double Scene::CalculateResolutionRatio()
         return 100.0;
 
     return (100.0 - (double) s_memoryThresholdPercent) / (100.0 - (double) statex.dwMemoryLoad);
-    }
+#else
+    return 1.0;
 #endif
-
+    }

@@ -245,8 +245,8 @@ public:
 
 #if defined (BENTLEYCONFIG_OS_WINDOWS) && !defined (BENTLEYCONFIG_OS_WINRT)
     static void GetMemoryStatistics(size_t& memoryLoad, size_t& total, size_t& available);
-    static double CalculateResolutionRatio();
 #endif
+    static double CalculateResolutionRatio();
 };
 
 //=======================================================================================
