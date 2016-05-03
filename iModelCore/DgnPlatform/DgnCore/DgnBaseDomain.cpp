@@ -9,7 +9,9 @@
 #include <DgnPlatform/DgnMarkupProject.h>
 #include <DgnPlatform/Annotations/TextAnnotationElement.h>
 #include <DgnPlatform/AnnotationTable.h>
+#if defined (NEEDSWORK_DIMENSION)
 #include <DgnPlatform/Dimension/Dimension.h>
+#endif
 #include <DgnPlatform/VolumeElement.h>
 
 BEGIN_BENTLEY_DGN_NAMESPACE
@@ -111,9 +113,11 @@ DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain
     RegisterHandler(dgn_ElementHandler::SubCategory::GetHandler());
     RegisterHandler(dgn_ElementHandler::TrueColor::GetHandler());
 
+#if defined (NEEDSWORK_DIMENSION)
     RegisterHandler(dgn_ElementHandler::DimensionStyleHandler::GetHandler());
     RegisterHandler(dgn_ElementHandler::LinearDimensionHandler2d::GetHandler());
     RegisterHandler(dgn_ElementHandler::LinearDimensionHandler3d::GetHandler());
+#endif
 
     RegisterHandler(dgn_ElementHandler::AnnotationTextStyleHandler::GetHandler());
     RegisterHandler(dgn_ElementHandler::AnnotationFrameStyleHandler::GetHandler());
