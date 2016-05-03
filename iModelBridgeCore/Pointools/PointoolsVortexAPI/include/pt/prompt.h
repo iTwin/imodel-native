@@ -12,7 +12,6 @@
 
 #ifdef NEEDS_WORK_VORTEX_DGNDB
 #include <string>
-#include <tchar.h>
 namespace pt {
 
 /**

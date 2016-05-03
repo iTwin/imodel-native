@@ -11,7 +11,7 @@
 
 #ifndef __NVEB_GLUT_API__
 #define __NVEB_GLUT_API__
-#ifndef WIN32
+#ifndef _WIN32
 
 #define NVEB_EFFECT_NAME(s) 
 #define NVEB_EFFECT_VERSION(s)

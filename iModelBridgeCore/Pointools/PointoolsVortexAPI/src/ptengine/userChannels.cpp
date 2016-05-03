@@ -796,10 +796,10 @@ void OOCFile::create( class UserChannel *uchannel )
 		}
 		else
 		{
-			GetTempPath(MAX_PATH-14, path);				// Default to using temporary folder
+			GetTempPathW(MAX_PATH-14, path);				// Default to using temporary folder
 		}
 
-		::GetTempFileName( path, L"uch", 0, filename );	// Generate a temporary file name
+		::GetTempFileNameW( path, L"uch", 0, filename );	// Generate a temporary file name
 
 		fname = pt::String( filename );	// set fname member for delete later on
 

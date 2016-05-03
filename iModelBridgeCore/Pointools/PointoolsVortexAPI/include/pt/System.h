@@ -25,13 +25,6 @@
 
 #pragma intrinsic(__rdtsc)
 
-#ifndef tstring
-#ifdef UNICODE
-#define tstring wstring
-#else
-#define tstring string
-#endif
-#endif
 namespace pt {
 
 /**
@@ -124,7 +117,7 @@ public:
 
      @cite Linux version written by Nicolai Haehnle <prefect_@gmx.net>, http://www.flipcode.com/cgi-bin/msg.cgi?showThread=COTD-getexename&forum=cotd&id=-1
      */
-    CCLASSES_API static std::tstring currentProgramFilename();
+    CCLASSES_API static std::wstring currentProgramFilename();
 
     /**
      Causes the current thread to yield for the specified duration
@@ -201,7 +194,7 @@ public:
     static unsigned __int64 getCycleCount();
 
     /** Set an environment variable for the current process */ 
-    static void setEnv(const std::tstring& name, const std::tstring& value);
+    static void setEnv(const std::wstring& name, const std::wstring& value);
 	
 	//#ifdef __APPLE__
 		static long m_OSXCPUSpeed; //In Cycles/Second
@@ -210,7 +203,7 @@ public:
 };
 
 
-#ifdef WIN32
+#ifdef _WIN32
     inline unsigned __int64 System::getCycleCount() {
        //unsigned __int64 timehi, timelo;
 

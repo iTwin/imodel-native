@@ -10,7 +10,7 @@ namespace PTRMI
 PipeManagerTCP::PipeManagerTCP(const PipeManagerName &name) : PipeManager(name)
 {
 // Pip Option
-#ifndef WIN64
+#ifndef _WIN64
 	initialize(PIPE_MANAGER_TCP_DEFAULT_LISTENER_PORT);
 #else
 	initialize(PIPE_MANAGER_TCP_DEFAULT_LISTENER_PORT + 1);

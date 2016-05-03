@@ -1,7 +1,7 @@
 #ifndef POINTOOLS_FILEPATH
 #define POINTOOLS_FILEPATH
 
-#if defined (WIN32) || defined (WIN64)
+#if defined (_WIN32) || defined (_WIN64)
 #include <ptds/fileIO_win32.h>
 #endif
 

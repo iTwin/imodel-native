@@ -1,5 +1,6 @@
 #pragma once
 
+#ifdef HAVE_OPENGL
 #include <ptengine/renderEffect.h>
 #include <ptengine/renderContext.h>
 
@@ -43,4 +44,6 @@ private:
 	ubyte											m_lastVisLayersMask;
 	GLuint											m_attribPos;
 };
+
 }
+#endif

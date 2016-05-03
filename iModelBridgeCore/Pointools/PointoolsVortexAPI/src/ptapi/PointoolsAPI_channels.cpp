@@ -371,7 +371,7 @@ PTres PTAPI ptSetChannelOOCFolder( const PTstr foldername )
 	bool res = false;
 
 	/* try to write a file into this folder using the same method as OOCFile */ 
-	::GetTempFileName( foldername, L"uch", 0, filename );	// Generate a temporary file name
+	::GetTempFileNameW( foldername, L"uch", 0, filename );	// Generate a temporary file name
 
 	ptds::FilePath fp(filename);
 	ptds::DataSourcePtr fhandle = ptds::dataSourceManager.openForReadWrite(&fp);	// open for read
@@ -380,7 +380,7 @@ PTres PTAPI ptSetChannelOOCFolder( const PTstr foldername )
 		res = true;
 	
 	ptds::dataSourceManager.close(fhandle);
-	DeleteFile(filename);
+	DeleteFileW(filename);
 
 	if (res)
 	{

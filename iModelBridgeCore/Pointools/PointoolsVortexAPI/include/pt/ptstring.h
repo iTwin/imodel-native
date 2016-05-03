@@ -39,13 +39,6 @@ namespace pt
 		inline const char* c_str() const { return const_cast<String*>(this)->encode(AsciiEncoding); }
 		inline const char* c_u8str() const { return const_cast<String*>(this)->encode(UTF8Encoding); }
 		inline const wchar_t* c_wstr() const { return (_wbuffer ? _wbuffer : L""); }
-#ifdef _TCHAR_DEFINED
-#ifdef _UNICODE
-		inline const TCHAR* c_tstr() const { return c_wstr(); }
-#else
-		inline const TCHAR* c_tstr() const { return c_u8str(); }
-#endif
-#endif
 
 		inline operator const wchar_t*() const { return c_wstr(); }
 		inline operator const char*() const { return c_str(); }

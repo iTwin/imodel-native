@@ -9,6 +9,7 @@
 #ifndef POINTOOLS_RENDER_ENGINE
 #define POINTOOLS_RENDER_ENGINE 1
 
+#ifdef HAVE_OPENGL
 
 #include <ptcloud2/defs.h>
 #include <ptgl/glcamera.h>
@@ -419,7 +420,7 @@ private:
 	void setupLighting();
 
 	bool loadRamps();
-	void loadRamp( const TCHAR* );
+	void loadRamp( const wchar_t* );
 	bool initializeGL();
 
 	float		_multiplier;
@@ -450,5 +451,5 @@ private:
 };
 
 }
-
+#endif
 #endif

@@ -16,7 +16,7 @@
 
 #include <stdio.h>
 
-#ifdef WIN32
+#ifdef _WIN32
     #include <windows.h>
     #include <strstream>
     #include <conio.h>
@@ -31,7 +31,7 @@
 
 namespace pt {
 
-#ifdef WIN32
+#ifdef _WIN32
 
 namespace _internal {
 /**
@@ -534,7 +534,7 @@ int prompt(
     int              numChoices,
     bool             useGui) {
 
-    #ifdef WIN32
+    #ifdef _WIN32
         if (useGui) {
             // Build the message box
             return guiPrompt(windowTitle, prompt, choice, numChoices);
@@ -567,7 +567,7 @@ void msgBox(
     prompt(title.c_str(), message.c_str(), choice, 1, true); 
 }
 #endif
-#ifndef WIN32
+#ifndef _WIN32
     #undef _getch
 #endif
 

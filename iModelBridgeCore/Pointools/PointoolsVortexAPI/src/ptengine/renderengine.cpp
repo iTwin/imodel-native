@@ -1,5 +1,4 @@
 /*system stuff						*/ 
-#include <tchar.h>
 #include <pt/trace.h>
 
 /*gl Headers						*/ 
@@ -2530,18 +2529,14 @@ void RenderEngine::renderPriorities()
 	}
 	glEnd();
 }	  
-#ifdef UNICODE
-#define tstring wstring
-#else
-#define tstring string
-#endif
+
 //-----------------------------------------------------
 // Chop off index letter to sort
 //-----------------------------------------------------
-static bool SortRamps(const std::tstring &a, const std::tstring &b)
+static bool SortRamps(const std::wstring &a, const std::wstring &b)
 {
-	std::tstring a1(&a.c_str()[1]);
-	std::tstring b1(&b.c_str()[1]);
+	std::wstring a1(&a.c_str()[1]);
+	std::wstring b1(&b.c_str()[1]);
 
 	return a1 < b1 ? true : false;
 }
@@ -2656,7 +2651,7 @@ bool RenderEngine::loadRamps()
 //-----------------------------------------------------------------------------
 // load ramp texture file
 //-----------------------------------------------------------------------------
-void RenderEngine::loadRamp(const TCHAR *fname )
+void RenderEngine::loadRamp(const wchar_t *fname )
 {
 	assert(false);	//no longer used, ramps are gradient objects now
 }

@@ -70,7 +70,7 @@
 // always (provided it doesn't generate a compiler error.)
 // --------------------------------------------------------------------------------------------------------------------------------
 #include <pt/ptmath.h>
-#include <gl/gl.h>
+
 
 #ifdef __INTEL_COMPILER
 template <bool B> struct templateAssert {};
@@ -882,6 +882,7 @@ static	const	matrix		rotation(const T &xTheta, const T &yTheta, const T &zTheta)
 					return zRotation(zTheta) >> yRotation(yTheta) >> xRotation(xTheta);
 				}
 
+#if defined(HAVE_OPENGL)
 static const matrix gluLookAt( const T *eye, const T *target, const T *up)
 {
     float forward[3], side[3], up[3];
@@ -920,6 +921,7 @@ static const matrix gluLookAt( const T *eye, const T *target, const T *up)
     glMultMatrixf(&m[0][0]);
     glTranslated(-eyex, -eyey, -eyez);
 }
+#endif
 				// Generate a 'look-at' matrix. Must be a 3x3 result because this routine uses a cross product
 
 static	const	matrix<3, 3, T>	lookat(const matrix<3, 1, T> &v, const T &theta = (T) 0)

@@ -11,7 +11,7 @@
 
 #ifdef POINTOOLS_API_INCLUDE
 #undef debugAssertM
-#define debugAssertM(a,b) if(!a) OutputDebugString(_T("assertion failed!!"))
+#define debugAssertM(a,b) if(!a) OutputDebugStringA("assertion failed!!")
 #endif
 
 struct ptstr

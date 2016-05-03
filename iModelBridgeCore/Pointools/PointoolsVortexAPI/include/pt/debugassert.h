@@ -102,7 +102,7 @@ namespace _internal {
 
     #ifndef __APPLE__
         #ifdef _MSC_VER
-			#ifdef WIN64
+			#ifdef _WIN64
 				#define rawBreak() assert(false);
 			#else
 				#define rawBreak()  _asm { int 3 }

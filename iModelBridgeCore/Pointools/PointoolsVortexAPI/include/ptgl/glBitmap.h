@@ -6,7 +6,7 @@
 
 #ifndef POINTOOLS_GLBITMAP_DEFINITION
 #define POINTOOLS_GLBITMAP_DEFINITION
-#ifdef WIN32
+#ifdef _WIN32
 
 namespace ptgl
 {

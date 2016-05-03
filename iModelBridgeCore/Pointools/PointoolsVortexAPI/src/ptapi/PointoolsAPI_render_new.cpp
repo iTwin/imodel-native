@@ -32,7 +32,7 @@ extern PTvoid			_ptEndViewportDraw();
 extern int				setLastErrorCode( int );
 
 extern pt::ViewParams	*g_currentViewParams;
-extern TCHAR			g_lastError[1024];
+extern wchar_t			g_lastError[1024];
 extern RenderContext	*g_currentRenderContext;
 
 PTuint			g_frame = 0;

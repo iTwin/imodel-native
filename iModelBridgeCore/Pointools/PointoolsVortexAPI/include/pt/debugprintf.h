@@ -42,7 +42,7 @@ namespace pt {
         va_list argList;
         va_start(argList, fmt);
 
-        #ifdef WIN32
+        #ifdef _WIN32
             const int MAX_STRING_LEN = 1024;
             std::string s = pt::vformat(fmt, argList);
             // Windows can't handle really long strings sent to

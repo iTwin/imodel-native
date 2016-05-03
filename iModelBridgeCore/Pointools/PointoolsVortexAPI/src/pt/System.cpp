@@ -38,7 +38,7 @@ static int iMax(int x, int y) { return x > y ? x : y; }
 
 #define RealTime double
 
-#ifdef WIN32
+#ifdef _WIN32
 
     #include <conio.h>
     #include <sys/timeb.h>
@@ -86,7 +86,7 @@ static PTEndian            _machineEndian      = PT_LITTLE_ENDIAN;
 static std::string          _cpuArch            = "Unknown";
 static std::string          _operatingSystem    = "Unknown";
 
-#ifdef WIN32
+#ifdef _WIN32
 /** Used by getTick() for timing */
 static LARGE_INTEGER        _start;
 static LARGE_INTEGER        _counterFrequency;
@@ -202,7 +202,7 @@ void System::init() {
     }
 
     if (_cpuID) {
-#ifndef WIN64
+#ifndef _WIN64
     // Process the CPUID information
 
         // We read the standard CPUID level 0x00000000 which should
@@ -278,7 +278,7 @@ void System::init() {
         }
 #endif
 	}
-    #ifdef WIN32
+    #ifdef _WIN32
         SYSTEM_INFO systemInfo;
         GetSystemInfo(&systemInfo);
         char* arch;
@@ -394,7 +394,7 @@ void checkForCPUID() {
 
         // We've to check if we can toggle the flag register bit 21.
         // If we can't the processor does not support the CPUID command.
-#ifndef WIN64
+#ifndef _WIN64
         #ifdef _MSC_VER
                 __asm {
                         pushfd
@@ -456,7 +456,7 @@ void getStandardProcessorExtensions() {
     // useful processor features.
     #ifdef _MSC_VER
         // Windows
-#ifndef WIN64
+#ifndef _WIN64
             __asm {
             push eax
             push ebx
@@ -541,7 +541,7 @@ void getStandardProcessorExtensions() {
 
 
 /** Michael Herf's fast memcpy */
-#if defined(WIN32) && defined(SSE)
+#if defined(_WIN32) && defined(SSE)
 
 // On x86 processors, use MMX
 void memcpy2(void *dst, const void *src, int nbytes) {
@@ -608,7 +608,7 @@ void System::memcpy(void* dst, const void* src, size_t numBytes) {
 
 /** Michael Herf's fastest memset. n32 must be filled with the same
     character repeated. */
-#if defined(WIN32) && defined(SSE)
+#if defined(_WIN32) && defined(SSE)
 
 // On x86 processors, use MMX
 void memfill(void *dst, int n32, unsigned long i) {
@@ -664,12 +664,12 @@ void System::memset(void* dst, uint8 value, size_t numBytes) {
 }
 
 
-std::tstring System::currentProgramFilename() {
-    TCHAR filename[2048];
+std::wstring System::currentProgramFilename() {
+    wchar_t filename[2048];
 
-    #ifdef WIN32
+    #ifdef _WIN32
     {
-        GetModuleFileName(NULL, filename, sizeof(filename));
+        GetModuleFileNameW(NULL, filename, sizeof(filename));
     } 
     #else
     {
@@ -708,7 +708,7 @@ void System::sleep(RealTime t) {
             sleepTime = max(remainingTime * .5, 0.002);
         }
 
-        #ifdef WIN32
+        #ifdef _WIN32
             Sleep((int)(sleepTime * 1e3));
         #else
             usleep((int)(sleepTime * 1e6));
@@ -721,7 +721,7 @@ void System::sleep(RealTime t) {
 
 
 void System::consoleClearScreen() {
-    #ifdef WIN32
+    #ifdef _WIN32
         system("cls");
     #else
         system("clear");
@@ -730,7 +730,7 @@ void System::consoleClearScreen() {
 
 
 bool System::consoleKeyPressed() {
-    #ifdef WIN32
+    #ifdef _WIN32
     
         return _kbhit() != 0;
 
@@ -772,7 +772,7 @@ bool System::consoleKeyPressed() {
 
 
 int System::consoleReadKey() {
-    #ifdef WIN32
+    #ifdef _WIN32
         return _getch();
     #else
         char c;
@@ -783,7 +783,7 @@ int System::consoleReadKey() {
 
 
 void initTime() {
-    #ifdef WIN32
+    #ifdef _WIN32
         if (QueryPerformanceFrequency(&_counterFrequency)) {
             QueryPerformanceCounter(&_start);
         }
@@ -819,7 +819,7 @@ void initTime() {
 
 RealTime System::getTick() { 
     init();
-    #ifdef WIN32
+    #ifdef _WIN32
         LARGE_INTEGER now;
         QueryPerformanceCounter(&now);
 
@@ -862,7 +862,7 @@ void* System::alignedMalloc(size_t bytes, size_t alignment) {
     }
 
     debugAssert(isValidHeapPointer((void*)truePtr));
-    #ifdef WIN32
+    #ifdef _WIN32
         debugAssert( _CrtIsValidPointer((void*)truePtr, totalBytes, TRUE) );
     #endif
 
@@ -887,7 +887,7 @@ void* System::alignedMalloc(size_t bytes, size_t alignment) {
 
     debugAssert(isValidHeapPointer((void*)truePtr));
 
-    #ifdef WIN32
+    #ifdef _WIN32
         debugAssert( _CrtIsValidPointer((void*)alignedPtr, bytes, TRUE) );
     #endif
     return (void *)alignedPtr;
@@ -914,9 +914,9 @@ void System::alignedFree(void* _ptr) {
 }
 
 
-void System::setEnv(const std::tstring& name, const std::tstring& value) {
-    #ifdef WIN32
-        std::tstring cmd = name + _T("=") + value;
+void System::setEnv(const std::wstring& name, const std::wstring& value) {
+    #ifdef _WIN32
+        std::wstring cmd = name + L"=" + value;
         _wputenv(name.c_str());
     #else
         setenv(name.c_str(), value.c_str(), 1);

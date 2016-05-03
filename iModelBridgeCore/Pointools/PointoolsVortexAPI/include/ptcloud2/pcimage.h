@@ -143,8 +143,10 @@ private:
 	pt::Object3D	*_scannerPos;
 	double			_scannerDist;
 
+#ifdef HAVE_OPENGL
 	typedef std::map<uint, GLuint> TexIDMap;
 	TexIDMap		_texids;
+#endif
 };
 
 };

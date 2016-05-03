@@ -4,7 +4,7 @@
 /*																			*/ 
 /*  Last Updated 16 Dec 2003 Faraz Ravi										*/ 
 /*--------------------------------------------------------------------------*/ 
-#ifdef WIN32
+#ifdef _WIN32
 #pragma warning (disable : 4786)
 #pragma warning (disable : 4251)
 #pragma warning (disable : 4275)
@@ -1167,7 +1167,7 @@ void UIManager::restoreUIState(unsigned char* data)
 		r.read(y, pos);
 		r.read(w, pos);
 		r.read(h, pos);
-#ifdef WIN32
+#ifdef _WIN32
 		int mx = ::GetSystemMetrics(SM_CXMAXIMIZED);
 		int my = ::GetSystemMetrics(SM_CYMAXIMIZED);
 		int cap = ::GetSystemMetrics(SM_CYCAPTION);	

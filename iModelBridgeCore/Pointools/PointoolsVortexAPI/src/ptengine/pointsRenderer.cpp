@@ -24,7 +24,9 @@
 
 #include <ptengine/engine.h>
 
+#ifdef HAVE_OPENGL
 #include <ptgl/glstate.h>
+#endif
 
 using namespace pointsengine;
 using namespace pt;
@@ -99,7 +101,9 @@ void PointsRenderer::renderPoints( RenderContext *context, const pcloud::Scene *
 	m_frameData.clearFrameStats();
 	m_frameData.isDynamic(dynamic);
 
+#ifdef HAVE_OPENGL
 	ptgl::State::clear();
+#endif
 
 	filterVoxelList( false, scene );
 

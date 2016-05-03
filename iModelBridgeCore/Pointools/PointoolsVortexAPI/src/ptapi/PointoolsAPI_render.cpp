@@ -19,7 +19,7 @@ using namespace pointsengine;
 extern PTvoid _ptBeginViewportDraw();
 extern PTvoid _ptEndViewportDraw();
 extern pt::ViewParams *g_currentViewParams;
-extern TCHAR g_lastError[1024];
+extern wchar_t g_lastError[1024];
 extern int setLastErrorCode( int );
 
 PTuint 		g_frame = 0;

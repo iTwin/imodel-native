@@ -14,7 +14,7 @@
 #include <string>
 #include <pt/ptunicode.h>
 
-#ifndef WIN32
+#ifndef _WIN32
     #include <stdarg.h>
 #endif
 
@@ -34,7 +34,7 @@ private:
      */
     FILE*                   logFile;
 
-    std::tstring             filename;
+    std::wstring             filename;
 
     static Log*             commonLog;
 
@@ -54,7 +54,7 @@ public:
      be opened for some reason, tries to open "c:/tmp/log.txt" or
      "c:/temp/log.txt" instead.
      */
-    Log(const std::tstring& filename = _T("ptlog.txt"),
+    Log(const std::wstring& filename = L"ptlog.txt",
         int stripFromStackBottom    = 0);
 
     virtual ~Log();
@@ -67,7 +67,7 @@ public:
     /**
      Marks the beginning of a logfile section.
      */
-    void section(const std::tstring& s);
+    void section(const std::wstring& s);
 
     /**
      Given arguments like printf, writes characters to the debug text overlay.
@@ -76,11 +76,11 @@ public:
 
     static Log* common();
 
-    static std::tstring getCommonLogFilename();
+    static std::wstring getCommonLogFilename();
 
-    void print(const std::tstring& s);
+    void print(const std::wstring& s);
 
-    void println(const std::tstring& s);
+    void println(const std::wstring& s);
 };
 
 }

@@ -213,7 +213,7 @@ namespace pt
 	  * If UNICODE is defined you will NOT get any conversion at all, if UNICODE is NOT defined you WILL get a conversion to a char string.<br>
 	  * This and the Ascii2UnicodeOrMaybeNot is the most "safe" ones if you wish to make UNICODE support transparent.
 	  */
-	typedef UnicodeConverter<wchar_t, TCHAR> Unicode2CurrentBuild;
+	//typedef UnicodeConverter<wchar_t, TCHAR> Unicode2CurrentBuild;
 
 	/// \ingroup GlobalStuff
 	// Typdef for easy conversion from char to wchar_t strings
@@ -221,7 +221,7 @@ namespace pt
 	  * If UNICODE is defined you WILL get a conversion to a wchar_t string, if UNICODE is NOT defined you WILL NOT get a conversion at all.
 	  * This and the Unicode2AsciiOrMaybeNot is the most "safe" ones if you wish to make UNICODE support transparent.
 	  */
-	typedef UnicodeConverter<char, TCHAR> Ascii2CurrentBuild;
+	//typedef UnicodeConverter<char, TCHAR> Ascii2CurrentBuild;
 
 	/// \ingroup GlobalStuff
 	// Typdef for easy conversion from wchar_t to char strings
@@ -229,7 +229,7 @@ namespace pt
 	  * If UNICODE is defined you will NOT get any conversion at all, if UNICODE is NOT defined you WILL get a conversion to a char string.<br>
 	  * This and the Ascii2UnicodeOrMaybeNot is the most "safe" ones if you wish to make UNICODE support transparent.
 	  */
-	typedef UnicodeConverter<TCHAR, char> AsciiGuaranteed;
+	//typedef UnicodeConverter<TCHAR, char> AsciiGuaranteed;
 
 	/// \ingroup GlobalStuff
 	// Typdef for easy conversion from char to wchar_t strings
@@ -237,7 +237,7 @@ namespace pt
 	  * If UNICODE is defined you WILL get a conversion to a wchar_t string, if UNICODE is NOT defined you WILL NOT get a conversion at all.
 	  * This and the Unicode2AsciiOrMaybeNot is the most "safe" ones if you wish to make UNICODE support transparent.
 	  */
-	typedef UnicodeConverter<TCHAR, wchar_t> UnicodeGuaranteed;
+	//typedef UnicodeConverter<TCHAR, wchar_t> UnicodeGuaranteed;
 }
 
 #endif

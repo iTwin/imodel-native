@@ -5,7 +5,7 @@
 /*  Last Updated 12 Dec 2003 Faraz Ravi										*/ 
 /*--------------------------------------------------------------------------*/ 
 
-#ifdef WIN32
+#ifdef _WIN32
 /*truncation from 'double' to 'float'*/ 
 #pragma warning ( disable:4305 ) 
 #endif

@@ -373,12 +373,12 @@ namespace PTRMI
 
 			if(numDigits == 4)
 			{
-				wsprintf(buffer, L"%d.%d.%d.%d", getSubValue(0), getSubValue(1), getSubValue(2), getSubValue(3));
+            wsprintfW(buffer, L"%d.%d.%d.%d", getSubValue(0), getSubValue(1), getSubValue(2), getSubValue(3));
 			}
 			else
 			if(numDigits == 6)
 			{
-				wsprintf(buffer, L"%d.%d.%d.%d.%d.%d", getSubValue(0), getSubValue(1), getSubValue(2), getSubValue(3), getSubValue(4), getSubValue(5), getSubValue(6));
+            wsprintfW(buffer, L"%d.%d.%d.%d.%d.%d", getSubValue(0), getSubValue(1), getSubValue(2), getSubValue(3), getSubValue(4), getSubValue(5), getSubValue(6));
 			}
 
 			setURL(buffer);			
@@ -395,12 +395,12 @@ namespace PTRMI
 
 		if(numDigits == 4)
 		{
-			wsprintf(buffer, L"%d.%d.%d.%d", getSubValue(0), getSubValue(1), getSubValue(2), getSubValue(3));
+			wsprintfW(buffer, L"%d.%d.%d.%d", getSubValue(0), getSubValue(1), getSubValue(2), getSubValue(3));
 		}
 		else
 		if(numDigits == 6)
 		{
-			wsprintf(buffer, L"%d.%d.%d.%d.%d.%d", getSubValue(0), getSubValue(1), getSubValue(2), getSubValue(3), getSubValue(4), getSubValue(5), getSubValue(6));
+            wsprintfW(buffer, L"%d.%d.%d.%d.%d.%d", getSubValue(0), getSubValue(1), getSubValue(2), getSubValue(3), getSubValue(4), getSubValue(5), getSubValue(6));
 		}
 
 		string = buffer;
