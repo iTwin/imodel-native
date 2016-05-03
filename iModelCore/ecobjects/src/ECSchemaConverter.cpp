@@ -871,8 +871,8 @@ ECObjectsStatus StandardCustomAttributeReferencesConverter::Convert(ECSchemaR sc
 	// Remove the old Custom Attribute and add the new one to the container
 	ECObjectsStatus status;
 
-	bool result = container.RemoveCustomAttribute(mapping.oldSchemaName, mapping.oldCustomAttributeName);
-	result = result;
+	/* unused: bool result = */container.RemoveCustomAttribute(mapping.oldSchemaName, mapping.oldCustomAttributeName);
+	// this does not fool clang: result = result;
 	if ((status = container.SetCustomAttribute(*customAttributeInstance)) != ECObjectsStatus::Success)
 		return status;
 	return ECObjectsStatus::Success;
@@ -920,18 +920,18 @@ ECObjectsStatus StandardCustomAttributeReferencesConverter::ConvertPropertyToEnu
 	auto enumerationValue = FindEnumerationValue(*enumeration, oldValue.GetUtf8CP());
 	if (enumerationValue == -1)
 	{
-		LOG.errorv("Couldn't find value '%s' in ECEnumeration %s", oldValue.GetUtf8CP(), enumeration->GetName());
+		LOG.errorv("Couldn't find value '%s' in ECEnumeration %s", oldValue.GetUtf8CP(), enumeration->GetName().c_str());
 		return ECObjectsStatus::ParseError;
 	}
 
 	if (newValue.SetInteger(enumerationValue) != BentleyStatus::SUCCESS)
 	{
-		LOG.errorv("Couldn't set value of %s to %d", propertyName, enumerationValue);
+		LOG.errorv("Couldn't set value of %s to %d", propertyName.c_str(), enumerationValue);
 		return ECObjectsStatus::Error;
 	}
 	if (newCustomAttribute.SetValue(propertyName.c_str(), newValue) != ECObjectsStatus::Success)
 	{
-		LOG.errorv("Couldn't set value of %s to %d", propertyName, enumerationValue);
+		LOG.errorv("Couldn't set value of %s to %d", propertyName.c_str(), enumerationValue);
 		return ECObjectsStatus::Error;
 	}
 
