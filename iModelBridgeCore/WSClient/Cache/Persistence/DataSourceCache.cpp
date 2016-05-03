@@ -352,6 +352,7 @@ BentleyStatus DataSourceCache::Reset()
 
     bset<ECSchemaCP> ignoreSchemas;
     ignoreSchemas.insert(m_db.Schemas().GetECSchema("ECDb_System"));
+    ignoreSchemas.insert(m_db.Schemas().GetECSchema("MetaSchema"));
 
     for (ECSchemaCP ecSchema : ecSchemas)
         {

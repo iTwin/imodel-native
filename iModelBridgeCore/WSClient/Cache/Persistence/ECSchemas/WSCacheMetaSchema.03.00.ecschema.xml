@@ -1,0 +1,12 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<ECSchema schemaName="WSCacheMetaSchema" nameSpacePrefix="wscms" version="03.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
+    <ECEntityClass typeName="ECSchemaDef" >
+        <ECProperty propertyName="Name" typeName="string"/>
+        <ECProperty propertyName="DisplayLabel" typeName="string"/>
+        <ECProperty propertyName="Description" typeName="string"/>
+        <ECProperty propertyName="NameSpacePrefix" typeName="string"/>
+        <ECProperty propertyName="VersionMajor" typeName="int"/>
+        <ECProperty propertyName="VersionWrite" typeName="int"/>
+        <ECProperty propertyName="VersionMinor" typeName="int"/>
+    </ECEntityClass>
+</ECSchema>
