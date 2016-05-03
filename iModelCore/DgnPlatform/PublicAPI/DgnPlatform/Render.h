@@ -905,8 +905,8 @@ struct Graphic : RefCounted<NonCopyableClass>
         FPoint3d const* m_points= nullptr;
         FPoint3d const* m_normals= nullptr;
         FPoint2d const* m_textureUV= nullptr;
-        Texture* m_texture = 0;
-        int32_t m_flags = 1; // QV_QTMESH_GENNORMALS
+        TexturePtr m_texture;
+        int32_t m_flags = 0; // don't generate normals
         DGNPLATFORM_EXPORT PolyfaceHeaderPtr ToPolyface() const;
     };
 

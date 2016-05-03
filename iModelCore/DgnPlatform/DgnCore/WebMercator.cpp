@@ -108,6 +108,7 @@ private:
     static Utf8String SerializeRasterInfo(RgbImageInfo const&);
     static RgbImageInfo DeserializeRasterInfo(Utf8CP);
     TiledRaster(){}
+    virtual ~TiledRaster(){}
         
 protected:
     virtual Utf8CP _GetId() const override {return m_url.c_str();}
@@ -1127,7 +1128,7 @@ RealityDataCache& WebMercatorModel::GetRealityDataCache() const
         BeFileName storageFileName = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName();
         storageFileName.AppendToPath(WString(m_properties.m_mapService.c_str(), true).c_str());
         m_realityDataCache->RegisterStorage(*BeSQLiteRealityDataStorage::Create(storageFileName));
-        m_realityDataCache->RegisterSource(*HttpRealityDataSource::Create(8));
+        m_realityDataCache->RegisterSource(*HttpRealityDataSource::Create(4));
         }
 
     return *m_realityDataCache;
@@ -1141,7 +1142,6 @@ bool TiledRaster::_IsExpired() const
     // return DateTime::CompareResult::EarlierThan == DateTime::Compare(GetExpirationDate(), DateTime::GetCurrentTime());}
     return false; // never expire
     }
-
 
 #define TABLE_NAME_TiledRaster  "TiledRaster"
 //=======================================================================================
