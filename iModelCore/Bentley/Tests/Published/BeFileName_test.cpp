@@ -2207,6 +2207,7 @@ TEST (BeFileNameTests, CloneDirectory)
 
 #endif
     }
+
 //---------------------------------------------------------------------------------------
 // @betest                                          Umar.Hayat                    02/16
 //---------------------------------------------------------------------------------------
@@ -2223,26 +2224,7 @@ TEST(BeFileNameTests, IsAbsolutePath)
     BeFileName fileName2(fileName.GetFileNameAndExtension());
     EXPECT_FALSE(fileName2.IsAbsolutePath());
     }
-//---------------------------------------------------------------------------------------
-// @betest                                          Umar.Hayat                    02/16
-//---------------------------------------------------------------------------------------
-TEST (BeFileNameTests, IsUrl)
-    {
-#if defined (BENTLEY_WIN32)
-    Utf8CP fileSpec = "C:\\dir\\dir\\somefile.txt";
-#else
-    Utf8CP fileSpec = "/var/dir/somefile.txt";
-#endif
-    BeFileName fileName(fileSpec, BentleyCharEncoding::Utf8);
-    EXPECT_FALSE(fileName.IsUrl());
 
-    BeFileName fileName2(L"http://www.google.com/");
-    EXPECT_TRUE(fileName2.IsUrl());
-
-    // Need to be fixed 
-    //BeFileName fileName3(L"https://www.google.com/");
-    //EXPECT_TRUE(fileName3.IsUrl());
-    }
 //---------------------------------------------------------------------------------------
 // @betest                                          Umar.Hayat                    02/16
 //---------------------------------------------------------------------------------------
