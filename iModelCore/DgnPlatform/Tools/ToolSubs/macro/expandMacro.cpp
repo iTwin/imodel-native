@@ -156,11 +156,29 @@ MacroExpander::MacroExpander (MacroConfigurationAdmin& macroCfgAdmin, MacroConfi
 +---------------+---------------+---------------+---------------+---------------+------*/
 /* static */ bool       MacroExpander::ContainsExpression (WCharCP textExpression, bool immediate)
     {
-    // we conclude it is an expression whenever there is an open parenthesis or brace.
-    if (NULL != ::wcschr (textExpression, '{'))
-        return true;
+    // we conclude it is an expression whenever there is an open parenthesis or brace following something other than whitespace.
+    WCharCP startBrace;
+    if (NULL != (startBrace = wcschr (textExpression, '{')))
+        {
+        for (WCharCP thisChar = textExpression; thisChar < startBrace; thisChar++)
+            {
+            if (!ISWHITESPACE (*thisChar))
+                return true;
+            }
+        }
+
+    if (!immediate)
+        return false;
     
-    return (immediate && (NULL != ::wcschr (textExpression, '(')));
+    if (NULL != (startBrace = wcschr (textExpression, '(')))
+        {
+        for (WCharCP thisChar = textExpression; thisChar < startBrace; thisChar++)
+            {
+            if (!ISWHITESPACE (*thisChar))
+                return true;
+            }
+        }
+    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**
