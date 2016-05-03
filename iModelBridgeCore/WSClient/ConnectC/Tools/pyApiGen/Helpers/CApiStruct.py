@@ -7,8 +7,7 @@ class CApiStruct(CStruct):
         self.__ecschema_name = ecschema_name
 
     def __get_api_gws_read_list_funtion_def(self):
-        get_request_str = "{0}_EXPORT CALLSTATUS {1}_Read{2}List\n".format(self._api.get_upper_api_acronym(),
-                                                                           self._api.get_api_name(), self.get_name())
+        get_request_str = "CallStatus {0}_Read{1}List\n".format(self._api.get_api_name(), self.get_name())
         get_request_str += "(\n"
         get_request_str += "{0}HANDLE apiHandle,\n".format(self._api.get_upper_api_acronym())
         get_request_str += "{0}DATABUFHANDLE* {1}Buffer\n".format(self._api.get_upper_api_acronym(), self.get_lower_name())
@@ -16,28 +15,31 @@ class CApiStruct(CStruct):
         return get_request_str
 
     def get_api_gws_read_list_definition(self):
-        return self.__get_api_gws_read_list_funtion_def() + ";\n"
+        return "{0}_EXPORT ".format(self._api.get_upper_api_acronym()) + self.__get_api_gws_read_list_funtion_def() + ";\n"
 
     def get_api_gws_read_list_implementation(self):
         get_request_str = self.__get_api_gws_read_list_funtion_def() + "\n"
         get_request_str += "    {\n"
         get_request_str += "    VERIFY_API\n\n"
         get_request_str += "    if ({0}Buffer == nullptr)\n".format(self.get_lower_name())
-        get_request_str += '        return CALLSTATUS {{{0}, "{1}", "{2}"}};\n\n'\
+        get_request_str += "        {\n"
+        get_request_str += '        api->SetStatusMessage("{1}");\n        api->SetStatusDescription("{2}");\n' \
+                           '        return {0};\n        }}\n\n'\
             .format("INVALID_PARAMETER",
                     self._status_codes["INVALID_PARAMETER"].message,
                     "{0}Buffer is a nullptr.".format(self.get_lower_name()))
         get_request_str += '    auto result = api->m_wsRepositoryClientPtr->SendQueryRequest(WSQuery("{0}", "{1}"))->GetResult();\n'\
             .format(self.__ecschema_name, self.get_name())
         get_request_str += "    if (!result.IsSuccess())\n"
-        get_request_str += "        return wsresultTo{0}Status(result.GetError().GetId(), result.GetError().GetDisplayMessage()," \
+        get_request_str += "        return wsresultTo{0}Status(api, result.GetError().GetId(), result.GetError().GetDisplayMessage()," \
                            " result.GetError().GetDisplayDescription());\n\n"\
             .format(self._api.get_api_name())
         get_request_str += "    {0}BUFFER* buf = ({0}BUFFER*) calloc(1, sizeof({0}BUFFER));\n".format(self._api.get_api_acronym())
         get_request_str += "    if (buf == nullptr)\n"
         get_request_str += "        {\n"
         get_request_str += "        free(buf);\n"
-        get_request_str += '        return CALLSTATUS {{{0}, "{1}", "{2}"}};\n' \
+        get_request_str += '        api->SetStatusMessage("{1}");\n        api->SetStatusDescription("{2}");\n' \
+                           '        return {0};\n' \
             .format("INTERNAL_MEMORY_ERROR",
                     self._status_codes["INTERNAL_MEMORY_ERROR"].message,
                     "Failed to calloc memory for {0}BUFFER.".format(self._api.get_api_acronym()))
@@ -52,16 +54,15 @@ class CApiStruct(CStruct):
         get_request_str += "    buf->lCount = buf->lItems.size();\n"
         get_request_str += "    buf->lType = BUFF_TYPE_{0};\n".format(self.get_upper_name())
         get_request_str += "    *{0}Buffer = ({1}DATABUFHANDLE) buf;\n\n".format(self.get_lower_name(), self._api.get_upper_api_acronym())
-        get_request_str += '    return CALLSTATUS {{{0}, "{1}", "{2}"}};\n'.format("SUCCESS",
-                                                                                   self._status_codes["SUCCESS"].message,
-                                                                                   "{0}_Read{1}List completed successfully."
-                                                                                   .format(self._api.get_api_name(), self.get_name()))
+        get_request_str += '    api->SetStatusMessage("{1}");\n    api->SetStatusDescription("{2}");\n' \
+                           '    return {0};\n'.format("SUCCESS", self._status_codes["SUCCESS"].message,
+                                                      "{0}_Read{1}List completed successfully."
+                                                      .format(self._api.get_api_name(), self.get_name()))
         get_request_str += "    }\n"
         return get_request_str
 
     def __get_api_gws_create_function_def(self):
-        create_request_str = "{0}_EXPORT CALLSTATUS {1}_Create{2}\n".format(self._api.get_upper_api_acronym(),
-                                                                            self._api.get_api_name(), self.get_name())
+        create_request_str = "CallStatus {0}_Create{1}\n".format(self._api.get_api_name(), self.get_name())
         create_request_str += "(\n"
         create_request_str += "{0}HANDLE apiHandle".format(self._api.get_upper_api_acronym())
         create_request_str += self.__get_gws_properties_for_function_def()
@@ -69,7 +70,7 @@ class CApiStruct(CStruct):
         return create_request_str
 
     def get_api_gws_create_definition(self):
-        return self.__get_api_gws_create_function_def() + ";\n"
+        return "{0}_EXPORT ".format(self._api.get_upper_api_acronym()) + self.__get_api_gws_create_function_def() + ";\n"
 
     def get_api_gws_create_implementation(self):
         create_request_str = self.__get_api_gws_create_function_def() + "\n"
@@ -84,18 +85,18 @@ class CApiStruct(CStruct):
         create_request_str += '    objectCreationJson["instance"] = instance;\n\n'
         create_request_str += '    auto result = api->m_wsRepositoryClientPtr->SendCreateObjectRequest(objectCreationJson)->GetResult();\n'
         create_request_str += "    if (!result.IsSuccess())\n"
-        create_request_str += "        return wsresultTo{0}Status(result.GetError().GetId(), result.GetError().GetDisplayMessage()," \
+        create_request_str += "        return wsresultTo{0}Status(api, result.GetError().GetId(), result.GetError().GetDisplayMessage()," \
                               " result.GetError().GetDisplayDescription());\n\n"\
             .format(self._api.get_api_name())
-        create_request_str += '    return CALLSTATUS {{{0}, "{1}", "{2}"}};\n'\
+        create_request_str += '    api->SetStatusMessage("{1}");\n    api->SetStatusDescription("{2}");\n' \
+                              '    return {0};\n'\
             .format("SUCCESS", self._status_codes["SUCCESS"].message,
                     "{0}_Create{1} completed successfully.".format(self._api.get_api_name(), self.get_name()))
         create_request_str += "    }\n"
         return create_request_str
 
     def __get_api_gws_read_function_def(self):
-        read_request_str = "{0}_EXPORT CALLSTATUS {1}_Read{2}\n".format(self._api.get_upper_api_acronym(),
-                                                                        self._api.get_api_name(), self.get_name())
+        read_request_str = "CallStatus {0}_Read{1}\n".format(self._api.get_api_name(), self.get_name())
         read_request_str += "(\n"
         read_request_str += "{0}HANDLE apiHandle,\n".format(self._api.get_upper_api_acronym())
         read_request_str += "WCharCP {0}Id,\n".format(self.get_lower_name())
@@ -104,21 +105,23 @@ class CApiStruct(CStruct):
         return read_request_str
 
     def get_api_gws_read_definition(self):
-        return self.__get_api_gws_read_function_def() + ";\n"
+        return "{0}_EXPORT ".format(self._api.get_upper_api_acronym()) + self.__get_api_gws_read_function_def() + ";\n"
 
     def get_api_gws_read_implementation(self):
         get_request_str = self.__get_api_gws_read_function_def() + "\n"
         get_request_str += "    {\n"
         get_request_str += "    VERIFY_API\n\n"
         get_request_str += "    if ({0}Buffer == nullptr || {0}Id == nullptr || wcslen({0}Id) == 0)\n".format(self.get_lower_name())
-        get_request_str += '        return CALLSTATUS {{{0}, "{1}", "{2}"}};\n\n'\
+        get_request_str += "        {\n"
+        get_request_str += '        api->SetStatusMessage("{1}");\n        api->SetStatusDescription("{2}");\n' \
+                           '        return {0};\n        }}\n\n'\
             .format("INVALID_PARAMETER", self._status_codes["INVALID_PARAMETER"].message,
                     "{0}Buffer is a nullptr or {0}Id is nullptr or empty.".format(self.get_lower_name()))
         get_request_str += '    auto result = api->m_wsRepositoryClientPtr->'
         get_request_str += 'SendGetObjectRequest({{"{0}", "{1}", Utf8String({2}Id)}})->GetResult();\n'\
             .format(self.__ecschema_name, self.get_name(), self.get_lower_name())
         get_request_str += "    if (!result.IsSuccess())\n"
-        get_request_str += "        return wsresultTo{0}Status(result.GetError().GetId(), result.GetError().GetDisplayMessage()," \
+        get_request_str += "        return wsresultTo{0}Status(api, result.GetError().GetId(), result.GetError().GetDisplayMessage()," \
                            " result.GetError().GetDisplayDescription());\n\n"\
             .format(self._api.get_api_name())
         get_request_str += "    LP{0}{1}BUFFER {2}Buf = new {0}{1}BUFFER;\n" \
@@ -129,7 +132,8 @@ class CApiStruct(CStruct):
         get_request_str += "    if (buf == nullptr)\n"
         get_request_str += "        {\n"
         get_request_str += "        free({0}Buf);\n".format(self.get_lower_name())
-        get_request_str += '        return CALLSTATUS {{{0}, "{1}", "{2}"}};\n' \
+        get_request_str += '        api->SetStatusMessage("{1}");\n        api->SetStatusDescription("{2}");\n' \
+                           '        return {0};\n' \
             .format("INTERNAL_MEMORY_ERROR",
                     self._status_codes["INTERNAL_MEMORY_ERROR"].message,
                     "Failed to calloc memory for {0}BUFFER.".format(self._api.get_api_acronym()))
@@ -138,16 +142,15 @@ class CApiStruct(CStruct):
         get_request_str += "    buf->lType = BUFF_TYPE_{0};\n".format(self.get_upper_name())
         get_request_str += "    buf->lItems = {{{0}Buf}};\n".format(self.get_lower_name())
         get_request_str += "    *{0}Buffer = ({1}DATABUFHANDLE) buf;\n\n".format(self.get_lower_name(), self._api.get_upper_api_acronym())
-        get_request_str += '    return CALLSTATUS {{{0}, "{1}", "{2}"}};\n'.format("SUCCESS",
-                                                                                   self._status_codes["SUCCESS"].message,
-                                                                                   "{0}_Read{1} completed successfully."
-                                                                                   .format(self._api.get_api_name(), self.get_name()))
+        get_request_str += '    api->SetStatusMessage("{1}");\n    api->SetStatusDescription("{2}");\n' \
+                           '    return {0};\n'.format("SUCCESS", self._status_codes["SUCCESS"].message,
+                                                      "{0}_Read{1} completed successfully."
+                                                      .format(self._api.get_api_name(), self.get_name()))
         get_request_str += "    }\n"
         return get_request_str
 
     def __get_api_gws_update_function_def(self):
-        update_request_str = "{0}_EXPORT CALLSTATUS {1}_Update{2}\n".format(self._api.get_upper_api_acronym(),
-                                                                            self._api.get_api_name(), self.get_name())
+        update_request_str = "CallStatus {0}_Update{1}\n".format(self._api.get_api_name(), self.get_name())
         update_request_str += "(\n"
         update_request_str += "{0}HANDLE apiHandle,\n".format(self._api.get_upper_api_acronym())
         update_request_str += "WCharCP {0}Id".format(self.get_lower_name())
@@ -156,7 +159,7 @@ class CApiStruct(CStruct):
         return update_request_str
 
     def get_api_gws_update_definition(self):
-        return self.__get_api_gws_update_function_def() + ";\n"
+        return "{0}_EXPORT ".format(self._api.get_upper_api_acronym()) + self.__get_api_gws_update_function_def() + ";\n"
 
     def get_api_gws_update_implementation(self):
         create_request_str = self.__get_api_gws_update_function_def() + "\n"
@@ -167,18 +170,18 @@ class CApiStruct(CStruct):
             .format(self.__ecschema_name, self.get_name(), self.get_lower_name())
         create_request_str += 'propertiesJson)->GetResult();\n'
         create_request_str += "    if (!result.IsSuccess())\n"
-        create_request_str += "        return wsresultTo{0}Status(result.GetError().GetId(), result.GetError().GetDisplayMessage()," \
+        create_request_str += "        return wsresultTo{0}Status(api, result.GetError().GetId(), result.GetError().GetDisplayMessage()," \
                               " result.GetError().GetDisplayDescription());\n\n"\
             .format(self._api.get_api_name())
-        create_request_str += '    return CALLSTATUS {{{0}, "{1}", "{2}"}};\n'\
+        create_request_str += '    api->SetStatusMessage("{1}");\n    api->SetStatusDescription("{2}");\n' \
+                              '    return {0};\n'\
             .format("SUCCESS", self._status_codes["SUCCESS"].message,
                     "{0}_Update{1} completed successfully.".format(self._api.get_api_name(), self.get_name()))
         create_request_str += "    }\n"
         return create_request_str
 
     def __get_api_gws_delete_function_def(self):
-        delete_request_str = "{0}_EXPORT CALLSTATUS {1}_Delete{2}\n".format(self._api.get_upper_api_acronym(),
-                                                                            self._api.get_api_name(), self.get_name())
+        delete_request_str = "CallStatus {0}_Delete{1}\n".format(self._api.get_api_name(), self.get_name())
         delete_request_str += "(\n"
         delete_request_str += "{0}HANDLE apiHandle,\n".format(self._api.get_upper_api_acronym())
         delete_request_str += "WCharCP {0}Id\n".format(self.get_lower_name())
@@ -186,24 +189,27 @@ class CApiStruct(CStruct):
         return delete_request_str
 
     def get_api_gws_delete_definition(self):
-        return self.__get_api_gws_delete_function_def() + ";\n"
+        return "{0}_EXPORT ".format(self._api.get_upper_api_acronym()) + self.__get_api_gws_delete_function_def() + ";\n"
 
     def get_api_gws_delete_implementation(self):
         delete_request_str = self.__get_api_gws_delete_function_def() + "\n"
         delete_request_str += "    {\n"
         delete_request_str += "    VERIFY_API\n\n"
         delete_request_str += "    if ({0}Id == nullptr || wcslen({0}Id) == 0)\n".format(self.get_lower_name())
-        delete_request_str += '        return CALLSTATUS {{{0}, "{1}", "{2}"}};\n\n'\
-            .format("INVALID_PARAMETER",self._status_codes["INVALID_PARAMETER"].message,
+        delete_request_str += "        {\n"
+        delete_request_str += '        api->SetStatusMessage("{1}");\n         api->SetStatusDescription("{2}");\n' \
+                              '        return {0};\n        }}\n\n'\
+            .format("INVALID_PARAMETER", self._status_codes["INVALID_PARAMETER"].message,
                     "{0}Id is a nullptr or empty.".format(self.get_lower_name()))
         delete_request_str += '    auto result = api->m_wsRepositoryClientPtr->'
         delete_request_str += 'SendDeleteObjectRequest({{"{0}", "{1}", Utf8String({2}Id)}})->GetResult();\n' \
             .format(self.__ecschema_name, self.get_name(), self.get_lower_name())
         delete_request_str += "    if (!result.IsSuccess())\n"
-        delete_request_str += "        return wsresultTo{0}Status(result.GetError().GetId(), result.GetError().GetDisplayMessage()," \
+        delete_request_str += "        return wsresultTo{0}Status(api, result.GetError().GetId(), result.GetError().GetDisplayMessage()," \
                               " result.GetError().GetDisplayDescription());\n\n"\
             .format(self._api.get_api_name())
-        delete_request_str += '    return CALLSTATUS {{{0}, "{1}", "{2}"}};\n'\
+        delete_request_str += '    api->SetStatusMessage("{1}");\n        api->SetStatusDescription("{2}");\n' \
+                              '    return {0};\n'\
             .format("SUCCESS",
                     self._status_codes["SUCCESS"].message,
                     "{0}_Delete{1} completed successfully.".format(self._api.get_api_name(), self.get_name()))
@@ -248,7 +254,9 @@ class CApiStruct(CStruct):
             else:
                 properties_str += 'propertiesJson["{0}"] = *{0};\n'.format(ecproperty.attributes["propertyName"].value)
         properties_str += '    if (propertiesJson.size() == 0)\n'
-        properties_str += '        return CALLSTATUS {{{0}, "{1}", "{2}"}};\n'\
+        properties_str += '        {\n'
+        properties_str += '        api->SetStatusMessage("{1}");\n        api->SetStatusDescription("{2}");\n' \
+                          '        return {0};\n        }}\n'\
             .format("INVALID_PARAMETER",
                     self._status_codes["INVALID_PARAMETER"].message,
                     "There were not any valid {0} properties passed in.".format(self.get_name()))

@@ -35,7 +35,7 @@ class CppCliClassesHeaderWriter(HeaderWriter):
         self._file.write('    public ref class CallStatus\n')
         self._file.write('        {\n')
         self._file.write('        public:\n')
-        self._file.write('            CallStatus(CALLSTATUS status);\n')
+        self._file.write('            CallStatus(uint16_t id, CharCP message, CharCP description);\n')
         self._file.write('            int Id;\n')
         self._file.write('            String^ Message;\n')
         self._file.write('            String^ Description;\n')

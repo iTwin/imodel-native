@@ -56,10 +56,10 @@ class CPublicBufferHeaderWriter(HeaderWriter):
     def __write_api_free_buffer(self):
         self._file.write(self._COMMENT_GroupBriefLong
                          .format("Free an allocated data buffer",
-                                 "\param[in] dataBuffer Data buffer"))
-        self._file.write("{0}_EXPORT CALLSTATUS {1}_DataBufferFree\n".format(self._api.get_upper_api_acronym(), self._api.get_api_name()))
+                                 "\param[in] apiHandle Handle to api\n* \param[in] dataBuffer Data buffer"))
+        self._file.write("{0}_EXPORT CallStatus {1}_DataBufferFree\n".format(self._api.get_upper_api_acronym(), self._api.get_api_name()))
         self._file.write("(\n")
-        self._file.write("{0}DATABUFHANDLE dataBuffer\n".format(self._api.get_upper_api_acronym()))
+        self._file.write("{0}HANDLE apiHandle,\n{0}DATABUFHANDLE dataBuffer\n".format(self._api.get_upper_api_acronym()))
         self._file.write(");\n")
 
     def __write_api_get_functions(self):
@@ -142,15 +142,17 @@ class CPublicBufferHeaderWriter(HeaderWriter):
     def __get_api_accessor_comment(self, property_type):
         comment_str = "/************************************************************************************//**\n"
         comment_str += "* \\brief Get a {0} property from a data buffer\n".format(property_type.title())
+        comment_str += "* \param[in] apiHandle handle to api\n"
         comment_str += "* \param[in] dataBuffer Data buffer\n"
         comment_str += "* \param[in] bufferProperty buffer property\n"
         comment_str += "* \param[in] index buffer index\n"
         if property_type == "string":
-            comment_str += "* \param[out] str Pointer to buffer to store string property\n"
             comment_str += "* \param[in] strLength buffer length\n"
+            comment_str += "* \param[out] str Pointer to buffer to store string property\n"
         elif property_type == "StringLength":
             comment_str += "* \param[out] outStringSize Pointer to store the string length\n"
         elif property_type == "guid":
+            comment_str += "* \param[in] strLength guid-buffer length\n"
             comment_str += "* \param[out] guid Pointer to buffer to store GUID property\n"
         elif property_type == "boolean":
             comment_str += "* \param[out] boolean Pointer to bool to store property\n"
@@ -168,21 +170,22 @@ class CPublicBufferHeaderWriter(HeaderWriter):
 
     def __get_api_accessor_definition(self, property_type):
         if property_type is 'StringLength':
-            accessor_str = "{0}_EXPORT CALLSTATUS {1}_DataBufferGetStringLength\n".format(self._api.get_upper_api_acronym(), self._api.get_api_name())
+            accessor_str = "{0}_EXPORT CallStatus {1}_DataBufferGetStringLength\n".format(self._api.get_upper_api_acronym(), self._api.get_api_name())
         else:
-            accessor_str = "{0}_EXPORT CALLSTATUS {1}_DataBufferGet{2}Property\n".format(self._api.get_upper_api_acronym(),
+            accessor_str = "{0}_EXPORT CallStatus {1}_DataBufferGet{2}Property\n".format(self._api.get_upper_api_acronym(),
                                                                                          self._api.get_api_name(),
                                                                                          property_type.title())
         accessor_str += "(\n"
-        accessor_str += "{0}DATABUFHANDLE dataBuffer,\n".format(self._api.get_upper_api_acronym())
+        accessor_str += "{0}HANDLE apiHandle,\n{0}DATABUFHANDLE dataBuffer,\n".format(self._api.get_upper_api_acronym())
         accessor_str += "int16_t bufferProperty,\n"
         accessor_str += "uint32_t index,\n"
         if property_type == "string":
-            accessor_str += "WCharP str,\n"
-            accessor_str += "uint32_t strLength\n"
+            accessor_str += "uint32_t strLength,\n"
+            accessor_str += "WCharP str\n"
         elif property_type == "StringLength":
             accessor_str += "size_t* outStringSize\n"
         elif property_type == "guid":
+            accessor_str += "uint32_t strLength,\n"
             accessor_str += "WCharP guid\n"
         elif property_type == "boolean":
             accessor_str += "bool* boolean\n"

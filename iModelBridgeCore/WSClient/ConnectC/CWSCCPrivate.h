@@ -28,7 +28,7 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 //Common code to verify API reference
 #define VERIFY_API \
 if(NULL == apiHandle) \
-    return CALLSTATUS{INVALID_PARAMETER, "Invalid apiHandle parameter.", "The api handle passed to the function is NULL."}; \
+    return INVALID_PARAMETER; \
 LPCWSCC api = (LPCWSCC) apiHandle;
 
 class WSPathProvider : public IApplicationPathsProvider
@@ -58,12 +58,18 @@ class ConnectWebServicesClientC_internal
     private:
         WSPathProvider m_pathProv;
         static WSLocalState m_localState;
+        Utf8String m_lastStatusDescription;
+        Utf8String m_lastStatusMessage;
 
     public:
         ConnectWebServicesClientC_internal(Utf8String authenticatedToken, uint32_t productId);
         ConnectWebServicesClientC_internal(Utf8String username, Utf8String password, uint32_t productId);
         shared_ptr<WSRepositoryClient> m_wsRepositoryClientPtr;
         shared_ptr<SolrClient> m_solrClientPtr;
+        Utf8StringCR GetLastStatusMessage();
+        Utf8StringCR GetLastStatusDescription();
+        void SetStatusMessage(Utf8String message);
+        void SetStatusDescription(Utf8String desc);
     };
 
 typedef ConnectWebServicesClientC_internal* LPCWSCC;
