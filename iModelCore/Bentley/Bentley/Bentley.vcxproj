@@ -53,6 +53,7 @@
   <ItemGroup>
     <ClInclude Include="..\PublicAPI\Bentley\Base64Utilities.h" />
     <ClInclude Include="..\PublicAPI\Bentley\BeAssert.h" />
+    <ClInclude Include="..\PublicAPI\Bentley\BeAtomic.h" />
     <ClInclude Include="..\PublicAPI\Bentley\BeDebugLog.h" />
     <ClInclude Include="..\PublicAPI\Bentley\BeDirectoryIterator.h" />
     <ClInclude Include="..\PublicAPI\Bentley\BeFile.h" />
