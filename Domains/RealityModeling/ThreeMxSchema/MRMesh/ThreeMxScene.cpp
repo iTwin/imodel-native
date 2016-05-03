@@ -16,6 +16,8 @@
 +---------------+---------------+---------------+---------------+---------------+------*/
 Scene::Scene(DgnDbR db, TransformCR location, Utf8CP realityCacheName, Utf8CP rootUrl, Render::SystemP renderSys) : m_db(db), m_rootUrl(rootUrl), m_location(location), m_renderSystem(renderSys)
     {
+    m_isUrl = (0 == strncmp("http:", rootUrl, 5) || 0 == strncmp("https:", rootUrl, 6));
+
     m_scale = location.ColumnXMagnitude();
 
     m_localCacheName = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName();
@@ -24,7 +26,7 @@ Scene::Scene(DgnDbR db, TransformCR location, Utf8CP realityCacheName, Utf8CP ro
 
     m_cache = RealityDataCache::Create(100);
     m_cache->RegisterStorage(*BeSQLiteRealityDataStorage::Create(m_localCacheName));
-    m_cache->RegisterSource(m_rootUrl.IsUrl() ? (IRealityDataSourceBase&) *HttpRealityDataSource::Create(4) : *FileRealityDataSource::Create(1));
+    m_cache->RegisterSource(IsUrl() ? (IRealityDataSourceBase&) *HttpRealityDataSource::Create(1) : *FileRealityDataSource::Create(1));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -55,26 +57,29 @@ BentleyStatus Scene::LoadScene()
     if (SUCCESS != ReadRoot(sceneInfo))
         return ERROR;
 
-    BeFileName rootPath(BeFileName::DevAndDir, m_rootUrl.c_str());
-    for (auto const& child : sceneInfo.m_meshChildren)
+    m_rootNode = new Node(NodeInfo(), nullptr);
+    m_rootNode->m_info.m_childPath = sceneInfo.m_rootNodePath;
+
+    if (SUCCESS != SynchronousRead(*m_rootNode, ConstructNodeName(sceneInfo.m_rootNodePath, m_rootUrl)))
+        return ERROR;
+
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+    static uint32_t s_sleepMillis = 3;
+    while (!m_rootNode->LoadedUntilDisplayable(*this))
         {
-        NodePtr childNode = new Node(NodeInfo(), nullptr);
-
-        if (SUCCESS != SynchronousRead(*childNode, ConstructNodeName(child, &rootPath)))
-            return ERROR;
-
-        childNode->LoadUntilDisplayable(*this);
-        m_rootNodes.push_back(childNode);
+        ProcessRequests();
+        BeThreadUtilities::BeSleep(s_sleepMillis);
         }
+#endif
 
-    SetProjectionTransform(sceneInfo);
+    m_rootNode->Dump("");
     return SUCCESS;
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                      Ray.Bentley     09/2015
 //----------------------------------------------------------------------------------------
-BentleyStatus Scene::SetProjectionTransform(SceneInfo const& sceneInfo)
+BentleyStatus Scene::ReadGeoLocation(SceneInfo const& sceneInfo)
     {
     DRange3d  range = GetRange(Transform::FromIdentity());
     if (range.IsNull())
@@ -124,7 +129,7 @@ BentleyStatus Scene::SetProjectionTransform(SceneInfo const& sceneInfo)
     // 0 == SUCCESS, 1 == Warning, 2 == Severe Warning,  Negative values are severe errors.
     if (status == 0 || status == 1)
         {
-//        m_location = Transform::FromProduct(localTransform, transform);
+        m_location = Transform::FromProduct(localTransform, transform);
         return SUCCESS;
         }
 
@@ -136,9 +141,6 @@ BentleyStatus Scene::SetProjectionTransform(SceneInfo const& sceneInfo)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void drawBoundingSpheres(NodeCR node, RenderContextR context, SceneCR scene) 
     {
-    if (!node.IsLoaded())
-        return;
-
     if (node.IsDisplayable())
         node.DrawBoundingSphere(context, scene);
 
@@ -151,8 +153,7 @@ static void drawBoundingSpheres(NodeCR node, RenderContextR context, SceneCR sce
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Scene::DrawBoundingSpheres(RenderContextR context)
     {
-    for (auto const& child : m_rootNodes)
-        drawBoundingSpheres(*child, context, *this);
+    drawBoundingSpheres(*m_rootNode, context, *this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -160,12 +161,7 @@ void Scene::DrawBoundingSpheres(RenderContextR context)
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t Scene::GetMeshMemorySize() const
     {
-    size_t memorySize = 0;
-
-    for (auto const& child : m_rootNodes)
-        memorySize += child->GetMeshMemorySize();
-
-    return memorySize;
+    return m_rootNode->GetMeshMemorySize();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -173,12 +169,7 @@ size_t Scene::GetMeshMemorySize() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t Scene::GetTextureMemorySize() const
     {
-    size_t memorySize = 0;
-
-    for (auto const& child : m_rootNodes)
-        memorySize += child->GetTextureMemorySize();
-
-    return memorySize;
+    return m_rootNode->GetTextureMemorySize();
     }
 
 /*-----------------------------------------------------------------------------------**//**
@@ -186,21 +177,7 @@ size_t Scene::GetTextureMemorySize() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t Scene::GetNodeCount() const
     {
-    size_t  count = 1;
-    for (auto const& child : m_rootNodes)
-        count += child->GetNodeCount();
-    return count;
-    }
-
-/*-----------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-size_t Scene::GetMeshCount() const
-    {
-    size_t  count = 0;
-    for (auto const& child : m_rootNodes)
-        count += child->GetMeshCount();
-    return count;
+    return m_rootNode->GetNodeCount();
     }
 
 /*-----------------------------------------------------------------------------------**//**
@@ -211,25 +188,15 @@ void Scene::FlushStale(uint64_t staleTime)
     if (!m_requests.empty())
         return;
 
-    for (auto& child : m_rootNodes)
-        child->FlushStale(staleTime);
+    m_rootNode->FlushStale(staleTime);
     }
 
 /*-----------------------------------------------------------------------------------**//**
-    * @bsimethod                                                    Ray.Bentley     03/2015
+* @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t Scene::GetMaxDepth() const
     {
-    size_t maxChildDepth = 0;
-
-    for (auto const& child : m_rootNodes)
-        {
-        size_t childDepth = child->GetMaxDepth();
-        if (childDepth > maxChildDepth)
-            maxChildDepth = childDepth;
-        }
-
-    return 1 + maxChildDepth;
+    return 1 + m_rootNode->GetMaxDepth();
     }
 
 //----------------------------------------------------------------------------------------
@@ -237,13 +204,7 @@ size_t Scene::GetMaxDepth() const
 //----------------------------------------------------------------------------------------
 DRange3d Scene::GetRange(TransformCR trans) const
     {
-    DRange3d range;
-    range.Init();
-
-    for (auto const& child : m_rootNodes)
-        range.UnionOf(range, child->GetRange(trans));
-
-    return range;
+    return m_rootNode->GetRange(trans);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -251,30 +212,23 @@ DRange3d Scene::GetRange(TransformCR trans) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Scene::Draw(RenderContextR context)
     {
-    bool childrenScheduled=false;
-    for (auto const& child : m_rootNodes)
-        {
-        childrenScheduled |= child->Draw(context, *this);
-        if (context.CheckStop())
-            break;
-        }
-    return childrenScheduled;
+    return m_rootNode->Draw(context, *this);
     }
 
-/*-----------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     03/2015
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileName Scene::ConstructNodeName(Utf8StringCR childName, BeFileNameCP parentName)
+Utf8String Scene::ConstructNodeName(Utf8StringCR childName, Utf8StringCR parentPath)
     {
-    BeFileName nodeFileName(childName.c_str());
+    if (IsUrl())
+        {
+        Utf8String parentDir = parentPath.substr(0, parentPath.find_last_of("/"));
+        return parentDir + "/" + childName;
+        }
 
-    if (nodeFileName.IsAbsolutePath() || nodeFileName.IsUrl())
-        return nodeFileName;
-
-    BeFileName fullNodeFileName = (NULL == parentName) ? BeFileName() : *parentName;
-    fullNodeFileName.AppendToPath(nodeFileName.c_str());
-
-    return fullNodeFileName;
+    BeFileName nodeFileName(BeFileName::DevAndDir, BeFileName(parentPath));
+    nodeFileName.AppendToPath(BeFileName(childName));
+    return nodeFileName.GetNameUtf8();
     }
 
 /*-----------------------------------------------------------------------------------**//**

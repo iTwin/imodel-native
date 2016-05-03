@@ -45,7 +45,7 @@ Geometry::Geometry(Graphic::TriMeshArgs const& args, SceneR scene)
         memcpy(&m_textureUV.front(), args.m_textureUV, args.m_numPoints * sizeof(FPoint2d));
         }
 
-    if (nullptr == scene.GetRenderSystem() || nullptr==args.m_texture)
+    if (nullptr == scene.GetRenderSystem() || !args.m_texture.IsValid())
         return;
 
     m_graphic = scene.GetRenderSystem()->_CreateGraphic(Graphic::CreateParams(nullptr, scene.m_location));
@@ -59,9 +59,7 @@ Geometry::Geometry(Graphic::TriMeshArgs const& args, SceneR scene)
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t Geometry::GetMemorySize() const
     {
-    size_t size = m_points.size() * sizeof(FPoint3d) + 
-                  m_normals.size() * sizeof(FPoint3d) + 
-                  m_textureUV.size() * sizeof(FPoint2d);
+    size_t size = m_points.size() * sizeof(FPoint3d) + m_normals.size() * sizeof(FPoint3d) + m_textureUV.size() * sizeof(FPoint2d);
 
     if (m_graphic.IsValid())
         {
@@ -82,8 +80,8 @@ void Geometry::Draw(RenderContextR context)
         context.OutputGraphic(*m_graphic, nullptr);
     }
 
-/*-----------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     03/2015
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 DRange3d Geometry::GetRange(TransformCR trans) const    
     {

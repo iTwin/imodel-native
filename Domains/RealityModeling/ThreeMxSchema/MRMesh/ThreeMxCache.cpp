@@ -12,6 +12,8 @@
 
 int s_debugCacheLevel = 0;
 
+static bool isUrl(Utf8CP str){return (0 == strncmp("http:", str, 5) || 0 == strncmp("https:", str, 6));}
+
 #define TABLE_NAME_ThreeMx "ThreeMx"
 
 //=======================================================================================
@@ -129,7 +131,7 @@ protected:
 
         if (options.m_output)
             {
-            *options.m_output = std::move(m_nodeBytes);
+            *options.m_output = m_nodeBytes; // copy, don't move - we need the data in this object to cache it.
             return SUCCESS;
             }
 
@@ -207,6 +209,7 @@ protected:
     BentleyStatus PersistToStorage(Db& db, BeMutex& cs) const
         {
         BeMutexHolder lock(cs);
+        BeAssert(m_nodeBytes.HasData());
 
         CachedStatementPtr selectStatement;
         if (BE_SQLITE_OK != db.GetCachedStatement(selectStatement, "SELECT Filename FROM " TABLE_NAME_ThreeMx " WHERE Filename=?"))
@@ -220,7 +223,6 @@ protected:
             }
         else
             {
-            BeAssert(m_nodeBytes.HasData());
 
             // insert
             CachedStatementPtr stmt;
@@ -268,6 +270,7 @@ struct HttpData : ThreeMxData, IRealityData<HttpData, BeSQLiteRealityDataStorage
     };
 
 private:
+
 protected:
     virtual Utf8CP _GetId() const override {return GetFilename().c_str();}
     virtual bool _IsExpired() const override {return false;}
@@ -351,21 +354,21 @@ void ThreeMxData::CloneNode(Node& node)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-RealityDataCacheResult Scene::RequestData(Node* node, BeFileNameCR path, bool synchronous, MxStreamBuffer* output)
+RealityDataCacheResult Scene::RequestData(Node* node, Utf8StringCR path, bool synchronous, MxStreamBuffer* output)
     {
     RealityDataCacheResult result;
 
-    if (path.IsUrl())
+    if (isUrl(path.c_str()))
         {
         HttpDataPtr meshData;
-        result = m_cache->Get(meshData, path.GetNameUtf8().c_str(), *new HttpData::RequestOptions(output, *this, synchronous));
+        result = m_cache->Get(meshData, path.c_str(), *new HttpData::RequestOptions(output, *this, synchronous));
         if (RealityDataCacheResult::Success == result && nullptr != node)
             meshData->CloneNode(*node);
         }
     else
         {
         FileDataPtr meshData;
-        result = m_cache->Get(meshData, path.GetNameUtf8().c_str(), *new FileData::RequestOptions(output, *this, synchronous));
+        result = m_cache->Get(meshData, path.c_str(), *new FileData::RequestOptions(output, *this, synchronous));
         if (RealityDataCacheResult::Success == result && nullptr != node)
             meshData->CloneNode(*node);
         }
@@ -389,16 +392,13 @@ Scene::RequestStatus Scene::ProcessRequests()
         if (BeTimeUtilities::QueryMillisecondsCounter() > endTime)
             break;
 
-        if (!curr->first->m_parent->IsLoaded())
-            continue;
-
-        BeFileName fileName = curr->first->GetFileName();
-        RealityDataCacheResult cacheStatus = RequestData(curr->first, fileName, false, nullptr);
+        Utf8StringCR filePath = curr->first->GetFilePath(*this);
+        RealityDataCacheResult cacheStatus = RequestData(curr->first.get(), filePath.c_str(), false, nullptr);
         switch (cacheStatus)
             {
             case RealityDataCacheResult::Success:
                 {
-                curr->first->SetDirectory(BeFileName(BeFileName::DevAndDir, fileName));
+                curr->first->SetNodePath(filePath);
 
                 requestsProcessed++;
                 curr = m_requests.erase(curr);
@@ -407,8 +407,8 @@ Scene::RequestStatus Scene::ProcessRequests()
 
             case RealityDataCacheResult::NotFound:
                 {
-                DisplayNodeFailureWarning(fileName);
-                curr->first->m_parent->RemoveChild(curr->first);
+                DisplayNodeFailureWarning(filePath);
+                curr->first->m_parent->RemoveChild(curr->first.get());
                 break;
                 }
 
@@ -428,39 +428,37 @@ Scene::RequestStatus Scene::ProcessRequests()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus Scene::SynchronousRead(NodeR node, BeFileNameCR fileName)
+BentleyStatus Scene::SynchronousRead(NodeR node, Utf8StringCR filePath)
     {
-    RealityDataCacheResult status = RequestData(&node, fileName, true, nullptr);
+    RealityDataCacheResult status = RequestData(&node, filePath.c_str(), true, nullptr);
     if (RealityDataCacheResult::Success != status)
         return ERROR;
 
-    node.SetDirectory(BeFileName(BeFileName::DevAndDir, fileName));
+    node.SetNodePath(filePath);
     return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Scene::QueueChildLoad(Node::MeshNodes const& children, DgnViewportP viewport)
+void Scene::QueueLoadChildren(Node& node, DgnViewportP viewport)
     {
     int requestsMade = 0;
 
-    for (auto const& child : children)
+    node.m_childrenRequested = true;
+
+    auto found = m_requests.find(&node);
+    if (found == m_requests.end())
         {
-        BeFileName fileName = child->GetFileName();
-        auto found = m_requests.find(child.get());
-        
-        if (found == m_requests.end())
-            {
-            BeAssert(child->m_children.empty());
-            RequestData(nullptr, fileName, false, nullptr);
-            m_requests[child.get()] = NodeRequest(viewport);
-            requestsMade++;
-            }
-        else
-            {
-            found->second.m_viewports.insert(viewport);
-            }
+        Utf8StringCR fileName = node.GetFilePath(*this);
+        BeAssert(node.m_children.empty());
+        RequestData(nullptr, fileName.c_str(), false, nullptr);
+        m_requests[&node] = NodeRequest(viewport);
+        ++requestsMade;
+        }
+    else
+        {
+        found->second.m_viewports.insert(viewport);
         }
 
     if (s_debugCacheLevel > 3 && requestsMade)

@@ -37,7 +37,10 @@ ProgressiveTask::Completion ThreeMxProgressive::_DoProgressive(ProgressiveContex
     switch (m_scene.ProcessRequests())
         {
         case Scene::RequestStatus::None:
+            return Completion::Aborted;
+
         case Scene::RequestStatus::Processed:
+            m_scene.Draw(context);
             return Completion::Aborted;
         }
 
@@ -103,7 +106,9 @@ void ThreeMxModel::_AddTerrainGraphics(TerrainContextR context) const
         return;
         }
 
-    if (m_scene->Draw(context))
+    m_scene->Draw(context);
+
+    if (m_scene->HasPendingRequests())
         context.GetViewport()->ScheduleTerrainProgressiveTask(*new ThreeMxProgressive(*m_scene));
     }
 
