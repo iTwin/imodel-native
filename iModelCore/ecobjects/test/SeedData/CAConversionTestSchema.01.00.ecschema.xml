@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ECSchema schemaName="CAConverisonTest" nameSpacePrefix="dgn" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" prefix="bsca"/>
+
+    <ECEntityClass typeName="TestClassB">
+        <ECProperty propertyName="gfdhgfshfsgh" typeName="dateTime">
+            <ECCustomAttributes>
+                <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.12">
+                    <DateTimeKind>Unspecified</DateTimeKind>
+                    <DateTimeComponent>Date</DateTimeComponent>
+                </DateTimeInfo>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECEntityClass>
+    <ECEntityClass typeName="TestClassA">
+        <ECProperty propertyName="LastMod" typeName="dateTime">
+            <ECCustomAttributes>
+                <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.12">
+                    <DateTimeKind>Utc</DateTimeKind>
+                    <DateTimeComponent>DateTime</DateTimeComponent>
+                </DateTimeInfo>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECEntityClass>
+    <ECEntityClass typeName="TestClassC">
+        <ECProperty propertyName="LastModDate" typeName="dateTime">
+            <ECCustomAttributes>
+                <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.12">
+                    <DateTimeKind>Utc</DateTimeKind>
+                    <DateTimeComponent>DateTime</DateTimeComponent>
+                </DateTimeInfo>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECEntityClass>
+
+</ECSchema>

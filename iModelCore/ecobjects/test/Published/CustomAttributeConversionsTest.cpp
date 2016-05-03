@@ -1405,5 +1405,21 @@ TEST_F(StandardValueToEnumConversionTest, EnumName_NamingConvention)
     CheckTypeName("Class_PropertyB_2", *m_schema, "PropertyB", { "Class" });
 
     }
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Andreas.Kurka                 04 / 2016
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(StandardValueToEnumConversionTest, SomeTest)
+{
+	ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+	ECSchemaPtr schema;
+	SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, ECTestFixture::GetTestDataPath(L"CAConversionTestSchema.01.00.ecschema.xml").c_str(), *schemaContext);
+	ASSERT_EQ(SchemaReadStatus::Success, status );
+
+	bool result = ECSchemaConverter::Convert(*schema);
+	ASSERT_EQ(true, result);
+
+	SchemaWriteStatus status2 = schema->WriteToXmlFile(ECTestFixture::GetTempDataPath(L"CAConversionTestSchema.01.00.ecschema-out.xml").c_str());
+	ASSERT_EQ(SchemaWriteStatus::Success, status2);
+}
 
 END_BENTLEY_ECN_TEST_NAMESPACE
