@@ -1,9 +1,11 @@
-//-------------------------------------------------------------------------------------- 
-//     $Source: PublicAPI/DgnPlatform/AnnotationTable.h $
-//  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
-//-------------------------------------------------------------------------------------- 
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: PublicAPI/DgnPlatform/AnnotationTable.h $
+|
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
 #pragma once
-
 //__PUBLISH_SECTION_START__
 
 #include <Bentley/RefCounted.h>

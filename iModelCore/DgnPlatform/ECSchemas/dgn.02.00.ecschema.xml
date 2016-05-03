@@ -801,6 +801,7 @@
         </Target>
     </ECRelationshipClass>
 
+    <!--
     <ECEntityClass typeName="DimensionStyle">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
@@ -832,6 +833,7 @@
         <BaseClass>GraphicalElement3d</BaseClass>
         <BaseClass>LinearDimension</BaseClass>
     </ECEntityClass>
+    -->
 
     <ECEntityClass typeName="ViewAttachment">
         <!-- A reference to a ViewDefinition, placed onto a sheet -->

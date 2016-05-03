@@ -838,6 +838,7 @@ protected:
     virtual DrawingGraphicCP _ToDrawingGraphic() const {return nullptr;}
     virtual DefinitionElementCP _ToDefinitionElement() const {return nullptr;}
     virtual IElementGroupCP _ToIElementGroup() const {return nullptr;}
+    virtual DgnGeometryPartCP _ToGeometryPart() const {return nullptr;}
 
     //! Construct a DgnElement from its params
     DGNPLATFORM_EXPORT explicit DgnElement(CreateParams const& params);
@@ -868,6 +869,7 @@ public:
     DGNPLATFORM_EXPORT GeometrySource2dCP ToGeometrySource2d() const;
     DGNPLATFORM_EXPORT GeometrySource3dCP ToGeometrySource3d() const;
 
+    DgnGeometryPartCP ToGeometryPart() const {return _ToGeometryPart();}                //!< more efficient substitute for dynamic_cast<DgnGeometryPartCP>(el)
     DefinitionElementCP ToDefinitionElement() const {return _ToDefinitionElement();}    //!< more efficient substitute for dynamic_cast<DefinitionElementCP>(el)
     AnnotationElement2dCP ToAnnotationElement2d() const {return _ToAnnotationElement2d();} //!< more efficient substitute for dynamic_cast<AnnotationElement2dCP>(el)
     DrawingGraphicCP ToDrawingGraphic() const {return _ToDrawingGraphic();}             //!< more efficient substitute for dynamic_cast<DrawingGraphicCP>(el)
@@ -877,6 +879,7 @@ public:
     GeometrySource2dP ToGeometrySource2dP() {return const_cast<GeometrySource2dP>(ToGeometrySource2d());} //!< more efficient substitute for dynamic_cast<GeometrySource2dP>(el)
     GeometrySource3dP ToGeometrySource3dP() {return const_cast<GeometrySource3dP>(ToGeometrySource3d());} //!< more efficient substitute for dynamic_cast<GeometrySource3dP>(el)
 
+    DgnGeometryPartP ToGeometryPartP() {return const_cast<DgnGeometryPartP>(_ToGeometryPart());}                //!< more efficient substitute for dynamic_cast<DgnGeometryPartCP>(el)
     DefinitionElementP ToDefinitionElementP() {return const_cast<DefinitionElementP>(_ToDefinitionElement());}  //!< more efficient substitute for dynamic_cast<DefinitionElementP>(el)
     AnnotationElement2dP ToAnnotationElement2dP() {return const_cast<AnnotationElement2dP>(_ToAnnotationElement2d());} //!< more efficient substitute for dynamic_cast<AnnotationElement2dP>(el)
     DrawingGraphicP ToDrawingGraphicP() {return const_cast<DrawingGraphicP>(_ToDrawingGraphic());}              //!< more efficient substitute for dynamic_cast<DrawingGraphicP>(el)
@@ -1311,7 +1314,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void _OnReversedDelete() const override;
     DGNPLATFORM_EXPORT virtual void _OnUpdateFinished() const override;
     DGNPLATFORM_EXPORT virtual void _RemapIds(DgnImportContext&) override;
-    virtual uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() + static_cast<uint32_t>(sizeof(m_categoryId) + sizeof(m_geom)) + sizeof(m_graphics) + m_geom.GetAllocSize();}
+    virtual uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() + (sizeof(*this) - sizeof(T_Super)) + m_geom.GetAllocSize();}
 
     static void AddBaseClassParams(ECSqlClassParams& params);
     DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& stmt);

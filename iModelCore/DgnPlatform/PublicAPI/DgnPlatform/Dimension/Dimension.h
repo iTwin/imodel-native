@@ -139,8 +139,10 @@ private:
     DimensionStyleCPtr      m_dimStyle;
     DgnElementId            m_textStyleId;
     GeometryBuilderR        m_geomBuilder;
-    double                  m_textHeight;
     bvector<DPoint2d>       m_dimPoints;
+    double                  m_textHeight;
+    double                  m_runningStackOffset;
+    DPoint2d                m_textMargin;
 
     Utf8String              FormatDistanceString (double distance);
     double                  CalculateMeasureDistance (DPoint2dCR start, DPoint2dCR end);
