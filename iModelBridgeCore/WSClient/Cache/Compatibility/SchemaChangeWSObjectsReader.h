@@ -22,10 +22,15 @@ class SchemaChangeWSObjectsReader : public WSObjectsReader
         std::shared_ptr<WSObjectsReader> m_reader;
         Utf8String m_schemaName;
         mutable bmap<const rapidjson::Value*, rapidjson::SizeType> m_indexes;
-        rapidjson::Value m_emptyArrayJsonObject = rapidjson::Type::kArrayType;
+        rapidjson::Value m_emptyArrayJsonObject;
 
     public:
-        SchemaChangeWSObjectsReader(std::shared_ptr<WSObjectsReader> reader, Utf8String schemaName) : m_reader(reader), m_schemaName(schemaName) {}
+        SchemaChangeWSObjectsReader(std::shared_ptr<WSObjectsReader> reader, Utf8String schemaName) : 
+            m_reader(reader), 
+            m_schemaName(schemaName),
+            m_emptyArrayJsonObject(rapidjson::Type::kArrayType)
+            {}
+
         virtual ~SchemaChangeWSObjectsReader() {}
 
         virtual Instances ReadInstances(std::shared_ptr<const rapidjson::Value> data) override
