@@ -536,7 +536,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
         s_getLastStitchingDuration = ((double)clock() - startClock) / CLOCKS_PER_SEC / 60.0;
 #endif
         }
-    else
+    else    
         {
 #ifdef SCALABLE_MESH_ATP    
         s_getLastStitchingDuration = 0;

@@ -24,35 +24,6 @@
 extern bool s_useThreadsInStitching;
 extern bool s_useThreadsInMeshing;
 
-
-template<class DataType> class LinkedStoredPooledVector : public HPMStoredPooledVector < DataType >
-    {
-    public:
-        LinkedStoredPooledVector() : HPMStoredPooledVector()
-            {
-            m_onDiscard = [] () {};
-            };
-        LinkedStoredPooledVector(HFCPtr<typename PoolItem<DataType>::PoolType > pool, IHPMDataStore<DataType>* store)
-            : HPMStoredPooledVector(pool,store)
-            {
-            m_onDiscard = [] () {};
-            };
-    void DoOnDiscard(std::function<void()> callback)
-        {
-        m_onDiscard = callback;
-        };
-
-    virtual bool Discard() const
-        {
-        auto retVal = HPMStoredPooledVector < DataType >::Discard();
-        m_onDiscard();
-        return retVal;
-        };
-
-    private:
-        std::function<void()> m_onDiscard;
-    };
-
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 
 extern ScalableMeshScheduler* s_clipScheduler;
@@ -95,9 +66,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     friend class SMMeshIndex < POINT, EXTENT > ;
     public:
         SMMeshIndexNode(size_t pi_SplitTreshold,
-                        const EXTENT& pi_rExtent,
-                        HFCPtr<HPMCountLimitedPool<POINT>> pool,
-                        HFCPtr<SMPointTileStore<POINT, EXTENT> > store,
+                        const EXTENT& pi_rExtent,                                                
                         SMMeshIndex<POINT, EXTENT>* meshIndex,
                         ISMPointIndexFilter<POINT, EXTENT>* filter,
                         bool balanced,
@@ -124,9 +93,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
                      const HFCPtr<SMMeshIndexNode>& pi_rpParentNode);
 
     SMMeshIndexNode(HPMBlockID blockID,
-                     HFCPtr<SMMeshIndexNode<POINT, EXTENT> > parent,
-                      HFCPtr<HPMCountLimitedPool<POINT> > pool,
-                      HFCPtr<SMPointTileStore<POINT, EXTENT> > store,
+                     HFCPtr<SMMeshIndexNode<POINT, EXTENT> > parent,                                            
                       SMMeshIndex<POINT, EXTENT>* meshIndex,
                       ISMPointIndexFilter<POINT, EXTENT>* filter,
                       bool balanced,
@@ -136,9 +103,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
                       ISMPointIndexMesher<POINT, EXTENT>* mesher3d,
                       CreatedNodeMap*                      createdNodeMap);
 
-    SMMeshIndexNode(HPMBlockID blockID,
-                      HFCPtr<HPMCountLimitedPool<POINT> > pool,
-                      HFCPtr<SMPointTileStore<POINT, EXTENT> > store,
+    SMMeshIndexNode(HPMBlockID blockID,                                            
                       SMMeshIndex<POINT, EXTENT>* meshIndex,
                       ISMPointIndexFilter<POINT, EXTENT>* filter,
                       bool balanced,
@@ -149,9 +114,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
                       CreatedNodeMap* createdNodeMap);
 
     SMMeshIndexNode(size_t pi_SplitTreshold,
-                      const EXTENT& pi_rExtent,
-                      HFCPtr<HPMCountLimitedPool<POINT>> pool,
-                      HFCPtr<SMPointTileStore<POINT, EXTENT> > store,
+                      const EXTENT& pi_rExtent,                                            
                       SMMeshIndex<POINT, EXTENT>* meshIndex,
                       ISMPointIndexFilter<POINT, EXTENT>* filter,
                       bool balanced,
@@ -160,9 +123,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
                       ISMPointIndexMesher<POINT, EXTENT>* mesher3d,
                       CreatedNodeMap*                      createdNodeMap);
 
-    SMMeshIndexNode(HPMBlockID blockID,
-                     HFCPtr<HPMCountLimitedPool<POINT> > pool,
-                     HFCPtr<SMPointTileStore<POINT, EXTENT> > store,
+    SMMeshIndexNode(HPMBlockID blockID,                                          
                      SMMeshIndex<POINT, EXTENT>* meshIndex,
                      ISMPointIndexFilter<POINT, EXTENT>* filter,
                      bool balanced,
@@ -172,9 +133,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
                      CreatedNodeMap* createdNodeMap);
 
     SMMeshIndexNode(HPMBlockID blockID,
-                     HFCPtr<SMMeshIndexNode<POINT, EXTENT> > parent,
-                     HFCPtr<HPMCountLimitedPool<POINT> > pool,
-                     HFCPtr<SMPointTileStore<POINT, EXTENT> > store,
+                     HFCPtr<SMMeshIndexNode<POINT, EXTENT> > parent,                                          
                      SMMeshIndex<POINT, EXTENT>* meshIndex,
                      ISMPointIndexFilter<POINT, EXTENT>* filter,
                      bool balanced,
@@ -193,15 +152,13 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CreateNewChildNode(HPMBlockID blockID);
     virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CreateNewNode(HPMBlockID blockID, bool isRootNode = false) override;
 
-    virtual bool Discard() const;
-
-    virtual bool Inflate() const;
+    virtual bool Discard() override;    
     virtual bool Destroy();
 
 
-    virtual void Load() const;
+    virtual void Load() const override;
 
-    virtual void Unload() const override;
+    virtual void Unload() override;
 
     virtual bool IsGraphLoaded() const;
 
@@ -573,9 +530,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     {
     friend class SMMeshIndexNode < POINT, EXTENT > ;
     public:
-        SMMeshIndex(SMMemoryPoolPtr& smMemoryPool,    
-                     HFCPtr<HPMCountLimitedPool<POINT> > pool, 
-                     HFCPtr<SMPointTileStore<POINT, EXTENT> > store,                      
+        SMMeshIndex(SMMemoryPoolPtr& smMemoryPool,                         
+                     HFCPtr<SMPointTileStore<POINT, EXTENT> > ptsStore,                      
                      HFCPtr<SMPointTileStore<int32_t, EXTENT>> ptsIndiceStore,
                      HFCPtr<HPMIndirectCountLimitedPool<MTGGraph> > graphPool,
                      HFCPtr<IScalableMeshDataStore<MTGGraph, Byte, Byte>> graphStore,                     
@@ -731,21 +687,11 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
             a = a;
             return true;
             }
-
-        virtual void SetDirty(bool dirty) const override
+        
+        virtual RefCountedPtr<SMMemoryPoolVectorItem<POINT>> GetPointsPtr(bool loadPts = true) override 
             {
-            HPMCountLimitedPoolItem<POINT>::SetDirty(false);
-            }
-
-        virtual size_t size() const override
-            {
-            return GetParentNodePtr()->size();
-            };
-
-        virtual const POINT& operator[](size_t index) const //override
-            {
-            return GetParentNodePtr()->operator[](index);
-            };
+            return GetParentNodePtr()->GetPointsPtr(loadPts);
+            }        
 
         virtual bool Destroy() override
             {
@@ -756,12 +702,12 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
             {};
 
 
-        virtual bool Store() const override
+        virtual bool Store() override
             {
             return false;
             };
 
-        virtual bool Discard() const override
+        virtual bool Discard() override
             {
             return false;
             };

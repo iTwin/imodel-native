@@ -157,7 +157,7 @@ public:
     SQLiteNodeHeader nodeHeader;
     nodeHeader.m_nodeID = blockID.m_integerID;
     if (!m_smSQLiteFile->GetNodeHeader(nodeHeader)) return 1;
-    //nodeHeader.m_nodeCount = GetBlockDataCount(blockID);
+    //nodeHeader.m_nbPoints = GetBlockDataCount(blockID);
     *header = nodeHeader;
     header->m_IsLeaf = header->m_apSubNodeID.size() == 0 || (!header->m_apSubNodeID[0].IsValid());
     header->m_IsBranched = !header->m_IsLeaf && (header->m_apSubNodeID.size() > 1 && header->m_apSubNodeID[1].IsValid());

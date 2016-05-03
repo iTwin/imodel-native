@@ -732,8 +732,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                     pStreamingUVTileStore = new StreamingUVStoreType(uv_store_path, groupedStreamingFilePath, AreDataCompressed());
                     pStreamingUVsIndicesTileStore = new StreamingIndiceStoreType(uvIndice_store_path, groupedStreamingFilePath, AreDataCompressed());
                     pStreamingTextureTileStore = new StreamingTextureTileStore(texture_store_path.c_str());
-                    m_scmIndexPtr = new MeshIndexType(ScalableMeshMemoryPools<POINT>::Get()->GetGenericPool(),
-                                                       ScalableMeshMemoryPools<POINT>::Get()->GetPointPool(),
+                    m_scmIndexPtr = new MeshIndexType(ScalableMeshMemoryPools<POINT>::Get()->GetGenericPool(),                                                       
                                                        &*pStreamingTileStore,                                                            
                                                             &*pStreamingIndiceTileStore,
                                                             ScalableMeshMemoryPools<POINT>::Get()->GetGraphPool(),
@@ -748,6 +747,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                                                             false,
                                                             0,
                                                             0);
+
                     }
                 else
                     {
@@ -761,8 +761,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
 
 
                     m_scmIndexPtr = new MeshIndexType(//pMemoryPool, 
-                                                       ScalableMeshMemoryPools<POINT>::Get()->GetGenericPool(),
-                                                       ScalableMeshMemoryPools<POINT>::Get()->GetPointPool(),
+                                                       ScalableMeshMemoryPools<POINT>::Get()->GetGenericPool(),                                                       
                                                        &*pTileStore,                                                       
                                                        &*pIndiceTileStore,
                                                        ScalableMeshMemoryPools<POINT>::Get()->GetGraphPool(),
@@ -778,9 +777,8 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                                                        false,
                                                        0,
                                                        0);  //NEEDS_WORK_SM - Should we store mesher information in STM file like filter?
-                    }
+                    }          
 
-                m_scmIndexPtr->m_useSTMFormat = false;
             WString clipFilePath = m_path;
             clipFilePath.append(L"_clips"); 
            // IDTMFile::File::Ptr clipFilePtr = IDTMFile::File::Create(clipFilePath.c_str());
@@ -1289,7 +1287,7 @@ template <class POINT> __int64 ScalableMesh<POINT>::_GetPointCount()
 
 template <class POINT> void ScalableMesh<POINT>::_TextureFromRaster(HIMMosaic* mosaicP)
     {
-    auto nextID = m_scmIndexPtr->GetStore()->GetNextID();
+    auto nextID = m_scmIndexPtr->GetPointsStore()->GetNextID();
     nextID = nextID != uint64_t(-1) ? nextID : m_scmIndexPtr->GetNextID();
     m_scmIndexPtr->SetNextID(nextID);
     m_scmIndexPtr->TextureFromRaster(mosaicP);
