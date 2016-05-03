@@ -164,7 +164,7 @@ static bvector<ECInstanceId>::const_iterator findRelId(bvector<ECInstanceId> con
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TransactionManagerTests::TransactionManagerTests() : m_host(ScopedDgnHost::Options::DisableRepositoryManager)
+TransactionManagerTests::TransactionManagerTests()
 {
     // Must register my domain whenever I initialize a host
     DgnPlatformTestDomain::Register();

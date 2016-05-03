@@ -5,6 +5,8 @@
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+#if defined (NEEDSWORK_DIMENSION)
+
 #include "DgnHandlersTests.h"
 #include <DgnPlatform/DgnDbTables.h>
 #include <DgnPlatform/Dimension/Dimension.h>
@@ -344,26 +346,48 @@ DgnElementId    CreateBasicDimensionPersisted (bvector<DPoint3d> const& points, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (LinearDimension3dTest, BasicPersist)
     {
-    bvector<DPoint3d>   points;
-    points.push_back (DPoint3d::From (0.0, 2.0, 0.0));
-    points.push_back (DPoint3d::From (4.0, 2.0, 0.0));
-    points.push_back (DPoint3d::From (10.0, 4.0, 0.0));
-
-    YawPitchRollAngles angles;
-    angles.SetYaw (AngleInDegrees::FromDegrees (0.0));
-
-    DgnElementId elementId = CreateBasicDimensionPersisted (points, angles);
-
-    // Purge the cache so that we don't get a cached element.
-    GetDgnDb().Elements().Purge(0);
-
-    LinearDimension3dCPtr readDimension = LinearDimension3d::Get(GetDgnDb(), elementId);
-    ASSERT_TRUE(readDimension.IsValid());
-
-    printf ("Point Count %d\n", readDimension->GetPointCount());
-    for (uint32_t index = 0; index < readDimension->GetPointCount(); index++)
+    if (true)
         {
-        DPoint3d point = readDimension->GetPoint(index);
-        printf ("   Point[%d]: %f, %f\n", index, point.x, point.y);
+        bvector<DPoint3d>   points;
+        points.push_back (DPoint3d::From (0.0,   0.0, 0.0));
+        points.push_back (DPoint3d::From (4.0,   0.0, 0.0));
+        points.push_back (DPoint3d::From (6.0,   0.0, 0.0));
+        points.push_back (DPoint3d::From (10.0, -1.0, 0.0));
+
+        YawPitchRollAngles angles;
+        angles.SetYaw (AngleInDegrees::FromDegrees (0.0));
+
+        CreateBasicDimensionPersisted (points, angles);
         }
+
+    if (true)
+        {
+        bvector<DPoint3d>   points;
+        points.push_back (DPoint3d::From (15.0, 0.0, 0.0));
+        points.push_back (DPoint3d::From (15.0, 4.0, 0.0));
+        points.push_back (DPoint3d::From (15.0, 6.0, 0.0));
+        points.push_back (DPoint3d::From (17.0, 10.0, 0.0));
+
+        YawPitchRollAngles angles;
+        angles.SetYaw (AngleInDegrees::FromDegrees (90.0));
+
+        CreateBasicDimensionPersisted (points, angles);
+        }
+
+    if (true)
+        {
+        bvector<DPoint3d>   points;
+        points.push_back (DPoint3d::From (20.0, 0.0, 0.0));
+        points.push_back (DPoint3d::From (23.0, 4.0, 0.0));
+        points.push_back (DPoint3d::From (24.0, 5.0, 0.0));
+        points.push_back (DPoint3d::From (30.0, 8.0, 0.0));
+
+        YawPitchRollAngles angles;
+        angles.SetYaw (AngleInDegrees::FromDegrees (45.0));
+
+        CreateBasicDimensionPersisted (points, angles);
+        }
+
     }
+
+#endif // NEEDSWORK_DIMENSION

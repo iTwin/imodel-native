@@ -15,8 +15,7 @@ DGNPLATFORM_TYPEDEFS(ICodedEntity);
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 //=======================================================================================
-//! Interface adopted by an object which possesses an authority-issued DgnCode, such as a model
-//! or element.
+//! Interface adopted by an object which possesses an authority-issued DgnCode, such as a DgnModel or DgnElement.
 // @bsistruct                                                    Paul.Connelly   01/16
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ICodedEntity
@@ -29,7 +28,6 @@ protected:
     virtual DgnDbStatus _SetCode(DgnCode const& code) = 0; //!< Set the code directly if permitted. Do not perform any validation of the code itself.
     virtual DgnElementCP _ToDgnElement() const { return nullptr; }
     virtual DgnModelCP _ToDgnModel() const { return nullptr; }
-    virtual DgnGeometryPartCP _ToGeometryPart() const { return nullptr; }
 public:
     DgnDbR GetDgnDb() const { return _GetDgnDb(); }
     bool SupportsCodeAuthority(DgnAuthorityCR authority) const { return _SupportsCodeAuthority(authority); }
@@ -37,7 +35,6 @@ public:
     DgnCode const& GetCode() const { return _GetCode(); }
     DgnElementCP ToDgnElement() const { return _ToDgnElement(); }
     DgnModelCP ToDgnModel() const { return _ToDgnModel(); }
-    DgnGeometryPartCP ToGeometryPart() const { return _ToGeometryPart(); }
 
     DGNPLATFORM_EXPORT DgnDbStatus SetCode(DgnCode const& newCode);
     DGNPLATFORM_EXPORT DgnDbStatus ValidateCode() const;

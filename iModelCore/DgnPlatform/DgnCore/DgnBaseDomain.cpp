@@ -9,7 +9,9 @@
 #include <DgnPlatform/DgnMarkupProject.h>
 #include <DgnPlatform/Annotations/TextAnnotationElement.h>
 #include <DgnPlatform/AnnotationTable.h>
+#if defined (NEEDSWORK_DIMENSION)
 #include <DgnPlatform/Dimension/Dimension.h>
+#endif
 #include <DgnPlatform/VolumeElement.h>
 
 BEGIN_BENTLEY_DGN_NAMESPACE
@@ -42,6 +44,7 @@ namespace dgn_ElementHandler
 HANDLER_DEFINE_MEMBERS(Element)
 HANDLER_DEFINE_MEMBERS(Geometric2d)
 HANDLER_DEFINE_MEMBERS(Geometric3d)
+HANDLER_DEFINE_MEMBERS(GeometryPart)
 HANDLER_DEFINE_MEMBERS(Annotation2d)
 HANDLER_DEFINE_MEMBERS(DrawingGraphic)
 };
@@ -95,6 +98,7 @@ DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain
     RegisterHandler(dgn_ElementHandler::Element::GetHandler());
     RegisterHandler(dgn_ElementHandler::Geometric2d::GetHandler());
     RegisterHandler(dgn_ElementHandler::Geometric3d::GetHandler());
+    RegisterHandler(dgn_ElementHandler::GeometryPart::GetHandler());
     RegisterHandler(dgn_ElementHandler::Annotation2d::GetHandler());
     RegisterHandler(dgn_ElementHandler::DrawingGraphic::GetHandler());
     RegisterHandler(dgn_ElementHandler::VolumeElementHandler::GetHandler());
@@ -109,9 +113,11 @@ DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain
     RegisterHandler(dgn_ElementHandler::SubCategory::GetHandler());
     RegisterHandler(dgn_ElementHandler::TrueColor::GetHandler());
 
+#if defined (NEEDSWORK_DIMENSION)
     RegisterHandler(dgn_ElementHandler::DimensionStyleHandler::GetHandler());
     RegisterHandler(dgn_ElementHandler::LinearDimensionHandler2d::GetHandler());
     RegisterHandler(dgn_ElementHandler::LinearDimensionHandler3d::GetHandler());
+#endif
 
     RegisterHandler(dgn_ElementHandler::AnnotationTextStyleHandler::GetHandler());
     RegisterHandler(dgn_ElementHandler::AnnotationFrameStyleHandler::GetHandler());

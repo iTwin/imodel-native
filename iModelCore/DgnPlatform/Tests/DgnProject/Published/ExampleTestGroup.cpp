@@ -18,7 +18,7 @@ struct ExampleTestGroup : ::testing::Test
     Dgn::ScopedDgnHost m_testHost;
     static DgnDbTestUtils::SeedDbInfo s_seedFileInfo;
 
-    ExampleTestGroup() : m_testHost(ScopedDgnHost::Options::DisableRepositoryManager) { }
+    ExampleTestGroup() { }
 
     // Insert the following macros into the definition of your test group subclass to declare that you want to set up shared resources for all of the tests in your group.
     BETEST_DECLARE_TC_SETUP
@@ -36,7 +36,7 @@ DgnDbTestUtils::SeedDbInfo ExampleTestGroup::s_seedFileInfo;
 //---------------------------------------------------------------------------------------
 BETEST_TC_SETUP(ExampleTestGroup) 
     {
-    ScopedDgnHost tempHost(ScopedDgnHost::Options::DisableRepositoryManager);
+    ScopedDgnHost tempHost;
 
     //  Request a root seed file.
     DgnDbTestUtils::SeedDbInfo rootSeedInfo = DgnDbTestUtils::GetSeedDb(DgnDbTestUtils::SeedDbId::OneSpatialModel, DgnDbTestUtils::SeedDbOptions(false, true));

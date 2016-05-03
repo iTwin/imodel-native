@@ -78,8 +78,6 @@ enum class ViewportResizeMode
 struct EXPORT_VTABLE_ATTRIBUTE DgnViewport : RefCounted<NonCopyableClass>
 {
     friend struct ViewManager;
-    typedef bpair<Render::GraphicSet, ElementAlignedBox3d> GraphicSetRangePair; //!< @private
-    typedef bmap<DgnGeometryPartId, GraphicSetRangePair> PartGraphicMap;        //!< @private
     typedef std::deque<Utf8String> ViewStateStack;
     typedef bvector<ProgressiveTaskPtr> ProgressiveTasks;
 
@@ -146,7 +144,6 @@ protected:
     Utf8String      m_currentBaseline;
     ViewStateStack  m_forwardStack;
     ViewStateStack  m_backStack;
-    mutable PartGraphicMap m_partGraphics;
 
     DGNPLATFORM_EXPORT void DestroyViewport();
     DGNPLATFORM_EXPORT void SuspendViewport();
@@ -180,7 +177,6 @@ public:
     Byte GetDynamicsTransparency() const {return m_dynamicsTransparency;}
     void SetDynamicsTransparency(Byte val) {m_dynamicsTransparency = val;}
 
-    PartGraphicMap& GetPartGraphics() const {return m_partGraphics;}
     void SetRenderTarget(Render::Target* target) {m_renderTarget=target; m_sync.InvalidateFirstDrawComplete();}
     double GetFrustumFraction() const {return m_frustFraction;}
     bool IsVisible() {return _IsVisible();}
@@ -496,6 +492,14 @@ public:
     //! Get the View Flags for this DgnViewport.
     //! @return the View flags for this DgnViewport.
     Render::ViewFlags GetViewFlags() const {return m_viewController->GetViewFlags();}
+
+    //! Get the Point Cloud View Settings (display style, ...) for this DgnViewport.
+    //! @return the point cloud view settings for this DgnViewport.
+    Render::PointCloudViewSettings GetPointCloudViewSettings() const {return m_viewController->GetPointCloudViewSettings();}
+
+    //! Get the Point Cloud View Settings (display style, ...) for this DgnViewport.
+    //! @return the point cloud view settings for this DgnViewport.
+    Render::PointCloudViewSettings const& GetPointCloudViewSettingsR() const {return m_viewController->GetPointCloudViewSettingsR();}
 
     //! Synchronized this DgnViewport with the current state of its ViewController. A DgnViewport may hold local copies of the information
     //! in its ViewController. Therefore, when changes are made to the state of a ViewController, it must be synchronized with the

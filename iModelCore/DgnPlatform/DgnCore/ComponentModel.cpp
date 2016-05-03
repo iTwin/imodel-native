@@ -270,7 +270,7 @@ DgnDbStatus ComponentGeometryHarvester::HarvestModel(bvector<bpair<DgnSubCategor
         DgnGeometryPartPtr geomPart = DgnGeometryPart::Create(db);
         builder->CreateGeometryPart(db, true);
         builder->SetGeometryStream(*geomPart);
-        if (BSISUCCESS != db.GeometryParts().InsertGeometryPart(*geomPart))
+        if (!db.Elements().Insert(*geomPart).IsValid())
             {
             BeAssert(false && "cannot create geompart for solution geometry -- what could have gone wrong?");
             return DgnDbStatus::WriteError;

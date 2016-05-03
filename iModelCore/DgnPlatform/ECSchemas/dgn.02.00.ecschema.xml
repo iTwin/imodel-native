@@ -184,23 +184,6 @@
             </Class>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="AuthorityIssuesGeometryPartCode" description="GeometryPart has a code which was issued by the given authority" strength="referencing">
-        <ECCustomAttributes>
-            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-                <OnDeleteAction>NoAction</OnDeleteAction>
-            </ForeignKeyRelationshipMap>
-        </ECCustomAttributes>
-        <Source cardinality="(1,1)" roleLabel="issues code" polymorphic="false">
-            <Class class="Authority"/>
-        </Source>
-        <Target cardinality="(0,N)" roleLabel="has N codes" polymorphic="false">
-            <Class class="GeometryPart">
-                <Key>
-                    <Property name="Code.AuthorityId"/>
-                </Key>
-            </Class>
-        </Target>
-    </ECRelationshipClass>
 
     <ECEntityClass typeName="Model" modifier="Abstract">
         <ECCustomAttributes>
@@ -214,6 +197,8 @@
                 <MapStrategy>
                     <Strategy>SharedTable</Strategy>
                     <AppliesToSubclasses>True</AppliesToSubclasses>
+                    <Options>SharedColumnsForSubclasses</Options>
+                    <MinimumSharedColumnCount>8</MinimumSharedColumnCount>
                 </MapStrategy>
                 <Indexes>
                     <DbIndex>
@@ -424,7 +409,17 @@
     <ECEntityClass typeName="DictionaryElement" modifier="Abstract">
         <BaseClass>DefinitionElement</BaseClass>
     </ECEntityClass>
-    
+    <ECEntityClass typeName="GroupInformationElement" modifier="Abstract">
+        <BaseClass>InformationElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <MapStrategy>
+                    <Options>SharedColumnsForSubclasses</Options>
+                    <MinimumSharedColumnCount>8</MinimumSharedColumnCount>
+                </MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECEntityClass>
     <ECEntityClass typeName="GeometricElement" modifier="Abstract">
         <BaseClass>Element</BaseClass>
         <ECCustomAttributes>
@@ -809,6 +804,7 @@
         </Target>
     </ECRelationshipClass>
 
+    <!--
     <ECEntityClass typeName="DimensionStyle">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
@@ -840,6 +836,7 @@
         <BaseClass>GraphicalElement3d</BaseClass>
         <BaseClass>LinearDimension</BaseClass>
     </ECEntityClass>
+    -->
 
     <ECEntityClass typeName="ViewAttachment">
         <!-- A reference to a ViewDefinition, placed onto a sheet -->
@@ -1295,23 +1292,10 @@
     </ECEntityClass>
 
     <ECEntityClass typeName="GeometryPart">
+        <BaseClass>DictionaryElement</BaseClass>
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00">
-                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
-                <Indexes>
-                    <DbIndex>
-                        <Name>ix_dgn_GeometryPart_Code</Name>
-                        <IsUnique>True</IsUnique>
-                        <Properties>
-                            <string>Code.AuthorityId</string>
-                            <string>Code.Namespace</string>
-                            <string>Code.Value</string>
-                        </Properties>
-                    </DbIndex>
-                </Indexes>
-            </ClassMap>
+            <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
-        <ECStructProperty propertyName="Code" typeName="AuthorityIssuedCode"/>
         <ECProperty propertyName="GeometryStream" typeName="binary">
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.01.00">

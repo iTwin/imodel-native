@@ -185,7 +185,7 @@ DgnElementId DgnDbTestFixture::InsertElementUsingGeometryPart2d(DgnCodeCR gpCode
 
     GeometryBuilderPtr builder = GeometryBuilder::Create(*model, categoryId, DPoint2d::From(0.0, 0.0));
 
-    DgnGeometryPartId existingPartId = m_db->GeometryParts().QueryGeometryPartId(gpCode);
+    DgnGeometryPartId existingPartId = DgnGeometryPart::QueryGeometryPartId(gpCode, *m_db);
     EXPECT_TRUE(existingPartId.IsValid());
 
     if (!(builder->Append(existingPartId, Transform::From(0.0, 0.0, 0.0))))
@@ -215,7 +215,7 @@ DgnElementId DgnDbTestFixture::InsertElementUsingGeometryPart(DgnCodeCR gpCode, 
 
     GeometryBuilderPtr builder = GeometryBuilder::Create(*model, categoryId, DPoint3d::From(0.0, 0.0,0.0));
 
-    DgnGeometryPartId existingPartId = m_db->GeometryParts().QueryGeometryPartId(gpCode);
+    DgnGeometryPartId existingPartId = DgnGeometryPart::QueryGeometryPartId(gpCode, *m_db);
     EXPECT_TRUE(existingPartId.IsValid());
 
     if (!(builder->Append(existingPartId, Transform::From(0.0, 0.0, 0.0))))

@@ -544,16 +544,17 @@ void WebMercatorDisplay::DrawAndCacheTile(RenderContext& context, TileIdCR tilei
     
     m_image.Invalidate(); // reuse the same buffer, in order to minimize mallocs
 
+    BentleyStatus readStatus = ERROR;
     if (contentType.Equals("image/png"))
         {
-        imageInfo.ReadImageFromPngBuffer(m_image, data.GetData(), data.GetSize());
+        readStatus = imageInfo.ReadImageFromPngBuffer(m_image, data.GetData(), data.GetSize());
         }
     else if (contentType.Equals("image/jpeg"))
         {
-        imageInfo.ReadImageFromJpgBuffer(m_image, data.GetData(), data.GetSize());
+        readStatus = imageInfo.ReadImageFromJpgBuffer(m_image, data.GetData(), data.GetSize());
         }
 
-    if (!m_image.IsValid())
+    if (ERROR == readStatus || !m_image.IsValid())
         return;
 
     BeAssert(!imageInfo.m_isBGR);

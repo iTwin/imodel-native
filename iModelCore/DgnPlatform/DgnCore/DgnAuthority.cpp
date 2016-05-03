@@ -668,8 +668,8 @@ DgnDbStatus ResourceAuthority::_ValidateCode(ICodedEntityCR entity) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus GeometryPartAuthority::_ValidateCode(ICodedEntityCR entity) const
     {
-    auto status = T_Super::_ValidateCode(entity);
-    if (DgnDbStatus::Success == status && nullptr == entity.ToGeometryPart())
+    DgnDbStatus status = T_Super::_ValidateCode(entity);
+    if (DgnDbStatus::Success == status && nullptr == entity.ToDgnElement())
         status = DgnDbStatus::InvalidCodeAuthority;
 
     return status;
