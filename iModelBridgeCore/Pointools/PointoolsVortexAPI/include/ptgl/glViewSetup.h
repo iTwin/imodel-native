@@ -1,7 +1,7 @@
 #ifndef POINTOOLS_GL_VIEW_SETUP_HELPERS
 #define POINTOOLS_GL_VIEW_SETUP_HELPERS
 
-#include <ptgl\ptgl.h>
+#include <ptgl/ptgl.h>
 
 namespace ptgl
 {

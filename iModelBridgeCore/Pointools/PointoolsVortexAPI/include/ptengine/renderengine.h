@@ -9,7 +9,7 @@
 #ifndef POINTOOLS_RENDER_ENGINE
 #define POINTOOLS_RENDER_ENGINE 1
 
-#include <gl/glew.h>
+
 #include <ptcloud2/defs.h>
 #include <ptgl/glcamera.h>
 #include <ptgl/gllight.h>

@@ -1,7 +1,7 @@
 #ifndef POINTOOLS_DISPLAY_INFO_H
 #define POINTOOLS_DISPLAY_INFO_H
 
-#include <pt\flags.h>
+#include <pt/flags.h>
 
 namespace pt
 {

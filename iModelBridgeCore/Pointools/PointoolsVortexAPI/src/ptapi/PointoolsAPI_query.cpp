@@ -1,7 +1,6 @@
 #include "PointoolsVortexAPIInternal.h"
 
 #define POINTOOLS_API_BUILD_DLL
-#include <gl/glew.h>
 
 #include <ptapi/PointoolsVortexAPI.h>
 #include <ptapi/PointoolsAPI_handle.h>
@@ -30,11 +29,6 @@
 #include <pt/project.h>
 #include <pt/timer.h>
 
-#include <list>
-#include <map>
-#include <algorithm>
-#include <fstream>
-#include <queue>
 #include <math/matrix_math.h>
 
 #include <ptengine/StreamManager.h>

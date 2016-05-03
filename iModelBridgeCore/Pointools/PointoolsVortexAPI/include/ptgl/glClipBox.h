@@ -1,8 +1,8 @@
 #ifndef POINTOOLS_GL_CLIPBOX
 #define POINTOOLS_GL_CLIPBOX
 
-#include <pt\boundingbox.h>
-#include <ptgl\ptgl.h>
+#include <pt/boundingbox.h>
+#include <ptgl/ptgl.h>
 
 namespace ptgl
 {

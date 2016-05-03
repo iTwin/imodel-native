@@ -16,16 +16,16 @@
 #pragma warning (disable : 4251)
 #pragma warning (disable : 4275)
 
-#include <Loki\AssocVector.h>
+#include <Loki/AssocVector.h>
 #include <map>
 #include <vector>
 
-#include <ptcmdppe\interact.h>
-#include <pt\typedefs.h>
+#include <ptcmdppe/interact.h>
+#include <pt/typedefs.h>
 
-#include <ptcmdppe\eventdefs.h>
-#include <ptmodm\module.h>
-#include <pt\parametermap.h>
+#include <ptcmdppe/eventdefs.h>
+#include <ptmodm/module.h>
+#include <pt/parametermap.h>
 
 #define CP_CMD_UNKNOWN		0
 #define CP_CMD_FOUND		1

@@ -9,15 +9,15 @@
 #define POINTOOLS_PLUGING_MANAGER_TEMPLATE
 
 #ifdef NEEDS_WORK_VORTEX_DGNDB
-#include <pt\trace.h>
+#include <pt/trace.h>
 
 #include <map>
 #include <vector>
 #include <string>
-#include <pt\typedefs.h>
+#include <pt/typedefs.h>
 #include <io.h>
-#include <ptappdll\ptapp.h>
-#include <utility\ptstr.h>
+#include <ptappdll/ptapp.h>
+#include <utility/ptstr.h>
 
 #ifdef WIN32
 #include <windows.h>

@@ -7,7 +7,7 @@
 #include <sys/types.h>
 #include <time.h>
 
-#include <ptgeom\geom.h>
+#include <ptgeom/geom.h>
 
 /**********************************************************************/
 

@@ -1,14 +1,14 @@
 #ifndef POINTOOLS_PCLOUD2_SCENE
 #define POINTOOLS_PCLOUD2_SCENE
 
-#include <pt\ptstring.h>
-#include <ptcloud2\pointcloud.h>
-#include <ptcloud2\scanpos.h>
-#include <ptcloud2\indexstream.h>
-#include <pt\scenegraph.h>
+#include <pt/ptstring.h>
+#include <ptcloud2/pointcloud.h>
+#include <ptcloud2/scanpos.h>
+#include <ptcloud2/indexstream.h>
+#include <pt/scenegraph.h>
 
-#include <ptcloud2\metatags.h>
-#include <ptcloud2\metadata.h>
+#include <ptcloud2/metatags.h>
+#include <ptcloud2/metadata.h>
 
 namespace pcloud
 {

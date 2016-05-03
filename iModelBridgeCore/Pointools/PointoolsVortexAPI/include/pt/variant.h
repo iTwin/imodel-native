@@ -1,9 +1,9 @@
 #ifndef POINTOOLS_VARIANT_DEFINITION
 #define POINTOOLS_VARIANT_DEFINITION
 
-#include <ttl\var\variant.hpp>
-#include <pt\ptstring.h>
-#include <pt\geomtypes.h>
+#include <ttl/var/variant.hpp>
+#include <pt/ptstring.h>
+#include <pt/geomtypes.h>
 #include <string>
 #pragma warning(disable: 4512) // assignment operator could not be generated for pt::ValueToString
 

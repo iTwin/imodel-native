@@ -8,12 +8,12 @@
 #define POINTOOLS_TOOL_BASECLASS_HEADER
 
 
-#include <pt\geomtypes.h>
-#include <pttool\pttool.h>
-#include <ptcmdppe\eventdefs.h>
-#include <ptmodm\Module.h>
-#include <ptgl\glCamera.h>
-#include <pt\parametermap.h>
+#include <pt/geomtypes.h>
+#include <pttool/pttool.h>
+#include <ptcmdppe/eventdefs.h>
+#include <ptmodm/Module.h>
+#include <ptgl/glCamera.h>
+#include <pt/parametermap.h>
 
 namespace ptapp
 {

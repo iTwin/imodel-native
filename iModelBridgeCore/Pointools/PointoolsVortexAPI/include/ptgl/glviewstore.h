@@ -12,7 +12,7 @@
 #endif
 
 #include "ptgl.h"
-#include <pt\geomtypes.h>
+#include <pt/geomtypes.h>
 
 #include <gl/gl.h>
 #include <gl/glu.h>

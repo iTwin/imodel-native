@@ -31,9 +31,6 @@
 #ifndef UnicodeConversion_h
 #define UnicodeConversion_h
 
-#include <windows.h>
-#include <string>
-#include <tchar.h>
 
 #ifndef WC_NO_BEST_FIT_CHARS
 #define WC_NO_BEST_FIT_CHARS      0x00000400  // do not use best fit chars

@@ -12,10 +12,10 @@
 #include "PointoolsVortexAPIInternal.h"
 
 
-#include <ptcmdppe\CommandPipe.h>
-#include <ptcmdppe\CmdOutput.h>
-#include <pt\trace.h>
-#include <fltk\cursor.h>
+#include <ptcmdppe/CommandPipe.h>
+#include <ptcmdppe/CmdOutput.h>
+#include <pt/trace.h>
+#include <fltk/cursor.h>
 #include <stack>
 #include <vector>
 

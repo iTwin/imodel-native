@@ -9,8 +9,8 @@
 #pragma warning (disable : 4251)
 #endif
 
-#include <ptmodm\modulesManager.h>
-#include <pt\trace.h>
+#include <ptmodm/modulesManager.h>
+#include <pt/trace.h>
 
 using namespace pt;
  

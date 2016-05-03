@@ -17,13 +17,6 @@
 #include <pt/ptmath.h> 
 #include <time.h>
 
-#ifdef WIN32
-    #include <Windows.h>
-    #include <imagehlp.h>
-#else
-    #include <stdarg.h>
-#endif
-
 namespace pt {
 
 Log* Log::commonLog = NULL;

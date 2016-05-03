@@ -1,9 +1,9 @@
 #include "PointoolsVortexAPIInternal.h"
 
-#include <ptgl\glViewsetup.h>
+#include <ptgl/glViewsetup.h>
 
-#include <gl\gl.h>
-#include <gl\glu.h>
+#include <gl/gl.h>
+#include <gl/glu.h>
 
 using namespace ptgl;
 

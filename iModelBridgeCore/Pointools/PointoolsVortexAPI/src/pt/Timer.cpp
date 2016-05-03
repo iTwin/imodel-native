@@ -12,10 +12,9 @@
 */
 //#include <stdlib.h>
 #include "PointoolsVortexAPIInternal.h"
-#include <stdio.h>
-#include <string.h>
 
-#include <pt\Timer.h>
+
+#include <pt/Timer.h>
 
 using namespace pt;
 

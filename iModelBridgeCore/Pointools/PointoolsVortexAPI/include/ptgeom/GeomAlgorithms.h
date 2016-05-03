@@ -4,7 +4,7 @@
 
 #ifndef PT_GEOMETRY_ALGORITHMS
 #define PT_GEOMETRY_ALGORITHMS
-#include <pt\geomTypes.h>
+#include <pt/geomTypes.h>
 
 struct gaPoint2d
 {

@@ -8,13 +8,9 @@
 /*----------------------------------------------------------------------*/ 
 
 #include "PointoolsVortexAPIInternal.h"
-#include <map>
 
-
-#include <gl\glew.h>
-#include <ptcloud2\defs.h>
-#include <ptcloud2\buildindex.h>
-#include <iostream>
+#include <ptcloud2/defs.h>
+#include <ptcloud2/buildindex.h>
 
 #define DEFAULT_MAX_POINTS_PER_LEAF 100000
 #define DEFAULT_MIN_SUBDIVISION_DEPTH 1

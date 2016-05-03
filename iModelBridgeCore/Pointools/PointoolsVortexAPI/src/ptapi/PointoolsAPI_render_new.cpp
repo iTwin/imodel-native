@@ -8,7 +8,6 @@
 
 #include <pt/trace.h>
 
-#include <gl/glew.h>
 #include <ptapi/PointoolsVortexAPI.h>
 
 #include <ptgl/glInvariant.h>

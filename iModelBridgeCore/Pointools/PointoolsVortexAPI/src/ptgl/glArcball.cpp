@@ -13,11 +13,11 @@
 #include "PointoolsVortexAPIInternal.h"
 
 
-#include <ptgl\glArcball.h>
-#include <gl\gl.h>
-#include <gl\glu.h>
+#include <ptgl/glArcball.h>
+#include <gl/gl.h>
+#include <gl/glu.h>
 
-#include <pt\datatree.h>
+#include <pt/datatree.h>
 
 using namespace ptgl;
 

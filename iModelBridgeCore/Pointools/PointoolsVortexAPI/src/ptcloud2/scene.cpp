@@ -1,9 +1,7 @@
 #include "PointoolsVortexAPIInternal.h"
-#include <windows.h>
-#include <ptcloud2\scene.h>
-#include <iostream>
 
-#include <utility\ptstr.h>
+#include <ptcloud2/scene.h>
+#include <utility/ptstr.h>
 
 using namespace pcloud;
 

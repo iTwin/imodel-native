@@ -10,6 +10,8 @@
 
 // Windows Header Files:
 #include <windows.h>
+#include <Commdlg.h>
+#include <tchar.h>
 
 // C header files
 #include <assert.h>
@@ -52,7 +54,6 @@
 #include <set>
 #include <fstream>
 #include <stack>
-#include <strstream>
 #include <bitset>
 #include <mutex>
 #include <random>
@@ -63,6 +64,7 @@
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <GL/glext.h>
+
 
 #include <ptengine/pointsScene.h>
 #include <ptengine/renderContext.h>

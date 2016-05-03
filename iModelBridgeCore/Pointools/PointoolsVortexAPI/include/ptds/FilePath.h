@@ -4,8 +4,8 @@
 #include <vector>
 #include <algorithm>
 
-#include <pt\unicodeconversion.h>
-#include <pt\ptmath.h>
+#include <pt/unicodeconversion.h>
+#include <pt/ptmath.h>
 
 #ifndef NO_DATA_SOURCE_SERVER
 #include <PTRMI/Array.h>

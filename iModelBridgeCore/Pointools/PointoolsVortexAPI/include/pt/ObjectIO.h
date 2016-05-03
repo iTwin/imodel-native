@@ -1,9 +1,9 @@
 #ifndef POINTOOLS_OBJECT_OI_HELPERS
 #define POINTOOLS_OBJECT_OI_HELPERS
 
-#include <pt\variant.h>
-#include <pt\scenegraph.h>
-#include <pt\datatree.h>
+#include <pt/variant.h>
+#include <pt/scenegraph.h>
+#include <pt/datatree.h>
 
 namespace pt
 {

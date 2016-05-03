@@ -6,9 +6,9 @@
 #ifndef POINTOOLS_GL_EFFECTS_INTERFACE
 #define POINTOOLS_GL_EFFECTS_INTERFACE
 
-#include <pt\geomTypes.h>
-#include <ptgl\glCamera.h>
-#include <ptgl\ptgl.h>
+#include <pt/geomTypes.h>
+#include <ptgl/glCamera.h>
+#include <ptgl/ptgl.h>
 
 namespace ptgl
 {

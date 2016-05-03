@@ -1,8 +1,8 @@
 #ifndef POINTOOLS_PROJECT_TOOL
 #define POINTOOLS_PROJECT_TOOL
 
-#include <ptcmdppe\eventdefs.h>
-#include <pttool\tool.h>
+#include <ptcmdppe/eventdefs.h>
+#include <pttool/tool.h>
 
 namespace pt
 {

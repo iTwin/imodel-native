@@ -5,10 +5,10 @@
 #include <vector>
 #include <string>
 #include <map>
-#include <ptcloud2\defs.h>
-#include <ptfs\filepath.h>
-#include <ptengine\ptengine_api.h>
-#include <ptengine\pointsIOdefs.h>
+#include <ptcloud2/defs.h>
+#include <ptfs/filepath.h>
+#include <ptengine/ptengine_api.h>
+#include <ptengine/pointsIOdefs.h>
 
 namespace pointsengine
 {

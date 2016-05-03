@@ -8,9 +8,9 @@
 #ifndef POINTOOLS_TOOLS_MODULE_INTERFACE
 #define POINTOOLS_TOOLS_MODULE_INTERFACE
 
-#include <pttool\pttool.h>
-#include <ptmodm\ModulesManager.h>
-#include <ptmodm\module.h>
+#include <pttool/pttool.h>
+#include <ptmodm/ModulesManager.h>
+#include <ptmodm/module.h>
 
 namespace pt { class Tool; }
 namespace ptapp

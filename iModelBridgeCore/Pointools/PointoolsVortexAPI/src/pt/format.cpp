@@ -11,15 +11,6 @@
 #include <pt/format.h>
 #include <pt/ptunicode.h>
 
-#ifdef WIN32
-    #include <windows.h>
-    #define vsnprintf _vsnprintf
-    #define NEWLINE "\r\n"
-#else
-    #include <stdarg.h>
-    #define NEWLINE "\n"
-#endif
-
 #ifdef _MSC_VER
     // disable: "C++ exception handler used"
     #pragma warning (disable : 4530)
@@ -76,8 +67,4 @@ std::string vformat(const char* fmt, char* argPtr) {
 
 } // namespace
 
-#ifdef WIN32
-  #undef _vsnprintf
-#endif
 
-#undef NEWLINE

@@ -1,11 +1,11 @@
 #ifndef POINTOOLS_IO_HELPER
 #define POINTOOLS_IO_HELPER
 
-#include <ptds\DataSource.h>
-#include <pt\typedefs.h>
-#include <pt\boundingBox.h>
-#include <pt\ptstring.h>
-#include <ptfs\filepath.h>
+#include <ptds/DataSource.h>
+#include <pt/typedefs.h>
+#include <pt/boundingBox.h>
+#include <pt/ptstring.h>
+#include <ptfs/filepath.h>
 
 #include <map>
 #include <iostream>

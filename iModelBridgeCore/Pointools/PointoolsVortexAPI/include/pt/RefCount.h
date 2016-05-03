@@ -9,7 +9,7 @@
 #ifndef POINTOOLS_REF_COUNT
 #define POINTOOLS_REF_COUNT
 
-#include <pt\debug.h>
+#include <pt/debug.h>
 
 namespace pt
 {

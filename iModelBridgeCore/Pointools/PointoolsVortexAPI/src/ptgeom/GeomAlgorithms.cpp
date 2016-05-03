@@ -1,6 +1,6 @@
-#include <pt\geomtypes.h>
-#include <ptgeom\geom.h>
-#include <ptgeom\GeomAlgorithms.h>
+#include <pt/geomtypes.h>
+#include <ptgeom/geom.h>
+#include <ptgeom/GeomAlgorithms.h>
 
 #define NONE  (-1)
 

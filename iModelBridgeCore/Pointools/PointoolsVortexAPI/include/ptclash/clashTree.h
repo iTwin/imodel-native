@@ -1,5 +1,4 @@
 #pragma once
-#include <gl/glew.h>
 #include <pt/boundsTree.h>
 #include <pt/ObjectRef.h>
 #include <ptfs/FilePath.h>

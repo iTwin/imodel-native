@@ -10,15 +10,15 @@
 
 #include <stack>
 
-#include <pt\geomTypes.h>
-#include <ptgl\glFrustum.h>
-#include <ptgl\glViewstore.h>
-#include <ptgl\glArcball.h>
-#include <ptgl\glLight.h>
-#include <pt\BoundingBox.h>
+#include <pt/geomTypes.h>
+#include <ptgl/glFrustum.h>
+#include <ptgl/glViewstore.h>
+#include <ptgl/glArcball.h>
+#include <ptgl/glLight.h>
+#include <pt/BoundingBox.h>
 
-#include <pt\Rect.h>
-#include <ptgl\ptgl.h>
+#include <pt/Rect.h>
+#include <ptgl/ptgl.h>
 
 namespace pt { namespace datatree { class Branch; } }
 

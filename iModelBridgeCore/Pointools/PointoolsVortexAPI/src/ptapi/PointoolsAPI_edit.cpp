@@ -1,7 +1,6 @@
 #include "PointoolsVortexAPIInternal.h"
 
 #define POINTOOLS_API_BUILD_DLL
-#include <gl/glew.h>
 
 #ifdef _DEBUG
 #define FILE_TRACE	1

@@ -8,7 +8,7 @@
 */
 
 #include "PointoolsVortexAPIInternal.h"
-#include <ptgl\3dmath.h>
+#include <ptgl/3dmath.h>
 
 #ifdef REAL_IS_FLOAT
 // WARNING: these pragmas below could be MSVC compiler specific

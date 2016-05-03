@@ -10,7 +10,7 @@
 #ifndef POINTOOLS_TIMER
 #define POINTOOLS_TIMER 1
 
-#include <pt\classes.h>
+#include <pt/classes.h>
 
 
 #if defined(_MSC_VER)

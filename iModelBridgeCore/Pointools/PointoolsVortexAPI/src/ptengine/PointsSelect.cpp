@@ -9,7 +9,7 @@
 
 #include <ptcmdppe/cmdstate.h>
 
-#include <pt\trace.h>
+#include <pt/trace.h>
 
 #define _VERBOSE	1
 

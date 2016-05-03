@@ -2,11 +2,11 @@
 #define POINTOOLS_BINARY_OCTREE
 
 //Memory efficient octree generation
-#include <pt\boundingbox.h>
+#include <pt/boundingbox.h>
 #include <mathimf.h>
 #include <assert.h>
 
-#include <ptcloud2\node.h>
+#include <ptcloud2/node.h>
 namespace pcloud
 {
 class BinaryOctree

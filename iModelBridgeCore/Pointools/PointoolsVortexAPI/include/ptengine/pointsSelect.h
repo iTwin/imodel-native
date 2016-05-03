@@ -10,13 +10,13 @@
 #define POINTOOLS_POINTCLOUD_SELECT_FILTER 1
 
 
-#include <pt\scenegraph.h>
+#include <pt/scenegraph.h>
 
-#include <ptcloud2\voxel.h>
-#include <ptcloud2\bitvector.h>
+#include <ptcloud2/voxel.h>
+#include <ptcloud2/bitvector.h>
 
-#include <ptengine\selectionFilter.h>
-#include <ptengine\ptengine_api.h>
+#include <ptengine/selectionFilter.h>
+#include <ptengine/ptengine_api.h>
 
 #include <list>
 #include <vector>

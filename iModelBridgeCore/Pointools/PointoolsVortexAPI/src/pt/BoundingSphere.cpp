@@ -5,8 +5,8 @@
 /*																			*/ 
 /*  Last Updated 12 Oct 2003 Faraz Ravi										*/ 
 /*--------------------------------------------------------------------------*/ 
-#include <pt\BoundingSphere.h>
-#include <pt\BoundingBox.h>
+#include <pt/BoundingSphere.h>
+#include <pt/BoundingBox.h>
 
 using namespace pt;
 

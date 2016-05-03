@@ -6,7 +6,7 @@
 /*  Last Updated 12 Oct 2003 Faraz Ravi										*/ 
 /*--------------------------------------------------------------------------*/ 
 
-#include <pt\geometry_1_51.h>
+#include <pt/geometry_1_51.h>
 
 using namespace pt;
 

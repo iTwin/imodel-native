@@ -9,8 +9,8 @@
 #ifndef COMMONCLASSESBOUNDINGSPHERE_INTERFACE
 #define COMMONCLASSESBOUNDINGSPHERE_INTERFACE
 
-#include <pt\geomtypes.h>
-#include <pt\boundingbox.h>
+#include <pt/geomtypes.h>
+#include <pt/boundingbox.h>
 
 namespace pt
 {

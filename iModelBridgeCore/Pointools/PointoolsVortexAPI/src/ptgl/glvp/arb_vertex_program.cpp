@@ -3,7 +3,7 @@
 	By Nutty
 */
 
-#include <ptgl\arb_vertex_program.h>
+#include <ptgl/arb_vertex_program.h>
 
 //The actual function pointer instances.
 PFNGLVERTEXATTRIB1SARB glVertexAttrib1sARB;

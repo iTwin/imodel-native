@@ -1,7 +1,7 @@
 #ifndef POINTOOLS_OBJECT_BOUNDS_H	
 #define POINTOOLS_OBJECT_BOUNDS_H
 
-#include <pt\flags.h>
+#include <pt/flags.h>
 
 namespace pt
 {

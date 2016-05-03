@@ -1,5 +1,5 @@
 #include "PointoolsVortexAPIInternal.h"
-#include <windows.h>
+
 
 #include <ptengine/PointsScene.h>
 #include <ptengine/PointsPager.h>

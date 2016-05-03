@@ -9,11 +9,11 @@
 #ifndef COMMONCLASSES_DATATABLE_DEFINITION
 #define COMMONCLASSES_DATATABLE_DEFINITION
 
-#include <pt\classes.h>
-#include <pt\geomtypes.h>
-#include <pt\ptstring.h>
+#include <pt/classes.h>
+#include <pt/geomtypes.h>
+#include <pt/ptstring.h>
 
-#include <Loki\AssocVector.h>
+#include <Loki/AssocVector.h>
 
 #include <string>
 

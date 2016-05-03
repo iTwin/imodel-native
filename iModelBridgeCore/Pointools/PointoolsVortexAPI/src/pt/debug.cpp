@@ -7,9 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 
 #ifdef _DEBUG
-#include <stdio.h>
-#include <stdarg.h>
-#include <windows.h>
+
 void _trace(char *fmt, ...)
 {
 char out[1024];

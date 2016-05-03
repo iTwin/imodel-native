@@ -8,9 +8,9 @@
  @edited  2003-09-13
  */
 
-#ifndef PT_PROMPT_H
-#define PT_PROMPT_H
+#pragma once
 
+#ifdef NEEDS_WORK_VORTEX_DGNDB
 #include <string>
 #include <tchar.h>
 namespace pt {

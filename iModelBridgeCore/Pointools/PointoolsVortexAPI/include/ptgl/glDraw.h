@@ -1,7 +1,7 @@
 #ifndef POINTOOLS_GL_DRAW_ROUTINES
 #define POINTOOLS_GL_DRAW_ROUTINES
 
-#include <ptgl\ptgl.h>
+#include <ptgl/ptgl.h>
 
 namespace ptgl
 {

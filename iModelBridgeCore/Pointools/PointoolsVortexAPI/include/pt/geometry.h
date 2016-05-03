@@ -1,7 +1,7 @@
 #ifndef POINTOOLS_GEOMETRY3D_TEMPLATE_H
 #define POINTOOLS_GEOMETRY3D_TEMPLATE_H
 
-#include <pt\scenegraph.h>
+#include <pt/scenegraph.h>
 
 namespace pt
 {

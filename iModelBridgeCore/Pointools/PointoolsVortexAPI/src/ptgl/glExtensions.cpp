@@ -1,6 +1,6 @@
 #include "PointoolsVortexAPIInternal.h"
-#include <ptgl\glExtensions.h>
-#include <gl\gl.h>
+#include <ptgl/glExtensions.h>
+#include <gl/gl.h>
 #include <set>
 #include <string>
 

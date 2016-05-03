@@ -1,6 +1,6 @@
 #include "PointoolsVortexAPIInternal.h"
 
-#include <pt\timestamp.h>
+#include <pt/timestamp.h>
 using namespace pt;
 
 namespace {

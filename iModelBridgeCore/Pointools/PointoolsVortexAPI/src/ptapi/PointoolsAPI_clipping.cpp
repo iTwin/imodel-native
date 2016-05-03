@@ -1,5 +1,4 @@
 #include "PointoolsVortexAPIInternal.h"
-#include <gl/glew.h>
 #include <ptapi/PointoolsVortexAPI.h>
 #include <ptengine/renderengine.h>
 #include <ptengine/engine.h>

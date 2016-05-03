@@ -1,14 +1,11 @@
 #include "PointoolsVortexAPIInternal.h"
 
-#include <commdlg.h>
 #define POINTOOLS_API_BUILD_DLL
 
 #ifdef POINTOOLS_BENTLEY_LICENSING
 #include <ptlic/PointoolsBentleyLicenseAPI.h>
 #endif
 
-#include <string>
-#include <gl/glew.h>
 #include <ptapi/PointoolsVortexAPI.h>
 
 #include <ptapi/PointoolsAPI_handle.h>

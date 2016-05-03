@@ -24,11 +24,6 @@
 #include <fltk/ask.h>
 #include <fltk/run.h>
 
-#include <boost/bind.hpp>
-#include <boost/filesystem\path.hpp>
-#include <boost/filesystem\operations.hpp>
-#include <boost/tokenizer.hpp>
-
 #include <io.h>
 
 #include <ptui/ptSplash.h>

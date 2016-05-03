@@ -11,7 +11,6 @@
 #define POINTOOLS_PCLOUD_IMAGE_H
 
 
-#include <gl/glew.h>
 #include <pt/geomtypes.h>
 #include <ptcloud2/pointcloud.h>
 

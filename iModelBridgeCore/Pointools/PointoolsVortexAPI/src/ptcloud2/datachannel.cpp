@@ -13,12 +13,12 @@
 //#define DEBUG_OUTPUT
 
 #include <math.h>
-#include <ptcloud2\datachannel.h>
-#include <pt\geomtypes.h>
+#include <ptcloud2/datachannel.h>
+#include <pt/geomtypes.h>
 
 
 #include <pt/ptstring.h>
-#include <pt\boundingbox.h>
+#include <pt/boundingbox.h>
 
 #include <pt/trace.h>
 #include <random>

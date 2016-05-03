@@ -21,7 +21,7 @@ namespace pt {
  */
 inline bool isValidHeapPointer(const void* x) {
     #ifdef _WIN32
-        return (_CrtIsValidHeapPointer(x) != 0) && ((INT_PTR) x != (INT_PTR)0xcccccccc) && ((INT_PTR) x != (INT_PTR) 0xdeadbeef) && ((INT_PTR) x != (INT_PTR) 0xfeeefeee);
+        return (_CrtIsValidHeapPointer(x) != 0) && ((intptr_t) x != (intptr_t)0xcccccccc) && ((intptr_t) x != (intptr_t) 0xdeadbeef) && ((intptr_t) x != (intptr_t) 0xfeeefeee);
     #else
         return x != NULL;
     #endif
@@ -34,7 +34,7 @@ inline bool isValidHeapPointer(const void* x) {
  */
 inline bool isValidPointer(const void* x) {
     #ifdef _WIN32
-        return (_CrtIsValidPointer(x, 0, true) != 0) && ((INT_PTR) x != (INT_PTR) 0xcccccccc) && ((INT_PTR) x != (INT_PTR) 0xdeadbeef) && ((INT_PTR) x != (INT_PTR)0xfeeefeee);
+        return (_CrtIsValidPointer(x, 0, true) != 0) && ((intptr_t) x != (intptr_t) 0xcccccccc) && ((intptr_t) x != (intptr_t) 0xdeadbeef) && ((intptr_t) x != (intptr_t)0xfeeefeee);
     #else
         return x != NULL;
     #endif

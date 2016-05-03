@@ -1,8 +1,8 @@
 #ifndef __POINTOOLS_BLOCK_HEADER
 #define __POINTOOLS_BLOCK_HEADER
 
-#include <loki\assocvector.h>
-#include "..\callback\callback.h"
+#include <loki/assocvector.h>
+#include "../callback/callback.h"
 #include "comp.h"
 
 struct ptlblock

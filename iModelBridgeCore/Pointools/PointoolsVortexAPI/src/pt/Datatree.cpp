@@ -1,6 +1,6 @@
 #include "PointoolsVortexAPIInternal.h"
-#include <pt\datatree.h>
-#include <pt\datatreePrintf.h>
+#include <pt/datatree.h>
+#include <pt/datatreePrintf.h>
 
 namespace pt
 {

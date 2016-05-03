@@ -25,26 +25,30 @@
         </Bindings>
     </Part>
     
-    <Part Name="PointoolsVortexAPI" OnlyPlatforms="x86,x64" PrgOutputDir="PointoolsVortexAPI" >
+    <Part Name="PointoolsVortexAPI" PrgOutputDir="PointoolsVortexAPI" >
         <RequiredRepository>Bentley</RequiredRepository>
         <RequiredRepository>PointoolsCommon</RequiredRepository>
         <SubPart PartName="PointoolsVortexAPI_DLL"/>
         <SubPart PartName="PointoolsVortexAPI_FeatureExtract_DLL"/>
     </Part>
 
+    <Part Name="WindowsOnlySubPats" OnlyPlatforms="x86,x64" PrgOutputDir="PointoolsVortexAPI" >
+        <SubPart PartName="EncryptShaders" />        
+        <SubPart PartName="OpenGLExt"       PartFile="openglHeaders"    Repository="libsrc-opengl"/>
+        <SubPart PartName="GLEW"            PartFile="opengl"           Repository="libsrc-opengl" LibType="Static"/>
+    </Part>
+
+
     <Part Name="PointoolsVortexAPI_DLL" BentleyBuildMakeFile="PointoolsVortexAPI.mke" ApiNumber="G06">
         <RequiredRepository>PointoolsCommon</RequiredRepository>
         <SubPart PartName="PublicApi" />
-        <SubPart PartName="EncryptShaders" />
-        <SubPart PartName="OpenGLExt"       PartFile="openglHeaders"    Repository="libsrc-opengl"/>
-        <SubPart PartName="GLEW"            PartFile="opengl"           Repository="libsrc-opengl" LibType="Static"/>
-        <SubPart PartName="ttl"             PartFile="ttl"              Repository="libsrc-ttl"/>
-        <SubPart PartName="wildmagic"       PartFile="wildmagic"        Repository="libsrc-geometrictools"/>
-        <SubPart PartName="Loki"            PartFile="Loki"             Repository="libsrc-loki"/>
-        <SubPart PartName="FastDelegate"    PartFile="FastDelegate"     Repository="libsrc-FastDelegate"/>
-        <SubPart PartName="SCZ_Compress"    PartFile="scz_compress"     Repository="libsrc-scz_compress"/>
         <!-- <SubPart PartName="Base" PartFile="Bentley" Repository="Bentley" /> -->
         <!-- <SubPart PartName="LicenseSDK8.11" PartFile="${SrcRoot}bsicommon/CvsPartfiles/bsibin" Repository="bsibin-licensesdk" />  -->
+        <SubPart PartName="ttl"             PartFile="ttl"              Repository="libsrc-ttl"/>
+        <SubPart PartName="Loki"            PartFile="Loki"             Repository="libsrc-loki"/>
+        <SubPart PartName="wildmagic"       PartFile="wildmagic"        Repository="libsrc-geometrictools"/>
+        <SubPart PartName="FastDelegate"    PartFile="FastDelegate"     Repository="libsrc-FastDelegate"/>
+        <SubPart PartName="SCZ_Compress"    PartFile="scz_compress"     Repository="libsrc-scz_compress"/>
         <Bindings>
             <Libs> Delivery/$(shlibprefix)PointoolsVortexAPI$(libext)</Libs>
             <Assemblies ProductDirectoryName="PointoolsAssemblies">Delivery/$(shlibprefix)PointoolsVortexAPI$(ApiNumber)$(shlibext)</Assemblies>
@@ -63,7 +67,7 @@
 * Pointools Vortex FeatureExtract
 ********************************************************************************************************
 -->
-  <Part Name="PointoolsVortexAPI_FeatureExtract_DLL" BentleyBuildMakeFile="extensions/VortexFeatureExtract/FeatureExtract.mke" >
+  <Part Name="PointoolsVortexAPI_FeatureExtract_DLL" OnlyPlatforms="x86,x64" BentleyBuildMakeFile="extensions/VortexFeatureExtract/FeatureExtract.mke" >
     <RequiredRepository>PointoolsCommon</RequiredRepository>	
     <SubPart PartName="wildmagic" PartFile="wildmagic" Repository="libsrc-geometrictools"/>
     <Bindings>
