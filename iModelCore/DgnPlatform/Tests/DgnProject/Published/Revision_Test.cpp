@@ -8,10 +8,12 @@
 #include "ChangeTestFixture.h"
 #include <DgnPlatform/DgnChangeSummary.h>
 #include <DgnPlatform/GenericDomain.h>
+#include "../BackDoor/PublicAPI/BackDoor/DgnProject/DgnPlatformTestDomain.h"
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
+USING_NAMESPACE_BENTLEY_DPTEST
 
 // Turn this on for debugging.
 // #define DUMP_REVISION 1
@@ -24,13 +26,12 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 struct RevisionTestFixture : ChangeTestFixture
 {
 DEFINE_T_SUPER(ChangeTestFixture)
-private:
+protected:
     int m_z = 0;
     WCharCP m_copyTestFileName = L"RevisionTestCopy.idgndb";
 
     virtual void _CreateDgnDb() override;
 
-protected:
     void InsertFloor(int xmax, int ymax);
     void ModifyElement(DgnElementId elementId);
 
@@ -96,7 +97,7 @@ protected:
         return cpEl;
         }
 public:
-    RevisionTestFixture() : T_Super(L"RevisionTest.idgndb") {}
+    RevisionTestFixture(WCharCP filename = L"RevisionTest.idgndb", bool wantTestDomain=false) : T_Super(filename, wantTestDomain) {}
 };
 
 //---------------------------------------------------------------------------------------
@@ -498,3 +499,147 @@ TEST_F(RevisionTestFixture, Codes)
     expectedCodes.insert(cpUncoded->GetCode());
     ExpectCodes(expectedCodes, createdCodes);
     }
+
+//=======================================================================================
+// Silly handler for testing dependencies.
+// Assuming A and B are TestElement-s, if A drives B then:
+//  - TestElementDrivesElement.Property1 is an integer X from 0-3 identifying TestIntegerProperty[X+1]
+//    in element B
+//  - The value of TestIntegerPropertyX always has the same value as A.TestIntegerProperty1
+// @bsistruct                                                   Paul.Connelly   05/16
+//=======================================================================================
+struct TestElementDependency : TestElementDrivesElementHandler::Callback
+{
+    virtual void _OnRootChanged(DgnDbR, ECInstanceId, DgnElementId, DgnElementId) override;
+    virtual void _ProcessDeletedDependency(DgnDbR, dgn_TxnTable::ElementDep::DepRelData const&) override { }
+
+    TestElementDependency() { TestElementDrivesElementHandler::SetCallback(this); }
+    ~TestElementDependency() { TestElementDrivesElementHandler::SetCallback(nullptr); }
+
+    static void Insert(DgnDbR db, DgnElementId rootId, DgnElementId depId, uint8_t index);
+    static uint8_t GetIndex(DgnDbR db, ECInstanceId relId);
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void TestElementDependency::Insert(DgnDbR db, DgnElementId rootId, DgnElementId depId, uint8_t index)
+    {
+    ECInstanceKey key = TestElementDrivesElementHandler::Insert(db, rootId, depId);
+    Utf8CP str = "0";
+    switch (index)
+        {
+        case 1: str = "1"; break;
+        case 2: str = "2"; break;
+        case 3: str = "3"; break;
+        }
+
+    TestElementDrivesElementHandler::SetProperty1(db, str, key);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+uint8_t TestElementDependency::GetIndex(DgnDbR db, ECInstanceId relId)
+    {
+    Utf8String str = TestElementDrivesElementHandler::GetProperty1(db, relId);
+    uint8_t idx = 0;
+    if (0 < str.length())
+        {
+        switch (str[0])
+            {
+            case '1':   idx = 1; break;
+            case '2':   idx = 2; break;
+            case '3':   idx = 3; break;
+            }
+        }
+
+    return idx;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void TestElementDependency::_OnRootChanged(DgnDbR db, ECInstanceId relId, DgnElementId rootId, DgnElementId depId)
+    {
+    auto root = db.Elements().Get<TestElement>(rootId);
+    auto dep = db.Elements().GetForEdit<TestElement>(depId);
+    ASSERT_TRUE(root.IsValid() && dep.IsValid());
+
+    uint8_t index = GetIndex(db, relId);
+    dep->SetIntegerProperty(index, root->GetIntegerProperty(0));
+    auto cpDep = db.Elements().Update(*dep);
+    ASSERT_TRUE(cpDep.IsValid());
+    EXPECT_EQ(cpDep->GetIntegerProperty(index), root->GetIntegerProperty(0));
+    }
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   05/16
+//=======================================================================================
+struct DependencyRevisionTest : RevisionTestFixture
+{
+    DEFINE_T_SUPER(RevisionTestFixture);
+
+    TestElementDependency   m_dep;
+
+    TestElementCPtr InsertElement(int32_t intProp1);
+
+    DependencyRevisionTest() : T_Super(L"DependencyRevisionTest.idgndb", true) { }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TestElementCPtr DependencyRevisionTest::InsertElement(int32_t intProp1)
+    {
+    DgnDbR db = m_testModel->GetDgnDb();
+    auto el = TestElement::Create(db, m_testModelId, m_testCategoryId);
+    el->SetIntegerProperty(0, intProp1);
+    auto cpEl = db.Elements().Insert(*el);
+    EXPECT_TRUE(cpEl.IsValid());
+    return cpEl;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Ensure the dependency callback works as expected...
+* @bsimethod                                                    Paul.Connelly   05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DependencyRevisionTest, TestDependency)
+    {
+    CreateDgnDb();
+    auto& db = *m_testDb;
+    db.SaveChanges("Create initial model");
+
+    // C.TestIntegerProperty2 is driven by A.TestIntegerProperty1
+    // C.TestIntegerProperty3 is driven by B.TestIntegerProperty1
+    auto a = InsertElement(123),
+         b = InsertElement(456),
+         c = InsertElement(789);
+
+    auto aId = a->GetElementId(),
+         bId = b->GetElementId(),
+         cId = c->GetElementId();
+
+    TestElementDependency::Insert(db, aId, cId, 2);
+    TestElementDependency::Insert(db, bId, cId, 3);
+
+    db.SaveChanges("Initial dependencies");
+
+    c = db.Elements().Get<TestElement>(cId);
+    EXPECT_EQ(123, c->GetIntegerProperty(2));
+    EXPECT_EQ(456, c->GetIntegerProperty(3));
+
+    auto pA = db.Elements().GetForEdit<TestElement>(aId);
+    auto pB = db.Elements().GetForEdit<TestElement>(bId);
+    pA->SetIntegerProperty(0, 321);
+    EXPECT_TRUE(pA->Update().IsValid());
+    pB->SetIntegerProperty(0, 654);
+    EXPECT_TRUE(pB->Update().IsValid());
+
+    db.SaveChanges("Modify root properties");
+
+    c = db.Elements().Get<TestElement>(cId);
+    EXPECT_EQ(321, c->GetIntegerProperty(2));
+    EXPECT_EQ(654, c->GetIntegerProperty(3));
+    }
+

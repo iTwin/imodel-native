@@ -920,10 +920,16 @@ DgnDbStatus DgnElement::SaveUserProperties() const
     CachedECSqlStatementPtr stmt = GetDgnDb().GetPreparedECSqlStatement("UPDATE " DGN_SCHEMA(DGN_CLASSNAME_Element) " SET UserProperties=? WHERE ECInstanceId=?");
     BeAssert(stmt.IsValid());
 
+    Utf8String str;
     if (m_userProperties->IsEmpty())
+        {
         stmt->BindNull(1);
+        }
     else
-        stmt->BindText(1, m_userProperties->ToString().c_str(), IECSqlBinder::MakeCopy::Yes);
+        {
+        str = m_userProperties->ToString();
+        stmt->BindText(1, str.c_str(), IECSqlBinder::MakeCopy::No);
+        }
  
     BeAssert(GetElementId().IsValid());
     stmt->BindId(2, GetElementId());

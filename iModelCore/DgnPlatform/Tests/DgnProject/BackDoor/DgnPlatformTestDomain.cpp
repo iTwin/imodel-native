@@ -28,6 +28,21 @@ HANDLER_DEFINE_MEMBERS(TestElementDrivesElementHandler)
 bool TestElementDrivesElementHandler::s_shouldFail;
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TestElement::TestElement(CreateParams const& params) : T_Super(params)
+    {
+    for (auto& i : m_intProps)
+        i = 0;
+
+    for (auto& d : m_doubleProps)
+        d = 0.0;
+
+    for (auto& p : m_pointProps)
+        p = DPoint3d::FromXYZ(0.0, 0.0, 0.0);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TestElementPtr TestElement::Create(DgnDbR db, DgnModelId mid, DgnCategoryId categoryId, Utf8CP elementCode)
@@ -238,6 +253,12 @@ void TestElement::_CopyFrom(DgnElementCR el)
         {
         m_testElemProperty = testEl->m_testElemProperty;
         m_testItemProperty = testEl->m_testItemProperty;
+        for (size_t i = 0; i < 4; i++)
+            {
+            m_intProps[i] = testEl->m_intProps[i];
+            m_doubleProps[i] = testEl->m_doubleProps[i];
+            m_pointProps[i] = testEl->m_pointProps[i];
+            }
         }
     }
 
@@ -371,11 +392,31 @@ void TestElementDrivesElementHandler::_ProcessDeletedDependency(DgnDbR db, dgn_T
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TestElementDrivesElementHandler::UpdateProperty1(DgnDbR db, EC::ECInstanceKeyCR key)
     {
-    //  Modify a property of the dependency relationship itself
+    SetProperty1(db, "changed", key);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void TestElementDrivesElementHandler::SetProperty1(DgnDbR db, Utf8CP value, EC::ECInstanceKeyCR key)
+    {
     ECSqlStatement stmt;
-    stmt.Prepare(db, "UPDATE ONLY " DPTEST_SCHEMA_NAME "." DPTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME " SET Property1='changed'  WHERE(ECInstanceId=?)");
-    stmt.BindId(1, key.GetECInstanceId());
+    stmt.Prepare(db, "UPDATE ONLY " DPTEST_SCHEMA_NAME "." DPTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME " SET Property1=?  WHERE(ECInstanceId=?)");
+    stmt.BindText(1, value, IECSqlBinder::MakeCopy::No);
+    stmt.BindId(2, key.GetECInstanceId());
     ASSERT_EQ( stmt.Step(), BE_SQLITE_DONE );
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String TestElementDrivesElementHandler::GetProperty1(DgnDbR db, EC::ECInstanceId id)
+    {
+    ECSqlStatement stmt;
+    stmt.Prepare(db, "SELECT Property1 FROM " DPTEST_SCHEMA_NAME "." DPTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME " WHERE(ECInstanceId=?)");
+    stmt.BindId(1, id);
+    EXPECT_EQ(stmt.Step(), BE_SQLITE_ROW);
+    return stmt.GetValueText(0);
     }
 
 /*---------------------------------------------------------------------------------**//**

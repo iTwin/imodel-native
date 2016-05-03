@@ -73,7 +73,7 @@ struct TestElement : Dgn::PhysicalElement
 
     DGNELEMENT_DECLARE_MEMBERS(DPTEST_TEST_ELEMENT_CLASS_NAME, Dgn::PhysicalElement) 
 public:
-    TestElement(CreateParams const& params) : T_Super(params) {} 
+    TestElement(CreateParams const& params);
 
 protected:
     Utf8String  m_testItemProperty;
@@ -307,6 +307,8 @@ public:
     static void SetShouldFail(bool b) {s_shouldFail = b;}
 
     static void UpdateProperty1(Dgn::DgnDbR, EC::ECInstanceKeyCR);
+    static void SetProperty1(Dgn::DgnDbR, Utf8CP, EC::ECInstanceKeyCR);
+    static Utf8String GetProperty1(Dgn::DgnDbR, EC::ECInstanceId);
 
     static ECN::ECClassCR GetECClass(Dgn::DgnDbR db) {return *db.Schemas().GetECClass(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME);}
 
