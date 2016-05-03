@@ -26,8 +26,10 @@ PTuint 		g_frame = 0;
 PTenum 		g_units = PT_METERS;
 PTdouble 	g_unitScale = 1.0;
 
+#ifdef HAVE_OPENGL
 ptgl::Camera 	g_camera;
 ptgl::Light 	g_light;
+#endif
 
 namespace
 {
@@ -120,6 +122,7 @@ PTvoid	PTAPI ptOverrideDrawMode(PTenum drawmode)
 {
 	g_drawmodeOverride = drawmode; 
 }
+#ifdef HAVE_OPENGL
 //-------------------------------------------------------------------------------
 // DrawGL - draw the point clouds in OpenGL
 //-------------------------------------------------------------------------------
@@ -127,6 +130,7 @@ PTvoid	PTAPI ptDrawGL(PTbool dynamic)
 {
 	ptDrawSceneGL(0, dynamic);
 }
+#endif
 //-----------------------------------------------------------------------------
 PTuint	PTAPI ptKbLoaded( PTbool reset )
 {
@@ -141,6 +145,7 @@ PTuint	PTAPI ptWeightedPtsLoaded( PTbool reset )
 
 extern pcloud::Scene* sceneFromHandle(PThandle);
 
+#ifdef HAVE_OPENGL
 //-----------------------------------------------------------------------------
 PTvoid PTAPI ptDrawSceneGL(PThandle scene, PTbool dynamic)
 {
@@ -217,3 +222,4 @@ PTvoid PTAPI ptDrawSceneGL(PThandle scene, PTbool dynamic)
 	}
 	g_frame++;
 }
+#endif

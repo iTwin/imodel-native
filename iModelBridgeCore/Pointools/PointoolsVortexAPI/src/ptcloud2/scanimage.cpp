@@ -372,6 +372,8 @@ void ScanImage::undistort(const char *new_filename)
 	/* TODO: save it */ 
 
 }
+
+#ifdef HAVE_OPENGL
 //
 // end texture projection
 //
@@ -444,3 +446,4 @@ void ScanImage::drawGL()
 			glPopMatrix();
 	}
 }
+#endif

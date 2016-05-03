@@ -163,6 +163,7 @@ bool		ClashTree::loadFromFile( const ptds::FilePath &file, mmatrix4d &currentTra
 	return m_tree ? true : false;
 }
 
+#ifdef HAVE_OPENGL
 //-----------------------------------------------------------------------------
 void ClashTree::drawBox( const OBBoxd &box ) const
 //-----------------------------------------------------------------------------
@@ -254,6 +255,8 @@ int ClashTree::drawNodes( int level ) const
 	}
 	return 0;
 }
+#endif
+
 //-----------------------------------------------------------------------------
 int	ClashTree::maxLeafDepth()
 //-----------------------------------------------------------------------------

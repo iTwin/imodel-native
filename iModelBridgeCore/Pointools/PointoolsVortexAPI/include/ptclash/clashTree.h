@@ -39,10 +39,12 @@ public:
 
 	int						targetPtsPerLeaf() const { return m_targetPtsPerLeaf; }
 
-	// for diagnostics
+#ifdef HAVE_OPENGL
+    // for diagnostics
 	int						drawLeaves() const;
 	int						drawNodes(int level) const;
 	int						drawTree() const;
+#endif
 
 	int						maxLeafDepth();
 	int						minLeafDepth();
@@ -62,8 +64,10 @@ public:
 
 
 protected:
-	
+
+#ifdef HAVE_OPENGL
 	void					drawBox( const OBBoxd &box ) const;
+#endif
 
 	OrientedBoxBoundsTreed::Node *readNode(ptds::ReadBlock &reader, OrientedBoxBoundsTreed::Node *parent=0);
 

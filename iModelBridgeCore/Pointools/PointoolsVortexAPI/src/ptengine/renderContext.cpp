@@ -95,7 +95,11 @@ RenderContext *RenderContextManager::getRenderContext( RenderEnvironment env, Co
 	switch (env)
 	{
 	case RenderEnvOpenGL:
-		return getOpenGLContext( context );
+#ifdef HAVE_OPENGL
+        return getOpenGLContext( context );
+#else
+        return 0;  //not supported
+#endif
 		
 	case RenderEnvDirect3D:
 		return getDirect3DContext( context );
@@ -158,6 +162,7 @@ RenderContextManager *RenderContextManager::instance()
 	}	
 	return rcm;
 }
+#ifdef HAVE_OPENGL
 /*****************************************************************************/
 /**
 * @brief
@@ -242,6 +247,7 @@ RenderContext * RenderContextManager::createOpenGLContext(bool forceFixedFunc)
 	rc->m_effects->addEffect( new RenderLayersEffectGL );
 	return rc;
 }
+#endif
 
 /*****************************************************************************/
 /**

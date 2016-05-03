@@ -22,7 +22,7 @@ CompileOptionsMki               = $(SrcRoot)Pointools/PointoolsVortexAPI/mki/Poi
 #--------------------------------------------------------------------------------------
 appSrc              = $(_MakeFilePath)
 MultiCompileDepends = $(_MakeFileSpec) $(appSrc)Include/PointoolsVortexAPIInternal.h
-HAVE_OPENGL         = 1
+#HAVE_OPENGL         = 1
 
 always:
     !~@mkdir $(o)    
@@ -105,8 +105,6 @@ $(o)TEA$(oext)                           : $(basedir)src/encryption/TEA.cpp     
 
 $(o)datatreeBlob$(oext)                  : $(basedir)src/pt/datatreeBlob.cpp                                     $(basedir)include/pt/datatreeBlob.h                              ${MultiCompileDepends}
 
-$(o)PointoolsAPI_unitTests$(oext)        : $(basedir)src/ptapi/PointoolsAPI_unitTests.cpp                                                                                          ${MultiCompileDepends}
-
 $(o)colourRamps$(oext)                   : $(basedir)src/ptengine/colourRamps.cpp                                $(basedir)include/ptengine/colourRamps.h                         ${MultiCompileDepends}
 
 $(o)project$(oext)                       : $(basedir)src/ptl/project.cpp                                         $(basedir)include/ptl/project.h                                  ${MultiCompileDepends}
@@ -152,8 +150,6 @@ $(o)Log$(oext)                           : $(basedir)src/pt/Log.cpp             
 
 $(o)StreamHost$(oext)                    : $(basedir)src/ptengine/StreamHost.cpp                                 $(basedir)include/ptengine/StreamHost.h                          ${MultiCompileDepends}
                                                                                                                   
-$(o)renderClipEffect$(oext)              : $(basedir)src/ptengine/renderClipEffect.cpp                           $(basedir)include/ptengine/renderClipEffect.h                    ${MultiCompileDepends}
-                                                                                                                  
 $(o)consolidate$(oext)                   : $(basedir)src/ptedit/consolidate.cpp                                                                                                    ${MultiCompileDepends}
                                                                                                                   
 $(o)renderPointsBuffer$(oext)            : $(basedir)src/ptengine/renderPointsBuffer.cpp                         $(basedir)include/ptengine/renderPointsBuffer.h                  ${MultiCompileDepends}
@@ -173,8 +169,6 @@ $(o)queryDensity$(oext)                  : $(basedir)src/ptengine/queryDensity.c
 $(o)DataSourceFile$(oext)                : $(basedir)src/ptds/DataSourceFile.cpp                                 $(basedir)include/ptds/DataSourceFile.h                          ${MultiCompileDepends}
                                                                                                                   
 $(o)DataSourceManager$(oext)             : $(basedir)src/ptds/DataSourceManager.cpp                              $(basedir)include/ptds/DataSourceManager.h                       ${MultiCompileDepends}
-                                                                                                                  
-$(o)visibilityEngine$(oext)              : $(basedir)src/ptengine/visibilityEngine.cpp                           $(basedir)include/ptengine/visibilityEngine.h                    ${MultiCompileDepends}
                                                                                                                   
 $(o)pointsPager$(oext)                   : $(basedir)src/ptengine/pointsPager.cpp                                $(basedir)include/ptengine/pointsPager.h                         ${MultiCompileDepends}
                                                                                                                   
@@ -372,8 +366,15 @@ $(o)ClipManager$(oext)                   : $(basedir)src/ptengine/ClipManager.cp
 
 $(o)IsolationFilter$(oext)               : $(basedir)src/ptedit/IsolationFilter.cpp                              $(basedir)include/ptedit/IsolationFilter.h                       ${MultiCompileDepends}
 
+$(o)visibilityEngine$(oext)              : $(basedir)src/ptengine/visibilityEngine.cpp                           $(basedir)include/ptengine/visibilityEngine.h                    ${MultiCompileDepends}
+
+$(o)glFrustum$(oext)                     : $(basedir)src/ptgl/glFrustum.cpp                                      $(basedir)include/ptgl/glFrustum.h                               ${MultiCompileDepends}
 
 %if defined(HAVE_OPENGL)
+$(o)renderClipEffect$(oext)              : $(basedir)src/ptengine/renderClipEffect.cpp                           $(basedir)include/ptengine/renderClipEffect.h                    ${MultiCompileDepends}
+                                                                                                                  
+$(o)PointoolsAPI_unitTests$(oext)        : $(basedir)src/ptapi/PointoolsAPI_unitTests.cpp                                                                                          ${MultiCompileDepends}
+
 $(o)glShader$(oext)                      : $(basedir)src/ptgl/glShader.cpp                                       $(basedir)include/ptgl/glShader.h                                ${MultiCompileDepends}
 
 $(o)gltext$(oext)                        : $(basedir)src/ptgl/gltext.cpp                                         $(basedir)include/ptgl/gltext.h                                  ${MultiCompileDepends}
@@ -406,8 +407,6 @@ $(o)glExtensions$(oext)                  : $(basedir)src/ptgl/glExtensions.cpp  
 
 $(o)glFont$(oext)                        : $(basedir)src/ptgl/glFont.cpp                                         $(basedir)include/ptgl/glFont.h                                  ${MultiCompileDepends}
                                                                                                                   
-$(o)glFrustum$(oext)                     : $(basedir)src/ptgl/glFrustum.cpp                                      $(basedir)include/ptgl/glFrustum.h                               ${MultiCompileDepends}
-
 $(o)glState$(oext)                       : $(basedir)src/ptgl/glState.cpp                                        $(basedir)include/ptgl/glState.h                                 ${MultiCompileDepends}
 
 $(o)renderPipelineGLShader$(oext)        : $(basedir)src/ptengine/renderPipelineGLShader.cpp                     $(basedir)include/ptengine/renderPipelineGLShader.h              ${MultiCompileDepends}

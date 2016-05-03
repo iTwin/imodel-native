@@ -82,7 +82,9 @@ struct PTViewport
 	}
 
 	pt::ViewParams				viewParams;
+#ifdef HAVE_OPENGL
 	ptgl::Viewstore				vstore;
+#endif
 	wchar_t						name[64];
 	bool						inUse;
 	PTint						pointsCap;
@@ -97,6 +99,8 @@ private:
 	ContextID					contextid;
 	ContextID					prevcontextid;
 };
+
+#ifdef HAVE_OPENGL
 //-----------------------------------------------------------------------------
 // OpenGL Viewport abstraction
 //-----------------------------------------------------------------------------
@@ -235,6 +239,8 @@ struct PTViewportBMPGL : public PTViewportGL
 	BITMAPINFO	bmpInfo;
 	RenderContext *renderContext;
 };
+#endif
+
 //-----------------------------------------------------------------------------
 // DirectX Viewport - unimplemented
 //-----------------------------------------------------------------------------
@@ -249,6 +255,8 @@ struct PTViewportSW : public PTViewport
 {
 
 };
+
+#ifdef HAVE_OPENGL
 //-----------------------------------------------------------------------------
 //	Make Current on construct + switch back on destruct
 //-----------------------------------------------------------------------------
@@ -267,11 +275,14 @@ struct PTMakeCurrent
 	HDC currentDC;
 	HGLRC currentRC;
 };
+#endif
 //-----------------------------------------------------------------------------
 namespace detail
 {
+#ifdef HAVE_OPENGL
 	static HGLRC s_storeRC;
 	static HDC s_storeDC;
+#endif
 	PTViewport* g_viewports[PT_MAX_VIEWPORTS];
 	PTbool _flipMouseY = true;
 	bool _initialised = false;
@@ -326,8 +337,10 @@ PTvoid _ptAdjustMouseYVal( int &y)
 //-------------------------------------------------------------------------------
 PTvoid _ptMakeVPContextCurrent()
 {
+#ifdef HAVE_OPENGL
 	s_storeRC = wglGetCurrentContext();
 	s_storeDC = wglGetCurrentDC();
+#endif
 	g_viewports[g_currentViewport]->makeCurrent();
 }
 //-------------------------------------------------------------------------------
@@ -335,7 +348,11 @@ PTvoid _ptMakeVPContextCurrent()
 //-------------------------------------------------------------------------------
 PTvoid _ptRestoreContext()
 {
-	wglMakeCurrent(s_storeDC, s_storeRC);
+#ifdef HAVE_OPENGL
+    wglMakeCurrent(s_storeDC, s_storeRC);
+#else
+    assert(!"OpenGL is not available...");
+#endif
 }
 //
 //-----------------------------------------------------------------------------
@@ -491,10 +508,14 @@ PTvoid _ptBeginViewportDraw()
 	g_currentRenderContext = g_viewports[g_currentViewport]->getRenderContext();
 
 	_ptApplyShader(g_currentViewport);
+#ifdef HAVE_OPENGL
 	_ptApplyLight(g_currentViewport);
-	
+#endif
+
 	theVisibilityEngine().pointsBudget( g_viewports[g_currentViewport]->pointsCap );
-	g_viewports[g_currentViewport]->vstore.store();
+#ifdef HAVE_OPENGL
+    g_viewports[g_currentViewport]->vstore.store();
+#endif
 }
 //-------------------------------------------------------------------------------
 // Prepares the viewport for drawing : this function is not exported
@@ -503,7 +524,7 @@ PTvoid _ptEndViewportDraw()
 {
 	/* only do this for static view, not dynamic */ 
 	_ptSavePntsLoadedData(g_currentViewport);
-	theVisibilityEngine().pointsBudget( -1 );
+    theVisibilityEngine().pointsBudget( -1 );
 }
 //-------------------------------------------------------------------------------
 // find the least recently used viewport
@@ -523,6 +544,7 @@ PTint _ptLeastRecentlyUsedViewport()
 	}
 	return viewport;
 }
+
 /*****************************************************************************/
 /**
 * @brief
@@ -533,11 +555,14 @@ PTint _ptLeastRecentlyUsedViewport()
 /*****************************************************************************/
 PTint PTAPI _ptAddViewportDeduceContext(PTint index, const PTstr name)
 {
-	if (wglGetCurrentContext())
+#ifdef HAVE_OPENGL
+    if (wglGetCurrentContext())
 	{
 		return ptAddViewport(index, name, PT_GL_VIEWPORT);
 	}
-	else return ptAddViewport(index, name, PT_SW_VIEWPORT);
+	else 
+#endif
+        return ptAddViewport(index, name, PT_SW_VIEWPORT);
 
 	//TODO: DirectX
 }
@@ -595,7 +620,11 @@ PTint	PTAPI ptAddViewport(PTint index, const PTstr name, PTenum contextType)
 		switch( contextType )
 		{
 		case PT_GL_VIEWPORT:
-			g_viewports[index] = new PTViewportGL;
+#ifdef HAVE_OPENGL
+            g_viewports[index] = new PTViewportGL;
+#else
+            g_viewports[index] = new PTViewport(0);	// No support for OpenGL
+#endif
 			break;
 		case PT_DX_VIEWPORT:
 			g_viewports[index] = new PTViewport(0);	// not implemented yet 	//TODO: DirectX
@@ -713,7 +742,7 @@ PTvoid	PTAPI ptSetViewport(PTint index)
 	g_currentViewParams = &g_viewports[g_currentViewport]->viewParams;
 	g_currentRenderContext = g_viewports[g_currentViewport]->getRenderContext();
 
-	theVisibilityEngine().pointsBudget( g_viewports[g_currentViewport]->pointsCap );
+    theVisibilityEngine().pointsBudget( g_viewports[g_currentViewport]->pointsCap );
 
 	/* if this is a bitmap viewport we are managing the GL context so must switch here */ 
 	if (g_viewports[g_currentViewport]->type() == pt::String("glbitmap"))
@@ -777,6 +806,8 @@ PTint	PTAPI ptSetViewportByName(const PTstr name)
 
 	return g_currentViewport;
 }
+
+#ifdef HAVE_OPENGL
 //-------------------------------------------------------------------------------
 // destroy bitmap viewport
 //-------------------------------------------------------------------------------
@@ -890,6 +921,7 @@ PTvoid* PTAPI ptCreateBitmapViewport(int w, int h, const PTstr name)
 
 	return vp->bmp;
 }
+#endif
 //-------------------------------------------------------------------------------
 // capture context info
 //-------------------------------------------------------------------------------
@@ -905,6 +937,8 @@ PTvoid	PTAPI ptStoreView()
 // Get Current Viewport
 //-------------------------------------------------------------------------------
 PTint	PTAPI ptCurrentViewport() { return g_currentViewport; }
+
+#ifdef HAVE_OPENGL
 //-----------------------------------------------------------------------------
 //
 //-----------------------------------------------------------------------------
@@ -1024,6 +1058,7 @@ PTbool	PTAPI ptReadViewFromGL( void )
 
 	return PT_TRUE;
 }
+#endif
 //-----------------------------------------------------------------------------
 PTbool	PTAPI ptReadViewFromDX( void )
 {
@@ -1249,6 +1284,8 @@ PTvoid _outputMatrix(const double *m)
 	for (i=0; i<15; i++) std::cout << m[i] << ", ";
 	std::cout << m[15] << std::endl;
 }
+
+#ifdef HAVE_OPENGL
 //-----------------------------------------------------------------------------
 PTbool _ptUnitTestProjection()
 {
@@ -1331,3 +1368,4 @@ PTbool _ptUnitTestProjection()
 	glPopMatrix();
 	return true;
 }
+#endif

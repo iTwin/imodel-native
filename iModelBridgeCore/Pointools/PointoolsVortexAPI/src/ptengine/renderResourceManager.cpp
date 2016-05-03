@@ -9,9 +9,11 @@ namespace
 { 
 	RenderResourceManager *g_resManInstance=0;
 
+#ifdef HAVE_OPENGL
 	//embedded resources
 	#include <pshader.frag.cpp>	// as generated from pshader.frag by encryptshader.exe
 	#include <pshader.vert.cpp>	// as generated from pshader.vert by encryptshader.exe
+#endif
 
 	std::set<char*> g_scripts;
 
@@ -51,6 +53,7 @@ RenderResourceManager	*RenderResourceManager::instance()
 	return g_resManInstance;														// in mt situations
 }
 
+#ifdef HAVE_OPENGL
 /*****************************************************************************/
 /**
 * @brief
@@ -114,6 +117,7 @@ char*				RenderResourceManager::getShaderScript( const char* name )
 
 	return spt;
 }
+#endif
 /*****************************************************************************/
 /**
 * @brief

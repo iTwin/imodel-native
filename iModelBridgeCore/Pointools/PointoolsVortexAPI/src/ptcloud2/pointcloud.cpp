@@ -443,6 +443,7 @@ int PointCloud::getProperty(const char *id, pt::Variant &v)
 	}
 	return retval;
 }
+#ifdef HAVE_OPENGL
 void PointCloud::pushUserTransformation() const
 { 
 #ifndef POINTOOLS_POD_API
@@ -530,6 +531,7 @@ void UserTransform::pushGL()
 	}
 #endif
 }
+#endif
 void UserTransform::updateMatrix()
 {
 	if (_flags & 1)

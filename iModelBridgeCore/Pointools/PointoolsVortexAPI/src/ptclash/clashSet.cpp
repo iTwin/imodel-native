@@ -117,6 +117,7 @@ void ClashSet::remObject( ClashObject *obj )
 	}
 	m_objects = objs;
 }
+#ifdef HAVE_OPENGL
 //-----------------------------------------------------------------------------
 int ClashSet::drawTrees(int depth)
 {
@@ -129,6 +130,7 @@ int ClashSet::drawTrees(int depth)
 	}
 	return count;
 }
+#endif
 //-----------------------------------------------------------------------------
 void ClashSet::getDiagnosticString( pt::String &str ) const
 {

@@ -24,6 +24,11 @@
             <PublicAPI Domain="Vortex" />
         </Bindings>
     </Part>
+
+    <Part Name="VortexLibs">
+        <SubPart PartName="PointoolsVortexAPI_DLL"/>
+        <SubPart PartName="PointoolsVortexAPI_FeatureExtract_DLL"/>
+    </Part>
     
     <!-- platform to be excluded in their respective part-->
     <Part Name="WindowsOnlySubPats" OnlyPlatforms="x86,x64" PrgOutputDir="PointoolsVortexAPI" >
@@ -749,9 +754,8 @@
 ********************************************************************************************************
 -->
 
-    <Product Name="PointoolsVortexAPI" SaveProduct="false">
-        <SubPart PartName="PointoolsVortexAPI_DLL"/>
-        <SubPart PartName="PointoolsVortexAPI_FeatureExtract_DLL"/>
+    <Product Name="PointoolsVortexAPI" PrgOutputDir="PointoolsVortexAPI" SaveProduct="false">
+        <SubPart PartName="VortexLibs"/>
         <Directories DirectoryListName="PointoolsVortexAPI_List_Null"/>
     </Product>
 

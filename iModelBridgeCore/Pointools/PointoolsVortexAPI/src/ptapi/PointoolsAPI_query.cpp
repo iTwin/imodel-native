@@ -4363,13 +4363,15 @@ struct FrustumQuery : public Query
 		/*	if (_writer) delete _writer;
 		_writer = 0; */
 
-		if (g_currentViewParams)
+        if (g_currentViewParams)
 			theVisibilityEngine().setViewParameters( *g_currentViewParams );
 
-		if (!g_camera.getLight()){
+#ifdef HAVE_OPENGL
+        if (!g_camera.getLight()){
 			g_camera.setLight(&g_light);
 		}
 		g_light.setupGL();
+#endif
 
 		theVisibilityEngine().computeVisibility();
 
@@ -4523,7 +4525,7 @@ struct FrustumQuery : public Query
 	pt::CoordinateSpace cs;
 	std::vector<pcloud::Voxel *> voxels;
 };
-}
+} // namespace::queryDetail
 //-----------------------------------------------------------------------------
 // Frustum Points Query
 //-----------------------------------------------------------------------------

@@ -26,7 +26,9 @@ public:
 		FRUSTUM_PARTIAL,
 		FRUSTUM_CULLED
 	};
-	void buildFrustum();
+#ifdef HAVE_OPENGL
+    void buildFrustum();
+#endif
 	void buildFrustum(const double *projection_matrix, const double *modelview_matrix);
 	
 	template<typename T> 

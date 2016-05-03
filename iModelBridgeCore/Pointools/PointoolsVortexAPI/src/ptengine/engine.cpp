@@ -24,15 +24,18 @@ using namespace ___pntsengine;
 void pointsengine::initializeEngine()
 {
 	g_pointsScene = new PointsScene;
-	g_visibilityEngine = new VisibilityEngine;
 	g_pointsPager = new PointsPager;
 	g_pointsFilteringState = new PointsFilteringState;
 	g_pointLayers = new PointLayersState;
 
 	g_pointsScene->initialize();
-	g_visibilityEngine->initialize();
-	g_pointsPager->initialize();
-	g_pointLayers->initialize();
+    g_pointsPager->initialize();
+    g_pointLayers->initialize();
+
+#ifdef HAVE_OPENGL
+    g_visibilityEngine = new VisibilityEngine;
+    g_visibilityEngine->initialize();
+#endif
 }
 	
 PointsScene		&pointsengine::thePointsScene()
@@ -65,13 +68,17 @@ void pointsengine::pauseEngine()
 	if (!g_pointsScene) return;
 
 	g_pointsPager->pause();
-	g_visibilityEngine->pause();
+#ifdef HAVE_OPENGL
+    g_visibilityEngine->pause();
+#endif
 }
 void pointsengine::unpauseEngine()
 {
 	if (!g_pointsScene) return;
 
-	g_visibilityEngine->unpause();
+#ifdef HAVE_OPENGL
+    g_visibilityEngine->unpause();
+#endif
 	g_pointsPager->unpause();
 }
 void pointsengine::destroy()
@@ -83,7 +90,6 @@ void pointsengine::destroy()
 	if (!g_pointsScene) return;
 
 	delete g_pointsPager;
-	delete g_visibilityEngine;
 	
 	g_pointsScene->clear(true);
 
@@ -91,6 +97,10 @@ void pointsengine::destroy()
 	delete g_pointsFilteringState;
 
 	g_pointsPager = 0;
-	g_visibilityEngine = 0;
-	g_pointsScene = 0;	
+    g_pointsScene = 0;
+
+#ifdef HAVE_OPENGL
+    delete g_visibilityEngine;
+    g_visibilityEngine = 0;
+#endif
 }

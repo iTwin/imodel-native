@@ -102,8 +102,10 @@ void PointsRenderer::renderPoints( RenderContext *context, const pcloud::Scene *
 	ptgl::State::clear();
 
 	filterVoxelList( false, scene );
-	
+
+#ifdef HAVE_OPENGL
 	if (g_showDebugInfo) renderDiagnostics();					// debug output	
+#endif
 
 											// see how many passes are required to render the current scene, scenes with
 											// clipped voxels for example may require more than one rendering pass	
@@ -692,6 +694,7 @@ void PointsRenderer::computeActualColour(ubyte *col, const double *pnt, const sh
 	col[2] = pcol[2];
 }
 
+#ifdef HAVE_OPENGL
 /*****************************************************************************/
 /**
 * @brief
@@ -736,6 +739,7 @@ void PointsRenderer::renderDiagnostics()
 	}	
 	RenderVoxelDiagnosticInfo::endVoxelEditStateRender();
 }
+#endif
 void	PointsRenderer::renderEditStackDebug()
 {
 	// to do :)
