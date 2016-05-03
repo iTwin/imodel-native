@@ -17,9 +17,7 @@ namespace pointsengine
 	class PointLayersState;
 
 	PTENGINE_API PointsScene		&thePointsScene();
-#ifdef HAVE_OPENGL
     PTENGINE_API VisibilityEngine	&theVisibilityEngine();
-#endif
 	PTENGINE_API PointsPager		&thePointsPager();
 	PTENGINE_API PointLayersState	&thePointLayersState();
 

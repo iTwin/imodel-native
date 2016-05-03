@@ -4330,7 +4330,6 @@ inline static int voxzorder(const pcloud::Voxel *a, const pcloud::Voxel *b)
 {
 	return a->priority() > b->priority() ? 1 : 0;
 }
-#ifdef HAVE_OPENGL
 //-----------------------------------------------------------------------------
 struct FrustumQuery : public Query
 {
@@ -4370,13 +4369,15 @@ struct FrustumQuery : public Query
 		/*	if (_writer) delete _writer;
 		_writer = 0; */
 
-		if (g_currentViewParams)
+        if (g_currentViewParams)
 			theVisibilityEngine().setViewParameters( *g_currentViewParams );
 
-		if (!g_camera.getLight()){
+#ifdef HAVE_OPENGL
+        if (!g_camera.getLight()){
 			g_camera.setLight(&g_light);
 		}
 		g_light.setupGL();
+#endif
 
 		theVisibilityEngine().computeVisibility();
 
@@ -4530,9 +4531,7 @@ struct FrustumQuery : public Query
 	pt::CoordinateSpace cs;
 	std::vector<pcloud::Voxel *> voxels;
 };
-#endif
 } // namespace::queryDetail
-#ifdef HAVE_OPENGL
 //-----------------------------------------------------------------------------
 // Frustum Points Query
 //-----------------------------------------------------------------------------
@@ -4552,7 +4551,6 @@ PThandle PTAPI ptCreateFrustumPointsQuery()
 	}
 	return h;
 }
-#endif
 //-----------------------------------------------------------------------------
 // Bounding Box Query
 //-----------------------------------------------------------------------------

@@ -423,10 +423,11 @@ $(o)ClipManager$(oext)                   : $(basedir)src\ptengine\ClipManager.cp
 
 $(o)IsolationFilter$(oext)               : $(basedir)src\ptedit\IsolationFilter.cpp                              $(basedir)include\ptedit\IsolationFilter.h                       ${MultiCompileDepends}
 
+$(o)visibilityEngine$(oext)              : $(basedir)src\ptengine\visibilityEngine.cpp                           $(basedir)include\ptengine\visibilityEngine.h                    ${MultiCompileDepends}
+
+$(o)glFrustum$(oext)                     : $(basedir)src\ptgl\glFrustum.cpp                                      $(basedir)include\ptgl\glFrustum.h                               ${MultiCompileDepends}
 
 %if defined(HAVE_OPENGL)
-$(o)visibilityEngine$(oext)              : $(basedir)src\ptengine\visibilityEngine.cpp                           $(basedir)include\ptengine\visibilityEngine.h                    ${MultiCompileDepends}
-                                                                                                                  
 $(o)renderClipEffect$(oext)              : $(basedir)src\ptengine\renderClipEffect.cpp                           $(basedir)include\ptengine\renderClipEffect.h                    ${MultiCompileDepends}
                                                                                                                   
 $(o)PointoolsAPI_unitTests$(oext)        : $(basedir)src\ptapi\PointoolsAPI_unitTests.cpp                                                                                          ${MultiCompileDepends}
@@ -463,8 +464,6 @@ $(o)glExtensions$(oext)                  : $(basedir)src\ptgl\glExtensions.cpp  
 
 $(o)glFont$(oext)                        : $(basedir)src\ptgl\glFont.cpp                                         $(basedir)include\ptgl\glFont.h                                  ${MultiCompileDepends}
                                                                                                                   
-$(o)glFrustum$(oext)                     : $(basedir)src\ptgl\glFrustum.cpp                                      $(basedir)include\ptgl\glFrustum.h                               ${MultiCompileDepends}
-
 $(o)glState$(oext)                       : $(basedir)src\ptgl\glState.cpp                                        $(basedir)include\ptgl\glState.h                                 ${MultiCompileDepends}
 
 $(o)renderPipelineGLShader$(oext)        : $(basedir)src\ptengine\renderPipelineGLShader.cpp                     $(basedir)include\ptengine\renderPipelineGLShader.h              ${MultiCompileDepends}

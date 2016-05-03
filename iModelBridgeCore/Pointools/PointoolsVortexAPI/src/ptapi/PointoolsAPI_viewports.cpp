@@ -358,7 +358,6 @@ PTvoid _ptRestoreContext()
     assert(!"OpenGL is not available...");
 #endif
 }
-#ifdef HAVE_OPENGL
 //
 //-----------------------------------------------------------------------------
 PTint64	PTAPI ptPtsLoadedInViewportSinceDraw( PThandle forScene )
@@ -476,19 +475,16 @@ PTint64	PTAPI ptPtsToLoadInViewport( PThandle forScene, PTbool reCompute )
 
 	return pntsToLoad;
 }
-#endif
 //-------------------------------------------------------------------------------
 // _ptSavePntsLoadedData | saves points deficet on last draw
 //-------------------------------------------------------------------------------
 PTvoid _ptSavePntsLoadedData( int viewport )
 {
-#ifdef HAVE_OPENGL
 	if (g_viewports[viewport])
 	{
 		theVisibilityEngine().getLastFramePntsShortfall( 
 			g_viewports[viewport]->pntsShortfallOnDraw );
 	}
-#endif
 }
 //-------------------------------------------------------------------------------
 PTvoid PTAPI ptEndDrawFrameMetrics()
@@ -518,8 +514,10 @@ PTvoid _ptBeginViewportDraw()
 	_ptApplyShader(g_currentViewport);
 #ifdef HAVE_OPENGL
 	_ptApplyLight(g_currentViewport);
-	
+#endif
+
 	theVisibilityEngine().pointsBudget( g_viewports[g_currentViewport]->pointsCap );
+#ifdef HAVE_OPENGL
     g_viewports[g_currentViewport]->vstore.store();
 #endif
 }
@@ -530,9 +528,7 @@ PTvoid _ptEndViewportDraw()
 {
 	/* only do this for static view, not dynamic */ 
 	_ptSavePntsLoadedData(g_currentViewport);
-#ifdef HAVE_OPENGL
     theVisibilityEngine().pointsBudget( -1 );
-#endif
 }
 //-------------------------------------------------------------------------------
 // find the least recently used viewport
@@ -750,9 +746,7 @@ PTvoid	PTAPI ptSetViewport(PTint index)
 	g_currentViewParams = &g_viewports[g_currentViewport]->viewParams;
 	g_currentRenderContext = g_viewports[g_currentViewport]->getRenderContext();
 
-#ifdef HAVE_OPENGL
     theVisibilityEngine().pointsBudget( g_viewports[g_currentViewport]->pointsCap );
-#endif
 
 	/* if this is a bitmap viewport we are managing the GL context so must switch here */ 
 	if (g_viewports[g_currentViewport]->type() == pt::String("glbitmap"))

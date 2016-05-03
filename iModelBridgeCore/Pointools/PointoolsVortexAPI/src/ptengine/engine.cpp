@@ -14,9 +14,7 @@ using namespace pointsengine;
 namespace ___pntsengine
 {
 	PointsScene*			g_pointsScene;
-#ifdef HAVE_OPENGL
 	VisibilityEngine*		g_visibilityEngine;
-#endif
 	PointsPager*			g_pointsPager;
 	PointsFilteringState*	g_pointsFilteringState;
 	PointLayersState*		g_pointLayers;
@@ -45,13 +43,11 @@ PointsScene		&pointsengine::thePointsScene()
 	if (!g_pointsScene) initializeEngine();
 	return *g_pointsScene;
 }
-#ifdef HAVE_OPENGL
 VisibilityEngine	&pointsengine::theVisibilityEngine() 
 {
 	if (!g_pointsScene) initializeEngine();	
 	return *g_visibilityEngine;
 }
-#endif
 PointsPager		&pointsengine::thePointsPager()
 {
 	if (!g_pointsScene) initializeEngine();

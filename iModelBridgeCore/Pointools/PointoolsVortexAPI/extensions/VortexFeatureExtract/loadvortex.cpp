@@ -86,10 +86,8 @@ PTDRAWINTERACTIVEGL ptDrawInteractiveGL = 0;
 #endif
 PTKBLOADED ptKbLoaded = 0;
 PTWEIGHTEDPTSLOADED ptWeightedPtsLoaded= 0;
-#ifdef HAVE_OPENGL
 PTPTSLOADEDINVIEWPORTSINCEDRAW ptPtsLoadedInViewportSinceDraw = 0;
 PTPTSTOLOADINVIEWPORT ptPtsToLoadInViewport = 0;
-#endif
 PTENDDRAWFRAMEMETRICS ptEndDrawFrameMetrics = 0;
 PTSTARTDRAWFRAMEMETRICS ptStartDrawFrameMetrics = 0;
 
@@ -437,10 +435,8 @@ bool LoadVortex(HMODULE mod)
 		ptKbLoaded= (PTKBLOADED)GetAPIFunc("ptKbLoaded");
 
 		ptWeightedPtsLoaded = (PTWEIGHTEDPTSLOADED)GetAPIFunc("ptWeightedPtsLoaded");
-#ifdef HAVE_OPENGL
         ptPtsLoadedInViewportSinceDraw = (PTPTSLOADEDINVIEWPORTSINCEDRAW) GetAPIFunc("ptPtsLoadedInViewportSinceDraw");
 		ptPtsToLoadInViewport = (PTPTSTOLOADINVIEWPORT) GetAPIFunc("ptPtsToLoadInViewport");
-#endif
 
 		ptEndDrawFrameMetrics = (PTENDDRAWFRAMEMETRICS) GetAPIFunc("ptEndDrawFrameMetrics");
 		ptStartDrawFrameMetrics = (PTSTARTDRAWFRAMEMETRICS) GetAPIFunc("ptStartDrawFrameMetrics");
