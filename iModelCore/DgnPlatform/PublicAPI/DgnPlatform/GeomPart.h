@@ -22,9 +22,9 @@ namespace dgn_ElementHandler {struct GeometryPart;};
 //! @see DgnGeometryParts
 //! @ingroup GROUP_Geometry
 //=======================================================================================
-struct DgnGeometryPart : DictionaryElement
+struct DgnGeometryPart : DefinitionElement
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_GeometryPart, DictionaryElement);
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_GeometryPart, DefinitionElement);
     friend struct dgn_ElementHandler::GeometryPart;
 
 //__PUBLISH_SECTION_END__

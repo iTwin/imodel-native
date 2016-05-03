@@ -31,9 +31,9 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 //=======================================================================================
 //! @ingroup GROUP_Annotation
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DimensionStyle : DictionaryElement
+struct EXPORT_VTABLE_ATTRIBUTE DimensionStyle : DefinitionElement
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_DimensionStyle, DictionaryElement);
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_DimensionStyle, DefinitionElement);
 
 private:
     DgnElementId        m_textStyleId;
@@ -56,7 +56,7 @@ protected:
 public:
     static DgnClassId               QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_DimensionStyle)); }
     
-    explicit DimensionStyle(DgnDbR db) : T_Super(CreateParams(db, QueryClassId(db), DgnCode())) {}
+    explicit DimensionStyle(DgnDbR db) : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), DgnCode())) {}
     explicit DimensionStyle(CreateParams const& params) : T_Super(params) {}
     DimensionStylePtr CreateCopy() const { return MakeCopy<DimensionStyle>(); }
 

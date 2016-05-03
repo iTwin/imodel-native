@@ -216,10 +216,10 @@ DgnDbStatus DgnElement::_OnInsert()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DictionaryElement::_OnInsert()
+DgnDbStatus DefinitionElement::_OnInsert()
     {
-    // dictionary elements can reside *only* in the dictionary model.
-    auto status = GetModel()->IsDictionaryModel() ? T_Super::_OnInsert() : DgnDbStatus::WrongModel;
+    // DefinitionElements can reside *only* in a DefinitionModel
+    DgnDbStatus status = GetModel()->IsDefinitionModel() ? T_Super::_OnInsert() : DgnDbStatus::WrongModel;
     return status;
     }
 
@@ -2332,14 +2332,6 @@ DgnDbStatus DgnElement::ExternalKeyAspect::Delete(DgnElementCR element, DgnAutho
         return DgnDbStatus::WriteError;
 
     return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DictionaryElement::CreateParams::CreateParams(DgnDbR db, DgnClassId classId, DgnCode const& code, Utf8CP label, DgnElementId parentId)
-    : T_Super(db, DgnModel::DictionaryId(), classId, code, label, parentId) 
-    {
     }
 
 /*---------------------------------------------------------------------------------**//**
