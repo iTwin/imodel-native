@@ -111,6 +111,9 @@ WSLocalState ConnectWebServicesClientC_internal::m_localState = WSLocalState();
 +---------------+---------------+---------------+---------------+---------------+------*/
 ConnectWebServicesClientC_internal::ConnectWebServicesClientC_internal(Utf8String tokenXml, uint32_t productId)
     {
+    m_lastStatusMessage = Utf8String("");
+    m_lastStatusDescription = Utf8String("");
+
     DgnClientFxCommon::SetApplicationPathsProvider(&m_pathProv);
 
     BeFileName::CreateNewDirectory(m_pathProv.GetTemporaryDirectory());
@@ -161,6 +164,9 @@ ConnectWebServicesClientC_internal::ConnectWebServicesClientC_internal(Utf8Strin
 +---------------+---------------+---------------+---------------+---------------+------*/
 ConnectWebServicesClientC_internal::ConnectWebServicesClientC_internal(Utf8String username, Utf8String password, uint32_t productId)
     {
+    m_lastStatusMessage = Utf8String("");
+    m_lastStatusDescription = Utf8String("");
+
     DgnClientFxCommon::SetApplicationPathsProvider(&m_pathProv);
     
     BeFileName::CreateNewDirectory(m_pathProv.GetTemporaryDirectory());
