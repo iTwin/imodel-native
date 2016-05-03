@@ -903,7 +903,7 @@ bmap<Utf8String, CustomAttributeReplacement> const& StandardCustomAttributeRefer
 		
 		// Add More...
 			
-			s_isInitialized = true;
+		s_isInitialized = true;
 		}
 	
 		return s_entries;
@@ -985,7 +985,6 @@ IECInstanceR targetCustomAttribute
 
     targetValue.From(sourceValue);
     return ECObjectsStatus::Success;
-
     }
 
 //---------------------------------------------------------------------------------------
@@ -1003,19 +1002,19 @@ ECValueR sourceValue
     auto enumerationValue = FindEnumerationValue(enumeration, sourceValue.GetUtf8CP());
     if (enumerationValue == -1)
         {
-        LOG.errorv("Couldn't find value '%s' in ECEnumeration %s", sourceValue.GetUtf8CP(), enumeration.GetName());
+        LOG.errorv("Couldn't find value '%s' in ECEnumeration %s", sourceValue.GetUtf8CP(), enumeration.GetName().c_str());
         return ECObjectsStatus::ParseError;
         }
 
     if (!targetValue.IsInteger() || targetValue.SetInteger(enumerationValue) != BentleyStatus::SUCCESS)
         {
-        LOG.errorv("Couldn't set value of %s to %d", propertyName, enumerationValue);
+        LOG.errorv("Couldn't set value of %s to %d", propertyName.c_str(), enumerationValue);
         return ECObjectsStatus::Error;
         }
 
     if (targetCustomAttribute.SetValue(propertyName.c_str(), targetValue) != ECObjectsStatus::Success)
         {
-        LOG.errorv("Couldn't set value of %s to %d", propertyName, enumerationValue);
+        LOG.errorv("Couldn't set value of %s to %d", propertyName.c_str(), enumerationValue);
         return ECObjectsStatus::Error;
         }
 

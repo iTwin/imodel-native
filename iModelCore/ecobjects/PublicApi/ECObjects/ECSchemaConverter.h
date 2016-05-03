@@ -82,10 +82,9 @@ public:
     ECOBJECTS_EXPORT static ECObjectsStatus AddConverter(Utf8StringCR schemaName, Utf8StringCR customAttributeName, IECCustomAttributeConverterPtr& converter);
 
 	//! Adds the supplied IECCustomAttributeConverterP which will be later called when ECSchemaConverter::Convert is run
-	//! @param[in] schemaName   The schemaName that the customattribute belongs to
-	//! @param[in] customAttributeName The name of customAttribute
+	//! @param[in] customAttributeQualifiedName Key used to retrieve converter
 	//! @param[in] converter The converter that is to be called when schemaName:customAtrributeName is found
-	//! @remarks   Overwrites converter if schemaName+customAttribute name already exists. 
+	//! @remarks   Overwrites converter if key already exists. 
 	ECOBJECTS_EXPORT static ECObjectsStatus AddConverter(Utf8StringCR customAttributeQualifiedName, IECCustomAttributeConverterPtr& converter);
 
     //! Removes a custom attribute from the ecProperty including its base and child ecProperties
