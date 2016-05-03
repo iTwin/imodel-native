@@ -10,19 +10,20 @@ class CBufferStruct(CStruct):
         if not self.does_contain_property_type(property_type):
             raise PropertyTypeError("Property type {0} not accepted".format(property_type))
         if property_type is 'StringLength':
-            accessor_str = "CALLSTATUS " + self.get_lower_name() + "GetStringLength\n"
+            accessor_str = "CallStatus " + self.get_lower_name() + "GetStringLength\n"
         else:
-            accessor_str = "CALLSTATUS " + self.get_lower_name() + "Get" + property_type.title() + "Property\n"
+            accessor_str = "CallStatus " + self.get_lower_name() + "Get" + property_type.title() + "Property\n"
         accessor_str += "(\n"
-        accessor_str += "H{0}BUFFER buf,\n".format(self._api.get_api_acronym())
+        accessor_str += "LP{0} api,\nH{0}BUFFER buf,\n".format(self._api.get_api_acronym())
         accessor_str += "int16_t bufferProperty,\n"
         accessor_str += "uint32_t index,\n"
         if property_type == "string":
-            accessor_str += "WCharP str,\n"
-            accessor_str += "uint32_t strLength\n"
+            accessor_str += "uint32_t strLength,\n"
+            accessor_str += "WCharP str\n"
         elif property_type == "StringLength":
             accessor_str += "size_t* outStringSize\n"
         elif property_type == "guid":
+            accessor_str += "uint32_t strLength,\n"
             accessor_str += "WCharP guid\n"
         elif property_type == "boolean":
             accessor_str += "bool* boolean\n"
@@ -49,7 +50,7 @@ class CBufferStruct(CStruct):
         elif property_type == "StringLength":
             accessor_str += " || outStringSize == nullptr"
         elif property_type == "guid":
-            accessor_str += " || guid == nullptr"
+            accessor_str += " || guid == nullptr || strLength == 0"
         elif property_type == "boolean":
             accessor_str += " || boolean == nullptr"
         elif property_type == "int":
@@ -61,12 +62,16 @@ class CBufferStruct(CStruct):
         else:
             raise PropertyTypeError("Property type {0} not accepted".format(property_type))
         accessor_str += ")\n"
-        accessor_str += '        return CALLSTATUS {{{0}, "{1}", "{2}"}};\n\n'\
+        accessor_str += '        {\n'
+        accessor_str += '        api->SetStatusMessage("{1}");\n        api->SetStatusDescription("{2}");\n' \
+                        '        return {0};\n        }}\n\n'\
             .format("INVALID_PARAMETER",
                     self._status_codes["INVALID_PARAMETER"].message,
                     "An invalid buffer pointer or invalid property pointer was passed into the get property function.")
         accessor_str += '    if(index >= buf->lCount)\n'
-        accessor_str += '        return CALLSTATUS {{{0}, "{1}", "{2}"}};\n\n' \
+        accessor_str += '        {\n'
+        accessor_str += '        api->SetStatusMessage("{1}");\n        api->SetStatusDescription("{2}");\n' \
+                        '        return {0};\n        }}\n\n' \
             .format("INVALID_PARAMETER",
                     self._status_codes["INVALID_PARAMETER"].message,
                     "The index parameter passed into the get property function is out of bounds.")
@@ -104,15 +109,15 @@ class CBufferStruct(CStruct):
                     property_access_str += '            pLong = nullptr;\n'
                 else:
                     raise PropertyTypeError("Property type {0} not accepted".format(property_type))
-                property_access_str += '            return {2};\n'
+                property_access_str += '            {2};\n'
                 property_access_str += '            }}\n'
 
                 if property_type == "string":
-                    property_access_str += "        wcscpy(str, {0}Buf->{1}.c_str());\n"
+                    property_access_str += "        BeStringUtilities::Wcsncpy(str, strLength, {0}Buf->{1}.c_str());\n"
                 elif property_type == "StringLength":
                     property_access_str += "        *outStringSize = {0}Buf->{1}.length();\n"
                 elif property_type == "guid":
-                    property_access_str += "        wcscpy(guid, {0}Buf->{1}.c_str());\n"
+                    property_access_str += "        BeStringUtilities::Wcsncpy(guid, strLength, {0}Buf->{1}.c_str());\n"
                 elif property_type == "boolean":
                     property_access_str += "        *boolean = {0}Buf->{1};\n"
                 elif property_type == "int":
@@ -124,7 +129,9 @@ class CBufferStruct(CStruct):
                 else:
                     raise PropertyTypeError("Property type {0} not accepted".format(property_type))
                 accessor_str += property_access_str.format(self.get_lower_name(), ecproperty.attributes["propertyName"].value,
-                                                           'CALLSTATUS {{{0}, "{1}", "{2}"}}'
+                                                           'api->SetStatusMessage("{1}");\n'
+                                                           '            api->SetStatusDescription("{2}");\n'
+                                                           '            return {0}'
                                                            .format("PROPERTY_HAS_NOT_BEEN_SET",
                                                                    self._status_codes['PROPERTY_HAS_NOT_BEEN_SET'].message,
                                                                    "{0} property is not set, so it can not be retrieved."
@@ -132,11 +139,14 @@ class CBufferStruct(CStruct):
                 accessor_str += "        }\n"
         if not is_first_property:
             accessor_str += "    else\n"
-            accessor_str += '        return CALLSTATUS {{{0}, "{1}", "{2}"}};\n'\
+            accessor_str += '        {\n'
+            accessor_str += '        api->SetStatusMessage("{1}");\n        api->SetStatusDescription("{2}");\n' \
+                            '        return {0};\n        }}\n'\
                 .format("INVALID_PARAMETER",
                         self._status_codes["INVALID_PARAMETER"].message,
                         "The bufferProperty is invalid. It did not match up with any of the buffer's properties.")
-        accessor_str += '    return CALLSTATUS {{{0}, "{1}", "{2}"}};\n'\
+        accessor_str += '    api->SetStatusMessage("{1}");\n    api->SetStatusDescription("{2}");\n' \
+                        '    return {0};\n'\
             .format("SUCCESS",
                     self._status_codes["SUCCESS"].message,
                     "The property retrieval function completed successfully.")

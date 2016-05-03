@@ -34,11 +34,11 @@ class CppCliClassesSourceWriter(SourceWriter):
 
     def __write_status_class_implementation(self):
         self._file.write(self._COMMENT_BsiMethod)
-        self._file.write('    CallStatus::CallStatus(CALLSTATUS status)\n')
+        self._file.write('    CallStatus::CallStatus(uint16_t id, CharCP message, CharCP description)\n')
         self._file.write('        {\n')
-        self._file.write('        Id = status.id;\n')
-        self._file.write('        Message = gcnew String(status.message);\n')
-        self._file.write('        Description = gcnew String(status.description);\n')
+        self._file.write('        Id = id;\n')
+        self._file.write('        Message = gcnew String(message);\n')
+        self._file.write('        Description = gcnew String(description);\n')
         self._file.write('        }\n')
 
 
