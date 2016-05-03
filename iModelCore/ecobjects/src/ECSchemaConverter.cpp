@@ -255,27 +255,27 @@ ECSchemaConverterP ECSchemaConverter::GetSingleton()
     {
     static ECSchemaConverterP ECSchemaConverterSingleton = nullptr;
 
-	if (nullptr == ECSchemaConverterSingleton)
-		{
-		ECSchemaConverterSingleton = new ECSchemaConverter();
-		IECCustomAttributeConverterPtr scConv = new StandardValuesConverter();
-		ECSchemaConverterSingleton->AddConverter("EditorCustomAttributes", "StandardValues", scConv);
+    if (nullptr == ECSchemaConverterSingleton)
+        {
+        ECSchemaConverterSingleton = new ECSchemaConverter();
+        IECCustomAttributeConverterPtr scConv = new StandardValuesConverter();
+        ECSchemaConverterSingleton->AddConverter("EditorCustomAttributes", "StandardValues", scConv);
 
-		IECCustomAttributeConverterPtr unitSchemaConv = new UnitSpecificationsConverter();
-		ECSchemaConverterSingleton->AddConverter("Unit_Attributes", "UnitSpecifications", unitSchemaConv);
+        IECCustomAttributeConverterPtr unitSchemaConv = new UnitSpecificationsConverter();
+        ECSchemaConverterSingleton->AddConverter("Unit_Attributes", "UnitSpecifications", unitSchemaConv);
 
-		IECCustomAttributeConverterPtr unitPropConv = new UnitSpecificationConverter();
-		ECSchemaConverterSingleton->AddConverter("Unit_Attributes", "UnitSpecification", unitPropConv);
+        IECCustomAttributeConverterPtr unitPropConv = new UnitSpecificationConverter();
+        ECSchemaConverterSingleton->AddConverter("Unit_Attributes", "UnitSpecification", unitPropConv);
 
-		// Iterates over the Custom Attributes classes that will be converted. This converter basically
-		// handles Custom Attributes that moved into a new schema but with no content change.
-		auto const& mappingDictionary = StandardCustomAttributeReferencesConverter::GetCustomAttributesMapping();
-		IECCustomAttributeConverterPtr standardClassConverter = new StandardCustomAttributeReferencesConverter();
-		for (auto classMapping : mappingDictionary)
-			{
-			ECSchemaConverterSingleton->AddConverter(classMapping.first, standardClassConverter);
-			}
-		}	
+        // Iterates over the Custom Attributes classes that will be converted. This converter basically
+        // handles Custom Attributes that moved into a new schema but with no content change.
+        auto const& mappingDictionary = StandardCustomAttributeReferencesConverter::GetCustomAttributesMapping();
+        IECCustomAttributeConverterPtr standardClassConverter = new StandardCustomAttributeReferencesConverter();
+        for (auto classMapping : mappingDictionary)
+            {
+            ECSchemaConverterSingleton->AddConverter(classMapping.first, standardClassConverter);
+            }
+        }    
 
     return ECSchemaConverterSingleton;
     }
@@ -286,7 +286,7 @@ ECSchemaConverterP ECSchemaConverter::GetSingleton()
 ECObjectsStatus ECSchemaConverter::AddConverter(Utf8StringCR schemaName, Utf8StringCR customAttributeName, IECCustomAttributeConverterPtr& converter)
     {
     Utf8String converterName = GetQualifiedClassName(schemaName, customAttributeName);
-	return AddConverter(converterName, converter);
+    return AddConverter(converterName, converter);
     }
 
 //---------------------------------------------------------------------------------------
@@ -894,20 +894,20 @@ IECInstanceR sourceCustomAttribute
 // @bsimethod                                     
 //---------------------------------------------------------------------------------
 bmap<Utf8String, CustomAttributeReplacement> const& StandardCustomAttributeReferencesConverter::GetCustomAttributesMapping()
-	{
-	if (!s_isInitialized)
-		{
-		// Converts reference of DateTimeInfo CA to the new class
-		AddMapping("Bentley_Standard_CustomAttributes", "DateTimeInfo", "CoreCustomAttributes", "DateTimeInfo");
-		AddMapping("Bentley_Standard_CustomAttributes", "ClassHasCurrentTimeStampProperty", "CoreCustomAttributes", "ClassHasCurrentTimeStampProperty");
-		
-		// Add More...
-			
-		s_isInitialized = true;
-		}
-	
-		return s_entries;
-	}
+    {
+    if (!s_isInitialized)
+        {
+        // Converts reference of DateTimeInfo CA to the new class
+        AddMapping("Bentley_Standard_CustomAttributes", "DateTimeInfo", "CoreCustomAttributes", "DateTimeInfo");
+        AddMapping("Bentley_Standard_CustomAttributes", "ClassHasCurrentTimeStampProperty", "CoreCustomAttributes", "ClassHasCurrentTimeStampProperty");
+        
+        // Add More...
+            
+        s_isInitialized = true;
+        }
+    
+        return s_entries;
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     
