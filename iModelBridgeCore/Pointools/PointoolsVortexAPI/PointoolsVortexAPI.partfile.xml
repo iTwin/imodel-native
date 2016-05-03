@@ -25,25 +25,19 @@
         </Bindings>
     </Part>
     
-    <Part Name="PointoolsVortexAPI" PrgOutputDir="PointoolsVortexAPI" >
-        <RequiredRepository>Bentley</RequiredRepository>
-        <RequiredRepository>PointoolsCommon</RequiredRepository>
-        <SubPart PartName="PointoolsVortexAPI_DLL"/>
-        <SubPart PartName="PointoolsVortexAPI_FeatureExtract_DLL"/>
-    </Part>
-
+    <!-- platform to be excluded in their respective part-->
     <Part Name="WindowsOnlySubPats" OnlyPlatforms="x86,x64" PrgOutputDir="PointoolsVortexAPI" >
         <SubPart PartName="EncryptShaders" />        
         <SubPart PartName="OpenGLExt"       PartFile="openglHeaders"    Repository="libsrc-opengl"/>
         <SubPart PartName="GLEW"            PartFile="opengl"           Repository="libsrc-opengl" LibType="Static"/>
     </Part>
 
-
     <Part Name="PointoolsVortexAPI_DLL" BentleyBuildMakeFile="PointoolsVortexAPI.mke" ApiNumber="G06">
         <RequiredRepository>PointoolsCommon</RequiredRepository>
         <SubPart PartName="PublicApi" />
         <!-- <SubPart PartName="Base" PartFile="Bentley" Repository="Bentley" /> -->
         <!-- <SubPart PartName="LicenseSDK8.11" PartFile="${SrcRoot}bsicommon/CvsPartfiles/bsibin" Repository="bsibin-licensesdk" />  -->
+        <SubPart PartName="WindowsOnlySubPats"/>
         <SubPart PartName="ttl"             PartFile="ttl"              Repository="libsrc-ttl"/>
         <SubPart PartName="Loki"            PartFile="Loki"             Repository="libsrc-loki"/>
         <SubPart PartName="wildmagic"       PartFile="wildmagic"        Repository="libsrc-geometrictools"/>
@@ -70,6 +64,7 @@
   <Part Name="PointoolsVortexAPI_FeatureExtract_DLL" OnlyPlatforms="x86,x64" BentleyBuildMakeFile="extensions/VortexFeatureExtract/FeatureExtract.mke" >
     <RequiredRepository>PointoolsCommon</RequiredRepository>	
     <SubPart PartName="wildmagic" PartFile="wildmagic" Repository="libsrc-geometrictools"/>
+    <SubPart PartName="PointoolsVortexAPI_DLL"/>
     <Bindings>
       <VendorAPI Domain="PointoolsVortexAPI_FeatureExtract_DLL"/>
       <Libs> Delivery/VortexFeatureExtract.lib </Libs>
@@ -754,21 +749,24 @@
 ********************************************************************************************************
 -->
 
-  <Product Name="PointoolsVortexAPI" SaveProduct="false">
-    <SubPart PartName="PointoolsVortexAPI_DLL"/>  
-    <Directories DirectoryListName="PointoolsVortexAPI_List_Null"/>
-  </Product>
+    <Product Name="PointoolsVortexAPI" SaveProduct="false">
+        <SubPart PartName="PointoolsVortexAPI_DLL"/>
+        <SubPart PartName="PointoolsVortexAPI_FeatureExtract_DLL"/>
+        <Directories DirectoryListName="PointoolsVortexAPI_List_Null"/>
+    </Product>
 
-  <ProductDirectoryList ListName="PointoolsVortexAPI_List_Null">
+    <ProductDirectoryList ListName="PointoolsVortexAPI_List_Null">
+        <ProductDirectory Name="PointoolsAssemblies" Path="" Deliver="false"/>
+        <ProductDirectory Name="PublicAPI" Path="" Deliver="false"/>
+        <ProductDirectory Name="VendorAPI" Path="VendorAPI" Deliver="false"/>
+        <ProductDirectory Name="VendorAPI" Path="VendorAPI" Deliver="false" LibType="static"/>
+        <ProductDirectory Name="Libs" Path="Libs" Deliver="false"/>
+        <ProductDirectory Name="Assemblies" Path="Assemblies" Deliver="false"/>
+        <ProductDirectory Name="VendorNotices" Path="" Deliver="false"/>
+        <ProductDirectory Name="VendorNotices" Path="" Deliver="false" LibType="static"/>
+        <ProductDirectory Name="BentleyNativeAssemblies" Path="" Deliver="false" LibType="static"/>
+        <ProductDirectory Name="Libs" Path="" Deliver="false" LibType="static"/>
+    </ProductDirectoryList>
 
-    <ProductDirectory Name="PointoolsAssemblies" Path="" Deliver="false"/>
-    <ProductDirectory Name="PointoolsAssemblies32Ext" Path="" Deliver="false"/>
-    
-    <ProductDirectory Name="VendorAPI" Path="VendorAPI" Deliver="false"/>
-    <ProductDirectory Name="Libs" Path="Libs" Deliver="false"/>
-    <ProductDirectory Name="Assemblies" Path="Assemblies" Deliver="false"/>
-    
-  </ProductDirectoryList>
- 
-          
+
 </BuildContext>
