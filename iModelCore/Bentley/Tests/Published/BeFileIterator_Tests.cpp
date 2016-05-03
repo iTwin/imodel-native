@@ -184,7 +184,7 @@ TEST(BeDirectoryIterator, FileNamePattern_Parse)
     {
 #ifdef NEEDS_WORK
         // This test is not portable. Use portable directory separator chars.
-        // It also seems to be exposing a bug in FileNamePatter::Parse. The returned dir should not be \a*.txt. It should be c:\abc\bca\
+        // It also seems to be exposing a bug in FileNamePatter::Parse. The returned dir should not be \a*.txt. It should be c:\abc\bca\ 
     BeFileName wildcard (NULL, L"C:\\abc\\bca", L"a*.txt", NULL);
     BeFileName dir;
     WString glob;
