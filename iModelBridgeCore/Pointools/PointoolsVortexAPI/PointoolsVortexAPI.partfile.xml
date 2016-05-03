@@ -749,7 +749,7 @@
 ********************************************************************************************************
 -->
 
-    <Product Name="PointoolsVortexAPI" SaveProduct="false">
+    <Product Name="PointoolsVortexAPI" PrgOutputDir="PointoolsVortexAPI" SaveProduct="false">
         <SubPart PartName="PointoolsVortexAPI_DLL"/>
         <SubPart PartName="PointoolsVortexAPI_FeatureExtract_DLL"/>
         <Directories DirectoryListName="PointoolsVortexAPI_List_Null"/>
