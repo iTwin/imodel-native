@@ -294,7 +294,7 @@
     </ECEntityClass>
 
     <ECRelationshipClass typeName="NodeToExtendedData" strength="embedding">
-        <Source cardinality="(1,1)" polymorphic="true">
+        <Source cardinality="(0,1)" polymorphic="true">
             <Class class="Node"/>
         </Source>
         <Target cardinality="(0,1)" polymorphic="false">
