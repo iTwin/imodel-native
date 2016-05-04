@@ -867,4 +867,56 @@ TEST_F(DependencyRevisionTest, Conflict)
     VerifyDependentProperties(cId, { 789, m_dep.GetMostRecentValue(), 0, 0 });
     }
 
+/*---------------------------------------------------------------------------------**//**
+* When a changeset is applied for undo/redo, we notify TxnTables so they can update
+* their in-memory state. e.g., undoing the insertion of an element causes that element
+* to be dropped from the element cache.
+* This same logic was not being applied when merging revisions. Verify that it now is
+* applied correctly.
+* @bsimethod                                                    Paul.Connelly   05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DependencyRevisionTest, UpdateCache)
+    {
+    CreateDgnDb();
+    
+    // Initial state: create two elements
+    DgnElementId aId = InsertElement(123)->GetElementId();
+    DgnElementId bId = InsertElement(456)->GetElementId();
+    m_testDb->SaveChanges();
+    ASSERT_TRUE(CreateRevision().IsValid());
+    BackupTestFile();
+
+    // Revision: delete element A; modify element B
+    EXPECT_EQ(DgnDbStatus::Success, m_testDb->Elements().Get<TestElement>(aId)->Delete());
+    UpdateRootProperty(654, bId);
+    m_testDb->SaveChanges("Revision");
+    VerifyRootProperty(bId, 654);
+    EXPECT_TRUE(m_testDb->Elements().Get<TestElement>(aId).IsNull());
+
+    DgnRevisionPtr rev = CreateRevision();
+    ASSERT_TRUE(rev.IsValid());
+
+    // Restore initial state and verify it
+    RestoreTestFile();
+    auto elA = m_testDb->Elements().Get<TestElement>(aId);
+    auto elB = m_testDb->Elements().Get<TestElement>(bId);
+    ASSERT_TRUE(elA.IsValid());
+    ASSERT_TRUE(elB.IsValid());
+    EXPECT_TRUE(elA->IsPersistent());
+    EXPECT_TRUE(elB->IsPersistent());
+    EXPECT_EQ(456, elB->GetIntegerProperty(0));
+    VerifyRootProperty(bId, 456);
+
+    // Apply revision and verify cache
+    EXPECT_EQ(RevisionStatus::Success, m_testDb->Revisions().MergeRevision(*rev));
+    EXPECT_TRUE(m_testDb->Elements().Get<TestElement>(aId).IsNull());
+    EXPECT_FALSE(m_testDb->Elements().Get<TestElement>(aId).IsValid());
+    EXPECT_FALSE(elA->IsPersistent());
+    EXPECT_TRUE(elB->IsPersistent());   // NB: The original element remains in the cache, now modified to match updated state...
+    EXPECT_EQ(654, elB->GetIntegerProperty(0));
+    VerifyRootProperty(bId, 654);
+
+    elA = nullptr;
+    elB = nullptr;
+    }
 
