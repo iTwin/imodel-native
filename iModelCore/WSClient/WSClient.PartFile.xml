@@ -138,7 +138,6 @@
     <!-- // ConnectWebServicesClientC lib                                          // -->
     <!-- //////////////////////////////////////////////////////////////////////////// -->
 
-<!--
     <Part Name="ConnectWebServicesClientC">
         <SubPart PartName="ConnectWebServicesClientC-PublicAPI" />
         <SubPart PartName="ConnectWebServicesClientC-Library" />
@@ -168,7 +167,7 @@
             <Assemblies ProductDirectoryName="WSClientAssemblies">Delivery/$(libprefix)ConnectWebServicesClientC.so</Assemblies>
         </Bindings>
     </Part>
--->
+
     <!-- //////////////////////////////////////////////////////////////////////////// -->
     <!-- // L10N                                                                   // -->
     <!-- //////////////////////////////////////////////////////////////////////////// -->
@@ -455,6 +454,7 @@
     <Part Name="WSClientIntegrationTests" BentleyBuildMakeFile="Tests/IntegrationTests/IntegrationTests.mke">
         <SubPart PartName="WebServicesClient" />
         <SubPart PartName="WebServicesCache" />
+        <SubPart PartName="ConnectWebServicesClientC" />
         <SubPart PartName="WSClient-PublishedAPI" />
         <SubPart PartName="google_gtest_lib" PartFile="gtest" Repository="util-gtest" />
         <SubPart PartName="google_gmock_lib" PartFile="gmock" Repository="util-gmock" />
