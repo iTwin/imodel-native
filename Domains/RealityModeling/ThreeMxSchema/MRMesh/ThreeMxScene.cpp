@@ -57,20 +57,11 @@ BentleyStatus Scene::LoadScene()
     if (SUCCESS != ReadRoot(sceneInfo))
         return ERROR;
 
-    m_rootNode = new Node(NodeInfo(), nullptr);
-    m_rootNode->m_info.m_childPath = sceneInfo.m_rootNodePath;
+    m_rootNode = new Node(nullptr);
+    m_rootNode->m_childPath = sceneInfo.m_rootNodePath;
 
     if (SUCCESS != SynchronousRead(*m_rootNode, ConstructNodeName(sceneInfo.m_rootNodePath, m_rootUrl)))
         return ERROR;
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    static uint32_t s_sleepMillis = 3;
-    while (!m_rootNode->LoadedUntilDisplayable(*this))
-        {
-        ProcessRequests();
-        BeThreadUtilities::BeSleep(s_sleepMillis);
-        }
-#endif
 
     m_rootNode->Dump("");
     return SUCCESS;
@@ -144,8 +135,12 @@ static void drawBoundingSpheres(NodeCR node, RenderContextR context, SceneCR sce
     if (node.IsDisplayable())
         node.DrawBoundingSphere(context, scene);
 
-    for (auto const& child : node.GetChildren())
-        drawBoundingSpheres(*child, context, scene);
+    Node::ChildNodes const* children = node.GetChildren();
+    if (children)
+        {
+        for (auto const& child : *children)
+            drawBoundingSpheres(*child, context, scene);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -154,14 +149,6 @@ static void drawBoundingSpheres(NodeCR node, RenderContextR context, SceneCR sce
 void Scene::DrawBoundingSpheres(RenderContextR context)
     {
     drawBoundingSpheres(*m_rootNode, context, *this);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-size_t Scene::GetMeshMemorySize() const
-    {
-    return m_rootNode->GetMeshMemorySize();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -178,25 +165,6 @@ size_t Scene::GetTextureMemorySize() const
 size_t Scene::GetNodeCount() const
     {
     return m_rootNode->GetNodeCount();
-    }
-
-/*-----------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Scene::FlushStale(uint64_t staleTime)
-    {
-    if (!m_requests.empty())
-        return;
-
-    m_rootNode->FlushStale(staleTime);
-    }
-
-/*-----------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-size_t Scene::GetMaxDepth() const
-    {
-    return 1 + m_rootNode->GetMaxDepth();
     }
 
 //----------------------------------------------------------------------------------------

@@ -75,36 +75,6 @@ public:
 /*=================================================================================**//**
 * @bsiclass                                                     Ray.Bentley     03/2015
 +===============+===============+===============+===============+===============+======*/
-struct NodeInfo
-{
-    friend struct Node;
-    friend struct Scene;
-private:
-    DRange3d m_range;
-    DPoint3d m_center;
-    double m_radius;
-    double m_maxScreenDiameter;
-    Utf8String m_childPath; // this is the name of the file, relative to m_dir of this node, to load the children of this node. 
-
-public:
-    bool Read(JsonValueCR pt, Utf8String&, bvector<Utf8String>& nodeResources);
-    double GetMaxDiameter() const {return m_maxScreenDiameter;}
-    double GetRadius() const {return m_radius;}
-    DPoint3dCR GetCenter() const {return m_center;}
-    DRange3dCR GetRange() const {return m_range;}
-    Utf8StringCR GetChildPath() const {return m_childPath;}
-
-    NodeInfo()
-        {
-        m_center.Zero();
-        m_radius = 0.0;
-        m_maxScreenDiameter = 0.0;
-        }
-};
-
-/*=================================================================================**//**
-* @bsiclass                                                     Ray.Bentley     03/2015
-+===============+===============+===============+===============+===============+======*/
 struct SceneInfo
 {
     Utf8String m_sceneName;
@@ -114,34 +84,43 @@ struct SceneInfo
     BentleyStatus Read(MxStreamBuffer&);
 };
 
-
 /*=================================================================================**//**
 * @bsiclass                                                     Ray.Bentley     03/2015
 +===============+===============+===============+===============+===============+======*/
 struct Node : RefCountedBase, NonCopyableClass
 {
     friend struct Scene;
-
     typedef bvector<NodePtr> ChildNodes;
-    NodeInfo m_info;
+
+private:
+    DRange3d m_range = DRange3d::NullRange();
+    DPoint3d m_center;
+    double m_radius = 0.0;
+    double m_maxScreenDiameter = 0.0;
+    Utf8String m_childPath;     // this is the name of the file, relative to m_dir of this node, to load the children of this node. 
     NodeP m_parent;
-    ChildNodes m_children;
-    bvector<GeometryPtr> m_geometry;
+    ChildNodes m_childNodes;
+    GeometryPtr m_geometry;
     Utf8String m_nodePath;      // the file of this node. This is not set until we attempt to load its children.
-    mutable bool m_childrenRequested;
-    uint64_t m_lastUsed;
+
+    enum ChildLoad {Invalid=0, Queued=1, Ready=2};
+    BeAtomic<int> m_childLoad;
+
+    bool ReadHeader(JsonValueCR pt, Utf8String&, bvector<Utf8String>& nodeResources);
 
 public:
-    Node(NodeInfo const& info, NodeP parent) : m_info(info), m_parent(parent), m_childrenRequested(false), m_lastUsed(0) {}
+    Node(NodeP parent) : m_parent(parent), m_childLoad(ChildLoad::Invalid) {m_center.Zero();}
     ~Node();
 
-    void SetNodePath(Utf8StringCR path) {m_nodePath = path;}
-//    void AddGeometry(int32_t nodeId, Dgn::Render::Graphic::TriMeshArgs& args, int32_t textureIndex, SceneR);
-//    void PushNode(const NodeInfo& nodeInfo) ;
+    double GetMaxDiameter() const {return m_maxScreenDiameter;}
+    double GetRadius() const {return m_radius;}
+    DPoint3dCR GetCenter() const {return m_center;}
+    DRange3dCR GetRange() const {return m_range;}
+    Utf8StringCR GetChildPath() const {return m_childPath;}
 
+    void SetNodePath(Utf8StringCR path) {m_nodePath = path;}
     BentleyStatus Read3MXB(MxStreamBuffer&, SceneR);
     BentleyStatus Read3MXB(BeFileNameCR filename, SceneR);
-
     Utf8String GetFilePath(SceneR) const;
     BentleyStatus LoadChildren(SceneR);
     bool LoadedUntilDisplayable(SceneR);
@@ -150,27 +129,21 @@ public:
     void DrawGeometry(Dgn::RenderContextR);
     void DrawBoundingSphere(Dgn::RenderContextR, SceneCR) const;
     DRange3d GetRange(TransformCR) const;
-    bool HasChildren() const {return !m_info.m_childPath.empty();}
-    bool AreChildrenLoaded() const {return !m_children.empty();}
-    bool AreVisibleChildrenLoaded(ChildNodes& visibleChildren, Dgn::ViewContextR viewContext, SceneR) const;
-    bool IsDisplayable() const {return m_info.GetMaxDiameter() > 0.0;}
+    void SetIsReady() {return m_childLoad.store(ChildLoad::Ready);}
+    bool IsQueued() const {return m_childLoad.load() == ChildLoad::Queued;}
+    bool AreChildrenValid() const {return m_childLoad.load() == ChildLoad::Ready;}
+    bool NeedLoadChildren() const {return m_childLoad.load() == ChildLoad::Invalid && !m_childPath.empty();}
+    bool IsDisplayable() const {return GetMaxDiameter() > 0.0;}
     size_t GetTextureMemorySize() const {return 0;}
     size_t GetMeshMemorySize() const;
     size_t GetMemorySize() const {return GetMeshMemorySize() + GetTextureMemorySize();}
     size_t GetNodeCount() const;
     size_t GetMeshCount() const;
-    size_t GetMaxDepth() const;
     bool TestVisibility(Dgn::ViewContextR viewContext, SceneR);
     void RemoveChild(NodeP child);
-    void Clone(Node const& other);
-    void ClearGraphics();
-    bool IsCached() const;
-    bool Validate(NodeCP parent) const;
-    void Clear();
     void FlushStale(uint64_t staleTime);
-    ChildNodes const& GetChildren() const {return m_children;}
+    ChildNodes const* GetChildren() const {return AreChildrenValid() ? &m_childNodes : nullptr;}
     NodeCP GetParent() const {return m_parent;}
-    NodeInfo const& GetInfo() const {return m_info;}
 };
 
 /*=================================================================================**//**
@@ -218,8 +191,8 @@ private:
 public:
     THREEMX_EXPORT Scene(Dgn::DgnDbR, TransformCR location, Utf8CP realityCacheName, Utf8CP rootUrl, Dgn::Render::SystemP);
     Dgn::Render::SystemP GetRenderSystem() const {return m_renderSystem;}
-    DPoint3d GetNodeCenter(NodeInfo const& node) const {return DPoint3d::FromProduct(m_location, node.GetCenter());}
-    double GetNodeRadius(NodeInfo const& node) const {return m_scale * node.GetRadius();}
+    DPoint3d GetNodeCenter(Node const& node) const {return DPoint3d::FromProduct(m_location, node.GetCenter());}
+    double GetNodeRadius(Node const& node) const {return m_scale * node.GetRadius();}
     bool Draw(Dgn::RenderContextR);
     DRange3d GetRange(TransformCR) const;
     void DrawBoundingSpheres(Dgn::RenderContextR);
@@ -228,8 +201,6 @@ public:
     size_t GetMemorySize() const {return GetMeshMemorySize() + GetTextureMemorySize();}
     size_t GetMeshCount() const;
     size_t GetNodeCount() const;
-    size_t GetMaxDepth() const;
-    void FlushStale(uint64_t staleTime);
     bool GetLoadSynchronous() const {return m_loadSynchronous;}
     bool UseFixedResolution()const {return m_useFixedResolution;}
     double GetFixedResolution() const {return m_fixedResolution;}

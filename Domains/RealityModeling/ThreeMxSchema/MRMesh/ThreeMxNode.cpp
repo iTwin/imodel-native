@@ -17,28 +17,18 @@ Node::~Node()
 #endif
     }
 
-/*-----------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Node::Clear()
-    {
-    m_nodePath.clear();
-    m_children.clear();
-    m_geometry.clear();
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String Node::GetFilePath(SceneR scene) const
     {
-    BeAssert(!m_info.m_childPath.empty());
+    BeAssert(!m_childPath.empty());
 
     Utf8String parentPath;
     if (m_parent)
         parentPath = m_parent->m_nodePath;
 
-    return scene.ConstructNodeName(m_info.m_childPath, parentPath);
+    return scene.ConstructNodeName(m_childPath, parentPath);
     }
 
 /*-----------------------------------------------------------------------------------**//**
@@ -46,14 +36,13 @@ Utf8String Node::GetFilePath(SceneR scene) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Node::LoadChildren(SceneR scene)
     {
-    if (!m_nodePath.empty())
-        return SUCCESS;         // Already loaded.
+    BeAssert(m_childLoad.load() == ChildLoad::Invalid);
 
     Utf8String parentPath;
     if (m_parent)
         parentPath = m_parent->m_nodePath;
 
-    Utf8String myFile =  GetFilePath(scene);
+    Utf8String myFile = GetFilePath(scene);
     if (SUCCESS != scene.SynchronousRead(*this, myFile))
         {
         scene.DisplayNodeFailureWarning(myFile);
@@ -64,6 +53,7 @@ BentleyStatus Node::LoadChildren(SceneR scene)
     return SUCCESS;
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -103,28 +93,15 @@ bool Node::Validate(NodeCP parent) const
 
     return true;
     }
-
-/*-----------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool Node::IsCached() const
-    {
-    for (auto const& geometry : m_geometry)
-        {
-        if (!geometry->IsCached())
-            return false;
-        }
-
-    return true;
-    }
+#endif
 
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Node::DrawGeometry(RenderContextR context)
     {
-    for (auto const& geom : m_geometry)
-        geom->Draw(context);
+    if (m_geometry.IsValid())
+        m_geometry->Draw(context);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -133,10 +110,14 @@ void Node::DrawGeometry(RenderContextR context)
 void Node::Dump(Utf8CP header) const
     {
     printf(header);
-    printf("Children=%s, file=%s, nGeom=%d\n", m_info.m_childPath.c_str(), m_nodePath.c_str(), (int) m_geometry.size());
+    printf("Children=%s, file=%s, nGeom=%d\n", m_childPath.c_str(), m_nodePath.c_str(), m_geometry.IsValid());
 
     Utf8String childHdr = Utf8String(header) + "  ";
-    for (auto const& child : m_children)
+    ChildNodes const* children = GetChildren();
+    if (nullptr == children)
+        return;
+
+    for (auto const& child : *children)
         child->Dump(childHdr.c_str());
     }
 
@@ -150,7 +131,7 @@ void Node::DrawBoundingSphere(RenderContextR context, SceneCR scene) const
     ColorDef white=ColorDef::White();
     white.SetAlpha(50);
     graphic->SetSymbology(white, white, 0);
-    graphic->AddSolidPrimitive(*ISolidPrimitive::CreateDgnSphere(DgnSphereDetail(scene.GetNodeCenter(m_info), scene.GetNodeRadius(m_info))));
+    graphic->AddSolidPrimitive(*ISolidPrimitive::CreateDgnSphere(DgnSphereDetail(scene.GetNodeCenter(*this), scene.GetNodeRadius(*this))));
     graphic->Close();
     context.OutputGraphic(*graphic, nullptr);
     }
@@ -163,8 +144,8 @@ bool Node::TestVisibility(ViewContextR viewContext, SceneR scene)
     if (!IsDisplayable())
         return true; // this seems wierd, but "is displayable" really means its a root node with no max diameter. That means we need to draw its children.
 
-    DPoint3d center = scene.GetNodeCenter(m_info);
-    double radius = scene.GetNodeRadius(m_info);
+    DPoint3d center = scene.GetNodeCenter(*this);
+    double radius = scene.GetNodeRadius(*this);
     return viewContext.IsPointVisible(center, ViewContext::WantBoresite::No, radius);
     }
 
@@ -176,67 +157,40 @@ bool Node::Draw(RenderContextR context, SceneR scene)
     if (!TestVisibility(context, scene))
         return false;
 
-    double radius = scene.GetNodeRadius(m_info);
+    double radius = scene.GetNodeRadius(*this);
     bool tooCoarse = true;
 
     if (IsDisplayable())
         {
         if (scene.UseFixedResolution())
             {
-            tooCoarse = (radius / scene.GetFixedResolution()) > m_info.GetMaxDiameter();
+            tooCoarse = (radius / scene.GetFixedResolution()) > GetMaxDiameter();
             }
         else
             {
-            DPoint3d center = scene.GetNodeCenter(m_info);
-            double pixelSize  =  radius / context.GetPixelSizeAtPoint(&center);
-            tooCoarse = pixelSize > Scene::CalculateResolutionRatio() * m_info.GetMaxDiameter();
+            DPoint3d center = scene.GetNodeCenter(*this);
+            double pixelSize = radius / context.GetPixelSizeAtPoint(&center);
+            tooCoarse = pixelSize > GetMaxDiameter();
             }
         }
 
-    if (tooCoarse && !m_children.empty()) // this node is too coarse for current view, don't draw it and instead draw its children
+    ChildNodes const* children = GetChildren();
+    if (tooCoarse && nullptr != children) // this node is too coarse for current view, don't draw it and instead draw its children
         {
         bool childrenScheduled = false;
-        for (auto const& child : m_children)
+        for (auto const& child : *children)
             childrenScheduled |= child->Draw(context, scene);
 
         return childrenScheduled;
         }
 
     DrawGeometry(context);
-    if (!tooCoarse || m_childrenRequested || !HasChildren())
+
+    if (!tooCoarse || !NeedLoadChildren())
         return false;
 
     scene.QueueLoadChildren(*this, context.GetViewport());
     return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-size_t Node::GetMeshCount() const
-    {
-    size_t count = m_geometry.size();
-
-    for (auto const& child : m_children)
-        count += child->GetMeshCount();
-
-    return count;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-size_t Node::GetMeshMemorySize() const
-    {
-    size_t memorySize = 0;
-
-    for (auto const& mesh : m_geometry)
-        memorySize += mesh->GetMemorySize();
-
-    for (auto const& child : m_children)
-        memorySize += child->GetMeshMemorySize();
-
-    return memorySize;
     }
 
 /*-----------------------------------------------------------------------------------**//**
@@ -246,12 +200,17 @@ size_t Node::GetNodeCount() const
     {
     size_t count = 1;
 
-    for (auto const& child : m_children)
-        count += child->GetNodeCount();
+    ChildNodes const* children = GetChildren();
+    if (nullptr != children)
+        {
+        for (auto const& child : *children)
+            count += child->GetNodeCount();
+        }
 
     return count;
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -268,34 +227,27 @@ size_t Node::GetMaxDepth() const
 
     return 1 + maxChildDepth;
     }
+#endif
 
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Node::RemoveChild(NodeP failedChild)
     {
-    for (auto child = m_children.begin(); child != m_children.end(); ++child)
+    if (!AreChildrenValid())
+        return;
+
+    for (auto child = m_childNodes.begin(); child != m_childNodes.end(); ++child)
         {
         if (child->get() == failedChild)
             {
-            m_children.erase(child);
+            m_childNodes.erase(child);
             return;
             }
         }
     }
 
-/*-----------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Node::ClearGraphics()
-    {
-    for (auto const& mesh : m_geometry)
-        mesh->ClearGraphic();
-
-    for (auto const& child : m_children)
-        child->ClearGraphics();
-    }
-
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                        Grigas.Petraitis            04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -316,6 +268,7 @@ void Node::Clone(Node const& other)
         m_children.push_back(child);
         }
     }
+#endif
 
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
@@ -324,18 +277,23 @@ DRange3d Node::GetRange(TransformCR trans) const
     {
     DRange3d range = DRange3d::NullRange();
 
-    for (auto const& child : m_children)     // Prefer the more accurate child range...
-        range.UnionOf(range, child->GetRange(trans));
+    ChildNodes const* children = GetChildren();
+    if (nullptr != children)
+        {
+        for (auto const& child : *children)     // Prefer the more accurate child range...
+            range.UnionOf(range, child->GetRange(trans));
+        }
 
     if (range.IsNull())
         {
-        for (auto const& mesh : m_geometry)
-            range.UnionOf(range, mesh->GetRange(trans));
+        if (m_geometry.IsValid())
+            range.UnionOf(range, m_geometry->GetRange(trans));
         }
 
     return range;
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -352,3 +310,4 @@ void Node::FlushStale(uint64_t staleTime)
         }
     }
 
+#endif

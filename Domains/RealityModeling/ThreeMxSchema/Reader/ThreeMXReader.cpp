@@ -99,7 +99,7 @@ END_UNNAMED_NAMESPACE
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool NodeInfo::Read(JsonValueCR pt, Utf8String& name, bvector<Utf8String>& nodeResources)
+bool Node::ReadHeader(JsonValueCR pt, Utf8String& name, bvector<Utf8String>& nodeResources)
     {
     if (name.empty())
         {
@@ -207,16 +207,17 @@ BentleyStatus Node::Read3MXB(MxStreamBuffer& in, SceneR scene)
             Utf8String nodeName;
             bvector<Utf8String> nodeResources;
             nodeName = node.get("id", "").asCString();
-            NodeInfo nodeInfo;
 
-            if (!nodeInfo.Read(node, nodeName, nodeResources))
+            NodePtr nodeptr  = new Node(this);
+
+            if (!nodeptr->ReadHeader(node, nodeName, nodeResources))
                 return ERROR;
 
             nodeIds[nodeName] = nodeCount++;
             for (size_t i = 0; i < nodeResources.size(); ++i)
                 geometryNodeCorrespondence[nodeResources[i]] = nodeName;
 
-            m_children.push_back(new Node(nodeInfo, this));
+            m_childNodes.push_back(nodeptr);
             }
         }
 
@@ -232,7 +233,7 @@ BentleyStatus Node::Read3MXB(MxStreamBuffer& in, SceneR scene)
         return SUCCESS;
 
     bmap<Utf8String, Dgn::Render::TexturePtr> renderTextures;
-    for (auto& resource : resources)
+    for (JsonValueCR resource : resources)
         {
         resourceType = resource.get("type", "").asCString();
         resourceFormat = resource.get("format", "").asCString();
@@ -255,7 +256,6 @@ BentleyStatus Node::Read3MXB(MxStreamBuffer& in, SceneR scene)
 
             ByteStream jpeg(buffer, resourceSize);
             RgbImageInfo imageInfo;
-            imageInfo.m_hasAlpha = true;
             Render::Image rgba;
             if (SUCCESS != imageInfo.ReadImageFromJpgBuffer(rgba, jpeg.GetData(), jpeg.GetSize()))
                 {
@@ -272,7 +272,7 @@ BentleyStatus Node::Read3MXB(MxStreamBuffer& in, SceneR scene)
         return SUCCESS;
 
     offset = (uint32_t) ThreeMX::GetMagicNumber().size() + 4 + infoSize;
-    for (auto& resource : resources)
+    for (JsonValueCR resource : resources)
         {
         resourceType   = resource.get("type", "").asCString();
         resourceFormat = resource.get("format", "").asCString();
@@ -331,10 +331,18 @@ BentleyStatus Node::Read3MXB(MxStreamBuffer& in, SceneR scene)
             trimesh.m_textureUV  = (FPoint2d const*) ctm.GetFloatArray(CTM_UV_MAP_1);
             trimesh.m_texture    = renderTextures[texName];
 
-            m_children[nodeId->second]->m_geometry.push_back(new Geometry(trimesh, scene));
+            BeAssert(!m_childNodes[nodeId->second]->m_geometry.IsValid());
+            m_childNodes[nodeId->second]->m_geometry = new Geometry(trimesh, scene);
             }
         }
 
+    for (auto& child : m_childNodes)
+        {
+        if (child->IsDisplayable() && !child->m_geometry.IsValid())
+            {
+            BeAssert(false);
+            }
+        }
     return SUCCESS;
     }
 

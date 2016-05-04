@@ -12,8 +12,6 @@
 
 int s_debugCacheLevel = 0;
 
-static bool isUrl(Utf8CP str){return (0 == strncmp("http:", str, 5) || 0 == strncmp("https:", str, 6));}
-
 #define TABLE_NAME_ThreeMx "ThreeMx"
 
 //=======================================================================================
@@ -27,8 +25,12 @@ struct ThreeMxData
     struct RequestOptions : RealityDataCacheOptions
         {
         Scene& m_scene;
+        NodePtr m_node;
         MxStreamBuffer* m_output;
-        RequestOptions(MxStreamBuffer* output, Scene& scene) : RealityDataCacheOptions(true, false, true, true), m_scene(scene), m_output(output) {}
+        RequestOptions(MxStreamBuffer* output, NodeP node, Scene& scene) : RealityDataCacheOptions(true, false, true, true), m_scene(scene), m_node(node), m_output(output) 
+            {
+            BeAssert(m_node.IsValid() || nullptr!=m_output);
+            }
         };
 
     //=======================================================================================
@@ -104,9 +106,7 @@ struct ThreeMxData
         };
 
 protected:
-    bool m_isRoot;
     Utf8String m_filename;
-    NodePtr m_node;
     mutable MxStreamBuffer m_nodeBytes;
 
     /*---------------------------------------------------------------------------------**//**
@@ -114,10 +114,7 @@ protected:
     +---------------+---------------+---------------+---------------+---------------+------*/
     BentleyStatus InitFromSelf(IRealityDataBase const& self, RequestOptions const& options)
         {
-        ThreeMxData const& other = dynamic_cast<ThreeMxData const&>(self);
-        m_node = new Node(NodeInfo(), nullptr);
-        m_node->Clone(*other.GetNode());
-        m_filename = other.GetFilename();
+        BeAssert(options.m_node->AreChildrenValid());
         return SUCCESS;
         }
 
@@ -135,16 +132,15 @@ protected:
             return SUCCESS;
             }
 
-        m_node = new Node(NodeInfo(), nullptr);
-    
-        BeAssert(m_node->m_children.empty());
-        if (SUCCESS != m_node->Read3MXB(m_nodeBytes, options.m_scene))
+        printf ("initfromsource node=%p\n", options.m_node.get());
+        BeAssert(options.m_node->IsQueued());
+        if (SUCCESS != options.m_node->Read3MXB(m_nodeBytes, options.m_scene))
             {
             m_nodeBytes.Clear();
             m_nodeBytes.SetPos(0);    
-            m_node = nullptr;
             return ERROR;
             }
+        options.m_node->SetIsReady();
 
         if (!options.UseStorage())
             {
@@ -158,22 +154,22 @@ protected:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                03/2015
     +---------------+---------------+---------------+---------------+---------------+------*/
-    BentleyStatus InitFromStorage(Db& db, BeMutex& cs, Utf8CP id, RequestOptions const& options)
+    BentleyStatus InitFromStorage(Db& db, BeMutex& cs, Utf8CP filename, RequestOptions const& options)
         {
         if (true)
             {
             BeMutexHolder lock(cs);
 
             CachedStatementPtr stmt;
-            if (BE_SQLITE_OK != db.GetCachedStatement(stmt, "SELECT Data, DataSize FROM " TABLE_NAME_ThreeMx " WHERE Filename=?"))
+            if (BE_SQLITE_OK != db.GetCachedStatement(stmt, "SELECT Data,DataSize FROM " TABLE_NAME_ThreeMx " WHERE Filename=?"))
                 return ERROR;
 
             stmt->ClearBindings();
-            stmt->BindText(1, id, Statement::MakeCopy::No);
+            stmt->BindText(1, filename, Statement::MakeCopy::No);
             if (BE_SQLITE_ROW != stmt->Step())
                 return ERROR;
 
-            m_filename = id;
+            m_filename = filename;
 
             const void* data = stmt->GetValueBlob(0);
             int dataSize = stmt->GetValueInt(1);
@@ -187,16 +183,15 @@ protected:
             return SUCCESS;
             }
 
-        m_node = new Node(NodeInfo(), nullptr);
-
-        BeAssert(m_node->GetChildren().empty());
-        BentleyStatus result = m_node->Read3MXB(m_nodeBytes, options.m_scene);
+        printf ("initfromstorage node=%p\n", options.m_node.get());
+        BeAssert(options.m_node->IsQueued());
+        BentleyStatus result = options.m_node->Read3MXB(m_nodeBytes, options.m_scene);
         if (SUCCESS != result)
             {
             BeAssert(false);
-            m_node = nullptr;
             return ERROR;
             }
+        options.m_node->SetIsReady();
 
         m_nodeBytes.Clear();    
         m_nodeBytes.SetPos(0);    
@@ -244,9 +239,7 @@ protected:
         }
 public:
     virtual ~ThreeMxData() {}
-    NodePtr GetNode() const {return m_node;}
     Utf8StringCR GetFilename() const {return m_filename;}
-    void CloneNode(Node& node);
 };
 
 //=======================================================================================
@@ -261,7 +254,7 @@ struct HttpData : ThreeMxData, IRealityData<HttpData, BeSQLiteRealityDataStorage
     {
     DEFINE_BENTLEY_REF_COUNTED_MEMBERS
     public:
-        RequestOptions(MxStreamBuffer* output, Scene& scene, bool synchronous) : ThreeMxData::RequestOptions(output, scene)
+        RequestOptions(MxStreamBuffer* output, NodeP node, Scene& scene, bool synchronous) : ThreeMxData::RequestOptions(output, node, scene)
             {
             BeSQLiteRealityDataStorage::SelectOptions::SetForceSynchronousRequest(synchronous);
             HttpRealityDataSource::RequestOptions::SetForceSynchronousRequest(synchronous);
@@ -295,9 +288,8 @@ struct FileData : ThreeMxData, IRealityData<FileData, BeSQLiteRealityDataStorage
     {
     DEFINE_BENTLEY_REF_COUNTED_MEMBERS
     public:
-        RequestOptions(MxStreamBuffer* output, Scene& scene, bool synchronous) : ThreeMxData::RequestOptions(output, scene)
+        RequestOptions(MxStreamBuffer* output, NodeP node, Scene& scene, bool synchronous) : ThreeMxData::RequestOptions(output, node, scene)
             {
-            BeSQLiteRealityDataStorage::SelectOptions::SetForceSynchronousRequest(synchronous);
             FileRealityDataSource::RequestOptions::SetForceSynchronousRequest(synchronous);
             SetUseStorage(false);
             }
@@ -331,49 +323,27 @@ void Scene::RemoveRequest(NodeR node)
 
     if (found != m_requests.end())
         m_requests.erase(found);
-
-    for (auto const& child : node.GetChildren())
-        RemoveRequest(*child);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                06/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ThreeMxData::CloneNode(Node& node)
-    {
-    BeAssert(GetNode().IsValid());
-
-    // clone the node but keep the parent and the m_info structure the same
-    NodeP parent = node.m_parent;
-    NodeInfo  info = node.m_info;
-    node.Clone(*GetNode());
-    node.m_parent = parent;
-    node.m_info = info;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-RealityDataCacheResult Scene::RequestData(Node* node, Utf8StringCR path, bool synchronous, MxStreamBuffer* output)
+RealityDataCacheResult Scene::RequestData(NodeP node, Utf8StringCR path, bool synchronous, MxStreamBuffer* output)
     {
-    RealityDataCacheResult result;
+    DgnDb::VerifyClientThread();
 
-    if (isUrl(path.c_str()))
+    BeAssert(output || (node && node->NeedLoadChildren()));
+    if (nullptr != node)
+        node->m_childLoad.store(Node::ChildLoad::Queued);
+
+    if (IsUrl())
         {
         HttpDataPtr meshData;
-        result = m_cache->Get(meshData, path.c_str(), *new HttpData::RequestOptions(output, *this, synchronous));
-        if (RealityDataCacheResult::Success == result && nullptr != node)
-            meshData->CloneNode(*node);
-        }
-    else
-        {
-        FileDataPtr meshData;
-        result = m_cache->Get(meshData, path.c_str(), *new FileData::RequestOptions(output, *this, synchronous));
-        if (RealityDataCacheResult::Success == result && nullptr != node)
-            meshData->CloneNode(*node);
+        return m_cache->Get(meshData, path.c_str(), *new HttpData::RequestOptions(output, node, *this, synchronous));
         }
 
-    return result;
+    FileDataPtr meshData;
+    return m_cache->Get(meshData, path.c_str(), *new FileData::RequestOptions(output, node, *this, synchronous));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -393,13 +363,14 @@ Scene::RequestStatus Scene::ProcessRequests()
             break;
 
         Utf8StringCR filePath = curr->first->GetFilePath(*this);
+        BeAssert(curr->first.IsValid());
+        curr->first->SetNodePath(filePath);
+
         RealityDataCacheResult cacheStatus = RequestData(curr->first.get(), filePath.c_str(), false, nullptr);
         switch (cacheStatus)
             {
             case RealityDataCacheResult::Success:
                 {
-                curr->first->SetNodePath(filePath);
-
                 requestsProcessed++;
                 curr = m_requests.erase(curr);
                 break;
@@ -430,6 +401,8 @@ Scene::RequestStatus Scene::ProcessRequests()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Scene::SynchronousRead(NodeR node, Utf8StringCR filePath)
     {
+    BeAssert(node.NeedLoadChildren());
+
     RealityDataCacheResult status = RequestData(&node, filePath.c_str(), true, nullptr);
     if (RealityDataCacheResult::Success != status)
         return ERROR;
@@ -445,31 +418,21 @@ void Scene::QueueLoadChildren(Node& node, DgnViewportP viewport)
     {
     int requestsMade = 0;
 
-    node.m_childrenRequested = true;
+    BeAssert(node.NeedLoadChildren());
 
     auto found = m_requests.find(&node);
     if (found == m_requests.end())
         {
         Utf8StringCR fileName = node.GetFilePath(*this);
-        BeAssert(node.m_children.empty());
-        RequestData(nullptr, fileName.c_str(), false, nullptr);
+        RequestData(&node, fileName.c_str(), false, nullptr);
+
         m_requests[&node] = NodeRequest(viewport);
         ++requestsMade;
         }
     else
         {
+        BeAssert(false);
         found->second.m_viewports.insert(viewport);
         }
-
-    if (s_debugCacheLevel > 3 && requestsMade)
-        printf("%d Cache Requests Initiated, %d Exist\n", requestsMade, (int) m_requests.size());
-
-#ifdef WIP
-    if (0 != requestsMade && !m_progressiveStarted)
-        {
-        m_progressiveStarted = true;
-        ProgressiveDisplayManager::GetManager().BeginProgressive(*this);
-        }
-#endif
     }
 
