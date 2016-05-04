@@ -187,11 +187,11 @@ StatusInt LsSymbolReference::Output (LineStyleContextR lineStyleContext, LineSty
 +---------------+---------------+---------------+---------------+---------------+------*/
 void LsSymbolComponent::Draw (LineStyleContextR context)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     DgnGeometryPartPtr geomPart = GetGeometryPart();
     if (!geomPart.IsValid())
         return;
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     BeAssert(nullptr != context.GetViewContext());
     ViewContextR vContext = *context.GetViewContext();
     GeometryStreamIO::Collection collection(geomPart->GetGeometryStream().GetData(), geomPart->GetGeometryStream().GetSize());
