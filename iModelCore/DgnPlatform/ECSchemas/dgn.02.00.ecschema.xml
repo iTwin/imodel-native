@@ -406,9 +406,6 @@
         </ECCustomAttributes>
     </ECEntityClass>
 
-    <ECEntityClass typeName="DictionaryElement" modifier="Abstract">
-        <BaseClass>DefinitionElement</BaseClass>
-    </ECEntityClass>
     <ECEntityClass typeName="GroupInformationElement" modifier="Abstract">
         <BaseClass>InformationElement</BaseClass>
         <ECCustomAttributes>
@@ -809,7 +806,7 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
-        <BaseClass>DictionaryElement</BaseClass>
+        <BaseClass>DefinitionElement</BaseClass>
         <ECProperty propertyName="TextStyleId" typeName="long"/>
     </ECEntityClass>
 
@@ -1045,7 +1042,7 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
-        <BaseClass>DictionaryElement</BaseClass>
+        <BaseClass>DefinitionElement</BaseClass>
         <ECProperty propertyName="Descr" DisplayLabel="Description" typeName="string"/>
         <ECProperty propertyName="Scope" typeName="int"/>
         <ECProperty propertyName="Rank" typeName="int"/>
@@ -1054,7 +1051,7 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
-        <BaseClass>DictionaryElement</BaseClass>
+        <BaseClass>DefinitionElement</BaseClass>
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string"/>
         <ECProperty propertyName="Properties" typeName="string"/>
     </ECEntityClass>
@@ -1090,7 +1087,7 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
-        <BaseClass>DictionaryElement</BaseClass>
+        <BaseClass>DefinitionElement</BaseClass>
         <ECProperty propertyName="Data" typeName="int"/>
     </ECEntityClass>
 
@@ -1098,7 +1095,7 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
-        <BaseClass>DictionaryElement</BaseClass>
+        <BaseClass>DefinitionElement</BaseClass>
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string"/>
         <ECProperty propertyName="Data" typeName="string"/>
     </ECEntityClass>
@@ -1107,7 +1104,7 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
-        <BaseClass>DictionaryElement</BaseClass>
+        <BaseClass>DefinitionElement</BaseClass>
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" description="Description of the style"/>
         <ECProperty propertyName="Data" typeName="binary" description="Encoded style properties"/>
     </ECEntityClass>
@@ -1116,7 +1113,7 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
-        <BaseClass>DictionaryElement</BaseClass>
+        <BaseClass>DefinitionElement</BaseClass>
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" description="Description of the style"/>
         <ECProperty propertyName="Data" typeName="binary" description="Encoded style properties"/>
     </ECEntityClass>
@@ -1125,7 +1122,7 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
-        <BaseClass>DictionaryElement</BaseClass>
+        <BaseClass>DefinitionElement</BaseClass>
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" description="Description of the style"/>
         <ECProperty propertyName="Data" typeName="binary" description="Encoded style properties"/>
     </ECEntityClass>
@@ -1134,7 +1131,7 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
-        <BaseClass>DictionaryElement</BaseClass>
+        <BaseClass>DefinitionElement</BaseClass>
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" description="Description of the style"/>
         <ECProperty propertyName="Data" typeName="binary" description="Encoded style properties"/>
     </ECEntityClass>
@@ -1143,7 +1140,7 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
-        <BaseClass>DictionaryElement</BaseClass>
+        <BaseClass>DefinitionElement</BaseClass>
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" description="Description of the style"/>
         <ECProperty propertyName="Data" typeName="string" description="Encoded style properties"/>
     </ECEntityClass>
@@ -1152,7 +1149,7 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
-        <BaseClass>DictionaryElement</BaseClass>
+        <BaseClass>DefinitionElement</BaseClass>
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string"/>
         <ECProperty propertyName="Data" typeName="binary" description="Encoded texture data">
             <ECCustomAttributes>
@@ -1195,13 +1192,13 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
-        <BaseClass>DictionaryElement</BaseClass>
+        <BaseClass>DefinitionElement</BaseClass>
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string"/>
         <ECProperty propertyName="Value" typeName="string"/>
     </ECEntityClass>
 
     <ECEntityClass typeName="ViewDefinition" modifier="Abstract">
-        <BaseClass>DictionaryElement</BaseClass>
+        <BaseClass>DefinitionElement</BaseClass>
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string"/>
         <ECProperty propertyName="Source" displayLabel="Source" typeName="int"/>
         <ECNavigationProperty propertyName="BaseModelId" relationshipName="BaseModelForView" direction="Backward"/>
@@ -1292,7 +1289,7 @@
     </ECEntityClass>
 
     <ECEntityClass typeName="GeometryPart">
-        <BaseClass>DictionaryElement</BaseClass>
+        <BaseClass>DefinitionElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>

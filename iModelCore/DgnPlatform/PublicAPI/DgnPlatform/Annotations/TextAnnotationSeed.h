@@ -79,9 +79,9 @@ typedef DgnElementId TextAnnotationSeedId;
 //! @ingroup GROUP_Annotation
 // @bsiclass                                                    Jeff.Marker     07/2014
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE TextAnnotationSeed : DictionaryElement
+struct EXPORT_VTABLE_ATTRIBUTE TextAnnotationSeed : DefinitionElement
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_TextAnnotationSeed, DictionaryElement);
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_TextAnnotationSeed, DefinitionElement);
 
 private:
     friend struct TextAnnotationSeedPersistence;
@@ -105,7 +105,7 @@ public:
     static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_TextAnnotationSeed); }
     static DgnClassId QueryDgnClassId(DgnDbR db) { return DgnClassId(QueryECClassId(db)); }
 
-    explicit TextAnnotationSeed(DgnDbR db) : T_Super(CreateParams(db, QueryDgnClassId(db), DgnCode())) {}
+    explicit TextAnnotationSeed(DgnDbR db) : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryDgnClassId(db), DgnCode())) {}
     explicit TextAnnotationSeed(CreateParams const& params) : T_Super(params) {}
     static TextAnnotationSeedPtr Create(DgnDbR project) { return new TextAnnotationSeed(project); }
     TextAnnotationSeedPtr CreateCopy() const { return MakeCopy<TextAnnotationSeed>(); }

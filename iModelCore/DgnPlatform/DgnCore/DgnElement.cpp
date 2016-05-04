@@ -216,10 +216,10 @@ DgnDbStatus DgnElement::_OnInsert()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DictionaryElement::_OnInsert()
+DgnDbStatus DefinitionElement::_OnInsert()
     {
-    // dictionary elements can reside *only* in the dictionary model.
-    auto status = GetModel()->IsDictionaryModel() ? T_Super::_OnInsert() : DgnDbStatus::WrongModel;
+    // DefinitionElements can reside *only* in a DefinitionModel
+    DgnDbStatus status = GetModel()->IsDefinitionModel() ? T_Super::_OnInsert() : DgnDbStatus::WrongModel;
     return status;
     }
 
@@ -888,10 +888,16 @@ DgnDbStatus DgnElement::SaveUserProperties() const
     CachedECSqlStatementPtr stmt = GetDgnDb().GetPreparedECSqlStatement("UPDATE " DGN_SCHEMA(DGN_CLASSNAME_Element) " SET UserProperties=? WHERE ECInstanceId=?");
     BeAssert(stmt.IsValid());
 
+    Utf8String str;
     if (m_userProperties->IsEmpty())
+        {
         stmt->BindNull(1);
+        }
     else
-        stmt->BindText(1, m_userProperties->ToString().c_str(), IECSqlBinder::MakeCopy::Yes);
+        {
+        str = m_userProperties->ToString();
+        stmt->BindText(1, str.c_str(), IECSqlBinder::MakeCopy::No);
+        }
  
     BeAssert(GetElementId().IsValid());
     stmt->BindId(2, GetElementId());
@@ -2332,14 +2338,6 @@ DgnDbStatus DgnElement::ExternalKeyAspect::Delete(DgnElementCR element, DgnAutho
         return DgnDbStatus::WriteError;
 
     return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DictionaryElement::CreateParams::CreateParams(DgnDbR db, DgnClassId classId, DgnCode const& code, Utf8CP label, DgnElementId parentId)
-    : T_Super(db, DgnModel::DictionaryId(), classId, code, label, parentId) 
-    {
     }
 
 /*---------------------------------------------------------------------------------**//**

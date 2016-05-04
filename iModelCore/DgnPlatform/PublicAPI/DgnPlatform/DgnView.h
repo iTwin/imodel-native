@@ -39,9 +39,9 @@ enum class DgnViewSource
 //! @ingroup GROUP_DgnView
 // @bsiclass                                                      Paul.Connelly   10/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ViewDefinition : DictionaryElement
+struct EXPORT_VTABLE_ATTRIBUTE ViewDefinition : DefinitionElement
 {
-    DEFINE_T_SUPER(DictionaryElement);
+    DEFINE_T_SUPER(DefinitionElement);
 public:
     //! Holds the data which describes a view definition
     struct Data

@@ -17,6 +17,7 @@ protected:
     Dgn::ScopedDgnHost m_testHost;
     DgnDbPtr m_testDb;
     WString m_testFileName;
+    bool    m_wantTestDomain;
 
     DgnModelId m_testModelId;
     SpatialModelPtr m_testModel;
@@ -41,7 +42,7 @@ protected:
     void UpdateDgnDbExtents();
 
 public:
-    ChangeTestFixture(WCharCP testFileName) : m_testFileName (testFileName) {}
+    ChangeTestFixture(WCharCP testFileName, bool wantTestDomain=false);
     virtual ~ChangeTestFixture() {}
     virtual void SetUp() override {}
     virtual void TearDown() override { if (m_testDb.IsValid()) m_testDb->SaveChanges("Saving DgnDb at end of test"); }

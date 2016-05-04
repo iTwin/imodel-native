@@ -31,9 +31,9 @@ typedef bvector<DgnCategoryId> DgnCategoryIdList;
 
 //! A sub-category of a category.
 //! @ingroup GROUP_DgnCategory
-struct EXPORT_VTABLE_ATTRIBUTE DgnSubCategory : DictionaryElement
+struct EXPORT_VTABLE_ATTRIBUTE DgnSubCategory : DefinitionElement
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_SubCategory, DictionaryElement);
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_SubCategory, DefinitionElement);
 public:
     //! The parameters that can determine how graphics on a SubCategory appear when drawn.
     //! @ingroup GROUP_DgnCategory
@@ -241,9 +241,9 @@ public:
 //! of additional sub-categories.
 //! @ingroup GROUP_DgnCategory
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DgnCategory : DictionaryElement
+struct EXPORT_VTABLE_ATTRIBUTE DgnCategory : DefinitionElement
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_Category, DictionaryElement);
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_Category, DefinitionElement);
 public:
     //! The Rank of a category indicates how it was created and where it can be used.
     //! @ingroup GROUP_DgnCategory

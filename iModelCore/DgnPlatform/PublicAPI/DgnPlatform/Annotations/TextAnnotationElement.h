@@ -65,6 +65,7 @@ public:
     TextAnnotationCP GetAnnotation() const { return m_annotation.get(); }
     void SetAnnotation(TextAnnotationCP value) { m_annotation = value ? value->Clone() : nullptr; }
     DGNPLATFORM_EXPORT void GenerateGeometricPrimitive(GeometrySourceR, GenerateReason) const;
+    DGNPLATFORM_EXPORT void CopyFrom(TextAnnotationData const&);
     DGNPLATFORM_EXPORT void RemapIds(DgnImportContext&);
 };
 
@@ -93,7 +94,8 @@ protected:
     virtual SnapStatus _OnSnap(SnapContextR context) const override { return context.DoTextSnap(); } // Default snap using text box...
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnUpdate(DgnElementCR originalElment) override;
-    DGNPLATFORM_EXPORT virtual void _RemapIds(DgnImportContext& context) override { GetItemR().RemapIds(context); }
+    DGNPLATFORM_EXPORT DgnElementPtr virtual _Clone(DgnDbStatus* status=nullptr, DgnElement::CreateParams const* params=nullptr) const;
+    DGNPLATFORM_EXPORT DgnElementPtr virtual _CloneForImport(DgnDbStatus*, DgnModelR destModel, DgnImportContext&) const;
     TextAnnotationDataCP GetItemCP() const { return TextAnnotationData::GetCP(*this); }
     DGNPLATFORM_EXPORT TextAnnotationDataR GetItemR();
 
@@ -138,7 +140,8 @@ protected:
     virtual SnapStatus _OnSnap(SnapContextR context) const override { return context.DoTextSnap(); } // Default snap using text box...
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnUpdate(DgnElementCR originalElment) override;
-    DGNPLATFORM_EXPORT virtual void _RemapIds(DgnImportContext& context) override { GetItemR().RemapIds(context); }
+    DGNPLATFORM_EXPORT DgnElementPtr virtual _Clone(DgnDbStatus* status=nullptr, DgnElement::CreateParams const* params=nullptr) const;
+    DGNPLATFORM_EXPORT DgnElementPtr virtual _CloneForImport(DgnDbStatus*, DgnModelR destModel, DgnImportContext&) const;
     TextAnnotationDataCP GetItemCP() const { return TextAnnotationData::GetCP(*this); }
     DGNPLATFORM_EXPORT TextAnnotationDataR GetItemR();
 

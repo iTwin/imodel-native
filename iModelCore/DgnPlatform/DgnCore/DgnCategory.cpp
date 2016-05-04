@@ -109,7 +109,7 @@ void DgnCategory::_CopyFrom(DgnElementCR el)
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCategory::CreateParams::CreateParams(DgnDbR db, Utf8StringCR name, Scope scope, Rank rank, Utf8StringCR descr)
-    : T_Super(db, QueryDgnClassId(db), CreateCategoryCode(name)), m_data(scope, rank, descr)
+    : T_Super(db, DgnModel::DictionaryId(), QueryDgnClassId(db), CreateCategoryCode(name)), m_data(scope, rank, descr)
     {
     //
     }
@@ -332,7 +332,7 @@ void DgnSubCategory::_CopyFrom(DgnElementCR el)
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnSubCategory::CreateParams::CreateParams(DgnDbR db, DgnCategoryId catId, Utf8StringCR name, Appearance const& app, Utf8StringCR descr)
-    : T_Super(db, QueryDgnClassId(db), CreateSubCategoryCode(catId, name), nullptr, catId), m_data(app, descr)
+    : T_Super(db, DgnModel::DictionaryId(), QueryDgnClassId(db), CreateSubCategoryCode(catId, name), nullptr, catId), m_data(app, descr)
     {
     }
 

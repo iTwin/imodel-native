@@ -98,7 +98,7 @@ void LightDefinition::_CopyFrom(DgnElementCR el)
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 LightDefinition::CreateParams::CreateParams(DgnDbR db, Utf8StringCR name, Utf8StringCR value, Utf8StringCR descr)
-  : T_Super(db, QueryDgnClassId(db), CreateLightDefinitionCode(name)),
+  : T_Super(db, DgnModel::DictionaryId(), QueryDgnClassId(db), CreateLightDefinitionCode(name)),
     m_data(value, descr)
     {
     //

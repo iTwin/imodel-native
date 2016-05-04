@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: DgnCore/Annotations/AnnotationTextBlockLayout.cpp $
-//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
 
 #include <DgnPlatformInternal.h> 
@@ -371,9 +371,10 @@ bool AnnotationLayoutRun::AffectsJustification() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-AnnotationLayoutLine::AnnotationLayoutLine() :
+AnnotationLayoutLine::AnnotationLayoutLine(AnnotationParagraphCR seedParagraph) :
     T_Super()
     {
+    m_seedParagraph = &seedParagraph;
     m_isValid = false;
     m_layoutRange.Init();
     m_offsetFromDocument.Zero();
@@ -384,6 +385,7 @@ AnnotationLayoutLine::AnnotationLayoutLine() :
 //---------------------------------------------------------------------------------------
 void AnnotationLayoutLine::CopyFrom(AnnotationLayoutLineCR rhs)
     {
+    m_seedParagraph = rhs.m_seedParagraph;
     m_isValid = rhs.m_isValid;
     m_layoutRange = rhs.m_layoutRange;
     m_offsetFromDocument = rhs.m_offsetFromDocument;
@@ -463,7 +465,7 @@ void AnnotationTextBlockLayout::CopyFrom(AnnotationTextBlockLayoutCR rhs)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-AnnotationLayoutLinePtr AnnotationTextBlockLayout::FlushLine(AnnotationLayoutLineR line)
+AnnotationLayoutLinePtr AnnotationTextBlockLayout::FlushLine(AnnotationLayoutLineR line, AnnotationParagraphCR nextLineSeedParagraph)
     {
     // Based on comments in Update, we want to guarantee that each layout line has at least one run.
     if (line.GetRuns().empty())
@@ -472,7 +474,7 @@ AnnotationLayoutLinePtr AnnotationTextBlockLayout::FlushLine(AnnotationLayoutLin
         if (m_lines.empty() || m_lines.back()->GetRuns().empty())
             {
             BeAssert(false);
-            return AnnotationLayoutLine::Create();
+            return AnnotationLayoutLine::Create(nextLineSeedParagraph);
             }
             
         // While we could technically make the following code agnostic of run type, this should always be true, and other things must be fixed instead of working around it here.
@@ -480,7 +482,7 @@ AnnotationLayoutLinePtr AnnotationTextBlockLayout::FlushLine(AnnotationLayoutLin
         if (AnnotationRunType::LineBreak != previousRun.GetType())
             {
             BeAssert(false);
-            return AnnotationLayoutLine::Create();
+            return AnnotationLayoutLine::Create(nextLineSeedParagraph);
             }
 
         AnnotationLineBreakRunPtr lineBreak = ((AnnotationLineBreakRunCR)previousRun).CloneAsLineBreakRun();
@@ -509,7 +511,7 @@ AnnotationLayoutLinePtr AnnotationTextBlockLayout::FlushLine(AnnotationLayoutLin
 
     m_lines.push_back(&line);
 
-    return AnnotationLayoutLine::Create();
+    return AnnotationLayoutLine::Create(nextLineSeedParagraph);
     }
 
 //---------------------------------------------------------------------------------------
@@ -522,15 +524,18 @@ void AnnotationTextBlockLayout::PopulateLines()
     //  All blank lines interior to a paragraph will contain a data (vs. layout) line break run. A potential trailing blank line of a paragraph may have no data runs, but will always have been preceeded by a line break.
     //  For ease of algorithms, we synthesize a new layout line break run for these trailing lines based on the preceeding run.
 
+    if (0 == m_doc->GetParagraphs().size())
+        return;
+
     double docWidth = m_doc->GetDocumentWidth();
     bool isWrapped = (docWidth > 0.0);
     
-    AnnotationLayoutLinePtr line = AnnotationLayoutLine::Create();
+    AnnotationLayoutLinePtr line = AnnotationLayoutLine::Create(*m_doc->GetParagraphs()[0]);
 
     for (size_t iParagraph = 0; iParagraph < m_doc->GetParagraphs().size(); ++iParagraph)
         {
         if (iParagraph > 0)
-            line = FlushLine(*line);
+            line = FlushLine(*line, *m_doc->GetParagraphs()[iParagraph]);
 
         for (auto const& run : m_doc->GetParagraphs()[iParagraph]->GetRuns())
             {
