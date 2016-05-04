@@ -1582,7 +1582,7 @@ TEST_F(ECDbAdapterTests, DeleteRelationship_HoldingRelationshipWithChildWithMult
     EXPECT_TRUE(adapter.HasRelationship(relClass, otherParent, child));
     }
 
-TEST_F(ECDbAdapterTests, DeleteRelationship_EmbeddingRelationshipWithChildWithMultipleParents_DeletesRelationshipAndChild)
+TEST_F(ECDbAdapterTests, RelateInstances_EmbeddingRelationshipAndAdditonalParent_Error)
     {
     auto db = GetTestDb();
     ECDbAdapter adapter(*db);
@@ -1590,27 +1590,15 @@ TEST_F(ECDbAdapterTests, DeleteRelationship_EmbeddingRelationshipWithChildWithMu
     auto ecClass = adapter.GetECClass("TestSchema.TestClass");
     auto relClass = adapter.GetECRelationshipClass("TestSchema.EmbeddingRel");
 
-    ECInstanceKey parent, child, otherParent, rel1, rel2;
+    ECInstanceKey parent, child, otherParent;
     INSERT_INSTANCE(*db, ecClass, parent);
     INSERT_INSTANCE(*db, ecClass, child);
     INSERT_INSTANCE(*db, ecClass, otherParent);
-    INSERT_RELATIONSHIP(*db, relClass, parent, child, rel1);
-    INSERT_RELATIONSHIP(*db, relClass, otherParent, child, rel2);
-    EXPECT_EQ(2, adapter.FindInstances(relClass).size());
 
-    CREATE_MockECDbAdapterDeleteListener(listener);
-    EXPECT_CALL_OnBeforeDelete(listener, db, child);
-    EXPECT_CALL_OnBeforeDelete(listener, db, rel1);
-    EXPECT_CALL_OnBeforeDelete(listener, db, rel2);
-    adapter.RegisterDeleteListener(&listener);
+    ASSERT_TRUE(adapter.RelateInstances(relClass, parent, child).IsValid());
+    ASSERT_FALSE(adapter.RelateInstances(relClass, otherParent, child).IsValid());
 
-    EXPECT_EQ(SUCCESS, adapter.DeleteRelationship(relClass, parent, child));
-
-    auto notDeletedInstances = adapter.FindInstances(ecClass);
-    EXPECT_EQ(2, notDeletedInstances.size());
-    EXPECT_CONTAINS(notDeletedInstances, parent.GetECInstanceId());
-    EXPECT_CONTAINS(notDeletedInstances, otherParent.GetECInstanceId());
-    EXPECT_EQ(0, adapter.FindInstances(relClass).size());
+    EXPECT_EQ(1, adapter.FindInstances(relClass).size());
     }
 
 TEST_F(ECDbAdapterTests, DeleteRelationship_OnBeforeDeleteReturnsAdditionalToDelete_DeletesAdditionalInstancesWithTheirChildren)

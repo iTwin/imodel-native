@@ -25,8 +25,8 @@ class SchemaChangeWSObjectsReader : public WSObjectsReader
         rapidjson::Value m_emptyArrayJsonObject;
 
     public:
-        SchemaChangeWSObjectsReader(std::shared_ptr<WSObjectsReader> reader, Utf8String schemaName) : 
-            m_reader(reader), 
+        SchemaChangeWSObjectsReader(std::shared_ptr<WSObjectsReader> reader, Utf8String schemaName) :
+            m_reader(reader),
             m_schemaName(schemaName),
             m_emptyArrayJsonObject(rapidjson::Type::kArrayType)
             {}
