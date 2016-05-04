@@ -106,9 +106,9 @@ typedef DgnElementId AnnotationTextStyleId;
 //! @ingroup GROUP_Annotation
 // @bsiclass                                                    Jeff.Marker     05/2014
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE AnnotationTextStyle : DictionaryElement
+struct EXPORT_VTABLE_ATTRIBUTE AnnotationTextStyle : DefinitionElement
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_AnnotationTextStyle, DictionaryElement);
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_AnnotationTextStyle, DefinitionElement);
     
 private:
     friend struct AnnotationTextStylePersistence;
@@ -134,7 +134,7 @@ public:
     static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_AnnotationTextStyle); }
     static DgnClassId QueryDgnClassId(DgnDbR db) { return DgnClassId(QueryECClassId(db)); }
     
-    explicit AnnotationTextStyle(DgnDbR db) : T_Super(CreateParams(db, QueryDgnClassId(db), DgnCode())) {}
+    explicit AnnotationTextStyle(DgnDbR db) : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryDgnClassId(db), DgnCode())) {}
     explicit AnnotationTextStyle(CreateParams const& params) : T_Super(params) {}
     static AnnotationTextStylePtr Create(DgnDbR db) { return new AnnotationTextStyle(db); }
     AnnotationTextStylePtr CreateCopy() const { return MakeCopy<AnnotationTextStyle>(); }

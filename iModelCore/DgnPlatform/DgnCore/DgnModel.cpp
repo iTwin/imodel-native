@@ -367,8 +367,8 @@ DgnDbStatus DefinitionModel::_OnInsertElement(DgnElementR el)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DictionaryModel::_OnInsertElement(DgnElementR el)
     {
-    // dictionary model can contain *only* dictionary elements
-    auto status = el.IsDictionaryElement() ? T_Super::_OnInsertElement(el) : DgnDbStatus::WrongModel;
+    // dictionary model can contain *only* DefinitionElements
+    DgnDbStatus status = el.IsDefinitionElement() ? T_Super::_OnInsertElement(el) : DgnDbStatus::WrongModel;
     return status;
     }
 

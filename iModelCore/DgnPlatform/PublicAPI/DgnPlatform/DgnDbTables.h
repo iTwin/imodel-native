@@ -25,7 +25,6 @@
 #define DGN_CLASSNAME_ComponentModel        "ComponentModel"
 #define DGN_CLASSNAME_DefinitionElement     "DefinitionElement"
 #define DGN_CLASSNAME_DefinitionModel       "DefinitionModel"
-#define DGN_CLASSNAME_DictionaryElement     "DictionaryElement"
 #define DGN_CLASSNAME_DictionaryModel       "DictionaryModel"
 #define DGN_CLASSNAME_AnnotationElement2d   "AnnotationElement2d"
 #define DGN_CLASSNAME_DrawingGraphic        "DrawingGraphic"

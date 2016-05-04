@@ -1580,9 +1580,9 @@ public:
 //!  @ingroup LineStyleManagerModule
 // @bsiclass
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE LineStyleElement : DictionaryElement
+struct EXPORT_VTABLE_ATTRIBUTE LineStyleElement : DefinitionElement
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_LineStyle, DictionaryElement);
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_LineStyle, DefinitionElement);
     
 private:
     Utf8String m_description;
@@ -1605,7 +1605,7 @@ public:
     static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_LineStyle); }
     static DgnClassId QueryDgnClassId(DgnDbR db) { return DgnClassId(QueryECClassId(db)); }
     
-    explicit LineStyleElement(DgnDbR db) : T_Super(CreateParams(db, QueryDgnClassId(db), DgnCode())) {}
+    explicit LineStyleElement(DgnDbR db) : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryDgnClassId(db), DgnCode())) {}
     explicit LineStyleElement(CreateParams const& params) : T_Super(params) {}
     static LineStyleElementPtr Create(DgnDbR db) { return new LineStyleElement(db); }
     LineStyleElementPtr CreateCopy() const { return MakeCopy<LineStyleElement>(); }

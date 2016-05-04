@@ -916,8 +916,7 @@ public:
 //=======================================================================================
 //! A definition model which contains definitions like materials and styles which are used
 //! throughout a DgnDb. Each DgnDb has exactly one DictionaryModel.
-//! A DictionaryModel can contain @em only DictionaryElements; and likewise, a
-//! DictionaryElement can @em only reside in a DictionaryModel.
+//! A DictionaryModel can contain @em only DefinitionElements.
 //! The dictionary model cannot be copied or deleted. In general, dictionary elements
 //! are copied from one dictionary model to another, often indirectly as the result of
 //! copying another element which depends upon them.
