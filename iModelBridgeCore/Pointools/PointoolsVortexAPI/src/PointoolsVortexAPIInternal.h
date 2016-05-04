@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: include/PointoolsVortexAPIInternal.h $
+|     $Source: src/PointoolsVortexAPIInternal.h $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -14,7 +14,32 @@
     #include <Commdlg.h>
     #include <winsock.h>
     #include <Shlwapi.h>
+    #include <io.h>
+    #include <shlobj.h>
+#else
+    // NEEDS_WORK_VORTEX_DGNDB
+    // use BeStringUtilities::Wcsncpy
+    #define wcscpy_s
+    #define wcsncpy_s
+    #define _snwprintf_s
+    #define wcsnlen_s
+
+    #define FILE_ATTRIBUTE_NORMAL 0x00000080  
+    #define PathStripPathW
+    #define PathRemoveExtensionW
+    #define PathRemoveFileSpecW
+    #define PathFindExtensionW
+    #define PathRemoveFileSpecW
+    #define PathAppendW
+    #define PathRenameExtensionW
+    #define PathRelativePathToW
+    #define SetCurrentDirectoryW
+    #define _waccess(a,b) 1
+
+
+
 #endif
+
 
 // C header files
 #include <assert.h>
@@ -28,6 +53,9 @@
 #include <iomanip>
 #include <memory.h>
 #include <stdarg.h>
+#include <wchar.h>
+#include <locale.h>
+#include <string.h>
 
 #ifdef _DEBUG
 #define FILE_TRACE 1
@@ -71,6 +99,10 @@
 #include <ptengine/renderengine.h>
 #endif
 
+#include <Bentley/Bentley.h>
+#include <Bentley/BeStringUtilities.h>
+#include <Bentley/BeTimeUtilities.h>
+#include <ptapi/PointoolsVortexAPI.h>
 #include <ptengine/pointsScene.h>
 #include <ptengine/renderContext.h>
 #include <ptfs/filepath.h>
@@ -81,5 +113,5 @@
 #include <PTRMI/Manager.h>
 #include <ptengine/ClipManager.h>
 
-#include <ptapi/PointoolsVortexAPI.h>
+
 

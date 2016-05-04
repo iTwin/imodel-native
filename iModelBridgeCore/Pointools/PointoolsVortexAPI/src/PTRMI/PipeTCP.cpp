@@ -119,7 +119,7 @@ PTRMI::Status PipeTCP::stopDispatcher(void)
 	return status;
 }
 
-unsigned long __stdcall PipeTCP::dispatcherCall(void *params)
+unsigned long STDCALL_ATTRIBUTE PipeTCP::dispatcherCall(void *params)
 {
 	PipeTCP	*	pipeTCP;
 	Status		status;

@@ -21,7 +21,7 @@ CompileOptionsMki               = $(SrcRoot)Pointools/PointoolsVortexAPI/mki/Poi
 #   Macros
 #--------------------------------------------------------------------------------------
 appSrc              = $(_MakeFilePath)
-MultiCompileDepends = $(_MakeFileSpec) $(appSrc)Include/PointoolsVortexAPIInternal.h
+MultiCompileDepends = $(_MakeFileSpec) $(appSrc)src/PointoolsVortexAPIInternal.h
 
 always:
     !~@mkdir $(o)    
@@ -51,7 +51,7 @@ dirToSearch=$(PointoolsVortexAPIInclude)
 #----------------------------------------------------------------------
 #   Pre-compiled header
 #----------------------------------------------------------------------
-PchCompiland        = $(basedir)/src/PointoolsVortexAPIInternal.cpp
+PchCompiland        = $(basedir)src/PointoolsVortexAPIInternal.cpp
 PchOutputDir        = $(o)
 PchExtraOptions     = -Zm160
 PchExplicitDepends  = $(MultiCompileDepends)
@@ -59,7 +59,7 @@ PchExplicitDepends  = $(MultiCompileDepends)
 %if defined (winNT) && defined (BUILD_TOOLSET) 
     %if $(BUILD_TOOLSET) == "GCC"
         # Avoid internal compiler error in GCC using windows ndk toolchain
-        GCC_NO_PRE_COMPILED_HEADER = 1
+        #GCC_NO_PRE_COMPILED_HEADER = 1
     %endif
 %endif
 %include $(SharedMki)PreCompileHeader.mki
@@ -85,13 +85,18 @@ $(o)PointoolsBentleyLicense$(oext)       : $(basedir)src/ptlic/PointoolsBentleyL
 $(o)PointoolsBentleyLicenseAPI$(oext)    : $(basedir)src/ptlic/PointoolsBentleyLicenseAPI.cpp                    $(basedir)include/ptlic/PointoolsBentleyLicenseAPI.h             ${MultiCompileDepends}
 %endif
 
+
 $(o)OBBox$(oext)                         : $(basedir)src/pt/OBBox.cpp                                            $(basedir)include/pt/OBBox.h                                     ${MultiCompileDepends}
+
+%if 1
 
 $(o)DebugAssert$(oext)                   : $(basedir)src/pt/DebugAssert.cpp                                      $(basedir)include/pt/DebugAssert.h                               ${MultiCompileDepends}
 
 $(o)System$(oext)                        : $(basedir)src/pt/System.cpp                                           $(basedir)include/pt/System.h                                    ${MultiCompileDepends}
 
 $(o)FilePath$(oext)                      : $(basedir)src/ptds/FilePath.cpp                                       $(basedir)include/ptds/FilePath.h                                ${MultiCompileDepends}
+
+
 
 $(o)PointoolsAPI_imaging$(oext)          : $(basedir)src/ptapi/PointoolsAPI_imaging.cpp                                                                                            ${MultiCompileDepends}
 
@@ -131,16 +136,11 @@ $(o)PointoolsAPI_shader$(oext)           : $(basedir)src/ptapi/PointoolsAPI_shad
 
 $(o)datatreeIO$(oext)                    : $(basedir)src/pt/datatreeIO.cpp                                       $(basedir)include/pt/datatreeIO.h                                ${MultiCompileDepends}
 
-
-
-
 $(o)ptstring$(oext)                      : $(basedir)src/pt/ptstring.cpp                                         $(basedir)include/pt/ptstring.h                                  ${MultiCompileDepends}
-
 
 $(o)PointoolsAPI_query$(oext)            : $(basedir)src/ptapi/PointoolsAPI_query.cpp                                                                                              ${MultiCompileDepends}
 
 $(o)renderRGBEffect$(oext)               : $(basedir)src/ptengine/renderRGBEffect.cpp                            $(basedir)include/ptengine/renderRGBEffect.h                     ${MultiCompileDepends}
-
 
 $(o)IClashObjectManager$(oext)           : $(basedir)src/vortexobjects/IClashObjectManager.cpp                   $(basedir)include/vortexobjects/IClashObjectManager.h            ${MultiCompileDepends}
 
@@ -371,6 +371,8 @@ $(o)IsolationFilter$(oext)               : $(basedir)src/ptedit/IsolationFilter.
 $(o)visibilityEngine$(oext)              : $(basedir)src/ptengine/visibilityEngine.cpp                           $(basedir)include/ptengine/visibilityEngine.h                    ${MultiCompileDepends}
 
 $(o)glFrustum$(oext)                     : $(basedir)src/ptgl/glFrustum.cpp                                      $(basedir)include/ptgl/glFrustum.h                               ${MultiCompileDepends}
+
+%endif
 
 %if defined(HAVE_OPENGL)
 $(o)renderClipEffect$(oext)              : $(basedir)src/ptengine/renderClipEffect.cpp                           $(basedir)include/ptengine/renderClipEffect.h                    ${MultiCompileDepends}

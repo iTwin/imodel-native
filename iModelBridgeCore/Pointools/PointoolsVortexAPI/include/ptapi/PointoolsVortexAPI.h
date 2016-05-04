@@ -29,7 +29,8 @@
 #define PT_FIT_MODE_USE_SELECTED	0x01
 #define PT_FIT_MODE_USE_INPUT		0x02
 
-#define PTAPI	__stdcall
+#define PTAPI	STDCALL_ATTRIBUTE
+
 
 /* view parameters - these operate in current viewport */ 
 PTbool	PTAPI ptReadViewFromDX( void );

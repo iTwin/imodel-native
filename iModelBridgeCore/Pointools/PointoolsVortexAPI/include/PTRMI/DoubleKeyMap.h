@@ -50,7 +50,7 @@ protected:
 	{
 		MutexScope	mutexScope(mutex);
 
-		M::iterator	it;
+		typename M::iterator	it;
 
 		if((it = map.find(key)) != map.end())
 		{
@@ -62,7 +62,7 @@ protected:
 
 	template<typename M, typename K> T *removeIndex(M &map, K &key)
 	{
-		M::iterator			it;
+        typename M::iterator			it;
 		T				*	item = NULL;
 															// Look up item and erase it's map entry
 		MutexScope	mutexScope(mutex);
@@ -128,7 +128,7 @@ protected:
 
 	template<typename M, typename K> const K *getKey(M &map, T *item)
 	{
-		M::iterator it;
+        typename M::iterator it;
 
 		MutexScope	mutexScope(mutex);
 
@@ -206,7 +206,7 @@ protected:
 
 	template<typename M, typename K> bool getFirstKey(M &map, K &key)
 	{
-		M::iterator	it;
+		typename M::iterator	it;
 
 		MutexScope	mutexScope(mutex);
 

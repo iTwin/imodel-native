@@ -21,7 +21,7 @@
 
 namespace pt {
 
-std::string __cdecl format(const char* fmt,...) {
+std::string CDECL_ATTRIBUTE format(const char* fmt,...) {
     va_list argList;
     va_start(argList,fmt);
     std::string result = vformat(fmt, argList);

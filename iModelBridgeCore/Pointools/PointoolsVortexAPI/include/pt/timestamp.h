@@ -7,29 +7,13 @@ namespace pt
 {
 struct TimeStamp
 {
-	void tick() { QueryPerformanceCounter(&_time); }
-	void zero() { _time.QuadPart = 0; }
-	
-	TimeStamp operator + (const TimeStamp &t) { _time.QuadPart += t._time.QuadPart; return *this; }
-	TimeStamp operator - (const TimeStamp &t) { _time.QuadPart -= t._time.QuadPart; return *this; }
-	TimeStamp operator * (const TimeStamp &t) { _time.QuadPart *= t._time.QuadPart; return *this; }
-	TimeStamp operator / (const TimeStamp &t) { _time.QuadPart /= t._time.QuadPart; return *this; }
-	void operator += (const TimeStamp &t) { _time.QuadPart += t._time.QuadPart; }
-	void operator -= (const TimeStamp &t) { _time.QuadPart -= t._time.QuadPart; }
-	void operator *= (const TimeStamp &t) { _time.QuadPart *= t._time.QuadPart; }
-	void operator /= (const TimeStamp &t) { _time.QuadPart /= t._time.QuadPart; }
-	
-	bool operator == (const TimeStamp &t) { return _time.QuadPart == t._time.QuadPart; }
-	TimeStamp& operator = (const TimeStamp &t) { _time.QuadPart = t._time.QuadPart; return *this; }
+    void tick();
+    void zero() { m_timeMillis = 0; }
 
-	double operator()(double) const { return (double)_time.QuadPart; }
-	int64_t operator()(int64_t) const { return (int64_t)_time.QuadPart; }
-
-	LARGE_INTEGER _time;
-
-	CCLASSES_API static bool initialize();
 	CCLASSES_API static double delta_s(const TimeStamp &t0, const TimeStamp &t1);
 	CCLASSES_API static double delta_ms(const TimeStamp &t0, const TimeStamp &t1);
+
+    uint64_t m_timeMillis;
 };
 
 

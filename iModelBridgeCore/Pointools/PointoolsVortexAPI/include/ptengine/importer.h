@@ -14,9 +14,9 @@
 #include <ptengine/ptengine_api.h>
 
 #ifdef POINTSIO_EXPORTS
-#define PNTSIO_API __declspec(dllexport)
+#define PNTSIO_API EXPORT_ATTRIBUTE
 #else
-#define PNTSIO_API __declspec(dllimport)
+#define PNTSIO_API IMPORT_ATTRIBUTE
 #endif
 //! Points Importer plugin base class
 /*!

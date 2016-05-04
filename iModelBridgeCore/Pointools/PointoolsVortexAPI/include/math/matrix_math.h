@@ -282,7 +282,7 @@ inline	const	matrix<N, 1, T>	concat(const matrix<M, 1, T> &m) const
 				}
 //special homogenuos 3d vector *matrix(4,4) case
 //for performance reasons, this is coded explicitly
-template<class T> inline void	vec3_multiply_mat4(const matrix<4,4, T> &m, matrix<4,1, T> &res) const
+inline void	vec3_multiply_mat4(const matrix<4,4, T> &m, matrix<4,1, T> &res) const
 				{
 					//make sure is a vector!
 					TemplateAssert(M==1 && N==4);

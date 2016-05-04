@@ -60,8 +60,8 @@ class CCLASSES_API Output
 public:
 	Output() { _level = 0; };
 	virtual ~Output() { _level = 0; };
-	virtual void __cdecl outputf(const char* fmt ...) const;
-	virtual void __cdecl outputLinef(const char* fmt ...) const;
+	virtual void CDECL_ATTRIBUTE outputf(const char* fmt ...) const;
+	virtual void CDECL_ATTRIBUTE outputLinef(const char* fmt ...) const;
 	void push() { _level++; }
 	void pop() { _level--; }
 	void root() { _level = 0; }
@@ -89,7 +89,7 @@ enum PropertyType
 /*!
 *	Property class
 */
-#define DEFAULT_PROPERTY_COLOR  RGB(128,128,128)
+#define DEFAULT_PROPERTY_COLOR  0x808080 // RGB(128,128,128)
 
 struct Property
 {

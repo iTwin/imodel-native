@@ -12,17 +12,10 @@
 
 #include <sys/stat.h>
 #include <sys/types.h>
-
-#include <io.h>
-#include <string>
-#include <vector>
-#include <algorithm>
-
 #include <ptds/ptwin32_api.h>
 #include <pt/ptmath.h>
 
 #include <stdio.h>
-#include <shlobj.h>
 
 #include <pt/unicodeconversion.h>
 

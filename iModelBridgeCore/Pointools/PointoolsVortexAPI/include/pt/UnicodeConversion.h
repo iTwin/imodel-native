@@ -76,10 +76,12 @@ namespace pt
 			char * buffer = new char[ strLength ];
 			try
 			{
+            #ifdef NEEDS_WORK_VORTEX_DGNDB
 				BOOL defa;
 				::WideCharToMultiByte( CP_ACP, WC_NO_BEST_FIT_CHARS, input, -1, buffer, static_cast<int>(strLength), 0, &defa );
 				retVal = buffer;
 				delete [] buffer;
+            #endif
 			}
 			catch( ... )
 			{
@@ -122,9 +124,11 @@ namespace pt
 
 			try
 			{
+#ifdef NEEDS_WORK_VORTEX_DGNDB
 				::MultiByteToWideChar( CP_ACP, MB_COMPOSITE , input, -1, buffer, static_cast<int>(bufferSize - 1) );
 				retVal = buffer;
 				delete [] buffer;
+#endif
 			}
 			catch( ... )
 			{

@@ -72,7 +72,7 @@ public:
     /**
      Given arguments like printf, writes characters to the debug text overlay.
      */
-    void __cdecl printf(const char* fmt ...);
+    void CDECL_ATTRIBUTE printf(const char* fmt ...);
 
     static Log* common();
 

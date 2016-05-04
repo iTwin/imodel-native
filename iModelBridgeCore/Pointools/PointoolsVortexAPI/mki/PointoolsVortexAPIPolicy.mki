@@ -33,11 +33,43 @@ nameToDefine = __PointoolsVortexAPI_BUILD__
 nameToDefine = DATATREE_NO_PARAMMAP
 %include cdefapnd.mki
 
+#nameToDefine = PTRMI_LOGGING
+#%include cdefapnd.mki
+
+#nameToDefine = _TEST
+#%include cdefapnd.mki
+
+nameToDefine = POINTOOLS_API
+%include cdefapnd.mki
+
+nameToDefine = POINTOOLS_API_INCLUDE
+%include cdefapnd.mki
+
+nameToDefine = PTENG_DELAY_LOAD
+%include cdefapnd.mki
+
+nameToDefine = PTLANG_ENGLISH
+%include cdefapnd.mki
+
+nameToDefine = POINTOOLS_PTRMI_PIPE_MANAGER_EXT
+%include cdefapnd.mki
+
+nameToDefine = VORTEX_OBJECTS_API
+%include cdefapnd.mki
+
+#NEEDS_WORK_VORTEX_DGNDB
+#nameToDefine = NO_DATA_SOURCE_SERVER
+#%include cdefapnd.mki
+
 dirToSearch=$(PointoolsVortexAPIInclude)
 %include cincapnd.mki
 
 %if defined(HAVE_OPENGL)
+nameToDefine = GLEW_STATIC
+%include cdefapnd.mki
+
 dirToSearch=$(pointoolsVortexAPIVendorAPI)glew
+
 %include cincapnd.mki
 
 dirToSearch=$(pointoolsVortexAPIVendorAPI)OpenGLExt
@@ -47,17 +79,10 @@ dirToSearch=$(pointoolsVortexAPIVendorAPI)OpenGLExt
 dirToSearch=$(pointoolsVortexAPIVendorAPI)wildmagic/core
 %include cincapnd.mki
 
+#&&MM remove this 
 CCompOpts + -DREL_V=$(REL_V)
 CCompOpts + -DMAJ_V=$(MAJ_V)
 CCompOpts + -DMIN_V=$(MIN_V)
 CCompOpts + -DSUBMIN_V=$(SUBMIN_V)
 CCompOpts + -DVERSION=$(REL_V).$(MAJ_V).$(MIN_V).$(SUBMIN_V)
-CCompOpts + -D"PTRMI_LOGGING"
-CCompOpts + -D"_TEST"
-CCompOpts + -D"POINTOOLS_API"
-CCompOpts + -D"POINTOOLS_API_INCLUDE"
-CCompOpts + -D"PTENG_DELAY_LOAD"
-CCompOpts + -D"PTLANG_ENGLISH"
-CCompOpts + -D"GLEW_STATIC"
-CCompOpts + -D"POINTOOLS_PTRMI_PIPE_MANAGER_EXT"
-CCompOpts + -D"VORTEX_OBJECTS_API"
+
