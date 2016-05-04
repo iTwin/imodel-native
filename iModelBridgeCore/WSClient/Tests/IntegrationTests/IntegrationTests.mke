@@ -92,6 +92,7 @@ GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)BeCurl$(libext)
 GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)BeLibxml2$(libext)
 GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)WebServicesCache$(libext)
 GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)WebServicesClient$(libext)
+GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)ConnectWebServicesClientC$(libext)
 GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)BeIcu4c$(libext)
 GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)bentleylog4cxx$(libext)
 GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)BeZlib$(libext)
@@ -103,3 +104,11 @@ GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)liblog4cxx010$(libext)
 GUNITTEST_NOEXEC = 1
 
 %include $(SrcRoot)bsicommon/sharedmki/gunittest.mki
+
+#----------------------------------------------------------------------------------------
+# WIP - Link ConnectWebServicesClientC DLL, because it currently isn't being delivered by
+#       DgnClientSdk. To Force SDK delivery, edit DgnClientFx/PublicMki/Win7/deliver.mki.
+#----------------------------------------------------------------------------------------
+ApiNumber = G06
+always:
+    @CreateSymLinks.py -f"$(o)$(libprefix)ConnectWebServicesClientC$(ApiNumber)$(shlibext)=$(BuildContext)SubParts/Assemblies/$(libprefix)ConnectWebServicesClientC$(ApiNumber)$(shlibext)"
