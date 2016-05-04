@@ -220,24 +220,24 @@
          "$ECInstanceId" : "1",
          "$ECInstanceLabel" : "Foo",
          "anglesFoo" : {
-            "Alpha" : "12.345",
-            "Beta" : "12.345",
+            "Alpha" : "12.345000000000001",
+            "Beta" : "12.345000000000001",
             "Theta" : null
          },
          "arrayOfAnglesStructsFoo" : [
             {
-               "Alpha" : "12.345",
-               "Beta" : "12.345",
+               "Alpha" : "12.345000000000001",
+               "Beta" : "12.345000000000001",
                "Theta" : null
             },
             {
-               "Alpha" : "12.345",
-               "Beta" : "12.345",
+               "Alpha" : "12.345000000000001",
+               "Beta" : "12.345000000000001",
                "Theta" : null
             },
             {
-               "Alpha" : "12.345",
-               "Beta" : "12.345",
+               "Alpha" : "12.345000000000001",
+               "Beta" : "12.345000000000001",
                "Theta" : null
             }
          ],
@@ -246,7 +246,7 @@
          "booleanFoo" : null,
          "commonGeometryFoo" : null,
          "datetimeFoo" : null,
-         "doubleFoo" : "12.345",
+         "doubleFoo" : "12.345000000000001",
          "intFoo" : "67",
          "longFoo" : null,
          "point2dFoo" : null,
