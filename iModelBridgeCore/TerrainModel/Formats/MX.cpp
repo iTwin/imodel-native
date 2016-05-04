@@ -213,130 +213,111 @@ BcDTMPtr MXFilImporter::ImportStringModel (ModelTableRecord* modelTableRecord) c
             MXModelObjectPtr<StringTableRecord> stringTableRecord;
             if (iter->getRecord(stringTableRecord.GetR(), ModelObject::Read) == eOk)
                 {
-                WString stringName (stringTableRecord->stringName ());
+                WString stringName(stringTableRecord->stringName());
                 int numDims = stringTableRecord->type() % 100;
                 bool isPointString = (((numDims == 3) || (numDims == 4)) && (stringTableRecord->stringName()[0] == 'P'));
-                bool isTextString = (stringTableRecord->stringName()[0] == '*');
-
-                // Add String Masking here! and/or callback!
-                DTMFeatureType featureType = isPointString || isTextString ? DTMFeatureType::FeatureSpot : DTMFeatureType::Breakline;
-                // Need to interpret the string type and do we want to import it?
-                unsigned char* data = (unsigned char*)stringTableRecord->stringData();
-                bool isContour = false;
-                double z = 0;
-                if(stringTableRecord->isA() == MXContourString::desc())
+                if (stringTableRecord->stringName()[0] != '*') // If we aren't a text straing
                     {
-                    MXContourString* contourString = MXContourString::cast(stringTableRecord.get());
-                    isContour = true;
-                    z = contourString->getContourHeight();
-                    }
-
-                std::unique_ptr<DPoint3d[]> pointsP (new DPoint3d [stringTableRecord->numPoints()]);
-                std::unique_ptr<int[]> discosP (new int[stringTableRecord->numPoints()]);
-                DPoint3d* points = pointsP.get();
-                int* discos = discosP.get();
-                int j = 0;
-                if (((stringTableRecord->type() / 100) % 10) == 0)
-                    {
-                    long d[2];
-                    DPoint3d pt;
-                    for(int i = 1; i <= stringTableRecord->numPoints(); i++, j++)
+                    // Add String Masking here! and/or callback!
+                    DTMFeatureType featureType = isPointString ? DTMFeatureType::FeatureSpot : DTMFeatureType::Breakline;
+                    // Need to interpret the string type and do we want to import it?
+                    unsigned char* data = (unsigned char*)stringTableRecord->stringData();
+                    bool isContour = false;
+                    double z = 0;
+                    if (stringTableRecord->isA() == MXContourString::desc())
                         {
-                        int offset = ((i - 1) * stringTableRecord->dataRecordSize());
+                        MXContourString* contourString = MXContourString::cast(stringTableRecord.get());
+                        isContour = true;
+                        z = contourString->getContourHeight();
+                        }
 
-                        memcpy (&d[0], data + offset, sizeof(long) * 2);
-                        pt.x = ((double)d[0]) / 1000;
-                        pt.y = ((double)d[1]) / 1000;
-
-                        if(isContour)
-                            {
-                            pt.z = z;
-                            }
-                        else
-                            {
-                            memcpy (&d[0], data + offset + sizeof(long) * 2, sizeof(long));
-                            pt.z = ((double)d[0]) / 1000;
-                            }
-                        discos[j] = modelFile->ConvertXYZToWorld (pt.x, pt.y, pt.z);
-                        points[j] = pt;
-                    }
-                }
-                else
-                    {
-                    for(int i = 1; i <= stringTableRecord->numPoints(); i++, j++)
+                    std::unique_ptr<DPoint3d[]> pointsP(new DPoint3d[stringTableRecord->numPoints()]);
+                    std::unique_ptr<int[]> discosP(new int[stringTableRecord->numPoints()]);
+                    DPoint3d* points = pointsP.get();
+                    int* discos = discosP.get();
+                    int j = 0;
+                    if (((stringTableRecord->type() / 100) % 10) == 0)
                         {
+                        long d[2];
                         DPoint3d pt;
-                        int offset = ((i - 1) * stringTableRecord->dataRecordSize());
-
-                        memcpy (&pt, data + offset, sizeof(double) * 2);
-
-                        if(isContour)
+                        for (int i = 1; i <= stringTableRecord->numPoints(); i++, j++)
                             {
-                            pt.z = z;
+                            int offset = ((i - 1) * stringTableRecord->dataRecordSize());
+
+                            memcpy(&d[0], data + offset, sizeof(long) * 2);
+                            pt.x = ((double)d[0]) / 1000;
+                            pt.y = ((double)d[1]) / 1000;
+
+                            if (isContour)
+                                {
+                                pt.z = z;
+                                }
+                            else
+                                {
+                                memcpy(&d[0], data + offset + sizeof(long) * 2, sizeof(long));
+                                pt.z = ((double)d[0]) / 1000;
+                                }
+                            discos[j] = modelFile->ConvertXYZToWorld(pt.x, pt.y, pt.z);
+                            points[j] = pt;
                             }
-                        else
-                            memcpy (&pt.z, data + offset + sizeof(double) * 2, sizeof(double));
-                        discos[j] = modelFile->ConvertXYZToWorld (pt.x, pt.y, pt.z);
-                        points[j] = pt;
                         }
-                    }
-
-                // Add the points.
-                bool includeNULLSegments = false;
-                //bool nullInValidLevels = false;
-
-                int numPoints = stringTableRecord->numPoints();
-                int pointNum = 0;
-                bool inNullSegment = points[0].z < -998;
-                bool inDisco = discos[0] == eStart;
-                pointList.clear();
-
-                for (pointNum = 0; pointNum < numPoints; pointNum++)
-                    {
-                    if (inDisco)
-                        {
-                        if (discos[pointNum] != eEnd)
-                            continue;
-
-                        inDisco = false;
-                        pointList.push_back(points[pointNum]);
-                        inNullSegment = points[pointNum].z < -998;
-                        continue;
-                        }
-
-                    // Skip over discos.
-                    bool isPointNull = points[pointNum].z < -998;
-
-                    if (isPointNull == inNullSegment)
-                        pointList.push_back(points[pointNum]);
                     else
                         {
-                        if (inNullSegment)
-                            pointList.push_back(points[pointNum]);
+                        for (int i = 1; i <= stringTableRecord->numPoints(); i++, j++)
+                            {
+                            DPoint3d pt;
+                            int offset = ((i - 1) * stringTableRecord->dataRecordSize());
 
-                        if (includeNULLSegments || !inNullSegment)
+                            memcpy(&pt, data + offset, sizeof(double) * 2);
+
+                            if (isContour)
+                                {
+                                pt.z = z;
+                                }
+                            else
+                                memcpy(&pt.z, data + offset + sizeof(double) * 2, sizeof(double));
+                            discos[j] = modelFile->ConvertXYZToWorld(pt.x, pt.y, pt.z);
+                            points[j] = pt;
+                            }
+                        }
+
+                    // Add the points.
+                    bool includeNULLSegments = false;
+                    //bool nullInValidLevels = false;
+
+                    int numPoints = stringTableRecord->numPoints();
+                    int pointNum = 0;
+                    bool inNullSegment = points[0].z < -998;
+                    bool inDisco = discos[0] == eStart;
+                    pointList.clear();
+
+                    for (pointNum = 0; pointNum < numPoints; pointNum++)
+                        {
+                        if (inDisco)
+                            {
+                            if (discos[pointNum] != eEnd)
+                                continue;
+
+                            inDisco = false;
+                            pointList.push_back(points[pointNum]);
+                            inNullSegment = points[pointNum].z < -998;
+                            continue;
+                            }
+
+                        // Skip over discos.
+                        bool isPointNull = points[pointNum].z < -998;
+
+                        if (isPointNull == inNullSegment)
+                            pointList.push_back(points[pointNum]);
+                        else
                             {
                             if (inNullSegment)
                                 pointList.push_back(points[pointNum]);
-                            if (DTMFeatureType::FeatureSpot == featureType)
-                                dtm->AddPointFeature(pointList.data(), (int)pointList.size(), asLong(stringTableRecord->stringName()), &featureId);
-                            else
-                                dtm->AddLinearFeature(featureType, pointList.data(), (int)pointList.size(), asLong(stringTableRecord->stringName()), &featureId);
-                            if (m_callback)
-                                m_callback->AddFeature(featureId, L"", L"", stringName.GetWCharCP(), L"", featureType, pointList.data(), (int)pointList.size());
-                            }
-                        pointList.clear();
-                        if (inNullSegment)
-                            pointList.push_back(points[pointNum]);
-                        inNullSegment = isPointNull;
-                        }
 
-                    if (discos[pointNum] == eStart)
-                        {
-                        if (!pointList.empty())
-                            {
                             if (includeNULLSegments || !inNullSegment)
                                 {
+                                if (inNullSegment)
+                                    pointList.push_back(points[pointNum]);
                                 if (DTMFeatureType::FeatureSpot == featureType)
                                     dtm->AddPointFeature(pointList.data(), (int)pointList.size(), asLong(stringTableRecord->stringName()), &featureId);
                                 else
@@ -345,21 +326,41 @@ BcDTMPtr MXFilImporter::ImportStringModel (ModelTableRecord* modelTableRecord) c
                                     m_callback->AddFeature(featureId, L"", L"", stringName.GetWCharCP(), L"", featureType, pointList.data(), (int)pointList.size());
                                 }
                             pointList.clear();
+                            if (inNullSegment)
+                                pointList.push_back(points[pointNum]);
+                            inNullSegment = isPointNull;
                             }
-                        inDisco = true;
+
+                        if (discos[pointNum] == eStart)
+                            {
+                            if (!pointList.empty())
+                                {
+                                if (includeNULLSegments || !inNullSegment)
+                                    {
+                                    if (DTMFeatureType::FeatureSpot == featureType)
+                                        dtm->AddPointFeature(pointList.data(), (int)pointList.size(), asLong(stringTableRecord->stringName()), &featureId);
+                                    else
+                                        dtm->AddLinearFeature(featureType, pointList.data(), (int)pointList.size(), asLong(stringTableRecord->stringName()), &featureId);
+                                    if (m_callback)
+                                        m_callback->AddFeature(featureId, L"", L"", stringName.GetWCharCP(), L"", featureType, pointList.data(), (int)pointList.size());
+                                    }
+                                pointList.clear();
+                                }
+                            inDisco = true;
+                            }
                         }
+                    if (includeNULLSegments || !inNullSegment)
+                        {
+                        if (DTMFeatureType::FeatureSpot == featureType)
+                            dtm->AddPointFeature(pointList.data(), (int)pointList.size(), asLong(stringTableRecord->stringName()), &featureId);
+                        else
+                            dtm->AddLinearFeature(featureType, pointList.data(), (int)pointList.size(), asLong(stringTableRecord->stringName()), &featureId);
+                        if (m_callback)
+                            m_callback->AddFeature(featureId, L"", L"", stringName.GetWCharCP(), L"", featureType, pointList.data(), (int)pointList.size());
+                        }
+                    pointList.clear();
                     }
-                if (includeNULLSegments || !inNullSegment)
-                    {
-                    if (DTMFeatureType::FeatureSpot == featureType)
-                        dtm->AddPointFeature(pointList.data(), (int)pointList.size(), asLong(stringTableRecord->stringName()), &featureId);
-                    else
-                        dtm->AddLinearFeature(featureType, pointList.data(), (int)pointList.size(), asLong(stringTableRecord->stringName()), &featureId);
-                    if (m_callback)
-                        m_callback->AddFeature(featureId, L"", L"", stringName.GetWCharCP(), L"", featureType, pointList.data(), (int)pointList.size());
-                    }
-                pointList.clear();
-               }
+                }
             iter->next();
             }
         }
