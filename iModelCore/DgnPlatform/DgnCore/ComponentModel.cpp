@@ -401,7 +401,7 @@ void ComponentDef::QueryComponentDefs(bvector<DgnClassId>& componentDefs, DgnDbR
     if (nullptr == componentSpecificationCA)
         return;
 
-    Statement stmt(db, "SELECT ClassId FROM ec_BaseClass WHERE BaseClassId=?");
+    Statement stmt(db, "SELECT ClassId FROM ec_ClassHasBaseClasses WHERE BaseClassId=?");
 
     bvector<DgnClassId> baseClassIds;
     baseClassIds.push_back(DgnClassId(baseClassIn.GetId()));
