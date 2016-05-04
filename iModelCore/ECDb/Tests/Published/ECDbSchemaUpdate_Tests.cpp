@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/Published/ECDbSchemaUpgrade_Tests.cpp $
+|  $Source: Tests/Published/ECDbSchemaUpdate_Tests.cpp $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
