@@ -258,10 +258,9 @@ bvector<ECRelationshipClassCP> ECDbAdapter::FindRelationshipClasses(ECClassId so
                 INNER JOIN ec_RelationshipConstraintClass RCC
                     ON  RC.Id = RCC.ConstraintId
             UNION
-            SELECT RC.RelationshipClassId, RC.RelationshipEnd, RCC.IsPolymorphic, BC.ClassId, NestingLevel + 1
+            SELECT RCC.RelationshipClassId, RCC.RelationshipEnd, RCC.IsPolymorphic, BC.ClassId, NestingLevel + 1
                 FROM RelationshipConstraintClasses RCC
-                INNER JOIN ec_ClassHasBaseClasses BC
-                    ON BC.BaseClassId = RCC.ClassId
+                INNER JOIN ec_ClassHasBaseClasses BC ON BC.BaseClassId = RCC.ClassId
                 WHERE RCC.IsPolymorphic = 1
                 ORDER BY 2 DESC
             )
