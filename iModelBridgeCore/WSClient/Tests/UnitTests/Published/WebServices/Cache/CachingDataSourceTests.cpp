@@ -572,7 +572,6 @@ TEST_F(CachingDataSourceTests, GetFile_FileInstanceIsCached_ProgressIsCalledWith
     fileInstances.Add(fileId, {{"TestSize", "42"}, {"TestName", "TestFileName"}});
 
     auto txn = ds->StartCacheTransaction();
-    auto s = ds->GetRepositorySchemas(txn);
     ASSERT_EQ(SUCCESS, txn.GetCache().CacheInstanceAndLinkToRoot(fileId, fileInstances.ToWSObjectsResponse(), "root"));
     txn.Commit();
 
