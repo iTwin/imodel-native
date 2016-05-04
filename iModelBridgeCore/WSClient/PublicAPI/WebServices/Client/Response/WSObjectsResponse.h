@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Client/Response/WSObjectsResponse.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -21,7 +21,7 @@ USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct WSObjectsResponse
     {
-    private:
+    protected:
         HttpBodyPtr m_httpBody;
         bool        m_isModified;
         Utf8String  m_eTag;
@@ -33,7 +33,7 @@ struct WSObjectsResponse
         std::shared_ptr<WSObjectsReader> m_reader;
         mutable std::shared_ptr<WSObjectsReader::Instances> m_readerInstances;
 
-    private:
+    protected:
         JsonValueR GetJsonValuePrivate() const;
         std::shared_ptr<rapidjson::Document> GetRapidJsonDocumentPrivate() const;
 

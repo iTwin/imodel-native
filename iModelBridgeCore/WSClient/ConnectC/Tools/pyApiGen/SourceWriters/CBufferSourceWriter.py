@@ -61,34 +61,47 @@ class CBufferSourceWriter(SourceWriter):
 
     def __write_api_buffer_free_function(self):
         self._file.write(self._COMMENT_BsiMethod)
-        self._file.write("{0}_EXPORT CALLSTATUS {1}_DataBufferFree\n".format(self._api.get_upper_api_acronym(),
-                                                                             self._api.get_api_name()))
+        self._file.write("CallStatus {0}_DataBufferFree\n".format(self._api.get_api_name()))
         self._file.write("(\n")
-        self._file.write("{0}DATABUFHANDLE dataBuffer\n".format(self._api.get_upper_api_acronym()))
+        self._file.write("{0}HANDLE apiHandle,\n{0}DATABUFHANDLE dataBuffer\n".format(self._api.get_upper_api_acronym()))
         self._file.write(")\n")
         self._file.write("    {\n")
+        self._file.write("    VERIFY_API\n")
         self._file.write("    if (nullptr == dataBuffer)\n")
-        self._file.write('        return CALLSTATUS {{{0}, "{1}", "{2}"}};\n\n'
-                         .format("INVALID_PARAMETER",
-                                 self._status_codes["INVALID_PARAMETER"].message,
-                                 "The dataBuffer passed into the property get function is a nullptr."))
+        self._file.write('        {\n')
+        self._file.write('        api->SetStatusMessage("{1}");\n        api->SetStatusDescription("{2}");\n'
+                         '        return {0};\n        }}\n\n'.format("INVALID_PARAMETER", self._status_codes["INVALID_PARAMETER"].message,
+                                                                      "The dataBuffer passed into {0}_DataBufferFree is invalid."
+                                                                      .format(self._api.get_api_name())))
         self._file.write("    H{0}BUFFER buf = (H{0}BUFFER)dataBuffer;\n".format(self._api.get_api_acronym()))
-        self._file.write("    for (auto it = buf->lItems.begin(); it != buf->lItems.end(); it++)\n")
+        self._file.write("    for (int index = 0; index < buf->lItems.size(); index++)\n")
         self._file.write("        {\n")
-        self._file.write("        if (it != nullptr)\n")
-        self._file.write("            delete *it;\n")
+        self._file.write("        if (buf->lItems[index] != nullptr)\n")
+        self._file.write("            {\n")
+        self._file.write("            switch(buf->lType)\n")
+        self._file.write("                {\n")
+        for buffer_struct in self.__buffer_structs:
+            self._file.write("                case BUFF_TYPE_{0}:\n".format(buffer_struct.get_upper_name()))
+            self._file.write("                    {\n")
+            self._file.write("                    LP{0}{1}BUFFER {2}Buf = (LP{0}{1}BUFFER) buf->lItems[index];\n"
+                             .format(self._api.get_upper_api_acronym(), buffer_struct.get_upper_name(), buffer_struct.get_lower_name()))
+            self._file.write("                    delete {0}Buf;\n".format(buffer_struct.get_lower_name()))
+            self._file.write("                    }\n")
+            self._file.write("                    break;\n")
+        self._file.write("                default:\n")
+        self._file.write("                    continue;\n")
+        self._file.write("                }\n")
+        self._file.write("            }\n")
         self._file.write("        }\n")
         self._file.write("    free(buf);\n")
-        self._file.write('    return CALLSTATUS {{{0}, "{1}", "{2}"}};\n'.format("SUCCESS", self._status_codes["SUCCESS"].message,
-                                                                                 "{0}_DataBufferFree completed successfully."
-                                                                                 .format(self._api.get_upper_api_acronym())))
-
-        self._file.write("    }\n")
+        self._file.write('    api->SetStatusMessage("{1}");\n    api->SetStatusDescription("{2}");\n'
+                         '    return {0};\n    }}\n'.format("SUCCESS", self._status_codes["SUCCESS"].message,
+                                                            "The {0}_DataBufferFree function successfully completed."
+                                                            .format(self._api.get_api_name())))
 
     def __write_api_buffer_count_function(self):
         self._file.write(self._COMMENT_BsiMethod)
-        self._file.write("{0}_EXPORT uint64_t {1}_DataBufferGetCount\n".format(self._api.get_upper_api_acronym(),
-                                                                               self._api.get_api_name()))
+        self._file.write("uint64_t {0}_DataBufferGetCount\n".format(self._api.get_api_name()))
         self._file.write("(\n")
         self._file.write("{0}DATABUFHANDLE dataBuffer\n".format(self._api.get_upper_api_acronym()))
         self._file.write(")\n")
@@ -178,21 +191,20 @@ class CBufferSourceWriter(SourceWriter):
 
     def __get_api_accessor(self, property_type):
         if property_type is 'StringLength':
-            accessor_str = "{0}_EXPORT CALLSTATUS {1}_DataBufferGetStringLength\n".format(self._api.get_upper_api_acronym(),
-                                                                                          self._api.get_api_name())
+            accessor_str = "CallStatus {0}_DataBufferGetStringLength\n".format(self._api.get_api_name())
         else:
-            accessor_str = "{0}_EXPORT CALLSTATUS {1}_DataBufferGet{2}Property\n".format(self._api.get_upper_api_acronym(),
-                                                                                         self._api.get_api_name(), property_type.title())
+            accessor_str = "CallStatus {0}_DataBufferGet{1}Property\n".format(self._api.get_api_name(), property_type.title())
         accessor_str += "(\n"
-        accessor_str += "{0}DATABUFHANDLE dataBuffer,\n".format(self._api.get_upper_api_acronym())
+        accessor_str += "{0}HANDLE apiHandle,\n{0}DATABUFHANDLE dataBuffer,\n".format(self._api.get_upper_api_acronym())
         accessor_str += "int16_t bufferProperty,\n"
         accessor_str += "uint32_t index,\n"
         if property_type == "string":
-            accessor_str += "WCharP str,\n"
-            accessor_str += "uint32_t strLength\n"
+            accessor_str += "uint32_t strLength,\n"
+            accessor_str += "WCharP str\n"
         elif property_type == "StringLength":
             accessor_str += "size_t* outStringSize\n"
         elif property_type == "guid":
+            accessor_str += "uint32_t strLength,\n"
             accessor_str += "WCharP guid\n"
         elif property_type == "boolean":
             accessor_str += "bool* boolean\n"
@@ -206,11 +218,13 @@ class CBufferSourceWriter(SourceWriter):
             raise PropertyTypeError("Property type {0} not accepted".format(property_type))
         accessor_str += ")\n"
         accessor_str += "    {\n"
+        accessor_str += "    VERIFY_API\n"
         accessor_str += "    if(nullptr == dataBuffer)\n"
-        accessor_str += '        return CALLSTATUS {{{0}, "{1}", "{2}"}};\n\n'\
-            .format("INVALID_PARAMETER",
-                    self._status_codes["INVALID_PARAMETER"].message,
-                    "The dataBuffer passed into the property get function is a nullptr.")
+        accessor_str += '        {\n'
+        accessor_str += '        api->SetStatusMessage("{1}");\n        api->SetStatusDescription("{2}");\n' \
+                        '        return {0};\n        }}\n\n'.format("INVALID_PARAMETER", self._status_codes["INVALID_PARAMETER"],
+                                                                     "The dataBuffer passed into {0} data access function is invalid."
+                                                                     .format(self._api.get_api_name()))
         accessor_str += "    H{0}BUFFER buf = (H{0}BUFFER) dataBuffer;\n\n".format(self._api.get_api_acronym())
         accessor_str += "    switch (buf->lType)\n"
         accessor_str += "        {\n"
@@ -223,26 +237,25 @@ class CBufferSourceWriter(SourceWriter):
                 else:
                     accessor_str += "return {0}Get{1}Property".format(buffer_struct.get_lower_name(), property_type.title())
                 if property_type == "string":
-                    accessor_str += "(buf, bufferProperty, index, str, strLength);\n"
+                    accessor_str += "(api, buf, bufferProperty, index, strLength, str);\n"
                 elif property_type == "StringLength":
-                    accessor_str += "(buf, bufferProperty, index, outStringSize);\n"
+                    accessor_str += "(api, buf, bufferProperty, index, outStringSize);\n"
                 elif property_type == "guid":
-                    accessor_str += "(buf, bufferProperty, index, guid);\n"
+                    accessor_str += "(api, buf, bufferProperty, index, strLength, guid);\n"
                 elif property_type == "boolean":
-                    accessor_str += "(buf, bufferProperty, index, boolean);\n"
+                    accessor_str += "(api, buf, bufferProperty, index, boolean);\n"
                 elif property_type == "int":
-                    accessor_str += "(buf, bufferProperty, index, integer);\n"
+                    accessor_str += "(api, buf, bufferProperty, index, integer);\n"
                 elif property_type == "double":
-                    accessor_str += "(buf, bufferProperty, index, pDouble);\n"
+                    accessor_str += "(api, buf, bufferProperty, index, pDouble);\n"
                 elif property_type == "long":
-                    accessor_str += "(buf, bufferProperty, index, pLong);\n"
+                    accessor_str += "(api, buf, bufferProperty, index, pLong);\n"
                 else:
                     raise PropertyTypeError("Property type {0} not accepted".format(property_type))
         accessor_str += "        default:\n"
-        accessor_str += '            return CALLSTATUS {{{0}, "{1}", "{2}"}};\n'\
-            .format("INVALID_PARAMETER",
-                    self._status_codes["INVALID_PARAMETER"].message,
-                    "The buf->lType does not match any of the buffer properties.")
+        accessor_str += '        api->SetStatusMessage("{1}");\n        api->SetStatusDescription("{2}");\n' \
+                        '        return {0};\n'.format("INVALID_PARAMETER", self._status_codes["INVALID_PARAMETER"],
+                                                       "The buffer type passed in is invalid.")
         accessor_str += "        }\n"
         accessor_str += "    }\n"
         return accessor_str

@@ -935,6 +935,18 @@
     <ClInclude Include="PublicAPI\WebServices\ConnectC\CWSCCPublic.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Cache\Schemas.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Cache\Compatibility\SchemaChangeWSObjectsReader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Cache\Compatibility\SchemaChangeWSObjectsResponse.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Cache\Compatibility\Schemas.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Xml Include="WSClient.PartFile.xml" />
@@ -943,6 +955,7 @@
     <Xml Include="Cache\Persistence\ECSchemas\Support\Mapping\PW_WSG_Supplemental_ECDbMapping.01.01.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\Support\Mapping\Bentley_SP_Supplemental_ECDbMapping.01.00.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\Support\Mapping\MetaSchema_Supplemental_ECDbMapping.02.00.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\Support\Mapping\ProjectContent_Supplemental_ECDbMapping.01.00.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\DataSourceSpecification.01.00.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\DSCacheLegacySupportSchema.01.00.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\DSCacheSchema.01.01.ecschema.xml" />
@@ -952,9 +965,8 @@
     <Xml Include="Cache\Persistence\ECSchemas\DSCacheSchema.01.05.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\DSCacheSchema.01.06.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\DSCacheSchema.01.07.ecschema.xml" />
-    <Xml Include="Cache\Persistence\ECSchemas\MetaSchema.02.00.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\WSCache.02.00.ecschema.xml" />
-    <Xml Include="Cache\Persistence\ECSchemas\Support\Mapping\ProjectContent_Supplemental_ECDbMapping.01.00.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\WSCacheMetaSchema.03.00.ecschema.xml" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Connect\Connect.mki" />

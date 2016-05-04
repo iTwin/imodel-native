@@ -38,6 +38,20 @@ CWSCC_EXPORT CWSCCHANDLE ConnectWebServicesClientC_InitializeApiWithCredentials(
 * \param[in] apiHandle Previously created API object
 * \param[out] projectBuffer of User Project data
 ****************************************************************************************/
-CWSCC_EXPORT CALLSTATUS ConnectWebServicesClientC_GetIMSUserInfo(CWSCCHANDLE apiHandle, CWSCCDATABUFHANDLE* projectBuffer);
+CWSCC_EXPORT CallStatus ConnectWebServicesClientC_GetIMSUserInfo(CWSCCHANDLE apiHandle, CWSCCDATABUFHANDLE* projectBuffer);
+
+/************************************************************************************//**
+* \brief Retrieve the previous status message
+* \param[in] apiHandle Previously created API object
+* \return last status message
+****************************************************************************************/
+CWSCC_EXPORT CharCP ConnectWebServicesClientC_GetLastStatusMessage(CWSCCHANDLE apiHandle);
+
+/************************************************************************************//**
+* \brief Retrieve the previous status description
+* \param[in] apiHandle Previously created API object
+* \return last status description
+****************************************************************************************/
+CWSCC_EXPORT CharCP ConnectWebServicesClientC_GetLastStatusDescription(CWSCCHANDLE apiHandle);
 
 /** \} */
