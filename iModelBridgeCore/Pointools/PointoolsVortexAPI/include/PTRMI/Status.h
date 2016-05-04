@@ -1,6 +1,5 @@
 #pragma once
 
-#include <windows.h>
 #include <fstream>
 #include <pt/timestamp.h>
 

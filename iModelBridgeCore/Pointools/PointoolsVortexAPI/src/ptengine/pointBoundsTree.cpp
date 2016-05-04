@@ -128,7 +128,7 @@ struct ApproxCountPointsInBox
 	pt::OBBoxd	box;
 	int		numVoxelsIntersecting;
 	int		numVoxels;
-	__int64	numPoints;
+	int64_t	numPoints;
 
 	template <class T>
 	void point( const vec3<T> &pnt, int index, const ubyte &layers ) {}
@@ -151,7 +151,7 @@ struct ApproxCountPointsInBox
 				++numVoxelsIntersecting;
 				++numVoxels;
 				double overlap = approxOverlap(ext, box);
-				numPoints += static_cast<__int64>(overlap * static_cast<double>(v->fullPointCount()));
+				numPoints += static_cast<int64_t>(overlap * static_cast<double>(v->fullPointCount()));
 			}			
 			else return FilterOut;
 			
@@ -601,8 +601,8 @@ bool PointsBoundsTree::buildTreeDetail( TreeNode *_node, TreeNode *_parent,
 		SplitData *data = splitStack.top();
 		splitStack.pop();
 
-		__int64 debug_count = QueryPointsArrayd::totalPointsAllocatedCount();
-		__int64 debug_mem = QueryPointsArrayd::totalPointsStoredCount();
+		int64_t debug_count = QueryPointsArrayd::totalPointsAllocatedCount();
+		int64_t debug_mem = QueryPointsArrayd::totalPointsStoredCount();
 
 		// start of algo
 		OBBoxd left, right;

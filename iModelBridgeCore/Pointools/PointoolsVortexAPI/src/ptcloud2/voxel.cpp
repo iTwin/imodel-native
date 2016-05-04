@@ -404,9 +404,9 @@ ptds::DataSource::DataSourceForm Voxel::getDataSourceForm(void) const
 // return bytes requested
 //--------------------------------------------------------------------------------------
 
-float Voxel::getPotentialLOD(__int64 numPointsChanged)
+float Voxel::getPotentialLOD(int64_t numPointsChanged)
 {
-	__int64	newNumPoints;
+	int64_t	newNumPoints;
 															// If number of points after change is positive
 	if((newNumPoints = lodPointCount() + numPointsChanged) > 0 && _pointCount > 0)
 	{
@@ -578,7 +578,7 @@ int Voxel::resizeAndFillChannelToRequestedLod(Channel ch,
 												uint &num_bytes, 
 												uint &bytes_offset,
 												ptds::DataSourcePtr &dataSrc,
-												__int64 srcPos,
+												int64_t srcPos,
 												void* buffer)
 {
 
@@ -745,7 +745,7 @@ unsigned int Voxel::getVoxelDataSourceReadSet(LOD lod, ptds::DataSourceReadSet &
 {
 	DataChannel *	dataChannel;
 	unsigned int	previousChannelSize = 0;
-	__int64			position;
+	int64_t			position;
 	unsigned int	i;
 	
 	for(i = 0; i < MAX_LOAD_CHANNELS; i++)
@@ -766,7 +766,7 @@ unsigned int Voxel::getVoxelDataSourceReadSet(LOD lod, ptds::DataSourceReadSet &
 
 
 
-void Voxel::getChannelDataSourceRead(DataChannel &dataChannel, __int64 position, LOD lod, ptds::DataSourceReadSet &readSet)
+void Voxel::getChannelDataSourceRead(DataChannel &dataChannel, int64_t position, LOD lod, ptds::DataSourceReadSet &readSet)
 {
 	unsigned int	previousSize;
 	unsigned int	numPoints;
@@ -799,7 +799,7 @@ void Voxel::getChannelDataSourceRead(DataChannel &dataChannel, __int64 position,
 
 #endif
 
-int Voxel::getChannelResizeReadInfo(Channel ch, float amount, int &num_points, uint &num_bytes, uint &bytes_offset, __int64 &srcPos)
+int Voxel::getChannelResizeReadInfo(Channel ch, float amount, int &num_points, uint &num_bytes, uint &bytes_offset, int64_t &srcPos)
 {
 	num_bytes	= 0;
 	num_points	= 0;
@@ -1218,7 +1218,7 @@ public:
 	HashPointSet( float spacing = 0.01f ) : _spacing( spacing ) {};
 
 	void setSpacing( float val )	{ _spacing = val; }
-	typedef unsigned __int64 HashVal;
+	typedef uint64_t HashVal;
 	
 	void	clear()	{	_hashSet.clear(); }
 	
@@ -1274,9 +1274,9 @@ public:
 	{
 		pt::vector3i quantize_multiples(pt.x / _spacing, pt.y / _spacing, pt.z / _spacing);
 
-		hash =  (((unsigned __int64)quantize_multiples.x) & 0x1fffff);
-		hash |= (((unsigned __int64)quantize_multiples.y) << 21) & 0x3FFFFE00000;
-		hash |= (((unsigned __int64)quantize_multiples.z) << 42) & 0x7FFFFC0000000000;
+		hash =  (((uint64_t)quantize_multiples.x) & 0x1fffff);
+		hash |= (((uint64_t)quantize_multiples.y) << 21) & 0x3FFFFE00000;
+		hash |= (((uint64_t)quantize_multiples.z) << 42) & 0x7FFFFC0000000000;
 		return true;
 	}
 

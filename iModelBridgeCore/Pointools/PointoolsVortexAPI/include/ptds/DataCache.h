@@ -48,7 +48,7 @@ protected:
 
 	typedef BitArray<>					PageResidentBitArray;
 	typedef unsigned short				CacheFileVersion;
-	typedef unsigned __int64			FileHeaderStr;
+	typedef uint64_t			FileHeaderStr;
 
 	typedef std::priority_queue<DataCacheParallelRead>	ParallelReadPriorityQueue;
 

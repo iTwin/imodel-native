@@ -519,7 +519,7 @@ namespace ptds
 		unsigned int numErrors(void) { return _blockErrors.numErrors(); }
 
 		uint				_chunksize;
-		__int64				_chunkstart;
+		int64_t				_chunkstart;
 
 		BlockErrorTracker	_blockErrors;
 	};

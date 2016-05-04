@@ -15,7 +15,7 @@
 
 #if defined(_MSC_VER)
     namespace pt {
-        typedef __int64 Timer_t;
+        typedef int64_t Timer_t;
     }
 #elif defined(__linux) || defined(__FreeBSD__) || defined(__CYGWIN__)|| defined(__MINGW32__)
     namespace pt {

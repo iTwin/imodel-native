@@ -37,8 +37,8 @@ public:
 	bool isLayerLocked( int layer ) const;
 	bool isLayerVisible( int layer ) const;
 	
-	__int64 getLayerState() const;
-	void setLayerState(__int64 state);
+	int64_t getLayerState() const;
+	void setLayerState(int64_t state);
 
 	void paintSelSphere();
 	void paintSelCube();

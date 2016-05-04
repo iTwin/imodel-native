@@ -256,18 +256,18 @@ public:
 	{
 		Layers(ubyte current, ubyte active, ubyte locked, ubyte visible)
 		{ layers[0] = current; layers[1] = active; layers[2] = locked; layers[3] = visible; }
-		Layers(__int64 state) : layersInt(state) {}
+		Layers(int64_t state) : layersInt(state) {}
 		ushort layers[4];
-		__int64 layersInt;
+		int64_t layersInt;
 	};
-	static __int64 layerState()
+	static int64_t layerState()
 	{
 		Layers layers(g_currentLayer, g_activeLayers, g_lockedLayers, g_visibleLayers);
 		return layers.layersInt;		
 	}
 	void saveStateInBranch( datatree::Branch *b )
 	{
-		__int64 layers = layerState();
+		int64_t layers = layerState();
 
 		b->addNode("mode", (int)g_mode);
 		b->addNode("layers", layers);
@@ -280,7 +280,7 @@ public:
 	}
 	void restoreStateFromBranch( const datatree::Branch *b )
 	{
-		__int64 layers;
+		int64_t layers;
 		int mode=1;
 
 		if (b->getNode("layers", layers))
@@ -512,13 +512,13 @@ uint PointEdit::numEdits() const
 	return _edits.size();
 }
 //
-__int64 PointEdit::getLayerState() const
+int64_t PointEdit::getLayerState() const
 {
 	PointEditHistory::Layers l(g_currentLayer, g_activeLayers, g_lockedLayers, g_visibleLayers);
 	return l.layersInt;
 }
 //
-void PointEdit::setLayerState(__int64 state)
+void PointEdit::setLayerState(int64_t state)
 {
 	PointEditHistory::Layers l(state);
 	

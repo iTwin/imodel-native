@@ -113,11 +113,11 @@ struct ListBranchVisitor
 	{
 		printf("%d", v);
 	}
-	void operator()(const __int64 &v)
+	void operator()(const int64_t &v)
 	{
 		printf("%d", (int)v);
 	}
-	void operator()(const unsigned __int64 &v)
+	void operator()(const uint64_t &v)
 	{
 		printf("%d", (int)v);
 	}

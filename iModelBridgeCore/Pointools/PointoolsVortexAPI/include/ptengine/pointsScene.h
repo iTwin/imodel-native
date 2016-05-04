@@ -94,8 +94,8 @@ public:
 	const pcloud::PointCloud *cloudByKey(const pt::ObjectKey &objk) const;
 	pcloud::PointCloud *cloudByKey(const pt::ObjectKey &objk);
 
-	const pcloud::PointCloud *cloudByGUID(const __int64 guid) const;
-	pcloud::PointCloud *cloudByGUID(const __int64 guid);
+	const pcloud::PointCloud *cloudByGUID(const int64_t guid) const;
+	pcloud::PointCloud *cloudByGUID(const int64_t guid);
 
 	int getIteration() const { return _iteration; }
 
@@ -113,7 +113,7 @@ private:
 	std::map<pt::ObjectKey, pcloud::Scene*> _sceneByKey;
 
 	/* guid key */ 
-	std::map<__int64, pcloud::PointCloud*> _cloudByGuid;
+	std::map<int64_t, pcloud::PointCloud*> _cloudByGuid;
 
 	/* remove file notification */ 
 	std::list< FileObserver * > _fileObs;

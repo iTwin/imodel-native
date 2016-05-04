@@ -28,7 +28,7 @@ namespace pcloud
 	public:
 		DeltaEncoder(std::vector <ubyte> &data) : _byteData(data) {};
 		void compress(const pt::vector3s *geom, int size);
-		void compress(std::vector<__int64> &diff);
+		void compress(std::vector<int64_t> &diff);
 		std::vector <ubyte> &_byteData;
 	};
 }

@@ -35,8 +35,8 @@ public:
 	inline const unsigned char &lodAsByte() const		{ return m_lod; }
 	inline const unsigned char &requestByte() const	{ return m_request_lod; }
 
-	void	filePointer(__int64 pos)	{ m_filepointer = pos; }
-	__int64 filePointer() const			{ return m_filepointer; }
+	void	filePointer(int64_t pos)	{ m_filepointer = pos; }
+	int64_t filePointer() const			{ return m_filepointer; }
 
 	int		fileIndex() const			{ return (int)m_fileindex; }
 	void	fileIndex(int filei)		{ m_fileindex = (unsigned char)filei; }
@@ -48,7 +48,7 @@ protected:
 	unsigned char m_lod;
 	unsigned char m_fileindex;
 
-	__int64	m_filepointer;
+	int64_t	m_filepointer;
 };
 }
 #endif

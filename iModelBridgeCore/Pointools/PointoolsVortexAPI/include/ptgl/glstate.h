@@ -176,20 +176,20 @@ namespace ptgl
 		PTGL_API RenderStateSet* globalSet();
 		void generateHashCode()
 		{
-			union HashCode { struct flags { unsigned int st; unsigned int pr; }; flags f; __int64 hash; };
+			union HashCode { struct flags { unsigned int st; unsigned int pr; }; flags f; int64_t hash; };
 			HashCode hc;
 			hc.f.st = _enablestate;
 			hc.f.pr = _paramstate;
 			
 			_hashcode = hc.hash;
 		}
-		__int64 hashcode() const { return _hashcode; }
+		int64_t hashcode() const { return _hashcode; }
 	private:
 		unsigned int _enablestate;
 		unsigned int _paramstate;
 		unsigned int _clientstate;
 
-		unsigned __int64 _hashcode;
+		uint64_t _hashcode;
 
 		inline bool _updateParameter(const RenderStateSet *current, unsigned int param, bool &newstate)
 		{

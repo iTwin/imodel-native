@@ -148,7 +148,7 @@ int Scene::buildCloudGroupFromStream(SceneBuildData *buildInfo)
 
 		if (cloud_info && CLOUD_VALID(cloud_info))
 		{
-			__int64 numPoints = cloud_info->numPoints;
+			int64_t numPoints = cloud_info->numPoints;
 			buildInfo->cloudIndex = i;
 
 			if (numPoints < ONE_PASS_THRESHOLD)
@@ -509,7 +509,7 @@ int Scene::readMultiPass( SceneBuildData *buildInfo )
 
 	/*find overall cloud spec																*/ 
 	uint spec = 0;
-	__int64 pointcount = 0;
+	int64_t pointcount = 0;
 
 	PTTRACE_LINE 
 
@@ -822,7 +822,7 @@ int Scene::writePointData( SceneBuildData *buildInfo, PointCloud *pc )
 				{
 					PTTRACEOUT << "FAILURE: POD File creation failed. This is most likley to be a memory failure";
 					GlobalMemoryStatusEx(&mem);
-					__int64 aval = mem.ullAvailVirtual;	
+					int64_t aval = mem.ullAvailVirtual;	
 					int writebuffsizeMB = aval / (1024 * 1024);
 
 					PTTRACEOUT << aval << "Mb available in this processes virtual memory space";

@@ -79,7 +79,7 @@ namespace pcloud
 			void operator = (const AvData &a) { memcpy(this, &a, sizeof(this)); }
 		};
 
-		static bool hashPoint(const pt::vector3d &vec, float multiple, unsigned __int64 &hash)
+		static bool hashPoint(const pt::vector3d &vec, float multiple, uint64_t &hash)
 		{
 			pt::vector3i quantize_multiples(vec.x / multiple, vec.y / multiple, vec.z / multiple);
 
@@ -100,7 +100,7 @@ namespace pcloud
 
 			hash = (((unsigned int)quantize_multiples.x) & 0x1fffff);
 			hash |= (((unsigned int)quantize_multiples.y) << 21) & 0x3FFFFE00000;
-			hash |= (((unsigned __int64)quantize_multiples.z) << 42) & 0x7FFFFC0000000000;
+			hash |= (((uint64_t)quantize_multiples.z) << 42) & 0x7FFFFC0000000000;
 			return true;
 		}
 
@@ -119,7 +119,7 @@ namespace pcloud
 		
 		bool filter(const pt::vector3d &pnt,  double multiple)
 		{	
-			unsigned __int64 hash;
+			uint64_t hash;
 			if (!hashPoint(pnt, multiple, hash)) return false;
 			PointsHashSet::iterator it = _phs->find(hash);
 			
@@ -141,8 +141,8 @@ namespace pcloud
 			_voxelPHS.clear();
 		}
 
-		typedef std::set<unsigned __int64> PointsHashSet;
-		typedef std::map<unsigned __int64, AvData > PointsHashMap;
+		typedef std::set<uint64_t> PointsHashSet;
+		typedef std::map<uint64_t, AvData > PointsHashMap;
 		typedef std::map<const Voxel *, PointsHashMap*> VoxelPHM;
 		typedef std::map<const Voxel *, PointsHashSet*> VoxelPHS;
 

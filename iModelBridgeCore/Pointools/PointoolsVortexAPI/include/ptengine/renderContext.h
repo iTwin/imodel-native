@@ -7,7 +7,7 @@
 
 namespace pointsengine
 {
-	typedef		__int64				ContextID;
+	typedef		int64_t				ContextID;
 
 	class RenderContext
 	{

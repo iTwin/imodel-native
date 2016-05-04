@@ -22,11 +22,11 @@ namespace pointsengine
 			}
 		}
 
-		static __int64 totalPointsStoredCount()
+		static int64_t totalPointsStoredCount()
 		{
 			return totalPointsStored();
 		}
-		static __int64 totalPointsAllocatedCount()
+		static int64_t totalPointsAllocatedCount()
 		{
 			return totalPointsAllocated();
 		}
@@ -154,14 +154,14 @@ namespace pointsengine
 	
 	protected:
 
-		static inline __int64 &totalPointsStored()
+		static inline int64_t &totalPointsStored()
 		{
-			static __int64 total=0;
+			static int64_t total=0;
 			return total;
 		}
-		static inline __int64 &totalPointsAllocated()
+		static inline int64_t &totalPointsAllocated()
 		{
-			static __int64 total=0;
+			static int64_t total=0;
 			return total;
 		}
 		bool expand()

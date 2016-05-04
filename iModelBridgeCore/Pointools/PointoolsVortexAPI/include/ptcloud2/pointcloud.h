@@ -16,7 +16,7 @@
 
 namespace pcloud
 {
-	typedef __int64 PointCloudGUID;
+	typedef int64_t PointCloudGUID;
 
 	class PCLOUD_API UserTransform
 	{
@@ -87,17 +87,17 @@ namespace pcloud
 		const std::vector<Voxel*> &voxels() const	{ return _voxels; }
 		std::vector<Voxel*> &voxels() 				{ return _voxels; }
 
-		void filepointer(__int64 &p) { _filepointer = p; }
-		__int64 filepointer() const { return _filepointer; }
+		void filepointer(int64_t &p) { _filepointer = p; }
+		int64_t filepointer() const { return _filepointer; }
 		
 		uint ibound() { return _ibound; }
 		uint jbound() { return _jbound; }
 
 		bool hasChannel(int ch) const { return _channels[ch]; }
 		
-		__int64 currentMemUseage() const;
-		__int64 fullMemUseage() const { return _memused; }
-		__int64 numPoints() const { return _numpoints; }
+		int64_t currentMemUseage() const;
+		int64_t fullMemUseage() const { return _memused; }
+		int64_t numPoints() const { return _numpoints; }
 
 		// returns distance from seek pnt
 		double findNearestPoint(const pt::vector3d &seek_pnt, pt::vector3d &nearest, pt::CoordinateSpace cs) const;
@@ -140,10 +140,10 @@ namespace pcloud
 		std::vector <Voxel*> _voxels;
 
 		PointCloudGUID _guid;
-		__int64 _filepointer;
+		int64_t _filepointer;
 
-		__int64 _memused;
-		__int64 _numpoints;
+		int64_t _memused;
+		int64_t _numpoints;
 
 		float _compressionTolerance;
 

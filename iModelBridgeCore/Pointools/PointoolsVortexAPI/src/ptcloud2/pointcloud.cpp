@@ -355,7 +355,7 @@ void PointCloud::generateGuid()
 }
 //---------------------------------------------------------------
 // Object guid, based on the cloud guid
-// Note that many places in Vortex use the __int64 guid when writing,
+// Note that many places in Vortex use the int64_t guid when writing,
 // e.g. UserChannel persistance, this object guid should not be
 // used in these places, it is currently only used with the Clash trees.
 //---------------------------------------------------------------

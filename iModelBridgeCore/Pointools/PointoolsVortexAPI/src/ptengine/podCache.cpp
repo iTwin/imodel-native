@@ -281,7 +281,7 @@ bool PODCacheManager::readCacheFile( const pcloud::Scene *pod )
 					for (i=0; i<pod->numBranchObjects(); i++)
 					{
 						const pcloud::PointCloud *pcloud = pod->cloud(i);
-						__int64 guid;
+						int64_t guid;
 						rb.read(guid);
 
 						if (guid == pcloud->guid())

@@ -110,8 +110,8 @@ struct GlobalPagerData
 	PointsPager *			pointsPager;
 	std::thread*			pager;
 
-	__int64					bytesLoaded;
-	__int64					weightedNumPntsLoaded;
+	int64_t					bytesLoaded;
+	int64_t					weightedNumPntsLoaded;
 
 	/* working flags */ 
 	bool					run;
@@ -126,8 +126,8 @@ struct GlobalPagerData
 
 	/* tuning */ 
 	float					capacity;
-	__int64					memoryTarget;
-	__int64					memoryUsed;
+	int64_t					memoryTarget;
+	int64_t					memoryUsed;
 	bool					useMemoryTarget;
 	bool					allowReduce;
 

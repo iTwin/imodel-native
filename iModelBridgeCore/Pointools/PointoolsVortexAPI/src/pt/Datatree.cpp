@@ -303,7 +303,7 @@ void Reader::readNode( FILE *file, Branch *owner )
 	case 2: { float v; fread(&v, sizeof(float), 1, file); owner->addNode(nodeid, v); } break;
 	case 3: { double v; fread(&v, sizeof(double), 1, file); owner->addNode(nodeid, v); } break;
 	case 4: { uint32 v; fread(&v, sizeof(uint32), 1, file); owner->addNode(nodeid, v); } break;
-	case 5: { __int64 v; fread(&v, sizeof(__int64), 1, file); owner->addNode(nodeid, v); } break;
+	case 5: { int64_t v; fread(&v, sizeof(int64_t), 1, file); owner->addNode(nodeid, v); } break;
 	case 6: { vector3i v; fread(&v, sizeof(int)*3, 1, file); owner->addNode(nodeid, v); } break;
 	case 7: { vector3 v; fread(&v, sizeof(float)*3, 1, file); owner->addNode(nodeid, v); } break; 
 	case 8: { vector3d v; fread(&v, sizeof(double)*3, 1, file); owner->addNode(nodeid, v); } break;

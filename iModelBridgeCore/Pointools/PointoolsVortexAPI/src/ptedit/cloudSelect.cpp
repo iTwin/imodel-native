@@ -8,7 +8,7 @@ namespace ptedit
 {
 	struct SelCloud : public PointsVisitor
 	{
-		SelCloud( __int64 g ) : guid(g), res(false) {}
+		SelCloud( int64_t g ) : guid(g), res(false) {}
 
 
 		bool cloud(pcloud::PointCloud *c)	
@@ -32,7 +32,7 @@ namespace ptedit
 			return true;
 		}
 		bool res;
-		__int64 guid;
+		int64_t guid;
 	};
 
 CloudSelect::CloudSelect() : EditNodeDef("CloudSelect") { cloudGuid = 0; };

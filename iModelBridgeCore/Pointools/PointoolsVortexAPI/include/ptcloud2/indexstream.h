@@ -51,14 +51,14 @@ public:
 
 		struct CloudInfo
 		{
-			__int64		numPoints;
+			int64_t		numPoints;
 			uint		spec;
 			uint		bytesPerPoint;
 			uint		ibound;
 			uint		jbound;
 			pt::BoundingBoxD bounds;
 			pt::BoundingBox xbounds;
-			__int64		imagePointer;
+			int64_t		imagePointer;
 			
 			mmatrix4d	 matrix;
 			pt::vector3d	offset;
@@ -164,7 +164,7 @@ public:
 		void closeReadStream();
 
 		/* Get the file stream position, useful to check for fat32 4Gb limit failure */ 
-		__int64 writeStreamPosition();
+		int64_t writeStreamPosition();
 
 		/* read cloud - starts reading a clouds data */ 
 		const CloudInfo *readCloud(int idx);
@@ -218,17 +218,17 @@ public:
 
 		bool applyPointStreamFilter(void) const;
 
-		void setAddedPointCount(unsigned __int64 v)
+		void setAddedPointCount(uint64_t v)
 		{
 			addedPointCount = v;
 		}
 
-		unsigned __int64 getAddedPointCount(void) const
+		uint64_t getAddedPointCount(void) const
 		{
 			return addedPointCount;
 		}
 
-		unsigned __int64 getNumCloudPoints() const;
+		uint64_t getNumCloudPoints() const;
 
 	private:
 		void checkWriteBuffer();
@@ -342,7 +342,7 @@ public:
 
 		MetaData					_metaData;
 
-		unsigned __int64			addedPointCount;
+		uint64_t			addedPointCount;
 
 		pcloud::PointStreamFilter	*_pointStreamFilter;
 	};

@@ -59,11 +59,11 @@ public:
 		clear();
 		delete [] _grid;
 	}
-	__int64 countSet() const
+	int64_t countSet() const
 	{
 		if (!_grid) return 0;
 
-		__int64 count = 0;
+		int64_t count = 0;
 		for (unsigned int i=0;i<(_divx*_divy*_divz);i++)
 		{
 			if (_grid[i]) count += _grid[i]->count();
@@ -136,10 +136,10 @@ public:
 		}
 		return false;
 	}
-	unsigned __int64 getPntIndex( double x, double y, double z ) const
+	uint64_t getPntIndex( double x, double y, double z ) const
 	{
 		struct I { unsigned int a; unsigned int b; };
-		union I64 { unsigned __int64 i64; I i; };
+		union I64 { uint64_t i64; I i; };
 		I64 p;
 
 		int a = 0;

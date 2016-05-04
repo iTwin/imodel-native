@@ -1,8 +1,6 @@
 
 #pragma once
 
-#include <winsock.h>
-
 #include <string>
 #include <stdio.h>
 

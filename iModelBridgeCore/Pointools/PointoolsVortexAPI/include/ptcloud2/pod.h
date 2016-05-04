@@ -164,7 +164,7 @@ namespace pcloud
 		void							*tracker;
 		ubyte							endian;
 		ubyte							version[4];
-		__int64							fileSize;
+		int64_t							fileSize;
 	};
 	class PCLOUD_API PodIO
 	{

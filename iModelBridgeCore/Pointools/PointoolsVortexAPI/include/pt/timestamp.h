@@ -1,8 +1,6 @@
 #ifndef POINTOOLS_TIMESTAMP_INCLUDE
 #define POINTOOLS_TIMESTAMP_INCLUDE
 
-#include <winnt.h>
-
 #include <pt/classes.h>
 
 namespace pt
@@ -25,7 +23,7 @@ struct TimeStamp
 	TimeStamp& operator = (const TimeStamp &t) { _time.QuadPart = t._time.QuadPart; return *this; }
 
 	double operator()(double) const { return (double)_time.QuadPart; }
-	__int64 operator()(__int64) const { return (__int64)_time.QuadPart; }
+	int64_t operator()(int64_t) const { return (int64_t)_time.QuadPart; }
 
 	LARGE_INTEGER _time;
 

@@ -7,7 +7,7 @@ namespace pt
 {
 struct Guid
 {
-	typedef __int64 GuidPartType;
+	typedef int64_t GuidPartType;
 
 	Guid() 
 	{

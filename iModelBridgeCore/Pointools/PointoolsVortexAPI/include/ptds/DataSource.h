@@ -26,8 +26,8 @@ class DataSource
 
 public:
 
-	typedef __int64			DataPointer;
-	typedef __int64			DataSize;
+	typedef int64_t			DataPointer;
+	typedef int64_t			DataSize;
 
 	typedef unsigned char	Data;
 	typedef DataSize		Size;

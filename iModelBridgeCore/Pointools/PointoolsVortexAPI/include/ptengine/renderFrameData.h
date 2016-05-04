@@ -53,7 +53,7 @@ namespace pointsengine
 		//  average
 		int		m_frameCounter;
 		int		m_msTotalFrameTime;
-		__int64	m_ptsTotal;
+		int64_t	m_ptsTotal;
 
 		bool	m_isDynamic;
 	};

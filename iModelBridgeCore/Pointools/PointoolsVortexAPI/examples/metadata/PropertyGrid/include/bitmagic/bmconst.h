@@ -29,7 +29,7 @@ namespace bm
 
 #ifdef _WIN32
 
-typedef unsigned __int64 id64_t;
+typedef uint64_t id64_t;
 
 #else
 

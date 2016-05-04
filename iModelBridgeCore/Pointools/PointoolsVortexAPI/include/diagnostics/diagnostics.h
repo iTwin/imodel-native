@@ -50,7 +50,7 @@ namespace ptdg
 		pt::Timer_t	m_timeStamp;
 		pt::Timer_t	m_endStamp;
 
-		__int64		m_numPoints;
+		int64_t		m_numPoints;
 		int			m_bufferSize;
 		uint		m_channels;
 
@@ -64,8 +64,8 @@ namespace ptdg
 
 		pt::Timer_t	m_timeStamp;
 		
-		__int64		m_ptsShortfall;
-		__int64		m_ptsLoadedSinceDraw;
+		int64_t		m_ptsShortfall;
+		int64_t		m_ptsLoadedSinceDraw;
 	};
 
 	struct PagerData1
@@ -75,7 +75,7 @@ namespace ptdg
 		pt::Timer_t	m_timeStamp;
 
 		uint		m_actualPtsLoaded;
-		__int64		m_memAval;
+		int64_t		m_memAval;
 		uint		m_mode;
 	};
 
@@ -98,12 +98,12 @@ namespace ptdg
 		pt::Timer_t	m_timeStamp;
 
 		int			m_numVoxelsInView;
-		__int64		m_numFullPtsInView;		//full number, not LOD
+		int64_t		m_numFullPtsInView;		//full number, not LOD
 		
-		__int64		m_numLODPtsInView1;		// to test different lod algos
-		__int64		m_numLODPtsInView2;
-		__int64		m_numLODPtsInView3;
-		__int64		m_numLODPtsInView4;
+		int64_t		m_numLODPtsInView1;		// to test different lod algos
+		int64_t		m_numLODPtsInView2;
+		int64_t		m_numLODPtsInView3;
+		int64_t		m_numLODPtsInView4;
 
 		float		m_averageLOD;
 		float		m_maxLOD;

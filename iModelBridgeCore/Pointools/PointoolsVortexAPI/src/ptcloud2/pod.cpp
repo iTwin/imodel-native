@@ -825,7 +825,7 @@ bool PodIO::writeCloudStructure(PodJob &job, int cloud_idx)
 bool PodIO::reWriteCloudSizes(PodJob &job, int cloud_idx)
 {
 	ptds::Tracker *tracker = TRACKER(job.tracker);
-	__int64 savepos = tracker->position();
+	int64_t savepos = tracker->position();
 
 	ReWriteSizes rw(tracker, cloud_idx, job.version[POD_STRUCTURE_VERSION]);
 	
@@ -952,11 +952,11 @@ bool PodIO::readHeader(pcloud::PodJob &job, bool skip)
 	rb.read(num_clouds);
 	pos += sizeof(uint);
 
-	__int64 guid=0;
-	__int64 structure_pointer=0;
-	__int64 data_pointer=0;
+	int64_t guid=0;
+	int64_t structure_pointer=0;
+	int64_t data_pointer=0;
 
-	std::vector<__int64> data_pointers;
+	std::vector<int64_t> data_pointers;
 	std::vector<PointCloud*> pointclouds;
 
 	uint i;
@@ -1150,7 +1150,7 @@ bool PodIO::readCloudStructure(pcloud::PodJob &job, PointCloud *cloud, bool skip
 		uint p_count, n_count;
 
 		/*position file pointer*/ 
-		__int64 fp = cloud->filepointer();
+		int64_t fp = cloud->filepointer();
 
 		if (!fp || !job.h->movePointerTo(fp))	
 		{
@@ -1197,7 +1197,7 @@ bool PodIO::readCloudStructure(pcloud::PodJob &job, PointCloud *cloud, bool skip
 		memset(strata, 0, sizeof(strata));
 		//
 
-		__int64 filepointer;
+		int64_t filepointer;
 
 		for (i=0;i<n_count;i++)
 		{
@@ -1440,9 +1440,9 @@ bool PodIO::dumpHeader(pcloud::PodJob &job)
 	uint num_clouds;
 	rb.read(num_clouds, "Number of Clouds");
 
-	__int64 guid;
-	__int64 structure_pointer;
-	__int64 data_pointer;
+	int64_t guid;
+	int64_t structure_pointer;
+	int64_t data_pointer;
 
 	for (uint i=0; i<num_clouds; i++)
 	{
@@ -1501,7 +1501,7 @@ bool PodIO::dumpCloudStructure(pcloud::PodJob &job, PointCloud *cloud)
 		uint p_count, n_count;
 
 		/*position file pointer*/ 
-		__int64 fp = cloud->filepointer();
+		int64_t fp = cloud->filepointer();
 		if (!fp) return false;
 		
 		std::cout << "Current pos = " << readTracker->position() 
@@ -1541,7 +1541,7 @@ bool PodIO::dumpCloudStructure(pcloud::PodJob &job, PointCloud *cloud)
 		int *parents = new int[n_count];
 		uint size = 0;
 
-		__int64 filepointer;
+		int64_t filepointer;
 
 		std::cout << "\tReading Node data..." << std::endl;
 

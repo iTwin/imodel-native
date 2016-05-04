@@ -275,8 +275,8 @@
 //			if (f & SELECTED_PNT_VAL && f & g_activeLayersP) ++_count[t];
 //		}
 //
-//		__int64 totalCount() const { return _count[0] + _count[1] + _count[2] + _count[3]; }
-//		__int64 _count[4];
+//		int64_t totalCount() const { return _count[0] + _count[1] + _count[2] + _count[3]; }
+//		int64_t _count[4];
 //	};
 //	/* ------------------------------------------------------------------------ */ 
 //	/*  Count Selected							                                */ 
@@ -317,12 +317,12 @@
 //			}		
 //		}
 //
-//		__int64 totalCount() const { return _count; }
+//		int64_t totalCount() const { return _count; }
 //		pt::vector3 *buffer() const { return _points; }
 //		
 //	private:
-//		__int64 _count;
-//		__int64 _bufferSize;
+//		int64_t _count;
+//		int64_t _bufferSize;
 //		pt::vector3 *_points;
 //	};
 //	/* ------------------------------------------------------------------------ */ 

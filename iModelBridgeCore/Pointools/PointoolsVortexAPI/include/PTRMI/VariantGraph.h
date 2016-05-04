@@ -193,7 +193,7 @@ public:
 
 	void readString(std::wifstream &stream)
 	{
-		__int64	v;
+		int64_t	v;
 
 		stream >> v;
 

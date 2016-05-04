@@ -530,7 +530,7 @@ void IndexStream::addPassPointIntensity(const short *intensity)
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
-__int64 IndexStream::writeStreamPosition()
+int64_t IndexStream::writeStreamPosition()
 {
 	if(applyPointStreamFilter())
 		return globalPointStreamFilter->writeStreamPosition();
@@ -1121,9 +1121,9 @@ void IndexStream::buildNormals(bool transform, float quality)
 	}
 }
 
-unsigned __int64 IndexStream::getNumCloudPoints() const
+uint64_t IndexStream::getNumCloudPoints() const
 {
-	__int64 numPoints = 0;
+	int64_t numPoints = 0;
 
 	if(applyPointStreamFilter())
 	{

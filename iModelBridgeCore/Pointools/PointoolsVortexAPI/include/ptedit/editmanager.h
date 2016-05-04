@@ -61,8 +61,8 @@ public:
 	bool	isLayerVisible( int layer ) const;
 	bool	doesLayerHavePoints( int layer ) const;
 
-	__int64 getLayerState() const;
-	void	setLayerState(__int64 state);
+	int64_t getLayerState() const;
+	void	setLayerState(int64_t state);
 
 	bool	moveSelToLayer( bool deselect );
 	bool	copySelToLayer( bool deselect );
@@ -92,8 +92,8 @@ public:
 	void	layersFromUserChannel( pointsengine::UserChannel* userChannel );
 
 	// query
-	__int64 countVisiblePoints( void );
-	__int64 countPointsInLayer( int layerIndex );
+	int64_t countVisiblePoints( void );
+	int64_t countPointsInLayer( int layerIndex );
 
 	//editing operations
 	void	selectAll( void );

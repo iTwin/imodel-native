@@ -152,7 +152,7 @@ public:
 
 //	Size						writeBytesFrom							(const Data *buffer, DataPointer position, Size numBytes)	{return sendAuto<Size, PC<In<Array<const Data>>>, PC<In<DataPointer>>, PC<In<Size>> >(0, L"writeBytesFrom", Array<const Data>(numBytes, reinterpret_cast<const Data *>(buffer)), position, numBytes);}
 
-	__int64						getFileSize								(void)														{return sendAuto<__int64>(0, DATA_SOURCE_METHOD_GET_FILE_SIZE);}
+	int64_t						getFileSize								(void)														{return sendAuto<int64_t>(0, DATA_SOURCE_METHOD_GET_FILE_SIZE);}
 
 	void						destroy									(void);
 //	DataSourceType				getPathDataSourceType					(const ptds::FilePath *path)								{return DataSourceTypeServer;}

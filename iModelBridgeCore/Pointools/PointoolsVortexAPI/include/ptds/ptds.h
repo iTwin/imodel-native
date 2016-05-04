@@ -2,7 +2,7 @@
 
 namespace ptds
 {
-	typedef __int64 DataPointer;
-	typedef __int64 DataSize;
+	typedef int64_t DataPointer;
+	typedef int64_t DataSize;
 }
 

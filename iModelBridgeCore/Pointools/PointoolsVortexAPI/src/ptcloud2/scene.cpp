@@ -78,7 +78,7 @@ void Scene::setInstanceIndex( int instance )
 	_instance = instance;
 }
 
-PointCloud* Scene::newCloud( __int64 guid )
+PointCloud* Scene::newCloud( int64_t guid )
 { 
 	PointCloud *pc = new PointCloud(L"Cloud", this);
 	
@@ -152,12 +152,12 @@ void Scene::clear()
 /*****************************************************************************/
 /**
 * @brief
-* @return __int64
+* @return int64_t
 */
 /*****************************************************************************/
-__int64 Scene::fullPointCount() const
+int64_t Scene::fullPointCount() const
 {
-	__int64 pcount = 0;
+	int64_t pcount = 0;
 	for (int i= 0; i<_clouds.size(); i++)
 	{
 		pcount += _clouds[i]->numPoints();
@@ -167,12 +167,12 @@ __int64 Scene::fullPointCount() const
 /*****************************************************************************/
 /**
 * @brief
-* @return __int64
+* @return int64_t
 */
 /*****************************************************************************/
-__int64 Scene::lodPointCount() const
+int64_t Scene::lodPointCount() const
 {
-	__int64 pcount = 0;
+	int64_t pcount = 0;
 	for (int i= 0; i<_clouds.size(); i++)
 	{
 		if (_clouds[i]->root())	

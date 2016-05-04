@@ -68,6 +68,9 @@ CCPchOpts = $(UsePrecompiledHeaderOptions)
 #CCPchOpts + -showIncludes
 CPchOpts  = $(UsePrecompiledHeaderOptions)
 
+#&&MM to fix.
+GccCommonCompOpts + -fpermissive
+
 #DisableMultiCompile=1
 
 #----------------------------------------------------------------------

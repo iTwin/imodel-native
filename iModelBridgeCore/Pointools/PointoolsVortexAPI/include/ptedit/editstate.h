@@ -25,10 +25,10 @@ union LayerState
 		layers[2] = locked; 
 		layers[3] = visible; 
 	}
-	LayerState(__int64 state) : layersInt(state) {}
+	LayerState(int64_t state) : layersInt(state) {}
 
 	ushort layers[4];
-	__int64 layersInt;
+	int64_t layersInt;
 };
 
 struct GlobalState

@@ -25,13 +25,14 @@ namespace pt
 template<typename T> class BBox : public Bounds<3, T>
 {
 public:
+    typedef Bounds<3, T> Base;
 	BBox()
 	{
 		clear();
 		for (int i=0; i<3; i++) 
 		{
-			upper_bounds[i] = 0;
-			lower_bounds[i] = 0;
+        Base::upper_bounds[i] = 0;
+        Base::lower_bounds[i] = 0;
 		}
 	}
 
@@ -40,11 +41,11 @@ public:
 	{
 		for (int i=0; i<3; i++) 
 		{
-			upper_bounds[i] = (T)box.upper(i);
-			lower_bounds[i] = (T)box.lower(i);
+        Base::upper_bounds[i] = (T)box.upper(i);
+        Base::lower_bounds[i] = (T)box.lower(i);
 		}
 		_av.set( box.weightedCenter() );
-		_empty = false;
+        Base::_empty = false;
 	}
 
 	BBox(T ux, T lx, T uy, T ly, T uz, T lz)
@@ -58,26 +59,26 @@ public:
 	inline void setBox(T ux, T lx, T uy, T ly, T uz, T lz)
 	{
 		clear();
-		lower_bounds[0] = lx;
-		lower_bounds[1] = ly;
-		lower_bounds[2] = lz;
-		upper_bounds[0] = ux;
-		upper_bounds[1] = uy;
-		upper_bounds[2] = uz;
-		_empty = false;
+        Base::lower_bounds[0] = lx;
+        Base::lower_bounds[1] = ly;
+        Base::lower_bounds[2] = lz;
+        Base::upper_bounds[0] = ux;
+        Base::upper_bounds[1] = uy;
+        Base::upper_bounds[2] = uz;
+        Base::_empty = false;
 	}
 	inline void setBox(const vec3<T> &lower, const vec3<T> &upper)
 	{
 		clear();
-		lower_bounds[0] = lower.x;
-		lower_bounds[1] = lower.y;
-		lower_bounds[2] = lower.z;
-		upper_bounds[0] = upper.x;
-		upper_bounds[1] = upper.y;
-		upper_bounds[2] = upper.z;
-		_empty = false;
+        Base::lower_bounds[0] = lower.x;
+        Base::lower_bounds[1] = lower.y;
+        Base::lower_bounds[2] = lower.z;
+        Base::upper_bounds[0] = upper.x;
+        Base::upper_bounds[1] = upper.y;
+        Base::upper_bounds[2] = upper.z;
+        Base::_empty = false;
 	}
-	inline void clear() { _empty = true; _av.zero(); }
+	inline void clear() { Base::_empty = true; _av.zero(); }
 	
 	/*expansion*/ 
 	inline void expandBy(const BBox<T>& bb)
@@ -89,14 +90,14 @@ public:
 			bb.getExtrema(i, v);
 			expandBy(v);
 		}
-		_empty = false;
+        Base::_empty = false;
 	}
 	inline void expandBy(const vec3<T> &v) { expand(v); _av += v; _av /= static_cast<T>(2.0); }
 	inline void expandBy(const double *v)
 	{
 		T vf[] = { (T)v[0], (T)v[1], (T)v[2] };
 		expand(vf);
-		_empty = false;
+        Base::_empty = false;
 	}
 
 	void expandByCoef(T coef)
@@ -108,10 +109,10 @@ public:
 
 		for(t = 0; t < 3; t++)
 		{
-			float offset = size(t) * 0.5 * coef;
+			float offset = Base::size(t) * 0.5 * coef;
 
-			u_bounds[t] = upper_bounds[t] + offset;
-			l_bounds[t] = lower_bounds[t] - offset;
+			u_bounds[t] = Base::upper_bounds[t] + offset;
+			l_bounds[t] = Base::lower_bounds[t] - offset;
 		}
 
 		setBox(u_bounds[0], l_bounds[0], u_bounds[1], l_bounds[1], u_bounds[2], l_bounds[2]);
@@ -120,31 +121,31 @@ public:
 
 	void expandByOffset(T dx, T dy, T dz)
 	{
-		setBox(upper(0) + dx, lower(0) - dx, upper(1) + dy, lower(1) - dy, upper(2) + dz, lower(2) - dz);
+		setBox(Base::upper(0) + dx, Base::lower(0) - dx, Base::upper(1) + dy, Base::lower(1) - dy, Base::upper(2) + dz, Base::lower(2) - dz);
 	}
 
 	
 	/*accessors*/ 
-	inline T dx() const		{ return size(0); }
-	inline T dy() const		{ return size(1); }
-	inline T dz() const		{ return size(2); }	
-	inline const T &lx() const	{ return lower_bounds[0]; }
-	inline const T &ly() const	{ return lower_bounds[1]; }
-	inline const T &lz() const	{ return lower_bounds[2]; }
-	inline const T &ux() const	{ return upper_bounds[0]; }
-	inline const T &uy() const	{ return upper_bounds[1]; }
-	inline const T &uz() const	{ return upper_bounds[2]; }
+	inline T dx() const		{ return Base::size(0); }
+	inline T dy() const		{ return Base::size(1); }
+	inline T dz() const		{ return Base::size(2); }
+	inline const T &lx() const	{ return Base::lower_bounds[0]; }
+	inline const T &ly() const	{ return Base::lower_bounds[1]; }
+	inline const T &lz() const	{ return Base::lower_bounds[2]; }
+	inline const T &ux() const	{ return Base::upper_bounds[0]; }
+	inline const T &uy() const	{ return Base::upper_bounds[1]; }
+	inline const T &uz() const	{ return Base::upper_bounds[2]; }
 
-	inline T &lx() { return lower_bounds[0]; }
-	inline T &ly() { return lower_bounds[1]; }
-	inline T &lz() { return lower_bounds[2]; }
-	inline T &ux() { return upper_bounds[0]; }
-	inline T &uy() { return upper_bounds[1]; }
-	inline T &uz() { return upper_bounds[2]; }
+	inline T &lx() { return Base::lower_bounds[0]; }
+	inline T &ly() { return Base::lower_bounds[1]; }
+	inline T &lz() { return Base::lower_bounds[2]; }
+	inline T &ux() { return Base::upper_bounds[0]; }
+	inline T &uy() { return Base::upper_bounds[1]; }
+	inline T &uz() { return Base::upper_bounds[2]; }
 
 	inline const vec3<T> &weightedCenter() const { return _av; }
-	inline vec3<T> center() const { return diagonal() / 2.0 + vec3<T>(lower_bounds); }
-	inline vec3<T> diagonal() const { return vec3<T>(size(0), size(1), size(2)); }
+	inline vec3<T> center() const { return diagonal() / 2.0 + vec3<T>(Base::lower_bounds); }
+	inline vec3<T> diagonal() const { return vec3<T>(Base::size(0), Base::size(1), Base::size(2)); }
 
 	inline T maxDimensionSize(void)
 	{
@@ -157,13 +158,13 @@ public:
 		{
 			for (int i=0; i<3; i++) 
 			{
-				upper_bounds[i] = box.upper_bounds[i];
-				lower_bounds[i] = box.lower_bounds[i];
+            Base::upper_bounds[i] = box.upper_bounds[i];
+            Base::lower_bounds[i] = box.lower_bounds[i];
 			}	
-			_empty = box._empty;
+            Base::_empty = box._empty;
 			_av = box._av;
 			_valid = box._valid;
-			memcpy( _usebound, box._usebound, sizeof(_usebound));
+			memcpy(Base::_usebound, box._usebound, sizeof(Base::_usebound));
 		}
 		return *this;
 	}
@@ -174,8 +175,8 @@ public:
 
 		for (int i=0; i<3; i++) 
 		{
-			if (fabs(upper_bounds[i] - b.upper_bounds[i]) > 0.00001) return false;
-			if (fabs(lower_bounds[i] - b.lower_bounds[i]) > 0.00001) return false;
+			if (fabs(Base::upper_bounds[i] - b.upper_bounds[i]) > 0.00001) return false;
+			if (fabs(Base::lower_bounds[i] - b.lower_bounds[i]) > 0.00001) return false;
 		}
 		return true;
 	}
@@ -184,7 +185,7 @@ public:
 		return !(*this == b);
 	}
 
-
+#if defined(HAVE_OPENGL)
 	void draw() const
 	{
 		float l;
@@ -308,12 +309,13 @@ public:
 		glEnd();
 		glFrontFace(GL_CCW);
 	}
+#endif
 
 	template<class Real> bool intersectsRay(const Ray<Real> &ray) const
 	{
-		vec3<T> bext(upper_bounds[0]-lower_bounds[0],
-			upper_bounds[1]-lower_bounds[1],
-			upper_bounds[2]-lower_bounds[2]);
+		vec3<T> bext(Base::upper_bounds[0]- Base::lower_bounds[0],
+                     Base::upper_bounds[1]- Base::lower_bounds[1],
+                     Base::upper_bounds[2]- Base::lower_bounds[2]);
 
 		bext *= 0.5f;
 
@@ -346,9 +348,9 @@ public:
 
 	bool intersectsSegment(const Segment<T> &segment) const
 	{
-		vec3<T> bext(upper_bounds[0]-lower_bounds[0],
-			upper_bounds[1]-lower_bounds[1],
-			upper_bounds[2]-lower_bounds[2]);
+		vec3<T> bext(Base::upper_bounds[0]- Base::lower_bounds[0],
+                     Base::upper_bounds[1]- Base::lower_bounds[1],
+                     Base::upper_bounds[2]- Base::lower_bounds[2]);
 
 		bext *= 0.5f;
 
@@ -392,13 +394,13 @@ public:
 		T dcx, dcy, dcz;
 		T xMax, yMax, zMax;
 																// Calculate axial distances between box centers												
-		dcx = fabs(((upper(0) + lower(0)) - (b.upper(0) + b.lower(0))) * 0.5);
-		dcy = fabs(((upper(1) + lower(1)) - (b.upper(1) + b.lower(1))) * 0.5);
-		dcz = fabs(((upper(2) + lower(2)) - (b.upper(2) + b.lower(2))) * 0.5);
+		dcx = fabs(((Base::upper(0) + Base::lower(0)) - (b.upper(0) + b.lower(0))) * 0.5);
+		dcy = fabs(((Base::upper(1) + Base::lower(1)) - (b.upper(1) + b.lower(1))) * 0.5);
+		dcz = fabs(((Base::upper(2) + Base::lower(2)) - (b.upper(2) + b.lower(2))) * 0.5);
 																// Calculate axial spans between each box's opposite ends
-		xMax = dcx + ((upper(0) - lower(0)) + (b.upper(0) - b.lower(0))) * 0.5;
-		yMax = dcy + ((upper(1) - lower(1)) + (b.upper(1) - b.lower(1))) * 0.5;
-		zMax = dcz + ((upper(2) - lower(2)) + (b.upper(2) - b.lower(2))) * 0.5;
+		xMax = dcx + ((Base::upper(0) - Base::lower(0)) + (b.upper(0) - b.lower(0))) * 0.5;
+		yMax = dcy + ((Base::upper(1) - Base::lower(1)) + (b.upper(1) - b.lower(1))) * 0.5;
+		zMax = dcz + ((Base::upper(2) - Base::lower(2)) + (b.upper(2) - b.lower(2))) * 0.5;
 
 																// Return the square of the diagonal distance
 		return xMax*xMax + yMax*yMax + zMax*zMax;
@@ -418,41 +420,41 @@ public:
 
 		T	delta;
 																// Calculate squared delta for X axis if ranges non overlapping
-		if(lower(0) > b.upper(0))
+		if(Base::lower(0) > b.upper(0))
 		{
-			delta	= lower(0) - b.upper(0);
+			delta	= Base::lower(0) - b.upper(0);
 			result += (delta * delta);
 		}
 		else
-		if(b.lower(0) > upper(0))
+		if(b.lower(0) > Base::upper(0))
 		{
-			delta	= upper(0) - b.lower(0);
+			delta	= Base::upper(0) - b.lower(0);
 			result	+= (delta * delta);
 		}
 
 																// Calculate squared delta for Y axis if ranges non overlapping
-		if(lower(1) > b.upper(1))
+		if(Base::lower(1) > b.upper(1))
 		{
-			delta	= lower(1) - b.upper(1);
+			delta	= Base::lower(1) - b.upper(1);
 			result += (delta * delta);
 		}
 		else
-		if(b.lower(1) > upper(1))
+		if(b.lower(1) > Base::upper(1))
 		{
-			delta	= upper(1) - b.lower(1);
+			delta	= Base::upper(1) - b.lower(1);
 			result	+= (delta * delta);
 		}
 
 																// Calculate squared delta for Z axis if ranges non overlapping
-		if(lower(2) > b.upper(2))
+		if(Base::lower(2) > b.upper(2))
 		{
-			delta	= lower(2) - b.upper(2);
+			delta	= Base::lower(2) - b.upper(2);
 			result += (delta * delta);
 		}
 		else
-		if(b.lower(2) > upper(2))
+		if(b.lower(2) > Base::upper(2))
 		{
-			delta	= upper(2) - b.lower(2);
+			delta	= Base::upper(2) - b.lower(2);
 			result	+= (delta * delta);
 		}
 
