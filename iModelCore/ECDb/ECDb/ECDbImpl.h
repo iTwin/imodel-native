@@ -96,7 +96,6 @@ private:
     BeBriefcaseBasedIdSequence m_tableIdSequence;
     BeBriefcaseBasedIdSequence m_columnIdSequence;
     BeBriefcaseBasedIdSequence m_indexIdSequence;
-    BeBriefcaseBasedIdSequence m_constraintIdSequence;
     BeBriefcaseBasedIdSequence m_classmapIdSequence;
     BeBriefcaseBasedIdSequence m_propertypathIdSequence;
 
@@ -149,7 +148,6 @@ public:
     BeBriefcaseBasedIdSequence& GetTableIdSequence() { return m_tableIdSequence; }
     BeBriefcaseBasedIdSequence& GetColumnIdSequence() { return m_columnIdSequence; }
     BeBriefcaseBasedIdSequence& GetIndexIdSequence() { return m_indexIdSequence; }
-    BeBriefcaseBasedIdSequence& GetConstraintIdSequence() { return m_constraintIdSequence; }
     BeBriefcaseBasedIdSequence& GetClassMapIdSequence() { return m_classmapIdSequence; }
     BeBriefcaseBasedIdSequence& GetPropertyPathIdSequence() { return m_propertypathIdSequence; }
 

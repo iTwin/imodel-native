@@ -391,10 +391,7 @@ ForeignKeyDbConstraint const* DbTable::CreateForeignKeyConstraint(DbColumn const
         return nullptr;
         }
 
-    BeBriefcaseBasedId constraintId;
-    m_dbSchema.GetECDb().GetECDbImplR().GetConstraintIdSequence().GetNextValue(constraintId);
-
-    std::unique_ptr<ForeignKeyDbConstraint> constraint (new ForeignKeyDbConstraint(DbConstraintId(constraintId.GetValue()), *this, fkColumn, referencedColumn, onDeleteAction, onUpdateAction));
+    std::unique_ptr<ForeignKeyDbConstraint> constraint (new ForeignKeyDbConstraint(*this, fkColumn, referencedColumn, onDeleteAction, onUpdateAction));
     ForeignKeyDbConstraint* constraintP = constraint.get();
     m_constraints.push_back(std::move(constraint));
 
@@ -1047,8 +1044,8 @@ BentleyStatus PrimaryKeyDbConstraint::Remove(Utf8CP columnName)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-ForeignKeyDbConstraint::ForeignKeyDbConstraint(DbConstraintId id, DbTable const& fkTable, DbColumn const& fkColumn, DbColumn const& referencedColumn, ForeignKeyDbConstraint::ActionType onDeleteAction, ForeignKeyDbConstraint::ActionType onUpdateAction)
-    : DbConstraint(Type::ForeignKey, fkTable), m_id(id), m_onDeleteAction(onDeleteAction), m_onUpdateAction(onUpdateAction)
+ForeignKeyDbConstraint::ForeignKeyDbConstraint(DbTable const& fkTable, DbColumn const& fkColumn, DbColumn const& referencedColumn, ForeignKeyDbConstraint::ActionType onDeleteAction, ForeignKeyDbConstraint::ActionType onUpdateAction)
+    : DbConstraint(Type::ForeignKey, fkTable), m_onDeleteAction(onDeleteAction), m_onUpdateAction(onUpdateAction)
     {
     m_fkColumns.push_back(&fkColumn);
     m_referencedTableColumns.push_back(&referencedColumn);
@@ -1174,7 +1171,7 @@ void ForeignKeyDbConstraint::RemoveIfDuplicate()
 //---------------------------------------------------------------------------------------
 bool ForeignKeyDbConstraint::IsValid() const
     {
-    return m_id.IsValid() && GetReferencedTable().IsValid() && !m_fkColumns.empty() && m_fkColumns.size() == m_referencedTableColumns.size();
+    return GetReferencedTable().IsValid() && !m_fkColumns.empty() && m_fkColumns.size() == m_referencedTableColumns.size();
     }
 
 //---------------------------------------------------------------------------------------

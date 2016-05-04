@@ -22,7 +22,6 @@ ECDb::Impl::Impl(ECDbR ecdb) : m_ecdb(ecdb), m_schemaManager(nullptr),
                             m_tableIdSequence(ecdb, "ec_tableidsequence"),
                             m_columnIdSequence(ecdb, "ec_columnidsequence"),
                             m_indexIdSequence(ecdb, "ec_indexidsequence"),
-                            m_constraintIdSequence(ecdb, "ec_constraintidsequence"),
                             m_classmapIdSequence(ecdb, "ec_classmapidsequence"),
                             m_propertypathIdSequence(ecdb, "ec_propertypathidsequence"),
                             m_issueReporter(ecdb)
@@ -192,7 +191,6 @@ std::vector<BeBriefcaseBasedIdSequence const*> ECDb::Impl::GetSequences() const
             &m_ecEnumIdSequence,
             &m_classmapIdSequence,
             &m_columnIdSequence,
-            &m_constraintIdSequence,
             &m_tableIdSequence,
             &m_propertypathIdSequence,
             &m_indexIdSequence};

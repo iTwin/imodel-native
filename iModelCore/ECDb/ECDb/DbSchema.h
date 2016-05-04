@@ -239,17 +239,14 @@ public:
         };
 
     private:
-        DbConstraintId m_id;
         std::vector<DbColumn const*> m_fkColumns;
         std::vector<DbColumn const*> m_referencedTableColumns;
         ActionType m_onDeleteAction;
         ActionType m_onUpdateAction;
 
     public:
-        ForeignKeyDbConstraint(DbConstraintId id, DbTable const& fkTable, DbColumn const& fkColumn, DbColumn const& referencedColumn, ForeignKeyDbConstraint::ActionType onDeleteAction, ForeignKeyDbConstraint::ActionType onUpdateAction);
+        ForeignKeyDbConstraint(DbTable const& fkTable, DbColumn const& fkColumn, DbColumn const& referencedColumn, ForeignKeyDbConstraint::ActionType onDeleteAction, ForeignKeyDbConstraint::ActionType onUpdateAction);
         ~ForeignKeyDbConstraint() {}
-
-        DbConstraintId GetId() const { return m_id; }
 
         DbTable const& GetReferencedTable() const { BeAssert(!m_referencedTableColumns.empty()); return m_referencedTableColumns[0]->GetTable(); }
         DbTable const& GetForeignKeyTable() const { return GetTable(); }
