@@ -12,9 +12,6 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-#define ECDB_HOLDING_VIEW "ec_RelationshipHoldingStatistics"
-
-
 //=====================================SqlViewBuilder===================================
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                         09/2015
@@ -713,7 +710,7 @@ void ECDbMapAnalyser::Storage::HandleCascadeLinkTable(std::vector<ECDbMapAnalyse
             body.AppendFormatted("(OLD.[%s] = [%s])", relationship->To().GetInstanceId()->GetSingleColumn()->GetName().c_str(), referencedEndPrimaryKey->GetName().c_str());
             if (relationship->IsHolding())
                 {
-                body.AppendFormatted(" AND (SELECT COUNT (*) FROM " ECDB_HOLDING_VIEW "  WHERE ECInstanceId = OLD.[%s]) = 0", relationship->To().GetInstanceId()->GetSingleColumn()->GetName().c_str());
+                body.AppendFormatted(" AND (SELECT COUNT (*) FROM " ECDB_RELATIONSHIPHELDINSTANCESSTATS_VIEWNAME "  WHERE ECInstanceId = OLD.[%s]) = 0", relationship->To().GetInstanceId()->GetSingleColumn()->GetName().c_str());
                 }
             body.Append(";").AppendEol();
             }
@@ -1634,7 +1631,7 @@ void ECDbMapAnalyser::ProcessEndTableRelationships()
 
                     if (relationship->IsHolding())
                         {
-                        body.AppendFormatted(" AND (SELECT COUNT(*) FROM " ECDB_HOLDING_VIEW "  WHERE ECInstanceId=OLD.[%s]) = 0", toKeyColumn->GetName().c_str());
+                        body.AppendFormatted(" AND (SELECT COUNT(*) FROM " ECDB_RELATIONSHIPHELDINSTANCESSTATS_VIEWNAME "  WHERE ECInstanceId=OLD.[%s]) = 0", toKeyColumn->GetName().c_str());
                         }
                     body.AppendLine(";");
 

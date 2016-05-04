@@ -1724,15 +1724,12 @@ void Partition::AppendECClassIdFilterSql(Utf8StringR filterSqlExpression, Utf8CP
         }
     }
 
-#define ECDB_HOLDING_VIEW "ec_RelationshipHoldingStatistics"
-#define ECDB_HOLDING_VIEW_HELDID_COLNAME "HeldECInstanceId"
-
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan     01/2016
 //---------------+---------------+---------------+---------------+---------------+---------
 void RelationshipPurger::Finalize()
     {
-    for (auto& stmt : m_stmts)
+    for (std::unique_ptr<Statement>& stmt : m_stmts)
         {
         stmt->Finalize();
         }
@@ -1809,7 +1806,7 @@ BentleyStatus RelationshipPurger::Initialize(ECDbCR ecdb)
                     return ERROR;
                     }
 
-                unionClauseBuilder.AppendFormatted("SELECT [%s] " ECDB_HOLDING_VIEW_HELDID_COLNAME " FROM [%s] WHERE [%s] IS NOT NULL", foreignIdCol->GetName().c_str(), table->GetName().c_str(), foreignIdCol->GetName().c_str());
+                unionClauseBuilder.AppendFormatted("SELECT [%s] " ECDB_RELATIONSHIPHELDINSTANCESSTATS_ID_COLNAME " FROM [%s] WHERE [%s] IS NOT NULL", foreignIdCol->GetName().c_str(), table->GetName().c_str(), foreignIdCol->GetName().c_str());
                 }
 
             if (!unionClauseBuilder.IsEmpty())
@@ -1837,12 +1834,12 @@ BentleyStatus RelationshipPurger::Initialize(ECDbCR ecdb)
                 return ERROR;
 
             NativeSqlBuilder unionClauseBuilder;
-            unionClauseBuilder.AppendFormatted("SELECT [%s] " ECDB_HOLDING_VIEW_HELDID_COLNAME " FROM [%s]", heldIdCol->GetName().c_str(), primaryTable.GetName().c_str());
+            unionClauseBuilder.AppendFormatted("SELECT [%s] " ECDB_RELATIONSHIPHELDINSTANCESSTATS_ID_COLNAME " FROM [%s]", heldIdCol->GetName().c_str(), primaryTable.GetName().c_str());
             unionClauseList.push_back(std::move(unionClauseBuilder));
             }
         }
 
-    NativeSqlBuilder holdingViewBuilder("DROP VIEW IF EXISTS " ECDB_HOLDING_VIEW "; CREATE VIEW " ECDB_HOLDING_VIEW " AS ");
+    NativeSqlBuilder holdingViewBuilder("DROP VIEW IF EXISTS " ECDB_RELATIONSHIPHELDINSTANCESSTATS_VIEWNAME "; CREATE VIEW " ECDB_RELATIONSHIPHELDINSTANCESSTATS_VIEWNAME " AS ");
     if (!unionClauseList.empty())
         {
         bool isFirstItem = true;
@@ -1858,7 +1855,7 @@ BentleyStatus RelationshipPurger::Initialize(ECDbCR ecdb)
         holdingViewBuilder.Append(";");
         }
     else
-        holdingViewBuilder.Append("SELECT NULL " ECDB_HOLDING_VIEW_HELDID_COLNAME " LIMIT 0;");
+        holdingViewBuilder.Append("SELECT NULL " ECDB_RELATIONSHIPHELDINSTANCESSTATS_ID_COLNAME " LIMIT 0;");
 
     if (BE_SQLITE_OK != ecdb.ExecuteSql(holdingViewBuilder.ToString()))
         {
@@ -1906,7 +1903,7 @@ BentleyStatus RelationshipPurger::Purge(ECDbCR ecdb)
 Utf8String RelationshipPurger::BuildSql(Utf8CP tableName, Utf8CP pkColumnName)
     {
     Utf8String str;
-    str.Sprintf("DELETE FROM [%s] WHERE [%s] NOT IN (SELECT " ECDB_HOLDING_VIEW_HELDID_COLNAME " FROM " ECDB_HOLDING_VIEW ")", tableName, pkColumnName);
+    str.Sprintf("DELETE FROM [%s] WHERE [%s] NOT IN (SELECT " ECDB_RELATIONSHIPHELDINSTANCESSTATS_ID_COLNAME " FROM " ECDB_RELATIONSHIPHELDINSTANCESSTATS_VIEWNAME ")", tableName, pkColumnName);
     return str;
     }
 
