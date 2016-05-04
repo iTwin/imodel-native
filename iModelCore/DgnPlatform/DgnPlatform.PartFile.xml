@@ -176,7 +176,7 @@
         <SubPart PartName="BackdoorForUnitTests"/> <!-- BuildTests.mke cannot be called in parallel because it always makes a static symlink; ensure it was run once in isolation -->
         
         <!-- Temporary while Mike Embick determines the feasibility of this library via unit tests. -->
-        <SubPart PartName="GraphVizLibrary" PartFile="graphviz" Repository="libsrc-graphviz"/>
+        <!-- <SubPart PartName="GraphVizLibrary" PartFile="graphviz" Repository="libsrc-graphviz"/> -->
         
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="DgnPlatform/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
