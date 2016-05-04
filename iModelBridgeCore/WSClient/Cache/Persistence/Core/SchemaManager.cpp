@@ -162,6 +162,7 @@ std::vector<ECSchemaPtr>& schemasOut
             return ERROR;
             }
 
+        // WIP06
 //        FIXME: Satyakam: Temporary commenting out to avoid crash.
 //        if (SUCCESS != FixLegacySchema(*schema, *context))
 //            {
