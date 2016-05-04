@@ -57,14 +57,9 @@ class CPublicApiHeaderWriter(HeaderWriter):
         self._file.write(status_code_str)
         self._write_spacing()
         self._file.write(self._COMMENT_GroupBriefShort
-                         .format("Struct to hold a status id, status display message, and description. See \\ref {0}StatusCodes\n"
+                         .format("Call status code. See \\ref {0}StatusCodes\n"
                                  .format(self._api.get_api_name())))
-        self._file.write("typedef struct _CALLSTATUS\n")
-        self._file.write("    {\n")
-        self._file.write("    int16_t id;\n")
-        self._file.write("    CharCP message;\n")
-        self._file.write("    CharCP description;\n")
-        self._file.write("    } CALLSTATUS, *LPCALLSTATUS;\n")
+        self._file.write("typedef int16_t CallStatus;\n")
         self._file.write(self._COMMENT_GroupEnd)
 
     def __write_api_handle(self):
@@ -89,7 +84,7 @@ class CPublicApiHeaderWriter(HeaderWriter):
 
     def __write_api_handle_free_declaration(self):
         self._file.write(self._COMMENT_GroupBriefShort.format("API handle free function"))
-        self._file.write('{0}_EXPORT CALLSTATUS {1}_FreeApi({0}HANDLE apiHandle);\n'.format(self._api.get_upper_api_acronym(),
+        self._file.write('{0}_EXPORT CallStatus {1}_FreeApi({0}HANDLE apiHandle);\n'.format(self._api.get_upper_api_acronym(),
                                                                                             self._api.get_api_name()))
 
     def __write_api_read_list_definition(self, api_struct):

@@ -12,7 +12,7 @@
 * Constructor.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-CWSCC_EXPORT CWSCCHANDLE ConnectWebServicesClientC_InitializeApiWithToken(WCharCP wAuthenticatedToken, uint32_t productId)
+CWSCCHANDLE ConnectWebServicesClientC_InitializeApiWithToken(WCharCP wAuthenticatedToken, uint32_t productId)
     {
     Utf8String authenticatedToken;
     BeStringUtilities::WCharToUtf8(authenticatedToken, wAuthenticatedToken);
@@ -26,7 +26,7 @@ CWSCC_EXPORT CWSCCHANDLE ConnectWebServicesClientC_InitializeApiWithToken(WCharC
 * Constructor.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-CWSCC_EXPORT CWSCCHANDLE ConnectWebServicesClientC_InitializeApiWithCredentials(WCharCP wUsername, WCharCP wPassword, uint32_t productId)
+CWSCCHANDLE ConnectWebServicesClientC_InitializeApiWithCredentials(WCharCP wUsername, WCharCP wPassword, uint32_t productId)
     {
     Utf8String username, password;
     BeStringUtilities::WCharToUtf8(username, wUsername);
@@ -40,37 +40,68 @@ CWSCC_EXPORT CWSCCHANDLE ConnectWebServicesClientC_InitializeApiWithCredentials(
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                    04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-CALLSTATUS httperrorToConnectWebServicesClientStatus(HttpStatus status, Utf8StringCR message, Utf8StringCR description)
+CallStatus httperrorToConnectWebServicesClientStatus(LPCWSCC api, HttpStatus status, Utf8StringCR message, Utf8StringCR description)
     {
+    api->SetStatusMessage(message);
+    api->SetStatusDescription(description);
     switch (status)
         {
-            case HttpStatus::InternalServerError:
-                return CALLSTATUS{ ERROR500, message.c_str(), description.c_str() };
-            case HttpStatus::BadRequest:
-                return CALLSTATUS{ ERROR400, message.c_str(), description.c_str() };
-            case HttpStatus::NotFound:
-                return CALLSTATUS{ ERROR404, message.c_str(), description.c_str() };
-            default:
-                return CALLSTATUS{ ERROR500, message.c_str(), description.c_str() };
+        case HttpStatus::InternalServerError:
+            return ERROR500;
+        case HttpStatus::BadRequest:
+            return ERROR400;
+        case HttpStatus::NotFound:
+            return ERROR404;
+        default:
+            return ERROR500;
         }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-CWSCC_EXPORT CALLSTATUS ConnectWebServicesClientC_GetIMSUserInfo(CWSCCHANDLE apiHandle, CWSCCDATABUFHANDLE* userBuffer)
+CallStatus ConnectWebServicesClientC_GetIMSUserInfo(CWSCCHANDLE apiHandle, CWSCCDATABUFHANDLE* userBuffer)
     {
     VERIFY_API
 
     if (userBuffer == NULL)
-        return CALLSTATUS{ INVALID_PARAMETER, "The userBuffer parameter is NULL." };
+        {
+        api->SetStatusMessage("The userBuffer parameter is NULL.");
+        api->SetStatusDescription("The userBuffer parameter passed into ConnectWebServicesClientC_GetIMSUserInfo is invalid.");
+        return INVALID_PARAMETER;
+        }
 
     auto result = api->m_solrClientPtr->SendGetRequest()->GetResult();
     if (!result.IsSuccess())
-        return httperrorToConnectWebServicesClientStatus( result.GetError().GetHttpStatus(), result.GetError().GetDisplayMessage(), result.GetError().GetDisplayDescription());
+        return httperrorToConnectWebServicesClientStatus(api, result.GetError().GetHttpStatus(), result.GetError().GetDisplayMessage(), result.GetError().GetDisplayDescription());
     
+    api->SetStatusMessage("Success!");
+    api->SetStatusDescription("The IMS user info was successfully retreived.");
+    return SUCCESS;
+    }
 
-    return CALLSTATUS{ SUCCESS, "Success!" };
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+CharCP ConnectWebServicesClientC_GetLastStatusMessage(CWSCCHANDLE apiHandle)
+    {
+    if (NULL == apiHandle)
+        return "apiHandle passed into ConnectWebServicesClientC_GetLastStatusMessage is NULL.";
+    LPCWSCC api = (LPCWSCC) apiHandle;
+
+    return api->GetLastStatusMessage().c_str();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+CharCP ConnectWebServicesClientC_GetLastStatusDescription(CWSCCHANDLE apiHandle)
+    {
+    if (NULL == apiHandle)
+        return "apiHandle passed into ConnectWebServicesClientC_GetLastStatusDescription is NULL.";
+    LPCWSCC api = (LPCWSCC) apiHandle;
+
+    return api->GetLastStatusDescription().c_str();
     }
 
 WSLocalState ConnectWebServicesClientC_internal::m_localState = WSLocalState();
@@ -80,6 +111,9 @@ WSLocalState ConnectWebServicesClientC_internal::m_localState = WSLocalState();
 +---------------+---------------+---------------+---------------+---------------+------*/
 ConnectWebServicesClientC_internal::ConnectWebServicesClientC_internal(Utf8String tokenXml, uint32_t productId)
     {
+    m_lastStatusMessage = Utf8String("");
+    m_lastStatusDescription = Utf8String("");
+
     DgnClientFxCommon::SetApplicationPathsProvider(&m_pathProv);
 
     BeFileName::CreateNewDirectory(m_pathProv.GetTemporaryDirectory());
@@ -130,6 +164,9 @@ ConnectWebServicesClientC_internal::ConnectWebServicesClientC_internal(Utf8Strin
 +---------------+---------------+---------------+---------------+---------------+------*/
 ConnectWebServicesClientC_internal::ConnectWebServicesClientC_internal(Utf8String username, Utf8String password, uint32_t productId)
     {
+    m_lastStatusMessage = Utf8String("");
+    m_lastStatusDescription = Utf8String("");
+
     DgnClientFxCommon::SetApplicationPathsProvider(&m_pathProv);
     
     BeFileName::CreateNewDirectory(m_pathProv.GetTemporaryDirectory());
@@ -173,4 +210,24 @@ ConnectWebServicesClientC_internal::ConnectWebServicesClientC_internal(Utf8Strin
     Utf8String searchApiUrl = "https://qa-waz-search.bentley.com/token";
     Utf8String collection = "IMS/User";
     m_solrClientPtr = SolrClient::Create(searchApiUrl, collection, clientInfo, samlAuthHandler);
+    }
+
+void ConnectWebServicesClientC_internal::SetStatusMessage(Utf8String message)
+    {
+    m_lastStatusMessage = message;
+    }
+
+void ConnectWebServicesClientC_internal::SetStatusDescription(Utf8String desc)
+    {
+    m_lastStatusDescription = desc;
+    }
+
+Utf8StringCR ConnectWebServicesClientC_internal::GetLastStatusMessage()
+    {
+    return m_lastStatusMessage;
+    }
+
+Utf8StringCR ConnectWebServicesClientC_internal::GetLastStatusDescription()
+    {
+    return m_lastStatusDescription;
     }

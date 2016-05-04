@@ -1,25 +1,17 @@
 #----------------------------------------------------------------------------------------
-#   Tests that are ignored on purpose
-#----------------------------------------------------------------------------------------
-
-#----------------------------------------------------------------------------------------
-# Unknown issues - need to investigate
-#----------------------------------------------------------------------------------------
-
-#----------------------------------------------------------------------------------------
 # Known issues
 #----------------------------------------------------------------------------------------
 
-# AsyncTask::GetResult() makes test fail randomly
+# AsyncTask::GetResult() makes test fail randomly. Low priority
 CachingDataSourceTests.OpenOrCreate_CalledSecondTimeAfterCacheWasCreated_OpensAndSucceeds
 
-# Fails on WinX86. (onProgressCalled actual 0; expected 1)
+# Fails on WinX86. (onProgressCalled actual 0; expected 1). Low priority
 CachingDataSourceTests.GetFile_ClassDoesNotHaveFileDependentPropertiesCA_ProgressIsCalledWithNoNameAndNoSizeAndFileHasDefaultName
 
-#Fails on iOS; Vincas said to ignore
-ECDbAdapterTests.*
+# Pending fix on UniqueTaskHolder. Low priority
+ConnectSignInManagerTests.GetAuthenticationHandler_TwoRequestsSentInParaleleUsingDifferentAuthHandlersWithSameServer_OnlyOneTokenRequestSent
 
-# Fails on Android. Notified Vincas
+# Fails on Android. Medium priority
 FileUtilTests.TruncateFilePath_FileWithNoExtension_TruncatesFileName
 FileUtilTests.TruncateFilePath_MaxPathLessThanPath_TruncatesFileName
 FileUtilTests.TruncateFilePath_MaxPathMoreThanPath_DoesNothing
@@ -28,12 +20,19 @@ FileUtilTests.TruncateFilePath_MaxPathSoSmallThatExtensionWouldBeChanged_Error
 FileUtilTests.TruncateFilePath_MaxPathSoSmallThatFileNameWouldBeEmpty_Error
 FileUtilTests.TruncateFilePath_PathIsFolder_Error
 
+#Fails on iOS; Need to investigate why. High priority
+ECDbAdapterTests.*
+
 #----------------------------------------------------------------------------------------
-# Fail due to DgnDb06 changes 
+# Fails due to DgnDb06xx changes. All High priority
 #----------------------------------------------------------------------------------------
 
 # Graphite05x EDDb upgrade is not yet supported or will not be. Waiting for requirements for any upgrades needed to be implemented.
-DataSourceCacheUpgradeTests*
+DataSourceCacheUpgradeTests.CachingDataSource_OpenOrCreate_V5*
+DataSourceCacheUpgradeTests.Open_V5*
+DataSourceCacheUpgradeTests.Open_V7*
+DataSourceCacheUpgradeTests.Open_V8*
+DataSourceCacheUpgradeTests.Open_V9*
 
 # ECSchema update in ECDb is not yet supported
 DataSourceCacheTests.UpdateSchemas_SchemasWithDeletedPropertyPassedToDataSourceCacheWithCachedStatements_SuccessAndSchemasAccessable
@@ -45,10 +44,10 @@ ECDbAdapterTests.DeleteInstances_DeletingRelationshipThatHoldsHierarchy_Hierarch
 ECDbAdapterTests.DeleteInstances_DeletingParentThatHoldsTwoChildrenThatHoldSubChild_DeletesParentAndChildrenAndSubChild
 ECDbAdapterTests.DeleteInstances_DeletedInstanceIsInHoldingCircularRelationships_DeletesChildren
 
-#Need adjustments to 06 ECRelationship limitations in ECDb
+# Need adjustments to 06 ECRelationship limitations in ECDb
 CachingDataSourceTests.*
 ChangeManagerTests.*
 DataSourceCacheTests.*
 
-# Pending fix on UniqueTaskHolder
-ConnectSignInManagerTests.GetAuthenticationHandler_TwoRequestsSentInParaleleUsingDifferentAuthHandlersWithSameServer_OnlyOneTokenRequestSent
+# Waiting for ECDb implementation
+DataSourceCacheTests.UpdateSchemas_*

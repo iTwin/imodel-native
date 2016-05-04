@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ECSchema schemaName="WSCache" nameSpacePrefix="WSC" version="02.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
+<ECSchema schemaName="WSCache" nameSpacePrefix="wsc" version="02.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
     <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" prefix="bsca"/>
     <ECSchemaReference name="ECDb_FileInfo" version="02.00" prefix="ecdbf"/>
     <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap"/>
@@ -294,7 +294,7 @@
     </ECEntityClass>
 
     <ECRelationshipClass typeName="NodeToExtendedData" strength="embedding">
-        <Source cardinality="(1,1)" polymorphic="true">
+        <Source cardinality="(0,1)" polymorphic="true">
             <Class class="Node"/>
         </Source>
         <Target cardinality="(0,1)" polymorphic="false">

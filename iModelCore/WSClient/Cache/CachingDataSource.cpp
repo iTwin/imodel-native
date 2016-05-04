@@ -17,6 +17,8 @@
 #include <DgnClientFx/Utils/Http/HttpStatusHelper.h>
 #include <Bentley/BeTimeUtilities.h>
 
+#include "Compatibility/SchemaChangeWSObjectsResponse.h"
+#include "Compatibility/Schemas.h"
 #include "CacheNavigationTask.h"
 #include "Logging.h"
 #include "DownloadFilesTask.h"
@@ -141,8 +143,8 @@ WorkerThreadPtr cacheAccessThread
     return cacheAccessThread->ExecuteAsync([=]
         {
         LOG.infov(L"CachingDataSource::OpenOrCreate() using environment:\n%ls\n%ls",
-            cacheEnvironment.persistentFileCacheDir.c_str(),
-            cacheEnvironment.temporaryFileCacheDir.c_str());
+                  cacheEnvironment.persistentFileCacheDir.c_str(),
+                  cacheEnvironment.temporaryFileCacheDir.c_str());
 
         ECDb::CreateParams params;
         params.SetStartDefaultTxn(DefaultTxn::No); // Allow concurrent multiple connection access
@@ -171,12 +173,12 @@ WorkerThreadPtr cacheAccessThread
         auto infoStore = std::make_shared<RepositoryInfoStore>(cacheTransactionManager.get(), client, cacheAccessThread);
 
         auto ds = std::shared_ptr<CachingDataSource>(new CachingDataSource(
-                                                     client,
-                                                     cacheTransactionManager,
-                                                     infoStore,
-                                                     cacheAccessThread,
-                                                     cacheEnvironment.temporaryFileCacheDir
-                                                     ));
+            client,
+            cacheTransactionManager,
+            infoStore,
+            cacheAccessThread,
+            cacheEnvironment.temporaryFileCacheDir
+            ));
 
         auto txn = ds->StartCacheTransaction();
         if (ds->m_infoStore->IsCacheInitialized(txn.GetCache()))
@@ -208,11 +210,11 @@ WorkerThreadPtr cacheAccessThread
             openResult->SetSuccess(ds);
             });
         })
-        ->Then<OpenResult>([=]
+            ->Then<OpenResult>([=]
             {
             double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-            LOG.infov("CachingDataSource::OpenOrCreate() %s and took: %.2f ms", 
-                openResult->IsSuccess() ? "succeeded" : "failed", end - start);
+            LOG.infov("CachingDataSource::OpenOrCreate() %s and took: %.2f ms",
+                      openResult->IsSuccess() ? "succeeded" : "failed", end - start);
 
             return *openResult;
             });
@@ -269,11 +271,12 @@ AsyncTaskPtr<CachingDataSource::Result> CachingDataSource::UpdateSchemas(ICancel
                 return;
                 }
 
-            // Ensure MetaSchema is available
+            // Ensure ECSchemaDef class is available
             auto txn = StartCacheTransaction();
-            if (!txn.GetCache().GetAdapter().HasECSchema("MetaSchema"))
+            if (!txn.GetCache().GetAdapter().HasECSchema(SCHEMA_WSCacheMetaSchema))
                 {
-                if (SUCCESS != txn.GetCache().UpdateSchemas({GetMetaSchemaPath()}))
+                auto path = SchemaContext::GetCacheSchemasDir().AppendToPath(BeFileName(SCHEMA_WSCacheMetaSchema ".03.00.ecschema.xml"));
+                if (SUCCESS != txn.GetCache().UpdateSchemas({path}))
                     {
                     result->SetError(Status::InternalCacheError);
                     return;
@@ -295,7 +298,9 @@ AsyncTaskPtr<CachingDataSource::Result> CachingDataSource::UpdateSchemas(ICancel
                     }
 
                 auto txn = StartCacheTransaction();
-                if (SUCCESS != txn.GetCache().CacheResponse(responseKey, objectsResult.GetValue()))
+                // MetaSchema instances are read-only in ECDb, need to use different schema
+                SchemaChangeWSObjectsResponse response(objectsResult.GetValue(), SCHEMA_WSCacheMetaSchema);
+                if (SUCCESS != txn.GetCache().CacheResponse(responseKey, response))
                     {
                     result->SetError(Status::InternalCacheError);
                     return;
@@ -325,22 +330,20 @@ AsyncTaskPtr<CachingDataSource::Result> CachingDataSource::UpdateSchemas(ICancel
                     return;
                     }
 
-                for (ObjectIdCR schemaId : schemaIds)
+                for (ObjectId schemaId : schemaIds)
                     {
                     SchemaKey schemaKey = ReadSchemaKey(txn, schemaId);
-
-                    if (ECSchema::IsStandardSchema(schemaKey.m_schemaName)
-                        || schemaKey.m_schemaName == "MetaSchema") // WIP06 ECDb does not support schema update
-                        {
+                    if (ECSchema::IsStandardSchema(schemaKey.m_schemaName) || schemaKey.m_schemaName == SCHEMA_MetaSchema)
                         continue;
-                        }
 
                     Utf8String eTag = txn.GetCache().ReadFileCacheTag(schemaId);
                     TempFilePtr schemaFile = GetTempFileForSchema(schemaKey);
 
                     temporaryFiles->push_back(schemaFile);
 
-                    m_client->SendGetFileRequest(schemaId, schemaFile->GetPath(), eTag, nullptr, ct)
+                    ObjectId remoteSchemaId = schemaId;
+                    remoteSchemaId.schemaName = SCHEMA_MetaSchema;
+                    m_client->SendGetFileRequest(remoteSchemaId, schemaFile->GetPath(), eTag, nullptr, ct)
                         ->Then(m_cacheAccessThread, [=] (WSFileResult& schemaFileResult)
                         {
                         schemaDownloadResults->insert({schemaId, schemaFileResult});
@@ -437,13 +440,7 @@ bvector<SchemaKey> CachingDataSource::GetRepositorySchemaKeys(CacheTransactionCR
         }
 
     for (JsonValueCR schemaDef : schemaDefs)
-        {
-        Utf8String schemaName = schemaDef["Name"].asString();
-        uint32_t major = schemaDef["VersionMajor"].asInt();
-        uint32_t minor = schemaDef["VersionMinor"].asInt();
-
-        keys.push_back(SchemaKey(schemaName.c_str(), major, minor));
-        }
+        keys.push_back(ExtractSchemaKey(schemaDef));
 
     return keys;
     }
@@ -462,37 +459,37 @@ WSInfo CachingDataSource::GetServerInfo(CacheTransactionCR txn)
 TempFilePtr CachingDataSource::GetTempFileForSchema(SchemaKeyCR schemaKey)
     {
     if (schemaKey.m_schemaName.empty())
-        {
         return GetTempFile(BeGuid().ToString(), ObjectId());
-        }
 
-    Utf8PrintfString schemaFileName
-        (
-        "%s.%02d.%02d.ecschema.xml",
-        Utf8String(schemaKey.m_schemaName).c_str(),
-        schemaKey.m_versionMajor,
-        schemaKey.m_versionMinor
-        );
-
+    Utf8String schemaFileName = schemaKey.m_schemaName + "." + schemaKey.GetLegacyVersionString() + ".ecschema.xml";
     return GetTempFile(schemaFileName, ObjectId());
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaKey CachingDataSource::ReadSchemaKey(CacheTransactionCR txn, ObjectIdCR schemaid)
+SchemaKey CachingDataSource::ReadSchemaKey(CacheTransactionCR txn, ObjectIdCR schemaId)
     {
     Json::Value schemaDef;
-    if (CacheStatus::OK != txn.GetCache().ReadInstance(schemaid, schemaDef))
+    if (CacheStatus::OK != txn.GetCache().ReadInstance(schemaId, schemaDef))
         {
-        BeAssert(false && "SchemaDef should be cached before calling this functions");
+        BeAssert(false && "ECSchemaDef should be cached before calling this functions");
         return SchemaKey();
         }
 
+    return ExtractSchemaKey(schemaDef);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    05/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+SchemaKey CachingDataSource::ExtractSchemaKey(JsonValueCR schemaDef)
+    {
     return SchemaKey(
-        schemaDef["Name"].asCString(),
-        schemaDef["VersionMajor"].asInt(),
-        schemaDef["VersionMinor"].asInt()
+        schemaDef[CLASS_ECSchemaDef_PROPERTY_Name].asCString(),
+        schemaDef[CLASS_ECSchemaDef_PROPERTY_VersionMajor].asInt(),
+        schemaDef[CLASS_ECSchemaDef_PROPERTY_VersionWrite].asInt(),
+        schemaDef[CLASS_ECSchemaDef_PROPERTY_VersionMinor].asInt()
         );
     }
 
@@ -698,7 +695,7 @@ ICancellationTokenPtr ct
                 if (!response.IsFinal())
                     {
                     CacheObjects(responseKey, query, origin, response.GetSkipToken(), page + 1, ct)
-                    ->Then([=] (DataOriginResult nextResult)
+                        ->Then([=] (DataOriginResult nextResult)
                         {
                         *result = nextResult;
                         });
@@ -1025,14 +1022,6 @@ CachedResponseKey CachingDataSource::CreateSchemaListResponseKey(CacheTransactio
     {
     ECInstanceKey root = txn.GetCache().FindOrCreateRoot("");
     return CachedResponseKey(root, CachedResultsName_Schemas);
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod
-+--------------------------------------------------------------------------------------*/
-BeFileName CachingDataSource::GetMetaSchemaPath()
-    {
-    return SchemaContext::GetCacheSchemasDir().AppendToPath(L"MetaSchema.02.00.ecschema.xml");
     }
 
 /*--------------------------------------------------------------------------------------+

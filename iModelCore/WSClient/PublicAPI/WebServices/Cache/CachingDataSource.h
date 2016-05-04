@@ -70,6 +70,7 @@ struct CachingDataSource :
         ICancellationTokenPtr CreateCancellationToken(ICancellationTokenPtr ct);
 
         SchemaKey ReadSchemaKey(CacheTransactionCR txn, ObjectIdCR schemaId);
+        SchemaKey ExtractSchemaKey(JsonValueCR schemaDef);
 
         TempFilePtr GetTempFile(Utf8StringCR fileName, ObjectIdCR objectId); // TODO: create mockable file manager
         TempFilePtr GetTempFileForSchema(SchemaKeyCR schemaKey);
@@ -85,8 +86,6 @@ struct CachingDataSource :
 
         void NotifyOnCacheSchemaChangedListeners();
         CachedResponseKey CreateSchemaListResponseKey(CacheTransactionCR txn);
-
-        static BeFileName GetMetaSchemaPath();
 
         AsyncTaskPtr<DataOriginResult> CacheObjects
             (

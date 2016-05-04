@@ -34,17 +34,15 @@ class CApiSourceWriter(SourceWriter):
 
     def __write_api_handle_free_function(self):
         self._file.write(self._COMMENT_BsiMethod)
-        self._file.write('CALLSTATUS {1}_FreeApi({0}HANDLE apiHandle)\n'.format(self._api.get_upper_api_acronym(),
-                                                                                           self._api.get_api_name()))
+        self._file.write('CallStatus {1}_FreeApi({0}HANDLE apiHandle)\n'.format(self._api.get_upper_api_acronym(),
+                                                                                self._api.get_api_name()))
         self._file.write('    {\n')
         self._file.write('    if (nullptr == apiHandle)\n')
-        self._file.write('        return CALLSTATUS {{{0}, "{1}", "{2}"}};\n\n'
-                         .format("INVALID_PARAMETER".format(self._api.get_upper_api_name()),
-                                 self._status_codes["INVALID_PARAMETER"].message,
-                                 "The apiHandle passed into the function is a nullptr."))
+        self._file.write('        return INVALID_PARAMETER;\n\n')
         self._file.write('    LP{0} api = (LP{0}) apiHandle;\n'.format(self._api.get_upper_api_acronym()))
         self._file.write('    free(api);\n')
-        self._file.write('    return CALLSTATUS {{{0}, "{1}", "{2}"}};\n'
+        self._file.write('    api->SetStatusMessage("{1}");\n    api->SetStatusDescription("{2}");\n'
+                         '    return {0};\n'
                          .format("SUCCESS".format(self._api.get_upper_api_name()),
                                  self._status_codes["SUCCESS"].message,
                                  "The {0}_FreeApi completed successfully.".format(self._api.get_api_name())))

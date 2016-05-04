@@ -253,15 +253,14 @@ bvector<ECRelationshipClassCP> ECDbAdapter::FindRelationshipClasses(ECClassId so
         WITH RECURSIVE 
             RelationshipConstraintClasses (RelationshipClassId, RelationshipEnd, IsPolymorphic, ClassId, NestingLevel) AS
             (
-            SELECT RC.RelationshipClassId, RCC.RelationshipEnd, RC.IsPolymorphic, RCC.ClassId, 0
+            SELECT RC.RelationshipClassId, RC.RelationshipEnd, RC.IsPolymorphic, RCC.ClassId, 0
                 FROM ec_RelationshipConstraint RC
                 INNER JOIN ec_RelationshipConstraintClass RCC
-                    ON  RC.RelationshipClassId = RCC.RelationshipClassId
-                    AND RC.RelationshipEnd = RCC.RelationshipEnd
+                    ON  RC.Id = RCC.ConstraintId
             UNION
-            SELECT RCC.RelationshipClassId, RCC.RelationshipEnd, RCC.IsPolymorphic, BC.ClassId, NestingLevel + 1
+            SELECT RC.RelationshipClassId, RC.RelationshipEnd, RCC.IsPolymorphic, BC.ClassId, NestingLevel + 1
                 FROM RelationshipConstraintClasses RCC
-                INNER JOIN ec_BaseClass BC
+                INNER JOIN ec_ClassHasBaseClasses BC
                     ON BC.BaseClassId = RCC.ClassId
                 WHERE RCC.IsPolymorphic = 1
                 ORDER BY 2 DESC
@@ -1091,45 +1090,48 @@ BentleyStatus ECDbAdapter::OnBeforeDelete(ECClassCR ecClass, ECInstanceId instan
 BentleyStatus ECDbAdapter::DeleteInstances(const ECInstanceKeyMultiMap& instances)
     {
     if (instances.empty())
-        {
         return SUCCESS;
-        }
 
     bset<ECInstanceKey> allInstancesBeingDeleted;
     if (SUCCESS != FindInstancesBeingDeleted(instances, allInstancesBeingDeleted))
-        {
         return ERROR;
-        }
 
     bset<ECInstanceKey> additionalInstancesSet;
     for (ECInstanceKeyCR key : allInstancesBeingDeleted)
         {
         ECClassCP ecClass = GetECClass(key);
         if (nullptr == ecClass)
-            {
             return ERROR;
-            }
+
         for (auto listener : m_deleteListeners)
             {
             if (SUCCESS != listener->OnBeforeDelete(*ecClass, key.GetECInstanceId(), additionalInstancesSet))
-                {
                 return ERROR;
-                }
             }
         }
 
     for (auto pair : instances)
         {
         if (SUCCESS != DeleteInstance(pair.first, pair.second))
-            {
             return ERROR;
-            }
         }
 
     // Cleanup holding relationship hierarchies
-    if (SUCCESS != m_ecDb->Purge(ECDb::PurgeMode::HoldingRelationships))
+    // WIP06 workaround to Purge() issue. Has worse performance
+    // WIP06 disabled due to issue with holding relationships
+    bool usePurge = false;
+    if (usePurge)
         {
-        return ERROR;
+        if (SUCCESS != m_ecDb->Purge(ECDb::PurgeMode::HoldingRelationships))
+            return ERROR;
+        }
+    else
+        {
+        for (auto key : allInstancesBeingDeleted)
+            {
+            if (SUCCESS != DeleteInstance(key.GetECClassId(), key.GetECInstanceId()))
+                return ERROR;
+            }
         }
 
     ECInstanceKeyMultiMap additionalInstancesMap;
@@ -1151,9 +1153,7 @@ BentleyStatus ECDbAdapter::DeleteInstance(ECClassId classId, ECInstanceId instan
         {
         ECClassCP ecClass = GetECClass(classId);
         if (nullptr == ecClass)
-            {
             return bastring();
-            }
         return "DELETE FROM ONLY " + ecClass->GetECSqlName() + " WHERE ECInstanceId = ? ";
         });
 
@@ -1161,9 +1161,7 @@ BentleyStatus ECDbAdapter::DeleteInstance(ECClassId classId, ECInstanceId instan
 
     DbResult result;
     if (BE_SQLITE_DONE != (result = statement->Step()))
-        {
         return ERROR;
-        }
 
     return SUCCESS;
     }
