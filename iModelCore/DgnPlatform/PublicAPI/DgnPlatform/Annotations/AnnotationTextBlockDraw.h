@@ -28,9 +28,9 @@ private:
     Transform m_documentTransform;
 
     DGNPLATFORM_EXPORT void CopyFrom(AnnotationTextBlockDrawCR);
-    BentleyStatus DrawTextRun(AnnotationLayoutRunCR, Render::GraphicR, ViewContextR, Render::GeometryParamsR, TransformCR) const;
-    BentleyStatus DrawFractionRun(AnnotationLayoutRunCR, Render::GraphicR, ViewContextR, Render::GeometryParamsR, TransformCR) const;
-    BentleyStatus DrawLineBreakRun(AnnotationLayoutRunCR, Render::GraphicR, ViewContextR, Render::GeometryParamsR, TransformCR) const;
+    BentleyStatus DrawTextRun(AnnotationLayoutRunCR, AnnotationLayoutLineCR, Render::GraphicR, ViewContextR, Render::GeometryParamsR, TransformCR) const;
+    BentleyStatus DrawFractionRun(AnnotationLayoutRunCR, AnnotationLayoutLineCR, Render::GraphicR, ViewContextR, Render::GeometryParamsR, TransformCR) const;
+    BentleyStatus DrawLineBreakRun(AnnotationLayoutRunCR, AnnotationLayoutLineCR, Render::GraphicR, ViewContextR, Render::GeometryParamsR, TransformCR) const;
 
 public:
     DGNPLATFORM_EXPORT explicit AnnotationTextBlockDraw(AnnotationTextBlockLayoutCR);

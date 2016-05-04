@@ -30,9 +30,9 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //! palette, and each palette name unique within its DgnDb.
 //! @bsistruct                                                  Paul.Connelly   09/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DgnMaterial : DictionaryElement
+struct EXPORT_VTABLE_ATTRIBUTE DgnMaterial : DefinitionElement
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_MaterialElement, DictionaryElement);
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_MaterialElement, DefinitionElement);
 public:
     //! Holds the data which describe a material
     struct Data

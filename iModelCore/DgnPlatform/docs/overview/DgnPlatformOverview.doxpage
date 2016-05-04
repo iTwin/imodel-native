@@ -13,7 +13,7 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 
 The DgnPlatform library is a key part of the %DgnDb technology stack from <a href="http://www.bentley.com/">Bentley</a>. 
 The DgnPlatform library contains the data access API for the %DgnDb file format.
-It also provides the run-time services necessary for writing applications focused on sustaining infrastructure (buildings, bridges, transit, utilities, energy, water, etc.).
+It also provides the run-time services necessary for writing applications focused on advancing infrastructure (buildings, bridges, transit, utilities, energy, water, etc.).
 The technology stack is designed to leverage whatever system resources are available without strictly requiring them.
 This allows applications to run on everything from mobile devices to high-powered desktop environments.
 <p>
@@ -46,28 +46,17 @@ Domain examples include:
 @li Construction
 @li Planning
 
-Domains ship with the platform but are separate in a software architecture sense.  The goal of a domain is to capture the data model and file I/O services
-required for a specific discipline or lifecycle phase.  Domains are meant to be used across applications and to raise the level of information sharing.
+Domains are separate from the platform in a software architecture sense, but may (or may not) be part of the platform SDK delivery.  
+The goal of a domain is to capture the data model and file I/O services required for a specific discipline or lifecycle phase.  
+Domains are meant to be used across applications and to raise the level of information sharing.
 Domains are written in C++ and do not include user interface or tools.
 
 @ref GROUP_DgnDomain
 
 <p>
-Within a domain, real-world objects are modeled using elements and element aspects.  An element represents that identity and function of the real-world object.
-Subclasses of DgnElement are created for each type of real-world object that is being modeled.  Elements focus on specification.  For example, a piece
-of equipment that performs a specific function.
-<p>
-Element aspects are additional data instances associated with and owned by the element. Element aspects focus on the unique form and instance-specific properties of the real-world object
-that fulfills the specification.  Standard element aspects like ElementItem (properties of the item ordered from a catalog) and ElementGeom (physical geometry of the element) may be used, 
-or applications can introduce their own aspects.  This composition-based pattern of data modeling is very flexible and powerful.
-<p>
-Elements are the center of the %DgnDb universe and are described in more detail here:
+The objects of a domain are modeled using subclassed of DgnElement.  Elements are the center of the %DgnDb universe and are described in more detail here:
 
 @li @subpage PAGE_ElementOverview
-
-<p>
-The final layer for a %DgnDb application is the app layer.  The app decides which domains to include and provides the user interface and tools and everything that the user sees.
-This layer is typically written in TypeScript/JavaScript.
 
 <hr>
 

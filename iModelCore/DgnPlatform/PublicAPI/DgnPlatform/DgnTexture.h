@@ -20,9 +20,9 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //! DgnTexture is an element representing a named texture. The texture data is stored as a
 //! binary blob interpreted according to the specified texture format.
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DgnTexture : DictionaryElement
+struct EXPORT_VTABLE_ATTRIBUTE DgnTexture : DefinitionElement
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_Texture, DictionaryElement);
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_Texture, DefinitionElement);
 
 public:
     //! Supported texture formats. A texture's binary data is interpreted according to its specified format.

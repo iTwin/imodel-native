@@ -106,9 +106,9 @@ typedef DgnElementId AnnotationLeaderStyleId;
 //! @ingroup GROUP_Annotation
 // @bsiclass                                                    Jeff.Marker     06/2014
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE AnnotationLeaderStyle : DictionaryElement
+struct EXPORT_VTABLE_ATTRIBUTE AnnotationLeaderStyle : DefinitionElement
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_AnnotationLeaderStyle, DictionaryElement);
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_AnnotationLeaderStyle, DefinitionElement);
 
 private:
     friend struct AnnotationLeaderStylePersistence;
@@ -132,7 +132,7 @@ public:
     static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_AnnotationLeaderStyle); }
     static DgnClassId QueryDgnClassId(DgnDbR db) { return DgnClassId(QueryECClassId(db)); }
     
-    explicit AnnotationLeaderStyle(DgnDbR db) : T_Super(CreateParams(db, QueryDgnClassId(db), DgnCode())) {}
+    explicit AnnotationLeaderStyle(DgnDbR db) : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryDgnClassId(db), DgnCode())) {}
     explicit AnnotationLeaderStyle(CreateParams const& params) : T_Super(params) {}
     static AnnotationLeaderStylePtr Create(DgnDbR db) { return new AnnotationLeaderStyle(db); }
     AnnotationLeaderStylePtr CreateCopy() const { return MakeCopy<AnnotationLeaderStyle>(); }

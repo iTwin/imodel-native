@@ -192,7 +192,7 @@ public:
     void Add (JsCurvePrimitiveP primitive){m_curveVector->Add (primitive->GetICurvePrimitivePtr ());}
     static JsLoopP CreateRegularPolygonXY (JsDPoint3dP center, double xDistance, double edgeCount, bool isOutsideRadius)
         {
-        int numEdge = (int)xDistance;
+        int numEdge = (int)edgeCount;
         if (numEdge > 100)
             numEdge = 100;
         if (numEdge < 3)

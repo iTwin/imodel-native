@@ -43,7 +43,7 @@ struct TransactionManagerTests : public DgnDbTestFixture
 {
     DEFINE_T_SUPER(DgnDbTestFixture);
 public:
-    TransactionManagerTests() : DgnDbTestFixture(ScopedDgnHost::Options::DisableRepositoryManager) { }
+    TransactionManagerTests() { }
     ~TransactionManagerTests();
     void TwiddleTime(DgnElementCPtr);
     void SetupProject(WCharCP projFile, WCharCP testFile, Db::OpenMode mode);

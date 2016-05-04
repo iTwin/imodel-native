@@ -57,9 +57,9 @@ enum class AnnotationTextStyleProperty
     WidthFactor = 15 //!< (real, per-document) @note Factor of height
 
 //__PUBLISH_SECTION_END__
-    // *********************************************************************************************
-    // **** ADDING MEMBERS? Consider updating: AnnotationTextStylePersistence, TextStyleInterop ****
-    // *********************************************************************************************
+    // ****************************************************************************************************************************************
+    // **** ADDING MEMBERS? Consider updating: AnnotationTextStylePersistence, TextStyleInterop, AnnotationTextStyle::CreateEffectiveStyle ****
+    // ****************************************************************************************************************************************
 //__PUBLISH_SECTION_START__
 };
 
@@ -106,9 +106,9 @@ typedef DgnElementId AnnotationTextStyleId;
 //! @ingroup GROUP_Annotation
 // @bsiclass                                                    Jeff.Marker     05/2014
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE AnnotationTextStyle : DictionaryElement
+struct EXPORT_VTABLE_ATTRIBUTE AnnotationTextStyle : DefinitionElement
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_AnnotationTextStyle, DictionaryElement);
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_AnnotationTextStyle, DefinitionElement);
     
 private:
     friend struct AnnotationTextStylePersistence;
@@ -134,7 +134,7 @@ public:
     static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_AnnotationTextStyle); }
     static DgnClassId QueryDgnClassId(DgnDbR db) { return DgnClassId(QueryECClassId(db)); }
     
-    explicit AnnotationTextStyle(DgnDbR db) : T_Super(CreateParams(db, QueryDgnClassId(db), DgnCode())) {}
+    explicit AnnotationTextStyle(DgnDbR db) : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryDgnClassId(db), DgnCode())) {}
     explicit AnnotationTextStyle(CreateParams const& params) : T_Super(params) {}
     static AnnotationTextStylePtr Create(DgnDbR db) { return new AnnotationTextStyle(db); }
     AnnotationTextStylePtr CreateCopy() const { return MakeCopy<AnnotationTextStyle>(); }
@@ -176,6 +176,7 @@ public:
     DGNPLATFORM_EXPORT void SetWidthFactor(double);
 
     DGNPLATFORM_EXPORT AnnotationTextStylePtr CreateEffectiveStyle(AnnotationTextStylePropertyBagCR overrides) const;
+    DGNPLATFORM_EXPORT static AnnotationTextStylePtr CreateEffectiveStyle(AnnotationTextStyleCR docStyle, AnnotationTextStylePropertyBagCR docOverrides, AnnotationTextStyleCR parStyle, AnnotationTextStylePropertyBagCR parOverrides, AnnotationTextStyleCR runStyle, AnnotationTextStylePropertyBagCR runOverrides);
     DgnFontCR ResolveFont() const { return DgnFontManager::ResolveFont(m_dgndb.Fonts().FindFontById(GetFontId())); }
 
     static DgnElementId QueryId(DgnDbR db, Utf8CP name) { return db.Elements().QueryElementIdByCode(CreateCodeFromName(name)); }

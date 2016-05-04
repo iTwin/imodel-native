@@ -206,6 +206,10 @@ struct Script : RefCountedBaseWithCreate // ***  NEEDS WORK: It should not be ne
     static void ImportLibrary (Utf8StringCR libName);
 
     static void ReportError(Utf8StringCR description);
+
+    static void BeginDisposeContext();
+    static void EndDisposeContext();
+
 };
 
 //=======================================================================================
@@ -809,7 +813,7 @@ struct JsDgnGeometryPart : RefCountedBaseWithCreate
         DGNJSAPI_VALIDATE_ARGS_NULL(DGNJSAPI_IS_VALID_JSOBJ(db));
         return new JsDgnGeometryPart(*DgnGeometryPart::Create(*db->m_db));
         }
-    BentleyStatus Insert() {return m_value->GetDgnDb().GeometryParts().InsertGeometryPart(*m_value);}
+    BentleyStatus Insert() {return m_value->GetDgnDb().Elements().Insert(*m_value).IsValid() ? BentleyStatus::SUCCESS : BentleyStatus::ERROR;}
 };
 
 typedef JsDgnGeometryPart* JsDgnGeometryPartP;

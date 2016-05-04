@@ -270,7 +270,7 @@ DgnDbStatus ComponentGeometryHarvester::HarvestModel(bvector<bpair<DgnSubCategor
         DgnGeometryPartPtr geomPart = DgnGeometryPart::Create(db);
         builder->CreateGeometryPart(db, true);
         builder->SetGeometryStream(*geomPart);
-        if (BSISUCCESS != db.GeometryParts().InsertGeometryPart(*geomPart))
+        if (!db.Elements().Insert(*geomPart).IsValid())
             {
             BeAssert(false && "cannot create geompart for solution geometry -- what could have gone wrong?");
             return DgnDbStatus::WriteError;
@@ -401,7 +401,7 @@ void ComponentDef::QueryComponentDefs(bvector<DgnClassId>& componentDefs, DgnDbR
     if (nullptr == componentSpecificationCA)
         return;
 
-    Statement stmt(db, "SELECT ClassId FROM ec_BaseClass WHERE BaseClassId=?");
+    Statement stmt(db, "SELECT ClassId FROM ec_ClassHasBaseClasses WHERE BaseClassId=?");
 
     bvector<DgnClassId> baseClassIds;
     baseClassIds.push_back(DgnClassId(baseClassIn.GetId()));
@@ -481,7 +481,7 @@ DgnDbStatus ComponentDef::DeleteComponentDef(DgnDbR db, Utf8StringCR fullEcSqlCl
         if (!cdef.IsValid())
             return status;
 
-        if (!cdef->UsesTemporaryModel() && db.Models().Get<ComponentModel>(db.Models().QueryModelId(DgnModel::CreateModelCode(cdef->GetModelName()))).IsValid())
+        if (!cdef->UsesTemporaryModel() && db.Models().Get<ComponentModel>(db.Models().QueryModelId(DgnModel::CreateModelCode(cdef->GetComponentName()))).IsValid())
             cdef->GetModel().Delete();
 
         ECSqlStatement stmt;
@@ -523,7 +523,7 @@ ComponentDefPtr ComponentDef::FromECClass(DgnDbStatus* statusOut, DgnDbR db, ECN
         return nullptr;
         }
 
-    Utf8String modelName = cdef->GetModelName();
+    Utf8String modelName = cdef->GetComponentName();
     if (!modelName.empty() && !db.Models().QueryModelId(DgnModel::CreateModelCode(modelName)).IsValid())
         {
         delete cdef;
@@ -606,7 +606,7 @@ DgnCategoryId ComponentDef::QueryCategoryId() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ComponentDef::UsesTemporaryModel() const
     {
-    return GetModelName().empty();
+    return GetComponentName().empty();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -632,7 +632,7 @@ ECN::IECInstancePtr ComponentDef::MakeVariationSpec()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ComponentDef::GetModelName() const {return GetCaValueString(*m_ca, CDEF_CA_MODEL);}
+Utf8String ComponentDef::GetComponentName() const {return GetCaValueString(*m_ca, CDEF_CA_MODEL);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/15
@@ -702,7 +702,7 @@ ComponentModelR ComponentDef::GetModel()
 
     DgnModelId modelId;
         
-    Utf8String modelName = GetModelName();
+    Utf8String modelName = GetComponentName();
     if (!modelName.empty())
         {
         DgnCode modelCode = DgnModel::CreateModelCode(modelName);
@@ -1121,7 +1121,7 @@ DgnDbStatus ComponentDef::Export(DgnImportContext& context, ExportOptions const&
 
     if (!UsesTemporaryModel()) 
         {
-        DgnModelPtr existingModel = context.GetDestinationDb().Models().GetModel(context.GetDestinationDb().Models().QueryModelId(DgnModel::CreateModelCode(GetModelName())));
+        DgnModelPtr existingModel = context.GetDestinationDb().Models().GetModel(context.GetDestinationDb().Models().QueryModelId(DgnModel::CreateModelCode(GetComponentName())));
         if (existingModel.IsValid())
             existingModel->Delete();
 

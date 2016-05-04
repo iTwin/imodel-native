@@ -78,7 +78,7 @@ static void checkGeometryStream(GeometrySourceCR gel, GeometricPrimitive::Geomet
         if (partId.IsValid())
             {
             ++partCount;
-            auto part = gel.GetSourceDgnDb().GeometryParts().LoadGeometryPart(partId);
+            auto part = gel.GetSourceDgnDb().Elements().Get<DgnGeometryPart>(partId);
             ASSERT_TRUE(part.IsValid());
             for (auto inner : GeometryCollection(part->GetGeometryStream(), gel.GetSourceDgnDb()))
                 {
@@ -100,7 +100,7 @@ static void checkGeometryStream(GeometrySourceCR gel, GeometricPrimitive::Geomet
 static void checkSlabDimensions(GeometrySourceCR el, double expectedX, double expectedY, double expectedZ)
     {
     DgnGeometryPartId partId = (*GeometryCollection(el).begin()).GetGeometryPartId();
-    DgnGeometryPartPtr part = el.GetSourceDgnDb().GeometryParts().LoadGeometryPart(partId);
+    DgnGeometryPartCPtr part = el.GetSourceDgnDb().Elements().Get<DgnGeometryPart>(partId);
     ASSERT_TRUE(part.IsValid());
 
     DgnBoxDetail box;
@@ -234,7 +234,7 @@ AutoCloseComponentDb(ComponentModelTest& t) : m_test(t) {;}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-ComponentModelTest::ComponentModelTest() : m_host(ScopedDgnHost::Options::DisableRepositoryManager)
+ComponentModelTest::ComponentModelTest()
     {
     T_HOST.GetScriptAdmin().RegisterScriptNotificationHandler(*new ComponentModelTest_DetectJsErrors);
     m_host.SetFetchScriptCallback(this);

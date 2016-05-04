@@ -340,11 +340,11 @@ void                LsSymbolComponent::GetRange (DRange3dR range) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    07/2015
 //---------------------------------------------------------------------------------------
-DgnGeometryPartPtr LsSymbolComponent::GetGeometryPart() const
+DgnGeometryPartCPtr LsSymbolComponent::GetGeometryPart() const
     {
     if (m_geomPart.IsValid())
         return m_geomPart;
 
-    m_geomPart = GetDgnDbP()->GeometryParts().LoadGeometryPart(m_geomPartId);
+    m_geomPart = GetDgnDbP()->Elements().Get<DgnGeometryPart>(m_geomPartId);
     return m_geomPart;
     }

@@ -7,16 +7,105 @@
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
 #include "DgnCoreLog.h"
-#include <DgnPlatform/DgnMarkupProject.h>
 #include <BeJpeg/BeJpeg.h>
+#include <DgnPlatform/DgnMarkupProject.h>
+#include <DgnPlatform/DgnView.h>
 
 #define QV_RGBA_FORMAT   0
 #define QV_BGRA_FORMAT   1
 #define QV_RGB_FORMAT    2
 #define QV_BGR_FORMAT    3
 
+#define MARKUPEXTERNALLINK_LinkedElementId "LinkedElementId"
+
 static WCharCP s_markupDgnDbExt   = L".markupdb";
 static Utf8CP  s_projectType      = "Markup";
+
+BEGIN_BENTLEY_DGN_NAMESPACE
+
+DOMAIN_DEFINE_MEMBERS(MarkupDomain)
+
+namespace dgn_ModelHandler
+    {
+    HANDLER_DEFINE_MEMBERS(SpatialRedline)
+    HANDLER_DEFINE_MEMBERS(Redline)
+    }
+
+namespace dgn_ElementHandler
+    {
+    HANDLER_DEFINE_MEMBERS(MarkupExternalLinkHandler)
+    HANDLER_DEFINE_MEMBERS(MarkupExternalLinkGroupHandler)
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    04/2016
+//---------------------------------------------------------------------------------------
+DgnDbStatus MarkupExternalLink::_BindInsertParams(BeSQLite::EC::ECSqlStatement& statement)
+    {
+    DgnDbStatus stat = BindParams(statement);
+    if (DgnDbStatus::Success != stat)
+        return stat;
+    return T_Super::_BindInsertParams(statement);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    01/2016
+//---------------------------------------------------------------------------------------
+DgnDbStatus MarkupExternalLink::_BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement)
+    {
+    DgnDbStatus stat = BindParams(statement);
+    if (DgnDbStatus::Success != stat)
+        return stat;
+    return T_Super::_BindUpdateParams(statement);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    04/2016
+//---------------------------------------------------------------------------------------
+DgnDbStatus MarkupExternalLink::BindParams(BeSQLite::EC::ECSqlStatement& stmt)
+    {
+    if (ECSqlStatus::Success != stmt.BindId(stmt.GetParameterIndex(MARKUPEXTERNALLINK_LinkedElementId), m_linkedElementId))
+        return DgnDbStatus::BadArg;
+
+    return DgnDbStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    04/2016
+//---------------------------------------------------------------------------------------
+DgnDbStatus MarkupExternalLink::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
+    {
+    DgnDbStatus status = T_Super::_ReadSelectParams(stmt, params);
+    if (DgnDbStatus::Success != status)
+        return status;
+
+    m_linkedElementId = stmt.GetValueId<DgnElementId>(params.GetSelectIndex(MARKUPEXTERNALLINK_LinkedElementId));
+    return DgnDbStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    04/2016
+//---------------------------------------------------------------------------------------
+void MarkupExternalLink::_CopyFrom(DgnElementCR other)
+    {
+    T_Super::_CopyFrom(other);
+
+    MarkupExternalLinkCP otherLink = dynamic_cast<MarkupExternalLinkCP> (&other);
+    if (otherLink)
+        m_linkedElementId = otherLink->m_linkedElementId;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    03/2015
+//---------------------------------------------------------------------------------------
+MarkupDomain::MarkupDomain() : DgnDomain(MARKUP_SCHEMA_NAME, "Markup Domain", 1)
+    {
+    RegisterHandler(dgn_ModelHandler::Redline::GetHandler());
+    RegisterHandler(dgn_ModelHandler::SpatialRedline::GetHandler());
+    RegisterHandler(dgn_ElementHandler::RedlineViewDef::GetHandler());
+    RegisterHandler(dgn_ElementHandler::MarkupExternalLinkHandler::GetHandler());
+    RegisterHandler(dgn_ElementHandler::MarkupExternalLinkGroupHandler::GetHandler());
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/13
@@ -97,6 +186,14 @@ DgnViewId SpatialRedlineModel::GetFirstView()
     {
     auto db = GetDgnMarkupProject();
     return db? db->GetFirstViewOf(GetModelId()): DgnViewId();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ramanujam.Raman                 04/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void MarkupExternalLink::AddClassParams(ECSqlClassParamsR params)
+    {
+    params.Add(MARKUPEXTERNALLINK_LinkedElementId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -511,14 +608,29 @@ DbResult DgnMarkupProject::ConvertToMarkupProject(BeFileNameCR fileNameIn, Creat
         stmt.Step();
         }
 
+    if (DgnDbStatus::Success != ImportMarkupSchema())
+        return BE_SQLITE_ERROR;
+
     SaveSettings();
     SaveChanges();
-
 
     // POST CONDITIONS
     BeAssert(!mpp.GetSpatialRedlining() || IsSpatialRedlineProject());
 
     return BE_SQLITE_OK;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    05/2015
+//---------------------------------------------------------------------------------------
+DgnDbStatus DgnMarkupProject::ImportMarkupSchema()
+    {
+    BeFileName schemaFile(T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
+    schemaFile.AppendToPath(MARKUP_SCHEMA_PATH);
+
+    DgnDbStatus status = MarkupDomain::GetDomain().ImportSchema(*this, schemaFile);
+    BeAssert(DgnDbStatus::Success == status);
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -933,7 +1045,7 @@ bpair<Dgn::DgnModelId,double> DgnMarkupProject::FindClosestRedlineModel(ViewCont
 +---------------+---------------+---------------+---------------+---------------+------*/
 RedlineModelPtr RedlineModel::Create(DgnMarkupProjectR markupProject, Utf8CP name, DgnModelId templateModelId)
     {
-    DgnClassId rmodelClassId = DgnClassId(markupProject.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, "RedlineModel"));
+    DgnClassId rmodelClassId = DgnClassId(markupProject.Schemas().GetECClassId(MARKUP_SCHEMA_NAME, "RedlineModel"));
     RedlineModelPtr rdlModel = new RedlineModel(RedlineModel::CreateParams(markupProject, rmodelClassId, CreateModelCode(name), DPoint2d::FromZero()));
     if (!rdlModel.IsValid())
         return nullptr;
@@ -956,7 +1068,7 @@ RedlineModelPtr RedlineModel::Create(DgnMarkupProjectR markupProject, Utf8CP nam
 +---------------+---------------+---------------+---------------+---------------+------*/
 SpatialRedlineModelPtr SpatialRedlineModel::Create(DgnMarkupProjectR markupProject, Utf8CP name, SpatialModelCR subjectViewTargetModel)
     {
-    DgnClassId rmodelClassId = DgnClassId(markupProject.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialRedlineModel));
+    DgnClassId rmodelClassId = DgnClassId(markupProject.Schemas().GetECClassId(MARKUP_SCHEMA_NAME, MARKUP_CLASSNAME_SpatialRedlineModel));
 
     SpatialRedlineModelPtr rdlModel = new SpatialRedlineModel(SpatialRedlineModel::CreateParams(markupProject, rmodelClassId, CreateModelCode(name)));
     if (!rdlModel.IsValid())
@@ -1731,3 +1843,5 @@ BentleyStatus DgnMarkupProject::EmptySpatialRedlineModel(DgnModelId mid)
     {
     return EmptyRedlineModel(mid);
     }
+
+END_BENTLEY_DGN_NAMESPACE

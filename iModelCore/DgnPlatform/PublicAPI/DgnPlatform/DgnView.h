@@ -12,13 +12,14 @@
 #include "DgnElement.h"
 #include "ElementHandler.h"
 #include "ECSqlStatementIterator.h"
+#include "DgnMarkupProject.h"
 
 #define DGN_CLASSNAME_ViewDefinition "ViewDefinition"
 #define DGN_CLASSNAME_SpatialViewDefinition "SpatialViewDefinition"
 #define DGN_CLASSNAME_CameraViewDefinition "CameraViewDefinition"
 #define DGN_CLASSNAME_DrawingViewDefinition "DrawingViewDefinition"
 #define DGN_CLASSNAME_SheetViewDefinition "SheetViewDefinition"
-#define DGN_CLASSNAME_RedlineViewDefinition "RedlineViewDefinition"
+#define MARKUP_CLASSNAME_RedlineViewDefinition "RedlineViewDefinition"
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -38,9 +39,9 @@ enum class DgnViewSource
 //! @ingroup GROUP_DgnView
 // @bsiclass                                                      Paul.Connelly   10/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ViewDefinition : DictionaryElement
+struct EXPORT_VTABLE_ATTRIBUTE ViewDefinition : DefinitionElement
 {
-    DEFINE_T_SUPER(DictionaryElement);
+    DEFINE_T_SUPER(DefinitionElement);
 public:
     //! Holds the data which describes a view definition
     struct Data
@@ -432,7 +433,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE RedlineViewDefinition : SheetViewDefinition
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_RedlineViewDefinition, SheetViewDefinition);
+    DGNELEMENT_DECLARE_MEMBERS(MARKUP_CLASSNAME_RedlineViewDefinition, SheetViewDefinition);
 public:
     //! Parameters used to construct a RedlineViewDefinition
     struct CreateParams : T_Super::CreateParams
@@ -451,7 +452,7 @@ public:
     explicit RedlineViewDefinition(CreateParams const& params) : T_Super(params) { }
 
     //! Look up the ECClass ID used for RedlineViewDefinitions in the specified DgnDb
-    static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_RedlineViewDefinition)); }
+    static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(MARKUP_SCHEMA_NAME, MARKUP_CLASSNAME_RedlineViewDefinition)); }
 };
 
 namespace dgn_ElementHandler
@@ -504,7 +505,7 @@ namespace dgn_ElementHandler
     //=======================================================================================
     struct RedlineViewDef : SheetViewDef
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_RedlineViewDefinition, RedlineViewDefinition, RedlineViewDef, SheetViewDef, DGNPLATFORM_EXPORT);
+    ELEMENTHANDLER_DECLARE_MEMBERS(MARKUP_CLASSNAME_RedlineViewDefinition, RedlineViewDefinition, RedlineViewDef, SheetViewDef, DGNPLATFORM_EXPORT);
     };
 };
 

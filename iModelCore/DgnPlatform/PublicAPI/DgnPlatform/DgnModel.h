@@ -384,7 +384,7 @@ protected:
     //! <p>
     //! A subclass implementation of _ImportECRelationshipsFrom should copy only the relationship subclasses that are defined by the 
     //! the ECSchema/DgnDomain of the subclass. For example, the base DgnModel implementation will handle the relationships defined in the 
-    //! base Dgn schema, including ElementDrivesElement, ElementGeomUsesParts, ElementGroupsMembers, and ElementUsesStyles.
+    //! base Dgn schema, including ElementDrivesElement, ElementUsesGeometryParts, ElementGroupsMembers, and ElementUsesStyles.
     //! <p>
     //! Both endpoints of an ECRelationship must be in the same DgnDb. Since the import operation can copy elements between DgnDbs, a subclass implementation
     //! must be careful about which ECRelationships to import. Normally, only ECRelationships between elements in the model should be copied. 
@@ -445,6 +445,9 @@ public:
     //! A newly created model before it is inserted, or a model after calling Delete, is not persistent.
     bool IsPersistent() const {return m_persistent;}
 
+    //! Get the name of this model
+    Utf8String GetName() const {return m_code.GetValue();}
+    
     //! Get the DgnClassId of this DgnModel
     DgnClassId GetClassId() const {return m_classId;}
 
@@ -913,8 +916,7 @@ public:
 //=======================================================================================
 //! A definition model which contains definitions like materials and styles which are used
 //! throughout a DgnDb. Each DgnDb has exactly one DictionaryModel.
-//! A DictionaryModel can contain @em only DictionaryElements; and likewise, a
-//! DictionaryElement can @em only reside in a DictionaryModel.
+//! A DictionaryModel can contain @em only DefinitionElements.
 //! The dictionary model cannot be copied or deleted. In general, dictionary elements
 //! are copied from one dictionary model to another, often indirectly as the result of
 //! copying another element which depends upon them.
@@ -1087,7 +1089,7 @@ struct ComponentDef : RefCountedBase
 
     ECN::ECClassCR GetECClass() const {return m_class;}
 
-    DGNPLATFORM_EXPORT Utf8String GetModelName() const;
+    DGNPLATFORM_EXPORT Utf8String GetComponentName() const;
     DGNPLATFORM_EXPORT ComponentModelR GetModel();
 
     DGNPLATFORM_EXPORT bool UsesTemporaryModel() const;

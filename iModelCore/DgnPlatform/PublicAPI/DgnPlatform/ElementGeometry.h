@@ -96,6 +96,7 @@ struct GeometryStreamIO
     {
         Invalid                 = 0,
         Header                  = 1,    //!< Required to be first opcode
+        SubGraphicRange         = 2,    //!< Local range of next geometric primitive
         GeometryPartInstance    = 3,    //!< Draw referenced geometry part
         BasicSymbology          = 4,    //!< Set symbology for subsequent geometry that doesn't follow subCategory appearance
         PointPrimitive          = 5,    //!< Simple lines, line strings, shapes, point strings, etc.
@@ -106,7 +107,7 @@ struct GeometryStreamIO
         CurvePrimitive          = 10,   //!< Single CurvePrimitive
         SolidPrimitive          = 11,   //!< SolidPrimitive
         BsplineSurface          = 12,   //!< BSpline surface
-#if defined (DGNPLATFORM_WIP_PARASOLID)
+#if defined (BENTLEYCONFIG_PARASOLIDS)
         ParasolidBRep           = 13,   //!< Parasolid body
         BRepPolyface            = 14,   //!< PolyfaceQueryCarrier from Parasolid BRep
         BRepPolyfaceExact       = 15,   //!< PolyfaceQueryCarrier from Parasolid BRep with only straight edges and planar faces
@@ -118,7 +119,9 @@ struct GeometryStreamIO
         Material                = 21,   //!< Render material
         TextString              = 22,   //!< TextString (single-line/single-format run of characters)
         LineStyleModifiers      = 23,   //!< Specifies line style overrides to populate a LineStyleParams structure
+#if defined (BENTLEYCONFIG_OPENCASCADE)
         OpenCascadeBRep         = 24,   //!< Open Cascade TopoDS_Shape
+#endif
     };
 
     //=======================================================================================
@@ -179,6 +182,7 @@ struct GeometryStreamIO
         void Append(DgnGeometryPartId, TransformCP geomToElem);
         void Append(Render::GeometryParamsCR, bool ignoreSubCategory); // Adds multiple op-codes...
         void Append(TextStringCR);
+        void Append(DRange3dCR);
     };
 
     //=======================================================================================
@@ -206,6 +210,7 @@ struct GeometryStreamIO
         bool Get(Operation const&, DgnGeometryPartId&, TransformR) const;
         bool Get(Operation const&, Render::GeometryParamsR) const; // Updated by multiple op-codes, true if changed
         bool Get(Operation const&, TextStringR) const;
+        bool Get(Operation const&, DRange3dR) const;
     };
 
     //=======================================================================================
@@ -284,7 +289,7 @@ struct GeometryStreamIO
 //=======================================================================================
 struct GeometryCollection
 {
-#if defined (DGNPLATFORM_WIP_PARASOLID)
+#if defined (BENTLEYCONFIG_PARASOLIDS)
     enum class BRepOutput
     {
         None    = 0,       //!< Output nothing.
@@ -315,7 +320,7 @@ struct GeometryCollection
             Polyface            = 6,  //!< Polyface
             SolidKernelEntity   = 7,  //!< SolidKernelEntity
             TextString          = 8,  //!< TextString
-#if defined (DGNPLATFORM_WIP_PARASOLID)
+#if defined (BENTLEYCONFIG_PARASOLIDS)
             BRepPolyface        = 9,  //!< BRep surface mesh (from BRepOutput::Auto when Parasolid not available or if requested by BRepOutput::Mesh)
             BRepCurveVector     = 10, //!< BRep edge/face curves (when requested by BRepOutput::Edges | BRepOutput::FaceIso)
 #endif
@@ -330,7 +335,7 @@ struct GeometryCollection
             Transform               m_geomToWorld;
             GeometricPrimitivePtr   m_geometry;
             GeometryStreamEntryId   m_geomStreamEntryId;
-#if defined (DGNPLATFORM_WIP_PARASOLID)
+#if defined (BENTLEYCONFIG_PARASOLIDS)
             BRepOutput              m_bRepOutput;
 #endif
 
@@ -339,7 +344,7 @@ struct GeometryCollection
                 m_sourceToWorld = Transform::FromIdentity();
                 m_geomToSource  = Transform::FromIdentity();
                 m_geomToWorld   = Transform::FromIdentity();
-#if defined (DGNPLATFORM_WIP_PARASOLID)
+#if defined (BENTLEYCONFIG_PARASOLIDS)
                 m_bRepOutput    = BRepOutput::Auto;
 #endif
             }
@@ -374,7 +379,8 @@ struct GeometryCollection
         DGNPLATFORM_EXPORT bool IsSurface() const;          //!< closed curve, planar region, surface, and open mesh check that avoids creating GeometricPrimitivePtr when possible.
         DGNPLATFORM_EXPORT bool IsSolid() const;            //!< solid and volumetric mesh check that avoids creating GeometricPrimitivePtr when possible.
 
-        DgnGeometryPartPtr GetGeometryPartPtr() const {return m_state->m_dgnDb.GeometryParts().LoadGeometryPart(m_state->m_geomStreamEntryId.GetGeometryPartId());}
+        DgnGeometryPartPtr GetGeometryPartPtr() const {return m_state->m_dgnDb.Elements().GetForEdit<DgnGeometryPart>(m_state->m_geomStreamEntryId.GetGeometryPartId());}
+        DgnGeometryPartCPtr GetGeometryPartCPtr() const {return m_state->m_dgnDb.Elements().Get<DgnGeometryPart>(m_state->m_geomStreamEntryId.GetGeometryPartId());}
         DGNPLATFORM_EXPORT GeometricPrimitivePtr GetGeometryPtr() const;
 
         TransformCR GetSourceToWorld() const {return m_state->m_sourceToWorld;}
@@ -396,7 +402,7 @@ public:
     const_iterator begin() const {return const_iterator(m_data, m_dataSize, m_state);}
     const_iterator end() const {return const_iterator();}
 
-#if defined (DGNPLATFORM_WIP_PARASOLID)
+#if defined (BENTLEYCONFIG_PARASOLIDS)
     //! Override the default BRep handling option, BRepOutput::Auto. For example, an application can set to BRepOutput::BRep to
     //! detect when BReps are present in the GeometryStream to avoid modifications when Parasolid is not available.
     void SetBRepOutput(BRepOutput bRep) {m_state.m_bRepOutput = bRep;}
@@ -418,7 +424,7 @@ public:
 
 typedef RefCountedPtr<GeometryBuilder> GeometryBuilderPtr;
 
-#if defined (DGNPLATFORM_WIP_PARASOLID)
+#if defined (BENTLEYCONFIG_PARASOLIDS)
 ENUM_IS_FLAGS(GeometryCollection::BRepOutput)
 #endif
 
@@ -454,6 +460,7 @@ private:
     bool                     m_havePlacement;
     bool                     m_isPartCreate;
     bool                     m_is3d;
+    bool                     m_appendAsSubGraphics;
     Placement3d              m_placement3d;
     Placement2d              m_placement2d;
     DgnDbR                   m_dgnDb;
@@ -467,7 +474,7 @@ private:
     bool ConvertToLocal (GeometricPrimitiveR);
     bool AppendWorld (GeometricPrimitiveR);
     bool AppendLocal (GeometricPrimitiveCR);
-    void OnNewGeom (DRange3dCR localRange);
+    void OnNewGeom (DRange3dCR localRange, bool isSubGraphic);
 
 public:
 
@@ -481,6 +488,7 @@ public:
 
     DGNPLATFORM_EXPORT BentleyStatus SetGeometryStream (DgnGeometryPartR);
     DGNPLATFORM_EXPORT BentleyStatus SetGeometryStreamAndPlacement (GeometrySourceR);
+    void SetAppendAsSubGraphics() {m_appendAsSubGraphics = !m_isPartCreate;} //! Subsequent Append calls will produce sub-graphics with local ranges for picking. Not valid when creating a GeometryPart.
 
     DGNPLATFORM_EXPORT bool Append (DgnSubCategoryId);
     DGNPLATFORM_EXPORT bool Append (Render::GeometryParamsCR);

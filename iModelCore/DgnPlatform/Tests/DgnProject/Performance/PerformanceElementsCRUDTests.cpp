@@ -2304,3 +2304,78 @@ TEST_F(PerformanceElementsCRUDTestFixture, DeleteApi)
     ApiDeleteTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS);
     ApiDeleteTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS);
     }
+
+// Uncomment this to profile ElementLocksPerformanceTest
+// #define PROFILE_ELEMENT_LOCKS_TEST 1
+// Uncomment this to output timings of ElementLocksPerformanceTest runs
+// #define PRINT_ELEMENT_LOCKS_TEST 1
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   04/16
+//=======================================================================================
+struct ElementLocksPerformanceTest : PerformanceElementsCRUDTestFixture
+{
+    void TestInsert(bool asBriefcase, Utf8CP className, int numElems)
+        {
+        auto dbName = asBriefcase ? L"LocksBriefcase.idgndb" : L"LocksRepository.idgndb";
+        SetUpTestDgnDb(dbName, className, 0);
+        if (asBriefcase)
+            TestDataManager::MustBeBriefcase(m_db, Db::OpenMode::ReadWrite);
+
+        bvector<DgnElementPtr> elems;
+        elems.reserve(numElems);
+        CreateElements(numElems, className, elems, "MyModel", true);
+
+#ifdef PROFILE_ELEMENT_LOCKS_TEST
+        printf("Attach profiler...\n");
+        getchar();
+#endif
+        StopWatch timer(true);
+        for (auto& elem : elems)
+            {
+            DgnDbStatus stat;
+            elem->Insert(&stat);
+            EXPECT_EQ(DgnDbStatus::Success, stat);
+            }
+
+        timer.Stop();
+#ifdef PRINT_ELEMENT_LOCKS_TEST
+        printf("%ls (%d): %f\n", dbName, m_db->GetBriefcaseId().GetValue(), timer.GetElapsedSeconds());
+#endif
+
+        m_db->SaveChanges();
+        }
+
+    void TestInsert(bool asBriefcase, int nElems) { TestInsert(asBriefcase, ELEMENT_PERFORMANCE_ELEMENT4_CLASS, nElems); }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ElementLocksPerformanceTest, Master_Insert100) { TestInsert(false, 100); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ElementLocksPerformanceTest, Master_Insert1000) { TestInsert(false, 1000); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ElementLocksPerformanceTest, Master_Insert10000) { TestInsert(false, 10000); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ElementLocksPerformanceTest, Briefcase_Insert100) { TestInsert(true, 100); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ElementLocksPerformanceTest, Briefcase_Insert1000) { TestInsert(true, 1000); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ElementLocksPerformanceTest, Briefcase_Insert10000) { TestInsert(true, 10000); }
+

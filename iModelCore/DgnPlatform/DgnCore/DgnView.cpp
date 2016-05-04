@@ -116,7 +116,7 @@ void ViewDefinition::_CopyFrom(DgnElementCR el)
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewDefinition::CreateParams::CreateParams(DgnDbR db, DgnCode const& code, DgnClassId classId, Data const& data)
-    : T_Super(db, classId, code), m_data(data)
+    : T_Super(db, DgnModel::DictionaryId(), classId, code), m_data(data)
     {
     //
     }

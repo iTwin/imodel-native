@@ -215,8 +215,20 @@ ChangeSet::ConflictResolution ChangeStreamFileReader::_OnConflict(ChangeSet::Con
     if (cause == ConflictCause::NotFound && opcode == DbOpcode::Delete) // a delete that is already gone. 
        return ConflictResolution::Skip; // This is caused by propagate delete on a foreign key. It is not a problem.
 
+    if (indirect)
+        {
+        // We are going to re-run the change propagation logic after applying the changeset in order to resolve indirect changes
+        // NEEDSWORK: Often the only conflict here is the 'LastMod' column of an element...can we detect that?
+        return ChangeSet::ConflictResolution::Skip; // rely on change propagation
+        }
+
+    // NEEDSWORK: What about the case in which we have a local indirect change and a conflicting direct change?
+    // The direct change should win - but do we have a way of detecting this scenario?
+    // We could assert that the local change MUST be indirect if our locking logic is functioning properly, and therefore always allow the direct change to Replace the indirect change
+
     if (tableName)
         iter.Dump(m_dgndb, false, 1);
+
     BeAssert(false);
     return ChangeSet::ConflictResolution::Abort;
     }
@@ -513,8 +525,6 @@ void DgnRevision::CollectCodesFromChangeSet(DgnDbCR dgndb, IChangeSet& changeSet
     collectCodes(m_assignedCodes, m_discardedCodes, elems);
     auto models = DgnChangeIterator::MakeModelChangeIterator(dgndb, changeSet);
     collectCodes(m_assignedCodes, m_discardedCodes, models);
-    auto geomparts = DgnChangeIterator::MakeGeometryPartChangeIterator(dgndb, changeSet);
-    collectCodes(m_assignedCodes, m_discardedCodes, geomparts);
     }
 
 /*---------------------------------------------------------------------------------**//**

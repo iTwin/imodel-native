@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnRscFont.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -272,6 +272,9 @@ void DgnRscFont::LoadGlyphs() const
         return;
 
     m_hasLoadedGlyphs = true;
+
+    if (!IsResolved())
+        return;
 
     //.............................................................................................
     IDgnRscFontData* data = (IDgnRscFontData*)m_data;

@@ -488,7 +488,7 @@ private:
     bool                m_isModified;
 
     DgnGeometryPartId           m_geomPartId;
-    mutable DgnGeometryPartPtr  m_geomPart;
+    mutable DgnGeometryPartCPtr m_geomPart;
     double                      m_storedScale;              //
     double                      m_muDef;                    // Set to m_storedScale if it is non-zero. Otherwise, it is 1/uorPerMaster for the model ref used in the PostProcessLoad step;
     DPoint3d                    m_symSize;
@@ -533,7 +533,7 @@ public:
 
     void                SetGeometryPartId       (DgnGeometryPartId id) {m_geomPartId = id;}
     DgnGeometryPartId       GetGeometryPartId       () const {return m_geomPartId;}
-    DgnGeometryPartPtr      GetGeometryPart         () const;
+    DgnGeometryPartCPtr     GetGeometryPart         () const;
     DgnModelP           GetSymbolDgnModel   (ViewContextCP context) const;
     void                SetMuDef            (double mudef) {m_muDef = mudef;}
     void                SetSymSize          (DPoint3dCP sz){m_symSize = *sz;}
@@ -1597,9 +1597,9 @@ public:
 //!  @ingroup LineStyleManagerModule
 // @bsiclass
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE LineStyleElement : DictionaryElement
+struct EXPORT_VTABLE_ATTRIBUTE LineStyleElement : DefinitionElement
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_LineStyle, DictionaryElement);
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_LineStyle, DefinitionElement);
     
 private:
     Utf8String m_description;
@@ -1622,7 +1622,7 @@ public:
     static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_LineStyle); }
     static DgnClassId QueryDgnClassId(DgnDbR db) { return DgnClassId(QueryECClassId(db)); }
     
-    explicit LineStyleElement(DgnDbR db) : T_Super(CreateParams(db, QueryDgnClassId(db), DgnCode())) {}
+    explicit LineStyleElement(DgnDbR db) : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryDgnClassId(db), DgnCode())) {}
     explicit LineStyleElement(CreateParams const& params) : T_Super(params) {}
     static LineStyleElementPtr Create(DgnDbR db) { return new LineStyleElement(db); }
     LineStyleElementPtr CreateCopy() const { return MakeCopy<LineStyleElement>(); }
