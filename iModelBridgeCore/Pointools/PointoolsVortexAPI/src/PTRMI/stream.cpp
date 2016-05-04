@@ -92,7 +92,7 @@ PTRMI::Status Stream::beginClientMethod(const Name &methodName)
 															// Get the message header version used with this host
 	messageVersion = host->getMessageVersionUsed();
 
-															// Notify pipe that send is beginning
+#ifdef NEEDS_WORK_VORTEX_DGNDB_SERVER
 	if((status = getManager().getPipeProtocolManager().beginSend(*this)).isFailed())
 	{
 		releaseCaller();
@@ -101,6 +101,7 @@ PTRMI::Status Stream::beginClientMethod(const Name &methodName)
 
 		return status;
 	}
+#endif
 															// Reset read/write positions
 	resetSendBuffer();
 
@@ -150,8 +151,10 @@ Status Stream::sendMessage(void)
 															// Do 1+retries attempts at making RMI call
 	for(sendCount = 0; trySend && sendCount <= getSendMessageNumRetries(); sendCount++)
 	{
+#ifdef NEEDS_WORK_VORTEX_DGNDB_SERVER
 															// Try message send
 		status = getManager().getPipeProtocolManager().sendMessage(*this, Message::MessageType_Call);
+#endif
 															// If RMI failed and status warrants retrying the send
 		if(trySend = isSendRetryStatus(status))
 		{
@@ -162,9 +165,10 @@ Status Stream::sendMessage(void)
 		}
 
 	}
+#ifdef NEEDS_WORK_VORTEX_DGNDB_SERVER
 															// End Send. Notify pipe sending has ended (Note: For Ext pipe, receive has also completed)
 	getManager().getPipeProtocolManager().endSend(*this);
-
+#endif
 															// Return RMI call status
 	return status;
 }
@@ -188,11 +192,13 @@ Status Stream::invokeClientMethod(ClientInterfaceBase &clientInterface, bool met
 	{
 		return status;
 	}
+#ifdef NEEDS_WORK_VORTEX_DGNDB_SERVER
 															// If this pipe architecture requires waiting for a message, block and wait
 	if((status = getManager().getPipeProtocolManager().waitForResult(*this, receiveMessageEvent)).isFailed())
 	{
 		return status;
 	}
+#endif
 															// Return should now be in the stream's receive buffer
 
 															// Return OK
@@ -208,14 +214,18 @@ PTRMI::Status Stream::endClientMethod(bool methodCancelled)
 															// If method was completed
 //	if(methodCancelled == false)
 	{
+#ifdef NEEDS_WORK_VORTEX_DGNDB_SERVER
 															// Signal end of method
 		getManager().getPipeProtocolManager().signalEndMethod(*this);
+#endif
 	}
 															// Invocation complete, so release caller mutex on stream
 	releaseCaller();
+
+#ifdef NEEDS_WORK_VORTEX_DGNDB_SERVER
 															// End receiving reply
 	status = getManager().getPipeProtocolManager().endReceive(*this);
-
+#endif
 															// If successful
 	if(status.isOK())
 	{
@@ -609,6 +619,8 @@ Stream::~Stream(void)
 Status Stream::initializeServerInvoke(void)
 {
 	Status		status;
+
+#ifdef NEEDS_WORK_VORTEX_DGNDB_SERVER
 															// Begin sending method reply
 															// (This is done before endReceive() to overlap locking for pipes that need to maintain recursive mutex)
 	if((status = getManager().getPipeProtocolManager().beginSend(*this)).isFailed())
@@ -621,6 +633,8 @@ Status Stream::initializeServerInvoke(void)
 	{
 		return status;
 	}
+#endif
+															// End receiving method invocation.
 															// Return OK
 	return status;	
 }

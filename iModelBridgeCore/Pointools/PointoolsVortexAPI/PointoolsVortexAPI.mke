@@ -431,10 +431,11 @@ $(o)renderIntensityEffect$(oext)         : $(basedir)src/ptengine/renderIntensit
 
 %endif
 
-#%if defined(NEEDS_WORK_VORTEX_DGNDB)
 $(o)Status$(oext)                        : $(basedir)src/PTRMI/Status.cpp                                        $(basedir)include/PTRMI/Status.h                                 ${MultiCompileDepends}
                                                                                                                   
+%if defined(NEEDS_WORK_VORTEX_DGNDB_SERVER)
 $(o)PipeProtocolManager$(oext)           : $(basedir)src/PTRMI/PipeProtocolManager.cpp                           $(basedir)include/PTRMI/PipeProtocolManager.h                    ${MultiCompileDepends}
+%endif
 
 $(o)URL$(oext)                           : $(basedir)src/PTRMI/URL.cpp                                           $(basedir)include/PTRMI/URL.h                                    ${MultiCompileDepends}
 
@@ -452,9 +453,11 @@ $(o)ClientServerInterface$(oext)         : $(basedir)src/PTRMI/ClientServerInter
 
 $(o)PipeExt$(oext)                       : $(basedir)src/PTRMI/PipeExt.cpp                                       $(basedir)include/PTRMI/PipeExt.h                                ${MultiCompileDepends}
                                                                                                                   
-$(o)PipeManagerTCP$(oext)                : $(basedir)src/PTRMI/PipeManagerTCP.cpp                                $(basedir)include/PTRMI/PipeManagerTCP.h                         ${MultiCompileDepends}
+%if defined(NEEDS_WORK_VORTEX_DGNDB_SERVER)
+v$(o)PipeManagerTCP$(oext)                : $(basedir)src/PTRMI/PipeManagerTCP.cpp                                $(basedir)include/PTRMI/PipeManagerTCP.h                         ${MultiCompileDepends}
 
 $(o)PipeTCP$(oext)                       : $(basedir)src/PTRMI/PipeTCP.cpp                                       $(basedir)include/PTRMI/PipeTCP.h                                ${MultiCompileDepends}
+%endif
                                                                                                                   
 $(o)Manager$(oext)                       : $(basedir)src/PTRMI/Manager.cpp                                       $(basedir)include/PTRMI/Manager.h                                ${MultiCompileDepends}
                                                                                                                   
@@ -489,7 +492,6 @@ $(o)ManagerServerInterface$(oext)        : $(basedir)src/PTRMI/ManagerServerInte
 $(o)DispatcherPTRMI$(oext)               : $(basedir)src/PTRMI/DispatcherPTRMI.cpp                                                                                                 ${MultiCompileDepends}
 
 $(o)ClientInterfaceExtDataBentley$(oext) : $(basedir)src/PTRMI/ClientInterfaceExtDataBentley.cpp                 $(basedir)include/PTRMI/ClientInterfaceExtDataBentley.h          ${MultiCompileDepends}
-#%endif
 
 #
 # Compile the above uniform set of dependency blocks in a single invocation of the Visual C compiler.

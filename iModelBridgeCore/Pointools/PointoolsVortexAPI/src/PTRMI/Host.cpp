@@ -30,7 +30,9 @@ Host::~Host(void)
 {
 															// Delete Host's Pipe. Must be done explicitly using Pipe because
 															// indexing to host has been deleted
+#ifdef NEEDS_WORK_VORTEX_DGNDB_SERVER
 	getManager().getPipeProtocolManager().deletePipe(getPipe());
+#endif
 
 	setPipe(NULL);
 }

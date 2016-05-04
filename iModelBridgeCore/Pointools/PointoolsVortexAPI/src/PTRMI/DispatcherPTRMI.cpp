@@ -104,6 +104,8 @@ PTRMI::Status Dispatcher::updateHostName(Stream &stream, const Name &hostName, c
 
 PTRMI::Status Dispatcher::receiveAndDispatchCall(Message &callHeader, const Name &hostName)
 {
+#ifdef NEEDS_WORK_VORTEX_DGNDB_SERVER
+
 	Status						status;
 	Status						sendStatus;
 	ServerInterfaceBase 	*	serverInterface;
@@ -201,11 +203,18 @@ PTRMI::Status Dispatcher::receiveAndDispatchCall(Message &callHeader, const Name
 
 															// Return lower level send status
 	return sendStatus;
+
+#else
+    Status status;
+    return status;
+#endif
 }
 
 
 PTRMI::Status Dispatcher::receiveAndDispatchReturn(Message &header, const Name &hostName)
 {
+#ifdef NEEDS_WORK_VORTEX_DGNDB_SERVER
+
 	Status					status;
 	ClientInterfaceBase *	receiver;
 	Stream				*	stream;
@@ -243,6 +252,11 @@ PTRMI::Status Dispatcher::receiveAndDispatchReturn(Message &header, const Name &
 	getManager().getPipeProtocolManager().waitForEndMethod(*stream);
 															// Return the end status
 	return status;
+
+#else
+    Status status;
+    return status;
+#endif
 }
 
 
