@@ -869,7 +869,7 @@ IECInstanceR sourceCustomAttribute
 
     schema.AddReferencedSchema(*customAttributeSchema);
 
-    for (size_t i = 0; i < sourceCustomAttributeClass->GetPropertyCount(); i++)
+    for (int i = 0; i < sourceCustomAttributeClass->GetPropertyCount(); i++)
         {
         ECPropertyP propP = sourceCustomAttributeClass->GetPropertyByIndex(i);
         ConvertPropertyValue(propP->GetName(), sourceCustomAttribute, *targetAttributeInstance);
@@ -894,20 +894,20 @@ IECInstanceR sourceCustomAttribute
 // @bsimethod                                     
 //---------------------------------------------------------------------------------
 bmap<Utf8String, CustomAttributeReplacement> const& StandardCustomAttributeReferencesConverter::GetCustomAttributesMapping()
-	{
-	if (!s_isInitialized)
-		{
-		// Converts reference of DateTimeInfo CA to the new class
-		AddMapping("Bentley_Standard_CustomAttributes", "DateTimeInfo", "CoreCustomAttributes", "DateTimeInfo");
-		AddMapping("Bentley_Standard_CustomAttributes", "ClassHasCurrentTimeStampProperty", "CoreCustomAttributes", "ClassHasCurrentTimeStampProperty");
-		
-		// Add More...
-			
-		s_isInitialized = true;
-		}
-	
-		return s_entries;
-	}
+    {
+    if (!s_isInitialized)
+        {
+        // Converts reference of DateTimeInfo CA to the new class
+        AddMapping("Bentley_Standard_CustomAttributes", "DateTimeInfo", "CoreCustomAttributes", "DateTimeInfo");
+        AddMapping("Bentley_Standard_CustomAttributes", "ClassHasCurrentTimeStampProperty", "CoreCustomAttributes", "ClassHasCurrentTimeStampProperty");
+
+        // Add More...
+
+        s_isInitialized = true;
+        }
+
+    return s_entries;
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     
