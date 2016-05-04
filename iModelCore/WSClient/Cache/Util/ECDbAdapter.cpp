@@ -253,15 +253,14 @@ bvector<ECRelationshipClassCP> ECDbAdapter::FindRelationshipClasses(ECClassId so
         WITH RECURSIVE 
             RelationshipConstraintClasses (RelationshipClassId, RelationshipEnd, IsPolymorphic, ClassId, NestingLevel) AS
             (
-            SELECT RC.RelationshipClassId, RCC.RelationshipEnd, RC.IsPolymorphic, RCC.ClassId, 0
+            SELECT RC.RelationshipClassId, RC.RelationshipEnd, RC.IsPolymorphic, RCC.ClassId, 0
                 FROM ec_RelationshipConstraint RC
                 INNER JOIN ec_RelationshipConstraintClass RCC
-                    ON  RC.RelationshipClassId = RCC.RelationshipClassId
-                    AND RC.RelationshipEnd = RCC.RelationshipEnd
+                    ON  RC.Id = RCC.ConstraintId
             UNION
-            SELECT RCC.RelationshipClassId, RCC.RelationshipEnd, RCC.IsPolymorphic, BC.ClassId, NestingLevel + 1
+            SELECT RC.RelationshipClassId, RC.RelationshipEnd, RCC.IsPolymorphic, BC.ClassId, NestingLevel + 1
                 FROM RelationshipConstraintClasses RCC
-                INNER JOIN ec_BaseClass BC
+                INNER JOIN ec_ClassHasBaseClasses BC
                     ON BC.BaseClassId = RCC.ClassId
                 WHERE RCC.IsPolymorphic = 1
                 ORDER BY 2 DESC
