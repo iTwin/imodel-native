@@ -27,9 +27,6 @@ DgnProjectPackageTest.VerifyViewsForDgndbFilesConvertedDuringBuild   #Affan #TFS
 ViewAttachmentTest.Geom                                 # NonVisibleViewport
 VolumeElementTestFixture.QueryTest                      # FenceParams::AcceptElement
 
-#Uses the eb ECschema which has to be refactored for EC3 and ECDb06. Notified Raman
-JsonTests.FieldEngineerStructArray
-
 ElementAspectTests.ImportElementsWithAspect             # Does not element import aspects
 FontTests.QueryFonts                                    # Defect 386022 - Does not find font
 TextStringTest.BoundingShape                            # UmarH WIP
