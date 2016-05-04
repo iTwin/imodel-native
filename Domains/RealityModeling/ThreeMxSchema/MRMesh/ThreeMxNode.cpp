@@ -109,7 +109,7 @@ void Node::DrawGeometry(RenderContextR context)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Node::Dump(Utf8CP header) const
     {
-    printf(header);
+    puts(header);
     printf("Children=%s, file=%s, nGeom=%d\n", m_childPath.c_str(), m_nodePath.c_str(), m_geometry.IsValid());
 
     Utf8String childHdr = Utf8String(header) + "  ";

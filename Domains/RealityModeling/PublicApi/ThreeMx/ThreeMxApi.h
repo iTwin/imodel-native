@@ -216,14 +216,14 @@ public:
 
 #if defined (BENTLEYCONFIG_OS_WINDOWS) && !defined (BENTLEYCONFIG_OS_WINRT)
     static void GetMemoryStatistics(size_t& memoryLoad, size_t& total, size_t& available);
-    static double CalculateResolutionRatio();
 #endif
+    static double CalculateResolutionRatio();
 };
 
 //=======================================================================================
 // @bsiclass                                                    Ray.Bentley     09/2015
 //=======================================================================================
-struct ThreeMxDomain : Dgn::DgnDomain
+struct EXPORT_VTABLE_ATTRIBUTE ThreeMxDomain : Dgn::DgnDomain
 {
     DOMAIN_DECLARE_MEMBERS(ThreeMxDomain, THREEMX_EXPORT)
 
