@@ -298,6 +298,9 @@ BentleyStatus ECDbSchemaWriter::UpdateECProperty(ECPropertyChange& propertyChang
             return Fail("ECSCHEMA-UPGRADE: Changing ECProperty::Navigation.Direction is not supported. Failed on ECProperty %s.%s.",
                         oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
         }
+
+    SqlUpdater updater("ec_Property");
+
     if (propertyChange.GetName().IsValid())
         {
         if (propertyChange.GetName().GetNew().IsNull())
@@ -558,6 +561,7 @@ BentleyStatus ECDbSchemaWriter::UpdateECClass(ECClassChange& classChange, ECClas
 
     if (classChange.Properties().IsValid())
         {
+        int ordinal = (int) newClass.GetPropertyCount(false);
         for (size_t i = 0; i < classChange.Properties().Count(); i++)
             {
             auto& change = classChange.Properties().At(i);
@@ -575,8 +579,10 @@ BentleyStatus ECDbSchemaWriter::UpdateECClass(ECClassChange& classChange, ECClas
                     return ERROR;
                     }
 
-                if (ImportECProperty(*newProperty, static_cast<int>(newClass.GetPropertyCount(false))) == ERROR)
+                if (SUCCESS != ImportECProperty(*newProperty, ordinal))
                     return ERROR;
+
+                ordinal++;
                 }
             else if (change.GetState() == ChangeState::Modified)
                 {
@@ -616,13 +622,13 @@ BentleyStatus ECDbSchemaWriter::UpdateECSchemaReferences(ReferenceChanges& refer
             {
             SchemaKey oldRef;
             if (SchemaKey::ParseSchemaFullName(oldRef, change.GetOld().Value().c_str()) != ECObjectsStatus::Success)
-                return Fail("ECSCHEMA-UPGRADE: Failed to parse old reference schema fullname from difference. Failed on ECSchema %s.",
+                return Fail("ECSCHEMA-UPGRADE: Failed to parse old reference schema full name from difference. Failed on ECSchema %s.",
                             oldSchema.GetFullSchemaName().c_str());
 
 
             ECSchemaId referenceSchemaId = ECDbSchemaPersistenceHelper::GetECSchemaId(m_ecdb, oldRef.GetName().c_str());
             Statement stmt;
-            if (stmt.Prepare(m_ecdb, "DELETE FROM ec_SchemaReference WHERE SchemaId = ? AND ReferencedSchemaId = ?") != BE_SQLITE_OK)
+            if (stmt.Prepare(m_ecdb, "DELETE FROM ec_SchemaReference WHERE SchemaId=? AND ReferencedSchemaId=?") != BE_SQLITE_OK)
                 return ERROR;
 
             stmt.BindId(1, oldSchema.GetId());
@@ -649,13 +655,13 @@ BentleyStatus ECDbSchemaWriter::UpdateECSchemaReferences(ReferenceChanges& refer
             //Schema must exist with that or greater version
             if (!existingRef.Matches(newRef, SchemaMatchType::LatestCompatible))
                 {
-                return Fail("ECSCHEMA-UPGRADE: Could not find compitable reference schema for %s. Failed on ECSchema %s.",
+                return Fail("ECSCHEMA-UPGRADE: Could not find compatible reference schema for %s. Failed on ECSchema %s.",
                             newRef.GetFullSchemaName().c_str(), oldSchema.GetFullSchemaName().c_str());
                 }
 
             ECSchemaId referenceSchemaId = ECDbSchemaPersistenceHelper::GetECSchemaId(m_ecdb, newRef.GetName().c_str());
             Statement stmt;
-            if (stmt.Prepare(m_ecdb, "INSERT INTO ec_SchemaReference (SchemaId, ReferencedSchemaId) VALUES (?, ?)") != BE_SQLITE_OK)
+            if (stmt.Prepare(m_ecdb, "INSERT INTO ec_SchemaReference(SchemaId, ReferencedSchemaId) VALUES (?,?)") != BE_SQLITE_OK)
                 return ERROR;
 
             stmt.BindId(1, oldSchema.GetId());
