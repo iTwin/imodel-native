@@ -329,7 +329,7 @@ protected:
 	wchar_t m_filename[512];
 	size_t	 m_pos;
 	int	 m_fileline;
-	__int64 m_bytes_read;
+	int64_t m_bytes_read;
 };
 
 #endif

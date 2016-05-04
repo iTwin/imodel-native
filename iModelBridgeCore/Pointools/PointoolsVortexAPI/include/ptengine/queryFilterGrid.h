@@ -9,7 +9,7 @@ namespace pointsengine
 // grid implemented using a set
 struct HashGrid
 {
-	typedef unsigned __int64 HashVal;
+	typedef uint64_t HashVal;
 
 	HashGrid( const pt::vector3d &spacing ) 
 		:  m_spacing(spacing)

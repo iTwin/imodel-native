@@ -1,6 +1,5 @@
 #pragma once
 
-#include <windows.h>
 #include <string>
 
 #include <PTRMI/PTRMI.h>
@@ -16,7 +15,7 @@ class GUID
 
 public:
 
-	typedef unsigned __int64	PartialValue;
+	typedef uint64_t	PartialValue;
 
 protected:
 

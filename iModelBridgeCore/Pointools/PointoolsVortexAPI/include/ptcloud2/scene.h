@@ -38,7 +38,7 @@ namespace pcloud
 		};
 
 		/*management*/ 
-		PointCloud* newCloud( __int64 guid = 0 );
+		PointCloud* newCloud( int64_t guid = 0 );
 
 		void addCloud(PointCloud* cloud);
 		void removeCloud(PointCloud* cloud);
@@ -94,8 +94,8 @@ namespace pcloud
 		void	setInstanceIndex( int instance );
 		int		getInstanceIndex() const			{ return _instance; }
 
-		__int64	fullPointCount() const;
-		__int64 lodPointCount() const;
+		int64_t	fullPointCount() const;
+		int64_t lodPointCount() const;
 
 		pt::Guid	objectGuid() const;
 

@@ -1074,10 +1074,10 @@ void PointEditManager::invertSelection()
 /*****************************************************************************/
 /**
 * @brief
-* @return __int64
+* @return int64_t
 */
 /*****************************************************************************/
-__int64 PointEditManager::countVisiblePoints()
+int64_t PointEditManager::countVisiblePoints()
 {
 	PTTRACE_FUNC
 
@@ -1089,10 +1089,10 @@ __int64 PointEditManager::countVisiblePoints()
 /*****************************************************************************/
 /**
 * @brief
-* @return __int64
+* @return int64_t
 */
 /*****************************************************************************/
-__int64 PointEditManager::countPointsInLayer( int layerIndex )
+int64_t PointEditManager::countPointsInLayer( int layerIndex )
 {
 	PTTRACE_FUNC
 

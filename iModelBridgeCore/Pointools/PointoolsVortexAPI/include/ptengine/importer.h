@@ -55,8 +55,8 @@ public:
 	virtual bool readUserOptions();
 
 	static void addFile();
-	static __int64 totalFileSize();
-	static __int64 fileSize(const ptds::FilePath &path);
+	static int64_t totalFileSize();
+	static int64_t fileSize(const ptds::FilePath &path);
 	static void clearFiles();
 	static void addFolder();
 

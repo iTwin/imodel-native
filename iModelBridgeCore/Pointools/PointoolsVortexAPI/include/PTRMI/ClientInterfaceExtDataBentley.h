@@ -22,7 +22,7 @@ namespace PTRMI
 
 		typedef unsigned short		FileVersion;
 
-		typedef unsigned __int64	FileHeader;
+		typedef uint64_t	FileHeader;
 
 	protected:
 

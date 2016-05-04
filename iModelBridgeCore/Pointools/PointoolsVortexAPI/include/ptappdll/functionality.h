@@ -10,7 +10,7 @@ namespace pt {class ParameterMap; }
 
 namespace ptapp
 {
-	typedef unsigned __int64 FuncCode;
+	typedef uint64_t FuncCode;
 
 	void addFunctionality(void*);
 	pt::ParameterMap *functionality(FuncCode);

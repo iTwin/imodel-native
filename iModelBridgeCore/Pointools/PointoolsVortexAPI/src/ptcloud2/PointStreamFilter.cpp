@@ -400,7 +400,7 @@ void PointStreamFilter::restartCloudPass(void)
 }
 
 
-__int64 PointStreamFilter::writeStreamPosition(void)
+int64_t PointStreamFilter::writeStreamPosition(void)
 {
 	unsigned int					t;
 	SpatialPartitioner::NodeHSet	set;

@@ -18,7 +18,7 @@ namespace ptedit
 		void setCloud( const pcloud::PointCloud *pc );
 
 	private:
-		__int64 cloudGuid;
+		int64_t cloudGuid;
 	};
 
 } // end namespace ptedit

@@ -9,8 +9,12 @@
 #pragma once
 
 // Windows Header Files:
-#include <windows.h>
-#include <Commdlg.h>
+#if defined (BENTLEY_WIN32) 
+    #include <windows.h>
+    #include <Commdlg.h>
+    #include <winsock.h>
+    #include <Shlwapi.h>
+#endif
 
 // C header files
 #include <assert.h>

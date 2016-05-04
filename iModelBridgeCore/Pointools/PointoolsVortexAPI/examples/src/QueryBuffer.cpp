@@ -47,11 +47,11 @@ int QueryBuffer<double>::executeQuery( PThandle query, PThandle channel )
 }
 //-----------------------------------------------------------------------------
 template<>
-__int64	QueryBuffer<float>::countPointsInQuery( PThandle query )
+int64_t	QueryBuffer<float>::countPointsInQuery( PThandle query )
 {
 	ptResetQuery( query );
 	
-	__int64 count = 0;
+	int64_t count = 0;
 	m_validPnts = 0;
 
 	do
@@ -65,9 +65,9 @@ __int64	QueryBuffer<float>::countPointsInQuery( PThandle query )
 
 }
 //-----------------------------------------------------------------------------
-__int64		QueryBuffer<float>::computeQueryBoundingBox( PThandle query, PTdouble *lower3, PTdouble *upper3 )	// returns point count
+int64_t		QueryBuffer<float>::computeQueryBoundingBox( PThandle query, PTdouble *lower3, PTdouble *upper3 )	// returns point count
 {
-	__int64 count = 0;
+	int64_t count = 0;
 	m_validPnts = 0;
 
 	ptResetQuery( query );
@@ -95,9 +95,9 @@ __int64		QueryBuffer<float>::computeQueryBoundingBox( PThandle query, PTdouble *
 }
 //-----------------------------------------------------------------------------
 template<>
-__int64	QueryBuffer<double>::countPointsInQuery( PThandle query )
+int64_t	QueryBuffer<double>::countPointsInQuery( PThandle query )
 {
-	__int64 count = 0;
+	int64_t count = 0;
 	m_validPnts = 0;
 
 	ptResetQuery( query );

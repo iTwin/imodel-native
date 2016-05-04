@@ -270,7 +270,7 @@ DataSource::Size DataSourceFile::writeBytes(const Data *buffer, Size number_byte
 	return static_cast<Size>(W);
 }
 
-__int64 DataSourceFile::getFileSize(void) 
+int64_t DataSourceFile::getFileSize(void) 
 { 
 	LARGE_INTEGER li;
 	DWORD s;

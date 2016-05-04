@@ -32,7 +32,7 @@ extern pcloud::Scene*	sceneFromHandle(PThandle handle);
 //-----------------------------------------------------------------------------
 struct PTViewport
 {
-	PTViewport( __int64 context_id )
+	PTViewport( int64_t context_id )
 	{
 		contextid = context_id;
 		prevcontextid = 0;
@@ -369,8 +369,8 @@ PTint64	PTAPI ptPtsLoadedInViewportSinceDraw( PThandle forScene )
 
 	theVisibilityEngine().computeCurrentPntsShortfall( sc, currShortfall  );
 
-	__int64 currShortfallNum = 0;
-	__int64 lastShortfallNum = 0;
+	int64_t currShortfallNum = 0;
+	int64_t lastShortfallNum = 0;
 
 	if (sc)
 	{
@@ -397,7 +397,7 @@ PTint64	PTAPI ptPtsLoadedInViewportSinceDraw( PThandle forScene )
 			++i;
 		}
 	}
-	__int64 shortfallNum  = lastShortfallNum - currShortfallNum;
+	int64_t shortfallNum  = lastShortfallNum - currShortfallNum;
 	
 	s_loadMetric.m_ptsLoadedSinceDraw = shortfallNum;
 
@@ -406,11 +406,11 @@ PTint64	PTAPI ptPtsLoadedInViewportSinceDraw( PThandle forScene )
 }
 //-----------------------------------------------------------------------------
 // GLOBAL - used for stats output only
-__int64 g_lastPtsToLoadInViewportValue = 0;
+int64_t g_lastPtsToLoadInViewportValue = 0;
 //-----------------------------------------------------------------------------
 PTint64	PTAPI ptPtsToLoadInViewport( PThandle forScene, PTbool reCompute )
 {
-	__int64 pntsToLoad = 0;
+	int64_t pntsToLoad = 0;
 
 	if (forScene)
 	{

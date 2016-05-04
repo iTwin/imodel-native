@@ -341,13 +341,13 @@ namespace ptedit
 			if (f & g_activeLayers) ++_count[t];
 		}
 
-		__int64 totalCount() const 
+		int64_t totalCount() const 
 		{ 
-			__int64 c=0;		
+			int64_t c=0;		
 			for (int i=0;i<EDT_MAX_THREADS;i++) c += _count[i];
 			return c;
 		}
-		__int64 _count[EDT_MAX_THREADS];
+		int64_t _count[EDT_MAX_THREADS];
 	};
 
 	
@@ -425,14 +425,14 @@ namespace ptedit
 			if (f & _layers) ++_count[t];
 		}
 
-		__int64 totalCount() const 
+		int64_t totalCount() const 
 		{ 
-			__int64 c=0;		
+			int64_t c=0;		
 			for (int i=0;i<EDT_MAX_THREADS;i++) c += _count[i];
 			return c;
 		}
 
-		__int64 _count[EDT_MAX_THREADS];
+		int64_t _count[EDT_MAX_THREADS];
 		ubyte	_layers;
 	};
 
@@ -472,13 +472,13 @@ namespace ptedit
 			if (f & SELECTED_PNT_BIT && f & g_activeLayers) ++_count[t];
 		}
 
-		__int64 totalCount() const 
+		int64_t totalCount() const 
 		{ 
-			__int64 c=0;	
+			int64_t c=0;	
 			for (int i=0;i<EDT_MAX_THREADS;i++) c += _count[i];
 			return c;
 		}
-		__int64 _count[EDT_MAX_THREADS];
+		int64_t _count[EDT_MAX_THREADS];
 	};
 
 	/* ------------------------------------------------------------------------ */ 
@@ -576,12 +576,12 @@ namespace ptedit
 			}		
 		}
 
-		__int64 totalCount() const { return _count; }
+		int64_t totalCount() const { return _count; }
 		pt::vector3 *buffer() const { return _points; }
 		
 	private:
-		__int64 _count;
-		__int64 _bufferSize;
+		int64_t _count;
+		int64_t _bufferSize;
 		pt::vector3 *_points;
 	};
 	/* ------------------------------------------------------------------------ */ 

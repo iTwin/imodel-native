@@ -99,7 +99,7 @@ public:
 
 		Pager	&	operator =			(const Pager &p);
 		void		balanceMemoryLoad	(int deltamb);
-		__int64 	purgeData			(int mb=0);
+		int64_t 	purgeData			(int mb=0);
 		void		processRequests		(pointsengine::StreamManager &streamManager);
 		bool		checkFlags			(void);
 		int			loadVoxel			(pcloud::Voxel*, float lodRead, bool lock=true);
@@ -112,8 +112,8 @@ public:
 }
 
 
-__int64								memoryUsage				(void);
-pointsengine::PointsPager::MemMode	determineMemoryMode		(__int64 &available);
+int64_t								memoryUsage				(void);
+pointsengine::PointsPager::MemMode	determineMemoryMode		(int64_t &available);
 
 
 #endif

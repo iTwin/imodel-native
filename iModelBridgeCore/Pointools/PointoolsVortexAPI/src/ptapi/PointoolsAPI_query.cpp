@@ -189,24 +189,24 @@ namespace querydetail
 		
 		virtual bool	doesOwnDensityLimitCompute() const { return false; } 
 
-		//virtual __int64 computePntsInQuery()=0;
+		//virtual int64_t computePntsInQuery()=0;
 
 		bool			isBeingRun() const					{ return lastPnt && lastVoxel ? true : false; }
 		bool			isReset() const						{ return !(isBeingRun()); }
 		PTint64			getDensityLimit() const				{ return pointLimit; };
 
-		virtual __int64 computeNumPointsInQuery()	{ return -1; }
+		virtual int64_t computeNumPointsInQuery()	{ return -1; }
 
 	protected:
 
 		pcloud::Voxel	*lastVoxel;			// last voxel query returned points from, used to continue query
 		int				lastPnt;			// last point delivered, used to continue query when buffer full
 		float			densityCoeff;		// den coeff, meaning depends on density type
-		__int64			pointLimit;			// total number of points limit
+		int64_t			pointLimit;			// total number of points limit
 		bool			gather;			
 		PTenum			density;			// density type
 		PTenum			rgbMode;		
-		__int64			pointCount;			// point count of points returned
+		int64_t			pointCount;			// point count of points returned
 		PThandle		scope;				// point cloud or scene (pod) scope
 		uint			layerMask;
 
@@ -285,8 +285,8 @@ namespace querydetail
 		NodeCondition *C;
 		bool voxel(pcloud::Voxel *vox) { return true; }
 		std::vector<pcloud::Voxel *>	&voxels;
-		__int64 lodPointCount;
-		__int64 fullPointCount;
+		int64_t lodPointCount;
+		int64_t fullPointCount;
 		const pcloud::PointCloud *pcloudOnly;
 		const pcloud::Scene *sceneOnly;
 		vector3d world2prj;
@@ -1500,8 +1500,8 @@ namespace querydetail
 		bool						isWriter;			// is intended to write back channel updates
 
 		/* stats */ 
-		__int64						pntsFailed;			// point unavailable that are out of core
-		__int64						pntsTotal;			// total pnts read
+		int64_t						pntsFailed;			// point unavailable that are out of core
+		int64_t						pntsTotal;			// total pnts read
 	};
 
 
@@ -1518,7 +1518,7 @@ namespace querydetail
 		{
 			count += C->validPoint( vector3d(pnt), f ) ? 1 : 0;
 		}
-		__int64 count;
+		int64_t count;
 		Condition *C;	
 	};
 
@@ -1573,13 +1573,13 @@ namespace querydetail
 			if (_writer) delete _writer;
 		}
 		//---------------------------------------------------------------------
-		virtual __int64 computeNumPointsInQuery() 
+		virtual int64_t computeNumPointsInQuery() 
 		{
 			std::vector <pcloud::Voxel*> voxels;
 			GatherVoxelsVisitor<Condition> gather(&C, voxels, scope);
 			thePointsScene().visitNodes(&gather, false);			
 			
-			__int64 count = 0;
+			int64_t count = 0;
 
 			for (int i=0; i<gather.voxels.size(); i++)
 			{
@@ -3020,10 +3020,6 @@ h->extents = ext;
 		if(resultSetSize == NULL)
 			return;
 
-		unsigned __int64		p;
-		_int64					r;
-		unsigned int			n;
-		unsigned int			i;
 		T					*	baseGeom;
 		ubyte				*	baseRGB;
 		PTshort				*	baseIntensity;
@@ -3037,9 +3033,9 @@ h->extents = ext;
 															// Faster geometric copy
 		if(rgbBufferArray == NULL && intensityBufferArray == NULL)
 		{
-			n = queryPoints.size();
+            size_t n = queryPoints.size();
 															// For each query point
-			for(p = 0; p < n; p++)
+			for(size_t p = 0; p < n; p++)
 			{
 															// Get it's geom destination buffer base
 				baseGeom = geomBufferArray[p];
@@ -3053,7 +3049,7 @@ h->extents = ext;
 															// Set number of results returned for this result set
 					resultSetSize[p] = numResults;
 															// Copy each result to supplied geometry buffer
-					for(r = numResults - 1; r >= 0; r--)
+					for(int64_t r = numResults - 1; r >= 0; r--)
 					{
 						queryPoint->getResultPop(voxelPoint);
 
@@ -3064,9 +3060,9 @@ h->extents = ext;
 		}
 		else
 		{
-			n = queryPoints.size();
+            size_t n = queryPoints.size();
 															// For each query point
-			for(p = 0; p < n; p++)
+			for(size_t p = 0; p < n; p++)
 			{
 															// Get it's geom destination buffer base
 				baseGeom = geomBufferArray[p];
@@ -3087,9 +3083,9 @@ h->extents = ext;
 															// Set number of results returned for this result set
 					resultSetSize[p] = numResults;
 															// Copy each result to supplied geometry buffer
-					for(r = numResults - 1; r >= 0; r--)
+					for(int64_t r = numResults - 1; r >= 0; r--)
 					{
-						i = r * 3;
+                        int64_t i = r * 3;
 
 						queryPoint->getResultPop(voxelPoint);
 
@@ -5058,20 +5054,20 @@ bool computePntLimitDensity( querydetail::Query *query )
 		|| query->getDensityType() != PT_QUERY_DENSITY_LIMIT) 
 		return true;
 	
-	__int64 numPointsRequired = query->getDensityLimit();
+	int64_t numPointsRequired = query->getDensityLimit();
 
 	query->setDensity( PT_QUERY_DENSITY_FULL, 1.0f );	//no good because it'll load
 	//query->resetQuery();
 
 	//int numPointsIteration = query->runQuery(1000000, (PTdouble*)0, 0, 0, 0);
-	//__int64 numPointsInQuery = numPointsIteration;
+	//int64_t numPointsInQuery = numPointsIteration;
 
 	//while (numPointsIteration)
 	//{
 	//	numPointsIteration = query->runQuery(1000000, (PTdouble*)0, 0, 0, 0);
 	//	numPointsInQuery += numPointsIteration;
 	//}
-	__int64 numPointsInQuery = query->computeNumPointsInQuery();
+	int64_t numPointsInQuery = query->computeNumPointsInQuery();
 
 	float densityCoeff = (numPointsInQuery > 0) ? (float)numPointsRequired / numPointsInQuery : 0;
 

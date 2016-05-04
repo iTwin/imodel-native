@@ -1,9 +1,6 @@
 
 #pragma once
 
-#include <windows.h>
-
-
 namespace PTRMI
 {
 	class Event

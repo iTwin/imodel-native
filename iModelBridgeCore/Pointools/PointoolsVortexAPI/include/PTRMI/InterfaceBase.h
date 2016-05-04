@@ -1,7 +1,5 @@
 #pragma once 
 
-#include <windows.h>
-
 #include <PTRMI/GUID.h>
 #include <PTRMI/Name.h>
 #include <PT/TimeStamp.h>

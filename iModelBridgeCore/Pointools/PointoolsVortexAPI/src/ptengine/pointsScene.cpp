@@ -242,12 +242,12 @@ void PointsScene::addScene(pcloud::Scene *sc)
 	{
 		pcloud::PointCloud *pc = (*sc)[i];
 
-		__int64 guid = pc->guid();
+		int64_t guid = pc->guid();
 		if (!guid)
 		{
 			pc->generateGuid();
 		}
-		_cloudByGuid.insert( std::pair<__int64, pcloud::PointCloud*>( pc->guid(), pc) );
+		_cloudByGuid.insert( std::pair<int64_t, pcloud::PointCloud*>( pc->guid(), pc) );
 
 		if (pc->root())
 		{
@@ -327,15 +327,15 @@ pcloud::PointCloud * PointsScene::cloudByKey(const pt::ObjectKey &objk)
 	return 0;
 }
 //-----------------------------------------------------------------------------
-const pcloud::PointCloud *PointsScene::cloudByGUID(const __int64 guid) const
+const pcloud::PointCloud *PointsScene::cloudByGUID(const int64_t guid) const
 {
-	std::map<__int64, pcloud::PointCloud*>::const_iterator it = _cloudByGuid.find(guid);
+	std::map<int64_t, pcloud::PointCloud*>::const_iterator it = _cloudByGuid.find(guid);
 	return it == _cloudByGuid.end() ? 0 : it->second;
 }
 //-----------------------------------------------------------------------------
-pcloud::PointCloud *PointsScene::cloudByGUID(const __int64 guid)
+pcloud::PointCloud *PointsScene::cloudByGUID(const int64_t guid)
 {
-	std::map<__int64, pcloud::PointCloud*>::iterator it = _cloudByGuid.find(guid);
+	std::map<int64_t, pcloud::PointCloud*>::iterator it = _cloudByGuid.find(guid);
 	return it == _cloudByGuid.end() ? 0 : it->second;
 }
 //-----------------------------------------------------------------------------
@@ -349,7 +349,7 @@ void PointsScene::removeScene(pcloud::Scene *sc, bool del)
 	/* remove from maps */ 
 	for (int c=0; c<sc->numObjects(); c++)
 	{
-		__int64 guid = sc->cloud(c)->guid();
+		int64_t guid = sc->cloud(c)->guid();
 		if (_cloudByGuid.find(guid) != _cloudByGuid.end())
 			_cloudByGuid.erase( _cloudByGuid.find(guid) );
 	};

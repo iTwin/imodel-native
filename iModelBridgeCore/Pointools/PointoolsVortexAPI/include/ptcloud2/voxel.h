@@ -91,9 +91,9 @@ namespace pcloud
 		void* resizeChannelToRequestedLod(Channel ch, float amount, int &num_points, uint &num_bytes, uint &bytes_offset, bool multRequest = true);
 
 		int resizeAndFillChannelToRequestedLod(Channel ch, float amount, int &num_points, uint &num_bytes, uint &bytes_offset, 
-			ptds::DataSourcePtr &dataSrc, __int64 srcPos, void* buffer);
+			ptds::DataSourcePtr &dataSrc, int64_t srcPos, void* buffer);
 
-		int getChannelResizeReadInfo(Channel ch, float amount, int &num_points, uint &num_bytes, uint &bytes_offset, __int64 &srcPos);
+		int getChannelResizeReadInfo(Channel ch, float amount, int &num_points, uint &num_bytes, uint &bytes_offset, int64_t &srcPos);
 
 		
 		/* returns info on channel in relation to requested lod */ 
@@ -176,10 +176,10 @@ namespace pcloud
 
 		unsigned int		getVoxelPointStorageSize	(void);
 		unsigned int		getNumPointsWithBudget		(ptds::DataSize budgetBytes, ptds::DataSize &budgetNotUsed);
-		float				getPotentialLOD				(__int64 numPointsChanged);
+		float				getPotentialLOD				(int64_t numPointsChanged);
 
 		unsigned int		getVoxelDataSourceReadSet	(LOD lod, ptds::DataSourceReadSet &readSet);
-		void				getChannelDataSourceRead	(DataChannel &dataChannel, __int64 position, LOD lod, ptds::DataSourceReadSet &readSet);
+		void				getChannelDataSourceRead	(DataChannel &dataChannel, int64_t position, LOD lod, ptds::DataSourceReadSet &readSet);
 
 		LODComparison		compareLOD					(LOD a, LOD b);
 
@@ -194,8 +194,8 @@ namespace pcloud
 		float usage() const { return _usage; }
 
 		/* pointer to out-of-core channel data */ 
-		void	filePointer(__int64 pos)	{ m_filepointer = pos; }
-		__int64 filePointer() const			{ return m_filepointer; }
+		void	filePointer(int64_t pos)	{ m_filepointer = pos; }
+		int64_t filePointer() const			{ return m_filepointer; }
 
 		/* file index in scene */ 
 		FileIndex	fileIndex	(void) const			{return m_fileindex;}
@@ -803,19 +803,19 @@ namespace pcloud
 			uint uidVoxel;
 			};
 			Components comp;
-			unsigned __int64 uid;
+			uint64_t uid;
 		};
 		const VoxelID &uid() const 
 		{ 
 			return m_id; 
 		}
 
-		void setLastStreamManagerIteration(unsigned __int64 iteration)
+		void setLastStreamManagerIteration(uint64_t iteration)
 		{
 			m_lastStreamManagerIteration = iteration;
 		}
 
-		unsigned __int64 getLastStreamManagerIteration(void) const
+		uint64_t getLastStreamManagerIteration(void) const
 		{
 			return m_lastStreamManagerIteration;
 		}
@@ -854,12 +854,12 @@ namespace pcloud
 		FileIndex		m_fileindex;			// Fileindex in points pager
 
 												// Last stream manager iteration that this voxel was processed
-		unsigned __int64 m_lastStreamManagerIteration;
+		uint64_t m_lastStreamManagerIteration;
 
 		
 		VoxelID m_id;							// Unique voxel id
 
-		__int64	m_filepointer;					// Pointer in file to start of channel data
+		int64_t	m_filepointer;					// Pointer in file to start of channel data
 
 		bool resizedToStream;					// True if voxel channels have been resized ready for streamed data to be placed in them
 

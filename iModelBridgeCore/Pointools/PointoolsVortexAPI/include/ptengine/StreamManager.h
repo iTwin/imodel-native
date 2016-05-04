@@ -31,7 +31,7 @@ public:
 	typedef pointsengine::PointsScene::VOXELSLIST							VoxelList;
 	typedef pointsengine::PointsPager::MemMode								MemMode;
 
-	typedef	unsigned __int64												Iteration;
+	typedef	uint64_t												Iteration;
 
 protected:
 

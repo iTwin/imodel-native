@@ -36,13 +36,13 @@ struct DiagnosticData
 
 	pt::vector3d	in_pnts[16];
 	double			in_double[4];
-	__int64			in_int[4];
+	int64_t			in_int[4];
 	bool			in_bool[4];
 	PThandle		in_handles[4];
 
 	pt::vector3d	out_pnts[16];
 	double			out_double[4];
-	__int64			out_int[4];
+	int64_t			out_int[4];
 	bool			out_bool[4];
 	
 	int				num_out;

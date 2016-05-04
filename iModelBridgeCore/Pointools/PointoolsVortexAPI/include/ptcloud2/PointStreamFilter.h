@@ -267,7 +267,7 @@ public:
 	void				addPassPointColour			(const pt::vector3d &geomd, const ubyte *rgb);
 	void				addPassPointIntensity		(const pt::vector3d &geomd, const short *intensity);
 
-	__int64				writeStreamPosition			(void);
+	int64_t				writeStreamPosition			(void);
 
 	void				getIndexStreams				(std::vector<IndexStream *> &result);
 

@@ -83,7 +83,7 @@ void OctreeCompressor::compress(pt::vector3s *geom, int size, pt::vector3s p, in
 }
 void DeltaEncoder::compress(const pt::vector3s *geom, int size)
 {
-	std::vector <__int64> pnts;
+	std::vector <int64_t> pnts;
 	int i;
 	/*get data range*/ 
 	vector3s _min, _max;
@@ -111,7 +111,7 @@ void DeltaEncoder::compress(const pt::vector3s *geom, int size)
 
 	for (i=0; i<size; i++)
 	{
-		__int64 p = 0;
+		int64_t p = 0;
 		vector3s s(geom[i][c], geom[i][b], geom[i][a]);
 		memcpy(&p, &s, sizeof(vector3));
 		pnts.push_back(p);
@@ -119,12 +119,12 @@ void DeltaEncoder::compress(const pt::vector3s *geom, int size)
 	std::stable_sort(pnts.begin(), pnts.end());
 
 	/*find largest difference*/ 
-	__int64 diff =0;
-	std::vector<__int64> diffv;
+	int64_t diff =0;
+	std::vector<int64_t> diffv;
 
 	for (i=0; i<size-1; i++)
 	{
-		__int64 d = pnts[i+1] - pnts[i];
+		int64_t d = pnts[i+1] - pnts[i];
 		diffv.push_back(d);
 		if ( d > diff) diff = d;
 	}
@@ -134,10 +134,10 @@ void DeltaEncoder::compress(const pt::vector3s *geom, int size)
 
 	compress(diffv);
 }
-void DeltaEncoder::compress(std::vector<__int64> &diff)
+void DeltaEncoder::compress(std::vector<int64_t> &diff)
 {
 	/*find largest difference*/ 
-	__int64 df =0;
+	int64_t df =0;
 	int i;
 	int enc8 =0;
 	int enc256 = 0;
@@ -148,7 +148,7 @@ void DeltaEncoder::compress(std::vector<__int64> &diff)
 
 	for (i=0; i<size; i++)
 	{
-		__int64 d = diff[i+1] - diff[i];
+		int64_t d = diff[i+1] - diff[i];
 		if ( d > df) df = d;
 		if ( d <= 256) ++enc256;
 		if ( d <= 512) ++enc512;

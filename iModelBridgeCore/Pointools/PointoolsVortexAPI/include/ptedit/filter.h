@@ -266,13 +266,13 @@
 //			if (f & SELECTED_PNT_VAL && f & g_activeLayersP) ++_count[t];
 //		}
 //
-//		__int64 totalCount() const 
+//		int64_t totalCount() const 
 //		{ 
-//			__int64 c;		
+//			int64_t c;		
 //			for (int i=0;i<EDT_MAX_THREADS;i++) c += _count[i];
 //			return c;
 //		}
-//		__int64 _count[EDT_MAX_THREADS];
+//		int64_t _count[EDT_MAX_THREADS];
 //	};
 //	/* ------------------------------------------------------------------------ */ 
 //	/*  Count Selected							                                */ 
@@ -313,12 +313,12 @@
 //			}		
 //		}
 //
-//		__int64 totalCount() const { return _count; }
+//		int64_t totalCount() const { return _count; }
 //		pt::vector3 *buffer() const { return _points; }
 //		
 //	private:
-//		__int64 _count;
-//		__int64 _bufferSize;
+//		int64_t _count;
+//		int64_t _bufferSize;
 //		pt::vector3 *_points;
 //	};
 //	/* ------------------------------------------------------------------------ */ 

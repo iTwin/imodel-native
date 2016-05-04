@@ -7,8 +7,8 @@ namespace ptedit
 {
 	struct ConsolidationData
 	{
-		std::map<__int64, uint> nodeSpecs;
-		std::map<__int64, ubyte*> nodeFilters;
+		std::map<int64_t, uint> nodeSpecs;
+		std::map<int64_t, ubyte*> nodeFilters;
 	};
 
 	class ConsolidateNode : public EditNodeDef

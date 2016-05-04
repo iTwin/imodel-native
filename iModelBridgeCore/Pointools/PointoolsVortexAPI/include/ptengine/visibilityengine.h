@@ -72,7 +72,7 @@ public:
 	const		pt::vector3 &getBiasPoint() const				{ return m_biasPnt; }
 
 	/* points loaded shortfall per scene */ 
-	typedef		std::map<const pcloud::Scene *, __int64>		LoadedShortfallMap;
+	typedef		std::map<const pcloud::Scene *, int64_t>		LoadedShortfallMap;
 
 	void		getLastFramePntsShortfall( LoadedShortfallMap &result  )	{ result = m_loadShortfall; }
 	void		computeCurrentPntsShortfall( const pcloud::Scene* inSceneOrNullForAll, LoadedShortfallMap &result  );

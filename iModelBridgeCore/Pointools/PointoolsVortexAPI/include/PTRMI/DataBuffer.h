@@ -183,8 +183,8 @@ namespace PTRMI
 		DataBuffer &						operator >>				(long &value);
 		DataBuffer &						operator >>				(unsigned int &value);
 		DataBuffer &						operator >>				(int &value);
-		DataBuffer &						operator >>				(unsigned __int64 &value);
-		DataBuffer &						operator >>				(__int64 &value);
+		DataBuffer &						operator >>				(uint64_t &value);
+		DataBuffer &						operator >>				(int64_t &value);
 		DataBuffer &						operator >>				(wchar_t &value);
 		DataBuffer &						operator >>				(bool &value);				
 		DataBuffer &						operator >>				(float &value);				
@@ -198,8 +198,8 @@ namespace PTRMI
 		DataBuffer &						operator <<				(long value);
 		DataBuffer &						operator <<				(unsigned int value);
 		DataBuffer &						operator <<				(int value);
-		DataBuffer &						operator <<				(unsigned __int64 value);
-		DataBuffer &						operator <<				(__int64 value);
+		DataBuffer &						operator <<				(uint64_t value);
+		DataBuffer &						operator <<				(int64_t value);
 		DataBuffer &						operator <<				(wchar_t value);
 		DataBuffer &						operator <<				(bool value);				
 		DataBuffer &						operator <<				(float value);				
@@ -414,8 +414,8 @@ namespace PTRMI
 	inline DataBuffer &DataBuffer::operator>>(long &value)				{readFromBuffer(value); return (*this);}
 	inline DataBuffer &DataBuffer::operator>>(unsigned int &value)		{readFromBuffer(value); return (*this);}
 	inline DataBuffer &DataBuffer::operator>>(int &value)				{readFromBuffer(value); return (*this);}
-	inline DataBuffer &DataBuffer::operator>>(unsigned __int64 &value)	{readFromBuffer(value); return (*this);}
-	inline DataBuffer &DataBuffer::operator>>(__int64 &value)			{readFromBuffer(value); return (*this);}
+	inline DataBuffer &DataBuffer::operator>>(uint64_t &value)	{readFromBuffer(value); return (*this);}
+	inline DataBuffer &DataBuffer::operator>>(int64_t &value)			{readFromBuffer(value); return (*this);}
 	inline DataBuffer &DataBuffer::operator>>(wchar_t &value)			{readFromBuffer(value); return (*this);}
 	inline DataBuffer &DataBuffer::operator>>(bool &value)				{readFromBuffer(value); return (*this);}
 	inline DataBuffer &DataBuffer::operator>>(float &value)				{readFromBuffer(value); return (*this);}
@@ -431,8 +431,8 @@ namespace PTRMI
 	inline DataBuffer &DataBuffer::operator<<(long value)				{writeToBuffer(value); return (*this);}
 	inline DataBuffer &DataBuffer::operator<<(unsigned int value)		{writeToBuffer(value); return (*this);}
 	inline DataBuffer &DataBuffer::operator<<(int value)				{writeToBuffer(value); return (*this);}
-	inline DataBuffer &DataBuffer::operator<<(unsigned __int64 value)	{writeToBuffer(value); return (*this);}
-	inline DataBuffer &DataBuffer::operator<<(__int64 value)			{writeToBuffer(value); return (*this);}
+	inline DataBuffer &DataBuffer::operator<<(uint64_t value)	{writeToBuffer(value); return (*this);}
+	inline DataBuffer &DataBuffer::operator<<(int64_t value)			{writeToBuffer(value); return (*this);}
 	inline DataBuffer &DataBuffer::operator<<(wchar_t value)			{writeToBuffer(value); return (*this);}
 	inline DataBuffer &DataBuffer::operator<<(bool value)				{writeToBuffer(value); return (*this);}
 	inline DataBuffer &DataBuffer::operator<<(float value)				{writeToBuffer(value); return (*this);}

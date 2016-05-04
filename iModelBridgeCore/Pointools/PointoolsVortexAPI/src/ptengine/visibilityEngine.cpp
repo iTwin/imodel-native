@@ -419,7 +419,7 @@ void	VisibilityEngine::computeCurrentPntsShortfall( const pcloud::Scene* inScene
 	PointsScene::VoxIterator e = m_voxlist.end();
 	pcloud::Voxel *vox;
 
-	__int64 totalOutstandingRequests = 0;
+	int64_t totalOutstandingRequests = 0;
 
 	while (i != e)
 	{
@@ -886,7 +886,7 @@ struct VisibilityCompute : public PointsVisitor
 		}
 		return true;
 	}
-	__int64 getFullPointCount( const pcloud::Node *n, __int64 &count )
+	int64_t getFullPointCount( const pcloud::Node *n, int64_t &count )
 	{	
 		if (n->isLeaf()) 
 			count += static_cast<const pcloud::Voxel*>(n)->fullPointCount();
@@ -914,7 +914,7 @@ struct VisibilityCompute : public PointsVisitor
 		bb.uy() *= g_unitScale;
 		bb.uz() *= g_unitScale;
 
-		__int64 fullPointCount = 0;
+		int64_t fullPointCount = 0;
 
 		getFullPointCount(n, fullPointCount);
 
@@ -1125,7 +1125,7 @@ float thinness(const pt::BoundingBox &bb)
 * @return float
 */
 /*****************************************************************************/
-__int64 getFullPointCount( pcloud::Node *n, __int64 &count )
+int64_t getFullPointCount( pcloud::Node *n, int64_t &count )
 {	
 	if (n->isLeaf()) 
 		count += static_cast<pcloud::Voxel*>(n)->fullPointCount();
@@ -1151,7 +1151,7 @@ float VisibilityEngine::computeVoxelLOD( const pt::ViewParams &view, pcloud::Nod
 	}
 	projArea = pixel_area[0];	// needed for diagnostics
 
-	__int64 fullPointCount = 0;
+	int64_t fullPointCount = 0;
 	getFullPointCount(n, fullPointCount);
 
 	if (pixel_area[0] > 0 && fullPointCount > 0)

@@ -14,7 +14,7 @@ public:
 		class Traversal, 
 		class FilterChain
 	>
-	static __int64 run( Traversal &traversal, FilterChain &filters )
+	static int64_t run( Traversal &traversal, FilterChain &filters )
 	{
 		traversal.traverse( filters );
 		return 0;
@@ -26,7 +26,7 @@ public:
 		class FilterChain,
 		class DensityPolicy
 	>
-	static __int64 run( Traversal &traversal, FilterChain &filters, DensityPolicy &d )
+	static int64_t run( Traversal &traversal, FilterChain &filters, DensityPolicy &d )
 	{
 		traversal.traverse( filters, d );
 		return 0;

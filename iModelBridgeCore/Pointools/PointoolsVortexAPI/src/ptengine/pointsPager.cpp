@@ -41,7 +41,7 @@
 #include <pt/trace.h>
 
 #define		PAGER_THREAD 0
-#define		_MEMAVAL (__int64)(mem.dwAvailVirtual - ((1.0-pp.capacity) * mem.dwTotalVirtual))
+#define		_MEMAVAL (int64_t)(mem.dwAvailVirtual - ((1.0-pp.capacity) * mem.dwTotalVirtual))
 
 using namespace pointsengine;
 using namespace pt;
@@ -349,8 +349,8 @@ void PointsPager::Pager::balanceMemoryLoad( int deltamb )
 #endif
 	if (deltamb < 0)
 	{
-		__int64 loose_bytes = -deltamb * 1024 * 1024;
-		__int64 bytespurged = 0;//purgeData( -deltamb );
+		int64_t loose_bytes = -deltamb * 1024 * 1024;
+		int64_t bytespurged = 0;//purgeData( -deltamb );
 
 		if (bytespurged >= loose_bytes) return;
 		else
@@ -405,7 +405,7 @@ void PointsPager::Pager::balanceMemoryLoad( int deltamb )
 	}
 	else
 	{
-		__int64 gain_bytes = deltamb * 1024 * 1024;
+		int64_t gain_bytes = deltamb * 1024 * 1024;
 
 		i = e;
 		while (i!=b)
@@ -434,13 +434,13 @@ void PointsPager::Pager::balanceMemoryLoad( int deltamb )
 //---------------------------------------------------------
 // Purge data from voxels
 //---------------------------------------------------------
-__int64 PointsPager::Pager::purgeData( int mb )
+int64_t PointsPager::Pager::purgeData( int mb )
 {
 	PointsScene::VoxIterator b = pp.voxlist.begin();
 	PointsScene::VoxIterator e = pp.voxlist.end();
 	PointsScene::VoxIterator i;
 
-	__int64 bytes2loose = mb * 1024 *1024;
+	int64_t bytes2loose = mb * 1024 *1024;
 
 	pcloud::Voxel *vox =0;
 	uint bytes, offset;
@@ -494,7 +494,7 @@ __int64 PointsPager::Pager::purgeData( int mb )
 //---------------------------------------------------------
 // memory Usage count
 //---------------------------------------------------------
-__int64 memoryUsage()
+int64_t memoryUsage()
 {
 	PointsScene::UseSceneVoxels voxelslock(pp.voxlist, pp.voxlistState);
 	if (!pp.voxlist.size()) return 0;
@@ -507,7 +507,7 @@ __int64 memoryUsage()
 	//uint bytes, offset;
 	//int pnts;
 
-	__int64 bytesUsed = 0;
+	int64_t bytesUsed = 0;
 
 	i = b;
 	while (i!=e)
@@ -557,7 +557,7 @@ uint PointsPager::pointsLoadedMetric(bool reset)
 }
 //-----------------------------------------------------------------------------
 //static 
-PointsPager::MemMode determineMemoryMode( __int64 &available )
+PointsPager::MemMode determineMemoryMode( int64_t &available )
 {
 	PointsPager::MemMode memoryMode = PointsPager::MemPlenty;
 	float memCoef = (float)pp.memoryUsed / pp.memoryTarget;
@@ -661,7 +661,7 @@ void PointsPager::Pager::processRequests(pointsengine::StreamManager &streamMana
 	/* locals */ 
 	//pcloud::Voxel	*vox;
 	//int				lod, req;
-	__int64			memAval;
+	int64_t			memAval;
 	bool			loading = false;
 
 	/* timer */ 
@@ -1061,7 +1061,7 @@ int VoxelLoader::loadVoxel(pcloud::Voxel *vox, float lodRead, bool full, bool lo
 				pcloud::Channel ch = pcloud::channel(c);
 				
 				/*reallocate voxel data channels*/ 
-				__int64 pos = vox->filePointer() + prev_channel_size;
+				int64_t pos = vox->filePointer() + prev_channel_size;
 				
 				/*this is the size of full channel data on disk*/ 
 				prev_channel_size += vox->fullPointCount() * dc->typesize() * dc->multiple();

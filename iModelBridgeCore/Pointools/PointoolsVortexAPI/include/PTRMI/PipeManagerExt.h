@@ -16,7 +16,7 @@ public:
 
 		typedef unsigned int			(*ExternalCallFunction)				(void *sendData, unsigned int sendDataSize, void *extData, unsigned int extDataSize, void **receiveData, unsigned int *receiveDataSize);
 		typedef bool					(*ExternalReleaseBufferFunction)	(void *buffer);
-		typedef unsigned int			(*ExternalProcessRequestCallback)	(void *dataSend, unsigned int dataSendSize, unsigned __int64 clientIDFirst64, unsigned __int64 clientIDSecond64);
+		typedef unsigned int			(*ExternalProcessRequestCallback)	(void *dataSend, unsigned int dataSendSize, uint64_t clientIDFirst64, uint64_t clientIDSecond64);
 
 		typedef unsigned long			ExternalErrorCode;
 

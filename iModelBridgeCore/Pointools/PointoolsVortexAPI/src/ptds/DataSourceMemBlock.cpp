@@ -97,7 +97,7 @@ namespace ptds
 		return 0;
 	}
 
-	__int64 DataSourceMemBlock::getFileSize(void) 
+	int64_t DataSourceMemBlock::getFileSize(void) 
 	{ 
 		return m_mem.byte_size;
 

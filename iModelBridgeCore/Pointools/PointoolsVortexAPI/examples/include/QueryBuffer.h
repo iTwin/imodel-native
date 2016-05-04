@@ -54,9 +54,9 @@ public:
 	int						numPntsInQueryIteration() const				{ return m_validPnts; }
 	bool					isBufferFull() const						{ return m_validPnts == m_size ? true : false; }
 
-	__int64					countPointsInQuery( PThandle query );	
+	int64_t					countPointsInQuery( PThandle query );	
 
-	__int64					computeQueryBoundingBox( PThandle query, PTdouble *lower3, PTdouble *upper3 );	// returns point count
+	int64_t					computeQueryBoundingBox( PThandle query, PTdouble *lower3, PTdouble *upper3 );	// returns point count
 
 private:
 	bool					allocateChannelBuffer( PThandle channel, int channelIndex );

@@ -191,7 +191,7 @@ public:
     static void beginCycleCount(uint64& cycleCount);
     static void endCycleCount(uint64& cycleCount);
 
-    static unsigned __int64 getCycleCount();
+    static uint64_t getCycleCount();
 
     /** Set an environment variable for the current process */ 
     static void setEnv(const std::wstring& name, const std::wstring& value);
@@ -204,8 +204,8 @@ public:
 
 
 #ifdef _WIN32
-    inline unsigned __int64 System::getCycleCount() {
-       //unsigned __int64 timehi, timelo;
+    inline uint64_t System::getCycleCount() {
+       //uint64_t timehi, timelo;
 
        //// Use the assembly instruction rdtsc, which gets the current
        //// cycle count (since the process started) and puts it in edx:eax.
@@ -216,7 +216,7 @@ public:
        //   mov timelo, eax;
        //}
 
-       //return ((unsigned __int64)timehi << 32) + (unsigned __int64)timelo;
+       //return ((uint64_t)timehi << 32) + (uint64_t)timelo;
 
 	   return __rdtsc();
     }

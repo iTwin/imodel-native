@@ -29,11 +29,11 @@ public:
 
 protected:
 
-	unsigned __int64	queryExtents			(PThandle scene, PTdouble *localLower, PTdouble *localUpper, QueryType queryType, QueryGeometry type);
-	unsigned __int64	queryMultiExtents		(const wchar_t *fakeFilePath, const wchar_t *realFilePath, bool testServer, QueryType queryType, QueryGeometry queryGeometry, const wchar_t *logFile);
+	uint64_t queryExtents			(PThandle scene, PTdouble *localLower, PTdouble *localUpper, QueryType queryType, QueryGeometry type);
+	uint64_t	queryMultiExtents		(const wchar_t *fakeFilePath, const wchar_t *realFilePath, bool testServer, QueryType queryType, QueryGeometry queryGeometry, const wchar_t *logFile);
 
 public:
 
-	unsigned __int64	runTest					(unsigned int &completedIterations);
-	unsigned __int64	runTestClientServer		(unsigned int &completedIterations);
+	uint64_t	runTest					(unsigned int &completedIterations);
+	uint64_t	runTestClientServer		(unsigned int &completedIterations);
 };

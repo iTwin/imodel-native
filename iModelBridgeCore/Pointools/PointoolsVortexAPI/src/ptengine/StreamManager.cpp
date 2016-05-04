@@ -136,7 +136,7 @@ int StreamManager::getVoxelReadInfo(PointsPager::Pager *pager, pcloud::Voxel *vo
 				pcloud::Channel ch = pcloud::channel(c);
 				
 				/*reallocate voxel data channels*/ 
-				__int64 pos = vox->filePointer() + prev_channel_size;
+				int64_t pos = vox->filePointer() + prev_channel_size;
 				
 				/*this is the size of full channel data on disk*/ 
 				prev_channel_size += vox->fullPointCount() * dc->typesize() * dc->multiple();
@@ -397,7 +397,7 @@ PTRMI::Status StreamManager::processStreamDataSourceNonStreamed(StreamDataSource
 	float				am = 0;
 	Voxel::LOD			lod, req;
 	pt::TimeStamp		t0;
-	__int64				memAval;
+	int64_t				memAval;
 
 	bool				ooc;		// this leaf is OOC
 	bool				new_ooc;						
@@ -631,7 +631,7 @@ void StreamManager::loadStreamBudget(Voxel *voxel, DataSourcePtr dataSource, boo
 	if(voxel == NULL)
 		return;
 
-	unsigned __int64	numPointsInBudget;
+	uint64_t	numPointsInBudget;
 	float				streamLOD;
 	DataSourceReadSet	readSetRequest;
 															// Get channel read requests as a read set for full read

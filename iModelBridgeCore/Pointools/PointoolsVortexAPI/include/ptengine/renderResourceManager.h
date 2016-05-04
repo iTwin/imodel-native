@@ -2,7 +2,7 @@
 
 #include <ptengine/colourRamps.h>
 
-#define PTRES_TEXID		__int64
+#define PTRES_TEXID		int64_t
 #define LPVOIDSHADER	void*
 
 namespace pointsengine

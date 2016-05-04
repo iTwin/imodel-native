@@ -71,7 +71,6 @@
 // --------------------------------------------------------------------------------------------------------------------------------
 #include <pt/ptmath.h>
 
-
 #ifdef __INTEL_COMPILER
 template <bool B> struct templateAssert {};
 struct templateAssert<true> {static void there_has_been_a_compile_time_assertion() {};};
@@ -1356,6 +1355,7 @@ inline		T		*data()       {return _data;}
 inline		unsigned int	width() const {return N;}
 inline		unsigned int	height() const {return M;}
 
+#if defined(HAVE_OPENGL)
 				//gl - thses are all 4x4 matrix operations
 				//added by Faraz Ravi igloosoft 2002
 inline		void	loadGLmodel()
@@ -1373,6 +1373,7 @@ inline		void	loadGLmodel()
 						}
 					}
 				}
+#endif
 inline		void	getGLmatrix16(T *m) const
 				{
 					TemplateAssert(N == 4 && M == 4);

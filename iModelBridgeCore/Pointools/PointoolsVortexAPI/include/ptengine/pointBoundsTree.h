@@ -99,9 +99,9 @@ namespace pointsengine
 			QueryPointsArrayd *pnts;
 		};
 
-		__int64	pointsProcessed;
-		__int64 totalPoints;
-		__int64 lastProgress;
+		int64_t	pointsProcessed;
+		int64_t totalPoints;
+		int64_t lastProgress;
 
 		int		m_targetPntsPerBox;
 		double 	m_minDim;

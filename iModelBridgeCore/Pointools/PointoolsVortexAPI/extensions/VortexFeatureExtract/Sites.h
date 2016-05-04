@@ -10,7 +10,7 @@ namespace vortex
 
 #define INVALID_BIT 0x80000000
 
-typedef unsigned __int64	SKeyType;
+typedef uint64_t	SKeyType;
 typedef unsigned int		SIndexType;
 
 class Site

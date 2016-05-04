@@ -10,8 +10,6 @@
 
 #pragma warning ( disable : 4267 )
 
-#include <windows.h>
-#include <shlwapi.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 

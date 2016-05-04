@@ -125,7 +125,7 @@ wchar_t	testFilesClientServer[][1024] =
 
 
 
-unsigned __int64 ExtentsQueryTest::queryExtents(PThandle scene, PTdouble *localLower, PTdouble *localUpper, QueryType queryType, QueryGeometry geometry)
+uint64_t ExtentsQueryTest::queryExtents(PThandle scene, PTdouble *localLower, PTdouble *localUpper, QueryType queryType, QueryGeometry geometry)
 {
 	PThandle query;
 
@@ -195,7 +195,7 @@ unsigned __int64 ExtentsQueryTest::queryExtents(PThandle scene, PTdouble *localL
 	PTubyte			*	bufferRGB;
 	PTshort			*	bufferIntensity;
 	unsigned int		n;
-	unsigned __int64	totalQueryPoints;
+	uint64_t	totalQueryPoints;
 
 	bufferGeom		= new double[numBufferPoints * 3];
 	bufferRGB		= new PTubyte[numBufferPoints * 3];
@@ -228,7 +228,7 @@ unsigned __int64 ExtentsQueryTest::queryExtents(PThandle scene, PTdouble *localL
 	return totalQueryPoints;
 }
 
-unsigned __int64 ExtentsQueryTest::queryMultiExtents(const wchar_t *fakeFilePath, const wchar_t *realFilePath, bool testServer, QueryType queryType, QueryGeometry queryGeometry, const wchar_t *logFile)
+uint64_t ExtentsQueryTest::queryMultiExtents(const wchar_t *fakeFilePath, const wchar_t *realFilePath, bool testServer, QueryType queryType, QueryGeometry queryGeometry, const wchar_t *logFile)
 {
 	double				scales[] = {0.10, 0.25, 0.50, 0.75, 1.0};
 	unsigned int		numScales = 5;
@@ -237,8 +237,8 @@ unsigned __int64 ExtentsQueryTest::queryMultiExtents(const wchar_t *fakeFilePath
 	double				extentsCenter[3];
 	double				extentsHalfSize[3];
 	unsigned int		s;
-	unsigned __int64	numPoints;
-	unsigned __int64	maxPoints = 0;
+	uint64_t	numPoints;
+	uint64_t	maxPoints = 0;
 	double				localLower[3];
 	double				localUpper[3];
 
@@ -337,11 +337,11 @@ unsigned __int64 ExtentsQueryTest::queryMultiExtents(const wchar_t *fakeFilePath
 	return maxPoints;
 }
 
-unsigned __int64 ExtentsQueryTest::runTest(unsigned int &completedIterations)
+uint64_t ExtentsQueryTest::runTest(unsigned int &completedIterations)
 {
 	unsigned int		t;
 	unsigned int		emptyDataSize = 256;
-	unsigned __int64	maxPoints;
+	uint64_t	maxPoints;
 
 	const wchar_t		logFile[]			= L"C:\\Test.txt";
 	wchar_t				realFilePathBase[]	= L"D:\\PointoolsData\\General\\POD\\";
@@ -411,11 +411,11 @@ unsigned __int64 ExtentsQueryTest::runTest(unsigned int &completedIterations)
 }
 
 
-unsigned __int64 ExtentsQueryTest::runTestClientServer(unsigned int &completedIterations)
+uint64_t ExtentsQueryTest::runTestClientServer(unsigned int &completedIterations)
 {
 	unsigned int		t;
 	unsigned int		emptyDataSize = 256;
-	unsigned __int64	maxPoints;
+	uint64_t	maxPoints;
 
 	wchar_t				fakeFilePathBase[] = L"C:\\test\\atps\\PointCloudTester\\PointCloudTest\\baselinefiles\\PointCloudTester_BoundaryQueryServerTest\\Data - InternalOnly\\pod\\BoxHundredPercent\\Data - InternalOnly_pod_Apple Canyon_";
 	wchar_t				realFilePathBase[] = L"C:\\DataSet\\PointCloud\\PointCloud\\Data - InternalOnly\\pod\\Apple Canyon\\";
