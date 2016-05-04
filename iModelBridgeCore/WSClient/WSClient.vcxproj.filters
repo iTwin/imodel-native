@@ -935,13 +935,16 @@
     <ClInclude Include="PublicAPI\WebServices\ConnectC\CWSCCPublic.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Cache\Compatibility\Schemas.h">
+    <ClInclude Include="Cache\Schemas.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Cache\Compatibility\SchemaChangeWSObjectsReader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Cache\Compatibility\SchemaChangeWSObjectsResponse.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Cache\Compatibility\Schemas.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
