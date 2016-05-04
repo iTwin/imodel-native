@@ -196,6 +196,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Cache\CacheNavigationTask.h" />
+    <ClInclude Include="Cache\Compatibility\SchemaChangeWSObjectsReader.h" />
+    <ClInclude Include="Cache\Compatibility\SchemaChangeWSObjectsResponse.h" />
+    <ClInclude Include="Cache\Compatibility\Schemas.h" />
     <ClInclude Include="Cache\Logging.h" />
     <ClInclude Include="Cache\CachingTaskBase.h" />
     <ClInclude Include="Cache\ChangesGraph.h" />
