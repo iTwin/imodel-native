@@ -1977,6 +1977,7 @@ TEST_F(ECDbSchemaUpgradeTests, ModifyProperties)
     ASSERT_FALSE(asserted);
     sp.Cancel();
 
+#ifdef TFS433459
     sp.Begin();
     SchemaItem modifiedECStructArrayPropertyType(
         //SchemaItem with modified ECStructArrayProperty type
@@ -1999,27 +2000,6 @@ TEST_F(ECDbSchemaUpgradeTests, ModifyProperties)
     sp.Cancel();
 
     sp.Begin();
-    SchemaItem modifiedPrimitiveType(
-        //SchemaItem with modified IsPrimitive type
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECStructClass typeName='ChangeInfoStruct' modifier='None'>"
-        "       <ECProperty propertyName='ChangeStatus' typeName='int' readOnly='false' />"
-        "   </ECStructClass>"
-        "   <ECEntityClass typeName='TestClass' modifier='None' >"
-        "       <ECArrayProperty propertyName='PrimitiveProperty' typeName='string' readOnly='false' />"
-        "       <ECArrayProperty propertyName='PrimitiveArrayProperty' minOccurs='0' maxOccurs='5' typeName='string' />"
-        "       <ECStructProperty propertyName='structProp' typeName='ChangeInfoStruct' readOnly='false' />"
-        "       <ECStructArrayProperty propertyName='StructArrayProp' typeName='ChangeInfoStruct' minOccurs='0' maxOccurs='5' readonly='false' />"
-        "       <ECProperty propertyName='ExtendedProperty' typeName='string' extendedTypeName='URL' />"
-        "   </ECEntityClass>"
-        "</ECSchema>", false, "Modifying IsPrimitiveType is not supported");
-    asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), modifiedPrimitiveType);
-    ASSERT_FALSE(asserted);
-    sp.Cancel();
-
-    sp.Begin();
     SchemaItem modifiedPrimitiveArrayType(
         //SchemaItem with modified IsPrimitiveArray Type
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -2037,6 +2017,28 @@ TEST_F(ECDbSchemaUpgradeTests, ModifyProperties)
         "</ECSchema>", false, "Modifying ECArrayProperty is not supported");
     asserted = false;
     AssertSchemaImport(asserted, GetECDb(), modifiedPrimitiveArrayType);
+    ASSERT_FALSE(asserted);
+    sp.Cancel();
+#endif // TFS433459
+
+    sp.Begin();
+    SchemaItem modifiedPrimitiveType(
+        //SchemaItem with modified IsPrimitive type
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECStructClass typeName='ChangeInfoStruct' modifier='None'>"
+        "       <ECProperty propertyName='ChangeStatus' typeName='int' readOnly='false' />"
+        "   </ECStructClass>"
+        "   <ECEntityClass typeName='TestClass' modifier='None' >"
+        "       <ECArrayProperty propertyName='PrimitiveProperty' typeName='string' readOnly='false' />"
+        "       <ECArrayProperty propertyName='PrimitiveArrayProperty' minOccurs='0' maxOccurs='5' typeName='string' />"
+        "       <ECStructProperty propertyName='structProp' typeName='ChangeInfoStruct' readOnly='false' />"
+        "       <ECStructArrayProperty propertyName='StructArrayProp' typeName='ChangeInfoStruct' minOccurs='0' maxOccurs='5' readonly='false' />"
+        "       <ECProperty propertyName='ExtendedProperty' typeName='string' extendedTypeName='URL' />"
+        "   </ECEntityClass>"
+        "</ECSchema>", false, "Modifying IsPrimitiveType is not supported");
+    asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), modifiedPrimitiveType);
     ASSERT_FALSE(asserted);
     sp.Cancel();
 
@@ -2061,6 +2063,7 @@ TEST_F(ECDbSchemaUpgradeTests, ModifyProperties)
     ASSERT_FALSE(asserted);
     sp.Cancel();
 
+#ifdef TFS433463
     sp.Begin();
     SchemaItem modifiedECArrayPropertyMaxOccurs(
         //SchemaItem with Modified ECArrayProperty MaxOccurs
@@ -2081,6 +2084,7 @@ TEST_F(ECDbSchemaUpgradeTests, ModifyProperties)
     AssertSchemaImport(asserted, GetECDb(), modifiedECArrayPropertyMaxOccurs);
     ASSERT_FALSE(asserted);
     sp.Cancel();
+#endif // TFS433463
 
     sp.Begin();
     SchemaItem modifiedExtendedType(
