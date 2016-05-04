@@ -2,12 +2,13 @@
 
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="..\bsicommon\build\PartFile.xsd" >
 
+<!--        <SubPart PartName="Ustation"            PartFile="PowerPlatform"     Repository="MstnPlatform" /> -->
+
     <Part Name="ElementHandler" BMakeFile="elementhandler\handler\handler.mke">
         <SubPart PartName="DgnPlatformDll" PartFile="DgnPlatform"     Repository="DgnPlatform" />
         <SubPart PartName="DgnView"     PartFile="DgnDisplay"      Repository="DgnDisplay" />
         <SubPart PartName="Core"        PartFile="TerrainModel" />
         <SubPart PartName="DgnGeoCoord" PartFile="GeoCoord"        Repository="GeoCoord" />
-        <SubPart PartName="Ustation"            PartFile="PowerPlatform"     Repository="MstnPlatform" />
         <SubPart PartName="ScalableTerrainModel" PartFile="TerrainModel" />              
         <!-- MST TBD - Temp -->
         <SubPart PartName="RasterCore"           PartFile="DgnDisplay"           Repository="DgnDisplay"/>        
