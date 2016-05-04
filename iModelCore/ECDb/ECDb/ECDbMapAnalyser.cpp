@@ -937,7 +937,7 @@ void ECDbMapAnalyser::GetClassIds(std::vector<ECN::ECClassId>& rootClassIds, std
     Statement stmt;
     if (BE_SQLITE_OK != stmt.Prepare(GetMap().GetECDb(), "SELECT C.Id, C.Type FROM ec_Class C "
                                      "INNER JOIN ec_ClassMap M ON M.ClassId=C.Id "
-                                     "LEFT JOIN ec_BaseClass B ON B.ClassId=C.Id "
+                                     "LEFT JOIN ec_ClassHasBaseClasses B ON B.ClassId=C.Id "
                                      "WHERE B.BaseClassId IS NULL"))
         {
         BeAssert(false);
@@ -981,7 +981,7 @@ void ECDbMapAnalyser::SetupDerivedClassLookup()
     {
     m_derivedClassLookup.clear();
     Statement stmt;
-    stmt.Prepare(GetMap().GetECDb(), "SELECT BaseClassId, ClassId FROM ec_BaseClass ORDER BY BaseClassId");
+    stmt.Prepare(GetMap().GetECDb(), "SELECT BaseClassId, ClassId FROM ec_ClassHasBaseClasses ORDER BY BaseClassId");
     while (stmt.Step() == BE_SQLITE_ROW)
         m_derivedClassLookup[stmt.GetValueId<ECClassId>(0)].insert(stmt.GetValueId<ECClassId>(1));
     }

@@ -56,7 +56,7 @@ BentleyStatus DbSchemaPersistenceManager::Load(DbSchema& dbSchema, ECDbCR ecdb, 
 //static
 DbResult DbSchemaPersistenceManager::ReadTables(DbSchema& dbSchema, ECDbCR ecdb)
     {
-    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT A.Id, A.Name, A.Type, A.IsVirtual, B.Name BaseTableName FROM ec_Table A LEFT JOIN ec_Table B ON A.BaseTableId = B.Id ORDER BY A.BaseTableId");
+    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT A.Id, A.Name, A.Type, A.IsVirtual, B.Name BaseTableName FROM ec_Table A LEFT JOIN ec_Table B ON A.PrimaryTableId = B.Id ORDER BY A.PrimaryTableId");
     if (stmt == nullptr)
         return BE_SQLITE_ERROR;
 
@@ -283,7 +283,7 @@ DbResult DbSchemaPersistenceManager::ReadPropertyMappings(ClassDbMapping& classM
 //static
 DbResult DbSchemaPersistenceManager::ReadClassMappings(DbSchema& dbSchema, ECDbCR ecdb)
     {
-    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT Id, ParentId, ClassId, MapStrategy, MapStrategyOptions, MapStrategyMinSharedColumnCount, MapStrategyAppliesToSubclasses FROM ec_ClassMap ORDER BY Id, ParentId");
+    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT Id, ParentId, ClassId, MapStrategy, MapStrategyOptions, MapStrategyMinSharedColumnCount, MapStrategyAppliesToSubclasses FROM ec_ClassMap ORDER BY Id");
     if (stmt == nullptr)
         {
         BeAssert(false && "Failed to get statement");
@@ -406,14 +406,7 @@ BentleyStatus DbSchemaPersistenceManager::Save(ECDbCR ecdb, DbSchema const& dbSc
             return ERROR;
         }
 
-    for (DbTable const* table : tables)
-        {
-        for (DbConstraint const* constraint : table->GetConstraints())
-            {
-            if (BE_SQLITE_OK != InsertConstraint(ecdb, *constraint))
-                return ERROR;
-            }
-        }
+    //PK or FK constraints are not saved in the metadata
 
     DbMappings const& dbMappings = dbSchema.GetDbMappings();
     for (auto const& kvPair : dbMappings.GetPropertyPaths())
@@ -455,7 +448,7 @@ DbResult DbSchemaPersistenceManager::InsertTable(ECDbCR ecdb, DbTable const& tab
         return BE_SQLITE_ERROR;
         }
 
-    CachedStatementPtr stmt = ecdb.GetCachedStatement("INSERT INTO ec_Table(Id, Name, Type, IsVirtual, BaseTableId) VALUES (?, ?, ?, ?, ?)");
+    CachedStatementPtr stmt = ecdb.GetCachedStatement("INSERT INTO ec_Table(Id, Name, Type, IsVirtual, PrimaryTableId) VALUES (?, ?, ?, ?, ?)");
     if (stmt == nullptr)
         return BE_SQLITE_ERROR;
 
@@ -531,27 +524,12 @@ DbResult DbSchemaPersistenceManager::InsertColumn(ECDbCR ecdb, DbColumn const& c
     return stat == BE_SQLITE_DONE ? BE_SQLITE_OK : stat;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        01/2015
-//---------------------------------------------------------------------------------------
-//static
-DbResult DbSchemaPersistenceManager::InsertConstraint(ECDbCR ecdb, DbConstraint const& constraint)
-    {
-    if (constraint.GetType() == DbConstraint::Type::ForeignKey)
-        return InsertForeignKeyConstraint(ecdb, static_cast<ForeignKeyDbConstraint const&>(constraint));
-
-    if (constraint.GetType() == DbConstraint::Type::PrimaryKey)
-        return BE_SQLITE_OK; //PKs are not recorded in the ec tables
-
-    BeAssert(false && "Unhandled DbConstraint::Type");
-    return BE_SQLITE_ERROR;
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        01/2015
 //---------------------------------------------------------------------------------------
 //static
-DbResult DbSchemaPersistenceManager::InsertForeignKeyConstraint(ECDbCR ecdb, ForeignKeyDbConstraint const& fkConstraint)
+/*DbResult DbSchemaPersistenceManager::InsertForeignKeyConstraint(ECDbCR ecdb, ForeignKeyDbConstraint const& fkConstraint)
     {
     if (!fkConstraint.IsValid())
         {
@@ -600,7 +578,7 @@ DbResult DbSchemaPersistenceManager::InsertForeignKeyConstraint(ECDbCR ecdb, For
 
     return BE_SQLITE_OK;
     }
-
+*/
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        01/2015
 //---------------------------------------------------------------------------------------

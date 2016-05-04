@@ -88,7 +88,7 @@ BentleyStatus ECDbSchemaWriter::CreateECSchemaEntry(ECSchemaCR ecSchema)
 BentleyStatus ECDbSchemaWriter::CreateBaseClassEntry(ECClassId ecClassId, ECClassCR baseClass, int ordinal)
     {
     CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "INSERT INTO ec_BaseClass(ClassId,BaseClassId,Ordinal) VALUES(?,?,?)"))
+    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "INSERT INTO ec_ClassHasBaseClasses(ClassId,BaseClassId,Ordinal) VALUES(?,?,?)"))
         return ERROR;
 
     if (BE_SQLITE_OK != stmt->BindId(1, ecClassId))
@@ -106,7 +106,7 @@ BentleyStatus ECDbSchemaWriter::CreateBaseClassEntry(ECClassId ecClassId, ECClas
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaWriter::CreateECRelationshipConstraintEntry(ECClassId relationshipClassId, ECN::ECRelationshipConstraintR relationshipConstraint, ECRelationshipEnd endpoint)
+BentleyStatus ECDbSchemaWriter::CreateECRelationshipConstraintEntry(ECRelationshipConstraintId& constraintId, ECClassId relationshipClassId, ECN::ECRelationshipConstraintR relationshipConstraint, ECRelationshipEnd endpoint)
     {
     CachedStatementPtr stmt = nullptr;
     if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "INSERT INTO ec_RelationshipConstraint (RelationshipClassId,RelationshipEnd,MultiplicityLowerLimit,MultiplicityUpperLimit,RoleLabel,IsPolymorphic) VALUES (?,?,?,?,?,?)"))
@@ -133,7 +133,12 @@ BentleyStatus ECDbSchemaWriter::CreateECRelationshipConstraintEntry(ECClassId re
     if (BE_SQLITE_OK != stmt->BindInt(6, relationshipConstraint.GetIsPolymorphic() ? 1 : 0))
         return ERROR;
 
-    return BE_SQLITE_DONE == stmt->Step() ? SUCCESS : ERROR;
+    if (BE_SQLITE_DONE != stmt->Step())
+        return ERROR;
+
+
+    constraintId = ECRelationshipConstraintId((uint64_t) m_ecdb.GetLastInsertRowId());
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
@@ -224,7 +229,7 @@ BentleyStatus ECDbSchemaWriter::UpdateECProperty(ECPropertyChange& propertyChang
         }
     else
         propertyId = newProperty.GetId();
-    SqlUpdater updater("ec_Property");
+
     if (propertyChange.GetTypeName().IsValid())
         {
         return Fail("ECSCHEMA-UPGRADE: Changing ECProperty::Type is not supported. Failed on ECProperty %s.%s.",
@@ -1275,11 +1280,14 @@ BentleyStatus ECDbSchemaWriter::ImportECRelationshipConstraint(ECClassId relClas
     {
     BeAssert(relClassId.IsValid());
 
-    if (SUCCESS != CreateECRelationshipConstraintEntry(relClassId, relationshipConstraint, end))
+    ECRelationshipConstraintId constraintId;;
+    if (SUCCESS != CreateECRelationshipConstraintEntry(constraintId, relClassId, relationshipConstraint, end))
         return ERROR;
 
+    BeAssert(constraintId.IsValid());
+
     CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "INSERT INTO ec_RelationshipConstraintClass(RelationshipClassId,RelationshipEnd,ClassId,KeyProperties) VALUES(?,?,?,?)"))
+    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "INSERT INTO ec_RelationshipConstraintClass(ConstraintId,ClassId,KeyProperties) VALUES(?,?,?)"))
         return ERROR;
 
     for (ECRelationshipConstraintClassCP constraintClassObj : relationshipConstraint.GetConstraintClasses())
@@ -1290,13 +1298,10 @@ BentleyStatus ECDbSchemaWriter::ImportECRelationshipConstraint(ECClassId relClas
 
         BeAssert(constraintClass.GetId().IsValid());
 
-        if (BE_SQLITE_OK != stmt->BindId(1, relClassId))
+        if (BE_SQLITE_OK != stmt->BindId(1, constraintId))
             return ERROR;
 
-        if (BE_SQLITE_OK != stmt->BindInt(2, (int) end))
-            return ERROR;
-
-        if (BE_SQLITE_OK != stmt->BindId(3, constraintClass.GetId()))
+        if (BE_SQLITE_OK != stmt->BindId(2, constraintClass.GetId()))
             return ERROR;
 
         bvector<Utf8String> const& keyPropNames = constraintClassObj->GetKeys();
@@ -1304,7 +1309,7 @@ BentleyStatus ECDbSchemaWriter::ImportECRelationshipConstraint(ECClassId relClas
         if (!keyPropNames.empty())
             {
             ECDbSchemaPersistenceHelper::SerializeRelationshipKeyProperties(keyPropJson, keyPropNames);
-            if (BE_SQLITE_OK != stmt->BindText(4, keyPropJson.c_str(), Statement::MakeCopy::No))
+            if (BE_SQLITE_OK != stmt->BindText(3, keyPropJson.c_str(), Statement::MakeCopy::No))
                 return ERROR;
             }
 
@@ -1318,7 +1323,7 @@ BentleyStatus ECDbSchemaWriter::ImportECRelationshipConstraint(ECClassId relClas
     stmt = nullptr;
 
     ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType containerType = end == ECRelationshipEnd_Source ? ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::SourceRelationshipConstraint : ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::TargetRelationshipConstraint;
-    return ImportCustomAttributes(relationshipConstraint, ECContainerId(relClassId), containerType);
+    return ImportCustomAttributes(relationshipConstraint, ECContainerId(constraintId), containerType);
     }
 
 /*---------------------------------------------------------------------------------------
@@ -1356,7 +1361,7 @@ BentleyStatus ECDbSchemaWriter::ImportECProperty(ECN::ECPropertyCR ecProperty, i
 
     //now insert the actual property
     BeSQLite::CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "INSERT INTO ec_Property(Id,ClassId,Name,DisplayLabel,Description,IsReadonly,Ordinal,Kind,PrimitiveType,Enumeration,NonPrimitiveType,ExtendedType,ArrayMinOccurs,ArrayMaxOccurs,NavigationPropertyDirection) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"))
+    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "INSERT INTO ec_Property(Id,ClassId,Name,DisplayLabel,Description,IsReadonly,Ordinal,Kind,PrimitiveType,EnumerationId,StructClassId,ExtendedTypeName,ArrayMinOccurs,ArrayMaxOccurs,NavigationRelationshipClassId,NavigationDirection) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"))
         return ERROR;
 
     if (BE_SQLITE_OK != stmt->BindId(1, ecProperty.GetId()))
@@ -1380,18 +1385,18 @@ BentleyStatus ECDbSchemaWriter::ImportECProperty(ECN::ECPropertyCR ecProperty, i
     if (BE_SQLITE_OK != stmt->BindInt(6, ecProperty.GetIsReadOnly() ? 1 : 0))
         return ERROR;
 
-    //WIP Ordinal
     if (BE_SQLITE_OK != stmt->BindInt(7, ordinal))
         return ERROR;
 
     const int kindIndex = 8;
     const int primitiveTypeIndex = 9;
-    const int enumTypeIndex = 10;
-    const int nonPrimitiveTypeIndex = 11;
+    const int enumIdIndex = 10;
+    const int structClassIdIndex = 11;
     const int extendedTypeIndex = 12;
     const int arrayMinIndex = 13;
     const int arrayMaxIndex = 14;
-    const int navDirIndex = 15;
+    const int navRelClassIdIndex = 15;
+    const int navDirIndex = 16;
 
     if (ecProperty.GetIsPrimitive())
         {
@@ -1415,7 +1420,7 @@ BentleyStatus ECDbSchemaWriter::ImportECProperty(ECN::ECPropertyCR ecProperty, i
                 }
 
             const uint64_t enumId = it->second;
-            if (BE_SQLITE_OK != stmt->BindUInt64(enumTypeIndex, enumId))
+            if (BE_SQLITE_OK != stmt->BindUInt64(enumIdIndex, enumId))
                 return ERROR;
             }
 
@@ -1430,7 +1435,7 @@ BentleyStatus ECDbSchemaWriter::ImportECProperty(ECN::ECPropertyCR ecProperty, i
         if (BE_SQLITE_OK != stmt->BindInt(kindIndex, Enum::ToInt(ECPropertyKind::Struct)))
             return ERROR;
 
-        if (BE_SQLITE_OK != stmt->BindId(nonPrimitiveTypeIndex, ecProperty.GetAsStructProperty()->GetType().GetId()))
+        if (BE_SQLITE_OK != stmt->BindId(structClassIdIndex, ecProperty.GetAsStructProperty()->GetType().GetId()))
             return ERROR;
         }
     else if (ecProperty.GetIsArray())
@@ -1449,7 +1454,7 @@ BentleyStatus ECDbSchemaWriter::ImportECProperty(ECN::ECPropertyCR ecProperty, i
             if (BE_SQLITE_OK != stmt->BindInt(kindIndex, Enum::ToInt(ECPropertyKind::StructArray)))
                 return ERROR;
 
-            if (BE_SQLITE_OK != stmt->BindId(nonPrimitiveTypeIndex, arrayProp->GetAsStructArrayProperty()->GetStructElementType()->GetId()))
+            if (BE_SQLITE_OK != stmt->BindId(structClassIdIndex, arrayProp->GetAsStructArrayProperty()->GetStructElementType()->GetId()))
                 return ERROR;
             }
 
@@ -1473,15 +1478,19 @@ BentleyStatus ECDbSchemaWriter::ImportECProperty(ECN::ECPropertyCR ecProperty, i
             return ERROR;
 
         NavigationECPropertyCP navProp = ecProperty.GetAsNavigationProperty();
-        if (BE_SQLITE_OK != stmt->BindId(nonPrimitiveTypeIndex, navProp->GetRelationshipClass()->GetId()))
+        if (BE_SQLITE_OK != stmt->BindId(navRelClassIdIndex, navProp->GetRelationshipClass()->GetId()))
             return ERROR;
 
         if (BE_SQLITE_OK != stmt->BindInt(navDirIndex, Enum::ToInt(navProp->GetDirection())))
             return ERROR;
         }
 
-    if (BE_SQLITE_DONE != stmt->Step())
+    DbResult stat = stmt->Step();
+    if (BE_SQLITE_DONE != stat)
+        {
+        LOG.fatal(m_ecdb.GetLastError().c_str());
         return ERROR;
+        }
 
     return ImportCustomAttributes(ecProperty, ECContainerId(ecPropertyId), ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Property);
     }

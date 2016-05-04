@@ -1227,11 +1227,11 @@ void ECDbMap::LightweightCache::LoadRelationshipCache() const
 
     Utf8CP sql0 =
         "WITH RECURSIVE DerivedClassList(RelationshipClassId, RelationshipEnd, IsPolymorphic, CurrentClassId, DerivedClassId) "
-        "AS (SELECT RCC.RelationshipClassId,RCC.RelationshipEnd,RC.IsPolymorphic,RCC.ClassId,RCC.ClassId "
-        "FROM ec_RelationshipConstraintClass RCC INNER JOIN ec_RelationshipConstraint RC ON RC.RelationshipClassId = RCC.RelationshipClassId AND RC.RelationshipEnd = RCC.RelationshipEnd "
+        "AS (SELECT RC.RelationshipClassId,RC.RelationshipEnd,RC.IsPolymorphic,RCC.ClassId,RCC.ClassId "
+        "FROM ec_RelationshipConstraintClass RCC INNER JOIN ec_RelationshipConstraint RC ON RC.Id = RCC.ConstraintId "
         "UNION "
         "SELECT DCL.RelationshipClassId, DCL.RelationshipEnd, DCL.IsPolymorphic, BC.BaseClassId, BC.ClassId "
-        "FROM DerivedClassList DCL INNER JOIN ec_BaseClass BC ON BC.BaseClassId = DCL.DerivedClassId "
+        "FROM DerivedClassList DCL INNER JOIN ec_ClassHasBaseClasses BC ON BC.BaseClassId = DCL.DerivedClassId "
         "WHERE IsPolymorphic = 1) "
         "SELECT DerivedClassId, RelationshipClassId, RelationshipEnd FROM DerivedClassList";
 
@@ -1277,7 +1277,7 @@ void ECDbMap::LightweightCache::LoadHorizontalPartitions()  const
         "AS (SELECT Id, Id, Id FROM ec_Class "
         "UNION "
         "SELECT RootClassId, BC.BaseClassId, BC.ClassId FROM DerivedClassList DCL "
-        "INNER JOIN ec_BaseClass BC ON BC.BaseClassId = DCL.DerivedClassId), "
+        "INNER JOIN ec_ClassHasBaseClasses BC ON BC.BaseClassId = DCL.DerivedClassId), "
         "TableMapInfo AS ("
         "SELECT ec_Class.Id ClassId, ec_Table.Name TableName FROM ec_PropertyMap "
         "JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId AND (ec_Column.ColumnKind & %d = 0) "

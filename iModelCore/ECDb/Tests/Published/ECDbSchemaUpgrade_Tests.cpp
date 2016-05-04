@@ -16,7 +16,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsiclass                                   Muhammad Hassan                     03/16
 //+---------------+---------------+---------------+---------------+---------------+------
-struct ECDbSchemaUpgradeTests : public SchemaImportTestFixture
+struct ECSchemaUpdateTests : public SchemaImportTestFixture
     {
     void CloseReOpenECDb()
         {
@@ -89,14 +89,14 @@ struct ECSchemaDuplicator :IECSchemaLocater
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     03/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSchemaUpgradeTests, UpdateECSchemaAttributes)
+TEST_F(ECSchemaUpdateTests, UpdateECSchemaAttributes)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Test Schema' description='This is Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "</ECSchema>");
 
-    SetupECDb("schemaupgrade.ecdb", schemaItem);
+    SetupECDb("schemaupdate.ecdb", schemaItem);
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
@@ -130,7 +130,7 @@ TEST_F(ECDbSchemaUpgradeTests, UpdateECSchemaAttributes)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     03/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSchemaUpgradeTests, UpdateECClassAttributes)
+TEST_F(ECSchemaUpdateTests, UpdateECClassAttributes)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -138,7 +138,7 @@ TEST_F(ECDbSchemaUpgradeTests, UpdateECClassAttributes)
         "   <ECEntityClass typeName='TestClass' displayLabel='Test Class' description='This is test Class' modifier='None' />"
         "</ECSchema>");
 
-    SetupECDb("schemaupgrade.ecdb", schemaItem);
+    SetupECDb("schemaupdate.ecdb", schemaItem);
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
@@ -189,7 +189,7 @@ TEST_F(ECDbSchemaUpgradeTests, UpdateECClassAttributes)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     03/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSchemaUpgradeTests, UpdateECPropertyAttributes)
+TEST_F(ECSchemaUpdateTests, UpdateECPropertyAttributes)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -199,7 +199,7 @@ TEST_F(ECDbSchemaUpgradeTests, UpdateECPropertyAttributes)
         "   </ECEntityClass>"
         "</ECSchema>");
 
-    SetupECDb("schemaupgrade.ecdb", schemaItem);
+    SetupECDb("schemaupdate.ecdb", schemaItem);
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
@@ -262,7 +262,7 @@ TEST_F(ECDbSchemaUpgradeTests, UpdateECPropertyAttributes)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSchemaUpgradeTests, UpdatingECDbMapCAIsNotSupported)
+TEST_F(ECSchemaUpdateTests, UpdatingECDbMapCAIsNotSupported)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -279,7 +279,7 @@ TEST_F(ECDbSchemaUpgradeTests, UpdatingECDbMapCAIsNotSupported)
         "   </ECEntityClass>"
         "</ECSchema>");
 
-    SetupECDb("schemaupgrade.ecdb", schemaItem);
+    SetupECDb("schemaupdate.ecdb", schemaItem);
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
@@ -306,7 +306,7 @@ TEST_F(ECDbSchemaUpgradeTests, UpdatingECDbMapCAIsNotSupported)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     03/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSchemaUpgradeTests, UpdateCAProperties)
+TEST_F(ECSchemaUpdateTests, UpdateCAProperties)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -328,7 +328,7 @@ TEST_F(ECDbSchemaUpgradeTests, UpdateCAProperties)
         "   </ECEntityClass>"
         "</ECSchema>");
 
-    SetupECDb("schemaupgrade.ecdb", schemaItem);
+    SetupECDb("schemaupdate.ecdb", schemaItem);
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
@@ -417,14 +417,14 @@ TEST_F(ECDbSchemaUpgradeTests, UpdateCAProperties)
     //---------------------------------------------------------------------------------------
     // @bsimethod                                   AFfan Khan                     03/16
     //+---------------+---------------+---------------+---------------+---------------+------
-    TEST_F(ECDbSchemaUpgradeTests, SqlSchemaChangeIsNotSupportedOnClientBriefcase)
+    TEST_F(ECSchemaUpdateTests, SqlSchemaChangeIsNotSupportedOnClientBriefcase)
         {
         SchemaItem schemaItem(
             "<?xml version='1.0' encoding='utf-8'?>"
             "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
             "</ECSchema>");
 
-        SetupECDb("schemaupgrade.ecdb", schemaItem);
+        SetupECDb("schemaupdate.ecdb", schemaItem);
         ASSERT_TRUE(GetECDb().IsDbOpen());
         ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
         BeBriefcaseId newClientSideBriefcaseId(123);
@@ -443,14 +443,14 @@ TEST_F(ECDbSchemaUpgradeTests, UpdateCAProperties)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     03/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSchemaUpgradeTests, AddNewEntityClass)
+TEST_F(ECSchemaUpdateTests, AddNewEntityClass)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "</ECSchema>");
 
-    SetupECDb("schemaupgrade.ecdb", schemaItem);
+    SetupECDb("schemaupdate.ecdb", schemaItem);
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
@@ -492,7 +492,7 @@ TEST_F(ECDbSchemaUpgradeTests, AddNewEntityClass)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     03/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSchemaUpgradeTests, AddNewClassModifyAllExistingAttributes)
+TEST_F(ECSchemaUpdateTests, AddNewClassModifyAllExistingAttributes)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -503,7 +503,7 @@ TEST_F(ECDbSchemaUpgradeTests, AddNewClassModifyAllExistingAttributes)
         "   </ECEntityClass>"
         "</ECSchema>");
 
-    SetupECDb("schemaupgrade.ecdb", schemaItem);
+    SetupECDb("schemaupdate.ecdb", schemaItem);
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
@@ -585,7 +585,7 @@ TEST_F(ECDbSchemaUpgradeTests, AddNewClassModifyAllExistingAttributes)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     03/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSchemaUpgradeTests, AddNewProperty)
+TEST_F(ECSchemaUpdateTests, AddNewProperty)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -594,7 +594,7 @@ TEST_F(ECDbSchemaUpgradeTests, AddNewProperty)
         "   </ECEntityClass>"
         "</ECSchema>");
 
-    SetupECDb("schemaupgrade.ecdb", schemaItem);
+    SetupECDb("schemaupdate.ecdb", schemaItem);
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
@@ -639,7 +639,7 @@ TEST_F(ECDbSchemaUpgradeTests, AddNewProperty)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     03/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSchemaUpgradeTests, AddNewPropertyModifyAllExistingAttributes)
+TEST_F(ECSchemaUpdateTests, AddNewPropertyModifyAllExistingAttributes)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -650,7 +650,7 @@ TEST_F(ECDbSchemaUpgradeTests, AddNewPropertyModifyAllExistingAttributes)
         "   </ECEntityClass>"
         "</ECSchema>");
 
-    SetupECDb("schemaupgrade.ecdb", schemaItem);
+    SetupECDb("schemaupdate.ecdb", schemaItem);
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
@@ -736,7 +736,7 @@ TEST_F(ECDbSchemaUpgradeTests, AddNewPropertyModifyAllExistingAttributes)
 //        "   <ECEntityClass typeName='TestClass' displayLabel='Test Class' description='This is test Class' modifier='None' />"
 //        "</ECSchema>");
 //
-//    SetupECDb("schemaupgrade.ecdb", schemaItem);
+//    SetupECDb("schemaupdate.ecdb", schemaItem);
 //    ASSERT_TRUE(GetECDb().IsDbOpen());
 //    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 //
@@ -825,7 +825,7 @@ TEST_F(ECDbSchemaUpgradeTests, AddNewPropertyModifyAllExistingAttributes)
 //        "   <ECEntityClass typeName='TestClass' displayLabel='Test Class' description='This is test Class' modifier='None' />"
 //        "</ECSchema>");
 //
-//    SetupECDb("schemaupgrade.ecdb", schemaItem);
+//    SetupECDb("schemaupdate.ecdb", schemaItem);
 //    ASSERT_TRUE(GetECDb().IsDbOpen());
 //    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 //
@@ -905,7 +905,7 @@ TEST_F(ECDbSchemaUpgradeTests, AddNewPropertyModifyAllExistingAttributes)
 //        "   </ECEntityClass>"
 //        "</ECSchema>");
 //
-//    SetupECDb("schemaupgrade.ecdb", schemaItem);
+//    SetupECDb("schemaupdate.ecdb", schemaItem);
 //    ASSERT_TRUE(GetECDb().IsDbOpen());
 //    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 //
@@ -985,7 +985,7 @@ TEST_F(ECDbSchemaUpgradeTests, AddNewPropertyModifyAllExistingAttributes)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSchemaUpgradeTests, MinimumSharedColumnsCount_AddProperty)
+TEST_F(ECSchemaUpdateTests, MinimumSharedColumnsCount_AddProperty)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -1006,7 +1006,7 @@ TEST_F(ECDbSchemaUpgradeTests, MinimumSharedColumnsCount_AddProperty)
         "   </ECEntityClass>"
         "</ECSchema>");
 
-    SetupECDb("schemaupgrade.ecdb", schemaItem);
+    SetupECDb("schemaupdate.ecdb", schemaItem);
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
@@ -1053,7 +1053,7 @@ TEST_F(ECDbSchemaUpgradeTests, MinimumSharedColumnsCount_AddProperty)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSchemaUpgradeTests, MinimumSharedColumnsCountForSubClasses_AddProperty)
+TEST_F(ECSchemaUpdateTests, MinimumSharedColumnsCountForSubClasses_AddProperty)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -1078,7 +1078,7 @@ TEST_F(ECDbSchemaUpgradeTests, MinimumSharedColumnsCountForSubClasses_AddPropert
         "    </ECEntityClass>"
         "</ECSchema>");
 
-    SetupECDb("schemaupgrade.ecdb", schemaItem);
+    SetupECDb("schemaupdate.ecdb", schemaItem);
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
@@ -1130,7 +1130,7 @@ TEST_F(ECDbSchemaUpgradeTests, MinimumSharedColumnsCountForSubClasses_AddPropert
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSchemaUpgradeTests, MinimumSharedColumnsCountWithJoinedTable_AddProperty)
+TEST_F(ECSchemaUpdateTests, MinimumSharedColumnsCountWithJoinedTable_AddProperty)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -1155,7 +1155,7 @@ TEST_F(ECDbSchemaUpgradeTests, MinimumSharedColumnsCountWithJoinedTable_AddPrope
         "    </ECEntityClass>"
         "</ECSchema>");
 
-    SetupECDb("schemaupgrade.ecdb", schemaItem);
+    SetupECDb("schemaupdate.ecdb", schemaItem);
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
@@ -1208,7 +1208,7 @@ TEST_F(ECDbSchemaUpgradeTests, MinimumSharedColumnsCountWithJoinedTable_AddPrope
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSchemaUpgradeTests, ImportMultipleSchemaVersions_AddNewProperty)
+TEST_F(ECSchemaUpdateTests, ImportMultipleSchemaVersions_AddNewProperty)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -1217,7 +1217,7 @@ TEST_F(ECDbSchemaUpgradeTests, ImportMultipleSchemaVersions_AddNewProperty)
         "   </ECEntityClass>"
         "</ECSchema>");
 
-    SetupECDb("schemaupgrade.ecdb", schemaItem);
+    SetupECDb("schemaupdate.ecdb", schemaItem);
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
@@ -1283,7 +1283,7 @@ TEST_F(ECDbSchemaUpgradeTests, ImportMultipleSchemaVersions_AddNewProperty)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSchemaUpgradeTests, UpdateMultipleSchemasInDb)
+TEST_F(ECSchemaUpdateTests, UpdateMultipleSchemasInDb)
     {
     ECDbTestFixture::Initialize();
     ECDbR ecdb = SetupECDb("updateStartupCompanyschema.ecdb", BeFileName(L"DSCacheSchema.01.00.ecschema.xml"));
@@ -1313,14 +1313,14 @@ TEST_F(ECDbSchemaUpgradeTests, UpdateMultipleSchemasInDb)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSchemaUpgradeTests, DowngradeSchemaMajorVersion)
+TEST_F(ECSchemaUpdateTests, DowngradeSchemaMajorVersion)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "</ECSchema>");
 
-    SetupECDb("schemaupgrade.ecdb", schemaItem);
+    SetupECDb("schemaupdate.ecdb", schemaItem);
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
@@ -1337,14 +1337,14 @@ TEST_F(ECDbSchemaUpgradeTests, DowngradeSchemaMajorVersion)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSchemaUpgradeTests, DowngradeSchemaMiddleVersion)
+TEST_F(ECSchemaUpdateTests, DowngradeSchemaMiddleVersion)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "</ECSchema>");
 
-    SetupECDb("schemaupgrade.ecdb", schemaItem);
+    SetupECDb("schemaupdate.ecdb", schemaItem);
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
@@ -1361,14 +1361,14 @@ TEST_F(ECDbSchemaUpgradeTests, DowngradeSchemaMiddleVersion)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSchemaUpgradeTests, DowngradeSchemaMinorVersion)
+TEST_F(ECSchemaUpdateTests, DowngradeSchemaMinorVersion)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.1.1' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "</ECSchema>");
 
-    SetupECDb("schemaupgrade.ecdb", schemaItem);
+    SetupECDb("schemaupdate.ecdb", schemaItem);
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
@@ -1385,14 +1385,14 @@ TEST_F(ECDbSchemaUpgradeTests, DowngradeSchemaMinorVersion)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSchemaUpgradeTests, SetSchemaNamePrefixNull)
+TEST_F(ECSchemaUpdateTests, SetSchemaNamePrefixNull)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "</ECSchema>");
 
-    SetupECDb("schemaupgrade.ecdb", schemaItem);
+    SetupECDb("schemaupdate.ecdb", schemaItem);
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
@@ -1409,14 +1409,14 @@ TEST_F(ECDbSchemaUpgradeTests, SetSchemaNamePrefixNull)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSchemaUpgradeTests, InvalidValueForNameSpacePrefix)
+TEST_F(ECSchemaUpdateTests, InvalidValueForNameSpacePrefix)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "</ECSchema>");
 
-    SetupECDb("schemaupgrade.ecdb", schemaItem);
+    SetupECDb("schemaupdate.ecdb", schemaItem);
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
@@ -1441,7 +1441,7 @@ TEST_F(ECDbSchemaUpgradeTests, InvalidValueForNameSpacePrefix)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSchemaUpgradeTests, ValidateDeletingECClassNotSupported)
+TEST_F(ECSchemaUpdateTests, ValidateDeletingECClassNotSupported)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -1449,7 +1449,7 @@ TEST_F(ECDbSchemaUpgradeTests, ValidateDeletingECClassNotSupported)
         "   <ECEntityClass typeName='TestClass' modifier='None' />"
         "</ECSchema>");
 
-    SetupECDb("schemaupgrade.ecdb", schemaItem);
+    SetupECDb("schemaupdate.ecdb", schemaItem);
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
@@ -1466,7 +1466,7 @@ TEST_F(ECDbSchemaUpgradeTests, ValidateDeletingECClassNotSupported)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSchemaUpgradeTests, DeleteExistingECEnumeration)
+TEST_F(ECSchemaUpdateTests, DeleteExistingECEnumeration)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -1477,7 +1477,7 @@ TEST_F(ECDbSchemaUpgradeTests, DeleteExistingECEnumeration)
         " </ECEnumeration>"
         "</ECSchema>");
 
-    SetupECDb("schemaupgrade.ecdb", schemaItem);
+    SetupECDb("schemaupdate.ecdb", schemaItem);
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
@@ -1493,7 +1493,7 @@ TEST_F(ECDbSchemaUpgradeTests, DeleteExistingECEnumeration)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSchemaUpgradeTests, ModifyExistingECEnumeration)
+TEST_F(ECSchemaUpdateTests, ModifyExistingECEnumeration)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -1503,7 +1503,7 @@ TEST_F(ECDbSchemaUpgradeTests, ModifyExistingECEnumeration)
         " </ECEnumeration>"
         "</ECSchema>");
 
-    SetupECDb("schemaupgrade.ecdb", schemaItem);
+    SetupECDb("schemaupdate.ecdb", schemaItem);
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
@@ -1523,14 +1523,14 @@ TEST_F(ECDbSchemaUpgradeTests, ModifyExistingECEnumeration)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSchemaUpgradeTests, AddNewECEnumeration)
+TEST_F(ECSchemaUpdateTests, AddNewECEnumeration)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "</ECSchema>");
 
-    SetupECDb("schemaupgrade.ecdb", schemaItem);
+    SetupECDb("schemaupdate.ecdb", schemaItem);
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
@@ -1549,7 +1549,7 @@ TEST_F(ECDbSchemaUpgradeTests, AddNewECEnumeration)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSchemaUpgradeTests, UpgradeECClassModifier)
+TEST_F(ECSchemaUpdateTests, UpgradeECClassModifier)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -1557,7 +1557,7 @@ TEST_F(ECDbSchemaUpgradeTests, UpgradeECClassModifier)
         "   <ECEntityClass typeName='TestClass' modifier='None' />"
         "</ECSchema>");
 
-    SetupECDb("schemaupgrade.ecdb", schemaItem);
+    SetupECDb("schemaupdate.ecdb", schemaItem);
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
@@ -1575,7 +1575,7 @@ TEST_F(ECDbSchemaUpgradeTests, UpgradeECClassModifier)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSchemaUpgradeTests, ModifyIsEntityClass)
+TEST_F(ECSchemaUpdateTests, ModifyIsEntityClass)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -1583,7 +1583,7 @@ TEST_F(ECDbSchemaUpgradeTests, ModifyIsEntityClass)
         "   <ECEntityClass typeName='TestClass' modifier='None' />"
         "</ECSchema>");
 
-    SetupECDb("schemaupgrade.ecdb", schemaItem);
+    SetupECDb("schemaupdate.ecdb", schemaItem);
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
@@ -1600,7 +1600,7 @@ TEST_F(ECDbSchemaUpgradeTests, ModifyIsEntityClass)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSchemaUpgradeTests, ModifyIsStructClass)
+TEST_F(ECSchemaUpdateTests, ModifyIsStructClass)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -1608,7 +1608,7 @@ TEST_F(ECDbSchemaUpgradeTests, ModifyIsStructClass)
         "   <ECStructClass typeName='TestClass' />"
         "</ECSchema>");
 
-    SetupECDb("schemaupgrade.ecdb", schemaItem);
+    SetupECDb("schemaupdate.ecdb", schemaItem);
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
@@ -1625,7 +1625,7 @@ TEST_F(ECDbSchemaUpgradeTests, ModifyIsStructClass)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSchemaUpgradeTests, ModifyIsCustomAttributeClass)
+TEST_F(ECSchemaUpdateTests, ModifyIsCustomAttributeClass)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -1633,7 +1633,7 @@ TEST_F(ECDbSchemaUpgradeTests, ModifyIsCustomAttributeClass)
         "   <ECCustomAttributeClass typeName='TestClass' appliesTo='EntityClass, RelationshipClass' />"
         "</ECSchema>");
 
-    SetupECDb("schemaupgrade.ecdb", schemaItem);
+    SetupECDb("schemaupdate.ecdb", schemaItem);
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
@@ -1650,7 +1650,7 @@ TEST_F(ECDbSchemaUpgradeTests, ModifyIsCustomAttributeClass)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSchemaUpgradeTests, ModifyIsRelationshipClass)
+TEST_F(ECSchemaUpdateTests, ModifyIsRelationshipClass)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -1666,7 +1666,7 @@ TEST_F(ECDbSchemaUpgradeTests, ModifyIsRelationshipClass)
         "     </ECRelationshipClass>"
         "</ECSchema>");
 
-    SetupECDb("schemaupgrade.ecdb", schemaItem);
+    SetupECDb("schemaupdate.ecdb", schemaItem);
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
@@ -1684,7 +1684,7 @@ TEST_F(ECDbSchemaUpgradeTests, ModifyIsRelationshipClass)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSchemaUpgradeTests, ModifyRelationship)
+TEST_F(ECSchemaUpdateTests, ModifyRelationship)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -1700,7 +1700,7 @@ TEST_F(ECDbSchemaUpgradeTests, ModifyRelationship)
         "     </ECRelationshipClass>"
         "</ECSchema>");
 
-    SetupECDb("schemaupgrade.ecdb", schemaItem);
+    SetupECDb("schemaupdate.ecdb", schemaItem);
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
@@ -1870,7 +1870,7 @@ TEST_F(ECDbSchemaUpgradeTests, ModifyRelationship)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSchemaUpgradeTests, UpgradeReferenceSchema)
+TEST_F(ECSchemaUpdateTests, UpgradeReferenceSchema)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -1878,7 +1878,7 @@ TEST_F(ECDbSchemaUpgradeTests, UpgradeReferenceSchema)
         "   <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
         "</ECSchema>");
 
-    SetupECDb("schemaupgrade.ecdb", schemaItem);
+    SetupECDb("schemaupdate.ecdb", schemaItem);
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 

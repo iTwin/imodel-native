@@ -49,7 +49,7 @@ private:
 private:
     BentleyStatus CreateECSchemaEntry(ECSchemaCR);
     BentleyStatus CreateBaseClassEntry(ECClassId, ECClassCR baseClass, int ordinal);
-    BentleyStatus CreateECRelationshipConstraintEntry(ECClassId relationshipClassId, ECN::ECRelationshipConstraintR, ECRelationshipEnd);
+    BentleyStatus CreateECRelationshipConstraintEntry(ECRelationshipConstraintId& constraintId, ECClassId relationshipClassId, ECN::ECRelationshipConstraintR, ECRelationshipEnd);
     BentleyStatus InsertCAEntry(IECInstanceP customAttribute, ECClassId ecClassId, ECContainerId, ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType, int ordinal);
     BentleyStatus ReplaceCAEntry(IECInstanceP customAttribute, ECClassId ecClassId, ECContainerId, ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType, int ordinal);
     BentleyStatus DeleteCAEntry(ECClassId, ECContainerId, ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType);

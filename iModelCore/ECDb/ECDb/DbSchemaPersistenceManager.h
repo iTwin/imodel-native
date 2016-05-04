@@ -38,8 +38,6 @@ private:
 
     static DbResult InsertTable(ECDbCR, DbTable const&);
     static DbResult InsertColumn(ECDbCR, DbColumn const&, int columnOrdinal, int primaryKeyOrdinal);
-    static DbResult InsertConstraint(ECDbCR, DbConstraint const&);
-    static DbResult InsertForeignKeyConstraint(ECDbCR, ForeignKeyDbConstraint const&);
     static DbResult InsertIndex(ECDbCR, DbIndex const&);
 
     static DbResult InsertClassMapping(ECDbCR, ClassDbMapping const&);

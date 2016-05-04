@@ -121,6 +121,7 @@ struct ECEnumerationId : BeInt64Id
     };
 
 typedef BeInt64Id ECContainerId;
+typedef BeInt64Id ECRelationshipConstraintId;
 
 #define ECDB_COL_ECInstanceId "ECInstanceId"
 #define ECDB_COL_ECClassId "ECClassId"

@@ -744,7 +744,9 @@ MappingStatus RelationshipMappingInfo::_EvaluateMapStrategy()
             return MappingStatus::Success;
             }
 
-        return m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::OwnTable, false) == SUCCESS ? MappingStatus::Success : MappingStatus::Error;
+        BeAssert(m_resolvedStrategy.IsResolved());
+        return MappingStatus::Success;
+        //return m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::OwnTable, false) == SUCCESS ? MappingStatus::Success : MappingStatus::Error;
         }
 
     //FK type relationship mapping

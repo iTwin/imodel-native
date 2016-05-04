@@ -1938,7 +1938,7 @@ Utf8String ChangeSummary::InstanceIterator::Options::ToSelectStatement(Utf8CP co
             "    DerivedClasses(ClassId) AS ("
             "        VALUES(:baseClassId)"
             "        UNION "
-            "        SELECT ec_BaseClass.ClassId FROM ec_BaseClass, DerivedClasses WHERE ec_BaseClass.BaseClassId=DerivedClasses.ClassId"
+            "        SELECT ec_ClassHasBaseClasses.ClassId FROM ec_ClassHasBaseClasses, DerivedClasses WHERE ec_ClassHasBaseClasses.BaseClassId=DerivedClasses.ClassId"
             "        )"
             " SELECT ClassId,InstanceId,DbOpcode,Indirect,TableName"
             " FROM ");

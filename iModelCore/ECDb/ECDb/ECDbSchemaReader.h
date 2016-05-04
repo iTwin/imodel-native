@@ -102,7 +102,7 @@ struct ECDbSchemaReader
         BentleyStatus LoadBaseClassesFromDb(ECN::ECClassP& ecClass, Context&, ECN::ECClassId ecClassId) const;
         BentleyStatus LoadCAFromDb(ECN::IECCustomAttributeContainerR  caConstainer, Context&, ECContainerId containerId, ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType) const;
         BentleyStatus LoadECRelationshipConstraintFromDb(ECN::ECRelationshipClassP&, Context&, ECN::ECClassId constraintClassId, ECN::ECRelationshipEnd) const;
-        BentleyStatus LoadECRelationshipConstraintClassesFromDb(ECN::ECRelationshipConstraintR, Context&, ECN::ECClassId relationshipClassId, ECN::ECRelationshipEnd) const;
+        BentleyStatus LoadECRelationshipConstraintClassesFromDb(ECN::ECRelationshipConstraintR, Context&, ECRelationshipConstraintId constraintId) const;
         BentleyStatus LoadECSchemaDefinition(DbECSchemaEntry*&, bvector<DbECSchemaEntry*>& newlyLoadedSchemas, ECN::ECSchemaId ctxECSchemaId) const;
 
         BentleyStatus ReadECSchema(DbECSchemaEntry*&, Context&, ECN::ECSchemaId, bool loadClasses) const;
