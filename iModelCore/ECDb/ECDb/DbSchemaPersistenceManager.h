@@ -63,7 +63,6 @@ private:
     static BentleyStatus BuildCreateIndexDdl(Utf8StringR ddl, Utf8StringR comparableIndexDef, ECDbCR, DbIndex const&);
     static BentleyStatus GenerateIndexWhereClause(Utf8StringR ddl, ECDbCR, DbIndex const&);
 
-
 public:
     static BentleyStatus Load(DbSchema&, ECDbCR, DbSchema::LoadState loadMode);
     static BentleyStatus Save(ECDbCR, DbSchema const&);

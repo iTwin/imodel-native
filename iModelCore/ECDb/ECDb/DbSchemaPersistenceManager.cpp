@@ -524,61 +524,6 @@ DbResult DbSchemaPersistenceManager::InsertColumn(ECDbCR ecdb, DbColumn const& c
     return stat == BE_SQLITE_DONE ? BE_SQLITE_OK : stat;
     }
 
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        01/2015
-//---------------------------------------------------------------------------------------
-//static
-/*DbResult DbSchemaPersistenceManager::InsertForeignKeyConstraint(ECDbCR ecdb, ForeignKeyDbConstraint const& fkConstraint)
-    {
-    if (!fkConstraint.IsValid())
-        {
-        BeAssert(false && "ForeignKey constraint does not have any columns");
-        return BE_SQLITE_ERROR;
-        }
-
-    CachedStatementPtr stmt = ecdb.GetCachedStatement("INSERT INTO ec_ForeignKey(Id, TableId, ReferencedTableId, OnDelete, OnUpdate) VALUES (?, ?, ?, ?, ?)");
-    if (stmt == nullptr)
-        return BE_SQLITE_ERROR;
-
-    stmt->BindId(1, fkConstraint.GetId());
-    stmt->BindId(2, fkConstraint.GetForeignKeyTable().GetId());
-    stmt->BindId(3, fkConstraint.GetReferencedTable().GetId());
-
-    if (fkConstraint.GetOnDeleteAction() != ForeignKeyDbConstraint::ActionType::NotSpecified)
-        stmt->BindInt(4, Enum::ToInt(fkConstraint.GetOnDeleteAction()));
-
-    if (fkConstraint.GetOnUpdateAction() != ForeignKeyDbConstraint::ActionType::NotSpecified)
-        stmt->BindInt(5, Enum::ToInt(fkConstraint.GetOnUpdateAction()));
-
-    DbResult stat = stmt->Step();
-    if (stat != BE_SQLITE_DONE)
-        return stat;
-
-    stmt = ecdb.GetCachedStatement("INSERT INTO ec_ForeignKeyColumn(ForeignKeyId, ColumnId, ReferencedColumnId, Ordinal) VALUES (?, ?, ?, ?)");
-    if (stmt == nullptr)
-        return BE_SQLITE_ERROR;
-
-    int fkColOrdinal = 0;
-    for (DbColumn const* fkCol : fkConstraint.GetFkColumns())
-        {
-        stmt->Reset();
-        stmt->ClearBindings();
-        stmt->BindId(1, fkConstraint.GetId());
-        stmt->BindId(2, fkCol->GetId());
-        stmt->BindId(3, fkConstraint.GetReferencedTableColumns()[(size_t) fkColOrdinal]->GetId());
-        stmt->BindInt(4, fkColOrdinal);
-
-        stat = stmt->Step();
-        if (stat != BE_SQLITE_DONE)
-            return stat;
-
-        fkColOrdinal++;
-        }
-
-    return BE_SQLITE_OK;
-    }
-*/
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        01/2015
 //---------------------------------------------------------------------------------------
