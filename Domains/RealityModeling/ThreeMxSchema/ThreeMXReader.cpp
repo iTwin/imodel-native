@@ -1,53 +1,18 @@
 /*-------------------------------------------------------------------------------------+
 |
-|     $Source: ThreeMxSchema/Reader/ThreeMXReader.cpp $
+|     $Source: ThreeMxSchema/ThreeMXReader.cpp $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "../ThreeMxSchemaInternal.h"
-#include <DgnPlatform/JsonUtils.h>
-
-#include "openctm/openctm.h"
+#include "ThreeMxInternal.h"
+#include "OpenCTM/openctm.h"
 
 #define LOG_ERROR (*NativeLogging::LoggingManager::GetLogger(L"3MX")).errorv
 
 BEGIN_UNNAMED_NAMESPACE
-struct ThreeMX
-    {
-    static Utf8String GetMagicNumber() { return "3MXBO"; }
-    static Utf8String GetSceneExtension() { return "3mx"; }
-    static Utf8String GetNodeExtension() { return "3mxb"; }
-    static Utf8String GetSceneVersionTag() { return "3mxVersion"; }
-    static Utf8String GetLongName(){ return "Smart3DCapture 3MX"; }
-    static Utf8String GetDescription(){ return "Smart3DCapture 3D Multiresolution Mesh Exchange Format"; }
-    static Utf8String GetShortName(){ return "3MX"; }
-    };
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bool readBytes(MxStreamBuffer& in, void* buf, uint32_t size)
-    {
-    ByteCP start = in.GetCurrent();
-    ByteCP end   = in.Advance(size);
-    if (nullptr == end)
-        {
-        BeAssert(false);
-        return false;
-        }
-
-    memcpy(buf, start, size);
-    return true;
-    }
-
-/*-----------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-static CTMuint ctmReadFunc(void* buf, CTMuint count, void* userData)
-    {
-    return readBytes(*(MxStreamBuffer*)userData, buf, count) ? count : 0;
-    }
+static Utf8String GetMagicString() { return "3MXBO"; }
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   04/16
@@ -56,26 +21,35 @@ struct CtmContext
 {
     void* m_openCTM;
 
-    CtmContext(MxStreamBuffer& in, uint32_t offset) {m_openCTM=ctmNewContext(CTM_IMPORT); in.SetPos(offset); ctmLoadCustom(m_openCTM, (CTMreadfn)ctmReadFunc, &in);}
-    ~CtmContext() {ctmFreeContext(m_openCTM);}
+    static bool ReadBytes(MxStreamBuffer& in, void* buf, uint32_t size)
+        {
+        ByteCP start = in.GetCurrent();
+        if (nullptr == in.Advance(size)) {BeAssert(false); return false;}
+        memcpy(buf, start, size);
+        return true;
+        }
 
-    CTMenum GetError() {return ctmGetError(m_openCTM);}
-    uint32_t GetInteger(CTMenum val) {return ctmGetInteger(m_openCTM, val);}
-    FPoint3d const* GetFloatArray(CTMenum val) {return (FPoint3d const*)ctmGetFloatArray(m_openCTM, val);}
-    int32_t const* GetIntegerArray(CTMenum val){return (int32_t const*) ctmGetIntegerArray(m_openCTM, val);}
+    static CTMuint ReadFunc(void* buf, CTMuint count, void* userData) {return ReadBytes(*(MxStreamBuffer*)userData, buf, count) ? count : 0;}
+
+    CtmContext(MxStreamBuffer& in, uint32_t offset) {m_openCTM=::ctmNewContext(CTM_IMPORT); in.SetPos(offset); ::ctmLoadCustom(m_openCTM, (CTMreadfn)ReadFunc, &in);}
+    ~CtmContext() {::ctmFreeContext(m_openCTM);}
+
+    CTMenum GetError() {return ::ctmGetError(m_openCTM);}
+    uint32_t GetInteger(CTMenum val) {return ::ctmGetInteger(m_openCTM, val);}
+    FPoint3d const* GetFloatArray(CTMenum val) {return (FPoint3d const*) ::ctmGetFloatArray(m_openCTM, val);}
+    int32_t const* GetIntegerArray(CTMenum val){return (int32_t const*) ::ctmGetIntegerArray(m_openCTM, val);}
 };
 
-template <typename T> T getJsonValue(JsonValueCR pt);
+template<typename T> T getJsonValue(JsonValueCR pt);
 template<> double getJsonValue(JsonValueCR pt) {return pt.asDouble();}
-//template<> size_t getJsonValue(JsonValueCR pt) {return pt.asUInt();}
 template<> Utf8String getJsonValue(JsonValueCR pt) {return pt.asCString();}
 
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T> bool readVectorEntry(JsonValueCR pt, Utf8StringCR tag, bvector<T>& v)
+template<typename T> bool readVectorEntry(JsonValueCR pt, Utf8CP tag, bvector<T>& v)
     {
-    Json::Value entry = pt[tag.c_str()];
+    JsonValueCR entry = pt[tag];
     if (!entry.isArray())
         return false;
 
@@ -88,12 +62,13 @@ template<typename T> bool readVectorEntry(JsonValueCR pt, Utf8StringCR tag, bvec
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void dPoint3dFromJson(DPoint3dR point, Json::Value const& inValue)
+static void dPoint3dFromJson(DPoint3dR point, JsonValueCR inValue)
     {
     point.x = inValue[0].asDouble();
     point.y = inValue[1].asDouble();
     point.z = inValue[2].asDouble();
     }
+
 END_UNNAMED_NAMESPACE
 
 /*-----------------------------------------------------------------------------------**//**
@@ -107,14 +82,14 @@ bool Node::ReadHeader(JsonValueCR pt, Utf8String& name, bvector<Utf8String>& nod
         return false;
         }
 
-    Json::Value bbMin=pt["bbMin"];
+    JsonValueCR bbMin=pt["bbMin"];
     if (bbMin.size() != 3)
         {
         LOG_ERROR("Malformed bbMin");
         return false;
         }
 
-    Json::Value bbMax=pt["bbMax"];
+    JsonValueCR bbMax=pt["bbMax"];
     if (bbMax.size() != 3)
         {
         LOG_ERROR("Malformed bbMax");
@@ -127,7 +102,7 @@ bool Node::ReadHeader(JsonValueCR pt, Utf8String& name, bvector<Utf8String>& nod
     m_center.Interpolate(m_range.low, .5, m_range.high);
     m_radius = 0.5 * m_range.low.Distance(m_range.high);
 
-    Json::Value val = pt["maxScreenDiameter"];
+    JsonValueCR val = pt["maxScreenDiameter"];
     if (val.empty())
         {
         LOG_ERROR("Cannot find \"maxScreenDiameter\" entry");
@@ -151,17 +126,16 @@ bool Node::ReadHeader(JsonValueCR pt, Utf8String& name, bvector<Utf8String>& nod
     return true;
     }
 
-
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus Node::Read3MXB(MxStreamBuffer& in, SceneR scene)
+BentleyStatus Node::DoRead(MxStreamBuffer& in, SceneR scene)
     {
     bmap<Utf8String, int> textureIds, nodeIds;
     bmap<Utf8String, Utf8String> geometryNodeCorrespondence;
     int nodeCount = 0;
 
-    uint32_t magicSize = (uint32_t) ThreeMX::GetMagicNumber().size();
+    uint32_t magicSize = (uint32_t) GetMagicString().size();
     ByteCP currPos = in.GetCurrent();
     if (!in.Advance(magicSize))
         {
@@ -170,14 +144,14 @@ BentleyStatus Node::Read3MXB(MxStreamBuffer& in, SceneR scene)
         }
 
     Utf8String magicNumber((Utf8CP) currPos, (Utf8CP) in.GetCurrent());
-    if (magicNumber != ThreeMX::GetMagicNumber())
+    if (magicNumber != GetMagicString())
         {
         LOG_ERROR("wrong magic number");
         return ERROR;
         }
 
     uint32_t infoSize;
-    if (!readBytes(in, &infoSize, 4))
+    if (!CtmContext::ReadBytes(in, &infoSize, 4))
         {
         LOG_ERROR("Can't read size");
         return ERROR;
@@ -226,7 +200,7 @@ BentleyStatus Node::Read3MXB(MxStreamBuffer& in, SceneR scene)
 
     Utf8String resourceType, resourceFormat, resourceName;
     uint32_t resourceSize;
-    uint32_t offset = (uint32_t) ThreeMX::GetMagicNumber().size() + 4 + infoSize;
+    uint32_t offset = (uint32_t) GetMagicString().size() + 4 + infoSize;
 
     JsonValueCR resources = pt["resources"];
     if (resources.empty())
@@ -271,7 +245,7 @@ BentleyStatus Node::Read3MXB(MxStreamBuffer& in, SceneR scene)
     if (renderTextures.empty())
         return SUCCESS;
 
-    offset = (uint32_t) ThreeMX::GetMagicNumber().size() + 4 + infoSize;
+    offset = (uint32_t) GetMagicString().size() + 4 + infoSize;
     for (JsonValueCR resource : resources)
         {
         resourceType   = resource.get("type", "").asCString();
@@ -336,6 +310,23 @@ BentleyStatus Node::Read3MXB(MxStreamBuffer& in, SceneR scene)
             }
         }
 
+    return SUCCESS;
+    }
+
+
+/*-----------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus Node::Read3MXB(MxStreamBuffer& in, SceneR scene)
+    {
+    BeAssert(!AreChildrenValid());
+
+    auto stat = DoRead(in, scene);
+    if (SUCCESS != stat)
+        return stat;
+
+#define DEBUG_NODES
+#if defined (DEBUG_NODES)
     for (auto& child : m_childNodes)
         {
         if (child->IsDisplayable() && !child->m_geometry.IsValid())
@@ -343,6 +334,9 @@ BentleyStatus Node::Read3MXB(MxStreamBuffer& in, SceneR scene)
             BeAssert(false);
             }
         }
+#endif
+
+    SetIsReady();
     return SUCCESS;
     }
 
@@ -358,10 +352,12 @@ BentleyStatus SceneInfo::Read(MxStreamBuffer& buffer)
         {
         LOG_ERROR("Cannot parse info");
         return ERROR;
-        } int version = pt.get(ThreeMX::GetSceneVersionTag().c_str(), 0).asInt();
+        } 
+
+    int version = pt.get("3mxVersion", 0).asInt();
     if (version != 1)
         {
-        LOG_ERROR("Unsupported version of %s", ThreeMX::GetShortName().c_str());
+        LOG_ERROR("Unsupported version of 3MX");
         return ERROR;
         }
 
@@ -390,16 +386,9 @@ BentleyStatus SceneInfo::Read(MxStreamBuffer& buffer)
         m_reprojectionSystem = layer.get("SRS", "").asCString();
         if (!m_reprojectionSystem.empty())
             {
-            if (!readVectorEntry(layer, "SRSOrigin", m_origin))
-                {
-                LOG_ERROR("Could not find the SRS origin");
-                return ERROR;
-                }
-            if (m_origin.size() != 3)
-                {
-                LOG_ERROR("Malformed SRS origin");
-                return ERROR;
-                }
+            JsonValueCR orgJson = layer["SRSOrigin"];
+            if (!orgJson.empty())
+                dPoint3dFromJson(m_origin, orgJson);
             }
         return SUCCESS;
         }

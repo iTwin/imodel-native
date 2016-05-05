@@ -1,11 +1,11 @@
 /*-------------------------------------------------------------------------------------+
 |
-|     $Source: ThreeMxSchema/ThreeMxHandler.cpp $
+|     $Source: ThreeMxSchema/ThreeMxModel.cpp $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ThreeMxSchemaInternal.h"
+#include "ThreeMxInternal.h"
 #include <DgnPlatform/JsonUtils.h>
 
 DOMAIN_DEFINE_MEMBERS(ThreeMxDomain)
@@ -34,17 +34,10 @@ struct ThreeMxProgressive : ProgressiveTask
 +---------------+---------------+---------------+---------------+---------------+------*/
 ProgressiveTask::Completion ThreeMxProgressive::_DoProgressive(ProgressiveContext& context, WantShow&) 
     {
-    switch (m_scene.ProcessRequests())
-        {
-        case Scene::RequestStatus::None:
-            return Completion::Aborted;
+    auto stat = m_scene.ProcessRequests();
+    m_scene.Draw(context);
 
-        case Scene::RequestStatus::Processed:
-            m_scene.Draw(context);
-            return Completion::Aborted;
-        }
-
-    return Completion::Finished;
+    return stat==Scene::RequestStatus::Finished ? Completion::Finished : Completion::Aborted;
     }
 
 /*---------------------------------------------------------------------------------**//**

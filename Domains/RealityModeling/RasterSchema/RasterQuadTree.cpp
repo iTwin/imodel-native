@@ -90,7 +90,7 @@ class ThreadPool
         static ThreadPool& GetInstance()
             {
             // At least 2 make sense since we have a mix of io and cpu/memory operations.
-            size_t hardwareThreads = std::thread::hardware_concurrency();
+            size_t hardwareThreads = std::thread::hardware_concurrency() / 2;
             static ThreadPool* s_pool = new ThreadPool(MAX(2, hardwareThreads));
             return *s_pool;
             }

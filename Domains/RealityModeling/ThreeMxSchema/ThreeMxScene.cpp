@@ -1,11 +1,11 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ThreeMxSchema/MRMesh/ThreeMxScene.cpp $
+|     $Source: ThreeMxSchema/ThreeMxScene.cpp $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "../ThreeMxSchemaInternal.h"
+#include "ThreeMxInternal.h"
 
 #if defined (BENTLEYCONFIG_OS_WINDOWS)
 #include <windows.h>
@@ -17,14 +17,15 @@
 Scene::Scene(DgnDbR db, TransformCR location, Utf8CP realityCacheName, Utf8CP rootUrl, Render::SystemP renderSys) : m_db(db), m_rootUrl(rootUrl), m_location(location), m_renderSystem(renderSys)
     {
     m_isUrl = (0 == strncmp("http:", rootUrl, 5) || 0 == strncmp("https:", rootUrl, 6));
+    m_rootDir = m_rootUrl.substr(0, m_rootUrl.find_last_of("/"));
 
     m_scale = location.ColumnXMagnitude();
 
     m_localCacheName = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName();
     m_localCacheName.AppendToPath(BeFileName(realityCacheName));
-    m_localCacheName.AppendExtension(L"3mxCache");
+    m_localCacheName.AppendExtension(L"3MXcache");
 
-    m_cache = RealityDataCache::Create(100);
+    m_cache = RealityDataCache::Create(0);
     m_cache->RegisterStorage(*BeSQLiteRealityDataStorage::Create(m_localCacheName));
     m_cache->RegisterSource(IsUrl() ? (IRealityDataSourceBase&) *HttpRealityDataSource::Create(1) : *FileRealityDataSource::Create(1));
     }
@@ -44,12 +45,12 @@ BentleyStatus Scene::DeleteRealityCache()
 BentleyStatus Scene::ReadRoot(SceneInfo& sceneInfo)
     {
     MxStreamBuffer rootStream;
-    RealityDataCacheResult status = RequestData(nullptr, m_rootUrl, true, &rootStream);
+    RealityDataCacheResult status = RequestData(nullptr, true, &rootStream);
     return (RealityDataCacheResult::Success != status) ? ERROR : sceneInfo.Read(rootStream);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     04/2015
+* @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Scene::LoadScene()
     {
@@ -60,11 +61,39 @@ BentleyStatus Scene::LoadScene()
     m_rootNode = new Node(nullptr);
     m_rootNode->m_childPath = sceneInfo.m_rootNodePath;
 
-    if (SUCCESS != SynchronousRead(*m_rootNode, ConstructNodeName(sceneInfo.m_rootNodePath, m_rootUrl)))
-        return ERROR;
+    return RealityDataCacheResult::Success == RequestData(m_rootNode.get(), true, nullptr) ? SUCCESS : ERROR;
+    }
 
-    m_rootNode->Dump("");
-    return SUCCESS;
+/*-----------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     03/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t Scene::GetNodeCount() const
+    {
+    return m_rootNode->GetNodeCount();
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                      Ray.Bentley     09/2015
+//----------------------------------------------------------------------------------------
+DRange3d Scene::GetRange(TransformCR trans) const
+    {
+    return m_rootNode->GetRange(trans);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Scene::Draw(RenderContextR context)
+    {
+    return m_rootNode->Draw(context, *this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String Scene::ConstructNodeName(Node& node)
+    {
+    return m_rootDir + node.GetChildFile();
     }
 
 //----------------------------------------------------------------------------------------
@@ -83,13 +112,7 @@ BentleyStatus Scene::ReadGeoLocation(SceneInfo const& sceneInfo)
     if (sceneInfo.m_reprojectionSystem.empty())
         return SUCCESS;         // No GCS...
 
-    DPoint3d reprojectionOrigin;
-    if (3 == sceneInfo.m_origin.size())
-        reprojectionOrigin.InitFromArray(&sceneInfo.m_origin.front());
-    else
-        reprojectionOrigin.Zero();
-
-    Transform transform = Transform::From(reprojectionOrigin);
+    Transform transform = Transform::From(sceneInfo.m_origin);
     WString    warningMsg;
     StatusInt  status, warning;
 
@@ -127,84 +150,12 @@ BentleyStatus Scene::ReadGeoLocation(SceneInfo const& sceneInfo)
     return ERROR;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void drawBoundingSpheres(NodeCR node, RenderContextR context, SceneCR scene) 
-    {
-    if (node.IsDisplayable())
-        node.DrawBoundingSphere(context, scene);
-
-    Node::ChildNodes const* children = node.GetChildren();
-    if (children)
-        {
-        for (auto const& child : *children)
-            drawBoundingSpheres(*child, context, scene);
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Scene::DrawBoundingSpheres(RenderContextR context)
-    {
-    drawBoundingSpheres(*m_rootNode, context, *this);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-size_t Scene::GetTextureMemorySize() const
-    {
-    return m_rootNode->GetTextureMemorySize();
-    }
-
-/*-----------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-size_t Scene::GetNodeCount() const
-    {
-    return m_rootNode->GetNodeCount();
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                      Ray.Bentley     09/2015
-//----------------------------------------------------------------------------------------
-DRange3d Scene::GetRange(TransformCR trans) const
-    {
-    return m_rootNode->GetRange(trans);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool Scene::Draw(RenderContextR context)
-    {
-    return m_rootNode->Draw(context, *this);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   05/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String Scene::ConstructNodeName(Utf8StringCR childName, Utf8StringCR parentPath)
-    {
-    if (IsUrl())
-        {
-        Utf8String parentDir = parentPath.substr(0, parentPath.find_last_of("/"));
-        return parentDir + "/" + childName;
-        }
-
-    BeFileName nodeFileName(BeFileName::DevAndDir, BeFileName(parentPath));
-    nodeFileName.AppendToPath(BeFileName(childName));
-    return nodeFileName.GetNameUtf8();
-    }
-
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-#if defined (BENTLEYCONFIG_OS_WINDOWS) && !defined (BENTLEYCONFIG_OS_WINRT)
 void Scene::GetMemoryStatistics(size_t& memoryLoad, size_t& total, size_t& available)
     {
+#if defined (BENTLEYCONFIG_OS_WINDOWS) && !defined (BENTLEYCONFIG_OS_WINRT)
     MEMORYSTATUSEX statex;
     statex.dwLength = sizeof (statex);
     ::GlobalMemoryStatusEx(&statex);
@@ -212,8 +163,8 @@ void Scene::GetMemoryStatistics(size_t& memoryLoad, size_t& total, size_t& avail
     memoryLoad = (size_t) statex.dwMemoryLoad;
     total      = (size_t) statex.ullTotalPhys;
     available  = (size_t) statex.ullAvailPhys;
-    }
 #endif
+    }
 
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     07/2015

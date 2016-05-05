@@ -1,11 +1,11 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ThreeMxSchema/MRMesh/ThreeMxGeometry.cpp $
+|     $Source: ThreeMxSchema/ThreeMxGeometry.cpp $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "../ThreeMxSchemaInternal.h"
+#include "ThreeMxInternal.h"
 
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015

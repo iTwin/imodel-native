@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ThreeMxSchema/ThreeMxSchemaInternal.h $
+|     $Source: ThreeMxSchema/ThreeMxInternal.h $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |

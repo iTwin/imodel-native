@@ -1,6 +1,6 @@
-#--------------------------------------------------------------------------------------                                                                                       
+#--------------------------------------------------------------------------------------
 #
-#     $Source: ThreeMxSchema/ThreeMxSchema.mke $
+#     $Source: ThreeMxSchema/ThreeMx.mke $
 #
 #  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
@@ -10,26 +10,23 @@
 #-----------------------------------------------------------
 # Root directory
 #-----------------------------------------------------------
-SrcThreeMxSchema = $(_MakeFilePath)
+SrcThreeMx = $(_MakeFilePath)
 
 #------------------------------------------------------
 # Header file locations in source tree
 #------------------------------------------------------
-ThreeMxPublicApiSrc = $(SrcThreeMxSchema)../PublicAPI/ThreeMx/
+ThreeMxPublicApiSrc = $(SrcThreeMx)../PublicAPI/ThreeMx/
 
 #-----------------------------------------------------------
 # Source directories
 #-----------------------------------------------------------
-SrcMrMesh           = $(SrcThreeMxSchema)MrMesh/
-SrcThreeMxReader    = $(SrcThreeMxSchema)Reader/
-SrcOpenCtm          = $(SrcThreeMxReader)openCtm/
-SrcLibLzma          = $(SrcOpenCtm)LibLzma/
+SrcOpenCtm = $(SrcThreeMx)openCtm/
 
 #----------------------------------------------------------
 # Set and then include the CompileOptionsMki file.
 # It is needed and also %included by PreCompileHeader.mki
 #----------------------------------------------------------
-CompileOptionsMki               = $(SrcThreeMxSchema)ThreeMxSchema.mki
+CompileOptionsMki = $(SrcThreeMx)ThreeMx.mki
 %include $(CompileOptionsMki)
 
 always:
@@ -38,26 +35,25 @@ always:
 #--------------------------------------------------------------------------------------
 #   Set up build dependencies
 #--------------------------------------------------------------------------------------
-threeMxSchemaDepends         = $(_MakeFileSpec)   \
-                               $(ThreeMxPublicApiSrc)ThreeMxApi.h 
-                                  
+threeMxDepends  = $(_MakeFileSpec) $(ThreeMxPublicApiSrc)ThreeMxApi.h
+
 MultiCompileDepends=$(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
-$(o)ThreeMxReader$(oext)  : $(SrcThreeMxReader)ThreeMxReader.cpp ${threeMxSchemaDepends} ${MultiCompileDepends} 
+$(o)ThreeMxReader$(oext)  : $(SrcThreeMx)ThreeMxReader.cpp ${threeMxDepends} ${MultiCompileDepends}
 
-$(o)ThreeMxCache$(oext)   : $(SrcMrMesh)ThreeMxCache.cpp ${threeMxSchemaDepends}  ${MultiCompileDepends}
+$(o)ThreeMxCache$(oext)   : $(SrcThreeMx)ThreeMxCache.cpp ${threeMxDepends}  ${MultiCompileDepends}
 
-$(o)ThreeMxNode$(oext)    : $(SrcMrMesh)ThreeMxNode.cpp ${threeMxSchemaDepends} ${MultiCompileDepends} 
+$(o)ThreeMxNode$(oext)    : $(SrcThreeMx)ThreeMxNode.cpp ${threeMxDepends} ${MultiCompileDepends}
 
-$(o)ThreeMxGeometry$(oext) : $(SrcMrMesh)ThreeMxGeometry.cpp ${threeMxSchemaDepends} ${MultiCompileDepends} 
+$(o)ThreeMxGeometry$(oext) : $(SrcThreeMx)ThreeMxGeometry.cpp ${threeMxDepends} ${MultiCompileDepends}
 
-$(o)ThreeMxScene$(oext)   : $(SrcMrMesh)ThreeMxScene.cpp ${threeMxSchemaDepends} ${MultiCompileDepends} 
+$(o)ThreeMxScene$(oext)   : $(SrcThreeMx)ThreeMxScene.cpp ${threeMxDepends} ${MultiCompileDepends}
 
-$(o)ThreeMxHandler$(oext) : $(SrcThreeMxSchema)ThreeMxHandler.cpp ${threeMxSchemaDepends} ${MultiCompileDepends} 
+$(o)ThreeMxModel$(oext) : $(SrcThreeMx)ThreeMxModel.cpp ${threeMxDepends} ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
-objs =% $(MultiCompileObjectList) 
+objs =% $(MultiCompileObjectList)
 
 CCPchOpts =
 CPchOpts =
@@ -75,15 +71,15 @@ CPchOpts =
 MultiCompileDepends=$(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
-$(o)openCtm$(oext)                  : $(SrcOpenCtm)openCtm.c $(SrcOpenCtm)openCtm.h ${threeMxSchemaDepends} ${MultiCompileDepends} 
+$(o)openCtm$(oext)     : $(SrcOpenCtm)openCtm.c $(SrcOpenCtm)openCtm.h ${threeMxDepends} ${MultiCompileDepends}
 
-$(o)stream$(oext)                   : $(SrcOpenCtm)stream.c $(SrcOpenCtm)openCtm.h ${threeMxSchemaDepends} ${MultiCompileDepends}
+$(o)stream$(oext)      : $(SrcOpenCtm)stream.c $(SrcOpenCtm)openCtm.h ${threeMxDepends} ${MultiCompileDepends}
 
-$(o)compressMG1$(oext)              : $(SrcOpenCtm)compressMG1.c ${threeMxSchemaDepends} ${MultiCompileDepends}
+$(o)compressMG1$(oext) : $(SrcOpenCtm)compressMG1.c ${threeMxDepends} ${MultiCompileDepends}
 
-$(o)compressMG2$(oext)              : $(SrcOpenCtm)compressMG2.c ${threeMxSchemaDepends} ${MultiCompileDepends}
+$(o)compressMG2$(oext) : $(SrcOpenCtm)compressMG2.c ${threeMxDepends} ${MultiCompileDepends}
 
-$(o)compressRAW$(oext)              : $(SrcOpenCtm)compressRAW.c ${threeMxSchemaDepends} ${MultiCompileDepends}
+$(o)compressRAW$(oext) : $(SrcOpenCtm)compressRAW.c ${threeMxDepends} ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 nonportObjs=%$(MultiCompileObjectList)
@@ -98,7 +94,7 @@ CPchOpts =
 objs + $(nonportObjs)
 
 #--------------------------------------------------------------------------------------
-#   Build the library                                                                                     
+#   Build the library
 #--------------------------------------------------------------------------------------
 DLM_NAME                    = $(appName)
 DLM_OBJECT_FILES            = $(objs)
