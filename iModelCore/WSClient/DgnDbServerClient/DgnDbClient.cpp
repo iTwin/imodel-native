@@ -225,14 +225,6 @@ DgnDbPtr CleanDb(DgnDbCR db)
     auto revision = tempdb->Revisions().StartCreateRevision();
     if (revision.IsValid())
         tempdb->Revisions().FinishCreateRevision();
-    //TxnManager::TxnId cancelToId, tempId = tempdb->Txns().GetCurrentTxnId();            //Clear transaction table
-    //while (tempId.IsValid())
-    //    {
-    //    cancelToId = tempId;
-    //    tempId = tempdb->Txns().QueryPreviousTxnId(tempId);
-    //    }
-    //if (cancelToId.IsValid())
-    //    tempdb->Txns().CancelTo(cancelToId, TxnManager::AllowCrossSessions::Yes);
     tempdb->SaveBriefcaseLocalValue("ParentRevisionId", "");                            //Clear parent revision id
     tempdb->ChangeBriefcaseId(BeBriefcaseId(0));                                        //Set BriefcaseId to 0 (master)
     tempdb->SaveBriefcaseLocalValue(DgnDbServer::Db::Local::RepositoryURL, "");         //Set URL
@@ -286,7 +278,7 @@ DgnDbServerRepositoryTaskPtr DgnDbClient::CreateNewRepository(Dgn::DgnDbCR db, U
             }
 
         // Stage 1. Create repository.
-        Utf8String adminRepositoryURL = (*repositoriesResult.GetValue().begin()).GetId();
+        Utf8String adminRepositoryURL = repositoriesResult.GetValue()[0].GetId();
         IWSRepositoryClientPtr client = WSRepositoryClient::Create(m_serverUrl, adminRepositoryURL, m_clientInfo, nullptr, m_authenticationHandler);
         Json::Value repositoryCreationJson = RepositoryCreationJson(repositoryName, dbFileId, description, dbFileName, published);
         client->SetCredentials(m_credentials);
@@ -431,13 +423,13 @@ DgnDbServerBriefcaseTaskPtr DgnDbClient::OpenBriefcase(Dgn::DgnDbPtr db, bool do
 //@bsimethod                                     Karolis.Dziedzelis             03/2016
 //---------------------------------------------------------------------------------------
 DgnDbServerStatusTaskPtr DgnDbClient::DownloadBriefcase(DgnDbRepositoryConnectionPtr connection, BeFileName filePath, BeBriefcaseId briefcaseId, Utf8StringCR url,
-                                                      bool doSync, HttpRequest::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
+                                                        bool doSync, HttpRequest::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
     {
     auto briefcaseTask = connection->DownloadBriefcaseFile(filePath, BeBriefcaseId(briefcaseId), url, callback, cancellationToken);
     if (!doSync)
         return briefcaseTask;
 
-    auto pullTask = connection->Pull("", callback, cancellationToken);
+    auto pullTask = connection->Pull(connection->GetRepositoryInfo().GetMergedRevisionId(), callback, cancellationToken);
     bset<std::shared_ptr<AsyncTask>> tasks;
     tasks.insert(briefcaseTask);
     tasks.insert(pullTask);
