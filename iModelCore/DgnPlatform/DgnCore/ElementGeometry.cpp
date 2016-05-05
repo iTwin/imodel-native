@@ -4833,10 +4833,12 @@ GeometryBuilder::GeometryBuilder(DgnDbR dgnDb, DgnCategoryId categoryId, bool is
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-GeometryBuilderPtr GeometryBuilder::CreateGeometryPart(GeometryStreamCR stream, DgnDbR db, bool ignoreSymbology)
+GeometryBuilderPtr GeometryBuilder::CreateGeometryPart(GeometryStreamCR stream, DgnDbR db, bool ignoreSymbology, Render::GeometryParamsP params)
     {
     GeometryBuilderPtr builder = new GeometryBuilder(db, DgnCategoryId(), Placement3d());
     GeometryStreamIO::Collection collection(stream.GetData(), stream.GetSize());
+    GeometryStreamIO::Reader reader(db);
+    size_t basicSymbCount = 0;
 
     for (auto const& egOp : collection)
         {
@@ -4846,7 +4848,7 @@ GeometryBuilderPtr GeometryBuilder::CreateGeometryPart(GeometryStreamCR stream, 
                 break; // Already have header....
 
             case GeometryStreamIO::OpCode::SubGraphicRange:
-                break; // A part must produce a single sub-graphic...
+                break; // A part must produce a single graphic...
 
             case GeometryStreamIO::OpCode::GeometryPartInstance:
                 return nullptr; // Nested parts aren't supported...
@@ -4855,6 +4857,14 @@ GeometryBuilderPtr GeometryBuilder::CreateGeometryPart(GeometryStreamCR stream, 
                 {
                 if (ignoreSymbology)
                     break;
+
+                basicSymbCount++;
+
+                if (1 == basicSymbCount && nullptr != params)
+                    {
+                    reader.Get(egOp, *params);
+                    break; // Initial symbology should not be baked into GeometryPart...
+                    }
 
                 // Can't change sub-category in GeometryPart's GeometryStream, only preserve sub-category appearance overrides.
                 auto ppfb = flatbuffers::GetRoot<FB::BasicSymbology>(egOp.m_data);
@@ -4883,6 +4893,12 @@ GeometryBuilderPtr GeometryBuilder::CreateGeometryPart(GeometryStreamCR stream, 
                 {
                 if (ignoreSymbology)
                     break;
+
+                if (1 == basicSymbCount && nullptr != params)
+                    {
+                    reader.Get(egOp, *params);
+                    break; // Initial symbology should not be baked into GeometryPart...
+                    }
 
                 builder->m_writer.Append(egOp); // Append raw data...
                 break;
