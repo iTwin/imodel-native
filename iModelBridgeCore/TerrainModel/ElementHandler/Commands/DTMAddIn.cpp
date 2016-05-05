@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/Commands/DTMAddIn.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "stdafx.h"
@@ -82,7 +82,7 @@ void AddIn::AnnotateContours (WCharCP unparsed)
     {
     if (!WString::IsNullOrEmpty (unparsed))
         {
-        ElementHandle dtm = FindDTMHelper::Find (unparsed, ACTIVEMODEL, !INCLUDE_REFS);
+        ElementHandle dtm = FindDTMHelper::Find (unparsed, ACTIVEMODEL, INCLUDE_REFS);
         if (dtm.IsValid ())
             {
             StartMainAnnotateContoursCommand (dtm, CMD_TERRAINMODEL_LABEL_CONTOURS);
@@ -97,7 +97,7 @@ void AddIn::AnnotateSpots (WCharCP unparsed)
     EngageWordlib ();
     if (!WString::IsNullOrEmpty (unparsed))
         {
-        ElementHandle dtm = FindDTMHelper::Find (unparsed, ACTIVEMODEL, !INCLUDE_REFS);
+        ElementHandle dtm = FindDTMHelper::Find (unparsed, ACTIVEMODEL, INCLUDE_REFS);
         if (dtm.IsValid ())
             {
             StartMainAnnotateSpotsCommand (dtm, CMD_TERRAINMODEL_LABEL_SPOTS);
