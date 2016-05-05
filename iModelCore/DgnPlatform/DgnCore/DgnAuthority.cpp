@@ -505,13 +505,13 @@ DgnCode DgnTexture::CreateTextureCode(Utf8StringCR name)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode ModelAuthority::CreateModelCode(Utf8StringCR modelName)
+DgnCode ModelAuthority::CreateModelCode(Utf8StringCR modelName, Utf8StringCR nameSpace)
     {
     // ###TODO_CODES: Silently replace illegal characters?
     Utf8String trimmed(modelName);
     trimmed.Trim();
 
-    return SystemAuthority::CreateCode(SystemAuthority::Model, trimmed);
+    return SystemAuthority::CreateCode(SystemAuthority::Model, trimmed, nameSpace);
     }
 
 /*---------------------------------------------------------------------------------**//**

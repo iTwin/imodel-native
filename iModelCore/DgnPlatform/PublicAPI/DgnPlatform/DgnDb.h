@@ -25,7 +25,7 @@ enum DgnDbSchemaValues : int32_t
     DGNDB_CURRENT_VERSION_Major = 6,
     DGNDB_CURRENT_VERSION_Minor = 1,
     DGNDB_CURRENT_VERSION_Sub1  = 0,
-    DGNDB_CURRENT_VERSION_Sub2  = 0,
+    DGNDB_CURRENT_VERSION_Sub2  = 1,
 //__PUBLISH_SECTION_END__
     //------------------------------
     // Schema change history
@@ -33,6 +33,7 @@ enum DgnDbSchemaValues : int32_t
     // 6.0.1.1 - Remove ON DELETE RESTRICT, ON UPDATE RESTRICT
     // 6.0.1.2 - Introduce MinimumSharedColumnCount for dgn_GeometricElement2d=8 and dgn_GeometricElement3d=16
     // 6.1.0.0 - BIS clean-up activities (move classes to Markup domain, shared colums for dgn:Model, dgn:GeometryPart --> element, etc.)
+    // 6.1.0.1 - GroupInformation-related changes, mark completion of this round of BIS clean-up
 //__PUBLISH_SECTION_START__
 
     DGNDB_SUPPORTED_VERSION_Major = 6,  // oldest version of the schema supported by the current api
@@ -147,6 +148,7 @@ protected:
     BeSQLite::DbResult CreateDgnDbTables();
     BeSQLite::DbResult CreateAuthorities();
     BeSQLite::DbResult CreateDictionaryModel();
+    BeSQLite::DbResult CreateGroupInformationModel();
     BeSQLite::DbResult InitializeDgnDb(CreateDgnDbParams const& params);
     BeSQLite::DbResult SaveDgnDbSchemaVersion(DgnVersion version=DgnVersion(DGNDB_CURRENT_VERSION_Major,DGNDB_CURRENT_VERSION_Minor,DGNDB_CURRENT_VERSION_Sub1,DGNDB_CURRENT_VERSION_Sub2));
     BeSQLite::DbResult DoOpenDgnDb(BeFileNameCR projectNameIn, OpenParams const&);

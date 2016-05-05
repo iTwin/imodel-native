@@ -287,6 +287,12 @@
         </ECCustomAttributes>
         <BaseClass>DefinitionModel</BaseClass>
     </ECEntityClass>
+    <ECEntityClass typeName="GroupInformationModel">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00"/>
+        </ECCustomAttributes>
+        <BaseClass>InformationModel</BaseClass>
+    </ECEntityClass>
     <ECEntityClass typeName="WebMercatorModel">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
