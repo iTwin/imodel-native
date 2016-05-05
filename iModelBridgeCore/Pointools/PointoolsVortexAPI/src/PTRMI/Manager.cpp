@@ -81,11 +81,13 @@ Status Manager::initialize(void)
 		return PTRMI::Status(PTRMI::Status::Status_Error_Memory_Allocation);
 	}
 															// Create pipe protocol manager
+#ifdef NEEDS_WORK_VORTEX_DGNDB_SERVER
 	setPipeProtocolManager(new PipeProtocolManager());
 	if(getPipeProtocolManagerPtr() == NULL)
 	{
 		return PTRMI::Status(PTRMI::Status::Status_Error_Memory_Allocation);
 	}
+#endif
 															// Create message dispatcher
 	setDispatcher(new Dispatcher());
 	if(getDispatcherPtr() == NULL)
@@ -562,7 +564,6 @@ PTRMI::Status Manager::discardObject(const GUID *serverInterfaceGUID)
 
 PTRMI::Status Manager::setSendExternalCallFunction(PipeManagerExt::ExternalCallFunction function)
 {
-	PipeManagerExt *pipeManagerExt;
 /*
 	MutexScope mutexScope(managerMutex, MANAGER_LOCK_TIMEOUT);
 	if(mutexScope.isLocked() == false)
@@ -570,6 +571,9 @@ PTRMI::Status Manager::setSendExternalCallFunction(PipeManagerExt::ExternalCallF
 		return Status(Status::Status_Error_Failed_To_Lock_Manager);
 	}
 */
+
+#ifdef NEEDS_WORK_VORTEX_DGNDB_SERVER
+	PipeManagerExt *pipeManagerExt;
 	if((pipeManagerExt = dynamic_cast<PTRMI::PipeManagerExt *>(getManager().getPipeProtocolManager().getPipeManager(std::wstring(L"Ext")))) == NULL)
 	{
 		return Status(Status::Status_Error_Failed_To_Find_Ext_Manager);
@@ -578,12 +582,15 @@ PTRMI::Status Manager::setSendExternalCallFunction(PipeManagerExt::ExternalCallF
 	pipeManagerExt->setSendExternalCallFunction(function);
 
 	return Status();
+#else
+    Status status;
+    return status;
+#endif
 }
 
 
 PipeManagerExt::ExternalCallFunction Manager::getSendExternalCallFunction(void)
 {
-	PipeManagerExt *pipeManagerExt;
 /*
 	MutexScope mutexScope(managerMutex, MANAGER_LOCK_TIMEOUT);
 	if(mutexScope.isLocked() == false)
@@ -592,18 +599,23 @@ PipeManagerExt::ExternalCallFunction Manager::getSendExternalCallFunction(void)
 		return NULL;
 	}
 */
+
+#ifdef NEEDS_WORK_VORTEX_DGNDB
+	PipeManagerExt *pipeManagerExt;
 	if((pipeManagerExt = dynamic_cast<PTRMI::PipeManagerExt *>(getManager().getPipeProtocolManager().getPipeManager(std::wstring(L"Ext")))) == NULL)
 	{
 		return NULL;
 	}
 
 	return pipeManagerExt->getSendExternalCallFunction();
+#else
+    return nullptr;
+#endif
 }
 
 
 PTRMI::Status Manager::setReleaseExternalBufferFunction(PipeManagerExt::ExternalReleaseBufferFunction function)
 {
-	PipeManagerExt *pipeManagerExt;
 /*
 	MutexScope mutexScope(managerMutex, MANAGER_LOCK_TIMEOUT);
 	if(mutexScope.isLocked() == false)
@@ -611,6 +623,9 @@ PTRMI::Status Manager::setReleaseExternalBufferFunction(PipeManagerExt::External
 		return Status(Status::Status_Error_Failed_To_Lock_Manager);
 	}
 */
+
+#ifdef NEEDS_WORK_VORTEX_DGNDB_SERVER
+	PipeManagerExt *pipeManagerExt;
 	if((pipeManagerExt = dynamic_cast<PTRMI::PipeManagerExt *>(getManager().getPipeProtocolManager().getPipeManager(std::wstring(L"Ext")))) == NULL)
 	{
 		return Status(Status::Status_Error_Failed_To_Find_Ext_Manager);
@@ -619,12 +634,15 @@ PTRMI::Status Manager::setReleaseExternalBufferFunction(PipeManagerExt::External
 	pipeManagerExt->setReleaseExternalBufferFunction(function);
 
 	return Status();
+#else
+    Status status;
+    return status;
+#endif
 }
 
 
 PipeManagerExt::ExternalReleaseBufferFunction Manager::getReleaseExternalBufferFunction(void)
 {
-	PipeManagerExt *pipeManagerExt;
 /*
 	MutexScope mutexScope(managerMutex, MANAGER_LOCK_TIMEOUT);
 	if(mutexScope.isLocked() == false)
@@ -633,17 +651,24 @@ PipeManagerExt::ExternalReleaseBufferFunction Manager::getReleaseExternalBufferF
 		return NULL;
 	}
 */
+
+#ifdef NEEDS_WORK_VORTEX_DGNDB_SERVER
+    PipeManagerExt *pipeManagerExt;
 	if((pipeManagerExt = dynamic_cast<PTRMI::PipeManagerExt *>(getManager().getPipeProtocolManager().getPipeManager(std::wstring(L"Ext")))) == NULL)
 	{
 		return NULL;
 	}
 
 	return pipeManagerExt->getReleaseExternalBufferFunction();
+#else
+    return nullptr;
+#endif
 }
 
 
 PTRMI::Status Manager::receiveExternalCall(void *receive, unsigned int receiveSize, void **send, unsigned int *sendSize, PTRMI::GUID *clientManager)
 {
+#ifdef NEEDS_WORK_VORTEX_DGNDB_SERVER
 	PipeManagerExt *pipeManagerExt;
 
 	if((pipeManagerExt = dynamic_cast<PTRMI::PipeManagerExt *>(getPipeProtocolManager().getPipeManager(std::wstring(L"Ext")))) == NULL)
@@ -652,12 +677,17 @@ PTRMI::Status Manager::receiveExternalCall(void *receive, unsigned int receiveSi
 	}
 
 	return pipeManagerExt->receiveExternalCall(receive, receiveSize, send, sendSize, clientManager);
+#else
+    Status status;
+    return status;
+#endif
 }
 
 
 
 PTRMI::Status Manager::receiveExternalCallCB(void *receive, unsigned int receiveSize, PTRMI::GUID *clientManager, PipeManagerExt::ExternalProcessRequestCallback externalProcessRequestCallback)
 {
+#ifdef NEEDS_WORK_VORTEX_DGNDB_SERVER
 	PipeManagerExt *pipeManagerExt;
 
 	if((pipeManagerExt = dynamic_cast<PTRMI::PipeManagerExt *>(getPipeProtocolManager().getPipeManager(std::wstring(L"Ext")))) == NULL)
@@ -666,6 +696,10 @@ PTRMI::Status Manager::receiveExternalCallCB(void *receive, unsigned int receive
 	}
 
 	return pipeManagerExt->receiveExternalCallCB(receive, receiveSize, clientManager, externalProcessRequestCallback);
+#else
+    Status status;
+    return status;
+#endif
 }
 
 

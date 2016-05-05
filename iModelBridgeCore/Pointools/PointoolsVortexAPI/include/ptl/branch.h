@@ -5,12 +5,12 @@
 
 
 #ifdef PTL_EXPORTS
-#define PTL_API __declspec(dllexport)
+#define PTL_API EXPORT_ATTRIBUTE
 #else
 	#ifdef POINTOOLS_API_INCLUDE
 		#define PTL_API 
 	#else
-		#define PTL_API __declspec(dllimport)
+		#define PTL_API IMPORT_ATTRIBUTE
 	#endif
 #endif
 

@@ -210,18 +210,21 @@ public:
 
 		return m_transform; 
 	};
+
+#if defined(NEEDS_WORK_VORTEX_DGNDB)
 	void getTransformMatrix(matrix<4,4,T> &m) const
 	{
 		m = matrix<4,4,T>::identity();
 
-		for (i=0; i<3; i++)
-			for (j=0; j<3; j++)
+		for (uint32_t i=0; i<3; i++)
+			for (uint32_t j=0; j<3; j++)
 				mat(i,j) = m(i,j);
 
 		mat(3,0) = m_base.x;
 		mat(3,1) = m_base.y;
 		mat(3,2) = m_base.z;
 	}
+#endif
 
 	/* converting 2D plane coords into 3D coords						*/ 
 	void to3D(const vec2<T> &p, VectorType &t) const

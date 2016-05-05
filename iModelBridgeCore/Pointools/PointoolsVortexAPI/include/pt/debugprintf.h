@@ -24,7 +24,7 @@
 namespace pt {
 
 /**
- @fn void __cdecl debugPrintf(const char *fmt ...)
+ @fn void CDECL_ATTRIBUTE debugPrintf(const char *fmt ...)
  
   Prints a string from arguments of the style of printf.
   If _DEBUG is not defined, does nothing.  On Windows, the
@@ -37,7 +37,7 @@ namespace pt {
     // This function is inlined so that it can be turned off depending
     // on the linked program's _DEBUG setting (not the _DEBUG setting
     // the library was compiled against).
-    inline void __cdecl debugPrintf(const char* fmt ...) {
+    inline void CDECL_ATTRIBUTE debugPrintf(const char* fmt ...) {
 
         va_list argList;
         va_start(argList, fmt);
@@ -65,7 +65,7 @@ namespace pt {
 #else
 
     // The compiler should optimize away this empty call
-    inline void __cdecl debugPrintf(const char* /*fmt*/ ...) {};
+    inline void CDECL_ATTRIBUTE debugPrintf(const char* /*fmt*/ ...) {};
 
 #endif
 

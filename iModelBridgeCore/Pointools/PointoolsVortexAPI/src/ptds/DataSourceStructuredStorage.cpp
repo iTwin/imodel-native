@@ -1,7 +1,8 @@
 #include "PointoolsVortexAPIInternal.h"
-#include <iostream>
 
 #include <ptds/DataSourceStructuredStorage.h>
+
+#ifdef NEEDS_WORK_VORTEX_DGNDB
 #include <PTRMI/Name.h>
 
 namespace ptds
@@ -490,3 +491,4 @@ DataSource::DataSourceForm DataSourceStructuredStorage::getDataSourceForm(void)
 
 } // End ptds namespace
 
+#endif

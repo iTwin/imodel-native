@@ -31,8 +31,8 @@ class TraceOutput : public Output
 public:
 	TraceOutput() { _level = 0; };
 	virtual ~TraceOutput() { _level = 0; };
-	void __cdecl outputf(const char* fmt ...) const;
-	void __cdecl outputLinef(const char* fmt ...) const;
+	void CDECL_ATTRIBUTE outputf(const char* fmt ...) const;
+	void CDECL_ATTRIBUTE outputLinef(const char* fmt ...) const;
 
 protected:
 	int _level;
@@ -1093,7 +1093,7 @@ void Project3D::diagnostic(Output*output, bool recursive) const
 // Output
 //-----------------------------------------------------------------------------
 
-void __cdecl Output::outputLinef(const char* fmt ...) const
+void CDECL_ATTRIBUTE Output::outputLinef(const char* fmt ...) const
 {
 	tab();
 	va_list arg_list;
@@ -1101,7 +1101,7 @@ void __cdecl Output::outputLinef(const char* fmt ...) const
 	std::cout << (format(fmt, arg_list)).c_str() << std::endl;
 	va_end(arg_list);			
 }
-void __cdecl Output::outputf(const char* fmt ...) const
+void CDECL_ATTRIBUTE Output::outputf(const char* fmt ...) const
 {
 	tab();
 
@@ -1115,7 +1115,7 @@ void Output::tab() const
 	for (int i=0; i<_level; i++) std::cout << "\t";
 }
 
-void __cdecl TraceOutput::outputLinef(const char* fmt ...) const
+void CDECL_ATTRIBUTE TraceOutput::outputLinef(const char* fmt ...) const
 {
 	tab();
 	va_list arg_list;
@@ -1124,7 +1124,7 @@ void __cdecl TraceOutput::outputLinef(const char* fmt ...) const
 	
 	va_end(arg_list);			
 }
-void __cdecl TraceOutput::outputf(const char* fmt ...) const
+void CDECL_ATTRIBUTE TraceOutput::outputf(const char* fmt ...) const
 {
 	tab();
 

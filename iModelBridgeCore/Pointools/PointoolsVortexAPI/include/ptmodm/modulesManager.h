@@ -14,9 +14,9 @@
 #include "module.h"
 
 #ifdef MODM_EXPORTS
-#define MODM_API __declspec(dllexport)
+#define MODM_API EXPORT_ATTRIBUTE
 #else
-#define MODM_API __declspec(dllimport)
+#define MODM_API IMPORT_ATTRIBUTE
 #endif
 
 namespace pt

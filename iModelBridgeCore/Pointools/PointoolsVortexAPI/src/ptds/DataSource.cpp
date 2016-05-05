@@ -38,9 +38,12 @@ DataSource::DataSourceType DataSource::getPathDataSourceType(const FilePath *pat
 															// If path is a standard file path, return type
 	if(DataSourceFile::isValidPath(path))
 		return DataSourceFile::getDataSourceType();
+
+#ifdef NEEDS_WORK_VORTEX_DGNDB
 															// If path is a structured storage (external), return type
 	if(DataSourceStructuredStorage::isValidPath(path))
 		return DataSourceStructuredStorage::getDataSourceType();
+#endif
 															// Path type not recognized so return NULL type
 	return DataSourceNull::getDataSourceType();
 }

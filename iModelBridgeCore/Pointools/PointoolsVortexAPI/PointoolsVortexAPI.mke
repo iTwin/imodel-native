@@ -21,7 +21,7 @@ CompileOptionsMki               = $(SrcRoot)Pointools/PointoolsVortexAPI/mki/Poi
 #   Macros
 #--------------------------------------------------------------------------------------
 appSrc              = $(_MakeFilePath)
-MultiCompileDepends = $(_MakeFileSpec) $(appSrc)Include/PointoolsVortexAPIInternal.h
+MultiCompileDepends = $(_MakeFileSpec) $(appSrc)src/PointoolsVortexAPIInternal.h
 
 always:
     !~@mkdir $(o)    
@@ -48,10 +48,13 @@ $(BuildContextSrc)pshader.frag.cpp: $(PointoolsVortexAPIShaderSrc)pshader.frag
 dirToSearch=$(PointoolsVortexAPIInclude)
 %include cincapnd.mki
 
+#&&MM to fix.
+GccCommonCompOpts + -fpermissive
+
 #----------------------------------------------------------------------
 #   Pre-compiled header
 #----------------------------------------------------------------------
-PchCompiland        = $(basedir)/src/PointoolsVortexAPIInternal.cpp
+PchCompiland        = $(basedir)src/PointoolsVortexAPIInternal.cpp
 PchOutputDir        = $(o)
 PchExtraOptions     = -Zm160
 PchExplicitDepends  = $(MultiCompileDepends)
@@ -59,7 +62,7 @@ PchExplicitDepends  = $(MultiCompileDepends)
 %if defined (winNT) && defined (BUILD_TOOLSET) 
     %if $(BUILD_TOOLSET) == "GCC"
         # Avoid internal compiler error in GCC using windows ndk toolchain
-        GCC_NO_PRE_COMPILED_HEADER = 1
+        #GCC_NO_PRE_COMPILED_HEADER = 1
     %endif
 %endif
 %include $(SharedMki)PreCompileHeader.mki
@@ -68,8 +71,7 @@ CCPchOpts = $(UsePrecompiledHeaderOptions)
 #CCPchOpts + -showIncludes
 CPchOpts  = $(UsePrecompiledHeaderOptions)
 
-#&&MM to fix.
-GccCommonCompOpts + -fpermissive
+
 
 #DisableMultiCompile=1
 
@@ -85,13 +87,18 @@ $(o)PointoolsBentleyLicense$(oext)       : $(basedir)src/ptlic/PointoolsBentleyL
 $(o)PointoolsBentleyLicenseAPI$(oext)    : $(basedir)src/ptlic/PointoolsBentleyLicenseAPI.cpp                    $(basedir)include/ptlic/PointoolsBentleyLicenseAPI.h             ${MultiCompileDepends}
 %endif
 
+
 $(o)OBBox$(oext)                         : $(basedir)src/pt/OBBox.cpp                                            $(basedir)include/pt/OBBox.h                                     ${MultiCompileDepends}
+
+%if 1
 
 $(o)DebugAssert$(oext)                   : $(basedir)src/pt/DebugAssert.cpp                                      $(basedir)include/pt/DebugAssert.h                               ${MultiCompileDepends}
 
 $(o)System$(oext)                        : $(basedir)src/pt/System.cpp                                           $(basedir)include/pt/System.h                                    ${MultiCompileDepends}
 
 $(o)FilePath$(oext)                      : $(basedir)src/ptds/FilePath.cpp                                       $(basedir)include/ptds/FilePath.h                                ${MultiCompileDepends}
+
+
 
 $(o)PointoolsAPI_imaging$(oext)          : $(basedir)src/ptapi/PointoolsAPI_imaging.cpp                                                                                            ${MultiCompileDepends}
 
@@ -131,16 +138,11 @@ $(o)PointoolsAPI_shader$(oext)           : $(basedir)src/ptapi/PointoolsAPI_shad
 
 $(o)datatreeIO$(oext)                    : $(basedir)src/pt/datatreeIO.cpp                                       $(basedir)include/pt/datatreeIO.h                                ${MultiCompileDepends}
 
-
-
-
 $(o)ptstring$(oext)                      : $(basedir)src/pt/ptstring.cpp                                         $(basedir)include/pt/ptstring.h                                  ${MultiCompileDepends}
-
 
 $(o)PointoolsAPI_query$(oext)            : $(basedir)src/ptapi/PointoolsAPI_query.cpp                                                                                              ${MultiCompileDepends}
 
 $(o)renderRGBEffect$(oext)               : $(basedir)src/ptengine/renderRGBEffect.cpp                            $(basedir)include/ptengine/renderRGBEffect.h                     ${MultiCompileDepends}
-
 
 $(o)IClashObjectManager$(oext)           : $(basedir)src/vortexobjects/IClashObjectManager.cpp                   $(basedir)include/vortexobjects/IClashObjectManager.h            ${MultiCompileDepends}
 
@@ -372,6 +374,8 @@ $(o)visibilityEngine$(oext)              : $(basedir)src/ptengine/visibilityEngi
 
 $(o)glFrustum$(oext)                     : $(basedir)src/ptgl/glFrustum.cpp                                      $(basedir)include/ptgl/glFrustum.h                               ${MultiCompileDepends}
 
+%endif
+
 %if defined(HAVE_OPENGL)
 $(o)renderClipEffect$(oext)              : $(basedir)src/ptengine/renderClipEffect.cpp                           $(basedir)include/ptengine/renderClipEffect.h                    ${MultiCompileDepends}
                                                                                                                   
@@ -431,11 +435,8 @@ $(o)renderIntensityEffect$(oext)         : $(basedir)src/ptengine/renderIntensit
 
 %endif
 
-#%if defined(NEEDS_WORK_VORTEX_DGNDB)
 $(o)Status$(oext)                        : $(basedir)src/PTRMI/Status.cpp                                        $(basedir)include/PTRMI/Status.h                                 ${MultiCompileDepends}
                                                                                                                   
-$(o)PipeProtocolManager$(oext)           : $(basedir)src/PTRMI/PipeProtocolManager.cpp                           $(basedir)include/PTRMI/PipeProtocolManager.h                    ${MultiCompileDepends}
-
 $(o)URL$(oext)                           : $(basedir)src/PTRMI/URL.cpp                                           $(basedir)include/PTRMI/URL.h                                    ${MultiCompileDepends}
 
 $(o)ServerInterface$(oext)               : $(basedir)src/PTRMI/ServerInterface.cpp                               $(basedir)include/PTRMI/ServerInterface.h                        ${MultiCompileDepends}
@@ -452,9 +453,15 @@ $(o)ClientServerInterface$(oext)         : $(basedir)src/PTRMI/ClientServerInter
 
 $(o)PipeExt$(oext)                       : $(basedir)src/PTRMI/PipeExt.cpp                                       $(basedir)include/PTRMI/PipeExt.h                                ${MultiCompileDepends}
                                                                                                                   
+%if defined(NEEDS_WORK_VORTEX_DGNDB_SERVER)
+
+$(o)PipeProtocolManager$(oext)           : $(basedir)src/PTRMI/PipeProtocolManager.cpp                           $(basedir)include/PTRMI/PipeProtocolManager.h                    ${MultiCompileDepends}
+
 $(o)PipeManagerTCP$(oext)                : $(basedir)src/PTRMI/PipeManagerTCP.cpp                                $(basedir)include/PTRMI/PipeManagerTCP.h                         ${MultiCompileDepends}
 
 $(o)PipeTCP$(oext)                       : $(basedir)src/PTRMI/PipeTCP.cpp                                       $(basedir)include/PTRMI/PipeTCP.h                                ${MultiCompileDepends}
+
+%endif
                                                                                                                   
 $(o)Manager$(oext)                       : $(basedir)src/PTRMI/Manager.cpp                                       $(basedir)include/PTRMI/Manager.h                                ${MultiCompileDepends}
                                                                                                                   
@@ -489,7 +496,6 @@ $(o)ManagerServerInterface$(oext)        : $(basedir)src/PTRMI/ManagerServerInte
 $(o)DispatcherPTRMI$(oext)               : $(basedir)src/PTRMI/DispatcherPTRMI.cpp                                                                                                 ${MultiCompileDepends}
 
 $(o)ClientInterfaceExtDataBentley$(oext) : $(basedir)src/PTRMI/ClientInterfaceExtDataBentley.cpp                 $(basedir)include/PTRMI/ClientInterfaceExtDataBentley.h          ${MultiCompileDepends}
-#%endif
 
 #
 # Compile the above uniform set of dependency blocks in a single invocation of the Visual C compiler.

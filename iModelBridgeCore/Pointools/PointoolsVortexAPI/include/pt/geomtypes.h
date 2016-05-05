@@ -731,13 +731,15 @@ struct Ray
 	{	
 		t = direction.dot(pnt - origin);
 	}
+#if defined(NEEDS_WORK_VORTEX_DGNDB)
+    Invalid use of members in static function
 	template <typename CastTo>
 	static void cast(Ray<CastTo> &ray)
 	{
 		direction.cast(ray.direction);
 		origin.cast(ray.origin);
 	}
-
+#endif
 	vec3<Real> origin;
 	vec3<Real> direction;
 };
@@ -748,6 +750,8 @@ struct Segment
 		: a(p0), b(p1)	{}
 	Segment() {};
 
+#if defined(NEEDS_WORK_VORTEX_DGNDB)
+p0 not defined in scope
 	Ray<Real> ray() 
 	{ 
 		vec3<Real> dir(p0,p1);
@@ -755,6 +759,7 @@ struct Segment
 
 		return Ray<Real>(p0, dir); 
 	}	
+#endif
 	vec3<Real> pointAt(Real t) const
 	{
 		vec3<Real> v(a,b);
@@ -762,6 +767,8 @@ struct Segment
 
 		return a + v * t;
 	}
+#if defined(NEEDS_WORK_VORTEX_DGNDB)
+origin not defined in scope
 	bool perpDist2Pnt(const vec3<Real> &pnt, Real &dist, Real &t) const
 	{	
 		double b = perpPntProjection(pnt);
@@ -787,6 +794,7 @@ struct Segment
 		}
 		return false;	
 	}
+#endif
 	vec3<Real> a;
 	vec3<Real> b;
 };

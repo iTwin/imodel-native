@@ -19,7 +19,7 @@ template<typename Obj> class RemotePtr
 
 public:
 
-	typedef typename ObjClientInfo<typename Obj>::I	ObjectClientInterface;
+	typedef typename ObjClientInfo<Obj>::I	ObjectClientInterface;
 
 
 protected:

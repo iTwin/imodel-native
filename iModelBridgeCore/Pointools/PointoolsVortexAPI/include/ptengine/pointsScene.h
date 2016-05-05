@@ -102,7 +102,7 @@ public:
 	void addFileObserver( FileObserver *obs );
 	void remFileObserver( FileObserver *obs );
 
-	bool PointsScene::getAllCloudRoots(std::vector<pcloud::Node *> &result, bool visibleOnly);
+	bool getAllCloudRoots(std::vector<pcloud::Node *> &result, bool visibleOnly);
 
 
 private:

@@ -599,7 +599,6 @@ PTbool PTAPI ptInitialize(const PTubyte* licenseData)
 	ftime_cmp.LowPart = ftime.dwLowDateTime;
 	ftime_cmp.HighPart = ftime.dwHighDateTime;
 
-	TimeStamp::initialize();
 	g_startTime.tick();
 
 	_failed = false;
@@ -1673,6 +1672,7 @@ void PTAPI ptGetClientServerSendRetries(PTuint *numRetries, PTuint *delayMillise
 
 PThandle ptOpenPODServer(const PTstr clientFilePath, const PTstr serverFilePath, PTRMI::GUID *fileGUID)
 {
+#ifdef NEEDS_WORK_VORTEX_DGNDB
 	ptds::FilePath		fp;
 	ptds::DataSource *	dataSource;
 
@@ -1699,6 +1699,9 @@ PThandle ptOpenPODServer(const PTstr clientFilePath, const PTstr serverFilePath,
 
 															// Open File DataSource
 	return ptOpenPODFromDataSource(dataSource, serverFilePath);
+#else
+    return PT_NULL;
+#endif
 }
 
 
@@ -1710,6 +1713,7 @@ PThandle ptOpenPODServer(const PTstr clientFilePath, const PTstr serverFilePath,
 //-------------------------------------------------------------------------------
 PThandle PTAPI ptOpenPODStructuredStorageStream(const PTstr filepath, PTvoid *initStream)
 {
+#ifdef NEEDS_WORK_VORTEX_DGNDB
 	ptds::DataSourcePtr dataSource;
 
 	ptds::FilePath fp(filepath);
@@ -1721,6 +1725,9 @@ PThandle PTAPI ptOpenPODStructuredStorageStream(const PTstr filepath, PTvoid *in
 		return PT_NULL;
 															// Open File DataSource
 	return ptOpenPODFromDataSource(dataSource, filepath);
+#else
+    return PT_NULL;
+#endif
 }
 
 //-----------------------------------------------------------------------------

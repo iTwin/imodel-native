@@ -8,12 +8,12 @@
 #define _COMMANDPIPE_PROGRESS
 
 #ifdef CMDPIPE_EXPORTS
-#define CMDPIPE_API __declspec(dllexport)
+#define CMDPIPE_API EXPORT_ATTRIBUTE
 #else
 	#ifdef POINTOOLS_API_INCLUDE
 		#define CMDPIPE_API 
 	#else
-		#define CMDPIPE_API __declspec(dllimport)
+		#define CMDPIPE_API IMPORT_ATTRIBUTE
 	#endif
 #endif
 

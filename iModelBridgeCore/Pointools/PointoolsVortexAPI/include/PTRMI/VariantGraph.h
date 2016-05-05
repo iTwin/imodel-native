@@ -135,6 +135,8 @@ template<typename T, typename VT> class VariantT : public Variant<VT>
 
 public:
 
+    typedef Variant<VT>         Base;
+
 	typedef T					Type;
 
 	typedef VariantT<T, VT>		thisType;
@@ -146,8 +148,8 @@ protected:
 
 protected:
 
-	static VariantType			type;
-	static VariantTypeName		typeName;
+	static typename Base::VariantType			type;
+	static typename Base::VariantTypeName		typeName;
 
 public:
 								VariantT	(void)							{}
@@ -156,13 +158,13 @@ public:
  	void						set			(const Type &v)					{value = v;}
  	Type					&	get			(void)							{return value;} const
 
-	static void					setType		(VariantType initType)			{type = initType;}
-	VariantType				&	getType		(void) const					{return type;}
+	static void					setType		(typename Base::VariantType initType)			{type = initType;}
+    typename Base::VariantType&	getType		(void) const					{return type;}
 
-	static void					setTypeName	(const VariantTypeName &initTypeName)	{typeName = initTypeName;}
-	const VariantTypeName	&	getTypeName	(void)							{return typeName;}
+	static void					setTypeName	(const Base::VariantTypeName &initTypeName)	{typeName = initTypeName;}
+	const Base::VariantTypeName& getTypeName	(void)						{return typeName;}
 
-	static VariantType		&	getTypeS	(void)							{return type;}
+	static typename Base::VariantType& getTypeS	(void)						{return type;}
 
  	void						read		(DataBuffer &buffer)			{buffer >> value;}
  	void						write		(DataBuffer &buffer) const		{buffer << value;}
@@ -233,7 +235,7 @@ public:
 
 	bool copy(Variant<VT> *variant)
 	{
-		return copyTyped<thisType>(variant);
+		return this->copyTyped<thisType>(variant);
 	}
 };
 
@@ -250,7 +252,7 @@ public:
 
 	bool copy(Variant<VT> *variant)
 	{
-		return copyTyped<thisType>(variant);
+		return this->copyTyped<thisType>(variant);
 	}
 
 };
@@ -267,7 +269,7 @@ public:
 
 	bool copy(Variant<VT> *variant)
 	{
-		return copyTyped<thisType>(variant);
+		return this->copyTyped<thisType>(variant);
 	}
 
 };
@@ -284,7 +286,7 @@ public:
 
 	bool copy(Variant<VT> *variant)
 	{
-		return copyTyped<thisType>(variant);
+		return this->copyTyped<thisType>(variant);
 	}
 
 };
@@ -303,7 +305,7 @@ public:
 
 	bool copy(Variant<VT> *variant)
 	{
-		return copyTyped<thisType>(variant);
+		return this->copyTyped<thisType>(variant);
 	}
 
 };
@@ -320,7 +322,7 @@ public:
 
 	bool copy(Variant<VT> *variant)
 	{
-		return copyTyped<thisType>(variant);
+		return this->copyTyped<thisType>(variant);
 	}
 
 };
@@ -338,7 +340,7 @@ public:
 
 	bool copy(Variant<VT> *variant)
 	{
-		return copyTyped<thisType>(variant);
+		return this->copyTyped<thisType>(variant);
 	}
 
 };
@@ -355,7 +357,7 @@ public:
 
 	bool copy(Variant<VT> *variant)
 	{
-		return copyTyped<thisType>(variant);
+		return this->copyTyped<thisType>(variant);
 	}
 
 };
@@ -374,7 +376,7 @@ public:
 
 	bool copy(Variant<VT> *variant)
 	{
-		return copyTyped<thisType>(variant);
+		return this->copyTyped<thisType>(variant);
 	}
 
 };
@@ -392,7 +394,7 @@ public:
 
 	bool copy(Variant<VT> *variant)
 	{
-		return copyTyped<thisType>(variant);
+		return this->copyTyped<thisType>(variant);
 	}
 
 };
@@ -410,12 +412,12 @@ public:
 
 	bool copy(Variant<VT> *variant)
 	{
-		return copyTyped<thisType>(variant);
+		return this->copyTyped<thisType>(variant);
 	}
 
 	void getString(std::wostringstream &string, unsigned int indent)
 	{
-		if(get())
+		if(this->get())
 		{
 			string << VARIANT_BOOL_TRUE;
 		}
@@ -442,7 +444,7 @@ public:
 			val = false;
 		}
 
-		set(val);
+        this->set(val);
 	}
 };
 
@@ -459,7 +461,7 @@ public:
 
 	bool copy(Variant<VT> *variant)
 	{
-		return copyTyped<thisType>(variant);
+		return this->copyTyped<thisType>(variant);
 	}
 
 	void getString(std::wostringstream &string, unsigned int indent)
@@ -506,7 +508,7 @@ public:
 	typedef	VT										VariantType;
 	typedef typename Variant<VT>::VariantTypeName	VariantTypeName;
 
-	typedef	PTRMI::Variant<VT> *(__cdecl *VariantMethodNew)(void);
+	typedef	PTRMI::Variant<VT> *(CDECL_ATTRIBUTE *VariantMethodNew)(void);
 
 protected:
 
@@ -890,7 +892,7 @@ inline bool PTRMI::VariantGraph<K, VT>::addVariantNameMeta(VT type, const Varian
 template<typename K, typename VT>
 inline VariantMeta<VT>	*PTRMI::VariantGraph<K, VT>::getVariantMeta(VariantTypeName &typeName)
 {
-	VariantTypeNameMetaMap::iterator it;
+    typename VariantTypeNameMetaMap::iterator it;
 
 	if((it = variantTypeNameMeta.find(typeName)) != variantTypeNameMeta.end())
 	{
@@ -903,7 +905,7 @@ inline VariantMeta<VT>	*PTRMI::VariantGraph<K, VT>::getVariantMeta(VariantTypeNa
 template<typename K, typename VT>
 inline VariantMeta<VT>	*PTRMI::VariantGraph<K, VT>::getVariantMeta(VT type)
 {
-	VariantTypeMetaMap::iterator it;
+	typename VariantTypeMetaMap::iterator it;
 
 	if((it = variantTypeMeta.find(type)) != variantTypeMeta.end())
 	{
@@ -968,7 +970,7 @@ inline PTRMI::VariantGraph<K, VT>::~VariantGraph(void)
 template<typename K, typename VT>
 inline bool PTRMI::VariantGraph<K, VT>::deleteAll(void)
 {
-	Iterator		it;
+	//Iterator		it;
 	Key				key;
 	Variant<VT> *	v;
 	bool			ret = true;
@@ -1107,7 +1109,7 @@ typedef VariantGraph<std::wstring, unsigned char>	StringVariantGraph;
 template<typename K, typename VT>
 inline typename PTRMI::VariantGraph<K, VT>::Group *PTRMI::VariantGraph<K, VT>::addLocation(KeyPath &keyPath)
 {
-	KeyPath::iterator	lastItem = keyPath.end();
+    typename KeyPath::iterator	lastItem = keyPath.end();
 	lastItem--;
 
 	return addGroup(keyPath, keyPath.begin(), lastItem);
@@ -1241,7 +1243,7 @@ inline typename PTRMI::VariantGraph<K, VT>::Group *PTRMI::VariantGraph<K, VT>::f
 template<typename K, typename VT>
 inline Variant<VT> *PTRMI::VariantGraph<K, VT>::find(Key &key) const
 {
-	KeyVariantMap::const_iterator	it;
+    typename KeyVariantMap::const_iterator	it;
 															// Look for given key at 'this' level
 	if((it = keyVariants.find(key)) != keyVariants.end())
 	{
@@ -1256,7 +1258,7 @@ template<typename K, typename VT>
 inline bool PTRMI::VariantGraph<K, VT>::remove(Key &key)
 {
 	Variant<VT>					*	v;
-	KeyVariantMap::iterator			it;
+    typename KeyVariantMap::iterator			it;
 	bool							ret = true;
 	Iterator						vit;
 															// Look for given key at 'this' level
@@ -1326,7 +1328,7 @@ inline void PTRMI::VariantGraph<K, VT>::read(DataBuffer &buffer)
 template<typename K, typename VT>
 inline bool PTRMI::VariantGraph<K, VT>::getKey(Variant<VT> *variant, Key &key) const
 {
-	KeyVariantMap::const_iterator		it;
+	typename KeyVariantMap::const_iterator		it;
 	//Variant<VT>						*	v;
 
 	for(it = keyVariants.begin(); it != keyVariants.end(); it++)
@@ -1530,7 +1532,7 @@ inline bool PTRMI::VariantGraph<K, VT>::readSymbol(std::wifstream &in, std::wstr
 
 
 template<typename K, typename VT>
-inline bool PTRMI::VariantGraph<K, VT>::readFile(const wchar_t *file, std::wistringstream *string = NULL)
+inline bool PTRMI::VariantGraph<K, VT>::readFile(const wchar_t *file, std::wistringstream *string)
 {
 	std::wifstream	in;
 	bool			ret;

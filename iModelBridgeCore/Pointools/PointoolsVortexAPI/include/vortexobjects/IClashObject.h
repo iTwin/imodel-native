@@ -31,7 +31,7 @@ namespace vortex
 	class PTVOBJECT_API IClashObject
 	{
 	public:
-		typedef PTvoid (__stdcall *generateClashTreeCB)(PTint pcentComplete);			
+		typedef PTvoid (STDCALL_ATTRIBUTE *generateClashTreeCB)(PTint pcentComplete);
 
 	protected:				
 		virtual PTres			_getClashTree(IClashTree*& clashTreeRet) = 0;		
