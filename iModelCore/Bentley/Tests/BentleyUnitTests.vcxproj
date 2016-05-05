@@ -38,12 +38,14 @@
     <ClCompile Include="Published\DateTimeTestDataset.cpp" />
     <ClCompile Include="Published\DateTime_DstAnalysis.cpp" />
     <ClCompile Include="Published\DateTime_Tests.cpp" />
+    <ClCompile Include="Published\Md5_Test.cpp" />
     <ClCompile Include="Published\OsEnvUnitTests.cpp" />
     <ClCompile Include="Published\printf_test.cpp" />
     <ClCompile Include="Published\printf_test2.cpp" />
     <ClCompile Include="Published\RefCounted_test.cpp" />
     <ClCompile Include="Published\scanf_test.cpp" />
     <ClCompile Include="Published\DateTimeTestHelpers.cpp" />
+    <ClCompile Include="Published\SHA1_Test.cpp" />
     <ClCompile Include="Published\shared_mutex.cpp" />
     <ClCompile Include="Published\Utf8String_test.cpp" />
     <ClCompile Include="Published\valueformat_test.cpp" />

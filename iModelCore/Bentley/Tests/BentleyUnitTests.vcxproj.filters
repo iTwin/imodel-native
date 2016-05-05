@@ -99,6 +99,12 @@
     <ClCompile Include="Published\VersionTests.cpp">
       <Filter>Published</Filter>
     </ClCompile>
+    <ClCompile Include="Published\Md5_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\SHA1_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="BentleyUnitTests.PartFile.xml" />
