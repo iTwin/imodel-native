@@ -289,7 +289,7 @@ void ComponentModelPerfTest::PlaceInstances(int ninstances, int boxCount, DPoint
             {
             DgnElementCPtr instance = cdef->MakeInstanceOfVariation(&status, *targetModel, *variation, nullptr);
 
-            PhysicalElementPtr pinst = instance->MakeCopy<PhysicalElement>();
+            auto pinst = instance->MakeCopy<GeometricElement3d>();
             Placement3d placement;
             placement.GetOriginR() = DPoint3d::From(-i,-i,-i);
             pinst->SetPlacement(placement);
