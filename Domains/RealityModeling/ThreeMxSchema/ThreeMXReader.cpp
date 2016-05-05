@@ -41,7 +41,7 @@ struct CtmContext
 };
 
 template<typename T> T getJsonValue(JsonValueCR pt);
-template<> double getJsonValue(JsonValueCR pt) {return pt.asDouble();}
+// UNUSED: template<> double getJsonValue(JsonValueCR pt) {return pt.asDouble();}
 template<> Utf8String getJsonValue(JsonValueCR pt) {return pt.asCString();}
 
 /*-----------------------------------------------------------------------------------**//**
