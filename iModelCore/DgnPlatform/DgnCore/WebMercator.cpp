@@ -98,11 +98,11 @@ struct TiledRaster : IRealityData<TiledRaster, BeSQLiteRealityDataStorage, HttpR
     };
 
 private:
-    Utf8String      m_url;
-    ByteStream      m_data;
-    DateTime        m_creationDate;
-    Utf8String      m_contentType;
-    RgbImageInfo    m_rasterInfo;
+    Utf8String  m_url;
+    ByteStream  m_data;
+    DateTime    m_creationDate;
+    Utf8String  m_contentType;
+    RgbImageInfo m_rasterInfo;
 
 private:
     static Utf8String SerializeRasterInfo(RgbImageInfo const&);
@@ -808,7 +808,8 @@ ProgressiveTask::Completion WebMercatorDisplay::_DoProgressive(ProgressiveContex
         RgbImageInfo expectedImageInfo;
         m_model._CreateUrl(url, expectedImageInfo, tileid);
         TiledRasterPtr realityData;
-        if (RealityDataCacheResult::Success == realityCache.Get<TiledRaster>(realityData, url.c_str(), *new TiledRaster::RequestOptions(expectedImageInfo)))
+        RefCountedPtr<TiledRaster::RequestOptions> opt = new TiledRaster::RequestOptions(expectedImageInfo);
+        if (RealityDataCacheResult::Success == realityCache.Get<TiledRaster>(realityData, url.c_str(), *opt))
             {
             BeAssert(realityData.IsValid());
             //  The image is available from the cache. Great! Draw it.
@@ -1126,10 +1127,12 @@ RealityDataCache& WebMercatorModel::GetRealityDataCache() const
     if (!m_realityDataCache.IsValid())
         {
         m_realityDataCache = RealityDataCache::Create(100);
+
         BeFileName storageFileName = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName();
-        storageFileName.AppendToPath(WString(m_properties.m_mapService.c_str(), true).c_str());
+        storageFileName.AppendToPath(BeFileName(GetName()));
+        storageFileName.AppendExtension(L"tilecache");
         m_realityDataCache->RegisterStorage(*BeSQLiteRealityDataStorage::Create(storageFileName));
-        m_realityDataCache->RegisterSource(*HttpRealityDataSource::Create(4));
+        m_realityDataCache->RegisterSource(*HttpRealityDataSource::Create(8));
         }
 
     return *m_realityDataCache;
