@@ -321,21 +321,10 @@ BentleyStatus Node::Read3MXB(MxStreamBuffer& in, SceneR scene)
     {
     BeAssert(!AreChildrenValid());
 
-    auto stat = DoRead(in, scene);
-    if (SUCCESS != stat)
-        return stat;
+    if (SUCCESS != DoRead(in, scene))
+        return ERROR;
 
-#define DEBUG_NODES
-#if defined (DEBUG_NODES)
-    for (auto& child : m_childNodes)
-        {
-        if (child->IsDisplayable() && !child->m_geometry.IsValid())
-            {
-            BeAssert(false);
-            }
-        }
-#endif
-
+    // only after we've successfully read the entire node, mark it as ready so other threads can look at its child nodes.
     SetIsReady();
     return SUCCESS;
     }
@@ -393,5 +382,6 @@ BentleyStatus SceneInfo::Read(MxStreamBuffer& buffer)
         return SUCCESS;
         }
 
+    // we didn't find a mesh pyramid
     return ERROR;
     }

@@ -17,7 +17,10 @@
 Scene::Scene(DgnDbR db, TransformCR location, Utf8CP realityCacheName, Utf8CP rootUrl, Render::SystemP renderSys) : m_db(db), m_rootUrl(rootUrl), m_location(location), m_renderSystem(renderSys)
     {
     m_isUrl = (0 == strncmp("http:", rootUrl, 5) || 0 == strncmp("https:", rootUrl, 6));
-    m_rootDir = m_rootUrl.substr(0, m_rootUrl.find_last_of("/"));
+    if (m_isUrl)
+        m_rootDir = m_rootUrl.substr(0, m_rootUrl.find_last_of("/"));
+    else
+        m_rootDir = BeFileName(BeFileName::DevAndDir, BeFileName(m_rootUrl)).GetNameUtf8();
 
     m_scale = location.ColumnXMagnitude();
 
@@ -25,7 +28,7 @@ Scene::Scene(DgnDbR db, TransformCR location, Utf8CP realityCacheName, Utf8CP ro
     m_localCacheName.AppendToPath(BeFileName(realityCacheName));
     m_localCacheName.AppendExtension(L"3MXcache");
 
-    m_cache = RealityDataCache::Create(0);
+    m_cache = RealityDataCache::Create(100);
     m_cache->RegisterStorage(*BeSQLiteRealityDataStorage::Create(m_localCacheName));
     m_cache->RegisterSource(IsUrl() ? (IRealityDataSourceBase&) *HttpRealityDataSource::Create(1) : *FileRealityDataSource::Create(1));
     }
