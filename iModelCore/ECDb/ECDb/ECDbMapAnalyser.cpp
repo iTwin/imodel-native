@@ -12,9 +12,6 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-#define ECDB_HOLDING_VIEW "ec_RelationshipHoldingStatistics"
-
-
 //=====================================SqlViewBuilder===================================
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                         09/2015
@@ -713,7 +710,7 @@ void ECDbMapAnalyser::Storage::HandleCascadeLinkTable(std::vector<ECDbMapAnalyse
             body.AppendFormatted("(OLD.[%s] = [%s])", relationship->To().GetInstanceId()->GetSingleColumn()->GetName().c_str(), referencedEndPrimaryKey->GetName().c_str());
             if (relationship->IsHolding())
                 {
-                body.AppendFormatted(" AND (SELECT COUNT (*) FROM " ECDB_HOLDING_VIEW "  WHERE ECInstanceId = OLD.[%s]) = 0", relationship->To().GetInstanceId()->GetSingleColumn()->GetName().c_str());
+                body.AppendFormatted(" AND (SELECT COUNT (*) FROM " ECDB_RELATIONSHIPHELDINSTANCESSTATS_VIEWNAME "  WHERE ECInstanceId = OLD.[%s]) = 0", relationship->To().GetInstanceId()->GetSingleColumn()->GetName().c_str());
                 }
             body.Append(";").AppendEol();
             }
@@ -937,7 +934,7 @@ void ECDbMapAnalyser::GetClassIds(std::vector<ECN::ECClassId>& rootClassIds, std
     Statement stmt;
     if (BE_SQLITE_OK != stmt.Prepare(GetMap().GetECDb(), "SELECT C.Id, C.Type FROM ec_Class C "
                                      "INNER JOIN ec_ClassMap M ON M.ClassId=C.Id "
-                                     "LEFT JOIN ec_BaseClass B ON B.ClassId=C.Id "
+                                     "LEFT JOIN ec_ClassHasBaseClasses B ON B.ClassId=C.Id "
                                      "WHERE B.BaseClassId IS NULL"))
         {
         BeAssert(false);
@@ -981,7 +978,7 @@ void ECDbMapAnalyser::SetupDerivedClassLookup()
     {
     m_derivedClassLookup.clear();
     Statement stmt;
-    stmt.Prepare(GetMap().GetECDb(), "SELECT BaseClassId, ClassId FROM ec_BaseClass ORDER BY BaseClassId");
+    stmt.Prepare(GetMap().GetECDb(), "SELECT BaseClassId, ClassId FROM ec_ClassHasBaseClasses ORDER BY BaseClassId");
     while (stmt.Step() == BE_SQLITE_ROW)
         m_derivedClassLookup[stmt.GetValueId<ECClassId>(0)].insert(stmt.GetValueId<ECClassId>(1));
     }
@@ -1634,7 +1631,7 @@ void ECDbMapAnalyser::ProcessEndTableRelationships()
 
                     if (relationship->IsHolding())
                         {
-                        body.AppendFormatted(" AND (SELECT COUNT(*) FROM " ECDB_HOLDING_VIEW "  WHERE ECInstanceId=OLD.[%s]) = 0", toKeyColumn->GetName().c_str());
+                        body.AppendFormatted(" AND (SELECT COUNT(*) FROM " ECDB_RELATIONSHIPHELDINSTANCESSTATS_VIEWNAME "  WHERE ECInstanceId=OLD.[%s]) = 0", toKeyColumn->GetName().c_str());
                         }
                     body.AppendLine(";");
 

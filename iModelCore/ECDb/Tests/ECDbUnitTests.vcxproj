@@ -19,8 +19,6 @@
     <ClCompile Include="BackDoor\ECDbTestProject.cpp" />
     <ClCompile Include="BackDoor\ECDbTests.cpp" />
     <ClCompile Include="Performance\DevSummitPerformanceTests.cpp" />
-    <ClCompile Include="Performance\PerformanceBisDesignStudies_Test.cpp" />
-    <ClCompile Include="Performance\PerformanceBisDesignTestFixture.cpp" />
     <ClCompile Include="Performance\PerformanceCRUDTestsHelper.cpp" />
     <ClCompile Include="Performance\PerformanceECDbFileInfoTests.cpp" />
     <ClCompile Include="Performance\PerformanceECDbMapCATests.cpp" />
@@ -89,7 +87,6 @@
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECDb\ECDbTestFixture.h" />
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECDb\ECDbTestProject.h" />
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECDb\ECDbTests.h" />
-    <ClInclude Include="Performance\PerformanceBisDesignTestFixture.h" />
     <ClInclude Include="Performance\PerformanceCRUDTestsHelper.h" />
     <ClInclude Include="Performance\PerformanceTests.h" />
     <ClInclude Include="Performance\ProfileBreak.h" />

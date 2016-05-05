@@ -9008,18 +9008,6 @@ TEST_F(ReferentialIntegrityTestFixture, ForeignKeyRelationshipMap_EnforceReferen
     //when AllowDuplicate is turned of, OneFooHasManyGoo will also be mapped as endtable therefore ReferentialIntegrityCheck will be performed for it, so there will be two rows in the ForeignKey table
     ASSERT_FALSE(ecdb.TableExists("ts_OneFooHasOneGoo"));
     ASSERT_FALSE(ecdb.TableExists("ts_OneFooHasManyGoo"));
-
-    BeSQLite::Statement sqlStatment;
-    ASSERT_EQ(BE_SQLITE_OK, sqlStatment.Prepare(ecdb, "SELECT ec_Column.Name FROM ec_Column JOIN ec_ForeignKey ON ec_ForeignKey.TableId = ec_Column.[TableId] JOIN ec_ForeignKeyColumn ON ec_ForeignKeyColumn.ColumnId = ec_Column.Id WHERE ec_ForeignKey.Id = 1"));
-    size_t rowCount = 0;
-    while (sqlStatment.Step() != DbResult::BE_SQLITE_DONE)
-        {
-        rowCount++;
-        }
-    ASSERT_EQ(2, rowCount);
-
-    sqlStatment.Finalize();
-    ecdb.CloseDb();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -9032,19 +9020,6 @@ TEST_F(ReferentialIntegrityTestFixture, ForeignKeyConstraint_EnforceReferentialI
     //when AllowDuplicate is turned on, OneFooHasManyGoo will also be mapped as endtable therefore there will be only one row in the ForeignKey table
     ASSERT_FALSE(ecdb.TableExists("ts_OneFooHasOneGoo"));
     ASSERT_FALSE(ecdb.TableExists("ts_OneFooHasManyGoo"));
-
-    BeSQLite::Statement sqlStatment;
-    auto stat = sqlStatment.Prepare(ecdb, "SELECT ec_Column.[Name] FROM ec_Column JOIN ec_ForeignKey ON ec_ForeignKey.[TableId] = ec_Column.[TableId] JOIN ec_ForeignKeyColumn ON ec_ForeignKeyColumn.[ColumnId] = ec_Column.[Id] WHERE ec_ForeignKey.[Id] = 1");
-    ASSERT_EQ(stat, DbResult::BE_SQLITE_OK);
-    size_t rowCount = 0;
-    while (sqlStatment.Step() != DbResult::BE_SQLITE_DONE)
-        {
-        rowCount++;
-        }
-    ASSERT_EQ(2, rowCount);
-
-    sqlStatment.Finalize();
-    ecdb.CloseDb();
     }
 
 /*---------------------------------------------------------------------------------**//**

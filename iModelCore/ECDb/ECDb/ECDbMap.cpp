@@ -913,7 +913,7 @@ BentleyStatus ECDbMap::CreateClassIdColumnIfNecessary(DbTable& table, bset<Class
     if (!addClassIdCol)
         return SUCCESS;
 
-    DbColumn * ecClassIdColumn = table.CreateColumn(ECDB_COL_ECClassId, DbColumn::Type::Integer, 1, DbColumn::Kind::ECClassId, PersistenceType::Persisted);
+    DbColumn* ecClassIdColumn = table.CreateColumn(ECDB_COL_ECClassId, DbColumn::Type::Integer, 1, DbColumn::Kind::ECClassId, PersistenceType::Persisted);
     if (ecClassIdColumn == nullptr)
         return ERROR;
 
@@ -1227,11 +1227,11 @@ void ECDbMap::LightweightCache::LoadRelationshipCache() const
 
     Utf8CP sql0 =
         "WITH RECURSIVE DerivedClassList(RelationshipClassId, RelationshipEnd, IsPolymorphic, CurrentClassId, DerivedClassId) "
-        "AS (SELECT RCC.RelationshipClassId,RCC.RelationshipEnd,RC.IsPolymorphic,RCC.ClassId,RCC.ClassId "
-        "FROM ec_RelationshipConstraintClass RCC INNER JOIN ec_RelationshipConstraint RC ON RC.RelationshipClassId = RCC.RelationshipClassId AND RC.RelationshipEnd = RCC.RelationshipEnd "
+        "AS (SELECT RC.RelationshipClassId,RC.RelationshipEnd,RC.IsPolymorphic,RCC.ClassId,RCC.ClassId "
+        "FROM ec_RelationshipConstraintClass RCC INNER JOIN ec_RelationshipConstraint RC ON RC.Id = RCC.ConstraintId "
         "UNION "
         "SELECT DCL.RelationshipClassId, DCL.RelationshipEnd, DCL.IsPolymorphic, BC.BaseClassId, BC.ClassId "
-        "FROM DerivedClassList DCL INNER JOIN ec_BaseClass BC ON BC.BaseClassId = DCL.DerivedClassId "
+        "FROM DerivedClassList DCL INNER JOIN ec_ClassHasBaseClasses BC ON BC.BaseClassId = DCL.DerivedClassId "
         "WHERE IsPolymorphic = 1) "
         "SELECT DerivedClassId, RelationshipClassId, RelationshipEnd FROM DerivedClassList";
 
@@ -1277,7 +1277,7 @@ void ECDbMap::LightweightCache::LoadHorizontalPartitions()  const
         "AS (SELECT Id, Id, Id FROM ec_Class "
         "UNION "
         "SELECT RootClassId, BC.BaseClassId, BC.ClassId FROM DerivedClassList DCL "
-        "INNER JOIN ec_BaseClass BC ON BC.BaseClassId = DCL.DerivedClassId), "
+        "INNER JOIN ec_ClassHasBaseClasses BC ON BC.BaseClassId = DCL.DerivedClassId), "
         "TableMapInfo AS ("
         "SELECT ec_Class.Id ClassId, ec_Table.Name TableName FROM ec_PropertyMap "
         "JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId AND (ec_Column.ColumnKind & %d = 0) "
@@ -1724,15 +1724,12 @@ void Partition::AppendECClassIdFilterSql(Utf8StringR filterSqlExpression, Utf8CP
         }
     }
 
-#define ECDB_HOLDING_VIEW "ec_RelationshipHoldingStatistics"
-#define ECDB_HOLDING_VIEW_HELDID_COLNAME "HeldECInstanceId"
-
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan     01/2016
 //---------------+---------------+---------------+---------------+---------------+---------
 void RelationshipPurger::Finalize()
     {
-    for (auto& stmt : m_stmts)
+    for (std::unique_ptr<Statement>& stmt : m_stmts)
         {
         stmt->Finalize();
         }
@@ -1809,7 +1806,7 @@ BentleyStatus RelationshipPurger::Initialize(ECDbCR ecdb)
                     return ERROR;
                     }
 
-                unionClauseBuilder.AppendFormatted("SELECT [%s] " ECDB_HOLDING_VIEW_HELDID_COLNAME " FROM [%s] WHERE [%s] IS NOT NULL", foreignIdCol->GetName().c_str(), table->GetName().c_str(), foreignIdCol->GetName().c_str());
+                unionClauseBuilder.AppendFormatted("SELECT [%s] " ECDB_RELATIONSHIPHELDINSTANCESSTATS_ID_COLNAME " FROM [%s] WHERE [%s] IS NOT NULL", foreignIdCol->GetName().c_str(), table->GetName().c_str(), foreignIdCol->GetName().c_str());
                 }
 
             if (!unionClauseBuilder.IsEmpty())
@@ -1837,12 +1834,12 @@ BentleyStatus RelationshipPurger::Initialize(ECDbCR ecdb)
                 return ERROR;
 
             NativeSqlBuilder unionClauseBuilder;
-            unionClauseBuilder.AppendFormatted("SELECT [%s] " ECDB_HOLDING_VIEW_HELDID_COLNAME " FROM [%s]", heldIdCol->GetName().c_str(), primaryTable.GetName().c_str());
+            unionClauseBuilder.AppendFormatted("SELECT [%s] " ECDB_RELATIONSHIPHELDINSTANCESSTATS_ID_COLNAME " FROM [%s]", heldIdCol->GetName().c_str(), primaryTable.GetName().c_str());
             unionClauseList.push_back(std::move(unionClauseBuilder));
             }
         }
 
-    NativeSqlBuilder holdingViewBuilder("DROP VIEW IF EXISTS " ECDB_HOLDING_VIEW "; CREATE VIEW " ECDB_HOLDING_VIEW " AS ");
+    NativeSqlBuilder holdingViewBuilder("DROP VIEW IF EXISTS " ECDB_RELATIONSHIPHELDINSTANCESSTATS_VIEWNAME "; CREATE VIEW " ECDB_RELATIONSHIPHELDINSTANCESSTATS_VIEWNAME " AS ");
     if (!unionClauseList.empty())
         {
         bool isFirstItem = true;
@@ -1858,7 +1855,7 @@ BentleyStatus RelationshipPurger::Initialize(ECDbCR ecdb)
         holdingViewBuilder.Append(";");
         }
     else
-        holdingViewBuilder.Append("SELECT NULL " ECDB_HOLDING_VIEW_HELDID_COLNAME " LIMIT 0;");
+        holdingViewBuilder.Append("SELECT NULL " ECDB_RELATIONSHIPHELDINSTANCESSTATS_ID_COLNAME " LIMIT 0;");
 
     if (BE_SQLITE_OK != ecdb.ExecuteSql(holdingViewBuilder.ToString()))
         {
@@ -1906,7 +1903,7 @@ BentleyStatus RelationshipPurger::Purge(ECDbCR ecdb)
 Utf8String RelationshipPurger::BuildSql(Utf8CP tableName, Utf8CP pkColumnName)
     {
     Utf8String str;
-    str.Sprintf("DELETE FROM [%s] WHERE [%s] NOT IN (SELECT " ECDB_HOLDING_VIEW_HELDID_COLNAME " FROM " ECDB_HOLDING_VIEW ")", tableName, pkColumnName);
+    str.Sprintf("DELETE FROM [%s] WHERE [%s] NOT IN (SELECT " ECDB_RELATIONSHIPHELDINSTANCESSTATS_ID_COLNAME " FROM " ECDB_RELATIONSHIPHELDINSTANCESSTATS_VIEWNAME ")", tableName, pkColumnName);
     return str;
     }
 

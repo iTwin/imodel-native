@@ -76,7 +76,7 @@ BentleyStatus ECDbSchemaReader::EnsureDerivedClassesExist(ECClassId baseClassId)
 BentleyStatus ECDbSchemaReader::EnsureDerivedClassesExist(Context& ctx, ECClassId baseClassId) const
     {
     CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != m_db.GetCachedStatement(stmt, "SELECT ClassId FROM ec_BaseClass WHERE BaseClassId = ?"))
+    if (BE_SQLITE_OK != m_db.GetCachedStatement(stmt, "SELECT ClassId FROM ec_ClassHasBaseClasses WHERE BaseClassId = ?"))
         return ERROR;
 
     if (BE_SQLITE_OK != stmt->BindId(1, baseClassId))
@@ -505,7 +505,7 @@ BentleyStatus ECDbSchemaReader::LoadECSchemaFromDb(DbECSchemaEntry*& schemaEntry
     {
     CachedStatementPtr stmt = nullptr;
     if (BE_SQLITE_OK != m_db.GetCachedStatement(stmt, "SELECT S.Name, S.DisplayLabel,S.Description,S.NamespacePrefix,S.VersionDigit1,S.VersionDigit2,S.VersionDigit3, "
-                                                "(SELECT COUNT(*) FROM ec_Class C WHERE S.Id = C.SchemaID) + (SELECT COUNT(*) FROM ec_Enumeration e WHERE S.Id = e.SchemaID) "
+                                                "(SELECT COUNT(*) FROM ec_Class C WHERE S.Id = C.SchemaId) + (SELECT COUNT(*) FROM ec_Enumeration e WHERE S.Id = e.SchemaId) "
                                                 "FROM ec_Schema S WHERE S.Id=?"))
         return ERROR;
 
@@ -559,11 +559,12 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, Contex
             Utf8String m_description;
             bool m_isReadonly = false;
             int m_primType = -1;
-            ECClassId m_nonPrimTypeId;
+            ECClassId m_structClassId;
             Utf8String m_extendedTypeName;
             ECEnumerationId m_enumId;
             uint32_t m_arrayMinOccurs = 0;
             uint32_t m_arrayMaxOccurs = std::numeric_limits<uint32_t>::max();
+            ECClassId m_navPropRelClassId;
             int m_navPropDirection = -1;
             };
 
@@ -576,16 +577,17 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, Contex
             const int descrIx = 4;
             const int isReadonlyIx = 5;
             const int primTypeIx = 6;
-            const int enumIx = 7;
-            const int nonPrimTypeIx = 8;
+            const int enumIdIx = 7;
+            const int structClassIdIx = 8;
             const int extendedTypeIx = 9;
             const int minOccursIx = 10;
             const int maxOccursIx = 11;
-            const int navPropDirectionIx = 12;
+            const int navRelationshipClassId = 12;
+            const int navPropDirectionIx = 13;
 
             CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT Id,Kind,Name,DisplayLabel,Description,IsReadonly,"
-                                                              "PrimitiveType,Enumeration,NonPrimitiveType,ExtendedType,"
-                                                              "ArrayMinOccurs,ArrayMaxOccurs,NavigationPropertyDirection "
+                                                              "PrimitiveType,EnumerationId,StructClassId,ExtendedTypeName,"
+                                                              "ArrayMinOccurs,ArrayMaxOccurs,NavigationRelationshipClassId,NavigationDirection "
                                                               "FROM ec_Property WHERE ClassId=? ORDER BY Ordinal");
             if (stmt == nullptr)
                 return ERROR;
@@ -615,25 +617,25 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, Contex
                 else
                     rowInfo.m_primType = stmt->GetValueInt(primTypeIx);
 
-                if (!stmt->IsColumnNull(enumIx))
-                    rowInfo.m_enumId = stmt->GetValueId<ECEnumerationId>(enumIx);
+                if (!stmt->IsColumnNull(enumIdIx))
+                    rowInfo.m_enumId = stmt->GetValueId<ECEnumerationId>(enumIdIx);
 
                 if ((kind == ECPropertyKind::Primitive || kind == ECPropertyKind::PrimitiveArray) && primTypeIsNull && !rowInfo.m_enumId.IsValid())
                     {
-                    BeAssert(false && "Either PrimitiveType or Enumeration column must not be NULL for primitive and prim array property");
+                    BeAssert(false && "Either PrimitiveType or EnumerationId column must not be NULL for primitive and prim array property");
                     return ERROR;
                     }
 
-                if (stmt->IsColumnNull(nonPrimTypeIx))
+                if (stmt->IsColumnNull(structClassIdIx))
                     {
-                    if (kind == ECPropertyKind::Struct || kind == ECPropertyKind::StructArray || kind == ECPropertyKind::Navigation)
+                    if (kind == ECPropertyKind::Struct || kind == ECPropertyKind::StructArray)
                         {
-                        BeAssert(false && "NonPrimitiveType column must not be NULL for struct, struct array and navigation property");
+                        BeAssert(false && "StructClassId column must not be NULL for struct or struct array property");
                         return ERROR;
                         }
                     }
                 else
-                    rowInfo.m_nonPrimTypeId = stmt->GetValueId<ECClassId>(nonPrimTypeIx);
+                    rowInfo.m_structClassId = stmt->GetValueId<ECClassId>(structClassIdIx);
 
                 if (!stmt->IsColumnNull(extendedTypeIx))
                     rowInfo.m_extendedTypeName.assign(stmt->GetValueText(extendedTypeIx));
@@ -652,11 +654,22 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, Contex
                     rowInfo.m_arrayMaxOccurs = (uint32_t) stmt->GetValueInt(maxOccursIx);
                     }
 
+                if (stmt->IsColumnNull(navRelationshipClassId))
+                    {
+                    if (kind == ECPropertyKind::Navigation)
+                        {
+                        BeAssert(false && "NavigationRelationshipClassId column must not be NULL for navigation property");
+                        return ERROR;
+                        }
+                    }
+                else
+                    rowInfo.m_navPropRelClassId = stmt->GetValueId<ECClassId>(navRelationshipClassId);
+
                 if (stmt->IsColumnNull(navPropDirectionIx))
                     {
                     if (kind == ECPropertyKind::Navigation)
                         {
-                        BeAssert(false && "NavigationPropertyDirection column must not be NULL for navigation property");
+                        BeAssert(false && "NavigationDirection column must not be NULL for navigation property");
                         return ERROR;
                         }
                     }
@@ -714,9 +727,9 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, Contex
 
                 case ECPropertyKind::Struct:
                 {
-                BeAssert(rowInfo.m_nonPrimTypeId.IsValid());
+                BeAssert(rowInfo.m_structClassId.IsValid());
 
-                ECClassCP structClassRaw = GetECClass(ctx, rowInfo.m_nonPrimTypeId);
+                ECClassCP structClassRaw = GetECClass(ctx, rowInfo.m_structClassId);
                 if (structClassRaw == nullptr)
                     return ERROR;
 
@@ -760,8 +773,8 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, Contex
 
                 case ECPropertyKind::StructArray:
                 {
-                BeAssert(rowInfo.m_nonPrimTypeId.IsValid());
-                ECClassCP structClassRaw = GetECClass(ctx, rowInfo.m_nonPrimTypeId);
+                BeAssert(rowInfo.m_structClassId.IsValid());
+                ECClassCP structClassRaw = GetECClass(ctx, rowInfo.m_structClassId);
                 if (structClassRaw == nullptr)
                     return ERROR;
 
@@ -787,8 +800,8 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, Contex
                 {
                 BeAssert(ecClass->IsEntityClass());
 
-                BeAssert(rowInfo.m_nonPrimTypeId.IsValid());
-                ECClassCP relClassRaw = GetECClass(ctx, rowInfo.m_nonPrimTypeId);
+                BeAssert(rowInfo.m_navPropRelClassId.IsValid());
+                ECClassCP relClassRaw = GetECClass(ctx, rowInfo.m_navPropRelClassId);
                 if (relClassRaw == nullptr)
                     return ERROR;
 
@@ -837,7 +850,7 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, Contex
 BentleyStatus ECDbSchemaReader::LoadBaseClassesFromDb(ECClassP& ecClass, Context& ctx, ECClassId ecClassId) const
     {
     CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != m_db.GetCachedStatement(stmt, "SELECT BaseClassId FROM ec_BaseClass WHERE ClassId=? ORDER BY Ordinal"))
+    if (BE_SQLITE_OK != m_db.GetCachedStatement(stmt, "SELECT BaseClassId FROM ec_ClassHasBaseClasses WHERE ClassId=? ORDER BY Ordinal"))
         return ERROR;
 
     if (BE_SQLITE_OK != stmt->BindId(1, ecClassId))
@@ -908,7 +921,7 @@ BentleyStatus ECDbSchemaReader::LoadCAFromDb(ECN::IECCustomAttributeContainerR c
 BentleyStatus ECDbSchemaReader::LoadECRelationshipConstraintFromDb(ECRelationshipClassP& ecRelationship, Context& ctx, ECClassId relationshipClassId, ECRelationshipEnd relationshipEnd) const
     {
     CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != m_db.GetCachedStatement(stmt, "SELECT MultiplicityLowerLimit,MultiplicityUpperLimit,IsPolymorphic,RoleLabel FROM ec_RelationshipConstraint WHERE RelationshipClassId=? AND RelationshipEnd=?"))
+    if (BE_SQLITE_OK != m_db.GetCachedStatement(stmt, "SELECT Id,MultiplicityLowerLimit,MultiplicityUpperLimit,IsPolymorphic,RoleLabel FROM ec_RelationshipConstraint WHERE RelationshipClassId=? AND RelationshipEnd=?"))
         return ERROR;
 
     if (BE_SQLITE_OK != stmt->BindId(1, relationshipClassId))
@@ -920,36 +933,35 @@ BentleyStatus ECDbSchemaReader::LoadECRelationshipConstraintFromDb(ECRelationshi
     if (BE_SQLITE_ROW != stmt->Step())
         return ERROR;
 
+    ECRelationshipConstraintId constraintId = stmt->GetValueId<ECRelationshipConstraintId>(0);
+
     ECRelationshipConstraintR constraint = (relationshipEnd == ECRelationshipEnd_Target) ? ecRelationship->GetTarget() : ecRelationship->GetSource();
 
-    constraint.SetCardinality(RelationshipCardinality(stmt->GetValueInt(0), stmt->GetValueInt(1)));
-    constraint.SetIsPolymorphic(stmt->GetValueInt(2) != 0);
+    constraint.SetCardinality(RelationshipCardinality(stmt->GetValueInt(1), stmt->GetValueInt(2)));
+    constraint.SetIsPolymorphic(stmt->GetValueInt(3) != 0);
 
-    if (!stmt->IsColumnNull(3))
-        constraint.SetRoleLabel(stmt->GetValueText(3));
+    if (!stmt->IsColumnNull(4))
+        constraint.SetRoleLabel(stmt->GetValueText(4));
 
-    if (SUCCESS != LoadECRelationshipConstraintClassesFromDb(constraint, ctx, relationshipClassId, relationshipEnd))
+    if (SUCCESS != LoadECRelationshipConstraintClassesFromDb(constraint, ctx, constraintId))
         return ERROR;
 
     ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType containerType =
         relationshipEnd == ECRelationshipEnd_Target ? ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::TargetRelationshipConstraint : ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::SourceRelationshipConstraint;
 
-    return LoadCAFromDb(constraint, ctx, ECContainerId(relationshipClassId), containerType);
+    return LoadCAFromDb(constraint, ctx, ECContainerId(constraintId), containerType);
     }
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaReader::LoadECRelationshipConstraintClassesFromDb(ECRelationshipConstraintR constraint, Context& ctx, ECClassId relationshipClassId, ECRelationshipEnd relationshipEnd) const
+BentleyStatus ECDbSchemaReader::LoadECRelationshipConstraintClassesFromDb(ECRelationshipConstraintR constraint, Context& ctx, ECRelationshipConstraintId constraintId) const
     {
     CachedStatementPtr statement = nullptr;
-    if (BE_SQLITE_OK != m_db.GetCachedStatement(statement, "SELECT ClassId, KeyProperties FROM ec_RelationshipConstraintClass WHERE RelationshipClassId=? AND RelationshipEnd=?"))
+    if (BE_SQLITE_OK != m_db.GetCachedStatement(statement, "SELECT ClassId, KeyProperties FROM ec_RelationshipConstraintClass WHERE ConstraintId=?"))
         return ERROR;
 
-    if (BE_SQLITE_OK != statement->BindId(1, relationshipClassId))
-        return ERROR;
-
-    if (BE_SQLITE_OK != statement->BindInt(2, (int) relationshipEnd))
+    if (BE_SQLITE_OK != statement->BindId(1, constraintId))
         return ERROR;
 
     while (statement->Step() == BE_SQLITE_ROW)

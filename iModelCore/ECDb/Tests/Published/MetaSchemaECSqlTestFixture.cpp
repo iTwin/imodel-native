@@ -578,16 +578,14 @@ void MetaSchemaECSqlTestFixture::AssertPropertyDef(ECPropertyCR expectedProp, EC
             continue;
             }
 
-        if (colName.EqualsI("NonPrimitiveTypeClassId"))
+        if (colName.EqualsI("StructClassId"))
             {
             if (structProp != nullptr)
-               ASSERT_EQ(structProp->GetType().GetId().GetValue(), val.GetId<ECClassId>().GetValue()) << "ECPropertyDef.NonPrimitiveTypeClassId for struct prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+               ASSERT_EQ(structProp->GetType().GetId().GetValue(), val.GetId<ECClassId>().GetValue()) << "ECPropertyDef.StructClassId for struct prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
             else if (structArrayProp != nullptr)
-                ASSERT_EQ(structArrayProp->GetStructElementType()->GetId().GetValue(), val.GetId<ECClassId>().GetValue()) << "ECPropertyDef.NonPrimitiveTypeClassId for struct array prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
-            else if (navProp != nullptr)
-                ASSERT_EQ(navProp->GetRelationshipClass()->GetId().GetValue(), val.GetId<ECClassId>().GetValue()) << "ECPropertyDef.NonPrimitiveTypeClassId for nav prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+                ASSERT_EQ(structArrayProp->GetStructElementType()->GetId().GetValue(), val.GetId<ECClassId>().GetValue()) << "ECPropertyDef.StructClassId for struct array prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
             else
-                ASSERT_TRUE(val.IsNull()) << "ECPropertyDef.NonPrimitiveTypeClassId for neither struct, struct array nor navigation prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+                ASSERT_TRUE(val.IsNull()) << "ECPropertyDef.StructClassId for neither struct nor struct array prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
 
             continue;
             }
@@ -614,12 +612,22 @@ void MetaSchemaECSqlTestFixture::AssertPropertyDef(ECPropertyCR expectedProp, EC
             continue;
             }
 
-        if (colName.EqualsI("NavigationPropertyDirection"))
+        if (colName.EqualsI("NavigationRelationshipClassId"))
             {
             if (navProp != nullptr)
-                ASSERT_EQ((int) navProp->GetDirection(), val.GetInt()) << "ECPropertyDef.NavigationPropertyDirection for nav prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+                ASSERT_EQ(navProp->GetRelationshipClass()->GetId().GetValue(), val.GetId<ECClassId>().GetValue()) << "ECPropertyDef.NavigationRelationshipClassId for nav prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
             else
-                ASSERT_TRUE(val.IsNull()) << "ECPropertyDef.NavigationPropertyDirection for non-nav prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+                ASSERT_TRUE(val.IsNull()) << "ECPropertyDef.NavigationRelationshipClassId for non-navigation prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+
+            continue;
+            }
+
+        if (colName.EqualsI("NavigationDirection"))
+            {
+            if (navProp != nullptr)
+                ASSERT_EQ((int) navProp->GetDirection(), val.GetInt()) << "ECPropertyDef.NavigationDirection for nav prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+            else
+                ASSERT_TRUE(val.IsNull()) << "ECPropertyDef.NavigationDirection for non-nav prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
 
             continue;
             }

@@ -10,6 +10,9 @@
 #include "ECDbInternalTypes.h"
 #include "ECDbProfileUpgrader.h"
 
+#define ECDB_RELATIONSHIPHELDINSTANCESSTATS_VIEWNAME "ec_RelationshipHeldInstancesStats"
+#define ECDB_RELATIONSHIPHELDINSTANCESSTATS_ID_COLNAME "Id"
+
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
 // @bsiclass                                                 Krischan.Eberle      12/2012
@@ -31,9 +34,9 @@ private:
     static DbResult AssignProfileVersion(ECDbR, bool onProfileCreation);
 
     //! Expected version of the ECDb profile for this version of the ECDb API.
-    static SchemaVersion GetExpectedVersion() { return SchemaVersion(3, 6, 0, 0); }
+    static SchemaVersion GetExpectedVersion() { return SchemaVersion(3, 7, 0, 0); }
     //! Minimum version of the ECDb profile which can still be auto-upgraded to the latest profile version.
-    static SchemaVersion GetMinimumSupportedVersion() { return SchemaVersion(3, 0, 0, 0); }
+    static SchemaVersion GetMinimumSupportedVersion() { return SchemaVersion(3, 7, 0, 0); }
 
     static void GetUpgraderSequence(std::vector<std::unique_ptr<ECDbProfileUpgrader>>&, SchemaVersion const& currentProfileVersion);
 

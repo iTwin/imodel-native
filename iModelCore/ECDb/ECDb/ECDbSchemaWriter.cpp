@@ -9,39 +9,6 @@
 
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        03/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaWriter::Fail(Utf8CP fmt, ...) const
-    {
-    va_list args;
-    va_start(args, fmt);
-
-    Utf8String formattedMessage;
-    formattedMessage.VSprintf(fmt, args);
-
-    //Utf8String a;a.VSprintf
-    m_ecdb.GetECDbImplR().GetIssueReporter()
-        .Report(ECDbIssueSeverity::Error, formattedMessage.c_str());
-
-    return ERROR;
-    }
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        03/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ECDbSchemaWriter::Warn(Utf8CP fmt, ...) const
-    {
-    va_list args;
-    va_start(args, fmt);
-
-    Utf8String formattedMessage;
-    formattedMessage.VSprintf(fmt, args);
-
-    //Utf8String a;a.VSprintf
-    m_ecdb.GetECDbImplR().GetIssueReporter()
-        .Report(ECDbIssueSeverity::Warning, formattedMessage.c_str());
-
-    }
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
@@ -88,7 +55,7 @@ BentleyStatus ECDbSchemaWriter::CreateECSchemaEntry(ECSchemaCR ecSchema)
 BentleyStatus ECDbSchemaWriter::CreateBaseClassEntry(ECClassId ecClassId, ECClassCR baseClass, int ordinal)
     {
     CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "INSERT INTO ec_BaseClass(ClassId,BaseClassId,Ordinal) VALUES(?,?,?)"))
+    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "INSERT INTO ec_ClassHasBaseClasses(ClassId,BaseClassId,Ordinal) VALUES(?,?,?)"))
         return ERROR;
 
     if (BE_SQLITE_OK != stmt->BindId(1, ecClassId))
@@ -106,7 +73,7 @@ BentleyStatus ECDbSchemaWriter::CreateBaseClassEntry(ECClassId ecClassId, ECClas
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaWriter::CreateECRelationshipConstraintEntry(ECClassId relationshipClassId, ECN::ECRelationshipConstraintR relationshipConstraint, ECRelationshipEnd endpoint)
+BentleyStatus ECDbSchemaWriter::CreateECRelationshipConstraintEntry(ECRelationshipConstraintId& constraintId, ECClassId relationshipClassId, ECN::ECRelationshipConstraintR relationshipConstraint, ECRelationshipEnd endpoint)
     {
     CachedStatementPtr stmt = nullptr;
     if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "INSERT INTO ec_RelationshipConstraint (RelationshipClassId,RelationshipEnd,MultiplicityLowerLimit,MultiplicityUpperLimit,RoleLabel,IsPolymorphic) VALUES (?,?,?,?,?,?)"))
@@ -133,7 +100,12 @@ BentleyStatus ECDbSchemaWriter::CreateECRelationshipConstraintEntry(ECClassId re
     if (BE_SQLITE_OK != stmt->BindInt(6, relationshipConstraint.GetIsPolymorphic() ? 1 : 0))
         return ERROR;
 
-    return BE_SQLITE_DONE == stmt->Step() ? SUCCESS : ERROR;
+    if (BE_SQLITE_DONE != stmt->Step())
+        return ERROR;
+
+
+    constraintId = ECRelationshipConstraintId((uint64_t) m_ecdb.GetLastInsertRowId());
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
@@ -224,85 +196,74 @@ BentleyStatus ECDbSchemaWriter::UpdateECProperty(ECPropertyChange& propertyChang
         }
     else
         propertyId = newProperty.GetId();
-    SqlUpdater updater("ec_Property");
+
     if (propertyChange.GetTypeName().IsValid())
         {
-        return Fail("ECSCHEMA-UPGRADE: Changing ECProperty::Type is not supported. Failed on ECProperty %s.%s.",
+        GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECProperty %s.%s: Changing the type of an ECProperty is not supported.",
                     oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
+        return ERROR;
         }
 
-    //if (propertyChange.GetMaximumValue().Exist())
-    //    {
-    //    return Fail("ECSCHEMA-UPGRADE: Changing ECProperty::MaximumValue is not supported. Failed on ECProperty %s.%s.",
-    //                oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
-    //    }
-    //if (propertyChange.GetMinimumValue().Exist())
-    //    {
-    //    return Fail("ECSCHEMA-UPGRADE: Changing ECProperty::MinimumValue is not supported. Failed on ECProperty %s.%s.",
-    //                oldProperty.GetClass().GetFullName(), oldProperty.GetName()).c_str();
-    //    }
-    if (propertyChange.IsStruct().IsValid())
+    if (propertyChange.IsStruct().IsValid() || propertyChange.IsStructArray().IsValid() || propertyChange.IsPrimitive().IsValid() ||
+        propertyChange.IsPrimitiveArray().IsValid() || propertyChange.IsNavigation().IsValid())
         {
-        return Fail("ECSCHEMA-UPGRADE: Changing ECProperty::IsStruct is not supported. Failed on ECProperty %s.%s.",
-                    oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
-        }
-    if (propertyChange.IsStructArray().IsValid())
-        {
-        return Fail("ECSCHEMA-UPGRADE: Changing ECProperty::IsStructArray is not supported. Failed on ECProperty %s.%s.",
-                    oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
-        }
-    if (propertyChange.IsPrimitive().IsValid())
-        {
-        return Fail("ECSCHEMA-UPGRADE: Changing ECProperty::IsPrimitive is not supported. Failed on ECProperty %s.%s.",
-                    oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
-        }
-    if (propertyChange.IsPrimitiveArray().IsValid())
-        {
-        return Fail("ECSCHEMA-UPGRADE: Changing ECProperty::IsPrimitiveArray is not supported. Failed on ECProperty %s.%s.",
-                    oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
+        GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECProperty %s.%s: Changing the kind of the ECProperty is not supported.",
+                                  oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
+        return ERROR;
         }
     if (propertyChange.GetExtendedTypeName().IsValid())
         {
-        return Fail("ECSCHEMA-UPGRADE: Changing ECProperty::ExtendedTypeName is not supported. Failed on ECProperty %s.%s.",
-                    oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
+        GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECProperty %s.%s: Changing the ExtendedTypeName of an ECProperty is not supported.",
+                                  oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
+        return ERROR;
         }
-    if (propertyChange.IsNavigation().IsValid())
-        {
-        return Fail("ECSCHEMA-UPGRADE: Changing ECProperty::ExtendedTypeName is not supported. Failed on ECProperty %s.%s.",
-                    oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
-        }
+
     if (propertyChange.IsReadonly().IsValid())
         {
-        return Fail("ECSCHEMA-UPGRADE: Changing ECProperty::ExtendedTypeName is not supported. Failed on ECProperty %s.%s.",
-                    oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
+        GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECProperty %s.%s: Changing the 'IsReadonly' flag of an ECProperty is not supported.",
+                                  oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
+        return ERROR;
         }
+
     if (propertyChange.GetArray().IsValid())
         {
-        auto& arrayChange = propertyChange.GetArray();
-        if (arrayChange.MaxOccurs().IsValid())
-            return Fail("ECSCHEMA-UPGRADE: Changing ECProperty::Array.MaxOccurs is not supported. Failed on ECProperty %s.%s.",
-                        oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
-
-        if (arrayChange.MinOccurs().IsValid())
-            return Fail("ECSCHEMA-UPGRADE: Changing ECProperty::Array.MinOccurs is not supported. Failed on ECProperty %s.%s.",
-                        oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
+        ArrayChange& arrayChange = propertyChange.GetArray();
+        if (arrayChange.MaxOccurs().IsValid() || arrayChange.MinOccurs().IsValid())
+            {
+            GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECProperty %s.%s: Changing the 'MinOccurs' or 'MaxOccurs' for an Array ECProperty is not supported.",
+                                      oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
+            return ERROR;
+            }
         }
+
     if (propertyChange.GetNavigation().IsValid())
         {
-        auto& navigationChange = propertyChange.GetNavigation();
+        NavigationChange& navigationChange = propertyChange.GetNavigation();
         if (navigationChange.GetRelationshipClassName().IsValid())
-            return Fail("ECSCHEMA-UPGRADE: Changing ECProperty::Navigation.RelationshipClassName is not supported. Failed on ECProperty %s.%s.",
-                        oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
+            {
+            GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECProperty %s.%s: Changing the 'RelationshipClassName' for a Navigation ECProperty is not supported.",
+                                      oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
+            return ERROR;
+            }
 
         if (navigationChange.Direction().IsValid())
-            return Fail("ECSCHEMA-UPGRADE: Changing ECProperty::Navigation.Direction is not supported. Failed on ECProperty %s.%s.",
-                        oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
+            {
+            GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECProperty %s.%s: Changing the 'Direction' for a Navigation ECProperty is not supported.",
+                                      oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
+            return ERROR;
+            }
         }
+
+    SqlUpdater updater("ec_Property");
+
     if (propertyChange.GetName().IsValid())
         {
         if (propertyChange.GetName().GetNew().IsNull())
-            return Fail("ECSCHEMA-UPGRADE: Changing ECProperty::Maximum is not supported. Failed on ECProperty %s.%s.",
-                        oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
+            {
+            GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECProperty %s.%s: 'Name' must always be set for an ECProperty is not supported.",
+                                      oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
+            return ERROR;
+            }
 
         updater.Set("Name", propertyChange.GetName().GetNew().Value());
         }
@@ -327,29 +288,33 @@ BentleyStatus ECDbSchemaWriter::UpdateECProperty(ECPropertyChange& propertyChang
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECDbSchemaWriter::UpdateECRelationshipConstraint(ECContainerId containerId, SqlUpdater& sqlUpdater, ECRelationshipConstraintChange& constraintChange, ECRelationshipConstraintCR oldConstraint, ECRelationshipConstraintCR newConstraint, bool isSource, Utf8CP relationshipName)
     {
-    Utf8CP constraintType = isSource ? "Source" : "Target";
+    Utf8CP constraintEndStr = isSource ? "Source" : "Target";
     if (constraintChange.GetStatus() == ECChange::Status::Done)
         return SUCCESS;
 
     if (constraintChange.GetCardinality().IsValid())
         {
-        return Fail("ECSCHEMA-UPGRADE: Changing ECRelationshipClass::%s::Cardinality is not supported. Failed on ECRelationshipClass %s.",
-                    constraintType, relationshipName);
+        GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECRelationshipClass %s - Constraint: %s: Changing 'Cardinality' of an ECRelationshipConstraint is not supported.",
+                                  relationshipName, constraintEndStr);
+        return ERROR;
         }
+
     if (constraintChange.IsPolymorphic().IsValid())
         {
-        return Fail("ECSCHEMA-UPGRADE: Changing ECRelationshipClass::%s::IsPolymorphic is not supported. Failed on ECRelationshipClass %s.",
-                    constraintType, relationshipName);
+        GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECRelationshipClass %s - Constraint: %s: Changing flag 'IsPolymorphic' of an ECRelationshipConstraint is not supported.",
+                                  relationshipName, constraintEndStr);
+        return ERROR;
         }
+
     if (constraintChange.ConstraintClasses().IsValid())
         {
-        return Fail("ECSCHEMA-UPGRADE: Changing ECRelationshipClass::%s::ConstraintClasses is not supported. Failed on ECRelationshipClass %s.",
-                    constraintType, relationshipName);
+        GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECRelationshipClass %s - Constraint: %s: Changing the constraint classes is not supported.",
+                                  relationshipName, constraintEndStr);
+        return ERROR;
         }
+
     if (constraintChange.GetRoleLabel().IsValid())
-        {
         sqlUpdater.Set("RoleLabel", constraintChange.GetRoleLabel().GetNew().Value());
-        }
 
     const ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType containerType = isSource ? ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::SourceRelationshipConstraint : ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::TargetRelationshipConstraint;
     return UpdateECCustomAttributes(containerType, containerId, constraintChange.CustomAttributes(), oldConstraint, newConstraint);
@@ -392,10 +357,14 @@ BentleyStatus ECDbSchemaWriter::UpdateECCustomAttributes(ECDbSchemaPersistenceHe
 
         if (change.GetParent()->GetState() != ChangeState::New)
             {
-            if (GetCustomAttributeValidator().HasAnyRuleForSchema(schemaName.c_str()))
+            if (m_customAttributeValidator.HasAnyRuleForSchema(schemaName.c_str()))
                 {
-                if (GetCustomAttributeValidator().Validate(change) == CustomAttributeValidator::Policy::Reject)
-                    return Fail("ECSCHEMA-UPGRADE: Changing or adding %s customAttributes on exisiting schema/class/property/relationshipConstraint are not allowed.", schemaName.c_str());
+                if (m_customAttributeValidator.Validate(change) == CustomAttributeValidator::Policy::Reject)
+                    {
+                    GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. Adding or modifying %s CustomAttributes is not supported.",
+                                              schemaName.c_str());
+                    return ERROR;
+                    }
                 }
             }
 
@@ -469,23 +438,29 @@ BentleyStatus ECDbSchemaWriter::UpdateECClass(ECClassChange& classChange, ECClas
         classId = newClass.GetId();
 
     SqlUpdater updater("ec_Class");
+
     if (classChange.GetClassModifier().IsValid())
         {
-        return Fail("ECSCHEMA-UPGRADE: Changing ECClass::Modifier is not supported. Failed on ECClass %s.",
-                    oldClass.GetFullName());
+        GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECClass %s: Changing the ECClassModifier on an ECClass is not supported.",
+                                  oldClass.GetFullName());
+        return ERROR;
         }
 
     if (classChange.ClassType().IsValid())
         {
-        return Fail("ECSCHEMA-UPGRADE: Changing ECClass::ClassType is not supported. Change was [%s]'. Failed on ECClass %s.",
-                    classChange.GetString().c_str(), oldClass.GetFullName());
+        GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECClass %s: Changing the ECClassType of an ECClass is not supported.",
+                                  oldClass.GetFullName());
+        return ERROR;
         }
 
     if (classChange.GetName().IsValid())
         {
         if (classChange.GetName().GetNew().IsNull())
-            return Fail("ECSCHEMA-UPGRADE: Cannot set ECClass::Name to null. Failed while renaming ECClass %s.",
-                        oldClass.GetFullName());
+            {
+            GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECClass %s: Name must always be set for an ECClass.",
+                                      oldClass.GetFullName());
+            return ERROR;
+            }
 
         updater.Set("Name", classChange.GetName().GetNew().Value());
         }
@@ -505,16 +480,20 @@ BentleyStatus ECDbSchemaWriter::UpdateECClass(ECClassChange& classChange, ECClas
         auto& relationshipChange = classChange.GetRelationship();
         if (relationshipChange.GetStrength().IsValid())
             {
-            return Fail("ECSCHEMA-UPGRADE: Changing ECRelationshipClass::Strength is not supported. Failed on ECRelationshipClass %s.",
-                        oldClass.GetFullName());
+            GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECRelationshipClass %s: Changing the 'Strength' of an ECRelationshipClass is not supported.",
+                                      oldClass.GetFullName());
+            return ERROR;
             }
+
         if (relationshipChange.GetStrengthDirection().IsValid())
             {
-            return Fail("ECSCHEMA-UPGRADE: Changing ECRelationshipClass::StrengthDirection is not supported. Failed on ECRelationshipClass %s.",
-                        oldClass.GetFullName());
+            GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECRelationshipClass %s: Changing the 'StrengthDirection' of an ECRelationshipClass is not supported.",
+                                      oldClass.GetFullName());
+            return ERROR;
             }
-        auto oldRel = oldClass.GetRelationshipClassCP();
-        auto newRel = newClass.GetRelationshipClassCP();
+
+        ECRelationshipClassCP oldRel = oldClass.GetRelationshipClassCP();
+        ECRelationshipClassCP newRel = newClass.GetRelationshipClassCP();
         BeAssert(oldRel != nullptr && newRel != nullptr);
         if (oldRel == nullptr && newRel == nullptr)
             return ERROR;
@@ -539,32 +518,36 @@ BentleyStatus ECDbSchemaWriter::UpdateECClass(ECClassChange& classChange, ECClas
             auto& change = classChange.BaseClasses().At(i);
             if (change.GetState() == ChangeState::Deleted)
                 {
-                return Fail("ECSCHEMA-UPGRADE: Deleting BaseClass is not supported. Failed on ECClass %s.",
-                            oldClass.GetFullName());
+                GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECClass %s: Removing a base class from an ECClass is not supported.",
+                                          oldClass.GetFullName());
+                return ERROR;
                 }
             else if (change.GetState() == ChangeState::New)
                 {
-                return Fail("ECSCHEMA-UPGRADE: Adding new BaseClass is not supported. Failed on ECClass %s.",
-                            oldClass.GetFullName());
-                //Determin index
+                GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECClass %s: Adding a new base class to an ECClass is not supported.",
+                                          oldClass.GetFullName());
+                return ERROR;
                 }
             else if (change.GetState() == ChangeState::Modified)
                 {
-                return Fail("ECSCHEMA-UPGRADE: Modifing BaseClass is not supported. Failed on ECClass %s.",
-                            oldClass.GetFullName());
+                GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECClass %s: Modifying the position of a base class in the list of base classes of an ECClass is not supported.",
+                                          oldClass.GetFullName());
+                return ERROR;
                 }
             }
         }
 
     if (classChange.Properties().IsValid())
         {
+        int ordinal = (int) newClass.GetPropertyCount(false);
         for (size_t i = 0; i < classChange.Properties().Count(); i++)
             {
             auto& change = classChange.Properties().At(i);
             if (change.GetState() == ChangeState::Deleted)
                 {
-                return Fail("ECSCHEMA-UPGRADE: Deleting ECProperty is not supported. Failed on ECClass %s.",
-                            oldClass.GetFullName());
+                GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECClass %s: Deleting an ECProperty from an ECClass is not supported.",
+                                          oldClass.GetFullName());
+                return ERROR;
                 }
             else if (change.GetState() == ChangeState::New)
                 {
@@ -575,8 +558,10 @@ BentleyStatus ECDbSchemaWriter::UpdateECClass(ECClassChange& classChange, ECClas
                     return ERROR;
                     }
 
-                if (ImportECProperty(*newProperty, static_cast<int>(newClass.GetPropertyCount(false))) == ERROR)
+                if (SUCCESS != ImportECProperty(*newProperty, ordinal))
                     return ERROR;
+
+                ordinal++;
                 }
             else if (change.GetState() == ChangeState::Modified)
                 {
@@ -616,78 +601,99 @@ BentleyStatus ECDbSchemaWriter::UpdateECSchemaReferences(ReferenceChanges& refer
             {
             SchemaKey oldRef;
             if (SchemaKey::ParseSchemaFullName(oldRef, change.GetOld().Value().c_str()) != ECObjectsStatus::Success)
-                return Fail("ECSCHEMA-UPGRADE: Failed to parse old reference schema fullname from difference. Failed on ECSchema %s.",
-                            oldSchema.GetFullSchemaName().c_str());
-
+                {
+                GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECSchema %s: Failed to parse previous ECSchema reference name.",
+                                          oldSchema.GetFullSchemaName().c_str());
+                return ERROR;
+                }
 
             ECSchemaId referenceSchemaId = ECDbSchemaPersistenceHelper::GetECSchemaId(m_ecdb, oldRef.GetName().c_str());
             Statement stmt;
-            if (stmt.Prepare(m_ecdb, "DELETE FROM ec_SchemaReference WHERE SchemaId = ? AND ReferencedSchemaId = ?") != BE_SQLITE_OK)
+            if (stmt.Prepare(m_ecdb, "DELETE FROM ec_SchemaReference WHERE SchemaId=? AND ReferencedSchemaId=?") != BE_SQLITE_OK)
                 return ERROR;
 
             stmt.BindId(1, oldSchema.GetId());
             stmt.BindId(2, referenceSchemaId);
 
             if (stmt.Step() != BE_SQLITE_DONE)
-                return Fail("ECSCHEMA-UPGRADE: Failed to remove schema reference %s. Failed on ECSchema %s.",
-                            oldRef.GetFullSchemaName().c_str(), oldSchema.GetFullSchemaName().c_str());
+                {
+                GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECSchema %s: Failed to remove ECSchema reference %s.",
+                                          oldSchema.GetFullSchemaName().c_str(), oldRef.GetFullSchemaName().c_str());
+                return ERROR;
+                }
             }
         else if (change.GetState() == ChangeState::New)
             {
             SchemaKey newRef, existingRef;
             if (SchemaKey::ParseSchemaFullName(newRef, change.GetNew().Value().c_str()) != ECObjectsStatus::Success)
-                return Fail("ECSCHEMA-UPGRADE: Failed to parse new reference schema fullname from difference. Failed on ECSchema %s.",
-                            oldSchema.GetFullSchemaName().c_str());
+                {
+                GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECSchema %s: Failed to parse new ECSchema reference.",
+                                          oldSchema.GetFullSchemaName().c_str());
+                return ERROR;
+                }
 
             //Ensure schema exist
             if (!ECDbSchemaPersistenceHelper::TryGetECSchemaKey(existingRef, m_ecdb, newRef.GetName().c_str()))
                 {
-                return Fail("ECSCHEMA-UPGRADE: Failed to find schema reference in ECDb with name %s. Failed on ECSchema %s.",
-                            newRef.GetFullSchemaName().c_str(), oldSchema.GetFullSchemaName().c_str());
+                GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECSchema %s: Referenced ECSchema %s does not exist in the file.",
+                                          oldSchema.GetFullSchemaName().c_str(), newRef.GetFullSchemaName().c_str());
+                return ERROR;
                 }
 
             //Schema must exist with that or greater version
             if (!existingRef.Matches(newRef, SchemaMatchType::LatestCompatible))
                 {
-                return Fail("ECSCHEMA-UPGRADE: Could not find compitable reference schema for %s. Failed on ECSchema %s.",
-                            newRef.GetFullSchemaName().c_str(), oldSchema.GetFullSchemaName().c_str());
+                GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECSchema %s: Could not locate compatible referenced ECSchema %s.",
+                                          oldSchema.GetFullSchemaName().c_str(), newRef.GetFullSchemaName().c_str());
+                return ERROR;
                 }
 
             ECSchemaId referenceSchemaId = ECDbSchemaPersistenceHelper::GetECSchemaId(m_ecdb, newRef.GetName().c_str());
             Statement stmt;
-            if (stmt.Prepare(m_ecdb, "INSERT INTO ec_SchemaReference (SchemaId, ReferencedSchemaId) VALUES (?, ?)") != BE_SQLITE_OK)
+            if (stmt.Prepare(m_ecdb, "INSERT INTO ec_SchemaReference(SchemaId, ReferencedSchemaId) VALUES (?,?)") != BE_SQLITE_OK)
                 return ERROR;
 
             stmt.BindId(1, oldSchema.GetId());
             stmt.BindId(2, referenceSchemaId);
 
             if (stmt.Step() != BE_SQLITE_DONE)
-                return Fail("ECSCHEMA-UPGRADE: Failed to add new schema reference %s. Failed on ECSchema %s.",
-                            newRef.GetFullSchemaName().c_str(), oldSchema.GetFullSchemaName().c_str());
+                {
+                GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECSchema %s: Failed to add new reference to ECSchema %s.",
+                                          oldSchema.GetFullSchemaName().c_str(), newRef.GetFullSchemaName().c_str());
+                return ERROR;
+                }
             }
         else if (change.GetState() == ChangeState::Modified)
             {
             SchemaKey oldRef, newRef, existingRef;
             if (SchemaKey::ParseSchemaFullName(oldRef, change.GetOld().Value().c_str()) != ECObjectsStatus::Success)
-                return Fail("ECSCHEMA-UPGRADE: Failed to parse old reference schema fullname from difference. Failed on ECSchema %s.",
-                            oldSchema.GetFullSchemaName().c_str());
+                {
+                GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECSchema %s: Failed to parse previous ECSchema reference.",
+                                          oldSchema.GetFullSchemaName().c_str());
+                return ERROR;
+                }
 
             if (SchemaKey::ParseSchemaFullName(newRef, change.GetNew().Value().c_str()) != ECObjectsStatus::Success)
-                return Fail("ECSCHEMA-UPGRADE: Failed to parse new reference schema fullname from difference. Failed on ECSchema %s.",
-                            oldSchema.GetFullSchemaName().c_str());
+                {
+                GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECSchema %s: Failed to parse new ECSchema reference.",
+                                          oldSchema.GetFullSchemaName().c_str());
+                return ERROR;
+                }
 
             //Ensure schema exist and also get updated version number.
             if (!ECDbSchemaPersistenceHelper::TryGetECSchemaKey(existingRef, m_ecdb, oldRef.GetName().c_str()))
                 {
-                return Fail("ECSCHEMA-UPGRADE: Failed to find schema reference in ECDb with name %s. Failed on ECSchema %s.",
-                            oldRef.GetFullSchemaName().c_str(), oldSchema.GetFullSchemaName().c_str());
+                GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECSchema %s: Referenced ECSchema %s does not exist in the file.",
+                                          oldSchema.GetFullSchemaName().c_str(), oldRef.GetFullSchemaName().c_str());
+                return ERROR;
                 }
 
             //Schema must exist with that or greater version
             if (!existingRef.Matches(newRef, SchemaMatchType::LatestCompatible))
                 {
-                return Fail("ECSCHEMA-UPGRADE: Could not find compitable reference schema for %s. Failed on ECSchema %s.",
-                            newRef.GetFullSchemaName().c_str(), oldSchema.GetFullSchemaName().c_str());
+                GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECSchema %s: Could not locate compatible referenced ECSchema %s.",
+                                          oldSchema.GetFullSchemaName().c_str(), newRef.GetFullSchemaName().c_str());
+                return ERROR;
                 }
             }
 
@@ -709,10 +715,12 @@ BentleyStatus ECDbSchemaWriter::UpdateECClasses(ECClassChanges& classChanges, EC
         auto& change = classChanges.At(i);
         if (change.GetState() == ChangeState::Deleted)
             {
-            return Fail("ECSCHEMA-UPGRADE: Deleting ECClass is not supported. Failed on ECSchema %s.",
-                        oldSchema.GetFullSchemaName().c_str());
+            GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECSchema %s: Deleting ECClasses from an ECSchema is not supported.",
+                                      oldSchema.GetFullSchemaName().c_str());
+            return ERROR;
             }
-        else if (change.GetState() == ChangeState::New)
+
+        if (change.GetState() == ChangeState::New)
             {
             ECClassCP newClass = newSchema.GetClassCP(change.GetName().GetNew().Value().c_str());
             if (newClass == nullptr)
@@ -723,8 +731,11 @@ BentleyStatus ECDbSchemaWriter::UpdateECClasses(ECClassChanges& classChanges, EC
 
             if (ImportECClass(*newClass) == ERROR)
                 return ERROR;
+
+            continue;
             }
-        else if (change.GetState() == ChangeState::Modified)
+
+        if (change.GetState() == ChangeState::Modified)
             {
             ECClassCP oldClass = oldSchema.GetClassCP(change.GetId());
             ECClassCP newClass = newSchema.GetClassCP(change.GetId());
@@ -758,21 +769,24 @@ BentleyStatus ECDbSchemaWriter::UpdateECEnumerations(ECEnumerationChanges& enumC
     for (size_t i = 0; i < enumChanges.Count(); i++)
         {
 
-        auto& change = enumChanges.At(i);
+        ECEnumerationChange& change = enumChanges.At(i);
         if (change.GetState() == ChangeState::Deleted)
             {
-            return Fail("ECSCHEMA-UPGRADE: Deleting enumeration is not supported. Failed on ECSchema %s.",
-                        oldSchema.GetFullSchemaName().c_str());
+            GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECSchema %s: Deleting ECEnumerations from an ECSchema is not supported.",
+                                      oldSchema.GetFullSchemaName().c_str());
+            return ERROR;
             }
         else if (change.GetState() == ChangeState::New)
             {
-            return Fail("ECSCHEMA-UPGRADE: Adding new enumeration is not supported. Failed on ECSchema %s.",
-                        oldSchema.GetFullSchemaName().c_str());
+            GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECSchema %s: Adding new ECEnumerations from an ECSchema is not supported.",
+                                      oldSchema.GetFullSchemaName().c_str());
+            return ERROR;
             }
         else if (change.GetState() == ChangeState::Modified)
             {
-            return Fail("ECSCHEMA-UPGRADE: Modifying enumeration is not supported. Failed on ECSchema %s.",
-                        oldSchema.GetFullSchemaName().c_str());
+            GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECEnumeration %s in ECSchema %s: Changing ECEnumerations is not supported.",
+                                      change.GetId(), oldSchema.GetFullSchemaName().c_str());
+            return ERROR;
             }
         }
 
@@ -793,7 +807,7 @@ BentleyStatus ECDbSchemaWriter::UpdateECSchema(ECSchemaChange& schemaChange, ECS
         schemaId = ECDbSchemaManager::GetSchemaIdForECSchemaFromDuplicateECSchema(m_ecdb, newSchema);
         if (!schemaId.IsValid())
             {
-            BeAssert(false && "Failed to resolve ecshema id");
+            BeAssert(false && "Failed to resolve ecschema id");
             return ERROR;
             }
         }
@@ -804,8 +818,11 @@ BentleyStatus ECDbSchemaWriter::UpdateECSchema(ECSchemaChange& schemaChange, ECS
     if (schemaChange.GetName().IsValid())
         {
         if (schemaChange.GetName().GetNew().IsNull())
-            return Fail("ECSCHEMA-UPGRADE: Cannot set ECSchema::Name to null. Failed while renaming ECSchema %s.",
-                        oldSchema.GetFullSchemaName().c_str());
+            {
+            GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECSchema %s: Name must always be set.",
+                                      oldSchema.GetFullSchemaName().c_str());
+            return ERROR;
+            }
 
         updater.Set("Name", schemaChange.GetName().GetNew().Value());
         }
@@ -820,16 +837,18 @@ BentleyStatus ECDbSchemaWriter::UpdateECSchema(ECSchemaChange& schemaChange, ECS
 
     if (schemaChange.GetVersionMajor().IsValid())
         {
-        return Fail("ECSCHEMA-UPGRADE: Any change to ECSchema::VersionMajor is not supported. Failed on ECSchema %s.",
-                    oldSchema.GetFullSchemaName().c_str());
+        GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECSchema %s: Changing 'VersionMajor' of an ECSchema is not supported.",
+                                  oldSchema.GetFullSchemaName().c_str());
+        return ERROR;
         }
 
     if (schemaChange.GetVersionWrite().IsValid())
         {
         if (schemaChange.GetVersionWrite().GetValue(ValueId::Deleted).Value() > schemaChange.GetVersionWrite().GetValue(ValueId::New).Value())
             {
-            return Fail("ECSCHEMA-UPGRADE: Cannot downgrade ECSchema::VersionWrite. Failed on ECSchema %s.",
-                        oldSchema.GetFullSchemaName().c_str());
+            GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECSchema %s: Decreasing 'VersionWrite' of an ECSchema is not supported.",
+                                      oldSchema.GetFullSchemaName().c_str());
+            return ERROR;
             }
 
         updater.Set("VersionDigit2", schemaChange.GetVersionWrite().GetNew().Value());
@@ -839,8 +858,9 @@ BentleyStatus ECDbSchemaWriter::UpdateECSchema(ECSchemaChange& schemaChange, ECS
         {
         if (schemaChange.GetVersionMinor().GetValue(ValueId::Deleted).Value() > schemaChange.GetVersionMinor().GetValue(ValueId::New).Value())
             {
-            return Fail("ECSCHEMA-UPGRADE: Cannot downgrade ECSchema::VersionMinor. Failed on ECSchema %s.",
-                        oldSchema.GetFullSchemaName().c_str());
+            GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECSchema %s: Decreasing 'VersionMinor' of an ECSchema is not supported.",
+                                      oldSchema.GetFullSchemaName().c_str());
+            return ERROR;
             }
 
         updater.Set("VersionDigit3", schemaChange.GetVersionMinor().GetNew().Value());
@@ -849,14 +869,17 @@ BentleyStatus ECDbSchemaWriter::UpdateECSchema(ECSchemaChange& schemaChange, ECS
     if (schemaChange.GetNamespacePrefix().IsValid())
         {
         if (schemaChange.GetNamespacePrefix().GetNew().IsNull())
-            return Fail("ECSCHEMA-UPGRADE: Cannot set ECSchema::NamespacePrefix to null. Failed on ECSchema %s.",
-                        oldSchema.GetFullSchemaName().c_str());
+            {
+            GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECSchema %s: NamespacePrefix must always be set.",
+                                      oldSchema.GetFullSchemaName().c_str());
+            return ERROR;
+            }
 
         if (ECDbSchemaPersistenceHelper::ContainsECSchemaWithNamespacePrefix(m_ecdb, schemaChange.GetNamespacePrefix().GetNew().Value().c_str()))
             {
-            return Fail("ECSCHEMA-UPGRADE: Invalid value for ECSchema::NamespacePrefix. Another schema with that namespacePrefix already exist. Failed on ECSchema %s.",
-                        oldSchema.GetFullSchemaName().c_str());
-
+            GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECSchema %s: NamespacePrefix is already used by another existing ECSchema.",
+                                      oldSchema.GetFullSchemaName().c_str());
+            return ERROR;
             }
 
         updater.Set("NamespacePrefix", schemaChange.GetNamespacePrefix().GetNew().Value());
@@ -907,9 +930,8 @@ BentleyStatus ECDbSchemaWriter::Import(ECSchemaCompareContext& ctx, ECN::ECSchem
                 return SUCCESS;
 
             schemaChange->SetStatus(ECChange::Status::Done);
-            Fail("ECSCHEMA-UPGRADE: Deleting ECSchema is not supported. Failed while deleting ECSchema %s.",
-                 ecSchema.GetFullSchemaName().c_str());
-
+            GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECSchema %s: Deleting an ECSchema is not supported.",
+                                      ecSchema.GetFullSchemaName().c_str());
             return ERROR;
             }
         else
@@ -1269,11 +1291,14 @@ BentleyStatus ECDbSchemaWriter::ImportECRelationshipConstraint(ECClassId relClas
     {
     BeAssert(relClassId.IsValid());
 
-    if (SUCCESS != CreateECRelationshipConstraintEntry(relClassId, relationshipConstraint, end))
+    ECRelationshipConstraintId constraintId;;
+    if (SUCCESS != CreateECRelationshipConstraintEntry(constraintId, relClassId, relationshipConstraint, end))
         return ERROR;
 
+    BeAssert(constraintId.IsValid());
+
     CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "INSERT INTO ec_RelationshipConstraintClass(RelationshipClassId,RelationshipEnd,ClassId,KeyProperties) VALUES(?,?,?,?)"))
+    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "INSERT INTO ec_RelationshipConstraintClass(ConstraintId,ClassId,KeyProperties) VALUES(?,?,?)"))
         return ERROR;
 
     for (ECRelationshipConstraintClassCP constraintClassObj : relationshipConstraint.GetConstraintClasses())
@@ -1284,13 +1309,10 @@ BentleyStatus ECDbSchemaWriter::ImportECRelationshipConstraint(ECClassId relClas
 
         BeAssert(constraintClass.GetId().IsValid());
 
-        if (BE_SQLITE_OK != stmt->BindId(1, relClassId))
+        if (BE_SQLITE_OK != stmt->BindId(1, constraintId))
             return ERROR;
 
-        if (BE_SQLITE_OK != stmt->BindInt(2, (int) end))
-            return ERROR;
-
-        if (BE_SQLITE_OK != stmt->BindId(3, constraintClass.GetId()))
+        if (BE_SQLITE_OK != stmt->BindId(2, constraintClass.GetId()))
             return ERROR;
 
         bvector<Utf8String> const& keyPropNames = constraintClassObj->GetKeys();
@@ -1298,7 +1320,7 @@ BentleyStatus ECDbSchemaWriter::ImportECRelationshipConstraint(ECClassId relClas
         if (!keyPropNames.empty())
             {
             ECDbSchemaPersistenceHelper::SerializeRelationshipKeyProperties(keyPropJson, keyPropNames);
-            if (BE_SQLITE_OK != stmt->BindText(4, keyPropJson.c_str(), Statement::MakeCopy::No))
+            if (BE_SQLITE_OK != stmt->BindText(3, keyPropJson.c_str(), Statement::MakeCopy::No))
                 return ERROR;
             }
 
@@ -1312,7 +1334,7 @@ BentleyStatus ECDbSchemaWriter::ImportECRelationshipConstraint(ECClassId relClas
     stmt = nullptr;
 
     ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType containerType = end == ECRelationshipEnd_Source ? ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::SourceRelationshipConstraint : ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::TargetRelationshipConstraint;
-    return ImportCustomAttributes(relationshipConstraint, ECContainerId(relClassId), containerType);
+    return ImportCustomAttributes(relationshipConstraint, ECContainerId(constraintId), containerType);
     }
 
 /*---------------------------------------------------------------------------------------
@@ -1350,7 +1372,7 @@ BentleyStatus ECDbSchemaWriter::ImportECProperty(ECN::ECPropertyCR ecProperty, i
 
     //now insert the actual property
     BeSQLite::CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "INSERT INTO ec_Property(Id,ClassId,Name,DisplayLabel,Description,IsReadonly,Ordinal,Kind,PrimitiveType,Enumeration,NonPrimitiveType,ExtendedType,ArrayMinOccurs,ArrayMaxOccurs,NavigationPropertyDirection) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"))
+    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "INSERT INTO ec_Property(Id,ClassId,Name,DisplayLabel,Description,IsReadonly,Ordinal,Kind,PrimitiveType,EnumerationId,StructClassId,ExtendedTypeName,ArrayMinOccurs,ArrayMaxOccurs,NavigationRelationshipClassId,NavigationDirection) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"))
         return ERROR;
 
     if (BE_SQLITE_OK != stmt->BindId(1, ecProperty.GetId()))
@@ -1374,18 +1396,18 @@ BentleyStatus ECDbSchemaWriter::ImportECProperty(ECN::ECPropertyCR ecProperty, i
     if (BE_SQLITE_OK != stmt->BindInt(6, ecProperty.GetIsReadOnly() ? 1 : 0))
         return ERROR;
 
-    //WIP Ordinal
     if (BE_SQLITE_OK != stmt->BindInt(7, ordinal))
         return ERROR;
 
     const int kindIndex = 8;
     const int primitiveTypeIndex = 9;
-    const int enumTypeIndex = 10;
-    const int nonPrimitiveTypeIndex = 11;
+    const int enumIdIndex = 10;
+    const int structClassIdIndex = 11;
     const int extendedTypeIndex = 12;
     const int arrayMinIndex = 13;
     const int arrayMaxIndex = 14;
-    const int navDirIndex = 15;
+    const int navRelClassIdIndex = 15;
+    const int navDirIndex = 16;
 
     if (ecProperty.GetIsPrimitive())
         {
@@ -1409,7 +1431,7 @@ BentleyStatus ECDbSchemaWriter::ImportECProperty(ECN::ECPropertyCR ecProperty, i
                 }
 
             const uint64_t enumId = it->second;
-            if (BE_SQLITE_OK != stmt->BindUInt64(enumTypeIndex, enumId))
+            if (BE_SQLITE_OK != stmt->BindUInt64(enumIdIndex, enumId))
                 return ERROR;
             }
 
@@ -1424,7 +1446,7 @@ BentleyStatus ECDbSchemaWriter::ImportECProperty(ECN::ECPropertyCR ecProperty, i
         if (BE_SQLITE_OK != stmt->BindInt(kindIndex, Enum::ToInt(ECPropertyKind::Struct)))
             return ERROR;
 
-        if (BE_SQLITE_OK != stmt->BindId(nonPrimitiveTypeIndex, ecProperty.GetAsStructProperty()->GetType().GetId()))
+        if (BE_SQLITE_OK != stmt->BindId(structClassIdIndex, ecProperty.GetAsStructProperty()->GetType().GetId()))
             return ERROR;
         }
     else if (ecProperty.GetIsArray())
@@ -1443,7 +1465,7 @@ BentleyStatus ECDbSchemaWriter::ImportECProperty(ECN::ECPropertyCR ecProperty, i
             if (BE_SQLITE_OK != stmt->BindInt(kindIndex, Enum::ToInt(ECPropertyKind::StructArray)))
                 return ERROR;
 
-            if (BE_SQLITE_OK != stmt->BindId(nonPrimitiveTypeIndex, arrayProp->GetAsStructArrayProperty()->GetStructElementType()->GetId()))
+            if (BE_SQLITE_OK != stmt->BindId(structClassIdIndex, arrayProp->GetAsStructArrayProperty()->GetStructElementType()->GetId()))
                 return ERROR;
             }
 
@@ -1467,15 +1489,19 @@ BentleyStatus ECDbSchemaWriter::ImportECProperty(ECN::ECPropertyCR ecProperty, i
             return ERROR;
 
         NavigationECPropertyCP navProp = ecProperty.GetAsNavigationProperty();
-        if (BE_SQLITE_OK != stmt->BindId(nonPrimitiveTypeIndex, navProp->GetRelationshipClass()->GetId()))
+        if (BE_SQLITE_OK != stmt->BindId(navRelClassIdIndex, navProp->GetRelationshipClass()->GetId()))
             return ERROR;
 
         if (BE_SQLITE_OK != stmt->BindInt(navDirIndex, Enum::ToInt(navProp->GetDirection())))
             return ERROR;
         }
 
-    if (BE_SQLITE_DONE != stmt->Step())
+    DbResult stat = stmt->Step();
+    if (BE_SQLITE_DONE != stat)
+        {
+        LOG.fatal(m_ecdb.GetLastError().c_str());
         return ERROR;
+        }
 
     return ImportCustomAttributes(ecProperty, ECContainerId(ecPropertyId), ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Property);
     }

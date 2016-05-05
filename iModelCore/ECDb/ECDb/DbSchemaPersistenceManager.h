@@ -38,8 +38,6 @@ private:
 
     static DbResult InsertTable(ECDbCR, DbTable const&);
     static DbResult InsertColumn(ECDbCR, DbColumn const&, int columnOrdinal, int primaryKeyOrdinal);
-    static DbResult InsertConstraint(ECDbCR, DbConstraint const&);
-    static DbResult InsertForeignKeyConstraint(ECDbCR, ForeignKeyDbConstraint const&);
     static DbResult InsertIndex(ECDbCR, DbIndex const&);
 
     static DbResult InsertClassMapping(ECDbCR, ClassDbMapping const&);
@@ -64,7 +62,6 @@ private:
 
     static BentleyStatus BuildCreateIndexDdl(Utf8StringR ddl, Utf8StringR comparableIndexDef, ECDbCR, DbIndex const&);
     static BentleyStatus GenerateIndexWhereClause(Utf8StringR ddl, ECDbCR, DbIndex const&);
-
 
 public:
     static BentleyStatus Load(DbSchema&, ECDbCR, DbSchema::LoadState loadMode);

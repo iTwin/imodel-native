@@ -30,7 +30,12 @@ RelationshipClassMap::RelationshipClassMap(Type type, ECRelationshipClassCR ecRe
 //---------------------------------------------------------------------------------------
 DbColumn* RelationshipClassMap::CreateConstraintColumn(Utf8CP columnName, DbColumn::Kind columnId, PersistenceType persType)
     {
-    DbColumn* column = GetPrimaryTable().FindColumnP(columnName);
+    DbTable& table = GetPrimaryTable();
+    const bool wasEditMode = table.GetEditHandle().CanEdit();
+    if (!wasEditMode)
+        table.GetEditHandleR().BeginEdit();
+
+    DbColumn* column = table.FindColumnP(columnName);
     if (column != nullptr)
         {
         if (!Enum::Intersects(column->GetKind(), columnId))
@@ -39,16 +44,11 @@ DbColumn* RelationshipClassMap::CreateConstraintColumn(Utf8CP columnName, DbColu
         return column;
         }
 
-    if (GetPrimaryTable().IsOwnedByECDb())
-        {
-        column = GetPrimaryTable().CreateColumn(columnName, DbColumn::Type::Integer, columnId, persType);
-        }
-    else
-        {
-        GetPrimaryTable().GetEditHandleR().BeginEdit();
-        column = GetPrimaryTable().CreateColumn(columnName, DbColumn::Type::Integer, columnId, PersistenceType::Virtual);
-        GetPrimaryTable().GetEditHandleR().EndEdit();
-        }
+    persType = table.IsOwnedByECDb() ? persType : PersistenceType::Virtual;
+    column = table.CreateColumn(columnName, DbColumn::Type::Integer, columnId, persType);
+
+    if (!wasEditMode)
+        table.GetEditHandleR().EndEdit();
 
     return column;
     }
