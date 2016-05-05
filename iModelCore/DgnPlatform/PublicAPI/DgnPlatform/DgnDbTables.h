@@ -43,6 +43,7 @@
 #define DGN_CLASSNAME_GraphicalElement2d    "GraphicalElement2d"
 #define DGN_CLASSNAME_GraphicalElement3d    "GraphicalElement3d"
 #define DGN_CLASSNAME_GraphicalModel2d      "GraphicalModel2d"
+#define DGN_CLASSNAME_GroupInformationModel "GroupInformationModel"
 #define DGN_CLASSNAME_LineStyle             "LineStyle"
 #define DGN_CLASSNAME_Link                  "Link"
 #define DGN_CLASSNAME_LocalAuthority        "LocalAuthority"

@@ -373,6 +373,26 @@ DgnDbStatus DictionaryModel::_OnInsertElement(DgnElementR el)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus GroupInformationModel::_OnInsertElement(DgnElementR element)
+    {
+    return element.IsGroupInformationElement() ? T_Super::_OnInsertElement(element) : DgnDbStatus::WrongModel;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+GroupInformationModelPtr GroupInformationModel::Create(DgnDbR db, DgnCode const& modelCode)
+    {
+    ModelHandlerR handler = dgn_ModelHandler::GroupInformation::GetHandler();
+    DgnClassId classId = db.Domains().GetClassId(handler);
+    DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, classId, modelCode));
+
+    return dynamic_cast<GroupInformationModelP>(model.get());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                 Ramanujam.Raman   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnModel::Read(DgnModelId modelId)

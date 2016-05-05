@@ -147,6 +147,7 @@ protected:
     BeSQLite::DbResult CreateDgnDbTables();
     BeSQLite::DbResult CreateAuthorities();
     BeSQLite::DbResult CreateDictionaryModel();
+    BeSQLite::DbResult CreateGroupInformationModel();
     BeSQLite::DbResult InitializeDgnDb(CreateDgnDbParams const& params);
     BeSQLite::DbResult SaveDgnDbSchemaVersion(DgnVersion version=DgnVersion(DGNDB_CURRENT_VERSION_Major,DGNDB_CURRENT_VERSION_Minor,DGNDB_CURRENT_VERSION_Sub1,DGNDB_CURRENT_VERSION_Sub2));
     BeSQLite::DbResult DoOpenDgnDb(BeFileNameCR projectNameIn, OpenParams const&);

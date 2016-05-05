@@ -214,8 +214,6 @@ BENTLEY_TRANSLATABLE_STRINGS_START(DgnCoreL10N,dgncore_msg)
     L10N_STRING(DATETIME_UTC)                                   // =="UTC"==
     L10N_STRING(VIEW_MessageID_BaseName)                        // =="Untitled"==
 
-    L10N_STRING(MODELNAME_Dictionary)                           // =="Resource Dictionary"==
-
     L10N_STRING(REVISION_Merged)                                // =="Merged"==
 
     L10N_STRING(ECTYPEADAPTER_True)                             // =="True"==
