@@ -180,8 +180,8 @@
         <ProductDirectory Name="GdalData" Deliver="false"/>
         <ProductDirectory Name="ImagePPAssemblies" Deliver="false"/>
         <ProductDirectory Name="ImagePPAssemblies" Deliver="false" LibType="static"/>
-        <ProductDirectory Name="RasterAssemblies" Deliver="false"/>
-        <ProductDirectory Name="RasterAssemblies" Deliver="false" LibType="static"/>
+        <ProductDirectory Name="RealityAssemblies" Deliver="false"/>
+        <ProductDirectory Name="RealityAssemblies" Deliver="false" LibType="static"/>
         <ProductDirectory Name="PointCloudAssemblies" Deliver="false"/>
         <ProductDirectory Name="PointCloudAssemblies" Deliver="false" LibType="static"/>
         <ProductDirectory Name="PointoolsAssemblies"  Deliver="false"/>
