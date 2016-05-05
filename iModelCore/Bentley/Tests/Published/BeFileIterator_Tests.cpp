@@ -182,14 +182,16 @@ TEST (BeDirectoryIterator, Test1)
 //---------------------------------------------------------------------------------------
 TEST(BeDirectoryIterator, FileNamePattern_Parse)
     {
-#ifdef NEEDS_WORK
-        // This test is not portable. Use portable directory separator chars.
-        // It also seems to be exposing a bug in FileNamePatter::Parse. The returned dir should not be \a*.txt. It should be c:\abc\bca\ I think.
-    BeFileName wildcard (NULL, L"C:\\abc\\bca", L"a*.txt", NULL);
     BeFileName dir;
     WString glob;
+#if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
+    BeFileName wildcard (NULL, L"C:\\abc\\bca", L"a*.txt", NULL);
     FileNamePattern::Parse(dir, glob, wildcard);
-    EXPECT_STREQ(L"\\a*.txt", dir.c_str());
-    EXPECT_STREQ(L"a*.txt", glob.c_str());
+    EXPECT_STREQ(L"c:\\abc\\bca\\", dir.c_str()) << "Directory name is incorrectly parsed";
+#else 
+    BeFileName wildcard (NULL, L"/var/abc/bca", L"a*.txt", NULL);
+    FileNamePattern::Parse(dir, glob, wildcard);
+    EXPECT_STREQ(L"/var/abc/bca/", dir.c_str()) << "Directory name is incorrectly parsed";
 #endif
+    EXPECT_STREQ(L"a*.txt", glob.c_str());
     }

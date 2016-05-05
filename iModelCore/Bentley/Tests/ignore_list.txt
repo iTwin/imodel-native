@@ -11,5 +11,6 @@ BeFileNameTests.UNCReadOnlyTest         # Testable UNC path is required to be av
 BeTextFileTests.*
 BeStringUtilitiesTests.UriEncoding              # Notified Sam
 DoubleFormatterTest.ReplaceDecimalSeparator     # Only replace default decimal Separator
+BeDirectoryIterator.FileNamePattern_Parse       # Directory name is incorrectly parsed
 
 CRuntimeTests.posixregex # runs only on Android, and it crashes there in regfree, because preg contains garbage $1 = {buffer = 0x0, allocated = 0, used = 0, syntax = 242396, fastmap = 0x0, translate = 0x2 <Address 0x2 out of bounds>
