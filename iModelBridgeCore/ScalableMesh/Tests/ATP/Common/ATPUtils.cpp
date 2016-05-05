@@ -281,7 +281,7 @@ bool RunTestPlan(BeFileName& testPlanPath)
                 PerformConstraintTest(pTestNode, pResultFile);
                 break;
             case TEST_SDK_MESH:
-                PerformSDKCreationTexturedMeshNode(pTestNode, pResultFile);
+                //PerformSDKCreationTexturedMeshNode(pTestNode, pResultFile);
                 break;
             case TEST_STREAMING:
                 PerformStreaming(pTestNode, pResultFile);

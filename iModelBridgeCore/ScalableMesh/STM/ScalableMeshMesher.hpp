@@ -891,9 +891,7 @@ template<class POINT, class EXTENT> size_t ScalableMesh2DDelaunayMesher<POINT, E
             continue;
             }
         meshGraph->SetMaskAt(currentID, visitedMask);
-        int edgeAroundFace = 0, vIndex;
-
-        RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(node->GetPointsPtr());
+        int edgeAroundFace = 0, vIndex;        
 
         MTGARRAY_FACE_LOOP(aroundFaceIndex, meshGraph, currentID)
             {

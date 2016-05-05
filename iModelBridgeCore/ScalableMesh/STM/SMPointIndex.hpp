@@ -1743,13 +1743,18 @@ void SMPointIndexNode<POINT, EXTENT>::PushNodeDown(size_t targetLevel)
         RefCountedPtr<SMMemoryPoolVectorItem<POINT>> subNodePtsPtr(m_pSubNodeNoSplit->GetPointsPtr());
         RefCountedPtr<SMMemoryPoolVectorItem<POINT>> ptsPtr(GetPointsPtr());
 
-        subNodePtsPtr->reserve(ptsPtr->size());
+        if (ptsPtr->size() > 0)
+            subNodePtsPtr->reserve(ptsPtr->size());
+
         m_pSubNodeNoSplit->m_nodeHeader.m_arePoints3d = m_nodeHeader.m_arePoints3d;
         if (!m_pSubNodeNoSplit->m_nodeHeader.m_arePoints3d) m_pSubNodeNoSplit->SetNumberOfSubNodesOnSplit(4);
         else m_pSubNodeNoSplit->SetNumberOfSubNodesOnSplit(8);
         OnPushNodeDown(); //we push the feature definitions first so that they can take care of their own point data
-                
-        subNodePtsPtr->push_back(&(*ptsPtr)[0], ptsPtr->size());
+
+        if (ptsPtr->size() > 0)
+            {
+            subNodePtsPtr->push_back(&(*ptsPtr)[0], ptsPtr->size());
+            }
 
         m_pSubNodeNoSplit->m_nodeHeader.m_contentExtent = m_nodeHeader.m_contentExtent;
         m_pSubNodeNoSplit->m_nodeHeader.m_contentExtentDefined = m_nodeHeader.m_contentExtentDefined;

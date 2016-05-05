@@ -43,9 +43,9 @@ typedef enum
     TEST_SDK_MESH,
     TEST_STREAMING,
     TEST_RANDOM_DRAPE,
-    //EXPORT_LINE,
-    //EXPORT_VOLUME,
-    //IMPORT_VOLUME,
+    EXPORT_LINE,
+    EXPORT_VOLUME,
+    IMPORT_VOLUME,
     ADD_TEXTURES_TO_MESH,
     } TestType;
 

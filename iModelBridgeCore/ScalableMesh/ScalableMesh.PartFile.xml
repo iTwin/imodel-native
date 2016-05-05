@@ -225,7 +225,8 @@
         <ProductDirectory Name="Libs" Deliver="false" />
         <ProductDirectory Name="Libs" LibType="static" Deliver="false" />
     </ProductDirectoryList>   
-        <Product Name="ScalableMeshCommandLine">
+      
+    <Product Name="ScalableMeshCommandLine">
         <SubPart PartName="ScalableMeshCommandLineTest" />  
         <Directories DirectoryListName="DgnPlatform" PartFile="DgnPlatform" Repository="DgnPlatform" />            
         <Directories DirectoryListName="ScalableMeshCmd" />        

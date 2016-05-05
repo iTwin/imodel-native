@@ -390,7 +390,7 @@ public:
         }
 
     virtual bool reserve(size_t newCount)
-        {
+        {        
         assert(newCount > 0);
         
         size_t newSize = newCount * sizeof(DataType);
@@ -561,14 +561,14 @@ public:
         {   
         if (m_data != 0)
             {
-            delete [] m_data;            
+            NotifySizeChangePoolItem(-(int64_t)m_nbItems * sizeof(DataType));        
+
+            delete [] m_data;                        
             m_nbItems = 0;
             m_data = 0;  
             m_size = 0;
             m_allocatedSize = 0;
-            m_dirty = true;
-
-            NotifySizeChangePoolItem(-(int64_t)m_nbItems * sizeof(DataType));        
+            m_dirty = true;            
             }
         }
     
