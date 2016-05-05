@@ -37,12 +37,6 @@
     <ClCompile Include="Performance\QueryTests.cpp">
       <Filter>Performance</Filter>
     </ClCompile>
-    <ClCompile Include="Performance\PerformanceBisDesignTestFixture.cpp">
-      <Filter>Performance\BisDesign</Filter>
-    </ClCompile>
-    <ClCompile Include="Performance\PerformanceBisDesignStudies_Test.cpp">
-      <Filter>Performance\BisDesign</Filter>
-    </ClCompile>
     <ClCompile Include="Performance\DevSummitPerformanceTests.cpp">
       <Filter>Performance</Filter>
     </ClCompile>
@@ -240,9 +234,6 @@
     <ClInclude Include="Published\ECSqlCommonTestDataset.h">
       <Filter>Published\ECSql\ECSqlTestFramework\Datasets</Filter>
     </ClInclude>
-    <ClInclude Include="Performance\PerformanceBisDesignTestFixture.h">
-      <Filter>Performance\BisDesign</Filter>
-    </ClInclude>
     <ClInclude Include="Published\RandomECInstanceGenerator.h">
       <Filter>Published</Filter>
     </ClInclude>
@@ -304,9 +295,6 @@
     </Filter>
     <Filter Include="Published\ECSql">
       <UniqueIdentifier>{cf8fae63-4351-4d33-98af-816e66e0d708}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Performance\BisDesign">
-      <UniqueIdentifier>{f9eb09bd-e1ae-40d4-a895-d9bbc9798957}</UniqueIdentifier>
     </Filter>
     <Filter Include="BackDoor">
       <UniqueIdentifier>{4888a13a-3bdb-4b36-b77c-5a4d589ea3f7}</UniqueIdentifier>
