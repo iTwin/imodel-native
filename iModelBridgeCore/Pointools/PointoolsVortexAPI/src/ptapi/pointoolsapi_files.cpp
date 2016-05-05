@@ -599,7 +599,6 @@ PTbool PTAPI ptInitialize(const PTubyte* licenseData)
 	ftime_cmp.LowPart = ftime.dwLowDateTime;
 	ftime_cmp.HighPart = ftime.dwHighDateTime;
 
-	TimeStamp::initialize();
 	g_startTime.tick();
 
 	_failed = false;

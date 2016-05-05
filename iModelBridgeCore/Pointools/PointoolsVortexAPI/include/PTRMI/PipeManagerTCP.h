@@ -33,7 +33,7 @@ namespace PTRMI
 		Status			setupListener				(void);
 		Status			shutdownListener			(void);
 
-static	unsigned long	__stdcall listenerCall		(void *params);
+static	unsigned long	STDCALL_ATTRIBUTE listenerCall		(void *params);
 		Status			listener					(void);
 
 		bool			getValidProtocolHostAddress	(const URL &objectName, URL &protocol, HostAddressIP4 &hostAddress) const;

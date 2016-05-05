@@ -12,9 +12,7 @@
 #define MIN(a,b) ( (a)>(b) ? (b) : (a) )
 #define RAD_TO_DEG   ( 180.0 / PI )
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
+BEGIN_EXTERN_C
 
 	extern float angle_deg_2d ( float x1, float y1, float x2, float y2, 
 			float x3, float y3 );
@@ -218,7 +216,5 @@ extern "C" {
 	void  vector_unit_2d ( float *x1, float *y1 );
 	void  vector_unit_3d ( float *x1, float *y1, float *z1 );
 	void  vector_unit_nd ( int n, float x[] );
-#if defined(__cplusplus)
- }
-#endif
+END_EXTERN_C
 

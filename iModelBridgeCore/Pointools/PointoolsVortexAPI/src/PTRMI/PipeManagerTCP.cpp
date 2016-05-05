@@ -286,7 +286,7 @@ PTRMI::Status PipeManagerTCP::initializeWinsock(void)
 
 }
 
-unsigned long __stdcall PipeManagerTCP::listenerCall(void *params)
+unsigned long STDCALL_ATTRIBUTE PipeManagerTCP::listenerCall(void *params)
 {
 															// If parameters not passed, exit
 	if(params == NULL)

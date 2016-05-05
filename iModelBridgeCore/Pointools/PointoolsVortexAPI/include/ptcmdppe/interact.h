@@ -14,9 +14,9 @@
 #include <string>
 
 #ifdef CMDPIPE_EXPORTS
-#define CMDPIPE_API __declspec(dllexport)
+#define CMDPIPE_API EXPORT_ATTRIBUTE
 #else
-#define CMDPIPE_API __declspec(dllimport)
+#define CMDPIPE_API IMPORT_ATTRIBUTE
 #endif
 
 #include <pt/typedefs.h>

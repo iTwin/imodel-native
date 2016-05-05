@@ -40,6 +40,7 @@
     <Part Name="PointoolsVortexAPI_DLL" BentleyBuildMakeFile="PointoolsVortexAPI.mke" ApiNumber="G06">
         <RequiredRepository>PointoolsCommon</RequiredRepository>
         <SubPart PartName="PublicApi" />
+        <SubPart PartName="BentleyDll"      PartFile="Bentley"           Repository="Bentley" />
         <!-- <SubPart PartName="Base" PartFile="Bentley" Repository="Bentley" /> -->
         <!-- <SubPart PartName="LicenseSDK8.11" PartFile="${SrcRoot}bsicommon/CvsPartfiles/bsibin" Repository="bsibin-licensesdk" />  -->
         <!--SubPart PartName="OpenGLSubParts"/-->

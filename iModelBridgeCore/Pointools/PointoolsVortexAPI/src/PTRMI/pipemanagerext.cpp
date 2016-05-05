@@ -6,7 +6,7 @@
 #include <PTRMI/Message.h>
 #include <PTRMI/ClientInterfaceExtData.h>
 
-bool __stdcall ptServerClientLost(uint64_t clientIDFirst64, uint64_t clientIDSecond64);
+bool STDCALL_ATTRIBUTE ptServerClientLost(uint64_t clientIDFirst64, uint64_t clientIDSecond64);
 
 namespace PTRMI
 {

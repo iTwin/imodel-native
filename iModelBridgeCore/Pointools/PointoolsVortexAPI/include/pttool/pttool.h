@@ -2,9 +2,9 @@
 #pragma warning ( disable : 4786 )
 
 #ifdef PTTOOL_EXPORTS
-#define PTTOOL_API __declspec(dllexport)
+#define PTTOOL_API EXPORT_ATTRIBUTE
 #else
-#define PTTOOL_API __declspec(dllimport)
+#define PTTOOL_API IMPORT_ATTRIBUTE
 #endif
 
 

@@ -104,7 +104,7 @@ void Log::section(const std::wstring& s) {
 }
 
 
-void __cdecl Log::printf(const char* fmt, ...) {
+void CDECL_ATTRIBUTE Log::printf(const char* fmt, ...) {
     printHeader();
 	va_list arg_list;
 	va_start(arg_list, fmt);

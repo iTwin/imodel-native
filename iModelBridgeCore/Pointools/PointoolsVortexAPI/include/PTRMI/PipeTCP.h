@@ -33,7 +33,7 @@ protected:
 
 protected:
 
-static	unsigned long __stdcall	dispatcherCall			(void *params);
+static	unsigned long STDCALL_ATTRIBUTE	dispatcherCall			(void *params);
 		Status					dispatcher				(void);
 
 		Status					lockSend				(void);

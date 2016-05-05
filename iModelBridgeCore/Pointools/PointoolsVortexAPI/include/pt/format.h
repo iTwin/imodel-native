@@ -15,12 +15,6 @@
 
 #include <pt/ptunicode.h>
 
-#ifndef _MSC_VER
-    #ifndef __cdecl
-        #define __cdecl __attribute__((cdecl))
-    #endif
-#endif
-
 namespace pt {
 
 /**
@@ -30,7 +24,7 @@ namespace pt {
   string is under 160 characters (not including terminator) and slower
   when the string is longer.
  */
-std::string   __cdecl format(
+std::string CDECL_ATTRIBUTE format(
     const char*                 fmt
     ...);
 

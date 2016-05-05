@@ -91,17 +91,17 @@ public:
 
 	void stripPath()
 	{
-		::PathStripPathW(m_sPath);
+		PathStripPathW(m_sPath);
 	}
 
 	void stripExtension()
 	{
-		::PathRemoveExtensionW(m_sPath);
+		PathRemoveExtensionW(m_sPath);
 	}
 
 	void stripFilename()
 	{
-		::PathRemoveFileSpecW(m_sPath);
+		PathRemoveFileSpecW(m_sPath);
 	}
 
 	void setFilenameOnly(const wchar_t *fn)
@@ -120,20 +120,20 @@ public:
 	{
 		wchar_t f[PT_MAXPATH];
 		wcscpy_s(f, PT_MAXPATH, m_sPath);
-		::PathStripPathW(f);
+		PathStripPathW(f);
 		int l = (int)wcsnlen_s(m_sPath, PT_MAXPATH);
 		return &m_sPath[l-wcsnlen_s(f, PT_MAXPATH)];
 	}
 
 	const wchar_t* extension() const
 	{
-		return &(::PathFindExtensionW(m_sPath))[1];
+		return &(PathFindExtensionW(m_sPath))[1];
 	}
 
 	void directory(wchar_t *dst) const
 	{
 		wcscpy_s(dst, PT_MAXPATH, m_sPath);
-		::PathRemoveFileSpecW(dst);
+		PathRemoveFileSpecW(dst);
 	}
 
 	void fulldirectory(wchar_t *dst) const
@@ -161,7 +161,7 @@ public:
 		while (it != ancestors.end())
 		{
 			m_parent->directory(d);
-			::PathAppendW(dst, d);
+			PathAppendW(dst, d);
 			++it;
 		}
 	}
@@ -179,7 +179,7 @@ public:
 			return;
 		}
 		fulldirectory(dst);
-		::PathAppendW(dst, m_sPath);
+		PathAppendW(dst, m_sPath);
 	}
 
 	void setExtension(const wchar_t*ext)
@@ -188,9 +188,9 @@ public:
 		{
 			wchar_t _ext[64];
 			_snwprintf_s(_ext, 14, 15, L".%s", ext);
-			::PathRenameExtensionW(m_sPath, _ext);
+			PathRenameExtensionW(m_sPath, _ext);
 		}
-		else ::PathRenameExtensionW(m_sPath, ext);
+		else PathRenameExtensionW(m_sPath, ext);
 	}
 
 	const FilePath *parent() const { return m_parent; }
@@ -199,12 +199,12 @@ public:
 
 	void setAbsolute()
 	{
-		m_bAbsolute = 1;
+		m_bAbsolute = true;
 	}
 
 	void setRelative()
 	{
-		m_bAbsolute = 0;
+		m_bAbsolute = false;
 	}
 
 	bool isRelative() const
@@ -244,8 +244,7 @@ public:
 
 		f.fullpath(fp);
 
-		::PathRelativePathToW(path,fp,
-			FILE_ATTRIBUTE_NORMAL,	m_sPath, FILE_ATTRIBUTE_NORMAL);
+		PathRelativePathToW(path,fp, FILE_ATTRIBUTE_NORMAL,	m_sPath, FILE_ATTRIBUTE_NORMAL);
 		setPath(path);
 	}
 
@@ -380,12 +379,12 @@ public:
 	static void setProjectDirectory(const wchar_t *path)
 	{
 		wcscpy_s(projectDirectory(), PT_MAXPATH, path);
-		::PathRemoveFileSpecW(projectDirectory());
+		PathRemoveFileSpecW(projectDirectory());
 	}
 
 	static void makeProjectDirectoryCurrent()
 	{
-		::SetCurrentDirectoryW(projectDirectory());
+		SetCurrentDirectoryW(projectDirectory());
 	}
 
 	static int maxFilePath()
@@ -393,6 +392,7 @@ public:
 		return PT_MAXPATH; 
 	}
 
+#ifdef NEEDS_WORK_VORTEX_DGNDB
 	static ptds::FilePath applicationDataFolder()
 	{
 		LPITEMIDLIST pidl;
@@ -403,6 +403,7 @@ public:
 			return ptds::FilePath(p);
 		}
 	}
+#endif
 
 #ifndef NO_DATA_SOURCE_SERVER
 
@@ -420,7 +421,7 @@ private:
 	}
 	wchar_t  m_sPath[PT_MAXPATH];
 
-	BYTE m_bAbsolute;
+	bool m_bAbsolute;
 
 	const FilePath *m_parent;
 };
