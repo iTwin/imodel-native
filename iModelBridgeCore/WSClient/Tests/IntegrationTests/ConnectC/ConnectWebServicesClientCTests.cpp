@@ -13,8 +13,24 @@
 
 void ConnectWebServicesClientC::SetUp()
     {
-    m_api = ConnectWebServicesClientC_InitializeApiWithCredentials(L"david.jones@bentley.com", L"testdfijEr34", CCPRODUCTID);
+    m_api = ConnectWebServicesClientC_InitializeApiWithCredentials
+        (m_username.c_str(),
+        m_password.c_str(),
+        m_temporaryDirectory.c_str(),
+        m_assetsRootDirectory.c_str(),
+        m_applicationName.c_str(),
+        m_applicationVersion.c_str(),
+        m_applicationGuid.c_str(),
+        m_ccProductId.c_str()
+        );
+
     ASSERT_TRUE(m_api != nullptr);
+
+    ConnectWebServicesClientC_ConfigureWebProxy
+        (
+        m_api,
+        "127.0.0.1:8888"
+        );
     }
 
 TEST_F(ConnectWebServicesClientC, ReadProject_ProjectExists_SuccessfulRetreival)
@@ -37,25 +53,47 @@ TEST_F(ConnectWebServicesClientC, ReadProject_InvalidDataBufHandle_ErrorCodeRetu
 
 TEST_F(ConnectWebServicesClientC, Ctor_ValidCredentialsAndProductId_SuccessfulInialization)
     {
-    WCharP username = L"david.jones@bentley.com";
-    WCharP password = L"testdfijEr34";
-    auto api = ConnectWebServicesClientC_InitializeApiWithCredentials(username, password, CCPRODUCTID);
+    auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
+        (m_username.c_str(),
+        m_password.c_str(),
+        m_temporaryDirectory.c_str(),
+        m_assetsRootDirectory.c_str(),
+        m_applicationName.c_str(),
+        m_applicationVersion.c_str(),
+        m_applicationGuid.c_str(),
+        m_ccProductId.c_str()
+        );
     ASSERT_FALSE(api == nullptr);
     }
 
 TEST_F(ConnectWebServicesClientC, Ctor_InvalidCredentialsAndValidProductId_NullptrReturned)
     {
-    WChar *username = L"david.jones@bentley.com";
-    WChar *password = L"password";
-    auto api = ConnectWebServicesClientC_InitializeApiWithCredentials(username, password, CCPRODUCTID);
+    WCharP password = L"password";
+    auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
+        (m_username.c_str(),
+        password,
+        m_temporaryDirectory.c_str(),
+        m_assetsRootDirectory.c_str(),
+        m_applicationName.c_str(),
+        m_applicationVersion.c_str(),
+        m_applicationGuid.c_str(),
+        m_ccProductId.c_str()
+        );
     ASSERT_TRUE(api == nullptr);
     }
 
 TEST_F(ConnectWebServicesClientC, Ctor_ValidCredentialsAndInvalidProductId_NullptrReturned)
     {
-    WChar *username = L"david.jones@bentley.com";
-    WChar *password = L"testdfijEr34";
-    auto api = ConnectWebServicesClientC_InitializeApiWithCredentials(username, password, 9999);
+    auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
+        (m_username.c_str(),
+        m_password.c_str(),
+        m_temporaryDirectory.c_str(),
+        m_assetsRootDirectory.c_str(),
+        m_applicationName.c_str(),
+        m_applicationVersion.c_str(),
+        m_applicationGuid.c_str(),
+        L"9999"
+        );
     ASSERT_TRUE(api == nullptr);
     }
 
