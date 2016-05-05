@@ -332,6 +332,9 @@ public:
 public:
     static DgnCode GetModelCode(Iterator::Entry const& entry); //!< @private
     //! Determine the Id of the first non-dictionary model in this DgnDb.
+    //! @note DEPRECATED - Improper assumptions about model structure within a DgnDb
+    //! @see QueryModelId
+    //! @private
     DGNPLATFORM_EXPORT DgnModelId QueryFirstModelId() const;
 
     //! Load a DgnModel from this DgnDb. Loading a model does not cause its elements to be filled. Rather, it creates an
