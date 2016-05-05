@@ -30,15 +30,16 @@ private:
     Utf8String m_name;
     Utf8String m_id;
     Utf8String m_fileId;
+    Utf8String m_mergedRevisionId;
     Utf8String m_userUploaded;
     DateTime   m_uploadedDate;
  //__PUBLISH_SECTION_START__
 public:
     DGNDBSERVERCLIENT_EXPORT RepositoryInfo();
-    DGNDBSERVERCLIENT_EXPORT RepositoryInfo(Utf8StringCR serverUrl, Utf8StringCR id);
+    DGNDBSERVERCLIENT_EXPORT RepositoryInfo(Utf8StringCR serverUrl, Utf8StringCR id, Utf8StringCR mergedRevisionId = "");
     DGNDBSERVERCLIENT_EXPORT RepositoryInfo(Utf8StringCR serverUrl, Utf8StringCR id, Utf8StringCR name, Utf8StringCR description);
     DGNDBSERVERCLIENT_EXPORT RepositoryInfo(Utf8StringCR serverUrl, Utf8StringCR id, Utf8StringCR name, Utf8StringCR fileId, Utf8StringCR fileUrl,
-                                            Utf8StringCR fileName, Utf8StringCR description, Utf8StringCR user, DateTimeCR date);
+                                            Utf8StringCR fileName, Utf8StringCR description, Utf8StringCR mergedRevisionId, Utf8StringCR user, DateTimeCR date);
 
     //__PUBLISH_SECTION_END__
     static DgnDbServerStatusResult ReadRepositoryInfo(RepositoryInfo& repositoryInfo, Dgn::DgnDbCR db);
@@ -54,6 +55,7 @@ public:
     DGNDBSERVERCLIENT_EXPORT Utf8StringCR GetId() const; //!< Converted repository name, containing no illegal characters.
     DGNDBSERVERCLIENT_EXPORT Utf8StringCR GetFileId() const; //!< Guid of the repository master file.
     DGNDBSERVERCLIENT_EXPORT Utf8String   GetWSRepositoryName() const; //!< Formatted WebServices repository id that is used in the address.
+    DGNDBSERVERCLIENT_EXPORT Utf8StringCR GetMergedRevisionId() const; //!< Get Last Revision Id merged to the repository.
     DGNDBSERVERCLIENT_EXPORT Utf8StringCR GetUserUploaded() const; //!< Name of the user that uploaded the master file.
     DGNDBSERVERCLIENT_EXPORT DateTimeCR   GetUploadedDate() const; //!< Date when the file was uploaded.
 };

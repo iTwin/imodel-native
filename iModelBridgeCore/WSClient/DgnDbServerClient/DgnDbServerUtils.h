@@ -59,6 +59,7 @@ namespace ServerSchema
         static Utf8CP BriefcaseId = "BriefcaseId";
         static Utf8CP ParentId = "ParentId";
         static Utf8CP MasterFileId = "MasterFileId";
+        static Utf8CP MergedRevisionId = "MergedRevisionId";
         static Utf8CP UserCreated = "UserCreated";
         static Utf8CP PushDate = "PushDate";
         static Utf8CP Published = "Published";
@@ -97,6 +98,7 @@ namespace Db
         {
         static Utf8CP RepositoryURL = "ServerURL";
         static Utf8CP RepositoryId = "RepositoryId";
+        static Utf8CP ParentRevisionId = "ParentRevisionId";
         }
     namespace Properties
         {

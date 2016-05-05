@@ -70,7 +70,7 @@ void RepositoryInfoParser (RepositoryInfoR repositoryInfo, Utf8StringCR reposito
     DateTime::FromString(uploadedDate, static_cast<Utf8CP>(value[ServerSchema::Property::UploadedDate].asCString()));
     repositoryInfo = RepositoryInfo(repositoryUrl, repositoryId, value[ServerSchema::Property::RepositoryName].asString(), value[ServerSchema::Property::FileId].asString(), 
                                     value[ServerSchema::Property::URL].asString(), value[ServerSchema::Property::FileName].asString(), value[ServerSchema::Property::Description].asString(),
-                                    value[ServerSchema::Property::UserUploaded].asString(), uploadedDate);
+                                    value[ServerSchema::Property::MergedRevisionId].asString(), value[ServerSchema::Property::UserUploaded].asString(), uploadedDate);
     }
 
 //---------------------------------------------------------------------------------------

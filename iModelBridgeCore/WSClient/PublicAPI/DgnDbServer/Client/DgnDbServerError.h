@@ -16,9 +16,9 @@ struct DgnDbServerError : public DgnClientFx::Utils::AsyncError
     public:
         enum class Id
             {
-            Unknown,
+            Unknown = -1,
             //DgnDbServer Errors
-            MissingRequiredProperties,
+            MissingRequiredProperties = 1,
             InvalidBriefcase,
             BriefcaseDoesNotBelongToUser,
             AnotherUserPushing,
