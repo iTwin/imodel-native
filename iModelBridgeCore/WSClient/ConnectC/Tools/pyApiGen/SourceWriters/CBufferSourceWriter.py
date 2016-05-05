@@ -222,7 +222,7 @@ class CBufferSourceWriter(SourceWriter):
         accessor_str += "    if(nullptr == dataBuffer)\n"
         accessor_str += '        {\n'
         accessor_str += '        api->SetStatusMessage("{1}");\n        api->SetStatusDescription("{2}");\n' \
-                        '        return {0};\n        }}\n\n'.format("INVALID_PARAMETER", self._status_codes["INVALID_PARAMETER"],
+                        '        return {0};\n        }}\n\n'.format("INVALID_PARAMETER", self._status_codes["INVALID_PARAMETER"].message,
                                                                      "The dataBuffer passed into {0} data access function is invalid."
                                                                      .format(self._api.get_api_name()))
         accessor_str += "    H{0}BUFFER buf = (H{0}BUFFER) dataBuffer;\n\n".format(self._api.get_api_acronym())
@@ -254,7 +254,7 @@ class CBufferSourceWriter(SourceWriter):
                     raise PropertyTypeError("Property type {0} not accepted".format(property_type))
         accessor_str += "        default:\n"
         accessor_str += '        api->SetStatusMessage("{1}");\n        api->SetStatusDescription("{2}");\n' \
-                        '        return {0};\n'.format("INVALID_PARAMETER", self._status_codes["INVALID_PARAMETER"],
+                        '        return {0};\n'.format("INVALID_PARAMETER", self._status_codes["INVALID_PARAMETER"].message,
                                                        "The buffer type passed in is invalid.")
         accessor_str += "        }\n"
         accessor_str += "    }\n"
