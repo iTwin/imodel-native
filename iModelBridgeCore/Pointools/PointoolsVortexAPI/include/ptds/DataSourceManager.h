@@ -24,9 +24,6 @@ class DataSourceManager
 {
 protected:
 
-	IStorage					*	currentStructuredStorage;
-	IStream						*	currentStructuredStorageStream;
-
 public:
 									DataSourceManager					(void);
 

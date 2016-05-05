@@ -175,7 +175,7 @@ namespace PTRMI
 	}
 
 	HOST_ADDRESS_T inline
-	bool HostAddress<IPSubValue, numDigits>::getURL(std::wstring &resultURL, bool includePort = true)
+	bool HostAddress<IPSubValue, numDigits>::getURL(std::wstring &resultURL, bool includePort)
 	{
 		unsigned int p = url.find_first_of(L":");
 

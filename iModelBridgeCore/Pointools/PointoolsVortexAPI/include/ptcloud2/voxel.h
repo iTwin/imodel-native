@@ -9,10 +9,6 @@
 #ifndef POINTCLOUD_VOXEL
 #define POINTCLOUD_VOXEL 1
 
-#ifndef POINTOOLS_POD_API
-#include <pt/pageable.h>
-#endif
-
 #include <ptcloud2/pcloud.h>
 #include <ptcloud2/node.h>
 #include <ptcloud2/datachannel.h>

@@ -38,6 +38,7 @@ DataSourcePtr DataSourceManager::createDataSource(const FilePath *path, DataSour
 	//DataSourcePtr result;
 															// NOTE: Register and poll DataSource modules in future
 
+#ifdef NEEDS_WORK_VORTEX_DGNDB
 															// If path refers to a structured storage (Externally managed) create new data source
 	if(DataSourceStructuredStorage::isValidPath(path))
 		return DataSourceStructuredStorage::createNew(path);
@@ -48,6 +49,8 @@ DataSourcePtr DataSourceManager::createDataSource(const FilePath *path, DataSour
 															// If path is URL to a data source cache, create a new data source cache
 	if(DataSourceCache::isValidPath(path))
 		return DataSourceCache::createNew(path);
+
+#endif
 
 #endif
 															// If path is URL to data in buffer, create a new memory based data source

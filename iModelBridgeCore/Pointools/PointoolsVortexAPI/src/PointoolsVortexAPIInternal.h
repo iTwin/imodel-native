@@ -6,7 +6,12 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#pragma once
+// pragma once is giving 'error: #pragma once in main file' with GCC. Looks like a GCC bug :
+// https://gcc.gnu.org/bugzilla/show_bug.cgi?id=47857
+//#pragma once
+
+#ifndef __VORTEXINTERNAL_H__
+#define __VORTEXINTERNAL_H__
 
 // Windows Header Files:
 #if defined (BENTLEY_WIN32) 
@@ -35,7 +40,13 @@
     #define PathRelativePathToW
     #define SetCurrentDirectoryW
     #define _waccess(a,b) 1
+    #define DeleteFileW(a)
 
+    typedef void* HANDLE;
+   
+
+    #define swscanf_s swscanf
+    #define sprintf_s BeStringUtilities::Snprintf
 
 
 #endif
@@ -110,8 +121,11 @@
 #include <pt/ptmath.h>
 #include <ptcloud2/bitvector.h>
 #include <math/matrix_math.h>
-#include <PTRMI/Manager.h>
+
+#if defined (BENTLEY_WIN32)     //NEEDS_WORK_VORTEX_DGNDB 
+    #include <PTRMI/Manager.h>
+#endif
 #include <ptengine/ClipManager.h>
 
-
+#endif //__VORTEXINTERNAL_H__
 
