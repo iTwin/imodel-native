@@ -6,6 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 
+#ifdef NOT_NOW_ANDROID_STATIC_BB_1_ISSUE
+
 #ifdef BENTLEY_WIN32
 
 #include "DgnHandlersTests.h"
@@ -2135,3 +2137,5 @@ geometry to the DgnDb. These will make it easier to provide the intended interac
 */
 
 #endif
+
+#endif // NOT_NOW_ANDROID_STATIC_BB_1_ISSUE
