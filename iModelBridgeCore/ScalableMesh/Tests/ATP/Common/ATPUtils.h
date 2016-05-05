@@ -46,6 +46,7 @@ typedef enum
     EXPORT_LINE,
     EXPORT_VOLUME,
     IMPORT_VOLUME,
+    TEST_GROUP_NODE_HEADERS,
     ADD_TEXTURES_TO_MESH,
     } TestType;
 

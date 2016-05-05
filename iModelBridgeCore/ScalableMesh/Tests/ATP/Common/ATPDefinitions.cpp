@@ -1280,6 +1280,48 @@ StatusInt DoBatchDrape(vector<vector<DPoint3d>>& lines, DTMPtr& dtmPtr, vector<v
 //    file.Close();
 //    }
 
+void PerformGroupNodeHeaders(BeXmlNodeP pTestNode, FILE* pResultFile)
+    {
+    WString scmFileName, outputDir, result;
+    // Parses the test(s) definition:
+    if (pTestNode->GetAttributeStringValue(scmFileName, "scmFileName") != BEXML_Success)
+        {
+        printf("ERROR : scmFileName attribute not found\r\n");
+        return;
+        }
+    if (pTestNode->GetAttributeStringValue(outputDir, "outputDir") != BEXML_Success)
+        {
+        printf("ERROR : outputDir attribute not found\r\n");
+        return;
+        }
+
+    double t = clock();
+
+    // Check existence of scm file
+    StatusInt status;
+    IScalableMeshPtr scmFile = IScalableMesh::GetFor(scmFileName.c_str(), false, false, status);
+
+    if (scmFile != 0 && status == SUCCESS)
+        {
+        status = scmFile->GroupNodeHeaders(outputDir);
+        if (SUCCESS != status) result = L"FAILURE -> could not group node headers";
+        }
+    else
+        {
+        result = L"FAILURE -> could not open scm file";
+        }
+    t = clock() - t;
+
+    fwprintf(pResultFile, L"%s,%s,%0.5f\n",
+             scmFileName.c_str(),
+             result.c_str(),
+             (double)t / CLOCKS_PER_SEC
+             );
+
+    fflush(pResultFile);
+
+    }
+
 void AddTexturesToMesh(BeXmlNodeP pTestNode, FILE* pResultFile)
     {
     WString scmFileName, cloudOutDirPath, result;

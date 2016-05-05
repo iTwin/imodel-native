@@ -60,7 +60,7 @@ private:
 class SMNodeGroupMasterHeader : public std::map<size_t, vector<uint64_t>>, public HFCShareableObject<SMNodeGroupMasterHeader>
     {
     public:
-        SMNodeGroupMasterHeader(const WString& pi_pOldMasterHeaderPath) : m_pOldMasterHeaderPath(pi_pOldMasterHeaderPath) {}
+        SMNodeGroupMasterHeader() {}
 
         void AddGroup(const size_t& pi_pGroupID, size_type pi_pCount = 10000)
             {
@@ -75,19 +75,20 @@ class SMNodeGroupMasterHeader : public std::map<size_t, vector<uint64_t>>, publi
 
         void SaveToFile(const WString pi_pOutputDirPath)
             {
+            assert(!m_pOldMasterHeader.empty()); // Old master header must be set!
 
             // First, we need to copy the old Master Header file -- then append group information --
-            auto oldMasterHeaderFilename = m_pOldMasterHeaderPath;
-            oldMasterHeaderFilename.append(L"\\MasterHeader.sscm");
-            BeFile oldMasterHeaderFile;
-            if (BeFileStatus::Success != OPEN_FILE(oldMasterHeaderFile, oldMasterHeaderFilename.c_str(), BeFileAccess::Read)) //oldMasterHeaderFile.Open(oldMasterHeaderFilename.c_str(), BeFileAccess::Read, BeFileSharing::None))
-                assert(!"Problem reading the old Master Header File... does it exist?");
-            uint64_t fileSize;
-            oldMasterHeaderFile.GetSize(fileSize);
-            bvector<Byte> oldMasterHeaderBuffer(fileSize);
-            uint32_t bytes_read;
-            oldMasterHeaderFile.Read(oldMasterHeaderBuffer.data(), &bytes_read, fileSize);
-            assert(bytes_read == fileSize);
+            //auto oldMasterHeaderFilename = m_pOldMasterHeaderPath;
+            //oldMasterHeaderFilename.append(L"\\MasterHeader.sscm");
+            //BeFile oldMasterHeaderFile;
+            //if (BeFileStatus::Success != OPEN_FILE(oldMasterHeaderFile, oldMasterHeaderFilename.c_str(), BeFileAccess::Read)) //oldMasterHeaderFile.Open(oldMasterHeaderFilename.c_str(), BeFileAccess::Read, BeFileSharing::None))
+            //    assert(!"Problem reading the old Master Header File... does it exist?");
+            //uint64_t fileSize;
+            //oldMasterHeaderFile.GetSize(fileSize);
+            //bvector<Byte> oldMasterHeaderBuffer(fileSize);
+            //uint32_t bytes_read;
+            //oldMasterHeaderFile.Read(oldMasterHeaderBuffer.data(), &bytes_read, fileSize);
+            //assert(bytes_read == fileSize);
 
             wstringstream ss;
             ss << WString(pi_pOutputDirPath + L"\\MasterHeader.bin");
@@ -98,14 +99,14 @@ class SMNodeGroupMasterHeader : public std::map<size_t, vector<uint64_t>>, publi
                 {
                 uint32_t NbChars = 0;
 
-                // Paste old Master Header file into new Master Header file
+                // Save old Master Header file into new Master Header file
                 // NEEDS_WORK_SM : The old Master Header is saved in JSON format. Should be binary.
-                const auto sizeOldMasterHeaderFile = oldMasterHeaderBuffer.size();
+                const uint32_t sizeOldMasterHeaderFile = (uint32_t)m_pOldMasterHeader.size();
                 file.Write(&NbChars, &sizeOldMasterHeaderFile, sizeof(sizeOldMasterHeaderFile));
                 assert(NbChars == sizeof(sizeOldMasterHeaderFile));
 
-                file.Write(&NbChars, oldMasterHeaderBuffer.data(), (uint32_t)oldMasterHeaderBuffer.size());
-                assert(NbChars == (uint32_t)oldMasterHeaderBuffer.size());
+                file.Write(&NbChars, m_pOldMasterHeader.data(), sizeOldMasterHeaderFile);
+                assert(NbChars == (uint32_t)m_pOldMasterHeader.size());
 
                 // Append group information
                 for (auto& group : *this)
@@ -129,8 +130,15 @@ class SMNodeGroupMasterHeader : public std::map<size_t, vector<uint64_t>>, publi
                 }
             file.Close();
             }
+
+        void SetOldMasterHeaderData(SQLiteIndexHeader pi_pOldMasterHeader)
+            {
+            // Serialize master header
+            m_pOldMasterHeader.resize(sizeof(pi_pOldMasterHeader));
+            memcpy(m_pOldMasterHeader.data(), &pi_pOldMasterHeader, sizeof(pi_pOldMasterHeader));
+            }
     private:
-        WString m_pOldMasterHeaderPath;
+        bvector<uint8_t> m_pOldMasterHeader;
     };
 
 class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
@@ -1117,13 +1125,14 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
     public:
         // Constructor / Destroyer
 
-        SMStreamingPointTaggedTileStore(WString& path, WString grouped_headers_path = L"", bool compress = true)
+        SMStreamingPointTaggedTileStore(WString& path, WString grouped_headers_path = L"", bool areNodeHeadersGrouped = false, bool compress = true)
             :m_path(path),
             m_path_to_grouped_headers(grouped_headers_path),
             m_node_id(0),
+            m_use_node_header_grouping(areNodeHeadersGrouped),
             m_pCodec(new HCDCodecZlib()),
-            m_storage_connection_string(L"DefaultEndpointsProtocol=https;AccountName=pcdsustest;AccountKey=3EQ8Yb3SfocqbYpeIUxvwu/aEdiza+MFUDgQcIkrxkp435c7BxV8k2gd+F+iK/8V2iho80kFakRpZBRwFJh8wQ==")//,
-           // m_stream_store(m_storage_connection_string, L"scalablemeshtest")
+            m_storage_connection_string(L"DefaultEndpointsProtocol=https;AccountName=pcdsustest;AccountKey=3EQ8Yb3SfocqbYpeIUxvwu/aEdiza+MFUDgQcIkrxkp435c7BxV8k2gd+F+iK/8V2iho80kFakRpZBRwFJh8wQ=="),
+            m_stream_store(m_storage_connection_string.c_str(), L"scalablemeshtest")
             {
             if (s_stream_from_disk)
                 {
@@ -1224,7 +1233,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
             if (indexHeader != NULL)
                 {
 
-                if (s_stream_from_grouped_store)
+                if (m_use_node_header_grouping || s_stream_from_grouped_store)
                     {
                     wstringstream ss;
                     ss << m_path_to_grouped_headers << L"MasterHeader.bin";
@@ -1250,7 +1259,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                             }
                         else 
                             {
-                           /* m_stream_store.DownloadBlob(filename.c_str(), [indexHeader, &headerSize, &masterHeaderBuffer](const scalable_mesh::azure::Storage::point_buffer_type& buffer)
+                            m_stream_store.DownloadBlob(filename.c_str(), [indexHeader, &headerSize, &masterHeaderBuffer](const scalable_mesh::azure::Storage::point_buffer_type& buffer)
                                 {
                                 if (buffer.empty())
                                     {
@@ -1261,30 +1270,44 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
 
                                 masterHeaderBuffer = new char[headerSize];
                                 memcpy(masterHeaderBuffer, buffer.data(), headerSize);
-                                });*/
+                                });
                             }
 
                         uint64_t position = 0;
 
-                        uint64_t sizeOfOldMasterHeaderPart;
+                        uint32_t sizeOfOldMasterHeaderPart;
                         memcpy(&sizeOfOldMasterHeaderPart, masterHeaderBuffer + position, sizeof(sizeOfOldMasterHeaderPart));
                         position += sizeof(sizeOfOldMasterHeaderPart);
+                        assert(sizeOfOldMasterHeaderPart == sizeof(SQLiteIndexHeader));
 
-                        { // NEEDS_WORK_SM : The old Master Header is saved in JSON format. Should be binary.
-                        Json::Reader reader;
-                        Json::Value masterHeader;
-                        reader.parse(masterHeaderBuffer + position, masterHeaderBuffer + sizeOfOldMasterHeaderPart, masterHeader);
-                        position += sizeOfOldMasterHeaderPart;
-
-                        indexHeader->m_SplitTreshold = masterHeader["splitThreshold"].asUInt();
-                        indexHeader->m_balanced = masterHeader["balanced"].asBool();
-                        indexHeader->m_depth = masterHeader["depth"].asUInt();
-                        indexHeader->m_singleFile = masterHeader["singleFile"].asBool();
+                        SQLiteIndexHeader oldMasterHeader;
+                        memcpy(&oldMasterHeader, masterHeaderBuffer + position, sizeof(SQLiteIndexHeader));
+                        position += sizeof(SQLiteIndexHeader);
+                        indexHeader->m_SplitTreshold = oldMasterHeader.m_SplitTreshold;
+                        indexHeader->m_balanced = oldMasterHeader.m_balanced;
+                        indexHeader->m_depth = oldMasterHeader.m_depth;
+                        indexHeader->m_singleFile = oldMasterHeader.m_singleFile;
                         HASSERT(indexHeader->m_singleFile == false); // cloud is always multifile. So if we use streamingTileStore without multiFile, there are problem
-
-                        auto rootNodeBlockID = masterHeader["rootNodeBlockID"].asUInt();
+                        
+                        auto rootNodeBlockID = oldMasterHeader.m_rootNodeBlockID;
                         indexHeader->m_rootNodeBlockID = rootNodeBlockID != IDTMFile::GetNullNodeID() ? HPMBlockID(rootNodeBlockID) : HPMBlockID();
-                        }
+
+
+                        //{ // NEEDS_WORK_SM : The old Master Header is saved in JSON format. Should be binary.
+                        //Json::Reader reader;
+                        //Json::Value masterHeader;
+                        //reader.parse(masterHeaderBuffer + position, masterHeaderBuffer + sizeOfOldMasterHeaderPart, masterHeader);
+                        //position += sizeOfOldMasterHeaderPart;
+                        //
+                        //indexHeader->m_SplitTreshold = masterHeader["splitThreshold"].asUInt();
+                        //indexHeader->m_balanced = masterHeader["balanced"].asBool();
+                        //indexHeader->m_depth = masterHeader["depth"].asUInt();
+                        //indexHeader->m_singleFile = masterHeader["singleFile"].asBool();
+                        //HASSERT(indexHeader->m_singleFile == false); // cloud is always multifile. So if we use streamingTileStore without multiFile, there are problem
+                        //
+                        //auto rootNodeBlockID = masterHeader["rootNodeBlockID"].asUInt();
+                        //indexHeader->m_rootNodeBlockID = rootNodeBlockID != IDTMFile::GetNullNodeID() ? HPMBlockID(rootNodeBlockID) : HPMBlockID();
+                        //}
 
                         // Parse rest of file -- group information
                         while (position < headerSize)
@@ -1348,7 +1371,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                     }
                 else {
                     auto blob_name = m_path + L"MasterHeader.sscm";
-                   /* m_stream_store.DownloadBlob(blob_name.c_str(), [indexHeader, &headerSize](const scalable_mesh::azure::Storage::point_buffer_type& buffer)
+                    m_stream_store.DownloadBlob(blob_name.c_str(), [indexHeader, &headerSize](const scalable_mesh::azure::Storage::point_buffer_type& buffer)
                         {
                         if (buffer.empty()) 
                             {
@@ -1367,7 +1390,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                         auto rootNodeBlockID = masterHeader["rootNodeBlockID"].asUInt();
                         indexHeader->m_rootNodeBlockID = rootNodeBlockID != IDTMFile::GetNullNodeID() ? HPMBlockID(rootNodeBlockID) : HPMBlockID();
 
-                        });*/
+                        });
 
                     }
                 return headerSize;
@@ -1623,6 +1646,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                 auto group = this->GetGroup(blockID);
                 auto node_header = group->GetNodeHeader(ConvertBlockID(blockID));
                 ReadNodeHeaderFromBinary(header, group->GetRawHeaders() + node_header.offset, node_header.size);
+                header->m_isTextured = !header->m_textureID.empty();
                 }
             else {
                 auto nodeHeader = this->GetNodeHeader(blockID);
@@ -1665,8 +1689,10 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
         Json::Value m_header;
         uint32_t m_node_id;
         bool m_stream_from_disk;
+        bool m_use_node_header_grouping;
         HFCPtr<HCDCodec>        m_pCodec;
-        std::wstring m_storage_connection_string;
+        // NEEDS_WORK_SM_STREAMING: should only have one stream store for all data types
+        WString m_storage_connection_string;
         scalable_mesh::azure::Storage m_stream_store;
         WString m_path_to_grouped_headers;
         bvector<HFCPtr<SMNodeGroup>> m_nodeHeaderGroups;

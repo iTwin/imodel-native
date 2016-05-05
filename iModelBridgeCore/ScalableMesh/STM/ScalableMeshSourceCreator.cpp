@@ -631,10 +631,8 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
 
         auto position = m_scmFileName.find_last_of(L".stm");
         auto filenameWithoutExtension = m_scmFileName.substr(0, position - 3);
-        WString streamingFilePath = filenameWithoutExtension + L"_stream\\";
         auto groupedStreamingFilePath = filenameWithoutExtension + L"_grouped_stream\\";
-        WString point_store_path = streamingFilePath + L"point_store\\";
-        pDataIndex->SaveCloudReady(groupedStreamingFilePath, HFCPtr<SMNodeGroupMasterHeader>(new SMNodeGroupMasterHeader(point_store_path)));
+        pDataIndex->SaveCloudReady(groupedStreamingFilePath, true);
         }
 //    auto& store = pDataIndex->GetClipStore();
     pDataIndex = 0;

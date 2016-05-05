@@ -361,10 +361,10 @@ int IScalableMesh::LoadAllNodeHeaders(size_t& nbLoadedNodes) const
     return _LoadAllNodeHeaders(nbLoadedNodes);
     }
 
-/*int IScalableMesh::AddTextures(const HFCPtr<HIMMosaic>& pMosaic) const
+int IScalableMesh::GroupNodeHeaders(const WString& pi_pOutputDirPath) const
     {
-    return _AddTextures(pMosaic);
-    }*/
+    return _GroupNodeHeaders(pi_pOutputDirPath);
+    }
 #endif
 
 /*----------------------------------------------------------------------------+
@@ -719,18 +719,18 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                     WString azureDatasetName(L"quebeccity\\");
                     // NEEDS_WORK_SM - Check existence of the following directories
                     WString streamingFilePath = (s_stream_from_disk ? m_path.substr(0, position - 3) + L"_stream\\" : L"");
-                    WString groupedStreamingFilePath = (s_stream_from_disk ? filenameWithoutExtension + L"_grouped_stream\\" : azureDatasetName + L"headers\\");
+                    WString groupedStreamingFilePath = (s_stream_from_disk ? streamingFilePath + L"groupedNodeHeaders\\" : azureDatasetName + L"headers\\");
                     WString point_store_path = (s_stream_from_disk ? streamingFilePath + L"point_store\\" : azureDatasetName + L"points\\");
                     WString indice_store_path = (s_stream_from_disk ? streamingFilePath + L"indice_store\\" : azureDatasetName + L"indices\\");
-                    WString uv_store_path = streamingFilePath + L"uv_store\\";
-                    WString uvIndice_store_path = streamingFilePath + L"uvIndice_store\\";
-                    WString texture_store_path = streamingFilePath + L"texture_store\\";
+                    WString uv_store_path = (s_stream_from_disk ? streamingFilePath + L"uv_store\\" : azureDatasetName + L"uvs\\");
+                    WString uvIndice_store_path = (s_stream_from_disk ? streamingFilePath + L"uvIndice_store\\" : azureDatasetName + L"uvIndices\\");
+                    WString texture_store_path = (s_stream_from_disk ? streamingFilePath + L"texture_store\\" : azureDatasetName + L"textures\\");
 
                     // NEEDS_WORK_SM - Need to stream textures as well
-                    pStreamingTileStore = new StreamingPointStoreType(point_store_path, groupedStreamingFilePath, AreDataCompressed());
-                    pStreamingIndiceTileStore = new SMStreamingPointTaggedTileStore< int32_t, YProtPtExtentType>(indice_store_path, groupedStreamingFilePath, AreDataCompressed());
-                    pStreamingUVTileStore = new SMStreamingPointTaggedTileStore< DPoint2d, YProtPtExtentType>(uv_store_path, groupedStreamingFilePath, AreDataCompressed());
-                    pStreamingUVsIndicesTileStore = new SMStreamingPointTaggedTileStore<int32_t, YProtPtExtentType >(uvIndice_store_path, groupedStreamingFilePath, AreDataCompressed());
+                    pStreamingTileStore = new StreamingPointStoreType(point_store_path, groupedStreamingFilePath, s_stream_from_grouped_store, AreDataCompressed());
+                    pStreamingIndiceTileStore = new StreamingIndiceStoreType(indice_store_path, groupedStreamingFilePath, AreDataCompressed());
+                    pStreamingUVTileStore = new StreamingUVStoreType(uv_store_path, groupedStreamingFilePath, AreDataCompressed());
+                    pStreamingUVsIndicesTileStore = new StreamingIndiceStoreType(uvIndice_store_path, groupedStreamingFilePath, AreDataCompressed());
                     pStreamingTextureTileStore = new StreamingTextureTileStore(texture_store_path.c_str());
                     m_scmIndexPtr = new MeshIndexType(ScalableMeshMemoryPools<POINT>::Get()->GetGenericPool(),                                                       
                                                        &*pStreamingTileStore,                                                            
@@ -747,13 +747,6 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                                                             false,
                                                             0,
                                                             0);
-
-                    if (s_save_grouped_store && !m_scmIndexPtr->IsEmpty())
-                        {
-
-                        auto groupedStreamingFilePath = m_path.substr(0, position - 3) + L"_grouped_stream\\";
-                        m_scmIndexPtr->SaveCloudReady(groupedStreamingFilePath, HFCPtr<SMNodeGroupMasterHeader>(new SMNodeGroupMasterHeader(point_store_path)));
-                        }
 
                     }
                 else
@@ -1884,7 +1877,7 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_ConvertToCloud(const WStr
     {
     if (m_scmIndexPtr == nullptr) return ERROR;
 
-    return m_scmIndexPtr->SaveCloudReady(pi_pOutputDirPath);
+    return m_scmIndexPtr->SaveCloudReady(pi_pOutputDirPath, false);
     }
 
 #ifdef SCALABLE_MESH_ATP
@@ -1898,16 +1891,13 @@ template <class POINT> int ScalableMesh<POINT>::_LoadAllNodeHeaders(size_t& nbLo
     } 
 
 /*----------------------------------------------------------------------------+
-|MrDTM::_AddTextures
+|MrDTM::_GroupNodeHeaders
 +----------------------------------------------------------------------------*/
-/*template <class POINT> int ScalableMesh<POINT>::_AddTextures(const HFCPtr<HIMMosaic>& pMosaic) const
+template <class POINT> int ScalableMesh<POINT>::_GroupNodeHeaders(const WString& pi_pOutputDirPath) const
     {
-    auto nextID = m_scmIndexPtr->GetStore()->GetNextID();
-    nextID = nextID != uint64_t(-1) ? nextID : m_scmIndexPtr->GetNextID();
-    m_scmIndexPtr->SetNextID(nextID);
-    m_scmIndexPtr->TextureFromRaster(pMosaic.GetPtr());
+    m_scmIndexPtr->SaveCloudReady(pi_pOutputDirPath, true);
     return SUCCESS;
-    }*/
+    }
 #endif
 /*----------------------------------------------------------------------------+
 |ScalableMeshSingleResolutionPointIndexView Method Definition Section - Begin
