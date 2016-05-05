@@ -12,12 +12,44 @@
 * Constructor.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-CWSCCHANDLE ConnectWebServicesClientC_InitializeApiWithToken(WCharCP wAuthenticatedToken, uint32_t productId)
+CWSCCHANDLE ConnectWebServicesClientC_InitializeApiWithToken
+(
+WCharCP wAuthenticatedToken,
+WCharCP wTemporaryDirectory,
+WCharCP wAssetsRootDirectory,
+WCharCP wApplicationName,
+WCharCP wApplicationVersion,
+WCharCP wApplicationGUID,
+WCharCP wApplicationProductId
+)
     {
     Utf8String authenticatedToken;
+    BeFileName temporaryDirectory(wTemporaryDirectory);
+    BeFileName assetsRootDirectory(wAssetsRootDirectory);
+    Utf8String applicationName;
+    Utf8String utf8ApplicationVersion;
+    Utf8String applicationGUID;
+    Utf8String applicationProductId;
     BeStringUtilities::WCharToUtf8(authenticatedToken, wAuthenticatedToken);
-    LPCWSCC api = new ConnectWebServicesClientC_internal(authenticatedToken, productId);
-    if (api->m_wsRepositoryClientPtr == nullptr || api->m_solrClientPtr == nullptr)
+    BeStringUtilities::WCharToUtf8(applicationName, wApplicationName);
+    BeStringUtilities::WCharToUtf8(utf8ApplicationVersion, wApplicationVersion);
+    BeStringUtilities::WCharToUtf8(applicationGUID, wApplicationGUID);
+    BeStringUtilities::WCharToUtf8(applicationProductId, wApplicationProductId);
+
+    BeVersion applicationVersion(utf8ApplicationVersion.c_str());
+
+    LPCWSCC api = new ConnectWebServicesClientC_internal
+        (
+        authenticatedToken,
+        temporaryDirectory,
+        assetsRootDirectory,
+        applicationName,
+        applicationVersion,
+        applicationGUID,
+        applicationProductId
+        );
+
+    if (api->m_solrClientPtr == nullptr)
         return nullptr;
     return (CWSCCHANDLE) api;
     }
@@ -26,13 +58,49 @@ CWSCCHANDLE ConnectWebServicesClientC_InitializeApiWithToken(WCharCP wAuthentica
 * Constructor.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-CWSCCHANDLE ConnectWebServicesClientC_InitializeApiWithCredentials(WCharCP wUsername, WCharCP wPassword, uint32_t productId)
+CWSCCHANDLE ConnectWebServicesClientC_InitializeApiWithCredentials
+(
+WCharCP wUsername,
+WCharCP wPassword,
+WCharCP wTemporaryDirectory,
+WCharCP wAssetsRootDirectory,
+WCharCP wApplicationName,
+WCharCP wApplicationVersion,
+WCharCP wApplicationGUID,
+WCharCP wApplicationProductId
+)
     {
-    Utf8String username, password;
+    Utf8String username;
+    Utf8String password;
+    BeFileName temporaryDirectory(wTemporaryDirectory);
+    BeFileName assetsRootDirectory(wAssetsRootDirectory);
+    Utf8String applicationName;
+    Utf8String utf8ApplicationVersion;
+    Utf8String applicationGUID;
+    Utf8String applicationProductId;
+
     BeStringUtilities::WCharToUtf8(username, wUsername);
     BeStringUtilities::WCharToUtf8(password, wPassword);
-    LPCWSCC api = new ConnectWebServicesClientC_internal(username, password, productId);
-    if (api->m_wsRepositoryClientPtr == nullptr || api->m_solrClientPtr == nullptr)
+    BeStringUtilities::WCharToUtf8(applicationName, wApplicationName);
+    BeStringUtilities::WCharToUtf8(utf8ApplicationVersion, wApplicationVersion);
+    BeStringUtilities::WCharToUtf8(applicationGUID, wApplicationGUID);
+    BeStringUtilities::WCharToUtf8(applicationProductId, wApplicationProductId);
+
+    BeVersion applicationVersion(utf8ApplicationVersion.c_str());
+
+    LPCWSCC api = new ConnectWebServicesClientC_internal
+        (
+        username,
+        password,
+        temporaryDirectory,
+        assetsRootDirectory,
+        applicationName,
+        applicationVersion,
+        applicationGUID,
+        applicationProductId
+        );
+
+    if (api->m_solrClientPtr == nullptr)
         return nullptr;
     return (CWSCCHANDLE) api;
     }
@@ -104,23 +172,168 @@ CharCP ConnectWebServicesClientC_GetLastStatusDescription(CWSCCHANDLE apiHandle)
     return api->GetLastStatusDescription().c_str();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+CallStatus ConnectWebServicesClientC_ConfigureWebProxy(CWSCCHANDLE apiHandle, Utf8CP proxyUrl)
+    {
+    VERIFY_API
+
+    if (proxyUrl == nullptr)
+        {
+        api->SetStatusMessage("The proxyUrl is a nullptr.");
+        api->SetStatusDescription("proxyUrl cannot be a null pointer when creating a Web Proxy.");
+        return INVALID_PARAMETER;
+        }
+
+    api->CreateProxyHttpClient(proxyUrl);
+    api->SetStatusMessage("Success!");
+    api->SetStatusDescription("The WSRepositoryClient was successfully created.");
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+CallStatus ConnectWebServicesClientC_ConfigureWebProxyWithCredentials
+(
+CWSCCHANDLE apiHandle,
+Utf8CP proxyUrl,
+Utf8CP username,
+Utf8CP password
+)
+    {
+    VERIFY_API
+
+    if (proxyUrl == nullptr)
+        {
+        api->SetStatusMessage("The proxyUrl is a nullptr.");
+        api->SetStatusDescription("proxyUrl cannot be a null pointer when creating a Web Proxy.");
+        return INVALID_PARAMETER;
+        }
+
+    if (username == nullptr || password == nullptr)
+        {
+        api->SetStatusMessage("The username of password is a nullptr.");
+        api->SetStatusDescription("username and password cannot be null pointers when configuring a Web Proxy.");
+        return INVALID_PARAMETER;
+        }
+
+    api->CreateProxyHttpClient(proxyUrl, username, password);
+    api->SetStatusMessage("Success!");
+    api->SetStatusDescription("The WSRepositoryClient was successfully created.");
+    return SUCCESS;
+    }
+
 WSLocalState ConnectWebServicesClientC_internal::m_localState = WSLocalState();
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ConnectWebServicesClientC_internal::ConnectWebServicesClientC_internal(Utf8String tokenXml, uint32_t productId)
+ConnectWebServicesClientC_internal::ConnectWebServicesClientC_internal
+(
+Utf8String authenticatedToken,
+BeFileName temporaryDirectory,
+BeFileName assetsRootDirectory,
+Utf8String applicationName,
+BeVersion applicationVersion,
+Utf8String applicationGUID,
+Utf8String applicationProductId
+)
     {
+    Initialize
+        (
+        temporaryDirectory,
+        assetsRootDirectory,
+        applicationName,
+        applicationVersion,
+        applicationGUID,
+        applicationProductId
+        );
+
+    SamlTokenPtr token = make_shared<SamlToken>(authenticatedToken);
+    auto result = m_connectSignInManager->SignInWithToken(token)->GetResult();
+    if (!result.IsSuccess())
+        return;
+
+    //IMS-Search API
+    shared_ptr<AuthenticationHandler> samlAuthHandler = std::make_shared<ConnectAuthenticationHandler>
+        (
+        UrlProvider::Urls::ConnectWsgGlobal.Get(),
+        m_connectSignInManager->GetTokenProvider(UrlProvider::Urls::ConnectWsgGlobal.Get()),
+        m_proxy, 
+        true
+        );
+    Utf8String searchApiUrl = "https://qa-waz-search.bentley.com/token";
+    Utf8String collection = "IMS/User";
+    m_solrClientPtr = SolrClient::Create(searchApiUrl, collection, m_clientInfo, samlAuthHandler);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ConnectWebServicesClientC_internal::ConnectWebServicesClientC_internal
+(
+Utf8String username,
+Utf8String password,
+BeFileName temporaryDirectory,
+BeFileName assetsRootDirectory,
+Utf8String applicationName,
+BeVersion applicationVersion,
+Utf8String applicationGUID,
+Utf8String applicationProductId
+)
+    {
+    Initialize
+        (
+        temporaryDirectory,
+        assetsRootDirectory,
+        applicationName,
+        applicationVersion,
+        applicationGUID,
+        applicationProductId
+        );
+
+    Credentials credentials(username, password);
+    auto result = m_connectSignInManager->SignInWithCredentials(credentials)->GetResult();
+    if (!result.IsSuccess())
+        return;
+
+    //IMS-Search API
+    shared_ptr<AuthenticationHandler> samlAuthHandler = std::make_shared<ConnectAuthenticationHandler>
+        (
+        UrlProvider::Urls::ConnectWsgGlobal.Get(), 
+        m_connectSignInManager->GetTokenProvider(UrlProvider::Urls::ConnectWsgGlobal.Get()),
+        m_proxy, 
+        true
+        );
+    Utf8String searchApiUrl = "https://qa-waz-search.bentley.com/token";
+    Utf8String collection = "IMS/User";
+    m_solrClientPtr = SolrClient::Create(searchApiUrl, collection, m_clientInfo, samlAuthHandler);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void ConnectWebServicesClientC_internal::Initialize
+(
+BeFileName temporaryDirectory,
+BeFileName assetsRootDirectory,
+Utf8String applicationName,
+BeVersion applicationVersion,
+Utf8String applicationGUID,
+Utf8String applicationProductId
+)
+    {
+
     m_lastStatusMessage = Utf8String("");
     m_lastStatusDescription = Utf8String("");
 
-    DgnClientFxCommon::SetApplicationPathsProvider(&m_pathProv);
+    BeFileName::CreateNewDirectory(temporaryDirectory);
+    BeSQLite::BeSQLiteLib::Initialize(temporaryDirectory);
+    //BeSQLite::EC::ECDb::Initialize(m_pathProv.GetTemporaryDirectory(), &m_pathProv.GetAssetsRootDirectory()); //TODO: Is this needed?
 
-    BeFileName::CreateNewDirectory(m_pathProv.GetTemporaryDirectory());
-    BeSQLite::BeSQLiteLib::Initialize(m_pathProv.GetTemporaryDirectory()); //Prob needed
-    BeSQLite::EC::ECDb::Initialize(m_pathProv.GetTemporaryDirectory(), &m_pathProv.GetAssetsRootDirectory()); //TODO: Is this needed?
-
-    BeFileName dgnClientFxSqlangFile = m_pathProv.GetAssetsRootDirectory();
+    BeFileName dgnClientFxSqlangFile = assetsRootDirectory;
     dgnClientFxSqlangFile.AppendToPath(L"sqlang");
 #if !defined (NDEBUG)
     dgnClientFxSqlangFile.AppendToPath(L"DgnClientFx_pseudo.sqlang.db3");
@@ -131,102 +344,71 @@ ConnectWebServicesClientC_internal::ConnectWebServicesClientC_internal(Utf8Strin
     BeSQLite::L10N::SqlangFiles sqlangFiles(dgnClientFxSqlangFile); //Prob needed
     DgnClientFxL10N::ReInitialize(sqlangFiles, sqlangFiles); //needed
 
-    auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-    ConnectAuthenticationPersistence::CustomInitialize(&m_localState);
-    auto bclient = make_shared<BuddiClient>(proxy);
 #if !defined (NDEBUG)
-    UrlProvider::Initialize(UrlProvider::Qa, UrlProvider::DefaultTimeout, &m_localState, bclient);
+    UrlProvider::Initialize(UrlProvider::Qa, UrlProvider::DefaultTimeout, &m_localState, nullptr);
 #else
-    UrlProvider::Initialize(UrlProvider::Release, UrlProvider::DefaultTimeout, &m_localState, bclient);
+    UrlProvider::Initialize(UrlProvider::Release, UrlProvider::DefaultTimeout, &m_localState, nullptr);
 #endif
-    ClientInfoPtr clientInfo = shared_ptr<ClientInfo>(new ClientInfo("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", Utf8PrintfString("%i", productId)));
-    auto manager = ConnectSignInManager::Create(clientInfo, proxy, &m_localState);
-    SamlTokenPtr token = make_shared<SamlToken>(tokenXml);
-    auto result = manager->SignInWithToken(token)->GetResult();
-    if (!result.IsSuccess())
-        return;
-
-    //WSG
-    Utf8String serverUrl = UrlProvider::Urls::ConnectWsgGlobal.Get();
-    auto authHandler = manager->GetAuthenticationHandler(serverUrl, proxy);
-    Utf8String repositoryId = "BentleyCONNECT.Global--CONNECT.GLOBAL";
-    m_wsRepositoryClientPtr = WSRepositoryClient::Create(serverUrl, repositoryId, clientInfo, nullptr, authHandler);
-
-    //IMS-Search API
-    shared_ptr<AuthenticationHandler> samlAuthHandler = std::make_shared<ConnectAuthenticationHandler>(serverUrl, manager->GetTokenProvider(serverUrl), proxy, true);
-    Utf8String searchApiUrl = "https://qa-waz-search.bentley.com/token";
-    Utf8String collection = "IMS/User";
-    m_solrClientPtr = SolrClient::Create(searchApiUrl, collection, clientInfo, samlAuthHandler);
+    m_clientInfo = ClientInfo::Create(applicationName, applicationVersion, applicationGUID, applicationProductId);
+    m_connectSignInManager = ConnectSignInManager::Create(m_clientInfo, nullptr, &m_localState);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ConnectWebServicesClientC_internal::ConnectWebServicesClientC_internal(Utf8String username, Utf8String password, uint32_t productId)
+void ConnectWebServicesClientC_internal::CreateProxyHttpClient
+(
+Utf8String proxyUrl,
+Utf8String username,
+Utf8String password
+)
     {
-    m_lastStatusMessage = Utf8String("");
-    m_lastStatusDescription = Utf8String("");
-
-    DgnClientFxCommon::SetApplicationPathsProvider(&m_pathProv);
-    
-    BeFileName::CreateNewDirectory(m_pathProv.GetTemporaryDirectory());
-    BeSQLite::BeSQLiteLib::Initialize(m_pathProv.GetTemporaryDirectory());
-    BeSQLite::EC::ECDb::Initialize(m_pathProv.GetTemporaryDirectory(), &m_pathProv.GetAssetsRootDirectory());
-    
-    BeFileName dgnClientFxSqlangFile = m_pathProv.GetAssetsRootDirectory();
-    dgnClientFxSqlangFile.AppendToPath(L"sqlang");
-#if !defined (NDEBUG)
-    dgnClientFxSqlangFile.AppendToPath(L"DgnClientFx_pseudo.sqlang.db3");
-#else
-    dgnClientFxSqlangFile.AppendToPath(L"DgnClientFx_en.sqlang.db3");
-#endif
-
-    BeSQLite::L10N::SqlangFiles sqlangFiles(dgnClientFxSqlangFile);
-    DgnClientFxL10N::ReInitialize(sqlangFiles, sqlangFiles);
-
-    auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-    ConnectAuthenticationPersistence::CustomInitialize(&m_localState);
-    auto bclient = make_shared<BuddiClient>(proxy);
-#if !defined (NDEBUG)
-    UrlProvider::Initialize(UrlProvider::Qa, UrlProvider::DefaultTimeout, &m_localState, bclient);
-#else
-    UrlProvider::Initialize(UrlProvider::Release, UrlProvider::DefaultTimeout, &m_localState, bclient);
-#endif
-    ClientInfoPtr clientInfo = shared_ptr<ClientInfo>(new ClientInfo("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", Utf8PrintfString("%i", productId)));
-    auto manager = ConnectSignInManager::Create(clientInfo, proxy, &m_localState);
-    Credentials credentials(username, password);
-    auto result = manager->SignInWithCredentials(credentials)->GetResult();
-    if (!result.IsSuccess())
-        return;
-
-    //WSG
-    Utf8String serverUrl = UrlProvider::Urls::ConnectWsgGlobal.Get();
-    auto authHandler = manager->GetAuthenticationHandler(serverUrl, proxy);
-    Utf8String repositoryId = "BentleyCONNECT.Global--CONNECT.GLOBAL";
-    m_wsRepositoryClientPtr = WSRepositoryClient::Create(serverUrl, repositoryId, clientInfo, nullptr, authHandler);
-
-    //IMS-Search API
-    shared_ptr<AuthenticationHandler> samlAuthHandler = std::make_shared<ConnectAuthenticationHandler>(serverUrl, manager->GetTokenProvider(serverUrl), proxy, true);
-    Utf8String searchApiUrl = "https://qa-waz-search.bentley.com/token";
-    Utf8String collection = "IMS/User";
-    m_solrClientPtr = SolrClient::Create(searchApiUrl, collection, clientInfo, samlAuthHandler);
+    m_proxy = ProxyHttpHandler::GetProxyIfReachable(proxyUrl);
+    if (!Utf8String::IsNullOrEmpty(username.c_str()) && !Utf8String::IsNullOrEmpty(password.c_str()))
+        m_proxy->SetProxyCredentials(Credentials(username, password));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void ConnectWebServicesClientC_internal::CreateWSRepositoryClient
+(
+Utf8String serverUrl,
+Utf8String repositoryId
+)
+    {
+    auto authHandler = m_connectSignInManager->GetAuthenticationHandler(serverUrl, m_proxy);
+    auto clientPtr = WSRepositoryClient::Create(serverUrl, repositoryId, m_clientInfo, nullptr, authHandler);
+    m_repositoryClients.insert(make_bpair(serverUrl + repositoryId, clientPtr));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 void ConnectWebServicesClientC_internal::SetStatusMessage(Utf8String message)
     {
     m_lastStatusMessage = message;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 void ConnectWebServicesClientC_internal::SetStatusDescription(Utf8String desc)
     {
     m_lastStatusDescription = desc;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 Utf8StringCR ConnectWebServicesClientC_internal::GetLastStatusMessage()
     {
     return m_lastStatusMessage;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 Utf8StringCR ConnectWebServicesClientC_internal::GetLastStatusDescription()
     {
     return m_lastStatusDescription;

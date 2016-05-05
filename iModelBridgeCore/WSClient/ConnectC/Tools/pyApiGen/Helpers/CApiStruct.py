@@ -28,7 +28,19 @@ class CApiStruct(CStruct):
             .format("INVALID_PARAMETER",
                     self._status_codes["INVALID_PARAMETER"].message,
                     "{0}Buffer is a nullptr.".format(self.get_lower_name()))
-        get_request_str += '    auto result = api->m_wsRepositoryClientPtr->SendQueryRequest(WSQuery("{0}", "{1}"))->GetResult();\n'\
+        get_request_str += '    if (api->m_repositoryClients.find(UrlProvider::Urls::{0}.Get() ' \
+                           '+ "{1}") ' \
+                           '== api->m_repositoryClients.end())\n'.format(self._api.get_url_descriptor(), self._api.get_repository_id())
+        get_request_str += '        {\n'
+        get_request_str += '        api->CreateWSRepositoryClient\n'
+        get_request_str += '            (\n'
+        get_request_str += '            UrlProvider::Urls::{0}.Get(),\n'.format(self._api.get_url_descriptor())
+        get_request_str += '            "{0}"\n'.format(self._api.get_repository_id())
+        get_request_str += '            );\n'
+        get_request_str += '        }\n\n'
+        get_request_str += '    auto client = api->m_repositoryClients.find(UrlProvider::Urls::{0}.Get() ' \
+                           '+ "{1}")->second;\n'.format(self._api.get_url_descriptor(), self._api.get_repository_id())
+        get_request_str += '    auto result = client->SendQueryRequest(WSQuery("{0}", "{1}"))->GetResult();\n'\
             .format(self.__ecschema_name, self.get_name())
         get_request_str += "    if (!result.IsSuccess())\n"
         get_request_str += "        return wsresultTo{0}Status(api, result.GetError().GetId(), result.GetError().GetDisplayMessage()," \
@@ -83,7 +95,19 @@ class CApiStruct(CStruct):
         create_request_str += '    instance["properties"] = propertiesJson;\n\n'
         create_request_str += '    Json::Value objectCreationJson;\n'
         create_request_str += '    objectCreationJson["instance"] = instance;\n\n'
-        create_request_str += '    auto result = api->m_wsRepositoryClientPtr->SendCreateObjectRequest(objectCreationJson)->GetResult();\n'
+        create_request_str += '    if (api->m_repositoryClients.find(UrlProvider::Urls::{0}.Get() ' \
+                              '+ "{1}") ' \
+                              '== api->m_repositoryClients.end())\n'.format(self._api.get_url_descriptor(), self._api.get_repository_id())
+        create_request_str += '        {\n'
+        create_request_str += '        api->CreateWSRepositoryClient\n'
+        create_request_str += '            (\n'
+        create_request_str += '            UrlProvider::Urls::{0}.Get(),\n'.format(self._api.get_url_descriptor())
+        create_request_str += '            "{0}"\n'.format(self._api.get_repository_id())
+        create_request_str += '            );\n'
+        create_request_str += '        }\n\n'
+        create_request_str += '    auto client = api->m_repositoryClients.find(UrlProvider::Urls::{0}.Get() ' \
+                              '+ "{1}")->second;\n'.format(self._api.get_url_descriptor(), self._api.get_repository_id())
+        create_request_str += '    auto result = client->SendCreateObjectRequest(objectCreationJson)->GetResult();\n'
         create_request_str += "    if (!result.IsSuccess())\n"
         create_request_str += "        return wsresultTo{0}Status(api, result.GetError().GetId(), result.GetError().GetDisplayMessage()," \
                               " result.GetError().GetDisplayDescription());\n\n"\
@@ -117,7 +141,19 @@ class CApiStruct(CStruct):
                            '        return {0};\n        }}\n\n'\
             .format("INVALID_PARAMETER", self._status_codes["INVALID_PARAMETER"].message,
                     "{0}Buffer is a nullptr or {0}Id is nullptr or empty.".format(self.get_lower_name()))
-        get_request_str += '    auto result = api->m_wsRepositoryClientPtr->'
+        get_request_str += '    if (api->m_repositoryClients.find(UrlProvider::Urls::{0}.Get() ' \
+                           '+ "{1}") ' \
+                           '== api->m_repositoryClients.end())\n'.format(self._api.get_url_descriptor(), self._api.get_repository_id())
+        get_request_str += '        {\n'
+        get_request_str += '        api->CreateWSRepositoryClient\n'
+        get_request_str += '            (\n'
+        get_request_str += '            UrlProvider::Urls::{0}.Get(),\n'.format(self._api.get_url_descriptor())
+        get_request_str += '            "{0}"\n'.format(self._api.get_repository_id())
+        get_request_str += '            );\n'
+        get_request_str += '        }\n\n'
+        get_request_str += '    auto client = api->m_repositoryClients.find(UrlProvider::Urls::{0}.Get() ' \
+                           '+ "{1}")->second;\n'.format(self._api.get_url_descriptor(), self._api.get_repository_id())
+        get_request_str += '    auto result = client->'
         get_request_str += 'SendGetObjectRequest({{"{0}", "{1}", Utf8String({2}Id)}})->GetResult();\n'\
             .format(self.__ecschema_name, self.get_name(), self.get_lower_name())
         get_request_str += "    if (!result.IsSuccess())\n"
@@ -162,23 +198,35 @@ class CApiStruct(CStruct):
         return "{0}_EXPORT ".format(self._api.get_upper_api_acronym()) + self.__get_api_gws_update_function_def() + ";\n"
 
     def get_api_gws_update_implementation(self):
-        create_request_str = self.__get_api_gws_update_function_def() + "\n"
-        create_request_str += "    {\n"
-        create_request_str += "    VERIFY_API\n\n"
-        create_request_str += self.__get_gws_properties_for_function_impl()
-        create_request_str += '\n    auto result = api->m_wsRepositoryClientPtr->SendUpdateObjectRequest({{"{0}", "{1}", Utf8String({2}Id)}}, '\
+        update_request_str = self.__get_api_gws_update_function_def() + "\n"
+        update_request_str += "    {\n"
+        update_request_str += "    VERIFY_API\n\n"
+        update_request_str += self.__get_gws_properties_for_function_impl()
+        update_request_str += '    if (api->m_repositoryClients.find(UrlProvider::Urls::{0}.Get() ' \
+                              '+ "{1}") ' \
+                              '== api->m_repositoryClients.end())\n'.format(self._api.get_url_descriptor(), self._api.get_repository_id())
+        update_request_str += '        {\n'
+        update_request_str += '        api->CreateWSRepositoryClient\n'
+        update_request_str += '            (\n'
+        update_request_str += '            UrlProvider::Urls::{0}.Get(),\n'.format(self._api.get_url_descriptor())
+        update_request_str += '            "{0}"\n'.format(self._api.get_repository_id())
+        update_request_str += '            );\n'
+        update_request_str += '        }\n\n'
+        update_request_str += '    auto client = api->m_repositoryClients.find(UrlProvider::Urls::{0}.Get() ' \
+                              '+ "{1}")->second;\n'.format(self._api.get_url_descriptor(), self._api.get_repository_id())
+        update_request_str += '    auto result = client->SendUpdateObjectRequest({{"{0}", "{1}", Utf8String({2}Id)}}, '\
             .format(self.__ecschema_name, self.get_name(), self.get_lower_name())
-        create_request_str += 'propertiesJson)->GetResult();\n'
-        create_request_str += "    if (!result.IsSuccess())\n"
-        create_request_str += "        return wsresultTo{0}Status(api, result.GetError().GetId(), result.GetError().GetDisplayMessage()," \
+        update_request_str += 'propertiesJson)->GetResult();\n'
+        update_request_str += "    if (!result.IsSuccess())\n"
+        update_request_str += "        return wsresultTo{0}Status(api, result.GetError().GetId(), result.GetError().GetDisplayMessage()," \
                               " result.GetError().GetDisplayDescription());\n\n"\
             .format(self._api.get_api_name())
-        create_request_str += '    api->SetStatusMessage("{1}");\n    api->SetStatusDescription("{2}");\n' \
+        update_request_str += '    api->SetStatusMessage("{1}");\n    api->SetStatusDescription("{2}");\n' \
                               '    return {0};\n'\
             .format("SUCCESS", self._status_codes["SUCCESS"].message,
                     "{0}_Update{1} completed successfully.".format(self._api.get_api_name(), self.get_name()))
-        create_request_str += "    }\n"
-        return create_request_str
+        update_request_str += "    }\n"
+        return update_request_str
 
     def __get_api_gws_delete_function_def(self):
         delete_request_str = "CallStatus {0}_Delete{1}\n".format(self._api.get_api_name(), self.get_name())
@@ -201,7 +249,19 @@ class CApiStruct(CStruct):
                               '        return {0};\n        }}\n\n'\
             .format("INVALID_PARAMETER", self._status_codes["INVALID_PARAMETER"].message,
                     "{0}Id is a nullptr or empty.".format(self.get_lower_name()))
-        delete_request_str += '    auto result = api->m_wsRepositoryClientPtr->'
+        delete_request_str += '    if (api->m_repositoryClients.find(UrlProvider::Urls::{0}.Get() ' \
+                              '+ "{1}") ' \
+                              '== api->m_repositoryClients.end())\n'.format(self._api.get_url_descriptor(), self._api.get_repository_id())
+        delete_request_str += '        {\n'
+        delete_request_str += '        api->CreateWSRepositoryClient\n'
+        delete_request_str += '            (\n'
+        delete_request_str += '            UrlProvider::Urls::{0}.Get(),\n'.format(self._api.get_url_descriptor())
+        delete_request_str += '            "{0}"\n'.format(self._api.get_repository_id())
+        delete_request_str += '            );\n'
+        delete_request_str += '        }\n\n'
+        delete_request_str += '    auto client = api->m_repositoryClients.find(UrlProvider::Urls::{0}.Get() ' \
+                              '+ "{1}")->second;\n'.format(self._api.get_url_descriptor(), self._api.get_repository_id())
+        delete_request_str += '    auto result = client->'
         delete_request_str += 'SendDeleteObjectRequest({{"{0}", "{1}", Utf8String({2}Id)}})->GetResult();\n' \
             .format(self.__ecschema_name, self.get_name(), self.get_lower_name())
         delete_request_str += "    if (!result.IsSuccess())\n"
