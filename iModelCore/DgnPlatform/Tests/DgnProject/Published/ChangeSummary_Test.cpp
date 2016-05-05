@@ -663,7 +663,7 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
 
     BeFileName schemaPathname;
     BeTest::GetHost().GetDocumentsRoot(schemaPathname);
-    schemaPathname.AppendToPath(L"DgnDb\\ECDb\\Schemas\\StartupCompany.02.00.ecschema.xml");
+    schemaPathname.AppendToPath(L"DgnDb\\Schemas\\StartupCompany.02.00.ecschema.xml");
 
     ECSchemaPtr startupSchema = ReadECSchemaFromDisk(schemaPathname);
     ASSERT_TRUE(startupSchema.IsValid());
