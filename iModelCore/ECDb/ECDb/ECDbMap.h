@@ -230,19 +230,26 @@ struct StorageDescription : NonCopyableClass
 //+===============+===============+===============+===============+===============+======
 struct RelationshipPurger
     {
+    enum class Options
+        {
+        SchemaChanged = 1,
+        DeleteRelatedInstances = 2,
+        Default = SchemaChanged | DeleteRelatedInstances
+        };
+
     private:
         typedef bmap<Utf8CP, Utf8String, CompareIUtf8Ascii> SqlPerTableMap;
 
         std::vector<std::unique_ptr<Statement>> m_stmts;
-
         BentleyStatus Initialize(ECDbCR);
         static Utf8String BuildSql(Utf8CP tableName, Utf8CP pkColumnName);
+        std::vector<RelationshipClassMapCP> GetHoldingRelationships(ECDbCR ecdb) const;
+        BentleyStatus UpdateView(ECDbCR);
 
     public:
         RelationshipPurger() {}
         ~RelationshipPurger() { Finalize(); }
-
-        BentleyStatus Purge(ECDbCR);
+        BentleyStatus Purge(ECDbCR, Options option = Options::Default);
         void Finalize();
     };
 END_BENTLEY_SQLITE_EC_NAMESPACE

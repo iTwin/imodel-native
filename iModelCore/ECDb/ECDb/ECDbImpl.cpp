@@ -209,7 +209,7 @@ BentleyStatus ECDb::Impl::Purge(ECDb::PurgeMode mode) const
     if (Enum::Contains(mode, ECDb::PurgeMode::HoldingRelationships))
         {
         RelationshipPurger purger;
-        if (SUCCESS != purger.Purge(m_ecdb))
+        if (SUCCESS != purger.Purge(m_ecdb, RelationshipPurger::Options::DeleteRelatedInstances))
             return ERROR;
         }
 

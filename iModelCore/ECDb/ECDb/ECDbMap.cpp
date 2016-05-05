@@ -1740,61 +1740,47 @@ void RelationshipPurger::Finalize()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan     01/2016
 //---------------+---------------+---------------+---------------+---------------+---------
-BentleyStatus RelationshipPurger::Initialize(ECDbCR ecdb)
+std::vector<RelationshipClassMapCP> RelationshipPurger::GetHoldingRelationships(ECDbCR ecdb) const
     {
-    if (ecdb.IsReadonly())
-        return ERROR;
-
-    if (!m_stmts.empty())
-        return SUCCESS; //already initialized
-
+    std::vector<RelationshipClassMapCP> relationshipList;
     Utf8String sql;
     sql.Sprintf("SELECT C.Id FROM ec_Class C INNER JOIN ec_ClassMap CM ON CM.ClassId=C.Id WHERE C.RelationshipStrength=%d AND CM.MapStrategy!=%d",
                 Enum::ToInt(StrengthType::Holding), Enum::ToInt(ECDbMapStrategy::Strategy::NotMapped));
 
-    CachedStatementPtr stmt = ecdb.GetCachedStatement(sql.c_str());
-    if (stmt == nullptr)
-        return ERROR;
+    Statement stmt;
+    if (stmt.Prepare(ecdb, sql.c_str()) != BE_SQLITE_OK)
+        {
+        BeAssert(false && "Failed to prepare query");
+        return relationshipList;
+        }
 
     ECDbMapCR map = ecdb.GetECDbImplR().GetECDbMap();
     std::vector<RelationshipClassMapCP> relationships;
 
-    while (stmt->Step() == BE_SQLITE_ROW)
+    while (stmt.Step() == BE_SQLITE_ROW)
         {
-        ECClassId id = stmt->GetValueId<ECClassId>(0);
+        ECClassId id = stmt.GetValueId<ECClassId>(0);
         if (RelationshipClassMapCP relationshipClassMap = static_cast<RelationshipClassMapCP>(map.GetClassMap(id)))
-            relationships.push_back(relationshipClassMap);
+            relationshipList.push_back(relationshipClassMap);
         }
 
-    //reset stmt so that it doesn't hold resources
-    stmt = nullptr;
+    return relationshipList;
+    }
 
-    SqlPerTableMap deleteOrphansSqlPerTableMap;
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan     01/2016
+//---------------+---------------+---------------+---------------+---------------+---------
+BentleyStatus RelationshipPurger::UpdateView(ECDbCR ecdb)
+    {
     NativeSqlBuilder::List unionClauseList;
     bmap<DbTable const*, ECDbMap::LightweightCache::RelationshipEnd> linkTables;
-    for (RelationshipClassMapCP relClassMap : relationships)
+    for (RelationshipClassMapCP relClassMap : GetHoldingRelationships(ecdb))
         {
         ECRelationshipClassCR relClass = relClassMap->GetRelationshipClass();
-        ECRelationshipConstraintCR heldConstraint = relClass.GetStrengthDirection() == ECRelatedInstanceDirection::Forward ? relClass.GetTarget() : relClass.GetSource();
-
-        std::set<DbTable const*> heldTables = map.GetTablesFromRelationshipEnd(heldConstraint, EndTablesOptimizationOptions::ForeignEnd);
-        for (DbTable const* table : heldTables)
-            {
-            DbTable const* heldTable = table->GetParentOfJoinedTable() != nullptr ? table->GetParentOfJoinedTable() : table;
-            Utf8CP heldTableName = heldTable->GetName().c_str();
-            auto itor = deleteOrphansSqlPerTableMap.find(heldTableName);
-            if (itor == deleteOrphansSqlPerTableMap.end())
-                {
-                DbColumn const* idCol = heldTable->GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
-                deleteOrphansSqlPerTableMap[heldTableName] = BuildSql(heldTableName, idCol->GetName().c_str());
-                }
-            }
-
         if (relClassMap->GetType() == ClassMap::Type::RelationshipEndTable)
             {
             RelationshipClassEndTableMap const* endTableRelClassMap = static_cast<RelationshipClassEndTableMap const*>(relClassMap);
             PropertyMapCP foreignIdPropMap = endTableRelClassMap->GetConstraintECInstanceIdPropMap(endTableRelClassMap->GetReferencedEnd());
-
             DbColumn::Kind foreignIdColKind = endTableRelClassMap->GetReferencedEnd() == ECRelationshipEnd_Source ? DbColumn::Kind::SourceECInstanceId : DbColumn::Kind::TargetECInstanceId;
             NativeSqlBuilder unionClauseBuilder;
             for (DbTable const* table : foreignIdPropMap->GetTables())
@@ -1806,7 +1792,7 @@ BentleyStatus RelationshipPurger::Initialize(ECDbCR ecdb)
                     return ERROR;
                     }
 
-                unionClauseBuilder.AppendFormatted("SELECT [%s] " ECDB_RELATIONSHIPHELDINSTANCESSTATS_ID_COLNAME " FROM [%s] WHERE [%s] IS NOT NULL", foreignIdCol->GetName().c_str(), table->GetName().c_str(), foreignIdCol->GetName().c_str());
+                unionClauseBuilder.AppendFormatted("SELECT DISTINCT [%s] " ECDB_RELATIONSHIPHELDINSTANCESSTATS_ID_COLNAME " FROM [%s] WHERE [%s] IS NOT NULL", foreignIdCol->GetName().c_str(), table->GetName().c_str(), foreignIdCol->GetName().c_str());
                 }
 
             if (!unionClauseBuilder.IsEmpty())
@@ -1815,7 +1801,6 @@ BentleyStatus RelationshipPurger::Initialize(ECDbCR ecdb)
         else
             {
             DbTable const& primaryTable = static_cast<RelationshipClassLinkTableMap const*>(relClassMap)->GetPrimaryTable();
-
             ECDbMap::LightweightCache::RelationshipEnd heldEnd = relClass.GetStrengthDirection() == ECRelatedInstanceDirection::Forward ? ECDbMap::LightweightCache::RelationshipEnd::Target : ECDbMap::LightweightCache::RelationshipEnd::Source;
             auto it = linkTables.find(&primaryTable);
             if (it == linkTables.end())
@@ -1834,7 +1819,7 @@ BentleyStatus RelationshipPurger::Initialize(ECDbCR ecdb)
                 return ERROR;
 
             NativeSqlBuilder unionClauseBuilder;
-            unionClauseBuilder.AppendFormatted("SELECT [%s] " ECDB_RELATIONSHIPHELDINSTANCESSTATS_ID_COLNAME " FROM [%s]", heldIdCol->GetName().c_str(), primaryTable.GetName().c_str());
+            unionClauseBuilder.AppendFormatted("SELECT DISTINCT [%s] " ECDB_RELATIONSHIPHELDINSTANCESSTATS_ID_COLNAME " FROM [%s]", heldIdCol->GetName().c_str(), primaryTable.GetName().c_str());
             unionClauseList.push_back(std::move(unionClauseBuilder));
             }
         }
@@ -1846,7 +1831,7 @@ BentleyStatus RelationshipPurger::Initialize(ECDbCR ecdb)
         for (NativeSqlBuilder const& unionClause : unionClauseList)
             {
             if (!isFirstItem)
-                holdingViewBuilder.Append(" UNION ALL ");
+                holdingViewBuilder.Append(" UNION ");
 
             holdingViewBuilder.Append(unionClause);
             isFirstItem = false;
@@ -1863,6 +1848,38 @@ BentleyStatus RelationshipPurger::Initialize(ECDbCR ecdb)
         return ERROR;
         }
 
+    return SUCCESS;
+    }
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan     01/2016
+//---------------+---------------+---------------+---------------+---------------+---------
+BentleyStatus RelationshipPurger::Initialize(ECDbCR ecdb)
+    {
+    if (!m_stmts.empty())
+        return SUCCESS; //already initialized
+
+    ECDbMapCR map = ecdb.GetECDbImplR().GetECDbMap();
+    SqlPerTableMap deleteOrphansSqlPerTableMap;
+    NativeSqlBuilder::List unionClauseList;
+
+    for (RelationshipClassMapCP relClassMap : GetHoldingRelationships(ecdb))
+        {
+        ECRelationshipClassCR relClass = relClassMap->GetRelationshipClass();
+        ECRelationshipConstraintCR heldConstraint = relClass.GetStrengthDirection() == ECRelatedInstanceDirection::Forward ? relClass.GetTarget() : relClass.GetSource();
+        
+        std::set<DbTable const*> heldTables = map.GetTablesFromRelationshipEnd(heldConstraint, EndTablesOptimizationOptions::ForeignEnd);
+        for (DbTable const* table : heldTables)
+            {
+            DbTable const* heldTable = table->GetParentOfJoinedTable() != nullptr ? table->GetParentOfJoinedTable() : table;
+            Utf8CP heldTableName = heldTable->GetName().c_str();
+            auto itor = deleteOrphansSqlPerTableMap.find(heldTableName);
+            if (itor == deleteOrphansSqlPerTableMap.end())
+                {
+                DbColumn const* idCol = heldTable->GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
+                deleteOrphansSqlPerTableMap[heldTableName] = BuildSql(heldTableName, idCol->GetName().c_str());
+                }
+            }
+        }
 
     for (bpair<Utf8CP, Utf8String> const& kvPair : deleteOrphansSqlPerTableMap)
         {
@@ -1882,17 +1899,26 @@ BentleyStatus RelationshipPurger::Initialize(ECDbCR ecdb)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan     01/2016
 //---------------+---------------+---------------+---------------+---------------+---------
-BentleyStatus RelationshipPurger::Purge(ECDbCR ecdb)
+BentleyStatus RelationshipPurger::Purge(ECDbCR ecdb, Options option)
     {
+    if (ecdb.IsReadonly())
+        return ERROR;
+
+    if (Enum::Contains(option, Options::SchemaChanged))
+        if (UpdateView(ecdb) != SUCCESS)
+            return ERROR;
+
     if (Initialize(ecdb) != SUCCESS)
         return ERROR;
 
-    for (std::unique_ptr<Statement>& stmt : m_stmts)
+    if (Enum::Contains(option, Options::DeleteRelatedInstances))
         {
-        if (BE_SQLITE_DONE != stmt->Step())
-            return ERROR;
+        for (std::unique_ptr<Statement>& stmt : m_stmts)
+            {
+            if (BE_SQLITE_DONE != stmt->Step())
+                return ERROR;
+            }
         }
-
     return SUCCESS;
     }
 

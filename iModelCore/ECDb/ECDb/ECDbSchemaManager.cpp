@@ -183,7 +183,7 @@ BentleyStatus ECDbSchemaManager::ImportECSchemas(ECSchemaCacheR cache) const
 
     {
     RelationshipPurger purger;
-    if (SUCCESS != purger.Purge(m_ecdb))
+    if (SUCCESS != purger.Purge(m_ecdb, RelationshipPurger::Options::SchemaChanged))
         return ERROR;
     }
 
