@@ -46,6 +46,7 @@
 #define DGN_CLASSNAME_GroupInformationModel "GroupInformationModel"
 #define DGN_CLASSNAME_LineStyle             "LineStyle"
 #define DGN_CLASSNAME_Link                  "Link"
+#define DGN_CLASSNAME_LinkElement           "LinkElement"
 #define DGN_CLASSNAME_LocalAuthority        "LocalAuthority"
 #define DGN_CLASSNAME_MaterialAuthority     "MaterialAuthority"
 #define DGN_CLASSNAME_Model                 "Model"
