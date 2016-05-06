@@ -359,7 +359,6 @@ TEST_F(PerformanceECDbFileInfoTests, PurgeAfterDeletionOfOneInstancePerClass)
                 continue;
 
             int deletedCountPerClass = 0;
-            printf("className: %s\n", ecclass->GetName().c_str());
             ASSERT_EQ(SUCCESS, DeleteOwners(deletedCountPerClass, ecclass->GetId(), 1));
             deletedCount += deletedCountPerClass;
             }
