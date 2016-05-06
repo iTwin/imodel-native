@@ -35,7 +35,9 @@
 
 #include <ptengine/StreamHost.h>
 
+#if NEEDS_WORK_VORTEX_DGNDB 
 #include <PTRMI/ClientInterfaceExtDataBentley.h>
+#endif
 
 #include <pt/trace.h>
 
@@ -84,13 +86,14 @@ PTuint				testServerCallBack						(PTvoid *dataSend, PTuint dataSendSize, PTvoid
 bool				ptSetClientServerURLOverride			(const wchar_t *url);
 const wchar_t	*	ptGetClientServerURLOverride			(void);
 
-
+#ifdef NEEDS_WORK_VORTEX_DGNDB
 //PTRMI_INSTANCE_CLIENT_INTERFACE(ptds::DataSourceServerClientInterface, ptds::DataSourceServer)
 //PTRMI_INSTANCE_SERVER_INTERFACE(ptds::DataSourceServerServerInterface<ptds::DataSourceServer>, ptds::DataSourceServer)
 
 PTRMI_INSTANCE_SERVER_INTERFACE(ptds::DataSourceServerServerInterface<ptds::DataSource>, ptds::DataSource)
 
 //PTRMI_INHERIT_SERVER_INTERFACE(MyServerInterface<MyObjClass>, MyDerivedObjClass)
+#endif
 
 
 #define			DEFAULT_DEMO_TIMEOUT 300
@@ -745,8 +748,11 @@ PTbool PTAPI ptInitialize(const PTubyte* licenseData)
 		}
 #endif
 		PTRMI::initialize();
-															// Initialize server data sources with PTRMI
+
+#ifdef NEEDS_WORK_VORTEX_DGNDB								
+        // Initialize server data sources with PTRMI
 		PTRMI::getManager().newMetaInterface<ptds::DataSourceServer>(L"DataSourceServer");
+#endif
 
 		pointsengine::initializeEngine();
 		extern PTvoid _ptInitialiseShaders();
@@ -1084,6 +1090,7 @@ PThandle ptOpenPODFromDataSource(ptds::DataSourcePtr dataSource, const PTstr fil
 	return sceneHandle;
 }
 
+#ifdef NEEDS_WORK_VORTEX_DGNDB
 PThandle PTAPI test_ptOpenPODStructuredStorageStream(const PTstr filepath) 
 {
 	//  Pip Test
@@ -1119,6 +1126,7 @@ if(r)
 
 	return result;
 }
+
 
 
 PThandle ptOpenPODServer(const PTstr clientFilePath, const PTstr serverFilePath, PTRMI::GUID *fileGUID);
@@ -1184,6 +1192,7 @@ PTbool PTAPI ptSetClientStreaming(PTuint min, PTuint max, PTuint refresh, PTdoub
 															// Return true
 	return true;
 }
+#endif
 
 void f(void);
 
@@ -1210,6 +1219,8 @@ PThandle PTAPI ptOpenPOD(const PTstr filepath)
 #endif
 
 	PThandle h;
+
+#ifdef NEEDS_WORK_VORTEX_DGNDB
 															// Try to re-open an existing structured storage stream (needed for ptCreateSceneInstance with structured storage)
 	if(h = ptReOpenPODStructuredStorageStream(filepath))
 	{
@@ -1225,6 +1236,7 @@ PThandle PTAPI ptOpenPOD(const PTstr filepath)
 	{
 		return h;
 	}
+#endif
 															// Try to open POD local file
 	if(h = ptOpenPODFile(filepath))
 	{
@@ -1256,6 +1268,7 @@ PThandle ptOpenPODFile(const PTstr filepath)
 	return ptOpenPODFromDataSource(dataSource, filepath);
 }
 
+#ifdef NEEDS_WORK_VORTEX_DGNDB
 
 PThandle ptReOpenPODStructuredStorageStream(const PTstr filepath)
 {
@@ -1672,7 +1685,6 @@ void PTAPI ptGetClientServerSendRetries(PTuint *numRetries, PTuint *delayMillise
 
 PThandle ptOpenPODServer(const PTstr clientFilePath, const PTstr serverFilePath, PTRMI::GUID *fileGUID)
 {
-#ifdef NEEDS_WORK_VORTEX_DGNDB
 	ptds::FilePath		fp;
 	ptds::DataSource *	dataSource;
 
@@ -1699,9 +1711,6 @@ PThandle ptOpenPODServer(const PTstr clientFilePath, const PTstr serverFilePath,
 
 															// Open File DataSource
 	return ptOpenPODFromDataSource(dataSource, serverFilePath);
-#else
-    return PT_NULL;
-#endif
 }
 
 
@@ -1729,6 +1738,7 @@ PThandle PTAPI ptOpenPODStructuredStorageStream(const PTstr filepath, PTvoid *in
     return PT_NULL;
 #endif
 }
+#endif
 
 //-----------------------------------------------------------------------------
 // scene instancing - loads file in again into different pcloud

@@ -1,5 +1,6 @@
 #pragma once
 
+#ifdef NEEDS_WORK_VORTEX_DGNDB
 #include <ptds/DataSourceFile.h>
 
 #include <PTRMI/ClientInterface.h>
@@ -221,3 +222,4 @@ PTRMI_USE_SERVER_INTERFACE(ptds::DataSourceServerServerInterface<ptds::DataSourc
 PTRMI_INHERIT_SERVER_INTERFACE(ptds::DataSourceServerServerInterface<ptds::DataSource>, ptds::DataSourceServer)
 
 
+#endif
