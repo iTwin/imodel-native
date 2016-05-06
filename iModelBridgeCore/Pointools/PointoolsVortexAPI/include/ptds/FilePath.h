@@ -125,7 +125,7 @@ public:
         WString dev, dir;
         m_path.ParseName(&dev, &dir, nullptr, nullptr);
         BeFileName pathWithoutFileName(dev.c_str(), dir.c_str(), nullptr, nullptr);
-		wcscpy_s(dst, PT_MAXPATH, pathWithoutFileName.c_str());
+        BeStringUtilities::Wcsncpy(dst, PT_MAXPATH, pathWithoutFileName.c_str());
 	}
 
 	void fulldirectory(wchar_t *dst) const
@@ -155,7 +155,7 @@ public:
 			m_parent->directory(d);
             BeFileName dstPath(dst);
             dstPath.AppendToPath(d);
-            wcscpy_s(dst, PT_MAXPATH, dstPath.c_str());
+            BeStringUtilities::Wcsncpy(dst, PT_MAXPATH, dstPath.c_str());
 			++it;
 		}
 	}
@@ -169,13 +169,13 @@ public:
 	{
 		if (m_bAbsolute)
 		{
-			wcscpy_s(dst, PT_MAXPATH, m_path.c_str());
+			BeStringUtilities::Wcsncpy(dst, PT_MAXPATH, m_path.c_str());
 			return;
 		}
 		fulldirectory(dst);
         BeFileName dstPath(dst);
         dstPath.AppendToPath(m_path);
-        wcscpy_s(dst, PT_MAXPATH, dstPath.c_str());
+        BeStringUtilities::Wcsncpy(dst, PT_MAXPATH, dstPath.c_str());
 	}
 
 	void setExtension(const wchar_t*ext)
@@ -355,13 +355,17 @@ public:
 
 	static void setProjectDirectory(const wchar_t *path)
 	{
-		wcscpy_s(projectDirectory(), PT_MAXPATH, path);
-		PathRemoveFileSpecW(projectDirectory());
+        BeFileName pathWithoutFileName(path);
+        WString dev, dir;
+        pathWithoutFileName.ParseName(&dev, &dir, nullptr, nullptr);
+        BeStringUtilities::Wcsncpy(projectDirectory(), PT_MAXPATH, pathWithoutFileName.c_str());
 	}
 
 	static void makeProjectDirectoryCurrent()
 	{
+#if defined(NEEDS_WORK_VORTEX_DGNDB)
 		SetCurrentDirectoryW(projectDirectory());
+#endif
 	}
 
 	static int maxFilePath()
