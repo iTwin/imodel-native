@@ -967,6 +967,7 @@
     <Xml Include="Cache\Persistence\ECSchemas\DSCacheSchema.01.07.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\WSCache.02.00.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\WSCacheMetaSchema.03.00.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\Support\V3Conversion\eBAttributes_V3Conversion.02.00.ecschema.xml" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Connect\Connect.mki" />
