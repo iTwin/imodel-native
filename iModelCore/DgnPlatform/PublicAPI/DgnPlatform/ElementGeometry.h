@@ -485,6 +485,7 @@ public:
     Render::GeometryParamsCR GetGeometryParams() const {return m_elParams;} //!< @private
     DGNPLATFORM_EXPORT BentleyStatus GetGeometryStream (GeometryStreamR); //!< @private
     DGNPLATFORM_EXPORT GeometryStreamEntryId GetGeometryStreamEntryId() const; //! Return the primitive id of the geometry last added to the builder.
+    DGNPLATFORM_EXPORT bool MatchesGeometryPart (DgnGeometryPartId, DgnDbR db, bool ignoreSymbology = false, bool ignoreInitialSymbology = true); //!< @private assume change already checked...
 
     DGNPLATFORM_EXPORT BentleyStatus SetGeometryStream (DgnGeometryPartR);
     DGNPLATFORM_EXPORT BentleyStatus SetGeometryStreamAndPlacement (GeometrySourceR);
