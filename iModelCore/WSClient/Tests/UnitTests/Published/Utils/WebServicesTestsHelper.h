@@ -108,6 +108,8 @@ HttpResponse StubWSInfoHttpResponseWebApi20();
 HttpResponse StubWSInfoHttpResponseWebApi21();
 //! Stub WebApi 2.2 and BWSG server
 HttpResponse StubWSInfoHttpResponseWebApi22();
+//! Stub WebApi 2.4 and BWSG server
+HttpResponse StubWSInfoHttpResponseWebApi24();
 //! Stub WebApi version and BWSG server
 HttpResponse StubWSInfoHttpResponseWebApi(BeVersion webApiVersion);
 
@@ -128,6 +130,8 @@ WSError StubWSCanceledError();
 
 ClientInfoPtr StubClientInfo();
 ClientInfoPtr StubValidClientInfo();
+
+ObjectId StubObjectId();
 
 ECN::ECSchemaPtr ParseSchema(Utf8StringCR schemaXml, ECN::ECSchemaReadContextPtr context = nullptr);
 
