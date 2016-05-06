@@ -197,6 +197,11 @@ HttpResponse StubWSInfoHttpResponseWebApi22()
     return StubWSInfoHttpResponseWebApi(BeVersion(2, 2));
     }
 
+HttpResponse StubWSInfoHttpResponseWebApi24()
+    {
+    return StubWSInfoHttpResponseWebApi(BeVersion(2, 4));
+    }
+
 HttpResponse StubWSInfoHttpResponseWebApi(BeVersion webApiVersion)
     {
     auto info = StubWSInfoWebApi(webApiVersion);
@@ -273,6 +278,11 @@ ClientInfoPtr StubValidClientInfo()
     {
     auto productId = "2545"; // Navigator Desktop CONNECT Edition
     return std::shared_ptr<ClientInfo>(new ClientInfo("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", productId));
+    }
+
+ObjectId StubObjectId()
+    {
+    return ObjectId("TestSchema", "TestClass", "TestId");
     }
 
 ECSchemaPtr ParseSchema(Utf8StringCR schemaXml, ECSchemaReadContextPtr context)
