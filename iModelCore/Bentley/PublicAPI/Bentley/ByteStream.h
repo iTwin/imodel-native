@@ -10,6 +10,7 @@
 
 #include "Bentley.h"
 #include "BeAssert.h"
+#include <utility>
 
 BEGIN_BENTLEY_NAMESPACE
 
