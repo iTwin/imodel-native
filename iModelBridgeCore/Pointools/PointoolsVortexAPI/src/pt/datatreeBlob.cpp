@@ -10,7 +10,7 @@ Blob::~Blob()
 {
 	if (_del) delete _data;
 }
-Blob::Blob( void *data, uint32 size, bool del /*= false*/ ) 
+Blob::Blob(uint8_t *data, uint32 size, bool del /*= false*/ )
 	: _data(data), _size(size), _del(del)
 {
 	_compression = None;
@@ -25,8 +25,7 @@ bool Blob::compress( Compression type )
 		int new_size=0;
 		char *compressed=0;
 
-		int compressed_size = Scz_Compress_Buffer2Buffer( 
-			(char*)_data, _size, &compressed, &new_size, 1 );
+		int compressed_size = Scz_Compress_Buffer2Buffer((char*)_data, _size, &compressed, &new_size, 1 );
 
 		if (compressed_size)
 		{
@@ -55,8 +54,7 @@ bool Blob::decompress()
 		int new_size=0;
 		char *compressed=0;
 
-		int compressed_size = Scz_Decompress_Buffer2Buffer(
-			(char*)_data, _size, &compressed, &new_size );
+		int compressed_size = Scz_Decompress_Buffer2Buffer((char*)_data, _size, &compressed, &new_size );
 
 		if (compressed_size)
 		{

@@ -47,7 +47,7 @@ namespace ptedit
 		inline const float &alpha(int p) const { return br[p]; }
 		inline const float &ialpha(int p) const { return ibr[p]; }
 
-		inline const int &mode() { return (int)_mode; }
+		inline const int &mode() { return _mode; }
 		void mode( int m ) { _mode = m; }
 	private:
 		double	_radius2;
@@ -536,6 +536,7 @@ namespace ptedit
 	};
 	//static FilterOpPaintErase s_opPaintErase;
 
+#ifdef NEEDS_WORK_VORTEX_DGNDB
 	//
 	// Paint Filter - for painting not select
 	//
@@ -685,5 +686,6 @@ namespace ptedit
 		int _didSelect;
 	};
 
+#endif
 
 } // end namespace ptedit

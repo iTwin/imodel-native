@@ -4,8 +4,6 @@
 #include <ptengine/pointsscene.h>
 #include <ptengine/engine.h>
 #include <ptcloud2/voxel.h>
-#include <ptgl/glviewstore.h>
-#include <ptgl/glcamera.h>
 #include <pt/rect.h>
 #include <pt/fence.h>
 #include <pt/viewparams.h>

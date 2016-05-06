@@ -21,6 +21,7 @@
     #include <Shlwapi.h>
     #include <io.h>
     #include <shlobj.h>
+    #include <strstream>
 #else
     // NEEDS_WORK_VORTEX_DGNDB
     // use BeStringUtilities::Wcsncpy
@@ -41,6 +42,11 @@
     #define SetCurrentDirectoryW
     #define _waccess(a,b) 1
     #define DeleteFileW(a)
+
+    #define LOBYTE(w)           ((uint8_t)(((uintptr_t)(w)) & 0xff))    
+    #define GetRValue(rgb)      (LOBYTE(rgb))
+    #define GetGValue(rgb)      (LOBYTE(((uint16_t)(rgb)) >> 8))
+    #define GetBValue(rgb)      (LOBYTE((rgb)>>16))
 
     typedef void* HANDLE;
    
@@ -67,6 +73,7 @@
 #include <wchar.h>
 #include <locale.h>
 #include <string.h>
+#include <stdexcept>
 
 #ifdef _DEBUG
 #define FILE_TRACE 1

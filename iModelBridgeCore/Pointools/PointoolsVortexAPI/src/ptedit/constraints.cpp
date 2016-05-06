@@ -1,4 +1,6 @@
 #include "PointoolsVortexAPIInternal.h"
+
+#ifdef NEEDS_WORK_VORTEX_DGNDB
 #include <ptedit/constriants.h>
 
 using namespace ptedit;
@@ -343,3 +345,4 @@ bool IntensityConstraint::writeState( pt::datatree::Branch *b) const
 	}
 	else return false;
 }
+#endif

@@ -81,6 +81,13 @@ public:
 	inline void clear() { Base::_empty = true; _av.zero(); }
 	
 	/*expansion*/ 
+    inline void expandBy(const double *v)
+        {
+        T vf[] = {(T) v[0], (T) v[1], (T) v[2]};
+        Base::expand(vf);
+        Base::_empty = false;
+        }
+    inline void expandBy(const vec3<T> &v) { Base::expand(v); _av += v; _av /= static_cast<T>(2.0); }
 	inline void expandBy(const BBox<T>& bb)
 	{
 		if (bb.isEmpty()) return;
@@ -92,13 +99,8 @@ public:
 		}
         Base::_empty = false;
 	}
-	inline void expandBy(const vec3<T> &v) { expand(v); _av += v; _av /= static_cast<T>(2.0); }
-	inline void expandBy(const double *v)
-	{
-		T vf[] = { (T)v[0], (T)v[1], (T)v[2] };
-		expand(vf);
-        Base::_empty = false;
-	}
+	
+	
 
 	void expandByCoef(T coef)
 	{

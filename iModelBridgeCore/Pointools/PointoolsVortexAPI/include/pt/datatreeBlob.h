@@ -21,7 +21,7 @@ public:
 		CompressZIP = 2
 	};
 
-	Blob(void *data, uint32 size, bool del = false );
+	Blob(uint8_t *data, uint32 size, bool del = false );
 	~Blob();
 
 	bool	compress( Compression type );
@@ -30,7 +30,7 @@ public:
 
 	bool	_del;
 	int		_compression;
-	void	*_data;
+    uint8_t	*_data;
 	uint32	_size;
 };
 }

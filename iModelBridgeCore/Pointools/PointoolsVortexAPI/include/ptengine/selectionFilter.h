@@ -5,7 +5,6 @@
 #include <ptcloud2/voxel.h>
 #include <pt/rect.h>
 #include <pt/fence.h>
-#include <ptgl/glviewstore.h>
 
 #define POINT_FILTER_WHOLE_VOXEL	-1
 #define POINT_FILTER_DONE			-3

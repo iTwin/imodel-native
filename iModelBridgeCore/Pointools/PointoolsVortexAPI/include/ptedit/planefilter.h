@@ -2,7 +2,6 @@
 #include <ptedit/edit.h>
 #include <ptedit/editSelect.h>
 #include <ptedit/editNodeDef.h>
-#include <ptgl/glviewstore.h>
 #include <pt/fence.h>
 #include <pt/plane.h>
 

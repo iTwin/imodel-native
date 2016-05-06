@@ -8,10 +8,6 @@
 #include <pt/datatree.h>
 #include <pt/boundingbox.h>
 
-
-#include <ptgl/glviewstore.h>
-#include <ptgl/glcamera.h>
-
 #include <ptcloud2/voxel.h>
 
 #include <ptengine/pointsscene.h>

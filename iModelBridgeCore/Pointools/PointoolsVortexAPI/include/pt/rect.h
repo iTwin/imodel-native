@@ -18,41 +18,42 @@ template <class REAL>
 class Rect : public Bounds<2, REAL>
 {
 public:
+    typedef Bounds<2, REAL> Base;
 	typedef Rect<REAL> RT;
 
 	Rect(){};
 	Rect(REAL x, REAL y, REAL x2, REAL y2)
 	{
-		lower_bounds[0] = x;
-		lower_bounds[1] = y;
-		upper_bounds[0] = x2;
-		upper_bounds[1] = y2;
+        Base::lower_bounds[0] = x;
+        Base::lower_bounds[1] = y;
+        Base::upper_bounds[0] = x2;
+        Base::upper_bounds[1] = y2;
 	};
 
 	~Rect(){};
 
 	void set(REAL x, REAL y, REAL x2, REAL y2)
 	{
-		lower_bounds[0] = x;
-		lower_bounds[1] = y;
-		upper_bounds[0] = x2;
-		upper_bounds[1] = y2;
+    Base::lower_bounds[0] = x;
+    Base::lower_bounds[1] = y;
+    Base::upper_bounds[0] = x2;
+    Base::upper_bounds[1] = y2;
 	};
 
 	/*accessors*/
-	inline REAL dx() const		{ return size(0); }
-	inline REAL dy() const		{ return size(1); }
-	inline void width(REAL w)	{ upper_bounds[0] = lower_bounds[0] + w; }
-	inline void height(REAL h)	{ upper_bounds[1] = lower_bounds[1] + h; }
+	inline REAL dx() const		{ return Base::size(0); }
+	inline REAL dy() const		{ return Base::size(1); }
+	inline void width(REAL w)	{ Base::upper_bounds[0] = Base::lower_bounds[0] + w; }
+	inline void height(REAL h)	{ Base::upper_bounds[1] = Base::lower_bounds[1] + h; }
 
-	inline const REAL &lx() const	{ return lower_bounds[0]; }
-	inline const REAL &ly() const	{ return lower_bounds[1]; }
-	inline const REAL &ux() const	{ return upper_bounds[0]; }
-	inline const REAL &uy() const	{ return upper_bounds[1]; }
-	inline  REAL &lx() 	{ return lower_bounds[0]; }
-	inline  REAL &ly() 	{ return lower_bounds[1]; }
-	inline  REAL &ux() 	{ return upper_bounds[0]; }
-	inline  REAL &uy() 	{ return upper_bounds[1]; }
+	inline const REAL &lx() const	{ return Base::lower_bounds[0]; }
+	inline const REAL &ly() const	{ return Base::lower_bounds[1]; }
+	inline const REAL &ux() const	{ return Base::upper_bounds[0]; }
+	inline const REAL &uy() const	{ return Base::upper_bounds[1]; }
+	inline  REAL &lx() 	{ return Base::lower_bounds[0]; }
+	inline  REAL &ly() 	{ return Base::lower_bounds[1]; }
+	inline  REAL &ux() 	{ return Base::upper_bounds[0]; }
+	inline  REAL &uy() 	{ return Base::upper_bounds[1]; }
 
 	void operator += (const vec2<REAL> &t)
 	{
@@ -85,8 +86,8 @@ public:
 	{
 		for (int i=0;i<2;i++)
 		{
-			lower_bounds[i] *= s;
-			upper_bounds[i] *= s;
+        Base::lower_bounds[i] *= s;
+        Base::upper_bounds[i] *= s;
 		}
 	};
 	template <class T>
@@ -94,12 +95,12 @@ public:
 	{
 		for (int i=0;i<2;i++)
 		{
-			lower_bounds[i] /= s;
-			upper_bounds[i] /= s;
+        Base::lower_bounds[i] /= s;
+        Base::upper_bounds[i] /= s;
 		}
 	};
-	inline REAL midX() const { return mid(0); };
-	inline REAL midY() const { return mid(1); };
+	inline REAL midX() const { return Base::mid(0); };
+	inline REAL midY() const { return Base::mid(1); };
 
 	bool intersection(const RT &rect)
 	{

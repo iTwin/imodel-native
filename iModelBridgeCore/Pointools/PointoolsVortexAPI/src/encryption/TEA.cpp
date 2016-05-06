@@ -5,9 +5,6 @@
 #include <encryption/SHA.h>
 #include <encryption/DoubleBuffering.h>
 
-#include <exception>
-#include <strstream>
-
 using namespace std;
 
 //Null chain
@@ -59,9 +56,9 @@ void CTEA::Initialize(char const* keydata, int keydatalength, char const* chain,
 	{
 		//Initialize the chain
 		if(NULL==m_apchain0.get())
-			m_apchain0 = auto_ptr<char>(new char[m_blockSize]);
+			m_apchain0.reset(new char[m_blockSize]);
 		if(NULL==m_apchain.get())
-			m_apchain = auto_ptr<char>(new char[m_blockSize]);
+			m_apchain.reset(new char[m_blockSize]);
 		memcpy(m_apchain0.get(), chain, m_blockSize);
 		memcpy(m_apchain.get(), chain, m_blockSize);	
 	}
@@ -69,7 +66,7 @@ void CTEA::Initialize(char const* keydata, int keydatalength, char const* chain,
 		//Fast Initialization
 		return;
 	if(NULL == m_apKey.get())
-		m_apKey = auto_ptr<char>(new char[m_keylength]);
+		m_apKey.reset(new char[m_keylength]);
 	memcpy(m_apKey.get(), key, m_keylength);
 	//Move Key Data into unsigned int array
 	BytesToWord(reinterpret_cast<unsigned char const*>(&key[0]), m_auiKey[0]);
@@ -233,33 +230,30 @@ void CTEA::EncryptFile(string const& rostrFileIn, string const& rostrFileOut)
 		throw runtime_error(string(sm_szErrorMsg1));
 	//Check if the same file for input and output
 	if(rostrFileIn == rostrFileOut)
-	{
-		ostrstream ostr;
-		ostr << sm_szErrorMsg8 << rostrFileIn << "!" << ends;
-		string ostrMsg = ostr.str();
-		ostr.freeze(false);
-		throw runtime_error(ostrMsg);
-	}
+	    {
+        std::string msg(sm_szErrorMsg8);
+        msg += rostrFileIn;
+        msg += "!\n";
+		throw runtime_error(msg);
+	    }
 	//Open Input File
 	ifstream in(rostrFileIn.c_str(), ios::binary);
 	if(!in)
-	{
-		ostrstream ostr;
-		ostr << sm_szErrorMsg7 << rostrFileIn << "!" << ends;
-		string ostrMsg = ostr.str();
-		ostr.freeze(false);
-		throw runtime_error(ostrMsg);
-	}
+	    {
+        std::string msg(sm_szErrorMsg7);
+        msg += rostrFileIn;
+        msg += "!\n";
+		throw runtime_error(msg);
+	    }
 	//Open Output File
 	ofstream out(rostrFileOut.c_str(), ios::binary);
 	if(!out)
-	{
-		ostrstream ostr;
-		ostr << sm_szErrorMsg7 << rostrFileOut << "!" << ends;
-		string ostrMsg = ostr.str();
-		ostr.freeze(false);
-		throw runtime_error(ostrMsg);
-	}
+	    {
+        std::string msg(sm_szErrorMsg7);
+        msg += rostrFileOut;
+        msg += "!\n";
+        throw runtime_error(msg);
+	    }
 	//Computing the signature
 	char acSig[33] = {0};
 	Signature(acSig);
@@ -291,33 +285,30 @@ void CTEA::DecryptFile(string const& rostrFileIn, string const& rostrFileOut)
 		throw runtime_error(string(sm_szErrorMsg1));
 	//Check if the same file for input and output
 	if(rostrFileIn == rostrFileOut)
-	{
-		ostrstream ostr;
-		ostr << sm_szErrorMsg8 << rostrFileIn << "!" << ends;
-		string ostrMsg = ostr.str();
-		ostr.freeze(false);
-		throw runtime_error(ostrMsg);
-	}
+        {
+        std::string msg(sm_szErrorMsg8);
+        msg += rostrFileIn;
+        msg += "!\n";
+        throw runtime_error(msg);
+        }
 	//Open Input File
 	ifstream in(rostrFileIn.c_str(), ios::binary);
 	if(!in)
-	{
-		ostrstream ostr;
-		ostr << sm_szErrorMsg7 << rostrFileIn << "!" << ends;
-		string ostrMsg = ostr.str();
-		ostr.freeze(false);
-		throw runtime_error(ostrMsg);
-	}
+        {
+        std::string msg(sm_szErrorMsg7);
+        msg += rostrFileIn;
+        msg += "!\n";
+        throw runtime_error(msg);
+        }
 	//Open Output File
 	ofstream out(rostrFileOut.c_str(), ios::binary);
 	if(!out)
-	{
-		ostrstream ostr;
-		ostr << sm_szErrorMsg7 << rostrFileOut << "!" << ends;
-		string ostrMsg = ostr.str();
-		ostr.freeze(false);
-		throw runtime_error(ostrMsg);
-	}
+        {
+        std::string msg(sm_szErrorMsg7);
+        msg += rostrFileOut;
+        msg += "!\n";
+        throw runtime_error(msg);
+        }
 	//Computing the signature
 	char acSig[33] = {0};
 	Signature(acSig);
@@ -326,13 +317,14 @@ void CTEA::DecryptFile(string const& rostrFileIn, string const& rostrFileOut)
 	in.read(acSig1, 32);
 	//Compare the signatures
 	if(memcmp(acSig1, acSig, 32) != 0)
-	{
-		ostrstream ostr;
-		ostr << sm_szErrorMsg9 << rostrFileIn << sm_szErrorMsg10 << ends;
-		string ostrMsg = ostr.str();
-		ostr.freeze(false);
-		throw runtime_error(ostrMsg);
-	}
+        {
+        std::string msg(sm_szErrorMsg9);
+        msg += rostrFileIn;
+        msg += sm_szErrorMsg10;
+        msg += "\n";
+        throw runtime_error(msg);
+        }
+
 	//Resetting the chain
 	ResetChain();
 	//Reading from file

@@ -16,8 +16,10 @@
 #include <ptcloud2/pod.h>
 #include <pt/project.h>
 
+#ifdef HAVE_OPENGL
 #include <ptgl/glcamera.h>
 #include <ptgl/gltext.h>
+#endif
 
 #include <ptengine/queryScene.h> 
 

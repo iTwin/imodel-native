@@ -162,6 +162,8 @@ namespace pointsengine
 		bool operator() (const pt::vector3d &p )	{ return sphere.contains(pt::vector3(p.x, p.y, p.z)); }
 		const pt::BoundingSphere &sphere;
 	};
+
+#ifdef NEEDS_WORK_VORTEX_DGNDB 
 	//
 	// Spherical Query
 	//
@@ -170,7 +172,7 @@ namespace pointsengine
 	{
 		SphericalQuery(Receptor &r, const pt::vector3 &cen, float rad) : receptor(r)
 		{
-			sphere.centre(cen);
+			sphere.center(cen);
 			sphere.radius(rad);
 		}
 		bool scene(pcloud::Scene *sc)	{
@@ -205,6 +207,7 @@ namespace pointsengine
 		pt::BoundingSphere   sphere;
 		Receptor		 &receptor;
 	};
+#endif
 	//
 	// Point In Box
 	//
@@ -215,6 +218,7 @@ namespace pointsengine
 		bool operator() (const pt::vector3d &p)	{ return box.inBounds(pt::vector3(p.x, p.y, p.z)); }
 		const pt::BoundingBox &box;
 	};
+#ifdef NEEDS_WORK_VORTEX_DGNDB 
 	//
 	// Box Query
 	//
@@ -242,6 +246,7 @@ namespace pointsengine
 		pt::BoundingBox		box;
 		Receptor			&receptor;
 	};
+#endif
 	//
 	// Point On Plane
 	//
@@ -326,6 +331,8 @@ namespace pointsengine
 		};
 		pt::Planef plane;
 	};
+
+#ifdef NEEDS_WORK_VORTEX_DGNDB 
 	//
 	// Plane Query
 	//
@@ -405,5 +412,6 @@ namespace pointsengine
 		bool valid;
 		bool planeSpace;
 	};
+#endif
 }
 #endif
