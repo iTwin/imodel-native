@@ -280,7 +280,7 @@ struct PerformanceQueryTests : public PopulateKitchenSinkDb
         void LoadByInstanceId()
             {
             ConnectToDb();
-            LoadByInstanceId("401", "TestClass", 1);
+            LoadByInstanceId("400", "TestClass", 1);
             LoadByInstanceId("251", "Test2Class", 1);
             LoadByInstanceId("99", "Folder", 1);
             LoadByInstanceId("199", "Document", 1);
