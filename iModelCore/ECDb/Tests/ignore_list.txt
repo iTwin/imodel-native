@@ -22,3 +22,5 @@ ECDbMappingTestFixture.RelationshipWithAbstractConstraintClassAndNoSubclasses
 #TFS 383266
 JsonReaderTests.ReadInstanceAlongWithRelatedInstances
 
+ECSchemaUpdateTests.ModifyPropToReadOnly
+
