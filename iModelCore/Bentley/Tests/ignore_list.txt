@@ -8,7 +8,9 @@ BeFileNameTests.UNCReadOnlyTest         # Testable UNC path is required to be av
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
-BeTextFileTests.*
+BeTextFileTests.OpenToWrite                     # WIP
+BeTextFileTests.CountLinesInFile                # WIP
+
 BeStringUtilitiesTests.UriEncoding              # Notified Sam
 DoubleFormatterTest.ReplaceDecimalSeparator     # Only replace default decimal Separator
 BeDirectoryIterator.FileNamePattern_Parse       # Directory name is incorrectly parsed
