@@ -365,7 +365,9 @@ $(o)visibilityEngine$(oext)              : $(basedir)src/ptengine/visibilityEngi
 
 $(o)glFrustum$(oext)                     : $(basedir)src/ptgl/glFrustum.cpp                                      $(basedir)include/ptgl/glFrustum.h                               ${MultiCompileDepends}
 
+#----------------------- HAVE_OPENGL -------------------------------------------
 %if defined(HAVE_OPENGL)
+
 $(o)renderClipEffect$(oext)              : $(basedir)src/ptengine/renderClipEffect.cpp                           $(basedir)include/ptengine/renderClipEffect.h                    ${MultiCompileDepends}
                                                                                                                   
 $(o)PointoolsAPI_unitTests$(oext)        : $(basedir)src/ptapi/PointoolsAPI_unitTests.cpp                                                                                          ${MultiCompileDepends}
@@ -424,6 +426,21 @@ $(o)renderIntensityEffect$(oext)         : $(basedir)src/ptengine/renderIntensit
 
 %endif
 
+#----------------------------NEEDS_WORK_VORTEX_DGNDB_SERVER -----------------------
+%if defined(NEEDS_WORK_VORTEX_DGNDB_SERVER)
+
+$(o)PipeProtocolManager$(oext)           : $(basedir)src/PTRMI/PipeProtocolManager.cpp                           $(basedir)include/PTRMI/PipeProtocolManager.h                    ${MultiCompileDepends}
+
+$(o)PipeManagerTCP$(oext)                : $(basedir)src/PTRMI/PipeManagerTCP.cpp                                $(basedir)include/PTRMI/PipeManagerTCP.h                         ${MultiCompileDepends}
+
+$(o)PipeTCP$(oext)                       : $(basedir)src/PTRMI/PipeTCP.cpp                                       $(basedir)include/PTRMI/PipeTCP.h                                ${MultiCompileDepends}
+
+$(o)ClientInterfaceExtDataBentley$(oext) : $(basedir)src/PTRMI/ClientInterfaceExtDataBentley.cpp                 $(basedir)include/PTRMI/ClientInterfaceExtDataBentley.h          ${MultiCompileDepends}
+
+%endif
+
+#--------------------------------- PTRMI -----------------------------------------
+
 $(o)Status$(oext)                        : $(basedir)src/PTRMI/Status.cpp                                        $(basedir)include/PTRMI/Status.h                                 ${MultiCompileDepends}
                                                                                                                   
 $(o)URL$(oext)                           : $(basedir)src/PTRMI/URL.cpp                                           $(basedir)include/PTRMI/URL.h                                    ${MultiCompileDepends}
@@ -440,21 +457,8 @@ $(o)ManagerClientInterface$(oext)        : $(basedir)src/PTRMI/ManagerClientInte
 
 $(o)ClientServerInterface$(oext)         : $(basedir)src/PTRMI/ClientServerInterface.cpp                         $(basedir)include/PTRMI/ClientServerInterface.h                  ${MultiCompileDepends}
 
-$(o)PipeExt$(oext)                       : $(basedir)src/PTRMI/PipeExt.cpp                                       $(basedir)include/PTRMI/PipeExt.h                                ${MultiCompileDepends}
-                                                                                                                  
-%if defined(NEEDS_WORK_VORTEX_DGNDB_SERVER)
-
-$(o)PipeProtocolManager$(oext)           : $(basedir)src/PTRMI/PipeProtocolManager.cpp                           $(basedir)include/PTRMI/PipeProtocolManager.h                    ${MultiCompileDepends}
-
-$(o)PipeManagerTCP$(oext)                : $(basedir)src/PTRMI/PipeManagerTCP.cpp                                $(basedir)include/PTRMI/PipeManagerTCP.h                         ${MultiCompileDepends}
-
-$(o)PipeTCP$(oext)                       : $(basedir)src/PTRMI/PipeTCP.cpp                                       $(basedir)include/PTRMI/PipeTCP.h                                ${MultiCompileDepends}
-
-$(o)ClientInterfaceExtDataBentley$(oext) : $(basedir)src/PTRMI/ClientInterfaceExtDataBentley.cpp                 $(basedir)include/PTRMI/ClientInterfaceExtDataBentley.h          ${MultiCompileDepends}
-
-
-%endif
-
+$(o)PipeExt$(oext)                       : $(basedir)src/PTRMI/PipeExt.cpp                                       $(basedir)include/PTRMI/PipeExt.h                                ${MultiCompileDepends}                                                                                              
+                                                                                                                
 $(o)DataSourceServer$(oext)              : $(basedir)src/ptds/DataSourceServer.cpp                               $(basedir)include/ptds/DataSourceServer.h                        ${MultiCompileDepends}
 
 $(o)DataSourceMultiReadSet$(oext)        : $(basedir)src/ptds/DataSourceMultiReadSet.cpp                         $(basedir)include/ptds/DataSourceMultiReadSet.h                  ${MultiCompileDepends}

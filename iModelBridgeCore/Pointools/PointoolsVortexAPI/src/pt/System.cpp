@@ -26,6 +26,7 @@
 #include <pt/pterror.h>
 #include <pt/units.h>
 
+#ifdef NEEDS_WORK_VORTEX_DGNDB 
 static bool isPow2(int num) { return ((num & -num) == num); }
 static int iMin(int x, int y) { return x < y ? x : y; }
 static int iMax(int x, int y) { return x > y ? x : y; }
@@ -71,8 +72,11 @@ static int iMax(int x, int y) { return x > y ? x : y; }
     #include <CoreServices/CoreServices.h>
 #endif
 
+#endif
+
 namespace pt {
 
+#ifdef NEEDS_WORK_VORTEX_DGNDB 
 static bool                                     _rdtsc              = false;
 static bool                                     _mmx                = false;
 static bool                                     _sse                = false;
@@ -844,6 +848,21 @@ RealTime System::getLocalTime() {
 }
 
 
+
+void System::setEnv(const std::wstring& name, const std::wstring& value)
+    {
+#ifdef _WIN32
+    std::wstring cmd = name + L"=" + value;
+    _wputenv(name.c_str());
+#else
+    setenv(name.c_str(), value.c_str(), 1);
+#endif
+    }
+
+
+
+#endif
+
 void* System::alignedMalloc(size_t bytes, size_t alignment) {
     alwaysAssertM(isPow2(alignment), _T("alignment must be a power of 2"));
 
@@ -912,16 +931,5 @@ void System::alignedFree(void* _ptr) {
     debugAssert(isValidHeapPointer((void*)truePtr));
     free(truePtr);
 }
-
-
-void System::setEnv(const std::wstring& name, const std::wstring& value) {
-    #ifdef _WIN32
-        std::wstring cmd = name + L"=" + value;
-        _wputenv(name.c_str());
-    #else
-        setenv(name.c_str(), value.c_str(), 1);
-    #endif
-}
-
 
 }  // namespace
