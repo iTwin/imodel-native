@@ -44,7 +44,7 @@ Scene::Scene(DgnDbR db, TransformCR location, Utf8CP realityCacheName, Utf8CP ro
     m_localCacheName.AppendToPath(BeFileName(realityCacheName));
     m_localCacheName.AppendExtension(L"3MXcache");
 
-    m_cache = RealityDataCache::Create(100);
+    m_cache = RealityDataCache::Create();
     m_cache->RegisterStorage(*BeSQLiteRealityDataStorage::Create(m_localCacheName));
     m_cache->RegisterSource(IsUrl() ? (IRealityDataSourceBase&) *HttpRealityDataSource::Create(8) : *FileRealityDataSource::Create(4));
     }
@@ -63,9 +63,13 @@ BentleyStatus Scene::DeleteRealityCache()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Scene::ReadRoot(SceneInfo& sceneInfo)
     {
-    MxStreamBuffer rootStream;
+    MxStreamBuffer* rootStream = nullptr;
     RealityDataCacheResult status = RequestData(nullptr, true, &rootStream);
-    return (RealityDataCacheResult::Success != status) ? ERROR : sceneInfo.Read(rootStream);
+    if (RealityDataCacheResult::Success != status)
+        return ERROR;
+
+    BeAssert(nullptr != rootStream);
+    return sceneInfo.Read(*rootStream);
     }
 
 /*---------------------------------------------------------------------------------**//**

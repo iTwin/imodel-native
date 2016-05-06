@@ -24,18 +24,15 @@ struct WmsTileData : IRealityData<WmsTileData, BeSQLiteRealityDataStorage, HttpR
     //===================================================================================
     // @bsimethod                                               Mathieu.Marchand  6/2015
     //===================================================================================
-    struct RequestOptions : RealityDataCacheOptions, IRealityData::RequestOptions
-    {
-    DEFINE_BENTLEY_REF_COUNTED_MEMBERS
-    private:
-        RequestOptions(bool allowExpired, bool requestFromSource) :RealityDataCacheOptions(allowExpired, requestFromSource) {}        
-    public:
-        ~RequestOptions() {}
+    struct RequestOptions : IRealityData::RequestOptions
+        {
         //! Creates the options object.
-        //! @param[in] returnExpired        Should the cache return reality data even if it's expired.
         //! @param[in] requestFromSource    Should the cache request for fresh data if it's expired or doesn't exist.
-        static RefCountedPtr<RequestOptions> Create(bool returnExpired, bool requestFromSource) {return new RequestOptions(returnExpired, requestFromSource);}        
-    };
+        RequestOptions(bool requestFromSource)
+            {
+            SetRequestFromSource(requestFromSource);
+            }
+        };
 
 private:
     Utf8String      m_url;
@@ -51,9 +48,8 @@ private:
 protected:
     virtual Utf8CP _GetId() const override {return m_url.c_str();}
     virtual bool _IsExpired() const override;
-    virtual BentleyStatus _InitFrom(IRealityDataBase const& self, RealityDataCacheOptions const&) override;
-    virtual BentleyStatus _InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> const& header, ByteStream const& body, HttpRealityDataSource::RequestOptions const& options) override;
-    virtual BentleyStatus _InitFrom(BeSQLite::Db& db, BeMutex& cs, Utf8CP key, BeSQLiteRealityDataStorage::SelectOptions const& options) override;
+    virtual BentleyStatus _InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> const& header, ByteStream const& body) override;
+    virtual BentleyStatus _InitFrom(BeSQLite::Db& db, BeMutex& cs, Utf8CP key) override;
     virtual BentleyStatus _Persist(BeSQLite::Db& db, BeMutex& cs) const override;
     virtual BeSQLiteRealityDataStorage::DatabasePrepareAndCleanupHandlerPtr _GetDatabasePrepareAndCleanupHandler() const override;
 
@@ -163,27 +159,11 @@ bool WmsTileData::IsSupportedContent(Utf8StringCR contentType) const
     return false;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               09/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus WmsTileData::_InitFrom(IRealityDataBase const& self, RealityDataCacheOptions const& options)
-    {
-    WmsTileData const& other = dynamic_cast<WmsTileData const&>(self);
-    m_url = other.m_url;
-    m_creationDate = other.m_creationDate;
-    m_contentType = other.m_contentType;
-    m_data = other.m_data;
-    return SUCCESS;
-    }
-
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  6/2015
 //----------------------------------------------------------------------------------------
-BentleyStatus WmsTileData::_InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> const& header, ByteStream const& body, HttpRealityDataSource::RequestOptions const& requestOptions) 
-    {
-    BeAssert(nullptr != dynamic_cast<RequestOptions const*>(&requestOptions));
-   // RequestOptions const& options = static_cast<RequestOptions const&>(requestOptions);
-    
+BentleyStatus WmsTileData::_InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> const& header, ByteStream const& body) 
+    {    
     m_url.AssignOrClear(url);
     m_creationDate = DateTime::GetCurrentTime();
 
@@ -204,7 +184,7 @@ BentleyStatus WmsTileData::_InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> co
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  6/2015
 //----------------------------------------------------------------------------------------
-BentleyStatus WmsTileData::_InitFrom(BeSQLite::Db& db, BeMutex& cs, Utf8CP key, BeSQLiteRealityDataStorage::SelectOptions const& options)
+BentleyStatus WmsTileData::_InitFrom(BeSQLite::Db& db, BeMutex& cs, Utf8CP key)
     {
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     wt_OperationForGraphics highPriority;
@@ -447,10 +427,6 @@ Render::Image WmsSource::_QueryTile(TileId const& id, bool& alphaBlend)
 
     Utf8String tileUrl = BuildTileUrl(id);
     Render::Image image;
-
-    //      We are using tiledRaster but it should be extended to support more pixeltype and compression or have a new type?
-    //      Maybe we should create a better Image object than RgbImageInfo and use that.
-    RefCountedPtr<WmsTileData::RequestOptions> pOptions = WmsTileData::RequestOptions::Create(true, true/*request*/);
         
     //&&MM for WMS it looks like I will need another kind of tiledRaster to handle exception response from the server.
     //     for example, a badly formated request generate an XML response. This is badly interpreted as a valid response(HttpRealityDataSourceRequest::_Handle) and 
@@ -461,8 +437,8 @@ Render::Image WmsSource::_QueryTile(TileId const& id, bool& alphaBlend)
     // *** as the database get bigger(I guess 500MB) the first call is very very slow. sorting by string is probably not a good idea either
     //     Maybe one table per server?  and use TileId or hash the url ?
     //     BeSQLiteRealityDataStorage::wt_Prepare call to "VACCUUM" is the reason why we have such a big slowdown.
-    RefCountedPtr<WmsTileData> pWmsTileData;
-    if(RealityDataCacheResult::Success != GetRealityDataCache().Get<WmsTileData>(pWmsTileData, tileUrl.c_str(), *pOptions))
+    RefCountedPtr<WmsTileData> pWmsTileData = WmsTileData::Create();
+    if(RealityDataCacheResult::Success != GetRealityDataCache().Get<WmsTileData>(*pWmsTileData, tileUrl.c_str(), WmsTileData::RequestOptions(true)))
         return image;
 
     BeAssert(pWmsTileData.IsValid());
@@ -551,11 +527,11 @@ RealityDataCache& WmsSource::GetRealityDataCache() const
     {
     if (m_realityDataCache.IsNull())
         {
-        RealityDataCachePtr cache = RealityDataCache::Create(100);
+        m_realityDataCache = RealityDataCache::Create();
         BeFileName storageFileName = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName();
         storageFileName.AppendToPath(L"WMS");
-        cache->RegisterStorage(*BeSQLiteRealityDataStorage::Create(storageFileName));
-        cache->RegisterSource(*HttpRealityDataSource::Create(8));
+        m_realityDataCache->RegisterStorage(*BeSQLiteRealityDataStorage::Create(storageFileName));
+        m_realityDataCache->RegisterSource(*HttpRealityDataSource::Create(8));
         }
     return *m_realityDataCache;
     }

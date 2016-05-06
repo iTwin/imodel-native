@@ -22,20 +22,6 @@ struct ThreeMxData
     //=======================================================================================
     // @bsiclass                                        Grigas.Petraitis            03/2015
     //=======================================================================================
-    struct RequestOptions : RealityDataCacheOptions
-        {
-        Scene& m_scene;
-        NodePtr m_node;
-        MxStreamBuffer* m_output;
-        RequestOptions(MxStreamBuffer* output, NodeP node, Scene& scene) : RealityDataCacheOptions(true, false, true, true), m_scene(scene), m_node(node), m_output(output) 
-            {
-            BeAssert(m_node.IsValid() || nullptr!=m_output);
-            }
-        };
-
-    //=======================================================================================
-    // @bsiclass                                        Grigas.Petraitis            03/2015
-    //=======================================================================================
     struct DatabasePrepareAndCleanupHandler : BeSQLiteRealityDataStorage::DatabasePrepareAndCleanupHandler
         {
         mutable BeAtomic<bool> m_isPrepared;
@@ -106,46 +92,48 @@ struct ThreeMxData
         };
 
 protected:
+    Scene& m_scene;
+    NodePtr m_node;
     Utf8String m_filename;
     mutable MxStreamBuffer m_nodeBytes;
 
     /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                    Grigas.Petraitis                04/2015
+    * @bsimethod                                    Grigas.Petraitis                05/2016
     +---------------+---------------+---------------+---------------+---------------+------*/
-    BentleyStatus InitFromSelf(IRealityDataBase const& self, RequestOptions const& options)
+    ThreeMxData(NodeP node, Scene& scene)
+        : m_scene(scene), m_node(node)
         {
-        BeAssert(options.m_node->AreChildrenValid());
-        return SUCCESS;
+        /*BeAssert(m_node.IsValid() || nullptr!=m_output);*/
         }
 
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                04/2015
     +---------------+---------------+---------------+---------------+---------------+------*/
-    BentleyStatus InitFromSource(Utf8CP filename, ByteStream const& data, RequestOptions const& options)
+    BentleyStatus InitFromSource(Utf8CP filename, ByteStream const& data)
         {
         m_filename = filename;
         m_nodeBytes = data;
 
-        if (options.m_output)
+        /*if (m_output)
             {
-            *options.m_output = m_nodeBytes; // copy, don't move - we need the data in this object to cache it.
+            *m_output = m_nodeBytes; // copy, don't move - we need the data in this object to cache it.
             return SUCCESS;
-            }
+            }*/
 
-        printf ("initfromsource node=%p\n", options.m_node.get());
-        BeAssert(options.m_node->IsQueued());
-        if (SUCCESS != options.m_node->Read3MXB(m_nodeBytes, options.m_scene))
+        printf ("initfromsource node=%p\n", m_node.get());
+        BeAssert(m_node->IsQueued());
+        if (SUCCESS != m_node->Read3MXB(m_nodeBytes, m_scene))
             {
             m_nodeBytes.Clear();
             m_nodeBytes.SetPos(0);    
             return ERROR;
             }
 
-        if (!options.UseStorage())
+        /*if (!options.UseStorage())
             {
             m_nodeBytes.Clear();
             m_nodeBytes.SetPos(0);    
-            }
+            }*/
 
         return SUCCESS;
         }
@@ -153,7 +141,7 @@ protected:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                03/2015
     +---------------+---------------+---------------+---------------+---------------+------*/
-    BentleyStatus InitFromStorage(Db& db, BeMutex& cs, Utf8CP filename, RequestOptions const& options)
+    BentleyStatus InitFromStorage(Db& db, BeMutex& cs, Utf8CP filename)
         {
         if (true)
             {
@@ -176,14 +164,14 @@ protected:
             m_nodeBytes.SetPos(0);
             }
 
-        if (options.m_output)
+        /*if (options.m_output)
             {
             *options.m_output = std::move(m_nodeBytes);
             return SUCCESS;
-            }
+            }*/
 
-        BeAssert(options.m_node->IsQueued());
-        BentleyStatus result = options.m_node->Read3MXB(m_nodeBytes, options.m_scene);
+        BeAssert(m_node->IsQueued());
+        BentleyStatus result = m_node->Read3MXB(m_nodeBytes, m_scene);
         if (SUCCESS != result)
             {
             BeAssert(false);
@@ -237,6 +225,7 @@ protected:
 public:
     virtual ~ThreeMxData() {}
     Utf8StringCR GetFilename() const {return m_filename;}
+    MxStreamBuffer& GetOutput() const {return m_nodeBytes;}
 };
 
 //=======================================================================================
@@ -247,30 +236,31 @@ struct HttpData : ThreeMxData, IRealityData<HttpData, BeSQLiteRealityDataStorage
     //=======================================================================================
     // @bsiclass                                        Grigas.Petraitis            03/2015
     //=======================================================================================
-    struct RequestOptions : ThreeMxData::RequestOptions, IRealityData::RequestOptions
+    struct RequestOptions : IRealityData::RequestOptions
     {
     DEFINE_BENTLEY_REF_COUNTED_MEMBERS
     public:
-        RequestOptions(MxStreamBuffer* output, NodeP node, Scene& scene, bool synchronous) : ThreeMxData::RequestOptions(output, node, scene)
+        RequestOptions(bool synchronous)
             {
             BeSQLiteRealityDataStorage::SelectOptions::SetForceSynchronousRequest(synchronous);
             HttpRealityDataSource::RequestOptions::SetForceSynchronousRequest(synchronous);
             SetUseStorage(true);
+            SetRequestFromSource(true);
             }
     };
 
 private:
+    HttpData(NodeP node, Scene& scene) : ThreeMxData(node, scene) {}
 
 protected:
     virtual Utf8CP _GetId() const override {return GetFilename().c_str();}
     virtual bool _IsExpired() const override {return false;}
-    virtual BentleyStatus _InitFrom(IRealityDataBase const& self, RealityDataCacheOptions const& options) override {return InitFromSelf(self, (RequestOptions const&) options);}
-    virtual BentleyStatus _InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> const& header, ByteStream const& body, HttpRealityDataSource::RequestOptions const& options) override {return InitFromSource(url, body, (RequestOptions const&)options);}
-    virtual BentleyStatus _InitFrom(Db& db, BeMutex& cs, Utf8CP id, BeSQLiteRealityDataStorage::SelectOptions const& options) override {return InitFromStorage(db, cs, id, (RequestOptions const&)options);}
+    virtual BentleyStatus _InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> const& header, ByteStream const& body) override {return InitFromSource(url, body);}
+    virtual BentleyStatus _InitFrom(Db& db, BeMutex& cs, Utf8CP id) override {return InitFromStorage(db, cs, id);}
     virtual BentleyStatus _Persist(Db& db, BeMutex& cs) const override {return PersistToStorage(db, cs);}
     virtual BeSQLiteRealityDataStorage::DatabasePrepareAndCleanupHandlerPtr _GetDatabasePrepareAndCleanupHandler() const override {return DatabasePrepareAndCleanupHandler::Create();}
 public:
-    static RefCountedPtr<HttpData> Create() {return new HttpData();}
+    static RefCountedPtr<HttpData> Create(NodeP node, Scene& scene) {return new HttpData(node, scene);}
 };
 
 //=======================================================================================
@@ -281,30 +271,30 @@ struct FileData : ThreeMxData, IRealityData<FileData, BeSQLiteRealityDataStorage
     //=======================================================================================
     // @bsiclass                                        Grigas.Petraitis            03/2015
     //=======================================================================================
-    struct RequestOptions : ThreeMxData::RequestOptions, IRealityData::RequestOptions
+    struct RequestOptions : IRealityData::RequestOptions
     {
     DEFINE_BENTLEY_REF_COUNTED_MEMBERS
     public:
-        RequestOptions(MxStreamBuffer* output, NodeP node, Scene& scene, bool synchronous) : ThreeMxData::RequestOptions(output, node, scene)
+        RequestOptions(bool synchronous)
             {
             FileRealityDataSource::RequestOptions::SetForceSynchronousRequest(synchronous);
             SetUseStorage(false);
+            SetRequestFromSource(true);
             }
     };
 
 private:
-    FileData() : ThreeMxData() {}
+    FileData(NodeP node, Scene& scene) : ThreeMxData(node, scene) {}
 
 protected:
     virtual Utf8CP _GetId() const override {return GetFilename().c_str();}
     virtual bool _IsExpired() const override {return false;}
-    virtual BentleyStatus _InitFrom(IRealityDataBase const& self, RealityDataCacheOptions const& options) override {return InitFromSelf(self, (RequestOptions const&)options);}
-    virtual BentleyStatus _InitFrom(Utf8CP filepath, ByteStream const& data, FileRealityDataSource::RequestOptions const& options) override {return InitFromSource(filepath, data, (RequestOptions const&)options);}
-    virtual BentleyStatus _InitFrom(Db& db, BeMutex& cs, Utf8CP id, BeSQLiteRealityDataStorage::SelectOptions const& options) override {return InitFromStorage(db, cs, id, (RequestOptions const&)options);} 
+    virtual BentleyStatus _InitFrom(Utf8CP filepath, ByteStream const& data) override {return InitFromSource(filepath, data);}
+    virtual BentleyStatus _InitFrom(Db& db, BeMutex& cs, Utf8CP id) override {return InitFromStorage(db, cs, id);} 
     virtual BentleyStatus _Persist(Db& db, BeMutex& cs) const override {return PersistToStorage(db, cs);}
     virtual BeSQLiteRealityDataStorage::DatabasePrepareAndCleanupHandlerPtr _GetDatabasePrepareAndCleanupHandler() const override {return DatabasePrepareAndCleanupHandler::Create();}
 public:
-    static RefCountedPtr<FileData> Create() {return new FileData();}    
+    static RefCountedPtr<FileData> Create(NodeP node, Scene& scene) {return new FileData(node, scene);}    
 };
 
 DEFINE_REF_COUNTED_PTR(ThreeMxData)
@@ -325,7 +315,7 @@ void Scene::RemoveRequest(NodeR node)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-RealityDataCacheResult Scene::RequestData(NodeP node, bool synchronous, MxStreamBuffer* output)
+RealityDataCacheResult Scene::RequestData(NodeP node, bool synchronous, MxStreamBuffer** output)
     {
     DgnDb::VerifyClientThread();
     BeAssert(output || node);
@@ -347,14 +337,25 @@ RealityDataCacheResult Scene::RequestData(NodeP node, bool synchronous, MxStream
         filePath = m_rootUrl;
         }
 
+    ThreeMxData const* data = nullptr;
+    RealityDataCacheResult result;
     if (IsUrl())
         {
-        HttpDataPtr meshData;
-        return m_cache->Get(meshData, filePath.c_str(), *new HttpData::RequestOptions(output, node, *this, synchronous));
+        HttpDataPtr meshData = HttpData::Create(node, *this);
+        data = meshData.get();
+        result = m_cache->Get(*meshData, filePath.c_str(), HttpData::RequestOptions(synchronous));
+        }
+    else
+        {
+        FileDataPtr meshData = FileData::Create(node, *this);
+        data = meshData.get();
+        result = m_cache->Get(*meshData, filePath.c_str(), FileData::RequestOptions(synchronous));
         }
 
-    FileDataPtr meshData;
-    return m_cache->Get(meshData, filePath.c_str(), *new FileData::RequestOptions(output, node, *this, synchronous));
+    if (nullptr != output)
+        *output = &data->GetOutput();
+
+    return result;
     }
 
 /*---------------------------------------------------------------------------------**//**

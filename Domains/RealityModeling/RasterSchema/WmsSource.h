@@ -19,7 +19,7 @@ BEGIN_BENTLEY_RASTERSCHEMA_NAMESPACE
 struct WmsSource : public RasterSource
 {
 private:
-    RealityDataCachePtr m_realityDataCache;
+    mutable RealityDataCachePtr m_realityDataCache;
 
 public:
     static WmsSourcePtr Create(WmsMap const& mapInfo);

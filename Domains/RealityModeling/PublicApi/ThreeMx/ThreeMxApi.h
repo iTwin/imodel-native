@@ -199,7 +199,7 @@ private:
     void RemoveRequest(NodeR node);
     bool HasPendingRequests() const {return !m_requests.empty();}
     bool IsUrl() const {return m_isUrl;}
-    Dgn::RealityDataCacheResult RequestData(Node* node, bool synchronous, MxStreamBuffer*);
+    Dgn::RealityDataCacheResult RequestData(Node* node, bool synchronous, MxStreamBuffer**);
 
 public:
     THREEMX_EXPORT Scene(Dgn::DgnDbR, TransformCR location, Utf8CP realityCacheName, Utf8CP rootUrl, Dgn::Render::SystemP);
