@@ -21,6 +21,10 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
     {
     BeAssert(exp.IsComplete());
     ctx.PushScope(exp, exp.GetOptionsClauseExp());
+    
+    ECSqlStatus stat = CheckForReadonlyProperties(ctx, exp);
+    if (stat != ECSqlStatus::Success)
+        return stat;
 
     ClassNameExp const* classNameExp = exp.GetClassNameExp();
 
@@ -178,6 +182,30 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
 
     ctx.PopScope();
     return status;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                         05/2016
+//+---------------+---------------+---------------+---------------+---------------+--------
+ECSqlStatus ECSqlUpdatePreparer::CheckForReadonlyProperties(ECSqlPrepareContext& ctx, UpdateStatementExp const& exp)
+    {
+    for (Exp const* expr : exp.GetAssignmentListExp()->GetChildren())
+        {
+        AssignmentExp const* assignmentExp = static_cast<AssignmentExp const*>(expr);        
+        if (!assignmentExp->GetPropertyNameExp()->IsPropertyRef())
+            {
+            ECPropertyCR prop = assignmentExp->GetPropertyNameExp()->GetPropertyMap().GetProperty();
+
+            if (prop.IsReadOnlyFlagSet() && prop.GetIsReadOnly() && !prop.IsCalculated())
+                {
+                ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Preparing the ECSQL '%s' failed. Cannot insert data into ECProperty '%s' which is marked as 'IsReadonly'",
+                                                                        exp.ToECSql().c_str(), prop.GetName().c_str());
+                return ECSqlStatus::InvalidECSql;
+                }
+            }
+        }
+
+    return ECSqlStatus::Success;
     }
 
 //-----------------------------------------------------------------------------------------

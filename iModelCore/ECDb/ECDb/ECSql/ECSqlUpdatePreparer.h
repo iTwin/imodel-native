@@ -21,7 +21,7 @@ private:
     //static class
     ECSqlUpdatePreparer ();
     ~ECSqlUpdatePreparer ();
-
+    static ECSqlStatus CheckForReadonlyProperties(ECSqlPrepareContext& ctx, UpdateStatementExp const& exp);
     static ECSqlStatus PrepareAssignmentListExp (NativeSqlBuilder::ListOfLists& nativeSqlSnippetLists, ECSqlPrepareContext& ctx, AssignmentListExp const* assignmentListExp);
   
 public:

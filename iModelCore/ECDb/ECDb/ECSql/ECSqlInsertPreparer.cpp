@@ -35,12 +35,13 @@ ECSqlStatus ECSqlInsertPreparer::Prepare(ECSqlPrepareContext& ctx, InsertStateme
         if (info->GetPrimaryECinstanceIdParameterIndex() > 0)
             parentOfJoinedTableStmt->SetECInstanceIdBinder(static_cast<int>(info->GetPrimaryECinstanceIdParameterIndex()));
         }
-  
+
+
     NativeSqlSnippets insertNativeSqlSnippets;
     ECSqlStatus stat = GenerateNativeSqlSnippets(insertNativeSqlSnippets, ctx, exp, classMap);
     if (!stat.IsSuccess())
         return stat;
-    
+
     if (classMap.IsRelationshipClassMap())
         stat = PrepareInsertIntoRelationship(ctx, insertNativeSqlSnippets, exp , classMap);
     else

@@ -218,13 +218,6 @@ BentleyStatus ECDbSchemaWriter::UpdateECProperty(ECPropertyChange& propertyChang
         return ERROR;
         }
 
-    if (propertyChange.IsReadonly().IsValid())
-        {
-        GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECProperty %s.%s: Changing the 'IsReadonly' flag of an ECProperty is not supported.",
-                                  oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
-        return ERROR;
-        }
-
     if (propertyChange.GetArray().IsValid())
         {
         ArrayChange& arrayChange = propertyChange.GetArray();
@@ -267,13 +260,20 @@ BentleyStatus ECDbSchemaWriter::UpdateECProperty(ECPropertyChange& propertyChang
 
         updater.Set("Name", propertyChange.GetName().GetNew().Value());
         }
+
     if (propertyChange.GetDisplayLabel().IsValid())
         {
         updater.Set("DisplayLabel", propertyChange.GetDisplayLabel().GetNew().Value());
         }
+
     if (propertyChange.GetDescription().IsValid())
         {
         updater.Set("Description", propertyChange.GetDescription().GetNew().Value());
+        }
+
+    if (propertyChange.IsReadonly().IsValid())
+        {
+        updater.Set("IsReadonly", propertyChange.IsReadonly().GetNew().Value());
         }
 
     updater.Where("Id", propertyId.GetValue());
