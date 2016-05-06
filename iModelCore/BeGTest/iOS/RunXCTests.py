@@ -42,26 +42,28 @@ def RunTest(xcodeprojpath, deviceName, okToRetry, logfile):
     procStdOutLine = proc.stdout.readline ()
     while procStdOutLine:
         
+        lline = procStdOutLine.lower()
+
         # We often get an error when copying resources to the device the first time we try to run a given set of tests
-        if procStdOutLine.startswith('Cp') and procStdOutLine.find('Permission denied'):
+        if lline.startswith('cp') and -1 != lline.find('permission denied'):
             mustRetry = True
             break
         
-        #if procStdOutLine.lower().find('error') != -1:
+        #if lline.find('error') != -1:
         #    print '\n' + procStdOutLine
 
         printProgress(procStdOutLine, status_len)
 
         logfile.write(procStdOutLine)
 
-        if procStdOutLine.startswith('Test Case'):
+        if lline.startswith('test case'):
             testCount = testCount + 1
         else:
-            if procStdOutLine.startswith('Test Suite'):
+            if lline.startswith('test suite'):
                 testSuiteCount = testSuiteCount + 1
             else:
-                starterr = procStdOutLine.find('error:')
-                if -1 != starterr and -1 != procStdOutLine.find('failed'):
+                starterr = lline.find('error:')
+                if -1 != starterr and -1 != lline.find('failed'):
                     err = errpat.match(procStdOutLine[starterr:])
                     if err != None:
                         print "\nFAILED " + err.group(1) + "." + err.group(2)
