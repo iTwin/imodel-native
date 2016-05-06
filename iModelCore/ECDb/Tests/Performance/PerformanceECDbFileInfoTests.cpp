@@ -301,7 +301,7 @@ TEST_F(PerformanceECDbFileInfoTests, PurgeAfterSingleDeletion)
 
     FileInfoStats afterPurgeStats;
     ASSERT_EQ(SUCCESS, RetrieveFileInfoStats(afterPurgeStats));
-    ASSERT_EQ(beforePurgeStats.m_fileInfoCount - deletedCount, afterPurgeStats.m_fileInfoCount);
+    ASSERT_EQ(beforePurgeStats.m_fileInfoCount, afterPurgeStats.m_fileInfoCount);
     ASSERT_EQ(beforePurgeStats.m_ownershipCount - deletedCount, afterPurgeStats.m_ownershipCount);
 
     LogTiming("Purge after deletion of one file backed instance", timer);
@@ -332,7 +332,7 @@ TEST_F(PerformanceECDbFileInfoTests, PurgeAfterDeletionOfAllInstancesOfSingleCla
     FileInfoStats afterPurgeStats;
     ASSERT_EQ(SUCCESS, RetrieveFileInfoStats(afterPurgeStats));
     const int deletedFileBackedInstances = std::min(s_fileInfoCountPerClass, deletedCount);
-    ASSERT_EQ(beforePurgeStats.m_fileInfoCount - deletedFileBackedInstances, afterPurgeStats.m_fileInfoCount);
+    ASSERT_EQ(beforePurgeStats.m_fileInfoCount, afterPurgeStats.m_fileInfoCount);
     ASSERT_EQ(beforePurgeStats.m_ownershipCount - deletedFileBackedInstances, afterPurgeStats.m_ownershipCount);
 
     LogTiming("Purge after deletion of all instances of a single file-backed ECClass", timer);
@@ -376,7 +376,7 @@ TEST_F(PerformanceECDbFileInfoTests, PurgeAfterDeletionOfOneInstancePerClass)
 
     FileInfoStats afterPurgeStats;
     ASSERT_EQ(SUCCESS, RetrieveFileInfoStats(afterPurgeStats));
-    ASSERT_EQ(beforePurgeStats.m_fileInfoCount - deletedCount, afterPurgeStats.m_fileInfoCount);
+    ASSERT_EQ(beforePurgeStats.m_fileInfoCount, afterPurgeStats.m_fileInfoCount);
     ASSERT_EQ(beforePurgeStats.m_ownershipCount - deletedCount, afterPurgeStats.m_ownershipCount);
 
     LogTiming("Purge after deletion of one instance per file-backed ECClass", timer);
