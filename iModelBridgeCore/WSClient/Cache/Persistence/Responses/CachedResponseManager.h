@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Persistence/Responses/CachedResponseManager.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -36,6 +36,7 @@ struct CachedResponseManager : public IDeleteHandler
         ECRelationshipClassCP   m_responseToParentClass;
         ECRelationshipClassCP   m_responseToHolderClass;
         ECRelationshipClassCP   m_responseToResponsePageClass;
+        ECRelationshipClassCP   m_responseToAdditionalInstance;
 
         ECClassCP               m_responsePageClass;
         ECRelationshipClassCP   m_responsePageToResultClass;
@@ -62,11 +63,11 @@ struct CachedResponseManager : public IDeleteHandler
             const InstanceCacheHelper::CachedInstances& instances
             );
 
-        BentleyStatus ReadPageObjectIds
+        BentleyStatus ReadTargetObjectIds
             (
-            ECInstanceKeyCR pageKey,
+            ECInstanceKeyCR sourceKey,
             ECRelationshipClassCP relationshipClass,
-            bset<ObjectId>& objectIdsOut
+            bset<ObjectId>& targetIdsOut
             );
 
         BentleyStatus MarkTemporaryInstancesAsPartial
@@ -121,6 +122,13 @@ struct CachedResponseManager : public IDeleteHandler
         BentleyStatus UpdatePageCachedDate(CachedResponseKeyCR responseKey, uint64_t page);
         //! Insert query info and update page cache date and relate response instances
         BentleyStatus SavePage(CachedResponseKeyCR responseKey, uint64_t page, Utf8StringCR cacheTag, const InstanceCacheHelper::CachedInstances& instances);
+        
+        //! Add additional instance to response that will not be managed with it but will be returned as one of cached
+        BentleyStatus AddAdditionalInstance(CachedResponseKeyCR responseKey, ECInstanceKeyCR instanceKey);
+        //! Remove additional instance
+        BentleyStatus RemoveAdditionalInstance(CachedResponseKeyCR responseKey, ECInstanceKeyCR instanceKey);
+        //! Remove additional instance from any responses, will keep responses intact
+        BentleyStatus RemoveAdditionalInstance(ECInstanceKeyCR instanceKey);
 
         //! Read response instances. Relationships not included. 
         //! @param readCallback will be called for each successfull query, caller is responsible for extracting data.
