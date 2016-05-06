@@ -6,6 +6,7 @@
 
 #include <pt/unicodeconversion.h>
 #include <pt/ptmath.h>
+#include <Bentley/BeFileName.h>
 
 #ifndef NO_DATA_SOURCE_SERVER
 #include <PTRMI/Array.h>
@@ -35,22 +36,24 @@ public:
 	{
 		m_parent = 0;
 		m_bAbsolute = true;
-		memset(m_sPath, 0,PT_MAXPATH*sizeof(wchar_t)); 
-		wcscpy_s(m_sPath, PT_MAXPATH, L"(empty)");
+        BeFileName tmp(L"(empty)");
+        m_path = tmp;
 	}
 
 	FilePath(const wchar_t* path)
 	{
 		m_parent = 0;
 		m_bAbsolute = true;
-		wcsncpy_s(m_sPath, path, PT_MAXPATH);
+        BeFileName tmp(path);
+        m_path = tmp;
 	}
 
 	FilePath(const char* path)
 	{
 		m_parent = 0;
 		m_bAbsolute = true;
-		wcsncpy_s(m_sPath, pt::Ascii2Unicode::convert(path).c_str(), PT_MAXPATH);
+        BeFileName tmp(path);
+        m_path = tmp;
 	}
 
 	~FilePath() {}
@@ -72,7 +75,8 @@ public:
 
 	inline FilePath& operator = (const FilePath &p)
 	{
-		wcsncpy_s(m_sPath, p.m_sPath, PT_MAXPATH);
+        m_path = p.m_path;
+
 		m_bAbsolute = p.m_bAbsolute;
 		m_parent = p.m_parent;
 
@@ -81,59 +85,47 @@ public:
 
 	void setPath(const wchar_t* path)
 	{
-		wcsncpy_s(m_sPath, path, PT_MAXPATH);
-	}
-
-	void makeRelativeToProject()
-	{
-		makeRelativeTo(FilePath(getProjectDirectory()));
-	}
-
-	void stripPath()
-	{
-		PathStripPathW(m_sPath);
+        BeFileName tmp(path);
+        m_path = tmp;
 	}
 
 	void stripExtension()
 	{
-		PathRemoveExtensionW(m_sPath);
+        WString dev, dir, name;
+        m_path.ParseName(&dev, &dir, &name, nullptr);
+
+        BeFileName pathWithoutExtension(dev.c_str(), dir.c_str(), name.c_str(), nullptr);
+        m_path = pathWithoutExtension;
 	}
 
 	void stripFilename()
 	{
-		PathRemoveFileSpecW(m_sPath);
+        WString dev, dir;
+        m_path.ParseName(&dev, &dir, nullptr, nullptr);
+
+        BeFileName pathWithoutFileName(dev.c_str(), dir.c_str(), nullptr, nullptr);
+        m_path = pathWithoutFileName;
 	}
 
 	void setFilenameOnly(const wchar_t *fn)
 	{
-		wchar_t ext[10];
-		wchar_t dr[PT_MAXPATH];
-		wcscpy_s(ext, 10, extension());
-		stripExtension();
-
-		directory(dr);
-
-		_snwprintf_s(m_sPath, PT_MAXPATH, PT_MAXPATH-1, L"%s\\%s.%s", dr, fn, ext);			
+        WString dev, dir, name, ext;
+        m_path.ParseName(&dev, &dir, &name, &ext);
+        BeFileName pathWitNewName(dev.c_str(), dir.c_str(), fn, ext.c_str());
+        m_path = pathWitNewName;
 	}
 
 	const wchar_t* filename() const
 	{
-		wchar_t f[PT_MAXPATH];
-		wcscpy_s(f, PT_MAXPATH, m_sPath);
-		PathStripPathW(f);
-		int l = (int)wcsnlen_s(m_sPath, PT_MAXPATH);
-		return &m_sPath[l-wcsnlen_s(f, PT_MAXPATH)];
-	}
-
-	const wchar_t* extension() const
-	{
-		return &(PathFindExtensionW(m_sPath))[1];
+        return m_path.GetFileNameAndExtension().c_str();
 	}
 
 	void directory(wchar_t *dst) const
 	{
-		wcscpy_s(dst, PT_MAXPATH, m_sPath);
-		PathRemoveFileSpecW(dst);
+        WString dev, dir;
+        m_path.ParseName(&dev, &dir, nullptr, nullptr);
+        BeFileName pathWithoutFileName(dev.c_str(), dir.c_str(), nullptr, nullptr);
+		wcscpy_s(dst, PT_MAXPATH, pathWithoutFileName.c_str());
 	}
 
 	void fulldirectory(wchar_t *dst) const
@@ -161,36 +153,38 @@ public:
 		while (it != ancestors.end())
 		{
 			m_parent->directory(d);
-			PathAppendW(dst, d);
+            BeFileName dstPath(dst);
+            dstPath.AppendToPath(d);
+            wcscpy_s(dst, PT_MAXPATH, dstPath.c_str());
 			++it;
 		}
 	}
 
 	const wchar_t* path() const
 	{
-		return m_sPath;
+    return m_path.c_str();
 	}
 
 	void fullpath(wchar_t *dst) const
 	{
 		if (m_bAbsolute)
 		{
-			wcscpy_s(dst, PT_MAXPATH, m_sPath);
+			wcscpy_s(dst, PT_MAXPATH, m_path.c_str());
 			return;
 		}
 		fulldirectory(dst);
-		PathAppendW(dst, m_sPath);
+        BeFileName dstPath(dst);
+        dstPath.AppendToPath(m_path);
+        wcscpy_s(dst, PT_MAXPATH, dstPath.c_str());
 	}
 
 	void setExtension(const wchar_t*ext)
 	{
-		if (ext[0] != '.')
-		{
-			wchar_t _ext[64];
-			_snwprintf_s(_ext, 14, 15, L".%s", ext);
-			PathRenameExtensionW(m_sPath, _ext);
-		}
-		else PathRenameExtensionW(m_sPath, ext);
+        WString dev, dir, name;
+        m_path.ParseName(&dev, &dir, &name, nullptr);
+        BeFileName pathWitNewExtension(dev.c_str(), dir.c_str(), name.c_str(), nullptr);
+        pathWitNewExtension.AppendExtension(ext);
+        m_path = pathWitNewExtension;
 	}
 
 	const FilePath *parent() const { return m_parent; }
@@ -214,10 +208,7 @@ public:
 
 	bool isEmpty() const
 	{
-		if ((wcscmp(m_sPath, L"(empty)") == 0)
-			|| wcslen(m_sPath) == 0 )
-			return true;
-		return false;
+        return m_path.IsEmpty();
 	}
 
 	void setParent(const FilePath *f)
@@ -232,20 +223,6 @@ public:
 		wchar_t p[PT_MAXPATH];
 		fullpath(p);
 		return (_waccess(p,0) == 0) ? true : false;
-	}
-
-	void makeRelativeTo(const FilePath &f)
-	{
-		m_bAbsolute = false;
-		m_parent = &f;
-
-		wchar_t path[PT_MAXPATH];
-		wchar_t fp[PT_MAXPATH];
-
-		f.fullpath(fp);
-
-		PathRelativePathToW(path,fp, FILE_ATTRIBUTE_NORMAL,	m_sPath, FILE_ATTRIBUTE_NORMAL);
-		setPath(path);
 	}
 
 	static bool checkExists(const std::wstring &p)
@@ -419,11 +396,10 @@ private:
 		static wchar_t dir[PT_MAXPATH] = L"\0";
 		return dir;
 	}
-	wchar_t  m_sPath[PT_MAXPATH];
 
-	bool m_bAbsolute;
-
-	const FilePath *m_parent;
+    BeFileName      m_path;
+	bool            m_bAbsolute;
+	const FilePath* m_parent;
 };
 
 } // End ptfs namespace
