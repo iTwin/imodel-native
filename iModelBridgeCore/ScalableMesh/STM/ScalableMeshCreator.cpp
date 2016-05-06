@@ -416,7 +416,7 @@ IScalableMeshCreator::Impl::Impl(const WChar* scmFileName)
             }
         }*/
     s_useThreadsInMeshing = true;
-    s_useThreadsInStitching = true;
+    s_useThreadsInStitching = false;
     s_useThreadsInFiltering = true;
     }
 

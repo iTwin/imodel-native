@@ -340,6 +340,9 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
                 // In reality starting at 9 not all points are used but let's gives us a little margin.
                 RefCountedPtr<SMMemoryPoolVectorItem<POINT>> subNodePointsPtr(subNodes[indexNodes]->GetPointsPtr());
 
+                if (subNodePointsPtr->size() == 0)
+                    continue;
+
                 if (subNodePointsPtr->size() <= 10)
                     {
                     // Too few content in node ... promote them all                           
