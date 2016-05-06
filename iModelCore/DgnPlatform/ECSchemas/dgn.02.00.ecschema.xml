@@ -287,6 +287,12 @@
         </ECCustomAttributes>
         <BaseClass>DefinitionModel</BaseClass>
     </ECEntityClass>
+    <ECEntityClass typeName="GroupInformationModel">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00"/>
+        </ECCustomAttributes>
+        <BaseClass>InformationModel</BaseClass>
+    </ECEntityClass>
     <ECEntityClass typeName="WebMercatorModel">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
@@ -395,7 +401,7 @@
     </ECEntityClass>
 
     <ECEntityClass typeName="LinkElement" modifier="Abstract">
-        <BaseClass>DefinitionElement</BaseClass>
+        <BaseClass>InformationElement</BaseClass>
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
@@ -429,7 +435,7 @@
     </ECEntityClass>
     <ECEntityClass typeName="GeometricElement3d" modifier="Abstract">
         <!-- Base class for elements with 3d geometry -->
-	<!-- GeometricElement3d elements are not inherently spatially located, but can be spatially located. -->
+	    <!-- GeometricElement3d elements are not inherently spatially located, but can be spatially located. -->
         <BaseClass>GeometricElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>

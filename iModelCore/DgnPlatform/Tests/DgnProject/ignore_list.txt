@@ -5,7 +5,6 @@
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
-JsonTests.JsonValueStructure                            # Fails after geomlibs/ecobjects merge from topaz
 
 #----------------------------------------------------------------------------------------
 # *** Broken in 06; need to be re-visited ***
@@ -27,9 +26,6 @@ DgnProjectPackageTest.VerifyViewsForDgndbFilesConvertedDuringBuild   #Affan #TFS
 ViewAttachmentTest.Geom                                 # NonVisibleViewport
 VolumeElementTestFixture.QueryTest                      # FenceParams::AcceptElement
 
-#Uses the eb ECschema which has to be refactored for EC3 and ECDb06. Notified Raman
-JsonTests.FieldEngineerStructArray
-
 ElementAspectTests.ImportElementsWithAspect             # Does not element import aspects
 FontTests.QueryFonts                                    # Defect 386022 - Does not find font
 TextStringTest.BoundingShape                            # UmarH WIP
@@ -42,3 +38,4 @@ DgnLinkTest.Clone                                       # Defect 386016:- Does n
 DgnLinkTest.* # Need to figure the BIS hierarchy for DgnLinks - Shaun
 DgnECNavigatorTest.DgnLinksElementInfo # Need to figure the BIS hierarchy for DgnLinks - Shaun
 DgnECNavigatorTest.IfcElementInfo # Need to figure BIS schema for IFC - Shaun/Raman
+DgnECNavigatorTest.PlantElementInfo # Improperly creating a GroupInformationElement when the "NamedGroupOwnsMembers" CA is found - Shaun/Carole

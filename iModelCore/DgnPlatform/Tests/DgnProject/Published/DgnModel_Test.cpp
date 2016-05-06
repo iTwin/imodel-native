@@ -319,7 +319,7 @@ TEST_F(DgnModelTests, WorkWithDgnModelTable)
     //Iterating through the models
     DgnModels& modelTable = m_db->Models();
     DgnModels::Iterator iter = modelTable.MakeIterator();
-    ASSERT_EQ(3, iter.QueryCount()); // including dictionary model...
+    ASSERT_EQ(4, iter.QueryCount()); // including DictionaryModel and GroupInformationModel...
 
     //Set up testmodel properties as we know what the models in this file contain
     TestModelProperties models[3], testModel;
@@ -331,7 +331,7 @@ TEST_F(DgnModelTests, WorkWithDgnModelTable)
     for (DgnModels::Iterator::Entry const& entry : iter)
     {
         ASSERT_TRUE(entry.GetModelId().IsValid()) << "Model Id is not Valid";
-        if (DgnModel::DictionaryId() == entry.GetModelId())
+        if ((DgnModel::DictionaryId() == entry.GetModelId()) || (DgnModel::GroupInformationId() == entry.GetModelId()))
             continue;
 
         WString entryNameW(entry.GetCodeValue(), true);               // string conversion
@@ -417,7 +417,7 @@ TEST_F (DgnModelTests, ModelsIterator)
 
     DgnModels& models = db.Models ();
     DgnModels::Iterator iter = models.MakeIterator ();
-    EXPECT_EQ (5, iter.QueryCount ()); // including the dictionary model...
+    EXPECT_EQ (6, iter.QueryCount ()); // including the DictionaryModel and GroupInformationModel...
     DgnModels::Iterator::Entry entry = iter.begin ();
     int i = 0;
     for (auto const& entry : iter)

@@ -158,7 +158,7 @@ MacroExpander::MacroExpander (MacroConfigurationAdmin& macroCfgAdmin, MacroConfi
     {
     // we conclude it is an expression whenever there is an open parenthesis or brace following something other than whitespace.
     WCharCP startBrace;
-    if (NULL != (startBrace = wcschr (textExpression, '{')))
+    if (NULL != (startBrace = ::wcschr (textExpression, '{')))
         {
         for (WCharCP thisChar = textExpression; thisChar < startBrace; thisChar++)
             {
@@ -170,7 +170,7 @@ MacroExpander::MacroExpander (MacroConfigurationAdmin& macroCfgAdmin, MacroConfi
     if (!immediate)
         return false;
     
-    if (NULL != (startBrace = wcschr (textExpression, '(')))
+    if (NULL != (startBrace = ::wcschr (textExpression, '(')))
         {
         for (WCharCP thisChar = textExpression; thisChar < startBrace; thisChar++)
             {
