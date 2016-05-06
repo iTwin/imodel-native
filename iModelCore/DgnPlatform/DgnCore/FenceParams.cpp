@@ -80,6 +80,16 @@ virtual Render::GraphicPtr _CreateGraphic(Render::Graphic::CreateParams const& p
     return new SimplifyGraphic(params, *this, *this);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual Render::GraphicPtr _CreateGroupNode(Render::Graphic::CreateParams const& params, Render::GraphicArray& entries, ClipPrimitiveCP clip) override
+    {
+#if defined (NEEDS_WORK)
+#endif
+    return new SimplifyGraphic(params, *this, *this);
+    }
+
 virtual UnhandledPreference _GetUnhandledPreference(CurveVectorCR, SimplifyGraphic&) const override {return UnhandledPreference::Curve;} // If view has clipping...
 virtual UnhandledPreference _GetUnhandledPreference(ISolidPrimitiveCR, SimplifyGraphic&) const override {return UnhandledPreference::Curve;}
 virtual UnhandledPreference _GetUnhandledPreference(MSBsplineSurfaceCR, SimplifyGraphic&) const override {return UnhandledPreference::Curve;}

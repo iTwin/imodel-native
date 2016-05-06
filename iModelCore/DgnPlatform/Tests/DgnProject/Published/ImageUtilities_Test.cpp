@@ -134,9 +134,9 @@ TEST (ImageUtilities_Tests, JPG)
     BeFile pngFile;
     ASSERT_TRUE( pngFile.Create(pngFileName, /*createAlways*/true) == BeFileStatus::Success );
     
-    bvector<uint8_t> jpegData;
+    ByteStream jpegData;
     ASSERT_TRUE(SUCCESS == info.WriteImageToJpgBuffer(jpegData, testImage, 100));
-    ASSERT_TRUE(BeFileStatus::Success == pngFile.Write(NULL, &jpegData[0], (uint32_t)jpegData.size()));
+    ASSERT_TRUE(BeFileStatus::Success == pngFile.Write(NULL, jpegData.GetData(), (uint32_t)jpegData.GetSize()));
 
     Render::Image imageRead;
     RgbImageInfo infoRead = info;
