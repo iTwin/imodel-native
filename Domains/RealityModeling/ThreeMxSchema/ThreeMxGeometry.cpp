@@ -48,7 +48,7 @@ Geometry::Geometry(Graphic::TriMeshArgs const& args, SceneR scene)
     if (nullptr == scene.GetRenderSystem() || !args.m_texture.IsValid())
         return;
 
-    m_graphic = scene.GetRenderSystem()->_CreateGraphic(Graphic::CreateParams(nullptr, scene.m_location));
+    m_graphic = scene.GetRenderSystem()->_CreateGraphic(Graphic::CreateParams());
     m_graphic->SetSymbology(ColorDef::White(), ColorDef::White(), 0);
     m_graphic->AddTriMesh(args);
     m_graphic->Close();
@@ -74,10 +74,10 @@ size_t Geometry::GetMemorySize() const
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Geometry::Draw(RenderContextR context)
+void Geometry::Draw(DrawArgsR args)
     {
     if (m_graphic.IsValid())
-        context.OutputGraphic(*m_graphic, nullptr);
+        args.m_graphics.Add(*m_graphic);
     }
 
 /*---------------------------------------------------------------------------------**//**

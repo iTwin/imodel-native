@@ -11,6 +11,18 @@
 #include <windows.h>
 #endif
 
+#define RENDER_LOGGING 1
+#if defined (RENDER_LOGGING)
+#   define THREADLOG (*NativeLogging::LoggingManager::GetLogger(DgnDb::GetThreadIdName()))
+#   define DEBUG_PRINTF THREADLOG.debugv
+#   define WARN_PRINTF THREADLOG.debugv
+#   define ERROR_PRINTF THREADLOG.errorv
+#else
+#   define DEBUG_PRINTF(...)
+#   define WARN_PRINTF(...)
+#   define ERROR_PRINTF(...)
+#endif
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -20,7 +32,11 @@ Scene::Scene(DgnDbR db, TransformCR location, Utf8CP realityCacheName, Utf8CP ro
     if (m_isUrl)
         m_rootDir = m_rootUrl.substr(0, m_rootUrl.find_last_of("/"));
     else
-        m_rootDir = BeFileName(BeFileName::DevAndDir, BeFileName(m_rootUrl)).GetNameUtf8();
+        {
+        BeFileName rootUrl(BeFileName::DevAndDir, BeFileName(m_rootUrl));
+        BeFileName::FixPathName(rootUrl, rootUrl, false);
+        m_rootDir = rootUrl.GetNameUtf8();
+        }
 
     m_scale = location.ColumnXMagnitude();
 
@@ -30,7 +46,7 @@ Scene::Scene(DgnDbR db, TransformCR location, Utf8CP realityCacheName, Utf8CP ro
 
     m_cache = RealityDataCache::Create(100);
     m_cache->RegisterStorage(*BeSQLiteRealityDataStorage::Create(m_localCacheName));
-    m_cache->RegisterSource(IsUrl() ? (IRealityDataSourceBase&) *HttpRealityDataSource::Create(1) : *FileRealityDataSource::Create(1));
+    m_cache->RegisterSource(IsUrl() ? (IRealityDataSourceBase&) *HttpRealityDataSource::Create(8) : *FileRealityDataSource::Create(4));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -88,7 +104,17 @@ DRange3d Scene::GetRange(TransformCR trans) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Scene::Draw(RenderContextR context)
     {
-    return m_rootNode->Draw(context, *this);
+    DrawArgs args(context, *this);
+    m_rootNode->Draw(args);
+
+    if (!args.m_graphics.m_entries.empty())
+        {
+        DEBUG_PRINTF("drawing %d 3mx nodes", args.m_graphics.m_entries.size());
+        auto group = context.CreateGroupNode(Graphic::CreateParams(nullptr, GetLocation()), args.m_graphics, nullptr);
+        BeAssert(args.m_graphics.m_entries.empty()); // the CreateGroupNode should have moved them
+        context.OutputGraphic(*group, nullptr);
+        }
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**

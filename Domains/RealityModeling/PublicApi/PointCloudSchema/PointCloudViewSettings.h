@@ -375,11 +375,11 @@ struct ViewSettingsData
         /*---------------------------------------------------------------------------------**//**
         * @bsimethod
         +---------------+---------------+---------------+---------------+---------------+------*/
-        bool      GetUseRgb() const               { return TO_BOOL(m_flags & VIEWSETTINGS_RGB_MASK); }
-        bool      GetUseIntensity() const         { return TO_BOOL(m_flags & VIEWSETTINGS_INTENSITY_MASK); }
-        bool      GetUseLightning() const         { return TO_BOOL(m_flags & VIEWSETTINGS_LIGHTNING_MASK); }
-        bool      GetUsePlane() const             { return TO_BOOL(m_flags & VIEWSETTINGS_PLANE_MASK); }
-        bool      GetUseFrontBias() const         { return TO_BOOL(m_flags & VIEWSETTINGS_FRONTBIAS_MASK); }
+        bool      GetUseRgb() const               { return TO_BOOL(m_flags & Dgn::PointCloudSettings::VIEWSETTINGS_RGB_MASK); }
+        bool      GetUseIntensity() const         { return TO_BOOL(m_flags & Dgn::PointCloudSettings::VIEWSETTINGS_INTENSITY_MASK); }
+        bool      GetUseLightning() const         { return TO_BOOL(m_flags & Dgn::PointCloudSettings::VIEWSETTINGS_LIGHTNING_MASK); }
+        bool      GetUsePlane() const             { return TO_BOOL(m_flags & Dgn::PointCloudSettings::VIEWSETTINGS_PLANE_MASK); }
+        bool      GetUseFrontBias() const         { return TO_BOOL(m_flags & Dgn::PointCloudSettings::VIEWSETTINGS_FRONTBIAS_MASK); }
         float     GetContrast() const             { return m_contrast; }
         float     GetBrightness() const           { return m_brightness; }
         float     GetDistance() const             { return m_dist; }
@@ -396,11 +396,11 @@ struct ViewSettingsData
         /*---------------------------------------------------------------------------------**//**
         * @bsimethod
         +---------------+---------------+---------------+---------------+---------------+------*/
-        void SetUseRgb(bool value)                  { value ? m_flags |= VIEWSETTINGS_RGB_MASK       : m_flags &= ~VIEWSETTINGS_RGB_MASK; }
-        void SetUseIntensity(bool value)            { value ? m_flags |= VIEWSETTINGS_INTENSITY_MASK : m_flags &= ~VIEWSETTINGS_INTENSITY_MASK; }
-        void SetUseLightning(bool value)            { value ? m_flags |= VIEWSETTINGS_LIGHTNING_MASK : m_flags &= ~VIEWSETTINGS_LIGHTNING_MASK; }
-        void SetUsePlane(bool value)                { value ? m_flags |= VIEWSETTINGS_PLANE_MASK     : m_flags &= ~VIEWSETTINGS_PLANE_MASK; }
-        void SetUseFrontBias(bool value)            { value ? m_flags |= VIEWSETTINGS_FRONTBIAS_MASK : m_flags &= ~VIEWSETTINGS_FRONTBIAS_MASK; }
+        void SetUseRgb(bool value)                  { value ? m_flags |= Dgn::PointCloudSettings::VIEWSETTINGS_RGB_MASK       : m_flags &= ~Dgn::PointCloudSettings::VIEWSETTINGS_RGB_MASK; }
+        void SetUseIntensity(bool value)            { value ? m_flags |= Dgn::PointCloudSettings::VIEWSETTINGS_INTENSITY_MASK : m_flags &= ~Dgn::PointCloudSettings::VIEWSETTINGS_INTENSITY_MASK; }
+        void SetUseLightning(bool value)            { value ? m_flags |= Dgn::PointCloudSettings::VIEWSETTINGS_LIGHTNING_MASK : m_flags &= ~Dgn::PointCloudSettings::VIEWSETTINGS_LIGHTNING_MASK; }
+        void SetUsePlane(bool value)                { value ? m_flags |= Dgn::PointCloudSettings::VIEWSETTINGS_PLANE_MASK     : m_flags &= ~Dgn::PointCloudSettings::VIEWSETTINGS_PLANE_MASK; }
+        void SetUseFrontBias(bool value)            { value ? m_flags |= Dgn::PointCloudSettings::VIEWSETTINGS_FRONTBIAS_MASK : m_flags &= ~Dgn::PointCloudSettings::VIEWSETTINGS_FRONTBIAS_MASK; }
         void SetContrast(float value)               { m_contrast = value; }
         void SetBrightness(float value)             { m_brightness = value; }
         void SetDistance(float value)               { m_dist = value; }
@@ -419,8 +419,8 @@ struct ViewSettingsData
         +---------------+---------------+---------------+---------------+---------------+------*/
         static uint16_t GetDefaultIntensityRampIndex() { return 0; }
         static uint16_t GetDefaultPlaneRampIndex()     { return 1; }
-        static float  GetDefaultContrast()           { return POINTCLOUD_DEFAULT_VIEW_CONTRAST; }
-        static float  GetDefaultBrightness()         { return POINTCLOUD_DEFAULT_VIEW_BRIGHTNESS; }
+        static float  GetDefaultContrast()           { return Dgn::PointCloudSettings::GetDefaultViewContrast(); }
+        static float  GetDefaultBrightness()         { return Dgn::PointCloudSettings::GetDefaultViewBrightness(); }
 
 
         //Advanced Settings for SS4

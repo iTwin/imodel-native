@@ -8,7 +8,7 @@
 #include "ThreeMxInternal.h"
 #include "OpenCTM/openctm.h"
 
-#define LOG_ERROR (*NativeLogging::LoggingManager::GetLogger(L"3MX")).errorv
+#define LOG_ERROR(...) {BeAssert(false); (*NativeLogging::LoggingManager::GetLogger(L"3MX")).errorv(__VA_ARGS__);}
 
 BEGIN_UNNAMED_NAMESPACE
 
@@ -209,7 +209,7 @@ BentleyStatus Node::DoRead(MxStreamBuffer& in, SceneR scene)
     bmap<Utf8String, Dgn::Render::TexturePtr> renderTextures;
     for (JsonValueCR resource : resources)
         {
-        resourceType = resource.get("type", "").asCString();
+        resourceType   = resource.get("type", "").asCString();
         resourceFormat = resource.get("format", "").asCString();
         resourceName   = resource.get("id", "").asCString();
         resourceSize   = resource.get("size", 0).asUInt();
@@ -223,7 +223,6 @@ BentleyStatus Node::DoRead(MxStreamBuffer& in, SceneR scene)
             ByteCP buffer=in.GetCurrent();
             if (!in.Advance(resourceSize))
                 {
-                BeAssert(false);
                 LOG_ERROR("Cannot read texture data");
                 return ERROR;
                 }
@@ -231,9 +230,8 @@ BentleyStatus Node::DoRead(MxStreamBuffer& in, SceneR scene)
             ByteStream jpeg(buffer, resourceSize);
             RgbImageInfo imageInfo;
             Render::Image rgba;
-            if (SUCCESS != imageInfo.ReadImageFromJpgBuffer(rgba, jpeg.GetData(), jpeg.GetSize()))
+            if (SUCCESS != imageInfo.ReadImageFromJpgBuffer(rgba, jpeg.GetData(), jpeg.GetSize(), RgbImageInfo::BottomUp::Yes))
                 {
-                BeAssert(false);
                 LOG_ERROR("bad texture data");
                 return ERROR;
                 }
@@ -268,7 +266,6 @@ BentleyStatus Node::DoRead(MxStreamBuffer& in, SceneR scene)
             auto nodeId = nodeIds.find(nodeName);
             if (nodeId == nodeIds.end())
                 {
-                BeAssert(false);
                 LOG_ERROR("Node name is unknown");
                 return ERROR;
                 }
@@ -276,7 +273,6 @@ BentleyStatus Node::DoRead(MxStreamBuffer& in, SceneR scene)
             CtmContext ctm(in, thisOffset);
             if (CTM_NONE != ctm.GetError())
                 {
-                BeAssert(false);
                 LOG_ERROR("CTM read error: %s", ctmErrorString(ctm.GetError()));
                 return ERROR;
                 }
@@ -289,9 +285,9 @@ BentleyStatus Node::DoRead(MxStreamBuffer& in, SceneR scene)
             if (texName.empty())
                 continue;
 
-            if (renderTextures.find(texName) == renderTextures.end())
+            auto texture = renderTextures.find(texName);
+            if (texture == renderTextures.end())
                 {
-                BeAssert(false);
                 LOG_ERROR("Bad texture name %s", texName.c_str());
                 return ERROR;
                 }
@@ -303,7 +299,7 @@ BentleyStatus Node::DoRead(MxStreamBuffer& in, SceneR scene)
             trimesh.m_numIndices = 3 * ctm.GetInteger(CTM_TRIANGLE_COUNT);
             trimesh.m_vertIndex  = ctm.GetIntegerArray(CTM_INDICES);
             trimesh.m_textureUV  = (FPoint2d const*) ctm.GetFloatArray(CTM_UV_MAP_1);
-            trimesh.m_texture    = renderTextures[texName];
+            trimesh.m_texture    = texture->second;
 
             BeAssert(!m_childNodes[nodeId->second]->m_geometry.IsValid());
             m_childNodes[nodeId->second]->m_geometry = new Geometry(trimesh, scene);

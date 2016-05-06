@@ -26,6 +26,7 @@
 
 BEGIN_BENTLEY_THREEMX_NAMESPACE
 
+DEFINE_POINTER_SUFFIX_TYPEDEFS(DrawArgs)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Geometry)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Node)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Scene)
@@ -51,7 +52,7 @@ struct MxStreamBuffer : ByteStream
     };
 
 /*=================================================================================**//**
-* A mesh, plus a texture
+* A mesh, plus optionally a texture
 * @bsiclass                                                     Ray.Bentley     03/2015
 +===============+===============+===============+===============+===============+======*/
 struct Geometry : RefCountedBase, NonCopyableClass
@@ -66,7 +67,7 @@ private:
 public:
     Geometry(Dgn::Render::Graphic::TriMeshArgs const&, SceneR);
     PolyfaceHeaderPtr GetPolyface() const;
-    void Draw(Dgn::RenderContextR);
+    void Draw(DrawArgsR);
     DRange3d GetRange(TransformCR) const;
     size_t GetMemorySize() const;
     void ClearGraphic() {m_graphic = nullptr;}
@@ -86,18 +87,29 @@ struct SceneInfo
     BentleyStatus Read(MxStreamBuffer&);
 };
 
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   05/16
+//=======================================================================================
+struct DrawArgs
+{
+    Dgn::RenderContextR m_context;
+    SceneR m_scene;
+    Dgn::Render::GraphicArray m_graphics;
+    DrawArgs(Dgn::RenderContextR context, SceneR scene) : m_context(context), m_scene(scene) {}
+};
+
 /*=================================================================================**//**
-* A node in the 3mx scene. Each node has a range (from which we store a center/radius) and a "maxScreenDiameter" value. 
+* A node in the 3mx scene. Each node has a range (from which we store a center/radius) and a "maxScreenDiameter" value.
 *
 * It can optionally have:
 *  1) a Geometry ojbect. If present, it is used to draw this node if the size of the node in pixes is less than maxScreenDiameter. The first few nodes in the scene
 *     are merely present to segregate the scene and do not have Geometry (that is, thier maxScreenDiameter is 0, so they are not displayable)
 *  2) a list of child nodes. The child nodes are read from the "child file" whose name, relative to the parent of this node, is stored in the member "m_childPath". When a node
-*     is first created (by its parent), the list of child nodes is empty. Only when/if we determine that the geometry of a node is not fine enough 
+*     is first created (by its parent), the list of child nodes is empty. Only when/if we determine that the geometry of a node is not fine enough
 *     (that is, it is too large in pixels) for a view do we load its children.
 *
 * Multi-threaded loading of children:
-* The loading of children of a node involves reading a file (and potentially downloading from an external reality server). We always do that asynchronously via the RealityCache service on 
+* The loading of children of a node involves reading a file (and potentially downloading from an external reality server). We always do that asynchronously via the RealityCache service on
 * the reality cache thread(s). That means that sometimes we'll attempt to draw a node and discover that it is too coarse for the current view, but its children are not loaded yet. In that
 * case we draw thw geometry of the parent and queue its children to be loaded. The inter-thread synchronization is via the BeAtomic member variable "m_childLoad". Only when the value
 * of m_childLoad==Ready is it safe to use the m_childNodes member.
@@ -116,7 +128,7 @@ private:
     double m_maxScreenDiameter = 0.0;
     NodeP m_parent;
     GeometryPtr m_geometry;
-    Utf8String m_childPath;     // this is the name of the file, relative to path of this node, to load the children of this node. 
+    Utf8String m_childPath;     // this is the name of the file (relative to path of this node) to load the children of this node.
 
     enum ChildLoad {Invalid=0, Queued=1, Ready=2, NotFound=3};
     BeAtomic<int> m_childLoad;
@@ -127,7 +139,6 @@ private:
 
 public:
     Node(NodeP parent) : m_parent(parent), m_childLoad(ChildLoad::Invalid) {m_center.Zero();}
-
     double GetMaxDiameter() const {return m_maxScreenDiameter;}
     double GetRadius() const {return m_radius;}
     DPoint3dCR GetCenter() const {return m_center;}
@@ -138,8 +149,8 @@ public:
     Utf8String GetFilePath(SceneR) const;
     BentleyStatus LoadChildren(SceneR);
     void Dump(Utf8CP prefix) const;
-    bool Draw(Dgn::RenderContextR, SceneR);
-    void DrawGeometry(Dgn::RenderContextR);
+    bool Draw(DrawArgsR);
+    void DrawGeometry(DrawArgsR);
     DRange3d GetRange(TransformCR) const;
     void SetIsReady() {return m_childLoad.store(ChildLoad::Ready);}
     void SetNotFound() {BeAssert(false); return m_childLoad.store(ChildLoad::NotFound);}
@@ -147,6 +158,7 @@ public:
     bool AreChildrenValid() const {return m_childLoad.load() == ChildLoad::Ready;}
     bool NeedLoadChildren() const {return m_childLoad.load() == ChildLoad::Invalid && !m_childPath.empty();}
     bool IsDisplayable() const {return GetMaxDiameter() > 0.0;}
+    void UnloadChildren();
     size_t GetNodeCount() const;
     bool TestVisibility(Dgn::ViewContextR viewContext, SceneR);
     ChildNodes const* GetChildren() const {return AreChildrenValid() ? &m_childNodes : nullptr;}
@@ -234,7 +246,7 @@ struct ThreeMxModel : Dgn::SpatialModel
 
 private:
     Utf8String m_rootUrl;
-    Transform m_location; 
+    Transform m_location;
     mutable ScenePtr m_scene;
 
     DRange3d GetSceneRange();
