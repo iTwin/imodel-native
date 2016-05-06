@@ -28,7 +28,7 @@ struct          BeNumerical
 #elif defined (__APPLE__) || defined (ANDROID) || defined (__linux) || defined (__EMSCRIPTEN__)
     static double   BeNextafter (double x, double y)    {return nextafter(x,y);}
 
-    #if defined (__APPLE__)
+    #if defined (__APPLE__) || defined(__EMSCRIPTEN__)
         static int      BeIsnan (double v)                  {return isnan (v);}
         static int      BeFinite (double v)                 {return isfinite(v);}
     #else
