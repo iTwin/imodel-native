@@ -831,7 +831,7 @@ TEST_F(SqlFunctionsTest, bbox_union)
     // This is an example of accumlating the union of bounding boxes.
     // Note that when computing a union, it only makes sense to use axis-aligned bounding boxes, not element-aligned bounding boxes.
     stmt.Prepare(*dgndb, "SELECT DGN_bbox_union(" AABB_FROM_PLACEMENT ") FROM " DGN_TABLE(DGN_CLASSNAME_Element) " AS e," DGN_TABLE(DGN_CLASSNAME_GeometricElement3d) 
-                    " AS g WHERE e.ModelId=2 AND e.id=g.ElementId");
+                    " AS g WHERE e.ModelId=3 AND e.id=g.ElementId");
     //__PUBLISH_EXTRACT_END__
     auto rc = stmt.Step();
     ASSERT_EQ(BE_SQLITE_ROW, rc);

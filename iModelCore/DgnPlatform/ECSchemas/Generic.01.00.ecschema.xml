@@ -35,16 +35,16 @@
     </ECEntityClass>
 
     <ECEntityClass typeName="SpatialGroup">
-        <!-- A SpatialElement that groups other SpatialElements using the ElementGroupsMembers relationship -->
-        <BaseClass>dgn:SpatialElement</BaseClass>
+        <!-- A GroupInformationElement that groups SpatialElements using the ElementGroupsMembers relationship -->
+        <BaseClass>dgn:GroupInformationElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
 
     <ECEntityClass typeName="GraphicGroup2d">
-        <!-- A GraphicalElement2d that groups other GraphicalElement2ds using the ElementGroupsMembers relationship -->
-        <BaseClass>dgn:GraphicalElement2d</BaseClass>
+        <!-- A GroupInformationElement that groups GraphicalElement2ds using the ElementGroupsMembers relationship -->
+        <BaseClass>dgn:GroupInformationElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>

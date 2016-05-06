@@ -18,6 +18,7 @@ DOMAIN_DEFINE_MEMBERS(GenericDomain)
 namespace generic_ElementHandler
     {
     HANDLER_DEFINE_MEMBERS(GenericSpatialGroupHandler)
+    HANDLER_DEFINE_MEMBERS(GenericGraphicGroup2dHandler)
     HANDLER_DEFINE_MEMBERS(GenericSpatialLocationHandler)
     HANDLER_DEFINE_MEMBERS(GenericPhysicalObjectHandler)
     HANDLER_DEFINE_MEMBERS(GenericGraphic3dHandler)
@@ -31,6 +32,7 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
 GenericDomain::GenericDomain() : DgnDomain(GENERIC_DOMAIN_NAME, "Generic Domain", 1) 
     {
     RegisterHandler(generic_ElementHandler::GenericSpatialGroupHandler::GetHandler());
+    RegisterHandler(generic_ElementHandler::GenericGraphicGroup2dHandler::GetHandler());
     RegisterHandler(generic_ElementHandler::GenericSpatialLocationHandler::GetHandler());
     RegisterHandler(generic_ElementHandler::GenericPhysicalObjectHandler::GetHandler());
     RegisterHandler(generic_ElementHandler::GenericGraphic3dHandler::GetHandler());
@@ -72,4 +74,18 @@ GenericPhysicalObjectPtr GenericPhysicalObject::Create(SpatialModelR model, DgnC
         }
 
     return new GenericPhysicalObject(CreateParams(model.GetDgnDb(), model.GetModelId(), classId, categoryId));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    05/2016
+//---------------------------------------------------------------------------------------
+GenericSpatialGroupPtr GenericSpatialGroup::Create(DgnDbR db, DgnCode const& code)
+    {
+    DgnModelId modelId = DgnModel::GroupInformationId();
+    DgnClassId classId = db.Domains().GetClassId(generic_ElementHandler::GenericSpatialGroupHandler::GetHandler());
+
+    if (!classId.IsValid())
+        return nullptr;
+
+    return new GenericSpatialGroup(CreateParams(db, modelId, classId, code));
     }
