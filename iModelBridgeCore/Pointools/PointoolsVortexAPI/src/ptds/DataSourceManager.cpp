@@ -4,7 +4,9 @@
 #include <ptds/DataSourceCache.h>
 #include <ptds/DataSourceMemory.h>
 
+#ifdef NEEDS_WORK_VORTEX_DGNDB 
 #include <PTRMI/ClientInterfaceExtDataBentley.h>
+#endif
 
 #ifndef NO_DATA_SOURCE_SERVER
 #include <PTRMI/Manager.h>
@@ -38,6 +40,7 @@ DataSourcePtr DataSourceManager::createDataSource(const FilePath *path, DataSour
 	//DataSourcePtr result;
 															// NOTE: Register and poll DataSource modules in future
 
+#ifdef NEEDS_WORK_VORTEX_DGNDB
 															// If path refers to a structured storage (Externally managed) create new data source
 	if(DataSourceStructuredStorage::isValidPath(path))
 		return DataSourceStructuredStorage::createNew(path);
@@ -48,6 +51,8 @@ DataSourcePtr DataSourceManager::createDataSource(const FilePath *path, DataSour
 															// If path is URL to a data source cache, create a new data source cache
 	if(DataSourceCache::isValidPath(path))
 		return DataSourceCache::createNew(path);
+
+#endif
 
 #endif
 															// If path is URL to data in buffer, create a new memory based data source
@@ -143,8 +148,10 @@ bool DataSourceManager::close(DataSource *dataSource)
 	return false;
 }
 
+
 #ifndef NO_DATA_SOURCE_SERVER
 
+#ifdef NEEDS_WORK_VORTEX_DGNDB 
 DataSource *DataSourceManager::createRemoteDataSourceServer(const wchar_t *clientFilePath, const wchar_t *serverFilePath)
 {
 	PTRMI::Name								className(L"DataSourceServer");
@@ -209,7 +216,7 @@ DataSource *DataSourceManager::createDataSourceCache(const wchar_t *clientFilePa
 															// Return data source
 	return dataSourceCache;
 }
-
+#endif
 
 DataSource *DataSourceManager::getVoxelDataSource(pcloud::Voxel *voxel, int userThread)
 {

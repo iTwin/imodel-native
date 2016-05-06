@@ -24,9 +24,6 @@ class DataSourceManager
 {
 protected:
 
-	IStorage					*	currentStructuredStorage;
-	IStream						*	currentStructuredStorageStream;
-
 public:
 									DataSourceManager					(void);
 
@@ -40,11 +37,13 @@ public:
 	bool							deleteDataSource					(DataSourcePtr fileHandler);
 
 #ifndef NO_DATA_SOURCE_SERVER
+#ifdef NEEDS_WORK_VORTEX_DGNDB
 	DataSource					*	createRemoteDataSourceServer		(const wchar_t *clientFilePath, const wchar_t *serverFilePath);
 	DataSource					*	createDataSourceCache				(const wchar_t *clientFilePath, const wchar_t *serverFilePath, PTRMI::GUID *fileGUID);
-
+#endif
 	DataSource					*	getVoxelDataSource					(pcloud::Voxel *voxel, int thread);
 	DataSource					*	getOrCreateOpenVoxelDataSource	(pcloud::Voxel *voxel, int thread);
+
 #endif
 
 };

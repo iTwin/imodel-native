@@ -1,11 +1,10 @@
 #include "PointoolsVortexAPIInternal.h"
 
-#include <algorithm>
-
 #include <PTRMI/DataBuffer.h>
 #include <PTRMI/Pipe.h>
 #include <ptds/DataSource.h>
 #include <ptds/FilePath.h>
+#include <PTRMI/Array.h>
 
 namespace PTRMI
 {
@@ -864,11 +863,29 @@ PTRMI::Status DataBuffer::testSimple(void)
 
 }
 
+DataBuffer & DataBuffer::operator<<(const std::wstring &str)
+    {
+    // Wrap string as an array for writing
+    PTRMI::Array<const wchar_t>	arrayString(PTRMI::Array<const wchar_t>::Size(str.length()) + 1, str.c_str());
+    // Write array
+    (*this) << arrayString;
 
+    return (*this);
+    }
 
+DataBuffer & DataBuffer::operator>>(std::wstring &str)
+    {
+    wchar_t					buffer[DATA_BUFFER_MAX_STRING_LENGTH];
+    PTRMI::Array<wchar_t>	arrayString(DATA_BUFFER_MAX_STRING_LENGTH, buffer);
 
+    (*this) >> arrayString;
 
+    if (arrayString.isValid())
+        {
+        str = arrayString.getArray();
+        }
 
-
+    return (*this);
+    }
 
 } // End PTRMI namespace

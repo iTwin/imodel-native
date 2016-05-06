@@ -191,12 +191,8 @@ DataSource::Data *DataSourceMultiReadSet::executeMultiReadSet(DataSource &dataSo
 	MultiReadIndex						t;
 	DataSourceMultiRead				*	multiRead; 
 	DataSourceReadSet				*	readSet;
-	PTRMI::GUID							dataSourceServerInterfaceGUID;
-	ServerInterfaceBase				*	dataSourceServerInterface;
-	DataSourceServer				*	dataSourceServer;
 	Status								status;
 	bool								bufferAllocated = false;
-	ptds::DataSize						readSize;
 	DataSource::Data				*	dest;
 															// Executes a local multi batch of read sets
 	if((numMultiReads = getNumMultiReads()) == 0)
@@ -235,20 +231,24 @@ timer.start();
 			{
 															// Get MultiRead's ReadSet
 				if(readSet = multiRead->getDataSourceReadSet())
-				{
-															// Get the DataSourceServerInterface GUID from the MultiRead to know which DataSource to read ReadSet from
-					dataSourceServerInterfaceGUID = multiRead->getDataSourceServerInterface();
+				{			
+#ifdef NEEDS_WORK_VORTEX_DGNDB 
+												// Get the DataSourceServerInterface GUID from the MultiRead to know which DataSource to read ReadSet from
+                    PTRMI::GUID	dataSourceServerInterfaceGUID = multiRead->getDataSourceServerInterface();
 
 					if(dataSourceServerInterfaceGUID.isValidGUID())
 					{
+                        ServerInterfaceBase* dataSourceServerInterface;
 															// Lock the Server Interface for use
 						if((dataSourceServerInterface = getManager().getObjectManager().lockServerInterface(dataSourceServerInterfaceGUID)))
 						{
-															// Get the DataSource object represented by the ServerInterface
+                            DataSourceServer* dataSourceServer;
+
+                            // Get the DataSource object represented by the ServerInterface
 							if(dataSourceServer = reinterpret_cast<DataSourceServer *>(dataSourceServerInterface->getObject()))
 							{
 															// Execute the ReadSet on the data source
-								readSize = dataSourceServer->readBytesReadSet(dest, readSet);
+                                ptds::DataSize readSize = dataSourceServer->readBytesReadSet(dest, readSet);
 															// Advance the destination buffer
 								dest += readSize;
 							}
@@ -268,6 +268,7 @@ timer.start();
 					{
 						throw Status(Status::Status_Error_Server_Interface_Invalid);
 					}
+#endif
 				}
 				else
 				{

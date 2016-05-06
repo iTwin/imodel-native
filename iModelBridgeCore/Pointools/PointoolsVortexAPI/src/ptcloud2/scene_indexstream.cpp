@@ -393,8 +393,8 @@ int Scene::buildPreliminaryOctree( IncNode *root, int initial_depth, int target_
 																				// 50k, 100k,	100k,	100k,	100k,	100k,	200k,	1M,		2M
 
             const unsigned int numThresholds = 8;
-            uint64_t thresholds[numThresholds]	= { 2_M, 5_M, 10_M, 50_M, 100_M, 500_M, 1_B, 10_B };
-			uint64_t points[numThresholds + 1]	= { 50_K, 100_K, 100_K, 100_K, 100_K, 100_K, 200_K, 1_M, 2_M };
+            uint64_t thresholds[numThresholds]	= { 2_Million, 5_Million, 10_Million, 50_Million, 100_Million, 500_Million, 1_Billion, 10_Billion};
+			uint64_t points[numThresholds + 1]	= { 50_Kilo, 100_Kilo, 100_Kilo, 100_Kilo, 100_Kilo, 100_Kilo, 200_Kilo, 1_Million, 2_Million};
 
 			int				i;
             unsigned int	minPointsTarget = static_cast<uint>(points[numThresholds]);					// Default to largest target

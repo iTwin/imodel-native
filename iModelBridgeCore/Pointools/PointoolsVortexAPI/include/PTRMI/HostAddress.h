@@ -64,8 +64,10 @@ namespace PTRMI
 		bool			setSubValues			(const unsigned int values[numDigits]);
 		bool			setSubValues			(const IPSubValue values[numDigits]);
 
+#ifdef NEEDS_WORK_VORTEX_DGNDB_SERVER
 		bool			setAddress				(const sockaddr_in &addr);
 		bool			getAddress				(sockaddr_in &result) const;
+#endif
 
 		bool			isValidIndex			(Index index) const;
 		bool			getIPDefined			(void) const;
@@ -80,6 +82,7 @@ namespace PTRMI
 	typedef HostAddress<unsigned char, 4>	HostAddressIP4;
 	typedef HostAddress<unsigned short, 6>	HostAddressIP6;
 
+#ifdef NEEDS_WORK_VORTEX_DGNDB_SERVER
 
 	HOST_ADDRESS_T inline
 	bool PTRMI::HostAddress<IPSubValue, numDigits>::setAddress(const sockaddr_in &addr)
@@ -106,7 +109,7 @@ namespace PTRMI
 
 		return true;
 	}
-
+#endif
 
 	HOST_ADDRESS_T inline
 	void HostAddress<IPSubValue, numDigits>::setPort(Port initPort)
@@ -172,7 +175,7 @@ namespace PTRMI
 	}
 
 	HOST_ADDRESS_T inline
-	bool HostAddress<IPSubValue, numDigits>::getURL(std::wstring &resultURL, bool includePort = true)
+	bool HostAddress<IPSubValue, numDigits>::getURL(std::wstring &resultURL, bool includePort)
 	{
 		unsigned int p = url.find_first_of(L":");
 

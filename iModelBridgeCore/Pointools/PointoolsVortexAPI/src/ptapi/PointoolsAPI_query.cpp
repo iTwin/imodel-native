@@ -755,10 +755,7 @@ namespace querydetail
 			float							amount;
 			float							lod_amount;
 			bool							doLoad;
-			DataSource::DataSourceForm		dataSourceForm;
-			DataSource					*	dataSource;
-			StreamDataSource			*	streamDataSource;
-			bool							streamDataSourceCreated;
+			
 			bool							voxelLoadDump = true;
 			pcloud::Voxel				*	lastPartiallyIteratedVoxel = NULL;
 
@@ -782,9 +779,13 @@ namespace querydetail
 															// Calculate load details based on LODs and density settings
 			amount = calculateVoxelLoad(vox, doLoad);
 
-															// Get whether data source is local or remote
-			dataSourceForm = vox->getDataSourceForm();
-															// If DataSource is remote
+#ifdef NEEDS_WORK_VORTEX_DGNDB 
+            DataSource					*	dataSource;
+            StreamDataSource			*	streamDataSource;
+            bool							streamDataSourceCreated;											// Get whether data source is local or remote
+            DataSource::DataSourceForm dataSourceForm = vox->getDataSourceForm();
+            
+            // If DataSource is remote
 			if(doLoad && dataSourceForm == ptds::DataSource::DataSourceFormRemote)
 			{
 															// Get existing open DataSource or create an open data source associated with this thread
@@ -829,6 +830,7 @@ namespace querydetail
 				voxelLoadDump = false;
 			}
 
+#endif 
 															// Carry out load with instruction to dump on scope destruction if memory is out of core
 			pointsengine::VoxelLoader load(doLoad ? vox : 0, amount, false, false, voxelLoadDump);
 															// Force loader not to lock
@@ -850,6 +852,7 @@ namespace querydetail
 
 
 			bool voxelDeferred = false;
+#ifdef NEEDS_WORK_VORTEX_DGNDB 
 															// If DataSource is remote
 			if(doLoad && dataSourceForm == ptds::DataSource::DataSourceFormRemote)
 			{
@@ -862,6 +865,7 @@ namespace querydetail
 															// Update number of potential points available
 				rwPos.counterPotential += newPotential;
 			}
+#endif
 															// If real and potential number of points to be returned exceeds buffer size
 			if(finalVoxel)
 			{

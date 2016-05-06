@@ -1,10 +1,6 @@
 
 #pragma once
 
-#include <vector>
-
-#include <PTRMI/Array.h>
-#include <PTRMI/ArrayDirect.h>
 #include <PTRMI/Name.h>
 #include <PTRMI/Status.h>
 #include <PTDS/FilePath.h>
@@ -467,32 +463,6 @@ namespace PTRMI
 		(const_cast<T *>(&value))->read(*this);
 
 		return *this;
-	}
-
-
-	inline DataBuffer & DataBuffer::operator<<(const std::wstring &str)
-	{
-															// Wrap string as an array for writing
-		PTRMI::Array<const wchar_t>	arrayString(PTRMI::Array<const wchar_t>::Size(str.length()) + 1, str.c_str());
-															// Write array
-		(*this) << arrayString;
-
-		return (*this);
-	}
-
-	inline DataBuffer & DataBuffer::operator>>(std::wstring &str)
-	{
-		wchar_t					buffer[DATA_BUFFER_MAX_STRING_LENGTH];
-		PTRMI::Array<wchar_t>	arrayString(DATA_BUFFER_MAX_STRING_LENGTH, buffer);
-
-		(*this) >> arrayString;
-
-		if(arrayString.isValid())
-		{
-			str = arrayString.getArray();
-		}
-
-		return (*this);
 	}
 
 	inline void DataBuffer::reset(void)
