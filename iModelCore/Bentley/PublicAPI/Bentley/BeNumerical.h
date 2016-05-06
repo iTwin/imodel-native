@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/BeNumerical.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__PUBLISH_SECTION_START__
@@ -25,7 +25,7 @@ struct          BeNumerical
     static double   BeNextafter (double x, double y)    {return _nextafter(x,y);}
     static int      BeIsnan (double v)                  {return _isnan(v);}
     static int      BeFinite (double v)                 {return _finite(v);}
-#elif defined (__APPLE__) || defined (ANDROID) || defined (__linux)
+#elif defined (__APPLE__) || defined (ANDROID) || defined (__linux) || defined (__EMSCRIPTEN__)
     static double   BeNextafter (double x, double y)    {return nextafter(x,y);}
 
     #if defined (__APPLE__)

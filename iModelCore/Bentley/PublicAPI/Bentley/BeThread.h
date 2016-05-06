@@ -193,7 +193,7 @@ public:
     BENTLEYDLL_EXPORT void notify_all();
 };
 
-#if defined (__APPLE__) || defined (ANDROID) || defined (__linux)
+#if defined (__APPLE__) || defined (ANDROID) || defined (__linux) || defined (__EMSCRIPTEN__)
     typedef void* (*T_ThreadStart)(void*);
     #define THREAD_MAIN_IMPL void*
 #elif defined (_WIN32) // Windows && WinRT
