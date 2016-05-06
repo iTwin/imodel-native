@@ -50,7 +50,7 @@ namespace pointsengine
 
 			D.preQuery( voxel );
 			float a = D.lodAmount(voxel);
-			voxel->iterateTransformedPoints( R, m_cs, a );
+			voxel->iterateTransformedPoints( R, m_cs, static_cast<ubyte>(a) );
 			D.postQuery( voxel );
 		}
 

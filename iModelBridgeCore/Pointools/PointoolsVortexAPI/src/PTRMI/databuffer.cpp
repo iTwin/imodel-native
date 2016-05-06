@@ -833,7 +833,7 @@ PTRMI::Status DataBuffer::testSimple(void)
 		}
 		else
 		{
-			readNum			= static_cast<double>(numItems) * (static_cast<double>(rand()) / static_cast<double>(RAND_MAX));
+            readNum = static_cast<uint>(static_cast<double>(numItems) * (static_cast<double>(rand()) / static_cast<double>(RAND_MAX)));
 			readNum			= std::max(readNum, numItems);
 			--readAllCounter;
 		}		

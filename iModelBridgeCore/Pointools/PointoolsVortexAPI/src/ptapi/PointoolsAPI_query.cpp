@@ -248,11 +248,11 @@ namespace querydetail
 				pcloudOnly = cloudFromHandle(scope);
 				sceneOnly = sceneFromHandle(scope);
 			}
-			world2prj.set(-pt::Project3D::project().registration().matrix()(3,0),
-				-pt::Project3D::project().registration().matrix()(3,1),
-				-pt::Project3D::project().registration().matrix()(3,2));
-		};
-		//---------------------------------------------------------------------
+			world2prj.set(static_cast<float>(-pt::Project3D::project().registration().matrix()(3,0)),
+                          static_cast<float>(-pt::Project3D::project().registration().matrix()(3,1)),
+                          static_cast<float>(-pt::Project3D::project().registration().matrix()(3, 2)));
+        };
+        //---------------------------------------------------------------------
 		bool scene(pcloud::Scene *sc)
 		{
 			if (sceneOnly && sc != sceneOnly) return false;
@@ -351,10 +351,10 @@ namespace querydetail
 			spatialGridFailure = false;
 			doSelect = select;
 
-			world2prj.set(-pt::Project3D::project().registration().matrix()(3,0),
-				-pt::Project3D::project().registration().matrix()(3,1),
-				-pt::Project3D::project().registration().matrix()(3,2));
-
+			world2prj.set(static_cast<float>(-pt::Project3D::project().registration().matrix()(3,0)),
+				          static_cast<float>(-pt::Project3D::project().registration().matrix()(3,1)),
+				          static_cast<float>(-pt::Project3D::project().registration().matrix()(3,2)));
+                                                                                                   
 		}
 		//---------------------------------------------------------------------
 		bool scene(pcloud::Scene *sc)
@@ -572,10 +572,10 @@ namespace querydetail
 				selcol[2] = 0;
 			}
 
-			world2prj.set(-pt::Project3D::project().registration().matrix()(3,0),
-					-pt::Project3D::project().registration().matrix()(3,1),
-					-pt::Project3D::project().registration().matrix()(3,2));
-
+			world2prj.set(static_cast<float>(-pt::Project3D::project().registration().matrix()(3,0)),
+                          static_cast<float>(-pt::Project3D::project().registration().matrix()(3,1)),
+                          static_cast<float>(-pt::Project3D::project().registration().matrix()(3,2)));
+                                                                                                 
 			/* detailed */
 			if (_numPointChannels > 32) _numPointChannels = 32;
 
@@ -1246,9 +1246,9 @@ namespace querydetail
 				{
 					if (buffer)
 					{
-						buffer[rwPos.counter*3] = pnt.x;
-						buffer[rwPos.counter*3+1] = pnt.y;
-						buffer[rwPos.counter*3+2] = pnt.z;
+						buffer[rwPos.counter*3] =   static_cast<T>(pnt.x);
+						buffer[rwPos.counter*3+1] = static_cast<T>(pnt.y);
+						buffer[rwPos.counter*3+2] = static_cast<T>(pnt.z);
 					}
 
 					if (colBuffer)
@@ -2164,9 +2164,9 @@ public:
 	unsigned int getPointCount(void)
 	{
 		if(getNode()->isLeaf())
-			return reinterpret_cast<pcloud::Voxel *>(getNode())->fullPointCount();
+            return static_cast<uint>(reinterpret_cast<pcloud::Voxel *>(getNode())->fullPointCount());
 
-		return getNode()->lodPointCount();
+		return static_cast<uint>(getNode()->lodPointCount());
 	}
 
 															// Implements Min Priority queue by inverting comparison

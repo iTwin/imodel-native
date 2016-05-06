@@ -36,10 +36,10 @@ extern double g_unitScale;
 inline static float quadArea2(const vector4d &a, const vector4d &b, const vector4d &c, const vector4d &d)
 {
 	/*two triangles - abc + acd*/ 
-	float area = fabs(((b.x - a.x)*(c.y-a.y)) - ((c.x - a.x) * (b.y - a.y)));
+	double area = fabs(((b.x - a.x)*(c.y-a.y)) - ((c.x - a.x) * (b.y - a.y)));
 	area += fabs(((c.x - a.x)*(d.y-a.y)) - ((d.x - a.x) * (c.y - a.y)));
 	area *= 0.5;
-	return area;
+	return static_cast<float>(area);
 }
 VisibilityEngine::VisibilityEngine()
 {
@@ -438,7 +438,7 @@ void	VisibilityEngine::computeCurrentPntsShortfall( const pcloud::Scene* inScene
 			pcloud::Voxel::LOD req = vox->getRequestLOD();
 
 			int shortfall = 
-				max(0, vox->getNumPointsAtLOD(req) - vox->getNumPointsAtLOD(lod));
+                static_cast<int>(max(0, vox->getNumPointsAtLOD(req) - vox->getNumPointsAtLOD(lod)));
 			
 			if (shortfall>0)
 			{
@@ -474,7 +474,7 @@ float	VisibilityEngine::computeVoxelPriority( const pt::ViewParams &view, Visibi
 			/* priority metric */ 
 			if (view.viewport[2] && view.viewport[3])
 			{
-				p1 = midp.z;
+                p1 = static_cast<float>(midp.z);
 				p1 *= p1 * p1;
 				p1 = 1.0f - p1;
 				p = p1 * 10.0f;
@@ -483,7 +483,7 @@ float	VisibilityEngine::computeVoxelPriority( const pt::ViewParams &view, Visibi
 				midp.y /= view.viewport[3];
 
 				/* check following line for correctness */ 
-				p += 0.2f * (2.0f - (2*fabs(midp.x - 0.5f) + 2*fabs(midp.y - 0.5f)));
+				p += static_cast<float>(0.2f * (2.0f - (2*fabs(midp.x - 0.5f) + 2*fabs(midp.y - 0.5f))));
 				p /= 3.0f;
 
 				//p -= vox->getCurrentLOD() * 0.1f;		
@@ -492,21 +492,21 @@ float	VisibilityEngine::computeVoxelPriority( const pt::ViewParams &view, Visibi
 			break;				
 			
 		case BiasNear:
-			p = 1 - midp.z;
+			p = static_cast<float>(1 - midp.z);
 			if (p< 0) p = 0;
 			if (!visible) p *= 0.1;
 			break;
 
 		case BiasFar:
-			p = midp.z;
+			p = static_cast<float>(midp.z);
 			if (p<0) p = 0;
 			if (!visible) p *= 0.1;
 			break;
 
 		case BiasPoint:
 			{
-			double d = biasPt.dist2( vector3(mid.x, mid.y, mid.z) );
-			if (d > 0) p = 1.0 / d;
+			double d = biasPt.dist2( vector3(static_cast<float>(mid.x), static_cast<float>(mid.y), static_cast<float>(mid.z)) );
+			if (d > 0) p = static_cast<float>(1.0 / d);
 			if (!visible) p *= 0.75;
 			}
 			break;
@@ -556,7 +556,7 @@ struct FillOcclusionFrame : public PointsVisitor
 		pcloud::Node * node = const_cast<pcloud::Node*>(n);
 		pcloud::Voxel *voxel = static_cast<pcloud::Voxel*>(node);
 
-		int numPts = voxel->getRequestLOD() * voxel->fullPointCount() * occFrame.factor() * 0.1;
+        int numPts = static_cast<int>(voxel->getRequestLOD() * voxel->fullPointCount() * occFrame.factor() * 0.1);
 		if (numPts < 50) numPts = 50;
 
 		vid = voxel->indexInCloud();
@@ -573,7 +573,7 @@ struct FillOcclusionFrame : public PointsVisitor
 		pt::vector4d w;
 		if (view.project4v(v4, w))
 		{
-			occFrame.insert(w.x,w.y,w.z, vid);
+            occFrame.insert(static_cast<int>(w.x), static_cast<int>(w.y), static_cast<float>(w.z), vid);
 		}
 	}
 	int									vid;
@@ -626,7 +626,7 @@ struct CullOccluded : public PointsVisitor
 
 		if (!reqLodPts) return true;
 
-		int numPts = reqLodPts * occFrame.factor() * occFrame.factor();
+		int numPts = static_cast<int>(reqLodPts * occFrame.factor() * occFrame.factor());
 		if (numPts < 50) numPts = 50;
 			
 		vid = voxel->indexInCloud();
@@ -658,7 +658,7 @@ struct CullOccluded : public PointsVisitor
 		pt::vector4d w;
 		if (view.project4v(v4, w))
 		{
-			if (occFrame.isOccluded(w.x,w.y,w.z, occ_vid))
+			if (occFrame.isOccluded(static_cast<int>(w.x), static_cast<int>(w.y), static_cast<float>(w.z), occ_vid))
 			{
 				if (occ_vid != vid)
 					++pointsOccluded;
@@ -713,7 +713,7 @@ struct UpdateStats : public PointsVisitor
 
 			stats.m_averageLOD += rlod;
 			stats.m_numFullPtsInView += v->fullPointCount();
-			stats.m_numLODPtsInView1 += v->fullPointCount() * rlod;
+            stats.m_numLODPtsInView1 += static_cast<int64_t>(v->fullPointCount() * rlod);
 
 			if (rlod > stats.m_maxLOD) stats.m_maxLOD = rlod;
 			if (rlod < stats.m_minLOD) stats.m_minLOD = rlod;
@@ -821,7 +821,7 @@ struct ComputeShortfall : public PointsVisitor
 		{
 			const pcloud::Voxel *vox = static_cast<const pcloud::Voxel*>(n);
 			
-			int shortfall = ( vox->getRequestLOD() * vox->fullPointCount() ) - vox->lodPointCount();
+            int shortfall = static_cast<int>((vox->getRequestLOD() * vox->fullPointCount()) - vox->lodPointCount());
 			
 			if (shortfall > LOD_MIN_VALUE *  vox->fullPointCount() && !vox->flag( pcloud::OutOfCore ) )
 			{
@@ -962,7 +962,7 @@ struct VisibilityCompute : public PointsVisitor
 								
 				if (visible) 
 				{
-					stats.m_numLODPtsInView1 += computedLOD * fullPointCount; 
+                    stats.m_numLODPtsInView1 += static_cast<int64_t>(computedLOD * fullPointCount);
 					stats.m_totalPxArea += projArea;
 				}
 			}
@@ -1056,7 +1056,7 @@ void VisibilityEngine::computeVisibility()
 	// adjust for budget cap
 	if (m_pointsBudget != -1 && visibility.stats.m_numLODPtsInView1 > m_pointsBudget )
 	{
-		BudgetAdjustment budget(visibility.stats.m_numLODPtsInView1, m_pointsBudget );
+        BudgetAdjustment budget(static_cast<float>(visibility.stats.m_numLODPtsInView1), static_cast<float>(m_pointsBudget));
 		thePointsScene().visitPointClouds( &budget );
 	}
 
@@ -1106,15 +1106,15 @@ float thinness(const pt::BoundingBox &bb)
 
 	if (d.x < d.y && d.x < d.z)
 	{
-		return max( d.x / d.y, d.x / d.z );
+        return static_cast<float>(max(d.x / d.y, d.x / d.z));
 	}
 	else if (d.y < d.x && d.y < d.z)
 	{
-		return max( d.y / d.x, d.y / d.z );
+		return static_cast<float>(max( d.y / d.x, d.y / d.z ));
 	}
 	else if (d.z < d.x && d.z < d.y)
 	{
-		return max( d.z / d.y, d.z / d.x );
+		return static_cast<float>(max( d.z / d.y, d.z / d.x ));
 	}
 	return 1.0f;
 }
@@ -1170,7 +1170,7 @@ float VisibilityEngine::computeVoxelLOD( const pt::ViewParams &view, pcloud::Nod
 		if (required_density[0] < LOD_MIN)
 		{
 			if (fullPointCount * LOD_MIN < LOD_MIN_PTS)	
-				required_density[0] = 16.0 / fullPointCount;
+				required_density[0] = 16.0f / fullPointCount;
 			else
 				required_density[0] = LOD_MIN;
 		}
@@ -1189,8 +1189,8 @@ void	VisibilityEngine::OcclusionFrame::setSize(int viewport_x_res, int viewport_
 	m_vp_x = viewport_x_res;
 	m_vp_y = viewport_y_res;
 
-	m_vp_x = viewport_x_res * factor + 1;
-	m_vp_y = viewport_y_res * factor + 1;
+    m_vp_x = static_cast<int>(viewport_x_res * factor + 1);
+	m_vp_y = static_cast<int>(viewport_y_res * factor + 1);
 	
 	if (m_frame)
 	{
@@ -1212,8 +1212,8 @@ bool	VisibilityEngine::OcclusionFrame::isOccluded(int x, int y, float z, int &vi
 {
 	if (!m_frame) return false;
 
-	int xi = x * m_factor;
-	int yi = y * m_factor;
+	int xi = static_cast<int>(x * m_factor);
+	int yi = static_cast<int>(y * m_factor);
 
 	if (xi < 0 || yi < 0 || xi >= m_vp_x || yi >= m_vp_y )
 	{
@@ -1227,8 +1227,8 @@ bool	VisibilityEngine::OcclusionFrame::isOccluded(int x, int y, float z, int &vi
 }
 bool	VisibilityEngine::OcclusionFrame::insert(int x, int y, float z, int vid)
 {	
-	int xi = x * m_factor;
-	int yi = y * m_factor;
+	int xi = static_cast<int>(x * m_factor);
+	int yi = static_cast<int>(y * m_factor);
 
 	if (xi < 0 || yi < 0 || xi >= m_vp_x || yi >= m_vp_y )
 	{

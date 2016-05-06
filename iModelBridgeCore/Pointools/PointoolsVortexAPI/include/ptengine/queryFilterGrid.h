@@ -88,10 +88,10 @@ private:
 	bool hashPoint(const pt::vector3d &pnt, HashVal &hash) const
 	{
 		pt::vector3i quantize_multiples( 
-			floor(pnt.x / m_spacing.x), 
-			floor(pnt.y / m_spacing.y), 
-			floor(pnt.z / m_spacing.z));
-
+			static_cast<int>(floor(pnt.x / m_spacing.x)), 
+			static_cast<int>(floor(pnt.y / m_spacing.y)), 
+			static_cast<int>(floor(pnt.z / m_spacing.z)));
+                                                       
 		// truncate anything too big 
 		pt::vector3i large_component(quantize_multiples);
 		large_component /= 1000000;

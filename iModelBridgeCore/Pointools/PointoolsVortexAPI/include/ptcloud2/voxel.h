@@ -415,7 +415,7 @@ namespace pcloud
 		{
 			pcloud::DataChannel *geom = _channels[pcloud::PCloud_Geometry];
 
-			uint end = amount * getNumPointsAtLOD(getCurrentLOD());
+            uint end = static_cast<uint>(amount * getNumPointsAtLOD(getCurrentLOD()));
 
 			_iterateTransformedPointsRange( R, T, layerMask, 0, end );
 		}
