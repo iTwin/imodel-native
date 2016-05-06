@@ -100,7 +100,6 @@ private:
 protected:
     virtual Utf8CP _GetId() const override {return m_url.c_str();}
     virtual bool _IsExpired() const override;
-    virtual BentleyStatus _InitFrom(IRealityDataBase const& self) override;
     virtual BentleyStatus _InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> const& header, ByteStream const& body) override;
     virtual BentleyStatus _InitFrom(BeSQLite::Db& db, BeMutex& cs, Utf8CP key) override;
     virtual BentleyStatus _Persist(BeSQLite::Db& db, BeMutex& cs) const override;
@@ -1113,7 +1112,7 @@ RealityDataCache& WebMercatorModel::GetRealityDataCache() const
     {
     if (!m_realityDataCache.IsValid())
         {
-        m_realityDataCache = RealityDataCache::Create(100);
+        m_realityDataCache = RealityDataCache::Create();
 
         BeFileName storageFileName = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName();
         storageFileName.AppendToPath(BeFileName(GetName()));
@@ -1197,20 +1196,6 @@ struct TiledRasterPrepareAndCleanupHandler : BeSQLiteRealityDataStorage::Databas
 BeSQLiteRealityDataStorage::DatabasePrepareAndCleanupHandlerPtr TiledRaster::_GetDatabasePrepareAndCleanupHandler() const
     {
     return new TiledRasterPrepareAndCleanupHandler();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               09/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TiledRaster::_InitFrom(IRealityDataBase const& self)
-    {
-    TiledRaster const& other = dynamic_cast<TiledRaster const&>(self);
-    m_url = other.m_url;
-    m_creationDate = other.m_creationDate;
-    m_contentType = other.m_contentType;
-    m_rasterInfo = other.m_rasterInfo;
-    m_data = other.m_data;
-    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
