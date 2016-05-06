@@ -47,9 +47,13 @@ BentleyStatus Scene::DeleteRealityCache()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Scene::ReadRoot(SceneInfo& sceneInfo)
     {
-    MxStreamBuffer rootStream;
+    MxStreamBuffer* rootStream = nullptr;
     RealityDataCacheResult status = RequestData(nullptr, true, &rootStream);
-    return (RealityDataCacheResult::Success != status) ? ERROR : sceneInfo.Read(rootStream);
+    if (RealityDataCacheResult::Success != status)
+        return ERROR;
+
+    BeAssert(nullptr != rootStream);
+    return sceneInfo.Read(*rootStream);
     }
 
 /*---------------------------------------------------------------------------------**//**
