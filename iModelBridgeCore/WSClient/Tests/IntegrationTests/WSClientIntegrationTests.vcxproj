@@ -47,7 +47,7 @@
     <NMakeReBuildCommandLine>bb -v4 -ax64 -r WSClient -f WSClient -p WSClientIntegrationTests b</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>bb $(BB2N0) -v4 -ax64 -r WSClient -f WSClient -p WSClientIntegrationTests re  WSClientIntegrationTests WebServices* -c</NMakeCleanCommandLine>
     <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
-    <IncludePath>$(SrcRoot)util\gtest\include;$(SrcRoot)util\gmock\include;$(OutRoot)Winx64\Product\DgnClientSdk-Winx64\include;$(SrcRoot)WSClient\Tests\UnitTests\Published\Utils;$(IncludePath)</IncludePath>
+    <IncludePath>$(SrcRoot)WSClient\Tests\UnitTests\Published\Utils;$(OutRoot)Winx64\BuildContexts\WSClient\VendorAPI;$(OutRoot)Winx64\BuildContexts\WSClient\PublicAPI;$(IncludePath)</IncludePath>
     <OutDir>$(OutRoot)VSOut\$(MSBuildProjectName)\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(OutDir)</IntDir>
   </PropertyGroup>
@@ -77,7 +77,6 @@
     <ClCompile Include="Cache\RepositorySchemaUpgradeTests.cpp" />
     <ClCompile Include="Cache\ECDbAdapterTests.cpp" />
     <ClCompile Include="Configuration\BuddiClientTests.cpp" />
-    <ClCompile Include="ConnectC\ConnectWebServicesClientCTests.cpp" />
     <ClCompile Include="Examples\ExampleTests.cpp" />
     <ClCompile Include="Repository\Extensions\HierarchicalSearchTests.cpp" />
     <ClCompile Include="Repository\Extensions\NavigationTests.cpp" />
@@ -98,7 +97,6 @@
     <ClInclude Include="Cache\ECDbAdapterTests.h" />
     <ClInclude Include="Cache\RepositorySchemaUpgradeTests.h" />
     <ClInclude Include="Configuration\BuddiClientTests.h" />
-    <ClInclude Include="ConnectC\ConnectWebServicesClientCTests.h" />
     <ClInclude Include="Examples\ExampleTests.h" />
     <ClInclude Include="Repository\Extensions\HierarchicalSearchTests.h" />
     <ClInclude Include="Repository\Extensions\NavigationTests.h" />
