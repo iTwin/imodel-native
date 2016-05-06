@@ -21,11 +21,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#ifdef _MSC_VER
-    // disable: "C++ exception handler used"
-    #pragma warning (disable : 4530)
-#endif // _MSC_VER
-
 /**
   @def error(level, message, showPrompt)
   error(const char *level, const char *message, bool showPrompt);

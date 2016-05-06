@@ -864,7 +864,7 @@ bool StreamManager::raceLimitStreaming(unsigned int minTimeMilliseconds)
 
 	t.tick();
 
-	uint lastRefresh = testLastRefresh.delta_ms(testLastRefresh, t);
+    uint lastRefresh = static_cast<uint>(testLastRefresh.delta_ms(testLastRefresh, t));
 
 	if(lastRefresh < minTimeMilliseconds)
 		return false;

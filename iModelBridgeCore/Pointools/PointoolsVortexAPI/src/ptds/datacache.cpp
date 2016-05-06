@@ -561,7 +561,7 @@ DataCache::CachePageIndex DataCache::calculateNumPages(DataSize fullFileSize, Da
 	if(fullFileSize == 0 || pageSize == 0)
 		return 0;
 
-	CachePageIndex	pages = fullFileSize / pageSize;
+	CachePageIndex	pages = static_cast<CachePageIndex>(fullFileSize / pageSize);
 
 	if((fullFileSize & pages) > 0)
 		++pages;
@@ -581,7 +581,7 @@ DataCache::CachePageIndex DataCache::getCachePageIndex(DataPointer position)
 	if(getCachePageSize() == 0)
 		return 0;
 
-	return position / getCachePageSize();
+    return static_cast<CachePageIndex>(position / getCachePageSize());
 }
 
 
@@ -1355,7 +1355,7 @@ bool DataCache::consumeRead(ParallelReadPriorityQueue &queue, DataCacheParallelR
 															// Move read position to next cache page
 	parallelRead.setCurrentReadPosition(parallelRead.getCurrentReadPosition() + dataSizeRead);
 															// Number of points read is total data read divided by bytes required to represent item
-	parallelRead.setCurrentNumPointsRead(parallelRead.getCurrentReadSize() / parallelRead.getItemSize());
+    parallelRead.setCurrentNumPointsRead(static_cast<uint>(parallelRead.getCurrentReadSize() / parallelRead.getItemSize()));
 
 															// Return OK
 	return true;
@@ -1456,8 +1456,8 @@ Status DataCache::readOutOfCachePageReadSet(DataSource &dataSourceFullFile, Data
 	if((readSize = readSet.getTotalReadSize()) == 0)
 		return Status(Status::Status_Error_Cache_Read_Set_Failed);
 															// Allocate memory from the DataBuffer
-	dataBuffer.createInternalBuffer(readSize);
-	if((buffer = dataBuffer.allocate(readSize)) == NULL)
+	dataBuffer.createInternalBuffer(static_cast<PTRMI::DataBuffer::DataSize>(readSize));
+	if((buffer = dataBuffer.allocate(static_cast<PTRMI::DataBuffer::DataSize>(readSize))) == NULL)
 		return Status(Status::Status_Error_Memory_Allocation);
 
 															// Execute the read set from the full file
@@ -1523,7 +1523,7 @@ DataCache::CachePageIndex DataCache::getNumCachePagesInDataSize(DataSize dataSiz
 
 	CachePageIndex numPages;
 															// Get number of pages that could fit in given data size
-	numPages = dataSize / getCachePageSize();
+	numPages = static_cast<CachePageIndex>(dataSize / getCachePageSize());
 															// If there is a remainder
 	if(dataSize % getCachePageSize() > 0)
 	{

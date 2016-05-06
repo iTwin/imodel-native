@@ -16,21 +16,21 @@ public:
 		_yd = yd;	// delta y
 		_zd = zd;	// delta z
 
-		_xd_s = xd / spacing;	// dist in voxels
-		_yd_s = yd / spacing;	
-		_zd_s = zd / spacing;
+        _xd_s = static_cast<unsigned int>(xd / spacing);	// dist in voxels
+		_yd_s = static_cast<unsigned int>(yd / spacing);	
+		_zd_s = static_cast<unsigned int>(zd / spacing);
 
-		_divx = 1+(xd / spacing) / 64;	// number of divisions in X
-		_divy = 1+(yd / spacing) / 64;  // in Y
-		_divz = 1+(zd / spacing) / 64;  // in Z
+		_divx = static_cast<unsigned int>(1+(xd / spacing) / 64);	// number of divisions in X
+		_divy = static_cast<unsigned int>(1+(yd / spacing) / 64);  // in Y
+		_divz = static_cast<unsigned int>(1+(zd / spacing) / 64);  // in Z
 
 		_xdv = xd / _divx;			// size of division in X
 		_ydv = yd / _divy;			// in Y
 		_zdv = zd / _divz;			// in Z
 
-		_xdv_s = _xdv / spacing;	// voxel dim of div in X
-		_ydv_s = _ydv / spacing;	// in Y
-		_zdv_s = _zdv / spacing;	// in Z
+		_xdv_s = static_cast<unsigned int>(_xdv / spacing);	// voxel dim of div in X
+		_ydv_s = static_cast<unsigned int>(_ydv / spacing);	// in Y
+		_zdv_s = static_cast<unsigned int>(_zdv / spacing);	// in Z
 
 		if (_xdv_s <= 0) _xdv_s = 1;	// check for zero thickness
 		if (_ydv_s <= 0) _ydv_s = 1;
@@ -85,7 +85,9 @@ public:
 	}
 	void getBoundingBox(BoundingBox &bb)
 	{
-		bb.setBox(_x + _xd * _spacing, _x, _y + _yd * _spacing, _y, _z + _zd * _spacing, _z );
+		bb.setBox(static_cast<float>(_x + _xd * _spacing), static_cast<float>(_x), 
+                  static_cast<float>(_y + _yd * _spacing), static_cast<float>(_y), 
+                  static_cast<float>(_z + _zd * _spacing), static_cast<float>(_z));
 	}
 	bool set( const double *pnt, bool val=true )
 	{
@@ -157,9 +159,9 @@ public:
 		y -= _y;
 		z -= _z;
 
-		int xi = x / _xdv;
-		int yi = y / _ydv;
-		int zi = z / _zdv;
+		int xi = static_cast<int>(x / _xdv);
+		int yi = static_cast<int>(y / _ydv);
+		int zi = static_cast<int>(z / _zdv);
 
 		x -= xi * _xdv;
 		y -= yi * _ydv;

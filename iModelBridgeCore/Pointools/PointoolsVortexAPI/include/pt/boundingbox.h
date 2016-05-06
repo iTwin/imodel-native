@@ -17,9 +17,6 @@
 #include <pt/Bounds.h>
 #include <pt/geomtypes.h>
 
-
-#pragma warning ( disable : 4275 )
-
 namespace pt
 {
 template<typename T> class BBox : public Bounds<3, T>
@@ -324,13 +321,13 @@ public:
 		vec3<Real> diff, cen(center());
 
 		diff.x = ray.origin.x - cen.x;
-		if(fabsf(diff.x)>bext.x && diff.x*ray.direction.x>=0.0f)	return false;
+		if(fabsf(static_cast<float>(diff.x))>bext.x && diff.x*ray.direction.x>=0.0f)	return false;
 
 		diff.y = ray.origin.y - cen.y;
-		if(fabsf(diff.y)>bext.y && diff.y*ray.direction.y>=0.0f)	return false;
+		if(fabsf(static_cast<float>(diff.y))>bext.y && diff.y*ray.direction.y>=0.0f)	return false;
 
 		diff.z = ray.origin.z - cen.z;
-		if(fabsf(diff.z)>bext.z && diff.z*ray.direction.z>=0.0f)	return false;
+		if(fabsf(static_cast<float>(diff.z))>bext.z && diff.z*ray.direction.z>=0.0f)	return false;
 
 		Real fAWdU[3];
 
@@ -340,9 +337,9 @@ public:
 
 		Real f;
 
-		f = ray.direction.y * diff.z - ray.direction.z * diff.y;	if(fabsf(f)>bext.y*fAWdU[2] + bext.z*fAWdU[1])	return false;
-		f = ray.direction.z * diff.x - ray.direction.x * diff.z;	if(fabsf(f)>bext.x*fAWdU[2] + bext.z*fAWdU[0])	return false;
-		f = ray.direction.x * diff.y - ray.direction.y * diff.x;	if(fabsf(f)>bext.x*fAWdU[1] + bext.y*fAWdU[0])	return false;
+		f = ray.direction.y * diff.z - ray.direction.z * diff.y;	if(fabsf(static_cast<float>(f))>bext.y*fAWdU[2] + bext.z*fAWdU[1])	return false;
+		f = ray.direction.z * diff.x - ray.direction.x * diff.z;	if(fabsf(static_cast<float>(f))>bext.x*fAWdU[2] + bext.z*fAWdU[0])	return false;
+		f = ray.direction.x * diff.y - ray.direction.y * diff.x;	if(fabsf(static_cast<float>(f))>bext.x*fAWdU[1] + bext.y*fAWdU[0])	return false;
 
 		return true;
 	}
@@ -362,23 +359,23 @@ public:
 
 		dir.x = 0.5f * (segment.b.x - segment.a.x);
 		diff.x = (0.5f * (segment.b.x + segment.a.x)) - cen.x;
-		fAWdU[0] = fabsf(dir.x);
-		if(fabsf(diff.x)>bext.x + fAWdU[0])	return false;
+		fAWdU[0] = fabsf(static_cast<float>(dir.x));
+		if(fabsf(static_cast<float>(diff.x))>bext.x + fAWdU[0])	return false;
 
 		dir.y = 0.5f * (segment.b.y - segment.a.y);
 		diff.y = (0.5f * (segment.b.y + segment.a.y)) - cen.y;
-		fAWdU[1] = fabsf(dir.y);
-		if(fabsf(diff.y)>bext.y + fAWdU[1])	return false;
+		fAWdU[1] = fabsf(static_cast<float>(dir.y));
+		if(fabsf(static_cast<float>(diff.y))>bext.y + fAWdU[1])	return false;
 
 		dir.z = 0.5f * (segment.b.z - segment.a.z);
 		diff.z = (0.5f * (segment.b.z + segment.a.z)) - cen.z;
-		fAWdU[2] = fabsf(dir.z);
-		if(fabsf(diff.z)>bext.z + fAWdU[2])	return false;
+		fAWdU[2] = fabsf(static_cast<float>(dir.z));
+		if(fabsf(static_cast<float>(diff.z))>bext.z + fAWdU[2])	return false;
 
 		T f;
-		f = dir.y * diff.z - dir.z * diff.y;	if(fabsf(f)>bext.y*fAWdU[2] + bext.z*fAWdU[1])	return false;
-		f = dir.z * diff.x - dir.x * diff.z;	if(fabsf(f)>bext.x*fAWdU[2] + bext.z*fAWdU[0])	return false;
-		f = dir.x * diff.y - dir.y * diff.x;	if(fabsf(f)>bext.x*fAWdU[1] + bext.y*fAWdU[0])	return false;
+		f = dir.y * diff.z - dir.z * diff.y;	if(fabsf(static_cast<float>(f))>bext.y*fAWdU[2] + bext.z*fAWdU[1])	return false;
+		f = dir.z * diff.x - dir.x * diff.z;	if(fabsf(static_cast<float>(f))>bext.x*fAWdU[2] + bext.z*fAWdU[0])	return false;
+		f = dir.x * diff.y - dir.y * diff.x;	if(fabsf(static_cast<float>(f))>bext.x*fAWdU[1] + bext.y*fAWdU[0])	return false;
 
 		return true;
 	}
@@ -396,13 +393,13 @@ public:
 		T dcx, dcy, dcz;
 		T xMax, yMax, zMax;
 																// Calculate axial distances between box centers												
-		dcx = fabs(((Base::upper(0) + Base::lower(0)) - (b.upper(0) + b.lower(0))) * 0.5);
-		dcy = fabs(((Base::upper(1) + Base::lower(1)) - (b.upper(1) + b.lower(1))) * 0.5);
-		dcz = fabs(((Base::upper(2) + Base::lower(2)) - (b.upper(2) + b.lower(2))) * 0.5);
+        dcx = static_cast<T>(fabs(((Base::upper(0) + Base::lower(0)) - (b.upper(0) + b.lower(0))) * 0.5));
+		dcy = static_cast<T>(fabs(((Base::upper(1) + Base::lower(1)) - (b.upper(1) + b.lower(1))) * 0.5));
+		dcz = static_cast<T>(fabs(((Base::upper(2) + Base::lower(2)) - (b.upper(2) + b.lower(2))) * 0.5));
 																// Calculate axial spans between each box's opposite ends
-		xMax = dcx + ((Base::upper(0) - Base::lower(0)) + (b.upper(0) - b.lower(0))) * 0.5;
-		yMax = dcy + ((Base::upper(1) - Base::lower(1)) + (b.upper(1) - b.lower(1))) * 0.5;
-		zMax = dcz + ((Base::upper(2) - Base::lower(2)) + (b.upper(2) - b.lower(2))) * 0.5;
+		xMax = static_cast<T>(dcx + ((Base::upper(0) - Base::lower(0)) + (b.upper(0) - b.lower(0))) * 0.5);
+		yMax = static_cast<T>(dcy + ((Base::upper(1) - Base::lower(1)) + (b.upper(1) - b.lower(1))) * 0.5);
+		zMax = static_cast<T>(dcz + ((Base::upper(2) - Base::lower(2)) + (b.upper(2) - b.lower(2))) * 0.5);
 
 																// Return the square of the diagonal distance
 		return xMax*xMax + yMax*yMax + zMax*zMax;
@@ -469,7 +466,7 @@ public:
 	inline T radius() const { return sqrt(radius2()); }
     inline T radius2() const
     {
-       return 0.25*(diagonal().length2());
+       return static_cast<T>(0.25*(diagonal().length2()));
     }
 private:
 	vec3<T>	_av;

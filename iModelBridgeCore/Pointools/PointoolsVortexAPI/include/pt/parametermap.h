@@ -15,10 +15,6 @@
 #include <vector>
 #include <set>
 
-#pragma warning (disable : 4800)
-#pragma warning (disable : 4311) //pointer truncation from 'void *' to 'unsigned int'
-#pragma warning (disable : 4312) //conversion from 'unsigned int' to 'void *' of greater size
-
 namespace pt
 {
 #define PARAMETER_MAP_TYPE Loki::AssocVector
@@ -389,7 +385,7 @@ struct ParameterList
 private:
 	bool operator()(int index, void *&v) const
 	{	
-		unsigned int p;
+        uintptr_t p;
 
 		if ((*this)(index, p))
 		{

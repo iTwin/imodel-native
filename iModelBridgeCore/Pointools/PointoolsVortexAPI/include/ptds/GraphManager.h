@@ -554,7 +554,7 @@ namespace ptds
 
 		for(t = 0; t < dim; t++)
 		{
-			v[t] = (static_cast<double>(rand()) / static_cast<double>(RAND_MAX));
+            v[t] = static_cast<float>((static_cast<double>(rand()) / static_cast<double>(RAND_MAX)));
 		}
 	}
 
@@ -838,7 +838,7 @@ namespace ptds
 
 		p3 = p2 + delta;
 
-		p3[1] = (getExtentsMax() - getExtentsMin())[1] * static_cast<double>(rand()) / static_cast<double>(RAND_MAX);
+		p3[1] = static_cast<float>((getExtentsMax() - getExtentsMin())[1] * static_cast<double>(rand()) / static_cast<double>(RAND_MAX));
 
 		add(p3);
 	}
@@ -1014,7 +1014,7 @@ namespace ptds
 			p += get(i);
 		}
 
-		p *= 1.0 / static_cast<T>(numPoints);
+		p *= 1.0f / static_cast<T>(numPoints);
 
 		return p;
 	}
@@ -1041,7 +1041,7 @@ namespace ptds
 			p += get(i);
 		}
 
-		p *= 1.0 / static_cast<T>(numPoints);
+		p *= 1.0f / static_cast<T>(numPoints);
 
 		return p;
 	}
@@ -1081,10 +1081,10 @@ namespace ptds
 
 		if(mean)
 		{
-			*mean = meanIndex;
+			*mean = static_cast<T>(meanIndex);
 		}
 
-		return variance;
+		return static_cast<T>(variance);
 	}
 
 
@@ -1155,9 +1155,9 @@ namespace ptds
 		}
 
 															// Calculate a and b constants where y = ax + b
-		a = sty / stt;
+		a = static_cast<T>(sty / stt);
 
-		b = (sy - a * sx) / n;
+		b = static_cast<T>((sy - a * sx) / n);
 															// Return OK
 		return true;
 	}

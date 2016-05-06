@@ -168,7 +168,7 @@ namespace pointsengine
 		{
 			if (allocate( m_capacity + m_chunkSize ))
 			{
-				m_chunkSize *= 1.25;
+				m_chunkSize *=static_cast<int>( 1.25);
 				return true;
 			}
 			return false;
@@ -214,7 +214,7 @@ namespace pointsengine
 	template <> 
 	void QueryPointsArray<float>::point( const pt::vec3<double> &pt, int index, ubyte layers )
 	{
-		addPoint(pt::vec3<float>(pt.x, pt.y, pt.z));
+		addPoint(pt::vec3<float>(static_cast<float>(pt.x), static_cast<float>(pt.y), static_cast<float>(pt.z)));
 	}
 
 //	template <> 

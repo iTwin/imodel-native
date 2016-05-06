@@ -39,7 +39,7 @@ ptds::DataSize StreamDataSource::executeReadSet(void)
 	if((totalReadSize = getReadSet()->getTotalReadSize()) == 0)
 		return 0;
 															// Make sure enough buffer space exists	
-	if((buffer = readSetBuffer.allocate(totalReadSize)) == NULL)
+    if ((buffer = readSetBuffer.allocate(static_cast<PTRMI::DataBuffer::DataSize>(totalReadSize))) == NULL)
 		return 0;
 															// Do all reads in read set as a single batch
 															// that reads into the single readSetBuffer
@@ -269,7 +269,7 @@ bool StreamDataSource::verifyReadSet(PTRMI::DataBuffer::Data *buffer, DataSource
 bool StreamDataSource::initializeReadSetBuffer(ptds::DataSize size)
 {
 															// Initialize internal buffer management with a buffer of given size
-	if(readSetBuffer.createInternalBuffer(size).isOK())
+	if(readSetBuffer.createInternalBuffer(static_cast<PTRMI::DataBuffer::DataSize>(size)).isOK())
 	{
 															// Return OK
 		return true;

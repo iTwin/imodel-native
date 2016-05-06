@@ -46,13 +46,13 @@ namespace ptds
 
 	bool DataSourceMemBlock::movePointerBy(DataPointer numBytes)
 	{
-		m_mem.move_wptr_by( numBytes );
+        m_mem.move_wptr_by(static_cast<int>(numBytes));
 		return true;
 	}
 
 	bool DataSourceMemBlock::movePointerTo(DataPointer numBytes)
 	{
-		m_mem.move_wptr_by( numBytes );	
+		m_mem.move_wptr_by(static_cast<int>(numBytes ));
 		return true;
 	}
 
@@ -77,22 +77,22 @@ namespace ptds
 
 	DataSource::Size DataSourceMemBlock::readBytes(Data *buffer, Size numBytes)
 	{
-		m_mem.read_bytes(buffer, numBytes, m_readPos);
+		m_mem.read_bytes(buffer, static_cast<int>(numBytes), static_cast<int>(m_readPos));
 		return numBytes;
 	}
 
 
 	DataSource::Size DataSourceMemBlock::readBytesFrom(Data *buffer, DataPointer position, Size numBytes)
 	{
-		int pos = position;
-		m_mem.read_bytes(buffer, numBytes, pos);
+		int pos = static_cast<int>(position);
+        m_mem.read_bytes(buffer, static_cast<int>(numBytes), pos);
 		return numBytes;
 	}
 
 
 	DataSource::Size DataSourceMemBlock::writeBytes(const Data *buffer, Size number_bytes)
 	{
-		if (m_mem.write_bytes( buffer, number_bytes ))
+		if (m_mem.write_bytes( buffer, static_cast<int>(number_bytes) ))
 			return number_bytes;
 		return 0;
 	}

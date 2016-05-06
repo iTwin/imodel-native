@@ -85,7 +85,7 @@ int PointsBuffer::setBufferSize( int newSize )
 			m_normal = 0;
 			m_points = 0;
 
-			numPoints *= 0.75;
+            numPoints = static_cast<int>(numPoints * 0.75);
 		}
 	}
 	m_bufferSize = numPoints;

@@ -22,8 +22,8 @@ namespace pcloud
 
 			pt::vector3d size(bb.dx(), bb.dy(), bb.dz());
 			int a = size.major_axis();
-			float val = bb.upper(a) - bb.lower(a);
-			int subd = val / accuracy;
+			float val = static_cast<float>(bb.upper(a) - bb.lower(a));
+			int subd = static_cast<int>(val / accuracy);
 
 			/* find lowest power of 2 that is above subd*/ 
 			int depth = 1;
@@ -81,7 +81,9 @@ namespace pcloud
 
 		static bool hashPoint(const pt::vector3d &vec, float multiple, uint64_t &hash)
 		{
-			pt::vector3i quantize_multiples(vec.x / multiple, vec.y / multiple, vec.z / multiple);
+            pt::vector3i quantize_multiples(static_cast<int>(vec.x / multiple), 
+                                            static_cast<int>(vec.y / multiple), 
+                                            static_cast<int>(vec.z / multiple));
 
 			/* trucate anything too big */ 
 			pt::vector3i large_component(quantize_multiples);
@@ -120,7 +122,7 @@ namespace pcloud
 		bool filter(const pt::vector3d &pnt,  double multiple)
 		{	
 			uint64_t hash;
-			if (!hashPoint(pnt, multiple, hash)) return false;
+            if (!hashPoint(pnt, static_cast<float>(multiple), hash)) return false;
 			PointsHashSet::iterator it = _phs->find(hash);
 			
 			if (it != _phs->end()) return false;
@@ -328,7 +330,7 @@ namespace pcloud
 				{
 					if (!_child[i]->hasChildren())
 					{
-						Voxel *vox = new Voxel(_lower, _upper, depth()+1, _child[i]->extents(), _child[i]->lodPointCount());
+                        Voxel *vox = new Voxel(_lower, _upper, depth() + 1, _child[i]->extents(), static_cast<uint>(_child[i]->lodPointCount()));
 						voxels.push_back(vox);
 
 						vox->addChannel(PCloud_Geometry, Float32, geomtype, 3, 0, 0, 0);
@@ -339,7 +341,7 @@ namespace pcloud
 							pt::vector3d sc(b.dx()/65336.0f, b.dy()/65336.0f, b.dz()/65336.0f);
 							pt::vector3d of(b.mid(0), b.mid(1), b.mid(2));
 
-							float t = tolerance * 0.1;
+							float t = tolerance * 0.1f;
 							if (sc.x< t) sc.x = t;
 							if (sc.y< t) sc.y = t;
 							if (sc.z< t) sc.z = t;

@@ -68,7 +68,7 @@ public:
 
 	/* plane's constant											*/ 
 	inline void constant(T k)		{ m_constant = k; m_base = m_normal * k; m_transform_dirty = true; }
-	inline float constant() const	{ return m_constant; }
+	inline float constant() const	{ return static_cast<float>(m_constant); }
 
 	/* plane's base position									*/ 
 	/* use instead of constant for simplified positioning		*/ 

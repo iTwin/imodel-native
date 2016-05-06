@@ -21,7 +21,7 @@ CDoubleBuffering::CDoubleBuffering(ifstream& in, char* pcBuff, int iSize, int iD
 	if(m_iDataLen<1 || m_iSize2<m_iDataLen)
 		throw runtime_error("CDoubleBuffering: Illegal Construction Data!");
 	in.read(m_pcBuff, m_iSize2);
-	m_iEnd = m_rin.gcount();
+    m_iEnd = static_cast<int>(m_rin.gcount());
 	m_iCurPos = 0;
 	m_iBuf = 0;
 }
@@ -52,7 +52,7 @@ int CDoubleBuffering::GetData(char* pszDataBuf, int iDataLen)
 			else
 			{
 				m_rin.read(m_pcBuff+m_iEnd, m_iSize2);
-				m_iEnd += m_rin.gcount();
+				m_iEnd += static_cast<int>(m_rin.gcount());
 				if(iCurPos > m_iEnd) //Still greater, then EOF attained
 				{
 					assert(m_rin.eof());
@@ -95,7 +95,7 @@ int CDoubleBuffering::GetData(char* pszDataBuf, int iDataLen)
 			else
 			{
 				m_rin.read(m_pcBuff, m_iSize2);
-				m_iEnd = m_rin.gcount();
+				m_iEnd = static_cast<int>(m_rin.gcount());
 				iCurPos %= m_iSize;
 				if(iCurPos > m_iEnd) //Still greater, then EOF attained
 				{

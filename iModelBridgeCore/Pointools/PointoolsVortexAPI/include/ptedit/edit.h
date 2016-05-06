@@ -29,5 +29,5 @@ z - offset float cast
 */
 #define PNT_BUFFER_VOXEL_CODE 0xffffffff
 #define PNT_BUFFER_OFFSET_CODE 0xffffff00
-#define MIN_FILTER 0.0625
+#define MIN_FILTER 0.0625f
 }

@@ -17,8 +17,6 @@
 #include <memory.h>
 #include <pt/classes.h>
 
-#pragma warning( disable : 4244 )
-
 namespace pt
 {
 /*--------------------------------------------------------------------------*/ 
@@ -252,9 +250,9 @@ public:
 			z /= vx.z;
 		}
 	inline void operator /= (const float &val) {
-			x /= val;
-			y /= val;
-			z /= val;
+			x = static_cast<short>(x / val);
+            y = static_cast<short>(y / val);
+            z = static_cast<short>(z / val);
 		}
 	inline void operator /= (const int &val) {
 			x /= val;
@@ -267,10 +265,10 @@ public:
 			z *= vx.z;
 		}
 	inline void operator *= (const float &val) {
-			x *= val;
-			y *= val;
-			z *= val;
-		}
+        x = static_cast<short>(x * val);
+        y = static_cast<short>(y * val);
+        z = static_cast<short>(z * val);
+    }
 	inline void operator *= (const int &val) {
 			x *= val;
 			y *= val;
@@ -294,26 +292,27 @@ public:
 		float dist = length();
 		if (dist)
 		{
-			x /= dist;
-			y /= dist;
-			z /= dist;
+            x = static_cast<short>(x / dist);
+            y = static_cast<short>(y / dist);
+            z = static_cast<short>(z / dist);
+
 		}
 	}
 	/*length and distance*/ 
-	inline float length2() const				{ return x*x + y*y + z*z; }
+	inline float length2() const				{ return static_cast<float>(x*x + y*y + z*z); }
 	inline float length() const					{ return sqrt(length2()); }
 	inline float dist(const vector3s &vx) const	{ return sqrt(dist2(vx));}
 	
 	inline float dist2(const vector3s &vx) const
 	{
-		float dx = x - vx.x;
-		float dy = y - vx.y;
-		float dz = z - vx.z;
+		float dx = (float)(x - vx.x);
+		float dy = (float)(y - vx.y);
+		float dz = (float)(z - vx.z);
 
 		return dx*dx+dy*dy+dz*dz;
 	}
 	/*dot*/ 
-	float dot (const vector3s& vx) const { return x*vx.x + y*vx.y + z*vx.z; }
+	float dot (const vector3s& vx) const { return (float)(x*vx.x + y*vx.y + z*vx.z); }
 	
 	/*cross*/ 
 	inline vector3s cross (const vector3s& vx) const
@@ -363,7 +362,7 @@ public:
 	vec3() {};
 	vec3(const vector3s &vs) { x = vs.x; y = vs.y; z = vs.z; }
 	vec3(const float*v) { x = v[0]; y = v[1]; z = v[2]; }
-	vec3(const double*v) { x = v[0]; y = v[1]; z = v[2]; }
+	vec3(const double*v) { x = static_cast<T>(v[0]); y = static_cast<T>(v[1]); z = static_cast<T>(v[2]); }
 	vec3(const vec3<T> &a, const vec3<T> &b) { *this = b; *this -= a; };
 	vec3(const T &nx, const T &ny, const T &nz)
 	{
@@ -425,6 +424,9 @@ public:
 	inline vec3 operator * (const float &v) const	{
 		return vec3<T>(x * v, y * v, z * v);}
 
+	inline vec3 operator * (const double &v) const	{
+		return vec3<T>(x * v, y * v, z * v);}
+
 	inline vec3<T> operator / (const vec3<T>& vx) const {
 		return vec3<T>(x / vx.x, y / vx.y, z / vx.z); };
 
@@ -452,9 +454,9 @@ public:
 			z /= val;
 		}
 	inline void operator /= (const double &val) {
-			x /= val;
-			y /= val;
-			z /= val;
+			x /= static_cast<T>(val);
+			y /= static_cast<T>(val);
+			z /= static_cast<T>(val);
 		}
 	inline void operator /= (const int &val) {
 			x /= val;
@@ -491,7 +493,7 @@ public:
 	inline void get(float *d) const { d[0] = x; d[1] = y; d[2] = z; };
 	inline void set(const float &nx, const float &ny, const float &nz)	{ x = nx; y = ny; z = nz; };
 	inline void set(const float *d)	{ x = d[0]; y = d[1]; z = d[2]; };
-	inline void set(const double *d)	{ x = d[0]; y = d[1]; z = d[2]; };
+	inline void set(const double *d)	{ x = static_cast<T>(d[0]); y = static_cast<T>(d[1]); z = static_cast<T>(d[2]); };
 	inline void set(const float &val) { x = val; y = val; z = val; };
 	inline void zero() { x = 0; y = 0; z = 0; };
 
@@ -713,7 +715,7 @@ struct Ray
 	{	
 		perpPntProjection(pnt, t);
 
-		vec3<Real> onRay(origin + direction * t);
+        vec3<Real> onRay(origin + direction * static_cast<Real>(t));
 		dist = (onRay - pnt).length();
 
 		return (t >= 0) ? true : false;

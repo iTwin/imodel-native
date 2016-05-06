@@ -64,11 +64,11 @@ DataTable &DataTable::operator = (const DataTable &dt)
 	return *this;
 }
 
-void DataTable::addP(const DTID &id, int *ptr)		{ if (!set(id, ptr)) pintegers.insert(PINTMAP::value_type(id, ptr));	}
-void DataTable::addP(const DTID &id, float *ptr)	{ if (!set(id, ptr)) pfloats.insert(PFLOATMAP::value_type(id, ptr));	}
-void DataTable::addP(const DTID &id, bool *ptr)		{ if (!set(id, ptr)) pbools.insert(PBOOLMAP::value_type(id, ptr));		}
-void DataTable::addP(const DTID &id, vector3 *ptr)	{ if (!set(id, ptr)) pvectors.insert(PVEC3MAP::value_type(id, ptr));	}
-void DataTable::addP(const DTID &id, String *ptr)	{ if (!set(id, ptr)) pstrings.insert(PSTRINGMAP::value_type(id, ptr));	}
+void DataTable::addP(const DTID &id, int *ptr)	    { if (!set(id, *ptr)) pintegers.insert(PINTMAP::value_type(id, ptr));	}
+void DataTable::addP(const DTID &id, float *ptr)	{ if (!set(id, *ptr)) pfloats.insert(PFLOATMAP::value_type(id, ptr));	}
+void DataTable::addP(const DTID &id, bool *ptr)		{ if (!set(id, *ptr)) pbools.insert(PBOOLMAP::value_type(id, ptr));		}
+void DataTable::addP(const DTID &id, vector3 *ptr)	{ if (!set(id, *ptr)) pvectors.insert(PVEC3MAP::value_type(id, ptr));	}
+void DataTable::addP(const DTID &id, String *ptr)	{ if (!set(id, ptr->c_str())) pstrings.insert(PSTRINGMAP::value_type(id, ptr));	}
 
 void DataTable::clear()
 {

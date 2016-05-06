@@ -320,7 +320,7 @@ bool ClipManager::inside(int thread, const pt::vector3d &pnt)
 
 	// no active clip planes so inside
 	if (numActivePlanes[thread] == 0)
-		return ptedit::FullyInside; 
+		return true; //ptedit::FullyInside; 
 
 	PTuint clipStyle[EDT_MAX_THREADS];
 	clipStyle[thread] = ClipManager::instance().getClipStyle();

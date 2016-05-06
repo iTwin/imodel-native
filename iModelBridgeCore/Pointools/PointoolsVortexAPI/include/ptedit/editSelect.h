@@ -163,7 +163,7 @@ public:
 		}
 
 		t1.tick();
-		_lastProcessTime = t1.delta_ms(t0, t1);
+		_lastProcessTime = static_cast<int>(t1.delta_ms(t0, t1));
 		return _didSelect ? true : false;
 	}
 
@@ -428,7 +428,7 @@ private:
 	//---------------------------------------------------------------------------------------------
 	int processSelectionFullInclusion( pcloud::Node* n )
 	{
-		_didSelect += n->lodPointCount();
+        _didSelect += static_cast<int>(n->lodPointCount());
 
 		switch (g_state.selmode)
 		{

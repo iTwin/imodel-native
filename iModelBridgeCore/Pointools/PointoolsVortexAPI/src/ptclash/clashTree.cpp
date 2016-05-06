@@ -348,25 +348,25 @@ PTres ClashTree::_getLeafBounds(PTfloat* extents, PTdouble* center, PTfloat* xAx
 
 	for (int i=0; i<boxes.size(); i++)
 	{
-		extents[i*3] = boxes.at(i).extents().x;
-		extents[(i*3)+1] = boxes.at(i).extents().y;
-		extents[(i*3)+2] = boxes.at(i).extents().z;
+		extents[i*3]     = static_cast<PTfloat>(boxes.at(i).extents().x);
+		extents[(i*3)+1] = static_cast<PTfloat>( boxes.at(i).extents().y);
+		extents[(i*3)+2] = static_cast<PTfloat>( boxes.at(i).extents().z);
 
-		center[i*3] = boxes.at(i).center().x;
-		center[(i*3)+1] = boxes.at(i).center().y;
-		center[(i*3)+2] = boxes.at(i).center().z;
+		center[i*3]     =  static_cast<PTfloat>(boxes.at(i).center().x);
+		center[(i*3)+1] =  static_cast<PTfloat>(boxes.at(i).center().y);
+		center[(i*3)+2] =  static_cast<PTfloat>(boxes.at(i).center().z);
 
-		xAxis[i*3] = boxes.at(i).axis(0).x;
-		xAxis[(i*3)+1] = boxes.at(i).axis(0).y;
-		xAxis[(i*3)+2] = boxes.at(i).axis(0).z;
+		xAxis[i*3]     =  static_cast<PTfloat>(boxes.at(i).axis(0).x);
+		xAxis[(i*3)+1] =  static_cast<PTfloat>(boxes.at(i).axis(0).y);
+		xAxis[(i*3)+2] =  static_cast<PTfloat>(boxes.at(i).axis(0).z);
 
-		yAxis[i*3] = boxes.at(i).axis(1).x;
-		yAxis[(i*3)+1] = boxes.at(i).axis(1).y;
-		yAxis[(i*3)+2] = boxes.at(i).axis(1).z;
+		yAxis[i*3]     =  static_cast<PTfloat>(boxes.at(i).axis(1).x);
+		yAxis[(i*3)+1] =  static_cast<PTfloat>(boxes.at(i).axis(1).y);
+		yAxis[(i*3)+2] =  static_cast<PTfloat>(boxes.at(i).axis(1).z);
 
-		zAxis[i*3] = boxes.at(i).axis(2).x;
-		zAxis[(i*3)+1] = boxes.at(i).axis(2).y;
-		zAxis[(i*3)+2] = boxes.at(i).axis(2).z;
+		zAxis[i*3]     =  static_cast<PTfloat>(boxes.at(i).axis(2).x);
+		zAxis[(i*3)+1] =  static_cast<PTfloat>(boxes.at(i).axis(2).y);
+		zAxis[(i*3)+2] =  static_cast<PTfloat>(boxes.at(i).axis(2).z);
 	}
 
 	return PTV_NOT_IMPLEMENTED_IN_VERSION;

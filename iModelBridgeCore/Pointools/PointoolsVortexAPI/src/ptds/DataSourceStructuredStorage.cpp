@@ -181,7 +181,7 @@ DataSource::Size DataSourceStructuredStorage::readBytes(Data *buffer, Size numbe
 
 		beginRead(numberByesToRead);
 
-		if(FAILED(hres = getStream()->Read(buffer, numberByesToRead, &numberBytesRead)))
+		if(FAILED(hres = getStream()->Read(buffer, static_cast<ULONG>(numberByesToRead), &numberBytesRead)))
 			return 0;
 
 		endRead(numberByesToRead);
@@ -197,7 +197,7 @@ DataSource::Size DataSourceStructuredStorage::writeBytes(const Data *buffer, Siz
 
 	if(validHandle())
 	{
-		if(FAILED(getStream()->Write(buffer, numberBytesToWrite, &numberBytesWritten)))
+		if(FAILED(getStream()->Write(buffer, static_cast<ULONG>(numberBytesToWrite), &numberBytesWritten)))
 			return 0;
 	}
 

@@ -65,10 +65,10 @@ void GlobalState::readState( const pt::datatree::Branch* b )
 	b->getNode("editScopeIsScene", scopeIsScene);
 	b->getNode("editScopeInstance", scopeInstance);
 
-	g_currentLayer = layer.layers[0];
-	g_activeLayers = layer.layers[1];
-	g_visibleLayers = layer.layers[2];
-	g_lockedLayers = layer.layers[3];
+    g_currentLayer = static_cast<ubyte>(layer.layers[0]);
+	g_activeLayers = static_cast<ubyte>(layer.layers[1]);
+	g_visibleLayers = static_cast<ubyte>(layer.layers[2]);
+	g_lockedLayers = static_cast<ubyte>(layer.layers[3]);
 
 	/* constraint state */ 
 	datatree::Branch* c = b->getBranch("constraint");

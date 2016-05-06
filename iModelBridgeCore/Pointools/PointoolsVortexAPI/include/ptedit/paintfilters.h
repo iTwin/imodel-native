@@ -166,9 +166,8 @@ namespace ptedit
 			{
 				pt::vector3d d[EDT_MAX_THREADS];
 				d[t] = paint.center - pnt;
-
 				float dist[EDT_MAX_THREADS];
-				dist[t] = d[t].x*d[t].x+d[t].y*d[t].y+d[t].z*d[t].z;
+				dist[t] = static_cast<float>(d[t].x*d[t].x+d[t].y*d[t].y+d[t].z*d[t].z);
 
 				return dist[t] < g_selBrush.brush.radius2() ? true : false;
 			}
@@ -213,7 +212,7 @@ namespace ptedit
 			else
 			{
 				/* check for full inclusion */ 
-				float rx2 = g_paint.brush.radius() * 2;
+                float rx2 = static_cast<float>(g_paint.brush.radius() * 2);
 				pt::vector3d corner;
 				int i=0;
 				for (i; i<8; i++)
@@ -230,13 +229,13 @@ namespace ptedit
 					{
 						if( cen[i] < bb.lower(i) )
 						{
-							s = cen[i] - bb.lower(i);
+							s = static_cast<float>(cen[i] - bb.lower(i));
 							d += s*s;
 						}
 
 						else if( cen[i] > bb.upper(i) )
 						{
-							s = cen[i] - bb.upper(i);
+							s = static_cast<float>(cen[i] - bb.upper(i));
 							d += s*s;
 						}
 
@@ -275,26 +274,26 @@ namespace ptedit
 			}
 			else
 			{
-				res[0] = dst[0] * ia;
-				res[1] = dst[1] * ia;
-				res[2] = dst[2] * ia;
+				res[0] = static_cast<int>(dst[0] * ia);
+				res[1] = static_cast<int>(dst[1] * ia);
+				res[2] = static_cast<int>(dst[2] * ia);
 
-				res[0] += a * src[0];
-				res[1] += a * src[1];
-				res[2] += a * src[2];	
+				res[0] += static_cast<int>(a * src[0]);
+				res[1] += static_cast<int>(a * src[1]);
+				res[2] += static_cast<int>(a * src[2]);	
 			}
 		}
 		static void mixBack( int *res, const ubyte *dst, float a, float ia)
 		{
-			res[0] = (a * res[0]) + (ia * dst[0]);
-			res[1] = (a * res[1]) + (ia * dst[1]);
-			res[2] = (a * res[2]) + (ia * dst[2]);
+			res[0] = static_cast<int>((a * res[0]) + (ia * dst[0]));
+			res[1] = static_cast<int>((a * res[1]) + (ia * dst[1]));
+			res[2] = static_cast<int>((a * res[2]) + (ia * dst[2]));
 		}
 		static void multiply( const ubyte *src, const ubyte *dst, float a, float ia, int *res )
 		{
-			res[0] = (float)dst[0] * (float)src[0] / 255;
-			res[1] = (float)dst[1] * (float)src[1] / 255;
-			res[2] = (float)dst[2] * (float)src[2] / 255;
+			res[0] = static_cast<int>((float)dst[0] * (float)src[0] / 255);
+			res[1] = static_cast<int>((float)dst[1] * (float)src[1] / 255);
+			res[2] = static_cast<int>((float)dst[2] * (float)src[2] / 255);
 
 			mixBack( res, dst, a, ia);
 		}
@@ -302,15 +301,15 @@ namespace ptedit
 		{
 			if (dst[0] + dst[1] + dst[2] < 384)
 			{
-				res[0]= (float)( 2 * dst[0] * src[0] ) / 255;
-				res[1]= (float)( 2 * dst[1] * src[1] ) / 255;
-				res[2]= (float)( 2 * dst[2] * src[2] ) / 255;
+				res[0]= static_cast<int>((float)( 2 * dst[0] * src[0] ) / 255);
+				res[1]= static_cast<int>((float)( 2 * dst[1] * src[1] ) / 255);
+				res[2]= static_cast<int>((float)( 2 * dst[2] * src[2] ) / 255);
 			}
 			else
 			{
-				res[0]= 255 - ((float)( 2* (255-dst[0])*(255-src[0]) ) / 255);
-				res[1]= 255 - ((float)( 2* (255-dst[1])*(255-src[1]) ) / 255);
-				res[2]= 255 - ((float)( 2* (255-dst[2])*(255-src[2]) ) / 255);
+				res[0]= static_cast<int>(255 - ((float)( 2* (255-dst[0])*(255-src[0]) ) / 255));
+				res[1]= static_cast<int>(255 - ((float)( 2* (255-dst[1])*(255-src[1]) ) / 255));
+				res[2]= static_cast<int>(255 - ((float)( 2* (255-dst[2])*(255-src[2]) ) / 255));
 			}
 			mixBack( res, dst, a, ia);
 		}
@@ -583,15 +582,15 @@ namespace ptedit
 
 			uint *tmp = &_tmp[t*3];
 			
-			d[t] = 255 * lastDist(t) / g_paint.brush.radius2();
+			d[t] = static_cast<int>(255 * lastDist(t) / g_paint.brush.radius2());
 			b[t] = g_paint.brush.alpha(d[t]) * g_paint.alpha;
 
 			if (mult >= 0)
 			{
 				ubyte col_adj[EDT_MAX_THREADS*3];
-				col_adj[t*3] = (float)col[0] * mult;
-				col_adj[t*3+1] = (float)col[1] * mult;
-				col_adj[t*3+2] = (float)col[2] * mult;
+				col_adj[t*3]   = static_cast<ubyte>((float)col[0] * mult);
+				col_adj[t*3+1] = static_cast<ubyte>((float)col[1] * mult);
+				col_adj[t*3+2] = static_cast<ubyte>((float)col[2] * mult);
 
 				BlendMode::blend( PaintModeNormal, t, col_adj, dst, b[t], dst );
 			}
@@ -658,7 +657,7 @@ namespace ptedit
 				d[t] = paint.center - pnt;
 
 				float dist[EDT_MAX_THREADS];
-				dist[t] = d[t].x*d[t].x+d[t].y*d[t].y+d[t].z*d[t].z;
+				dist[t] = static_cast<float>(d[t].x*d[t].x+d[t].y*d[t].y+d[t].z*d[t].z);
 
 				lastDist(t) = dist[t];
 				return dist[t] < g_paint.brush.radius2() ? true : false;

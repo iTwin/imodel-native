@@ -136,10 +136,10 @@ public:
 			{
 				++j;
 				
-				x_i = m_points[i].x;
-				y_i = m_points[i].y;
-				x_j = m_points[j%size].x;
-				y_j = m_points[j%size].y;
+				x_i = static_cast<float>(m_points[i].x);
+				y_i = static_cast<float>(m_points[i].y);
+				x_j = static_cast<float>(m_points[j%size].x);
+				y_j = static_cast<float>(m_points[j%size].y);
 
 				if (y_i < y && y_j >= y || y_j < y && y_i >= y)
 					if (x_i + (y - y_i) /(y_j - y_i) * (x_j - x_i) < x)

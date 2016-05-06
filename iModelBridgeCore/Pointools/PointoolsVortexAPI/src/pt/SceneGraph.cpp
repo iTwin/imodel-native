@@ -959,12 +959,12 @@ void Object3D::visitInterface(InterfaceVisitor *visitor) const
 	}
 	else
 	{
-		l.set(	m_projectBounds.bounds().lx(),
-				m_projectBounds.bounds().ly(),
-				m_projectBounds.bounds().lz() );
-		u.set(	m_projectBounds.bounds().ux(),
-				m_projectBounds.bounds().uy(),
-				m_projectBounds.bounds().uz() );
+		l.set(	static_cast<float>(m_projectBounds.bounds().lx()),
+				static_cast<float>(m_projectBounds.bounds().ly()),
+				static_cast<float>(m_projectBounds.bounds().lz()) );
+		u.set(	static_cast<float>(m_projectBounds.bounds().ux()),
+				static_cast<float>(m_projectBounds.bounds().uy()),
+				static_cast<float>(m_projectBounds.bounds().uz()) );
 
 		Project3D::project().project2WorldSpace(l, wl);
 		Project3D::project().project2WorldSpace(u, wu);

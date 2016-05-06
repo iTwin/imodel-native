@@ -81,7 +81,7 @@ namespace pcloud
 
 		/* used during indexing only */ 
 		void readChannel(Channel ch, int count, void* data);
-		inline int size() const { return lodPointCount(); }
+		inline uint64 size() const { return lodPointCount(); }
 
 		/* resize in-core allocation for channel to the requested lod */ 
 		void* resizeChannelToRequestedLod(Channel ch, float amount, int &num_points, uint &num_bytes, uint &bytes_offset, bool multRequest = true);
@@ -415,7 +415,7 @@ namespace pcloud
 		{
 			pcloud::DataChannel *geom = _channels[pcloud::PCloud_Geometry];
 
-			uint end = amount * getNumPointsAtLOD(getCurrentLOD());
+            uint end = static_cast<uint>(amount * getNumPointsAtLOD(getCurrentLOD()));
 
 			_iterateTransformedPointsRange( R, T, layerMask, 0, end );
 		}

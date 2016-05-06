@@ -462,13 +462,13 @@ PTres	PTAPI ptLayerBounds( PTuint layer, PTfloat *lower3, PTfloat *upper3, bool 
 	pt::BoundingBoxD box;
 	if (PointEditManager::instance()->getLayerBoundingBox( layer, box, approx_fast ))
 	{
-		lower3[0] = box.lx();
-		lower3[1] = box.ly();
-		lower3[2] = box.lz();
+        lower3[0] = static_cast<PTfloat>(box.lx());
+		lower3[1] = static_cast<PTfloat>(box.ly());
+		lower3[2] = static_cast<PTfloat>(box.lz());
 
-		upper3[0] = box.ux();
-		upper3[1] = box.uy();
-		upper3[2] = box.uz();
+		upper3[0] = static_cast<PTfloat>(box.ux());
+		upper3[1] = static_cast<PTfloat>(box.uy());
+		upper3[2] = static_cast<PTfloat>(box.uz());
 
 		PTTRACEOUT << " = " << lower3[0] << ", " << lower3[1] << ", " << lower3[2] << " to " << upper3[0] << ", " << upper3[1] << ", " << upper3[2] ;
 
@@ -514,7 +514,7 @@ PTint PTAPI ptGetEditData( PTint index, PTubyte *data )
 		ptds::DataSourcePtr memBlock = ptds::DataSourceMemBlock::createNew();
 		writeBinaryDatatree( dtree, memBlock );
 
-		int fs = memBlock->getFileSize();
+        int fs = static_cast<int>(memBlock->getFileSize());
 		void * buffer = static_cast<ptds::DataSourceMemBlock*>(memBlock)->getWriteBuffer();
 		memcpy(data, buffer, fs);
 
@@ -539,7 +539,7 @@ PTint PTAPI ptGetEditDataSize( PTint index )
 
 		writeBinaryDatatree( dtree, memBlock );
 
-		int fs = memBlock->getFileSize();
+		int fs = static_cast<int>(memBlock->getFileSize());
 		memBlock->closeAndDelete();
 		return fs;
 	}

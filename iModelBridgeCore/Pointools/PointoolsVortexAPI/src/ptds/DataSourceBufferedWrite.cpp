@@ -14,9 +14,9 @@ DataSourceBufferedWrite::DataSourceBufferedWrite( DataSourcePtr dataSrc, DataSou
 
 	if (!allocateBuffer(bufferSize))
 	{
-		bufferSize *= 0.5;
+        bufferSize = static_cast<DataSource::Size>(bufferSize * 0.5);
 		if (!allocateBuffer(bufferSize))
-			bufferSize *= 0.5;
+            bufferSize = static_cast<DataSource::Size>(bufferSize * 0.5);
 
 		allocateBuffer(bufferSize);
 	}

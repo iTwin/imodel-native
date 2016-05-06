@@ -83,7 +83,7 @@ void	VoxelInPlaceBuffer::reset()
 /*****************************************************************************/
 int		VoxelInPlaceBuffer::setBufferSize( int newSize )
 {
-	return (m_voxel) ? m_voxel->size() : 0;		// has no effect;
+	return (m_voxel) ? static_cast<int>(m_voxel->size()) : 0;		// has no effect;
 }
 
 /*****************************************************************************/

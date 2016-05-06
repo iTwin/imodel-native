@@ -23,8 +23,10 @@
 #include <ptcloud2/bitvoxelgrid.h>
 #include <ptcloud2/pod.h>
 
+#ifdef HAVE_OPENGL
 #include <ptgl/glcamera.h>
 #include <ptgl/gltext.h>
+#endif
 
 #include <pt/project.h>
 #include <pt/timer.h>
@@ -246,11 +248,11 @@ namespace querydetail
 				pcloudOnly = cloudFromHandle(scope);
 				sceneOnly = sceneFromHandle(scope);
 			}
-			world2prj.set(-pt::Project3D::project().registration().matrix()(3,0),
-				-pt::Project3D::project().registration().matrix()(3,1),
-				-pt::Project3D::project().registration().matrix()(3,2));
-		};
-		//---------------------------------------------------------------------
+			world2prj.set(static_cast<float>(-pt::Project3D::project().registration().matrix()(3,0)),
+                          static_cast<float>(-pt::Project3D::project().registration().matrix()(3,1)),
+                          static_cast<float>(-pt::Project3D::project().registration().matrix()(3, 2)));
+        };
+        //---------------------------------------------------------------------
 		bool scene(pcloud::Scene *sc)
 		{
 			if (sceneOnly && sc != sceneOnly) return false;
@@ -349,10 +351,10 @@ namespace querydetail
 			spatialGridFailure = false;
 			doSelect = select;
 
-			world2prj.set(-pt::Project3D::project().registration().matrix()(3,0),
-				-pt::Project3D::project().registration().matrix()(3,1),
-				-pt::Project3D::project().registration().matrix()(3,2));
-
+			world2prj.set(static_cast<float>(-pt::Project3D::project().registration().matrix()(3,0)),
+				          static_cast<float>(-pt::Project3D::project().registration().matrix()(3,1)),
+				          static_cast<float>(-pt::Project3D::project().registration().matrix()(3,2)));
+                                                                                                   
 		}
 		//---------------------------------------------------------------------
 		bool scene(pcloud::Scene *sc)
@@ -570,10 +572,10 @@ namespace querydetail
 				selcol[2] = 0;
 			}
 
-			world2prj.set(-pt::Project3D::project().registration().matrix()(3,0),
-					-pt::Project3D::project().registration().matrix()(3,1),
-					-pt::Project3D::project().registration().matrix()(3,2));
-
+			world2prj.set(static_cast<float>(-pt::Project3D::project().registration().matrix()(3,0)),
+                          static_cast<float>(-pt::Project3D::project().registration().matrix()(3,1)),
+                          static_cast<float>(-pt::Project3D::project().registration().matrix()(3,2)));
+                                                                                                 
 			/* detailed */
 			if (_numPointChannels > 32) _numPointChannels = 32;
 
@@ -1244,9 +1246,9 @@ namespace querydetail
 				{
 					if (buffer)
 					{
-						buffer[rwPos.counter*3] = pnt.x;
-						buffer[rwPos.counter*3+1] = pnt.y;
-						buffer[rwPos.counter*3+2] = pnt.z;
+						buffer[rwPos.counter*3] =   static_cast<T>(pnt.x);
+						buffer[rwPos.counter*3+1] = static_cast<T>(pnt.y);
+						buffer[rwPos.counter*3+2] = static_cast<T>(pnt.z);
 					}
 
 					if (colBuffer)
@@ -1599,12 +1601,12 @@ namespace querydetail
 						break;
 
 					case PT_QUERY_DENSITY_FULL:						// full density, but modulated by coeff
-						count += v->fullPointCount() * densityCoeff;
+                        count = static_cast<int64_t>(count + (v->fullPointCount() * densityCoeff));
 						break;
 
 					case PT_QUERY_DENSITY_VIEW_COMPLETE:
 					case PT_QUERY_DENSITY_VIEW:						// current view based density
-						count += densityCoeff * v->getRequestLOD() * v->fullPointCount();
+						count = static_cast<int64_t>(count + (densityCoeff * v->getRequestLOD() * v->fullPointCount()));
 						break;
 					}
 				}
@@ -2162,9 +2164,9 @@ public:
 	unsigned int getPointCount(void)
 	{
 		if(getNode()->isLeaf())
-			return reinterpret_cast<pcloud::Voxel *>(getNode())->fullPointCount();
+            return static_cast<uint>(reinterpret_cast<pcloud::Voxel *>(getNode())->fullPointCount());
 
-		return getNode()->lodPointCount();
+		return static_cast<uint>(getNode()->lodPointCount());
 	}
 
 															// Implements Min Priority queue by inverting comparison
@@ -2630,12 +2632,12 @@ public:
 
 	void setK(PTint initK)
 	{
-		k = initK;
+		k = static_cast<Real>(initK);
 	}
 
     PTuint getK(void)
 	{
-		return k;
+		return static_cast<PTuint>(k);
 	}
 
 	void setQueryLOD(PTfloat lod)
@@ -3231,10 +3233,10 @@ float distMin = queryBox.minDistanceSquared(extents);
 	 */
 	void getExtents(pcloud::Node *node, ReadPoints &visitor, pt::BoundingBox &result)
 	{
-		result.setBox(node->extents().ux(), node->extents().lx(),
-					node->extents().uy(), node->extents().ly(),
-					node->extents().uz(), node->extents().lz());
-		result.translateBy(pt::vector3(visitor.world2prj.x, visitor.world2prj.y, visitor.world2prj.z));
+        result.setBox(static_cast<float>(node->extents().ux()), static_cast<float>(node->extents().lx()),
+					  static_cast<float>(node->extents().uy()), static_cast<float>(node->extents().ly()),
+					  static_cast<float>(node->extents().uz()), static_cast<float>(node->extents().lz()));
+		result.translateBy(pt::vector3(static_cast<float>(visitor.world2prj.x), static_cast<float>(visitor.world2prj.y), static_cast<float>(visitor.world2prj.z)));
 	}
 
 	void getExtents(pcloud::Node *node, ReadPoints &visitor, pt::BoundingBoxD &result)
@@ -3473,7 +3475,7 @@ PTfloat PTAPI ptFindNearestPoint( PThandle scene, const PTdouble *pnt, PTdouble 
 			nearest[0] *= g_unitScale;
 			nearest[1] *= g_unitScale;
 			nearest[2] *= g_unitScale;
-			return dist * g_unitScale;
+			return static_cast<PTfloat>(dist * g_unitScale);
 		}
 		else
 		{
@@ -3498,7 +3500,7 @@ PTfloat PTAPI ptFindNearestPoint( PThandle scene, const PTdouble *pnt, PTdouble 
 		nearest[1] *= g_unitScale;
 		nearest[2] *= g_unitScale;
 		ndist *= g_unitScale;
-		return ndist >= 0 ? ndist : -1.0f;
+        return static_cast<PTfloat>(ndist >= 0 ? ndist : -1.0f);
 	}
 	return -1.0f;
 }
@@ -4355,9 +4357,10 @@ struct FrustumQuery : public Query
 	//-------------------------------------------------------------------------
 	void resetQuery()
 	{
+#ifdef HAVE_OPENGL
 		extern ptgl::Camera g_camera;
 		extern ptgl::Light g_light;
- 
+#endif 
 		Query::resetQuery();
 
 		/*	if (_writer) delete _writer;

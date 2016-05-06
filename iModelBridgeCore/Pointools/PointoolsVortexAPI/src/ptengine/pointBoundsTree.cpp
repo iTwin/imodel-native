@@ -255,12 +255,12 @@ bool PointsBoundsTree::extendTree(
 	
 	tree->pointsProcessed = 0;
 
-	float vol_region = region.extents().x * region.extents().y * region.extents().z;
+    float vol_region = static_cast<float>(region.extents().x * region.extents().y * region.extents().z);
 	if (vol_region < 0.001) vol_region = 1.0;
 
-	float vol_cloud = cloud->root()->extents().volume();
+	float vol_cloud = static_cast<float>(cloud->root()->extents().volume());
 
-	tree->totalPoints = cloud->numPoints() * vol_cloud / vol_region;	// of course this is not exact
+    tree->totalPoints = static_cast<int64_t>(cloud->numPoints() * vol_cloud / vol_region);	// of course this is not exact
 
 	// extract overlapping tree nodes
 	std::set< const TreeNode* > leaves;
@@ -687,7 +687,7 @@ bool PointsBoundsTree::buildTreeDetail( TreeNode *_node, TreeNode *_parent,
 				data->node->left()->setFlag( TreeNode::Complete );
 
 				// set the element count, scale by lod of points
-				int numPoints =  (float)left_pnts->size() / ((proportionFiltered>0) ?  proportionFiltered : 1.0f);
+                int numPoints = static_cast<int>((float)left_pnts->size() / ((proportionFiltered > 0) ? proportionFiltered : 1.0f));
 				data->node->left()->setElementCount( numPoints );
 
 				left_pnts->destroy();
@@ -743,7 +743,7 @@ bool PointsBoundsTree::buildTreeDetail( TreeNode *_node, TreeNode *_parent,
 				data->node->right()->setFlag( TreeNode::Complete );
 				
 				// set the element count, scale by lod of points
-				int numPoints =  (float)right_pnts->size() / ((proportionFiltered>0) ?  proportionFiltered : 1.0f);
+				int numPoints = static_cast<int>((float)right_pnts->size() / ((proportionFiltered>0) ?  proportionFiltered : 1.0f));
 
 				data->node->right()->setElementCount( numPoints );
 
@@ -1010,11 +1010,11 @@ int		PointsBoundsTree::getBuildTargetPntsPerBox() const
 }	
 int		PointsBoundsTree::getBuildMinBoxDim() const
 {
-	return m_minDim;
+	return static_cast<int>(m_minDim);
 }
 int		PointsBoundsTree::getBuildMaxBoxDim() const
 {
-	return m_maxDim;
+	return static_cast<int>(m_maxDim);
 }
 
 

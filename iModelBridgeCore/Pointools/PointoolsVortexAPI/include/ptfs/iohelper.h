@@ -137,7 +137,7 @@ namespace ptds
 		DataPointer position() const { return _filepointer; }
 		
 		/* Warning: does not move the filepointer itself */ 
-		void advance(uint bytes) { _filepointer += bytes; }
+		void advance(DataSize bytes) { _filepointer += bytes; }
 
 		/*place holders for references*/ 
 		void insertPlaceholder(uint id)
@@ -348,6 +348,7 @@ namespace ptds
 			{
 				h->readBytes(_buffersize);
 			}
+
 			_chunksize = _buffersize > READ_BUFFER_CHUNK ? READ_BUFFER_CHUNK : _buffersize;
 			_chunkstart = 0;
 
@@ -384,14 +385,14 @@ namespace ptds
 			if (_tracker) return tracker()->position() - _buffersize + _pos;
 			return 0;
 		}
-		uint readChunk(int size = READ_BUFFER_CHUNK)
+		DataSize readChunk(DataSize size = READ_BUFFER_CHUNK)
 		{
 			/*check end condition*/ 
 			if (_pos >= _buffersize) return 0;			
-			if (_pos + size > _buffersize)	size = _buffersize - _pos;
+			if (_pos + size > _buffersize)	size =_buffersize - _pos;
 
 			/*calc remaining unread of chunk*/ 
-			int chunkunread = _chunksize - (_pos - _chunkstart);
+			DataSize chunkunread = _chunksize - (_pos - _chunkstart);
 
 			size += chunkunread;
 
@@ -410,7 +411,7 @@ namespace ptds
 			_chunkstart = _pos;
 
 			/*read chunk*/ 
-			unsigned int ret =_H->readBytes(&_buffer[chunkunread], _chunksize-chunkunread);
+			DataSize ret =_H->readBytes(&_buffer[chunkunread], _chunksize-chunkunread);
 			if (!ret)
 				_blockErrors.increment();
 	
@@ -516,11 +517,11 @@ namespace ptds
 			return true;
 		}
 
-		int size() const { return _buffersize; }
+		DataSize size() const { return _buffersize; }
 
 		unsigned int numErrors(void) { return _blockErrors.numErrors(); }
 
-		uint				_chunksize;
+		DataSize			_chunksize;
 		int64_t				_chunkstart;
 
 		BlockErrorTracker	_blockErrors;
@@ -628,7 +629,7 @@ namespace ptds
 
 			return res;
 		}
-		bool write(const void *d, uint size)
+		bool write(const void *d, DataSize size)
 		{
 			assert(_buffer);
 
@@ -727,7 +728,7 @@ namespace ptds
 			_pos += num_bytes;
 			return true;
 		}
-		bool reserve(uint size)
+		bool reserve(DataSize size)
 		{
 			assert(_buffer);
 
@@ -772,7 +773,7 @@ namespace ptds
 				}
 				else
 				{
-					uint size = _commitpos;
+					DataSize size = _commitpos;
 					_H->writeBytes(size);	
 				}
 			}
@@ -787,7 +788,7 @@ namespace ptds
 		unsigned int numErrors(void)	{ return _blockErrors.numErrors(); }
 
 	private:
-		bool expandBuffer(int size)
+		bool expandBuffer(DataSize size)
 		{
 #ifdef _VERBOSE
 			std::cout << "#e";

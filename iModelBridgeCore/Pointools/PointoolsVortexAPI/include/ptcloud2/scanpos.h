@@ -46,7 +46,7 @@ namespace pcloud
 		}
 		void getLocation(pt::vector3d &loc) const 
 		{
-			loc.set(_registration(3, 0), _registration(3, 1), _registration(3, 2));
+			loc.set(static_cast<float>(_registration(3, 0)), static_cast<float>(_registration(3, 1)), static_cast<float>(_registration(3, 2)));
 		}
 
 		int numImages() const { return (int)_images.size(); }

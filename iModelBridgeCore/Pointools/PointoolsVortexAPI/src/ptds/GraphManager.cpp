@@ -193,7 +193,7 @@ LRESULT CALLBACK Graph::windowMessageHandler(HWND hWnd, UINT Msg, WPARAM wParam,
 
 			if(graph->getWindowTimer() == 0)
 			{
-				graph->setWindowTimer(wParam);
+                graph->setWindowTimer(static_cast<uint>(wParam));
 			}
 
 			if(graph->getWindowTimer() == wParam)

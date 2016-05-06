@@ -59,7 +59,7 @@ namespace pcindex
 		void calcInitialBounds()
 		{
 			BoundingBox bb;
-			BuildIndex::calcBoundingBox(points, _pointCount, bb);
+            BuildIndex::calcBoundingBox(points, static_cast<int>(_pointCount), bb);
 			
 			/*set up partitions*/ 
 			_lower[0] = bb.lx();
@@ -227,22 +227,22 @@ namespace pcindex
 						/*copy into new voxel*/ 
 						Voxel*vox = new Voxel(*inode);
 						vox->addChannel(PCloud_Geometry, Float32, BuildIndex::geomStoreType(), 3);
-						vox->readChannel(PCloud_Geometry, inode->fullPointCount(), inode->points);
+						vox->readChannel(PCloud_Geometry, static_cast<int>(inode->fullPointCount()), inode->points);
 
 						if (inode->rgb)
 						{
 							vox->addChannel(PCloud_RGB, UByte8, UByte8, 3);
-							vox->readChannel(PCloud_RGB, inode->fullPointCount(), inode->rgb);
+							vox->readChannel(PCloud_RGB, static_cast<int>(inode->fullPointCount()), inode->rgb);
 						}
 						if (inode->intensity)
 						{
 							vox->addChannel(PCloud_Intensity, Short16, Short16, 1);
-							vox->readChannel(PCloud_Intensity, inode->fullPointCount(), inode->intensity);
+							vox->readChannel(PCloud_Intensity, static_cast<int>(inode->fullPointCount()), inode->intensity);
 						}
 						if (inode->normals)
 						{
 							vox->addChannel(PCloud_Normal, Short16, Short16, 3);
-							vox->readChannel(PCloud_Normal, inode->fullPointCount(), inode->normals);
+							vox->readChannel(PCloud_Normal, static_cast<int>(inode->fullPointCount()), inode->normals);
 						}
 						delete [] inode->points;
 						if (inode->rgb) delete [] inode->rgb;
@@ -354,22 +354,22 @@ Node* BuildIndex::buildUniformPointsTree(std::vector<ChannelData*> &cd,
 	if (node->points)
 	{
 		node->addChannel(PCloud_Geometry, Float32, geomStoreType(), 3);
-		node->readChannel(PCloud_Geometry, node->lodPointCount(), node->points );
+        node->readChannel(PCloud_Geometry, static_cast<int>(node->lodPointCount()), node->points);
 
 		if (node->rgb)
 		{
 			node->addChannel(PCloud_RGB, UByte8, UByte8, 3);
-			node->readChannel(PCloud_RGB, node->lodPointCount(), node->rgb );
+			node->readChannel(PCloud_RGB, static_cast<int>(node->lodPointCount()), node->rgb );
 		}
 		if (node->intensity)
 		{
 			node->addChannel(PCloud_Intensity, Short16, Short16, 1);
-			node->readChannel(PCloud_Intensity, node->lodPointCount(), node->intensity );
+			node->readChannel(PCloud_Intensity, static_cast<int>(node->lodPointCount()), node->intensity );
 		}
 		if (node->normals)
 		{
 			node->addChannel(PCloud_Normal, Short16, Short16, 3);
-			node->readChannel(PCloud_Normal, node->lodPointCount(), node->normals );
+			node->readChannel(PCloud_Normal, static_cast<int>(node->lodPointCount()), node->normals );
 		}
 		voxels.push_back(node);
 		delete [] node->points;

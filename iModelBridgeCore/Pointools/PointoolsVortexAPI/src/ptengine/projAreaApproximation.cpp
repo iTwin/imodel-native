@@ -13,10 +13,10 @@ template <class V>
 inline static float quadArea2(const V &a, const V &b, const V &c, const V &d)
 {
 	/*two triangles - abc + acd*/ 
-	float area = fabs(((b.x - a.x)*(c.y-a.y)) - ((c.x - a.x) * (b.y - a.y)));
+	double area = fabs(((b.x - a.x)*(c.y-a.y)) - ((c.x - a.x) * (b.y - a.y)));
 	area += fabs(((c.x - a.x)*(d.y-a.y)) - ((d.x - a.x) * (c.y - a.y)));
 	area *= 0.5;
-	return area;
+	return static_cast<float>(area);
 }
 //-----------------------------------------------------------------------------
 static void getVoxelBoundingBox( const pcloud::Node *v, pt::BoundingBoxD &bb )
@@ -132,8 +132,8 @@ struct ProjectPointsIntoGrid
 	{
 		vs.project3v( v, projPnts[i] );
 
-		int x = projPnts[i].x / 8;
-		int y = projPnts[i].y / 8;
+		int x = static_cast<int>(projPnts[i].x / 8);
+		int y = static_cast<int>(projPnts[i].y / 8);
 
 		grid.insert( x * 1000 + y );
 	}
@@ -192,7 +192,7 @@ struct ScanPoints
 		{
 			if (validRow[i])
 			{
-				float a = scanRows[i].dx() * SCAN_ROW_HEIGHT;
+				float a = static_cast<float>(scanRows[i].dx() * SCAN_ROW_HEIGHT);
 				area += a;// < 256 ? 256 : a;
 			}
 		}
@@ -210,7 +210,7 @@ float Scanline_Approximator::pixArea( const pcloud::Node *v, const pt::ViewParam
 {
 	if (!v->flag(pcloud::Visible)) return 0;
 
-	int numPntSample = v->lodPointCount() < SL_PNT_SAMPLE_SIZE ? v->lodPointCount() : SL_PNT_SAMPLE_SIZE;
+	//int numPntSample = v->lodPointCount() < SL_PNT_SAMPLE_SIZE ? v->lodPointCount() : SL_PNT_SAMPLE_SIZE;
 
 	ScanPoints sp(vs);
 

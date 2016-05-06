@@ -55,7 +55,7 @@ struct ClashObject : public vortex::IClashObject
 	int								drawObjBoundsTree(int depth=-1);
 #endif
 
-	int								msPreparationTime() const		{ return m_timeToPrepare; }
+	double					    	msPreparationTime() const		{ return m_timeToPrepare; }
 	int								maxTreeLeafDepth() const;
 	int								minTreeLeafDepth() const;
 

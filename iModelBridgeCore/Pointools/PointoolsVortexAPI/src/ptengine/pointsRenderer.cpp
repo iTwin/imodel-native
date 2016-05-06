@@ -127,7 +127,7 @@ void PointsRenderer::renderPoints( RenderContext *context, const pcloud::Scene *
 	// debug output
 	//renderDiagnostics();
 
-	if (dynamic) computeDynamicFPS( t0, context->settings()->framesPerSec() );
+    if (dynamic) computeDynamicFPS(t0, static_cast<float>(context->settings()->framesPerSec()));
 
 	thePointsPager().unpause(); //not needed, see above
 }
@@ -240,15 +240,15 @@ int PointsRenderer::fillAndRenderPointsBuffers( RenderContext *context, bool dyn
 
 				VoxelLoader loadPoints(vox, pass ? (float)numRenderPts/ vox->fullPointCount() : 0, false, false);	//OOC handling
 				
-				if (numRenderPts > vox->lodPointCount()) numRenderPts = vox->lodPointCount();			// mainly check for OOC
+                if (numRenderPts > vox->lodPointCount()) numRenderPts = static_cast<int>(vox->lodPointCount());			// mainly check for OOC
 
 				if (dynamic) 
 				{
 					double d_size = m_frameData.frameDensity() < 1 ?									//apply dynamic reduction
 						numRenderPts * m_frameData.frameDensity() : numRenderPts;						//to maintain framerate
-					numRenderPts = d_size < numRenderPts ? (d_size > 0 ? d_size : 1) : numRenderPts;
+					numRenderPts = d_size < numRenderPts ? (d_size > 0 ? static_cast<int>(d_size) : 1) : numRenderPts;
 				}			
-				numRenderPts *= context->settings()->overallDensity();
+                numRenderPts = static_cast<int>(numRenderPts*context->settings()->overallDensity());
 
 				PointsBufferI *ptsBuffer = determineBufferToUse( context, vox );
 				m_activeBuffer = ptsBuffer;	// for low-level access needed by some effects
@@ -298,20 +298,20 @@ void PointsRenderer::computeDynamicFPS( const pt::TimeStamp &t0, float fps )
 
 	float mstarget = 1000.0f / fps;
 
-	if (ms > 0.01)	 frameDensity *= (mstarget / ms);
+    if (ms > 0.01)	 frameDensity = static_cast<float>(frameDensity * (mstarget / ms));
 
 	if (frameDensity > 1000.0) frameDensity = 1000.0;
 	if (frameDensity < 0.005f) frameDensity = 0.005f;
 
 	// targets for next frame
 	m_frameData.frameDensity( frameDensity );
-	m_frameData.frameDuration( mstarget );		
+    m_frameData.frameDuration(static_cast<int>(mstarget));
 
 	// analytics
 	m_frameData.lastFrameTime( (int)ms );
 	m_frameData.incFrameCounter();
 
-	float avPtsSec = m_frameData.averagePtsPerSecond() / 1e6;
+    float avPtsSec = static_cast<float>(m_frameData.averagePtsPerSecond() / 1e6);
 
 	if (g_showDebugInfo)
 	{
@@ -337,18 +337,18 @@ int PointsRenderer::numVoxelPointsToRender( const pcloud::Voxel * vox, float min
 		if ( vox->flag( pcloud::WholeHidden ) ) return 0;
 		if ( !vox->layers(0) && !vox->channel( pcloud::PCloud_Filter ) ) return 0;	// part layer without a channel to support
 
-		int reqSize = vox->getRequestLOD() * vox->fullPointCount();
+        int reqSize = static_cast<int>(vox->getRequestLOD() * vox->fullPointCount());
 		int editedSize = vox->numPointsEdited();
 
 		if (!editedSize) editedSize = reqSize;
 
-		uint renderSize = min(reqSize, editedSize);
+		uint renderSize = static_cast<uint>(min(reqSize, editedSize));
 		float renderProp = (float)renderSize / vox->fullPointCount();
 
 		if ( !vox->flag( pcloud::OutOfCore ) ) // don't check min available if ooc 
 		{
 			if ( renderSize > 0 && renderProp < minOutput)
-				renderSize = minOutput * vox->fullPointCount();
+                renderSize = static_cast<uint>(minOutput * vox->fullPointCount());
 
 			if (!renderSize) return 0;
 
@@ -525,10 +525,10 @@ void PointsRenderer::updateColourConstants( const RenderSettings *settings )
 {
 	m_colSettings = *settings;
 
-	m_colGeomzscale = vector3d(m_colSettings.geomShaderParams()).length();
+	m_colGeomzscale = static_cast<float>(vector3d(m_colSettings.geomShaderParams()).length());
 
 	if (fabs(m_colGeomzscale) < 1) m_colGeomzscale = 1.0;
-	m_colGeomzscale = 1.0 / m_colGeomzscale;
+	m_colGeomzscale = 1.0f / m_colGeomzscale;
 
 	m_colContrast = m_colSettings.intensityBlack();
 	m_colBrightness = m_colSettings.intensityWhite();;
@@ -628,7 +628,7 @@ void PointsRenderer::computeActualColour(ubyte *col, const double *pnt, const sh
 		if (_in > 1.0f) _in = 1.0f;
 		else if (_in < 0) _in = 0;
 
-		int in = (_in * (m_colIntGrad->imgWidth()-1));
+        int in = static_cast<int>(_in * (m_colIntGrad->imgWidth() - 1));
 
 		pcol[2] *= img[in*4];
 		pcol[1] *= img[in*4+1];
@@ -642,9 +642,9 @@ void PointsRenderer::computeActualColour(ubyte *col, const double *pnt, const sh
 		const ubyte *img = m_colGeomGrad->img();
 
 		vector3 ps( m_colSettings.geomShaderParams());
-		vector3 gz(pnt[0],pnt[1], pnt[2]);
+        vector3 gz(static_cast<float>(pnt[0]), static_cast<float>(pnt[1]), static_cast<float>(pnt[2]));
 
-		float z = gz.dot(ps) + m_colSettings.geomShaderParams()[3];
+		float z = static_cast<float>(gz.dot(ps) + m_colSettings.geomShaderParams()[3]);
 		bool isblack = false;
 
 		/*edge behaviour*/ 
@@ -674,7 +674,7 @@ void PointsRenderer::computeActualColour(ubyte *col, const double *pnt, const sh
 		}
 		if (!isblack)
 		{
-			int zp = (z * m_colGeomGrad->imgWidth());
+            int zp = static_cast<int>(z * m_colGeomGrad->imgWidth());
 
 			pcol[2] *= img[zp*4];
 			pcol[1] *= img[zp*4+1];

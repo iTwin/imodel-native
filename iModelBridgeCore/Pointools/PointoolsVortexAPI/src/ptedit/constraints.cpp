@@ -179,7 +179,7 @@ bool HueConstraint::match(int t, pcloud::Voxel *v, const pt::vector3d &p, uint i
 	tol[t] = instance(t).tolerance;
 
 	int mhue[EDT_MAX_THREADS];
-	mhue[t] = instance(t).hue;
+	mhue[t] = static_cast<int>(instance(t).hue);
 
 	ubyte *src[EDT_MAX_THREADS];
 	v->channel(pcloud::PCloud_RGB)->getptr(&src[t], i);
@@ -187,7 +187,7 @@ bool HueConstraint::match(int t, pcloud::Voxel *v, const pt::vector3d &p, uint i
 	pt::Color h[EDT_MAX_THREADS];
 	h[t].rgb(src[t][0], src[t][1], src[t][2]);
 	int ch[EDT_MAX_THREADS];
-	ch[t] = h[t].hue();
+	ch[t] = static_cast<int>(h[t].hue());
 
 	return ( abs(ch[t] - mhue[t]) < tol[t] ) ? true : false;
 }
@@ -230,7 +230,7 @@ void LumConstraint::setLum( COLORREF lumcol, int tol )
 		for (int i=0;i<EDT_MAX_THREADS;i++)
 		{
 			instance(i).tolerance = tol;
-			instance(i).lum = c.luminance() * 510;
+			instance(i).lum = static_cast<int>(c.luminance() * 510);
 			instance(i).stateIndex++;
 		}
 	}

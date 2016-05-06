@@ -185,7 +185,7 @@ Status DataBuffer::manageBuffer(DataSize extraBytes)
 		}
 
 															// Get amount of physical free space
-		float totalEmptySize = getInternalBufferSize() - getDataSize();
+        float totalEmptySize = static_cast<float>(getInternalBufferSize() - getDataSize());
 															// Get ratio of how full the buffer is
 		float fullRatio = (static_cast<float>(getDataSize()) / static_cast<float>(getBufferSize()));
 															// If fuller than threshold, do a resize
@@ -319,7 +319,7 @@ Status DataBuffer::readFileToBuffer(const wchar_t *filepath, bool limitFileSize)
 
 															// Get file size
 	fileIn.seekg(0, std::ios::end);
-	unsigned long fileSize = fileIn.tellg();
+	unsigned long fileSize = static_cast<unsigned long>(fileIn.tellg());
 	fileIn.seekg(0);
 															// Check we have enough buffer allocated
 	if(fileSize > getInternalBufferSize())
@@ -366,7 +366,7 @@ Status DataBuffer::readFileToBuffer(const wchar_t *filePath, ptds::DataSource *d
 		return Status(Status::Status_Error_File_Open_For_Read);
 	}
 															// Get size of file
-	if((fileSize = dataSource->getFileSize()) == 0)
+    if ((fileSize = static_cast<PTRMI::DataBuffer::DataSize>(dataSource->getFileSize())) == 0)
 	{
 		Status::log(L"DataBuffer::readFileToBuffer zero file size", filePath);
 		return Status(Status::Status_Error_File_Size_Zero);
@@ -808,7 +808,7 @@ PTRMI::Status DataBuffer::testSimple(void)
 
 	for(i = 0; i < numIterations; i++)
 	{
-		writeNum = static_cast<double>(maxInsertions) * (static_cast<double>(rand()) / static_cast<double>(RAND_MAX));
+        writeNum = static_cast<uint>(static_cast<double>(maxInsertions) * (static_cast<double>(rand()) / static_cast<double>(RAND_MAX)));
 
 		for(w = 0; w < writeNum; w++)
 		{
@@ -833,7 +833,7 @@ PTRMI::Status DataBuffer::testSimple(void)
 		}
 		else
 		{
-			readNum			= static_cast<double>(numItems) * (static_cast<double>(rand()) / static_cast<double>(RAND_MAX));
+            readNum = static_cast<uint>(static_cast<double>(numItems) * (static_cast<double>(rand()) / static_cast<double>(RAND_MAX)));
 			readNum			= std::max(readNum, numItems);
 			--readAllCounter;
 		}		

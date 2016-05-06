@@ -37,20 +37,6 @@
 
 namespace pt {
 
-#ifdef _MSC_VER
-    // disable: "conversion from 'double' to 'float', possible loss of
-    // data
-    #pragma warning (disable : 4244)
-
-    // disable: "truncation from 'double' to 'float'
-    #pragma warning (disable : 4305)
-
-    // disable: "C++ exception handler used"
-    #pragma warning (disable : 4530)
-
-#endif // _MSC_VER
-
-
 const double fuzzyEpsilon = 0.000001;
 
 inline const double& inf() {

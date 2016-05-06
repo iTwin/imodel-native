@@ -17,8 +17,6 @@
 
 #include <string>
 
-#pragma warning (disable : 4800)
-
 namespace pt
 {
 	typedef std::string DTID;

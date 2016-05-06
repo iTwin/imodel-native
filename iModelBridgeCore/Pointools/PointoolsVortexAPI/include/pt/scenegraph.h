@@ -26,8 +26,6 @@
 #include <map>
 #include <string>
 
-#pragma warning (disable:4355) // 'this' : used in base member initializer list
-
 namespace pt
 {
 

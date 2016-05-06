@@ -99,9 +99,9 @@ namespace pcloud
 		template<class T>	inline void begin(T** ptr) { (*ptr) = reinterpret_cast<T*>(_data); }
 		template<class T>	inline void end(T** ptr) { begin(ptr); (*ptr) += _count; }
 
-		template<class T> inline void getConstPtr(const T **ptr, int index)  const { (*ptr) = reinterpret_cast<const T*>(&_data[_multiple * _typesize * index]); }
-		template<class T> inline void getptr(T **ptr, int index)  { (*ptr) = reinterpret_cast<T*>(&_data[_multiple * _typesize * index]); }
-		template<class T> inline void getval(T &v, int index) const { v = *((T*)(&_data[_multiple * _typesize * index])); }
+		template<class T> inline void getConstPtr(const T **ptr, int64_t index)  const { (*ptr) = reinterpret_cast<const T*>(&_data[_multiple * _typesize * index]); }
+		template<class T> inline void getptr(T **ptr, int64_t index)  { (*ptr) = reinterpret_cast<T*>(&_data[_multiple * _typesize * index]); }
+		template<class T> inline void getval(T &v, int64_t index) const { v = *((T*)(&_data[_multiple * _typesize * index])); }
 
 		inline bool valid() const { return _data ? true : false; }
 		inline uint typesize() const { return _typesize; }
