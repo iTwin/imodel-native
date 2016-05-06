@@ -365,7 +365,7 @@ void BeSQLiteRealityDataStorage::PersistDataWork::_DoWork()
 void BeSQLiteRealityDataStorage::SelectDataWork::_DoWork()
     {
     BeMutexHolder lock(m_resultCV.GetMutex());
-    m_result = m_storage->wt_Select(*m_data, m_id.c_str(), *m_options, *m_responseReceiver);
+    m_result = m_storage->wt_Select(*m_data, m_id.c_str(), m_options, *m_responseReceiver);
     m_hasResult = true;
     m_resultCV.notify_all();
     }
@@ -474,7 +474,7 @@ RealityDataStorageResult BeSQLiteRealityDataStorage::wt_Select(Data& data, Utf8C
     wt_Prepare(*data._GetDatabasePrepareAndCleanupHandler());
 
     RealityDataStorageResult result;
-    if (SUCCESS != data._InitFrom(*m_database, m_databaseCS, id, options))
+    if (SUCCESS != data._InitFrom(*m_database, m_databaseCS, id))
         {
         responseReceiver._OnResponseReceived(*RealityDataStorageResponse::Create(RealityDataStorageResult::NotFound, id, data), options, !options.ForceSynchronousRequest());
         result = RealityDataStorageResult::NotFound;
@@ -590,7 +590,7 @@ RealityDataStorageResult InMemoryRealityDataStorage::Select(Data& data, Utf8CP i
     auto iter = m_map.find(id);
     if (m_map.end() != iter)
         {
-        data._InitFrom(id, *iter->second, options);
+        data._InitFrom(id, *iter->second);
         if (options.GetRemoveAfterSelect())
             {
             iter->second->Release();
@@ -812,15 +812,15 @@ struct FileRealityDataSourceRequest : AsyncRealityDataSourceRequest
 private:
     RefCountedPtr<FileRealityDataSource::Data>  m_data;
     Utf8String m_filename;
-    RefCountedPtr<FileRealityDataSource::RequestOptions const> m_requestOptions;
+    FileRealityDataSource::RequestOptions m_requestOptions;
     
     FileRealityDataSourceRequest(FileRealityDataSource::Data& data, Utf8CP url, FileRealityDataSource::RequestOptions const& requestOptions)
-        : m_data(&data), m_filename(url), m_requestOptions(&requestOptions)
+        : m_data(&data), m_filename(url), m_requestOptions(requestOptions)
         {}
 
 protected:
     virtual Utf8CP _GetId() const {return m_filename.c_str();}
-    virtual AsyncRealityDataSourceRequest::RequestOptions const& _GetRequestOptions() const {return *m_requestOptions;}
+    virtual AsyncRealityDataSourceRequest::RequestOptions const& _GetRequestOptions() const {return m_requestOptions;}
     virtual RefCountedPtr<RealityDataSourceResponse> _Handle() const override
         {
         if (!BeFileName::DoesPathExist(BeFileName(m_filename).c_str()))
@@ -845,7 +845,7 @@ protected:
         if (ShouldCancelRequest())
             return RealityDataSourceResponse::Create(RealityDataSourceResult::Cancelled, m_filename.c_str(), *m_data);
         
-        if (SUCCESS != m_data->_InitFrom(m_filename.c_str(), data, *m_requestOptions))
+        if (SUCCESS != m_data->_InitFrom(m_filename.c_str(), data))
             {
             BeAssert(false);
             return RealityDataSourceResponse::Create(RealityDataSourceResult::Error_Unknown, m_filename.c_str(), *m_data);
@@ -990,13 +990,13 @@ struct HttpRealityDataSourceRequest : AsyncRealityDataSourceRequest, IHttpReques
 private:
     RefCountedPtr<HttpRealityDataSource::Data> m_data;
     Utf8String                   m_url;
-    RefCountedPtr<HttpRealityDataSource::RequestOptions const> m_requestOptions;
+    HttpRealityDataSource::RequestOptions m_requestOptions;
     
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                     Grigas.Petraitis               03/2015
     +---------------+---------------+---------------+---------------+-----------+------*/
     HttpRealityDataSourceRequest(HttpRealityDataSource::Data& data, Utf8CP url, HttpRealityDataSource::RequestOptions const& requestOptions)
-        : m_data(&data), m_url(url), m_requestOptions(&requestOptions)
+        : m_data(&data), m_url(url), m_requestOptions(requestOptions)
         {}
 
 protected:
@@ -1008,7 +1008,7 @@ protected:
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                     Grigas.Petraitis               04/2015
     +---------------+---------------+---------------+---------------+-----------+------*/
-    virtual AsyncRealityDataSourceRequest::RequestOptions const& _GetRequestOptions() const {return *m_requestOptions;}
+    virtual AsyncRealityDataSourceRequest::RequestOptions const& _GetRequestOptions() const {return m_requestOptions;}
 
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                     Grigas.Petraitis               05/2015
@@ -1052,7 +1052,7 @@ protected:
             case HttpResponseStatus::Success:
                 {
                 m_data->ParseExpirationDateAndETag(response->GetHeader());
-                if (SUCCESS != m_data->_InitFrom(m_url.c_str(), response->GetHeader(), response->GetBody(), *m_requestOptions))
+                if (SUCCESS != m_data->_InitFrom(m_url.c_str(), response->GetHeader(), response->GetBody()))
                     {
                     RDCLOG(LOG_INFO, "[%lld] response 200 but unable to initialize reality data",(uint64_t)BeThreadUtilities::GetCurrentThreadId());
                     return RealityDataSourceResponse::Create(RealityDataSourceResult::Error_Unknown, m_url.c_str(), *m_data);
@@ -1285,13 +1285,10 @@ void RealityDataCache::_OnResponseReceived(RealityDataSourceResponse const& resp
         case RealityDataSourceResult::Success:
         case RealityDataSourceResult::NotModified:
             {
-            BeAssert(nullptr != dynamic_cast<RealityDataCacheOptions const*>(&options));
-            RealityDataCacheOptions const& cacheOptions = dynamic_cast<RealityDataCacheOptions const&>(options);
-
-            if (cacheOptions.SaveInArrivals())
+            if (options.SaveInArrivals())
                 AddToArrivals(*Arrival::Create(response.GetData()));
             
-            if (cacheOptions.UseStorage() && persistHandler.IsValid())
+            if (options.UseStorage() && persistHandler.IsValid())
                 {
                 BeAssert(&response.GetData() == persistHandler->_GetData());
                 RealityDataStorageResult result = persistHandler->_Persist();
@@ -1300,13 +1297,17 @@ void RealityDataCache::_OnResponseReceived(RealityDataSourceResponse const& resp
             break;
             }
 
+        case RealityDataSourceResult::Error_NotFound:
+            response.GetData()._OnNotFound();
+            break;
+
         case RealityDataSourceResult::Error_GatewayTimeout:
         case RealityDataSourceResult::Error_CouldNotResolveHost:
         case RealityDataSourceResult::Error_NoConnection:
-        case RealityDataSourceResult::Error_NotFound:
         case RealityDataSourceResult::Error_AccessDenied:
         case RealityDataSourceResult::Error_Unknown:
         case RealityDataSourceResult::Cancelled:
+            response.GetData()._OnError();
             break;
 
         default:
@@ -1319,11 +1320,9 @@ void RealityDataCache::_OnResponseReceived(RealityDataSourceResponse const& resp
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RealityDataCache::_OnResponseReceived(RealityDataStorageResponse const& response, IRealityDataStorageBase::SelectOptions const& options, bool isAsync)
     {
-    BeAssert(nullptr != dynamic_cast<RealityDataCacheOptions const*>(&options));
-    RealityDataCacheOptions const& cacheOptions = dynamic_cast<RealityDataCacheOptions const&>(options);
-    RealityDataCacheResult result = HandleStorageResponse(response, cacheOptions);
+    RealityDataCacheResult result = HandleStorageResponse(response, options);
 
-    if (cacheOptions.SaveInArrivals())
+    if (options.SaveInArrivals())
         {
         switch (result)
             {
@@ -1341,6 +1340,16 @@ void RealityDataCache::_OnResponseReceived(RealityDataStorageResponse const& res
         BeMutexHolder lock(m_resultsCS);
         BeAssert(m_results.end() == m_results.find(&response.GetData()));
         m_results[&response.GetData()] = result;
+        }
+
+    switch (result)
+        {
+        case RealityDataCacheResult::NotFound:
+            response.GetData()._OnNotFound();
+            break;
+        case RealityDataCacheResult::Error:
+            response.GetData()._OnError();
+            break;
         }
     }
 

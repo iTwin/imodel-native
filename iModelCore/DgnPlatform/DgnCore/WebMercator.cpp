@@ -83,20 +83,6 @@ typedef WebMercatorModel::TileId const& TileIdCR;
 //=======================================================================================
 struct TiledRaster : IRealityData<TiledRaster, BeSQLiteRealityDataStorage, HttpRealityDataSource>
 {
-    //===================================================================================
-    // @bsiclass                                        Grigas.Petraitis        10/2014
-    //===================================================================================
-    struct RequestOptions : RefCountedBase, IRealityData::RequestOptions, RealityDataCacheOptions
-    {
-        DEFINE_BENTLEY_REF_COUNTED_MEMBERS
-    private:
-        RgbImageInfo m_expectedImageInfo;
-    public:
-        RequestOptions() : RealityDataCacheOptions(false,false) {}
-        RequestOptions(RgbImageInfo const& expectedImageInfo) : m_expectedImageInfo(expectedImageInfo), RealityDataCacheOptions(true, true) {}
-        RgbImageInfo const& GetExpectedImageInfo() const {return m_expectedImageInfo;}
-    };
-
 private:
     Utf8String  m_url;
     ByteStream  m_data;
@@ -108,19 +94,21 @@ private:
     static Utf8String SerializeRasterInfo(RgbImageInfo const&);
     static RgbImageInfo DeserializeRasterInfo(Utf8CP);
     TiledRaster(){}
+    TiledRaster(RgbImageInfo rasterInfo) : m_rasterInfo(rasterInfo) {}
     virtual ~TiledRaster(){}
         
 protected:
     virtual Utf8CP _GetId() const override {return m_url.c_str();}
     virtual bool _IsExpired() const override;
-    virtual BentleyStatus _InitFrom(IRealityDataBase const& self, RealityDataCacheOptions const&) override;
-    virtual BentleyStatus _InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> const& header, ByteStream const& body, HttpRealityDataSource::RequestOptions const& options) override;
-    virtual BentleyStatus _InitFrom(BeSQLite::Db& db, BeMutex& cs, Utf8CP key, BeSQLiteRealityDataStorage::SelectOptions const& options) override;
+    virtual BentleyStatus _InitFrom(IRealityDataBase const& self) override;
+    virtual BentleyStatus _InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> const& header, ByteStream const& body) override;
+    virtual BentleyStatus _InitFrom(BeSQLite::Db& db, BeMutex& cs, Utf8CP key) override;
     virtual BentleyStatus _Persist(BeSQLite::Db& db, BeMutex& cs) const override;
     virtual BeSQLiteRealityDataStorage::DatabasePrepareAndCleanupHandlerPtr _GetDatabasePrepareAndCleanupHandler() const override;
 
 public:
     static RefCountedPtr<TiledRaster> Create() {return new TiledRaster();}
+    static RefCountedPtr<TiledRaster> Create(RgbImageInfo rasterInfo) {return new TiledRaster(rasterInfo);}
     ByteStream const& GetData() const {return m_data;}
     DateTime GetCreationDate() const {return m_creationDate;}
     RgbImageInfo const& GetImageInfo() const {return m_rasterInfo;}
@@ -807,9 +795,8 @@ ProgressiveTask::Completion WebMercatorDisplay::_DoProgressive(ProgressiveContex
         Utf8String url;
         RgbImageInfo expectedImageInfo;
         m_model._CreateUrl(url, expectedImageInfo, tileid);
-        TiledRasterPtr realityData;
-        RefCountedPtr<TiledRaster::RequestOptions> opt = new TiledRaster::RequestOptions(expectedImageInfo);
-        if (RealityDataCacheResult::Success == realityCache.Get<TiledRaster>(realityData, url.c_str(), *opt))
+        TiledRasterPtr realityData = TiledRaster::Create(expectedImageInfo);
+        if (RealityDataCacheResult::Success == realityCache.Get<TiledRaster>(*realityData, url.c_str()))
             {
             BeAssert(realityData.IsValid());
             //  The image is available from the cache. Great! Draw it.
@@ -837,8 +824,8 @@ ProgressiveTask::Completion WebMercatorDisplay::_DoProgressive(ProgressiveContex
         TileIdCR tileid  = iter->second;
 
         // See if the image has arrived in the cache.
-        TiledRasterPtr realityData;
-        if (RealityDataCacheResult::Success == realityCache.Get<TiledRaster>(realityData, url.c_str(), *new TiledRaster::RequestOptions()))
+        TiledRasterPtr realityData = TiledRaster::Create();
+        if (RealityDataCacheResult::Success == realityCache.Get<TiledRaster>(*realityData, url.c_str()))
             {
             if (context.CheckStop())
                 return Completion::Aborted;
@@ -1215,7 +1202,7 @@ BeSQLiteRealityDataStorage::DatabasePrepareAndCleanupHandlerPtr TiledRaster::_Ge
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TiledRaster::_InitFrom(IRealityDataBase const& self, RealityDataCacheOptions const& options)
+BentleyStatus TiledRaster::_InitFrom(IRealityDataBase const& self)
     {
     TiledRaster const& other = dynamic_cast<TiledRaster const&>(self);
     m_url = other.m_url;
@@ -1229,11 +1216,8 @@ BentleyStatus TiledRaster::_InitFrom(IRealityDataBase const& self, RealityDataCa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TiledRaster::_InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> const& header, ByteStream const& body, HttpRealityDataSource::RequestOptions const& requestOptions) 
-    {
-    BeAssert(nullptr != dynamic_cast<RequestOptions const*>(&requestOptions));
-    RequestOptions const& options = static_cast<RequestOptions const&>(requestOptions);
-    
+BentleyStatus TiledRaster::_InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> const& header, ByteStream const& body) 
+    {    
     m_url.AssignOrClear(url);
     m_creationDate = DateTime::GetCurrentTime();
 
@@ -1242,8 +1226,6 @@ BentleyStatus TiledRaster::_InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> co
         return ERROR;
 
     m_contentType = contentTypeIter->second.c_str();
-    m_rasterInfo = options.GetExpectedImageInfo();
-
     m_data = body;
 
     return BSISUCCESS;
@@ -1252,7 +1234,7 @@ BentleyStatus TiledRaster::_InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> co
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TiledRaster::_InitFrom(BeSQLite::Db& db, BeMutex& cs, Utf8CP key, BeSQLiteRealityDataStorage::SelectOptions const& options)
+BentleyStatus TiledRaster::_InitFrom(BeSQLite::Db& db, BeMutex& cs, Utf8CP key)
     {
     BeMutexHolder lock(cs);
 

@@ -55,7 +55,38 @@ struct ThreadPoolQueueNotEmptyPredicate;
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-struct RealityDataCacheOptions;
+//=======================================================================================
+//! Options for @ref RealityDataCache::Get request function.
+// @bsiclass                                        Grigas.Petraitis            10/2014
+//=======================================================================================
+struct RealityDataCacheOptions
+    {
+    private:
+        bool m_requestFromSource;
+        bool m_useStorage;
+        bool m_removeFromArrivals;
+        bool m_saveInArrivals;
+
+    public:
+        RealityDataCacheOptions() : m_requestFromSource(true), m_useStorage(true), m_saveInArrivals(true), m_removeFromArrivals(true) {}
+        virtual ~RealityDataCacheOptions() {}
+                
+        //! Should the cache request for fresh data if it's expired or doesn't exist.
+        bool RequestFromSource() const {return m_requestFromSource;}
+        void SetRequestFromSource(bool value) {m_requestFromSource = value;}
+
+        //! Should reality data storage be used for the requested data.
+        bool UseStorage() const {return m_useStorage;}
+        void SetUseStorage(bool value) {m_useStorage = value;}
+        
+        //! Should the data be put in "arrivals" queue for quick access after it was pulled from the source.
+        bool SaveInArrivals() const {return m_saveInArrivals;}
+        void SetSaveInArrivals(bool value) {m_saveInArrivals = value;}
+
+        //! Should the data be persisted in storage after being retrieved from source.
+        bool RemoveFromArrivals() const {return m_removeFromArrivals;}
+        void SetRemoveFromArrivals(bool value) {m_removeFromArrivals = value;}
+    };
 
 //=======================================================================================
 //! The virtual base class for all reality data implementations. 
@@ -71,7 +102,9 @@ struct IRealityDataBase : IRefCounted
         virtual ~IRealityDataBase() {}
         virtual Utf8CP _GetId() const = 0;
         virtual bool _IsExpired() const = 0;
-        virtual BentleyStatus _InitFrom(IRealityDataBase const& self, RealityDataCacheOptions const&) = 0;
+        virtual BentleyStatus _InitFrom(IRealityDataBase const& self) = 0;
+        virtual void _OnError() {}
+        virtual void _OnNotFound() {}
 
     public:
         // properties
@@ -89,8 +122,6 @@ struct IRealityData : _StorageType::Data, _SourceType::Data
     {
 #if !defined (DOCUMENTATION_GENERATOR)
     DEFINE_BENTLEY_REF_COUNTED_MEMBERS
-    DEFINE_MEMBER_TYPE_CHECKER(RequestOptions)
-    DEFINE_MEMBER_CHECKER(Create)
 #endif
 
     // export
@@ -106,17 +137,8 @@ struct IRealityData : _StorageType::Data, _SourceType::Data
         };
     
     IRealityData() {}
-
-    //! The virtual destructor which provides some compile-time assertions for the
-    //! implementing type.
-    virtual ~IRealityData()
-        {
-        static_assert(has_member_Create<ThisType>::value, "IRealityData implementation must have a static Create() function.");
-        static_assert(std::is_same<decltype(ThisType::Create()), RefCountedPtr<ThisType>>::value, "The return type of the Create() function must be RefCountedPtr<ThisType>");
-        static_assert(has_member_type_RequestOptions<ThisType>::value, "IRealityData implementation must have an inner struct RequestOptions.");
-        static_assert(std::is_base_of<RequestOptions, typename ThisType::RequestOptions>::value && std::is_base_of<RealityDataCacheOptions, typename ThisType::RequestOptions>::value, 
-            "RequestOptions must derive from IRealityData::RequestOptions and RealityDataCacheOptions");
-        }
+    virtual ~IRealityData() {}
+    uint32_t GetRefCount() const {return m_refCount.load();}
     };
 
 //=======================================================================================
@@ -374,7 +396,7 @@ struct EXPORT_VTABLE_ATTRIBUTE IRealityDataStorageBase : RefCountedBase
     //===================================================================================
     // @bsiclass                                        Grigas.Petraitis        03/2015
     //===================================================================================
-    struct EXPORT_VTABLE_ATTRIBUTE SelectOptions : virtual IRefCounted {};
+    struct SelectOptions : virtual RealityDataCacheOptions {};
 
     //===================================================================================
     // @bsiclass                                        Grigas.Petraitis        03/2015
@@ -511,7 +533,7 @@ struct EXPORT_VTABLE_ATTRIBUTE IRealityDataSourceBase : RefCountedBase
     //===================================================================================
     // @bsiclass                                        Grigas.Petraitis        03/2015
     //===================================================================================
-    struct EXPORT_VTABLE_ATTRIBUTE RequestOptions : virtual IRefCounted {};
+    struct RequestOptions : virtual RealityDataCacheOptions {};
 
     //===================================================================================
     // @bsiclass                                        Grigas.Petraitis        03/2015
@@ -670,45 +692,6 @@ public:
 };
 
 //=======================================================================================
-//! Options for @ref RealityDataCache::Get request function.
-// @bsiclass                                        Grigas.Petraitis            10/2014
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE RealityDataCacheOptions : IRealityDataSourceBase::RequestOptions, IRealityDataStorageBase::SelectOptions
-    {
-    private:
-        bool m_requestFromSource;
-        bool m_useStorage;
-        bool m_removeFromArrivals;
-        bool m_saveInArrivals;
-
-    public:
-        //! Creates the options object.
-        //! @param[in] requestFromSource    Should the cache request for fresh data if it's expired or doesn't exist.
-        //! @param[in] useStorage           Should reality data storage be used for the requested data.
-        //! @param[in] saveInArrivals       Should the data be put in "arrivals" queue for quick access after it was pulled from the source.
-        //! @param[in] removeFromArrivals   Should the data be removed from arrivals queue if taken from there.
-        RealityDataCacheOptions(bool requestFromSource, bool useStorage, bool saveInArrivals = true, bool removeFromArrivals = true) 
-            : m_requestFromSource(requestFromSource), m_useStorage(useStorage), m_saveInArrivals(saveInArrivals), m_removeFromArrivals(removeFromArrivals)
-            {}
-                
-        //! Should the cache request for fresh data if it's expired or doesn't exist.
-        bool RequestFromSource() const {return m_requestFromSource;}
-        void SetRequestFromSource(bool value) {m_requestFromSource = value;}
-
-        //! Should reality data storage be used for the requested data.
-        bool UseStorage() const {return m_useStorage;}
-        void SetUseStorage(bool value) {m_useStorage = value;}
-        
-        //! Should the data be put in "arrivals" queue for quick access after it was pulled from the source.
-        bool SaveInArrivals() const {return m_saveInArrivals;}
-        void SetSaveInArrivals(bool value) {m_saveInArrivals = value;}
-
-        //! Should the data be persisted in storage after being retrieved from source.
-        bool RemoveFromArrivals() const {return m_removeFromArrivals;}
-        void SetRemoveFromArrivals(bool value) {m_removeFromArrivals = value;}
-    };
-
-//=======================================================================================
 //! The result of RealityDataCache::Get.
 // @bsiclass                                        Grigas.Petraitis            04/2015
 //=======================================================================================
@@ -793,6 +776,9 @@ private:
     DGNPLATFORM_EXPORT RealityDataCacheResult GetResult(Utf8CP id, RealityDataSourceResult sourceResult);
 
 public:
+    void SetArrivalsQueueSize(int size) {m_arrivalsQueueSize = size;}
+
+public:
     //! Create a new reality data cache.
     DGNPLATFORM_EXPORT static RealityDataCachePtr Create(int arrivalsQueueSize = 0);
 
@@ -809,15 +795,13 @@ public:
     //! @param[out] data       An reference object to receive the requested data.
     //! @param[in] id       The id of the requested data.
     //! @param[in] options  The request options.
-    template<typename DataType> RealityDataCacheResult Get(RefCountedPtr<DataType>& data, Utf8CP id, typename DataType::RequestOptions const& options)
+    template<typename DataType> RealityDataCacheResult Get(DataType& data, Utf8CP id, typename DataType::RequestOptions const& options = DataType::RequestOptions())
         {
-        data = DataType::Create();
-
         ArrivalPtr arrival = GetFromArrivals(id, options);
         if (arrival.IsValid())
             {
             if (nullptr != arrival->GetData())
-                ((IRealityDataBase*)data.get())->_InitFrom(*arrival->GetData(), options);
+                ((IRealityDataBase*)&data)->_InitFrom(*arrival->GetData());
             return arrival->GetResult();
             }
 
@@ -827,12 +811,12 @@ public:
                 return RealityDataCacheResult::NotFound;
 
             bool handled;
-            return GetResult(id, GetSource<typename DataType::SourceType>()->Request(*data, handled, id, options, *this));
+            return GetResult(id, GetSource<typename DataType::SourceType>()->Request(data, handled, id, options, *this));
             }
         
-        QueueRequestHandler(id, *DataType::SourceType::RequestHandler::Create(*GetSource<typename DataType::SourceType>(), *data, id, options, *this));
-        QueuePersistHandler(id, *DataType::StorageType::PersistHandler::Create(*GetStorage<typename DataType::StorageType>(), *data));
-        return GetResult(*data, id, GetStorage<typename DataType::StorageType>()->Select(*data, id, options, *this));
+        QueueRequestHandler(id, *DataType::SourceType::RequestHandler::Create(*GetSource<typename DataType::SourceType>(), data, id, options, *this));
+        QueuePersistHandler(id, *DataType::StorageType::PersistHandler::Create(*GetStorage<typename DataType::StorageType>(), data));
+        return GetResult(data, id, GetStorage<typename DataType::StorageType>()->Select(data, id, options, *this));
         }
 };
 
@@ -907,7 +891,7 @@ struct EXPORT_VTABLE_ATTRIBUTE BeSQLiteRealityDataStorage : IRealityDataStorage<
             virtual DatabasePrepareAndCleanupHandlerPtr _GetDatabasePrepareAndCleanupHandler() const = 0;
 
             //! Initialize data from the database using key and select options.
-            virtual BentleyStatus _InitFrom(BeSQLite::Db& db, BeMutex& cs, Utf8CP key, SelectOptions const& options) = 0;
+            virtual BentleyStatus _InitFrom(BeSQLite::Db& db, BeMutex& cs, Utf8CP key) = 0;
 
             //! Persist this data in the database.
             virtual BentleyStatus _Persist(BeSQLite::Db& db, BeMutex& cs) const = 0;
@@ -968,14 +952,14 @@ struct EXPORT_VTABLE_ATTRIBUTE BeSQLiteRealityDataStorage : IRealityDataStorage<
     private:
         Utf8String m_id;
         RefCountedPtr<Data>  m_data;
-        RefCountedPtr<SelectOptions const> m_options;
+        SelectOptions        m_options;
         IRealityDataStorageResponseReceiverPtr m_responseReceiver;
         bool                             m_hasResult;
         mutable RealityDataStorageResult m_result;
         mutable BeConditionVariable      m_resultCV;
     protected:
         SelectDataWork(BeSQLiteRealityDataStorage& storage, Utf8CP id, Data& data, SelectOptions const& options, IRealityDataStorageResponseReceiver& responseReceiver) 
-            : StorageWork(storage), m_id(id), m_data(&data), m_options(&options), m_hasResult(false), m_responseReceiver(&responseReceiver)
+            : StorageWork(storage), m_id(id), m_data(&data), m_options(options), m_hasResult(false), m_responseReceiver(&responseReceiver)
             {} 
         virtual void _DoWork() override;
     public:
@@ -1091,7 +1075,7 @@ struct EXPORT_VTABLE_ATTRIBUTE InMemoryRealityDataStorage : IRealityDataStorage<
             using IRealityDataStorage::Data::_InitFrom;
 
             //! Initialize data from the void pointer and select options.
-            virtual BentleyStatus _InitFrom(Utf8CP id, Data const& data, SelectOptions const& options) = 0;
+            virtual BentleyStatus _InitFrom(Utf8CP id, Data const& data) = 0;
         };
     
     //===================================================================================
@@ -1286,8 +1270,7 @@ struct EXPORT_VTABLE_ATTRIBUTE FileRealityDataSource : AsyncRealityDataSource<Fi
             //! Initializes this data with file path, content and request options.
             //! @param[in] filepath     The path of the file that the data was read from.
             //! @param[in] data         The file content.
-            //! @param[in] options      The request options.
-            virtual BentleyStatus _InitFrom(Utf8CP filepath, ByteStream const& data, RequestOptions const& options) = 0;
+            virtual BentleyStatus _InitFrom(Utf8CP filepath, ByteStream const& data) = 0;
         };
 
     //===================================================================================
@@ -1374,7 +1357,7 @@ struct EXPORT_VTABLE_ATTRIBUTE HttpRealityDataSource : AsyncRealityDataSource<Ht
             using IRealityDataSource::Data::_InitFrom;
             void SetExpirationDate(DateTime const& date) {m_expirationDate = date;}
             void SetEntityTag(Utf8CP eTag) {m_entityTag = eTag;}
-            virtual BentleyStatus _InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> const& header, ByteStream const& body, RequestOptions const& options) = 0;
+            virtual BentleyStatus _InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> const& header, ByteStream const& body) = 0;
         public:
             DateTime const& GetExpirationDate() const {return m_expirationDate;}
             Utf8CP GetEntityTag() const {return m_entityTag.c_str();}
