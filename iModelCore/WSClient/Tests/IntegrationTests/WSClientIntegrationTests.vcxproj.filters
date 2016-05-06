@@ -1,126 +1,44 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Source Files">
-      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
-      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
-    </Filter>
-    <Filter Include="Header Files">
-      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
-      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
-    </Filter>
-    <Filter Include="Resource Files">
-      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
-      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
-    </Filter>
+    <ClCompile Include="Cache\CachingDataSourceTests.cpp" />
+    <ClCompile Include="Cache\RepositorySchemaUpgradeTests.cpp" />
+    <ClCompile Include="Cache\ECDbAdapterTests.cpp" />
+    <ClCompile Include="Configuration\BuddiClientTests.cpp" />
+    <ClCompile Include="Examples\ExampleTests.cpp" />
+    <ClCompile Include="Repository\Extensions\HierarchicalSearchTests.cpp" />
+    <ClCompile Include="Repository\Extensions\NavigationTests.cpp" />
+    <ClCompile Include="Repository\Extensions\WorkflowStateManagerTests.cpp" />
+    <ClCompile Include="Repository\RepositoryCacheFactoryTests.cpp" />
+    <ClCompile Include="Repository\WorkspaceTests.cpp" />
+    <ClCompile Include="Repository\WorkspaceUpgradeTests.cpp" />
+    <ClCompile Include="Ims\SolrClientTests.cpp" />
+    <ClCompile Include="TestUtils\WSClientIntegrationTestsHost.cpp" />
+    <ClCompile Include="TestUtils\TestMain.cpp" />
+    <ClCompile Include="Repository\ConnectWorkspaceManagerTests.cpp" />
+    <ClCompile Include="Connect\ImsClientTests.cpp" />
+    <ClCompile Include="Client\WSClientTests.cpp" />
+    <ClCompile Include="Client\WSRepositoryClientTests.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="TestUtils\TestMain.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Repository\WorkspaceTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Repository\RepositoryCacheFactoryTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Repository\ConnectWorkspaceManagerTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Repository\Extensions\NavigationTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Repository\Extensions\HierarchicalSearchTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Repository\WorkspaceUpgradeTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Repository\Extensions\WorkflowStateManagerTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Cache\CachingDataSourceTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Client\WSClientTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Client\WSRepositoryClientTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="TestUtils\WSClientIntegrationTestsHost.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Configuration\BuddiClientTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Connect\ImsClientTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Examples\ExampleTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Cache\RepositorySchemaUpgradeTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Cache\ECDbAdapterTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Ims\SolrClientTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="Repository\WorkspaceTests.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Repository\RepositoryCacheFactoryTests.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Repository\ConnectWorkspaceManagerTests.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Repository\StubRepositoryCachePathProvider.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Repository\Extensions\NavigationTests.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Repository\Extensions\HierarchicalSearchTests.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Repository\WorkspaceUpgradeTests.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Repository\Extensions\WorkflowStateManagerTests.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Cache\CachingDataSourceTests.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Client\WSClientTests.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Client\WSRepositoryClientTests.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="TestUtils\WSClientIntegrationTestsHost.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Configuration\BuddiClientTests.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Connect\ImsClientTests.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Examples\ExampleTests.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Ims\SolrClientTests.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
+    <ClInclude Include="Cache\CachingDataSourceTests.h" />
+    <ClInclude Include="Cache\ECDbAdapterTests.h" />
+    <ClInclude Include="Cache\RepositorySchemaUpgradeTests.h" />
+    <ClInclude Include="Configuration\BuddiClientTests.h" />
+    <ClInclude Include="Examples\ExampleTests.h" />
+    <ClInclude Include="Repository\Extensions\HierarchicalSearchTests.h" />
+    <ClInclude Include="Repository\Extensions\NavigationTests.h" />
+    <ClInclude Include="Repository\Extensions\WorkflowStateManagerTests.h" />
+    <ClInclude Include="Repository\RepositoryCacheFactoryTests.h" />
+    <ClInclude Include="Repository\StubRepositoryCachePathProvider.h" />
+    <ClInclude Include="Repository\WorkspaceTests.h" />
+    <ClInclude Include="Repository\WorkspaceUpgradeTests.h" />
+    <ClInclude Include="Repository\ConnectWorkspaceManagerTests.h" />
+    <ClInclude Include="Connect\ImsClientTests.h" />
+    <ClInclude Include="Client\WSClientTests.h" />
+    <ClInclude Include="Client\WSRepositoryClientTests.h" />
+    <ClInclude Include="Ims\SolrClientTests.h" />
+    <ClInclude Include="TestUtils\WSClientIntegrationTestsHost.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="IntegrationTests.mke" />
