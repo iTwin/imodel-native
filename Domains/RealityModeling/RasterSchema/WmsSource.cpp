@@ -48,7 +48,6 @@ private:
 protected:
     virtual Utf8CP _GetId() const override {return m_url.c_str();}
     virtual bool _IsExpired() const override;
-    virtual BentleyStatus _InitFrom(IRealityDataBase const& self) override;
     virtual BentleyStatus _InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> const& header, ByteStream const& body) override;
     virtual BentleyStatus _InitFrom(BeSQLite::Db& db, BeMutex& cs, Utf8CP key) override;
     virtual BentleyStatus _Persist(BeSQLite::Db& db, BeMutex& cs) const override;
@@ -158,19 +157,6 @@ bool WmsTileData::IsSupportedContent(Utf8StringCR contentType) const
         return true;
     
     return false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               09/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus WmsTileData::_InitFrom(IRealityDataBase const& self)
-    {
-    WmsTileData const& other = dynamic_cast<WmsTileData const&>(self);
-    m_url = other.m_url;
-    m_creationDate = other.m_creationDate;
-    m_contentType = other.m_contentType;
-    m_data = other.m_data;
-    return SUCCESS;
     }
 
 //----------------------------------------------------------------------------------------
@@ -541,11 +527,11 @@ RealityDataCache& WmsSource::GetRealityDataCache() const
     {
     if (m_realityDataCache.IsNull())
         {
-        RealityDataCachePtr cache = RealityDataCache::Create(100);
+        m_realityDataCache = RealityDataCache::Create();
         BeFileName storageFileName = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName();
         storageFileName.AppendToPath(L"WMS");
-        cache->RegisterStorage(*BeSQLiteRealityDataStorage::Create(storageFileName));
-        cache->RegisterSource(*HttpRealityDataSource::Create(8));
+        m_realityDataCache->RegisterStorage(*BeSQLiteRealityDataStorage::Create(storageFileName));
+        m_realityDataCache->RegisterSource(*HttpRealityDataSource::Create(8));
         }
     return *m_realityDataCache;
     }

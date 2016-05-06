@@ -28,7 +28,7 @@ Scene::Scene(DgnDbR db, TransformCR location, Utf8CP realityCacheName, Utf8CP ro
     m_localCacheName.AppendToPath(BeFileName(realityCacheName));
     m_localCacheName.AppendExtension(L"3MXcache");
 
-    m_cache = RealityDataCache::Create(100);
+    m_cache = RealityDataCache::Create();
     m_cache->RegisterStorage(*BeSQLiteRealityDataStorage::Create(m_localCacheName));
     m_cache->RegisterSource(IsUrl() ? (IRealityDataSourceBase&) *HttpRealityDataSource::Create(1) : *FileRealityDataSource::Create(1));
     }

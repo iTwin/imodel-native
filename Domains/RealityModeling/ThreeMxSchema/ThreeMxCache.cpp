@@ -22,20 +22,6 @@ struct ThreeMxData
     //=======================================================================================
     // @bsiclass                                        Grigas.Petraitis            03/2015
     //=======================================================================================
-    struct RequestOptions : virtual RealityDataCacheOptions
-        {
-        RequestOptions()
-            {
-            SetUseStorage(true);
-            SetRequestFromSource(true);
-            SetSaveInArrivals(false);
-            SetRemoveFromArrivals(false);
-            }
-        };
-
-    //=======================================================================================
-    // @bsiclass                                        Grigas.Petraitis            03/2015
-    //=======================================================================================
     struct DatabasePrepareAndCleanupHandler : BeSQLiteRealityDataStorage::DatabasePrepareAndCleanupHandler
         {
         mutable BeAtomic<bool> m_isPrepared;
@@ -118,15 +104,6 @@ protected:
         : m_scene(scene), m_node(node)
         {
         /*BeAssert(m_node.IsValid() || nullptr!=m_output);*/
-        }
-
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                    Grigas.Petraitis                04/2015
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    BentleyStatus InitFromSelf(IRealityDataBase const& self)
-        {
-        BeAssert(m_node->AreChildrenValid());
-        return SUCCESS;
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -259,7 +236,7 @@ struct HttpData : ThreeMxData, IRealityData<HttpData, BeSQLiteRealityDataStorage
     //=======================================================================================
     // @bsiclass                                        Grigas.Petraitis            03/2015
     //=======================================================================================
-    struct RequestOptions : ThreeMxData::RequestOptions, IRealityData::RequestOptions
+    struct RequestOptions : IRealityData::RequestOptions
     {
     DEFINE_BENTLEY_REF_COUNTED_MEMBERS
     public:
@@ -268,6 +245,7 @@ struct HttpData : ThreeMxData, IRealityData<HttpData, BeSQLiteRealityDataStorage
             BeSQLiteRealityDataStorage::SelectOptions::SetForceSynchronousRequest(synchronous);
             HttpRealityDataSource::RequestOptions::SetForceSynchronousRequest(synchronous);
             SetUseStorage(true);
+            SetRequestFromSource(true);
             }
     };
 
@@ -277,7 +255,6 @@ private:
 protected:
     virtual Utf8CP _GetId() const override {return GetFilename().c_str();}
     virtual bool _IsExpired() const override {return false;}
-    virtual BentleyStatus _InitFrom(IRealityDataBase const& self) override {return InitFromSelf(self);}
     virtual BentleyStatus _InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> const& header, ByteStream const& body) override {return InitFromSource(url, body);}
     virtual BentleyStatus _InitFrom(Db& db, BeMutex& cs, Utf8CP id) override {return InitFromStorage(db, cs, id);}
     virtual BentleyStatus _Persist(Db& db, BeMutex& cs) const override {return PersistToStorage(db, cs);}
@@ -294,7 +271,7 @@ struct FileData : ThreeMxData, IRealityData<FileData, BeSQLiteRealityDataStorage
     //=======================================================================================
     // @bsiclass                                        Grigas.Petraitis            03/2015
     //=======================================================================================
-    struct RequestOptions : ThreeMxData::RequestOptions, IRealityData::RequestOptions
+    struct RequestOptions : IRealityData::RequestOptions
     {
     DEFINE_BENTLEY_REF_COUNTED_MEMBERS
     public:
@@ -302,6 +279,7 @@ struct FileData : ThreeMxData, IRealityData<FileData, BeSQLiteRealityDataStorage
             {
             FileRealityDataSource::RequestOptions::SetForceSynchronousRequest(synchronous);
             SetUseStorage(false);
+            SetRequestFromSource(true);
             }
     };
 
@@ -311,7 +289,6 @@ private:
 protected:
     virtual Utf8CP _GetId() const override {return GetFilename().c_str();}
     virtual bool _IsExpired() const override {return false;}
-    virtual BentleyStatus _InitFrom(IRealityDataBase const& self) override {return InitFromSelf(self);}
     virtual BentleyStatus _InitFrom(Utf8CP filepath, ByteStream const& data) override {return InitFromSource(filepath, data);}
     virtual BentleyStatus _InitFrom(Db& db, BeMutex& cs, Utf8CP id) override {return InitFromStorage(db, cs, id);} 
     virtual BentleyStatus _Persist(Db& db, BeMutex& cs) const override {return PersistToStorage(db, cs);}
