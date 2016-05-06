@@ -18,6 +18,7 @@
 
 namespace ptds
 {
+#ifdef NEEDS_WORK_VORTEX_DGNDB
 	//-------------------------------------------------------------------------
 	// simple io helper
 	//-------------------------------------------------------------------------
@@ -97,6 +98,7 @@ namespace ptds
 		DataSourcePtr	H;
 		DataPointer		pos;
 	};
+#endif
 	//-------------------------------------------------------------------------
 	// Tracker helper
 	//-------------------------------------------------------------------------
@@ -285,14 +287,14 @@ namespace ptds
 	public:
 		BlockErrorTracker() : m_numErrors(0) { ; }
 		void reset(void) { m_numErrors = 0; }
-		void increment(void) { InterlockedIncrement(&m_numErrors); }
+        void increment(void) { ++m_numErrors; }
 		long numErrors(void) 
 		{ 
 			return m_numErrors; 
 		}
 
 	private:
-		volatile long m_numErrors;
+		std::atomic<long> m_numErrors;
 	};
 
 	//----------------------------------------------------------------------

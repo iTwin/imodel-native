@@ -17,6 +17,8 @@
 #include <pt/ptmath.h>
 #include <pt/typedefs.h>
 #include <pt/classes.h>
+
+#ifdef NEEDS_WORK_VORTEX_DGNDB 
 #include <intrin.h>
 
 #ifdef __APPLE__
@@ -24,6 +26,7 @@
 #endif
 
 #pragma intrinsic(__rdtsc)
+#endif
 
 namespace pt {
 
@@ -55,6 +58,7 @@ enum PTEndian {PT_BIG_ENDIAN, PT_LITTLE_ENDIAN};
 class System {
 public:
 
+#ifdef NEEDS_WORK_VORTEX_DGNDB 
 	/** */
 	static void init();
 	static bool initialized;
@@ -88,6 +92,7 @@ public:
      */
     static PTEndian machineEndian();
 
+#endif
     /**
      Guarantees that the start of the array is aligned to the 
      specified number of bytes.
@@ -99,6 +104,7 @@ public:
      */
     CCLASSES_API static void alignedFree(void* ptr);
 
+#ifdef NEEDS_WORK_VORTEX_DGNDB 
 	/** An implementation of memcpy that may be up to 2x as fast as the C library
 	    one on some processors.  Guaranteed to have the same behavior as memcpy
 		in all cases. */
@@ -200,9 +206,10 @@ public:
 		static long m_OSXCPUSpeed; //In Cycles/Second
 		static double m_secondsPerNS;
 	//#endif
+#endif
 };
 
-
+#ifdef NEEDS_WORK_VORTEX_DGNDB 
 #ifdef _WIN32
     inline uint64_t System::getCycleCount() {
        //uint64_t timehi, timelo;
@@ -264,7 +271,7 @@ inline void System::endCycleCount(uint64& cycleCount) {
 	#endif
 }
 
-
+#endif
 } // namespace
 
 

@@ -1,9 +1,11 @@
 #include "PointoolsVortexAPIInternal.h"
 
+#ifdef NEEDS_WORK_VORTEX_DGNDB 
 #include <ptds/DataSourceServer.h>
 #include <ptds/DataSourceManager.h>
 
 #include <PTRMI/Manager.h>
+
 #include <PTRMI/ClientInterfaceExtDataBentley.h>
 
 #include <ptds/DataSourceMultiReadSet.h>
@@ -481,3 +483,4 @@ bool DataSourceServerClientInterface::closeAndDelete(void)
 
 } // End ptds namespace
 
+#endif

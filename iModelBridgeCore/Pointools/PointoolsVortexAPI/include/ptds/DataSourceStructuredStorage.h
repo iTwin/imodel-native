@@ -3,8 +3,7 @@
 
 #include <ptds/DataSource.h>
 
-#include <string.h>
-#include <map>
+#ifdef NEEDS_WORK_VORTEX_DGNDB
 
 namespace PTRMI
 {
@@ -86,3 +85,5 @@ public:
 };
 
 } // End ptds namespace
+
+#endif

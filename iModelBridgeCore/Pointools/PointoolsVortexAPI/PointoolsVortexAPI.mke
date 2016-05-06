@@ -48,6 +48,9 @@ $(BuildContextSrc)pshader.frag.cpp: $(PointoolsVortexAPIShaderSrc)pshader.frag
 dirToSearch=$(PointoolsVortexAPIInclude)
 %include cincapnd.mki
 
+#&&MM to fix.
+GccCommonCompOpts + -fpermissive
+
 #----------------------------------------------------------------------
 #   Pre-compiled header
 #----------------------------------------------------------------------
@@ -68,8 +71,7 @@ CCPchOpts = $(UsePrecompiledHeaderOptions)
 #CCPchOpts + -showIncludes
 CPchOpts  = $(UsePrecompiledHeaderOptions)
 
-#&&MM to fix.
-GccCommonCompOpts + -fpermissive
+
 
 #DisableMultiCompile=1
 
@@ -85,18 +87,13 @@ $(o)PointoolsBentleyLicense$(oext)       : $(basedir)src/ptlic/PointoolsBentleyL
 $(o)PointoolsBentleyLicenseAPI$(oext)    : $(basedir)src/ptlic/PointoolsBentleyLicenseAPI.cpp                    $(basedir)include/ptlic/PointoolsBentleyLicenseAPI.h             ${MultiCompileDepends}
 %endif
 
-
 $(o)OBBox$(oext)                         : $(basedir)src/pt/OBBox.cpp                                            $(basedir)include/pt/OBBox.h                                     ${MultiCompileDepends}
-
-%if 1
 
 $(o)DebugAssert$(oext)                   : $(basedir)src/pt/DebugAssert.cpp                                      $(basedir)include/pt/DebugAssert.h                               ${MultiCompileDepends}
 
 $(o)System$(oext)                        : $(basedir)src/pt/System.cpp                                           $(basedir)include/pt/System.h                                    ${MultiCompileDepends}
 
 $(o)FilePath$(oext)                      : $(basedir)src/ptds/FilePath.cpp                                       $(basedir)include/ptds/FilePath.h                                ${MultiCompileDepends}
-
-
 
 $(o)PointoolsAPI_imaging$(oext)          : $(basedir)src/ptapi/PointoolsAPI_imaging.cpp                                                                                            ${MultiCompileDepends}
 
@@ -261,9 +258,7 @@ $(o)DataSourceRead$(oext)                : $(basedir)src/ptds/DataSourceRead.cpp
 $(o)pointcloud$(oext)                    : $(basedir)src/ptcloud2/pointcloud.cpp                                 $(basedir)include/ptcloud2/pointcloud.h                          ${MultiCompileDepends}
                                                                                                                   
 $(o)scene_indexstream$(oext)             : $(basedir)src/ptcloud2/scene_indexstream.cpp                                                                                            ${MultiCompileDepends}
-                                                                                                                  
-$(o)DataSourceMultiReadSet$(oext)        : $(basedir)src/ptds/DataSourceMultiReadSet.cpp                         $(basedir)include/ptds/DataSourceMultiReadSet.h                  ${MultiCompileDepends}
-                                                                                                               
+                                                                                                                                                                                                                                 
 $(o)VoxelLODSet$(oext)                   : $(basedir)src/ptengine/VoxelLODSet.cpp                                $(basedir)include/ptengine/VoxelLODSet.h                         ${MultiCompileDepends}
                                                                                                                   
 $(o)pointsScene$(oext)                   : $(basedir)src/ptengine/pointsScene.cpp                                $(basedir)include/ptengine/pointsScene.h                         ${MultiCompileDepends}
@@ -315,9 +310,7 @@ $(o)SceneGraph$(oext)                    : $(basedir)src/pt/SceneGraph.cpp      
 $(o)buildindex$(oext)                    : $(basedir)src/ptcloud2/buildindex.cpp                                 $(basedir)include/ptcloud2/buildindex.h                          ${MultiCompileDepends}
                                                                                                                   
 $(o)layers$(oext)                        : $(basedir)src/ptedit/layers.cpp                                                                                                         ${MultiCompileDepends}
-                                                                                                                                                                                                                                    
-$(o)DataSourceServer$(oext)              : $(basedir)src/ptds/DataSourceServer.cpp                               $(basedir)include/ptds/DataSourceServer.h                        ${MultiCompileDepends}
-                                                                                                                                                                                                                                   
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
 $(o)DataSourceMemory$(oext)              : $(basedir)src/ptds/DataSourceMemory.cpp                               $(basedir)include/ptds/DataSourceMemory.h                        ${MultiCompileDepends}
                                                                                                                   
 $(o)DoubleBuffering$(oext)               : $(basedir)src/encryption/DoubleBuffering.cpp                          $(basedir)include/encryption/DoubleBuffering.h                   ${MultiCompileDepends}
@@ -372,9 +365,9 @@ $(o)visibilityEngine$(oext)              : $(basedir)src/ptengine/visibilityEngi
 
 $(o)glFrustum$(oext)                     : $(basedir)src/ptgl/glFrustum.cpp                                      $(basedir)include/ptgl/glFrustum.h                               ${MultiCompileDepends}
 
-%endif
-
+#----------------------- HAVE_OPENGL -------------------------------------------
 %if defined(HAVE_OPENGL)
+
 $(o)renderClipEffect$(oext)              : $(basedir)src/ptengine/renderClipEffect.cpp                           $(basedir)include/ptengine/renderClipEffect.h                    ${MultiCompileDepends}
                                                                                                                   
 $(o)PointoolsAPI_unitTests$(oext)        : $(basedir)src/ptapi/PointoolsAPI_unitTests.cpp                                                                                          ${MultiCompileDepends}
@@ -433,12 +426,23 @@ $(o)renderIntensityEffect$(oext)         : $(basedir)src/ptengine/renderIntensit
 
 %endif
 
-$(o)Status$(oext)                        : $(basedir)src/PTRMI/Status.cpp                                        $(basedir)include/PTRMI/Status.h                                 ${MultiCompileDepends}
-                                                                                                                  
+#----------------------------NEEDS_WORK_VORTEX_DGNDB_SERVER -----------------------
 %if defined(NEEDS_WORK_VORTEX_DGNDB_SERVER)
+
 $(o)PipeProtocolManager$(oext)           : $(basedir)src/PTRMI/PipeProtocolManager.cpp                           $(basedir)include/PTRMI/PipeProtocolManager.h                    ${MultiCompileDepends}
+
+$(o)PipeManagerTCP$(oext)                : $(basedir)src/PTRMI/PipeManagerTCP.cpp                                $(basedir)include/PTRMI/PipeManagerTCP.h                         ${MultiCompileDepends}
+
+$(o)PipeTCP$(oext)                       : $(basedir)src/PTRMI/PipeTCP.cpp                                       $(basedir)include/PTRMI/PipeTCP.h                                ${MultiCompileDepends}
+
+$(o)ClientInterfaceExtDataBentley$(oext) : $(basedir)src/PTRMI/ClientInterfaceExtDataBentley.cpp                 $(basedir)include/PTRMI/ClientInterfaceExtDataBentley.h          ${MultiCompileDepends}
+
 %endif
 
+#--------------------------------- PTRMI -----------------------------------------
+
+$(o)Status$(oext)                        : $(basedir)src/PTRMI/Status.cpp                                        $(basedir)include/PTRMI/Status.h                                 ${MultiCompileDepends}
+                                                                                                                  
 $(o)URL$(oext)                           : $(basedir)src/PTRMI/URL.cpp                                           $(basedir)include/PTRMI/URL.h                                    ${MultiCompileDepends}
 
 $(o)ServerInterface$(oext)               : $(basedir)src/PTRMI/ServerInterface.cpp                               $(basedir)include/PTRMI/ServerInterface.h                        ${MultiCompileDepends}
@@ -453,13 +457,11 @@ $(o)ManagerClientInterface$(oext)        : $(basedir)src/PTRMI/ManagerClientInte
 
 $(o)ClientServerInterface$(oext)         : $(basedir)src/PTRMI/ClientServerInterface.cpp                         $(basedir)include/PTRMI/ClientServerInterface.h                  ${MultiCompileDepends}
 
-$(o)PipeExt$(oext)                       : $(basedir)src/PTRMI/PipeExt.cpp                                       $(basedir)include/PTRMI/PipeExt.h                                ${MultiCompileDepends}
-                                                                                                                  
-%if defined(NEEDS_WORK_VORTEX_DGNDB_SERVER)
-v$(o)PipeManagerTCP$(oext)                : $(basedir)src/PTRMI/PipeManagerTCP.cpp                                $(basedir)include/PTRMI/PipeManagerTCP.h                         ${MultiCompileDepends}
+$(o)PipeExt$(oext)                       : $(basedir)src/PTRMI/PipeExt.cpp                                       $(basedir)include/PTRMI/PipeExt.h                                ${MultiCompileDepends}                                                                                              
+                                                                                                                
+$(o)DataSourceServer$(oext)              : $(basedir)src/ptds/DataSourceServer.cpp                               $(basedir)include/ptds/DataSourceServer.h                        ${MultiCompileDepends}
 
-$(o)PipeTCP$(oext)                       : $(basedir)src/PTRMI/PipeTCP.cpp                                       $(basedir)include/PTRMI/PipeTCP.h                                ${MultiCompileDepends}
-%endif
+$(o)DataSourceMultiReadSet$(oext)        : $(basedir)src/ptds/DataSourceMultiReadSet.cpp                         $(basedir)include/ptds/DataSourceMultiReadSet.h                  ${MultiCompileDepends}
                                                                                                                   
 $(o)Manager$(oext)                       : $(basedir)src/PTRMI/Manager.cpp                                       $(basedir)include/PTRMI/Manager.h                                ${MultiCompileDepends}
                                                                                                                   
@@ -493,7 +495,6 @@ $(o)ManagerServerInterface$(oext)        : $(basedir)src/PTRMI/ManagerServerInte
 
 $(o)DispatcherPTRMI$(oext)               : $(basedir)src/PTRMI/DispatcherPTRMI.cpp                                                                                                 ${MultiCompileDepends}
 
-$(o)ClientInterfaceExtDataBentley$(oext) : $(basedir)src/PTRMI/ClientInterfaceExtDataBentley.cpp                 $(basedir)include/PTRMI/ClientInterfaceExtDataBentley.h          ${MultiCompileDepends}
 
 #
 # Compile the above uniform set of dependency blocks in a single invocation of the Visual C compiler.

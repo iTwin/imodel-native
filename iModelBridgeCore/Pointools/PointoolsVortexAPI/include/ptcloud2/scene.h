@@ -147,15 +147,15 @@ namespace pcloud
 	};
 
     // Custom literals used by the scene
-    constexpr unsigned long long operator"" _K(unsigned long long val)
+    constexpr unsigned long long operator"" _Kilo(unsigned long long val)
         {
         return val * 1000;
         }
-    constexpr unsigned long long operator"" _M(unsigned long long val)
+    constexpr unsigned long long operator"" _Million(unsigned long long val)
         {
         return val * 1000000;
         }
-    constexpr unsigned long long operator"" _B(unsigned long long val)
+    constexpr unsigned long long operator"" _Billion(unsigned long long val)
         {
         return val * 1000000000;
         }

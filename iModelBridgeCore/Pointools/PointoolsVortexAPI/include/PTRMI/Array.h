@@ -2,6 +2,7 @@
 #pragma once
 
 #include <PTRMI/PTRMI.h>
+#include <PTRMI/DataBuffer.h>
 
 #define ARRAY_T		template<typename T>
 

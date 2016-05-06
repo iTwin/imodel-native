@@ -1,6 +1,8 @@
 
 #pragma once
 
+#include <PTRMI/ArrayDirect.h>
+
 namespace PTRMI
 {
 
