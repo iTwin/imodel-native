@@ -103,7 +103,7 @@ struct ChangeManager : public IChangeManager
 
         WSCACHE_EXPORT BentleyStatus ModifyObject(ECInstanceKeyCR instanceKey, JsonValueCR properties, SyncStatus syncStatus = SyncStatus::Ready) override;
 
-        WSCACHE_EXPORT BentleyStatus RevertModifiedObject(ECInstanceKeyCR instance) override;
+        WSCACHE_EXPORT BentleyStatus RevertModifiedObject(ECInstanceKeyCR instanceKey) override;
 
         WSCACHE_EXPORT BentleyStatus DeleteObject(ECInstanceKeyCR instanceKey, SyncStatus syncStatus = SyncStatus::Ready) override;
 
@@ -126,6 +126,9 @@ struct ChangeManager : public IChangeManager
 
         WSCACHE_EXPORT BentleyStatus SetSyncStatus(ECInstanceKeyCR instanceKey, SyncStatus syncStatus) override;
 
+        WSCACHE_EXPORT BentleyStatus AddCreatedInstanceToResponse(CachedResponseKeyCR responseKey, ECInstanceKeyCR instanceKey);
+        WSCACHE_EXPORT BentleyStatus RemoveCreatedInstanceFromResponse(CachedResponseKeyCR responseKey, ECInstanceKeyCR instanceKey);
+
         // -- Getting changes --
 
         WSCACHE_EXPORT bool HasChanges() override;
@@ -138,13 +141,13 @@ struct ChangeManager : public IChangeManager
         WSCACHE_EXPORT RelationshipChange GetRelationshipChange(ECInstanceKeyCR relationshipKey) override;
         WSCACHE_EXPORT FileChange GetFileChange(ECInstanceKeyCR instanceKey) override;
 
-        WSCACHE_EXPORT IChangeManager::ChangeStatus GetObjectChangeStatus(ECInstanceKeyCR instance) override;
-        WSCACHE_EXPORT ChangeManager::SyncStatus GetObjectSyncStatus(ECInstanceKeyCR instance) override;
+        WSCACHE_EXPORT IChangeManager::ChangeStatus GetObjectChangeStatus(ECInstanceKeyCR instanceKey) override;
+        WSCACHE_EXPORT ChangeManager::SyncStatus GetObjectSyncStatus(ECInstanceKeyCR instanceKey) override;
 
         WSCACHE_EXPORT InstanceRevisionPtr ReadInstanceRevision(ECInstanceKeyCR instanceKey) override;
         WSCACHE_EXPORT FileRevisionPtr ReadFileRevision(ECInstanceKeyCR instanceKey) override;
 
-        WSCACHE_EXPORT BentleyStatus ReadModifiedProperties(ECInstanceKeyCR instance, JsonValueR propertiesOut) override;
+        WSCACHE_EXPORT BentleyStatus ReadModifiedProperties(ECInstanceKeyCR instanceKey, JsonValueR propertiesOut) override;
 
         // -- Commiting changes --
 

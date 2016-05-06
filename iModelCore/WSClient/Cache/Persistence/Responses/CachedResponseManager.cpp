@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Persistence/Responses/CachedResponseManager.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -38,6 +38,7 @@ m_responsePageClass(dbAdapter.GetECClass(SCHEMA_CacheSchema, CLASS_CachedRespons
 m_responseToParentClass(dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_ResponseInfoToParent)),
 m_responseToHolderClass(dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_ResponseInfoToHolder)),
 m_responseToResponsePageClass(dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_ResponseToResponsePage)),
+m_responseToAdditionalInstance(dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_ResponseToAdditionalInstance)),
 
 m_responsePageToResultClass(dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_ResponsePageToResult)),
 m_responsePageToResultWeakClass(dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_ResponsePageToResultWeak)),
@@ -105,7 +106,7 @@ CachedResponseInfo CachedResponseManager::ReadInfo(CachedResponseKeyCR key)
     Utf8PrintfString statementKey("CachedResponseManager::ReadInfo:%lld", key.GetParent().GetECClassId());
     auto statement = m_statementCache->GetPreparedStatement(statementKey, [=]
         {
-        return 
+        return
             "SELECT response.* "
             "FROM ONLY " ECSql_CachedResponseInfoClass " response "
             "JOIN ONLY " + ECSqlBuilder::ToECSqlSnippet(*parentClass) + " parent "
@@ -507,12 +508,12 @@ const InstanceCacheHelper::CachedInstances& instances
     bset<CachedRelationshipKey> newRelInfos;
 
     std::set_difference(oldCachedRelInfos.begin(), oldCachedRelInfos.end(),
-        newCachedRelInfos.begin(), newCachedRelInfos.end(),
-        std::inserter(outdatedRelInfos, outdatedRelInfos.end()));
+                        newCachedRelInfos.begin(), newCachedRelInfos.end(),
+                        std::inserter(outdatedRelInfos, outdatedRelInfos.end()));
 
     std::set_difference(newCachedRelInfos.begin(), newCachedRelInfos.end(),
-        oldCachedRelInfos.begin(), oldCachedRelInfos.end(),
-        std::inserter(newRelInfos, newRelInfos.end()));
+                        oldCachedRelInfos.begin(), oldCachedRelInfos.end(),
+                        std::inserter(newRelInfos, newRelInfos.end()));
 
     if (SUCCESS != m_relationshipInfoManager->RelateCachedRelationshipsToHolder(pageKey, m_responsePageToRelInfoClass, newRelInfos) ||
         SUCCESS != m_relationshipInfoManager->RemoveCachedRelationshipsFromHolder(pageKey, m_responsePageToRelInfoClass, outdatedRelInfos))
@@ -557,6 +558,60 @@ const InstanceCacheHelper::CachedInstances& instances
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    05/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus CachedResponseManager::AddAdditionalInstance(CachedResponseKeyCR responseKey, ECInstanceKeyCR instanceKey)
+    {
+    auto info = ReadInfo(responseKey);
+    if (!info.IsCached())
+        {
+        if (SUCCESS != InsertInfo(info))
+            return ERROR;
+        if (SUCCESS != SetResponseCompleted(responseKey, true))
+            return ERROR;
+        }
+
+    if (!m_dbAdapter->RelateInstances(m_responseToAdditionalInstance, info.GetKey(), instanceKey).IsValid())
+        return ERROR;
+
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    05/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus CachedResponseManager::RemoveAdditionalInstance(CachedResponseKeyCR responseKey, ECInstanceKeyCR instanceKey)
+    {
+    auto info = ReadInfo(responseKey);
+    if (!info.IsCached())
+        return ERROR;
+
+    return m_dbAdapter->DeleteRelationship(m_responseToAdditionalInstance, info.GetKey(), instanceKey);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    05/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus CachedResponseManager::RemoveAdditionalInstance(ECInstanceKeyCR instanceKey)
+    {
+    auto statement = m_statementCache->GetPreparedStatement("CachedResponseManager::RemoveAdditionalInstance", [&]
+        {
+        return "DELETE FROM ONLY " + ECSqlBuilder::ToECSqlSnippet(*m_responseToAdditionalInstance) + " WHERE TargetECInstanceId = ?";
+        });
+
+    statement->BindId(1, instanceKey.GetECInstanceId());
+
+    ECSqlStepStatus status;
+    while (ECSqlStepStatus::HasRow == (status = statement->Step()))
+        {}
+
+    if (ECSqlStepStatus::Done != status)    
+        return ERROR;
+
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus CachedResponseManager::ReadResponse
@@ -595,6 +650,10 @@ BentleyStatus CachedResponseManager::ReadResponseInstanceKeys(ECInstanceKeyCR re
             return ERROR;
             }
         }
+
+    if (SUCCESS != m_hierarchyManager->ReadTargetKeys(responseKey, m_responseToAdditionalInstance, keysOut))
+        return ERROR;
+
     return SUCCESS;
     }
 
@@ -609,41 +668,43 @@ bset<ObjectId>& objectIdsOut
     {
     for (auto& page : FindPages(responseKey))
         {
-        if (SUCCESS != ReadPageObjectIds(page, m_responsePageToResultClass, objectIdsOut) ||
-            SUCCESS != ReadPageObjectIds(page, m_responsePageToResultWeakClass, objectIdsOut))
+        if (SUCCESS != ReadTargetObjectIds(page, m_responsePageToResultClass, objectIdsOut) ||
+            SUCCESS != ReadTargetObjectIds(page, m_responsePageToResultWeakClass, objectIdsOut))
             {
             return ERROR;
             }
         }
+
+    if (SUCCESS != ReadTargetObjectIds(responseKey, m_responseToAdditionalInstance, objectIdsOut))
+        return ERROR;
+
     return SUCCESS;
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    07/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus CachedResponseManager::ReadPageObjectIds
+BentleyStatus CachedResponseManager::ReadTargetObjectIds
 (
-ECInstanceKeyCR pageKey,
+ECInstanceKeyCR sourceKey,
 ECRelationshipClassCP relationshipClass,
-bset<ObjectId>& objectIdsOut
+bset<ObjectId>& targetIdsOut
 )
     {
-    Utf8PrintfString key("CachedResponseManager::ReadPageObjectIds:%lld", relationshipClass->GetId());
+    Utf8PrintfString key("CachedResponseManager::ReadTargetObjectIds:%lld", relationshipClass->GetId());
     auto statement = m_statementCache->GetPreparedStatement(key, [&]
         {
         return CacheQueryHelper::ECSql::SelectRemoteIdsByRelatedSourceECInstanceId(*relationshipClass);
         });
 
-    statement->BindId(1, pageKey.GetECInstanceId());
+    statement->BindId(1, sourceKey.GetECInstanceId());
 
     ECSqlStepStatus status;
     while (ECSqlStepStatus::HasRow == (status = statement->Step()))
         {
         ECClassCP resultClass = m_dbAdapter->GetECClass(statement->GetValueInt64(0));
         if (nullptr == resultClass)
-            {
             return ERROR;
-            }
 
         ObjectId objectId
             {
@@ -652,13 +713,12 @@ bset<ObjectId>& objectIdsOut
             statement->GetValueText(1)
             };
 
-        objectIdsOut.insert(objectId);
+        targetIdsOut.insert(objectId);
         }
 
     if (ECSqlStepStatus::Done != status)
-        {
         return ERROR;
-        }
+
     return SUCCESS;
     }
 

@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Persistence/Core/CacheSchema.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -15,7 +15,7 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 //--------------------------------------------------------------------------------------+
 
 #define SCHEMA_CacheSchema_Major                                    1
-#define SCHEMA_CacheSchema_Minor                                    7
+#define SCHEMA_CacheSchema_Minor                                    8
 
 #define SCHEMA_CacheSchema                                          "DSCacheSchema"
 
@@ -88,6 +88,7 @@ enum class CachedInstanceState
 #define CLASS_ResponseInfoToParent                                  "CachedResponseInfoToParentRelationship"
 #define CLASS_ResponseInfoToHolder                                  "CachedResponseInfoToHolderRelationship"
 #define CLASS_ResponseToResponsePage                                "ResponseToResponsePage"
+#define CLASS_ResponseToAdditionalInstance                          "ResponseToAdditionalInstance"
 #define CLASS_ResponsePageToResult                                  "ResponsePageToResult"
 #define CLASS_ResponsePageToResultWeak                              "ResponsePageToResultWeak"
 #define CLASS_ResponsePageToRelationshipInfo                        "ResponsePageToRelationshipInfo"

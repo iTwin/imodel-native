@@ -51,6 +51,10 @@ struct MockChangeManager : public IChangeManager
             BentleyStatus(ECInstanceKeyCR, Utf8StringCR));
         MOCK_METHOD2 (SetSyncStatus,
             BentleyStatus (ECInstanceKeyCR, SyncStatus));
+        MOCK_METHOD2 (AddCreatedInstanceToResponse, 
+            BentleyStatus(CachedResponseKeyCR responseKey, ECInstanceKeyCR instanceKey));
+        MOCK_METHOD2 (RemoveCreatedInstanceFromResponse, 
+            BentleyStatus(CachedResponseKeyCR responseKey, ECInstanceKeyCR instanceKey));
         MOCK_METHOD0 (HasChanges,
             bool ());
         MOCK_METHOD2 (GetChanges,
