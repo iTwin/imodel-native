@@ -531,7 +531,7 @@ PTvoid _ptEndViewportDraw()
 //-------------------------------------------------------------------------------
 PTint _ptLeastRecentlyUsedViewport()
 {
-	PTint min = 1e9;
+	PTint min = static_cast<PTint>(1e9);
 	PTint viewport = -1;
 	for (int i=0; i<PT_MAX_VIEWPORTS; i++)
 	{
@@ -988,7 +988,7 @@ static float screenToActual(PTint sx, PTint sy, PTdouble *actual, PTfloat *depth
 		if (px < 16 && px >= 0)
 		{
 			double a[3];
-			double v[]= { (double)sx, (double)sy,usedepth[px] };
+			double v[]= { sx,sy,usedepth[px] };
 			vstore.unproject3v(a, v);
 			for (i=0; i<3; i++) actual[i] = (float)a[i];
 			return usedepth[px];

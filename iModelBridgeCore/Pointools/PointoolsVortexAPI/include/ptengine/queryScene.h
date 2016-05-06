@@ -159,7 +159,7 @@ namespace pointsengine
 	{
 		PointInSphere(pt::BoundingSphere &bs) : sphere(bs) {};
 		bool operator() (const pt::vector3 &p )	{ return sphere.contains(p); }
-		bool operator() (const pt::vector3d &p )	{ return sphere.contains(pt::vector3(p.x, p.y, p.z)); }
+		bool operator() (const pt::vector3d &p )	{ return sphere.contains(pt::vector3(static_cast<float>(p.x), static_cast<float>(p.y), static_cast<float>(p.z))); }
 		const pt::BoundingSphere &sphere;
 	};
 	//
@@ -212,7 +212,7 @@ namespace pointsengine
 	{
 		PointInBox(pt::BoundingBox &bx) : box(bx) {};
 		bool operator() (const pt::vector3 &p )	{ return box.inBounds(p); }
-		bool operator() (const pt::vector3d &p)	{ return box.inBounds(pt::vector3(p.x, p.y, p.z)); }
+		bool operator() (const pt::vector3d &p)	{ return box.inBounds(pt::vector3(static_cast<float>(p.x), static_cast<float>(p.y), static_cast<float>(p.z))); }
 		const pt::BoundingBox &box;
 	};
 	//
@@ -252,7 +252,7 @@ namespace pointsengine
 			return (fabs(plane.distToPlane(p)) < tolerance);
 		}
 		bool operator() (const pt::vector3d &p)	{ 
-			return (fabs(plane.distToPlane(pt::vector3(p.x, p.y, p.z))) < tolerance);
+			return (fabs(plane.distToPlane(pt::vector3(static_cast<float>(p.x), static_cast<float>(p.y), static_cast<float>(p.z)))) < tolerance);
 		}
 		
 		const pt::Planef &plane;
@@ -297,7 +297,7 @@ namespace pointsengine
             return fabs(plane.distToPlane(p)) < tolerance && fence.pntInFence(point);
 		}
 		bool operator() (const pt::vector3d &p)	{ 
-			return (*this)(pt::vector3(p.x, p.y, p.z));
+			return (*this)(pt::vector3(static_cast<float>(p.x), static_cast<float>(p.y), static_cast<float>(p.z)));
 		}
 		
 		pt::vector2 point;

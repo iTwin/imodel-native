@@ -100,10 +100,10 @@ void Gradient::fillInterpolatedGradient( const GradKey *a, const GradKey *b )
 	if (a->pos > 0.9999f)	return;
 	if (!b)	b = &end;		// if no end key, set end as copy of start at 1.0
 
-	int xa = a->pos * m_gradSize;
+    int xa = static_cast<int>(a->pos * m_gradSize);
 	if (xa > m_gradSize) xa = m_gradSize;
 
-	int xb = b->pos * m_gradSize;
+	int xb = static_cast<int>(b->pos * m_gradSize);
 	if (xb > m_gradSize) xb = m_gradSize;
 
 	float ca1, ca2, ca3;
@@ -160,9 +160,9 @@ void Gradient::fillInterpolatedGradient( const GradKey *a, const GradKey *b )
 			switch ( b->mode )
 			{
 			case GradColRGB:
-				col.rgb( ca1 + pos * (cb1 - ca1),
-						ca2 + pos * (cb2 - ca2),
-						ca3 + pos * (cb3 - ca3));
+				col.rgb( static_cast<int>(ca1 + pos * (cb1 - ca1)),
+						 static_cast<int>(ca2 + pos * (cb2 - ca2)),
+						 static_cast<int>(ca3 + pos * (cb3 - ca3)));
 				break;
 					
 			case GradColHSL:

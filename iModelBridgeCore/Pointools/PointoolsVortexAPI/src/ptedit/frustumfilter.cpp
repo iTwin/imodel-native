@@ -7,17 +7,14 @@ using namespace pt;
 
 void FrustumSelect::buildFromScreenRect(const pt::Recti &r, const pt::ViewParams &vparams, double units)
 {
-	vector3 x1y1_n(r.lower(0), r.lower(1), 0.005f);
-	vector3 x1y1_f(r.lower(0), r.lower(1), 0.9995f);
-
-	vector3 x1y2_n(r.lower(0), r.upper(1), 0.005f);
-	vector3 x1y2_f(r.lower(0), r.upper(1), 0.9995f);
-
-	vector3 x2y2_n(r.upper(0), r.upper(1), 0.005f);
-	vector3 x2y2_f(r.upper(0), r.upper(1), 0.9995f);
-
-	vector3 x2y1_n(r.upper(0), r.lower(1), 0.005f);
-	vector3 x2y1_f(r.upper(0), r.lower(1), 0.9995f);
+    vector3 x1y1_n(static_cast<float>(r.lower(0)), static_cast<float>(r.lower(1)), 0.005f);
+	vector3 x1y1_f(static_cast<float>(r.lower(0)), static_cast<float>(r.lower(1)), 0.9995f);
+	vector3 x1y2_n(static_cast<float>(r.lower(0)), static_cast<float>(r.upper(1)), 0.005f);
+	vector3 x1y2_f(static_cast<float>(r.lower(0)), static_cast<float>(r.upper(1)), 0.9995f);
+	vector3 x2y2_n(static_cast<float>(r.upper(0)), static_cast<float>(r.upper(1)), 0.005f);
+	vector3 x2y2_f(static_cast<float>(r.upper(0)), static_cast<float>(r.upper(1)), 0.9995f);
+	vector3 x2y1_n(static_cast<float>(r.upper(0)), static_cast<float>(r.lower(1)), 0.005f);
+	vector3 x2y1_f(static_cast<float>(r.upper(0)), static_cast<float>(r.lower(1)), 0.9995f);
 	
 	vparams.unproject3vTV(corners[0], x1y1_n);
 	vparams.unproject3vTV(corners[1], x2y1_n);

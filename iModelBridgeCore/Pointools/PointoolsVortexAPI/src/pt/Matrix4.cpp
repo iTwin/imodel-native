@@ -18,7 +18,7 @@ void matrix4::invert()
 	float	d = determinant();
 	if (d == 0.0) return;
 
-	d = 1.0 / d;
+	d = static_cast<float>(1.0 / d);
 
 	matrix4	&m = *this;
 	matrix4	result;

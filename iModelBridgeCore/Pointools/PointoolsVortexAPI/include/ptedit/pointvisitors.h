@@ -384,7 +384,7 @@ namespace ptedit
 
 					if (layers)
 					{
-						uint voxel_count = 0;
+                        uint64_t voxel_count = 0;
 
 						// explicitly code the iteration here, because the filter channel maybe more complete than the lod
 						// in the case that a channel was loaded
@@ -409,7 +409,7 @@ namespace ptedit
 							voxel_count = cp.totalCount();
 
 							if (v->numPointsEdited())
-								voxel_count *= (float)v->fullPointCount()/v->numPointsEdited();
+								voxel_count = static_cast<uint64_t>(voxel_count * (float)v->fullPointCount()/v->numPointsEdited());
 						}
 						_count[0] += voxel_count;
 					}

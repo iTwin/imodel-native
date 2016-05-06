@@ -67,7 +67,7 @@ public:
 	void world2ProjectSpace(const vector3d &v0, vector3 &v1) const	{
 		vector3d v1d;
 		m_registration.invMatrix().vec3_multiply_mat4(v0,v1d);	
-		v1.x = v1d.x;v1.y = v1d.y;v1.z = v1d.z;
+		v1.x = static_cast<float>(v1d.x);v1.y = static_cast<float>(v1d.y);v1.z = static_cast<float>(v1d.z);
 	}
 private:
 	void updateSceneArray();

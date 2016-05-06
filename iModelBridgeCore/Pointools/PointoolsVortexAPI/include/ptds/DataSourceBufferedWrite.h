@@ -19,7 +19,7 @@ namespace ptds
 			return writeBytes(reinterpret_cast<const DataSource::Data *>(buffer), number_bytes);
 		}
 
-		template<typename T> unsigned int writeBytes	(const T &buffer)
+		template<typename T> DataSource::Size writeBytes	(const T &buffer)
 		{
 			return writeBytes(reinterpret_cast<const DataSource::Data *>(&buffer), sizeof(T));
 		}

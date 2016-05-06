@@ -16,8 +16,10 @@
 #include <ptengine/engine.h>
 #include <ptedit/editManager.h>
 
+#ifdef HAVE_OPENGL
 #include <ptgl/glcamera.h>
 #include <ptgl/gllight.h>
+#endif
 
 #include <pt/debugassert.h>
 #include <ptappdll/ptapp.h>

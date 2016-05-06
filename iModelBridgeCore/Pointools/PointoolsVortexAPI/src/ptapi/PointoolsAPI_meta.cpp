@@ -42,7 +42,7 @@ namespace
 {
 	typedef std::map< PThandle, FileMeta* > FileMetaMap;
 	FileMetaMap m_fileMeta;
-	PThandle m_lastHandle = 15e7;
+    PThandle m_lastHandle = static_cast<PThandle>(15e7);
 };
 extern pcloud::Scene*	sceneFromHandle(PThandle handle);
 extern int				setLastErrorCode( int );
@@ -62,7 +62,7 @@ FileMeta *extractSceneMeta( const pcloud::Scene *scene, bool inGraph )
 
 	for (int i=0; i<meta->numClouds; i++)
 	{
-		meta->numPoints += scene->cloud(i)->numPoints();
+        meta->numPoints += static_cast<int>(scene->cloud(i)->numPoints());
 		meta->sceneSpec |= scene->cloud(i)->hasChannel( pcloud::PCloud_Intensity ) ? PT_HAS_INTENSITY : 0;
 		meta->sceneSpec |= scene->cloud(i)->hasChannel( pcloud::PCloud_RGB ) ? PT_HAS_RGB : 0;
 		meta->sceneSpec |= scene->cloud(i)->hasChannel( pcloud::PCloud_Normal ) ? PT_HAS_NORMAL : 0;

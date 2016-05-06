@@ -121,7 +121,7 @@ namespace pt
 				m_axis[i].normalize();
 			}			
 			
-			m_center.set(mat(3,0), mat(3,1), mat(3,2));
+			m_center.set(static_cast<float>(mat(3,0)), static_cast<float>(mat(3,1)), static_cast<float>(mat(3,2)));
 		}
 
 		void				transform(const mmatrix4d &mat)
@@ -153,7 +153,7 @@ namespace pt
 			m_axis[1].set(0,1,0);
 			m_axis[2].set(0,0,1);
 
-			m_extents.set( bx.dx()*0.5, bx.dy()*0.5, bx.dz()*0.5);
+			m_extents.set( static_cast<float>(bx.dx()*0.5), static_cast<float>(bx.dy()*0.5), static_cast<float>(bx.dz()*0.5));
 			
 			return (*this);
 		}

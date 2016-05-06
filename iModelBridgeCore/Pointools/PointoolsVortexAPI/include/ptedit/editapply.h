@@ -34,9 +34,9 @@ namespace ptedit
 				&& (!v->numPointsEdited() || (v->numPointsEdited() > v->lodPointCount())))
 			{
 				if ( g_editWorkingMode & EditWorkOnAll || (g_editApplyMode & EditIncludeOOC) )
-					v->numPointsEdited( v->fullPointCount() );
+					v->numPointsEdited(static_cast<uint>(v->fullPointCount()) );
 				else
-					v->numPointsEdited( v->lodPointCount() * g_state.density );
+					v->numPointsEdited( static_cast<uint64_t>(v->lodPointCount() * g_state.density ));
 			}
 		}		
 		
@@ -60,7 +60,7 @@ namespace ptedit
 			if (g_editWorkingMode == EditWorkOnProportion)	am = g_state.density;
 
 			// number of points already processed
-			int fp = v->numPointsEdited();
+            uint64_t fp = v->numPointsEdited();
 
 			{
 				// for ooc we will dump data after loading + processing
@@ -88,7 +88,7 @@ namespace ptedit
 						v->_iterateTransformedPointsRange( R, T, 0, 0, v->numPointsEdited() );
 
 					if ( am > 0.999999f )	// numbers must match exactly
-						v->numPointsEdited( v->fullPointCount() ); 
+						v->numPointsEdited(static_cast<uint>(v->fullPointCount()) );
 				}
 			}
 		}

@@ -15,8 +15,10 @@
 #include <ptcloud2/pod.h>
 #include <pt/project.h>
 
+#ifdef HAVE_OPENGL
 #include <ptgl/glcamera.h>
 #include <ptgl/gltext.h>
+#endif
 
 #include <ptengine/queryScene.h>
 
@@ -373,7 +375,7 @@ struct PointLimit
 	}
 	void setVoxel(Voxel *vox) 
 	{ 
-		limit = vox->fullPointCount() * lod;
+		limit = static_cast<int>(vox->fullPointCount() * lod);
 		pcount = 0;
 	}
 	int pcount; 
@@ -396,9 +398,9 @@ struct ReadPoints
 	{
 		if (pcount < limit)
 		{
-			pnts[pcount*3] = pnt.x + cb[0];
-			pnts[pcount*3+1] = pnt.y + cb[1];
-			pnts[pcount*3+2] = pnt.z + cb[2];
+			pnts[pcount*3]   = static_cast<PTfloat>(pnt.x + cb[0]);
+			pnts[pcount*3+1] = static_cast<PTfloat>(pnt.y + cb[1]);
+			pnts[pcount*3+2] = static_cast<PTfloat>(pnt.z + cb[2]);
 		}
 		++pcount;
 	}
@@ -406,9 +408,9 @@ struct ReadPoints
 	{
 		if (pcount < limit)
 		{
-			pnts[pcount*3] = pnt.x + cb[0];
-			pnts[pcount*3+1] = pnt.y + cb[1];
-			pnts[pcount*3+2] = pnt.z + cb[2];
+			pnts[pcount*3]   = static_cast<PTfloat>(pnt.x + cb[0]);
+			pnts[pcount*3+1] = static_cast<PTfloat>(pnt.y + cb[1]);
+			pnts[pcount*3+2] = static_cast<PTfloat>(pnt.z + cb[2]);
 		}
 		++pcount;
 	}
@@ -435,9 +437,9 @@ PTuint	PTAPI PTAPI ptGetSceneProxyPoints(PThandle scene, PTint num_points, PTflo
 		PointsScene::VoxIterator it = voxels.begin(); 
 
 		pt::vector3d world2prj;
-		world2prj.set(-pt::Project3D::project().registration().matrix()(3,0),
-				-pt::Project3D::project().registration().matrix()(3,1),
-				-pt::Project3D::project().registration().matrix()(3,2));
+		world2prj.set(static_cast<float>(-pt::Project3D::project().registration().matrix()(3,0)),
+                      static_cast<float>(-pt::Project3D::project().registration().matrix()(3,1)),
+                      static_cast<float>(-pt::Project3D::project().registration().matrix()(3,2)));
 
 		int num_actual_pnts=0;
 	
@@ -467,9 +469,9 @@ PTuint	PTAPI PTAPI ptGetSceneProxyPoints(PThandle scene, PTint num_points, PTflo
 				{
 					bb.getExtrema(i, pnt);
 				
-					pnts[count++] =  pnt.x;
-					pnts[count++] =  pnt.y;
-					pnts[count++] =  pnt.z;
+					pnts[count++] =  static_cast<PTfloat>(pnt.x);
+					pnts[count++] =  static_cast<PTfloat>(pnt.y);
+					pnts[count++] =  static_cast<PTfloat>(pnt.z);
 				}
 
 				if (count / 3 == num_points) 
@@ -530,12 +532,12 @@ PTres	PTAPI ptSceneBounds(PThandle scene, PTfloat *lower, PTfloat *upper)
 	if (sc)
 	{
 		BoundingBoxD bb = sc->projectBounds().bounds();
-		lower[0] = bb.lower(0);
-		lower[1] = bb.lower(1);
-		lower[2] = bb.lower(2);
-		upper[0] = bb.upper(0);
-		upper[1] = bb.upper(1);
-		upper[2] = bb.upper(2);
+		lower[0] = static_cast<PTfloat>(bb.lower(0));
+		lower[1] = static_cast<PTfloat>(bb.lower(1));
+		lower[2] = static_cast<PTfloat>(bb.lower(2));
+		upper[0] = static_cast<PTfloat>(bb.upper(0));
+		upper[1] = static_cast<PTfloat>(bb.upper(1));
+		upper[2] = static_cast<PTfloat>(bb.upper(2));
 		return 	setLastErrorCode( PTV_SUCCESS );
 	}
 	return 	setLastErrorCode( PTV_INVALID_HANDLE );
@@ -574,12 +576,12 @@ PTres	PTAPI ptCloudBounds(PThandle cloud, PTfloat *lower, PTfloat *upper)
 	if (pc)
 	{
 		BoundingBoxD bb = pc->projectBounds().bounds();
-		lower[0] = bb.lower(0);
-		lower[1] = bb.lower(1);
-		lower[2] = bb.lower(2);
-		upper[0] = bb.upper(0);
-		upper[1] = bb.upper(1);
-		upper[2] = bb.upper(2);
+		lower[0] = static_cast<PTfloat>(bb.lower(0));
+		lower[1] = static_cast<PTfloat>(bb.lower(1));
+		lower[2] = static_cast<PTfloat>(bb.lower(2));
+		upper[0] = static_cast<PTfloat>(bb.upper(0));
+		upper[1] = static_cast<PTfloat>(bb.upper(1));
+		upper[2] = static_cast<PTfloat>(bb.upper(2));
 		return 	setLastErrorCode( PTV_SUCCESS );
 	}
 	return 	setLastErrorCode( PTV_INVALID_HANDLE );

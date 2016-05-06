@@ -721,11 +721,11 @@ class SetEditPointToLODVisitor : public pcloud::Node::Visitor
 			{
 				pcloud::Voxel *v = 
 					const_cast<pcloud::Voxel*>( static_cast<const pcloud::Voxel*>(node) );
-				v->numPointsEdited( v->lodPointCount() * g_state.density );
+                v->numPointsEdited(static_cast<uint>(v->lodPointCount() * g_state.density));
 
 				if (g_editApplyMode & EditIncludeOOC)
 				{
-					v->numPointsEdited( v->fullPointCount() );
+					v->numPointsEdited(static_cast<uint>(v->fullPointCount()) );
 				}
 			}
 			return true;
@@ -1165,7 +1165,7 @@ void PointEditManager::paintRadius( double radius )
 /*****************************************************************************/
 float PointEditManager::getPaintRadius( )
 {
-	return _activeBrush->radius();
+    return static_cast<float>(_activeBrush->radius());
 }
 /*****************************************************************************/
 /**
@@ -1195,7 +1195,7 @@ void PointEditManager::paintSelectAtPoint( const pt::vector3d &pnt, bool limit_r
 	pt::vector3d cam;
 
 	///* check for depth jump */ 
-	float ddepth = lastpoint.dist(pnt);//fabs(cam.dist(pnt) - cam.dist(lastpoint));
+	float ddepth = static_cast<float>(lastpoint.dist(pnt));//fabs(cam.dist(pnt) - cam.dist(lastpoint));
 	
 	if ( !limit_range || lastpoint.is_zero() || ddepth  <  _activeBrush->radius() * 3)
 	{

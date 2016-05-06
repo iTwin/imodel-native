@@ -1,5 +1,3 @@
-#pragma warning (disable : 4251 )
-#pragma warning ( disable : 4786 )
 
 #ifdef PCLOUD_EXPORTS
 #define PCLOUD_API EXPORT_ATTRIBUTE

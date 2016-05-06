@@ -94,7 +94,7 @@ public:
 	float	getZoomDistThreshold() const { return m_zoomthreshold; };
 
 	void	setMinFOV(float fov) { m_minfov = fov; };
-	float	getMinFOV() const { return m_minfov; };
+	float	getMinFOV() const { return STATIC_CAST;
 
 	/*frustum*/ 
 	void setFrustum(float fUpFovDegrees, float fAspectRatio, float fNear, float fFar);

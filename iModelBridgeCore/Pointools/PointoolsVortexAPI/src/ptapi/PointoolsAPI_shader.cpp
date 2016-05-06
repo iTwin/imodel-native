@@ -162,7 +162,7 @@ struct ShaderSetup
 			static int lastMultiple = 0;
 
 			TimeStamp tnow; tnow.tick();
-			int s = TimeStamp::delta_s(g_startTime, tnow);
+			int s = static_cast<int>(TimeStamp::delta_s(g_startTime, tnow));
 			s /= g_timeOut;
 			
 			float factor = 0.6f;
@@ -174,7 +174,7 @@ struct ShaderSetup
 			}
 			if (s > lastMultiple)
 			{
-				g_timeOut *= 0.8;
+				g_timeOut = static_cast<int>(g_timeOut * 0.8);
 				lastMultiple = s;
 			}
 		}
@@ -213,7 +213,7 @@ struct ShaderSetup
 			origin *= planeOffset;
 			origin -= coordinateBase;
 
-			planeOffset = origin.dot( pt::vector3d(planeVector) );
+			planeOffset = static_cast<PTfloat>(origin.dot( pt::vector3d(planeVector) ));
 
 			plane.x = planeVector.x;
 			plane.y = planeVector.y;

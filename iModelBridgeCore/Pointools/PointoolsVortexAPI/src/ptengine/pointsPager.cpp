@@ -424,7 +424,7 @@ void PointsPager::Pager::balanceMemoryLoad( int deltamb )
 				{
 					pcloud::DataChannel *dc = const_cast<pcloud::DataChannel*>(vox->channel(c));
 					if (!dc || !dc->size() ) continue;						
-					gain_bytes -= (dc->multiple() * dc->typesize()) * vox->getCurrentLOD() * vox->fullPointCount();
+					gain_bytes -= static_cast<int64_t>((dc->multiple() * dc->typesize()) * vox->getCurrentLOD() * vox->fullPointCount());
 				}
 				if (gain_bytes <= 0) break;
 			}
@@ -538,7 +538,7 @@ int PointsPager::pagingIteration() const
 //-----------------------------------------------------------------------------
 uint PointsPager::KBytesLoaded(bool reset) 
 {
-	uint kb = pp.bytesLoaded / 1024;
+	uint kb = static_cast<uint>(pp.bytesLoaded / 1024);
 	if (reset)
 		pp.bytesLoaded = 0;
 
@@ -550,7 +550,7 @@ uint PointsPager::KBytesLoaded(bool reset)
 //-----------------------------------------------------------------------------
 uint PointsPager::pointsLoadedMetric(bool reset)
 {
-	uint pnts = pp.weightedNumPntsLoaded;
+	uint pnts = static_cast<uint>(pp.weightedNumPntsLoaded);
 	if (reset) pp.weightedNumPntsLoaded = 0;
 
 	return pnts;
@@ -575,8 +575,8 @@ PointsPager::MemMode determineMemoryMode( int64_t &available )
 	/* auto mem target management */ 
 	if (!pp.useMemoryTarget)
 	{
-		int mb = available / (1024 * 1024);
-		pp.memoryTarget = available * pp.capacity + pp.memoryUsed;
+		int mb = static_cast<int>(available / (1024 * 1024));
+		pp.memoryTarget = static_cast<int64_t>(available * pp.capacity + pp.memoryUsed);
 
 		memoryMode = PointsPager::MemPlenty;
 
@@ -626,7 +626,7 @@ void PointsPager::setCacheSizeMb( int mb )
 //-----------------------------------------------------------------------------
 int PointsPager::getCacheSizeMb()
 {
-	return pp.memoryTarget / (1024 * 1024);
+    return static_cast<int>(pp.memoryTarget / (1024 * 1024));
 }
 //-----------------------------------------------------------------------------
 void PointsPager::useAutoCacheSize()
@@ -1064,7 +1064,7 @@ int VoxelLoader::loadVoxel(pcloud::Voxel *vox, float lodRead, bool full, bool lo
 				int64_t pos = vox->filePointer() + prev_channel_size;
 				
 				/*this is the size of full channel data on disk*/ 
-				prev_channel_size += vox->fullPointCount() * dc->typesize() * dc->multiple();
+                prev_channel_size += static_cast<uint>(vox->fullPointCount() * dc->typesize() * dc->multiple());
 
 				/*can't do this earlier because we need offset value*/ 
 				if (dofilter && chfilter & channelbit)

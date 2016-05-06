@@ -18,8 +18,6 @@
 #include <vector>
 #include <set>
 
-#pragma warning (disable :4311) //pointer truncation from 'pcloud::Partition *const ' to 'long'
-
 namespace pcloud
 {
 
@@ -67,12 +65,12 @@ public:
 	/*Root constructor*/ 
 	Node(const pt::BoundingBoxD &exts)
 	{
-		_lower[0] = exts.lx();
-		_lower[1] = exts.ly();
-		_lower[2] = exts.lz();
-		_upper[0] = exts.ux();
-		_upper[1] = exts.uy();
-		_upper[2] = exts.uz();
+		_lower[0] = static_cast<float>(exts.lx());
+		_lower[1] = static_cast<float>(exts.ly());
+		_lower[2] = static_cast<float>(exts.lz());
+		_upper[0] = static_cast<float>(exts.ux());
+		_upper[1] = static_cast<float>(exts.uy());
+		_upper[2] = static_cast<float>(exts.uz());
 
 		memset(_child, 0, sizeof(void*)*8); 
 

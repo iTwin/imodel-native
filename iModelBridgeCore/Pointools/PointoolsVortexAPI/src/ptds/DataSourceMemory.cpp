@@ -38,9 +38,9 @@ DataSourcePtr DataSourceMemory::createNew(const FilePath *path, DataSource::Data
 
 	if(sourceBuffer)
 	{
-		dataSource->dataBuffer.setExternalBuffer(sourceBuffer, sourceBufferSize);
+		dataSource->dataBuffer.setExternalBuffer(sourceBuffer, static_cast<PTRMI::DataBuffer::DataSize>(sourceBufferSize));
 		dataSource->dataBuffer.setMode(PTRMI::DataBuffer::Mode_External);
-		dataSource->dataBuffer.setWritePtr(sourceBufferSize);
+		dataSource->dataBuffer.setWritePtr(static_cast<PTRMI::DataBuffer::DataSize>(sourceBufferSize));
 	}
 	else
 	{
@@ -131,13 +131,13 @@ bool DataSourceMemory::closeAndDelete(void)
 
 DataSource::Size DataSourceMemory::readBytes(Data *buffer, Size numBytes)
 {
-	return dataBuffer.readFromBuffer(buffer, numBytes);
+	return dataBuffer.readFromBuffer(buffer, static_cast<PTRMI::DataBuffer::DataSize>(numBytes));
 }
 
 
 DataSource::Size DataSourceMemory::writeBytes(const Data *buffer, Size numBytes)
 {
-	dataBuffer.writeToBuffer(buffer, numBytes);
+	dataBuffer.writeToBuffer(buffer, static_cast<PTRMI::DataBuffer::DataSize>(numBytes));
 
 	return 0;
 }
@@ -145,7 +145,7 @@ DataSource::Size DataSourceMemory::writeBytes(const Data *buffer, Size numBytes)
 
 DataSource::Size DataSourceMemory::readBytesFrom(Data *buffer, DataPointer position, Size numBytes)
 {
-	if((dataBuffer.setReadPtr(position)).isFailed())
+	if((dataBuffer.setReadPtr(static_cast<PTRMI::DataBuffer::DataSize>(position))).isFailed())
 	{
 		return 0;
 	}
@@ -182,11 +182,11 @@ bool DataSourceMemory::movePointerTo(DataPointer numBytes)
 															// If mode is Write or ReadWrite, move Write pointer first so that extra space is created if not already present
 	if(getOpenState() == DataSource::DataSourceStateOpenForWrite || getOpenState() == DataSourceStateOpenForReadWrite)
 	{
-		if(dataBuffer.setWritePtr(numBytes).isFailed())
+		if(dataBuffer.setWritePtr(static_cast<PTRMI::DataBuffer::DataSize>(numBytes)).isFailed())
 		{
-			dataBuffer.allocateTo(numBytes);
+			dataBuffer.allocateTo(static_cast<PTRMI::DataBuffer::DataSize>(numBytes));
 
-			if(dataBuffer.setWritePtr(numBytes).isFailed())
+			if(dataBuffer.setWritePtr(static_cast<PTRMI::DataBuffer::DataSize>(numBytes)).isFailed())
 			{
 				return false;
 			}
@@ -195,7 +195,7 @@ bool DataSourceMemory::movePointerTo(DataPointer numBytes)
 															// If mode is Read or ReadWrite, move read pointer
 	if(getOpenState() == DataSourceStateOpenForRead || getOpenState() == DataSourceStateOpenForReadWrite)
 	{
-		if(dataBuffer.setReadPtr(numBytes).isFailed())
+		if(dataBuffer.setReadPtr(static_cast<PTRMI::DataBuffer::DataSize>(numBytes)).isFailed())
 		{
 			return false;
 		}

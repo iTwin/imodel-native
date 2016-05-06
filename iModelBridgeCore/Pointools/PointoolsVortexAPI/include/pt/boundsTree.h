@@ -66,7 +66,7 @@ public:
 		vector3d center = m_bounds.center();
 		vector3d centerLocalized;
 		transform.vec3_multiply_mat4(center, centerLocalized);
-		floatCenterLocalized.set(centerLocalized.x, centerLocalized.y, centerLocalized.z);
+		floatCenterLocalized.set(static_cast<float>(centerLocalized.x), static_cast<float>(centerLocalized.y), static_cast<float>(centerLocalized.z));
 
 		floatBounds.center(floatCenterLocalized);
 

@@ -33,9 +33,9 @@ public:
 	}
 	inline void fromUINT(unsigned int rgb)
 	{
-		r = 0.00392156862745098  * GetRValue(rgb);// ((unsigned char)(rgb));
-		g = 0.00392156862745098  * GetGValue(rgb);//((unsigned char)(((unsigned short)(rgb)) >> 8));
-		b = 0.00392156862745098  * GetBValue(rgb);//((unsigned char)((rgb)>>16));
+		r = static_cast<float>(0.00392156862745098  * GetRValue(rgb));// ((unsigned char)(rgb));
+		g = static_cast<float>(0.00392156862745098  * GetGValue(rgb));//((unsigned char)(((unsigned short)(rgb)) >> 8));
+		b = static_cast<float>(0.00392156862745098  * GetBValue(rgb));//((unsigned char)((rgb)>>16));
 	}
 	inline uint toUINT()
 	{

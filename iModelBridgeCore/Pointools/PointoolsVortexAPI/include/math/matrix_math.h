@@ -331,20 +331,20 @@ inline	void	vec3_multiply_mat4f(const float v[3], float resv[3]) const
 					//make sure this is a 4x4 matrix!
 					TemplateAssert(M==4 && N==4);
 
-					resv[0] =	(*this)(0,0) * v[0]
-							+	(*this)(1,0) * v[1]
-							+	(*this)(2,0) * v[2]
-							+   (*this)(3,0);	//*1
+					resv[0] =	static_cast<float>((*this)(0,0) * v[0]
+							                        +	(*this)(1,0) * v[1]
+							                        +	(*this)(2,0) * v[2]
+							                        +   (*this)(3,0));	//*1
 
-					resv[1] =	(*this)(0,1) * v[0]
-							+	(*this)(1,1) * v[1]
-							+	(*this)(2,1) * v[2]
-							+   (*this)(3,1);
+					resv[1] = static_cast<float>((*this)(0,1) * v[0]
+							                    +	(*this)(1,1) * v[1]
+							                    +	(*this)(2,1) * v[2]
+							                    +   (*this)(3,1));
 
-					resv[2] =	(*this)(0,2) * v[0]
-							+	(*this)(1,2) * v[1]
-							+	(*this)(2,2) * v[2]
-							+   (*this)(3,2);
+					resv[2] = static_cast<float>((*this)(0,2) * v[0]
+							                    +	(*this)(1,2) * v[1]
+							                    +	(*this)(2,2) * v[2]
+							                    +   (*this)(3,2));
 				}
 inline	void	mat3_multiply_vec3f(const float v[3], float resv[3]) const
 				{
@@ -398,20 +398,20 @@ inline	void	vec3_multiply_mat4f(float v[3]) const
 					//make sure this is a 4x4 matrix!
 					TemplateAssert(M==4 && N==4);
 
-					w[0] =		(*this)(0,0) * v[0]
-							+	(*this)(1,0) * v[1]
-							+	(*this)(2,0) * v[2]
-							+   (*this)(3,0);	//*1
+					w[0] = static_cast<float>((*this)(0,0) * v[0]
+							            +	(*this)(1,0) * v[1]
+							            +	(*this)(2,0) * v[2]
+							            +   (*this)(3,0));	//*1
 
-					w[1] =		(*this)(0,1) * v[0]
-							+	(*this)(1,1) * v[1]
-							+	(*this)(2,1) * v[2]
-							+   (*this)(3,1);
+					w[1] = static_cast<float>((*this)(0,1) * v[0]
+							            +	(*this)(1,1) * v[1]
+							            +	(*this)(2,1) * v[2]
+							            +   (*this)(3,1));
 
-					w[2] =		(*this)(0,2) * v[0]
-							+	(*this)(1,2) * v[1]
-							+	(*this)(2,2) * v[2]
-							+   (*this)(3,2);
+					w[2] = static_cast<float>((*this)(0,2) * v[0]
+							            +	(*this)(1,2) * v[1]
+							            +	(*this)(2,2) * v[2]
+							            +   (*this)(3,2));
 					v[0] = w[0]; v[1] = w[1]; v[2] = w[2];
 				}
 inline	void	vec3_multiply_mat4(T v[3]) const

@@ -131,7 +131,7 @@ CloudChannelData::CloudChannelData( const pcloud::PointCloud* cloud, uint bitsiz
 		for (int i=0; i<cloud->voxels().size(); i++)
 		{
 			const pcloud::Voxel *vox = cloud->voxels()[i];
-			data.push_back( VoxelChannelData( vox->fullPointCount(), (bitsize * multiple) / 8, vox->fullPointCount(), flags) );
+			data.push_back( VoxelChannelData(static_cast<uint>(vox->fullPointCount()), (bitsize * multiple) / 8, static_cast<uint>(vox->fullPointCount()), flags) );
 			VoxelChannelData &v = data.back();
 
 			v.uniform_value = new ubyte[BYTES_PER_ELEMENT];
@@ -145,13 +145,13 @@ CloudChannelData::CloudChannelData( const pcloud::PointCloud* cloud, uint bitsiz
 				if(sourceChannel && destChannel)
 				{
 															// Unlock source channel voxel data for access
-					sourceChannel->unlock(&sourceVoxelChannelData, vox->fullPointCount());
+					sourceChannel->unlock(&sourceVoxelChannelData, static_cast<uint>(vox->fullPointCount()));
 															// Copy to destination
 					v.copy(sourceVoxelChannelData);
 															// Lock source channel voxel data
 					sourceChannel->lock(&sourceVoxelChannelData);
 															// Update destination voxel channel
-					destChannel->update(&v, vox->fullPointCount());
+					destChannel->update(&v, static_cast<uint>(vox->fullPointCount()));
 															// Lock destination voxel channel
 					destChannel->lock(&v);
 				}
@@ -854,7 +854,7 @@ bool OOCFile::writeVCD( class VoxelChannelData* vcd, size_t numPoints )
 		}
 
 		/* write actual data part */ 
-		int bytesWritten =  fhandle->writeBytes(vcd->getData(), numBytes ); 
+		int bytesWritten = static_cast<int>(fhandle->writeBytes(vcd->getData(), numBytes ));
 		
 		/* write zeros if first time and numPoints < numFullPoints - maybe should be default value*/ 
 		if (zeroBufferSize)
@@ -888,7 +888,7 @@ bool OOCFile::readVCD( class VoxelChannelData* vcd, size_t numPoints )
 	
 	int numBytes = numPoints * vcd->getBytesPerPoint();
 	fhandle->movePointerTo((ptds::DataPointer)vcd->getFilePos());
-	int bytesRead = fhandle->readBytes(vcd->getData(), numBytes ); 
+	int bytesRead = static_cast<int>(fhandle->readBytes(vcd->getData(), numBytes ));
 	return (bytesRead == numBytes) ? true : false;
 }
 //-----------------------------------------------------------------------------

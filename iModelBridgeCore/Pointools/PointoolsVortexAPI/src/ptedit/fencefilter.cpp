@@ -33,7 +33,7 @@ void FenceSelect::buildFromScreenFence(const pt::Fence<int> &f, const pt::ViewPa
 	int size = f.numPoints();
 	for (int i=0; i<size; i++)
 	{
-		a.set(f.point(i).x, f.point(i).y, 0.5);
+        a.set(static_cast<float>(f.point(i).x), static_cast<float>(f.point(i).y), 0.5);
 		view.unproject3v(ar, a);
 		modelm.vec3_multiply_mat4(ar, art);
 
@@ -107,8 +107,8 @@ bool FenceSelect::generateHullPlanes()
 	Wm5::Vector2f *vertices = new Wm5::Vector2f[fence.numPoints()];
 	for (int i=0; i<fence.numPoints(); i++)
 	{
-		vertices[i].X() = fence[i].x;
-		vertices[i].Y() = fence[i].y;
+		vertices[i].X() = static_cast<float>(fence[i].x);
+		vertices[i].Y() = static_cast<float>(fence[i].y);
 	}
 	Wm5::ConvexHull2f chull( fence.numPoints(), vertices, 1e-5, false, Wm5::Query::QT_INTEGER);
 	if (chull.GetDimension() >= 2)
@@ -129,7 +129,7 @@ bool FenceSelect::generateHullPlanes()
 			{
 				p30.set(p0.X()*-1,p0.Y()*-1, -1.0);
 				p31.set(p1.X()*-1,p1.Y()*-1,-1.0);
-				p32.set(p1.X()*-3.0,p1.Y()*-3.0,-3.0);
+				p32.set(p1.X()*-3.0f,p1.Y()*-3.0f,-3.0);
 			}
 			else
 			{

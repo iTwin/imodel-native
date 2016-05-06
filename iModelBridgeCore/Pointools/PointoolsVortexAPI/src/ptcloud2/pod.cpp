@@ -69,7 +69,7 @@ namespace pod
 			if (node->isLeaf())
 			{
 				vox = static_cast<const Voxel*>(node);
-				size = vox->fullPointCount();
+				size = static_cast<uint>(vox->fullPointCount());
 			}
 			if (tracker->moveToPointer(CLOUD_MULTIPLIER * _cloudindex + _nodeindex))
 			{
@@ -140,7 +140,7 @@ namespace pod
 			if (node->isLeaf())
 			{
 				const Voxel *v = static_cast<const Voxel*>(node);
-				size = v->fullPointCount();
+                size = static_cast<uint>(v->fullPointCount());
 			}
 			block->write(nodetype);
 			block->write(depth);
@@ -148,7 +148,12 @@ namespace pod
 			// bounding box save - must be done like this due to historic reasons
 		//	const ubyte *ptr = (const ubyte*)(const void*)&node->extents(); // Old version
 			// save bounding box as floats to allow backward compatibilty in all products that are not expecting bounding boxes as doubles
-			pt::BoundingBox bbf(node->extents().ux(), node->extents().lx(), node->extents().uy(), node->extents().ly(), node->extents().uz(), node->extents().lz());
+			pt::BoundingBox bbf(static_cast<float>(node->extents().ux()), 
+                                static_cast<float>(node->extents().lx()), 
+                                static_cast<float>(node->extents().uy()), 
+                                static_cast<float>(node->extents().ly()), 
+                                static_cast<float>(node->extents().uz()), 
+                                static_cast<float>(node->extents().lz()));
 			const ubyte *ptr = (const ubyte*)(const void*)&bbf;
 			
 			// push forward by size of vftable pointer

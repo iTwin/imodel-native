@@ -783,7 +783,7 @@ PTvoid PTAPI ptRelease()
 		SYSTEMTIME st;
 		GetSystemTime(&st);
 		int s = st.wHour * 3600 + st.wMinute * 60 + st.wSecond;
-		s -= (g_timeOut * 0.5); /* add on half the timeout period remaining */ 
+		s = static_cast<int>(s - (g_timeOut * 0.5)); /* add on half the timeout period remaining */
 
 		CRegStdWORD reg(lastrunKey, s, FALSE, HKEY_LOCAL_MACHINE);
 		reg = (DWORD)s;
@@ -1179,7 +1179,7 @@ PTbool PTAPI ptSetClientStreaming(PTuint min, PTuint max, PTuint refresh, PTdoub
 		pointsengine::StreamHost::setStreamMinDefault(min);
 		pointsengine::StreamHost::setStreamMaxDefault(max);
 		pointsengine::StreamHost::setStreamRefreshDefault(refresh);
-		pointsengine::StreamHost::setStreamScalarDefault(scalar);
+        pointsengine::StreamHost::setStreamScalarDefault(static_cast<float>(scalar));
 	}
 															// Return true
 	return true;
@@ -1616,7 +1616,7 @@ PTbool PTAPI ptSetClientServerCacheDataSize(PTuint size)
 
 PTuint PTAPI ptGetClientServerCacheDataSize(void)
 {
-	return ptds::DataSourceCache::getDefaultCachePageSize();
+	return static_cast<PTuint>(ptds::DataSourceCache::getDefaultCachePageSize());
 }
 
 
@@ -1628,7 +1628,7 @@ PTbool PTAPI ptSetClientCacheCompletionThreshold(PTuint size)
 
 PTuint PTAPI ptGetClientCacheCompletionThreshold(void)
 {
-	return ptds::DataSourceCache::getDefaultCacheCompletionThreshold();
+	return static_cast<PTuint>(ptds::DataSourceCache::getDefaultCacheCompletionThreshold());
 }
 
 

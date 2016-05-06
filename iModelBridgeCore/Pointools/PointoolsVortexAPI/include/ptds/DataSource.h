@@ -199,12 +199,12 @@ public:
 		return writeBytes(reinterpret_cast<const Data *>(buffer), number_bytes);
 	}
 
-	template<typename T> unsigned int readBytes(T &buffer)
+	template<typename T> Size readBytes(T &buffer)
 	{
 		return readBytes(reinterpret_cast<Data *>(&buffer), sizeof(T));
 	}
 
-	template<typename T> unsigned int writeBytes(const T &buffer)
+	template<typename T> Size writeBytes(const T &buffer)
 	{
 		return writeBytes(reinterpret_cast<const Data *>(&buffer), sizeof(T));
 	}

@@ -164,12 +164,12 @@ unsigned int DataSource::getBudgetParallelReadNormal(DataSize budget, DataSource
 		if(budget <= totalReadSize)
 		{
 															// Number of points read is the number of whole points that can be read using the budget
-			numPoints		= budget / totalItemSize;
+			numPoints		= static_cast<unsigned int>(budget / totalItemSize);
 		}
 		else
 		{
 															// Budget is greater than necessary, so clip num points to specified read size
-			numPoints		= totalReadSize / totalItemSize;
+			numPoints		= static_cast<unsigned int>(totalReadSize / totalItemSize);
 		}
 
 															// Budget not used is the remainder

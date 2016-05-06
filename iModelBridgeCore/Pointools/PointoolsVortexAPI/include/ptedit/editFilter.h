@@ -4,8 +4,10 @@
 #include <ptengine/pointsscene.h>
 #include <ptengine/engine.h>
 #include <ptcloud2/voxel.h>
+#ifdef HAVE_OPENGL
 #include <ptgl/glviewstore.h>
 #include <ptgl/glcamera.h>
+#endif
 #include <pt/rect.h>
 #include <pt/fence.h>
 #include <pt/viewparams.h>

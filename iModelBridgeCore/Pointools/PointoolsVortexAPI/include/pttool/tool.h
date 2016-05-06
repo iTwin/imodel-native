@@ -12,7 +12,9 @@
 #include <pttool/pttool.h>
 #include <ptcmdppe/eventdefs.h>
 #include <ptmodm/Module.h>
+#ifdef HAVE_OPENGL
 #include <ptgl/glCamera.h>
+#endif
 #include <pt/parametermap.h>
 
 namespace ptapp
@@ -116,8 +118,9 @@ class PTTOOL_API Tool
 		static void endXORDraw();
 		static void endPixelDraw();
 		static void endDraw();
+#ifdef HAVE_OPENGL
 		static ptgl::Camera *camera();
-
+#endif
 		static void redrawViewport();
 		static void refreshViewport();
 		static void dynamicRedrawViewport();

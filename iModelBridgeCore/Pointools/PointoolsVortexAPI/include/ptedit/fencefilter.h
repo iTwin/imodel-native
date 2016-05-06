@@ -139,10 +139,10 @@ namespace ptedit
 			{
 				++j[th];
 				
-				x_i[th] = f.point(i[th]).x;
-				y_i[th] = f.point(i[th]).y;
-				x_j[th] = f.point(j[th]%size[th]).x;
-				y_j[th] = f.point(j[th]%size[th]).y;
+				x_i[th] = static_cast<float>(f.point(i[th]).x);
+				y_i[th] = static_cast<float>(f.point(i[th]).y);
+				x_j[th] = static_cast<float>(f.point(j[th]%size[th]).x);
+				y_j[th] = static_cast<float>(f.point(j[th]%size[th]).y);
 
 				if (y_i[th] < y && y_j[th] >= y || y_j[th] < y && y_i[th] >= y)
 					if (x_i[th] + (y - y_i[th]) /(y_j[th] - y_i[th]) * (x_j[th] - x_i[th]) < x)

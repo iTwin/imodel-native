@@ -229,7 +229,7 @@ void StreamHost::setStreamScalarDefault(float scalar)
 
 float StreamHost::getStreamScalarDefault(void)
 {
-	return streamScalarDefault;
+	return static_cast<float>(streamScalarDefault);
 }
 
 
@@ -539,7 +539,7 @@ StreamDataSource *StreamHost::getFirstActiveStreamDataSource(void)
 
 ptds::DataSize StreamHost::executeMultiReadSet(void)
 {
-	ptds::DataSize				totalReadSize;
+    ptds::DataSize		        totalReadSize;
 	PTRMI::DataBuffer::Data	*	buffer;
 	ptds::DataSize				sizeRead;
 	StreamDataSource		*	streamDataSource;
@@ -549,7 +549,7 @@ ptds::DataSize StreamHost::executeMultiReadSet(void)
 	if((totalReadSize = multiReadSet.getTotalReadSize()) == 0)
 		return 0;
 															// Make sure enough buffer space exists	
-	if((buffer = multiReadSetBuffer.allocate(totalReadSize)) == NULL)
+	if((buffer = multiReadSetBuffer.allocate(static_cast<PTRMI::DataBuffer::DataSize>(totalReadSize))) == NULL)
 		return 0;
 															// Get the first active StreamDataSource to carry out the remote operation
 	if((streamDataSource = getFirstActiveStreamDataSource()) == NULL)
@@ -636,7 +636,7 @@ bool StreamHost::initialize(ptds::DataSize multiReadSetBufferSize)
 
 	analyzer.initialize();
 															// Initialize internal buffer management with a buffer of given size
-	if(multiReadSetBuffer.createInternalBuffer(multiReadSetBufferSize).isOK())
+	if(multiReadSetBuffer.createInternalBuffer(static_cast<PTRMI::DataBuffer::DataSize>(multiReadSetBufferSize)).isOK())
 	{
 															// Return OK
 		return true;
@@ -694,7 +694,7 @@ bool StreamHost::streamRoundTrip(void)
 		if(dataSource = streamDataSource->getDataSource())
 		{
 			analyzer.beginRead(1, 1, 0);
-			unsigned int r = dataSource->readBytes(buffer, STREAM_HOST_ROUND_TRIP_DATA_SIZE);
+            ptds::DataSource::Size r = dataSource->readBytes(buffer, STREAM_HOST_ROUND_TRIP_DATA_SIZE);
 			analyzer.endRead(1, 1, 0);
 
 			return true;

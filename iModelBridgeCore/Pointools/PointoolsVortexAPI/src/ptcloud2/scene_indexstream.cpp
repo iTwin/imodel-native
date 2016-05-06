@@ -311,7 +311,7 @@ int Scene::readSinglePass( SceneBuildData *buildInfo )
 		BuildIndex::geomStoreType() = Float32;
 		BuildIndex::minDepth() = 1;
 	}
-	pc->buildFromRaw(cloud_info->numPoints, (float*)geom, rgb, intensity, (short*)normals);	
+    pc->buildFromRaw(static_cast<int>(cloud_info->numPoints), (float*)geom, rgb, intensity, (short*)normals);
 
 	/*save this cloud + clear voxel data						*/ 
 	pc->initialize();
@@ -397,13 +397,13 @@ int Scene::buildPreliminaryOctree( IncNode *root, int initial_depth, int target_
 			uint64_t points[numThresholds + 1]	= { 50_K, 100_K, 100_K, 100_K, 100_K, 100_K, 200_K, 1_M, 2_M };
 
 			int				i;
-			unsigned int	minPointsTarget = points[numThresholds];					// Default to largest target
+            unsigned int	minPointsTarget = static_cast<uint>(points[numThresholds]);					// Default to largest target
 
 			for (i=0; i< numThresholds; i++)
 			{
 				if(root->lodPointCount() < thresholds[i])
 				{
-					minPointsTarget = points[i];
+					minPointsTarget = static_cast<uint>(points[i]);
 					break;
 				}
 			}
@@ -605,9 +605,9 @@ int Scene::writePointData( SceneBuildData *buildInfo, PointCloud *pc )
 		char mess[256];
 	
 		GlobalMemoryStatusEx(&mem);		
-		aval = mem.ullAvailVirtual * 0.75; /* leave space for read / write block allocations */ 
+		aval = static_cast<uint64_t>(mem.ullAvailVirtual * 0.75); /* leave space for read / write block allocations */
 		writebuffsize = aval;
-		writebuffsizeMB = writebuffsize / (1024 * 1024);
+        writebuffsizeMB = static_cast<int>(writebuffsize / (1024 * 1024));
 		
 		sprintf_s(mess, "Gathering data for POD file : iteration %d using up to %dMb for buffer", ++iteration, writebuffsizeMB);
 		ptapp::CmdProgress writeprogress(mess, 0, (buildInfo->endCloud - buildInfo->startCloud)+1);
@@ -641,10 +641,10 @@ int Scene::writePointData( SceneBuildData *buildInfo, PointCloud *pc )
 				DataChannel *dc = const_cast<DataChannel*>(vox->channel(ch));
 				if (dc)
 				{
-					pointbytes += dc->typesize() * dc->multiple() * vox->fullPointCount() * 1.2;
+					pointbytes += static_cast<uint64_t>(dc->typesize() * dc->multiple() * vox->fullPointCount() * 1.2);
 
 					/* check for failure here */ 
-					if (!dc->allocate(vox->fullPointCount()))
+					if (!dc->allocate(static_cast<int>(vox->fullPointCount())))
 					{
 						//MessageBoxA(NULL, "Out of memory during channel allocation - import may fail", "Memory Error", MB_OK);
 						memory_failure = true;
@@ -703,7 +703,8 @@ int Scene::writePointData( SceneBuildData *buildInfo, PointCloud *pc )
 
 				/* does this cloud intersect the region of voxels? */ 
 				// SA_BB not sure about this, check. Extents should be in world, but are being intersected with transformed extents?
-				pt::BoundingBox truncatedBnds(bb.ux(), bb.lx(), bb.uy(), bb.ly(), bb.uz(), bb.lz());
+                pt::BoundingBox truncatedBnds(static_cast<float>(bb.ux()), static_cast<float>(bb.lx()), static_cast<float>(bb.uy()),
+                                              static_cast<float>(bb.ly()), static_cast<float>(bb.uz()), static_cast<float>(bb.lz()));
 				if (!cloud_info->xbounds.intersects(&truncatedBnds))
 				{
 					continue;
@@ -758,9 +759,9 @@ int Scene::writePointData( SceneBuildData *buildInfo, PointCloud *pc )
 										if (!pnt1d.is_zero()) pnt1d /= dc->scaler();
 										
 										pt::vector3s pnt16;
-										pnt16.x = pnt1d.x;
-										pnt16.y = pnt1d.y;
-										pnt16.z = pnt1d.z;
+										pnt16.x = static_cast<short>(pnt1d.x);
+										pnt16.y = static_cast<short>(pnt1d.y);
+										pnt16.z = static_cast<short>(pnt1d.z);
 										if (vox->channel(PCloud_Geometry)->validIndex(pos))
 											vox->channel(PCloud_Geometry)->set(pos, &pnt16);								
 									}
@@ -823,7 +824,7 @@ int Scene::writePointData( SceneBuildData *buildInfo, PointCloud *pc )
 					PTTRACEOUT << "FAILURE: POD File creation failed. This is most likley to be a memory failure";
 					GlobalMemoryStatusEx(&mem);
 					int64_t aval = mem.ullAvailVirtual;	
-					int writebuffsizeMB = aval / (1024 * 1024);
+                    int writebuffsizeMB = static_cast<int>(aval / (1024 * 1024));
 
 					PTTRACEOUT << aval << "Mb available in this processes virtual memory space";
 

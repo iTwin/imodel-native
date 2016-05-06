@@ -14,8 +14,6 @@
 #include <pt/geomtypes.h>
 #include <ptcloud2/pointcloud.h>
 
-#pragma warning ( disable : 4805 ) // unsafe mix of bool and double
-
 namespace pcloud
 {
 struct Calibration
@@ -65,7 +63,7 @@ struct Calibration
 	}
 	void undistort(ubyte *_dimg, int w, int h, ubyte *&new_img, int &new_w, int &new_h);
 
-	bool hasDistortion() const { return (k1 == k2 == k3 == k4 == p1 == p2 == 0) ? true : false; }
+	bool hasDistortion() const { return (0 == k1 && 0 == k2 && 0 == k3 && 0 == k4 && 0 == p1 && 0 == p2); }
 
 	/* distortion coeffs */ 
 	double k1;

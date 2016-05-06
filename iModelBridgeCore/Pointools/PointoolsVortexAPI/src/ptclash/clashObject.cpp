@@ -206,7 +206,7 @@ static void computeTreeGenerationParameters( const pcloud::PointCloud * cloud, i
 {
 	computeTreeGenerationParametersGeneric(cloud, target_pts,leaf_min_dim, leaf_max_dim);
 	
-	target_pts = cloud->numPoints() / 50000;
+	target_pts = static_cast<int>(cloud->numPoints() / 50000);
 	if (target_pts < 1000)
 		target_pts = 1000;
 
@@ -217,7 +217,7 @@ static void computeTreeGenerationParameters( const pcloud::Scene * scene, int &t
 {
 	computeTreeGenerationParametersGeneric(scene,target_pts,leaf_min_dim, leaf_max_dim);
 
-	target_pts = scene->fullPointCount() / 50000;
+	target_pts = static_cast<int>(scene->fullPointCount() / 50000);
 
 	if (target_pts < 1000)
 		target_pts = 1000;
@@ -344,12 +344,12 @@ ClashTree	*ClashObject::compareTrees( const ClashObject *b, bool difference, Com
 				for (int i=0; i<NUM_DIFFERENCING_THREADS; i++)
 					total_processed += mt_progress_val[i];
 			}
-			int p = (100.0f * total_processed) / num_leaves;
+			int p = static_cast<int>((100.0f * total_processed) / num_leaves);
 
 			// only update on percentage change
 			if (p > perc)
 			{
-				func( p );
+                func(static_cast<float>(p));
 				perc = p;
 			}
 		};
@@ -397,7 +397,7 @@ ClashTree	*ClashObject::compareTrees( const ClashObject *b, bool difference, Com
 		double minDim = max(b->objTree()->minLeafDim(), objTree()->minLeafDim() );   // but this is faster
 		double avPts = (b->objTree()->targetPtsPerLeaf() + objTree()->targetPtsPerLeaf()) * 0.5;	// not accurate, but doesn't matter
 
-		ClashTree *ct = new ClashTree( m_ref, tr, minDim, maxDim, avPts );
+		ClashTree *ct = new ClashTree( m_ref, tr, minDim, maxDim, static_cast<int>(avPts) );
 		return ct;
 	}
 	return 0;
@@ -655,7 +655,7 @@ PTres ClashObject::_getClashTree(vortex::IClashTree*& clashTreeRet)
 bool ClashObject::feedbackForIClashObject(float pcentComplete)
 {
 	if (m_iclashObjectCallback)
-		m_iclashObjectCallback->clashTreeGenerationProgress(pcentComplete);
+		m_iclashObjectCallback->clashTreeGenerationProgress(static_cast<PTint>(pcentComplete));
 
 	return true;
 }

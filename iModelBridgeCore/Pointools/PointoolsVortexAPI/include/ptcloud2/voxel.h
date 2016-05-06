@@ -85,7 +85,7 @@ namespace pcloud
 
 		/* used during indexing only */ 
 		void readChannel(Channel ch, int count, void* data);
-		inline int size() const { return lodPointCount(); }
+		inline uint64 size() const { return lodPointCount(); }
 
 		/* resize in-core allocation for channel to the requested lod */ 
 		void* resizeChannelToRequestedLod(Channel ch, float amount, int &num_points, uint &num_bytes, uint &bytes_offset, bool multRequest = true);

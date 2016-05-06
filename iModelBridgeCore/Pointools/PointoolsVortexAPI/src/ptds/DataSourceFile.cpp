@@ -223,7 +223,7 @@ DataSource::Size DataSourceFile::readBytes(Data *buffer, Size numBytes)
 	{
 		beginRead(numBytes);
 
-		if(ReadFile(handle, buffer, numBytes, &numRead, NULL) == FALSE)
+		if(ReadFile(handle, buffer, static_cast<DWORD>(numBytes), &numRead, NULL) == FALSE)
 		{
 			return 0;
 		}

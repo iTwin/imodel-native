@@ -212,7 +212,7 @@ void Voxel::addChannel(Channel ch, DataType native, DataType storeas,
 		return;
 
 	if (!allocate)
-		allocate = lodPointCount();
+        allocate = static_cast<int>(lodPointCount());
 
 	if (allocate)
 	{
@@ -232,10 +232,10 @@ void Voxel::buildEditChannel(ubyte default_value)
 		return;
 
 	_channels[PCloud_Filter] = new DataChannel(UByte8, UByte8, 1);
-	_channels[PCloud_Filter]->allocate(fullPointCount());
+	_channels[PCloud_Filter]->allocate(static_cast<int>(fullPointCount()));
 	
 	/* initialize to 0 */ 
-	int fp = fullPointCount();
+	int fp = static_cast<int>(fullPointCount());
 	_numPointsEdited = 0;
 
 	for (int i=0; i<fp; i++)
@@ -272,7 +272,7 @@ bool Voxel::initializeChannels(int newsize)
 	// defaults are ok in case of failure
 	memset( _strataSize, 0, NUM_STRATA * sizeof(int));
 	_strataSpacing = 0;									//ie no stratification
-	_strataSize[0] = _pointCount;						// 1 strata
+	_strataSize[0] = static_cast<int>(_pointCount);		// 1 strata
 
 	/* resize channels if needed */ 
 	if (newsize >0)
@@ -317,7 +317,7 @@ bool Voxel::initializeChannels(int newsize)
 	else 
 	{
 		density = 1.0f;
-		strata[0] = _pointCount;
+		strata[0] = static_cast<int>(_pointCount);
 	}
 	_strataSpacing = density_spacing;
 	/* end comment out here */
@@ -363,7 +363,7 @@ unsigned int Voxel::getNumPointsWithBudget(ptds::DataSize budgetBytes, ptds::Dat
 															// Return how much of the budget would not fit
 		budgetNotUsed = budgetBytes % pointStorageSize;
 															// Return conservative number of points that fit into the budget
-		return budgetBytes / pointStorageSize;
+		return static_cast<uint>(budgetBytes / pointStorageSize);
 	}
 															// Error, so return zero
 	return 0;
@@ -375,7 +375,7 @@ unsigned int Voxel::getNumPointsAtLOD(LOD lod) const
 															// Get point count with round up
 	unsigned int numPoints = static_cast<unsigned int>((fullPointCount() * lod) + 0.5);
 															// Return clipped to maximum number of points
-	numPoints = min(numPoints, fullPointCount());
+	numPoints = static_cast<uint>(min(numPoints, fullPointCount()));
 															// If LOD is non zero, return at least one point
 	if(numPoints == 0 && lod > 0)
 	{
@@ -428,7 +428,7 @@ int Voxel::requestBytes() const
 	for (int i=0;i<MAX_CHANNELS; i++)
 	{
 		if (_channels[i]) 
-			bytes += _channels[i]->typesize() * _channels[i]->multiple() * _pointCount * req;
+			bytes += static_cast<int>(_channels[i]->typesize() * _channels[i]->multiple() * _pointCount * req);
 	}
 	return bytes;
 }
@@ -453,7 +453,7 @@ void Voxel::lodRequestSizeInfo(Channel ch, float amount, int &num_points, uint &
 	}
 	
 	uint prev_size = dc->size();		
-	num_points = req * _pointCount - prev_size; 
+	num_points = static_cast<int>(req * _pointCount - prev_size);
 	num_bytes = num_points * dc->multiple() * dc->typesize();
 	bytes_offset = prev_size * dc->multiple() * dc->typesize();
 
@@ -516,11 +516,11 @@ void *Voxel::resizeChannelToRequestedLod(Channel ch, float amount, int &num_poin
 	bool doNotResize = false;
 
 #endif
-	if (!doNotResize) num_points = req * _pointCount - prev_size; 
+	if (!doNotResize) num_points = static_cast<int>(req * _pointCount - prev_size);
 	num_bytes = abs(num_points * bytesPerPnt);
 	
 	/* block to 8Kb */ 
-	int total_bytes_remaining = (_pointCount - prev_size) * bytesPerPnt;
+	int total_bytes_remaining = static_cast<int>((_pointCount - prev_size) * bytesPerPnt);
 #ifdef BLOCK_THE_SIZE
 
 	if (!doNotResize)
@@ -643,7 +643,7 @@ if(req < 1.0f / 255.0f)
 	num_bytes = abs(num_points * bytesPerPnt);
 
 	/* block to 8Kb */ 
-	int total_bytes_remaining = (_pointCount - prev_size) * bytesPerPnt;
+	int total_bytes_remaining = static_cast<int>((_pointCount - prev_size) * bytesPerPnt);
 
 #ifdef BLOCK_THE_SIZE
 
@@ -703,7 +703,7 @@ if(req < 1.0f / 255.0f)
 	{
 		unsigned int bytesRead;
 															// Read now or add to ReadSet if reading is deferred
-		bytesRead = dataSrc->readBytes(data, num_bytes);
+		bytesRead = static_cast<uint>(dataSrc->readBytes(data, num_bytes));
 
 // Pip Option
 /*
@@ -757,7 +757,7 @@ unsigned int Voxel::getVoxelDataSourceReadSet(LOD lod, ptds::DataSourceReadSet &
 
 			getChannelDataSourceRead(*dataChannel, position, lod, readSet);
 
-			previousChannelSize += fullPointCount() * dataChannel->getPointSize();
+			previousChannelSize += static_cast<uint>(fullPointCount() * dataChannel->getPointSize());
 		}
 	}		
 
@@ -845,13 +845,13 @@ int Voxel::getChannelResizeReadInfo(Channel ch, float amount, int &num_points, u
 
 	if (!doNotResize)
 	{
-		num_points = req * _pointCount - prev_size; 
+		num_points = static_cast<int>(req * _pointCount - prev_size);
 	}
 
 	num_bytes = abs(num_points * bytesPerPnt);
 
 	/* block to 8Kb */ 
-	int total_bytes_remaining = (_pointCount - prev_size) * bytesPerPnt;
+	int total_bytes_remaining = static_cast<int>((_pointCount - prev_size) * bytesPerPnt);
 
 #ifdef BLOCK_THE_SIZE
 
@@ -879,7 +879,7 @@ int Voxel::getChannelResizeReadInfo(Channel ch, float amount, int &num_points, u
 #ifdef BLOCK_THE_SIZE	
 	uint pcount = prev_size + num_points;
 #else
-	uint pcount = req * _pointCount;
+	uint pcount = static_cast<uint>(req * _pointCount);
 #endif
 
 	num_points	= _channels[ch]->size() - prev_size;
@@ -1022,7 +1022,7 @@ void Voxel::computeExtents()
 	else
 	{
 		ExpandBox eb(_worldExtents);
-		iterateTransformedPointsRange(eb, pt::WorldSpace, false, 0, 5e3);
+		iterateTransformedPointsRange(eb, pt::WorldSpace, false, 0, static_cast<uint>(5e3));
 	}
 	flag(ExtentsDirty, false);
 }
@@ -1272,7 +1272,9 @@ public:
 
 	bool hashPoint(const pt::vector3 &pt, HashVal &hash) const
 	{
-		pt::vector3i quantize_multiples(pt.x / _spacing, pt.y / _spacing, pt.z / _spacing);
+		pt::vector3i quantize_multiples(static_cast<int>(pt.x / _spacing), 
+                                        static_cast<int>(pt.y / _spacing), 
+                                        static_cast<int>(pt.z / _spacing));
 
 		hash =  (((uint64_t)quantize_multiples.x) & 0x1fffff);
 		hash |= (((uint64_t)quantize_multiples.y) << 21) & 0x3FFFFE00000;
@@ -1332,7 +1334,9 @@ struct StrataOrdering
 		extents = voxel->extents();
 
 		pointsEntered = 0;
-		corner = pt::vector3( voxel->extents().lx(), voxel->extents().ly(), voxel->extents().lz());
+		corner = pt::vector3( static_cast<float>(voxel->extents().lx()), 
+                              static_cast<float>(voxel->extents().ly()), 
+                              static_cast<float>(voxel->extents().lz()));
 		hasEntered = new bool[ voxel->fullPointCount() ];
 		memset(hasEntered, 0, sizeof(bool) * voxel->fullPointCount() );
 	}

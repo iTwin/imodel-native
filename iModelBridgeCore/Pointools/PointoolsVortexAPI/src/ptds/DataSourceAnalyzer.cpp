@@ -299,7 +299,7 @@ void DataSourceAnalyzer::endPeriod(void)
 		Period currentTime	= timeGlobal.getEllapsedTimeSeconds();
 		Period period		= timePeriod.getEllapsedTimeSeconds();
 
-		DataSourceAnalyzerSeries::Point	p(currentTime, period);
+        DataSourceAnalyzerSeries::Point	p(static_cast<float>(currentTime), static_cast<float>(period));
 
 		periodSeries->add(p);		
 	}
@@ -331,7 +331,7 @@ bool DataSourceAnalyzer::endRead(unsigned int numMultiReads, unsigned int numRea
 	{
 		if(s = getSeries(SeriesLatency))
 		{
-			DataSourceAnalyzerSeries::Point	p(t, period);
+			DataSourceAnalyzerSeries::Point	p(static_cast<float>(t), static_cast<float>(period));
 
 			s->add(p);
 		}
@@ -347,7 +347,7 @@ bool DataSourceAnalyzer::endRead(unsigned int numMultiReads, unsigned int numRea
 
 		if(period > latencyMean[1])
 		{
-			DataSourceAnalyzerSeries::Point	p(t, static_cast<double>(dataSize) / (period - latencyMean[1]));
+			DataSourceAnalyzerSeries::Point	p(static_cast<float>(t), static_cast<float>(dataSize / (period - latencyMean[1])));
 
 			if(s = getSeries(SeriesBandwidth))
 			{
@@ -357,20 +357,20 @@ bool DataSourceAnalyzer::endRead(unsigned int numMultiReads, unsigned int numRea
 
 		if(s = getSeries(SeriesDataSize))
 		{
-			DataSourceAnalyzerSeries::Point	p(t, static_cast<double>(dataSize));
+			DataSourceAnalyzerSeries::Point	p(static_cast<float>(t), static_cast<float>(dataSize));
 
 			s->add(p);
 		}
 
 		if(s = getSeries(SeriesNumMultiReads))
 		{
-			DataSourceAnalyzerSeries::Point	p(t, static_cast<double>(numMultiReads));
+			DataSourceAnalyzerSeries::Point	p(static_cast<float>(t), static_cast<float>(numMultiReads));
 			s->add(p);
 		}
 
 		if(s = getSeries(SeriesNumReads))
 		{
-			DataSourceAnalyzerSeries::Point	p(t, static_cast<double>(numReads));
+			DataSourceAnalyzerSeries::Point	p(static_cast<float>(t), static_cast<float>(numReads));
 			s->add(p);
 		}
 
@@ -469,7 +469,7 @@ DataSize DataSourceAnalyzer::sampleBandwidth(Period targetPeriod, Period &usePer
 	dataSize = static_cast<DataSize>((usePeriod - latencyMean[1]) * bandwidthMean[1]);
 
 															// Apply slight upward pressure on bandwidth by requesting more than otherwise would
-	dataSize *= pointsengine::StreamHost::getStreamScalarDefault();
+    dataSize = static_cast<DataSize>(dataSize * pointsengine::StreamHost::getStreamScalarDefault());
 															// If enforcing minimum budget, clip to lower threshold
 	if(pointsengine::StreamHost::getStreamMinDefaultEnforce())
 	{
@@ -480,7 +480,7 @@ DataSize DataSourceAnalyzer::sampleBandwidth(Period targetPeriod, Period &usePer
 	if(budgetSeries = getSeries(SeriesBudget))
 	{
 		double timeSeconds = timeGlobal.getEllapsedTimeSeconds();
-		DataSourceAnalyzerSeries::Point	p(timeSeconds, static_cast<float>(dataSize));
+        DataSourceAnalyzerSeries::Point	p(static_cast<float>(timeSeconds), static_cast<float>(dataSize));
 		budgetSeries->add(p);
 	}
 

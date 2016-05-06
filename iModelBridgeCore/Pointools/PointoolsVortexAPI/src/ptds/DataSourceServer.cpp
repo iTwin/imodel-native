@@ -320,7 +320,9 @@ DataSource::Size DataSourceServerClientInterface::readBytes(Data *buffer, Size n
 
 DataSource::Size DataSourceServerClientInterface::writeBytes(const Data *buffer, Size numBytes)
 {
-	return sendAuto<Size, PC<In<Array<const Data>>>, PC<In<Size>> >(0, DATA_SOURCE_METHOD_WRITE_BYTES, Array<const Data>(numBytes, reinterpret_cast<const Data *>(buffer)), numBytes);
+	return sendAuto<Size, PC<In<Array<const Data>>>, PC<In<Size>> >(0, DATA_SOURCE_METHOD_WRITE_BYTES, 
+                                                                    Array<const Data>(numBytes, reinterpret_cast<const Data *>(buffer)), 
+                                                                    numBytes);
 }
 
 
@@ -338,7 +340,9 @@ DataSource::Size DataSourceServerClientInterface::readBytesFrom(Data *buffer, Da
 															// Otherwise, do a Standard RMI read
 		beginRead(numBytes);
 															// Read data from givne position
-		numRead = sendAuto<Size, PC<Out<ArrayDirect<>>>, PC<In<DataPointer>>, PC<In<Size>> >(0, DATA_SOURCE_METHOD_READ_BYTES_FROM, ArrayDirect<>(numBytes, reinterpret_cast<Data *>(buffer)), position, numBytes);
+		numRead = sendAuto<Size, PC<Out<ArrayDirect<>>>, PC<In<DataPointer>>, PC<In<Size>> >(0, 
+                                        DATA_SOURCE_METHOD_READ_BYTES_FROM, ArrayDirect<>(numBytes, reinterpret_cast<Data *>(buffer)), 
+                                        position, numBytes);
 
 		endRead(numBytes);
 	}

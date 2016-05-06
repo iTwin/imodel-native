@@ -32,7 +32,7 @@ RGBMAP g_rgbmap;
 		if (it == g_rgbmap.end())
 		{
 			DataChannel *ndc = new pcloud::DataChannel( UByte8, UByte8, 3 );
-			ndc->allocate( v->fullPointCount() );
+            ndc->allocate(static_cast<int>(v->fullPointCount()));
 						
 			/* get the offset position */ 
 			uint channel_offset=0;
@@ -42,7 +42,7 @@ RGBMAP g_rgbmap;
 				if (!dc) continue;
 				if (i != (int)pcloud::PCloud_RGB)
 				{
-					channel_offset += v->fullPointCount() * dc->typesize() * dc->multiple();
+                    channel_offset += static_cast<uint>(v->fullPointCount() * dc->typesize() * dc->multiple());
 				}
 				else
 				{
@@ -80,7 +80,7 @@ RGBMAP g_rgbmap;
 	{ 
 		center.set(cen); 
 		
-		float r = g_selBrush.brush.radius();
+        float r = static_cast<float>(g_selBrush.brush.radius());
 		box.setBox(r,-r, r,-r, r,-r);
 		box.centerAt(pt::vector3d(cen.x, cen.y, cen.z));
 	}
@@ -88,7 +88,7 @@ RGBMAP g_rgbmap;
 	{ 
 		center.set(cen); 
 		
-		float r = g_selBrush.brush.radius();
+		float r = static_cast<float>(g_selBrush.brush.radius());
 		box.setBox(r,-r, r,-r, r,-r);
 		box.centerAt(cen);
 	}
@@ -96,7 +96,7 @@ RGBMAP g_rgbmap;
 	{ 
 		center.set(cen); 
 		
-		float r = g_selBrush.brush.radius();
+		float r = static_cast<float>(g_selBrush.brush.radius());
 		box.setBox(r,-r, r,-r, r,-r);
 		box.centerAt(pt::vector3d(cen.x, cen.y, cen.z));
 	}

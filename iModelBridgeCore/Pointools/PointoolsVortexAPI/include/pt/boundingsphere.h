@@ -45,7 +45,7 @@ public:
 			T r = dv.length();
 			if (r>_radius)
 			{
-				T dr = (r-_radius)*0.5;
+				T dr = static_cast<T>((r-_radius)*0.5);
 				_center += dv*(dr/r);
 				_radius += dr;
 			}

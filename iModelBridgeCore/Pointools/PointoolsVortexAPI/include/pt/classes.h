@@ -10,6 +10,5 @@
 		#define CCLASSES_API IMPORT_ATTRIBUTE
 	#endif
 #endif
-#pragma warning ( disable : 4251 ) /*need to have dll-interface to be used by clients*/ 
 
 #endif

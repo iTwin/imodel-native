@@ -782,7 +782,7 @@ public:
 
 	template<unsigned int VD> ChildIndex classify(matrix<VD, 1, double> &point)
 	{
-		return normal.dot(point) + constant;
+		return static_cast<ChildIndex>(normal.dot(point) + constant);
 	}
 
 	template<unsigned int VD> ChildIndex classify(matrix<VD, 1, double> &point, typename Types<Real>::Extents &extents)
@@ -1152,9 +1152,9 @@ public:
 													// Get point position in grid space
 			cellPos = minOffset / cellSize;
 
-			cellPosInt(0, 0) = cellPos(0, 0);
-			cellPosInt(1, 0) = cellPos(1, 0);
-			cellPosInt(2, 0) = cellPos(2, 0);
+			cellPosInt(0, 0) = static_cast<unsigned int>(cellPos(0, 0));
+			cellPosInt(1, 0) = static_cast<unsigned int>(cellPos(1, 0));
+			cellPosInt(2, 0) = static_cast<unsigned int>(cellPos(2, 0));
 
 													// Test 27 local cells
 			for(cell(0, 0) = cellPosInt(0, 0) - 1; cell(0, 0) <= cellPosInt(0, 0) + 1; cell(0, 0)++)

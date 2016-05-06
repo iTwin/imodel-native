@@ -118,7 +118,7 @@ int IndexStream::addGroup(bool combine, float tolerance, bool gen_normals, float
 	{
 		if (tolerance > 0)
 		{
-			_truncationMultiplier = tolerance * 1e6;
+            _truncationMultiplier = static_cast<int>(tolerance * 1e6);
 			/* remove inaccuraccy */ 
 			_truncationMultiplier /= 10;
 			_truncationMultiplier *= 10;
@@ -199,9 +199,9 @@ bool IndexStream::closeStream()
 				ci->bounds.translateBy(-c);
 
 				ci->xbounds.translateBy(vector3(
-					ci->truncation.x * TRUNCATE_MULTIPLIER, 
-					ci->truncation.y * TRUNCATE_MULTIPLIER, 
-					ci->truncation.z * TRUNCATE_MULTIPLIER));
+                    static_cast<float>(ci->truncation.x * TRUNCATE_MULTIPLIER),
+					static_cast<float>(ci->truncation.y * TRUNCATE_MULTIPLIER), 
+					static_cast<float>(ci->truncation.z * TRUNCATE_MULTIPLIER)));
 
 				ci->matrix.translate(vector4d(
 					(double)c.x + (double)(ci->truncation.x * TRUNCATE_MULTIPLIER), 
@@ -234,7 +234,7 @@ bool IndexStream::closeStream()
 	}
 	
 	int val;
-	mx *= 0.05;
+    mx = static_cast<unsigned int>(mx * 0.05);
 	
 	for (i=0; i<255; i++)
 	{
@@ -586,9 +586,9 @@ bool IndexStream::addPoint(const pt::vector3d &geomd, const ubyte * const rgb,
 	if (!_cloud->numPoints)
 	{
 		/* check size of values for truncation*/ 
-		_cloud->truncation.x = geomd.x / TRUNCATE_MULTIPLIER;
-		_cloud->truncation.y = geomd.y / TRUNCATE_MULTIPLIER;
-		_cloud->truncation.z = geomd.z / TRUNCATE_MULTIPLIER;
+		_cloud->truncation.x = static_cast<int>(geomd.x / TRUNCATE_MULTIPLIER);
+		_cloud->truncation.y = static_cast<int>(geomd.y / TRUNCATE_MULTIPLIER);
+		_cloud->truncation.z = static_cast<int>(geomd.z / TRUNCATE_MULTIPLIER);
 	}
 	/* remove any large component */ 
 	geomdn.x = geomd.x - _cloud->truncation.x * TRUNCATE_MULTIPLIER;
@@ -602,7 +602,7 @@ bool IndexStream::addPoint(const pt::vector3d &geomd, const ubyte * const rgb,
 	_group->xbounds.expand(xgeom);
 	_cloud->xbounds.expand(xgeom);
 
-	if (_image) _image->set(_cloud->_orderedpos, _cloud->numPoints);
+    if (_image) _image->set(_cloud->_orderedpos, static_cast<int>(_cloud->numPoints));
 	_cloud->numPoints++;
 	_cloud->_orderedpos++;
 
@@ -728,9 +728,9 @@ int IndexStream::readPoint(pt::vector3 &geom, ubyte *rgb, short *intensity, pt::
 	}
 
 	/*correction for normalized coords*/ 
-	geom.x -= ci->offset.x;
-	geom.y -= ci->offset.y;
-	geom.z -= ci->offset.z;
+    geom.x -= static_cast<float>(ci->offset.x);
+	geom.y -= static_cast<float>(ci->offset.y);
+	geom.z -= static_cast<float>(ci->offset.z);
 
 	double intd;
 
@@ -748,7 +748,7 @@ int IndexStream::readPoint(pt::vector3 &geom, ubyte *rgb, short *intensity, pt::
 				
 				/* reduce contrast */ 
 				intd *= 0.5;
-				*intensity = intd;
+				*intensity = static_cast<short>(intd);
 			}
 		}
 		else _readblock->advance(sizeof(short)); 
@@ -888,7 +888,7 @@ bool IndexStream::_buildNormals(int cloud_idx, pt::vector3s* _normals, bool tran
 		short _z;
 	};
 	Normal *normals = reinterpret_cast<Normal*>(_normals);
-	int nh_size = quality * 10;
+	int nh_size = static_cast<int>(quality * 10);
 	if (nh_size < 2) nh_size = 2;
 	if (nh_size > 13) nh_size = 13;
 
