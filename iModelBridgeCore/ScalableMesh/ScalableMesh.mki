@@ -11,6 +11,9 @@
 # If we define appName and use it for DLM_NAME, MultiCppCompileRule.mki will use it for CCompPDBName, and linkLibrary.mki will use DLM_NAME for LIB_NAME.
 # PreCompiledHeader.mki uses CCompPDBName
 
+#This is because GMP and MPFR don't use vendor prefixes in the CGAL files
+dirToSearch=$(OutputRootDir)BuildContexts/CGAL/VendorAPI/GMP
+%include cincapnd.mki
 
 #----------------------------------------------------------
 # Preprocessor definition.
