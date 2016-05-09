@@ -48,15 +48,14 @@ struct SchemaImportContext;
 //!     * loads the ECClasses specified in the constraints of the relationship class
 //!       (but @b not their derived ECClasses)
 //!        
-//! ### %ECDbSchemaManager is a Schema Locater
+//! ### %ECDbSchemaManager is an %IECSchemaLocater
 //! ECDbSchemaManager also implements ECN::IECSchemaLocater so it can be used to locate ECSchemas
 //! already stored in the %ECDb file when reading an ECSchema from disk, for example:
 //! 
-//!     ECN::ECSchemaReadContextPtr ecSchemaContext = ECN::ECSchemaReadContext::CreateContext ();
+//!     ECN::ECSchemaReadContextPtr ecSchemaContext = ECN::ECSchemaReadContext::CreateContext();
 //!     ecSchemaContext->AddSchemaLocater(ecdb.GetSchemaLocater());
-//!     ECN::SchemaKey schemaKey ("foo", 1, 0);
-//!     ECN::ECSchemaPtr fooSchema = ECN::ECSchema::LocateSchema (schemaKey, *ecSchemaContext);
-//!     schemaManager.ImportECSchemas(ecSchemaContext->GetCache());
+//!     ECN::SchemaKey schemaKey("foo", 1, 0);
+//!     ECN::ECSchemaPtr fooSchema = ECN::ECSchema::LocateSchema(schemaKey, *ecSchemaContext);
 //!
 //! @see @ref ECDbOverview, @ref ECDbTransactions, @ref ECDbCodeSamples
 //! @ingroup ECDbGroup
@@ -168,10 +167,11 @@ struct ECDbSchemaManager : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCopya
 
         //! Creates or updates views in the ECDb file to visualize the EC content as ECClasses and ECProperties rather than tables and columns.
         //! This can help debugging the EC data, especially when ECClasses and ECProperties share tables and columns or are spread across multiple tables.
-        //! @note The views are strickly intended for developers for debugging purpose only. They should not be used in application code. 
+        //! @note The views are strictly intended for developers for debugging purpose only. They should not be used in application code. 
         //! No code should depend on these views.
-        //! @return SUCCESS OR ERROR
+        //! @return SUCCESS or ERROR
         ECDB_EXPORT BentleyStatus CreateECClassViewsInDb() const;
+
 #if !defined (DOCUMENTATION_GENERATOR)    
         //! For cases where we are working with an ECClass in a referenced ECSchema that is a duplicate of one already persisted
         //! and therefore doesn't have the persistent ECClassId set. Generally, we would prefer that the primary ECSchema had
@@ -202,15 +202,14 @@ typedef ECDbSchemaManager const& ECDbSchemaManagerCR;
 //=======================================================================================
 struct ECDbMapDebugInfo
     {
-    private:
-        ECDbMapDebugInfo();
-        ~ECDbMapDebugInfo();
+private:
+    ECDbMapDebugInfo();
+    ~ECDbMapDebugInfo();
 
-    public:
-        ECDB_EXPORT static BentleyStatus GetMapInfoForSchema (Utf8StringR info, ECDbCR ecdb, Utf8CP ecSchemaName, bool skipUnmappedClasses);
-        ECDB_EXPORT static BentleyStatus GetMapInfoForClass(Utf8StringR info, ECDbCR ecdb, Utf8CP ecClassName);
-        ECDB_EXPORT static BentleyStatus GetMapInfoForAllClasses (Utf8StringR info, ECDbCR ecdb, bool skipUnmappedClasses);
-
+public:
+    ECDB_EXPORT static BentleyStatus GetMapInfoForSchema(Utf8StringR info, ECDbCR, Utf8CP ecSchemaName, bool skipUnmappedClasses);
+    ECDB_EXPORT static BentleyStatus GetMapInfoForClass(Utf8StringR info, ECDbCR, Utf8CP ecClassName);
+    ECDB_EXPORT static BentleyStatus GetMapInfoForAllClasses (Utf8StringR info, ECDbCR, bool skipUnmappedClasses);
     };
 
 #endif

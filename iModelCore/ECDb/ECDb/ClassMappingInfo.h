@@ -159,7 +159,6 @@ private:
     virtual MappingStatus _EvaluateMapStrategy();
     void DetermineCardinality(ECN::ECRelationshipConstraintCR source, ECN::ECRelationshipConstraintCR target);
     BentleyStatus ResolveEndTables(EndTablesOptimizationOptions source, EndTablesOptimizationOptions target);
-    MappingStatus Validate(ECDbMapStrategy::Strategy strategy, RelationshipMappingInfo::Cardinality cardinality);
 
 public:
     RelationshipMappingInfo(ECN::ECRelationshipClassCR relationshipClass, ECDbMapCR ecdbMap) : ClassMappingInfo(relationshipClass, ecdbMap), m_sourceColumnsMappingIsNull(true), m_targetColumnsMappingIsNull(true),
