@@ -51,6 +51,7 @@
     </ECEntityClass>
 
     <ECEntityClass typeName="InstanceBackup">
+        <ECNavigationProperty propertyName="InfoId" relationshipName="ChangeInfoToInstanceBackup" direction="backward" />
         <ECProperty propertyName="Instance" typeName="string"/>
     </ECEntityClass>
 
@@ -253,7 +254,7 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="ChangeInfoToInstanceBackup" strength="holding">
+    <ECRelationshipClass typeName="ChangeInfoToInstanceBackup" strength="embedding">
         <Source cardinality="(1,1)" polymorphic="true">
             <Class class="ChangeInfo"/>
         </Source>
