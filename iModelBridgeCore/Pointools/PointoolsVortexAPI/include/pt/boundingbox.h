@@ -392,13 +392,13 @@ public:
 		T xMax, yMax, zMax;
 																// Calculate axial distances between box centers												
 		dcx = static_cast<T>(fabs(((Base::upper(0) + Base::lower(0)) - (b.upper(0) + b.lower(0))) * 0.5));
-		dcy = fabs(((Base::upper(1) + Base::lower(1)) - (b.upper(1) + b.lower(1))) * 0.5);
-		dcz = fabs(((Base::upper(2) + Base::lower(2)) - (b.upper(2) + b.lower(2))) * 0.5);
+		dcy = static_cast<T>(fabs(((Base::upper(1) + Base::lower(1)) - (b.upper(1) + b.lower(1))) * 0.5));
+		dcz = static_cast<T>(fabs(((Base::upper(2) + Base::lower(2)) - (b.upper(2) + b.lower(2))) * 0.5));
 																// Calculate axial spans between each box's opposite ends
-		xMax = dcx + ((Base::upper(0) - Base::lower(0)) + (b.upper(0) - b.lower(0))) * 0.5;
-		yMax = dcy + ((Base::upper(1) - Base::lower(1)) + (b.upper(1) - b.lower(1))) * 0.5;
-		zMax = dcz + ((Base::upper(2) - Base::lower(2)) + (b.upper(2) - b.lower(2))) * 0.5;
-
+		xMax = static_cast<T>(dcx + ((Base::upper(0) - Base::lower(0)) + (b.upper(0) - b.lower(0))) * 0.5);
+		yMax = static_cast<T>(dcy + ((Base::upper(1) - Base::lower(1)) + (b.upper(1) - b.lower(1))) * 0.5);
+		zMax = static_cast<T>(dcz + ((Base::upper(2) - Base::lower(2)) + (b.upper(2) - b.lower(2))) * 0.5);
+                                                                                                      
 																// Return the square of the diagonal distance
 		return xMax*xMax + yMax*yMax + zMax*zMax;
 	}
