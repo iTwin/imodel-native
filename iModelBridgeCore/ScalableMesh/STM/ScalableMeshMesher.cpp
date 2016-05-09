@@ -103,3 +103,59 @@ int AddIslandsToDTMObject(bvector<bvector<DPoint3d>>& islandFeatures, bvector<bv
         }
     return status;
     }
+
+void AddLoopsFromShape(bvector<bvector<DPoint3d>>& polygons, const HGF2DShape* shape)
+    {
+
+    if (shape->IsComplex())
+        {
+        for (auto& elem : shape->GetShapeList())
+            {
+            AddLoopsFromShape(polygons, elem);
+            }
+        }
+    else if (!shape->IsEmpty())
+        {
+        HGF2DPositionCollection thePoints;
+        shape->Drop(&thePoints, shape->GetTolerance());
+
+        bvector<DPoint3d> vec(thePoints.size());
+
+        for (size_t idx = 0; idx < thePoints.size(); idx++)
+            {
+            vec[idx].x = thePoints[idx].GetX();
+            vec[idx].y = thePoints[idx].GetY();
+            vec[idx].z = 0; // As mentionned below the Z is disregarded
+            }
+
+        polygons.push_back(vec);
+        }
+    }
+
+void MergePolygonSets(bvector<bvector<DPoint3d>>& polygons)
+    {
+    bvector<bvector<DPoint3d>> newUnifiedPoly;
+    HFCPtr<HGF2DCoordSys>   coordSysPtr(new HGF2DCoordSys());
+    HFCPtr<HVEShape> allPolyShape = new HVEShape(coordSysPtr);
+    for (auto& poly : polygons)
+        {
+        UntieLoopsFromPolygon(poly);
+        HArrayAutoPtr<double> tempBuffer(new double[poly.size() * 2]);
+
+        int bufferInd = 0;
+
+        for (size_t pointInd = 0; pointInd < poly.size(); pointInd++)
+            {
+            tempBuffer[bufferInd * 2] = poly[pointInd].x;
+            tempBuffer[bufferInd * 2 + 1] = poly[pointInd].y;
+            bufferInd++;
+            }
+        HVE2DPolygonOfSegments polygon(poly.size() * 2, tempBuffer, coordSysPtr);
+
+        HFCPtr<HVEShape> subShapePtr = new HVEShape(polygon);
+        allPolyShape->Unify(*subShapePtr);
+        }
+
+    AddLoopsFromShape(newUnifiedPoly, allPolyShape->GetLightShape());
+    polygons = newUnifiedPoly;
+    }

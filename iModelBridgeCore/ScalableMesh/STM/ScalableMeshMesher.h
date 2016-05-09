@@ -95,4 +95,7 @@ template<class POINT, class EXTENT> class ScalableMesh2DDelaunayMesher : public 
             bool m_tetGen;
         };
 
+        void MergePolygonSets(bvector<bvector<DPoint3d>>& polygons);
+        void MergePolygonSets(bvector<bvector<DPoint3d>>& polygons, bvector<DTMFeatureType>& types);
+
 //#include "ScalableMeshMesher.hpp"

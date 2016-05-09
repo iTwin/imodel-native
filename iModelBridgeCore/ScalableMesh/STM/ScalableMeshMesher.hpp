@@ -1743,6 +1743,8 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
                 newFBoundary.push_back(vec);
                 }
             postFeatureBoundary = newFBoundary;
+       // MergePolygonSets(postFeatureBoundary);
+#if 0
             for (auto& polygon : postFeatureBoundary)
                 {
                 if (polygon.size() > 2)
@@ -1784,6 +1786,7 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
                     fclose(polyCliPFile);*/
                     }
                 }
+#endif
 
     status = AddPolygonsToDTMObject(postFeatureBoundary, DTMFeatureType::DrapeVoid, dtmObjP);
 
