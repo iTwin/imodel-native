@@ -123,7 +123,7 @@
                         <IsUnique>False</IsUnique>
                         <Properties>
                             <string>ClassId</string>
-                            <string>RemoteId</string>
+                            <string>RelRemoteId</string>
                         </Properties>
                     </DbIndex>
                     <DbIndex>
@@ -140,7 +140,7 @@
                 </Indexes>
             </ClassMap>
         </ECCustomAttributes>
-        <ECProperty propertyName="RemoteId" typeName="string"/>
+        <ECProperty propertyName="RelRemoteId" typeName="string"/>
         <ECProperty propertyName="SourceClassId" typeName="long"/>
         <ECProperty propertyName="SourceInstanceId" typeName="long"/>
         <ECProperty propertyName="TargetClassId" typeName="long"/>

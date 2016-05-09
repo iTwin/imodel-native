@@ -44,7 +44,7 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 #define CLASS_CachedResponsePageInfo_PROPERTY_Index                 "Index"
 
 #define CLASS_CachedRelationshipInfo                                "CachedRelationshipInfo"
-#define CLASS_CachedRelationshipInfo_PROPERTY_RemoteId              "RemoteId"
+#define CLASS_CachedRelationshipInfo_PROPERTY_RemoteId              "RelRemoteId"
 #define CLASS_CachedRelationshipInfo_PROPERTY_ClassId               "ClassId"
 #define CLASS_CachedRelationshipInfo_PROPERTY_InstanceId            "InstanceId"
 #define CLASS_CachedRelationshipInfo_PROPERTY_SourceClassId         "SourceClassId"
