@@ -233,7 +233,7 @@
     &nbsp;      | @ref BentleyApi::ECN::Referencing "Referencing" or @ref BentleyApi::ECN::Holding "Holding" | @ref BentleyApi::ECN::Forward "Forward" or @ref BentleyApi::ECN::Backward "Backward"
     N:1         | @ref BentleyApi::ECN::Embedding "Embedding" | @ref BentleyApi::ECN::Backward "Backward"
     &nbsp;      | @ref BentleyApi::ECN::Referencing "Referencing" or @ref BentleyApi::ECN::Holding "Holding" | @ref BentleyApi::ECN::Forward "Forward" or @ref BentleyApi::ECN::Backward "Backward"
-    M:N         | @ref BentleyApi::ECN::Referencing "Referencing" or @ref BentleyApi::ECN::Holding "Holding" | @ref BentleyApi::ECN::Forward "Forward" or @ref BentleyApi::ECN::Backward "Backward"
+    M:N         | @ref BentleyApi::ECN::Referencing "Referencing" | @ref BentleyApi::ECN::Forward "Forward" or @ref BentleyApi::ECN::Backward "Backward"
 
     ## Foreign Key mapping versus Link Table mapping
     ECDb always attempts to map an @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClass" using a 
