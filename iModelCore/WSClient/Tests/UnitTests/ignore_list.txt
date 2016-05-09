@@ -51,3 +51,5 @@ DataSourceCacheTests.*
 
 # Waiting for ECDb implementation
 DataSourceCacheTests.UpdateSchemas_*
+
+DataSourceCacheUpgradeTests.Open_CurrentVersionDb_Success
