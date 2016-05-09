@@ -44,7 +44,7 @@ struct ECInstanceUpdaterAgainstPrimitiveClassTests : ECInstanceUpdaterTests
                     updatedInstance->SetValue("LongMember", v);
                     instance->GetValue(v, "BooleanMember");
                     updatedInstance->SetValue("BooleanMember", ECValue(!(v.GetBoolean())));
-                    updatedInstance->SetValue("DoubleMember", ECValue(3.1415));
+                   // updatedInstance->SetValue("DoubleMember", ECValue(3.1415));
                     }
                 updatedInstance->SetInstanceId(instance->GetInstanceId().c_str());
 

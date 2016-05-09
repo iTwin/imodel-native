@@ -2078,7 +2078,7 @@ TEST_F(ECSchemaUpdateTests, ModifyProperties)
         "       <ECArrayProperty propertyName='PrimitiveArrayProperty' minOccurs='0' maxOccurs='5' typeName='string' />"
         "       <ECStructProperty propertyName='structProp' typeName='ChangeInfoStruct' readOnly='false' />"
         "       <ECStructArrayProperty propertyName='StructArrayProp' typeName='ChangeInfoStruct' minOccurs='0' maxOccurs='5' readOnly='false' />"
-        "       <ECProperty propertyName='ExtendedProperty' typeName='string' extendedTypeName='email' />"
+        "       <ECProperty propertyName='ExtendedProperty' typeName='string' extendedTypeName='URL' />"
         "   </ECEntityClass>"
         "</ECSchema>", true, "Modifying ReadOnly flag is supported");
     asserted = false;
