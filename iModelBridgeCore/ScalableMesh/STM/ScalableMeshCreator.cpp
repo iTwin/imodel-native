@@ -390,7 +390,7 @@ IScalableMeshCreator::Impl::Impl(const WChar* scmFileName)
     m_isDgnDb = false;
 
     s_useThreadsInMeshing = true;
-    s_useThreadsInStitching = false;
+    s_useThreadsInStitching = true;
     s_useThreadsInFiltering = true;
     }
 

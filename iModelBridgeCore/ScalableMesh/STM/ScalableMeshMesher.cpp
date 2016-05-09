@@ -104,14 +104,14 @@ int AddIslandsToDTMObject(bvector<bvector<DPoint3d>>& islandFeatures, bvector<bv
     return status;
     }
 
-void AddLoopsFromShape(bvector<bvector<DPoint3d>>& polygons, const HGF2DShape* shape)
+void AddLoopsFromShape(bvector<bvector<DPoint3d>>& polygons, const HGF2DShape* shape, std::function<void(const bvector<DPoint3d>& element)> afterPolygonAdded)
     {
 
     if (shape->IsComplex())
         {
         for (auto& elem : shape->GetShapeList())
             {
-            AddLoopsFromShape(polygons, elem);
+            AddLoopsFromShape(polygons, elem, afterPolygonAdded);
             }
         }
     else if (!shape->IsEmpty())
@@ -129,16 +129,26 @@ void AddLoopsFromShape(bvector<bvector<DPoint3d>>& polygons, const HGF2DShape* s
             }
 
         polygons.push_back(vec);
+        afterPolygonAdded(vec);
         }
     }
 
 void MergePolygonSets(bvector<bvector<DPoint3d>>& polygons)
+    {
+    return MergePolygonSets(polygons, [] (const size_t i, const bvector<DPoint3d>& element)
+        {
+        return true;
+        }, [] (const bvector<DPoint3d>&element) {});
+    }
+
+void MergePolygonSets(bvector<bvector<DPoint3d>>& polygons, std::function<bool(const size_t i, const bvector<DPoint3d>& element)> choosePolygonInSet, std::function<void(const bvector<DPoint3d>& element)> afterPolygonAdded)
     {
     bvector<bvector<DPoint3d>> newUnifiedPoly;
     HFCPtr<HGF2DCoordSys>   coordSysPtr(new HGF2DCoordSys());
     HFCPtr<HVEShape> allPolyShape = new HVEShape(coordSysPtr);
     for (auto& poly : polygons)
         {
+        if (!choosePolygonInSet(&poly - &polygons.front(), poly)) continue;
         UntieLoopsFromPolygon(poly);
         HArrayAutoPtr<double> tempBuffer(new double[poly.size() * 2]);
 
@@ -156,6 +166,6 @@ void MergePolygonSets(bvector<bvector<DPoint3d>>& polygons)
         allPolyShape->Unify(*subShapePtr);
         }
 
-    AddLoopsFromShape(newUnifiedPoly, allPolyShape->GetLightShape());
+    AddLoopsFromShape(newUnifiedPoly, allPolyShape->GetLightShape(), afterPolygonAdded);
     polygons = newUnifiedPoly;
     }

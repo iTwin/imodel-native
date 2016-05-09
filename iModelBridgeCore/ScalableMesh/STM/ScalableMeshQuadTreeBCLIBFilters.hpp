@@ -14,6 +14,7 @@
 //#include "ScalableMesh/Garland/GarlandMeshFilter.h"
 #include "ScalableMesh\ScalableMeshGraph.h"
 #include "CGALEdgeCollapse.h"
+#include "ScalableMeshMesher.h"
 
 
 //=====================================================================================================================
@@ -531,75 +532,29 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIB_CGALMeshFilte
     vecPts.assign(inputPts.begin(), inputPts.end());    
     if (polylines.size() > 0)
         {
-        HFCPtr<HGF2DCoordSys>   coordSysPtr(new HGF2DCoordSys());
-        HFCPtr<HVEShape> allPolyShape = new HVEShape(coordSysPtr);
+
         bvector<DTMFeatureType> newTypes;
+        bvector<DTMFeatureType> otherNewTypes;
         bvector<bvector<DPoint3d>> newLines;
-
-        for (auto& line : polylines)
+        MergePolygonSets(polylines, [&newTypes, &newLines, &types] (const size_t i, const bvector<DPoint3d>& vec)
             {
-            if (!IsVoidFeature((IDTMFile::FeatureType)types[&line - &polylines.front()]))
+            if (!IsVoidFeature((IDTMFile::FeatureType)types[i]))
                 {
-                newLines.push_back(line);
-                newTypes.push_back(types[&line - &polylines.front()]);
-                }
-            HArrayAutoPtr<double> tempBuffer(new double[line.size() * 2]);
-
-            int bufferInd = 0;
-
-            for (size_t pointInd = 0; pointInd < line.size(); pointInd++)
-                {
-                tempBuffer[bufferInd * 2] = line[pointInd].x;
-                tempBuffer[bufferInd * 2 + 1] = line[pointInd].y;
-                bufferInd++;
-                }
-            HVE2DPolygonOfSegments polygon(line.size() * 2, tempBuffer, coordSysPtr);
-
-            HFCPtr<HVEShape> subShapePtr = new HVEShape(polygon);
-            allPolyShape->Unify(*subShapePtr);
-            }
-        if (allPolyShape->GetLightShape()->IsComplex())
-            {
-            for (auto& elem : allPolyShape->GetLightShape()->GetShapeList())
-                {
-                HGF2DPositionCollection thePoints;
-                elem->Drop(&thePoints, elem->GetTolerance());
-
-                bvector<DPoint3d> vec(thePoints.size());
-
-                for (size_t idx = 0; idx < thePoints.size(); idx++)
-                    {
-                    vec[idx].x = thePoints[idx].GetX();
-                    vec[idx].y = thePoints[idx].GetY();
-                    vec[idx].z = 0; // As mentionned below the Z is disregarded
-                    }
-
                 newLines.push_back(vec);
-                newTypes.push_back(DTMFeatureType::DrapeVoid);
+                newTypes.push_back(types[i]);
+                return false;
                 }
-            }
-        else if (!allPolyShape->GetLightShape()->IsEmpty())
-            {
-            HGF2DPositionCollection thePoints;
-            allPolyShape->GetLightShape()->Drop(&thePoints, allPolyShape->GetLightShape()->GetTolerance());
-
-            bvector<DPoint3d> vec(thePoints.size());
-
-            for (size_t idx = 0; idx < thePoints.size(); idx++)
+            else return true;
+            },
+                [&otherNewTypes] (const bvector<DPoint3d>& vec)
                 {
-                vec[idx].x = thePoints[idx].GetX();
-                vec[idx].y = thePoints[idx].GetY();
-                vec[idx].z = 0; // As mentionned below the Z is disregarded
-                }
-
-            newLines.push_back(vec);
-            newTypes.push_back(DTMFeatureType::DrapeVoid);
-            }
-        polylines = newLines;
-        types = newTypes;
+                otherNewTypes.push_back(DTMFeatureType::DrapeVoid);
+                });
+            otherNewTypes.insert(otherNewTypes.end(), newTypes.begin(), newTypes.end());
+            polylines.insert(polylines.end(), newLines.begin(), newLines.end());
+                types = otherNewTypes;
+            SimplifyPolylines(polylines);
         }
-
-    SimplifyPolylines(polylines);
 
 
     if (ret)
