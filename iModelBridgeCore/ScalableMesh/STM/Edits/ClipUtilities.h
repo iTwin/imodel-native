@@ -36,12 +36,12 @@ class FaceToUVMap
     public:
         DRange3d range;
         FaceToUVMap(DRange3d r=DRange3d()): range(r) {};
-        void ReadFrom(const int32_t* indices, const int32_t* uvIndices, const DPoint2d* uvs, size_t nIndices);
-        void AddFacetOnEdge(const int32_t* indices, const DPoint2d* uvs, const int32_t* edge);
+        void ReadFrom(const int32_t* indices, const int32_t* uvIndices, const DPoint2d* uvCoords, size_t nIndices);
+        void AddFacetOnEdge(const int32_t* indices, const DPoint2d* uvCoords, const int32_t* edge);
         void RemoveFacetFromEdge(const int32_t* indices, const int32_t* edge);
-        void AddFacet(const int32_t* indices, const DPoint2d* uvs);
+        void AddFacet(const int32_t* indices, const DPoint2d* uvCoords);
         void RemoveFacet(const int32_t* indices);
-        bool GetFacet(const int32_t* indices, DPoint2d* uvs);
+        bool GetFacet(const int32_t* indices, DPoint2d* uvCoords);
         bool SplitFacet(DPoint2d& newUv, const int32_t newPt, const int32_t* indices, std::function<DPoint2d(std::array<DPoint2d, 3>, const int32_t*, int32_t)> interpolateCallback);
         bool SplitEdge(DPoint2d* newUvs, const int32_t newPt, const int32_t* indices, const int32_t* pts, std::function<DPoint2d(std::array<DPoint2d, 3>, const int32_t*, int32_t)> interpolateCallback);
         bool SplitFacetOrEdge(DPoint2d& newUv, const int32_t newPt, const int32_t* indices, std::function<DPoint2d(std::array<DPoint2d, 3>, const int32_t*, int32_t)> interpolateCallback, bool onEdge);

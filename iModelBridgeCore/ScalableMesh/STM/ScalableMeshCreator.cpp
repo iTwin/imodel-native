@@ -125,7 +125,8 @@ inline const GCS& GetDefaultGCS ()
 }
 
 #ifdef SM_BESQL_FORMAT
-std::atomic<size_t> s_nextNodeID = 0;
+//NEEDS_WORK_SM : Should be part of the index instead to avoid having very big odd values.
+std::atomic<uint64_t> s_nextNodeID = 0;
 #endif
 
 
@@ -413,7 +414,7 @@ IScalableMeshCreator::Impl::Impl(const WChar* scmFileName)
             }
         }*/
     s_useThreadsInMeshing = true;
-    s_useThreadsInStitching = true;
+    s_useThreadsInStitching = false;
     s_useThreadsInFiltering = true;
     }
 
@@ -546,8 +547,7 @@ static ISMPointIndexMesher<POINT, EXTENT>* Create3dMesherFromType (ScalableMeshM
         {
         case SCM_MESHER_2D_DELAUNAY:
             return new ScalableMesh2DDelaunayMesher<POINT, EXTENT>();
-/*        case SCM_MESHER_LMS_MARCHING_CUBE:
-            return new ScalableMeshAPSSOutOfCoreMesher<POINT, EXTENT>();
+            /*        
         case SCM_MESHER_3D_DELAUNAY:
             return new ScalableMesh3DDelaunayMesher<POINT, EXTENT> (false);
         case SCM_MESHER_TETGEN:
@@ -573,8 +573,7 @@ ScalableMeshMesherType Get2_5dMesherType ()
 
 ScalableMeshMesherType Get3dMesherType ()
     {    
-    //return SCM_MESHER_2D_DELAUNAY;
-    //return SCM_MESHER_LMS_MARCHING_CUBE;
+    //return SCM_MESHER_2D_DELAUNAY;    
     //return SCM_MESHER_3D_DELAUNAY;
 #ifndef NO_3D_MESH
     return SCM_MESHER_TETGEN;
@@ -618,7 +617,7 @@ int IScalableMeshCreator::Impl::CreateScalableMesh(bool isSingleFile)
 +---------------+---------------+---------------+---------------+---------------+------*/
 
 
-StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<IndexType>&                                    pDataIndex, 
+StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&                                    pDataIndex, 
 
                                                        HPMMemoryMgrReuseAlreadyAllocatedBlocksWithAlignment& myMemMgr,
                                                        bool needBalancing) 
@@ -692,19 +691,13 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<IndexType>&       
             pStreamingUVsIndicesTileStore = new SMStreamingPointTaggedTileStore< int32_t, PointIndexExtentType>(uvIndice_store_path, WString(), (SCM_COMPRESSION_DEFLATE == m_compressionType));
             pStreamingTextureTileStore = new StreamingTextureTileStore(texture_store_path.c_str());
             
-            pDataIndex = new IndexType(ScalableMeshMemoryPools<PointType>::Get()->GetGenericPool(),
-                                       ScalableMeshMemoryPools<PointType>::Get()->GetPointPool(),
-                                       &*pStreamingTileStore,
-                                       ScalableMeshMemoryPools<PointType>::Get()->GetPtsIndicePool(),
+            pDataIndex = new MeshIndexType(ScalableMeshMemoryPools<PointType>::Get()->GetGenericPool(),                                       
+                                       &*pStreamingTileStore,                                       
                                        &*pStreamingIndiceTileStore,
                                        ScalableMeshMemoryPools<PointType>::Get()->GetGraphPool(),
                                        pGraphTileStore = new SMSQLiteGraphTileStore(m_smSQLitePtr),                                       
-                                       &*pStreamingTextureTileStore,
-                                       ScalableMeshMemoryPools<PointType>::Get()->GetUVPool(),
-                                       //pUVTileStore,
-                                       //new UVTileStore<PointType>(filePtr, 0),
-                                       &*pStreamingUVTileStore,
-                                       ScalableMeshMemoryPools<PointType>::Get()->GetUVsIndicesPool(),
+                                       &*pStreamingTextureTileStore,                                                                              
+                                       &*pStreamingUVTileStore,                                       
                                        &*pStreamingUVsIndicesTileStore,
                                        10000,
                                        pFilter,
@@ -740,20 +733,13 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<IndexType>&       
             pGraphTileStore = new SMSQLiteGraphTileStore(m_smSQLitePtr);
 
             //pIndiceTileStore = new TileStoreType(filePtr, (SCM_COMPRESSION_DEFLATE == m_compressionType));
-            pDataIndex = new IndexType(ScalableMeshMemoryPools<PointType>::Get()->GetGenericPool(),
-                                       ScalableMeshMemoryPools<PointType>::Get()->GetPointPool(),
-                                       &*pFinalTileStore,
-                                       ScalableMeshMemoryPools<PointType>::Get()->GetPtsIndicePool(),
+            pDataIndex = new MeshIndexType(ScalableMeshMemoryPools<PointType>::Get()->GetGenericPool(),                                       
+                                       &*pFinalTileStore,                                       
                                        &*pIndiceTileStore,
                                        ScalableMeshMemoryPools<PointType>::Get()->GetGraphPool(),
                                        pGraphTileStore,                                       
-                                       &*pTextureTileStore,
-                                       //new TextureTileStore(filePtr, n),
-                                       ScalableMeshMemoryPools<PointType>::Get()->GetUVPool(),
-                                       //pUVTileStore,
-                                       //new UVTileStore<PointType>(filePtr, 0),
-                                       &*pUVTileStore,
-                                       ScalableMeshMemoryPools<PointType>::Get()->GetUVsIndicesPool(),
+                                       &*pTextureTileStore,                                       
+                                       &*pUVTileStore,                                       
                                        &*pUVsIndicesTileStore,
                                        10000,
                                        pFilter,
@@ -774,11 +760,7 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<IndexType>&       
             ClipRegistry* registry = new ClipRegistry(clipFileDefPath);
             pDataIndex->SetClipRegistry(registry);
             }
-
-        pDataIndex->m_useSTMFormat = false;
-
-
-
+        
     return SUCCESS;
     }
 

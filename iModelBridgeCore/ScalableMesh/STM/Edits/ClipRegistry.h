@@ -27,9 +27,7 @@ class ClipRegistry : public HFCShareableObject<ClipRegistry>
     {
     //HFCPtr<SMPointTaggedTileStore<DPoint3d, YProtPtExtentType>> m_clipStore;
     HFCPtr<SMSQLiteClipDefinitionsTileStore<YProtPtExtentType>> m_clipStore;
-    HFCPtr<SMSQLiteSkirtDefinitionsTileStore<YProtPtExtentType>> m_skirtStore;
-    //HFCPtr<HPMCountLimitedPool<DPoint3d>> m_pool;
-    //vector<HPMStoredPooledVector<DPoint3d>> m_clips;
+    HFCPtr<SMSQLiteSkirtDefinitionsTileStore<YProtPtExtentType>> m_skirtStore;    
     SMPointIndexHeader<YProtPtExtentType> h;
     WString m_path;
     bmap<uint64_t, bvector<DPoint3d>> m_clipDefs;
@@ -38,8 +36,7 @@ class ClipRegistry : public HFCShareableObject<ClipRegistry>
     public:
 
     ClipRegistry(const WString& fileName)
-        {
-       // m_pool = new HPMCountLimitedPool<DPoint3d>(new HPMMemoryMgrReuseAlreadyAllocatedBlocksWithAlignment(100, 2000 * sizeof(DPoint3d)), 200000);
+        {       
        // IDTMFile::File::Ptr filePtr = IDTMFile::File::Open(fileName.c_str());
         StatusInt status;
         SMSQLiteFilePtr filePtr = SMSQLiteFile::Open(fileName.c_str(), false, status);
@@ -115,27 +112,7 @@ class ClipRegistry : public HFCShareableObject<ClipRegistry>
     uint64_t AddClip(const DPoint3d* clip, size_t clipSize)
         {
         if (m_clipStore == NULL) OpenStore();
-        /*if (m_clips.size() + 1 > m_clips.capacity())
-            {
-            for (auto& element : m_clips)
-                {
-                    element.UnPin();
-                    if (!element.Discarded()) element.Discard();
-                }
-            m_clips.resize(m_clips.size() + 1);
-            for (size_t i = 0; i < m_clips.size() - 1; ++i) m_clips[i].Pin();
-            }
-        else m_clips.resize(m_clips.size() + 1);
-        h.m_depth += 1;
-        m_clipStore->StoreMasterHeader(&h, 0);
-        auto& newClip = m_clips.back();
-        newClip.SetStore(m_clipStore);
-        newClip.SetPool(m_pool);
-        newClip.push_back(clip, clipSize);
-        newClip.Discard();
-        newClip.Inflate();
-        newClip.Pin();
-        return newClip.GetBlockID().m_integerID;*/
+     
         m_clipStore->StoreBlock(const_cast<DPoint3d*>(clip), clipSize, m_maxID);
         return m_maxID++;
         }

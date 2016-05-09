@@ -53,10 +53,10 @@ class ScalableMeshPointStorageEditor : public Import::BackInserter
     Memory::ConstPacketProxy<PtType>        m_pointPacket;
 
     typedef SMPointIndex<PtType, YProtPtExtentType>
-                                            IndexType;    
-    IndexType&                         m_rIndex;
+                                            MeshIndexType;    
+    MeshIndexType&                         m_rIndex;
 
-    explicit                                ScalableMeshPointStorageEditor    (IndexType&                 pi_rIndex)
+    explicit                                ScalableMeshPointStorageEditor    (MeshIndexType&                 pi_rIndex)
         :   m_rIndex(pi_rIndex) {}
 
     virtual void                            _Assign                    (const Memory::PacketGroup&      pi_rSrc) override
@@ -85,7 +85,7 @@ class ScalableMeshPointNonDestructiveStorageEditor : public ScalableMeshPointSto
 
     friend class                            ScalableMeshNonDestructiveEditStorage<PtType>;
 
-    explicit                                ScalableMeshPointNonDestructiveStorageEditor(IndexType&                 pi_rIndex)
+    explicit                                ScalableMeshPointNonDestructiveStorageEditor(MeshIndexType&                 pi_rIndex)
         : ScalableMeshPointStorageEditor(pi_rIndex)
         {}
 
@@ -198,13 +198,13 @@ class GenericLinearStorageEditor : public Import::BackInserter
 
 
      typedef SMMeshIndex<PtType, YProtPtExtentType>
-         IndexType;
+         MeshIndexType;
 
-     IndexType&                              m_rIndex;
+     MeshIndexType&                              m_rIndex;
      size_t     m_importedFeatures;
 
      explicit                                ScalableMeshLinearStorageEditor
-         (IndexType&                  pi_rFeatureIndex)
+         (MeshIndexType&                  pi_rFeatureIndex)
          : m_rIndex(pi_rFeatureIndex), m_importedFeatures(0)
          {}
 
@@ -254,7 +254,7 @@ class GenericLinearStorageEditor : public Import::BackInserter
      friend class                            ScalableMeshNonDestructiveEditStorage < PtType > ;
 
      explicit                                ScalableMeshNonDestructiveLinearStorageEditor
-         (IndexType&                  pi_rFeatureIndex)
+         (MeshIndexType&                  pi_rFeatureIndex)
          : ScalableMeshLinearStorageEditor(pi_rFeatureIndex)
          {}
 
@@ -310,9 +310,9 @@ class ScalableMeshStorage : public IStorage
                                             MeshTypeFactory;
 
     typedef SMMeshIndex<PtType, YProtPtExtentType>
-                                            IndexType;    
+                                            MeshIndexType;    
 
-    IndexType*                         m_pPointIndex;
+    MeshIndexType*                         m_pPointIndex;
 
     GeoCoords::GCS                          m_geoCoordSys;
 
@@ -355,7 +355,7 @@ class ScalableMeshStorage : public IStorage
 
 public:
 
-    explicit                                ScalableMeshStorage               (IndexType&                 pi_rIndex,
+    explicit                                ScalableMeshStorage               (MeshIndexType&                 pi_rIndex,
                                                                         const GeoCoords::GCS&           pi_rGeoCoordSys)
         :   m_pPointIndex(&pi_rIndex),
             m_geoCoordSys(pi_rGeoCoordSys)
@@ -392,7 +392,7 @@ class ScalableMeshNonDestructiveEditStorage : public ScalableMeshStorage<PtType>
 
 public:
 
-    explicit                                ScalableMeshNonDestructiveEditStorage(IndexType&                 pi_rIndex,
+    explicit                                ScalableMeshNonDestructiveEditStorage(MeshIndexType&                 pi_rIndex,
                                                                         const GeoCoords::GCS&           pi_rGeoCoordSys)
                                                                         : ScalableMeshStorage(pi_rIndex, pi_rGeoCoordSys)
         {

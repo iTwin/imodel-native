@@ -414,7 +414,7 @@ StatusInt IScalableMeshSourceImporter::Impl::SyncWithSources ()
 
     // Remove sources which have been removed or modified
 #if 0 //NEEDS_WORK_SM_IMPORTER : ?
-    if (BSISUCCESS != RemoveSourcesFrom<PointIndexType>(pointIndex, listRemoveExtent))
+    if (BSISUCCESS != RemoveSourcesFrom<MeshIndexType>(pointIndex, listRemoveExtent))
         return BSIERROR;          
 #endif
 

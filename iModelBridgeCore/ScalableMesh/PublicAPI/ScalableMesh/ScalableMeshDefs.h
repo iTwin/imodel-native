@@ -52,8 +52,7 @@ enum ScalableMeshFilterType
 
 enum ScalableMeshMesherType
     {
-    SCM_MESHER_2D_DELAUNAY = 0, //Suitable only for 2.5D data   
-    SCM_MESHER_LMS_MARCHING_CUBE = 1,
+    SCM_MESHER_2D_DELAUNAY = 0, //Suitable only for 2.5D data       
     SCM_MESHER_3D_DELAUNAY = 2,
     SCM_MESHER_TETGEN = 3,
     SCM_MESHER_QTY,

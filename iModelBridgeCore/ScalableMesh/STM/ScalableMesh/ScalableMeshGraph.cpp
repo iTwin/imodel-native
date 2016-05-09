@@ -605,7 +605,6 @@ void ExtractFaceIndexListFromGraph(std::vector<int>& faceIndexBuffer, MTGGraph* 
     }
 
 
-
 void AddFacesToGraph(MTGGraph* destGraphP, std::vector<int>& faces, std::vector<std::vector<std::pair<long, MTGNodeId>>*>& existingEdges, std::vector<int>& indexMapping, std::vector<DPoint3d>& pointsInGraph, std::vector<DPoint3d>& pointsInFaces, bvector<int>& componentContours)
     {
    // std::ofstream log;

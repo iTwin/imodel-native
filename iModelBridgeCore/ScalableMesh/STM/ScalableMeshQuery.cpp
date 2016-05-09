@@ -1201,7 +1201,7 @@ ScalableMeshMesh::~ScalableMeshMesh()
         }
     }
 
-int ScalableMeshMesh::AppendMesh(size_t nbPoints, DPoint3d* points, size_t nbFaceIndexes, const int32_t* faceIndexes, size_t normalCount, DVec3d* pNormal, int32_t* pNormalIndex, size_t uvCount, DPoint2d* pUv, int32_t* pUvIndex)
+int ScalableMeshMesh::AppendMesh(size_t nbPoints, DPoint3d* points, size_t nbFaceIndexes, const int32_t* faceIndexes, size_t normalCount, DVec3d* pNormal, int32_t* pNormalIndex, size_t uvCount, const DPoint2d* pUv, const int32_t* pUvIndex)
     {
     //NEEDS_WORK_SM - Not Supported yet
     assert(normalCount == 0 && pNormal == 0 && pNormalIndex == 0);
@@ -2009,21 +2009,17 @@ void ScalableMeshMesh::ApplyClipMesh(const DifferenceSet& d)
             stats << std::to_string(m_pUv[m_pUvIndex[i+1]-1].x)+" " +std::to_string(m_pUv[m_pUvIndex[i+1]-1].y) << std::endl;
             stats << std::to_string(m_pUv[m_pUvIndex[i+2]-1].x)+" " +std::to_string(m_pUv[m_pUvIndex[i+2]-1].y) << std::endl;
             std::array<int32_t, 3> face = { m_faceIndexes[i], m_faceIndexes[i + 1], m_faceIndexes[i + 2] };
-            std::array<DPoint2d, 3> uvs = { m_pUv[m_pUvIndex[i]-1], m_pUv[m_pUvIndex[i + 1]-1], m_pUv[m_pUvIndex[i + 2]-1] };
+            std::array<DPoint2d, 3> uvCoords = { m_pUv[m_pUvIndex[i]-1], m_pUv[m_pUvIndex[i + 1]-1], m_pUv[m_pUvIndex[i + 2]-1] };
             if (m_pUv[m_pUvIndex[i]-1].x > 1+1e-4 || m_pUv[m_pUvIndex[i]-1].x < 0-1e-4 || m_pUv[m_pUvIndex[i + 1]-1].x > 1+1e-4 || m_pUv[m_pUvIndex[i + 1]-1].x < 0-1e-4 || m_pUv[m_pUvIndex[i + 2]-1].x > 1+1e-4 || m_pUv[m_pUvIndex[i + 2]-1].x < 0-1e-4)
                 stats << "WRONG INDEX -- INDICES " + std::to_string(m_pUvIndex[i]-1) + " " + std::to_string(m_pUvIndex[i + 1]-1) + " " + std::to_string(m_pUvIndex[i + 2]-1) << std::endl;
-            originalUvs.insert(make_pair(m_faceIndexes[i], make_bpair(face, uvs)));
-            originalUvs.insert(make_pair(m_faceIndexes[i+1], make_bpair(face, uvs)));
-            originalUvs.insert(make_pair(m_faceIndexes[i+2], make_bpair(face, uvs)));
+            originalUvs.insert(make_pair(m_faceIndexes[i], make_bpair(face, uvCoords)));
+            originalUvs.insert(make_pair(m_faceIndexes[i+1], make_bpair(face, uvCoords)));
+            originalUvs.insert(make_pair(m_faceIndexes[i+2], make_bpair(face, uvCoords)));
             }
         stats.close();
     }
 #endif
-
-    ApplyClipDiffSetToMesh(m_points, m_nbPoints, 
-                           m_faceIndexes, m_nbFaceIndexes, 
-                           m_pUv, m_pUvIndex, m_uvCount, d);
-
+  
 #if SM_TRACE_CLIPS_GETMESH
     if (m_uvCount > 0 && m_pUvIndex && d.addedFaces.size() >= 3)
         {
@@ -2053,14 +2049,14 @@ void ScalableMeshMesh::ApplyClipMesh(const DifferenceSet& d)
                 for (auto it = range.first; it != range.second; ++it)
                     {
                     auto face = it->second.first;
-                    auto uvs = it->second.second;
+                    auto uvCoords = it->second.second;
                     if ((face[0] == m_faceIndexes[i] || face[1] == m_faceIndexes[i] || face[2] == m_faceIndexes[i]) &&
                         (face[0] == m_faceIndexes[i + 1] || face[1] == m_faceIndexes[i + 1] || face[2] == m_faceIndexes[i + 1]) &&
                         (face[0] == m_faceIndexes[i + 2] || face[1] == m_faceIndexes[i + 2] || face[2] == m_faceIndexes[i + 2]))
                         {
-                        if ((fabs(uvs[0].Distance(m_pUv[m_pUvIndex[i]-1])) < 1e-3 || fabs(uvs[1].Distance(m_pUv[m_pUvIndex[i]-1])) < 1e-3 ||fabs(uvs[2].Distance(m_pUv[m_pUvIndex[i]-1])) < 1e-3) &&
-                            (fabs(uvs[0].Distance(m_pUv[m_pUvIndex[i+1]-1])) < 1e-3  || fabs(uvs[1].Distance(m_pUv[m_pUvIndex[i+1]-1])) < 1e-3 || fabs(uvs[2].Distance(m_pUv[m_pUvIndex[i+1]-1])) < 1e-3) &&
-                            (fabs(uvs[0].Distance(m_pUv[m_pUvIndex[i+2]-1])) < 1e-3  || fabs(uvs[1].Distance(m_pUv[m_pUvIndex[i+2]-1])) < 1e-3 || fabs(uvs[2].Distance(m_pUv[m_pUvIndex[i+2]-1])) < 1e-3))
+                        if ((fabs(uvCoords[0].Distance(m_pUv[m_pUvIndex[i]-1])) < 1e-3 || fabs(uvCoords[1].Distance(m_pUv[m_pUvIndex[i]-1])) < 1e-3 ||fabs(uvCoords[2].Distance(m_pUv[m_pUvIndex[i]-1])) < 1e-3) &&
+                            (fabs(uvCoords[0].Distance(m_pUv[m_pUvIndex[i+1]-1])) < 1e-3  || fabs(uvCoords[1].Distance(m_pUv[m_pUvIndex[i+1]-1])) < 1e-3 || fabs(uvCoords[2].Distance(m_pUv[m_pUvIndex[i+1]-1])) < 1e-3) &&
+                            (fabs(uvCoords[0].Distance(m_pUv[m_pUvIndex[i+2]-1])) < 1e-3  || fabs(uvCoords[1].Distance(m_pUv[m_pUvIndex[i+2]-1])) < 1e-3 || fabs(uvCoords[2].Distance(m_pUv[m_pUvIndex[i+2]-1])) < 1e-3))
                             {
 
                             }
@@ -2068,9 +2064,9 @@ void ScalableMeshMesh::ApplyClipMesh(const DifferenceSet& d)
                             {
                             stats2 << " DIFFERENCE !" << std::endl;
                             stats2 << " STORED UVS " << std::endl;
-                            stats2 << std::to_string(uvs[0].x) + " " + std::to_string(uvs[0].y) << std::endl;
-                            stats2 << std::to_string(uvs[1].x) + " " + std::to_string(uvs[1].y) << std::endl;
-                            stats2 << std::to_string(uvs[2].x) + " " + std::to_string(uvs[2].y) << std::endl;
+                            stats2 << std::to_string(uvCoords[0].x) + " " + std::to_string(uvCoords[0].y) << std::endl;
+                            stats2 << std::to_string(uvCoords[1].x) + " " + std::to_string(uvCoords[1].y) << std::endl;
+                            stats2 << std::to_string(uvCoords[2].x) + " " + std::to_string(uvCoords[2].y) << std::endl;
                             break;
                             }
                         }

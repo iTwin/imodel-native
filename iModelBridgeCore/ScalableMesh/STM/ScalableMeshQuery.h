@@ -714,7 +714,7 @@ class ScalableMeshMesh : public IScalableMeshMesh
               size_t GetNbFaceIndexes() const {return m_nbFaceIndexes;}
         const int32_t* GetFaceIndexes() const {return m_faceIndexes;}
 
-        int AppendMesh(size_t nbPoints, DPoint3d* points, size_t nbFaceIndexes, const int32_t* faceIndexes, size_t normalCount, DVec3d* pNormal, int32_t* pNormalIndex, size_t uvCount, DPoint2d* pUv, int32_t* pUvIndex);
+        int AppendMesh(size_t nbPoints, DPoint3d* points, size_t nbFaceIndexes, const int32_t* faceIndexes, size_t normalCount, DVec3d* pNormal, int32_t* pNormalIndex, size_t uvCount, const DPoint2d* pUv, const int32_t* pUvIndex);
 
         void ApplyDifferenceSet(const DifferenceSet& d);
 

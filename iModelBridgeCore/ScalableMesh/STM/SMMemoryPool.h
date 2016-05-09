@@ -21,9 +21,10 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
     
 enum class SMPoolDataTypeDesc
     {
-    Point = 0,
+    Points = 0,
     TriPtIndices,    
-    UVIndices, 
+    TriUvIndices, 
+    UvCoords, 
     DiffSet, 
     Graph,
     Texture,
@@ -262,7 +263,8 @@ private:
 
 protected: 
 
-        size_t    m_nbItems;
+        size_t m_nbItems;
+        size_t m_allocatedSize;
 
 public:
     
@@ -277,7 +279,7 @@ public:
             }
         iteratorBase(SMMemoryPoolVectorItem<DataType>* vector, size_t initialPosition) {
             m_vector = vector;
-            m_index = initialPosition; /* if (m_vector != NULL) m_vector->Pin();*/
+            m_index = initialPosition; 
             }
         const_iterator_t    ConvertToConst () const
             {
@@ -287,9 +289,7 @@ public:
         const_reference     Dereference    () const {
             return m_vector->operator[](m_index);
             }
-        reference           Dereference    () {
-            return m_vector->operator[](m_index);
-            }
+
         void                Increment      ()
             {
             m_index++;
@@ -366,6 +366,7 @@ public:
             {
             m_nbItems = nbItems;
             m_size = nbItems * sizeof(DataType);
+            m_allocatedSize = m_size;
             m_nodeId = nodeId;
             
             if (m_nbItems > 0)
@@ -375,48 +376,7 @@ public:
             
             m_dataType = dataType;
             }
-    /*
-    SMMemoryPoolVectorItem(uint64_t nodeId)                        
-            {
-            m_nbItems = 0;
-            m_size = nbItems * sizeof(DataType);
-            m_nodeId = nodeId;
-
-            if (nbItems > 0)
-                m_data = (Byte*)new DataType[nbItems];
-                                               
-            m_dataType = GetDataType(typeid(DataType));
-            }
-            */
-    /*
-    SMMemoryPoolVectorItem ()
-        : PoolItem<DataType>::Type()
-        {
-        m_allocatedCount = 0;
-        m_count = 0;
-        m_memory = NULL;
-
-        m_accessCount=0;
-        }*/
-
-    /** -----------------------------------------------------------------------------
-
-        Creates a pooled vector. The pool used for the memory count management is
-        provided.
-
-        -----------------------------------------------------------------------------
-    */
-    /*
-    SMMemoryPoolVectorItem(HFCPtr< typename PoolItem<DataType>::PoolType > pool)
-        : PoolItem<DataType>::Type(pool)
-        {
-        m_allocatedCount = 0;
-        m_count = 0;
-        m_memory = NULL;
-
-
-        m_accessCount=0;
-        }*/
+      
     /** -----------------------------------------------------------------------------
 
         Destroyer. If the object is pool managed then it is removed from the pool
@@ -426,220 +386,70 @@ public:
     */
 
     virtual ~SMMemoryPoolVectorItem()
-        {
-        /*
-        if (m_pool != NULL)
-            if (!GetPoolManaged())
-                m_pool->Free(this);
-                */
+        {     
         }
 
-
     virtual bool reserve(size_t newCount)
-        {
-        assert(!"MST TBD");
-        /*MST TBD
-        if (Discarded())
-            Inflate();
-
-        HASSERT(!Discarded());
-
-        // We tolerate that the reserve count be 0 yet return immediately
-        if (newCount == 0)
-            return true;
-
-        if (newCount > m_allocatedCount)
-            {
-            if (m_pool != NULL)
-                {
-                bool allocationSuccess = true;
-                if (!GetPoolManaged())
-                    allocationSuccess = m_pool->Allocate (newCount, this);
-                else
-                    allocationSuccess = m_pool->Reallocate (newCount, this);
-
-                if (!allocationSuccess)
-                    throw std::bad_alloc();
-                }
-            else
-                {
-                void* newMemory = new DataType[newCount];
-                if (newMemory == NULL)
-                    throw std::bad_alloc();
-
-                memcpy (newMemory, m_memory, sizeof(DataType)*m_count);
-                delete [] m_memory;
-                m_memory = reinterpret_cast<DataType*>(newMemory);
-                m_allocatedCount = newCount;
-                }
-            SetDirty(true);
+        {        
+        assert(newCount > 0);
+        
+        size_t newSize = newCount * sizeof(DataType);
+                                                
+        if (newSize > m_allocatedSize)
+            {            
+            Byte* newMemory = (Byte*)new DataType[newCount];
+            memcpy (newMemory, m_data, m_size);
+            delete [] m_data;
+            m_data = newMemory;                
+            m_allocatedSize = newSize;
             }
-            */
+
         return true;
         }
 
     size_t capacity() const
         {
-        assert(!"MST TBD");
-        /*
-        if (Discarded())
-            Inflate();
-
-        HASSERT(!Discarded());
-
-        return m_allocatedCount;
-        */
-        return 0;
+        return m_allocatedSize / sizeof(DataType);               
         }
 
     bool push_back(const DataType& newObject)
-        {
-        assert(!"MST TBD");
-
-        
-#if 0
-        m_itemMutex.lock();
-        if (Discarded())
-            Inflate();
-
-        HASSERT(!Discarded());
-
-        if((m_allocatedCount <= m_count) && !reserve ((m_count * 3)/2 + 2))
-            throw std::bad_alloc();
-   
-        m_accessCount++;
-        if ((m_accessCount > 100) && (m_pool != NULL) && !Pinned())
-            {            
-            /*
-            HPMStoredPooledVector* poolVec = dynamic_cast<HPMStoredPooledVector*>(this);
-            DataType dataType;
-            PoolOperationLogger::GetLogger().LogAccess(poolVec->GetBlockID().m_integerID, m_count, &dataType);
-            */
-            
-            m_pool->NotifyAccess(this);
-            m_accessCount = 0;
-            }
-
-        m_memory[m_count] = newObject;
-        m_itemMutex.unlock();
-        m_count++;
-        SetDirty(true);
-#endif
-        return true;
-        }
-    /** -----------------------------------------------------------------------------
-
-        This push_back overload does not exist in std::vector but is provided for
-        performance reason. It copies the provided pooled vector to self.
-
-        -----------------------------------------------------------------------------
-    */
-#if 0
-    bool push_back(const SMMemoryPoolVectorItem<DataType>* source)
         {        
-        if (source->size() == 0)
-            return false;
-
-        // Pin the pooled vector given as source in case it gets discarded in the process
-        source->Pin();
-
-        if (Discarded())
-            Inflate();
-
-        HASSERT(!Discarded());
-
-        if (m_allocatedCount <= (m_count + source->size()))
-            if (!reserve (m_count + source->size()))
-                throw std::bad_alloc();
-
-        m_accessCount+=source->size();
-        if ((m_accessCount > 100) && (m_pool != NULL) && !Pinned())
+        if (m_allocatedSize < (m_nbItems + 1) * sizeof(DataType))
             {
-            m_pool->NotifyAccess(this);
-            m_accessCount = 0;
+            reserve(ceil((m_nbItems + 1) * 1.5));
             }
+        
+        ((DataType*)m_data)[m_nbItems] = newObject;
+        m_nbItems++;
+        
+        m_size = m_nbItems * sizeof(DataType);
+        m_dirty = true;        
 
-        memcpy (&(m_memory[m_count]), source->m_memory, sizeof(DataType) * source->size());
-        m_count += source->size();
-        SetDirty(true);
-        source->UnPin();
+        NotifySizeChangePoolItem(sizeof(DataType));
+
+        assert(m_size <= m_allocatedSize);
 
         return true;
         }
-#endif
-    /** -----------------------------------------------------------------------------
-
-        This push_back overload does not exist in std::vector but is provided for
-        performance reason. It copies the provided pooled vector to self from given
-        index to specified end index included.
-
-        -----------------------------------------------------------------------------
-    */
-
-#if 0
-    bool push_back(const SMMemoryPoolVectorItem<DataType>* source, size_t start, size_t end)
-        {
-        HASSERT (end > start);
-        HASSERT (end < source->size());
-
-        if (source->size() == 0)
-            return false;
-        m_itemMutex.lock();
-        // Pin the pooled vector given as source in case it gets discarded in the process
-        source->Pin();
-
-        if (Discarded())
-            Inflate();
-
-        HASSERT(!Discarded());
-
-        if (m_allocatedCount <= (m_count + (end - start + 1)))
-            if (!reserve (m_count + (end - start + 1)))
-                throw std::bad_alloc();
-
-        m_accessCount += (end - start + 1);
-        if ((m_accessCount > 100) && (m_pool != NULL) && !Pinned())
-            {
-            m_pool->NotifyAccess(this);
-            m_accessCount = 0;
-            }
-
-        memcpy (&(m_memory[m_count]), &(source->m_memory[start]), sizeof(DataType) * (end - start + 1));
-        m_count += (end - start + 1);
-        SetDirty(true);
-        source->UnPin();
-        m_itemMutex.unlock();
-        return true;
-        }
-#endif
-
-    /** -----------------------------------------------------------------------------
-
-        This push_back overload does not exist in std::vector but is provided for
-        performance reason. It copies into the vector many DataTypes in a single call.
-
-        -----------------------------------------------------------------------------
-    */
+    
     bool push_back(const DataType* newObjects, size_t count)
         {        
-        if (count == 0)
-            return false;
-       
-        DataType* newData = new DataType[m_nbItems + count];        
+        assert(count != 0);      
 
-        if (m_nbItems > 0)
-            std::copy_n((DataType*)m_data, m_nbItems, newData);
+        if ((m_nbItems + count) * sizeof(DataType) > m_allocatedSize)
+            {
+            reserve(ceil((m_nbItems + count) * 1.5));                   
+            }
 
-        std::copy_n(newObjects, count, newData + m_nbItems);
-
-        delete [] m_data;
-        m_data = (Byte*)newData;
-        
-        m_nbItems += count;
+        memcpy(&((DataType*)m_data)[m_nbItems], newObjects, count * sizeof(DataType));
+                      
+        m_nbItems += count;    
         m_size = m_nbItems * sizeof(DataType);
         m_dirty = true;
 
-        NotifySizeChangePoolItem(count * sizeof(DataType));        
+        NotifySizeChangePoolItem(count * sizeof(DataType));
+
+        assert(m_size <= m_allocatedSize);
        
         return true;
         }
@@ -653,31 +463,13 @@ public:
         It returns the number of data type returned
         -----------------------------------------------------------------------------
     */
-#if 0
+
     size_t get(DataType* objects, size_t maxCount) const
         {
-        std::lock_guard<std::recursive_mutex> lock(m_itemMutex);
-        if (maxCount == 0)
-            return false;
-
-        if (Discarded() && !Pinned())
-            Inflate();
-        else if (Pinned()) SetDiscarded(false);
-
-        HASSERT(!Discarded());
-
-        m_accessCount += MIN(m_count, maxCount);
-        if ((m_accessCount > 100) && (m_pool != NULL))
-            {
-            m_pool->NotifyAccess(this);
-            m_accessCount = 0;
-            }
-
-        memcpy (objects, m_memory, sizeof(DataType) * MIN (m_count, maxCount));
-
-        return MIN(m_count, maxCount);
+        assert(maxCount == m_nbItems);
+        memcpy(objects, m_data, maxCount * sizeof(DataType));        
+        return maxCount;
         }
-#endif
 
     // This used to be a reference returned but this caused a problem when the ref was maintained and the
     // tile discarded...
@@ -688,6 +480,7 @@ public:
         return ((DataType*)m_data)[index];
         }
     
+#if 0 
     void modify(size_t          index,
                 const DataType& newDataValue)
         {
@@ -697,118 +490,88 @@ public:
         SetDirty (true);
         */
         }
+#endif
 
     virtual size_t size() const
         {
         return m_nbItems;
         }
-
-    iterator erase (iterator itr)
+    
+    void erase (const bvector<size_t>& indexes)
         {
-        assert(!"MST TBD");
+        assert(indexes.size() <= m_nbItems && indexes.size() > 0);        
+                
+        bvector<bool> toEraseItems(m_nbItems, false);
+                               
+        for (auto index : indexes)
+            {
+            assert(index < toEraseItems.size());
+            toEraseItems[index] = true;            
+            }
+        
+        DataType* currentData = (DataType*)m_data;
+        //NEEDS_WORK_POOL //should we diminish pool size if the size is too large after erase 
+        //size_t newSize = m_nbItems - indexes.size();
+        //DataType* newData = new DataType[newSize];        
+        DataType* newData = (DataType*)m_data;
+        size_t newDataInd = 0;
 
-        /*
-        if (itr.m_vector != this)
-            return iterator();
-        m_itemMutex.lock();
-        this->erase(itr.m_index);
-        m_itemMutex.unlock();
-        if (itr.m_index == 0)
-            return iterator(this, iterator::npos);
+        for (size_t ind = 0; ind < toEraseItems.size(); ind++)
+            {
+            if (!toEraseItems[ind])
+                {
+                newData[newDataInd] = currentData[ind];
+                newDataInd++;
+                }            
+            }
 
-        if (itr.m_index > m_count)
-            return iterator(this, iterator::npos);
-            */
+        m_nbItems -= toEraseItems.size();        
+        m_size = m_nbItems * sizeof(DataType);
+        m_dirty = true;
 
-        return iterator(this, itr.m_index - 1);
+        NotifySizeChangePoolItem(-1 * toEraseItems.size() * sizeof(DataType));
         }
 
-    void erase (size_t index)
+     void erase (size_t index)
         {
-        assert(!"MST TBD");
+        memcpy(&m_data[index], &m_data[index + 1], m_nbItems - index - 1 * sizeof(DataType));
+        m_nbItems -= 1;      
+        m_size = m_nbItems * sizeof(DataType);
+        m_dirty = true;  
 
-        /*
-        m_itemMutex.lock();
-        if (Discarded())
-            Inflate();
-
-        HASSERT(!Discarded());
-
-        if (index < m_count - 1)
-            memcpy(&(m_memory[index]), &(m_memory[index+1]), sizeof(DataType) * (m_count - 1 - index));
-        m_count--;
-
-        m_accessCount++;
-        if ((m_accessCount > 100) && (m_pool != NULL) && !Pinned())
-            {
-            m_pool->NotifyAccess(this);
-            m_accessCount = 0;
-            }
-        SetDirty (true);
-
-        if ((m_allocatedCount > 0) && (m_count == 0))
-            {
-            if (m_pool != NULL)
-                {
-                if (GetPoolManaged())
-                    {
-                    bool freeSuccess = m_pool->Free(this);
-                    freeSuccess = freeSuccess;
-                    HASSERT(freeSuccess);
-                    }
-                }
-            else
-                {
-                delete [] m_memory;
-                m_memory = NULL;
-                }
-            }
-        m_itemMutex.unlock();
-        */
+        NotifySizeChangePoolItem(-1 * (int64_t)sizeof(DataType));
         }
 
     virtual void clearFrom(size_t indexToClearFrom)
-        {
-        assert(!"MST TBD");
-
-        /*
-        if (Discarded())
-            Inflate();
-
-        HASSERT(!Discarded());
-
-        HASSERT (indexToClearFrom < m_count);
+        {        
+        assert(indexToClearFrom < m_nbItems);
 
         if (indexToClearFrom == 0)
             clear();
         else
             {
-            m_count = indexToClearFrom;
-            SetDirty (true);
-            }
-            */
+            NotifySizeChangePoolItem((indexToClearFrom - m_nbItems) * sizeof(DataType));
+            m_nbItems = indexToClearFrom; 
+            m_size = m_nbItems * sizeof(DataType);
+            m_dirty = true;
+            }            
         }
 
     virtual void clear()
         {   
         if (m_data != 0)
             {
-            delete [] m_data;
             NotifySizeChangePoolItem(-(int64_t)m_nbItems * sizeof(DataType));        
+
+            delete [] m_data;                        
             m_nbItems = 0;
             m_data = 0;  
             m_size = 0;
-            m_dirty = true;
+            m_allocatedSize = 0;
+            m_dirty = true;            
             }
         }
-
-    iterator begin()
-        {
-        if (m_nbItems > 0)
-            return iterator(this, (size_t)0);
-        return iterator(this, iterator::npos);
-
-        }
+    
     const_iterator begin() const
         {
         if (m_nbItems > 0)
@@ -816,39 +579,18 @@ public:
         return const_iterator(this, iterator::npos);
 
         }
-
-    iterator end()
-        {
-        return iterator(this, iterator::npos);
-        }
+    
     const_iterator end() const
         {
         return const_iterator(this, iterator::npos);
         }
 
     void random_shuffle()
-        {
-        assert(!"MST TBD");
-        /*
+        {                                        
+        if (m_nbItems > 0)
+            std::random_shuffle(m_data, &(m_data[m_nbItems - 1]));
 
-        if (Discarded())
-            Inflate();
-
-        HASSERT(!Discarded());
-
-        m_accessCount++;
-        if ((m_accessCount > 100) && (m_pool != NULL) && !Pinned())
-            {
-            m_pool->NotifyAccess(this);
-            m_accessCount = 0;
-            }
-
-        if (m_count > 0)
-            std::random_shuffle(m_memory, &(m_memory[m_count -1]));
-
-        SetDirty(true);
-        */
-
+        m_dirty = true;        
         }
     };
 
@@ -889,8 +631,6 @@ typedef RefCountedPtr<SMMemoryPoolItemBase> SMMemoryPoolItemBasePtr;
 //First impl - dead lock
 static clock_t s_timeDiff = CLOCKS_PER_SEC * 120;
 static double s_maxMemBeforeFlushing = 1.2;
-
-static uint64_t s_initSize = 100;
 
 class SMMemoryPool : public RefCountedBase
     {

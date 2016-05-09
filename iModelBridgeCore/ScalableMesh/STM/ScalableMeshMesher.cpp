@@ -29,8 +29,6 @@
  
 //template class ScalableMesh2DDelaunayMesher<DPoint3d, IDTMFile::Extent3d64f>;
 
-//template class ScalableMeshAPSSOutOfCoreMesher<DPoint3d, IDTMFile::Extent3d64f>;
-
 //template class ScalableMesh3DDelaunayMesher<DPoint3d, IDTMFile::Extent3d64f>;
 
 template class ScalableMesh2DDelaunayMesher<DPoint3d, DRange3d>;

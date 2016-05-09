@@ -52,6 +52,11 @@ DPoint3d PtToPtConverter::operator () (const HGF3DCoord<double>& inputPt) const
     //  DPoint3d outPt = {inputPt.GetX(), inputPt.GetY(), 0};
     return outPt;
     }
+
+void PtToPtConverter::Transform(DPoint3d* ptsOut, const DPoint3d* ptsIn, size_t nbPts)
+    {
+    memcpy(ptsOut, ptsIn, nbPts * sizeof(DPoint3d));
+    }
     
 /*---------------------------------------------------------------------------------**//**
 * Calculate normals for points of a mesh

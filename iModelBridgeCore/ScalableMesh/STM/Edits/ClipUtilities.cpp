@@ -24,16 +24,16 @@ void print_polygonarray(std::string& s, const char* tag, DPoint3d* polyArray, in
     }
 
 
-void FaceToUVMap::ReadFrom(const int32_t* indices, const int32_t* uvIndices, const DPoint2d* uvs, size_t nIndices)
+void FaceToUVMap::ReadFrom(const int32_t* indices, const int32_t* uvIndices, const DPoint2d* uvCoords, size_t nIndices)
     {
     for (size_t i = 0; i < nIndices; i += 3)
         {
-        DPoint2d uvArray[3] = { uvs[uvIndices[i]-1], uvs[uvIndices[i + 1]-1], uvs[uvIndices[i + 2]-1] };
+        DPoint2d uvArray[3] = { uvCoords[uvIndices[i]-1], uvCoords[uvIndices[i + 1]-1], uvCoords[uvIndices[i + 2]-1] };
         AddFacet(indices + i, uvArray);
         }
     }
 
-void FaceToUVMap::AddFacetOnEdge(const int32_t* indices, const DPoint2d* uvs, const int32_t* edge)
+void FaceToUVMap::AddFacetOnEdge(const int32_t* indices, const DPoint2d* uvCoords, const int32_t* edge)
     {
     std::array<int32_t, 2> idx = { 0, 1};
     std::sort(idx.begin(), idx.end(), [&edge] (const int32_t& a, const int32_t&b) { return edge[a] < edge[b]; });
@@ -44,10 +44,10 @@ void FaceToUVMap::AddFacetOnEdge(const int32_t* indices, const DPoint2d* uvs, co
         if (indices[i] != edge[0] && indices[i] != edge[1])
             {
             lastIdx = indices[i];
-            sortedUvs[2] = uvs[i];
+            sortedUvs[2] = uvCoords[i];
             }
-        else if (edge[idx[0]] == indices[i]) sortedUvs[0] = uvs[i];
-        else if (edge[idx[1]] == indices[i])sortedUvs[1] = uvs[i];
+        else if (edge[idx[0]] == indices[i]) sortedUvs[0] = uvCoords[i];
+        else if (edge[idx[1]] == indices[i])sortedUvs[1] = uvCoords[i];
         }
     if (map.count(edge[idx[0]]) > 0 && map[edge[idx[0]]].count(edge[idx[1]]) > 0)
         {
@@ -89,7 +89,7 @@ void FaceToUVMap::RemoveFacetFromEdge(const int32_t* indices, const int32_t* edg
     if (deleteEdge)map[edge[0]].erase(edge[1]);
     }
 
-void FaceToUVMap::AddFacet(const int32_t* indices, const DPoint2d* uvs)
+void FaceToUVMap::AddFacet(const int32_t* indices, const DPoint2d* uvCoords)
     {
 #if SM_TRACE_CLIPS_GETMESH
     Utf8String nameBeforeClips = Utf8String(s_path) + "faceTrace_";
@@ -105,14 +105,14 @@ void FaceToUVMap::AddFacet(const int32_t* indices, const DPoint2d* uvs)
     stats.open(nameBeforeClips.c_str(), std::ios_base::app);
     stats << "ADDING FACET " + std::to_string(indices[0]) + " " + std::to_string(indices[1]) + " " + std::to_string(indices[2]) << std::endl;
     stats << "UVs\n";
-    stats << std::to_string(uvs[0].x) + " " + std::to_string(uvs[0].y) << std::endl;
-    stats << std::to_string(uvs[1].x) + " " + std::to_string(uvs[1].y) << std::endl;
-    stats << std::to_string(uvs[2].x) + " " + std::to_string(uvs[2].y) << std::endl;
+    stats << std::to_string(uvCoords[0].x) + " " + std::to_string(uvCoords[0].y) << std::endl;
+    stats << std::to_string(uvCoords[1].x) + " " + std::to_string(uvCoords[1].y) << std::endl;
+    stats << std::to_string(uvCoords[2].x) + " " + std::to_string(uvCoords[2].y) << std::endl;
     stats.close();
 #endif
    /* std::array<int32_t, 3> idx = { 0, 1, 2 };
     std::sort(idx.begin(), idx.end(), [&indices] (const int32_t& a, const int32_t&b) { return indices[a] < indices[b]; });
-    std::array<DPoint2d, 3> sortedUvs = { uvs[idx[0]], uvs[idx[1]], uvs[idx[2]] };
+    std::array<DPoint2d, 3> sortedUvs = { uvCoords[idx[0]], uvCoords[idx[1]], uvCoords[idx[2]] };
     if (map.count(indices[idx[0]]) > 0 && map[indices[idx[0]]].count(indices[idx[1]]) > 0) 
         {
         if (map[indices[idx[0]]][indices[idx[1]]][1].first == -1)
@@ -125,7 +125,7 @@ void FaceToUVMap::AddFacet(const int32_t* indices, const DPoint2d* uvs)
         }*/
     int32_t edges[3][2] = { { indices[0], indices[1] }, { indices[1], indices[2] }, { indices[0], indices[2] } };
     for (size_t i = 0; i < 3; ++i)
-        AddFacetOnEdge(indices, uvs, edges[i]);
+        AddFacetOnEdge(indices, uvCoords, edges[i]);
     }
 
 void FaceToUVMap::RemoveFacet(const int32_t* indices)
@@ -151,7 +151,7 @@ void FaceToUVMap::RemoveFacet(const int32_t* indices)
         RemoveFacetFromEdge(indices, edges[i]);
     }
 
-bool FaceToUVMap::GetFacet(const int32_t* indices, DPoint2d* uvs) 
+bool FaceToUVMap::GetFacet(const int32_t* indices, DPoint2d* uvCoords) 
     {
     std::array<int32_t, 3> idx = { 0, 1, 2 };
     std::sort(idx.begin(), idx.end(), [&indices] (const int32_t& a, const int32_t&b) { return indices[a] < indices[b]; });
@@ -161,7 +161,7 @@ bool FaceToUVMap::GetFacet(const int32_t* indices, DPoint2d* uvs)
             if (val.first == indices[idx[2]])
                 {
                 for (size_t i = 0; i < 3; ++i)
-                    uvs[idx[i]] = val.second[i];
+                    uvCoords[idx[i]] = val.second[i];
 #if SM_TRACE_CLIPS_GETMESH
                 Utf8String nameBeforeClips = Utf8String(s_path) + "faceTrace_";
                 nameBeforeClips.append(to_string(range.low.x).c_str());
@@ -176,9 +176,9 @@ bool FaceToUVMap::GetFacet(const int32_t* indices, DPoint2d* uvs)
                 stats.open(nameBeforeClips.c_str(), std::ios_base::app);
                 stats << "GETTING FACET " + std::to_string(indices[0]) + " " + std::to_string(indices[1]) + " " + std::to_string(indices[2]) << std::endl;
                 stats << "UVs\n";
-                stats << std::to_string(uvs[0].x) + " " + std::to_string(uvs[0].y) << std::endl;
-                stats << std::to_string(uvs[1].x) + " " + std::to_string(uvs[1].y) << std::endl;
-                stats << std::to_string(uvs[2].x) + " " + std::to_string(uvs[2].y) << std::endl;
+                stats << std::to_string(uvCoords[0].x) + " " + std::to_string(uvCoords[0].y) << std::endl;
+                stats << std::to_string(uvCoords[1].x) + " " + std::to_string(uvCoords[1].y) << std::endl;
+                stats << std::to_string(uvCoords[2].x) + " " + std::to_string(uvCoords[2].y) << std::endl;
                 stats.close();
 #endif
                 return true;
@@ -211,7 +211,7 @@ bool FaceToUVMap::GetFacet(const int32_t* indices, DPoint2d* uvs)
 
 bool FaceToUVMap::SplitFacetOrEdge(DPoint2d& newUv, const int32_t newPt, const int32_t* indices, std::function<DPoint2d(std::array<DPoint2d, 3>, const int32_t*, int32_t)> interpolateCallback, bool onEdge)
     {
-    std::array<DPoint2d, 3> uvs;
+    std::array<DPoint2d, 3> uvCoords;
     std::array<int32_t, 3> idx = { 0, 1, 2 };
     std::sort(idx.begin(), idx.end(), [&indices] (const int32_t& a, const int32_t&b) { return indices[a] < indices[b]; });
 #if SM_TRACE_CLIPS_GETMESH
@@ -240,8 +240,8 @@ bool FaceToUVMap::SplitFacetOrEdge(DPoint2d& newUv, const int32_t newPt, const i
             if (val.first == indices[idx[2]])
                 {
                 for (size_t i = 0; i < 3; ++i)
-                    uvs[idx[i]] = val.second[i];
-                newUv = interpolateCallback(uvs, indices, newPt);
+                    uvCoords[idx[i]] = val.second[i];
+                newUv = interpolateCallback(uvCoords, indices, newPt);
                 int32_t orderedFace[3] = { indices[idx[0]], indices[idx[1]], indices[idx[2]] };
                 RemoveFacet(orderedFace);
                 for (size_t i = 0; i < 3; ++i)
@@ -1420,8 +1420,8 @@ void Clipper::TagUVsOnPolyface(PolyfaceHeaderPtr& poly, BENTLEY_NAMESPACE_NAME::
     poly->PointIndex().clear();
     for (size_t i = 0; i < indices.size(); i += 3)
         {
-        DPoint2d uvs[3];
-        if (!faceToUVMap.GetFacet(&indices[i], uvs))
+        DPoint2d uvCoords[3];
+        if (!faceToUVMap.GetFacet(&indices[i], uvCoords))
             {
             nFaceMisses++;
             poly->PointIndex().push_back(allPts[indices[i]] + 1);
@@ -1436,12 +1436,12 @@ void Clipper::TagUVsOnPolyface(PolyfaceHeaderPtr& poly, BENTLEY_NAMESPACE_NAME::
         poly->PointIndex().push_back(allPts[indices[i + 2]] + 1);
         for (size_t uvI = 0; uvI < 3; ++uvI)
             {
-            if (allUvs.count(uvs[uvI]) == 0)
+            if (allUvs.count(uvCoords[uvI]) == 0)
                 {
-                poly->Param().push_back(uvs[uvI]);
-                allUvs[uvs[uvI]] = (int)poly->Param().size();
+                poly->Param().push_back(uvCoords[uvI]);
+                allUvs[uvCoords[uvI]] = (int)poly->Param().size();
                 }
-            poly->ParamIndex().push_back(allUvs[uvs[uvI]]);
+            poly->ParamIndex().push_back(allUvs[uvCoords[uvI]]);
             }
         }
     std::string s;
@@ -1539,8 +1539,8 @@ DTMInsertPointCallback Clipper::GetInsertPointCallback(FaceToUVMap& faceToUVMap,
 #endif
         if (onEdge)
             {
-            DPoint2d uvs[2];
-            faceToUVMap.SplitEdge(uvs, newPtNum, pts, pts + 2, [&ptr, &pt] (std::array<DPoint2d, 3> uvs, const int32_t* indices, int32_t newPt) -> DPoint2d
+            DPoint2d uvCoords[2];
+            faceToUVMap.SplitEdge(uvCoords, newPtNum, pts, pts + 2, [&ptr, &pt] (std::array<DPoint2d, 3> uvCoords, const int32_t* indices, int32_t newPt) -> DPoint2d
                 {
                 double fraction;
                 DPoint3d pt1, pt2;
@@ -1548,14 +1548,14 @@ DTMInsertPointCallback Clipper::GetInsertPointCallback(FaceToUVMap& faceToUVMap,
                 ptr->GetBcDTM()->GetPoint(indices[1], pt2);
                 DSegment3d seg = DSegment3d::From(pt1, pt2);
                 seg.PointToFractionParameter(fraction, pt);
-                DPoint2d newUv = DPoint2d::FromInterpolate(uvs[0], fraction, uvs[1]);
+                DPoint2d newUv = DPoint2d::FromInterpolate(uvCoords[0], fraction, uvCoords[1]);
                 return newUv;
                 });
             }
         else
             {
             DPoint2d uv;
-            faceToUVMap.SplitFacet(uv, newPtNum, pts, [&ptr, &pt] (std::array<DPoint2d, 3> uvs, const int32_t* indices, int32_t newPt) -> DPoint2d
+            faceToUVMap.SplitFacet(uv, newPtNum, pts, [&ptr, &pt] (std::array<DPoint2d, 3> uvCoords, const int32_t* indices, int32_t newPt) -> DPoint2d
                 {
                 DPoint3d triangle[3];
                 for (size_t i = 0; i < 3; ++i)
@@ -1564,7 +1564,7 @@ DTMInsertPointCallback Clipper::GetInsertPointCallback(FaceToUVMap& faceToUVMap,
                 DPoint3d barycentric;
                 bsiDPoint3d_barycentricFromDPoint3dTriangle(&barycentric, &pt, &triangle[0], &triangle[1], &triangle[2]);
                 DPoint2d newUv;
-                bsiDPoint2d_fromBarycentricAndDPoint2dTriangle(&newUv, &barycentric, &uvs[0], &uvs[1], &uvs[2]);
+                bsiDPoint2d_fromBarycentricAndDPoint2dTriangle(&newUv, &barycentric, &uvCoords[0], &uvCoords[1], &uvCoords[2]);
                 return newUv;
                 });
             }

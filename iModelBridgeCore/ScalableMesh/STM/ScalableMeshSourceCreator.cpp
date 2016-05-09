@@ -329,7 +329,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
     {
     using namespace IDTMFile;
 
-    HFCPtr<IndexType>          pDataIndex;
+    HFCPtr<MeshIndexType>          pDataIndex;
 
     HPMMemoryMgrReuseAlreadyAllocatedBlocksWithAlignment myMemMgr(100, 2000 * sizeof(PointType));
 
@@ -443,7 +443,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
     pDataIndex->SetFeaturePool(pool);
     // Remove sources which have been removed or modified
 
-    if (BSISUCCESS != RemoveSourcesFrom<IndexType>(*pDataIndex, listRemoveExtent))
+    if (BSISUCCESS != RemoveSourcesFrom<MeshIndexType>(*pDataIndex, listRemoveExtent))
         return BSIERROR;
 
     // Import sources
@@ -488,7 +488,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
         }
 
     // Balance data             
-    if (BSISUCCESS != this->template BalanceDown<IndexType>(*pDataIndex, previousDepth))
+    if (BSISUCCESS != this->template BalanceDown<MeshIndexType>(*pDataIndex, previousDepth))
         return BSIERROR;
 
 #ifdef SCALABLE_MESH_ATP
@@ -500,7 +500,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
     if (s_mesh)
         {
         // Mesh data             
-        if (BSISUCCESS != IScalableMeshCreator::Impl::Mesh<IndexType>(*pDataIndex))
+        if (BSISUCCESS != IScalableMeshCreator::Impl::Mesh<MeshIndexType>(*pDataIndex))
             return BSIERROR;
         }
 
@@ -517,7 +517,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
         if (s_filter)
             {
             // Filter data (in order to create sub-resolutions)
-            if (BSISUCCESS != IScalableMeshCreator::Impl::Filter<IndexType>(*pDataIndex, -1))
+            if (BSISUCCESS != IScalableMeshCreator::Impl::Filter<MeshIndexType>(*pDataIndex, -1))
                 return BSIERROR;
             }
 
@@ -535,7 +535,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
         s_getLastStitchingDuration = ((double)clock() - startClock) / CLOCKS_PER_SEC / 60.0;
 #endif
         }
-    else
+    else    
         {
 #ifdef SCALABLE_MESH_ATP    
         s_getLastStitchingDuration = 0;
@@ -550,7 +550,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
 #ifdef SCALABLE_MESH_ATP    
             startClock = clock();
 #endif
-            if (BSISUCCESS != IScalableMeshCreator::Impl::Filter<IndexType>(*pDataIndex, level))
+            if (BSISUCCESS != IScalableMeshCreator::Impl::Filter<MeshIndexType>(*pDataIndex, level))
                 return BSIERROR;
 
 #ifdef SCALABLE_MESH_ATP    
@@ -559,7 +559,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
 #endif
             //if (level == (int)depth)
                 {
-                if (BSISUCCESS != IScalableMeshCreator::Impl::Stitch<IndexType>(*pDataIndex, level, false))
+                if (BSISUCCESS != IScalableMeshCreator::Impl::Stitch<MeshIndexType>(*pDataIndex, level, false))
                     return BSIERROR;
                 }
 
@@ -630,10 +630,8 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
 
         auto position = m_scmFileName.find_last_of(L".stm");
         auto filenameWithoutExtension = m_scmFileName.substr(0, position - 3);
-        WString streamingFilePath = filenameWithoutExtension + L"_stream\\";
         auto groupedStreamingFilePath = filenameWithoutExtension + L"_grouped_stream\\";
-        WString point_store_path = streamingFilePath + L"point_store\\";
-        pDataIndex->SaveCloudReady(groupedStreamingFilePath, HFCPtr<SMNodeGroupMasterHeader>(new SMNodeGroupMasterHeader(point_store_path)));
+        pDataIndex->SaveCloudReady(groupedStreamingFilePath, true);
         }
 //    auto& store = pDataIndex->GetClipStore();
     pDataIndex = 0;
@@ -735,7 +733,7 @@ int IScalableMeshSourceCreator::Impl::UpdateLastModified()
     return status;
     }
 
-int IScalableMeshSourceCreator::Impl::ApplyEditsFromSources(HFCPtr<IndexType>& pIndex)
+int IScalableMeshSourceCreator::Impl::ApplyEditsFromSources(HFCPtr<MeshIndexType>& pIndex)
     {
     const GCS& fileGCS = GetGCS();
     Sink* sinkP = new ScalableMeshNonDestructiveEditStorage<PointType>(*pIndex, fileGCS);
@@ -819,7 +817,7 @@ int IScalableMeshSourceCreator::Impl::GetRasterSources(HFCPtr<HIMMosaic>& pMosai
     return status;
     }
 
-int IScalableMeshSourceCreator::Impl::ImportRasterSourcesTo(HFCPtr<IndexType>& pIndex)
+int IScalableMeshSourceCreator::Impl::ImportRasterSourcesTo(HFCPtr<MeshIndexType>& pIndex)
     {
     HFCPtr<HIMMosaic> pMosaic;
     StatusInt status = GetRasterSources(pMosaic);

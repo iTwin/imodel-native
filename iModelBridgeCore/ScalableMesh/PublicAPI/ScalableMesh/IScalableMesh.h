@@ -116,7 +116,7 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
 
 #ifdef SCALABLE_MESH_ATP
         virtual int                                 _LoadAllNodeHeaders(size_t& nbLoadedNodes) const = 0; 
-        //virtual int                                 _AddTextures(const HFCPtr<BENTLEY_NAMESPACE_NAME::ImagePP::HIMMosaic>& pMosaic) const = 0;
+        virtual int                                 _GroupNodeHeaders(const WString& pi_pOutputDirPath) const = 0;
 #endif
         virtual uint64_t                           _AddClip(const DPoint3d* pts, size_t ptsSize) = 0;
 
@@ -255,7 +255,7 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
                                                                                  bool                    openShareable);
 
         BENTLEY_SM_EXPORT int                     LoadAllNodeHeaders(size_t& nbLoadedNodes) const; 
-
+        BENTLEY_SM_EXPORT int                     GroupNodeHeaders(const WString& pi_pOutputDirPath) const;
 
     };
 

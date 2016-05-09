@@ -84,7 +84,7 @@ typedef RefCountedPtr<ClipShapeStorage>     ClipShapeStoragePtr;
 typedef DPoint3d                          PointType;
 //typedef IDTMFile::Extent3d64f                         PointIndexExtentType;
 typedef DRange3d PointIndexExtentType;
-typedef SMMeshIndex <PointType, PointIndexExtentType> IndexType;
+typedef SMMeshIndex <PointType, PointIndexExtentType> MeshIndexType;
 
 void RegisterDelayedImporters();
 inline bool fileExist(const WChar* fileName)
@@ -129,7 +129,7 @@ struct IScalableMeshCreator::Impl
 
 
 
-        StatusInt                           CreateDataIndex(HFCPtr<IndexType>&                                    pDataIndex,
+        StatusInt                           CreateDataIndex(HFCPtr<MeshIndexType>&                                    pDataIndex,
                                                             HPMMemoryMgrReuseAlreadyAllocatedBlocksWithAlignment& myMemMgr,
                                                             bool needBalancing = false);
 
@@ -170,7 +170,7 @@ struct IScalableMeshCreator::Impl
                                                                    bool                                    do2_5dStitchFirst = false);
 
 
-          HFCPtr<IndexType>                   m_pDataIndex;
+          HFCPtr<MeshIndexType>                   m_pDataIndex;
     public :  
         explicit                            Impl                           (const WChar*                          scmFileName);
         explicit                            Impl                           (const IScalableMeshPtr&                        iDTMFilePtr);

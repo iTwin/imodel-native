@@ -126,7 +126,7 @@ public:
 
     void GetPoints(int64_t nodeID, bvector<uint8_t>& pts, size_t& uncompressedSize);
     void GetIndices(int64_t nodeID, bvector<uint8_t>& indices, size_t& uncompressedSize);
-    void GetUVs(int64_t nodeID, bvector<uint8_t>& uvs, size_t& uncompressedSize);
+    void GetUVs(int64_t nodeID, bvector<uint8_t>& uvCoords, size_t& uncompressedSize);
     bool LoadSources(SourcesDataSQLite& sourcesData);
     void GetUVIndices(int64_t nodeID, bvector<uint8_t>& uvIndices, size_t& uncompressedSize);
     void GetTexture(int64_t nodeID, bvector<uint8_t>& texture, size_t& uncompressedSize);
@@ -138,7 +138,7 @@ public:
 
     void StorePoints(int64_t& nodeID, const bvector<uint8_t>& pts, size_t uncompressedSize);
     void StoreIndices(int64_t& nodeID, const bvector<uint8_t>& indices, size_t uncompressedSize);
-    void StoreUVs(int64_t& nodeID, const bvector<uint8_t>& uvs, size_t uncompressedSize);
+    void StoreUVs(int64_t& nodeID, const bvector<uint8_t>& uvCoords, size_t uncompressedSize);
     void StoreUVIndices(int64_t& nodeID, const bvector<uint8_t>& uvIndices, size_t uncompressedSize);
     void StoreTexture(int64_t& nodeID, const bvector<uint8_t>& texture, size_t uncompressedSize);
     void StoreGraph(int64_t& nodeID, const bvector<uint8_t>& graph, size_t uncompressedSize);

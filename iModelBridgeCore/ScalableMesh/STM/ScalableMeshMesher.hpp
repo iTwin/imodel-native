@@ -59,7 +59,10 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
     //LOGSTRING_NODE_INFO(node, LOG_PATH_STR)
     //LOGSTRING_NODE_INFO_W(node, LOG_PATH_STR_W)
     //NEEDS_WORK_SM
-    if (node->size() > 4)
+
+    RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(node->GetPointsPtr());
+
+    if (pointsPtr->size() > 4)
         {
 #ifdef SINGLE_TILE
         EXTENT ext = node->GetContentExtent();
@@ -87,21 +90,21 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
         nameStats.append(".txt");
         std::ofstream stats;
         stats.open(nameStats.c_str(), std::ios_base::trunc);
-        stats << " N OF POINTS " + std::to_string(node->size())+"\n";
+        stats << " N OF POINTS " + std::to_string(pointsPtr->size())+"\n";
         stats << "N OF INDICES " + std::to_string(node->m_nodeHeader.m_nbFaceIndexes) + "\n";
         stats << " NODE TOTAL COUNT "+std::to_string(node->m_nodeHeader.m_totalCount)+"\n";
         stats.close();
 #endif
-
-        vector<DPoint3d> points(node->size());
-
-        std::transform(node->begin(), node->end(), &points[0], PtToPtConverter());
+        
+        vector<DPoint3d> points(pointsPtr->size());
+        
+        PtToPtConverter::Transform(&points[0], &(*pointsPtr)[0], points.size());
 
         BC_DTM_OBJ* dtmObjP(dtmPtr->GetBcDTM()->GetTinHandle());
 
         if (!node->m_isGrid || node->m_featureDefinitions.size() > 0 || !s_useSpecialTriangulationOnGrids)
             {
-            status = bcdtmObject_storeDtmFeatureInDtmObject(dtmObjP, DTMFeatureType::RandomSpots, dtmObjP->nullUserTag, 1, &dtmObjP->nullFeatureId, &points[0], (long)node->size());
+            status = bcdtmObject_storeDtmFeatureInDtmObject(dtmObjP, DTMFeatureType::RandomSpots, dtmObjP->nullUserTag, 1, &dtmObjP->nullFeatureId, &points[0], (long)pointsPtr->size());
 
             assert(status == SUCCESS);
 
@@ -235,7 +238,7 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
 
             if (meshP != 0)
                 {
-                node->clear();
+                pointsPtr->clear();
                 
                 vector<POINT> nodePts(meshP->GetNbPoints());
                 bvector<DPoint3d> pts(meshP->GetNbPoints());
@@ -325,7 +328,7 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
                 ClipMeshToNodeRange<POINT, EXTENT>(faceIndexes, nodePts, pts, node->m_nodeHeader.m_contentExtent, nodeRange, meshP);
               
                 node->m_nodeHeader.m_nbFaceIndexes = faceIndexes.size();
-                node->push_back(&nodePts[0], nodePts.size());
+                pointsPtr->push_back(&nodePts[0], nodePts.size());
                 bvector<int> componentPointsId;
                 // SM_NEED_WORKS : textures
                 if (faceIndexes.size() > 0)
@@ -389,11 +392,11 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
                     node->ClearPtsIndices();
                 
 
-                if (node->IsLeaf() && node->size() != node->m_nodeHeader.m_totalCount)
+                if (node->IsLeaf() && pointsPtr->size() != node->m_nodeHeader.m_totalCount)
                     {
-                    node->m_nodeHeader.m_totalCount = node->size();
+                    node->m_nodeHeader.m_totalCount = pointsPtr->size();
                     }
-                node->m_nodeHeader.m_nodeCount = node->size();
+                node->m_nodeHeader.m_nodeCount = pointsPtr->size();
 #if SM_TRACE_MESH_STATS
                 Utf8String nameStats = "e:\\output\\scmesh\\2015-11-18\\defects\\tileaftermeshing_";
                 nameStats.append(std::to_string(node->m_nodeHeader.m_level).c_str());
@@ -423,128 +426,6 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
         }
 
     return isMeshingDone;
-    }
-
-
-/**----------------------------------------------------------------------------
-Merry 2013 / Guennebaud 2007 MLS mesher.
-See following papers for reference:
-Gael Guennebaud & Markus Gross. Algebraic Point Set Surfaces. ACM Transactions on Graphics (TOG) - Proceedings of ACM SIGGRAPH 2007 26(3) (2007)
-http://dx.doi.org/10.1145/1275808.1276406
-Bruce Merry, James Gain and Patrick Marais. Moving Least Squares reconstruction of large models with GPUs. TRANSACTIONS ON VISUALIZATION AND COMPUTER GRAPHICS 20(2) (2014)
-http://dx.doi.org/10.1109/TVCG.2013.118
-
-For this algorithm nodes provided in input should have duplicated points (include all neighbor points that may influence this node's surface).
------------------------------------------------------------------------------*/
-    template<class POINT, class EXTENT> bool ScalableMeshAPSSOutOfCoreMesher<POINT, EXTENT>::Init(const SMMeshIndex<POINT, EXTENT>& pointIndex)
-    {
-    m_totalPointCount = pointIndex.GetCount();
-    m_numberOfLevels = pointIndex.GetDepth() + 1;
-
-    return true;
-    } 
-
-//#pragma optimize("", off)
-    template<class POINT, class EXTENT> bool ScalableMeshAPSSOutOfCoreMesher<POINT, EXTENT>::Mesh(HFCPtr<SMMeshIndexNode<POINT, EXTENT> > node) const
-    {
-    vector<DPoint3d> points(node->size());
-    vector<DVec3d> normals(node->size());
-    vector<float> * distances = new std::vector<float>();
-    std::vector<float> * vertex = new std::vector<float>();
-    EXTENT extent = node->GetContentExtent();
-    double x = ExtentOp<EXTENT>::GetXMin(extent) + (ExtentOp<EXTENT>::GetXMax(extent) - ExtentOp<EXTENT>::GetXMin(extent)) / 2;
-    double y = ExtentOp<EXTENT>::GetYMin(extent) + (ExtentOp<EXTENT>::GetYMax(extent) - ExtentOp<EXTENT>::GetYMin(extent)) / 2;
-    double z = ExtentOp<EXTENT>::GetZMin(extent) + (ExtentOp<EXTENT>::GetZMax(extent) - ExtentOp<EXTENT>::GetZMin(extent)) / 2;
-    std::transform(node->begin(), node->end(), &points[0], PtToPtConverter());
-    if (0 == points.size()) 
-        return false;
-    //normalize point coordinates so that origin is closer to 0 (large values for coords can cause PCL trouble)
-    std::for_each(points.begin(), points.end(), [x, y, z] (DPoint3d& p)
-        {
-        p.x -= x;
-        p.y -= y;
-        p.z -= z;
-        });
-    //compute normals for point set
-    BENTLEY_NAMESPACE_NAME::PCLUtility::INormalCalculator::ComputeNormals(&normals[0], &points[0], node->size());
-    //create distances for cell grid
-    Eigen::Vector3f boxmin(ExtentOp<EXTENT>::GetXMin(extent)-x, ExtentOp<EXTENT>::GetYMin(extent)-y, ExtentOp<EXTENT>::GetZMin(extent)-z);
-    Eigen::Vector3f boxmax(ExtentOp<EXTENT>::GetXMax(extent)-x, ExtentOp<EXTENT>::GetYMax(extent)-y, ExtentOp<EXTENT>::GetZMax(extent)-z);
-//    size_t level = node->GetLevel();
- //   size_t depth = node->GetDepth();
-    //computeGridDistancesAPSS(distances, &points, &normals, boxmin, boxmax,level,depth);
-    //marching tetrahedra to compute mesh
-    //marchingTetrahedra(vertex, distances, boxmin, boxmax);
-    delete distances;
-    if (0 == vertex->size()) 
-        return false;
-    //extract indices and coordinate arrays from MT result
-    std::unordered_map<std::string, int> coordMap;
-    std::vector<POINT> pts;
-    std::vector<int> indices;
-    POINT pt;
-    for (size_t i = 0; i < vertex->size(); i += 9)
-        {
-        for (size_t j = 0; j < 3; j++)
-            {
-            pt.x = (*vertex)[i + (j * 3) + 0];
-            pt.y = (*vertex)[i + (j * 3) + 1];
-            pt.z = (*vertex)[i + (j * 3) + 2];
-            int x, y, z; //to_string only formats 6 decimals...can't believe I wrote this
-            memcpy(&x, &((*vertex)[i + (j * 3) + 0]), sizeof(int));
-            memcpy(&y, &((*vertex)[i + (j * 3) + 1]), sizeof(int));
-            memcpy(&z, &((*vertex)[i + (j * 3) + 2]), sizeof(int));
-            std::string ptKey(std::to_string(x) + "@" + std::to_string(y) + "@"+std::to_string(z));
-            if (coordMap.count(ptKey) == 0)
-                {
-                pts.push_back(pt);
-                coordMap[ptKey] = (int)pts.size();
-                indices.push_back(coordMap[ptKey]);
-                }
-            else
-                {
-                indices.push_back(coordMap[ptKey]);
-                }
-            }
-        }
-    delete vertex;
-    //cleaning
-    //write triangles to node
-    std::for_each(pts.begin(), pts.end(), [x, y, z] (POINT& p)
-        {
-        p.x += x;
-        p.y += y;
-        p.z += z;
-        });
-    node->clear();
-    node->m_nodeHeader.m_totalCountDefined = false;
-    if (node->IsLeaf())
-        {
-        node->m_nodeHeader.m_totalCount = pts.size();
-        }
-    node->m_nodeHeader.m_nodeCount = pts.size();
-    // NEEDS_WORK_SM : texture indice wrong place=> use IndiceTileStore
-    node->push_back(&pts[0], pts.size());
-    node->m_nodeHeader.m_nbFaceIndexes = indices.size();
-    size_t nbPointsForFaceInd = (size_t)ceil((node->m_nodeHeader.m_nbFaceIndexes * (double)sizeof(int32_t)) / (double)sizeof(POINT));
-    //this should probably be replaced by something like node->setMeshIndexes() in the future to prevent code duplication
-    POINT* pPiggyBackMeshIndexes = new POINT[nbPointsForFaceInd];
-    memcpy(pPiggyBackMeshIndexes, &indices[0], node->m_nodeHeader.m_nbFaceIndexes * sizeof(int32_t));
-    node->push_back(pPiggyBackMeshIndexes, nbPointsForFaceInd);
-    //node->setNbPointsUsedForMeshIndex(nbPointsForFaceInd);
-    
-    delete[] pPiggyBackMeshIndexes;
-    return true;
-    }
-//#pragma optimize("", on)
-
-/**----------------------------------------------------------------------------
-Initiates the stitching of the mesh present in neighbor nodes.
------------------------------------------------------------------------------*/
-template<class POINT, class EXTENT> bool ScalableMeshAPSSOutOfCoreMesher<POINT, EXTENT>::Stitch(HFCPtr<SMMeshIndexNode<POINT, EXTENT> > node) const
-    {
-    //assert(!"Not yet implemented yet");
-    return true;
     }
 
 /**----------------------------------------------------------------------------
@@ -980,14 +861,16 @@ template<class POINT, class EXTENT> size_t ScalableMesh2DDelaunayMesher<POINT, E
     MTGMask addedMask;
     template<class POINT, class EXTENT> void ScalableMesh2DDelaunayMesher<POINT, EXTENT>::SelectPointsToStitch(std::vector<DPoint3d>& stitchedPoints, HFCPtr<SMMeshIndexNode<POINT, EXTENT> > node, MTGGraph* meshGraph, EXTENT neighborExt, vector<int>* pointsToDestPointsMap) const
     {
-POINT* pts = nullptr;
+    POINT* pts = nullptr;
+
+    RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(node->GetPointsPtr());
+
     if (s_useThreadsInStitching)
-        {
-        node->LockPts();
-        pts = new POINT[node->size()];
-        node->get(pts, node->size());
-        node->UnlockPts();
+        {                
+        pts = new POINT[pointsPtr->size()];
+        memcpy(pts, &(*pointsPtr)[0], pointsPtr->size() * sizeof(POINT));        
         }
+
     std::queue<MTGNodeId> bounds;
     MTGARRAY_SET_LOOP(edgeID, meshGraph)
         {
@@ -1019,7 +902,7 @@ POINT* pts = nullptr;
             continue;
             }
         meshGraph->SetMaskAt(currentID, visitedMask);
-        int edgeAroundFace = 0, vIndex;
+        int edgeAroundFace = 0, vIndex;        
 
         MTGARRAY_FACE_LOOP(aroundFaceIndex, meshGraph, currentID)
             {
@@ -1031,12 +914,14 @@ POINT* pts = nullptr;
                 assert(vIndex > 0);
                 if(vIndex <= 0)break;
                 faceIdx[edgeAroundFace] = vIndex;
-                    POINT pt = s_useThreadsInStitching ? pts[vIndex - 1] : (*node)[vIndex - 1];
-                    facePoints[edgeAroundFace] = DPoint3d::FromXYZ(pt.x, pt.y, pt.z);
+                
+                POINT pt = s_useThreadsInStitching ? pts[vIndex - 1] : (*pointsPtr)[vIndex - 1];
+                facePoints[edgeAroundFace] = DPoint3d::FromXYZ(pt.x, pt.y, pt.z);
                 }
             edgeAroundFace++;
             if (edgeAroundFace > 3)break;
             }
+
         MTGARRAY_END_FACE_LOOP(aroundFaceIndex, meshGraph, currentID)
             if(edgeAroundFace < 3) continue;
             if (edgeAroundFace > 3)
@@ -1052,7 +937,7 @@ POINT* pts = nullptr;
         if (ExtentOp<EXTENT>::Overlap(neighborExt, ExtentOp<EXTENT>::Create(sphereCenter.x - sphereRadius, sphereCenter.y - sphereRadius,
             sphereCenter.z, sphereCenter.x + sphereRadius,
             sphereCenter.y + sphereRadius, sphereCenter.z)) ||
-            (HasOverlapWithNeighborsXY(meshGraph, currentID, s_useThreadsInStitching ? pts : &(*node)[0])))
+            (HasOverlapWithNeighborsXY(meshGraph, currentID, s_useThreadsInStitching ? pts : &(*pointsPtr)[0])))
             {
             for (int i = 0; i < 3; i++)
                 {
@@ -1112,7 +997,7 @@ POINT* pts = nullptr;
     if (s_useThreadsInStitching) delete[] pts;
 
     }
-//#pragma optimize("", off)
+
     
     //NEEDS_WORK_SM: Provide a specialization for this taking into account that POINT and DPoint3d are now the same
 template<class POINT, class EXTENT> size_t ScalableMesh2DDelaunayMesher<POINT, EXTENT>::UpdateMeshNodeFromIndexLists(HFCPtr<SMMeshIndexNode<POINT, EXTENT> > node, POINT** newMesh, vector<vector<int32_t>>& indices, vector<std::vector<DPoint3d>>& pts, int& nFaces, DPoint3d& minPt, DPoint3d& maxPt) const
@@ -1333,14 +1218,16 @@ template<class POINT, class EXTENT> void ScalableMesh2DDelaunayMesher<POINT, EXT
     {
     POINT* pts = nullptr;
     size_t nOfPts = 0;
+
+    RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(node->GetPointsPtr());
+
     if (s_useThreadsInStitching)
-        {
-        node->LockPts();
-        pts = new POINT[node->size()];
-        node->get(pts, node->size());
-        nOfPts = node->size();
-        node->UnlockPts();
+        {             
+        pts = new POINT[pointsPtr->size()];
+        memcpy(pts, &(*pointsPtr)[0], sizeof(POINT) * pointsPtr->size());                
+        nOfPts = pointsPtr->size();        
         }
+
     DRange3d box = DRange3d::From(ExtentOp<EXTENT>::GetXMin(neighborExt), ExtentOp<EXTENT>::GetYMin(neighborExt), ExtentOp<EXTENT>::GetZMin(neighborExt),
                                   +ExtentOp<EXTENT>::GetXMax(neighborExt), ExtentOp<EXTENT>::GetYMax(neighborExt), ExtentOp<EXTENT>::GetZMax(neighborExt));
     DPlane3d planes[6];
@@ -1348,9 +1235,9 @@ template<class POINT, class EXTENT> void ScalableMesh2DDelaunayMesher<POINT, EXT
     DVec3d normals[6];
     box.Get6Planes(origins, normals);
     for (size_t i = 0; i < 6; ++i) planes[i] = DPlane3d::FromOriginAndNormal(origins[i], normals[i]);
-    for (size_t i = 0; i < (s_useThreadsInStitching? nOfPts : node->size()); ++i)
+    for (size_t i = 0; i < (s_useThreadsInStitching? nOfPts : pointsPtr->size()); ++i)
         {
-        POINT pt = s_useThreadsInStitching? pts[i] : node->operator[](i);
+        POINT pt = s_useThreadsInStitching? pts[i] : pointsPtr->operator[](i);
         DPoint3d pt3d = DPoint3d::From(PointOp<POINT>::GetX(pt), PointOp<POINT>::GetY(pt), PointOp<POINT>::GetZ(pt));
         for (size_t j = 0; j < 6; ++j)
             {
@@ -1386,15 +1273,17 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
     MTGGraph meshGraph = *meshGraphP;
 
     //node->ReleaseGraph();
-    node->Pin();
-
+    
     size_t neighborIndices[26] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25 };
     size_t nodeIndicesInNeighbor[26] = { 7, 6, 5, 4, 3, 2, 1, 0, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8 };
     vector<DPoint3d> stitchedPoints;
-    vector<int> pointsToDestPointsMap(node->size());
+
+    RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(node->GetPointsPtr());
+
+    vector<int> pointsToDestPointsMap(pointsPtr->size());
     std::fill_n(pointsToDestPointsMap.begin(), pointsToDestPointsMap.size(), -1);
     
-    std::vector<DPoint3d> nodePoints(node->size());
+    std::vector<DPoint3d> nodePoints(pointsPtr->size());
 
 
 #if SM_TRACE_MESH_STATS
@@ -1405,11 +1294,11 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
 #endif
 std::map<DPoint3d, int, compare3D> stitchedSet;
 
-for (size_t i = 0; i < node->size(); i++)
+for (size_t i = 0; i < pointsPtr->size(); i++)
     {
-    nodePoints[i].x = (*node)[i].x;
-    nodePoints[i].y = (*node)[i].y;
-    nodePoints[i].z = (*node)[i].z;
+    nodePoints[i].x = (*pointsPtr)[i].x;
+    nodePoints[i].y = (*pointsPtr)[i].y;
+    nodePoints[i].z = (*pointsPtr)[i].z;
     }
 #if SM_OUTPUT_MESHES_STITCHING
 WString nameBefore = LOG_PATH_STR_W + L"prestitchmesh_";
@@ -1452,8 +1341,7 @@ for (size_t& neighborInd : neighborIndices)
                    ( node->m_nodeHeader.m_apAreNeighborNodesStitched[neighborInd] ? " NODE STITCHED \n" : " NOT STITCHED \n");*/
                 
                     SelectPointsToStitch(stitchedPoints, node, &meshGraph, node->m_apNeighborNodes[neighborInd][neighborSubInd]->GetContentExtent(), nullptr);
-                  
-                    //node->m_apNeighborNodes[neighborInd][neighborSubInd]->Pin();
+                                      
                    // s += " CURRENT N OF POINTS TO STITCH " + std::to_string(stitchedPoints.size()) + "\n";
                     if (node->m_apNeighborNodes[neighborInd][neighborSubInd]->m_nodeHeader.m_apAreNeighborNodesStitched[nodeIndicesInNeighbor[idx]] == false)
                         SelectPointsToStitch(stitchedPoints, static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*node->m_apNeighborNodes[neighborInd][neighborSubInd]), &meshGraphNeighbor, node->GetContentExtent(), nullptr);
@@ -1463,12 +1351,12 @@ for (size_t& neighborInd : neighborIndices)
                    // s += " CURRENT N OF POINTS TO STITCH " + std::to_string(stitchedPoints.size()) + "\n";
                     if (node->m_apNeighborNodes[neighborInd][neighborSubInd]->m_nodeHeader.m_apAreNeighborNodesStitched[nodeIndicesInNeighbor[idx]] == false)
                         {
-                        bvector<bvector<DPoint3d>> b;
-                        if(s_useThreadsInStitching) node->m_apNeighborNodes[neighborInd][neighborSubInd]->LockPts();
-                        POINT* pts = new POINT[node->m_apNeighborNodes[neighborInd][neighborSubInd]->size()];
-                        node->m_apNeighborNodes[neighborInd][neighborSubInd]->get(pts, node->m_apNeighborNodes[neighborInd][neighborSubInd]->size());
-                        vector<DPoint3d> nPts(node->m_apNeighborNodes[neighborInd][neighborSubInd]->size());
-                        if (s_useThreadsInStitching) node->m_apNeighborNodes[neighborInd][neighborSubInd]->UnlockPts();
+                        bvector<bvector<DPoint3d>> b;                        
+                        RefCountedPtr<SMMemoryPoolVectorItem<POINT>> neigborNodePointsPtr(node->m_apNeighborNodes[neighborInd][neighborSubInd]->GetPointsPtr());
+
+                        POINT* pts = new POINT[neigborNodePointsPtr->size()];                        
+                        neigborNodePointsPtr->get(pts, neigborNodePointsPtr->size());
+                        vector<DPoint3d> nPts(neigborNodePointsPtr->size());                        
                         for (int i = 0; i < nPts.size(); i++)
                             {
                             nPts[i].x = pts[i].x;
@@ -1496,7 +1384,7 @@ for (size_t& neighborInd : neighborIndices)
                         //delete meshGraphNeighbor;
                         delete[] pts;
                         }
-                    //node->m_apNeighborNodes[neighborInd][neighborSubInd]->UnPin();
+                    
                     //node->m_apNeighborNodes[neighborInd][neighborSubInd]->m_nodeHeader.m_apAreNeighborNodesStitched[nodeIndicesInNeighbor[idx]] = true;
                     
                 }          
@@ -1973,9 +1861,11 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
     node->ReadFeatureDefinitions(features, types);
     assert(node->m_nodeHeader.m_nbFaceIndexes == 0 || newNodePointData != nullptr);
     //node->setNbPointsUsedForMeshIndex(0);
-    node->UnPin();
+    
     if (newNodePointData == nullptr) return true;
-    node->clear();
+
+    pointsPtr->clear();
+
    // delete meshGraph;
     size_t removed = 0;
     for (auto& id : componentsPointsId)
@@ -1998,7 +1888,7 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
     node->m_nodeHeader.m_numberOfMeshComponents = componentsPointsId.size();
     if (node->m_nodeHeader.m_nbFaceIndexes > 0)
         {
-        node->push_back(&newNodePointData[0], stitchedPoints.size());
+        pointsPtr->push_back(&newNodePointData[0], stitchedPoints.size());
         node->ReplacePtsIndices((int32_t*)&newNodePointData[stitchedPoints.size()], node->m_nodeHeader.m_nbFaceIndexes);
 
       
@@ -2009,7 +1899,7 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
             node->m_nodeHeader.m_totalCount += stitchedPoints.size();
             }
         node->m_nodeHeader.m_nodeCount = stitchedPoints.size();
-        assert(node->size() == stitchedPoints.size());
+        assert(pointsPtr->size() == stitchedPoints.size());
         if (node->m_featureDefinitions.size() > 0)
             {
             for (auto& def : node->m_featureDefinitions) if (!def.Discarded()) def.Discard();
@@ -2053,14 +1943,17 @@ template<class POINT, class EXTENT> bool ScalableMesh3DDelaunayMesher<POINT, EXT
 return true;
 #else
     //NEEDS_WORK_SM
-    if (node->size () > 4)
-        {
-        vector<DPoint3d> points (node->size ());
-        std::transform (node->begin (), node->end (), &points[0], PtToPtConverter ());
+    RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(GetPointsPtr());
+    
+    if (pointsPtr->size() > 4)
+        {        
+        vector<DPoint3d> points (pointsPtr->size ());
+
+        PtToPtConverter::Transform(&points[0], &(*pointsPtr)[0], points.size());
 
         IScalableMeshMeshPtr meshPtr;
 #ifndef NO_3D_MESH	
-        Create3dDelaunayMesh(&points[0], (int)node->size(), &draw, &meshPtr, nullptr, m_tetGen);
+        Create3dDelaunayMesh(&points[0], (int)pointsPtr->size(), &draw, &meshPtr, nullptr, m_tetGen);
 #endif
 
         ScalableMeshMesh* meshP ((ScalableMeshMesh*)meshPtr.get ());
@@ -2069,7 +1962,7 @@ return true;
 
         if (meshP != 0)
             {
-            node->clear();
+            pointsPtr->clear();
 
             //NEEDS_WORK_SM Avoid some assert            
             if (points.size() != meshP->GetNbPoints() && node->IsLeaf())
@@ -2085,7 +1978,7 @@ return true;
                 nodePts[pointInd].y = meshP->GetPoints()[pointInd].y;
                 nodePts[pointInd].z = meshP->GetPoints()[pointInd].z;
                 }
-            node->push_back(&nodePts[0], nodePts.size());
+            pointsPtr->push_back(&nodePts[0], nodePts.size());
             bvector<int> componentPointsId; //holds the leftmost point of each connected component
             if (NULL == node->GetGraphPtr()) node->CreateGraph();
             else
@@ -2156,7 +2049,7 @@ return true;
                 {
                 node->m_nodeHeader.m_totalCount = node->size();
                 }
-            node->m_nodeHeader.m_nodeCount = node->size();
+            node->m_nodeHeader.m_nodeCount = pointsPtr->size();
           //  isMeshingDone = true;
 
            
@@ -2441,7 +2334,7 @@ return true;
         }
     meshGraph->DropMask(visitedMask);
     }
-//#pragma optimize("", on)
+
 /**----------------------------------------------------------------------------
 Initiates the stitching of the mesh present in neighbor nodes. 
 -----------------------------------------------------------------------------*/
@@ -2467,7 +2360,9 @@ template<class POINT, class EXTENT> bool ScalableMesh3DDelaunayMesher<POINT, EXT
     size_t neighborIndices[27] = { 0,1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25 };//{ 1, 3, 4, 6, 12, 21 }; //only neighbors that share a face at the moment
     size_t nodeIndicesInNeighbor[27] = { 7, 6, 5, 4, 3, 2, 1, 0, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8 };//{ 6, 4, 3, 1, 21, 12 };
     vector<DPoint3d> stitchedPoints;
-    vector<int> pointsToDestPointsMap(node->size());
+    RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(GetPointsPtr());
+
+    vector<int> pointsToDestPointsMap(pointsPtr->size());
     std::fill_n(pointsToDestPointsMap.begin(), pointsToDestPointsMap.size(), -1);
     
 //    EXTENT ext = node->GetContentExtent();
@@ -2532,16 +2427,16 @@ template<class POINT, class EXTENT> bool ScalableMesh3DDelaunayMesher<POINT, EXT
 #endif
     stitchedPoints.resize(meshP->GetNbPoints());
     memcpy(&stitchedPoints[0], meshP->GetPoints(), meshP->GetNbPoints()*sizeof(DPoint3d));
-    //merge meshes
-    std::vector<DPoint3d> nodePoints(node->size());
+    //merge meshes    
+    std::vector<DPoint3d> nodePoints(pointsPtr->size());
 
     std::map<DPoint3d, int, compare3D> stitchedSet;
         //std::vector<std::pair<DPoint3d, int>> stitchedSet;
-    for (size_t i = 0; i < node->size(); i++)
+    for (size_t i = 0; i < pointsPtr->size(); i++)
         {
-        nodePoints[i].x = (*node)[i].x;
-        nodePoints[i].y = (*node)[i].y;
-        nodePoints[i].z = (*node)[i].z;
+        nodePoints[i].x = (*pointsPtr)[i].x;
+        nodePoints[i].y = (*pointsPtr)[i].y;
+        nodePoints[i].z = (*pointsPtr)[i].z;
         }
 
     for (int i = 0; i < (int)stitchedPoints.size(); i++)
@@ -2583,8 +2478,11 @@ template<class POINT, class EXTENT> bool ScalableMesh3DDelaunayMesher<POINT, EXT
     memcpy(node->m_nodeHeader.m_meshComponents, componentsPointsId.data(), componentsPointsId.size()*sizeof(int));
     node->m_nodeHeader.m_numberOfMeshComponents = componentsPointsId.size();
     //node->setNbPointsUsedForMeshIndex(0);
-    node->clear();
-    node->push_back(&newNodePointData[0], arraySize);
+
+
+
+    pointsPtr->clear();
+    pointsPtr->push_back(&newNodePointData[0], arraySize);
     //node->setNbPointsUsedForMeshIndex(arraySize - stitchedPoints.size());
     delete[] newNodePointData;
     if (node->IsLeaf()) node->m_nodeHeader.m_totalCount = stitchedPoints.size();

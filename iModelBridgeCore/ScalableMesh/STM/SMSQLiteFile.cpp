@@ -441,7 +441,7 @@ void SMSQLiteFile::GetIndices(int64_t nodeID, bvector<uint8_t>& indices, size_t&
     }
 
 
-void SMSQLiteFile::GetUVIndices(int64_t nodeID, bvector<uint8_t>& uvs, size_t& uncompressedSize)
+void SMSQLiteFile::GetUVIndices(int64_t nodeID, bvector<uint8_t>& uvCoords, size_t& uncompressedSize)
     {
     std::lock_guard<std::mutex> lock(dbLock);
     CachedStatementPtr stmt;
@@ -454,9 +454,9 @@ void SMSQLiteFile::GetUVIndices(int64_t nodeID, bvector<uint8_t>& uvs, size_t& u
         uncompressedSize = 0;
         return;
         }
-    uvs.resize(stmt->GetValueInt64(1));
+    uvCoords.resize(stmt->GetValueInt64(1));
     uncompressedSize = stmt->GetValueInt64(2);
-    memcpy(&uvs[0], stmt->GetValueBlob(0), uvs.size());
+    memcpy(&uvCoords[0], stmt->GetValueBlob(0), uvCoords.size());
     }
 
 void SMSQLiteFile::GetTexture(int64_t nodeID, bvector<uint8_t>& texture, size_t& uncompressedSize)
@@ -477,7 +477,7 @@ void SMSQLiteFile::GetTexture(int64_t nodeID, bvector<uint8_t>& texture, size_t&
     memcpy(&texture[0], stmt->GetValueBlob(0), texture.size());
     }
 
-void SMSQLiteFile::GetUVs(int64_t nodeID, bvector<uint8_t>& uvs, size_t& uncompressedSize)
+void SMSQLiteFile::GetUVs(int64_t nodeID, bvector<uint8_t>& uvCoords, size_t& uncompressedSize)
     {
     std::lock_guard<std::mutex> lock(dbLock);
     CachedStatementPtr stmt;
@@ -490,9 +490,9 @@ void SMSQLiteFile::GetUVs(int64_t nodeID, bvector<uint8_t>& uvs, size_t& uncompr
         uncompressedSize = 0;
         return;
         }
-    uvs.resize(stmt->GetValueInt64(1));
+    uvCoords.resize(stmt->GetValueInt64(1));
     uncompressedSize = stmt->GetValueInt64(2);
-    memcpy(&uvs[0], stmt->GetValueBlob(0), uvs.size());
+    memcpy(&uvCoords[0], stmt->GetValueBlob(0), uvCoords.size());
     }
 
 void SMSQLiteFile::GetGraph(int64_t nodeID, bvector<uint8_t>& graph, size_t& uncompressedSize)
@@ -695,7 +695,7 @@ void SMSQLiteFile::StoreIndices(int64_t& nodeID, const bvector<uint8_t>& indices
         }
     }
 
-void SMSQLiteFile::StoreUVIndices(int64_t& nodeID, const bvector<uint8_t>& uvs, size_t uncompressedSize)
+void SMSQLiteFile::StoreUVIndices(int64_t& nodeID, const bvector<uint8_t>& uvCoords, size_t uncompressedSize)
     {
     std::lock_guard<std::mutex> lock(dbLock);
     CachedStatementPtr stmt;
@@ -710,7 +710,7 @@ void SMSQLiteFile::StoreUVIndices(int64_t& nodeID, const bvector<uint8_t>& uvs, 
         m_database->GetCachedStatement(stmt, "INSERT INTO SMTexture (NodeId,TexData, UVData, SizeTexture, SizeUVs) VALUES(?,?,?,?,?)");
         stmt->BindInt64(1, nodeID);
         stmt->BindBlob(2, nullptr, 0, MAKE_COPY_NO);
-        stmt->BindBlob(3, &uvs[0], (int)uvs.size(), MAKE_COPY_NO);
+        stmt->BindBlob(3, &uvCoords[0], (int)uvCoords.size(), MAKE_COPY_NO);
         stmt->BindInt64(4, 0);
         stmt->BindInt64(5, uncompressedSize);
         DbResult status = stmt->Step();
@@ -724,7 +724,7 @@ void SMSQLiteFile::StoreUVIndices(int64_t& nodeID, const bvector<uint8_t>& uvs, 
     else
         {
         m_database->GetCachedStatement(stmt, "UPDATE SMTexture SET UVData=?, SizeUVs=? WHERE NodeId=?");
-        stmt->BindBlob(1, &uvs[0], (int)uvs.size(), MAKE_COPY_NO);
+        stmt->BindBlob(1, &uvCoords[0], (int)uvCoords.size(), MAKE_COPY_NO);
         stmt->BindInt64(2, uncompressedSize);
         stmt->BindInt64(3, nodeID);
         DbResult status = stmt->Step();
@@ -771,7 +771,7 @@ void SMSQLiteFile::StoreTexture(int64_t& nodeID, const bvector<uint8_t>& texture
         }
     }
 
-void SMSQLiteFile::StoreUVs(int64_t& nodeID, const bvector<uint8_t>& uvs, size_t uncompressedSize)
+void SMSQLiteFile::StoreUVs(int64_t& nodeID, const bvector<uint8_t>& uvCoords, size_t uncompressedSize)
     {
     std::lock_guard<std::mutex> lock(dbLock);
     CachedStatementPtr stmt;
@@ -785,7 +785,7 @@ void SMSQLiteFile::StoreUVs(int64_t& nodeID, const bvector<uint8_t>& uvs, size_t
         Savepoint insertTransaction(*m_database, "insert");
         m_database->GetCachedStatement(stmt, "INSERT INTO SMUVs (NodeId,UVData,SizeUVs) VALUES(?,?,?)");
         stmt->BindInt64(1, nodeID);
-        stmt->BindBlob(2, &uvs[0], (int)uvs.size(), MAKE_COPY_NO);
+        stmt->BindBlob(2, &uvCoords[0], (int)uvCoords.size(), MAKE_COPY_NO);
         stmt->BindInt64(3, uncompressedSize);
         DbResult status = stmt->Step();
         assert(status == BE_SQLITE_DONE);
@@ -794,7 +794,7 @@ void SMSQLiteFile::StoreUVs(int64_t& nodeID, const bvector<uint8_t>& uvs, size_t
     else
         {
         m_database->GetCachedStatement(stmt, "UPDATE SMUVs SET UvData=?, SizeUVs=? WHERE NodeId=?");
-        stmt->BindBlob(1, &uvs[0], (int)uvs.size(), MAKE_COPY_NO);
+        stmt->BindBlob(1, &uvCoords[0], (int)uvCoords.size(), MAKE_COPY_NO);
         stmt->BindInt64(2, uncompressedSize);
         stmt->BindInt64(3, nodeID);
         DbResult status = stmt->Step();
