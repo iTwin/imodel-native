@@ -1590,8 +1590,11 @@ BeFileNameStatus BeFileName::BeCopyFile(WCharCP sourceFile, WCharCP destinationF
     int     bytesRead, bytesWritten;
     FILE    *sFile, *dFile;
 
-    if (!(sFile = fopen(toUtf8(sourceFile).c_str(), "rb"))) 
+    if (failIfFileExists && BeFileName(destinationFile).DoesPathExist())
         return BeFileNameStatus::AccessViolation;
+
+    if (!(sFile = fopen(toUtf8(sourceFile).c_str(), "rb"))) 
+        return (ENOENT==errno)? BeFileNameStatus::FileNotFound: BeFileNameStatus::AccessViolation;
     if (!(dFile = fopen(toUtf8(destinationFile).c_str(), "w+b"))) 
         {
         fclose(sFile);
