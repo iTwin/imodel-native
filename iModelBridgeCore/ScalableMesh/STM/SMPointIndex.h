@@ -724,6 +724,16 @@ public:
         return m_nodeHeader.m_nodeCount;       
         }
 
+    void LockPts()
+        {
+        m_ptsLock.lock();        
+        }
+
+    void UnlockPts()
+        {        
+        m_ptsLock.unlock();
+        }
+
     /**----------------------------------------------------------------------------
     Get the neighbor reciprocal position.
     -----------------------------------------------------------------------------*/
@@ -1142,6 +1152,7 @@ protected:
         SMMemoryPoolItemId m_pointsPoolItemId;
         uint64_t           m_nodeId; 
         bool               m_isDirty;
+        std::mutex         m_ptsLock;
         
         static std::map<size_t, SMNodeGroup*> s_OpenGroups;
         static int s_GroupID;    

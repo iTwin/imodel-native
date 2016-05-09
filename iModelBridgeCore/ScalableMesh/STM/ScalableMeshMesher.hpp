@@ -848,11 +848,13 @@ template<class POINT, class EXTENT> size_t ScalableMesh2DDelaunayMesher<POINT, E
     POINT* pts = nullptr;
 
     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(node->GetPointsPtr());
-
+          
     if (s_useThreadsInStitching)
         {                
+        node->LockPts();
         pts = new POINT[pointsPtr->size()];
-        memcpy(pts, &(*pointsPtr)[0], pointsPtr->size() * sizeof(POINT));        
+        memcpy(pts, &(*pointsPtr)[0], pointsPtr->size() * sizeof(POINT));
+        node->UnlockPts();
         }
 
     std::queue<MTGNodeId> bounds;
@@ -1226,10 +1228,12 @@ template<class POINT, class EXTENT> void ScalableMesh2DDelaunayMesher<POINT, EXT
     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(node->GetPointsPtr());
 
     if (s_useThreadsInStitching)
-        {             
+        {    
+        node->LockPts();
         pts = new POINT[pointsPtr->size()];
         memcpy(pts, &(*pointsPtr)[0], sizeof(POINT) * pointsPtr->size());                
         nOfPts = pointsPtr->size();        
+        node->UnlockPts();
         }
 
     DRange3d box = DRange3d::From(ExtentOp<EXTENT>::GetXMin(neighborExt), ExtentOp<EXTENT>::GetYMin(neighborExt), ExtentOp<EXTENT>::GetZMin(neighborExt),
@@ -1279,6 +1283,8 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
 
     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(node->GetPointsPtr());
 
+    if (s_useThreadsInStitching) node->LockPts();
+
     vector<int> pointsToDestPointsMap(pointsPtr->size());
     std::fill_n(pointsToDestPointsMap.begin(), pointsToDestPointsMap.size(), -1);
     
@@ -1298,6 +1304,9 @@ for (size_t i = 0; i < pointsPtr->size(); i++)
     nodePoints[i].y = (*pointsPtr)[i].y;
     nodePoints[i].z = (*pointsPtr)[i].z;
     }
+
+    if (s_useThreadsInStitching) node->UnlockPts();
+
 #if SM_OUTPUT_MESHES_STITCHING
 WString nameBefore = LOG_PATH_STR_W + L"prestitchmesh_";
 LOGSTRING_NODE_INFO_W(node, nameBefore)
@@ -1804,7 +1813,11 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
     
     if (newNodePointData == nullptr) return true;
 
+    if (s_useThreadsInStitching) node->LockPts();
+
     pointsPtr->clear();
+
+    if (s_useThreadsInStitching) node->UnlockPts();
 
    // delete meshGraph;
     size_t removed = 0;
@@ -1828,7 +1841,10 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
     node->m_nodeHeader.m_numberOfMeshComponents = componentsPointsId.size();
     if (node->m_nodeHeader.m_nbFaceIndexes > 0)
         {
+        if (s_useThreadsInStitching) node->LockPts();
+
         pointsPtr->push_back(&newNodePointData[0], stitchedPoints.size());
+        
         node->ReplacePtsIndices((int32_t*)&newNodePointData[stitchedPoints.size()], node->m_nodeHeader.m_nbFaceIndexes);
 
         //node->setNbPointsUsedForMeshIndex(arraySize-stitchedPoints.size());
@@ -1838,8 +1854,11 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
             node->m_nodeHeader.m_totalCount -= nodePoints.size();
             node->m_nodeHeader.m_totalCount += stitchedPoints.size();
             }
-        node->m_nodeHeader.m_nodeCount = stitchedPoints.size();
+        node->m_nodeHeader.m_nodeCount = stitchedPoints.size();        
         assert(pointsPtr->size() == stitchedPoints.size());
+
+        if (s_useThreadsInStitching) node->UnlockPts();
+
 #if SM_OUTPUT_MESHES_STITCHING
             {
             WString nameStitched = LOG_PATH_STR_W + L"poststitchmesh_";

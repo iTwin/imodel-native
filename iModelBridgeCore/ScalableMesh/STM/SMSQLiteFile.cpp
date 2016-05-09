@@ -72,13 +72,14 @@ SMSQLiteFilePtr SMSQLiteFile::Open(const WString& filename, bool openReadOnly, S
 
 bool SMSQLiteFile::Create(BENTLEY_NAMESPACE_NAME::Utf8CP filename)
 {
-if (m_database == nullptr)
-m_database = new ScalableMeshDb();
+    if (m_database == nullptr)
+
+    m_database = new ScalableMeshDb();
+
     DbResult result;
     result = m_database->CreateNewDb(filename);
 
     assert(result == BE_SQLITE_OK);
-
 
     result = m_database->CreateTable("SMMasterHeader", "MasterHeaderId INTEGER PRIMARY KEY,"
         "Balanced INTEGER,"

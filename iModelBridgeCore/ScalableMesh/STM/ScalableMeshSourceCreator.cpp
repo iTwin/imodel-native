@@ -434,6 +434,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
         PointIndexExtentType>             GenericTileStoreType;
     WString name = m_scmFileName;
     WString featureFilePath = name.append(L"_feature"); //temporary file, deleted after generation
+    _wremove(featureFilePath.c_str());
     //IDTMFile::File::Ptr featureFilePtr = IDTMFile::File::Create(featureFilePath.c_str());
     SMSQLiteFilePtr sqliteFeatureFile = new SMSQLiteFile();
     sqliteFeatureFile->Create(featureFilePath);

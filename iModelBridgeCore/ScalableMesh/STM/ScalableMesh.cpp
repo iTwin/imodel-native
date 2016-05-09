@@ -11,7 +11,7 @@
 +--------------------------------------------------------------------------------------*/
   
 #include <ScalableMeshPCH.h>
-#include "ImagePPHeaders.h"
+#include "ImagePPHeaders.h" 
 extern bool   GET_HIGHEST_RES;
 
 /*------------------------------------------------------------------+
