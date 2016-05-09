@@ -379,40 +379,16 @@ IScalableMeshCreator::Impl::Impl(const WChar* scmFileName)
     : m_gcs(GetDefaultGCS()),
     m_scmFileName(scmFileName),
     m_lastSyncTime(Time::CreateSmallestPossible()),
-    // m_lastSourcesModificationTime(CreateUnknownModificationTime()),
-    // m_lastSourcesModificationCheckTime(Time::CreateSmallestPossible()),
-    //  m_sourcesDirty(false),
     m_gcsDirty(false),
     //   m_sourceEnv(CreateSourceEnvFrom(scmFileName)),
     m_compressionType(SCM_COMPRESSION_DEFLATE),
     m_workingLayer(DEFAULT_WORKING_LAYER)
     {
-    // m_sources.RegisterEditListener(*this);
-    //m_dgnScalableMesh.Create();
 
 
     WString smStoreDgnDbStr;
     m_isDgnDb = false;
 
-    //FeatureIndexType linearIndex;
-   /* bool isBlobMode = true;
-    if (BSISUCCESS == ConfigurationManager::GetVariable(smStoreDgnDbStr, L"SM_STORE_DGNDB"))
-        {
-        m_isDgnDb = _wtoi(smStoreDgnDbStr.c_str()) > 0;
-        isBlobMode = _wtoi(smStoreDgnDbStr.c_str()) > 1;
-        }
-
-
-    WString multithreadStr;
-    if (BSISUCCESS == ConfigurationManager::GetVariable(multithreadStr, L"SM_MULTITHREAD_GENERATION"))
-        {
-        if (_wtoi(multithreadStr.c_str()) > 0)
-            {
-            s_useThreadsInMeshing = true;
-            s_useThreadsInStitching = true;
-            s_useThreadsInFiltering = true;
-            }
-        }*/
     s_useThreadsInMeshing = true;
     s_useThreadsInStitching = true;
     s_useThreadsInFiltering = true;
@@ -431,14 +407,6 @@ IScalableMeshCreator::Impl::Impl(const IScalableMeshPtr& scmPtr)
     WString smStoreDgnDbStr;
     m_isDgnDb = false;
 
-    //FeatureIndexType linearIndex;
-    /*bool isBlobMode;
-    if (BSISUCCESS == ConfigurationManager::GetVariable(smStoreDgnDbStr, L"SM_STORE_DGNDB"))
-        {
-        m_isDgnDb = _wtoi(smStoreDgnDbStr.c_str()) > 0;
-        isBlobMode = _wtoi(smStoreDgnDbStr.c_str()) > 1;
-        }*/
-
 
     }
 
@@ -449,7 +417,6 @@ IScalableMeshCreator::Impl::~Impl()
     StatusInt status = SaveToFile();
     assert(BSISUCCESS == status);
     m_scmPtr = 0;
-    //m_sources.UnregisterEditListener(*this);
     }
 
 StatusInt IScalableMeshCreator::Impl::SetTextureMosaic(HIMMosaic* mosaicP)
@@ -459,21 +426,6 @@ StatusInt IScalableMeshCreator::Impl::SetTextureMosaic(HIMMosaic* mosaicP)
     return SUCCESS;
     }
 
-/*----------------------------------------------------------------------------+
-|IScalableMeshCreator::Impl::CreateSourceEnvFrom
-+----------------------------------------------------------------------------*/
-/*DocumentEnv IScalableMeshCreator::Impl::CreateSourceEnvFrom  (const WChar* filePath)
-    {
-    WString currentDirPath(filePath);
-    const WString::size_type dirEndPos = currentDirPath.find_last_of(L"\\/");
-
-    if (WString::npos == dirEndPos)
-        return DocumentEnv(L"");
-
-    currentDirPath.resize(dirEndPos + 1);
-    return DocumentEnv(currentDirPath.c_str());
-    }
-    */
  
 
 
@@ -706,14 +658,7 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
                                        pMesher3d);
             pDataIndex->SetSingleFile(false);
             pDataIndex->SetGenerating(true);
-           // WString clipFilePath = m_scmFileName;
-            //clipFilePath.append(L"_clips");
-            //IDTMFile::File::Ptr clipFilePtr = IDTMFile::File::Create(clipFilePath.c_str());
-            /*HFCPtr<IScalableMeshDataStore<DifferenceSet, Byte, Byte>> store = new DiffSetTileStore(clipFilePath, 0, true);
-            store->StoreMasterHeader(NULL, 0);
-            pDataIndex->SetClipStore(store);
-            auto pool = ScalableMeshMemoryPools<POINT>::Get()->GetDiffSetPool();
-            pDataIndex->SetClipPool(pool);*/
+
             WString clipFileDefPath = m_scmFileName;
             clipFileDefPath.append(L"_clipDefinitions");
             ClipRegistry* registry = new ClipRegistry(clipFileDefPath);
@@ -747,14 +692,7 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
                                        pMesher2_5d,
                                        pMesher3d);
             pDataIndex->SetGenerating(true);
-            //WString clipFilePath = m_scmFileName;
-            //clipFilePath.append(L"_clips");
-            //IDTMFile::File::Ptr clipFilePtr = IDTMFile::File::Create(clipFilePath.c_str());
-            /*HFCPtr<IScalableMeshDataStore<DifferenceSet, Byte, Byte>> store = new DiffSetTileStore(clipFilePath, 0, true);
-            //store->StoreMasterHeader(NULL, 0);
-            pDataIndex->SetClipStore(store);
-            auto pool = ScalableMeshMemoryPools<POINT>::Get()->GetDiffSetPool();
-            pDataIndex->SetClipPool(pool);*/
+
             WString clipFileDefPath = m_scmFileName;
             clipFileDefPath.append(L"_clipDefinitions");
             ClipRegistry* registry = new ClipRegistry(clipFileDefPath);
@@ -765,101 +703,7 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
     }
 
 
-/*---------------------------------------------------------------------------------**//**
-* @description
-* @bsimethod                                                  Mathieu.St-Pierre  11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-#if 0
-template <typename PointType, typename PointIndex, typename LinearIndex>
-StatusInt IScalableMeshCreator::Impl::AddPointOverviewOfLinears (PointIndex&  pointIndex,
-                                                          LinearIndex& linearIndex)
-    {
-    YProtFeatureExtentType linearExtent = linearIndex.GetContentExtent();
 
-    list<HFCPtr<HVEDTMLinearFeature>> linearList;
-
-    linearIndex.GetIn(linearExtent, linearList);
-
-    int status = SUCCESS;
-
-    if (linearList.size() > 0)
-        {
-        //Compute the number of points
-        list<HFCPtr<HVEDTMLinearFeature> >::iterator linearIter    = linearList.begin();
-        list<HFCPtr<HVEDTMLinearFeature> >::iterator linearIterEnd = linearList.end();
-
-        size_t nbOfLinearPoints = 0;
-
-        while (linearIter != linearIterEnd)
-            {
-            nbOfLinearPoints += (*linearIter)->GetSize();
-            linearIter++;
-            }
-
-        int decimationStep;
-
-        if (nbOfLinearPoints > MAX_NUM_POINTS_FOR_LINEAR_OVERVIEW)
-            {
-            //Should result in a number of points roughly in the range of 11250 - 22500 points
-            decimationStep = round((double)nbOfLinearPoints / MAX_NUM_POINTS_FOR_LINEAR_OVERVIEW);
-            }
-        else
-            {
-            decimationStep = 1;
-            }
-
-        linearIter    = linearList.begin();
-        linearIterEnd = linearList.end();
-
-        uint32_t              tileNumber = 0;
-        HAutoPtr<PointType> linePts;
-        size_t               linePtsMaxSize = 0;
-
-        int globalLinearPointInd = 0;
-
-        while (linearIter != linearIterEnd)
-            {
-            if (linePtsMaxSize < (*linearIter)->GetSize())
-                {
-                linePtsMaxSize = (*linearIter)->GetSize();
-                linePts = new PointType[linePtsMaxSize];
-                }
-
-            size_t nbLinePts = 0;
-
-            for (size_t indexPoints = 0 ; indexPoints < (*linearIter)->GetSize(); indexPoints++)
-                {
-                if (globalLinearPointInd % decimationStep == 0)
-                    {
-                    linePts[nbLinePts].x = (*linearIter)->GetPoint(indexPoints).GetX();
-                    linePts[nbLinePts].y = (*linearIter)->GetPoint(indexPoints).GetY();
-                    linePts[nbLinePts].z = (*linearIter)->GetPoint(indexPoints).GetZ();
-                    nbLinePts++;
-                    }
-
-                globalLinearPointInd++;
-                }
-
-            if (nbLinePts > 0)
-                {
-                bool result = pointIndex.AddArray(linePts.get(), nbLinePts, false);
-
-                assert(result == true);
-                }
-
-            if (status != SUCCESS)
-                {
-                break;
-                }
-
-            linearIter++;
-            tileNumber++;
-            }
-        }
-
-    return SUCCESS;
-    }
-#endif
 /*---------------------------------------------------------------------------------**//**
 * @description
 * @bsimethod                                                  Raymond.Gauthier   03/2011

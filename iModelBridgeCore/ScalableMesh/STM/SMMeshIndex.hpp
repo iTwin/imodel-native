@@ -1322,7 +1322,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::ReadFea
         if (!IsClosedFeature(m_featureDefinitions[i][0])) continue;
         for (size_t j = 1; j < m_featureDefinitions[i].size(); ++j)
             {
-            if (m_featureDefinitions[i][j] < size()) feature.push_back(this->operator[](m_featureDefinitions[i][j]));
+            if (m_featureDefinitions[i][j] < GetPointsPtr()->size()) feature.push_back(this->GetPointsPtr()->operator[](m_featureDefinitions[i][j]));
             }
         points.push_back(feature);
         types.push_back((DTMFeatureType)m_featureDefinitions[i][0]);
@@ -1342,8 +1342,8 @@ template<class POINT, class EXTENT> size_t SMMeshIndexNode<POINT, EXTENT>::AddFe
             continue;
             }
         POINT pointToInsert = PointOp<POINT>::Create(pt.x, pt.y, pt.z);
-        this->push_back(pointToInsert);
-        indexes.push_back((int32_t)this->size() - 1);
+        this->GetPointsPtr()->push_back(pointToInsert);
+        indexes.push_back((int32_t)this->GetPointsPtr()->size() - 1);
         }
     if (m_featureDefinitions.capacity() < m_featureDefinitions.size() + 1) for (auto& def : m_featureDefinitions) if (!def.Discarded()) def.Discard();
     m_featureDefinitions.resize(m_featureDefinitions.size() + 1);
@@ -1997,7 +1997,7 @@ void SMMeshIndexNode<POINT, EXTENT>::CollectFeatureDefinitionsFromGraph(MTGGraph
         definition = feature1;
         }
 
-    SortDefinitionsBasedOnNodeBounds(featureDefs, m_nodeHeader.m_nodeExtent, &this->operator[](0), this->size());
+    //SortDefinitionsBasedOnNodeBounds(featureDefs, m_nodeHeader.m_nodeExtent, &this->operator[](0), this->size());
 
     for (auto& definition : featureDefs)
         {
