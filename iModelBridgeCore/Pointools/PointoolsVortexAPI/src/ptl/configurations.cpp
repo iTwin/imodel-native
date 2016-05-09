@@ -127,7 +127,7 @@ Project::Configuration *Project::getConfiguration(const char *id)
 //
 //
 //
-int Project::numConfigurations() const { return _configs.size(); }
+int Project::numConfigurations() const { return static_cast<int>(_configs.size()); }
 //
 //
 //

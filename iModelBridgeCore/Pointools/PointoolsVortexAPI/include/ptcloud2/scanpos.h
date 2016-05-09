@@ -31,7 +31,7 @@ namespace pcloud
 			_images.push_back(image);
 		}
 
-		int numClouds() const { return _clouds.size(); }
+		int numClouds() const { return static_cast<int>(_clouds.size()); }
 		PointCloud *cloud(int i) { return _clouds[i]; }
 		bool hasCloud(PointCloud *cloud)
 		{

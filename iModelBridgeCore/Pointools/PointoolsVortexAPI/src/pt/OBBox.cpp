@@ -69,7 +69,7 @@ OBBoxf	createFittingOBBf( const std::vector< vector3 > &pts )
 
 OBBoxd createFittingOBBd( const std::vector<vector3d> &pts )
 {
-	return createFittingOBBd(&pts[0], pts.size());
+	return createFittingOBBd(&pts[0], static_cast<int>(pts.size()));
 }
 
 

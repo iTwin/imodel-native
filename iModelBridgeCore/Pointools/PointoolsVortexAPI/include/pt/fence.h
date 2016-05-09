@@ -41,7 +41,7 @@ public:
 	}
 	void clear() { m_points.clear(); }
 
-	int numPoints() const { return m_points.size(); }
+	int numPoints() const { return static_cast<int>(m_points.size()); }
 	
 	bool intersectsEdge(Real p0x, Real p0y, Real p1x, Real p1y) const
 	{

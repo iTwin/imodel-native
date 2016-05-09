@@ -728,7 +728,7 @@ bool PodIO::writeCloudData(PodJob &job, int cloud_idx, int start_voxel, int num_
 	const PointCloud *pc = job.scene->cloud(cloud_idx);
 	if (num_voxels < 0)
 	{
-		num_voxels = pc->voxels().size();
+		num_voxels = static_cast<int>(pc->voxels().size());
 		start_voxel = 0;
 	}
 
@@ -794,7 +794,7 @@ bool PodIO::writeCloudStructure(PodJob &job, int cloud_idx)
 	pc->root()->traverseTopDown(&cn);
 	
 	/*key and write partitions*/ 
-	int v_count = pc->voxels().size();
+	int v_count = static_cast<int>(pc->voxels().size());
 	int n_count = pc->root()->countNodes();
 	int p_count = 0; /* no partition system - hangover from previous version*/ 
 

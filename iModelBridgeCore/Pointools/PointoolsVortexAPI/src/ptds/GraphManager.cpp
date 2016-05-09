@@ -166,7 +166,7 @@ unsigned int Graph::getNumEntities(void)
 	if(mutexScope.isLocked() == false)
 		return 0;
 
-	return entities.size();
+	return static_cast<uint>(entities.size());
 }
 
 LRESULT CALLBACK Graph::windowMessageHandler(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
@@ -875,7 +875,7 @@ unsigned int GraphManager::getNumGraphs()
 	if(mutexScope.isLocked() == false)
 		return 0;
 
-	return graphs.size();
+    return static_cast<unsigned int>(graphs.size());
 }
 
 

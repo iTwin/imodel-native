@@ -67,7 +67,7 @@ public:
 	{
 		applyGroupItems<this_type, std::vector<T *> &>(groupKey, this, &this_type::getItemsOfType<T>, resultSet);
 
-		return resultSet.size();
+		return static_cast<unsigned int>(resultSet.size());
 	}
 
 	template<typename T> Status getItemsOfType(Item &item, std::vector<T *> &resultSet)

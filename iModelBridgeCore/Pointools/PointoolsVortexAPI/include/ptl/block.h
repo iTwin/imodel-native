@@ -107,7 +107,7 @@ public:
 
 		while (c)
 		{
-			s += c->size();
+			s += static_cast<int>(c->size());
 			c = c->next;
 		}
 		return s;
@@ -120,7 +120,7 @@ public:
 
 		while (c)
 		{
-			s += c->totalSize();
+			s += static_cast<int>(c->totalSize());
 			c = c->next;
 		}
 		return s;
@@ -192,7 +192,7 @@ protected:
 	Chunk			*lastchunk()		{ return endchunk; }
 public:
 	template <class T>		void write(const T &s)		{ chunk->write(&s, sizeof(T)); }
-	void write_s(const char *s) { short len = strlen(s) + 1; write(len); chunk->write(s, len); }
+	void write_s(const char *s) { short len = static_cast<short>(strlen(s)+1); write(len); chunk->write(s, len); }
 	template <class T>	void write_array(const T *s, int sz) { chunk->write(s, sz*sizeof(T)); };
 	void write_chunk(const void *d, int bytes) { write(bytes); chunk->write(d, bytes); }
 	void write(const void* d, int bytes) const { chunk->write(d, bytes); }

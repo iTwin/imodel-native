@@ -243,7 +243,7 @@ struct DifferenceComputer // ala Signore Babbage
 
 	void operator ()()
 	{
-		int num_leaves = m_leaves.size();
+		int num_leaves = static_cast<int>(m_leaves.size());
 
 		if (!num_leaves)
 			return;
@@ -301,7 +301,7 @@ ClashTree	*ClashObject::compareTrees( const ClashObject *b, bool difference, Com
 		LeavesSet leaves;
 		tree->root()->collectLeaves( leaves );
 
-		int num_leaves = leaves.size();
+		int num_leaves = static_cast<int>(leaves.size());
 
 		// distribute these to 8 threads
 		int leaves_per_thread = num_leaves / NUM_DIFFERENCING_THREADS;

@@ -300,7 +300,7 @@ EvaluatedOpStackHeader::EvaluatedOpStackHeader( const pt::String &name, const Op
 	GatherForWriteVisitor gather( m_leafNodeStates );	// gather voxels
 	thePointsScene().visitVoxels( &gather, false ); 
 
-	m_numLeafStates = m_leafNodeStates.size();	// num voxels to write
+	m_numLeafStates = static_cast<int>(m_leafNodeStates.size());	// num voxels to write
 	m_hasRGB = gather.hasPaint;
 	m_numLayerBytes = gather.numLayerBytes;
 	m_numLeafData = gather.numLeafNodesWithData;

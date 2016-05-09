@@ -51,7 +51,7 @@ public:
 	int addImage(const char* file)
 	{ 
 		m_images.push_back(file); 
-		return m_images.size()-1; 
+		return static_cast<int>(m_images.size()-1); 
 	}
 	void dirtyInfo()		{ m_objectInfoDirty = true;	}
 	void undirtyInfo()		{ m_objectInfoDirty = false; }
@@ -68,7 +68,7 @@ public:
 
 	void addInfo(const wchar_t* _name, int _key, void *_obj, short _imgID, bool _prop, const pt::DisplayInfo *_di);
 
-	int				numImages() const	{ return m_images.size(); }
+    int				numImages() const { return static_cast<int>(m_images.size()); }
 	const char*		image(int i) const	{ return m_images[i]; }
 
 	const ObjectInfo*	popObjectInfo()	const	{ const_cast<SceneClassInfo*>(this)->m_objectInfoUpdated = false; return m_objectInfo; }

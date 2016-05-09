@@ -250,7 +250,7 @@ int		PointEditManager::stateId() const
 /*****************************************************************************/
 uint PointEditManager::numEdits() const
 {
-	return m_edits.size();
+	return static_cast<uint>(m_edits.size());
 }
 
 /*****************************************************************************/

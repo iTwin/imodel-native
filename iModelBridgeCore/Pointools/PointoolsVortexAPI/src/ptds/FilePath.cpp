@@ -55,7 +55,7 @@ void FilePath::read(PTRMI::DataBuffer &buffer)
 void FilePath::write(PTRMI::DataBuffer &buffer) const
 {
 															// Write string plus terminator
-	PTRMI::Array<const unsigned char> str((wcslen(m_sPath) + 1) * sizeof(wchar_t), reinterpret_cast<const unsigned char *>(&(m_sPath[0])));
+    PTRMI::Array<const unsigned char> str(static_cast<int>((wcslen(m_sPath) + 1) * sizeof(wchar_t)), reinterpret_cast<const unsigned char *>(&(m_sPath[0])));
 
 	buffer << str;
 }

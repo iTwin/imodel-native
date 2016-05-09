@@ -36,7 +36,7 @@ protected:
 	void clearModules();
 
 	_Module *getModule(unsigned int index) { return m_modules[index]; }
-	inline unsigned int numModules() const { return m_modules.size(); }
+	inline unsigned int numModules() const { return static_cast<int>(m_modules.size()); }
 
 private:
 	std::vector<_Module*>	m_modules;

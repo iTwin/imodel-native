@@ -21,7 +21,7 @@ ColourGradientManager::ColourGradientManager()
 /*****************************************************************************/
 int ColourGradientManager::numColourGradients() const 
 { 
-	return m_gradients.size();
+    return static_cast<int>(m_gradients.size());
 }
 
 /*****************************************************************************/

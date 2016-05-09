@@ -168,7 +168,7 @@ pcloud::Scene *PointsScene::operator [] (int i)
 //-----------------------------------------------------------------------------
 int PointsScene::size() 
 { 
-	return _scenes.size(); 
+	return static_cast<int>(_scenes.size());
 }
 //-----------------------------------------------------------------------------
 PointsScene::VoxIterator PointsScene::voxbegin()
@@ -236,7 +236,7 @@ void PointsScene::addScene(pcloud::Scene *sc)
 
 	for (i=0; i<_scenes.size(); i++) if (_scenes[i] == sc) return;
 
-	int vcount = _voxels.size();
+	int vcount = static_cast<int>(_voxels.size());
 		
 	for (i=0; i<sc->size(); i++)
 	{
@@ -563,7 +563,7 @@ void PointsScene::visitPointClouds( PointsVisitor *visitor )
 //-----------------------------------------------------------------------------
 void PointsScene::visitNodes( PointsVisitor *visitor, bool visible_only ) 
 {
-	int numScenes = _scenes.size();
+	int numScenes = static_cast<int>(_scenes.size());
 	for (int sc=0; sc<numScenes; sc++)
 	{
 		pcloud::Scene* scene = _scenes[sc];

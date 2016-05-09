@@ -87,8 +87,8 @@ void DataTable::clear()
 	
 int DataTable::size()
 {
-	return 	integers.size() + floats.size() +  bools.size() +  strings.size() +  vectors.size() + 
-			pintegers.size() + 	pfloats.size() + pbools.size() + pstrings.size() + pvectors.size();
+	return 	static_cast<int>(integers.size() + floats.size() +  bools.size() +  strings.size() +  vectors.size() +
+			                 pintegers.size() + 	pfloats.size() + pbools.size() + pstrings.size() + pvectors.size());
 }
 TYPE DataTable::type(const DTID &id)
 {
@@ -213,13 +213,13 @@ int DataTable::serializeWrite(void *d) const
 	ptr[pos++] = s;
 
 	/*integers*/ 
-	s = integers.size();
+    s = static_cast<uint>(integers.size());
 	ptr[pos++] = s;
 
 	for (INTMAP::const_iterator i = integers.begin(); i!= integers.end(); i++)
 	{
 		/*id*/
-		s = i->first.size();
+		s = static_cast<uint>(i->first.size());
 		ptr[pos++] = s;
 
 		memcpy(&ptr[pos], i->first.c_str() ,s);		
@@ -230,13 +230,13 @@ int DataTable::serializeWrite(void *d) const
 	}
 
 	/*floats*/
-	s = floats.size();
+	s = static_cast<uint>(floats.size());
 	ptr[pos++] = s;
 
 	for (FLOATMAP::const_iterator f = floats.begin(); f!= floats.end(); f++)
 	{
 		/*id*/
-		s = f->first.size();
+		s = static_cast<uint>(f->first.size());
 		ptr[pos++] = s;
 
 		memcpy(&ptr[pos], f->first.c_str() ,s);		
@@ -246,13 +246,13 @@ int DataTable::serializeWrite(void *d) const
 		pos += sizeof(float);
 	}
 	/*bools*/
-	s = bools.size();
+	s = static_cast<uint>(bools.size());
 	ptr[pos++] = s;
 
 	for (BOOLMAP::const_iterator b = bools.begin(); b!= bools.end(); b++)
 	{
 		/*id*/
-		s = b->first.size();
+		s = static_cast<uint>(b->first.size());
 		ptr[pos++] = s;
 
 		memcpy(&ptr[pos], b->first.c_str() ,s);		
@@ -338,19 +338,19 @@ int DataTable::serializeSize() const
 	for (INTMAP::const_iterator i = integers.begin(); i!= integers.end(); i++)
 	{
 		/*id*/ 
-		sz += i->first.size()+1;		
+        sz += static_cast<int>(i->first.size() + 1);
 		sz += sizeof(int);
 	}
 	/*floats*/ 
 	for (FLOATMAP::const_iterator f = floats.begin(); f!= floats.end(); f++)
 	{
-		sz += f->first.size()+1;		
+		sz += static_cast<int>(f->first.size()+1);
 		sz += sizeof(float);
 	}
 	/*bools*/ 
 	for (BOOLMAP::const_iterator b = bools.begin(); b!= bools.end(); b++)
 	{
-		sz += b->first.size()+1;		
+		sz += static_cast<int>(b->first.size()+1);
 		sz += sizeof(bool);
 	}
 	return sz;

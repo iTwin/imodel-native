@@ -319,7 +319,7 @@ const Branch * Branch::getIndexedBranch( int i ) const
 //-----------------------------------------------------------------------------
 Branch* Branch::addIndexedBranch() /* adds a branch with a numerical identifier, easy for arrays */
 {
-	int num = _branches.size() + 1;
+    int num = static_cast<int>(_branches.size() + 1);
 	char buff[NODE_ID_SIZE];
 	NodeID numID(_itoa(num, buff, 10) );
 	return addBranch( numID );

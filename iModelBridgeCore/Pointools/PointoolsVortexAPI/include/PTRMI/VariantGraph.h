@@ -477,7 +477,7 @@ public:
 	{
 		stream >> value;
 
-		unsigned int	length	= value.size();
+		unsigned int	length	= static_cast<uint>(value.size());
 		unsigned int	start	= 0;
 		unsigned int	end		= length - 1;
 															// Strip off start and end quotes if present
@@ -1066,7 +1066,7 @@ inline Variant<VT> * PTRMI::VariantGraph<K, VT>::createAndReadVariant(std::wifst
 template<typename K, typename VT>
 inline unsigned int PTRMI::VariantGraph<K, VT>::getNumItems(void) const
 {
-	return variants.size();
+	return static_cast<uint>(variants.size());
 }
 									
 

@@ -529,7 +529,7 @@ auto scrambler = [](std::string toScramble) -> std::string
         {
         value += 100 + i*7;
         }
-    out[toScramble.size()] = 100 + toScramble.size() * 7;
+    out[toScramble.size()] = static_cast<char>(100 + toScramble.size() * 7);
     return out;
     };
 
@@ -905,7 +905,7 @@ PThandle PTAPI ptBrowseAndOpenPOD()
 		return PT_NULL;
 	}
 	
-	int len = wcslen(filename);
+	size_t len = wcslen(filename);
 	if ( wcsicmp(&filename[len-3], L"ptl") == 0 )
 	{
 		return ptOpenPTL(filename);
@@ -919,7 +919,7 @@ PThandle PTAPI ptBrowseAndOpenPOD()
         wchar_t fname[260];
 
         wcscpy(fpath, strptr);
-		int pathlen = wcslen(fpath);
+		size_t pathlen = wcslen(fpath);
 
 		strptr += pathlen + 1;
 		int numscenes = 0;

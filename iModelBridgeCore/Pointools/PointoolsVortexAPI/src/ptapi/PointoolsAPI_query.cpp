@@ -932,7 +932,7 @@ namespace querydetail
 
 		unsigned int getNumDeferredVoxels(void)
 		{
-			return deferredVoxels.size();
+			return static_cast<uint>(deferredVoxels.size());
 		}
 
 		bool processDeferredVoxels(void)
@@ -1729,7 +1729,7 @@ namespace querydetail
 			if (!lastVoxel)					//first iteration
 			{
 				ptdg::Time::stamp( stats );
-				stats.m_bufferSize = buffersize;
+				stats.m_bufferSize = static_cast<int>(buffersize);
 				setUpStats();
 			}
 
@@ -1738,7 +1738,7 @@ namespace querydetail
 
 			
 			ReadPoints<Condition, float>
-					reader( &C, buffersize, geomBuffer, rgbBuffer, 0 /* intensity */, false, lastVoxel, lastPnt,
+					reader( &C, static_cast<int>(buffersize), geomBuffer, rgbBuffer, 0 /* intensity */, false, lastVoxel, lastPnt,
 					density, densityCoeff, ugrid, rgbMode,0, 0 /*classification*/, 0, 0, 0, 0, 0, layerMask );
 
 			reader.cs = cs;
@@ -2049,7 +2049,7 @@ public:
 
 	inline unsigned long getSize(void)		
 	{
-		return priorityQueue.size();
+		return static_cast<unsigned long>(priorityQueue.size());
 	}
 
 	inline void clear(void)

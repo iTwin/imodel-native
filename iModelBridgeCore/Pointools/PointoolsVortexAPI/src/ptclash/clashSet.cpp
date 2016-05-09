@@ -70,7 +70,7 @@ int  ClashSet::getObjects( std::vector<pt::PersistentObjectRef> &objs ) const
 	{
 		objs.push_back( m_objects[i]->objRef() );
 	}
-	return m_objects.size();
+	return static_cast<int>(m_objects.size());
 }
 //-----------------------------------------------------------------------------
 void ClashSet::clear()

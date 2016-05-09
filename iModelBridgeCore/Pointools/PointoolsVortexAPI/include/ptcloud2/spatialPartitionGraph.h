@@ -507,7 +507,7 @@ public:
 		} while(source->empty() == false && numNodesRefined > 0);
 
 															// Return num results
-		return result.size();
+		return static_cast<uint>(result.size());
 	}
 
 };
@@ -624,7 +624,7 @@ public:
 
 	NodeIndex getMaxNodes(void)
 	{
-		return nodes.size();
+        return static_cast<NodeIndex>(nodes.size());
 	}
 
 	void							setMaxChildren	(ChildIndex maxChildren) {}
@@ -703,7 +703,7 @@ public:
 
 			ChildIndex getMaxChildren(void)
 			{
-				return children.size();
+				return static_cast<ChildIndex>(children.size());
 			}
 
 
@@ -1171,7 +1171,7 @@ public:
 				}
 			}
 
-			return result.size();
+			return static_cast<uint>(result.size());
 		}
 
 		NodeType getType(void)

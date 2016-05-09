@@ -188,7 +188,7 @@ void StreamScheduler::incrementNumVoxelsActive(void)
 
 unsigned int StreamScheduler::getNumStreamHostsActive(void)
 {
-	return streamHostsActive.size();
+	return static_cast<uint>(streamHostsActive.size());
 }
 
 

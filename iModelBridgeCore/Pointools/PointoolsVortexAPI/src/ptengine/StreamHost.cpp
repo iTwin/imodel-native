@@ -125,7 +125,7 @@ ptds::DataSize StreamHost::getStreamBudget(StreamManagerParameters &params, ptds
 
 StreamHost::NumVoxels StreamHost::getNumVoxelsActive(void)
 {
-	return voxelsActive.size();
+	return static_cast<int>(voxelsActive.size());
 }
 
 
@@ -316,7 +316,7 @@ StreamDataSource *StreamHost::getActiveStreamDataSource(ptds::DataSourcePtr data
 
 unsigned int StreamHost::getNumActiveStreamDataSources(void)
 {
-	return streamDataSourcesActive.size();
+	return static_cast<int>(streamDataSourcesActive.size());
 }
 
 
