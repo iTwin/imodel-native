@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnGeoCoord.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -416,7 +416,6 @@ DgnDbR            dgnProject
 //);
 /*__PUBLISH_SECTION_START__*/
 
-/*__PUBLISH_SECTION_END__*/
 private:
 
 public:
@@ -466,7 +465,6 @@ short const*   type66AppData,
 DgnDbR               cache
 );
 
-/*__PUBLISH_SECTION_START__*/
 };
 
 /*__PUBLISH_SECTION_END__*/
