@@ -2080,7 +2080,7 @@ TEST_F(ECSchemaUpdateTests, ModifyProperties)
         "       <ECStructArrayProperty propertyName='StructArrayProp' typeName='ChangeInfoStruct' minOccurs='0' maxOccurs='5' readOnly='false' />"
         "       <ECProperty propertyName='ExtendedProperty' typeName='string' extendedTypeName='email' />"
         "   </ECEntityClass>"
-        "</ECSchema>", false, "Modifying ReadOnly flag is not supported");
+        "</ECSchema>", true, "Modifying ReadOnly flag is supported");
     asserted = false;
     AssertSchemaImport(asserted, GetECDb(), modifiedReadonlyFlag);
     ASSERT_FALSE(asserted);
@@ -2116,16 +2116,21 @@ TEST_F(ECSchemaUpdateTests, ModifyPropToReadOnly)
     //Insert should be successfull
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "INSERT INTO ts.TestClass(ReadWriteProp, P1, P2) VALUES('RW1', 'P1_Val1', 'P2_Val1')"));
     ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
-
+     
     statement.Finalize();
-    //Update Prepare should fail for ReadOnlyProp
+    //Update Prepare should fail for ReadOnlyProp 
+
+
+
+
+
     EXPECT_EQ(ECSqlStatus::Error, statement.Prepare(GetECDb(), "UPDATE ts.TestClass Set ReadWriteProp='RW1new', P1='P1_Val1new'"));
 
     statement.Finalize();
     //skipping readonly Property Update should be successful.
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "UPDATE ts.TestClass Set ReadWriteProp='RW1new', P2='P2_Val1new' WHERE P2='P2_Val1'"));
     ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
-
+     
     //Update schema 
     SchemaItem schemaItem2(
         "<?xml version='1.0' encoding='utf-8'?>"
