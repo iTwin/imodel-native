@@ -30,7 +30,7 @@ namespace pcloud
 			PodBlockManager::write() is called. Implementers can write any data they like in here,
 			writing of the PodBlock type, version and size is handled by the PodBlockManager.
 			 */
-			virtual bool writePodBlockData(ptds::WriteBlock& wb) = NULL;
+			virtual bool writePodBlockData(ptds::WriteBlock& wb) = 0;
 		};
 
 		class WriteDataSizeCallback
@@ -40,7 +40,7 @@ namespace pcloud
 			PodBlockManager::write() is called. Implementers must write a single unsigned int
 			representing the size of the data written in WriteDataCallback::writePodBlockData().
 			 */
-			virtual bool writePodBlockDataSize(ptds::WriteBlock& wb) = NULL;
+			virtual bool writePodBlockDataSize(ptds::WriteBlock& wb) = 0;
 		};
 
 		/** Constructor for a PodBlock where the data and data length are already known

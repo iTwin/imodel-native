@@ -8,11 +8,6 @@
 #include <pt/datatree.h>
 #include <pt/boundingbox.h>
 
-#ifdef HAVE_OPENGL
-#include <ptgl/glviewstore.h>
-#include <ptgl/glcamera.h>
-#endif
-
 #include <ptcloud2/voxel.h>
 
 #include <ptengine/pointsscene.h>

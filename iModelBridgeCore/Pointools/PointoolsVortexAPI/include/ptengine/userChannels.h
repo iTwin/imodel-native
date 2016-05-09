@@ -283,6 +283,7 @@ public:
 		return ( i == m_data.end() ? 0 : &i->second->data[ v->indexInCloud() ]);
 	}
 
+#ifdef NEEDS_WORK_VORTEX_DGNDB
 	template <class T>
 	inline bool getValue( VoxelID id, int point, T &v ) const
 	{
@@ -295,6 +296,7 @@ public:
 		VoxelChannelData *ch = cloudChannel( id );
 		return ch ? ch->setVal( point, v ) : false;
 	}
+#endif
 	/* this is used when data is not modified, just read */ 
 	void lock( VoxelChannelData* );
 

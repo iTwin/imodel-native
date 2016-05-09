@@ -92,6 +92,7 @@ RGBMAP g_rgbmap;
 		box.setBox(r,-r, r,-r, r,-r);
 		box.centerAt(cen);
 	}
+#ifdef NEEDS_WORK_VORTEX_DGNDB
 	void BrushPaintRGB::setCenter(const pt::vector3 &cen) 
 	{ 
 		center.set(cen); 
@@ -100,6 +101,7 @@ RGBMAP g_rgbmap;
 		box.setBox(r,-r, r,-r, r,-r);
 		box.centerAt(pt::vector3d(cen.x, cen.y, cen.z));
 	}
+#endif
 
 	void PaintBrush::radius(double r) 
 	{ 

@@ -47,6 +47,7 @@ public:
 	{
 		return intersectsEdge(PointType(p0x,p0y), PointType(p1x,p1y));
 	}
+#ifdef NEEDS_WORK_VORTEX_DGNDB 
 	bool isConvex() const
 	{
 		int j=0; bool p = false; bool n = false;
@@ -70,6 +71,7 @@ public:
 		}
 		return true;
 	}
+#endif
 	static bool isLeft(const PointType &p0, const PointType &p1, const PointType &p2 )
 	{
 		return ((p1.x - p0.x)*(p2.y - p0.y) - (p2.x - p0.x)*(p1.y - p0.y) > 0) ?

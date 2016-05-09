@@ -7,7 +7,6 @@
 #include <ptengine/engine.h>
 #include <ptengine/clipManager.h>
 #include <ptcloud2/voxel.h>
-#include <ptgl/glviewstore.h>
 
 #include <ptedit/edit.h>
 #include <ptedit/editState.h>
@@ -73,9 +72,9 @@ public:
 	{	
 		_didSelect = 0;
 
-		_basePoint = pt::vector3d(Project3D::project().registration().matrix()(3,0), 
-				Project3D::project().registration().matrix()(3,1), 
-				Project3D::project().registration().matrix()(3,2));
+		_basePoint = pt::vector3d(pt::Project3D::project().registration().matrix()(3,0), 
+				pt::Project3D::project().registration().matrix()(3,1), 
+				pt::Project3D::project().registration().matrix()(3,2));
 
 			pcloud::Voxel::CoordinateSpaceTransform cst(
 				const_cast<pcloud::PointCloud*>(voxel->pointCloud()));

@@ -15,8 +15,6 @@
 
 #include <ptengine/pointsscene.h>
 #include <ptgl/glfrustum.h>
-#include <ptgl/glviewstore.h>
-
 #include <ptengine/module.h>
 
 namespace pointsengine

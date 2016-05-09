@@ -82,11 +82,11 @@ private:
 	//Compute Signature
 	void Signature(char* pcSig);
 	//Key
-	auto_ptr<char> m_apKey;
+    std::unique_ptr<char> m_apKey;
 	unsigned int m_auiKey[KEY_LENGTH/4]; //128 bits key (16 bytes)
 	//Chain Block
-	auto_ptr<char> m_apchain0;
-	auto_ptr<char> m_apchain;
+	std::unique_ptr<char> m_apchain0;
+    std::unique_ptr<char> m_apchain;
 
 public:
 	//Null chain

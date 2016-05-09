@@ -35,6 +35,8 @@ protected:
 	int stateIndex;
 	int writtenStateIndex;
 };
+
+#ifdef  NEEDS_WORK_VORTEX_DGNDB
 //
 // Colour Constraint
 //
@@ -156,4 +158,5 @@ private:
 	int tolerance;
 	short intensity;
 };
+#endif
 };

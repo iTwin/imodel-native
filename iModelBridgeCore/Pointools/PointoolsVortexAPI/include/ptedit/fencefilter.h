@@ -1,7 +1,6 @@
 #pragma once
 #include <ptedit/editSelect.h>
 
-#include <ptgl/glviewstore.h>
 #include <pt/fence.h>
 #include <pt/plane.h>
 #include <pt/datatree.h>
