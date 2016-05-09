@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/BuildInstanceAndSerializeToXML.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -10,6 +10,7 @@
 
 #include <ECObjects/ECInstance.h>
 #include <ECObjects/StandaloneECInstance.h>
+#include <ECObjects/SchemaLocalizedStrings.h>
 #include <ECObjects/ECValue.h>
 #define N_FINAL_STRING_PROPS_IN_FAKE_CLASS 48
 

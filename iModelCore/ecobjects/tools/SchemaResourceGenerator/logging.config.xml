@@ -3,36 +3,6 @@
 
 <log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/">
 
-    <!--
-   Write diagnostic messages to a log file that will "roll" when it reaches a size of 10mb. 
-   Keep around the last 5 of these files to assist in diagnostics if needed.
-    -->
-
-    <appender name="RollingFileAppender" class="org.apache.log4j.RollingFileAppender">
-        <param name="File" value="${LOCALAPPDATA}\\Bentley\\Logs\\SchemaResourceGenerator.log"/> <!-- Required -->
-        <param name="MaxFileSize" value="10000000" /> <!-- Required -->
-        <param name="MaxBackupIndex" value="5"/> <!-- Required -->
-        <param name="createpath" value="true"/> <!-- Optional -->
-        <layout class="org.apache.log4j.PatternLayout">
-            <param name="ConversionPattern" value="%-5p %-40.40c - %m%n"/>
-        </layout>
-        <param name="Append" value="false"/><!-- this should make it create a new file each time -->
-    </appender>
-
-    <!-- Calls OutputDebugStringW, sending output to debugger's Output window -->
-    <appender name="OutputDebugStringAppender" class="org.apache.log4j.OutputDebugStringAppender">
-        <layout class="org.apache.log4j.PatternLayout">
-            <!--param name="ConversionPattern" value="%d{ISO8601} %-5p [%t] %-40.40c - %m%n"/-->
-            <param name="ConversionPattern" value="%-5p %-40.40c - %m%n"/>
-        </layout>
-    </appender>
-
-    <appender name="SocketAppender" class="org.apache.log4j.net.XMLSocketAppender">
-       <param name="RemoteHost" value="localhost"/>
-       <param name="Port" value="4560"/>
-       <param name="ReconnectionDelay" value="1000"/>
-    </appender>
-
     <appender name="Console" class="org.apache.log4j.ConsoleAppender">
         <layout class="org.apache.log4j.PatternLayout">
             <param name="ConversionPattern" value="%-5p %c - %m%n"/>
@@ -47,38 +17,14 @@
     If you do not choose to establish a category for a logger, log output
     configuration is handled by the 'root' configuration file element.
 
-    For example, adding a 'category' tag named pwise.system containing 
-    a 'priority' tag with a value of 'info' means that all logging messages
-    logged with the category pwise.system (with a severity of 'info' or 
-    greater) will be logged.
-    
     Possible priorities: all, debug, info, warn, error, fatal, off
 
     <category name="catname">                     <priority value="all"/></category>
--->
-
-    <!-- 
-     The root category will be used to specify the options for any category or option not
-     explicitly specifed in a category node.
--->
-    <category name="ECObjectsNative">   <priority value="debug"/></category>
+    -->
+    <category name="ECObjectsNative">   <priority value="warn"/></category>
 
     <root>                            
         <priority value="info" />
         <appender-ref ref="Console"/>
-        <!--appender-ref ref="OutputDebugStringAppender" /-->
-        <!-- appender-ref ref="RollingFileAppender" /-->
-        <!-- Keep this commented out by default since we do not want to write to localappdata on firebug & PRG machines-->
     </root>
-
-    <!-- 
-    <category name="DgnV8Converter">
-        <priority value="info"/>
-    </category>
-
-    <category name="DgnDbSync">
-        <priority value="info"/>
-    </category>
-    -->
-
 </log4j:configuration>

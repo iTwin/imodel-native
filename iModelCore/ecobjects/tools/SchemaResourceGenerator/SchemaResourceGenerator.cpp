@@ -15,7 +15,7 @@
 
 USING_NAMESPACE_BENTLEY_EC
 
-BentleyApi::NativeLogging::ILogger* s_logger = BentleyApi::NativeLogging::LoggingManager::GetLogger("SchemaConverter");
+BentleyApi::NativeLogging::ILogger* s_logger = BentleyApi::NativeLogging::LoggingManager::GetLogger("SchemaResourceGenerator");
 
 #pragma region Commandline Parameters
 struct Options
@@ -23,6 +23,7 @@ struct Options
     bvector<BeFileName> InputFiles;
     Utf8String CultureName;
     BeFileName OutDirectory;
+    bool HasOutDirectorySet = false;
     bvector<BeFileName> ReferencePaths;
     Utf8String OutputFileName;
     int Precendence = 9900;
@@ -36,7 +37,6 @@ static void ShowUsage()
     {
     const char *usage =
 #include "usage.txt"
-#include "SchemaResourceGenerator.h"
         ;
 
     printf(usage);
@@ -139,6 +139,7 @@ static bool TryParseInput(int argc, char** argv, Options& options)
                 case InputParserState::OutDirectory:
                     options.OutDirectory = BeFileName(arg, true);
                     s_logger->infov("Output Directory: %s", arg);
+                    options.HasOutDirectorySet = true;
                     currentState = InputParserState::ExpectingSwitch;
                     continue;
 
@@ -248,6 +249,9 @@ static bool PathPointsToXliff(BeFileName const& file)
 #pragma region Xliff Output
 static void WriteResource(BeXmlWriter& writer, Utf8CP key, Utf8CP value)
     {
+    if (Utf8String::IsNullOrEmpty(key) || Utf8String::IsNullOrEmpty(value))
+        return;
+
     writer.WriteElementStart("trans-unit");
     writer.WriteAttribute("id", key);
     writer.WriteAttribute("resname", key);
@@ -262,7 +266,26 @@ static void WriteResource(BeXmlWriter& writer, Utf8CP key, Utf8CP value)
 
 static bool WriteXliff(Options const& options)
     {
-    BeFileName outFile(L"C:\\test\\schemaOut.xliff");
+    BeFileName firstInputFile = options.InputFiles[0];
+    BeFileName outFile = options.HasOutDirectorySet ? options.OutDirectory : firstInputFile.GetDirectoryName();
+    Utf8String culture = options.CultureName;
+    if (culture.empty())
+        culture = "en";
+
+    Utf8String outputFileName;
+    if (!options.OutputFileName.empty())
+        outputFileName = options.OutputFileName;
+    else
+        {
+        Utf8String s(firstInputFile.GetFileNameAndExtension());
+        outputFileName = s.substr(0, s.size() - 13);
+        }
+
+    outputFileName.append(".");
+    outputFileName.append(culture);
+    outputFileName.append(".xliff");
+
+    outFile.AppendUtf8(outputFileName.c_str());
     s_logger->infov("Writing output file %s", outFile.GetNameUtf8().c_str());
     BeXmlWriterPtr xmlWriter = BeXmlWriter::CreateFileWriter(outFile.GetName());
 
@@ -300,15 +323,70 @@ static bool WriteXliff(Options const& options)
         xmlWriter->WriteAttribute("source-language", "en");
         xmlWriter->WriteElementStart("body");
 
+        xmlWriter->WriteElementStart("group");
+        xmlWriter->WriteAttribute("resname", "Schema");
+        auto key = SchemaResourceKeyHelper::GetSchemaDisplayLabelKey(*schema);
+        WriteResource(*xmlWriter, key.c_str(), schema->GetInvariantDisplayLabel().c_str());
+
+        key = SchemaResourceKeyHelper::GetSchemaDescriptionKey(*schema);
+        WriteResource(*xmlWriter, key.c_str(), schema->GetInvariantDescription().c_str());
+        xmlWriter->WriteElementEnd();//group
+
         if (schema->GetClassCount() > 0)
             {
             xmlWriter->WriteElementStart("group");
             xmlWriter->WriteAttribute("resname", "Classes");
-            for (auto const c : schema->GetClasses())
+
+            for (ECClassCP c : schema->GetClasses())
                 {
-                Utf8PrintfString key("%s_DisplayLabel", c->GetName().c_str());
+                key = SchemaResourceKeyHelper::GetTypeDisplayLabelKey(*c);
                 WriteResource(*xmlWriter, key.c_str(), c->GetInvariantDisplayLabel().c_str());
+
+                key = SchemaResourceKeyHelper::GetTypeDescriptionKey(*c);
+                WriteResource(*xmlWriter, key.c_str(), c->GetInvariantDescription().c_str());
+
+                for (ECPropertyCP p : c->GetProperties())
+                    {
+                    key = SchemaResourceKeyHelper::GetTypeChildDisplayLabelKey(*p);
+                    WriteResource(*xmlWriter, key.c_str(), p->GetInvariantDisplayLabel().c_str());
+
+                    key = SchemaResourceKeyHelper::GetTypeChildDescriptionKey(*p);
+                    WriteResource(*xmlWriter, key.c_str(), p->GetInvariantDescription().c_str());
+                    }
+
+                if (c->IsRelationshipClass())
+                    {
+                    auto relC = c->GetRelationshipClassCP();
+                    Utf8CP invariant = relC->GetSource().GetInvariantRoleLabel().c_str();
+                    key = SchemaResourceKeyHelper::GetRelationshipSourceRoleLabelKey(*relC, invariant);
+                    WriteResource(*xmlWriter, key.c_str(), invariant);
+
+                    invariant = relC->GetTarget().GetInvariantRoleLabel().c_str();
+                    key = SchemaResourceKeyHelper::GetRelationshipTargetRoleLabelKey(*relC, invariant);
+                    WriteResource(*xmlWriter, key.c_str(), invariant);
+                    }
                 }
+            }
+
+            if (schema->GetEnumerationCount() > 0)
+                {
+                xmlWriter->WriteElementStart("group");
+                xmlWriter->WriteAttribute("resname", "Enumerations");
+
+                for (ECEnumerationCP e : schema->GetEnumerations())
+                    {
+                    key = SchemaResourceKeyHelper::GetTypeDisplayLabelKey(*e);
+                    WriteResource(*xmlWriter, key.c_str(), e->GetInvariantDisplayLabel().c_str());
+
+                    key = SchemaResourceKeyHelper::GetTypeDescriptionKey(*e);
+                    WriteResource(*xmlWriter, key.c_str(), e->GetInvariantDescription().c_str());
+
+                    for (ECEnumeratorCP ep : e->GetEnumerators())
+                        {
+                        key = SchemaResourceKeyHelper::GetTypeChildDisplayLabelKey(*ep);
+                        WriteResource(*xmlWriter, key.c_str(), ep->GetInvariantDisplayLabel().c_str());
+                        }
+                    }
             
             xmlWriter->WriteElementEnd();//group
             }
@@ -349,7 +427,7 @@ int main(int argc, char** argv)
     BeFileName exePath(exePathW);
     BeFileName exeDirectory(exePath.GetDirectoryName());
     BeFileName logFilePath(exeDirectory);
-    logFilePath.AppendToPath(L"SchemaConverter.logging.config.xml");
+    logFilePath.AppendToPath(L"SchemaResourceGenerator.logging.config.xml");
     logFilePath.BeGetFullPathName();
     BentleyApi::NativeLogging::LoggingConfig::SetOption(CONFIG_OPTION_CONFIG_FILE, logFilePath);
     BentleyApi::NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::LOG4CXX_LOGGING_PROVIDER);

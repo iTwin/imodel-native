@@ -492,7 +492,8 @@ static Utf8CP s_standardSchemaNames[] =
     "Unit_Attributes",
     "Units_Schema",
     "USCustomaryUnitSystemDefaults",
-    "ECDbMap"
+    "ECDbMap",
+    "MetaSchema"
     };
 
 /*---------------------------------------------------------------------------------**//**

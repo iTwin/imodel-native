@@ -23,7 +23,7 @@ struct CustomAttributeRemovalTest : ECTestFixture
 
     CustomAttributeRemovalTest(Utf8String customAttributeName)
         :m_customAttributeName(customAttributeName) {}
-    
+
     ~CustomAttributeRemovalTest()
         {
         if (m_refSchema.IsValid())
@@ -384,7 +384,7 @@ TEST_F(StandardValueToEnumConversionTest, StrictTestInheritence_ParentPropertyWi
 
     ECEnumerationCP ecEnum;
     Utf8String enumName = "BaseName_Title1";
-    ASSERT_NE(nullptr, ecEnum = m_schema->GetEnumerationCP(enumName.c_str())) << "Enumeration " << enumName <<" should have been created";
+    ASSERT_NE(nullptr, ecEnum = m_schema->GetEnumerationCP(enumName.c_str())) << "Enumeration " << enumName << " should have been created";
     EXPECT_EQ(1, ecEnum->GetEnumeratorCount());
     EXPECT_EQ(false, ecEnum->GetIsStrict()) << "Title1 is derived from base class property which has no StandardValues CA so GetIsStrict() should return false";
 
@@ -822,7 +822,7 @@ TEST_F(StandardValueToEnumConversionTest, Strict_Duplicate_Inherited_Combo_Expec
     ASSERT_NE(nullptr, ecEnum = m_schema->GetEnumerationCP(enumName.c_str())) << "Enumeration " << enumName << " should have been created";
     EXPECT_EQ(1, ecEnum->GetEnumeratorCount());
     EXPECT_EQ(false, ecEnum->GetIsStrict()) << "Title1 is derived from base class property which has no StandardValues CA so GetIsStrict() should return false";
-    
+
     }
 
 
@@ -1126,7 +1126,7 @@ TEST_F(StandardValueToEnumConversionTest, InheritedSDValues_ConversionWithWarnin
         "</ECSchema>";
 
     ReadSchemaWithRef(schemaXMLRef, schemaXML);
-   
+
     EXPECT_TRUE(ECSchemaConverter::Convert(*m_schema.get())) << "Schema conversion should have passed with warnings";
     CheckTypeName("int", *m_schema, "TitleA", { "A", "B", "C" });
     CheckTypeName("int", *m_refSchema, "TitleA", { "D" });
@@ -1312,7 +1312,7 @@ TEST_F(StandardValueToEnumConversionTest, IsBaseClassTest)
 
     ECSchemaPtr schema2;
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema2, schemaXML2, *m_readContext));
-    EXPECT_FALSE(ECSchemaConverter::IsBaseClass(schema->GetClassP("Aa"), schema2->GetClassP("D")))<< "Class D of Trap2 Schema is not  base class of Aa";
+    EXPECT_FALSE(ECSchemaConverter::IsBaseClass(schema->GetClassP("Aa"), schema2->GetClassP("D"))) << "Class D of Trap2 Schema is not  base class of Aa";
     EXPECT_TRUE(ECSchemaConverter::IsBaseClass(schema->GetClassP("Aa"), schema->GetClassP("D"))) << "Class D of Trap Schema should be a base class of Aa";
     EXPECT_TRUE(ECSchemaConverter::IsBaseClass(schema->GetClassP("Aa"), schema->GetClassP("B"))) << "Class B of Trap Schema should be base class of Aa";
     }
@@ -1404,6 +1404,82 @@ TEST_F(StandardValueToEnumConversionTest, EnumName_NamingConvention)
     //increment number until enumName is not in schema
     CheckTypeName("Class_PropertyB_2", *m_schema, "PropertyB", { "Class" });
 
+    }
+
+Utf8String GetDateTimeInfoValueAsString(IECInstancePtr instancePtr, Utf8String name)
+    {
+    ECPropertyP propertyP = instancePtr->GetClass().GetPropertyP(name);
+    
+    ECValue value;
+    instancePtr->GetValue(value, propertyP->GetName().c_str());
+    EXPECT_EQ(true, value.IsInteger()) << "Property: " << propertyP->GetName() << " is supposed to be an integer";
+
+    Utf8String propertyValue;
+    value.ConvertPrimitiveToString(propertyValue);
+    
+    return propertyValue;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Andreas.Kurka                 04 / 2016
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(StandardValueToEnumConversionTest, CAConversionTest)
+    {
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr schema;
+    SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, ECTestFixture::GetTestDataPath(L"CAConversionTestSchema.01.00.ecschema.xml").c_str(), *schemaContext);
+    ASSERT_EQ(SchemaReadStatus::Success, status);
+
+    bool result = ECSchemaConverter::Convert(*schema);
+    ASSERT_EQ(true, result);
+
+    // Test that the CoreCustomAttributesSchema is referenced
+    bool found = false;
+    for (auto it : schema->GetReferencedSchemas())
+        {
+        Utf8String name = it.second->GetName();
+        if (BeStringUtilities::Stricmp("CoreCustomAttributes", name.c_str()) == 0)
+            {
+            found = true;
+            }
+        }
+    EXPECT_TRUE(found) << "Converted schema is missing schema reference to CoreCustomAttributes";
+
+    ECClassP classAP = schema->GetClassP("TestClassA");
+    EXPECT_TRUE(classAP != nullptr) << "Could not find TestClassA in schema";
+    ECClassP classBP = schema->GetClassP("TestClassB");
+    EXPECT_TRUE(classBP != nullptr) << "Could not find TestClassB in schema";
+    ECClassP classCP = schema->GetClassP("TestClassC");
+    EXPECT_TRUE(classCP != nullptr) << "Could not find TestClassC in schema";
+
+    ECPropertyP lastModPropP = classAP->GetPropertyP("LastMod");
+    EXPECT_TRUE(lastModPropP != nullptr) << "TestClassA is supposed to have property LastMod";
+
+    ECPropertyP nextModPropP = classBP->GetPropertyP("NextMod");
+    EXPECT_TRUE(nextModPropP != nullptr) << "TestClassB is supposed to have property LastMod";
+
+    IECInstancePtr dateTimeInfoAPtr = lastModPropP->GetCustomAttribute("DateTimeInfo");
+    EXPECT_TRUE(dateTimeInfoAPtr != nullptr) << "Could not find DateTimeInfo on LastMod property of TestClassA";
+
+    IECInstancePtr dateTimeInfoBPtr = nextModPropP->GetCustomAttribute("DateTimeInfo");
+    EXPECT_TRUE(dateTimeInfoBPtr != nullptr) << "Could not find DateTimeInfo on NextMod property of TestClassB";
+
+    Utf8String lastModDateTimeKind = GetDateTimeInfoValueAsString(dateTimeInfoAPtr, "DateTimeKind");
+    EXPECT_EQ("2", lastModDateTimeKind) << "DateTimeKind of TestClassA has wrong value";
+    Utf8String  lastModDateTimeComponent= GetDateTimeInfoValueAsString(dateTimeInfoAPtr, "DateTimeComponent");
+    EXPECT_EQ("0", lastModDateTimeComponent) << "DateTimeComponent of TextClassA has wrong value";
+
+    Utf8String nextModDateTimeKind = GetDateTimeInfoValueAsString(dateTimeInfoBPtr, "DateTimeKind" );
+    EXPECT_EQ("0", nextModDateTimeKind) << "DateTimeKind of TestClassB has wrong value";
+    Utf8String  nextModDateTimeComponent = GetDateTimeInfoValueAsString(dateTimeInfoBPtr, "DateTimeComponent");
+    EXPECT_EQ("1", nextModDateTimeComponent) << "DateTimeComponent of TextClassB has wrong value";
+
+    IECInstancePtr timeStampInstancePtr = classCP->GetCustomAttribute("ClassHasCurrentTimeStampProperty");
+    EXPECT_TRUE(timeStampInstancePtr != nullptr) << "Could not get ClassHasCurrentTimeStampProperty CA from TestClassC";
+
+    // For debugging enable that so see the created schema file
+    //SchemaWriteStatus status2 = schema->WriteToXmlFile(ECTestFixture::GetTempDataPath(L"CAConversionTestSchema.01.00.ecschema-out.xml").c_str());
+    //EXPECT_EQ(SchemaWriteStatus::Success, status2);
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE

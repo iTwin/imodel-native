@@ -18,12 +18,12 @@ static Utf8CP const KEY                = "Key";
 static Utf8CP const VALUE              = "Value";
 static Utf8CP const IS_GUID            = "IsGUID";
 
-static Utf8CP const STANDARD           = "Standard";
-static Utf8CP const DISPLAYLABEL       = "DisplayLabel";
-static Utf8CP const DESCRIPTION        = "Description";
+//static Utf8CP const STANDARD           = "Standard";
+//static Utf8CP const DISPLAYLABEL       = "DisplayLabel";
+//static Utf8CP const DESCRIPTION        = "Description";
 static Utf8CP const SOURCE             = "Source";
-static Utf8CP const SOURCEROLELABEL    = "SourceRoleLabel";
-static Utf8CP const TARGETROLELABEL    = "TargetRoleLabel";
+//static Utf8CP const SOURCEROLELABEL    = "SourceRoleLabel";
+//static Utf8CP const TARGETROLELABEL    = "TargetRoleLabel";
 static Utf8CP const COLON              = ":";
 static Utf8CP const DOT                = ".";
 static Utf8CP const GUID               = "GUID:";
@@ -43,33 +43,12 @@ Utf8StringCR SchemaLocalizedStrings::GetLocalizedString(Utf8CP labelKey, Utf8Str
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Colin.Kerr                      04/2015
 //--------------------------------------------------------------------------------------
-Utf8String SchemaLocalizedStrings::ComputeHash(Utf8StringCR invariantString) const
-    {
-    return "";
-    //Utf8String convertedString = Utf8String(invariantString);
-    //
-    //CharP shaHash;
-    //apr_sha1_base64(convertedString.c_str(), invariantString.length(), shaHash);
-    //wchar_t locHash[8];
-    //wprintf(locHash, L"%02x%02x%02x%02x", shaHash[5], shaHash[6], shaHash[7], shaHash[8]);
-    //return locHash;
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Colin.Kerr                      04/2015
-//--------------------------------------------------------------------------------------
 Utf8StringCR SchemaLocalizedStrings::GetSchemaDisplayLabel(ECSchemaCP ecSchema, Utf8StringCR invariantDisplayLabel) const
     {
-    if (m_empty)
+    if (m_empty || ecSchema == nullptr)
         return invariantDisplayLabel;
-    // Standard:Schema.04.02.DisplayLabel:[Hash]
-    Utf8String labelKey (STANDARD);
-    labelKey.append(COLON);
-    labelKey.append(ecSchema->GetLegacyFullSchemaName());
-    labelKey.append(DOT);
-    labelKey.append(DISPLAYLABEL);
-    labelKey.append(COLON);
-    labelKey.append(ComputeHash(invariantDisplayLabel));
+
+    Utf8String labelKey = SchemaResourceKeyHelper::GetSchemaDisplayLabelKey(*ecSchema);
     return GetLocalizedString(labelKey.c_str(), invariantDisplayLabel);
     }
 
@@ -78,17 +57,11 @@ Utf8StringCR SchemaLocalizedStrings::GetSchemaDisplayLabel(ECSchemaCP ecSchema, 
 //--------------------------------------------------------------------------------------
 Utf8StringCR SchemaLocalizedStrings::GetSchemaDescription(ECSchemaCP ecSchema, Utf8StringCR invariantDescription) const
     {
-    if (m_empty)
+    if (m_empty || ecSchema == nullptr)
         return invariantDescription;
-    // Standard:Schema.04.02.Description:[Hash]
-    Utf8String descriptionKey(STANDARD);
-    descriptionKey.append(COLON);
-    descriptionKey.append(ecSchema->GetLegacyFullSchemaName());
-    descriptionKey.append(DOT);
-    descriptionKey.append(DESCRIPTION);
-    descriptionKey.append(COLON);
-    descriptionKey.append(ComputeHash(invariantDescription));
-    return GetLocalizedString(descriptionKey.c_str(), invariantDescription);
+    
+    Utf8String key = SchemaResourceKeyHelper::GetSchemaDescriptionKey(*ecSchema);
+    return GetLocalizedString(key.c_str(), invariantDescription);
     }
 
 //--------------------------------------------------------------------------------------
@@ -96,19 +69,12 @@ Utf8StringCR SchemaLocalizedStrings::GetSchemaDescription(ECSchemaCP ecSchema, U
 //--------------------------------------------------------------------------------------
 Utf8StringCR SchemaLocalizedStrings::GetClassDisplayLabel(ECClassCP ecClass, Utf8StringCR invariantDisplayLabel) const
     {
-    if (m_empty)
+    if (m_empty || ecClass == nullptr)
         return invariantDisplayLabel;
-    // Standard:Schema.04.02:Class.DisplayLabel:[Hash]
-    Utf8String labelKey(STANDARD);
-    labelKey.append(COLON);
-    labelKey.append(ecClass->GetSchema().GetLegacyFullSchemaName());
-    labelKey.append(COLON);
-    labelKey.append(ecClass->GetName());
-    labelKey.append(DOT);
-    labelKey.append(DISPLAYLABEL);
-    labelKey.append(COLON);
-    labelKey.append(ComputeHash(invariantDisplayLabel));
-    return GetLocalizedString(labelKey.c_str(), invariantDisplayLabel);
+    
+    Utf8String key = SchemaResourceKeyHelper::GetTypeDisplayLabelKey(*ecClass);
+    
+    return GetLocalizedString(key.c_str(), invariantDisplayLabel);
     }
 
 //--------------------------------------------------------------------------------------
@@ -118,17 +84,9 @@ Utf8StringCR SchemaLocalizedStrings::GetEnumerationDisplayLabel(ECEnumerationCR 
     {
     if (m_empty)
         return invariantDisplayLabel;
-    // Standard:Schema.04.02:Enumeration.DisplayLabel:[Hash]
-    Utf8String labelKey(STANDARD);
-    labelKey.append(COLON);
-    labelKey.append(ecEnumeration.GetSchema().GetLegacyFullSchemaName());
-    labelKey.append(COLON);
-    labelKey.append(ecEnumeration.GetName());
-    labelKey.append(DOT);
-    labelKey.append(DISPLAYLABEL);
-    labelKey.append(COLON);
-    labelKey.append(ComputeHash(invariantDisplayLabel));
-    return GetLocalizedString(labelKey.c_str(), invariantDisplayLabel);
+
+    Utf8String key = SchemaResourceKeyHelper::GetTypeDisplayLabelKey(ecEnumeration);
+    return GetLocalizedString(key.c_str(), invariantDisplayLabel);
     }
 
 //--------------------------------------------------------------------------------------
@@ -136,20 +94,12 @@ Utf8StringCR SchemaLocalizedStrings::GetEnumerationDisplayLabel(ECEnumerationCR 
 //--------------------------------------------------------------------------------------
 Utf8StringCR SchemaLocalizedStrings::GetClassDescription(ECClassCP ecClass, Utf8StringCR invariantDescription) const
     {
-    if (m_empty)
+    if (m_empty || ecClass == nullptr)
         return invariantDescription;
-    // Standard:Schema.04.02:Class.Description:[Hash]
-    Utf8String descriptionKey(STANDARD);
-    descriptionKey.append(COLON);
-    descriptionKey.append(ecClass->GetSchema().GetLegacyFullSchemaName());
-    descriptionKey.append(COLON);
-    descriptionKey.append(ecClass->GetName());
-    descriptionKey.append(DOT);
-    descriptionKey.append(DESCRIPTION);
-    descriptionKey.append(COLON);
-    descriptionKey.append(ComputeHash(invariantDescription));
 
-    return GetLocalizedString(descriptionKey.c_str(), invariantDescription);
+    Utf8String key = SchemaResourceKeyHelper::GetTypeDescriptionKey(*ecClass);
+
+    return GetLocalizedString(key.c_str(), invariantDescription);
     }
 
 //--------------------------------------------------------------------------------------
@@ -159,18 +109,10 @@ Utf8StringCR SchemaLocalizedStrings::GetEnumerationDescription(ECEnumerationCR e
     {
     if (m_empty)
         return invariantDescription;
-    // Standard:Schema.04.02:Class.Description:[Hash]
-    Utf8String descriptionKey(STANDARD);
-    descriptionKey.append(COLON);
-    descriptionKey.append(ecEnumeration.GetSchema().GetLegacyFullSchemaName());
-    descriptionKey.append(COLON);
-    descriptionKey.append(ecEnumeration.GetName());
-    descriptionKey.append(DOT);
-    descriptionKey.append(DESCRIPTION);
-    descriptionKey.append(COLON);
-    descriptionKey.append(ComputeHash(invariantDescription));
 
-    return GetLocalizedString(descriptionKey.c_str(), invariantDescription);
+    Utf8String key = SchemaResourceKeyHelper::GetTypeDescriptionKey(ecEnumeration);
+
+    return GetLocalizedString(key.c_str(), invariantDescription);
     }
 
 //--------------------------------------------------------------------------------------
@@ -178,22 +120,12 @@ Utf8StringCR SchemaLocalizedStrings::GetEnumerationDescription(ECEnumerationCR e
 //--------------------------------------------------------------------------------------
 Utf8StringCR SchemaLocalizedStrings::GetPropertyDisplayLabel(ECPropertyCP ecProperty, Utf8StringCR invariantDisplayLabel) const
     {
-    if (m_empty)
+    if (m_empty || ecProperty == nullptr)
         return invariantDisplayLabel;
-    // Standard:Schema.04.02:Class:Property.DisplayLabel:[Hash]
-    Utf8String labelKey(STANDARD);
-    labelKey.append(COLON);
-    labelKey.append(ecProperty->GetClass().GetSchema().GetLegacyFullSchemaName());
-    labelKey.append(COLON);
-    labelKey.append(ecProperty->GetClass().GetName());
-    labelKey.append(COLON);
-    labelKey.append(ecProperty->GetName());
-    labelKey.append(DOT);
-    labelKey.append(DISPLAYLABEL);
-    labelKey.append(COLON);
-    labelKey.append(ComputeHash(invariantDisplayLabel));
 
-    return GetLocalizedString(labelKey.c_str(), invariantDisplayLabel);
+    Utf8String key = SchemaResourceKeyHelper::GetTypeChildDisplayLabelKey(*ecProperty);
+
+    return GetLocalizedString(key.c_str(), invariantDisplayLabel);
     }
 
 //--------------------------------------------------------------------------------------
@@ -201,22 +133,12 @@ Utf8StringCR SchemaLocalizedStrings::GetPropertyDisplayLabel(ECPropertyCP ecProp
 //--------------------------------------------------------------------------------------
 Utf8StringCR SchemaLocalizedStrings::GetPropertyDescription(ECPropertyCP ecProperty, Utf8StringCR invariantDescription) const
     {
-    if (m_empty)
+    if (m_empty || ecProperty == nullptr)
         return invariantDescription;
-    // Standard:Schema.04.02:Class:Property.Description:[Hash]
-    Utf8String descriptionKey(STANDARD);
-    descriptionKey.append(COLON);
-    descriptionKey.append(ecProperty->GetClass().GetSchema().GetLegacyFullSchemaName());
-    descriptionKey.append(COLON);
-    descriptionKey.append(ecProperty->GetClass().GetName());
-    descriptionKey.append(COLON);
-    descriptionKey.append(ecProperty->GetName());
-    descriptionKey.append(DOT);
-    descriptionKey.append(DESCRIPTION);
-    descriptionKey.append(COLON);
-    descriptionKey.append(ComputeHash(invariantDescription));
 
-    return GetLocalizedString(descriptionKey.c_str(), invariantDescription);
+    Utf8String key = SchemaResourceKeyHelper::GetTypeChildDescriptionKey(*ecProperty);
+
+    return GetLocalizedString(key.c_str(), invariantDescription);
     }
 
 //--------------------------------------------------------------------------------------
@@ -226,28 +148,9 @@ Utf8StringCR SchemaLocalizedStrings::GetEnumeratorDisplayLabel(ECEnumeratorCR ec
     {
     if (m_empty)
         return invariantDisplayLabel;
-    // Standard:Schema.04.02:Class:Property.DisplayLabel:[Hash]
-    Utf8String labelKey(STANDARD);
-    labelKey.append(COLON);
-    ECEnumerationCR e = ecEnumerator.GetEnumeration();
-    labelKey.append(e.GetSchema().GetLegacyFullSchemaName());
-    labelKey.append(COLON);
-    labelKey.append(e.GetName());
-    labelKey.append(COLON);
 
-    Utf8String enumeratorName;
-    if (ecEnumerator.IsInteger())
-        enumeratorName.Sprintf("%d", ecEnumerator.GetInteger());
-    else
-        enumeratorName = ecEnumerator.GetString();
-
-    labelKey.append(enumeratorName);
-    labelKey.append(DOT);
-    labelKey.append(DISPLAYLABEL);
-    labelKey.append(COLON);
-    labelKey.append(ComputeHash(invariantDisplayLabel));
-
-    return GetLocalizedString(labelKey.c_str(), invariantDisplayLabel);
+    Utf8String key = SchemaResourceKeyHelper::GetTypeChildDisplayLabelKey(ecEnumerator);
+    return GetLocalizedString(key.c_str(), invariantDisplayLabel);
     }
 
 //--------------------------------------------------------------------------------------
@@ -255,19 +158,11 @@ Utf8StringCR SchemaLocalizedStrings::GetEnumeratorDisplayLabel(ECEnumeratorCR ec
 //--------------------------------------------------------------------------------------
 Utf8StringCR SchemaLocalizedStrings::GetRelationshipSourceRoleLabel(ECRelationshipClassCP relClass, Utf8StringCR invariantRoleLabel) const
     {
-    if (m_empty)
+    if (m_empty || relClass == nullptr)
         return invariantRoleLabel;
-    // Standard:Schema.04.02:RelClass.SourceRoleLabel:[Hash]
-    Utf8String roleLabelKey(STANDARD);
-    roleLabelKey.append(COLON);
-    roleLabelKey.append(relClass->GetSchema().GetLegacyFullSchemaName());
-    roleLabelKey.append(COLON);
-    roleLabelKey.append(relClass->GetName());
-    roleLabelKey.append(DOT);
-    roleLabelKey.append(SOURCEROLELABEL);
-    roleLabelKey.append(COLON);
-    roleLabelKey.append(ComputeHash(invariantRoleLabel));
-    return GetLocalizedString(roleLabelKey.c_str(), invariantRoleLabel);
+    
+    Utf8String key = SchemaResourceKeyHelper::GetRelationshipSourceRoleLabelKey(*relClass, invariantRoleLabel.c_str());
+    return GetLocalizedString(key.c_str(), invariantRoleLabel);
     }
 
 //--------------------------------------------------------------------------------------
@@ -275,19 +170,13 @@ Utf8StringCR SchemaLocalizedStrings::GetRelationshipSourceRoleLabel(ECRelationsh
 //--------------------------------------------------------------------------------------
 Utf8StringCR SchemaLocalizedStrings::GetRelationshipTargetRoleLabel(ECRelationshipClassCP relClass, Utf8StringCR invariantRoleLabel) const
     {
-    if (m_empty)
+    if (m_empty || relClass == nullptr)
         return invariantRoleLabel;
-    // Standard:Schema.04.02:RelClass.SourceRoleLabel:[Hash]
-    Utf8String roleLabelKey(STANDARD);
-    roleLabelKey.append(COLON);
-    roleLabelKey.append(relClass->GetSchema().GetLegacyFullSchemaName());
-    roleLabelKey.append(COLON);
-    roleLabelKey.append(relClass->GetName());
-    roleLabelKey.append(DOT);
-    roleLabelKey.append(TARGETROLELABEL);
-    roleLabelKey.append(COLON);
-    roleLabelKey.append(ComputeHash(invariantRoleLabel));
-    return GetLocalizedString(roleLabelKey.c_str(), invariantRoleLabel);
+
+    Utf8String key = SchemaResourceKeyHelper::GetRelationshipTargetRoleLabelKey(
+        relClass->GetSchema().GetLegacyFullSchemaName().c_str(), relClass->GetName().c_str(), invariantRoleLabel.c_str());
+
+    return GetLocalizedString(key.c_str(), invariantRoleLabel);
     }
 
 //--------------------------------------------------------------------------------------
