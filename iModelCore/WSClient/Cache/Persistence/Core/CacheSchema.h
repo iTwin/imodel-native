@@ -72,6 +72,7 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 #define CLASS_ChangeInfo_PROPERTY_IsLocal                           "IsLocal"
 
 #define CLASS_InstanceBackup                                        "InstanceBackup"
+#define CLASS_InstanceBackup_PROPERTY_InfoId                        "InfoId"
 #define CLASS_InstanceBackup_PROPERTY_Instance                      "Instance"
 
 #define CLASS_RootToNode                                            "RootToNode"
