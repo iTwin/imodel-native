@@ -288,7 +288,7 @@ void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
 void PerformUpdateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     {
     WString stmFileName;
-    ScalableMeshMesherType mesherType = SCM_MESHER_3D_DELAUNAY;
+    ScalableMeshMesherType mesherType = SCM_MESHER_2D_DELAUNAY;
     ScalableMeshFilterType filterType = SCM_FILTER_CGAL_SIMPLIFIER;
     vector<UpToDateState> sourcesPartialUpdate;
     vector<WString> sourceToAdd;

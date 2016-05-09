@@ -14,11 +14,10 @@
 
 #include <ScalableMesh/Import/Definitions.h>
 
-#include <ScalableMesh/Import/ContentConfigVisitor.h>
-#include <ScalableMesh/Import/ImportConfigVisitor.h>
 
 #include <ScalableMesh/Import/DataType.h>
 #include <ScalableMesh/Import/ScalableMeshData.h>
+#include <ScalableMesh/Import/ImportConfig.h>
 #include <ScalableMesh/GeoCoords/GCS.h>
 
 #include <ScalableMesh/Import/CustomFilterFactory.h>
@@ -38,7 +37,7 @@ namespace Internal {
 * @description  
 * @bsiclass                                                  Raymond.Gauthier   05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-class Config : public IImportConfigVisitor
+    class Config : public ImportConfig
     {
     CustomFilteringSequence         m_sourceFilters;
     CustomFilteringSequence         m_targetFilters;
@@ -58,16 +57,53 @@ class Config : public IImportConfigVisitor
     const ExtractionConfig*         m_extractionConfigP;
     const FilteringConfig*          m_filteringConfigP;
 
-    virtual void                    _Visit                     (const AttachmentsConfig&        config) override;
-    virtual void                    _Visit                     (const DefaultSourceGCSConfig&   config) override;
-    virtual void                    _Visit                     (const DefaultTargetGCSConfig&   config) override;
-    virtual void                    _Visit                     (const DefaultTargetLayerConfig& config) override;
-    virtual void                    _Visit                     (const DefaultTargetTypeConfig&  config) override;
-    virtual void            _Visit               (const DefaultTargetScalableMeshConfig& config) override;
-    virtual void                    _Visit                     (const ImportExtractionConfig&   config) override;
-    virtual void                    _Visit                     (const ImportFilteringConfig&    config) override;
-    virtual void                    _Visit                     (const SourceFiltersConfig&      config) override;
-    virtual void                    _Visit                     (const TargetFiltersConfig&      config) override;
+
+    virtual void _SetAreAttachmentsImported(bool importAttachments) override
+        {
+        m_importAttachments = importAttachments;
+        }
+    virtual void _SetDefaultTargetLayer(uint32_t layer) override
+        {
+        m_defaultTargetLayer = layer;
+        m_hasDefaultTargetLayer = true;
+        }
+    virtual void _SetDefaultTargetType(const DataTypeFamily* typeP)
+        {
+        m_defaultTargetTypeP = typeP;
+        }
+
+    virtual void _SetDefaultSourceGCS(const GCS* gcsP)
+        {
+        m_defaultSourceGCSP = gcsP;
+        }
+    virtual void _SetDefaultTargetGCS(const GCS* gcsP)
+        {
+        m_defaultTargetGCSP = gcsP;
+        }
+
+    virtual void _SetDefaultTargetSMData(const ScalableMeshData* smDataP)
+        {
+        m_defaultTargetSMDataP = smDataP;
+        }
+
+    virtual void _SetExtractionConfig(const ExtractionConfig* extractionConfigP)
+        {
+        m_extractionConfigP = extractionConfigP;
+        }
+    virtual void _SetFilteringConfig(const FilteringConfig* filteringConfigP)
+        {
+        m_filteringConfigP = filteringConfigP;
+        }
+
+    virtual void _SetSourceFilters(const CustomFilteringSequence& sourceFilters)
+        {
+        m_sourceFilters = sourceFilters;
+        }
+    virtual void _SetTargetFilters(const CustomFilteringSequence& targetFilters) 
+        {
+        m_targetFilters = targetFilters;
+        }
+
 
 public:
     explicit                        Config                     ();
@@ -95,6 +131,7 @@ public:
     const CustomFilteringSequence&  GetSourceFilters           () const { return m_sourceFilters; }
     const CustomFilteringSequence&  GetTargetFilters           () const { return m_targetFilters; }
     };
+
 
 
 } // END namespace Internal

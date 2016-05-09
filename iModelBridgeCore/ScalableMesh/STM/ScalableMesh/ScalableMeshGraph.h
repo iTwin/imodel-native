@@ -47,4 +47,19 @@ void RemoveOverhangsFromPolygon(bvector<DPoint3d>& polygon);
 
 bool HasOverlapWithNeighborsXY(MTGGraph* graphP, MTGNodeId boundaryId, const DPoint3d* pts);
 
+void TagFeatureEdges(MTGGraph* graphP, DTMFeatureType tagValue, size_t featureSize, const int32_t* featureData, bool tagEnds = true);
+
+void ReadFeatureTags(MTGGraph * graphP, std::vector<int>& pointToDestPointsMap, bvector<bvector<int32_t>>& features, std::map<int,int>& componentForPoints);
+
+void ReadFeatureTags(MTGGraph * graphP, std::vector<int>& pointToDestPointsMap, bvector<bvector<int32_t>>& features);
+
+struct TaggedEdge
+    {
+    int tag;
+    int vtx1;
+    int vtx2;
+    };
+
+void ReadFeatureEndTags(MTGGraph * graphP, std::vector<int>& pointToDestPointsMap, bvector<TaggedEdge>& featureEdges);
+
 END_BENTLEY_SCALABLEMESH_NAMESPACE

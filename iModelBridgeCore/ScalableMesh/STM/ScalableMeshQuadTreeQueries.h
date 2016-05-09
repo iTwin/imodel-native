@@ -305,17 +305,19 @@ public:
         double m_bestHitScore;
         double m_depth;
         bool m_is2d;
+        bool m_useUnboundedRay;
         bvector<double> m_fractions;
    
     public:
 
-                            ScalableMeshQuadTreeLevelIntersectIndexQuery(const EXTENT   extent, 
-                                                              size_t         level,                                                    
-                                                               DRay3d ray,
-                                                               bool is2d = false,
-                                                               double depth = -1,
+        ScalableMeshQuadTreeLevelIntersectIndexQuery(const EXTENT   extent,
+                                                     size_t         level,
+                                                     DRay3d ray,
+                                                     bool is2d = false,
+                                                     double depth = -1,
+                                                     bool useUnboundedRay = true,
                                                                RaycastOptions intersectType = RaycastOptions::LAST_INTERSECT)
-                                                               : HGFLevelPointIndexQuery(extent, level), m_intersect(intersectType), m_target(ray), m_bestHitScore(numeric_limits<double>::quiet_NaN()), m_is2d(is2d), m_depth(depth)
+                                                               : HGFLevelPointIndexQuery(extent, level), m_intersect(intersectType), m_target(ray), m_bestHitScore(numeric_limits<double>::quiet_NaN()), m_is2d(is2d), m_depth(depth), m_useUnboundedRay(useUnboundedRay)
                                 {                                                             
                                 }                            
 

@@ -13,6 +13,11 @@
 #include <CGAL/Surface_mesh_simplification/Policies/Edge_collapse/Count_ratio_stop_predicate.h>
 #include <CGAL/Surface_mesh_simplification/Policies/Edge_collapse/Edge_length_cost.h>
 #include <CGAL/Surface_mesh_simplification/Policies/Edge_collapse/Midpoint_placement.h>
+#include <iostream>
+
+#include <boost/geometry.hpp>
+#include <boost/geometry/geometries/linestring.hpp>
+#include <boost/geometry/geometries/point_xy.hpp>
 
 namespace SMS = CGAL::Surface_mesh_simplification;
 
@@ -162,6 +167,13 @@ class Preserve25DCost : public SMS::LindstromTurk_cost < ECM_ >
             areaNormal.Normalize();
             if (zDir.AngleTo(areaNormal) > PI / 2) return result_type(std::numeric_limits<double>::max());
             }
+        int label = -1;
+        profile.surface().graphP->TryGetLabel(v0v1, 2, label);
+        if (label != -1)
+            {
+            auto score = SMS::LindstromTurk_cost < ECM_ >::operator()(profile, placement);
+            if (score) score = *score *3.0;
+            }
         return SMS::LindstromTurk_cost < ECM_ >::operator()(profile, placement);
         }
     };
@@ -177,9 +189,84 @@ bool CGALEdgeCollapse(MTGGraph* inoutMesh, std::vector<DPoint3d>& pts, uint64_t 
     // The surface mesh and stop conditions are mandatory arguments. 
     // The index maps are needed because the vertices and edges  
     // of this surface mesh lack an "id()" field.  
-    Utf8String path = "E:\\output\\scmesh\\2016-01-28\\";
-   /* Utf8String str1 = "tested";
-    PrintGraph(path, str1, inoutMesh);*/
+    Utf8String path = "E:\\output\\scmesh\\2016-05-05\\";
+    /*if (id == 15)
+        {
+        Utf8String str1 = std::to_string(id).c_str();
+        PrintGraph(path, str1, inoutMesh);
+        }*/
+    
+   /* bvector < bvector<int32_t>> features;
+    std::vector<int> temp;
+    ReadFeatureTags(inoutMesh, temp, features);
+    bvector<std::set<int32_t>> ptsMatch(pts.size());
+    for (auto& feature : features)
+        {
+        ptsMatch[feature[1]].insert(feature[2]);
+        ptsMatch[feature[2]].insert(feature[1]);
+        }
+    int start = -1;
+    size_t ni = 0;
+    for (size_t t = 0; t < ptsMatch.size(); ++t)
+        {
+        if (ptsMatch[t].size() == 1) start = (int) t;
+        }
+    while (start != -1)
+        {
+        bvector<DPoint3d> list;
+        while (start != -1)
+            {
+            list.push_back(pts[start]);
+            if (ptsMatch[start].empty()) start = -1;
+            else
+                {
+                int next = *ptsMatch[start].begin();
+                ptsMatch[start].erase(next);
+                ptsMatch[next].erase(start);
+                start = next;
+                }
+            }
+        if (!list.empty())
+            {
+            Utf8String str1 = std::to_string(id).c_str();
+            str1.append("_");
+            str1.append(std::to_string(ni).c_str());
+            str1.append(".p");
+            FILE* graphSaved = fopen((path + str1).c_str(), "wb");
+            size_t npts = list.size();
+            fwrite(&npts, sizeof(size_t), 1, graphSaved);
+            fwrite(&list[0], sizeof(DPoint3d), npts, graphSaved);
+            fclose(graphSaved);
+            }
+        for (size_t t = 0; t < ptsMatch.size(); ++t)
+            {
+            if (ptsMatch[t].size() == 1) start = (int)t;
+            }
+        ni++;
+        }*/
+    if (id == 15)
+        {
+       /* size_t ni = 0;
+        bvector<TaggedEdge> edges;
+        std::vector<int> temp;
+        ReadFeatureEndTags(inoutMesh, temp, edges);
+        for (auto& edge : edges)
+            {
+            bvector<DPoint3d> list;
+            list.push_back(pts[edge.vtx1]);
+            list.push_back(pts[edge.vtx2]);
+            Utf8String str1 = std::to_string(id).c_str();
+            str1.append("_");
+            str1.append(std::to_string(ni).c_str());
+            str1.append(".p");
+            FILE* graphSaved = fopen((path + str1).c_str(), "wb");
+            size_t npts = list.size();
+            fwrite(&npts, sizeof(size_t), 1, graphSaved);
+            fwrite(&list[0], sizeof(DPoint3d), npts, graphSaved);
+            fclose(graphSaved);
+            ni++;
+            }*/
+        }
 
   /*  bool wasRemoved =*/ RemoveKnotsFromGraph(inoutMesh, pts);
    GraphWithGeometryInfo graphData(inoutMesh, &pts[0], pts.size());
@@ -209,6 +296,8 @@ bool CGALEdgeCollapse(MTGGraph* inoutMesh, std::vector<DPoint3d>& pts, uint64_t 
     /*if (pts.size() == 5387) log(true, graphData);
     else*/ log(false, graphData);
 
+
+
         auto params = CGAL::parameters::vertex_index_map(get(CGAL::vertex_external_index, graphData)).halfedge_index_map(get(CGAL::halfedge_external_index, graphData)).get_cost(Preserve25DCost<GraphWithGeometryInfo>()).get_placement(SMS::Midpoint_placement<GraphWithGeometryInfo>());
         try
             {
@@ -221,10 +310,12 @@ bool CGALEdgeCollapse(MTGGraph* inoutMesh, std::vector<DPoint3d>& pts, uint64_t 
         ret = false;
         }
 
-
-   /* Utf8String str2 = "afterEdgeCollapse";
-    str2 += std::to_string(pts.size()).c_str();
-    PrintGraph(path, str2, inoutMesh); */
+    /*if (id == 15)
+        {
+         Utf8String str2 = "afterEdgeCollapse";
+         str2 += std::to_string(graphData.id).c_str();
+         PrintGraph(path, str2, inoutMesh); 
+        }*/
    /* Utf8String str2 = "afterCollapse_graph_";
     str2 += std::to_string(id).c_str();
         {
@@ -239,6 +330,27 @@ bool CGALEdgeCollapse(MTGGraph* inoutMesh, std::vector<DPoint3d>& pts, uint64_t 
         fclose(graphSaved);
         delete[] graphData;
         }*/
+
     return ret;
+    }
+
+void SimplifyPolylines(bvector<bvector<DPoint3d>>& polylines)
+    {
+    typedef boost::geometry::model::d2::point_xy<double> xy;
+    for (auto& polyline : polylines)
+        {
+        DRange3d ext = DRange3d::From(polyline);
+        boost::geometry::model::linestring<xy> line;
+        for (auto&pt : polyline)
+            line.push_back(xy(pt.x, pt.y));
+
+            boost::geometry::model::linestring<xy> simplified;
+        boost::geometry::simplify(line, simplified, 0.5);
+
+        polyline.clear();
+        for (auto& pt : simplified)
+            polyline.push_back(DPoint3d::From(pt.x(), pt.y(), (ext.high.z - ext.low.z) / 2));
+        }
+
     }
 END_BENTLEY_SCALABLEMESH_NAMESPACE

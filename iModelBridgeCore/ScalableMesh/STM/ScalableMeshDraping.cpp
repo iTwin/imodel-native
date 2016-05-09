@@ -115,6 +115,7 @@ void MeshTraversalQueue::CollectAll(const bvector<IScalableMeshNodePtr>& inputNo
                                                                                ray,
                                                                                true,
                                                                                DVec3d::FromStartEnd(m_polylineToDrape[segment], m_polylineToDrape[segment + 1]).Magnitude(),
+                                                                               true ,
                                                                                ScalableMeshQuadTreeLevelIntersectIndexQuery<DPoint3d,DRange3d>::RaycastOptions::ALL_INTERSECT);
         bvector<IScalableMeshNodePtr> outNodes;
         for (auto& node : inputNodes)
@@ -683,6 +684,7 @@ void ScalableMeshDraping::QueryNodesBasedOnParams(bvector<IScalableMeshNodePtr>&
                                                                                ray,
                                                                                params->Get2d(),
                                                                                params->GetDepth(),
+                                                                               params->GetUseUnboundedRay(),
                                                                                ScalableMeshQuadTreeLevelIntersectIndexQuery<DPoint3d, DRange3d>::RaycastOptions::ALL_INTERSECT);
         for (auto& node : m_nodeSelection)
             node->RunQuery(query, nodes);
@@ -694,6 +696,7 @@ bool ScalableMeshDraping::_DrapeAlongVector(DPoint3d* endPt, double *slope, doub
     DVec3d vecDirection = DVec3d::FromXYAngleAndMagnitude(directionOfVector, 1);
     vecDirection.z = slopeOfVector;
     IScalableMeshNodeQueryParamsPtr params = IScalableMeshNodeQueryParams::CreateParams();
+    params->SetUseUnboundedRay(false);
     IScalableMeshNodeRayQueryPtr query = m_scmPtr->GetNodeQueryInterface();
     params->SetLevel(m_levelForDrapeLinear);
 
@@ -716,10 +719,13 @@ bool ScalableMeshDraping::_DrapeAlongVector(DPoint3d* endPt, double *slope, doub
             {
             if (endPt != nullptr)
                 {
-                m_transform.Multiply(*endPt);
+                //if (node->GetContentExtent().IsContained(*endPt))
+                    {
+                    m_transform.Multiply(*endPt);
+                    ret = true;
+                    break;
+                    }
                 }
-            ret = true;
-            break;
             }
         }
     return ret;

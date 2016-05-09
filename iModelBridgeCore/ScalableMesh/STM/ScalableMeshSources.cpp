@@ -23,7 +23,7 @@
 #include "ScalableMeshEditListener.h"
 
 #include <ScalableMesh/Import/ImportSequence.h>
-#include <ScalableMesh/Import/Command/All.h>
+#include <ScalableMesh/Import/Command/Base.h>
 
 #include <ScalableMesh/Type/IScalableMeshLinear.h>
 #include <ScalableMesh/Type/IScalableMeshPoint.h>
@@ -173,6 +173,9 @@ DTMSourceDataType IDTMSource::GetSourceType () const
     return m_implP->m_sourceDataType;
     }
 
+
+
+
 /*----------------------------------------------------------------------------+
 |IDTMSource::GetLastModified
 +----------------------------------------------------------------------------*/
@@ -281,29 +284,38 @@ bool DoImportSourceLinear (DTMSourceDataType type)
 ImportSequence CreateImportDTMSequence ()
     {
     ImportSequence sequence;
-    sequence.push_back(ImportTypeCommand(PointTypeFamilyCreator().Create()));
-    sequence.push_back(ImportTypeCommand(LinearTypeFamilyCreator().Create()));
+    ImportCommandBase importPoints, importLinears;
+    importPoints.SetSourceType(PointTypeFamilyCreator().Create()); 
+    importLinears.SetSourceType(LinearTypeFamilyCreator().Create());
+    sequence.push_back(importPoints);
+    sequence.push_back(importLinears);
     return sequence;
     }
 
 ImportSequence CreateImportPointsSequence ()
     {
     ImportSequence sequence;
-    sequence.push_back(ImportTypeCommand(PointTypeFamilyCreator().Create()));
+    ImportCommandBase importPoints;
+    importPoints.SetSourceType(PointTypeFamilyCreator().Create());
+    sequence.push_back(importPoints);
     return sequence;
     }
 
 ImportSequence CreateImportLinearsSequence ()
     {
     ImportSequence sequence;
-    sequence.push_back(ImportTypeCommand(LinearTypeFamilyCreator().Create()));
+    ImportCommandBase importLinears;
+    importLinears.SetSourceType(LinearTypeFamilyCreator().Create());
+    sequence.push_back(importLinears);
     return sequence;
     }
 
 ImportSequence CreateImportClipMasksSequence ()
     {
     ImportSequence sequence;
-    sequence.push_back(ImportTypeCommand(LinearTypeFamilyCreator().Create()));
+    ImportCommandBase importLinears;
+    importLinears.SetSourceType(LinearTypeFamilyCreator().Create());
+    sequence.push_back(importLinears);
     return sequence;
     }
 

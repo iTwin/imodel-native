@@ -6,16 +6,21 @@
 |       $Date: 2011/07/07 16:14:12 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #pragma once
 
 #include <ScalableMesh/Import/Definitions.h>
+#include <ScalableMesh/Import/DataTypeFamily.h>
 
 BEGIN_BENTLEY_SCALABLEMESH_IMPORT_NAMESPACE
-
+struct ImporterImpl;
+namespace Internal
+    {
+    class Config;
+    }
 struct IImportSequenceVisitor;
 
 /*---------------------------------------------------------------------------------**//**
@@ -29,58 +34,65 @@ protected:
 private:
     friend struct                           ImportCommand;
 
+    struct UniqueTokenType {};
+
     void*                                   m_implP; // Reserved some space for further use
+
+    uint32_t                                m_sourceLayer;
+    DataTypeFamily                      m_sourceType;
+    uint32_t                                m_targetLayer;
+    DataTypeFamily                      m_targetType;
+
+    bool                                m_sourceLayerSet;
+    bool                      m_sourceTypeSet;
+    bool                                m_targetLayerSet;
+    bool                      m_targetTypeSet;
 
     // Disabled as clone should not need it
     ImportCommandBase&                      operator=                          (const ImportCommandBase&);
 
-    virtual ClassID                         _GetClassID                        () const = 0;
-    virtual ImportCommandBase*              _Clone                             () const = 0;
-    virtual void                            _Accept                            (IImportSequenceVisitor&             visitor) const = 0;
-
-protected:
-    IMPORT_DLLE explicit                    ImportCommandBase                  ();
-    IMPORT_DLLE explicit                    ImportCommandBase                  (const ImportCommandBase&            rhs);
-
-public:
-    IMPORT_DLLE virtual                     ~ImportCommandBase                 () = 0;
-    };
-
-
-/*---------------------------------------------------------------------------------**//**
-* @description  
-* @bsiclass                                                  Raymond.Gauthier   05/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-template <typename ComponentT>
-struct ImportCommandMixinBase : public ImportCommandBase
-    {
-private:
-    struct UniqueTokenType {};
-
-    virtual ClassID                         _GetClassID                        () const override;
-    virtual ImportCommandBase*              _Clone                             () const override;
-    virtual void                            _Accept                            (IImportSequenceVisitor&             visitor) const override;
-
-    // Disabled as clone should not need it
-    ImportCommandMixinBase&                 operator=                          (const ImportCommandMixinBase&);
-
-protected:
-    typedef ImportCommandMixinBase<ComponentT>           
-                                            super_class;
-
-    explicit                                ImportCommandMixinBase             ();
-    virtual                                 ~ImportCommandMixinBase            () = 0;
-
-                                            ImportCommandMixinBase             (const ImportCommandMixinBase&       rhs);
-
-    static ClassID                          s_GetClassID                       ()
+    virtual ClassID                         _GetClassID() const
         {
         static ClassID CLASS_ID = &typeid(UniqueTokenType());
         return CLASS_ID;
         }
+    virtual ImportCommandBase*              _Clone() const { return new ImportCommandBase(*this); };
+    virtual void                            _Accept(IImportSequenceVisitor&             visitor)const {};
 
+    public:
+    IMPORT_DLLE                     ImportCommandBase                  ();
+    IMPORT_DLLE                     ImportCommandBase                  (const ImportCommandBase&            rhs);
+    IMPORT_DLLE                     ImportCommandBase(const ImportCommand&            cmd);
+
+
+    IMPORT_DLLE virtual                     ~ImportCommandBase() ;
+
+    virtual void                           _Execute(ImporterImpl&       impl,
+                                                    const Internal::Config&       config)
+        {}
+    void                                    SetSourceLayer(uint32_t layer)
+        {
+        m_sourceLayer = layer;
+        m_sourceLayerSet = true;
+        }
+
+    void                                    SetTargetLayer(uint32_t layer)
+        {
+        m_targetLayer = layer;
+        m_targetLayerSet = true;
+        }
+
+    void                                    SetSourceType(const DataTypeFamily& type)
+        {
+        m_sourceType = type;
+        m_sourceTypeSet = true;
+        }
+
+    void                                    SetTargetType(const DataTypeFamily& type)
+        {
+        m_targetType = type;
+        m_targetTypeSet = true;
+        }
     };
-
-
 
 END_BENTLEY_SCALABLEMESH_IMPORT_NAMESPACE

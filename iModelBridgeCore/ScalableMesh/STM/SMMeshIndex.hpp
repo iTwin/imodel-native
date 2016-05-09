@@ -21,6 +21,7 @@
 #include "vuPolygonClassifier.h"
 #include "LogUtils.h"
 #include "Edits\Skirts.h"
+#include <map>
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 #define SM_OUTPUT_MESHES_GRAPH 0
@@ -1219,8 +1220,11 @@ inline bool IsClosedFeature(IDTMFile::FeatureType type)
     {
     DTMFeatureType dtmType = (DTMFeatureType)type;
     return dtmType == DTMFeatureType::Hole || dtmType == DTMFeatureType::Island || dtmType == DTMFeatureType::Void || dtmType == DTMFeatureType::BreakVoid ||
-        dtmType == DTMFeatureType::Polygon || dtmType == DTMFeatureType::Region || dtmType == DTMFeatureType::Contour || dtmType == DTMFeatureType::Hull;
+        dtmType == DTMFeatureType::Polygon || dtmType == DTMFeatureType::Region || dtmType == DTMFeatureType::Contour || dtmType == DTMFeatureType::Hull ||
+        dtmType == DTMFeatureType::DrapeVoid;
     }
+
+
 
 static size_t s_featuresAddedToTree = 0;
 
@@ -1308,6 +1312,47 @@ template<class EXTENT> void ClipFeatureDefinition(IDTMFile::FeatureType type, EX
             withinExtent = isPointInRange;
             }
         }
+    }
+
+template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::ReadFeatureDefinitions(bvector<bvector<DPoint3d>>& points, bvector<DTMFeatureType> & types)
+    {
+    for (size_t i = 0; i < m_featureDefinitions.size(); ++i)
+        {
+        bvector<DPoint3d> feature;
+        if (!IsClosedFeature(m_featureDefinitions[i][0])) continue;
+        for (size_t j = 1; j < m_featureDefinitions[i].size(); ++j)
+            {
+            if (m_featureDefinitions[i][j] < size()) feature.push_back(this->operator[](m_featureDefinitions[i][j]));
+            }
+        points.push_back(feature);
+        types.push_back((DTMFeatureType)m_featureDefinitions[i][0]);
+        }
+    }
+
+template<class POINT, class EXTENT> size_t SMMeshIndexNode<POINT, EXTENT>::AddFeatureDefinitionSingleNode(IDTMFile::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent)
+    {
+    vector<int32_t> indexes;
+    DRange3d nodeRange = DRange3d::From(ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMin(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMin(m_nodeHeader.m_nodeExtent),
+                                        ExtentOp<EXTENT>::GetXMax(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMax(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMax(m_nodeHeader.m_nodeExtent));
+    for (auto pt : points)
+        {
+        if (pt.x == DBL_MAX)
+            {
+            indexes.push_back(INT_MAX);
+            continue;
+            }
+        POINT pointToInsert = PointOp<POINT>::Create(pt.x, pt.y, pt.z);
+        this->push_back(pointToInsert);
+        indexes.push_back((int32_t)this->size() - 1);
+        }
+    if (m_featureDefinitions.capacity() < m_featureDefinitions.size() + 1) for (auto& def : m_featureDefinitions) if (!def.Discarded()) def.Discard();
+    m_featureDefinitions.resize(m_featureDefinitions.size() + 1);
+    auto& newFeatureDef = m_featureDefinitions.back();
+    newFeatureDef.SetStore(dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetFeatureStore());
+    newFeatureDef.SetPool(dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetFeaturePool());
+    newFeatureDef.push_back((int32_t)type);
+    newFeatureDef.push_back(&indexes[0], indexes.size());
+    return 0;
     }
 
 //=======================================================================================
@@ -1698,6 +1743,274 @@ void SMMeshIndexNode<POINT, EXTENT>::SplitMeshForChildNodes()
 
 
 extern size_t s_nCreatedNodes;
+
+void CollectNextFeatureEdges(MTGGraph*graphP, MTGNodeId current, int tagValueI, MTGMask visitedMask, bvector<int32_t>& edges)
+    {
+    bool hasEdges = true;
+    do
+        {
+        int vIndex = -1;
+        graphP->TryGetLabel(current, 0, vIndex);
+        graphP->SetMaskAt(current, visitedMask);
+        edges.push_back(vIndex - 1);
+        MTGNodeId next = graphP->FSucc(current);
+        bool foundNext = false;
+        MTGARRAY_VERTEX_LOOP(edge, graphP, next)
+            {
+            int tagValue = -1;
+            graphP->TryGetLabel(next, 2, tagValue);
+            if (tagValueI == tagValue)
+                {
+                current = edge;
+                foundNext = true;
+                break;
+                }
+            }
+        MTGARRAY_END_VERTEX_LOOP(edge, graphP, next)
+            if (graphP->GetMaskAt(current, visitedMask)) hasEdges = false;
+        if (!foundNext) hasEdges = false;
+        }
+    while (hasEdges);
+    }
+
+void SortDefinitionsBasedOnNodeBounds(bvector<bvector<int32_t>>& featureDefs, const DRange3d& extent, const DPoint3d* pts, const size_t nPts)
+    {
+    bvector<bvector<bpair<int,int>>> featuresBeginOrEndOnEdge(6);
+    DPoint3d origins[6];
+    DVec3d normals[6];
+    extent.Get6Planes(origins, normals);
+    DPlane3d planes[6];
+    size_t nOfFeaturesToLink = 0;
+    for (size_t i = 0; i < 6; ++i)
+        planes[i] = DPlane3d::FromOriginAndNormal(origins[i], normals[i]);
+
+    for (auto& def : featureDefs)
+        {
+        if (!IsClosedFeature(def[0])) continue;
+        bool isOnEdge = false;
+        for (size_t i = 0; i < 6; ++i)
+            {
+            if (fabs(planes[i].Evaluate(pts[def[1]])) < 1e-4)
+                {
+                featuresBeginOrEndOnEdge[i].push_back(make_bpair(0, (int)(&def - &featureDefs.front())));
+                isOnEdge = true;
+                }
+            else if (fabs(planes[i].Evaluate(pts[def[def.size()-2]])) < 1e-4)
+                {
+                featuresBeginOrEndOnEdge[i].push_back(make_bpair(1, (int)(&def - &featureDefs.front())));
+                isOnEdge = true;
+                }
+            }
+        if (isOnEdge) nOfFeaturesToLink++;
+        }
+    bvector<bpair<int,int>> idxOrder;
+    for (size_t i = 0; i < 6; ++i)
+        for (auto& idx : featuresBeginOrEndOnEdge[i])idxOrder.push_back(idx);
+
+    int currentId = 0;
+    bvector<bvector<int32_t>> mergedFeatures;
+    bvector<int32_t> currentFeature;
+    std::set<int> usedFeatures;
+    std::set<int> checkIds;
+    while (usedFeatures.size() < nOfFeaturesToLink && checkIds.size() < idxOrder.size() && currentId < idxOrder.size())
+        {
+        if (currentFeature.size() > 1)
+            {
+            currentFeature.push_back(currentFeature[1]);
+            mergedFeatures.push_back(currentFeature);
+            currentFeature.clear();
+            }
+        if (checkIds.count(currentId) != 0 || usedFeatures.count(idxOrder[currentId].second) != 0)
+            {
+            currentId++;
+            continue;
+            }
+        checkIds.insert(currentId);
+        int feaId = idxOrder[currentId].second;
+        if (currentFeature.empty()) currentFeature.push_back(featureDefs[feaId][0]);
+        if (idxOrder[currentId].first == 1) currentFeature.insert(currentFeature.end(), featureDefs[feaId].begin() + 1, featureDefs[feaId].end()-1);
+        else currentFeature.insert(currentFeature.end(), featureDefs[feaId].rbegin()+1, featureDefs[feaId].rend() - 1);
+        usedFeatures.insert(feaId);
+        ++currentId;
+        int iterations = 0;
+        while (currentId < idxOrder.size())
+            {
+            int feaId = idxOrder[currentId].second;
+            if (usedFeatures.count(feaId) != 0) break;
+            usedFeatures.insert(feaId);
+            checkIds.insert(currentId);
+            if (idxOrder[currentId].first == 1) currentFeature.insert(currentFeature.end(), featureDefs[feaId].begin() + 1, featureDefs[feaId].end()-1);
+            else currentFeature.insert(currentFeature.end(), featureDefs[feaId].rbegin()+1, featureDefs[feaId].rend() - 1);
+
+            if (currentFeature.back() == currentFeature[1]) break;
+            if (iterations % 2 != 0) ++currentId;
+            else
+                {
+                size_t id = 0;
+                for (id = currentId + 1; id < idxOrder.size(); ++id)
+                    if (idxOrder[id].second == feaId)
+                        {
+                        break;
+                        }
+                currentId = (int)id + 1;
+                }
+            }
+        currentId = 0;
+
+        }
+    if (currentFeature.size() > 1)
+        {
+        currentFeature.push_back(currentFeature[1]);
+        mergedFeatures.push_back(currentFeature);
+        currentFeature.clear();
+        }
+    for (auto it = usedFeatures.begin(); it != usedFeatures.end(); ++it)
+        featureDefs[*it].clear();
+    for (auto& feature : mergedFeatures) featureDefs.push_back(feature);
+    }
+
+//=======================================================================================
+// @bsimethod                                                   Elenie.Godzaridis 4/16
+//=======================================================================================
+template<class POINT, class EXTENT>
+void SMMeshIndexNode<POINT, EXTENT>::CollectFeatureDefinitionsFromGraph(MTGGraph* graph, size_t maxPtID)
+    {
+    // MTGMask visitedMask = graph->GrabMask();
+    bvector<bvector<int32_t>> features;
+    bvector<bvector<int32_t>> featureDefs;
+    /*    bvector<int32_t> currentFeature;
+        MTGARRAY_SET_LOOP(edgeID, graph)
+        {
+        if (!graph->GetMaskAt(edgeID, visitedMask))
+        {
+        graph->SetMaskAt(edgeID, visitedMask);
+        int tagValue = -1;
+        graph->TryGetLabel(edgeID, 2, tagValue);
+        if (IsClosedFeature(tagValue))
+        {
+        if (currentFeature.size() > 0)
+        {
+        features.push_back(currentFeature);
+        currentFeature.clear();
+        }
+        currentFeature.push_back(tagValue);
+        MTGNodeId current = edgeID;
+        bvector<int32_t> left;
+        bvector<int32_t> right;
+        CollectNextFeatureEdges(graph, current, tagValue, visitedMask,left);
+        CollectNextFeatureEdges(graph, graph->EdgeMate(current), tagValue, visitedMask, right);
+        currentFeature.insert(currentFeature.end(), left.rbegin(), left.rend());
+        currentFeature.insert(currentFeature.end(), right.begin(), right.end());
+
+        }
+        }
+        }
+        MTGARRAY_END_SET_LOOP(edgeID, graph)
+        graph->ClearMask(visitedMask);
+        graph->DropMask(visitedMask);
+        if (currentFeature.size() > 0)
+        features.push_back(currentFeature);*/
+    std::vector<int> temp;
+    std::map<int, int> componentForPoints;
+    ReadFeatureTags(graph, temp, features, componentForPoints);
+
+    std::map<int,bvector<std::set<int32_t>>> ptsMatch;
+    for (auto& feature : features)
+        {
+        int tag = feature[0];
+        if (ptsMatch.count(tag) == 0)
+            {
+            ptsMatch[tag] = bvector<std::set<int32_t>>(maxPtID);
+            }
+        ptsMatch[tag][feature[1]].insert(feature[2]);
+        ptsMatch[tag][feature[2]].insert(feature[1]);
+        }
+    for (auto& it : ptsMatch)
+        {
+        int tag = it.first;
+        int start = -1;
+        for (size_t t = 0; t < ptsMatch[tag].size(); ++t)
+            {
+            if (ptsMatch[tag][t].size() == 1)
+                {
+                start = (int)t;
+                break;
+                }
+            }
+        while (start != -1)
+            {
+            bvector<int32_t> list;
+            while (start != -1)
+                {
+                list.push_back(start);
+                if (ptsMatch[tag][start].empty()) start = -1;
+                else
+                    {
+                    int next = *(ptsMatch[tag][start].begin());
+                    ptsMatch[tag][start].erase(next);
+                    ptsMatch[tag][next].erase(start);
+                    start = next;
+                    }
+                }
+            if (!list.empty() && list.size() > 1)
+                {
+                if (IsClosedFeature(tag)) list.push_back(list.front());
+                list.insert(list.begin(), tag);
+                featureDefs.push_back(list);
+               /* std::ofstream f;
+                f.open((Utf8String("e:\\output\\scmesh\\2016-05-05\\feature_") + Utf8String(std::to_string(GetBlockID().m_integerID).c_str()) + Utf8String(std::to_string(featureDefs.size()).c_str())).c_str(), std::ios_base::trunc);
+                for (auto& i : list)
+                    {
+                    f << i;
+                    if ((&i - &list.front()) > 0) f << " " << operator[](i).x << " " << operator[](i).y << " " << operator[](i).z;
+                    f << std::endl;
+                    }
+                f.close();*/
+                }
+            for (size_t t = 0; t < ptsMatch[tag].size(); ++t)
+                {
+                if (ptsMatch[tag][t].size() == 1)
+                    {
+                    start = (int)t;
+                    break;
+                    }
+                }
+            }
+        }
+
+    for (auto& definition : featureDefs)
+        {
+        bvector<int> feature1 = definition;
+        for (auto it = featureDefs.begin(); feature1.size() > 0 && it != featureDefs.end(); ++it)
+            {
+            auto& nextDefinition = *it;
+            if (definition != nextDefinition && nextDefinition.size() > 1 && componentForPoints.count(feature1.back()) != 0 && componentForPoints.count(nextDefinition[1]) != 0)
+                {
+                if (componentForPoints[feature1.back()] = componentForPoints[nextDefinition[1]])
+                    {
+                    feature1.insert(feature1.end(), nextDefinition.begin() + 1, nextDefinition.end());
+                    nextDefinition.clear();
+                    it = featureDefs.begin();
+                    }
+                }
+            }
+        definition = feature1;
+        }
+
+    SortDefinitionsBasedOnNodeBounds(featureDefs, m_nodeHeader.m_nodeExtent, &this->operator[](0), this->size());
+
+    for (auto& definition : featureDefs)
+        {
+        if (definition.size() < 2) continue;
+        if (m_featureDefinitions.capacity() < m_featureDefinitions.size() + 1) for (auto& def : m_featureDefinitions) if (!def.Discarded()) def.Discard();
+        m_featureDefinitions.resize(m_featureDefinitions.size() + 1);
+        auto& newFeatureDef = m_featureDefinitions.back();
+        newFeatureDef.SetStore(dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetFeatureStore());
+        newFeatureDef.SetPool(dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetFeaturePool());
+        newFeatureDef.push_back(&definition[0], definition.size());
+        }
+    }
+
 //=======================================================================================
 // @bsimethod                                                   Elenie.Godzaridis 12/15
 //=======================================================================================
@@ -1707,6 +2020,7 @@ void SMMeshIndexNode<POINT, EXTENT>::UpdateFromGraph(MTGGraph * graph, bvector<D
     std::vector<int> faceIndices;
     MTGMask visitedMask = graph->GrabMask();
     bvector<DPoint3d> retainedPts;
+    bmap<DPoint3d, int, DPoint3dZYXTolerancedSortComparison> ptMap(DPoint3dZYXTolerancedSortComparison(10e-4, 0));
     bvector<int> indices(pointList.size(), -1);
 
     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr = GetPointsPtr();
@@ -1723,8 +2037,16 @@ void SMMeshIndexNode<POINT, EXTENT>::UpdateFromGraph(MTGGraph * graph, bvector<D
                 assert(vIndex <= (int)pointList.size());
                 if (indices[vIndex - 1] == -1)
                     {
-                    retainedPts.push_back(pointList[vIndex - 1]);
-                    indices[vIndex - 1] = (int)retainedPts.size();
+                    if (ptMap.count(pointList[vIndex - 1]) == 0)
+                        {
+                        retainedPts.push_back(pointList[vIndex - 1]);
+                        indices[vIndex - 1] = (int)retainedPts.size();
+                        ptMap[pointList[vIndex - 1]] = (int)retainedPts.size();
+                        }
+                    else
+                        {
+                        indices[vIndex - 1] = ptMap[pointList[vIndex - 1]];
+                        }
                     }
                 int idx = indices[vIndex - 1];
                 graph->TrySetLabel(edgeID, 0, idx);
@@ -1740,8 +2062,16 @@ void SMMeshIndexNode<POINT, EXTENT>::UpdateFromGraph(MTGGraph * graph, bvector<D
                 assert(vIndex <= (int)pointList.size());
                 if (indices[vIndex - 1] == -1)
                     {
-                    retainedPts.push_back(pointList[vIndex - 1]);
-                    indices[vIndex - 1] = (int)retainedPts.size();
+                    if (ptMap.count(pointList[vIndex - 1]) == 0)
+                        {
+                        retainedPts.push_back(pointList[vIndex - 1]);
+                        indices[vIndex - 1] = (int)retainedPts.size();
+                        ptMap[pointList[vIndex - 1]] = (int)retainedPts.size();
+                        }
+                    else
+                        {
+                        indices[vIndex - 1] = ptMap[pointList[vIndex - 1]];
+                        }
                     }
                 int idx = indices[vIndex - 1];
                     faceIndices.push_back(idx);
@@ -1770,6 +2100,7 @@ void SMMeshIndexNode<POINT, EXTENT>::UpdateFromGraph(MTGGraph * graph, bvector<D
         this->m_nodeHeader.m_nodeCount = retainedPts.size();
         this->ReplacePtsIndices((int32_t*)&faceIndices[0], this->m_nodeHeader.m_nbFaceIndexes);
         }
+    //CollectFeatureDefinitionsFromGraph(graph, retainedPts.size());
 #if SM_OUTPUT_MESHES_GRAPH
     WString nameBefore = L"e:\\output\\scmesh\\2015-12-11\\afterfilter_";
     nameBefore.append(std::to_wstring(this->m_nodeHeader.m_level).c_str());
@@ -2266,11 +2597,11 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
 #else
     {
     if (m_differenceSets.size() == 0) return;
-    //std::cout << "Merging clips for " << GetBlockID().m_integerID << " we have " << m_differenceSets.size() << "clips"<<std::endl;
     for (auto& diffSet : m_differenceSets)
         {
         if (diffSet.clientID == (uint64_t)-1 && diffSet.upToDate) return;
         }
+    //std::cout << "Merging clips for " << GetBlockID().m_integerID << " we have " << m_differenceSets.size() << "clips" << std::endl;
 
     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(GetPointsPtr());
 
@@ -2705,6 +3036,7 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::Modify
                     }
 
 #else
+            //std::cout << " updating clip " << clipId << " to node " << GetBlockID().m_integerID << " toggle is "<<setToggledWhenIdIsOn<< std::endl;
             *it = DifferenceSet();
             it->clientID = clipId;
             it->toggledForID = setToggledWhenIdIsOn;

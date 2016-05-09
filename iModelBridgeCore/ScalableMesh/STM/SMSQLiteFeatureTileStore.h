@@ -32,8 +32,8 @@ template <class EXTENT> class SMSQLiteFeatureTileStore : public SMPointTileStore
 
             // initialize codec
             HFCPtr<HCDCodec> pCodec = new HCDCodecZlib(pi_compressedPacket.GetDataSize());
-            pi_uncompressedPacket.SetBufferOwnership(true);
-            pi_uncompressedPacket.SetBuffer(new Byte[pi_uncompressedPacket.GetDataSize()], pi_uncompressedPacket.GetDataSize() * sizeof(Byte));
+            //pi_uncompressedPacket.SetBufferOwnership(true);
+            //pi_uncompressedPacket.SetBuffer(new Byte[pi_uncompressedPacket.GetDataSize()], pi_uncompressedPacket.GetDataSize() * sizeof(Byte));
             const size_t compressedDataSize = pCodec->DecompressSubset(pi_compressedPacket.GetBufferAddress(), pi_compressedPacket.GetDataSize() * sizeof(Byte), pi_uncompressedPacket.GetBufferAddress(), pi_uncompressedPacket.GetBufferSize() * sizeof(Byte));
             pi_uncompressedPacket.SetDataSize(compressedDataSize);
 

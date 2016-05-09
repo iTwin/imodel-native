@@ -36,8 +36,6 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #include <ScalableMesh/Import/Source.h>
 #include <ScalableMesh/Import/Importer.h>
 
-#include <ScalableMesh/Import/Config/All.h>
-
 #include <ScalableMesh/Import/Error/Source.h>
 
 #include "../Import/Sink.h"
@@ -728,7 +726,7 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
             dbFilePath.ReplaceI(L".stm", L".db");
             pFinalTileStore = new TileStoreType(m_smSQLitePtr);
             pIndiceTileStore = new SMSQLiteIndiceTileStore<YProtPtExtentType >(m_smSQLitePtr);
-            // SM_NEEDS_WORKS : layerID 
+
             pUVTileStore = new SMSQLiteUVTileStore<YProtPtExtentType >(m_smSQLitePtr);
             pUVsIndicesTileStore = new SMSQLiteUVIndiceTileStore<YProtPtExtentType >(m_smSQLitePtr);
             pTextureTileStore = new SMSQLiteTextureTileStore(m_smSQLitePtr);

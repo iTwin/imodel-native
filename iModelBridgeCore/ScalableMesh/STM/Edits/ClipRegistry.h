@@ -134,6 +134,22 @@ class ClipRegistry : public HFCShareableObject<ClipRegistry>
         //m_clips[id].SetDirty(false);
         }
 
+    bool HasClip(uint64_t id)
+        {
+        if (m_clipStore == NULL) OpenStore();
+        size_t nOfPts = m_clipStore->GetBlockDataCount(id);
+        if (nOfPts == 0) return false;
+        else return true;
+        }
+
+    bool HasSkirt(uint64_t id)
+        {
+        if (m_skirtStore == NULL) OpenStore();
+        size_t nOfPts = m_skirtStore->GetBlockDataCount(id);
+        if (nOfPts == 0) return false;
+        else return true;
+        }
+
     void GetClip(uint64_t id, bvector<DPoint3d>& clip)
         {
         /*if (id < 0 || id > m_clips.size()) return;
