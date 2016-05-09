@@ -509,7 +509,7 @@ public:
 
     ~SMPointNodeHeader()
          {
-              //  if (nullptr != m_meshComponents) delete[] m_meshComponents;
+           if (nullptr != m_meshComponents) delete[] m_meshComponents;
          }
 
     SMPointNodeHeader<EXTENT>& operator=(const SQLiteNodeHeader& nodeHeader)

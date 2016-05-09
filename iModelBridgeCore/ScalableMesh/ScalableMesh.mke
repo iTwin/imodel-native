@@ -241,8 +241,6 @@ $(o)ScalableMeshSourceDescription$(oext) : $(stmDir)ScalableMeshSourceDescriptio
 
 $(o)ScalableMeshSourceImportConfig$(oext) : $(stmDir)ScalableMeshSourceImportConfig.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)ScalableMeshStream$(oext) : $(stmDir)ScalableMeshStream.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
-
 $(o)ScalableMeshURL$(oext) : $(stmDir)ScalableMeshURL.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 $(o)ScalableMeshPolicy$(oext) : $(stmDir)ScalableMeshPolicy.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}

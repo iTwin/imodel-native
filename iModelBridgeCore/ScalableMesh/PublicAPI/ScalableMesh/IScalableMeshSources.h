@@ -33,8 +33,8 @@ struct IDTMLocalFileSource;
 struct IDTMDgnLevelSource;
 struct IDTMDgnReferenceLevelSource;
 
-struct BinaryIStream;
-struct BinaryOStream;
+//struct BinaryIStream;
+//struct BinaryOStream;
 
 
 typedef RefCountedPtr<IDTMSource>           IDTMSourcePtr;
