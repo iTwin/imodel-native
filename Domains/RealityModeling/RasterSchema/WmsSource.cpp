@@ -20,19 +20,14 @@ USING_NAMESPACE_BENTLEY_SQLITE
 // @bsimethod                                                   Mathieu.Marchand  6/2015
 //=======================================================================================
 struct WmsTileData : IRealityData<WmsTileData, BeSQLiteRealityDataStorage, HttpRealityDataSource>
-    {
+{
     //===================================================================================
     // @bsimethod                                               Mathieu.Marchand  6/2015
     //===================================================================================
-    struct RequestOptions : IRealityData::RequestOptions
-        {
-        //! Creates the options object.
-        //! @param[in] requestFromSource    Should the cache request for fresh data if it's expired or doesn't exist.
-        RequestOptions(bool requestFromSource)
-            {
-            SetRequestFromSource(requestFromSource);
-            }
-        };
+    struct RequestOptions : RealityDataOptions
+    {
+        RequestOptions(bool requestFromSource){m_requestFromSource=requestFromSource;}
+    };
 
 private:
     Utf8String      m_url;
@@ -58,7 +53,7 @@ public:
     ByteStream const& GetData() const  {return m_data;}
     DateTime GetCreationDate() const  {return m_creationDate;}
     Utf8String GetContentType() const  {return m_contentType;}
-    };
+};
 
 //----------------------------------------------------------------------------------------
 //-------------------------------  WmsTileData      ----------------------------------------
@@ -76,10 +71,11 @@ bool WmsTileData::_IsExpired() const
 // @bsimethod                                                   Mathieu.Marchand  6/2015
 //=======================================================================================
 struct WmsTileDataPrepareAndCleanupHandler : BeSQLiteRealityDataStorage::DatabasePrepareAndCleanupHandler
-    {
-    static BeAtomic<bool> s_isPrepared;
+{
+    BeAtomic<bool> m_isPrepared;
 
-    virtual bool _IsPrepared() const override {return s_isPrepared;}
+    WmsTileDataPrepareAndCleanupHandler() {m_isPrepared.store(false);}
+    virtual bool _IsPrepared() const override {return m_isPrepared;}
 
     //----------------------------------------------------------------------------------------
     // @bsimethod                                                   Mathieu.Marchand  6/2015
@@ -88,21 +84,14 @@ struct WmsTileDataPrepareAndCleanupHandler : BeSQLiteRealityDataStorage::Databas
         {
         if (db.TableExists(TABLE_NAME_WmsTileData))
             {
-            s_isPrepared.store(true);
+            m_isPrepared.store(true);
             return SUCCESS;
             }
     
-        Utf8CP ddl = "Url CHAR PRIMARY KEY, \
-                        Raster BLOB,          \
-                        RasterSize INT,       \
-                        ContentType CHAR,     \
-                        Created BIGINT,       \
-                        Expires BIGINT,       \
-                        ETag CHAR";
-
+        Utf8CP ddl = "Url CHAR PRIMARY KEY,Raster BLOB,RasterSize INT,ContentType CHAR,Created BIGINT,Expires BIGINT,ETag CHAR";
         if (BeSQLite::BE_SQLITE_OK == db.CreateTable(TABLE_NAME_WmsTileData, ddl))
             {
-            s_isPrepared.store(true);
+            m_isPrepared.store(true);
             return SUCCESS;
             }
         return ERROR;
@@ -134,9 +123,7 @@ struct WmsTileDataPrepareAndCleanupHandler : BeSQLiteRealityDataStorage::Databas
             
         return SUCCESS;
         }
-    };
-
-BeAtomic<bool> WmsTileDataPrepareAndCleanupHandler::s_isPrepared(false);
+};
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  6/2015
@@ -153,7 +140,7 @@ bool WmsTileData::IsSupportedContent(Utf8StringCR contentType) const
     {
     // Only jpeg and png for now.
     // "application/vnd.ogc.se_xml" would be a Wms exception. In the future, we should report that to the user.
-    if(contentType.EqualsI (CONTENT_TYPE_PNG) || contentType.EqualsI (CONTENT_TYPE_JPEG))
+    if (contentType.EqualsI(CONTENT_TYPE_PNG) || contentType.EqualsI(CONTENT_TYPE_JPEG))
         return true;
     
     return false;
@@ -506,7 +493,7 @@ Utf8String WmsSource::BuildTileUrl(TileId const& tileId)
         GetTileSizeX(tileId), GetTileSizeY(tileId), m_mapInfo.m_format.c_str());
        
     // Optional parameters
-    if(m_mapInfo.m_transparent)
+    if (m_mapInfo.m_transparent)
         tileUrl.append("&TRANSPARENT=TRUE");
     else
         tileUrl.append("&TRANSPARENT=FALSE");

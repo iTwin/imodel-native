@@ -19,15 +19,6 @@ Utf8String Node::GetChildFile() const
     return parentPath.substr(0, parentPath.find_last_of("/")) + "/" + m_childPath;
     }
 
-/*-----------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Node::DrawGeometry(DrawArgsR args)
-    {
-    if (m_geometry.IsValid())
-        m_geometry->Draw(args);
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -61,10 +52,10 @@ bool Node::TestVisibility(ViewContextR viewContext, SceneR scene)
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Node::Draw(DrawArgsR args)
+void Node::Draw(DrawArgsR args, int depth)
     {
     if (!TestVisibility(args.m_context, args.m_scene))
-        return false;
+        return;
 
     double radius = args.m_scene.GetNodeRadius(*this);
     bool tooCoarse = true;
@@ -86,20 +77,22 @@ bool Node::Draw(DrawArgsR args)
     ChildNodes const* children = GetChildren();
     if (tooCoarse && nullptr != children) // this node is too coarse for current view, don't draw it and instead draw its children
         {
-        bool childrenScheduled = false;
         for (auto const& child : *children)
-            childrenScheduled |= child->Draw(args);
+            child->Draw(args, depth+1);
 
-        return childrenScheduled;
+        return ;
         }
 
-    DrawGeometry(args);
+    if (m_geometry.IsValid())
+        m_geometry->Draw(args);
 
-    if (!tooCoarse || !NeedLoadChildren())
-        return false;
+    if (!HasChildren() || !tooCoarse)
+        return;
 
-    args.m_scene.QueueLoadChildren(*this);
-    return true;
+    args.m_missing.Insert(depth, this);
+    
+    if (IsInvalid())
+        args.m_scene.RequestData(this, false, nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**

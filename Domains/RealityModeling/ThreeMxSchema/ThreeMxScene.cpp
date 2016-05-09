@@ -11,18 +11,6 @@
 #include <windows.h>
 #endif
 
-#define RENDER_LOGGING 1
-#if defined (RENDER_LOGGING)
-#   define THREADLOG (*NativeLogging::LoggingManager::GetLogger(DgnDb::GetThreadIdName()))
-#   define DEBUG_PRINTF THREADLOG.debugv
-#   define WARN_PRINTF THREADLOG.debugv
-#   define ERROR_PRINTF THREADLOG.errorv
-#else
-#   define DEBUG_PRINTF(...)
-#   define WARN_PRINTF(...)
-#   define ERROR_PRINTF(...)
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -61,15 +49,10 @@ BentleyStatus Scene::DeleteRealityCache()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus Scene::ReadRoot(SceneInfo& sceneInfo)
+BentleyStatus Scene::ReadSceneFile(SceneInfo& sceneInfo)
     {
-    MxStreamBuffer* rootStream = nullptr;
-    RealityDataCacheResult status = RequestData(nullptr, true, &rootStream);
-    if (RealityDataCacheResult::Success != status)
-        return ERROR;
-
-    BeAssert(nullptr != rootStream);
-    return sceneInfo.Read(*rootStream);
+    MxStreamBuffer rootStream;
+    return RealityDataCacheResult::Success != RequestData(nullptr, true, &rootStream) ? ERROR : sceneInfo.Read(rootStream);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -78,7 +61,7 @@ BentleyStatus Scene::ReadRoot(SceneInfo& sceneInfo)
 BentleyStatus Scene::LoadScene()
     {
     SceneInfo sceneInfo;
-    if (SUCCESS != ReadRoot(sceneInfo))
+    if (SUCCESS != ReadSceneFile(sceneInfo))
         return ERROR;
 
     m_rootNode = new Node(nullptr);
@@ -106,18 +89,9 @@ DRange3d Scene::GetRange(TransformCR trans) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Scene::Draw(RenderContextR context)
+bool Scene::Draw(DrawArgs& args)
     {
-    DrawArgs args(context, *this);
-    m_rootNode->Draw(args);
-
-    if (!args.m_graphics.m_entries.empty())
-        {
-        DEBUG_PRINTF("drawing %d 3mx nodes", args.m_graphics.m_entries.size());
-        auto group = context.CreateGroupNode(Graphic::CreateParams(nullptr, GetLocation()), args.m_graphics, nullptr);
-        BeAssert(args.m_graphics.m_entries.empty()); // the CreateGroupNode should have moved them
-        context.OutputGraphic(*group, nullptr);
-        }
+    m_rootNode->Draw(args, 0);
     return true;
     }
 

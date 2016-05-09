@@ -41,7 +41,6 @@ struct CtmContext
 };
 
 template<typename T> T getJsonValue(JsonValueCR pt);
-// UNUSED: template<> double getJsonValue(JsonValueCR pt) {return pt.asDouble();}
 template<> Utf8String getJsonValue(JsonValueCR pt) {return pt.asCString();}
 
 /*-----------------------------------------------------------------------------------**//**
@@ -131,6 +130,11 @@ bool Node::ReadHeader(JsonValueCR pt, Utf8String& name, bvector<Utf8String>& nod
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Node::DoRead(MxStreamBuffer& in, SceneR scene)
     {
+    BeAssert(IsQueued());
+    m_childLoad.store(Node::ChildLoad::Loading);
+
+    BeAssert(m_childNodes.empty());
+
     bmap<Utf8String, int> textureIds, nodeIds;
     bmap<Utf8String, Utf8String> geometryNodeCorrespondence;
     int nodeCount = 0;
@@ -318,7 +322,10 @@ BentleyStatus Node::Read3MXB(MxStreamBuffer& in, SceneR scene)
     BeAssert(!AreChildrenValid());
 
     if (SUCCESS != DoRead(in, scene))
+        {
+        BeAssert(false);
         return ERROR;
+        }
 
     // only after we've successfully read the entire node, mark it as ready so other threads can look at its child nodes.
     SetIsReady();

@@ -92,10 +92,14 @@ struct SceneInfo
 //=======================================================================================
 struct DrawArgs
 {
+    typedef bmultimap<int, NodePtr> MissingNodes;
     Dgn::RenderContextR m_context;
     SceneR m_scene;
     Dgn::Render::GraphicArray m_graphics;
+    MissingNodes m_missing;
     DrawArgs(Dgn::RenderContextR context, SceneR scene) : m_context(context), m_scene(scene) {}
+
+    void DrawGraphics();
 };
 
 /*=================================================================================**//**
@@ -120,6 +124,7 @@ struct Node : RefCountedBase, NonCopyableClass
 {
     friend struct Scene;
     typedef bvector<NodePtr> ChildNodes;
+    enum ChildLoad {Invalid=0, Queued=1, Loading=2, Ready=3, NotFound=4};
 
 private:
     DRange3d m_range = DRange3d::NullRange();
@@ -130,7 +135,6 @@ private:
     GeometryPtr m_geometry;
     Utf8String m_childPath;     // this is the name of the file (relative to path of this node) to load the children of this node.
 
-    enum ChildLoad {Invalid=0, Queued=1, Ready=2, NotFound=3};
     BeAtomic<int> m_childLoad;
     ChildNodes m_childNodes;
 
@@ -145,18 +149,18 @@ public:
     DRange3dCR GetRange() const {return m_range;}
     Utf8String GetChildFile () const;
     BentleyStatus Read3MXB(MxStreamBuffer&, SceneR);
-    BentleyStatus Read3MXB(BeFileNameCR filename, SceneR);
     Utf8String GetFilePath(SceneR) const;
     BentleyStatus LoadChildren(SceneR);
     void Dump(Utf8CP prefix) const;
-    bool Draw(DrawArgsR);
-    void DrawGeometry(DrawArgsR);
+    void Draw(DrawArgsR, int depth);
     DRange3d GetRange(TransformCR) const;
+    ChildLoad GetChildLoadStatus() const {return (ChildLoad) m_childLoad.load();}
     void SetIsReady() {return m_childLoad.store(ChildLoad::Ready);}
     void SetNotFound() {BeAssert(false); return m_childLoad.store(ChildLoad::NotFound);}
+    bool HasChildren() const {return !m_childPath.empty();}
     bool IsQueued() const {return m_childLoad.load() == ChildLoad::Queued;}
     bool AreChildrenValid() const {return m_childLoad.load() == ChildLoad::Ready;}
-    bool NeedLoadChildren() const {return m_childLoad.load() == ChildLoad::Invalid && !m_childPath.empty();}
+    bool IsInvalid() const {return m_childLoad.load() == ChildLoad::Invalid;}
     bool IsDisplayable() const {return GetMaxDiameter() > 0.0;}
     void UnloadChildren();
     size_t GetNodeCount() const;
@@ -191,22 +195,18 @@ private:
     NodePtr m_rootNode;
     Dgn::RealityDataCachePtr m_cache;
     Dgn::Render::SystemP m_renderSystem = nullptr;
-    Requests m_requests;
 
     BentleyStatus ReadGeoLocation(SceneInfo const&);
-    void QueueLoadChildren(Node&);
-    BentleyStatus LoadScene();
-    void RemoveRequest(NodeR node);
-    bool HasPendingRequests() const {return !m_requests.empty();}
+    BentleyStatus LoadScene(); // synchronous  
     bool IsUrl() const {return m_isUrl;}
-    Dgn::RealityDataCacheResult RequestData(Node* node, bool synchronous, MxStreamBuffer**);
+    Dgn::RealityDataCacheResult RequestData(Node* node, bool synchronous, MxStreamBuffer*);
 
 public:
     THREEMX_EXPORT Scene(Dgn::DgnDbR, TransformCR location, Utf8CP realityCacheName, Utf8CP rootUrl, Dgn::Render::SystemP);
     Dgn::Render::SystemP GetRenderSystem() const {return m_renderSystem;}
     DPoint3d GetNodeCenter(Node const& node) const {return DPoint3d::FromProduct(m_location, node.GetCenter());}
     double GetNodeRadius(Node const& node) const {return m_scale * node.GetRadius();}
-    bool Draw(Dgn::RenderContextR);
+    bool Draw(DrawArgs&);
     DRange3d GetRange(TransformCR) const;
     size_t GetNodeCount() const;
     bool GetLoadSynchronous() const {return m_loadSynchronous;}
@@ -214,12 +214,9 @@ public:
     double GetFixedResolution() const {return m_fixedResolution;}
     TransformCR GetLocation() const {return m_location;}
     double GetScale() const {return m_scale;}
-    THREEMX_EXPORT BentleyStatus ReadRoot(SceneInfo& sceneInfo);
+    THREEMX_EXPORT BentleyStatus ReadSceneFile(SceneInfo& sceneInfo); //! Read the scene file synchronously
     THREEMX_EXPORT BentleyStatus DeleteRealityCache();
     Utf8String ConstructNodeName(Node& node);
-
-    enum class RequestStatus {Finished, Pending};
-    RequestStatus ProcessRequests();
 
     static void GetMemoryStatistics(size_t& memoryLoad, size_t& total, size_t& available);
     static double CalculateResolutionRatio();

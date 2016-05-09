@@ -25,19 +25,51 @@ ThreeMxDomain::ThreeMxDomain() : DgnDomain(THREEMX_SCHEMA_NAME, "3MX Domain", 1)
 struct ThreeMxProgressive : ProgressiveTask
 {
     SceneR m_scene;
-    ThreeMxProgressive(SceneR scene) : m_scene(scene) {}
+    DrawArgs::MissingNodes m_missing;
+    ThreeMxProgressive(SceneR scene, DrawArgs::MissingNodes& nodes) : m_scene(scene), m_missing(std::move(nodes)){}
     Completion _DoProgressive(ProgressiveContext& context, WantShow&) override;
 };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ProgressiveTask::Completion ThreeMxProgressive::_DoProgressive(ProgressiveContext& context, WantShow&) 
+ProgressiveTask::Completion ThreeMxProgressive::_DoProgressive(ProgressiveContext& context, WantShow& show) 
     {
-    auto stat = m_scene.ProcessRequests();
-    m_scene.Draw(context);
+    DrawArgs args(context, m_scene);
 
-    return stat==Scene::RequestStatus::Finished ? Completion::Finished : Completion::Aborted;
+    DEBUG_PRINTF("3MX progressive %d missing", m_missing.size());
+
+    for (auto const& node: m_missing)
+        {
+        auto stat = node.second->GetChildLoadStatus();
+        if (stat == Node::ChildLoad::Ready)
+            node.second->Draw(args, node.first);
+        else if (stat != Node::ChildLoad::NotFound)
+            args.m_missing.Insert(node.first, node.second);
+        }
+
+    args.DrawGraphics();
+//        show = WantShow::Yes;
+
+    m_missing.swap(args.m_missing);
+
+    DEBUG_PRINTF("3MX after progressive still %d missing", m_missing.size());
+    return m_missing.empty() ? Completion::Finished : Completion::Aborted;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DrawArgs::DrawGraphics()
+    {
+    if (m_graphics.m_entries.empty())
+        return;
+
+    DEBUG_PRINTF("3MX drawing %d 3mx nodes", m_graphics.m_entries.size());
+                       
+    auto group = m_context.CreateGroupNode(Graphic::CreateParams(nullptr, m_scene.GetLocation()), m_graphics, nullptr);
+    BeAssert(m_graphics.m_entries.empty()); // the CreateGroupNode should have moved them
+    m_context.OutputGraphic(*group, nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -99,10 +131,14 @@ void ThreeMxModel::_AddTerrainGraphics(TerrainContextR context) const
         return;
         }
 
-    m_scene->Draw(context);
+    DrawArgs args(context, *m_scene);
+    m_scene->Draw(args);
+    DEBUG_PRINTF("3MX draw %d graphics, %d missing nodes", args.m_graphics.m_entries.size(), args.m_missing.size());
 
-    if (m_scene->HasPendingRequests())
-        context.GetViewport()->ScheduleTerrainProgressiveTask(*new ThreeMxProgressive(*m_scene));
+    args.DrawGraphics();
+
+    if (!args.m_missing.empty())
+        context.GetViewport()->ScheduleTerrainProgressiveTask(*new ThreeMxProgressive(*m_scene, args.m_missing));
     }
 
 #define JSON_ROOT_URL "RootUrl"
