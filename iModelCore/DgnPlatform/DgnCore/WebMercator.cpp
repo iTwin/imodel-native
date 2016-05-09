@@ -93,9 +93,6 @@ private:
 private:
     static Utf8String SerializeRasterInfo(RgbImageInfo const&);
     static RgbImageInfo DeserializeRasterInfo(Utf8CP);
-    TiledRaster(){}
-    TiledRaster(RgbImageInfo rasterInfo) : m_rasterInfo(rasterInfo) {}
-    virtual ~TiledRaster(){}
         
 protected:
     virtual Utf8CP _GetId() const override {return m_url.c_str();}
@@ -106,8 +103,8 @@ protected:
     virtual BeSQLiteRealityDataStorage::DatabasePrepareAndCleanupHandlerPtr _GetDatabasePrepareAndCleanupHandler() const override;
 
 public:
-    static RefCountedPtr<TiledRaster> Create() {return new TiledRaster();}
-    static RefCountedPtr<TiledRaster> Create(RgbImageInfo rasterInfo) {return new TiledRaster(rasterInfo);}
+    TiledRaster(){}
+    TiledRaster(RgbImageInfo rasterInfo) : m_rasterInfo(rasterInfo) {}
     ByteStream const& GetData() const {return m_data;}
     DateTime GetCreationDate() const {return m_creationDate;}
     RgbImageInfo const& GetImageInfo() const {return m_rasterInfo;}
@@ -794,8 +791,9 @@ ProgressiveTask::Completion WebMercatorDisplay::_DoProgressive(ProgressiveContex
         Utf8String url;
         RgbImageInfo expectedImageInfo;
         m_model._CreateUrl(url, expectedImageInfo, tileid);
-        TiledRasterPtr realityData = TiledRaster::Create(expectedImageInfo);
-        if (RealityDataCacheResult::Success == realityCache.Get<TiledRaster>(*realityData, url.c_str()))
+
+        TiledRasterPtr realityData = new TiledRaster(expectedImageInfo);
+        if (RealityDataCacheResult::Success == realityCache.Get<TiledRaster>(*realityData, url.c_str(), RealityDataOptions()))
             {
             BeAssert(realityData.IsValid());
             //  The image is available from the cache. Great! Draw it.
@@ -823,8 +821,8 @@ ProgressiveTask::Completion WebMercatorDisplay::_DoProgressive(ProgressiveContex
         TileIdCR tileid  = iter->second;
 
         // See if the image has arrived in the cache.
-        TiledRasterPtr realityData = TiledRaster::Create();
-        if (RealityDataCacheResult::Success == realityCache.Get<TiledRaster>(*realityData, url.c_str()))
+        TiledRasterPtr realityData = new TiledRaster();
+        if (RealityDataCacheResult::Success == realityCache.Get<TiledRaster>(*realityData, url.c_str(), RealityDataOptions()))
             {
             if (context.CheckStop())
                 return Completion::Aborted;
@@ -1138,8 +1136,11 @@ bool TiledRaster::_IsExpired() const
 // @bsiclass                                        Grigas.Petraitis            03/2015
 //=======================================================================================
 struct TiledRasterPrepareAndCleanupHandler : BeSQLiteRealityDataStorage::DatabasePrepareAndCleanupHandler
-    {
+{
     mutable BeAtomic<bool> m_isPrepared;
+
+    TiledRasterPrepareAndCleanupHandler() {m_isPrepared.store(false);}
+
     virtual bool _IsPrepared() const override {return m_isPrepared;}
 
     /*-----------------------------------------------------------------------------**//**
@@ -1188,7 +1189,7 @@ struct TiledRasterPrepareAndCleanupHandler : BeSQLiteRealityDataStorage::Databas
             
         return SUCCESS;
         }
-    };
+};
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               03/2015
