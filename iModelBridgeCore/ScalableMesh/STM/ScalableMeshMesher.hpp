@@ -40,8 +40,8 @@ extern bool s_useSpecialTriangulationOnGrids;
 #define TILE_X2 214155
 #define TILE_Y2 224205
 #define SM_OUTPUT_MESHES_STITCHING 0
-#define SM_TRACE_FEATURE_DEFS 1
-#define SM_TRACE_FEATURE_DEFINITIONS 1
+#define SM_TRACE_FEATURE_DEFS 0
+#define SM_TRACE_FEATURE_DEFINITIONS 0
 #define SM_TRACE_MESH_STATS 0
 //#define TILE_Y2 220088.85
 
