@@ -835,6 +835,7 @@ enum class GeoLocationProviderStatus
     Available               = 4,
     OutOfService            = 5,
     LocationUnavailable     = 6,
+    Initializing            = 7,
 };
 
 typedef bvector<double> T_DoubleVector;
