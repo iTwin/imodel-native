@@ -198,7 +198,7 @@ ECSqlStatus ECSqlUpdatePreparer::CheckForReadonlyProperties(ECSqlPrepareContext&
 
             if (prop.IsReadOnlyFlagSet() && prop.GetIsReadOnly() && !prop.IsCalculated())
                 {
-                ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Preparing the ECSQL '%s' failed. Cannot update data into ECProperty '%s' which is marked as 'IsReadonly'",
+                ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Preparing the ECSQL '%s' failed. Cannot update data into ECProperty '%s' which is marked as 'Readonly'",
                                                                         exp.ToECSql().c_str(), prop.GetName().c_str());
                 return ECSqlStatus::InvalidECSql;
                 }

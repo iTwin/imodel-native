@@ -2118,14 +2118,7 @@ TEST_F(ECSchemaUpdateTests, ModifyPropToReadOnly)
     ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
      
     statement.Finalize();
-    //Update Prepare should fail for ReadOnlyProp 
-
-
-
-
-
-    EXPECT_EQ(ECSqlStatus::Error, statement.Prepare(GetECDb(), "UPDATE ts.TestClass Set ReadWriteProp='RW1new', P1='P1_Val1new'"));
-
+    ASSERT_NE(ECSqlStatus::Success, statement.Prepare(GetECDb(), "UPDATE ts.TestClass Set ReadWriteProp='RW1new', P1='P1_Val1new'"));
     statement.Finalize();
     //skipping readonly Property Update should be successful.
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "UPDATE ts.TestClass Set ReadWriteProp='RW1new', P2='P2_Val1new' WHERE P2='P2_Val1'"));
@@ -2158,7 +2151,7 @@ TEST_F(ECSchemaUpdateTests, ModifyPropToReadOnly)
 
     //Verify Update
     statement.Finalize();
-    EXPECT_EQ(ECSqlStatus::Error, statement.Prepare(GetECDb(), "UPDATE ts.TestClass SET ReadWriteProp='RW2new', P2='P2_Val2new'"));
+    ASSERT_NE(ECSqlStatus::Success, statement.Prepare(GetECDb(), "UPDATE ts.TestClass SET ReadWriteProp='RW2new', P2='P2_Val2new'"));
 
     statement.Finalize();
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "UPDATE ts.TestClass SET ReadWriteProp='RW2new', P1='P1_Val2new' WHERE P1='P1_Val2'"));
@@ -2206,6 +2199,7 @@ TEST_F(ECSchemaUpdateTests, ModifyPropToReadOnly)
     P1            -> ReadOnly
     P2            -> ReadWrite
     */
+    statement.Finalize();
     //Insert should be successfull
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "INSERT INTO ts.TestClass(ReadWriteProp, P1, P2) VALUES('RW1', 'P1_Val3', 'P2_Val3')"));
     ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
@@ -2213,18 +2207,18 @@ TEST_F(ECSchemaUpdateTests, ModifyPropToReadOnly)
     //Verify Update
     statement.Finalize();
     //Update Prepare should fail for ReadOnlyProp
-    EXPECT_EQ(ECSqlStatus::Error, statement.Prepare(GetECDb(), "UPDATE ts.TestClass Set ReadWriteProp='RW3new', P1='P1_Val3new''"));
+    ASSERT_NE(ECSqlStatus::Success, statement.Prepare(GetECDb(), "UPDATE ts.TestClass Set ReadWriteProp='RW3new', P1='P1_Val3new''"));
 
     statement.Finalize();
     //skipping readonly Property Update should be successful.
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "UPDATE ts.TestClass Set ReadWriteProp='RW3new', P1='P1_Val3new' WHERE P1'P1_Val3'"));
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "UPDATE ts.TestClass Set ReadWriteProp='RW3new', P2='P2_Val3new' WHERE P1 = 'P1_Val3'"));
     ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
 
     //Verify Select
     statement.Finalize();
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT P1 FROM ts.TestClass WHERE ReadWriteProp='RW3new'"));
     ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
-    ASSERT_STREQ("P1_Val3new", statement.GetValueText(0));
+    ASSERT_STREQ("P1_Val3", statement.GetValueText(0));
 
     statement.Finalize();
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "DELETE FROM ts.TestClass"));

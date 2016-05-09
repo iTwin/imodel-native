@@ -264,7 +264,7 @@ TEST_F (JsonUpdaterTests, UpdateProperties)
     ASSERT_EQ (ECSqlStatus::Success, checkStmt.BindId (1, key.GetECInstanceId()));
     ASSERT_EQ (ECSqlStatus::Success, checkStmt.BindInt (2, 200));
     ASSERT_EQ (ECSqlStatus::Success, checkStmt.BindText (3, expectedVal, IECSqlBinder::MakeCopy::No));
-    ASSERT_EQ (ECSqlStatus::Success, checkStmt.BindDouble (4, 2000.20));
+    ASSERT_EQ (ECSqlStatus::Success, checkStmt.BindDouble (4, 1000.10)); //Readonly values will not be updated
 
     ASSERT_EQ (BE_SQLITE_ROW, checkStmt.Step ());
     checkStmt.Reset ();
@@ -285,7 +285,7 @@ TEST_F (JsonUpdaterTests, UpdateProperties)
     ASSERT_EQ (ECSqlStatus::Success, checkStmt.BindId (1, key.GetECInstanceId()));
     ASSERT_EQ (ECSqlStatus::Success, checkStmt.BindInt (2, 300));
     ASSERT_EQ (ECSqlStatus::Success, checkStmt.BindText (3, expectedVal, IECSqlBinder::MakeCopy::No));
-    ASSERT_EQ (ECSqlStatus::Success, checkStmt.BindDouble (4, 3000.30));
+    ASSERT_EQ (ECSqlStatus::Success, checkStmt.BindDouble (4, 1000.10));//Readonly values will not be updated
     ASSERT_EQ (BE_SQLITE_ROW, checkStmt.Step ());
     checkStmt.Reset ();
     checkStmt.ClearBindings ();
@@ -384,7 +384,7 @@ TEST_F (JsonUpdaterTests, ClassHavingReadonlyOrCalcProperty)
     properties = Json::objectValue;
     JsonReader reader(ecdb, ecClass->GetId ());
     ASSERT_EQ (SUCCESS, reader.ReadInstance (properties, instanceKey.GetECInstanceId ()));
-    ASSERT_EQ ("NewValue", properties["TestReadOnlyProperty"].asString ());//validate updated value
+    ASSERT_EQ ("OldValue", properties["TestReadOnlyProperty"].asString ());//validate updated value
     }
 
 END_ECDBUNITTESTS_NAMESPACE

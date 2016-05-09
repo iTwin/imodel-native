@@ -193,6 +193,12 @@ ClassUpdaterImpl::ClassUpdaterImpl(ECDbCR ecdb, ECClassCR ecClass)
     bvector<ECPropertyCP> propertiesToBind;
     for (ECPropertyCP ecProperty : GetECClass().GetProperties(true))
         {
+        if (ecProperty->IsReadOnlyFlagSet() && ecProperty->GetIsReadOnly() && !ecProperty->IsCalculated())
+            {
+            LOG.warningv("ECProperty '%s.%s' is marked as 'Readonly' and therefore will be skipped during update operations", ecProperty->GetClass().GetFullName(), ecProperty->GetName().c_str());
+            continue;
+            }
+
         propertiesToBind.push_back(ecProperty);
         }
 

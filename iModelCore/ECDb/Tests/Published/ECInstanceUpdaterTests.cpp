@@ -219,12 +219,13 @@ TEST_F(ECInstanceUpdaterTests, UpdateReadonlyProperty)
     v.SetLong(newP3Value);
     ASSERT_EQ(ECObjectsStatus::Success, updatedInstance->SetValue("P3", v));
 
+    //Updater will skip any readonly properties therefore after update properties will retain there old values as new values will not be updated.
     ECInstanceUpdater updater(ecdb, *ecClass);
     ASSERT_EQ(SUCCESS, updater.Update(*updatedInstance));
 
     Utf8String validateECSql;
     validateECSql.Sprintf("SELECT NULL FROM ts.A WHERE ECInstanceId=%llu AND P1=%d AND P2 LIKE '%s' AND P3=%lld",
-                          key.GetECInstanceId().GetValue(), newP1Value, newP2Value, newP3Value);
+                          key.GetECInstanceId().GetValue(), oldP1Value, oldP2Value, newP3Value);
 
     ECSqlStatement validateStmt;
     ASSERT_EQ(ECSqlStatus::Success, validateStmt.Prepare(ecdb, validateECSql.c_str()));
