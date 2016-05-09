@@ -7,21 +7,17 @@
 #--------------------------------------------------------------------------------------
 import os, glob, sys, string, stat, re, subprocess
 
+import sys
+sys.path.append(os.path.join (os.getenv("SrcRoot"), "bsicommon", "build"))
+from bentleybuild.utils import *
+
 #-------------------------------------------------------------------------------------------
 # bsimethod                                     Sam.Wilson              04/2016
 #-------------------------------------------------------------------------------------------
 def printProgress(procStdOutLine, status_len):
     msg = procStdOutLine.strip('\n')
     msg = msg.replace('\t', ' ')
-    if len(msg) < status_len:
-        msg = msg + ' ' * (status_len-len(msg))
-    else:
-        if len(msg) > status_len:
-            msg = msg[0:status_len-1]
-    sys.stdout.write(msg)
-    sys.stdout.flush()
-    sys.stdout.write("\b" * len(msg))
-
+    showRewritableLine(msg, INFO_LEVEL_Important)
 
 #-------------------------------------------------------------------------------------------
 # bsimethod                                     Sam.Wilson              04/2016
