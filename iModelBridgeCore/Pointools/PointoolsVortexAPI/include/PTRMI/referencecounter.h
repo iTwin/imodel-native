@@ -46,12 +46,10 @@ namespace PTRMI
 
 		virtual ~ReferenceCounter(void)
 		{
-                        #pragma warning(disable:4127)
 			if(warnings)
 			{
 				assert(isReferenceCounterZero());
 			}
-                        #pragma warning(default:4127)
 		}
 
 		void setReferenceCounterDeleted(bool deleted)
