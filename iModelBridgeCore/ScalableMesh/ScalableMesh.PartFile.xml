@@ -52,7 +52,6 @@
         <ProductDirectory Name="ECServicesManagedAssemblies"  Deliver="true" Path="Dlls"/>
         <ProductDirectory Name="BentleyDesktopClientApi_Native"  Deliver="true" Path="Dlls"/>
 
-
         <ProductDirectory   Name="ecobjectsnativeassemblies"                Path="Dlls"                              />
         <ProductDirectory   Name="ecschemas"                                Path="Dlls"                              />
         <ProductDirectory   Name="DGNIndexerECSchemas"                      Path="Dlls"                              />
@@ -75,7 +74,22 @@
         <ProductDirectory   Name="ECExchangeTestSupportAssemblies"          Path="Dlls"                      />
         <ProductDirectory   Name="dgnecpluginassemblies"                    Path="Dlls"                      />
         <ProductDirectory   Name="MdlsysAsneeded"                           Path="Dlls"                      />
-      
+      <ProductDirectory Name="LicenseAssembliesWithConnectionClient"  Deliver="true" Path="Dlls"/>
+      <ProductDirectory Name="LicenseAssemblies"  Deliver="true" Path="Dlls"/>
+      <ProductDirectory Name="BentleyGeometryNetAssemblies"  Deliver="true" Path="Dlls"/>
+       <ProductDirectory Name="DgnPlatformNETAssemblies"  Deliver="true" Path="Dlls"/>
+        <ProductDirectory Name="JsonNetAssemblies"  Deliver="true" Path="Dlls"/>
+         <ProductDirectory Name="TelerikWPFAssemblies"  Deliver="true" Path="Dlls"/>
+          <ProductDirectory Name="SpellEngineAssemblies"  Deliver="true" Path="Dlls"/>
+       <ProductDirectory Name="DgnIModelNativeAssemblies"  Deliver="true" Path="Dlls"/>
+       <ProductDirectory Name="DgnIModelNETAssemblies"  Deliver="true" Path="Dlls"/>
+       <ProductDirectory Name="MstnToolsNativeAssemblies"  Deliver="true" Path="Dlls"/>
+       <ProductDirectory Name="PPManagedAssemblies"  Deliver="true" Path="Dlls"/>
+       <ProductDirectory Name="NlibAssemblies"  Deliver="true" Path="Dlls"/>
+       <ProductDirectory Name="IwGeometryAssemblies"  Deliver="true" Path="Dlls"/>
+       <ProductDirectory Name="FeatureAspectGenSrc"  Deliver="true" Path="Dlls"/>
+        <ProductDirectory Name="TranskitGenSrc"  Deliver="true" Path="Dlls"/>
+       <ProductDirectory Name="BentleyClientSharedAssemblies"  Deliver="true" Path="Dlls"/>
         <ProductDirectory Name="PublicAPI" Path="PublicAPI" Deliver="true"/>
         <ProductDirectory Name="ScalableMeshAssemblies" Path="Dlls"/>
         <ProductDirectory Name="DgnPlatformData" Path="Dlls"/>
@@ -105,10 +119,12 @@
         <ProductDirectory Name="DgnViewLibs"  Path="Libs" Deliver="true"/>
         <ProductDirectory Name="TerrainModelElementHandler" Path="Dlls" />
         <ProductDirectory Name="GlewAssemblies" Deliver="false"/>
+        <ProductDirectory Name="GlewAssemblies" LibType="static" Deliver="false"/>
         <ProductDirectory Name="JpegAssemblies" Deliver="false"/>
         <ProductDirectory Name="PngNativeAssemblies" Deliver="false"/>            
         <ProductDirectory Name="TiffNativeAssemblies" Deliver="false"/>      
         <ProductDirectory Name="ZlibNativeAssemblies" Deliver="false"/>   
+         <ProductDirectory Name="ZlibNativeAssemblies" LibType="static" Deliver="false"/> 
         <ProductDirectory Name="PCLLicenses" Path="Notices" />        
     </ProductDirectoryList>
   
