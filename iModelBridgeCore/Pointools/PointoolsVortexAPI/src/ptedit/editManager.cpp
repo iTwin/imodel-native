@@ -3,7 +3,6 @@
 // PT_EDIT Point cloud editing plugin
 //
 //-----------------------------------------------------------------------------------------------
-#pragma warning (disable : 4786 )
 
 #include "PointoolsVortexAPIInternal.h"
 #include <wildmagic/math/Wm5matrix3.h>

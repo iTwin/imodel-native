@@ -11,9 +11,6 @@
 #include <Mgc/MgcIntersection3d.pkg>
 #include <Mgc/MgcMath.h>
 
-//taking address of temp
-#pragma warning ( disable : 1563 ) 
-
 #define MGCVEC(a) *reinterpret_cast<Mgc::Vector3*>((void*)&a)
 #define PTVEC(a) *reinterpret_cast<pt::vector3*>((void*)&a)
 

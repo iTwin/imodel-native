@@ -4,11 +4,7 @@
 /*																			*/ 
 /*  Last Updated 16 Dec 2003 Faraz Ravi										*/ 
 /*--------------------------------------------------------------------------*/ 
-#ifdef _WIN32
-#pragma warning (disable : 4786)
-#pragma warning (disable : 4251)
-#pragma warning (disable : 4275)
-#endif
+
 #define COUTTRACER
 
 

@@ -11,11 +11,6 @@
 #include <pt/format.h>
 #include <pt/ptunicode.h>
 
-#ifdef _MSC_VER
-    // disable: "C++ exception handler used"
-    #pragma warning (disable : 4530)
-#endif // _MSC_VER
-
 // If your platform does not have vsnprintf, you can find a
 // implementation at http://www.ijs.si/software/snprintf/
 

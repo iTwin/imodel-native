@@ -4,11 +4,6 @@
 /*																			*/ 
 /*  Last Updated 21 Dec 2003 Faraz Ravi										*/ 
 /*--------------------------------------------------------------------------*/ 
-#ifdef _WIN32
-#pragma warning (disable : 4786)
-#pragma warning (disable : 4251)
-#endif
-
 #include <ptmodm/modulesManager.h>
 #include <pt/trace.h>
 

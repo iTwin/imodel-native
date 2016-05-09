@@ -3,8 +3,6 @@
 // PT_EDIT Point cloud editing plugin
 //
 //-----------------------------------------------------------------------------------------------
-#pragma warning (disable : 4786 )
-
 #include <Wm5matrix3.h>
 #include <Wm5ApprPlaneFit3.h>
 
