@@ -49,8 +49,35 @@
     <ProductDirectoryList ListName="ScalableMeshSDK">
         <ProductDirectory Name="TMSchemas"  Deliver="true" Path="Dlls"/>
         <ProductDirectory Name="ECSchemas"  Deliver="true" Path="Dlls"/>
+        <ProductDirectory Name="ECServicesManagedAssemblies"  Deliver="true" Path="Dlls"/>
+        <ProductDirectory Name="BentleyDesktopClientApi_Native"  Deliver="true" Path="Dlls"/>
+
+
+        <ProductDirectory   Name="ecobjectsnativeassemblies"                Path="Dlls"                              />
+        <ProductDirectory   Name="ecschemas"                                Path="Dlls"                              />
+        <ProductDirectory   Name="DGNIndexerECSchemas"                      Path="Dlls"                              />
+        <ProductDirectory   Name="ecobjectsmanagedassemblies"               Path="Dlls"                  />
+        <ProductDirectory   Name="ecservicesmanagedassemblies"              Path="Dlls"                  />
+        <ProductDirectory   Name="ecreportingmanagedassemblies"             Path="Dlls"                  />
+        <ProductDirectory   Name="ecexchangemanagedassemblies"              Path="Dlls"                  />
+        <ProductDirectory   Name ="ecrulesmanagedassemblies"                Path="Dlls"                  />
+        <ProductDirectory   Name="ECFAtpAssemblies"                         Path="Dlls"                  />
+        <ProductDirectory   Name="LoggingManagedAssemblies"                 Path="Dlls"                  />
+        <ProductDirectory   Name="LoggingOptionalManagedAssemblies"         Path="Dlls"                  />
+        <ProductDirectory   Name="PointCloudCoreAssemblies"                 Path="Dlls"                      />
+        <ProductDirectory   Name="ecplugins"                                Path="Dlls"                      />
+        <ProductDirectory   Name="SqlDbECPluginAssemblies"                  Path="Dlls"                      />
+        <ProductDirectory   Name="PlatformTechAssemblies"                   Path="Dlls"                      />
+        <ProductDirectory   Name="PlatformTechManagedAssemblies"            Path="Dlls"                      />
+        <ProductDirectory   Name="PlatformTechManagedTestSupportAssemblies" Path="Dlls"                      />
+        <ProductDirectory   Name="ManagedTestSupportAssemblies"             Path="Dlls"                      />
+        <ProductDirectory   Name="ContractTestRuntimeAssemblies"            Path="Dlls"                      />
+        <ProductDirectory   Name="ECExchangeTestSupportAssemblies"          Path="Dlls"                      />
+        <ProductDirectory   Name="dgnecpluginassemblies"                    Path="Dlls"                      />
+        <ProductDirectory   Name="MdlsysAsneeded"                           Path="Dlls"                      />
+      
         <ProductDirectory Name="PublicAPI" Path="PublicAPI" Deliver="true"/>
-         <ProductDirectory Name="ScalableMeshAssemblies" Path="Dlls"/>
+        <ProductDirectory Name="ScalableMeshAssemblies" Path="Dlls"/>
         <ProductDirectory Name="DgnPlatformData" Path="Dlls"/>
         <ProductDirectory Name="GeoCoordNativeAssemblies" Path="Dlls"/>
         <ProductDirectory Name="AcisAssemblies" Path="Dlls"/>
