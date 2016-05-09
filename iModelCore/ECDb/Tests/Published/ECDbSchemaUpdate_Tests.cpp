@@ -2106,7 +2106,7 @@ TEST_F(ECSchemaUpdateTests, ModifyPropToReadOnly)
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
-    /*-------------------After Schema 1 Import--------------------------
+    /*-------------------After 1st Schema Import--------------------------
     ReadWriteProp -> ReadWrite
     P1            -> ReadOnly
     P2            -> ReadWrite
@@ -2116,14 +2116,15 @@ TEST_F(ECSchemaUpdateTests, ModifyPropToReadOnly)
     //Insert should be successfull
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "INSERT INTO ts.TestClass(ReadWriteProp, P1, P2) VALUES('RW1', 'P1_Val1', 'P2_Val1')"));
     ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
-     
+
     statement.Finalize();
     ASSERT_NE(ECSqlStatus::Success, statement.Prepare(GetECDb(), "UPDATE ts.TestClass Set ReadWriteProp='RW1new', P1='P1_Val1new'"));
+
     statement.Finalize();
-    //skipping readonly Property Update should be successful.
+    //skipping readonly Property, Update should be successful.
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "UPDATE ts.TestClass Set ReadWriteProp='RW1new', P2='P2_Val1new' WHERE P2='P2_Val1'"));
     ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
-     
+
     //Update schema 
     SchemaItem schemaItem2(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -2138,7 +2139,7 @@ TEST_F(ECSchemaUpdateTests, ModifyPropToReadOnly)
     AssertSchemaImport(asserted, GetECDb(), schemaItem2);
     EXPECT_FALSE(asserted);
 
-    /*-------------------After Schema 2nd Import--------------------------
+    /*-------------------After 2nd Schema Import--------------------------
     ReadWriteProp -> ReadWrite
     P1            -> ReadWrite
     P2            -> ReadOnly
@@ -2194,7 +2195,7 @@ TEST_F(ECSchemaUpdateTests, ModifyPropToReadOnly)
     AssertSchemaImport(asserted, GetECDb(), schemaItem3);
     EXPECT_FALSE(asserted);
 
-    /*-------------------After Schema 3rd Import--------------------------
+    /*-------------------After 3rd Schema Import--------------------------
     ReadWriteProp -> ReadWrite
     P1            -> ReadOnly
     P2            -> ReadWrite
@@ -2221,6 +2222,7 @@ TEST_F(ECSchemaUpdateTests, ModifyPropToReadOnly)
     ASSERT_STREQ("P1_Val3", statement.GetValueText(0));
 
     statement.Finalize();
+    //Verify Delete
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "DELETE FROM ts.TestClass"));
     ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
 
