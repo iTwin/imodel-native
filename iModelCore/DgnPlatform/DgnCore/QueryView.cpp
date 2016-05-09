@@ -563,7 +563,7 @@ void DgnQueryQueue::Terminate()
     while (State::TerminateRequested == m_state)
         {
         m_cv.notify_all();
-        m_cv.RelativeWait(lock, 1000);
+        m_cv.RelativeWait(lock, 10000);
         }
     }
 
