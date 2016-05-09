@@ -53,7 +53,7 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #include "Plugins/ScalableMeshIDTMFileTraits.h"
 
 #include "ScalableMeshStorage.h"
-#include <ScalableMesh/IScalableMeshStream.h>
+
 
 #include <ScalableMesh/IScalableMeshPolicy.h>
 

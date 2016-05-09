@@ -3,7 +3,7 @@
 /*__PUBLISH_SECTION_START__*/
 
 #include <ScalableMesh/Import/Definitions.h>
-#include <ScalableMesh/IScalableMeshStream.h>
+//#include <ScalableMesh/IScalableMeshStream.h>
 #include <ScalableMesh/IScalableMeshTime.h>
 
 

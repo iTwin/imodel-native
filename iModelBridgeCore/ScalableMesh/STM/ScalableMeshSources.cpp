@@ -14,7 +14,7 @@
 #include "ImagePPHeaders.h"
 #include "ScalableMeshSources.h"
 #include <ScalableMesh/IScalableMeshSourceVisitor.h>
-#include <ScalableMesh/IScalableMeshStream.h>
+
 
 #include "ScalableMeshTime.h"
 #include <ScalableMesh/IScalableMeshSourceImportConfig.h>

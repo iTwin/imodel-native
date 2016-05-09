@@ -14,7 +14,7 @@
 #include "ScalableMeshSourcePersistance.h"
 
 #include <ScalableMesh/IScalableMeshSourceVisitor.h>
-#include <ScalableMesh/IScalableMeshStream.h>
+
 #include <ScalableMesh/Import/DataSQLite.h>
 
 #include "ScalableMeshSources.h"

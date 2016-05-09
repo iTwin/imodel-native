@@ -26,7 +26,7 @@
 #include <ScalableMesh/Type/IScalableMeshTIN.h>
 #include <ScalableMesh/Type/IScalableMeshMesh.h>
 
-#include <ScalableMesh/IScalableMeshStream.h>
+
 
 #include <ScalableMesh/IScalableMeshPolicy.h>
 
