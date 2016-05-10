@@ -231,8 +231,9 @@ PTres		PTAPI	ptGetMetaTag( PThandle metadataHandle, const PTstr tagName, PTstr v
 	wchar_t tagName_str[PT_MAX_META_STR_LEN];
 	wcsncpy(tagName_str, tagName, PT_MAX_META_STR_LEN);
 	
-	wchar_t *first_tok = wcstok( tagName_str, L"." );
-	wchar_t *second_tok = wcstok( 0, L"." );
+    wchar_t * context;
+	wchar_t *first_tok = wcstok( tagName_str, L".", &context);
+	wchar_t *second_tok = wcstok( nullptr, L".", &context);
 
 	pt::String tsection, titem, tvalue;
 
@@ -278,8 +279,9 @@ PTres		PTAPI	ptSetMetaTag( PThandle metadataHandle, const PTstr tagName, const P
 	wchar_t tagName_str[PT_MAX_META_STR_LEN];
 	wcsncpy(tagName_str, tagName, PT_MAX_META_STR_LEN);
 	
-	wchar_t *first_tok = wcstok( tagName_str, L"." );
-	wchar_t *second_tok = wcstok( 0, L"." );
+    wchar_t * context;
+	wchar_t *first_tok = wcstok( tagName_str, L".", &context);
+	wchar_t *second_tok = wcstok(nullptr, L".", &context);
 
 	pt::String tsection, titem, tvalue;
 
@@ -461,8 +463,9 @@ PTres		PTAPI	ptGetUserMetaTagByName( PThandle h , const PTstr sectionDotName, PT
 	wchar_t tagName_str[PT_MAX_META_STR_LEN];
 	wcsncpy(tagName_str, sectionDotName, PT_MAX_META_STR_LEN);
 	
-	wchar_t *first_tok = wcstok( tagName_str, L"." );
-	wchar_t *second_tok = wcstok( 0, L"." );
+    wchar_t * context;
+	wchar_t *first_tok = wcstok( tagName_str, L".", &context);
+	wchar_t *second_tok = wcstok(nullptr, L".", &context);
 
 	pt::String tsection, titem, tvalue;
 

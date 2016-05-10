@@ -10,8 +10,10 @@
 #define PT_PATH_SIZE 260
 
 #ifdef POINTOOLS_API_INCLUDE
-#undef debugAssertM
-#define debugAssertM(a,b) if(!a) OutputDebugStringA("assertion failed!!")
+    #ifdef BENTLEY_WIN32
+        #undef debugAssertM
+        #define debugAssertM(a,b) if(!a) OutputDebugStringA("assertion failed!!")
+    #endif
 #endif
 
 struct ptstr

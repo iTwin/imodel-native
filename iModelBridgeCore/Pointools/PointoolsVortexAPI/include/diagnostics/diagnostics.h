@@ -27,13 +27,13 @@ namespace ptdg
 	struct Time
 	{
 		template <class T>
-		static void stamp( T &t )			{ t.m_timeStamp =  pt::Timer::instance()->tick(); }
+		static void stamp( T &t )			{ t.m_timeStamp =  pt::Timer::tick(); }
 
 		template <class T>
-		static void endStamp( T &t )		{ t.m_endStamp =  pt::Timer::instance()->tick(); }
+		static void endStamp( T &t )		{ t.m_endStamp =  pt::Timer::tick(); }
 
 		template <class T>
-		static void timeTakenMS( T &t )		{ return pt::Timer::instance()->delta_ms( t.m_timeStamp, t.m_endStamp ); }
+		static void timeTakenMS( T &t )		{ return pt::Timer::delta_m( t.m_timeStamp, t.m_endStamp ); }
 
 	};
 	// all metric structs MUST BE BINARY SERIALIZABLE, no strings etc..
@@ -47,8 +47,8 @@ namespace ptdg
 		char		m_queryType[16];
 
 		uint		m_queryID;
-		pt::Timer_t	m_timeStamp;
-		pt::Timer_t	m_endStamp;
+		pt::Timer::TimeMs	m_timeStamp;
+        pt::Timer::TimeMs	m_endStamp;
 
 		int64_t		m_numPoints;
 		int			m_bufferSize;
@@ -62,7 +62,7 @@ namespace ptdg
 	{
 		static		MetricTypeID		metricID()	{ return eLoadMetric1; }
 
-		pt::Timer_t	m_timeStamp;
+        pt::Timer::TimeMs	m_timeStamp;
 		
 		int64_t		m_ptsShortfall;
 		int64_t		m_ptsLoadedSinceDraw;
@@ -72,7 +72,7 @@ namespace ptdg
 	{
 		static		MetricTypeID		metricID()	{ return ePagerMetric1; }
 
-		pt::Timer_t	m_timeStamp;
+        pt::Timer::TimeMs	m_timeStamp;
 
 		uint		m_actualPtsLoaded;
 		int64_t		m_memAval;
@@ -83,7 +83,7 @@ namespace ptdg
 	{
 		static		MetricTypeID		metricID()	{ return eRenderMetric1; }
 
-		pt::Timer_t	m_timeStamp;
+        pt::Timer::TimeMs	m_timeStamp;
 
 		int			m_voxelsRendered;
 		int			m_ptsRendered;
@@ -95,7 +95,7 @@ namespace ptdg
 	{
 		static		MetricTypeID		metricID()	{ return eVisibilityMetric1; }
 
-		pt::Timer_t	m_timeStamp;
+        pt::Timer::TimeMs	m_timeStamp;
 
 		int			m_numVoxelsInView;
 		int64_t		m_numFullPtsInView;		//full number, not LOD

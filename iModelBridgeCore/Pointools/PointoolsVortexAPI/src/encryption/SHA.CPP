@@ -3,10 +3,6 @@
 //SHA.cpp
 #include <encryption/SHA.h>
 
-#include <exception>
-#include <fstream>
-#include <strstream>
-
 using namespace std;
 
 const unsigned int CSHA::sm_K256[64] =

@@ -2,7 +2,6 @@
 
 //Method.cpp
 #include <encryption/Method.h>
-#include <strstream>
 
 using namespace std;
 
@@ -127,11 +126,10 @@ int CEncryptMethod::Pad(char* in, int iLength)
 
 void CEncryptMethod::HelpThrow(string const& rostrFileIn)
 {
-	ostrstream ostr;
-	ostr << "FileCrypt ERROR: Not an FileCrypt Encrypted File " << rostrFileIn << "!" << ends;
-	string ostrMsg = ostr.str();
-	ostr.freeze(false);
-	throw runtime_error(ostrMsg);
+    pt::String str;
+    str.format("FileCrypt ERROR: Not an FileCrypt Encrypted File %s!/n", rostrFileIn.c_str());
+    std::string stdStr(str.c_str());
+	throw runtime_error(stdStr);
 }
 
 void CEncryptMethod::BytesToWord(unsigned char const* pucBytes, unsigned int& ruiWord)

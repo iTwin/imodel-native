@@ -77,7 +77,7 @@ namespace ptds
 
 	DataSource::Size DataSourceMemBlock::readBytes(Data *buffer, Size numBytes)
 	{
-		m_mem.read_bytes(buffer, static_cast<int>(numBytes), static_cast<int>(m_readPos));
+		m_mem.read_bytes(buffer, static_cast<int>(numBytes), m_readPos);
 		return numBytes;
 	}
 

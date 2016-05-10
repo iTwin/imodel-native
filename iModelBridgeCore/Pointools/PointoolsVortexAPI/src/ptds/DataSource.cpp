@@ -119,7 +119,8 @@ DataSource::Size DataSource::addReadSetItem(Data *buffer, DataPointer position, 
 															// Add a read set item based on the 
 	if(isReadSetDefined())
 	{
-		if(getReadSet()->addRead(DataSourceRead(getReadSetClientID(), 0, position, numBytes, buffer)))
+    DataSourceRead dataRead(getReadSetClientID(), 0, position, numBytes, buffer);
+		if(getReadSet()->addRead(dataRead))
 		{
 			return numBytes;
 		}

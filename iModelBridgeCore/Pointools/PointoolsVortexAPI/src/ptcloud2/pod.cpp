@@ -1782,7 +1782,7 @@ bool PodBlockManager::readPodBlock(const char* type, ptds::ReadBlock& rb)
 	return false;
 }
 
-PodBlockReadHandler::PodBlockReadHandler(std::string& id) : 
+PodBlockReadHandler::PodBlockReadHandler(std::string const& id) : 
 m_id(id) 
 { 
 #ifdef _DEBUG

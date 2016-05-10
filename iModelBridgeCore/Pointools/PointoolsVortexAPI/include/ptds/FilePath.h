@@ -1,9 +1,5 @@
 #pragma once
 
-#include <string>
-#include <vector>
-#include <algorithm>
-
 #include <pt/unicodeconversion.h>
 #include <pt/ptmath.h>
 #include <Bentley/BeFileName.h>
@@ -188,8 +184,6 @@ public:
 	}
 
 	const FilePath *parent() const { return m_parent; }
-
-	bool findFile(wchar_t *dst, bool parent_dir = true, bool project_dir = true);
 
 	void setAbsolute()
 	{

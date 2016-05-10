@@ -1285,9 +1285,9 @@ public:
 	float distToNearestValue(const pt::vector3 &pt) const	// approx dist, not cartesian
 	{
 		float d[] = 
-		{	fabs(fmod(pt.x, _spacing)) / _spacing,
-			fabs(fmod(pt.y, _spacing)) / _spacing,
-			fabs(fmod(pt.z, _spacing)) / _spacing};		// normalise to make simple
+		{	fabsf(fmod(pt.x, _spacing)) / _spacing,
+			fabsf(fmod(pt.y, _spacing)) / _spacing,
+			fabsf(fmod(pt.z, _spacing)) / _spacing};		// normalise to make simple
 		
 		return  0.33333f * _spacing *
 			(fabs( d[0] - 0.5f ) + fabs( d[1] - 0.5f ) + fabs( d[2] - 0.5f ));	// return dist where -0.5*spacing < d < 0.5*spacing

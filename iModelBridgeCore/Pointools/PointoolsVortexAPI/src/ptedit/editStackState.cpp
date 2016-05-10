@@ -198,6 +198,8 @@ struct PointCloudStateHandler
 	}
 };
 static PointCloudStateHandler s_pointCloudStateHandler;
+
+#ifdef NEEDS_WORK_VORTEX_DGNDB
 //-----------------------------------------------------------------------------
 // Create Cloud State Visitor : creates the per cloud state structures
 // THIS IS UNUSED AND ITS INTENT IS UNCLEAR
@@ -226,6 +228,7 @@ private:
 	uint	m_byteSize;
 	uint	m_flags;
 };
+#endif
 //
 // Visitor to gather leaves needing write
 //

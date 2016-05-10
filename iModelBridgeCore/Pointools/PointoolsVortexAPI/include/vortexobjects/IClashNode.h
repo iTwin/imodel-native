@@ -14,9 +14,9 @@ namespace vortex
 	class PTVOBJECT_API IClashNode
 	{
 	protected:		
-		virtual IClashNode*	_getLeft(PTvoid) = 0;
-		virtual IClashNode*	_getRight(PTvoid) = 0;
-		virtual PTbool		_isLeaf(PTvoid) = 0;
+		virtual IClashNode*	_getLeft() = 0;
+		virtual IClashNode*	_getRight() = 0;
+		virtual PTbool		_isLeaf() = 0;
 		virtual PTvoid		_getBounds(PTfloat* extents3, PTdouble* center3, PTfloat* xAxis3, PTfloat* yAxis3, PTfloat* zAxis3) = 0;
 
 	public:		
@@ -25,21 +25,21 @@ namespace vortex
 		// @return	a valid IClashNode pointer to the left child node of this node
 		//			or PT_NULL if this node has no left child node.
 		//------------------------------------------------------------------------
-		IClashNode*	getLeft(PTvoid);
+		IClashNode*	getLeft();
 
 		//------------------------------------------------------------------------
 		// Get the right child node of this node
 		// @return	a valid IClashNode pointer to the right child node of this node
 		//			or PT_NULL if this node has no left child node.	
 		//------------------------------------------------------------------------
-		IClashNode*	getRight(PTvoid);
+		IClashNode*	getRight();
 
 		//------------------------------------------------------------------------
 		// Check if this node is a leaf node
 		// @return	true if this node is a leaf node (i.e. it has no child nodes),
 		//			false if it is not a leaf node.
 		//------------------------------------------------------------------------
-		PTbool		isLeaf(PTvoid);
+		PTbool		isLeaf();
 
 		//------------------------------------------------------------------------
 		// Get the non axis-aligned bounds of this node in local coordinates, 

@@ -489,7 +489,7 @@ bool UserChannel::writeToBranch( pt::datatree::Branch *branch, bool copy )
 //-----------------------------------------------------------------------------
 // User Channel construct from file handle
 //-----------------------------------------------------------------------------
-UserChannel::UserChannel() :  m_multiple(0), m_defaultValue(0), m_flags(0)
+UserChannel::UserChannel() :  m_multiple(0), m_defaultValue(nullptr), m_flags(0)
 {
 }
 //-----------------------------------------------------------------------------
@@ -785,6 +785,7 @@ const pt::String &OOCFile::getOOCFileFolder()
 //-----------------------------------------------------------------------------
 void OOCFile::create( class UserChannel *uchannel )
 {
+#ifdef BENTLEY_WIN32    //NEEDS_WORK_VORTEX_DGNDB
 	if (!fhandle)
 	{
 		wchar_t filename[MAX_PATH];
@@ -808,17 +809,20 @@ void OOCFile::create( class UserChannel *uchannel )
 
 		fend = 0;	// filepointer to end of file, reset here
 	}
+#endif
 }
 //-----------------------------------------------------------------------------
 // destroy the OOC File
 //-----------------------------------------------------------------------------
 void OOCFile::destroy()
 {
+#ifdef BENTLEY_WIN32    //NEEDS_WORK_VORTEX_DGNDB
 	ptds::dataSourceManager.close(fhandle);
 	::DeleteFileW( fname.c_wstr() );
 	fhandle = NULL;
 	fend = 0;
 	fname = "";
+#endif
 }
 //-----------------------------------------------------------------------------
 // OOCFile: write the data to file

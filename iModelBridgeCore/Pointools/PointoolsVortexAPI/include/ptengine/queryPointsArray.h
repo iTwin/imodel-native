@@ -30,7 +30,7 @@ namespace pointsengine
 		{
 			return totalPointsAllocated();
 		}
-		QueryPointsArray::~QueryPointsArray()
+		~QueryPointsArray()
 		{
 			destroy();
 		}

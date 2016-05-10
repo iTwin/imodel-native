@@ -65,8 +65,8 @@ struct ClashObject : public vortex::IClashObject
 	// Interface from vortex::IClashObject, allows external client access to some ClashObject functionality	
 	virtual PTres					_getClashTree(vortex::IClashTree*& clashTreeRet);		
 	virtual PTres					_generateClashTree(vortex::IClashObjectCallback* callback);		
-	virtual PTbool					_clashTreeFileExists(PTvoid);
-	virtual const PTstr				_getClashTreeFilename(PTvoid);
+	virtual PTbool					_clashTreeFileExists();
+	virtual const PTstr				_getClashTreeFilename();
 
 	// support function to allow translation of internal TreeFeedbackFunc to external vortex::IClashObjectCallback
 	bool							feedbackForIClashObject(float pcentComplete);

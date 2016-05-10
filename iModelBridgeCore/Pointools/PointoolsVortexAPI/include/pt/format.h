@@ -33,7 +33,7 @@ std::string CDECL_ATTRIBUTE format(
  */
 std::string vformat(
     const char*                 fmt,
-    char*		                va_list);
+    va_list		                vlist);
 }; // namespace
 
 #endif

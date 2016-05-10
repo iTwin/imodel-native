@@ -489,7 +489,7 @@ int Scene::readMultiPass( SceneBuildData *buildInfo )
 
 	/* check for a thin box for Quad Tree indexing rather than Octree*/ 
 	int quadTreeAxis = -1;	//ie don't make qt, make ot
-	pt::vector3 boxSize = bounds.diagonal();
+	pt::vector3d boxSize = bounds.diagonal();
 	if (boxSize.z < ( boxSize.y + boxSize.x) * 0.025) 
 		quadTreeAxis = 2;
 	if (boxSize.y < ( boxSize.x + boxSize.z) * 0.025)

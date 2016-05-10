@@ -8,13 +8,6 @@
 #ifndef COMMONCLASSES_GEOMTYPES
 #define COMMONCLASSES_GEOMTYPES
 
-#ifdef __INTEL_COMPILER
-#include <mathimf.h>
-#else
-#include <math.h>
-#endif
-
-#include <memory.h>
 #include <pt/classes.h>
 
 namespace pt
@@ -558,8 +551,8 @@ public:
 	bool is_finite() const  { return isfinite(x) && isfinite(y) && isfinite(z);		}
 	bool is_finitef() const { return isfinitef(x) && isfinitef(y) && isfinitef(z);	}	
 
-	bool is_nan() const { return _isnan(x) || _isnan(y) || _isnan(z); }
-	bool is_nanf() const { return _isnanf(x) || _isnanf(y) || _isnanf(z); }
+	bool is_nan() const { return std::isnan(x) || std::isnan(y) || std::isnan(z); }
+	bool is_nanf() const { return std::isnan((float)x) || std::isnan((float) y) || std::isnan((float) z); }
 
 	inline static vec3<T> &cast(T *v)  { return *reinterpret_cast<vec3<T>*>(v); }
 	inline static const vec3<T> &cast(const T *v) { return *reinterpret_cast<const vec3<T>*>(v); }
@@ -584,14 +577,14 @@ public:
 	double w;
 
 	vector4d() {};
-	vector4d(vector3 &v)
+	vector4d(vector3 const&v)
 	{
 		x = v.x;
 		y = v.y;
 		z = v.z;
 		w = 1.0;
 	}
-	vector4d(vector3d &v)
+	vector4d(vector3d const&v)
 	{
 		x = v.x;
 		y = v.y;

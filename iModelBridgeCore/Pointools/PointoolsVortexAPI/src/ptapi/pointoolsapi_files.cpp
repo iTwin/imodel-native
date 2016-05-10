@@ -149,6 +149,7 @@ static std::wstring lastrunKey = L"Software\\Pointools\\Vortex\\LastRun";
 static std::wstring lastrunKeySetback = L"Software\\Pointools\\Vortex\\lr";
 static bool _hasPSTimeOut = true;
 
+#if NOTUSED
 //-----------------------------------------------------------------------------
 bool checkSetback()
 {
@@ -166,6 +167,8 @@ bool checkSetback()
 	reg.write();
 	return false;
 } 
+#endif
+
 //-----------------------------------------------------------------------------
 bool checkPreSessionTimeOut()
 {

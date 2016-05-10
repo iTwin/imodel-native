@@ -205,44 +205,49 @@ const wchar_t *String::getW(wchar_t *buffer, size_t buffsize) const
 // get a utf8 string
 //
 const char* String::getEncoded(Encoding enc, char * buffer, int buffsize) const
-{
-	int chars=length();
+    {
+    int chars = length();
 
-	memset(buffer, '\0', buffsize);
+    memset(buffer, '\0', buffsize);
 
-	/* check for string truncation */ 
-	assert(buffsize >= chars);
-	
-	if (buffsize < chars) chars = buffsize;
-	
-	if (_abuffer && !_abufferDirty && _encoding == enc)
-	{
-		assert (strnlen(_abuffer, MAX_STRING_LENGTH) <= (size_t)buffsize);
-		strcpy(buffer, _abuffer);
-	}
-	else
-	{
-		switch(enc)
-		{
-		case AsciiEncoding:
-			try		{
-				BOOL defa;
-                                if (!::WideCharToMultiByte( CP_ACP, WC_NO_BEST_FIT_CHARS, _wbuffer, 
-					static_cast<int>(chars), buffer, buffsize, 0, &defa )) throw;		
-			}
-			catch( ... ) {
-				assert(0);
-			}
-			break;
-		case UTF8Encoding:
-			utf8fromwc(buffer, buffsize, _wbuffer, (unsigned)chars);
-			break;
-		default:
-			assert(0);
-		}
-	}
-	return buffer;
-} 
+    /* check for string truncation */
+    assert(buffsize >= chars);
+
+    if (buffsize < chars) 
+        chars = buffsize;
+
+    if (_abuffer && !_abufferDirty && _encoding == enc)
+        {
+        assert(strnlen(_abuffer, MAX_STRING_LENGTH) <= (size_t) buffsize);
+        strcpy(buffer, _abuffer);
+        }
+    else
+        {
+#if defined (BENTLEY_WIN32)     //NEEDS_WORK_VORTEX_DGNDB 
+        switch (enc)
+            {
+            case AsciiEncoding:
+                try
+                    {
+                    BOOL defa;
+                    if (!::WideCharToMultiByte(CP_ACP, WC_NO_BEST_FIT_CHARS, _wbuffer, static_cast<int>(chars), buffer, buffsize, 0, &defa)) 
+                        throw;
+                    }
+                catch (...)
+                    {
+                    assert(0);
+                    }
+                break;
+            case UTF8Encoding:
+                utf8fromwc(buffer, buffsize, _wbuffer, (unsigned) chars);
+                break;
+            default:
+                assert(0);
+            }
+#endif
+        }
+    return buffer;
+    }
 //
 // buffer allocation
 //

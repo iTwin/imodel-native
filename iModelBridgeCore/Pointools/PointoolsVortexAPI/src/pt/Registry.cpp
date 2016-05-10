@@ -1,6 +1,7 @@
 #include "PointoolsVortexAPIInternal.h"
 #include <pt/registry.h>
 
+#ifdef BENTLEY_WIN32    //NEEDS_WORK_VORTEX_DGNDB
 #ifdef _MFC_VER
 //MFC is available - also use the MFC-based classes	
 
@@ -624,3 +625,4 @@ CRegStdWORD& CRegStdWORD::operator =(DWORD d)
 	write();
 	return *this;
 }
+#endif

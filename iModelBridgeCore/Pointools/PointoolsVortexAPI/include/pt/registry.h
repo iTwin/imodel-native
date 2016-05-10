@@ -1,6 +1,6 @@
 #pragma once
-#include <string>
-#include <Shlwapi.h>
+
+#ifdef BENTLEY_WIN32    //NEEDS_WORK_VORTEX_DGNDB
 #ifdef _MFC_VER
 
 /**
@@ -672,3 +672,4 @@ protected:
 	BOOL	m_force;				///< indicates if no cache should be used, i.e. always read and write directly from registry
 	DWORD	m_loc;
 };
+#endif

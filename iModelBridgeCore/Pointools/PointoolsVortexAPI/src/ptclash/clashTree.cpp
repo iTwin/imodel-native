@@ -318,7 +318,7 @@ void	ClashTree::orphanTree()
 //-----------------------------------------------------------------------------
 // IClashTree
 //-----------------------------------------------------------------------------
-vortex::IClashNode* ClashTree::_getRoot(PTvoid)
+vortex::IClashNode* ClashTree::_getRoot()
 {
 	if (m_tree)
 		return m_tree->root();
@@ -326,7 +326,7 @@ vortex::IClashNode* ClashTree::_getRoot(PTvoid)
 	return PT_NULL;
 }
 
-PTint ClashTree::_getNumLeaves(PTvoid)
+PTint ClashTree::_getNumLeaves()
 {
 	return numLeaves();
 }

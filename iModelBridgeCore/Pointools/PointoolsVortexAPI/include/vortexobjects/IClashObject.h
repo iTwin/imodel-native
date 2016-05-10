@@ -36,8 +36,8 @@ namespace vortex
 	protected:				
 		virtual PTres			_getClashTree(IClashTree*& clashTreeRet) = 0;		
 		virtual PTres			_generateClashTree(IClashObjectCallback* callback) = 0;		
-		virtual PTbool			_clashTreeFileExists(PTvoid) = 0;
-		virtual const PTstr 	_getClashTreeFilename(PTvoid) = 0;			
+		virtual PTbool			_clashTreeFileExists() = 0;
+		virtual const PTstr 	_getClashTreeFilename() = 0;			
 
 	public:		
 		//--------------------------------------------------------------------		
@@ -70,7 +70,7 @@ namespace vortex
 		// @return			true if the clash tree has already been generated
 		//					for this clash object, false otherwise
 		//--------------------------------------------------------------------		
-		PTbool clashTreeFileExists(PTvoid);
+		PTbool clashTreeFileExists();
 				
 		//--------------------------------------------------------------------		
 		// Get the filename where the clash tree data is cached locally. Note
@@ -81,7 +81,7 @@ namespace vortex
 		// @return			const pointer to the local filename.
 		//					or NULL if an error occurs;
 		//--------------------------------------------------------------------		
-		const PTstr getClashTreeFilename(PTvoid);
+		const PTstr getClashTreeFilename();
 		
 	};
 
