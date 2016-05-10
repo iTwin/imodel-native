@@ -55,6 +55,7 @@ extern bool s_inEditing;
 bool s_useThreadsInStitching = false;
 bool s_useThreadsInMeshing = false;
 bool s_useThreadsInFiltering = false;
+bool s_useThreadsInTexturing = false;
 size_t s_nCreatedNodes = 0;
 bool s_useSpecialTriangulationOnGrids = false;
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE

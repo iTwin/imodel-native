@@ -23,6 +23,7 @@
 
 extern bool s_useThreadsInStitching;
 extern bool s_useThreadsInMeshing;
+extern bool s_useThreadsInTexturing;
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 

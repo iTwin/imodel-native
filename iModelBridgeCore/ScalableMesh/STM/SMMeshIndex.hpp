@@ -2152,7 +2152,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
         {
         TextureFromRaster(sourceRasterP);
         }
-    else RunOnNextAvailableThread(std::bind([] (SMMeshIndexNode<POINT, EXTENT>* node, HIMMosaic* rasterP, size_t threadId) ->void
+    else if (s_useThreadsInTexturing) RunOnNextAvailableThread(std::bind([] (SMMeshIndexNode<POINT, EXTENT>* node, HIMMosaic* rasterP, size_t threadId) ->void
         {
         node->TextureFromRaster(rasterP);
         SetThreadAvailableAsync(threadId);
@@ -2169,7 +2169,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
                 {
                 auto mesh = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(m_apSubNodes[indexNodes]);
                 assert(mesh != nullptr);
-                if (m_nodeHeader.m_level+1 == m_SMIndex->GetTerrainDepth())
+                if (s_useThreadsInTexturing && m_nodeHeader.m_level+1 == m_SMIndex->GetTerrainDepth())
                     {
                     dynamic_cast<SMMeshIndex<POINT,EXTENT>*>(m_SMIndex)->m_textureWorkerTasks.push_back(std::async(std::bind([] (SMMeshIndexNode<POINT, EXTENT>* node, HIMMosaic* rasterP) ->bool
                         {
