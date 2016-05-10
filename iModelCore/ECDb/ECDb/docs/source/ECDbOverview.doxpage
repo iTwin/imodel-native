@@ -61,6 +61,7 @@
     - <b>ECSchema management</b> capabilities (e.g. importing ECSchemas into an @ref ECDbFile "ECDb file",
     retrieving ECSchema entities from an @ref ECDbFile "ECDb file" (see BentleyApi::BeSQLite::EC::ECDbSchemaManager and @ref ECDbECSchemaRules))
     - Internally maps %EC data to SQLite tables and columns
+    - <b>@ref ECSchemaUpdate "ECSchema Update" </b> which allow making changes to existing ECSchemas.
 
     @section ECDbMapping ECSQL hides away the database mapping of EC data
     A key feature of @ref ECSQLOverview "ECSQL" is that it <b>targets the
@@ -120,7 +121,7 @@
     @li @subpage ECDbFileInfo
     @li @subpage ECDbCreatingECDbFromScratch
     @li @subpage ECDbCodeSamples
-
+    @li @subpage ECSchemaUpdate
     @see @ref ECDbOverview
     */
 
@@ -557,6 +558,8 @@
     @see @ref ECDbOverview
     */
 
+
+
     /**
     @page ECDbFileInfo File-backed ECInstances
     %ECDb provides basic support for file-backed ECInstances. Every %ECDb file contains the system ECSchema
@@ -577,5 +580,33 @@
     cleaned-up by the Purge method).
      
   
+    @see @ref ECDbOverview
+    */
+
+    /**
+    @page ECSchemaUpdate ECSchema Update
+    %ECDb provides basic support for ECSchema update. @b ECSchemaUpdate is term refered to a process by which
+    ECSchema is evolved by making changes to existing ECSchema. ECDb simplify ECSchema update by letting user 
+    import a new or same version of ECSchema that exist in ECDb with changes. ECDb then determine the changes by
+    comparing newly imported schema with the existing schema in ECDb and apply those changes to ECDb. 
+    ECDb does not support any kind of change in ECSchema. It support a subset of allowed changes which will grow 
+    with new releases. As of now following changes are supported in ECSchemaUpdate.
+
+    - Adding new ECClass to existing ECSchema.
+    - Modifying existing ECClass(s).
+        - Currently DisplayLabel, Description and customAttributes can be modified.
+    - Adding new ECProperty to existing ECClass.
+    - Modifying existing ECProperty(s).
+        - Currently DisplayLabel, Description, IsReadonly and customAttributes can be modified.
+    - Adding/Deleting/Modifing ECCustomAttribute on existing containers (ECSchema, ECClass, ECProperty and ECRelationshipConstraint).
+    
+    @note If ECSchemaUpdate result in a change that would also require to change underlaying SQL schema then the 
+    @b BriefCase must be either master or standalone. For client-side briefcases we do not support ECSchemaUpdate 
+    that require changes to SQL schema.
+
+    @note if @ref BentleyApi::BeSQLite::EC::ECDbSchemaManager::ImportECSchemas "ImportECSchemas()" return error user 
+    must either exit application or cancel any safepoint created before importing schema. ECDb may be left in a 
+    inconsistent and unusable state after a failed ECSchema import.
+     
     @see @ref ECDbOverview
     */
