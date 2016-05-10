@@ -204,12 +204,11 @@ Utf8String         LsDefinition::GetStyleName () const
 #define NUMBER_ITERATIONS_ComponentStroker   (1)
 #define MAX_XRANGE_RATIO (256 * NUMBER_ITERATIONS_ComponentStroker)
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 //=======================================================================================
 //! Base class for StrokeComponentForRange and ComponentToTextureStroker
 // @bsiclass                                                    John.Gooding    10/2015
 //=======================================================================================
-struct ComponentStroker : Dgn::IStrokeForCache
+struct ComponentStroker
     {
 protected:
     DgnDbR              m_dgndb;
@@ -238,10 +237,7 @@ ComponentStroker(DgnDbR dgndb, LsComponentR component, double scale) : m_dgndb(d
     m_points[1].Init(length, 0, 0);
     }
 
-int32_t _GetQvIndex() const override {return 1;}
-QvElemP _GetQvElem(double pixelSize) const override {return nullptr;}
-void _SaveQvElem(QvElemP, double pixelSize = 0.0, double sizeDependentRatio = 0.0) const override {}
-DgnDbR _GetDgnDb() const override { return m_dgndb; }
+DgnDbR GetDgnDb() const { return m_dgndb; }
 };
 
 //=======================================================================================
@@ -258,24 +254,28 @@ StrokeComponentForRange(DgnDbR dgndb, LsComponentR component) : ComponentStroker
     //  It should have already created a copy of the components if that is necessary
     BeAssert(m_component->_IsOkayForTextureGeneration() == LsOkayForTextureGeneration::NoChangeRequired);
     }
+};  // StrokeComponentForRange
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
-/* static */  void CreateGeometryMapMaterial(ViewContextR context, Stroker& stroker, intptr_t textureId)
+/* static */  void CreateGeometryMapMaterial(ViewContextR context, Render::GraphicR graphic, intptr_t textureId)
     {
+    //  Runs in work thread.  Takes a graphic, pairs it with textureId, and queues the appropriate render task.
+
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     context.GetIViewDraw ().DefineQVGeometryMap (textureId, stroker, nullptr, false, context, false);
 #endif
     return;
     }
-};
+#endif
 
 //=======================================================================================
 //! Used to generate a texture based on a line style.
 // @bsiclass                                                    John.Gooding    08/2015
 //=======================================================================================
-struct ComponentToTextureStroker : Stroker
+struct ComponentToTextureStroker : ComponentStroker
 {
 private:
     double              m_scaleFactor;
@@ -306,7 +306,7 @@ ComponentToTextureStroker(DgnDbR dgndb, double scaleFactor, ColorDef lineColor, 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
-void _Stroke(ViewContextR context) const override
+Render::GraphicPtr Stroke(ViewContextR context) const
     {
     GraphicParams         elemMatSymb;
 
@@ -326,14 +326,19 @@ void _Stroke(ViewContextR context) const override
     lineStyleSymb.Init(nullptr);
     lineStyleSymb.SetScale(m_scaleFactor);
 
-    context.GetCurrentGraphicR().ActivateGraphicParams(&elemMatSymb);
 
-    context.PushTransform(m_transformForTexture);
-    m_component->_StrokeLineString(&context, &lineStyleSymb, m_points, 2, false);
-    context.PopTransformClip();
+    //  Create the graphic
+    Render::GraphicPtr graphic = context.CreateGraphic(Graphic::CreateParams(context.GetViewport(), m_transformForTexture));
+
+    //  Add symbology
+    graphic->ActivateGraphicParams(elemMatSymb);
+    m_component->_StrokeLineString(*graphic, &context, &lineStyleSymb, m_points, 2, false);
+
+    return graphic;
     }
 };
 
+#if defined(THIS_IS_USED)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2015
 //---------------------------------------------------------------------------------------
@@ -403,7 +408,11 @@ static DRange2d getAdjustedRange(uint32_t& scaleFactor, DRange3dCR lsRange, doub
 //---------------------------------------------------------------------------------------
 Render::TexturePtr LsDefinition::GenerateTexture(ViewContextR viewContext, LineStyleSymbR lineStyleSymb)
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+    DgnViewportP vp = viewContext.GetViewport();
+    if (vp == nullptr)
+        return nullptr;
+
+
     //  Assume the caller already knows this is something that must be converted but does not know it can be converted.
     BeAssert(m_lsComp->GetComponentType() != LsComponentType::RasterImage);
 
@@ -412,14 +421,15 @@ Render::TexturePtr LsDefinition::GenerateTexture(ViewContextR viewContext, LineS
     m_lsComp->_StartTextureGeneration();
 
     if (m_lsComp->_IsOkayForTextureGeneration() == Dgn::LsOkayForTextureGeneration::NotAllowed)
-        return 0;
+        return nullptr;
 
     //  Something in the component tree may be modified for texture generation.  For example, the size of an iteration
     //  may be expanded to accomodate a symbol that overflows.
     LsComponentPtr  comp = m_lsComp->_GetForTextureGeneration();
     if (comp.IsNull())
-        return 0;
+        return nullptr;
 
+#if defined(NOTNOW)
     //  Get just the range of the components.  Don't let any scaling enter into this.
     DRange3d  lsRange;
     StrokeComponentForRange rangeStroker(viewContext.GetDgnDb(), *comp);
@@ -427,18 +437,15 @@ Render::TexturePtr LsDefinition::GenerateTexture(ViewContextR viewContext, LineS
 
     uint32_t  scaleFactor = 1;
     DRange2d range2d = getAdjustedRange(scaleFactor, lsRange, comp->_GetLength());
+#else
+    DRange2d range2d = { 0.0, 0.0, 1.0, 1.0 };
+    uint32_t  scaleFactor = 1;
+#endif
 
     SymbologyQueryResults  symbologyResults;
     comp->_QuerySymbology(symbologyResults);
     ColorDef lineColor, fillColor;
     bool isColorBySymbol = symbologyResults.IsColorBySymbol(lineColor, fillColor) && !symbologyResults.IsColorByLevel();
-    if (!isColorBySymbol)
-        {
-        //  This should not matter because we pass false for isColorBySymbol causing DefineQVGeometryMap to use QV_GEOTEXTURE_DEFERCLRSEL
-        //  However, at the time this was tested it QV_GEOTEXTURE_DEFERCLRSEL did not provide the expected behavior.
-        lineColor = ColorDef::Black();
-        fillColor = ColorDef::Black();
-        }
 
     uint32_t lineWeight;
     bool isWeightBySymbol = symbologyResults.IsWeightBySymbol(lineWeight);
@@ -446,12 +453,13 @@ Render::TexturePtr LsDefinition::GenerateTexture(ViewContextR viewContext, LineS
         lineWeight = 0;
 
     ComponentToTextureStroker   stroker(viewContext.GetDgnDb(), scaleFactor, lineColor, fillColor, lineWeight, *comp);
+    GraphicPtr graphic = stroker.Stroke(viewContext);
 
-    viewContext.GetIViewDraw ().DefineQVGeometryMap (intptr_t(this), stroker, range2d, isColorBySymbol, viewContext, false);
-    m_hasTextureWidth = true;
-    m_textureWidth = scaleFactor * (range2d.high.y - range2d.low.y);
-#endif
-    return nullptr;
+    Render::GeometryTexturePtr texture = vp->GetRenderTarget()->CreateGeometryTexture(*graphic, range2d, isColorBySymbol, false, 0);
+    texture->_QueueTask();
+    texture->ReleaseGraphic();
+
+    return texture.get();
     }
 
 /*---------------------------------------------------------------------------------**//**

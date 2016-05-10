@@ -503,13 +503,11 @@ void LineStyleSymb::Init(DgnStyleId styleId, LineStyleParamsCR styleParams, DVec
 
     SetScale(scale);
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     // NEEDSWORK_LINESTYLES -- this probably is the right place to get a raster texture based on an image.
     // Texture is required for 3d...but it should still be an option for 2d...
     // If this is a 3d view and we have a line style then we want to convert the line style
     // to a texture line style. Need to figure out the correct place to do this.
     m_texture = nameRec->GetTexture(context, *this, context.Is3dView(), scale); // Need to force texture for 3d?
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
