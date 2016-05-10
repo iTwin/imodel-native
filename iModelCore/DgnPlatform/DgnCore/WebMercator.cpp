@@ -75,6 +75,27 @@ bool WebMercatorModel::TileId::operator<(TileId const& rhs) const
     }
 
 BEGIN_UNNAMED_NAMESPACE
+enum 
+{
+    TILE_SIZE = 256,
+    MIN_ZOOM_LEVEL = 0, 
+    MAX_ZOOM_LEVEL = 22, 
+    MAX_TEXTURE_CACHE = 200,
+    MAX_DB_CACHE_SIZE = 1024*1024*1024, // 1 Gb
+};
+
+//=======================================================================================
+// @bsiclass                                        Grigas.Petraitis            03/2015
+//=======================================================================================
+struct TiledRasterCache : BeSQLiteRealityDataStorage
+{
+    uint64_t m_allowedSize = MAX_DB_CACHE_SIZE;
+    using BeSQLiteRealityDataStorage::BeSQLiteRealityDataStorage;
+    mutable BeAtomic<bool> m_isPrepared;
+    virtual bool _IsPrepared() const override {return m_isPrepared;}
+    virtual BentleyStatus _PrepareDatabase(BeSQLite::Db& db) const override;
+    virtual BentleyStatus _CleanupDatabase(BeSQLite::Db& db) const override;
+};
 
 typedef WebMercatorModel::TileId const& TileIdCR;
 
@@ -93,9 +114,6 @@ private:
 private:
     static Utf8String SerializeRasterInfo(RgbImageInfo const&);
     static RgbImageInfo DeserializeRasterInfo(Utf8CP);
-    TiledRaster(){}
-    TiledRaster(RgbImageInfo rasterInfo) : m_rasterInfo(rasterInfo) {}
-    virtual ~TiledRaster(){}
         
 protected:
     virtual Utf8CP _GetId() const override {return m_url.c_str();}
@@ -103,11 +121,10 @@ protected:
     virtual BentleyStatus _InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> const& header, ByteStream const& body) override;
     virtual BentleyStatus _InitFrom(BeSQLite::Db& db, BeMutex& cs, Utf8CP key) override;
     virtual BentleyStatus _Persist(BeSQLite::Db& db, BeMutex& cs) const override;
-    virtual BeSQLiteRealityDataStorage::DatabasePrepareAndCleanupHandlerPtr _GetDatabasePrepareAndCleanupHandler() const override;
 
 public:
-    static RefCountedPtr<TiledRaster> Create() {return new TiledRaster();}
-    static RefCountedPtr<TiledRaster> Create(RgbImageInfo rasterInfo) {return new TiledRaster(rasterInfo);}
+    TiledRaster(){}
+    TiledRaster(RgbImageInfo rasterInfo) : m_rasterInfo(rasterInfo) {}
     ByteStream const& GetData() const {return m_data;}
     DateTime GetCreationDate() const {return m_creationDate;}
     RgbImageInfo const& GetImageInfo() const {return m_rasterInfo;}
@@ -150,14 +167,6 @@ DEFINE_REF_COUNTED_PTR(TiledRaster)
 * Max size of a tile coordiante is 2^22
 *
 +---------------+---------------+---------------+---------------+---------------+------*/
-enum 
-{
-    TILE_SIZE = 256,
-    MIN_ZOOM_LEVEL = 0, 
-    MAX_ZOOM_LEVEL = 22, 
-    MAX_TEXTURE_CACHE = 200,
-};
-
 struct Upoint2d
     {
     uint32_t  x;
@@ -794,10 +803,12 @@ ProgressiveTask::Completion WebMercatorDisplay::_DoProgressive(ProgressiveContex
         Utf8String url;
         RgbImageInfo expectedImageInfo;
         m_model._CreateUrl(url, expectedImageInfo, tileid);
-        TiledRasterPtr realityData = TiledRaster::Create(expectedImageInfo);
-        if (RealityDataCacheResult::Success == realityCache.Get<TiledRaster>(*realityData, url.c_str()))
+
+        TiledRasterPtr realityData = new TiledRaster(expectedImageInfo);
+        if (RealityDataCacheResult::Success == realityCache.Get<TiledRaster>(*realityData, url.c_str(), RealityDataOptions()))
             {
             BeAssert(realityData.IsValid());
+
             //  The image is available from the cache. Great! Draw it.
             if (!m_model._ShouldRejectTile(tileid, url, realityData->GetData()))
                 DrawAndCacheTile(context, tileid, *realityData);
@@ -823,8 +834,8 @@ ProgressiveTask::Completion WebMercatorDisplay::_DoProgressive(ProgressiveContex
         TileIdCR tileid  = iter->second;
 
         // See if the image has arrived in the cache.
-        TiledRasterPtr realityData = TiledRaster::Create();
-        if (RealityDataCacheResult::Success == realityCache.Get<TiledRaster>(*realityData, url.c_str()))
+        TiledRasterPtr realityData = new TiledRaster();
+        if (RealityDataCacheResult::Success == realityCache.Get<TiledRaster>(*realityData, url.c_str(), RealityDataOptions()))
             {
             if (context.CheckStop())
                 return Completion::Aborted;
@@ -1106,25 +1117,6 @@ void WebMercatorModel::_ReadJsonProperties(Json::Value const& val)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                03/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-RealityDataCache& WebMercatorModel::GetRealityDataCache() const
-    {
-    if (!m_realityDataCache.IsValid())
-        {
-        m_realityDataCache = RealityDataCache::Create();
-
-        BeFileName storageFileName = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName();
-        storageFileName.AppendToPath(BeFileName(GetName()));
-        storageFileName.AppendExtension(L"tilecache");
-        m_realityDataCache->RegisterStorage(*BeSQLiteRealityDataStorage::Create(storageFileName));
-        m_realityDataCache->RegisterSource(*HttpRealityDataSource::Create(8));
-        }
-
-    return *m_realityDataCache;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TiledRaster::_IsExpired() const 
@@ -1134,68 +1126,67 @@ bool TiledRaster::_IsExpired() const
     }
 
 #define TABLE_NAME_TiledRaster  "TiledRaster"
-//=======================================================================================
-// @bsiclass                                        Grigas.Petraitis            03/2015
-//=======================================================================================
-struct TiledRasterPrepareAndCleanupHandler : BeSQLiteRealityDataStorage::DatabasePrepareAndCleanupHandler
+/*-----------------------------------------------------------------------------**//**
+* @bsimethod                                     Grigas.Petraitis           03/2015
++---------------+---------------+---------------+---------------+---------------+--*/
+BentleyStatus TiledRasterCache::_PrepareDatabase(BeSQLite::Db& db) const 
     {
-    mutable BeAtomic<bool> m_isPrepared;
-    virtual bool _IsPrepared() const override {return m_isPrepared;}
-
-    /*-----------------------------------------------------------------------------**//**
-    * @bsimethod                                     Grigas.Petraitis           03/2015
-    +---------------+---------------+---------------+---------------+---------------+--*/
-    virtual BentleyStatus _PrepareDatabase(BeSQLite::Db& db) const override
+    if (db.TableExists(TABLE_NAME_TiledRaster))
         {
-        if (db.TableExists(TABLE_NAME_TiledRaster))
-            {
-            m_isPrepared.store(true);
-            return SUCCESS;
-            }
-
-        Utf8CP ddl = "Url CHAR PRIMARY KEY,Raster BLOB,RasterSize INT,RasterInfo CHAR,ContentType CHAR,Created BIGINT,Expires BIGINT,ETag CHAR";
-        if (BeSQLite::BE_SQLITE_OK == db.CreateTable(TABLE_NAME_TiledRaster, ddl))
-            {
-            m_isPrepared.store(true);
-            return SUCCESS;
-            }
-        return ERROR;
-        }
-    
-    /*-----------------------------------------------------------------------------**//**
-    * @bsimethod                                     Grigas.Petraitis           03/2015
-    +---------------+---------------+---------------+---------------+---------------+--*/
-    virtual BentleyStatus _CleanupDatabase(BeSQLite::Db& db) const override
-        {
-        static uint64_t allowedSize = 1024 * 1024 * 1024; // 1 GB
-
-        CachedStatementPtr selectStatement;
-        if (BeSQLite::BE_SQLITE_OK != db.GetCachedStatement(selectStatement, "SELECT RasterSize,Created FROM " TABLE_NAME_TiledRaster " ORDER BY Created ASC"))
-            return ERROR;
-    
-        uint64_t accumulatedSize = 0;
-        while ((accumulatedSize < allowedSize) && (BeSQLite::BE_SQLITE_ROW == selectStatement->Step()))
-            accumulatedSize += selectStatement->GetValueUInt64(0);
-        uint64_t date = selectStatement->GetValueUInt64(1);
-            
-        CachedStatementPtr deleteStatement;        
-        if (BeSQLite::BE_SQLITE_OK != db.GetCachedStatement(deleteStatement, "DELETE FROM " TABLE_NAME_TiledRaster " WHERE Created  <= ? "))
-            return ERROR;
-
-        deleteStatement->BindUInt64(1, date);
-        if (BeSQLite::BE_SQLITE_DONE != deleteStatement->Step())
-            return ERROR;
-            
+        m_isPrepared.store(true);
         return SUCCESS;
         }
-    };
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLiteRealityDataStorage::DatabasePrepareAndCleanupHandlerPtr TiledRaster::_GetDatabasePrepareAndCleanupHandler() const
+    Utf8CP ddl = "Url CHAR PRIMARY KEY,Raster BLOB,RasterSize INT,RasterInfo CHAR,ContentType CHAR,Created BIGINT,Expires BIGINT,ETag CHAR";
+    if (BeSQLite::BE_SQLITE_OK == db.CreateTable(TABLE_NAME_TiledRaster, ddl))
+        {
+        m_isPrepared.store(true);
+        return SUCCESS;
+        }
+    return ERROR;
+    }
+
+/*-----------------------------------------------------------------------------**//**
+* @bsimethod                                     Grigas.Petraitis           03/2015
++---------------+---------------+---------------+---------------+---------------+--*/
+BentleyStatus TiledRasterCache::_CleanupDatabase(BeSQLite::Db& db) const 
     {
-    return new TiledRasterPrepareAndCleanupHandler();
+    CachedStatementPtr sumStatement;
+    db.GetCachedStatement(sumStatement, "SELECT SUM(RasterSize) FROM " TABLE_NAME_TiledRaster);
+
+    if (BE_SQLITE_ROW != sumStatement->Step())
+        return ERROR;
+
+    uint64_t sum = sumStatement->GetValueInt64(0);
+    if (sum <= m_allowedSize)
+        return SUCCESS;
+
+    uint64_t garbageSize = sum - m_allowedSize;
+
+    CachedStatementPtr selectStatement;
+    db.GetCachedStatement(selectStatement, "SELECT RasterSize,Created FROM " TABLE_NAME_TiledRaster " ORDER BY Created ASC");
+
+    uint64_t runningSum=0;
+    while (runningSum < garbageSize)
+        {
+        if (BE_SQLITE_ROW != selectStatement->Step())
+            {
+            BeAssert(false);
+            return ERROR;
+            }
+
+        runningSum += selectStatement->GetValueInt64(0);
+        }
+
+    BeAssert (runningSum >= garbageSize);
+    uint64_t creationDate = selectStatement->GetValueInt64(1);
+    BeAssert (creationDate > 0);
+
+    CachedStatementPtr deleteStatement;
+    db.GetCachedStatement(deleteStatement, "DELETE FROM " TABLE_NAME_TiledRaster " WHERE Created <= ?");
+    deleteStatement->BindInt64(1, creationDate);
+
+    return BE_SQLITE_DONE == deleteStatement->Step() ? SUCCESS : ERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1351,3 +1342,23 @@ RgbImageInfo TiledRaster::DeserializeRasterInfo(Utf8CP serializedJson)
     info.m_isTopDown = json["isTopDown"].asBool();
     return info;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+RealityDataCache& WebMercatorModel::GetRealityDataCache() const
+    {
+    if (!m_realityDataCache.IsValid())
+        {
+        m_realityDataCache = new RealityDataCache();
+
+        BeFileName storageFileName = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName();
+        storageFileName.AppendToPath(BeFileName(GetName()));
+        storageFileName.AppendExtension(L"tilecache");
+        m_realityDataCache->RegisterStorage(*new TiledRasterCache(storageFileName));
+        m_realityDataCache->RegisterSource(*HttpRealityDataSource::Create(8));
+        }
+
+    return *m_realityDataCache;
+    }
+
