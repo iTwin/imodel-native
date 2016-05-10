@@ -28,7 +28,7 @@ void FilePath::read(PTRMI::DataBuffer &buffer)
 
 void FilePath::write(PTRMI::DataBuffer &buffer) const
 {
-	PTRMI::Array<const unsigned char> str((wcslen(m_path.c_str()) + 1) * sizeof(wchar_t), reinterpret_cast<const unsigned char *>(&(m_path.c_str()[0])));
+    PTRMI::Array<const unsigned char> str(static_cast<int>((wcslen(m_path.c_str()) + 1) * sizeof(wchar_t)), reinterpret_cast<const unsigned char *>(&(m_path.c_str()[0])));
 
 	buffer << str;
 }

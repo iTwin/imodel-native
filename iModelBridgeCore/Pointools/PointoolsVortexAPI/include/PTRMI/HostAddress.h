@@ -420,8 +420,8 @@ namespace PTRMI
 	HOST_ADDRESS_T inline
 	bool PTRMI::HostAddress<IPSubValue, numDigits>::getFromURL(const std::wstring &string, size_t *readPos)
 	{
-		unsigned int	start;
-		unsigned int	end;
+		size_t	        start;
+		size_t	        end;
 		unsigned int	items;
 		unsigned int	p = 0;
 		wchar_t			buffer[2048];

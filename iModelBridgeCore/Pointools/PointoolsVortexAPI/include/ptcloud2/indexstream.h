@@ -208,7 +208,7 @@ public:
 		CloudGroup *setGroup(int g);
 
 		/* num of groups in total */ 
-		int numGroups() const											{ return _groups.size(); }
+		int numGroups() const											{ return static_cast<int>(_groups.size()); }
 
 		/* get group information */ 
 		const CloudGroup *group() const									{ return _group; } 

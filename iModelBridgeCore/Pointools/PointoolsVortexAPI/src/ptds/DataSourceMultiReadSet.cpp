@@ -66,7 +66,7 @@ DataSourceMultiRead *DataSourceMultiReadSet::addMultiRead(DataSourceMultiRead &m
 
 unsigned int DataSourceMultiReadSet::getNumMultiReads(void) const
 {
-	return multiReadSet.size();
+	return static_cast<unsigned int>(multiReadSet.size());
 }
 
 DataSourceMultiRead *DataSourceMultiReadSet::getMultiRead(MultiReadIndex index)

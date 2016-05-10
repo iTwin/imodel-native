@@ -16,7 +16,7 @@ int		RenderEffectsManager::addEffect(pointsengine::RenderEffectI *effect)
 {
 	m_disableColor = false;
 	m_effects.push_back( effect );
-	return m_effects.size()-1;
+	return static_cast<int>(m_effects.size()-1);
 }
 
 

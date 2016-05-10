@@ -302,7 +302,7 @@ int UserChannelManager::saveChannelsToFile( const pt::String &filename, int numC
 			++i;
 		}
 	}
-	numChannels = channelsToWrite.size();
+	numChannels = static_cast<int>(channelsToWrite.size());
 	if (!numChannels) return PTV_FILE_NOTHING_TO_WRITE;
 
 	ptds::FilePath fp(filename.c_wstr());

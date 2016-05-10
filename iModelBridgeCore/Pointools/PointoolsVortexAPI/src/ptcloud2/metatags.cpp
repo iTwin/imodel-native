@@ -26,7 +26,7 @@ bool MetaTags::groupName(int index, pt::String &name) const
 int MetaTags::numTagsInGroup( const pt::String &group ) const
 {
 	const MetaTagMap *tags = getGroup( group );
-	return (tags ? tags->size() : 0 );
+	return (tags ? static_cast<int>(tags->size()) : 0 );
 }
 void MetaTags::addGroup(const pt::String &name)
 {

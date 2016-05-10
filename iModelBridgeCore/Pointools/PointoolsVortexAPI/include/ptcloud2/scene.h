@@ -70,7 +70,7 @@ namespace pcloud
 			return i == _cloudsByGUID.end() ? 0 : i->second;
 		}
 
-		inline uint size() const							{ return _clouds.size(); }
+		inline uint size() const							{ return static_cast<uint>(_clouds.size()); }
 		void clear();
 		
 		const wchar_t *typeDescriptor() const	{ return L"Point Cloud"; }

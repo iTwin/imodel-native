@@ -262,7 +262,7 @@ void Gradient::reverse()
 	m_firstKey = end;
 	m_firstKey->prev = 0;
 
-	for (int i=keys.size()-1; i>=0; i--)
+	for (int i= static_cast<int>(keys.size()-1); i>=0; i--)
 	{
 		m_firstKey->insert( keys[i] );
 	}

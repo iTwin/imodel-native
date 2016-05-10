@@ -77,7 +77,7 @@ void VoxelLODSet::clear(void)
 
 unsigned int VoxelLODSet::getNumEntries(void)
 {
-	return voxelLODSet.size();
+	return static_cast<uint>(voxelLODSet.size());
 }
 
 VoxelLOD *VoxelLODSet::createVoxelLOD(ClientID id)

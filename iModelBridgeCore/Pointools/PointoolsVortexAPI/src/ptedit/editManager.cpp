@@ -3,7 +3,6 @@
 // PT_EDIT Point cloud editing plugin
 //
 //-----------------------------------------------------------------------------------------------
-#pragma warning (disable : 4786 )
 
 #include "PointoolsVortexAPIInternal.h"
 #include <wildmagic/math/Wm5matrix3.h>
@@ -250,7 +249,7 @@ int		PointEditManager::stateId() const
 /*****************************************************************************/
 uint PointEditManager::numEdits() const
 {
-	return m_edits.size();
+	return static_cast<uint>(m_edits.size());
 }
 
 /*****************************************************************************/

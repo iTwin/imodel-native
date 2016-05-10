@@ -82,7 +82,7 @@ namespace ptedit
 	static SelectionResult intersect(const FenceSelect &f, const pt::BoundingBoxD &box)
 	{
 		if (!f.isValid) return FullyOutside;
-		int numPlanes = f.hullPlanes.size();
+		int numPlanes = static_cast<int>(f.hullPlanes.size());
 
 		int x; pt::vector3d p,n;
 

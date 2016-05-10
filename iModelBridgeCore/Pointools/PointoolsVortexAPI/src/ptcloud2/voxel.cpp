@@ -1515,7 +1515,7 @@ int		Voxel::computeStrataIndex(std::vector<int> &index, int *strata/*[NUM_STRATA
 	{
 		std::shuffle(index.begin(), index.end(), _rng);
 		for (int i=0; i<_pointCount; i++) index.push_back(i);
-		strata[0] = index.size();
+        strata[0] = static_cast<int>(index.size());
 		return 1;		// we need all points available to do stratification
 	}
 
@@ -1543,7 +1543,7 @@ int		Voxel::computeStrataIndex(std::vector<int> &index, int *strata/*[NUM_STRATA
 	// transfer strata into the index - each one is randomised to avoid patterns formed by insertion order
 	for (i=0; i<NUM_STRATA; i++)
 	{		
-		strata[i] = uniform.strata[i].size();
+		strata[i] = static_cast<int>(uniform.strata[i].size());
 
 		if (!strata[i]) continue;
 

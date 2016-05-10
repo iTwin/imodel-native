@@ -289,7 +289,7 @@ bool DataSourceFile::isValidPath(const FilePath *filepath)
 	{
 		std::wstring p = filepath->path();
 
-		unsigned int i = p.find(':');
+		unsigned int i = static_cast<uint>(p.find(':'));
 															// If not present or drive letter, return is file path
 		if(i == -1 || i == 1)
 			return true;

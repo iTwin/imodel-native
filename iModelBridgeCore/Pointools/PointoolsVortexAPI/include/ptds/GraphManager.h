@@ -549,7 +549,7 @@ namespace ptds
 
 		for(t = 0; t < dim; t++)
 		{
-            v[t] = static_cast<float>((static_cast<double>(rand()) / static_cast<double>(RAND_MAX)));
+			v[t] = static_cast<float>((static_cast<double>(rand()) / static_cast<double>(RAND_MAX)));
 		}
 	}
 
@@ -707,7 +707,7 @@ namespace ptds
 		if(mutexScope.isLocked() == false)
 			return 0;
 
-		return points.size();
+        return static_cast<uint>(points.size());
 	}
 
 	template<typename T, unsigned int dim>

@@ -218,7 +218,7 @@ PTres		PTAPI ptReadChannelsFile( const PTstr filename, PTint &numChannels, PThan
 	std::vector<UserChannel*> channels;
 	PTres res = UserChannelManager::instance()->loadChannelsFromFile( pt::String( filename ), channels );
 
-	numChannels = channels.size();
+	numChannels = static_cast<PTint>(channels.size());
 	if (numChannels > 256) numChannels = 256;
 
 	if (res != PTV_SUCCESS) 
@@ -251,7 +251,7 @@ PTres PTAPI ptReadChannelsFileFromBuffer(void *buffer, PTuint64 bufferSize, PTin
 	std::vector<UserChannel*> channels;
 	PTres res = UserChannelManager::instance()->loadChannelsFromFile(dummyFilename, channels, static_cast<ptds::DataSource::Data *>(buffer), bufferSize);
 
-	numChannels = channels.size();
+    numChannels = static_cast<PTint>(channels.size());
 	if (numChannels > 256) numChannels = 256;
 
 	if (res != PTV_SUCCESS) 
@@ -284,7 +284,7 @@ PTres	PTAPI ptWriteChannelsFile( const PTstr filename, PTint numChannels, const 
 	if (uchannels.size()) 
 	{
 		return UserChannelManager::instance()->
-			saveChannelsToFile( pt::String( filename ), uchannels.size(), &(uchannels[0]) );	
+            saveChannelsToFile(pt::String(filename), static_cast<int>(uchannels.size()), &(uchannels[0]));
 	}
 	else return false;
 }
@@ -317,7 +317,7 @@ PTuint64 PTAPI ptWriteChannelsFileToBuffer(PTint numChannels, const PThandle *ch
 
 	if (uchannels.size()) 
 	{
-		 PTres res = UserChannelManager::instance()->saveChannelsToFile(dummyFilename, uchannels.size(), &(uchannels[0]), &dataSource);	
+		 PTres res = UserChannelManager::instance()->saveChannelsToFile(dummyFilename, static_cast<int>(uchannels.size()), &(uchannels[0]), &dataSource);
 	}
 	else 
 	{

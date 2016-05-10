@@ -39,7 +39,7 @@ public:
 	bool setProjectSpaceOrigin( const vector3d &origin );
 	void optimizeCoordinateSpace();
 
-	int numObjects() const { return m_scenesv.size(); }
+	int numObjects() const { return static_cast<int>(m_scenesv.size()); }
 	const Object3D* object(int i) const { return m_scenesv[i]; }
 	Object3D* object(int i) { return m_scenesv[i]; }
 

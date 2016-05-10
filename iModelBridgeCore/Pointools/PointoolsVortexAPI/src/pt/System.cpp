@@ -863,11 +863,12 @@ void System::setEnv(const std::wstring& name, const std::wstring& value)
 
 #endif
 
-void* System::alignedMalloc(size_t bytes, size_t alignment) {
-    alwaysAssertM(isPow2(alignment), _T("alignment must be a power of 2"));
+void* System::alignedMalloc(size_t bytes, size_t alignment) 
+{
+    alwaysAssertM(isPow2(static_cast<int>(alignment)), _T("alignment must be a power of 2"));
 
     // We must align to at least a word boundary.
-    alignment = iMax(alignment, sizeof(void *));
+    alignment = iMax(static_cast<int>(alignment), sizeof(void *));
 
     // Pad the allocation size with the alignment size and the
     // size of the redirect pointer.
@@ -890,7 +891,7 @@ void* System::alignedMalloc(size_t bytes, size_t alignment) {
     size_t  alignedPtr = truePtr + sizeof(void*);
 
     // 2^n - 1 has the form 1111... in binary.
-    uint32 bitMask = (alignment - 1);
+    uint32 bitMask = static_cast<uint32>((alignment - 1));
 
     // Advance forward until we reach an aligned location.
     while ((alignedPtr & bitMask) != 0) {

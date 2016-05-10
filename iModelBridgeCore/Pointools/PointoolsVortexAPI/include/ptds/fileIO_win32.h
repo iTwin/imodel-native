@@ -8,8 +8,6 @@
 #ifndef POINTOOLS_FILEIO_WIN32
 #define POINTOOLS_FILEIO_WIN32
 
-#pragma warning ( disable : 4267 )
-
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <ptds/ptwin32_api.h>

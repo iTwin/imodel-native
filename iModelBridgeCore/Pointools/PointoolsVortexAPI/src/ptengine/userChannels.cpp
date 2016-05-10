@@ -837,7 +837,7 @@ bool OOCFile::writeVCD( class VoxelChannelData* vcd, size_t numPoints )
 		if (!numPoints) numPoints = vcd->getNumPoints();
 		if (numPoints > vcd->getNumPoints()) numPoints = vcd->getNumPoints();
 
-		int numBytes = numPoints * vcd->getBytesPerPoint();
+		int numBytes = static_cast<int>(numPoints * vcd->getBytesPerPoint());
 
 		uint zeroBufferSize = 0;
 
@@ -850,7 +850,7 @@ bool OOCFile::writeVCD( class VoxelChannelData* vcd, size_t numPoints )
 			/* must use full point count first time to reserve enough space */ 
 			fend += vcd->getBytesPerPoint() * vcd->getFullNumPoints();
 		
-			zeroBufferSize = (vcd->getFullNumPoints() - numPoints) * vcd->getBytesPerPoint();
+			zeroBufferSize = static_cast<uint>((vcd->getFullNumPoints() - numPoints) * vcd->getBytesPerPoint());
 		}
 		else
 		{
@@ -885,12 +885,12 @@ bool OOCFile::readVCD( class VoxelChannelData* vcd, size_t numPoints )
 	if (numPoints) 
 	{
 		if (numPoints > vcd->numPoints) vcd->destroy(true);		//need larger buffer
-		vcd->numPoints = numPoints;
+		vcd->numPoints = static_cast<uint>(numPoints);
 	}
 
 	if (!vcd->getData()) vcd->allocate();
 	
-	int numBytes = numPoints * vcd->getBytesPerPoint();
+	int numBytes = static_cast<int>(numPoints * vcd->getBytesPerPoint());
 	fhandle->movePointerTo((ptds::DataPointer)vcd->getFilePos());
 	int bytesRead = static_cast<int>(fhandle->readBytes(vcd->getData(), numBytes ));
 	return (bytesRead == numBytes) ? true : false;

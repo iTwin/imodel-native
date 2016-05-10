@@ -107,7 +107,7 @@ PTres ClipManager::setClipStyle( PTuint style )
 uint ClipManager::getNumClippingPlanes()
 {
 	// if other types of clip objects that are not clip planes are added in the future this will need updating
-	return m_clipPlanes.size();
+	return static_cast<uint>(m_clipPlanes.size());
 }
 
 uint ClipManager::getNumEnabledClippingPlanes()

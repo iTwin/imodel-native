@@ -193,7 +193,7 @@ int Dispatcher::writeTree(datatree::Branch *branch, bool configuration)
 
 		++it;
 	}
-	return brmap.size();
+	return static_cast<int>(brmap.size());
 }
 //---------------------------------------------------------------------------
 // free Blocks allocated here
@@ -290,16 +290,16 @@ void Block::write_block(Block *b)
 	write(b->identifier);
 	write(b->version);
 
-	int num_chunks = b->firstchunk()->numChunks();
+	int num_chunks = static_cast<int>(b->firstchunk()->numChunks());
 	write(num_chunks);
 
 	Chunk *c = b->firstchunk();
 
 	while (c)
 	{
-		int size = c->size();
+		int size = static_cast<int>(c->size());
 
-		if (size <= 1) size = c->totalSize();
+		if (size <= 1) size = static_cast<int>(c->totalSize());
 
 		write(size);
 		write(c->_chunk, size);
@@ -360,7 +360,7 @@ bool BlockIO::store(Block *block, DataSourcePtr h)
 {
 	if (block)
 	{
-		int	bytes = block->size();
+		int	bytes = static_cast<int>(block->size());
 		h->writeBytes(block->identifier, 8);
 		h->writeBytes(&bytes, sizeof(int));
 

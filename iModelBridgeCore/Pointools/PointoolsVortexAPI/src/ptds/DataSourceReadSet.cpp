@@ -37,7 +37,7 @@ bool DataSourceReadSet::addRead(DataSourceRead &read)
 
 unsigned int DataSourceReadSet::getNumReads(void) const
 {
-	return readSet.size();
+	return static_cast<uint>(readSet.size());
 }
 
 

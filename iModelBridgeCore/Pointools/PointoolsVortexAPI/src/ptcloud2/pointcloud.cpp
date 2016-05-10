@@ -91,7 +91,7 @@ void PointCloud::setRoot(Node*n)
 		}
 		_numpoints += _voxels[i]->fullPointCount();
 	}
-	int nodes = _root->countNodes() - _voxels.size();
+	int nodes = static_cast<int>(_root->countNodes() - _voxels.size());
 	_memused += sizeof(Node) * nodes;
 	_memused += (sizeof(Voxel) + sizeof(void*) ) * _voxels.size();
 }

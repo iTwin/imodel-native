@@ -135,7 +135,7 @@ int IndexStream::addGroup(bool combine, float tolerance, bool gen_normals, float
 	_clouds = &_group->clouds;
 	_groups.push_back(_group);
 	
-	_groupidx = _groups.size() - 1;
+	_groupidx = static_cast<int>(_groups.size() - 1);
 	return _groupidx;
 }
 
@@ -322,7 +322,7 @@ void	IndexStream::addCalibratedImageToCloud(const char *filename, const mmatrix4
 
 	char file[260];
 	char newfile[260];
-	int l = strlen(filename);
+	int l = static_cast<int>(strlen(filename));
 
 	strncpy(file, filename, 260);
 
@@ -412,7 +412,7 @@ bool IndexStream::addCloud(uint cloud_spec, const mmatrix4d *mat, uint ibound, u
 		if (errors)
 			return false;
 	}
-	_writeblock = _pager->newWriteBlock(PCLOUD_STREAM_BLOCKSIZE, CLOUD_KEY(_groupidx, _clouds->size()), "Cloud", true);
+	_writeblock = _pager->newWriteBlock(PCLOUD_STREAM_BLOCKSIZE, CLOUD_KEY(_groupidx, static_cast<uint>(_clouds->size())), "Cloud", true);
 	if (!_writeblock)
 		return false;
 	
@@ -424,7 +424,7 @@ bool IndexStream::addCloud(uint cloud_spec, const mmatrix4d *mat, uint ibound, u
 	 
 	if (ibound >0 && jbound >0 && (ibound * jbound < 64000000) )
 	{
-		_image = new PointsImage(ibound,jbound,_clouds->size(), 
+		_image = new PointsImage(ibound,jbound, static_cast<int>(_clouds->size()),
 			cloud_spec & PCLOUD_CLOUD_ROW_MAJOR ? true : false);
 	}
 
@@ -1090,7 +1090,7 @@ void IndexStream::buildNormals(bool transform, float quality)
 
 		_normalpager = new ptds::BlockPager(filepath);
 	}
-	ptapp::CmdProgress progress("Building Normals...", 0, _clouds->size());
+	ptapp::CmdProgress progress("Building Normals...", 0, static_cast<int>(_clouds->size()));
 
 	for (int i=0; i<_clouds->size(); i++)
 	{

@@ -46,7 +46,7 @@ void GUID::write(DataBuffer &buffer) const
 DataSize GUID::getMaxWriteSize(void)
 {
 															// Size is generated (bool) + GUID stored as array
-	DataBuffer::DataSize maxSize = sizeof(bool) + PTRMI::Array<const unsigned char>::getMaxWriteSize(sizeof(::GUID));
+	DataBuffer::DataSize maxSize = static_cast<DataBuffer::DataSize>(sizeof(bool) + PTRMI::Array<const unsigned char>::getMaxWriteSize(sizeof(::GUID)));
 
 	return maxSize;
 }

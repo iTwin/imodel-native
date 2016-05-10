@@ -190,7 +190,7 @@ PTTRACE_FUNC
 			for (i=0;i<group->clouds.size(); i++)
 			{
 				IndexStream::CloudInfo *cloudinfo = group->clouds[i];
-				cloudinfo->_cloudPosInScene = _clouds.size();
+                cloudinfo->_cloudPosInScene = static_cast<uint>(_clouds.size());
 
 				if (CLOUD_VALID(cloudinfo))
 				{
@@ -214,7 +214,7 @@ PTTRACE_FUNC
 			for (i=0; i<buildInfo->stream->numClouds(); i++)
 			{
 				/* record which scene cloud this will be*/ 
-				buildInfo->stream->cloudInfo(i)->_cloudPosInScene = _clouds.size();
+				buildInfo->stream->cloudInfo(i)->_cloudPosInScene = static_cast<uint>(_clouds.size());
 
 				IndexStream::CloudInfo *cloudinfo = buildInfo->stream->cloudInfo(i);
 
@@ -855,13 +855,13 @@ int Scene::writePointData( SceneBuildData *buildInfo, PointCloud *pc )
 		for (v=0;v<voxread.size(); v++) voxel_sizes[v] = voxread[v];
 
 		PodIO::writeCloudData( *buildInfo->job, buildInfo->cloudInfo()->_cloudPosInScene, 
-			start_voxel, processvoxels.size(), voxel_sizes, true );
+            start_voxel, static_cast<int>(processvoxels.size()), voxel_sizes, true);
 
 		delete [] voxel_sizes;
 
 		PTTRACE_LINE
 		
-		start_voxel += processvoxels.size();
+		start_voxel += static_cast<int>(processvoxels.size());
 
 		writeprogress.inc(1);
 

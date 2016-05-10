@@ -4,8 +4,6 @@
 /*																			*/ 
 /*  Last Updated 1 March 2004 Faraz Ravi									*/ 
 /*--------------------------------------------------------------------------*/ 
-#pragma warning ( disable : 4244) // conversion from long to short
-
 #include <ptapp/license.h>
 #include <stdio.h>
 #include <boost/filesystem/operations.hpp>

@@ -534,7 +534,7 @@ static bool datatypeStrCmp(const wchar_t *a, const wchar_t *b)
 //-----------------------------------------------------------------------------
 int SceneClassManager::numImportFileTypes(const wchar_t *typeDesc)
 { 
-	if (!typeDesc) return _importfiletypes.size(); 
+	if (!typeDesc) return static_cast<int>(_importfiletypes.size());
 	
 	int c= 0;
 
@@ -545,7 +545,7 @@ int SceneClassManager::numImportFileTypes(const wchar_t *typeDesc)
 }
 int SceneClassManager::numExportFileTypes(const wchar_t *typeDesc) 
 { 
-	if (!typeDesc) return _exportfiletypes.size(); 
+	if (!typeDesc) return static_cast<int>(_exportfiletypes.size());
 
 	int c= 0;
 
@@ -584,7 +584,7 @@ const ptds::FileType &SceneClassManager::exportFileType(int i, const wchar_t *ty
 	}
 	return NULL_FILETYPE;
 }
-int SceneClassManager::numClassManagers() { return _classmanagers.size(); }
+int SceneClassManager::numClassManagers() { return static_cast<int>(_classmanagers.size()); }
 int SceneClassManager::getClassManagers(SceneClassManager**managers)
 {
 	PTTRACE("SceneClassManager::getClassManagers");

@@ -4,10 +4,6 @@
 /*																			*/ 
 /*  Last Updated 28 Dec 2003 Faraz Ravi										*/ 
 /*--------------------------------------------------------------------------*/ 
-#ifdef _WIN32
-#pragma warning (disable : 4786)
-#pragma warning (disable : 4251)
-#endif
 
 #include <pt/typedefs.h>
 #include <pttool/Tool.h>

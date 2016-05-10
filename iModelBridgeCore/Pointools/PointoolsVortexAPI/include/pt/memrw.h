@@ -109,7 +109,7 @@ struct MemRW
 
 	bool write_s(const char *s)
 	{		
-		int size = strlen(s) + 1;
+		int size = static_cast<int>(strlen(s) + 1);
 		if (checkSize(size+sizeof(int)))
 		{
 			write(size);
@@ -128,7 +128,7 @@ struct MemRW
 	};
 	bool write_ws(const wchar_t *s)
 	{
-		int size = wcslen(s) + 1;
+		int size = static_cast<int>(wcslen(s) + 1);
 			
 		if (checkSize(size*2+sizeof(int)))
 		{	

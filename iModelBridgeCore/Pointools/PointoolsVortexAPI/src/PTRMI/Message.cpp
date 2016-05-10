@@ -254,14 +254,14 @@ unsigned int Message::calculateMaxHeaderSize(void)
 {
 	unsigned int maxSize;
 															// Calculate maximum existing requirement (Versions 1 and 2)
-	maxSize =	sizeof(messageVersion)			+
-				status.getMaxWriteSize()		+
-				sizeof(messageType)				+
-				senderManager.getMaxWriteSize()	+
-				sender.getMaxWriteSize()		+
-				receiver.getMaxWriteSize()		+
-				methodName.getMaxWriteSize(PTRMI_MESSAGE_MAX_METHOD_NAME_SIZE) +
-				sizeof(MessageSize);
+	maxSize = static_cast<int>(sizeof(messageVersion)			+
+				                status.getMaxWriteSize()		+
+				                sizeof(messageType)				+
+				                senderManager.getMaxWriteSize()	+
+				                sender.getMaxWriteSize()		+
+				                receiver.getMaxWriteSize()		+
+				                methodName.getMaxWriteSize(PTRMI_MESSAGE_MAX_METHOD_NAME_SIZE) +
+				                sizeof(MessageSize));
 															// Increase to add reserved space if possible
 	maxSize = std::max(maxSize, PTRMI_MESSAGE_PREFERRED_HEADER_SIZE);
 

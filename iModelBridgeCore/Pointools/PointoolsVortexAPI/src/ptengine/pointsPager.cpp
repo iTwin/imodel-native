@@ -275,7 +275,7 @@ pcloud::Scene::CreateSceneResult PointsPager::openScene(pcloud::Scene *scene)
 				return pcloud::Scene::InvalidPODFile;	// TODO: return codes
 			}
 
-			Voxel::FileIndex file = pp.files.size()-1;
+            Voxel::FileIndex file = static_cast<Voxel::FileIndex>(pp.files.size() - 1);
 			
 			for (int j=0;j<	pc->voxels().size(); j++)
 			{

@@ -13,9 +13,6 @@
 #define CMDPIPE_API IMPORT_ATTRIBUTE
 #endif
 
-#pragma warning (disable : 4251)
-#pragma warning (disable : 4275)
-
 #include <Loki/AssocVector.h>
 #include <map>
 #include <vector>

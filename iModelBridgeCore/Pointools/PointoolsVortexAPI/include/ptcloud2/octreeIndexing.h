@@ -81,9 +81,7 @@ namespace pcloud
 
 		static bool hashPoint(const pt::vector3d &vec, float multiple, uint64_t &hash)
 		{
-            pt::vector3i quantize_multiples(static_cast<int>(vec.x / multiple), 
-                                            static_cast<int>(vec.y / multiple), 
-                                            static_cast<int>(vec.z / multiple));
+			pt::vector3i quantize_multiples(static_cast<int>(vec.x / multiple), static_cast<int>(vec.y / multiple), static_cast<int>(vec.z / multiple));
 
 			/* trucate anything too big */ 
 			pt::vector3i large_component(quantize_multiples);
@@ -122,7 +120,7 @@ namespace pcloud
 		bool filter(const pt::vector3d &pnt,  double multiple)
 		{	
 			uint64_t hash;
-            if (!hashPoint(pnt, static_cast<float>(multiple), hash)) return false;
+			if (!hashPoint(pnt, static_cast<float>(multiple), hash)) return false;
 			PointsHashSet::iterator it = _phs->find(hash);
 			
 			if (it != _phs->end()) return false;
@@ -330,7 +328,7 @@ namespace pcloud
 				{
 					if (!_child[i]->hasChildren())
 					{
-                        Voxel *vox = new Voxel(_lower, _upper, depth() + 1, _child[i]->extents(), static_cast<uint>(_child[i]->lodPointCount()));
+						Voxel *vox = new Voxel(_lower, _upper, depth()+1, _child[i]->extents(), static_cast<uint>(_child[i]->lodPointCount()));
 						voxels.push_back(vox);
 
 						vox->addChannel(PCloud_Geometry, Float32, geomtype, 3, 0, 0, 0);

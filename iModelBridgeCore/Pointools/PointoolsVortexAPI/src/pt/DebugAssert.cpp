@@ -22,11 +22,6 @@
 #include <pt/debugPrintf.h>
 #include <pt/Log.h>
 
-#ifdef _WIN32
-    // disable: "C++ exception handler used"
-    #pragma warning (disable : 4530)
-#endif
-
 using namespace std;
 
 namespace pt { namespace _internal {

@@ -332,13 +332,13 @@ public:
 		first_is_biggest(bv, &largest, &smallest);
 
 		/* allocate space if required*/ 
-		if (!result.allocate(bv[largest]->size) ) 
+		if (!result.allocate(static_cast<int>(bv[largest]->size))) 
 		{
 		  return false; /* can't get memory, so can't continue */ 
 		} 
 		else 
 		{
-			numints = B.size;
+            numints = static_cast<elem_t>(B.size);
 
 			for (i=0; i < numints; i++) 
 			{
@@ -354,7 +354,7 @@ public:
 	   register elem_t i;
 				elem_t numblocks;   
 
-		numblocks = B.size > size ? size : B.size;
+		numblocks = B.size > size ? static_cast<elem_t>(size) : static_cast<elem_t>(B.size);
 		for (i=0; i < numblocks; i++) bits[i] &= B.bits[i];
 	} 
 	static void first_is_biggest(const bitvector *bv[2], unsigned char* _big, unsigned char* _small)
@@ -400,7 +400,7 @@ public:
 	   bv[smallest] = &B;
 	   first_is_biggest(bv, &largest, &smallest);
 
-	   if (!result.allocate(bv[largest]->bitsize))
+	   if (!result.allocate(static_cast<elem_t>(bv[largest]->bitsize)))
 	   {
 		  return false; 
 	   } 
@@ -408,7 +408,7 @@ public:
 	   {
 		  result.copy(*bv[largest]);
 
-		  numints = bv[smallest]->size;
+		  numints = static_cast<elem_t>(bv[smallest]->size);
 
 		  for (i=0; i < numints; i++) {
 			 result.bits[i] |= bv[smallest]->bits[i];
@@ -422,7 +422,7 @@ public:
 	   register elem_t i;
 				elem_t numblocks;   
 
-		numblocks = B.size > size ? size : B.size;
+		numblocks = B.size > size ? static_cast<elem_t>(size) : static_cast<elem_t>(B.size);
 		for (i=0; i < numblocks; i++) bits[i] |= B.bits[i];
 	}
  /*
@@ -457,7 +457,7 @@ public:
 	   bv[smallest] = &B;
 	   first_is_biggest(bv, &largest, &smallest);
 
-	   if (!diff.allocate(bv[largest]->bitsize))
+	   if (!diff.allocate(static_cast<elem_t>(bv[largest]->bitsize)))
 	   {
 		  return false; 
 	   } 
@@ -465,7 +465,7 @@ public:
 	   {
 		  diff.copy(*bv[largest]);
 
-		  numints = bv[smallest]->size;
+		  numints = static_cast<elem_t>(bv[smallest]->size);
 
 		  for (i=0; i < numints; i++) 
 		  {
@@ -480,7 +480,7 @@ public:
 	   register elem_t i;
 				elem_t numblocks;   
 
-		numblocks = B.size > size ? size : B.size;
+		numblocks = B.size > size ? static_cast<elem_t>(size) : static_cast<elem_t>(B.size);
 		for (i=0; i < numblocks; i++) bits[i] ^= B.bits[i];
 
 	}

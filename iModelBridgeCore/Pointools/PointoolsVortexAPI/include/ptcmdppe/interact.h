@@ -7,9 +7,6 @@
 #ifndef _COMMANDPIPE_INTERACT_DEFINITIONS
 #define _COMMANDPIPE_INTERACT_DEFINITIONS
 
-#pragma warning (disable : 4251)
-#pragma warning (disable : 4275)
-
 #include <stack>
 #include <string>
 

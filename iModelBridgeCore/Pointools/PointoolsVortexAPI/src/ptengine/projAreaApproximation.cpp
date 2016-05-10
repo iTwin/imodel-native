@@ -139,7 +139,7 @@ struct ProjectPointsIntoGrid
 	}
 	int computeApproxArea(void)
 	{
-		return grid.size() * 64;
+		return static_cast<int>(grid.size() * 64);
 	} 
 	vector3d		projPnts[ SL_PNT_SAMPLE_SIZE ];
 	const			pt::ViewParams &vs;

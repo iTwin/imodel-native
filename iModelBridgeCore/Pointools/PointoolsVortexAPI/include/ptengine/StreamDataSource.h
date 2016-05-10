@@ -104,7 +104,7 @@ inline void StreamDataSource::getVoxelIterators(VoxelSet::iterator &start, Voxel
 
 inline unsigned int StreamDataSource::getNumVoxels(void)
 {
-	return voxelSet.size();
+	return static_cast<uint>(voxelSet.size());
 }
 
 

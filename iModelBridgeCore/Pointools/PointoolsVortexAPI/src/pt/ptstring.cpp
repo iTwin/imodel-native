@@ -58,7 +58,7 @@ bool String::operator != (const String &s) const	{	return lstrcmpW(_wbuffer, s.c
 int String::length() const
 {
 	if (!_wbuffer) return 0;
-	return wcsnlen(_wbuffer, _wbuffsize);
+	return static_cast<int>(wcsnlen(_wbuffer, _wbuffsize));
 }
 //
 // Assignment operator
@@ -115,7 +115,7 @@ String &String::operator = (const char *s)
 	}
 	if (s && s[0] != '\0')
 	{
-		int len = strlen(s)+1;
+		int len = static_cast<int>(strlen(s)+1);
 		allocBuffer(len);
 		
 		utf8towc(s, (unsigned)len, _wbuffer, _wbuffsize);

@@ -92,7 +92,7 @@ void PointsRenderer::renderPoints( RenderContext *context, const pcloud::Scene *
 	t0.tick();								// start timer
 
 	PointsScene::UseSceneVoxels voxelslock( m_voxlist, m_voxlistState );	// Get the scene voxels
-	int voxelcount = m_voxlist.size();
+	int voxelcount = static_cast<int>(m_voxlist.size());
 	
 	if (!voxelcount || !m_enabled)  return;		// early exit if nothing to render
 

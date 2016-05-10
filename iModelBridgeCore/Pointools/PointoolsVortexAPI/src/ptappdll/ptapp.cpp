@@ -4,8 +4,6 @@
 /*																			*/ 
 /*  Last Updated 30 Jan 2004 Faraz Ravi										*/ 
 /*--------------------------------------------------------------------------*/ 
-#pragma warning ( disable : 4251)
-
 #include "PointoolsVortexAPIInternal.h"
 #include <ptappdll/ptapp.h>
 #include <pt/parametermap.h>

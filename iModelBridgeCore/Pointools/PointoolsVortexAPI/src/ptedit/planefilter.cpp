@@ -20,7 +20,7 @@ void  PlaneSelect::computePlane()
 		Wm5::Vector3d mgcPoints[500];
 		Wm5::Vector3d planeOrigin, planeNormal;
 		
-		int size = points.size();
+		int size = static_cast<int>(points.size());
 		if (size > 500) size = 500;
 
 		for (int i=0; i<size; i++)

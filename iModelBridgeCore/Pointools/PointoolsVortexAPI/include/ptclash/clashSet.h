@@ -27,7 +27,7 @@ public:
 
 	unsigned int size() const	
 	{ 
-		return m_objects.size(); 
+		return static_cast<uint>(m_objects.size());
 	}
 	
 	ClashObject *operator [] (unsigned int i)
