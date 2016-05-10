@@ -116,11 +116,11 @@ struct CachedResponseManager : public IECDbAdapter::DeleteListener
         BentleyStatus SavePage(ResponseKeyCR responseKey, uint64_t page, Utf8StringCR cacheTag, const InstanceCacheHelper::CachedInstances& instances);
         
         //! Add additional instance to response that will not be managed with it but will be returned as one of cached
-        BentleyStatus AddAdditionalInstance(CachedResponseKeyCR responseKey, ECInstanceKeyCR instanceKey);
+        BentleyStatus AddAdditionalInstance(ResponseKeyCR responseKey, CachedObjectInfoKeyCR instanceInfoKey);
         //! Remove additional instance
-        BentleyStatus RemoveAdditionalInstance(CachedResponseKeyCR responseKey, ECInstanceKeyCR instanceKey);
+        BentleyStatus RemoveAdditionalInstance(ResponseKeyCR responseKey, CachedObjectInfoKeyCR instanceInfoKey);
         //! Remove additional instance from any responses, will keep responses intact
-        BentleyStatus RemoveAdditionalInstance(ECInstanceKeyCR instanceKey);
+        BentleyStatus RemoveAdditionalInstance(CachedObjectInfoKeyCR instanceInfoKey);
 
         //! Read response instances. Relationships not included. 
         //! @param readCallback will be called for each successfull query, caller is responsible for extracting data.

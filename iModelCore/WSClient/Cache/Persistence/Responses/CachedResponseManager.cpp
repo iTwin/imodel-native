@@ -38,7 +38,7 @@ m_responsePageClass(m_dbAdapter.GetECClass(SCHEMA_CacheSchema, CLASS_CachedRespo
 m_responseToParentClass(m_dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_ResponseToParent)),
 m_responseToHolderClass(m_dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_ResponseToHolder)),
 m_responseToResponsePageClass(m_dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_ResponseToResponsePage)),
-m_responseToAdditionalInstance(m_dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_ResponseToAdditionalInstance)),
+m_responseToAdditionalInstanceClass(m_dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_ResponseToAdditionalInstance)),
 
 m_responsePageToResultClass(m_dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_ResponsePageToResult)),
 m_responsePageToResultWeakClass(m_dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_ResponsePageToResultWeak)),
@@ -573,7 +573,7 @@ const InstanceCacheHelper::CachedInstances& instances
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus CachedResponseManager::AddAdditionalInstance(CachedResponseKeyCR responseKey, ECInstanceKeyCR instanceKey)
+BentleyStatus CachedResponseManager::AddAdditionalInstance(ResponseKeyCR responseKey, CachedObjectInfoKeyCR instanceInfoKey)
     {
     auto info = ReadInfo(responseKey);
     if (!info.IsCached())
@@ -584,7 +584,7 @@ BentleyStatus CachedResponseManager::AddAdditionalInstance(CachedResponseKeyCR r
             return ERROR;
         }
 
-    if (!m_dbAdapter->RelateInstances(m_responseToAdditionalInstance, info.GetKey(), instanceKey).IsValid())
+    if (!m_dbAdapter.RelateInstances(m_responseToAdditionalInstanceClass, info.GetInfoKey(), instanceInfoKey).IsValid())
         return ERROR;
 
     return SUCCESS;
@@ -593,32 +593,32 @@ BentleyStatus CachedResponseManager::AddAdditionalInstance(CachedResponseKeyCR r
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus CachedResponseManager::RemoveAdditionalInstance(CachedResponseKeyCR responseKey, ECInstanceKeyCR instanceKey)
+BentleyStatus CachedResponseManager::RemoveAdditionalInstance(ResponseKeyCR responseKey, CachedObjectInfoKeyCR instanceInfoKey)
     {
     auto info = ReadInfo(responseKey);
     if (!info.IsCached())
         return ERROR;
 
-    return m_dbAdapter->DeleteRelationship(m_responseToAdditionalInstance, info.GetKey(), instanceKey);
+    return m_dbAdapter.DeleteRelationship(m_responseToAdditionalInstanceClass, info.GetInfoKey(), instanceInfoKey);
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus CachedResponseManager::RemoveAdditionalInstance(ECInstanceKeyCR instanceKey)
+BentleyStatus CachedResponseManager::RemoveAdditionalInstance(CachedObjectInfoKeyCR instanceInfoKey)
     {
-    auto statement = m_statementCache->GetPreparedStatement("CachedResponseManager::RemoveAdditionalInstance", [&]
+    auto statement = m_statementCache.GetPreparedStatement("CachedResponseManager::RemoveAdditionalInstance", [&]
         {
-        return "DELETE FROM ONLY " + ECSqlBuilder::ToECSqlSnippet(*m_responseToAdditionalInstance) + " WHERE TargetECInstanceId = ?";
+        return "DELETE FROM ONLY " + m_responseToAdditionalInstanceClass->GetECSqlName() + " WHERE TargetECInstanceId = ?";
         });
 
-    statement->BindId(1, instanceKey.GetECInstanceId());
+    statement->BindId(1, instanceInfoKey.GetECInstanceId());
 
-    ECSqlStepStatus status;
-    while (ECSqlStepStatus::HasRow == (status = statement->Step()))
+    DbResult status;
+    while (BE_SQLITE_ROW == (status = statement->Step()))
         {}
 
-    if (ECSqlStepStatus::Done != status)    
+    if (BE_SQLITE_DONE != status)
         return ERROR;
 
     return SUCCESS;
@@ -664,7 +664,7 @@ BentleyStatus CachedResponseManager::ReadResponseInstanceKeys(CacheNodeKeyCR res
             }
         }
 
-    if (SUCCESS != m_objectInfoManager.ReadCachedInstanceKeys(responseKey, *m_responseToAdditionalInstance, keysOut))
+    if (SUCCESS != m_objectInfoManager.ReadCachedInstanceKeys(responseKey, *m_responseToAdditionalInstanceClass, keysOut))
         return ERROR;
 
     return SUCCESS;
@@ -684,7 +684,7 @@ BentleyStatus CachedResponseManager::ReadResponseObjectIds(CacheNodeKeyCR respon
             }
         }
         
-    if (SUCCESS != m_objectInfoManager.ReadCachedInstanceIds(responseKey, *m_responseToAdditionalInstance, objectIdsOut))
+    if (SUCCESS != m_objectInfoManager.ReadCachedInstanceIds(responseKey, *m_responseToAdditionalInstanceClass, objectIdsOut))
         return ERROR;
 
     return SUCCESS;

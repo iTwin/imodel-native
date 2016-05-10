@@ -568,27 +568,33 @@ BentleyStatus ChangeManager::SetSyncStatus(ECInstanceKeyCR instanceKey, SyncStat
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-BentleyStatus ChangeManager::AddCreatedInstanceToResponse(CachedResponseKeyCR responseKey, ECInstanceKeyCR instanceKey)
+BentleyStatus ChangeManager::AddCreatedInstanceToResponse(CachedResponseKeyCR cachedResponseKey, ECInstanceKeyCR instanceKey)
     {
+    ResponseKey responseKey = m_responseManager.ConvertResponseKey(cachedResponseKey);
     if (!responseKey.IsValid())
         return ERROR;
-    if (ChangeStatus::Created != GetObjectChangeStatus(instanceKey))
+
+    ObjectInfo info = m_objectInfoManager.ReadInfo(instanceKey);
+    if (ChangeStatus::Created != info.GetChangeStatus())
         return ERROR;
 
-    return m_responseManager->AddAdditionalInstance(responseKey, instanceKey);
+    return m_responseManager.AddAdditionalInstance(responseKey, info.GetInfoKey());
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-BentleyStatus ChangeManager::RemoveCreatedInstanceFromResponse(CachedResponseKeyCR responseKey, ECInstanceKeyCR instanceKey)
+BentleyStatus ChangeManager::RemoveCreatedInstanceFromResponse(CachedResponseKeyCR cachedResponseKey, ECInstanceKeyCR instanceKey)
     {
+    ResponseKey responseKey = m_responseManager.ConvertResponseKey(cachedResponseKey);
     if (!responseKey.IsValid())
         return ERROR;
-    if (ChangeStatus::Created != GetObjectChangeStatus(instanceKey))
+
+    ObjectInfo info = m_objectInfoManager.ReadInfo(instanceKey);
+    if (ChangeStatus::Created != info.GetChangeStatus())
         return ERROR;
 
-    return m_responseManager->RemoveAdditionalInstance(responseKey, instanceKey);
+    return m_responseManager.RemoveAdditionalInstance(responseKey, info.GetInfoKey());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -897,7 +903,7 @@ BentleyStatus ChangeManager::CommitInstanceChange(InstanceRevisionCR revision)
         return ERROR;
         }
 
-    if (SUCCESS != m_responseManager->RemoveAdditionalInstance(revision.GetInstanceKey()))
+    if (SUCCESS != m_responseManager.RemoveAdditionalInstance(info.GetInfoKey()))
         return ERROR;
 
     ObjectId newId = revision.GetObjectId();
