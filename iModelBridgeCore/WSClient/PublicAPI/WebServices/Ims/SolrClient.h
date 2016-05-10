@@ -35,7 +35,7 @@ struct ISolrClient
         virtual Utf8StringCR GetCollectionPath() const = 0;
 
         //! Send query request using a SolrQuery. Send an HttpRequest to the Ims Search API Url.
-        //! @param[in] query
+        //! @param[in] query	The request
         virtual AsyncTaskPtr<SolrGetResult> SendGetRequest(SolrQueryCR query = SolrQuery()) const = 0;
     };
 
