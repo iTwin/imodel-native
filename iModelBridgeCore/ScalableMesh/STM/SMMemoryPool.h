@@ -525,11 +525,11 @@ public:
                 }            
             }
 
-        m_nbItems -= toEraseItems.size();        
+        m_nbItems -= indexes.size();        
         m_size = m_nbItems * sizeof(DataType);
         m_dirty = true;
 
-        NotifySizeChangePoolItem(-1 * toEraseItems.size() * sizeof(DataType));
+        NotifySizeChangePoolItem(-1 * indexes.size() * sizeof(DataType));
         }
 
      void erase (size_t index)

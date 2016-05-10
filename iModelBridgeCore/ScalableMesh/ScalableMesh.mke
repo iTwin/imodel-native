@@ -408,7 +408,7 @@ LINKER_LIBRARIES            = \
     $(ContextSubpartsLibs)$(BeJsonCppLib) \
     $(ContextSubpartsLibs)$(BentleyGeomLib) \
     $(ContextSubpartsLibs)DgnPlatform.lib \
-    $(ContextSubpartsLibs)CGAL.lib 
+    $(ContextSubpartsLibs)CGAL.lib
 #    $(ContextSubpartsLibs)BePointCloud.lib \
 
 %include $(sharedMki)LinkLibrary.mki

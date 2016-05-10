@@ -75,7 +75,7 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #include "SMSQLiteUVIndiceTileStore.h"
 #include "SMSQLiteTextureTileStore.h"
 #include <ImagePP\all\h\HIMMosaic.h>
-
+#include <DgnPlatform\DesktopTools\ConfigurationManager.h>
 
 
 #define SCALABLE_MESH_TIMINGS
@@ -434,7 +434,7 @@ StatusInt IScalableMeshCreator::Impl::SetTextureMosaic(HIMMosaic* mosaicP)
 template<class POINT, class EXTENT>
 static ISMPointIndexFilter<POINT, EXTENT>* scm_createFilterFromType (ScalableMeshFilterType filterType)
     {
-    /*WString filterTypeStr;
+    WString filterTypeStr;
 
     //NEEDS_WORK_SM : Document all environments variable like this one somewhere (e.g. : pw:\\Alpo.bentley.com:alpo-bentleygeospatial\Documents\Raster Products\General\environment variables.doc)
     if (BSISUCCESS == ConfigurationManager::GetVariable(filterTypeStr, L"SM_FILTER_TYPE"))
@@ -448,8 +448,7 @@ static ISMPointIndexFilter<POINT, EXTENT>* scm_createFilterFromType (ScalableMes
             {
             assert(!"Unknown filter type");
             }        
-        }*/
-
+        }
 
     switch (filterType)
         {
