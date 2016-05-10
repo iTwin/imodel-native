@@ -337,6 +337,7 @@
     <Xml Include="Cache\Persistence\ECSchemas\DSCacheSchema.01.05.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\DSCacheSchema.01.06.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\DSCacheSchema.01.07.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\DSCacheSchema.01.08.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\MetaSchema.02.00.ecschema.xml" />
     <Xml Include="WSClient.PartFile.xml">
       <SubType>Designer</SubType>
