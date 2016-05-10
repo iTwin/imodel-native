@@ -11,6 +11,7 @@
 #include "Bentley.h"
 #include "BeAssert.h"
 #include <utility>
+#include <string.h>
 
 BEGIN_BENTLEY_NAMESPACE
 
