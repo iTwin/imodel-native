@@ -233,10 +233,10 @@
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="ResponseToAdditionalInstance" isDomainClass="True" strength="referencing" strengthDirection="forward">
-        <Source cardinality="(1,1)" polymorphic="True">
+        <Source cardinality="(0,N)" polymorphic="True">
             <Class class="CachedResponseInfo" />
         </Source>
-        <Target cardinality="(1,1)" polymorphic="True">
+        <Target cardinality="(0,N)" polymorphic="True">
             <Class class="bsm:AnyClass" />
         </Target>
     </ECRelationshipClass>
