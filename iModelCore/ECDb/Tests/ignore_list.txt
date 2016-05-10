@@ -22,7 +22,7 @@ ECDbMappingTestFixture.RelationshipWithAbstractConstraintClassAndNoSubclasses
 #TFS 383266
 JsonReaderTests.ReadInstanceAlongWithRelatedInstances
 
-#TFS 437000
+#TFS 437116
 ECDbRelationshipsIntegrityTests.ForwardHoldingRelationshipsTest
 ECDbRelationshipsIntegrityTests.BackwardHoldingRelationshipsTest
 
