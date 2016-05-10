@@ -9,9 +9,6 @@
 #include <DgnPlatform/HttpHandler.h>
 
 #define ONE_GB (1024 * 1024 * 1024)
-
-int s_debugCacheLevel = 0;
-
 #define TABLE_NAME_ThreeMx "ThreeMx"
 
 BEGIN_UNNAMED_NAMESPACE
@@ -21,7 +18,6 @@ BEGIN_UNNAMED_NAMESPACE
 //=======================================================================================
 struct ThreeMxCache : BeSQLiteRealityDataStorage
 {
-public:
     uint64_t m_allowedSize = ONE_GB;
 
     using BeSQLiteRealityDataStorage::BeSQLiteRealityDataStorage;
@@ -44,110 +40,10 @@ protected:
     mutable MxStreamBuffer m_nodeBytes;
     MxStreamBuffer* m_output;
 
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                    Grigas.Petraitis                04/2015
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    BentleyStatus InitFromSource(Utf8CP filename, ByteStream const& data)
-        {
-        m_nodeBytes = data;
-        m_filename = filename;
+    BentleyStatus InitFromSource(Utf8CP filename, ByteStream const& data);
+    BentleyStatus InitFromStorage(Db& db, BeMutex& cs, Utf8CP filename);
+    BentleyStatus PersistToStorage(Db& db, BeMutex& cs) const;
 
-        if (m_output)
-            {
-            *m_output = data;
-            return SUCCESS;
-            }
-
-        BeAssert(m_node->IsQueued());
-        if (SUCCESS != m_node->Read3MXB(m_nodeBytes, m_scene))
-            {
-            m_nodeBytes.Clear();
-            m_nodeBytes.SetPos(0);    
-            return ERROR;
-            }
-
-        return SUCCESS;
-        }
-
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                    Grigas.Petraitis                03/2015
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    BentleyStatus InitFromStorage(Db& db, BeMutex& cs, Utf8CP filename)
-        {
-        if (true)
-            {
-            BeMutexHolder lock(cs);
-
-            CachedStatementPtr stmt;
-            if (BE_SQLITE_OK != db.GetCachedStatement(stmt, "SELECT Data,DataSize FROM " TABLE_NAME_ThreeMx " WHERE Filename=?"))
-                return ERROR;
-
-            stmt->ClearBindings();
-            stmt->BindText(1, filename, Statement::MakeCopy::No);
-            if (BE_SQLITE_ROW != stmt->Step())
-                return ERROR;
-
-            m_filename = filename;
-
-            const void* data = stmt->GetValueBlob(0);
-            int dataSize = stmt->GetValueInt(1);
-            m_nodeBytes.SaveData((Byte*)data, dataSize);
-            m_nodeBytes.SetPos(0);
-            }
-
-        if (m_output)
-            {
-            *m_output = m_nodeBytes;
-            return SUCCESS;
-            }
-
-        BeAssert(m_node->IsQueued());
-        BentleyStatus result = m_node->Read3MXB(m_nodeBytes, m_scene);
-        if (SUCCESS != result)
-            {
-            BeAssert(false);
-            return ERROR;
-            }
-
-        return SUCCESS;
-        }
-
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                    Grigas.Petraitis                03/2015
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    BentleyStatus PersistToStorage(Db& db, BeMutex& cs) const
-        {
-        BeMutexHolder lock(cs);
-        BeAssert(m_nodeBytes.HasData());
-
-        CachedStatementPtr selectStatement;
-        if (BE_SQLITE_OK != db.GetCachedStatement(selectStatement, "SELECT Filename FROM " TABLE_NAME_ThreeMx " WHERE Filename=?"))
-            return ERROR;
-
-        selectStatement->ClearBindings();
-        selectStatement->BindText(1, m_filename.c_str(), Statement::MakeCopy::No);
-        if (BE_SQLITE_ROW == selectStatement->Step())
-            {
-            // update
-            }
-        else
-            {
-            // insert
-            CachedStatementPtr stmt;
-            if (BE_SQLITE_OK != db.GetCachedStatement(stmt, "INSERT INTO " TABLE_NAME_ThreeMx " (Filename,Data,DataSize,Created) VALUES (?,?,?,?)"))
-                return ERROR;
-
-            stmt->ClearBindings();
-            stmt->BindText(1, m_filename.c_str(), Statement::MakeCopy::No);
-            stmt->BindBlob(2, m_nodeBytes.GetData(), (int)m_nodeBytes.GetSize(), Statement::MakeCopy::No);
-            stmt->BindInt64(3, (int64_t)m_nodeBytes.GetSize());
-            stmt->BindInt64(4, BeTimeUtilities::GetCurrentTimeAsUnixMillis());
-            if (BE_SQLITE_DONE != stmt->Step())
-                return ERROR;
-            }
-
-        return SUCCESS;
-        }
 public:
     ThreeMxData(NodeP node, Scene& scene, MxStreamBuffer* output) : m_scene(scene), m_node(node), m_output(output) {}
     Utf8StringCR GetFilename() const {return m_filename;}
@@ -159,9 +55,8 @@ public:
 //=======================================================================================
 struct HttpData : ThreeMxData, IRealityData<HttpData, BeSQLiteRealityDataStorage, HttpRealityDataSource>
 {
-    //=======================================================================================
-    // @bsiclass                                        Grigas.Petraitis            03/2015
-    //=======================================================================================
+    using ThreeMxData::ThreeMxData;
+
     struct RequestOptions : RealityDataOptions
     {
         RequestOptions(bool synchronous)
@@ -171,8 +66,7 @@ struct HttpData : ThreeMxData, IRealityData<HttpData, BeSQLiteRealityDataStorage
             m_requestFromSource=true;
             }
     };
-public:
-    using ThreeMxData::ThreeMxData;
+
 
 protected:
     virtual Utf8CP _GetId() const override {return GetFilename().c_str();}
@@ -187,12 +81,8 @@ protected:
 //=======================================================================================
 struct FileData : ThreeMxData, IRealityData<FileData, BeSQLiteRealityDataStorage, FileRealityDataSource>
 {
-    //=======================================================================================
-    // @bsiclass                                        Grigas.Petraitis            03/2015
-    //=======================================================================================
     struct RequestOptions : RealityDataOptions
     {
-    public:
         RequestOptions(bool synchronous)
             {
             m_forceSynchronous = synchronous;
@@ -207,7 +97,7 @@ protected:
     virtual Utf8CP _GetId() const override {return GetFilename().c_str();}
     virtual bool _IsExpired() const override {return false;}
     virtual BentleyStatus _InitFrom(Utf8CP filepath, ByteStream const& data) override {return InitFromSource(filepath, data);}
-    virtual BentleyStatus _InitFrom(Db& db, BeMutex& cs, Utf8CP id) override {return InitFromStorage(db, cs, id);} 
+    virtual BentleyStatus _InitFrom(Db& db, BeMutex& cs, Utf8CP id) override {return InitFromStorage(db, cs, id);}
     virtual BentleyStatus _Persist(Db& db, BeMutex& cs) const override {return PersistToStorage(db, cs);}
 };
 
@@ -215,6 +105,111 @@ DEFINE_REF_COUNTED_PTR(FileData)
 DEFINE_REF_COUNTED_PTR(HttpData)
 
 END_UNNAMED_NAMESPACE
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ThreeMxData::InitFromSource(Utf8CP filename, ByteStream const& data)
+    {
+    m_nodeBytes = data;
+    m_filename = filename;
+
+    if (m_output)
+        {
+        *m_output = data;
+        return SUCCESS;
+        }
+
+    BeAssert(m_node->IsQueued());
+    if (SUCCESS != m_node->Read3MXB(m_nodeBytes, m_scene))
+        {
+        m_nodeBytes.Clear();
+        m_nodeBytes.SetPos(0);
+        return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                03/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ThreeMxData::InitFromStorage(Db& db, BeMutex& cs, Utf8CP filename)
+    {
+    if (true)
+        {
+        BeMutexHolder lock(cs);
+
+        CachedStatementPtr stmt;
+        if (BE_SQLITE_OK != db.GetCachedStatement(stmt, "SELECT Data,DataSize FROM " TABLE_NAME_ThreeMx " WHERE Filename=?"))
+            return ERROR;
+
+        stmt->ClearBindings();
+        stmt->BindText(1, filename, Statement::MakeCopy::No);
+        if (BE_SQLITE_ROW != stmt->Step())
+            return ERROR;
+
+        m_filename = filename;
+
+        const void* data = stmt->GetValueBlob(0);
+        int dataSize = stmt->GetValueInt(1);
+        m_nodeBytes.SaveData((Byte*)data, dataSize);
+        m_nodeBytes.SetPos(0);
+        }
+
+    if (m_output)
+        {
+        *m_output = m_nodeBytes;
+        return SUCCESS;
+        }
+
+    BeAssert(m_node->IsQueued());
+    BentleyStatus result = m_node->Read3MXB(m_nodeBytes, m_scene);
+    if (SUCCESS != result)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                03/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ThreeMxData::PersistToStorage(Db& db, BeMutex& cs) const
+    {
+    BeMutexHolder lock(cs);
+    BeAssert(m_nodeBytes.HasData());
+
+    CachedStatementPtr selectStatement;
+    if (BE_SQLITE_OK != db.GetCachedStatement(selectStatement, "SELECT Filename FROM " TABLE_NAME_ThreeMx " WHERE Filename=?"))
+        return ERROR;
+
+    selectStatement->ClearBindings();
+    selectStatement->BindText(1, m_filename.c_str(), Statement::MakeCopy::No);
+    if (BE_SQLITE_ROW == selectStatement->Step())
+        {
+        // update
+        }
+    else
+        {
+        // insert
+        CachedStatementPtr stmt;
+        if (BE_SQLITE_OK != db.GetCachedStatement(stmt, "INSERT INTO " TABLE_NAME_ThreeMx " (Filename,Data,DataSize,Created) VALUES (?,?,?,?)"))
+            return ERROR;
+
+        stmt->ClearBindings();
+        stmt->BindText(1, m_filename.c_str(), Statement::MakeCopy::No);
+        stmt->BindBlob(2, m_nodeBytes.GetData(), (int)m_nodeBytes.GetSize(), Statement::MakeCopy::No);
+        stmt->BindInt64(3, (int64_t)m_nodeBytes.GetSize());
+        stmt->BindInt64(4, BeTimeUtilities::GetCurrentTimeAsUnixMillis());
+        if (BE_SQLITE_DONE != stmt->Step())
+            return ERROR;
+        }
+
+    return SUCCESS;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2015

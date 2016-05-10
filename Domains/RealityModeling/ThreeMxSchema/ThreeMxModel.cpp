@@ -40,6 +40,9 @@ ProgressiveTask::Completion ThreeMxProgressive::_DoProgressive(ProgressiveContex
     DEBUG_PRINTF("3MX progressive %d missing", m_missing.size());
 
     for (auto const& node: m_missing)
+        DEBUG_PRINTF("3MX missing level=%d", node.first);
+
+    for (auto const& node: m_missing)
         {
         auto stat = node.second->GetChildLoadStatus();
         if (stat == Node::ChildLoad::Ready)
@@ -48,9 +51,16 @@ ProgressiveTask::Completion ThreeMxProgressive::_DoProgressive(ProgressiveContex
             args.m_missing.Insert(node.first, node.second);
         }
 
-    args.DrawGraphics();
-//        show = WantShow::Yes;
+    for (auto const& node: args.m_missing)
+        DEBUG_PRINTF("3MX stilll level=%d", node.first);
 
+    if (!args.m_graphics.m_entries.empty())
+        show = WantShow::Yes;
+
+    // all of the nodes that newly arrived are now in the graphics of the DrawArgs. Draw them now.
+    args.DrawGraphics();                                                                                        
+
+    // swap the list of missing tiles from this pass with those that are still missing.
     m_missing.swap(args.m_missing);
 
     DEBUG_PRINTF("3MX after progressive still %d missing", m_missing.size());
