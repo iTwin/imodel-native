@@ -60,29 +60,10 @@ adb logcat BeTestX:* doOpenChoice:* ICU_DATA_FILE:* TestRunner:I BeSQLiteDb:* Be
 %message ${ANDROIDJUNIT_OUTPUT_DIR}/logcat$(scriptExt)
 %message in another shell to monitor progress
 
-# *** NEEDS WORK: If com.bentley.test is currently running, use adb shell kill to kill it.
-
-# *** Note that adb cannot deal with a symlink, so we cannot run adb install directly from here. To work around this, we use a generated "installApk" script instead.
-    #$(adbCmd) -d install -r ${ANDROIDJUNITPROJ}/project/app/build/outputs/apk/Test-debug.apk
-    #$(adbCmd) -d install -r ${ANDROIDJUNITPROJ}/project/app/build/outputs/apk/Test-debug-androidTest-unaligned.apk
+%if defined(winNT)
+    RunPrefix=start \/WAIT \/MIN
+%endif
 
 always:
-    $(ANDROIDJUNITPROJ)Scripts/installApk$(scriptExt)
-    python $(baseDir)RunAndroidJUnitTest.py $(logFile)
+    $(RunPrefix) python $(baseDir)RunAndroidJUnitTest.py $(logFile) $(ANDROIDJUNITPROJ)Scripts/installApk$(scriptExt) ${ANDROIDJUNIT_OUTPUT_DIR}/logcat$(scriptExt)
       
-# $(adbCmd) shell am instrument -w com.bentley.unittest\/com.bentley.unittest.BeInstrumentationTestRunner
-
-# *** NEEDS WORK: having failures does not break the build!?
-
-# *** NEEDS WORK: bentleybuildmake.exe never returns unless we kill off the adb process.
-#%if defined(winNT)
-#always:
-#    -taskkill \/f \/im adb.exe
-#    -taskkill \/f \/im adb.exe
-#    -taskkill \/f \/im adb.exe
-#%endif
-
-%message To run a single unit test:
-%message      $(ANDROIDJUNITPROJ)Scripts/runOneTest$(scriptExt)
-%message To see progress and logging messages, run the following command in a separate shell: 
-%message        $(adbCmd) logcat TestRunner:* *:E
