@@ -686,7 +686,6 @@ private:
     mutable bmap<void const*, RealityDataCacheResult> m_results;
     mutable BeMutex m_resultsCS;
     
-    RealityDataCache() {}
     ~RealityDataCache();
 
     // note: these might be called from any thread!
@@ -712,7 +711,7 @@ private:
     
 public:
     //! Create a new reality data cache.
-    DGNPLATFORM_EXPORT static RealityDataCachePtr Create();
+    DGNPLATFORM_EXPORT RealityDataCache() {}
 
     //! Cleans up local caches
     DGNPLATFORM_EXPORT void Cleanup();
@@ -753,39 +752,6 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE BeSQLiteRealityDataStorage : IRealityDataStorage<BeSQLiteRealityDataStorage>, NonCopyableClass
 {
     //===================================================================================
-    //! Interface for a class which prepares the database for storing specific type of data
-    //! and knows how to clean it up.
-    // @bsiclass                                        Grigas.Petraitis        03/2015
-    //===================================================================================
-    struct DatabasePrepareAndCleanupHandler : RefCountedBase
-        {
-        struct Comparer
-            {
-            bool operator()(DatabasePrepareAndCleanupHandler const* lhs, DatabasePrepareAndCleanupHandler const* rhs) const
-                {
-                size_t lhs_hash = typeid(*lhs).hash_code();
-                size_t rhs_hash = typeid(*rhs).hash_code();
-                return lhs_hash < rhs_hash;
-                }
-            };
-
-        friend struct BeSQLiteRealityDataStorage;
-        protected:
-            //! Called to check if the database is prepared to store specific type of data 
-            //! (the type must be known to the implementation).
-            virtual bool _IsPrepared() const = 0;
-
-            //! Called to prepare the database for storing specific type of data (the type 
-            //! must be known to the implementation).
-            virtual BentleyStatus _PrepareDatabase(BeSQLite::Db& db) const = 0;
-
-            //! Called to free some space in the database.
-            //! @param[in] db           The database to cleanup.
-            virtual BentleyStatus _CleanupDatabase(BeSQLite::Db& db) const = 0;
-        };
-    typedef RefCountedPtr<DatabasePrepareAndCleanupHandler> DatabasePrepareAndCleanupHandlerPtr;
-
-    //===================================================================================
     //! Interface for BeSQLiteRealityDataStorage data. All reality data using this kind of 
     //! storage must implement this interface.
     // @bsiclass                                        Grigas.Petraitis        03/2015
@@ -794,10 +760,6 @@ struct EXPORT_VTABLE_ATTRIBUTE BeSQLiteRealityDataStorage : IRealityDataStorage<
         {
         friend struct BeSQLiteRealityDataStorage;
         protected:
-            //! Return @ref DatabasePrepareAndCleanupHandler which knows how to prepare and cleanup
-            //! database for this data type.
-            virtual DatabasePrepareAndCleanupHandlerPtr _GetDatabasePrepareAndCleanupHandler() const = 0;
-
             //! Initialize data from the database using key and select options.
             virtual BentleyStatus _InitFrom(BeSQLite::Db& db, BeMutex& cs, Utf8CP key) = 0;
 
@@ -908,7 +870,6 @@ struct EXPORT_VTABLE_ATTRIBUTE BeSQLiteRealityDataStorage : IRealityDataStorage<
     
 private:
     bool m_initialized;
-    bset<DatabasePrepareAndCleanupHandler const*, DatabasePrepareAndCleanupHandler::Comparer> m_cleanupHandlers;
     Utf8String m_filename;
     RefCountedPtr<BeSQLiteStorageThreadPool> m_threadPool;
     BeAtomic<bool> m_hasChanges;
@@ -921,12 +882,11 @@ private:
     RefCountedPtr<BeSQLite::BusyRetry> m_retry;
 
 private:
-    BeSQLiteRealityDataStorage(BeFileName const& filename, uint32_t idleTime);
-    void                     wt_Prepare(DatabasePrepareAndCleanupHandler const& prepareHandler);
-    void                     wt_Cleanup();
-    void                     wt_Persist(Data const& data);
+    void wt_Prepare();
+    void wt_Cleanup();
+    void wt_Persist(Data const& data);
     RealityDataStorageResult wt_Select(Data& data, Utf8CP id, RealityDataOptions options, IRealityDataStorageResponseReceiver& responseReceiver);
-    void                     wt_SaveChanges();
+    void wt_SaveChanges();
 
 public:
     //! NOT PUBLISHED: needed for tests
@@ -936,16 +896,27 @@ protected:
     virtual Utf8String _GetStorageId() const override {return StorageId();}
     DGNPLATFORM_EXPORT virtual void _Terminate() override;
 
+    //! Called to check if the database is prepared to store specific type of data 
+    //! (the type must be known to the implementation).
+    virtual bool _IsPrepared() const = 0;
+
+    //! Called to prepare the database for storing specific type of data (the type 
+    //! must be known to the implementation).
+    virtual BentleyStatus _PrepareDatabase(BeSQLite::Db& db) const = 0;
+
+    //! Called to free some space in the database.
+    //! @param[in] db           The database to cleanup.
+    virtual BentleyStatus _CleanupDatabase(BeSQLite::Db& db) const = 0;
+
 public:
-    //! The id of this storage.
-    static Utf8String StorageId() {return "BeSQLite";}
-
-    DGNPLATFORM_EXPORT ~BeSQLiteRealityDataStorage();
-
     //! Creates a new BeSQLiteRealityDataStorage.
     //! @param[in] filename     File name.
     //! @param[in] idleTime     Time (in miliseconds) for the worker thread to wait before commiting changes to the database.
-    DGNPLATFORM_EXPORT static BeSQLiteRealityDataStoragePtr Create(BeFileName const& filename, uint32_t idleTime = 5000);
+    DGNPLATFORM_EXPORT BeSQLiteRealityDataStorage(BeFileName const& filename, uint32_t idleTime=5000);
+    DGNPLATFORM_EXPORT ~BeSQLiteRealityDataStorage();
+
+    //! The id of this storage.
+    static Utf8String StorageId() {return "BeSQLite";}
 
     //! Initialize data object with the data in the database.
     DGNPLATFORM_EXPORT RealityDataStorageResult Select(Data& data, Utf8CP id, RealityDataOptions options, IRealityDataStorageResponseReceiver& responseReceiver);

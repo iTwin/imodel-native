@@ -274,14 +274,6 @@ struct RealityDataStorageBusyRetry : BeSQLite::BusyRetry
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLiteRealityDataStoragePtr BeSQLiteRealityDataStorage::Create(BeFileName const& filename, uint32_t idleTime)
-    {
-    return new BeSQLiteRealityDataStorage(filename, idleTime);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               11/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
 BeSQLiteRealityDataStorage::BeSQLiteRealityDataStorage(BeFileName const& filename, uint32_t idleTime)
     : m_filename(filename), m_database(new BeSQLite::Db()), m_initialized(false), m_hasChanges(false), m_idleTime(idleTime)
     {
@@ -344,9 +336,7 @@ void BeSQLiteRealityDataStorage::CleanAndSaveChangesWork::_DoWork()
     if (!m_storage->m_hasChanges)
         return;
 
-    for (auto const& handler : m_storage->m_cleanupHandlers)
-        m_storage->wt_Prepare(*handler);
-
+    m_storage->wt_Prepare();
     m_storage->wt_Cleanup();
     m_storage->wt_SaveChanges();
     }
@@ -389,9 +379,6 @@ void BeSQLiteRealityDataStorage::_Terminate()
     m_threadPool->Terminate();
     m_threadPool->WaitUntilAllThreadsIdle();
 
-    for (auto& cleanupHandler : m_cleanupHandlers)
-        cleanupHandler->Release();
-
     BeMutexHolder lock(m_databaseCS);
     if (m_initialized)
         {
@@ -404,7 +391,7 @@ void BeSQLiteRealityDataStorage::_Terminate()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BeSQLiteRealityDataStorage::wt_Prepare(DatabasePrepareAndCleanupHandler const& prepareHandler)
+void BeSQLiteRealityDataStorage::wt_Prepare()
     {
     BeMutexHolder lock(m_databaseCS);
     BeSQLite::DbResult result;
@@ -423,16 +410,10 @@ void BeSQLiteRealityDataStorage::wt_Prepare(DatabasePrepareAndCleanupHandler con
         m_initialized = true;
         }
 
-    if (!prepareHandler._IsPrepared())
+    if (!_IsPrepared())
         {
-        BentleyStatus preparationStatus = prepareHandler._PrepareDatabase(*m_database);
+        BentleyStatus preparationStatus = _PrepareDatabase(*m_database);
         BeAssert(SUCCESS == preparationStatus);
-        BeAssert(m_cleanupHandlers.end() == m_cleanupHandlers.find(&prepareHandler) || typeid(prepareHandler).hash_code() == typeid(**m_cleanupHandlers.find(&prepareHandler)).hash_code());
-        if (m_cleanupHandlers.end() == m_cleanupHandlers.find(&prepareHandler))
-            {
-            prepareHandler.AddRef();
-            m_cleanupHandlers.insert(&prepareHandler);
-            }
     
         if (BeSQLite::BE_SQLITE_OK != (result = m_database->SaveChanges()))
             {
@@ -448,11 +429,8 @@ void BeSQLiteRealityDataStorage::wt_Prepare(DatabasePrepareAndCleanupHandler con
 void BeSQLiteRealityDataStorage::wt_Cleanup()
     {
     BeMutexHolder lock(m_databaseCS);
-    for (auto const& cleanupHandler : m_cleanupHandlers)
-        {
-        BentleyStatus result = cleanupHandler->_CleanupDatabase(*m_database);
-        BeAssert(SUCCESS == result);
-        }                                
+    BentleyStatus result = _CleanupDatabase(*m_database);
+    BeAssert(SUCCESS == result);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -471,7 +449,7 @@ void BeSQLiteRealityDataStorage::wt_SaveChanges()
 +---------------+---------------+---------------+---------------+---------------+------*/
 RealityDataStorageResult BeSQLiteRealityDataStorage::wt_Select(Data& data, Utf8CP id, RealityDataOptions options, IRealityDataStorageResponseReceiver& responseReceiver)
     {
-    wt_Prepare(*data._GetDatabasePrepareAndCleanupHandler());
+    wt_Prepare();
 
     RealityDataStorageResult result;
     if (SUCCESS != data._InitFrom(*m_database, m_databaseCS, id))
@@ -521,7 +499,7 @@ RealityDataStorageResult BeSQLiteRealityDataStorage::Select(Data& data, Utf8CP i
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BeSQLiteRealityDataStorage::wt_Persist(Data const& data)
     {
-    wt_Prepare(*data._GetDatabasePrepareAndCleanupHandler());
+    wt_Prepare();
 
     BentleyStatus result = data._Persist(*m_database, m_databaseCS);
     BeAssert(SUCCESS == result);
@@ -1121,10 +1099,6 @@ RealityDataSourceResult CombinedRealityDataSourceBase::Request(Data& data, bool&
 /*======================================================================================+
 |   RealityDataCache
 +======================================================================================*/
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-RealityDataCachePtr RealityDataCache::Create() {return new RealityDataCache();}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               05/2015
