@@ -46,7 +46,6 @@ protected:
     virtual BentleyStatus _InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> const& header, ByteStream const& body) override;
     virtual BentleyStatus _InitFrom(BeSQLite::Db& db, BeMutex& cs, Utf8CP key) override;
     virtual BentleyStatus _Persist(BeSQLite::Db& db, BeMutex& cs) const override;
-    virtual BeSQLiteRealityDataStorage::DatabasePrepareAndCleanupHandlerPtr _GetDatabasePrepareAndCleanupHandler() const override;
 
 public:
     static RefCountedPtr<WmsTileData> Create() {return new WmsTileData();}    
@@ -70,11 +69,11 @@ bool WmsTileData::_IsExpired() const
 //=======================================================================================
 // @bsimethod                                                   Mathieu.Marchand  6/2015
 //=======================================================================================
-struct WmsTileDataPrepareAndCleanupHandler : BeSQLiteRealityDataStorage::DatabasePrepareAndCleanupHandler
+struct WmsTileCache : BeSQLiteRealityDataStorage
 {
-    BeAtomic<bool> m_isPrepared;
+    using BeSQLiteRealityDataStorage::BeSQLiteRealityDataStorage;
+    mutable BeAtomic<bool> m_isPrepared;
 
-    WmsTileDataPrepareAndCleanupHandler() {m_isPrepared.store(false);}
     virtual bool _IsPrepared() const override {return m_isPrepared;}
 
     //----------------------------------------------------------------------------------------
@@ -124,14 +123,6 @@ struct WmsTileDataPrepareAndCleanupHandler : BeSQLiteRealityDataStorage::Databas
         return SUCCESS;
         }
 };
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  6/2015
-//----------------------------------------------------------------------------------------
-BeSQLiteRealityDataStorage::DatabasePrepareAndCleanupHandlerPtr WmsTileData::_GetDatabasePrepareAndCleanupHandler() const
-    {
-    return new WmsTileDataPrepareAndCleanupHandler();
-    }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  6/2015
@@ -514,10 +505,10 @@ RealityDataCache& WmsSource::GetRealityDataCache() const
     {
     if (m_realityDataCache.IsNull())
         {
-        m_realityDataCache = RealityDataCache::Create();
+        m_realityDataCache = new RealityDataCache();
         BeFileName storageFileName = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName();
         storageFileName.AppendToPath(L"WMS");
-        m_realityDataCache->RegisterStorage(*BeSQLiteRealityDataStorage::Create(storageFileName));
+        m_realityDataCache->RegisterStorage(* new WmsTileCache(storageFileName));
         m_realityDataCache->RegisterSource(*HttpRealityDataSource::Create(8));
         }
     return *m_realityDataCache;

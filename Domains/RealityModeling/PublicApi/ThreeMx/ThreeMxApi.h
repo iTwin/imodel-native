@@ -200,6 +200,7 @@ private:
     BentleyStatus LoadScene(); // synchronous  
     bool IsUrl() const {return m_isUrl;}
     Dgn::RealityDataCacheResult RequestData(Node* node, bool synchronous, MxStreamBuffer*);
+    void CreateCache();
 
 public:
     THREEMX_EXPORT Scene(Dgn::DgnDbR, TransformCR location, Utf8CP realityCacheName, Utf8CP rootUrl, Dgn::Render::SystemP);

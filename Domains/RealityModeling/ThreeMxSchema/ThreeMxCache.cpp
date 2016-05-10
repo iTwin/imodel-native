@@ -14,83 +14,29 @@ int s_debugCacheLevel = 0;
 
 #define TABLE_NAME_ThreeMx "ThreeMx"
 
+BEGIN_UNNAMED_NAMESPACE
+
+//=======================================================================================
+// @bsiclass                                        Grigas.Petraitis            03/2015
+//=======================================================================================
+struct ThreeMxCache : BeSQLiteRealityDataStorage
+{
+public:
+    uint64_t m_allowedSize = ONE_GB;
+
+    using BeSQLiteRealityDataStorage::BeSQLiteRealityDataStorage;
+
+    mutable BeAtomic<bool> m_isPrepared;
+    virtual bool _IsPrepared() const override {return m_isPrepared;}
+    virtual BentleyStatus _PrepareDatabase(BeSQLite::Db& db) const override;
+    virtual BentleyStatus _CleanupDatabase(BeSQLite::Db& db) const override;
+};
+
 //=======================================================================================
 // @bsiclass                                        Grigas.Petraitis            04/2015
 //=======================================================================================
 struct ThreeMxData
 {
-    //=======================================================================================
-    // @bsiclass                                        Grigas.Petraitis            03/2015
-    //=======================================================================================
-    struct DatabasePrepareAndCleanupHandler : BeSQLiteRealityDataStorage::DatabasePrepareAndCleanupHandler
-        {
-        mutable BeAtomic<bool> m_isPrepared;
-
-        /*---------------------------------------------------------------------------------**//**
-        * @bsimethod                                    Grigas.Petraitis                04/2015
-        +---------------+---------------+---------------+---------------+---------------+------*/
-        virtual bool _IsPrepared() const {return m_isPrepared;}
-
-        /*---------------------------------------------------------------------------------**//**
-        * @bsimethod                                    Grigas.Petraitis                03/2015
-        +---------------+---------------+---------------+---------------+---------------+------*/
-        virtual BentleyStatus _PrepareDatabase(BeSQLite::Db& db) const override
-            {
-            if (db.TableExists(TABLE_NAME_ThreeMx))
-                {
-                m_isPrepared.store(true);
-                return SUCCESS;
-                }
-
-            Utf8CP ddl = "Filename CHAR PRIMARY KEY,Data BLOB,DataSize BIGINT,Created BIGINT";
-            if (BE_SQLITE_OK == db.CreateTable(TABLE_NAME_ThreeMx, ddl))
-                {
-                m_isPrepared.store(true);
-                return SUCCESS;
-                }
-            return ERROR;
-            }
-
-        /*---------------------------------------------------------------------------------**//**
-        * @bsimethod                                    Grigas.Petraitis                03/2015
-        +---------------+---------------+---------------+---------------+---------------+------*/
-        virtual BentleyStatus _CleanupDatabase(BeSQLite::Db& db) const override
-            {
-            CachedStatementPtr sumStatement;
-            if (BE_SQLITE_OK != db.GetCachedStatement(sumStatement, "SELECT SUM(DataSize) FROM " TABLE_NAME_ThreeMx))
-                return ERROR;
-
-            if (BE_SQLITE_ROW != sumStatement->Step())
-                return ERROR;
-
-            static uint64_t allowedSize = ONE_GB; // 1 GB
-
-            CachedStatementPtr selectStatement;
-            if (BE_SQLITE_OK != db.GetCachedStatement(selectStatement, "SELECT DataSize, Created FROM " TABLE_NAME_ThreeMx " ORDER BY Created ASC"))
-                return ERROR;
-
-            uint64_t runningSum = 0;
-            while ((runningSum < allowedSize) && (BE_SQLITE_ROW == selectStatement->Step()))
-                runningSum += selectStatement->GetValueInt64(0);
-
-            uint64_t creationDate = selectStatement->GetValueInt64(1);
-            CachedStatementPtr deleteStatement;
-            if (BE_SQLITE_OK != db.GetCachedStatement(deleteStatement, "DELETE FROM " TABLE_NAME_ThreeMx " WHERE Created <= ?"))
-                return ERROR;
-
-            deleteStatement->BindInt64(1, creationDate);
-            if (BE_SQLITE_DONE != deleteStatement->Step())
-                return ERROR;
-
-            return SUCCESS;
-            }
-
-        /*---------------------------------------------------------------------------------**//**
-        * @bsimethod                                    Grigas.Petraitis                03/2015
-        +---------------+---------------+---------------+---------------+---------------+------*/
-        static RefCountedPtr<DatabasePrepareAndCleanupHandler> Create() {return new DatabasePrepareAndCleanupHandler();}
-        };
-
 protected:
     Scene& m_scene;
     NodePtr m_node;
@@ -234,7 +180,6 @@ protected:
     virtual BentleyStatus _InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> const& header, ByteStream const& body) override {return InitFromSource(url, body);}
     virtual BentleyStatus _InitFrom(Db& db, BeMutex& cs, Utf8CP id) override {return InitFromStorage(db, cs, id);}
     virtual BentleyStatus _Persist(Db& db, BeMutex& cs) const override {return PersistToStorage(db, cs);}
-    virtual BeSQLiteRealityDataStorage::DatabasePrepareAndCleanupHandlerPtr _GetDatabasePrepareAndCleanupHandler() const override {return DatabasePrepareAndCleanupHandler::Create();}
 };
 
 //=======================================================================================
@@ -264,11 +209,75 @@ protected:
     virtual BentleyStatus _InitFrom(Utf8CP filepath, ByteStream const& data) override {return InitFromSource(filepath, data);}
     virtual BentleyStatus _InitFrom(Db& db, BeMutex& cs, Utf8CP id) override {return InitFromStorage(db, cs, id);} 
     virtual BentleyStatus _Persist(Db& db, BeMutex& cs) const override {return PersistToStorage(db, cs);}
-    virtual BeSQLiteRealityDataStorage::DatabasePrepareAndCleanupHandlerPtr _GetDatabasePrepareAndCleanupHandler() const override {return DatabasePrepareAndCleanupHandler::Create();}
 };
 
 DEFINE_REF_COUNTED_PTR(FileData)
 DEFINE_REF_COUNTED_PTR(HttpData)
+
+END_UNNAMED_NAMESPACE
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                03/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ThreeMxCache::_PrepareDatabase(BeSQLite::Db& db) const 
+    {
+    if (db.TableExists(TABLE_NAME_ThreeMx))
+        {
+        m_isPrepared.store(true);
+        return SUCCESS;
+        }
+
+    Utf8CP ddl = "Filename CHAR PRIMARY KEY,Data BLOB,DataSize BIGINT,Created BIGINT";
+    if (BE_SQLITE_OK == db.CreateTable(TABLE_NAME_ThreeMx, ddl))
+        {
+        m_isPrepared.store(true);
+        return SUCCESS;
+        }
+    return ERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                03/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ThreeMxCache::_CleanupDatabase(BeSQLite::Db& db) const 
+    {
+    CachedStatementPtr sumStatement;
+    db.GetCachedStatement(sumStatement, "SELECT SUM(DataSize) FROM " TABLE_NAME_ThreeMx);
+
+    if (BE_SQLITE_ROW != sumStatement->Step())
+        return ERROR;
+
+    uint64_t sum = sumStatement->GetValueInt64(0);
+    if (sum <= m_allowedSize)
+        return SUCCESS;
+
+    uint64_t garbageSize = sum - m_allowedSize;
+
+    CachedStatementPtr selectStatement;
+    db.GetCachedStatement(selectStatement, "SELECT DataSize,Created FROM " TABLE_NAME_ThreeMx " ORDER BY Created ASC");
+
+    uint64_t runningSum=0;
+    while (runningSum < garbageSize)
+        {
+        if (BE_SQLITE_ROW != selectStatement->Step())
+            {
+            BeAssert(false);
+            return ERROR;
+            }
+
+        runningSum += selectStatement->GetValueInt64(0);
+        }
+
+    BeAssert (runningSum >= garbageSize);
+    uint64_t creationDate = selectStatement->GetValueInt64(1);
+    BeAssert (creationDate > 0);
+
+    CachedStatementPtr deleteStatement;
+    db.GetCachedStatement(deleteStatement, "DELETE FROM " TABLE_NAME_ThreeMx " WHERE Created <= ?");
+    deleteStatement->BindInt64(1, creationDate);
+
+    return BE_SQLITE_DONE == deleteStatement->Step() ? SUCCESS : ERROR;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2015
@@ -294,7 +303,6 @@ RealityDataCacheResult Scene::RequestData(NodeP node, bool synchronous, MxStream
         {
         filePath = m_rootUrl;
         }
-
     
     if (IsUrl())
         {
@@ -306,3 +314,12 @@ RealityDataCacheResult Scene::RequestData(NodeP node, bool synchronous, MxStream
     return m_cache->Get(*filedata, filePath.c_str(), FileData::RequestOptions(synchronous));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void Scene::CreateCache()
+    {
+    m_cache = new RealityDataCache();
+    m_cache->RegisterStorage(*new ThreeMxCache(m_localCacheName));
+    m_cache->RegisterSource(IsUrl() ? (IRealityDataSourceBase&) *HttpRealityDataSource::Create(8) : *FileRealityDataSource::Create(4));
+    }
