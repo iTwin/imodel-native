@@ -325,7 +325,7 @@ class ScalableMeshStorage : public IStorage
         return ContentDescriptor
             (
             L"STM",
-            LayerDescriptor(L"",
+            ILayerDescriptor::CreateLayerDescriptor(L"",
                             Import::DataTypeSet
                                 (
                                 PointTypeFactory().Create(), 
@@ -427,7 +427,7 @@ class GenericStorage : public IStorage
         return ContentDescriptor
             (
             L"STM",
-            LayerDescriptor(L"",
+            ILayerDescriptor::CreateLayerDescriptor(L"",
                             Import::DataTypeSet
                                 (
                                 PointTypeFactory().Create(), 
@@ -564,7 +564,7 @@ class ClipShapeStorage : public IStorage
         return ContentDescriptor
             (
             L"",
-            LayerDescriptor(L"",
+            ILayerDescriptor::CreateLayerDescriptor(L"",
                             LinearFeatureTypeFactory().Create(),
                             m_targetGCS,
                             0,

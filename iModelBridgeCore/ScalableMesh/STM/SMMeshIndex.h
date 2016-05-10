@@ -236,6 +236,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     void UpdateFromGraph(MTGGraph * graph, bvector<DPoint3d>& pointList);
 
+    void CollectFeatureDefinitionsFromGraph(MTGGraph* graph, size_t maxPtID);
+
     void SplitNodeBasedOnImageRes();
     void SplitMeshForChildNodes();
 
@@ -245,6 +247,9 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     void                TextureFromRaster(HIMMosaic* sourceRasterP);
     void                TextureFromRasterRecursive(HIMMosaic* sourceRasterP);
 
+    void                  ReadFeatureDefinitions(bvector<bvector<DPoint3d>>& points, bvector<DTMFeatureType> & types);
+
+    size_t                AddFeatureDefinitionSingleNode(IDTMFile::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent);
     size_t                AddFeatureDefinitionUnconditional(IDTMFile::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent);
     size_t                AddFeatureDefinition(IDTMFile::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent, bool ExtentFixed);
 
@@ -791,5 +796,11 @@ template<class POINT, class EXTENT> class ISMMeshIndexFilter : public ISMPointIn
 
     };
 
+inline bool IsVoidFeature(IDTMFile::FeatureType type)
+    {
+    DTMFeatureType dtmType = (DTMFeatureType)type;
+    return dtmType == DTMFeatureType::Hole || dtmType == DTMFeatureType::Void || dtmType == DTMFeatureType::BreakVoid ||
+        dtmType == DTMFeatureType::DrapeVoid;
+    }
 
 //#include "SMMeshIndex.hpp"

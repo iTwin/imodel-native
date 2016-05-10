@@ -20,7 +20,7 @@
 
 BEGIN_BENTLEY_SCALABLEMESH_IMPORT_NAMESPACE
 struct ContentDescriptor;
-struct LayerDescriptor;
+struct ILayerDescriptor;
 struct ContentConfig;
 struct ImportSequence;
 struct Source;
@@ -50,11 +50,11 @@ private:
     friend struct                           SourceLayerDescriptorHolder;
 
     uint32_t                                    m_id;
-    const Import::LayerDescriptor*          m_descriptorP;
+    RefCountedPtr<const Import::ILayerDescriptor>          m_descriptorP;
     const void*                             m_implP;
 
     explicit                                SourceLayerDescriptor      (uint32_t                            layer,
-                                                                        const Import::LayerDescriptor&  descriptor);   
+                                                                        const Import::ILayerDescriptor&  descriptor);   
 
                                             SourceLayerDescriptor      (const SourceLayerDescriptor&    rhs);
     SourceLayerDescriptor&                  operator=                  (const SourceLayerDescriptor&    rhs);
@@ -62,7 +62,7 @@ public:
     BENTLEY_SM_EXPORT uint32_t                        GetID                      () const;
     BENTLEY_SM_EXPORT const WChar*              GetName                    () const;
 
-    BENTLEY_SM_EXPORT const Import::LayerDescriptor&
+    BENTLEY_SM_EXPORT const Import::ILayerDescriptor&
                                             GetDescriptor              () const;
     };
 

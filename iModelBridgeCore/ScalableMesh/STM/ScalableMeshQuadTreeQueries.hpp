@@ -1699,6 +1699,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeLevelIntersectIndex
         {
         if (m_is2d && m_depth != -1 && (m_depth < par)) return false;
         if (!m_is2d && m_depth != -1 && ((m_depth < fraction.low) || (fraction.high < 0 && m_depth < fabs(fraction.high)))) return false;
+        if (!m_is2d && !m_useUnboundedRay && fraction.high < 1e-6) return false;
         if (node->m_nodeHeader.m_totalCount == 0) return false;
 
         if ((node->m_nodeHeader.m_balanced && node->GetLevel() == m_requestedLevel) || (!node->m_nodeHeader.m_balanced && (node->GetLevel() == m_requestedLevel || node->IsLeaf())) && (!m_is2d || (par > 0||par2 > 0)))

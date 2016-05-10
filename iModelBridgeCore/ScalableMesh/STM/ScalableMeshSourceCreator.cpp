@@ -34,7 +34,6 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #include "../Import/Sink.h"
 #include "ScalableMeshSourcesImport.h"
 
-#include <ScalableMesh/Import/Config/All.h>
 #include <ScalableMesh/IScalableMeshStream.h>
 
 #include <ScalableMesh/IScalableMeshPolicy.h>
@@ -435,6 +434,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
         PointIndexExtentType>             GenericTileStoreType;
     WString name = m_scmFileName;
     WString featureFilePath = name.append(L"_feature"); //temporary file, deleted after generation
+    _wremove(featureFilePath.c_str());
     //IDTMFile::File::Ptr featureFilePtr = IDTMFile::File::Create(featureFilePath.c_str());
     SMSQLiteFilePtr sqliteFeatureFile = new SMSQLiteFile();
     sqliteFeatureFile->Create(featureFilePath);
@@ -745,7 +745,7 @@ int IScalableMeshSourceCreator::Impl::ApplyEditsFromSources(HFCPtr<MeshIndexType
     const ContentDescriptor& targetContentDescriptor(sinkPtr->GetDescriptor());
     assert(1 == targetContentDescriptor.GetLayerCount());
 
-    const GCS& targetGCS(targetContentDescriptor.LayersBegin()->GetGCS());
+    const GCS& targetGCS((*targetContentDescriptor.LayersBegin())->GetGCS());
     // NEEDS_WORK_SM : PARTIAL_UPDATE :remove
     const ScalableMeshData& targetScalableMeshData = ScalableMeshData::GetNull();
 
@@ -859,7 +859,7 @@ StatusInt IScalableMeshSourceCreator::Impl::ImportSourcesTo(Sink* sinkP)
     const ContentDescriptor& targetContentDescriptor(sinkPtr->GetDescriptor());
     assert(1 == targetContentDescriptor.GetLayerCount());
 
-    const GCS& targetGCS(targetContentDescriptor.LayersBegin()->GetGCS());
+    const GCS& targetGCS((*targetContentDescriptor.LayersBegin())->GetGCS());
     // NEEDS_WORK_SM : PARTIAL_UPDATE :remove
     const ScalableMeshData& targetScalableMeshData = ScalableMeshData::GetNull();
 
@@ -1069,7 +1069,7 @@ int IScalableMeshSourceCreator::Impl::ImportClipMaskSource(const IDTMSource&    
             return BSIERROR;
 
         // Import
-        const Importer::Status importStatus = importerPtr->Import(dataSource.GetConfig().GetSequence(), dataSource.GetConfig().GetConfig());
+        const Importer::Status importStatus = importerPtr->Import(dataSource.GetConfig().GetSequence(), *dataSource.GetConfig().GetConfig());
         if(importStatus != Importer::S_SUCCESS)
             return BSIERROR;
 
@@ -1104,24 +1104,32 @@ int IScalableMeshSourceCreator::Impl::TraverseSource(SourcesImporter&           
         if(state != UpToDateState::ADD && state != UpToDateState::PARTIAL_ADD)
             return status;
 
-        ImportConfig importConfig(sourceImportConfig.GetConfig());
+        RefCountedPtr<ImportConfig> importConfig(sourceImportConfig.GetConfig());
 
         // For the moment we always want to combine imported source layers to first STM layer.
-        importConfig.push_back(DefaultTargetLayerConfig(0));
+        //importConfig.push_back(DefaultTargetLayerConfig(0));
+        importConfig->SetDefaultTargetLayer(0);
 
         // Ensure that sources that have no GCSs and no user selected GCS may fall-back on the STM's GCS
-        importConfig.push_back(DefaultSourceGCSConfig(targetGCS));
+        //importConfig.push_back(DefaultSourceGCSConfig(targetGCS));
+        importConfig->SetDefaultSourceGCS(new GCS(targetGCS));
 
         // NEEDS_WORK_SM : ensure that sources that have no Extent ?
-        importConfig.push_back(DefaultTargetScalableMeshConfig(targetScalableMeshData));
+        //importConfig.push_back(DefaultTargetScalableMeshConfig(targetScalableMeshData));
+        importConfig->SetDefaultTargetSMData(new ScalableMeshData(targetScalableMeshData));
 
         if (!clipShapePtr->IsEmpty())
-            importConfig.push_back(TargetFiltersConfig(ClipMaskFilterFactory::CreateFrom(clipShapePtr)));
+            {
+            CustomFilteringSequence seq;
+            seq.push_back(ClipMaskFilterFactory::CreateFrom(clipShapePtr));
+            //importConfig.push_back(TargetFiltersConfig(ClipMaskFilterFactory::CreateFrom(clipShapePtr)));
+            importConfig->SetTargetFilters(seq);
+            }
 
         SourceRef sourceRef(CreateSourceRefFromIDTMSource(dataSource, m_scmFileName));
 
 
-        importer.AddSource(sourceRef, sourceConfig, importConfig, importSequence, srcImportConfig/*, vecRange*/);
+        importer.AddSource(sourceRef, sourceConfig, importConfig.get(), importSequence, srcImportConfig/*, vecRange*/);
         }
     catch (...)
         {

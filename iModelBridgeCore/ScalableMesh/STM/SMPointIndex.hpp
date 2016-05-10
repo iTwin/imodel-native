@@ -3703,11 +3703,11 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Discar
         {        
         // Save the current blockID        
         bool needStoreHeader = m_isDirty;
-
-        RefCountedPtr<SMMemoryPoolVectorItem<POINT>> ptsPtr(GetPointsPtr());
-
+        
         if (needStoreHeader) 
             {
+            RefCountedPtr<SMMemoryPoolVectorItem<POINT>> ptsPtr(GetPointsPtr());
+
             const_cast<SMPointIndexNode<POINT, EXTENT>*>(this)->m_nodeHeader.m_nodeCount = ptsPtr->size();
 
             //NEEDS_WORK_SM : During partial update some synchro problem can occur.
