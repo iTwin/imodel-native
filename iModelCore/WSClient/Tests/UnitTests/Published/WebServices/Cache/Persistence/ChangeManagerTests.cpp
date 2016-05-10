@@ -1663,18 +1663,15 @@ TEST_F(ChangeManagerTests, CommitInstanceRevision_CreatedObjectWithFile_DoesNotC
     EXPECT_EQ(IChangeManager::ChangeStatus::Modified, cache->GetChangeManager().GetFileChange(instance).GetChangeStatus());
     }
 
-TEST_F(ChangeManagerTests, CommitInstanceRevision_CreatedObjectThatWasAddedToResponse_RemovesItFromResponse)
+TEST_F(ChangeManagerTests, CommitInstanceRevision_CreatedObjectThatWasAddedToResponses_RemovesItFromResponses)
     {
     // Arrange
     auto cache = GetTestCache();
     auto instance = StubCreatedObjectInCache(*cache);
-    auto responseKey = StubCachedResponseKey(*cache);
-    ASSERT_EQ(SUCCESS, cache->GetChangeManager().AddCreatedInstanceToResponse(responseKey, instance));
-
-    ECInstanceKeyMultiMap instances;
-    ASSERT_EQ(CacheStatus::OK, cache->ReadResponseInstanceKeys(responseKey, instances));
-    EXPECT_EQ(1, instances.size());
-    EXPECT_CONTAINS(instances, ECDbHelper::ToPair(instance));
+    auto responseKey1 = StubCachedResponseKey(*cache);
+    auto responseKey2 = StubCachedResponseKey(*cache);
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().AddCreatedInstanceToResponse(responseKey1, instance));
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().AddCreatedInstanceToResponse(responseKey2, instance));
 
     auto revision = cache->GetChangeManager().ReadInstanceRevision(instance);
     // Act
@@ -1683,10 +1680,15 @@ TEST_F(ChangeManagerTests, CommitInstanceRevision_CreatedObjectThatWasAddedToRes
     // Assert
     EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, cache->GetCachedObjectInfo(instance).GetChangeStatus());
 
-    instances.clear();
-    ASSERT_EQ(CacheStatus::OK, cache->ReadResponseInstanceKeys(responseKey, instances));
+    ECInstanceKeyMultiMap instances;
+    ASSERT_EQ(CacheStatus::OK, cache->ReadResponseInstanceKeys(responseKey1, instances));
     EXPECT_NCONTAIN(instances, ECDbHelper::ToPair(instance));
-    ASSERT_TRUE(cache->IsResponseCached(responseKey));
+    ASSERT_TRUE(cache->IsResponseCached(responseKey1));
+
+    instances.clear();
+    ASSERT_EQ(CacheStatus::OK, cache->ReadResponseInstanceKeys(responseKey2, instances));
+    EXPECT_NCONTAIN(instances, ECDbHelper::ToPair(instance));
+    ASSERT_TRUE(cache->IsResponseCached(responseKey2));
     }
 
 TEST_F(ChangeManagerTests, CommitInstanceRevision_NewRemoteIdExistsInCache_RemovesOldInstanceAndMovesRootRelationships)
@@ -2764,6 +2766,44 @@ TEST_F(ChangeManagerTests, AddCreatedInstanceToResponse_CreatedObjectAndExisting
     EXPECT_CONTAINS(instances, ECDbHelper::ToPair(instance));
     EXPECT_CONTAINS(instances, ECDbHelper::ToPair(cache->FindInstance({"TestSchema.TestClass", "A"})));
     EXPECT_CONTAINS(instances, ECDbHelper::ToPair(cache->FindInstance({"TestSchema.TestClass", "B"})));
+    }
+
+TEST_F(ChangeManagerTests, AddCreatedInstanceToResponse_MultipleCreatedObjects_AddsObjectsToResponse)
+    {
+    auto cache = GetTestCache();
+    auto instance1 = StubCreatedObjectInCache(*cache);
+    auto instance2 = StubCreatedObjectInCache(*cache);
+    auto responseKey = StubCachedResponseKey(*cache);
+
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().AddCreatedInstanceToResponse(responseKey, instance1));
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().AddCreatedInstanceToResponse(responseKey, instance2));
+
+    ECInstanceKeyMultiMap instances;
+    ASSERT_EQ(CacheStatus::OK, cache->ReadResponseInstanceKeys(responseKey, instances));
+    EXPECT_EQ(2, instances.size());
+    EXPECT_CONTAINS(instances, ECDbHelper::ToPair(instance1));
+    EXPECT_CONTAINS(instances, ECDbHelper::ToPair(instance2));
+    }
+
+TEST_F(ChangeManagerTests, AddCreatedInstanceToResponse_MultipleResponses_AddsObjectsToResponses)
+    {
+    auto cache = GetTestCache();
+    auto instance = StubCreatedObjectInCache(*cache);
+    auto responseKey1 = StubCachedResponseKey(*cache);
+    auto responseKey2 = StubCachedResponseKey(*cache);
+
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().AddCreatedInstanceToResponse(responseKey1, instance));
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().AddCreatedInstanceToResponse(responseKey2, instance));
+
+    ECInstanceKeyMultiMap instances;
+    ASSERT_EQ(CacheStatus::OK, cache->ReadResponseInstanceKeys(responseKey1, instances));
+    EXPECT_EQ(1, instances.size());
+    EXPECT_CONTAINS(instances, ECDbHelper::ToPair(instance));
+
+    instances.clear();
+    ASSERT_EQ(CacheStatus::OK, cache->ReadResponseInstanceKeys(responseKey2, instances));
+    EXPECT_EQ(1, instances.size());
+    EXPECT_CONTAINS(instances, ECDbHelper::ToPair(instance));
     }
 
 TEST_F(ChangeManagerTests, RemoveCreatedInstanceFromResponse_NotExistingInstance_Error)
