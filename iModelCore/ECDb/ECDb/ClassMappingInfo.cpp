@@ -541,7 +541,7 @@ BentleyStatus RelationshipMappingInfo::_InitializeFromSchema()
                 if (!constraintClass->GetKeys().empty())
                     {
                     m_ecdbMap.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
-                            "ForeignKeyRelationshipMap custom attribute on ECRelationshipClass '%s' must not have a value for ForeignKeyProperty as there are Key properties defined in the ECRelationshipConstraint on the foreign key end.",
+                            "ForeignKeyRelationshipMap custom attribute on ECRelationshipClass '%s' must not have a value for ForeignKeyColumn as there are Key properties defined in the ECRelationshipConstraint on the foreign key end.",
                                GetECClass().GetFullName());
                     return ERROR;
                     }
@@ -562,7 +562,7 @@ BentleyStatus RelationshipMappingInfo::_InitializeFromSchema()
         if (onDeleteAction == ForeignKeyDbConstraint::ActionType::Cascade && relClass->GetStrength() != StrengthType::Embedding)
             {
             m_ecdbMap.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
-                       "ForeignKeyRelationshipMap custom attribute on ECRelationshipClass '%s' can only define a CASCADE DELETE constraint if the relationship strength is 'Embedding'.",
+                       "ForeignKeyRelationshipMap custom attribute on ECRelationshipClass '%s' can only define 'Cascade' as OnDeleteAction if the relationship strength is 'Embedding'.",
                        GetECClass().GetFullName());
             return ERROR;
             }
@@ -623,60 +623,6 @@ BentleyStatus RelationshipMappingInfo::ResolveEndTables(EndTablesOptimizationOpt
     return m_sourceTables.empty() || m_targetTables.empty() ? ERROR : SUCCESS;
     }
 
-
-//---------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                01 / 2016
-//+---------------+---------------+---------------+---------------+---------------+------
-MappingStatus RelationshipMappingInfo::Validate(ECDbMapStrategy::Strategy strategy, RelationshipMappingInfo::Cardinality cardinality)
-    {
-    ECRelationshipClassCR rel = *GetECClass().GetRelationshipClassCP();
-    if (rel.GetStrength() != StrengthType::Embedding)
-        return MappingStatus::Success;
-
-    if (strategy == ECDbMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable)
-        {
-        if (cardinality == RelationshipMappingInfo::Cardinality::OneToOne)
-            {
-            if (rel.GetStrengthDirection() == ECRelatedInstanceDirection::Backward)
-                return MappingStatus::Success;
-
-            m_ecdbMap.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "For embedding type relationship '%s' StengthDirection (Forward) does not match resolved MapStrategy (ForeignKeyRelationshipInSourceTable). StrengthDirection should be inverted to fix this issue.", rel.GetFullName());            
-            return MappingStatus::Error;
-            }
-
-        if (cardinality == RelationshipMappingInfo::Cardinality::ManyToOne)
-            {
-            if (rel.GetStrengthDirection() == ECRelatedInstanceDirection::Backward)
-                return MappingStatus::Success;
-
-            m_ecdbMap.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "For embedding type relationship '%s' StengthDirection (Forward) does not match resolved MapStrategy (ForeignKeyRelationshipInSourceTable). StrengthDirection should be inverted to fix this issue.", rel.GetFullName());
-            return MappingStatus::Error;
-            }
-        }
-    else if (strategy == ECDbMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable)
-        {
-        if (cardinality == RelationshipMappingInfo::Cardinality::OneToOne)
-            {
-            if (rel.GetStrengthDirection() == ECRelatedInstanceDirection::Forward)
-                return MappingStatus::Success;
-
-            m_ecdbMap.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "For embedding type relationship '%s' StengthDirection (Backward) does not match resolved MapStrategy (ForeignKeyRelationshipInTargetTable). StrengthDirection should be inverted to fix this issue.", rel.GetFullName());
-            return MappingStatus::Error;
-            }
-
-        if (cardinality == RelationshipMappingInfo::Cardinality::OneToMany)
-            {
-            if (rel.GetStrengthDirection() == ECRelatedInstanceDirection::Forward)
-                return MappingStatus::Success;
-
-            m_ecdbMap.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "For embedding type relationship '%s' StengthDirection (Backward) does not match resolved MapStrategy (ForeignKeyRelationshipInTargetTable). StrengthDirection should be inverted to fix this issue.", rel.GetFullName());
-            return MappingStatus::Error;
-            }
-        }
-
-    BeAssert(false && "Unexpected map strategy");
-    return MappingStatus::Error;
-    }
 //---------------------------------------------------------------------------------
 // @bsimethod                                 Ramanujam.Raman                07 / 2012
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -692,6 +638,8 @@ MappingStatus RelationshipMappingInfo::_EvaluateMapStrategy()
     ECRelationshipClassCP relationshipClass = GetECClass().GetRelationshipClassCP();
     ECRelationshipConstraintR source = relationshipClass->GetSource();
     ECRelationshipConstraintR target = relationshipClass->GetTarget();
+    const StrengthType strength = relationshipClass->GetStrength();
+    const ECRelatedInstanceDirection strengthDirection = relationshipClass->GetStrengthDirection();
 
     DetermineCardinality(source, target);
     const bool userStrategyIsForeignKeyMapping = m_customMapType == CustomMapType::ForeignKeyOnSource || m_customMapType == CustomMapType::ForeignKeyOnTarget;
@@ -721,23 +669,39 @@ MappingStatus RelationshipMappingInfo::_EvaluateMapStrategy()
         m_cardinality == Cardinality::ManyToMany ||
         GetECClass().GetPropertyCount() > 0)
         {
+        if (strength == StrengthType::Embedding)
+            {
+            m_ecdbMap.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
+                                                                         "Failed to map ECRelationshipClass %s. The mapping rules imply a link table relationship, and link table relationships with strength 'Embedding' is not supported. See API docs for details on the mapping rules.",
+                                                                         GetECClass().GetFullName());
+            return MappingStatus::Error;
+            }
+
+        if (m_cardinality == Cardinality::ManyToMany && strength != StrengthType::Referencing)
+            {
+            m_ecdbMap.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
+                                                                         "Failed to map ECRelationshipClass %s: Cardinality and strength contradict each other. For the cardinality '%s:%s' the strength must always be 'Referencing'.",
+                                                                         GetECClass().GetFullName(), relationshipClass->GetSource().GetCardinality().ToString().c_str(), relationshipClass->GetTarget().GetCardinality().ToString().c_str());
+            return MappingStatus::Error;
+            }
+
         if (userStrategyIsForeignKeyMapping)
             {
             m_ecdbMap.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
-                "Failed to map ECRelationshipClass %s. It implies a link table relationship because of its cardinality or because it has ECProperties. Therefore it must not have a ForeignKeyRelationshipMap custom attribute.",
+                "Failed to map ECRelationshipClass %s. The mapping rules imply a link table relationship. Therefore it must not have a ForeignKeyRelationshipMap custom attribute. See API docs for details on the mapping rules.",
                 GetECClass().GetFullName());
             return MappingStatus::Error;
             }
 
-        if (relationshipClass->GetStrength() == StrengthType::Embedding)
+        if (strength == StrengthType::Embedding)
             {
             m_ecdbMap.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
-                 "Failed to map ECRelationshipClass %s. It implies a link table relationship, but has the strength 'Embedding' which is not allowed for link tables.",
+                "Failed to map ECRelationshipClass %s. The mapping rules imply a link table relationship, and link table relationships with strength 'Embedding' is not supported. See API docs for details on the mapping rules.",
                 GetECClass().GetFullName());
             return MappingStatus::Error;
             }
 
-        if (ResolveEndTables(EndTablesOptimizationOptions::ReferencedEnd, EndTablesOptimizationOptions::ReferencedEnd) == ERROR)
+        if (SUCCESS != ResolveEndTables(EndTablesOptimizationOptions::ReferencedEnd, EndTablesOptimizationOptions::ReferencedEnd))
             {
             LogClassNotMapped(NativeLogging::LOG_WARNING, *relationshipClass, "Source or target constraints don't include any concrete classes or its classes are not mapped to tables.");
             m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::NotMapped, false);
@@ -746,11 +710,10 @@ MappingStatus RelationshipMappingInfo::_EvaluateMapStrategy()
 
         BeAssert(m_resolvedStrategy.IsResolved());
         return MappingStatus::Success;
-        //return m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::OwnTable, false) == SUCCESS ? MappingStatus::Success : MappingStatus::Error;
         }
 
     //FK type relationship mapping
-    if (ResolveEndTables(EndTablesOptimizationOptions::ForeignEnd, EndTablesOptimizationOptions::ForeignEnd) == ERROR)
+    if (SUCCESS != ResolveEndTables(EndTablesOptimizationOptions::ForeignEnd, EndTablesOptimizationOptions::ForeignEnd))
         {
         LogClassNotMapped(NativeLogging::LOG_WARNING, *relationshipClass, "Source or target constraints don't include any concrete classes or its classes are not mapped to tables.");
         m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::NotMapped, false);
@@ -779,7 +742,7 @@ MappingStatus RelationshipMappingInfo::_EvaluateMapStrategy()
                             constraintStr = "target constraint is";
 
                         m_ecdbMap.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
-                                   "Failed to map ECRelationshipClass %s. It implies a link table relationship as the %s mapped to more than one end table. Therefore it must not have a ForeignKeyRelationshipMap custom attribute.",
+                                   "Failed to map ECRelationshipClass %s. It implies a link table relationship as the %s mapped to more than one end table. Therefore it must not have a ForeignKeyRelationshipMap custom attribute. See API docs for details on the mapping rules.",
                                    GetECClass().GetFullName(), constraintStr);
                         return MappingStatus::Error;
                         }
@@ -789,13 +752,19 @@ MappingStatus RelationshipMappingInfo::_EvaluateMapStrategy()
                     }
 
                 if (m_customMapType == CustomMapType::ForeignKeyOnSource)
+                    {
+                    BeAssert(strengthDirection == ECRelatedInstanceDirection::Backward);
                     resolvedStrategy = ECDbMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable;
+                    }
                 else if (m_customMapType == CustomMapType::ForeignKeyOnTarget)
+                    {
+                    BeAssert(strengthDirection == ECRelatedInstanceDirection::Forward);
                     resolvedStrategy = ECDbMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable;
+                    }
                 else
                     {
                     BeAssert(m_customMapType == CustomMapType::None);
-                    if (relationshipClass->GetStrengthDirection() == ECRelatedInstanceDirection::Backward)
+                    if (strengthDirection == ECRelatedInstanceDirection::Backward)
                         resolvedStrategy = ECDbMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable;
                     else
                         resolvedStrategy = ECDbMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable;
@@ -806,11 +775,11 @@ MappingStatus RelationshipMappingInfo::_EvaluateMapStrategy()
 
             case Cardinality::OneToMany:
                 {
-                if (m_customMapType == CustomMapType::ForeignKeyOnSource)
+                if (strength == StrengthType::Embedding && strengthDirection == ECRelatedInstanceDirection::Backward)
                     {
                     m_ecdbMap.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
-                               "Failed to map ECRelationshipClass %s. It implies a foreign key relationship on the target's table. Therefore the 'End' property in the ForeignKeyRelationshipMap custom attribute must not be set to 'Source'.",
-                               GetECClass().GetFullName());
+                                                                                 "Failed to map ECRelationshipClass %s. For strength 'Embedding', the cardinality '%s:%s' requires the strength direction to be 'Forward'.",
+                                                                                 GetECClass().GetFullName(), relationshipClass->GetSource().GetCardinality().ToString().c_str(), relationshipClass->GetTarget().GetCardinality().ToString().c_str());
                     return MappingStatus::Error;
                     }
 
@@ -828,11 +797,11 @@ MappingStatus RelationshipMappingInfo::_EvaluateMapStrategy()
 
             case Cardinality::ManyToOne:
                 {
-                if (m_customMapType == CustomMapType::ForeignKeyOnTarget)
+                if (strength == StrengthType::Embedding && strengthDirection == ECRelatedInstanceDirection::Forward)
                     {
                     m_ecdbMap.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
-                        "Failed to map ECRelationshipClass %s. It implies a foreign key relationship on the source's table. Therefore the 'End' property in the ForeignKeyRelationshipMap custom attribute must not be set to 'Target'.",
-                        GetECClass().GetFullName());
+                                                                                 "Failed to map ECRelationshipClass %s. For strength 'Embedding', the cardinality '%s:%s' requires the strength direction to be 'Backward'.",
+                                                                                 GetECClass().GetFullName(), relationshipClass->GetSource().GetCardinality().ToString().c_str(), relationshipClass->GetTarget().GetCardinality().ToString().c_str());
                     return MappingStatus::Error;
                     }
 
@@ -860,11 +829,7 @@ MappingStatus RelationshipMappingInfo::_EvaluateMapStrategy()
     else
         ResolveEndTables(EndTablesOptimizationOptions::ReferencedEnd, EndTablesOptimizationOptions::ReferencedEnd);
 
-    if (Validate(resolvedStrategy, m_cardinality) != MappingStatus::Success)
-        return MappingStatus::Error;
-
     return m_resolvedStrategy.Assign(resolvedStrategy, false) == SUCCESS ? MappingStatus::Success : MappingStatus::Error;
-
     }
 
 
