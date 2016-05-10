@@ -969,11 +969,11 @@ IECInstanceR targetCustomAttribute
     if ((status = sourceCustomAttribute.GetValue(sourceValue, propertyName.c_str())) != ECObjectsStatus::Success)
         return status;
 
-	// Checks if property Value is actually set. In case it isn't the property conversion will be skipped
-	// as only properties that are defined on the source Custom Attribute will be set on the target
-	// Custom Attribute.
-	if (sourceValue.IsUninitialized() || sourceValue.IsNull())
-		return ECObjectsStatus::Success;
+    // Checks if property Value is actually set. In case it isn't the conversion will be stopped
+    // as only properties that are defined on the source Custom Attribute will be set on the target
+    // Custom Attribute.
+    if (sourceValue.IsUninitialized() || sourceValue.IsNull())
+        return ECObjectsStatus::Success;
 
     ECValue targetValue;
     if ((status = targetCustomAttribute.GetValue(targetValue, propertyName.c_str())) != ECObjectsStatus::Success)
@@ -994,6 +994,7 @@ IECInstanceR targetCustomAttribute
         }
 
     targetValue.From(sourceValue);
+    targetCustomAttribute.SetValue(propertyName.c_str(), targetValue);
     return ECObjectsStatus::Success;
     }
 
