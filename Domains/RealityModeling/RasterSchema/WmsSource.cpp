@@ -508,8 +508,8 @@ RealityDataCache& WmsSource::GetRealityDataCache() const
         m_realityDataCache = new RealityDataCache();
         BeFileName storageFileName = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName();
         storageFileName.AppendToPath(L"WMS");
-        m_realityDataCache->RegisterStorage(* new WmsTileCache(storageFileName));
-        m_realityDataCache->RegisterSource(*HttpRealityDataSource::Create(8));
+        m_realityDataCache->RegisterStorage(* new WmsTileCache(storageFileName, SchedulingMethod::LIFO));
+        m_realityDataCache->RegisterSource(*HttpRealityDataSource::Create(8, SchedulingMethod::LIFO));
         }
     return *m_realityDataCache;
     }

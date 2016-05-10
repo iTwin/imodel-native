@@ -315,6 +315,6 @@ RealityDataCacheResult Scene::RequestData(NodeP node, bool synchronous, MxStream
 void Scene::CreateCache()
     {
     m_cache = new RealityDataCache();
-    m_cache->RegisterStorage(*new ThreeMxCache(m_localCacheName));
-    m_cache->RegisterSource(IsUrl() ? (IRealityDataSourceBase&) *HttpRealityDataSource::Create(8) : *FileRealityDataSource::Create(4));
+    m_cache->RegisterStorage(*new ThreeMxCache(m_localCacheName, SchedulingMethod::FIFO));
+    m_cache->RegisterSource(IsUrl() ? (IRealityDataSourceBase&) *HttpRealityDataSource::Create(8, SchedulingMethod::FIFO) : *FileRealityDataSource::Create(4, SchedulingMethod::FIFO));
     }
