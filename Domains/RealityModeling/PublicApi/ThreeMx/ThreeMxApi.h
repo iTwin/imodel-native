@@ -88,6 +88,7 @@ struct SceneInfo
 };
 
 //=======================================================================================
+// Arguments for drawing a node
 // @bsiclass                                                    Keith.Bentley   05/16
 //=======================================================================================
 struct DrawArgs
@@ -97,8 +98,8 @@ struct DrawArgs
     SceneR m_scene;
     Dgn::Render::GraphicArray m_graphics;
     MissingNodes m_missing;
-    DrawArgs(Dgn::RenderContextR context, SceneR scene) : m_context(context), m_scene(scene) {}
 
+    DrawArgs(Dgn::RenderContextR context, SceneR scene) : m_context(context), m_scene(scene) {}
     void DrawGraphics();
 };
 
@@ -207,9 +208,9 @@ public:
     Dgn::Render::SystemP GetRenderSystem() const {return m_renderSystem;}
     DPoint3d GetNodeCenter(Node const& node) const {return DPoint3d::FromProduct(m_location, node.GetCenter());}
     double GetNodeRadius(Node const& node) const {return m_scale * node.GetRadius();}
-    bool Draw(DrawArgs&);
-    DRange3d GetRange(TransformCR) const;
-    size_t GetNodeCount() const;
+    void Draw(DrawArgs& args) {m_rootNode->Draw(args, 0);}
+    DRange3d GetRange(TransformCR trans) const {return m_rootNode->GetRange(trans);}
+    size_t GetNodeCount() const {return m_rootNode->GetNodeCount();}
     bool GetLoadSynchronous() const {return m_loadSynchronous;}
     bool UseFixedResolution()const {return m_useFixedResolution;}
     double GetFixedResolution() const {return m_fixedResolution;}
