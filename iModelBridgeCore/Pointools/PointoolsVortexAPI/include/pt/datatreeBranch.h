@@ -10,14 +10,6 @@
 //-----------------------------------------------------------------------------
 #pragma once
 
-// C includes
-#include <stdio.h>
-#include <assert.h>
-#include <errno.h>
-
-// C+ includes
-#include <map>
-#include <stack>
 
 // PT includes
 #include <pt/variant.h>

@@ -1470,7 +1470,7 @@ const float *Camera::getUp() const
 //
 void Camera::setLocation(const float *v)
 {
-	if (_isnan(v[0])) return;
+	if (std::isnan(v[0])) return;
 
 	vector3 loc(v);
 	loc -= m_target;

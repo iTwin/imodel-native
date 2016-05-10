@@ -15,7 +15,6 @@
 #include <ptengine/module.h>
 #include <ptengine/podCache.h>
 #include <ptengine/voxelLoader.h>
-#include <set>
 
 #define	LOW_LOD_LOAD_THRESHOLD	512
 #define	LOAD_BLOCK_SIZE 65536

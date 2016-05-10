@@ -233,7 +233,7 @@ public:
 	/*check containment in Octant - does not check bounds, just half spaces */ 
 	template<class T> uint inOctant(const T &pt) const
 	{
-		T m = mid();
+        pt::vector3 m = mid();
 		uint c = 0;
 		if (pt.x > m.x || _quadtree & 1) c |= 1;
 		if (pt.y > m.y || _quadtree & 2) c |= 2;

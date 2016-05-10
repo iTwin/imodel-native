@@ -16,9 +16,9 @@ namespace vortex
 	class PTVOBJECT_API IClashTree
 	{
 	protected:
-		virtual IClashNode* _getRoot(PTvoid) = 0;
+		virtual IClashNode* _getRoot() = 0;
 		
-		virtual PTint		_getNumLeaves(PTvoid) = 0;
+		virtual PTint		_getNumLeaves() = 0;
 
 		virtual PTres		_getLeafBounds(PTfloat* extents, PTdouble* center, PTfloat* xAxis, PTfloat* yAxis, PTfloat* zAxis) = 0;
 
@@ -28,13 +28,13 @@ namespace vortex
 		// @return		A pointer to the clash tree root node is returned here, 
 		//				or PT_NULL is returned if no root node is found		
 		//--------------------------------------------------------------------
-		IClashNode* getRoot(PTvoid);
+		IClashNode* getRoot();
 
 		//--------------------------------------------------------------------
 		// Get the number of leaf nodes that this clash tree has
 		// @return		The number of leaf nodes that this clash tree has
 		//--------------------------------------------------------------------
-		PTint		getNumLeaves(PTvoid);
+		PTint		getNumLeaves();
 
 		//--------------------------------------------------------------------
 		// Get the non-axis aligned leaf node bounds of leaf nodes in this 

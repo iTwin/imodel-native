@@ -19,7 +19,7 @@ template<class ContainerType> void testSpatialPartitioner(void)
 	SpatialPartitionGraph<Point, PointSet>	manager;
 
 	ContainerType			spatialPartitionContainer;
-	ContainerType::Leaf		spatialPartitionContainerLeaf;
+	typename ContainerType::Leaf		spatialPartitionContainerLeaf;
 
 	SpatialPartitioner::Types<double>::Vector3	p(0, 0, 0);
 	pt::BoundingBox								e;
@@ -75,7 +75,7 @@ template<class Point, class PointSet> SpatialPartitionGraph<Point, PointSet>::~S
 	deleteAll();
 }
 
-
+#if defined (NEEDS_WORK_VORTEX_DGNDB)
 template<class Point, class PointSet> Container *SpatialPartitionGraph<Point, PointSet>::createNode(NodeType type)
 {
 	typedef float	Real;
@@ -123,6 +123,7 @@ template<class Point, class PointSet> Container *SpatialPartitionGraph<Point, Po
 		return NULL;
 	}
 }
+#endif
 
 
 

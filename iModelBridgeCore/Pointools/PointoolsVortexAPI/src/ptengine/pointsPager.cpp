@@ -6,7 +6,6 @@
 #define COUT_TRACE
 #endif
 
-#include <set>
 #include <ptcloud2/Voxel.h>
 
 #include <ptfs/filepath.h>
@@ -18,11 +17,7 @@
 
 #include <pt/timestamp.h>
 #include <ptengine/engine.h>
-#include <algorithm>
-
 #include <ptcmdppe/cmdstate.h>
-
-#include <iostream>
 
 #include <pt/trace.h>
 

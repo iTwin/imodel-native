@@ -164,7 +164,8 @@ bool PointStreamFilter::startStream(const wchar_t *filename)
 {
 	SpatialPartitioner::NodeHSet	set;
 
-	spatialPartitionGraph.listDepthFirst(set, spatialPartitionGraph.getRootNode(), NodeTypePointStreamFilterPOD);
+    SpatialPartitioner::NodeH rootNode = spatialPartitionGraph.getRootNode();
+	spatialPartitionGraph.listDepthFirst(set, rootNode, NodeTypePointStreamFilterPOD);
 
 	// Generate a list of all POD nodes
 	// call startStream(filename) on each node
@@ -199,7 +200,8 @@ bool PointStreamFilter::closeStream(void)
 	unsigned int					t;
 	SpatialPartitioner::NodeHSet	set;
 
-	spatialPartitionGraph.listDepthFirst(set, spatialPartitionGraph.getRootNode(), NodeTypePointStreamFilterPOD);
+    SpatialPartitioner::NodeH rootNode = spatialPartitionGraph.getRootNode();
+	spatialPartitionGraph.listDepthFirst(set, rootNode, NodeTypePointStreamFilterPOD);
 
 	for(t = 0; t < set.size(); t++)
 	{
@@ -269,7 +271,8 @@ void PointStreamFilter::addCloud(uint cloud_spec, const mmatrix4d *mat, uint ibo
 		cloudMat = mmatrix4d::identity();
 	}
 
-	spatialPartitionGraph.listDepthFirst(set, spatialPartitionGraph.getRootNode(), NodeTypePointStreamFilterPOD);
+    SpatialPartitioner::NodeH rootNode = spatialPartitionGraph.getRootNode();
+	spatialPartitionGraph.listDepthFirst(set, rootNode, NodeTypePointStreamFilterPOD);
 
 	for(t = 0; t < set.size(); t++)
 	{
@@ -289,7 +292,8 @@ int PointStreamFilter::addGroup(bool combine, float tolerance, bool gen_normals,
 	unsigned int					t;
 	SpatialPartitioner::NodeHSet	set;
 
-	spatialPartitionGraph.listDepthFirst(set, spatialPartitionGraph.getRootNode(), NodeTypePointStreamFilterPOD);
+    SpatialPartitioner::NodeH rootNode = spatialPartitionGraph.getRootNode();
+	spatialPartitionGraph.listDepthFirst(set, rootNode, NodeTypePointStreamFilterPOD);
 
 	for(t = 0; t < set.size(); t++)
 	{
@@ -309,7 +313,8 @@ void PointStreamFilter::addNull(void)
 	unsigned int					t;
 	SpatialPartitioner::NodeHSet	set;
 
-	spatialPartitionGraph.listDepthFirst(set, spatialPartitionGraph.getRootNode(), NodeTypePointStreamFilterPOD);
+    SpatialPartitioner::NodeH rootNode = spatialPartitionGraph.getRootNode();
+	spatialPartitionGraph.listDepthFirst(set, rootNode, NodeTypePointStreamFilterPOD);
 
 	for(t = 0; t < set.size(); t++)
 	{
@@ -368,7 +373,8 @@ void PointStreamFilter::rescaleIntensities(void)
 	unsigned int					t;
 	SpatialPartitioner::NodeHSet	set;
 
-	spatialPartitionGraph.listDepthFirst(set, spatialPartitionGraph.getRootNode(), NodeTypePointStreamFilterPOD);
+    SpatialPartitioner::NodeH rootNode = spatialPartitionGraph.getRootNode();
+	spatialPartitionGraph.listDepthFirst(set, rootNode, NodeTypePointStreamFilterPOD);
 
 	for(t = 0; t < set.size(); t++)
 	{
@@ -386,7 +392,8 @@ void PointStreamFilter::restartCloudPass(void)
 	unsigned int					t;
 	SpatialPartitioner::NodeHSet	set;
 
-	spatialPartitionGraph.listDepthFirst(set, spatialPartitionGraph.getRootNode(), NodeTypePointStreamFilterPOD);
+    SpatialPartitioner::NodeH rootNode = spatialPartitionGraph.getRootNode();
+	spatialPartitionGraph.listDepthFirst(set, rootNode, NodeTypePointStreamFilterPOD);
 
 	for(t = 0; t < set.size(); t++)
 	{
@@ -405,7 +412,8 @@ int64_t PointStreamFilter::writeStreamPosition(void)
 	unsigned int					t;
 	SpatialPartitioner::NodeHSet	set;
 
-	spatialPartitionGraph.listDepthFirst(set, spatialPartitionGraph.getRootNode(), NodeTypePointStreamFilterPOD);
+    SpatialPartitioner::NodeH rootNode = spatialPartitionGraph.getRootNode();
+	spatialPartitionGraph.listDepthFirst(set, rootNode, NodeTypePointStreamFilterPOD);
 
 	for(t = 0; t < set.size(); t++)
 	{
@@ -491,7 +499,8 @@ void PointStreamFilter::getIndexStreams(std::vector<IndexStream *> &result)
 	unsigned int					t;
 	SpatialPartitioner::NodeHSet	set;
 
-	spatialPartitionGraph.listDepthFirst(set, spatialPartitionGraph.getRootNode(), NodeTypePointStreamFilterPOD);
+    SpatialPartitioner::NodeH rootNode = spatialPartitionGraph.getRootNode();
+	spatialPartitionGraph.listDepthFirst(set, rootNode, NodeTypePointStreamFilterPOD);
 
 	for(t = 0; t < set.size(); t++)
 	{

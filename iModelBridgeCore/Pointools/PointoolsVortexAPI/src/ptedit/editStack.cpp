@@ -149,7 +149,8 @@ struct RemoveFlagged
 			{
 				numRemoved++;
 				b->clear();
-				b->setNodeValue("operation", pt::String("null"));
+                pt::String str("null");
+				b->setNodeValue("operation", str);
 			}
 		}
 	}

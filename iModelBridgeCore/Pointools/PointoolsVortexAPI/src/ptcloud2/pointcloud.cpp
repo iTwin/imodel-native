@@ -347,11 +347,16 @@ bool PointCloud::setGuid( PointCloudGUID pcguid )
 //---------------------------------------------------------------
 void PointCloud::generateGuid()
 {	
-	/* this is just random - because we need to be able to distiguish between duplicate clouds*/ 
+#if defined (BENTLEY_WIN32) //NEEDS_WORK_VORTEX_DGNDB
+	/* this is just random - because we need to be able to distinguish between duplicate clouds*/ 
 	GUID g;
 	CoCreateGuid( &g );
-	
+    	
 	memcpy(&_guid, &g, sizeof(_guid));
+#else
+    memset(&_guid, 0, sizeof(_guid));
+#endif
+
 }
 //---------------------------------------------------------------
 // Object guid, based on the cloud guid

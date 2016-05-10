@@ -29,7 +29,7 @@ char szClassName[ ] = "Pointools Vortex Monitor";
 
 #include <fstream>
 
-pt::Timer_t		g_startTime = 0;
+pt::Timer::TimeMs		g_startTime = 0;
 int				g_lastQueryRow = 1;
 int				g_lastLoadRow = 1;
 int				g_lastVisRow = 1;
@@ -59,8 +59,8 @@ void addQueryRow( ptdg::QueryData1 &query )
 
 	int timestamp = pt::Timer::instance()->delta_m( g_startTime, query.m_timeStamp );
 
-	pt::Timer_t currTimestamp = pt::Timer::instance()->tick();
-	int cts = pt::Timer::instance()->delta_m( g_startTime, currTimestamp );
+    pt::Timer::TimeMs currTimestamp = pt::Timer::tick();
+	int cts = pt::Timer::delta_m( g_startTime, currTimestamp );
 
 	grid->insertItem(0, g_lastQueryRow, timestamp );
 	grid->insertItem(1, g_lastQueryRow, (int)query.m_queryID );

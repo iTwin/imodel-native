@@ -21,12 +21,12 @@ PTres IClashObject::generateClashTree(IClashObjectCallback* callback)
 	return _generateClashTree(callback);
 }
 
-PTbool IClashObject::clashTreeFileExists(PTvoid)
+PTbool IClashObject::clashTreeFileExists()
 {
 	return _clashTreeFileExists();
 }
 
-const PTstr IClashObject::getClashTreeFilename(PTvoid)
+const PTstr IClashObject::getClashTreeFilename()
 {
 	return _getClashTreeFilename();
 }

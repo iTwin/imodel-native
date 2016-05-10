@@ -58,8 +58,8 @@ public:
 	//------------------------------------------------------------------------
 	// IClashTree
 	//------------------------------------------------------------------------
-	virtual vortex::IClashNode*		_getRoot(PTvoid);	
-	virtual PTint					_getNumLeaves(PTvoid);
+	virtual vortex::IClashNode*		_getRoot();	
+	virtual PTint					_getNumLeaves();
 	virtual PTres					_getLeafBounds(PTfloat* extents, PTdouble* center, PTfloat* xAxis, PTfloat* yAxis, PTfloat* zAxis);
 
 

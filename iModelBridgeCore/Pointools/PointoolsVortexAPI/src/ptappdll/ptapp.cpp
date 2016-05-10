@@ -40,6 +40,8 @@ static void determineVersion()
 	static bool init = false;
 	if (!init)
 	{
+#if defined (BENTLEY_WIN32)     //NEEDS_WORK_VORTEX_DGNDB 
+
 		char path[MAX_PATH];
 		::GetModuleFileNameA(NULL, path, sizeof(path));
 
@@ -59,6 +61,7 @@ static void determineVersion()
 			_version = PTVIEW_STD_VERSION;
 		}
 		else
+#endif
 		{
 			strcpy(_appString, "Pointools View");
 			_version = PTVIEW_UNKNOWN_VERSION;
@@ -102,6 +105,7 @@ const char *ptapp::editionString()
 //
 const wchar_t*ptapp::apppathW()
 {
+#if defined (BENTLEY_WIN32)     //NEEDS_WORK_VORTEX_DGNDB 
 	if (!_pathinit)
 	{
 		wchar_t fp[PT_MAXPATH];
@@ -113,6 +117,7 @@ const wchar_t*ptapp::apppathW()
 		_pathinit = true;
 		_apppathA = Unicode2Ascii::convert(_apppath.path());
 	}
+#endif
 	return _apppath.path();
 }
 const char*ptapp::apppathA()

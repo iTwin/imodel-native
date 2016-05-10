@@ -303,8 +303,6 @@ public:
 
 															// Node Creation and Deletion
 
-	Container											*	createNode					(NodeType nodeType);
-
 	template<class N> N *createContainer(void)
 	{
 		return new N();
@@ -591,14 +589,14 @@ public:
 
 			void setChild(ChildIndex index, Container *container)
 			{
-				if(index < getMaxChildren())
+				if(index < Leaf::getMaxChildren())
 					children[index] = container;
 			}
 
 			SpatialPartitionNode *getNode(NodeIndex index)
 			{
 				if(index < numNodes)
-					return &(nodes[index]);
+					return &(Leaf::nodes[index]);
 
 				return NULL;
 			}
@@ -628,11 +626,11 @@ public:
 	}
 
 	void							setMaxChildren	(ChildIndex maxChildren) {}
-	ChildIndex						getMaxChildren	(void) {return 0;}
+	ChildIndex						getMaxChildren	() {return 0;}
 	void							setChild		(ChildIndex index, Container *child) {}
 	Container					*	getChild		(ChildIndex index) {return NULL;}
 
-	bool							isLeaf(void)
+	bool							isLeaf()
 	{
 		 // Note: Implement properly
 
@@ -877,6 +875,7 @@ public:
 		return 0;
 	}
 
+#if defined (BENTLEY_WIN32)     //NEEDS_WORK_VORTEX_DGNDB 
 	template<> ChildIndex classify<2>(typename Types<double>::Vector3 &point, typename Types<double>::Extents &extents)
 	{
 															// Create mapping onto two children (binary)
@@ -894,6 +893,7 @@ public:
 															// Create unique mapping onto eight children (oct)
 		return (P3::classify(point, extents) * 4) + (P2::classify(point, extents) * 2) + P1::classify(point, extents);
 	}
+#endif
 
 	NodeType getType(void)
 	{
@@ -1249,7 +1249,7 @@ public:
 
 	ContainerH1Grid(void)
 	{
-		setMaxNodes(1);
+    ContainerHv<Real, NodeGrid<Real, Data>>::setMaxNodes(1);
 	}
 };
 															// Generic container with arbitrary node type

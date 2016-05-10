@@ -454,7 +454,7 @@ bool ClashObject::preparePointCloud(TreeFeedbackFunc fb )
 	if (m_tree) return true;
 	else m_tree = new ClashTree(m_ref);	// to try to load
 
-	pt::Timer_t t0=0, t1=0;
+    pt::Timer::TimeMs t0=0, t1=0;
 
 	int		target_pts;
 	double	leaf_min_dim, leaf_max_dim;
@@ -468,13 +468,13 @@ bool ClashObject::preparePointCloud(TreeFeedbackFunc fb )
 		if (cloud)
 		{
 			// is it a scene
-			t0 = pt::Timer::instance()->tick();
+			t0 = pt::Timer::tick();
 			
 			computeTreeGenerationParameters( cloud, target_pts, leaf_min_dim, leaf_max_dim );
 
 			PointsBoundsTree *tree = PointsBoundsTree::createFromPointCloud( cloud, target_pts, leaf_min_dim, leaf_max_dim, fb );
 
-			t1 = pt::Timer::instance()->tick();
+			t1 = pt::Timer::tick();
 
 			if (tree)
 			{
@@ -487,13 +487,13 @@ bool ClashObject::preparePointCloud(TreeFeedbackFunc fb )
 			pcloud::Scene *scene = sceneFromHandle(m_ref.key());
 			if (scene)
 			{
-				t0 = pt::Timer::instance()->tick();
+				t0 = pt::Timer::tick();
 
 				computeTreeGenerationParameters( scene, target_pts, leaf_min_dim, leaf_max_dim );
 
 				PointsBoundsTree *tree = PointsBoundsTree::createFromScene( scene, target_pts, leaf_min_dim, leaf_max_dim, fb );
 
-				t1 = pt::Timer::instance()->tick();
+				t1 = pt::Timer::tick();
 
 				if (tree)
 				{
@@ -522,7 +522,7 @@ bool ClashObject::preparePointCloud(TreeFeedbackFunc fb )
 	
 	if (t0>0 && t1>0)
 	{
-		m_timeToPrepare = pt::Timer::instance()->delta_m(t0,t1);
+		m_timeToPrepare = (double)pt::Timer::delta_m(t0,t1);
 	}
 	return m_tree ? true : false;
 }
@@ -568,21 +568,14 @@ bool ClashObject::preparePointCloud(TreeFeedbackFunc fb )
 
 	if (guid) 
 	{
-		char g0_buff[32];
-		char g1_buff[32];
-	
-		_i64toa( guid.getPart1(), g0_buff, 16 );
-		_i64toa( guid.getPart2(), g1_buff, 16 );
-
 		pt::String guidStr;
-		guidStr.format(".%s.%s", g0_buff, g1_buff);
+        guidStr.format(".%llx.%llx", guid.getPart1(), guid.getPart2());
 		cacheFilename = scenePath.filename();
 		cacheFilename += guidStr;
 	}
 	else
 	{
-		HANDLE h = CreateFileW( scenePath.filename(), GENERIC_READ, FILE_SHARE_READ, NULL,
-			OPEN_EXISTING, 0, NULL);
+		HANDLE h = CreateFileW( scenePath.filename(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
 
 		wchar_t dateStr[256];
 		dateStr[0]=0;
@@ -671,13 +664,13 @@ PTres ClashObject::_generateClashTree(vortex::IClashObjectCallback* callback)
 	return PTV_FILE_FAILED_TO_CREATE;
 }
 
-PTbool ClashObject::_clashTreeFileExists(PTvoid)
+PTbool ClashObject::_clashTreeFileExists()
 {
 	ptds::FilePath path = generateCacheFilename();
 	return path.checkExists();
 }
 
-const PTstr ClashObject::_getClashTreeFilename(PTvoid)
+const PTstr ClashObject::_getClashTreeFilename()
 {
 	static ptds::FilePath currentFilePath = generateCacheFilename();	
 	if (!currentFilePath.isEmpty())

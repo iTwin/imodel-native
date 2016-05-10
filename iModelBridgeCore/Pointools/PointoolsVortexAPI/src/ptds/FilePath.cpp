@@ -7,24 +7,18 @@
 #endif
 
 
-#ifndef NO_DATA_SOURCE_SERVER
-
-#ifdef NEEDS_WORK_VORTEX_DGNDB_SERVER
-class PTRMI::URL;
-#endif
-
-#endif
+// #ifndef NO_DATA_SOURCE_SERVER
+// class PTRMI::URL;
+// #endif
 
 namespace ptds
 {
-
 #ifndef NO_DATA_SOURCE_SERVER
 
 void FilePath::read(PTRMI::DataBuffer &buffer)
 {
     wchar_t path[PT_MAXPATH];
-    wcscpy_s(path, PT_MAXPATH, m_path.c_str());
-	PTRMI::Array<> strArray((PT_MAXPATH) * sizeof(wchar_t), reinterpret_cast<PTRMI::Array<>::Data *>(&(path[0])));
+    PTRMI::Array<> strArray((PT_MAXPATH) * sizeof(wchar_t), reinterpret_cast<PTRMI::Array<>::Data *>(&(path[0])));
 	buffer >> strArray;
 
     BeFileName tmp(path);

@@ -5,11 +5,6 @@
 #pragma comment (lib,"Gdiplus.lib")
 #endif
 
-#include <vector>
-#include <list>
-#include <stdarg.h>
-#include <math.h>
-#include <algorithm>
 #include <PTRMI/Mutex.h>
 
 

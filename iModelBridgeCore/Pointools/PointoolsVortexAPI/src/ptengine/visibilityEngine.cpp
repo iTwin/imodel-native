@@ -1031,7 +1031,7 @@ void VisibilityEngine::computeVisibility()
 		Project3D::project().registration().matrix()(3,1), 
 		Project3D::project().registration().matrix()(3,2), 0);
 	
-	Timer_t t0 = pt::Timer::instance()->tick();
+    pt::Timer::TimeMs t0 = pt::Timer::tick();
 
 	/* frustum visibility */ 
 	FrustumCheck frustumcheck(m_fr);
@@ -1089,8 +1089,8 @@ void VisibilityEngine::computeVisibility()
 
 	//std::cout << "priority bounds = " << bounds.lower(0) << " to " << bounds.upper(0) << std::endl;
 
-	Timer_t t1 = pt::Timer::instance()->tick();
-	time += pt::Timer::instance()->delta_m(t0,t1);
+    pt::Timer::TimeMs t1 = pt::Timer::tick();
+	time += pt::Timer::delta_m(t0,t1);
 	if (m_iteration % 20 == 0)
 	{
 		time /= 20;

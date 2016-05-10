@@ -94,7 +94,7 @@ struct OBBFilter2
 		
 				if (m_includeCorners)
 				{
-					vec3<T> vt;
+					pt::vec3<T> vt;
 									
 					//extract corners and add to pts
 					for (int i=0; i<8; i++) 
@@ -178,7 +178,7 @@ struct OBBFilter2NodeExtents
 	{
 		FilterResult res = FilterOut;
 		pt::BoundingBoxD box = n->extents();				
-		vec3<T> vt;
+		pt::vec3<T> vt;
 		
 		// fully contained, return corners
 		if ( m_box1.contains(box) || m_box2.contains(box) ) 
@@ -230,8 +230,8 @@ struct OBBFilter2NodeExtents
 				{
 					for (double y=box.ly(); y< box.uy(); y += m_spacing)
 					{						
-						vec3<T> pnt(x,y,box.lz());
-						vec3<T> pnt2(x,y,box.uz());
+						pt::vec3<T> pnt(x,y,box.lz());
+						pt::vec3<T> pnt2(x,y,box.uz());
 
 						if (m_box1.contains(pnt))
 							m_rec1.point(pnt, 0, 0);
@@ -249,8 +249,8 @@ struct OBBFilter2NodeExtents
 				{
 					for (double z=box.lz(); z< box.uz(); z += m_spacing)
 					{						
-						vec3<T> pnt(x,box.ly(),z);
-						vec3<T> pnt2(x,box.uy(),z);
+						pt::vec3<T> pnt(x,box.ly(),z);
+						pt::vec3<T> pnt2(x,box.uy(),z);
 
 						if (m_box1.contains(pnt))
 							m_rec1.point(pnt, 0, 0);
@@ -268,8 +268,8 @@ struct OBBFilter2NodeExtents
 				{
 					for (double z=box.lz(); z< box.uz(); z += m_spacing)
 					{						
-						vec3<T> pnt(box.lx(),y,z);
-						vec3<T> pnt2(box.ux(),y,z);
+						pt::vec3<T> pnt(box.lx(),y,z);
+                        pt::vec3<T> pnt2(box.ux(),y,z);
 
 						if (m_box1.contains(pnt))
 							m_rec1.point(pnt, 0, 0);

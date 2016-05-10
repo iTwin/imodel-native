@@ -385,7 +385,7 @@ void Color::toRGB()
   {
     if (m_saturation == 0.0) // Grauton, einfacher Fall
     {
-      m_color[c_red] = m_color[c_green] = m_color[c_blue] = unsigned char(m_luminance * 255.0);
+      m_color[c_red] = m_color[c_green] = m_color[c_blue] = (unsigned char)(m_luminance * 255.0);
     }
     else
     {

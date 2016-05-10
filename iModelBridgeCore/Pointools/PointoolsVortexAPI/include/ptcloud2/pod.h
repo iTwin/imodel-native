@@ -45,7 +45,7 @@ namespace pcloud
 
 		/** Constructor for a PodBlock where the data and data length are already known
 		 */
-		PodBlock(std::string& id, unsigned int version, void* data, unsigned int dataLen) :
+		PodBlock(std::string const& id, unsigned int version, void* data, unsigned int dataLen) :
 		  m_id(id),
 			  m_version(version),
 			  m_data(data),
@@ -56,7 +56,7 @@ namespace pcloud
 		  /** Constructor for a PodBlock where the data and data length are not known, but a callback 
 		   object is provided which will be called at the point at which the data is to be written
 		   */
-		  PodBlock(std::string& id, unsigned int version, WriteDataCallback* writeDataCallback, WriteDataSizeCallback* writeDataSizeCallback) :
+		  PodBlock(std::string const& id, unsigned int version, WriteDataCallback* writeDataCallback, WriteDataSizeCallback* writeDataSizeCallback) :
 		  m_id(id),
 			  m_version(version),
 			  m_data(NULL),
@@ -86,7 +86,7 @@ namespace pcloud
 	class PodBlockReadHandler	
 	{
 	public:
-		PodBlockReadHandler(std::string& id);
+		PodBlockReadHandler(std::string const& id);
 
 		// All PodBlockHandlers must implement this function which is called by the PodBlockManager on
 		// encountering a PodBlock matching this handlers ID.
@@ -130,7 +130,7 @@ namespace pcloud
 		 */
 		void setReadBlockPos(ptds::DataPointer& pos) { m_blockReadPos = pos; }
 
-		static void registerHandler(std::string& id, PodBlockReadHandler* handler) { if (_instance) _instance->m_handlers.insert(std::pair<std::string, PodBlockReadHandler*>(id, handler)); }
+		static void registerHandler(std::string const& id, PodBlockReadHandler* handler) { if (_instance) _instance->m_handlers.insert(std::pair<std::string, PodBlockReadHandler*>(id, handler)); }
 
 	private:
 		PodBlockReadHandler* handler(const char* type);

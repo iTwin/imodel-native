@@ -1,9 +1,5 @@
 #pragma once
 
-#include <string>
-#include <vector>
-#include <algorithm>
-
 #include <pt/unicodeconversion.h>
 #include <pt/ptmath.h>
 #include <Bentley/BeFileName.h>

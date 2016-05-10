@@ -239,7 +239,7 @@ class UserChannel
 	pt::String	m_name;
 	uint		m_bitsize;
 	uint		m_multiple;
-	void		*m_defaultValue;
+    ubyte*      m_defaultValue;
 	uint		m_flags;
 	
 	// removed to due to versioning issues

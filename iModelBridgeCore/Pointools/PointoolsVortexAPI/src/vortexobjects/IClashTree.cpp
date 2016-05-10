@@ -10,12 +10,12 @@ using namespace vortex;
 //---------------------------------------------------------------------------
 // Public NVI
 //---------------------------------------------------------------------------
-IClashNode* IClashTree::getRoot(PTvoid)
+IClashNode* IClashTree::getRoot()
 {
 	return _getRoot();
 }
 
-PTint IClashTree::getNumLeaves(PTvoid)
+PTint IClashTree::getNumLeaves()
 {
 	return _getNumLeaves();
 }

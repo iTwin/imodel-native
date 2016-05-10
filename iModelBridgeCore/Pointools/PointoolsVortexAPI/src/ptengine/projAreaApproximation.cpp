@@ -52,7 +52,7 @@ float AABB_Approximator::pixArea( const pcloud::Node *v, const pt::ViewParams &v
 	vector4d ux_ly_lz(bb.ux(), bb.ly(), bb.lz(), 1.0);
 	vector4d lx_ly_uz(bb.lx(), bb.ly(), bb.uz(), 1.0);
 
-	vector3 d = bb.diagonal();
+	vector3d d = bb.diagonal();
 
 	float area_bias = 1.0f;
 

@@ -10,17 +10,17 @@ using namespace vortex;
 //---------------------------------------------------------------------------
 // Public NVI
 //---------------------------------------------------------------------------
-IClashNode*	IClashNode::getLeft(PTvoid)
+IClashNode*	IClashNode::getLeft()
 {
 	return _getLeft();
 }
 
-IClashNode*	IClashNode::getRight(PTvoid)
+IClashNode*	IClashNode::getRight()
 {
 	return _getRight();
 }
 
-PTbool IClashNode::isLeaf(PTvoid)
+PTbool IClashNode::isLeaf()
 {
 	return _isLeaf();
 }

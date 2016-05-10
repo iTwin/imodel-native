@@ -27,7 +27,7 @@ std::string CDECL_ATTRIBUTE format(const char* fmt,...) {
 
 
 // glibc 2.1 and MSVC 7 have been updated to the C99 standard
-std::string vformat(const char* fmt, char* argPtr) {
+std::string vformat(const char* fmt, va_list argPtr) {
     // If the string is less than 161 characters,
     // allocate it on the stack because this saves
     // the malloc/free time.  The number 161 is chosen

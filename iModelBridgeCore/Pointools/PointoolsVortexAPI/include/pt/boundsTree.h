@@ -535,7 +535,7 @@ public:
 			if (m_right)	m_right->collectNodes( nodes, depth );
 		}
 	}
-
+#ifdef NEEDS_WORK_VORTEX_DGNDB
 	void	collectNodes( std::vector<B> &nodes, ubyte flags) const
 	{
 		if (m_flags & flags)
@@ -549,6 +549,7 @@ public:
 			if (m_right)	m_right->collectNodes( nodes, flags );
 		}
 	}
+#endif
 
 	void	collectLeaves( std::vector<B> &leaves, ubyte flags=0xff ) const
 	{
@@ -707,17 +708,17 @@ public:
 	//--------------------------------------------------------------------
 	// IClashNode
 	//--------------------------------------------------------------------		
-	virtual vortex::IClashNode*	_getLeft(PTvoid)
+	virtual vortex::IClashNode*	_getLeft()
 	{
 		return left();
 	}
 
-	virtual vortex::IClashNode*	_getRight(PTvoid)
+	virtual vortex::IClashNode*	_getRight()
 	{
 		return right();
 	}
 
-	virtual PTbool				_isLeaf(PTvoid)
+	virtual PTbool				_isLeaf()
 	{
 		return (!left() && !right());
 	}
@@ -1040,8 +1041,7 @@ class BoundsTree
 			std::set< const Node* > results;
 			bt->root()->collectLeaves( results, Node::NodeInterferance );
 			
-			std::set< const Node* >::const_iterator i =
-				results.begin();
+			typename std::set< const Node* >::const_iterator i = results.begin();
 
 			while (i!=results.end())
 			{
@@ -1052,6 +1052,7 @@ class BoundsTree
 		}
 
 		
+#ifdef NEEDS_WORK_VORTEX_DGNDB
 		template <class GeometryObject, class GeometryCompare>
 		BoundsTree<B> *computeIntersectionGeneric( GeometryObject &obj )
 		{
@@ -1092,6 +1093,7 @@ class BoundsTree
 			
 			return rt ? new BoundsTree<B>(rt) : 0;
 		}
+#endif
 
 	
 	protected:

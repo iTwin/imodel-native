@@ -8,7 +8,9 @@
 #include "PointoolsVortexAPIInternal.h"
 
 #include <ptgl/glfrustum.h>
+#ifdef HAVE_OPENGL
 #include <gl/gl.h>
+#endif
 
 using namespace pt;
 using namespace ptgl;
