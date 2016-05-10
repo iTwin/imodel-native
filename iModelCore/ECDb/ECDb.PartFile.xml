@@ -76,9 +76,9 @@
         <SubPart PartName="Zlib"                             PartFile="Zlib"         Repository="Libsrc-Compress" />
         <Bindings>
             <Files ProductDirectoryName="UnitTests-IgnoreList"     ProductSubDirectory="ECDb" SubPartDirectory="UnitTests/ECDb"> Delivery/UnitTests/ignore_list.txt</Files>
-            <Files ProductDirectoryName="UnitTests-ECDbTestData"   ProductSubDirectory="Schemas"> Delivery/UnitTests/ECDbTestData/Schemas/*.xml</Files>
-            <Files ProductDirectoryName="UnitTests-ECDbTestData"> Delivery/UnitTests/ECDbTestData/*.json</Files>
-            <Files ProductDirectoryName="UnitTests-ECDbTestData"> Delivery/UnitTests/ECDbTestData/*.xml</Files>
+            <Files ProductDirectoryName="UnitTests-ECDbTestData"   ProductSubDirectory="Schemas" SubPartDirectory="UnitTests/ECDb"> Delivery/UnitTests/ECDbTestData/Schemas/*.xml</Files>
+            <Files ProductDirectoryName="UnitTests-ECDbTestData" SubPartDirectory="UnitTests/ECDb"> Delivery/UnitTests/ECDbTestData/*.json</Files>
+            <Files ProductDirectoryName="UnitTests-ECDbTestData" SubPartDirectory="UnitTests/ECDb"> Delivery/UnitTests/ECDbTestData/*.xml</Files>
         </Bindings>
     </Part>
 
