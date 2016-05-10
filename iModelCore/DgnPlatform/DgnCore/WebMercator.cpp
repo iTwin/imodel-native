@@ -81,6 +81,7 @@ BEGIN_UNNAMED_NAMESPACE
 //=======================================================================================
 struct TiledRasterCache : BeSQLiteRealityDataStorage
 {
+    uint64_t m_allowedSize = MAX_DB_CACHE_SIZE;
     using BeSQLiteRealityDataStorage::BeSQLiteRealityDataStorage;
     mutable BeAtomic<bool> m_isPrepared;
     virtual bool _IsPrepared() const override {return m_isPrepared;}
@@ -164,6 +165,7 @@ enum
     MIN_ZOOM_LEVEL = 0, 
     MAX_ZOOM_LEVEL = 22, 
     MAX_TEXTURE_CACHE = 200,
+    MAX_DB_CACHE_SIZE = 1024*1024*1024, // 1 Gb
 };
 
 struct Upoint2d
@@ -1149,26 +1151,42 @@ BentleyStatus TiledRasterCache::_PrepareDatabase(BeSQLite::Db& db) const
 +---------------+---------------+---------------+---------------+---------------+--*/
 BentleyStatus TiledRasterCache::_CleanupDatabase(BeSQLite::Db& db) const 
     {
-    static uint64_t allowedSize = 1024 * 1024 * 1024; // 1 GB
+    CachedStatementPtr sumStatement;
+    db.GetCachedStatement(sumStatement, "SELECT SUM(RasterSize) FROM " TABLE_NAME_TiledRaster);
+
+    if (BE_SQLITE_ROW != sumStatement->Step())
+        return ERROR;
+
+    uint64_t sum = sumStatement->GetValueInt64(0);
+    if (sum <= m_allowedSize)
+        return SUCCESS;
+
+    uint64_t garbageSize = sum - m_allowedSize;
 
     CachedStatementPtr selectStatement;
-    if (BeSQLite::BE_SQLITE_OK != db.GetCachedStatement(selectStatement, "SELECT RasterSize,Created FROM " TABLE_NAME_TiledRaster " ORDER BY Created ASC"))
-        return ERROR;
+    db.GetCachedStatement(selectStatement, "SELECT RasterSize,Created FROM " TABLE_NAME_TiledRaster " ORDER BY Created ASC");
 
-    uint64_t accumulatedSize = 0;
-    while ((accumulatedSize < allowedSize) && (BeSQLite::BE_SQLITE_ROW == selectStatement->Step()))
-        accumulatedSize += selectStatement->GetValueUInt64(0);
-    uint64_t date = selectStatement->GetValueUInt64(1);
+    uint64_t runningSum=0;
+    while (runningSum < garbageSize)
+        {
+        if (BE_SQLITE_ROW != selectStatement->Step())
+            {
+            BeAssert(false);
+            return ERROR;
+            }
+
+        runningSum += selectStatement->GetValueInt64(0);
+        }
+
+    BeAssert (runningSum >= garbageSize);
+    uint64_t creationDate = selectStatement->GetValueInt64(1);
+    BeAssert (creationDate > 0);
 
     CachedStatementPtr deleteStatement;
-    if (BeSQLite::BE_SQLITE_OK != db.GetCachedStatement(deleteStatement, "DELETE FROM " TABLE_NAME_TiledRaster " WHERE Created  <= ? "))
-        return ERROR;
+    db.GetCachedStatement(deleteStatement, "DELETE FROM " TABLE_NAME_TiledRaster " WHERE Created <= ?");
+    deleteStatement->BindInt64(1, creationDate);
 
-    deleteStatement->BindUInt64(1, date);
-    if (BeSQLite::BE_SQLITE_DONE != deleteStatement->Step())
-        return ERROR;
-
-    return SUCCESS;
+    return BE_SQLITE_DONE == deleteStatement->Step() ? SUCCESS : ERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**
