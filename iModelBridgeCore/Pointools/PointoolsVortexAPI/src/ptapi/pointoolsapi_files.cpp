@@ -747,7 +747,10 @@ PTbool PTAPI ptInitialize(const PTubyte* licenseData)
 			}
 		}
 #endif
-		PTRMI::initialize();
+
+#ifdef NEEDS_WORK_VORTEX_DGNDB_SERVER
+        PTRMI::initialize();
+#endif
 
 #ifdef NEEDS_WORK_VORTEX_DGNDB								
         // Initialize server data sources with PTRMI
@@ -795,8 +798,9 @@ PTvoid PTAPI ptRelease()
 		reg = (DWORD)s;
 		reg.write();
 
-															// Delete all items from PTRMI system
-		PTRMI::getManager().deleteAll();
+#ifdef NEEDS_WORK_VORTEX_DGNDB_SERVER
+        PTRMI::getManager().deleteAll();
+#endif
 	}
 }
 //-------------------------------------------------------------------------------

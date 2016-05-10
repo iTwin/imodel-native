@@ -393,6 +393,7 @@ StreamDataSource *StreamHost::getOrCreateActiveStreamDataSource(ptds::DataSource
 
 bool StreamHost::isDataSourceValid(ptds::DataSourcePtr dataSource)
 {
+#ifdef NEEDS_WORK_VORTEX_DGNDB_SERVER
 	ClientInterfaceBase *dataSourceClientInterface;
 															// If DataSource is networked
 	if(dataSource->getDataSourceForm() == DataSource::DataSourceFormRemote)
@@ -404,6 +405,8 @@ bool StreamHost::isDataSourceValid(ptds::DataSourcePtr dataSource)
 			return dataSourceClientInterface->getStatus().isOK();
 		}
 	}
+#endif
+
 															// Return OK
 	return true;
 }
@@ -417,7 +420,9 @@ void StreamHost::setHostFeatureMultiReadSet(bool supported)
 
 bool StreamHost::getHostFeatureMultiReadSet(void)
 {
-	bool result;
+#ifdef NEEDS_WORK_VORTEX_DGNDB_SERVER
+    bool result;
+#endif
 
 	if(getHostInitialized())
 	{
@@ -425,10 +430,12 @@ bool StreamHost::getHostFeatureMultiReadSet(void)
 	}
 	else
 	{
+#ifdef NEEDS_WORK_VORTEX_DGNDB_SERVER
 		if(PTRMI::getManager().getHostFeatureMultiReadSet(getHostName(), result))
 		{
 			return result;
 		}
+#endif
 	}
 
 	return false;
@@ -449,6 +456,8 @@ StreamDataSource *StreamHost::addActiveDataSourceVoxel(ptds::DataSourcePtr dataS
 	{
 		*streamDataSourceCreated = false;
 	}
+
+#ifdef NEEDS_WORK_VORTEX_DGNDB_SERVER
 															// If DataSource is networked
 	if(dataSource->getDataSourceForm() == DataSource::DataSourceFormRemote)
 	{
@@ -464,6 +473,7 @@ StreamDataSource *StreamHost::addActiveDataSourceVoxel(ptds::DataSourcePtr dataS
 			}
 		}
 	}
+#endif
 															// Get or create an active StreamDataSource object associated and create a StreamVoxel entry
 	if((streamDataSource = getOrCreateActiveStreamDataSource(dataSource, streamDataSourceCreated)) == NULL)
 	{
@@ -509,6 +519,7 @@ bool StreamHost::generateMultiReadSet(void)
 															// Get StreamDataSource's ReadSet
 			if(readSet = streamDataSource.getReadSet())
 			{
+#ifdef NEEDS_WORK_VORTEX_DGNDB_SERVER
 															// Get GUID of remote DataSource object
 				dataSourceServerInterface = dataSourceClientInterface->getRemoteInterface().getGUID();
 															// Add MultiRead (ReadSet)
@@ -516,6 +527,7 @@ bool StreamHost::generateMultiReadSet(void)
 				{
 					++numAdded;
 				}
+#endif
 			}
 		}
 	}

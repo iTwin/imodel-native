@@ -437,14 +437,6 @@ $(o)PipeTCP$(oext)                       : $(basedir)src/PTRMI/PipeTCP.cpp      
 
 $(o)ClientInterfaceExtDataBentley$(oext) : $(basedir)src/PTRMI/ClientInterfaceExtDataBentley.cpp                 $(basedir)include/PTRMI/ClientInterfaceExtDataBentley.h          ${MultiCompileDepends}
 
-%endif
-
-#--------------------------------- PTRMI -----------------------------------------
-
-$(o)Status$(oext)                        : $(basedir)src/PTRMI/Status.cpp                                        $(basedir)include/PTRMI/Status.h                                 ${MultiCompileDepends}
-                                                                                                                  
-$(o)URL$(oext)                           : $(basedir)src/PTRMI/URL.cpp                                           $(basedir)include/PTRMI/URL.h                                    ${MultiCompileDepends}
-
 $(o)ServerInterface$(oext)               : $(basedir)src/PTRMI/ServerInterface.cpp                               $(basedir)include/PTRMI/ServerInterface.h                        ${MultiCompileDepends}
 
 $(o)ObjectManager$(oext)                 : $(basedir)src/PTRMI/ObjectManager.cpp                                 $(basedir)include/PTRMI/ObjectManager.h                          ${MultiCompileDepends}
@@ -461,8 +453,6 @@ $(o)PipeExt$(oext)                       : $(basedir)src/PTRMI/PipeExt.cpp      
                                                                                                                 
 $(o)DataSourceServer$(oext)              : $(basedir)src/ptds/DataSourceServer.cpp                               $(basedir)include/ptds/DataSourceServer.h                        ${MultiCompileDepends}
 
-$(o)DataSourceMultiReadSet$(oext)        : $(basedir)src/ptds/DataSourceMultiReadSet.cpp                         $(basedir)include/ptds/DataSourceMultiReadSet.h                  ${MultiCompileDepends}
-                                                                                                                  
 $(o)Manager$(oext)                       : $(basedir)src/PTRMI/Manager.cpp                                       $(basedir)include/PTRMI/Manager.h                                ${MultiCompileDepends}
                                                                                                                   
 $(o)Host$(oext)                          : $(basedir)src/PTRMI/Host.cpp                                          $(basedir)include/PTRMI/Host.h                                   ${MultiCompileDepends}
@@ -481,11 +471,7 @@ $(o)Name$(oext)                          : $(basedir)src/PTRMI/Name.cpp         
 
 $(o)InterfaceBase$(oext)                 : $(basedir)src/PTRMI/InterfaceBase.cpp                                 $(basedir)include/PTRMI/InterfaceBase.h                          ${MultiCompileDepends}
 
-$(o)DataBuffer$(oext)                    : $(basedir)src/PTRMI/DataBuffer.cpp                                    $(basedir)include/PTRMI/DataBuffer.h                             ${MultiCompileDepends}
-
 $(o)Pipe$(oext)                          : $(basedir)src/PTRMI/Pipe.cpp                                          $(basedir)include/PTRMI/Pipe.h                                   ${MultiCompileDepends}
-                                                                                                                  
-$(o)GUID$(oext)                          : $(basedir)src/PTRMI/GUID.cpp                                          $(basedir)include/PTRMI/GUID.h                                   ${MultiCompileDepends}
                                                                                                                   
 $(o)Message$(oext)                       : $(basedir)src/PTRMI/Message.cpp                                       $(basedir)include/PTRMI/Message.h                                ${MultiCompileDepends}
 
@@ -494,6 +480,20 @@ $(o)HostManager$(oext)                   : $(basedir)src/PTRMI/HostManager.cpp  
 $(o)ManagerServerInterface$(oext)        : $(basedir)src/PTRMI/ManagerServerInterface.cpp                        $(basedir)include/PTRMI/ManagerServerInterface.h                 ${MultiCompileDepends}
 
 $(o)DispatcherPTRMI$(oext)               : $(basedir)src/PTRMI/DispatcherPTRMI.cpp                                                                                                 ${MultiCompileDepends}
+
+%endif
+
+#--------------------------------- PTRMI -----------------------------------------
+
+$(o)Status$(oext)                        : $(basedir)src/PTRMI/Status.cpp                                        $(basedir)include/PTRMI/Status.h                                 ${MultiCompileDepends}
+
+$(o)DataBuffer$(oext)                    : $(basedir)src/PTRMI/DataBuffer.cpp                                    $(basedir)include/PTRMI/DataBuffer.h                             ${MultiCompileDepends}
+
+$(o)URL$(oext)                           : $(basedir)src/PTRMI/URL.cpp                                           $(basedir)include/PTRMI/URL.h                                    ${MultiCompileDepends}
+
+$(o)DataSourceMultiReadSet$(oext)        : $(basedir)src/ptds/DataSourceMultiReadSet.cpp                         $(basedir)include/ptds/DataSourceMultiReadSet.h                  ${MultiCompileDepends}
+
+$(o)GUID$(oext)                          : $(basedir)src/PTRMI/GUID.cpp                                          $(basedir)include/PTRMI/GUID.h                                   ${MultiCompileDepends}
 
 
 #

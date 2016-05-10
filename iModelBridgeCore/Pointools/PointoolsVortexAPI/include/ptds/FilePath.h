@@ -189,8 +189,6 @@ public:
 
 	const FilePath *parent() const { return m_parent; }
 
-	bool findFile(wchar_t *dst, bool parent_dir = true, bool project_dir = true);
-
 	void setAbsolute()
 	{
 		m_bAbsolute = true;

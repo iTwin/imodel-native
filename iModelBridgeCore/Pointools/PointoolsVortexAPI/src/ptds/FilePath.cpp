@@ -8,39 +8,15 @@
 
 
 #ifndef NO_DATA_SOURCE_SERVER
+
+#ifdef NEEDS_WORK_VORTEX_DGNDB_SERVER
 class PTRMI::URL;
+#endif
+
 #endif
 
 namespace ptds
 {
-
-bool FilePath::findFile(wchar_t *dst, bool parent_dir, bool project_dir)
-{
-	fullpath(dst);
-
-	if (_access(pt::Unicode2Ascii::convert(dst).c_str(),0) == 0) return true;
-
-    BeFileName tmp (m_path.GetFileNameAndExtension());
-	wcscpy(dst, tmp.c_str());
-
-	/*try parents directory*/ 
-	if (m_parent && parent_dir)
-	{
-		wchar_t d[PT_MAXPATH];
-		m_parent->fulldirectory(d);
-
-		swprintf(dst, L"%s\\%s", d, filename());
-
-		if (_access(pt::Unicode2Ascii::convert(dst).c_str(),0) == 0) return true;
-	}
-	if (project_dir && wcslen(projectDirectory()) > 0)
-	{
-		const wchar_t *dir [] = { projectDirectory(), L"/0" };
-		return ::PathFindOnPathW(dst, dir) ? true : false;
-	}
-	return false;
-}
-
 
 #ifndef NO_DATA_SOURCE_SERVER
 
