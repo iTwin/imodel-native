@@ -667,7 +667,7 @@ enum class RealityDataCacheResult
 //! the internet.
 // @bsiclass                                        Grigas.Petraitis            10/2014
 //=======================================================================================
-struct RealityDataCache : NonCopyableClass, IRealityDataStorageResponseReceiver, IRealityDataSourceResponseReceiver
+struct EXPORT_VTABLE_ATTRIBUTE RealityDataCache : NonCopyableClass, IRealityDataStorageResponseReceiver, IRealityDataSourceResponseReceiver
 {    
     DEFINE_BENTLEY_REF_COUNTED_MEMBERS
 
