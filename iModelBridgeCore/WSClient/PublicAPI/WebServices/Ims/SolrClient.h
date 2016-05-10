@@ -74,7 +74,7 @@ struct SolrClient : public ISolrClient
         WSCLIENT_EXPORT Utf8StringCR GetCollectionPath() const override;
 
         //! Send query request using a SolrQuery. Send an HttpRequest to the Solr REST Url.
-        //! @param[in] [Optional] The SolrQuery used to construct the get request url
+        //! @param[in] query [Optional] The SolrQuery used to construct the get request url
         WSCLIENT_EXPORT AsyncTaskPtr<SolrGetResult> SendGetRequest(SolrQueryCR query = SolrQuery()) const override;
     };
 
