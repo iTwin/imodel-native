@@ -53,3 +53,6 @@ DataSourceCacheTests.*
 DataSourceCacheTests.UpdateSchemas_*
 
 DataSourceCacheUpgradeTests.Open_CurrentVersionDb_Success
+
+
+DataSourceCacheUpgradeTests.Open_V10AddingAdditionalInstanceToExistingResponse_WorksFine # Notified autoblame list
