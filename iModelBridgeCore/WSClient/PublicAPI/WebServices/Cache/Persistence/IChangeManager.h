@@ -9,6 +9,7 @@
 //__PUBLISH_SECTION_START__
 
 #include <WebServices/Cache/WebServicesCache.h>
+#include <WebServices/Cache/Persistence/CachedResponseKey.h>
 #include <WebServices/Client/ObjectId.h>
 #include <WebServices/Client/Response/WSObjectsResponse.h>
 
@@ -92,7 +93,7 @@ struct EXPORT_VTABLE_ATTRIBUTE IChangeManager
         virtual BentleyStatus ModifyObject(ECInstanceKeyCR instanceKey, JsonValueCR properties, SyncStatus syncStatus = SyncStatus::Ready) = 0;
 
         //! Remove change and revert modified instance properties to latest cached version
-        virtual BentleyStatus RevertModifiedObject(ECInstanceKeyCR instance) = 0;
+        virtual BentleyStatus RevertModifiedObject(ECInstanceKeyCR instanceKey) = 0;
 
         //! Delete object from cache and mark it for sync
         virtual BentleyStatus DeleteObject(ECInstanceKeyCR instanceKey, SyncStatus syncStatus = SyncStatus::Ready) = 0;
@@ -126,6 +127,12 @@ struct EXPORT_VTABLE_ATTRIBUTE IChangeManager
         //! Change whether or not an object is ready to be synced to the server
         virtual BentleyStatus SetSyncStatus(ECInstanceKeyCR instanceKey, SyncStatus syncStatus) = 0;
 
+        //! Add created instance to response to act as placeholder until it is synced to server and pulled back. Instance commit will remove it from response
+        virtual BentleyStatus AddCreatedInstanceToResponse(CachedResponseKeyCR responseKey, ECInstanceKeyCR instanceKey) = 0;
+
+        //! Remove created instance from response
+        virtual BentleyStatus RemoveCreatedInstanceFromResponse(CachedResponseKeyCR responseKey, ECInstanceKeyCR instanceKey) = 0;
+
         // -- Getting changes --
 
         //! Check if local cache has any pending changes
@@ -158,7 +165,7 @@ struct EXPORT_VTABLE_ATTRIBUTE IChangeManager
         virtual FileRevisionPtr ReadFileRevision(ECInstanceKeyCR instanceKey) = 0;
 
         //! Get instance properties that were modified
-        virtual BentleyStatus ReadModifiedProperties(ECInstanceKeyCR instance, JsonValueR propertiesOut) = 0;
+        virtual BentleyStatus ReadModifiedProperties(ECInstanceKeyCR instanceKey, JsonValueR propertiesOut) = 0;
 
         // -- Commiting changes --
 

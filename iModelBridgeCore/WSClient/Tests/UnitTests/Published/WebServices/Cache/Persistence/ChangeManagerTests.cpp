@@ -1749,6 +1749,32 @@ TEST_F(ChangeManagerTests, CommitInstanceRevision_CreatedObjectWithFile_DoesNotC
     EXPECT_EQ(IChangeManager::ChangeStatus::Modified, cache->GetChangeManager().GetFileChange(instance).GetChangeStatus());
     }
 
+TEST_F(ChangeManagerTests, CommitInstanceRevision_CreatedObjectThatWasAddedToResponse_RemovesItFromResponse)
+    {
+    // Arrange
+    auto cache = GetTestCache();
+    auto instance = StubCreatedObjectInCache(*cache);
+    auto responseKey = StubCachedResponseKey(*cache);
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().AddCreatedInstanceToResponse(responseKey, instance));
+
+    ECInstanceKeyMultiMap instances;
+    ASSERT_EQ(CacheStatus::OK, cache->ReadResponseInstanceKeys(responseKey, instances));
+    EXPECT_EQ(1, instances.size());
+    EXPECT_CONTAINS(instances, ECDbHelper::ToPair(instance));
+
+    auto revision = cache->GetChangeManager().ReadInstanceRevision(instance);
+    // Act
+    revision->SetRemoteId("NewId");
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().CommitInstanceRevision(*revision));
+    // Assert
+    EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, cache->GetCachedObjectInfo(instance).GetChangeStatus());
+
+    instances.clear();
+    ASSERT_EQ(CacheStatus::OK, cache->ReadResponseInstanceKeys(responseKey, instances));
+    EXPECT_NCONTAIN(instances, ECDbHelper::ToPair(instance));
+    ASSERT_TRUE(cache->IsResponseCached(responseKey));
+    }
+
 TEST_F(ChangeManagerTests, CommitInstanceRevision_NewRemoteIdExistsInCache_RemovesOldInstanceAndMovesRootRelationships)
     {
     // Arrange
@@ -2741,6 +2767,119 @@ TEST_F(ChangeManagerTests, RevertModifiedObject_ModifiedInstanceAndSyncActive_Er
     ASSERT_EQ(SUCCESS, cache->GetAdapter().GetJsonInstance(properties, instance));
     EXPECT_EQ("A1", properties["TestProperty"].asString());
     EXPECT_EQ("B1", properties["TestProperty2"].asString());
+    }
+
+TEST_F(ChangeManagerTests, AddCreatedInstanceToResponse_NotExistingInstance_Error)
+    {
+    auto cache = GetTestCache();
+    auto nonExistingInstance = StubNonExistingInstanceKey(*cache);
+    auto responseKey = StubCachedResponseKey(*cache);
+    ASSERT_EQ(ERROR, cache->GetChangeManager().AddCreatedInstanceToResponse(responseKey, nonExistingInstance));
+    }
+
+TEST_F(ChangeManagerTests, AddCreatedInstanceToResponse_NotChangedInstance_Error)
+    {
+    auto cache = GetTestCache();
+    auto instance = StubInstanceInCache(*cache);
+    auto responseKey = StubCachedResponseKey(*cache);
+    ASSERT_EQ(ERROR, cache->GetChangeManager().AddCreatedInstanceToResponse(responseKey, instance));
+    }
+
+TEST_F(ChangeManagerTests, AddCreatedInstanceToResponse_DeletedInstance_Error)
+    {
+    auto cache = GetTestCache();
+    auto instance = StubInstanceInCache(*cache);
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().DeleteObject(instance));
+    auto responseKey = StubCachedResponseKey(*cache);
+    ASSERT_EQ(ERROR, cache->GetChangeManager().AddCreatedInstanceToResponse(responseKey, instance));
+    }
+
+TEST_F(ChangeManagerTests, AddCreatedInstanceToResponse_ModifiedInstance_Error)
+    {
+    auto cache = GetTestCache();
+    auto instance = StubInstanceInCache(*cache);
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(instance, Json::objectValue));
+    auto responseKey = StubCachedResponseKey(*cache);
+    ASSERT_EQ(ERROR, cache->GetChangeManager().AddCreatedInstanceToResponse(responseKey, instance));
+    }
+
+TEST_F(ChangeManagerTests, AddCreatedInstanceToResponse_CreatedRelationship_Error)
+    {
+    auto cache = GetTestCache();
+    auto relationship = StubCreatedRelationshipInCache(*cache);
+    auto responseKey = StubCachedResponseKey(*cache);
+    ASSERT_EQ(ERROR, cache->GetChangeManager().AddCreatedInstanceToResponse(responseKey, relationship));
+    }
+
+TEST_F(ChangeManagerTests, AddCreatedInstanceToResponse_CreatedObjectAndNotExistingResponse_CreatesResponseAndAddsObjectToIt)
+    {
+    auto cache = GetTestCache();
+    auto instance = StubCreatedObjectInCache(*cache);
+    auto responseKey = StubCachedResponseKey(*cache);
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().AddCreatedInstanceToResponse(responseKey, instance));
+
+    EXPECT_TRUE(cache->IsResponseCached(responseKey));
+
+    ECInstanceKeyMultiMap instances;
+    ASSERT_EQ(CacheStatus::OK, cache->ReadResponseInstanceKeys(responseKey, instances));
+    EXPECT_EQ(1, instances.size());
+    EXPECT_CONTAINS(instances, ECDbHelper::ToPair(instance));
+
+    bset<ObjectId> objectIds;
+    ASSERT_EQ(CacheStatus::OK, cache->ReadResponseObjectIds(responseKey, objectIds));
+    EXPECT_EQ(1, objectIds.size());
+    EXPECT_CONTAINS(objectIds, cache->FindInstance(instance));
+    }
+
+TEST_F(ChangeManagerTests, AddCreatedInstanceToResponse_CreatedObjectAndExistingResponse_AddsObjectToExistingInstanceList)
+    {
+    auto cache = GetTestCache();
+    auto responseKey = StubCachedResponseKey(*cache);
+
+    StubInstances stubInstances;
+    stubInstances.Add({"TestSchema.TestClass", "A"});
+    stubInstances.Add({"TestSchema.TestClass", "B"});
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, stubInstances.ToWSObjectsResponse()));
+    
+    auto instance = StubCreatedObjectInCache(*cache);
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().AddCreatedInstanceToResponse(responseKey, instance));
+
+    ECInstanceKeyMultiMap instances;
+    ASSERT_EQ(CacheStatus::OK, cache->ReadResponseInstanceKeys(responseKey, instances));
+    EXPECT_EQ(3, instances.size());
+    EXPECT_CONTAINS(instances, ECDbHelper::ToPair(instance));
+    EXPECT_CONTAINS(instances, ECDbHelper::ToPair(cache->FindInstance({"TestSchema.TestClass", "A"})));
+    EXPECT_CONTAINS(instances, ECDbHelper::ToPair(cache->FindInstance({"TestSchema.TestClass", "B"})));
+    }
+
+TEST_F(ChangeManagerTests, RemoveCreatedInstanceFromResponse_NotExistingInstance_Error)
+    {
+    auto cache = GetTestCache();
+    auto nonExistingInstance = StubNonExistingInstanceKey(*cache);
+    auto responseKey = StubCachedResponseKey(*cache);
+    ASSERT_EQ(ERROR, cache->GetChangeManager().RemoveCreatedInstanceFromResponse(responseKey, nonExistingInstance));
+    }
+
+TEST_F(ChangeManagerTests, RemoveCreatedInstanceFromResponse_CreatedInstanceWasNotAdded_Error)
+    {
+    auto cache = GetTestCache();
+    auto instance = StubCreatedObjectInCache(*cache);
+    auto responseKey = StubCachedResponseKey(*cache);
+    ASSERT_EQ(ERROR, cache->GetChangeManager().RemoveCreatedInstanceFromResponse(responseKey, instance));
+    }
+
+TEST_F(ChangeManagerTests, RemoveCreatedInstanceFromResponse_CreatedInstanceWasAdded_RemovesInstanceFromResponse)
+    {
+    auto cache = GetTestCache();
+    auto instance = StubCreatedObjectInCache(*cache);
+
+    auto responseKey = StubCachedResponseKey(*cache);
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().AddCreatedInstanceToResponse(responseKey, instance));
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().RemoveCreatedInstanceFromResponse(responseKey, instance));
+
+    ECInstanceKeyMultiMap instances;
+    ASSERT_EQ(CacheStatus::OK, cache->ReadResponseInstanceKeys(responseKey, instances));
+    EXPECT_TRUE(instances.empty());
     }
 
 #endif

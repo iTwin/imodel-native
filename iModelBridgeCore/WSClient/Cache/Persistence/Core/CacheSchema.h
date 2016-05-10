@@ -80,6 +80,7 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 #define CLASS_ResponseToParent                                      "ResponseToParent"
 #define CLASS_ResponseToHolder                                      "ResponseToHolder"
 #define CLASS_ResponseToResponsePage                                "ResponseToResponsePage"
+#define CLASS_ResponseToAdditionalInstance                          "ResponseToAdditionalInstance"
 #define CLASS_ResponsePageToResult                                  "ResponsePageToResult"
 #define CLASS_ResponsePageToResultWeak                              "ResponsePageToResultWeak"
 #define CLASS_ChangeInfoToInstanceBackup                            "ChangeInfoToInstanceBackup"

@@ -105,6 +105,7 @@
     <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV5ToCurrent.cpp" />
     <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV7ToV9.cpp" />
     <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV9ToV10.cpp" />
+    <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV10ToV11.cpp" />
     <ClCompile Include="Cache\ServerQueryHelper.cpp" />
     <ClCompile Include="Cache\SyncCachedDataTask.cpp" />
     <ClCompile Include="Cache\SyncCachedInstancesSeperatelyTask.cpp" />
@@ -240,6 +241,7 @@
     <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV5ToCurrent.h" />
     <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV7ToV9.h" />
     <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV9ToV10.h" />
+    <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV10ToV11.h" />
     <ClInclude Include="Cache\Schemas.h" />
     <ClInclude Include="Cache\Util\JsonUtil.h" />
     <ClInclude Include="Cache\Util\StringHelper.h" />

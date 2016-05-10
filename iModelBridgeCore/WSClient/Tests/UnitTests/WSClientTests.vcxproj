@@ -283,6 +283,11 @@
   <ItemGroup>
     <None Include="BuildTests.mke" />
     <None Include="Prewire.mke" />
+    <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\10.zip" />
+    <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\5.zip" />
+    <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\7.zip" />
+    <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\8.zip" />
+    <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\9.zip" />
     <None Include="AssetsDelivery.mke" />
   </ItemGroup>
   <ItemGroup>

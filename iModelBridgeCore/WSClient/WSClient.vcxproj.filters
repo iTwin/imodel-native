@@ -423,6 +423,12 @@
     <ClCompile Include="ConnectC\CWSCCInternal.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Azure\AzureBlobStorageClient.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV10ToV11.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Client\WebApi\WebApi.h">

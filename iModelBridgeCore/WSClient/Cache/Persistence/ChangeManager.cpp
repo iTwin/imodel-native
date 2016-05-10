@@ -566,6 +566,32 @@ BentleyStatus ChangeManager::SetSyncStatus(ECInstanceKeyCR instanceKey, SyncStat
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+BentleyStatus ChangeManager::AddCreatedInstanceToResponse(CachedResponseKeyCR responseKey, ECInstanceKeyCR instanceKey)
+    {
+    if (!responseKey.IsValid())
+        return ERROR;
+    if (ChangeStatus::Created != GetObjectChangeStatus(instanceKey))
+        return ERROR;
+
+    return m_responseManager->AddAdditionalInstance(responseKey, instanceKey);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+BentleyStatus ChangeManager::RemoveCreatedInstanceFromResponse(CachedResponseKeyCR responseKey, ECInstanceKeyCR instanceKey)
+    {
+    if (!responseKey.IsValid())
+        return ERROR;
+    if (ChangeStatus::Created != GetObjectChangeStatus(instanceKey))
+        return ERROR;
+
+    return m_responseManager->RemoveAdditionalInstance(responseKey, instanceKey);
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    07/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ChangeManager::HasChanges()
@@ -834,11 +860,13 @@ BentleyStatus ChangeManager::CommitInstanceChange(InstanceRevisionCR revision)
         return ERROR;
         }
 
+    // Deleted
     if (revision.GetChangeStatus() == ChangeStatus::Deleted && currentRevision)
         {
         return m_hierarchyManager.DeleteInstance(info.GetInfoKey());
         }
 
+    // Modified
     if (revision.GetChangeStatus() == ChangeStatus::Modified)
         {
         if (currentRevision)
@@ -862,11 +890,15 @@ BentleyStatus ChangeManager::CommitInstanceChange(InstanceRevisionCR revision)
         return ERROR;
         }
 
+    // Created
     if (revision.GetChangeStatus() != ChangeStatus::Created)
         {
         BeAssert(false && "Change status is unsupported for commit");
         return ERROR;
         }
+
+    if (SUCCESS != m_responseManager->RemoveAdditionalInstance(revision.GetInstanceKey()))
+        return ERROR;
 
     ObjectId newId = revision.GetObjectId();
     if (newId.remoteId.empty() || newId.remoteId == info.GetObjectId().remoteId)
