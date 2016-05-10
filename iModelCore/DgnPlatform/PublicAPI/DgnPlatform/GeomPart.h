@@ -22,7 +22,7 @@ namespace dgn_ElementHandler {struct GeometryPart;};
 //! @see DgnGeometryParts
 //! @ingroup GROUP_Geometry
 //=======================================================================================
-struct DgnGeometryPart : DefinitionElement
+struct EXPORT_VTABLE_ATTRIBUTE DgnGeometryPart : DefinitionElement
 {
     DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_GeometryPart, DefinitionElement);
     friend struct dgn_ElementHandler::GeometryPart;
