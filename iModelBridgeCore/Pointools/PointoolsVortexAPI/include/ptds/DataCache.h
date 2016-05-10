@@ -86,9 +86,9 @@ protected:
 
 	CachePageIndexSet		outOfCachePageSet;
 
-	PTRMI::Mutex			mutexCacheStats;
-	PTRMI::Mutex			mutexPageBuffer;
-	PTRMI::Mutex			mutexStatusFile;
+    std::recursive_mutex    mutexCacheStats;
+    std::recursive_mutex	mutexPageBuffer;
+    std::recursive_mutex	mutexStatusFile;
 
 protected:
 

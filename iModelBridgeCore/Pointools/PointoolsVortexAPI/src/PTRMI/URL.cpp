@@ -4,7 +4,7 @@
 #include <PTRMI/DataBuffer.h>
 
 #ifndef NO_DATA_SOURCE_SERVER
-#include <PTRMI/Manager.h>
+//#include <PTRMI/Manager.h>
 #endif
 namespace PTRMI
 {
@@ -206,6 +206,7 @@ bool URL::getProtocolHostAddress(URL &protocolHostAddress) const
 
 bool URL::getRemoteManagerName(URL &remoteManagerName) const
 {
+#if defined (BENTLEY_WIN32)  // NEEDS_WORK_VORTEX_DGNDB
 	URL protocolHostAddress;
 
 	if(getProtocolHostAddress(protocolHostAddress) == false)
@@ -214,6 +215,10 @@ bool URL::getRemoteManagerName(URL &remoteManagerName) const
 	remoteManagerName = protocolHostAddress + L"/" + MANAGER_OBJECT_NAME;
 
 	return true;
+#else
+    return false;
+#endif
+
 }
 #endif
 

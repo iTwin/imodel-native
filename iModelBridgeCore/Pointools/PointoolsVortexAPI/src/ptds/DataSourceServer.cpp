@@ -199,7 +199,7 @@ const bool DataSourceServerClientInterface::addClientSideFilePath(const std::wst
 {
 	removeClientSideFilePath(serverFilePath);
 
-	MutexScope mutexScope(pathPathMapMutex);
+    std::lock_guard<std::recursive_mutex> mutexScope(pathPathMapMutex);
 
 	pathPathMap[serverFilePath] = clientFilePath;
 
@@ -211,7 +211,7 @@ const std::wstring *DataSourceServerClientInterface::getClientSideFilePath(const
 {
 	PathPathMap::iterator it;
 
-	MutexScope mutexScope(pathPathMapMutex);
+    std::lock_guard<std::recursive_mutex> mutexScope(pathPathMapMutex);
 
 	if((it = pathPathMap.find(serverFilePath)) != pathPathMap.end())
 	{
@@ -226,7 +226,7 @@ bool DataSourceServerClientInterface::removeClientSideFilePath(const std::wstrin
 {
 	PathPathMap::iterator it;
 
-	MutexScope mutexScope(pathPathMapMutex);
+    std::lock_guard<std::recursive_mutex> mutexScope(pathPathMapMutex);
 
 	if((it = pathPathMap.find(serverFilePath)) != pathPathMap.end())
 	{

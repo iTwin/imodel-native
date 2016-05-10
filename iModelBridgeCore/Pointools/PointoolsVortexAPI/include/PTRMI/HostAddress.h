@@ -396,12 +396,12 @@ namespace PTRMI
 
 		if(numDigits == 4)
 		{
-			wsprintfW(buffer, L"%d.%d.%d.%d", getSubValue(0), getSubValue(1), getSubValue(2), getSubValue(3));
+			swprintf(buffer, sizeof(buffer) / sizeof(buffer[0]), L"%d.%d.%d.%d", getSubValue(0), getSubValue(1), getSubValue(2), getSubValue(3));
 		}
 		else
 		if(numDigits == 6)
 		{
-            wsprintfW(buffer, L"%d.%d.%d.%d.%d.%d", getSubValue(0), getSubValue(1), getSubValue(2), getSubValue(3), getSubValue(4), getSubValue(5), getSubValue(6));
+            swprintf(buffer, sizeof(buffer)/ sizeof(buffer[0]), L"%d.%d.%d.%d.%d.%d", getSubValue(0), getSubValue(1), getSubValue(2), getSubValue(3), getSubValue(4), getSubValue(5));
 		}
 
 		string = buffer;

@@ -42,7 +42,7 @@ DataCache::~DataCache(void)
 
 Status DataCache::clear(void)
 {
-	PTRMI::MutexScope mutexScope(mutexCacheStats);
+    std::lock_guard<std::recursive_mutex> mutexScope(mutexCacheStats);
 															// Flag that cache status file should be read
 	setCacheStatusFileRead(false);
 															// Initially no data
@@ -152,7 +152,8 @@ Status DataCache::readStartEndPages(DataPointer start, DataPointer end, Data *de
 	}
 
 															// Mutex single page read buffer
-	PTRMI::MutexScope mutexScope(mutexPageBuffer);
+    std::lock_guard<std::recursive_mutex> mutexScope(mutexPageBuffer);
+	
 															// If Start and End are in same page, handle single windowed page
 															// This is likely to be frequent, so it is handled explicitly
 	if(pageStart == pageEnd)
@@ -362,7 +363,7 @@ Status DataCache::createCache(const wchar_t *filePath, const wchar_t *cacheFileP
 		return Status(Status::Status_Error_File_Open_For_Read);
 
 
-	PTRMI::MutexScope mutexScope(mutexCacheStats);
+    std::lock_guard<std::recursive_mutex> mutexScope(mutexCacheStats);
 															// Record the full file size
 	setFileSize(fullFileSize);
 															// Set the page size
@@ -446,7 +447,7 @@ Status DataCache::readCacheStatusFile(const wchar_t *filePathCacheStatusFile, Da
 	if(filePathCacheStatusFile == NULL || dataSourceCache == NULL)
 		return Status(Status::Status_Error_Bad_Parameter);
 
-	PTRMI::MutexScope mutexScope(mutexStatusFile);
+    std::lock_guard<std::recursive_mutex> mutexScope(mutexStatusFile);
 
 	buffer.setMode(PTRMI::DataBuffer::Mode_Internal);
 															// Read file into buffer from data source
@@ -462,7 +463,7 @@ Status DataCache::readCacheStatusFile(const wchar_t *filePathCacheStatusFile, Da
 		return Status(Status::Status_Error_File_Newer_Version);
 
 
-	PTRMI::MutexScope mutexScopeCacheStats(mutexCacheStats);
+    std::lock_guard<std::recursive_mutex> mutexScopeCacheStats(mutexCacheStats);
 															// Get the size of the full original file
 	buffer >> fullFileSize;
 	setFileSize(fullFileSize);
@@ -492,9 +493,9 @@ Status DataCache::writeCacheStatusFile(const wchar_t *filePathCacheStatusFile, D
 	if(filePathCacheStatusFile == NULL || dataSourceCache == NULL)
 		return Status(Status::Status_Error_Bad_Parameter);
 
-	PTRMI::MutexScope mutexScopeStatsFile(mutexStatusFile);
+    std::lock_guard<std::recursive_mutex> mutexScopeStatsFile(mutexStatusFile);
 
-	PTRMI::MutexScope mutexScopeCacheStats(mutexCacheStats);
+    std::lock_guard<std::recursive_mutex> mutexScopeCacheStats(mutexCacheStats);
 															// Reserve a conservatively sized buffer
 	bufferSize = cachePageResident.getStorageSizeBytes() + 1024;
 															// Create buffer
@@ -742,7 +743,7 @@ Status DataCache::readPageRangeFromDataSource(CachePageIndex pageStart, CachePag
 
 Status DataCache::createPageBuffer(DataSize size)
 {
-	PTRMI::MutexScope mutexScope(mutexPageBuffer);
+    std::lock_guard<std::recursive_mutex> mutexScope(mutexPageBuffer);
 
 	if(size == 0)
 	{
@@ -777,7 +778,7 @@ DataCache::Data *DataCache::getPageBuffer(void)
 
 void DataCache::destroyPageBuffer(void)
 {
-	PTRMI::MutexScope mutexScope(mutexPageBuffer);
+    std::lock_guard<std::recursive_mutex> mutexScope(mutexPageBuffer);
 
 	if(getPageBuffer() != NULL)
 	{
@@ -911,7 +912,7 @@ Status DataCache::writeCachePageRange(Data *source, CachePageIndex pageStart, Ca
 // test_timer[6].stop();
 
 
-	PTRMI::MutexScope mutexScope(mutexCacheStats);
+    std::lock_guard<std::recursive_mutex> mutexScope(mutexCacheStats);
 															// Set residency bits to resident for all written pages
 	setPageRangeResidencyState(pageStart, pageEnd, PageStateResident);
 															// Update number of cache pages resident in cache
@@ -955,7 +956,7 @@ Status DataCache::manageCacheStatusFileUpdate(DataSourceCache *dataSourceCache, 
 {
 	Status	status;
 
-	PTRMI::MutexScope mutexScope(mutexCacheStats);
+    std::lock_guard<std::recursive_mutex> mutexScope(mutexCacheStats);
 
 // Pip Option
 //outputStatusToLog();
@@ -995,7 +996,7 @@ Status DataCache::setPageRangeResidencyState(CachePageIndex pageStart, CachePage
 
 Status DataCache::clearCachePageResidencyStates(void)
 {
-	PTRMI::MutexScope mutexScope(mutexCacheStats);
+    std::lock_guard<std::recursive_mutex> mutexScope(mutexCacheStats);
 
 	cachePageResident.clearArray();
 
@@ -1066,7 +1067,7 @@ const wchar_t *DataCache::getCacheStatusFilePath(void)
 
 Status DataCache::getCacheStats(DataSize &bytesFull, DataSize &bytesEmpty)
 {
-	PTRMI::MutexScope mutexScope(mutexCacheStats);
+    std::lock_guard<std::recursive_mutex> mutexScope(mutexCacheStats);
 
 	bytesFull	= getNumCachePagesResident() * getCachePageSize();
 	bytesEmpty	= getFileSize() - bytesFull;
@@ -1077,7 +1078,7 @@ Status DataCache::getCacheStats(DataSize &bytesFull, DataSize &bytesEmpty)
 
 bool DataCache::isCacheComplete(void)
 {
-	PTRMI::MutexScope mutexScope(mutexCacheStats);
+    std::lock_guard<std::recursive_mutex> mutexScope(mutexCacheStats);
 
 	return (getNumCachePagesResident() == getNumCachePages());
 }
@@ -1105,8 +1106,8 @@ Status DataCache::completeCache(DataSourceCache *dataSourceCache)
 	Status				status;
 
 
-	PTRMI::MutexScope mutexScopeCacheStats(mutexCacheStats);
-	PTRMI::MutexScope mutexScopeStatusFile(mutexStatusFile);
+    std::lock_guard<std::recursive_mutex> mutexScopeCacheStats(mutexCacheStats);
+    std::lock_guard<std::recursive_mutex> mutexScopeStatusFile(mutexStatusFile);
 
 															// If no cache pages, no file to create
 	if((numPages = getNumCachePages()) == 0)

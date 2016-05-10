@@ -305,6 +305,7 @@ DataBuffer::DataSize DataBuffer::writeToBuffer(const Data *source, DataSize numB
 
 Status DataBuffer::readFileToBuffer(const wchar_t *filepath, bool limitFileSize)
 {
+#if defined (BENTLEY_WIN32)  // NEEDS_WORK_VORTEX_DGNDB
 	std::ifstream	fileIn;
 	Status			status;
 
@@ -347,6 +348,7 @@ Status DataBuffer::readFileToBuffer(const wchar_t *filepath, bool limitFileSize)
 	fileIn.close();
 															// Move write pointer
 	setWritePtr(fileSize);
+#endif
 															// Return OK
 	return Status();
 }
@@ -359,8 +361,10 @@ Status DataBuffer::readFileToBuffer(const wchar_t *filePath, ptds::DataSource *d
 
 	DataSize	fileSize;
 	Status		status;
-															// Open file for reading from data source
-	if(dataSource->openForRead(&ptds::FilePath(filePath)) == false)
+    ptds::FilePath path(filePath);
+
+    // Open file for reading from data source
+	if(dataSource->openForRead(&path) == false)
 	{
 		Status::log(L"DataBuffer::readFileToBuffer opening ", filePath);
 		return Status(Status::Status_Error_File_Open_For_Read);
@@ -399,8 +403,8 @@ Status DataBuffer::readFileToBuffer(const wchar_t *filePath, ptds::DataSource *d
 
 Status DataBuffer::writeFileFromBuffer(const wchar_t *filepath)
 {
+#if defined (BENTLEY_WIN32)  // NEEDS_WORK_VORTEX_DGNDB
 	std::ofstream fileOut;
-
 
 	fileOut.open(filepath, std::ios::binary | std::ios::out);
 
@@ -420,6 +424,7 @@ Status DataBuffer::writeFileFromBuffer(const wchar_t *filepath)
 
 	fileOut.close();
 
+#endif
 	return Status();
 }
 
@@ -666,8 +671,11 @@ PTRMI::Status DataBuffer::normalizeInternalBuffer(void)
 {
 	if(getDataSize() > 0)
 	{
-															// Move data back to the start of the buffer
-		memmove_s(getInternalBuffer(), getBufferSize(), getReadPtrAddress(), getDataSize());
+        BeAssert(getBufferSize() >= getDataSize());
+
+        // Move data back to the start of the buffer
+        if(getBufferSize() >= getDataSize())
+		    memmove(getInternalBuffer(), getReadPtrAddress(), getDataSize());
 	}
 															// Translate defined pointers back
 	translatePtrsBack(getReadPtr());

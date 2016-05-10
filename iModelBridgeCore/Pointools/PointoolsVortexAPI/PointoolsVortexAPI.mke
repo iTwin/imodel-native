@@ -89,9 +89,7 @@ $(o)DebugAssert$(oext)                   : $(basedir)src/pt/DebugAssert.cpp     
 
 $(o)System$(oext)                        : $(basedir)src/pt/System.cpp                                           $(basedir)include/pt/System.h                                    ${MultiCompileDepends}
 
-%if $(TARGET_PLATFORM)=="Windows"
 $(o)FilePath$(oext)                      : $(basedir)src/ptds/FilePath.cpp                                       $(basedir)include/ptds/FilePath.h                                ${MultiCompileDepends}
-%endif
 
 $(o)PointoolsAPI_imaging$(oext)          : $(basedir)src/ptapi/PointoolsAPI_imaging.cpp                                                                                            ${MultiCompileDepends}
 
@@ -131,9 +129,7 @@ $(o)Registry$(oext)                      : $(basedir)src/pt/Registry.cpp        
 
 $(o)PointoolsAPI_shader$(oext)           : $(basedir)src/ptapi/PointoolsAPI_shader.cpp                                                                                             ${MultiCompileDepends}
 
-%if $(TARGET_PLATFORM)=="Windows"
 $(o)datatreeIO$(oext)                    : $(basedir)src/pt/datatreeIO.cpp                                       $(basedir)include/pt/datatreeIO.h                                ${MultiCompileDepends}
-%endif
 
 $(o)ptstring$(oext)                      : $(basedir)src/pt/ptstring.cpp                                         $(basedir)include/pt/ptstring.h                                  ${MultiCompileDepends}
 
@@ -514,13 +510,17 @@ $(o)DispatcherPTRMI$(oext)               : $(basedir)src/PTRMI/DispatcherPTRMI.c
 
 $(o)Status$(oext)                        : $(basedir)src/PTRMI/Status.cpp                                        $(basedir)include/PTRMI/Status.h                                 ${MultiCompileDepends}
 
+%if $(TARGET_PLATFORM)=="Windows"    
 $(o)DataBuffer$(oext)                    : $(basedir)src/PTRMI/DataBuffer.cpp                                    $(basedir)include/PTRMI/DataBuffer.h                             ${MultiCompileDepends}
+%endif
 
 $(o)URL$(oext)                           : $(basedir)src/PTRMI/URL.cpp                                           $(basedir)include/PTRMI/URL.h                                    ${MultiCompileDepends}
 
 $(o)DataSourceMultiReadSet$(oext)        : $(basedir)src/ptds/DataSourceMultiReadSet.cpp                         $(basedir)include/ptds/DataSourceMultiReadSet.h                  ${MultiCompileDepends}
 
+%if $(TARGET_PLATFORM)=="Windows"    
 $(o)GUID$(oext)                          : $(basedir)src/PTRMI/GUID.cpp                                          $(basedir)include/PTRMI/GUID.h                                   ${MultiCompileDepends}
+%endif
 
 
 #

@@ -3,10 +3,8 @@
 #include <PTRMI/Status.h>
 
 #ifndef NO_DATA_SOURCE_SERVER
-#include <PTRMI/Manager.h>
+//#include <PTRMI/Manager.h>
 #endif
-
-#include <time.h>
 
 namespace PTRMI
 {
@@ -25,7 +23,7 @@ void Status::set(Error value, bool report)
 		{
 			wchar_t	message[512];
 
-			_swprintf(message, L"Status = %d", (int) get());
+			swprintf(message, sizeof(message) / sizeof(message[0]), L"Status = %d", (int) get());
 			log(L"Status Error : ", message);
 		}
 	}
@@ -39,11 +37,13 @@ void Status::log(const wchar_t *message1, const wchar_t *message2)
 
 	writeTime();
 
+#if defined (BENTLEY_WIN32)  // NEEDS_WORK_VORTEX_DGNDB
 	std::wofstream out;
 	out.open(logFile.c_str(), std::ios::out | std::ios::app);
 	out << "Status : " << message1 << " " << message2 << std::endl;
 	out.flush();
 	out.close();
+#endif
 }
 
 
@@ -54,11 +54,13 @@ void Status::log(const wchar_t *message1, unsigned int value)
 
 	writeTime();
 
+#if defined (BENTLEY_WIN32)  // NEEDS_WORK_VORTEX_DGNDB
 	std::wofstream out;
 	out.open(logFile.c_str(), std::ios::out | std::ios::app);
 	out << "Status : " << message1 << " " << value << std::endl;
 	out.flush();
 	out.close();
+#endif
 }
 
 #ifndef NO_DATA_SOURCE_SERVER
@@ -106,12 +108,14 @@ void Status::writeTime(void)
 {
 	double t = timer.getEllapsedTimeSeconds();
 
+#if defined (BENTLEY_WIN32)  // NEEDS_WORK_VORTEX_DGNDB
 	std::wofstream out;
 	out.open(logFile.c_str(), std::ios::out | std::ios::app);
 	out << "T = " << t;
 	out << L" : ";
 	out.flush();
 	out.close();
+#endif
 }
 
 

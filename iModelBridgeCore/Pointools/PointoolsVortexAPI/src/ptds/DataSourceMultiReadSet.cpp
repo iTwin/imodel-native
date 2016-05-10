@@ -1,7 +1,9 @@
 #include "PointoolsVortexAPIInternal.h"
 
 #include <ptds/DataSourceMultiReadSet.h>
+#ifdef NEEDS_WORK_VORTEX_DGNDB 
 #include <PTRMI/Manager.h>
+#endif
 #include <ptds/DataSourceServer.h>
 
 namespace ptds

@@ -65,6 +65,7 @@
     #define wcsncpy_s
     #define _snwprintf_s
     #define wcsnlen_s
+    #define wcstombs_s(a,b,c,d,e)
 
     #define lstrcmpW wcscmp
     #define wcsnlen(str,size) wcslen(str)
@@ -72,16 +73,7 @@
     #define strcpy_s(dest, destSize, src) BeStringUtilities::Strncpy(dest, destSize, src, BeStringUtilities::AsManyAsPossible);
 
     #define FILE_ATTRIBUTE_NORMAL 0x00000080  
-    #define PathStripPathW
-    #define PathRemoveExtensionW
-    #define PathRemoveFileSpecW
-    #define PathFindExtensionW
-    #define PathRemoveFileSpecW
-    #define PathAppendW
-    #define PathRenameExtensionW
-    #define PathRelativePathToW
     #define SetCurrentDirectoryW
-    #define _waccess(a,b) 1
     #define DeleteFileW(a)
 
     #define LOBYTE(w)           ((uint8_t)(((uintptr_t)(w)) & 0xff))    

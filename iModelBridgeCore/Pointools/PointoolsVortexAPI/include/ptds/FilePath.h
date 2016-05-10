@@ -216,12 +216,12 @@ public:
 
 		wchar_t p[PT_MAXPATH];
 		fullpath(p);
-		return (_waccess(p,0) == 0) ? true : false;
+		return BeFileName::DoesPathExist(p);
 	}
 
 	static bool checkExists(const std::wstring &p)
 	{
-		return (_waccess(p.c_str(),0) == 0) ? true : false;
+        return BeFileName::DoesPathExist(p.c_str());
 	}
 
 	static bool isSlash(wchar_t c)
@@ -366,26 +366,6 @@ public:
 	{ 
 		return PT_MAXPATH; 
 	}
-
-#ifdef NEEDS_WORK_VORTEX_DGNDB
-	static ptds::FilePath applicationDataFolder()
-	{
-		LPITEMIDLIST pidl;
-		if (SHGetSpecialFolderLocation(0, CSIDL_APPDATA, &pidl) == NOERROR)	
-		{
-			wchar_t p[PT_MAXPATH];
-			SHGetPathFromIDListW(pidl,p);
-			return ptds::FilePath(p);
-		}
-	}
-#endif
-
-#ifndef NO_DATA_SOURCE_SERVER
-
-	void read	(PTRMI::DataBuffer &buffer);
-	void write	(PTRMI::DataBuffer &buffer) const;
-
-#endif
 
 private:
 

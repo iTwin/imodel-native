@@ -1,19 +1,19 @@
 #pragma once 
 
-#include <string>
 
-#include <PTRMI/GUID.h>
-#include <PTRMI/Mutex.h>
-#include <PTRMI/URL.h>
+//#include <PTRMI/GUID.h>
+//#include <PTRMI/Mutex.h>
+//#include <PTRMI/URL.h>
 #include <PTRMI/Message.h>
 #include <PTRMI/DataBuffer.h>
-#include <PTRMI/Event.h>
+//#include <PTRMI/Event.h>
 
 namespace PTRMI
 {
 
 class PipeManager;
 class Stream;
+class Event;
 
 class Pipe
 {

@@ -200,7 +200,9 @@ struct ReadValAndAddNode
 	template <class T>
 	void operator()()
 	{		
-		ttl::var::apply_visitor(*this, Variant(T()));
+        T myT;
+        Variant v(myT);
+		ttl::var::apply_visitor(*this, v);
 	}
 	
 	template <class T>

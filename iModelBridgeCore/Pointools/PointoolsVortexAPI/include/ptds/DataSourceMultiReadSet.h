@@ -6,8 +6,6 @@
 #include <PTRMI/DataBuffer.h>
 #include <PTRMI/Status.h>
 
-#include <vector>
-
 using namespace PTRMI;
 
 #define	PTDS_DATA_SOURCE_MULTI_READ_SET_MAX_MULTI_READS 1024
