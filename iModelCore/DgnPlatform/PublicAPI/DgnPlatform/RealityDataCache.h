@@ -60,13 +60,13 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 // @bsiclass                                        Grigas.Petraitis            10/2014
 //=======================================================================================
 struct RealityDataOptions
-    {
+{
     bool m_requestFromSource = true;
     bool m_useStorage = true;
     bool m_forceSynchronous = false;
     bool m_removeAfterSelect = false;
     bool m_retryNotFoundRequests = false;
-    };
+};
 
 //=======================================================================================
 //! The virtual base class for all reality data implementations. 
@@ -75,7 +75,7 @@ struct RealityDataOptions
 // @bsiclass                                        Grigas.Petraitis            03/2015
 //=======================================================================================
 struct IRealityDataBase : IRefCounted
-    {
+{
     friend struct RealityDataCache;
     
     protected:
@@ -89,7 +89,7 @@ struct IRealityDataBase : IRefCounted
         // properties
         Utf8CP GetId() const {return _GetId();}
         bool IsExpired() const {return _IsExpired();}
-    };
+};
 
 //=======================================================================================
 //! The base class for all reality data implementations. The implementation must provide
@@ -98,7 +98,7 @@ struct IRealityDataBase : IRefCounted
 //=======================================================================================
 template<typename _Derived, typename _StorageType, typename _SourceType>
 struct IRealityData : _StorageType::Data, _SourceType::Data
-    {
+{
 #if !defined (DOCUMENTATION_GENERATOR)
     DEFINE_BENTLEY_REF_COUNTED_MEMBERS
 #endif
@@ -111,16 +111,16 @@ struct IRealityData : _StorageType::Data, _SourceType::Data
     IRealityData() {}
     virtual ~IRealityData() {}
     uint32_t GetRefCount() const {return m_refCount.load();}
-    };
+};
 
 //=======================================================================================
 // @bsiclass                                        Grigas.Petraitis            04/2015
 //=======================================================================================
 enum class SchedulingMethod
-    {
+{
     FIFO,   // queue
     LIFO    // stack
-    };
+};
 
 //=======================================================================================
 // @bsiclass                                        Grigas.Petraitis            10/2014

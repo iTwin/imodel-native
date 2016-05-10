@@ -75,6 +75,14 @@ bool WebMercatorModel::TileId::operator<(TileId const& rhs) const
     }
 
 BEGIN_UNNAMED_NAMESPACE
+enum 
+{
+    TILE_SIZE = 256,
+    MIN_ZOOM_LEVEL = 0, 
+    MAX_ZOOM_LEVEL = 22, 
+    MAX_TEXTURE_CACHE = 200,
+    MAX_DB_CACHE_SIZE = 1024*1024*1024, // 1 Gb
+};
 
 //=======================================================================================
 // @bsiclass                                        Grigas.Petraitis            03/2015
@@ -159,15 +167,6 @@ DEFINE_REF_COUNTED_PTR(TiledRaster)
 * Max size of a tile coordiante is 2^22
 *
 +---------------+---------------+---------------+---------------+---------------+------*/
-enum 
-{
-    TILE_SIZE = 256,
-    MIN_ZOOM_LEVEL = 0, 
-    MAX_ZOOM_LEVEL = 22, 
-    MAX_TEXTURE_CACHE = 200,
-    MAX_DB_CACHE_SIZE = 1024*1024*1024, // 1 Gb
-};
-
 struct Upoint2d
     {
     uint32_t  x;
@@ -809,6 +808,7 @@ ProgressiveTask::Completion WebMercatorDisplay::_DoProgressive(ProgressiveContex
         if (RealityDataCacheResult::Success == realityCache.Get<TiledRaster>(*realityData, url.c_str(), RealityDataOptions()))
             {
             BeAssert(realityData.IsValid());
+
             //  The image is available from the cache. Great! Draw it.
             if (!m_model._ShouldRejectTile(tileid, url, realityData->GetData()))
                 DrawAndCacheTile(context, tileid, *realityData);
