@@ -2,7 +2,7 @@
 |
 |     $Source: Client/ClientConfiguration.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -21,7 +21,8 @@ IHttpHandlerPtr customHandler
 m_serverUrl(serverUrl),
 m_repositoryId(repositoryId),
 m_schemaProvider(schemaProvider),
-m_httpClient(std::make_shared<HttpClient>(defaultHeadersProvider, customHandler))
+m_httpClient(std::make_shared<HttpClient>(defaultHeadersProvider, customHandler)),
+m_httpHandler(customHandler)
     {}
 
 /*--------------------------------------------------------------------------------------+
@@ -46,6 +47,14 @@ Utf8StringCR ClientConfiguration::GetRepositoryId() const
 HttpClientR ClientConfiguration::GetHttpClient() const
     {
     return *m_httpClient;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    04/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+IHttpHandlerPtr ClientConfiguration::GetHttpHandler() const
+    {
+    return m_httpHandler;
     }
 
 /*--------------------------------------------------------------------------------------+

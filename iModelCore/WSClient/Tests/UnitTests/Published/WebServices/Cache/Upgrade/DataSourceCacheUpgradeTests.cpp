@@ -14,6 +14,7 @@
 //    Zip should contain:
 //      Named folders with cache.ecdb file and "persistent", "temporary" folders inside.
 // 3. Add new x.zip delivery/extraction into TestAssetsDeliver.mke
+//    You might need to run "bb re WSClientUnitTests-Assets" to get those changes to build output
 // 4. Write Open_Vx... test case to test upgrade. 
 // 5. Use GetSeedPaths() to get paths to extracted files.
 //--------------------------------------------------------------------------------------+
@@ -668,6 +669,53 @@ TEST_F(DataSourceCacheUpgradeTests, Open_V9CachingNewPagedData_WorksFine)
     EXPECT_TRUE(cache.FindInstance({"TestSchema.TestClass", "C"}).IsValid());
     EXPECT_TRUE(cache.FindInstance({"TestSchema.TestClass", "D"}).IsValid());
     EXPECT_TRUE(cache.FindRelationship(*relClass, {"TestSchema.TestClass", "A"}, {"TestSchema.TestClass", "B"}).IsValid());
+    }
+
+//// Left for referance
+//TEST_F(DataSourceCacheUpgradeTests, SetupV10)
+//    {
+//    DataSourceCache cache;
+//    auto paths = GetNewSeedPaths(10, "data");
+//    ASSERT_EQ(SUCCESS, cache.Create(paths.first, paths.second));
+//    ASSERT_EQ(SUCCESS, cache.UpdateSchemas(std::vector<ECSchemaPtr> {GetTestSchema()}));
+//
+//    // Setup test data
+//    StubInstances instances;
+//    instances.Add({"TestSchema.TestClass", "A"}).AddRelated({"TestSchema.TestRelationshipClass", "AB"}, {"TestSchema.TestClass", "B"});
+//    instances.Add({"TestSchema.TestClass", "C"});
+//    CachedResponseKey key(cache.FindOrCreateRoot(nullptr), "ResponseA");
+//    ASSERT_EQ(SUCCESS, cache.CacheResponse(key, instances.ToWSObjectsResponse("ETagA")));
+//
+//    // Save
+//    cache.GetECDb().SaveChanges();
+//    cache.Close();
+//    }
+
+TEST_F(DataSourceCacheUpgradeTests, Open_V10AddingAdditionalInstanceToExistingResponse_WorksFine)
+    {
+    // Arrange
+    auto paths = GetSeedPaths(10, "data");
+
+    DataSourceCache cache;
+    ASSERT_EQ(SUCCESS, cache.Open(paths.first, paths.second));
+
+    // New instace
+    auto ecClass = cache.GetAdapter().GetECClass("TestSchema", "TestClass");
+    ASSERT_NE(nullptr, ecClass);
+    auto instance = cache.GetChangeManager().CreateObject(*ecClass, Json::objectValue);
+    ASSERT_TRUE(instance.IsValid());
+
+    // Check
+    CachedResponseKey responseKey(cache.FindOrCreateRoot(nullptr), "ResponseA");
+    ASSERT_EQ(SUCCESS, cache.GetChangeManager().AddCreatedInstanceToResponse(responseKey, instance));
+
+    ECInstanceKeyMultiMap instances;
+    ASSERT_EQ(CacheStatus::OK, cache.ReadResponseInstanceKeys(responseKey, instances));
+    EXPECT_EQ(4, instances.size());
+    EXPECT_CONTAINS(instances, ECDbHelper::ToPair(instance));
+    EXPECT_CONTAINS(instances, ECDbHelper::ToPair(cache.FindInstance({"TestSchema.TestClass", "A"})));
+    EXPECT_CONTAINS(instances, ECDbHelper::ToPair(cache.FindInstance({"TestSchema.TestClass", "B"})));
+    EXPECT_CONTAINS(instances, ECDbHelper::ToPair(cache.FindInstance({"TestSchema.TestClass", "C"})));
     }
 
 #endif

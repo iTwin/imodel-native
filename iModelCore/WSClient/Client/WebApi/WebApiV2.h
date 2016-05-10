@@ -2,13 +2,14 @@
 |
 |     $Source: Client/WebApi/WebApiV2.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #pragma once
 
 #include "WebApi.h"
+#include <WebServices/Azure/AzureBlobStorageClient.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
@@ -22,11 +23,12 @@ struct WebApiV2 : public WebApi
 
     private:
         WSInfo m_info;
+        IAzureBlobStorageClientPtr m_azureClient;
 
     private:
-        Utf8String GetWebApiUrl() const;
-        Utf8String GetRepositoryUrl(Utf8StringCR repositoryId) const;
-        Utf8String GetUrl(Utf8StringCR path, Utf8StringCR queryString = "") const;
+        Utf8String GetWebApiUrl(BeVersion webApiVersion = {}) const;
+        Utf8String GetRepositoryUrl(Utf8StringCR repositoryId, BeVersion webApiVersion = {}) const;
+        Utf8String GetUrl(Utf8StringCR path, Utf8StringCR queryString = "", BeVersion webApiVersion = {}) const;
 
         Utf8String CreateObjectSubPath(ObjectIdCR objectId) const;
         Utf8String CreateFileSubPath(ObjectIdCR objectId) const;
@@ -42,7 +44,16 @@ struct WebApiV2 : public WebApi
         WSCreateObjectResult ResolveCreateObjectResponse(HttpResponse& response) const;
         WSUpdateObjectResult ResolveUpdateObjectResponse(HttpResponse& response) const;
         WSObjectsResult ResolveObjectsResponse(HttpResponse& response, const ObjectId* objectId = nullptr) const;
-        WSFileResult ResolveFileResponse(HttpResponse& response, BeFileName filePath) const;
+
+        HttpRequest CreateFileDownloadRequest
+            (
+            Utf8StringCR url,
+            BeFileNameCR filePath,
+            Utf8StringCR eTag,
+            HttpRequest::ProgressCallbackCR onProgress,
+            ICancellationTokenPtr ct
+            ) const;
+        WSFileResult ResolveFileDownloadResponse(HttpResponse& response, BeFileName filePath) const;
 
     public:
         WebApiV2(std::shared_ptr<const ClientConfiguration> configuration, WSInfo info);

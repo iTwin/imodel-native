@@ -2,7 +2,7 @@
 |
 |     $Source: Client/ClientConfiguration.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -24,6 +24,7 @@ struct ClientConfiguration
         const Utf8String m_repositoryId;
         const IWSSchemaProviderPtr m_schemaProvider;
         std::shared_ptr<HttpClient> m_httpClient;
+        IHttpHandlerPtr m_httpHandler;
 
     public:
         ClientConfiguration
@@ -38,6 +39,7 @@ struct ClientConfiguration
         Utf8StringCR GetServerUrl() const;
         Utf8StringCR GetRepositoryId() const;
         HttpClientR GetHttpClient() const;
+        IHttpHandlerPtr GetHttpHandler() const;
         BeFileName GetDefaultSchemaPath(WSInfoCR info) const;
     };
 
