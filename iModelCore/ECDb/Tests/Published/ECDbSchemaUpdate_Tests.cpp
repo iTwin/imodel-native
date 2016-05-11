@@ -1935,7 +1935,7 @@ TEST_F(ECSchemaUpdateTests, ModifyProperties)
     ASSERT_FALSE(asserted);
     sp.Cancel();
 
-#ifdef TFS433459
+
     sp.Begin();
     SchemaItem modifiedECStructArrayPropertyType(
         //SchemaItem with modified ECStructArrayProperty type
@@ -1977,7 +1977,6 @@ TEST_F(ECSchemaUpdateTests, ModifyProperties)
     AssertSchemaImport(asserted, GetECDb(), modifiedPrimitiveArrayType);
     ASSERT_FALSE(asserted);
     sp.Cancel();
-#endif // TFS433459
 
     sp.Begin();
     SchemaItem modifiedPrimitiveType(
@@ -2021,7 +2020,7 @@ TEST_F(ECSchemaUpdateTests, ModifyProperties)
     ASSERT_FALSE(asserted);
     sp.Cancel();
 
-#ifdef TFS433463
+
     sp.Begin();
     SchemaItem modifiedECArrayPropertyMaxOccurs(
         //SchemaItem with Modified ECArrayProperty MaxOccurs
@@ -2042,7 +2041,7 @@ TEST_F(ECSchemaUpdateTests, ModifyProperties)
     AssertSchemaImport(asserted, GetECDb(), modifiedECArrayPropertyMaxOccurs);
     ASSERT_FALSE(asserted);
     sp.Cancel();
-#endif // TFS433463
+
 
     sp.Begin();
     SchemaItem modifiedExtendedType(

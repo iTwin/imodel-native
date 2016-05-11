@@ -511,20 +511,20 @@ BentleyStatus ECSchemaComparer::CompareECProperty(ECPropertyChange& change, ECPr
     if (aArray && bArray)
         {
 
-        if (aArray->GetMaxOccurs() != bArray->GetMaxOccurs())
-            change.GetArray().MaxOccurs().SetValue(aArray->GetMaxOccurs(), bArray->GetMaxOccurs());
+        if (aArray->GetStoredMaxOccurs() != bArray->GetStoredMaxOccurs())
+            change.GetArray().MaxOccurs().SetValue(aArray->GetStoredMaxOccurs(), bArray->GetStoredMaxOccurs());
 
         if (aArray->GetMinOccurs() != bArray->GetMinOccurs())
             change.GetArray().MinOccurs().SetValue(aArray->GetMinOccurs(), bArray->GetMinOccurs());
         }
     else if (aArray && !bArray)
         {
-        change.GetArray().MaxOccurs().SetValue(ValueId::Deleted, aArray->GetMaxOccurs());
-        change.GetArray().MinOccurs().SetValue(ValueId::Deleted, bArray->GetMinOccurs());
+        change.GetArray().MaxOccurs().SetValue(ValueId::Deleted, aArray->GetStoredMaxOccurs());
+        change.GetArray().MinOccurs().SetValue(ValueId::Deleted, aArray->GetMinOccurs());
         }
     else if (!aArray && bArray)
         {
-        change.GetArray().MaxOccurs().SetValue(ValueId::New, aArray->GetMaxOccurs());
+        change.GetArray().MaxOccurs().SetValue(ValueId::New, bArray->GetStoredMaxOccurs());
         change.GetArray().MinOccurs().SetValue(ValueId::New, bArray->GetMinOccurs());
         }
 
@@ -1300,7 +1300,7 @@ BentleyStatus ECSchemaComparer::AppendECProperty(ECPropertyChanges& changes, ECP
     if (v.GetIsArray())
         {
         auto arrayProp = v.GetAsArrayProperty();
-        propertyChange.GetArray().MaxOccurs().SetValue(appendType, arrayProp->GetMaxOccurs());
+        propertyChange.GetArray().MaxOccurs().SetValue(appendType, arrayProp->GetStoredMaxOccurs());
         propertyChange.GetArray().MinOccurs().SetValue(appendType, arrayProp->GetMinOccurs());
         }
 
