@@ -225,9 +225,9 @@ public:
     bool IsUndoActive() {return m_undoActive;}
     void ClearUndo();
     void ChangeDynamics(Render::GraphicListP list);
-    void ChangeRenderPlan();
+    DGNVIEW_EXPORT void ChangeRenderPlan();
     void ApplyViewState(Utf8StringCR val, int animationTime);
-    void Refresh();
+    DGNVIEW_EXPORT void Refresh();
     DGNVIEW_EXPORT void ApplyNext(int animationTime);
     DGNVIEW_EXPORT void ApplyPrevious(int animationTime);
     DGNPLATFORM_EXPORT static Render::Queue& RenderQueue();
