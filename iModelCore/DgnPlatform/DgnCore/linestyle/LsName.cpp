@@ -18,7 +18,6 @@ struct LineStyleRangeCollector : IGeometryProcessor
 private:
     LsComponentR        m_component;
     DRange3d            m_range;
-    ViewContextP        m_context;
     Transform           m_currentTransform;
     DPoint3d            m_points[2];
 
@@ -30,7 +29,8 @@ protected:
 explicit LineStyleRangeCollector(LsComponentR component, DPoint3d points[2]) 
 : m_component(component) 
     {
-    m_range.Init();
+    //  Make sure to include both end points in case the line style has pading at the beginning or end.
+    m_range = DRange3d::From(points[0], points[1]);
     m_currentTransform.InitIdentity();
     m_points[0] = points[0];
     m_points[1] = points[1];
@@ -411,12 +411,16 @@ static DRange2d getAdjustedRange(uint32_t& scaleFactor, DRange3dCR lsRange, doub
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
-Render::TexturePtr LsDefinition::GenerateTexture(ViewContextR viewContext, LineStyleSymbR lineStyleSymb)
+Render::TexturePtr LsDefinition::GenerateTexture(double& textureDrawWidth, ViewContextR viewContext, LineStyleSymbR lineStyleSymb)
     {
+    double unitDef = GetUnitsDefinition();
+    if (unitDef < mgds_fc_epsilon)
+        unitDef = 1.0;
+
+    textureDrawWidth = 0;
     DgnViewportP vp = viewContext.GetViewport();
     if (vp == nullptr)
         return nullptr;
-
 
     //  Assume the caller already knows this is something that must be converted but does not know it can be converted.
     BeAssert(m_lsComp->GetComponentType() != LsComponentType::RasterImage);
@@ -461,13 +465,18 @@ Render::TexturePtr LsDefinition::GenerateTexture(ViewContextR viewContext, LineS
     texture->_QueueTask();
     texture->ReleaseGraphic();
 
+    double yRange = range2d.high.y - range2d.low.y;
+    if (0.0 == yRange)
+        yRange = 1;
+
+    textureDrawWidth = yRange * unitDef;
     return texture.get();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-Texture* LsDefinition::GetTexture(ViewContextR viewContext, LineStyleSymbR lineStyleSymb, bool forceTexture, double scale) 
+Texture* LsDefinition::GetTexture(ViewContextR viewContext, LineStyleSymbR lineStyleSymb, bool forceTexture, double scaleWithoutUnits) 
     {
     if (!m_lsComp.IsValid())
         return nullptr;
@@ -510,12 +519,13 @@ Texture* LsDefinition::GetTexture(ViewContextR viewContext, LineStyleSymbR lineS
             {
             m_textureInitialized = true;
             //  Convert this type to texture on the fly if possible
-            m_texture = GenerateTexture(viewContext, lineStyleSymb);
+            m_texture = GenerateTexture(m_textureWidth, viewContext, lineStyleSymb);
+            m_hasTextureWidth = true;
             }
         }
 
     if (m_texture.IsValid() && m_lsComp.IsValid() && m_hasTextureWidth)
-        lineStyleSymb.SetWidth (m_textureWidth * scale);
+        lineStyleSymb.SetWidth (m_textureWidth * scaleWithoutUnits);
     
     return m_texture.get();
     }

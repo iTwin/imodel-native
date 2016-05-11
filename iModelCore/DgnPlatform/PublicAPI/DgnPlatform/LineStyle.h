@@ -1289,7 +1289,7 @@ private:
     void Init (CharCP nName, Json::Value& lsDefinition, DgnStyleId styleId);
     void SetHWStyle(LsComponentId componentID);
     int                 GetUnits                () const {return m_attributes & LSATTR_UNITMASK;}
-    Render::TexturePtr GenerateTexture(ViewContextR viewContext, Render::LineStyleSymbR lineStyleSymb);
+    Render::TexturePtr GenerateTexture(double& textureDrawWidth, ViewContextR viewContext, Render::LineStyleSymbR lineStyleSymb);
     LsDefinition (Utf8CP name, DgnDbR project, Json::Value& lsDefinition, DgnStyleId styleId);
 
 public:
@@ -1322,7 +1322,7 @@ public:
     DgnStyleId GetStyleId () { return m_styleId; }
 
     // Raster Images...
-    Render::Texture* GetTexture(ViewContextR viewContext, Render::LineStyleSymbR lineStyleSymb, bool forceTexture, double scale);
+    Render::Texture* GetTexture(ViewContextR viewContext, Render::LineStyleSymbR lineStyleSymb, bool forceTexture, double scaleWithoutUnitDef);
 
     //  There should no reason to provide set methods or to expose this outside of DgnPlatform.
     DGNPLATFORM_EXPORT double _GetMaxWidth () const;
