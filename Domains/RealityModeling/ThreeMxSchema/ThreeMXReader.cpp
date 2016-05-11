@@ -240,7 +240,7 @@ BentleyStatus Node::DoRead(MxStreamBuffer& in, SceneR scene)
                 return ERROR;
                 }
 
-            renderTextures[resourceName] = scene.m_renderSystem->_CreateTexture(rgba, imageInfo.m_hasAlpha);
+            renderTextures[resourceName] = scene.m_renderSystem->_CreateImageTexture(rgba, imageInfo.m_hasAlpha);
             }
         }
 
