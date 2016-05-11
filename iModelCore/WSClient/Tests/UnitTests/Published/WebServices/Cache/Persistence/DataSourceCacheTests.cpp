@@ -254,11 +254,11 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_DefaultUsedSchemasPassed_Success)
     DataSourceCache cache;
     cache.Create(BeFileName(":memory:"), CacheEnvironment());
 
-    auto path = GetTestsAssetsDir().AppendToPath(L"ECSchemas/WSClient/Cache/MetaSchema.02.00.ecschema.xml");
+    auto path = GetTestsAssetsDir().AppendToPath(L"ECSchemas/WSClient/Cache/WSCacheMetaSchema.03.00.ecschema.xml");
 
     ASSERT_EQ(SUCCESS, cache.UpdateSchemas(std::vector<BeFileName> {path}));
 
-    EXPECT_TRUE(nullptr != cache.GetAdapter().GetECSchema("MetaSchema"));
+    EXPECT_TRUE(nullptr != cache.GetAdapter().GetECSchema("WSCacheMetaSchema"));
     }
 
 TEST_F(DataSourceCacheTests, GetInstance_NotCached_ReturnsDataNotCachedAndNullInstance)
@@ -4943,6 +4943,95 @@ TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsInstanceThatWasLocallyD
     Json::Value instanceJson;
     EXPECT_EQ(CacheStatus::OK, cache->ReadInstance({"TestSchema.TestClass", "B"}, instanceJson));
     EXPECT_EQ("NewB", instanceJson["TestProperty"].asString());
+
+    EXPECT_EQ(IChangeManager::ChangeStatus::Deleted, cache->GetChangeManager().GetObjectChangeStatus(cache->FindInstance({"TestSchema.TestClass", "A"})));
+    }
+
+TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsRelatedInstanceThatWasLocallyDeleted_IgnoresDeletedInstance)
+    {
+    auto cache = GetTestCache();
+
+    auto key = StubCachedResponseKey(*cache);
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "A"}, {{"TestProperty", "OldA"}})
+        .AddRelated({"TestSchema.TestRelationshipClass", "AB"}, {"TestSchema.TestClass", "B"}, {{"TestProperty", "OldB"}});
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse()));
+
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().DeleteObject(cache->FindInstance({"TestSchema.TestClass", "B"})));
+
+    instances.Clear();
+    instances.Add({"TestSchema.TestClass", "A"}, {{"TestProperty", "NewA"}})
+        .AddRelated({"TestSchema.TestRelationshipClass", "AB"}, {"TestSchema.TestClass", "B"}, {{"TestProperty", "NewB"}});
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse()));
+
+    Json::Value instanceJson;
+    EXPECT_EQ(CacheStatus::OK, cache->ReadInstance({"TestSchema.TestClass", "A"}, instanceJson));
+    EXPECT_EQ("NewA", instanceJson["TestProperty"].asString());
+
+    EXPECT_EQ(IChangeManager::ChangeStatus::Deleted, cache->GetChangeManager().GetObjectChangeStatus(cache->FindInstance({"TestSchema.TestClass", "B"})));
+    }
+
+TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsMultipleRelationshipsToRelatedInstanceThatWasLocallyDeleted_IgnoresDeletedInstance)
+    {
+    auto cache = GetTestCache();
+
+    auto key = StubCachedResponseKey(*cache);
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "A"})
+        .AddRelated({"TestSchema.TestRelationshipClass", "AB"}, {"TestSchema.TestClass", "B"});
+    instances.Add({"TestSchema.TestClass", "C"})
+        .AddRelated({"TestSchema.TestRelationshipClass", "CB"}, {"TestSchema.TestClass", "B"});
+
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse()));
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().DeleteObject(cache->FindInstance({"TestSchema.TestClass", "B"})));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse()));
+
+    EXPECT_EQ(IChangeManager::ChangeStatus::Deleted, cache->GetChangeManager().GetObjectChangeStatus(cache->FindInstance({"TestSchema.TestClass", "B"})));
+    }
+
+TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsRelatedInstanceThatWasLocallyDeleted_CachedResponseContainsDeletedInstanceAlso)
+    {
+    auto cache = GetTestCache();
+
+    auto key = StubCachedResponseKey(*cache);
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "A"})
+        .AddRelated({"TestSchema.TestRelationshipClass", "AB"}, {"TestSchema.TestClass", "B"});
+
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse()));
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().DeleteObject(cache->FindInstance({"TestSchema.TestClass", "B"})));
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse()));
+
+    bset<ObjectId> objectIds;
+    EXPECT_EQ(CacheStatus::OK, cache->ReadResponseObjectIds(key, objectIds));
+    EXPECT_EQ(2, objectIds.size());
+    EXPECT_CONTAINS(objectIds, ObjectId("TestSchema.TestClass", "A"));
+    EXPECT_CONTAINS(objectIds, ObjectId("TestSchema.TestClass", "B"));
+
+    EXPECT_EQ(IChangeManager::ChangeStatus::Deleted, cache->GetChangeManager().GetObjectChangeStatus(cache->FindInstance({"TestSchema.TestClass", "B"})));
+    }
+
+TEST_F(DataSourceCacheTests, CacheResponse_ResultNoLongerContainsRelatedInstanceThatWasLocallyDeleted_RemovesDeletedInstanceFromCache)
+    {
+    auto cache = GetTestCache();
+
+    auto key = StubCachedResponseKey(*cache);
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "A"})
+        .AddRelated({"TestSchema.TestRelationshipClass", "AB"}, {"TestSchema.TestClass", "B"});
+
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse()));
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().DeleteObject(cache->FindInstance({"TestSchema.TestClass", "B"})));
+
+    instances.Clear();
+    instances.Add({"TestSchema.TestClass", "A"});
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse()));
+
+    bset<ObjectId> objectIds;
+    EXPECT_EQ(CacheStatus::OK, cache->ReadResponseObjectIds(key, objectIds));
+    EXPECT_EQ(1, objectIds.size());
+    EXPECT_CONTAINS(objectIds, ObjectId("TestSchema.TestClass", "A"));
+    EXPECT_FALSE(cache->FindInstance({"TestSchema.TestClass", "B"}).IsValid());
     }
 
 TEST_F(DataSourceCacheTests, CacheResponse_PartialResultsContainsInstanceThatWasLocallyDeleted_IgnoresInstance)
@@ -4962,6 +5051,8 @@ TEST_F(DataSourceCacheTests, CacheResponse_PartialResultsContainsInstanceThatWas
     Json::Value instanceJson;
     EXPECT_EQ(CacheStatus::DataNotCached, cache->ReadInstance({"TestSchema.TestClass", "Foo"}, instanceJson));
     EXPECT_EQ(Json::Value::null, instanceJson);
+
+    EXPECT_EQ(IChangeManager::ChangeStatus::Deleted, cache->GetChangeManager().GetObjectChangeStatus(cache->FindInstance({"TestSchema.TestClass", "Foo"})));
     }
 
 TEST_F(DataSourceCacheTests, CacheResponse_PartialResultsContainsInstanceThatWasCachedAsPartial_UpdatesInstance)
