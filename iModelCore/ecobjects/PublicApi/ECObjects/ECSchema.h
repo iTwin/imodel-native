@@ -440,7 +440,7 @@ struct PrimitiveECProperty;
 Base class for an object which provides the context for an IECTypeAdapter
 @bsiclass
 +===============+===============+===============+===============+===============+======*/
-struct IECTypeAdapterContext : RefCountedBase
+struct EXPORT_VTABLE_ATTRIBUTE IECTypeAdapterContext : RefCountedBase
     {
 /*__PUBLISH_SECTION_END__*/
 private:

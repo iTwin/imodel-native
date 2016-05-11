@@ -869,10 +869,14 @@ IECInstanceR sourceCustomAttribute
 
     schema.AddReferencedSchema(*customAttributeSchema);
 
+	ECObjectsStatus propertyConversionStatus;
     for (uint32_t i = 0; i < sourceCustomAttributeClass->GetPropertyCount(); i++)
         {
         ECPropertyP propP = sourceCustomAttributeClass->GetPropertyByIndex((uint32_t)i);
-        ConvertPropertyValue(propP->GetName(), sourceCustomAttribute, *targetAttributeInstance);
+
+		propertyConversionStatus = ConvertPropertyValue(propP->GetName(), sourceCustomAttribute, *targetAttributeInstance);
+		if (ECObjectsStatus::Success != propertyConversionStatus)
+			return propertyConversionStatus;
         }
 
     // Remove the old Custom Attribute and add the new one to the container
@@ -965,6 +969,12 @@ IECInstanceR targetCustomAttribute
     if ((status = sourceCustomAttribute.GetValue(sourceValue, propertyName.c_str())) != ECObjectsStatus::Success)
         return status;
 
+    // Checks if property Value is actually set. In case it isn't the conversion will be stopped
+    // as only properties that are defined on the source Custom Attribute will be set on the target
+    // Custom Attribute.
+    if (sourceValue.IsUninitialized() || sourceValue.IsNull())
+        return ECObjectsStatus::Success;
+
     ECValue targetValue;
     if ((status = targetCustomAttribute.GetValue(targetValue, propertyName.c_str())) != ECObjectsStatus::Success)
         return status;
@@ -984,6 +994,7 @@ IECInstanceR targetCustomAttribute
         }
 
     targetValue.From(sourceValue);
+    targetCustomAttribute.SetValue(propertyName.c_str(), targetValue);
     return ECObjectsStatus::Success;
     }
 
