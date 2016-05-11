@@ -978,6 +978,11 @@ void GraphicParams::Cook(GeometryParamsCR elParams, ViewContextR context)
             else
                 {
                 m_lineTexture = lsSymb.GetTexture(); // For 2d do we need to check that this wasn't a forced texture???
+                if (m_lineTexture.IsValid())
+                    {
+                    m_trueWidthStart = (lsSymb.HasOrgWidth() ? lsSymb.GetOriginWidth() : lsSymb.GetEndWidth());
+                    m_trueWidthEnd = (lsSymb.HasEndWidth() ? lsSymb.GetEndWidth() : lsSymb.GetOriginWidth());
+                    }
                 }
             }
         }

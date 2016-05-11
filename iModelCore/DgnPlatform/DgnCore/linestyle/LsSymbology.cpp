@@ -400,7 +400,7 @@ void LineStyleSymb::Init(DgnStyleId styleId, LineStyleParamsCR styleParams, DVec
     {
     Clear(); // In case of error make sure m_lStyle is nullptr so we callers know this LineStyleSymb isn't valid...
 
-    if (!styleId.IsValid())
+    if (!styleId.IsValid() || true)
         return;
 
     LsCacheP lsCache = LsCache::GetDgnDbCache(context.GetDgnDb());
@@ -470,11 +470,11 @@ void LineStyleSymb::Init(DgnStyleId styleId, LineStyleParamsCR styleParams, DVec
     //  When this is a query model we get "GetLineStyleScale->GetModelInfo->....LoadFromDb" with an invalid model ID.
     double scale = nameRec->IsPhysical () ? 1.0 : dgnModel->GetLineStyleScale ();
 #else
-    double scale = 1.0;
+    double scaleWithoutUnits = 1.0;
 #endif
 
     if (styleParams.modifiers & STYLEMOD_SCALE && 0.0 != styleParams.scale)
-        scale *= styleParams.scale;
+        scaleWithoutUnits *= styleParams.scale;
 
     // now adjust scale for units in linestyle definition
     double unitDef = nameRec->GetUnitsDefinition();
@@ -483,7 +483,7 @@ void LineStyleSymb::Init(DgnStyleId styleId, LineStyleParamsCR styleParams, DVec
 
     // NOTE: Removed nameRec->IsUnitsDevice() check. Problematic if not drawing in immediate mode...and a bad idea (draws outside element range, i.e. not pickable, etc.)
     //       Removed nameRec->IsUnitsMeters() check. No additional scaling is needed.
-    scale *= unitDef;
+    double scaleWithUnits = scaleWithoutUnits * unitDef;
 
     double startWidth = styleParams.startWidth;
     double endWidth = styleParams.endWidth;
@@ -491,8 +491,8 @@ void LineStyleSymb::Init(DgnStyleId styleId, LineStyleParamsCR styleParams, DVec
     // if the start/end are "true width", then the scale factor is not applied
     if (!(styleParams.modifiers & STYLEMOD_TRUE_WIDTH))  // TRUE_WIDTH means both don't scale, and use UORs.
         {
-        startWidth *= scale;
-        endWidth *= scale;
+        startWidth *= scaleWithoutUnits;
+        endWidth *= scaleWithoutUnits;
         }
 
     if (styleParams.modifiers & STYLEMOD_SWIDTH)
@@ -501,15 +501,11 @@ void LineStyleSymb::Init(DgnStyleId styleId, LineStyleParamsCR styleParams, DVec
     if (styleParams.modifiers & STYLEMOD_EWIDTH)
         SetEndWidth(endWidth);
 
-    SetScale(scale);
+    SetScale(scaleWithUnits);
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     // NEEDSWORK_LINESTYLES -- this probably is the right place to get a raster texture based on an image.
     // Texture is required for 3d...but it should still be an option for 2d...
-    // If this is a 3d view and we have a line style then we want to convert the line style
-    // to a texture line style. Need to figure out the correct place to do this.
-    m_texture = nameRec->GetTexture(context, *this, context.Is3dView(), scale); // Need to force texture for 3d?
-#endif
+    m_texture = nameRec->GetTexture(context, *this, context.Is3dView(), 1 /* scaleWithoutUnits */);
     }
 
 /*---------------------------------------------------------------------------------**//**

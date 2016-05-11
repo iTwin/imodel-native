@@ -485,7 +485,7 @@ public:
         BeTest::GetHost().GetOutputRoot(filename);
         filename.AppendToPath(L"BeSQLiteRealityDataStorageTests.db");
 
-        m_storage = new TestCacheDatabase(filename, 0);
+        m_storage = new TestCacheDatabase(filename, SchedulingMethod::LIFO, 1, 0);
         }
     virtual void TearDown() override
         {
@@ -635,7 +635,7 @@ protected:
 public:
     virtual void SetUp() override
         {
-        m_source = FileRealityDataSource::Create(1);
+        m_source = FileRealityDataSource::Create(1, SchedulingMethod::LIFO);
 
         BeFileName sourceFile;
         BeTest::GetHost().GetOutputRoot(sourceFile);
