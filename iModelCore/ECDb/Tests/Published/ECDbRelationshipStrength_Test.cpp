@@ -1157,11 +1157,6 @@ TEST_F(ECDbRelationshipsIntegrityTests, ForwardHoldingRelationshipsTest)
     ASSERT_FALSE(RelationshipExists("ts.FooHoldManyGoo", fooKeys[0], gooKeys[1]));
     ASSERT_FALSE(RelationshipExists("ts.FooHoldManyGoo", fooKeys[0], gooKeys[2]));
     ASSERT_FALSE(RelationshipExists("ts.ManyFooHoldManyGoo", fooKeys[0], gooKeys[0]));
-
-    ASSERT_EQ(SUCCESS, GetECDb().Purge(ECDb::PurgeMode::HoldingRelationships));
-    ASSERT_TRUE(InstanceExists("ts.Goo", gooKeys[0]));//gooKeys[0] is still held by fooKeys[1] and fooKeys[2]
-    ASSERT_TRUE(RelationshipExists("ts.FooHoldsGoo", fooKeys[1], gooKeys[1]));
-    ASSERT_TRUE(RelationshipExists("ts.ManyFooHoldManyGoo", fooKeys[1], gooKeys[1]));
     }
 
     //Delete fooKeys[1]
@@ -1178,12 +1173,6 @@ TEST_F(ECDbRelationshipsIntegrityTests, ForwardHoldingRelationshipsTest)
     ASSERT_TRUE(InstanceExists("ts.Goo", gooKeys[2]));
     ASSERT_FALSE(RelationshipExists("ts.FooHoldsGoo", fooKeys[1], gooKeys[1]));
     ASSERT_FALSE(RelationshipExists("ts.ManyFooHoldManyGoo", fooKeys[1], gooKeys[1]));
-
-    ASSERT_EQ(SUCCESS, GetECDb().Purge(ECDb::PurgeMode::HoldingRelationships));
-    ASSERT_TRUE(InstanceExists("ts.Goo", gooKeys[0]));//gooKeys[0], gooKeys[1] are still held by fooKeys[2]
-    ASSERT_TRUE(InstanceExists("ts.Goo", gooKeys[1]));
-    ASSERT_TRUE(RelationshipExists("ts.FooHoldsGoo", fooKeys[2], gooKeys[2]));
-    ASSERT_TRUE(RelationshipExists("ts.ManyFooHoldManyGoo", fooKeys[2], gooKeys[2]));
     }
 
     //Delete fooKeys[2]
@@ -1199,11 +1188,6 @@ TEST_F(ECDbRelationshipsIntegrityTests, ForwardHoldingRelationshipsTest)
     ASSERT_TRUE(InstanceExists("ts.Goo", gooKeys[2]));
     ASSERT_FALSE(RelationshipExists("ts.FooHoldsGoo", fooKeys[2], gooKeys[2]));
     ASSERT_FALSE(RelationshipExists("ts.ManyFooHoldManyGoo", fooKeys[2], gooKeys[2]));
-
-    ASSERT_EQ(SUCCESS, GetECDb().Purge(ECDb::PurgeMode::HoldingRelationships));
-    ASSERT_FALSE(InstanceExists("ts.Goo", gooKeys[0]));//gooKeys get deleted when last foo is deleted.
-    ASSERT_FALSE(InstanceExists("ts.Goo", gooKeys[1]));
-    ASSERT_FALSE(InstanceExists("ts.Goo", gooKeys[2]));
     }
     }
 
@@ -1308,11 +1292,6 @@ TEST_F(ECDbRelationshipsIntegrityTests, BackwardHoldingRelationshipsTest)
     ASSERT_FALSE(RelationshipExists("ts.FooHeldByManyGoo", fooKeys[0], gooKeys[1]));
     ASSERT_FALSE(RelationshipExists("ts.FooHeldByManyGoo", fooKeys[0], gooKeys[2]));
     ASSERT_FALSE(RelationshipExists("ts.ManyFooHeldByManyGoo", fooKeys[0], gooKeys[0]));
-
-    ASSERT_EQ(SUCCESS, GetECDb().Purge(ECDb::PurgeMode::HoldingRelationships));
-    ASSERT_TRUE(InstanceExists("ts.Foo", fooKeys[0]));//fooKeys[0] is still held by gooKeys[1] and gooKeys[2]
-    ASSERT_TRUE(RelationshipExists("ts.FooHeldByGoo", fooKeys[1], gooKeys[1]));
-    ASSERT_TRUE(RelationshipExists("ts.ManyFooHeldByManyGoo", fooKeys[1], gooKeys[1]));
     }
 
     //Delete gooKeys[1]
@@ -1329,12 +1308,6 @@ TEST_F(ECDbRelationshipsIntegrityTests, BackwardHoldingRelationshipsTest)
     ASSERT_TRUE(InstanceExists("ts.Foo", fooKeys[2]));
     ASSERT_FALSE(RelationshipExists("ts.FooHeldByGoo", fooKeys[1], gooKeys[1]));
     ASSERT_FALSE(RelationshipExists("ts.ManyFooHeldByManyGoo", fooKeys[1], gooKeys[1]));
-
-    ASSERT_EQ(SUCCESS, GetECDb().Purge(ECDb::PurgeMode::HoldingRelationships));
-    ASSERT_TRUE(InstanceExists("ts.Foo", fooKeys[0]));//fooKeys[0], fooKeys[1] are still held by gooKeys[2]
-    ASSERT_TRUE(InstanceExists("ts.Foo", fooKeys[1]));
-    ASSERT_TRUE(RelationshipExists("ts.FooHeldByGoo", fooKeys[2], gooKeys[2]));
-    ASSERT_TRUE(RelationshipExists("ts.ManyFooHeldByManyGoo", fooKeys[2], gooKeys[2]));
     }
 
     //Delete gooKeys[2]
@@ -1350,11 +1323,6 @@ TEST_F(ECDbRelationshipsIntegrityTests, BackwardHoldingRelationshipsTest)
     ASSERT_TRUE(InstanceExists("ts.Foo", fooKeys[2]));
     ASSERT_FALSE(RelationshipExists("ts.FooHeldByGoo", fooKeys[2], gooKeys[2]));
     ASSERT_FALSE(RelationshipExists("ts.ManyFooHeldByManyGoo", fooKeys[2], gooKeys[2]));
-
-    ASSERT_EQ(SUCCESS, GetECDb().Purge(ECDb::PurgeMode::HoldingRelationships));
-    ASSERT_FALSE(InstanceExists("ts.Foo", fooKeys[0]));//fooKeys get deleted when last gookeys is deleted.
-    ASSERT_FALSE(InstanceExists("ts.Foo", fooKeys[1]));
-    ASSERT_FALSE(InstanceExists("ts.Foo", fooKeys[2]));
     }
     }
 

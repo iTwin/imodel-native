@@ -203,13 +203,8 @@ std::vector<BeBriefcaseBasedIdSequence const*> ECDb::Impl::GetSequences() const
 BentleyStatus ECDb::Impl::Purge(ECDb::PurgeMode mode) const
     {
     if (Enum::Contains(mode, ECDb::PurgeMode::FileInfoOwnerships))
-        if (SUCCESS != PurgeFileInfos())
-            return ERROR;
-
-    if (Enum::Contains(mode, ECDb::PurgeMode::HoldingRelationships))
         {
-        RelationshipPurger purger;
-        if (SUCCESS != purger.Purge(m_ecdb, RelationshipPurger::Options::DeleteRelatedInstances))
+        if (SUCCESS != PurgeFileInfos())
             return ERROR;
         }
 
