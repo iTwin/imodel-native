@@ -21,10 +21,13 @@
 * \param[in] authenticatedToken used to initizalize HttpClients
 * \param[in] temporaryDirectory directory path used for temporary files
 * \param[in] assetsRootDirectory directory path which contains needed asset files (
-* \param[in] applicationName - human readable string with company and application name. Format: "Bentley-TestApplication"
-* \param[in] applicationVersion - major and minor numbers could be used to identify application in server side
-* \param[in] applicationGUID - unique application GUID used for registering WSG usage
-* \param[in] applicationProductId - application product ID (e.g. "1234") used for federated sign-in [optional otherwise]
+* \param[in] applicationName human readable string with company and application name. Format: "Bentley-TestApplication"
+* \param[in] applicationVersion major and minor numbers could be used to identify application in server side
+* \param[in] applicationGUID unique application GUID used for registering WSG usage
+* \param[in] applicationProductId application product ID (e.g. "1234") used for federated sign-in
+* \param[in] proxyUrl [optional] The base url for the Web Proxy
+* \param[in] proxyUsername [optional] The username used to configure the Web Proxy
+* \param[in] proxyPassword [optional] The password used to configure the Web Proxy
 * \return WSAPIHANDLE API object
 ****************************************************************************************/
 CWSCC_EXPORT CWSCCHANDLE ConnectWebServicesClientC_InitializeApiWithToken
@@ -35,7 +38,10 @@ WCharCP assetsRootDirectory,
 WCharCP applicationName,
 WCharCP applicationVersion,
 WCharCP applicationGUID,
-WCharCP applicationProductId
+WCharCP applicationProductId,
+WCharCP proxyUrl,
+WCharCP proxyUsername,
+WCharCP proxyPassword
 );
 
 /************************************************************************************//**
@@ -44,10 +50,13 @@ WCharCP applicationProductId
 * \param[in] password password used to login
 * \param[in] temporaryDirectory directory path used for temporary files
 * \param[in] assetsRootDirectory directory path which contains needed asset files (
-* \param[in] applicationName - human readable string with company and application name. Format: "Bentley-TestApplication"
-* \param[in] applicationVersion - major and minor numbers could be used to identify application in server side
-* \param[in] applicationGUID - unique application GUID used for registering WSG usage
-* \param[in] applicationProductId - application product ID (e.g. "1234") used for federated sign-in [optional otherwise]
+* \param[in] applicationName human readable string with company and application name. Format: "Bentley-TestApplication"
+* \param[in] applicationVersion major and minor numbers could be used to identify application in server side
+* \param[in] applicationGUID unique application GUID used for registering WSG usage
+* \param[in] applicationProductId application product ID (e.g. "1234") used for federated sign-in
+* \param[in] proxyUrl [optional] The base url for the Web Proxy
+* \param[in] proxyUsername [optional] The username used to configure the Web Proxy
+* \param[in] proxyPassword [optional] The password used to configure the Web Proxy
 * \return WSAPIHANDLE API object
 ****************************************************************************************/
 CWSCC_EXPORT CWSCCHANDLE ConnectWebServicesClientC_InitializeApiWithCredentials
@@ -59,7 +68,10 @@ WCharCP assetsRootDirectory,
 WCharCP applicationName,
 WCharCP applicationVersion,
 WCharCP applicationGUID,
-WCharCP applicationProductId
+WCharCP applicationProductId,
+WCharCP proxyUrl,
+WCharCP proxyUsername,
+WCharCP proxyPassword
 );
 
 /************************************************************************************//**
@@ -84,20 +96,20 @@ CWSCC_EXPORT CharCP ConnectWebServicesClientC_GetLastStatusMessage(CWSCCHANDLE a
 CWSCC_EXPORT CharCP ConnectWebServicesClientC_GetLastStatusDescription(CWSCCHANDLE apiHandle);
 
 /************************************************************************************//**
-* \brief Retrieve the previous status description
+* \brief Retrieve the instanceId of the last created object (if there is one, empty string otherwise)
 * \param[in] apiHandle Previously created API object
-* \param[in] proxyUrl The base url for the Web Proxy
+* \return last instance Id
 ****************************************************************************************/
-CWSCC_EXPORT CallStatus ConnectWebServicesClientC_ConfigureWebProxy(CWSCCHANDLE apiHandle, Utf8CP proxyUrl);
+CWSCC_EXPORT CharCP ConnectWebServicesClientC_GetLastCreatedObjectInstanceId(CWSCCHANDLE apiHandle);
 
 /************************************************************************************//**
 * \brief Retrieve the previous status description
 * \param[in] apiHandle Previously created API object
 * \param[in] proxyUrl The base url for the Web Proxy
-* \param[in] username The username used to configure the Web Proxy
-* \param[in] password The password used to configure the Web Proxy
+* \param[in] username  [optional] The username used to configure the Web Proxy
+* \param[in] password  [optional] The password used to configure the Web Proxy
 ****************************************************************************************/
-CWSCC_EXPORT CallStatus ConnectWebServicesClientC_ConfigureWebProxyWithCredentials
+CWSCC_EXPORT CallStatus ConnectWebServicesClientC_ConfigureWebProxy
 (
 CWSCCHANDLE apiHandle,
 Utf8CP proxyUrl,
