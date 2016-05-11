@@ -125,7 +125,8 @@ AuthenticationHandlerPtr authenticationHandler
         if (!result.IsSuccess())
             return DgnDbRepositoryConnectionResult::Error(result.GetError());
 
-        if (!repositoryConnection->GetRepositoryInfo().GetFileURL().empty())
+        //if (!repositoryConnection->GetRepositoryInfo().GetFileURL().empty())
+        if (Utf8String::npos != repositoryConnection->GetRepositoryInfo().GetServerURL().rfind ("cloudapp.net"))
             repositoryConnection->SetAzureClient(AzureBlobStorageClient::Create());
 
         return DgnDbRepositoryConnectionResult::Success(repositoryConnection);
