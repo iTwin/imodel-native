@@ -36,12 +36,12 @@ SMMemoryPoolItemBase::SMMemoryPoolItemBase(Byte* data, uint64_t size, uint64_t n
     m_data = data;
     m_dirty = false;
     }
-
+   
 SMMemoryPoolItemBase::~SMMemoryPoolItemBase()
     {
     if (m_data != 0)
         delete [] m_data;
-    }
+    }   
 
 uint64_t SMMemoryPoolItemBase::GetSize()
     {

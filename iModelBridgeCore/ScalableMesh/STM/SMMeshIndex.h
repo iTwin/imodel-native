@@ -21,6 +21,9 @@
 
 #include "SMMemoryPool.h"
 
+#include <ScalableMesh\IScalableMeshProgressiveQuery.h>
+
+
 extern bool s_useThreadsInStitching;
 extern bool s_useThreadsInMeshing;
 
@@ -50,12 +53,67 @@ template<class POINT, class EXTENT> class ISMPointIndexMesher;
 template<class POINT, class EXTENT> class ISMMeshIndexFilter;
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
+
 enum ClipAction
     {
     ACTION_ADD = 0,
     ACTION_DELETE,
     ACTION_MODIFY
     };
+
+struct SmCachedDisplayData 
+    {
+    private : 
+
+        SmCachedDisplayMesh*                m_cachedDisplayMesh;
+        SmCachedDisplayTexture*             m_cachedDisplayTexture;
+        IScalableMeshDisplayCacheManagerPtr m_displayCacheManagerPtr;
+        size_t                              m_memorySize;
+
+    public : 
+    
+        SmCachedDisplayData(SmCachedDisplayMesh*                 cachedDisplayMesh,
+                            SmCachedDisplayTexture*              cachedDisplayTexture,
+                            IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr, 
+                            size_t                               memorySize)
+            {
+            m_cachedDisplayMesh = m_cachedDisplayMesh;
+            m_cachedDisplayTexture = m_cachedDisplayTexture; 
+            m_displayCacheManagerPtr = displayCacheManagerPtr;
+            m_memorySize = memorySize;
+            }
+
+        ~SmCachedDisplayData()
+            {
+            if (m_cachedDisplayMesh != 0)
+                {
+                BentleyStatus status = m_displayCacheManagerPtr->_DestroyCachedMesh(m_cachedDisplayMesh); 
+                assert(status == SUCCESS);                    
+                }
+
+            if (m_cachedDisplayTexture != 0)
+                {
+                BentleyStatus status = m_displayCacheManagerPtr->_DestroyCachedTexture(m_cachedDisplayTexture); 
+                assert(status == SUCCESS);                    
+                }
+            }
+
+        size_t GetMemorySize() const
+            {
+            return m_memorySize;
+            }                
+
+        SmCachedDisplayMesh* GetCachedDisplayMesh() const
+            {
+            return m_cachedDisplayMesh; 
+            }
+
+        SmCachedDisplayTexture* GetCachedDisplayTexture() const
+            {
+            return m_cachedDisplayTexture;
+            }
+    };
+
 END_BENTLEY_SCALABLEMESH_NAMESPACE
 
 template<class POINT, class EXTENT> class SMMeshIndex;
@@ -344,6 +402,26 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
         return poolMemVectorItemPtr;
         }
+
+    virtual RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayData>> AddDisplayData(SmCachedDisplayData* smCachedDisplayData)
+        {                        
+        assert(smCachedDisplayData != 0);        
+
+        RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayData>> customGenericBlobItemPtr(new SMMemoryPoolGenericBlobItem<SmCachedDisplayData>(smCachedDisplayData, smCachedDisplayData->GetMemorySize(), GetBlockID().m_integerID, SMPoolDataTypeDesc::Display));        
+        SMMemoryPoolItemBasePtr memPoolItemPtr(customGenericBlobItemPtr.get());
+        m_displayDataPoolItemId = GetMemoryPool()->AddItem(memPoolItemPtr);
+        assert(m_displayDataPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);                                            
+        return customGenericBlobItemPtr;
+        }    
+    
+    virtual RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayData>> GetDisplayDataPtr()
+        {        
+        RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayData>> cachedDisplayDataItemPtr;
+                
+        GetMemoryPool()->GetItem<SmCachedDisplayData>(cachedDisplayDataItemPtr, m_displayDataPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::Display);
+            
+        return cachedDisplayDataItemPtr;
+        }    
         
     SMMemoryPoolPtr GetMemoryPool() const
         {
@@ -517,7 +595,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         mutable SMMemoryPoolItemId m_triIndicesPoolItemId;        
         mutable SMMemoryPoolItemId m_texturePoolItemId;                        
         mutable SMMemoryPoolItemId m_triUvIndicesPoolItemId;                
-        mutable SMMemoryPoolItemId m_uvCoordsPoolItemId;                
+        mutable SMMemoryPoolItemId m_uvCoordsPoolItemId;
+        mutable SMMemoryPoolItemId m_displayDataPoolItemId;        
         ISMPointIndexMesher<POINT, EXTENT>* m_mesher2_5d;
         ISMPointIndexMesher<POINT, EXTENT>* m_mesher3d;
         mutable bool m_isGraphLoaded;                
