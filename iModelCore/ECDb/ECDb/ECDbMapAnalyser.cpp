@@ -640,100 +640,6 @@ ECDbMapAnalyser::Relationship::EndPoint& ECDbMapAnalyser::Relationship::From() {
 //---------------------------------------------------------------------------------------
 ECDbMapAnalyser::Relationship::EndPoint& ECDbMapAnalyser::Relationship::To() { return m_to; }
 
-//=====================================ECDbMapAnalyser::Storage==========================
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                         09/2015
-//---------------------------------------------------------------------------------------
-ECDbMapAnalyser::Storage::Storage(DbTable const& table)
-    :m_table(table)
-    {}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                         09/2015
-//---------------------------------------------------------------------------------------
-DbTable const& ECDbMapAnalyser::Storage::GetTable() const { return m_table; }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                         09/2015
-//---------------------------------------------------------------------------------------
-bool ECDbMapAnalyser::Storage::IsVirtual() const { return m_table.GetPersistenceType() == PersistenceType::Virtual; }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                         09/2015
-//---------------------------------------------------------------------------------------
-std::set<ECDbMapAnalyser::Class*> & ECDbMapAnalyser::Storage::GetClassesR() { return m_classes; }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                         09/2015
-//---------------------------------------------------------------------------------------
-std::set<ECDbMapAnalyser::Relationship*> & ECDbMapAnalyser::Storage::GetRelationshipsR() { return m_relationships; }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                         09/2015
-//---------------------------------------------------------------------------------------
-std::map<ECDbMapAnalyser::Storage*, std::set<ECDbMapAnalyser::Relationship*>> & ECDbMapAnalyser::Storage::CascadesTo() { return m_cascades; } //OnDelete_tableA
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                         09/2015
-//---------------------------------------------------------------------------------------
-SqlTriggerBuilder::TriggerList& ECDbMapAnalyser::Storage::GetTriggerListR() { return m_triggers; }
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                         09/2015
-//---------------------------------------------------------------------------------------
-void ECDbMapAnalyser::Storage::HandleCascadeLinkTable(std::vector<ECDbMapAnalyser::Relationship*> const& relationships)
-    {
-    for (auto relationship : relationships)
-        {
-        if (!relationship->RequireCascade())
-            continue;
-
-        auto& builder = GetTriggerListR().Create(SqlTriggerBuilder::Type::Delete, SqlTriggerBuilder::Condition::After, false);
-        builder.GetNameBuilder()
-            .Append(GetTable().GetName().c_str())
-            .Append("_")
-            .Append(relationship->GetSqlName())
-            .Append("_Cascade");
-
-        builder.GetOnBuilder().Append(GetTable().GetName().c_str());
-        auto& body = builder.GetBodyBuilder();
-        body.Append("--3 ").Append(relationship->GetRelationshipClassMap().GetRelationshipClass().GetFullName()).AppendEol();
-        for (auto storage : relationship->To().GetStorages())
-            {
-            body
-                .Append("DELETE FROM ")
-                .AppendEscaped(storage->GetTable().GetName().c_str())
-                .Append(" WHERE ");
-
-            auto referencedEndPrimaryKey = storage->GetTable().GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
-            body.AppendFormatted("(OLD.[%s] = [%s])", relationship->To().GetInstanceId()->GetSingleColumn()->GetName().c_str(), referencedEndPrimaryKey->GetName().c_str());
-            if (relationship->IsHolding())
-                {
-                body.AppendFormatted(" AND (SELECT COUNT (*) FROM " ECDB_RELATIONSHIPHELDINSTANCESSTATS_VIEWNAME "  WHERE ECInstanceId = OLD.[%s]) = 0", relationship->To().GetInstanceId()->GetSingleColumn()->GetName().c_str());
-                }
-            body.Append(";").AppendEol();
-            }
-        }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                         09/2015
-//---------------------------------------------------------------------------------------
-void ECDbMapAnalyser::Storage::Generate()
-    {
-    std::vector<Relationship*> linkTables;
-    for (auto relationship : GetRelationshipsR())
-        {
-        if (relationship->IsLinkTable())
-            {
-            linkTables.push_back(relationship);
-            }
-        }
-
-    HandleCascadeLinkTable(linkTables);
-    }
-
 //=====================================ECDbMapAnalyser===================================
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                         09/2015
@@ -932,7 +838,7 @@ BentleyStatus ECDbMapAnalyser::AnalyseRelationshipClass(RelationshipClassMapCR e
 void ECDbMapAnalyser::GetClassIds(std::vector<ECN::ECClassId>& rootClassIds, std::vector<ECN::ECClassId>& rootRelationshipClassIds) const
     {
     Statement stmt;
-    if (BE_SQLITE_OK != stmt.Prepare(GetMap().GetECDb(), "SELECT C.Id, C.Type FROM ec_Class C "
+    if (BE_SQLITE_OK != stmt.Prepare(m_map.GetECDb(), "SELECT C.Id, C.Type FROM ec_Class C "
                                      "INNER JOIN ec_ClassMap M ON M.ClassId=C.Id "
                                      "LEFT JOIN ec_ClassHasBaseClasses B ON B.ClassId=C.Id "
                                      "WHERE B.BaseClassId IS NULL"))
@@ -968,7 +874,7 @@ std::set<ECN::ECClassId> const& ECDbMapAnalyser::GetDerivedClassIds(ECN::ECClass
 //---------------------------------------------------------------------------------------
 ClassMapCP ECDbMapAnalyser::GetClassMap(ECN::ECClassId classId) const
     {
-    return GetMap().GetClassMap(classId);
+    return m_map.GetClassMap(classId);
     }
 
 //---------------------------------------------------------------------------------------
@@ -978,7 +884,7 @@ void ECDbMapAnalyser::SetupDerivedClassLookup()
     {
     m_derivedClassLookup.clear();
     Statement stmt;
-    stmt.Prepare(GetMap().GetECDb(), "SELECT BaseClassId, ClassId FROM ec_ClassHasBaseClasses ORDER BY BaseClassId");
+    stmt.Prepare(m_map.GetECDb(), "SELECT BaseClassId, ClassId FROM ec_ClassHasBaseClasses ORDER BY BaseClassId");
     while (stmt.Step() == BE_SQLITE_ROW)
         m_derivedClassLookup[stmt.GetValueId<ECClassId>(0)].insert(stmt.GetValueId<ECClassId>(1));
     }
@@ -1373,272 +1279,10 @@ BentleyStatus ECDbMapAnalyser::Analyse(bool applyChanges)
         BuildPolymorphicUpdateTrigger(ecclass);
         }
 
-    ProcessEndTableRelationships();
-    ProcessLinkTableRelationships();
-    for (auto const& kvPair : m_storage)
-        {
-        kvPair.second->Generate();
-        }
-
     if (applyChanges)
         return ApplyChanges() == DbResult::BE_SQLITE_OK ? SUCCESS : ERROR;
 
     return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                         09/2015
-//---------------------------------------------------------------------------------------
-void ECDbMapAnalyser::HandleLinkTable(Storage* fromStorage, std::map<ECDbMapAnalyser::Storage*, std::set<ECDbMapAnalyser::Relationship*>> const& relationshipsByStorage, bool isFrom)
-    {
-    // table_delete_linkTable
-    for (auto& i : relationshipsByStorage)
-        {
-        auto relationshipStorage = i.first;
-        auto& relationships = i.second;
-        if (relationshipStorage->IsVirtual())
-            continue;
-
-        //Determine which source/target or both side to delete
-        std::set<DbColumn const*> forignKeys;
-        for (auto relationship : relationships)
-            {
-            if (relationship->GetRelationshipClassMap()._GetDataIntegrityEnforcementMethod() == RelationshipClassMap::ReferentialIntegrityMethod::Trigger)
-                {
-                if (isFrom)
-                    forignKeys.insert(relationship->From().GetInstanceId()->GetSingleColumn());
-                else
-                    forignKeys.insert(relationship->To().GetInstanceId()->GetSingleColumn());
-                }
-            }
-
-        if (forignKeys.empty())
-            continue;
-
-        auto& builder = fromStorage->GetTriggerListR().Create(SqlTriggerBuilder::Type::Delete, SqlTriggerBuilder::Condition::After, false);
-        builder.GetNameBuilder()
-            .Append(fromStorage->GetTable().GetName().c_str())
-            .Append("_")
-            .Append(relationshipStorage->GetTable().GetName().c_str())
-            .AppendIIf(isFrom, "_From", "_To")
-            .Append("_Delete");
-
-
-        builder.GetOnBuilder().Append(fromStorage->GetTable().GetName().c_str());
-        NativeSqlBuilder& body = builder.GetBodyBuilder();
-        for (auto relationship : relationships)
-            {
-            body.Append("--4 ").Append(relationship->GetRelationshipClassMap().GetRelationshipClass().GetFullName()).AppendEol();
-            }
-
-        body.Append("DELETE FROM ").AppendEscaped(relationshipStorage->GetTable().GetName().c_str()).Append(" WHERE ");
-
-        auto thisECInstanceIdColumn = fromStorage->GetTable().GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
-        for (auto forignKey : forignKeys)
-            {
-            body.AppendFormatted("(OLD.[%s] = [%s])", thisECInstanceIdColumn->GetName().c_str(), forignKey->GetName().c_str());
-            if (forignKey != *forignKeys.rbegin())
-                {
-                body.Append(" OR ");
-                }
-            }
-        body.Append(";").AppendEol();
-        }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                         09/2015
-//---------------------------------------------------------------------------------------
-void ECDbMapAnalyser::ProcessLinkTableRelationships()
-    {
-    //       lhs/from                rel table         rel
-    std::map<Storage*, std::map<Storage*, std::set<Relationship*>>> lhs2rel;
-    //       rhs/to                 rel table          rel
-    std::map<Storage*, std::map<Storage*, std::set<Relationship*>>> rhs2rel;
-
-    for (auto& i : m_relationships)
-        {
-        auto relationship = i.second.get();
-        if (!relationship->IsLinkTable())
-            continue;
-
-        for (auto from : relationship->From().GetStorages())
-            for (auto to : relationship->To().GetStorages())
-                {
-                lhs2rel[const_cast<Storage*>(from)][const_cast<Storage*>(&relationship->GetStorage())].insert(relationship);
-                rhs2rel[const_cast<Storage*>(to)][const_cast<Storage*>(&relationship->GetStorage())].insert(relationship);
-                }
-        }
-
-    for (auto& i : lhs2rel)
-        {
-        auto lhsStorage = i.first;
-        auto& relByStorage = i.second;
-        HandleLinkTable(lhsStorage, relByStorage, true);
-        }
-    for (auto& i : rhs2rel)
-        {
-        auto rhsStorage = i.first;
-        auto& relByStorage = i.second;
-        HandleLinkTable(rhsStorage, relByStorage, false);
-        }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                         09/2015
-//---------------------------------------------------------------------------------------
-void ECDbMapAnalyser::ProcessEndTableRelationships()
-    {
-    // DELETE FROM to WHERE to.Id = from.Key
-    // FROM            TO
-    //  [A] -> AHasB -> B
-    //  
-    //  DELETE B / UPDATE A.K = NULL
-    //  A -> AHasB -> [B]
-    //                
-    //  DELETE B 
-    // relationship UPDATE ....
-    for (auto& i : m_relationships)
-        {
-        auto relationship = i.second.get();
-        if (relationship->IsLinkTable())
-            continue;
-
-        if (relationship->IsMarkedForCascadeDelete())
-            continue;
-
-        if (relationship->GetRelationshipClassMap()._GetDataIntegrityEnforcementMethod() == RelationshipClassMap::ReferentialIntegrityMethod::ForeignKey)
-            continue;
-
-        bool isSelfRelationship = false;
-        auto const lhsStorages = relationship->From().GetStorages();
-        auto const rhsStorages = relationship->To().GetStorages();
-        if (lhsStorages.size() == 1 && rhsStorages.size() == 1)
-            isSelfRelationship = *lhsStorages.begin() == *rhsStorages.begin();
-
-        bool persistedInFrom = &relationship->From() == &relationship->ForeignEnd();
-        if (persistedInFrom)
-            {
-            for (auto toStorage : relationship->To().GetStorages())
-                {
-                auto& builder = const_cast<Storage*>(toStorage)->GetTriggerListR().Create(SqlTriggerBuilder::Type::Delete, SqlTriggerBuilder::Condition::After, false);
-                builder.GetNameBuilder()
-                    .Append(toStorage->GetTable().GetName().c_str())
-                    .Append("_")
-                    .Append(relationship->GetSqlName())
-                    .Append("_Delete");
-
-                builder.GetOnBuilder().Append(toStorage->GetTable().GetName().c_str());
-                auto& body = builder.GetBodyBuilder();
-                body.Append("--10").Append(relationship->GetRelationshipClassMap().GetRelationshipClass().GetFullName()).AppendEol();
-                for (auto fromStorage : relationship->From().GetStorages())
-                    {
-                    body.Append("UPDATE ")
-                        .AppendEscaped(fromStorage->GetTable().GetName().c_str())
-                        .Append(" SET ")
-                        .AppendEscaped(relationship->To().GetInstanceId()->GetSingleColumn()->GetName().c_str())
-                        .Append(" = NULL");
-
-                    if (!relationship->To().GetClassId()->IsVirtual() &&
-                        relationship->To().GetClassId()->IsMappedToClassMapTables() &&
-                        relationship->To().GetClassId()->GetSingleColumn()->GetKind() != DbColumn::Kind::ECClassId)
-                        {
-                        body.Append(", ")
-                            .AppendEscaped(relationship->To().GetClassId()->GetSingleColumn()->GetName().c_str())
-                            .Append(" = NULL");
-                        }
-
-                    body.Append(" WHERE OLD.")
-                        .AppendEscaped(relationship->To().GetResolvedInstanceId(*toStorage).GetColumn().GetName().c_str())
-                        .Append(" = ")
-                        .AppendEscaped(relationship->To().GetInstanceId()->GetSingleColumn()->GetName().c_str());
-                    body.Append(";").AppendEol();
-                    }
-                }
-            }
-        else if (isSelfRelationship)
-            {
-            for (auto foreignEnd : relationship->ForeignEnd().GetStorages())
-                {
-                auto& builder = const_cast<Storage*>(foreignEnd)->GetTriggerListR().Create(SqlTriggerBuilder::Type::Delete, SqlTriggerBuilder::Condition::After, false);
-                builder.GetNameBuilder()
-                    .Append(foreignEnd->GetTable().GetName().c_str())
-                    .Append("_")
-                    .Append(relationship->GetSqlName())
-                    .Append("_Self_Delete");
-
-                builder.GetOnBuilder().Append(foreignEnd->GetTable().GetName().c_str());
-                auto& body = builder.GetBodyBuilder();
-                body.Append("--11").Append(relationship->GetRelationshipClassMap().GetRelationshipClass().GetFullName()).AppendEol();
-                for (auto referencedEnd : relationship->ReferencedEnd().GetStorages())
-                    {
-                    body.Append("UPDATE ")
-                        .AppendEscaped(referencedEnd->GetTable().GetName().c_str())
-                        .Append(" SET ")
-                        .AppendEscaped(relationship->ReferencedEnd().GetInstanceId()->GetSingleColumn()->GetName().c_str())
-                        .Append("=NULL");
-
-                    if (!relationship->To().GetClassId()->IsVirtual()
-                        && relationship->To().GetClassId()->IsMappedToClassMapTables()
-                        && relationship->To().GetClassId()->GetSingleColumn()->GetKind() != DbColumn::Kind::ECClassId)
-                        {
-                        body.Append(", ")
-                            .AppendEscaped(relationship->ReferencedEnd().GetClassId()->GetSingleColumn()->GetName().c_str())
-                            .Append("=NULL");
-                        }
-
-                    body.Append(" WHERE OLD.")
-                        .AppendEscaped(relationship->ForeignEnd().GetInstanceId()->GetSingleColumn()->GetName().c_str())
-                        .Append("=")
-                        .AppendEscaped(relationship->ReferencedEnd().GetInstanceId()->GetSingleColumn()->GetName().c_str());
-                    body.Append(";").AppendEol();
-                    }
-                }
-            }
-        if (relationship->RequireCascade())
-            {
-            for (auto fromStorage : relationship->From().GetStorages())
-                {
-                auto& builder = const_cast<Storage*>(fromStorage)->GetTriggerListR()
-                    .Create(SqlTriggerBuilder::Type::Delete, SqlTriggerBuilder::Condition::After, false);
-
-                builder.GetNameBuilder()
-                    .Append(fromStorage->GetTable().GetName().c_str())
-                    .Append("_")
-                    .Append(relationship->GetSqlName())
-                    .Append("_CascadeDelete");
-
-                builder.GetOnBuilder().Append(fromStorage->GetTable().GetName().c_str());
-                auto& body = builder.GetBodyBuilder();
-                for (auto toStorage : relationship->To().GetStorages())
-                    {
-                    body.Append("DELETE FROM ").AppendEscaped(toStorage->GetTable().GetName().c_str()).Append(" WHERE ");
-
-                    auto toKeyColumn = relationship->To().GetInstanceId()->GetSingleColumn();
-                    auto fromKeyColumn = relationship->From().GetInstanceId()->GetSingleColumn();
-                    if (toStorage != fromStorage)
-                        {
-                        //Self join should not be processed here.
-                        //This is issue with EndTable our Source/Target key is always in same table. Following should fix that
-                        if (persistedInFrom)
-                            fromKeyColumn = toStorage->GetTable().GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
-                        else
-                            toKeyColumn = fromStorage->GetTable().GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
-                        }
-                    body.AppendFormatted("([%s]=OLD.[%s])",
-                                         fromKeyColumn->GetName().c_str(),
-                                         toKeyColumn->GetName().c_str());
-
-                    if (relationship->IsHolding())
-                        {
-                        body.AppendFormatted(" AND (SELECT COUNT(*) FROM " ECDB_RELATIONSHIPHELDINSTANCESSTATS_VIEWNAME "  WHERE ECInstanceId=OLD.[%s]) = 0", toKeyColumn->GetName().c_str());
-                        }
-                    body.AppendLine(";");
-
-                    }
-                }
-            }
-        }
     }
 
 //==============================================ECClassViewGenerator==============================================

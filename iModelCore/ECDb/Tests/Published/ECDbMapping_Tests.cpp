@@ -8101,11 +8101,6 @@ TEST_F(ECDbHoldingRelationshipStrengthTestFixture, OneToOneForward)
     ASSERT_TRUE(InstanceExists("ts.GeometryPart", partKey1));
     ASSERT_TRUE(InstanceExists("ts.GeometryPart", partKey2));
     ASSERT_FALSE(RelationshipExists("ts.GeometryHoldsParts", geomKey1, partKey1)) << "ECSQL DELETE deletes affected relationships";
-
-    ASSERT_EQ(SUCCESS, GetECDb().Purge(ECDb::PurgeMode::HoldingRelationships));
-    ASSERT_TRUE(InstanceExists("ts.Geometry", geomKey2));
-    ASSERT_FALSE(InstanceExists("ts.GeometryPart", partKey1));
-    ASSERT_FALSE(InstanceExists("ts.GeometryPart", partKey2)) << "Part 2 has never been held by anybody, so it should be purged";
     }
 
 //---------------------------------------------------------------------------------------
@@ -8186,11 +8181,6 @@ TEST_F(ECDbHoldingRelationshipStrengthTestFixture, OneToOneBackward)
     ASSERT_TRUE(InstanceExists("ts.GeometryPart", partKey1));
     ASSERT_TRUE(InstanceExists("ts.GeometryPart", partKey2));
     ASSERT_FALSE(RelationshipExists("ts.PartHeldByGeometry", partKey1, geomKey1)) << "ECSQL DELETE deletes affected relationships";
-
-    ASSERT_EQ(SUCCESS, GetECDb().Purge(ECDb::PurgeMode::HoldingRelationships));
-    ASSERT_TRUE(InstanceExists("ts.Geometry", geomKey2));
-    ASSERT_FALSE(InstanceExists("ts.GeometryPart", partKey1));
-    ASSERT_FALSE(InstanceExists("ts.GeometryPart", partKey2)) << "Part 2 has never been held by anybody, so it should be purged";
     }
 
 //---------------------------------------------------------------------------------------
@@ -8280,12 +8270,6 @@ TEST_F(ECDbHoldingRelationshipStrengthTestFixture, OneToManyForward)
     ASSERT_FALSE(RelationshipExists("ts.GeometryHoldsParts", geomKey1, partKey1)) << "ECSQL DELETE deletes affected relationships";
     ASSERT_TRUE(RelationshipExists("ts.GeometryHoldsParts", geomKey2, partKey1));
 
-    ASSERT_EQ(SUCCESS, GetECDb().Purge(ECDb::PurgeMode::HoldingRelationships));
-    ASSERT_TRUE(InstanceExists("ts.Geometry", geomKey2));
-    ASSERT_TRUE(InstanceExists("ts.GeometryPart", partKey1)) << "Part 1 is still held by Geom2";
-    ASSERT_TRUE(RelationshipExists("ts.GeometryHoldsParts", geomKey2, partKey1)) << "Part 1 is still held by Geom2";
-    ASSERT_FALSE(InstanceExists("ts.GeometryPart", partKey2)) << "Part 2 has never been held by anybody, so it should be purged";
-
     //delete Geom2
     ASSERT_EQ(ECSqlStatus::Success, delGeomStmt.BindId(1, geomKey2.GetECInstanceId()));
     ASSERT_EQ(BE_SQLITE_DONE, delGeomStmt.Step());
@@ -8293,10 +8277,6 @@ TEST_F(ECDbHoldingRelationshipStrengthTestFixture, OneToManyForward)
     ASSERT_FALSE(InstanceExists("ts.Geometry", geomKey2));
     ASSERT_TRUE(InstanceExists("ts.GeometryPart", partKey1)) << "Part 1 is not held anymore, but will only be deleted by Purge";
     ASSERT_FALSE(RelationshipExists("ts.GeometryHoldsParts", geomKey2, partKey1));
-
-    ASSERT_EQ(SUCCESS, GetECDb().Purge(ECDb::PurgeMode::HoldingRelationships));
-    ASSERT_FALSE(InstanceExists("ts.GeometryPart", partKey1));
-
     }
 
 //---------------------------------------------------------------------------------------
@@ -8386,12 +8366,6 @@ TEST_F(ECDbHoldingRelationshipStrengthTestFixture, OneToManyBackward)
     ASSERT_FALSE(RelationshipExists("ts.PartIsHeldByGeometry", partKey1, geomKey1)) << "ECSQL DELETE deletes affected relationships";
     ASSERT_TRUE(RelationshipExists("ts.PartIsHeldByGeometry", partKey1, geomKey2));
 
-    ASSERT_EQ(SUCCESS, GetECDb().Purge(ECDb::PurgeMode::HoldingRelationships));
-    ASSERT_TRUE(InstanceExists("ts.Geometry", geomKey2));
-    ASSERT_TRUE(InstanceExists("ts.GeometryPart", partKey1)) << "Part 1 is still held by Geom2";
-    ASSERT_TRUE(RelationshipExists("ts.PartIsHeldByGeometry", partKey1, geomKey2)) << "Part 1 is still held by Geom2";
-    ASSERT_FALSE(InstanceExists("ts.GeometryPart", partKey2)) << "Part 2 has never been held by anybody, so it should be purged";
-
     //delete Geom2
     ASSERT_EQ(ECSqlStatus::Success, delGeomStmt.BindId(1, geomKey2.GetECInstanceId()));
     ASSERT_EQ(BE_SQLITE_DONE, delGeomStmt.Step());
@@ -8399,9 +8373,200 @@ TEST_F(ECDbHoldingRelationshipStrengthTestFixture, OneToManyBackward)
     ASSERT_FALSE(InstanceExists("ts.Geometry", geomKey2));
     ASSERT_TRUE(InstanceExists("ts.GeometryPart", partKey1)) << "Part 1 is not held anymore, but will only be deleted by Purge";
     ASSERT_FALSE(RelationshipExists("ts.PartIsHeldByGeometry", partKey1, geomKey2));
+    }
 
-    ASSERT_EQ(SUCCESS, GetECDb().Purge(ECDb::PurgeMode::HoldingRelationships));
-    ASSERT_FALSE(InstanceExists("ts.GeometryPart", partKey1));
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  02/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbHoldingRelationshipStrengthTestFixture, ManyToManyForward)
+    {
+    SetupECDb("ecdbrelationshipmappingrules_manytomanyandholding.ecdb",
+              SchemaItem("N:N and holding",
+                         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                         "  <ECEntityClass typeName='Geometry' >"
+                         "    <ECProperty propertyName='Type' typeName='string' />"
+                         "  </ECEntityClass>"
+                         "  <ECEntityClass typeName='GeometryPart' >"
+                         "    <ECProperty propertyName='Stream' typeName='binary' />"
+                         "  </ECEntityClass>"
+                         "  <ECRelationshipClass typeName='GeometryHasParts' strength='holding' strengthDirection='Forward'>"
+                         "     <Source cardinality='(0,N)' polymorphic='True'>"
+                         "         <Class class='Geometry' />"
+                         "     </Source>"
+                         "    <Target cardinality='(0,N)' polymorphic='True'>"
+                         "        <Class class='GeometryPart' />"
+                         "     </Target>"
+                         "  </ECRelationshipClass>"
+                         "</ECSchema>"));
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+
+    ECInstanceKey geomKey1;
+    ECInstanceKey geomKey2;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO ts.Geometry(Type) VALUES(?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Polygon", IECSqlBinder::MakeCopy::Yes));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(geomKey1));
+    stmt.Reset();
+    stmt.ClearBindings();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Solid", IECSqlBinder::MakeCopy::Yes));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(geomKey2));
+    }
+
+    ECInstanceKey partKey1;
+    ECInstanceKey partKey2;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO ts.GeometryPart(Stream) VALUES(randomblob(4))"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(partKey1));
+    stmt.Reset();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(partKey2));
+    }
+
+    {
+    //Create relationships:
+         //Geom-Part
+         //1-1
+         //1-2
+         //2-2
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO ts.GeometryHasParts(SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId) VALUES(?,?,?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, geomKey1.GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, geomKey1.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, partKey1.GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, partKey1.GetECClassId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, geomKey1.GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, geomKey1.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, partKey2.GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, partKey2.GetECClassId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, geomKey2.GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, geomKey2.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, partKey2.GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, partKey2.GetECClassId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+    GetECDb().SaveChanges();
+
+    //Delete Geom1
+    ECSqlStatement delGeomStmt;
+    ASSERT_EQ(ECSqlStatus::Success, delGeomStmt.Prepare(GetECDb(), "DELETE FROM ts.Geometry WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, delGeomStmt.BindId(1, geomKey1.GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_DONE, delGeomStmt.Step());
+
+    ASSERT_FALSE(InstanceExists("ts.Geometry", geomKey1));
+    ASSERT_TRUE(InstanceExists("ts.Geometry", geomKey2));
+    ASSERT_TRUE(InstanceExists("ts.GeometryPart", partKey1));
+    ASSERT_TRUE(InstanceExists("ts.GeometryPart", partKey2));
+    ASSERT_FALSE(RelationshipExists("ts.GeometryHasParts", geomKey1, partKey1));
+    ASSERT_FALSE(RelationshipExists("ts.GeometryHasParts", geomKey1, partKey2));
+    ASSERT_TRUE(RelationshipExists("ts.GeometryHasParts", geomKey2, partKey2));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  02/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbHoldingRelationshipStrengthTestFixture, ManyToManyBackward)
+    {
+    SetupECDb("ecdbrelationshipmappingrules_manytomanyandholding.ecdb",
+              SchemaItem("N:N and holding",
+                         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                         "  <ECEntityClass typeName='Geometry' >"
+                         "    <ECProperty propertyName='Type' typeName='string' />"
+                         "  </ECEntityClass>"
+                         "  <ECEntityClass typeName='GeometryPart' >"
+                         "    <ECProperty propertyName='Stream' typeName='binary' />"
+                         "  </ECEntityClass>"
+                         "  <ECRelationshipClass typeName='PartsHeldByGeometry' strength='holding' strengthDirection='Backward'>"
+                         "    <Source cardinality='(0,N)' polymorphic='True'>"
+                         "        <Class class='GeometryPart' />"
+                         "     </Source>"
+                         "     <Target cardinality='(0,N)' polymorphic='True'>"
+                         "         <Class class='Geometry' />"
+                         "     </Target>"
+                         "  </ECRelationshipClass>"
+                         "</ECSchema>"));
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+
+    ECInstanceKey geomKey1;
+    ECInstanceKey geomKey2;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO ts.Geometry(Type) VALUES(?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Polygon", IECSqlBinder::MakeCopy::Yes));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(geomKey1));
+    stmt.Reset();
+    stmt.ClearBindings();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Solid", IECSqlBinder::MakeCopy::Yes));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(geomKey2));
+    }
+
+    ECInstanceKey partKey1;
+    ECInstanceKey partKey2;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO ts.GeometryPart(Stream) VALUES(randomblob(4))"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(partKey1));
+    stmt.Reset();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(partKey2));
+    }
+
+    {
+    //Create relationships:
+    //Geom-Part
+        //1-1
+        //1-2
+        //2-2
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO ts.PartsHeldByGeometry(SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId) VALUES(?,?,?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, partKey1.GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, partKey1.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, geomKey1.GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, geomKey1.GetECClassId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, partKey2.GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, partKey2.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, geomKey1.GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, geomKey1.GetECClassId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, partKey2.GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, partKey2.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, geomKey2.GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, geomKey2.GetECClassId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+    GetECDb().SaveChanges();
+
+    //Delete Geom1
+    ECSqlStatement delGeomStmt;
+    ASSERT_EQ(ECSqlStatus::Success, delGeomStmt.Prepare(GetECDb(), "DELETE FROM ts.Geometry WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, delGeomStmt.BindId(1, geomKey1.GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_DONE, delGeomStmt.Step());
+
+    ASSERT_FALSE(InstanceExists("ts.Geometry", geomKey1));
+    ASSERT_TRUE(InstanceExists("ts.Geometry", geomKey2));
+    ASSERT_TRUE(InstanceExists("ts.GeometryPart", partKey1));
+    ASSERT_TRUE(InstanceExists("ts.GeometryPart", partKey2));
+    ASSERT_FALSE(RelationshipExists("ts.PartsHeldByGeometry", partKey1, geomKey1));
+    ASSERT_FALSE(RelationshipExists("ts.PartsHeldByGeometry", partKey2, geomKey1));
+    ASSERT_TRUE(RelationshipExists("ts.PartsHeldByGeometry", partKey2, geomKey2));
     }
 
 //=======================================================================================    

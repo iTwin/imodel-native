@@ -490,16 +490,9 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    stat = ecdb.ExecuteSql("CREATE UNIQUE INDEX uix_ec_IndexColumn_IndexId_ColumnId_Ordinal ON ec_IndexColumn(IndexId,ColumnId,Ordinal);"
+    return ecdb.ExecuteSql("CREATE UNIQUE INDEX uix_ec_IndexColumn_IndexId_ColumnId_Ordinal ON ec_IndexColumn(IndexId,ColumnId,Ordinal);"
                            "CREATE INDEX ix_ec_IndexColumn_IndexId_Ordinal ON ec_IndexColumn(IndexId,Ordinal);"
                            "CREATE INDEX ix_ec_IndexColumn_ColumnId ON ec_IndexColumn(ColumnId)");
-
-    if (BE_SQLITE_OK != stat)
-        return stat;
-
-    //create the view with the profile so that it can be used to map an ECClass against it. The view definition will change after
-    //each schema import, but the select clause will stay the same.
-    return ecdb.ExecuteSql("CREATE VIEW " ECDB_RELATIONSHIPHELDINSTANCESSTATS_VIEWNAME " AS SELECT NULL " ECDB_RELATIONSHIPHELDINSTANCESSTATS_ID_COLNAME " LIMIT 0");
     }
 
 

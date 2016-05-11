@@ -10,9 +10,6 @@
 #include "ECDbInternalTypes.h"
 #include "ECDbProfileUpgrader.h"
 
-#define ECDB_RELATIONSHIPHELDINSTANCESSTATS_VIEWNAME "ec_RelationshipHeldInstancesStats"
-#define ECDB_RELATIONSHIPHELDINSTANCESSTATS_ID_COLNAME "Id"
-
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
 // @bsiclass                                                 Krischan.Eberle      12/2012

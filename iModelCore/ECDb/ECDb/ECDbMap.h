@@ -106,8 +106,6 @@ struct ECDbMap :NonCopyableClass
 
         MappingStatus AddClassMap(ClassMapPtr&) const;
 
-        DbResult UpdateHoldingView();
-
         ClassMapsByTable GetClassMapsByTable() const;
         BentleyStatus GetClassMapsFromRelationshipEnd(std::set<ClassMap const*>&, ECN::ECClassCR, bool recursive) const;
         std::vector<ECClassCP> GetBaseClassesNotAlreadyMapped(ECClassCR ecclass) const;
@@ -223,33 +221,4 @@ struct StorageDescription : NonCopyableClass
         static std::unique_ptr<StorageDescription> Create(ClassMap const&, ECDbMap::LightweightCache const& lwmc);
     };
 
-
-//=======================================================================================
-//!Purge Holding type relationship end.
-// @bsiclass                                               Affan.Khan           01/2016
-//+===============+===============+===============+===============+===============+======
-struct RelationshipPurger
-    {
-    enum class Options
-        {
-        SchemaChanged = 1,
-        DeleteRelatedInstances = 2,
-        Default = SchemaChanged | DeleteRelatedInstances
-        };
-
-    private:
-        typedef bmap<Utf8CP, Utf8String, CompareIUtf8Ascii> SqlPerTableMap;
-
-        std::vector<std::unique_ptr<Statement>> m_stmts;
-        BentleyStatus Initialize(ECDbCR);
-        static Utf8String BuildSql(Utf8CP tableName, Utf8CP pkColumnName);
-        std::vector<RelationshipClassMapCP> GetHoldingRelationships(ECDbCR ecdb) const;
-        BentleyStatus UpdateView(ECDbCR);
-
-    public:
-        RelationshipPurger() {}
-        ~RelationshipPurger() { Finalize(); }
-        BentleyStatus Purge(ECDbCR, Options option = Options::Default);
-        void Finalize();
-    };
 END_BENTLEY_SQLITE_EC_NAMESPACE

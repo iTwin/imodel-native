@@ -90,7 +90,8 @@ struct ECDbSchemaManager : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCopya
 
         //! Imports all @ref ECN::ECSchema "ECSchemas" contained by the @p schemaCache and all
         //! their referenced @ref ECN::ECSchema "ECSchemas" into the @ref ECDbFile "ECDb file".
-        //! After importing the schemas, any pointers to the existing schemas should be discarded and
+        //! ECSchemas that already exist in the file are updated (see @ref ECDbECSchemaUpdateSupportedFeatures).
+        //! @note After importing the schemas, any pointers to the existing schemas should be discarded and
         //! they should be obtained as needed through the ECDbECSchemaManager API.
         //!
         //! @param[in] schemaCache Typically obtained from ECSchemaReadContext.GetCache() that contains the imported ECSchema and all of its referenced ECSchemas.
@@ -99,6 +100,7 @@ struct ECDbSchemaManager : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCopya
         //!                     All schemas should be read from a single ECN::ECSchemaReadContext. 
         //!                     If any duplicates are found in @p schemaCache an error will returned.
         //! @return BentleyStatus::SUCCESS or BentleyStatus::ERROR (error details are being logged)
+        //! @see @ref ECDbECSchemaImportAndUpdate
         ECDB_EXPORT BentleyStatus ImportECSchemas(ECN::ECSchemaCacheR schemaCache) const;
 
         //! Checks whether the ECDb file contains the ECSchema with the specified name or not.
