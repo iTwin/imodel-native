@@ -77,6 +77,7 @@
     <ClCompile Include="Published\JsonLibrary_Test.cpp" />
     <ClCompile Include="Published\JsonReaderTests.cpp" />
     <ClCompile Include="Published\JsonUpdaterTests.cpp" />
+    <ClCompile Include="Published\MapDebugInfo_Tests.cpp" />
     <ClCompile Include="Published\MetaSchemaECSqlTestFixture.cpp" />
     <ClCompile Include="Published\NestedStructArrayTestSchemaHelper.cpp" />
     <ClCompile Include="Published\RandomECInstanceGenerator.cpp" />

@@ -2105,7 +2105,7 @@ TEST_F(ECSchemaUpdateTests, ModifyPropToReadOnly)
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
-    /*-------------------After Schema 1 Import--------------------------
+    /*-------------------After 1st Schema Import--------------------------
     ReadWriteProp -> ReadWrite
     P1            -> ReadOnly
     P2            -> ReadWrite
@@ -2115,14 +2115,15 @@ TEST_F(ECSchemaUpdateTests, ModifyPropToReadOnly)
     //Insert should be successfull
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "INSERT INTO ts.TestClass(ReadWriteProp, P1, P2) VALUES('RW1', 'P1_Val1', 'P2_Val1')"));
     ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
-     
+
     statement.Finalize();
     ASSERT_NE(ECSqlStatus::Success, statement.Prepare(GetECDb(), "UPDATE ts.TestClass Set ReadWriteProp='RW1new', P1='P1_Val1new'"));
+
     statement.Finalize();
-    //skipping readonly Property Update should be successful.
+    //skipping readonly Property, Update should be successful.
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "UPDATE ts.TestClass Set ReadWriteProp='RW1new', P2='P2_Val1new' WHERE P2='P2_Val1'"));
     ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
-     
+
     //Update schema 
     SchemaItem schemaItem2(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -2137,7 +2138,7 @@ TEST_F(ECSchemaUpdateTests, ModifyPropToReadOnly)
     AssertSchemaImport(asserted, GetECDb(), schemaItem2);
     EXPECT_FALSE(asserted);
 
-    /*-------------------After Schema 2nd Import--------------------------
+    /*-------------------After 2nd Schema Import--------------------------
     ReadWriteProp -> ReadWrite
     P1            -> ReadWrite
     P2            -> ReadOnly
@@ -2193,7 +2194,7 @@ TEST_F(ECSchemaUpdateTests, ModifyPropToReadOnly)
     AssertSchemaImport(asserted, GetECDb(), schemaItem3);
     EXPECT_FALSE(asserted);
 
-    /*-------------------After Schema 3rd Import--------------------------
+    /*-------------------After 3rd Schema Import--------------------------
     ReadWriteProp -> ReadWrite
     P1            -> ReadOnly
     P2            -> ReadWrite
@@ -2220,6 +2221,7 @@ TEST_F(ECSchemaUpdateTests, ModifyPropToReadOnly)
     ASSERT_STREQ("P1_Val3", statement.GetValueText(0));
 
     statement.Finalize();
+    //Verify Delete
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "DELETE FROM ts.TestClass"));
     ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
 
@@ -2229,4 +2231,83 @@ TEST_F(ECSchemaUpdateTests, ModifyPropToReadOnly)
     ASSERT_EQ(0, statement.GetValueInt(0));
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     05/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, ModifyCustomAttributePropertyValues)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Test Schema' description='This is Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECCustomAttributeClass typeName = 'TestCA' appliesTo = 'PrimitiveProperty'>"
+        "       <ECProperty propertyName = 'BinaryProp' typeName = 'Binary' />"
+        "       <ECProperty propertyName = 'BooleanProp' typeName = 'boolean' />"
+        "       <ECProperty propertyName = 'DateTimeProp' typeName = 'DateTime' />"
+        "       <ECProperty propertyName = 'DoubleProp' typeName = 'Double' />"
+        "       <ECProperty propertyName = 'IntegerProp' typeName = 'int' />"
+        "       <ECProperty propertyName = 'LongProp' typeName = 'long' />"
+        "       <ECProperty propertyName = 'Point2DProp' typeName = 'Point2D' />"
+        "       <ECProperty propertyName = 'Point3DProp' typeName = 'Point3D' />"
+        "       <ECProperty propertyName = 'StringProp' typeName = 'string' />"
+        "   </ECCustomAttributeClass>"
+        "   <ECEntityClass typeName='TestClass' displayLabel='Test Class' description='This is test Class' modifier='None' >"
+        "       <ECProperty propertyName='TestProperty' displayLabel='Test Property' description='this is property' typeName='string' >"
+        "        <ECCustomAttributes>"
+        "            <TestCA xmlns='TestSchema.01.00'>"
+        "                <BinaryProp>10100101</BinaryProp>"
+        "                <BooleanProp>true</BooleanProp>"
+        "                <DateTimeProp>20160509</DateTimeProp>"
+        "                <DoubleProp>1.0001</DoubleProp>"
+        "                <IntegerProp>10</IntegerProp>"
+        "                <LongProp>1000000</LongProp>"
+        "                <Point2DProp>3.0,4.5</Point2DProp>"
+        "                <Point3DProp>30.5,40.5,50.5</Point3DProp>"
+        "                <StringProp>'This is String Property'</StringProp>"
+        "            </TestCA>"
+        "        </ECCustomAttributes>"
+        "       </ECProperty>"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    SchemaItem editedSchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Test Schema' description='This is Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECCustomAttributeClass typeName = 'TestCA' appliesTo = 'PrimitiveProperty'>"
+        "       <ECProperty propertyName = 'BinaryProp' typeName = 'Binary' />"
+        "       <ECProperty propertyName = 'BooleanProp' typeName = 'boolean' />"
+        "       <ECProperty propertyName = 'DateTimeProp' typeName = 'DateTime' />"
+        "       <ECProperty propertyName = 'DoubleProp' typeName = 'Double' />"
+        "       <ECProperty propertyName = 'IntegerProp' typeName = 'int' />"
+        "       <ECProperty propertyName = 'LongProp' typeName = 'long' />"
+        "       <ECProperty propertyName = 'Point2DProp' typeName = 'Point2D' />"
+        "       <ECProperty propertyName = 'Point3DProp' typeName = 'Point3D' />"
+        "       <ECProperty propertyName = 'StringProp' typeName = 'string' />"
+        "   </ECCustomAttributeClass>"
+        "   <ECEntityClass typeName='TestClass' displayLabel='Test Class' description='This is test Class' modifier='None' >"
+        "       <ECProperty propertyName='TestProperty' displayLabel='Test Property' description='this is property' typeName='string' >"
+        "        <ECCustomAttributes>"
+        "            <TestCA xmlns='TestSchema.01.00'>"
+        "                <BinaryProp>10100011</BinaryProp>"
+        "                <BooleanProp>false</BooleanProp>"
+        "                <DateTimeProp>20160510</DateTimeProp>"
+        "                <DoubleProp>2.0001</DoubleProp>"
+        "                <IntegerProp>20</IntegerProp>"
+        "                <LongProp>2000000</LongProp>"
+        "                <Point2DProp>4.0,5.5</Point2DProp>"
+        "                <Point3DProp>35.5,45.5,55.5</Point3DProp>"
+        "                <StringProp>'This is Modified String Property'</StringProp>"
+        "            </TestCA>"
+        "        </ECCustomAttributes>"
+        "       </ECProperty>"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+
+    bool asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
+    ASSERT_FALSE(asserted);
+    }
 END_ECDBUNITTESTS_NAMESPACE

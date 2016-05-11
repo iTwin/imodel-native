@@ -1375,6 +1375,23 @@ TEST_F(ECDbSchemaRules, RelationshipMappingLimitations_UnsupportedCases)
                                             "</ECSchema>", false, "Cardinality N:N and Embedding is not supported"));
 
     unsupportedSchemas.push_back(SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                                          "  <ECEntityClass typeName='Geometry' >"
+                                          "    <ECProperty propertyName='Type' typeName='string' />"
+                                          "  </ECEntityClass>"
+                                          "  <ECEntityClass typeName='GeometryPart' >"
+                                          "    <ECProperty propertyName='Stream' typeName='binary' />"
+                                          "  </ECEntityClass>"
+                                          "  <ECRelationshipClass typeName='GeometryHasParts' strength='holding' strengthDirection='Forward'>"
+                                          "     <Source cardinality='(0,N)' polymorphic='True'>"
+                                          "         <Class class='Geometry' />"
+                                          "     </Source>"
+                                          "    <Target cardinality='(0,N)' polymorphic='True'>"
+                                          "        <Class class='GeometryPart' />"
+                                          "     </Target>"
+                                          "  </ECRelationshipClass>"
+                                          "</ECSchema>", false, "Cardinality N:N and Holding is not supported"));
+
+    unsupportedSchemas.push_back(SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                             "<ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
                                             "  <ECEntityClass typeName='Parent' >"
                                             "    <ECProperty propertyName='ParentProp' typeName='long' />"
@@ -1561,24 +1578,6 @@ TEST_F(ECDbSchemaRules, RelationshipMappingLimitations_SupportedCases)
                           "         <Class class='Geometry' />"
                           "     </Source>"
                           "    <Target cardinality='(0,1)' polymorphic='True'>"
-                          "        <Class class='GeometryPart' />"
-                          "     </Target>"
-                          "  </ECRelationshipClass>"
-                          "</ECSchema>"));
-
-    supportedSchemas.push_back(SchemaItem("N:N and holding",
-                          "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                          "  <ECEntityClass typeName='Geometry' >"
-                          "    <ECProperty propertyName='Type' typeName='string' />"
-                          "  </ECEntityClass>"
-                          "  <ECEntityClass typeName='GeometryPart' >"
-                          "    <ECProperty propertyName='Stream' typeName='binary' />"
-                          "  </ECEntityClass>"
-                          "  <ECRelationshipClass typeName='GeometryHasParts' strength='holding' strengthDirection='Forward'>"
-                          "     <Source cardinality='(0,N)' polymorphic='True'>"
-                          "         <Class class='Geometry' />"
-                          "     </Source>"
-                          "    <Target cardinality='(0,N)' polymorphic='True'>"
                           "        <Class class='GeometryPart' />"
                           "     </Target>"
                           "  </ECRelationshipClass>"

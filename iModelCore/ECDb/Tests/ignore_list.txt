@@ -22,5 +22,12 @@ ECDbMappingTestFixture.RelationshipWithAbstractConstraintClassAndNoSubclasses
 #TFS 383266
 JsonReaderTests.ReadInstanceAlongWithRelatedInstances
 
-ECSchemaUpdateTests.ModifyPropToReadOnly
 ECDbMappingTestFixture.ECInstanceIdAutoGeneration # fails on Android - notified Krischan and Majd
+
+#TFS 438256
+ECDbRelationshipsIntegrityTests.ForwardHoldingRelationshipsTest
+ECDbRelationshipsIntegrityTests.BackwardHoldingRelationshipsTest
+
+#TFS 438276
+ECDbRelationshipsIntegrityTests.ForwardHoldingOneToOne
+

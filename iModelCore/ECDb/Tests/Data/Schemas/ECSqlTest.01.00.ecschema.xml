@@ -376,7 +376,7 @@
             <Class class="P"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="PSAHasP_N1" strength="referencing">
+    <ECRelationshipClass typeName="PSAHasP_N1" strength="embedding" strengthDirection="Backward">
         <BaseClass>AbstractR</BaseClass>
         <Source cardinality="(0,N)" polymorphic="true">
             <Class class="PSA"/>
@@ -385,7 +385,7 @@
             <Class class="P"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="PSAHasTHBase_0N" strength="referencing">
+    <ECRelationshipClass typeName="PSAHasTHBase_0N" strength="embedding">
         <Source cardinality="(0,1)" polymorphic="true">
             <Class class="PSA"/>
         </Source>
