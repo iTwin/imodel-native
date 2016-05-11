@@ -45,26 +45,33 @@ class WSPathProvider : public IApplicationPathsProvider
         virtual BeFileNameCR _GetLocalStateDirectory() const { return m_nullPath; }
         virtual BeFileNameCR _GetAssetsRootDirectory() const { return m_rootDirectory; }
         virtual BeFileNameCR _GetMarkupSeedFilePath() const { return m_nullPath; }
-
+                
     public:
-        WSPathProvider()
+        WSPathProvider(BeFileName tempDir, BeFileName rootDir)
             {
-            m_rootDirectory = BeFileName(R"(D:\dev\dgndb0601dev\out\Winx64\Product\DgnClientSdk-Winx64\assets)");
-            m_tempDirectory = BeFileName(R"(C:\Users\David.Jones\AppData\Local\Bentley\WSApi)");
+            m_tempDirectory = tempDir;
+            m_rootDirectory = rootDir;
             }
     };
 
 class ConnectWebServicesClientC_internal
     {
     private:
-        WSPathProvider                  m_pathProv;
+        WSPathProvider                  m_pathProvider;
         static WSLocalState             m_localState;
         Utf8String                      m_lastStatusDescription;
         Utf8String                      m_lastStatusMessage;
+        WSCreateObjectResponse          m_lastCreatedObjectResponse;
+        WSObjectsResponse               m_lastObjectsResponse;
         shared_ptr<ProxyHttpHandler>    m_proxy;
         ConnectSignInManagerPtr         m_connectSignInManager;
         ClientInfoPtr                   m_clientInfo;
 
+    public:
+        bmap<Utf8String, shared_ptr<WSRepositoryClient>> m_repositoryClients;
+        shared_ptr<SolrClient> m_solrClientPtr;
+
+    private:
         void Initialize
             (
             BeFileName temporaryDirectory,
@@ -84,8 +91,12 @@ class ConnectWebServicesClientC_internal
             Utf8String applicationName,
             BeVersion applicationVersion,
             Utf8String applicationGUID,
-            Utf8String applicationProductId
+            Utf8String applicationProductId,
+            Utf8StringP proxyUrl = nullptr,
+            Utf8StringP proxyUsername = nullptr,
+            Utf8StringP proxyPassword = nullptr
             );
+
         ConnectWebServicesClientC_internal
             (
             Utf8String username,
@@ -95,8 +106,13 @@ class ConnectWebServicesClientC_internal
             Utf8String applicationName,
             BeVersion applicationVersion,
             Utf8String applicationGUID,
-            Utf8String applicationProductId
+            Utf8String applicationProductId,
+            Utf8StringP proxyUrl = nullptr,
+            Utf8StringP proxyUsername = nullptr,
+            Utf8StringP proxyPassword = nullptr
             );
+
+        ~ConnectWebServicesClientC_internal ();
 
         void CreateProxyHttpClient
             (
@@ -111,12 +127,13 @@ class ConnectWebServicesClientC_internal
             Utf8String repositoryId
             );
 
-        bmap<Utf8String, shared_ptr<WSRepositoryClient>> m_repositoryClients;
-        shared_ptr<SolrClient> m_solrClientPtr;
         Utf8StringCR GetLastStatusMessage();
         Utf8StringCR GetLastStatusDescription();
+        CharCP       GetLastCreatedObjectInstanceId ();
         void SetStatusMessage(Utf8String message);
         void SetStatusDescription(Utf8String desc);
+        void SetCreatedObjectResponse (WSCreateObjectResponse response);
+        void SetObjectsResponse (WSObjectsResponse response);
     };
 
 typedef ConnectWebServicesClientC_internal* LPCWSCC;
