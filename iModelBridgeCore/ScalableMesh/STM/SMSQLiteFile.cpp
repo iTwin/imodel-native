@@ -342,7 +342,11 @@ bool SMSQLiteFile::GetNodeHeader(SQLiteNodeHeader& nodeHeader)
 
     DbResult status = stmt->Step();
     assert(status == BE_SQLITE_DONE || status == BE_SQLITE_ROW);
-    if (status == BE_SQLITE_DONE) return false;
+    if (status == BE_SQLITE_DONE) 
+        {
+        assert(!"Node header not found");
+        return false;
+        }
     nodeHeader.m_parentNodeID = stmt->GetValueInt64(0);
     nodeHeader.m_level = stmt->GetValueInt64(1);
     nodeHeader.m_filtered = stmt->GetValueInt(2) ? true : false;
