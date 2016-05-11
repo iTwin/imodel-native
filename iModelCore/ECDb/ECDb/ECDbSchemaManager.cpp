@@ -181,12 +181,6 @@ BentleyStatus ECDbSchemaManager::ImportECSchemas(ECSchemaCacheR cache) const
     if (MappingStatus::Error == m_map.MapSchemas(context))
         return ERROR;
 
-    {
-    RelationshipPurger purger;
-    if (SUCCESS != purger.Purge(m_ecdb, RelationshipPurger::Options::SchemaChanged))
-        return ERROR;
-    }
-
     m_ecdb.ClearECDbCache();
 
     timer.Stop();

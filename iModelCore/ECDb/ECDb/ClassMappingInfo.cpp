@@ -677,26 +677,10 @@ MappingStatus RelationshipMappingInfo::_EvaluateMapStrategy()
             return MappingStatus::Error;
             }
 
-        if (m_cardinality == Cardinality::ManyToMany && strength != StrengthType::Referencing)
-            {
-            m_ecdbMap.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
-                                                                         "Failed to map ECRelationshipClass %s: Cardinality and strength contradict each other. For the cardinality '%s:%s' the strength must always be 'Referencing'.",
-                                                                         GetECClass().GetFullName(), relationshipClass->GetSource().GetCardinality().ToString().c_str(), relationshipClass->GetTarget().GetCardinality().ToString().c_str());
-            return MappingStatus::Error;
-            }
-
         if (userStrategyIsForeignKeyMapping)
             {
             m_ecdbMap.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
                 "Failed to map ECRelationshipClass %s. The mapping rules imply a link table relationship. Therefore it must not have a ForeignKeyRelationshipMap custom attribute. See API docs for details on the mapping rules.",
-                GetECClass().GetFullName());
-            return MappingStatus::Error;
-            }
-
-        if (strength == StrengthType::Embedding)
-            {
-            m_ecdbMap.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
-                "Failed to map ECRelationshipClass %s. The mapping rules imply a link table relationship, and link table relationships with strength 'Embedding' is not supported. See API docs for details on the mapping rules.",
                 GetECClass().GetFullName());
             return MappingStatus::Error;
             }

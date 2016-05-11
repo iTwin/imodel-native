@@ -129,27 +129,23 @@ struct ECDbMapAnalyser
     struct Relationship;
     struct Storage
         {
-        private:
+    private:
+        DbTable const& m_table;
+        std::set<Class*> m_classes;
+        std::set<Relationship*> m_relationships;
+        std::map<Storage*, std::set<Relationship*>> m_cascades;
 
-            DbTable const& m_table;
-            std::set<Class*> m_classes;
-            std::set<Relationship*> m_relationships;
-            std::map<Storage*, std::set<Relationship*>> m_cascades;
-            SqlTriggerBuilder::TriggerList m_triggers;
+    public:
+        explicit Storage(DbTable const& table) :m_table(table){}
 
-        public:
-            Storage(DbTable const& table);
-            DbTable const& GetTable() const;
-            bool IsVirtual() const;
-            std::set<Class*> & GetClassesR();
-            std::set<Class*> const& GetClasses() const { return m_classes; }
-            std::set<Relationship*> & GetRelationshipsR();
-            std::map<Storage*, std::set<Relationship*>> & CascadesTo();
-            SqlTriggerBuilder::TriggerList& GetTriggerListR();
-            SqlTriggerBuilder::TriggerList const& GetTriggerList() const;
-            void HandleCascadeLinkTable(std::vector<Relationship*> const& relationships);
-            void Generate();
+        DbTable const& GetTable() const { return m_table; }
+        bool IsVirtual() const { return m_table.GetPersistenceType() == PersistenceType::Virtual; }
+        std::set<Class*> & GetClassesR() { return m_classes; }
+        std::set<Class*> const& GetClasses() const { return m_classes; }
+        std::set<Relationship*> & GetRelationshipsR() { return m_relationships; }
+        std::map<Storage*, std::set<Relationship*>> & CascadesTo() { return m_cascades; }
         };
+
     //=======================================================================================
     //! Wraps up a concept of ECClass
     // @bsiclass                                               Affan.Khan          09/2015
@@ -287,36 +283,31 @@ struct ECDbMapAnalyser
 
             };
 
-        mutable std::map<ECN::ECClassId, std::set<ECN::ECClassId>> m_derivedClassLookup;
         ECDbMapR m_map;
+        mutable std::map<ECN::ECClassId, std::set<ECN::ECClassId>> m_derivedClassLookup;
         std::map<ECN::ECClassId, std::unique_ptr<Class>> m_classes;
         std::map<ECN::ECClassId, std::unique_ptr<Relationship>> m_relationships;
         std::map<Utf8CP, std::unique_ptr<Storage>, CompareIUtf8Ascii> m_storage;
         std::map<Class const*, ViewInfo> m_viewInfos;
 
     private:
-        ECDbMapR GetMapR() { return m_map; }
-        ECDbMapCR GetMap() const { return m_map; }
         Storage& GetStorage(Utf8CP tableName);
         Storage& GetStorage(ClassMapCR classMap) { return GetStorage(classMap.GetJoinedTable().GetName().c_str()); }
-        Class& GetClass(ClassMapCR classMap);
-        Relationship&  GetRelationship(RelationshipClassMapCR classMap);
+        Class& GetClass(ClassMapCR);
+        Relationship& GetRelationship(RelationshipClassMapCR);
         BentleyStatus AnalyseClass(ClassMapCR);
         BentleyStatus AnalyseRelationshipClass(RelationshipClassMapCR);
         void GetClassIds(std::vector<ECN::ECClassId>& rootClassIds, std::vector<ECN::ECClassId>& rootRelationshipClassIds) const;
         std::set<ECN::ECClassId> const& GetDerivedClassIds(ECN::ECClassId baseClassId) const;
-        ClassMapCP GetClassMap(ECN::ECClassId classId) const;
         void SetupDerivedClassLookup();
-        void ProcessEndTableRelationships();
-        void ProcessLinkTableRelationships();
+        ClassMapCP GetClassMap(ECN::ECClassId classId) const;
         SqlViewBuilder BuildView(Class& nclass);
-        BentleyStatus BuildPolymorphicDeleteTrigger(Class& nclass);
-        BentleyStatus BuildPolymorphicUpdateTrigger(Class& nclass);
-        void HandleLinkTable(Storage* fromStorage, std::map<Storage*, std::set<ECDbMapAnalyser::Relationship*>> const& relationshipsByStorage, bool isFrom);
+        BentleyStatus BuildPolymorphicDeleteTrigger(Class&);
+        BentleyStatus BuildPolymorphicUpdateTrigger(Class&);
         static NativeSqlBuilder GetClassFilter(std::pair<ECDbMapAnalyser::Storage const*, std::set<ECDbMapAnalyser::Class const*>> const& partition);
         DbResult ApplyChanges();
         DbResult ExecuteDDL(Utf8CP sql);
-        ViewInfo* GetViewInfoForClass(Class const& nclass);
+        ViewInfo* GetViewInfoForClass(Class const&);
 
     public:
         explicit ECDbMapAnalyser(ECDbMapR ecdbMap) : m_map(ecdbMap) {}
