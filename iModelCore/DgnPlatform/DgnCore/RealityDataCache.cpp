@@ -274,11 +274,11 @@ struct RealityDataStorageBusyRetry : BeSQLite::BusyRetry
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLiteRealityDataStorage::BeSQLiteRealityDataStorage(BeFileName const& filename, uint32_t idleTime)
+BeSQLiteRealityDataStorage::BeSQLiteRealityDataStorage(BeFileName const& filename, SchedulingMethod schedulingMethod, int numThreads, uint32_t idleTime)
     : m_filename(filename), m_database(new BeSQLite::Db()), m_initialized(false), m_hasChanges(false), m_idleTime(idleTime)
     {
     m_retry = new RealityDataStorageBusyRetry();
-    m_threadPool = BeSQLiteStorageThreadPool::Create(*this);
+    m_threadPool = BeSQLiteStorageThreadPool::Create(*this, numThreads, schedulingMethod);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -767,7 +767,7 @@ bool AsyncRealityDataSource<Derived>::RequestHandler::_ShouldCancel() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-FileRealityDataSourcePtr FileRealityDataSource::Create(int numThreads) {return new FileRealityDataSource(numThreads);}
+FileRealityDataSourcePtr FileRealityDataSource::Create(int numThreads, SchedulingMethod schedulingMethod) {return new FileRealityDataSource(numThreads, schedulingMethod);}
 
 //===================================================================================
 // @bsiclass                                        Grigas.Petraitis        03/2015

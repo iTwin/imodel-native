@@ -1355,8 +1355,8 @@ RealityDataCache& WebMercatorModel::GetRealityDataCache() const
         BeFileName storageFileName = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName();
         storageFileName.AppendToPath(BeFileName(GetName()));
         storageFileName.AppendExtension(L"tilecache");
-        m_realityDataCache->RegisterStorage(*new TiledRasterCache(storageFileName));
-        m_realityDataCache->RegisterSource(*HttpRealityDataSource::Create(8));
+        m_realityDataCache->RegisterStorage(*new TiledRasterCache(storageFileName, SchedulingMethod::LIFO, 4));
+        m_realityDataCache->RegisterSource(*HttpRealityDataSource::Create(8, SchedulingMethod::LIFO));
         }
 
     return *m_realityDataCache;

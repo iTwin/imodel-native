@@ -796,11 +796,16 @@ struct EXPORT_VTABLE_ATTRIBUTE BeSQLiteRealityDataStorage : IRealityDataStorage<
     private:
         BeSQLiteRealityDataStoragePtr m_storage;
     protected:
-        BeSQLiteStorageThreadPool(BeSQLiteRealityDataStorage& storage) : RealityDataThreadPool(4, 0, SchedulingMethod::LIFO), m_storage(&storage) {}
+        BeSQLiteStorageThreadPool(BeSQLiteRealityDataStorage& storage, int numThreads, SchedulingMethod schedulingMethod) 
+            : RealityDataThreadPool(numThreads, numThreads, schedulingMethod), m_storage(&storage) 
+            {}
         ThreadSafeQueue<RealityDataWorkPtr>& GetQueue() {return RealityDataThreadPool::GetQueue();}
         virtual bool _AssignWork(RealityDataWorkerThread& thread) override;
     public:
-        static RefCountedPtr<BeSQLiteStorageThreadPool> Create(BeSQLiteRealityDataStorage& storage) {return new BeSQLiteStorageThreadPool(storage);}
+        static RefCountedPtr<BeSQLiteStorageThreadPool> Create(BeSQLiteRealityDataStorage& storage, int numThreads, SchedulingMethod schedulingMethod)
+            {
+            return new BeSQLiteStorageThreadPool(storage, numThreads, schedulingMethod);
+            }
         void QueueIdleWork(RealityDataWork& work);
     };
     
@@ -911,8 +916,10 @@ protected:
 public:
     //! Creates a new BeSQLiteRealityDataStorage.
     //! @param[in] filename     File name.
+    //! @param[in] schedulingMethod The order of handled requests.
+    //! @param[in] numThreads   The number of worker threads used by this storage.
     //! @param[in] idleTime     Time (in miliseconds) for the worker thread to wait before commiting changes to the database.
-    DGNPLATFORM_EXPORT BeSQLiteRealityDataStorage(BeFileName const& filename, uint32_t idleTime=5000);
+    DGNPLATFORM_EXPORT BeSQLiteRealityDataStorage(BeFileName const& filename, SchedulingMethod schedulingMethod, int numThreads = 4, uint32_t idleTime=5000);
     DGNPLATFORM_EXPORT ~BeSQLiteRealityDataStorage();
 
     //! The id of this storage.
@@ -1074,8 +1081,8 @@ protected:
         m_threadPool->Terminate();
         m_threadPool->WaitUntilAllThreadsIdle();
         }
-    AsyncRealityDataSource(int numThreads) 
-        : m_threadPool(RealityDataThreadPool::Create(numThreads, 0, SchedulingMethod::LIFO)), m_ignoreRequestsUntil(0), m_terminateRequested(false)
+    AsyncRealityDataSource(int numThreads, SchedulingMethod schedulingMethod) 
+        : m_threadPool(RealityDataThreadPool::Create(numThreads, numThreads, schedulingMethod)), m_ignoreRequestsUntil(0), m_terminateRequested(false)
         {}
 
 protected:
@@ -1135,7 +1142,7 @@ struct EXPORT_VTABLE_ATTRIBUTE FileRealityDataSource : AsyncRealityDataSource<Fi
     };
 
 private:
-    FileRealityDataSource(int numThreads) : AsyncRealityDataSource(numThreads) {}
+    FileRealityDataSource(int numThreads, SchedulingMethod schedulingMethod) : AsyncRealityDataSource(numThreads, schedulingMethod) {}
 
 protected:
     virtual Utf8String _GetSourceId() const override {return SourceId();}
@@ -1150,7 +1157,8 @@ public:
 
     //! Create a new instance of FileRealityDataSource.
     //! @param[in] numThreads   Number of worker threads to use for reading files. Must be at least 1.
-    DGNPLATFORM_EXPORT static RefCountedPtr<FileRealityDataSource> Create(int numThreads);
+    //! @param[in] schedulingMethod The order of handled requests.
+    DGNPLATFORM_EXPORT static RefCountedPtr<FileRealityDataSource> Create(int numThreads, SchedulingMethod schedulingMethod);
 
     //! Request the data to be initialized from the specified file.
     DGNPLATFORM_EXPORT RealityDataSourceResult Request(Data& data, bool& handled, Utf8CP filepath, RealityDataOptions options, IRealityDataSourceResponseReceiver& responseReceiver);
@@ -1216,7 +1224,7 @@ struct EXPORT_VTABLE_ATTRIBUTE HttpRealityDataSource : AsyncRealityDataSource<Ht
     };
 
 private:
-    HttpRealityDataSource(int numThreads) : AsyncRealityDataSource(numThreads) {}
+    HttpRealityDataSource(int numThreads, SchedulingMethod schedulingMethod) : AsyncRealityDataSource(numThreads, schedulingMethod) {}
 
 protected:
     virtual Utf8String _GetSourceId() const override {return SourceId();}
@@ -1230,7 +1238,7 @@ public:
     static Utf8String SourceId() {return "Http";}
     
     //! Create a new instance of HttpRealityDataSource.
-    static HttpRealityDataSourcePtr Create(int numThreads) {return new HttpRealityDataSource(numThreads);}
+    static HttpRealityDataSourcePtr Create(int numThreads, SchedulingMethod schedulingMethod) {return new HttpRealityDataSource(numThreads, schedulingMethod);}
     
     //! Request the data to be initialized from the content at the specified url
     DGNPLATFORM_EXPORT RealityDataSourceResult Request(Data& data, bool& handled, Utf8CP url, RealityDataOptions options, IRealityDataSourceResponseReceiver& responseReceiver);
