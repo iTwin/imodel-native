@@ -953,6 +953,9 @@
     <ClInclude Include="Cache\Compatibility\Schemas.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV10ToV11.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Xml Include="WSClient.PartFile.xml" />
@@ -975,6 +978,7 @@
     <Xml Include="Cache\Persistence\ECSchemas\WSCacheMetaSchema.03.00.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\Support\V3Conversion\eBAttributes_V3Conversion.02.00.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\Support\Mapping\Issue_Supplemental_ECDbMapping.01.00.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\DSCacheSchema.01.08.ecschema.xml" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Connect\Connect.mki" />
