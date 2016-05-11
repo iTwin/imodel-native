@@ -548,6 +548,16 @@ THREAD_MAIN_IMPL DgnQueryQueue::Main(void* arg)
     return 0;
     }
 
+        void RequestAbort();
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnQueryQueue::Task::RequestAbort()
+    {
+    m_view.SetAbortQuery(true);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -559,11 +569,14 @@ void DgnQueryQueue::Terminate()
     if (State::Active != m_state)
         return;
 
+    if (m_active.IsValid())
+        m_active->RequestAbort();  // if we're working on a query tell it to stop
+
     m_state = State::TerminateRequested;
     while (State::TerminateRequested == m_state)
         {
         m_cv.notify_all();
-        m_cv.RelativeWait(lock, 1000);
+        m_cv.RelativeWait(lock, 10000);
         }
     }
 

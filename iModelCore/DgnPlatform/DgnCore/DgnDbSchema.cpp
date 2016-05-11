@@ -52,21 +52,40 @@ static void importDgnSchema(DgnDbR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnDb::CreateDictionaryModel()
+static DbResult insertIntoDgnModel(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCode const& modelCode)
     {
-    Utf8String dictionaryName = DgnCoreL10N::GetString(DgnCoreL10N::MODELNAME_Dictionary());
-    
-    DgnCode modelCode = DgnModel::CreateModelCode(dictionaryName);
-    Statement stmt(*this, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Model) " (Id,Code_Value,Label,ECClassId,Visibility,Code_AuthorityId,Code_Namespace) VALUES(?,?,'',?,0,?,?)");
-    stmt.BindId(1, DgnModel::DictionaryId());
+    Statement stmt(db, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Model) " (Id,Code_Value,Label,ECClassId,Visibility,Code_AuthorityId,Code_Namespace) VALUES(?,?,'',?,0,?,?)");
+    stmt.BindId(1, modelId);
     stmt.BindText(2, modelCode.GetValueCP(), Statement::MakeCopy::No);
-    stmt.BindId(3, Domains().GetClassId(dgn_ModelHandler::Dictionary::GetHandler()));
+    stmt.BindId(3, classId);
     stmt.BindId(4, modelCode.GetAuthority());
     stmt.BindText(5, modelCode.GetNamespace().c_str(), Statement::MakeCopy::No);
 
     auto result = stmt.Step();
-    BeAssert(BE_SQLITE_DONE == result && "Failed to create dictionary model");
+    BeAssert(BE_SQLITE_DONE == result && "Failed to create model");
     return result;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult DgnDb::CreateDictionaryModel()
+    {
+    DgnModelId modelId = DgnModel::DictionaryId();
+    DgnClassId classId = Domains().GetClassId(dgn_ModelHandler::Dictionary::GetHandler());
+    DgnCode modelCode = DgnModel::CreateModelCode("Dictionary", DGN_ECSCHEMA_NAME);
+    return insertIntoDgnModel(*this, modelId, classId, modelCode);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult DgnDb::CreateGroupInformationModel()
+    {
+    DgnModelId modelId = DgnModel::GroupInformationId();
+    DgnClassId classId = Domains().GetClassId(dgn_ModelHandler::GroupInformation::GetHandler());
+    DgnCode modelCode = DgnModel::CreateModelCode("GroupInformation", DGN_ECSCHEMA_NAME);
+    return insertIntoDgnModel(*this, modelId, classId, modelCode);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -100,8 +119,9 @@ DbResult DgnDb::CreateDgnDbTables()
     // Every DgnDb has a few built-in authorities for element codes
     CreateAuthorities();
 
-    // Every DgnDb has a dictionary model
+    // Every DgnDb has a DictionaryModel and a default GroupInformationModel
     CreateDictionaryModel();
+    CreateGroupInformationModel();
 
     // The Generic domain is used when a conversion process doesn't have enough information to pick something better
     if (DgnDbStatus::Success != GenericDomain::ImportSchema(*this, DgnDomain::ImportSchemaOptions::ImportOnly)) // Let an upper layer decide whether or not to create ECClassViews

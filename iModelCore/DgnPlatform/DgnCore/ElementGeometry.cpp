@@ -4831,12 +4831,94 @@ GeometryBuilder::GeometryBuilder(DgnDbR dgnDb, DgnCategoryId categoryId, bool is
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  05/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool GeometryBuilder::MatchesGeometryPart(DgnGeometryPartId partId, DgnDbR db, bool ignoreSymbology, bool ignoreInitialSymbology)
+    {
+    DgnGeometryPartCPtr partGeometry = db.Elements().Get<DgnGeometryPart>(partId);
+
+    if (!partGeometry.IsValid())
+        return false;
+
+    GeometryStreamIO::Collection collection(&m_writer.m_buffer.front(), (uint32_t) m_writer.m_buffer.size());
+    size_t basicSymbCount = 0;
+
+    GeometryStreamIO::Collection partCollection(partGeometry->GetGeometryStream().GetData(), partGeometry->GetGeometryStream().GetSize());
+    auto partIter = partCollection.begin();
+
+    for (auto const& egOp : collection)
+        {
+        switch (egOp.m_opCode)
+            {
+            case GeometryStreamIO::OpCode::Header:
+                break; // Part iter already advanced past header...
+
+            case GeometryStreamIO::OpCode::SubGraphicRange:
+                break; // Skip...
+
+            case GeometryStreamIO::OpCode::GeometryPartInstance:
+                return false; // Nested parts are invalid...
+
+            case GeometryStreamIO::OpCode::BasicSymbology:
+                {
+                if (ignoreSymbology)
+                    break;
+
+                basicSymbCount++;
+
+                if (1 == basicSymbCount && ignoreInitialSymbology)
+                    break;
+
+                return false; // NEEDSWORK: Don't need to support this currently...V8 converter creates a separate element for each geometric primitive...
+                }
+
+            case GeometryStreamIO::OpCode::LineStyleModifiers:
+            case GeometryStreamIO::OpCode::AreaFill:
+            case GeometryStreamIO::OpCode::Pattern:
+            case GeometryStreamIO::OpCode::Material:
+                {
+                if (ignoreSymbology)
+                    break;
+
+                if (1 == basicSymbCount && ignoreInitialSymbology)
+                    break;
+
+                return false; // NEEDSWORK: Don't need to support this currently...V8 converter creates a separate element for each geometric primitive...
+                }
+
+            default:
+                {
+                ++partIter;
+
+                if (partIter == partCollection.end())
+                    return false;
+
+                GeometryStreamIO::Operation const& partEgOp = *partIter;
+
+                if (partEgOp.m_opCode != egOp.m_opCode)
+                    return false;
+
+                if (partEgOp.m_dataSize != egOp.m_dataSize)
+                    return false;
+
+                // NEEDSWORK: Seems unlikely that this isn't a match (V8 converter already compared range)...if necessary add fuzzy geometry compare...
+                break;
+                }
+            }
+        }
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-GeometryBuilderPtr GeometryBuilder::CreateGeometryPart(GeometryStreamCR stream, DgnDbR db, bool ignoreSymbology)
+GeometryBuilderPtr GeometryBuilder::CreateGeometryPart(GeometryStreamCR stream, DgnDbR db, bool ignoreSymbology, Render::GeometryParamsP params)
     {
     GeometryBuilderPtr builder = new GeometryBuilder(db, DgnCategoryId(), Placement3d());
     GeometryStreamIO::Collection collection(stream.GetData(), stream.GetSize());
+    GeometryStreamIO::Reader reader(db);
+    size_t basicSymbCount = 0;
 
     for (auto const& egOp : collection)
         {
@@ -4846,7 +4928,7 @@ GeometryBuilderPtr GeometryBuilder::CreateGeometryPart(GeometryStreamCR stream, 
                 break; // Already have header....
 
             case GeometryStreamIO::OpCode::SubGraphicRange:
-                break; // A part must produce a single sub-graphic...
+                break; // A part must produce a single graphic...
 
             case GeometryStreamIO::OpCode::GeometryPartInstance:
                 return nullptr; // Nested parts aren't supported...
@@ -4855,6 +4937,14 @@ GeometryBuilderPtr GeometryBuilder::CreateGeometryPart(GeometryStreamCR stream, 
                 {
                 if (ignoreSymbology)
                     break;
+
+                basicSymbCount++;
+
+                if (1 == basicSymbCount && nullptr != params)
+                    {
+                    reader.Get(egOp, *params);
+                    break; // Initial symbology should not be baked into GeometryPart...
+                    }
 
                 // Can't change sub-category in GeometryPart's GeometryStream, only preserve sub-category appearance overrides.
                 auto ppfb = flatbuffers::GetRoot<FB::BasicSymbology>(egOp.m_data);
@@ -4883,6 +4973,12 @@ GeometryBuilderPtr GeometryBuilder::CreateGeometryPart(GeometryStreamCR stream, 
                 {
                 if (ignoreSymbology)
                     break;
+
+                if (1 == basicSymbCount && nullptr != params)
+                    {
+                    reader.Get(egOp, *params);
+                    break; // Initial symbology should not be baked into GeometryPart...
+                    }
 
                 builder->m_writer.Append(egOp); // Append raw data...
                 break;

@@ -244,6 +244,7 @@ struct DgnQueryQueue
         virtual void _Go() = 0;
         uint32_t GetDelayAfter() {return m_plan.GetDelayAfter();}
         bool IsForView(DgnQueryViewCR view) const {return &m_view == &view;}
+        void RequestAbort();
     };
 
     typedef RefCountedPtr<Task> TaskPtr;

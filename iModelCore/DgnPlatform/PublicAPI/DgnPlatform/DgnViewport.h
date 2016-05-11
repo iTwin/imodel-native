@@ -493,14 +493,6 @@ public:
     //! @return the View flags for this DgnViewport.
     Render::ViewFlags GetViewFlags() const {return m_viewController->GetViewFlags();}
 
-    //! Get the Point Cloud View Settings (display style, ...) for this DgnViewport.
-    //! @return the point cloud view settings for this DgnViewport.
-    Render::PointCloudViewSettings GetPointCloudViewSettings() const {return m_viewController->GetPointCloudViewSettings();}
-
-    //! Get the Point Cloud View Settings (display style, ...) for this DgnViewport.
-    //! @return the point cloud view settings for this DgnViewport.
-    Render::PointCloudViewSettings const& GetPointCloudViewSettingsR() const {return m_viewController->GetPointCloudViewSettingsR();}
-
     //! Synchronized this DgnViewport with the current state of its ViewController. A DgnViewport may hold local copies of the information
     //! in its ViewController. Therefore, when changes are made to the state of a ViewController, it must be synchronized with the
     //! DgnViewport to which it is connected before the changes are visible to the user. This method also allows applications to save
