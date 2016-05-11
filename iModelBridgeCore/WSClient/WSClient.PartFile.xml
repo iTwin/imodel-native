@@ -410,11 +410,11 @@
     <!-- ********************** -->
     <!-- **** AndroidJUnit **** -->
     <!-- ********************** -->
-    <Part Name="AndroidJUnit" BentleyBuildMakeFile="${SrcRoot}BeGTest/Android/MakeJUnitTestProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=WSClient -dTEST_COLLECTION_PRODUCT=WSClient-Tests -dSHARED_LIBRARIES=DgnClientFx,WebServicesClient,WebServicesCache -dTEST_ANDROID_MIN_SDK_VERSION=19" OnlyPlatforms="Android*">
+    <Part Name="AndroidJUnit" BentleyBuildMakeFile="${SrcRoot}BeGTest/Android/MakeJUnitTestProject.mke" BentleyBuildMakeOptions="-dTEST_COLLECTION_PRODUCT=WSClient-Tests -dSHARED_LIBRARIES=DgnClientFx,WebServicesClient,WebServicesCache -dTEST_ANDROID_MIN_SDK_VERSION=19" OnlyPlatforms="Android*">
         <SubProduct ProductName="WSClient-Tests"/>
         <SubPart PartName="AndroidJUnitTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
-            <Directory ProductDirectoryName="AndroidJUnit-Project" SourceName="Delivery/ANJU/WSClient/Project" />
+            <Directory ProductDirectoryName="AndroidJUnit-Project" SourceName="Delivery/ANJUP" />
         </Bindings>
     </Part>
 
