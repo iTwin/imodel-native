@@ -33,6 +33,7 @@ DataSourceCacheUpgradeTests.Open_V5*
 DataSourceCacheUpgradeTests.Open_V7*
 DataSourceCacheUpgradeTests.Open_V8*
 DataSourceCacheUpgradeTests.Open_V9*
+DataSourceCacheUpgradeTests.Open_V1*
 
 # ECSchema update in ECDb is not yet supported
 DataSourceCacheTests.UpdateSchemas_SchemasWithDeletedPropertyPassedToDataSourceCacheWithCachedStatements_SuccessAndSchemasAccessable
