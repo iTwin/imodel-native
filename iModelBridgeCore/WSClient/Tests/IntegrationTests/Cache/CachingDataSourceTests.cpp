@@ -32,6 +32,22 @@ void CachingDataSourceTests::SetUp()
     CacheTransactionManager::SetAllowUnsafeAccess(true);
     }
 
+BeFileName GetTestCachePath()
+    {
+    BeFileName cachePath = StubFilePath("TestWSCache.ecdb");
+    CacheEnvironment env = StubCacheEnvironemnt();
+
+    cachePath.BeDeleteFile();
+    BeFileName::EmptyAndRemoveDirectory(env.persistentFileCacheDir);
+    BeFileName::EmptyAndRemoveDirectory(env.temporaryFileCacheDir);
+
+    EXPECT_FALSE(cachePath.DoesPathExist());
+    EXPECT_FALSE(env.persistentFileCacheDir.DoesPathExist());
+    EXPECT_FALSE(env.temporaryFileCacheDir.DoesPathExist());
+
+    return cachePath;
+    }
+
 TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectGlobal_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
@@ -39,7 +55,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectGlobal_Succeeds)
     Utf8String serverUrl = "https://qa-wsg20-eus.cloudapp.net/";
     Utf8String repositoryId = "BentleyCONNECT.Global--CONNECT.GLOBAL";
     Credentials credentials("8cc45bd041514b58947ea6c09c@gmail.com", "qwe12312");
-    BeFileName cachePath(L":memory:");
+    BeFileName cachePath = GetTestCachePath();
 
     auto manager = ConnectSignInManager::Create(StubValidClientInfo(), proxy, &m_localState);
     ASSERT_TRUE(manager->SignInWithCredentials(credentials)->GetResult().IsSuccess());
@@ -68,8 +84,8 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectSharedContent_Succeeds
 
     Utf8String serverUrl = "https://qa-wsg20-eus.cloudapp.net/";
     Utf8String repositoryId = "BentleyCONNECT.SharedContent--CONNECT.SharedContent";
-    Credentials credentials("8cc45bd041514b58947ea6c09c@gmail.com", "qwe12312");
-    BeFileName cachePath(L":memory:");
+    Credentials credentials("bentleyvilnius@gmail.com", "Q!w2e3r4t5");
+    BeFileName cachePath = GetTestCachePath();
 
     auto manager = ConnectSignInManager::Create(StubValidClientInfo(), proxy, &m_localState);
     ASSERT_TRUE(manager->SignInWithCredentials(credentials)->GetResult().IsSuccess());
@@ -96,8 +112,8 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectPersonalShare_Succeeds
 
     Utf8String serverUrl = "https://qa-wsg20-eus.cloudapp.net";
     Utf8String repositoryId = "BentleyCONNECT.PersonalPublishing--CONNECT.PersonalPublishing";
-    Credentials credentials("8cc45bd041514b58947ea6c09c@gmail.com", "qwe12312");
-    BeFileName cachePath(L":memory:");
+    Credentials credentials("bentleyvilnius@gmail.com", "Q!w2e3r4t5");
+    BeFileName cachePath = GetTestCachePath();
 
     auto manager = ConnectSignInManager::Create(StubValidClientInfo(), proxy, &m_localState);
     ASSERT_TRUE(manager->SignInWithCredentials(credentials)->GetResult().IsSuccess());
@@ -111,13 +127,12 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectPersonalShare_Succeeds
 
 TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectProjectShare_Succeeds)
     {
-    // Fails because user has no shared projects, need other user
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
     Utf8String serverUrl = "https://qa-wsg20-eus.cloudapp.net";
-    Utf8String repositoryId = "BentleyCONNECT.ProjectContent--f84ee4ab-3b31-4ba9-bf8e-edd124c73393";
-    Credentials credentials("8cc45bd041514b58947ea6c09c@gmail.com", "qwe12312");
-    BeFileName cachePath(L":memory:");
+    Utf8String repositoryId = "BentleyCONNECT.ProjectContent--c4d60664-1226-4d4f-8beb-7d0e372ccc06";
+    Credentials credentials("bentleyvilnius@gmail.com", "Q!w2e3r4t5");
+    BeFileName cachePath = GetTestCachePath();
 
     auto manager = ConnectSignInManager::Create(StubValidClientInfo(), proxy, &m_localState);
     ASSERT_TRUE(manager->SignInWithCredentials(credentials)->GetResult().IsSuccess());
@@ -129,15 +144,17 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectProjectShare_Succeeds)
     ASSERT_FALSE(nullptr == result.GetValue());
     }
 
-TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectProjectDataRetrieved_Succeeds)
+TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectPunchlist_Succeeds)
     {
-    // Fails because user has no shared projects, need other user
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
-    Utf8String serverUrl = "https://qa-wsg20-eus.cloudapp.net";
-    Utf8String repositoryId = "BentleyCONNECT.ProjectContent--f84ee4ab-3b31-4ba9-bf8e-edd124c73393";
-    Credentials credentials("8cc45bd041514b58947ea6c09c@gmail.com", "qwe12312");
-    BeFileName cachePath(L":memory:");
+    Utf8String serverUrl = "https://qa-punchlist-eus.cloudapp.net";
+    Utf8String repositoryId = "IssuePlugin--default";
+    Credentials credentials("bentleyvilnius@gmail.com", "Q!w2e3r4t5");
+    BeFileName cachePath = GetTestCachePath();
+
+    cachePath = BeFileName(StubFilePath("punchlistcache.ecdb"));
+    DataSourceCache::DeleteCacheFromDisk(cachePath, StubCacheEnvironemnt());
 
     auto manager = ConnectSignInManager::Create(StubValidClientInfo(), proxy, &m_localState);
     ASSERT_TRUE(manager->SignInWithCredentials(credentials)->GetResult().IsSuccess());
@@ -145,24 +162,8 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectProjectDataRetrieved_S
 
     auto client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, authHandler);
 
-    auto openResult = CachingDataSource::OpenOrCreate(client, cachePath, StubCacheEnvironemnt())->GetResult();
-    ASSERT_FALSE(nullptr == openResult.GetValue());
-    auto ds = openResult.GetValue();
-
-    ObjectId fileId("eBSchema.Document", "62172");
-    auto txn = ds->StartCacheTransaction();
-    txn.GetCache().LinkInstanceToRoot(nullptr, fileId);
-    txn.Commit();
-
-    auto fileResult = ds->GetFile(fileId, CachingDataSource::DataOrigin::CachedOrRemoteData, nullptr, nullptr)->GetResult();
-    ASSERT_TRUE(fileResult.IsSuccess());
-    BeDebugLog(fileResult.GetValue().GetFilePath().GetNameUtf8().c_str());
-    auto fileResult2 = ds->GetFile(fileId, CachingDataSource::DataOrigin::RemoteData, nullptr, nullptr)->GetResult();
-
-    auto result = ds->GetNavigationChildren(ObjectId(), CachingDataSource::DataOrigin::CachedOrRemoteData, nullptr)->GetResult();
-    ASSERT_TRUE(result.IsSuccess());
-    BeDebugLog(result.GetValue().GetJson().toStyledString().c_str());
-    auto result2 = ds->GetNavigationChildren(ObjectId(), CachingDataSource::DataOrigin::RemoteData, nullptr)->GetResult();
+    auto result = CachingDataSource::OpenOrCreate(client, cachePath, StubCacheEnvironemnt())->GetResult();
+    ASSERT_FALSE(nullptr == result.GetValue());
     }
 
 TEST_F(CachingDataSourceTests, OpenOrCreate_WSG13eBPluginRepository_Succeeds)
@@ -172,7 +173,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG13eBPluginRepository_Succeeds)
     Utf8String serverUrl = "https://viltest2-7.bentley.com/ws";
     Utf8String repositoryId = "eB.viltest2-5.bentley.com,eB_Mobile";
     Credentials creds("admin", "admin");
-    BeFileName cachePath(L":memory:");
+    BeFileName cachePath = GetTestCachePath();
 
     IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, proxy);
     client->SetCredentials(creds);
@@ -188,7 +189,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG13ProjectWisePluginRepository_Suc
     Utf8String serverUrl = "https://viltest2-7.bentley.com/ws";
     Utf8String repositoryId = "pw.PW_Mobile_SS3";
     Credentials creds("admin", "admin");
-    BeFileName cachePath(L":memory:");
+    BeFileName cachePath = GetTestCachePath();
 
     IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, proxy);
     client->SetCredentials(creds);
@@ -204,7 +205,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG13SharePointPluginRepository_Succ
     Utf8String serverUrl = "https://viltest2-7.bentley.com/ws";
     Utf8String repositoryId = "ec.Bentley.ECOM.SharePointProvider--http~3A~2F~2Fviltest2-10";
     Credentials creds("VILTEST2-10\\administrator", "Q!w2e3r4");
-    BeFileName cachePath(L":memory:");
+    BeFileName cachePath = GetTestCachePath();
 
     IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, proxy);
     client->SetCredentials(creds);
@@ -220,7 +221,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG22eBPluginRepository_Succeeds)
     Utf8String serverUrl = "https://viltest2-7.bentley.com/ws22";
     Utf8String repositoryId = "Bentley.eB--viltest2-5.bentley.com~2CeB_Mobile";
     Credentials creds("admin", "admin");
-    BeFileName cachePath(L":memory:");
+    BeFileName cachePath = GetTestCachePath();
 
     IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, proxy);
     client->SetCredentials(creds);
@@ -236,7 +237,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG23ProjectWisePluginRepository_Suc
     Utf8String serverUrl = "https://viltest2-8.bentley.com/ws23";
     Utf8String repositoryId = "Bentley.PW--VILTEST2-5.bentley.com~3APW_Mobile_SS3";
     Credentials creds("admin", "admin");
-    BeFileName cachePath(L":memory:");
+    BeFileName cachePath = GetTestCachePath();
 
     IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, proxy);
     client->SetCredentials(creds);
@@ -252,26 +253,10 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG2xProjectWisePluginMapMobileRepos
     Utf8String serverUrl = "https://geo-demo-ws.bentley.com/ws";
     Utf8String repositoryId = "Bentley.PW--geo-demo.bentley.com~3AGeo-Demo";
     Credentials creds("twc", "admin");
-    BeFileName cachePath(L":memory:");
+    BeFileName cachePath = GetTestCachePath();
 
     auto info = std::make_shared<ClientInfo>("Bentley-MapMobile", BeVersion(5,4), "77def89a-7e50-4f0e-a4c7-24fb6044dbfb", 
         "CLQIqB7y8eCUpdJe5uyRVVaaGbk=", "Windows 6.1", nullptr);
-
-    IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, proxy);
-    client->SetCredentials(creds);
-
-    auto result = CachingDataSource::OpenOrCreate(client, cachePath, StubCacheEnvironemnt())->GetResult();
-    ASSERT_FALSE(nullptr == result.GetValue());
-    }
-
-TEST_F(CachingDataSourceTests, OpenOrCreate_WSG24SharePointPluginRepository_Succeeds)
-    {
-    auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-
-    Utf8String serverUrl = "https://viltest2-5.bentley.com/ws24";
-    Utf8String repositoryId = "Bentley.SP--http~3A~2F~2Fviltest2-10";
-    Credentials creds(R"(.\administrator)", "Q!w2e3r4");
-    BeFileName cachePath(L":memory:");
 
     IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, proxy);
     client->SetCredentials(creds);
@@ -287,7 +272,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_WSG23ProjectWisePluginRepository
     Utf8String serverUrl = "https://viltest2-8.bentley.com/ws23";
     Utf8String repositoryId = "Bentley.PW--VILTEST2-5.bentley.com~3APW_Mobile_SS3";
     Credentials creds("admin", "admin");
-    BeFileName cachePath(L":memory:");
+    BeFileName cachePath = GetTestCachePath();
 
     IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, proxy);
     client->SetCredentials(creds);
@@ -296,7 +281,8 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_WSG23ProjectWisePluginRepository
     ASSERT_FALSE(nullptr == ds);
     BentleyStatus status;
 
-    ObjectId uploadsFolderId {"PW_WSG", "Project", "acd8be01-f097-461d-837a-63afeea9a8ea"};
+    /* pw:\\VILTEST2-5.bentley.com:PW_Mobile_SS3\Documents\VRA\WSClientIntegrationTests\CachingDataSourceTests\Uploads\ */
+    ObjectId uploadsFolderId {"PW_WSG", "Project", "30ff82ee-0a91-42ca-9dd6-c941e577be94"};
     ObjectId uploadsFolderNavNodeId {"Navigation", "NavNode", "ECObjects--" + uploadsFolderId.schemaName + "-" + uploadsFolderId.className + "-" + uploadsFolderId.remoteId};
 
     {
@@ -441,7 +427,7 @@ TEST_F(CachingDataSourceTests, GetObjects_WSG2PWSpatialQuery_Succeeds)
     Utf8String serverUrl = "https://viltest2-8.bentley.com/ws23";
     Utf8String repositoryId = "Bentley.PW--VILTEST2-5.bentley.com~3APW_Mobile_SS3";
     Credentials creds("admin", "admin");
-    BeFileName cachePath(L":memory:");
+    BeFileName cachePath = GetTestCachePath();
 
     IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, proxy);
     client->SetCredentials(creds);
@@ -587,8 +573,8 @@ TEST_F(CachingDataSourceTests, GetObjects_PunchlistQueries_Succeeds)
 
     Utf8String serverUrl = "https://qa-punchlist-eus.cloudapp.net";
     Utf8String repositoryId = "IssuePlugin--default";
-    Credentials credentials("bcc_user4@mailinator.com", "member#4");
-    BeFileName cachePath(L":memory:");
+    Credentials credentials("bentleyvilnius@gmail.com", "Q!w2e3r4t5");
+    BeFileName cachePath = GetTestCachePath();
 
     cachePath = BeFileName(StubFilePath("punchlistcache.ecdb"));
     DataSourceCache::DeleteCacheFromDisk(cachePath, StubCacheEnvironemnt());

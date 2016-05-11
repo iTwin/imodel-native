@@ -1,17 +1,14 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Cache/Persistence/Core/Version.h $
+|     $Source: Tests/UnitTests/Published/WebServices/Azure/AzureBlobStorageClientTests.h $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-
 #pragma once
 
-#include <WebServices/WebServices.h>
+#include "../../Utils/WebServicesTestsHelper.h"
 
-BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
+class AzureBlobStorageClientTests : public BaseMockHttpHandlerTest
+    {};
 
-static const int WSCACHE_FORMAT_VERSION = 11;
-
-END_BENTLEY_WEBSERVICES_NAMESPACE

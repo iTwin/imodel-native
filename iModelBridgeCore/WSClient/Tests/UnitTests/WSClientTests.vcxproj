@@ -31,6 +31,7 @@
     <ClInclude Include="Published\Utils\ValuePrinter.h" />
     <ClInclude Include="Published\Utils\WebServicesUnitTests.h" />
     <ClInclude Include="Published\Utils\WSClientBaseTest.h" />
+    <ClInclude Include="Published\WebServices\Azure\AzureBlobStorageClientTests.h" />
     <ClInclude Include="Published\WebServices\Cache\BaseCachingDataSourceTest.h" />
     <ClInclude Include="Published\WebServices\Cache\CachingDataSourceErrorTests.h" />
     <ClInclude Include="Published\WebServices\Cache\CachingDataSourceTests.h" />
@@ -173,6 +174,7 @@
     <ClCompile Include="Published\Utils\ValuePrinter.cpp" />
     <ClCompile Include="Published\Utils\WebServicesTestsHelper.cpp" />
     <ClCompile Include="Published\Utils\WSClientBaseTest.cpp" />
+    <ClCompile Include="Published\WebServices\Azure\AzureBlobStorageClientTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\BaseCachingDataSourceTest.cpp" />
     <ClCompile Include="Published\WebServices\Cache\CachingDataSourceErrorTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\CachingDataSourceTests.cpp" />
@@ -272,6 +274,11 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="dependencies.mki" />
+    <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\10.zip" />
+    <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\5.zip" />
+    <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\7.zip" />
+    <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\8.zip" />
+    <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\9.zip" />
     <None Include="TestAssetsDelivery.mke" />
   </ItemGroup>
   <ItemGroup>

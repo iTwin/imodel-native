@@ -2,7 +2,7 @@
 #
 #     $Source: ClientPrewire.mke $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 PolicyFile = $(InternalSystemPolicy)
@@ -12,6 +12,7 @@ PolicyFile = $(InternalSystemPolicy)
 always:
     !~@mkdir $(BuildContext)PublicAPI/WebServices
     @CreateSymLinks.py "$(BuildContext)PublicAPI/WebServices/WebServices.h  =$(_MakeFilePath)/PublicAPI/WebServices/WebServices.h"
+    @CreateSymLinks.py "$(BuildContext)PublicAPI/WebServices/Azure          =$(_MakeFilePath)/PublicAPI/WebServices/Azure"
     @CreateSymLinks.py "$(BuildContext)PublicAPI/WebServices/Client         =$(_MakeFilePath)/PublicAPI/WebServices/Client"
     @CreateSymLinks.py "$(BuildContext)PublicAPI/WebServices/Configuration  =$(_MakeFilePath)/PublicAPI/WebServices/Configuration"
     @CreateSymLinks.py "$(BuildContext)PublicAPI/WebServices/Connect        =$(_MakeFilePath)/PublicAPI/WebServices/Connect"
