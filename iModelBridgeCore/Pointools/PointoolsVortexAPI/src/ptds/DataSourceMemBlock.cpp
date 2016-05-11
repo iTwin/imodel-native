@@ -15,7 +15,6 @@ namespace ptds
 
 	DataSourceMemBlock::DataSourceMemBlock(void)
 	{
-		handle = NULL;
 		m_readPos = 0;
 	}
 

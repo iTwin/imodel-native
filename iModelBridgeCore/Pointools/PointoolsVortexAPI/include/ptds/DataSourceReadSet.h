@@ -38,7 +38,7 @@ public:
 
 							DataSourceReadSet		(void);
 
-		bool				addRead					(DataSourceRead &read);
+		bool				addRead					(DataSourceRead const &read);
 		unsigned int		getNumReads				(void) const;
  const	DataSourceRead	*	getRead					(ReadIndex index) const;
 		DataSourceRead	*	getRead					(ReadIndex index);

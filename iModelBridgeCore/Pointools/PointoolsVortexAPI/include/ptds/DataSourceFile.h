@@ -14,12 +14,7 @@ public:
 
 protected:
 
-	HANDLE					handle;
-
-protected:
-
-	void					invalidateHandle	(void);
-
+	BeFile                  m_file;
 
 public:
 

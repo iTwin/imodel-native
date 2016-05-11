@@ -56,12 +56,12 @@ PchOutputDir        = $(o)
 PchExtraOptions     = -Zm160
 PchExplicitDepends  = $(MultiCompileDepends)
 
-%if defined (winNT) && defined (BUILD_TOOLSET) 
-    %if $(BUILD_TOOLSET) == "GCC"
-        # Avoid internal compiler error in GCC using windows ndk toolchain
-        GCC_NO_PRE_COMPILED_HEADER = 1
-    %endif
+%if defined (winNT) && $(BUILD_TOOLSET) == "GCC"
+    # Using pch generate a crash in cc1plus.exe. Apparently this is caused by a too large pch. Should be fixed in future android NDK release.
+    # http://stackoverflow.com/questions/10841306/cc1plus-exe-crash-when-using-large-precompiled-header-file
+    #GCC_NO_PRE_COMPILED_HEADER = 1
 %endif
+
 %include $(SharedMki)PreCompileHeader.mki
 
 CCPchOpts = $(UsePrecompiledHeaderOptions)
@@ -70,7 +70,6 @@ CPchOpts  = $(UsePrecompiledHeaderOptions)
 
 #DisableMultiCompile=1
 
-#NEEDS_WORK_VORTEX_DGNDB: Fix source files between %if $(TARGET_PLATFORM)=="Windows" 
 #----------------------------------------------------------------------
 #       Build source files
 #----------------------------------------------------------------------
@@ -121,10 +120,6 @@ $(o)pointsExchanger$(oext)               : $(basedir)src/ptengine/pointsExchange
 
 $(o)projAreaApproximation$(oext)         : $(basedir)src/ptengine/projAreaApproximation.cpp                      $(basedir)include/ptengine/projAreaApproximation.h               ${MultiCompileDepends}
 
-%if $(TARGET_PLATFORM)=="Windows"
-$(o)pointoolsapi_files$(oext)            : $(basedir)src/ptapi/pointoolsapi_files.cpp                            $(basedir)include/PTRMI/TestPTRMI.h                              ${MultiCompileDepends}
-%endif
-
 $(o)Registry$(oext)                      : $(basedir)src/pt/Registry.cpp                                         $(basedir)include/pt/Registry.h                                  ${MultiCompileDepends}
 
 $(o)PointoolsAPI_shader$(oext)           : $(basedir)src/ptapi/PointoolsAPI_shader.cpp                                                                                             ${MultiCompileDepends}
@@ -134,7 +129,11 @@ $(o)datatreeIO$(oext)                    : $(basedir)src/pt/datatreeIO.cpp      
 $(o)ptstring$(oext)                      : $(basedir)src/pt/ptstring.cpp                                         $(basedir)include/pt/ptstring.h                                  ${MultiCompileDepends}
 
 %if $(TARGET_PLATFORM)=="Windows"
+
 $(o)PointoolsAPI_query$(oext)            : $(basedir)src/ptapi/PointoolsAPI_query.cpp                                                                                              ${MultiCompileDepends}
+
+$(o)pointoolsapi_files$(oext)            : $(basedir)src/ptapi/pointoolsapi_files.cpp                            $(basedir)include/PTRMI/TestPTRMI.h                              ${MultiCompileDepends}
+
 %endif
 
 $(o)renderRGBEffect$(oext)               : $(basedir)src/ptengine/renderRGBEffect.cpp                            $(basedir)include/ptengine/renderRGBEffect.h                     ${MultiCompileDepends}
@@ -145,10 +144,12 @@ $(o)Matrix4$(oext)                       : $(basedir)src/pt/Matrix4.cpp         
 
 $(o)Datatable$(oext)                     : $(basedir)src/pt/Datatable.cpp                                        $(basedir)include/pt/datatable.h                                 ${MultiCompileDepends}
 
-%if $(TARGET_PLATFORM)=="Windows"
 $(o)Log$(oext)                           : $(basedir)src/pt/Log.cpp                                              $(basedir)include/pt/Array.h                                     ${MultiCompileDepends}
 
+%if $(TARGET_PLATFORM)=="Windows"
+
 $(o)StreamHost$(oext)                    : $(basedir)src/ptengine/StreamHost.cpp                                 $(basedir)include/ptengine/StreamHost.h                          ${MultiCompileDepends}
+
 %endif
                                                                                                                   
 $(o)consolidate$(oext)                   : $(basedir)src/ptedit/consolidate.cpp                                                                                                    ${MultiCompileDepends}
@@ -166,10 +167,10 @@ $(o)editState$(oext)                     : $(basedir)src/ptedit/editState.cpp   
 $(o)userChannelManager$(oext)            : $(basedir)src/ptengine/userChannelManager.cpp                                                                                           ${MultiCompileDepends}
                                                                                                                   
 $(o)queryDensity$(oext)                  : $(basedir)src/ptengine/queryDensity.cpp                               $(basedir)include/ptengine/queryDensity.h                        ${MultiCompileDepends}
-          
-%if $(TARGET_PLATFORM)=="Windows"                                                                                                        
+                                                                                                              
 $(o)DataSourceFile$(oext)                : $(basedir)src/ptds/DataSourceFile.cpp                                 $(basedir)include/ptds/DataSourceFile.h                          ${MultiCompileDepends}
-                                                                                                                  
+     
+%if $(TARGET_PLATFORM)=="Windows"                                                                                                                 
 $(o)DataSourceManager$(oext)             : $(basedir)src/ptds/DataSourceManager.cpp                              $(basedir)include/ptds/DataSourceManager.h                       ${MultiCompileDepends}
                                                                                        
 $(o)pointsPager$(oext)                   : $(basedir)src/ptengine/pointsPager.cpp                                $(basedir)include/ptengine/pointsPager.h                         ${MultiCompileDepends}
@@ -267,11 +268,11 @@ $(o)pod$(oext)                           : $(basedir)src/ptcloud2/pod.cpp       
 $(o)DataSourceRead$(oext)                : $(basedir)src/ptds/DataSourceRead.cpp                                 $(basedir)include/ptds/DataSourceRead.h                          ${MultiCompileDepends}
                                                                                                                   
 $(o)pointcloud$(oext)                    : $(basedir)src/ptcloud2/pointcloud.cpp                                 $(basedir)include/ptcloud2/pointcloud.h                          ${MultiCompileDepends}
+
+$(o)scene_indexstream$(oext)             : $(basedir)src/ptcloud2/scene_indexstream.cpp                                                                                            ${MultiCompileDepends}
                         
 %if $(TARGET_PLATFORM)=="Windows"     
-                                                                                     
-$(o)scene_indexstream$(oext)             : $(basedir)src/ptcloud2/scene_indexstream.cpp                                                                                            ${MultiCompileDepends}
-
+                                                                                 
 $(o)DataCacheParallelRead$(oext)         : $(basedir)src/ptds/DataCacheParallelRead.cpp                          $(basedir)include/ptds/DataCacheParallelRead.h                   ${MultiCompileDepends}
 
 %endif
@@ -307,10 +308,8 @@ $(o)PointoolsAPI_tuning$(oext)           : $(basedir)src/ptapi/PointoolsAPI_tuni
 $(o)PointoolsAPI_viewports$(oext)        : $(basedir)src/ptapi/PointoolsAPI_viewports.cpp                                                                                          ${MultiCompileDepends}
                                                                                                                   
 $(o)IClashObject$(oext)                  : $(basedir)src/vortexobjects/IClashObject.cpp                          $(basedir)include/vortexobjects/IClashObject.h                   ${MultiCompileDepends}
-          
-%if $(TARGET_PLATFORM)=="Windows"                                                                                                                       
+                                                                                                                              
 $(o)clashObject$(oext)                   : $(basedir)src/ptclash/clashObject.cpp                                 $(basedir)include/ptclash/clashObject.h                          ${MultiCompileDepends}
-%endif
                                                                                                                                                                                                                                     
 $(o)renderSettings$(oext)                : $(basedir)src/ptengine/renderSettings.cpp                             $(basedir)include/ptengine/renderSettings.h                      ${MultiCompileDepends}
                                                                                                                   
@@ -329,10 +328,8 @@ $(o)layers$(oext)                        : $(basedir)src/ptedit/layers.cpp      
 $(o)DataSourceMemory$(oext)              : $(basedir)src/ptds/DataSourceMemory.cpp                               $(basedir)include/ptds/DataSourceMemory.h                        ${MultiCompileDepends}
                                                                                                                   
 $(o)DoubleBuffering$(oext)               : $(basedir)src/encryption/DoubleBuffering.cpp                          $(basedir)include/encryption/DoubleBuffering.h                   ${MultiCompileDepends}
-           
-%if $(TARGET_PLATFORM)=="Windows"                                                                                                          
+                                                                                                                  
 $(o)DataCache$(oext)                     : $(basedir)src/ptds/DataCache.cpp                                      $(basedir)include/ptds/DataCache.h                               ${MultiCompileDepends}
-%endif
                                                                                                                   
 $(o)ptapp$(oext)                         : $(basedir)src/ptappdll/ptapp.cpp                                      $(basedir)include/ptappdll/ptapp.h                               ${MultiCompileDepends}
                                                                                                                   
@@ -347,13 +344,13 @@ $(o)renderResourceManager$(oext)         : $(basedir)src/ptengine/renderResource
 $(o)StreamManagerParameters$(oext)       : $(basedir)src/ptengine/StreamManagerParameters.cpp                    $(basedir)include/ptengine/StreamManagerParameters.h             ${MultiCompileDepends}
                                                                                                                   
 $(o)Timer$(oext)                         : $(basedir)src/pt/Timer.cpp                                            $(basedir)include/pt/Timer.h                                     ${MultiCompileDepends}
+
+$(o)Datatree$(oext)                      : $(basedir)src/pt/Datatree.cpp                                         $(basedir)include/pt/Datatree.h                                  ${MultiCompileDepends}
+
+$(o)cmdprogress$(oext)                   : $(basedir)src/ptcmdppe/cmdprogress.cpp                                $(basedir)include/ptcmdppe/cmdprogress.h                         ${MultiCompileDepends}
    
 %if $(TARGET_PLATFORM)=="Windows"      
-                                                                                                                                                                                                                                    
-$(o)Datatree$(oext)                      : $(basedir)src/pt/Datatree.cpp                                         $(basedir)include/pt/Datatree.h                                  ${MultiCompileDepends}
-                                                                                                         
-$(o)cmdprogress$(oext)                   : $(basedir)src/ptcmdppe/cmdprogress.cpp                                $(basedir)include/ptcmdppe/cmdprogress.h                         ${MultiCompileDepends}
-
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              
 $(o)GraphManager$(oext)                  : $(basedir)src/ptds/GraphManager.cpp                                   $(basedir)include/ptds/GraphManager.h                            ${MultiCompileDepends}
 
 %endif

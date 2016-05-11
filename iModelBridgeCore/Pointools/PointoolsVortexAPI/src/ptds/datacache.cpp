@@ -315,12 +315,14 @@ Status DataCache::openCache(const wchar_t *filePathFull, const wchar_t *filePath
 	}
 
 															// Open full file for reading
-	if(dataSourceFullFile->openForRead(&ptds::FilePath(filePathFull)) == false)
+    ptds::FilePath fullFilePath(filePathFull);
+	if(dataSourceFullFile->openForRead(&fullFilePath) == false)
 	{
 		return Status(Status::Status_Error_File_Open_For_Read);
 	}
 															// Open main cache file for read/write
-	if(dataSourceCacheFile->openForReadWrite(&ptds::FilePath(filePathCache)) == false)
+    ptds::FilePath cacheFilePath(filePathCache);
+	if(dataSourceCacheFile->openForReadWrite(&cacheFilePath) == false)
 	{
 		dataSourceFullFile->close();
 		return Status(Status::Status_Error_File_Open_For_Read_Write);
@@ -354,9 +356,8 @@ Status DataCache::createCache(const wchar_t *filePath, const wchar_t *cacheFileP
 
 	if((dataSourceCacheFile = dataSourceCache->getDataSourceCacheFile()) == NULL)
 		return Status(Status::Status_Error_Failed);
-
 															// Open file so the size can be obtained
-	if(dataSourceFullFile->openForRead(&ptds::FilePath(filePath)) == false)
+	if(dataSourceFullFile->openForRead(&path) == false)
 		return Status(Status::Status_Error_File_Open_For_Read);
 															// Get size of full original file
 	if((fullFileSize = dataSourceFullFile->getFileSize()) == 0)
@@ -1187,7 +1188,7 @@ void DataCache::outputStatusToLog(void)
 {
 	wchar_t	message[2048];
 
-	wsprintfW(message, L"Cache Pages: %d %d %d", getNumCachePages(), getNumCachePagesResident(), getPercentageCachePagesResident());
+	swprintf(message, 2048, L"Cache Pages: %d %d %d", getNumCachePages(), getNumCachePagesResident(), getPercentageCachePagesResident());
 
 	Status::log(message, L"");
 }

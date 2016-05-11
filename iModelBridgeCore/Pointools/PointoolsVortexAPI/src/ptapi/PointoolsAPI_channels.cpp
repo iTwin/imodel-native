@@ -381,7 +381,7 @@ PTres PTAPI ptSetChannelOOCFolder( const PTstr foldername )
 		res = true;
 	
 	ptds::dataSourceManager.close(fhandle);
-	DeleteFileW(filename);
+    BeFileName::BeDeleteFile(filename);
 
 	if (res)
 	{

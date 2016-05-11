@@ -63,14 +63,11 @@ const std::wstring & URL::getString(void) const
 
 void URL::getString(std::string &result)
 {
-	char buffer[URL_MAX_LENGTH];
+    AString temp(url.c_str());
+    if (temp.size() >= URL_MAX_LENGTH)
+        temp.resize(URL_MAX_LENGTH-1);
 
-	size_t convertedChars	= 0;
-	size_t originalSize		= getLength() + 1;
-
-	wcstombs_s(&convertedChars, buffer, originalSize, url.c_str(), _TRUNCATE);
-
-	result = buffer;	
+  	result = temp.c_str();
 }
 
 bool URL::isValidURL(void) const
@@ -334,7 +331,7 @@ unsigned int URL::split(URL &protocol, URL &hostAddress, URL &object, bool *gotP
 	return numItems;
 }
 
-bool URL::setProtocol(URL &newProtocol)
+bool URL::setProtocol(URL const &newProtocol)
 {
 	PTRMI::URL	protocol, hostAddress, object, newURL;
 

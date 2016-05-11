@@ -310,7 +310,7 @@ namespace PTRMI
 					setLogEnabled(true);
 
 #ifndef NO_DATA_SOURCE_SERVER
-					DeleteFileW(filePath);
+                    BeFileName::BeDeleteFile(filePath);
 					log(L"Log started ", L"");
 #endif
 				}

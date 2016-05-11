@@ -557,7 +557,7 @@ bool ClashObject::preparePointCloud(TreeFeedbackFunc fb )
 	if (userClashDataFolder.length())
 	{
 		wchar_t tempPath[PT_MAXPATH] = {0};
-		_snwprintf_s(tempPath, PT_MAXPATH, PT_MAXPATH-1, L"%s\\%s", userClashDataFolder.c_wstr(), scenePath.filename());			
+        BeStringUtilities::Snwprintf(tempPath, PT_MAXPATH, L"%s\\%s", userClashDataFolder.c_wstr(), scenePath.filename());
 		scenePath = tempPath;
 	}
 
@@ -575,28 +575,19 @@ bool ClashObject::preparePointCloud(TreeFeedbackFunc fb )
 	}
 	else
 	{
-		HANDLE h = CreateFileW( scenePath.filename(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
-
 		wchar_t dateStr[256];
 		dateStr[0]=0;
 
-		if (h != INVALID_HANDLE_VALUE)
-		{
-			FILETIME creationTime;
-			FILETIME lastAccessTime;
-			FILETIME lastWriteTime;
-
-		    SYSTEMTIME stUTC;
-
-			if (GetFileTime( h, &creationTime, &lastAccessTime, &lastWriteTime ))
-			{
-				 // Convert the last-write time to local time.
-				FileTimeToSystemTime(&lastWriteTime, &stUTC);
-
+        time_t lastWriteTime;
+        if(BeFileNameStatus::Success == BeFileName::GetFileTime(nullptr, nullptr, &lastWriteTime, scenePath.filename()))
+		    {
+            DateTime dateTime;
+            if(SUCCESS == DateTime::FromUnixMilliseconds(dateTime, (uint64_t) lastWriteTime * 1000))
+                {
+                
 				// Build a string showing the date and time.
-				swprintf(dateStr, L"%02d%02d%02d%02d%02d",
-					(int)stUTC.wMonth, (int)stUTC.wDay, (int)stUTC.wYear,
-					(int)stUTC.wHour, (int)stUTC.wMinute);
+				swprintf(dateStr, 256, L"%02d%02d%02d%02d%02d", 
+                         dateTime.GetMonth(), dateTime.GetDay (), dateTime.GetYear(), dateTime.GetHour (), dateTime.GetMinute ());
 			}
 		}
 		cacheFilename = scenePath.filename();
@@ -605,8 +596,6 @@ bool ClashObject::preparePointCloud(TreeFeedbackFunc fb )
 			cacheFilename += pt::String(".");		
 			cacheFilename += pt::String(dateStr);
 		}
-
-		CloseHandle(h);
 	}
 	scenePath.setFilenameOnly( cacheFilename.c_wstr() );
 	scenePath.setExtension(L"clashdata");

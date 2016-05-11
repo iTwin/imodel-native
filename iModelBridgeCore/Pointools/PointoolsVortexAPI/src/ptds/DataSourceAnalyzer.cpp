@@ -5,9 +5,6 @@
 #include <ptengine/StreamHost.h>
 
 
-#include <iostream>
-#include <fstream>
-
 #define DATA_SOURCE_ONE_SECOND_MILLISECONDS					1000
 #define DATA_SOURCE_ANALYZER_DEFAULT_DATA_SIZE				1024 * 256	// Default data size to stream while initializing early stages of analysis
 #define DEFAULT_DATA_SOURCE_ANALYZER_MIN_LATENCY_ENTRIES	5			// Number of latency entries to monitor

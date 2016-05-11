@@ -816,13 +816,11 @@ void OOCFile::create( class UserChannel *uchannel )
 //-----------------------------------------------------------------------------
 void OOCFile::destroy()
 {
-#ifdef BENTLEY_WIN32    //NEEDS_WORK_VORTEX_DGNDB
 	ptds::dataSourceManager.close(fhandle);
-	::DeleteFileW( fname.c_wstr() );
+    BeFileName::BeDeleteFile(fname.c_wstr());
 	fhandle = NULL;
 	fend = 0;
 	fname = "";
-#endif
 }
 //-----------------------------------------------------------------------------
 // OOCFile: write the data to file

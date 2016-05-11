@@ -128,8 +128,9 @@ bool DataTree::writeTree( const String &path )
 	Meta::makeMeta(m);
 
 	NodeWriteVisitor wv;
-	if (EINVAL == _wfopen_s(&wv._file, path.c_wstr(), L"wb")
-		|| !wv._file) return false;
+    wv._file = fopen(path.c_str(), "wb");
+	if (NULL == wv._file)
+		return false;
 
 	char *id = "dtree1.1";
 	fwrite(id, 8, 1, wv._file);
@@ -148,9 +149,9 @@ bool DataTree::writeTree( const String &path )
 bool DataTree::isDTreeFile( const String &filepath )
 {
 	/*read tree from file*/ 
-	FILE * file=0;
-	if (EINVAL == _wfopen_s(&file, filepath.c_wstr(), L"rb")
-		|| !file) return false;
+	FILE * file = fopen(filepath.c_str(), "rb");
+	if(NULL == file)
+        return false;
 
 	/*is this a valid dtree file*/ 
 	char id[9];
@@ -183,11 +184,9 @@ struct Reader
 bool DataTree::readTree( const String &filepath )
 {
 	/*read tree from file*/ 
-	FILE * file=0;
-	if (EINVAL == _wfopen_s(&file, filepath.c_wstr(), L"rb")
-		|| !file) return false;
-
-	if (!file) return false;
+    FILE * file = fopen(filepath.c_str(), "rb");
+    if (NULL == file)
+        return false;
 
 	/*is this a valid dtree file*/ 
 	char id[9];

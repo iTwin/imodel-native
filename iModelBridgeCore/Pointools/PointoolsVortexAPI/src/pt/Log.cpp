@@ -21,37 +21,39 @@ namespace pt {
 
 Log* Log::commonLog = NULL;
 
-Log::Log(const std::wstring& filename, int stripFromStackBottom) : 
-    stripFromStackBottom(stripFromStackBottom) {
+Log::Log(const std::wstring& filename, int stripFromStackBottom)
+    : stripFromStackBottom(stripFromStackBottom)
+    {
 
     this->filename = filename;
 
-    logFile = _wfopen(filename.c_str(), L"w");
+    AString filenameA(filename.c_str());
+    logFile = fopen(filenameA.c_str(), "w");
 
-    if (logFile == NULL) {
-        std::wstring drive, base, ext;
-
-		//std::vector<std::string> path;
-		//ptds:FilePath::parseFilename(filename, drive, path, base, ext);
-
-  //      std::string logName = base + ((ext != "") ? ("." + ext) : ""); 
-		std::wstring logName;
+    if (logFile == NULL)
+        {
+        std::string logName;
 
         // Write time is greater than 1ms.  This may be a network drive.... try another file.
-        #ifdef _WIN32
-			if (ptds::FilePath::checkExists(L"c:/tmp")) {
-                logName = std::wstring(L"c:/tmp/") + logName;
-            } else if (ptds::FilePath::checkExists(L"c:/temp")) { 
-                logName = std::wstring(L"c:/temp/") + logName;
-            } else {
-                logName = std::wstring(L"c:/") + logName;
+#ifdef _WIN32
+        if (ptds::FilePath::checkExists(L"c:/tmp"))
+            {
+            logName = std::string("c:/tmp/") + logName;
             }
-        #else
-            logName = std::string("/tmp/") + logName;
-        #endif
+        else if (ptds::FilePath::checkExists(L"c:/temp"))
+            {
+            logName = std::string("c:/temp/") + logName;
+            }
+        else
+            {
+            logName = std::string("c:/") + logName;
+            }
+#else
+        logName = std::string("/tmp/") + logName;
+#endif
 
-        logFile = _wfopen(logName.c_str(), L"w");
-    }
+        logFile = fopen(logName.c_str(), "w");
+        }
 
     // Turn off buffering.
     setvbuf(logFile, NULL, _IONBF, 0);
@@ -62,10 +64,11 @@ Log::Log(const std::wstring& filename, int stripFromStackBottom) :
     fprintf(logFile, "Start: %s\n", ctime(&t));
     fflush(logFile);
 
-    if (commonLog == NULL) {
+    if (commonLog == NULL)
+        {
         commonLog = this;
+        }
     }
-}
 
 
 Log::~Log() {

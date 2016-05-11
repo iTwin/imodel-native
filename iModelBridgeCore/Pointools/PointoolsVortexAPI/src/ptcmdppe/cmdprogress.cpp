@@ -46,7 +46,9 @@ CmdProgress::CmdProgress(const char *st, int mn, int mx, bool dedicated_win)
 		_output->progress(st);
 		_output->flush();
 	}
+#if defined (BENTLEY_WIN32) 
 	::SetCursor(LoadCursor(0, IDC_WAIT));
+#endif
 	/*register job*/ 
 }
 CmdProgress::~CmdProgress()

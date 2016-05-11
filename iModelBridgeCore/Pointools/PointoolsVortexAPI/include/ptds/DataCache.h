@@ -1,13 +1,8 @@
 #pragma once
 
 #include <PTRMI/Status.h>
-#include <PTRMI/Mutex.h>
 #include <ptds/DataSource.h>
 #include <ptds/BitArray.h>
-
-#include <vector>
-#include <set>
-#include <queue>
 
 #define DATA_CACHE_DEFAULT_FILE_SIZE						0
 #define DATA_CACHE_DEFAULT_NUM_PAGES_RESIDENT				0

@@ -590,10 +590,10 @@ int Scene::writePointData( SceneBuildData *buildInfo, PointCloud *pc )
 		voxels.push(pc->voxels()[i]);
 
 	/* check how much memory is available */ 
+#if defined (BENTLEY_WIN32) 
 	MEMORYSTATUSEX mem;
 	mem.dwLength = sizeof(MEMORYSTATUSEX);
-    uint64_t aval;
-	int writebuffsizeMB;
+#endif
 
 	UniformFilter uniFilter;
 
@@ -603,11 +603,14 @@ int Scene::writePointData( SceneBuildData *buildInfo, PointCloud *pc )
 		PTTRACE_LINE
 
 		char mess[256];
-	
+#if defined (BENTLEY_WIN32) 	
 		GlobalMemoryStatusEx(&mem);		
-		aval = static_cast<uint64_t>(mem.ullAvailVirtual * 0.75); /* leave space for read / write block allocations */
-		writebuffsize = aval;
-        writebuffsizeMB = static_cast<int>(writebuffsize / (1024 * 1024));
+        writebuffsize = static_cast<uint64_t>(mem.ullAvailVirtual * 0.75); /* leave space for read / write block allocations */
+#else
+        writebuffsize = 1024 * 1024 * 100;  //100 MB
+#endif
+		
+        int writebuffsizeMB = static_cast<int>(writebuffsize / (1024 * 1024));
 		
 		sprintf_s(mess, "Gathering data for POD file : iteration %d using up to %dMb for buffer", ++iteration, writebuffsizeMB);
 		ptapp::CmdProgress writeprogress(mess, 0, (buildInfo->endCloud - buildInfo->startCloud)+1);
@@ -770,7 +773,7 @@ int Scene::writePointData( SceneBuildData *buildInfo, PointCloud *pc )
 										pnt1d -= dc->offset();
 										pnt1d /= dc->scaler();
 
-										pt::vector3 pp = pnt1d;
+										pt::vector3d pp = pnt1d;
 
 										if (vox->channel(PCloud_Geometry)->validIndex(pos))
 											vox->channel(PCloud_Geometry)->set(pos, &pp);								
@@ -821,12 +824,14 @@ int Scene::writePointData( SceneBuildData *buildInfo, PointCloud *pc )
 				}
 				catch (...)
 				{
-					PTTRACEOUT << "FAILURE: POD File creation failed. This is most likley to be a memory failure";
+					PTTRACEOUT << "FAILURE: POD File creation failed. This is most likely to be a memory failure";
+#if defined (BENTLEY_WIN32) 
 					GlobalMemoryStatusEx(&mem);
 					int64_t aval = mem.ullAvailVirtual;	
                     int writebuffsizeMB = static_cast<int>(aval / (1024 * 1024));
 
 					PTTRACEOUT << aval << "Mb available in this processes virtual memory space";
+#endif
 
 					error = OutOfMemory;
 					/* empty voxel cache */ 

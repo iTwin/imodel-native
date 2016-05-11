@@ -57,7 +57,7 @@ namespace PTRMI
 		void					toUpper					(void);
 		void					toLower					(void);
 
-		bool					setProtocol				(URL &newProtocol);
+		bool					setProtocol				(URL const &newProtocol);
 
 		bool					isProtocol				(const wchar_t *protocolString) const;
 		bool					isProtocolNetworked		(void) const;

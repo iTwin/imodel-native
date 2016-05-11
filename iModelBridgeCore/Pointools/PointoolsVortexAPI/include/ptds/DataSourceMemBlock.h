@@ -15,8 +15,6 @@ namespace ptds
 
 	protected:
 
-		HANDLE					handle;
-
 		bool					openForRead			(const Data*buffer);
 		bool					openForWrite		(void);
 

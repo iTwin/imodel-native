@@ -23,7 +23,7 @@ void DataSourceReadSet::clear(void)
 }
 
 
-bool DataSourceReadSet::addRead(DataSourceRead &read)
+bool DataSourceReadSet::addRead(DataSourceRead const&read)
 {
 	readSet.push_back(read);
 															// Accumulate total item size

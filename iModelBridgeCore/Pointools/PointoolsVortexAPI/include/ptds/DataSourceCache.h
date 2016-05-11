@@ -3,8 +3,6 @@
 #include <ptds/DataSource.h>
 #include <ptds/DataCache.h>
 
-#include <map>
-
 #define DATA_SOURCE_CACHE_FILE_POSTFIX			L".podc"		// Standard Postfix for cache files
 #define DATA_SOURCE_CACHE_FILE_SEPARATOR		L"/"			
 

@@ -14,7 +14,7 @@ namespace ptds
 
 DataSourceFile::DataSourceFile(void)
 {
-	invalidateHandle();
+    m_file.SetBogus();
 }
 
 
@@ -37,15 +37,7 @@ bool DataSourceFile::openForRead(const FilePath *filepath, bool create)
 
 	setOpenState(DataSourceStateClosed);
 
-	handle = CreateFileW(path,
-		GENERIC_READ,				 // open for writing
-		FILE_SHARE_READ,			 // do not share
-		NULL,						 // no security
-		OPEN_EXISTING,				 // open existing only
-		FILE_ATTRIBUTE_NORMAL,		 // normal file
-		NULL);						 // optimization hints
-
-	if(validHandle())
+	if(BeFileStatus::Success == m_file.Open(path, BeFileAccess::Read))
 	{
 		filePath = (*filepath);
 		PTRMI::Status::log(L"Open for read : ", path);
@@ -71,16 +63,7 @@ bool DataSourceFile::openForWrite(const FilePath *filepath, bool create)
 
 	setOpenState(DataSourceStateClosed);
 
-	handle = CreateFileW(path,
-		GENERIC_WRITE,				// open for writing
-		NULL,						// do not share
-		NULL,						// no security
-		CREATE_ALWAYS,				// overwrite existing
-		FILE_ATTRIBUTE_NORMAL |		// normal file
-		FILE_FLAG_WRITE_THROUGH,	// optimization hints
-		NULL);
-
-	if(validHandle())
+	if(BeFileStatus::Success == m_file.Create(path, /*createAlways*/true))
 	{
 		filePath = (*filepath);
 		canWrite = true;
@@ -105,26 +88,15 @@ bool DataSourceFile::openForReadWrite(const FilePath *filepath, bool create)
 	wchar_t path[PT_MAXPATH];
 	filepath->fullpath(path);
 
+    setOpenState(DataSourceStateClosed);
 
-	setOpenState(DataSourceStateClosed);
+	BeFileStatus status;
+    if (create)
+        status = m_file.Create(path, /*createAlways*/true);
+    else
+        status = m_file.Open(path, BeFileAccess::ReadWrite);
 
-	DWORD openExistingOrCreate = OPEN_EXISTING;
-												// If Create specified, create if file doesn't exist
-	if(create)
-	{
-		openExistingOrCreate = OPEN_ALWAYS;
-	}
-
-	handle = CreateFileW(path,
-		GENERIC_READ | GENERIC_WRITE,			// Open for Read and Write
-		FILE_SHARE_READ | FILE_SHARE_WRITE,		// Share reads and writes
-		NULL,									// no security
-		openExistingOrCreate,					// open existing or create a new file
-		FILE_ATTRIBUTE_NORMAL |					// normal file
-		FILE_FLAG_WRITE_THROUGH,
-		NULL);									// optimization hints
-
-	if(validHandle())
+	if(BeFileStatus::Success == status)
 	{
 		filePath = (*filepath);
 		canWrite = true;
@@ -144,54 +116,28 @@ bool DataSourceFile::openForReadWrite(const FilePath *filepath, bool create)
 
 bool DataSourceFile::movePointerBy(DataPointer numBytes)
 {
-	LARGE_INTEGER li;
-
-	li.QuadPart = numBytes;
-
-	long highPart = li.HighPart;
-	long lowPart = li.LowPart;
-
-	DWORD lo = SetFilePointer(handle, lowPart, &highPart, FILE_CURRENT);
-
-	return (lowPart == li.LowPart && highPart == li.HighPart) ? true : false;
+    return BeFileStatus::Success == m_file.SetPointer(numBytes, BeFileSeekOrigin::Current);
 }
 
 
 bool DataSourceFile::movePointerTo(DataPointer numBytes)
 {
-	LARGE_INTEGER li;
-
 	Super::movePointerTo(numBytes);
 
-	li.QuadPart = numBytes;
-
-	long highPart = li.HighPart;
-	long lowPart = li.LowPart;
-
-	DWORD lo = SetFilePointer(handle, lowPart, &highPart, FILE_BEGIN);
-
-	return (lo == li.LowPart && highPart == li.HighPart) ? true : false;			
+    return BeFileStatus::Success == m_file.SetPointer(numBytes, BeFileSeekOrigin::Begin);		
 }
 
 
 bool DataSourceFile::validHandle(void)
 {
-	return handle != INVALID_HANDLE_VALUE;
+	return m_file.IsOpen();
 }
-
-
-void DataSourceFile::invalidateHandle(void)
-{
-	handle = INVALID_HANDLE_VALUE;
-}
-
 
 void DataSourceFile::close(void)
 {
 	if(validHandle())
 	{
-		CloseHandle(handle);
-		invalidateHandle();
+        m_file.Close();
 
 		setOpenState(DataSourceStateClosed);
 
@@ -206,24 +152,24 @@ void DataSourceFile::close(void)
 bool DataSourceFile::closeAndDelete(void)
 {
 	close();
-
-	return DeleteFileW(filePath.path()) != 0;
+    
+    return BeFileNameStatus::Success == BeFileName::BeDeleteFile(filePath.path());
 }
 
 DataSource::Size DataSourceFile::readBytes(Data *buffer, Size numBytes)
 {
-	DWORD numRead;
+	uint32_t numRead = 0;
 
 	if(getReadSetEnabled() && isReadSetDefined())
 	{
 		return readBytesFrom(buffer, getDataPointer(), numBytes);
 	}
 
-	if(handle)
+	if(validHandle())
 	{
 		beginRead(numBytes);
 
-		if(ReadFile(handle, buffer, static_cast<DWORD>(numBytes), &numRead, NULL) == FALSE)
+		if(BeFileStatus::Success != m_file.Read(buffer, &numRead, (uint32_t)numBytes))
 		{
 			return 0;
 		}
@@ -263,20 +209,18 @@ DataSource::Size DataSourceFile::readBytesFrom(Data *buffer, DataPointer positio
 
 DataSource::Size DataSourceFile::writeBytes(const Data *buffer, Size number_bytes)
 {
-	DWORD W; 
-	
-	WriteFile(handle, buffer, static_cast<DWORD>(number_bytes), &W, 0);
+    uint32_t written = 0;
+    m_file.Write(&written, buffer, (uint32_t)number_bytes);
 
-	return static_cast<Size>(W);
+	return written;
 }
 
 int64_t DataSourceFile::getFileSize(void) 
 { 
-	LARGE_INTEGER li;
-	DWORD s;
-	li.LowPart = GetFileSize(handle, &s); 
-	li.HighPart = (LONG)s;
-	return li.QuadPart;
+    uint64_t size = 0;
+    m_file.GetSize(size);
+
+	return size;
 };
 
 
@@ -353,7 +297,7 @@ void DataSourceFile::getURL(PTRMI::URL &url)
 
 	if(filePath = getFilePath())
 	{
-		url.setProtocol(PTRMI::URL::URL(PTRMI::URL::PT_PTFL));
+		url.setProtocol(PTRMI::URL(PTRMI::URL::PT_PTFL));
 		url += filePath->path();
 	}
 	else

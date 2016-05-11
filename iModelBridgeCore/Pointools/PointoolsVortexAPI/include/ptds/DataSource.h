@@ -2,7 +2,6 @@
 
 #include <ptds/FilePath.h>
 #include <pt/ptstring.h>
-#include <ptds/DataSourceAnalyzer.h>
 
 namespace PTRMI
 {
@@ -80,8 +79,6 @@ public:
 protected:
 
 	FilePath				filePath;
-
-//	DataSourceAnalyzer		analyzer;
 
 	ReadMode				readMode;
 

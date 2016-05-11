@@ -97,9 +97,9 @@ PTRMI_INSTANCE_SERVER_INTERFACE(ptds::DataSourceServerServerInterface<ptds::Data
 
 
 #define			DEFAULT_DEMO_TIMEOUT 300
-#define			HAS_EXPIRED ( systime.wYear > expire_year \
-					|| (systime.wYear == expire_year &&	(systime.wMonth > expire_month ||  \
-					(systime.wMonth == expire_month && systime.wDay > expire_day))))
+#define			HAS_EXPIRED ( g_dateTile.GetYear() > expire_year \
+					        || (g_dateTile.GetYear() == expire_year &&	(g_dateTile.GetMonth() > expire_month ||  \
+					           (g_dateTile.GetMonth() == expire_month && g_dateTile.GetDay()> expire_day))))
 
 using namespace pt;
 using namespace pointsengine;
@@ -113,9 +113,7 @@ int				g_timeOut = -1;
 bool			_failed = false;
 TimeStamp		g_startTime;
 
-SYSTEMTIME		systime;
-FILETIME		ftime;
-ULARGE_INTEGER	ftime_cmp, expire_cmp;
+DateTime        g_dateTile;
 
 bool			_initialized = false;
 unsigned char	_nonDemoCode =0;
@@ -173,6 +171,7 @@ bool checkSetback()
 bool checkPreSessionTimeOut()
 {
 	return true;
+#if defined(NEEDS_WORK_VORTEX_DGNDB)    // has alwys return true!
 	if (g_timeOut < 0 || !_hasPSTimeOut) return false;
 
 	/* check wait period */ 
@@ -210,6 +209,7 @@ bool checkPreSessionTimeOut()
 	g_startTime.tick();
 	_hasPSTimeOut = false;
 	return true;
+#endif
 }
 
 //-------------------------------------------------------------------------------
@@ -436,6 +436,7 @@ bool _extractPODfromPTL(const pt::datatree::Branch *b)
 //-------------------------------------------------------------------------------
 PTbool ptInitializeEnvVariables(void)
 {
+#if defined (BENTLEY_WIN32)     //NEEDS_WORK_VORTEX_DGNDB 
 	wchar_t envValue[512];
 
 	if(::GetEnvironmentVariableW(L"PTVORTEX_LOG", envValue, 512) > 0)
@@ -511,7 +512,7 @@ PTbool ptInitializeEnvVariables(void)
 			}
 		}
 	}
-
+#endif
 
 	return true;
 }
@@ -598,14 +599,11 @@ bool useSELECTLicense(std::string& company, std::string& module, std::string& ty
 //-------------------------------------------------------------------------------
 PTbool PTAPI ptInitialize(const PTubyte* licenseData)
 {
-	PTTRACE_FUNC
+    PTTRACE_FUNC
 
-	::GetSystemTime(&systime);
-	SystemTimeToFileTime(&systime, &ftime);
-	ftime_cmp.LowPart = ftime.dwLowDateTime;
-	ftime_cmp.HighPart = ftime.dwHighDateTime;
-
-	g_startTime.tick();
+    g_dateTile = DateTime::GetCurrentTime();
+	
+    g_startTime.tick();
 
 	_failed = false;
 
@@ -678,20 +676,10 @@ PTbool PTAPI ptInitialize(const PTubyte* licenseData)
 				hasExpiry = false;
 			}
 
-			SYSTEMTIME t;
-			ZeroMemory(&t, sizeof(t));
-			t.wDay = expire_day; 
-			t.wMonth =  expire_month;
-			t.wYear = expire_year;
-
-			FILETIME f;
-			SystemTimeToFileTime( &t, &f );
-			expire_cmp.LowPart = f.dwLowDateTime;
-			expire_cmp.HighPart = f.dwHighDateTime;
-
 			/* check module name if NOT set to 'any' */ 
 			if (strcmp(module.c_str(), txt_any))
 			{
+#if defined (BENTLEY_WIN32)     //NEEDS_WORK_VORTEX_DGNDB 
 				char mod[64];
 				::GetModuleFileNameA(NULL, mod, 64);
 				::PathStripPathA(mod);
@@ -702,6 +690,7 @@ PTbool PTAPI ptInitialize(const PTubyte* licenseData)
 					_failed = true;
 					setLastErrorCode( PTV_LICENSE_MODULE_ERROR );
 				}
+#endif
 			}
 			if (hasExpiry && (HAS_EXPIRED && !_failed)) 
 			{
@@ -792,6 +781,7 @@ PTvoid PTAPI ptRelease()
 	{
 		pointsengine::destroy();
 
+#if defined (BENTLEY_WIN32)     //NEEDS_WORK_VORTEX_DGNDB 
 		SYSTEMTIME st;
 		GetSystemTime(&st);
 		int s = st.wHour * 3600 + st.wMinute * 60 + st.wSecond;
@@ -800,6 +790,7 @@ PTvoid PTAPI ptRelease()
 		CRegStdWORD reg(lastrunKey, s, FALSE, HKEY_LOCAL_MACHINE);
 		reg = (DWORD)s;
 		reg.write();
+#endif
 
 #ifdef NEEDS_WORK_VORTEX_DGNDB_SERVER
         PTRMI::getManager().deleteAll();
@@ -863,6 +854,7 @@ PThandle PTAPI ptOpenPTL(const PTstr filepath)
 //-------------------------------------------------------------------------------
 PThandle PTAPI ptBrowseAndOpenPOD()
 {
+#if defined (BENTLEY_WIN32)     //NEEDS_WORK_VORTEX_DGNDB 
 	PTTRACE_FUNC
 
 	if (!checkPreSessionTimeOut())
@@ -946,6 +938,9 @@ PThandle PTAPI ptBrowseAndOpenPOD()
 		if (!numscenes) return ptOpenPOD(filename);
 		return lastHandle;
 	}
+#else
+    return 0;
+#endif
 }
 bool blockDuplicates = true;
 
