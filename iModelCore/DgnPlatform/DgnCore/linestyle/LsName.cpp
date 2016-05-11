@@ -242,22 +242,6 @@ double GetLength() {return m_points[1].x;}
 };
 
 //=======================================================================================
-//! Used to calculate the range of the line style.
-// @bsiclass                                                    John.Gooding    09/2015
-//=======================================================================================
-struct          StrokeComponentForRange : ComponentStroker
-{
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    08/2015
-//---------------------------------------------------------------------------------------
-StrokeComponentForRange(DgnDbR dgndb, LsComponentR component) : ComponentStroker(dgndb, component, 1.0)
-    {
-    //  It should have already created a copy of the components if that is necessary
-    BeAssert(m_component->_IsOkayForTextureGeneration() == LsOkayForTextureGeneration::NoChangeRequired);
-    }
-};  // StrokeComponentForRange
-
-//=======================================================================================
 //! Used to generate a texture based on a line style.
 // @bsiclass                                                    John.Gooding    08/2015
 //=======================================================================================
@@ -415,7 +399,10 @@ Render::TexturePtr LsDefinition::GenerateTexture(double& textureDrawWidth, ViewC
     {
     double unitDef = GetUnitsDefinition();
     if (unitDef < mgds_fc_epsilon)
+        {
+        BeAssert(unitDef > mgds_fc_epsilon);
         unitDef = 1.0;
+        }
 
     textureDrawWidth = 0;
     DgnViewportP vp = viewContext.GetViewport();
