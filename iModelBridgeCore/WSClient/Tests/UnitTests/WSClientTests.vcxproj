@@ -23,6 +23,7 @@
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnClientFx\TestApplication.h" />
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnClientFx\TestEnvironment.h" />
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnClientFx\DgnClientFxViewportHelpers.h" />
+    <ClInclude Include="Published\WebServices\ConnectC\ConnectWebServicesClientCTests.h" />
     <ClInclude Include="Published\Utils\AsyncTestCheckpoint.h" />
     <ClInclude Include="Published\Utils\BaseMockHttpHandlerTest.h" />
     <ClInclude Include="Published\Utils\MockTests.h" />
@@ -161,6 +162,7 @@
     <ClCompile Include="BackDoor\TestApplication.cpp" />
     <ClCompile Include="BackDoor\TestEnvironment.cpp" />
     <ClCompile Include="BackDoor\DgnClientFxViewportHelpers.cpp" />
+    <ClCompile Include="Published\WebServices\ConnectC\ConnectWebServicesClientCTests.cpp" />
     <ClCompile Include="NonPublished\CordovaPluginTests.cpp" />
     <ClCompile Include="NonPublished\ConfigurableUiTests.cpp" />
     <ClCompile Include="NonPublished\ECExpressionTests.cpp" />

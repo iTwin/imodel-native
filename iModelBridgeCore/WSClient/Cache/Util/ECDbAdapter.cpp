@@ -1116,21 +1116,10 @@ BentleyStatus ECDbAdapter::DeleteInstances(const ECInstanceKeyMultiMap& instance
         }
 
     // Cleanup holding relationship hierarchies
-    // WIP06 workaround to Purge() issue. Has worse performance
-    // WIP06 disabled due to issue with holding relationships
-    bool usePurge = false;
-    if (usePurge)
+    for (auto key : allInstancesBeingDeleted)
         {
-        if (SUCCESS != m_ecDb->Purge(ECDb::PurgeMode::HoldingRelationships))
+        if (SUCCESS != DeleteInstance(key.GetECClassId(), key.GetECInstanceId()))
             return ERROR;
-        }
-    else
-        {
-        for (auto key : allInstancesBeingDeleted)
-            {
-            if (SUCCESS != DeleteInstance(key.GetECClassId(), key.GetECInstanceId()))
-                return ERROR;
-            }
         }
 
     ECInstanceKeyMultiMap additionalInstancesMap;
