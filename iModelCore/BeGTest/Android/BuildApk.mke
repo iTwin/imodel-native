@@ -2,15 +2,15 @@
 #
 #     $Source: Android/BuildApk.mke $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 #
 # Builds an APK that rolls up a Android JUnit test project
 #
 # Inputs:
-%ifndef TEST_NAME
-    %error Define TEST_NAME as the name of the test. The .exe will use this name. Various output directories will also be based on it, so it must be unique among tests.
+%ifndef TEST_COLLECTION_PRODUCT
+    %error Define TEST_COLLECTION_PRODUCT as the name of the test collection product
 %endif
 %include mdl.mki
 
@@ -19,7 +19,7 @@
 %endif
 
 baseDir             = $(_MakeFilePath)
-outputDir           = $(OutputRootDir)build/$(TEST_NAME)/
+outputDir           = $(OutputRootDir)build/$(TEST_COLLECTION_PRODUCT)/
 mainDir             = $(outputDir)project/app/src/main/
 libsDir             = $(outputDir)project/app/libs/
 androidTestDir      = $(outputDir)project/app/src/androidTest/
