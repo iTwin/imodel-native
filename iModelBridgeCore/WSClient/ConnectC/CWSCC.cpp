@@ -20,7 +20,10 @@ WCharCP wAssetsRootDirectory,
 WCharCP wApplicationName,
 WCharCP wApplicationVersion,
 WCharCP wApplicationGUID,
-WCharCP wApplicationProductId
+WCharCP wApplicationProductId,
+WCharCP wproxyUrl,
+WCharCP wproxyUsername,
+WCharCP wproxyPassword
 )
     {
     Utf8String authenticatedToken;
@@ -30,11 +33,18 @@ WCharCP wApplicationProductId
     Utf8String utf8ApplicationVersion;
     Utf8String applicationGUID;
     Utf8String applicationProductId;
+    Utf8String proxyUrl;
+    Utf8String proxyUsername;
+    Utf8String proxyPassword;
+
     BeStringUtilities::WCharToUtf8(authenticatedToken, wAuthenticatedToken);
     BeStringUtilities::WCharToUtf8(applicationName, wApplicationName);
     BeStringUtilities::WCharToUtf8(utf8ApplicationVersion, wApplicationVersion);
     BeStringUtilities::WCharToUtf8(applicationGUID, wApplicationGUID);
     BeStringUtilities::WCharToUtf8(applicationProductId, wApplicationProductId);
+    BeStringUtilities::WCharToUtf8(proxyUrl, wproxyUrl);
+    BeStringUtilities::WCharToUtf8(proxyUsername, wproxyUsername);
+    BeStringUtilities::WCharToUtf8(proxyPassword, wproxyPassword);
 
     BeVersion applicationVersion(utf8ApplicationVersion.c_str());
 
@@ -46,7 +56,10 @@ WCharCP wApplicationProductId
         applicationName,
         applicationVersion,
         applicationGUID,
-        applicationProductId
+        applicationProductId,
+        &proxyUrl,
+        &proxyUsername,
+        &proxyPassword
         );
 
     if (api->m_solrClientPtr == nullptr)
@@ -67,7 +80,10 @@ WCharCP wAssetsRootDirectory,
 WCharCP wApplicationName,
 WCharCP wApplicationVersion,
 WCharCP wApplicationGUID,
-WCharCP wApplicationProductId
+WCharCP wApplicationProductId,
+WCharCP wproxyUrl,
+WCharCP wproxyUsername,
+WCharCP wproxyPassword
 )
     {
     Utf8String username;
@@ -78,6 +94,9 @@ WCharCP wApplicationProductId
     Utf8String utf8ApplicationVersion;
     Utf8String applicationGUID;
     Utf8String applicationProductId;
+    Utf8String proxyUrl;
+    Utf8String proxyUsername;
+    Utf8String proxyPassword;
 
     BeStringUtilities::WCharToUtf8(username, wUsername);
     BeStringUtilities::WCharToUtf8(password, wPassword);
@@ -85,6 +104,9 @@ WCharCP wApplicationProductId
     BeStringUtilities::WCharToUtf8(utf8ApplicationVersion, wApplicationVersion);
     BeStringUtilities::WCharToUtf8(applicationGUID, wApplicationGUID);
     BeStringUtilities::WCharToUtf8(applicationProductId, wApplicationProductId);
+    BeStringUtilities::WCharToUtf8(proxyUrl, wproxyUrl);
+    BeStringUtilities::WCharToUtf8(proxyUsername, wproxyUsername);
+    BeStringUtilities::WCharToUtf8(proxyPassword, wproxyPassword);
 
     BeVersion applicationVersion(utf8ApplicationVersion.c_str());
 
@@ -97,7 +119,10 @@ WCharCP wApplicationProductId
         applicationName,
         applicationVersion,
         applicationGUID,
-        applicationProductId
+        applicationProductId,
+        &proxyUrl,
+        &proxyUsername,
+        &proxyPassword
         );
 
     if (api->m_solrClientPtr == nullptr)
@@ -175,27 +200,19 @@ CharCP ConnectWebServicesClientC_GetLastStatusDescription(CWSCCHANDLE apiHandle)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-CallStatus ConnectWebServicesClientC_ConfigureWebProxy(CWSCCHANDLE apiHandle, Utf8CP proxyUrl)
+CharCP ConnectWebServicesClientC_GetLastCreatedObjectInstanceId(CWSCCHANDLE apiHandle)
     {
-    VERIFY_API
-
-    if (proxyUrl == nullptr)
-        {
-        api->SetStatusMessage("The proxyUrl is a nullptr.");
-        api->SetStatusDescription("proxyUrl cannot be a null pointer when creating a Web Proxy.");
-        return INVALID_PARAMETER;
-        }
-
-    api->CreateProxyHttpClient(proxyUrl);
-    api->SetStatusMessage("Success!");
-    api->SetStatusDescription("The WSRepositoryClient was successfully created.");
-    return SUCCESS;
+    if (NULL == apiHandle)
+        return "apiHandle passed into ConnectWebServicesClientC_GetLastCreatedObjectInstanceId is NULL.";
+    LPCWSCC api = (LPCWSCC) apiHandle;
+    auto str = api->GetLastCreatedObjectInstanceId ();
+    return str;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-CallStatus ConnectWebServicesClientC_ConfigureWebProxyWithCredentials
+CallStatus ConnectWebServicesClientC_ConfigureWebProxy
 (
 CWSCCHANDLE apiHandle,
 Utf8CP proxyUrl,
@@ -209,13 +226,6 @@ Utf8CP password
         {
         api->SetStatusMessage("The proxyUrl is a nullptr.");
         api->SetStatusDescription("proxyUrl cannot be a null pointer when creating a Web Proxy.");
-        return INVALID_PARAMETER;
-        }
-
-    if (username == nullptr || password == nullptr)
-        {
-        api->SetStatusMessage("The username of password is a nullptr.");
-        api->SetStatusDescription("username and password cannot be null pointers when configuring a Web Proxy.");
         return INVALID_PARAMETER;
         }
 
@@ -238,9 +248,18 @@ BeFileName assetsRootDirectory,
 Utf8String applicationName,
 BeVersion applicationVersion,
 Utf8String applicationGUID,
-Utf8String applicationProductId
+Utf8String applicationProductId,
+Utf8StringP proxyUrl,
+Utf8StringP proxyUsername,
+Utf8StringP proxyPassword
 )
+: m_pathProvider(temporaryDirectory, assetsRootDirectory)
     {
+    if (proxyUrl != nullptr)
+        CreateProxyHttpClient(*proxyUrl, *proxyUsername, *proxyPassword);
+    else
+        m_proxy = nullptr;
+
     Initialize
         (
         temporaryDirectory,
@@ -281,9 +300,18 @@ BeFileName assetsRootDirectory,
 Utf8String applicationName,
 BeVersion applicationVersion,
 Utf8String applicationGUID,
-Utf8String applicationProductId
+Utf8String applicationProductId,
+Utf8StringP proxyUrl,
+Utf8StringP proxyUsername,
+Utf8StringP proxyPassword
 )
+: m_pathProvider(temporaryDirectory, assetsRootDirectory)
     {
+    if (!Utf8String::IsNullOrEmpty(proxyUrl->c_str()))
+        CreateProxyHttpClient(*proxyUrl, *proxyUsername, *proxyPassword);
+    else
+        m_proxy = nullptr;
+
     Initialize
         (
         temporaryDirectory,
@@ -325,15 +353,15 @@ Utf8String applicationGUID,
 Utf8String applicationProductId
 )
     {
-
     m_lastStatusMessage = Utf8String("");
     m_lastStatusDescription = Utf8String("");
+    DgnClientFxCommon::SetApplicationPathsProvider(&m_pathProvider);
 
-    BeFileName::CreateNewDirectory(temporaryDirectory);
-    BeSQLite::BeSQLiteLib::Initialize(temporaryDirectory);
+    BeFileName::CreateNewDirectory(m_pathProvider.GetTemporaryDirectory());
+    BeSQLite::BeSQLiteLib::Initialize(m_pathProvider.GetTemporaryDirectory());
     //BeSQLite::EC::ECDb::Initialize(m_pathProv.GetTemporaryDirectory(), &m_pathProv.GetAssetsRootDirectory()); //TODO: Is this needed?
 
-    BeFileName dgnClientFxSqlangFile = assetsRootDirectory;
+    BeFileName dgnClientFxSqlangFile = m_pathProvider.GetAssetsRootDirectory();
     dgnClientFxSqlangFile.AppendToPath(L"sqlang");
 #if !defined (NDEBUG)
     dgnClientFxSqlangFile.AppendToPath(L"DgnClientFx_pseudo.sqlang.db3");
@@ -343,15 +371,25 @@ Utf8String applicationProductId
 
     BeSQLite::L10N::SqlangFiles sqlangFiles(dgnClientFxSqlangFile); //Prob needed
     DgnClientFxL10N::ReInitialize(sqlangFiles, sqlangFiles); //needed
-
+    auto bclient = make_shared<BuddiClient>(m_proxy);
 #if !defined (NDEBUG)
-    UrlProvider::Initialize(UrlProvider::Qa, UrlProvider::DefaultTimeout, &m_localState, nullptr);
+    UrlProvider::Initialize(UrlProvider::Qa, UrlProvider::DefaultTimeout, &m_localState, bclient);
 #else
-    UrlProvider::Initialize(UrlProvider::Release, UrlProvider::DefaultTimeout, &m_localState, nullptr);
+    UrlProvider::Initialize(UrlProvider::Release, UrlProvider::DefaultTimeout, &m_localState, bclient);
 #endif
     m_clientInfo = ClientInfo::Create(applicationName, applicationVersion, applicationGUID, applicationProductId);
-    m_connectSignInManager = ConnectSignInManager::Create(m_clientInfo, nullptr, &m_localState);
+    m_connectSignInManager = ConnectSignInManager::Create(m_clientInfo, m_proxy, &m_localState);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ConnectWebServicesClientC_internal::~ConnectWebServicesClientC_internal()
+    {
+    m_connectSignInManager->SignOut ();
+    UrlProvider::Uninitialize ();
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -363,9 +401,8 @@ Utf8String username,
 Utf8String password
 )
     {
-    m_proxy = ProxyHttpHandler::GetProxyIfReachable(proxyUrl);
-    if (!Utf8String::IsNullOrEmpty(username.c_str()) && !Utf8String::IsNullOrEmpty(password.c_str()))
-        m_proxy->SetProxyCredentials(Credentials(username, password));
+    m_proxy = std::make_shared<ProxyHttpHandler>(proxyUrl, nullptr);
+    m_proxy->SetProxyCredentials (Credentials (username, password));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -401,6 +438,22 @@ void ConnectWebServicesClientC_internal::SetStatusDescription(Utf8String desc)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+void ConnectWebServicesClientC_internal::SetCreatedObjectResponse (WSCreateObjectResponse response)
+    {
+    m_lastCreatedObjectResponse = response;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void ConnectWebServicesClientC_internal::SetObjectsResponse (WSObjectsResponse response)
+    {
+    m_lastObjectsResponse = response;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 Utf8StringCR ConnectWebServicesClientC_internal::GetLastStatusMessage()
     {
     return m_lastStatusMessage;
@@ -412,4 +465,17 @@ Utf8StringCR ConnectWebServicesClientC_internal::GetLastStatusMessage()
 Utf8StringCR ConnectWebServicesClientC_internal::GetLastStatusDescription()
     {
     return m_lastStatusDescription;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+CharCP ConnectWebServicesClientC_internal::GetLastCreatedObjectInstanceId ()
+    {
+    if (m_lastCreatedObjectResponse.GetObject ()["changedInstance"]["instanceAfterChange"]["instanceId"].isString())
+        {
+        return m_lastCreatedObjectResponse.GetObject ()["changedInstance"]["instanceAfterChange"]["instanceId"].asCString ();
+        }
+    else
+        return "";
     }

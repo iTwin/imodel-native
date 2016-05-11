@@ -8,15 +8,18 @@
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../CWSCCGenBuffer.h" afterPath="$PROJECT_DIR$/../../CWSCCGenBuffer.h" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../CWSCCPrivate.h" afterPath="$PROJECT_DIR$/../../CWSCCPrivate.h" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Generator.py" afterPath="$PROJECT_DIR$/Generator.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Helpers/CApiStruct.py" afterPath="$PROJECT_DIR$/Helpers/CApiStruct.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/SourceWriters/CBufferSourceWriter.py" afterPath="$PROJECT_DIR$/SourceWriters/CBufferSourceWriter.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Writer.py" afterPath="$PROJECT_DIR$/Writer.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/SourceWriters/CApiSourceWriter.py" afterPath="$PROJECT_DIR$/SourceWriters/CApiSourceWriter.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../../PublicAPI/WebServices/ConnectC/CWSCCGenBufferPublic.h" afterPath="$PROJECT_DIR$/../../../PublicAPI/WebServices/ConnectC/CWSCCGenBufferPublic.h" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../../PublicAPI/WebServices/ConnectC/CWSCCGenPublic.h" afterPath="$PROJECT_DIR$/../../../PublicAPI/WebServices/ConnectC/CWSCCGenPublic.h" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../../PublicAPI/WebServices/ConnectC/CWSCCPublic.h" afterPath="$PROJECT_DIR$/../../../PublicAPI/WebServices/ConnectC/CWSCCPublic.h" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../../PublicAPI/WebServices/Ims/SolrClient.h" afterPath="$PROJECT_DIR$/../../../PublicAPI/WebServices/Ims/SolrClient.h" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../../Tests/IntegrationTests/ConnectC/ConnectWebServicesClientCTests.cpp" afterPath="$PROJECT_DIR$/../../../Tests/IntegrationTests/ConnectC/ConnectWebServicesClientCTests.cpp" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../../Tests/IntegrationTests/ConnectC/ConnectWebServicesClientCTests.h" afterPath="$PROJECT_DIR$/../../../Tests/IntegrationTests/ConnectC/ConnectWebServicesClientCTests.h" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../../Tests/IntegrationTests/WSClientIntegrationTests.vcxproj" afterPath="$PROJECT_DIR$/../../../Tests/IntegrationTests/WSClientIntegrationTests.vcxproj" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../../Tests/IntegrationTests/WSClientIntegrationTests.vcxproj.filters" afterPath="$PROJECT_DIR$/../../../Tests/IntegrationTests/WSClientIntegrationTests.vcxproj.filters" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../../Tests/UnitTests/WSClientTests.vcxproj" afterPath="$PROJECT_DIR$/../../../Tests/UnitTests/WSClientTests.vcxproj" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../../Tests/UnitTests/WSClientTests.vcxproj.filters" afterPath="$PROJECT_DIR$/../../../Tests/UnitTests/WSClientTests.vcxproj.filters" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../../WSClient.PartFile.xml" afterPath="$PROJECT_DIR$/../../../WSClient.PartFile.xml" />
     </list>
     <ignored path="pyApiGen.iws" />
@@ -48,10 +51,10 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="Generator.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="Generator.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Generator.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="440">
+            <state relative-caret-position="726">
               <caret line="38" column="46" selection-start-line="38" selection-start-column="46" selection-end-line="38" selection-end-column="46" />
               <folding>
                 <element signature="e#0#27#0" expanded="true" />
@@ -85,8 +88,8 @@
       <file leaf-file-name="CApiSourceWriter.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/SourceWriters/CApiSourceWriter.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="924">
-              <caret line="43" column="30" selection-start-line="43" selection-start-column="30" selection-end-line="43" selection-end-column="30" />
+            <state relative-caret-position="902">
+              <caret line="42" column="45" selection-start-line="42" selection-start-column="45" selection-end-line="42" selection-end-column="45" />
               <folding />
             </state>
           </provider>
@@ -134,11 +137,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="CApiStruct.py" pinned="false" current-in-tab="false">
+      <file leaf-file-name="CApiStruct.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/Helpers/CApiStruct.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="217">
-              <caret line="251" column="26" selection-start-line="251" selection-start-column="26" selection-end-line="251" selection-end-column="26" />
+            <state relative-caret-position="459">
+              <caret line="273" column="67" selection-start-line="273" selection-start-column="67" selection-end-line="273" selection-end-column="67" />
               <folding />
             </state>
           </provider>
@@ -195,7 +198,6 @@
         <option value="$PROJECT_DIR$/HeaderWriters/CBufferHeaderWriter.py" />
         <option value="$PROJECT_DIR$/HeaderWriters/CppCliApiHeaderWriter.py" />
         <option value="$PROJECT_DIR$/HeaderWriters/CPublicApiHeaderWriter.py" />
-        <option value="$PROJECT_DIR$/SourceWriters/CApiSourceWriter.py" />
         <option value="$PROJECT_DIR$/Helpers/CBufferStruct.py" />
         <option value="$PROJECT_DIR$/HeaderWriters/CPublicBufferHeaderWriter.py" />
         <option value="$PROJECT_DIR$/HeaderWriters/CppCliClassesHeaderWriter.py" />
@@ -205,8 +207,9 @@
         <option value="$PROJECT_DIR$/SourceWriters/SourceWriter.py" />
         <option value="$PROJECT_DIR$/SourceWriters/CBufferSourceWriter.py" />
         <option value="$PROJECT_DIR$/Writer.py" />
-        <option value="$PROJECT_DIR$/Helpers/CApiStruct.py" />
         <option value="$PROJECT_DIR$/Generator.py" />
+        <option value="$PROJECT_DIR$/SourceWriters/CApiSourceWriter.py" />
+        <option value="$PROJECT_DIR$/Helpers/CApiStruct.py" />
       </list>
     </option>
   </component>
@@ -539,26 +542,26 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="-9" y="-9" width="1938" height="1168" extended-state="1" />
-    <editor active="true" />
+    <frame x="-9" y="-9" width="1938" height="1168" extended-state="7" />
+    <editor active="false" />
     <layout>
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.19010417" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="true" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.19010417" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
-      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.30464217" sideWeight="0.56041664" order="7" side_tool="true" content_ui="tabs" />
-      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3384913" sideWeight="0.31927082" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.30464217" sideWeight="0.56875" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Run" active="true" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.30464217" sideWeight="0.43958333" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
-      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.23210831" sideWeight="0.6145833" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.30464217" sideWeight="0.43125" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3384913" sideWeight="0.31770834" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.23210831" sideWeight="0.6145833" order="3" side_tool="false" content_ui="tabs" />
     </layout>
   </component>
   <component name="Vcs.Log.UiProperties">
@@ -687,7 +690,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -725,14 +727,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/SourceWriters/CApiSourceWriter.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="924">
-          <caret line="43" column="30" selection-start-line="43" selection-start-column="30" selection-end-line="43" selection-end-column="30" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/SourceWriters/CBufferSourceWriter.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="5588">
@@ -759,21 +753,29 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/Helpers/CApiStruct.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="217">
-          <caret line="251" column="26" selection-start-line="251" selection-start-column="26" selection-end-line="251" selection-end-column="26" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/Generator.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="440">
+        <state relative-caret-position="726">
           <caret line="38" column="46" selection-start-line="38" selection-start-column="46" selection-end-line="38" selection-end-column="46" />
           <folding>
             <element signature="e#0#27#0" expanded="true" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/SourceWriters/CApiSourceWriter.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="902">
+          <caret line="42" column="45" selection-start-line="42" selection-start-column="45" selection-end-line="42" selection-end-column="45" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Helpers/CApiStruct.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="459">
+          <caret line="273" column="67" selection-start-line="273" selection-start-column="67" selection-end-line="273" selection-end-column="67" />
+          <folding />
         </state>
       </provider>
     </entry>

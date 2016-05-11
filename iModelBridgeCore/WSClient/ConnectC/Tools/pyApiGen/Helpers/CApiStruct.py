@@ -66,6 +66,7 @@ class CApiStruct(CStruct):
         get_request_str += "    buf->lCount = buf->lItems.size();\n"
         get_request_str += "    buf->lType = BUFF_TYPE_{0};\n".format(self.get_upper_name())
         get_request_str += "    *{0}Buffer = ({1}DATABUFHANDLE) buf;\n\n".format(self.get_lower_name(), self._api.get_upper_api_acronym())
+        get_request_str += '    api->SetObjectsResponse(result.GetValue());\n'
         get_request_str += '    api->SetStatusMessage("{1}");\n    api->SetStatusDescription("{2}");\n' \
                            '    return {0};\n'.format("SUCCESS", self._status_codes["SUCCESS"].message,
                                                       "{0}_Read{1}List completed successfully."
@@ -112,6 +113,7 @@ class CApiStruct(CStruct):
         create_request_str += "        return wsresultTo{0}Status(api, result.GetError().GetId(), result.GetError().GetDisplayMessage()," \
                               " result.GetError().GetDisplayDescription());\n\n"\
             .format(self._api.get_api_name())
+        create_request_str += '    api->SetCreatedObjectResponse(result.GetValue());\n'
         create_request_str += '    api->SetStatusMessage("{1}");\n    api->SetStatusDescription("{2}");\n' \
                               '    return {0};\n'\
             .format("SUCCESS", self._status_codes["SUCCESS"].message,
@@ -178,6 +180,7 @@ class CApiStruct(CStruct):
         get_request_str += "    buf->lType = BUFF_TYPE_{0};\n".format(self.get_upper_name())
         get_request_str += "    buf->lItems = {{{0}Buf}};\n".format(self.get_lower_name())
         get_request_str += "    *{0}Buffer = ({1}DATABUFHANDLE) buf;\n\n".format(self.get_lower_name(), self._api.get_upper_api_acronym())
+        get_request_str += '    api->SetObjectsResponse(result.GetValue());\n'
         get_request_str += '    api->SetStatusMessage("{1}");\n    api->SetStatusDescription("{2}");\n' \
                            '    return {0};\n'.format("SUCCESS", self._status_codes["SUCCESS"].message,
                                                       "{0}_Read{1} completed successfully."
@@ -268,7 +271,7 @@ class CApiStruct(CStruct):
         delete_request_str += "        return wsresultTo{0}Status(api, result.GetError().GetId(), result.GetError().GetDisplayMessage()," \
                               " result.GetError().GetDisplayDescription());\n\n"\
             .format(self._api.get_api_name())
-        delete_request_str += '    api->SetStatusMessage("{1}");\n        api->SetStatusDescription("{2}");\n' \
+        delete_request_str += '    api->SetStatusMessage("{1}");\n    api->SetStatusDescription("{2}");\n' \
                               '    return {0};\n'\
             .format("SUCCESS",
                     self._status_codes["SUCCESS"].message,
