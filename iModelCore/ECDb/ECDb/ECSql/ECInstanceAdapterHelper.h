@@ -298,6 +298,8 @@ public:
 
     static bool TryGetCurrentTimeStampProperty (ECN::ECPropertyCP& currentTimeStampProp, ECN::ECClassCR ecClass);
 
+    static bool HasReadonlyPropertiesAreUpdatableOption(ECDbCR, ECN::ECClassCR, Utf8CP ecsqlOptions);
+
     //! Sets the ECInstanceId on the given ECInstance.
     //! @param[in,out] instance ECInstance on which the id is set
     //! @param[out] ecInstanceId Id to set

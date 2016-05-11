@@ -443,7 +443,7 @@ BentleyStatus ECSqlParser::ParseOptECSqlOptionsClause(std::unique_ptr<OptionsExp
     if (childCount == 0)
         return SUCCESS; //User never provided options
 
-    auto optionsExp = unique_ptr<OptionsExp>(new OptionsExp());
+    unique_ptr<OptionsExp> optionsExp(new OptionsExp());
     for (size_t i = 0; i < childCount; i++)
         {
         unique_ptr<OptionExp> optionExp = nullptr;
