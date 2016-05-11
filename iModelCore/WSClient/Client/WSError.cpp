@@ -94,8 +94,6 @@ WSError::WSError(HttpResponseCR httpResponse) : WSError()
 
     if (ConnectionStatus::Canceled == httpResponse.GetConnectionStatus())
         {
-        m_message.clear();
-        m_description.clear();
         m_status = Status::Canceled;
         m_id = WSError::Id::Unknown;
         return;
@@ -103,9 +101,8 @@ WSError::WSError(HttpResponseCR httpResponse) : WSError()
 
     if (ConnectionStatus::OK != httpResponse.GetConnectionStatus())
         {
-        m_message = HttpError(httpResponse).GetDisplayMessage();
-        m_description.clear();
-
+        m_message = HttpError(httpResponse).GetMessage();
+        
         if (ConnectionStatus::CertificateError == httpResponse.GetConnectionStatus())
             {
             m_status = Status::CertificateError;
@@ -128,13 +125,35 @@ WSError::WSError(HttpResponseCR httpResponse) : WSError()
         HttpStatus::Unauthorized == httpResponse.GetHttpStatus())   // Bentley CONNECT token could not be retrieved
         {
         m_message = HttpError::GetHttpDisplayMessage(HttpStatus::Unauthorized);
-        m_description.clear();
         m_status = Status::ReceivedError;
         m_id = Id::LoginFailed;
         return;
         }
 
     SetStatusServerNotSupported();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    05/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+WSError::WSError(HttpErrorCR httpError)
+    {
+    if (ConnectionStatus::Canceled == httpError.GetConnectionStatus())
+        {
+        m_status = Status::Canceled;
+        m_id = WSError::Id::Unknown;
+        return;
+        }
+
+    if (ConnectionStatus::OK != httpError.GetConnectionStatus())
+        {
+        m_message = httpError.GetMessage();
+        m_status = Status::ConnectionError;
+        m_id = WSError::Id::Unknown;
+        return;
+        }
+
+    SetStatusReceivedError(httpError, Id::Unknown, nullptr, nullptr);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -284,7 +303,7 @@ void WSError::SetStatusReceivedError(HttpErrorCR httpError, Id errorId, Utf8Stri
         }
     else
         {
-        m_message = httpError.GetDisplayMessage();
+        m_message = httpError.GetMessage();
         }
 
     // Set description
@@ -296,7 +315,7 @@ void WSError::SetStatusReceivedError(HttpErrorCR httpError, Id errorId, Utf8Stri
         m_message = WSErrorLocalizedString(MESSAGE_UnknownError);
         if (m_description.empty())
             {
-            m_description = httpError.GetDisplayMessage();
+            m_description = httpError.GetMessage();
             }
         }
     }

@@ -1,0 +1,21 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: Azure/Azure.mki $
+#
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+AzureMkiPublicApiDir = $(ClientPublicApiDirectory)Azure/
+AzureMkiSourceDir = $(ClientSourceDirectory)Azure/
+
+#--------------------------------------------------------------------------------------
+#   Set up build dependencies
+#--------------------------------------------------------------------------------------
+AzureMkiHeaders =  $(AzureMkiPublicApiDir)AzureBlobStorageClient.h
+
+#--------------------------------------------------------------------------------------
+#   Compile
+#--------------------------------------------------------------------------------------
+$(o)AzureBlobStorageClient$(oext)           : $(AzureMkiSourceDir)AzureBlobStorageClient.cpp $(AzureMkiHeaders) ${MultiCompileDepends}
+
