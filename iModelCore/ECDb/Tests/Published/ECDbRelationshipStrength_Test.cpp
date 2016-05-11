@@ -1119,8 +1119,7 @@ TEST_F(ECDbRelationshipsIntegrityTests, ForwardHoldingOneToOne)
     ASSERT_TRUE(InstanceExists("ts.Goo", gooKeys[2]));
     ASSERT_FALSE(RelationshipExists("ts.FooHoldsGoo", fooKeys[0], gooKeys[0]));
 
-    ASSERT_EQ(SUCCESS, GetECDb().Purge(ECDb::PurgeMode::HoldingRelationships));
-    ASSERT_FALSE(InstanceExists("ts.Goo", gooKeys[0]));
+    ASSERT_TRUE(InstanceExists("ts.Goo", gooKeys[0]));
 
     //gooKeys[1] and gooKeys[2] are still held by fooKeys[1] and fooKeys[2] respectively in 1-1 relationship
     ASSERT_TRUE(InstanceExists("ts.Goo", gooKeys[1]));
