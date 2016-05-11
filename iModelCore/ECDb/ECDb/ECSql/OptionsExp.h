@@ -41,7 +41,9 @@ struct OptionsExp : Exp
     {
     DEFINE_EXPR_TYPE(Options)
 
+public:
     static Utf8CP const NOECCLASSIDFILTER_OPTION;
+    static Utf8CP const READONLYPROPERTIESAREUPDATABLE_OPTION;
 
 private:
     bmap<Utf8CP, size_t, CompareIUtf8Ascii> m_optionsByName;

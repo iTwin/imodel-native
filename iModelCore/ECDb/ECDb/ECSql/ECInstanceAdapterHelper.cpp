@@ -596,18 +596,18 @@ bool ECInstanceAdapterHelper::IsOrContainsCalculatedProperty(ECN::ECPropertyCR p
     {
     ECClassCP structType = nullptr;
     if (prop.GetIsPrimitive())
-        {
         return prop.IsCalculated();
-        }
-    else if (prop.GetIsArray())
+
+    if (prop.GetIsArray())
         {
-        auto arrayProp = prop.GetAsArrayProperty();
+        ArrayECPropertyCP arrayProp = prop.GetAsArrayProperty();
         if (arrayProp->GetKind() == ARRAYKIND_Primitive)
             return arrayProp->IsCalculated();
 
-        auto structArrayProp = prop.GetAsStructArrayProperty();
+        StructArrayECProperty const* structArrayProp = prop.GetAsStructArrayProperty();
         if (nullptr == structArrayProp)
             return false;
+
         structType = structArrayProp->GetStructElementType();
         }
     else if (prop.GetIsStruct())
@@ -615,7 +615,7 @@ bool ECInstanceAdapterHelper::IsOrContainsCalculatedProperty(ECN::ECPropertyCR p
 
     if (structType != nullptr)
         {
-        for (auto structMemberProp : structType->GetProperties(true))
+        for (ECPropertyCP structMemberProp : structType->GetProperties(true))
             {
             if (IsOrContainsCalculatedProperty(*structMemberProp))
                 return true;
@@ -649,6 +649,43 @@ bool ECInstanceAdapterHelper::TryGetCurrentTimeStampProperty(ECN::ECPropertyCP& 
         currentTimeStampProp = ecClass.GetPropertyP(v.GetWCharCP(), true);
 
     return currentTimeStampProp != nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                   01/15
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+bool ECInstanceAdapterHelper::HasReadonlyPropertiesAreUpdatableOption(ECDbCR ecdb, ECClassCR ecClass, Utf8CP ecsqlOptions)
+    {
+    if (Utf8String::IsNullOrEmpty(ecsqlOptions))
+        return false;
+
+    Utf8String dummyECSql;
+    dummyECSql.Sprintf("SELECT NULL FROM ONLY %s ECSQLOPTIONS %s", ecClass.GetECSqlName().c_str(), ecsqlOptions);
+    
+    ECSqlParser parser;
+    std::unique_ptr<Exp> parseTree = parser.Parse(ecdb, dummyECSql.c_str());
+    if (parseTree == nullptr)
+        return false;
+
+    SingleSelectStatementExp const* selectStmtExp = nullptr;
+    if (parseTree->GetType() == Exp::Type::Select)
+        {
+        SelectStatementExp const* stmtExp = static_cast<SelectStatementExp const*>(parseTree.get());
+        BeAssert(stmtExp->GetChildrenCount() != 0);
+        selectStmtExp = &stmtExp->GetCurrent();
+        }
+    else if (parseTree->GetType() == Exp::Type::SingleSelect)
+        selectStmtExp = static_cast<SingleSelectStatementExp const*>(parseTree.get());
+
+    if (selectStmtExp == nullptr)
+        {
+        BeAssert(selectStmtExp != nullptr);
+        return false;
+        }
+
+    OptionsExp const* optionsExp = selectStmtExp->GetOptions();
+    return optionsExp != nullptr && optionsExp->HasOption(OptionsExp::READONLYPROPERTIESAREUPDATABLE_OPTION);
     }
 
 //---------------------------------------------------------------------------------------

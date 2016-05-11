@@ -389,6 +389,33 @@ ECSqlTestDataset ECSqlUpdateTestDataset::MiscTests (int rowCountPerClass)
     ecsql = "UPDATE ONLY ecsql._UnderBar u SET u._A_B_C = '''', u._ABC = 22, u._ABC_ = '''5''', u.A_B_C_ = 44, u.ABC_= 'LAST''' WHERE u._ABC > 0";
     ECSqlTestFrameworkHelper::AddNonSelect(dataset, ecsql, true);
 
+    //*******************************************************
+    // ECSQLOPTIONS ReadonlyPropertiesAreUpdatable
+    //*******************************************************
+    ecsql = "UPDATE ONLY ecsql.ClassWithLastModProp SET I=123, LastMod=? WHERE ECInstanceId=?";
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
+
+    ecsql = "UPDATE ONLY ecsql.PSA SET PStructProp.CreationDate=? WHERE ECInstanceId=?";
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
+
+    //cal props are always updatable
+    ecsql = "UPDATE ONLY ecsql.ClassWithLastModProp SET FullName='bla' WHERE ECInstanceId=?";
+    ECSqlTestFrameworkHelper::AddNonSelect(dataset, ecsql, true);
+
+    ecsql = "UPDATE ONLY ecsql.ClassWithLastModProp SET I=123, LastMod=? WHERE ECInstanceId=? ECSQLOPTIONS ReadonlyPropertiesAreUpdatable";
+    ECSqlTestFrameworkHelper::AddNonSelect(dataset, ecsql, true);
+
+    ecsql = "UPDATE ONLY ecsql.PSA SET PStructProp.CreationDate=? WHERE ECInstanceId=? ECSQLOPTIONS ReadonlyPropertiesAreUpdatable";
+    ECSqlTestFrameworkHelper::AddNonSelect(dataset, ecsql, true);
+
+    //options are expected to be case insensitive
+    ecsql = "UPDATE ONLY ecsql.ClassWithLastModProp SET I=123, LastMod=? WHERE ECInstanceId=? ECSQLOPTIONS rEaDonlYPropertiEsAreupdaTable";
+    ECSqlTestFrameworkHelper::AddNonSelect(dataset, ecsql, true);
+
+    //option has no affect if no readonly prop is in the SET clause
+    ecsql = "UPDATE ONLY ecsql.ClassWithLastModProp SET I=123 WHERE ECInstanceId=? ECSQLOPTIONS ReadonlyPropertiesAreUpdatable";
+    ECSqlTestFrameworkHelper::AddNonSelect(dataset, ecsql, true);
+
     return dataset;
     }
 

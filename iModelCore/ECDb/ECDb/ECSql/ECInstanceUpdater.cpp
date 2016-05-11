@@ -16,60 +16,32 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //+===============+===============+===============+===============+===============+======
 struct ECInstanceUpdater::Impl
     {
-    private:
-        ECN::ECClassCR m_ecClass;
+private:
+    ECDbCR m_ecdb;
+    ECN::ECClassCR m_ecClass;
+    mutable ECSqlStatement m_statement;
+    ECValueBindingInfoCollection m_ecValueBindingInfos;
+    int m_ecinstanceIdParameterIndex;
+    bool m_needsCalculatedPropertyEvaluation;
+    bool m_isValid;
 
-        virtual BentleyStatus _Update(IECInstanceCR instance) const = 0;
-        virtual bool _IsValid() const = 0;
+    void Initialize(bvector<ECPropertyCP> const& properties, Utf8CP ecsqlOptions) { Initialize(properties, nullptr, ecsqlOptions); }
+    void Initialize(bvector<uint32_t> const& propertyIndexes, Utf8CP ecsqlOptions);
+    void Initialize(bvector<ECPropertyCP> const& properties, bvector<Utf8CP> const* propertyAccessStrings, Utf8CP ecsqlOptions);
 
-    protected:
-        explicit Impl(ECN::ECClassCR ecClass)
-            : m_ecClass(ecClass)
-            {}
+    static void LogFailure(ECN::IECInstanceCR instance, Utf8CP errorMessage) { ECInstanceAdapterHelper::LogFailure("update", instance, errorMessage); }
 
-        ECN::ECClassCR GetECClass() const { return m_ecClass; }
+public:
+    Impl(ECDbCR, ECClassCR, Utf8CP ecsqlOptions);
+    Impl(ECDbCR, IECInstanceCR, Utf8CP ecsqlOptions);
+    Impl(ECDbCR, ECClassCR, bvector<uint32_t> const& propertyIndexesToBind, Utf8CP ecsqlOptions);
+    Impl(ECDbCR, ECClassCR, bvector<ECPropertyCP> const& properties, Utf8CP ecsqlOptions);
+    ~Impl() {}
 
-        static void LogFailure(ECN::IECInstanceCR instance, Utf8CP errorMessage);
-
-    public:
-        virtual ~Impl()
-            {}
-
-        BentleyStatus Update(IECInstanceCR instance) const;
-        bool IsValid() const;
+    BentleyStatus Update(IECInstanceCR instance) const;
+    bool IsValid() const { return m_isValid; }
     };
 
-//======================================================================================
-// @bsiclass                                                 Krischan.Eberle      06/2014
-//+===============+===============+===============+===============+===============+======
-struct ClassUpdaterImpl : ECInstanceUpdater::Impl
-    {
-    private:
-        ECDbCR m_ecdb;
-        mutable ECSqlStatement m_statement;
-        ECValueBindingInfoCollection m_ecValueBindingInfos;
-        int m_ecinstanceIdParameterIndex;
-        bool m_needsCalculatedPropertyEvaluation;
-        bool m_isValid;
-
-        void Initialize(bvector<ECPropertyCP>& propertiesToBind);
-        void Initialize(bvector<uint32_t>& propertiesToBind);
-
-        virtual BentleyStatus _Update(IECInstanceCR instance) const override;
-        virtual bool _IsValid() const override { return m_isValid; }
-
-    public:
-        ClassUpdaterImpl(ECDbCR ecdb, ECClassCR ecClass);
-        ClassUpdaterImpl(ECDbCR ecdb, IECInstanceCR instance);
-        ClassUpdaterImpl(ECDbCR ecdb, ECClassCR ecClass, bvector<uint32_t>& propertiesToBind);
-        ClassUpdaterImpl(ECDbCR ecdb, ECClassCR ecClass, bvector<ECPropertyCP>& propertiesToBind);
-
-        ~ClassUpdaterImpl()
-            {}
-    };
-
-
-//************************************** Implementation part **************************
 
 //*************************************************************************************
 // ECInstanceUpdater
@@ -77,33 +49,33 @@ struct ClassUpdaterImpl : ECInstanceUpdater::Impl
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Carole.MacDonald                   02 / 14
 //+---------------+---------------+---------------+---------------+---------------+------
-ECInstanceUpdater::ECInstanceUpdater(ECDbCR ecdb, ECN::ECClassCR ecClass)
+ECInstanceUpdater::ECInstanceUpdater(ECDbCR ecdb, ECN::ECClassCR ecClass, Utf8CP ecsqlOptions)
     {
-    m_impl = new ClassUpdaterImpl(ecdb, ecClass);
+    m_impl = new Impl(ecdb, ecClass, ecsqlOptions);
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Carole.MacDonald                   08/14
 //+---------------+---------------+---------------+---------------+---------------+------
-ECInstanceUpdater::ECInstanceUpdater(ECDbCR ecdb, ECN::IECInstanceCR instance)
+ECInstanceUpdater::ECInstanceUpdater(ECDbCR ecdb, ECN::IECInstanceCR instance, Utf8CP ecsqlOptions)
     {
-    m_impl = new ClassUpdaterImpl(ecdb, instance);
+    m_impl = new Impl(ecdb, instance, ecsqlOptions);
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Carole.MacDonald                   09/14
 //+---------------+---------------+---------------+---------------+---------------+------
-ECInstanceUpdater::ECInstanceUpdater(ECDbCR ecdb, ECN::ECClassCR ecClass, bvector<uint32_t>& propertiesToBind)
+ECInstanceUpdater::ECInstanceUpdater(ECDbCR ecdb, ECN::ECClassCR ecClass, bvector<uint32_t> const& propertyIndexesToBind, Utf8CP ecsqlOptions)
     {
-    m_impl = new ClassUpdaterImpl(ecdb, ecClass, propertiesToBind);
+    m_impl = new Impl(ecdb, ecClass, propertyIndexesToBind, ecsqlOptions);
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Carole.MacDonald                   02/16
 //+---------------+---------------+---------------+---------------+---------------+------
-ECInstanceUpdater::ECInstanceUpdater(ECDbCR ecdb, ECN::ECClassCR ecClass, bvector<ECN::ECPropertyCP>& propertiesToBind)
+ECInstanceUpdater::ECInstanceUpdater(ECDbCR ecdb, ECN::ECClassCR ecClass, bvector<ECN::ECPropertyCP> const& properties, Utf8CP ecsqlOptions)
     {
-    m_impl = new ClassUpdaterImpl(ecdb, ecClass, propertiesToBind);
+    m_impl = new Impl(ecdb, ecClass, properties, ecsqlOptions);
     }
 
 //---------------------------------------------------------------------------------------
@@ -140,6 +112,190 @@ BentleyStatus ECInstanceUpdater::Update(ECN::IECInstanceCR instance) const
 // ECInstanceUpdater::Impl
 //*************************************************************************************
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                   06/14
+//+---------------+---------------+---------------+---------------+---------------+------
+ECInstanceUpdater::Impl::Impl(ECDbCR ecdb, ECClassCR ecClass, Utf8CP ecsqlOptions)
+    : m_ecdb(ecdb), m_ecClass(ecClass), m_isValid(false), m_needsCalculatedPropertyEvaluation(false)
+    {
+    bvector<ECPropertyCP> properties;
+    for (ECPropertyCP prop : m_ecClass.GetProperties(true))
+        {
+        properties.push_back(prop);
+        }
+
+    Initialize(properties, ecsqlOptions);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald                   08/14
+//+---------------+---------------+---------------+---------------+---------------+------
+ECInstanceUpdater::Impl::Impl(ECDbCR ecdb, IECInstanceCR instance, Utf8CP ecsqlOptions)
+    : m_ecdb(ecdb), m_ecClass(instance.GetClass()), m_isValid(false), m_needsCalculatedPropertyEvaluation(false)
+    {
+    bvector<ECPropertyCP> properties;
+
+    ECValuesCollectionPtr collection = ECValuesCollection::Create(instance);
+    for (ECPropertyValueCR propertyValue : *collection)
+        {
+        if (propertyValue.GetValue().IsLoaded())
+            properties.push_back(propertyValue.GetValueAccessor().GetECProperty());
+        }
+
+    Initialize(properties, ecsqlOptions);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald                   02/16
+//+---------------+---------------+---------------+---------------+---------------+------
+ECInstanceUpdater::Impl::Impl(ECDbCR ecdb, ECClassCR ecClass, bvector<uint32_t> const& propertyIndexesToBind, Utf8CP ecsqlOptions)
+    : m_ecdb(ecdb), m_ecClass(ecClass), m_isValid(false), m_needsCalculatedPropertyEvaluation(false)
+    {
+    Initialize(propertyIndexesToBind, ecsqlOptions);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald                   09/14
+//+---------------+---------------+---------------+---------------+---------------+------
+ECInstanceUpdater::Impl::Impl(ECDbCR ecdb, ECClassCR ecClass, bvector<ECN::ECPropertyCP> const& propertiesToBind, Utf8CP ecsqlOptions)
+    : m_ecdb(ecdb), m_ecClass(ecClass), m_isValid(false), m_needsCalculatedPropertyEvaluation(false)
+    {
+    Initialize(propertiesToBind, ecsqlOptions);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald                   08/14
+//+---------------+---------------+---------------+---------------+---------------+------
+void ECInstanceUpdater::Impl::Initialize(bvector<uint32_t> const& propertyIndexesToBind, Utf8CP ecsqlOptions)
+    {
+    bvector<ECPropertyCP> properties;
+    bvector<Utf8CP> propertyAccessStrings;
+    ECEnablerP enabler = m_ecClass.GetDefaultStandaloneEnabler();
+    for (uint32_t propertyIndex : propertyIndexesToBind)
+        {
+        ECPropertyCP ecProperty = enabler->LookupECProperty(propertyIndex);
+        if (ecProperty == nullptr)
+            {
+            LOG.errorv("Could not find ECProperty in ECClass '%s' for property index %" PRIu32 ".", m_ecClass.GetFullName(), propertyIndex);
+            m_isValid = false;
+            return;
+            }
+
+        if (ecProperty->GetIsStruct())
+            continue;
+
+        properties.push_back(ecProperty);
+        Utf8CP accessString = nullptr;
+        if (ECObjectsStatus::Success != enabler->GetAccessString(accessString, propertyIndex))
+            {
+            LOG.errorv("Could not retrieve property access string in ECClass '%s' for property index %" PRIu32 ".", m_ecClass.GetFullName(), propertyIndex);
+            m_isValid = false;
+            return;
+            }
+
+        propertyAccessStrings.push_back(accessString);
+        }
+
+    return Initialize(properties, &propertyAccessStrings, ecsqlOptions);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                   05/16
+//+---------------+---------------+---------------+---------------+---------------+------
+void ECInstanceUpdater::Impl::Initialize(bvector<ECPropertyCP> const& properties, bvector<Utf8CP> const* propertyAccessStrings, Utf8CP ecsqlOptions)
+    {
+    const bool hasAccessStrings = propertyAccessStrings != nullptr && !propertyAccessStrings->empty();
+    if (hasAccessStrings && properties.size() != propertyAccessStrings->size())
+        {
+        BeAssert(false);
+        m_isValid = false;
+        return;
+        }
+
+    Utf8String ecsql("UPDATE ONLY ");
+    ecsql.append(m_ecClass.GetECSqlName()).append(" SET ");
+
+    ECPropertyCP currentTimeStampProp = nullptr;
+    const bool hasCurrentTimeStampProp = ECInstanceAdapterHelper::TryGetCurrentTimeStampProperty(currentTimeStampProp, m_ecClass);
+    const bool readonlyPropsAreUpdatable = ECInstanceAdapterHelper::HasReadonlyPropertiesAreUpdatableOption(m_ecdb, m_ecClass, ecsqlOptions);
+
+    const size_t propCount = properties.size();
+    ECEnablerP enabler = m_ecClass.GetDefaultStandaloneEnabler();
+    int parameterIndex = 1;
+    for (size_t ix = 0; ix < propCount; ix++)
+        {
+        ECPropertyCP prop = properties[ix];
+        //Current time stamp props are populated by SQLite, so ignore them here.
+        //Readonly props are ignored if they are not updatable - exception: calc props need to be updated because ECObject's evaluator is not available
+        //in ECDb.
+        if ((hasCurrentTimeStampProp && prop == currentTimeStampProp) ||
+            (!readonlyPropsAreUpdatable && (prop->IsReadOnlyFlagSet() && !prop->IsCalculated())))
+            continue;
+
+        if (!m_needsCalculatedPropertyEvaluation)
+            m_needsCalculatedPropertyEvaluation = ECInstanceAdapterHelper::IsOrContainsCalculatedProperty(*prop);
+
+        if (parameterIndex != 1)
+            ecsql.append(",");
+
+        Utf8CP unescapedAccessString = nullptr;
+        Utf8String accessString;
+        if (!hasAccessStrings)
+            {
+            unescapedAccessString = prop->GetName().c_str();
+            accessString.append("[").append(unescapedAccessString).append("]");
+            }
+        else
+            {
+            //escape each token of the access string
+            unescapedAccessString = propertyAccessStrings->at(ix);
+            bvector<Utf8String> tokens;
+            BeStringUtilities::Split(unescapedAccessString, ".", tokens);
+            BeAssert(!tokens.empty());
+
+            bool isFirstToken = true;
+            for (Utf8StringCR token : tokens)
+                {
+                if (!isFirstToken)
+                    accessString.append(".");
+
+                accessString.append("[").append(token).append("]");
+                isFirstToken = false;
+                }
+            }
+
+        ecsql.append(accessString).append("=?");
+
+        if (SUCCESS != m_ecValueBindingInfos.AddBindingInfo(*enabler, *prop, unescapedAccessString, parameterIndex))
+            {
+            m_isValid = false;
+            return;
+            }
+
+        parameterIndex++;
+        }
+
+    if (parameterIndex == 1)
+        {
+        if (properties.empty())
+            LOG.errorv("ECClass '%s' doesn't have any properties. Instances of that class therefore cannot be updated.", m_ecClass.GetFullName());
+        else
+            LOG.errorv("ECClass '%s' only has read-only properties. Instances of that class therefore cannot be updated.", m_ecClass.GetFullName());
+
+        m_isValid = false;
+        return;
+        }
+
+    ecsql.append(" WHERE ECInstanceId=?");
+    m_ecinstanceIdParameterIndex = parameterIndex;
+
+    if (!Utf8String::IsNullOrEmpty(ecsqlOptions))
+        ecsql.append(" ECSQLOPTIONS ").append(ecsqlOptions);
+
+    const ECSqlStatus stat = m_statement.Prepare(m_ecdb, ecsql.c_str());
+    m_isValid = stat.IsSuccess();
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   07/14
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECInstanceUpdater::Impl::Update(IECInstanceCR instance) const
@@ -160,215 +316,6 @@ BentleyStatus ECInstanceUpdater::Impl::Update(IECInstanceCR instance) const
         return ERROR;
         }
 
-    return _Update(instance);
-    }
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                   07/14
-//+---------------+---------------+---------------+---------------+---------------+------
-bool ECInstanceUpdater::Impl::IsValid() const
-    {
-    return _IsValid();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                   07/14
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-void ECInstanceUpdater::Impl::LogFailure(ECN::IECInstanceCR instance, Utf8CP errorMessage)
-    {
-    ECInstanceAdapterHelper::LogFailure("update", instance, errorMessage);
-    }
-
-//*************************************************************************************
-// ClassUpdaterImpl
-//*************************************************************************************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                   06/14
-//+---------------+---------------+---------------+---------------+---------------+------
-ClassUpdaterImpl::ClassUpdaterImpl(ECDbCR ecdb, ECClassCR ecClass)
-    : Impl(ecClass), m_ecdb(ecdb), m_isValid(false), m_needsCalculatedPropertyEvaluation(false)
-    {
-    bvector<ECPropertyCP> propertiesToBind;
-    for (ECPropertyCP ecProperty : GetECClass().GetProperties(true))
-        {
-        if (ecProperty->IsReadOnlyFlagSet() && ecProperty->GetIsReadOnly() && !ecProperty->IsCalculated())
-            {
-            LOG.warningv("ECProperty '%s.%s' is marked as 'Readonly' and therefore will be skipped during update operations", ecProperty->GetClass().GetFullName(), ecProperty->GetName().c_str());
-            continue;
-            }
-
-        propertiesToBind.push_back(ecProperty);
-        }
-
-    Initialize(propertiesToBind);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald                   08/14
-//+---------------+---------------+---------------+---------------+---------------+------
-ClassUpdaterImpl::ClassUpdaterImpl(ECDbCR ecdb, IECInstanceCR instance)
-    : Impl(instance.GetClass()), m_ecdb(ecdb), m_isValid(false), m_needsCalculatedPropertyEvaluation(false)
-    {
-    bvector<ECPropertyCP> propertiesToBind;
-
-    ECValuesCollectionPtr collection = ECValuesCollection::Create(instance);
-    for (ECPropertyValueCR propertyValue : *collection)
-        {
-        if (propertyValue.GetValue().IsLoaded())
-            propertiesToBind.push_back(propertyValue.GetValueAccessor().GetECProperty());
-        }
-
-    Initialize(propertiesToBind);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald                   02/16
-//+---------------+---------------+---------------+---------------+---------------+------
-ClassUpdaterImpl::ClassUpdaterImpl(ECDbCR ecdb, ECClassCR ecClass, bvector<uint32_t>& propertiesToBind)
-    : Impl(ecClass), m_ecdb(ecdb), m_isValid(false), m_needsCalculatedPropertyEvaluation(false)
-    {
-    Initialize(propertiesToBind);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald                   09/14
-//+---------------+---------------+---------------+---------------+---------------+------
-ClassUpdaterImpl::ClassUpdaterImpl(ECDbCR ecdb, ECClassCR ecClass, bvector<ECN::ECPropertyCP>& propertiesToBind)
-    : Impl(ecClass), m_ecdb(ecdb), m_isValid(false), m_needsCalculatedPropertyEvaluation(false)
-    {
-    Initialize(propertiesToBind);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald                   08/14
-//+---------------+---------------+---------------+---------------+---------------+------
-void ClassUpdaterImpl::Initialize(bvector<uint32_t>& propertiesToBind)
-    {
-    if (propertiesToBind.size() < 1)
-        {
-        LOG.errorv("ECClass '%s' doesn't have any properties. Instances of that class therefore cannot be updated.",
-                   GetECClass().GetFullName());
-
-        m_isValid = false;
-        return;
-        }
-
-    Utf8String ecsql("UPDATE ONLY ");
-    ecsql.append(GetECClass().GetECSqlName()).append(" SET ");
-
-    ECPropertyCP currentTimeStampProp = nullptr;
-    bool hasCurrentTimeStampProp = ECInstanceAdapterHelper::TryGetCurrentTimeStampProperty(currentTimeStampProp, GetECClass());
-
-    int parameterIndex = 1;
-    ECEnablerP enabler = GetECClass().GetDefaultStandaloneEnabler();
-    for (uint32_t propertyIndex : propertiesToBind)
-        {
-        ECPropertyCP ecProperty = enabler->LookupECProperty(propertyIndex);
-
-        //Current time stamp props are populated by SQLite, so ignore them here.
-        if (hasCurrentTimeStampProp && ecProperty == currentTimeStampProp)
-            continue;
-
-        if (ecProperty->GetIsStruct())
-            continue;
-
-        if (!m_needsCalculatedPropertyEvaluation)
-            m_needsCalculatedPropertyEvaluation = ECInstanceAdapterHelper::IsOrContainsCalculatedProperty(*ecProperty);
-
-        Utf8String propNameSnippet("[");
-        Utf8CP accessString;
-        enabler->GetAccessString(accessString, propertyIndex);
-        size_t offset = 0;
-        Utf8String utfAccessString(accessString);
-        Utf8String token;
-        bool firstEntry = true;
-        while ((offset = utfAccessString.GetNextToken(token, ".", offset)) != Utf8String::npos)
-            {
-            if (!firstEntry)
-                propNameSnippet.append(".[");
-            propNameSnippet.append(token).append("]");
-            firstEntry = false;
-            }
-
-        if (parameterIndex != 1)
-            ecsql.append(",");
-
-        ecsql.append(propNameSnippet).append("=?");
-
-        if (SUCCESS != m_ecValueBindingInfos.AddBindingInfo(*enabler, *ecProperty, accessString, parameterIndex))
-            {
-            m_isValid = false;
-            return;
-            }
-
-        parameterIndex++;
-        }
-
-    ecsql.append(" WHERE ECInstanceId=?");
-    m_ecinstanceIdParameterIndex = parameterIndex;
-
-    ECSqlStatus stat = m_statement.Prepare(m_ecdb, ecsql.c_str());
-    m_isValid = (stat.IsSuccess());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald                   08/14
-//+---------------+---------------+---------------+---------------+---------------+------
-void ClassUpdaterImpl::Initialize(bvector<ECPropertyCP>& propertiesToBind)
-    {
-    if (propertiesToBind.size() < 1)
-        {
-        LOG.errorv("ECClass '%s' doesn't have any properties. Instances of that class therefore cannot be updated.",
-                   GetECClass().GetFullName());
-
-        m_isValid = false;
-        return;
-        }
-
-    Utf8String ecsql("UPDATE ONLY ");
-    ecsql.append(GetECClass().GetECSqlName()).append(" SET ");
-
-    ECPropertyCP currentTimeStampProp = nullptr;
-    bool hasCurrentTimeStampProp = ECInstanceAdapterHelper::TryGetCurrentTimeStampProperty(currentTimeStampProp, GetECClass());
-
-    int parameterIndex = 1;
-    for (ECPropertyCP ecProperty : propertiesToBind)
-        {
-        //Current time stamp props are populated by SQLite, so ignore them here.
-        if (hasCurrentTimeStampProp && ecProperty == currentTimeStampProp)
-            continue;
-
-        if (!m_needsCalculatedPropertyEvaluation)
-            m_needsCalculatedPropertyEvaluation = ECInstanceAdapterHelper::IsOrContainsCalculatedProperty(*ecProperty);
-
-        if (parameterIndex != 1)
-            ecsql.append(",");
-
-        ecsql.append("[").append(ecProperty->GetName()).append("]=?");
-
-        if (SUCCESS != m_ecValueBindingInfos.AddBindingInfo(GetECClass(), *ecProperty, parameterIndex))
-            {
-            m_isValid = false;
-            return;
-            }
-
-        parameterIndex++;
-        }
-
-    ecsql.append(" WHERE ECInstanceId=?");
-    m_ecinstanceIdParameterIndex = parameterIndex;
-
-    ECSqlStatus stat = m_statement.Prepare(m_ecdb, ecsql.c_str());
-    m_isValid = (stat.IsSuccess());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                   07/14
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ClassUpdaterImpl::_Update(IECInstanceCR instance) const
-    {
     // ECSql does not support modifying the endpoints of a relationship instance.  First need to verify that.
     IECRelationshipInstanceCP relationshipInstance = dynamic_cast<IECRelationshipInstanceCP> (&instance);
     if (nullptr != relationshipInstance)
@@ -376,6 +323,7 @@ BentleyStatus ClassUpdaterImpl::_Update(IECInstanceCR instance) const
         ECInstanceId newSourceInstanceId;
         if (SUCCESS != ECInstanceId::FromString(newSourceInstanceId, relationshipInstance->GetSource()->GetInstanceId().c_str()))
             return ERROR;
+
         ECInstanceId newTargetInstanceId;
         if (SUCCESS != ECInstanceId::FromString(newTargetInstanceId, relationshipInstance->GetTarget()->GetInstanceId().c_str()))
             return ERROR;
@@ -384,7 +332,7 @@ BentleyStatus ClassUpdaterImpl::_Update(IECInstanceCR instance) const
         ECClassId newTargetClassId = relationshipInstance->GetTarget()->GetClass().GetId();
 
         Utf8String ecSql("SELECT SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ");
-        ecSql.append(GetECClass().GetECSqlName()).append(" WHERE ECInstanceId=?");
+        ecSql.append(m_ecClass.GetECSqlName()).append(" WHERE ECInstanceId=?");
         ECSqlStatement statement;
         ECSqlStatus status = statement.Prepare(m_ecdb, ecSql.c_str());
         if (!status.IsSuccess())

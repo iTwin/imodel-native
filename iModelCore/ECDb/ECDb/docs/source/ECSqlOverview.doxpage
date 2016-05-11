@@ -62,6 +62,19 @@
     - <c>SELECT ECInstanceId FROM myschema.Foo WHERE Name = <b>?</b></c>
     - <c>SELECT ECInstanceId FROM myschema.Foo WHERE Name = <b>:fooname</b></c>
 
+    @section ECSQLOptions ECSQLOPTIONS Clause
+    ECSQL comes with the @c ECSQLOPTIONS keyword that can be appended to an ECSQL statement and can be followed by one or more options.
+    The options influence how ECDb should prepare the ECSQL statement. See <a href="files/ecdb/ecsql_overview.pdf" target="_blank">ECSQL Overview (PDF)</a>
+    for syntax details.
+    
+    @note The options modify the default behavior of how ECDb prepares the ECSQL statement. The default behavior is however what you should use
+    in most of the cases. So use the options with great care and be aware of their impact.
+    
+    ECSQL Option | Description
+    ------------ | -----------
+    ReadonlyPropertiesAreUpdatable | By default, preparing an ECSQL UPDATE will fail if it includes @ref BentleyApi::ECN::ECProperty::GetIsReadOnly "read-only ECProperties". If this option is set, you can update read-only properties with an ECSQL UPDATE.
+    NoECClassIdFilter | If multiple ECClasses are mapped to the same table ECDb appends a class id filter to the generated SQLite SQL statement to make sure it only affects the desired rows in the table. In <b>very rare cases</b> you might not need this filter because you made sure yourself that the ECSQL where clause only affects the correct rows. In this case, you can set this option and might gain some performance.
+       
 
     @see @ref WorkingWithECDb
 

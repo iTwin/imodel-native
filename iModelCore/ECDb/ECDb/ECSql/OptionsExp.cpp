@@ -17,6 +17,12 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 Utf8CP const OptionsExp::NOECCLASSIDFILTER_OPTION = "NoECClassIdFilter";
 
 //-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                  05/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+Utf8CP const OptionsExp::READONLYPROPERTIESAREUPDATABLE_OPTION = "ReadonlyPropertiesAreUpdatable";
+
+//-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                  10/2015
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus OptionsExp::AddOptionExp(std::unique_ptr<OptionExp> optionExp)
