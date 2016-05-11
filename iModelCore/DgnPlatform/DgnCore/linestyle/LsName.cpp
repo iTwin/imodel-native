@@ -448,9 +448,7 @@ Render::TexturePtr LsDefinition::GenerateTexture(double& textureDrawWidth, ViewC
     ComponentToTextureStroker   stroker(viewContext.GetDgnDb(), scaleFactor, lineColor, fillColor, lineWeight, *comp);
     GraphicPtr graphic = stroker.Stroke(viewContext);
 
-    Render::GeometryTexturePtr texture = vp->GetRenderTarget()->CreateGeometryTexture(*graphic, range2d, isColorBySymbol, false, 0);
-    texture->_QueueTask();
-    texture->ReleaseGraphic();
+    Render::TexturePtr texture = vp->GetRenderTarget()->CreateGeometryTexture(*graphic, range2d, isColorBySymbol, false);
 
     double yRange = range2d.high.y - range2d.low.y;
     if (0.0 == yRange)

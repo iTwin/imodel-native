@@ -273,20 +273,6 @@ public:
 //=======================================================================================
 struct Texture : RefCounted<NonCopyableClass>
 {
-    virtual ImageTextureP _GetAsImageTextureP() { return nullptr; }
-    virtual ImageTextureCP _GetAsImageTextureCP() const { return nullptr; }
-    virtual GeometryTextureP _GetAsGeometryTextureP() { return nullptr; }
-    virtual GeometryTextureCP _GetAsGeometryTextureCP() const { return nullptr; }
-};
-
-//=======================================================================================
-//! A Texture for rendering generated from an image
-// @bsiclass                                                    Keith.Bentley   09/15
-//=======================================================================================
-struct ImageTexture : Texture
-{
-    virtual ImageTextureP _GetAsImageTextureP() { return this; }
-    virtual ImageTextureCP _GetAsImageTextureCP() const { return this; }
 };
 
 //=======================================================================================
@@ -296,28 +282,6 @@ struct Material : RefCounted<NonCopyableClass>
 {
     bvector<TexturePtr> m_mappedTextures;
     void AddMappedTexture(TextureR texture) {m_mappedTextures.push_back(&texture);}
-};
-
-//=======================================================================================
-// @bsiclass                                                    John.Gooding    04/16
-//=======================================================================================
-struct GeometryTexture : Texture
-{
-protected:
-    GraphicPtr      m_graphic;
-    DRange2d        m_range;
-    bool            m_useGeometryColors;
-    bool            m_forAreaPattern;
-    uintptr_t       m_tag;
-
-public:
-    virtual GeometryTextureP _GetAsGeometryTextureP() { return this; }
-    virtual GeometryTextureCP _GetAsGeometryTextureCP() const { return this; }
-
-    virtual void _QueueTask() const = 0;
-    void ReleaseGraphic() { m_graphic = nullptr; }
-    GeometryTexture(Render::GraphicR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern, uintptr_t tag) : m_graphic(&graphic), m_range(range), 
-                                m_useGeometryColors(useGeometryColors), m_forAreaPattern(forAreaPattern), m_tag(tag) {}
 };
 
 //=======================================================================================
@@ -1358,15 +1322,15 @@ struct GraphicArray
 struct System
 {
     virtual MaterialPtr _GetMaterial(DgnMaterialId, DgnDbR) const = 0;
-    virtual ImageTexturePtr _GetImageTexture(DgnTextureId, DgnDbR) const = 0;
+    virtual TexturePtr _GetImageTexture(DgnTextureId, DgnDbR) const = 0;
     virtual GraphicPtr _CreateGraphic(Graphic::CreateParams const& params) const = 0;
     virtual GraphicPtr _CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency) const = 0;
     virtual GraphicPtr _CreateGroupNode(Graphic::CreateParams const& params, GraphicArray& entries, ClipPrimitiveCP clip) const = 0;
 
     //N.B. _CreateTexture is called from multiple-threads implementer must ensure this is supported. If not non-shareable resource must be protected by locks.
-    virtual ImageTexturePtr _CreateImageTexture(ImageCR, bool enableAlpha) const = 0;
+    virtual TexturePtr _CreateImageTexture(ImageCR, bool enableAlpha) const = 0;
 
-    virtual GeometryTexturePtr _CreateGeometryTexture(Render::GraphicR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern, uintptr_t tag) const = 0;
+    virtual TexturePtr _CreateGeometryTexture(Render::GraphicR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern) const = 0;
 };
 
 //=======================================================================================
@@ -1435,9 +1399,9 @@ public:
     GraphicPtr CreateGraphic(Graphic::CreateParams const& params) {return m_system._CreateGraphic(params);}
     GraphicPtr CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency) {return m_system._CreateSprite(sprite, location, xVec, transparency);}
     MaterialPtr GetMaterial(DgnMaterialId id, DgnDbR dgndb) const {return m_system._GetMaterial(id, dgndb);}
-    ImageTexturePtr GetImageTexture(DgnTextureId id, DgnDbR dgndb) const {return m_system._GetImageTexture(id, dgndb);}
-    ImageTexturePtr CreateImageTexture(ImageR image, bool enableAlpha) const {return m_system._CreateImageTexture(image, enableAlpha);}
-    GeometryTexturePtr CreateGeometryTexture(Render::GraphicR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern, uintptr_t tag) const {return m_system._CreateGeometryTexture(graphic, range, useGeometryColors, forAreaPattern, tag);}
+    TexturePtr GetImageTexture(DgnTextureId id, DgnDbR dgndb) const {return m_system._GetImageTexture(id, dgndb);}
+    TexturePtr CreateImageTexture(ImageR image, bool enableAlpha) const {return m_system._CreateImageTexture(image, enableAlpha);}
+    TexturePtr CreateGeometryTexture(Render::GraphicR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern) const {return m_system._CreateGeometryTexture(graphic, range, useGeometryColors, forAreaPattern);}
     SystemR GetSystem() {return m_system;}
 
     uint32_t GetGraphicsPerSecondScene() const {return m_graphicsPerSecondScene.load();}
