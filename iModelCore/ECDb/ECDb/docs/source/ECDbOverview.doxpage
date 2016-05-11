@@ -182,7 +182,7 @@
     
     @ref BentleyApi::BeSQLite::EC::ECDbSchemaManager::ImportECSchemas "ECDbSchemaManager::ImportECSchemas" is the key API to
     - @b import new @ref BentleyApi::ECN::ECSchema "ECSchemas" into an @ref ECDbFile "ECDb file"
-    - @b update an @ref BentleyApi::ECN::ECSchema "ECSchema" which already exists in an @ref ECDbFile "ECDb file" with a newer version of it.
+    - @b update @ref BentleyApi::ECN::ECSchema "ECSchemas" which already exist in an @ref ECDbFile "ECDb file" with a newer version of them.
     %ECDb computes the changes between the newer and existing schema version and applies the changes to the %ECDb file
     
     See also @ref ECDbECSchemaRules
