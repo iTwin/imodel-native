@@ -97,7 +97,9 @@ bool Graph::initialize(const wchar_t *graphName)
 
 	setUpdateRandomEnabled(false);
 
+#ifdef HAVE_GDIPLUS
 	setHWND(NULL);
+#endif
 
 	setName(graphName);
 
@@ -169,6 +171,7 @@ unsigned int Graph::getNumEntities(void)
 	return static_cast<uint>(entities.size());
 }
 
+#ifdef HAVE_GDIPLUS
 LRESULT CALLBACK Graph::windowMessageHandler(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
 	Graph		*	graph;
@@ -235,6 +238,7 @@ LRESULT CALLBACK Graph::windowMessageHandler(HWND hWnd, UINT Msg, WPARAM wParam,
 
 	return 0;
 }
+#endif
 
 void Graph::createWindow(const wchar_t *windowName, int posX, int posY, int width, int height)
 {
@@ -721,7 +725,7 @@ Graph *GraphManager::getGraph(Index index)
 	return *it;
 }
 
-
+#ifdef HAVE_GDIPLUS
 Graph *GraphManager::getGraphWithWnd(HWND hWnd)
 {
 	PTRMI::MutexScope	mutexScope(mutex, GRAPH_MUTEX_TIMEOUT);
@@ -744,7 +748,7 @@ Graph *GraphManager::getGraphWithWnd(HWND hWnd)
 
 	return NULL;
 }
-
+#endif
 
 Graph *GraphManager::getGraphWithName(const wchar_t *graphName)
 {
@@ -951,7 +955,7 @@ void GraphEntity::clear(void)
 	setUnitScale(Vector2d(1.0, 1.0));
 }
 
-
+#ifdef HAVE_GDIPLUS
 void GraphEntity::beginStyle(HWND hWnd, HDC hDC)
 {
 
@@ -962,5 +966,6 @@ void GraphEntity::endStyle(void)
 {
 
 }
+#endif
 
 }

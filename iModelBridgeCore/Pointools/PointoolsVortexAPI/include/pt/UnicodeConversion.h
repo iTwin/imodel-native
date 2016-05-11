@@ -71,24 +71,8 @@ namespace pt
 		  */
 		static std::string convert( const wchar_t * input )
 		{
-			std::string retVal;
-			size_t strLength = wcslen(input)+sizeof(wchar_t);
-			char * buffer = new char[ strLength ];
-			try
-			{
-            #ifdef NEEDS_WORK_VORTEX_DGNDB
-				BOOL defa;
-				::WideCharToMultiByte( CP_ACP, WC_NO_BEST_FIT_CHARS, input, -1, buffer, static_cast<int>(strLength), 0, &defa );
-				retVal = buffer;
-				delete [] buffer;
-            #endif
-			}
-			catch( ... )
-			{
-				delete [] buffer;
-				throw;
-			}
-			return retVal;
+            AString temp(input);
+            return temp.c_str();
 		}
 	};
 
@@ -116,26 +100,8 @@ namespace pt
 			if( 0 == input || '\0' == input[0] )
 				return std::wstring();
 
-			std::wstring retVal;
-			const size_t bufferSize = strlen(input) + 1; // buffer size, need to allocate space for the '\0' char
-			wchar_t * buffer = new wchar_t[ bufferSize ];
-														// Null terminate the destination buffer
-			buffer[bufferSize - 1] = L'\0';
-
-			try
-			{
-#ifdef NEEDS_WORK_VORTEX_DGNDB
-				::MultiByteToWideChar( CP_ACP, MB_COMPOSITE , input, -1, buffer, static_cast<int>(bufferSize - 1) );
-				retVal = buffer;
-				delete [] buffer;
-#endif
-			}
-			catch( ... )
-			{
-				delete [] buffer;
-				throw;
-			}
-			return retVal;
+            WString temp(input, BentleyCharEncoding::Locale);
+            return temp.c_str();
 		}
 	};
 

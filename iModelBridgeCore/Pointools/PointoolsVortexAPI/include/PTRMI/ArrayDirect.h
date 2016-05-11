@@ -15,30 +15,23 @@ namespace PTRMI
 		typedef		Array<T>			Super;
 
 	public:
+					ArrayDirect			(void) : Super() {}
 
-					ArrayDirect			(void) : Array() {}
-
-					ArrayDirect			(Size initSize, T *initArray) : Array(initSize, initArray) {}
+                    ArrayDirect(typename Super::Size initSize, T *initArray) : Super(initSize, initArray) {}
 
 		void		readPartial			(DataBuffer &readBuffer, DataBuffer &writeBuffer);
 
-		void		advance				(DataBuffer &buffer);
 	};
 
-	template<typename T>
-	void PTRMI::ArrayDirect<T>::advance(DataBuffer &buffer)
-	{
-		buffer.advance(getSizeBytes());
-	}
 
 	ARRAYDIRECT_T
 	void ArrayDirect<T>::readPartial(DataBuffer &readBuffer, DataBuffer &writeBuffer)
 	{
 		Super::readPartial(readBuffer);
 															// Write size ready for the return
-		writePartial(writeBuffer);
+        Super::writePartial(writeBuffer);
 															// Allocate memory directly from write buffer
-		setArray(reinterpret_cast<T *>(writeBuffer.allocate(getSizeBytes())));
+        Super::setArray(reinterpret_cast<T *>(writeBuffer.allocate(Super::getSizeBytes())));
 	}
 
 

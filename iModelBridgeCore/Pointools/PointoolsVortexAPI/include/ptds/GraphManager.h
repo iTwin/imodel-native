@@ -252,9 +252,10 @@ namespace ptds
 		Vector2d				unitScale;
 		
 	protected:
-
+#ifdef HAVE_GDIPLUS
 		void					beginStyle						(HWND hWnd, HDC hDC);
-		void					endStyle						(void);
+        void					endStyle						(void);
+#endif
 
 	public:
 								GraphEntity						(void);
@@ -397,7 +398,9 @@ namespace ptds
 
 		PTRMI::Mutex			mutex;
 
+#ifdef HAVE_GDIPLUS
 		HWND					hWnd;
+#endif
 
 		std::wstring			name;
 
@@ -420,7 +423,9 @@ namespace ptds
 
 	protected:
 
+#ifdef HAVE_GDIPLUS
 		static LRESULT CALLBACK windowMessageHandler		(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
+#endif
 
 		void					setWindowWidth				(unsigned int width)	{windowWidth = width;}
 		void					setWindowHeight				(unsigned int height)	{windowHeight = height;}
@@ -435,7 +440,9 @@ namespace ptds
 		void					setWindowTimer				(unsigned int timer)	{windowTimer = timer;}
 		unsigned int			getWindowTimer				(void)					{return windowTimer;}
 
+#ifdef HAVE_GDIPLUS
 		void					setHWND						(HWND inithWnd)			{hWnd = inithWnd;}
+#endif
 
 		bool					calculateFrustum			(bool preserveAspectRatio, Vector2d &extentsMin, Vector2d &extentsMax, Vector2d &frustumMin, Vector2d &frustumMax, Vector2d &offset, Vector2d &scalar);
 
@@ -469,7 +476,9 @@ namespace ptds
 		void					setIncludeOriginY			(bool inc)						{includeOriginY = inc;}
 		bool					getIncludeOriginY			(void)							{return includeOriginY;}
 
+#ifdef HAVE_GDIPLUS
 		HWND					getHWND						(void)							{return hWnd;}
+#endif
 
 		void					setUpdateRandomEnabled		(bool enabled)					{updateRandomEnabled = enabled;}
 		bool					getUpdateRandomEnabled		(void)							{return updateRandomEnabled;}
@@ -520,9 +529,9 @@ namespace ptds
 		unsigned int	removeAllEntities		(Graph *graph);
 
 		Graph		*	getGraph				(Index graph);
+#ifdef HAVE_GDIPLUS
 		Graph		*	getGraphWithWnd			(HWND hWnd);
 
-#ifdef HAVE_GDIPLUS
 		void			draw					(HWND hWnd, HDC hDC, PAINTSTRUCT &ps);
 #endif
 
@@ -651,7 +660,7 @@ namespace ptds
 		if(mutexScope.isLocked() == false)
 			return false;
 
-		PointSet::iterator	itStart, itEnd;
+		typename PointSet::iterator	itStart, itEnd;
 		Index				n = getNumPoints();
 
 		if(start >= n || end >= n || start > end)
@@ -851,7 +860,7 @@ namespace ptds
 		Point delta = maximum - minimum;
 
 		unsigned int	phase = 0;
-		Point::Type		val;
+		typename Point::Type		val;
 
 		for(t = 0; t < numPoints; t++)
 		{
@@ -1043,7 +1052,7 @@ namespace ptds
 
 
 	template<typename T, unsigned int dim>
-	typename Series<T, dim>::Type Series<T, dim>::calculateVariance(Index index, T *mean = NULL)
+	typename Series<T, dim>::Type Series<T, dim>::calculateVariance(Index index, T *mean)
 	{
 		PTRMI::MutexScope mutexScope(mutex, GRAPH_ENTITY_MUTEX_TIMEOUT);
 		if(mutexScope.isLocked() == false)
@@ -1472,9 +1481,8 @@ namespace ptds
 		return v[0];
 	}
 
-
 	template<typename T, unsigned int dim>
-	inline typename const VectorND<T, dim>::Type &VectorND<T, dim>::operator[](Index index) const
+	inline typename VectorND<T, dim>::Type const& VectorND<T, dim>::operator[](Index index) const
 	{
 		if(index < getSize())
 		{
@@ -1483,7 +1491,6 @@ namespace ptds
 
 		return v[0];
 	}
-
 
 	template<typename T, unsigned int dim>
 	inline VectorND<T, dim> &VectorND<T, dim>::operator-=(const thisType &p)

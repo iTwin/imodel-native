@@ -23,6 +23,10 @@
  All rights reserved.
  */
 
+#ifndef PT_DEBUGASSERT_H
+#define PT_DEBUGASSERT_H
+
+
 #ifndef NEEDS_WORK_VORTEX_DGNDB
 
 #define debugAssert(exp)            assert(exp)
@@ -31,8 +35,6 @@
 
 #else
 
-#ifndef PT_DEBUGASSERT_H
-#define PT_DEBUGASSERT_H
 
 #include <string>
 #include <pt/ptunicode.h>

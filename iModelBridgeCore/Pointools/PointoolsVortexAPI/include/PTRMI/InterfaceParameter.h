@@ -67,21 +67,21 @@ template<typename P> class PC<In<P> > : public PC<P>
 {
 public:
 	PC(void) {}
-	PC(P &item)	{v = &item;}
+	PC(P &item)	{ PC<P>::v = &item;}
 };
 
 template<typename P> class PC<Out<P> > : public PC<P>
 {
 public:
 	PC(void)	{}
-	PC(P &item)	{v = &item;}
+	PC(P &item)	{ PC<P>::v = &item;}
 };
 
 template<typename P> class PC<InOut<P> > : public PC<P>
 {
 public:
 	PC(void)	{}
-	PC(P &item)	{v = &item;}
+	PC(P &item)	{ PC<P>::v = &item;}
 };
 
 
@@ -108,7 +108,7 @@ template<typename P> class PS<In<P> > : public PS<P>
 {
 public:
 	PS(void) {}
-	PS(P &item)	{v = item;}
+	PS(P &item)	{ PS<P>::v = item;}
 };
 
 template<typename P> class PS<In<P *> > : public PS<P *>
@@ -129,7 +129,7 @@ template<typename P> class PS<Out<P> > : public PS<P>
 {
 public:
 	PS(void) {}
-	PS(P &item)	{v = &item;}
+	PS(P &item)	{ PS<P>::v = &item;}
 };
 
 
@@ -151,7 +151,7 @@ template<typename P> class PS<InOut<P> > : public PS<P>
 {
 public:
 	PS(void) {}
-	PS(P &item)	{v = &item;}
+	PS(P &item)	{ PS<P>::v = &item;}
 };
 
 typedef PC<In<PVoid>>	PCVoid;
