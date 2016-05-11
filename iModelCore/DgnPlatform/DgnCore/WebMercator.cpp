@@ -554,7 +554,7 @@ void WebMercatorDisplay::DrawAndCacheTile(RenderContext& context, TileIdCR tilei
         return;
 
     BeAssert(!imageInfo.m_isBGR);
-    auto texture = context.GetTargetR().CreateTexture(m_image, false);
+    auto texture = context.GetTargetR().CreateImageTexture(m_image, false);
     m_model.GetTextureCache().Insert(tileid, imageInfo, *texture);
 
     DrawTile(context, tileid, imageInfo, *texture, m_model.GetGroundBias());
