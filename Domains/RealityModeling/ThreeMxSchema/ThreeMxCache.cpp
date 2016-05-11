@@ -8,7 +8,6 @@
 #include "ThreeMxInternal.h"
 #include <DgnPlatform/HttpHandler.h>
 
-#define ONE_GB (1024 * 1024 * 1024)
 #define TABLE_NAME_ThreeMx "ThreeMx"
 
 BEGIN_UNNAMED_NAMESPACE
@@ -18,7 +17,7 @@ BEGIN_UNNAMED_NAMESPACE
 //=======================================================================================
 struct ThreeMxCache : BeSQLiteRealityDataStorage
 {
-    uint64_t m_allowedSize = ONE_GB;
+    uint64_t m_allowedSize = (1024*1024*1024); // 1 Gb
 
     using BeSQLiteRealityDataStorage::BeSQLiteRealityDataStorage;
 
@@ -37,15 +36,22 @@ protected:
     Scene& m_scene;
     NodePtr m_node;
     Utf8String m_filename;
+    Utf8String m_shortName;
     mutable MxStreamBuffer m_nodeBytes;
     MxStreamBuffer* m_output;
 
     BentleyStatus InitFromSource(Utf8CP filename, ByteStream const& data);
     BentleyStatus InitFromStorage(Db& db, BeMutex& cs, Utf8CP filename);
     BentleyStatus PersistToStorage(Db& db, BeMutex& cs) const;
+    void OnNotFound() {if (m_node.IsValid()) m_node->SetNotFound();}
 
 public:
-    ThreeMxData(NodeP node, Scene& scene, MxStreamBuffer* output) : m_scene(scene), m_node(node), m_output(output) {}
+    ThreeMxData(NodeP node, Scene& scene, MxStreamBuffer* output) : m_scene(scene), m_node(node), m_output(output) 
+        {
+        if (node)
+            m_shortName = node->GetChildFile();
+        }
+
     Utf8StringCR GetFilename() const {return m_filename;}
     MxStreamBuffer& GetOutput() const {return m_nodeBytes;}
 };
@@ -71,6 +77,8 @@ struct HttpData : ThreeMxData, IRealityData<HttpData, BeSQLiteRealityDataStorage
 protected:
     virtual Utf8CP _GetId() const override {return GetFilename().c_str();}
     virtual bool _IsExpired() const override {return false;}
+    virtual void _OnError() override {OnNotFound();}
+    virtual void _OnNotFound() override {OnNotFound();}
     virtual BentleyStatus _InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> const& header, ByteStream const& body) override {return InitFromSource(url, body);}
     virtual BentleyStatus _InitFrom(Db& db, BeMutex& cs, Utf8CP id) override {return InitFromStorage(db, cs, id);}
     virtual BentleyStatus _Persist(Db& db, BeMutex& cs) const override {return PersistToStorage(db, cs);}
@@ -96,6 +104,8 @@ struct FileData : ThreeMxData, IRealityData<FileData, BeSQLiteRealityDataStorage
 protected:
     virtual Utf8CP _GetId() const override {return GetFilename().c_str();}
     virtual bool _IsExpired() const override {return false;}
+    virtual void _OnError() override {OnNotFound();}
+    virtual void _OnNotFound() override {OnNotFound();}
     virtual BentleyStatus _InitFrom(Utf8CP filepath, ByteStream const& data) override {return InitFromSource(filepath, data);}
     virtual BentleyStatus _InitFrom(Db& db, BeMutex& cs, Utf8CP id) override {return InitFromStorage(db, cs, id);}
     virtual BentleyStatus _Persist(Db& db, BeMutex& cs) const override {return PersistToStorage(db, cs);}
@@ -111,6 +121,9 @@ END_UNNAMED_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ThreeMxData::InitFromSource(Utf8CP filename, ByteStream const& data)
     {
+    if (m_node.IsValid() && !m_node->IsQueued())
+        return SUCCESS; // this node was abandoned.
+
     m_nodeBytes = data;
     m_filename = filename;
 
@@ -136,6 +149,9 @@ BentleyStatus ThreeMxData::InitFromSource(Utf8CP filename, ByteStream const& dat
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ThreeMxData::InitFromStorage(Db& db, BeMutex& cs, Utf8CP filename)
     {
+    if (m_node.IsValid() && !m_node->IsQueued())
+        return SUCCESS; // this node was abandoned.
+
     if (true)
         {
         BeMutexHolder lock(cs);
@@ -144,8 +160,9 @@ BentleyStatus ThreeMxData::InitFromStorage(Db& db, BeMutex& cs, Utf8CP filename)
         if (BE_SQLITE_OK != db.GetCachedStatement(stmt, "SELECT Data,DataSize FROM " TABLE_NAME_ThreeMx " WHERE Filename=?"))
             return ERROR;
 
+        Utf8String name = m_shortName.empty() ? m_filename : m_shortName;
         stmt->ClearBindings();
-        stmt->BindText(1, filename, Statement::MakeCopy::No);
+        stmt->BindText(1, name, Statement::MakeCopy::No);
         if (BE_SQLITE_ROW != stmt->Step())
             return ERROR;
 
@@ -179,20 +196,26 @@ BentleyStatus ThreeMxData::InitFromStorage(Db& db, BeMutex& cs, Utf8CP filename)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ThreeMxData::PersistToStorage(Db& db, BeMutex& cs) const
     {
+    if (m_node.IsValid() && m_node->IsAbandoned())
+        return SUCCESS;
+
     BeMutexHolder lock(cs);
     BeAssert(m_nodeBytes.HasData());
 
+    Utf8String name = m_shortName.empty() ? m_filename : m_shortName;
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     CachedStatementPtr selectStatement;
     if (BE_SQLITE_OK != db.GetCachedStatement(selectStatement, "SELECT Filename FROM " TABLE_NAME_ThreeMx " WHERE Filename=?"))
         return ERROR;
 
     selectStatement->ClearBindings();
-    selectStatement->BindText(1, m_filename.c_str(), Statement::MakeCopy::No);
+    selectStatement->BindText(1, name, Statement::MakeCopy::No);
     if (BE_SQLITE_ROW == selectStatement->Step())
         {
         // update
         }
     else
+#endif
         {
         // insert
         CachedStatementPtr stmt;
@@ -200,10 +223,13 @@ BentleyStatus ThreeMxData::PersistToStorage(Db& db, BeMutex& cs) const
             return ERROR;
 
         stmt->ClearBindings();
-        stmt->BindText(1, m_filename.c_str(), Statement::MakeCopy::No);
+        stmt->BindText(1, name, Statement::MakeCopy::No);
         stmt->BindBlob(2, m_nodeBytes.GetData(), (int)m_nodeBytes.GetSize(), Statement::MakeCopy::No);
         stmt->BindInt64(3, (int64_t)m_nodeBytes.GetSize());
-        stmt->BindInt64(4, BeTimeUtilities::GetCurrentTimeAsUnixMillis());
+
+        if (m_node.IsValid()) // for the root, store NULL for time. That way it will never get purged.
+            stmt->BindInt64(4, BeTimeUtilities::GetCurrentTimeAsUnixMillis());
+
         if (BE_SQLITE_DONE != stmt->Step())
             return ERROR;
         }
@@ -285,7 +311,7 @@ RealityDataCacheResult Scene::RequestData(NodeP node, bool synchronous, MxStream
     Utf8String filePath ;
     if (nullptr != node)
         {
-        if (!node->IsInvalid())
+        if (!node->AreChildrenNotLoaded())
             {
             BeAssert(false);
             return RealityDataCacheResult::Error;
@@ -316,5 +342,5 @@ void Scene::CreateCache()
     {
     m_cache = new RealityDataCache();
     m_cache->RegisterStorage(*new ThreeMxCache(m_localCacheName, SchedulingMethod::FIFO));
-    m_cache->RegisterSource(IsUrl() ? (IRealityDataSourceBase&) *HttpRealityDataSource::Create(8, SchedulingMethod::FIFO) : *FileRealityDataSource::Create(4, SchedulingMethod::FIFO));
+    m_cache->RegisterSource(IsUrl() ? (IRealityDataSourceBase&) *HttpRealityDataSource::Create(8, SchedulingMethod::FIFO) : *FileRealityDataSource::Create(8, SchedulingMethod::FIFO));
     }

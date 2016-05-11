@@ -43,8 +43,8 @@ struct CtmContext
 template<typename T> T getJsonValue(JsonValueCR pt);
 template<> Utf8String getJsonValue(JsonValueCR pt) {return pt.asCString();}
 
-/*-----------------------------------------------------------------------------------**//**
-* @bsimethod
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename T> bool readVectorEntry(JsonValueCR pt, Utf8CP tag, bvector<T>& v)
     {
@@ -70,8 +70,8 @@ static void dPoint3dFromJson(DPoint3dR point, JsonValueCR inValue)
 
 END_UNNAMED_NAMESPACE
 
-/*-----------------------------------------------------------------------------------**//**
-* @bsimethod
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Node::ReadHeader(JsonValueCR pt, Utf8String& name, bvector<Utf8String>& nodeResources)
     {
@@ -118,6 +118,8 @@ bool Node::ReadHeader(JsonValueCR pt, Utf8String& name, bvector<Utf8String>& nod
     bvector<Utf8String> children;
     if (!readVectorEntry(pt, "children", children))
         return false;
+
+    BeAssert(children.size() <= 1);
 
     if (1 == children.size())
         m_childPath = children[0];
@@ -312,7 +314,6 @@ BentleyStatus Node::DoRead(MxStreamBuffer& in, SceneR scene)
 
     return SUCCESS;
     }
-
 
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod

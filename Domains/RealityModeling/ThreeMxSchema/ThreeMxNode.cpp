@@ -12,7 +12,7 @@
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String Node::GetChildFile() const
     {
-    Utf8String parentPath = "/";
+    Utf8String parentPath("/");
     if (m_parent)
         parentPath = m_parent->GetChildFile();
 
@@ -36,32 +36,25 @@ void Node::Dump(Utf8CP header) const
         child->Dump(childHdr.c_str());
     }
 
-/*-----------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool Node::TestVisibility(ViewContextR viewContext, SceneR scene)
-    {
-    if (!IsDisplayable())
-        return true; // this seems wierd, but "is displayable" really means its a root node with no max diameter. That means we need to draw its children.
-
-    DPoint3d center = scene.GetNodeCenter(*this);
-    double radius = scene.GetNodeRadius(*this);
-    return viewContext.IsPointVisible(center, ViewContext::WantBoresite::No, radius);
-    }
-
-/*-----------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     03/2015
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Node::Draw(DrawArgsR args, int depth)
     {
-    if (!TestVisibility(args.m_context, args.m_scene))
-        return;
-
-    double radius = args.m_scene.GetNodeRadius(*this);
     bool tooCoarse = true;
 
     if (IsDisplayable())
         {
+        Frustum box(m_range);
+        args.m_scene.GetLocation().Multiply(box.GetPtsP(), box.GetPts(), 8); 
+
+        if (FrustumPlanes::Contained::Outside == args.m_context.GetFrustumPlanes().Contains(box))
+            {
+            UnloadChildren();  // NEEDS_WORK - maybe only do this if we need memory, maybe add lru field?
+            return;
+            }
+
+        double radius = args.m_scene.GetNodeRadius(*this);
         if (args.m_scene.UseFixedResolution())
             {
             tooCoarse = (radius / args.m_scene.GetFixedResolution()) > GetMaxDiameter();
@@ -80,19 +73,40 @@ void Node::Draw(DrawArgsR args, int depth)
         for (auto const& child : *children)
             child->Draw(args, depth+1);
 
-        return ;
+        return;
         }
 
     if (m_geometry.IsValid())
         m_geometry->Draw(args);
 
-    if (!HasChildren() || !tooCoarse)
+    if (!tooCoarse || !HasChildren())
+        {
+        UnloadChildren(); // NEEDS_WORK - maybe only do this if we need memory?
         return;
+        }
 
+    // this node is too coarse (we drew it already, of course) but has unloaded children. Put it into the list of "missing tiles" so we'll draw its children when they're loaded
     args.m_missing.Insert(depth, this);
     
-    if (IsInvalid())
+    if (AreChildrenNotLoaded()) // only request children if we haven't already asked for them
         args.m_scene.RequestData(this, false, nullptr);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* This method gets called on the (valid) children of nodes as they are unloaded. Its purpose is to notify the loading
+* threads that these nodes are no longer referenced and we shouldn't waste time loading them.
+* @bsimethod                                    Keith.Bentley                   05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void Node::SetAbandoned()
+    {
+    if (ChildLoad::Ready == m_childLoad.load()) // if this node's children are loaded, set them as abandoned too (recursively)
+        {
+        for (auto const& child : m_childNodes)
+            child->SetAbandoned();
+        }
+
+    // this is actually a race condtion, but it doesn't matter. If the loading thread misses the abandoned flag, the only consequence is we waste a little time.
+    m_childLoad.store(ChildLoad::Abandoned);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -101,13 +115,13 @@ void Node::Draw(DrawArgsR args, int depth)
 void Node::UnloadChildren()
     {
     DgnDb::VerifyClientThread();
-    if (m_childLoad.load() != ChildLoad::Ready)
-        {
-        BeAssert(false);
+    if (ChildLoad::Ready != m_childLoad.load()) // nothing to do
         return;
-        }
 
-    m_childLoad.store(ChildLoad::Invalid);
+    for (auto const& child : m_childNodes)
+        child->SetAbandoned();
+
+    m_childLoad.store(ChildLoad::NotLoaded);
     m_childNodes.clear();
     }
 

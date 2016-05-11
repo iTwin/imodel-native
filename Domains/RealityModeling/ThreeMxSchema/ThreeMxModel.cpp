@@ -26,6 +26,8 @@ struct ThreeMxProgressive : ProgressiveTask
 {
     SceneR m_scene;
     DrawArgs::MissingNodes m_missing;
+    uint64_t m_nextShow = 0;
+
     ThreeMxProgressive(SceneR scene, DrawArgs::MissingNodes& nodes) : m_scene(scene), m_missing(std::move(nodes)){}
     Completion _DoProgressive(ProgressiveContext& context, WantShow&) override;
 };
@@ -33,14 +35,11 @@ struct ThreeMxProgressive : ProgressiveTask
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ProgressiveTask::Completion ThreeMxProgressive::_DoProgressive(ProgressiveContext& context, WantShow& show) 
+ProgressiveTask::Completion ThreeMxProgressive::_DoProgressive(ProgressiveContext& context, WantShow& wantShow) 
     {
     DrawArgs args(context, m_scene);
 
     DEBUG_PRINTF("3MX progressive %d missing", m_missing.size());
-
-    for (auto const& node: m_missing)
-        DEBUG_PRINTF("3MX missing level=%d", node.first);
 
     for (auto const& node: m_missing)
         {
@@ -51,12 +50,6 @@ ProgressiveTask::Completion ThreeMxProgressive::_DoProgressive(ProgressiveContex
             args.m_missing.Insert(node.first, node.second);
         }
 
-    for (auto const& node: args.m_missing)
-        DEBUG_PRINTF("3MX stilll level=%d", node.first);
-
-    if (!args.m_graphics.m_entries.empty())
-        show = WantShow::Yes;
-
     // all of the nodes that newly arrived are now in the graphics of the DrawArgs. Draw them now.
     args.DrawGraphics();                                                                                        
 
@@ -64,7 +57,20 @@ ProgressiveTask::Completion ThreeMxProgressive::_DoProgressive(ProgressiveContex
     m_missing.swap(args.m_missing);
 
     DEBUG_PRINTF("3MX after progressive still %d missing", m_missing.size());
-    return m_missing.empty() ? Completion::Finished : Completion::Aborted;
+    if (m_missing.empty())
+        {
+        context.GetViewport()->SetNeedsHeal();
+        return Completion::Finished;
+        }
+
+    uint64_t now = BeTimeUtilities::QueryMillisecondsCounter();
+    if (now > m_nextShow)
+        {
+        m_nextShow = now + 1000;
+        wantShow = WantShow::Yes;
+        }
+
+    return Completion::Aborted;
     }
 
 /*---------------------------------------------------------------------------------**//**

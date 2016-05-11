@@ -125,7 +125,7 @@ struct Node : RefCountedBase, NonCopyableClass
 {
     friend struct Scene;
     typedef bvector<NodePtr> ChildNodes;
-    enum ChildLoad {Invalid=0, Queued=1, Loading=2, Ready=3, NotFound=4};
+    enum ChildLoad {NotLoaded=0, Queued=1, Loading=2, Ready=3, NotFound=4, Abandoned=5};
 
 private:
     DRange3d m_range = DRange3d::NullRange();
@@ -135,15 +135,15 @@ private:
     NodeP m_parent;
     GeometryPtr m_geometry;
     Utf8String m_childPath;     // this is the name of the file (relative to path of this node) to load the children of this node.
-
     BeAtomic<int> m_childLoad;
     ChildNodes m_childNodes;
 
+    void SetAbandoned();
     bool ReadHeader(JsonValueCR pt, Utf8String&, bvector<Utf8String>& nodeResources);
     BentleyStatus DoRead(MxStreamBuffer&, SceneR);
 
 public:
-    Node(NodeP parent) : m_parent(parent), m_childLoad(ChildLoad::Invalid) {m_center.Zero();}
+    Node(NodeP parent) : m_parent(parent), m_childLoad(ChildLoad::NotLoaded) {m_center.Zero();}
     double GetMaxDiameter() const {return m_maxScreenDiameter;}
     double GetRadius() const {return m_radius;}
     DPoint3dCR GetCenter() const {return m_center;}
@@ -160,12 +160,12 @@ public:
     void SetNotFound() {BeAssert(false); return m_childLoad.store(ChildLoad::NotFound);}
     bool HasChildren() const {return !m_childPath.empty();}
     bool IsQueued() const {return m_childLoad.load() == ChildLoad::Queued;}
+    bool IsAbandoned() const {return m_childLoad.load() == ChildLoad::Abandoned;}
     bool AreChildrenValid() const {return m_childLoad.load() == ChildLoad::Ready;}
-    bool IsInvalid() const {return m_childLoad.load() == ChildLoad::Invalid;}
+    bool AreChildrenNotLoaded() const {return m_childLoad.load() == ChildLoad::NotLoaded;}
     bool IsDisplayable() const {return GetMaxDiameter() > 0.0;}
     void UnloadChildren();
     size_t GetNodeCount() const;
-    bool TestVisibility(Dgn::ViewContextR viewContext, SceneR);
     ChildNodes const* GetChildren() const {return AreChildrenValid() ? &m_childNodes : nullptr;}
     NodeCP GetParent() const {return m_parent;}
 };
