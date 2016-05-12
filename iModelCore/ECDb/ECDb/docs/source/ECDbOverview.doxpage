@@ -226,7 +226,7 @@
         - Modify order of CustomAttribute list on the ECSchema
 
     ### ECClass
-    - Add a new @ref BentleyApi::ECN::ECClass "ECClass"
+    - Add a new @ref BentleyApi::ECN::ECClass "ECClass" to an ECSchema
     - Modify 
         - @ref BentleyApi::ECN::ECClass::GetDescription "Description"
         - @ref BentleyApi::ECN::ECClass::GetDisplayLabel "DisplayLabel"
@@ -236,8 +236,11 @@
         - Add, delete, modify
         - Modify order of CustomAttribute list on the ECClass
 
+    ### ECEnumeration
+    - Add a new @ref BentleyApi::ECN::ECEnumeration "ECEnumeration" to an ECSchema
+
     ### ECProperty
-    - Add a new @ref BentleyApi::ECN::ECProperty "ECProperty"
+    - Add a new @ref BentleyApi::ECN::ECProperty "ECProperty" to an ECClass
     - Modify 
         - @ref BentleyApi::ECN::ECProperty::GetDescription "Description"
         - @ref BentleyApi::ECN::ECProperty::GetDisplayLabel "DisplayLabel"
@@ -314,7 +317,7 @@
     &nbsp;      | @ref BentleyApi::ECN::Referencing "Referencing" or @ref BentleyApi::ECN::Holding "Holding" | @ref BentleyApi::ECN::Forward "Forward" or @ref BentleyApi::ECN::Backward "Backward"
     N:1         | @ref BentleyApi::ECN::Embedding "Embedding" | @ref BentleyApi::ECN::Backward "Backward"
     &nbsp;      | @ref BentleyApi::ECN::Referencing "Referencing" or @ref BentleyApi::ECN::Holding "Holding" | @ref BentleyApi::ECN::Forward "Forward" or @ref BentleyApi::ECN::Backward "Backward"
-    M:N         | @ref BentleyApi::ECN::Referencing "Referencing" | @ref BentleyApi::ECN::Forward "Forward" or @ref BentleyApi::ECN::Backward "Backward"
+    M:N         | @ref BentleyApi::ECN::Referencing "Referencing" or @ref BentleyApi::ECN::Holding "Holding" | @ref BentleyApi::ECN::Forward "Forward" or @ref BentleyApi::ECN::Backward "Backward"
 
     ## Foreign Key mapping versus Link Table mapping
     ECDb always attempts to map an @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClass" using a 
@@ -380,8 +383,8 @@
     ####Exceptions
     For @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClasses" with strength
     @ref BentleyApi::ECN::Holding "Holding" foreign key constraints exist to delete the relationship @em instances. But ECDb
-    cannot delete the actual orphaned instances automatically. Instead callers must explicitly call @ref BentleyApi::BeSQLite::EC::ECDb::Purge "ECDb::Purge"
-    at their discretion.
+    does not delete the actual orphaned instances automatically because there are different ways to interpret and implement the strength 
+    @ref BentleyApi::ECN::Holding "Holding". Consequently, <b>%ECDb treats Holding relationships as Referencing relationships</b>.
 
     For @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClasses" that specify 
     @ref BentleyApi::ECN::ECRelationshipConstraintClass::GetKeys "Key properties" the <em>foreign key</em> and
