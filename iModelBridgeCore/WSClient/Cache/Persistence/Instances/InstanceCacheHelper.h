@@ -43,7 +43,7 @@ struct InstanceCacheHelper
         ChangeInfoManager&          m_changeInfoManager;
 
         ECSqlAdapterCache<JsonInserter> m_inserters;
-        ECSqlAdapterCache<JsonUpdater> m_updaters;
+        ECSqlAdapterCacheWithOptions<JsonUpdater> m_updaters;
 
     private:
         BentleyStatus CacheInstance
