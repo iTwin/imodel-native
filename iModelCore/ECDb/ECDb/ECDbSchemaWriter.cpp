@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
-
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -369,8 +368,7 @@ BentleyStatus ECDbSchemaWriter::UpdateECCustomAttributes(ECDbSchemaPersistenceHe
             }
 
         if (change.GetState() == ChangeState::New)
-            {
-           
+            {           
             IECInstancePtr ca = newContainer.GetCustomAttribute(schemaName, className);
             BeAssert(ca.IsValid());
             if (ca.IsNull())
@@ -545,9 +543,14 @@ BentleyStatus ECDbSchemaWriter::UpdateECClass(ECClassChange& classChange, ECClas
             auto& change = classChange.Properties().At(i);
             if (change.GetState() == ChangeState::Deleted)
                 {
-                GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECClass %s: Deleting an ECProperty from an ECClass is not supported.",
-                                          oldClass.GetFullName());
-                return ERROR;
+                ECPropertyCP oldProperty = oldClass.GetPropertyP(change.GetId(), false);
+                if (oldProperty == nullptr)
+                    {
+                    BeAssert(false && "Failed to find property");
+                    return ERROR;
+                    }
+
+                return DeleteECProperty(change, *oldProperty);
                 }
             else if (change.GetState() == ChangeState::New)
                 {
@@ -586,6 +589,7 @@ BentleyStatus ECDbSchemaWriter::UpdateECClass(ECClassChange& classChange, ECClas
 
     return UpdateECCustomAttributes(ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Class, classId, classChange.CustomAttributes(), oldClass, newClass);
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -702,6 +706,122 @@ BentleyStatus ECDbSchemaWriter::UpdateECSchemaReferences(ReferenceChanges& refer
 
     return SUCCESS;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECDbSchemaWriter::DeleteECClass(ECClassChange& classChange, ECClassCR deletedClass)
+    {
+    if (!deletedClass.GetDerivedClasses().empty())
+        {
+        GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECSchema %s: Deleting ECClass '%s' with derived classes is not supported.",
+                                  deletedClass.GetSchema().GetFullSchemaName().c_str(), deletedClass.GetName().c_str());
+        return ERROR;
+        }
+
+    if (deletedClass.IsStructClass())
+        {
+        GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECSchema %s: Deleting ECClass '%s' failed. Struct class cannot be deleted",
+                                  deletedClass.GetSchema().GetFullSchemaName().c_str(), deletedClass.GetName().c_str());
+        return ERROR;
+        }
+
+    ClassMapCP deletedClassMap = m_ecdb.GetECDbImplR().GetECDbMap().GetClassMap(deletedClass);
+    if (deletedClassMap == nullptr)
+        {
+        BeAssert(false && "Failed to find classMap");
+        return ERROR;
+        }
+
+    bool purgeECInstances = deletedClassMap->GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::SharedTable;
+    bool canDeleteECClass = !deletedClassMap->GetMapStrategy().IsForeignKeyMapping();
+    if (!canDeleteECClass)
+        {
+        GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECSchema %s: Deleting ECClass '%s' failed. Deleting Relationship that is mapped using ForeignKeyMapping is not supported.",
+                                  deletedClass.GetSchema().GetFullSchemaName().c_str(), deletedClass.GetName().c_str());
+        return ERROR;
+        }
+
+    //Delete all instances
+    if (purgeECInstances)
+        {
+        if (DeleteECInstances(deletedClass) != SUCCESS)
+            return ERROR;
+        }
+
+    //Delete Class from MetaSchema and also its mapping
+    if (DeleteECClassEntry(deletedClass) != SUCCESS)
+        return ERROR;
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                         Affan.Khan  05/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECDbSchemaWriter::DeleteECClassEntry(ECClassCR deletedClass )
+    {
+
+    //DELETE ec_Class
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("DELETE FROM ec_Class WHERE Id = ?");
+    stmt->BindId(1, deletedClass.GetId());
+    if (stmt->Step() != BE_SQLITE_DONE)
+        return ERROR;
+
+    //Delete CustomAttribute
+    if (DeleteECCustomAttributes(deletedClass.GetId(), ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Class) != SUCCESS)
+        {
+        BeAssert(false && "Failed to prepare delete statement");
+        return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                         Affan.Khan  05/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECDbSchemaWriter::DeleteECInstances(ECClassCR deletedClass)
+    {
+    ECSqlStatement stmt;
+    if (stmt.Prepare(m_ecdb, SqlPrintfString("DELETE FROM %s", deletedClass.GetECSqlName().c_str()).GetUtf8CP()) != ECSqlStatus::Success)
+        {
+        GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECSchema %s: Deleting ECClass '%s' failed. Failed to delete existing instances for the class.",
+                                  deletedClass.GetSchema().GetFullSchemaName().c_str(), deletedClass.GetName().c_str());
+        return ERROR;
+        }
+
+    if (stmt.Step() != BE_SQLITE_DONE)
+        {
+        GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECSchema %s: Deleting ECClass '%s' failed. Failed to delete existing instances for the class.",
+                                  deletedClass.GetSchema().GetFullSchemaName().c_str(), deletedClass.GetName().c_str());
+        return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECDbSchemaWriter::DeleteECCustomAttributes(ECContainerId id, ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType type)
+    {
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("DELETE FROM ec_CustomAttribute WHERE ContainerId = ? AND ContainerType = ?");
+    stmt->BindId(1, id);
+    stmt->BindInt(2, Enum::ToInt(type));
+    return stmt->Step() == BE_SQLITE_DONE ? SUCCESS : ERROR;
+    }
+    
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECDbSchemaWriter::DeleteECProperty(ECPropertyChange& propertyChange, ECPropertyCR deletedProperty)
+    {
+    GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECClass %s: Deleting an ECProperty '%s' from an ECClass is not supported.",
+                              deletedProperty.GetClass().GetFullName(), deletedProperty.GetName().c_str());
+    return ERROR;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -715,12 +835,16 @@ BentleyStatus ECDbSchemaWriter::UpdateECClasses(ECClassChanges& classChanges, EC
         auto& change = classChanges.At(i);
         if (change.GetState() == ChangeState::Deleted)
             {
-            GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECSchema %s: Deleting ECClasses from an ECSchema is not supported.",
-                                      oldSchema.GetFullSchemaName().c_str());
-            return ERROR;
-            }
+            ECClassCP oldClass = oldSchema.GetClassCP(change.GetId());
+            if (oldClass == nullptr)
+                {
+                BeAssert(false && "Failed to find class");
+                return ERROR;
+                }
 
-        if (change.GetState() == ChangeState::New)
+            return DeleteECClass(change, *oldClass);
+            }
+        else if (change.GetState() == ChangeState::New)
             {
             ECClassCP newClass = newSchema.GetClassCP(change.GetName().GetNew().Value().c_str());
             if (newClass == nullptr)
@@ -734,8 +858,7 @@ BentleyStatus ECDbSchemaWriter::UpdateECClasses(ECClassChanges& classChanges, EC
 
             continue;
             }
-
-        if (change.GetState() == ChangeState::Modified)
+        else if (change.GetState() == ChangeState::Modified)
             {
             ECClassCP oldClass = oldSchema.GetClassCP(change.GetId());
             ECClassCP newClass = newSchema.GetClassCP(change.GetId());
@@ -768,7 +891,6 @@ BentleyStatus ECDbSchemaWriter::UpdateECEnumerations(ECEnumerationChanges& enumC
 
     for (size_t i = 0; i < enumChanges.Count(); i++)
         {
-
         ECEnumerationChange& change = enumChanges.At(i);
         if (change.GetState() == ChangeState::Deleted)
             {
@@ -826,10 +948,12 @@ BentleyStatus ECDbSchemaWriter::UpdateECSchema(ECSchemaChange& schemaChange, ECS
 
         updater.Set("Name", schemaChange.GetName().GetNew().Value());
         }
+    
     if (schemaChange.GetDisplayLabel().IsValid())
         {
         updater.Set("DisplayLabel", schemaChange.GetDisplayLabel().GetNew().Value());
         }
+    
     if (schemaChange.GetDescription().IsValid())
         {
         updater.Set("Description", schemaChange.GetDescription().GetNew().Value());

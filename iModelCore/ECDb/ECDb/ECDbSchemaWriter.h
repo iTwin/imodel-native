@@ -70,6 +70,12 @@ private:
     BentleyStatus UpdateECClasses(ECClassChanges& classChanges, ECSchemaCR oldSchema, ECSchemaCR newSchema);
     BentleyStatus UpdateECEnumerations(ECEnumerationChanges& enumChanges, ECSchemaCR oldSchema, ECSchemaCR newSchema);
 
+    BentleyStatus DeleteECClass(ECClassChange& classChange, ECClassCR deletedClass);
+    BentleyStatus DeleteECProperty(ECPropertyChange& propertyChange, ECPropertyCR deletedProperty);
+    BentleyStatus DeleteECCustomAttributes(ECContainerId id, ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType type);
+    BentleyStatus DeleteECInstances(ECClassCR deletedClass);
+    BentleyStatus DeleteECClassEntry(ECClassCR deletedClass);
+
     BentleyStatus TryParseId(Utf8StringR schemaName, Utf8StringR className, Utf8StringCR id) const;
 
     IssueReporter const& GetIssueReporter() const { return m_ecdb.GetECDbImplR().GetIssueReporter(); }

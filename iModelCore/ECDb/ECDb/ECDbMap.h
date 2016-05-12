@@ -100,7 +100,8 @@ struct ECDbMap :NonCopyableClass
         BentleyStatus CreateOrUpdateRequiredTables() const;
         BentleyStatus EvaluateColumnNotNullConstraints() const;
         BentleyStatus CreateOrUpdateIndexesInDb() const;
-
+        BentleyStatus PurgeOrphanTables() const;
+        BentleyStatus PurgeOrphanColumns() const;
         BentleyStatus FinishTableDefinitions(bool onlyCreateClassIdColumns = false) const;
         BentleyStatus CreateClassIdColumnIfNecessary(DbTable&, bset<ClassMap*> const&) const;
 
