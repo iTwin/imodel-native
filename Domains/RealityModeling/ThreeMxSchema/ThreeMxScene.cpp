@@ -81,7 +81,7 @@ Utf8String Scene::ConstructNodeName(Node& node)
 //----------------------------------------------------------------------------------------
 BentleyStatus Scene::ReadGeoLocation(SceneInfo const& sceneInfo)
     {
-    DRange3d  range = GetRange(Transform::FromIdentity());
+    DRange3d  range = ComputeRange();
     if (range.IsNull())
         return ERROR;
 

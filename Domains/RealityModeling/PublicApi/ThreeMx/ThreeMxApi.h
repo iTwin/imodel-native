@@ -128,7 +128,7 @@ struct Node : RefCountedBase, NonCopyableClass
     enum ChildLoad {NotLoaded=0, Queued=1, Loading=2, Ready=3, NotFound=4, Abandoned=5};
 
 private:
-    DRange3d m_range = DRange3d::NullRange();
+    Dgn::ElementAlignedBox3d m_range;
     DPoint3d m_center;
     double m_radius = 0.0;
     double m_maxScreenDiameter = 0.0;
@@ -147,14 +147,14 @@ public:
     double GetMaxDiameter() const {return m_maxScreenDiameter;}
     double GetRadius() const {return m_radius;}
     DPoint3dCR GetCenter() const {return m_center;}
-    DRange3dCR GetRange() const {return m_range;}
+    Dgn::ElementAlignedBox3d GetRange() const {return m_range;}
     Utf8String GetChildFile () const;
     BentleyStatus Read3MXB(MxStreamBuffer&, SceneR);
     Utf8String GetFilePath(SceneR) const;
     BentleyStatus LoadChildren(SceneR);
     void Dump(Utf8CP prefix) const;
     void Draw(DrawArgsR, int depth);
-    DRange3d GetRange(TransformCR) const;
+    Dgn::ElementAlignedBox3d ComputeRange();
     ChildLoad GetChildLoadStatus() const {return (ChildLoad) m_childLoad.load();}
     void SetIsReady() {return m_childLoad.store(ChildLoad::Ready);}
     void SetNotFound() {BeAssert(false); return m_childLoad.store(ChildLoad::NotFound);}
@@ -209,7 +209,7 @@ public:
     DPoint3d GetNodeCenter(Node const& node) const {return DPoint3d::FromProduct(m_location, node.GetCenter());}
     double GetNodeRadius(Node const& node) const {return m_scale * node.GetRadius();}
     void Draw(DrawArgs& args) {m_rootNode->Draw(args, 0);}
-    DRange3d GetRange(TransformCR trans) const {return m_rootNode->GetRange(trans);}
+    Dgn::ElementAlignedBox3d ComputeRange() {return m_rootNode->ComputeRange();}
     size_t GetNodeCount() const {return m_rootNode->GetNodeCount();}
     bool GetLoadSynchronous() const {return m_loadSynchronous;}
     bool UseFixedResolution()const {return m_useFixedResolution;}
@@ -258,6 +258,7 @@ public:
     THREEMX_EXPORT void _WriteJsonProperties(Json::Value&) const override;
     THREEMX_EXPORT void _ReadJsonProperties(Json::Value const&) override;
     THREEMX_EXPORT Dgn::AxisAlignedBox3d _QueryModelRange() const override;
+    THREEMX_EXPORT void _OnFitView(Dgn::FitContextR) override;
     void SetRootUrl(Utf8CP url) {m_rootUrl = url;}
     void SetLocation(TransformCR trans) {m_location = trans;}
 };

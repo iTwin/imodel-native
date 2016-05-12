@@ -131,7 +131,17 @@ AxisAlignedBox3d ThreeMxModel::_QueryModelRange() const
         return AxisAlignedBox3d();
         }
 
-    return AxisAlignedBox3d(m_scene->GetRange(m_scene->GetLocation()));
+    ElementAlignedBox3d range = m_scene->ComputeRange();
+    if (!range.IsValid())
+        return AxisAlignedBox3d();
+
+    Frustum box(range);
+    box.Multiply(m_scene->GetLocation());
+
+    AxisAlignedBox3d aaRange;
+    aaRange.Extend(box.m_pts, 8);
+
+    return aaRange;
     }   
 
 /*---------------------------------------------------------------------------------**//**
@@ -155,6 +165,19 @@ void ThreeMxModel::_AddTerrainGraphics(TerrainContextR context) const
 
     if (!args.m_missing.empty())
         context.GetViewport()->ScheduleTerrainProgressiveTask(*new ThreeMxProgressive(*m_scene, args.m_missing));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void ThreeMxModel::_OnFitView(FitContextR context)
+    {
+    Load(nullptr);
+    if (!m_scene.IsValid())
+        return;
+
+    ElementAlignedBox3d rangeWorld = m_scene->ComputeRange();
+    context.ExtendFitRange(rangeWorld, m_scene->GetLocation());
     }
 
 #define JSON_ROOT_URL "RootUrl"
