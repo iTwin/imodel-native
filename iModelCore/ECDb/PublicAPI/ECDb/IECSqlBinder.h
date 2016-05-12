@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECDb/IECSqlBinder.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -143,6 +143,13 @@ public:
     //! @param[in] value Value to bind
     //! @return ECSqlStatus::Success or error codes
     ECSqlStatus BindId(BeInt64Id value) { return value.IsValid() ? BindInt64((int64_t) value.GetValue()) : BindNull(); }
+
+    //! Binds a VirtualSet to the SQL function @b InVirtualSet.
+    //! The parameter must be the first parameter in the InVirtualSet function.
+    //! @param[in] virtualSet to bind
+    //! @return ECSqlStatus::Success or error codes
+    //! @see @ref ECDbCodeSampleECSqlStatementVirtualSets
+    ECSqlStatus BindVirtualSet(VirtualSet const& virtualSet) { return BindInt64((int64_t) &virtualSet); }
 
     //! Gets a binder which is used to bind struct values
     //! @remarks In case of error, e.g. if the parameter is not a struct, a no-op binder will be returned. Calling methods on the no-op binder

@@ -1655,6 +1655,58 @@ TEST_F(ECSqlStatementTestFixture, UpdateWithStructBinding)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                 05/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, BindVirtualSet)
+    {
+    const int perClassRowCount = 10;
+    ECDbCR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), perClassRowCount);
+
+    bvector<ECInstanceId> allIds;
+    {
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT ECInstanceId FROM ecsql.PSA"));
+    while (BE_SQLITE_ROW == statement.Step())
+        {
+        allIds.push_back(statement.GetValueId<ECInstanceId>(0));
+        }
+    ASSERT_EQ(perClassRowCount, (int) allIds.size());
+    }
+
+    ECInstanceIdSet idSet;
+    BeAssert(0 < perClassRowCount);
+    idSet.insert(allIds[0]);
+    BeAssert(4 < perClassRowCount);
+    idSet.insert(allIds[4]);
+    BeAssert(6 < perClassRowCount);
+    idSet.insert(allIds[6]);
+
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT count(*) FROM ecsql.PSA WHERE I<>? AND InVirtualSet(?, ECInstanceId)"));
+
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindInt(1, 0));
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindVirtualSet(2, idSet));
+
+    ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
+    ASSERT_EQ((int) idSet.size(), statement.GetValueInt(0));
+
+    statement.Reset();
+    statement.ClearBindings();
+
+    idSet.clear();
+    BeAssert(1 < perClassRowCount);
+    idSet.insert(allIds[1]);
+    BeAssert(3 < perClassRowCount);
+    idSet.insert(allIds[3]);
+
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindInt(1, 0));
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindVirtualSet(2, idSet));
+
+    ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
+    ASSERT_EQ((int) idSet.size(), statement.GetValueInt(0));
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 10/15
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, StructsInWhereClause)

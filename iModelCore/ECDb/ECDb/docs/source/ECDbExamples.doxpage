@@ -147,7 +147,7 @@
 
     @section ECDbCodeSampleECSqlStatementBindingPrimitives Bind primitive values to an ECSQL statement
 
-    This sample shows how to use @ref BentleyApi::BeSQLite::EC::ECSqlStatement "ECSqlStatement"'s API 
+    This sample shows how to use @ref BentleyApi::BeSQLite::EC::ECSqlStatement "ECSqlStatement" API 
     to bind parameter values to parameters in an ECSQL statement.
 
     @note This example also illustrates the use of the LIMIT and OFFSET clauses in ECSQL.
@@ -161,7 +161,7 @@
 
     @section ECDbCodeSampleECSqlStatementBindingWithNamedParameters ECSQL statement binding with named parameters
 
-    This sample shows how to use named parameters with the @ref BentleyApi::BeSQLite::EC::ECSqlStatement "ECSqlStatement"'s 
+    This sample shows how to use named parameters with the @ref BentleyApi::BeSQLite::EC::ECSqlStatement "ECSqlStatement" 
     binding API.
 
     $SAMPLECODE_BEGIN[Overview_ECDb_ECSqlStatementBindingWithNamedParameters,Example]
@@ -173,7 +173,7 @@
 
     @section ECDbCodeSampleECSqlStatementBindingStructs Bind struct values to an ECSQL statement
 
-    This sample shows how to use @ref BentleyApi::BeSQLite::EC::ECSqlStatement "ECSqlStatement"'s API to 
+    This sample shows how to use @ref BentleyApi::BeSQLite::EC::ECSqlStatement "ECSqlStatement" API to 
     bind struct values to parameters in an ECSQL statement.
 
     $SAMPLECODE_BEGIN[Overview_ECDb_ECSqlStatementBindingStructs,Example]
@@ -185,7 +185,7 @@
 
     @section ECDbCodeSampleECSqlStatementBindingArrays Bind arrays to an ECSQL statement
 
-    The following samples show how to use @ref BentleyApi::BeSQLite::EC::ECSqlStatement "ECSqlStatement"'s API to 
+    The following samples show how to use the @ref BentleyApi::BeSQLite::EC::ECSqlStatement "ECSqlStatement" API to 
     bind primitive and struct arrays to parameters in an ECSQL statement.
 
     Binding primitive arrays:
@@ -197,6 +197,22 @@
 
     $SAMPLECODE_BEGIN[Overview_ECDb_ECSqlStatementBindingStructArrays,Example]
     __PUBLISH_INSERT_FILE__ Overview_ECDb_ECSqlStatementBindingStructArrays.sampleCode
+    $SAMPLECODE_END
+
+    See <a href="files/ecdb/StartupCompany.01.00.ecschema.xml" target="_blank">Sample ECSchema</a> for the
+    definition of the ECClasses and ECProperties used in the ECSQL statement.
+
+    @section ECDbCodeSampleECSqlStatementVirtualSets VirtualSets in an ECSQL statement
+
+    The following samples show how to use the SQL function @b InVirtualSet in an ECSQL statement and
+    how to use the @ref BentleyApi::BeSQLite::EC::ECSqlStatement "ECSqlStatement" API to 
+    bind a @ref BentleyApi::BeSQLite::VirtualSet "VirtualSet" to the parameter in the @b InVirtualSet function.
+
+    The class @ref BentleyApi::BeSQLite::EC::ECInstanceIdSet "ECInstanceIdSet" used in the example is a subclass of VirtualSet
+    that can hold VirtualSets of @ref BentleyApi::BeSQLite::EC::ECInstanceId "ECInstanceIds".
+
+    $SAMPLECODE_BEGIN[Overview_ECDb_ECSqlStatementBindingVirtualSets,Example]
+    __PUBLISH_INSERT_FILE__ Overview_ECDb_ECSqlStatementBindingVirtualSets.sampleCode
     $SAMPLECODE_END
 
     See <a href="files/ecdb/StartupCompany.01.00.ecschema.xml" target="_blank">Sample ECSchema</a> for the
