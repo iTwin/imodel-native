@@ -52,14 +52,17 @@ def main():
     #teeCmd = os.path.join (os.getenv("SrcRoot"), "bsicommon", "build", "Tee.py")
     #tee = subprocess.Popen ("python " + teeCmd + " " + logfilename, shell=True, stdin=logcatproc.stdout, creationflags = subprocess.CREATE_NEW_PROCESS_GROUP)
 
-    failureCount = 0
-    procStdOutLine = proc.stdout.readline ()
-    while procStdOutLine:
-        showRewritableLine(procStdOutLine.replace('\n', ' ').replace('\r', ' '), INFO_LEVEL_Important)
-        if procStdOutLine.lower().startswith("failure"):
-            failureCount = failureCount + 1
+    with open (logfilename, 'a') as logfile:
+        failureCount = 0
         procStdOutLine = proc.stdout.readline ()
-    proc.wait()
+        while procStdOutLine:
+            showRewritableLine(procStdOutLine.replace('\n', ' ').replace('\r', ' '), INFO_LEVEL_Important)
+            logfile.write(procStdOutLine)
+            if procStdOutLine.lower().startswith("failure"):
+                failureCount = failureCount + 1
+                print procStdOutLine,
+            procStdOutLine = proc.stdout.readline ()
+        proc.wait()
 
     #logcatproc.kill()
 
