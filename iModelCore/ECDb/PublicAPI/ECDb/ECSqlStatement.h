@@ -152,6 +152,14 @@ public:
     //! @return ECSqlStatus::Success or error codes
     ECSqlStatus BindId(int parameterIndex, BeInt64Id value) { return GetBinder(parameterIndex).BindId(value); }
 
+    //! Binds a VirtualSet to the SQL function @b InVirtualSet.
+    //! The parameter must be the first parameter in the InVirtualSet function.
+    //! @param[in] parameterIndex Parameter index
+    //! @param[in] virtualSet to bind
+    //! @return ECSqlStatus::Success or error codes
+    //! @see @ref ECDbCodeSampleECSqlStatementVirtualSets
+    ECSqlStatus BindVirtualSet(int parameterIndex, VirtualSet const& virtualSet) { return GetBinder(parameterIndex).BindVirtualSet(virtualSet); }
+
     //! Gets a binder which is used to bind a struct value to the specified parameter
     //! @param[in] parameterIndex Parameter index
     //! @remarks In case of error, e.g. if the parameter is not a struct, a no-op binder will be returned. Calling methods on the no-op binder
