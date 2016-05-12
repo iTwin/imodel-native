@@ -43,8 +43,7 @@
         <SubPart PartName="StandardSchemas" PartFile="ECStandards"  Repository="ECStandards"/>
         <Bindings>
             <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="BeSQLite" SubPartDirectory="UnitTests/BeSQLite">Delivery/UnitTests/ignore_list.txt</Files>
-            <Files ProductDirectoryName="UnitTests-BeSQLiteTestData" SubPartDirectory="UnitTests/BeSQLite"> Delivery/UnitTests/BeSQLiteTestData/*.json</Files>
-            <Files ProductDirectoryName="UnitTests-BeSQLiteTestData" SubPartDirectory="UnitTests/BeSQLite"> Delivery/UnitTests/BeSQLiteTestData/*.db</Files>
+            <Directory ProductDirectoryName="UnitTests-BeSQLiteTestData" SourceName="Delivery/UnitTests/BeSQLiteTestData" />
         </Bindings>
     </Part>
 
