@@ -66,4 +66,4 @@ adb logcat BeTestX:* doOpenChoice:* ICU_DATA_FILE:* TestRunner:I BeSQLiteDb:* Be
 
 always:
     $(RunPrefix) python $(baseDir)RunAndroidJUnitTest.py $(logFile) $(ANDROIDJUNITPROJ)Scripts/installApk$(scriptExt) ${ANDROIDJUNIT_OUTPUT_DIR}/logcat$(scriptExt)
-      
+    python $(baseDIr)PrintLogAndReturnResult.py $(logFile)
