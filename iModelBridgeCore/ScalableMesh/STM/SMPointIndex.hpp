@@ -7803,7 +7803,7 @@ template<class POINT, class EXTENT> SMPointIndex<POINT, EXTENT>::SMPointIndex(HF
     m_indexHeader.m_numberOfSubNodesOnSplit = 8;
 
     m_indexHeaderDirty = true;
-
+    m_indexHeader.m_isTerrain = false;
     HINVARIANTS;
     m_indexHeader.m_SplitTreshold = pi_SplitTreshold;
     m_indexHeader.m_HasMaxExtent = false;

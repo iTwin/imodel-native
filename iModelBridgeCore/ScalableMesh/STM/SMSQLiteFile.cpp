@@ -90,6 +90,7 @@ bool SMSQLiteFile::Create(BENTLEY_NAMESPACE_NAME::Utf8CP filename)
         "IsTextured INTEGER,"
         "SingleFile INTEGER,"
         "TerrainDepth INTEGER,"
+        "IsTerrain INTEGER,"
         "GCS STRING,"
         "LastModifiedTime INTEGER,"
         "LastSyncTime INTEGER,"
@@ -230,11 +231,11 @@ bool SMSQLiteFile::SetMasterHeader(const SQLiteIndexHeader& newHeader)
     CachedStatementPtr stmt;
     if (nRows == 0)
     {
-        m_database->GetCachedStatement(stmt, "INSERT INTO SMMasterHeader (MasterHeaderId, Balanced, RootNodeId, SplitTreshold, Depth, TerrainDepth, IsTextured) VALUES(?,?,?,?,?,?,?)");
+        m_database->GetCachedStatement(stmt, "INSERT INTO SMMasterHeader (MasterHeaderId, Balanced, RootNodeId, SplitTreshold, Depth, TerrainDepth, IsTextured, IsTerrain) VALUES(?,?,?,?,?,?,?,?)");
     }
     else
     {
-        m_database->GetCachedStatement(stmt, "UPDATE SMMasterHeader SET MasterHeaderId=?, Balanced=?, RootNodeId=?, SplitTreshold=?, Depth=?, TerrainDepth=?, IsTextured=?"
+        m_database->GetCachedStatement(stmt, "UPDATE SMMasterHeader SET MasterHeaderId=?, Balanced=?, RootNodeId=?, SplitTreshold=?, Depth=?, TerrainDepth=?, IsTextured=?, IsTerrain=?"
             " WHERE MasterHeaderId=?");
     }
     stmt->BindInt64(1, id);
@@ -244,9 +245,10 @@ bool SMSQLiteFile::SetMasterHeader(const SQLiteIndexHeader& newHeader)
     stmt->BindInt64(5, newHeader.m_depth);
     stmt->BindInt64(6, newHeader.m_terrainDepth);
     stmt->BindInt(7, newHeader.m_textured ? 1 : 0);
+    stmt->BindInt(8, newHeader.m_isTerrain ? 1 : 0);
     //stmt->BindInt(7, newHeader.m_singleFile ? 1 : 0);
     if (nRows != 0)
-        stmt->BindInt64(8, id);
+        stmt->BindInt64(9, id);
     DbResult status = stmt->Step();
     assert(status == BE_SQLITE_DONE);
     return status == BE_SQLITE_DONE;
@@ -306,7 +308,7 @@ bool SMSQLiteFile::SetNodeHeader(const SQLiteNodeHeader& newNodeHeader)
 bool SMSQLiteFile::GetMasterHeader(SQLiteIndexHeader& header)
     {
     CachedStatementPtr stmt;
-    m_database->GetCachedStatement(stmt, "SELECT Balanced, RootNodeId, SplitTreshold, Depth,IsTextured, SingleFile FROM SMMasterHeader WHERE MasterHeaderId = ?");
+    m_database->GetCachedStatement(stmt, "SELECT Balanced, RootNodeId, SplitTreshold, Depth,IsTextured, SingleFile, TerrainDepth, IsTerrain FROM SMMasterHeader WHERE MasterHeaderId = ?");
     size_t id = 0;
     stmt->BindInt64(1, id);
     DbResult status = stmt->Step();
@@ -318,6 +320,8 @@ bool SMSQLiteFile::GetMasterHeader(SQLiteIndexHeader& header)
     header.m_depth = (size_t)stmt->GetValueInt(3);
     header.m_textured = stmt->GetValueInt(4) ? true : false;
     header.m_singleFile = stmt->GetValueInt(5) ? true : false;
+    header.m_terrainDepth = stmt->GetValueInt64(6);
+    header.m_isTerrain = stmt->GetValueInt(7) ? true : false;
     return true;
     }
 

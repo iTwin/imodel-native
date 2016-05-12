@@ -323,6 +323,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
 
 
     size_t previousDepth = pDataIndex->GetDepth();
+    pDataIndex->SetIsTerrain(true);
 
     const GCS& fileGCS = GetGCS();
 

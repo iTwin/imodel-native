@@ -1371,6 +1371,17 @@ public:
     bool IsSingleFile() const;
     void SetSingleFile(bool singleFile);
 
+    void SetIsTerrain(bool isTerrain)
+        {
+        m_indexHeader.m_isTerrain = isTerrain;
+        m_indexHeaderDirty = true;
+        }
+
+    bool IsTerrain() const
+        {
+        return m_indexHeader.m_isTerrain;
+        }
+
 
     /**----------------------------------------------------------------------------
     Changes an unbalanced index to a balanced index. If the index is already balanced

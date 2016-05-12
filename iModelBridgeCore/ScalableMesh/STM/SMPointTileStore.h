@@ -479,6 +479,7 @@ public:
             size_t                  m_numberOfSubNodesOnSplit;      // Control value that hold either 4 or 8 to indicate if a quadtree or octtree is used.
             size_t                  m_depth;                        // Cached (maximum) number of levels in the tree.
             size_t                  m_terrainDepth;                 //Maximum number of LODs for terrain(mesh) data, set at generation time
+            bool                    m_isTerrain;
         };
 
 #define MAX_NEIGHBORNODES_COUNT 26
@@ -627,6 +628,7 @@ public:
         m_singleFile = indexHeader.m_singleFile;
         m_SplitTreshold = indexHeader.m_SplitTreshold;
         m_textured = indexHeader.m_textured;
+        m_isTerrain = indexHeader.m_isTerrain;
         return *this;
         }
 
@@ -645,6 +647,7 @@ public:
         header.m_singleFile = m_singleFile;
         header.m_SplitTreshold = m_SplitTreshold;
         header.m_textured = m_textured;
+        header.m_isTerrain = m_isTerrain;
         return header;
         }
     };
