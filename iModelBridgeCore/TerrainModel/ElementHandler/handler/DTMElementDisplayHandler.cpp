@@ -155,7 +155,7 @@ bool IsValidTransformation (TransformCP transform)
 
         if (mat.isIdentity ())
             return true;
-        
+
         if(transform->isUniformScaleAndRotateAroundLine (&fixedPoint, &directionVector, &radians, &scale))
             {
             DVec3d upV;
@@ -179,7 +179,7 @@ virtual ITransformManipulatorPtr _GetITransformManipulator(ElementHandleCR elHan
 };
 
 /*=================================================================================-----*
-* @bsiclass                 MrDTMTransformManipulator                                               
+* @bsiclass                 MrDTMTransformManipulator
 +===============+===============+===============+===============+===============+======*/
  struct MrDTMTransformManipulator : RefCounted <ITransformManipulator>
      {
@@ -219,7 +219,7 @@ virtual ITransformManipulatorPtr _GetITransformManipulator(ElementHandleCR elHan
         WStringP            cantAcceptReasonP,
         ElementAgendaP      agenda
         ) override
-        {      
+        {
         if (NULL != cantAcceptReasonP)
             {
             *cantAcceptReasonP = TerrainModelElementResources::GetString(MSG_TERRAINMODEL_STMNotAllowedForOperation);
@@ -261,10 +261,10 @@ virtual ITransformManipulatorPtr _GetITransformManipulator(ElementHandleCR elHan
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct MrDTMElementTransformManipulatorExtension : public ITransformManipulatorExtension
 {
-virtual ITransformManipulatorPtr _GetITransformManipulator (ElementHandleCR eh, AgendaOperation opType, 
+virtual ITransformManipulatorPtr _GetITransformManipulator (ElementHandleCR eh, AgendaOperation opType,
                                                             AgendaModify modify, DisplayPathCP path) override
     {
-    // return manipulator only for operation we want to react on. 
+    // return manipulator only for operation we want to react on.
     switch (opType)
         {
         case AgendaOperation::Clipboard:
@@ -283,7 +283,7 @@ virtual ITransformManipulatorPtr _GetITransformManipulator (ElementHandleCR eh, 
 
     //TRICKY: Fix TR 177330: We want default implementation when we accept input element. Thus if we accept input
     //                       element, we will NOT return a manipulator and default implementation will be call.
-    //                       If element is not accepted, we return a manipulator; element will be rejected by it 
+    //                       If element is not accepted, we return a manipulator; element will be rejected by it
     //                       at a later time...(when accept is called).
     //(see TransformTool::OnElementModifyWithContext).
     MrDTMTransformManipulator* pManip = MrDTMTransformManipulator::Create(eh.GetDisplayHandler(), opType, modify);
@@ -384,7 +384,7 @@ IAnnotationHandlerP GetSharedAnnotationHandler ( void )
 //=======================================================================================
 struct DTMStrokeForCacheHull : IDTMStrokeForCache
     {
-    private: 
+    private:
         BcDTMP m_dtmElement;
         DTMDrawingInfo& m_drawingInfo;
         ViewContextP context;
@@ -405,7 +405,7 @@ struct DTMStrokeForCacheHull : IDTMStrokeForCache
         // @bsimethod                                                   Daryl.Holmwood 07/08
         //=======================================================================================
         static int draw(DTMFeatureType dtmFeatureType,int numTriangles,int numMeshPts,DPoint3d *meshPtsP,DPoint3d *meshVectorsP,int numMeshFaces, long *meshFacesP,void *userP)
-            {      
+            {
             UInt32 numPerFace = 3;
             bool   twoSided = false;
             size_t indexCount = numMeshFaces - 3;
@@ -430,7 +430,7 @@ struct DTMStrokeForCacheHull : IDTMStrokeForCache
         //
         //=======================================================================================
         void _StrokeForCache (ElementHandleCR element, ViewContextR context, double pixelSize)
-            {   
+            {
             if (context.CheckStop())
                 return;
 
@@ -500,9 +500,9 @@ ReprojectStatus DTMElementDisplayHandler::_OnGeoCoordinateReprojection (EditElem
     MrDTMDataRef* mrDTMDataRef = dynamic_cast<MrDTMDataRef* >(&*dtmDataRef);
     if (mrDTMDataRef != nullptr)
         {
-        // The element is a MRDTM ... this means that the 
+        // The element is a MRDTM ... this means that the
         // DTM definition is located on file and that it may contain its own spatial reference.
-        // The internal coordinates are not then transformed but the extent of the element need to be 
+        // The internal coordinates are not then transformed but the extent of the element need to be
         // updated.
         mrDTMDataRef->Reproject(geo.GetSourceGCS(), geo.GetDestinationGCS());
         element.GetDisplayHandler()->ValidateElementRange(element, true);
@@ -594,7 +594,7 @@ struct DTMElementHandlerTransformManipulator : RefCounted<ITransformManipulator>
     /*--------------------------------------------------------------------------------------*
     // @bsimethod                                                   Daryl.Holmwood 08/11
     +---------------+---------------+---------------+---------------+---------------+------*/
-    virtual StatusInt _OnTransform (EditElementHandleR element, TransformInfoCR tInfo, ViewContextP context) 
+    virtual StatusInt _OnTransform (EditElementHandleR element, TransformInfoCR tInfo, ViewContextP context)
         {
         // This is because of a bug when you copy a TM in a reference file to a 2d Model.
          if (element.GetElementType() != 106)
@@ -612,10 +612,10 @@ struct DTMElementHandlerTransformManipulator : RefCounted<ITransformManipulator>
             RefCountedPtr<DTMDataRef> dtmDataRef;
             DTMElementHandlerManager::GetDTMDataRef (dtmDataRef, element);
 
-            if ((dtmDataRef != 0) &&  
-                (dtmDataRef->IsMrDTM() == true) && 
+            if ((dtmDataRef != 0) &&
+                (dtmDataRef->IsMrDTM() == true) &&
                 ((((MrDTMDataRef*)dtmDataRef.get())->CanDisplayMrDTM() == false) ||
-                 (((MrDTMDataRef*)dtmDataRef.get())->IsAnchored() == true)))        
+                 (((MrDTMDataRef*)dtmDataRef.get())->IsAnchored() == true)))
                 {
                 return ret;
                 }
@@ -742,7 +742,7 @@ void DTMElementDisplayHandler::GetDTMDrawingInfo (DTMDrawingInfo& info, ElementH
     ElementHandle symbologyEl;
     ElementHandle originalEl;
     DgnModelRefP ref = GetActivatedModel (element, context);
-    
+
     originalEl = element;
     TMSymbologyOverrideManager::GetReferencedElement (element, originalEl);
 
@@ -776,7 +776,7 @@ void DTMElementDisplayHandler::GetDTMDrawingInfo (DTMDrawingInfo& info, ElementH
 
         ::DPoint3d* fencePtP = 0;
         int nbPts;
-       
+
         if (GetVisibleFencePointsFromContext (fencePtP, nbPts, context, info, drange) == false)
             {
             isVisible = false;
@@ -808,7 +808,7 @@ void DTMElementDisplayHandler::DrawSubElement (ElementHandleCR element, const El
     // Create a DTM element from the XAttributes (this is is a very lightweight operation that
     // just assigns the dtm internal arrays to their addresses inside the XAttributes).
     RefCountedPtr<DTMDataRef> DTMDataRef;
-    DTMElementHandlerManager::GetDTMDataRef (DTMDataRef, element); 
+    DTMElementHandlerManager::GetDTMDataRef (DTMDataRef, element);
 
     if (DTMDataRef != nullptr)
         {
@@ -816,9 +816,9 @@ void DTMElementDisplayHandler::DrawSubElement (ElementHandleCR element, const El
             {
             RefCountedPtr<MrDTMDataRef> mrDTMDataRef((MrDTMDataRef*)DTMDataRef.get());
 
-            //MrDTM should not be displayed            
+            //MrDTM should not be displayed
             if (mrDTMDataRef->CanDisplayMrDTM() == false)
-                {          
+                {
                 //If the MrDTM is selected display its 3D bounding box.
                 if (element.GetElementRef() != NULL && element.GetElementRef()->IsInSS(element.GetModelRef()))
                     {
@@ -840,10 +840,10 @@ void DTMElementDisplayHandler::DrawSubElement (ElementHandleCR element, const El
                     }
 
                 return;
-                }            
+                }
 
             //Check if the MrDTM display for the view is turned off.
-            if ((context.GetViewport() != 0) &&                    
+            if ((context.GetViewport() != 0) &&
                 (mrDTMDataRef->IsVisibleForView(context.GetViewport()->GetViewNumber()) == false))
                 {
                 return;
@@ -1002,13 +1002,13 @@ BentleyStatus DTMElementDisplayHandler::_GeneratePresentation (EditElementHandle
     {
     RefCountedPtr<DTMDataRef> DTMDataRef;
 
-    DTMElementHandlerManager::GetDTMDataRef (DTMDataRef, eh); 
+    DTMElementHandlerManager::GetDTMDataRef (DTMDataRef, eh);
     if (DTMDataRef.IsNull())
         return ERROR;
 
-    //An empty MrDTM cannot be drawn. 
-    if ((DTMDataRef != nullptr) && 
-        (DTMDataRef->IsMrDTM() == true) && 
+    //An empty MrDTM cannot be drawn.
+    if ((DTMDataRef != nullptr) &&
+        (DTMDataRef->IsMrDTM() == true) &&
         (((MrDTMDataRef*)DTMDataRef.get())->GetMrDTMState() == MRDTM_STATE_EMPTY))
         return ERROR;
 
@@ -1029,7 +1029,7 @@ BentleyStatus DTMElementDisplayHandler::_GeneratePresentation (EditElementHandle
 
         if (!hullStroker.HasDisplayedSomething())
             {
-            DrawScanRange (viewContext, eh, DTMDataRef);                    
+            DrawScanRange (viewContext, eh, DTMDataRef);
             }
         }
     return SUCCESS;
@@ -1055,13 +1055,13 @@ void DTMElementDisplayHandler::_Draw (ElementHandleCR element, ViewContextR cont
 
     RefCountedPtr<DTMDataRef> DTMDataRef;
 
-    DTMElementHandlerManager::GetDTMDataRef (DTMDataRef, element); 
+    DTMElementHandlerManager::GetDTMDataRef (DTMDataRef, element);
 
-    //An empty MrDTM cannot be drawn. 
-    if ((DTMDataRef != nullptr) && 
-        (DTMDataRef->IsMrDTM() == true) && 
+    //An empty MrDTM cannot be drawn.
+    if ((DTMDataRef != nullptr) &&
+        (DTMDataRef->IsMrDTM() == true) &&
         (((MrDTMDataRef*)DTMDataRef.get())->GetMrDTMState() == MRDTM_STATE_EMPTY))
-        {    
+        {
         return;
         }
 
@@ -1070,7 +1070,7 @@ void DTMElementDisplayHandler::_Draw (ElementHandleCR element, ViewContextR cont
         // If this has a dynamicRange don't draw the range, this is probably because the DTM is empty.
         if (!element.GetElementCP()->hdr.dhdr.props.b.dynamicRange)
             DrawScanRange (context, element, DTMDataRef);
-        
+
         return;
         }
 
@@ -1080,9 +1080,9 @@ void DTMElementDisplayHandler::_Draw (ElementHandleCR element, ViewContextR cont
             {
             RefCountedPtr<MrDTMDataRef> mrDTMDataRef((MrDTMDataRef*)DTMDataRef.get());
 
-            //MrDTM should not be displayed            
+            //MrDTM should not be displayed
             if (mrDTMDataRef->CanDisplayMrDTM() == false)
-                {                         
+                {
                 //If the MrDTM is selected display its 3D bounding box.
                 if (element.GetElementRef() != NULL && element.GetElementRef()->IsInSS(element.GetModelRef()))
                     {
@@ -1102,14 +1102,14 @@ void DTMElementDisplayHandler::_Draw (ElementHandleCR element, ViewContextR cont
                     p[2].y = p[3].y = p[5].y = p[6].y = range3d.high.y;
                     p[0].z = p[1].z = p[2].z = p[3].z = range3d.low.z;
                     p[4].z = p[5].z = p[6].z = p[7].z = range3d.high.z;
-                    context.DrawBox(p, true);                    
+                    context.DrawBox(p, true);
                     }
 
                 return;
-                }            
+                }
 
             //Check if the MrDTM display for the view is turned off.
-            if ((context.GetViewport() != 0) &&                    
+            if ((context.GetViewport() != 0) &&
                 (mrDTMDataRef->IsVisibleForView(context.GetViewport()->GetViewNumber()) == false))
                 {
                 return;
@@ -1133,7 +1133,7 @@ void DTMElementDisplayHandler::_Draw (ElementHandleCR element, ViewContextR cont
         bool forceTriangleDraw = purpose == DrawPurpose::CutXGraphicsCreate || purpose == DrawPurpose::Measure || purpose == DrawPurpose::VisibilityCalculation || purpose == DrawPurpose::ComputeModelRefRange;
 
         GetDTMDrawingInfo (info, element, DTMDataRef.get(), &context);
-        
+
         if(!info.IsVisible())
             {
             if (info.GetSymbologyElement().GetModelRef() != info.GetOriginalElement().GetModelRef())
@@ -1148,10 +1148,10 @@ void DTMElementDisplayHandler::_Draw (ElementHandleCR element, ViewContextR cont
         symbologyEl = info.GetSymbologyElement ();
 
         int dsIndex = -1;
-        
+
         DTMElementHandlerManager::GetThematicDisplayStyleIndex (symbologyEl, dsIndex);
         bool isHilited = false;
-        
+
         if (context.GetCurrHiliteState () != HILITED_None || purpose == DrawPurpose::Unhilite)
             isHilited = true;
 
@@ -1170,12 +1170,12 @@ void DTMElementDisplayHandler::_Draw (ElementHandleCR element, ViewContextR cont
                 // Use different caches for each part of the DTM.
                 DTMPtr dtmPtr(DTMDataRef->GetDTMStorage(GetHull, context));
                 BcDTMP dtm = 0;
-            
+
                 if (dtmPtr != 0)
                     {
                     dtm = dtmPtr->GetBcDTM();
-                    }                
-            
+                    }
+
                 if (dtm)
                     {
                     DTMStrokeForCacheHull hullStroker(dtm, info);
@@ -1183,7 +1183,7 @@ void DTMElementDisplayHandler::_Draw (ElementHandleCR element, ViewContextR cont
                         hullStroker._StrokeForCache(element, context, context.GetViewport() ? context.GetViewport()->GetPixelSizeAtPoint (NULL) : 0.);
                     if (!hullStroker.HasDisplayedSomething())
                         {
-                        DrawScanRange (context, element, DTMDataRef);                        
+                        DrawScanRange (context, element, DTMDataRef);
                         }
                     }
                 if (purpose == DrawPurpose::Hilite || purpose == DrawPurpose::Unhilite)
@@ -1204,8 +1204,8 @@ void DTMElementDisplayHandler::_Draw (ElementHandleCR element, ViewContextR cont
                     NULL != (displayStyle = DisplayStyleManager::GetDisplayStyleByIndex (styleIndex, *(DgnFileP)symbologyEl.GetDgnFileP())))
                     {
                     context.PushDisplayStyle (displayStyle, symbologyEl.GetModelRef(), false);
-                        
-                    // TFS# 103339 - If thematic material override exists, clear it here.  
+
+                    // TFS# 103339 - If thematic material override exists, clear it here.
                     // Not a great fix.  If handlers are going to push display styles we'll need a method for notifying them of push/pop.
                     OvrMatSymbP overrideMatSymb = context.GetOverrideMatSymb();
                     overrideMatSymb->Clear ();
@@ -1266,13 +1266,13 @@ void DTMElementDisplayHandler::_Draw (ElementHandleCR element, ViewContextR cont
                     }
                 else
                     {
-                    if ((dsIndex != -1) && 
+                    if ((dsIndex != -1) &&
                         ((iter.GetCurrentId().GetHandlerId() == DTMElementTrianglesHandler::GetInstance()->GetSubHandlerId())
                         || (iter.GetCurrentId().GetHandlerId() == DTMElementRasterDrapingHandler::GetInstance()->GetSubHandlerId())
                         ))
                         {
                         DTMElementSubDisplayHandler* hand = DTMElementSubDisplayHandler::FindHandler(iter);
-                        if (hand && hand->CanDraw (DTMDataRef.get(), context))    
+                        if (hand && hand->CanDraw (DTMDataRef.get(), context))
                             {
                             DTMElementSubHandler::SymbologyParams params (iter);
 
@@ -1322,7 +1322,7 @@ void DTMElementDisplayHandler::_Draw (ElementHandleCR element, ViewContextR cont
             SetColourMap (context, info.GetOriginalElement().GetModelRef());
 
         if (!inThematicDraw && ((!hasDisplayedSomething || DrawPurpose::Pick == context.GetDrawPurpose()) && displayPart < 0 && (!isHilited || displayPart == -2)))
-            {                    
+            {
             if (((DrawPurpose::Pick == context.GetDrawPurpose()) || (DrawPurpose::Flash == context.GetDrawPurpose())) &&
                  (DTMElementSubDisplayHandler::CanDoPickFlash(DTMDataRef, context.GetDrawPurpose()) == false))
                 return;
@@ -1339,7 +1339,7 @@ void DTMElementDisplayHandler::_Draw (ElementHandleCR element, ViewContextR cont
             // Use different caches for each part of the DTM.
             DTMPtr dtmPtr(DTMDataRef->GetDTMStorage(GetHull, context));
             BcDTMP dtm = 0;
-            
+
             if (dtmPtr != 0)
                 dtm = dtmPtr->GetBcDTM();
 
@@ -1350,12 +1350,12 @@ void DTMElementDisplayHandler::_Draw (ElementHandleCR element, ViewContextR cont
                     return;
 
             if (dtm)
-                { 
+                {
                 DTMStrokeForCacheHull hullStroker(dtm, info);
                     hullStroker._StrokeForCache(element, context, context.GetViewport() ? context.GetViewport()->GetPixelSizeAtPoint (NULL) : 0.);
                 if (!hullStroker.HasDisplayedSomething())
                     {
-                    DrawScanRange (context, element, DTMDataRef);                    
+                    DrawScanRange (context, element, DTMDataRef);
                     }
                 }
             }
@@ -1387,7 +1387,7 @@ void DTMElementDisplayHandler::_Draw (ElementHandleCR element, ViewContextR cont
             context.CookElemDisplayParams(element);
             context.ActivateOverrideMatSymb();
 
-            DrawScanRange (context, element, DTMDataRef);            
+            DrawScanRange (context, element, DTMDataRef);
             }
         }
     }
@@ -1395,8 +1395,8 @@ void DTMElementDisplayHandler::_Draw (ElementHandleCR element, ViewContextR cont
 StatusInt DTMElementDisplayHandler::_DrawCut (ElementHandleCR thisElm, ICutPlaneR cutPlane, ViewContextR context)
     {
     RefCountedPtr<DTMDataRef> DTMDataRef;
-    DTMElementHandlerManager::GetDTMDataRef (DTMDataRef, thisElm); 
-    
+    DTMElementHandlerManager::GetDTMDataRef (DTMDataRef, thisElm);
+
     if (DTMDataRef.IsValid())
         {
         IDrawCutInfo*   drawCutInfo = context.GetIDrawCutInfo ();
@@ -1421,32 +1421,39 @@ StatusInt DTMElementDisplayHandler::_DrawCut (ElementHandleCR thisElm, ICutPlane
                 if (!cutPlane._OverlapsElement (thisElm.GetElementCP()))
                     return SUCCESS;         // Should we fail permanently?
 
-                DPoint3d dPts[4];
                 Transform trsf;
                 DTMElementHandlerManager::GetStorageToUORMatrix (trsf, GetModelRef(thisElm), thisElm);
 
-                Transform trans;
-                
-                trans.InverseOf (trsf);
+                ClipMask clipMask;
+                DRange2d range2d;
+                RotMatrix matrix;
+                cutPlane._GetClipRange(clipMask, range2d, matrix);
 
-                dplane.productOf (&trans, &dplane);
+                double left;
+                double right;
+
+                DRange3d planeRange = DRange3d::From(range2d.low.x, range2d.low.y, 0, range2d.high.x, range2d.high.y, 0);
+                left = planeRange.low.x;
+                right = planeRange.high.x;
+
+                DVec3d xDir = DVec3d::FromNormalizedCrossProduct(dplane.normal, DVec3d::From(0, 0, 1));
+                DPoint3d res[2];
+                res[0] = DPoint3d::FromSumOf(dplane.origin, 1, xDir, left);
+                res[1] = DPoint3d::FromSumOf(dplane.origin, 1, xDir, right);
+
+                Transform trans;
+
+                trans.InverseOf (trsf);
+                trans.multiply(res, 2);
 
                 DRange3d range;
                 DTMDataRef->GetExtents (range);
-                dPts[0] = range.low;
-                dPts[2] = range.high;
-                dPts[1].x = dPts[0].x; dPts[1].y = dPts[2].y; dPts[1].z = dPts[0].x;
-                dPts[3].x = dPts[2].x; dPts[3].y = dPts[0].y; dPts[3].z = dPts[0].x;
-
-                DPoint3d res[100];
-                int numOut;
-                bsiPolygon_intersectDPlane3d(res, &numOut, 50, dPts, 4, &dplane);
                 IDTM* idtm = DTMDataRef->GetDTMStorage (None, context);
-                if (idtm && numOut)
+                if (idtm)
                     {
                     DTMDrapedLinePtr result;
 
-                    if (idtm->GetDTMDraping()->DrapeLinear(result, res, numOut) == DTM_SUCCESS)
+                    if (idtm->GetDTMDraping()->DrapeLinear(result, res, 2) == DTM_SUCCESS)
                         {
                         Int64 count = result->GetPointCount();
                         BeAssert(count <= INT_MAX);
@@ -1576,15 +1583,15 @@ SnapStatus DTMElementDisplayHandler::_OnSnap (SnapContextP context, int snapPath
     return SnapStatus::Aborted;
     }
 
-StatusInt DTMElementDisplayHandler::_OnTransform (EditElementHandleR element, TransformInfo const& transform) 
+StatusInt DTMElementDisplayHandler::_OnTransform (EditElementHandleR element, TransformInfo const& transform)
     {
     //An MrDTM that cannot be displayed or is anchored cannot be transformed.
     RefCountedPtr<DTMDataRef> dtmDataRef;
     DTMElementHandlerManager::GetDTMDataRef (dtmDataRef, element);
-    if ((dtmDataRef != 0) &&  
-        (dtmDataRef->IsMrDTM() == true) && 
+    if ((dtmDataRef != 0) &&
+        (dtmDataRef->IsMrDTM() == true) &&
         ((((MrDTMDataRef*)dtmDataRef.get())->CanDisplayMrDTM() == false) ||
-         (((MrDTMDataRef*)dtmDataRef.get())->IsAnchored() == true)))        
+         (((MrDTMDataRef*)dtmDataRef.get())->IsAnchored() == true)))
         {
         return SUCCESS;
         }
@@ -1604,15 +1611,15 @@ StatusInt DTMElementDisplayHandler::_OnTransform (EditElementHandleR element, Tr
     return SUCCESS;
     }
 
-bool DTMElementDisplayHandler::_IsTransformGraphics (ElementHandleCR elHandle, TransformInfoCR tInfo) 
+bool DTMElementDisplayHandler::_IsTransformGraphics (ElementHandleCR elHandle, TransformInfoCR tInfo)
     {
     //An MrDTM that cannot be displayed or is anchored cannot be transformed.
     RefCountedPtr<DTMDataRef> dtmDataRef;
     DTMElementHandlerManager::GetDTMDataRef (dtmDataRef, elHandle);
-    if ((dtmDataRef != 0) &&  
-        (dtmDataRef->IsMrDTM() == true) && 
+    if ((dtmDataRef != 0) &&
+        (dtmDataRef->IsMrDTM() == true) &&
         ((((MrDTMDataRef*)dtmDataRef.get())->CanDisplayMrDTM() == false) ||
-         (((MrDTMDataRef*)dtmDataRef.get())->IsAnchored() == true)))        
+         (((MrDTMDataRef*)dtmDataRef.get())->IsAnchored() == true)))
         {
         return false;
         }
@@ -1660,9 +1667,9 @@ StatusInt DTMElementDisplayHandler::_FenceClip (ElementAgendaP inside, ElementAg
 StatusInt DTMElementDisplayHandler::_OnFenceClip (ElementAgendaP inside, ElementAgendaP outside, ElementHandleCR element, FenceParamsP fp, FenceClipFlags options)
     {
     RefCountedPtr<DTMDataRef> DTMDataRef;
-    DTMElementHandlerManager::GetDTMDataRef (DTMDataRef, element); 
+    DTMElementHandlerManager::GetDTMDataRef (DTMDataRef, element);
 
-    if (DTMDataRef != nullptr && !DTMDataRef->IsMrDTM() && fp->GetClipVector().IsValid() && !fp->GetClipVector()->empty())                                                                          
+    if (DTMDataRef != nullptr && !DTMDataRef->IsMrDTM() && fp->GetClipVector().IsValid() && !fp->GetClipVector()->empty())
         {
         bvector<DPoint3d> fencePts;
 
@@ -1732,7 +1739,7 @@ StatusInt DTMElementDisplayHandler::_OnFenceClip (ElementAgendaP inside, Element
                 }
             }
 
-        return SUCCESS; 
+        return SUCCESS;
         }
     return ERROR;
     }
@@ -1782,13 +1789,13 @@ void DTMElementDisplayHandler::_OnConvertTo2d (EditElementHandleR eeh, Transform
     //ToDo How to move the elm to eeh.
     }
 
-StatusInt DTMElementDisplayHandler::_OnPreprocessCopy (EditElementHandleR element, ElementCopyContextP copyContext) 
+StatusInt DTMElementDisplayHandler::_OnPreprocessCopy (EditElementHandleR element, ElementCopyContextP copyContext)
     {
     RefCountedPtr<DTMDataRef> DTMDataRef;
-    DTMElementHandlerManager::GetDTMDataRef(DTMDataRef, element); 
+    DTMElementHandlerManager::GetDTMDataRef(DTMDataRef, element);
 
     if ((DTMDataRef != nullptr) && (DTMDataRef->IsMrDTM() == true))
-        {            
+        {
         }
     else
         {
@@ -1798,13 +1805,13 @@ StatusInt DTMElementDisplayHandler::_OnPreprocessCopy (EditElementHandleR elemen
     return T_Super::_OnPreprocessCopy (element, copyContext);
     }
 
-StatusInt DTMElementDisplayHandler::_OnPostProcessCopy (EditElementHandleR element, ElementCopyContextP copyContext) 
+StatusInt DTMElementDisplayHandler::_OnPostProcessCopy (EditElementHandleR element, ElementCopyContextP copyContext)
     {
     RefCountedPtr<DTMDataRef> DTMDataRef;
-    DTMElementHandlerManager::GetDTMDataRef(DTMDataRef, element); 
+    DTMElementHandlerManager::GetDTMDataRef(DTMDataRef, element);
 
     if ((DTMDataRef != nullptr) && (DTMDataRef->IsMrDTM() == true))
-        {            
+        {
         }
     else
         {
@@ -1822,7 +1829,7 @@ struct XAttributeId
         {
         }
     };
-ITransactionHandler::PreActionStatus  DTMElementDisplayHandler::_OnAdd (EditElementHandleR element) 
+ITransactionHandler::PreActionStatus  DTMElementDisplayHandler::_OnAdd (EditElementHandleR element)
     {
     DTMDataRefXAttribute::ProcessAddedElementWithReference (element);
     ElementHandle::XAttributeIter xAttrHandle(element, DTMHeaderXAttributeHandler::GetXAttributeHandlerId (), 0);
@@ -1831,7 +1838,7 @@ ITransactionHandler::PreActionStatus  DTMElementDisplayHandler::_OnAdd (EditElem
         Transform trsf;
         EditElementHandle dtmDataEl;
         dtmDataEl.SetModelRef (element.GetModelRef());
-        getStorageToUORMatrix(trsf, element);       
+        getStorageToUORMatrix(trsf, element);
         DTMElementHandlerManager::CheckAndCreateElementDescr107 (dtmDataEl, DTMElement107Handler::GetElemHandlerId (), trsf, *dtmDataEl.GetModelRef ());
         DTMElementHandlerManager::AddToModelInOwnBlock (dtmDataEl, element.GetModelRef());
         ElementHandle::XAttributeIter xAttrHandle (element);
@@ -1949,17 +1956,17 @@ void DTMElementDisplayHandler::_OnDeleted (ElementHandleP element)
     //DTMElementHandlerManager::GetDTMDataRef (dataRefPtr, *element);
     //if (dataRefPtr != nullptr)
     //    {
-    //    //Ensure that the cache release the MrDTMDataRef associated with the element 
+    //    //Ensure that the cache release the MrDTMDataRef associated with the element
     //    //so that the pointer to the iDTM file is released.
     //    DTMDataRefCachingManager::Remove(*element);
     //    }
     }
 
-BentleyStatus DTMElementDisplayHandler::_ValidateElementRange (EditElementHandleR element, bool setZ) 
+BentleyStatus DTMElementDisplayHandler::_ValidateElementRange (EditElementHandleR element, bool setZ)
     {
     RefCountedPtr<DTMDataRef> DTMDataRef;
 
-    DTMElementHandlerManager::GetDTMDataRef (DTMDataRef, element); 
+    DTMElementHandlerManager::GetDTMDataRef (DTMDataRef, element);
     if (DTMDataRef != nullptr)
         {
         DRange3d range3d;
@@ -1987,18 +1994,18 @@ BentleyStatus DTMElementDisplayHandler::_ValidateElementRange (EditElementHandle
     return SUCCESS;
     }
 
-void DTMElementDisplayHandler::_GetDescription (ElementHandleCR element, WString& string, UInt32 desiredLength) 
+void DTMElementDisplayHandler::_GetDescription (ElementHandleCR element, WString& string, UInt32 desiredLength)
     {
     RefCountedPtr<DTMDataRef> DTMDataRef;
-    DTMElementHandlerManager::GetDTMDataRef (DTMDataRef, element); 
+    DTMElementHandlerManager::GetDTMDataRef (DTMDataRef, element);
 
     //If not application activates the display of the MrDTM, add some information about
     //this fact.
-    if ((DTMDataRef != nullptr) && 
+    if ((DTMDataRef != nullptr) &&
         (DTMDataRef->IsMrDTM() == true))
         {
         if (DTMElementHandlerManager::GetMrDTMActivationRefCount() == 0)
-            {   
+            {
             string = TerrainModelElementResources::GetString (MSG_TERRAINMODEL_ApplicationRequired);
             }
         else
@@ -2006,7 +2013,7 @@ void DTMElementDisplayHandler::_GetDescription (ElementHandleCR element, WString
             string = TerrainModelElementResources::GetString (MSG_TERRAINMODEL_ScalableTerrainModel);
             }
         }
-    else 
+    else
         if(DTMDataRef != nullptr)
             {
             GetTypeName ( string, desiredLength );
@@ -2034,7 +2041,7 @@ void DTMElementDisplayHandler::_GetDescription (ElementHandleCR element, WString
 bool DTMElementDisplayHandler::GetProjectedPointOnDTM (DPoint3dR pointOnDTM, ElementHandleCR thisElm, ViewportP viewport, DPoint3dCR testPoint)
     {
     RefCountedPtr<DTMDataRef> DTMDataRef;
-    DTMElementHandlerManager::GetDTMDataRef (DTMDataRef, thisElm); 
+    DTMElementHandlerManager::GetDTMDataRef (DTMDataRef, thisElm);
 
     if (!DTMDataRef.IsValid())
         { return false; }
@@ -2120,7 +2127,7 @@ void DTMElementDisplayHandler::_OnUndoRedo (ElementHandleP afterUndoRedo, Elemen
 //=======================================================================================
 // @bsimethod                                                   Daryl.Holmwood 09/11
 //=======================================================================================
-void DTMElementDisplayHandler::_OnUndoRedoFinished (ElementRefP element, bool isUndo) 
+void DTMElementDisplayHandler::_OnUndoRedoFinished (ElementRefP element, bool isUndo)
     {
     ElementHandle elem (element, nullptr);
     elem.ResetHandler ();
@@ -2259,7 +2266,7 @@ void DTMElement107Handler::_OnDeleted(ElementHandleP element)
 // ToDo    DTMElementHandlerManager::GetDTMDataRef (dataRefPtr, *element);
 // ToDo    if (dataRefPtr != nullptr)
 // ToDo        {
-// ToDo        //Ensure that the cache release the MrDTMDataRef associated with the element 
+// ToDo        //Ensure that the cache release the MrDTMDataRef associated with the element
 // ToDo        //so that the pointer to the iDTM file is released.
 // ToDo        DTMDataRefCachingManager::Remove(*element);
 // ToDo        }
