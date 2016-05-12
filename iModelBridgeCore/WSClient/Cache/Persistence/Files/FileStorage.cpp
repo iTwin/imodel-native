@@ -134,6 +134,24 @@ BentleyStatus FileStorage::ReplaceFileWithRollback(BeFileNameCR fileToRollback, 
     else
         {
         status = BeFileName::BeMoveFile(moveFromFile, moveToFile);
+
+        //Me might not have access to move file
+        if (status != BeFileNameStatus::Success &&
+            status != BeFileNameStatus::IllegalName &&
+            status != BeFileNameStatus::AlreadyExists &&
+            status != BeFileNameStatus::CantCreate &&
+            status != BeFileNameStatus::FileNotFound &&
+            status != BeFileNameStatus::AccessViolation)
+            {
+            status = BeFileName::BeCopyFile(moveFromFile, moveToFile);
+
+            if (status == BeFileNameStatus::Success)
+                {
+                status = BeFileName::BeDeleteFile(moveFromFile);
+                if (status != BeFileNameStatus::Success)
+                    BeFileName::BeDeleteFile(moveToFile);
+                }
+            }
         }
 
     if (BeFileNameStatus::Success != status)
@@ -142,7 +160,7 @@ BentleyStatus FileStorage::ReplaceFileWithRollback(BeFileNameCR fileToRollback, 
             {
             RollbackFile(backupForRollbackFile, fileToRollback);
             }
-        LOG.errorv(L"Failed to cache file from: %ls to: %ls", moveFromFile.c_str(), moveToFile.c_str());
+        LOG.errorv(L"Failed to cache file from: %ls to: %ls (Error: %d)", moveFromFile.c_str(), moveToFile.c_str(), status);
         BeAssert(false);
         return ERROR;
         }
