@@ -120,7 +120,7 @@ PTfloat PTAPI ptGetDynamicFrameRate()
 {
 	return _framerate;
 }
-#ifdef HAVE_OPENGL
+
 //-----------------------------------------------------------------------------
 PTvoid PTAPI ptStaticOptimizer(PTfloat opt)
 {
@@ -131,7 +131,7 @@ PTfloat PTAPI ptGetStaticOptimizer()
 {
 	return theVisibilityEngine().optimizerStrength();
 }
-#endif
+
 //-----------------------------------------------------------------------------
 PTvoid	PTAPI ptDrawInteractiveGL() 
 {
