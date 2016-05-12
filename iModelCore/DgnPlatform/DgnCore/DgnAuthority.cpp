@@ -533,9 +533,9 @@ bool ComponentDef::IsComponentVariationCode(DgnCode const& icode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode GeometryPartAuthority::CreateGeometryPartCode(Utf8StringCR ns, Utf8StringCR name)
+DgnCode GeometryPartAuthority::CreateGeometryPartCode(Utf8StringCR name, Utf8StringCR ns)
     {
-    return SystemAuthority::CreateCode(SystemAuthority::GeometryPart, ns, name);
+    return SystemAuthority::CreateCode(SystemAuthority::GeometryPart, name, ns);
     }
 
 /*---------------------------------------------------------------------------------**//**
