@@ -587,7 +587,7 @@ TEST_F(ChangeManagerTests, ModifyFile_ExistingObject_SetsChangeStatusAndCachesFi
     // Assert
     ASSERT_EQ(SUCCESS, status);
     EXPECT_EQ(IChangeManager::ChangeStatus::Modified, cache->GetChangeManager().GetFileChange(instance).GetChangeStatus());
-    EXPECT_TRUE(cache->ReadFilePath(instance).find(L"test_files_persistent") != BeFileName::npos);
+    EXPECT_TRUE(cache->ReadFilePath(instance).find(L"persistent") != BeFileName::npos);
     EXPECT_EQ(1, cache->GetChangeManager().GetFileChange(instance).GetChangeNumber());
     EXPECT_EQ("NewContent", SimpleReadFile(cache->ReadFilePath(instance)));
     }
@@ -603,7 +603,7 @@ TEST_F(ChangeManagerTests, ModifyFile_ExistingObjectAndCopyFileTrue_CopiesFileTo
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyFile(instance, filePath, true));
     // Assert
     EXPECT_EQ(IChangeManager::ChangeStatus::Modified, cache->GetChangeManager().GetFileChange(instance).GetChangeStatus());
-    EXPECT_TRUE(cache->ReadFilePath(instance).find(L"test_files_persistent") != BeFileName::npos);
+    EXPECT_TRUE(cache->ReadFilePath(instance).find(L"persistent") != BeFileName::npos);
     EXPECT_EQ(1, cache->GetChangeManager().GetFileChange(instance).GetChangeNumber());
     EXPECT_EQ("NewContent", SimpleReadFile(cache->ReadFilePath(instance)));
     EXPECT_TRUE(filePath.DoesPathExist());
@@ -2184,7 +2184,7 @@ TEST_F(ChangeManagerTests, CommitFileRevision_ModifiedFile_RemovesChangeStatusAn
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().CommitFileRevision(*revision));
     // Assert
     EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, cache->GetChangeManager().GetFileChange(instance).GetChangeStatus());
-    EXPECT_TRUE(cache->ReadFilePath(instance).find(L"test_files_temporary") != BeFileName::npos);
+    EXPECT_TRUE(cache->ReadFilePath(instance).find(L"temporary") != BeFileName::npos);
     }
 
 TEST_F(ChangeManagerTests, CommitInstanceRevision_ModifiedObjectModifiedAfterRevisionWasRead_PreservesNewChangesAndLeavesAsModified)
