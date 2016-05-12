@@ -209,55 +209,50 @@
     @section ECDbECSchemaUpdateSupportedFeatures ECSchema Update Supported Features
     
     ### ECSchema
-    - Modify 
+    - @b Modify 
         - @ref BentleyApi::ECN::ECSchema::GetDescription "Description"
         - @ref BentleyApi::ECN::ECSchema::GetDisplayLabel "DisplayLabel"
         - @ref BentleyApi::ECN::ECSchema::GetNamespacePrefix "NamespacePrefix"
         - @b Version (@ref BentleyApi::ECN::ECSchema::GetVersionWrite "VersionWrite", @ref BentleyApi::ECN::ECSchema::GetVersionMinor "VersionMinor").
             - Modifying @ref BentleyApi::ECN::ECSchema::GetVersionMajor "VersionMajor" is not allowed though as major version changes cannot be performed through
             an ECSchema update.
-        - Order of @ref BentleyApi::ECN::ECSchema::GetClasses "ECClasses" in the ECSchema
-        - Order of @ref BentleyApi::ECN::ECSchema::GetEnumerations "ECEnumerations" in the ECSchema
-    - ECSchema references
-        - Add, delete, modify
-        - Modify order of @ref BentleyApi::ECN::ECSchema::GetReferencedSchemas "ECSchema references list"
-    - CustomAttributes on the ECSchema
-        - Add, delete, modify
-        - Modify order of CustomAttribute list on the ECSchema
+    - @ref BentleyApi::ECN::ECSchema::GetReferencedSchemas "ECSchema references"
+        - @b Add, @b delete, @b modify
+    - @ref BentleyApi::ECN::ECSchema::GetClasses "ECClasses"
+        - @b Add a new @ref BentleyApi::ECN::ECClass "ECClass"
+    - @ref BentleyApi::ECN::ECSchema::GetEnumerations "ECEnumerations"
+        - @b Add a new @ref BentleyApi::ECN::ECEnumeration "ECEnumeration"
+    - @b CustomAttributes on the ECSchema
+        - @b Add, @b delete, @b modify
 
     ### ECClass
-    - Add a new @ref BentleyApi::ECN::ECClass "ECClass" to an ECSchema
-    - Modify 
+    - @b Modify 
         - @ref BentleyApi::ECN::ECClass::GetDescription "Description"
         - @ref BentleyApi::ECN::ECClass::GetDisplayLabel "DisplayLabel"
-        - Order of @ref BentleyApi::ECN::ECClass::GetBaseClasses "BaseClasses" in the ECClass
-        - Order of @b ECProperties in the ECClass
-    - CustomAttributes on the ECClass
-        - Add, delete, modify
-        - Modify order of CustomAttribute list on the ECClass
-
-    ### ECEnumeration
-    - Add a new @ref BentleyApi::ECN::ECEnumeration "ECEnumeration" to an ECSchema
+    - @ref BentleyApi::ECN::ECClass::GetBaseClasses "BaseClasses"
+        - @b Modify order of BaseClasses in the ECClass
+    - @b ECProperties
+        - @b Add a new @ref BentleyApi::ECN::ECProperty "ECProperty"
+    - @b CustomAttributes on the ECClass
+        - @b Add, @b delete, @b modify
 
     ### ECProperty
-    - Add a new @ref BentleyApi::ECN::ECProperty "ECProperty" to an ECClass
-    - Modify 
+    - @b Modify 
         - @ref BentleyApi::ECN::ECProperty::GetDescription "Description"
         - @ref BentleyApi::ECN::ECProperty::GetDisplayLabel "DisplayLabel"
         - @ref BentleyApi::ECN::ECProperty::GetIsReadOnly "IsReadOnly"
-    - CustomAttributes on the ECProperty
-        - Add, delete, modify
-        - Modify order of CustomAttribute list on the ECProperty
+    - @b CustomAttributes on the ECProperty
+        - @b Add, @b delete, @b modify
 
     ### ECRelationshipConstraint
-    - Modify 
+    - @b Modify 
         - @ref BentleyApi::ECN::ECRelationshipConstraint::GetRoleLabel "RoleLabel"
-        - Order of @ref BentleyApi::ECN::ECRelationshipConstraint::GetConstraintClasses "ECRelationshipConstraintClass list"
-    - CustomAttributes on the ECRelationshipConstraint
-        - Add, delete, modify
-        - Modify order of CustomAttribute list on the ECRelationshipConstraint
-
+    - @b CustomAttributes on the ECRelationshipConstraint
+        - @b Add, @b delete, @b modify
     
+    @note The CustomAttributes from the @b ECDbMap ECSchema cannot be added, deleted, or modified as they
+    impact the mapping of the ECSchemas and therefore the layout of the database schema.
+
     @see @ref ECDbOverview
     */
 
