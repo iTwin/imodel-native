@@ -27,18 +27,17 @@ BEGIN_BENTLEY_RENDER_NAMESPACE
 //=======================================================================================
 enum class RenderMode
     {
-    Wireframe           = 0,
-    CrossSection        = 1,
-    Wiremesh            = 2,
-    HiddenLine          = 3,
-    SolidFill           = 4,
-    ConstantShade       = 5,
-    SmoothShade         = 6,
-    Phong               = 7,
-    RayTrace            = 8,
-    Radiosity           = 10,
-    RenderLuxology      = 12,
-    Invalid             = 15,
+    Wireframe      = 0,
+    CrossSection   = 1,
+    Wiremesh       = 2,
+    HiddenLine     = 3,
+    SolidFill      = 4,
+    ConstantShade  = 5,
+    SmoothShade    = 6,
+    Phong          = 7,
+    RayTrace       = 8,
+    Radiosity      = 10,
+    Invalid        = 15,
     };
 
 /*=================================================================================**//**
@@ -104,6 +103,7 @@ struct Task : RefCounted<NonCopyableClass>
         BeginHeal,
         FinishHeal,
         Heal,
+        DefineGeometryTexture,
     };
 
     //! The outcome of the processing of a Task.
@@ -138,8 +138,10 @@ public:
     //! @return true if this Task should replace the other pending task.
     virtual bool _Replaces(Task& other) const {return m_operation == other.m_operation;}
 
+    //! return true if this task changes the scene.
     virtual bool _DefinesScene() const = 0;
 
+    //! called when this task is entered into the render queue
     virtual void _OnQueued() const {}
 
     Target* GetTarget() const {return m_target.get();} //!< Get the Target of this Task
@@ -151,6 +153,7 @@ public:
 };
 
 //=======================================================================================
+// Base class for all tasks that change the scene
 // @bsiclass                                                    Keith.Bentley   03/16
 //=======================================================================================
 struct SceneTask : Task
@@ -161,6 +164,7 @@ struct SceneTask : Task
 };
 
 //=======================================================================================
+// Base class for tasks that don't change the scene
 // @bsiclass                                                    Keith.Bentley   03/16
 //=======================================================================================
 struct NonSceneTask : Task
@@ -269,6 +273,20 @@ public:
 //=======================================================================================
 struct Texture : RefCounted<NonCopyableClass>
 {
+    virtual ImageTextureP _GetAsImageTextureP() { return nullptr; }
+    virtual ImageTextureCP _GetAsImageTextureCP() const { return nullptr; }
+    virtual GeometryTextureP _GetAsGeometryTextureP() { return nullptr; }
+    virtual GeometryTextureCP _GetAsGeometryTextureCP() const { return nullptr; }
+};
+
+//=======================================================================================
+//! A Texture for rendering generated from an image
+// @bsiclass                                                    Keith.Bentley   09/15
+//=======================================================================================
+struct ImageTexture : Texture
+{
+    virtual ImageTextureP _GetAsImageTextureP() { return this; }
+    virtual ImageTextureCP _GetAsImageTextureCP() const { return this; }
 };
 
 //=======================================================================================
@@ -278,6 +296,28 @@ struct Material : RefCounted<NonCopyableClass>
 {
     bvector<TexturePtr> m_mappedTextures;
     void AddMappedTexture(TextureR texture) {m_mappedTextures.push_back(&texture);}
+};
+
+//=======================================================================================
+// @bsiclass                                                    John.Gooding    04/16
+//=======================================================================================
+struct GeometryTexture : Texture
+{
+protected:
+    GraphicPtr      m_graphic;
+    DRange2d        m_range;
+    bool            m_useGeometryColors;
+    bool            m_forAreaPattern;
+    uintptr_t       m_tag;
+
+public:
+    virtual GeometryTextureP _GetAsGeometryTextureP() { return this; }
+    virtual GeometryTextureCP _GetAsGeometryTextureCP() const { return this; }
+
+    virtual void _QueueTask() const = 0;
+    void ReleaseGraphic() { m_graphic = nullptr; }
+    GeometryTexture(Render::GraphicR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern, uintptr_t tag) : m_graphic(&graphic), m_range(range), 
+                                m_useGeometryColors(useGeometryColors), m_forAreaPattern(forAreaPattern), m_tag(tag) {}
 };
 
 //=======================================================================================
@@ -324,29 +364,29 @@ private:
     // NOTE: For performance, the constructor initializes members using:
     //         memset (&m_lStyle, 0, offsetof (LineStyleSymb, m_planeByRows)- offsetof (LineStyleSymb, m_lStyle));
     //         So it will be necessary to update it if first/last member are changed. */
-    ILineStyleCP    m_lStyle; // if nullptr, no linestyle active
+    ILineStyleCP m_lStyle; // if nullptr, no linestyle active
     struct
         {
-        uint32_t       scale:1;
-        uint32_t       dashScale:1;
-        uint32_t       gapScale:1;
-        uint32_t       orgWidth:1;
-        uint32_t       endWidth:1;
-        uint32_t       phaseShift:1;
-        uint32_t       autoPhase:1;
-        uint32_t       maxCompress:1;
-        uint32_t       iterationLimit:1;
-        uint32_t       treatAsSingleSegment:1;
-        uint32_t       plane:1;
-        uint32_t       cosmetic:1;
-        uint32_t       centerPhase:1;
-        uint32_t       xElemPhaseSet:1;
-        uint32_t       startTangentSet:1;
-        uint32_t       endTangentSet:1;
-        uint32_t       elementIsClosed:1;
-        uint32_t       continuationXElems:1;
-        uint32_t       isCurve:1;
-        uint32_t       isContinuous:1;
+        uint32_t scale:1;
+        uint32_t dashScale:1;
+        uint32_t gapScale:1;
+        uint32_t orgWidth:1;
+        uint32_t endWidth:1;
+        uint32_t phaseShift:1;
+        uint32_t autoPhase:1;
+        uint32_t maxCompress:1;
+        uint32_t iterationLimit:1;
+        uint32_t treatAsSingleSegment:1;
+        uint32_t plane:1;
+        uint32_t cosmetic:1;
+        uint32_t centerPhase:1;
+        uint32_t xElemPhaseSet:1;
+        uint32_t startTangentSet:1;
+        uint32_t endTangentSet:1;
+        uint32_t elementIsClosed:1;
+        uint32_t continuationXElems:1;
+        uint32_t isCurve:1;
+        uint32_t isContinuous:1;
         } m_options;
 
     int         m_nIterate;
@@ -389,7 +429,7 @@ public:
     double GetTotalLength() const {return m_totalLength;}
     DVec3dCP GetStartTangent() const {return &m_startTangent;}
     DVec3dCP GetEndTangent() const{return &m_endTangent;}
-    Texture* GetTexture() const {return m_texture.get(); }
+    Texture* GetTexture() const {return m_texture.get();}
 
     bool IsScaled() const {return m_options.scale;}
     bool IsAutoPhase() const {return m_options.autoPhase;}
@@ -1073,21 +1113,21 @@ public:
     void AddTextString(TextStringCR text) {_AddTextString(text);}
 
     //! Draw a series of Glyphs with display priority.
-    //! @param[in]          text        Text drawing parameters
-    //! @param[in]          zDepth      Priority value in 2d
+    //! @param[in] text   Text drawing parameters
+    //! @param[in] zDepth Priority value in 2d
     void AddTextString2d(TextStringCR text, double zDepth) {_AddTextString2d(text, zDepth);}
 
     //! Draw a filled triangle strip from 3D points.
-    //! @param[in]          numPoints   Number of vertices in \c points array.
-    //! @param[in]          points      Array of vertices.
-    //! @param[in]          usageFlags  0 or 1 if tri-strip represents a thickened line.
+    //! @param[in] numPoints   Number of vertices in \c points array.
+    //! @param[in] points      Array of vertices.
+    //! @param[in] usageFlags  0 or 1 if tri-strip represents a thickened line.
     void AddTriStrip(int numPoints, DPoint3dCP points, int32_t usageFlags) {_AddTriStrip(numPoints, points, usageFlags);}
 
     //! Draw a filled triangle strip from 2D points.
-    //! @param[in]          numPoints   Number of vertices in \c points array.
-    //! @param[in]          points      Array of vertices.
-    //! @param[in]          zDepth      Z depth value.
-    //! @param[in]          usageFlags  0 or 1 if tri-strip represents a thickened line.
+    //! @param[in] numPoints   Number of vertices in \c points array.
+    //! @param[in] points      Array of vertices.
+    //! @param[in] zDepth      Z depth value.
+    //! @param[in] usageFlags  0 or 1 if tri-strip represents a thickened line.
     void AddTriStrip2d(int numPoints, DPoint2dCP points, int32_t usageFlags, double zDepth) {_AddTriStrip2d(numPoints, points, usageFlags, zDepth);}
 
     //! @private
@@ -1097,7 +1137,7 @@ public:
     void AddTorus(DPoint3dCR center, DVec3dCR vectorX, DVec3dCR vectorY, double majorRadius, double minorRadius, double sweepAngle, bool capped) {AddSolidPrimitive(*ISolidPrimitive::CreateDgnTorusPipe(DgnTorusPipeDetail(center, vectorX, vectorY, majorRadius, minorRadius, sweepAngle, capped)));}
     void AddBox(DVec3dCR primary, DVec3dCR secondary, DPoint3dCR basePoint, DPoint3dCR topPoint, double baseWidth, double baseLength, double topWidth, double topLength, bool capped) {AddSolidPrimitive(*ISolidPrimitive::CreateDgnBox(DgnBoxDetail::InitFromCenters(basePoint, topPoint, primary, secondary, baseWidth, baseLength, topWidth, topLength, capped)));}
 
-    //! Add DRange3d edges using AddLineString
+    //! Add DRange3d edges 
     void AddRangeBox(DRange3dCR range)
         {
         DPoint3d p[8], tmpPts[9];
@@ -1120,7 +1160,7 @@ public:
         AddLineString(2, DSegment3d::From(p[2], p[6]).point);
         }
 
-    //! Add DRange2d edges using AddLineString2d
+    //! Add DRange2d edges 
     void AddRangeBox2d(DRange2dCR range, double zDepth)
         {
         DPoint2d tmpPts[5];
@@ -1135,7 +1175,7 @@ public:
         }
 
     //! Draw a 3D point cloud.
-    //! @param[in] drawParams Object containing draw parameters.
+    //! @param[in] drawParams PointCloud parameters
     void AddPointCloud(PointCloudDraw* drawParams) {_AddPointCloud(drawParams);}
 
     //! Draw OLE object.
@@ -1303,24 +1343,36 @@ public:
 };
 
 //=======================================================================================
+// @bsiclass                                                    Keith.Bentley   05/16
+//=======================================================================================
+struct GraphicArray
+{
+    bvector<GraphicPtr> m_entries;
+    void Add(Graphic& graphic) {m_entries.push_back(&graphic);}
+};
+
+//=======================================================================================
+//! A Render::System is the renderer-specific factory for creating Render::Graphics, Render::Textures, and Render::Materials.
 // @bsiclass                                                    Keith.Bentley   03/16
 //=======================================================================================
 struct System
 {
     virtual MaterialPtr _GetMaterial(DgnMaterialId, DgnDbR) const = 0;
-    virtual TexturePtr _GetTexture(DgnTextureId, DgnDbR) const = 0;
+    virtual ImageTexturePtr _GetImageTexture(DgnTextureId, DgnDbR) const = 0;
     virtual GraphicPtr _CreateGraphic(Graphic::CreateParams const& params) const = 0;
     virtual GraphicPtr _CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency) const = 0;
+    virtual GraphicPtr _CreateGroupNode(Graphic::CreateParams const& params, GraphicArray& entries, ClipPrimitiveCP clip) const = 0;
 
     //N.B. _CreateTexture is called from multiple-threads implementer must ensure this is supported. If not non-shareable resource must be protected by locks.
-    virtual TexturePtr _CreateTexture(ImageCR, bool enableAlpha) const = 0;
+    virtual ImageTexturePtr _CreateImageTexture(ImageCR, bool enableAlpha) const = 0;
+
+    virtual GeometryTexturePtr _CreateGeometryTexture(Render::GraphicR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern, uintptr_t tag) const = 0;
 };
 
 //=======================================================================================
-//! A Render::Target is the renderer-specific factory for creating Render::Graphics.
 //! A Render:Target holds the current "scene", the current set of dynamic Graphics, and the current decorators.
 //! When frames are composed, all of those Graphics are rendered, as appropriate.
-//! A Render:Target holds a reference to a Display::Device.
+//! A Render:Target holds a reference to a Render::Device, and a Render::System
 //! Every DgnViewport holds a reference to a Render::Target.
 // @bsiclass                                                    Keith.Bentley   11/15
 //=======================================================================================
@@ -1383,8 +1435,9 @@ public:
     GraphicPtr CreateGraphic(Graphic::CreateParams const& params) {return m_system._CreateGraphic(params);}
     GraphicPtr CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency) {return m_system._CreateSprite(sprite, location, xVec, transparency);}
     MaterialPtr GetMaterial(DgnMaterialId id, DgnDbR dgndb) const {return m_system._GetMaterial(id, dgndb);}
-    TexturePtr GetTexture(DgnTextureId id, DgnDbR dgndb) const {return m_system._GetTexture(id, dgndb);}
-    TexturePtr CreateTexture(ImageR image, bool enableAlpha) const {return m_system._CreateTexture(image, enableAlpha);}
+    ImageTexturePtr GetImageTexture(DgnTextureId id, DgnDbR dgndb) const {return m_system._GetImageTexture(id, dgndb);}
+    ImageTexturePtr CreateImageTexture(ImageR image, bool enableAlpha) const {return m_system._CreateImageTexture(image, enableAlpha);}
+    GeometryTexturePtr CreateGeometryTexture(Render::GraphicR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern, uintptr_t tag) const {return m_system._CreateGeometryTexture(graphic, range, useGeometryColors, forAreaPattern, tag);}
     SystemR GetSystem() {return m_system;}
 
     uint32_t GetGraphicsPerSecondScene() const {return m_graphicsPerSecondScene.load();}
@@ -1392,116 +1445,5 @@ public:
     void RecordFrameTime(GraphicList& scene, double seconds, bool isFromProgressiveDisplay) { RecordFrameTime(scene.GetCount(), seconds, isFromProgressiveDisplay); }
     DGNPLATFORM_EXPORT void RecordFrameTime(uint32_t numGraphicsInScene, double seconds, bool isFromProgressiveDisplay);
 };
-
-/*=================================================================================**//**
-* View settings for the point cloud
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
-#define POINTCLOUD_DEFAULT_VIEW_CONTRAST    (50.0)
-#define POINTCLOUD_DEFAULT_VIEW_BRIGHTNESS  (180.0)
-
-#define VIEWSETTINGS_RGB_MASK        (0x00000001)
-#define VIEWSETTINGS_INTENSITY_MASK  (0x00000002)
-#define VIEWSETTINGS_LIGHTNING_MASK  (0x00000004)
-#define VIEWSETTINGS_PLANE_MASK      (0x00000008)
-#define VIEWSETTINGS_FRONTBIAS_MASK  (0x00000010)
-
-struct PointCloudViewSettings
-    {
-    enum class DisplayStyle
-        {
-        None           = 0,
-        Intensity      = 1,
-        Classification = 2,
-        Location       = 3,
-        Custom         = 4, //New Display style in SS4
-        };
-
-protected:
-    uint32_t        m_flags;
-    double          m_contrast;
-    double          m_brightness;
-    double          m_distance;
-    double          m_offset;
-    int32_t         m_adaptivePointSize;
-    uint32_t        m_intensityRampIdx;
-    uint32_t        m_planeRampIdx;
-    uint32_t        m_planeAxis; //{x,y,z} index
-    DisplayStyle    m_displayStyle = DisplayStyle::None;
-    Utf8String      m_planeRamp;
-    Utf8String      m_intensityRamp;
-    bool            m_useACSAsPlaneAxis;
-
-    //Advanced Settings from SS4
-    bool            m_clampIntensity;
-    bool            m_needClassifBuffer;
-    Utf8String      m_displayStyleName;
-    int32_t         m_displayStyleIndex;
-
-public:
-    
-    DGNPLATFORM_EXPORT PointCloudViewSettings();
-    DGNPLATFORM_EXPORT void InitDefaults();
-    DGNPLATFORM_EXPORT bool AreSetToDefault() const;
-    DGNPLATFORM_EXPORT void FromJson(JsonValueCR);
-    DGNPLATFORM_EXPORT void ToJson(JsonValueR val) const;
-
-    DGNPLATFORM_EXPORT bool GetUseRgb() const;
-    DGNPLATFORM_EXPORT bool GetUseIntensity() const;
-    DGNPLATFORM_EXPORT bool GetUseLightning() const;
-    DGNPLATFORM_EXPORT bool GetUsePlane() const;
-    DGNPLATFORM_EXPORT bool GetUseFrontBias() const;
-
-    DGNPLATFORM_EXPORT uint32_t GetFlags() const;
-    DGNPLATFORM_EXPORT void SetFlags(uint32_t flags);
-
-    DGNPLATFORM_EXPORT double GetContrast() const;
-    DGNPLATFORM_EXPORT void SetContrast(double contrast);
-
-    DGNPLATFORM_EXPORT double GetBrightness() const;
-    DGNPLATFORM_EXPORT void SetBrightness(double brightness);
-
-    DGNPLATFORM_EXPORT double GetDistance() const;
-    DGNPLATFORM_EXPORT void SetDistance(double distance);
-
-    DGNPLATFORM_EXPORT double GetOffset() const;
-    DGNPLATFORM_EXPORT void SetOffset(double offset);
-
-    DGNPLATFORM_EXPORT int32_t GetAdaptivePointSize() const;
-    DGNPLATFORM_EXPORT void SetAdaptivePointSize(int32_t adaptivePointSize);
-
-    DGNPLATFORM_EXPORT uint32_t GetIntensityRampIdx() const;
-    DGNPLATFORM_EXPORT void SetIntensityRampIdx(uint32_t intensityRampIdx);
-
-    DGNPLATFORM_EXPORT uint32_t GetPlaneRampIdx() const;
-    DGNPLATFORM_EXPORT void SetPlaneRampIdx(uint32_t planeRampIdx);
-
-    DGNPLATFORM_EXPORT uint32_t GetPlaneAxis() const;
-    DGNPLATFORM_EXPORT void SetPlaneAxis(uint32_t planeAxis);
-
-    DGNPLATFORM_EXPORT DisplayStyle GetDisplayStyle() const;
-    DGNPLATFORM_EXPORT void SetDisplayStyle(DisplayStyle const& displayStyle);
-
-    DGNPLATFORM_EXPORT Utf8String GetPlaneRamp() const;
-    DGNPLATFORM_EXPORT void SetPlaneRamp(Utf8StringCR planeRamp);
-
-    DGNPLATFORM_EXPORT Utf8String GetIntensityRamp() const;
-    DGNPLATFORM_EXPORT void SetIntensityRamp(Utf8StringCR intensityRamp);
-
-    DGNPLATFORM_EXPORT bool GetUseACSAsPlaneAxis() const;
-    DGNPLATFORM_EXPORT void SetUseACSAsPlaneAxis(bool useACSAsPlaneAxis);
-
-    DGNPLATFORM_EXPORT bool GetClampIntensity() const;
-    DGNPLATFORM_EXPORT void SetClampIntensity(bool clampIntensity);
-
-    DGNPLATFORM_EXPORT bool GetNeedClassifBuffer() const;
-    DGNPLATFORM_EXPORT void SetNeedClassifBuffer(bool needClassifBuffer);
-
-    DGNPLATFORM_EXPORT Utf8String GetDisplayStyleName() const;
-    DGNPLATFORM_EXPORT void SetDisplayStyleName(Utf8StringCR displayStyleName);
-
-    DGNPLATFORM_EXPORT int32_t GetDisplayStyleIndex() const;
-    DGNPLATFORM_EXPORT void SetDisplayStyleIndex(int32_t displayStyleIndex);
-    };
 
 END_BENTLEY_RENDER_NAMESPACE

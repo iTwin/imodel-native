@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/linestyle/LsPointComponent.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -16,7 +16,7 @@
 * every place along the input line where a symbol should appear. Afterwards, process the symbols that appear at vertices.
 * @bsimethod                                                    Keith.Bentley   02/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       LsPointComponent::_DoStroke (ViewContextP context, DPoint3dCP inPoints, int nPoints, LineStyleSymbCP modifiers) const
+StatusInt       LsPointComponent::_DoStroke (LineStyleContextR context, DPoint3dCP inPoints, int nPoints, LineStyleSymbCP modifiers) const
     {
     if (NULL == m_strokeComponent.get ())
         return  SUCCESS;
@@ -191,15 +191,7 @@ LsSymbolReferenceCP LsPointComponent::GetSymbolForVertexCP (LsSymbolReference::V
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   02/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            LsPointComponent::_ProcessSymbol
-(
-ViewContextP     context,
-Centerline const* centerline,
-LineStyleSymbCP   modifiers,
-LsStrokeCP        pStroke,
-int               strokeIndex,
-int               endCondition
-) const
+bool LsPointComponent::_ProcessSymbol(LineStyleContextR context, Centerline const* centerline, LineStyleSymbCP modifiers, LsStrokeCP pStroke, int strokeIndex, int endCondition) const
     {
     LsSymbolReferenceCP    symRef = GetSymbolForStrokeCP (strokeIndex);
 
@@ -628,7 +620,7 @@ LsOkayForTextureGeneration LsPointComponent::VerifySymbol(double& adjustment, do
         {
         adjustment = 0 - xLow;
         retval = LsOkayForTextureGeneration::ChangeRequired;
-#if defined(NEEDSWORK_LINESTYLE)  //  How can we handle the symbol being larger than the stroke?  It is for Batten. It is easy to make this mistake and notice it if there is a small overlap.
+#if defined(NEEDSWORK_LINESTYLE)  //  How can we handle the symbol being larger than the stroke?  It is for Batten. It is easy to make this mistake and not notice it if there is a small overlap.
         if (xHigh + adjustment >= patternLength)
             retval = LsOkayForTextureGeneration::NotAllowed;
 #endif

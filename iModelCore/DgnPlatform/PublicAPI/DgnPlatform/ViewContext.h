@@ -30,10 +30,10 @@ struct     ILineStyleComponent
     virtual bool _IsContinuous() const = 0;
     virtual bool _HasWidth() const = 0;
     virtual double _GetLength() const = 0;
-    virtual StatusInt _StrokeLineString(ViewContextP, Render::LineStyleSymbP, DPoint3dCP, int nPts, bool isClosed) const = 0;
-    virtual StatusInt _StrokeLineString2d(ViewContextP, Render::LineStyleSymbP, DPoint2dCP, int nPts, double zDepth, bool isClosed) const = 0;
-    virtual StatusInt _StrokeArc(ViewContextP, Render::LineStyleSymbP, DPoint3dCP origin, RotMatrixCP rMatrix, double r0, double r1, double const* start, double const* sweep, DPoint3dCP range) const = 0;
-    virtual StatusInt _StrokeBSplineCurve(ViewContextP context, Render::LineStyleSymbP lsSymb, MSBsplineCurveCP, double const* tolerance) const = 0;
+    virtual StatusInt _StrokeLineString(Render::GraphicR, ViewContextP, Render::LineStyleSymbP, DPoint3dCP, int nPts, bool isClosed) const = 0;
+    virtual StatusInt _StrokeLineString2d(Render::GraphicR, ViewContextP, Render::LineStyleSymbP, DPoint2dCP, int nPts, double zDepth, bool isClosed) const = 0;
+    virtual StatusInt _StrokeArc(Render::GraphicR, ViewContextP, Render::LineStyleSymbP, DPoint3dCP origin, RotMatrixCP rMatrix, double r0, double r1, double const* start, double const* sweep, DPoint3dCP range) const = 0;
+    virtual StatusInt _StrokeBSplineCurve(Render::GraphicR, ViewContextP context, Render::LineStyleSymbP lsSymb, MSBsplineCurveCP, double const* tolerance) const = 0;
 };
 
 //=======================================================================================
@@ -151,6 +151,7 @@ protected:
     DGNPLATFORM_EXPORT virtual bool _FilterRangeIntersection(GeometrySourceCR);
     virtual IPickGeomP _GetIPickGeom() {return nullptr;}
     virtual Render::GraphicPtr _CreateGraphic(Render::Graphic::CreateParams const& params) = 0;
+    virtual Render::GraphicPtr _CreateGroupNode(Render::Graphic::CreateParams const& params, Render::GraphicArray&, ClipPrimitiveCP) = 0;
     DGNPLATFORM_EXPORT virtual void _SetupScanCriteria();
     virtual bool _WantUndisplayed() {return false;}
     DGNPLATFORM_EXPORT virtual void _AddViewOverrides(Render::OvrGraphicParamsR);
@@ -191,6 +192,7 @@ public:
     void EnableStopAfterTimout(uint32_t timeout) {m_endTime = BeTimeUtilities::QueryMillisecondsCounter()+timeout; m_stopAfterTimeout=true;}
 
     Render::GraphicPtr CreateGraphic(Render::Graphic::CreateParams const& params=Render::Graphic::CreateParams()) {return _CreateGraphic(params);}
+    Render::GraphicPtr CreateGroupNode(Render::Graphic::CreateParams const& params, Render::GraphicArray& array, ClipPrimitiveCP clip) {return _CreateGroupNode(params, array, clip);}
     Render::GraphicPtr AddSubGraphic(Render::GraphicR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, Render::GeometryParamsR geomParams) {return _AddSubGraphic(graphic, partId, subToGraphic, geomParams);}
     StatusInt VisitGeometry(GeometrySourceCR elem) {return _VisitGeometry(elem);}
     StatusInt VisitHit(HitDetailCR hit) {return _VisitHit(hit);}
@@ -371,6 +373,7 @@ public:
     Render::GraphicP _GetCachedGraphic(GeometrySourceCR source, double pixelSize) override {return source.Graphics().Find(*m_viewport, pixelSize);}
     DGNVIEW_EXPORT Render::GraphicPtr _StrokeGeometry(GeometrySourceCR source, double pixelSize) override;
     Render::GraphicPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override {return m_target.CreateGraphic(params);}
+    Render::GraphicPtr _CreateGroupNode(Render::Graphic::CreateParams const& params, Render::GraphicArray& entries, ClipPrimitiveCP clip) override {return m_target.GetSystem()._CreateGroupNode(params, entries, clip);}
     Render::TargetR GetTargetR() {return m_target;}
     DgnViewportR GetViewportR()  {return *m_viewport;}   // A RenderContext always have a viewport.
 };

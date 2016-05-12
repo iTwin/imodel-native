@@ -188,6 +188,7 @@ DGNPLATFORM_TYPEDEFS(ViewDefinition)
 DGNPLATFORM_TYPEDEFS(ViewManager)
 
 DGNPLATFORM_REF_COUNTED_PTR(AnnotationElement)
+DGNPLATFORM_REF_COUNTED_PTR(AnnotationElement2d)
 DGNPLATFORM_REF_COUNTED_PTR(ClipPrimitive)
 DGNPLATFORM_REF_COUNTED_PTR(ClipVector)
 DGNPLATFORM_REF_COUNTED_PTR(ComponentDef)
@@ -203,18 +204,17 @@ DGNPLATFORM_REF_COUNTED_PTR(DgnGCS)
 DGNPLATFORM_REF_COUNTED_PTR(DgnGeometryPart)
 DGNPLATFORM_REF_COUNTED_PTR(DgnMarkupProject)
 DGNPLATFORM_REF_COUNTED_PTR(DgnModel)
+DGNPLATFORM_REF_COUNTED_PTR(DgnQueryView)
 DGNPLATFORM_REF_COUNTED_PTR(DgnRevision)
 DGNPLATFORM_REF_COUNTED_PTR(DgnViewport)
-DGNPLATFORM_REF_COUNTED_PTR(AnnotationElement2d)
 DGNPLATFORM_REF_COUNTED_PTR(DisplayStyleHandlerSettings)
-DGNPLATFORM_REF_COUNTED_PTR (DrawingGraphic)
+DGNPLATFORM_REF_COUNTED_PTR(DrawingGraphic)
 DGNPLATFORM_REF_COUNTED_PTR(DrawingViewDefinition)
 DGNPLATFORM_REF_COUNTED_PTR(IBriefcaseManager)
 DGNPLATFORM_REF_COUNTED_PTR(IElemTopology)
 DGNPLATFORM_REF_COUNTED_PTR(PatternParams)
 DGNPLATFORM_REF_COUNTED_PTR(PhysicalElement)
 DGNPLATFORM_REF_COUNTED_PTR(ProgressiveTask)
-DGNPLATFORM_REF_COUNTED_PTR(DgnQueryView)
 DGNPLATFORM_REF_COUNTED_PTR(RedlineViewController)
 DGNPLATFORM_REF_COUNTED_PTR(SheetElement)
 DGNPLATFORM_REF_COUNTED_PTR(SheetViewController)
@@ -232,6 +232,7 @@ DGNPLATFORM_REF_COUNTED_PTR(ViewDefinition)
 
 BEGIN_BENTLEY_RENDER_NAMESPACE
     DEFINE_POINTER_SUFFIX_TYPEDEFS(Device)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(GeometryTexture)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(GeometryParams)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(GradientSymb)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(Graphic)
@@ -239,6 +240,7 @@ BEGIN_BENTLEY_RENDER_NAMESPACE
     DEFINE_POINTER_SUFFIX_TYPEDEFS(GraphicParams)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(ISprite)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(Image)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(ImageTexture)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(LineStyleInfo)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(LineStyleParams)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(LineStyleSymb)
@@ -253,9 +255,11 @@ BEGIN_BENTLEY_RENDER_NAMESPACE
     DEFINE_POINTER_SUFFIX_TYPEDEFS(Window)
 
     DEFINE_REF_COUNTED_PTR(Device)
+    DEFINE_REF_COUNTED_PTR(GeometryTexture)
     DEFINE_REF_COUNTED_PTR(GradientSymb)
     DEFINE_REF_COUNTED_PTR(Graphic)
     DEFINE_REF_COUNTED_PTR(GraphicList)
+    DEFINE_REF_COUNTED_PTR(ImageTexture)
     DEFINE_REF_COUNTED_PTR(LineStyleInfo)
     DEFINE_REF_COUNTED_PTR(Material)
     DEFINE_REF_COUNTED_PTR(MultiResImage)
@@ -380,27 +384,6 @@ public:
     void SetActiveGeometryPart(DgnGeometryPartId partId) {SetGeometryPartId(partId);}
     void Increment() {if (m_partId.IsValid()) SetPartIndex(GetPartIndex()+1); else SetIndex(GetIndex()+1);}
 };
-
-#ifdef WIP_ELEMENT_ITEM // *** pending redesign
-//=======================================================================================
-//! The key (classId,instanceId) of a the Item aspect.
-//=======================================================================================
-struct ElementItemKey : BeSQLite::EC::ECInstanceKey
-{
-    ElementItemKey() : BeSQLite::EC::ECInstanceKey() {}
-    ElementItemKey(ECN::ECClassId classId, BeSQLite::EC::ECInstanceId instanceId) : BeSQLite::EC::ECInstanceKey(classId, instanceId) {}
-    ElementItemKey(DgnClassId classId, BeSQLite::EC::ECInstanceId instanceId) : BeSQLite::EC::ECInstanceKey(classId.GetValue(), instanceId) {}
-    //! Converts an ECInstanceKey to a ElementItemKey.
-    //! @note Does a simple type conversion without checking if the specified ECInstanceKey is a valid ElementItemKey
-    explicit ElementItemKey(BeSQLite::EC::ECInstanceKeyCR key) : BeSQLite::EC::ECInstanceKey(key) {}
-    //! Return the DgnElementId held by this key.
-    //! @note The ECInstanceId of an Element and its ElementGeom aspect are the same.
-    DgnElementId GetElementId() const {return DgnElementId(GetECInstanceId().GetValue());}
-    DgnClassId GetClassId() const {return DgnClassId(GetECClassId());}
-};
-
-typedef ElementItemKey const& ElementItemKeyCR;
-#endif
 
 //=======================================================================================
 //! A DRange3d that holds min/max values for an object in each of x,y,z in some coordinate system.
@@ -856,6 +839,7 @@ enum class GeoLocationProviderStatus
     Available               = 4,
     OutOfService            = 5,
     LocationUnavailable     = 6,
+    Initializing            = 7,
 };
 
 typedef bvector<double> T_DoubleVector;
