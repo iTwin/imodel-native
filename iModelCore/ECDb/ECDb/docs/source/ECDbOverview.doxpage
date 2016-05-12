@@ -229,8 +229,6 @@
     - @b Modify 
         - @ref BentleyApi::ECN::ECClass::GetDescription "Description"
         - @ref BentleyApi::ECN::ECClass::GetDisplayLabel "DisplayLabel"
-    - @ref BentleyApi::ECN::ECClass::GetBaseClasses "BaseClasses"
-        - @b Modify order of BaseClasses in the ECClass
     - @b ECProperties
         - @b Add a new @ref BentleyApi::ECN::ECProperty "ECProperty"
     - @b CustomAttributes on the ECClass
