@@ -1402,9 +1402,8 @@ TEST_F(ECSchemaUpdateTests, InvalidValueForNameSpacePrefix)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan Khan                          05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, Delete_ECEntityClass_OwnTable)
+TEST_F(ECSchemaUpdateTests, Delete_ECEntityClass_MappedTo_OwnTable)
     {
-
     //Setup Db ===================================================================================================
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -1466,7 +1465,7 @@ TEST_F(ECSchemaUpdateTests, Delete_ECEntityClass_OwnTable)
     ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
     ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
 
-    assertAndExecuteECSQL(GetECDb(), "SELECT S, D, L FROM ts.Foo", ECSqlStatus::InvalidECSql, BE_SQLITE_ROW);
+    assertAndExecuteECSQL(GetECDb(), "SELECT S, D, L FROM ts.Foo", ECSqlStatus::InvalidECSql);
     assertAndExecuteECSQL(GetECDb(), "SELECT S, D, L FROM ts.Goo", ECSqlStatus::Success, BE_SQLITE_ROW);
 
     //Add Foo Again===============================================================================================

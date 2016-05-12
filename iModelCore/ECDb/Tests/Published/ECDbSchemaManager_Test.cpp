@@ -442,7 +442,7 @@ TEST_F(ECDbSchemaManagerTests, ImportSchemaWhereOlderVersionAlreadyExists)
     ASSERT_TRUE(schemaPtr != NULL);
     schemaCache->AddSchema(*schemaPtr);
 
-    ASSERT_EQ(ERROR, ecdb.Schemas().ImportECSchemas(*schemaCache));
+    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(*schemaCache));
     }
 
 //---------------------------------------------------------------------------------------
