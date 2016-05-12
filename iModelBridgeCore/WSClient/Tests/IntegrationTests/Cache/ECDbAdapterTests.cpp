@@ -285,7 +285,7 @@ TEST_F(ECDbAdapterTests, ECDb_UpdateNotExisting_Error)
     ECDbAdapter adapter(*db);
 
     auto ecClass = adapter.GetECClass("TestSchema.TestClass");
-    
+
     JsonUpdater updater(*db, *ecClass);
 
     Json::Value instance;
@@ -294,6 +294,157 @@ TEST_F(ECDbAdapterTests, ECDb_UpdateNotExisting_Error)
     instance.clear();
     instance[DataSourceCache_PROPERTY_LocalInstanceId] = "123";
     EXPECT_EQ(ERROR, updater.Update(instance));
+    }
+
+TEST_F(ECDbAdapterTests, DeleteInstances_DeletingLotsOfHoldingInstances_PerformanceIsAcceptable)
+    {
+    // Prepare seed file
+    auto schema = ParseSchema(R"xml(
+        <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECClass typeName="TestClass" />
+            <ECRelationshipClass typeName="HoldingRel" strength="holding">
+                <Source cardinality="(0,N)"><Class class="TestClass" /></Source>
+                <Target cardinality="(0,N)"><Class class="TestClass" /></Target>
+            </ECRelationshipClass>
+        </ECSchema>)xml");
+
+    auto seedPath = StubFilePath("seed.ecdb");
+    if (seedPath.DoesPathExist())
+        ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeDeleteFile(seedPath));
+
+    ObservableECDb seed;
+    seed.CreateNewDb(seedPath);
+
+    auto cache = ECSchemaCache::Create();
+    cache->AddSchema(*schema);
+    ASSERT_EQ(SUCCESS, seed.Schemas().ImportECSchemas(*cache));
+
+    auto ecClass = seed.Schemas().GetECClass("TestSchema", "TestClass");
+    auto holdingRelClass = seed.Schemas().GetECClass("TestSchema", "HoldingRel")->GetRelationshipClassCP();
+
+    // Generate data
+    auto start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+    bset<ECInstanceKey> allInstances;
+    ECInstanceKey parent;
+    INSERT_INSTANCE(seed, ecClass, parent);
+    bset<ECInstanceKey> parents;
+    parents.insert(parent);
+    allInstances.insert(parent);
+    for (int i = 0; i < 9; i++)
+        {
+        bset<ECInstanceKey> children;
+        for (auto& parent : parents)
+            {
+            ECInstanceKey a, b, rela, relb;
+            INSERT_INSTANCE(seed, ecClass, a);
+            INSERT_INSTANCE(seed, ecClass, b);
+            INSERT_RELATIONSHIP(seed, holdingRelClass, parent, a, rela);
+            INSERT_RELATIONSHIP(seed, holdingRelClass, parent, b, relb);
+            children.insert(a);
+            children.insert(b);
+            }
+        allInstances.insert(children.begin(), children.end());
+        parents = children;
+        }
+    auto end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+
+    BeDebugLog(Utf8PrintfString("Adding %d instances took %f ms", allInstances.size(), end - start).c_str());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, seed.SaveChanges());
+
+    // Test performance
+    int count = 20;
+    double totalTime = 0;
+
+    for (int i = 0; i < count; i++)
+        {
+        auto path = StubFilePath("performance.ecdb");
+        if (path.DoesPathExist())
+            ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeDeleteFile(path));
+        ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(seedPath, path));
+
+        ObservableECDb db;
+        db.OpenBeSQLiteDb(path, Db::OpenParams(Db::OpenMode::ReadWrite));
+        ECDbAdapter adapter(db);
+
+        ECInstanceKeyMultiMap instances;
+        instances.Insert(parent.GetECClassId(), parent.GetECInstanceId());
+
+        start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+        EXPECT_EQ(SUCCESS, adapter.DeleteInstances(instances));
+        end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+
+        double currentTime = end - start;
+        totalTime += currentTime;
+        BeDebugLog(Utf8PrintfString("DeleteInstances took %f ms", currentTime).c_str());
+
+        auto notDeletedInstances = adapter.FindInstances(ecClass);
+        EXPECT_EQ(0, notDeletedInstances.size());
+        }
+    BeDebugLog(Utf8PrintfString("DeleteInstances mean took %f ms", totalTime / count).c_str());
+    }
+
+TEST_F(ECDbAdapterTests, DeleteInstances_DeletingLotsOfInstances_PerformanceIsAcceptable)
+    {
+    // Prepare seed file
+    auto schema = ParseSchema(R"xml(
+        <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECClass typeName="TestClass" />
+        </ECSchema>)xml");
+
+    auto seedPath = StubFilePath("seed.ecdb");
+    if (seedPath.DoesPathExist())
+        ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeDeleteFile(seedPath));
+
+    ObservableECDb seed;
+    seed.CreateNewDb(seedPath);
+
+    auto cache = ECSchemaCache::Create();
+    cache->AddSchema(*schema);
+    ASSERT_EQ(SUCCESS, seed.Schemas().ImportECSchemas(*cache));
+
+    auto ecClass = seed.Schemas().GetECClass("TestSchema", "TestClass");
+
+    // Generate data
+    auto start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+    ECInstanceKeyMultiMap instances;
+    for (int i = 0; i < 1023; i++)
+        {
+        ECInstanceKey key;
+        INSERT_INSTANCE(seed, ecClass, key);
+        instances.insert({key.GetECClassId(), key.GetECInstanceId()});
+        }
+    auto end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+
+    BeDebugLog(Utf8PrintfString("Adding %d instances took %f ms", instances.size(), end - start).c_str());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, seed.SaveChanges());
+
+    // Test performance
+    int count = 20;
+    double totalTime = 0;
+
+    for (int i = 0; i < count; i++)
+        {
+        auto path = StubFilePath("performance.ecdb");
+        if (path.DoesPathExist())
+            ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeDeleteFile(path));
+        ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(seedPath, path));
+
+        ObservableECDb db;
+        db.OpenBeSQLiteDb(path, Db::OpenParams(Db::OpenMode::ReadWrite));
+        ECDbAdapter adapter(db);
+
+        start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+        EXPECT_EQ(SUCCESS, adapter.DeleteInstances(instances));
+        end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+
+        double currentTime = end - start;
+        totalTime += currentTime;
+        BeDebugLog(Utf8PrintfString("DeleteInstances took %f ms", currentTime).c_str());
+
+        auto notDeletedInstances = adapter.FindInstances(ecClass);
+        EXPECT_EQ(0, notDeletedInstances.size());
+        }
+    BeDebugLog(Utf8PrintfString("DeleteInstances mean took %f ms", totalTime / count).c_str());
     }
 
 #endif
