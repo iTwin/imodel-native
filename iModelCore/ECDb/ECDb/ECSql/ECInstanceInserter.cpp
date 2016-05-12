@@ -16,26 +16,25 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //+===============+===============+===============+===============+===============+======
 struct ECInstanceInserter::Impl : NonCopyableClass
     {
-    protected:
-        ECDbCR m_ecdb;
-        ECN::ECClassCR m_ecClass;
-        mutable ECSqlStatement m_statement;
-        ECValueBindingInfoCollection m_ecValueBindingInfos;
-        ECSqlSystemPropertyBindingInfo* m_ecinstanceIdBindingInfo;
+private:
+    ECDbCR m_ecdb;
+    ECN::ECClassCR m_ecClass;
+    mutable ECSqlStatement m_statement;
+    ECValueBindingInfoCollection m_ecValueBindingInfos;
+    ECSqlSystemPropertyBindingInfo* m_ecinstanceIdBindingInfo;
+    bool m_needsCalculatedPropertyEvaluation;
+    bool m_isValid;
 
-        bool m_needsCalculatedPropertyEvaluation;
-        mutable bool m_isValid;
+    void Initialize();
 
-        void Initialize();
+    static void LogFailure(ECN::IECInstanceCR instance, Utf8CP errorMessage) { ECInstanceAdapterHelper::LogFailure("insert", instance, errorMessage); }
 
-        static void LogFailure(ECN::IECInstanceCR instance, Utf8CP errorMessage);
+public:
+    Impl(ECDbCR ecdb, ECClassCR ecClass);
 
-    public:
-        Impl(ECDbCR ecdb, ECClassCR ecClass);
-
-        BentleyStatus Insert(ECInstanceKey& newInstanceKey, IECInstanceCR instance, bool autogenerateECInstanceId = true, ECInstanceId const* userprovidedECInstanceId = nullptr) const;
-        BentleyStatus Insert(ECN::IECInstanceR instance, bool autogenerateECInstanceId = true) const;
-        bool IsValid() const { return m_isValid; }
+    BentleyStatus Insert(ECInstanceKey& newInstanceKey, IECInstanceCR instance, bool autogenerateECInstanceId = true, ECInstanceId const* userprovidedECInstanceId = nullptr) const;
+    BentleyStatus Insert(ECN::IECInstanceR instance, bool autogenerateECInstanceId = true) const;
+    bool IsValid() const { return m_isValid; }
     };
 
 
@@ -290,16 +289,6 @@ BentleyStatus ECInstanceInserter::Impl::Insert(ECN::IECInstanceR instance, bool 
     else
         return SUCCESS;
     }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                   06/14
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-void ECInstanceInserter::Impl::LogFailure(ECN::IECInstanceCR instance, Utf8CP errorMessage)
-    {
-    ECInstanceAdapterHelper::LogFailure("insert", instance, errorMessage);
-    }
-
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
 

@@ -172,9 +172,9 @@ ECSqlStatus ECSqlDeletePreparer::GenerateNativeSqlSnippets(NativeSqlSnippets& de
 
     //System WHERE clause
     //if option to disable class id filter is set, nothing more to do
-    if (exp.GetOptionsClauseExp() != nullptr && exp.GetOptionsClauseExp()->HasOption(OptionsExp::NOECCLASSIDFILTER_OPTION))
+    OptionsExp const* optionsExp = exp.GetOptionsClauseExp();
+    if (optionsExp != nullptr && optionsExp->HasOption(OptionsExp::NOECCLASSIDFILTER_OPTION))
         return ECSqlStatus::Success;
-
 
     ClassMap const& classMap = classNameExp.GetInfo().GetMap();
     DbTable const* table = &classMap.GetPrimaryTable();

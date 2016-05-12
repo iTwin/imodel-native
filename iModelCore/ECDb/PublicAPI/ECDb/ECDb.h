@@ -46,8 +46,7 @@ public:
     enum class PurgeMode
         {
         FileInfoOwnerships = 1, //!< Purges FileInfoOwnership instances (see also @ref ECDbFileInfo)
-        HoldingRelationships = 2, //!< Purges all holding relationship ends.
-        All = FileInfoOwnerships | HoldingRelationships
+        All = FileInfoOwnerships
         };
 
     struct Impl;

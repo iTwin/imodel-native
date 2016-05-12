@@ -44,7 +44,7 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
             ECSqlStatus status = parentOfJoinedTableStmt->Prepare(ctx.GetECDb(), info->GetParentOfJoinedTableECSql());
             if (status != ECSqlStatus::Success)
                 {
-                ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Preparing the ECSQL '%s' failed. Preparing the primary table ECSQL '%s' failed", exp.ToECSql().c_str(), info->GetParentOfJoinedTableECSql());
+                ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to prepare ECSQL '%s'. Could not prepare the subset of the ECSQL that targets the primary table: %s.", exp.ToECSql().c_str(), info->GetParentOfJoinedTableECSql());
                 return ECSqlStatus::InvalidECSql;
                 }
             }
@@ -133,7 +133,9 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
         }
 
     nativeSqlBuilder.Append(topLevelWhereClause);
-    if (exp.GetOptionsClauseExp() == nullptr || !exp.GetOptionsClauseExp()->HasOption(OptionsExp::NOECCLASSIDFILTER_OPTION))
+
+    OptionsExp const* optionsExp = exp.GetOptionsClauseExp();
+    if (optionsExp == nullptr || !optionsExp->HasOption(OptionsExp::NOECCLASSIDFILTER_OPTION))
         {
         // WHERE clause
         Utf8String systemWhereClause;
@@ -189,6 +191,10 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
 //+---------------+---------------+---------------+---------------+---------------+--------
 ECSqlStatus ECSqlUpdatePreparer::CheckForReadonlyProperties(ECSqlPrepareContext& ctx, UpdateStatementExp const& exp)
     {
+    OptionsExp const* optionsExp = ctx.GetCurrentScope().GetOptions();
+    if (optionsExp != nullptr && optionsExp->HasOption(OptionsExp::READONLYPROPERTIESAREUPDATABLE_OPTION))
+        return ECSqlStatus::Success;
+
     for (Exp const* expr : exp.GetAssignmentListExp()->GetChildren())
         {
         AssignmentExp const* assignmentExp = static_cast<AssignmentExp const*>(expr);        
@@ -198,8 +204,8 @@ ECSqlStatus ECSqlUpdatePreparer::CheckForReadonlyProperties(ECSqlPrepareContext&
 
             if (prop.IsReadOnlyFlagSet() && prop.GetIsReadOnly() && !prop.IsCalculated())
                 {
-                ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Preparing the ECSQL '%s' failed. Cannot update data into ECProperty '%s' which is marked as 'Readonly'",
-                                                                        exp.ToECSql().c_str(), prop.GetName().c_str());
+                ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "The ECProperty '%s' is read-only. Read-only ECProperties cannot be modified by an ECSQL UPDATE statement. %s",
+                                                                        prop.GetName().c_str(), exp.ToECSql().c_str());
                 return ECSqlStatus::InvalidECSql;
                 }
             }

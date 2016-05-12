@@ -13,8 +13,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Ramanujam.Raman                 9/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-JsonUpdater::JsonUpdater (ECDbCR ecdb, ECN::ECClassCR ecClass)
-: m_ecdb (ecdb), m_ecClass (ecClass), m_ecinstanceUpdater (ecdb, ecClass)
+JsonUpdater::JsonUpdater (ECDbCR ecdb, ECN::ECClassCR ecClass, Utf8CP ecsqlOptions)
+: m_ecdb (ecdb), m_ecClass (ecClass), m_ecinstanceUpdater (ecdb, ecClass, ecsqlOptions)
     {}
 
 //---------------------------------------------------------------------------------------

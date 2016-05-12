@@ -58,7 +58,7 @@
     Core features:
     - the <b>%EC CRUD</b> API for performing Create, Read, Update, Delete operations on %ECInstances in an
     @ref ECDbFile "ECDb file" (see @ref ECSqlStatementOverview)
-    - <b>ECSchema management</b> capabilities (e.g. importing ECSchemas into an @ref ECDbFile "ECDb file",
+    - <b>ECSchema management</b> capabilities (e.g. importing or updating ECSchemas into an @ref ECDbFile "ECDb file",
     retrieving ECSchema entities from an @ref ECDbFile "ECDb file" (see BentleyApi::BeSQLite::EC::ECDbSchemaManager and @ref ECDbECSchemaRules))
     - Internally maps %EC data to SQLite tables and columns
 
@@ -114,13 +114,13 @@
     @li @subpage ECSQLSamples
     @li @subpage ECSqlStatementOverview
     @li @subpage ECDbTransactions
+    @li @subpage ECDbECSchemaImportAndUpdate
     @li @subpage ECDbECSchemaRules
     @li @subpage ECDbRelationshipMappingRules
     @li @subpage ECDbSchemaMappingCustomization
     @li @subpage ECDbFileInfo
     @li @subpage ECDbCreatingECDbFromScratch
     @li @subpage ECDbCodeSamples
-
     @see @ref ECDbOverview
     */
 
@@ -174,6 +174,87 @@
 
     See the @ref BentleyApi::BeSQLite::Db "BeSQLite API" for details about transactions.
 
+    @see @ref ECDbOverview
+    */
+
+    /**
+    @page ECDbECSchemaImportAndUpdate ECSchema Import and Update
+    
+    @ref BentleyApi::BeSQLite::EC::ECDbSchemaManager::ImportECSchemas "ECDbSchemaManager::ImportECSchemas" is the key API to
+    - @b import new @ref BentleyApi::ECN::ECSchema "ECSchemas" into an @ref ECDbFile "ECDb file"
+    - @b update @ref BentleyApi::ECN::ECSchema "ECSchemas" which already exist in an @ref ECDbFile "ECDb file" with a newer version of them.
+    %ECDb computes the changes between the newer and existing schema version and applies the changes to the %ECDb file
+    
+    See also @ref ECDbECSchemaRules
+
+    @note If @ref BentleyApi::BeSQLite::EC::ECDbSchemaManager::ImportECSchemas "ECDbSchemaManager::ImportECSchemas" fails, callers
+    should roll back the current savepoint or transaction. %ECDb, by design, does not do any transaction management itself and
+    does not ensure that its operations are atomic. See @ref ECDbTransactions for details.
+    
+    @section ECDbECSchemaImportAndUpdateAndBriefcases ECSchema Import/Update and Briefcases
+    
+    On @b Briefcases, by definition, no operations can be performed that modify the database schema. The @ref BentleyApi::BeSQLite::Db::GetBriefcaseId "BriefcaseId"
+    in this case is neither @ref BentleyApi::BeSQLite::BeBriefcaseId::Master "BeBriefcaseId::Master" nor @ref BentleyApi::BeSQLite::BeBriefcaseId::Standalone "BeBriefcaseId::Standalone".
+    An ECSchema Import or Update can, however, result in a modified database schema. For example, if an ECClass was added, a table might have to be created, 
+    or if an ECProperty was added, a column might have to be added. This depends though on the mapping rules.
+    
+    Consequently, this is the behavior of @ref BentleyApi::BeSQLite::EC::ECDbSchemaManager::ImportECSchemas "ECDbSchemaManager::ImportECSchemas"
+    with respect to briefcases:
+
+    ImportECSchemas return value | Briefcase | Master or standalone Briefcase
+    ---------------------------- | --------- | ------------------------------
+    Would modify DB schema       | ERROR     | SUCCESS
+    Would not modify DB schema   | SUCCESS   | SUCCESS
+   
+    @section ECDbECSchemaUpdateSupportedFeatures ECSchema Update Supported Features
+    
+    ### ECSchema
+    - Modify 
+        - @ref BentleyApi::ECN::ECSchema::GetDescription "Description"
+        - @ref BentleyApi::ECN::ECSchema::GetDisplayLabel "DisplayLabel"
+        - @ref BentleyApi::ECN::ECSchema::GetNamespacePrefix "NamespacePrefix"
+        - @b Version (@ref BentleyApi::ECN::ECSchema::GetVersionWrite "VersionWrite", @ref BentleyApi::ECN::ECSchema::GetVersionMinor "VersionMinor").
+            - Modifying @ref BentleyApi::ECN::ECSchema::GetVersionMajor "VersionMajor" is not allowed though as major version changes cannot be performed through
+            an ECSchema update.
+        - Order of @ref BentleyApi::ECN::ECSchema::GetClasses "ECClasses" in the ECSchema
+        - Order of @ref BentleyApi::ECN::ECSchema::GetEnumerations "ECEnumerations" in the ECSchema
+    - ECSchema references
+        - Add, delete, modify
+        - Modify order of @ref BentleyApi::ECN::ECSchema::GetReferencedSchemas "ECSchema references list"
+    - CustomAttributes on the ECSchema
+        - Add, delete, modify
+        - Modify order of CustomAttribute list on the ECSchema
+
+    ### ECClass
+    - Add a new @ref BentleyApi::ECN::ECClass "ECClass"
+    - Modify 
+        - @ref BentleyApi::ECN::ECClass::GetDescription "Description"
+        - @ref BentleyApi::ECN::ECClass::GetDisplayLabel "DisplayLabel"
+        - Order of @ref BentleyApi::ECN::ECClass::GetBaseClasses "BaseClasses" in the ECClass
+        - Order of @b ECProperties in the ECClass
+    - CustomAttributes on the ECClass
+        - Add, delete, modify
+        - Modify order of CustomAttribute list on the ECClass
+
+    ### ECProperty
+    - Add a new @ref BentleyApi::ECN::ECProperty "ECProperty"
+    - Modify 
+        - @ref BentleyApi::ECN::ECProperty::GetDescription "Description"
+        - @ref BentleyApi::ECN::ECProperty::GetDisplayLabel "DisplayLabel"
+        - @ref BentleyApi::ECN::ECProperty::GetIsReadOnly "IsReadOnly"
+    - CustomAttributes on the ECProperty
+        - Add, delete, modify
+        - Modify order of CustomAttribute list on the ECProperty
+
+    ### ECRelationshipConstraint
+    - Modify 
+        - @ref BentleyApi::ECN::ECRelationshipConstraint::GetRoleLabel "RoleLabel"
+        - Order of @ref BentleyApi::ECN::ECRelationshipConstraint::GetConstraintClasses "ECRelationshipConstraintClass list"
+    - CustomAttributes on the ECRelationshipConstraint
+        - Add, delete, modify
+        - Modify order of CustomAttribute list on the ECRelationshipConstraint
+
+    
     @see @ref ECDbOverview
     */
 
@@ -557,6 +638,8 @@
     @see @ref ECDbOverview
     */
 
+
+
     /**
     @page ECDbFileInfo File-backed ECInstances
     %ECDb provides basic support for file-backed ECInstances. Every %ECDb file contains the system ECSchema
@@ -579,3 +662,5 @@
   
     @see @ref ECDbOverview
     */
+
+   

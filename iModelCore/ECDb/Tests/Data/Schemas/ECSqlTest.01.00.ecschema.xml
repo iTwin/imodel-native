@@ -28,6 +28,7 @@
         <ECProperty propertyName="s" typeName="string"/>
         <ECProperty propertyName="p2d" typeName="point2d"/>
         <ECProperty propertyName="p3d" typeName="point3d"/>
+        <ECProperty propertyName="CreationDate" typeName="dateTime" readOnly="True"/>
     </ECStructClass>
     <ECEntityClass typeName="ABounded" description="Class with bounded array props">
         <ECArrayProperty propertyName="Prim_Array_Bounded" typeName="int" minOccurs="5" maxOccurs="10"/>
@@ -64,8 +65,17 @@
             </ClassHasCurrentTimeStampProperty>
         </ECCustomAttributes>
         <ECProperty propertyName="I" typeName="int"/>
-        <ECProperty propertyName="S" typeName="string"/>
-        <ECProperty propertyName="LastMod" typeName="dateTime">
+        <ECProperty propertyName="FirstName" typeName="string"/>
+        <ECProperty propertyName="LastName" typeName="string"/>
+        <ECProperty propertyName="FullName" typeName="string">
+            <ECCustomAttributes>
+                <CalculatedECPropertySpecification xmlns="Bentley_Standard_CustomAttributes.01.12">
+                    <ECExpression>this.FirstName this.LastName</ECExpression>
+                    <FailureValue>-</FailureValue>
+                </CalculatedECPropertySpecification>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="LastMod" typeName="dateTime" readOnly="True">
             <ECCustomAttributes>
                 <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.12">
                     <DateTimeKind>Utc</DateTimeKind>
