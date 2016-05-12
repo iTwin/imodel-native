@@ -99,15 +99,3 @@ private:
 };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
-
-//=======================================================================================
-// Standard way of defining XxxKey and XxxKeyCR types (enhances API type safety)
-//=======================================================================================
-#define ECINSTANCEKEY_SUBCLASS(classname, subclassname) \
-    struct classname : subclassname \
-    {\
-        classname() : subclassname() {} \
-        classname(ECN::ECClassId classId, BeSQLite::EC::ECInstanceId instanceId) : subclassname(classId, instanceId) {} \
-        explicit classname (BeSQLite::EC::ECInstanceKeyCR key) : subclassname (key) {} \
-    };\
-    typedef classname const& classname##CR;
