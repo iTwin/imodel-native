@@ -13,8 +13,8 @@
     %error Define TEST_COLLECTION_PRODUCT as the name of the test collection product
 %endif
 
-%ifndef TEST_DELIVERY_DIR
-    TEST_DELIVERY_DIR=ANJUP
+%ifndef TEST_DELIVERY_SUBDIR
+    TEST_DELIVERY_SUBDIR=ANJUP
 %endif
 
 %ifndef TEST_ANDROID_MIN_SDK_VERSION
@@ -254,10 +254,10 @@ $(libsDir)$(BENTLEY_ANDROID_AndroidABI)/gdb.setup : $(libsDir)$(BENTLEY_ANDROID_
 # Delivery
 #--------------------------------------------------------------------------------------
 # Keep paths short! We can easily exceed MAX_PATH on our firebug and PRG machines!
-$(BuildContext)Delivery/${TEST_DELIVERY_DIR} : $(outputDir)project
+$(BuildContext)Delivery/${TEST_DELIVERY_SUBDIR} : $(outputDir)project
     !~@mkdir $@
     $(SrcRoot)bsicommon/build/CopyWithSymlinks.py "$<" "$@" --excludePattern=intermediates
 
 always:
     $(_bmake) $(baseDir)BuildApk.mke -dTEST_COLLECTION_PRODUCT=$(TEST_COLLECTION_PRODUCT)
-    ~linkdir "$(BuildContext)Delivery/ANJU/$(TEST_NAME)/Project/Scripts=$(outputDir)Scripts"
+    ~linkdir "$(BuildContext)Delivery/${TEST_DELIVERY_SUBDIR}/Scripts=$(outputDir)Scripts"
