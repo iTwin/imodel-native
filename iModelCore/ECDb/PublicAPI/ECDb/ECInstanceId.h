@@ -52,13 +52,13 @@ public:
     ECInstanceKey(ECN::ECClassId ecClassId, ECInstanceId ecInstanceId) : m_ecClassId(ecClassId), m_ecInstanceId(ecInstanceId) {}
 
     //! Compare this ECInstanceKey with another key for equality
-    bool operator == (ECInstanceKey const& other) const { return m_ecClassId == other.m_ecClassId && m_ecInstanceId == other.m_ecInstanceId; }
+    bool operator==(ECInstanceKey const& other) const { return m_ecClassId == other.m_ecClassId && m_ecInstanceId == other.m_ecInstanceId; }
     
     //! Compare this ECInstanceKey with another key for inequality
-    bool operator != (ECInstanceKey const& other) const { return !(*this == other); }
+    bool operator!=(ECInstanceKey const& other) const { return !(*this == other); }
 
     //! Compare this ECInstanceKey with another key for ordering
-    bool operator < (ECInstanceKey const& other) const
+    bool operator<(ECInstanceKey const& other) const
         {
         if (m_ecClassId < other.m_ecClassId)
             return true;
@@ -83,7 +83,9 @@ typedef ECInstanceKey const* ECInstanceKeyCP;
 typedef ECInstanceKey& ECInstanceKeyR;
 
 //=======================================================================================
-//! A set of ECInstanceIds
+//! A VirtualSet of @ref ECInstanceId "ECInstanceIds" that can be used to bind a list
+//! of ECInstanceIds to the parameter in the SQL function @b InVirtualSet in an ECSqlStatement.
+//! @see ECSqlStatement::BindVirtualSet, ECDbCodeSampleECSqlStatementVirtualSets
 //! @ingroup ECDbGroup
 //+===============+===============+===============+===============+===============+======
 struct ECInstanceIdSet : bset<ECInstanceId>, BeSQLite::VirtualSet

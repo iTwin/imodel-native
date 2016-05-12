@@ -552,6 +552,54 @@ BentleyStatus ECDb_ECSqlStatementBindingStructArrays()
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                   05/16
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECDb_ECSqlStatementBindingVirtualSets()
+    {
+    ECDb ecdb;
+    //__PUBLISH_EXTRACT_START__ Overview_ECDb_ECSqlStatementBindingVirtualSets.sampleCode
+    // Task: Repeatedly retrieve a list of Assets by their ECInstanceIds. The list of ids varies in size from call to call.
+
+    ECSqlStatement statement;
+    statement.Prepare(ecdb, "SELECT ECInstanceId AS Id, GetECClassId() AS AssetSubclassId, BarCode FROM stco.Asset WHERE InVirtualSet(?,ECInstanceId)");
+
+    //First list
+    ECInstanceIdSet idSet;
+    idSet.insert(ECInstanceId(UINT64_C(1)));
+    idSet.insert(ECInstanceId(UINT64_C(2)));
+    idSet.insert(ECInstanceId(UINT64_C(3)));
+
+    statement.BindVirtualSet(1, idSet);
+
+    while (BE_SQLITE_ROW == statement.Step())
+        {
+        printf("Id: %s | SubclassId: %s | BarCode: %s\r\n",
+               statement.GetValueId<ECInstanceId>(0).ToString().c_str(), statement.GetValueId<ECClassId>(1).ToString().c_str(),
+               statement.GetValueText(2));
+        }
+
+    statement.Reset();
+    statement.ClearBindings();
+
+    //Another list
+    ECInstanceIdSet anotherIdSet;
+    anotherIdSet.insert(ECInstanceId(UINT64_C(100)));
+    anotherIdSet.insert(ECInstanceId(UINT64_C(200)));
+
+    statement.BindVirtualSet(1, anotherIdSet);
+
+    while (BE_SQLITE_ROW == statement.Step())
+        {
+        printf("Id: %s | SubclassId: %s | BarCode: %s\r\n",
+               statement.GetValueId<ECInstanceId>(0).ToString().c_str(), statement.GetValueId<ECClassId>(1).ToString().c_str(),
+               statement.GetValueText(2));
+        }
+
+    //__PUBLISH_EXTRACT_END__
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   11/13
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECDb_ECSqlColumnInfoOnNestedLevels()
@@ -791,5 +839,5 @@ BentleyStatus ECDb_ECSqlAndCustomSQLiteFunctions()
     return SUCCESS;
     }
 
-    
+
 END_BENTLEY_SQLITE_EC_NAMESPACE
