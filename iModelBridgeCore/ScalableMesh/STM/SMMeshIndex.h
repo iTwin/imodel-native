@@ -2,8 +2,8 @@
 #pragma once
 #include <Mtg/MtgStructs.h>
 #include "SMPointIndex.h"
-#include <ImagePP/all/h/HPMIndirectCountLimitedPool.h>
-//template <typename DataType> using HPMIndirectCountLimitedPool = HPMCountLimitedPool<DataType>;
+//#include <ImagePP/all/h/HPMIndirectCountLimitedPool.h>
+template <typename DataType> using HPMIndirectCountLimitedPool = HPMCountLimitedPool<DataType>;
 
 template<class POINT, class EXTENT> class ISMPointIndexMesher;
 template<class POINT, class EXTENT> class ISMMeshIndexFilter;

@@ -140,7 +140,7 @@ enum DTMStatus
 #define MEAN_SCREEN_PIXELS_PER_POINT 100
 
 
-struct IDTMVolume_ abstract
+struct IDTMVolume abstract
 {
 protected:
 virtual DTMStatusInt _ComputeVolumeCutAndFill(double& cut, double& fill, double& area, PolyfaceHeader& intersectingMeshSurface, DRange3d& meshRange, bvector<PolyfaceHeaderPtr>& volumeMeshVector) = 0;

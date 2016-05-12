@@ -11,7 +11,7 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT,EXTENT>::SMMeshIndexN
                  ISMPointIndexMesher<POINT, EXTENT>* mesher3d,
                  CreatedNodeMap*                      createdNodeMap)
                  : SMPointIndexNode<POINT, EXTENT>(pi_SplitTreshold, pi_rExtent, pool, store, filter, balanced, propagateDataDown, createdNodeMap),
-                 m_graphPool(&*graphPool), m_graphStore(graphStore), m_graphVec(&*graphPool, graphStore)
+                 m_graphPool(graphPool), m_graphStore(graphStore), m_graphVec(graphPool, graphStore)
     {
     m_mesher2_5d = mesher2_5d;
     m_mesher3d = mesher3d;
@@ -27,7 +27,7 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
                 const EXTENT& pi_rExtent,
                 const HFCPtr<SMMeshIndexNode<POINT, EXTENT> >& pi_rpParentNode)
                 : SMPointIndexNode<POINT, EXTENT>(pi_SplitTreshold, pi_rExtent, dynamic_cast<SMPointIndexNode*>(pi_rpParentNode.GetPtr())),
-                m_graphPool(pi_rpParentNode->GetGraphPool()), m_graphStore(pi_rpParentNode->GetGraphStore()), m_graphVec(&*m_graphPool, m_graphStore),
+                m_graphPool(pi_rpParentNode->GetGraphPool()), m_graphStore(pi_rpParentNode->GetGraphStore()), m_graphVec(m_graphPool, m_graphStore),
                 m_featureStore(pi_rpParentNode->m_featureStore), m_featurePool(pi_rpParentNode->m_featurePool)
     {
     m_mesher2_5d = pi_rpParentNode->GetMesher2_5d();
@@ -43,7 +43,7 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
                  const HFCPtr<SMMeshIndexNode<POINT, EXTENT> >& pi_rpParentNode,
                  bool IsUnsplitSubLevel)
                  : SMPointIndexNode<POINT, EXTENT>(pi_SplitTreshold, pi_rExtent, dynamic_cast<SMPointIndexNode*>(pi_rpParentNode.GetPtr()), IsUnsplitSubLevel),
-                 m_graphPool(pi_rpParentNode->GetGraphPool()), m_graphStore(pi_rpParentNode->GetGraphStore()), m_graphVec(&*m_graphPool, m_graphStore),
+                 m_graphPool(pi_rpParentNode->GetGraphPool()), m_graphStore(pi_rpParentNode->GetGraphStore()), m_graphVec(m_graphPool, m_graphStore),
                  m_featureStore(pi_rpParentNode->m_featureStore), m_featurePool(pi_rpParentNode->m_featurePool)
     {
     m_mesher2_5d = pi_rpParentNode->GetMesher2_5d();
@@ -105,7 +105,7 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
                  ISMPointIndexMesher<POINT, EXTENT>* mesher3d,
                  CreatedNodeMap*                      createdNodeMap)
                  : SMPointIndexNode<POINT, EXTENT>(blockID, static_pcast<SMPointIndexNode<POINT, EXTENT>, SMMeshIndexNode<POINT, EXTENT>>(parent), pool, store, filter, balanced, propagateDataDown, createdNodeMap),
-                 m_graphPool(&*graphPool), m_graphStore(graphStore), m_graphVec(&*graphPool, graphStore),
+                 m_graphPool(graphPool), m_graphStore(graphStore), m_graphVec(graphPool, graphStore),
                  m_featureStore(parent->m_featureStore), m_featurePool(parent->m_featurePool)
     {
     m_mesher2_5d = mesher2_5d;
@@ -128,7 +128,7 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
                  ISMPointIndexMesher<POINT, EXTENT>* mesher3d,
                  CreatedNodeMap* createdNodeMap)
                  : SMPointIndexNode<POINT, EXTENT>(blockID, pool, store, filter, balanced, propagateDataDown, createdNodeMap),
-                 m_graphPool(&*graphPool), m_graphStore(graphStore), m_graphVec(&*graphPool, graphStore),
+                 m_graphPool(graphPool), m_graphStore(graphStore), m_graphVec(graphPool, graphStore),
                  m_featureStore(nullptr), m_featurePool(nullptr)
     {
     m_mesher2_5d = mesher2_5d;

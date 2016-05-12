@@ -17,7 +17,7 @@
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
-struct ScalableMeshVolume : IDTMVolume_
+struct ScalableMeshVolume : IDTMVolume
     {
     private:
         IScalableMeshPtr m_scmPtr;

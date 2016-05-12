@@ -14,7 +14,6 @@
 
 extern bool   GET_HIGHEST_RES;
 
-
 /*------------------------------------------------------------------+
 | Include of the current class header                               |
 +------------------------------------------------------------------*/
@@ -169,11 +168,10 @@ IScalableMeshNodeRayQueryPtr IScalableMesh::GetNodeQueryInterface() const
     return _GetNodeQueryInterface();
     }
 
-/*IDTMVolume_* IScalableMesh::GetDTMVolume()
+IDTMVolume* IScalableMesh::GetDTMVolume()
     {
     return _GetDTMVolume();
-    }*/
-    
+    }
 
 const BaseGCSPtr& IScalableMesh::GetBaseGCS() const 
     {
@@ -1032,14 +1030,9 @@ template <class POINT> IDTMContouringP  ScalableMesh<POINT>::_GetDTMContouring()
     return 0;
     }
 
-/*template <class POINT> IDTMVolume_P ScalableMesh<POINT>::_GetDTMVolume()
+template <class POINT> IDTMVolumeP ScalableMesh<POINT>::_GetDTMVolume()
     {
     return new ScalableMeshVolume(this);
-    }*/
-    
-    template <class POINT> IDTMVolumeP ScalableMesh<POINT>::_GetDTMVolume()
-    {
-    return nullptr;
     }
 
 template <class POINT> DTMStatusInt ScalableMesh<POINT>::_CalculateSlopeArea (double&, double&, const DPoint3d*, int)
@@ -1503,13 +1496,7 @@ template <class POINT> IDTMContouringP  ScalableMeshSingleResolutionPointIndexVi
     return 0;
     }
 
-/*template <class POINT> IDTMVolume_P  ScalableMeshSingleResolutionPointIndexView<POINT>::_GetDTMVolume()
-    {
-    assert(0);
-    return 0;
-    }*/
-    
-    template <class POINT> IDTMVolumeP  ScalableMeshSingleResolutionPointIndexView<POINT>::_GetDTMVolume()
+template <class POINT> IDTMVolumeP  ScalableMeshSingleResolutionPointIndexView<POINT>::_GetDTMVolume()
     {
     assert(0);
     return 0;
@@ -1746,12 +1733,12 @@ template <class POINT> int ScalableMeshSingleResolutionPointIndexView<POINT>::_S
 |ScalableMeshSingleResolutionPointIndexView Method Definition Section - End
 +----------------------------------------------------------------------------*/
 
-DTMStatusInt IDTMVolume_::ComputeVolumeCutAndFill(double& cut, double& fill, double& area, PolyfaceHeader& intersectingMeshSurface, DRange3d& meshRange, bvector<PolyfaceHeaderPtr>& volumeMeshVector)
+DTMStatusInt IDTMVolume::ComputeVolumeCutAndFill(double& cut, double& fill, double& area, PolyfaceHeader& intersectingMeshSurface, DRange3d& meshRange, bvector<PolyfaceHeaderPtr>& volumeMeshVector)
     {
     return _ComputeVolumeCutAndFill(cut, fill, area, intersectingMeshSurface,meshRange, volumeMeshVector);
     }
 
-DTMStatusInt IDTMVolume_::ComputeVolumeCutAndFill(PolyfaceHeaderPtr& terrainMesh, double& cut, double& fill, PolyfaceHeader& mesh, bool is2d, bvector<PolyfaceHeaderPtr>& volumeMeshVector)
+DTMStatusInt IDTMVolume::ComputeVolumeCutAndFill(PolyfaceHeaderPtr& terrainMesh, double& cut, double& fill, PolyfaceHeader& mesh, bool is2d, bvector<PolyfaceHeaderPtr>& volumeMeshVector)
     {
     return _ComputeVolumeCutAndFill(terrainMesh, cut, fill, mesh, is2d, volumeMeshVector);
     }

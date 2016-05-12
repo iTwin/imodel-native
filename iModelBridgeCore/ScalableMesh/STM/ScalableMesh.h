@@ -180,7 +180,6 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         virtual IDTMDrainageP    _GetDTMDrainage() override;
         virtual IDTMContouringP  _GetDTMContouring() override;
         virtual IDTMVolumeP  _GetDTMVolume() override;
-        //virtual IDTMVolume_P  _GetDTMVolume() override;
 
         virtual DTMStatusInt     _GetRange(DRange3dR range) override;
         virtual BcDTMP           _GetBcDTM() override;
@@ -264,7 +263,6 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
         virtual IDTMDrainageP    _GetDTMDrainage() override;
         virtual IDTMContouringP  _GetDTMContouring() override;
         virtual IDTMVolumeP  _GetDTMVolume() override;
-        //virtual IDTMVolume_P  _GetDTMVolume() override;
 
         virtual DTMStatusInt     _GetRange(DRange3dR range) override;
         virtual BcDTMP           _GetBcDTM() override;
