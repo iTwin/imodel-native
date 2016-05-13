@@ -721,7 +721,14 @@ BentleyStatus ECDbSchemaWriter::DeleteECClass(ECClassChange& classChange, ECClas
 
     if (deletedClass.IsStructClass())
         {
-        GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECSchema %s: Deleting ECClass '%s' failed. Struct class cannot be deleted",
+        GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECSchema %s: Deleting ECClass '%s' failed. ECStructClass cannot be deleted",
+                                  deletedClass.GetSchema().GetFullSchemaName().c_str(), deletedClass.GetName().c_str());
+        return ERROR;
+        }
+
+    if (deletedClass.IsCustomAttributeClass())
+        {
+        GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECSchema %s: Deleting ECClass '%s' failed. ECCustomAttributeClass cannot be deleted",
                                   deletedClass.GetSchema().GetFullSchemaName().c_str(), deletedClass.GetName().c_str());
         return ERROR;
         }
@@ -733,23 +740,22 @@ BentleyStatus ECDbSchemaWriter::DeleteECClass(ECClassChange& classChange, ECClas
         return ERROR;
         }
 
-    bool purgeECInstances = deletedClassMap->GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::SharedTable;
-    bool canDeleteECClass = !deletedClassMap->GetMapStrategy().IsForeignKeyMapping();
-    if (!canDeleteECClass)
+    if (deletedClassMap->GetMapStrategy().IsForeignKeyMapping())
         {
-        GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECSchema %s: Deleting ECClass '%s' failed. Deleting Relationship that is mapped using ForeignKeyMapping is not supported.",
+        GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECSchema %s: Deleting ECClass '%s' failed. Deleting ECRelationshipClass with ForeignKey mapping is not supported.",
                                   deletedClass.GetSchema().GetFullSchemaName().c_str(), deletedClass.GetName().c_str());
         return ERROR;
         }
 
     //Delete all instances
+    bool purgeECInstances = deletedClassMap->GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::SharedTable;
     if (purgeECInstances)
         {
         if (DeleteECInstances(deletedClass) != SUCCESS)
             return ERROR;
         }
 
-    //Delete Class from MetaSchema and also its mapping
+    //Delete Class from ec_ tables and also its mapping
     if (DeleteECClassEntry(deletedClass) != SUCCESS)
         return ERROR;
 
