@@ -383,6 +383,14 @@ DgnDbStatus GroupInformationModel::_OnInsertElement(DgnElementR element)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus FunctionalModel::_OnInsertElement(DgnElementR element)
+    {
+    return element.IsFunctionalElement() ? T_Super::_OnInsertElement(element) : DgnDbStatus::WrongModel;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    05/16
++---------------+---------------+---------------+---------------+---------------+------*/
 GroupInformationModelPtr GroupInformationModel::Create(DgnDbR db, DgnCode const& modelCode)
     {
     ModelHandlerR handler = dgn_ModelHandler::GroupInformation::GetHandler();
