@@ -6,7 +6,7 @@
 |       $Date: 2011/12/01 18:51:29 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
@@ -933,8 +933,14 @@ GCS GCSFactory::Impl::CreateFromBaseCS (const WChar*             wkt,
     {
     BaseGCSPtr gcsPtr(BaseGCS::CreateGCS());     
     WString w_wkt(wkt);
+    WString wktWithoutFlavor;
     StatusInt initWarningCode = BSISUCCESS;
-    const StatusInt initStatus = gcsPtr->InitFromWellKnownText(&initWarningCode, 0, wktFlavor, w_wkt.GetWCharCP());
+
+    IDTMFile::WktFlavor wktFlavorInternal = GetWKTFlavor(&wktWithoutFlavor, w_wkt);
+    bool result = MapWktFlavorEnum(wktFlavor, wktFlavorInternal);
+    assert(result == true);
+    
+    const StatusInt initStatus = gcsPtr->InitFromWellKnownText(&initWarningCode, 0, wktFlavor, wktWithoutFlavor.GetWCharCP());
     
     if (BSISUCCESS != initStatus)
         {
