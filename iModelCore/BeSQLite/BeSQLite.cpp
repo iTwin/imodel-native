@@ -4611,6 +4611,89 @@ DbResult BeSQLiteLib::Initialize(BeFileNameCR tempDir, LogErrors logErrors)
 +---------------+---------------+---------------+---------------+---------------+------*/
 int BeSQLiteLib::CloseSqlDb(void* p) {return sqlite3_close((sqlite3*) p);}
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   12/14
++---------------+---------------+---------------+---------------+---------------+------*/
+void BeIdSet::FromString(Utf8StringCR str)
+    {
+    if (str.empty())
+        return;
+
+    Utf8CP curr = str.c_str();
+    while (true)
+        {
+        uint64_t startRange, endRange;
+        int converted = BE_STRING_UTILITIES_UTF8_SSCANF(curr, "%" SCNu64 "-%" SCNu64, &startRange, &endRange);
+        if (0 == converted)
+            return;
+
+        if (converted < 2)
+            endRange = startRange;
+        else if (endRange < startRange)
+            std::swap(startRange, endRange);
+        
+        for (; startRange<=endRange; ++startRange)
+            insert((BeBriefcaseBasedId) startRange);
+
+        curr = strchr(curr, ',');
+        if (curr == nullptr)
+            return;
+
+        ++curr;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   12/14
++---------------+---------------+---------------+---------------+---------------+------*/
+static void saveRange(bool& valid, Utf8StringR str, int64_t start, int64_t end)
+    {
+    if (!valid)
+        return;
+
+    valid = false;
+    if (!str.empty())
+        str.append(",");
+
+    char tmp[100];
+    if (start < end)
+        BeStringUtilities::Snprintf(tmp, _countof(tmp), "%lld-%lld", start, end);
+    else
+        BeStringUtilities::Snprintf(tmp, _countof(tmp), "%lld", start);
+
+    str.append(tmp);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* convert an IdSet to a Json string. This looks for ranges of contiguous values and uses "n-m" syntax.
+* @bsimethod                                    Keith.Bentley                   12/14
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String BeIdSet::ToString() const
+    {
+    Utf8String str;
+    int64_t start=0, end=0;
+    bool valid=false;
+    for (auto val : *this)
+        {
+        if (!val.IsValid())
+            continue;
+
+        int64_t curr = val.GetValue();
+        if (valid &&(curr == end+1))
+            {
+            end = curr;
+            continue;
+            }
+
+        saveRange(valid, str, start, end);
+        valid = true;
+        start = end = curr;
+        }
+
+    saveRange(valid, str, start, end);
+    return str;
+    }
+
 // Functions needed for 7z.  These are for a C API that simulates C++.
 static void *allocFor7z(void *p, size_t size)   {return malloc(size);}
 static void freeFor7z(void *p, void *address)    {free(address);}
@@ -5461,3 +5544,4 @@ void BeSQLiteLib::FreeMem(void* p) {sqlite3_free(p);}
 BeSQLiteLib::ILanguageSupport* s_languageSupport;
 void BeSQLiteLib::SetLanguageSupport(ILanguageSupport* value) {s_languageSupport = value;}
 BeSQLiteLib::ILanguageSupport* BeSQLiteLib::GetLanguageSupport() { return s_languageSupport; }
+

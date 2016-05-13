@@ -1118,6 +1118,53 @@ struct VirtualSet
     virtual bool _IsInSet(int nVals, DbValue const* vals) const = 0;
 };
 
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   12/14
+//=======================================================================================
+struct BeIdSet : bset<BeInt64Id>
+{
+    BE_SQLITE_EXPORT void FromString(Utf8StringCR in);
+    BE_SQLITE_EXPORT Utf8String ToString() const;
+};
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   12/14
+//=======================================================================================
+template<typename IdType> struct IdSet : BeIdSet, BeSQLite::VirtualSet
+{
+private:
+    BeIdSet m_set;
+
+    virtual bool _IsInSet(int nVals, DbValue const* vals) const
+        {
+        BeAssert(nVals == 1);
+        return Contains(IdType(vals[0].GetValueUInt64()));
+        }
+public:
+    IdSet(){static_assert(sizeof(IdType)==sizeof(BeInt64Id),"IdSets may only contain BeInt64Id");}
+
+    typedef bset<IdType> T_SetType;
+    typedef typename T_SetType::const_iterator const_iterator;
+    typedef typename T_SetType::iterator iterator;
+
+    const_iterator begin() const {return ((T_SetType&)m_set).begin();}
+    const_iterator end() const {return ((T_SetType&)m_set).end();}
+    const_iterator find(IdType id) const {return ((T_SetType&)m_set).find(id);}
+    bool empty() const {return m_set.empty();}
+    void clear() {m_set.clear();}
+    size_t size() const {return m_set.size();}
+    bpair<iterator,bool> insert(IdType const& val) {BeAssert(val.IsValid()); return ((T_SetType&)m_set).insert(val);}
+    void insert(const_iterator first, const_iterator last) {((T_SetType&)m_set).insert(first,last);}
+    size_t erase(IdType const& val) {return ((T_SetType&)m_set).erase(val);}
+    iterator erase(iterator it) {return ((T_SetType&)m_set).erase(it);}
+    bool Contains(IdType id) const {return end() != find(id);}
+    void FromString(Utf8StringCR in) {m_set.FromString(in);}
+    Utf8String ToString() const {return m_set.ToString();}
+
+    BeIdSet const& GetBeIdSet() const {return m_set;}
+};
+
 //=======================================================================================
 //! Wraps sqlite3_mprintf. Adds convenience that destructor frees memory.
 // @bsiclass                                                    Keith.Bentley   04/11
