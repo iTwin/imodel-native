@@ -46,7 +46,8 @@ private:
     bmap<ECN::ECEnumerationCP, uint64_t> m_enumIdCache;
     BeMutex m_mutex;
     CustomAttributeValidator m_customAttributeValidator;
-
+    std::set<ECSchemaId> m_majorChangesAllowedForSchemas;
+    bool IsMajorChangeAllowedForECSchema(ECSchemaId Id) const { return m_majorChangesAllowedForSchemas.find(Id) != m_majorChangesAllowedForSchemas.end(); }
     BentleyStatus CreateECSchemaEntry(ECSchemaCR);
     BentleyStatus CreateBaseClassEntry(ECClassId, ECClassCR baseClass, int ordinal);
     BentleyStatus CreateECRelationshipConstraintEntry(ECRelationshipConstraintId& constraintId, ECClassId relationshipClassId, ECN::ECRelationshipConstraintR, ECRelationshipEnd);
@@ -81,7 +82,7 @@ private:
     IssueReporter const& GetIssueReporter() const { return m_ecdb.GetECDbImplR().GetIssueReporter(); }
 
 public:
-    explicit ECDbSchemaWriter(ECDbCR ecdb) : m_ecdb (ecdb) 
+    explicit ECDbSchemaWriter(ECDbCR ecdb) : m_ecdb (ecdb)
         {
         m_customAttributeValidator.Accept("ECDbMap:ClassMap.MapStrategy.MinimumSharedColumnCount");
         m_customAttributeValidator.Reject("ECDbMap:*");

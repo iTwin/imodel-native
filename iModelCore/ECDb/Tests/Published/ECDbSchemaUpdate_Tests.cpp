@@ -1447,7 +1447,7 @@ TEST_F(ECSchemaUpdateTests, Delete_ECEntityClass_MappedTo_OwnTable)
     //Delete Foo ===================================================================================================
     SchemaItem deleteFoo(
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECEntityClass typeName='Goo' modifier='None'>"
         "       <ECProperty propertyName='S' typeName='string' />"
         "       <ECProperty propertyName='D' typeName='double' />"
@@ -1471,7 +1471,7 @@ TEST_F(ECSchemaUpdateTests, Delete_ECEntityClass_MappedTo_OwnTable)
     //Add Foo Again===============================================================================================
     SchemaItem addFoo(
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='3.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECEntityClass typeName='Foo' modifier='None'>"
         "       <ECProperty propertyName='S' typeName='string' />"
         "       <ECProperty propertyName='D' typeName='double' />"

@@ -727,6 +727,15 @@ bool ECDbSchemaWriter::IsSpecifiedInECRelationshipConstraint(ECClassCR deletedCl
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECDbSchemaWriter::DeleteECClass(ECClassChange& classChange, ECClassCR deletedClass)
     {
+
+    if (!IsMajorChangeAllowedForECSchema(deletedClass.GetSchema().GetId()))
+        {
+        GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECSchema %s: Deleting ECClass '%s'. This schema include a major change but does not increment the MajorVersion for the schema. Bump up the major version for this schema and try again.",
+                                  deletedClass.GetSchema().GetFullSchemaName().c_str(), deletedClass.GetName().c_str());
+        return ERROR;
+        }
+
+
     if (!deletedClass.GetDerivedClasses().empty())
         {
         GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECSchema %s: Deleting ECClass '%s' with derived classes is not supported.",
@@ -956,6 +965,7 @@ BentleyStatus ECDbSchemaWriter::UpdateECSchema(ECSchemaChange& schemaChange, ECS
     if (schemaChange.GetStatus() == ECChange::Status::Done)
         return SUCCESS;
 
+   
     ECSchemaId schemaId;
     if (!newSchema.HasId())
         {
@@ -994,9 +1004,15 @@ BentleyStatus ECDbSchemaWriter::UpdateECSchema(ECSchemaChange& schemaChange, ECS
 
     if (schemaChange.GetVersionMajor().IsValid())
         {
-        GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECSchema %s: Changing 'VersionMajor' of an ECSchema is not supported.",
-                                  oldSchema.GetFullSchemaName().c_str());
-        return ERROR;
+        if (schemaChange.GetVersionMajor().GetValue(ValueId::Deleted).Value() > schemaChange.GetVersionMajor().GetValue(ValueId::New).Value())
+            {
+            GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECSchema %s: Decreasing 'VersionMajor' of an ECSchema is not supported.",
+                                      oldSchema.GetFullSchemaName().c_str());
+            return ERROR;
+            }
+
+        m_majorChangesAllowedForSchemas.insert(oldSchema.GetId());
+        updater.Set("VersionDigit1", schemaChange.GetVersionMajor().GetNew().Value());
         }
 
     if (schemaChange.GetVersionWrite().IsValid())
@@ -1066,7 +1082,7 @@ BentleyStatus ECDbSchemaWriter::UpdateECSchema(ECSchemaChange& schemaChange, ECS
 BentleyStatus ECDbSchemaWriter::Import(ECSchemaCompareContext& ctx, ECN::ECSchemaCR ecSchema)
     {
     BeMutexHolder lock(m_mutex);
-
+    m_majorChangesAllowedForSchemas.clear();
     if (ECSchemaChange* schemaChange = ctx.GetChanges().Find(ecSchema.GetName().c_str()))
         {
         if (schemaChange->GetState() == ChangeState::Modified)
