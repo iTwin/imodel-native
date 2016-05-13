@@ -332,9 +332,14 @@ bool DataSourceCache::createDataSources(const wchar_t *filePathFull, DataCache *
 	if(getFullFileSubFilePath(fullFileURL, fullFileSubProtocolURL) == false)
 		return false;
 
-	DataSource *dataSourceFullFile			= dataSourceManager.createDataSource(&ptds::FilePath(fullFileSubProtocolURL.getString().c_str()));
-	DataSource *dataSourceCacheFile			= dataSourceManager.createDataSource(&ptds::FilePath(filePathCache));
-	DataSource *dataSourceCacheStatusFile	= dataSourceManager.createDataSource(&ptds::FilePath(filePathCacheStatus.c_str()));
+    ptds::FilePath subUrlPath(fullFileSubProtocolURL.getString().c_str());
+	DataSource *dataSourceFullFile			= dataSourceManager.createDataSource(&subUrlPath);
+
+    ptds::FilePath cacheFilePath(filePathCache);
+	DataSource *dataSourceCacheFile			= dataSourceManager.createDataSource(&cacheFilePath);
+
+    ptds::FilePath CacheStatusPath(filePathCacheStatus.c_str());
+	DataSource *dataSourceCacheStatusFile	= dataSourceManager.createDataSource(&CacheStatusPath);
 
 															// If a data source wasn't created properly, delete all others and exit
 	if(dataSourceFullFile == NULL || dataSourceCacheFile == NULL || dataSourceCacheStatusFile == NULL)

@@ -12,6 +12,8 @@
 #include <ptengine/renderLayersEffect.h>
 
 using namespace pointsengine;
+
+extern RenderContext *g_currentRenderContext;
 /*****************************************************************************/
 /**
 * @brief
@@ -121,8 +123,6 @@ bool RenderContextManager::destroyRenderContext( ContextID context )
 	ContextMap::iterator i = m_contexts.find( context );
 	
 	if (i == m_contexts.end()) return false;
-
-	extern RenderContext *g_currentRenderContext;
 
 	if (g_currentRenderContext == i->second)
 		g_currentRenderContext = 0;

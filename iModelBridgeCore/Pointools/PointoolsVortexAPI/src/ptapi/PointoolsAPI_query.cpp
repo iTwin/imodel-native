@@ -58,6 +58,7 @@ extern PTdouble					g_unitScale;
 extern PTdouble					g_units;
 extern int						setLastErrorCode( int );
 extern UserChannel *			_ptGetUserChannel( PThandle h );
+extern RenderContext*           g_currentRenderContext;
 
 //-----------------------------------------------------------------------------
 
@@ -83,6 +84,8 @@ struct NullCondition
 
 namespace querydetail
 {
+    struct FrustumCondition;
+
 	/* query base class */
 	class Query
 	{
@@ -556,8 +559,6 @@ namespace querydetail
 			pntsFailed = 0;
 			pntsTotal = 0;
 			layerMask = layer_mask;
-
-			extern RenderContext	*g_currentRenderContext;
 
 			if (g_currentRenderContext)
 			{
@@ -1276,7 +1277,6 @@ namespace querydetail
 							{
 								if (rgbSize > index)
 								{
-									extern RenderContext	*g_currentRenderContext;
 
 									if (g_currentRenderContext)
 									{
@@ -2462,9 +2462,9 @@ public:
 
 	inline Real getDistanceSquared(Real *data)
 	{
-		delta_x = vertex.x - data[0];
-		delta_y = vertex.y - data[1];
-		delta_z = vertex.z - data[2];
+        Real delta_x = vertex.x - data[0];
+        Real delta_y = vertex.y - data[1];
+        Real delta_z = vertex.z - data[2];
 
 		return delta_x * delta_x + delta_y * delta_y * delta_z * delta_z;
 	}
@@ -5043,7 +5043,6 @@ PTres PTAPI ptSetQueryRGBMode( PThandle query, PTenum mode )
 /************************************************************************/
 static void updateColourConstants()
 {
-	extern RenderContext *g_currentRenderContext;
 	if (g_currentRenderContext)
 	{
 		PointsRenderer *renderer = g_currentRenderContext->renderer();

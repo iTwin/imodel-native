@@ -47,7 +47,6 @@
 #include <mutex>
 #include <random>
 #include <thread>
-#include <omp.h>
 
 // Windows Header Files:
 #if defined (BENTLEY_WIN32) 
@@ -84,7 +83,7 @@
     #define swscanf_s swscanf
     #define sprintf_s BeStringUtilities::Snprintf
 
-    char* itoa(int value, char * str, int base)
+    inline char* itoa(int value, char * str, int base)
         {
         sprintf(str, "%d", value);
         return str;
@@ -132,7 +131,7 @@
 #include <ptcloud2/bitvector.h>
 #include <math/matrix_math.h>
 
-#if defined (BENTLEY_WIN32)     //NEEDS_WORK_VORTEX_DGNDB 
+#if defined (NEEDS_WORK_VORTEX_DGNDB)
     #include <PTRMI/Manager.h>
 #endif
 #include <ptengine/ClipManager.h>

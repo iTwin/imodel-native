@@ -546,7 +546,7 @@ bool Graph::draw(HWND hWnd, HDC hDC, PAINTSTRUCT &ps)
 
 
 
-void Graph::setBorderPixelsMin(Vector2i &pixels)
+void Graph::setBorderPixelsMin(Vector2i const& pixels)
 {
 	PTRMI::MutexScope	mutexScope(mutex, GRAPH_MUTEX_TIMEOUT);
 	if(mutexScope.isLocked() == false)
@@ -566,7 +566,7 @@ Vector2i Graph::getBorderPixelsMin(void)
 }
 
 
-void Graph::setBorderPixelsMax(Vector2i &pixels)
+void Graph::setBorderPixelsMax(Vector2i const& pixels)
 {
 	PTRMI::MutexScope	mutexScope(mutex, GRAPH_MUTEX_TIMEOUT);
 	if(mutexScope.isLocked() == false)
@@ -586,11 +586,12 @@ Vector2i Graph::getBorderPixelsMax(void)
 }
 
 
-
+#if defined (NEEDS_WORK_VORTEX_DGNDB)
 void Graph::update(void)
 {
 
 }
+#endif
 
 void Graph::updateRandom(void)
 {
@@ -838,7 +839,7 @@ void GraphManager::draw(HWND hWnd, HDC hDC, PAINTSTRUCT &ps)
 }
 #endif
 
-
+#if defined (NEEDS_WORK_VORTEX_DGNDB)
 void GraphManager::update(void)
 {
 	MSG         Msg;
@@ -850,6 +851,7 @@ void GraphManager::update(void)
 	}
 
 }
+#endif
 
 
 void GraphManager::updateRandom(void)

@@ -212,7 +212,7 @@ namespace pointsengine
 	};
 
 	template <> 
-	void QueryPointsArray<float>::point( const pt::vec3<double> &pt, int index, ubyte layers )
+    inline void QueryPointsArray<float>::point( const pt::vec3<double> &pt, int index, ubyte layers )
 	{
 		addPoint(pt::vec3<float>(static_cast<float>(pt.x), static_cast<float>(pt.y), static_cast<float>(pt.z)));
 	}
@@ -224,7 +224,7 @@ namespace pointsengine
 //	}
 
 	template <> 
-	void QueryPointsArray<double>::point( const pt::vec3<double> &pt, int index, ubyte layers )
+    inline void QueryPointsArray<double>::point( const pt::vec3<double> &pt, int index, ubyte layers )
 	{
 		addPoint(pt);
 	}

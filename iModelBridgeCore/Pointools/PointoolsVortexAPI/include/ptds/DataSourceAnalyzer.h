@@ -89,7 +89,7 @@ public:
 	static void					initializeGraphs				(int positionOffsetX = 0, int positionOffsetY = 0);
 	void						deleteGraphEntities				(void);
 
-	DataSourceAnalyzerSeries *	createNewSeries					(Graph *graph, SeriesIndex seriesIndex, const wchar_t *seriesName, unsigned int maxPoints, GraphEntityStyle &style);
+	DataSourceAnalyzerSeries *	createNewSeries					(Graph *graph, SeriesIndex seriesIndex, const wchar_t *seriesName, unsigned int maxPoints, GraphEntityStyle const& style);
 
 	static void					setEnableGraphs					(bool enabled);
 	static bool					getEnableGraphs					(void);

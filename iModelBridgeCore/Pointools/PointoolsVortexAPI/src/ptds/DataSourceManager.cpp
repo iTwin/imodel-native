@@ -6,12 +6,13 @@
 
 #ifdef NEEDS_WORK_VORTEX_DGNDB 
 #include <PTRMI/ClientInterfaceExtDataBentley.h>
-#endif
-
 #ifndef NO_DATA_SOURCE_SERVER
 #include <PTRMI/Manager.h>
 #include <ptds/DataSourceServer.h>
 #endif
+#endif
+
+
 
 #include <ptengine/globalpagerdata.h>
 

@@ -98,7 +98,9 @@ namespace PTRMI
 		DataSize							writeToBuffer			(const Data *source, DataSize numBytes);
 
 		template<typename T>	DataSize	readFromBuffer			(T &value);
+#if defined (NEEDS_WORK_VORTEX_DGNDB)
 		template<typename T>	DataSize	readFromBuffer			(const T &value);
+#endif
 		template<typename T>	DataSize	writeToBuffer			(const T &value);
 
 		Status								readFileToBuffer		(const wchar_t *filepath, bool limitFileSize = false);
@@ -204,7 +206,9 @@ namespace PTRMI
 		template<typename T> DataBuffer &	operator <<				(const T &value);
 		template<typename T> DataBuffer &	operator >>				(T &value);
 
+#if defined (NEEDS_WORK_VORTEX_DGNDB)
 		template<typename T> DataBuffer &	operator >>				(const T &value);
+#endif
 
 		DataBuffer &						operator <<				(const std::wstring &str);
 		DataBuffer &						operator >>				(std::wstring &str);
@@ -242,12 +246,14 @@ namespace PTRMI
 		return readFromBuffer(reinterpret_cast<void *>(&value), sizeof(T));
 	}
 
+#if defined (NEEDS_WORK_VORTEX_DGNDB)
 	template<typename T>
 	inline DataBuffer::DataSize DataBuffer::readFromBuffer(const T &value)
 	{
 															// Still need to read const values from buffers,
 		return readFromBuffer(reinterpret_cast<void *>(const_cast<T *>(&value)), sizeof(T));
 	}
+#endif
 
 
 	template<typename T>
@@ -410,7 +416,7 @@ namespace PTRMI
 	inline DataBuffer &DataBuffer::operator>>(long &value)				{readFromBuffer(value); return (*this);}
 	inline DataBuffer &DataBuffer::operator>>(unsigned int &value)		{readFromBuffer(value); return (*this);}
 	inline DataBuffer &DataBuffer::operator>>(int &value)				{readFromBuffer(value); return (*this);}
-	inline DataBuffer &DataBuffer::operator>>(uint64_t &value)	{readFromBuffer(value); return (*this);}
+	inline DataBuffer &DataBuffer::operator>>(uint64_t &value)	        {readFromBuffer(value); return (*this);}
 	inline DataBuffer &DataBuffer::operator>>(int64_t &value)			{readFromBuffer(value); return (*this);}
 	inline DataBuffer &DataBuffer::operator>>(wchar_t &value)			{readFromBuffer(value); return (*this);}
 	inline DataBuffer &DataBuffer::operator>>(bool &value)				{readFromBuffer(value); return (*this);}
@@ -427,7 +433,7 @@ namespace PTRMI
 	inline DataBuffer &DataBuffer::operator<<(long value)				{writeToBuffer(value); return (*this);}
 	inline DataBuffer &DataBuffer::operator<<(unsigned int value)		{writeToBuffer(value); return (*this);}
 	inline DataBuffer &DataBuffer::operator<<(int value)				{writeToBuffer(value); return (*this);}
-	inline DataBuffer &DataBuffer::operator<<(uint64_t value)	{writeToBuffer(value); return (*this);}
+	inline DataBuffer &DataBuffer::operator<<(uint64_t value)	        {writeToBuffer(value); return (*this);}
 	inline DataBuffer &DataBuffer::operator<<(int64_t value)			{writeToBuffer(value); return (*this);}
 	inline DataBuffer &DataBuffer::operator<<(wchar_t value)			{writeToBuffer(value); return (*this);}
 	inline DataBuffer &DataBuffer::operator<<(bool value)				{writeToBuffer(value); return (*this);}
@@ -456,6 +462,7 @@ namespace PTRMI
 		return *this;
 	}
 
+#if defined (NEEDS_WORK_VORTEX_DGNDB)
 	template<typename T>
 	inline DataBuffer &DataBuffer::operator>>(const T &value)
 	{
@@ -464,6 +471,7 @@ namespace PTRMI
 
 		return *this;
 	}
+#endif
 
 	inline void DataBuffer::reset(void)
 	{

@@ -17,7 +17,9 @@
 #include <ptds/DataSource.h>
 #include <ptengine/VoxelLODSet.h>
 
+#if defined (BENTLEY_WIN32) 
 #include <omp.h>						// OpenMP multi-threading support
+#endif
 
 #include <PTRMI/Status.h>
 
@@ -300,6 +302,15 @@ namespace pcloud
 		void _iterateTransformedPoints4Threads(Receiver &R, Transformer &T, 
 			ubyte layerMask=0, uint start_point=0, uint end_point=0)
 		{
+
+        //NEEDS_WORK_VORTEX_DGNDB_OPENMP: caller have this comment: "this is a hack because can't get optimised version to work" ???
+        // OpenMP is not linking on android could not found omp_get_num_threads and omp_get_thread_num
+        // We could probably avoid these calls and do something like: 
+        //#pragma omp parallel if (num_points > 1024) private(tid, i, e, pnt, pnt1d, index, f_b) num_threads(NUM_ITERATION_THREADS)
+        //  {
+        //  #pragma omp for ...........
+        //  }
+#if defined (BENTLEY_WIN32) 
 			pt::vector3 pnt1;
 			pt::vector3d pnt1d;
 
@@ -408,6 +419,9 @@ namespace pcloud
 					}
 				}
 			}
+#else
+        _iterateTransformedPointsRange(R, T, layerMask, start_point, end_point);
+#endif
 		}
 		//---------------------------------------------------------------------------
 		template <class Receiver, class Transformer>

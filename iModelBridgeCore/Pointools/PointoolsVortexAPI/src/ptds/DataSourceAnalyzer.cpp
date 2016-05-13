@@ -45,10 +45,10 @@ DataSourceAnalyzer::~DataSourceAnalyzer(void)
 
 void DataSourceAnalyzer::initializeGraphs(int positionOffsetX, int positionOffsetY)
 {
-	wchar_t		graphEnvValue[256];
 	Graph	*	graph;
 
-
+#if defined (BENTLEY_WIN32)  //NEEDS_WORK_VORTEX_DGNDB
+    wchar_t		graphEnvValue[256];
 	if(::GetEnvironmentVariableW(L"PTVORTEX_PW_GRAPH", graphEnvValue, 256) > 0)
 	{
 		setEnableGraphs(false);
@@ -60,6 +60,7 @@ void DataSourceAnalyzer::initializeGraphs(int positionOffsetX, int positionOffse
 			setEnableGraphs(true);
 		}
 	}
+#endif
 
 	if(getEnableGraphs() && graphManager.getNumGraphs() == 0)
 	{
@@ -128,7 +129,7 @@ float DataSourceAnalyzer::getSizeMb(DataSize sizeBytes)
 }
 
 
-DataSourceAnalyzerSeries *DataSourceAnalyzer::createNewSeries(Graph *graph, SeriesIndex seriesIndex, const wchar_t *seriesName, unsigned int maxPoints, GraphEntityStyle &style)
+DataSourceAnalyzerSeries *DataSourceAnalyzer::createNewSeries(Graph *graph, SeriesIndex seriesIndex, const wchar_t *seriesName, unsigned int maxPoints, GraphEntityStyle const& style)
 {
 	if(getSeries(seriesIndex) != NULL)
 		return NULL;

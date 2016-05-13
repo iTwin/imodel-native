@@ -19,17 +19,20 @@ void GUID::read(DataBuffer &buffer)
 	buffer >> isGenerated;
 	setGenerated(isGenerated);
 
+#ifdef BENTLEY_WIN32    //NEEDS_WORK_VORTEX_DGNDB
 	if(isGenerated)
 	{
 		PTRMI::Array<unsigned char> arrayGUID(sizeof(::GUID), reinterpret_cast<unsigned char *>(&guid));
 
 		buffer >> arrayGUID;
 	}
+#endif
 
 }
 
 void GUID::write(DataBuffer &buffer) const
 {
+#ifdef BENTLEY_WIN32    //NEEDS_WORK_VORTEX_DGNDB
 	bool isGenerated = getGenerated();
 
 	buffer << isGenerated;
@@ -41,14 +44,17 @@ void GUID::write(DataBuffer &buffer) const
 															// Write GUID
 		buffer << arrayGUID;
 	}
+#endif
 }
 
 DataSize GUID::getMaxWriteSize(void)
 {
+#ifdef BENTLEY_WIN32    //NEEDS_WORK_VORTEX_DGNDB
 															// Size is generated (bool) + GUID stored as array
 	DataBuffer::DataSize maxSize = static_cast<DataBuffer::DataSize>(sizeof(bool) + PTRMI::Array<const unsigned char>::getMaxWriteSize(sizeof(::GUID)));
 
 	return maxSize;
+#endif
 }
 
 
@@ -88,6 +94,8 @@ bool GUID::operator<(const PTRMI::GUID &other) const
 
 void GUID::generate(void)
 {
+
+#ifdef BENTLEY_WIN32    //NEEDS_WORK_VORTEX_DGNDB
 															// If not already generated
 	if(getGenerated() == false)
 	{
@@ -96,6 +104,7 @@ void GUID::generate(void)
 															// Flag as generated
 		setGenerated(true);
 	}
+#endif
 }
 
 
@@ -121,13 +130,17 @@ GUID::GUID(void)
 
 void GUID::setRawFirst64(PartialValue value)
 {
+#ifdef BENTLEY_WIN32    //NEEDS_WORK_VORTEX_DGNDB
 	*(reinterpret_cast<PartialValue *>(&guid)) = value;
+#endif
 }
 
 
 void GUID::setRawSecond64(PartialValue value)
 {
+#ifdef BENTLEY_WIN32    //NEEDS_WORK_VORTEX_DGNDB
 	*(reinterpret_cast<PartialValue *>(&((reinterpret_cast<unsigned char *>(&guid))[8]))) = value;
+#endif
 }
 
 
@@ -143,18 +156,27 @@ void GUID::setRaw(PartialValue firstValue, PartialValue secondValue)
 
 GUID::PartialValue GUID::getRawFirst64(void) const
 {
+#ifdef BENTLEY_WIN32    //NEEDS_WORK_VORTEX_DGNDB
 	return *(reinterpret_cast<const PartialValue *>(&guid));
+#else
+return 0;
+#endif
 }
 
 
 GUID::PartialValue GUID::getRawSecond64(void) const
 {
+#ifdef BENTLEY_WIN32    //NEEDS_WORK_VORTEX_DGNDB
 	return *(reinterpret_cast<const PartialValue *>(&((reinterpret_cast<const unsigned char *>(&guid))[8])));
+#else
+return 0;
+#endif
 }
 
 
 bool GUID::getHexString(std::wstring &string) const
 {
+#ifdef BENTLEY_WIN32    //NEEDS_WORK_VORTEX_DGNDB
 	WCHAR	*	wzGuid;
 	HRESULT		hr;
 	
@@ -167,11 +189,14 @@ bool GUID::getHexString(std::wstring &string) const
 
 	CoTaskMemFree(wzGuid);
 
+#endif
+
 	return true;
 }
 
 bool GUID::setHexString(std::wstring &string)
 {
+#ifdef BENTLEY_WIN32    //NEEDS_WORK_VORTEX_DGNDB
 	bool			result;
 	std::wstring	s;
 	HRESULT			r;
@@ -210,6 +235,9 @@ bool GUID::setHexString(std::wstring &string)
 	setGenerated(result);
 
 	return result;
+#else
+    return false;
+#endif
 }
 
 

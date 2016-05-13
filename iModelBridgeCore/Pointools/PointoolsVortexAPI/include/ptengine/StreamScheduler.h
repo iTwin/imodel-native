@@ -3,7 +3,6 @@
 #include <PTRMI/Name.h>
 #include <ptengine/StreamHost.h>
 #include <ptengine/StreamManagerParameters.h>
-#include <map>
 
 
 namespace pointsengine
@@ -11,12 +10,12 @@ namespace pointsengine
 
 class StreamScheduler
 {
+
+protected:
 	typedef std::map<PTRMI::Name, StreamHost>						NameStreamHostMap;
 	typedef std::set<StreamHost *>									StreamHostPtrSet;
 																											// Host Name -> DataSourcePtr -> StreamDataSource Set of Sets
-
-protected:
-																											// Set of connected StreamHosts
+                                                                                                            // Set of connected StreamHosts
 	NameStreamHostMap					streamHosts;
 	StreamHostPtrSet					streamHostsActive;
 

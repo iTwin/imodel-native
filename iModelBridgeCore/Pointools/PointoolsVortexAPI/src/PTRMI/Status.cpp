@@ -46,8 +46,7 @@ void Status::log(const wchar_t *message1, const wchar_t *message2)
 #endif
 }
 
-
-void Status::log(const wchar_t *message1, unsigned int value)
+void Status::log(const wchar_t *message1, uintptr_t const& value)
 {
 	if(getLogEnabled() == false)
 		return;

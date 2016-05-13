@@ -156,10 +156,10 @@ static	DataSize	getMaxWriteSize	(DataSize arraySize);
 	ARRAY_T
 	void Array<T>::readPartial(DataBuffer &buffer)
 	{
-		Size	initSize;
-															// Get size of array to be read in bytes
-		buffer >> (Size) initSize;
-															// Set size
+        // Get size of array to be read in bytes
+		Size initSize;
+		buffer.readFromBuffer(initSize);
+                															// Set size
 		setSize(initSize);
 	}
 

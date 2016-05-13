@@ -6,8 +6,10 @@
 
 #include <ptds/DataSource.h>
 
+#ifdef NEEDS_WORK_VORTEX_DGNDB
 #include <PTRMI/ClientInterface.h>
 #include <PTRMI/Manager.h>
+#endif
 
 #include <ptengine/StreamManagerParameters.h>
 
@@ -377,7 +379,7 @@ StreamDataSource *StreamHost::getOrCreateActiveStreamDataSource(ptds::DataSource
 			*streamDataSourceCreated = true;
 		}
 
-		streamDataSourcesActive[dataSource] = StreamDataSource(dataSource);
+        streamDataSourcesActive.insert({dataSource,StreamDataSource(dataSource)});
 
 		if((streamDataSource = getActiveStreamDataSource(dataSource)) == NULL)
 		{
@@ -500,6 +502,7 @@ StreamHost::StreamDataSourceIterator StreamHost::getActiveStreamDataSourceEnd(vo
 
 bool StreamHost::generateMultiReadSet(void)
 {
+#ifdef NEEDS_WORK_VORTEX_DGNDB
 	StreamDataSourceMap::iterator		it;
 	DataSourceReadSet				*	readSet;
 	ClientInterfaceBase				*	dataSourceClientInterface;
@@ -533,6 +536,9 @@ bool StreamHost::generateMultiReadSet(void)
 	}
 															// Return whether correct number were added
 	return (numAdded == multiReadSet.getNumMultiReads());
+#else
+    return false;
+#endif
 }
 
 

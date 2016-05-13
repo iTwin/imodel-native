@@ -361,9 +361,10 @@ namespace PTRMI
 
 		static void			writeTime			(void);
 
+        
 		static void			log					(const wchar_t *message1, const wchar_t *message2);
 
-		static void			log					(const wchar_t *message1, unsigned int value);
+		static void			log					(const wchar_t *message1, uintptr_t const& value);
 
 		Status				read				(PTRMI::DataBuffer &buffer);
 		Status				write				(PTRMI::DataBuffer &buffer) const;

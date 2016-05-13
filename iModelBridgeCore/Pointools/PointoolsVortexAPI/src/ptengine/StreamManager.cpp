@@ -10,7 +10,9 @@
 
 #include <ptengine/StreamSchedulerSequential.h>
 
+#ifdef NEEDS_WORK_VORTEX_DGNDB
 #include <PTRMI/Manager.h>
+#endif
 
 
 #define PTRMI_STREAM_MANAGER_MUTEX_TIMEOUT	1000 * 60
@@ -1004,7 +1006,7 @@ bool StreamManager::begin(void)
 															// Set status as failed
 	Status status(Status::Status_Error_Failed_To_Lock_Stream_Manager);
 
-	Status::log(L"Stream Manager Lock Failure on Thread : ", GetCurrentThreadId());
+	Status::log(L"Stream Manager Lock Failure on Thread : ", BeThreadUtilities::GetCurrentThreadId());
 															// Return failed
 	return false;
 }

@@ -70,7 +70,9 @@ namespace ptedit
 /*****************************************************************************/
 PointEditManager::PointEditManager()
 {
+#if defined (BENTLEY_WIN32)     // NEEDS_WORK_VORTEX_DGNDB_OPENMP
 	omp_set_num_threads(4);
+#endif
 	m_units = 1.0;
 
 	g_editWorkingMode = EditWorkOnView;

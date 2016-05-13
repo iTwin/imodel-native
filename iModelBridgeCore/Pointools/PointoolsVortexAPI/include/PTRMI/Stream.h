@@ -10,6 +10,7 @@
 
 #pragma once
 
+#ifdef NEEDS_WORK_VORTEX_DGNDB
 #include <PTRMI/PTRMI.h>
 #include <PTRMI/Mutex.h>
 #include <PTRMI/DataBuffer.h>
@@ -355,3 +356,9 @@ static	Stream::TimeMilliseconds getReceiveMessageTimeout	(void);
 		}
 	};
 }
+#else
+namespace PTRMI
+    {
+    class Stream;
+    };
+#endif

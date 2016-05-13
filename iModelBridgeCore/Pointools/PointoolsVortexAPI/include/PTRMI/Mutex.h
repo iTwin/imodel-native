@@ -9,7 +9,12 @@ class Mutex
 {
 protected:
 
+#if defined (BENTLEY_WIN32)     //NEEDS_WORK_VORTEX_DGNDB
 	HANDLE		mutex;
+#else
+    #define INFINITE 0xFFFFFFFF
+    void* mutex;
+#endif
 
 public:
 
@@ -20,14 +25,17 @@ public:
 
 	~Mutex(void)
 	{
+#if defined (BENTLEY_WIN32)     //NEEDS_WORK_VORTEX_DGNDB
 		if(mutex)
 		{
 			CloseHandle(mutex);
 		}
+#endif
 	}
 
 	bool wait(unsigned long timeout = INFINITE)
 	{
+#if defined (BENTLEY_WIN32)     //NEEDS_WORK_VORTEX_DGNDB
 		DWORD	result;
 
 		if(mutex == NULL)
@@ -62,12 +70,13 @@ public:
 		default: ;
 
 		}
-
+#endif
 		return false;
 	}
 
 	bool release(void)
 	{
+#if defined (BENTLEY_WIN32)     //NEEDS_WORK_VORTEX_DGNDB
 		if(mutex)
 		{
 			if(ReleaseMutex(mutex) == TRUE)
@@ -81,7 +90,7 @@ public:
 		}
 
 		Status::log(L"Warning: PTRMI::Mutex::release() mutex not defined", L"");
-
+#endif
 		return false;
 	}
 };

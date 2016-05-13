@@ -25,7 +25,9 @@
 
 #include <ptengine/StreamManager.h>
 
+#ifdef NEEDS_WORK_VORTEX_DGNDB
 #include <PTRMI/Manager.h>
+#endif
 
 
 #define REQUEST_RANGE 64
@@ -562,6 +564,7 @@ PointsPager::MemMode determineMemoryMode( int64_t &available )
 	if (memCoef > 0.75) memoryMode = PointsPager::MemUrgent;
 	if (memCoef > 0.98) memoryMode = PointsPager::MemCritical;
 
+#if defined (BENTLEY_WIN32)  //NEEDS_WORK_VORTEX_DGNDB
 	MEMORYSTATUS mem;
 	GlobalMemoryStatus(&mem);
 	uint memload = mem.dwMemoryLoad;
@@ -580,6 +583,7 @@ PointsPager::MemMode determineMemoryMode( int64_t &available )
 		else if (mb < 250) memoryMode = PointsPager::MemPrudent;
 		else if (mb < 500 ) memoryMode = PointsPager::MemOK;
 	}
+#endif
 
 	return memoryMode;
 }
@@ -675,7 +679,7 @@ void PointsPager::Pager::processRequests(pointsengine::StreamManager &streamMana
 // Pip Option
 // PTRMI::getManager().pingInactiveHosts();
 
-	Status::log(L"Stream Manager start processRequests() on thread : ", static_cast<unsigned int>(GetCurrentThreadId()));
+	Status::log(L"Stream Manager start processRequests() on thread : ", BeThreadUtilities::GetCurrentThreadId());
 
 															// Begin Streaming. Clear all iteration based data structures.
 	if(streamManager.begin() == false)
@@ -691,7 +695,7 @@ void PointsPager::Pager::processRequests(pointsengine::StreamManager &streamMana
 
 		streamManager.end();
 
-		Status::log(L"Stream Manager end processRequests() on thread : ", static_cast<unsigned int>(GetCurrentThreadId()));
+		Status::log(L"Stream Manager end processRequests() on thread : ", BeThreadUtilities::GetCurrentThreadId());
 
 		return;
 	}
@@ -708,7 +712,7 @@ void PointsPager::Pager::processRequests(pointsengine::StreamManager &streamMana
 	streamManager.end();
 
 
-	Status::log(L"Stream Manager end processRequests() on thread : ", static_cast<unsigned int>(GetCurrentThreadId()));
+	Status::log(L"Stream Manager end processRequests() on thread : ", BeThreadUtilities::GetCurrentThreadId());
 
 #ifdef _VERBOSE
 	std::cout << std::endl;

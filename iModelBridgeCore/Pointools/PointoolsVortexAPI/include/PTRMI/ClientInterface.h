@@ -1,5 +1,8 @@
 #pragma once
 
+
+
+#ifdef NEEDS_WORK_VORTEX_DGNDB
 #include <PTRMI/PTRMI.h>
 #include <PTRMI/Stream.h>
 #include <PTRMI/InterfaceBase.h>
@@ -334,3 +337,11 @@ Status::log(L"Client Interface beginMethod", methodName);
 
 
 }
+#else
+
+namespace PTRMI
+    {
+    class ClientInterfaceBase;
+    };
+
+#endif

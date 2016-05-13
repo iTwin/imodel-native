@@ -19,7 +19,6 @@
 #include <pt/timestamp.h>
 #include <pt/datatree.h>
 #include <pt/rect.h>
-#include <omp.h>
 
 #define	NO_TEST_POINT \
 		inline static bool testPoint(int t, pcloud::Voxel *v, const pt::vector3d &p, uint i) { return true; } 

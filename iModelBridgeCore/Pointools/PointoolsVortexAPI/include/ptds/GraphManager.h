@@ -219,9 +219,9 @@ namespace ptds
 
 	public:
 					GraphEntityStyle	(void);
-					GraphEntityStyle	(ColorRGB &initColor)	{setColor(initColor);}
+					GraphEntityStyle	(ColorRGB const&initColor)	{setColor(initColor);}
 
-		void		setColor			(ColorRGB &initColor)	{color = initColor;}
+		void		setColor			(ColorRGB const&initColor)	{color = initColor;}
 		ColorRGB	getColor			(void)					{return color;}
 
 	};
@@ -268,10 +268,10 @@ namespace ptds
 		void					setName							(const wchar_t *entityName)									{if(entityName) name = entityName;}
 		const wchar_t		*	getName							(void)														{return name.c_str();}
 
-		void					setStyle						(GraphEntityStyle &initStyle)								{style = initStyle;}
+		void					setStyle						(GraphEntityStyle const&initStyle)							{style = initStyle;}
 		GraphEntityStyle	&	getStyle						(void)														{return style;}
 
-		void					setUnitScale					(Vector2d &scale)											{unitScale = scale;}
+		void					setUnitScale					(Vector2d const&scale)										{unitScale = scale;}
 		Vector2d				getUnitScale					(void)														{return unitScale;}
 
 		virtual unsigned int	getNumPoints					(void)														{return 0;}
@@ -286,9 +286,9 @@ namespace ptds
 		void					setIndexRangeEnd				(Index end)													{indexRangeEnd = end;}
 		Index					getIndexRangeEnd				(void)														{return (getIndexRangeEnabled() ? indexRangeEnd : getNumPoints() - 1);}
 
-		void					setExtentsMin					(Vector2d &minimum)											{extentsMin = minimum;}
+		void					setExtentsMin					(Vector2d const&minimum)									{extentsMin = minimum;}
 		Vector2d				getExtentsMin					(void)														{return extentsMin;}
-		void					setExtentsMax					(Vector2d &maximum)											{extentsMax = maximum;}
+		void					setExtentsMax					(Vector2d const&maximum)									{extentsMax = maximum;}
 		Vector2d				getExtentsMax					(void)														{return extentsMax;}
 
 		virtual void			calculateMinMax					(Vector2d &minimum, Vector2d &maximum)						{}
@@ -362,8 +362,8 @@ namespace ptds
 		T								calculateStdDev					(Index index, T *mean = NULL, T *variance = NULL);
 		bool							calculateLinearLeastSquares2D	(T &a, T &b, Index dimX, Index dimY);
 		
-		void							generateRandom					(unsigned int numPoints, Index primaryAxis, T interval, Point &offset, Point &minimum, Point &maximum);
-		void							generateSquareWave				(unsigned int numPoints, Index primaryAxis, T interval, Point &offset, Point &minimum, Point &maximum);
+		void							generateRandom					(unsigned int numPoints, Index primaryAxis, T interval, Point const& offset, Point const& minimum, Point const& maximum);
+		void							generateSquareWave				(unsigned int numPoints, Index primaryAxis, T interval, Point const& offset, Point const& minimum, Point const& maximum);
 
 		void							updateRandom					(void);
 
@@ -464,10 +464,10 @@ namespace ptds
 		unsigned int			removeAllEntities			(void);
 		unsigned int			getNumEntities				(void);
 
-		void					setBorderPixelsMin			(Vector2i &pixels);
+		void					setBorderPixelsMin			(Vector2i const& pixels);
 		Vector2i				getBorderPixelsMin			(void);
 
-		void					setBorderPixelsMax			(Vector2i &pixels);
+		void					setBorderPixelsMax			(Vector2i const& pixels);
 		Vector2i				getBorderPixelsMax			(void);
 
 		void					setIncludeOriginX			(bool inc)						{includeOriginX = inc;}
@@ -493,7 +493,9 @@ namespace ptds
 		bool					calculateGraphFrustum		(Vector2d &frustumMin, Vector2d &frustumMax, Vector2d &offset, Vector2d &scalar);
 		bool					calculateEntityFrustum		(GraphEntity *entity, Vector2d &frustumMin, Vector2d &frustumMax, Vector2d &offset, Vector2d &scalar);
 
+#if defined (NEEDS_WORK_VORTEX_DGNDB)
 		void					update						(void);
+#endif
 
 		void					updateRandom				(void);
 	};
@@ -535,7 +537,9 @@ namespace ptds
 		void			draw					(HWND hWnd, HDC hDC, PAINTSTRUCT &ps);
 #endif
 
+#if defined (NEEDS_WORK_VORTEX_DGNDB)
 		void			update					(void);
+#endif
 
 		void			updateRandom			(void);
 		Graph		*	getGraphWithName		(const wchar_t *graphName);
@@ -849,7 +853,7 @@ namespace ptds
 
 
 	template<typename T, unsigned int dim>
-	void ptds::Series<T, dim>::generateSquareWave(unsigned int numPoints, Index primaryAxis, T interval, Point &offset, Point &minimum, Point &maximum)
+	void ptds::Series<T, dim>::generateSquareWave(unsigned int numPoints, Index primaryAxis, T interval, Point const& offset, Point const& minimum, Point const& maximum)
 	{
 		PTRMI::MutexScope mutexScope(mutex, GRAPH_ENTITY_MUTEX_TIMEOUT);
 		if(mutexScope.isLocked() == false)
@@ -905,7 +909,7 @@ namespace ptds
 
 
 	template<typename T, unsigned int dim>
-	void ptds::Series<T, dim>::generateRandom(unsigned int numPoints, Index primaryAxis, T interval, Point &offset, Point &minimum, Point &maximum)
+	void ptds::Series<T, dim>::generateRandom(unsigned int numPoints, Index primaryAxis, T interval, Point const&offset, Point const&minimum, Point const&maximum)
 	{
 		PTRMI::MutexScope mutexScope(mutex, GRAPH_ENTITY_MUTEX_TIMEOUT);
 		if(mutexScope.isLocked() == false)

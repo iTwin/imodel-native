@@ -1,7 +1,5 @@
 #pragma once
 
-#include <map>
-
 #include <PTRMI/ClientInterface.h>
 #include <PTRMI/ServerInterface.h>
 #include <PTRMI/Name.h>

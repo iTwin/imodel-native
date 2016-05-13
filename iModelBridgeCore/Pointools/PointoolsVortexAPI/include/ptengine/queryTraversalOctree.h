@@ -48,7 +48,8 @@ namespace pointsengine
 		template <class Receiver >
 		void traverse( Receiver &R )
 		{
-			traverse( R, CurrentDensity() );
+            CurrentDensity density;
+			traverse( R, density);
 		}
 
 		template <class Receiver, class DensityPolicy>

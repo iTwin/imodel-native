@@ -203,7 +203,7 @@ bool URL::getProtocolHostAddress(URL &protocolHostAddress) const
 
 bool URL::getRemoteManagerName(URL &remoteManagerName) const
 {
-#if defined (BENTLEY_WIN32)  // NEEDS_WORK_VORTEX_DGNDB
+#if defined (NEEDS_WORK_VORTEX_DGNDB)
 	URL protocolHostAddress;
 
 	if(getProtocolHostAddress(protocolHostAddress) == false)

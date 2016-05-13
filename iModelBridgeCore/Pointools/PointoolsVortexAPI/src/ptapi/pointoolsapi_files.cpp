@@ -26,9 +26,6 @@
  
 #include <encryption/tea.h>
 
-#include <PTRMI/TestPTRMI.h>
-#include <PTRMI/Manager.h>
-#include <PTRMI/PipeManagerExt.h>
 #include <ptds/DataSourceManager.h>
 #include <ptds/DataSourceServer.h>
 #include <ptds/DataSourceCache.h>
@@ -37,6 +34,9 @@
 
 #if NEEDS_WORK_VORTEX_DGNDB 
 #include <PTRMI/ClientInterfaceExtDataBentley.h>
+#include <PTRMI/TestPTRMI.h>
+#include <PTRMI/Manager.h>
+#include <PTRMI/PipeManagerExt.h>
 #endif
 
 #include <pt/trace.h>
