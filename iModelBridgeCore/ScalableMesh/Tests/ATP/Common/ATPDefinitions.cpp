@@ -4229,6 +4229,53 @@ void PerformStreaming(BeXmlNodeP pTestNode, FILE* pResultFile)
     fflush(pResultFile);
     }
 
+void PerformSCMToCloud(BeXmlNodeP pTestNode, FILE* pResultFile)
+    {
+    WString scmFileName, cloudOutDirPath, result;
+    // Parses the test(s) definition:
+    if (pTestNode->GetAttributeStringValue(scmFileName, "scmFileName") != BEXML_Success)
+        {
+        printf("ERROR : scmFileName attribute not found\r\n");
+        return;
+        }
+
+    if (pTestNode->GetAttributeStringValue(cloudOutDirPath, "cloudOutDirPath") != BEXML_Success || cloudOutDirPath.compare(L"") == 0 || cloudOutDirPath.compare(L"default") == 0)
+        {
+        // Use default path to output files
+        auto position = scmFileName.find_last_of(L".stm");
+        cloudOutDirPath = scmFileName.substr(0, position - 3) + L"_stream\\";
+        }
+
+    bool allTestPass = true;
+    double t = 0;
+
+    // Check existence of scm file
+    StatusInt status;
+    IScalableMeshPtr scmFile = IScalableMesh::GetFor(scmFileName.c_str(), true, true, status);
+
+    if (scmFile != 0 && status == SUCCESS)
+        {
+        t = clock();
+        status = scmFile->ConvertToCloud(cloudOutDirPath);
+        t = clock() - t;
+        result = SUCCESS == status ? L"SUCCESS" : L"FAILURE -> could not convert scm file";
+        }
+    else
+        {
+        result = L"FAILURE -> could not open scm file";
+        allTestPass = false;
+        }
+
+    fwprintf(pResultFile, L"%s,%s,%s,%0.5f\n",
+             scmFileName.c_str(),
+             cloudOutDirPath.c_str(),
+             allTestPass ? L"true" : L"false",
+             (double)t / CLOCKS_PER_SEC
+             );
+
+    fflush(pResultFile);
+    }
+
 bool GetMeshAsSingleTileDTM(IScalableMesh* meshP, BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& tmP)
     {
     int            status;
