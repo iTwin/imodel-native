@@ -148,7 +148,8 @@ struct ThreeMxProgressive : ProgressiveTask
 +---------------+---------------+---------------+---------------+---------------+------*/
 ProgressiveTask::Completion ThreeMxProgressive::_DoProgressive(ProgressiveContext& context, WantShow& wantShow) 
     {
-    DrawArgs args(context, m_scene);
+    uint64_t now = BeTimeUtilities::QueryMillisecondsCounter();
+    DrawArgs args(context, m_scene, now, now-m_scene.GetSaveTimeout());
 
     DEBUG_PRINTF("3MX progressive %d missing", m_missing.size());
 
@@ -156,25 +157,22 @@ ProgressiveTask::Completion ThreeMxProgressive::_DoProgressive(ProgressiveContex
         {
         auto stat = node.second->GetChildLoadStatus();
         if (stat == Node::ChildLoad::Ready)
-            node.second->Draw(args, node.first);
+            node.second->Draw(args, node.first);        // now ready, draw it (this potentially generates new missing nodes)
         else if (stat != Node::ChildLoad::NotFound)
-            args.m_missing.Insert(node.first, node.second);
+            args.m_missing.Insert(node.first, node.second);     // still not ready, put into new missing list
         }
 
-    // all of the nodes that newly arrived are now in the graphics of the DrawArgs. Draw them now.
-    args.DrawGraphics();                                                                                        
+    args.DrawGraphics();  // the nodes that newly arrived drew into the GraphicsArray in the DrawArgs. Add them to the context in a GroupNode
 
-    // swap the list of missing tiles from this pass with those that are still missing.
-    m_missing.swap(args.m_missing);
+    m_missing.swap(args.m_missing); // swap the list of missing tiles we were waiting for with those that are still missing.
 
     DEBUG_PRINTF("3MX after progressive still %d missing", m_missing.size());
-    if (m_missing.empty())
+    if (m_missing.empty()) // when we have no missing tiles, the progressive task is done. 
         {
-        context.GetViewport()->SetNeedsHeal();
+        context.GetViewport()->SetNeedsHeal(); // unfortunately the newly drawn tiles may 
         return Completion::Finished;
         }
 
-    uint64_t now = BeTimeUtilities::QueryMillisecondsCounter();
     if (now > m_nextShow)
         {
         m_nextShow = now + 1000;
@@ -209,7 +207,8 @@ void ThreeMxModel::Load(Dgn::Render::SystemP renderSys) const
 
     // if we ask for the model with a different Render::System, we just throw the old one away. 
     m_scene = new Scene(m_dgndb, m_location, GetName().c_str(), m_sceneFile.c_str(), renderSys);
-    m_scene->LoadScene();
+    if (SUCCESS != m_scene->LoadScene())
+        m_scene = nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -269,7 +268,8 @@ void ThreeMxModel::_AddTerrainGraphics(TerrainContextR context) const
         return;
         }
 
-    DrawArgs args(context, *m_scene);
+    uint64_t now = BeTimeUtilities::QueryMillisecondsCounter();
+    DrawArgs args(context, *m_scene, now, now-m_scene->GetSaveTimeout());
     m_scene->Draw(args);
     DEBUG_PRINTF("3MX draw %d graphics, %d missing nodes", args.m_graphics.m_entries.size(), args.m_missing.size());
 

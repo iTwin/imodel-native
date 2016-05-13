@@ -83,7 +83,7 @@ struct SceneInfo
     Utf8String m_sceneName;
     Utf8String m_reprojectionSystem;
     DPoint3d m_origin = DPoint3d::FromZero();
-    Utf8String m_rootNodePath;;
+    Utf8String m_rootNodePath;
     BentleyStatus Read(MxStreamBuffer&);
 };
 
@@ -105,8 +105,11 @@ struct DrawArgs
     SceneR m_scene;
     Dgn::Render::GraphicArray m_graphics;
     MissingNodes m_missing;
+    uint64_t m_now ;
+    uint64_t m_purgeOlderThan;
 
-    DrawArgs(Dgn::RenderContextR context, SceneR scene) : m_context(context), m_scene(scene) {}
+
+    DrawArgs(Dgn::RenderContextR context, SceneR scene, uint64_t now, uint64_t purgeOlderThan) : m_context(context), m_scene(scene), m_now(now), m_purgeOlderThan(purgeOlderThan) {}
     void DrawGraphics(); // place all entries in the GraphicArray into a GroupNode and send it to the RenderContext.
 };
 
@@ -140,10 +143,11 @@ private:
     double m_radius = 0.0;
     double m_maxScreenDiameter = 0.0;
     NodeP m_parent;
-    GeometryPtr m_geometry;
+    bvector<GeometryPtr> m_geometry;
     Utf8String m_childPath;     // this is the name of the file (relative to path of this node) to load the children of this node.
     BeAtomic<int> m_childLoad;
     ChildNodes m_childNodes;
+    mutable uint64_t m_childrenLastUsed = 0;
 
     void SetAbandoned();
     bool ReadHeader(JsonValueCR pt, Utf8String&, bvector<Utf8String>& nodeResources);
@@ -171,7 +175,7 @@ public:
     bool AreChildrenValid() const {return m_childLoad.load() == ChildLoad::Ready;}
     bool AreChildrenNotLoaded() const {return m_childLoad.load() == ChildLoad::NotLoaded;}
     bool IsDisplayable() const {return GetMaxDiameter() > 0.0;}
-    void UnloadChildren();
+    void UnloadChildren(uint64_t olderThan);
     size_t GetNodeCount() const;
     ChildNodes const* GetChildren() const {return AreChildrenValid() ? &m_childNodes : nullptr;}
     NodeCP GetParent() const {return m_parent;}
@@ -201,6 +205,7 @@ private:
     Transform m_location;
     double m_scale = 1.0;
     NodePtr m_rootNode;
+    uint32_t m_saveTimeout = 20 * 1000; // save unused nodes for 20 seconds
     Dgn::RealityDataCachePtr m_cache;
     Dgn::Render::SystemP m_renderSystem = nullptr;
 
@@ -217,6 +222,7 @@ public:
     double GetNodeRadius(Node const& node) const {return m_scale * node.GetRadius();}
     void Draw(DrawArgs& args) {m_rootNode->Draw(args, 0);}
     Dgn::ElementAlignedBox3d ComputeRange() {return m_rootNode->ComputeRange();}
+    uint32_t GetSaveTimeout() const {return m_saveTimeout;}
     size_t GetNodeCount() const {return m_rootNode->GetNodeCount();}
     bool UseFixedResolution()const {return m_useFixedResolution;}
     double GetFixedResolution() const {return m_fixedResolution;}

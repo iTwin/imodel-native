@@ -45,7 +45,7 @@ size_t Node::GetNodeCount() const
 void Node::Dump(Utf8CP header) const
     {
     puts(header);
-    printf("Children=%s, nGeom=%d\n", GetChildFile().c_str(), m_geometry.IsValid());
+    printf("Children=%s, nGeom=%d\n", GetChildFile().c_str(), (int) m_geometry.size());
 
     Utf8String childHdr = Utf8String(header) + "  ";
     ChildNodes const* children = GetChildren();
@@ -71,7 +71,7 @@ void Node::Draw(DrawArgsR args, int depth)
 
         if (FrustumPlanes::Contained::Outside == args.m_context.GetFrustumPlanes().Contains(box))
             {
-            UnloadChildren();  // NEEDS_WORK - maybe only do this if we need memory, maybe add lru field?
+            UnloadChildren(args.m_purgeOlderThan); 
             return;
             }
 
@@ -91,21 +91,26 @@ void Node::Draw(DrawArgsR args, int depth)
     ChildNodes const* children = GetChildren(); // returns nullptr if this node's children are not yet loaded.
     if (tooCoarse && nullptr != children) // this node is too coarse for current view, don't draw it and instead draw its children
         {
+        m_childrenLastUsed = args.m_now;
+
         for (auto const& child : *children)
             child->Draw(args, depth+1);
 
         return;
         }
 
-    if (m_geometry.IsValid()) // if we have geometry, draw it now
-        m_geometry->Draw(args);
+    if (!m_geometry.empty()) // if we have geometry, draw it now
+        {
+        for (auto geom : m_geometry)
+            geom->Draw(args);
+        }
 
     if (!HasChildren()) // this is a visible leaf node - we're done
         return;
 
     if (!tooCoarse) // if this node was fine enough for the current zoom scale, but it has children,  then they're no longer needed, unload them if they're loaded
         {
-        UnloadChildren(); // NEEDS_WORK - maybe only do this if we need memory?
+        UnloadChildren(args.m_purgeOlderThan); 
         return;
         }
 
@@ -139,11 +144,20 @@ void Node::SetAbandoned()
 * it arrives. Set its "abandoned" flag to tell the download thread it can skip it (it will get deleted when the download thread releases its reference to it.)
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Node::UnloadChildren()
+void Node::UnloadChildren(uint64_t olderThan)
     {
     DgnDb::VerifyClientThread();
-    if (ChildLoad::Ready != m_childLoad.load()) // nothing to do
+    if (ChildLoad::Ready != m_childLoad.load()) // children aren't loaded, nothing to do
         return;
+
+    if (m_childrenLastUsed > olderThan) // have we used this node's children recently?
+        {
+        // this node has been used recently. We're going to keep it, but potentially unload its grandchildren
+        for (auto const& child : m_childNodes)
+            child->UnloadChildren(olderThan);
+
+        return;
+        }
 
     for (auto const& child : m_childNodes)
         child->SetAbandoned();

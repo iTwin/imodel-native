@@ -127,9 +127,9 @@ bool Node::ReadHeader(JsonValueCR pt, Utf8String& name, bvector<Utf8String>& nod
     return true;
     }
 
-/*-----------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                      Ray.Bentley     09/2015
+//----------------------------------------------------------------------------------------
 BentleyStatus Node::DoRead(MxStreamBuffer& in, SceneR scene)
     {
     BeAssert(IsQueued());
@@ -307,16 +307,15 @@ BentleyStatus Node::DoRead(MxStreamBuffer& in, SceneR scene)
             trimesh.m_textureUV  = (FPoint2d const*) ctm.GetFloatArray(CTM_UV_MAP_1);
             trimesh.m_texture    = texture->second;
 
-            BeAssert(!m_childNodes[nodeId->second]->m_geometry.IsValid());
-            m_childNodes[nodeId->second]->m_geometry = new Geometry(trimesh, scene);
+            m_childNodes[nodeId->second]->m_geometry.push_back(new Geometry(trimesh, scene));
             }
         }
 
     return SUCCESS;
     }
 
-/*-----------------------------------------------------------------------------------**//**
-* @bsimethod
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Node::Read3MXB(MxStreamBuffer& in, SceneR scene)
     {
@@ -333,9 +332,9 @@ BentleyStatus Node::Read3MXB(MxStreamBuffer& in, SceneR scene)
     return SUCCESS;
     }
 
-/*-----------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                      Ray.Bentley     09/2015
+//----------------------------------------------------------------------------------------
 BentleyStatus SceneInfo::Read(MxStreamBuffer& buffer) 
     {
     Json::Value pt;

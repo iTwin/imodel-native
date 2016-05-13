@@ -43,7 +43,7 @@ protected:
     BentleyStatus InitFromSource(Utf8CP filename, ByteStream const& data);
     BentleyStatus InitFromStorage(Db& db, BeMutex& cs, Utf8CP filename);
     BentleyStatus PersistToStorage(Db& db, BeMutex& cs) const;
-    void OnNotFound() {if (m_node.IsValid()) m_node->SetNotFound();}
+    void OnNotFound() {BeAssert(false); if (m_node.IsValid()) m_node->SetNotFound();}
 
 public:
     ThreeMxData(NodeP node, Scene& scene, MxStreamBuffer* output) : m_scene(scene), m_node(node), m_output(output) 
@@ -160,7 +160,7 @@ BentleyStatus ThreeMxData::InitFromStorage(Db& db, BeMutex& cs, Utf8CP filename)
         if (BE_SQLITE_OK != db.GetCachedStatement(stmt, "SELECT Data,DataSize FROM " TABLE_NAME_ThreeMx " WHERE Filename=?"))
             return ERROR;
 
-        Utf8String name = m_shortName.empty() ? m_filename : m_shortName;
+        Utf8String name = m_shortName.empty() ? filename : m_shortName;
         stmt->ClearBindings();
         stmt->BindText(1, name, Statement::MakeCopy::No);
         if (BE_SQLITE_ROW != stmt->Step())
@@ -174,6 +174,7 @@ BentleyStatus ThreeMxData::InitFromStorage(Db& db, BeMutex& cs, Utf8CP filename)
         m_nodeBytes.SetPos(0);
         }
 
+    m_filename = filename;
     if (m_output)
         {
         *m_output = m_nodeBytes;
@@ -203,38 +204,18 @@ BentleyStatus ThreeMxData::PersistToStorage(Db& db, BeMutex& cs) const
     BeAssert(m_nodeBytes.HasData());
 
     Utf8String name = m_shortName.empty() ? m_filename : m_shortName;
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    CachedStatementPtr selectStatement;
-    if (BE_SQLITE_OK != db.GetCachedStatement(selectStatement, "SELECT Filename FROM " TABLE_NAME_ThreeMx " WHERE Filename=?"))
-        return ERROR;
+    CachedStatementPtr stmt;
+    db.GetCachedStatement(stmt, "INSERT INTO " TABLE_NAME_ThreeMx " (Filename,Data,DataSize,Created) VALUES (?,?,?,?)"))
 
-    selectStatement->ClearBindings();
-    selectStatement->BindText(1, name, Statement::MakeCopy::No);
-    if (BE_SQLITE_ROW == selectStatement->Step())
-        {
-        // update
-        }
-    else
-#endif
-        {
-        // insert
-        CachedStatementPtr stmt;
-        if (BE_SQLITE_OK != db.GetCachedStatement(stmt, "INSERT INTO " TABLE_NAME_ThreeMx " (Filename,Data,DataSize,Created) VALUES (?,?,?,?)"))
-            return ERROR;
+    stmt->ClearBindings();
+    stmt->BindText(1, name, Statement::MakeCopy::No);
+    stmt->BindBlob(2, m_nodeBytes.GetData(), (int)m_nodeBytes.GetSize(), Statement::MakeCopy::No);
+    stmt->BindInt64(3, (int64_t)m_nodeBytes.GetSize());
 
-        stmt->ClearBindings();
-        stmt->BindText(1, name, Statement::MakeCopy::No);
-        stmt->BindBlob(2, m_nodeBytes.GetData(), (int)m_nodeBytes.GetSize(), Statement::MakeCopy::No);
-        stmt->BindInt64(3, (int64_t)m_nodeBytes.GetSize());
+    if (m_node.IsValid()) // for the root, store NULL for time. That way it will never get purged.
+        stmt->BindInt64(4, BeTimeUtilities::GetCurrentTimeAsUnixMillis());
 
-        if (m_node.IsValid()) // for the root, store NULL for time. That way it will never get purged.
-            stmt->BindInt64(4, BeTimeUtilities::GetCurrentTimeAsUnixMillis());
-
-        if (BE_SQLITE_DONE != stmt->Step())
-            return ERROR;
-        }
-
-    return SUCCESS;
+    return BE_SQLITE_DONE = stmt->Step() ? SUCCESS : ERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -343,7 +324,6 @@ void Scene::CreateCache()
     m_cache = new RealityDataCache();
     m_cache->RegisterStorage(*new ThreeMxCache(m_localCacheName, SchedulingMethod::FIFO));
 
-    uint32_t threadCount = BeThreadUtilities::GetHardwareConcurrency() / 2;
-    threadCount = std::max((uint32_t) 2, threadCount);
+    uint32_t threadCount = std::max((uint32_t) 2,BeThreadUtilities::GetHardwareConcurrency() / 2);
     m_cache->RegisterSource(IsHttp() ? (IRealityDataSourceBase&) *HttpRealityDataSource::Create(threadCount, SchedulingMethod::FIFO) : *FileRealityDataSource::Create(threadCount, SchedulingMethod::FIFO));
     }
