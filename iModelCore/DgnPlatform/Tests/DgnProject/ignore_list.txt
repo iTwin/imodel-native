@@ -39,7 +39,3 @@ DgnLinkTest.* # Need to figure the BIS hierarchy for DgnLinks - Shaun
 DgnECNavigatorTest.DgnLinksElementInfo # Need to figure the BIS hierarchy for DgnLinks - Shaun
 DgnECNavigatorTest.IfcElementInfo # Need to figure BIS schema for IFC - Shaun/Raman
 DgnECNavigatorTest.PlantElementInfo # Improperly creating a GroupInformationElement when the "NamedGroupOwnsMembers" CA is found - Shaun/Carole
-
-#Temporarily ignoring these two tests as they are failing on PRG but nowhere else
-ChangeSummaryTestFixture.ElementChildRelationshipChanges
-DependencyRevisionTest.TestDependency
