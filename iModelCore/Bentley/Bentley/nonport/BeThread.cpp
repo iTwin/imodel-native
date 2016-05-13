@@ -35,6 +35,7 @@
 #include <Bentley/BeTimeUtilities.h>
 #include <Bentley/BeAssert.h>
 #include <Bentley/WString.h>
+#include <thread>
 #include <mutex>
 #include <condition_variable>
 
