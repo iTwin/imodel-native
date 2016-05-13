@@ -237,6 +237,8 @@ BEGIN_BENTLEY_RENDER_NAMESPACE
     DEFINE_POINTER_SUFFIX_TYPEDEFS(GeometryParams)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(GradientSymb)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(Graphic)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(IGraphicBuilder)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(GraphicBuilder)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(GraphicList)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(GraphicParams)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(ISprite)
@@ -299,57 +301,11 @@ typedef struct dgn_AuthorityHandler::Authority* AuthorityHandlerP;
 typedef struct dgn_AuthorityHandler::Authority& AuthorityHandlerR;
 typedef Byte const* ByteCP;
 
-//=======================================================================================
-// @bsiclass                                                    Keith.Bentley   12/14
-//=======================================================================================
-struct BeBriefcaseBasedIdSet : bset<BeSQLite::BeBriefcaseBasedId>
-{
-    DGNPLATFORM_EXPORT void FromJson(Json::Value const& in);
-    DGNPLATFORM_EXPORT void ToJson(Json::Value& out) const;
-};
-
-//=======================================================================================
-// @bsiclass                                                    Keith.Bentley   12/14
-//=======================================================================================
-template<typename IdType> struct IdSet : BeBriefcaseBasedIdSet, BeSQLite::VirtualSet
-{
-private:
-    BeBriefcaseBasedIdSet m_set;
-
-    virtual bool _IsInSet(int nVals, BeSQLite::DbValue const* vals) const
-        {
-        BeAssert(nVals == 1);
-        return Contains(IdType(vals[0].GetValueUInt64()));
-        }
-public:
-    IdSet(){static_assert(sizeof(IdType)==sizeof(BeSQLite::BeBriefcaseBasedId),"IdSets may only contain BeBriefcaseBasedId");}
-
-    typedef BentleyApi::bset<IdType> T_SetType;
-    typedef typename T_SetType::const_iterator const_iterator;
-    typedef typename T_SetType::iterator iterator;
-
-    const_iterator begin() const {return ((T_SetType&)m_set).begin();}
-    const_iterator end() const {return ((T_SetType&)m_set).end();}
-    const_iterator find(IdType id) const {return ((T_SetType&)m_set).find(id);}
-    bool empty() const {return m_set.empty();}
-    void clear() {m_set.clear();}
-    size_t size() const {return m_set.size();}
-    bpair<iterator,bool> insert(IdType const& val) {BeAssert(val.IsValid()); return ((T_SetType&)m_set).insert(val);}
-    void insert(const_iterator first, const_iterator last) {((T_SetType&)m_set).insert(first,last);}
-    size_t erase(IdType const& val) {return ((T_SetType&)m_set).erase(val);}
-    iterator erase(iterator it) {return ((T_SetType&)m_set).erase(it);}
-    bool Contains(IdType id) const {return end() != find(id);}
-    void FromJson(Json::Value const& in) {m_set.FromJson(in);}
-    void ToJson(Json::Value& out) const {m_set.ToJson(out);}
-
-    BeBriefcaseBasedIdSet const& GetBriefcaseBasedIdSet() const { return m_set; }
-};
-
-typedef IdSet<DgnElementId> DgnElementIdSet;            //!< IdSet with DgnElementId members. @ingroup GROUP_DgnElement
-typedef IdSet<DgnModelId> DgnModelIdSet;                //!< IdSet with DgnModelId members. @ingroup GROUP_DgnModel
-typedef IdSet<DgnCategoryId> DgnCategoryIdSet;          //!< IdSet with DgnCategoryId members. @ingroup GROUP_DgnCategory
-typedef IdSet<DgnSubCategoryId> DgnSubCategoryIdSet;    //!< IdSet with DgnSubCategoryId members. @ingroup GROUP_DgnCategory
-typedef IdSet<DgnMaterialId> DgnMaterialIdSet;          //!< IdSet with DgnMaterialId members.
+typedef BeSQLite::IdSet<DgnElementId> DgnElementIdSet;            //!< IdSet with DgnElementId members. @ingroup GROUP_DgnElement
+typedef BeSQLite::IdSet<DgnModelId> DgnModelIdSet;                //!< IdSet with DgnModelId members. @ingroup GROUP_DgnModel
+typedef BeSQLite::IdSet<DgnCategoryId> DgnCategoryIdSet;          //!< IdSet with DgnCategoryId members. @ingroup GROUP_DgnCategory
+typedef BeSQLite::IdSet<DgnSubCategoryId> DgnSubCategoryIdSet;    //!< IdSet with DgnSubCategoryId members. @ingroup GROUP_DgnCategory
+typedef BeSQLite::IdSet<DgnMaterialId> DgnMaterialIdSet;          //!< IdSet with DgnMaterialId members.
 
 typedef ECN::ECClassId DgnClassId;
 

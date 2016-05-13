@@ -2032,17 +2032,17 @@ public:
 };
 
 //=======================================================================================
-//! Utility methods for working with element assemblies.
+//! Utility methods for working with geometric element assemblies.
 // @bsiclass                                                BentleySystems
 //=======================================================================================
 struct ElementAssemblyUtil
 {
-    //! Get the top-level parent DgnElementId of the assembly for which the input DgnElement is a member.
-    //! @return DgnElementId of top-level parent. Will be invalid if there is no parent.
+    //! Get the parent DgnElementId of the assembly for which the input DgnElement is a member.
+    //! @return DgnElementId of parent. Will be invalid if there is no parent.
     DGNPLATFORM_EXPORT static DgnElementId GetAssemblyParentId(DgnElementCR el);
 
-    //! Query the DgnDb for all members of the assembly for which the input DgnElement is a member.
-    //! @return DgnElementIdSet containing the DgnElementIds of all assembly elements. Will be empty if not an assembly.
+    //! Query the DgnDb for members of the assembly for which the input DgnElement is a member.
+    //! @return DgnElementIdSet containing the DgnElementIds of assembly elements. Will be empty if not an assembly.
     DGNPLATFORM_EXPORT static DgnElementIdSet GetAssemblyElementIdSet(DgnElementCR el);
 };
 

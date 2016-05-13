@@ -109,11 +109,11 @@ enum class LsOkayForTextureGeneration
 struct LineStyleContext
 {
 private:
-    Render::GraphicPtr  m_graphic;
+    Render::GraphicBuilderPtr   m_graphic;
     ViewContextP        m_viewContext;
 public:
-    LineStyleContext(Render::GraphicR graphic, ViewContextP context) : m_graphic(&graphic), m_viewContext(context) {}
-    Render::GraphicR GetGraphicR() { return *m_graphic; }
+    LineStyleContext(Render::GraphicBuilderR graphic, ViewContextP context) : m_graphic(&graphic), m_viewContext(context) { }
+    Render::GraphicBuilderR GetGraphicR() { return *m_graphic; }
     ViewContextP GetViewContext() { return m_viewContext; }
 };
 
@@ -380,11 +380,11 @@ public:
     virtual double      _GetLength              () const override  {return 0.0;}
     virtual void        _PostProcessLoad        (DgnModelP modelRef) { return; }
     virtual void        _ClearPostProcess       () { return; }
-    virtual StatusInt   _StrokeLineString       (Render::GraphicR, ViewContextP, Render::LineStyleSymbP, DPoint3dCP, int nPts, bool isClosed) const override;
-    virtual StatusInt   _StrokeLineString2d     (Render::GraphicR, ViewContextP, Render::LineStyleSymbP, DPoint2d const*, int nPts, double zDepth, bool isClosed) const override;
-    virtual StatusInt   _StrokeArc              (Render::GraphicR, ViewContextP, Render::LineStyleSymbP, DPoint3dCP origin, RotMatrix const*, double r0, double r1,
+    virtual StatusInt   _StrokeLineString       (Render::GraphicBuilderR, ViewContextP, Render::LineStyleSymbP, DPoint3dCP, int nPts, bool isClosed) const override;
+    virtual StatusInt   _StrokeLineString2d     (Render::GraphicBuilderR, ViewContextP, Render::LineStyleSymbP, DPoint2d const*, int nPts, double zDepth, bool isClosed) const override;
+    virtual StatusInt   _StrokeArc              (Render::GraphicBuilderR, ViewContextP, Render::LineStyleSymbP, DPoint3dCP origin, RotMatrix const*, double r0, double r1,
                                                     double const* start, double const* sweep, DPoint3dCP range) const override;
-    virtual StatusInt   _StrokeBSplineCurve     (Render::GraphicR, ViewContextP context, Render::LineStyleSymbP lsSymb, MSBsplineCurve const*, double const* tolerance) const override;
+    virtual StatusInt   _StrokeBSplineCurve     (Render::GraphicBuilderR, ViewContextP context, Render::LineStyleSymbP lsSymb, MSBsplineCurve const*, double const* tolerance) const override;
     virtual StatusInt   _DoStroke               (LineStyleContextR, DPoint3dCP, int, Render::LineStyleSymbCP) const {return SUCCESS;}
     virtual void        _LoadFinished           () { m_isDirty = false; }
     virtual LsOkayForTextureGeneration _IsOkayForTextureGeneration() const = 0;

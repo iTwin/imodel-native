@@ -510,7 +510,7 @@ public:
             //! @param[in] context The context to output the body to.
             //! @param[in] simplify if true faces are output as simple types (CurveVector, SolidPrimitive, and MSBSplineSurface) instead of sheet bodies.
             //! @return SUCCESS if operation was handled.
-            virtual BentleyStatus _OutputBodyAsSurfaces(Render::GraphicR graphic, ISolidKernelEntityCR in, ViewContextR context, bool simplify = true) const {return ERROR;}
+            virtual BentleyStatus _OutputBodyAsSurfaces(Render::GraphicBuilderR graphic, ISolidKernelEntityCR in, ViewContextR context, bool simplify = true) const {return ERROR;}
 
             //! Output a ISolidKernelEntity as a wireframe representation.
             //! @param[in,out] graphic The graphic to append the edge and face hatch curve geometry to.
@@ -519,7 +519,7 @@ public:
             //! @param[in] includeEdges Include wire geometry for body edges.
             //! @param[in] includeFaceIso Include wire geometry for face isoparametrics.
             //! @return SUCCESS if operation was handled.
-            virtual BentleyStatus _OutputBodyAsWireframe(Render::GraphicR graphic, ISolidKernelEntityCR in, ViewContextR context, bool includeEdges = true, bool includeFaceIso = true) const {return ERROR;}
+            virtual BentleyStatus _OutputBodyAsWireframe(Render::GraphicBuilderR graphic, ISolidKernelEntityCR in, ViewContextR context, bool includeEdges = true, bool includeFaceIso = true) const {return ERROR;}
 
             //! Return a CurveVector representation for a sheet body with a single planar face.
             //! @param[in] in The solid kernel entity.
@@ -541,7 +541,7 @@ public:
             //! @param[in] clipMatrix clip orientation from clip x and y direction and plane normal.
             //! @param[in] clipMask mask detailing which directions are being clipped.
             //! @return SUCCESS if operation was handled.
-            virtual BentleyStatus _OutputBodyCut(Render::GraphicR graphic, ISolidKernelEntityCR in, TransformCP transform, ViewContextR context, DPlane3dCR plane, DRange2dCR clipRange, RotMatrixCR clipMatrix, ClipMask clipMask) const {return ERROR;}
+            virtual BentleyStatus _OutputBodyCut(Render::GraphicBuilderR graphic, ISolidKernelEntityCR in, TransformCP transform, ViewContextR context, DPlane3dCR plane, DRange2dCR clipRange, RotMatrixCR clipMatrix, ClipMask clipMask) const {return ERROR;}
 
             //! Stretch faces/edges of a solid/surface kernel entity.
             //! @param[in] in The solid kernel entity to strecth.
@@ -722,7 +722,7 @@ public:
             //! @param[in] context The context to output the sub-entity to.
             //! @return SUCCESS if a valid solid kernel sub-entity was specified.
             //! @note Can be used for selection dynamics as well as to collect sub-entity geometry as a CurveVector or SolidPrimitive using an IGeometryProcessor.
-            virtual BentleyStatus _Draw(Render::GraphicR graphic, ISubEntityCR subEntity, ViewContextR context) const {return ERROR;}
+            virtual BentleyStatus _Draw(Render::GraphicBuilderR graphic, ISubEntityCR subEntity, ViewContextR context) const {return ERROR;}
 
             //! Evaluate a uv parameter on a face sub-entity.
             //! @param[in] subEntity The solid kernel sub-entity to query.

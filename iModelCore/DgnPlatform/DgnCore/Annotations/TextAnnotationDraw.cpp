@@ -59,7 +59,7 @@ static Transform    computeDocumentTransform (AnnotationTextBlockLayoutCR layout
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-BentleyStatus TextAnnotationDraw::Draw(Render::GraphicR graphic, ViewContextR context, GeometryParamsR geomParams) const
+BentleyStatus TextAnnotationDraw::Draw(Render::GraphicBuilderR graphic, ViewContextR context, GeometryParamsR geomParams) const
     {
     //.............................................................................................
     if (nullptr == m_annotation->GetTextCP())
