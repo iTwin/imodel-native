@@ -14,6 +14,8 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
+#define DBSCHEMA_NULLTABLENAME "ECDbNotMapped"
+
 enum class PersistenceType
     {
     Persisted, //! Persisted in DB
