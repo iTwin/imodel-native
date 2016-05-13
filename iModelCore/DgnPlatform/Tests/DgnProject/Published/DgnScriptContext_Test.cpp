@@ -101,7 +101,7 @@ struct DgnScriptTest : public ::testing::Test
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnScriptTest, TestEga)
     {
-    DgnDbTestDgnManager tdm (L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite, /*needBriefcase*/false);
+    DgnDbTestDgnManager tdm (L"3dMetricGeneral.ibim", __FILE__, Db::OpenMode::ReadWrite, /*needBriefcase*/false);
     DgnDbP project = tdm.GetDgnProjectP();
     ASSERT_TRUE( project != NULL );
 
@@ -248,7 +248,7 @@ TEST_F(DgnScriptTest, RunScripts)
     T_HOST.GetScriptAdmin().EvaluateScript(jsProgram.c_str());
 
 
-    DgnDbTestDgnManager tdm(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite, /*needBriefcase*/false);
+    DgnDbTestDgnManager tdm(L"3dMetricGeneral.ibim", __FILE__, Db::OpenMode::ReadWrite, /*needBriefcase*/false);
     DgnDbP project = tdm.GetDgnProjectP();
     ASSERT_TRUE(project != NULL);
 
@@ -298,7 +298,7 @@ static bool areDateTimesEqual(DateTime const& d1, DateTime const& d2)
 TEST_F(DgnScriptTest, CRUD)
     {
 
-    DgnDbTestDgnManager tdm(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite, /*needBriefcase*/false);
+    DgnDbTestDgnManager tdm(L"3dMetricGeneral.ibim", __FILE__, Db::OpenMode::ReadWrite, /*needBriefcase*/false);
     DgnDbP project = tdm.GetDgnProjectP();
     ASSERT_TRUE(project != NULL);
 

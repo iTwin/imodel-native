@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/Raster_Test.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
@@ -90,13 +90,13 @@ static DgnModelP DgnModels::getAndFill(DgnDbR db, DgnModelId modelID)
     }
     
 /*---------------------------------------------------------------------------------**//**
-* Set up method that opens an existing .dgndb project file
+* Set up method that opens an existing .bim project file
 * @bsimethod                                    Algirdas.Mikoliunas            03/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnRasterTest::SetupProject ()
     {
     
-    DgnDbTestDgnManager::CreateProjectFromDgn (project, DgnDbTestDgnManager::GetOutputFilePath (L"RasterColorModes.dgndb"), DgnDbTestDgnManager::GetSeedFilePath (L"RasterColorModes.i.dgn.v8"));
+    DgnDbTestDgnManager::CreateProjectFromDgn (project, DgnDbTestDgnManager::GetOutputFilePath (L"RasterColorModes.bim"), DgnDbTestDgnManager::GetSeedFilePath (L"RasterColorModes.i.dgn.v8"));
     ASSERT_TRUE( project != NULL);
 
     file = &(dynamic_cast<DgnDb*>(project.get())->GetDgnFile());

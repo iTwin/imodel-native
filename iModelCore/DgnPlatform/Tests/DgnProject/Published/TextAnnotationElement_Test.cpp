@@ -41,7 +41,7 @@ TEST(TextAnnotation2dTest, BasicCrud)
     ScopedDgnHost host;
 
     BeFileName dbPath;
-    ASSERT_TRUE(SUCCESS == DgnDbTestDgnManager::GetTestDataOut(dbPath, L"2dMetricGeneral.idgndb", L"TextAnnotation2dTest-BasicCrud.dgndb", __FILE__));
+    ASSERT_TRUE(SUCCESS == DgnDbTestDgnManager::GetTestDataOut(dbPath, L"2dMetricGeneral.ibim", L"TextAnnotation2dTest-BasicCrud.bim", __FILE__));
 
     DgnModelId modelId;
     DgnElementId textStyleId;
@@ -232,7 +232,7 @@ TEST(TextAnnotation3dTest, BasicCrud)
     ScopedDgnHost host;
 
     BeFileName dbPath;
-    ASSERT_TRUE(SUCCESS == DgnDbTestDgnManager::GetTestDataOut(dbPath, L"3dMetricGeneral.idgndb", L"TextAnnotation3dTest-BasicCrud.dgndb", __FILE__));
+    ASSERT_TRUE(SUCCESS == DgnDbTestDgnManager::GetTestDataOut(dbPath, L"3dMetricGeneral.ibim", L"TextAnnotation3dTest-BasicCrud.bim", __FILE__));
 
     DgnModelId modelId;
     DgnElementId textStyleId;

@@ -65,7 +65,7 @@ struct CategoryTests : public DgnDbTestFixture
 //=======================================================================================
 TEST_F (CategoryTests, InsertCategory)
     {
-    SetupProject (L"3dMetricGeneral.idgndb", L"CategoryTests.idgndb", Db::OpenMode::ReadWrite);
+    SetupProject (L"3dMetricGeneral.ibim", L"CategoryTests.ibim", Db::OpenMode::ReadWrite);
     ASSERT_TRUE(m_db.IsValid());
         
     //Category properties.
@@ -191,7 +191,7 @@ TEST_F (CategoryTests, InsertCategory)
 //=======================================================================================
 TEST_F (CategoryTests, DeleteCategory)
     {
-    SetupProject (L"3dMetricGeneral.idgndb", L"CategoryTests.idgndb", Db::OpenMode::ReadWrite);
+    SetupProject (L"3dMetricGeneral.ibim", L"CategoryTests.ibim", Db::OpenMode::ReadWrite);
 
     Utf8CP name = "TestCategory";
     Utf8CP desc = "This is a test category.";
@@ -229,7 +229,7 @@ TEST_F (CategoryTests, DeleteCategory)
 //=======================================================================================
 TEST_F (CategoryTests, UpdateCategory)
     {
-    SetupProject (L"3dMetricGeneral.idgndb", L"CategoryTests.idgndb", Db::OpenMode::ReadWrite);
+    SetupProject (L"3dMetricGeneral.ibim", L"CategoryTests.ibim", Db::OpenMode::ReadWrite);
 
     //Category properties.
     Utf8CP name = "TestCategory";
@@ -279,7 +279,7 @@ TEST_F (CategoryTests, UpdateCategory)
 //=======================================================================================
 TEST_F (CategoryTests, InsertSubCategory)
     {
-    SetupProject (L"3dMetricGeneral.idgndb", L"CategoryTests.idgndb", Db::OpenMode::ReadWrite);
+    SetupProject (L"3dMetricGeneral.ibim", L"CategoryTests.ibim", Db::OpenMode::ReadWrite);
 
     Utf8CP name = "TestCategory";
     Utf8CP desc = "This is a test category.";
@@ -397,7 +397,7 @@ TEST_F (CategoryTests, InsertSubCategory)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CategoryTests, SubCategoryInvariants)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"SubCategoryInvaraints.idgndb", Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.ibim", L"SubCategoryInvaraints.ibim", Db::OpenMode::ReadWrite);
     DgnDbR db = *m_db;
 
     DgnSubCategory::Appearance app;
@@ -491,7 +491,7 @@ TEST_F(CategoryTests, SubCategoryInvariants)
 //=======================================================================================
 TEST_F (CategoryTests, DeleteSubCategory)
     {
-    SetupProject (L"3dMetricGeneral.idgndb", L"CategoryTests.idgndb", Db::OpenMode::ReadWrite);
+    SetupProject (L"3dMetricGeneral.ibim", L"CategoryTests.ibim", Db::OpenMode::ReadWrite);
 
     Utf8CP name = "TestCategory";
     Utf8CP desc = "This is a test category.";
@@ -527,7 +527,7 @@ TEST_F (CategoryTests, DeleteSubCategory)
 //=======================================================================================
 TEST_F (CategoryTests, UpdateSubCategory)
     {
-    SetupProject (L"3dMetricGeneral.idgndb", L"CategoryTests.idgndb", Db::OpenMode::ReadWrite);
+    SetupProject (L"3dMetricGeneral.ibim", L"CategoryTests.ibim", Db::OpenMode::ReadWrite);
 
     Utf8CP name = "TestCategory";
     Utf8CP desc = "This is a test category.";
@@ -576,7 +576,7 @@ TEST_F (CategoryTests, UpdateSubCategory)
 //=======================================================================================
 TEST_F (CategoryTests, QueryByElementId)
     {
-    SetupProject (L"3dMetricGeneral.idgndb", L"CategoryTests.idgndb", Db::OpenMode::ReadWrite);
+    SetupProject (L"3dMetricGeneral.ibim", L"CategoryTests.ibim", Db::OpenMode::ReadWrite);
 
     //Category properties.
     Utf8CP name = "TestCategory";

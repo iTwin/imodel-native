@@ -41,11 +41,11 @@ TEST(DgnMarkupProjectTest, CreateDgnMarkupProject)
     DgnViewId   seedViewId;
     if (true)
         {
-        DgnDbTestDgnManager tdmSeed (L"empty2d_english.idgndb", __FILE__, Db::OpenMode::Readonly, false);
+        DgnDbTestDgnManager tdmSeed (L"empty2d_english.ibim", __FILE__, Db::OpenMode::Readonly, false);
         seedModelId = tdmSeed.GetDgnProjectP()->Models().QueryModelId (DgnModel::CreateModelCode("RedlineSeedModel"));
         seedViewId = ViewDefinition::QueryViewId("RedlineSeedView", *tdmSeed.GetDgnProjectP());
 
-        DgnDbTestDgnManager tdm (L"2dMetricGeneral.idgndb", __FILE__, Db::OpenMode::Readonly, false);
+        DgnDbTestDgnManager tdm (L"2dMetricGeneral.ibim", __FILE__, Db::OpenMode::Readonly, false);
         DgnDbP project = tdm.GetDgnProjectP();
         ASSERT_TRUE( project != NULL );
 
@@ -64,7 +64,7 @@ TEST(DgnMarkupProjectTest, CreateDgnMarkupProject)
         ASSERT_TRUE( mpname.find (markupProjectBasename) != Utf8String::npos );
         }
 
-    //  Both .dgndb are now closed
+    //  Both .bim are now closed
 
     DbResult status;
 

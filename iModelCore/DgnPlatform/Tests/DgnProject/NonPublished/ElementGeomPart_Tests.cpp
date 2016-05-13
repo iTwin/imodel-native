@@ -36,7 +36,7 @@ static const DgnCode s_geomPartCode = DgnGeometryPart::CreateCode("Test", "GeomP
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ElementGeomPartTests, CRUD)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"GeomParts.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.ibim", L"GeomParts.ibim", BeSQLite::Db::OpenMode::ReadWrite);
 
     //Create a GeometryPart
     GeometricPrimitivePtr elGPtr = GeometricPrimitive::Create(*GeomHelper::computeShape());
@@ -91,7 +91,7 @@ TEST_F(ElementGeomPartTests, CRUD)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ElementGeomPartTests, CreateElements)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"GeomParts.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.ibim", L"GeomParts.ibim", BeSQLite::Db::OpenMode::ReadWrite);
 
     //Create a GeometryPart
     GeometricPrimitivePtr elGPtr = GeometricPrimitive::Create(*GeomHelper::computeShape());
@@ -120,7 +120,7 @@ TEST_F(ElementGeomPartTests, CreateElements)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ElementGeomPartTests, GeomPartWithoutCode)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"GeomParts.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.ibim", L"GeomParts.ibim", BeSQLite::Db::OpenMode::ReadWrite);
 
     //Create a GeometryPart
     GeometricPrimitivePtr elGPtr = GeometricPrimitive::Create(*GeomHelper::computeShape());
@@ -152,7 +152,7 @@ TEST_F(ElementGeomPartTests, GeomPartWithoutCode)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ElementGeomPartTests, ElementUsesGeometryParts)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"GeomParts.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.ibim", L"GeomParts.ibim", BeSQLite::Db::OpenMode::ReadWrite);
 
     //Create a GeometryPart
     GeometricPrimitivePtr elGPtr = GeometricPrimitive::Create(*GeomHelper::computeShape());
@@ -186,7 +186,7 @@ TEST_F(ElementGeomPartTests, ElementUsesGeometryParts)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ElementGeomPartTests, ElementUsesGeometryParts_DeleteGeomPart)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"GeomParts.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.ibim", L"GeomParts.ibim", BeSQLite::Db::OpenMode::ReadWrite);
 
     //Create a GeometryPart
     GeometricPrimitivePtr elGPtr = GeometricPrimitive::Create(*GeomHelper::computeShape());
@@ -219,7 +219,7 @@ TEST_F(ElementGeomPartTests, ElementUsesGeometryParts_DeleteGeomPart)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ElementGeomPartTests, ElementUsesGeometryParts_DeleteElement)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"GeomParts.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.ibim", L"GeomParts.ibim", BeSQLite::Db::OpenMode::ReadWrite);
 
     //Create a GeometryPart
     GeometricPrimitivePtr elGPtr = GeometricPrimitive::Create(*GeomHelper::computeShape());
@@ -254,7 +254,7 @@ TEST_F(ElementGeomPartTests, ElementUsesGeometryParts_DeleteElement)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ElementGeomPartTests, CreateElementsAndDeleteGemPart)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"GeomParts.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.ibim", L"GeomParts.ibim", BeSQLite::Db::OpenMode::ReadWrite);
 
     //Create a GeometryPart
     GeometricPrimitivePtr elGPtr = GeometricPrimitive::Create(*GeomHelper::computeShape());
@@ -293,7 +293,7 @@ TEST_F(ElementGeomPartTests, CreateElementsAndDeleteGemPart)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ElementGeomPartTests, GeomPart2d)
 {
-    SetupProject(L"2dMetricGeneral.idgndb", L"GeomParts2d.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupProject(L"2dMetricGeneral.ibim", L"GeomParts2d.ibim", BeSQLite::Db::OpenMode::ReadWrite);
 
     //Create a GeometryPart
     GeometricPrimitivePtr elGPtr = GeometricPrimitive::Create(*GeomHelper::computeShape2d());

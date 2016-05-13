@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/DgnProject/Published/Tag_Test.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
@@ -303,7 +303,7 @@ TEST_F (TagTest, FindTagByName)
 TEST (TagAcadTest, AcadTextTest)
     {
     ScopedDgnHost autoDgnHost;
-    DgnDbTestDgnManager tdm (L"bug.idgndb", __FILE__, OPENMODE_READWRITE);
+    DgnDbTestDgnManager tdm (L"bug.ibim", __FILE__, OPENMODE_READWRITE);
     DgnModelP dgnCache = tdm.GetAndFillDgnModelP();
 
     EditElementHandle tagElement;
