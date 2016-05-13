@@ -33,6 +33,9 @@ $(PublishExtractInput)Category.sample.cpp : $(_MakeFilePath)samplecode/Category.
 $(PublishExtractInput)Model.sample.cpp : $(_MakeFilePath)samplecode/Model.sample.cpp
     $(LinkFirstDepToFirstTarget)
 
+$(PublishExtractInput)RefCounted.sample.cpp : $(_MakeFilePath)samplecode/RefCounted.sample.cpp
+    $(LinkFirstDepToFirstTarget)
+
 $(PublishExtractInput)View.sample.cpp : $(_MakeFilePath)samplecode/View.sample.cpp
     $(LinkFirstDepToFirstTarget)
 

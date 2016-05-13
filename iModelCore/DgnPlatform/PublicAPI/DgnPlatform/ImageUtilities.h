@@ -24,7 +24,12 @@ struct RgbImageInfo
     uint32_t m_width = 0; //!< width of image in pixels
     bool m_hasAlpha = false; //!< If true, each pixel also has an alpha value (so that the image has 4 bytes per pixel).
     bool m_isBGR = false;    //!< If true, the image data is in BGR format; else RGB format. Always false for an image read from PNG.
-    bool m_isTopDown = true; //!< If true, the image data is in top-down row order; else bottom-up order. Always true for an image read from PNG.
+    BottomUp m_isBottomUp = BottomUp::No; //!< If true, the image data is in top-down row order; else bottom-up order. Always true for an image read from PNG.
+
+    void SetBottomUp(bool yesNo=true) {m_isBottomUp = yesNo ? BottomUp::Yes : BottomUp::No;}
+    void SetTopDown(bool yesNo=true) {SetBottomUp(!yesNo);}
+    bool IsBottomUp() const {return m_isBottomUp==BottomUp::Yes;}
+    bool IsTopDown() const {return m_isBottomUp==BottomUp::No;}
 
 /** @name PNG Support for the PNG format */
 /** @{ */
