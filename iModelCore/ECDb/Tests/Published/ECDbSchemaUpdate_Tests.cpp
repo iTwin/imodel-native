@@ -341,7 +341,7 @@ TEST_F(ECSchemaUpdateTests, UpdateCAProperties)
         "       <ECProperty propertyName = 'IsNullable' typeName = 'boolean' description = 'If false, values must not be unset for this property.' />"
         "       <ECProperty propertyName = 'IsUnique' typeName = 'boolean' description = 'Only allow unique values for this property.' />"
         "       <ECProperty propertyName = 'Collation' typeName = 'string' description = 'Specifies how string comparisons should work for this property. Possible values: Binary (default): bit to bit matching. NoCase: The same as binary, except that the 26 upper case characters of ASCII are folded to their lower case equivalents before comparing. Note that it only folds ASCII characters. RTrim: The same as binary, except that trailing space characters are ignored.' />"
-        "   </ECCustomAttributeClass>"        
+        "   </ECCustomAttributeClass>"
         "   <ECEntityClass typeName='TestClass' displayLabel='Modified Test Class' description='modified test class' modifier='None' >"
         "       <ECProperty propertyName='TestProperty' displayLabel='Modified Test Property' description='this is modified property' typeName='string' >"
         "        <ECCustomAttributes>"
@@ -959,10 +959,10 @@ TEST_F(ECSchemaUpdateTests, MinimumSharedColumnsCount_AddProperty)
         "                <MapStrategy>"
         "                   <Strategy>SharedTable</Strategy>"
         "                   <Options>SharedColumns</Options>"
-    //    "                   <MinimumSharedColumnCount>5</MinimumSharedColumnCount>"
+        //    "                   <MinimumSharedColumnCount>5</MinimumSharedColumnCount>"
         "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
         "                 </MapStrategy>"
-        "            </ClassMap>" 
+        "            </ClassMap>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='P1' typeName='int' />"
         "   </ECEntityClass>"
@@ -2086,4 +2086,85 @@ TEST_F(ECSchemaUpdateTests, ModifyProperties)
     ASSERT_FALSE(asserted);
     sp.Cancel();
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     05/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, ModifyCustomAttributePropertyValues)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Test Schema' description='This is Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECCustomAttributeClass typeName = 'TestCA' appliesTo = 'PrimitiveProperty'>"
+        "       <ECProperty propertyName = 'BinaryProp' typeName = 'Binary' />"
+        "       <ECProperty propertyName = 'BooleanProp' typeName = 'boolean' />"
+        "       <ECProperty propertyName = 'DateTimeProp' typeName = 'DateTime' />"
+        "       <ECProperty propertyName = 'DoubleProp' typeName = 'Double' />"
+        "       <ECProperty propertyName = 'IntegerProp' typeName = 'int' />"
+        "       <ECProperty propertyName = 'LongProp' typeName = 'long' />"
+        "       <ECProperty propertyName = 'Point2DProp' typeName = 'Point2D' />"
+        "       <ECProperty propertyName = 'Point3DProp' typeName = 'Point3D' />"
+        "       <ECProperty propertyName = 'StringProp' typeName = 'string' />"
+        "   </ECCustomAttributeClass>"
+        "   <ECEntityClass typeName='TestClass' displayLabel='Test Class' description='This is test Class' modifier='None' >"
+        "       <ECProperty propertyName='TestProperty' displayLabel='Test Property' description='this is property' typeName='string' >"
+        "        <ECCustomAttributes>"
+        "            <TestCA xmlns='TestSchema.01.00'>"
+        "                <BinaryProp>10100101</BinaryProp>"
+        "                <BooleanProp>true</BooleanProp>"
+        "                <DateTimeProp>20160509</DateTimeProp>"
+        "                <DoubleProp>1.0001</DoubleProp>"
+        "                <IntegerProp>10</IntegerProp>"
+        "                <LongProp>1000000</LongProp>"
+        "                <Point2DProp>3.0,4.5</Point2DProp>"
+        "                <Point3DProp>30.5,40.5,50.5</Point3DProp>"
+        "                <StringProp>'This is String Property'</StringProp>"
+        "            </TestCA>"
+        "        </ECCustomAttributes>"
+        "       </ECProperty>"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    SchemaItem editedSchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Test Schema' description='This is Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECCustomAttributeClass typeName = 'TestCA' appliesTo = 'PrimitiveProperty'>"
+        "       <ECProperty propertyName = 'BinaryProp' typeName = 'Binary' />"
+        "       <ECProperty propertyName = 'BooleanProp' typeName = 'boolean' />"
+        "       <ECProperty propertyName = 'DateTimeProp' typeName = 'DateTime' />"
+        "       <ECProperty propertyName = 'DoubleProp' typeName = 'Double' />"
+        "       <ECProperty propertyName = 'IntegerProp' typeName = 'int' />"
+        "       <ECProperty propertyName = 'LongProp' typeName = 'long' />"
+        "       <ECProperty propertyName = 'Point2DProp' typeName = 'Point2D' />"
+        "       <ECProperty propertyName = 'Point3DProp' typeName = 'Point3D' />"
+        "       <ECProperty propertyName = 'StringProp' typeName = 'string' />"
+        "   </ECCustomAttributeClass>"
+        "   <ECEntityClass typeName='TestClass' displayLabel='Test Class' description='This is test Class' modifier='None' >"
+        "       <ECProperty propertyName='TestProperty' displayLabel='Test Property' description='this is property' typeName='string' >"
+        "        <ECCustomAttributes>"
+        "            <TestCA xmlns='TestSchema.01.00'>"
+        "                <BinaryProp>10100011</BinaryProp>"
+        "                <BooleanProp>false</BooleanProp>"
+        "                <DateTimeProp>20160510</DateTimeProp>"
+        "                <DoubleProp>2.0001</DoubleProp>"
+        "                <IntegerProp>20</IntegerProp>"
+        "                <LongProp>2000000</LongProp>"
+        "                <Point2DProp>4.0,5.5</Point2DProp>"
+        "                <Point3DProp>35.5,45.5,55.5</Point3DProp>"
+        "                <StringProp>'This is Modified String Property'</StringProp>"
+        "            </TestCA>"
+        "        </ECCustomAttributes>"
+        "       </ECProperty>"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+
+    bool asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
+    ASSERT_FALSE(asserted);
+    }
+
 END_ECDBUNITTESTS_NAMESPACE
