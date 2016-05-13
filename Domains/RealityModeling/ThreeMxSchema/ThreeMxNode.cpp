@@ -73,9 +73,10 @@ void Node::Draw(DrawArgsR args, int depth)
         }
 
     ChildNodes const* children = GetChildren(); // returns nullptr if this node's children are not yet loaded.
-    if (tooCoarse && nullptr != children) // this node is too coarse for current view, don't draw it and instead draw its children
+    if (tooCoarse && nullptr != children) 
         {
-        m_childrenLastUsed = args.m_now;
+        // this node is too coarse for current view, don't draw it and instead draw its children
+        m_childrenLastUsed = args.m_now; // save the fact that we've used our children to delay purging them if this node becomes unused 
 
         for (auto const& child : *children)
             child->Draw(args, depth+1);
@@ -172,7 +173,6 @@ ElementAlignedBox3d Node::ComputeRange()
 * Create a PolyfaceHeader from a Geometry
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-
 PolyfaceHeaderPtr Geometry::GetPolyface() const
     {
     IGraphicBuilder::TriMeshArgs trimesh;
@@ -229,4 +229,3 @@ void Geometry::Draw(DrawArgsR args)
     if (m_graphic.IsValid())
         args.m_graphics.Add(*m_graphic);
     }
-
