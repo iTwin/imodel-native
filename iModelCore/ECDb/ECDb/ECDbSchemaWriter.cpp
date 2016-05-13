@@ -778,9 +778,14 @@ BentleyStatus ECDbSchemaWriter::UpdateECEnumerations(ECEnumerationChanges& enumC
             }
         else if (change.GetState() == ChangeState::New)
             {
-            GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECSchema %s: Adding new ECEnumerations from an ECSchema is not supported.",
-                                      oldSchema.GetFullSchemaName().c_str());
-            return ERROR;
+            ECEnumerationCP ecEnum = newSchema.GetEnumerationCP(change.GetId());
+            if (ecEnum == nullptr)
+                {
+                BeAssert(false && "Failed to find enum");
+                return ERROR;
+                }
+
+            return ImportECEnumeration(*ecEnum);
             }
         else if (change.GetState() == ChangeState::Modified)
             {
