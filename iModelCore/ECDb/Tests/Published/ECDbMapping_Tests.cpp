@@ -2918,6 +2918,423 @@ TEST_F(ECDbMappingTestFixture, InstanceInsertionForClassMappedToExistingTable)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     05/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbMappingTestFixture, MapRelationshipsToExistingTable)
+    {
+    auto assertECSql = [] (Utf8CP ecsql, ECDbR ecdb, ECSqlStatus sqlStatus = ECSqlStatus::InvalidECSql, DbResult dbResult = DbResult::BE_SQLITE_ERROR)
+        {
+        ECSqlStatement statement;
+        ASSERT_EQ(sqlStatus, statement.Prepare(ecdb, ecsql));
+        ASSERT_EQ(dbResult, statement.Step());
+        };
+
+    /*-----------------------------------------------
+    LinkTable relationship against existing link table
+    ------------------------------------------------*/
+    {
+    SetupECDb("linktablerelationshipmappedtoexistinglinktable.ecdb");
+
+    GetECDb().CreateTable("TestTable", "ECInstanceId INTEGER PRIMARY KEY, relProp INTEGER, SourceId INTEGER, TargetId INTEGER");
+    ASSERT_TRUE(GetECDb().TableExists("TestTable"));
+    GetECDb().SaveChanges();
+
+    SchemaItem testItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='t' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "<ECSchemaReference name='ECDbMap' version='01.01' prefix='ecdbmap' />"
+        "<ECEntityClass typeName='Foo' modifier='None' >"
+        "   <ECProperty propertyName='FooProp' typeName='int' />"
+        "</ECEntityClass>"
+        "<ECEntityClass typeName='Goo' modifier='None' >"
+        "   <ECProperty propertyName='GooProp' typeName='int' />"
+        "</ECEntityClass>"
+        "<ECRelationshipClass typeName='FooHasGoo' modifier='None' strength='referencing'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>"
+        "                   <Strategy>ExistingTable</Strategy>"
+        "                 </MapStrategy>"
+        "                <TableName>TestTable</TableName>"
+        "            </ClassMap>"
+        "            <LinkTableRelationshipMap xmlns = 'ECDbMap.01.01'>"
+        "               <SourceECInstanceIdColumn>SourceId</SourceECInstanceIdColumn>"
+        "               <TargetECInstanceIdColumn>TargetId</TargetECInstanceIdColumn>"
+        "            </LinkTableRelationshipMap>"
+        "        </ECCustomAttributes>"
+        "    <Source cardinality='(0,N)' polymorphic='True'>"
+        "      <Class class = 'Foo' />"
+        "    </Source>"
+        "    <Target cardinality='(0,N)' polymorphic='True'>"
+        "      <Class class = 'Goo' />"
+        "    </Target>"
+        "   <ECProperty propertyName='relProp' typeName='int' />"
+        "</ECRelationshipClass>"
+        "</ECSchema>", true, "relationship link table mapping to existing table is expected to succeed");
+
+    bool asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), testItem);
+    ASSERT_FALSE(asserted);
+
+    //Verify ECSql
+    assertECSql("INSERT INTO t.Foo(ECInstanceId, FooProp) VALUES(1, 1)", GetECDb(), ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
+    assertECSql("INSERT INTO t.Goo(ECInstanceId, GooProp) VALUES(1, 1)", GetECDb(), ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
+
+    assertECSql("SELECT count(*) FROM t.FooHasGoo", GetECDb(), ECSqlStatus::Success, DbResult::BE_SQLITE_ROW);
+    assertECSql("INSERT INTO t.FooHasGoo (SourceECInstanceId, TargetECInstanceId) VALUES(1, 1)", GetECDb());
+    assertECSql("UPDATE t.FooHasGoo set relProp=10 WHERE ECInstanceId=1", GetECDb());
+    assertECSql("DELETE FROM t.FooHasGoo", GetECDb());
+    }
+
+    /*----------------------------------------------------------------------------------
+    Existing Table already containing columns named SourceInstanceId and TargetInstanceId
+    -----------------------------------------------------------------------------------*/
+    {
+    SetupECDb("linktablerelationshipmappedtoexistinglinktable.ecdb");
+
+    GetECDb().CreateTable("TestTable", "ECInstanceId INTEGER PRIMARY KEY, relProp INTEGER, SourceECInstanceId INTEGER, TargetECInstanceId INTEGER");
+    ASSERT_TRUE(GetECDb().TableExists("TestTable"));
+    GetECDb().SaveChanges();
+
+    SchemaItem testItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='t' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "<ECSchemaReference name='ECDbMap' version='01.01' prefix='ecdbmap' />"
+        "<ECEntityClass typeName='Foo' modifier='None' >"
+        "   <ECProperty propertyName='FooProp' typeName='int' />"
+        "</ECEntityClass>"
+        "<ECEntityClass typeName='Goo' modifier='None' >"
+        "   <ECProperty propertyName='GooProp' typeName='int' />"
+        "</ECEntityClass>"
+        "<ECRelationshipClass typeName='FooHasGoo' modifier='None' strength='referencing'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>"
+        "                   <Strategy>ExistingTable</Strategy>"
+        "                 </MapStrategy>"
+        "                <TableName>TestTable</TableName>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "    <Source cardinality='(0,N)' polymorphic='True'>"
+        "      <Class class = 'Foo' />"
+        "    </Source>"
+        "    <Target cardinality='(0,N)' polymorphic='True'>"
+        "      <Class class = 'Goo' />"
+        "    </Target>"
+        "   <ECProperty propertyName='relProp' typeName='int' />"
+        "</ECRelationshipClass>"
+        "</ECSchema>", true, "linktable relationship map to existing table is expected to succeed if existing column already contains required named columns i.e SourceECInstanceId and TargetECInstanceId");
+
+    bool asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), testItem);
+    ASSERT_FALSE(asserted);
+
+    //Verify ECSql
+    assertECSql("INSERT INTO t.Foo(ECInstanceId, FooProp) VALUES(1, 1)", GetECDb(), ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
+    assertECSql("INSERT INTO t.Goo(ECInstanceId, GooProp) VALUES(1, 1)", GetECDb(), ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
+
+    assertECSql("SELECT count(*) FROM t.FooHasGoo", GetECDb(), ECSqlStatus::Success, DbResult::BE_SQLITE_ROW);
+    assertECSql("INSERT INTO t.FooHasGoo (SourceECInstanceId, TargetECInstanceId) VALUES(1, 1)", GetECDb());
+    assertECSql("UPDATE t.FooHasGoo set relProp=10 WHERE ECInstanceId=1", GetECDb());
+    assertECSql("DELETE FROM t.FooHasGoo", GetECDb());
+    }
+
+    /*----------------------------------------------------------------------------------------------------------------------------
+    CA linkTableRelationshipMap not applied nor the ExistingTable Contains Columns named SourceECInstanceId and TargetECInstanceId
+    -----------------------------------------------------------------------------------------------------------------------------*/
+    {
+    SetupECDb("linktablerelationshipmappedtoexistinglinktable.ecdb");
+
+    GetECDb().CreateTable("TestTable", "ECInstanceId INTEGER PRIMARY KEY, relProp INTEGER, SourceId INTEGER, TargetId INTEGER");
+    ASSERT_TRUE(GetECDb().TableExists("TestTable"));
+    GetECDb().SaveChanges();
+
+    SchemaItem testItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='t' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "<ECSchemaReference name='ECDbMap' version='01.01' prefix='ecdbmap' />"
+        "<ECEntityClass typeName='Foo' modifier='None' >"
+        "   <ECProperty propertyName='FooProp' typeName='int' />"
+        "</ECEntityClass>"
+        "<ECEntityClass typeName='Goo' modifier='None' >"
+        "   <ECProperty propertyName='GooProp' typeName='int' />"
+        "</ECEntityClass>"
+        "<ECRelationshipClass typeName='FooHasGoo' modifier='None' strength='referencing'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>"
+        "                   <Strategy>ExistingTable</Strategy>"
+        "                 </MapStrategy>"
+        "                <TableName>TestTable</TableName>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "    <Source cardinality='(0,N)' polymorphic='True'>"
+        "      <Class class = 'Foo' />"
+        "    </Source>"
+        "    <Target cardinality='(0,N)' polymorphic='True'>"
+        "      <Class class = 'Goo' />"
+        "    </Target>"
+        "   <ECProperty propertyName='relProp' typeName='int' />"
+        "</ECRelationshipClass>"
+        "</ECSchema>", false, "CA LinkTableRelationshipMap should be applied to specify source and target class Columns in existing table.");
+
+    bool asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), testItem);
+    ASSERT_FALSE(asserted);
+    }
+
+    /*---------------------------------------------
+    FK relationship class mapping to existing table
+    ----------------------------------------------*/
+    {
+    SetupECDb("fkrelationshipclassmappedtoexistingtable.ecdb");
+
+    GetECDb().CreateTable("TestTable", "ECInstanceId INTEGER PRIMARY KEY, GooProp INTEGER, ForeignKeyId INTEGER");
+    ASSERT_TRUE(GetECDb().TableExists("TestTable"));
+    GetECDb().SaveChanges();
+
+    SchemaItem testItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='t' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "<ECSchemaReference name='ECDbMap' version='01.01' prefix='ecdbmap' />"
+        "<ECEntityClass typeName='Foo' modifier='None' >"
+        "   <ECProperty propertyName='FooProp' typeName='int' />"
+        "</ECEntityClass>"
+        "<ECEntityClass typeName='Goo' modifier='None' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>"
+        "                   <Strategy>ExistingTable</Strategy>"
+        "                 </MapStrategy>"
+        "                <TableName>TestTable</TableName>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "   <ECProperty propertyName='GooProp' typeName='int' />"
+        "</ECEntityClass>"
+        "<ECRelationshipClass typeName='FooHasGoo' modifier='None' strength='referencing'>"
+        "        <ECCustomAttributes>"
+        "            <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00'>"
+        "                   <ForeignKeyColumn>ForeignKeyId</ForeignKeyColumn>"
+        "            </ForeignKeyRelationshipMap>"
+        "        </ECCustomAttributes>"
+        "    <Source cardinality='(0,1)' polymorphic='True'>"
+        "      <Class class = 'Foo' />"
+        "    </Source>"
+        "    <Target cardinality='(0,N)' polymorphic='True'>"
+        "      <Class class = 'Goo' />"
+        "    </Target>"
+        "</ECRelationshipClass>"
+        "</ECSchema>", true, "FK relationship mapping to existing table is expected to succeed");
+
+    bool asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), testItem);
+    ASSERT_FALSE(asserted);
+
+    //verify ECSql
+    assertECSql("INSERT INTO t.Foo(ECInstanceId, FooProp) VALUES(1, 1)", GetECDb(), ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
+
+    //ECSql on Classes mapped to existing table
+    assertECSql("SELECT COUNT(*) FROM t.Goo", GetECDb(), ECSqlStatus::Success, DbResult::BE_SQLITE_ROW);
+    assertECSql("INSERT INTO t.Goo(ECInstanceId, GooProp) VALUES(2, 2)", GetECDb());
+    assertECSql("UPDATE t.Goo SET GooProp=3 WHERE GooProp=2 AND ECInstanceId=2", GetECDb());
+    assertECSql("DELETE FROM t.Goo", GetECDb());
+
+    //ECSql on FK relationship mapped to existing table
+    assertECSql("SELECT COUNT(*) FROM t.FooHasGoo", GetECDb(), ECSqlStatus::Success, DbResult::BE_SQLITE_ROW);
+    assertECSql("INSERT INTO t.FooHasGoo(SourceECInstanceId, TargetECInstanceId) VALUES(1, 1)", GetECDb());
+    assertECSql("DELETE FROM t.FooHasGoo", GetECDb());
+    }
+
+    /*----------------------------------------------------------------------------------------------------------------------------------
+    Existing table already contains column with appropriate name required by the relationship to map i.e ForeignECInstanceId_t_FooHasGoo
+    ----------------------------------------------------------------------------------------------------------------------------------*/
+    {
+    SetupECDb("fkrelationshipclassmappedtoexistingtable.ecdb");
+
+    GetECDb().CreateTable("TestTable", "ECInstanceId INTEGER PRIMARY KEY, GooProp INTEGER, ForeignECInstanceId_t_FooHasGoo INTEGER");
+    ASSERT_TRUE(GetECDb().TableExists("TestTable"));
+    GetECDb().SaveChanges();
+
+    SchemaItem testItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='t' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "<ECSchemaReference name='ECDbMap' version='01.01' prefix='ecdbmap' />"
+        "<ECEntityClass typeName='Foo' modifier='None' >"
+        "   <ECProperty propertyName='FooProp' typeName='int' />"
+        "</ECEntityClass>"
+        "<ECEntityClass typeName='Goo' modifier='None' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>"
+        "                   <Strategy>ExistingTable</Strategy>"
+        "                 </MapStrategy>"
+        "                <TableName>TestTable</TableName>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "   <ECProperty propertyName='GooProp' typeName='int' />"
+        "</ECEntityClass>"
+        "<ECRelationshipClass typeName='FooHasGoo' modifier='None' strength='referencing'>"
+        "    <Source cardinality='(0,1)' polymorphic='True'>"
+        "      <Class class = 'Foo' />"
+        "    </Source>"
+        "    <Target cardinality='(0,N)' polymorphic='True'>"
+        "      <Class class = 'Goo' />"
+        "    </Target>"
+        "</ECRelationshipClass>"
+        "</ECSchema>", true, "FK relationship mapping to existing table is expected to succeed");
+
+    bool asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), testItem);
+    ASSERT_FALSE(asserted);
+
+    //verify ECSql
+    assertECSql("INSERT INTO t.Foo(ECInstanceId, FooProp) VALUES(1, 1)", GetECDb(), ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
+
+    //ECSql on Classes mapped to existing table
+    assertECSql("SELECT COUNT(*) FROM t.Goo", GetECDb(), ECSqlStatus::Success, DbResult::BE_SQLITE_ROW);
+    assertECSql("INSERT INTO t.Goo(ECInstanceId, GooProp) VALUES(2, 2)", GetECDb());
+    assertECSql("UPDATE t.Goo SET GooProp=3 WHERE GooProp=2 AND ECInstanceId=2", GetECDb());
+    assertECSql("DELETE FROM t.Goo", GetECDb());
+
+    //ECSql on FK relationship mapped to existing table
+    assertECSql("SELECT COUNT(*) FROM t.FooHasGoo", GetECDb(), ECSqlStatus::Success, DbResult::BE_SQLITE_ROW);
+    assertECSql("INSERT INTO t.FooHasGoo(SourceECInstanceId, TargetECInstanceId) VALUES(1, 1)", GetECDb());
+    assertECSql("DELETE FROM t.FooHasGoo", GetECDb());
+    }
+
+    /*--------------------------------------------------------------------------------------------------------------------
+    CA ForiegnKeyRelationshipMap not applied to relationshp class nor the Existing table contains column with required name
+    ---------------------------------------------------------------------------------------------------------------------*/
+    {
+    SetupECDb("fkrelationshipclassmappedtoexistingtable.ecdb");
+    GetECDb().CreateTable("TestTable", "ECInstanceId INTEGER PRIMARY KEY, GooProp INTEGER, ForeignKeyId INTEGER");
+    ASSERT_TRUE(GetECDb().TableExists("TestTable"));
+    GetECDb().SaveChanges();
+
+    SchemaItem testItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='t' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "<ECSchemaReference name='ECDbMap' version='01.01' prefix='ecdbmap' />"
+        "<ECEntityClass typeName='Foo' modifier='None' >"
+        "   <ECProperty propertyName='FooProp' typeName='int' />"
+        "</ECEntityClass>"
+        "<ECEntityClass typeName='Goo' modifier='None' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>"
+        "                   <Strategy>ExistingTable</Strategy>"
+        "                 </MapStrategy>"
+        "                <TableName>TestTable</TableName>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "   <ECProperty propertyName='GooProp' typeName='int' />"
+        "</ECEntityClass>"
+        "<ECRelationshipClass typeName='FooHasGoo' modifier='None' strength='referencing'>"
+        "    <Source cardinality='(0,1)' polymorphic='True'>"
+        "      <Class class = 'Foo' />"
+        "    </Source>"
+        "    <Target cardinality='(0,N)' polymorphic='True'>"
+        "      <Class class = 'Goo' />"
+        "    </Target>"
+        "</ECRelationshipClass>"
+        "</ECSchema>", false, "ForiegnKeyRelationshipMap CA not found nor the Existing table contains column with required name");
+
+    bool asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), testItem);
+    ASSERT_FALSE(asserted);
+    }
+
+    //Mapping Class containing Navigation property to existing table
+    {
+    SetupECDb("existingtablenavproperty.ecdb");
+
+    GetECDb().CreateTable("TestTable", "ECInstanceId INTEGER PRIMARY KEY, GooProp INTEGER, navProp INTEGER");
+    ASSERT_TRUE(GetECDb().TableExists("TestTable"));
+    GetECDb().SaveChanges();
+
+    SchemaItem testItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='t' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "<ECSchemaReference name='ECDbMap' version='01.01' prefix='ecdbmap' />"
+        "<ECEntityClass typeName='Foo' modifier='None' >"
+        "   <ECProperty propertyName='FooProp' typeName='int' />"
+        "</ECEntityClass>"
+        "<ECEntityClass typeName='Goo' modifier='None' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>"
+        "                   <Strategy>ExistingTable</Strategy>"
+        "                 </MapStrategy>"
+        "                <TableName>TestTable</TableName>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "   <ECProperty propertyName='GooProp' typeName='int' />"
+        "   <ECNavigationProperty propertyName = 'navProp' relationshipName = 'FooHasManyGoo' direction = 'backward' />"
+        "</ECEntityClass>"
+        "<ECRelationshipClass typeName='FooHasManyGoo' modifier='None' strength='referencing'>"
+        "    <Source cardinality='(0,1)' polymorphic='false'>"
+        "      <Class class = 'Foo' />"
+        "    </Source>"
+        "    <Target cardinality='(0,N)' polymorphic='false'>"
+        "      <Class class = 'Goo' />"
+        "    </Target>"
+        "</ECRelationshipClass>"
+        "</ECSchema>", true, "reusing existing column for navigation property is expected to succeed");
+
+    bool asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), testItem);
+    ASSERT_FALSE(asserted);
+
+    assertECSql("SELECT COUNT(*) FROM t.Goo", GetECDb(), ECSqlStatus::Success, DbResult::BE_SQLITE_ROW);
+    assertECSql("INSERT INTO t.Goo (GooProp, navProp) VALUES(1, 1)", GetECDb());
+    assertECSql("UPDATE ONLY t.Goo SET navProp=2", GetECDb());
+    assertECSql("DELETE FROM t.Goo", GetECDb());
+    }
+
+    //Cardinality implying NotNull or FK Column should not be allowed to map to existing table.
+    {
+    SetupECDb("existingtablenavproperty.ecdb");
+
+    GetECDb().CreateTable("TestTable", "ECInstanceId INTEGER PRIMARY KEY, GooProp INTEGER, navProp INTEGER");
+    ASSERT_TRUE(GetECDb().TableExists("TestTable"));
+    GetECDb().SaveChanges();
+
+    SchemaItem testItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='t' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "<ECSchemaReference name='ECDbMap' version='01.01' prefix='ecdbmap' />"
+        "<ECEntityClass typeName='Foo' modifier='None' >"
+        "   <ECProperty propertyName='FooProp' typeName='int' />"
+        "</ECEntityClass>"
+        "<ECEntityClass typeName='Goo' modifier='None' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>"
+        "                   <Strategy>ExistingTable</Strategy>"
+        "                 </MapStrategy>"
+        "                <TableName>TestTable</TableName>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "   <ECProperty propertyName='GooProp' typeName='int' />"
+        "   <ECNavigationProperty propertyName = 'navProp' relationshipName = 'FooHasManyGoo' direction = 'backward' />"
+        "</ECEntityClass>"
+        "<ECRelationshipClass typeName='FooHasManyGoo' modifier='None' strength='embedding'>"
+        "    <Source cardinality='(1,1)' polymorphic='false'>"
+        "      <Class class = 'Foo' />"
+        "    </Source>"
+        "    <Target cardinality='(0,N)' polymorphic='true'>"
+        "      <Class class = 'Goo' />"
+        "    </Target>"
+        "</ECRelationshipClass>"
+        "</ECSchema>", false, "Cardinality implying NotNull or FK Column is expected to be not supported");
+
+    bool asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), testItem);
+    ASSERT_FALSE(asserted);
+    }
+    }
+
+//---------------------------------------------------------------------------------------
 //*Test to verify the CRUD operations for a schema having similar Class and Property name
 // @bsimethod                                   Maha Nasir                     08/15
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -3016,7 +3433,7 @@ TEST_F(ECDbMappingTestFixture, MismatchDataTypesInExistingTable)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                     08/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, InvalidPrimaryKeyInExistingTable)
+TEST_F(ECDbMappingTestFixture, ExistingTableWithOutECInstanceIdColumn)
     {
     ECDb ecdb;
     ASSERT_EQ(BE_SQLITE_OK, ECDbTestUtility::CreateECDb(ecdb, nullptr, L"InvalidPrimaryKeyInExistingTable.ecdb"));
@@ -3041,7 +3458,7 @@ TEST_F(ECDbMappingTestFixture, InvalidPrimaryKeyInExistingTable)
         "            </ClassMap>"
         "        </ECCustomAttributes>"
         "  <ECProperty propertyName='Name' typeName='string'/>"
-        "  <ECProperty propertyName='Date' typeName='double'/>"
+        "  <ECProperty propertyName='Date' typeName='int'/>"
         "</ECEntityClass>"
         "</ECSchema>", false);
 
@@ -8956,7 +9373,6 @@ struct ReferentialIntegrityTestFixture : ECDbMappingTestFixture
 
     protected:
         void ExecuteRelationshipInsertionIntegrityTest(ECDbR ecdb, bool allowDuplicateRelationships, bool allowForeignKeyConstraint, bool schemaImportExpectedToSucceed) const;
-
     };
 
 /*---------------------------------------------------------------------------------**//**
