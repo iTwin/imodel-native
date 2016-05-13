@@ -220,6 +220,11 @@
         - @b Add, @b delete, @b modify
     - @ref BentleyApi::ECN::ECSchema::GetClasses "ECClasses"
         - @b Add a new @ref BentleyApi::ECN::ECClass "ECClass"
+        - @b Delete
+            - an @ref BentleyApi::ECN::ECEntityClass "ECEntityClass" which
+                - does not have subclasses
+                - is not used as constraint class in an @ref BentleyApi::ECN::ECRelationshipConstraint "ECRelationshipConstraint"
+            - an @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClass" which is mapped as <b>link table</b>
     - @ref BentleyApi::ECN::ECSchema::GetEnumerations "ECEnumerations"
         - @b Add a new @ref BentleyApi::ECN::ECEnumeration "ECEnumeration"
     - @b CustomAttributes on the ECSchema
@@ -229,8 +234,6 @@
     - @b Modify 
         - @ref BentleyApi::ECN::ECClass::GetDescription "Description"
         - @ref BentleyApi::ECN::ECClass::GetDisplayLabel "DisplayLabel"
-    - @ref BentleyApi::ECN::ECClass::GetBaseClasses "BaseClasses"
-        - @b Modify order of BaseClasses in the ECClass
     - @b ECProperties
         - @b Add a new @ref BentleyApi::ECN::ECProperty "ECProperty"
     - @b CustomAttributes on the ECClass
