@@ -149,7 +149,7 @@ struct ThreeMxProgressive : ProgressiveTask
 ProgressiveTask::Completion ThreeMxProgressive::_DoProgressive(ProgressiveContext& context, WantShow& wantShow) 
     {
     uint64_t now = BeTimeUtilities::QueryMillisecondsCounter();
-    DrawArgs args(context, m_scene, now, now-m_scene.GetSaveTimeout());
+    DrawArgs args(context, m_scene, now, now-m_scene.GetNodeExpirationTime());
 
     DEBUG_PRINTF("3MX progressive %d missing", m_missing.size());
 
@@ -269,9 +269,9 @@ void ThreeMxModel::_AddTerrainGraphics(TerrainContextR context) const
         }
 
     uint64_t now = BeTimeUtilities::QueryMillisecondsCounter();
-    DrawArgs args(context, *m_scene, now, now-m_scene->GetSaveTimeout());
+    DrawArgs args(context, *m_scene, now, now-m_scene->GetNodeExpirationTime());
     m_scene->Draw(args);
-    DEBUG_PRINTF("3MX draw %d graphics, %d missing nodes", args.m_graphics.m_entries.size(), args.m_missing.size());
+    DEBUG_PRINTF("3MX draw %d graphics, %d total, %d missing ", args.m_graphics.m_entries.size(), m_scene->CountNodes(), args.m_missing.size());
 
     args.DrawGraphics();
 

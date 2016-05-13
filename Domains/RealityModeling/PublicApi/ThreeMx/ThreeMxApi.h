@@ -68,8 +68,6 @@ public:
     Geometry(Dgn::Render::Graphic::TriMeshArgs const&, SceneR);
     PolyfaceHeaderPtr GetPolyface() const;
     void Draw(DrawArgsR);
-    DRange3d GetRange(TransformCR) const;
-    size_t GetMemorySize() const;
     void ClearGraphic() {m_graphic = nullptr;}
     bool IsCached() const {return m_graphic.IsValid();}
 };
@@ -163,7 +161,6 @@ public:
     BentleyStatus Read3MXB(MxStreamBuffer&, SceneR);
     Utf8String GetFilePath(SceneR) const;
     BentleyStatus LoadChildren(SceneR);
-    void Dump(Utf8CP prefix) const;
     void Draw(DrawArgsR, int depth);
     Dgn::ElementAlignedBox3d ComputeRange();
     ChildLoad GetChildLoadStatus() const {return (ChildLoad) m_childLoad.load();}
@@ -176,7 +173,7 @@ public:
     bool AreChildrenNotLoaded() const {return m_childLoad.load() == ChildLoad::NotLoaded;}
     bool IsDisplayable() const {return GetMaxDiameter() > 0.0;}
     void UnloadChildren(uint64_t olderThan);
-    size_t GetNodeCount() const;
+    int CountNodes() const;
     ChildNodes const* GetChildren() const {return AreChildrenValid() ? &m_childNodes : nullptr;}
     NodeCP GetParent() const {return m_parent;}
 };
@@ -205,7 +202,7 @@ private:
     Transform m_location;
     double m_scale = 1.0;
     NodePtr m_rootNode;
-    uint32_t m_saveTimeout = 20 * 1000; // save unused nodes for 20 seconds
+    uint32_t m_expirationTime = 20 * 1000; // save unused nodes for 20 seconds
     Dgn::RealityDataCachePtr m_cache;
     Dgn::Render::SystemP m_renderSystem = nullptr;
 
@@ -222,8 +219,8 @@ public:
     double GetNodeRadius(Node const& node) const {return m_scale * node.GetRadius();}
     void Draw(DrawArgs& args) {m_rootNode->Draw(args, 0);}
     Dgn::ElementAlignedBox3d ComputeRange() {return m_rootNode->ComputeRange();}
-    uint32_t GetSaveTimeout() const {return m_saveTimeout;}
-    size_t GetNodeCount() const {return m_rootNode->GetNodeCount();}
+    uint32_t GetNodeExpirationTime() const {return m_expirationTime;}
+    int CountNodes() const {return m_rootNode->CountNodes();}
     bool UseFixedResolution()const {return m_useFixedResolution;}
     double GetFixedResolution() const {return m_fixedResolution;}
     TransformCR GetLocation() const {return m_location;}

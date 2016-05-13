@@ -23,37 +23,21 @@ Utf8String Node::GetChildFile() const
     }
 
 /*-----------------------------------------------------------------------------------**//**
+* Count the number of node for this node and all of its children.
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t Node::GetNodeCount() const
+int Node::CountNodes() const
     {
-    size_t count = 1;
+    int count = 1;
 
     ChildNodes const* children = GetChildren();
     if (nullptr != children)
         {
         for (auto const& child : *children)
-            count += child->GetNodeCount();
+            count += child->CountNodes();
         }
 
     return count;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Node::Dump(Utf8CP header) const
-    {
-    puts(header);
-    printf("Children=%s, nGeom=%d\n", GetChildFile().c_str(), (int) m_geometry.size());
-
-    Utf8String childHdr = Utf8String(header) + "  ";
-    ChildNodes const* children = GetChildren();
-    if (nullptr == children)
-        return;
-
-    for (auto const& child : *children)
-        child->Dump(childHdr.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -184,9 +168,11 @@ ElementAlignedBox3d Node::ComputeRange()
     return m_range;
     }
 
-/*-----------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     03/2015
+/*---------------------------------------------------------------------------------**//**
+* Create a PolyfaceHeader from a Geometry
+* @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+
 PolyfaceHeaderPtr Geometry::GetPolyface() const
     {
     Graphic::TriMeshArgs trimesh;
@@ -200,7 +186,9 @@ PolyfaceHeaderPtr Geometry::GetPolyface() const
     }
 
 /*-----------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     03/2015
+* Construct a Geometry from a TriMeshArgs and a Scene. The scene is necessary to get the Render::System, and this
+* Geometry is only valid for that Render::System
+* @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 Geometry::Geometry(Graphic::TriMeshArgs const& args, SceneR scene)
     {
@@ -231,25 +219,8 @@ Geometry::Geometry(Graphic::TriMeshArgs const& args, SceneR scene)
     m_graphic->Close();
     }
 
-/*-----------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-size_t Geometry::GetMemorySize() const
-    {
-    size_t size = m_points.size() * sizeof(FPoint3d) + m_normals.size() * sizeof(FPoint3d) + m_textureUV.size() * sizeof(FPoint2d);
-
-    if (m_graphic.IsValid())
-        {
-        size += (m_points.size()  * 3 +
-                 m_normals.size() * 3 +
-                 m_textureUV.size() * 2) * sizeof(float);     // Account for QVision data (floats).
-        }
-
-    return size;
-    }
-
-/*-----------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     03/2015
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Geometry::Draw(DrawArgsR args)
     {
@@ -257,18 +228,3 @@ void Geometry::Draw(DrawArgsR args)
         args.m_graphics.Add(*m_graphic);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DRange3d Geometry::GetRange(TransformCR trans) const    
-    {
-    DRange3d range = DRange3d::NullRange();
-
-    for (auto const &fPoint : m_points)
-        {
-        DPoint3d dPt = {fPoint.x, fPoint.y, fPoint.z};
-        range.Extend(trans, &dPt, 1);
-        }
-
-    return range;
-    }
