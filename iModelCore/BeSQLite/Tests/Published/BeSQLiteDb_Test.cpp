@@ -667,7 +667,7 @@ TEST(BeSQLiteDbOpenTest, Expired)
 
     BeFileName expiredFileNameW (docDir);
     expiredFileNameW.AppendToPath(L"DgnDb");
-    expiredFileNameW.AppendToPath(L"expired.idgndb");
+    expiredFileNameW.AppendToPath(L"expired.ibim");
     ASSERT_TRUE( BeFileName::DoesPathExist(expiredFileNameW) );
 
     Utf8String expiredFileName(expiredFileNameW);
@@ -698,7 +698,7 @@ TEST(BeSQLiteDbOpenTest, Expired2)
     Utf8String expiredFileName;
     if (true)
         {
-        BeFileName dbFullName = BeSQLiteDbTests::getDbFilePath(L"expired2.idgndb");
+        BeFileName dbFullName = BeSQLiteDbTests::getDbFilePath(L"expired2.ibim");
         if (BeFileName::DoesPathExist(dbFullName))
             BeFileName::BeDeleteFile(dbFullName);
         BeSQLite::Db db;

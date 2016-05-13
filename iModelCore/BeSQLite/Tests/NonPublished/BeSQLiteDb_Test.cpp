@@ -152,7 +152,7 @@ TEST(BeSQLiteDb, ChangeBriefcaseIdInReadonlyMode)
     //prepare test dgn db
     {
     Db db;
-    auto stat = SetupDb(db, L"changerepoid.idgndb");
+    auto stat = SetupDb(db, L"changerepoid.ibim");
     ASSERT_EQ(BE_SQLITE_OK, stat) << "Creation of test BeSQLite DB failed.";
     dbPath.assign(db.GetDbFileName());
     db.CloseDb();
