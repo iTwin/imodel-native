@@ -1042,6 +1042,7 @@ protected:
 };
 
 //=======================================================================================
+//! Exposes methods for constructing a Graphic from graphic primitives.
 // @bsistruct                                                   Paul.Connelly   05/16
 //=======================================================================================
 struct GraphicBuilder
@@ -1259,6 +1260,7 @@ public:
 };
 
 //=======================================================================================
+//! A smart-pointer to a GraphicBuilder object.
 // @bsistruct                                                   Paul.Connelly   05/16
 //=======================================================================================
 struct GraphicBuilderPtr
