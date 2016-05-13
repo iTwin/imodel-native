@@ -1104,12 +1104,11 @@ TEST_F(ECDbRelationshipsIntegrityTests, ForwardHoldingOneToOne)
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "DELETE FROM ts.Foo WHERE ECInstanceId=?"));
+
     //Delete fooKeys[0]
     {
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fooKeys[0].GetECInstanceId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
-    stmt.Reset();
-    stmt.ClearBindings();
 
     ASSERT_FALSE(InstanceExists("ts.Foo", fooKeys[0]));
     ASSERT_TRUE(InstanceExists("ts.Foo", fooKeys[1]));
@@ -1118,15 +1117,35 @@ TEST_F(ECDbRelationshipsIntegrityTests, ForwardHoldingOneToOne)
     ASSERT_TRUE(InstanceExists("ts.Goo", gooKeys[1]));
     ASSERT_TRUE(InstanceExists("ts.Goo", gooKeys[2]));
     ASSERT_FALSE(RelationshipExists("ts.FooHoldsGoo", fooKeys[0], gooKeys[0]));
+    }
 
+    //Delete fooKeys[1]
+    {
+    stmt.Reset();
+    stmt.ClearBindings();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fooKeys[1].GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+
+    ASSERT_FALSE(InstanceExists("ts.Foo", fooKeys[1]));
+    ASSERT_TRUE(InstanceExists("ts.Foo", fooKeys[2]));
     ASSERT_TRUE(InstanceExists("ts.Goo", gooKeys[0]));
-
-    //gooKeys[1] and gooKeys[2] are still held by fooKeys[1] and fooKeys[2] respectively in 1-1 relationship
     ASSERT_TRUE(InstanceExists("ts.Goo", gooKeys[1]));
     ASSERT_TRUE(InstanceExists("ts.Goo", gooKeys[2]));
+    ASSERT_FALSE(RelationshipExists("ts.FooHoldsGoo", fooKeys[1], gooKeys[1]));
+    }
 
-    ASSERT_TRUE(RelationshipExists("ts.FooHoldsGoo", fooKeys[1], gooKeys[1]));
-    ASSERT_TRUE(RelationshipExists("ts.FooHoldsGoo", fooKeys[2], gooKeys[2]));
+    //Delete fooKeys[2]
+    {
+    stmt.Reset();
+    stmt.ClearBindings();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fooKeys[2].GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+
+    ASSERT_FALSE(InstanceExists("ts.Foo", fooKeys[2]));
+    ASSERT_TRUE(InstanceExists("ts.Goo", gooKeys[0]));
+    ASSERT_TRUE(InstanceExists("ts.Goo", gooKeys[1]));
+    ASSERT_TRUE(InstanceExists("ts.Goo", gooKeys[2]));
+    ASSERT_FALSE(RelationshipExists("ts.FooHoldsGoo", fooKeys[2], gooKeys[2]));
     }
     }
 
@@ -1143,6 +1162,7 @@ TEST_F(ECDbRelationshipsIntegrityTests, ForwardHoldingRelationshipsTest)
     AddEntityClass("Goo");
     AddRelationShipClass(Cardinality::ZeroOne, Cardinality::OneOne, StrengthType::Holding, Direction::Forward, "FooHoldsGoo", "Foo", "Goo", true);
     AddRelationShipClass(Cardinality::ZeroOne, Cardinality::OneMany, StrengthType::Holding, Direction::Forward, "FooHoldManyGoo", "Foo", "Goo", true);
+    AddRelationShipClass(Cardinality::OneMany, Cardinality::OneMany, StrengthType::Holding, Direction::Forward, "ManyFooHoldManyGoo", "Foo", "Goo", true);
     AssertSchemaImport(true);
 
     std::vector<ECInstanceKey> fooKeys, gooKeys;
@@ -1154,6 +1174,7 @@ TEST_F(ECDbRelationshipsIntegrityTests, ForwardHoldingRelationshipsTest)
     //Compute what are the right valid permutation
     std::vector<DbResult> FooHoldsGooResult;
     std::vector<DbResult> FooHoldsManyGooResult;
+    std::vector<DbResult> ManyFooHoldManyGooResult;
 
     for (auto f = 0; f < maxFooInstances; f++)
         {
@@ -1170,6 +1191,9 @@ TEST_F(ECDbRelationshipsIntegrityTests, ForwardHoldingRelationshipsTest)
                 FooHoldsManyGooResult.push_back(BE_SQLITE_DONE);
             else
                 FooHoldsManyGooResult.push_back(BE_SQLITE_CONSTRAINT_UNIQUE);
+
+            //Source(1,N), Target(1,N)
+            ManyFooHoldManyGooResult.push_back(BE_SQLITE_DONE);
             }
         }
 
@@ -1194,6 +1218,16 @@ TEST_F(ECDbRelationshipsIntegrityTests, ForwardHoldingRelationshipsTest)
     }
     ASSERT_EQ(count_FooHoldManyGoo, GetInsertedRelationshipsCount("ts.FooHoldManyGoo"));
 
+    //N-N...........................
+    size_t count_ManyFooHoldManyGoo = 0;
+    {
+    ASSERT_TRUE(TryGetPersistedMapStrategy(mapStrategy, m_ecdb, GetRelationShipClassId("ManyFooHoldManyGoo")));
+    ASSERT_EQ(PersistedMapStrategy::Strategy::OwnTable, mapStrategy.m_strategy);
+
+    InsertRelationshipInstances("ts.ManyFooHoldManyGoo", fooKeys, gooKeys, ManyFooHoldManyGooResult, count_ManyFooHoldManyGoo);
+    }
+    ASSERT_EQ(count_ManyFooHoldManyGoo, GetInsertedRelationshipsCount("ts.ManyFooHoldManyGoo"));
+
     m_ecdb.Schemas().CreateECClassViewsInDb();
 
     ECSqlStatement stmt;
@@ -1215,11 +1249,7 @@ TEST_F(ECDbRelationshipsIntegrityTests, ForwardHoldingRelationshipsTest)
     ASSERT_FALSE(RelationshipExists("ts.FooHoldManyGoo", fooKeys[0], gooKeys[0]));
     ASSERT_FALSE(RelationshipExists("ts.FooHoldManyGoo", fooKeys[0], gooKeys[1]));
     ASSERT_FALSE(RelationshipExists("ts.FooHoldManyGoo", fooKeys[0], gooKeys[2]));
-    ASSERT_TRUE(InstanceExists("ts.Goo", gooKeys[0]));//gooKeys[0] is still held by fooKeys[1] and fooKeys[2]
-    ASSERT_TRUE(InstanceExists("ts.Goo", gooKeys[2]));
-
-    ASSERT_TRUE(RelationshipExists("ts.FooHoldsGoo", fooKeys[1], gooKeys[1]));
-    ASSERT_TRUE(RelationshipExists("ts.FooHoldsGoo", fooKeys[2], gooKeys[2]));
+    ASSERT_FALSE(RelationshipExists("ts.ManyFooHoldManyGoo", fooKeys[0], gooKeys[0]));
     }
 
     //Delete fooKeys[1]
@@ -1231,9 +1261,11 @@ TEST_F(ECDbRelationshipsIntegrityTests, ForwardHoldingRelationshipsTest)
 
     ASSERT_FALSE(InstanceExists("ts.Foo", fooKeys[1]));
     ASSERT_TRUE(InstanceExists("ts.Foo", fooKeys[2]));
+    ASSERT_TRUE(InstanceExists("ts.Goo", gooKeys[0]));
     ASSERT_TRUE(InstanceExists("ts.Goo", gooKeys[1]));
     ASSERT_TRUE(InstanceExists("ts.Goo", gooKeys[2]));
     ASSERT_FALSE(RelationshipExists("ts.FooHoldsGoo", fooKeys[1], gooKeys[1]));
+    ASSERT_FALSE(RelationshipExists("ts.ManyFooHoldManyGoo", fooKeys[1], gooKeys[1]));
     }
 
     //Delete fooKeys[2]
@@ -1244,6 +1276,8 @@ TEST_F(ECDbRelationshipsIntegrityTests, ForwardHoldingRelationshipsTest)
     stmt.ClearBindings();
 
     ASSERT_FALSE(InstanceExists("ts.Foo", fooKeys[2]));
+    ASSERT_TRUE(InstanceExists("ts.Goo", gooKeys[0]));
+    ASSERT_TRUE(InstanceExists("ts.Goo", gooKeys[1]));
     ASSERT_TRUE(InstanceExists("ts.Goo", gooKeys[2]));
     ASSERT_FALSE(RelationshipExists("ts.FooHoldsGoo", fooKeys[2], gooKeys[2]));
     ASSERT_FALSE(RelationshipExists("ts.ManyFooHoldManyGoo", fooKeys[2], gooKeys[2]));
@@ -1263,6 +1297,7 @@ TEST_F(ECDbRelationshipsIntegrityTests, BackwardHoldingRelationshipsTest)
     AddEntityClass("Goo");
     AddRelationShipClass(Cardinality::ZeroOne, Cardinality::ZeroOne, StrengthType::Holding, Direction::Backward, "FooHeldByGoo", "Foo", "Goo", true);
     AddRelationShipClass(Cardinality::OneMany, Cardinality::ZeroOne, StrengthType::Holding, Direction::Backward, "FooHeldByManyGoo", "Foo", "Goo", true);
+    AddRelationShipClass(Cardinality::OneMany, Cardinality::OneMany, StrengthType::Holding, Direction::Backward, "ManyFooHeldByManyGoo", "Foo", "Goo", true);
     AssertSchemaImport(true);
 
     std::vector<ECInstanceKey> fooKeys, gooKeys;
@@ -1274,6 +1309,7 @@ TEST_F(ECDbRelationshipsIntegrityTests, BackwardHoldingRelationshipsTest)
     //Compute what are the right valid permutation
     std::vector<DbResult> fooHeldByGooResult;
     std::vector<DbResult> fooHeldByManyGooResult;
+    std::vector<DbResult> manyFooHeldByManyGoo;
 
     for (auto f = 0; f < maxFooInstances; f++)
         {
@@ -1290,6 +1326,9 @@ TEST_F(ECDbRelationshipsIntegrityTests, BackwardHoldingRelationshipsTest)
                 fooHeldByManyGooResult.push_back(BE_SQLITE_DONE);
             else
                 fooHeldByManyGooResult.push_back(BE_SQLITE_CONSTRAINT_UNIQUE);
+
+            //Source(1,N), Target(1,N)
+            manyFooHeldByManyGoo.push_back(BE_SQLITE_DONE);
             }
         }
 
@@ -1313,6 +1352,16 @@ TEST_F(ECDbRelationshipsIntegrityTests, BackwardHoldingRelationshipsTest)
     InsertRelationshipInstances("ts.FooHeldByManyGoo", fooKeys, gooKeys, fooHeldByManyGooResult, count_FooHeldByManyGoo);
     }
     ASSERT_EQ(count_FooHeldByManyGoo, GetInsertedRelationshipsCount("ts.FooHeldByManyGoo"));
+
+    //N-N...........................
+    size_t count_ManyFooHeldByManyGoo = 0;
+    {
+    ASSERT_TRUE(TryGetPersistedMapStrategy(mapStrategy, m_ecdb, GetRelationShipClassId("ManyFooHeldByManyGoo")));
+    ASSERT_EQ(PersistedMapStrategy::Strategy::OwnTable, mapStrategy.m_strategy);
+
+    InsertRelationshipInstances("ts.ManyFooHeldByManyGoo", fooKeys, gooKeys, manyFooHeldByManyGoo, count_ManyFooHeldByManyGoo);
+    }
+    ASSERT_EQ(count_ManyFooHeldByManyGoo, GetInsertedRelationshipsCount("ts.ManyFooHeldByManyGoo"));
 
     m_ecdb.Schemas().CreateECClassViewsInDb();
 
@@ -1347,7 +1396,8 @@ TEST_F(ECDbRelationshipsIntegrityTests, BackwardHoldingRelationshipsTest)
 
     ASSERT_FALSE(InstanceExists("ts.Goo", gooKeys[1]));
     ASSERT_TRUE(InstanceExists("ts.Goo", gooKeys[2]));
-    ASSERT_FALSE(InstanceExists("ts.Foo", fooKeys[1]));
+    ASSERT_TRUE(InstanceExists("ts.Foo", fooKeys[0]));
+    ASSERT_TRUE(InstanceExists("ts.Foo", fooKeys[1]));
     ASSERT_TRUE(InstanceExists("ts.Foo", fooKeys[2]));
     ASSERT_FALSE(RelationshipExists("ts.FooHeldByGoo", fooKeys[1], gooKeys[1]));
     ASSERT_FALSE(RelationshipExists("ts.ManyFooHeldByManyGoo", fooKeys[1], gooKeys[1]));
@@ -1361,6 +1411,8 @@ TEST_F(ECDbRelationshipsIntegrityTests, BackwardHoldingRelationshipsTest)
     stmt.ClearBindings();
 
     ASSERT_FALSE(InstanceExists("ts.Goo", gooKeys[2]));
+    ASSERT_TRUE(InstanceExists("ts.Foo", fooKeys[0]));
+    ASSERT_TRUE(InstanceExists("ts.Foo", fooKeys[1]));
     ASSERT_TRUE(InstanceExists("ts.Foo", fooKeys[2]));
     ASSERT_FALSE(RelationshipExists("ts.FooHeldByGoo", fooKeys[2], gooKeys[2]));
     ASSERT_FALSE(RelationshipExists("ts.ManyFooHeldByManyGoo", fooKeys[2], gooKeys[2]));

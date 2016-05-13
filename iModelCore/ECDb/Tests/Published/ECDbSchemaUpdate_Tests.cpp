@@ -1401,6 +1401,107 @@ TEST_F(ECSchemaUpdateTests, InvalidValueForNameSpacePrefix)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan Khan                          05/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, Delete_ECEntityClass_MappedTo_OwnTable)
+    {
+    //Setup Db ===================================================================================================
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECEntityClass typeName='Foo' modifier='None'>"
+        "       <ECProperty propertyName='S' typeName='string' />"
+        "       <ECProperty propertyName='D' typeName='double' />"
+        "       <ECProperty propertyName='L' typeName='long' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Goo' modifier='None'>"
+        "       <ECProperty propertyName='S' typeName='string' />"
+        "       <ECProperty propertyName='D' typeName='double' />"
+        "       <ECProperty propertyName='L' typeName='long' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    auto assertAndExecuteECSQL = [] (ECDbCR ecdb, Utf8CP ecsql, ECSqlStatus prepareStatus = ECSqlStatus::Success, DbResult stepStatus = BE_SQLITE_DONE)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(stmt.Prepare(ecdb, ecsql), prepareStatus);
+        if (stmt.IsPrepared())
+            {
+            ASSERT_EQ(stmt.Step(), stepStatus);
+            }
+        };
+
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(S,D,L) VALUES ('test1', 1.3, 334)" , ECSqlStatus::Success, BE_SQLITE_DONE);
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(S,D,L) VALUES ('test2', 23.3, 234)", ECSqlStatus::Success, BE_SQLITE_DONE);
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(S,D,L) VALUES ('test3', 44.32, 3344)", ECSqlStatus::Success, BE_SQLITE_DONE);
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(S,D,L) VALUES ('test4', 13.3, 2345)", ECSqlStatus::Success, BE_SQLITE_DONE);
+
+    ASSERT_TRUE(GetECDb().TableExists("ts_Foo"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Foo"), nullptr);
+
+    ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
+
+    //Delete Foo ===================================================================================================
+    SchemaItem deleteFoo(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECEntityClass typeName='Goo' modifier='None'>"
+        "       <ECProperty propertyName='S' typeName='string' />"
+        "       <ECProperty propertyName='D' typeName='double' />"
+        "       <ECProperty propertyName='L' typeName='long' />"
+        "   </ECEntityClass>"
+        "</ECSchema>", true, "Delete class should be successfull");
+    bool asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), deleteFoo);
+    ASSERT_FALSE(asserted);
+    //Following should not exist
+    ASSERT_EQ(GetECDb().Schemas().GetECClass("TestSchema", "Foo"), nullptr);
+    ASSERT_FALSE(GetECDb().TableExists("ts_Foo"));
+
+    //Following should exist
+    ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
+
+    assertAndExecuteECSQL(GetECDb(), "SELECT S, D, L FROM ts.Foo", ECSqlStatus::InvalidECSql);
+    assertAndExecuteECSQL(GetECDb(), "SELECT S, D, L FROM ts.Goo", ECSqlStatus::Success, BE_SQLITE_ROW);
+
+    //Add Foo Again===============================================================================================
+    SchemaItem addFoo(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='3.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECEntityClass typeName='Foo' modifier='None'>"
+        "       <ECProperty propertyName='S' typeName='string' />"
+        "       <ECProperty propertyName='D' typeName='double' />"
+        "       <ECProperty propertyName='L' typeName='long' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Goo' modifier='None'>"
+        "       <ECProperty propertyName='S' typeName='string' />"
+        "       <ECProperty propertyName='D' typeName='double' />"
+        "       <ECProperty propertyName='L' typeName='long' />"
+        "   </ECEntityClass>"
+        "</ECSchema>", true, "Delete class should be successfull");
+    asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), addFoo);
+    ASSERT_FALSE(asserted);
+
+    ASSERT_TRUE(GetECDb().TableExists("ts_Foo"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Foo"), nullptr);
+
+    ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
+
+    assertAndExecuteECSQL(GetECDb(), "SELECT S, D, L FROM ts.Foo", ECSqlStatus::Success, BE_SQLITE_DONE);
+    assertAndExecuteECSQL(GetECDb(), "SELECT S, D, L FROM ts.Goo", ECSqlStatus::Success, BE_SQLITE_ROW);
+
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(S,D,L) VALUES ('test1', 1.3, 334)", ECSqlStatus::Success, BE_SQLITE_DONE);
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(S,D,L) VALUES ('test2', 23.3, 234)", ECSqlStatus::Success, BE_SQLITE_DONE);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSchemaUpdateTests, ValidateModifingAddingDeletingBaseClassNotSupported)
@@ -1541,8 +1642,9 @@ TEST_F(ECSchemaUpdateTests, AddNewECEnumeration)
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         " <ECEnumeration typeName='NonStrictEnum' backingTypeName='int' isStrict='False'>"
         "   <ECEnumerator value = '0' displayLabel = 'txt' />"
+        "   <ECEnumerator value = '1' displayLabel = 'bat' />"
         " </ECEnumeration>"
-        "</ECSchema>", false, "Adding new ECEnumeration is not suppported");
+        "</ECSchema>", true, "Adding new ECEnumeration is supported");
     bool asserted = false;
     AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
     ASSERT_FALSE(asserted);

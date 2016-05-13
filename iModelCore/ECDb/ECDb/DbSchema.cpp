@@ -319,8 +319,6 @@ DbSchema::EntityType DbSchema::GetEntityType(ECDbCR ecdb, Utf8CP name)
     return EntityType::None;
     }
 
-#define DBSCHEMA_NULLTABLENAME "ECDbNotMapped"
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        10/2014
 //--------------------------------------------------------------------------------------

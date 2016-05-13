@@ -46,7 +46,8 @@ private:
     bmap<ECN::ECEnumerationCP, uint64_t> m_enumIdCache;
     BeMutex m_mutex;
     CustomAttributeValidator m_customAttributeValidator;
-
+    std::set<ECSchemaId> m_majorChangesAllowedForSchemas;
+    bool IsMajorChangeAllowedForECSchema(ECSchemaId Id) const { return m_majorChangesAllowedForSchemas.find(Id) != m_majorChangesAllowedForSchemas.end(); }
     BentleyStatus CreateECSchemaEntry(ECSchemaCR);
     BentleyStatus CreateBaseClassEntry(ECClassId, ECClassCR baseClass, int ordinal);
     BentleyStatus CreateECRelationshipConstraintEntry(ECRelationshipConstraintId& constraintId, ECClassId relationshipClassId, ECN::ECRelationshipConstraintR, ECRelationshipEnd);
@@ -70,12 +71,18 @@ private:
     BentleyStatus UpdateECClasses(ECClassChanges& classChanges, ECSchemaCR oldSchema, ECSchemaCR newSchema);
     BentleyStatus UpdateECEnumerations(ECEnumerationChanges& enumChanges, ECSchemaCR oldSchema, ECSchemaCR newSchema);
 
+    BentleyStatus DeleteECClass(ECClassChange& classChange, ECClassCR deletedClass);
+    BentleyStatus DeleteECProperty(ECPropertyChange& propertyChange, ECPropertyCR deletedProperty);
+    BentleyStatus DeleteECCustomAttributes(ECContainerId id, ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType type);
+    BentleyStatus DeleteECInstances(ECClassCR deletedClass);
+    BentleyStatus DeleteECClassEntry(ECClassCR deletedClass);
+    bool IsSpecifiedInECRelationshipConstraint(ECClassCR deletedClass) const;
     BentleyStatus TryParseId(Utf8StringR schemaName, Utf8StringR className, Utf8StringCR id) const;
 
     IssueReporter const& GetIssueReporter() const { return m_ecdb.GetECDbImplR().GetIssueReporter(); }
 
 public:
-    explicit ECDbSchemaWriter(ECDbCR ecdb) : m_ecdb (ecdb) 
+    explicit ECDbSchemaWriter(ECDbCR ecdb) : m_ecdb (ecdb)
         {
         m_customAttributeValidator.Accept("ECDbMap:ClassMap.MapStrategy.MinimumSharedColumnCount");
         m_customAttributeValidator.Reject("ECDbMap:*");
