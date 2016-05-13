@@ -48,6 +48,7 @@ public:
             typedef bmap<ECDbSqlTable const*, RelationshipTypeByClassId> RelationshipPerTable;
         private:
             mutable ClassIdsPerTableMap m_classIdsPerTable;
+            mutable ClassIdsPerTableMap m_nonAbstractClassIdsPerTable;
             mutable bmap<ECN::ECClassId, ClassIdsPerTableMap> m_horizontalPartitions;
             mutable bmap<ECN::ECClassId, RelationshipClassIds> m_relationshipEndsByClassIdRev;
             mutable RelationshipClassIds m_anyClassRelationships;
@@ -79,6 +80,7 @@ public:
             explicit LightweightCache (ECDbMapCR map);
             ~LightweightCache () {}
             std::vector<ECN::ECClassId> const& GetClassesForTable (ECDbSqlTable const&) const;
+            std::vector<ECN::ECClassId> const& GetNonAbstractClassesForTable(ECDbSqlTable const&) const;
             RelationshipTypeByClassId GetRelationshipsMapToTable (ECDbSqlTable const& table) const;
             RelationshipPerTable GetRelationshipsMapToTables () const;
             bset<ECDbSqlTable const*> const& GetVerticalPartitionsForClass(ECN::ECClassId classId) const;

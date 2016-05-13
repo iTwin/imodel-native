@@ -665,6 +665,11 @@ BentleyStatus ECDbMap::EvaluateColumnNotNullConstraints() const
         bmap<ECDbSqlTable const*, bset<ClassMap const*>> constraintClassesPerTable;
         for (ClassMap const* constraintClassMap : constraintClassMaps)
             {
+            //only non-abstract classes need to be considered as NOT NULL can be applied if base classes are all abstract
+            //as there will not be rows for those base classes
+            if (constraintClassMap->GetClass().GetClassModifier() == ECClassModifier::Abstract)
+                continue;
+
             for (ECDbSqlTable const* table : constraintClassMap->GetTables())
                 {
                 constraintClassesPerTable[table].insert(constraintClassMap);
@@ -674,7 +679,7 @@ BentleyStatus ECDbMap::EvaluateColumnNotNullConstraints() const
         LightweightCache const& lwc = GetLightweightCache();
         for (ECDbSqlTable const* fkTable : relClassMap.GetTables())
             {
-            std::vector<ECClassId> allClassIds = lwc.GetClassesForTable(*fkTable);
+            std::vector<ECClassId> allClassIds = lwc.GetNonAbstractClassesForTable(*fkTable);
             bset<ClassMap const*> const& constraintClassIds = constraintClassesPerTable[fkTable];
 
             ECDbSqlColumn const* fkColumn = relClassMap.GetReferencedEndECInstanceIdPropMap()->GetSingleColumn(*fkTable, true);
@@ -683,6 +688,10 @@ BentleyStatus ECDbMap::EvaluateColumnNotNullConstraints() const
                 BeAssert(false);
                 return ERROR;
                 }
+
+            //If FK column is a key property pointing to the ECInstanceId, it can already be NOT NULL
+            if (fkColumn->GetConstraint().IsNotNull())
+                continue;
 
             if (allClassIds.size() == constraintClassIds.size())
                 {
@@ -1216,7 +1225,7 @@ void ECDbMap::LightweightCache::LoadClassIdsPerTable() const
         return;
 
     Utf8String sql;
-    sql.Sprintf("SELECT t.Id, t.Name, c.Id FROM ec_PropertyMap pm "
+    sql.Sprintf("SELECT t.Id, t.Name, c.Id, c.Modifier FROM ec_PropertyMap pm "
                 "JOIN ec_Column col ON col.Id = pm.ColumnId AND (col.ColumnKind & %d = 0) "
                 "JOIN ec_PropertyPath pp ON pp.Id = pm.PropertyPathId "
                 "JOIN ec_ClassMap cm ON cm.Id = pm.ClassMapId "
@@ -1242,7 +1251,11 @@ void ECDbMap::LightweightCache::LoadClassIdsPerTable() const
             }
 
         ECClassId id = stmt->GetValueInt64(2);
+        ECClassModifier classModifier = Enum::FromInt<ECClassModifier>(stmt->GetValueInt(3));
         m_classIdsPerTable[currentTable].push_back(id);
+        if (classModifier != ECClassModifier::Abstract)
+            m_nonAbstractClassIdsPerTable[currentTable].push_back(id);
+
         m_tablesPerClassId[id].insert(currentTable);
         }
 
@@ -1556,6 +1569,15 @@ std::vector<ECClassId> const& ECDbMap::LightweightCache::GetClassesForTable (ECD
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle 05/2016
+//---------------------------------------------------------------------------------------
+std::vector<ECClassId> const& ECDbMap::LightweightCache::GetNonAbstractClassesForTable(ECDbSqlTable const& table) const
+    {
+    LoadClassIdsPerTable();
+    return m_nonAbstractClassIdsPerTable[&table];
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
 //---------------------------------------------------------------------------------------
 std::vector<ECClassId> const& ECDbMap::LightweightCache::GetAnyClassReplacements() const
@@ -1613,6 +1635,7 @@ void ECDbMap::LightweightCache::Reset ()
     m_relationshipEndsByClassIdRev.clear ();
     m_horizontalPartitions.clear();
     m_classIdsPerTable.clear();
+    m_nonAbstractClassIdsPerTable.clear();
     m_relationshipClassIdsPerConstraintClassIds.clear();
     m_nonAnyClassConstraintClassIdsPerRelClassIds.clear();
     m_anyClassRelationships.clear ();
