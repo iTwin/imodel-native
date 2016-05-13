@@ -23,9 +23,10 @@ private:
 	Utf8String m_repoId;
 	Utf8String m_userId;
 	Utf8String m_fullAddress;
+	int m_timeout;
 
 public:
-	WSCLIENT_EXPORT EventServiceClient (Utf8StringCR nameSpace, Utf8StringCR repoId, Utf8StringCR userId);
+	WSCLIENT_EXPORT EventServiceClient (Utf8StringCR nameSpace, Utf8StringCR repoId, Utf8StringCR userId, int longPollingTimeout);
 	WSCLIENT_EXPORT bool Receive(Utf8StringR msgOut, Utf8StringCR token);
 };
 
