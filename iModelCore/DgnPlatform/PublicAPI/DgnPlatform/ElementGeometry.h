@@ -256,7 +256,7 @@ struct GeometryStreamIO
 
         const_iterator begin() const {return const_iterator(m_data, m_dataSize);}
         const_iterator end() const {return const_iterator();}
-        void GetGeometryPartIds(IdSet<DgnGeometryPartId>&, DgnDbR) const;
+        void GetGeometryPartIds(BeSQLite::IdSet<DgnGeometryPartId>&, DgnDbR) const;
         void Draw(Render::GraphicR, ViewContextR, Render::GeometryParamsR, bool activateParams=true, DgnElementCP=nullptr) const;
     };
 

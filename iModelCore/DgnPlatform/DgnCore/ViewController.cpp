@@ -264,7 +264,7 @@ ViewController::ViewController(DgnDbR dgndb, DgnViewId viewId) : m_dgndb(dgndb)
 void ViewController::LoadCategories(JsonValueCR settings)
     {
     if (settings.isMember(VIEW_SETTING_Categories))
-        m_viewedCategories.FromJson(settings[VIEW_SETTING_Categories]);
+        m_viewedCategories.FromString(settings[VIEW_SETTING_Categories].asString());
 
     // load all SubCategories (even for categories not currently on)
     for (auto const& id : DgnSubCategory::QuerySubCategories(m_dgndb))
@@ -356,7 +356,7 @@ void ViewController::_SaveToSettings(JsonValueR settings) const
     if (ColorDef::Black() != m_backgroundColor)
         settings[VIEW_SETTING_BackgroundColor] = m_backgroundColor.GetValue();
 
-    m_viewedCategories.ToJson(settings[VIEW_SETTING_Categories]);
+    settings[VIEW_SETTING_Categories] = m_viewedCategories.ToString();
     if (m_subCategoryOverrides.empty())
         return;
 
@@ -1629,7 +1629,7 @@ void SpatialViewController::_RestoreFromSettings(JsonValueCR jsonObj)
     T_Super::_RestoreFromSettings(jsonObj);
 
     if (jsonObj.isMember(VIEW_SETTING_Models))
-        m_viewedModels.FromJson(jsonObj[VIEW_SETTING_Models]);
+        m_viewedModels.FromString(jsonObj[VIEW_SETTING_Models].asString());
 
     m_viewFlags.From3dJson(jsonObj[VIEW_SETTING_Flags]);
 
@@ -1670,7 +1670,7 @@ void SpatialViewController::_SaveToSettings(JsonValueR jsonObj) const
     T_Super::_SaveToSettings(jsonObj);
 
     m_viewFlags.To3dJson(jsonObj[VIEW_SETTING_Flags]);
-    m_viewedModels.ToJson(jsonObj[VIEW_SETTING_Models]);
+    jsonObj[VIEW_SETTING_Models] = m_viewedModels.ToString();
 
     JsonUtils::DPoint3dToJson(jsonObj[VIEW_SETTING_Origin], m_origin);
     JsonUtils::DPoint3dToJson(jsonObj[VIEW_SETTING_Delta], m_delta);
