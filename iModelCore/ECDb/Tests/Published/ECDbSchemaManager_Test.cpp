@@ -423,29 +423,6 @@ TEST_F(ECDbSchemaManagerTests, ImportDuplicateSchema)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                     Muhammad Hassan                  09/14
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSchemaManagerTests, ImportSchemaWhereOlderVersionAlreadyExists)
-    {
-    ECDbR ecdb = SetupECDb("ecschemamanagertest.ecdb", BeFileName(L"TestSchema.01.00.ecschema.xml"), 3);
-
-    //Verify the imported schema exists.
-    ASSERT_EQ(true, ecdb.Schemas().ContainsECSchema("TestSchema"));
-    ASSERT_EQ(false, ecdb.Schemas().ContainsECSchema("TS"));//shouldn't work with schema prefix
-    ASSERT_EQ(false, ecdb.Schemas().ContainsECSchema("inValidName"));
-
-    ECSchemaPtr schemaPtr = NULL;
-    ECSchemaReadContextPtr  context = nullptr;
-    ECSchemaCachePtr schemaCache = ECSchemaCache::Create();
-    ECDbTestUtility::ReadECSchemaFromDisk(schemaPtr, context, L"TestSchema.01.01.ecschema.xml", nullptr);
-    ASSERT_TRUE(schemaPtr.IsValid());
-    ASSERT_TRUE(schemaPtr != NULL);
-    schemaCache->AddSchema(*schemaPtr);
-
-    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(*schemaCache));
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  04/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbSchemaManagerTests, ImportSchemaWithReferenceToECDbMap10)

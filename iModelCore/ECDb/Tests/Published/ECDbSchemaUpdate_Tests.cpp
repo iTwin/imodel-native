@@ -1399,6 +1399,7 @@ TEST_F(ECSchemaUpdateTests, InvalidValueForNameSpacePrefix)
     AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
     ASSERT_FALSE(asserted);
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan Khan                          05/16
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1499,6 +1500,7 @@ TEST_F(ECSchemaUpdateTests, Delete_ECEntityClass_MappedTo_OwnTable)
     assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(S,D,L) VALUES ('test1', 1.3, 334)", ECSqlStatus::Success, BE_SQLITE_DONE);
     assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(S,D,L) VALUES ('test2', 23.3, 234)", ECSqlStatus::Success, BE_SQLITE_DONE);
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
