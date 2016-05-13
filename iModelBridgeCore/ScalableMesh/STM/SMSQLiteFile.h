@@ -74,6 +74,7 @@ struct SQLiteIndexHeader
     size_t                  m_depth;                        // Cached (maximum) number of levels in the tree.
     int              m_rootNodeBlockID;
     size_t                  m_terrainDepth;                 //Maximum number of LODs for terrain(mesh) data, set at generation time
+    bool                    m_isTerrain;                    //can the Scalable Mesh be used as a terrain, e.g. for design applications
     };
 
 struct SQLiteSourcesData
