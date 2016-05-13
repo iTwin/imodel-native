@@ -58,6 +58,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Azure\AzureBlobStorageClient.cpp" />
+    <ClCompile Include="Azure\EventServiceClient.cpp" />
     <ClCompile Include="Cache\CacheNavigationTask.cpp" />
     <ClCompile Include="Cache\CachingDataSource.cpp" />
     <ClCompile Include="Cache\CachingTaskBase.cpp" />
@@ -193,6 +194,7 @@
     <ClCompile Include="Client\WSRepository.cpp" />
     <ClCompile Include="Client\WSRepositoryClient.cpp" />
     <ClCompile Include="Tests\UnitTests\Published\WebServices\Azure\AzureBlobStorageClientTests.cpp" />
+    <ClCompile Include="Tests\UnitTests\Published\WebServices\Azure\EventServiceClientTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Cache\CacheNavigationTask.h" />
@@ -269,6 +271,7 @@
     <ClInclude Include="PublicAPI\DgnDbServer\Client\RepositoryInfo.h" />
     <ClInclude Include="PublicAPI\DgnDbServer\DgnDbServerCommon.h" />
     <ClInclude Include="PublicAPI\WebServices\Azure\AzureBlobStorageClient.h" />
+    <ClInclude Include="PublicAPI\WebServices\Azure\EventServiceClient.h" />
     <ClInclude Include="PublicAPI\WebServices\Cache\CachingDataSource.h" />
     <ClInclude Include="PublicAPI\WebServices\Cache\ICachingDataSource.h" />
     <ClInclude Include="PublicAPI\WebServices\Cache\IQueryProvider.h" />
@@ -369,6 +372,7 @@
     <ClInclude Include="PublicAPI\WebServices\Client\WSRepositoryClient.h" />
     <ClInclude Include="PublicAPI\WebServices\WebServices.h" />
     <ClInclude Include="Tests\UnitTests\Published\WebServices\Azure\AzureBlobStorageClientTests.h" />
+    <ClInclude Include="Tests\UnitTests\Published\WebServices\Azure\EventServiceClientTests.h" />
   </ItemGroup>
   <ItemGroup>
     <Xml Include="Cache\Persistence\ECSchemas\DataSourceSpecification.01.00.ecschema.xml" />

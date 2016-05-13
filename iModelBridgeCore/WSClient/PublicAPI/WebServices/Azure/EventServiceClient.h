@@ -1,0 +1,32 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: PublicAPI/WebServices/Azure/EventServiceClient.h $
+|
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+//__PUBLISH_SECTION_START__
+
+#include "../Client/WebServicesClient.h"
+#include <DgnClientFx/Utils/Http/HttpError.h>
+#include <DgnClientFx/Utils/Http/HttpResponse.h>
+#include <DgnClientFx/Utils/Threading/AsyncResult.h>
+
+BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
+USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
+
+struct EventServiceClient
+{
+private:
+	Utf8String m_nameSpace;
+	Utf8String m_repoId;
+	Utf8String m_userId;
+	Utf8String m_fullAddress;
+
+public:
+	WSCLIENT_EXPORT EventServiceClient (Utf8StringCR nameSpace, Utf8StringCR repoId, Utf8StringCR userId);
+	WSCLIENT_EXPORT bool Receive(Utf8StringR msgOut, Utf8StringCR token);
+};
+
+END_BENTLEY_WEBSERVICES_NAMESPACE

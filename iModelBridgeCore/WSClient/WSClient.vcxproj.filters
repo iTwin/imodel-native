@@ -369,7 +369,13 @@
     <ClCompile Include="Azure\AzureBlobStorageClient.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Azure\EventServiceClient.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="Tests\UnitTests\Published\WebServices\Azure\AzureBlobStorageClientTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Tests\UnitTests\Published\WebServices\Azure\EventServiceClientTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Connect\ConnectSignInManager.cpp">
@@ -857,7 +863,13 @@
     <ClInclude Include="PublicAPI\WebServices\Azure\AzureBlobStorageClient.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\Azure\EventServiceClient.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="Tests\UnitTests\Published\WebServices\Azure\AzureBlobStorageClientTests.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Tests\UnitTests\Published\WebServices\Azure\EventServiceClientTests.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\WebServices\Connect\ConnectSignInManager.h">
