@@ -120,7 +120,7 @@ template<typename READER> static BentleyStatus readPngToBuffer(ByteStream& outPi
     info.m_height = info_ptr->height;
     info.m_hasAlpha = (32 == info_ptr->pixel_depth);     // either RGB or RGBA
     info.m_isBGR = false;
-    info.m_isTopDown = true;
+    info.SetTopDown();
     outPixels.Resize((uint32_t) (info.m_height*bytesPerRow));
 
     for (uint32_t line=0; line < info.m_height; ++line)
@@ -262,8 +262,8 @@ static BentleyStatus prepareForPng(int& pngformat, bvector <png_bytep>& rows, By
     rows.resize(pngInfo.m_height);
 
     int    rowSize = pngInfo.m_width * bytesPerPixel;
-    uint8_t* row     = pngInfo.m_isTopDown ? img.GetDataP() : img.GetDataP() + (pngInfo.m_height-1)*rowSize;
-    int    rowStep = pngInfo.m_isTopDown? rowSize: -rowSize;
+    uint8_t* row     = pngInfo.IsTopDown() ? img.GetDataP() : img.GetDataP() + (pngInfo.m_height-1)*rowSize;
+    int    rowStep = pngInfo.IsTopDown() ? rowSize : -rowSize;
     for (size_t i=0; i<rows.size(); ++i)
         {
         rows[i] = row;
