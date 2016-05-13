@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Performance/DevSummitPerformanceTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PerformanceTests.h"
@@ -19,7 +19,7 @@ struct PerformanceDevSummitTests : public ::testing::Test
     public:
         void ExecuteInstanceCountQuery()
             {
-            BeFileName dbName("d:\\temp\\data\\SDM_Composite.i.idgndb");
+            BeFileName dbName("d:\\temp\\data\\SDM_Composite.i.ibim");
             auto stat = m_testProject.Open(dbName.GetNameUtf8().c_str());
             EXPECT_EQ (BE_SQLITE_OK, stat);
 
@@ -110,7 +110,7 @@ struct PerformanceDevSummitTests : public ::testing::Test
 
         void DoSingleTest(bool selectProperties, bool useWhereClause, bool useOrderBy, int expectedNumResults)
             {
-            BeFileName dbName("d:\\temp\\data\\PUG_STR_AllRefs_AP.i.idgndb");
+            BeFileName dbName("d:\\temp\\data\\PUG_STR_AllRefs_AP.i.ibim");
             auto stat = m_testProject.Open(dbName.GetNameUtf8().c_str());
             EXPECT_EQ (BE_SQLITE_OK, stat);
             ExecuteQuery(selectProperties, useWhereClause, useOrderBy, expectedNumResults);
