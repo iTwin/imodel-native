@@ -15,7 +15,7 @@ struct PerformanceECInstanceDeleteTestsFixture : public ::testing::Test
     ScopedDgnHost remoteHost;
     void SetUPDgnProj (DgnDbPtr &dgnProj)
         {
-        WCharCP testFileName = L"Main.idgndb";
+        WCharCP testFileName = L"Main.ibim";
         BeFileName sourceFile = DgnDbTestDgnManager::GetSeedFilePath (testFileName);
 
         BeFileName dgndbFileName;

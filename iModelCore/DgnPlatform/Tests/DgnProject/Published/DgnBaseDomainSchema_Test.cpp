@@ -33,7 +33,7 @@ Utf8String DgnBaseDomainSchemaTests::GetDDL(Utf8CP tableName)
 //---------------------------------------------------------------------------------------
 TEST_F(DgnBaseDomainSchemaTests, ValidateDomainSchemaDDL)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"ValidateDomainSchemaDDL.dgndb", Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.ibim", L"ValidateDomainSchemaDDL.bim", Db::OpenMode::ReadWrite);
 
     // dgn_Element
         {

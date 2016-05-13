@@ -17,7 +17,6 @@ TEST (ImageUtilities_Tests, Png)
     RgbImageInfo info;
     info.m_isBGR = false;
     info.m_hasAlpha = true;
-    info.m_isTopDown = true;
     info.m_width = 100;
     info.m_height = 200;
 
@@ -50,7 +49,7 @@ TEST (ImageUtilities_Tests, Png)
     ASSERT_EQ( infoRead.m_width, info.m_width );
     ASSERT_EQ( infoRead.m_height, info.m_height );
     ASSERT_EQ( infoRead.m_hasAlpha, info.m_hasAlpha );
-    ASSERT_TRUE( infoRead.m_isTopDown ); // PNG is always top-down
+    ASSERT_TRUE( infoRead.IsTopDown()); // PNG is always top-down
     ASSERT_TRUE( 0==memcmp(imageRead.GetDataP(), testImage.GetDataP(), imageRead.GetSize()) ); // Since our input was RGBA, there was no transformation on the way out to the file.
     }
 //---------------------------------------------------------------------------------------
@@ -62,7 +61,6 @@ TEST (ImageUtilities_Tests, PngReadFromBuffer)
     RgbImageInfo info;
     info.m_isBGR = false;
     info.m_hasAlpha = true;
-    info.m_isTopDown = true;
     info.m_width = 100;
     info.m_height = 200;
 
@@ -98,7 +96,7 @@ TEST (ImageUtilities_Tests, PngReadFromBuffer)
     ASSERT_EQ( infoRead.m_width, info.m_width );
     ASSERT_EQ( infoRead.m_height, info.m_height );
     ASSERT_EQ( infoRead.m_hasAlpha, info.m_hasAlpha );
-    ASSERT_TRUE( infoRead.m_isTopDown ); // PNG is always top-down
+    ASSERT_TRUE( infoRead.IsTopDown() ); // PNG is always top-down
     ASSERT_TRUE( 0==memcmp(imageRead.GetByteStream().GetDataP(), testImage.GetDataP(), imageRead.GetByteStream().GetSize()) ); // Since our input was RGBA, there was no transformation on the way out to the file.
     }
 
@@ -111,7 +109,6 @@ TEST (ImageUtilities_Tests, JPG)
     RgbImageInfo info;
     info.m_isBGR = false;
     info.m_hasAlpha = false;
-    info.m_isTopDown = true;
     info.m_width = 100;
     info.m_height = 200;
 
@@ -149,7 +146,7 @@ TEST (ImageUtilities_Tests, JPG)
     ASSERT_EQ(infoRead.m_width, info.m_width);
     ASSERT_EQ(infoRead.m_height, info.m_height);
     ASSERT_EQ(infoRead.m_hasAlpha, info.m_hasAlpha);
-    ASSERT_TRUE(infoRead.m_isTopDown); // PNG is always top-down
+    ASSERT_TRUE(infoRead.IsTopDown()); // PNG is always top-down
     EXPECT_EQ(imageRead.GetByteStream().GetSize(), testImage.GetSize());
     // Why image is not same , qaulity was 100 so it should transform or change any thing
     //ASSERT_TRUE(imageRead == testImage); // Since our input was RGBA, there was no transformation on the way out to the file.

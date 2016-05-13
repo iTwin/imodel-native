@@ -29,7 +29,7 @@ struct RevisionTestFixture : ChangeTestFixture
 DEFINE_T_SUPER(ChangeTestFixture)
 protected:
     int m_z = 0;
-    WCharCP m_copyTestFileName = L"RevisionTestCopy.idgndb";
+    WCharCP m_copyTestFileName = L"RevisionTestCopy.ibim";
 
     virtual void _CreateDgnDb() override;
 
@@ -98,7 +98,7 @@ protected:
         return cpEl;
         }
 public:
-    RevisionTestFixture(WCharCP filename = L"RevisionTest.idgndb", bool wantTestDomain=false) : T_Super(filename, wantTestDomain) {}
+    RevisionTestFixture(WCharCP filename = L"RevisionTest.ibim", bool wantTestDomain=false) : T_Super(filename, wantTestDomain) {}
 };
 
 //---------------------------------------------------------------------------------------
@@ -594,7 +594,7 @@ struct DependencyRevisionTest : RevisionTestFixture
     void VerifyDependentProperties(DgnElementId, std::array<int32_t, 4> const&);
     void VerifyRootProperty(DgnElementId, int32_t);
 
-    DependencyRevisionTest() : T_Super(L"DependencyRevisionTest.idgndb", true) { }
+    DependencyRevisionTest() : T_Super(L"DependencyRevisionTest.ibim", true) { }
 };
 
 /*---------------------------------------------------------------------------------**//**

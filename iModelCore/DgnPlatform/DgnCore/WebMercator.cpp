@@ -515,7 +515,7 @@ void WebMercatorDisplay::DrawTile(RenderContext& context, TileIdCR tileid, RgbIm
     DPoint3d uvPts[4];
     ComputeTileCorners(uvPts, tileid);
 
-    if (!imageInfo.m_isTopDown)
+    if (!imageInfo.IsTopDown())
         {
         std::swap(uvPts[0], uvPts[2]);
         std::swap(uvPts[1], uvPts[3]);
@@ -970,7 +970,7 @@ BentleyStatus StreetMapModel::_CreateUrl(Utf8StringR url, RgbImageInfo& expected
     expectedImageInfo.m_height = expectedImageInfo.m_width = 256;
     expectedImageInfo.m_hasAlpha = false;
     expectedImageInfo.m_isBGR = false;
-    expectedImageInfo.m_isTopDown = true;
+    expectedImageInfo.SetTopDown();
 
     if (m_properties.m_mapService.empty())
         {
@@ -1321,7 +1321,7 @@ Utf8String TiledRaster::SerializeRasterInfo(RgbImageInfo const& info)
     json["height"] = info.m_height;
     json["width"] = info.m_width;
     json["isBGR"] = info.m_isBGR;
-    json["isTopDown"] = info.m_isTopDown;
+    json["isTopDown"] = info.IsTopDown();
     return Json::FastWriter::ToString(json);
     }
 
@@ -1339,7 +1339,7 @@ RgbImageInfo TiledRaster::DeserializeRasterInfo(Utf8CP serializedJson)
     info.m_height = json["height"].asInt();
     info.m_width = json["width"].asInt();
     info.m_isBGR = json["isBGR"].asBool();
-    info.m_isTopDown = json["isTopDown"].asBool();
+    info.SetBottomUp(!json["isTopDown"].asBool());
     return info;
     }
 

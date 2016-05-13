@@ -231,6 +231,8 @@ struct Image
         Rgb  = 2,
         Bgr  = 3,
         Gray = 4,
+        Jpeg = 5,
+        PNG  = 6,
     };
     static size_t BytesPerPixel(Format format)
         {
@@ -238,6 +240,8 @@ struct Image
             {
             case Format::Rgba:
             case Format::Bgra:
+            case Format::Jpeg:
+            case Format::PNG:
                 return 4;
             case Format::Rgb:
             case Format::Bgr:
@@ -249,6 +253,7 @@ struct Image
 protected:
     uint32_t   m_width = 0;
     uint32_t   m_height = 0;
+
     Format     m_format = Format::Rgba;
     ByteStream m_image;
 

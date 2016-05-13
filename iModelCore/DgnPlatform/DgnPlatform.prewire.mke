@@ -34,6 +34,9 @@ $(BuildContext)Dox/Pages/DgnPlatform/CategoryOverview.doxpage : $(_MakeFilePath)
 $(BuildContext)Dox/Pages/DgnPlatform/DgnPlatformOverview.doxpage : $(_MakeFilePath)docs/overview/DgnPlatformOverview.doxpage
     $(LinkFirstDepToFirstTarget)
 
+$(BuildContext)Dox/Pages/DgnPlatform/CodingConventions.doxpage : $(_MakeFilePath)docs/overview/CodingConventions.doxpage
+    $(LinkFirstDepToFirstTarget)
+
 $(BuildContext)Dox/Pages/DgnPlatform/ElementOverview.doxpage : $(_MakeFilePath)docs/overview/ElementOverview.doxpage
     $(LinkFirstDepToFirstTarget)
 

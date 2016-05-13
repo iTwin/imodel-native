@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/DgnViews_Test.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
@@ -31,7 +31,7 @@ public:
     };
 
 /*---------------------------------------------------------------------------------**//**
-* Set up method that opens an existing .dgndb project file
+* Set up method that opens an existing .bim project file
 * @bsimethod                                    Algirdas.Mikoliunas            03/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewsTest::SetupProject (WCharCP projFile, Db::OpenMode mode)
@@ -51,7 +51,7 @@ struct DgnViewElemTest : DgnViewsTest
 
     void SetupProject()
         {
-        DgnViewsTest::SetupProject(L"ElementsSymbologyByLevel.idgndb", Db::OpenMode::ReadWrite);
+        DgnViewsTest::SetupProject(L"ElementsSymbologyByLevel.ibim", Db::OpenMode::ReadWrite);
         }
 
     DgnModelPtr AddModel(Utf8StringCR name)
