@@ -114,7 +114,7 @@ bool PointCloudProgressiveDisplay::DrawPointCloud(int64_t& pointsToLoad, Dgn::Re
     bool queryCompleted = true;
     m_lastTentativeStopped = false;
 
-    Render::GraphicPtr pGraphic = context.CreateGraphic(Render::Graphic::CreateParams(context.GetViewport(), m_model.GetSceneToWorld()));
+    auto pGraphic = context.CreateGraphic(Render::Graphic::CreateParams(context.GetViewport(), m_model.GetSceneToWorld()));
     Render::GraphicParams graphicParams;
     graphicParams.SetLineColor(m_model.GetColor());
     graphicParams.SetFillColor(m_model.GetColor());

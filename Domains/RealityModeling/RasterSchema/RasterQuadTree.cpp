@@ -385,8 +385,7 @@ bool RasterTile::Draw(RenderContextR context)
     static bool s_DrawTileShape = false;
     if(s_DrawTileShape)
         {
-        Render::GraphicPtr pTileInfoGraphic = context.CreateGraphic(Render::Graphic::CreateParams(context.GetViewport()));
-
+        auto pTileInfoGraphic = context.CreateGraphic(Render::Graphic::CreateParams(context.GetViewport()));
         Render::GraphicParams graphicParams;
         graphicParams.SetLineColor(ColorDef(222, 0, 0, 128));
         graphicParams.SetIsFilled(false);
@@ -872,7 +871,7 @@ ProgressiveTask::Completion RasterProgressiveDisplay::_DoProgressive(Progressive
             {
             RasterTileR tileNode = pTileQuery->GetTileNodeR();
 
-            Render::GraphicPtr pTileGraphic = context.CreateGraphic(Render::Graphic::CreateParams(context.GetViewport()));
+            auto pTileGraphic = context.CreateGraphic(Render::Graphic::CreateParams(context.GetViewport()));
 
             Render::GraphicParams graphicParams;
             graphicParams.SetLineColor(ColorDef::White());

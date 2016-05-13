@@ -296,7 +296,7 @@ BentleyStatus Node::DoRead(MxStreamBuffer& in, SceneR scene)
                 return ERROR;
                 }
 
-            Render::Graphic::TriMeshArgs trimesh;
+            Render::IGraphicBuilder::TriMeshArgs trimesh;
             trimesh.m_numPoints  = ctm.GetInteger(CTM_VERTEX_COUNT);
             trimesh.m_points     = ctm.GetFloatArray(CTM_VERTICES);
             trimesh.m_normals    = (ctm.GetInteger(CTM_HAS_NORMALS) == CTM_TRUE) ? ctm.GetFloatArray(CTM_NORMALS) : nullptr;
