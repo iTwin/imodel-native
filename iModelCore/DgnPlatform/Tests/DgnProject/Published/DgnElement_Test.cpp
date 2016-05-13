@@ -22,7 +22,7 @@ struct DgnElementTests : public DgnDbTestFixture
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (DgnElementTests, ResetStatistics)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"Element_Test.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.ibim", L"Element_Test.ibim", BeSQLite::Db::OpenMode::ReadWrite);
 
     m_defaultModelId = m_db->Models().QueryFirstModelId();
     DgnModelPtr seedModel = m_db->Models().GetModel(m_defaultModelId);
@@ -99,7 +99,7 @@ TEST_F (DgnElementTests, ResetStatistics)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (DgnElementTests, UpdateElement)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"Element_Test.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.ibim", L"Element_Test.ibim", BeSQLite::Db::OpenMode::ReadWrite);
 
     m_defaultModelId = m_db->Models().QueryFirstModelId();
     DgnModelPtr seedModel = m_db->Models().GetModel(m_defaultModelId);
@@ -140,7 +140,7 @@ TestElementCPtr DgnElementTests::AddChild(DgnElementCR parent)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnElementTests, DgnElementTransformer)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests_DgnEditElementCollector.idgndb", Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.ibim", L"TransactionManagerTests_DgnEditElementCollector.ibim", Db::OpenMode::ReadWrite);
 
     if (true)
         {
@@ -245,7 +245,7 @@ TEST_F(DgnElementTests, DgnElementTransformer)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnElementTests, DgnEditElementCollector)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests_DgnEditElementCollector.idgndb", Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.ibim", L"TransactionManagerTests_DgnEditElementCollector.ibim", Db::OpenMode::ReadWrite);
 
     DgnElementCPtr parent1 = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId)->Insert();
     ASSERT_TRUE(parent1.IsValid());
@@ -405,7 +405,7 @@ TEST_F(DgnElementTests, DgnEditElementCollector)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnElementTests, ElementCopierTests)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"ElementCopierTests.dgndb", Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.ibim", L"ElementCopierTests.bim", Db::OpenMode::ReadWrite);
 
     DgnElementCPtr parent = TestElement::Create(*m_db, m_defaultModelId,m_defaultCategoryId)->Insert();
     TestElementCPtr c1 = AddChild(*parent);
@@ -462,7 +462,7 @@ TEST_F(DgnElementTests, ElementCopierTests)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnElementTests, ElementCopierTests_Group)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"ElementCopierTests_Group.dgndb", Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.ibim", L"ElementCopierTests_Group.bim", Db::OpenMode::ReadWrite);
 
     DgnElementCPtr group = TestGroup::Create(*m_db, m_defaultModelId, m_defaultCategoryId)->Insert();
     DgnElementCPtr m1 = TestElement::Create(*m_db, m_defaultModelId,m_defaultCategoryId)->Insert();
@@ -519,7 +519,7 @@ TEST_F(DgnElementTests, ElementCopierTests_Group)
 //---------------------------------------------------------------------------------------
 TEST_F(DgnElementTests, ForceElementIdForInsert)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"ForceElementIdForInsert.dgndb", Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.ibim", L"ForceElementIdForInsert.bim", Db::OpenMode::ReadWrite);
 
     DgnModelId modelId = m_db->Models().QueryFirstModelId();
     DgnClassId classId = m_db->Domains().GetClassId(generic_ElementHandler::GenericPhysicalObjectHandler::GetHandler());
@@ -563,7 +563,7 @@ TEST_F(DgnElementTests, ForceElementIdForInsert)
 //---------------------------------------------------------------------------------------
 TEST_F(DgnElementTests, GenericDomainElements)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"GenericDomainElements.dgndb", Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.ibim", L"GenericDomainElements.bim", Db::OpenMode::ReadWrite);
 
     // GenericSpatialLocation
         {
@@ -662,7 +662,7 @@ void ElementGeomAndPlacementTests::TestLoadElem(DgnElementId id, Placement3d con
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ElementGeomAndPlacementTests, ValidateOnInsert)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"ElementGeomAndPlacement.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.ibim", L"ElementGeomAndPlacement.ibim", BeSQLite::Db::OpenMode::ReadWrite);
     m_defaultModelId = m_db->Models().QueryFirstModelId();
 
     DgnElementId noPlacementNoGeomId, placementAndGeomId, placementAndNoGeomId;
@@ -724,7 +724,7 @@ static int32_t countElementsOfClass(DgnClassId classId, DgnDbR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnElementTests, HandlerlessClass)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"HandlerlessClass.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.ibim", L"HandlerlessClass.ibim", BeSQLite::Db::OpenMode::ReadWrite);
 
     DgnClassId classId(m_db->Schemas().GetECClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_WITHOUT_HANDLER_CLASS_NAME));
     TestElement::CreateParams params(*m_db, m_defaultModelId, classId, m_defaultCategoryId, Placement3d(), DgnCode());
@@ -740,7 +740,7 @@ TEST_F(DgnElementTests, HandlerlessClass)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnElementTests, TestUnhandledProperties)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"TestUnhandledProperties.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.ibim", L"TestUnhandledProperties.ibim", BeSQLite::Db::OpenMode::ReadWrite);
     
     DgnElementCPtr persistentEl;
     if (true)
@@ -811,7 +811,7 @@ TEST_F(DgnElementTests, TestUnhandledProperties)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnElementTests, TestUserProperties)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"TestUserProperties.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.ibim", L"TestUserProperties.ibim", BeSQLite::Db::OpenMode::ReadWrite);
     
     // Note: Even if this test uses SetValueEC() and GetValueEC() for setting the user properties, the preference
     // would be to use the primitive setters and getters. The choice here was to just meant to get more coverage

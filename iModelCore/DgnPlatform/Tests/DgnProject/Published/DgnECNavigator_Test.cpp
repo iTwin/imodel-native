@@ -228,7 +228,7 @@ protected:
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnECNavigatorTest, PlantElementInfo)
     {
-    OpenDgnDb (L"04_Plant.i.idgndb");
+    OpenDgnDb (L"04_Plant.i.ibim");
     WCharCP expectedFileName = L"ElementInfo_04_Plant.json";
      
     DgnElementId v9ElementId = GetV9ElementId(140855); // 3645 - Equipment
@@ -246,7 +246,7 @@ TEST_F(DgnECNavigatorTest, PlantElementInfo)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnECNavigatorTest, DgnLinksElementInfo)
     {
-    OpenDgnDb(L"DgnLinksSample.idgndb");
+    OpenDgnDb(L"DgnLinksSample.ibim");
     WCharCP expectedFileName = L"DgnLinksSample.json";
    
     DgnElementId v9ElementId = GetV9ElementId(227); // "DgnLinksSample.dgn"
@@ -264,7 +264,7 @@ TEST_F(DgnECNavigatorTest, DgnLinksElementInfo)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnECNavigatorTest, IfcElementInfo)
     {
-    BeFileName testPath(L"IfcMechanicalModel.i.idgndb");
+    BeFileName testPath(L"IfcMechanicalModel.i.ibim");
     OpenDgnDb(testPath);
     WCharCP expectedFileName = L"IfcMechanicalModel.json";
 

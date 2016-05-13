@@ -22,7 +22,7 @@ public: DgnColorTests() : GenericDgnModelTestFixture(__FILE__, false /*2D*/, fal
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnColorTests, TrueColors)
     {
-    //SetupProject(L"ElementsSymbologyByLevel.idgndb", Db::OpenMode::ReadWrite);
+    //SetupProject(L"ElementsSymbologyByLevel.ibim", Db::OpenMode::ReadWrite);
     DgnDbR db = *GetDgnDb();
 
     DgnTrueColor color1(DgnTrueColor::CreateParams(db, ColorDef(255, 254, 253), "TestName1", "TestBook1"));

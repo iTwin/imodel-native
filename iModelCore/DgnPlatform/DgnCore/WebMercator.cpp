@@ -524,7 +524,7 @@ void WebMercatorDisplay::DrawTile(RenderContext& context, TileIdCR tileid, RgbIm
     for (auto& pt : uvPts)
         pt.z = bias;
 
-    GraphicPtr graphic = context.CreateGraphic(Graphic::CreateParams(context.GetViewport()));
+    GraphicBuilderPtr graphic = context.CreateGraphic(Graphic::CreateParams(context.GetViewport()));
     graphic->AddTile(texture, uvPts);     
     context.OutputGraphic(*graphic, nullptr);
     }

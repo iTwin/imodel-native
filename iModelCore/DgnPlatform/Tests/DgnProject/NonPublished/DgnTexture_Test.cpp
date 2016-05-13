@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/DgnTexture_Test.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../TestFixture/BlankDgnDbTestFixture.h"
@@ -47,7 +47,7 @@ struct DgnTexturesTest : public BlankDgnDbTestFixture
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (DgnTexturesTest, InsertQueryUpdateDelete)
     {
-    SetupProject(L"textures.idgndb");
+    SetupProject(L"textures.ibim");
     DgnDbR db = GetDb();
 
     // Textures have names

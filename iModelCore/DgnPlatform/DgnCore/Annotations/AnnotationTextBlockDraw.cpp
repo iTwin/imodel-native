@@ -78,7 +78,7 @@ static void adjustForSubOrSuperScript(TextStringR ts, AnnotationTextRunCR textRu
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-BentleyStatus AnnotationTextBlockDraw::DrawTextRun(AnnotationLayoutRunCR layoutRun, AnnotationLayoutLineCR layoutLine, Render::GraphicR graphic, ViewContextR context, GeometryParamsR geomParams, TransformCR transform) const
+BentleyStatus AnnotationTextBlockDraw::DrawTextRun(AnnotationLayoutRunCR layoutRun, AnnotationLayoutLineCR layoutLine, Render::GraphicBuilderR graphic, ViewContextR context, GeometryParamsR geomParams, TransformCR transform) const
     {
     AnnotationTextRunCR run = (AnnotationTextRunCR)layoutRun.GetSeedRun();
     
@@ -117,7 +117,7 @@ BentleyStatus AnnotationTextBlockDraw::DrawTextRun(AnnotationLayoutRunCR layoutR
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-BentleyStatus AnnotationTextBlockDraw::DrawFractionRun(AnnotationLayoutRunCR layoutRun, AnnotationLayoutLineCR layoutLine, Render::GraphicR graphic, ViewContextR context, GeometryParamsR geomParams, TransformCR transform) const
+BentleyStatus AnnotationTextBlockDraw::DrawFractionRun(AnnotationLayoutRunCR layoutRun, AnnotationLayoutLineCR layoutLine, Render::GraphicBuilderR graphic, ViewContextR context, GeometryParamsR geomParams, TransformCR transform) const
     {
     AnnotationFractionRunCR run = (AnnotationFractionRunCR)layoutRun.GetSeedRun();
     
@@ -203,7 +203,7 @@ BentleyStatus AnnotationTextBlockDraw::DrawFractionRun(AnnotationLayoutRunCR lay
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-BentleyStatus AnnotationTextBlockDraw::DrawLineBreakRun(AnnotationLayoutRunCR, AnnotationLayoutLineCR, Render::GraphicR, ViewContextR, GeometryParamsR, TransformCR) const
+BentleyStatus AnnotationTextBlockDraw::DrawLineBreakRun(AnnotationLayoutRunCR, AnnotationLayoutLineCR, Render::GraphicBuilderR, ViewContextR, GeometryParamsR, TransformCR) const
     {
     return SUCCESS;
     }
@@ -211,7 +211,7 @@ BentleyStatus AnnotationTextBlockDraw::DrawLineBreakRun(AnnotationLayoutRunCR, A
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-BentleyStatus AnnotationTextBlockDraw::Draw(Render::GraphicR graphic, ViewContextR context, GeometryParamsR geomParams) const
+BentleyStatus AnnotationTextBlockDraw::Draw(Render::GraphicBuilderR graphic, ViewContextR context, GeometryParamsR geomParams) const
     {
     BentleyStatus status = SUCCESS;
 

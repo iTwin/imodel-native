@@ -44,7 +44,7 @@ BETEST_TC_SETUP(ExampleTestGroup)
     //  The group's seed file is essentially the same as the root seed file, but with a different relative path.
     //  Note that we must put our group seed file in a group-specific sub-directory
     ExampleTestGroup::s_seedFileInfo = rootSeedInfo;
-    ExampleTestGroup::s_seedFileInfo.fileName.SetName(L"ExampleTestGroup/Test.dgndb");
+    ExampleTestGroup::s_seedFileInfo.fileName.SetName(L"ExampleTestGroup/Test.bim");
 
     DgnDbPtr db = DgnDbTestUtils::OpenSeedDbCopy(rootSeedInfo.fileName, ExampleTestGroup::s_seedFileInfo.fileName); // our seed starts as a copy of the root seed
     ASSERT_TRUE(db.IsValid());
