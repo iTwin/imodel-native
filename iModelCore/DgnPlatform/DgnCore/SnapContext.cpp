@@ -452,7 +452,7 @@ virtual bool _ProcessPolyface(PolyfaceQueryCR meshData, bool isFilled, SimplifyG
         if (0 != perFacePolyfaces.size())
             {
             AutoRestore<bool> savePolyEdges(&m_testPolyEdges, true);
-            graphic.AddPolyface(*perFacePolyfaces.front());
+            Render::GraphicBuilder(graphic).AddPolyface(*perFacePolyfaces.front());
             }
 
         break;
@@ -479,7 +479,7 @@ virtual void _OutputGraphics (ViewContextR context) override
 
     // Get the GeometryParams for this hit from the GeometryStream...
     GeometryCollection collection(*source);
-    Render::GraphicPtr graphic;
+    Render::GraphicBuilderPtr graphic;
 
 #if defined (BENTLEYCONFIG_PARASOLIDS)
     collection.SetBRepOutput(GeometryCollection::BRepOutput::Edges | GeometryCollection::BRepOutput::FaceIso); // Want exact edges only...

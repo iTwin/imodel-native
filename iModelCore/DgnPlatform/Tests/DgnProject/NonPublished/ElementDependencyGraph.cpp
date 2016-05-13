@@ -18,7 +18,7 @@
 #include <DgnPlatform/DgnElementDependency.h>
 
 #define GROUP_SUBDIR L"ElementDependencyGraph"
-#define GROUP_SEED_FILENAME GROUP_SUBDIR L"/Test.dgndb"
+#define GROUP_SEED_FILENAME GROUP_SUBDIR L"/Test.bim"
 #define DEFAULT_MODEL_NAME "Default"
 #define DEFAULT_CATEGORY_NAME "DefaultCat"
 #define DEFAULT_VIEW_NAME "DefaultView"
@@ -201,7 +201,7 @@ ElementDependencyGraph::~ElementDependencyGraph()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* set up method that opens an existing .dgndb project file after copying it to out
+* set up method that opens an existing .bim project file after copying it to out
 * @bsimethod                                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ElementDependencyGraph::SetupProject(WCharCP testFile, Db::OpenMode mode, bool needBriefcase)
@@ -257,7 +257,7 @@ void ElementDependencyGraph::TwiddleTime(DgnElementCPtr el)
 +---------------+---------------+---------------+---------------+---------------+------*/
 WString ElementDependencyGraph::GetTestFileName(WCharCP testname)
     {
-    return WPrintfString(L"%ls.idgndb",testname);
+    return WPrintfString(L"%ls.ibim",testname);
     }
 
 /*---------------------------------------------------------------------------------**//**

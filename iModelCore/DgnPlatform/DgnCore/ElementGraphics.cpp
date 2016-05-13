@@ -248,13 +248,13 @@ static bool wireframe_computeArc(DEllipse3dR ellipse, DPoint3dCR startPt, DPoint
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct StrokeSurfaceCurvesInfo
     {
-    ViewContextR        m_context;
-    Render::GraphicR    m_graphic;
-    MSBsplineSurfaceCR  m_surface;
-    bool                m_includeEdges;
-    bool                m_includeFaceIso;
+    ViewContextR                m_context;
+    Render::GraphicBuilderR     m_graphic;
+    MSBsplineSurfaceCR          m_surface;
+    bool                        m_includeEdges;
+    bool                        m_includeFaceIso;
 
-    StrokeSurfaceCurvesInfo(ViewContextR context, Render::GraphicR graphic, MSBsplineSurfaceCR surface, bool includeEdges, bool includeFaceIso) : m_context(context), m_graphic(graphic), m_surface(surface), m_includeEdges(includeEdges), m_includeFaceIso(includeFaceIso) {}
+    StrokeSurfaceCurvesInfo(ViewContextR context, Render::GraphicBuilderR graphic, MSBsplineSurfaceCR surface, bool includeEdges, bool includeFaceIso) : m_context(context), m_graphic(graphic), m_surface(surface), m_includeEdges(includeEdges), m_includeFaceIso(includeFaceIso) {}
     };
 
 #define MAX_CLIPBATCH   200
@@ -482,7 +482,7 @@ static void clearCurveVectorIds(CurveVectorCR curveVector)
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Ray.Bentley     10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void drawSolidPrimitiveCurveVector(Render::GraphicR graphic, CurveVectorCR curveVector, CurveTopologyIdCR topologyId, GeometryStreamEntryIdCR entryId)
+static void drawSolidPrimitiveCurveVector(Render::GraphicBuilderR graphic, CurveVectorCR curveVector, CurveTopologyIdCR topologyId, GeometryStreamEntryIdCR entryId)
     {
     if (!entryId.IsValid())
         {
@@ -499,7 +499,7 @@ static void drawSolidPrimitiveCurveVector(Render::GraphicR graphic, CurveVectorC
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Ray.Bentley     10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void drawSolidPrimitiveCurve(Render::GraphicR graphic, ICurvePrimitivePtr primitive, CurveTopologyIdCR topologyId, GeometryStreamEntryIdCR entryId)
+static void drawSolidPrimitiveCurve(Render::GraphicBuilderR graphic, ICurvePrimitivePtr primitive, CurveTopologyIdCR topologyId, GeometryStreamEntryIdCR entryId)
     {
     if (!entryId.IsValid())
         {
@@ -516,7 +516,7 @@ static void drawSolidPrimitiveCurve(Render::GraphicR graphic, ICurvePrimitivePtr
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WireframeGeomUtil::Draw(Render::GraphicR graphic, ISolidPrimitiveCR primitive, ViewContextR context, bool includeEdges, bool includeFaceIso)
+void WireframeGeomUtil::Draw(Render::GraphicBuilderR graphic, ISolidPrimitiveCR primitive, ViewContextR context, bool includeEdges, bool includeFaceIso)
     {
     GeometryStreamEntryId entryId = context.GetGeometryStreamEntryId();
 
@@ -837,7 +837,7 @@ void WireframeGeomUtil::Draw(Render::GraphicR graphic, ISolidPrimitiveCR primiti
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WireframeGeomUtil::Draw(Render::GraphicR graphic, MSBsplineSurfaceCR surface, ViewContextR context, bool includeEdges, bool includeFaceIso)
+void WireframeGeomUtil::Draw(Render::GraphicBuilderR graphic, MSBsplineSurfaceCR surface, ViewContextR context, bool includeEdges, bool includeFaceIso)
     {
     if (includeEdges)
         {
@@ -867,7 +867,7 @@ void WireframeGeomUtil::Draw(Render::GraphicR graphic, MSBsplineSurfaceCR surfac
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WireframeGeomUtil::Draw(Render::GraphicR graphic, ISolidKernelEntityCR entity, ViewContextR context, bool includeEdges, bool includeFaceIso)
+void WireframeGeomUtil::Draw(Render::GraphicBuilderR graphic, ISolidKernelEntityCR entity, ViewContextR context, bool includeEdges, bool includeFaceIso)
     {
 #if defined (BENTLEYCONFIG_PARASOLIDS)
     T_HOST.GetSolidsKernelAdmin()._OutputBodyAsWireframe(graphic, entity, context, includeEdges, includeFaceIso);
@@ -950,7 +950,7 @@ virtual void _OutputGraphics(ViewContextR context) override
         context.GetGeometryStreamEntryIdR() = m_sourceContext->GetGeometryStreamEntryId(); // For CurvePrimitiveId...
         }
 
-    Render::GraphicPtr graphic = context.CreateGraphic(Graphic::CreateParams(context.GetViewport()));
+    Render::GraphicBuilderPtr graphic = context.CreateGraphic(Graphic::CreateParams(context.GetViewport()));
 
     if (m_surface)
         WireframeGeomUtil::Draw(*graphic, *m_surface, context, m_includeEdges, m_includeFaceIso);
@@ -1088,7 +1088,7 @@ virtual void _OutputGraphics(ViewContextR context) override
         m_uniqueAttachments[attachment] = curve.get();
         }
 
-    Render::GraphicPtr graphic = context.CreateGraphic(Graphic::CreateParams(context.GetViewport()));
+    Render::GraphicBuilderPtr graphic = context.CreateGraphic(Graphic::CreateParams(context.GetViewport()));
 
     WireframeGeomUtil::Draw(*graphic, m_entity, context, m_includeEdges, m_includeFaceIso);
     graphic->Close();
@@ -1188,7 +1188,7 @@ void WireframeGeomUtil::CollectPolyfaces(ISolidKernelEntityCR entity, DgnDbR dgn
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WireframeGeomUtil::DrawOutline(CurveVectorCR curves, GraphicR graphic)
+void WireframeGeomUtil::DrawOutline(CurveVectorCR curves, GraphicBuilderR graphic)
     {
     if (1 > curves.size())
         return;
@@ -1221,7 +1221,7 @@ void WireframeGeomUtil::DrawOutline(CurveVectorCR curves, GraphicR graphic)
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WireframeGeomUtil::DrawOutline2d(CurveVectorCR curves, GraphicR graphic, double zDepth)
+void WireframeGeomUtil::DrawOutline2d(CurveVectorCR curves, GraphicBuilderR graphic, double zDepth)
     {
     if (1 > curves.size())
         return;
