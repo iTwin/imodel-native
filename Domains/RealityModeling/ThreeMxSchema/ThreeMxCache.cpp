@@ -325,7 +325,7 @@ RealityDataCacheResult Scene::RequestData(NodeP node, bool synchronous, MxStream
         filePath = m_rootUrl;
         }
     
-    if (IsUrl())
+    if (IsHttp())
         {
         HttpDataPtr httpdata = new HttpData(node, *this, output);
         return m_cache->Get(*httpdata, filePath.c_str(), HttpData::RequestOptions(synchronous));
@@ -342,5 +342,8 @@ void Scene::CreateCache()
     {
     m_cache = new RealityDataCache();
     m_cache->RegisterStorage(*new ThreeMxCache(m_localCacheName, SchedulingMethod::FIFO));
-    m_cache->RegisterSource(IsUrl() ? (IRealityDataSourceBase&) *HttpRealityDataSource::Create(8, SchedulingMethod::FIFO) : *FileRealityDataSource::Create(8, SchedulingMethod::FIFO));
+
+    uint32_t threadCount = BeThreadUtilities::GetHardwareConcurrency() / 2;
+    threadCount = std::max((uint32_t) 2, threadCount);
+    m_cache->RegisterSource(IsHttp() ? (IRealityDataSourceBase&) *HttpRealityDataSource::Create(threadCount, SchedulingMethod::FIFO) : *FileRealityDataSource::Create(threadCount, SchedulingMethod::FIFO));
     }

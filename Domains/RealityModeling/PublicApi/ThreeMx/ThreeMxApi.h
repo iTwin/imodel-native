@@ -52,7 +52,7 @@ struct MxStreamBuffer : ByteStream
     };
 
 /*=================================================================================**//**
-* A mesh, plus optionally a texture
+* A list mesh, plus optionally a graphic to draw it.
 * @bsiclass                                                     Ray.Bentley     03/2015
 +===============+===============+===============+===============+===============+======*/
 struct Geometry : RefCountedBase, NonCopyableClass
@@ -88,7 +88,14 @@ struct SceneInfo
 };
 
 //=======================================================================================
-// Arguments for drawing a node
+// Arguments for drawing a node. As nodes are drawn, their Render::Graphics go into the GraphicArray member of this object. After all
+// in-view nodes are drawn, the accumlated list of Render::Graphics are placed in a Render::GroupNode with the "location" 
+// transform for the scene (that is, the tile graphics are always in the local coordinate system of the 3mx scene.) 
+// If higher resolution tiles are needed but missing, the graphics for lower resolution tiles are 
+// drawn and the missing tiles are requested for download (if necessary.) They are then added to the MissingNodes member. If the
+// MissingNodes list is not empty, we schedule a ProgressiveDisplay that checks for the arrival of the missing nodes and draws them (using
+// this class). Each iteration of ProgressiveDisplay starts with a list of previously-missing tiles and generates a new list of 
+// still-missing tiles until all have arrived (or the view changes.)
 // @bsiclass                                                    Keith.Bentley   05/16
 //=======================================================================================
 struct DrawArgs
@@ -100,7 +107,7 @@ struct DrawArgs
     MissingNodes m_missing;
 
     DrawArgs(Dgn::RenderContextR context, SceneR scene) : m_context(context), m_scene(scene) {}
-    void DrawGraphics();
+    void DrawGraphics(); // place all entries in the GraphicArray into a GroupNode and send it to the RenderContext.
 };
 
 /*=================================================================================**//**
@@ -171,6 +178,7 @@ public:
 };
 
 /*=================================================================================**//**
+* A 3mx scene, constructed for a single Render::System. The graphics held by this scene are only useful for that Render::System.
 * @bsiclass                                                     Ray.Bentley     04/2015
 +===============+===============+===============+===============+===============+======*/
 struct Scene : RefCountedBase, NonCopyableClass
@@ -183,9 +191,8 @@ private:
     struct CompareNode{bool operator()(NodePtr a, NodePtr b) const {return a.get() < b.get();}};
     typedef bset<NodePtr, CompareNode> Requests;
 
-    bool m_loadSynchronous = false;
     bool m_useFixedResolution = false;
-    bool m_isUrl = false;
+    bool m_isHttp = false;
     double m_fixedResolution = 0.0;
     Dgn::DgnDbR m_db;
     Utf8String m_rootUrl;
@@ -199,29 +206,25 @@ private:
 
     BentleyStatus ReadGeoLocation(SceneInfo const&);
     BentleyStatus LoadScene(); // synchronous  
-    bool IsUrl() const {return m_isUrl;}
+    bool IsHttp() const {return m_isHttp;}
     Dgn::RealityDataCacheResult RequestData(Node* node, bool synchronous, MxStreamBuffer*);
     void CreateCache();
 
 public:
-    THREEMX_EXPORT Scene(Dgn::DgnDbR, TransformCR location, Utf8CP realityCacheName, Utf8CP rootUrl, Dgn::Render::SystemP);
+    THREEMX_EXPORT Scene(Dgn::DgnDbR, TransformCR location, Utf8CP realityCacheName, Utf8CP sceneFile, Dgn::Render::SystemP);
     Dgn::Render::SystemP GetRenderSystem() const {return m_renderSystem;}
     DPoint3d GetNodeCenter(Node const& node) const {return DPoint3d::FromProduct(m_location, node.GetCenter());}
     double GetNodeRadius(Node const& node) const {return m_scale * node.GetRadius();}
     void Draw(DrawArgs& args) {m_rootNode->Draw(args, 0);}
     Dgn::ElementAlignedBox3d ComputeRange() {return m_rootNode->ComputeRange();}
     size_t GetNodeCount() const {return m_rootNode->GetNodeCount();}
-    bool GetLoadSynchronous() const {return m_loadSynchronous;}
     bool UseFixedResolution()const {return m_useFixedResolution;}
     double GetFixedResolution() const {return m_fixedResolution;}
     TransformCR GetLocation() const {return m_location;}
     double GetScale() const {return m_scale;}
     THREEMX_EXPORT BentleyStatus ReadSceneFile(SceneInfo& sceneInfo); //! Read the scene file synchronously
-    THREEMX_EXPORT BentleyStatus DeleteRealityCache();
-    Utf8String ConstructNodeName(Node& node);
-
-    static void GetMemoryStatistics(size_t& memoryLoad, size_t& total, size_t& available);
-    static double CalculateResolutionRatio();
+    THREEMX_EXPORT BentleyStatus DeleteRealityCache(); //! delete the local SQLite file holding the cache of downloaded tiles.
+    Utf8String ConstructNodeName(Node& node) {return m_rootDir + node.GetChildFile();}
 };
 
 //=======================================================================================
@@ -236,6 +239,11 @@ public:
 };
 
 //=======================================================================================
+// A DgnModel to reference a 3mx scene. This holds the name of the scenefile, plus a "location" transform
+// to position the scene relative to the BIM. 
+// Note that the scenefile may also have a "Spatial Reference System" stored in it,
+// so the location can be calculated by geo-referncing it to the one in the BIM. But, since not all 3mx files are geo-referenced,
+// and sometimes users may want to "tweak" the location relative to their BIM, we store it in the model and use that.
 // @bsiclass                                                    Ray.Bentley     09/2015
 //=======================================================================================
 struct ThreeMxModel : Dgn::SpatialModel
@@ -244,7 +252,7 @@ struct ThreeMxModel : Dgn::SpatialModel
     friend struct ModelHandler;
 
 private:
-    Utf8String m_rootUrl;
+    Utf8String m_sceneFile;
     Transform m_location;
     mutable ScenePtr m_scene;
 
@@ -253,13 +261,16 @@ private:
 
 public:
     ThreeMxModel(CreateParams const& params) : T_Super(params) {m_location = Transform::FromIdentity();}
-    double GetDefaultExportResolution() const {return 0.0;}
     THREEMX_EXPORT void _AddTerrainGraphics(Dgn::TerrainContextR) const override;
     THREEMX_EXPORT void _WriteJsonProperties(Json::Value&) const override;
     THREEMX_EXPORT void _ReadJsonProperties(Json::Value const&) override;
     THREEMX_EXPORT Dgn::AxisAlignedBox3d _QueryModelRange() const override;
     THREEMX_EXPORT void _OnFitView(Dgn::FitContextR) override;
-    void SetRootUrl(Utf8CP url) {m_rootUrl = url;}
+
+    //! Set the name of the scene file for this 3MX model
+    void SetSceneFile(Utf8CP name) {m_sceneFile = name;}
+
+    //! Set the location transform (from scene coordinates to BIM coordinates)
     void SetLocation(TransformCR trans) {m_location = trans;}
 };
 
@@ -269,7 +280,7 @@ public:
 struct ModelHandler :  Dgn::dgn_ModelHandler::Spatial
 {
     MODELHANDLER_DECLARE_MEMBERS ("ThreeMxModel", ThreeMxModel, ModelHandler, Dgn::dgn_ModelHandler::Spatial, THREEMX_EXPORT)
-    THREEMX_EXPORT static Dgn::DgnModelId CreateModel(Dgn::DgnDbR db, Utf8CP modelName, Utf8CP rootUrl, TransformCP);
+    THREEMX_EXPORT static Dgn::DgnModelId CreateModel(Dgn::DgnDbR db, Utf8CP modelName, Utf8CP sceneFile, TransformCP);
 };
 
 END_BENTLEY_THREEMX_NAMESPACE
