@@ -140,6 +140,14 @@ void* BeThreadLocalStorage::GetValueAsPointer()
 #endif
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+uint32_t BeThreadUtilities::GetHardwareConcurrency()
+    {
+    return std::thread::hardware_concurrency();
+    }
+
 //=======================================================================================
 // The classe BeMutex, BeMutexHolder, and BeConditionVariable are each meant to be implemented by
 // std::recursive_mutex, std::unique_lock, and std::condition_variable_any respectively. All of this nonsense below 

@@ -236,6 +236,9 @@ struct  BeThreadUtilities
 
     //! Get the identifier of the current thread
     BENTLEYDLL_EXPORT static intptr_t GetCurrentThreadId();
+
+    //! see documentation for std::thread::hardware_concurrency()
+    BENTLEYDLL_EXPORT static uint32_t GetHardwareConcurrency();
 };
 
 //=======================================================================================

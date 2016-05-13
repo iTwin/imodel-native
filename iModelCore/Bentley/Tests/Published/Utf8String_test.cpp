@@ -39,7 +39,7 @@ TEST(Utf8StringTest,ThreadSafeRead)
         };
     
     int threadCount = std::thread::hardware_concurrency();
-    if (threadCount == 0) // Unable to get hardware thread count – use default.
+    if (threadCount == 0) // Unable to get hardware thread count use default.
         {
         threadCount = 2;
         }
