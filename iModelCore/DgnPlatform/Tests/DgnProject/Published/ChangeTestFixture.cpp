@@ -25,7 +25,7 @@ ChangeTestFixture::ChangeTestFixture(WCharCP testFileName, bool wantTestDomain) 
 //---------------------------------------------------------------------------------------
 void ChangeTestFixture::CreateSeedDgnDb(BeFileNameR seedPathname)
     {
-    seedPathname = DgnDbTestDgnManager::GetOutputFilePath(L"ChangeTestSeed.dgndb");
+    seedPathname = DgnDbTestDgnManager::GetOutputFilePath(L"ChangeTestSeed.bim");
     if (seedPathname.DoesPathExist())
         return;
 

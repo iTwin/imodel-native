@@ -46,7 +46,7 @@ PhysicalElementPtr ElementGroupTests::CreateAndInsertElement(DgnModelP model)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ElementGroupTests, CRUD)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"ElementGroupTests_CRUD.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.ibim", L"ElementGroupTests_CRUD.ibim", BeSQLite::Db::OpenMode::ReadWrite);
 
     DgnModelP model = m_db->Models().GetModel(m_defaultModelId).get();
     auto member1 = CreateAndInsertElement(model);
@@ -113,7 +113,7 @@ TEST_F(ElementGroupTests, CRUD)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ElementGroupTests, ElementCrossMembershipOfGroups)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"ElementGroupTests_ElementCrossMembershipOfGroups.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.ibim", L"ElementGroupTests_ElementCrossMembershipOfGroups.ibim", BeSQLite::Db::OpenMode::ReadWrite);
 
     DgnModelP model = m_db->Models().GetModel(m_defaultModelId).get();
     auto member1 = CreateAndInsertElement(model);
@@ -173,7 +173,7 @@ TEST_F(ElementGroupTests, ElementCrossMembershipOfGroups)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ElementGroupTests, NestedGroups)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"ElementGroupTests_ElementCrossMembershipOfGroups.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.ibim", L"ElementGroupTests_ElementCrossMembershipOfGroups.ibim", BeSQLite::Db::OpenMode::ReadWrite);
 
     DgnModelP model = m_db->Models().GetModel(m_defaultModelId).get();
     auto member1 = CreateAndInsertElement(model);
@@ -224,7 +224,7 @@ TEST_F(ElementGroupTests, NestedGroups)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ElementGroupTests, DeleteMemberElement)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"ElementGroupTests_DeleteMemberElement.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.ibim", L"ElementGroupTests_DeleteMemberElement.ibim", BeSQLite::Db::OpenMode::ReadWrite);
 
     DgnModelP model = m_db->Models().GetModel(m_defaultModelId).get();
     auto member1 = CreateAndInsertElement(model);
@@ -257,7 +257,7 @@ TEST_F(ElementGroupTests, DeleteMemberElement)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ElementGroupTests, DeleteElementGroup)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"ElementGroupTests_CRUD.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.ibim", L"ElementGroupTests_CRUD.ibim", BeSQLite::Db::OpenMode::ReadWrite);
 
     DgnModelP model = m_db->Models().GetModel(m_defaultModelId).get();
     auto member1 = CreateAndInsertElement(model);
@@ -293,7 +293,7 @@ TEST_F(ElementGroupTests, DeleteElementGroup)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ElementGroupTests, ElementGroupsMembersHelper)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"ElementGroupTests_CRUD.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.ibim", L"ElementGroupTests_CRUD.ibim", BeSQLite::Db::OpenMode::ReadWrite);
 
     DgnModelP model = m_db->Models().GetModel(m_defaultModelId).get();
     auto member1 = CreateAndInsertElement(model);

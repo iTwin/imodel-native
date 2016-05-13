@@ -169,7 +169,7 @@ TEST_F(BackwardsCompatibilityTests, OpenDgndbInCurrent)
     srcFilesPath.AppendToPath(L"DgnDb");
     srcFilesPath.AppendToPath(L"CompatibilityRoot");
     srcFilesPath.AppendToPath(L"DgnDb06");
-    srcFilesPath.AppendToPath(L"*.idgndb");
+    srcFilesPath.AppendToPath(L"*.ibim");
 
     BeFileName outputRoot;
     BeTest::GetHost().GetOutputRoot(outputRoot);

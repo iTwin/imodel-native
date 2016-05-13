@@ -316,9 +316,9 @@ void MissingHandlerTest::TestRestrictions(ElemInfo const& info, DgnDbR db, uint6
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MissingHandlerTest, HandlerRestrictions)
     {
-    static const WCharCP s_dbName = L"HandlerRestrictions.idgndb";
+    static const WCharCP s_dbName = L"HandlerRestrictions.ibim";
     BeFileName fullDgnDbFileName;
-    ASSERT_EQ(SUCCESS, DgnDbTestDgnManager::GetTestDataOut(fullDgnDbFileName, L"3dMetricGeneral.idgndb", s_dbName, __FILE__));
+    ASSERT_EQ(SUCCESS, DgnDbTestDgnManager::GetTestDataOut(fullDgnDbFileName, L"3dMetricGeneral.ibim", s_dbName, __FILE__));
 
     // Create a new dgndb, with our domain + handlers loaded
         {
