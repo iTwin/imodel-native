@@ -1,0 +1,79 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: docs/overview/CodingConventions.doxpage $
+|
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+//__PUBLISH_SECTION_START__
+
+BEGIN_BENTLEY_DGN_NAMESPACE
+
+/** @page PAGE_CodingConventions Coding Conventions
+
+@tableofcontents
+
+This page describes coding conventions used by the %DgnDb Technology Stack.
+Understanding these conventions will help the SDK user better understand the API.
+
+<hr>
+<!-- ---------------------------------------------------------------------------------- -->
+@section SECTION_CodingConventions1 Standard Type Suffixes
+
+When declaring C++ types, the %DgnDb Technology Stack most often uses the @c struct keyword instead of @c class keyword.  
+These are essentially equivalent, but the only real difference is that structs default to @c public: access for members and classes default to @c private: access for members.
+
+@see DgnElement
+
+Most structs also have associated typedefs for pointer types.
+The @b P suffix indicates a pointer and the @b CP suffix indicates a const pointer.  
+The @b R suffix indicates a reference and the @b CR suffix indicates a const reference.
+
+@see DgnElementP
+@see DgnElementCP
+@see DgnElementR
+@see DgnElementCR
+
+<hr>
+<!-- ---------------------------------------------------------------------------------- -->
+@section SECTION_CodingConventions2 Input-Only Parameters
+
+For input-only parameters, the convention is to pass primitive types by value and struct instances by const reference.
+
+@see GeometryBuilder::Append
+
+However, sometimes a @b CP (const pointer) type is used for input-only parameters to indicate that @c nullptr can be used for default behavior.
+
+@see DgnElement::Clone
+
+<hr>
+<!-- ---------------------------------------------------------------------------------- -->
+@section SECTION_CodingConventions3 Output Parameters
+
+Typically, return values handle the single output case.  For multiple output parameters, the convention is to pass parameters by reference.
+
+@see YawPitchRollAngles::TryFromTransform
+
+However, sometimes a @b P (pointer) type is used for output parameters to indicate that @c nullptr can be used if the output parameter is not of interest.
+
+@see DgnElements::Insert
+
+<hr>
+<!-- ---------------------------------------------------------------------------------- -->
+@section SECTION_CodingConventions4 Working with RefCountedPtr
+
+Many structs also have associated typedefs for reference-counted pointers.
+The @b Ptr suffix indicates a reference counted pointer.
+The @b CPtr suffix indicates a reference counted pointer to a const instance.
+
+@see DgnElementPtr
+@see DgnElementCPtr
+
+The sample code below demonstrates how to use @b Ptr (and @b CPtr) types:
+
+__PUBLISH_INSERT_FILE__ RefCounted_Basics.sampleCode
+
+<!-- ---------------------------------------------------------------------------------- -->
+*/
+
+END_BENTLEY_DGN_NAMESPACE
