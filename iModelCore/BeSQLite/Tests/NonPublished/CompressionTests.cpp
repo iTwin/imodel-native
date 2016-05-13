@@ -263,7 +263,7 @@ TEST(CompressionTests, LzmaBuffer)
 
     BeTest::GetHost().GetDocumentsRoot (fileName);
     fileName.AppendToPath(L"DgnDb");
-    fileName.AppendToPath(L"SubStation_NoFence.i.idgndb");
+    fileName.AppendToPath(L"SubStation_NoFence.i.ibim");
 
     uint32_t steps[] = { 5, 10, 0};
     LzmaCompresser lzmaCompresser;
@@ -284,7 +284,7 @@ TEST(CompressionTests, ZipBuffer)
 
     BeTest::GetHost().GetDocumentsRoot (fileName);
     fileName.AppendToPath(L"DgnDb");
-    fileName.AppendToPath(L"SiteLayout.i.idgndb");
+    fileName.AppendToPath(L"SiteLayout.i.ibim");
 
     uint32_t levels[] = { 5, 9, 0 };
     ZipCompresser zipCompresser;
@@ -445,11 +445,11 @@ TEST(CompressionTests, DirectComparisonSmallInput)
 
         BeTest::GetHost().GetDocumentsRoot (fileName);
         fileName.AppendToPath(L"DgnDb");
-        fileName.AppendToPath(L"SiteLayout.i.idgndb");
+        fileName.AppendToPath(L"SiteLayout.i.ibim");
 
         runDirectComparison(fileName.GetName(), sizes[i], inputLen);
-        runDirectComparison(L"E:\\graphite\\xfer\\DgnDb\\OPSPS.i.idgndb", sizes[i], inputLen);
-        runDirectComparison(L"E:\\graphite\\xfer\\DgnDb\\Plant - 201_total.i.idgndb", sizes[i], inputLen);
+        runDirectComparison(L"E:\\graphite\\xfer\\DgnDb\\OPSPS.i.ibim", sizes[i], inputLen);
+        runDirectComparison(L"E:\\graphite\\xfer\\DgnDb\\Plant - 201_total.i.ibim", sizes[i], inputLen);
         runDirectComparison(L"E:\\graphite\\out2010\\Winx64\\build\\DgnPlatform\\DgnHandlers\\TextStyleHandlers.obj", sizes[i], inputLen);
         runDirectComparison(L"E:\\graphite\\out2010\\Winx64\\build\\DgnPlatform\\DgnHandlers\\dgnhandlers.pdb", sizes[i], inputLen);
         runDirectComparison(L"E:\\graphite\\out2010\\Winx64\\Product\\BeGTest\\DgnHandlers5.dll", sizes[i], inputLen);
@@ -470,11 +470,11 @@ TEST(CompressionTests, DirectComparisonBigInput)
 
         BeTest::GetHost().GetDocumentsRoot (fileName);
         fileName.AppendToPath(L"DgnDb");
-        fileName.AppendToPath(L"SiteLayout.i.idgndb");
+        fileName.AppendToPath(L"SiteLayout.i.ibim");
 
         runDirectComparison(fileName.GetName(), sizes[i], inputLen);
-        runDirectComparison(L"E:\\graphite\\xfer\\DgnDb\\OPSPS.i.idgndb", sizes[i], inputLen);
-        runDirectComparison(L"E:\\graphite\\xfer\\DgnDb\\Plant - 201_total.i.idgndb", sizes[i], inputLen);
+        runDirectComparison(L"E:\\graphite\\xfer\\DgnDb\\OPSPS.i.ibim", sizes[i], inputLen);
+        runDirectComparison(L"E:\\graphite\\xfer\\DgnDb\\Plant - 201_total.i.ibim", sizes[i], inputLen);
         runDirectComparison(L"E:\\graphite\\out2010\\Winx64\\build\\DgnPlatform\\DgnHandlers\\dgnhandlers.pdb", sizes[i], inputLen);
         runDirectComparison(L"E:\\graphite\\out2010\\Winx64\\Product\\BeGTest\\DgnHandlers5.dll", sizes[i], inputLen);
         }
