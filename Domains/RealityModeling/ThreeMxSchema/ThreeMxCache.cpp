@@ -215,7 +215,7 @@ BentleyStatus ThreeMxData::PersistToStorage(Db& db, BeMutex& cs) const
     if (m_node.IsValid()) // for the root, store NULL for time. That way it will never get purged.
         stmt->BindInt64(4, BeTimeUtilities::GetCurrentTimeAsUnixMillis());
 
-    return BE_SQLITE_DONE  == stmt->Step() ? SUCCESS : ERROR;
+    return BE_SQLITE_DONE == stmt->Step() ? SUCCESS : ERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**

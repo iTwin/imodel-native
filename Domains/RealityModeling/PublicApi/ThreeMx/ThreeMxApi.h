@@ -65,7 +65,7 @@ private:
     Dgn::Render::GraphicPtr m_graphic;
 
 public:
-    Geometry(Dgn::Render::Graphic::TriMeshArgs const&, SceneR);
+    Geometry(Dgn::Render::IGraphicBuilder::TriMeshArgs const&, SceneR);
     PolyfaceHeaderPtr GetPolyface() const;
     void Draw(DrawArgsR);
     void ClearGraphic() {m_graphic = nullptr;}

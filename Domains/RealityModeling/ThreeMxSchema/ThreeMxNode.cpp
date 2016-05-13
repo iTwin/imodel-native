@@ -175,7 +175,7 @@ ElementAlignedBox3d Node::ComputeRange()
 
 PolyfaceHeaderPtr Geometry::GetPolyface() const
     {
-    Graphic::TriMeshArgs trimesh;
+    IGraphicBuilder::TriMeshArgs trimesh;
     trimesh.m_numIndices = (int32_t) m_indices.size();
     trimesh.m_vertIndex = m_indices.empty() ? nullptr : &m_indices.front();
     trimesh.m_numPoints = (int32_t) m_points.size();
@@ -190,7 +190,7 @@ PolyfaceHeaderPtr Geometry::GetPolyface() const
 * Geometry is only valid for that Render::System
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Geometry::Geometry(Graphic::TriMeshArgs const& args, SceneR scene)
+Geometry::Geometry(IGraphicBuilder::TriMeshArgs const& args, SceneR scene)
     {
     m_indices.resize(args.m_numIndices);
     memcpy(&m_indices.front(), args.m_vertIndex, args.m_numIndices * sizeof(int32_t));
@@ -213,10 +213,12 @@ Geometry::Geometry(Graphic::TriMeshArgs const& args, SceneR scene)
     if (nullptr == scene.GetRenderSystem() || !args.m_texture.IsValid())
         return;
 
-    m_graphic = scene.GetRenderSystem()->_CreateGraphic(Graphic::CreateParams());
-    m_graphic->SetSymbology(ColorDef::White(), ColorDef::White(), 0);
-    m_graphic->AddTriMesh(args);
-    m_graphic->Close();
+    auto graphic = scene.GetRenderSystem()->_CreateGraphic(Graphic::CreateParams());
+    graphic->SetSymbology(ColorDef::White(), ColorDef::White(), 0);
+    graphic->AddTriMesh(args);
+    graphic->Close();
+
+    m_graphic = graphic;
     }
 
 /*---------------------------------------------------------------------------------**//**
