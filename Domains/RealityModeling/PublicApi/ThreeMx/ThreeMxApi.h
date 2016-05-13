@@ -52,7 +52,7 @@ struct MxStreamBuffer : ByteStream
     };
 
 /*=================================================================================**//**
-* A mesh, plus optionally a texture
+* A list mesh, plus optionally a graphic to draw it.
 * @bsiclass                                                     Ray.Bentley     03/2015
 +===============+===============+===============+===============+===============+======*/
 struct Geometry : RefCountedBase, NonCopyableClass
@@ -83,11 +83,19 @@ struct SceneInfo
     Utf8String m_sceneName;
     Utf8String m_reprojectionSystem;
     DPoint3d m_origin = DPoint3d::FromZero();
-    Utf8String m_rootNodePath;;
+    Utf8String m_rootNodePath;
     BentleyStatus Read(MxStreamBuffer&);
 };
 
 //=======================================================================================
+// Arguments for drawing a node. As nodes are drawn, their Render::Graphics go into the GraphicArray member of this object. After all
+// in-view nodes are drawn, the accumlated list of Render::Graphics are placed in a Render::GroupNode with the "location" 
+// transform for the scene (that is, the tile graphics are always in the local coordinate system of the 3mx scene.) 
+// If higher resolution tiles are needed but missing, the graphics for lower resolution tiles are 
+// drawn and the missing tiles are requested for download (if necessary.) They are then added to the MissingNodes member. If the
+// MissingNodes list is not empty, we schedule a ProgressiveDisplay that checks for the arrival of the missing nodes and draws them (using
+// this class). Each iteration of ProgressiveDisplay starts with a list of previously-missing tiles and generates a new list of 
+// still-missing tiles until all have arrived (or the view changes.)
 // @bsiclass                                                    Keith.Bentley   05/16
 //=======================================================================================
 struct DrawArgs
@@ -97,9 +105,12 @@ struct DrawArgs
     SceneR m_scene;
     Dgn::Render::GraphicArray m_graphics;
     MissingNodes m_missing;
-    DrawArgs(Dgn::RenderContextR context, SceneR scene) : m_context(context), m_scene(scene) {}
+    uint64_t m_now ;
+    uint64_t m_purgeOlderThan;
 
-    void DrawGraphics();
+
+    DrawArgs(Dgn::RenderContextR context, SceneR scene, uint64_t now, uint64_t purgeOlderThan) : m_context(context), m_scene(scene), m_now(now), m_purgeOlderThan(purgeOlderThan) {}
+    void DrawGraphics(); // place all entries in the GraphicArray into a GroupNode and send it to the RenderContext.
 };
 
 /*=================================================================================**//**
@@ -124,52 +135,54 @@ struct Node : RefCountedBase, NonCopyableClass
 {
     friend struct Scene;
     typedef bvector<NodePtr> ChildNodes;
-    enum ChildLoad {Invalid=0, Queued=1, Loading=2, Ready=3, NotFound=4};
+    enum ChildLoad {NotLoaded=0, Queued=1, Loading=2, Ready=3, NotFound=4, Abandoned=5};
 
 private:
-    DRange3d m_range = DRange3d::NullRange();
+    Dgn::ElementAlignedBox3d m_range;
     DPoint3d m_center;
     double m_radius = 0.0;
     double m_maxScreenDiameter = 0.0;
     NodeP m_parent;
-    GeometryPtr m_geometry;
+    bvector<GeometryPtr> m_geometry;
     Utf8String m_childPath;     // this is the name of the file (relative to path of this node) to load the children of this node.
-
     BeAtomic<int> m_childLoad;
     ChildNodes m_childNodes;
+    mutable uint64_t m_childrenLastUsed = 0;
 
+    void SetAbandoned();
     bool ReadHeader(JsonValueCR pt, Utf8String&, bvector<Utf8String>& nodeResources);
     BentleyStatus DoRead(MxStreamBuffer&, SceneR);
 
 public:
-    Node(NodeP parent) : m_parent(parent), m_childLoad(ChildLoad::Invalid) {m_center.Zero();}
+    Node(NodeP parent) : m_parent(parent), m_childLoad(ChildLoad::NotLoaded) {m_center.Zero();}
     double GetMaxDiameter() const {return m_maxScreenDiameter;}
     double GetRadius() const {return m_radius;}
     DPoint3dCR GetCenter() const {return m_center;}
-    DRange3dCR GetRange() const {return m_range;}
+    Dgn::ElementAlignedBox3d GetRange() const {return m_range;}
     Utf8String GetChildFile () const;
     BentleyStatus Read3MXB(MxStreamBuffer&, SceneR);
     Utf8String GetFilePath(SceneR) const;
     BentleyStatus LoadChildren(SceneR);
     void Dump(Utf8CP prefix) const;
     void Draw(DrawArgsR, int depth);
-    DRange3d GetRange(TransformCR) const;
+    Dgn::ElementAlignedBox3d ComputeRange();
     ChildLoad GetChildLoadStatus() const {return (ChildLoad) m_childLoad.load();}
     void SetIsReady() {return m_childLoad.store(ChildLoad::Ready);}
     void SetNotFound() {BeAssert(false); return m_childLoad.store(ChildLoad::NotFound);}
     bool HasChildren() const {return !m_childPath.empty();}
     bool IsQueued() const {return m_childLoad.load() == ChildLoad::Queued;}
+    bool IsAbandoned() const {return m_childLoad.load() == ChildLoad::Abandoned;}
     bool AreChildrenValid() const {return m_childLoad.load() == ChildLoad::Ready;}
-    bool IsInvalid() const {return m_childLoad.load() == ChildLoad::Invalid;}
+    bool AreChildrenNotLoaded() const {return m_childLoad.load() == ChildLoad::NotLoaded;}
     bool IsDisplayable() const {return GetMaxDiameter() > 0.0;}
-    void UnloadChildren();
+    void UnloadChildren(uint64_t olderThan);
     size_t GetNodeCount() const;
-    bool TestVisibility(Dgn::ViewContextR viewContext, SceneR);
     ChildNodes const* GetChildren() const {return AreChildrenValid() ? &m_childNodes : nullptr;}
     NodeCP GetParent() const {return m_parent;}
 };
 
 /*=================================================================================**//**
+* A 3mx scene, constructed for a single Render::System. The graphics held by this scene are only useful for that Render::System.
 * @bsiclass                                                     Ray.Bentley     04/2015
 +===============+===============+===============+===============+===============+======*/
 struct Scene : RefCountedBase, NonCopyableClass
@@ -182,9 +195,8 @@ private:
     struct CompareNode{bool operator()(NodePtr a, NodePtr b) const {return a.get() < b.get();}};
     typedef bset<NodePtr, CompareNode> Requests;
 
-    bool m_loadSynchronous = false;
     bool m_useFixedResolution = false;
-    bool m_isUrl = false;
+    bool m_isHttp = false;
     double m_fixedResolution = 0.0;
     Dgn::DgnDbR m_db;
     Utf8String m_rootUrl;
@@ -193,34 +205,32 @@ private:
     Transform m_location;
     double m_scale = 1.0;
     NodePtr m_rootNode;
+    uint32_t m_saveTimeout = 20 * 1000; // save unused nodes for 20 seconds
     Dgn::RealityDataCachePtr m_cache;
     Dgn::Render::SystemP m_renderSystem = nullptr;
 
     BentleyStatus ReadGeoLocation(SceneInfo const&);
     BentleyStatus LoadScene(); // synchronous  
-    bool IsUrl() const {return m_isUrl;}
+    bool IsHttp() const {return m_isHttp;}
     Dgn::RealityDataCacheResult RequestData(Node* node, bool synchronous, MxStreamBuffer*);
     void CreateCache();
 
 public:
-    THREEMX_EXPORT Scene(Dgn::DgnDbR, TransformCR location, Utf8CP realityCacheName, Utf8CP rootUrl, Dgn::Render::SystemP);
+    THREEMX_EXPORT Scene(Dgn::DgnDbR, TransformCR location, Utf8CP realityCacheName, Utf8CP sceneFile, Dgn::Render::SystemP);
     Dgn::Render::SystemP GetRenderSystem() const {return m_renderSystem;}
     DPoint3d GetNodeCenter(Node const& node) const {return DPoint3d::FromProduct(m_location, node.GetCenter());}
     double GetNodeRadius(Node const& node) const {return m_scale * node.GetRadius();}
-    bool Draw(DrawArgs&);
-    DRange3d GetRange(TransformCR) const;
-    size_t GetNodeCount() const;
-    bool GetLoadSynchronous() const {return m_loadSynchronous;}
+    void Draw(DrawArgs& args) {m_rootNode->Draw(args, 0);}
+    Dgn::ElementAlignedBox3d ComputeRange() {return m_rootNode->ComputeRange();}
+    uint32_t GetSaveTimeout() const {return m_saveTimeout;}
+    size_t GetNodeCount() const {return m_rootNode->GetNodeCount();}
     bool UseFixedResolution()const {return m_useFixedResolution;}
     double GetFixedResolution() const {return m_fixedResolution;}
     TransformCR GetLocation() const {return m_location;}
     double GetScale() const {return m_scale;}
     THREEMX_EXPORT BentleyStatus ReadSceneFile(SceneInfo& sceneInfo); //! Read the scene file synchronously
-    THREEMX_EXPORT BentleyStatus DeleteRealityCache();
-    Utf8String ConstructNodeName(Node& node);
-
-    static void GetMemoryStatistics(size_t& memoryLoad, size_t& total, size_t& available);
-    static double CalculateResolutionRatio();
+    THREEMX_EXPORT BentleyStatus DeleteRealityCache(); //! delete the local SQLite file holding the cache of downloaded tiles.
+    Utf8String ConstructNodeName(Node& node) {return m_rootDir + node.GetChildFile();}
 };
 
 //=======================================================================================
@@ -235,6 +245,11 @@ public:
 };
 
 //=======================================================================================
+// A DgnModel to reference a 3mx scene. This holds the name of the scenefile, plus a "location" transform
+// to position the scene relative to the BIM. 
+// Note that the scenefile may also have a "Spatial Reference System" stored in it,
+// so the location can be calculated by geo-referncing it to the one in the BIM. But, since not all 3mx files are geo-referenced,
+// and sometimes users may want to "tweak" the location relative to their BIM, we store it in the model and use that.
 // @bsiclass                                                    Ray.Bentley     09/2015
 //=======================================================================================
 struct ThreeMxModel : Dgn::SpatialModel
@@ -243,7 +258,7 @@ struct ThreeMxModel : Dgn::SpatialModel
     friend struct ModelHandler;
 
 private:
-    Utf8String m_rootUrl;
+    Utf8String m_sceneFile;
     Transform m_location;
     mutable ScenePtr m_scene;
 
@@ -252,12 +267,16 @@ private:
 
 public:
     ThreeMxModel(CreateParams const& params) : T_Super(params) {m_location = Transform::FromIdentity();}
-    double GetDefaultExportResolution() const {return 0.0;}
     THREEMX_EXPORT void _AddTerrainGraphics(Dgn::TerrainContextR) const override;
     THREEMX_EXPORT void _WriteJsonProperties(Json::Value&) const override;
     THREEMX_EXPORT void _ReadJsonProperties(Json::Value const&) override;
     THREEMX_EXPORT Dgn::AxisAlignedBox3d _QueryModelRange() const override;
-    void SetRootUrl(Utf8CP url) {m_rootUrl = url;}
+    THREEMX_EXPORT void _OnFitView(Dgn::FitContextR) override;
+
+    //! Set the name of the scene file for this 3MX model
+    void SetSceneFile(Utf8CP name) {m_sceneFile = name;}
+
+    //! Set the location transform (from scene coordinates to BIM coordinates)
     void SetLocation(TransformCR trans) {m_location = trans;}
 };
 
@@ -267,7 +286,7 @@ public:
 struct ModelHandler :  Dgn::dgn_ModelHandler::Spatial
 {
     MODELHANDLER_DECLARE_MEMBERS ("ThreeMxModel", ThreeMxModel, ModelHandler, Dgn::dgn_ModelHandler::Spatial, THREEMX_EXPORT)
-    THREEMX_EXPORT static Dgn::DgnModelId CreateModel(Dgn::DgnDbR db, Utf8CP modelName, Utf8CP rootUrl, TransformCP);
+    THREEMX_EXPORT static Dgn::DgnModelId CreateModel(Dgn::DgnDbR db, Utf8CP modelName, Utf8CP sceneFile, TransformCP);
 };
 
 END_BENTLEY_THREEMX_NAMESPACE

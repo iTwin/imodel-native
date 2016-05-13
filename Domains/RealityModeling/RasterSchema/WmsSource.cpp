@@ -150,7 +150,7 @@ BentleyStatus WmsTileData::_InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> co
         return ERROR;
 
     // Reject and don't cache what we can't consumed.
-    if(!IsSupportedContent(contentTypeIter->second))
+    if (!IsSupportedContent(contentTypeIter->second))
         return BSIERROR;
 
     m_contentType = contentTypeIter->second.c_str();
@@ -230,8 +230,8 @@ BentleyStatus WmsTileData::_Persist(BeSQLite::Db& db, BeMutex& cs) const
 
         stmt->ClearBindings();
         stmt->BindInt64(1, expirationDate);
-        stmt->BindText (2, GetEntityTag(), BeSQLite::Statement::MakeCopy::Yes);
-        stmt->BindText (3, GetId(), BeSQLite::Statement::MakeCopy::Yes);
+        stmt->BindText(2, GetEntityTag(), BeSQLite::Statement::MakeCopy::Yes);
+        stmt->BindText(3, GetId(), BeSQLite::Statement::MakeCopy::Yes);
         if (BeSQLite::BE_SQLITE_DONE != stmt->Step())
             return ERROR;
         }
@@ -243,13 +243,13 @@ BentleyStatus WmsTileData::_Persist(BeSQLite::Db& db, BeMutex& cs) const
             return ERROR;
 
         stmt->ClearBindings();
-        stmt->BindText (1, GetId(), BeSQLite::Statement::MakeCopy::Yes);
-        stmt->BindBlob (2, GetData().data(), bufferSize, BeSQLite::Statement::MakeCopy::No);
-        stmt->BindInt  (3, bufferSize);
+        stmt->BindText(1, GetId(), BeSQLite::Statement::MakeCopy::Yes);
+        stmt->BindBlob(2, GetData().data(), bufferSize, BeSQLite::Statement::MakeCopy::No);
+        stmt->BindInt(3, bufferSize);
         stmt->BindInt64(4, creationTime);
         stmt->BindInt64(5, expirationDate);
-        stmt->BindText (6, GetEntityTag(), BeSQLite::Statement::MakeCopy::Yes);
-        stmt->BindText (7, GetContentType(), BeSQLite::Statement::MakeCopy::Yes);
+        stmt->BindText(6, GetEntityTag(), BeSQLite::Statement::MakeCopy::Yes);
+        stmt->BindText(7, GetContentType(), BeSQLite::Statement::MakeCopy::Yes);
         if (BeSQLite::BE_SQLITE_DONE != stmt->Step())
             return ERROR;
         }
@@ -273,13 +273,13 @@ BentleyStatus WmsTileData::_Persist(BeSQLite::Db& db, BeMutex& cs) const
     //  - CRS:83, CRS:27, CRS:84, or some Bentley WMS server geocoord keyname.
    
     //1) Attempt to build from EPSG code.   
-    if(0 == BeStringUtilities::Strnicmp(gcsStr.c_str(), "EPSG:", 5))
+    if (0 == BeStringUtilities::Strnicmp(gcsStr.c_str(), "EPSG:", 5))
         {
         Utf8String epsgCodeStr = gcsStr.substr(5);
         int epsgCode = atoi(epsgCodeStr.c_str());
 
         GeoCoordinates::BaseGCSPtr pGcs = GeoCoordinates::BaseGCS::CreateGCS();
-        if(SUCCESS == pGcs->InitFromEPSGCode(NULL, NULL, epsgCode))
+        if (SUCCESS == pGcs->InitFromEPSGCode(NULL, NULL, epsgCode))
             return pGcs;       
         }
 
@@ -295,7 +295,7 @@ BentleyStatus WmsTileData::_Persist(BeSQLite::Db& db, BeMutex& cs) const
 //----------------------------------------------------------------------------------------
 /*static*/ bool WmsSource::EvaluateReverseAxis(WmsMap const& mapInfo, GeoCoordinates::BaseGCSP pGcs)
     {
-    switch(mapInfo.m_axisOrder)
+    switch (mapInfo.m_axisOrder)
         {
         case WmsMap::AxisOrder::Normal:
             return false;
@@ -310,7 +310,7 @@ BentleyStatus WmsTileData::_Persist(BeSQLite::Db& db, BeMutex& cs) const
         }
     
     // Only CRS and version 1.3.0 as this non sense reverse axis.
-    if(!(mapInfo.m_version.Equals("1.3.0") && mapInfo.m_csType.EqualsI("CRS")))
+    if (!(mapInfo.m_version.Equals("1.3.0") && mapInfo.m_csType.EqualsI("CRS")))
         return false;
        
     // Our coordinates and what is required by geocoord is:
@@ -327,7 +327,7 @@ BentleyStatus WmsTileData::_Persist(BeSQLite::Db& db, BeMutex& cs) const
     // created outside that range that do not need to be inverted. Since geocoord cannot provide this information the best approach for now is 
     // to invert all geographic(lat/long) CS.
         
-    if(mapInfo.m_csLabel.EqualsI("CRS:1")  ||     // pixels 
+    if (mapInfo.m_csLabel.EqualsI("CRS:1")  ||     // pixels 
        mapInfo.m_csLabel.EqualsI("CRS:83") ||     // (long, lat)
        mapInfo.m_csLabel.EqualsI("CRS:84") ||     // (long, lat) 
        mapInfo.m_csLabel.EqualsI("CRS:27"))       // (long, lat) WMS spec are not clear about CRS:27, there is comment where x is latitude and y longitude but 
@@ -336,7 +336,7 @@ BentleyStatus WmsTileData::_Persist(BeSQLite::Db& db, BeMutex& cs) const
         return false;
         }
 
-    if(0 == BeStringUtilities::Strnicmp (mapInfo.m_csLabel.c_str(), "EPSG:", sizeof("EPSG:")-1/*skip '/n'*/))
+    if (0 == BeStringUtilities::Strnicmp(mapInfo.m_csLabel.c_str(), "EPSG:", sizeof("EPSG:")-1/*skip '/n'*/))
         {
         // All Geographic EPSG are assumed: x = latitude, y = longitude
         if (NULL != pGcs && GeoCoordinates::BaseGCS::pcvUnity/*isGeographic*/ == pGcs->GetProjectionCode()) 
@@ -416,7 +416,7 @@ Render::Image WmsSource::_QueryTile(TileId const& id, bool& alphaBlend)
     //     Maybe one table per server?  and use TileId or hash the url ?
     //     BeSQLiteRealityDataStorage::wt_Prepare call to "VACCUUM" is the reason why we have such a big slowdown.
     RefCountedPtr<WmsTileData> pWmsTileData = WmsTileData::Create();
-    if(RealityDataCacheResult::Success != GetRealityDataCache().Get<WmsTileData>(*pWmsTileData, tileUrl.c_str(), WmsTileData::RequestOptions(true)))
+    if (RealityDataCacheResult::Success != GetRealityDataCache().Get<WmsTileData>(*pWmsTileData, tileUrl.c_str(), WmsTileData::RequestOptions(true)))
         return image;
 
     BeAssert(pWmsTileData.IsValid());
@@ -427,17 +427,17 @@ Render::Image WmsSource::_QueryTile(TileId const& id, bool& alphaBlend)
     
     BentleyStatus status;
 
-    if (contentType.EqualsI (CONTENT_TYPE_PNG))
+    if (contentType.EqualsI(CONTENT_TYPE_PNG))
         {
         status = actualImageInfo.ReadImageFromPngBuffer(image, data.GetData(), data.GetSize());
         }
-    else if (contentType.EqualsI (CONTENT_TYPE_JPEG))
+    else if (contentType.EqualsI(CONTENT_TYPE_JPEG))
         {
         status = actualImageInfo.ReadImageFromJpgBuffer(image, data.GetData(), data.GetSize());
         }
     else
         {
-        BeAssertOnce (false && "Unsupported image type");
+        BeAssertOnce(false && "Unsupported image type");
         return image;
         }
 
@@ -445,7 +445,7 @@ Render::Image WmsSource::_QueryTile(TileId const& id, bool& alphaBlend)
     if (SUCCESS != status)
         return image;
     
-    BeAssert (!actualImageInfo.m_isBGR);    //&&MM todo 
+    BeAssert(!actualImageInfo.m_isBGR);    //&&MM todo 
 
     //&&MM how to tell if we need to enable alpha?
     //     We cannot reuse buffer anymore review...
@@ -489,7 +489,7 @@ Utf8String WmsSource::BuildTileUrl(TileId const& tileId)
     else
         tileUrl.append("&TRANSPARENT=FALSE");
 
-    if(!m_mapInfo.m_vendorSpecific.empty())
+    if (!m_mapInfo.m_vendorSpecific.empty())
         {
         tileUrl.append("&");
         tileUrl.append(m_mapInfo.m_vendorSpecific);

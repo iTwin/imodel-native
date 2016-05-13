@@ -46,10 +46,6 @@ $(o)ThreeMxCache$(oext)   : $(SrcThreeMx)ThreeMxCache.cpp ${threeMxDepends}  ${M
 
 $(o)ThreeMxNode$(oext)    : $(SrcThreeMx)ThreeMxNode.cpp ${threeMxDepends} ${MultiCompileDepends}
 
-$(o)ThreeMxGeometry$(oext) : $(SrcThreeMx)ThreeMxGeometry.cpp ${threeMxDepends} ${MultiCompileDepends}
-
-$(o)ThreeMxScene$(oext)   : $(SrcThreeMx)ThreeMxScene.cpp ${threeMxDepends} ${MultiCompileDepends}
-
 $(o)ThreeMxModel$(oext) : $(SrcThreeMx)ThreeMxModel.cpp ${threeMxDepends} ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki

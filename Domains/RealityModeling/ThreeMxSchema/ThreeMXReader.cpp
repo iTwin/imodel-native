@@ -43,8 +43,8 @@ struct CtmContext
 template<typename T> T getJsonValue(JsonValueCR pt);
 template<> Utf8String getJsonValue(JsonValueCR pt) {return pt.asCString();}
 
-/*-----------------------------------------------------------------------------------**//**
-* @bsimethod
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename T> bool readVectorEntry(JsonValueCR pt, Utf8CP tag, bvector<T>& v)
     {
@@ -70,8 +70,8 @@ static void dPoint3dFromJson(DPoint3dR point, JsonValueCR inValue)
 
 END_UNNAMED_NAMESPACE
 
-/*-----------------------------------------------------------------------------------**//**
-* @bsimethod
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Node::ReadHeader(JsonValueCR pt, Utf8String& name, bvector<Utf8String>& nodeResources)
     {
@@ -119,15 +119,17 @@ bool Node::ReadHeader(JsonValueCR pt, Utf8String& name, bvector<Utf8String>& nod
     if (!readVectorEntry(pt, "children", children))
         return false;
 
+    BeAssert(children.size() <= 1);
+
     if (1 == children.size())
         m_childPath = children[0];
 
     return true;
     }
 
-/*-----------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                      Ray.Bentley     09/2015
+//----------------------------------------------------------------------------------------
 BentleyStatus Node::DoRead(MxStreamBuffer& in, SceneR scene)
     {
     BeAssert(IsQueued());
@@ -305,17 +307,15 @@ BentleyStatus Node::DoRead(MxStreamBuffer& in, SceneR scene)
             trimesh.m_textureUV  = (FPoint2d const*) ctm.GetFloatArray(CTM_UV_MAP_1);
             trimesh.m_texture    = texture->second;
 
-            BeAssert(!m_childNodes[nodeId->second]->m_geometry.IsValid());
-            m_childNodes[nodeId->second]->m_geometry = new Geometry(trimesh, scene);
+            m_childNodes[nodeId->second]->m_geometry.push_back(new Geometry(trimesh, scene));
             }
         }
 
     return SUCCESS;
     }
 
-
-/*-----------------------------------------------------------------------------------**//**
-* @bsimethod
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Node::Read3MXB(MxStreamBuffer& in, SceneR scene)
     {
@@ -332,9 +332,9 @@ BentleyStatus Node::Read3MXB(MxStreamBuffer& in, SceneR scene)
     return SUCCESS;
     }
 
-/*-----------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                      Ray.Bentley     09/2015
+//----------------------------------------------------------------------------------------
 BentleyStatus SceneInfo::Read(MxStreamBuffer& buffer) 
     {
     Json::Value pt;
