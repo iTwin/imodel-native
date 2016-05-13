@@ -734,9 +734,8 @@ BentleyStatus ECDbSchemaWriter::DeleteECClass(ECClassChange& classChange, ECClas
                                   deletedClass.GetSchema().GetFullSchemaName().c_str(), deletedClass.GetName().c_str());
         return ERROR;
         }
-
-
-    if (!deletedClass.GetDerivedClasses().empty())
+    
+    if (!m_ecdb.Schemas().GetDerivedECClasses(deletedClass).empty())
         {
         GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECSchema %s: Deleting ECClass '%s' with derived classes is not supported.",
                                   deletedClass.GetSchema().GetFullSchemaName().c_str(), deletedClass.GetName().c_str());
