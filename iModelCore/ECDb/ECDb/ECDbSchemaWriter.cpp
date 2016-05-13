@@ -726,6 +726,13 @@ BentleyStatus ECDbSchemaWriter::DeleteECClass(ECClassChange& classChange, ECClas
         return ERROR;
         }
 
+    if (deletedClass.IsCustomAttributeClass())
+        {
+        GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECSchema %s: Deleting ECClass '%s' failed. CustomAttribute class cannot be deleted",
+                                  deletedClass.GetSchema().GetFullSchemaName().c_str(), deletedClass.GetName().c_str());
+        return ERROR;
+        }
+
     ClassMapCP deletedClassMap = m_ecdb.GetECDbImplR().GetECDbMap().GetClassMap(deletedClass);
     if (deletedClassMap == nullptr)
         {
