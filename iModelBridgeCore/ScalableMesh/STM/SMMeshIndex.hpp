@@ -556,18 +556,18 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::SaveClo
         // Save UVs
         RefCountedPtr<SMMemoryPoolVectorItem<DPoint2d>> uvCoordsPtr(GetUVCoordsPtr());
         
-        if (uvCoordsPtr.IsValid()) 
+        if (uvCoordsPtr.IsValid() && uvCoordsPtr->size() > 0)
             {
-            assert(uvCoordsPtr->size() > 0);
+            //assert(uvCoordsPtr->size() > 0);
             pi_pUVStore->StoreBlock(const_cast<DPoint2d*>(&(*uvCoordsPtr)[0]), uvCoordsPtr->size(), GetBlockID());
             }
 
         // Save UVIndices
         RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> uvIndicePtr(GetUVsIndicesPtr());
             
-        if (uvIndicePtr.IsValid())
+        if (uvIndicePtr.IsValid() && uvIndicePtr->size() > 0)
             {
-            assert(uvIndicePtr->size() > 0);
+            //assert(uvIndicePtr->size() > 0);
             pi_pUVIndiceStore->StoreBlock(const_cast<int*>(&(*uvIndicePtr)[0]), uvIndicePtr->size(), GetBlockID());    
             }
         
