@@ -1541,8 +1541,9 @@ TEST_F(ECSchemaUpdateTests, AddNewECEnumeration)
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         " <ECEnumeration typeName='NonStrictEnum' backingTypeName='int' isStrict='False'>"
         "   <ECEnumerator value = '0' displayLabel = 'txt' />"
+        "   <ECEnumerator value = '1' displayLabel = 'bat' />"
         " </ECEnumeration>"
-        "</ECSchema>", false, "Adding new ECEnumeration is not suppported");
+        "</ECSchema>", true, "Adding new ECEnumeration is supported");
     bool asserted = false;
     AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
     ASSERT_FALSE(asserted);
