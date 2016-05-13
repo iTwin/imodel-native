@@ -1942,7 +1942,7 @@ static void drawLocateHitDetail(DecorateContextR context, double aperture, HitDe
     RotMatrix   rMatrix = RotMatrix::From1Vector(normal, 2, true);
     DEllipse3d  ellipse = DEllipse3d::FromScaledRotMatrix(pt, rMatrix, radius, radius, 0.0, Angle::TwoPi());
 
-    GraphicPtr graphic = context.CreateGraphic();
+    GraphicBuilderPtr graphic = context.CreateGraphic();
 
     color.SetAlpha(200);
     graphic->SetSymbology(color, color, 1);
@@ -1978,7 +1978,7 @@ static void drawLocateCircle(DecorateContextR context, double aperture, DPoint3d
     ellipse.InitFromDGNFields2d((DPoint2dCR) center, 0.0, radius, radius, 0.0, msGeomConst_2pi, 0.0);
     ellipse2.InitFromDGNFields2d((DPoint2dCR) center, 0.0, radius+1, radius+1, 0.0, msGeomConst_2pi, 0.0);
 
-    GraphicPtr graphic = context.CreateGraphic();
+    GraphicBuilderPtr graphic = context.CreateGraphic();
     ColorDef    white = ColorDef::White();
     ColorDef    black = ColorDef::Black();
 

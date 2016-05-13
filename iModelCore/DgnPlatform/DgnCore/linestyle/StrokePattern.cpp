@@ -1664,7 +1664,7 @@ static void    createTristrip (DPoint3dP tristrip, int nPts, DPoint3dCP centerLi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   04/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void outputCapArc (Render::GraphicR output, DPoint3dCP pt1, DPoint3dCP pt2, DPoint3dCP pt3, bool doFill)
+static void outputCapArc (Render::GraphicBuilderR output, DPoint3dCP pt1, DPoint3dCP pt2, DPoint3dCP pt3, bool doFill)
     {
     DVec3d      xDir, yDir, zDir;
 
@@ -1691,7 +1691,7 @@ static void outputCapArc (Render::GraphicR output, DPoint3dCP pt1, DPoint3dCP pt
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   04/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void outputPolygon (Render::GraphicR output, int nPts, DPoint3dCP pts, double const* widths, int widthMode, int capMode, DPoint3dCP normal, DPoint3dCP startTangent, DPoint3dCP endTangent, bool polyLengthNotDiscernible)
+static void outputPolygon (Render::GraphicBuilderR output, int nPts, DPoint3dCP pts, double const* widths, int widthMode, int capMode, DPoint3dCP normal, DPoint3dCP startTangent, DPoint3dCP endTangent, bool polyLengthNotDiscernible)
     {
     ScopedArray<LineJoint, 50>  scopedJoints(nPts);
     LineJoint*  joints = scopedJoints.GetData();
@@ -1810,7 +1810,7 @@ void            Centerline::Output (LineStyleContextR context, LsStrokeP pStroke
     if (nPts <= 0)
         return;
 
-    Render::GraphicR output = context.GetGraphicR();
+    auto& output = context.GetGraphicR();
     int     widthMode = pStroke->GetWidthMode() & 0x3;
 
     // if there's no width, just output the centerline

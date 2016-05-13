@@ -311,7 +311,7 @@ StatusInt ViewContext::_OutputGeometry(GeometrySourceCR source)
     if (!graphic->IsForDisplay() && nullptr == GetIPickGeom())
         return SUCCESS;
 
-    Render::GraphicPtr rangeGraphic = CreateGraphic(Graphic::CreateParams(nullptr, (2 == s_drawRange ? Transform::FromIdentity() : source.GetPlacementTransform())));
+    Render::GraphicBuilderPtr rangeGraphic = CreateGraphic(Graphic::CreateParams(nullptr, (2 == s_drawRange ? Transform::FromIdentity() : source.GetPlacementTransform())));
     Render::GeometryParams rangeParams;
 
     rangeParams.SetCategoryId(source.GetCategoryId()); // Need category for pick...
@@ -338,7 +338,7 @@ StatusInt ViewContext::_OutputGeometry(GeometrySourceCR source)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-Render::GraphicPtr ViewContext::_AddSubGraphic(Render::GraphicR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, Render::GeometryParamsR geomParams)
+Render::GraphicPtr ViewContext::_AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, Render::GeometryParamsR geomParams)
     {
     DgnGeometryPartCPtr partGeometry = GetDgnDb().Elements().Get<DgnGeometryPart>(partId);
 
@@ -365,13 +365,14 @@ Render::GraphicPtr ViewContext::_AddSubGraphic(Render::GraphicR graphic, DgnGeom
         {
         GeometryStreamIO::Collection collection(partGeometry->GetGeometryStream().GetData(), partGeometry->GetGeometryStream().GetSize());
 
-        partGraphic = graphic.CreateSubGraphic(subToGraphic);
-        collection.Draw(*partGraphic, *this, geomParams, false, partGeometry.get());
+        auto partBuilder = graphic.CreateSubGraphic(subToGraphic);
+        partGraphic = partBuilder;
+        collection.Draw(*partBuilder, *this, geomParams, false, partGeometry.get());
             
         if (WasAborted()) // if we aborted, the graphic may not be complete, don't save it
             return nullptr;
 
-        partGraphic->Close(); 
+        partBuilder->Close(); 
         if (isForDisplay)
             partGeometry->Graphics().Save(*partGraphic);
         }
@@ -422,7 +423,7 @@ void ViewContext::_CookGeometryParams(GeometryParamsR geomParams, GraphicParamsR
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::CookGeometryParams(Render::GeometryParamsR geomParams, Render::GraphicR graphic)
+void ViewContext::CookGeometryParams(Render::GeometryParamsR geomParams, Render::GraphicBuilderR graphic)
     {
     GraphicParams graphicParams;
 
@@ -1423,7 +1424,7 @@ static bool getGridDimension(int& nRepetitions, double& min, DPoint3dCR org, DVe
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      05/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void drawGridRefs(Render::GraphicR graphic, DPoint3dCR org, DVec3dCR rowVec, DVec3dCR colVec, int rowRepetitions, int colRepetitions)
+static void drawGridRefs(Render::GraphicBuilderR graphic, DPoint3dCR org, DVec3dCR rowVec, DVec3dCR colVec, int rowRepetitions, int colRepetitions)
     {
     DPoint3d gridEnd;
 
@@ -1471,7 +1472,7 @@ static bool getClipPlaneIntersection(double& pMin, double& pMax, DPoint3dCR orig
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      05/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void drawGridDots(Render::GraphicR graphic, bool doIsoGrid, DPoint3dCR origin, DVec3d const& rowVec, int rowRepetitions, DVec3d const& colVec, int colRepetitions, int refSpacing)
+static void drawGridDots(Render::GraphicBuilderR graphic, bool doIsoGrid, DPoint3dCR origin, DVec3d const& rowVec, int rowRepetitions, DVec3d const& colVec, int colRepetitions, int refSpacing)
     {
     static double s_maxHorizonGrids = 800.0;
     DgnViewportCR vp = *graphic.GetViewport();
@@ -1558,7 +1559,7 @@ static void drawGridDots(Render::GraphicR graphic, bool doIsoGrid, DPoint3dCR or
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void drawGridPlane(Render::GraphicR graphic, DPoint3dCR gridOrigin, DVec3dCR xVec, DVec3dCR yVec, Point2dCR repetitions)
+static void drawGridPlane(Render::GraphicBuilderR graphic, DPoint3dCR gridOrigin, DVec3dCR xVec, DVec3dCR yVec, Point2dCR repetitions)
     {
     DgnViewportCR vp = *graphic.GetViewport();
     DVec3d viewZ;
@@ -1582,7 +1583,7 @@ static void drawGridPlane(Render::GraphicR graphic, DPoint3dCR gridOrigin, DVec3
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      05/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void drawGrid(Render::GraphicR graphic, bool doIsoGrid, bool drawDots, DPoint3dCR gridOrigin, DVec3dCR xVec, DVec3dCR yVec, uint32_t gridsPerRef, Point2d const& repetitions)
+static void drawGrid(Render::GraphicBuilderR graphic, bool doIsoGrid, bool drawDots, DPoint3dCR gridOrigin, DVec3dCR xVec, DVec3dCR yVec, uint32_t gridsPerRef, Point2d const& repetitions)
     {
     DgnViewportCR vp = *graphic.GetViewport();
     ColorDef color = vp.GetContrastToBackgroundColor();
@@ -1709,7 +1710,7 @@ void DecorateContext::DrawStandardGrid(DPoint3dR gridOrigin, RotMatrixR rMatrix,
     uorPerPixel *= refScale;
 
     bool drawDots = ((spacing.x/uorPerPixel) > minGridSeperationPixels) &&((spacing.y/uorPerPixel) > minGridSeperationPixels);
-    Render::GraphicPtr graphic = CreateGraphic(Graphic::CreateParams(&vp));
+    Render::GraphicBuilderPtr graphic = CreateGraphic(Graphic::CreateParams(&vp));
 
     drawGrid(*graphic, isoGrid, drawDots, gridOrg, gridX, gridY, gridsPerRef, repetitions);
     AddWorldDecoration(*graphic);

@@ -22,8 +22,13 @@ struct NullContext : ViewContext
     /*=================================================================================**//**
       @bsiclass                                                     Brien.Bastings  09/12
     +===============+===============+===============+===============+===============+======*/
-    struct NullGraphic : Render::Graphic
+    struct NullGraphic : Render::Graphic, Render::IGraphicBuilder
     {
+        bool m_isOpen = true;
+
+        StatusInt _Close() override { m_isOpen = false; return SUCCESS; }
+        virtual StatusInt _EnsureClosed() override { return m_isOpen ? _Close() : SUCCESS; }
+        bool _IsOpen() const override { return m_isOpen; }
         void _ActivateGraphicParams(Render::GraphicParamsCR, Render::GeometryParamsCP) override {}
         void _AddLineString(int numPoints, DPoint3dCP points) override {}
         void _AddLineString2d(int numPoints, DPoint2dCP points, double zDepth) override {}
@@ -50,11 +55,11 @@ struct NullContext : ViewContext
         void _AddDgnOle(Render::DgnOleDraw*) override {}
         void _AddPointCloud(Render::PointCloudDraw* drawParams) override {}
         void _AddSubGraphic(Render::GraphicR, TransformCR, Render::GraphicParamsCR) override {}
-        virtual Render::GraphicPtr _CreateSubGraphic(TransformCR) const override {return new NullGraphic();}
+        virtual Render::GraphicBuilderPtr _CreateSubGraphic(TransformCR) const override {return new NullGraphic();}
     };
 
 protected:
-    virtual Render::GraphicPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override {return new NullGraphic();}
+    virtual Render::GraphicBuilderPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override {return new NullGraphic();}
     virtual Render::GraphicPtr _CreateGroupNode(Render::Graphic::CreateParams const& params, Render::GraphicArray&, ClipPrimitiveCP) override {return new NullGraphic();}
 
 public:
