@@ -230,12 +230,11 @@ public:
     DGNPLATFORM_EXPORT DgnElementCPtr ImportElement(DgnDbStatus* stat, DgnModelR destModel, DgnElementCR sourceElement);
 };
 
-
 #define DGNELEMENT_DECLARE_MEMBERS(__ECClassName__,__superclass__) \
     private: typedef __superclass__ T_Super;\
-    public: static Utf8CP MyECClassName() {return __ECClassName__;}\
-    protected: virtual Utf8CP _GetECClassName() const override {return MyECClassName();}\
-               virtual Utf8CP _GetSuperECClassName() const override {return T_Super::_GetECClassName();}
+    public: static Utf8CP MyHandlerECClassName() {return __ECClassName__;}\
+    protected: virtual Utf8CP _GetHandlerECClassName() const override {return MyHandlerECClassName();}\
+               virtual Utf8CP _GetSuperHandlerECClassName() const override {return T_Super::_GetHandlerECClassName();}
 
 #define DGNASPECT_DECLARE_MEMBERS(__ECSchemaName__,__ECClassName__,__superclass__) \
     private:    typedef __superclass__ T_Super;\
@@ -613,12 +612,14 @@ protected:
     mutable ECN::AdHocJsonContainerP m_userProperties;
     mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
 
-    virtual Utf8CP _GetECClassName() const {return MyECClassName();}
-    virtual Utf8CP _GetSuperECClassName() const {return nullptr;}
+#if !defined (DOCUMENTATION_GENERATOR)
+    virtual Utf8CP _GetHandlerECClassName() const {return MyHandlerECClassName();}
+    virtual Utf8CP _GetSuperHandlerECClassName() const {return nullptr;}
 
-    void SetPersistent(bool val) const {m_flags.m_persistent = val;} //!< @private
-    void InvalidateElementId() {m_elementId = DgnElementId();} //!< @private
-    void InvalidateCode() {m_code = DgnCode();} //!< @private
+    void SetPersistent(bool val) const {m_flags.m_persistent = val;}
+    void InvalidateElementId() {m_elementId = DgnElementId();}
+    void InvalidateCode() {m_code = DgnCode();}
+#endif
     
     //! Invokes _CopyFrom() in the context of _Clone() or _CloneForImport(), preserving this element's code as specified by the CreateParams supplied to those methods.
     void CopyForCloneFrom(DgnElementCR src);
@@ -858,9 +859,9 @@ protected:
     CreateParams GetCreateParamsForImport(DgnModelR destModel, DgnImportContext& importer) const;
 
 public:
-    static Utf8CP MyECClassName() {return DGN_CLASSNAME_Element;}
-    Utf8CP GetECClassName() const {return _GetECClassName();}
-    Utf8CP GetSuperECClassName() const {return _GetSuperECClassName();}
+    static Utf8CP MyHandlerECClassName() {return DGN_CLASSNAME_Element;}                //!< @private
+    Utf8CP GetHandlerECClassName() const {return _GetHandlerECClassName();}             //!< @private
+    Utf8CP GetSuperHandlerECClassName() const {return _GetSuperHandlerECClassName();}   //!< @private
 
     DGNPLATFORM_EXPORT void AddRef() const;  //!< @private
     DGNPLATFORM_EXPORT void Release() const; //!< @private

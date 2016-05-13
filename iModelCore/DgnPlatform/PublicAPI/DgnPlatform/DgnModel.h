@@ -57,12 +57,11 @@ struct DgnElementMap : bmap<DgnElementId, DgnElementCPtr>
     uint32_t GetCount() const {return (uint32_t) size();}
     };
 
-
 #define DGNMODEL_DECLARE_MEMBERS(__ECClassName__,__superclass__)\
     private: typedef __superclass__ T_Super;\
-    public: static Utf8CP MyECClassName() {return __ECClassName__;}\
-    protected:  virtual Utf8CP _GetECClassName() const override {return MyECClassName();}\
-                virtual Utf8CP _GetSuperECClassName() const override {return T_Super::_GetECClassName();}
+    public: static Utf8CP MyHandlerECClassName() {return __ECClassName__;}\
+    protected:  virtual Utf8CP _GetHandlerECClassName() const override {return MyHandlerECClassName();}\
+                virtual Utf8CP _GetSuperHandlerECClassName() const override {return T_Super::_GetHandlerECClassName();}
 
 /**
 * @addtogroup GROUP_DgnModel DgnModel Module
@@ -421,8 +420,8 @@ protected:
 public:
     Utf8CP GetCopyrightMessage() const {return _GetCopyrightMessage();}
 
-    virtual Utf8CP _GetECClassName() const { return DGN_CLASSNAME_Model; }
-    virtual Utf8CP _GetSuperECClassName() const { return nullptr; }
+    virtual Utf8CP _GetHandlerECClassName() const {return DGN_CLASSNAME_Model;} //!< @private
+    virtual Utf8CP _GetSuperHandlerECClassName() const {return nullptr;}        //!< @private
 
     DGNPLATFORM_EXPORT ModelHandlerR GetModelHandler() const;
     DgnRangeTree* GetRangeIndexP(bool create) const {return _GetRangeIndexP(create);}
