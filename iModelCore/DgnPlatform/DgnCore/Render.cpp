@@ -309,7 +309,7 @@ void GraphicSet::Drop(Render::Graphic& graphic)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GraphicList::Add(Graphic& graphic, void* ovr, uint32_t ovrFlags) 
     {
-    graphic.Close(); 
+    graphic.EnsureClosed();
     m_list.push_back(Node(graphic, ovr, ovrFlags));
     }
 
@@ -431,7 +431,7 @@ static void floatToDouble(double* pDouble, float const* pFloat, size_t n)
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-PolyfaceHeaderPtr Graphic::TriMeshArgs::ToPolyface() const
+PolyfaceHeaderPtr GraphicBuilder::TriMeshArgs::ToPolyface() const
     {
     PolyfaceHeaderPtr polyFace = PolyfaceHeader::CreateFixedBlockIndexed(3);
 
@@ -466,3 +466,12 @@ PolyfaceHeaderPtr Graphic::TriMeshArgs::ToPolyface() const
 
     return polyFace;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+GraphicBuilderPtr GraphicBuilder::CreateSubGraphic(TransformCR subToGraphic) const
+    {
+    return m_builder->_CreateSubGraphic(subToGraphic);
+    }
+

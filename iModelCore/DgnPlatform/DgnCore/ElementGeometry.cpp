@@ -478,7 +478,7 @@ GeometricPrimitivePtr GeometricPrimitive::Clone() const
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometricPrimitive::AddToGraphic(Render::GraphicR graphic) const
+void GeometricPrimitive::AddToGraphic(Render::GraphicBuilderR graphic) const
     {
     // Do we need to worry about 2d draw (display priority) and fill, etc.?
     switch (GetGeometryType())
@@ -2855,7 +2855,7 @@ struct DrawHelper
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void CookGeometryParams(ViewContextR context, Render::GeometryParamsR geomParams, Render::GraphicR graphic, bool& geomParamsChanged)
+static void CookGeometryParams(ViewContextR context, Render::GeometryParamsR geomParams, Render::GraphicBuilderR graphic, bool& geomParamsChanged)
     {
     if (!geomParamsChanged)
         return;
@@ -2965,7 +2965,7 @@ static void SaveSolidKernelEntity(ViewContextR context, DgnElementCP element, Ge
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometryStreamIO::Collection::Draw(Render::GraphicR mainGraphic, ViewContextR context, Render::GeometryParamsR geomParams, bool activateParams, DgnElementCP element) const
+void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, ViewContextR context, Render::GeometryParamsR geomParams, bool activateParams, DgnElementCP element) const
     {
     bool isQVis = mainGraphic.IsForDisplay();
 #if defined (BENTLEYCONFIG_PARASOLIDS)
@@ -2977,8 +2977,8 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR mainGraphic, ViewContex
 #endif
     bool geomParamsChanged = activateParams || !isQVis; // NOTE: Don't always bake initial symbology into SubGraphics, it's activated before drawing QvElem...
     DRange3d subGraphicRange = DRange3d::NullRange();
-    Render::GraphicPtr subGraphic;
-    Render::GraphicP currGraphic = &mainGraphic;
+    Render::GraphicBuilderPtr subGraphic;
+    Render::GraphicBuilderP currGraphic = &mainGraphic;
     GeometryStreamEntryId& entryId = context.GetGeometryStreamEntryIdR();
     GeometryStreamIO::Reader reader(context.GetDgnDb());
 
@@ -3531,7 +3531,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR mainGraphic, ViewContex
 +---------------+---------------+---------------+---------------+---------------+------*/
 Render::GraphicPtr GeometrySource::_Stroke(ViewContextR context, double pixelSize) const
     {
-    Render::GraphicPtr graphic = context.CreateGraphic(Graphic::CreateParams(context.GetViewport(), GetPlacementTransform(), pixelSize));
+    Render::GraphicBuilderPtr graphic = context.CreateGraphic(Graphic::CreateParams(context.GetViewport(), GetPlacementTransform(), pixelSize));
     Render::GeometryParams params;
 
     params.SetCategoryId(GetCategoryId());
@@ -3575,7 +3575,7 @@ Render::GraphicPtr GeometrySource::_StrokeHit(ViewContextR context, HitDetailCR 
 
     // Get the GeometryParams for this hit from the GeometryStream...
     GeometryCollection collection(*this);
-    Render::GraphicPtr graphic;
+    Render::GraphicBuilderPtr graphic;
 
 #if defined (BENTLEYCONFIG_PARASOLIDS)
     collection.SetBRepOutput(GeometryCollection::BRepOutput::Mesh);
@@ -4769,7 +4769,7 @@ void TextAnnotationDrawToGeometricPrimitive::_OutputGraphics(ViewContextR contex
     {
     TextAnnotationDraw annotationDraw(m_text);
     Render::GeometryParams geomParams(m_builder.GetGeometryParams());
-    Render::GraphicPtr graphic = context.CreateGraphic(Graphic::CreateParams(context.GetViewport()));
+    Render::GraphicBuilderPtr graphic = context.CreateGraphic(Graphic::CreateParams(context.GetViewport()));
 
     annotationDraw.Draw(*graphic, context, geomParams);
     graphic->Close();

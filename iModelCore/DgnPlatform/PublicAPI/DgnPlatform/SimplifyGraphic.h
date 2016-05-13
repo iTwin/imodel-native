@@ -17,7 +17,7 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 //! @ingroup GROUP_Geometry
 // @bsiclass                                                      Brien.Bastings  06/05
 //=======================================================================================
-struct SimplifyGraphic : Render::Graphic
+struct SimplifyGraphic : Render::Graphic, Render::IGraphicBuilder
 {
     DEFINE_T_SUPER(Render::Graphic);
 
@@ -30,6 +30,7 @@ protected:
     bool                    m_inPatternDraw;
     bool                    m_inSymbolDraw;
     bool                    m_inTextDraw;
+    bool                    m_isOpen = true;
 
     Render::GraphicParams   m_currGraphicParams;
     Render::GeometryParams  m_currGeometryParams;
@@ -60,8 +61,11 @@ protected:
     DGNPLATFORM_EXPORT void _AddDgnOle(Render::DgnOleDraw*) override;
     DGNPLATFORM_EXPORT void _AddPointCloud(Render::PointCloudDraw* drawParams) override;
     DGNPLATFORM_EXPORT void _AddSubGraphic(Render::GraphicR, TransformCR, Render::GraphicParamsCR) override;
-    DGNPLATFORM_EXPORT Render::GraphicPtr _CreateSubGraphic(TransformCR) const override;
+    DGNPLATFORM_EXPORT Render::GraphicBuilderPtr _CreateSubGraphic(TransformCR) const override;
 
+    virtual bool _IsOpen() const override { return m_isOpen; }
+    virtual StatusInt _Close() override { m_isOpen = false; return SUCCESS; }
+    virtual StatusInt _EnsureClosed() override { return m_isOpen ? _Close() : SUCCESS; }
 public:
     DGNPLATFORM_EXPORT explicit SimplifyGraphic(Render::Graphic::CreateParams const& params, IGeometryProcessorR, ViewContextR);
 

@@ -400,7 +400,7 @@ bool TextString::GetGlyphSymbology(GeometryParamsR params) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     01/2015
 //---------------------------------------------------------------------------------------
-void TextString::AddUnderline(Render::GraphicR graphic) const
+void TextString::AddUnderline(Render::GraphicBuilderR graphic) const
     {
     if (!m_style.IsUnderlined())
         return;
