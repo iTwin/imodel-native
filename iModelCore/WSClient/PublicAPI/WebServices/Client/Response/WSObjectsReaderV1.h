@@ -2,7 +2,7 @@
 |
 |  $Source: PublicAPI/WebServices/Client/Response/WSObjectsReaderV1.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -46,6 +46,7 @@ struct WSObjectsReaderV1 : public WSObjectsReader
         virtual RelationshipInstance GetRelationshipInstance(const rapidjson::Value* relationshipInstance) const override;
 
         virtual Utf8String GetInstanceETag(const rapidjson::Value* instance) const override;
+        virtual rapidjson::SizeType GetRelationshipInstanceCount(const rapidjson::Value* relationshipInstances) const override;
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE
