@@ -710,6 +710,21 @@ BentleyStatus ECDbSchemaWriter::UpdateECSchemaReferences(ReferenceChanges& refer
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
+bool ECDbSchemaWriter::IsSpecifiedInECRelationshipConstraint(ECClassCR deletedClass) const
+    {
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT Id FROM ec_RelationshipConstraintClass WHERE ClassId = ? LIMIT 1");
+    stmt->BindId(1, deletedClass.GetId());
+    if (stmt == nullptr)
+        {
+        BeAssert(false && "SQL_SCHEMA_CHANGED");
+        return true;
+        }
+
+    return stmt->Step() == BE_SQLITE_ROW;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECDbSchemaWriter::DeleteECClass(ECClassChange& classChange, ECClassCR deletedClass)
     {
     if (!deletedClass.GetDerivedClasses().empty())
@@ -729,6 +744,13 @@ BentleyStatus ECDbSchemaWriter::DeleteECClass(ECClassChange& classChange, ECClas
     if (deletedClass.IsCustomAttributeClass())
         {
         GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECSchema %s: Deleting ECClass '%s' failed. CustomAttribute class cannot be deleted",
+                                  deletedClass.GetSchema().GetFullSchemaName().c_str(), deletedClass.GetName().c_str());
+        return ERROR;
+        }
+
+    if (IsSpecifiedInECRelationshipConstraint(deletedClass))
+        {
+        GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECSchema %s: Deleting ECClass '%s' failed. A class which is specified in a relationship constraint cannot be deleted",
                                   deletedClass.GetSchema().GetFullSchemaName().c_str(), deletedClass.GetName().c_str());
         return ERROR;
         }
