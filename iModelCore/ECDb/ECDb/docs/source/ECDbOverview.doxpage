@@ -238,7 +238,6 @@
     - @b Modify 
         - @ref BentleyApi::ECN::ECProperty::GetDescription "Description"
         - @ref BentleyApi::ECN::ECProperty::GetDisplayLabel "DisplayLabel"
-        - @ref BentleyApi::ECN::ECProperty::GetIsReadOnly "IsReadOnly"
     - @b CustomAttributes on the ECProperty
         - @b Add, @b delete, @b modify
 
