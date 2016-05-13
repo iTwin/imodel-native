@@ -1383,6 +1383,17 @@ void CameraViewController::VerifyFocusPlane()
 
     double backDist = eyeOrg.z;
     double frontDist = backDist - m_delta.z;
+
+    if (backDist<=0.0 || frontDist<=0.0)
+        {
+        // the camera location is invalid. Set it based on the view range.
+        double tanangle = tan(m_camera.GetLensAngle()/2.0);
+        backDist = m_delta.z / tanangle;
+        m_camera.SetFocusDistance(backDist/2);
+        CenterEyePoint(&backDist);
+        return;
+        }
+
     double focusDist = m_camera.GetFocusDistance();
     if (focusDist>frontDist && focusDist<backDist)
         return;
@@ -1605,6 +1616,7 @@ void CameraViewController::_RestoreFromSettings(JsonValueCR jsonObj)
     DPoint3d eyePt;
     JsonUtils::DPoint3dFromJson(eyePt, jsonObj[VIEW_SETTING_CameraPosition]);
     m_camera.SetEyePoint(eyePt);
+    m_camera.ValidateLens();
 
     VerifyFocusPlane();
     }

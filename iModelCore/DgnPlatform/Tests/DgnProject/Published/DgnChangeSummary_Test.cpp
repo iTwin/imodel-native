@@ -54,7 +54,7 @@ protected:
     void CompareSessions(DgnChangeSummaryTestFixture::ChangedElements& changedElements, uint32_t startSession, uint32_t endSession);
 
 public:
-    DgnChangeSummaryTestFixture() : T_Super(L"DgnChangeSummaryTest.dgndb") {}
+    DgnChangeSummaryTestFixture() : T_Super(L"DgnChangeSummaryTest.bim") {}
 };
 
 //---------------------------------------------------------------------------------------
@@ -295,7 +295,7 @@ void DgnChangeSummaryTestFixture::CompareSessions(DgnChangeSummaryTestFixture::C
 //---------------------------------------------------------------------------------------
 TEST_F(DgnChangeSummaryTestFixture, CreateSampleDataSet)
     {
-    WCharCP fileName = L"SampleBuilding.dgndb";
+    WCharCP fileName = L"SampleBuilding.bim";
     CreateSampleBuilding(fileName);
 
     BeFileName pathname = DgnDbTestDgnManager::GetOutputFilePath(fileName);
@@ -307,7 +307,7 @@ TEST_F(DgnChangeSummaryTestFixture, CreateSampleDataSet)
 //---------------------------------------------------------------------------------------
 TEST_F(DgnChangeSummaryTestFixture, ValidateChangeSummaries)
     {
-    WCharCP fileName = L"SampleBuildingTest.dgndb";
+    WCharCP fileName = L"SampleBuildingTest.bim";
     CreateSampleBuilding(fileName);
     OpenDgnDb();
 

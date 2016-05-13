@@ -57,7 +57,7 @@ struct DgnLineStyleTest : public ::testing::Test
     };
 
 /*---------------------------------------------------------------------------------**//**
-* Set up method that opens an existing .dgndb project file
+* Set up method that opens an existing .bim project file
 * @bsimethod                                    Algirdas.Mikoliunas            03/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnLineStyleTest::SetupProject(WCharCP projFile, Db::OpenMode mode)
@@ -73,7 +73,7 @@ void DgnLineStyleTest::SetupProject(WCharCP projFile, Db::OpenMode mode)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnLineStyleTest, ReadLineStyles)
     {
-    SetupProject (L"SubStation_NoFence.i.idgndb", Db::OpenMode::ReadWrite);
+    SetupProject (L"SubStation_NoFence.i.ibim", Db::OpenMode::ReadWrite);
     
     //Get line styles
     LsCacheP cache = LsCache::GetDgnDbCache(*project);
@@ -113,7 +113,7 @@ TEST_F(DgnLineStyleTest, ReadLineStyles)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnLineStyleTest, InsertLineStyle)
     {
-    SetupProject (L"SubStation_NoFence.i.idgndb", Db::OpenMode::ReadWrite);
+    SetupProject (L"SubStation_NoFence.i.ibim", Db::OpenMode::ReadWrite);
 
     //Get line styles
     DgnLineStyles& styleTable = project->Styles().LineStyles();
@@ -135,7 +135,7 @@ TEST_F(DgnLineStyleTest, InsertLineStyle)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnLineStyleTest, InsertAndQueryWithoutCacheReLoad)
     {
-    SetupProject (L"SubStation_NoFence.i.idgndb", Db::OpenMode::ReadWrite);
+    SetupProject (L"SubStation_NoFence.i.ibim", Db::OpenMode::ReadWrite);
 
     //Get line styles
     DgnLineStyles& styleTable = project->Styles().LineStyles();
@@ -167,7 +167,7 @@ TEST_F(DgnLineStyleTest, InsertAndQueryWithoutCacheReLoad)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnLineStyleTest, InsertDuplicateLineStyle)
     {
-    SetupProject (L"3dMetricGeneral.idgndb", Db::OpenMode::ReadWrite);
+    SetupProject (L"3dMetricGeneral.ibim", Db::OpenMode::ReadWrite);
 
     //Get line styles
     DgnLineStyles& styleTable = project->Styles().LineStyles();
@@ -194,7 +194,7 @@ TEST_F(DgnLineStyleTest, InsertDuplicateLineStyle)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnLineStyleTest, UpdateLineStyle)
 {
-    SetupProject(L"3dMetricGeneral.idgndb", Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.ibim", Db::OpenMode::ReadWrite);
 
     //Get line styles
     DgnLineStyles& styleTable = project->Styles().LineStyles();
@@ -224,7 +224,7 @@ TEST_F(DgnLineStyleTest, UpdateLineStyle)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnLineStyleTest, UpdateLineStyleWithExistingName)
     {
-    SetupProject (L"SubStation_NoFence.i.idgndb", Db::OpenMode::ReadWrite);
+    SetupProject (L"SubStation_NoFence.i.ibim", Db::OpenMode::ReadWrite);
 
     //Get line styles
     DgnLineStyles& styleTable = project->Styles().LineStyles();
@@ -254,7 +254,7 @@ TEST_F(DgnLineStyleTest, UpdateLineStyleWithExistingName)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnLineStyleTest, IteratorLineStyleElement)
     {
-    SetupProject (L"SubStation_NoFence.i.idgndb", Db::OpenMode::ReadWrite);
+    SetupProject (L"SubStation_NoFence.i.ibim", Db::OpenMode::ReadWrite);
 
     int count = 0;
     for (LineStyleElement::Entry entry : LineStyleElement::MakeIterator(*project))

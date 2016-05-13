@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/MemoryManager_Test.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../TestFixture/DgnDbTestFixtures.h"
@@ -42,7 +42,7 @@ struct MemoryManagerTests : public DgnDbTestFixture
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MemoryManagerTests, CalculateAndPurge)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"MemoryManager_Test.idgndb", BeSQLite::Db::OpenMode::ReadWrite); // because ImportSchemas() fails our test if Readonly...
+    SetupProject(L"3dMetricGeneral.ibim", L"MemoryManager_Test.ibim", BeSQLite::Db::OpenMode::ReadWrite); // because ImportSchemas() fails our test if Readonly...
 
     DgnDb& db = *m_db;
     MemoryManager& mgr = db.Memory();

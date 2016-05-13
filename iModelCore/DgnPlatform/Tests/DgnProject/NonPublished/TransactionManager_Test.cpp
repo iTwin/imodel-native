@@ -51,7 +51,7 @@ public:
 
 END_UNNAMED_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
-* set up method that opens an existing .dgndb project file after copying it to out
+* set up method that opens an existing .bim project file after copying it to out
 * @bsimethod                                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TransactionManagerTests::SetupProject(WCharCP projFile, WCharCP testFile, Db::OpenMode mode)
@@ -62,7 +62,7 @@ void TransactionManagerTests::SetupProject(WCharCP projFile, WCharCP testFile, D
     ASSERT_TRUE((Db::OpenMode::ReadWrite != mode) || m_db->Txns().IsTracking());
     }
 /*---------------------------------------------------------------------------------**//**
-* set up method that opens an existing .dgndb project file after copying it to out
+* set up method that opens an existing .bim project file after copying it to out
 * @bsimethod                                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool isElementIdInKeySet(bset<BeInt64Id> const& theSet, DgnElementId element)
@@ -143,7 +143,7 @@ void TransactionManagerTests::TwiddleTime(DgnElementCPtr el)
 // Wait for some other free map tile server
 //TEST_F(TransactionManagerTests, StreetMapModel)
 //    {
-//    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests_StreetMapModel.idgndb", Db::OpenMode::ReadWrite);
+//    SetupProject(L"3dMetricGeneral.ibim", L"TransactionManagerTests_StreetMapModel.ibim", Db::OpenMode::ReadWrite);
 //
 //    auto newModelId = dgn_ModelHandler::StreetMap::CreateStreetMapModel(*m_db, dgn_ModelHandler::StreetMap::MapService::OpenStreetMaps, dgn_ModelHandler::StreetMap::MapType::SatelliteImage, true);
 //    ASSERT_TRUE( newModelId.IsValid() );
@@ -161,7 +161,7 @@ void TransactionManagerTests::TwiddleTime(DgnElementCPtr el)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(TransactionManagerTests, CRUD)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests_CRUD.idgndb", Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.ibim", L"TransactionManagerTests_CRUD.ibim", Db::OpenMode::ReadWrite);
 
     m_db->SaveChanges();
     TxnMonitorVerifier monitor;
@@ -222,7 +222,7 @@ TEST_F(TransactionManagerTests, CRUD)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(TransactionManagerTests, ElementAssembly)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.ibim", L"TransactionManagerTests.ibim", Db::OpenMode::ReadWrite);
 
     TestElementPtr e1 = TestElement::Create(*m_db, m_defaultModelId,m_defaultCategoryId);
 
@@ -520,7 +520,7 @@ static void testSettings(DgnDbR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(TransactionManagerTests, UndoRedo)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.ibim", L"TransactionManagerTests.ibim", Db::OpenMode::ReadWrite);
     auto& txns = m_db->Txns();
 
     TestElementPtr templateEl = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, "", 101.0);
@@ -651,7 +651,7 @@ struct ModelTxnMonitor : TxnMonitor
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(TransactionManagerTests, ModelInsertReverse)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.ibim", L"TransactionManagerTests.ibim", BeSQLite::Db::OpenMode::ReadWrite);
     auto& txns = m_db->Txns();
 
     ModelTxnMonitor monitor;
@@ -690,7 +690,7 @@ TEST_F(TransactionManagerTests, ModelInsertReverse)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(TransactionManagerTests, ModelDeleteReverse)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.ibim", L"TransactionManagerTests.ibim", BeSQLite::Db::OpenMode::ReadWrite);
     auto& txns = m_db->Txns();
 
     auto seedModelId = m_defaultModelId;
@@ -725,7 +725,7 @@ TEST_F(TransactionManagerTests, ModelDeleteReverse)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(TransactionManagerTests, ElementInsertReverse)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.ibim", L"TransactionManagerTests.ibim", BeSQLite::Db::OpenMode::ReadWrite);
     auto& txns = m_db->Txns();
 
     auto seedModelId = m_defaultModelId;
@@ -777,7 +777,7 @@ TEST_F(TransactionManagerTests, ElementInsertReverse)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (TransactionManagerTests, ElementDeleteReverse)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.ibim", L"TransactionManagerTests.ibim", BeSQLite::Db::OpenMode::ReadWrite);
     auto& txns = m_db->Txns();
 
     //Creates a model.
@@ -829,7 +829,7 @@ TEST_F (TransactionManagerTests, ElementDeleteReverse)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (TransactionManagerTests, ReverseToPos)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.ibim", L"TransactionManagerTests.ibim", BeSQLite::Db::OpenMode::ReadWrite);
     auto& txns = m_db->Txns();
     auto txn_id = txns.GetCurrentTxnId();
 
@@ -854,7 +854,7 @@ TEST_F (TransactionManagerTests, ReverseToPos)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (TransactionManagerTests, CancelToPos)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.ibim", L"TransactionManagerTests.ibim", BeSQLite::Db::OpenMode::ReadWrite);
     auto& txns = m_db->Txns();
 
     //creates model
@@ -885,7 +885,7 @@ TEST_F (TransactionManagerTests, CancelToPos)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (TransactionManagerTests, MultiTxnOperation)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.ibim", L"TransactionManagerTests.ibim", BeSQLite::Db::OpenMode::ReadWrite);
     auto& txns = m_db->Txns();
 
     //Inserts a  model
@@ -946,7 +946,7 @@ struct DynamicTxnsTest : TransactionManagerTests
 
     void SetupProject(WCharCP testFileName)
         {
-        T_Super::SetupProject(L"3dMetricGeneral.idgndb", testFileName, BeSQLite::Db::OpenMode::ReadWrite);
+        T_Super::SetupProject(L"3dMetricGeneral.ibim", testFileName, BeSQLite::Db::OpenMode::ReadWrite);
         }
 
     void InsertElement(bvector<DgnElementId>& ids, bool saveIfNotInDynamics=true)
@@ -992,7 +992,7 @@ struct DynamicTxnsTest : TransactionManagerTests
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DynamicTxnsTest, BasicInvariants)
     {
-    SetupProject(L"BasicInvariants.dgndb");
+    SetupProject(L"BasicInvariants.bim");
 
     // IsInDynamics accurately reflects pushing and popping of dynamic operations
     DgnDbR db = *m_db;
@@ -1038,7 +1038,7 @@ TEST_F(DynamicTxnsTest, BasicInvariants)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DynamicTxnsTest, DynamicTxns)
     {
-    SetupProject(L"DynamicTxns.dgndb");
+    SetupProject(L"DynamicTxns.bim");
 
     DgnDbR db = *m_db;
     auto& txns = db.Txns();
@@ -1132,7 +1132,7 @@ TEST_F(DynamicTxnsTest, DynamicTxns)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DynamicTxnsTest, TxnMonitors)
     {
-    SetupProject(L"TxnMonitors.dgndb");
+    SetupProject(L"TxnMonitors.bim");
 
     DgnDbR db = *m_db;
     auto& txns = db.Txns();
@@ -1301,7 +1301,7 @@ struct DynamicChangesProcessor : DynamicTxnProcessor
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DynamicTxnsTest, IndirectChanges)
     {
-    SetupProject(L"IndirectChanges.dgndb");
+    SetupProject(L"IndirectChanges.bim");
 
     DgnDbR db = *m_db;
     auto& txns = db.Txns();
@@ -1586,7 +1586,7 @@ static BeSQLite::DbResult deleteRelationship(DgnDbR db, ECN::ECClassCR relcls, B
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(TransactionManagerTests, TestRelationshipLinkTableTracking)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"TestRelationshipLinkTableTracking.dgndb", Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.ibim", L"TestRelationshipLinkTableTracking.bim", Db::OpenMode::ReadWrite);
 
     // Put a couple of elements in the default model
     DgnElementId eid1, eid2;

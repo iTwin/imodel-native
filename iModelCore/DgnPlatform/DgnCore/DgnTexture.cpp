@@ -174,7 +174,7 @@ Render::Image DgnTexture::ExtractImage() const
             imageInfo.m_height = m_data.GetHeight();
             imageInfo.m_hasAlpha = true;
             imageInfo.m_isBGR = false;
-            imageInfo.m_isTopDown = true;
+            imageInfo.SetTopDown(true);
             
             imageInfo.ReadImageFromJpgBuffer(image, m_data.GetData(), m_data.GetSize());
             break;
