@@ -2681,8 +2681,8 @@ DgnElementId ElementAssemblyUtil::GetAssemblyParentId(DgnElementCR el)
         {
         DgnElementCPtr parentEl = el.GetDgnDb().Elements().GetElement(parentId);
 
-        if (!parentEl.IsValid())
-            return DgnElementId(); // Missing parent???
+        if (!parentEl.IsValid() || nullptr == parentEl->ToGeometrySource())
+            return DgnElementId(); // Missing or non-geometric parent...
 
         // NOTE: For plant applications, it might be a good idea to stop at the first non-geometric parent to avoid selecting the entire plant with assembly lock???
         thisParentId = parentEl->GetParentId();
