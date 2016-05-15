@@ -131,13 +131,12 @@ void Node::SetAbandoned()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Node::UnloadChildren(uint64_t olderThan)
     {
-    DgnDb::VerifyClientThread();
     if (ChildLoad::Ready != m_childLoad.load()) // children aren't loaded, nothing to do
         return;
 
     if (m_childrenLastUsed > olderThan) // have we used this node's children recently?
         {
-        // this node has been used recently. We're going to keep it, but potentially unload its grandchildren
+        // yes, this node has been used recently. We're going to keep it, but potentially unload its grandchildren
         for (auto const& child : m_childNodes)
             child->UnloadChildren(olderThan);
 

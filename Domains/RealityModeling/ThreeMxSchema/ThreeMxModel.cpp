@@ -169,7 +169,7 @@ ProgressiveTask::Completion ThreeMxProgressive::_DoProgressive(ProgressiveContex
     DEBUG_PRINTF("3MX after progressive still %d missing", m_missing.size());
     if (m_missing.empty()) // when we have no missing tiles, the progressive task is done. 
         {
-        context.GetViewport()->SetNeedsHeal(); // unfortunately the newly drawn tiles may 
+        context.GetViewport()->SetNeedsHeal(); // unfortunately the newly drawn tiles may be obscured by lower resolution ones
         return Completion::Finished;
         }
 
