@@ -89,7 +89,7 @@ public:
 
         void SetGroundBias(double val) {m_groundBias=val;}
         double GetGroundBias() const {return m_groundBias;}
-        void SetTransparency(double val) {LIMIT_RANGE(0.0, .9, val); m_transparency=val;}
+        void SetTransparency(double val) {m_transparency=std::max(0.0, std::min(val, .9));} // limit range bewteen 0 and .9
         double GetTransparency() const {return m_transparency;}
         void ToJson(Json::Value&) const;
         void FromJson(Json::Value const&);
@@ -130,7 +130,6 @@ public:
 
     //! Create the URL to request the specified tile from a map service.
     //! @param[out] url The returned URL
-    //! @param[out] imageInfo Expected image format
     //! @param[in] tileid  The location of the tile, according to the WebMercator tiling system
     //! @return SUCCESS if URL was computed and is valid
     virtual BentleyStatus _CreateUrl(Utf8StringR url, TileId tileid) const {return BSIERROR;}
@@ -163,7 +162,6 @@ struct EXPORT_VTABLE_ATTRIBUTE StreetMapModel : WebMercatorModel
 public:
     StreetMapModel(CreateParams const& params) : T_Super(params) {}
 };
-
 
 //=======================================================================================
 //! Base class for model handlers that create models derived from WebMercatorModel.

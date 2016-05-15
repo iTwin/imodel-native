@@ -73,13 +73,13 @@ struct Upoint2d
     uint32_t  y;
     };
 
-static Upoint2d s_pixelOrigin = {TILE_SIZE / 2, TILE_SIZE / 2};
-static double s_pixelsPerLonDegree = TILE_SIZE / 360.0;
-static double s_pixelsPerLonRadian = TILE_SIZE / msGeomConst_2pi;
-static double s_minLatitude  =  -85.05112878;
-static double s_maxLatitude  =   85.05112878;
-static double s_minLongitude = -180.0;
-static double s_maxLongitude =  180.0;
+static Upoint2d const s_pixelOrigin = {TILE_SIZE / 2, TILE_SIZE / 2};
+static double const s_pixelsPerLonDegree = TILE_SIZE / 360.0;
+static double const s_pixelsPerLonRadian = TILE_SIZE / msGeomConst_2pi;
+static double const s_minLatitude  =  -85.05112878;
+static double const s_maxLatitude  =   85.05112878;
+static double const s_minLongitude = -180.0;
+static double const s_maxLongitude =  180.0;
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   03/16
@@ -244,7 +244,7 @@ TilePtr WebMercatorModel::CreateTile(TileId id, Tile::Corners const& corners, Re
     }
 
 /*---------------------------------------------------------------------------------**//**
-* if the texture cache is full, drop the oldest entry
+* If the tile cache is full, drop the oldest entry
 * @bsimethod                                    Keith.Bentley                   03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void WebMercatorModel::TileCache::Trim()
@@ -265,7 +265,6 @@ void WebMercatorModel::TileCache::Trim()
             }
         }
 
-    DEBUG_PRINTF("Dropping tile");
     m_map.erase(oldest);
     }
 
@@ -372,7 +371,6 @@ WPixelPoint::WPixelPoint(TileId tileid)
     y = piy / (double)numTiles;
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * Compute meters/pixel at the Project's geo origin the specified zoomLevel.
 * @bsimethod                                                    Sam.Wilson      10/14
@@ -457,7 +455,7 @@ Tile::Corners WebMercatorDisplay::ComputeCorners(TileId tileid)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      10/14
+* @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TilePtr WebMercatorDisplay::GetCachedTile(TileId id)
     {
@@ -554,7 +552,6 @@ TileIdList WebMercatorDisplay::GetTileIds(uint8_t zoomLevel)
             }
         }
 
-    DEBUG_PRINTF("Tile count=%d", tileids.size());
     return tileids;
     }
 
@@ -610,7 +607,8 @@ void WebMercatorDisplay::DrawCoarserTiles(DrawArgs& args, uint8_t zoomLevel, uin
             args.DrawTile(*tile);
         }
 
-    args.DrawGraphics(-.01);
+    DEBUG_PRINTF("drawing %d coarser tiles", args.m_graphics.m_entries.size());
+    args.DrawGraphics(-100.0 * DgnUnits::OneMillimeter());
 
     if (!allFound && maxLevelsToTry>0 && zoomLevel>0)
         DrawCoarserTiles(args, zoomLevel-1, maxLevelsToTry-1);
@@ -633,7 +631,6 @@ void DrawArgs::DrawGraphics(double bias)
     if (m_graphics.m_entries.empty())
         return;
 
-    DEBUG_PRINTF("WebMercator drawing %d tiles", m_graphics.m_entries.size());
                        
     Transform biasTrans;
     biasTrans.InitFrom(DPoint3d::From(0.0, 0.0, bias));
@@ -662,14 +659,23 @@ void WebMercatorDisplay::DrawView(TerrainContextR context)
         return;
 
     Render::SystemR renderSys = context.GetTargetR().GetSystem();
-    DrawArgs args(context);
 
+    // first, make sure tiles are created. 
     for (auto const& tileId  : tileIds)
         {
         auto tile = GetCachedTile(tileId);
         if (!tile.IsValid())
             tile = m_model.CreateTile(tileId, ComputeCorners(tileId), renderSys);
+        }
 
+    DrawArgs args(context);
+
+    // run through the list again, checking for ones that are loaded. Do this as two separate loops so that potentially 
+    // some of the tiles at the beginning of the list might arrive before we get through this list.
+    for (auto const& tileId  : tileIds)
+        {
+        auto tile = GetCachedTile(tileId);
+        BeAssert(tile.IsValid());
         if (tile->IsLoaded())
             args.DrawTile(*tile);
         else
@@ -684,7 +690,9 @@ void WebMercatorDisplay::DrawView(TerrainContextR context)
     for (auto const& missing : args.m_missing)
         {
         DrawFinerTiles(args, missing->GetTileId(), 2);
-        args.DrawGraphics(-.001);
+
+        DEBUG_PRINTF("drawing %d finer tiles", args.m_graphics.m_entries.size());
+        args.DrawGraphics(-50.0 * DgnUnits::OneMillimeter());
         }
 
     if (m_zoomLevel > 0)
@@ -1316,7 +1324,7 @@ void WebMercatorModel::RequestTile(TileId id, TileR tile, Render::SystemR sys) c
     _CreateUrl(url, id);
 
     ColorDef color = ColorDef::White();
-    if (0.0 != m_properties.m_transparency)
+	    if (0.0 != m_properties.m_transparency)
         color.SetAlpha((Byte) (255.* m_properties.m_transparency));
 
     TileDataPtr data = new TileData(tile, sys, color);
