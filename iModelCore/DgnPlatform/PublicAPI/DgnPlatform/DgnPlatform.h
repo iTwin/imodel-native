@@ -113,6 +113,7 @@ DGNPLATFORM_TYPEDEFS(FenceManager)
 DGNPLATFORM_TYPEDEFS(FenceParams)
 DGNPLATFORM_TYPEDEFS(FitContext)
 DGNPLATFORM_TYPEDEFS(Frustum)
+DGNPLATFORM_TYPEDEFS(FunctionalElement)
 DGNPLATFORM_TYPEDEFS(GeomDetail)
 DGNPLATFORM_TYPEDEFS(GeometricPrimitive)
 DGNPLATFORM_TYPEDEFS(GeometryBuilder)
@@ -847,6 +848,8 @@ public:
     Byte GetGreen() const {return m_green;}
     Byte GetBlue() const {return m_blue;}
     Byte GetAlpha() const {return m_alpha;}
+
+    uint32_t GetRGBA() const { return  (uint32_t)((m_red << 24) | (uint32_t) (m_green << 16) | (uint32_t) (m_blue << 8) | (uint32_t) m_alpha); }
 
     uint32_t GetValue() const {return *reinterpret_cast<uint32_t const*>(this);}
     uint32_t GetValueNoAlpha() const {return 0xffffff & GetValue();}

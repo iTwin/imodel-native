@@ -36,6 +36,7 @@ HANDLER_DEFINE_MEMBERS(Definition)
 HANDLER_DEFINE_MEMBERS(Dictionary)
 HANDLER_DEFINE_MEMBERS(Geometric2d)
 HANDLER_DEFINE_MEMBERS(GroupInformation)
+HANDLER_DEFINE_MEMBERS(Functional)
 };
 
 namespace WebMercator
@@ -100,6 +101,7 @@ DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain
     RegisterHandler(dgn_ModelHandler::Definition::GetHandler());
     RegisterHandler(dgn_ModelHandler::Dictionary::GetHandler());
     RegisterHandler(dgn_ModelHandler::GroupInformation::GetHandler());
+    RegisterHandler(dgn_ModelHandler::Functional::GetHandler());
 
     RegisterHandler(dgn_ElementHandler::Element::GetHandler());
     RegisterHandler(dgn_ElementHandler::Geometric2d::GetHandler());

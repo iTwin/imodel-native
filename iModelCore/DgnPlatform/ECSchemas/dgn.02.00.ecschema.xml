@@ -293,6 +293,12 @@
         </ECCustomAttributes>
         <BaseClass>InformationModel</BaseClass>
     </ECEntityClass>
+    <ECEntityClass typeName="FunctionalModel">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00"/>
+        </ECCustomAttributes>
+        <BaseClass>Model</BaseClass>
+    </ECEntityClass>
     <ECEntityClass typeName="WebMercatorModel">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
@@ -1272,9 +1278,32 @@
         </Target>
     </ECRelationshipClass>
 
-    <!-- ////////////////////////////////////////////////////////////////////////////// -->
-    <!-- // DgnDb "implementation detail" classes -->
-    <!-- ////////////////////////////////////////////////////////////////////////////// -->
+    <ECEntityClass typeName="RoleElement" modifier="Abstract">
+        <BaseClass>Element</BaseClass>
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <MapStrategy>
+                    <Options>JoinedTablePerDirectSubclass</Options>
+                </MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="FunctionalElement" modifier="Abstract">
+        <BaseClass>RoleElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <MapStrategy>
+                    <Options>SharedColumnsForSubclasses</Options>
+                    <MinimumSharedColumnCount>16</MinimumSharedColumnCount>
+                </MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="FunctionalBreakdownElement" modifier="Abstract">
+        <BaseClass>FunctionalElement</BaseClass>
+    </ECEntityClass>
 
     <ECEntityClass typeName="SpatialIndex">
         <ECCustomAttributes>
