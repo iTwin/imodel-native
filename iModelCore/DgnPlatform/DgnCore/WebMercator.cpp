@@ -1009,15 +1009,12 @@ private:
     Utf8String  m_url;
     ByteStream  m_data;
     DateTime    m_creationDate;
-    RgbImageInfo m_imageInfo;
-    Utf8String  m_contentType;
+    bool        m_isJpeg;
     TilePtr     m_tile;
     ColorDef    m_color;
     Render::SystemR m_renderSys;
 
 private:
-    Utf8String SerializeRasterInfo() const;
-    void DeserializeRasterInfo(Utf8CP);
     void LoadTile();
 
 protected:
@@ -1031,7 +1028,6 @@ public:
     TileData(TileR tile, Render::SystemR renderSys, ColorDef color) : m_tile(&tile), m_renderSys(renderSys), m_color(color) {}
     ByteStream const& GetData() const {return m_data;}
     DateTime GetCreationDate() const {return m_creationDate;}
-    Utf8String const& GetContentType() const {return m_contentType;}
 };
 DEFINE_REF_COUNTED_PTR(TileData)
 
@@ -1050,7 +1046,7 @@ BentleyStatus TiledRasterCache::_PrepareDatabase(BeSQLite::Db& db) const
         return SUCCESS;
         }
 
-    Utf8CP ddl = "Url CHAR PRIMARY KEY,Raster BLOB,RasterSize INT,RasterInfo CHAR,ContentType CHAR,Created BIGINT,Expires BIGINT,ETag CHAR";
+    Utf8CP ddl = "Id PRIMARY KEY,Image BLOB,NumBytes INT,JPeg BOOL,Created BIGINT";
     if (BeSQLite::BE_SQLITE_OK == db.CreateTable(TABLE_NAME_TiledRaster, ddl))
         {
         m_isPrepared.store(true);
@@ -1065,7 +1061,7 @@ BentleyStatus TiledRasterCache::_PrepareDatabase(BeSQLite::Db& db) const
 BentleyStatus TiledRasterCache::_CleanupDatabase(BeSQLite::Db& db) const
     {
     CachedStatementPtr sumStatement;
-    db.GetCachedStatement(sumStatement, "SELECT SUM(RasterSize) FROM " TABLE_NAME_TiledRaster);
+    db.GetCachedStatement(sumStatement, "SELECT SUM(NumBytes) FROM " TABLE_NAME_TiledRaster);
 
     if (BE_SQLITE_ROW != sumStatement->Step())
         return ERROR;
@@ -1077,7 +1073,7 @@ BentleyStatus TiledRasterCache::_CleanupDatabase(BeSQLite::Db& db) const
     uint64_t garbageSize = sum - m_allowedSize;
 
     CachedStatementPtr selectStatement;
-    db.GetCachedStatement(selectStatement, "SELECT RasterSize,Created FROM " TABLE_NAME_TiledRaster " ORDER BY Created ASC");
+    db.GetCachedStatement(selectStatement, "SELECT NumBytes,Created FROM " TABLE_NAME_TiledRaster " ORDER BY Created ASC");
 
     uint64_t runningSum=0;
     while (runningSum < garbageSize)
@@ -1109,14 +1105,14 @@ void TileData::LoadTile()
     {
     Render::Image rgba;
     BentleyStatus readStatus = ERROR;
-    if (m_contentType.Equals("image/png"))
-        {
-        readStatus = m_imageInfo.ReadImageFromPngBuffer(rgba, m_data.GetData(), m_data.GetSize());
-        }
-    else if (m_contentType.Equals("image/jpeg"))
-        {
-        readStatus = m_imageInfo.ReadImageFromJpgBuffer(rgba, m_data.GetData(), m_data.GetSize());
-        }
+
+    RgbImageInfo imageInfo;
+    imageInfo.m_width = imageInfo.m_height = TILE_SIZE;
+
+    if (!m_isJpeg)
+        readStatus = imageInfo.ReadImageFromPngBuffer(rgba, m_data.GetData(), m_data.GetSize());
+    else 
+        readStatus = imageInfo.ReadImageFromJpgBuffer(rgba, m_data.GetData(), m_data.GetSize());
 
     if (ERROR == readStatus || !rgba.IsValid())
         {
@@ -1124,7 +1120,7 @@ void TileData::LoadTile()
         return;
         }
 
-    BeAssert(!m_imageInfo.m_isBGR);
+    BeAssert(!imageInfo.m_isBGR);
     auto graphic = m_renderSys._CreateGraphic(Graphic::CreateParams(nullptr));
     auto texture = m_renderSys._CreateImageTexture(rgba, false);
 
@@ -1147,7 +1143,9 @@ BentleyStatus TileData::_InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> const
     if (contentTypeIter == header.end())
         return ERROR;
 
-    m_contentType = contentTypeIter->second.c_str();
+    m_isJpeg = contentTypeIter->second.Equals("image/jpeg");
+    BeAssert(!m_isJpeg);
+
     m_data = body;
 
     LoadTile();
@@ -1159,14 +1157,9 @@ BentleyStatus TileData::_InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> const
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus TileData::_InitFrom(BeSQLite::Db& db, BeMutex& cs, Utf8CP key)
     {
-    BeMutexHolder lock(cs);
-
     CachedStatementPtr stmt;
-    if (BeSQLite::BE_SQLITE_OK != db.GetCachedStatement(stmt, "SELECT Raster,RasterSize,RasterInfo,Created,Expires,ETag,ContentType FROM " TABLE_NAME_TiledRaster " WHERE Url=?"))
-        return ERROR;
-
-    stmt->ClearBindings();
-    stmt->BindText(1, key, BeSQLite::Statement::MakeCopy::Yes);
+    db.GetCachedStatement(stmt, "SELECT Image,NumBytes,JPeg,Created FROM " TABLE_NAME_TiledRaster " WHERE Id=?");
+    stmt->BindBlob(1, &m_tile->m_id, sizeof(m_tile->m_id), Statement::MakeCopy::No);
 
     if (BeSQLite::BE_SQLITE_ROW != stmt->Step())
         {
@@ -1178,18 +1171,9 @@ BentleyStatus TileData::_InitFrom(BeSQLite::Db& db, BeMutex& cs, Utf8CP key)
         }
 
     m_url = key;
-    auto raster     = stmt->GetValueBlob(0);
-    auto rasterSize = stmt->GetValueInt(1);
-    m_data.SaveData((Byte*) raster, rasterSize);
-
-    DeserializeRasterInfo(stmt->GetValueText(2));
+    m_data.SaveData((Byte*) stmt->GetValueBlob(0), stmt->GetValueInt(1));
+    m_isJpeg = TO_BOOL(stmt->GetValueInt(2));
     DateTime::FromUnixMilliseconds(m_creationDate,(uint64_t) stmt->GetValueInt64(3));
-    m_contentType = stmt->GetValueText(6);
-
-    DateTime expirationDate;
-    DateTime::FromUnixMilliseconds(expirationDate,(uint64_t) stmt->GetValueInt64(4));
-    SetExpirationDate(expirationDate);
-    SetEntityTag(stmt->GetValueText(5));
 
     LoadTile();
     return SUCCESS;
@@ -1200,8 +1184,6 @@ BentleyStatus TileData::_InitFrom(BeSQLite::Db& db, BeMutex& cs, Utf8CP key)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus TileData::_Persist(Db& db, BeMutex& cs) const
     {
-    BeMutexHolder lock(cs);
-
 #ifdef DEBUG_MERCATOR
     Utf8String tmp(GetId()+40, 16);
     DEBUG_PRINTF("arrived  %s", tmp.c_str());
@@ -1217,77 +1199,17 @@ BentleyStatus TileData::_Persist(Db& db, BeMutex& cs) const
     if (SUCCESS != GetExpirationDate().ToUnixMilliseconds(expirationDate))
         return ERROR;
 
-    CachedStatementPtr selectStatement;
-    if (BeSQLite::BE_SQLITE_OK != db.GetCachedStatement(selectStatement, "SELECT Url FROM " TABLE_NAME_TiledRaster " WHERE Url=?"))
-        return ERROR;
+    // insert
+    CachedStatementPtr stmt;
+    db.GetCachedStatement(stmt, "INSERT INTO " TABLE_NAME_TiledRaster "(Id,Image,NumBytes,JPeg,Created) VALUES(?,?,?,?,?)");
 
-    selectStatement->ClearBindings();
-    selectStatement->BindText(1, GetId(), BeSQLite::Statement::MakeCopy::Yes);
-    if (BeSQLite::BE_SQLITE_ROW == selectStatement->Step())
-        {
-        // update
-        CachedStatementPtr stmt;
-        if (BeSQLite::BE_SQLITE_OK != db.GetCachedStatement(stmt, "UPDATE " TABLE_NAME_TiledRaster " SET Expires=?,ETag=? WHERE Url=?"))
-            return ERROR;
+    stmt->BindBlob(1, &m_tile->m_id, sizeof(m_tile->m_id), Statement::MakeCopy::No);
+    stmt->BindBlob(2, GetData().GetData(), bufferSize, BeSQLite::Statement::MakeCopy::No);
+    stmt->BindInt(3, bufferSize);
+    stmt->BindInt(4, m_isJpeg);
+    stmt->BindInt64(5, creationTime);
 
-        stmt->ClearBindings();
-        stmt->BindInt64(1, expirationDate);
-        stmt->BindText(2, GetEntityTag(), BeSQLite::Statement::MakeCopy::Yes);
-        stmt->BindText(3, GetId(), BeSQLite::Statement::MakeCopy::Yes);
-        if (BeSQLite::BE_SQLITE_DONE != stmt->Step())
-            return ERROR;
-        }
-    else
-        {
-        // insert
-        CachedStatementPtr stmt;
-        if (BeSQLite::BE_SQLITE_OK != db.GetCachedStatement(stmt, "INSERT INTO " TABLE_NAME_TiledRaster "(Url,Raster,RasterSize,RasterInfo,Created,Expires,ETag,ContentType) VALUES(?,?,?,?,?,?,?,?)"))
-            return ERROR;
-
-        stmt->ClearBindings();
-        stmt->BindText(1, GetId(), BeSQLite::Statement::MakeCopy::Yes);
-        stmt->BindBlob(2, GetData().GetData(), bufferSize, BeSQLite::Statement::MakeCopy::No);
-        stmt->BindInt(3, bufferSize);
-        stmt->BindText(4, SerializeRasterInfo().c_str(), BeSQLite::Statement::MakeCopy::Yes);
-        stmt->BindInt64(5, creationTime);
-        stmt->BindInt64(6, expirationDate);
-        stmt->BindText(7, GetEntityTag(), BeSQLite::Statement::MakeCopy::Yes);
-        stmt->BindText(8, GetContentType(), BeSQLite::Statement::MakeCopy::Yes);
-        if (BeSQLite::BE_SQLITE_DONE != stmt->Step())
-            return ERROR;
-        }
-
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               10/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String TileData::SerializeRasterInfo() const
-    {
-    Json::Value json;
-    json["hasAlpha"] = m_imageInfo.m_hasAlpha;
-    json["height"] = m_imageInfo.m_height;
-    json["width"] = m_imageInfo.m_width;
-    json["isBGR"] = m_imageInfo.m_isBGR;
-    json["isTopDown"] = m_imageInfo.IsTopDown();
-    return Json::FastWriter::ToString(json);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               10/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TileData::DeserializeRasterInfo(Utf8CP serializedJson)
-    {
-    Json::Value json;
-    Json::Reader reader;
-    reader.parse(serializedJson, json);
-
-    m_imageInfo.m_hasAlpha = json["hasAlpha"].asBool();
-    m_imageInfo.m_height = json["height"].asInt();
-    m_imageInfo.m_width = json["width"].asInt();
-    m_imageInfo.m_isBGR = json["isBGR"].asBool();
-    m_imageInfo.SetBottomUp(!json["isTopDown"].asBool());
+    return BeSQLite::BE_SQLITE_DONE == stmt->Step() ? SUCCESS : ERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1324,7 +1246,7 @@ void WebMercatorModel::RequestTile(TileId id, TileR tile, Render::SystemR sys) c
     _CreateUrl(url, id);
 
     ColorDef color = ColorDef::White();
-	    if (0.0 != m_properties.m_transparency)
+    if (0.0 != m_properties.m_transparency)
         color.SetAlpha((Byte) (255.* m_properties.m_transparency));
 
     TileDataPtr data = new TileData(tile, sys, color);
