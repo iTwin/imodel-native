@@ -40,6 +40,41 @@ namespace dgn_ElementHandler
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    04/2016
 //---------------------------------------------------------------------------------------
+MarkupExternalLink::CreateParams::CreateParams(LinkModelR linkModel, DgnElementId linkedElementId /*= DgnElementId()*/) : CreateParams(Dgn::DgnElement::CreateParams(linkModel.GetDgnDb(), linkModel.GetModelId(), MarkupExternalLink::QueryClassId(linkModel.GetDgnDb())), linkedElementId)
+    {
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    05/2016
+//---------------------------------------------------------------------------------------
+MarkupExternalLinkCPtr MarkupExternalLink::Insert()
+    {
+    MarkupExternalLinkCPtr link = GetDgnDb().Elements().Insert<MarkupExternalLink>(*this);
+    BeAssert(link.IsValid());
+    return link;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    05/2016
+//---------------------------------------------------------------------------------------
+MarkupExternalLinkCPtr MarkupExternalLink::Update()
+    {
+    MarkupExternalLinkCPtr link = GetDgnDb().Elements().Update<MarkupExternalLink>(*this);
+    BeAssert(link.IsValid());
+    return link;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    04/2016
+//---------------------------------------------------------------------------------------
+void MarkupExternalLink::AddClassParams(ECSqlClassParamsR params)
+    {
+    params.Add(MARKUPEXTERNALLINK_LinkedElementId);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    04/2016
+//---------------------------------------------------------------------------------------
 DgnDbStatus MarkupExternalLink::_BindInsertParams(BeSQLite::EC::ECSqlStatement& statement)
     {
     DgnDbStatus stat = BindParams(statement);
@@ -93,6 +128,33 @@ void MarkupExternalLink::_CopyFrom(DgnElementCR other)
     MarkupExternalLinkCP otherLink = dynamic_cast<MarkupExternalLinkCP> (&other);
     if (otherLink)
         m_linkedElementId = otherLink->m_linkedElementId;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    04/2016
+//---------------------------------------------------------------------------------------
+MarkupExternalLinkGroup::CreateParams::CreateParams(LinkModelR linkModel) : CreateParams(Dgn::DgnElement::CreateParams(linkModel.GetDgnDb(), linkModel.GetModelId(), MarkupExternalLinkGroup::QueryClassId(linkModel.GetDgnDb())))
+    {
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    05/2016
+//---------------------------------------------------------------------------------------
+MarkupExternalLinkGroupCPtr MarkupExternalLinkGroup::Insert()
+    {
+    MarkupExternalLinkGroupCPtr link = GetDgnDb().Elements().Insert<MarkupExternalLinkGroup>(*this);
+    BeAssert(link.IsValid());
+    return link;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    05/2016
+//---------------------------------------------------------------------------------------
+MarkupExternalLinkGroupCPtr MarkupExternalLinkGroup::Update()
+    {
+    MarkupExternalLinkGroupCPtr link = GetDgnDb().Elements().Update<MarkupExternalLinkGroup>(*this);
+    BeAssert(link.IsValid());
+    return link;
     }
 
 //---------------------------------------------------------------------------------------
@@ -186,14 +248,6 @@ DgnViewId SpatialRedlineModel::GetFirstView()
     {
     auto db = GetDgnMarkupProject();
     return db? db->GetFirstViewOf(GetModelId()): DgnViewId();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ramanujam.Raman                 04/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void MarkupExternalLink::AddClassParams(ECSqlClassParamsR params)
-    {
-    params.Add(MARKUPEXTERNALLINK_LinkedElementId);
     }
 
 /*---------------------------------------------------------------------------------**//**

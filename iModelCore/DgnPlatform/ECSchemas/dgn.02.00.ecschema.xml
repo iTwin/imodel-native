@@ -281,6 +281,12 @@
         </ECCustomAttributes>
         <BaseClass>InformationModel</BaseClass>
     </ECEntityClass>
+    <ECEntityClass typeName="LinkModel">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00"/>
+        </ECCustomAttributes>
+        <BaseClass>InformationModel</BaseClass>
+    </ECEntityClass>
     <ECEntityClass typeName="DictionaryModel">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
@@ -410,6 +416,23 @@
                 </MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
+    </ECEntityClass>
+    
+    <ECEntityClass typeName="UrlLink">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00" />
+        </ECCustomAttributes>
+        <BaseClass>LinkElement</BaseClass>
+        <ECProperty propertyName="Url" displayLabel="URL" typeName="string"/>
+        <ECProperty propertyName="Descr" displayLabel="Description" typeName="string"/>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="EmbeddedFileLink">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00" />
+        </ECCustomAttributes>
+        <BaseClass>LinkElement</BaseClass>
+        <ECProperty propertyName="Name" typeName="string"/>
     </ECEntityClass>
 
     <ECEntityClass typeName="GroupInformationElement" modifier="Abstract">
@@ -1254,7 +1277,7 @@
         </ECCustomAttributes>
     </ECEntityClass>
   
-    <ECRelationshipClass typeName="ElementHasLinks" description="Associates links to an entity." strength="referencing">
+    <ECRelationshipClass typeName="ElementHasLinks" description="Associates links to an element." strength="referencing">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
@@ -1267,7 +1290,7 @@
         <Source cardinality="(1,N)" roleLabel="has 0 to N links" polymorphic="true">
             <Class class="Element"/>
         </Source>
-        <Target cardinality="(0,N)" roleLabel="is on 1 or more elements" polymorphic="false">
+        <Target cardinality="(0,N)" roleLabel="is on 1 or more elements" polymorphic="true">
             <Class class="LinkElement"/>
         </Target>
     </ECRelationshipClass>
