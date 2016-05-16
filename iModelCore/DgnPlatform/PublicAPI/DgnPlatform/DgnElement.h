@@ -252,6 +252,47 @@ public:
 * @see @ref PAGE_CustomElement
 */
 
+/**
+* @addtogroup ElementCopying DgnElement Copying and Importing
+* 
+* There are 3 basic “copying” operations:
+*   1. DgnElement::Clone makes a copy of an element, suitable for inserting into the Db.
+*   2. DgnElement::Import makes a copy of an element in a source Db, suitable for inserting into a different Db. It “relocates” any IDs stored in the element or its aspects.
+*   3. DgnElement::CopyForEdit and MakeCopy make make a quick copy of an element, suitable for editing and then replacing in the Db.
+*
+* When making a copy of an element within the same DgnDb but a different model, set up an instance of DgnElement::CreateParams that specifies the target model
+* and pass that when you call Clone.
+*
+* <h2>Virtual Member Functions</h2>
+* DgnElement defines several virtual functions that control copying and importing. 
+*   * DgnElement::_CopyFrom - copy member variables from source element - used for many different purposes.
+*   * DgnElement::_Clone - make a copy of an element, suitable for inserting into the Db.
+*   * DgnElement::_CloneForImport - make a copy of an element in a source Db, suitable for inserting into a target Db. 
+*   * DgnElement::_RemapIds - “relocate” any IDs stored in the element or its aspects.
+* 
+* If you define a new subclass of DgnElement and it ...
+*   * Defines new member variables, override _CopyFrom to copy them.
+*   * Defines new properties that are IDs of any kind, override _RemapIds to relocate them to the destination DgnDb. 
+*   * Stores some of its data in Aspects, override _Clone and _CloneForImport, as described below.
+* 
+* If you don't use Aspects, then normally, you won't need to override _Clone and _CloneForImport.
+*
+* <h3>The Many Roles of _CopyFrom</h3>
+*
+* _Clone, _CloneForImport, and CopyForEdit all call_CopyFrom to do one specific part of the copying work: copying the member variables. 
+* _CopyFrom must make a straight, faithful copy of the C++ element struct’s member variables only. It must be quick. 
+* It should not load data from the Db. 
+*
+* <h3>Copying and Importing Aspects</h2>
+*
+* A subclass of DgnElement that stores some of its data in Aspects must take care of copying and importing those Aspects. 
+* Specifically, an element subclass should override _Clone and _CloneForImport. 
+*   * Its _Clone method should call super and then copy its aspects. 
+*   * Its _CloneForImport method should call super, then copy over its aspects, and then tell the copied to remap their IDs.
+*
+* @see @ref PAGE_ElementOverview
+*/
+
 //=======================================================================================
 //! An instance of a DgnElement in memory. 
 //!
@@ -260,25 +301,8 @@ public:
 //!  * Properties that are defined by the ECClass - use _GetProperty and _SetProperty. Various subclasses may also have their own strongly typed property access functions.
 //!  * Properties that are not defined by the ECClass but are added by the user use GetUserProperties
 //!
-//! <h2>Virtual Methods</h2>
-//!
 //! <h3>Copying and Importing</h2>
-//! There are 3 basic “copying” operations:
-//! 1.	DgnElement::_Clone makes a copy of an element, suitable for inserting into the Db.
-//! 2.	DgnElement::_CloneForImport makes a copy of an element in a source Db, suitable for inserting into a target Db. It calls _RemapIds to “relocate” any IDs stored in the element or its aspects.
-//! 3.	DgnElement::CopyForEdit makes a quick copy of an element, suitable for editing and then replacing in the Db.
-//! 
-//! Note that _Clone and _CloneForImport are both virtual. Subclasses are expected to override them in order to customize the copies. 
-//! _RemapIds is also virtual. Subclasses are expected to override it, in order to relocate stored IDs. 
-//! 
-//! _Clone, _CloneForImport, and CopyForEdit all call_CopyFrom to do one specific part of the copying work: copying the member variables. 
-//! That is, _CopyFrom is supposed to be a straight, faithful copy of the C++ element struct’s member variables only. It must be quick. 
-//! It should not load data from disk. C++ DgnElement subclasses are expected to override _CopyFrom in order to carry over the member variables that they introduce.
-//!
-//! <h3>Copying and Importing Aspects</h2>
-//! When you define a subclass of DgnElement that stores some of its data in one or more Aspects, your subclass must take care of copying and importing those Aspects. 
-//! Specifically, your subclass should override _Clone and _CloneForImport. Its _Clone method should call super and then copy over your aspect. 
-//! Its _CloneForImport method should call super, then copy over your aspect, and then tell it to remap its IDs.
+//! @see ElementCopying
 //!
 //! @ingroup GROUP_DgnElement
 // @bsiclass                                                     KeithBentley    10/13
