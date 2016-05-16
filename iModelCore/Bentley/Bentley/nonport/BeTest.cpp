@@ -588,6 +588,12 @@ bool BeTest::EqTol (int    v1, int    v2, int    tol) {return  abs(v1-v2) <= tol
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool BeTest::EqStr (Utf8CP s1, Utf8CP s2, bool ignoreCase)
     {
+    if (nullptr == s1)              // Amazingly, gtest STREQ supports NULL arguments, so we must emulate that.
+        return (nullptr == s2);
+
+    if (nullptr == s2)
+        return (nullptr == s1);
+
     if (ignoreCase)
         return 0 == BeStringUtilities::Stricmp (s1, s2);
     else
