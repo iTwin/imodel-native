@@ -120,7 +120,7 @@ bool ECNameValidation::DecodeFromValidName (Utf8StringR decoded, Utf8StringCR na
         if ('_' == buf[pos+7] && '_' == buf[pos+8])
             {
             uint32_t charCode;
-            if (1 == swscanf(buf.c_str() + pos + 3, L"%x", &charCode))
+            if (1 == BE_STRING_UTILITIES_SWSCANF(buf.c_str() + pos + 3, L"%x", &charCode))
                 {
                 buf[pos] = (WChar)charCode;
                 buf.erase (pos+1, 8);
