@@ -106,6 +106,7 @@ struct Task : RefCounted<NonCopyableClass>
         FinishHeal,
         Heal,
         DefineGeometryTexture,
+        FindNearestZ,
     };
 
     //! The outcome of the processing of a Task.
@@ -1497,6 +1498,7 @@ public:
     virtual void _DrawProgressive(GraphicListR progressiveList, StopWatch&) = 0;
     virtual bool _WantInvertBlackBackground() {return false;}
     virtual double _GetCameraFrustumNearScaleLimit() const = 0;
+    virtual double _FindNearestZ(DRange2dCR) const = 0;
 
     void AbortProgressive() {m_abort=true;}
     Point2d GetScreenOrigin() const {return _GetScreenOrigin();}
