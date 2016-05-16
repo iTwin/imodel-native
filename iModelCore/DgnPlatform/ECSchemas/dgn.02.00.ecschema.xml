@@ -1355,7 +1355,7 @@
                 <TargetECInstanceIdColumn>GeometryPartId</TargetECInstanceIdColumn>
             </LinkTableRelationshipMap>
         </ECCustomAttributes>
-        <Source cardinality="(0,N)" polymorphic="false">
+        <Source cardinality="(0,N)" polymorphic="true">
             <Class class="Element"/>
         </Source>
         <Target cardinality="(0,N)" polymorphic="false">
