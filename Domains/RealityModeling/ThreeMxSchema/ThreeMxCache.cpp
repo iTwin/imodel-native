@@ -154,7 +154,7 @@ BentleyStatus ThreeMxData::InitFromStorage(Db& db, BeMutex& cs, Utf8CP filename)
 
     if (true)
         {
-        BeMutexHolder lock(cs);
+//        BeMutexHolder lock(cs);
 
         CachedStatementPtr stmt;
         if (BE_SQLITE_OK != db.GetCachedStatement(stmt, "SELECT Data,DataSize FROM " TABLE_NAME_ThreeMx " WHERE Filename=?"))
@@ -200,7 +200,7 @@ BentleyStatus ThreeMxData::PersistToStorage(Db& db, BeMutex& cs) const
     if (m_node.IsValid() && m_node->IsAbandoned())
         return SUCCESS;
 
-    BeMutexHolder lock(cs);
+//    BeMutexHolder lock(cs);
     BeAssert(m_nodeBytes.HasData());
 
     Utf8String name = m_shortName.empty() ? m_filename : m_shortName;

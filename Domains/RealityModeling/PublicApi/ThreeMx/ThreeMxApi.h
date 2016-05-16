@@ -111,6 +111,7 @@ struct DrawArgs
     void DrawGraphics(); // place all entries in the GraphicArray into a GroupNode and send it to the RenderContext.
 };
 
+
 /*=================================================================================**//**
 * A node in the 3mx scene. Each node has a range (from which we store a center/radius) and a "maxScreenDiameter" value.
 *
@@ -226,7 +227,7 @@ public:
     TransformCR GetLocation() const {return m_location;}
     double GetScale() const {return m_scale;}
     THREEMX_EXPORT BentleyStatus ReadSceneFile(SceneInfo& sceneInfo); //! Read the scene file synchronously
-    THREEMX_EXPORT BentleyStatus DeleteRealityCache(); //! delete the local SQLite file holding the cache of downloaded tiles.
+    THREEMX_EXPORT BentleyStatus DeleteCacheFile(); //! delete the local SQLite file holding the cache of downloaded tiles.
     Utf8String ConstructNodeName(Node& node) {return m_rootDir + node.GetChildFile();}
 };
 
@@ -247,7 +248,7 @@ public:
 // Note that the scenefile may also have a "Spatial Reference System" stored in it,
 // so the location can be calculated by geo-referncing it to the one in the BIM. But, since not all 3mx files are geo-referenced,
 // and sometimes users may want to "tweak" the location relative to their BIM, we store it in the model and use that.
-// @bsiclass                                                    Ray.Bentley     09/2015
+// @bsiclass                                                    Keith.Bentley   03/16
 //=======================================================================================
 struct ThreeMxModel : Dgn::SpatialModel
 {
