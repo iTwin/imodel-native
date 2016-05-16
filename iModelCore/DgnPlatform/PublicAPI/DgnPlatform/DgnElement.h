@@ -230,12 +230,11 @@ public:
     DGNPLATFORM_EXPORT DgnElementCPtr ImportElement(DgnDbStatus* stat, DgnModelR destModel, DgnElementCR sourceElement);
 };
 
-
 #define DGNELEMENT_DECLARE_MEMBERS(__ECClassName__,__superclass__) \
     private: typedef __superclass__ T_Super;\
-    public: static Utf8CP MyECClassName() {return __ECClassName__;}\
-    protected: virtual Utf8CP _GetECClassName() const override {return MyECClassName();}\
-               virtual Utf8CP _GetSuperECClassName() const override {return T_Super::_GetECClassName();}
+    public: static Utf8CP MyHandlerECClassName() {return __ECClassName__;}\
+    protected: virtual Utf8CP _GetHandlerECClassName() const override {return MyHandlerECClassName();}\
+               virtual Utf8CP _GetSuperHandlerECClassName() const override {return T_Super::_GetHandlerECClassName();}
 
 #define DGNASPECT_DECLARE_MEMBERS(__ECSchemaName__,__ECClassName__,__superclass__) \
     private:    typedef __superclass__ T_Super;\
@@ -657,12 +656,14 @@ protected:
     mutable ECN::AdHocJsonContainerP m_userProperties;
     mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
 
-    virtual Utf8CP _GetECClassName() const {return MyECClassName();}
-    virtual Utf8CP _GetSuperECClassName() const {return nullptr;}
+#if !defined (DOCUMENTATION_GENERATOR)
+    virtual Utf8CP _GetHandlerECClassName() const {return MyHandlerECClassName();}
+    virtual Utf8CP _GetSuperHandlerECClassName() const {return nullptr;}
 
-    void SetPersistent(bool val) const {m_flags.m_persistent = val;} //!< @private
-    void InvalidateElementId() {m_elementId = DgnElementId();} //!< @private
-    void InvalidateCode() {m_code = DgnCode();} //!< @private
+    void SetPersistent(bool val) const {m_flags.m_persistent = val;}
+    void InvalidateElementId() {m_elementId = DgnElementId();}
+    void InvalidateCode() {m_code = DgnCode();}
+#endif
     
     //! Invokes _CopyFrom() in the context of _Clone() or _CloneForImport(), preserving this element's code as specified by the CreateParams supplied to those methods.
     void CopyForCloneFrom(DgnElementCR src);
@@ -883,6 +884,7 @@ protected:
     virtual InformationElementCP _ToInformationElement() const {return nullptr;}
     virtual DefinitionElementCP _ToDefinitionElement() const {return nullptr;}
     virtual GroupInformationElementCP _ToGroupInformationElement() const {return nullptr;}
+    virtual FunctionalElementCP _ToFunctionalElement() const {return nullptr;}
     virtual IElementGroupCP _ToIElementGroup() const {return nullptr;}
     virtual DgnGeometryPartCP _ToGeometryPart() const {return nullptr;}
 
@@ -901,9 +903,9 @@ protected:
     CreateParams GetCreateParamsForImport(DgnModelR destModel, DgnImportContext& importer) const;
 
 public:
-    static Utf8CP MyECClassName() {return DGN_CLASSNAME_Element;}
-    Utf8CP GetECClassName() const {return _GetECClassName();}
-    Utf8CP GetSuperECClassName() const {return _GetSuperECClassName();}
+    static Utf8CP MyHandlerECClassName() {return DGN_CLASSNAME_Element;}                //!< @private
+    Utf8CP GetHandlerECClassName() const {return _GetHandlerECClassName();}             //!< @private
+    Utf8CP GetSuperHandlerECClassName() const {return _GetSuperHandlerECClassName();}   //!< @private
 
     DGNPLATFORM_EXPORT void AddRef() const;  //!< @private
     DGNPLATFORM_EXPORT void Release() const; //!< @private
@@ -922,6 +924,7 @@ public:
     DrawingGraphicCP ToDrawingGraphic() const {return _ToDrawingGraphic();}             //!< more efficient substitute for dynamic_cast<DrawingGraphicCP>(el)
     IElementGroupCP ToIElementGroup() const {return _ToIElementGroup();}                //!< more efficient substitute for dynamic_cast<IElementGroup>(el)
     GroupInformationElementCP ToGroupInformationElement() const {return _ToGroupInformationElement();} //!< more efficient substitute for dynamic_cast<GroupInformationElementCP>(el)
+    FunctionalElementCP ToFunctionalElement() const {return _ToFunctionalElement();}    //!< more efficient substitute for dynamic_cast<FunctionalElementCP>(el)
     
     GeometrySourceP ToGeometrySourceP() {return const_cast<GeometrySourceP>(_ToGeometrySource());} //!< more efficient substitute for dynamic_cast<GeometrySourceP>(el)
     GeometrySource2dP ToGeometrySource2dP() {return const_cast<GeometrySource2dP>(ToGeometrySource2d());} //!< more efficient substitute for dynamic_cast<GeometrySource2dP>(el)
@@ -931,6 +934,7 @@ public:
     InformationElementP ToInformationElementP() {return const_cast<InformationElementP>(_ToInformationElement());} //!< more efficient substitute for dynamic_cast<InformationElementP>(el)
     DefinitionElementP ToDefinitionElementP() {return const_cast<DefinitionElementP>(_ToDefinitionElement());}  //!< more efficient substitute for dynamic_cast<DefinitionElementP>(el)
     GroupInformationElementP ToGroupInformationElementP() {return const_cast<GroupInformationElementP>(_ToGroupInformationElement());} //!< more efficient substitute for dynamic_cast<GroupInformationElementP>(el)
+    FunctionalElementP ToFunctionalElementP() {return const_cast<FunctionalElementP>(_ToFunctionalElement());}  //!< more efficient substitute for dynamic_cast<FunctionalElementP>(el)
     AnnotationElement2dP ToAnnotationElement2dP() {return const_cast<AnnotationElement2dP>(_ToAnnotationElement2d());} //!< more efficient substitute for dynamic_cast<AnnotationElement2dP>(el)
     DrawingGraphicP ToDrawingGraphicP() {return const_cast<DrawingGraphicP>(_ToDrawingGraphic());} //!< more efficient substitute for dynamic_cast<DrawingGraphicP>(el)
     //! @}
@@ -941,6 +945,7 @@ public:
     bool IsInformationElement() const {return nullptr != ToInformationElement();}   //!< Determine whether this element is an InformationElement or not
     bool IsDefinitionElement() const {return nullptr != ToDefinitionElement();}     //!< Determine whether this element is a DefinitionElement or not
     bool IsGroupInformationElement() const {return nullptr != ToGroupInformationElement();} //!< Determine whether this element is a GroupInformationElement or not
+    bool IsFunctionalElement() const {return nullptr != ToFunctionalElement();}     //!< Determine whether this element is a FunctionalElement or not
     bool IsAnnotationElement2d() const {return nullptr != ToAnnotationElement2d();} //!< Determine whether this element is an AnnotationElement2d
     bool IsDrawingGraphic() const {return nullptr != ToDrawingGraphic();}           //!< Determine whether this element is an DrawingGraphic
     bool IsSameType(DgnElementCR other) {return m_classId == other.m_classId;}      //!< Determine whether this element is the same type (has the same DgnClassId) as another element.
@@ -1774,6 +1779,7 @@ struct EXPORT_VTABLE_ATTRIBUTE LinkElement : InformationElement
 
 //=======================================================================================
 //! Abstract base class for group-related information elements.
+//! @ingroup GROUP_DgnElement
 // @bsiclass                                                    Shaun.Sewall    04/16
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE GroupInformationElement : InformationElement
@@ -1782,6 +1788,49 @@ struct EXPORT_VTABLE_ATTRIBUTE GroupInformationElement : InformationElement
 protected:
     virtual GroupInformationElementCP _ToGroupInformationElement() const override final {return this;}
     explicit GroupInformationElement(CreateParams const& params) : T_Super(params) {}
+};
+
+//=======================================================================================
+//! Abstract base class for roles played by other (typically physical) elements.
+//! For example:
+//! - <i>Lawyer</i> and <i>employee</i> are potential roles of a person
+//! - <i>Asset</i> and <i>safey hazard</i> are potential roles of a PhysicalElement
+//! @ingroup GROUP_DgnElement
+// @bsiclass                                                    Shaun.Sewall    05/16
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE RoleElement : DgnElement
+{
+    DEFINE_T_SUPER(DgnElement);
+protected:
+    explicit RoleElement(CreateParams const& params) : T_Super(params) {}
+};
+
+//=======================================================================================
+//! Abstract base class for functions performed by by other (typically physical) elements.
+//! For example, the <i>function of pumping</i> is performed by a Pump (PhysicalElement).
+//! @ingroup GROUP_DgnElement
+// @bsiclass                                                    Shaun.Sewall    05/16
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE FunctionalElement : RoleElement
+{
+    DEFINE_T_SUPER(RoleElement);
+protected:
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
+    virtual FunctionalElementCP _ToFunctionalElement() const override final {return this;}
+    explicit FunctionalElement(CreateParams const& params) : T_Super(params) {}
+};
+
+//=======================================================================================
+//! Abstract base class for objects that break down the functional structure of something.
+//! For example, a faciliy, like a building or plant, may be broken down into functional <i>systems</i>.
+//! @ingroup GROUP_DgnElement
+// @bsiclass                                                    Shaun.Sewall    05/16
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE FunctionalBreakdownElement : FunctionalElement
+{
+    DEFINE_T_SUPER(FunctionalElement);
+protected:
+    explicit FunctionalBreakdownElement(CreateParams const& params) : T_Super(params) {}
 };
 
 //=======================================================================================
