@@ -414,7 +414,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         return customGenericBlobItemPtr;
         }    
     
-    virtual RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayData>> GetDisplayDataPtr()
+    virtual RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayData>> GetDisplayData()
         {        
         RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayData>> cachedDisplayDataItemPtr;
                 
