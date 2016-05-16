@@ -260,6 +260,26 @@ public:
 //!  * Properties that are defined by the ECClass - use _GetProperty and _SetProperty. Various subclasses may also have their own strongly typed property access functions.
 //!  * Properties that are not defined by the ECClass but are added by the user use GetUserProperties
 //!
+//! <h2>Virtual Methods</h2>
+//!
+//! <h3>Copying and Importing</h2>
+//! There are 3 basic “copying” operations:
+//! 1.	DgnElement::_Clone makes a copy of an element, suitable for inserting into the Db.
+//! 2.	DgnElement::_CloneForImport makes a copy of an element in a source Db, suitable for inserting into a target Db. It calls _RemapIds to “relocate” any IDs stored in the element or its aspects.
+//! 3.	DgnElement::CopyForEdit makes a quick copy of an element, suitable for editing and then replacing in the Db.
+//! 
+//! Note that _Clone and _CloneForImport are both virtual. Subclasses are expected to override them in order to customize the copies. 
+//! _RemapIds is also virtual. Subclasses are expected to override it, in order to relocate stored IDs. 
+//! 
+//! _Clone, _CloneForImport, and CopyForEdit all call_CopyFrom to do one specific part of the copying work: copying the member variables. 
+//! That is, _CopyFrom is supposed to be a straight, faithful copy of the C++ element struct’s member variables only. It must be quick. 
+//! It should not load data from disk. C++ DgnElement subclasses are expected to override _CopyFrom in order to carry over the member variables that they introduce.
+//!
+//! <h3>Copying and Importing Aspects</h2>
+//! When you define a subclass of DgnElement that stores some of its data in one or more Aspects, your subclass must take care of copying and importing those Aspects. 
+//! Specifically, your subclass should override _Clone and _CloneForImport. Its _Clone method should call super and then copy over your aspect. 
+//! Its _CloneForImport method should call super, then copy over your aspect, and then tell it to remap its IDs.
+//!
 //! @ingroup GROUP_DgnElement
 // @bsiclass                                                     KeithBentley    10/13
 //=======================================================================================
