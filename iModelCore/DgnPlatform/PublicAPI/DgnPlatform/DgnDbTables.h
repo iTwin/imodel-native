@@ -33,6 +33,8 @@
 #define DGN_CLASSNAME_ElementAspect         "ElementAspect"
 #define DGN_CLASSNAME_ElementExternalKey    "ElementExternalKey"
 #define DGN_CLASSNAME_ElementMultiAspect    "ElementMultiAspect"
+#define DGN_CLASSNAME_FunctionalElement     "FunctionalElement"
+#define DGN_CLASSNAME_FunctionalModel       "FunctionalModel"
 #define DGN_CLASSNAME_GeometricElement2d    "GeometricElement2d"
 #define DGN_CLASSNAME_GeometricElement3d    "GeometricElement3d"
 #define DGN_CLASSNAME_GeometricModel        "GeometricModel"
