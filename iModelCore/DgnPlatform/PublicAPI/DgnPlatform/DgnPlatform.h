@@ -883,11 +883,6 @@ public:
 };
 
 //__PUBLISH_SECTION_END__
-
-#define QV_RESERVED_DISPLAYPRIORITY     (32)
-#define MAX_HW_DISPLAYPRIORITY          ((1<<23)-QV_RESERVED_DISPLAYPRIORITY)
-#define RESERVED_DISPLAYPRIORITY        (1<<19)
-
 // Used for verifying published tests in DgnPlatformTest are using published headers. DO NOT REMOVE.
 #define __DGNPLATFORM_NON_PUBLISHED_HEADER__ 1
 /*__PUBLISH_SECTION_START__*/
