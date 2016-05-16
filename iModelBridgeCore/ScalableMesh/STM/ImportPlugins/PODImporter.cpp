@@ -2,7 +2,7 @@
 |
 |     $Source: STM/ImportPlugins/PODImporter.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -532,8 +532,8 @@ private:
     bool                            m_reachedEof;
     bool                            m_isClip;
     bool                            m_isGroundDetection;
-
-
+    bvector<uint32_t>               m_classesToImport;
+    
     /*---------------------------------------------------------------------------------**//**
     * @description
     * @bsimethod                                                  Raymond.Gauthier   10/2010
@@ -542,12 +542,15 @@ private:
                                                                    (const IPointCloudDataQueryPtr& dataQueryPtr,
                                                                     ElementHandle& elHandle,
                                                                     bool isClip,
-                                                                    bool isGroundDetection)
+                                                                    bool isGroundDetection,
+                                                                    const bvector<uint32_t>& classesToImport)
         :   m_dataQueryPtr(dataQueryPtr),
             m_elHandle(elHandle, true),
             m_reachedEof(false), 
             m_isClip(isClip),
-            m_isGroundDetection(isGroundDetection)
+            m_isGroundDetection(isGroundDetection),
+            m_classesToImport(classesToImport)
+
         {
         m_elHandle.AddToModel();
 
@@ -598,8 +601,11 @@ private:
                 
         size_t packetInd = 0;
 
-        if (m_isClip || m_isGroundDetection)
+        if (m_isClip || m_isGroundDetection || (m_classesToImport.size() > 0))
             { 
+            assert(!m_isGroundDetection && m_classesToImport.size() > 0 ||
+                    m_isGroundDetection && m_classesToImport.size() == 0);
+
             UChar* filterBufferP(m_pointCloudQueryBufferPtr->GetFilterBuffer());
 
             for (size_t pointInd = 0; pointInd < pointsReadQty; pointInd++)
@@ -608,6 +614,8 @@ private:
                     {
                     if(m_isGroundDetection)
                         {
+                        assert(m_classesToImport.size() == 0);
+
                         UChar* classificationBuffer = (UChar*)m_pointCloudQueryBufferPtr->GetChannelBuffer(m_queryChannels[0]);
                         if(classificationBuffer[pointInd] == GROUND_CHANNEL_NUMBER) // if ground
                             {
@@ -619,7 +627,24 @@ private:
                             }
                         }
                     else
-                        {
+                        {                        
+                        if (m_classesToImport.size() > 0)
+                            {
+                            bool isSelectedClass = false;
+
+                            for (auto classToImport : m_classesToImport)
+                                {
+                                if (m_pointCloudQueryBufferPtr->GetClassificationBuffer()[pointInd] == classToImport)
+                                    {
+                                    isSelectedClass = true;
+                                    break;
+                                    }
+                                }
+
+                            if (!isSelectedClass)
+                                continue;
+                            }
+
                         m_packetXYZ.Edit()[packetInd] = m_pointCloudQueryBufferPtr->GetXyzBuffer()[pointInd];
                         m_packetRGB.Edit()[packetInd] = m_pointCloudQueryBufferPtr->GetRgbBuffer()[pointInd];
                         m_packetIntensity.Edit()[packetInd] = m_pointCloudQueryBufferPtr->GetIntensityBuffer()[pointInd];
@@ -710,11 +735,12 @@ class PODPointExtractorCreator : public InputExtractorCreatorMixinBase<PODSource
     static InputExtractorBase*                  CreateExtractor                    (PODSource&                     sourceBase,
                                                                                     const IPointCloudDataQueryPtr& dataQueryPtr, 
                                                                                     bool                           isClipped,
-                                                                                    bool                           isGroundDetection)
+                                                                                    bool                           isGroundDetection,
+                                                                                    const bvector<uint32_t>&       classesToImport)
         {
         // NEEDS_WORK_SM : internal classification => classification ?
         if (sourceBase.HasInternalClassification() || isGroundDetection)
-            return new PODPointExtractorWithInternalClassif(dataQueryPtr, sourceBase.GetElementHandle(), isClipped, isGroundDetection);
+            return new PODPointExtractorWithInternalClassif(dataQueryPtr, sourceBase.GetElementHandle(), isClipped, isGroundDetection, classesToImport);
 
         return new PODPointExtractor(dataQueryPtr, isClipped);
         }
@@ -759,7 +785,10 @@ class PODPointExtractorCreator : public InputExtractorCreatorMixinBase<PODSource
         SourceImportConfig* sourceImportConf = source.GetSourceImportConfigC();
         ScalableMeshData data = sourceImportConf->GetReplacementSMData();
 
-        return CreateExtractor(sourceBase, pDataQuery, isClipped, data.IsGroundDetection());
+        bvector<uint32_t> classesToImport;
+        data.GetClassificationToImport(classesToImport);
+
+        return CreateExtractor(sourceBase, pDataQuery, isClipped, data.IsGroundDetection(), classesToImport);
         }
     };
 
@@ -846,6 +875,8 @@ class Point3d64f_R16G16B16_I16_C8ToPoint3d64fConverter : public TypeConversionFi
             {
             bool operator () (const DPoint3d& pi_rPt, UChar pi_rPtClass) const
                 {
+                //NEEDS_WORK_SM : Currenlty done in PODPointExtractorWithInternalClassif::_Read because it is to 
+                //complicate to get classes information here.
                 return false;//GROUND_CLASS_ID != pi_rPtClass;
                 }
             } SHOULD_POINT_BE_REMOVED_PREDICATE;

@@ -238,6 +238,45 @@ inline void AddWildCardToFolderPath(WString* pio_pFolderPath)
                 */
             }       
 
+        //NEEDS_WORK_SM
+        WString classesToImportAttr;
+
+        status = pTestChildNode->GetAttributeStringValue(classesToImportAttr, "classesToImport");
+
+        if (status == BEXML_Success)
+            {           
+            bvector<uint32_t> classesToImport;
+
+            size_t startInd = 0;
+            size_t endInd = 0;
+
+            for (; endInd < classesToImportAttr.size(); endInd++)
+                {
+                if ((classesToImportAttr.c_str()[endInd] == ',') && (startInd < endInd - 1))
+                    {                    
+                    WString classIdStr(classesToImportAttr.substr(startInd, endInd - startInd - 1));
+                    int classId = _wtoi(classIdStr.c_str());                                        
+                    classesToImport.push_back(classId);
+                    startInd = endInd + 1;
+                    }
+                }
+
+            if (startInd < endInd)
+                {
+                WString classIdStr(classesToImportAttr.substr(startInd, endInd - startInd));
+                int classId = _wtoi(classIdStr.c_str());
+                classesToImport.push_back(classId);
+                }
+
+            if (classesToImport.size() > 0)
+                {
+                SourceImportConfig& sourceImportConfig = srcPtr->EditConfig();
+                ScalableMeshData data = sourceImportConfig.GetReplacementSMData();            
+                data.SetClassificationToImport(classesToImport);
+                sourceImportConfig.SetReplacementSMData(data);
+                }
+            }
+
         return true;
         }
   

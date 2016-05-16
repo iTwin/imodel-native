@@ -73,6 +73,9 @@ public:
     IMPORT_DLLE bool                            IsGroundDetection() const;
     IMPORT_DLLE void                            SetIsGroundDetection(bool isGroundDetection);
 
+    IMPORT_DLLE void                            GetClassificationToImport(bvector<uint32_t>& classesToImport);
+    IMPORT_DLLE void                            SetClassificationToImport(const bvector<uint32_t>& classesToImport);
+
     IMPORT_DLLE bool                            IsGISDataType() const;
     IMPORT_DLLE void                            SetIsGISDataType(bool isGISData);
 
