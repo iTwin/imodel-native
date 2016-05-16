@@ -60,7 +60,6 @@ struct Geometry : RefCountedBase, NonCopyableClass
 private:
     bvector<FPoint3d> m_points;
     bvector<FPoint3d> m_normals;
-    bvector<FPoint2d> m_textureUV;
     bvector<int32_t> m_indices;
     Dgn::Render::GraphicPtr m_graphic;
 
@@ -110,7 +109,6 @@ struct DrawArgs
     DrawArgs(Dgn::RenderContextR context, SceneR scene, uint64_t now, uint64_t purgeOlderThan) : m_context(context), m_scene(scene), m_now(now), m_purgeOlderThan(purgeOlderThan) {}
     void DrawGraphics(); // place all entries in the GraphicArray into a GroupNode and send it to the RenderContext.
 };
-
 
 /*=================================================================================**//**
 * A node in the 3mx scene. Each node has a range (from which we store a center/radius) and a "maxScreenDiameter" value.
@@ -181,7 +179,7 @@ public:
 
 /*=================================================================================**//**
 * A 3mx scene, constructed for a single Render::System. The graphics held by this scene are only useful for that Render::System.
-* @bsiclass                                                     Ray.Bentley     04/2015
+// @bsiclass                                                    Keith.Bentley   03/16
 +===============+===============+===============+===============+===============+======*/
 struct Scene : RefCountedBase, NonCopyableClass
 {
@@ -195,6 +193,7 @@ private:
 
     bool m_useFixedResolution = false;
     bool m_isHttp = false;
+    bool m_locatable = false;
     double m_fixedResolution = 0.0;
     Dgn::DgnDbR m_db;
     Utf8String m_rootUrl;
@@ -223,6 +222,7 @@ public:
     uint32_t GetNodeExpirationTime() const {return m_expirationTime;}
     int CountNodes() const {return m_rootNode->CountNodes();}
     bool UseFixedResolution()const {return m_useFixedResolution;}
+    bool IsLocatable() const {return m_locatable;}
     double GetFixedResolution() const {return m_fixedResolution;}
     TransformCR GetLocation() const {return m_location;}
     double GetScale() const {return m_scale;}

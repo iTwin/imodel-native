@@ -180,7 +180,7 @@ PolyfaceHeaderPtr Geometry::GetPolyface() const
     trimesh.m_numPoints = (int32_t) m_points.size();
     trimesh.m_points = m_points.empty() ? nullptr : &m_points.front();
     trimesh.m_normals = m_normals.empty() ? nullptr: &m_normals.front();
-    trimesh.m_textureUV = m_textureUV.empty() ? nullptr : &m_textureUV.front();
+    trimesh.m_textureUV = nullptr;
     return trimesh.ToPolyface();
     }
 
@@ -191,22 +191,19 @@ PolyfaceHeaderPtr Geometry::GetPolyface() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 Geometry::Geometry(IGraphicBuilder::TriMeshArgs const& args, SceneR scene)
     {
-    m_indices.resize(args.m_numIndices);
-    memcpy(&m_indices.front(), args.m_vertIndex, args.m_numIndices * sizeof(int32_t));
-
-    m_points.resize(args.m_numPoints);
-    memcpy(&m_points.front(), args.m_points, args.m_numPoints * sizeof(FPoint3d));
-    
-    if (nullptr != args.m_normals)
+    if (scene.IsLocatable())
         {
-        m_normals.resize(args.m_numPoints);
-        memcpy(&m_normals.front(), args.m_normals, args.m_numPoints * sizeof(FPoint3d));
-        }
+        m_indices.resize(args.m_numIndices);
+        memcpy(&m_indices.front(), args.m_vertIndex, args.m_numIndices * sizeof(int32_t));
 
-    if (nullptr != args.m_textureUV)
-        {
-        m_textureUV.resize(args.m_numPoints);
-        memcpy(&m_textureUV.front(), args.m_textureUV, args.m_numPoints * sizeof(FPoint2d));
+        m_points.resize(args.m_numPoints);
+        memcpy(&m_points.front(), args.m_points, args.m_numPoints * sizeof(FPoint3d));
+
+        if (nullptr != args.m_normals)
+            {
+            m_normals.resize(args.m_numPoints);
+            memcpy(&m_normals.front(), args.m_normals, args.m_numPoints * sizeof(FPoint3d));
+            }
         }
 
     if (nullptr == scene.GetRenderSystem() || !args.m_texture.IsValid())
