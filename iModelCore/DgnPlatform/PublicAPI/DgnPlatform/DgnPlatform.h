@@ -849,9 +849,8 @@ public:
     Byte GetBlue() const {return m_blue;}
     Byte GetAlpha() const {return m_alpha;}
 
-    uint32_t GetRGBA() const { return  (uint32_t)((m_red << 24) | (uint32_t) (m_green << 16) | (uint32_t) (m_blue << 8) | (uint32_t) m_alpha); }
-
-    uint32_t GetValue() const {return *reinterpret_cast<uint32_t const*>(this);}
+    uint32_t GetValue() const {return *reinterpret_cast<uint32_t const*>(this);} //! for use with Render primitives
+    uint32_t GetValueRgba() const {return ColorDef(m_alpha, m_blue, m_green, m_red).GetValue();} //! for use with UI controls
     uint32_t GetValueNoAlpha() const {return 0xffffff & GetValue();}
 
     bool operator==(ColorDef const& rhs) const {return GetValue() == rhs.GetValue();}
