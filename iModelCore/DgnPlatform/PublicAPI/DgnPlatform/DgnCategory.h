@@ -280,6 +280,7 @@ public:
     };
 
     //! Parameters used to construct a DgnCategory
+    //! @note If a domain or application (versus a user) is creating a DgnCategory for domain/application use, it is a best practice to set the code namespace of the category to the domain/application name.
     struct CreateParams : T_Super::CreateParams
     {
         DEFINE_T_SUPER(DgnCategory::T_Super::CreateParams);
@@ -287,17 +288,27 @@ public:
         Data m_data;
 
         //! Constructor from base class. Chiefly for internal use.
+        //! @private
         explicit CreateParams(DgnElement::CreateParams const& params, Scope scope=Scope::Any, Rank rank=Rank::User, Utf8StringCR descr="")
             : T_Super(params), m_data(scope, rank, descr) { }
 
         //! Constructs parameters for a category. Chiefly for internal use.
+        //! @private
         CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCode const& code, Utf8CP label=nullptr, DgnElementId parent=DgnElementId(),
                 Scope scope=Scope::Any, Rank rank=Rank::User, Utf8StringCR descr="")
             : T_Super(db, modelId, classId, code, label, parent), m_data(scope, rank, descr) { }
 
         //! Constructs parameters for creating a category.
         //! @param[in]      db    The DgnDb in which the category resides
-        //! @param[in]      name  The name of the category. Must be unique within the DgnDb.
+        //! @param[in]      code  The code of the category.
+        //! @param[in]      scope The scope of the category
+        //! @param[in]      rank  The rank of the category
+        //! @param[in]      descr Optional category description
+        DGNPLATFORM_EXPORT CreateParams(DgnDbR db, DgnCode const& code, Scope scope, Rank rank=Rank::User, Utf8StringCR descr="");
+
+        //! Constructs parameters for creating a category.
+        //! @param[in]      db    The DgnDb in which the category resides
+        //! @param[in]      name  The name of the category (which will be used as the code value)
         //! @param[in]      scope The scope of the category
         //! @param[in]      rank  The rank of the category
         //! @param[in]      descr Optional category description
@@ -359,7 +370,7 @@ public:
     void SetScope(Scope scope) { m_data.m_scope = scope; } //!< Set the category's scope.
     void SetRank(Rank rank) { m_data.m_rank = rank; } //!< Set the category's rank.
 
-    static DgnCode CreateCategoryCode(Utf8StringCR categoryName) { return CategoryAuthority::CreateCategoryCode(categoryName); } //!< Creates a Code for a category name.
+    static DgnCode CreateCategoryCode(Utf8StringCR categoryName, Utf8StringCR nameSpace="") { return CategoryAuthority::CreateCategoryCode(categoryName, nameSpace); } //!< Creates a Code for a category name.
     DGNPLATFORM_EXPORT static DgnCategoryId QueryCategoryId(DgnCode const& code, DgnDbR db); //!< Looks up the ID of a category by code.
     static DgnCategoryId QueryCategoryId(Utf8StringCR categoryName, DgnDbR db) { return QueryCategoryId(CreateCategoryCode(categoryName), db); } //!< Looks up the ID of a category by name.
     static DgnCategoryCPtr QueryCategory(DgnCategoryId categoryId, DgnDbR db) { return db.Elements().Get<DgnCategory>(categoryId); } //!< Looks up a category by ID.

@@ -50,6 +50,10 @@ In the case that custom categories are required, here is how to create and inser
 
 __PUBLISH_INSERT_FILE__ Category_CreateAndInsert.sampleCode
 
+@note If a domain or application (versus a user) is creating a DgnCategory for domain/application use, it is a best practice to set the code namespace of the category to the domain/application name.
+
+__PUBLISH_INSERT_FILE__ ToyTile_InsertCategory.sampleCode
+
 <hr>
 <!-- ---------------------------------------------------------------------------------- -->
 @section PAGE_CategoryOverview_SECTION_Category_DgnV8Level Category vs. DgnV8 Level

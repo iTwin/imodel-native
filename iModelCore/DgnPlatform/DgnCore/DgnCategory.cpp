@@ -111,7 +111,14 @@ void DgnCategory::_CopyFrom(DgnElementCR el)
 DgnCategory::CreateParams::CreateParams(DgnDbR db, Utf8StringCR name, Scope scope, Rank rank, Utf8StringCR descr)
     : T_Super(db, DgnModel::DictionaryId(), QueryDgnClassId(db), CreateCategoryCode(name)), m_data(scope, rank, descr)
     {
-    //
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCategory::CreateParams::CreateParams(DgnDbR db, DgnCode const& code, Scope scope, Rank rank, Utf8StringCR descr)
+    : T_Super(db, DgnModel::DictionaryId(), QueryDgnClassId(db), code), m_data(scope, rank, descr)
+    {
     }
 
 /*---------------------------------------------------------------------------------**//**

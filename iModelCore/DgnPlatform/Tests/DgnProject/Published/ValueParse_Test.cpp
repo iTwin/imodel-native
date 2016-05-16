@@ -1010,7 +1010,7 @@ TEST_F(AreaVolumeParserTest, AreaParserCreateFromModel)
 
     AreaParserPtr areaPar = AreaParser::Create(*geomModelP);
     
-    ASSERT_EQ (1000.0, areaPar->GetMasterUnitsScale()); //The model's master Units are in mm.
+    ASSERT_EQ (0.001, areaPar->GetMasterUnitsScale()); //The model's master Units are in mm.
     ASSERT_EQ (1.0, areaPar->GetScale()); //The scale is 1.0
 
     areaPar->SetScale(2.0);
@@ -1036,7 +1036,7 @@ TEST_F(AreaVolumeParserTest, VolumeParserCreateFromModel)
 
     VolumeParserPtr volPar = VolumeParser::Create(*geomModelP);
 
-    ASSERT_EQ(1000.0, volPar->GetMasterUnitsScale()); //The model's master Units are in mm.
+    ASSERT_EQ(0.001, volPar->GetMasterUnitsScale()); //The model's master Units are in mm.
     ASSERT_EQ(1.0, volPar->GetScale()); //The scale is 1.0
 
     VolumeParserPtr volPar2 = volPar->Clone();
