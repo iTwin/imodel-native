@@ -276,13 +276,13 @@ public:
 * 
 * If you don't use Aspects, then normally, you won't need to override _Clone and _CloneForImport.
 *
-* <h3>The Many Roles of _CopyFrom</h3>
+* <h2>The Many Roles of _CopyFrom</h2>
 *
 * _Clone, _CloneForImport, and CopyForEdit all call_CopyFrom to do one specific part of the copying work: copying the member variables. 
 * _CopyFrom must make a straight, faithful copy of the C++ element struct’s member variables only. It must be quick. 
 * It should not load data from the Db. 
 *
-* <h3>Copying and Importing Aspects</h2>
+* <h2>Copying and Importing Aspects</h2>
 *
 * A subclass of DgnElement that stores some of its data in Aspects must take care of copying and importing those Aspects. 
 * Specifically, an element subclass should override _Clone and _CloneForImport. 
@@ -300,7 +300,6 @@ public:
 //!  * Properties that are defined by the ECClass - use _GetProperty and _SetProperty. Various subclasses may also have their own strongly typed property access functions.
 //!  * Properties that are not defined by the ECClass but are added by the user use GetUserProperties
 //!
-//! <h3>Copying and Importing</h2>
 //! @see ElementCopying
 //!
 //! @ingroup GROUP_DgnElement
