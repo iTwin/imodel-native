@@ -113,7 +113,7 @@ extern "C" {
 */
 #define SQLITE_VERSION        "3.13.0"
 #define SQLITE_VERSION_NUMBER 3013000
-#define SQLITE_SOURCE_ID      "2016-04-13 21:00:36 55a62483b9121a8b373d038a26fdebc4308661f6"
+#define SQLITE_SOURCE_ID      "2016-05-13 17:22:33 b369980f0c4550a9034833caa2c7c85d6030f5ff"
 
 /*
 ** CAPI3REF: Run-Time Library Version Numbers
@@ -1932,12 +1932,30 @@ struct sqlite3_mem_methods {
 ** following this call.  The second parameter may be a NULL pointer, in
 ** which case the new setting is not reported back. </dd>
 **
+** <dt>SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION</dt>
+** <dd> ^This option is used to enable or disable the [sqlite3_load_extension()]
+** interface independently of the [load_extension()] SQL function.
+** The [sqlite3_enable_load_extension()] API enables or disables both the
+** C-API [sqlite3_load_extension()] and the SQL function [load_extension()].
+** There should be two additional arguments.
+** When the first argument to this interface is 1, then only the C-API is
+** enabled and the SQL function remains disabled.  If the first argment to
+** this interface is 0, then both the C-API and the SQL function are disabled.
+** If the first argument is -1, then no changes are made to state of either the
+** C-API or the SQL function.
+** The second parameter is a pointer to an integer into which
+** is written 0 or 1 to indicate whether [sqlite3_load_extension()] interface
+** is disabled or enabled following this call.  The second parameter may
+** be a NULL pointer, in which case the new setting is not reported back.
+** </dd>
+**
 ** </dl>
 */
 #define SQLITE_DBCONFIG_LOOKASIDE             1001 /* void* int int */
 #define SQLITE_DBCONFIG_ENABLE_FKEY           1002 /* int int* */
 #define SQLITE_DBCONFIG_ENABLE_TRIGGER        1003 /* int int* */
 #define SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER 1004 /* int int* */
+#define SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION 1005 /* int int* */
 
 
 /*
@@ -5474,8 +5492,17 @@ SQLITE_API int SQLITE_STDCALL sqlite3_table_column_metadata(
 ** should free this memory by calling [sqlite3_free()].
 **
 ** ^Extension loading must be enabled using
-** [sqlite3_enable_load_extension()] prior to calling this API,
+** [sqlite3_enable_load_extension()] or
+** [sqlite3_db_config](db,[SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION],1,NULL)
+** prior to calling this API,
 ** otherwise an error will be returned.
+**
+** <b>Security warning:</b> It is recommended that the 
+** [SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION] method be used to enable only this
+** interface.  The use of the [sqlite3_enable_load_extension()] interface
+** should be avoided.  This will keep the SQL function [load_extension()]
+** disabled and prevent SQL injections from giving attackers
+** access to extension loading capabilities.
 **
 ** See also the [load_extension() SQL function].
 */
@@ -5499,6 +5526,17 @@ SQLITE_API int SQLITE_STDCALL sqlite3_load_extension(
 ** ^Call the sqlite3_enable_load_extension() routine with onoff==1
 ** to turn extension loading on and call it with onoff==0 to turn
 ** it back off again.
+**
+** ^This interface enables or disables both the C-API
+** [sqlite3_load_extension()] and the SQL function [load_extension()].
+** Use [sqlite3_db_config](db,[SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION],..)
+** to enable or disable only the C-API.
+**
+** <b>Security warning:</b> It is recommended that extension loading
+** be disabled using the [SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION] method
+** rather than this interface, so the [load_extension()] SQL function
+** remains disabled. This will prevent SQL injections from giving attackers
+** access to extension loading capabilities.
 */
 SQLITE_API int SQLITE_STDCALL sqlite3_enable_load_extension(sqlite3 *db, int onoff);
 
@@ -8289,7 +8327,7 @@ struct sqlite3_rtree_query_info {
 /******** End of sqlite3rtree.h *********/
 /******** Begin file sqlite3session.h *********/
 
-#ifndef __SQLITESESSION_H_
+#if !defined(__SQLITESESSION_H_) && defined(SQLITE_ENABLE_SESSION)
 #define __SQLITESESSION_H_ 1
 
 /*
@@ -9563,7 +9601,7 @@ int sqlite3changegroup_output_strm(sqlite3_changegroup*,
 }
 #endif
 
-#endif  /* SQLITE_ENABLE_SESSION && SQLITE_ENABLE_PREUPDATE_HOOK */
+#endif  /* !defined(__SQLITESESSION_H_) && defined(SQLITE_ENABLE_SESSION) */
 
 /******** End of sqlite3session.h *********/
 /******** Begin file fts5.h *********/
@@ -9711,11 +9749,13 @@ struct Fts5PhraseIter {
 **       ... FROM ftstable WHERE ftstable MATCH $p ORDER BY rowid
 **
 **   with $p set to a phrase equivalent to the phrase iPhrase of the
-**   current query is executed. For each row visited, the callback function
-**   passed as the fourth argument is invoked. The context and API objects 
-**   passed to the callback function may be used to access the properties of
-**   each matched row. Invoking Api.xUserData() returns a copy of the pointer
-**   passed as the third argument to pUserData.
+**   current query is executed. Any column filter that applies to
+**   phrase iPhrase of the current query is included in $p. For each 
+**   row visited, the callback function passed as the fourth argument 
+**   is invoked. The context and API objects passed to the callback 
+**   function may be used to access the properties of each matched row.
+**   Invoking Api.xUserData() returns a copy of the pointer passed as 
+**   the third argument to pUserData.
 **
 **   If the callback function returns any value other than SQLITE_OK, the
 **   query is abandoned and the xQueryPhrase function returns immediately.

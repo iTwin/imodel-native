@@ -2361,7 +2361,7 @@ static void cacheEntryClear(Parse *pParse, struct yColCache *p){
   }
   p->iReg = 0;
   pParse->nColCache--;
-  assert( cacheIsValid(pParse) );
+  assert( pParse->db->mallocFailed || cacheIsValid(pParse) );
 }
 
 
@@ -2406,7 +2406,7 @@ SQLITE_PRIVATE void sqlite3ExprCacheStore(Parse *pParse, int iTab, int iCol, int
       p->tempReg = 0;
       p->lru = pParse->iCacheCnt++;
       pParse->nColCache++;
-      assert( cacheIsValid(pParse) );
+      assert( pParse->db->mallocFailed || cacheIsValid(pParse) );
       return;
     }
   }
@@ -8452,15 +8452,9 @@ SQLITE_PRIVATE void sqlite3DeleteColumnNames(sqlite3 *db, Table *pTable){
 ** db parameter can be used with db->pnBytesFreed to measure the memory
 ** used by the Table object.
 */
-SQLITE_PRIVATE void sqlite3DeleteTable(sqlite3 *db, Table *pTable){
+static void SQLITE_NOINLINE deleteTable(sqlite3 *db, Table *pTable){
   Index *pIndex, *pNext;
   TESTONLY( int nLookaside; ) /* Used to verify lookaside not used for schema */
-
-  assert( !pTable || pTable->nRef>0 );
-
-  /* Do not delete the table until the reference count reaches zero. */
-  if( !pTable ) return;
-  if( ((!db || db->pnBytesFreed==0) && (--pTable->nRef)>0) ) return;
 
   /* Record the number of outstanding lookaside allocations in schema Tables
   ** prior to doing any free() operations.  Since schema Tables do not use
@@ -8501,6 +8495,13 @@ SQLITE_PRIVATE void sqlite3DeleteTable(sqlite3 *db, Table *pTable){
   /* Verify that no lookaside memory was used by schema tables */
   assert( nLookaside==0 || nLookaside==db->lookaside.nOut );
 }
+SQLITE_PRIVATE void sqlite3DeleteTable(sqlite3 *db, Table *pTable){
+  /* Do not delete the table until the reference count reaches zero. */
+  if( !pTable ) return;
+  if( ((!db || db->pnBytesFreed==0) && (--pTable->nRef)>0) ) return;
+  deleteTable(db, pTable);
+}
+
 
 /*
 ** Unlink the given table from the hash tables and the delete the
@@ -8946,6 +8947,7 @@ SQLITE_PRIVATE void sqlite3AddColumn(Parse *pParse, Token *pName, Token *pType){
     zType = z + sqlite3Strlen30(z) + 1;
     memcpy(zType, pType->z, pType->n);
     zType[pType->n] = 0;
+    sqlite3Dequote(zType);
     pCol->affinity = sqlite3AffinityType(zType, &pCol->szEst);
     pCol->colFlags |= COLFLAG_HASTYPE;
   }
@@ -10080,7 +10082,7 @@ SQLITE_PRIVATE int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
       pTable->nCol = 0;
       nErr++;
     }
-    if( pSelTab ) sqlite3DeleteTable(db, pSelTab);
+    sqlite3DeleteTable(db, pSelTab);
     sqlite3SelectDelete(db, pSel);
     db->lookaside.bDisable--;
   } else {
@@ -13007,11 +13009,12 @@ SQLITE_PRIVATE void sqlite3DeleteFrom(
   int addrBypass = 0;    /* Address of jump over the delete logic */
   int addrLoop = 0;      /* Top of the delete loop */
   int addrEphOpen = 0;   /* Instruction to open the Ephemeral table */
+  int bComplex;          /* True if there are triggers or FKs or
+                         ** subqueries in the WHERE clause */
  
 #ifndef SQLITE_OMIT_TRIGGER
   int isView;                  /* True if attempting to delete from a view */
   Trigger *pTrigger;           /* List of table triggers, if required */
-  int bComplex;                /* True if there are either triggers or FKs */
 #endif
 
   memset(&sContext, 0, sizeof(sContext));
@@ -13039,7 +13042,6 @@ SQLITE_PRIVATE void sqlite3DeleteFrom(
 #else
 # define pTrigger 0
 # define isView 0
-# define bComplex 0
 #endif
 #ifdef SQLITE_OMIT_VIEW
 # undef isView
@@ -13141,7 +13143,8 @@ SQLITE_PRIVATE void sqlite3DeleteFrom(
   }else
 #endif /* SQLITE_OMIT_TRUNCATE_OPTIMIZATION */
   {
-    u16 wcf = WHERE_ONEPASS_DESIRED|WHERE_DUPLICATES_OK;
+    u16 wcf = WHERE_ONEPASS_DESIRED|WHERE_DUPLICATES_OK|WHERE_SEEK_TABLE;
+    if( sNC.ncFlags & NC_VarSelect ) bComplex = 1;
     wcf |= (bComplex ? 0 : WHERE_ONEPASS_MULTIROW);
     if( HasRowid(pTab) ){
       /* For a rowid table, initialize the RowSet to an empty set */
@@ -15052,6 +15055,14 @@ static void loadExt(sqlite3_context *context, int argc, sqlite3_value **argv){
   const char *zProc;
   sqlite3 *db = sqlite3_context_db_handle(context);
   char *zErrMsg = 0;
+
+  /* Disallow the load_extension() SQL function unless the SQLITE_LoadExtFunc
+  ** flag is set.  See the sqlite3_enable_load_extension() API.
+  */
+  if( (db->flags & SQLITE_LoadExtFunc)==0 ){
+    sqlite3_result_error(context, "not authorized", -1);
+    return;
+  }
 
   if( argc==2 ){
     zProc = (const char *)sqlite3_value_text(argv[1]);
@@ -20247,8 +20258,9 @@ static int sqlite3LoadExtension(
   /* Ticket #1863.  To avoid a creating security problems for older
   ** applications that relink against newer versions of SQLite, the
   ** ability to run load_extension is turned off by default.  One
-  ** must call sqlite3_enable_load_extension() to turn on extension
-  ** loading.  Otherwise you get the following error.
+  ** must call either sqlite3_enable_load_extension(db) or
+  ** sqlite3_db_config(db, SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION, 1, 0)
+  ** to turn on extension loading.
   */
   if( (db->flags & SQLITE_LoadExtension)==0 ){
     if( pzErrMsg ){
@@ -20387,9 +20399,9 @@ SQLITE_PRIVATE void sqlite3CloseExtensions(sqlite3 *db){
 SQLITE_API int SQLITE_STDCALL sqlite3_enable_load_extension(sqlite3 *db, int onoff){
   sqlite3_mutex_enter(db->mutex);
   if( onoff ){
-    db->flags |= SQLITE_LoadExtension;
+    db->flags |= SQLITE_LoadExtension|SQLITE_LoadExtFunc;
   }else{
-    db->flags &= ~SQLITE_LoadExtension;
+    db->flags &= ~(SQLITE_LoadExtension|SQLITE_LoadExtFunc);
   }
   sqlite3_mutex_leave(db->mutex);
   return SQLITE_OK;
@@ -27677,12 +27689,18 @@ static int pushDownWhereTerms(
 ){
   Expr *pNew;
   int nChng = 0;
+  Select *pX;           /* For looping over compound SELECTs in pSubq */
   if( pWhere==0 ) return 0;
-  if( (pSubq->selFlags & (SF_Aggregate|SF_Recursive))!=0 ){
-     return 0; /* restrictions (1) and (2) */
+  for(pX=pSubq; pX; pX=pX->pPrior){
+    if( (pX->selFlags & (SF_Aggregate|SF_Recursive))!=0 ){
+      testcase( pX->selFlags & SF_Aggregate );
+      testcase( pX->selFlags & SF_Recursive );
+      testcase( pX!=pSubq );
+      return 0; /* restrictions (1) and (2) */
+    }
   }
   if( pSubq->pLimit!=0 ){
-     return 0; /* restriction (3) */
+    return 0; /* restriction (3) */
   }
   while( pWhere->op==TK_AND ){
     nChng += pushDownWhereTerms(db, pSubq, pWhere->pRight, iCursor);
@@ -28984,6 +29002,13 @@ SQLITE_PRIVATE int sqlite3Select(
     ** the sDistinct.isTnct is still set.  Hence, isTnct represents the
     ** original setting of the SF_Distinct flag, not the current setting */
     assert( sDistinct.isTnct );
+
+#if SELECTTRACE_ENABLED
+    if( sqlite3SelectTrace & 0x400 ){
+      SELECTTRACE(0x400,pParse,p,("Transform DISTINCT into GROUP BY:\n"));
+      sqlite3TreeViewSelect(0, p, 0);
+    }
+#endif
   }
 
   /* If there is an ORDER BY clause, then create an ephemeral index to
@@ -31222,7 +31247,8 @@ SQLITE_PRIVATE void sqlite3Update(
   if( HasRowid(pTab) ){
     sqlite3VdbeAddOp3(v, OP_Null, 0, regRowSet, regOldRowid);
     pWInfo = sqlite3WhereBegin(
-        pParse, pTabList, pWhere, 0, 0, WHERE_ONEPASS_DESIRED, iIdxCur
+        pParse, pTabList, pWhere, 0, 0,
+            WHERE_ONEPASS_DESIRED | WHERE_SEEK_TABLE, iIdxCur
     );
     if( pWInfo==0 ) goto update_cleanup;
     okOnePass = sqlite3WhereOkOnePass(pWInfo, aiCurOnePass);

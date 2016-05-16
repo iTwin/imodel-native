@@ -2,10 +2,14 @@
 |
 |     $Source: ChangeSet.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <BeSQLite/ChangeSet.h>
+
+#define SQLITE_ENABLE_SESSION 1
+#define SQLITE_ENABLE_PREUPDATE_HOOK 1
+
 #include "SQLite/sqlite3.h"
 
 #define STREAM_PAGE_BYTE_SIZE 1024
