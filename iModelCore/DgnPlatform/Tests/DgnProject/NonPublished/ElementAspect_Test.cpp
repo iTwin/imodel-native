@@ -38,7 +38,7 @@ struct ElementAspectTests : public DgnDbTestFixture
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ElementAspectTests, UniqueAspect_CRUD)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"UniqueAspectCRUD.idgndb", Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.ibim", L"UniqueAspectCRUD.ibim", Db::OpenMode::ReadWrite);
     ECN::ECClassCR aclass = *TestUniqueAspect::GetECClass(*m_db);
     TestElementCPtr el;
     if (true)
@@ -117,7 +117,7 @@ TEST_F(ElementAspectTests, UniqueAspect_CRUD)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(ElementAspectTests, UniqueAspect_Uniqueness)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"UniqueAspectUniqueness.idgndb", Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.ibim", L"UniqueAspectUniqueness.ibim", Db::OpenMode::ReadWrite);
     ECN::ECClassCR aclass = *TestUniqueAspect::GetECClass(*m_db);
     TestElementCPtr el;
 
@@ -151,7 +151,7 @@ TEST_F(ElementAspectTests, UniqueAspect_Uniqueness)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ElementAspectTests, MultiAspect_CRUD)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"MultiAspectCRUD.idgndb", Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.ibim", L"MultiAspectCRUD.ibim", Db::OpenMode::ReadWrite);
     ECN::ECClassCR aclass = *TestMultiAspect::GetECClass(*m_db);
     TestElementCPtr el;
     EC::ECInstanceId a1id, a2id;
@@ -412,7 +412,7 @@ TEST_F(ElementAspectTests, ExternalKeyAspect_Delete)
 TEST_F(ElementAspectTests, ImportElementsWithAspect)
     {
     // Open Source Db
-    SetupProject(L"3dMetricGeneral.idgndb", L"SourceDb.idgndb", Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.ibim", L"SourceDb.ibim", Db::OpenMode::ReadWrite);
     DgnAuthorityId auth1Id;
     TestElementCPtr el1;
     if (true)
@@ -442,10 +442,10 @@ TEST_F(ElementAspectTests, ImportElementsWithAspect)
     if (true)
         {        
         // Open Destination DB
-        //SetupProject(L"3dMetricGeneral.idgndb", L"DestinationDb.idgndb", Db::OpenMode::ReadWrite);
+        //SetupProject(L"3dMetricGeneral.ibim", L"DestinationDb.ibim", Db::OpenMode::ReadWrite);
        // DgnDbPtr db2 = m_db;
         DgnDbPtr db2;
-        DgnDbTestFixture::OpenDb(db2, DgnDbTestFixture::CopyDb(L"DgnDb/3dMetricGeneral.idgndb", L"DestinationDb.idgndb"), DgnDb::OpenMode::ReadWrite, true);
+        DgnDbTestFixture::OpenDb(db2, DgnDbTestFixture::CopyDb(L"DgnDb/3dMetricGeneral.ibim", L"DestinationDb.ibim"), DgnDb::OpenMode::ReadWrite, true);
         ASSERT_TRUE(db2.IsValid());
         auto status = DgnPlatformTestDomain::GetDomain().ImportSchema(*db2);
         ASSERT_TRUE(DgnDbStatus::Success == status);

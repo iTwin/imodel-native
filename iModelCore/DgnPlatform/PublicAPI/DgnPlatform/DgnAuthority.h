@@ -190,7 +190,7 @@ protected:
 public:
     CategoryAuthority(CreateParams const& params) : T_Super(params) { }
 
-    DGNPLATFORM_EXPORT static DgnCode CreateCategoryCode(Utf8StringCR categoryName);
+    DGNPLATFORM_EXPORT static DgnCode CreateCategoryCode(Utf8StringCR categoryName, Utf8StringCR nameSpace="");
     DGNPLATFORM_EXPORT static DgnCode CreateSubCategoryCode(DgnCategoryId categoryId, Utf8StringCR subCategoryName);
     DGNPLATFORM_EXPORT static DgnAuthorityId GetCategoryAuthorityId();
 };

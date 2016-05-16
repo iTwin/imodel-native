@@ -37,7 +37,7 @@ public:
     TextAnnotationDrawPtr Clone() const { return new TextAnnotationDraw(*this); }
     TextAnnotationCR GetAnnotation() const { return *m_annotation; }
 
-    DGNPLATFORM_EXPORT BentleyStatus Draw(Render::GraphicR graphic, ViewContextR, Render::GeometryParamsR) const;
+    DGNPLATFORM_EXPORT BentleyStatus Draw(Render::GraphicBuilderR graphic, ViewContextR, Render::GeometryParamsR) const;
 };
 
 END_BENTLEY_DGN_NAMESPACE

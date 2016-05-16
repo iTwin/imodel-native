@@ -423,9 +423,9 @@ DbResult DgnDb::CreateAuthorities()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode CategoryAuthority::CreateCategoryCode(Utf8StringCR name)
+DgnCode CategoryAuthority::CreateCategoryCode(Utf8StringCR name, Utf8StringCR nameSpace)
     {
-    return SystemAuthority::CreateCode(SystemAuthority::Category, name);
+    return SystemAuthority::CreateCode(SystemAuthority::Category, name, nameSpace);
     }
 
 /*---------------------------------------------------------------------------------**//**

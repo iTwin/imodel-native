@@ -43,7 +43,7 @@ struct DgnLightsTest : public BlankDgnDbTestFixture
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnLightsTest, CRUD)
     {
-    SetupProject(L"lights.idgndb");
+    SetupProject(L"lights.ibim");
     auto params = MakeParams("Light1", "one");
     LightDefinition lt(params);
     LightDefinitionCPtr persistent = lt.Insert();
