@@ -340,6 +340,9 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
                 // In reality starting at 9 not all points are used but let's gives us a little margin.
                 RefCountedPtr<SMMemoryPoolVectorItem<POINT>> subNodePointsPtr(subNodes[indexNodes]->GetPointsPtr());
 
+                if (subNodePointsPtr->size() == 0)
+                    continue;
+
                 if (subNodePointsPtr->size() <= 10)
                     {
                     // Too few content in node ... promote them all                           
@@ -401,7 +404,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIB_CGALMeshFilte
     DPoint3d extentMin, extentMax;
     extentMin = DPoint3d::FromXYZ(ExtentOp<EXTENT>::GetXMin(pParentMeshNode->m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMin(pParentMeshNode->m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMin(pParentMeshNode->m_nodeHeader.m_nodeExtent));
     extentMax = DPoint3d::FromXYZ(ExtentOp<EXTENT>::GetXMax(pParentMeshNode->m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMax(pParentMeshNode->m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMax(pParentMeshNode->m_nodeHeader.m_nodeExtent));
-    Utf8String path = "E:\\output\\scmesh\\2016-01-28\\";
+    Utf8String path = "E:\\output\\scmesh\\2016-05-05\\";
    //     path += (std::to_string((unsigned long long) parentNode.GetPtr())+"_").c_str();
    /* path.append("filter.log");
     std::ofstream f;
@@ -413,6 +416,8 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIB_CGALMeshFilte
         }
     f << std::endl;
     f.close();*/
+    bvector<bvector<DPoint3d>> polylines;
+    bvector<DTMFeatureType> types;
     for (size_t indexNodes = 0; indexNodes < numSubNodes; indexNodes++)
         {
         if (subNodes[indexNodes] != NULL)
@@ -431,7 +436,8 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIB_CGALMeshFilte
                     inputPts.resize(subMeshPointsPtr->size());
 
                     PtToPtConverter::Transform(&inputPts[0], &(*subMeshPointsPtr)[0], inputPts.size());        
-                    
+                    subMeshNode->ReadFeatureDefinitions(polylines, types);
+
                    /* Utf8String str2 = "beforeFilter_beforeMerge_sub_";
                     str2 += std::to_string(inputPts.size()).c_str();
                     PrintGraph(path, str2, subMeshNode->GetGraphPtr());
@@ -452,6 +458,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIB_CGALMeshFilte
                     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(subMeshNode->GetPointsPtr());                    
                     std::vector<DPoint3d> pts(pointsPtr->size());                    
                     PtToPtConverter::Transform(&pts[0], &(*pointsPtr)[0], pts.size());
+                    subMeshNode->ReadFeatureDefinitions(polylines, types);
 
                     std::vector<int> pointsToDestPointsMap(pts.size());
                     std::fill_n(pointsToDestPointsMap.begin(), pointsToDestPointsMap.size(), -1);
@@ -490,7 +497,15 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIB_CGALMeshFilte
                     fwrite(&npts, sizeof(size_t), 1, graphSaved);
                     fwrite(&pts[0], sizeof(DPoint3d), npts, graphSaved);
                     fclose(graphSaved);*/
+                    if (NULL == subMeshNode->GetGraphPtr()) subMeshNode->LoadGraph();
+
                     MergeGraphs(meshInput, inputPts, subMeshNode->GetGraphPtr(), pts, extentMin, extentMax, pointsToDestPointsMap, contours);
+                   /* if (pParentMeshNode->GetBlockID().m_integerID == 15)
+                        {
+                        bvector<TaggedEdge> edges;
+                        std::vector<int> temp;
+                        ReadFeatureEndTags(meshInput, temp, edges);
+                        }*/
                     /*Utf8String str1 = "beforeFilter_afterMerge_sub_";
                     str1 += std::to_string(pts.size()).c_str();
                     PrintGraph(path, str1, meshInput);
@@ -510,12 +525,100 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIB_CGALMeshFilte
         }
     if (meshInput == nullptr) return false;
     ResolveUnmergedBoundaries(meshInput);
+
     bool ret = CGALEdgeCollapse(meshInput, inputPts, pParentMeshNode->GetBlockID().m_integerID);
     bvector<DPoint3d> vecPts;
     vecPts.assign(inputPts.begin(), inputPts.end());    
+    if (polylines.size() > 0)
+        {
+        HFCPtr<HGF2DCoordSys>   coordSysPtr(new HGF2DCoordSys());
+        HFCPtr<HVEShape> allPolyShape = new HVEShape(coordSysPtr);
+        bvector<DTMFeatureType> newTypes;
+        bvector<bvector<DPoint3d>> newLines;
+
+        for (auto& line : polylines)
+            {
+            if (!IsVoidFeature((IDTMFile::FeatureType)types[&line - &polylines.front()]))
+                {
+                newLines.push_back(line);
+                newTypes.push_back(types[&line - &polylines.front()]);
+                }
+            HArrayAutoPtr<double> tempBuffer(new double[line.size() * 2]);
+
+            int bufferInd = 0;
+
+            for (size_t pointInd = 0; pointInd < line.size(); pointInd++)
+                {
+                tempBuffer[bufferInd * 2] = line[pointInd].x;
+                tempBuffer[bufferInd * 2 + 1] = line[pointInd].y;
+                bufferInd++;
+                }
+            HVE2DPolygonOfSegments polygon(line.size() * 2, tempBuffer, coordSysPtr);
+
+            HFCPtr<HVEShape> subShapePtr = new HVEShape(polygon);
+            allPolyShape->Unify(*subShapePtr);
+            }
+        if (allPolyShape->GetLightShape()->IsComplex())
+            {
+            for (auto& elem : allPolyShape->GetLightShape()->GetShapeList())
+                {
+                HGF2DPositionCollection thePoints;
+                elem->Drop(&thePoints, elem->GetTolerance());
+
+                bvector<DPoint3d> vec(thePoints.size());
+
+                for (size_t idx = 0; idx < thePoints.size(); idx++)
+                    {
+                    vec[idx].x = thePoints[idx].GetX();
+                    vec[idx].y = thePoints[idx].GetY();
+                    vec[idx].z = 0; // As mentionned below the Z is disregarded
+                    }
+
+                newLines.push_back(vec);
+                newTypes.push_back(DTMFeatureType::DrapeVoid);
+                }
+            }
+        else if (!allPolyShape->GetLightShape()->IsEmpty())
+            {
+            HGF2DPositionCollection thePoints;
+            allPolyShape->GetLightShape()->Drop(&thePoints, allPolyShape->GetLightShape()->GetTolerance());
+
+            bvector<DPoint3d> vec(thePoints.size());
+
+            for (size_t idx = 0; idx < thePoints.size(); idx++)
+                {
+                vec[idx].x = thePoints[idx].GetX();
+                vec[idx].y = thePoints[idx].GetY();
+                vec[idx].z = 0; // As mentionned below the Z is disregarded
+                }
+
+            newLines.push_back(vec);
+            newTypes.push_back(DTMFeatureType::DrapeVoid);
+            }
+        polylines = newLines;
+        types = newTypes;
+        }
+
+    SimplifyPolylines(polylines);
+
+
     if (ret)
         {
+        volatile size_t n2 = 0;
+        MTGARRAY_SET_LOOP(edgeID, meshInput)
+            {
+            int tag = -1;
+            meshInput->TryGetLabel(edgeID, 2, tag);
+            if (tag != -1) n2++;
+            }
+        MTGARRAY_END_SET_LOOP(edgeID, meshInput)
+                
         dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(parentNode)->UpdateFromGraph(meshInput, vecPts);
+        for (auto& polyline : polylines)
+            {
+            DRange3d extent = DRange3d::From(polyline);
+            pParentMeshNode->AddFeatureDefinitionSingleNode((IDTMFile::FeatureType)types[&polyline - &polylines.front()], polyline, extent);
+            }
         }
     else
         {
@@ -526,6 +629,12 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIB_CGALMeshFilte
         RefCountedPtr<SMMemoryPoolVectorItem<POINT>> parentPointsPtr(pParentMeshNode->GetPointsPtr());
 
         parentPointsPtr->push_back(&vecPts[0], vecPts.size());
+        for (auto& polyline : polylines)
+            {
+            DRange3d extent = DRange3d::From(polyline);
+            pParentMeshNode->AddFeatureDefinitionSingleNode((IDTMFile::FeatureType)types[&polyline - &polylines.front()], polyline, extent);
+            }
+
         if (pParentMeshNode->m_nodeHeader.m_arePoints3d)
             {
             pParentMeshNode->GetMesher3d()->Mesh(pParentMeshNode);

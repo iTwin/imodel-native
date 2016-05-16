@@ -43,8 +43,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{931A223E-266D-4CA9-9D22-07F79BBC611D}</ProjectGuid>
-    <RootNamespace>ScalableMeshATP</RootNamespace>
+    <ProjectGuid>{F23A19DA-5B3E-4908-9A05-D562A75E572F}</ProjectGuid>
+    <RootNamespace>
+    </RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -124,16 +125,16 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>$(OutRoot)VS\$(Configuration)\</OutDir>
     <IntDir>$(OutRoot)VS\$(Configuration)\</IntDir>
-    <NMakeBuildCommandLine>BentleyBuild.py -p ScalableMeshATP -f ScalableMesh -r ScalableMesh b -x64</NMakeBuildCommandLine>
-    <NMakeOutput>$(OutRoot)Winx64\build\scalablemesh\ScalableMeshATP.exe</NMakeOutput>
+    <NMakeBuildCommandLine>BentleyBuild.py -p ScalableMeshCommandLineTest -f  ScalableMeshCommandLineTest -r  ScalableMeshCommandLineTest re  ScalableMeshCommandLineTest -x64   </NMakeBuildCommandLine>
+    <NMakeOutput>$(OutRoot)Winx64\build\ScalableMeshCommandLineTest\ ScalableMeshCommandLineTest.dll</NMakeOutput>
     <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
     <NMakePreprocessorDefinitions>Intellisense;WIN32;winNT;_VISCXX;_CONVERSION_DONT_USE_THREAD_LOCALE;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1;_SECURE_SCL_THROWS=1;_SECURE_SCL=0;WIN32_LEAN_AND_MEAN;WINVER=0x0501; _WIN32_WINNT=0x0501;_WIN32_IE=0x0501;DEBUG;WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <NMakeReBuildCommandLine>BentleyBuild.py -p ScalableMeshATP -f ScalableMesh -r ScalableMesh re ScalableMeshATPexe -x64 -c
-BentleyBuild.py -p ScalableMeshATPexe -f ScalableMesh -r ScalableMesh re ScalableMeshATP -x64</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>BentleyBuild.py -p ScalableMeshATP -f ScalableMesh -r ScalableMesh re ScalableMeshATP -x64 -c
+    <NMakeReBuildCommandLine>BentleyBuild.py -p  ScalableMeshCommandLineTest -f  ScalableMeshCommandLineTest -r  ScalableMeshCommandLineTest re  ScalableMeshCommandLineTest -x64 -c
+BentleyBuild.py -p  ScalableMeshCommandLineTest -f  ScalableMeshCommandLineTest -r  ScalableMeshCommandLineTest re  ScalableMeshCommandLineTest -x64 </NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>BentleyBuild.py -p  ScalableMeshCommandLineTest -f  ScalableMeshCommandLineTest -r  ScalableMeshCommandLineTest re  ScalableMeshCommandLineTest -x64 -c
 </NMakeCleanCommandLine>
-    <NMakeIncludeSearchPath>$(ProjectDir);$(ProjectDir)STM;$(OutRoot)Winx64\BuildContexts\scalablemesh\PublicAPI;$(OutRoot)Winx64\BuildContexts\scalablemesh\PublicAPI\scalablemesh</NMakeIncludeSearchPath>
-    <NMakeForcedIncludes>$(ProjectDir)ScalableMeshATPPch.h</NMakeForcedIncludes>
+    <NMakeIncludeSearchPath>$(ProjectDir);$(ProjectDir)STM;$(OutRoot)Winx64\BuildContexts\TerrainModel\PublicAPI;$(OutRoot)Winx64\BuildContexts\TerrainModel\ScalableTerrainModel\PublicAPI\ScalableTerrainModel</NMakeIncludeSearchPath>
+    <NMakeForcedIncludes>$(ProjectDir)STM\ScalableMeshCommandLineTestPCH.h</NMakeForcedIncludes>
     <NMakeForcedUsingAssemblies>
     </NMakeForcedUsingAssemblies>
     <AdditionalOptions>
@@ -141,23 +142,22 @@ BentleyBuild.py -p ScalableMeshATPexe -f ScalableMesh -r ScalableMesh re Scalabl
     <NMakeAssemblySearchPath>
     </NMakeAssemblySearchPath>
     <SourcePath>$(SourcePath);D:\PointoolsVortexAPI</SourcePath>
-    <IncludePath>C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\DgnPlatform\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\scalablemesh\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\ImagePP\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\BeSQLite\PublicAPI;C:\dev\ConceptStation\src\Imagepp\PublicApi;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\TerrainModel\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\Bentley\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\ConceptStation\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\DgnDisplay\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\DgnDisplay\PublicAPI\RasterCore;$(IncludePath)</IncludePath>
+    <IncludePath>C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\DgnPlatform\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\TerrainModel\PublicAPI;C:\dev\ConceptStation\src\DgnPlatform\DgnCore\;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\ScalableMeshCommandLineTest\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\BePointCloud\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\ConceptStation\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\RealityModeling\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\DgnDbSync\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\DgnDisplay\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\DgnPlatform\PublicAPI\DgnPlatform\;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <NMakeBuildCommandLine>BentleyBuild.py -p ScalableMeshATP -f ScalableMesh -r ScalableMesh re ScalableMeshATP -x64 </NMakeBuildCommandLine>
-    <NMakeOutput>$(OutRoot)Winx64\build\scalablemesh\ScalableMeshATP.exe</NMakeOutput>
+    <NMakeBuildCommandLine>BentleyBuild.py -p ScalableMeshCommandLineTest -f  ScalableMesh -r  ScalableMesh re  ScalableMeshCommandLineTest -x64   -s</NMakeBuildCommandLine>
+    <NMakeOutput>$(OutRoot)Winx64\build\ScalableMeshCommandLineTest\ ScalableMeshCommandLineTest.dll</NMakeOutput>
     <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
     <NMakePreprocessorDefinitions>Intellisense;WIN32;winNT;_VISCXX;_CONVERSION_DONT_USE_THREAD_LOCALE;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1;_SECURE_SCL_THROWS=1;_SECURE_SCL=0;WIN32_LEAN_AND_MEAN;WINVER=0x0501; _WIN32_WINNT=0x0501;_WIN32_IE=0x0501;DEBUG;WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <NMakeReBuildCommandLine>BentleyBuild.py -p ScalableMeshATPexe -f ScalableMesh -r ScalableMesh re ScalableMeshATPexe -x64 </NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>BentleyBuild.py -p ScalableMeshATP -f ScalableMesh -r ScalableMesh re ScalableMeshATP -ax64 -c</NMakeCleanCommandLine>
-    <NMakeIncludeSearchPath>$(ProjectDir);$(ProjectDir)STM;$(OutRoot)Winx64\BuildContexts\scalablemesh\PublicAPI;$(OutRoot)Winx64\BuildContexts\scalablemesh\PublicAPI\scalablemesh</NMakeIncludeSearchPath>
-    <NMakeForcedIncludes>
-    </NMakeForcedIncludes>
+    <NMakeReBuildCommandLine>BentleyBuild.py -p ScalableMeshCommandLineTest -f  ScalableMesh -r  ScalableMesh re  ScalableMeshCommandLineTest -x64  -c
+BentleyBuild.py -p ScalableMeshCommandLineTest -f  ScalableMesh -r  ScalableMesh re  ScalableMeshCommandLineTest -x64   </NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>BentleyBuild.py -p ScalableMeshCommandLineTest -f  ScalableMesh -r  ScalableMesh re  ScalableMeshCommandLineTest -x64  -c</NMakeCleanCommandLine>
+    <NMakeIncludeSearchPath>$(ProjectDir);$(ProjectDir)STM;$(OutRoot)Winx64\BuildContexts\TerrainModel\PublicAPI;$(OutRoot)Winx64\BuildContexts\TerrainModel\ScalableTerrainModel\PublicAPI\ScalableTerrainModel</NMakeIncludeSearchPath>
+    <NMakeForcedIncludes>$(ProjectDir)STM\ScalableMeshCommandLineTestPCH.h</NMakeForcedIncludes>
     <NMakeForcedUsingAssemblies />
     <AdditionalOptions />
     <NMakeAssemblySearchPath />
-    <SourcePath>$(SourcePath);D:\PointoolsVortexAPI</SourcePath>
-    <IncludePath>C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\DgnPlatform\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\scalablemesh\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\ImagePP\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\BeSQLite\PublicAPI;C:\dev\ConceptStation\src\Imagepp\PublicApi;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\TerrainModel\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\Bentley\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\ConceptStation\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\DgnDisplay\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\DgnDisplay\PublicAPI\RasterCore;$(IncludePath)</IncludePath>
+    <SourcePath>$(SourcePath);C:\dev\ConceptStation\src\Pointools\BePointCloud;D:\PointoolsVortexAPI</SourcePath>
     <OutDir>$(OutRoot)VS\$(Configuration)\</OutDir>
     <IntDir>$(OutRoot)VS\$(Configuration)\</IntDir>
   </PropertyGroup>
@@ -204,33 +204,29 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f Terra
     <SourcePath>$(SourcePath)</SourcePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <NMakeBuildCommandLine>BentleyBuild.py -p ScalableMeshATP -f ScalableMesh -r ScalableMesh re ScalableMeshATP -x64 -s</NMakeBuildCommandLine>
-    <NMakeOutput>$(OutRoot)Winx64\build\ScalableMesh\ScalableMeshATP.exe</NMakeOutput>
+    <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableMeshCommandLineTest -f  ScalableMeshCommandLineTest -r  ScalableMeshCommandLineTest re  ScalableMeshCommandLineTest -x64  </NMakeBuildCommandLine>
+    <NMakeOutput>$(OutRoot)Winx64\build\ScalableMeshCommandLineTest\ ScalableMeshCommandLineTest.dll</NMakeOutput>
     <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
     <NMakePreprocessorDefinitions>WIN32;winNT;_VISCXX;_CONVERSION_DONT_USE_THREAD_LOCALE;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1;_SECURE_SCL_THROWS=1;_SECURE_SCL=0;WIN32_LEAN_AND_MEAN;WINVER=0x0501;_WIN32_WINNT=0x0501;_WIN32_IE=0x0501;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <NMakeReBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableMeshATP -f ScalableMesh -r ScalableMesh re ScalableMeshATPexe -x64 -c</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableMeshATP -f ScalableMesh-r ScalableMesh re ScalableMeshATP -x64 -c</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p  ScalableMeshCommandLineTest -f  ScalableMeshCommandLineTest -r  ScalableMeshCommandLineTest re  ScalableMeshCommandLineTest -x64 -c</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p  ScalableMeshCommandLineTest -f  ScalableMeshCommandLineTest -r  ScalableMeshCommandLineTest re  ScalableMeshCommandLineTest -x64 -c</NMakeCleanCommandLine>
     <NMakeIncludeSearchPath>$(ProjectDir);$(ProjectDir)STM;$(OutRoot)Winx64\BuildContexts\TerrainModel\PublicAPI;$(OutRoot)Winx64\BuildContexts\TerrainModel\ScalableTerrainModel\PublicAPI\ScalableTerrainModel</NMakeIncludeSearchPath>
     <OutDir>$(OutRoot)VS\$(Configuration)\</OutDir>
     <IntDir>$(OutRoot)VS\$(Configuration)\</IntDir>
-    <NMakeForcedIncludes>$(ProjectDir)STM\ScalableMeshPCH.h</NMakeForcedIncludes>
     <SourcePath>$(SourcePath);D:\PointoolsVortexAPI</SourcePath>
-    <IncludePath>C:\dev\ScalableMesh-Topaz\out\release\Winx64\BuildContexts\DgnPlatform\PublicAPI;C:\dev\ScalableMesh-Topaz\out\release\Winx64\BuildContexts\scalablemesh\PublicAPI;C:\dev\ScalableMesh-Topaz\out\release\Winx64\BuildContexts\ImagePP\PublicAPI;C:\dev\ScalableMesh-Topaz\out\release\Winx64\BuildContexts\BeSQLite\PublicAPI;C:\dev\ScalableMesh-Topaz\src\Imagepp\PublicApi;C:\dev\ScalableMesh-Topaz\src\scalablemesh\STM;$(IncludePath)</IncludePath>
+    <IncludePath>C:\dev\ScalableMeshCommandLineTest-Topaz\out\release\Winx64\BuildContexts\DgnPlatform\PublicAPI;C:\dev\ScalableMeshCommandLineTest-Topaz\out\release\Winx64\BuildContexts\scalablemesh\PublicAPI;$(IncludePath)</IncludePath>
+    <NMakeForcedIncludes>$(ProjectDir)STM\ScalableMeshCommandLineTestPCH.h</NMakeForcedIncludes>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <NMakeBuildCommandLine>BentleyBuild.py -p ScalableMeshATP -f ScalableMesh -r ScalableMesh re ScalableMeshATP -x64 -s</NMakeBuildCommandLine>
-    <NMakeOutput>$(OutRoot)Winx64\build\scalablemesh\ScalableMeshATP.exe</NMakeOutput>
+    <NMakeBuildCommandLine>BentleyBuild.py -p ScalableMeshCommandLineTest -f  ScalableMeshCommandLineTest -r  ScalableMeshCommandLineTest re  ScalableMeshCommandLineTest -ax64  </NMakeBuildCommandLine>
+    <NMakeOutput>$(OutRoot)Winx64\build\ScalableMeshCommandLineTest\ ScalableMeshCommandLineTest.dll</NMakeOutput>
     <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
-    <NMakePreprocessorDefinitions>Intellisense;WIN32;winNT;_VISCXX;_CONVERSION_DONT_USE_THREAD_LOCALE;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1;_SECURE_SCL_THROWS=1;_SECURE_SCL=0;WIN32_LEAN_AND_MEAN;WINVER=0x0501; _WIN32_WINNT=0x0501;_WIN32_IE=0x0501;DEBUG;WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <NMakeReBuildCommandLine>BentleyBuild.py -p ScalableMeshATP -f ScalableMesh -r ScalableMesh re ScalableMeshATPexe -x64 -c</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>BentleyBuild.py -p ScalableMeshATP -f ScalableMesh -r ScalableMesh re ScalableMeshATP -x64 -c</NMakeCleanCommandLine>
-    <NMakeIncludeSearchPath>$(ProjectDir);$(ProjectDir)STM;$(OutRoot)Winx64\BuildContexts\scalablemesh\PublicAPI;$(OutRoot)Winx64\BuildContexts\scalablemesh\PublicAPI\scalablemesh</NMakeIncludeSearchPath>
-    <OutDir>$(OutRoot)VS\$(Configuration)\</OutDir>
-    <IncludePath>C:\dev\ConceptStation\out\release\Winx64\BuildContexts\DgnPlatform\PublicAPI;C:\dev\ConceptStation\out\release\Winx64\BuildContexts\scalablemesh\PublicAPI;C:\dev\ConceptStation\out\release\Winx64\BuildContexts\ImagePP\PublicAPI;C:\dev\ConceptStation\out\release\Winx64\BuildContexts\BeSQLite\PublicAPI;C:\dev\ConceptStation\src\Imagepp\PublicApi;C:\dev\ConceptStation\out\release\Winx64\BuildContexts\TerrainModel\PublicAPI;C:\dev\ConceptStation\out\release\Winx64\BuildContexts\Bentley\PublicAPI;C:\dev\ConceptStation\out\release\Winx64\BuildContexts\ConceptStation\PublicAPI;C:\dev\ConceptStation\out\release\Winx64\BuildContexts\DgnDisplay\PublicAPI;C:\dev\ConceptStation\out\release\Winx64\BuildContexts\DgnDisplay\PublicAPI\RasterCore;$(IncludePath)</IncludePath>
+    <NMakePreprocessorDefinitions>WIN32;winNT;_VISCXX;_CONVERSION_DONT_USE_THREAD_LOCALE;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1;_SECURE_SCL_THROWS=1;_SECURE_SCL=0;WIN32_LEAN_AND_MEAN;WINVER=0x0501;_WIN32_WINNT=0x0501;_WIN32_IE=0x0501;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakeReBuildCommandLine>BentleyBuild.py -p  ScalableMeshCommandLineTest -f  ScalableMeshCommandLineTest -r  ScalableMeshCommandLineTest re  ScalableMeshCommandLineTest -ax64 -c</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>BentleyBuild.py -p  ScalableMeshCommandLineTest -f  ScalableMeshCommandLineTest -r  ScalableMeshCommandLineTest re  ScalableMeshCommandLineTest -ax64 -c</NMakeCleanCommandLine>
+    <NMakeIncludeSearchPath>$(ProjectDir);$(ProjectDir)STM;$(OutRoot)Winx64\BuildContexts\TerrainModel\PublicAPI;$(OutRoot)Winx64\BuildContexts\TerrainModel\ScalableTerrainModel\PublicAPI\ScalableTerrainModel</NMakeIncludeSearchPath>
+    <IncludePath>C:\dev\ConceptStation\out\release\Winx64\BuildContexts\DgnPlatform\PublicAPI;C:\dev\ConceptStation\out\release\Winx64\BuildContexts\TerrainModel\PublicAPI;$(IncludePath)</IncludePath>
     <SourcePath>$(SourcePath)</SourcePath>
-    <IntDir>$(OutRoot)VS\$(Configuration)\</IntDir>
-    <NMakeForcedIncludes>
-    </NMakeForcedIncludes>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseProduct|Win32'">
     <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f TerrainModel -r TerrainModel re ScalableTerrainModel </NMakeBuildCommandLine>
@@ -281,42 +277,10 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f Terra
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\Common\ATPDefinitions.cpp" />
-    <ClCompile Include="..\Common\ATPFileFinder.cpp" />
-    <ClCompile Include="..\Common\ATPGeneration.cpp" />
-    <ClCompile Include="..\Common\ATPUtils.cpp" />
-    <ClCompile Include="..\Initialize.cpp" />
-    <ClCompile Include="..\ScalableMeshATPexe.cpp" />
-    <ClCompile Include="..\ScalableMeshATPPch.cpp" />
-    <ClCompile Include="..\TiledTriangulation\MrDTMFace.cpp" />
-    <ClCompile Include="..\TiledTriangulation\MrDTMUtil.cpp" />
-    <ClCompile Include="..\TiledTriangulation\TiledTriangulatorUtil.cpp" />
-    <ClCompile Include="..\TiledTriangulation\TiledTriangulatorValidator.cpp" />
-    <ClCompile Include="..\Tool\DrapeLineTool.cpp" />
-    <ClCompile Include="..\Tool\VolumeCalculationTool.cpp" />
+    <ClCompile Include="ScalableMeshCommandLineTest.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\Common\ATPDefinitions.h" />
-    <ClInclude Include="..\Common\ATPFileFinder.h" />
-    <ClInclude Include="..\Common\ATPGeneration.h" />
-    <ClInclude Include="..\Common\ATPUtils.h" />
-    <ClInclude Include="..\Initialize.h" />
-    <ClInclude Include="..\ScalableMeshATPexe.h" />
-    <ClInclude Include="..\ScalableMeshATPPch.h" />
-    <ClInclude Include="..\TiledTriangulation\ITiledTriangulatorValidator.h" />
-    <ClInclude Include="..\TiledTriangulation\MrDTMFace.h" />
-    <ClInclude Include="..\TiledTriangulation\MrDTMUtil.h" />
-    <ClInclude Include="..\TiledTriangulation\TiledTriangulatorUtil.h" />
-    <ClInclude Include="..\TiledTriangulation\TiledTriangulatorValidator.h" />
-    <ClInclude Include="..\Tool\DrapeLineTool.h" />
-    <ClInclude Include="..\Tool\VolumeCalculationTool.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <Xml Include="..\ScalableMesh.PartFile.xml" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\ScalableMeshATPexe.mke" />
-    <None Include="..\ScalableMeshATPexe.mki" />
+    <None Include="ScalableMeshCommandLineTest.mke" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

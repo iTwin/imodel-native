@@ -1266,7 +1266,7 @@ template <class POINT> void ScalableMeshNode<POINT>::ComputeDiffSet(DifferenceSe
 #endif
 
     auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_node);
-
+    //std::cout << "ComputeDiffset for node " << m_meshNode->GetBlockID().m_integerID << std::endl;
     diffs.firstIndex = (int)m_meshNode->GetNbPoints() + 1;
     //auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_node);    
     for (size_t i = 0; i < m_meshNode->m_nbClips; ++i)
@@ -1280,10 +1280,7 @@ template <class POINT> void ScalableMeshNode<POINT>::ComputeDiffSet(DifferenceSe
         else
             {
 #endif
-            //NEEDS_WORK_SM_ELENIE : Remove shift, use full 64 bits
-            //uint64_t lowerId = (d.clientID << 32) >> 32;
-                        
-            //uint64_t upperId = (d.clientID >> 32);
+
             if (d.toggledForID && (d.clientID == 0 || (d.clientID < ((uint64_t)-1) && clipsToShow.count(d.clientID) == 0) && d.upToDate))
                 {
                 //meshPtr->ApplyDifferenceSet(d);
@@ -2527,6 +2524,7 @@ template <class POINT> int ScalableMeshNodeRayQuery<POINT>::_Query(IScalableMesh
                                                                                  ray, 
                                                                                  params->Get2d(), 
                                                                                  params->GetDepth(), 
+                                                                                 params->GetUseUnboundedRay(),
                                                                                  params->Get2d() ? ScalableMeshQuadTreeLevelIntersectIndexQuery<POINT, YProtPtExtentType>::RaycastOptions::FIRST_INTERSECT : ScalableMeshQuadTreeLevelIntersectIndexQuery<POINT, YProtPtExtentType>::RaycastOptions::LAST_INTERSECT);
     m_scmIndexPtr->Query(&query, currentNodeP);
     if (currentNodeP == nullptr) return ERROR;
@@ -2549,6 +2547,7 @@ template <class POINT> int ScalableMeshNodeRayQuery<POINT>::_Query(bvector<IScal
                                                                                  ray, 
                                                                                  params->Get2d(), 
                                                                                  params->GetDepth(), 
+                                                                                 params->GetUseUnboundedRay(),
                                                                                  ScalableMeshQuadTreeLevelIntersectIndexQuery<POINT, YProtPtExtentType>::RaycastOptions::ALL_INTERSECT);
     m_scmIndexPtr->Query(&query, nodesP);
 

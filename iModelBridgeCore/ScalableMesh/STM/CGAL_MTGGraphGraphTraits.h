@@ -1128,25 +1128,36 @@ namespace CGAL
             boost::graph_traits<GraphWithGeometryInfo>::vertex_descriptor v = source(v0v1, g);
             assert(v != -1);
             if (v == -1) return v;
-           /* std::ofstream f;
-            f.open("E:\\output\\cgal.log", std::ios_base::app);
-            f << " COLLAPSING HALFEDGE " + std::to_string(v0v1) + " vtx " + std::to_string(v) + " to " + std::to_string(target(v0v1, g)) << std::endl;
-            f.close();*/
+            int label = -1;
+            g.graphP->TryGetLabel(v0v1,2 , label);
+
+            int featureComponentId = -1;
+            g.graphP->TryGetLabel(v0v1, 3, featureComponentId);
+           /* if (label != -1)
+                {
+                std::ofstream f;
+                f.open("E:\\output\\cgal.log", std::ios_base::app);
+                f << " COLLAPSING HALFEDGE " + std::to_string(v0v1) + " vtx " + std::to_string(v) + " to " + std::to_string(target(v0v1, g)) << std::endl;
+                f.close();
+                }*/
             bool printG = (v == 89 || target(v0v1, g) == 89 || target((boost::graph_traits<GraphWithGeometryInfo>::halfedge_descriptor)g.graphP->FSucc(v0v1), g) == 89 ||
                            target((boost::graph_traits<GraphWithGeometryInfo>::halfedge_descriptor)g.graphP->FSucc(g.graphP->EdgeMate(v0v1)), g) == 89);
            /*printG = printG || (v == 1367 || target(v0v1, g) == 1367 || target((boost::graph_traits<GraphWithGeometryInfo>::halfedge_descriptor)g.graphP->FSucc(v0v1), g) == 1367 ||
                                 target((boost::graph_traits<GraphWithGeometryInfo>::halfedge_descriptor)g.graphP->FSucc(g.graphP->EdgeMate(v0v1)), g) == 1367);*/
             printG = printG && traits::log;
-            if (printG)
+            if (printG /*||(label != -1 && g.id == 15)*/)
                 {
-                Utf8String path1 = "E:\\output\\scmesh\\2016-01-28\\";
+                Utf8String path1 = "E:\\output\\scmesh\\2016-05-05\\";
                 Utf8String str1 = "beforeCollapse_";
                 str1 += std::to_string(s_collapseN).c_str();
                 str1 += "_";
                 str1+=std::to_string(v0v1).c_str();
+                str1 += "_";
+                str1 += std::to_string(g.id).c_str();
                 PrintGraph(path1, str1, g.graphP);
                 }
             MTGNodeId v1next = g.graphP->FSucc(v0v1);
+           // int v2 = target(v1next, g);
             MTGNodeId v1v0 = g.graphP->EdgeMate(v0v1);
             MTGNodeId v0next = g.graphP->FSucc(v1v0);
             //MTGNodeId startsAtV1 = g.graphP->EdgeMate(g.graphP->FPred(v1v0));
@@ -1225,6 +1236,19 @@ namespace CGAL
                 for (MTGNodeId vSucc = g.graphP->VSucc(startsAtV1); g.graphP->IsValidNodeId(startsAtV1) && g.graphP->IsValidNodeId(vSucc) && vSucc != startsAtV1; vSucc = g.graphP->VSucc(vSucc))
                     {
                     g.graphP->TrySetLabel(vSucc, 0, v);
+                    if (featureComponentId != -1) //if this was the end of a feature, tag end identifier onto incoming feature edges of the same tag.
+                        {
+                        int existingFID = -1;
+                        g.graphP->TryGetLabel(vSucc, 2, existingFID);
+                        if (existingFID == label)
+                            {
+                            g.graphP->TrySetLabel(vSucc, 3, featureComponentId);
+                            g.graphP->TrySetLabel(g.graphP->EdgeMate(vSucc), 3, featureComponentId);
+                            }
+                        }
+                  /*  int vtx = -1;
+                    g.graphP->TryGetLabel(g.graphP->EdgeMate(vSucc), 0, vtx);
+                    if (label != -1 && FastCountNodesAroundFace(g.graphP, vSucc) > 3) g.graphP->TrySetLabel(vSucc, 2, label);*/
                     /*int vEdge;
                     g.graphP->TryGetLabel(g.graphP->EdgeMate(vSucc), 0, vEdge);
                     assert(vEdge != -1);
@@ -1232,13 +1256,15 @@ namespace CGAL
                     if (vEdge == v) toCollapse = vSucc; //self-loop, should collapse
                     }
                 }
-            if (printG)
+            if (printG /*|| (label != -1 && g.id == 15)*/)
                 {
-                Utf8String path = "E:\\output\\scmesh\\2016-01-28\\";
+                Utf8String path = "E:\\output\\scmesh\\2016-05-05\\";
                 Utf8String str = "afterCollapse_";
                 str += std::to_string(s_collapseN).c_str();
                 str += "_";
                 str+=std::to_string(startsAtV1).c_str();
+                str += "_";
+                str += std::to_string(g.id).c_str();
                 PrintGraph(path, str, g.graphP);
                 }
             s_collapseN++;

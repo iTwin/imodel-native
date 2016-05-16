@@ -77,6 +77,10 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
     
 #include <STMInternal/Foundations/FoundationsPrivateTools.h>
 
+//Useful for detecting memory leak
+//#define _DEBUG
+//#include <C:\Program Files (x86)\Visual Leak Detector\include\vld.h>
+
 #ifndef BEGIN_UNNAMED_NAMESPACE
 #define BEGIN_UNNAMED_NAMESPACE namespace {
 #define END_UNNAMED_NAMESPACE }

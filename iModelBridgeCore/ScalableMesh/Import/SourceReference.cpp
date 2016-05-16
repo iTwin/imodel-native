@@ -70,11 +70,7 @@ typename SourceRefMixinBase<BaseT>::ClassID SourceRefMixinBase<BaseT>::_GetClass
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename BaseT>
-void SourceRefMixinBase<BaseT>::_Accept (ISourceRefVisitor& visitor) const
-    {
-    visitor._Visit(static_cast<const BaseT&>(*this));
-    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @description  
@@ -143,10 +139,7 @@ SourceRef& SourceRef::operator= (const SourceRef& rhs)
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   04/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SourceRef::Accept (ISourceRefVisitor& pi_rVisitor) const
-    {
-    m_basePtr->_Accept(pi_rVisitor);
-    }
+
 
 void SourceRef::SetDtmSource(const IDTMSourcePtr&        dtmSourcePtr)
     {

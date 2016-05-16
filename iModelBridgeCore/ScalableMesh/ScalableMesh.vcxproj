@@ -145,12 +145,13 @@ BentleyBuild.py -p  ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableM
     <IncludePath>C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\DgnPlatform\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\TerrainModel\PublicAPI;C:\dev\ConceptStation\src\DgnPlatform\DgnCore\;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\ScalableMesh\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\BePointCloud\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\ConceptStation\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\RealityModeling\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\DgnDbSync\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\DgnDisplay\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\DgnPlatform\PublicAPI\DgnPlatform\;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <NMakeBuildCommandLine>BentleyBuild.py -p ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableMesh -x64  </NMakeBuildCommandLine>
+    <NMakeBuildCommandLine>BentleyBuild.py -ax64 -p ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableMesh  </NMakeBuildCommandLine>
     <NMakeOutput>$(OutRoot)Winx64\build\ScalableMesh\ ScalableMesh.dll</NMakeOutput>
     <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
     <NMakePreprocessorDefinitions>Intellisense;WIN32;winNT;_VISCXX;_CONVERSION_DONT_USE_THREAD_LOCALE;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1;_SECURE_SCL_THROWS=1;_SECURE_SCL=0;WIN32_LEAN_AND_MEAN;WINVER=0x0501; _WIN32_WINNT=0x0501;_WIN32_IE=0x0501;DEBUG;WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <NMakeReBuildCommandLine>BentleyBuild.py -p  ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableMesh -x64 -c</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>BentleyBuild.py -p  ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableMesh -x64 -c</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>BentleyBuild.py -ax64 -p ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableMesh  -c 
+BentleyBuild.py -ax64 -p ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableMesh  </NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>BentleyBuild.py -ax64 -p  ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableMesh -c</NMakeCleanCommandLine>
     <NMakeIncludeSearchPath>$(ProjectDir);$(ProjectDir)STM;$(OutRoot)Winx64\BuildContexts\TerrainModel\PublicAPI;$(OutRoot)Winx64\BuildContexts\TerrainModel\ScalableTerrainModel\PublicAPI\ScalableTerrainModel</NMakeIncludeSearchPath>
     <NMakeForcedIncludes>$(ProjectDir)STM\ScalableMeshPCH.h</NMakeForcedIncludes>
     <NMakeForcedUsingAssemblies />
@@ -335,42 +336,14 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f Terra
     <ClInclude Include="PublicAPI\ScalableMesh\GeoCoords\Transformation.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\GeoCoords\Transformation.hpp" />
     <ClInclude Include="PublicAPI\ScalableMesh\Import\Attachment.h" />
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Command\All.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\Import\Command\Base.h" />
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Command\ImportAll.h" />
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Command\ImportAllToLayer.h" />
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Command\ImportAllToLayerType.h" />
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Command\ImportAllToType.h" />
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Command\ImportLayer.h" />
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Command\ImportLayerToLayer.h" />
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Command\ImportLayerToLayerType.h" />
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Command\ImportLayerToType.h" />
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Command\ImportLayerType.h" />
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Command\ImportLayerTypeToLayer.h" />
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Command\ImportLayerTypeToLayerType.h" />
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Command\ImportLayerTypeToType.h" />
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Command\ImportType.h" />
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Command\ImportTypeToLayer.h" />
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Command\ImportTypeToLayerType.h" />
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Command\ImportTypeToType.h" />
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\All.h" />
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\Attachments.h" />
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\Base.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\Content\All.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\Content\Base.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\Content\ScalableMeshConfig.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\Content\GCS.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\Content\Layer.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\Content\Type.h" />
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\DefaultSourceGCS.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\DefaultTargetScalableMeshConfig.h" />
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\DefaultTargetGCS.h" />
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\DefaultTargetLayer.h" />
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\DefaultTargetType.h" />
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\Extraction.h" />
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\Filtering.h" />
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\SourceFilters.h" />
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\TargetFilters.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\Import\ContentConfig.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\Import\ContentConfigVisitor.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\Import\ContentDescriptor.h" />

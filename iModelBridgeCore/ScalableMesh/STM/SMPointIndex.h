@@ -192,9 +192,7 @@ public:
         {
         return false;
         }
-    
-    virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > Clone() const;
-    virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > Clone(const EXTENT& newNodeExtent) const;
+        
     virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CloneChild(const EXTENT& newNodeExtent) const;
     virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CloneUnsplitChild(const EXTENT& newNodeExtent) const;
     virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CloneUnsplitChildVirtual() const;
@@ -723,6 +721,16 @@ public:
         return m_nodeHeader.m_nodeCount;       
         }
 
+    void LockPts()
+        {
+        m_ptsLock.lock();        
+        }
+
+    void UnlockPts()
+        {        
+        m_ptsLock.unlock();
+        }
+
     /**----------------------------------------------------------------------------
     Get the neighbor reciprocal position.
     -----------------------------------------------------------------------------*/
@@ -886,7 +894,7 @@ public:
         };
 
     virtual void               ValidateInvariantsSoft() const
-        {
+        {            
 #ifdef __HMR_DEBUG
         // We only check invariants if the node is loaded ...
         if (IsLoaded())
@@ -1141,6 +1149,7 @@ protected:
         SMMemoryPoolItemId m_pointsPoolItemId;
         uint64_t           m_nodeId; 
         bool               m_isDirty;
+        std::mutex         m_ptsLock;
         
         static std::map<size_t, SMNodeGroup*> s_OpenGroups;
         static int s_GroupID;    
@@ -1315,7 +1324,7 @@ public:
     bool                Clear(HFCPtr<HVEShape> pi_shapeToClear);    
     bool                RemovePoints(const EXTENT& pi_extentToClear);    
 
-    StatusInt           SaveCloudReady(const WString pi_pOutputDirectoryName, HFCPtr<SMNodeGroupMasterHeader> pi_pGroupMasterHeader = nullptr, bool pi_pCompress = true) const;
+    StatusInt           SaveCloudReady(const WString pi_pOutputDirectoryName, bool groupNodeHeaders = true, bool pi_pCompress = true) const;
     typedef SMStreamingPointTaggedTileStore<POINT, EXTENT>        StreamingPointStoreType;
     typedef SMStreamingPointTaggedTileStore<int32_t, EXTENT>      StreamingIndiceStoreType;
     typedef SMStreamingPointTaggedTileStore<DPoint2d, EXTENT>     StreamingUVStoreType;

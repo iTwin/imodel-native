@@ -52,7 +52,7 @@ struct MyImageppLibAdmin : ImagePP::ImageppLibAdmin
 
 static void callHostOnAssert(WCharCP _Message, WCharCP _File, unsigned _Line, BeAssertFunctions::AssertType)
     {
-    //BeAssertFunctions::DefaultAssertionFailureHandler(_Message, _File, _Line);
+    BeAssertFunctions::DefaultAssertionFailureHandler(_Message, _File, _Line);
     }
 
 //-----------------------------------------------------------------------------------------

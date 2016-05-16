@@ -1080,6 +1080,7 @@ struct ScalableMeshNodeRayQueryParams : public IScalableMeshNodeQueryParams
         double m_depth;
         bool m_is2d;
         size_t m_level;
+        bool m_useUnboundedRay;
 
         virtual void _SetDirection(DVec3d direction) override
             {
@@ -1115,6 +1116,15 @@ struct ScalableMeshNodeRayQueryParams : public IScalableMeshNodeQueryParams
             {
             return m_level;
             }
+
+        virtual void _SetUseUnboundedRay(bool useUnboundedRay) override
+            {
+            m_useUnboundedRay = useUnboundedRay;
+            }
+        virtual bool _GetUseUnboundedRay() const override
+            {
+            return m_useUnboundedRay;
+            }
     public:
         static const double INFINITE_DEPTH;
         ScalableMeshNodeRayQueryParams()
@@ -1123,6 +1133,7 @@ struct ScalableMeshNodeRayQueryParams : public IScalableMeshNodeQueryParams
             m_depth = INFINITE_DEPTH; 
             m_is2d = false;
             m_level = (size_t)-1;
+            m_useUnboundedRay = true;
             }
 
         virtual ~ScalableMeshNodeRayQueryParams()
@@ -1458,7 +1469,7 @@ template<class POINT> class ScalableMeshCachedDisplayNode : public virtual IScal
 
        
 
-//NEEDS_WORK_SM : Should inherit from ScalableMeshNode instead
+
 template<class POINT> class ScalableMeshNodeEdit : public IScalableMeshNodeEdit, public ScalableMeshNode<POINT>
 
     {

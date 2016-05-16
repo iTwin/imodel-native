@@ -52,8 +52,10 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
     /*__PUBLISH_CLASS_VIRTUAL__*/
     protected:                         
 
-        //Methods for the public interface.        
+        //Methods for the public interface.       
         virtual __int64          _GetPointCount() = 0;
+
+        virtual bool          _IsTerrain() = 0;
 
         virtual DTMStatusInt     _GetRange(DRange3dR range) = 0;
 
@@ -114,7 +116,7 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
 
 #ifdef SCALABLE_MESH_ATP
         virtual int                                 _LoadAllNodeHeaders(size_t& nbLoadedNodes) const = 0; 
-        //virtual int                                 _AddTextures(const HFCPtr<BENTLEY_NAMESPACE_NAME::ImagePP::HIMMosaic>& pMosaic) const = 0;
+        virtual int                                 _GroupNodeHeaders(const WString& pi_pOutputDirPath) const = 0;
 #endif
         virtual uint64_t                           _AddClip(const DPoint3d* pts, size_t ptsSize) = 0;
 
@@ -153,6 +155,8 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
         void TextureFromRaster(BENTLEY_NAMESPACE_NAME::ImagePP::HIMMosaic* mosaicP);
 
         BENTLEY_SM_EXPORT __int64          GetPointCount();
+
+        BENTLEY_SM_EXPORT bool          IsTerrain();
 
         BENTLEY_SM_EXPORT DTMStatusInt     GetRange(DRange3dR range);
 
@@ -251,7 +255,7 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
                                                                                  bool                    openShareable);
 
         BENTLEY_SM_EXPORT int                     LoadAllNodeHeaders(size_t& nbLoadedNodes) const; 
-
+        BENTLEY_SM_EXPORT int                     GroupNodeHeaders(const WString& pi_pOutputDirPath) const;
 
     };
 

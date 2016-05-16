@@ -245,6 +245,8 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         virtual void                               _TextureFromRaster(HIMMosaic* mosaicP) override;
  
         virtual __int64          _GetPointCount() override;
+
+        virtual bool          _IsTerrain() override;
         
 
         virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*  _GetDTMInterface() override;
@@ -300,7 +302,7 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         
 #ifdef SCALABLE_MESH_ATP
         virtual int                    _LoadAllNodeHeaders(size_t& nbLoadedNodes) const override; 
-        //virtual int                    _AddTextures(const HFCPtr<HIMMosaic>& pMosaic) const override;
+        virtual int                    _GroupNodeHeaders(const WString& pi_pOutputDirPath) const override;
 #endif
 
         //Data source synchronization functions.
@@ -348,6 +350,8 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
 
         // Inherited from IDTM   
         virtual __int64          _GetPointCount() override;
+
+        virtual bool          _IsTerrain() override;
 
         virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*  _GetDTMInterface() override;
 
@@ -405,7 +409,7 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
 
 #ifdef SCALABLE_MESH_ATP
         virtual int                    _LoadAllNodeHeaders(size_t& nbLoadedNodes) const override {return ERROR;}
-        //virtual int                    _AddTextures(const HFCPtr<HIMMosaic>& pMosaic) const override { return ERROR; }
+        virtual int                    _GroupNodeHeaders(const WString& pi_pOutputDirPath) const override { return ERROR; }
 #endif
            
     };

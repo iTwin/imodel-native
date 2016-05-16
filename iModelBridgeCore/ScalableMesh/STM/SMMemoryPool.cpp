@@ -113,10 +113,12 @@ bool SMMemoryPool::RemoveItem(SMMemoryPoolItemId id, uint64_t nodeId, SMPoolData
 
     std::lock_guard<std::mutex> lock(*m_memPoolItemMutex[id]);            
     SMMemoryPoolItemBasePtr memItemPtr(m_memPoolItems[id]);
+
     if (memItemPtr.IsValid() && memItemPtr->IsCorrect(nodeId, dataType))
         {
-        m_currentPoolSizeInBytes -= memItemPtr->GetSize();
-
+        m_currentPoolSizeInBytes -= memItemPtr->GetSize();        
+        memItemPtr = 0;
+        assert(m_memPoolItems[id]->GetRefCount() == 1);
         m_memPoolItems[id] = 0;
         return true;
         }
@@ -173,7 +175,7 @@ SMMemoryPoolItemId SMMemoryPool::AddItem(SMMemoryPoolItemBasePtr& poolItem)
             {     
             std::lock_guard<std::mutex> lock(*m_memPoolItemMutex[itemIndToDelete]);
 
-            if (m_memPoolItems[itemIndToDelete].IsValid() && m_lastAccessTime[itemIndToDelete] < flushTimeThreshold)                    
+            if (m_memPoolItems[itemIndToDelete].IsValid() && m_lastAccessTime[itemIndToDelete] < flushTimeThreshold && m_memPoolItems[itemIndToDelete]->GetRefCount() == 1)                    
                 {
                 m_currentPoolSizeInBytes -= m_memPoolItems[itemIndToDelete]->GetSize();                                        
                 m_memPoolItems[itemIndToDelete] = 0; 
@@ -181,14 +183,14 @@ SMMemoryPoolItemId SMMemoryPool::AddItem(SMMemoryPoolItemBasePtr& poolItem)
                 }                                        
             }
         }
-    
+
     if (m_currentPoolSizeInBytes > m_maxPoolSizeInBytes * s_maxMemBeforeFlushing)
         {
         for (size_t itemIndToDelete = 0; itemIndToDelete < m_memPoolItems.size() && m_currentPoolSizeInBytes > m_maxPoolSizeInBytes; itemIndToDelete++)
             {  
             std::lock_guard<std::mutex> lock(*m_memPoolItemMutex[itemIndToDelete]);                    
 
-            if (m_memPoolItems[itemIndToDelete].IsValid())
+            if (m_memPoolItems[itemIndToDelete].IsValid() && m_memPoolItems[itemIndToDelete]->GetRefCount() == 1)
                 {
                 m_currentPoolSizeInBytes -= m_memPoolItems[itemIndToDelete]->GetSize();                
                 m_memPoolItems[itemIndToDelete] = 0; 
@@ -197,8 +199,10 @@ SMMemoryPoolItemId SMMemoryPool::AddItem(SMMemoryPoolItemBasePtr& poolItem)
             }
         }            
 
+    
     if (itemInd == m_memPoolItems.size())
         {
+        //NEEDS_WORK_SM : Replace by vector of vector
         if (m_currentPoolSizeInBytes < m_maxPoolSizeInBytes)
             {                      
             for (size_t itemId = 0; itemId < m_memPoolItemMutex.size(); itemId++)

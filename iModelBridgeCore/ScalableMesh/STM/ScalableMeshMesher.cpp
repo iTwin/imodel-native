@@ -26,9 +26,136 @@
 #include "ScalableMeshQuadTreeBCLIBFilters.h"
 #include "ScalableMeshMesher.h"
 #include "ScalableMeshMesher.hpp"
- 
+         
 //template class ScalableMesh2DDelaunayMesher<DPoint3d, IDTMFile::Extent3d64f>;
-
+ 
 //template class ScalableMesh3DDelaunayMesher<DPoint3d, IDTMFile::Extent3d64f>;
 
 template class ScalableMesh2DDelaunayMesher<DPoint3d, DRange3d>;
+
+void ProcessFeatureDefinitions(bvector<bvector<DPoint3d>>& voidFeatures, bvector<DTMFeatureType>& types, bvector<bvector<DPoint3d>>& islandFeatures, const std::vector<DPoint3d>& nodePoints, BC_DTM_OBJ* dtmObjP, const std::vector<HPMStoredPooledVector<int32_t>>& featureDefs)
+    {
+    for (size_t i = 0; i < featureDefs.size(); ++i)
+        {
+        bvector<DPoint3d> feature;
+        for (size_t j = 1; j < featureDefs[i].size(); ++j)
+            {
+            if (featureDefs[i][j] < nodePoints.size()) feature.push_back(nodePoints[featureDefs[i][j]]);
+            }
+        if ((DTMFeatureType)featureDefs[i][0] == DTMFeatureType::Void || (DTMFeatureType)featureDefs[i][0] == DTMFeatureType::Hole
+            || (DTMFeatureType)featureDefs[i][0] == DTMFeatureType::BreakVoid || (DTMFeatureType)featureDefs[i][0] == DTMFeatureType::DrapeVoid)
+            {
+
+            if (featureDefs[i].size() > 4)
+                voidFeatures.push_back(feature);
+            types.push_back((DTMFeatureType)featureDefs[i][0]);
+            }
+        else if ((DTMFeatureType)featureDefs[i][0] == DTMFeatureType::Island)
+            islandFeatures.push_back(feature);
+        else bcdtmObject_storeDtmFeatureInDtmObject(dtmObjP, (DTMFeatureType)featureDefs[i][0], dtmObjP->nullUserTag, 1, &dtmObjP->nullFeatureId, &feature[0], (long)feature.size());
+        }
+    }
+
+int AddPolygonsToDTMObject(bvector<bvector<DPoint3d>>& polygons, DTMFeatureType type, BC_DTM_OBJ* dtmObjP)
+    {
+    int status = DTM_SUCCESS;
+    for (auto& polygon : polygons)
+        {
+        if (polygon.size() > 2)
+            {
+            if (!bsiDPoint3d_pointEqualTolerance(&polygon.front(), &polygon.back(), 1e-8)) polygon.push_back(polygon.front());
+            if (type == DTMFeatureType::Void)
+                {
+                status = bcdtmObject_storeDtmFeatureInDtmObject(dtmObjP, DTMFeatureType::GraphicBreak, dtmObjP->nullUserTag, 1, &dtmObjP->nullFeatureId, (DPoint3d*)&(polygon[0]), (long)polygon.size());
+                assert(status == SUCCESS);
+                }
+            status = bcdtmObject_storeDtmFeatureInDtmObject(dtmObjP, type, dtmObjP->nullUserTag, 1, &dtmObjP->nullFeatureId, (DPoint3d*)&(polygon[0]), (long)polygon.size());
+            assert(status == SUCCESS);
+            }
+        }
+    return status;
+    }
+
+int AddIslandsToDTMObject(bvector<bvector<DPoint3d>>& islandFeatures, bvector<bvector<DPoint3d>>& voidFeatures, BC_DTM_OBJ* dtmObjP)
+    {
+    VuPolygonClassifier vu(1e-8, 0);
+    int status = DTM_SUCCESS;
+    for (auto& island : islandFeatures)
+        {
+        bool intersect = false;
+        for (auto& hole : voidFeatures)
+            {
+            vu.ClassifyAIntersectB(island, hole);
+            bvector<DPoint3d> xyz;
+            for (; vu.GetFace(xyz);)
+                {
+                intersect = true;
+                status = bcdtmObject_storeDtmFeatureInDtmObject(dtmObjP, DTMFeatureType::Island, dtmObjP->nullUserTag, 1, &dtmObjP->nullFeatureId, (DPoint3d*)&(xyz[0]), (long)xyz.size());
+                assert(status == SUCCESS);
+                }
+
+            }
+        if (!intersect)
+            {
+            status = bcdtmObject_storeDtmFeatureInDtmObject(dtmObjP, DTMFeatureType::Island, dtmObjP->nullUserTag, 1, &dtmObjP->nullFeatureId, (DPoint3d*)&(island[0]), (long)island.size());
+            
+            }
+        }
+    return status;
+    }
+
+void AddLoopsFromShape(bvector<bvector<DPoint3d>>& polygons, const HGF2DShape* shape)
+    {
+
+    if (shape->IsComplex())
+        {
+        for (auto& elem : shape->GetShapeList())
+            {
+            AddLoopsFromShape(polygons, elem);
+            }
+        }
+    else if (!shape->IsEmpty())
+        {
+        HGF2DPositionCollection thePoints;
+        shape->Drop(&thePoints, shape->GetTolerance());
+
+        bvector<DPoint3d> vec(thePoints.size());
+
+        for (size_t idx = 0; idx < thePoints.size(); idx++)
+            {
+            vec[idx].x = thePoints[idx].GetX();
+            vec[idx].y = thePoints[idx].GetY();
+            vec[idx].z = 0; // As mentionned below the Z is disregarded
+            }
+
+        polygons.push_back(vec);
+        }
+    }
+
+void MergePolygonSets(bvector<bvector<DPoint3d>>& polygons)
+    {
+    bvector<bvector<DPoint3d>> newUnifiedPoly;
+    HFCPtr<HGF2DCoordSys>   coordSysPtr(new HGF2DCoordSys());
+    HFCPtr<HVEShape> allPolyShape = new HVEShape(coordSysPtr);
+    for (auto& poly : polygons)
+        {
+        UntieLoopsFromPolygon(poly);
+        HArrayAutoPtr<double> tempBuffer(new double[poly.size() * 2]);
+
+        int bufferInd = 0;
+
+        for (size_t pointInd = 0; pointInd < poly.size(); pointInd++)
+            {
+            tempBuffer[bufferInd * 2] = poly[pointInd].x;
+            tempBuffer[bufferInd * 2 + 1] = poly[pointInd].y;
+            bufferInd++;
+            }
+        HVE2DPolygonOfSegments polygon(poly.size() * 2, tempBuffer, coordSysPtr);
+
+        HFCPtr<HVEShape> subShapePtr = new HVEShape(polygon);
+        allPolyShape->Unify(*subShapePtr);
+        }
+
+    AddLoopsFromShape(newUnifiedPoly, allPolyShape->GetLightShape());
+    polygons = newUnifiedPoly;
+    }

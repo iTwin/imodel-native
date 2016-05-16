@@ -11,7 +11,7 @@
 
 
 
-#include <ScalableMesh/IScalableMeshDataStore.h>
+#include <../STM/IScalableMeshDataStore.h>
 /*#include <ImagePP/all/h/IDTMTypes.h>
 #include <ImagePP/all/h/IDTMFile.h>
 #include <ImagePP/all/h/HGFSpatialIndex.h>
@@ -495,6 +495,8 @@ public:
     HPMBlockID  m_graphID;
     std::vector<HPMBlockID>  m_textureID;
     HPMBlockID  m_uvID;
+
+    //NEEDS_WORK_SM - should not be a vector.
     std::vector<HPMBlockID>  m_ptsIndiceID;
     std::vector<HPMBlockID>  m_uvsIndicesID;
     size_t      m_numberOfMeshComponents;

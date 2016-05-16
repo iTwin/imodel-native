@@ -813,6 +813,9 @@ struct IScalableMeshNodeQueryParams abstract: RefCountedBase
 
         virtual size_t _GetLevel() const = 0;
         virtual void _SetLevel(size_t level) = 0;
+
+        virtual bool _GetUseUnboundedRay() const = 0;
+        virtual void _SetUseUnboundedRay(bool useUnboundedRay) = 0;
     public:
         BENTLEY_SM_EXPORT void SetDirection(DVec3d direction) { return _SetDirection(direction); }
         BENTLEY_SM_EXPORT DVec3d GetDirection() { return _GetDirection(); }
@@ -825,6 +828,9 @@ struct IScalableMeshNodeQueryParams abstract: RefCountedBase
 
         BENTLEY_SM_EXPORT void SetLevel(size_t level) { return _SetLevel(level); }
         BENTLEY_SM_EXPORT size_t GetLevel() { return _GetLevel(); }
+
+        BENTLEY_SM_EXPORT void SetUseUnboundedRay(bool useUnboundedRay) { return _SetUseUnboundedRay(useUnboundedRay); }
+        BENTLEY_SM_EXPORT bool GetUseUnboundedRay() { return _GetUseUnboundedRay(); }
 
         BENTLEY_SM_EXPORT static IScalableMeshNodeQueryParamsPtr CreateParams();
     };

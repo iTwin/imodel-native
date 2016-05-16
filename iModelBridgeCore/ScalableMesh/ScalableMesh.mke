@@ -35,7 +35,7 @@ always:
 always:
    @CreateSymLinks.py -d"$(BuildContext)PublicAPI/ScalableMesh=$(SCMPublicAPISrc)/ScalableMesh"
 
-CCompOpts + -openmp -bigobj -DCGAL_NO_AUTOLINK -DBOOST_ALL_NO_LIB -DBOOST_SYSTEM_NO_DEPRECATED
+CCompOpts + -openmp -bigobj -DCGAL_NO_AUTOLINK -DBOOST_ALL_NO_LIB -DBOOST_SYSTEM_NO_DEPRECATED -GR
 
 #For legal reasons, not compiling these libraries or code depending on them right now.
 %if !defined (3DMesh)
@@ -155,8 +155,6 @@ $(o)Importer$(oext) : $(importDir)Importer.cpp $(importDir)ImporterImpl.h $(PCHH
 
 $(o)ImportPolicy$(oext) : $(importDir)ImportPolicy.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)ImporterCommandVisitor$(oext) : $(importDir)ImporterCommandVisitor.cpp $(importDir)ImporterImpl.h $(PCHHeaderDepends)  ${MultiCompileDepends}
-
 $(o)InternalContentDescriptor$(oext) : $(importDir)InternalContentDescriptor.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 $(o)InternalImporterConfig$(oext) : $(importDir)InternalImporterConfig.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
@@ -173,11 +171,6 @@ $(o)ContentConfig$(oext) : $(importDir)ContentConfig.cpp $(PCHHeaderDepends)  ${
 
 $(o)ImportSequence$(oext) : $(importDir)ImportSequence.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)ImportConfigs$(oext) : $(importDir)ImportConfigs.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
-
-$(o)ContentConfigs$(oext) : $(importDir)ContentConfigs.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
-
-$(o)ImportCommands$(oext) : $(importDir)ImportCommands.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 
 #-----------------------------------------------------------------------
@@ -417,7 +410,7 @@ LINKER_LIBRARIES            = \
     $(ContextSubpartsLibs)$(BeJsonCppLib) \
     $(ContextSubpartsLibs)$(BentleyGeomLib) \
     $(ContextSubpartsLibs)DgnPlatform.lib \
-    $(ContextSubpartsLibs)CGAL.lib 
+    $(ContextSubpartsLibs)CGAL.lib
 #    $(ContextSubpartsLibs)BePointCloud.lib \
 
 %include $(sharedMki)LinkLibrary.mki
