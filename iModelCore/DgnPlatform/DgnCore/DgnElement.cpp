@@ -223,6 +223,16 @@ DgnDbStatus DefinitionElement::_OnInsert()
     return status;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    05/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus FunctionalElement::_OnInsert()
+    {
+    // FunctionalElements can reside *only* in a FunctionalModel
+    DgnDbStatus status = GetModel()->IsFunctionalModel() ? T_Super::_OnInsert() : DgnDbStatus::WrongModel;
+    return status;
+    }
+
 struct OnInsertedCaller
     {
     DgnElementCR m_newEl;
@@ -2681,8 +2691,8 @@ DgnElementId ElementAssemblyUtil::GetAssemblyParentId(DgnElementCR el)
         {
         DgnElementCPtr parentEl = el.GetDgnDb().Elements().GetElement(parentId);
 
-        if (!parentEl.IsValid())
-            return DgnElementId(); // Missing parent???
+        if (!parentEl.IsValid() || nullptr == parentEl->ToGeometrySource())
+            return DgnElementId(); // Missing or non-geometric parent...
 
         // NOTE: For plant applications, it might be a good idea to stop at the first non-geometric parent to avoid selecting the entire plant with assembly lock???
         thisParentId = parentEl->GetParentId();

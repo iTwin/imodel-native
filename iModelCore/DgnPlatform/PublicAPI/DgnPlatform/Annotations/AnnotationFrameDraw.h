@@ -39,7 +39,7 @@ public:
     TransformCR GetDocumentTransform() const { return m_documentTransform; }
     void SetDocumentTransform(TransformCR value) { m_documentTransform = value; }
 
-    DGNPLATFORM_EXPORT BentleyStatus Draw(Render::GraphicR, ViewContextR, Render::GeometryParamsR) const;
+    DGNPLATFORM_EXPORT BentleyStatus Draw(Render::GraphicBuilderR, ViewContextR, Render::GeometryParamsR) const;
 };
 
 END_BENTLEY_DGN_NAMESPACE

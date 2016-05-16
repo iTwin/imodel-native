@@ -264,7 +264,7 @@ ViewController::ViewController(DgnDbR dgndb, DgnViewId viewId) : m_dgndb(dgndb)
 void ViewController::LoadCategories(JsonValueCR settings)
     {
     if (settings.isMember(VIEW_SETTING_Categories))
-        m_viewedCategories.FromJson(settings[VIEW_SETTING_Categories]);
+        m_viewedCategories.FromString(settings[VIEW_SETTING_Categories].asString());
 
     // load all SubCategories (even for categories not currently on)
     for (auto const& id : DgnSubCategory::QuerySubCategories(m_dgndb))
@@ -356,7 +356,7 @@ void ViewController::_SaveToSettings(JsonValueR settings) const
     if (ColorDef::Black() != m_backgroundColor)
         settings[VIEW_SETTING_BackgroundColor] = m_backgroundColor.GetValue();
 
-    m_viewedCategories.ToJson(settings[VIEW_SETTING_Categories]);
+    settings[VIEW_SETTING_Categories] = m_viewedCategories.ToString();
     if (m_subCategoryOverrides.empty())
         return;
 
@@ -1383,6 +1383,17 @@ void CameraViewController::VerifyFocusPlane()
 
     double backDist = eyeOrg.z;
     double frontDist = backDist - m_delta.z;
+
+    if (backDist<=0.0 || frontDist<=0.0)
+        {
+        // the camera location is invalid. Set it based on the view range.
+        double tanangle = tan(m_camera.GetLensAngle()/2.0);
+        backDist = m_delta.z / tanangle;
+        m_camera.SetFocusDistance(backDist/2);
+        CenterEyePoint(&backDist);
+        return;
+        }
+
     double focusDist = m_camera.GetFocusDistance();
     if (focusDist>frontDist && focusDist<backDist)
         return;
@@ -1605,6 +1616,7 @@ void CameraViewController::_RestoreFromSettings(JsonValueCR jsonObj)
     DPoint3d eyePt;
     JsonUtils::DPoint3dFromJson(eyePt, jsonObj[VIEW_SETTING_CameraPosition]);
     m_camera.SetEyePoint(eyePt);
+    m_camera.ValidateLens();
 
     VerifyFocusPlane();
     }
@@ -1617,7 +1629,7 @@ void SpatialViewController::_RestoreFromSettings(JsonValueCR jsonObj)
     T_Super::_RestoreFromSettings(jsonObj);
 
     if (jsonObj.isMember(VIEW_SETTING_Models))
-        m_viewedModels.FromJson(jsonObj[VIEW_SETTING_Models]);
+        m_viewedModels.FromString(jsonObj[VIEW_SETTING_Models].asString());
 
     m_viewFlags.From3dJson(jsonObj[VIEW_SETTING_Flags]);
 
@@ -1658,7 +1670,7 @@ void SpatialViewController::_SaveToSettings(JsonValueR jsonObj) const
     T_Super::_SaveToSettings(jsonObj);
 
     m_viewFlags.To3dJson(jsonObj[VIEW_SETTING_Flags]);
-    m_viewedModels.ToJson(jsonObj[VIEW_SETTING_Models]);
+    jsonObj[VIEW_SETTING_Models] = m_viewedModels.ToString();
 
     JsonUtils::DPoint3dToJson(jsonObj[VIEW_SETTING_Origin], m_origin);
     JsonUtils::DPoint3dToJson(jsonObj[VIEW_SETTING_Delta], m_delta);
@@ -1930,7 +1942,7 @@ static void drawLocateHitDetail(DecorateContextR context, double aperture, HitDe
     RotMatrix   rMatrix = RotMatrix::From1Vector(normal, 2, true);
     DEllipse3d  ellipse = DEllipse3d::FromScaledRotMatrix(pt, rMatrix, radius, radius, 0.0, Angle::TwoPi());
 
-    GraphicPtr graphic = context.CreateGraphic();
+    GraphicBuilderPtr graphic = context.CreateGraphic();
 
     color.SetAlpha(200);
     graphic->SetSymbology(color, color, 1);
@@ -1966,7 +1978,7 @@ static void drawLocateCircle(DecorateContextR context, double aperture, DPoint3d
     ellipse.InitFromDGNFields2d((DPoint2dCR) center, 0.0, radius, radius, 0.0, msGeomConst_2pi, 0.0);
     ellipse2.InitFromDGNFields2d((DPoint2dCR) center, 0.0, radius+1, radius+1, 0.0, msGeomConst_2pi, 0.0);
 
-    GraphicPtr graphic = context.CreateGraphic();
+    GraphicBuilderPtr graphic = context.CreateGraphic();
     ColorDef    white = ColorDef::White();
     ColorDef    black = ColorDef::Black();
 

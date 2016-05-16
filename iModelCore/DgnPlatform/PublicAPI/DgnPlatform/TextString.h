@@ -154,7 +154,7 @@ public:
     DGNPLATFORM_EXPORT void ComputeGlyphAxes(DVec3dR, DVec3dR) const;
     //! This is typically used, internally, to draw the underline of text, which can be distinct from drawing the actual glyphs in some APIs.
     //! @private
-    DGNPLATFORM_EXPORT void AddUnderline(Render::GraphicR) const;
+    DGNPLATFORM_EXPORT void AddUnderline(Render::GraphicBuilderR) const;
     //! Applies the relevant TextStringStyle properties to an GeometryParams. Most GeometryParams members are left untouched.
     //! @return true if changed.
     //! @private

@@ -722,7 +722,7 @@ TEST_F(DirectionParserTest, Clone)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DirectionParserTest, FromModel)
 {
-    SetupProject(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.ibim", __FILE__, Db::OpenMode::ReadWrite);
     DgnDbR db = *m_db;
 
     DgnModelPtr seedModel = db.Models().GetModel(db.Models().QueryFirstModelId());
@@ -999,7 +999,7 @@ struct AreaVolumeParserTest : public DgnDbTestFixture {};
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(AreaVolumeParserTest, AreaParserCreateFromModel)
 {
-    SetupProject(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.ibim", __FILE__, Db::OpenMode::ReadWrite);
     DgnDbR db = *m_db;
 
     DgnModelPtr seedModel = db.Models().GetModel(db.Models().QueryFirstModelId());
@@ -1025,7 +1025,7 @@ TEST_F(AreaVolumeParserTest, AreaParserCreateFromModel)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(AreaVolumeParserTest, VolumeParserCreateFromModel)
 {
-    SetupProject(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.ibim", __FILE__, Db::OpenMode::ReadWrite);
     DgnDbR db = *m_db;
 
     DgnModelPtr seedModel = db.Models().GetModel(db.Models().QueryFirstModelId());

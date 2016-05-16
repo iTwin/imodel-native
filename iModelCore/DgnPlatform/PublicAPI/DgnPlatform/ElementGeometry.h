@@ -60,7 +60,7 @@ public:
     DGNPLATFORM_EXPORT ISolidKernelEntityPtr GetAsISolidKernelEntity() const;
     DGNPLATFORM_EXPORT TextStringPtr GetAsTextString() const;
 
-    DGNPLATFORM_EXPORT void AddToGraphic(Render::GraphicR) const;
+    DGNPLATFORM_EXPORT void AddToGraphic(Render::GraphicBuilderR) const;
     DGNPLATFORM_EXPORT bool GetLocalCoordinateFrame(TransformR localToWorld) const;
     DGNPLATFORM_EXPORT bool GetLocalRange(DRange3dR localRange, TransformR localToWorld) const; // Expensive - copies geometry!
     DGNPLATFORM_EXPORT bool GetRange(DRange3dR range, TransformCP transform = nullptr) const;
@@ -256,8 +256,8 @@ struct GeometryStreamIO
 
         const_iterator begin() const {return const_iterator(m_data, m_dataSize);}
         const_iterator end() const {return const_iterator();}
-        void GetGeometryPartIds(IdSet<DgnGeometryPartId>&, DgnDbR) const;
-        void Draw(Render::GraphicR, ViewContextR, Render::GeometryParamsR, bool activateParams=true, DgnElementCP=nullptr) const;
+        void GetGeometryPartIds(BeSQLite::IdSet<DgnGeometryPartId>&, DgnDbR) const;
+        void Draw(Render::GraphicBuilderR, ViewContextR, Render::GeometryParamsR, bool activateParams=true, DgnElementCP=nullptr) const;
     };
 
     //=======================================================================================

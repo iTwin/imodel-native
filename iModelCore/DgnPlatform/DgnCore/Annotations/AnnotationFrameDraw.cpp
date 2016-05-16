@@ -32,7 +32,7 @@ void AnnotationFrameDraw::CopyFrom(AnnotationFrameDrawCR rhs)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
 //---------------------------------------------------------------------------------------
-static void setStrokeSymbology(Render::GraphicR graphic, ViewContextR context, GeometryParamsR geomParams, AnnotationColorType colorType, ColorDef colorValue, uint32_t weight)
+static void setStrokeSymbology(Render::GraphicBuilderR graphic, ViewContextR context, GeometryParamsR geomParams, AnnotationColorType colorType, ColorDef colorValue, uint32_t weight)
     {
     geomParams.ResetAppearance();
     geomParams.SetWeight(weight);
@@ -53,7 +53,7 @@ static void setStrokeSymbology(Render::GraphicR graphic, ViewContextR context, G
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
 //---------------------------------------------------------------------------------------
-static void setFillSymbology(Render::GraphicR graphic, ViewContextR context, GeometryParamsR geomParams, AnnotationColorType colorType, ColorDef colorValue, double transparency)
+static void setFillSymbology(Render::GraphicBuilderR graphic, ViewContextR context, GeometryParamsR geomParams, AnnotationColorType colorType, ColorDef colorValue, double transparency)
     {
     geomParams.ResetAppearance();
     geomParams.SetTransparency(transparency);
@@ -73,7 +73,7 @@ static void setFillSymbology(Render::GraphicR graphic, ViewContextR context, Geo
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
 //---------------------------------------------------------------------------------------
-BentleyStatus AnnotationFrameDraw::Draw(Render::GraphicR graphic, ViewContextR context, GeometryParamsR geomParams) const
+BentleyStatus AnnotationFrameDraw::Draw(Render::GraphicBuilderR graphic, ViewContextR context, GeometryParamsR geomParams) const
     {
     AnnotationFrameStylePtr frameStyle = m_frameLayout->GetFrame().CreateEffectiveStyle();
     
