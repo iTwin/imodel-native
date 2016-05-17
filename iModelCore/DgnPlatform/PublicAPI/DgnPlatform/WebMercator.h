@@ -13,6 +13,13 @@
 #include <DgnPlatform/ImageUtilities.h>
 #include <algorithm>
 
+#ifdef min
+#undef min
+#endif
+#ifdef max
+#undef max
+#endif
+
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 namespace WebMercator
