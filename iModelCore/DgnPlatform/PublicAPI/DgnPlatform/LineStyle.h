@@ -488,7 +488,6 @@ private:
     bool                m_isModified;
 
     DgnGeometryPartId           m_geomPartId;
-    mutable DgnGeometryPartCPtr m_geomPart;
     double                      m_storedScale;              //
     double                      m_muDef;                    // Set to m_storedScale if it is non-zero. Otherwise, it is 1/uorPerMaster for the model ref used in the PostProcessLoad step;
     DPoint3d                    m_symSize;
@@ -526,7 +525,7 @@ public:
 
     void                _PostProcessLoad    (DgnModelP modelRef) override;
     void                _ClearPostProcess   () override;
-    void                Draw                (LineStyleContextR);
+    void                Draw                (LineStyleContextR, TransformCR);
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     StatusInt           _GetRange           (DRange3dR range) const override;
 #endif
