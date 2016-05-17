@@ -420,7 +420,7 @@ BentleyStatus ECDbSchemaWriter::UpdateECClass(ECClassChange& classChange, ECClas
     if (!newClass.HasId())
         {
         classId = ECDbSchemaManager::GetClassIdForECClassFromDuplicateECSchema(m_ecdb, newClass);
-        if (!classId == INT64_C(0))
+        if (classId == INT64_C(0))
             {
             BeAssert(false && "Failed to resolve ecclass id");
             return ERROR;
