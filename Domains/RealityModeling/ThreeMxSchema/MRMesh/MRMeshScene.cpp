@@ -206,6 +206,17 @@ BentleyStatus Scene::GetProjectionTransform()
 
     if (1 == sscanf(m_srs.c_str(), "EPSG:%d", &epsgCode))
         status = acute3dGCS->InitFromEPSGCode(&warning, &warningMsg, epsgCode);
+        // Support for 3MX specific ENU (East North, Up) GCS specification
+    else if (2 == sscanf (sceneInfo.SRS.c_str(), "ENU:%lf,%lf", &latitude, &longitude))
+        {
+        // ENU specification does not impose any projection method so we use the first azimuthal available using values that will
+        // mimick the intent (North is Y positive, no offset)
+        // Note that we could have injected the origin here but keeping it in the transform as for other GCS specs
+        if (latitude < 90.0 && latitude > -90.0 && longitude < 180.0 && longitude > -180.0)
+            status = acute3dGCS->InitAzimuthalEqualArea(&warningMsg, L"WGS84", L"METER", longitude, latitude, 0.0, 1.0, 0.0, 0.0, 1);
+        else
+            status = ERROR;
+        }
     else
         status = acute3dGCS->InitFromWellKnownText(&warning, &warningMsg, DgnGCS::wktFlavorEPSG, WString(m_srs.c_str(), false).c_str());
 
