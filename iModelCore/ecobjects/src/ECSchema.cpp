@@ -1574,7 +1574,8 @@ bvector<ECSchemaP>& supplementalSchemas
         supplementalSchemas.push_back(schemaOut.get());
         }
 
-    BeFileName schemaPath2(schemaFilePath.c_str());
+    //The first file filter already finds files with 3 digits, this one would return them a second time
+    /*BeFileName schemaPath2(schemaFilePath.c_str());
     filter.AssignUtf8(schemaName.c_str());
     filter += L"_Supplemental_*.*.*.*.ecschema.xml";
     schemaPath2.AppendToPath(filter.c_str());
@@ -1588,7 +1589,7 @@ bvector<ECSchemaP>& supplementalSchemas
         if (SchemaReadStatus::Success != ECSchema::ReadFromXmlFile(schemaOut, fileName, schemaContext))
             continue;
         supplementalSchemas.push_back(schemaOut.get());
-        }
+        }*/
 
     return true;
     }
