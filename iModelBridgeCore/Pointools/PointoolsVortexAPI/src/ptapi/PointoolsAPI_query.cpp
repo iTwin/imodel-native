@@ -3449,7 +3449,7 @@ PTbool	PTAPI ptGetPointAttribute( PThandle cloud,
 								  PTuint attribute, void* data )
 {
 	setLastErrorCode( PTV_NOT_IMPLEMENTED_IN_VERSION );
-	debugAssertM(0, _T("ptGetPointAttribute Not Implemented"));
+	debugAssertM(0, "ptGetPointAttribute Not Implemented");
 	return false;
 }
 //-----------------------------------------------------------------------------

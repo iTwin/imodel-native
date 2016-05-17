@@ -17,7 +17,7 @@ srcDir          = $(_MakeFilePath)
 always:
    ~linkdir "$(PublicApiDir)Vortex=$(srcDir)PublicAPI/Vortex"
    
-# &&MM remove me.
+# NEEDS_WORK_VORTEX_DGNDB remove me or move to PublicAPI
 # Wire in my own vendor header files.
 #VendorAPIDir    = $(BuildContext)VendorAPI/$(appName)_DLL/
 #

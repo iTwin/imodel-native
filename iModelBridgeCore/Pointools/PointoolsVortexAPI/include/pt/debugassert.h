@@ -29,9 +29,9 @@
 
 #ifndef NEEDS_WORK_VORTEX_DGNDB
 
-#define debugAssert(exp)            assert(exp)
-#define debugAssertM(exp, msg)      assert(exp);
-#define alwaysAssertM(exp, msg)     assert(exp);
+#define debugAssert(exp)            BeAssert(exp)
+#define debugAssertM(exp, msg)      BeAssert(msg && exp);
+#define alwaysAssertM(exp, msg)     BeAssert(msg && exp);
 
 #else
 

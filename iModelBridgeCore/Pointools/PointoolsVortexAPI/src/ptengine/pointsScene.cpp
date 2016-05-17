@@ -26,7 +26,7 @@ namespace ptscene
 	PointsScene::VOXELSLIST _rendervoxels;
 	std::vector<pcloud::Scene *> _scenes;
 
-    //&&MM no shared_mutex in c++ 11 need to wait for c++ 17. Are we really loosing something?
+    //NEEDS_WORK_VORTEX_DGNDB &&MM no shared_mutex in c++ 11 need to wait for c++ 17. Are we really loosing something?
     // most of the lock are not shared.
 	std::mutex _listusemutex;
 
@@ -149,7 +149,7 @@ PointsScene::UseDepthSortedVoxels::UseDepthSortedVoxels(VOXELSLIST &vlist, int &
 //-----------------------------------------------------------------------------
 PointsScene::UseDepthSortedVoxels::~UseDepthSortedVoxels() 
 {
-    //&&MM shared_lock
+    //NEEDS_WORK_VORTEX_DGNDB &&MM shared_lock
 	//if (hasLock) _listusemutex.unlock_shared();
     if (hasLock) _listusemutex.unlock();
 }

@@ -865,7 +865,7 @@ void System::setEnv(const std::wstring& name, const std::wstring& value)
 
 void* System::alignedMalloc(size_t bytes, size_t alignment) 
 {
-    alwaysAssertM(isPow2(static_cast<int>(alignment)), _T("alignment must be a power of 2"));
+    alwaysAssertM(isPow2(static_cast<int>(alignment)), "alignment must be a power of 2");
 
     // We must align to at least a word boundary.
     alignment = iMax(static_cast<int>(alignment), sizeof(void *));

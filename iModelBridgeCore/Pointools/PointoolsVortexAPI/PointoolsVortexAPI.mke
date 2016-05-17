@@ -438,9 +438,7 @@ $(o)URL$(oext)                           : $(basedir)src/PTRMI/URL.cpp          
 
 $(o)DataSourceMultiReadSet$(oext)        : $(basedir)src/ptds/DataSourceMultiReadSet.cpp                         $(basedir)include/ptds/DataSourceMultiReadSet.h                  ${MultiCompileDepends}
 
-#%if $(TARGET_PLATFORM)=="Windows"    
 $(o)GUID$(oext)                          : $(basedir)src/PTRMI/GUID.cpp                                          $(basedir)include/PTRMI/GUID.h                                   ${MultiCompileDepends}
-#%endif
 
 #----------------------------NEEDS_WORK_VORTEX_DGNDB_SERVER -----------------------
 %if defined(NEEDS_WORK_VORTEX_DGNDB_SERVER)

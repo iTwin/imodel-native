@@ -47,7 +47,7 @@ void DataSourceAnalyzer::initializeGraphs(int positionOffsetX, int positionOffse
 {
 	Graph	*	graph;
 
-#if defined (BENTLEY_WIN32)  //NEEDS_WORK_VORTEX_DGNDB
+#if defined (NEEDS_WORK_VORTEX_DGNDB)
     wchar_t		graphEnvValue[256];
 	if(::GetEnvironmentVariableW(L"PTVORTEX_PW_GRAPH", graphEnvValue, 256) > 0)
 	{

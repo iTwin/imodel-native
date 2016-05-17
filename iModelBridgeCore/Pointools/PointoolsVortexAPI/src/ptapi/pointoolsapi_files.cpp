@@ -781,7 +781,7 @@ PTvoid PTAPI ptRelease()
 	{
 		pointsengine::destroy();
 
-#if defined (BENTLEY_WIN32)     //NEEDS_WORK_VORTEX_DGNDB 
+#if defined (NEEDS_WORK_VORTEX_DGNDB) 
 		SYSTEMTIME st;
 		GetSystemTime(&st);
 		int s = st.wHour * 3600 + st.wMinute * 60 + st.wSecond;

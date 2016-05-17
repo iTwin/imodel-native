@@ -847,8 +847,48 @@ public:
 // Spatial Partitioner
 // ************************************************************************************************
 
+template<class T, class P1, class P2, class P3, unsigned int Level_T>
+struct classify_helper
+    {
+    static ChildIndex Do(T& node, typename Types<double>::Vector3 &point, typename Types<double>::Extents &extents)
+        {
+        // Implement this
+        return 0;
+        }
+    };
 
-template<class Real, class Data, NodeType type, class P1, class P2 = Partition2Null, class P3 = Partition3Null> class NodeD : public SpatialPartitionNodeTyped<Real, Data>, public P1, public P2, public P3
+template<class T, class P1, class P2, class P3>
+struct classify_helper<T, P1, P2, P3, 2>
+    {
+    static ChildIndex Do(T& node, typename Types<double>::Vector3 &point, typename Types<double>::Extents &extents)
+        {
+        // Create mapping onto two children (binary)
+        return node.P1::classify(point, extents);
+        }
+    };
+
+template<class T, class P1, class P2, class P3>
+struct classify_helper<T, P1, P2, P3, 4>
+    {
+    static ChildIndex Do(T& node, typename Types<double>::Vector3 &point, typename Types<double>::Extents &extents)
+        {
+        // Create unique mapping onto four children (quad)
+        return (node.P2::classify(point, extents) * 2) + node.P1::classify(point, extents);
+        }
+    };
+
+template<class T, class P1, class P2, class P3>
+struct classify_helper<T, P1, P2, P3, 8>
+    {
+    static ChildIndex Do(T& node, typename Types<double>::Vector3 &point, typename Types<double>::Extents &extents)
+        {
+        // Create unique mapping onto eight children (oct)
+        return (node.P3::classify(point, extents) * 4) + (node.P2::classify(point, extents) * 2) + node.P1::classify(point, extents);
+        }
+    };
+
+template<class Real, class Data, NodeType type, class P1, class P2 = Partition2Null, class P3 = Partition3Null> 
+class NodeD : public SpatialPartitionNodeTyped<Real, Data>, public P1, public P2, public P3
 {
 
 public:
@@ -869,31 +909,10 @@ public:
 		return 0;		
 	}
 
-	template<unsigned int> ChildIndex classify(typename Types<double>::Vector3 &point, typename Types<double>::Extents &extents)
-	{
-		// Implement this
-		return 0;
-	}
-
-#if defined (BENTLEY_WIN32)     //NEEDS_WORK_VORTEX_DGNDB 
-	template<> ChildIndex classify<2>(typename Types<double>::Vector3 &point, typename Types<double>::Extents &extents)
-	{
-															// Create mapping onto two children (binary)
-		return P1::classify(point, extents);
-	}
-
-	template<> ChildIndex classify<4>(typename Types<double>::Vector3 &point, typename Types<double>::Extents &extents)
-	{
-															// Create unique mapping onto four children (quad)
-		return (P2::classify(point, extents) * 2) + P1::classify(point, extents);
-	}
-
-	template<> ChildIndex classify<8>(typename Types<double>::Vector3 &point, typename Types<double>::Extents &extents)
-	{
-															// Create unique mapping onto eight children (oct)
-		return (P3::classify(point, extents) * 4) + (P2::classify(point, extents) * 2) + P1::classify(point, extents);
-	}
-#endif
+    template<unsigned int> ChildIndex classify(typename Types<double>::Vector3 &point, typename Types<double>::Extents &extents)
+        {
+        return classify_helper<NodeD, P1, P2, P3, maxChildren>::Do(*this, point, extents);
+        }
 
 	NodeType getType(void)
 	{
@@ -905,7 +924,6 @@ public:
 		return maxChildren;
 	}
 };
-
 
 // ************************************************************************************************
 // Specific Partition Types

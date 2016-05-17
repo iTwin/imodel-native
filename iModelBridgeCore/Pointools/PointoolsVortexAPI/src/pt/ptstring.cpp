@@ -223,28 +223,23 @@ const char* String::getEncoded(Encoding enc, char * buffer, int buffsize) const
         }
     else
         {
-#if defined (BENTLEY_WIN32)     //NEEDS_WORK_VORTEX_DGNDB 
         switch (enc)
             {
             case AsciiEncoding:
-                try
-                    {
-                    BOOL defa;
-                    if (!::WideCharToMultiByte(CP_ACP, WC_NO_BEST_FIT_CHARS, _wbuffer, static_cast<int>(chars), buffer, buffsize, 0, &defa)) 
-                        throw;
-                    }
-                catch (...)
-                    {
-                    assert(0);
-                    }
+                {
+                BeStringUtilities::WCharToCurrentLocaleChar(buffer, _wbuffer, buffsize);
                 break;
+                }
             case UTF8Encoding:
-                utf8fromwc(buffer, buffsize, _wbuffer, (unsigned) chars);
+                {
+                Utf8String temp;
+                BeStringUtilities::WCharToUtf8(temp, _wbuffer, buffsize);
+                BeStringUtilities::Strncpy(buffer, buffsize, temp.c_str());
                 break;
+                }
             default:
                 assert(0);
             }
-#endif
         }
     return buffer;
     }

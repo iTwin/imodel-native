@@ -367,19 +367,11 @@ bool	MetaSurvey::getMetaDataString(const pt::String &item, pt::String &value ) c
 		{
 			if (capture_date < 10e9)
 			{
-#if defined (BENTLEY_WIN32)     //NEEDS_WORK_VORTEX_DGNDB I'm not sure that windows time_t and others platforms are equivalent.
-			    struct tm  ts;
-				errno_t err = localtime_s ( &ts, &capture_date );
-
-				if (err || ts.tm_year == 70) return false; 
-                strftime(buf, sizeof(buf), "%a %Y-%m-%d %H:%M:%S %Z", &ts);
-#else
                 struct tm*  ts;
                 ts = localtime(&capture_date);
 
                 if (ts->tm_year == 70) return false;
                 strftime(buf, sizeof(buf), "%a %Y-%m-%d %H:%M:%S %Z", ts);
-#endif
 
 				value = buf;
 
@@ -446,19 +438,6 @@ bool	MetaSurvey::setMetaDataString(const pt::String &item, const pt::String &val
 		buf[7] = 0;
 		buf[10] = 0;
 
-#if defined (BENTLEY_WIN32)     //NEEDS_WORK_VORTEX_DGNDB I'm not sure that windows time_t and others platforms are equivalent.
-		struct tm  ts;
-		time ( &capture_date );
-		errno_t err = localtime_s ( &ts, &capture_date );
-
-		if (err) return false;
-
-        ts.tm_year = atoi(buf);
-        ts.tm_mon = atoi(&buf[5]);
-        ts.tm_mday = atoi(&buf[8]);
-
-        capture_date = mktime(&ts);
-#else
         struct tm* ts;
         time(&capture_date);
         ts = localtime(&capture_date);
@@ -468,7 +447,6 @@ bool	MetaSurvey::setMetaDataString(const pt::String &item, const pt::String &val
         ts->tm_mday = atoi(&buf[8]);
 
         capture_date = mktime(ts);
-#endif
 	}
 
 	else if (item.compare( L"Company" ) == 0)
@@ -735,20 +713,11 @@ bool	MetaAudit::getMetaDataString(const pt::String &item, pt::String &value ) co
 			{
 				time_t now = time(0);
 
-#if defined (BENTLEY_WIN32)     //NEEDS_WORK_VORTEX_DGNDB I'm not sure that windows time_t and others platforms are equivalent.
-				struct tm  ts; 
-				errno_t err = localtime_s ( &ts, &import_date ); 
-
-				if (err || ts.tm_year == 70) return false; 
-
-				strftime(buf, sizeof(buf), "%a %Y-%m-%d %H:%M:%S %Z", &ts);
-#else
                 struct tm*  ts = localtime(&import_date);
 
                 if (ts->tm_year == 70) return false;
 
                 strftime(buf, sizeof(buf), "%a %Y-%m-%d %H:%M:%S %Z", ts);
-#endif
 				value = buf;
 			}
 			else

@@ -12,25 +12,25 @@
 #include "VortexErrors.h"
 #include "ExportMacros.h"
 
-//&&MM - split types and C export?
+//NEEDS_WORK_VORTEX_DGNDB &&MM - split types and C export?
 //     - Add a namespace
 //     - Use __PUBLISH_SECTION_START__ and __PUBLISH_SECTION_END__ if relevant
 
 typedef uint32_t        PTenum;
 typedef bool            PTbool;
-typedef int32_t          PTint;
-typedef int32_t            PTres;
-typedef uint32_t         PTuint;
-typedef float            PTfloat;
-typedef double            PTdouble;
-typedef short            PTshort;
-typedef unsigned short    PTushort;
+typedef int32_t         PTint;
+typedef int32_t         PTres;
+typedef uint32_t        PTuint;
+typedef float           PTfloat;
+typedef double          PTdouble;
+typedef short           PTshort;
+typedef unsigned short  PTushort;
 typedef uint64_t        PTuint64;
 typedef int64_t         PTint64;
 typedef void            PTvoid;
-typedef PTuint            PThandle;
+typedef PTuint          PThandle;
 typedef char            PTbyte;
-typedef unsigned char    PTubyte;
+typedef unsigned char   PTubyte;
 
 /* All strings are WCHAR, ie 2bytes per char */
 #define PTstr wchar_t*
@@ -201,7 +201,7 @@ typedef unsigned char    PTubyte;
 #define PT_CLIP_OUTSIDE                0x01
 #define PT_CLIP_INSIDE                0x02
 
-//&&MM I think we should create another file for that ex: VortexCApi.h or something.
+//NEEDS_WORK_VORTEX_DGNDB &&MM I think we should create another file for that ex: VortexCApi.h or something.
 BEGIN_EXTERN_C
 
 /* initialisation */
@@ -214,7 +214,7 @@ VORTEX_EXPORT PTvoid      ptGetVersionNum(PTubyte *version);
 VORTEX_EXPORT PTvoid      ptRelease(void);
 
 /* Client Server */
-#if 0 // TODO &&MM
+#if NEEDS_WORK_VORTEX_DGNDB
 extern PTCREATEFAKEPOD                            ptCreateFakePOD;
 extern PTSETSERVERCALLBACK                        ptSetServerCallBack;
 extern PTSETRELEASECLIENTSERVERBUFFERCALLBACK    ptSetReleaseClientServerBufferCallBack;

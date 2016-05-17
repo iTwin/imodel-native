@@ -354,7 +354,9 @@ void PointCloud::generateGuid()
     	
 	memcpy(&_guid, &g, sizeof(_guid));
 #else
-    memset(&_guid, 0, sizeof(_guid));
+    auto seed = std::chrono::high_resolution_clock::now().time_since_epoch().count();
+    std::mt19937_64 mt_rand(seed);
+    _guid = mt_rand();
 #endif
 
 }

@@ -159,7 +159,7 @@ Status Stream::sendMessage(void)
 		if(trySend = isSendRetryStatus(status))
 		{
 															// Back off for a period of time
-			Sleep(retryDelay);
+            BeThreadUtilities::BeSleep(retryDelay);
 															// Increment delay between retries
 			retryDelay += getSendMessageDelayIncrement();
 		}

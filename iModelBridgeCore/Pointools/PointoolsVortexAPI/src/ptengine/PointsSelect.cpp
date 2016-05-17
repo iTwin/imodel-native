@@ -41,7 +41,7 @@ namespace
 			if (!g_pause)
 			{
 				g_pause = true;
-				while (g_working) Sleep(5);
+				while (g_working) BeThreadUtilities::BeSleep(5);
 			}
 		}
 		~Pause()
@@ -104,7 +104,7 @@ void PointsSelect::pause()
 	if (g_pause) return;
 
 	g_pause = true;
-	while (g_working) Sleep(15);
+	while (g_working) BeThreadUtilities::BeSleep(15);
 }
 void PointsSelect::unpause()
 {
@@ -143,7 +143,7 @@ void PointsSelect::SelectionFilterThread::operator ()()
 		}
 		else g_working = false;
 
-		Sleep(g_used ? 50 : 500);
+        BeThreadUtilities::BeSleep(g_used ? 50 : 500);
 	}
 }	
 struct HidePoints
@@ -382,7 +382,7 @@ void PointsSelect::SelectionFilterThread::processSelectionFilters()
 					g_firstFilter->processVoxel(*i, true);
 			}
 			++i;
-			Sleep(2);
+            BeThreadUtilities::BeSleep(2);
 		};
 	}
 	g_working = false;

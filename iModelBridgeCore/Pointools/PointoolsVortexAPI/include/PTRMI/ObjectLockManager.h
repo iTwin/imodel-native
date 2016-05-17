@@ -278,7 +278,7 @@ namespace PTRMI
 					return status;
 				}
 															// Sleep for a short period of time and lock again
-				Sleep(retrySleep);
+                BeThreadUtilities::BeSleep(retrySleep);
 			}
 															// Release object lock
 			if((status = release(object, timeOut, externalMutex)).isFailed())

@@ -364,7 +364,7 @@ PTvoid PTAPI ptReleaseChannelsFileBuffer(PTuint64 bufferHandle)
 //-----------------------------------------------------------------------------
 PTres PTAPI ptSetChannelOOCFolder( const PTstr foldername )
 {
-#if defined (BENTLEY_WIN32)     //NEEDS_WORK_VORTEX_DGNDB 
+#if defined (NEEDS_WORK_VORTEX_DGNDB )
 	PTTRACE_FUNC
 
 	wchar_t filename[MAX_PATH];
@@ -389,8 +389,14 @@ PTres PTAPI ptSetChannelOOCFolder( const PTstr foldername )
 
 		return setLastErrorCode( PTV_SUCCESS );
 	}
-#endif
+
 	return setLastErrorCode( PTV_FILE_NOT_ACCESSIBLE );
+
+#else
+    OOCFile::setOOCFileFolder(pt::String(foldername));
+
+    return setLastErrorCode(PTV_SUCCESS);
+#endif
 }
 //-----------------------------------------------------------------------------
 // Delete all channels from the user channels manager

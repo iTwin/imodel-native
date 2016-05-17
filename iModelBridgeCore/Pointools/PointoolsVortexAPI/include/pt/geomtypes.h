@@ -745,16 +745,15 @@ struct Segment
 		: a(p0), b(p1)	{}
 	Segment() {};
 
-#if defined(NEEDS_WORK_VORTEX_DGNDB)
-p0 not defined in scope
+
 	Ray<Real> ray() 
 	{ 
-		vec3<Real> dir(p0,p1);
+		vec3<Real> dir(a,b);
 		dir.normalize();
 
-		return Ray<Real>(p0, dir); 
+		return Ray<Real>(a, dir);
 	}	
-#endif
+
 	vec3<Real> pointAt(Real t) const
 	{
 		vec3<Real> v(a,b);

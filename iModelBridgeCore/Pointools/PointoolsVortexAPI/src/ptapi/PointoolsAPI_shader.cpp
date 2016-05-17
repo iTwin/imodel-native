@@ -358,7 +358,7 @@ PTvoid PTAPI ptEnable(PTenum option)
 
 	default:
 		setLastErrorCode( PTV_INVALID_OPTION );
-		debugAssertM(0, _T("Unsupported ptEnable option"));
+		debugAssertM(0, "Unsupported ptEnable option");
 	}
 }
 //-------------------------------------------------------------------------------
@@ -399,7 +399,7 @@ PTvoid PTAPI ptDisable(PTenum option)
 
 	default:
 		setLastErrorCode( PTV_INVALID_OPTION );
-		debugAssertM(0, _T("Unsupported ptDisable option"));
+		debugAssertM(0, "Unsupported ptDisable option");
 	}
 }
 //-------------------------------------------------------------------------------
@@ -420,7 +420,7 @@ PTbool PTAPI ptIsEnabled(PTenum option)
 	case PT_ADAPTIVE_POINT_SIZE:return g_shaders[g_currentViewport].adaptivePntSize;
 	case PT_FRONT_BIAS:			return g_shaders[g_currentViewport].frontBias;
 	default:
-		debugAssertM(0, _T("Unsupported ptIsEnabled option")); return PT_TRUE;
+		debugAssertM(0, "Unsupported ptIsEnabled option"); return PT_TRUE;
 		setLastErrorCode( PTV_INVALID_OPTION );
 	}	
 }
@@ -494,7 +494,7 @@ PTres	PTAPI ptShaderOptionf(PTenum shader_option, PTfloat value)
 		g_shaders[g_currentViewport].materialGlossiness = value; break;
 
 	default:
-		debugAssertM(0, _T("Invalid Float Shader Option"));
+		debugAssertM(0, "Invalid Float Shader Option");
 		return setLastErrorCode( PTV_INVALID_OPTION );
 	}
 	return setLastErrorCode( PTV_SUCCESS );
@@ -511,7 +511,7 @@ PTres	PTAPI ptShaderOptionfv(PTenum shader_option, PTfloat *value)
 		break;
 
 	default:
-		debugAssertM(0, _T("Invalid Float Vector Shader Option"));
+		debugAssertM(0, "Invalid Float Vector Shader Option");
 		return setLastErrorCode( PTV_INVALID_OPTION );
 	}
 	return setLastErrorCode( PTV_SUCCESS );
@@ -528,7 +528,7 @@ PTres	PTAPI ptGetShaderOptionfv(PTenum shader_option, PTfloat *values)
 		break;
 
 	default:
-		debugAssertM(0, _T("Invalid Get Float Vector Shader Option"));
+		debugAssertM(0, "Invalid Get Float Vector Shader Option");
 		return setLastErrorCode( PTV_INVALID_OPTION );
 	}
 	return setLastErrorCode( PTV_SUCCESS );
@@ -583,7 +583,7 @@ PTres	PTAPI ptShaderOptioni(PTenum shader_option, PTint value)
 		break;
 
 	default:
-		debugAssertM(0, _T("Invalid Int Shader Option"));
+		debugAssertM(0, "Invalid Int Shader Option");
 		return setLastErrorCode( PTV_INVALID_OPTION );
 	}
 	return setLastErrorCode( PTV_SUCCESS );
@@ -632,7 +632,7 @@ PTres	PTAPI ptGetShaderOptioni(PTenum shader_option, PTint *value)
 		break;
 
 	default:
-		debugAssertM(0, _T("Invalid Get Int Shader"));
+		debugAssertM(0, "Invalid Get Int Shader");
 		return setLastErrorCode( PTV_INVALID_OPTION );
 	}
 	return setLastErrorCode( PTV_SUCCESS );
@@ -673,7 +673,7 @@ PTres	PTAPI ptGetShaderOptionf(PTenum shader_option, PTfloat *value)
 		(*value) = g_shaders[g_currentViewport].materialGlossiness; break;
 
 	default:
-		debugAssertM(0, _T("Invalid Get Float Shader"));
+		debugAssertM(0, "Invalid Get Float Shader");
 		return setLastErrorCode( PTV_INVALID_OPTION );
 	}
 	return setLastErrorCode( PTV_SUCCESS );
@@ -703,7 +703,7 @@ PTres	PTAPI ptLightOptionf(PTenum light_option, PTfloat value)
 		break;
 	
 	default:
-		debugAssertM(0, _T("Invalid Get Float Light"));
+		debugAssertM(0, "Invalid Get Float Light");
 		return setLastErrorCode( PTV_INVALID_OPTION );
 	}
 	return setLastErrorCode( PTV_SUCCESS );
@@ -744,7 +744,7 @@ PTres	PTAPI ptLightOptionfv(PTenum shader_option, PTfloat *value)
 		break;
 
 	default:
-		debugAssertM(0, _T("Invalid Get Float Light"));
+		debugAssertM(0, "Invalid Get Float Light");
 		return setLastErrorCode( PTV_INVALID_OPTION );
 	}
 	return setLastErrorCode( PTV_SUCCESS );
@@ -754,7 +754,7 @@ PTres	PTAPI ptLightOptionfv(PTenum shader_option, PTfloat *value)
 //-------------------------------------------------------------------------------
 PTres	PTAPI ptLightOptioni(PTenum shader_option, PTint value)
 {
-	debugAssertM(0, _T("Invalid Int Light Option"));
+	debugAssertM(0, "Invalid Int Light Option");
 	return setLastErrorCode( PTV_INVALID_OPTION );
 }
 //-------------------------------------------------------------------------------
@@ -793,7 +793,7 @@ PTres	PTAPI ptGetLightOptionf(PTenum light_option, PTfloat *value)
 		break;
 
 	default:
-		debugAssertM(0, _T("Invalid Light option"));
+		debugAssertM(0, "Invalid Light option");
 		return setLastErrorCode( PTV_INVALID_OPTION );
 	}
 	return setLastErrorCode( PTV_SUCCESS );

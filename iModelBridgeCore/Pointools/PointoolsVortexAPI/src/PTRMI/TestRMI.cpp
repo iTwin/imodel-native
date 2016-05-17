@@ -567,7 +567,7 @@ void testRMI(void)
 //	createDataSourceCacheTestFile(L"C:\\CacheTestFile.pod");
 	testDataSourceCacheRandom();
 
-	Sleep(1000 * 2);
+    BeThreadUtilities::BeSleep(1000 * 2);
 
 	testTCP();
 

@@ -65,24 +65,18 @@ dirToSearch=$(PointoolsVortexAPIInclude)
 %include cincapnd.mki
 
 %if defined(HAVE_OPENGL)
-nameToDefine = GLEW_STATIC
-%include cdefapnd.mki
+    nameToDefine = GLEW_STATIC
+    %include cdefapnd.mki
 
-dirToSearch=$(pointoolsVortexAPIVendorAPI)glew
+    dirToSearch=$(pointoolsVortexAPIVendorAPI)glew
 
-%include cincapnd.mki
+    %include cincapnd.mki
 
-dirToSearch=$(pointoolsVortexAPIVendorAPI)OpenGLExt
-%include cincapnd.mki
+    dirToSearch=$(pointoolsVortexAPIVendorAPI)OpenGLExt
+    %include cincapnd.mki
 %endif
 
 dirToSearch=$(pointoolsVortexAPIVendorAPI)wildmagic/core
 %include cincapnd.mki
 
-#&&MM remove this 
-CCompOpts + -DREL_V=$(REL_V)
-CCompOpts + -DMAJ_V=$(MAJ_V)
-CCompOpts + -DMIN_V=$(MIN_V)
-CCompOpts + -DSUBMIN_V=$(SUBMIN_V)
-CCompOpts + -DVERSION=$(REL_V).$(MAJ_V).$(MIN_V).$(SUBMIN_V)
 

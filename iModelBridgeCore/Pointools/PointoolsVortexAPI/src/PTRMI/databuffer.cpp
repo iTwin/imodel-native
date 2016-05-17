@@ -305,24 +305,20 @@ DataBuffer::DataSize DataBuffer::writeToBuffer(const Data *source, DataSize numB
 
 Status DataBuffer::readFileToBuffer(const wchar_t *filepath, bool limitFileSize)
 {
-#if defined (BENTLEY_WIN32)  // NEEDS_WORK_VORTEX_DGNDB
-	std::ifstream	fileIn;
-	Status			status;
-
+    BeFile fileIn;
+	Status status;
 															// Open binary file for read
-	fileIn.open(filepath, std::ios::in | std::ios::binary);
 															// If not open, return error
-	if(fileIn.is_open() == false)
+	if(BeFileStatus::Success != fileIn.Open(filepath, BeFileAccess::Read))
 	{
 		Status::log(L"DataBuffer::readFileToBuffer error opening ", filepath);
 		return Status(Status::Status_Error_File_Open_For_Read);
 	}
-
 															// Get file size
-	fileIn.seekg(0, std::ios::end);
-	unsigned long fileSize = static_cast<unsigned long>(fileIn.tellg());
-	fileIn.seekg(0);
-															// Check we have enough buffer allocated
+    uint64_t fileSize64 = 0;
+    fileIn.GetSize(fileSize64);
+    DataSize fileSize = (DataSize)fileSize64;
+																// Check we have enough buffer allocated
 	if(fileSize > getInternalBufferSize())
 	{
 		if(limitFileSize == false)
@@ -336,19 +332,15 @@ Status DataBuffer::readFileToBuffer(const wchar_t *filepath, bool limitFileSize)
 		}
 	}
 															// Read data block	
-	fileIn.read(reinterpret_cast<char *>(getBuffer()), fileSize);
 															// Check for error
-	if(!fileIn)
+	if(BeFileStatus::Success != fileIn.Read(getBuffer(), nullptr, fileSize))
 	{
 		Status::log(L"DataBuffer::readFileToBuffer error reading ", filepath);
 		Status::log(L"DataBuffer::readFileToBuffer fileSize ", fileSize);
 		return Status(Status::Status_Error_File_Read);
 	}
-															// Close file
-	fileIn.close();
 															// Move write pointer
 	setWritePtr(fileSize);
-#endif
 															// Return OK
 	return Status();
 }
@@ -403,28 +395,20 @@ Status DataBuffer::readFileToBuffer(const wchar_t *filePath, ptds::DataSource *d
 
 Status DataBuffer::writeFileFromBuffer(const wchar_t *filepath)
 {
-#if defined (BENTLEY_WIN32)  // NEEDS_WORK_VORTEX_DGNDB
-	std::ofstream fileOut;
+    BeFile fileOut;
 
-	fileOut.open(filepath, std::ios::binary | std::ios::out);
-
-	if(fileOut.is_open() == false)
+	if(BeFileStatus::Success != fileOut.Open(filepath, BeFileAccess::Write))
 	{
 		Status::log(L"DataBuffer::writeFileFromBuffer error opening ", filepath);
 		return Status(Status::Status_Error_File_Open_For_Write);
 	}
 
-	fileOut.write(reinterpret_cast<const char *>(getReadPtrAddress()), getDataSize());
-
-	if(!fileOut)
+    if(BeFileStatus::Success != fileOut.Write(nullptr, getReadPtrAddress(), getDataSize()))
 	{
 		Status::log(L"DataBuffer::writeFileFromBuffer error writing ", filepath);
 		return Status(Status::Status_Error_File_Write);
 	}
 
-	fileOut.close();
-
-#endif
 	return Status();
 }
 

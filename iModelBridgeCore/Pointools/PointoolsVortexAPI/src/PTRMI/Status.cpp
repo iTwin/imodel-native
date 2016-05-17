@@ -37,7 +37,7 @@ void Status::log(const wchar_t *message1, const wchar_t *message2)
 
 	writeTime();
 
-#if defined (BENTLEY_WIN32)  // NEEDS_WORK_VORTEX_DGNDB
+#if defined (NEEDS_WORK_VORTEX_DGNDB)
 	std::wofstream out;
 	out.open(logFile.c_str(), std::ios::out | std::ios::app);
 	out << "Status : " << message1 << " " << message2 << std::endl;
@@ -53,7 +53,7 @@ void Status::log(const wchar_t *message1, uintptr_t const& value)
 
 	writeTime();
 
-#if defined (BENTLEY_WIN32)  // NEEDS_WORK_VORTEX_DGNDB
+#if defined (NEEDS_WORK_VORTEX_DGNDB)
 	std::wofstream out;
 	out.open(logFile.c_str(), std::ios::out | std::ios::app);
 	out << "Status : " << message1 << " " << value << std::endl;
@@ -107,7 +107,7 @@ void Status::writeTime(void)
 {
 	double t = timer.getEllapsedTimeSeconds();
 
-#if defined (BENTLEY_WIN32)  // NEEDS_WORK_VORTEX_DGNDB
+#if defined (NEEDS_WORK_VORTEX_DGNDB)
 	std::wofstream out;
 	out.open(logFile.c_str(), std::ios::out | std::ios::app);
 	out << "T = " << t;

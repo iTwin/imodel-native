@@ -335,7 +335,7 @@ ClashTree	*ClashObject::compareTrees( const ClashObject *b, bool difference, Com
 
 		while (total_processed < num_leaves)
 		{
-			Sleep(100);
+            BeThreadUtilities::BeSleep(100);
 			{
                 std::lock_guard<std::mutex> lk(mt_progress_mutex);
 

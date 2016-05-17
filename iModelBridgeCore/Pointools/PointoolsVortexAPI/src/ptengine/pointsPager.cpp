@@ -240,7 +240,7 @@ void PointsPager::Pager::operator ()()
 			pp.complete = false;
 		}
 
-		Sleep(POINTS_PAGER_SLEEP);
+        BeThreadUtilities::BeSleep(POINTS_PAGER_SLEEP);
 	};
 
 }
@@ -1247,7 +1247,7 @@ void PointsPager::Pager::unloadVoxel(pcloud::Voxel *vox, bool lock)
 void PointsPager::stop()				
 { 
 	pp.run = false; 
-	while (pp.working) Sleep(10); 
+	while (pp.working) BeThreadUtilities::BeSleep(10);
 	pp.voxlist.clear(); 
 }
 //---------------------------------------------------------
@@ -1255,7 +1255,7 @@ void PointsPager::completeRequests()
 { 
 	pp.complete = true; 
 	while (pp.complete) 
-		Sleep(10); 
+        BeThreadUtilities::BeSleep(10);
 }
 //---------------------------------------------------------
 bool PointsPager::pause()				

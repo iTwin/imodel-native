@@ -304,16 +304,18 @@ Branch * Branch::getNthBranch( int n )
 Branch * Branch::getIndexedBranch( int i )
 {
 	char buff[NODE_ID_SIZE];
+    sprintf(buff, "%d", i);
 
-	NodeID nid(itoa(i, buff, 10));
+	NodeID nid(buff);
 	return getBranch( nid );
 }
 //-----------------------------------------------------------------------------
 const Branch * Branch::getIndexedBranch( int i ) const
 {
 	char buff[NODE_ID_SIZE];
+    sprintf(buff, "%d", i);
 
-	NodeID nid(itoa(i, buff, 10));
+	NodeID nid(buff);
 	return getBranch( nid );
 }
 //-----------------------------------------------------------------------------
@@ -321,7 +323,9 @@ Branch* Branch::addIndexedBranch() /* adds a branch with a numerical identifier,
 {
     int num = static_cast<int>(_branches.size() + 1);
 	char buff[NODE_ID_SIZE];
-	NodeID numID(itoa(num, buff, 10) );
+    sprintf(buff, "%d", num);
+
+	NodeID numID(buff);
 	return addBranch( numID );
 }
 //-----------------------------------------------------------------------------
