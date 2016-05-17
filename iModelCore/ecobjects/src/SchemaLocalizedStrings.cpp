@@ -10,13 +10,12 @@
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
-static Utf8CP const SCHEMANAME         = "Bentley_Standard_CustomAttributes";
+static Utf8CP const SCHEMANAME         = "SchemaLocalizationCustomAttributes";
 static Utf8CP const LOC_SPEC           = "LocalizationSpecification";
 static Utf8CP const LOCALE             = "Locale";
 static Utf8CP const RESOURCE           = "Resource";
 static Utf8CP const KEY                = "Key";
 static Utf8CP const VALUE              = "Value";
-static Utf8CP const IS_GUID            = "IsGUID";
 
 //static Utf8CP const STANDARD           = "Standard";
 //static Utf8CP const DISPLAYLABEL       = "DisplayLabel";
@@ -26,7 +25,6 @@ static Utf8CP const SOURCE             = "Source";
 //static Utf8CP const TARGETROLELABEL    = "TargetRoleLabel";
 static Utf8CP const COLON              = ":";
 static Utf8CP const DOT                = ".";
-static Utf8CP const GUID               = "GUID:";
 static Utf8CP const AT                 = "@";
 
 //--------------------------------------------------------------------------------------
@@ -218,8 +216,7 @@ SchemaLocalizedStrings::SchemaLocalizedStrings(ECSchemaCP localizationSupplement
     
     m_empty = false;
 
-    // Length of the string Standard:[SchemaFullName]:  10 is for the chars 'Standard::'
-    size_t prefixLength = 10 + primarySchema.GetLegacyFullSchemaName().length();
+    size_t prefixLength = primarySchema.GetName().length();
     Utf8String lastContainerAccessor = ""; // This is the container accessor for the primary schema
     Utf8String lastCaClassName;
     IECCustomAttributeContainerP caContainer = &primarySchema;
@@ -284,9 +281,6 @@ bool SchemaLocalizedStrings::TryConstructStringMaps(bmap<Utf8String, bpair<size_
         return false;
         }
 
-    bmap<Utf8String, Utf8String> guidLookUp;
-    bmap<Utf8String, bpair<size_t, Utf8String> > entriesReffingGuid;
-
     ArrayInfo resourcesInfo = resource.GetArrayInfo();
     for (uint32_t i = 0; i < resourcesInfo.GetCount(); ++i)
         {
@@ -302,38 +296,14 @@ bool SchemaLocalizedStrings::TryConstructStringMaps(bmap<Utf8String, bpair<size_
             if (!TryGetStringValue(*resourceEntry, key, KEY) || !TryGetStringValue(*resourceEntry, value, VALUE))
                 continue;
 
-            bool isGUID;
-            if (!TryGetBoolValue(*resourceEntry, isGUID, IS_GUID))
-                isGUID = false;
-
-            // Strip off hash ... TODO stop doing this once we can generate hash correctly
-            if (!key.StartsWithI(GUID))
-                {
-                size_t lastColon = key.rfind(COLON);
-                key = key.substr(0, lastColon + 1);
-                }
-
             size_t atIndex = key.find(AT);
-
-            if (isGUID)
-                entriesReffingGuid[key] = bpair<size_t, Utf8String>(atIndex, GUID + value);
-            else if (key.StartsWithI(GUID))
-                guidLookUp[key] = value;
-            else if (atIndex != std::string::npos)
+            if (atIndex != std::string::npos)
                 caStrings[key] = bpair<size_t, Utf8String>(atIndex, value);
             else
                 m_localizedStrings[Utf8String(key)] = Utf8String(value);
             }
         }
 
-    for (auto const& it : entriesReffingGuid)
-        {
-        if(it.second.first != std::string::npos)
-            caStrings[it.first] = bpair<size_t, Utf8String>(it.second.first, guidLookUp[it.second.second]);
-        else
-            m_localizedStrings[Utf8String(it.first)] = Utf8String(guidLookUp[it.second.second]);
-        }
-    
     return true;
     }
 
@@ -428,8 +398,8 @@ ECObjectsStatus SchemaLocalizedStrings::ParseCaKeyString(Utf8StringR containerAc
     {
     if (atIndex > prefixLength)
         containerAccessor = keyString.substr(prefixLength, atIndex - prefixLength); // <ClassName>:<PropertyName>
-    size_t beginCaKeyIndex = atIndex + 9; // index after @Standard:
-    size_t caSchemaClassSepIndex = keyString.find(COLON, beginCaKeyIndex + 1); // index of ':' between CaClassSchemaFullName and CaClassName
+    size_t beginCaKeyIndex = atIndex + 1; // index after @
+    size_t caSchemaClassSepIndex = keyString.find(COLON, beginCaKeyIndex); // index of ':' between CaClassSchemaName and CaClassName
     if (WString::npos == caSchemaClassSepIndex)
         return ECObjectsStatus::ParseError;
 
@@ -441,7 +411,7 @@ ECObjectsStatus SchemaLocalizedStrings::ParseCaKeyString(Utf8StringR containerAc
     if (WString::npos == accessorHashSepIndex)
         return ECObjectsStatus::ParseError;
 				
-    caSchemaName = keyString.substr(beginCaKeyIndex + 1, caSchemaClassSepIndex-1 - beginCaKeyIndex - 6); // substract 6 for schema version
+    caSchemaName = keyString.substr(beginCaKeyIndex, caSchemaClassSepIndex-1 - beginCaKeyIndex); // substract 6 for schema version
     caClassName = keyString.substr(caSchemaClassSepIndex + 1, propertyAccessorIndex - caSchemaClassSepIndex - 1);
     propertyAccessor = keyString.substr(propertyAccessorIndex + 1, accessorHashSepIndex - propertyAccessorIndex - 1);
 

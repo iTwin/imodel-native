@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ECSchema schemaName="House_Supplemental_Localization_ur_PK" nameSpacePrefix="loc_ur_PK" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00.13" prefix="bsca"/>
+    <ECSchemaReference name="SchemaLocalizationCustomAttributes" version="01.00.00" prefix="LocCA"/>
+    <ECCustomAttributes>
+        <SupplementalSchemaMetaData xmlns="Bentley_Standard_CustomAttributes.01.13">
+            <PrimarySchemaName>House</PrimarySchemaName>
+            <PrimarySchemaMajorVersion>1</PrimarySchemaMajorVersion>
+            <PrimarySchemaMinorVersion>0</PrimarySchemaMinorVersion>
+            <Precedence>9900</Precedence>
+            <Purpose>Localization</Purpose>
+            <IsUserSpecific>False</IsUserSpecific>
+        </SupplementalSchemaMetaData>
+        <LocalizationSpecification xmlns="SchemaLocalizationCustomAttributes.01.00">
+            <Locale>ur-PK</Locale>
+            <Resource>
+                <LocalizationData>
+                    <Key>House.DisplayLabel:c66ecd4c</Key>
+                    <Value>~~House~~</Value>
+                </LocalizationData>
+                <LocalizationData>
+                    <Key>House.Description:8627578a</Key>
+                    <Value>~~A house schema~~</Value>
+                </LocalizationData>
+                <LocalizationData>
+                    <Key>House:Content.DisplayLabel:7dd74d47</Key>
+                    <Value>~~Content~~</Value>
+                </LocalizationData>
+                <LocalizationData>
+                    <Key>House:Content:Items.DisplayLabel:4ec474fc</Key>
+                    <Value>~~Items~~</Value>
+                </LocalizationData>
+                <LocalizationData>
+                    <Key>House:Door.DisplayLabel:1f37ffd3</Key>
+                    <Value>~~This is a door~~</Value>
+                </LocalizationData>
+                <LocalizationData>
+                    <Key>House:Door:Length.DisplayLabel:11b5ead4</Key>
+                    <Value>~~Length~~</Value>
+                </LocalizationData>
+                <LocalizationData>
+                    <Key>House:Door:Width.DisplayLabel:ddb8d244</Key>
+                    <Value>~~Width~~</Value>
+                </LocalizationData>
+                <LocalizationData>
+                    <Key>House:Door:Height.DisplayLabel:138aa6f9</Key>
+                    <Value>~~Height~~</Value>
+                </LocalizationData>
+                <LocalizationData>
+                    <Key>House:Door:Thickness.DisplayLabel:cc6bfb46</Key>
+                    <Value>~~Thickness~~</Value>
+                </LocalizationData>
+                <LocalizationData>
+                    <Key>House:Door@House:ExtendedInfo:Purpose:436cb8ff</Key>
+                    <Value>~~To enter and leave house~~</Value>
+                </LocalizationData>
+                <LocalizationData>
+                    <Key>House:ExtendedInfo.DisplayLabel:d852925d</Key>
+                    <Value>~~Extended Information~~</Value>
+                </LocalizationData>
+                <LocalizationData>
+                    <Key>House:ExtendedInfo:Purpose.DisplayLabel:6b2b2452</Key>
+                    <Value>~~Purpose~~</Value>
+                </LocalizationData>
+                <LocalizationData>
+                    <Key>House:ExtendedInfo:ContentInfo.DisplayLabel:8b47cf67</Key>
+                    <Value>~~ContentInfo~~</Value>
+                </LocalizationData>
+                <LocalizationData>
+                    <Key>House:ExtendedInfo:ExtraInfo.DisplayLabel:97243ab2</Key>
+                    <Value>~~ExtraInfo~~</Value>
+                </LocalizationData>
+                <LocalizationData>
+                    <Key>House:Item.DisplayLabel:820c8e95</Key>
+                    <Value>~~Item~~</Value>
+                </LocalizationData>
+                <LocalizationData>
+                    <Key>House:Item.Description:706cd0c2</Key>
+                    <Value>~~An Item~~</Value>
+                </LocalizationData>
+                <LocalizationData>
+                    <Key>House:Item:Description.DisplayLabel:b39b158e</Key>
+                    <Value>~~Description~~</Value>
+                </LocalizationData>
+                <LocalizationData>
+                    <Key>House:Item:Description.Description:7918d3cb</Key>
+                    <Value>~~Description of an item~~</Value>
+                </LocalizationData>
+                <LocalizationData>
+                    <Key>House:Item:DisplayName.DisplayLabel:12adfacb</Key>
+                    <Value>~~Display Name~~</Value>
+                </LocalizationData>
+                <LocalizationData>
+                    <Key>House:Item:DisplayName.Description:f88dd6eb</Key>
+                    <Value>~~Display label for an item~~</Value>
+                </LocalizationData>
+                <LocalizationData>
+                    <Key>House:Item:Index.DisplayLabel:1758c2b4</Key>
+                    <Value>~~Index~~</Value>
+                </LocalizationData>
+                <LocalizationData>
+                    <Key>House:Room.DisplayLabel:5cdd2dde</Key>
+                    <Value>~~This is a room~~</Value>
+                </LocalizationData>
+                <LocalizationData>
+                    <Key>House:Room:Length.DisplayLabel:11b5ead4</Key>
+                    <Value>~~Length~~</Value>
+                </LocalizationData>
+                <LocalizationData>
+                    <Key>House:Room:Width.DisplayLabel:ddb8d244</Key>
+                    <Value>~~Width~~</Value>
+                </LocalizationData>
+                <LocalizationData>
+                    <Key>House:RoomHasDoor.DisplayLabel:7ffc04e7</Key>
+                    <Value>~~RoomHasDoor~~</Value>
+                </LocalizationData>
+                <LocalizationData>
+                    <Key>House:RoomHasDoor.SourceRoleLabel:e6552094</Key>
+                    <Value>~~Door to room~~</Value>
+                </LocalizationData>
+                <LocalizationData>
+                    <Key>House:RoomHasDoor.TargetRoleLabel:61b5c106</Key>
+                    <Value>~~Door for room~~</Value>
+                </LocalizationData>
+                <LocalizationData>
+                    <Key>House:RoomHasWindow.DisplayLabel:38943b93</Key>
+                    <Value>~~RoomHasWindow~~</Value>
+                </LocalizationData>
+                <LocalizationData>
+                    <Key>House:RoomHasWindow.SourceRoleLabel:38943b93</Key>
+                    <Value>~~RoomHasWindow~~</Value>
+                </LocalizationData>
+                <LocalizationData>
+                    <Key>House:RoomHasWindow.TargetRoleLabel:3245e1a6</Key>
+                    <Value>~~RoomHasWindow (Reversed)~~</Value>
+                </LocalizationData>
+                <LocalizationData>
+                    <Key>House:Window.DisplayLabel:af469d54</Key>
+                    <Value>~~Window~~</Value>
+                </LocalizationData>
+            </Resource>
+        </LocalizationSpecification>
+    </ECCustomAttributes>
+</ECSchema>
