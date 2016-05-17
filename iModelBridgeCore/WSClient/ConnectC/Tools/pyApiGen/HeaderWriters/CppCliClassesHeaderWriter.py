@@ -3,12 +3,14 @@ from HeaderWriters.HeaderWriter import HeaderWriter
 
 
 class CppCliClassesHeaderWriter(HeaderWriter):
-    def __init__(self, ecclasses, header_filename, api, status_codes, excluded_classes=None):
+    def __init__(self, ecclasses, header_filename, api, status_codes, excluded_classes):
         super(CppCliClassesHeaderWriter, self).__init__(ecclasses, header_filename, api, status_codes, excluded_classes)
         self.__cpp_cli_structs = []
         for ecclass in self._ecclasses:
-            if ecclass.attributes["typeName"].value not in self._excluded_classes:
-                self.__cpp_cli_structs.append(CppCliStruct(ecclass, api, self._status_codes))
+            if ecclass.attributes["typeName"].value in excluded_classes and \
+                    excluded_classes[ecclass.attributes["typeName"].value].should_exclude_entire_class():
+                continue
+            self.__cpp_cli_structs.append(CppCliStruct(ecclass, api, self._status_codes))
 
     def write_header(self):
         self._write_header_comments(True)

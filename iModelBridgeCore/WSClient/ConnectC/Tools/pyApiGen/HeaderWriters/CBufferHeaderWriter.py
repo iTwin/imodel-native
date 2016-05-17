@@ -11,12 +11,14 @@ class CBufferHeaderWriter(HeaderWriter):
                        "| Internal buffers\n"																	       \
                        "+--------------------------------------------------------------------------------------*/\n"
 
-    def __init__(self, ecclasses, header_filename, api, status_codes, excluded_classes=None):
+    def __init__(self, ecclasses, header_filename, api, status_codes, excluded_classes):
         super(CBufferHeaderWriter, self).__init__(ecclasses, header_filename, api, status_codes, excluded_classes)
         self.__buffer_structs = []
         for ecclass in self._ecclasses:
-            if ecclass.attributes["typeName"].value not in self._excluded_classes:
-                self.__buffer_structs.append(CBufferStruct(ecclass, api, self._status_codes))
+            if ecclass.attributes["typeName"].value in excluded_classes and \
+                    excluded_classes[ecclass.attributes["typeName"].value].should_exclude_entire_class():
+                continue
+            self.__buffer_structs.append(CBufferStruct(ecclass, api, self._status_codes))
 
     def write_header(self):
         self.__write_header_comment()
@@ -43,10 +45,12 @@ class CBufferHeaderWriter(HeaderWriter):
     def __write_defines(self):
         count = 1
         for ecclass in self._ecclasses:
-            if ecclass.attributes["typeName"].value not in self._excluded_classes:
-                self._file.write('#define BUFF_TYPE_' + ecclass.attributes["typeName"].value.upper())
-                self._file.write(' {0}'.format(count) + '\n')
-                count += 1
+            if ecclass.attributes["typeName"].value in self._excluded_classes and \
+                    self._excluded_classes[ecclass.attributes["typeName"].value].should_exclude_entire_class():
+                continue
+            self._file.write('#define BUFF_TYPE_' + ecclass.attributes["typeName"].value.upper())
+            self._file.write(' {0}'.format(count) + '\n')
+            count += 1
 
     def __write_parent_buffer(self):
         self._file.write('typedef struct _{0}BUFFER\n'.format(self._api.get_api_acronym()))

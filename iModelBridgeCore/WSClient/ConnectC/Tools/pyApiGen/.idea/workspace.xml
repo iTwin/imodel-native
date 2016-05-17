@@ -2,25 +2,26 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="530e57df-71f5-4dbd-ae0d-5416793c1020" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../CWSCC.cpp" afterPath="$PROJECT_DIR$/../../CWSCC.cpp" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/autoGenFilter.xlsx" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/ExcludedECClass.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../CWSCCGen.cpp" afterPath="$PROJECT_DIR$/../../CWSCCGen.cpp" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../CWSCCGenBuffer.cpp" afterPath="$PROJECT_DIR$/../../CWSCCGenBuffer.cpp" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../CWSCCGenBuffer.h" afterPath="$PROJECT_DIR$/../../CWSCCGenBuffer.h" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../CWSCCPrivate.h" afterPath="$PROJECT_DIR$/../../CWSCCPrivate.h" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Helpers/CApiStruct.py" afterPath="$PROJECT_DIR$/Helpers/CApiStruct.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Generator.py" afterPath="$PROJECT_DIR$/Generator.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/HeaderWriters/CBufferHeaderWriter.py" afterPath="$PROJECT_DIR$/HeaderWriters/CBufferHeaderWriter.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/HeaderWriters/CPublicApiHeaderWriter.py" afterPath="$PROJECT_DIR$/HeaderWriters/CPublicApiHeaderWriter.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/HeaderWriters/CPublicBufferHeaderWriter.py" afterPath="$PROJECT_DIR$/HeaderWriters/CPublicBufferHeaderWriter.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/HeaderWriters/CppCliApiHeaderWriter.py" afterPath="$PROJECT_DIR$/HeaderWriters/CppCliApiHeaderWriter.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/HeaderWriters/CppCliClassesHeaderWriter.py" afterPath="$PROJECT_DIR$/HeaderWriters/CppCliClassesHeaderWriter.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/SourceWriters/CApiSourceWriter.py" afterPath="$PROJECT_DIR$/SourceWriters/CApiSourceWriter.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/SourceWriters/CBufferSourceWriter.py" afterPath="$PROJECT_DIR$/SourceWriters/CBufferSourceWriter.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/SourceWriters/CppCliApiSourceWriter.py" afterPath="$PROJECT_DIR$/SourceWriters/CppCliApiSourceWriter.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/SourceWriters/CppCliClassesSourceWriter.py" afterPath="$PROJECT_DIR$/SourceWriters/CppCliClassesSourceWriter.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Writer.py" afterPath="$PROJECT_DIR$/Writer.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../../PublicAPI/WebServices/ConnectC/CWSCCGenBufferPublic.h" afterPath="$PROJECT_DIR$/../../../PublicAPI/WebServices/ConnectC/CWSCCGenBufferPublic.h" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../../PublicAPI/WebServices/ConnectC/CWSCCGenPublic.h" afterPath="$PROJECT_DIR$/../../../PublicAPI/WebServices/ConnectC/CWSCCGenPublic.h" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../../PublicAPI/WebServices/ConnectC/CWSCCPublic.h" afterPath="$PROJECT_DIR$/../../../PublicAPI/WebServices/ConnectC/CWSCCPublic.h" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../../PublicAPI/WebServices/Ims/SolrClient.h" afterPath="$PROJECT_DIR$/../../../PublicAPI/WebServices/Ims/SolrClient.h" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../../Tests/IntegrationTests/ConnectC/ConnectWebServicesClientCTests.cpp" afterPath="$PROJECT_DIR$/../../../Tests/IntegrationTests/ConnectC/ConnectWebServicesClientCTests.cpp" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../../Tests/IntegrationTests/ConnectC/ConnectWebServicesClientCTests.h" afterPath="$PROJECT_DIR$/../../../Tests/IntegrationTests/ConnectC/ConnectWebServicesClientCTests.h" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../../Tests/IntegrationTests/WSClientIntegrationTests.vcxproj" afterPath="$PROJECT_DIR$/../../../Tests/IntegrationTests/WSClientIntegrationTests.vcxproj" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../../Tests/IntegrationTests/WSClientIntegrationTests.vcxproj.filters" afterPath="$PROJECT_DIR$/../../../Tests/IntegrationTests/WSClientIntegrationTests.vcxproj.filters" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../../Tests/UnitTests/WSClientTests.vcxproj" afterPath="$PROJECT_DIR$/../../../Tests/UnitTests/WSClientTests.vcxproj" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../../Tests/UnitTests/WSClientTests.vcxproj.filters" afterPath="$PROJECT_DIR$/../../../Tests/UnitTests/WSClientTests.vcxproj.filters" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../../WSClient.PartFile.xml" afterPath="$PROJECT_DIR$/../../../WSClient.PartFile.xml" />
     </list>
     <ignored path="pyApiGen.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -41,46 +42,12 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="375">
-      <file leaf-file-name="CPublicApiHeaderWriter.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/HeaderWriters/CPublicApiHeaderWriter.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1320">
-              <caret line="61" column="33" selection-start-line="61" selection-start-column="26" selection-end-line="61" selection-end-column="33" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="Generator.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/Generator.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="726">
-              <caret line="38" column="46" selection-start-line="38" selection-start-column="46" selection-end-line="38" selection-end-column="46" />
-              <folding>
-                <element signature="e#0#27#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
       <file leaf-file-name="SourceWriter.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/SourceWriters/SourceWriter.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="484">
-              <caret line="23" column="0" selection-start-line="23" selection-start-column="0" selection-end-line="23" selection-end-column="0" />
+            <state relative-caret-position="198">
+              <caret line="10" column="63" selection-start-line="10" selection-start-column="63" selection-end-line="10" selection-end-column="63" />
               <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="CBufferStruct.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/Helpers/CBufferStruct.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="3212">
-              <caret line="147" column="29" selection-start-line="147" selection-start-column="29" selection-end-line="147" selection-end-column="29" />
-              <folding>
-                <element signature="e#0#27#0" expanded="true" />
-              </folding>
             </state>
           </provider>
         </entry>
@@ -88,8 +55,28 @@
       <file leaf-file-name="CApiSourceWriter.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/SourceWriters/CApiSourceWriter.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="902">
-              <caret line="42" column="45" selection-start-line="42" selection-start-column="45" selection-end-line="42" selection-end-column="45" />
+            <state relative-caret-position="428">
+              <caret line="65" column="0" selection-start-line="65" selection-start-column="0" selection-end-line="65" selection-end-column="0" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="CPublicApiHeaderWriter.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/HeaderWriters/CPublicApiHeaderWriter.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="186">
+              <caret line="78" column="45" selection-start-line="78" selection-start-column="45" selection-end-line="78" selection-end-column="45" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="CPublicBufferHeaderWriter.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/HeaderWriters/CPublicBufferHeaderWriter.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="110">
+              <caret line="7" column="103" selection-start-line="7" selection-start-column="103" selection-end-line="7" selection-end-column="103" />
               <folding />
             </state>
           </provider>
@@ -98,18 +85,8 @@
       <file leaf-file-name="Writer.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Writer.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="484">
-              <caret line="23" column="26" selection-start-line="23" selection-start-column="8" selection-end-line="23" selection-end-column="26" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="CBufferHeaderWriter.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/HeaderWriters/CBufferHeaderWriter.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="990">
-              <caret line="46" column="100" selection-start-line="46" selection-start-column="42" selection-end-line="46" selection-end-column="100" />
+            <state relative-caret-position="327">
+              <caret line="57" column="30" selection-start-line="57" selection-start-column="8" selection-end-line="57" selection-end-column="30" />
               <folding />
             </state>
           </provider>
@@ -118,8 +95,8 @@
       <file leaf-file-name="CBufferSourceWriter.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/SourceWriters/CBufferSourceWriter.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="5588">
-              <caret line="256" column="123" selection-start-line="256" selection-start-column="123" selection-end-line="256" selection-end-column="123" />
+            <state relative-caret-position="274">
+              <caret line="13" column="12" selection-start-line="13" selection-start-column="12" selection-end-line="13" selection-end-column="12" />
               <folding>
                 <element signature="e#0#47#0" expanded="true" />
               </folding>
@@ -127,21 +104,41 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="N~3AGlobalSchema.01.00.xml" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/N~3AGlobalSchema.01.00.xml">
+      <file leaf-file-name="CppCliApiSourceWriter.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/SourceWriters/CppCliApiSourceWriter.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="374">
-              <caret line="17" column="53" selection-start-line="17" selection-start-column="53" selection-end-line="17" selection-end-column="53" />
+            <state relative-caret-position="242">
+              <caret line="12" column="12" selection-start-line="12" selection-start-column="12" selection-end-line="12" selection-end-column="12" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="CApiStruct.py" pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/Helpers/CApiStruct.py">
+      <file leaf-file-name="CppCliClassesSourceWriter.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/SourceWriters/CppCliClassesSourceWriter.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="459">
-              <caret line="273" column="67" selection-start-line="273" selection-start-column="67" selection-end-line="273" selection-end-column="67" />
+            <state relative-caret-position="274">
+              <caret line="15" column="12" selection-start-line="15" selection-start-column="12" selection-end-line="15" selection-end-column="12" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="CBufferHeaderWriter.py" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/HeaderWriters/CBufferHeaderWriter.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="237">
+              <caret line="48" column="42" selection-start-line="48" selection-start-column="42" selection-end-line="48" selection-end-column="42" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="HeaderWriter.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/HeaderWriters/HeaderWriter.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="475">
+              <caret line="25" column="63" selection-start-line="25" selection-start-column="63" selection-end-line="25" selection-end-column="63" />
               <folding />
             </state>
           </provider>
@@ -159,8 +156,6 @@
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
       <list>
-        <option value="$PROJECT_DIR$/Struct.py" />
-        <option value="$PROJECT_DIR$/CSharpClassesWriter.py" />
         <option value="$PROJECT_DIR$/ApiSourceWriter.py" />
         <option value="$PROJECT_DIR$/py/HeaderWriters/PublicBufferHeaderWriter.py" />
         <option value="$PROJECT_DIR$/py/HeaderWriters/BufferHeaderWriter.py" />
@@ -195,26 +190,28 @@
         <option value="$PROJECT_DIR$/py/SchemaParser.py" />
         <option value="$PROJECT_DIR$/HeaderWriters/HeaderWriter.py" />
         <option value="$PROJECT_DIR$/SchemaParser.py" />
-        <option value="$PROJECT_DIR$/HeaderWriters/CBufferHeaderWriter.py" />
-        <option value="$PROJECT_DIR$/HeaderWriters/CppCliApiHeaderWriter.py" />
-        <option value="$PROJECT_DIR$/HeaderWriters/CPublicApiHeaderWriter.py" />
         <option value="$PROJECT_DIR$/Helpers/CBufferStruct.py" />
-        <option value="$PROJECT_DIR$/HeaderWriters/CPublicBufferHeaderWriter.py" />
-        <option value="$PROJECT_DIR$/HeaderWriters/CppCliClassesHeaderWriter.py" />
-        <option value="$PROJECT_DIR$/SourceWriters/CppCliApiSourceWriter.py" />
-        <option value="$PROJECT_DIR$/SourceWriters/CppCliClassesSourceWriter.py" />
         <option value="$PROJECT_DIR$/Helpers/CppCliStruct.py" />
         <option value="$PROJECT_DIR$/SourceWriters/SourceWriter.py" />
-        <option value="$PROJECT_DIR$/SourceWriters/CBufferSourceWriter.py" />
-        <option value="$PROJECT_DIR$/Writer.py" />
-        <option value="$PROJECT_DIR$/Generator.py" />
-        <option value="$PROJECT_DIR$/SourceWriters/CApiSourceWriter.py" />
         <option value="$PROJECT_DIR$/Helpers/CApiStruct.py" />
+        <option value="$PROJECT_DIR$/autoGenFilter.csv" />
+        <option value="$PROJECT_DIR$/Writer.py" />
+        <option value="$PROJECT_DIR$/ExcludedECClass.py" />
+        <option value="$PROJECT_DIR$/Generator.py" />
+        <option value="$PROJECT_DIR$/HeaderWriters/CppCliApiHeaderWriter.py" />
+        <option value="$PROJECT_DIR$/HeaderWriters/CppCliClassesHeaderWriter.py" />
+        <option value="$PROJECT_DIR$/HeaderWriters/CPublicBufferHeaderWriter.py" />
+        <option value="$PROJECT_DIR$/SourceWriters/CBufferSourceWriter.py" />
+        <option value="$PROJECT_DIR$/SourceWriters/CppCliApiSourceWriter.py" />
+        <option value="$PROJECT_DIR$/SourceWriters/CppCliClassesSourceWriter.py" />
+        <option value="$PROJECT_DIR$/HeaderWriters/CPublicApiHeaderWriter.py" />
+        <option value="$PROJECT_DIR$/SourceWriters/CApiSourceWriter.py" />
+        <option value="$PROJECT_DIR$/HeaderWriters/CBufferHeaderWriter.py" />
       </list>
     </option>
   </component>
   <component name="ProjectFrameBounds">
-    <option name="x" value="-9" />
+    <option name="x" value="-1929" />
     <option name="y" value="-9" />
     <option name="width" value="1938" />
     <option name="height" value="1168" />
@@ -266,7 +263,6 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
-      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <PATH>
@@ -309,20 +305,6 @@
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
             <PATH_ELEMENT>
-              <option name="myItemId" value="Helpers" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-          </PATH>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="pyApiGen" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="pyApiGen" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
               <option name="myItemId" value="HeaderWriters" />
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
@@ -330,11 +312,12 @@
         </subPane>
       </pane>
       <pane id="Scratches" />
+      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
-    <property name="settings.editor.selected.configurable" value="project.propVCSSupport.Mappings" />
+    <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
     <property name="settings.editor.splitter.proportion" value="0.2" />
   </component>
   <component name="RecentsManager">
@@ -360,6 +343,23 @@
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <module name="pyApiGen" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/Generator.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <method />
+    </configuration>
+    <configuration default="false" name="Writer" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="pyApiGen" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/Writer.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <method />
@@ -515,13 +515,15 @@
       <option name="SHOW_COMMAND_LINE" value="false" />
       <method />
     </configuration>
-    <list size="2">
+    <list size="3">
       <item index="0" class="java.lang.String" itemvalue="Python.SchemaParser" />
       <item index="1" class="java.lang.String" itemvalue="Python.Generator" />
+      <item index="2" class="java.lang.String" itemvalue="Python.Writer" />
     </list>
     <recent_temporary>
-      <list size="1">
+      <list size="2">
         <item index="0" class="java.lang.String" itemvalue="Python.Generator" />
+        <item index="1" class="java.lang.String" itemvalue="Python.Writer" />
       </list>
     </recent_temporary>
   </component>
@@ -542,26 +544,26 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="-9" y="-9" width="1938" height="1168" extended-state="7" />
-    <editor active="false" />
+    <frame x="-1929" y="-9" width="1938" height="1168" extended-state="7" />
+    <editor active="true" />
     <layout>
-      <window_info id="Project" active="true" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.19010417" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.19010417" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
-      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.30464217" sideWeight="0.56875" order="7" side_tool="true" content_ui="tabs" />
+      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.344294" sideWeight="0.42552084" order="7" side_tool="true" content_ui="tabs" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.29883945" sideWeight="0.30989584" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="true" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.344294" sideWeight="0.57447916" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4157549" sideWeight="0.59375" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.30464217" sideWeight="0.43125" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
-      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3384913" sideWeight="0.31770834" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.23210831" sideWeight="0.6145833" order="3" side_tool="false" content_ui="tabs" />
     </layout>
   </component>
   <component name="Vcs.Log.UiProperties">
@@ -587,15 +589,11 @@
       <breakpoints-dialog>
         <breakpoints-dialog />
       </breakpoints-dialog>
-      <option name="time" value="29" />
+      <option name="time" value="41" />
     </breakpoint-manager>
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/Cpp/Headers/WSApiGenPublic.h" />
-    <entry file="file://$PROJECT_DIR$/Cpp/Source/WSBuffer.cpp" />
-    <entry file="file://$PROJECT_DIR$/Cpp/Source/CWSCGen.cpp" />
-    <entry file="file://$PROJECT_DIR$/Cpp/Source/CWSCGenBuffer.cpp" />
     <entry file="file://$PROJECT_DIR$/CSharp/Source/CWSCGenClasses.cpp" />
     <entry file="file://$PROJECT_DIR$/CSharp/Headers/CWSCGenClasses.h" />
     <entry file="file://$PROJECT_DIR$/Cpp/Headers/CWSCGenBuffer.h" />
@@ -637,48 +635,6 @@
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/SchemaParser.py" />
-    <entry file="file://$PROJECT_DIR$/HeaderWriters/HeaderWriter.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="5" selection-start-line="0" selection-start-column="5" selection-end-line="0" selection-end-column="5" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/HeaderWriters/CPublicBufferHeaderWriter.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-340">
-          <caret line="144" column="60" selection-start-line="144" selection-start-column="60" selection-end-line="144" selection-end-column="60" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/HeaderWriters/CppCliApiHeaderWriter.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="226">
-          <caret line="16" column="29" selection-start-line="16" selection-start-column="29" selection-end-line="16" selection-end-column="29" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/HeaderWriters/CppCliClassesHeaderWriter.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="613">
-          <caret line="52" column="45" selection-start-line="52" selection-start-column="45" selection-end-line="52" selection-end-column="45" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/SourceWriters/CppCliClassesSourceWriter.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="880">
-          <caret line="40" column="60" selection-start-line="40" selection-start-column="60" selection-end-line="40" selection-end-column="60" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/SourceWriters/CppCliApiSourceWriter.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="402">
-          <caret line="21" column="40" selection-start-line="21" selection-start-column="40" selection-end-line="21" selection-end-column="40" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/Helpers/CppCliStruct.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="3652">
@@ -693,88 +649,159 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/HeaderWriters/CPublicApiHeaderWriter.py">
+    <entry file="file://$PROJECT_DIR$/Helpers/CBufferStruct.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1320">
-          <caret line="61" column="33" selection-start-line="61" selection-start-column="26" selection-end-line="61" selection-end-column="33" />
+        <state relative-caret-position="3212">
+          <caret line="147" column="29" selection-start-line="147" selection-start-column="29" selection-end-line="147" selection-end-column="29" />
+          <folding>
+            <element signature="e#0#27#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Helpers/CApiStruct.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="6006">
+          <caret line="273" column="67" selection-start-line="273" selection-start-column="67" selection-end-line="273" selection-end-column="67" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/HeaderWriters/CBufferHeaderWriter.py">
+    <entry file="file://$PROJECT_DIR$/autoGenFilter.csv" />
+    <entry file="file://C:/Python27/Lib/site-packages/openpyxl/xml/__init__.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="990">
-          <caret line="46" column="100" selection-start-line="46" selection-start-column="42" selection-end-line="46" selection-end-column="100" />
+        <state relative-caret-position="268">
+          <caret line="14" column="0" selection-start-line="14" selection-start-column="0" selection-end-line="14" selection-end-column="0" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/N~3AGlobalSchema.01.00.xml">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="374">
-          <caret line="17" column="53" selection-start-line="17" selection-start-column="53" selection-end-line="17" selection-end-column="53" />
+        <state relative-caret-position="506">
+          <caret line="128" column="52" selection-start-line="128" selection-start-column="23" selection-end-line="128" selection-end-column="52" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/Helpers/CBufferStruct.py">
+    <entry file="file://C:/Python27/Lib/xml/dom/minidom.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="3212">
-          <caret line="147" column="29" selection-start-line="147" selection-start-column="29" selection-end-line="147" selection-end-column="29" />
-          <folding>
-            <element signature="e#0#27#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/SourceWriters/CBufferSourceWriter.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="5588">
-          <caret line="256" column="123" selection-start-line="256" selection-start-column="123" selection-end-line="256" selection-end-column="123" />
-          <folding>
-            <element signature="e#0#47#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/SourceWriters/SourceWriter.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="484">
-          <caret line="23" column="0" selection-start-line="23" selection-start-column="0" selection-end-line="23" selection-end-column="0" />
+        <state relative-caret-position="167">
+          <caret line="820" column="0" selection-start-line="820" selection-start-column="0" selection-end-line="820" selection-end-column="0" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/Writer.py">
+    <entry file="file://$PROJECT_DIR$/ExcludedECClass.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="484">
-          <caret line="23" column="26" selection-start-line="23" selection-start-column="8" selection-end-line="23" selection-end-column="26" />
+        <state relative-caret-position="242">
+          <caret line="11" column="26" selection-start-line="11" selection-start-column="8" selection-end-line="11" selection-end-column="26" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/Generator.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="726">
-          <caret line="38" column="46" selection-start-line="38" selection-start-column="46" selection-end-line="38" selection-end-column="46" />
+        <state relative-caret-position="393">
+          <caret line="33" column="0" selection-start-line="33" selection-start-column="0" selection-end-line="33" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/HeaderWriters/CppCliApiHeaderWriter.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="110">
+          <caret line="8" column="39" selection-start-line="8" selection-start-column="39" selection-end-line="11" selection-end-column="24" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/HeaderWriters/CppCliClassesHeaderWriter.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="154">
+          <caret line="8" column="39" selection-start-line="8" selection-start-column="39" selection-end-line="11" selection-end-column="24" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/SourceWriters/CBufferSourceWriter.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="274">
+          <caret line="13" column="12" selection-start-line="13" selection-start-column="12" selection-end-line="13" selection-end-column="12" />
           <folding>
-            <element signature="e#0#27#0" expanded="true" />
+            <element signature="e#0#47#0" expanded="true" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/SourceWriters/CppCliApiSourceWriter.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="242">
+          <caret line="12" column="12" selection-start-line="12" selection-start-column="12" selection-end-line="12" selection-end-column="12" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/SourceWriters/CppCliClassesSourceWriter.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="274">
+          <caret line="15" column="12" selection-start-line="15" selection-start-column="12" selection-end-line="15" selection-end-column="12" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/SourceWriters/SourceWriter.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="198">
+          <caret line="10" column="63" selection-start-line="10" selection-start-column="63" selection-end-line="10" selection-end-column="63" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/HeaderWriters/CPublicBufferHeaderWriter.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="110">
+          <caret line="7" column="103" selection-start-line="7" selection-start-column="103" selection-end-line="7" selection-end-column="103" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/HeaderWriters/CPublicApiHeaderWriter.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="186">
+          <caret line="78" column="45" selection-start-line="78" selection-start-column="45" selection-end-line="78" selection-end-column="45" />
+          <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/SourceWriters/CApiSourceWriter.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="902">
-          <caret line="42" column="45" selection-start-line="42" selection-start-column="45" selection-end-line="42" selection-end-column="45" />
+        <state relative-caret-position="428">
+          <caret line="65" column="0" selection-start-line="65" selection-start-column="0" selection-end-line="65" selection-end-column="0" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/Helpers/CApiStruct.py">
+    <entry file="file://$PROJECT_DIR$/HeaderWriters/HeaderWriter.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="459">
-          <caret line="273" column="67" selection-start-line="273" selection-start-column="67" selection-end-line="273" selection-end-column="67" />
+        <state relative-caret-position="475">
+          <caret line="25" column="63" selection-start-line="25" selection-start-column="63" selection-end-line="25" selection-end-column="63" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Writer.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="327">
+          <caret line="57" column="30" selection-start-line="57" selection-start-column="8" selection-end-line="57" selection-end-column="30" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/HeaderWriters/CBufferHeaderWriter.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="237">
+          <caret line="48" column="42" selection-start-line="48" selection-start-column="42" selection-end-line="48" selection-end-column="42" />
           <folding />
         </state>
       </provider>
