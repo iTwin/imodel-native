@@ -91,9 +91,10 @@ BentleyStatus Scene::ReadGeoLocation(SceneInfo const& sceneInfo)
     DgnGCSPtr acute3dGCS = DgnGCS::CreateGCS(m_db);
 
     int epsgCode;
+    double latitude, longitude;
     if (1 == sscanf(sceneInfo.m_reprojectionSystem.c_str(), "EPSG:%d", &epsgCode))
         status = acute3dGCS->InitFromEPSGCode(&warning, &warningMsg, epsgCode);
-    else if (2 == sscanf (sceneInfo.SRS.c_str(), "ENU:%lf,%lf", &latitude, &longitude))
+    else if (2 == sscanf (sceneInfo.m_reprojectionSystem.c_str(), "ENU:%lf,%lf", &latitude, &longitude))
         {
         // ENU specification does not impose any projection method so we use the first azimuthal available using values that will
         // mimick the intent (North is Y positive, no offset)
