@@ -83,19 +83,12 @@ typedef ECInstanceKey const* ECInstanceKeyCP;
 typedef ECInstanceKey& ECInstanceKeyR;
 
 //=======================================================================================
-//! A VirtualSet of @ref ECInstanceId "ECInstanceIds" that can be used to bind a list
-//! of ECInstanceIds to the parameter in the SQL function @b InVirtualSet in an ECSqlStatement.
+//! A @ref BentleyApi::BeSQLite::VirtualSet "VirtualSet" of @ref ECInstanceId "ECInstanceIds" 
+//! that can be used to bind a list of ECInstanceIds to the parameter in the 
+//! SQL function @b InVirtualSet in an ECSqlStatement.
 //! @see ECSqlStatement::BindVirtualSet, ECDbCodeSampleECSqlStatementVirtualSets
 //! @ingroup ECDbGroup
 //+===============+===============+===============+===============+===============+======
-struct ECInstanceIdSet : bset<ECInstanceId>, BeSQLite::VirtualSet
-{
-private:
-    virtual bool _IsInSet(int nVals, DbValue const* vals) const
-        {
-        BeAssert(nVals == 1);
-        return this->end() != this->find(vals[0].GetValueId<ECInstanceId>());
-        }
-};
+typedef BeSQLite::IdSet<ECInstanceId> ECInstanceIdSet;
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
