@@ -20,21 +20,13 @@ USING_NAMESPACE_BENTLEY_SQLITE
 // @bsimethod                                                   Mathieu.Marchand  6/2015
 //=======================================================================================
 struct WmsTileData : IRealityData<WmsTileData, BeSQLiteRealityDataStorage, HttpRealityDataSource>
-    {
+{
     //===================================================================================
     // @bsimethod                                               Mathieu.Marchand  6/2015
     //===================================================================================
-    struct RequestOptions : RealityDataCacheOptions, IRealityData::RequestOptions
+    struct RequestOptions : RealityDataOptions
     {
-    DEFINE_BENTLEY_REF_COUNTED_MEMBERS
-    private:
-        RequestOptions(bool allowExpired, bool requestFromSource) :RealityDataCacheOptions(allowExpired, requestFromSource) {}        
-    public:
-        ~RequestOptions() {}
-        //! Creates the options object.
-        //! @param[in] returnExpired        Should the cache return reality data even if it's expired.
-        //! @param[in] requestFromSource    Should the cache request for fresh data if it's expired or doesn't exist.
-        static RefCountedPtr<RequestOptions> Create(bool returnExpired, bool requestFromSource) {return new RequestOptions(returnExpired, requestFromSource);}        
+        RequestOptions(bool requestFromSource){m_requestFromSource=requestFromSource;}
     };
 
 private:
@@ -51,18 +43,16 @@ private:
 protected:
     virtual Utf8CP _GetId() const override {return m_url.c_str();}
     virtual bool _IsExpired() const override;
-    virtual BentleyStatus _InitFrom(IRealityDataBase const& self, RealityDataCacheOptions const&) override;
-    virtual BentleyStatus _InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> const& header, ByteStream const& body, HttpRealityDataSource::RequestOptions const& options) override;
-    virtual BentleyStatus _InitFrom(BeSQLite::Db& db, BeMutex& cs, Utf8CP key, BeSQLiteRealityDataStorage::SelectOptions const& options) override;
+    virtual BentleyStatus _InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> const& header, ByteStream const& body) override;
+    virtual BentleyStatus _InitFrom(BeSQLite::Db& db, BeMutex& cs, Utf8CP key) override;
     virtual BentleyStatus _Persist(BeSQLite::Db& db, BeMutex& cs) const override;
-    virtual BeSQLiteRealityDataStorage::DatabasePrepareAndCleanupHandlerPtr _GetDatabasePrepareAndCleanupHandler() const override;
 
 public:
     static RefCountedPtr<WmsTileData> Create() {return new WmsTileData();}    
     ByteStream const& GetData() const  {return m_data;}
     DateTime GetCreationDate() const  {return m_creationDate;}
     Utf8String GetContentType() const  {return m_contentType;}
-    };
+};
 
 //----------------------------------------------------------------------------------------
 //-------------------------------  WmsTileData      ----------------------------------------
@@ -79,11 +69,12 @@ bool WmsTileData::_IsExpired() const
 //=======================================================================================
 // @bsimethod                                                   Mathieu.Marchand  6/2015
 //=======================================================================================
-struct WmsTileDataPrepareAndCleanupHandler : BeSQLiteRealityDataStorage::DatabasePrepareAndCleanupHandler
-    {
-    static BeAtomic<bool> s_isPrepared;
+struct WmsTileCache : BeSQLiteRealityDataStorage
+{
+    using BeSQLiteRealityDataStorage::BeSQLiteRealityDataStorage;
+    mutable BeAtomic<bool> m_isPrepared;
 
-    virtual bool _IsPrepared() const override {return s_isPrepared;}
+    virtual bool _IsPrepared() const override {return m_isPrepared;}
 
     //----------------------------------------------------------------------------------------
     // @bsimethod                                                   Mathieu.Marchand  6/2015
@@ -92,21 +83,14 @@ struct WmsTileDataPrepareAndCleanupHandler : BeSQLiteRealityDataStorage::Databas
         {
         if (db.TableExists(TABLE_NAME_WmsTileData))
             {
-            s_isPrepared.store(true);
+            m_isPrepared.store(true);
             return SUCCESS;
             }
     
-        Utf8CP ddl = "Url CHAR PRIMARY KEY, \
-                        Raster BLOB,          \
-                        RasterSize INT,       \
-                        ContentType CHAR,     \
-                        Created BIGINT,       \
-                        Expires BIGINT,       \
-                        ETag CHAR";
-
+        Utf8CP ddl = "Url CHAR PRIMARY KEY,Raster BLOB,RasterSize INT,ContentType CHAR,Created BIGINT,Expires BIGINT,ETag CHAR";
         if (BeSQLite::BE_SQLITE_OK == db.CreateTable(TABLE_NAME_WmsTileData, ddl))
             {
-            s_isPrepared.store(true);
+            m_isPrepared.store(true);
             return SUCCESS;
             }
         return ERROR;
@@ -138,17 +122,7 @@ struct WmsTileDataPrepareAndCleanupHandler : BeSQLiteRealityDataStorage::Databas
             
         return SUCCESS;
         }
-    };
-
-BeAtomic<bool> WmsTileDataPrepareAndCleanupHandler::s_isPrepared(false);
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  6/2015
-//----------------------------------------------------------------------------------------
-BeSQLiteRealityDataStorage::DatabasePrepareAndCleanupHandlerPtr WmsTileData::_GetDatabasePrepareAndCleanupHandler() const
-    {
-    return new WmsTileDataPrepareAndCleanupHandler();
-    }
+};
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  6/2015
@@ -157,33 +131,17 @@ bool WmsTileData::IsSupportedContent(Utf8StringCR contentType) const
     {
     // Only jpeg and png for now.
     // "application/vnd.ogc.se_xml" would be a Wms exception. In the future, we should report that to the user.
-    if(contentType.EqualsI (CONTENT_TYPE_PNG) || contentType.EqualsI (CONTENT_TYPE_JPEG))
+    if (contentType.EqualsI(CONTENT_TYPE_PNG) || contentType.EqualsI(CONTENT_TYPE_JPEG))
         return true;
     
     return false;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               09/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus WmsTileData::_InitFrom(IRealityDataBase const& self, RealityDataCacheOptions const& options)
-    {
-    WmsTileData const& other = dynamic_cast<WmsTileData const&>(self);
-    m_url = other.m_url;
-    m_creationDate = other.m_creationDate;
-    m_contentType = other.m_contentType;
-    m_data = other.m_data;
-    return SUCCESS;
-    }
-
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  6/2015
 //----------------------------------------------------------------------------------------
-BentleyStatus WmsTileData::_InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> const& header, ByteStream const& body, HttpRealityDataSource::RequestOptions const& requestOptions) 
-    {
-    BeAssert(nullptr != dynamic_cast<RequestOptions const*>(&requestOptions));
-   // RequestOptions const& options = static_cast<RequestOptions const&>(requestOptions);
-    
+BentleyStatus WmsTileData::_InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> const& header, ByteStream const& body) 
+    {    
     m_url.AssignOrClear(url);
     m_creationDate = DateTime::GetCurrentTime();
 
@@ -192,7 +150,7 @@ BentleyStatus WmsTileData::_InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> co
         return ERROR;
 
     // Reject and don't cache what we can't consumed.
-    if(!IsSupportedContent(contentTypeIter->second))
+    if (!IsSupportedContent(contentTypeIter->second))
         return BSIERROR;
 
     m_contentType = contentTypeIter->second.c_str();
@@ -204,7 +162,7 @@ BentleyStatus WmsTileData::_InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> co
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  6/2015
 //----------------------------------------------------------------------------------------
-BentleyStatus WmsTileData::_InitFrom(BeSQLite::Db& db, BeMutex& cs, Utf8CP key, BeSQLiteRealityDataStorage::SelectOptions const& options)
+BentleyStatus WmsTileData::_InitFrom(BeSQLite::Db& db, BeMutex& cs, Utf8CP key)
     {
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     wt_OperationForGraphics highPriority;
@@ -272,8 +230,8 @@ BentleyStatus WmsTileData::_Persist(BeSQLite::Db& db, BeMutex& cs) const
 
         stmt->ClearBindings();
         stmt->BindInt64(1, expirationDate);
-        stmt->BindText (2, GetEntityTag(), BeSQLite::Statement::MakeCopy::Yes);
-        stmt->BindText (3, GetId(), BeSQLite::Statement::MakeCopy::Yes);
+        stmt->BindText(2, GetEntityTag(), BeSQLite::Statement::MakeCopy::Yes);
+        stmt->BindText(3, GetId(), BeSQLite::Statement::MakeCopy::Yes);
         if (BeSQLite::BE_SQLITE_DONE != stmt->Step())
             return ERROR;
         }
@@ -285,13 +243,13 @@ BentleyStatus WmsTileData::_Persist(BeSQLite::Db& db, BeMutex& cs) const
             return ERROR;
 
         stmt->ClearBindings();
-        stmt->BindText (1, GetId(), BeSQLite::Statement::MakeCopy::Yes);
-        stmt->BindBlob (2, GetData().data(), bufferSize, BeSQLite::Statement::MakeCopy::No);
-        stmt->BindInt  (3, bufferSize);
+        stmt->BindText(1, GetId(), BeSQLite::Statement::MakeCopy::Yes);
+        stmt->BindBlob(2, GetData().data(), bufferSize, BeSQLite::Statement::MakeCopy::No);
+        stmt->BindInt(3, bufferSize);
         stmt->BindInt64(4, creationTime);
         stmt->BindInt64(5, expirationDate);
-        stmt->BindText (6, GetEntityTag(), BeSQLite::Statement::MakeCopy::Yes);
-        stmt->BindText (7, GetContentType(), BeSQLite::Statement::MakeCopy::Yes);
+        stmt->BindText(6, GetEntityTag(), BeSQLite::Statement::MakeCopy::Yes);
+        stmt->BindText(7, GetContentType(), BeSQLite::Statement::MakeCopy::Yes);
         if (BeSQLite::BE_SQLITE_DONE != stmt->Step())
             return ERROR;
         }
@@ -315,13 +273,13 @@ BentleyStatus WmsTileData::_Persist(BeSQLite::Db& db, BeMutex& cs) const
     //  - CRS:83, CRS:27, CRS:84, or some Bentley WMS server geocoord keyname.
    
     //1) Attempt to build from EPSG code.   
-    if(0 == BeStringUtilities::Strnicmp(gcsStr.c_str(), "EPSG:", 5))
+    if (0 == BeStringUtilities::Strnicmp(gcsStr.c_str(), "EPSG:", 5))
         {
         Utf8String epsgCodeStr = gcsStr.substr(5);
         int epsgCode = atoi(epsgCodeStr.c_str());
 
         GeoCoordinates::BaseGCSPtr pGcs = GeoCoordinates::BaseGCS::CreateGCS();
-        if(SUCCESS == pGcs->InitFromEPSGCode(NULL, NULL, epsgCode))
+        if (SUCCESS == pGcs->InitFromEPSGCode(NULL, NULL, epsgCode))
             return pGcs;       
         }
 
@@ -337,7 +295,7 @@ BentleyStatus WmsTileData::_Persist(BeSQLite::Db& db, BeMutex& cs) const
 //----------------------------------------------------------------------------------------
 /*static*/ bool WmsSource::EvaluateReverseAxis(WmsMap const& mapInfo, GeoCoordinates::BaseGCSP pGcs)
     {
-    switch(mapInfo.m_axisOrder)
+    switch (mapInfo.m_axisOrder)
         {
         case WmsMap::AxisOrder::Normal:
             return false;
@@ -352,7 +310,7 @@ BentleyStatus WmsTileData::_Persist(BeSQLite::Db& db, BeMutex& cs) const
         }
     
     // Only CRS and version 1.3.0 as this non sense reverse axis.
-    if(!(mapInfo.m_version.Equals("1.3.0") && mapInfo.m_csType.EqualsI("CRS")))
+    if (!(mapInfo.m_version.Equals("1.3.0") && mapInfo.m_csType.EqualsI("CRS")))
         return false;
        
     // Our coordinates and what is required by geocoord is:
@@ -369,7 +327,7 @@ BentleyStatus WmsTileData::_Persist(BeSQLite::Db& db, BeMutex& cs) const
     // created outside that range that do not need to be inverted. Since geocoord cannot provide this information the best approach for now is 
     // to invert all geographic(lat/long) CS.
         
-    if(mapInfo.m_csLabel.EqualsI("CRS:1")  ||     // pixels 
+    if (mapInfo.m_csLabel.EqualsI("CRS:1")  ||     // pixels 
        mapInfo.m_csLabel.EqualsI("CRS:83") ||     // (long, lat)
        mapInfo.m_csLabel.EqualsI("CRS:84") ||     // (long, lat) 
        mapInfo.m_csLabel.EqualsI("CRS:27"))       // (long, lat) WMS spec are not clear about CRS:27, there is comment where x is latitude and y longitude but 
@@ -378,7 +336,7 @@ BentleyStatus WmsTileData::_Persist(BeSQLite::Db& db, BeMutex& cs) const
         return false;
         }
 
-    if(0 == BeStringUtilities::Strnicmp (mapInfo.m_csLabel.c_str(), "EPSG:", sizeof("EPSG:")-1/*skip '/n'*/))
+    if (0 == BeStringUtilities::Strnicmp(mapInfo.m_csLabel.c_str(), "EPSG:", sizeof("EPSG:")-1/*skip '/n'*/))
         {
         // All Geographic EPSG are assumed: x = latitude, y = longitude
         if (NULL != pGcs && GeoCoordinates::BaseGCS::pcvUnity/*isGeographic*/ == pGcs->GetProjectionCode()) 
@@ -447,10 +405,6 @@ Render::Image WmsSource::_QueryTile(TileId const& id, bool& alphaBlend)
 
     Utf8String tileUrl = BuildTileUrl(id);
     Render::Image image;
-
-    //      We are using tiledRaster but it should be extended to support more pixeltype and compression or have a new type?
-    //      Maybe we should create a better Image object than RgbImageInfo and use that.
-    RefCountedPtr<WmsTileData::RequestOptions> pOptions = WmsTileData::RequestOptions::Create(true, true/*request*/);
         
     //&&MM for WMS it looks like I will need another kind of tiledRaster to handle exception response from the server.
     //     for example, a badly formated request generate an XML response. This is badly interpreted as a valid response(HttpRealityDataSourceRequest::_Handle) and 
@@ -461,8 +415,8 @@ Render::Image WmsSource::_QueryTile(TileId const& id, bool& alphaBlend)
     // *** as the database get bigger(I guess 500MB) the first call is very very slow. sorting by string is probably not a good idea either
     //     Maybe one table per server?  and use TileId or hash the url ?
     //     BeSQLiteRealityDataStorage::wt_Prepare call to "VACCUUM" is the reason why we have such a big slowdown.
-    RefCountedPtr<WmsTileData> pWmsTileData;
-    if(RealityDataCacheResult::Success != GetRealityDataCache().Get<WmsTileData>(pWmsTileData, tileUrl.c_str(), *pOptions))
+    RefCountedPtr<WmsTileData> pWmsTileData = WmsTileData::Create();
+    if (RealityDataCacheResult::Success != GetRealityDataCache().Get<WmsTileData>(*pWmsTileData, tileUrl.c_str(), WmsTileData::RequestOptions(true)))
         return image;
 
     BeAssert(pWmsTileData.IsValid());
@@ -473,17 +427,17 @@ Render::Image WmsSource::_QueryTile(TileId const& id, bool& alphaBlend)
     
     BentleyStatus status;
 
-    if (contentType.EqualsI (CONTENT_TYPE_PNG))
+    if (contentType.EqualsI(CONTENT_TYPE_PNG))
         {
         status = actualImageInfo.ReadImageFromPngBuffer(image, data.GetData(), data.GetSize());
         }
-    else if (contentType.EqualsI (CONTENT_TYPE_JPEG))
+    else if (contentType.EqualsI(CONTENT_TYPE_JPEG))
         {
         status = actualImageInfo.ReadImageFromJpgBuffer(image, data.GetData(), data.GetSize());
         }
     else
         {
-        BeAssertOnce (false && "Unsupported image type");
+        BeAssertOnce(false && "Unsupported image type");
         return image;
         }
 
@@ -491,7 +445,7 @@ Render::Image WmsSource::_QueryTile(TileId const& id, bool& alphaBlend)
     if (SUCCESS != status)
         return image;
     
-    BeAssert (!actualImageInfo.m_isBGR);    //&&MM todo 
+    BeAssert(!actualImageInfo.m_isBGR);    //&&MM todo 
 
     //&&MM how to tell if we need to enable alpha?
     //     We cannot reuse buffer anymore review...
@@ -530,12 +484,12 @@ Utf8String WmsSource::BuildTileUrl(TileId const& tileId)
         GetTileSizeX(tileId), GetTileSizeY(tileId), m_mapInfo.m_format.c_str());
        
     // Optional parameters
-    if(m_mapInfo.m_transparent)
+    if (m_mapInfo.m_transparent)
         tileUrl.append("&TRANSPARENT=TRUE");
     else
         tileUrl.append("&TRANSPARENT=FALSE");
 
-    if(!m_mapInfo.m_vendorSpecific.empty())
+    if (!m_mapInfo.m_vendorSpecific.empty())
         {
         tileUrl.append("&");
         tileUrl.append(m_mapInfo.m_vendorSpecific);
@@ -551,11 +505,11 @@ RealityDataCache& WmsSource::GetRealityDataCache() const
     {
     if (m_realityDataCache.IsNull())
         {
-        RealityDataCachePtr cache = RealityDataCache::Create(100);
+        m_realityDataCache = new RealityDataCache();
         BeFileName storageFileName = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName();
         storageFileName.AppendToPath(L"WMS");
-        cache->RegisterStorage(*BeSQLiteRealityDataStorage::Create(storageFileName));
-        cache->RegisterSource(*HttpRealityDataSource::Create(8));
+        m_realityDataCache->RegisterStorage(* new WmsTileCache(storageFileName, SchedulingMethod::LIFO));
+        m_realityDataCache->RegisterSource(*HttpRealityDataSource::Create(8, SchedulingMethod::LIFO));
         }
     return *m_realityDataCache;
     }

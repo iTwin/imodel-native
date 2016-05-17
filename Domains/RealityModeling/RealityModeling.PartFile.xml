@@ -24,14 +24,13 @@
     <Part Name="ScalableMeshSchema" OnlyPlatforms="x86,x64" BentleyBuildMakeFile="ScalableMeshSchema/ScalableMeshSchema.mke" >
         <SubPart PartName="ScalableMeshSchemaPublicAPI"/>
         <SubPart PartName="ImagePP"         PartFile="ImagePP"      Repository="ImagePP" />
-      <SubPart PartName="Core"         PartFile="TerrainModel"      Repository="TerrainModel" />
+        <SubPart PartName="Core"         PartFile="TerrainModel"      Repository="TerrainModel" />
         <SubPart PartName="DgnPlatformDll"  PartFile="DgnPlatform"  Repository="DgnPlatform" />
         <Bindings>
             <Assemblies ProductDirectoryName="RealityAssemblies">Delivery/$(shlibprefix)ScalableMeshSchema$(shlibext)</Assemblies>
             <Libs>Delivery/$(libprefix)ScalableMeshSchema$(libext)</Libs>
         </Bindings>
     </Part>  
-
 
     <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
     <!-- ////////////////////////////   PointCloudSchema   /////////////////////////////////// -->
@@ -54,8 +53,8 @@
         <!-- Need full data to decode EPSG code -->
         <SubPart PartName="GeoCoordData"    PartFile="csmap"        Repository="libsrc-csmap"/>
         <Bindings>
-            <Assemblies ProductDirectoryName="PointCloudAssemblies">Delivery/PointCloudSchema.dll</Assemblies>
-            <Libs>Delivery/PointCloudSchema.lib</Libs>
+            <Assemblies ProductDirectoryName="RealityAssemblies">Delivery/PointCloudSchema$(shlibext)</Assemblies>
+            <Libs>Delivery/PointCloudSchema$(libext)</Libs>
         </Bindings>
     </Part>
 
@@ -78,16 +77,15 @@
         <!-- Need full data to decode EPSG code -->
         <SubPart PartName="GeoCoordData"    PartFile="csmap"        Repository="libsrc-csmap"/>
         <Bindings>
-            <Assemblies ProductDirectoryName="RasterAssemblies">Delivery/$(shlibprefix)RasterSchema$(shlibext)</Assemblies>
+            <Assemblies ProductDirectoryName="RealityAssemblies">Delivery/$(shlibprefix)RasterSchema$(shlibext)</Assemblies>
             <Libs>Delivery/$(libprefix)RasterSchema$(libext)</Libs>
         </Bindings>
     </Part>    
 
-
     <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
     <!-- ////////////////////////////   ThreeMx       /////////////////////////////////// -->
     <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
-    <Part Name="ThreeMxPublicAPI" BentleyBuildMakeFile="ThreeMxSchema/ThreeMxSchema.prewire.mke">
+    <Part Name="ThreeMxPublicAPI" BentleyBuildMakeFile="ThreeMxSchema/ThreeMx.prewire.mke">
         <Bindings>
             <PublicAPI Domain="ThreeMx"/>
             <Files ProductDirectoryName="ECSchemas" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
@@ -96,14 +94,13 @@
         </Bindings>
     </Part>
     
-    <Part Name="ThreeMx" BentleyBuildMakeFile="ThreeMxSchema/ThreeMxSchema.mke">
+    <Part Name="ThreeMx" BentleyBuildMakeFile="ThreeMxSchema/ThreeMx.mke">
         <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform"/>
         <SubPart PartName="ThreeMxPublicAPI"/>
         <Bindings>
-            <Assemblies ProductDirectoryName="ThreeMxAssemblies" Required="false">Delivery/$(shlibprefix)ThreeMx$(shlibext)</Assemblies>
+            <Assemblies ProductDirectoryName="RealityAssemblies" Required="false">Delivery/$(shlibprefix)ThreeMx$(shlibext)</Assemblies>
             <Libs>Delivery/$(libprefix)ThreeMx$(libext)</Libs> 
         </Bindings>
     </Part>
-
 
 </BuildContext>

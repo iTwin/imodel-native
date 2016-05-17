@@ -2,7 +2,7 @@
 |
 |     $Source: PointCloudSchema/PointCloudViewSettings.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <PointCloudSchemaInternal.h>
@@ -55,7 +55,7 @@ ViewSettingsData& ViewSettingsData::operator=(ViewSettingsData const& rhs)
 void ViewSettingsData::InitDefault()
     {
     // init with default values
-    m_flags = (VIEWSETTINGS_FRONTBIAS_MASK);
+    m_flags = Dgn::PointCloudSettings::VIEWSETTINGS_FRONTBIAS_MASK;
     m_contrast = GetDefaultContrast();
     m_brightness = GetDefaultBrightness();
     m_dist = 10.0f;

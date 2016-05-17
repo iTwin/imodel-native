@@ -89,9 +89,10 @@ class ThreadPool
 
         static ThreadPool& GetInstance()
             {
-            // At least 2 make sense since we have a mix of io and cpu/memory operations.
-            size_t hardwareThreads = std::thread::hardware_concurrency();
-            static ThreadPool* s_pool = new ThreadPool(MAX(2, hardwareThreads));
+            // At least 2 make sense since we have a mix of io and cpu/memory operations. 
+            // But, we need the cpu for other things, don't start one for every core (I added the "/2") - kab
+            uint32_t threadCount = std::max((uint32_t) 2, BeThreadUtilities::GetHardwareConcurrency() / 2);
+            static ThreadPool* s_pool = new ThreadPool(threadCount);
             return *s_pool;
             }
     private:
@@ -215,7 +216,7 @@ void TileDataQuery::Run()
         }
 #endif         
     if (image.IsValid() && !IsCanceled())
-        m_pTile = m_target.CreateTexture(image, enableAlphaBlend);
+        m_pTile = m_target.CreateImageTexture(image, enableAlphaBlend);
         
     m_isFinished = true;
     }
@@ -385,8 +386,7 @@ bool RasterTile::Draw(RenderContextR context)
     static bool s_DrawTileShape = false;
     if(s_DrawTileShape)
         {
-        Render::GraphicPtr pTileInfoGraphic = context.CreateGraphic(Render::Graphic::CreateParams(context.GetViewport()));
-
+        auto pTileInfoGraphic = context.CreateGraphic(Render::Graphic::CreateParams(context.GetViewport()));
         Render::GraphicParams graphicParams;
         graphicParams.SetLineColor(ColorDef(222, 0, 0, 128));
         graphicParams.SetIsFilled(false);
@@ -872,7 +872,7 @@ ProgressiveTask::Completion RasterProgressiveDisplay::_DoProgressive(Progressive
             {
             RasterTileR tileNode = pTileQuery->GetTileNodeR();
 
-            Render::GraphicPtr pTileGraphic = context.CreateGraphic(Render::Graphic::CreateParams(context.GetViewport()));
+            auto pTileGraphic = context.CreateGraphic(Render::Graphic::CreateParams(context.GetViewport()));
 
             Render::GraphicParams graphicParams;
             graphicParams.SetLineColor(ColorDef::White());

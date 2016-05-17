@@ -55,13 +55,20 @@ void PointCloudProgressiveDisplay::SetupPtViewport(Dgn::RenderContextR context)
     // Changing the global density has no effect once points have been loaded. Instead, alter the display query density 
     PointCloudVortex::GlobalDensity(1.0f);
 
-    static bool s_frontBias = false;
-    PointCloudVortex::SetEnabledState(PtEnable::RGB_SHADER, true);
-    PointCloudVortex::SetEnabledState(PtEnable::FRONT_BIAS, s_frontBias);
+    auto spatial = context.GetViewport()->GetViewController()._ToSpatialView();
+    if (nullptr==spatial)
+        {
+        BeAssert(false);
+        return;
+        }
+    auto const& settings = spatial->GetPointCloudSettings();
+
+    PointCloudVortex::SetEnabledState(PtEnable::RGB_SHADER, settings.GetUseRgb());
+    PointCloudVortex::SetEnabledState(PtEnable::FRONT_BIAS, settings.GetUseFrontBias());
     PointCloudVortex::SetEnabledState(PtEnable::ADAPTIVE_POINT_SIZE, false);
-    PointCloudVortex::SetEnabledState(PtEnable::LIGHTING, false);
-    PointCloudVortex::SetEnabledState(PtEnable::INTENSITY_SHADER, false);
-    PointCloudVortex::SetEnabledState(PtEnable::PLANE_SHADER, false);
+    PointCloudVortex::SetEnabledState(PtEnable::LIGHTING, settings.GetUseLightning());
+    PointCloudVortex::SetEnabledState(PtEnable::INTENSITY_SHADER, settings.GetUseIntensity());
+    PointCloudVortex::SetEnabledState(PtEnable::PLANE_SHADER, settings.GetUsePlane());
     }
 
 //----------------------------------------------------------------------------------------
@@ -69,6 +76,10 @@ void PointCloudProgressiveDisplay::SetupPtViewport(Dgn::RenderContextR context)
 //----------------------------------------------------------------------------------------
 struct MyPointCloudDraw : Render::PointCloudDraw    //NEEDS_WORK_CONTINUOUS_RENDER temporary
     {
+    uint32_t m_ptCount;
+    DPoint3dCP m_ptCP;
+    ColorDef const* m_pRgb;
+
     virtual bool _IsThreadBound() { return false; } // I think we can remove that or somehow rework that concept.
     virtual bool _GetRange(DPoint3dP range) { return nullptr; }
     virtual bool _GetOrigin(DPoint3dP origin) { return nullptr; }
@@ -78,10 +89,6 @@ struct MyPointCloudDraw : Render::PointCloudDraw    //NEEDS_WORK_CONTINUOUS_REND
     virtual uint32_t _GetNumPoints() { return m_ptCount; }
     virtual DPoint3dCP _GetDPoints() { return m_ptCP; }
     virtual FPoint3dCP _GetFPoints() { return nullptr; }
-
-    uint32_t m_ptCount;
-    DPoint3dCP m_ptCP;
-    ColorDef const* m_pRgb;
     };
 
 //----------------------------------------------------------------------------------------
@@ -107,7 +114,7 @@ bool PointCloudProgressiveDisplay::DrawPointCloud(int64_t& pointsToLoad, Dgn::Re
     bool queryCompleted = true;
     m_lastTentativeStopped = false;
 
-    Render::GraphicPtr pGraphic = context.CreateGraphic(Render::Graphic::CreateParams(context.GetViewport(), m_model.GetSceneToWorld()));
+    auto pGraphic = context.CreateGraphic(Render::Graphic::CreateParams(context.GetViewport(), m_model.GetSceneToWorld()));
     Render::GraphicParams graphicParams;
     graphicParams.SetLineColor(m_model.GetColor());
     graphicParams.SetFillColor(m_model.GetColor());
