@@ -776,11 +776,11 @@ template <class POINT> int ScalableMesh<POINT>::Open()
 
 
                     // NEEDS_WORK_SM - Need to stream textures as well
-                    pStreamingTileStore = new StreamingPointStoreType(point_store_path, groupedStreamingFilePath, s_stream_from_grouped_store, AreDataCompressed());
-                    pStreamingIndiceTileStore = new StreamingIndiceStoreType(indice_store_path, groupedStreamingFilePath, AreDataCompressed());
-                    pStreamingUVTileStore = new StreamingUVStoreType(uv_store_path, groupedStreamingFilePath, AreDataCompressed());
-                    pStreamingUVsIndicesTileStore = new StreamingIndiceStoreType(uvIndice_store_path, groupedStreamingFilePath, AreDataCompressed());
-                    pStreamingTextureTileStore = new StreamingTextureTileStore(texture_store_path.c_str());
+                    pStreamingTileStore = new StreamingPointStoreType(getDataSourceAccount(), point_store_path, groupedStreamingFilePath, s_stream_from_grouped_store, AreDataCompressed());
+                    pStreamingIndiceTileStore = new StreamingIndiceStoreType(getDataSourceAccount(), indice_store_path, groupedStreamingFilePath, AreDataCompressed());
+                    pStreamingUVTileStore = new StreamingUVStoreType(getDataSourceAccount(), uv_store_path, groupedStreamingFilePath, AreDataCompressed());
+                    pStreamingUVsIndicesTileStore = new StreamingIndiceStoreType(getDataSourceAccount(), uvIndice_store_path, groupedStreamingFilePath, AreDataCompressed());
+                    pStreamingTextureTileStore = new StreamingTextureTileStore(getDataSourceAccount(), texture_store_path.c_str());
                     m_scmIndexPtr = new MeshIndexType(ScalableMeshMemoryPools<POINT>::Get()->GetGenericPool(),                                                       
                                                        &*pStreamingTileStore,                                                            
                                                             &*pStreamingIndiceTileStore,
@@ -1926,7 +1926,7 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_ConvertToCloud(const WStr
     {
     if (m_scmIndexPtr == nullptr) return ERROR;
 
-    return m_scmIndexPtr->SaveCloudReady(pi_pOutputDirPath, false);
+    return m_scmIndexPtr->SaveCloudReady(getDataSourceAccount(), pi_pOutputDirPath, false);
     }
 
 #ifdef SCALABLE_MESH_ATP
@@ -1944,7 +1944,7 @@ template <class POINT> int ScalableMesh<POINT>::_LoadAllNodeHeaders(size_t& nbLo
 +----------------------------------------------------------------------------*/
 template <class POINT> int ScalableMesh<POINT>::_GroupNodeHeaders(const WString& pi_pOutputDirPath) const
     {
-    m_scmIndexPtr->SaveCloudReady(pi_pOutputDirPath, true);
+    m_scmIndexPtr->SaveCloudReady(getDataSourceAccount(), pi_pOutputDirPath, true);
     return SUCCESS;
     }
 #endif

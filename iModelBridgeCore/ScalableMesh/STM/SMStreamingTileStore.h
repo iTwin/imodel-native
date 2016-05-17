@@ -16,6 +16,9 @@
 #include "ScalableMesh/Streaming/AzureStorage.h"
 #include <curl/curl.h>
 #include <condition_variable>
+
+#include <CloudDataSource/DataSourceAccount.h>
+
 #ifdef VANCOUVER_API
 #define OPEN_FILE(beFile, pathStr, accessMode) beFile.Open(pathStr, accessMode, BeFileSharing::None)
 #define OPEN_FILE_SHARE(beFile, pathStr, accessMode) beFile.Open(pathStr, accessMode, BeFileSharing::Read)
@@ -1125,7 +1128,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
     public:
         // Constructor / Destroyer
 
-        SMStreamingPointTaggedTileStore(WString& path, WString grouped_headers_path = L"", bool areNodeHeadersGrouped = false, bool compress = true)
+        SMStreamingPointTaggedTileStore(DataSourceAccount *dataSourceAccount, WString& path, WString grouped_headers_path = L"", bool areNodeHeadersGrouped = false, bool compress = true)
             :m_path(path),
             m_path_to_grouped_headers(grouped_headers_path),
             m_node_id(0),
@@ -1134,6 +1137,9 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
             m_storage_connection_string(L"DefaultEndpointsProtocol=https;AccountName=pcdsustest;AccountKey=3EQ8Yb3SfocqbYpeIUxvwu/aEdiza+MFUDgQcIkrxkp435c7BxV8k2gd+F+iK/8V2iho80kFakRpZBRwFJh8wQ=="),
             m_stream_store(m_storage_connection_string.c_str(), L"scalablemeshtest")
             {
+
+			(void) dataSourceAccount;
+
             if (s_stream_from_disk)
                 {
                 // Create base directory structure to store information if not already done

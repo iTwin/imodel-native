@@ -557,7 +557,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
         virtual void        Mesh();
 
-        virtual void        GetCloudFormatStores(const WString& pi_pOutputDirPath,
+        virtual void        GetCloudFormatStores(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirPath,
                                                  const bool& pi_pCompress,
                                                  HFCPtr<StreamingPointStoreType>& po_pPointStore,
                                                  HFCPtr<StreamingIndiceStoreType>& po_pIndiceStore,

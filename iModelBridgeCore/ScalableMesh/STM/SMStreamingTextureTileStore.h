@@ -211,7 +211,7 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
             return texture;
             }
 
-        StreamingTextureTileStore(WCharCP directory)
+        StreamingTextureTileStore(DataSourceAccount *dataSourceAccount, WCharCP directory)
             : m_path(directory),
             m_stream_store(L"DefaultEndpointsProtocol=https;AccountName=pcdsustest;AccountKey=3EQ8Yb3SfocqbYpeIUxvwu/aEdiza+MFUDgQcIkrxkp435c7BxV8k2gd+F+iK/8V2iho80kFakRpZBRwFJh8wQ=="
                          , L"scalablemeshtest")

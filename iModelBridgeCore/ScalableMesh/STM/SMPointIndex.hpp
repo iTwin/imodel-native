@@ -7907,7 +7907,7 @@ This method saves the mesh for streaming.
 
 @param
 -----------------------------------------------------------------------------*/
-template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveCloudReady(const WString pi_pOutputDirPath, bool groupNodeHeaders, bool pi_pCompress) const
+template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveCloudReady(DataSourceAccount *dataSourceAccount, const WString pi_pOutputDirPath, bool groupNodeHeaders, bool pi_pCompress) const
     {
     if (0 == CreateDirectoryW(pi_pOutputDirPath.c_str(), NULL))
         {
@@ -7944,7 +7944,7 @@ template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveC
         HFCPtr<StreamingUVStoreType> pUVStore;
         HFCPtr<StreamingIndiceStoreType> pUVIndiceStore;
         HFCPtr<StreamingTextureTileStoreType> pTextureStore;
-        this->GetCloudFormatStores(pi_pOutputDirPath, pi_pCompress, pPointStore, pIndiceStore, pUVStore, pUVIndiceStore, pTextureStore);
+        this->GetCloudFormatStores(dataSourceAccount, pi_pOutputDirPath, pi_pCompress, pPointStore, pIndiceStore, pUVStore, pUVIndiceStore, pTextureStore);
 
         rootNode->SaveCloudReadyNode(pPointStore, pIndiceStore, pUVStore, pUVIndiceStore, pTextureStore);
 

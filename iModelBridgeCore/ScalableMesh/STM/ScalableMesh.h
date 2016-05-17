@@ -113,7 +113,7 @@ public:
 
 	static DataSourceManager &			getDataSourceManager	(void)							{return s_dataSourceManager;}
 	void								setDataSourceAccount	(DataSourceAccount *account)	{m_dataSourceAccount = account;}
-	DataSourceAccount *					getDataSourceAccount	(void)							{return m_dataSourceAccount;}
+	DataSourceAccount *					getDataSourceAccount	(void) const					{return m_dataSourceAccount;}
 
 	DataSourceStatus					initializeAzureTest		(void);
 

@@ -1316,12 +1316,12 @@ public:
     bool                Clear(HFCPtr<HVEShape> pi_shapeToClear);    
     bool                RemovePoints(const EXTENT& pi_extentToClear);    
 
-    StatusInt           SaveCloudReady(const WString pi_pOutputDirectoryName, bool groupNodeHeaders = true, bool pi_pCompress = true) const;
+    StatusInt           SaveCloudReady(DataSourceAccount *dataSourceAccount, const WString pi_pOutputDirectoryName, bool groupNodeHeaders = true, bool pi_pCompress = true) const;
     typedef SMStreamingPointTaggedTileStore<POINT, EXTENT>        StreamingPointStoreType;
     typedef SMStreamingPointTaggedTileStore<int32_t, EXTENT>      StreamingIndiceStoreType;
     typedef SMStreamingPointTaggedTileStore<DPoint2d, EXTENT>     StreamingUVStoreType;
     typedef StreamingTextureTileStore                             StreamingTextureTileStoreType;
-    virtual void        GetCloudFormatStores(const WString& pi_pOutputDirPath,
+    virtual void        GetCloudFormatStores(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirPath,
                                              const bool& pi_pCompress,
                                              HFCPtr<StreamingPointStoreType>& po_pPointStore,
                                              HFCPtr<StreamingIndiceStoreType>& po_pIndiceStore,
@@ -1333,7 +1333,7 @@ public:
         WString point_store_path = pi_pOutputDirPath + L"point_store\\";
 
         // Create streaming stores
-        po_pPointStore = new StreamingPointStoreType(point_store_path, L"", pi_pCompress);
+        po_pPointStore = new StreamingPointStoreType(dataSourceAccount, point_store_path, L"", pi_pCompress);
         po_pIndiceStore   = nullptr;
         po_pUVStore       = nullptr;
         po_pUVIndiceStore = nullptr;
