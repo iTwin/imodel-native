@@ -1,0 +1,61 @@
+#pragma once
+
+#include <was/storage_account.h>
+#include <was/blob.h>
+#include <string>
+
+#include "DataSource.h"
+#include "DataSourceAccount.h"
+#include "DataSourceAccountCached.h"
+#include "DataSourceBuffer.h"
+#include "DataSourceMode.h"
+
+class DataSourceAccountAzure : public DataSourceAccountCached
+{
+
+
+protected:
+
+	typedef std::wstring								AzureConnectionString;
+	typedef azure::storage::cloud_storage_account		AzureStorageAccount;
+	typedef azure::storage::cloud_blob_client			AzureBlobClient;
+	typedef azure::storage::cloud_blob_container		AzureContainer;
+
+protected:
+
+	AzureStorageAccount					storageAccount;
+	AzureBlobClient						blobClient;
+	AzureConnectionString				connectionString;
+
+	AzureContainer						container;
+
+protected:
+
+	AzureConnectionString				createConnectionString			(AccountIdentifier identifier, AccountKey key);
+
+	DataSourceStatus					setConnectionString				(const AzureConnectionString string);
+	const AzureConnectionString		&	getConnectionString				(void);
+
+	void								setStorageAccount				(const AzureStorageAccount &account);
+	const AzureStorageAccount		&	getStorageAccount				(void);
+
+	void								setBlobClient					(const AzureBlobClient &client);
+	AzureBlobClient					&	getBlobClient					(void);
+
+	void								setContainer					(const AzureContainer &newContainer);
+	AzureContainer					&	getContainer					(void);
+
+public:
+
+										DataSourceAccountAzure			(const AccountName &account, const AccountIdentifier &identifier, const AccountKey &key);
+
+		DataSourceStatus				setAccount						(const AccountName &account, const AccountIdentifier &identifier, const AccountKey &key);
+
+		DataSource					*	createDataSource				(void);
+		DataSourceStatus				destroyDataSource				(DataSource *dataSource);
+
+		DataSourceStatus				initializeContainer				(const DataSourceURL &containerName, DataSourceMode mode);
+
+		DataSourceStatus				downloadBlobSync				(const DataSourceURL &blobPath, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size);
+		DataSourceStatus				uploadBlobSync					(const DataSourceURL &blobPath, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size);
+};

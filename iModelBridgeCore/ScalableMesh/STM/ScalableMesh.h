@@ -55,6 +55,9 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #include "ScalableMeshMemoryPools.h"
 
 #include "ScalableMeshVolume.h"
+
+#include <CloudDataSource/DataSourceManager.h>
+
 /*__PUBLISH_SECTION_START__*/
 using namespace BENTLEY_NAMESPACE_NAME::GeoCoordinates;
 
@@ -83,9 +86,12 @@ struct ScalableMeshBase : public RefCounted<IScalableMesh>
     GeoCoords::GCS                      m_sourceGCS;
     DRange3d                            m_contentExtent;
 
+	static DataSourceManager			s_dataSourceManager;
+	DataSourceAccount				*	m_dataSourceAccount;
+
     // NOTE: Stored in order to make it possible for the creator to use this. Remove when creator does not depends on
     // this interface anymore (take only a path).
-    const WString                  m_path; 
+    const WString					     m_path; 
 
 
     explicit                            ScalableMeshBase(SMSQLiteFilePtr& smSQLiteFile, const WString&             filePath);
@@ -103,7 +109,13 @@ public:
 
     const SMSQLiteFilePtr&              GetDbFile() const;
 
-    const WChar*                      GetPath                    () const;
+    const WChar*						GetPath                 () const;
+
+	static DataSourceManager &			getDataSourceManager	(void)							{return s_dataSourceManager;}
+	void								setDataSourceAccount	(DataSourceAccount *account)	{m_dataSourceAccount = account;}
+	DataSourceAccount *					getDataSourceAccount	(void)							{return m_dataSourceAccount;}
+
+	DataSourceStatus					initializeAzureTest		(void);
 
     };
 

@@ -36,6 +36,8 @@ extern bool   GET_HIGHEST_RES;
 #include <ScalableMesh\IScalableMeshSourceImportConfig.h>
 #include <ScalableMesh\IScalableMeshSources.h>
 
+#include <CloudDataSource/DataSourceManager.h>
+
 #include "ScalableMeshDraping.h"
 #include "ScalableMeshVolume.h"
 
@@ -55,6 +57,7 @@ extern bool   GET_HIGHEST_RES;
 #include "LogUtils.h"
 //#include "CGALEdgeCollapse.h"
 
+DataSourceManager ScalableMeshBase::s_dataSourceManager;
 
 
 ScalableMeshScheduler* s_clipScheduler = nullptr;
@@ -528,6 +531,46 @@ bool ScalableMeshBase::LoadGCSFrom()
 /*----------------------------------------------------------------------------+
 |ScalableMesh::ScalableMesh
 +----------------------------------------------------------------------------*/
+DataSourceStatus ScalableMeshBase::initializeAzureTest(void)
+{
+	DataSourceStatus							status;
+	DataSourceAccount::AccountIdentifier		accountIdentifier(L"pcdsustest");
+	DataSourceAccount::AccountKey				accountKey(L"3EQ8Yb3SfocqbYpeIUxvwu/aEdiza+MFUDgQcIkrxkp435c7BxV8k2gd+F+iK/8V2iho80kFakRpZBRwFJh8wQ==");
+	DataSourceService						*	serviceAzure;
+	DataSourceAccount						*	accountAzure;
+//	DataSourceAccount						*	accountCaching;
+//	DataSourceBuffer::BufferSize				testDataSize = 1024 * 1024 * 8;
+
+															// Get the Azure service
+	serviceAzure = getDataSourceManager().getService(DataSourceService::ServiceName(L"DataSourceServiceAzure"));
+	if(serviceAzure == nullptr)
+		return DataSourceStatus(DataSourceStatus::Status_Error_Test_Failed);
+															// Create an account on Azure
+	accountAzure = serviceAzure->createAccount(DataSourceAccount::AccountName(L"AzureAccount"), accountIdentifier, accountKey);
+	if (accountAzure == nullptr)
+		return DataSourceStatus(DataSourceStatus::Status_Error_Test_Failed);
+															// Set ScalableMesh's DataSource
+	setDataSourceAccount(accountAzure);
+
+/*
+															// Create an Azure specific DataSource
+	dataSourceAzure = dynamic_cast<DataSourceAzure *>(dataSourceManager.createDataSource(DataSourceManager::DataSourceName(L"MyAzureDataSource"), DataSourceAccount::AccountName(L"AzureAccount"), nullptr));
+	if (dataSourceAzure == nullptr)
+		return DataSourceStatus(DataSourceStatus::Status_Error);
+															// Blobs will be split up into segments of this size
+	dataSourceAzure->setSegmentSize(1024 * 64);
+															// Time I/O operation timeouts for threading
+	dataSourceAzure->setTimeout(DataSource::Timeout(100000));
+*/
+
+
+	return status;
+}
+
+
+/*----------------------------------------------------------------------------+
+|ScalableMesh::ScalableMesh
++----------------------------------------------------------------------------*/
 
 template <class POINT> ScalableMesh<POINT>::ScalableMesh(SMSQLiteFilePtr& smSQLiteFile, const WString& path)
     : ScalableMeshBase(smSQLiteFile, path),
@@ -725,6 +768,12 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                     WString uv_store_path = (s_stream_from_disk ? streamingFilePath + L"uv_store\\" : azureDatasetName + L"uvs\\");
                     WString uvIndice_store_path = (s_stream_from_disk ? streamingFilePath + L"uvIndice_store\\" : azureDatasetName + L"uvIndices\\");
                     WString texture_store_path = (s_stream_from_disk ? streamingFilePath + L"texture_store\\" : azureDatasetName + L"textures\\");
+
+					if (initializeAzureTest().isFailed())
+					{
+						return BSIERROR; // Error loading layer gcs
+					}
+
 
                     // NEEDS_WORK_SM - Need to stream textures as well
                     pStreamingTileStore = new StreamingPointStoreType(point_store_path, groupedStreamingFilePath, s_stream_from_grouped_store, AreDataCompressed());
