@@ -30,7 +30,7 @@ SMMemoryPoolItemBase::SMMemoryPoolItemBase()
 SMMemoryPoolItemBase::SMMemoryPoolItemBase(Byte* data, uint64_t size, uint64_t nodeId, SMPoolDataTypeDesc& dataType)
     {
     m_data = data;
-    m_size = size;
+    m_size = size;   
     m_nodeId = nodeId;
     m_dataType = dataType;
     m_data = data;

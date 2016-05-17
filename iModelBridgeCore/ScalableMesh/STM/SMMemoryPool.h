@@ -213,7 +213,9 @@ template <typename DataType> class SMMemoryPoolGenericBlobItem : public SMMemory
             }
 
         virtual ~SMMemoryPoolGenericBlobItem()
-            {            
+            {
+            delete (DataType*)m_data;
+            m_data = 0;
             }
 
         const DataType* GetData()

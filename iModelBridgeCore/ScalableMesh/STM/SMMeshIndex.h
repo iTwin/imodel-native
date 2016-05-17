@@ -77,13 +77,13 @@ struct SmCachedDisplayData
                             IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr, 
                             size_t                               memorySize)
             {
-            m_cachedDisplayMesh = m_cachedDisplayMesh;
-            m_cachedDisplayTexture = m_cachedDisplayTexture; 
+            m_cachedDisplayMesh = cachedDisplayMesh;
+            m_cachedDisplayTexture = cachedDisplayTexture; 
             m_displayCacheManagerPtr = displayCacheManagerPtr;
             m_memorySize = memorySize;
             }
 
-        ~SmCachedDisplayData()
+        virtual ~SmCachedDisplayData()
             {
             if (m_cachedDisplayMesh != 0)
                 {

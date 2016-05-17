@@ -1756,6 +1756,7 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
 
     //Not implemented yet
     assert(loadGraph == false);
+    assert(displayCacheManagerPtr != 0);
 
     LOAD_NODE
             
@@ -1815,8 +1816,9 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
                                                                                     false,
                                                                                     QV_RGB_FORMAT,
                                                                                     smTexturePtr->GetData());
-
-                qvMemorySizeEstimate += smTexturePtr->GetDimension().x * smTexturePtr->GetDimension().y * 3;
+                
+                //Estimate which seems to give good result. 
+                qvMemorySizeEstimate += smTexturePtr->GetDimension().x * smTexturePtr->GetDimension().y * 6;
 
                 assert(status == SUCCESS);
                 }
