@@ -81,34 +81,45 @@
     <!-- =========================================================== -->
     <!-- ==================       Sources      ===================== -->
     <!-- =========================================================== -->
-
+    <!-- =========================================================== -->
+    <xs:complexType name="ListOfFilesType">
+       <xs:annotation>
+            <xs:documentation>
+            This type defines the list of files.
+            It is composed of a list of files that refer wither to an external document or a file part of the compound document of the main
+            source of data.          
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>   
+            <xs:element name="File" type="xs:AnyURI" minOccurs="1" maxOccurs="unbounded" />          
+        </xs:sequence>
+    </xs:complexType>
+    
     <!-- =========================================================== -->
     <xs:complexType name="SourceType">
         <xs:annotation>
             <xs:documentation>
             A source of data. The data must be of the type of the group it belongs to.
             Different strategy can be used to identify and process compound documents of this type but the most important indication of the content
-            is the extension of the URI, the present type and the identification of the provider.               
+            is the extension of the URI, the present type and the identification of the provider.
             </xs:documentation>
         </xs:annotation>
         <xs:sequence>
-            <xs:element name="Copyright" type="xs:string" minOccurs="0" maxOccurs="1">
-            <xs:annotation>
-                <xs:documentation>
-                Copyright notice of the data source in one of the language it is written in.
-                If many languages are present then the copyright notice may contain many languages.
-                TO DO: I10N ? Can copyright use links? Should this be elements? See Copyright element of package below for alternatives.
-                </xs:documentation>
-            </xs:annotation>
-            </xs:element>
             <xs:element name="Id" type="xs:string" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>
-                    Identifier of the source. This ID is sufficient to obtain additional data from the Context Services.
-                    TO DO: Identifier is currently the USGS id if entry is from USGS but simple key of data source table in database.
-                    This means that the identifier could change if database is updated? Should a hash code be used instead?
+                    Identifier of the source. This ID is sufficient to obtain additional data from the Context Services at least
+                    a relatively short time after the creation of the package. If some time elapsed it would be wise to validate the
+                    content fits with other fields prior to interpreting additional data.
                     </xs:documentation>
                 </xs:annotation>
+            </xs:element>
+            <xs:element name="Copyright" type="xs:string" minOccurs="0" maxOccurs="1">
+            <xs:annotation>
+                <xs:documentation>
+                Copyright notice of the data source in the requested language or the default language it is written in. This copyright text can contain text or links to external documentation or both.
+                </xs:documentation>
+            </xs:annotation>
             </xs:element>
             <xs:element name="Provider" type="xs:string" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
@@ -118,33 +129,44 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="Filesize" type="xs:string" minOccurs="0" maxOccurs="1">
+            <xs:element name="Size" type="xs:string" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>
-                    The size of the data source in kilobytes. This value can be approximative. If the element is not present it must be assumed
-                    that the file size could or cannot not be known or that the time of the creation of the package.
+                    The size of the data source in kilobytes. This value can be approximative. If absent or zero it indicates that the size of the data cannot be determined either because unknown or because
+                    the source is streamed thus the amount of data depends on its use.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
             <xs:element name="Metadata" type="xs:string" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>
-                    URI refering to the metadata of the source. This may refer to the metadata of the data instead of the source in some case.
+                    Reference to the metadata of the source. If this element contains a fully qualified URI it may refer to an external
+                    document or it may refer to a file part of the compound document if it is the case.
                     If this field is absent then a request can be sent to context services to obtain this value or additional fields pertinent to the
                     data source.
-                    The metadata referenced must be ISO 19115. 
-                    TO DO: If data is FGDC format? An xslt could be used (provided free by USGS).
+                    The metadata referenced may be of different type depending on the presence and value of the type attribute. If the service can the metadata will be provided in the locale
+                    specified at the moment of the package ordering.
                     </xs:documentation>
                 </xs:annotation>
+                <xs:attribute name="type" type="xs:string">
+                    <xs:annotation>
+                        <xs:documentation>
+                        The type of the metadata referenced. This type can be ISO-19115 or FGDC or anyother string but usually 'text' indicating
+                        that the metadata is to be interpreted by a human in whatever text format. If absent then it may be assumed that the 
+                        extension of the link will indicate the nature of the metadata (HTML, text, or XML).
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute> 
             </xs:element>
-            <xs:element name="SisterFiles" type="xs:string" minOccurs="0" maxOccurs="1">
+            <xs:element name="SisterFiles" type="ListOfFilesType" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>
-                    A string containing a lsit of sister files. If the source is a compound then the sister files must be located inside the same 
-                    compound and the path relative to the root of the compound is assumed. For example if the sister file is located inside the
-                    zip file in the subdirectory foo3 then the sister file name will be 'foo3/SisterFile1.foo'. 
-                    If the source is not a compound then the same strategy applies to the uri of the source including relative path to the current pacakge file.
-                    The string can contain more than one sister file each entry separated by a '|' character.
+                      Sister files are files or documents that are required for the proper interpretation of the
+                      source. The source URI indicates the main file while sister files are associated with this main source of data.
+                      Sister files are always to be located in the same directory as the main file. Example of typical sister files
+                      include ESRI world file or PRJ/WKT geocoding file or the various files associated with a SHP Shape file that contain
+                      additional attributes. Documents that are not required for the proper automatic interpretation of the main file such as
+                      human readable documentation are not usually listed here.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -153,8 +175,11 @@
             <xs:annotation>
                 <xs:documentation>
                 A string representing the source location.
-                A relative path has the following for "./rel/file.ext" and is relative to the package file.
-                Otherwise it should be a fully qualified URL.  ex:ftp.bentley.com/Imagery/File.img
+                A relative path has the following form "./rel/file.ext" and is relative to the package file.
+                Otherwise it should be a fully qualified URL.  ex:ftp.bentley.com/Imagery/File.img.
+                The uri can designate a compound document such as zip file. The type of this compound is determined by the extension
+                of the file. The name of the file within the compound document is then specified after a separating # sign. The name of this file
+                can contain wildcard characters, thus indicating that many files can compose the main document by the same pattern. 
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -163,8 +188,7 @@
                 <xs:documentation>
                 The type of the data source. This string indicates the type of the final data and not necessarily the type of the distribution file.
                 For example USGS may distribute elevation data in an IMG file that is located in a ZIP file. The URI will indicate the ZIP file while the type
-                will indicate IMG as type. Refer to the general documentation of the SourceType type for additional details.
-                For this version of the Package the types currently supported are: JP2000, IMG, ????
+                will indicate IMG as type. As a general rule the type will be the usual extension of the document type.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -219,7 +243,8 @@
         </xs:simpleContent>
     </xs:complexType>
     
-    <!-- =========================================================== -->
+    <!-- =========================================================== 
+          THIS ELEMENT SHOULD HAVE ITS OWN XSD FOR SUPPORT OF WMS SETTINGS -->
     <xs:complexType name="WmsMapSettingsType">
         <xs:annotation>
             <xs:documentation>
@@ -298,6 +323,8 @@
             </xs:element>
         </xs:sequence>
     </xs:complexType>
+
+
   
     <!-- =========================================================== -->
     <xs:complexType name="WmsSourceType">
@@ -324,72 +351,7 @@
         </xs:complexContent>
     </xs:complexType>
     
-    <!-- =========================================================== -->
-    
-    <xs:complexType name="AlternateUrlType">
-        <xs:annotation>
-            <xs:documentation>
-            Type used to represent OSM (Open Street Map) specific resources
-            </xs:documentation>
-        </xs:annotation>
-            <xs:sequence>
-                <xs:element name="Url" type="xs:string" minOccurs="0" maxOccurs="unbounded">
-                    <xs:annotation>
-                        <xs:documentation>
-                        Each URL contains an alternate URL to the source.
-                        </xs:documentation>
-                    </xs:annotation>                    
-                </xs:element>
-            </xs:sequence>
-    </xs:complexType>        
-    
-    <!-- =========================================================== -->
-    
-    <xs:complexType name="OsmResourceType">
-        <xs:annotation>
-            <xs:documentation>
-            Type used to represent OSM (Open Street Map) specific resources
-            </xs:documentation>
-        </xs:annotation>
-            <xs:sequence>
-                <xs:element name="AlternateUrl" type="AlternateUrlType" minOccurs="0" maxOccurs="1">
-                    <xs:annotation>
-                        <xs:documentation>
-                        Contains the list of OSM specific alternate URLs
-                        </xs:documentation>
-                    </xs:annotation>                    
-                </xs:element>
-            </xs:sequence>
-    </xs:complexType>    
-    <!-- =========================================================== -->
-    <xs:complexType name="OsmSourceType">
-        <xs:annotation>
-            <xs:documentation>
-            Type used to represent OSM (Open Street Map) source. The OSM source is fully qualified since in addition to the server URL it contains
-            the protocol identifier and the coordinates of the region designated. It fully represents an OSM data blob/file.
-            The Osm source allows specification of alternate URLs to alternate OSM source representing the same region and the same stream format.
-            Many alternate URLs can be specified.
-            TO DO: There is something weird in the current implementation of the SOM source. First the main node is called OsmResource instead of OsmSource.
-            Secondly, looking at the code it seams that the structure of the content is "AlternateUrl" element that contains many "Url" elements.
-            TO DO: Given we want to generalise the AlternateUrl principle we may want to extract the Osm Specific alternate Url from this source type
-            and set it down into the SourceType directly.
-            </xs:documentation>
-        </xs:annotation>
-        <xs:complexContent>
-            <xs:extension base="SourceType">
-                <xs:sequence>
-                    <xs:element name="OsmResource" type="OsmResourceType" minOccurs="0" maxOccurs="1">
-                        <xs:annotation>
-                            <xs:documentation>
-                            Osm specific resources.
-                            </xs:documentation>
-                        </xs:annotation>                    
-                    </xs:element>
-                </xs:sequence>
-            </xs:extension>
-        </xs:complexContent>
-    </xs:complexType>
-    
+  
     
     <!-- =========================================================== -->
     <xs:complexType name="SourcesType">
@@ -403,7 +365,6 @@
             <xs:choice>
                 <xs:element name="Source" type="SourceType" minOccurs = "0" maxOccurs="unbounded"/>
                 <xs:element name="WmsSource" type="WmsSourceType" minOccurs = "0" maxOccurs="unbounded"/>  
-                <xs:element name="OsmSource" type="OsmSourceType" minOccurs = "0" maxOccurs="unbounded"/>                
             </xs:choice>
         </xs:sequence>
     </xs:complexType>
@@ -436,16 +397,10 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:choice>
-                <xs:element name="Source" type="SourceType" maxOccurs="1"/>
-                <xs:element name="WmsSource" type="WmsSourceType" maxOccurs="1"/>
-                <xs:element name="OsmSource" type="OsmSourceType" maxOccurs="1"/>
-            </xs:choice>
-            <xs:element name="AlternateSources" type="SourcesType" minOccurs="0" maxOccurs="1">
+            <xs:element name="Sources" type="SourcesType" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>
-                        This element will contain the list of alternate sources in case the source cannot be reached.
-                        TO DO: As alternative we may simply bump up the Source, WmsSource and OsmSource element max occurs!?
+                        The element that contains the list of sources for this data.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -646,6 +601,25 @@
                 <xs:element name="CreationDate" type="xs:dateTime" minOccurs="0" maxOccurs="1">
                     <xs:annotation>
                         <xs:documentation>The package creation date in UTC</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="Copyright" type="xs:string" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>
+                        A textual Copyright. The copyright is language unspecified meaning
+                        that it can be in any language as seen fit by the package creator.
+                        TO DO: Maybe no description should be provided since it introduces I10N issues with the file.
+                        COULD the copyright be a link instead to some Web page that would take into account the language of the client?
+                        Using reflections from others we could have something like what is used in Metadata in tc211 (ISO-19115) such as:
+                        <!-- <gco:CharacterString>Codelists for description of metadata datasets compliant with ISO/TC 211 19115:2003 and 19139</gco:CharacterString>
+                             <gmd:PT_FreeText>
+                                <gmd:textGroup>
+                                   <gmd:LocalisedCharacterString locale="#FR ">Listes de codes pour la description de lots de métadonnées conforme ISO TC/211 19115:2003 et 19139</gmd:LocalisedCharacterString>
+                                </gmd:textGroup>
+                             </gmd:PT_FreeText>
+                        -->
+                        Where the locale attribute uses a standard language code (ISO 639-1).
+                        </xs:documentation>
                     </xs:annotation>
                 </xs:element>
                 <xs:element name="PackageId" type="xs:string" minOccurs="0" maxOccurs="1">
