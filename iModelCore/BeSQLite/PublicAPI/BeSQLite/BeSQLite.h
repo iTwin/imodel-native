@@ -1143,7 +1143,7 @@ private:
         return Contains(IdType(vals[0].GetValueUInt64()));
         }
 public:
-    IdSet() { static_assert(std::is_base_of<BeInt64Id, IdType>::value && sizeof(BeInt64Id) == sizeof(IdType), "IdSet may only contain BeInt64Ids or subclasses of it of same size."); }
+    IdSet() { static_assert(std::is_base_of<BeInt64Id, IdType>::value && sizeof(BeInt64Id) == sizeof(IdType), "IdSet may only contain BeInt64Ids or subclasses of it of the same size."); }
 
     typedef bset<IdType> T_SetType;
     typedef typename T_SetType::const_iterator const_iterator;
