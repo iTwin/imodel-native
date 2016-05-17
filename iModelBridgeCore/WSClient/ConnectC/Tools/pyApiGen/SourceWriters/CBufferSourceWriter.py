@@ -4,12 +4,14 @@ from PropertyTypeError import PropertyTypeError
 
 
 class CBufferSourceWriter(SourceWriter):
-    def __init__(self, ecclasses, source_filename, api, status_codes, excluded_classes=None):
+    def __init__(self, ecclasses, source_filename, api, status_codes, excluded_classes):
         super(CBufferSourceWriter, self).__init__(ecclasses, source_filename, api, status_codes, excluded_classes)
         self.__buffer_structs = []
         for ecclass in self._ecclasses:
-            if ecclass.attributes["typeName"].value not in self._excluded_classes:
-                self.__buffer_structs.append(CBufferStruct(ecclass, api, status_codes))
+            if ecclass.attributes["typeName"].value in excluded_classes and \
+                    excluded_classes[ecclass.attributes["typeName"].value].should_exclude_entire_class():
+                continue
+            self.__buffer_structs.append(CBufferStruct(ecclass, api, status_codes))
 
     def write_source(self):
         self._write_header_comments()
