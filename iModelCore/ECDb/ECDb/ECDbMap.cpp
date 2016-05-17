@@ -1462,7 +1462,7 @@ std::vector<ECClassId> const& ECDbMap::LightweightCache::GetClassesForTable(DbTa
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle 05/2016
 //---------------------------------------------------------------------------------------
-std::vector<ECClassId> const& ECDbMap::LightweightCache::GetNonAbstractClassesForTable(ECDbSqlTable const& table) const
+std::vector<ECClassId> const& ECDbMap::LightweightCache::GetNonAbstractClassesForTable(DbTable const& table) const
     {
     LoadClassIdsPerTable();
     return m_nonAbstractClassIdsPerTable[&table];
