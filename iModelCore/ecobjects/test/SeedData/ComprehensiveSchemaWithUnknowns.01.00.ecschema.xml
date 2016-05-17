@@ -7,7 +7,7 @@
         <UnknownElement />
     </ECCustomAttributeClass>
     <ECCustomAttributes unknownAttribute="foo">
-        <GeneralCustomAttribute unknownAttribute="foo"  xmlns="ComprehensiveSchema.01.00">
+        <GeneralCustomAttribute unknownAttribute="foo"  xmlns="ComprehensiveSchemaWithUnknowns.01.00">
             <Primitive unknownAttribute="foo" >General Value</Primitive>
         </GeneralCustomAttribute>
     </ECCustomAttributes>
@@ -31,7 +31,7 @@
     <ECEntityClass typeName="Entity" modifier="Sealed" unknownAttribute="foo" >
         <BaseClass unknownAttribute="foo">BaseEntity</BaseClass>
         <ECCustomAttributes>
-            <ClassCustomAttribute xmlns="ComprehensiveSchema.01.00">
+            <ClassCustomAttribute xmlns="ComprehensiveSchemaWithUnknowns.01.00">
                 <Primitive>General Value on Class</Primitive>
             </ClassCustomAttribute>
         </ECCustomAttributes>
