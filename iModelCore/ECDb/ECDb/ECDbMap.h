@@ -46,6 +46,7 @@ struct ECDbMap :NonCopyableClass
 
             private:
                 mutable ClassIdsPerTableMap m_classIdsPerTable;
+                mutable ClassIdsPerTableMap m_nonAbstractClassIdsPerTable;
                 mutable bmap<ECN::ECClassId, ClassIdsPerTableMap> m_horizontalPartitions;
                 mutable bmap<ECN::ECClassId, bmap<ECN::ECClassId, RelationshipEnd>> m_relationshipClassIdsPerConstraintClassIds;
                 mutable bmap<ECN::ECClassId, bmap<ECN::ECClassId, RelationshipEnd>> m_constraintClassIdsPerRelClassIds;
@@ -68,6 +69,7 @@ struct ECDbMap :NonCopyableClass
                 explicit LightweightCache(ECDbMapCR map);
                 ~LightweightCache() {}
                 std::vector<ECN::ECClassId> const& GetClassesForTable(DbTable const&) const;
+                std::vector<ECN::ECClassId> const& GetNonAbstractClassesForTable(DbTable const&) const;
                 bset<DbTable const*> const& GetVerticalPartitionsForClass(ECN::ECClassId classId) const;
                 ClassIdsPerTableMap const& GetHorizontalPartitionsForClass(ECN::ECClassId) const;
                 //Gets all the constraint class ids plus the constraint end that make up the relationship with the given class id.

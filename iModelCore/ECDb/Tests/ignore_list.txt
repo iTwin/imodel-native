@@ -25,4 +25,5 @@ JsonReaderTests.ReadInstanceAlongWithRelatedInstances
 #TFS 440168
 ECDbMappingTestFixture.MapRelationshipsToExistingTable
 
-ECDbMappingTestFixture.ECInstanceIdAutoGeneration # fails on Android - notified Krischan and Majd
+#TFS 445921 (Hassan) - fails on Android
+ECDbMappingTestFixture.ECInstanceIdAutoGeneration 
