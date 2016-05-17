@@ -45,11 +45,13 @@ public:
     static BentleyStatus GetECSchemaKeys(ECSchemaKeys&, ECDbCR);
     static bool TryGetECSchemaKey(SchemaKey&, ECDbCR, ECSchemaId);
     static BentleyStatus GetECClassKeys(ECClassKeys&, ECSchemaId, ECDbCR);
-
+    static bool TryGetECSchemaKey(SchemaKey&, ECDbCR, Utf8CP schemaName);
     static BentleyStatus SerializeRelationshipKeyProperties(Utf8StringR jsonStr, bvector<Utf8String> const& keyPropNames);
     static BentleyStatus DeserializeRelationshipKeyProperties(ECRelationshipConstraintClassR, Utf8CP jsonStr);
     static BentleyStatus SerializeECEnumerationValues(Utf8StringR jsonStr, ECEnumerationCR);
     static BentleyStatus DeserializeECEnumerationValues(ECEnumerationR, Utf8CP jsonStr);
+    
+    static bool ContainsECSchemaWithNamespacePrefix(ECDbCR db, Utf8CP namespacePrefix);
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

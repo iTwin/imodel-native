@@ -117,6 +117,7 @@ ECDbAllHeaders = \
                 $(baseDir)ECSql/EmbeddedECSqlStatement.h \
                 $(baseDir)ECSql/ECInstanceAdapterHelper.h \
                 $(baseDir)ECSql/JsonReaderImpl.h \
+                $(baseDir)ECSchemaComparer.h \
                 $(baseDir)ECDbSql.h
 
 #----------------------------------------------------------------------
@@ -348,11 +349,13 @@ $(o)StructMappedToColumnsECSqlField$(oext):                 $(baseDir)ECSql/Stru
 
 $(o)StructArrayMappedToSecondaryTableECSqlField$(oext):     $(baseDir)ECSql/StructArrayMappedToSecondaryTableECSqlField.cpp       $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECSqlStepTask$(oext):	                            $(baseDir)ECSql/ECSqlStepTask.cpp       $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECSqlStepTask$(oext):                                   $(baseDir)ECSql/ECSqlStepTask.cpp       $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)EmbeddedECSqlStatement$(oext):	                    $(baseDir)ECSql/EmbeddedECSqlStatement.cpp       $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECSchemaComparer$(oext):                                $(baseDir)ECSchemaComparer.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECDbSql$(oext):	                                    $(baseDir)ECDbSql.cpp             $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)EmbeddedECSqlStatement$(oext):                          $(baseDir)ECSql/EmbeddedECSqlStatement.cpp       $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)ECDbSql$(oext):	                                        $(baseDir)ECDbSql.cpp             $(ECDbAllHeaders) ${MultiCompileDepends}
 
 
 %include MultiCppCompileGo.mki

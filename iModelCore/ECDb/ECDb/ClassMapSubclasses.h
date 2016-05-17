@@ -40,14 +40,14 @@ private:
 
         ~EmbeddedTypeClassMap () {}
 
-        MapStatus Initialize ();
+        MappingStatus Initialize ();
         };
 
     std::unique_ptr<EmbeddedTypeClassMap> m_embeddedTypeClassView;
 
     StructClassMap (ECN::ECClassCR, ECDbMapCR, ECDbMapStrategy, bool setIsDirty);
 
-    virtual MapStatus _OnInitialized () override;
+    virtual MappingStatus _OnInitialized () override;
     virtual Type _GetClassMapType () const override;
     virtual IClassMap const& _GetView (View classView) const override;
     //virtual BentleyStatus _Save (std::set<ClassMap const*>& savedGraph);
@@ -70,8 +70,8 @@ public:
 struct UnmappedClassMap : public ClassMap
     {
 private:
-     virtual MapStatus _MapPart1 (SchemaImportContext&, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap) override;
-     virtual MapStatus _MapPart2(SchemaImportContext&, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap) override { return MapStatus::Success; }
+     virtual MappingStatus _MapPart1 (SchemaImportContext&, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap) override;
+     virtual MappingStatus _MapPart2(SchemaImportContext&, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap) override { return MappingStatus::Success; }
     virtual Type _GetClassMapType () const override { return IClassMap::Type::Unmapped; }
     UnmappedClassMap (ECN::ECClassCR ecClass, ECDbMapCR ecdbMap, ECDbMapStrategy mapStrategy, bool setIsDirty);
     virtual BentleyStatus _Load (std::set<ClassMap const*>& loadGraph, ClassMapLoadContext& ctx, ECDbClassMapInfo const& mapInfo, IClassMap const* parentClassMap) override

@@ -135,10 +135,6 @@ ECSchemaCacheR cache,
 ImportOptions const& options
 ) const
     {
-    SchemaImportContext context (m_map.GetSQLManager().GetDbSchemaR());
-    if (SUCCESS != context.Initialize())
-        return ERROR;
-
     if (m_ecdb.IsReadonly ())
         {
         m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to import ECSchemas. ECDb file is read-only.");
@@ -155,11 +151,21 @@ ImportOptions const& options
 
     BeMutexHolder lock (m_criticalSection);
     
-    bvector<ECSchemaCP> importedSchemas;
-    if (SUCCESS != BatchImportECSchemas (context, importedSchemas, cache, options))
+    SchemaImportContext context;
+    if (SUCCESS != context.Initialize(m_map.GetSQLManager(), m_ecdb))
+        return ERROR;
+    if (SUCCESS != BatchImportECSchemas (context, cache, options))
         return ERROR;
   
-    if (MapStatus::Error == m_map.MapSchemas (context, importedSchemas))
+    ECSchemaCompareContext& compareContext = context.GetECSchemaCompareContext();
+    if (compareContext.HasNoSchemasToImport())
+        return SUCCESS;
+
+    //See if cache need to be cleared. If compareContext.RequireECSchemaUpgrade() == true will clear the cache and reload imported schema.
+    if (compareContext.ReloadECSchemaIfRequired(*this) == ERROR)
+        return ERROR;
+
+    if (MappingStatus::Error == m_map.MapSchemas (context))
         return ERROR;
 
     {
@@ -178,7 +184,7 @@ ImportOptions const& options
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                   Affan.Khan        29/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaManager::BatchImportECSchemas(SchemaImportContext const& context, bvector<ECN::ECSchemaCP>& importedSchemas, ECSchemaCacheR schemaCache, ImportOptions const& options) const
+BentleyStatus ECDbSchemaManager::BatchImportECSchemas(SchemaImportContext const& context, ECSchemaCacheR schemaCache, ImportOptions const& options) const
     {
     bvector<ECSchemaP> schemas;
     schemaCache.GetSchemas(schemas);
@@ -196,30 +202,7 @@ BentleyStatus ECDbSchemaManager::BatchImportECSchemas(SchemaImportContext const&
             return ERROR;
             }
 
-        if (id > INT64_C(0))
-            {
-            //schema with same name already exists. If version of existing schema is older than fail, as ECDb does not update
-            //schemas via import
-            SchemaKey existingSchemaKey;
-            if (!ECDbSchemaPersistenceHelper::TryGetECSchemaKey(existingSchemaKey, m_ecdb, id))
-                {
-                BeAssert(false && "SchemaId exists, so schema key must be retrievable");
-                return ERROR;
-                }
-
-            if (schema->GetVersionMajor() > existingSchemaKey.GetVersionMajor() ||
-                (schema->GetVersionMajor() == existingSchemaKey.GetVersionMajor() &&
-                 schema->GetVersionMinor() > existingSchemaKey.GetVersionMinor()))
-                {
-                m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
-                                                                "Failed to import the ECSchema '%s'. The ECSchema already exists in the ECDb file with an older version '%s'. ECDb does not support to update ECSchemas on import.",
-                                                                schema->GetFullSchemaName().c_str(),
-                                                                ECSchema::FormatSchemaVersion(existingSchemaKey.GetVersionMajor(), existingSchemaKey.GetVersionMinor()).c_str());
-                return ERROR;
-                }
-            }
-        else
-            BuildDependencyOrderedSchemaList(schemasToImport, schema);
+        BuildDependencyOrderedSchemaList(schemasToImport, schema);
         }
 
     //1. Only import supplemental schema if doSupplement = True AND saveSupplementals = TRUE
@@ -289,15 +272,13 @@ BentleyStatus ECDbSchemaManager::BatchImportECSchemas(SchemaImportContext const&
     if (!isValid)
         return ERROR;
 
+    ECSchemaCompareContext& schemaPrepareContext = const_cast<SchemaImportContext&>(context).GetECSchemaCompareContext();
+    if (schemaPrepareContext.Prepare(*this, dependencyOrderedPrimarySchemas) != SUCCESS)
+        return ERROR;
     ECDbSchemaWriter schemaWriter(m_ecdb);
-    for (ECSchemaCP schema : dependencyOrderedPrimarySchemas)
+    for (ECSchemaCP schema : schemaPrepareContext.GetImportingSchemas())
         {
-        importedSchemas.push_back(schema);
-
-        if (INT64_C(0) != ECDbSchemaPersistenceHelper::GetECSchemaId(m_ecdb, schema->GetName().c_str()))
-            continue;
-
-        if (SUCCESS != schemaWriter.Import(*schema))
+        if (SUCCESS != schemaWriter.Import(schemaPrepareContext, *schema))
             return ERROR;
         }
 

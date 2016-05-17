@@ -10,6 +10,7 @@
 #include "ClassMap.h"
 #include "ClassMapInfo.h"
 #include "ECDbSql.h"
+#include "ECSchemaComparer.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -85,25 +86,52 @@ public:
 
     std::vector<std::unique_ptr<ECDbSqlIndex>> const& GetIndexes() const { return m_indexes; }
     };
+//=======================================================================================
+// @bsiclass                                                Affan.Khan            03/2016
+//+===============+===============+===============+===============+===============+======
+struct ECSchemaCompareContext
+    {
+private:
+    bvector<ECN::ECSchemaCP> m_existingSchemaList;
+    bvector<ECN::ECSchemaCP> m_importedSchemaList;
+    ECSchemaChanges m_changes;
+    bool m_prepared;
 
+    bool AssertIfNotPrepared() const;
+
+public:
+    ECSchemaCompareContext() : m_prepared(false) {}
+    ~ECSchemaCompareContext() {}
+
+    BentleyStatus Prepare(ECDbSchemaManager const& schemaManager, bvector<ECN::ECSchemaP> const& dependencyOrderedPrimarySchemas);
+    bvector<ECN::ECSchemaCP>  const& GetImportingSchemas() const { return m_importedSchemaList; }
+    ECN::ECSchemaCP FindExistingSchema(Utf8CP schemaName) const;
+    bool IsPrepared() const { return m_prepared; }
+    ECSchemaChanges& GetChanges() { return m_changes; }
+    bool HasNoSchemasToImport() const { return m_importedSchemaList.empty(); }
+    bool RequiresUpdate() const;
+
+    BentleyStatus ReloadECSchemaIfRequired(ECDbSchemaManager const&);
+    };
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      05/2014
 //+===============+===============+===============+===============+===============+======
 struct SchemaImportContext
     {
 private:
-    SchemaImportECDbMapDb m_ecdbMapDb;
+    std::unique_ptr<SchemaImportECDbMapDb> m_ecdbMapDb;
 
     mutable std::map<ECN::ECClassCP, std::unique_ptr<UserECDbMapStrategy>> m_userStrategyCache;
     std::map<ClassMap const*, std::unique_ptr<ClassMapInfo>> m_classMapInfoCache;
 
     ClassMapLoadContext m_loadContext;
+    ECSchemaCompareContext m_compareContext;
 
     UserECDbMapStrategy* GetUserStrategyP(ECN::ECClassCR, ECN::ECDbClassMap const*) const;
 
 public:
-    explicit SchemaImportContext (ECDbMapDb& coreECDbMapDb) : m_ecdbMapDb(coreECDbMapDb) {}
-    BentleyStatus Initialize() { return m_ecdbMapDb.Load(); }
+    SchemaImportContext() {}
+    BentleyStatus Initialize(ECDbSQLManager const& dbSchema, ECDbCR ecdb);
 
     //! Gets the user map strategy for the specified ECClass.
     //! @return User map strategy. If the class doesn't have one a default strategy is returned. Only in 
@@ -115,7 +143,8 @@ public:
     std::map<ClassMap const*, std::unique_ptr<ClassMapInfo>> const& GetClassMapInfoCache() const { return m_classMapInfoCache; }
 
     ClassMapLoadContext& GetClassMapLoadContext() { return m_loadContext; }
-    SchemaImportECDbMapDb& GetECDbMapDb() { return m_ecdbMapDb; }
+    SchemaImportECDbMapDb& GetECDbMapDb() { return *m_ecdbMapDb; }
+	ECSchemaCompareContext& GetECSchemaCompareContext() { return m_compareContext; }
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -19,7 +19,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod                                 Krischan.Eberle                02/2014
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-std::unique_ptr<ClassMapInfo> ClassMapInfoFactory::Create(MapStatus& mapStatus, SchemaImportContext const& schemaImportContext, ECN::ECClassCR ecClass, ECDbMapCR ecDbMap)
+std::unique_ptr<ClassMapInfo> ClassMapInfoFactory::Create(MappingStatus& mapStatus, SchemaImportContext const& schemaImportContext, ECN::ECClassCR ecClass, ECDbMapCR ecDbMap)
     {
     std::unique_ptr<ClassMapInfo> info = nullptr;
     ECRelationshipClassCP ecRelationshipClass = ecClass.GetRelationshipClassCP();
@@ -28,7 +28,7 @@ std::unique_ptr<ClassMapInfo> ClassMapInfoFactory::Create(MapStatus& mapStatus, 
     else
         info = std::unique_ptr<ClassMapInfo>(new ClassMapInfo(ecClass, ecDbMap));
 
-    if (info == nullptr || (mapStatus = info->Initialize()) != MapStatus::Success)
+    if (info == nullptr || (mapStatus = info->Initialize()) != MappingStatus::Success)
         return nullptr;
 
     return info;
@@ -48,17 +48,17 @@ ClassMapInfo::ClassMapInfo (ECClassCR ecClass, ECDbMapCR ecDbMap)
 //---------------------------------------------------------------------------------
 //@bsimethod                                 Affan.Khan                            07/2012
 //+---------------+---------------+---------------+---------------+---------------+------
-MapStatus ClassMapInfo::Initialize()
+MappingStatus ClassMapInfo::Initialize()
     {
     if (SUCCESS != _InitializeFromSchema())
-        return MapStatus::Error;
+        return MappingStatus::Error;
 
     //Default values for table name and primary key column name
     if (m_tableName.empty())
         {
         // if hint does not supply a table name, use {ECSchema prefix}_{ECClass name}
         if (SUCCESS != IClassMap::DetermineTableName(m_tableName, m_ecClass))
-            return MapStatus::Error;
+            return MappingStatus::Error;
         }
 
     return _EvaluateMapStrategy();
@@ -67,20 +67,20 @@ MapStatus ClassMapInfo::Initialize()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Ramanujam.Raman                07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-MapStatus ClassMapInfo::_EvaluateMapStrategy()
+MappingStatus ClassMapInfo::_EvaluateMapStrategy()
     {
     if (m_ecClass.IsCustomAttributeClass())
         {
         LogClassNotMapped(NativeLogging::LOG_DEBUG, m_ecClass, "ECClass is a custom attribute which is never mapped to a table in ECDb.");
         m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::NotMapped, false);
-        return MapStatus::Success;
+        return MappingStatus::Success;
         }
 
     if (IClassMap::IsAnyClass(m_ecClass) || (m_ecClass.GetSchema().IsStandardSchema() && m_ecClass.GetName().CompareTo("InstanceCount") == 0))
         {
         LogClassNotMapped(NativeLogging::LOG_INFO, m_ecClass, "ECClass is a standard class not supported by ECDb.");
         m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::NotMapped, false);
-        return MapStatus::Success;
+        return MappingStatus::Success;
         }
 
     BeAssert(m_ecdbMap.GetSchemaImportContext() != nullptr);
@@ -88,12 +88,12 @@ MapStatus ClassMapInfo::_EvaluateMapStrategy()
     if (userStrategy == nullptr)
         {
         BeAssert(false);
-        return MapStatus::Error;
+        return MappingStatus::Error;
         }
 
     bool baseClassesNotMappedYet;
     if (SUCCESS != DoEvaluateMapStrategy(baseClassesNotMappedYet, *userStrategy))
-        return baseClassesNotMappedYet ? MapStatus::BaseClassesNotMapped : MapStatus::Error;
+        return baseClassesNotMappedYet ? MappingStatus::BaseClassesNotMapped : MappingStatus::Error;
 
     BeAssert(m_resolvedStrategy.IsResolved());
 
@@ -105,7 +105,7 @@ MapStatus ClassMapInfo::_EvaluateMapStrategy()
     if (m_isMapToVirtualTable)
         m_isMapToVirtualTable = m_resolvedStrategy.GetStrategy() != ECDbMapStrategy::Strategy::SharedTable;
 
-    return MapStatus::Success;
+    return MappingStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -634,30 +634,30 @@ BentleyStatus RelationshipMapInfo::ResolveEndTables(EndTablesOptimizationOptions
     }
 
 
-MapStatus RelationshipMapInfo::Validate(ECDbMapStrategy::Strategy strategy, RelationshipMapInfo::Cardinality cardinality)
+MappingStatus RelationshipMapInfo::Validate(ECDbMapStrategy::Strategy strategy, RelationshipMapInfo::Cardinality cardinality)
     {
     ECRelationshipClassCR rel = *GetECClass().GetRelationshipClassCP();
     if (rel.GetStrength() != StrengthType::Embedding)
-        return MapStatus::Success;
+        return MappingStatus::Success;
 
     if (strategy == ECDbMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable)
         {
         if (cardinality == RelationshipMapInfo::Cardinality::OneToOne)
             {
             if (rel.GetStrengthDirection() == ECRelatedInstanceDirection::Backward)
-                return MapStatus::Success;
+                return MappingStatus::Success;
 
             m_ecdbMap.GetECDbR().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "For embedding type relationship '%s' StengthDirection (Forward) does not match resolved MapStrategy (ForeignKeyRelationshipInSourceTable). StrengthDirection should be inverted to fix this issue.", rel.GetFullName());            
-            return MapStatus::Error;
+            return MappingStatus::Error;
             }
 
         if (cardinality == RelationshipMapInfo::Cardinality::ManyToOne)
             {
             if (rel.GetStrengthDirection() == ECRelatedInstanceDirection::Backward)
-                return MapStatus::Success;
+                return MappingStatus::Success;
 
             m_ecdbMap.GetECDbR().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "For embedding type relationship '%s' StengthDirection (Forward) does not match resolved MapStrategy (ForeignKeyRelationshipInSourceTable). StrengthDirection should be inverted to fix this issue.", rel.GetFullName());
-            return MapStatus::Error;
+            return MappingStatus::Error;
             }
         }
     else if (strategy == ECDbMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable)
@@ -665,36 +665,36 @@ MapStatus RelationshipMapInfo::Validate(ECDbMapStrategy::Strategy strategy, Rela
         if (cardinality == RelationshipMapInfo::Cardinality::OneToOne)
             {
             if (rel.GetStrengthDirection() == ECRelatedInstanceDirection::Forward)
-                return MapStatus::Success;
+                return MappingStatus::Success;
 
             m_ecdbMap.GetECDbR().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "For embedding type relationship '%s' StengthDirection (Backward) does not match resolved MapStrategy (ForeignKeyRelationshipInTargetTable). StrengthDirection should be inverted to fix this issue.", rel.GetFullName());
-            return MapStatus::Error;
+            return MappingStatus::Error;
             }
 
         if (cardinality == RelationshipMapInfo::Cardinality::OneToMany)
             {
             if (rel.GetStrengthDirection() == ECRelatedInstanceDirection::Forward)
-                return MapStatus::Success;
+                return MappingStatus::Success;
 
             m_ecdbMap.GetECDbR().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "For embedding type relationship '%s' StengthDirection (Backward) does not match resolved MapStrategy (ForeignKeyRelationshipInTargetTable). StrengthDirection should be inverted to fix this issue.", rel.GetFullName());
-            return MapStatus::Error;
+            return MappingStatus::Error;
             }
         }
 
     BeAssert(false && "Unexpected map strategy");
-    return MapStatus::Error;
+    return MappingStatus::Error;
     }
 //---------------------------------------------------------------------------------
 // @bsimethod                                 Ramanujam.Raman                07 / 2012
 //+---------------+---------------+---------------+---------------+---------------+------
-MapStatus RelationshipMapInfo::_EvaluateMapStrategy()
+MappingStatus RelationshipMapInfo::_EvaluateMapStrategy()
     {
-    MapStatus stat = ClassMapInfo::_EvaluateMapStrategy();
-    if (stat != MapStatus::Success)
+    MappingStatus stat = ClassMapInfo::_EvaluateMapStrategy();
+    if (stat != MappingStatus::Success)
         return stat;
 
     if (m_resolvedStrategy.IsNotMapped())
-        return MapStatus::Success;
+        return MappingStatus::Success;
 
     ECRelationshipClassCP relationshipClass = GetECClass().GetRelationshipClassCP();
     ECRelationshipConstraintR source = relationshipClass->GetSource();
@@ -710,17 +710,17 @@ MapStatus RelationshipMapInfo::_EvaluateMapStrategy()
                 "Failed to map ECRelationshipClass %s. Is has a ForeignKeyRelationshipClassMap CA and at the same time is part of a class hierarchy with the 'SharedTable (AppliesToSubclasses)' MapStrategy.",
                 GetECClass().GetFullName());
 
-            return MapStatus::Error;
+            return MappingStatus::Error;
             }
 
         if (ResolveEndTables(EndTablesOptimizationOptions::ReferencedEnd, EndTablesOptimizationOptions::ReferencedEnd) == ERROR)
             {
             LogClassNotMapped(NativeLogging::LOG_WARNING, *relationshipClass, "Source or target constraints don't include any concrete classes or its classes are not mapped to tables.");
             m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::NotMapped, false);
-            return MapStatus::Success;
+            return MappingStatus::Success;
             }
 
-        return MapStatus::Success;
+        return MappingStatus::Success;
         }
 
 
@@ -733,7 +733,7 @@ MapStatus RelationshipMapInfo::_EvaluateMapStrategy()
             m_ecdbMap.GetECDbR().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
                 "Failed to map ECRelationshipClass %s. It implies a link table relationship because of its cardinality or because it has ECProperties. Therefore it must not have a ForeignKeyRelationshipMap custom attribute.",
                 GetECClass().GetFullName());
-            return MapStatus::Error;
+            return MappingStatus::Error;
             }
 
         if (relationshipClass->GetStrength() == StrengthType::Embedding)
@@ -741,17 +741,17 @@ MapStatus RelationshipMapInfo::_EvaluateMapStrategy()
             m_ecdbMap.GetECDbR().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
                  "Failed to map ECRelationshipClass %s. It implies a link table relationship, but has the strength 'Embedding' which is not allowed for link tables.",
                 GetECClass().GetFullName());
-            return MapStatus::Error;
+            return MappingStatus::Error;
             }
 
         if (ResolveEndTables(EndTablesOptimizationOptions::ReferencedEnd, EndTablesOptimizationOptions::ReferencedEnd) == ERROR)
             {
             LogClassNotMapped(NativeLogging::LOG_WARNING, *relationshipClass, "Source or target constraints don't include any concrete classes or its classes are not mapped to tables.");
             m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::NotMapped, false);
-            return MapStatus::Success;
+            return MappingStatus::Success;
             }
 
-        return m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::OwnTable, false) == SUCCESS ? MapStatus::Success : MapStatus::Error;
+        return m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::OwnTable, false) == SUCCESS ? MappingStatus::Success : MappingStatus::Error;
         }
 
     //FK type relationship mapping
@@ -759,7 +759,7 @@ MapStatus RelationshipMapInfo::_EvaluateMapStrategy()
         {
         LogClassNotMapped(NativeLogging::LOG_WARNING, *relationshipClass, "Source or target constraints don't include any concrete classes or its classes are not mapped to tables.");
         m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::NotMapped, false);
-        return MapStatus::Success;
+        return MappingStatus::Success;
         }
 
     BeAssert(!m_allowDuplicateRelationships && "This can only be true if CustomMapType is LinkTable. That condition was already handled before though.");
@@ -786,7 +786,7 @@ MapStatus RelationshipMapInfo::_EvaluateMapStrategy()
                         m_ecdbMap.GetECDbR().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
                                    "Failed to map ECRelationshipClass %s. It implies a link table relationship as the %s mapped to more than one end table. Therefore it must not have a ForeignKeyRelationshipMap custom attribute.",
                                    GetECClass().GetFullName(), constraintStr);
-                        return MapStatus::Error;
+                        return MappingStatus::Error;
                         }
 
                     resolvedStrategy = ECDbMapStrategy::Strategy::OwnTable;
@@ -816,7 +816,7 @@ MapStatus RelationshipMapInfo::_EvaluateMapStrategy()
                     m_ecdbMap.GetECDbR().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
                                "Failed to map ECRelationshipClass %s. It implies a foreign key relationship on the target's table. Therefore the 'End' property in the ForeignKeyRelationshipMap custom attribute must not be set to 'Source'.",
                                GetECClass().GetFullName());
-                    return MapStatus::Error;
+                    return MappingStatus::Error;
                     }
 
                 if (sourceTableCount > 1)
@@ -824,7 +824,7 @@ MapStatus RelationshipMapInfo::_EvaluateMapStrategy()
                     m_ecdbMap.GetECDbR().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
                         "Failed to map ECRelationshipClass %s. Its foreign key end (Target) references more than one table (Source). This is not supported. Either define the MapStrategy 'SharedTable' on the classes of the referenced constraint or modify the ECRelationshipClass accordingly.",
                         GetECClass().GetFullName());
-                    return MapStatus::Error;
+                    return MappingStatus::Error;
                     }
 
                 resolvedStrategy = ECDbMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable;
@@ -838,7 +838,7 @@ MapStatus RelationshipMapInfo::_EvaluateMapStrategy()
                     m_ecdbMap.GetECDbR().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
                         "Failed to map ECRelationshipClass %s. It implies a foreign key relationship on the source's table. Therefore the 'End' property in the ForeignKeyRelationshipMap custom attribute must not be set to 'Target'.",
                         GetECClass().GetFullName());
-                    return MapStatus::Error;
+                    return MappingStatus::Error;
                     }
 
                 if (targetTableCount > 1)
@@ -846,7 +846,7 @@ MapStatus RelationshipMapInfo::_EvaluateMapStrategy()
                     m_ecdbMap.GetECDbR().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
                                "Failed to map ECRelationshipClass %s. Its foreign key end (Source) references more than one table (Target). This is not supported. Either define the MapStrategy 'SharedTable' on the classes of the referenced constraint or modify the ECRelationshipClass accordingly.",
                                GetECClass().GetFullName());
-                    return MapStatus::Error;
+                    return MappingStatus::Error;
                     }
 
                 resolvedStrategy = ECDbMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable;
@@ -855,7 +855,7 @@ MapStatus RelationshipMapInfo::_EvaluateMapStrategy()
 
             default:
                 BeAssert(false && "ManyToMany case should have been handled already.");
-                return MapStatus::Error;
+                return MappingStatus::Error;
         }
 
     if (resolvedStrategy == ECDbMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable)
@@ -865,10 +865,10 @@ MapStatus RelationshipMapInfo::_EvaluateMapStrategy()
     else
         ResolveEndTables(EndTablesOptimizationOptions::ReferencedEnd, EndTablesOptimizationOptions::ReferencedEnd);
 
-    if (Validate(resolvedStrategy, m_cardinality) != MapStatus::Success)
-        return MapStatus::Error;
+    if (Validate(resolvedStrategy, m_cardinality) != MappingStatus::Success)
+        return MappingStatus::Error;
 
-    return m_resolvedStrategy.Assign(resolvedStrategy, false) == SUCCESS ? MapStatus::Success : MapStatus::Error;
+    return m_resolvedStrategy.Assign(resolvedStrategy, false) == SUCCESS ? MappingStatus::Success : MappingStatus::Error;
 
     }
 

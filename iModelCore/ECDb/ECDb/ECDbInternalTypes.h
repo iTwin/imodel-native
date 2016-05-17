@@ -135,7 +135,7 @@ enum class ForeignKeyActionType
 
 typedef int64_t ECContainerId;
 
-enum class MapStatus 
+enum class MappingStatus 
     {
     Success                         = 0,
     BaseClassesNotMapped            = 1,    // We have temporarily stopped mapping a given branch of the class hierarchy because

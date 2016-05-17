@@ -113,8 +113,8 @@ private:
     void AddIndexToRelationshipEnd (SchemaImportContext&, ClassMapInfo const& mapInfo);
 
     bool GetReferencedEndKeyColumnName (Utf8StringR columnName, ECDbSqlTable const& table, bool mappingInProgress) const;
-    virtual MapStatus _MapPart1 (SchemaImportContext&, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap) override;
-    virtual MapStatus _MapPart2 (SchemaImportContext&, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap) override;
+    virtual MappingStatus _MapPart1 (SchemaImportContext&, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap) override;
+    virtual MappingStatus _MapPart2 (SchemaImportContext&, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap) override;
 
     //! Tries to retrieve the column to which the key property on the specified constraint is mapped to.
     //! @param[out] keyPropertyColumn found column or nullptr if no key property was defined on the constraint.
@@ -161,10 +161,10 @@ private:
     RelationshipClassLinkTableMap (ECN::ECRelationshipClassCR ecRelClass, ECDbMapCR ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty);
     virtual Type _GetClassMapType () const override { return Type::RelationshipLinkTable; };
 
-    virtual MapStatus _MapPart1 (SchemaImportContext&, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap) override;
-    virtual MapStatus _MapPart2 (SchemaImportContext&, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap) override;
+    virtual MappingStatus _MapPart1 (SchemaImportContext&, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap) override;
+    virtual MappingStatus _MapPart2 (SchemaImportContext&, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap) override;
 
-    MapStatus CreateConstraintPropMaps (RelationshipMapInfo const&, bool addSourceECClassIdColumnToTable, ECN::ECClassId defaultSourceECClassid, bool addTargetECClassIdColumnToTable, ECN::ECClassId defaultTargetECClassId);
+    MappingStatus CreateConstraintPropMaps (RelationshipMapInfo const&, bool addSourceECClassIdColumnToTable, ECN::ECClassId defaultSourceECClassid, bool addTargetECClassIdColumnToTable, ECN::ECClassId defaultTargetECClassId);
 
     void AddIndices (SchemaImportContext&, ClassMapInfo const&);
     void AddIndex(SchemaImportContext&, RelationshipIndexSpec, bool addUniqueIndex);

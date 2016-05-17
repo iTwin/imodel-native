@@ -25,7 +25,7 @@ private:
     ~ClassMapInfoFactory ();
 
 public:
-    static std::unique_ptr<ClassMapInfo> Create(MapStatus&, SchemaImportContext const&, ECN::ECClassCR, ECDbMapCR);
+    static std::unique_ptr<ClassMapInfo> Create(MappingStatus&, SchemaImportContext const&, ECN::ECClassCR, ECDbMapCR);
     };
 
 //======================================================================================
@@ -57,14 +57,14 @@ private:
 
 protected:
     virtual BentleyStatus _InitializeFromSchema();
-    virtual MapStatus _EvaluateMapStrategy();
+    virtual MappingStatus _EvaluateMapStrategy();
 
     static void LogClassNotMapped (NativeLogging::SEVERITY severity, ECN::ECClassCR ecClass, Utf8CP explanation);
 public:
     ClassMapInfo(ECN::ECClassCR, ECDbMapCR);
     virtual ~ClassMapInfo() {}
 
-    MapStatus Initialize();
+    MappingStatus Initialize();
 
     ECDbMapStrategy const& GetMapStrategy () const{ return m_resolvedStrategy; }
     ECDbMapCR GetECDbMap() const {return m_ecdbMap;}
@@ -135,10 +135,10 @@ private:
     std::set<ECDbSqlTable const*>  m_targetTables;
 
     virtual BentleyStatus _InitializeFromSchema() override;
-    virtual MapStatus _EvaluateMapStrategy();
+    virtual MappingStatus _EvaluateMapStrategy();
     void DetermineCardinality(ECN::ECRelationshipConstraintCR source, ECN::ECRelationshipConstraintCR target);
     BentleyStatus ResolveEndTables(EndTablesOptimizationOptions source, EndTablesOptimizationOptions target);
-    MapStatus Validate(ECDbMapStrategy::Strategy strategy, RelationshipMapInfo::Cardinality cardinality);
+    MappingStatus Validate(ECDbMapStrategy::Strategy strategy, RelationshipMapInfo::Cardinality cardinality);
 
 public:
     RelationshipMapInfo(ECN::ECRelationshipClassCR relationshipClass, ECDbMapCR ecdbMap) : ClassMapInfo(relationshipClass, ecdbMap), m_sourceColumnsMappingIsNull(true), m_targetColumnsMappingIsNull(true),

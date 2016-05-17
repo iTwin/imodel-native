@@ -64,13 +64,34 @@ void SchemaImportTestFixture::AssertSchemaImport(bool& asserted, ECDbCR ecdb, Sc
         }
 
     if (!deserializationFailed)
-        ASSERT_EQ(testItem.m_expectedToSucceed, SUCCESS == ecdb.Schemas().ImportECSchemas(context->GetCache ())) << testItem.m_assertMessage.c_str();
+        {
+        Savepoint sp(const_cast<ECDbR>(ecdb), "ECSChema Import");
+        BentleyStatus schemaImportStatus = ecdb.Schemas().ImportECSchemas(context->GetCache());
+        if (schemaImportStatus == SUCCESS)
+            sp.Commit();
+        else
+            sp.Cancel();
 
+        ASSERT_EQ(testItem.m_expectedToSucceed, SUCCESS == schemaImportStatus) << testItem.m_assertMessage.c_str();
+        }
     asserted = false;
     BeTest::SetFailOnAssert(true);
     }
 
-
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     04/16
+//+---------------+---------------+---------------+---------------+---------------+------
+void SchemaImportTestFixture::AssertColumnCount(ECDbCR ecdb, std::vector<std::pair<Utf8String, int>> const& testItems, Utf8CP scenario)
+    {
+    for (std::pair<Utf8String, int> const& kvPair : testItems)
+        {
+        Utf8CP tableName = kvPair.first.c_str();
+        const int expectedColCount = kvPair.second;
+        bvector<Utf8String> colNames;
+        ASSERT_TRUE(ecdb.GetColumns(colNames, tableName)) << tableName << " Scenario: " << scenario;
+        ASSERT_EQ(expectedColCount, colNames.size()) << tableName << " Scenario: " << scenario;
+        }
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  09/15

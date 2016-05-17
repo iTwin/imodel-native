@@ -31,7 +31,7 @@ ClassMap::Type StructClassMap::_GetClassMapType () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  02/2014
 //---------------------------------------------------------------------------------------
-MapStatus StructClassMap::_OnInitialized ()
+MappingStatus StructClassMap::_OnInitialized ()
     {
     return m_embeddedTypeClassView->Initialize ();
     }
@@ -52,7 +52,7 @@ IClassMap const& StructClassMap::_GetView (View classView) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  02/2014
 //---------------------------------------------------------------------------------------
-MapStatus StructClassMap::EmbeddedTypeClassMap::Initialize ()
+MappingStatus StructClassMap::EmbeddedTypeClassMap::Initialize ()
     {
     auto const& schemaManager = GetECDbMap ().GetECDbR ().Schemas ();
     auto systemPropMap = PropertyMapStructArrayTableKey::Create (schemaManager, ECSqlSystemProperty::ECInstanceId, *this);
@@ -78,7 +78,7 @@ MapStatus StructClassMap::EmbeddedTypeClassMap::Initialize ()
         m_embeddedClassViewPropMaps.AddPropertyMap (propMapPtr);
         }
 
-    return MapStatus::Success;
+    return MappingStatus::Success;
     }
 
 //************************** UnmappedClassMap ***************************************************
@@ -92,7 +92,7 @@ UnmappedClassMap::UnmappedClassMap (ECClassCR ecClass, ECDbMapCR ecdbMap, ECDbMa
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  02/2014
 //---------------------------------------------------------------------------------------
-MapStatus UnmappedClassMap::_MapPart1 (SchemaImportContext&, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap)
+MappingStatus UnmappedClassMap::_MapPart1 (SchemaImportContext&, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap)
     {
     m_dbView = std::unique_ptr<ClassDbView> (new ClassDbView (*this));
 
@@ -102,7 +102,7 @@ MapStatus UnmappedClassMap::_MapPart1 (SchemaImportContext&, ClassMapInfo const&
     auto nullTable = GetECDbMap ().GetSQLManager ().GetNullTable ();
     SetTable (*const_cast<ECDbSqlTable*> (nullTable));
 
-    return MapStatus::Success;
+    return MappingStatus::Success;
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

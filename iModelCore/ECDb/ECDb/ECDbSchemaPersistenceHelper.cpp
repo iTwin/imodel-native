@@ -43,6 +43,25 @@ bool ECDbSchemaPersistenceHelper::TryGetECSchemaKey(SchemaKey& key, ECDbCR ecdb,
     key = SchemaKey(stmt->GetValueText(0), stmt->GetValueInt(1), stmt->GetValueInt(3));
     return true;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                    04/2016
+//---------------------------------------------------------------------------------------
+bool ECDbSchemaPersistenceHelper::TryGetECSchemaKey(SchemaKey& key, ECDbCR ecdb, Utf8CP schemaName)
+    {
+    CachedStatementPtr stmt = nullptr;
+    if (BE_SQLITE_OK != ecdb.GetCachedStatement(stmt, "SELECT Name, VersionDigit1, VersionDigit2, VersionDigit3 FROM ec_Schema WHERE Name=?"))
+        return false;
+
+    if (BE_SQLITE_OK != stmt->BindText(1, schemaName, Statement::MakeCopy::No))
+        return false;
+
+    if (stmt->Step() != BE_SQLITE_ROW)
+        return false;
+
+    key = SchemaKey(stmt->GetValueText(0), stmt->GetValueInt(1), stmt->GetValueInt(3));
+    return true;
+    }
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -61,6 +80,21 @@ BentleyStatus ECDbSchemaPersistenceHelper::GetECSchemaKeys(ECSchemaKeys& keys, E
         }
 
     return SUCCESS;
+    }
+	
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    Affan.Khan        03/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECDbSchemaPersistenceHelper::ContainsECSchemaWithNamespacePrefix(ECDbCR db, Utf8CP namespacePrefix)
+    {
+    CachedStatementPtr stmt = nullptr;
+    //Although the columns used in the WHERE have COLLATE NOCASE we need to specify it in the WHERE clause again
+    //to satisfy older files which were created before column COLLATE NOCASE was added to the ECDb profile tables.
+    if (BE_SQLITE_OK != db.GetCachedStatement(stmt, "SELECT NULL FROM ec_Schema WHERE NamespacePrefix=? COLLATE NOCASE"))
+        return false;
+
+    stmt->BindText(1, namespacePrefix, Statement::MakeCopy::No);
+    return stmt->Step() == BE_SQLITE_ROW;
     }
 
 /*---------------------------------------------------------------------------------------

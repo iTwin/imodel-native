@@ -336,19 +336,19 @@ struct ClassMap : public IClassMap, RefCountedBase
         //! @param propertyAccessString (as used here) does not support access "inside" arrays, e.g. you can access a struct member inside an array of structs
         ECN::ECPropertyCP GetECProperty(ECN::ECClassCR ecClass, Utf8CP propertyAccessString);
 
-        virtual MapStatus _OnInitialized();
+        virtual MappingStatus _OnInitialized();
         virtual Type _GetClassMapType() const override;
 
     protected:
         ClassMap(ECN::ECClassCR, ECDbMapCR, ECDbMapStrategy, bool setIsDirty);
 
-        virtual MapStatus _MapPart1(SchemaImportContext&, ClassMapInfo const&, IClassMap const* parentClassMap);
-        virtual MapStatus _MapPart2(SchemaImportContext&, ClassMapInfo const&, IClassMap const* parentClassMap);
+        virtual MappingStatus _MapPart1(SchemaImportContext&, ClassMapInfo const&, IClassMap const* parentClassMap);
+        virtual MappingStatus _MapPart2(SchemaImportContext&, ClassMapInfo const&, IClassMap const* parentClassMap);
         virtual BentleyStatus _Load(std::set<ClassMap const*>& loadGraph, ClassMapLoadContext&, ECDbClassMapInfo const&, IClassMap const* parentClassMap);
         virtual BentleyStatus _Save(std::set<ClassMap const*>& savedGraph); 
         
 
-        MapStatus AddPropertyMaps(ClassMapLoadContext&, IClassMap const* parentClassMap, ECDbClassMapInfo const* loadInfo, ClassMapInfo const* classMapInfo);
+        MappingStatus AddPropertyMaps(ClassMapLoadContext&, IClassMap const* parentClassMap, ECDbClassMapInfo const* loadInfo, ClassMapInfo const* classMapInfo);
         void SetTable(ECDbSqlTable& newTable, bool append = false);
         virtual PropertyMapCollection const& _GetPropertyMaps() const;
         virtual TableListR _GetTables() const override { return m_tables; }
@@ -368,7 +368,7 @@ struct ClassMap : public IClassMap, RefCountedBase
         BentleyStatus Load(std::set<ClassMap const*>& loadGraph, ClassMapLoadContext& ctx, ECDbClassMapInfo const& mapInfo, IClassMap const* parentClassMap) { return _Load(loadGraph, ctx, mapInfo, parentClassMap); }
 
         //! Called during schema import when creating the class map from the imported ECClass 
-        MapStatus Map(SchemaImportContext&, ClassMapInfo const& classMapInfo);
+        MappingStatus Map(SchemaImportContext&, ClassMapInfo const& classMapInfo);
 
         ECDbSqlColumn* FindOrCreateColumnForProperty(ClassMapCR, ClassMapInfo const*, PropertyMapR,
                                                      Utf8CP requestedColumnName, ECN::PrimitiveType, bool nullable, bool unique, ECDbSqlColumn::Constraint::Collation, Utf8CP accessStringPrefix);
