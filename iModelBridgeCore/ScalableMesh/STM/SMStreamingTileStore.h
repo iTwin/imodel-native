@@ -783,23 +783,8 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
 
             if (header->m_isTextured)
                 {
-                auto& textures = nodeHeader["textureIDs"];
-                assert(textures.isArray());
-                header->m_textureID.resize(textures.size());
-                if (textures.size() > 0)
-                    {
-                    assert(header->m_isTextured);
-                    for (size_t indiceID = 0; indiceID < (size_t)textures.size(); indiceID++)
-                        {
-                        auto textureID = textures[(Json::ArrayIndex)indiceID].asUInt();
-                        header->m_textureID[indiceID] = textureID != IDTMFile::GetNullNodeID() ? HPMBlockID(textureID) : IDTMFile::GetNullNodeID();
-                        }
-                    }
-                else
-                    {
-                    header->m_textureID.resize(1);
-                    header->m_textureID[0] = HPMBlockID();
-                    }
+                header->m_textureID.resize(1);
+                header->m_textureID[0] = HPMBlockID(header->m_uvID);
 
                 auto& indices = nodeHeader["indiceID"];
                 assert(indices.isArray());
@@ -812,11 +797,6 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                         header->m_ptsIndiceID[indiceID] = id != IDTMFile::GetNullNodeID() ? HPMBlockID(id) : IDTMFile::GetNullNodeID();
                         }
                     }
-                //else
-                //    {
-                //    header->m_ptsIndiceID.resize(1);
-                //    header->m_ptsIndiceID[0] = HPMBlockID();
-                //    }
 
                 auto& uvIndiceIDs = nodeHeader["uvIndiceIDs"];
                 assert(uvIndiceIDs.isArray());
@@ -1346,7 +1326,10 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                     BeFile file;
                     auto filename = (m_path + L"MasterHeader.sscm").c_str();
                     if (BeFileStatus::Success != OPEN_FILE(file, filename, BeFileAccess::Read))//file.Open(filename, BeFileAccess::Read, BeFileSharing::None))
+                        {
+                        assert(!"Local master header could not be found");
                         return 0;
+                        }
                     char inBuffer[100000];
                     uint32_t bytes_read = 0;
                     file.Read(inBuffer, &bytes_read, (uint32_t)headerSize);
@@ -1558,10 +1541,10 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                 indice = header->m_ptsIndiceID[i].IsValid() ? ConvertBlockID(header->m_ptsIndiceID[i]) : IDTMFile::GetNullNodeID();
                 }
 
-            if (header->m_isTextured && !header->m_textureID.empty() && IsValidID(header->m_textureID[0]))
+            if (header->m_isTextured /*&& !header->m_textureID.empty() && IsValidID(header->m_textureID[0])*/)
                 {
                 block["areTextured"] = true;
-                block["nbTextureIDs"] = (int)header->m_textureID.size();
+                /*block["nbTextureIDs"] = (int)header->m_textureID.size();
                 auto& textureIDs = block["textureIDs"];
                 for (size_t i = 0; i < header->m_textureID.size(); i++)
                     {
@@ -1571,7 +1554,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                         Json::Value& textureID = (uint32_t)i >= textureIDs.size() ? textureIDs.append(Json::Value()) : textureIDs[(uint32_t)i];
                         textureID = header->m_textureID[i].IsValid() ? convertedID : IDTMFile::GetNullNodeID();
                         }
-                    }
+                    }*/
                 block["uvID"] = header->m_uvID.IsValid() ? ConvertBlockID(header->m_uvID) : IDTMFile::GetNullNodeID();
 
                 block["nbUVIDs"] = (int)header->m_uvsIndicesID.size();

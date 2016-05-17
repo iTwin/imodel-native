@@ -77,7 +77,7 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
 
                 void DecompressTexture(uint8_t* pi_CompressedTextureData, uint32_t pi_CompressedTextureSize, uint32_t pi_TextureSize, size_t pi_nOfChannels = 3)
                     {
-                    HCDPacket uncompressedPacket, compressedPacket(pi_CompressedTextureData, pi_CompressedTextureSize, pi_CompressedTextureSize);
+                    HCDPacket uncompressedPacket, compressedPacket(pi_CompressedTextureData + 4 * sizeof(int), pi_CompressedTextureSize - 4 * sizeof(int), pi_CompressedTextureSize);
                     uncompressedPacket.SetDataSize(pi_TextureSize);
 
                     m_Width = m_Height = (size_t)sqrt(pi_TextureSize / pi_nOfChannels);
