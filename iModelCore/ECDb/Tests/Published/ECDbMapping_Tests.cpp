@@ -1884,6 +1884,106 @@ TEST_F(ECDbMappingTestFixture, SharedColumnCA)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsiMethod                                      Krischan.Eberle                  05/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbMappingTestFixture, SharedColumnAndPerColumnConstraints)
+    {
+    SchemaItem testSchema("<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECSchemaReference name='ECDbMap' version='01.00.01' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='Parent' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00.01'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <Options>SharedColumns</Options>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Price' typeName='double' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Child' modifier='None'>"
+        "        <BaseClass>Parent</BaseClass>"
+        "        <ECProperty propertyName='NotNullableProp' typeName='double'>"
+        "           <ECCustomAttributes>"
+        "            <PropertyMap xmlns='ECDbMap.01.00.01'>"
+        "                <IsNullable>false</IsNullable>"
+        "            </PropertyMap>"
+        "           </ECCustomAttributes>"
+        "        </ECProperty>"
+        "        <ECProperty propertyName='NullableProp' typeName='string'>"
+        "           <ECCustomAttributes>"
+        "            <PropertyMap xmlns='ECDbMap.01.00.01'>"
+        "                <IsNullable>true</IsNullable>"
+        "            </PropertyMap>"
+        "           </ECCustomAttributes>"
+        "        </ECProperty>"
+        "        <ECProperty propertyName='UniqueProp' typeName='string'>"
+        "           <ECCustomAttributes>"
+        "            <PropertyMap xmlns='ECDbMap.01.00.01'>"
+        "                <IsUnique>true</IsUnique>"
+        "            </PropertyMap>"
+        "           </ECCustomAttributes>"
+        "        </ECProperty>"
+        "        <ECProperty propertyName='NotUniqueProp' typeName='string'>"
+        "           <ECCustomAttributes>"
+        "            <PropertyMap xmlns='ECDbMap.01.00.01'>"
+        "                <IsUnique>false</IsUnique>"
+        "            </PropertyMap>"
+        "           </ECCustomAttributes>"
+        "        </ECProperty>"
+        "        <ECProperty propertyName='CollationBinaryProp' typeName='string'>"
+        "           <ECCustomAttributes>"
+        "            <PropertyMap xmlns='ECDbMap.01.00.01'>"
+        "                <Collation>Binary</Collation>"
+        "            </PropertyMap>"
+        "           </ECCustomAttributes>"
+        "        </ECProperty>"
+        "        <ECProperty propertyName='CollationNoCaseProp' typeName='string'>"
+        "           <ECCustomAttributes>"
+        "            <PropertyMap xmlns='ECDbMap.01.00.01'>"
+        "                <Collation>NoCase</Collation>"
+        "            </PropertyMap>"
+        "           </ECCustomAttributes>"
+        "        </ECProperty>"
+        "        <ECProperty propertyName='CollationRTrimProp' typeName='string'>"
+        "           <ECCustomAttributes>"
+        "            <PropertyMap xmlns='ECDbMap.01.00.01'>"
+        "                <Collation>RTrim</Collation>"
+        "            </PropertyMap>"
+        "           </ECCustomAttributes>"
+        "        </ECProperty>"
+        "    </ECEntityClass>"
+        "</ECSchema>", true, "Column constraints on property that maps to shared column");
+
+    ECDb ecdb;
+    bool asserted = false;
+    AssertSchemaImport(ecdb, asserted, testSchema, "sharedcolumnandcolumnconstraints.ecdb");
+    ASSERT_FALSE(asserted);
+
+    Statement stmt;
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "SELECT sql FROM sqlite_master WHERE name='ts_Parent'"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "Did not find table ts_Parent";
+
+    bvector<Utf8String> columnDdlList;
+    BeStringUtilities::Split(stmt.GetValueText(0), ",", columnDdlList);
+    stmt.Finalize();
+
+    for (Utf8StringR columnDdl : columnDdlList)
+        {
+        columnDdl.ToLower();
+
+        if (!columnDdl.StartsWithI("[sc") || columnDdl.StartsWithI("sc"))
+            continue;
+
+        ASSERT_TRUE(columnDdl.find("not null") == columnDdl.npos) << columnDdl.c_str();
+        ASSERT_TRUE(columnDdl.find("unique") == columnDdl.npos) << columnDdl.c_str();
+        ASSERT_TRUE(columnDdl.find("collat") == columnDdl.npos) << columnDdl.c_str();
+        }
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   02/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbMappingTestFixture, MinimumSharedColumnCount)
