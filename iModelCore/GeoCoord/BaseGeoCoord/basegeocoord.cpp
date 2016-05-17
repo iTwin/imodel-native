@@ -2377,6 +2377,7 @@ BaseGCS::ProjectionCodeValue GetProjectionCodeFromWKTName (WStringR name) const
         ID = BaseGCS::pcvGaussKrugerTranverseMercator;
     else if ((upperMethodName == L"TRANSVERSE_MERCATOR") ||
              (upperMethodName == L"TRANSVERSE MERCATOR") ||
+             (upperMethodName == L"CT_TRANSVERSEMERCATOR") ||
              (upperMethodName == L"TRANSVERSE_MERCATOR_MAPINFO_21") ||
              (upperMethodName == L"TRANSVERSE_MERCATOR_MAPINFO_22") ||
              (upperMethodName == L"TRANSVERSE_MERCATOR_MAPINFO_23") ||
@@ -2567,13 +2568,16 @@ StatusInt SetParameterToCoordSys (WStringR parameterName, WStringR parameterStri
     std::transform(upperParameterName.begin(), upperParameterName.end(), upperParameterName.begin(), (int (*)(int))std::toupper);
 
 
-    if (upperParameterName == L"FALSE_EASTING")
+    if ((upperParameterName == L"FALSE_EASTING") ||
+        (upperParameterName == L"FALSEEASTING"))
         coordinateSystem.SetFalseEasting (parameterValue);
-    else if (upperParameterName == L"FALSE_NORTHING")
+    else if ((upperParameterName == L"FALSE_NORTHING") ||
+             (upperParameterName == L"FALSENORTHING"))
         coordinateSystem.SetFalseNorthing (parameterValue);
     else if ((upperParameterName == L"LATITUDE_OF_ORIGIN") ||
              (upperParameterName == L"LATITUDE_OF_CENTER") ||
-             (upperParameterName == L"CENTRAL_PARALLEL"))
+             (upperParameterName == L"CENTRAL_PARALLEL") ||
+             (upperParameterName == L"NATORIGINLAT"))
         {
         if ((BaseGCS::pcvHotineObliqueMercator1XY == coordinateSystem.GetProjectionCode()) ||
             (BaseGCS::pcvRectifiedSkewOrthomorphic == coordinateSystem.GetProjectionCode()))
@@ -2595,7 +2599,8 @@ StatusInt SetParameterToCoordSys (WStringR parameterName, WStringR parameterStri
         else
             coordinateSystem.SetCentralMeridian (parameterValue * conversionToDegree);
         }
-    else if (upperParameterName == L"SCALE_FACTOR")
+    else if ((upperParameterName == L"SCALE_FACTOR") ||
+             (upperParameterName == L"SCALEATNATORIGIN"))
         coordinateSystem.SetScaleReduction (parameterValue);
     else if (upperParameterName == L"STANDARD_PARALLEL_1")
         {
@@ -2622,7 +2627,8 @@ StatusInt SetParameterToCoordSys (WStringR parameterName, WStringR parameterStri
         coordinateSystem.SetHemisphere (hemisphere);
         }
         else if ((upperParameterName == L"LONGITUDE_OF_ORIGIN") ||
-                 (upperParameterName == L"LONGITUDE_OF_CENTER"))
+                 (upperParameterName == L"LONGITUDE_OF_CENTER") ||
+                 (upperParameterName == L"NATORIGINLONG"))
         {
         switch (coordinateSystem.GetProjectionCode())
             {
@@ -9448,36 +9454,46 @@ bvector<GeoPoint>&    shape
     // This means that the zone will remain about 12 kilometers from the poles. For cartography
     // made in the pole areas, other projection methods will have to be used.
 
-    // If datum transformation method is limitative by nature we will use the user-defined domain.
+    const ProjectionCodeValue projectionCode = GetProjectionCode();
+
+    // If datum transformation method is limitative by nature we will use the user-defined domain except for the danish systems.
     WGS84ConvertCode datumConvert = GetDatumConvertMethod();
 
-    if ((ConvertType_MREG  == datumConvert) ||
-        (ConvertType_NAD27 == datumConvert) ||
-        (ConvertType_HPGN  == datumConvert) ||  
-        (ConvertType_AGD66 == datumConvert) ||  
-        (ConvertType_AGD84 == datumConvert) ||
-        (ConvertType_NZGD4 == datumConvert) ||   
-        (ConvertType_ATS77 == datumConvert) ||  
-        (ConvertType_CSRS  == datumConvert) ||   
-        (ConvertType_TOKYO == datumConvert) ||   
-        (ConvertType_RGF93 == datumConvert) ||  
-        (ConvertType_ED50  == datumConvert) ||    
-        (ConvertType_DHDN  == datumConvert) ||
-        (ConvertType_GENGRID == datumConvert) ||
-        (ConvertType_CHENYX == datumConvert))
+    if ((projectionCode != pcvTransverseMercatorDenmarkSys34 && projectionCode != pcvTransverseMercatorDenmarkSys3499 && projectionCode != pcvTransverseMercatorDenmarkSys3401) &&
+        ((ConvertType_MREG  == datumConvert) ||
+         (ConvertType_NAD27 == datumConvert) ||
+         (ConvertType_HPGN  == datumConvert) ||  
+         (ConvertType_AGD66 == datumConvert) ||  
+         (ConvertType_AGD84 == datumConvert) ||
+         (ConvertType_NZGD4 == datumConvert) ||   
+         (ConvertType_ATS77 == datumConvert) ||  
+         (ConvertType_CSRS  == datumConvert) ||   
+         (ConvertType_TOKYO == datumConvert) ||   
+         (ConvertType_RGF93 == datumConvert) ||  
+         (ConvertType_ED50  == datumConvert) ||    
+         (ConvertType_DHDN  == datumConvert) ||
+         (ConvertType_GENGRID == datumConvert) ||
+         (ConvertType_CHENYX == datumConvert)))
         {
+
         double minLongitude = GetMinimumUsefulLongitude();
         double maxLongitude = GetMaximumUsefulLongitude();
         double minLatitude = GetMinimumUsefulLatitude();
         double maxLatitude = GetMaximumUsefulLatitude();
         if ((minLongitude != maxLongitude) && (minLatitude != minLongitude))
             {
+            // The user-defined are as defined in the dictionary but CSMAP requires a tiny difference from absolute 
+            // position specified (for example Transverse Mercator is technically valid up to 90 latitude but CSMAP requires a few centimeters appart
+            // just in case. For this reason we minimise slightly the extent
+            minLongitude += 0.0000028;
+            maxLongitude -= 0.0000028;
+            minLatitude += 0.0000028;
+            maxLatitude -= 0.0000028;
             return BaseGCSUtilGetRangeSpecified(shape, minLongitude, maxLongitude, minLatitude, maxLatitude);
             }
         }
 
 
-    const ProjectionCodeValue projectionCode = GetProjectionCode();
     switch (projectionCode)
         {
         case pcvCassini : // Not so sure about this one ... check http://www.radicalcartography.net/?projectionref
@@ -9502,12 +9518,31 @@ bvector<GeoPoint>&    shape
         case pcvMercatorScaleReduction :
         case pcvMercator :
         case pcvPopularVisualizationPseudoMercator :
+            {
+            // The mercator projection implementation limits somewhat the valid extent to the 
+            // user domain specified.
+            double minLongitude = GetMinimumUsefulLongitude();
+            double maxLongitude = GetMaximumUsefulLongitude();
+            double minLatitude = GetMinimumUsefulLatitude();
+            double maxLatitude = GetMaximumUsefulLatitude();
+            if ((minLongitude != maxLongitude) && (minLatitude != minLongitude))
+                {
+                // The user-defined are as defined in the dictionary but CSMAP requires a tiny difference from absolute 
+                // position specified (for example Transverse Mercator is technically valid up to 90 latitude but CSMAP requires a few centimeters appart
+                // just in case. For this reason we minimise slightly the extent
+                minLongitude += 0.0000028;
+                maxLongitude -= 0.0000028;
+                minLatitude += 0.0000028;
+                maxLatitude -= 0.0000028;
+                return BaseGCSUtilGetRangeSpecified(shape, minLongitude, maxLongitude, minLatitude, maxLatitude);
+                }
+
             // good pretty close 90 degrees east and west of central meridian
             return BaseGCSUtilGetRangeAboutMeridianAndEquator(shape, 
                                                    GetCentralMeridian (), 
-						   179.999999, 
+                                                   179.999999, 
                                                    80.0);
-        
+            }
         case pcvLambertEquidistantAzimuthal :
         case pcvAzimuthalEquidistantElevatedEllipsoid :
         case pcvLambertEqualAreaAzimuthal :
@@ -9614,6 +9649,37 @@ bvector<GeoPoint>&    shape
                 }
             else if (2 == region)
                 {
+#if (1)
+                // For some obscure reason the domain of this zone used to be the one deactivated below
+                // but now it is the one included here. I suspect this is because a reversibility test was either
+                // added or the tolerance to the application of the reversibility test modified. 
+                // &&AR To be checked.
+		        point.Init(13.6160, 56.3874, 0.0);
+		        shape.push_back(point);
+		        point.Init(13.6803, 55.9697, 0.0);
+		        shape.push_back(point);
+		        point.Init(13.3465, 55.1436, 0.0);
+		        shape.push_back(point);
+		        point.Init(12.6916, 54.6633, 0.0);
+		        shape.push_back(point);
+		        point.Init(11.8615, 54.3089, 0.0);
+		        shape.push_back(point);
+		        point.Init(10.5746, 54.5406, 0.0);
+		        shape.push_back(point);
+		        point.Init(10.1280, 54.8928, 0.0);
+		        shape.push_back(point);
+		        point.Init(10.1619, 55.2380, 0.0);
+		        shape.push_back(point);
+		        point.Init(10.3488, 56.0007, 0.0);
+		        shape.push_back(point);
+		        point.Init(11.0446, 56.6799, 0.0);
+		        shape.push_back(point);
+		        point.Init(11.6792, 56.8603, 0.0);
+		        shape.push_back(point);
+		        point.Init(13.6160, 56.3874, 0.0);
+		        shape.push_back(point);
+
+#else
 		        point.Init(11.5108, 54.4367, 0.0);
 		        shape.push_back(point);
 		        point.Init(10.2526, 54.6795, 0.0);
@@ -9636,6 +9702,7 @@ bvector<GeoPoint>&    shape
 		        shape.push_back(point);
 		        point.Init(11.5108, 54.4367, 0.0);
 		        shape.push_back(point);
+#endif
                 }
             else 
                 {
