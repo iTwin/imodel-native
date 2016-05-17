@@ -8,37 +8,79 @@
 #include "ClientInternal.h"
 #include <WebServices/Azure/EventServiceClient.h>
 #include <iomanip>
-#include <Bentley/Base64Utilities.h>
 
-EventServiceClient::EventServiceClient(Utf8StringCR nameSpace, Utf8StringCR repoId, Utf8StringCR userId, int longPollingTimeout)
-{
-	m_timeout = longPollingTimeout;
-	char numBuffer[10];
-	itoa(longPollingTimeout, numBuffer, 10);
-	Utf8String timeout = Utf8String(numBuffer);
-	m_nameSpace = nameSpace;
-	m_repoId = repoId;
-	m_userId = userId;
-	Utf8String baseAddress = "https://" + nameSpace + "." + "servicebus.windows.net/";
-	m_fullAddress = baseAddress + repoId + "/Subscriptions/" + userId + "/messages/head?timeout=" + timeout;
-}
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Jeehwan.cho   05/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+EventServiceClient::EventServiceClient(Utf8StringCR nameSpace, Utf8StringCR repoId, Utf8StringCR userId)
+    {
+    m_nameSpace = nameSpace;
+    m_repoId = repoId;
+    m_userId = userId;
+    Utf8String baseAddress = "https://" + nameSpace + "." + "servicebus.windows.net/";
+    m_fullAddress = baseAddress + repoId + "/Subscriptions/" + userId + "/messages/head?timeout=";
+    UpdateToken();
+    }
 
-bool EventServiceClient::Receive (Utf8StringR msgOut, Utf8StringCR token)
-{
-	HttpRequest request(m_fullAddress.c_str(), "DELETE", nullptr);
-	request.GetHeaders ().Clear ();
-	request.GetHeaders ().SetValue ("Content-Length", "0");
-	request.GetHeaders ().SetValue ("Content-Type", "application/atom+xml;type=entry;charset=utf-8");
-	request.GetHeaders ().SetAuthorization (token);
-	// request.SetTimeoutSeconds(m_timeout);
-	HttpResponse response = request.Perform();
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Jeehwan.cho   05/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool EventServiceClient::UpdateToken()
+    {
+    //todo: it will eventually hit BimServer web api using credential to get SaS token
+    m_token = "SharedAccessSignature sig=TOk40ce29TwpOYCFG7EWqHL5%2bmi9fIDX%2fYA0Ckv7Urs%3d&se=1463758026&skn=EventReceivePolicy&sr=https%3a%2f%2ftesthubjeehwan-ns.servicebus.windows.net%2ftest";
+    return true;
+    }
 
-	if (!response.IsSuccess())
-	{
-		printf("!!!!!response.IsSuccess()\n");
-		return false;
-	}
-	else
-		printf("response.IsSuccess(): %s\n", response.GetBody().AsString().c_str());
-	return true;
-}
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Jeehwan.cho   05/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+HttpResponse EventServiceClient::MakeReceiveDeleteRequest(bool longPolling)
+    {
+    char numBuffer[10];
+    if (longPolling)
+        itoa(230, numBuffer, 10); //max timeout for service bus rest api is set to 230 seconds
+    else
+        itoa(0, numBuffer, 10);
+    Utf8String url = m_fullAddress + Utf8String(numBuffer);
+    HttpRequest request(url.c_str(), "DELETE", nullptr);
+    request.GetHeaders().Clear();
+    request.GetHeaders().SetValue("Content-Length", "0");
+    request.GetHeaders().SetValue("Content-Type", "application/atom+xml;type=entry;charset=utf-8");
+    request.GetHeaders().SetAuthorization(m_token);
+    request.SetTransferTimeoutSeconds(230);
+    return request.Perform();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Jeehwan.cho   05/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool EventServiceClient::Receive(Utf8StringR msgOut, int retry, bool longPolling)
+    {
+    HttpResponse response = MakeReceiveDeleteRequest(longPolling);
+    switch (response.GetHttpStatus())
+        {
+            case HttpStatus::OK: //received a message
+                msgOut = response.GetBody().AsString();
+                return true;
+            case HttpStatus::NoContent: //no incoming message
+                msgOut = NULL;
+                return true;
+            case HttpStatus::NotFound: //subscription not setup yet
+                return false;
+            case HttpStatus::Unauthorized: //token may be expired
+                if (retry >= 1 || !UpdateToken())
+                    return false;
+                return Receive(msgOut, retry + 1, longPolling);
+            default:
+                return false;
+        }
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Jeehwan.cho   05/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool EventServiceClient::Receive(Utf8StringR msgOut, bool longPolling)
+    {
+    return Receive(msgOut, 0, longPolling);
+    }
