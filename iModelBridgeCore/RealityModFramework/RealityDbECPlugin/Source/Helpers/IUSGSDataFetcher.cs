@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
 using Bentley.ECSystem.Configuration;
+using Bentley.EC.Persistence.Operations;
 
 namespace IndexECPlugin.Source.Helpers
     {
@@ -116,9 +117,13 @@ namespace IndexECPlugin.Source.Helpers
                             return content.ReadAsStringAsync().Result;
                             }
                         }
+                    else
+                    {
+                    throw new OperationFailedException("USGS returned error " + response.StatusCode + " : " + response.ReasonPhrase);
+                    }
                     }
                 }
-            return null;
+            //return null;
             }
 
         /// <summary>
