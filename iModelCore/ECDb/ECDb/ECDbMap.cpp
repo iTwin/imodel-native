@@ -814,6 +814,11 @@ BentleyStatus ECDbMap::EvaluateColumnNotNullConstraints() const
         bmap<DbTable const*, bset<ClassMap const*>> constraintClassesPerTable;
         for (ClassMap const* constraintClassMap : constraintClassMaps)
             {
+            //only non-abstract classes need to be considered as NOT NULL can be applied if base classes are all abstract
+            //as there will not be rows for those base classes
+            if (constraintClassMap->GetClass().GetClassModifier() == ECClassModifier::Abstract)
+                continue;
+
             for (DbTable const* table : constraintClassMap->GetTables())
                 {
                 constraintClassesPerTable[table].insert(constraintClassMap);
@@ -823,7 +828,7 @@ BentleyStatus ECDbMap::EvaluateColumnNotNullConstraints() const
         LightweightCache const& lwc = GetLightweightCache();
         for (DbTable const* fkTable : relClassMap.GetTables())
             {
-            std::vector<ECClassId> allClassIds = lwc.GetClassesForTable(*fkTable);
+            std::vector<ECClassId> allClassIds = lwc.GetNonAbstractClassesForTable(*fkTable);
             bset<ClassMap const*> const& constraintClassIds = constraintClassesPerTable[fkTable];
 
             DbColumn const* fkColumn = relClassMap.GetReferencedEndECInstanceIdPropMap()->GetSingleColumn(*fkTable, true);
@@ -832,6 +837,10 @@ BentleyStatus ECDbMap::EvaluateColumnNotNullConstraints() const
                 BeAssert(false);
                 return ERROR;
                 }
+
+            //If FK column is a key property pointing to the ECInstanceId, it can already be NOT NULL
+            if (fkColumn->GetConstraint().IsNotNull())
+                continue;
 
             if (allClassIds.size() == constraintClassIds.size())
                 {
@@ -1304,7 +1313,7 @@ void ECDbMap::LightweightCache::LoadClassIdsPerTable() const
         return;
 
     Utf8String sql;
-    sql.Sprintf("SELECT t.Id, t.Name, c.Id FROM ec_Table t, ec_Class c, ec_PropertyMap pm, ec_ClassMap cm, ec_PropertyPath pp, ec_Column col "
+    sql.Sprintf("SELECT t.Id, t.Name, c.Id, c.Modifier FROM ec_Table t, ec_Class c, ec_PropertyMap pm, ec_ClassMap cm, ec_PropertyPath pp, ec_Column col "
                 "WHERE cm.Id=pm.ClassMapId AND pp.Id=pm.PropertyPathId AND col.Id=pm.ColumnId AND (col.ColumnKind & %d = 0) AND "
                 "c.Id=cm.ClassId AND t.Id=col.TableId AND "
                 "cm.MapStrategy<>%d AND cm.MapStrategy<>%d "
@@ -1327,7 +1336,11 @@ void ECDbMap::LightweightCache::LoadClassIdsPerTable() const
             }
 
         ECClassId id = stmt->GetValueId<ECClassId>(2);
+        ECClassModifier classModifier = Enum::FromInt<ECClassModifier>(stmt->GetValueInt(3));
         m_classIdsPerTable[currentTable].push_back(id);
+        if (classModifier != ECClassModifier::Abstract)
+            m_nonAbstractClassIdsPerTable[currentTable].push_back(id);
+
         m_tablesPerClassId[id].insert(currentTable);
         }
 
@@ -1447,6 +1460,15 @@ std::vector<ECClassId> const& ECDbMap::LightweightCache::GetClassesForTable(DbTa
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle 05/2016
+//---------------------------------------------------------------------------------------
+std::vector<ECClassId> const& ECDbMap::LightweightCache::GetNonAbstractClassesForTable(ECDbSqlTable const& table) const
+    {
+    LoadClassIdsPerTable();
+    return m_nonAbstractClassIdsPerTable[&table];
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
 //---------------------------------------------------------------------------------------
 bset<DbTable const*> const& ECDbMap::LightweightCache::GetVerticalPartitionsForClass(ECN::ECClassId classId) const
@@ -1476,6 +1498,7 @@ void ECDbMap::LightweightCache::Reset()
 
     m_horizontalPartitions.clear();
     m_classIdsPerTable.clear();
+    m_nonAbstractClassIdsPerTable.clear();
     m_relationshipClassIdsPerConstraintClassIds.clear();
     m_constraintClassIdsPerRelClassIds.clear();
     m_storageDescriptions.clear();
