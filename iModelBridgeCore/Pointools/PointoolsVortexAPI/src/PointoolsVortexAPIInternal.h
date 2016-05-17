@@ -51,12 +51,8 @@
 // Windows Header Files:
 #if defined (BENTLEY_WIN32) 
     #include <windows.h>
-    #include <Commdlg.h>
-    #include <winsock.h>
     #include <Shlwapi.h>
-    #include <io.h>
-    #include <shlobj.h>
-    #include <strstream>
+    #include <Commdlg.h>
 
     // Conflict with DateTime::GetCurrentTime
     #ifdef GetCurrentTime
@@ -110,6 +106,7 @@
 #include <Bentley/BeStringUtilities.h>
 #include <Bentley/BeTimeUtilities.h>
 #include <Bentley/BeThread.h>    
+#include <Bentley/BeSharedMutex.h>
 #include <Bentley/DateTime.h>    
 #include <ptapi/PointoolsVortexAPI.h>
 #include <ptengine/pointsScene.h>

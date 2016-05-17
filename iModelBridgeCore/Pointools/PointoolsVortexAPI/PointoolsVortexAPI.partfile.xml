@@ -769,6 +769,7 @@
         <ProductDirectory Name="VendorNotices" Path="" Deliver="false"/>
         <ProductDirectory Name="VendorNotices" Path="" Deliver="false" LibType="static"/>
         <ProductDirectory Name="BentleyNativeAssemblies" Path="" Deliver="false" LibType="static"/>
+        <ProductDirectory Name="BentleyNativeAssemblies" Path="" Deliver="false"/>
         <ProductDirectory Name="Libs" Path="" Deliver="false" LibType="static"/>
     </ProductDirectoryList>
 

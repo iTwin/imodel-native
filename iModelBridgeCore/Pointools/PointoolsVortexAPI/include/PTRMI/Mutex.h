@@ -9,90 +9,36 @@ class Mutex
 {
 protected:
 
-#if defined (BENTLEY_WIN32)     //NEEDS_WORK_VORTEX_DGNDB
-	HANDLE		mutex;
+#if defined (ANDROID)
+    // Android doesn't provide std::timed_mutex 
+    // I'm reluctant to use BeSharedMutex on all platforms since it is an homemade implementation and no one seems to use it.
+    BeSharedMutex mutex;
 #else
-    #define INFINITE 0xFFFFFFFF
-    void* mutex;
+    std::timed_mutex mutex;
 #endif
 
 public:
 
-	Mutex(void)
-	{
-		mutex = NULL;
-	}
+	Mutex(void){}
 
-	~Mutex(void)
-	{
-#if defined (BENTLEY_WIN32)     //NEEDS_WORK_VORTEX_DGNDB
-		if(mutex)
-		{
-			CloseHandle(mutex);
-		}
-#endif
-	}
+	~Mutex(void){}
 
-	bool wait(unsigned long timeout = INFINITE)
-	{
-#if defined (BENTLEY_WIN32)     //NEEDS_WORK_VORTEX_DGNDB
-		DWORD	result;
+    bool wait()
+        {
+        mutex.lock();
+        return true;
+        }
 
-		if(mutex == NULL)
-		{
-			if((mutex = CreateMutex(NULL, FALSE, NULL)) == NULL)
-			{
-				Status status(Status::Status_Error_Failed_To_Create_Mutex);
-				return false;
-			}
-		}
+    bool wait(unsigned long timeMs)
+        {
+        return mutex.try_lock_for(std::chrono::milliseconds(timeMs));
+        }
 
-		result = WaitForSingleObject(mutex, timeout);
-
-		switch(result)
-		{
-		case WAIT_OBJECT_0:
-
-			return true;
-
-		case WAIT_TIMEOUT:
-
-			wchar_t m[256];
-			swprintf(m, L"%d", timeout);
-			Status::log(L"Warning: PTRMI::Mutex::wait() timed out. Timeout (ms) : ", m);
-			break;
-
-		case WAIT_ABANDONED:
-
-			Status::log(L"Warning: PTRMI::Mutex::wait() abandoned", L"");
-			break;
-
-		default: ;
-
-		}
-#endif
-		return false;
-	}
-
-	bool release(void)
-	{
-#if defined (BENTLEY_WIN32)     //NEEDS_WORK_VORTEX_DGNDB
-		if(mutex)
-		{
-			if(ReleaseMutex(mutex) == TRUE)
-			{
-				return true;
-			}
-
-			Status::log(L"Warning: PTRMI::Mutex::release() failed to release", L"");
-
-			return false;
-		}
-
-		Status::log(L"Warning: PTRMI::Mutex::release() mutex not defined", L"");
-#endif
-		return false;
-	}
+    bool release(void)
+        {
+        mutex.unlock();
+        return true;
+        }
 };
 
 
@@ -103,22 +49,19 @@ protected:
 
 	Mutex *		mutex;
 
-	Mutex		mutexInternal;
-
 	bool		locked;
 
 public:
 
-	MutexScope(unsigned long timeOut = INFINITE)
-	{
-		setLocked(false);
-															// Set internal mutex
-		mutex = &mutexInternal;
-															// Wait on mutex
-		setLocked(mutex->wait(timeOut));
-	}
+    MutexScope(Mutex &initMutex)
+        {
+        setLocked(false);
+        mutex = &initMutex;
+        setLocked(mutex->wait());
+        }
 
-	MutexScope(Mutex &initMutex, unsigned long timeOut = INFINITE)
+
+	MutexScope(Mutex &initMutex, unsigned long timeOut)
 	{
 		setLocked(false);
 															// Set external mutex
@@ -127,19 +70,6 @@ public:
 		setLocked(mutex->wait(timeOut));
 	}
 
-	MutexScope(Mutex *initMutex, unsigned long timeOut = INFINITE)
-	{
-		setLocked(false);
-
-		mutex = initMutex;
-
-		setLocked(false);
-
-		if(initMutex)
-		{
-			setLocked(mutex->wait(timeOut));
-		}
-	}
 
 	~MutexScope(void)
 	{
