@@ -171,7 +171,7 @@ bool checkSetback()
 bool checkPreSessionTimeOut()
 {
 	return true;
-#if defined(NEEDS_WORK_VORTEX_DGNDB)    // has alwys return true!
+#if defined(NEEDS_WORK_VORTEX_DGNDB)    // has always returned true!
 	if (g_timeOut < 0 || !_hasPSTimeOut) return false;
 
 	/* check wait period */ 

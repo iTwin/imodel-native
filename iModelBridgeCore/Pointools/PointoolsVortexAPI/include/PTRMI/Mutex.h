@@ -9,12 +9,11 @@ class Mutex
 {
 protected:
 
-#if defined (ANDROID)
-    // Android doesn't provide std::timed_mutex 
-    // I'm reluctant to use BeSharedMutex on all platforms since it is an homemade implementation and no one seems to use it.
-    BeSharedMutex mutex;
+#if defined (ANDROID)   //NEEDS_WORK_VORTEX_DGNDB
+    // Android doesn't support std::recursive_timed_mutex 
+    std::recursive_mutex mutex;
 #else
-    std::timed_mutex mutex;
+    std::recursive_timed_mutex mutex;
 #endif
 
 public:
@@ -31,7 +30,11 @@ public:
 
     bool wait(unsigned long timeMs)
         {
+#if defined (ANDROID)
+        return mutex.try_lock();
+#else
         return mutex.try_lock_for(std::chrono::milliseconds(timeMs));
+#endif
         }
 
     bool release(void)

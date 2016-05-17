@@ -1,6 +1,6 @@
 #pragma once
 
-#ifdef BENTLEY_WIN32    //NEEDS_WORK_VORTEX_DGNDB
+#ifdef NEEDS_WORK_VORTEX_DGNDB
 #ifdef _MFC_VER
 
 /**
