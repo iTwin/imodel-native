@@ -57,7 +57,7 @@ struct SchemaResourceKeyHelper
 
         static Utf8String GetTypeChildKey(Utf8CP schemaName, Utf8CP typeName, Utf8CP childName)
             {
-            return Utf8PrintfString("%s:%s", GetTypeKey(schemaName, typeName), childName);
+            return Utf8PrintfString("%s:%s", GetTypeKey(schemaName, typeName).c_str(), childName);
             }
 
         //! Can be used to obtain a resource key for any named Child Display Label inside a type (ECProperty,ECEnumerator)
@@ -74,12 +74,12 @@ struct SchemaResourceKeyHelper
 
         static Utf8String GetRelationshipSourceRoleLabelKey(Utf8CP schemaName, Utf8CP className, Utf8CP invariant)
             {
-            return Utf8PrintfString("%s.SourceRoleLabel:%s", GetTypeKey(schemaName, className), ComputeHash(invariant).c_str());
+            return Utf8PrintfString("%s.SourceRoleLabel:%s", GetTypeKey(schemaName, className).c_str(), ComputeHash(invariant).c_str());
             }
 
         static Utf8String GetRelationshipTargetRoleLabelKey(Utf8CP schemaName, Utf8CP className, Utf8CP invariant)
             {
-            return Utf8PrintfString("%s.TargetRoleLabel:%s", GetTypeKey(schemaName, className), ComputeHash(invariant).c_str());
+            return Utf8PrintfString("%s.TargetRoleLabel:%s", GetTypeKey(schemaName, className).c_str(), ComputeHash(invariant).c_str());
             }
 
         ECOBJECTS_EXPORT static Utf8String ComputeHash(Utf8CP invariant);
