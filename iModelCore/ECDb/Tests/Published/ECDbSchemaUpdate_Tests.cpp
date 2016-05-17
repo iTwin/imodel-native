@@ -2412,4 +2412,5 @@ TEST_F(ECSchemaUpdateTests, ModifyCustomAttributePropertyValues)
     AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
     ASSERT_FALSE(asserted);
     }
+
 END_ECDBUNITTESTS_NAMESPACE
