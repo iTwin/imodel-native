@@ -19,6 +19,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 BentleyStatus SchemaImportContext::Initialize(ECDbSQLManager const& dbSchema, ECDbCR ecdb)
     {
     m_ecdbMapDb = std::unique_ptr<SchemaImportECDbMapDb>(new SchemaImportECDbMapDb(dbSchema.GetDbSchemaR()));
+    m_ecdbMapDb->Load();
     return SUCCESS;
     }
 
