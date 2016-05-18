@@ -1413,7 +1413,7 @@ inline		void	getGLmatrix16(T *m) const
 				{
 					TemplateAssert(N == 4 && M == 4);
 
- 					register int i, j;
+ 					int i, j;
  					matrix<4,4,T> locmat;
  					matrix<4,4,T> pmat, invpmat, tinvpmat;
 

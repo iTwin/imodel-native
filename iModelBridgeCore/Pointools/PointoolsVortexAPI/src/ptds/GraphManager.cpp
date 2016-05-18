@@ -124,7 +124,7 @@ GraphEntity *Graph::getEntity(Index index)
 {
 	PTRMI::MutexScope	mutexScope(mutex, GRAPH_MUTEX_TIMEOUT);
 	if(mutexScope.isLocked() == false)
-		return false;
+		return NULL;
 
 	if(index >= getNumEntities())
 		return NULL;

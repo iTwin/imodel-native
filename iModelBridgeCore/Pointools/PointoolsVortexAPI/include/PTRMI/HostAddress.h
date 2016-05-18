@@ -300,7 +300,7 @@ namespace PTRMI
 			{
 				setPort(initPort);
 
-				if((pos = string.find_first_of(L"/", *readPos)) >= 0)
+				if((pos = string.find_first_of(L"/", *readPos)) != std::wstring::npos)
 				{
 					*readPos = pos;
 				}
@@ -323,7 +323,7 @@ namespace PTRMI
 		size_t	pos;
 		bool	found = false;
 
-		if((pos = string.find_first_of(L"://")) < 0)
+		if((pos = string.find_first_of(L"://")) == std::wstring::npos)
 			return false;
 
 		pos += 3;
