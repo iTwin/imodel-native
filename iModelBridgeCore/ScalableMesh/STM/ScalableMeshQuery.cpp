@@ -1574,6 +1574,7 @@ DTMStatusInt ScalableMeshMesh::_GetAsBcDTM(BcDTMPtr& bcdtm)
         bcdtm = BcDTM::CreateFromDtmHandle(bcDtmP);
         }
     else return DTM_ERROR;
+
     DPoint3d triangle[4];
 
    /* for (unsigned int t = 0; t < m_nbFaceIndexes; t += 3)
@@ -1596,6 +1597,9 @@ DTMStatusInt ScalableMeshMesh::_GetAsBcDTM(BcDTMPtr& bcdtm)
         }*/
 
     bvector<int> indices;
+    bvector<DPoint3d> pts;
+    bvector<int> destIdx(m_nbPoints);
+    std::fill_n(destIdx.begin(), destIdx.size(), -1);
     for (unsigned int t = 0; t < m_nbFaceIndexes; t += 3)
         {
         for (int i = 0; i < 3; i++)
@@ -1610,19 +1614,34 @@ DTMStatusInt ScalableMeshMesh::_GetAsBcDTM(BcDTMPtr& bcdtm)
         DPoint3d closestPt;
         triSeg.ProjectPointXY(closestPt, param, triangle[2]);
         if (closestPt.AlmostEqualXY(triangle[2])) continue;
-        indices.push_back(m_faceIndexes[t] - 1);
+        if (destIdx[m_faceIndexes[t] - 1] == -1)
+            {
+            pts.push_back(m_points[m_faceIndexes[t] - 1]);
+            destIdx[m_faceIndexes[t] - 1] = (int)pts.size() - 1;
+            }
+        if (destIdx[m_faceIndexes[t+1] - 1] == -1)
+            {
+            pts.push_back(m_points[m_faceIndexes[t+1] - 1]);
+            destIdx[m_faceIndexes[t+1] - 1] = (int)pts.size() - 1;
+            }
+        if (destIdx[m_faceIndexes[t + 2] - 1] == -1)
+            {
+            pts.push_back(m_points[m_faceIndexes[t + 2] - 1]);
+            destIdx[m_faceIndexes[t + 2] - 1] = (int)pts.size() - 1;
+            }
+        indices.push_back(destIdx[m_faceIndexes[t] - 1]);
         if (bsiGeom_getXYPolygonArea(&triangle[0], 3) < 0)
             {
-            indices.push_back(m_faceIndexes[t + 2] - 1);
-            indices.push_back(m_faceIndexes[t + 1] - 1);
+            indices.push_back(destIdx[m_faceIndexes[t + 2] - 1]);
+            indices.push_back(destIdx[m_faceIndexes[t + 1] - 1]);
             }
         else
             {
-            indices.push_back(m_faceIndexes[t + 1] - 1);
-            indices.push_back(m_faceIndexes[t + 2] - 1);
+            indices.push_back(destIdx[m_faceIndexes[t + 1] - 1]);
+            indices.push_back(destIdx[m_faceIndexes[t + 2] - 1]);
             }
         }
-    int status = bcdtmObject_storeTrianglesInDtmObject(bcdtm->GetTinHandle(), DTMFeatureType::GraphicBreak, m_points, (int)m_nbPoints, &indices[0], (int)indices.size() / 3);
+    int status = bcdtmObject_storeTrianglesInDtmObject(bcdtm->GetTinHandle(), DTMFeatureType::GraphicBreak, &pts[0], (int)pts.size(), &indices[0], (int)indices.size() / 3);
 
     bool dbg = false;
     if (dbg)

@@ -70,6 +70,12 @@ public:
                                                                             const Import::ImportSequence&           sequence,
                                                                             SourceImportConfig&                     sourceImportConf);
 
+    void                                AddSDKSource(const Import::SourceRef&                sourceRef,
+                                                  const Import::ContentConfig&            contentConfig,
+                                                  const Import::ImportConfig*             config,
+                                                  const Import::ImportSequence&           sequence,
+                                                  SourceImportConfig&                     sourceImportConf);
+
     bool                                IsEmpty                            () const;
 
 

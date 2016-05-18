@@ -54,8 +54,8 @@ bool firstTile = false;
 template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXTENT>::Mesh(HFCPtr<SMMeshIndexNode<POINT, EXTENT> > node) const
     {
     bool isMeshingDone = false;
-    LOG_SET_PATH("E:\\output\\scmesh\\2016-05-05\\")
-    LOG_SET_PATH_W("E:\\output\\scmesh\\2016-05-05\\")
+    LOG_SET_PATH("E:\\output\\scmesh\\2016-05-17\\")
+    LOG_SET_PATH_W("E:\\output\\scmesh\\2016-05-17\\")
     //LOGSTRING_NODE_INFO(node, LOG_PATH_STR)
     //LOGSTRING_NODE_INFO_W(node, LOG_PATH_STR_W)
     //NEEDS_WORK_SM

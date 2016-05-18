@@ -58,6 +58,9 @@ enum ClipAction
     };
 END_BENTLEY_SCALABLEMESH_NAMESPACE
 
+extern size_t nGraphPins;
+extern size_t nGraphReleases;
+
 template<class POINT, class EXTENT> class SMMeshIndex;
 
 template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndexNode < POINT, EXTENT >
@@ -166,8 +169,10 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     virtual void LoadGraph(bool shouldPinGraph=false) const;
 
+
     void ReleaseGraph()
         {
+        nGraphReleases++;
         m_graphVec.UnPin();
         }
 
@@ -192,6 +197,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     void SetGraphDirty()
         {
+        //m_graphVec.RecomputeCount();
         m_graphVec.SetDiscarded(false);
         m_graphVec.SetDirty(true);
         }

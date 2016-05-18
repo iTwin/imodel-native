@@ -30,15 +30,15 @@ std::atomic<bool> s_areThreadsBusy[8];
 void SetThreadAvailableAsync(size_t threadId)
     {
     std::atomic<bool>* areThreadsBusy = s_areThreadsBusy;
-    std::thread* threadP = s_threads;
+    /*std::thread* threadP = s_threads;
     std::thread t = std::thread([areThreadsBusy, threadId, threadP] ()
         {
-        if(threadP[threadId].joinable()) threadP[threadId].join();
+        if(threadP[threadId].joinable()) threadP[threadId].join();*/
         bool expected = true;
         areThreadsBusy[threadId].compare_exchange_strong(expected, false);
         assert(expected);
-        });
-    t.detach();
+    /*    });
+    t.detach();*/
     }
 
 
@@ -52,7 +52,7 @@ void RunOnNextAvailableThread(std::function<void(size_t threadId)> lambda)
             bool expected = false;
             if (s_areThreadsBusy[t].compare_exchange_weak(expected, true))
                 {
-                if (s_threads[t].joinable()) continue;
+                if (s_threads[t].joinable()) s_threads[t].join();
                 wait = false;
                 s_threads[t] = std::thread(std::bind(lambda, t));
                 break;
@@ -81,7 +81,7 @@ void WaitForThreadStop()
     for (size_t t = 0; t < 8; ++t)
         {
         s_areThreadsBusy[t] = false;
-        s_threads[t] = std::thread();
+        if (!s_threads[t].joinable()) s_threads[t] = std::thread();
         }
     }
 

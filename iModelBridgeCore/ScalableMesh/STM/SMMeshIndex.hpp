@@ -850,6 +850,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Unload(
     SMPointIndexNode<POINT, EXTENT>::Unload();
     }
 
+
 //=======================================================================================
 // @bsimethod                                                  Elenie.Godzaridis 03/15
 //=======================================================================================
@@ -857,7 +858,11 @@ template <class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Create
     {
     m_graphVec.SetDiscarded(false);
     if (m_graphVec.size() == 0) m_graphVec.push_back(MTGGraph());
-    if (shouldPinGraph)m_graphVec.Pin();
+    if (shouldPinGraph)
+        {
+        nGraphPins++;
+        m_graphVec.Pin();
+        }
     }
 
 //=======================================================================================
@@ -874,7 +879,11 @@ template <class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::LoadGr
             m_graphVec.SetDirty(false);
             m_graphVec.Discard();
             }
-        if (shouldPinGraph) m_graphVec.Pin();
+        if (shouldPinGraph)
+            {
+            nGraphPins++;
+            m_graphVec.Pin();
+            }
         else m_graphVec.Inflate();
         m_isGraphLoaded = true;
         if (shouldPinGraph) m_graphInflateMutex.unlock();
@@ -1624,7 +1633,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Propag
 //=======================================================================================
 template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::ClipActionRecursive(ClipAction action, uint64_t clipId, DRange3d& extent,bool setToggledWhenIdIsOn)
     {
-    if (!IsLoaded()) return;
+    if (!IsLoaded()) Load();
     if (/*size() == 0 || m_nodeHeader.m_nbFaceIndexes < 3*/m_nodeHeader.m_totalCount == 0) return;
     DRange3d nodeRange = DRange3d::From(ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMin(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMin(m_nodeHeader.m_nodeExtent),
                                         ExtentOp<EXTENT>::GetXMax(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMax(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMax(m_nodeHeader.m_nodeExtent));
@@ -2266,6 +2275,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
     DRange2d contentExtent = DRange2d::From(ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMin(m_nodeHeader.m_nodeExtent),
                                             ExtentOp<EXTENT>::GetXMax(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMax(m_nodeHeader.m_nodeExtent));
     if (!rasterBox.IntersectsWith(contentExtent)) return;
+    if (GetPointsPtr()->size() == 0 || m_nodeHeader.m_nbFaceIndexes == 0) return;
     
     int textureWidthInPixels = 1024, textureHeightInPixels = 1024;
     double unitsPerPixelX = (contentExtent.high.x - contentExtent.low.x) / textureWidthInPixels;
@@ -2601,7 +2611,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
         {
         if (diffSet.clientID == (uint64_t)-1 && diffSet.upToDate) return;
         }
-    //std::cout << "Merging clips for " << GetBlockID().m_integerID << " we have " << m_differenceSets.size() << "clips" << std::endl;
+    std::cout << "Merging clips for " << GetBlockID().m_integerID << " we have " << m_differenceSets.size() << "clips" << std::endl;
 
     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(GetPointsPtr());
 
@@ -2658,6 +2668,15 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
         RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> uvIndexes = GetUVsIndicesPtr();
         RefCountedPtr<SMMemoryPoolVectorItem<DPoint2d>> uvCoords = GetUVCoordsPtr();
         
+
+       /*     {
+            LOG_SET_PATH("E:\\output\\scmesh\\2016-4-11\\")
+                LOG_SET_PATH_W("E:\\output\\scmesh\\2016-4-11\\")
+            WString nameStitched = LOG_PATH_STR_W + L"precompmesh_";
+            LOGSTRING_NODE_INFO_W(this, nameStitched)
+                nameStitched.append(L".m");
+            LOG_MESH_FROM_FILENAME_AND_BUFFERS_W(nameStitched, points.size(), ptIndices->size(), &points[0], (int32_t*)&(*ptIndices)[0])
+            }*/
         Clipper clipNode(&points[0], points.size(), (int32_t*)&(*ptIndices)[0], ptIndices->size(), nodeRange, &(*uvCoords)[0], &(*uvIndexes)[0]);
         bvector<bvector<PolyfaceHeaderPtr>> polyfaces;
         auto nodePtr = HFCPtr<SMPointIndexNode<POINT, EXTENT>>(static_cast<SMPointIndexNode<POINT, EXTENT>*>(const_cast<SMMeshIndexNode<POINT, EXTENT>*>(this)));
@@ -2718,7 +2737,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
         (m_differenceSets.begin() + (m_differenceSets.size() - 1))->upToDate = true;
         m_nbClips++;
         }
-    //std::cout << "Merged clips for " << GetBlockID().m_integerID << " we have " << m_differenceSets.size() << "clips" << std::endl;
+    std::cout << "Merged clips for " << GetBlockID().m_integerID << " we have " << m_differenceSets.size() << "clips" << std::endl;
 #endif
     }
 
@@ -2841,7 +2860,7 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::ClipIn
             d = clipNode.ClipNonConvexPolygon2D(&clipPts[0], clipPts.size());
 #else
             {
-            //std::cout << " adding clip " << clipId << " to node " << GetBlockID().m_integerID << std::endl;
+            std::cout << " adding clip " << clipId << " to node " << GetBlockID().m_integerID << std::endl;
             d.clientID = clipId;
             d.firstIndex = (int32_t)pointsPtr->size() + 1;
             d.toggledForID = setToggledWhenIdIsOn;
@@ -3036,7 +3055,7 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::Modify
                     }
 
 #else
-            //std::cout << " updating clip " << clipId << " to node " << GetBlockID().m_integerID << " toggle is "<<setToggledWhenIdIsOn<< std::endl;
+            std::cout << " updating clip " << clipId << " to node " << GetBlockID().m_integerID << " toggle is "<<setToggledWhenIdIsOn<< std::endl;
             *it = DifferenceSet();
             it->clientID = clipId;
             it->toggledForID = setToggledWhenIdIsOn;

@@ -23,6 +23,7 @@
 #include "ScalableMeshQuery.h"
 //#include "InternalUtilityFunctions.h"
 #include <ImagePP/all/h/HPMPooledVector.h>
+#include "Edits\\ClipUtilities.h"
 //#include <QuickVision\qvision.h>
 
 // This define does not work when it is set to 10000 and a dataset of 120000 is used

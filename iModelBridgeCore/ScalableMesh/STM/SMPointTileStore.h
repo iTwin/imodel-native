@@ -498,7 +498,7 @@ public:
     std::vector<HPMBlockID>  m_ptsIndiceID;
     std::vector<HPMBlockID>  m_uvsIndicesID;
     size_t      m_numberOfMeshComponents;
-    int*        m_meshComponents;
+    int*        m_meshComponents = nullptr;
     size_t m_nodeCount;
 
 

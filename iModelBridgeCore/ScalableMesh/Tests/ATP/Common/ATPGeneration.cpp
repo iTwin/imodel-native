@@ -164,6 +164,37 @@ enum
     ACCELERATOR_GPU
     };
 
+IDTMSourcePtr CreateSourceFor(const WString&          sourcePath,
+                              DTMSourceDataType importedType,
+                              BeXmlNodeP        pTestChildNode = 0)
+    {
+    if (0 == _wcsicmp(L"dgn", BeFileName::GetExtension(sourcePath.c_str()).c_str()))
+        {
+        assert(pTestChildNode != 0);
+
+        WString model = L"Default";
+        WString level = L"Default";
+
+
+
+
+
+        StatusInt status = pTestChildNode->GetAttributeStringValue(model, "model");
+
+        assert(status == SUCCESS);
+
+
+        status = pTestChildNode->GetAttributeStringValue(level, "level");
+
+        assert(status == SUCCESS);
+
+
+        return IDTMDgnLevelSource::Create(importedType, sourcePath.c_str(), 0, model.c_str(), 0, level.c_str()).get();
+        }
+
+    return IDTMLocalFileSource::Create(importedType, sourcePath.c_str()).get();
+    }
+
 bool ParseGenerationOptions(ScalableMeshMesherType* mesherType, ScalableMeshFilterType* filterType, int* trimmingMethod, ScalableMeshSaveType* saveType, BeXmlNodeP pTestNode)
     {
     bool isSuccess = true;
@@ -287,7 +318,7 @@ bool ParseSourceSubNodes(IDTMSourceCollection& sourceCollection, BeXmlNodeP pTes
                 if ((datasetPath.c_str()[datasetPath.size() - 1] != L'\\') &&
                     (datasetPath.c_str()[datasetPath.size() - 1] != L'/'))
                     {
-                    IDTMSourcePtr srcPtr = IDTMLocalFileSource::Create(dataType, datasetPath.c_str());
+                    IDTMSourcePtr srcPtr = CreateSourceFor(datasetPath.c_str(), dataType, pTestChildNode);
                     AddOptionToSource(srcPtr, pTestChildNode);
                     if (BSISUCCESS != sourceCollection.Add(srcPtr))
                         {
