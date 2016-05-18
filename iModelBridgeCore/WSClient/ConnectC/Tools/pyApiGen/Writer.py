@@ -55,7 +55,7 @@ class Writer(object):
         self._status_codes = status_codes
         self._COMMENT_AutoGen = self._COMMENT_AutoGen.format(datetime.date.today().strftime("%B %d, %Y"))
         self._COMMENT_Copyright = self._COMMENT_Copyright.format(os.path.basename(self._file.name), datetime.date.today().strftime("%Y"))
-        self._excluded_classes = [] if excluded_classes is None else excluded_classes
+        self._excluded_classes = excluded_classes
 
     def _write_spacing(self):
         self._file.write('\n')

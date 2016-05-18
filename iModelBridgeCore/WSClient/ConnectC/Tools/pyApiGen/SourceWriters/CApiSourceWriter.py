@@ -3,13 +3,15 @@ from SourceWriters.SourceWriter import SourceWriter
 
 
 class CApiSourceWriter(SourceWriter):
-    def __init__(self, schema_name, ecclasses, source_filename, api, status_codes, excluded_classes=None):
+    def __init__(self, schema_name, ecclasses, source_filename, api, status_codes, excluded_classes):
         super(CApiSourceWriter, self).__init__(ecclasses, source_filename, api, status_codes, excluded_classes)
         self.__schema_name = schema_name
         self.__api_structs = []
         for ecclass in self._ecclasses:
-            if ecclass.attributes["typeName"].value not in self._excluded_classes:
-                self.__api_structs.append(CApiStruct(self.__schema_name, ecclass, api, status_codes))
+            if ecclass.attributes["typeName"].value in excluded_classes and \
+                    excluded_classes[ecclass.attributes["typeName"].value].should_exclude_entire_class():
+                continue
+            self.__api_structs.append(CApiStruct(self.__schema_name, ecclass, api, status_codes))
 
     def write_source(self):
         self._write_header_comments()
@@ -47,10 +49,20 @@ class CApiSourceWriter(SourceWriter):
     def __write_api_gws_functions(self):
         for api_struct in self.__api_structs:
             self.__write_api_gws_read_list_implementation(api_struct)
-            self.__write_api_gws_create_implementation(api_struct)
-            self.__write_api_gws_read_implementation(api_struct)
-            self.__write_api_gws_update_implementation(api_struct)
-            self.__write_api_gws_delete_implementation(api_struct)
+            if api_struct.get_name() in self._excluded_classes:
+                if self._excluded_classes[api_struct.get_name()].should_have_create():
+                    self.__write_api_gws_create_implementation(api_struct)
+                if self._excluded_classes[api_struct.get_name()].should_have_read():
+                    self.__write_api_gws_read_implementation(api_struct)
+                if self._excluded_classes[api_struct.get_name()].should_have_update():
+                    self.__write_api_gws_update_implementation(api_struct)
+                if self._excluded_classes[api_struct.get_name()].should_have_delete():
+                    self.__write_api_gws_delete_implementation(api_struct)
+            else:
+                self.__write_api_gws_create_implementation(api_struct)
+                self.__write_api_gws_read_implementation(api_struct)
+                self.__write_api_gws_update_implementation(api_struct)
+                self.__write_api_gws_delete_implementation(api_struct)
 
     def __write_api_gws_read_list_implementation(self, api_struct):
         self._file.write(self._COMMENT_BsiMethod)
