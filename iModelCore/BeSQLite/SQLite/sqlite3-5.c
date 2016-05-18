@@ -1302,7 +1302,7 @@ struct WhereLevel {
   int addrFirst;        /* First instruction of interior of the loop */
   int addrBody;         /* Beginning of the body of this loop */
 #ifndef SQLITE_LIKE_DOESNT_MATCH_BLOBS
-  int iLikeRepCntr;     /* LIKE range processing counter register */
+  u32 iLikeRepCntr;     /* LIKE range processing counter register (times 2) */
   int addrLikeRep;      /* LIKE range processing address */
 #endif
   u8 iFrom;             /* Which entry in the FROM clause */
@@ -1640,7 +1640,7 @@ struct WhereInfo {
   Parse *pParse;            /* Parsing and code generating context */
   SrcList *pTabList;        /* List of tables in the join */
   ExprList *pOrderBy;       /* The ORDER BY clause or NULL */
-  ExprList *pResultSet;     /* Result set. DISTINCT operates on these */
+  ExprList *pDistinctSet;   /* DISTINCT over all these values */
   WhereLoop *pLoops;        /* List of all WhereLoop objects */
   Bitmask revMask;          /* Mask of ORDER BY terms that need reversing */
   LogEst nRowOut;           /* Estimated number of output rows */
@@ -1724,6 +1724,14 @@ SQLITE_PRIVATE void sqlite3WhereTabFuncArgs(Parse*, struct SrcList_item*, WhereC
 ** operators that are of interest to the query planner.  An
 ** OR-ed combination of these values can be used when searching for
 ** particular WhereTerms within a WhereClause.
+**
+** Value constraints:
+**     WO_EQ    == SQLITE_INDEX_CONSTRAINT_EQ
+**     WO_LT    == SQLITE_INDEX_CONSTRAINT_LT
+**     WO_LE    == SQLITE_INDEX_CONSTRAINT_LE
+**     WO_GT    == SQLITE_INDEX_CONSTRAINT_GT
+**     WO_GE    == SQLITE_INDEX_CONSTRAINT_GE
+**     WO_MATCH == SQLITE_INDEX_CONSTRAINT_MATCH
 */
 #define WO_IN     0x0001
 #define WO_EQ     0x0002
@@ -2310,9 +2318,10 @@ static int codeAllEqualityTerms(
 
 #ifndef SQLITE_LIKE_DOESNT_MATCH_BLOBS
 /*
-** If the most recently coded instruction is a constant range contraint
-** that originated from the LIKE optimization, then change the P3 to be
-** pLoop->iLikeRepCntr and set P5.
+** If the most recently coded instruction is a constant range constraint
+** (a string literal) that originated from the LIKE optimization, then 
+** set P3 and P5 on the OP_String opcode so that the string will be cast
+** to a BLOB at appropriate times.
 **
 ** The LIKE optimization trys to evaluate "x LIKE 'abc%'" as a range
 ** expression: "x>='ABC' AND x<'abd'".  But this requires that the range
@@ -2337,8 +2346,8 @@ static void whereLikeOptimizationStringFixup(
     assert( pOp!=0 );
     assert( pOp->opcode==OP_String8 
             || pTerm->pWC->pWInfo->pParse->db->mallocFailed );
-    pOp->p3 = pLevel->iLikeRepCntr;
-    pOp->p5 = 1;
+    pOp->p3 = (int)(pLevel->iLikeRepCntr>>1);  /* Register holding counter */
+    pOp->p5 = (u8)(pLevel->iLikeRepCntr&1);    /* ASC or DESC */
   }
 }
 #else
@@ -2925,14 +2934,17 @@ SQLITE_PRIVATE Bitmask sqlite3WhereCodeOneLoopStart(
       if( (pRangeEnd->wtFlags & TERM_LIKEOPT)!=0 ){
         assert( pRangeStart!=0 );                     /* LIKE opt constraints */
         assert( pRangeStart->wtFlags & TERM_LIKEOPT );   /* occur in pairs */
-        pLevel->iLikeRepCntr = ++pParse->nMem;
-        testcase( bRev );
-        testcase( pIdx->aSortOrder[nEq]==SQLITE_SO_DESC );
-        sqlite3VdbeAddOp2(v, OP_Integer,
-                          bRev ^ (pIdx->aSortOrder[nEq]==SQLITE_SO_DESC),
-                          pLevel->iLikeRepCntr);
+        pLevel->iLikeRepCntr = (u32)++pParse->nMem;
+        sqlite3VdbeAddOp2(v, OP_Integer, 1, (int)pLevel->iLikeRepCntr);
         VdbeComment((v, "LIKE loop counter"));
         pLevel->addrLikeRep = sqlite3VdbeCurrentAddr(v);
+        /* iLikeRepCntr actually stores 2x the counter register number.  The
+        ** bottom bit indicates whether the search order is ASC or DESC. */
+        testcase( bRev );
+        testcase( pIdx->aSortOrder[nEq]==SQLITE_SO_DESC );
+        assert( (bRev & ~1)==0 );
+        pLevel->iLikeRepCntr <<=1;
+        pLevel->iLikeRepCntr |= bRev ^ (pIdx->aSortOrder[nEq]==SQLITE_SO_DESC);
       }
 #endif
       if( pRangeStart==0
@@ -3070,7 +3082,7 @@ SQLITE_PRIVATE Bitmask sqlite3WhereCodeOneLoopStart(
     if( omitTable ){
       /* pIdx is a covering index.  No need to access the main table. */
     }else if( HasRowid(pIdx->pTable) ){
-      if( pWInfo->eOnePass!=ONEPASS_OFF ){
+      if( (pWInfo->wctrlFlags & WHERE_SEEK_TABLE)!=0 ){
         iRowidReg = ++pParse->nMem;
         sqlite3VdbeAddOp2(v, OP_IdxRowid, iIdxCur, iRowidReg);
         sqlite3ExprCacheStore(pParse, iCur, -1, iRowidReg);
@@ -3266,7 +3278,8 @@ SQLITE_PRIVATE Bitmask sqlite3WhereCodeOneLoopStart(
     wctrlFlags =  WHERE_OMIT_OPEN_CLOSE
                 | WHERE_FORCE_TABLE
                 | WHERE_ONETABLE_ONLY
-                | WHERE_NO_AUTOINDEX;
+                | WHERE_NO_AUTOINDEX
+                | (pWInfo->wctrlFlags & WHERE_SEEK_TABLE);
     for(ii=0; ii<pOrWc->nTerm; ii++){
       WhereTerm *pOrTerm = &pOrWc->a[ii];
       if( pOrTerm->leftCursor==iCur || (pOrTerm->eOperator & WO_AND)!=0 ){
@@ -3446,11 +3459,17 @@ SQLITE_PRIVATE Bitmask sqlite3WhereCodeOneLoopStart(
       continue;
     }
     if( pTerm->wtFlags & TERM_LIKECOND ){
+      /* If the TERM_LIKECOND flag is set, that means that the range search
+      ** is sufficient to guarantee that the LIKE operator is true, so we
+      ** can skip the call to the like(A,B) function.  But this only works
+      ** for strings.  So do not skip the call to the function on the pass
+      ** that compares BLOBs. */
 #ifdef SQLITE_LIKE_DOESNT_MATCH_BLOBS
       continue;
 #else
-      assert( pLevel->iLikeRepCntr>0 );
-      skipLikeAddr = sqlite3VdbeAddOp1(v, OP_IfNot, pLevel->iLikeRepCntr);
+      u32 x = pLevel->iLikeRepCntr;
+      assert( x>0 );
+      skipLikeAddr = sqlite3VdbeAddOp1(v, (x&1)? OP_IfNot : OP_If, (int)(x>>1));
       VdbeCoverage(v);
 #endif
     }
@@ -5149,7 +5168,10 @@ static WhereTerm *whereScanNext(WhereScan *pScan){
 **
 ** The scanner will be searching the WHERE clause pWC.  It will look
 ** for terms of the form "X <op> <expr>" where X is column iColumn of table
-** iCur.  The <op> must be one of the operators described by opMask.
+** iCur.   Or if pIdx!=0 then X is column iColumn of index pIdx.  pIdx
+** must be one of the indexes of table iCur.
+**
+** The <op> must be one of the operators described by opMask.
 **
 ** If the search is for X and the WHERE clause contains terms of the
 ** form X=Y then this routine might also return terms of the form
@@ -5197,11 +5219,12 @@ static WhereTerm *whereScanInit(
 
 /*
 ** Search for a term in the WHERE clause that is of the form "X <op> <expr>"
-** where X is a reference to the iColumn of table iCur and <op> is one of
-** the WO_xx operator codes specified by the op parameter.
-** Return a pointer to the term.  Return 0 if not found.
+** where X is a reference to the iColumn of table iCur or of index pIdx
+** if pIdx!=0 and <op> is one of the WO_xx operator codes specified by
+** the op parameter.  Return a pointer to the term.  Return 0 if not found.
 **
-** If pIdx!=0 then search for terms matching the iColumn-th column of pIdx
+** If pIdx!=0 then it must be one of the indexes of table iCur.  
+** Search for terms matching the iColumn-th column of pIdx
 ** rather than the iColumn-th column of table iCur.
 **
 ** The term returned might by Y=<expr> if there is another constraint in
@@ -8769,9 +8792,9 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
    && nRowEst
   ){
     Bitmask notUsed;
-    int rc = wherePathSatisfiesOrderBy(pWInfo, pWInfo->pResultSet, pFrom,
+    int rc = wherePathSatisfiesOrderBy(pWInfo, pWInfo->pDistinctSet, pFrom,
                  WHERE_DISTINCTBY, nLoop-1, pFrom->aLoop[nLoop-1], &notUsed);
-    if( rc==pWInfo->pResultSet->nExpr ){
+    if( rc==pWInfo->pDistinctSet->nExpr ){
       pWInfo->eDistinct = WHERE_DISTINCT_ORDERED;
     }
   }
@@ -8986,14 +9009,14 @@ static int whereShortCut(WhereLoopBuilder *pBuilder){
 ** used.
 */
 SQLITE_PRIVATE WhereInfo *sqlite3WhereBegin(
-  Parse *pParse,        /* The parser context */
-  SrcList *pTabList,    /* FROM clause: A list of all tables to be scanned */
-  Expr *pWhere,         /* The WHERE clause */
-  ExprList *pOrderBy,   /* An ORDER BY (or GROUP BY) clause, or NULL */
-  ExprList *pResultSet, /* Result set of the query */
-  u16 wctrlFlags,       /* One of the WHERE_* flags defined in sqliteInt.h */
-  int iAuxArg           /* If WHERE_ONETABLE_ONLY is set, index cursor number,
-                        ** If WHERE_USE_LIMIT, then the limit amount */
+  Parse *pParse,          /* The parser context */
+  SrcList *pTabList,      /* FROM clause: A list of all tables to be scanned */
+  Expr *pWhere,           /* The WHERE clause */
+  ExprList *pOrderBy,     /* An ORDER BY (or GROUP BY) clause, or NULL */
+  ExprList *pDistinctSet, /* Try not to output two rows that duplicate these */
+  u16 wctrlFlags,         /* The WHERE_* flags defined in sqliteInt.h */
+  int iAuxArg             /* If WHERE_ONETABLE_ONLY is set, index cursor number
+                          ** If WHERE_USE_LIMIT, then the limit amount */
 ){
   int nByteWInfo;            /* Num. bytes allocated for WhereInfo struct */
   int nTabList;              /* Number of elements in pTabList */
@@ -9068,7 +9091,7 @@ SQLITE_PRIVATE WhereInfo *sqlite3WhereBegin(
   pWInfo->pParse = pParse;
   pWInfo->pTabList = pTabList;
   pWInfo->pOrderBy = pOrderBy;
-  pWInfo->pResultSet = pResultSet;
+  pWInfo->pDistinctSet = pDistinctSet;
   pWInfo->iBreak = pWInfo->iContinue = sqlite3VdbeMakeLabel(v);
   pWInfo->wctrlFlags = wctrlFlags;
   pWInfo->iLimit = iAuxArg;
@@ -9141,13 +9164,13 @@ SQLITE_PRIVATE WhereInfo *sqlite3WhereBegin(
   if( db->mallocFailed ) goto whereBeginError;
 
   if( wctrlFlags & WHERE_WANT_DISTINCT ){
-    if( isDistinctRedundant(pParse, pTabList, &pWInfo->sWC, pResultSet) ){
+    if( isDistinctRedundant(pParse, pTabList, &pWInfo->sWC, pDistinctSet) ){
       /* The DISTINCT marking is pointless.  Ignore it. */
       pWInfo->eDistinct = WHERE_DISTINCT_UNIQUE;
     }else if( pOrderBy==0 ){
       /* Try to ORDER BY the result set to make distinct processing easier */
       pWInfo->wctrlFlags |= WHERE_DISTINCTBY;
-      pWInfo->pOrderBy = pResultSet;
+      pWInfo->pOrderBy = pDistinctSet;
     }
   }
 
@@ -9226,10 +9249,10 @@ SQLITE_PRIVATE WhereInfo *sqlite3WhereBegin(
 #endif
   /* Attempt to omit tables from the join that do not effect the result */
   if( pWInfo->nLevel>=2
-   && pResultSet!=0
+   && pDistinctSet!=0
    && OptimizationEnabled(db, SQLITE_OmitNoopJoin)
   ){
-    Bitmask tabUsed = sqlite3WhereExprListUsage(pMaskSet, pResultSet);
+    Bitmask tabUsed = sqlite3WhereExprListUsage(pMaskSet, pDistinctSet);
     if( sWLB.pOrderBy ){
       tabUsed |= sqlite3WhereExprListUsage(pMaskSet, sWLB.pOrderBy);
     }
@@ -9495,13 +9518,8 @@ SQLITE_PRIVATE void sqlite3WhereEnd(WhereInfo *pWInfo){
     }
 #ifndef SQLITE_LIKE_DOESNT_MATCH_BLOBS
     if( pLevel->addrLikeRep ){
-      int op;
-      if( sqlite3VdbeGetOp(v, pLevel->addrLikeRep-1)->p1 ){
-        op = OP_DecrJumpZero;
-      }else{
-        op = OP_JumpZeroIncr;
-      }
-      sqlite3VdbeAddOp2(v, op, pLevel->iLikeRepCntr, pLevel->addrLikeRep);
+      sqlite3VdbeAddOp2(v, OP_DecrJumpZero, (int)(pLevel->iLikeRepCntr>>1),
+                        pLevel->addrLikeRep);
       VdbeCoverage(v);
     }
 #endif
@@ -15376,6 +15394,7 @@ SQLITE_API int SQLITE_CDECL sqlite3_db_config(sqlite3 *db, int op, ...){
         { SQLITE_DBCONFIG_ENABLE_FKEY,           SQLITE_ForeignKeys    },
         { SQLITE_DBCONFIG_ENABLE_TRIGGER,        SQLITE_EnableTrigger  },
         { SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER, SQLITE_Fts3Tokenizer  },
+        { SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION, SQLITE_LoadExtension  },
       };
       unsigned int i;
       rc = SQLITE_ERROR; /* IMP: R-42790-23372 */

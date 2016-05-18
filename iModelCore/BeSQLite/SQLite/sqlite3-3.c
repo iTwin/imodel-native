@@ -1677,11 +1677,11 @@ static int decodeFlags(MemPage *pPage, int flagByte){
   pPage->xCellSize = cellSizePtr;
   pBt = pPage->pBt;
   if( flagByte==(PTF_LEAFDATA | PTF_INTKEY) ){
-    /* EVIDENCE-OF: R-03640-13415 A value of 5 means the page is an interior
-    ** table b-tree page. */
+    /* EVIDENCE-OF: R-07291-35328 A value of 5 (0x05) means the page is an
+    ** interior table b-tree page. */
     assert( (PTF_LEAFDATA|PTF_INTKEY)==5 );
-    /* EVIDENCE-OF: R-20501-61796 A value of 13 means the page is a leaf
-    ** table b-tree page. */
+    /* EVIDENCE-OF: R-26900-09176 A value of 13 (0x0d) means the page is a
+    ** leaf table b-tree page. */
     assert( (PTF_LEAFDATA|PTF_INTKEY|PTF_LEAF)==13 );
     pPage->intKey = 1;
     if( pPage->leaf ){
@@ -1695,11 +1695,11 @@ static int decodeFlags(MemPage *pPage, int flagByte){
     pPage->maxLocal = pBt->maxLeaf;
     pPage->minLocal = pBt->minLeaf;
   }else if( flagByte==PTF_ZERODATA ){
-    /* EVIDENCE-OF: R-27225-53936 A value of 2 means the page is an interior
-    ** index b-tree page. */
+    /* EVIDENCE-OF: R-43316-37308 A value of 2 (0x02) means the page is an
+    ** interior index b-tree page. */
     assert( (PTF_ZERODATA)==2 );
-    /* EVIDENCE-OF: R-16571-11615 A value of 10 means the page is a leaf
-    ** index b-tree page. */
+    /* EVIDENCE-OF: R-59615-42828 A value of 10 (0x0a) means the page is a
+    ** leaf index b-tree page. */
     assert( (PTF_ZERODATA|PTF_LEAF)==10 );
     pPage->intKey = 0;
     pPage->intKeyLeaf = 0;
@@ -19076,7 +19076,7 @@ static VdbeCursor *allocateCursor(
       (eCurType==CURTYPE_BTREE?sqlite3BtreeCursorSize():0);
 
   assert( iCur>=0 && iCur<p->nCursor );
-  if( p->apCsr[iCur] ){
+  if( p->apCsr[iCur] ){ /*OPTIMIZATION-IF-FALSE*/
     sqlite3VdbeFreeCursor(p, p->apCsr[iCur]);
     p->apCsr[iCur] = 0;
   }
@@ -19153,7 +19153,7 @@ static void applyAffinity(
   if( affinity>=SQLITE_AFF_NUMERIC ){
     assert( affinity==SQLITE_AFF_INTEGER || affinity==SQLITE_AFF_REAL
              || affinity==SQLITE_AFF_NUMERIC );
-    if( (pRec->flags & MEM_Int)==0 ){
+    if( (pRec->flags & MEM_Int)==0 ){ /*OPTIMIZATION-IF-FALSE*/
       if( (pRec->flags & MEM_Real)==0 ){
         if( pRec->flags & MEM_Str ) applyNumericAffinity(pRec,1);
       }else{
@@ -19163,10 +19163,13 @@ static void applyAffinity(
   }else if( affinity==SQLITE_AFF_TEXT ){
     /* Only attempt the conversion to TEXT if there is an integer or real
     ** representation (blob and NULL do not get converted) but no string
-    ** representation.
-    */
-    if( 0==(pRec->flags&MEM_Str) && (pRec->flags&(MEM_Real|MEM_Int)) ){
-      sqlite3VdbeMemStringify(pRec, enc, 1);
+    ** representation.  It would be harmless to repeat the conversion if 
+    ** there is already a string rep, but it is pointless to waste those
+    ** CPU cycles. */
+    if( 0==(pRec->flags&MEM_Str) ){ /*OPTIMIZATION-IF-FALSE*/
+      if( (pRec->flags&(MEM_Real|MEM_Int)) ){
+        sqlite3VdbeMemStringify(pRec, enc, 1);
+      }
     }
     pRec->flags &= ~(MEM_Real|MEM_Int);
   }
@@ -19492,7 +19495,7 @@ static Mem *out2Prerelease(Vdbe *p, VdbeOp *pOp){
   assert( pOp->p2<=(p->nMem+1 - p->nCursor) );
   pOut = &p->aMem[pOp->p2];
   memAboutToChange(p, pOut);
-  if( VdbeMemDynamic(pOut) ){
+  if( VdbeMemDynamic(pOut) ){ /*OPTIMIZATION-IF-FALSE*/
     return out2PrereleaseWithClear(pOut);
   }else{
     pOut->flags = MEM_Int;
@@ -19896,8 +19899,6 @@ case OP_HaltIfNull: {      /* in3 */
 ** is the same as executing Halt.
 */
 case OP_Halt: {
-  const char *zType;
-  const char *zLogFmt;
   VdbeFrame *pFrame;
   int pcx;
 
@@ -19926,34 +19927,28 @@ case OP_Halt: {
   p->rc = pOp->p1;
   p->errorAction = (u8)pOp->p2;
   p->pc = pcx;
+  assert( pOp->p5>=0 && pOp->p5<=4 );
   if( p->rc ){
     if( pOp->p5 ){
       static const char * const azType[] = { "NOT NULL", "UNIQUE", "CHECK",
                                              "FOREIGN KEY" };
-      assert( pOp->p5>=1 && pOp->p5<=4 );
       testcase( pOp->p5==1 );
       testcase( pOp->p5==2 );
       testcase( pOp->p5==3 );
       testcase( pOp->p5==4 );
-      zType = azType[pOp->p5-1];
+      sqlite3VdbeError(p, "%s constraint failed", azType[pOp->p5-1]);
+      if( pOp->p4.z ){
+        p->zErrMsg = sqlite3MPrintf(db, "%z: %s", p->zErrMsg, pOp->p4.z);
+      }
     }else{
-      zType = 0;
-    }
-    assert( zType!=0 || pOp->p4.z!=0 );
-    zLogFmt = "abort at %d in [%s]: %s";
-    if( zType && pOp->p4.z ){
-      sqlite3VdbeError(p, "%s constraint failed: %s", zType, pOp->p4.z);
-    }else if( pOp->p4.z ){
       sqlite3VdbeError(p, "%s", pOp->p4.z);
-    }else{
-      sqlite3VdbeError(p, "%s constraint failed", zType);
     }
-    sqlite3_log(pOp->p1, zLogFmt, pcx, p->zSql, p->zErrMsg);
+    sqlite3_log(pOp->p1, "abort at %d in [%s]: %s", pcx, p->zSql, p->zErrMsg);
   }
   rc = sqlite3VdbeHalt(p);
   assert( rc==SQLITE_BUSY || rc==SQLITE_OK || rc==SQLITE_ERROR );
   if( rc==SQLITE_BUSY ){
-    p->rc = rc = SQLITE_BUSY;
+    p->rc = SQLITE_BUSY;
   }else{
     assert( rc==SQLITE_OK || (p->rc&0xff)==SQLITE_CONSTRAINT );
     assert( rc==SQLITE_OK || db->nDeferredCons>0 || db->nDeferredImmCons>0 );
@@ -20019,10 +20014,7 @@ case OP_String8: {         /* same as TK_STRING, out2 */
 #ifndef SQLITE_OMIT_UTF16
   if( encoding!=SQLITE_UTF8 ){
     rc = sqlite3VdbeMemSetStr(pOut, pOp->p4.z, -1, SQLITE_UTF8, SQLITE_STATIC);
-    if( rc ){
-      assert( rc==SQLITE_TOOBIG ); /* This is the only possible error here */
-      goto too_big;
-    }
+    assert( rc==SQLITE_OK || rc==SQLITE_TOOBIG );
     if( SQLITE_OK!=sqlite3VdbeChangeEncoding(pOut, encoding) ) goto no_mem;
     assert( pOut->szMalloc>0 && pOut->zMalloc==pOut->z );
     assert( VdbeMemDynamic(pOut)==0 );
@@ -20035,10 +20027,12 @@ case OP_String8: {         /* same as TK_STRING, out2 */
     pOp->p4.z = pOut->z;
     pOp->p1 = pOut->n;
   }
+  testcase( rc==SQLITE_TOOBIG );
 #endif
   if( pOp->p1>db->aLimit[SQLITE_LIMIT_LENGTH] ){
     goto too_big;
   }
+  assert( rc==SQLITE_OK );
   /* Fall through to the next case, OP_String */
 }
   
@@ -20047,10 +20041,12 @@ case OP_String8: {         /* same as TK_STRING, out2 */
 **
 ** The string value P4 of length P1 (bytes) is stored in register P2.
 **
-** If P5!=0 and the content of register P3 is greater than zero, then
+** If P3 is not zero and the content of register P3 is equal to P5, then
 ** the datatype of the register P2 is converted to BLOB.  The content is
 ** the same sequence of bytes, it is merely interpreted as a BLOB instead
-** of a string, as if it had been CAST.
+** of a string, as if it had been CAST.  In other words:
+**
+** if( P3!=0 and reg[P3]==P5 ) reg[P2] := CAST(reg[P2] as BLOB)
 */
 case OP_String: {          /* out2 */
   assert( pOp->p4.z!=0 );
@@ -20061,12 +20057,11 @@ case OP_String: {          /* out2 */
   pOut->enc = encoding;
   UPDATE_MAX_BLOBSIZE(pOut);
 #ifndef SQLITE_LIKE_DOESNT_MATCH_BLOBS
-  if( pOp->p5 ){
-    assert( pOp->p3>0 );
+  if( pOp->p3>0 ){
     assert( pOp->p3<=(p->nMem+1 - p->nCursor) );
     pIn3 = &aMem[pOp->p3];
     assert( pIn3->flags & MEM_Int );
-    if( pIn3->u.i ) pOut->flags = MEM_Blob|MEM_Static|MEM_Term;
+    if( pIn3->u.i==pOp->p5 ) pOut->flags = MEM_Blob|MEM_Static|MEM_Term;
   }
 #endif
   break;
@@ -24922,21 +24917,6 @@ case OP_DecrJumpZero: {      /* jump, in1 */
 }
 
 
-/* Opcode: JumpZeroIncr P1 P2 * * *
-** Synopsis: if (r[P1]++)==0 ) goto P2
-**
-** The register P1 must contain an integer.  If register P1 is initially
-** zero, then jump to P2.  Increment register P1 regardless of whether or
-** not the jump is taken.
-*/
-case OP_JumpZeroIncr: {        /* jump, in1 */
-  pIn1 = &aMem[pOp->p1];
-  assert( pIn1->flags&MEM_Int );
-  VdbeBranchTaken(pIn1->u.i==0, 2);
-  if( (pIn1->u.i++)==0 ) goto jump_to_p2;
-  break;
-}
-
 /* Opcode: AggStep0 * P2 P3 P4 P5
 ** Synopsis: accum=r[P3] step(r[P2@P5])
 **
@@ -27347,7 +27327,6 @@ SQLITE_PRIVATE int sqlite3VdbeSorterInit(
 ){
   int pgsz;                       /* Page size of main database */
   int i;                          /* Used to iterate through aTask[] */
-  int mxCache;                    /* Cache size */
   VdbeSorter *pSorter;            /* The new sorter */
   KeyInfo *pKeyInfo;              /* Copy of pCsr->pKeyInfo with db==0 */
   int szKeyInfo;                  /* Size of pCsr->pKeyInfo in bytes */
@@ -27404,11 +27383,20 @@ SQLITE_PRIVATE int sqlite3VdbeSorterInit(
     }
 
     if( !sqlite3TempInMemory(db) ){
+      i64 mxCache;                /* Cache size in bytes*/
       u32 szPma = sqlite3GlobalConfig.szPma;
       pSorter->mnPmaSize = szPma * pgsz;
+
       mxCache = db->aDb[0].pSchema->cache_size;
-      if( mxCache<(int)szPma ) mxCache = (int)szPma;
-      pSorter->mxPmaSize = MIN((i64)mxCache*pgsz, SQLITE_MAX_PMASZ);
+      if( mxCache<0 ){
+        /* A negative cache-size value C indicates that the cache is abs(C)
+        ** KiB in size.  */
+        mxCache = mxCache * -1024;
+      }else{
+        mxCache = mxCache * pgsz;
+      }
+      mxCache = MIN(mxCache, SQLITE_MAX_PMASZ);
+      pSorter->mxPmaSize = MAX(pSorter->mnPmaSize, (int)mxCache);
 
       /* EVIDENCE-OF: R-26747-61719 When the application provides any amount of
       ** scratch memory using SQLITE_CONFIG_SCRATCH, SQLite avoids unnecessary
@@ -30507,6 +30495,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
         assert( pNC->nRef>=nRef );
         if( nRef!=pNC->nRef ){
           ExprSetProperty(pExpr, EP_VarSelect);
+          pNC->ncFlags |= NC_VarSelect;
         }
       }
       break;

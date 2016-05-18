@@ -155,11 +155,13 @@ struct Fts5PhraseIter {
 **       ... FROM ftstable WHERE ftstable MATCH $p ORDER BY rowid
 **
 **   with $p set to a phrase equivalent to the phrase iPhrase of the
-**   current query is executed. For each row visited, the callback function
-**   passed as the fourth argument is invoked. The context and API objects 
-**   passed to the callback function may be used to access the properties of
-**   each matched row. Invoking Api.xUserData() returns a copy of the pointer
-**   passed as the third argument to pUserData.
+**   current query is executed. Any column filter that applies to
+**   phrase iPhrase of the current query is included in $p. For each 
+**   row visited, the callback function passed as the fourth argument 
+**   is invoked. The context and API objects passed to the callback 
+**   function may be used to access the properties of each matched row.
+**   Invoking Api.xUserData() returns a copy of the pointer passed as 
+**   the third argument to pUserData.
 **
 **   If the callback function returns any value other than SQLITE_OK, the
 **   query is abandoned and the xQueryPhrase function returns immediately.
@@ -6193,6 +6195,17 @@ static int sqlite3Fts5ExprClonePhrase(
   if( rc==SQLITE_OK ){
     pNew->pRoot->pNear = (Fts5ExprNearset*)sqlite3Fts5MallocZero(&rc, 
         sizeof(Fts5ExprNearset) + sizeof(Fts5ExprPhrase*));
+  }
+  if( rc==SQLITE_OK ){
+    Fts5Colset *pColsetOrig = pOrig->pNode->pNear->pColset;
+    if( pColsetOrig ){
+      int nByte = sizeof(Fts5Colset) + pColsetOrig->nCol * sizeof(int);
+      Fts5Colset *pColset = (Fts5Colset*)sqlite3Fts5MallocZero(&rc, nByte);
+      if( pColset ){ 
+        memcpy(pColset, pColsetOrig, nByte);
+      }
+      pNew->pRoot->pNear->pColset = pColset;
+    }
   }
 
   for(i=0; rc==SQLITE_OK && i<pOrig->nTerm; i++){
@@ -16802,7 +16815,7 @@ static void fts5SourceIdFunc(
 ){
   assert( nArg==0 );
   UNUSED_PARAM2(nArg, apUnused);
-  sqlite3_result_text(pCtx, "fts5: 2016-04-13 21:00:36 55a62483b9121a8b373d038a26fdebc4308661f6", -1, SQLITE_TRANSIENT);
+  sqlite3_result_text(pCtx, "fts5: 2016-05-13 17:22:33 b369980f0c4550a9034833caa2c7c85d6030f5ff", -1, SQLITE_TRANSIENT);
 }
 
 static int fts5Init(sqlite3 *db){

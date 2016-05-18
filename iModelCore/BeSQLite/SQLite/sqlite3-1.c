@@ -16,6 +16,33 @@
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
 
+/* Special Comments:
+**
+** Some comments have special meaning to the tools that measure test
+** coverage:
+**
+**    NO_TEST                     - The branches on this line are not
+**                                  measured by branch coverage.  This is
+**                                  used on lines of code that actually
+**                                  implement parts of coverage testing.
+**
+**    OPTIMIZATION-IF-TRUE        - This branch is allowed to alway be false
+**                                  and the correct answer is still obtained,
+**                                  though perhaps more slowly.
+**
+**    OPTIMIZATION-IF-FALSE       - This branch is allowed to alway be true
+**                                  and the correct answer is still obtained,
+**                                  though perhaps more slowly.
+**
+**    PREVENTS-HARMLESS-OVERREAD  - This branch prevents a buffer overread
+**                                  that would be harmless and undetectable
+**                                  if it did occur.  
+**
+** In all cases, the special comment must be enclosed in the usual
+** slash-asterisk...asterisk-slash comment marks, with no spaces between the 
+** asterisks and the comment text.
+*/
+
 /*
 ** Make sure that rand_s() is available on Windows systems with MSVC 2005
 ** or higher.
@@ -314,7 +341,7 @@ extern "C" {
 */
 #define SQLITE_VERSION        "3.13.0"
 #define SQLITE_VERSION_NUMBER 3013000
-#define SQLITE_SOURCE_ID      "2016-04-13 21:00:36 55a62483b9121a8b373d038a26fdebc4308661f6"
+#define SQLITE_SOURCE_ID      "2016-05-13 17:22:33 b369980f0c4550a9034833caa2c7c85d6030f5ff"
 
 /*
 ** CAPI3REF: Run-Time Library Version Numbers
@@ -2133,12 +2160,30 @@ struct sqlite3_mem_methods {
 ** following this call.  The second parameter may be a NULL pointer, in
 ** which case the new setting is not reported back. </dd>
 **
+** <dt>SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION</dt>
+** <dd> ^This option is used to enable or disable the [sqlite3_load_extension()]
+** interface independently of the [load_extension()] SQL function.
+** The [sqlite3_enable_load_extension()] API enables or disables both the
+** C-API [sqlite3_load_extension()] and the SQL function [load_extension()].
+** There should be two additional arguments.
+** When the first argument to this interface is 1, then only the C-API is
+** enabled and the SQL function remains disabled.  If the first argment to
+** this interface is 0, then both the C-API and the SQL function are disabled.
+** If the first argument is -1, then no changes are made to state of either the
+** C-API or the SQL function.
+** The second parameter is a pointer to an integer into which
+** is written 0 or 1 to indicate whether [sqlite3_load_extension()] interface
+** is disabled or enabled following this call.  The second parameter may
+** be a NULL pointer, in which case the new setting is not reported back.
+** </dd>
+**
 ** </dl>
 */
 #define SQLITE_DBCONFIG_LOOKASIDE             1001 /* void* int int */
 #define SQLITE_DBCONFIG_ENABLE_FKEY           1002 /* int int* */
 #define SQLITE_DBCONFIG_ENABLE_TRIGGER        1003 /* int int* */
 #define SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER 1004 /* int int* */
+#define SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION 1005 /* int int* */
 
 
 /*
@@ -5675,8 +5720,17 @@ SQLITE_API int SQLITE_STDCALL sqlite3_table_column_metadata(
 ** should free this memory by calling [sqlite3_free()].
 **
 ** ^Extension loading must be enabled using
-** [sqlite3_enable_load_extension()] prior to calling this API,
+** [sqlite3_enable_load_extension()] or
+** [sqlite3_db_config](db,[SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION],1,NULL)
+** prior to calling this API,
 ** otherwise an error will be returned.
+**
+** <b>Security warning:</b> It is recommended that the 
+** [SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION] method be used to enable only this
+** interface.  The use of the [sqlite3_enable_load_extension()] interface
+** should be avoided.  This will keep the SQL function [load_extension()]
+** disabled and prevent SQL injections from giving attackers
+** access to extension loading capabilities.
 **
 ** See also the [load_extension() SQL function].
 */
@@ -5700,6 +5754,17 @@ SQLITE_API int SQLITE_STDCALL sqlite3_load_extension(
 ** ^Call the sqlite3_enable_load_extension() routine with onoff==1
 ** to turn extension loading on and call it with onoff==0 to turn
 ** it back off again.
+**
+** ^This interface enables or disables both the C-API
+** [sqlite3_load_extension()] and the SQL function [load_extension()].
+** Use [sqlite3_db_config](db,[SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION],..)
+** to enable or disable only the C-API.
+**
+** <b>Security warning:</b> It is recommended that extension loading
+** be disabled using the [SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION] method
+** rather than this interface, so the [load_extension()] SQL function
+** remains disabled. This will prevent SQL injections from giving attackers
+** access to extension loading capabilities.
 */
 SQLITE_API int SQLITE_STDCALL sqlite3_enable_load_extension(sqlite3 *db, int onoff);
 
@@ -8490,7 +8555,7 @@ struct sqlite3_rtree_query_info {
 /******** End of sqlite3rtree.h *********/
 /******** Begin file sqlite3session.h *********/
 
-#ifndef __SQLITESESSION_H_
+#if !defined(__SQLITESESSION_H_) && defined(SQLITE_ENABLE_SESSION)
 #define __SQLITESESSION_H_ 1
 
 /*
@@ -9764,7 +9829,7 @@ int sqlite3changegroup_output_strm(sqlite3_changegroup*,
 }
 #endif
 
-#endif  /* SQLITE_ENABLE_SESSION && SQLITE_ENABLE_PREUPDATE_HOOK */
+#endif  /* !defined(__SQLITESESSION_H_) && defined(SQLITE_ENABLE_SESSION) */
 
 /******** End of sqlite3session.h *********/
 /******** Begin file fts5.h *********/
@@ -9912,11 +9977,13 @@ struct Fts5PhraseIter {
 **       ... FROM ftstable WHERE ftstable MATCH $p ORDER BY rowid
 **
 **   with $p set to a phrase equivalent to the phrase iPhrase of the
-**   current query is executed. For each row visited, the callback function
-**   passed as the fourth argument is invoked. The context and API objects 
-**   passed to the callback function may be used to access the properties of
-**   each matched row. Invoking Api.xUserData() returns a copy of the pointer
-**   passed as the third argument to pUserData.
+**   current query is executed. Any column filter that applies to
+**   phrase iPhrase of the current query is included in $p. For each 
+**   row visited, the callback function passed as the fourth argument 
+**   is invoked. The context and API objects passed to the callback 
+**   function may be used to access the properties of each matched row.
+**   Invoking Api.xUserData() returns a copy of the pointer passed as 
+**   the third argument to pUserData.
 **
 **   If the callback function returns any value other than SQLITE_OK, the
 **   query is abandoned and the xQueryPhrase function returns immediately.
@@ -10828,7 +10895,7 @@ SQLITE_PRIVATE   void sqlite3Coverage(int);
 ** be true and false so that the unreachable code they specify will
 ** not be counted as untested code.
 */
-#if defined(SQLITE_COVERAGE_TEST)
+#if defined(SQLITE_COVERAGE_TEST) || defined(SQLITE_MUTATION_TEST)
 # define ALWAYS(X)      (1)
 # define NEVER(X)       (0)
 #elif !defined(NDEBUG)
@@ -12312,101 +12379,100 @@ typedef struct VdbeOpList VdbeOpList;
 #define OP_IfPos          64 /* synopsis: if r[P1]>0 then r[P1]-=P3, goto P2 */
 #define OP_IfNotZero      65 /* synopsis: if r[P1]!=0 then r[P1]-=P3, goto P2 */
 #define OP_DecrJumpZero   66 /* synopsis: if (--r[P1])==0 goto P2          */
-#define OP_JumpZeroIncr   67 /* synopsis: if (r[P1]++)==0 ) goto P2        */
-#define OP_IncrVacuum     68
-#define OP_VNext          69
-#define OP_Init           70 /* synopsis: Start at P2                      */
-#define OP_Return         71
-#define OP_EndCoroutine   72
-#define OP_HaltIfNull     73 /* synopsis: if r[P3]=null halt               */
-#define OP_Halt           74
-#define OP_Integer        75 /* synopsis: r[P2]=P1                         */
-#define OP_Int64          76 /* synopsis: r[P2]=P4                         */
-#define OP_String         77 /* synopsis: r[P2]='P4' (len=P1)              */
-#define OP_Null           78 /* synopsis: r[P2..P3]=NULL                   */
-#define OP_SoftNull       79 /* synopsis: r[P1]=NULL                       */
-#define OP_Blob           80 /* synopsis: r[P2]=P4 (len=P1)                */
-#define OP_Variable       81 /* synopsis: r[P2]=parameter(P1,P4)           */
-#define OP_Move           82 /* synopsis: r[P2@P3]=r[P1@P3]                */
-#define OP_Copy           83 /* synopsis: r[P2@P3+1]=r[P1@P3+1]            */
-#define OP_SCopy          84 /* synopsis: r[P2]=r[P1]                      */
-#define OP_IntCopy        85 /* synopsis: r[P2]=r[P1]                      */
-#define OP_ResultRow      86 /* synopsis: output=r[P1@P2]                  */
-#define OP_CollSeq        87
-#define OP_Function0      88 /* synopsis: r[P3]=func(r[P2@P5])             */
-#define OP_Function       89 /* synopsis: r[P3]=func(r[P2@P5])             */
-#define OP_AddImm         90 /* synopsis: r[P1]=r[P1]+P2                   */
-#define OP_RealAffinity   91
-#define OP_Cast           92 /* synopsis: affinity(r[P1])                  */
-#define OP_Permutation    93
-#define OP_Compare        94 /* synopsis: r[P1@P3] <-> r[P2@P3]            */
-#define OP_Column         95 /* synopsis: r[P3]=PX                         */
-#define OP_Affinity       96 /* synopsis: affinity(r[P1@P2])               */
+#define OP_IncrVacuum     67
+#define OP_VNext          68
+#define OP_Init           69 /* synopsis: Start at P2                      */
+#define OP_Return         70
+#define OP_EndCoroutine   71
+#define OP_HaltIfNull     72 /* synopsis: if r[P3]=null halt               */
+#define OP_Halt           73
+#define OP_Integer        74 /* synopsis: r[P2]=P1                         */
+#define OP_Int64          75 /* synopsis: r[P2]=P4                         */
+#define OP_String         76 /* synopsis: r[P2]='P4' (len=P1)              */
+#define OP_Null           77 /* synopsis: r[P2..P3]=NULL                   */
+#define OP_SoftNull       78 /* synopsis: r[P1]=NULL                       */
+#define OP_Blob           79 /* synopsis: r[P2]=P4 (len=P1)                */
+#define OP_Variable       80 /* synopsis: r[P2]=parameter(P1,P4)           */
+#define OP_Move           81 /* synopsis: r[P2@P3]=r[P1@P3]                */
+#define OP_Copy           82 /* synopsis: r[P2@P3+1]=r[P1@P3+1]            */
+#define OP_SCopy          83 /* synopsis: r[P2]=r[P1]                      */
+#define OP_IntCopy        84 /* synopsis: r[P2]=r[P1]                      */
+#define OP_ResultRow      85 /* synopsis: output=r[P1@P2]                  */
+#define OP_CollSeq        86
+#define OP_Function0      87 /* synopsis: r[P3]=func(r[P2@P5])             */
+#define OP_Function       88 /* synopsis: r[P3]=func(r[P2@P5])             */
+#define OP_AddImm         89 /* synopsis: r[P1]=r[P1]+P2                   */
+#define OP_RealAffinity   90
+#define OP_Cast           91 /* synopsis: affinity(r[P1])                  */
+#define OP_Permutation    92
+#define OP_Compare        93 /* synopsis: r[P1@P3] <-> r[P2@P3]            */
+#define OP_Column         94 /* synopsis: r[P3]=PX                         */
+#define OP_Affinity       95 /* synopsis: affinity(r[P1@P2])               */
+#define OP_MakeRecord     96 /* synopsis: r[P3]=mkrec(r[P1@P2])            */
 #define OP_String8        97 /* same as TK_STRING, synopsis: r[P2]='P4'    */
-#define OP_MakeRecord     98 /* synopsis: r[P3]=mkrec(r[P1@P2])            */
-#define OP_Count          99 /* synopsis: r[P2]=count()                    */
-#define OP_ReadCookie    100
-#define OP_SetCookie     101
-#define OP_ReopenIdx     102 /* synopsis: root=P2 iDb=P3                   */
-#define OP_OpenRead      103 /* synopsis: root=P2 iDb=P3                   */
-#define OP_OpenWrite     104 /* synopsis: root=P2 iDb=P3                   */
-#define OP_OpenAutoindex 105 /* synopsis: nColumn=P2                       */
-#define OP_OpenEphemeral 106 /* synopsis: nColumn=P2                       */
-#define OP_SorterOpen    107
-#define OP_SequenceTest  108 /* synopsis: if( cursor[P1].ctr++ ) pc = P2   */
-#define OP_OpenPseudo    109 /* synopsis: P3 columns in r[P2]              */
-#define OP_Close         110
-#define OP_ColumnsUsed   111
-#define OP_Sequence      112 /* synopsis: r[P2]=cursor[P1].ctr++           */
-#define OP_NewRowid      113 /* synopsis: r[P2]=rowid                      */
-#define OP_Insert        114 /* synopsis: intkey=r[P3] data=r[P2]          */
-#define OP_InsertInt     115 /* synopsis: intkey=P3 data=r[P2]             */
-#define OP_Delete        116
-#define OP_ResetCount    117
-#define OP_SorterCompare 118 /* synopsis: if key(P1)!=trim(r[P3],P4) goto P2 */
-#define OP_SorterData    119 /* synopsis: r[P2]=data                       */
-#define OP_RowKey        120 /* synopsis: r[P2]=key                        */
-#define OP_RowData       121 /* synopsis: r[P2]=data                       */
-#define OP_Rowid         122 /* synopsis: r[P2]=rowid                      */
-#define OP_NullRow       123
-#define OP_SorterInsert  124
-#define OP_IdxInsert     125 /* synopsis: key=r[P2]                        */
-#define OP_IdxDelete     126 /* synopsis: key=r[P2@P3]                     */
-#define OP_Seek          127 /* synopsis: Move P3 to P1.rowid              */
-#define OP_IdxRowid      128 /* synopsis: r[P2]=rowid                      */
-#define OP_Destroy       129
-#define OP_Clear         130
-#define OP_ResetSorter   131
-#define OP_CreateIndex   132 /* synopsis: r[P2]=root iDb=P1                */
+#define OP_Count          98 /* synopsis: r[P2]=count()                    */
+#define OP_ReadCookie     99
+#define OP_SetCookie     100
+#define OP_ReopenIdx     101 /* synopsis: root=P2 iDb=P3                   */
+#define OP_OpenRead      102 /* synopsis: root=P2 iDb=P3                   */
+#define OP_OpenWrite     103 /* synopsis: root=P2 iDb=P3                   */
+#define OP_OpenAutoindex 104 /* synopsis: nColumn=P2                       */
+#define OP_OpenEphemeral 105 /* synopsis: nColumn=P2                       */
+#define OP_SorterOpen    106
+#define OP_SequenceTest  107 /* synopsis: if( cursor[P1].ctr++ ) pc = P2   */
+#define OP_OpenPseudo    108 /* synopsis: P3 columns in r[P2]              */
+#define OP_Close         109
+#define OP_ColumnsUsed   110
+#define OP_Sequence      111 /* synopsis: r[P2]=cursor[P1].ctr++           */
+#define OP_NewRowid      112 /* synopsis: r[P2]=rowid                      */
+#define OP_Insert        113 /* synopsis: intkey=r[P3] data=r[P2]          */
+#define OP_InsertInt     114 /* synopsis: intkey=P3 data=r[P2]             */
+#define OP_Delete        115
+#define OP_ResetCount    116
+#define OP_SorterCompare 117 /* synopsis: if key(P1)!=trim(r[P3],P4) goto P2 */
+#define OP_SorterData    118 /* synopsis: r[P2]=data                       */
+#define OP_RowKey        119 /* synopsis: r[P2]=key                        */
+#define OP_RowData       120 /* synopsis: r[P2]=data                       */
+#define OP_Rowid         121 /* synopsis: r[P2]=rowid                      */
+#define OP_NullRow       122
+#define OP_SorterInsert  123
+#define OP_IdxInsert     124 /* synopsis: key=r[P2]                        */
+#define OP_IdxDelete     125 /* synopsis: key=r[P2@P3]                     */
+#define OP_Seek          126 /* synopsis: Move P3 to P1.rowid              */
+#define OP_IdxRowid      127 /* synopsis: r[P2]=rowid                      */
+#define OP_Destroy       128
+#define OP_Clear         129
+#define OP_ResetSorter   130
+#define OP_CreateIndex   131 /* synopsis: r[P2]=root iDb=P1                */
+#define OP_CreateTable   132 /* synopsis: r[P2]=root iDb=P1                */
 #define OP_Real          133 /* same as TK_FLOAT, synopsis: r[P2]=P4       */
-#define OP_CreateTable   134 /* synopsis: r[P2]=root iDb=P1                */
-#define OP_ParseSchema   135
-#define OP_LoadAnalysis  136
-#define OP_DropTable     137
-#define OP_DropIndex     138
-#define OP_DropTrigger   139
-#define OP_IntegrityCk   140
-#define OP_RowSetAdd     141 /* synopsis: rowset(P1)=r[P2]                 */
-#define OP_Param         142
-#define OP_FkCounter     143 /* synopsis: fkctr[P1]+=P2                    */
-#define OP_MemMax        144 /* synopsis: r[P1]=max(r[P1],r[P2])           */
-#define OP_OffsetLimit   145 /* synopsis: if r[P1]>0 then r[P2]=r[P1]+max(0,r[P3]) else r[P2]=(-1) */
-#define OP_AggStep0      146 /* synopsis: accum=r[P3] step(r[P2@P5])       */
-#define OP_AggStep       147 /* synopsis: accum=r[P3] step(r[P2@P5])       */
-#define OP_AggFinal      148 /* synopsis: accum=r[P1] N=P2                 */
-#define OP_Expire        149
-#define OP_TableLock     150 /* synopsis: iDb=P1 root=P2 write=P3          */
-#define OP_VBegin        151
-#define OP_VCreate       152
-#define OP_VDestroy      153
-#define OP_VOpen         154
-#define OP_VColumn       155 /* synopsis: r[P3]=vcolumn(P2)                */
-#define OP_VRename       156
-#define OP_Pagecount     157
-#define OP_MaxPgcnt      158
-#define OP_CursorHint    159
-#define OP_Noop          160
-#define OP_Explain       161
+#define OP_ParseSchema   134
+#define OP_LoadAnalysis  135
+#define OP_DropTable     136
+#define OP_DropIndex     137
+#define OP_DropTrigger   138
+#define OP_IntegrityCk   139
+#define OP_RowSetAdd     140 /* synopsis: rowset(P1)=r[P2]                 */
+#define OP_Param         141
+#define OP_FkCounter     142 /* synopsis: fkctr[P1]+=P2                    */
+#define OP_MemMax        143 /* synopsis: r[P1]=max(r[P1],r[P2])           */
+#define OP_OffsetLimit   144 /* synopsis: if r[P1]>0 then r[P2]=r[P1]+max(0,r[P3]) else r[P2]=(-1) */
+#define OP_AggStep0      145 /* synopsis: accum=r[P3] step(r[P2@P5])       */
+#define OP_AggStep       146 /* synopsis: accum=r[P3] step(r[P2@P5])       */
+#define OP_AggFinal      147 /* synopsis: accum=r[P1] N=P2                 */
+#define OP_Expire        148
+#define OP_TableLock     149 /* synopsis: iDb=P1 root=P2 write=P3          */
+#define OP_VBegin        150
+#define OP_VCreate       151
+#define OP_VDestroy      152
+#define OP_VOpen         153
+#define OP_VColumn       154 /* synopsis: r[P3]=vcolumn(P2)                */
+#define OP_VRename       155
+#define OP_Pagecount     156
+#define OP_MaxPgcnt      157
+#define OP_CursorHint    158
+#define OP_Noop          159
+#define OP_Explain       160
 
 /* Properties such as "out2" or "jump" that are specified in
 ** comments following the "case" for each opcode in the vdbe.c
@@ -12427,19 +12493,19 @@ typedef struct VdbeOpList VdbeOpList;
 /*  40 */ 0x0b, 0x0b, 0x01, 0x26, 0x26, 0x26, 0x26, 0x26,\
 /*  48 */ 0x26, 0x26, 0x26, 0x26, 0x26, 0x01, 0x12, 0x01,\
 /*  56 */ 0x01, 0x01, 0x01, 0x01, 0x23, 0x0b, 0x01, 0x01,\
-/*  64 */ 0x03, 0x03, 0x03, 0x03, 0x01, 0x01, 0x01, 0x02,\
-/*  72 */ 0x02, 0x08, 0x00, 0x10, 0x10, 0x10, 0x10, 0x00,\
-/*  80 */ 0x10, 0x10, 0x00, 0x00, 0x10, 0x10, 0x00, 0x00,\
-/*  88 */ 0x00, 0x00, 0x02, 0x02, 0x02, 0x00, 0x00, 0x00,\
-/*  96 */ 0x00, 0x10, 0x00, 0x10, 0x10, 0x00, 0x00, 0x00,\
-/* 104 */ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,\
-/* 112 */ 0x10, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,\
-/* 120 */ 0x00, 0x00, 0x10, 0x00, 0x04, 0x04, 0x00, 0x00,\
-/* 128 */ 0x10, 0x10, 0x00, 0x00, 0x10, 0x10, 0x10, 0x00,\
-/* 136 */ 0x00, 0x00, 0x00, 0x00, 0x00, 0x06, 0x10, 0x00,\
-/* 144 */ 0x04, 0x1a, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,\
-/* 152 */ 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x10, 0x00,\
-/* 160 */ 0x00, 0x00,}
+/*  64 */ 0x03, 0x03, 0x03, 0x01, 0x01, 0x01, 0x02, 0x02,\
+/*  72 */ 0x08, 0x00, 0x10, 0x10, 0x10, 0x10, 0x00, 0x10,\
+/*  80 */ 0x10, 0x00, 0x00, 0x10, 0x10, 0x00, 0x00, 0x00,\
+/*  88 */ 0x00, 0x02, 0x02, 0x02, 0x00, 0x00, 0x00, 0x00,\
+/*  96 */ 0x00, 0x10, 0x10, 0x10, 0x00, 0x00, 0x00, 0x00,\
+/* 104 */ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10,\
+/* 112 */ 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,\
+/* 120 */ 0x00, 0x10, 0x00, 0x04, 0x04, 0x00, 0x00, 0x10,\
+/* 128 */ 0x10, 0x00, 0x00, 0x10, 0x10, 0x10, 0x00, 0x00,\
+/* 136 */ 0x00, 0x00, 0x00, 0x00, 0x06, 0x10, 0x00, 0x04,\
+/* 144 */ 0x1a, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,\
+/* 152 */ 0x00, 0x00, 0x00, 0x00, 0x10, 0x10, 0x00, 0x00,\
+/* 160 */ 0x00,}
 
 /* The sqlite3P2Values() routine is able to run faster if it knows
 ** the value of the largest JUMP opcode.  The smaller the maximum
@@ -12447,7 +12513,7 @@ typedef struct VdbeOpList VdbeOpList;
 ** generated this include file strives to group all JUMP opcodes
 ** together near the beginning of the list.
 */
-#define SQLITE_MX_JUMP_OPCODE  70  /* Maximum JUMP opcode */
+#define SQLITE_MX_JUMP_OPCODE  69  /* Maximum JUMP opcode */
 
 /************** End of opcodes.h *********************************************/
 /************** Continuing where we left off in vdbe.h ***********************/
@@ -12670,7 +12736,11 @@ typedef struct PgHdr DbPage;
 #define PAGER_LOCKINGMODE_EXCLUSIVE   1
 
 /*
-** Numeric constants that encode the journalmode.  
+** Numeric constants that encode the journalmode.
+**
+** The numeric values encoded here (other than PAGER_JOURNALMODE_QUERY)
+** are exposed in the API via the "PRAGMA journal_mode" command and
+** therefore cannot be changed without a compatibility break.
 */
 #define PAGER_JOURNALMODE_QUERY     (-1)  /* Query the value of journalmode */
 #define PAGER_JOURNALMODE_DELETE      0   /* Commit by deleting journal file */
@@ -12688,6 +12758,11 @@ typedef struct PgHdr DbPage;
 
 /*
 ** Flags for sqlite3PagerSetFlags()
+**
+** Value constraints (enforced via assert()):
+**    PAGER_FULLFSYNC      == SQLITE_FullFSync
+**    PAGER_CKPT_FULLFSYNC == SQLITE_CkptFullFSync
+**    PAGER_CACHE_SPILL    == SQLITE_CacheSpill
 */
 #define PAGER_SYNCHRONOUS_OFF       0x01  /* PRAGMA synchronous=OFF */
 #define PAGER_SYNCHRONOUS_NORMAL    0x02  /* PRAGMA synchronous=NORMAL */
@@ -12857,7 +12932,7 @@ struct PgHdr {
   sqlite3_pcache_page *pPage;    /* Pcache object page handle */
   void *pData;                   /* Page data */
   void *pExtra;                  /* Extra content */
-  PgHdr *pDirty;                 /* Transient list of dirty pages */
+  PgHdr *pDirty;                 /* Transient list of dirty sorted by pgno */
   Pager *pPager;                 /* The pager this page is part of */
   Pgno pgno;                     /* Page number for this page */
 #ifdef SQLITE_CHECK_PAGES
@@ -12882,11 +12957,10 @@ struct PgHdr {
 #define PGHDR_WRITEABLE       0x004  /* Journaled and ready to modify */
 #define PGHDR_NEED_SYNC       0x008  /* Fsync the rollback journal before
                                      ** writing this page to the database */
-#define PGHDR_NEED_READ       0x010  /* Content is unread */
-#define PGHDR_DONT_WRITE      0x020  /* Do not write content to disk */
-#define PGHDR_MMAP            0x040  /* This is an mmap page object */
+#define PGHDR_DONT_WRITE      0x010  /* Do not write content to disk */
+#define PGHDR_MMAP            0x020  /* This is an mmap page object */
 
-#define PGHDR_WAL_APPEND      0x080  /* Appended to wal file */
+#define PGHDR_WAL_APPEND      0x040  /* Appended to wal file */
 
 /* Initialize and shutdown the page cache subsystem */
 SQLITE_PRIVATE int sqlite3PcacheInitialize(void);
@@ -12930,6 +13004,7 @@ SQLITE_PRIVATE void sqlite3PcacheDrop(PgHdr*);         /* Remove page from cache
 SQLITE_PRIVATE void sqlite3PcacheMakeDirty(PgHdr*);    /* Make sure page is marked dirty */
 SQLITE_PRIVATE void sqlite3PcacheMakeClean(PgHdr*);    /* Mark a single page as clean */
 SQLITE_PRIVATE void sqlite3PcacheCleanAll(PCache*);    /* Mark all dirty list pages as clean */
+SQLITE_PRIVATE void sqlite3PcacheClearWritable(PCache*);
 
 /* Change a page number.  Used by incr-vacuum. */
 SQLITE_PRIVATE void sqlite3PcacheMove(PgHdr*, Pgno);
@@ -12968,6 +13043,11 @@ SQLITE_PRIVATE int sqlite3PcachePagecount(PCache*);
 SQLITE_PRIVATE void sqlite3PcacheIterateDirty(PCache *pCache, void (*xIter)(PgHdr *));
 #endif
 
+#if defined(SQLITE_DEBUG)
+/* Check invariants on a PgHdr object */
+SQLITE_PRIVATE int sqlite3PcachePageSanity(PgHdr*);
+#endif
+
 /* Set and get the suggested cache-size for the specified pager-cache.
 **
 ** If no global maximum is configured, then the system attempts to limit
@@ -13003,6 +13083,9 @@ SQLITE_PRIVATE void sqlite3PCacheSetDefault(void);
 /* Return the header size */
 SQLITE_PRIVATE int sqlite3HeaderSizePcache(void);
 SQLITE_PRIVATE int sqlite3HeaderSizePcache1(void);
+
+/* Number of dirty pages as a percentage of the configured cache size */
+SQLITE_PRIVATE int sqlite3PCachePercentDirty(PCache*);
 
 #endif /* _PCACHE_H_ */
 
@@ -13233,7 +13316,7 @@ SQLITE_PRIVATE int sqlite3OsInit(void);
 /* 
 ** Functions for accessing sqlite3_file methods 
 */
-SQLITE_PRIVATE int sqlite3OsClose(sqlite3_file*);
+SQLITE_PRIVATE void sqlite3OsClose(sqlite3_file*);
 SQLITE_PRIVATE int sqlite3OsRead(sqlite3_file*, void*, int amt, i64 offset);
 SQLITE_PRIVATE int sqlite3OsWrite(sqlite3_file*, const void*, int amt, i64 offset);
 SQLITE_PRIVATE int sqlite3OsTruncate(sqlite3_file*, i64 size);
@@ -13278,7 +13361,7 @@ SQLITE_PRIVATE int sqlite3OsCurrentTimeInt64(sqlite3_vfs *, sqlite3_int64*);
 ** sqlite3_malloc() to obtain space for the file-handle structure.
 */
 SQLITE_PRIVATE int sqlite3OsOpenMalloc(sqlite3_vfs *, const char *, sqlite3_file **, int,int*);
-SQLITE_PRIVATE int sqlite3OsCloseFree(sqlite3_file *);
+SQLITE_PRIVATE void sqlite3OsCloseFree(sqlite3_file *);
 
 #endif /* _SQLITE_OS_H_ */
 
@@ -13687,6 +13770,11 @@ struct sqlite3 {
 
 /*
 ** Possible values for the sqlite3.flags.
+**
+** Value constraints (enforced via assert()):
+**      SQLITE_FullFSync     == PAGER_FULLFSYNC
+**      SQLITE_CkptFullFSync == PAGER_CKPT_FULLFSYNC
+**      SQLITE_CacheSpill    == PAGER_CACHE_SPILL
 */
 #define SQLITE_VdbeTrace      0x00000001  /* True to trace VDBE execution */
 #define SQLITE_InternChanges  0x00000002  /* Uncommitted Hash table changes */
@@ -13714,13 +13802,14 @@ struct sqlite3 {
 #define SQLITE_AutoIndex      0x00100000  /* Enable automatic indexes */
 #define SQLITE_PreferBuiltin  0x00200000  /* Preference to built-in funcs */
 #define SQLITE_LoadExtension  0x00400000  /* Enable load_extension */
-#define SQLITE_EnableTrigger  0x00800000  /* True to enable triggers */
-#define SQLITE_DeferFKs       0x01000000  /* Defer all FK constraints */
-#define SQLITE_QueryOnly      0x02000000  /* Disable database changes */
-#define SQLITE_VdbeEQP        0x04000000  /* Debug EXPLAIN QUERY PLAN */
-#define SQLITE_Vacuum         0x08000000  /* Currently in a VACUUM */
-#define SQLITE_CellSizeCk     0x10000000  /* Check btree cell sizes on load */
-#define SQLITE_Fts3Tokenizer  0x20000000  /* Enable fts3_tokenizer(2) */
+#define SQLITE_LoadExtFunc    0x00800000  /* Enable load_extension() SQL func */
+#define SQLITE_EnableTrigger  0x01000000  /* True to enable triggers */
+#define SQLITE_DeferFKs       0x02000000  /* Defer all FK constraints */
+#define SQLITE_QueryOnly      0x04000000  /* Disable database changes */
+#define SQLITE_VdbeEQP        0x08000000  /* Debug EXPLAIN QUERY PLAN */
+#define SQLITE_Vacuum         0x10000000  /* Currently in a VACUUM */
+#define SQLITE_CellSizeCk     0x20000000  /* Check btree cell sizes on load */
+#define SQLITE_Fts3Tokenizer  0x40000000  /* Enable fts3_tokenizer(2) */
 
 
 /*
@@ -13821,6 +13910,13 @@ struct FuncDestructor {
 ** values must correspond to OPFLAG_LENGTHARG and OPFLAG_TYPEOFARG.  And
 ** SQLITE_FUNC_CONSTANT must be the same as SQLITE_DETERMINISTIC.  There
 ** are assert() statements in the code to verify this.
+**
+** Value constraints (enforced via assert()):
+**     SQLITE_FUNC_MINMAX    ==  NC_MinMaxAgg      == SF_MinMaxAgg
+**     SQLITE_FUNC_LENGTH    ==  OPFLAG_LENGTHARG
+**     SQLITE_FUNC_TYPEOF    ==  OPFLAG_TYPEOFARG
+**     SQLITE_FUNC_CONSTANT  ==  SQLITE_DETERMINISTIC from the API
+**     SQLITE_FUNC_ENCMASK   depends on SQLITE_UTF* macros in the API
 */
 #define SQLITE_FUNC_ENCMASK  0x0003 /* SQLITE_UTF8, SQLITE_UTF16BE or UTF16LE */
 #define SQLITE_FUNC_LIKE     0x0004 /* Candidate for the LIKE optimization */
@@ -14820,6 +14916,9 @@ struct SrcList {
 /*
 ** Flags appropriate for the wctrlFlags parameter of sqlite3WhereBegin()
 ** and the WhereInfo.wctrlFlags member.
+**
+** Value constraints (enforced via assert()):
+**     WHERE_USE_LIMIT  == SF_FixedLimit
 */
 #define WHERE_ORDERBY_NORMAL   0x0000 /* No-op */
 #define WHERE_ORDERBY_MIN      0x0001 /* ORDER BY processing for min() func */
@@ -14837,6 +14936,7 @@ struct SrcList {
 #define WHERE_REOPEN_IDX       0x1000 /* Try to use OP_ReopenIdx */
 #define WHERE_ONEPASS_MULTIROW 0x2000 /* ONEPASS is ok with multiple rows */
 #define WHERE_USE_LIMIT        0x4000 /* There is a constant LIMIT clause */
+#define WHERE_SEEK_TABLE       0x8000 /* Do not defer seeks on main table */
 
 /* Allowed return values from sqlite3WhereIsDistinct()
 */
@@ -14880,16 +14980,18 @@ struct NameContext {
 /*
 ** Allowed values for the NameContext, ncFlags field.
 **
-** Note:  NC_MinMaxAgg must have the same value as SF_MinMaxAgg and
-** SQLITE_FUNC_MINMAX.
+** Value constraints (all checked via assert()):
+**    NC_HasAgg    == SF_HasAgg
+**    NC_MinMaxAgg == SF_MinMaxAgg == SQLITE_FUNC_MINMAX
 **
 */
 #define NC_AllowAgg  0x0001  /* Aggregate functions are allowed here */
-#define NC_HasAgg    0x0002  /* One or more aggregate functions seen */
+#define NC_PartIdx   0x0002  /* True if resolving a partial index WHERE */
 #define NC_IsCheck   0x0004  /* True if resolving names in a CHECK constraint */
 #define NC_InAggFunc 0x0008  /* True if analyzing arguments to an agg func */
-#define NC_PartIdx   0x0010  /* True if resolving a partial index WHERE */
+#define NC_HasAgg    0x0010  /* One or more aggregate functions seen */
 #define NC_IdxExpr   0x0020  /* True if resolving columns of CREATE INDEX */
+#define NC_VarSelect 0x0040  /* A correlated subquery has been seen */
 #define NC_MinMaxAgg 0x1000  /* min/max aggregates seen.  See note above */
 
 /*
@@ -14937,24 +15039,30 @@ struct Select {
 /*
 ** Allowed values for Select.selFlags.  The "SF" prefix stands for
 ** "Select Flag".
+**
+** Value constraints (all checked via assert())
+**     SF_HasAgg     == NC_HasAgg
+**     SF_MinMaxAgg  == NC_MinMaxAgg     == SQLITE_FUNC_MINMAX
+**     SF_FixedLimit == WHERE_USE_LIMIT
 */
 #define SF_Distinct       0x00001  /* Output should be DISTINCT */
 #define SF_All            0x00002  /* Includes the ALL keyword */
 #define SF_Resolved       0x00004  /* Identifiers have been resolved */
-#define SF_Aggregate      0x00008  /* Contains aggregate functions */
-#define SF_UsesEphemeral  0x00010  /* Uses the OpenEphemeral opcode */
-#define SF_Expanded       0x00020  /* sqlite3SelectExpand() called on this */
-#define SF_HasTypeInfo    0x00040  /* FROM subqueries have Table metadata */
-#define SF_Compound       0x00080  /* Part of a compound query */
-#define SF_Values         0x00100  /* Synthesized from VALUES clause */
-#define SF_MultiValue     0x00200  /* Single VALUES term with multiple rows */
-#define SF_NestedFrom     0x00400  /* Part of a parenthesized FROM clause */
-#define SF_MaybeConvert   0x00800  /* Need convertCompoundSelectToSubquery() */
+#define SF_Aggregate      0x00008  /* Contains agg functions or a GROUP BY */
+#define SF_HasAgg         0x00010  /* Contains aggregate functions */
+#define SF_UsesEphemeral  0x00020  /* Uses the OpenEphemeral opcode */
+#define SF_Expanded       0x00040  /* sqlite3SelectExpand() called on this */
+#define SF_HasTypeInfo    0x00080  /* FROM subqueries have Table metadata */
+#define SF_Compound       0x00100  /* Part of a compound query */
+#define SF_Values         0x00200  /* Synthesized from VALUES clause */
+#define SF_MultiValue     0x00400  /* Single VALUES term with multiple rows */
+#define SF_NestedFrom     0x00800  /* Part of a parenthesized FROM clause */
 #define SF_MinMaxAgg      0x01000  /* Aggregate containing min() or max() */
 #define SF_Recursive      0x02000  /* The recursive part of a recursive CTE */
 #define SF_FixedLimit     0x04000  /* nSelectRow set by a constant LIMIT */
-#define SF_Converted      0x08000  /* By convertCompoundSelectToSubquery() */
-#define SF_IncludeHidden  0x10000  /* Include hidden columns in output */
+#define SF_MaybeConvert   0x08000  /* Need convertCompoundSelectToSubquery() */
+#define SF_Converted      0x10000  /* By convertCompoundSelectToSubquery() */
+#define SF_IncludeHidden  0x20000  /* Include hidden columns in output */
 
 
 /*
@@ -15265,6 +15373,15 @@ struct AuthContext {
 
 /*
 ** Bitfield flags for P5 value in various opcodes.
+**
+** Value constraints (enforced via assert()):
+**    OPFLAG_LENGTHARG    == SQLITE_FUNC_LENGTH
+**    OPFLAG_TYPEOFARG    == SQLITE_FUNC_TYPEOF
+**    OPFLAG_BULKCSR      == BTREE_BULKLOAD
+**    OPFLAG_SEEKEQ       == BTREE_SEEK_EQ
+**    OPFLAG_FORDELETE    == BTREE_FORDELETE
+**    OPFLAG_SAVEPOSITION == BTREE_SAVEPOSITION
+**    OPFLAG_AUXDELETE    == BTREE_AUXDELETE
 */
 #define OPFLAG_NCHANGE       0x01    /* OP_Insert: Set to update db->nChange */
                                      /* Also used in P2 (not P5) of OP_Delete */
@@ -19407,13 +19524,11 @@ SQLITE_API int sqlite3_memdebug_vfs_oom_test = 1;
 ** of this would be completely automatic if SQLite were coded using
 ** C++ instead of plain old C.
 */
-SQLITE_PRIVATE int sqlite3OsClose(sqlite3_file *pId){
-  int rc = SQLITE_OK;
+SQLITE_PRIVATE void sqlite3OsClose(sqlite3_file *pId){
   if( pId->pMethods ){
-    rc = pId->pMethods->xClose(pId);
+    pId->pMethods->xClose(pId);
     pId->pMethods = 0;
   }
-  return rc;
 }
 SQLITE_PRIVATE int sqlite3OsRead(sqlite3_file *id, void *pBuf, int amt, i64 offset){
   DO_OS_MALLOC_TEST(id);
@@ -19631,12 +19746,10 @@ SQLITE_PRIVATE int sqlite3OsOpenMalloc(
   }
   return rc;
 }
-SQLITE_PRIVATE int sqlite3OsCloseFree(sqlite3_file *pFile){
-  int rc = SQLITE_OK;
+SQLITE_PRIVATE void sqlite3OsCloseFree(sqlite3_file *pFile){
   assert( pFile );
-  rc = sqlite3OsClose(pFile);
+  sqlite3OsClose(pFile);
   sqlite3_free(pFile);
-  return rc;
 }
 
 /*
@@ -24316,26 +24429,26 @@ SQLITE_PRIVATE int sqlite3ApiExit(sqlite3* db, int rc){
 ** Conversion types fall into various categories as defined by the
 ** following enumeration.
 */
-#define etRADIX       1 /* Integer types.  %d, %x, %o, and so forth */
-#define etFLOAT       2 /* Floating point.  %f */
-#define etEXP         3 /* Exponentional notation. %e and %E */
-#define etGENERIC     4 /* Floating or exponential, depending on exponent. %g */
-#define etSIZE        5 /* Return number of characters processed so far. %n */
-#define etSTRING      6 /* Strings. %s */
-#define etDYNSTRING   7 /* Dynamically allocated strings. %z */
-#define etPERCENT     8 /* Percent symbol. %% */
-#define etCHARX       9 /* Characters. %c */
+#define etRADIX       0 /* Integer types.  %d, %x, %o, and so forth */
+#define etFLOAT       1 /* Floating point.  %f */
+#define etEXP         2 /* Exponentional notation. %e and %E */
+#define etGENERIC     3 /* Floating or exponential, depending on exponent. %g */
+#define etSIZE        4 /* Return number of characters processed so far. %n */
+#define etSTRING      5 /* Strings. %s */
+#define etDYNSTRING   6 /* Dynamically allocated strings. %z */
+#define etPERCENT     7 /* Percent symbol. %% */
+#define etCHARX       8 /* Characters. %c */
 /* The rest are extensions, not normally found in printf() */
-#define etSQLESCAPE  10 /* Strings with '\'' doubled.  %q */
-#define etSQLESCAPE2 11 /* Strings with '\'' doubled and enclosed in '',
+#define etSQLESCAPE   9 /* Strings with '\'' doubled.  %q */
+#define etSQLESCAPE2 10 /* Strings with '\'' doubled and enclosed in '',
                           NULL pointers replaced by SQL NULL.  %Q */
-#define etTOKEN      12 /* a pointer to a Token structure */
-#define etSRCLIST    13 /* a pointer to a SrcList */
-#define etPOINTER    14 /* The %p conversion */
-#define etSQLESCAPE3 15 /* %w -> Strings with '\"' doubled */
-#define etORDINAL    16 /* %r -> 1st, 2nd, 3rd, 4th, etc.  English only */
+#define etTOKEN      11 /* a pointer to a Token structure */
+#define etSRCLIST    12 /* a pointer to a SrcList */
+#define etPOINTER    13 /* The %p conversion */
+#define etSQLESCAPE3 14 /* %w -> Strings with '\"' doubled */
+#define etORDINAL    15 /* %r -> 1st, 2nd, 3rd, 4th, etc.  English only */
 
-#define etINVALID     0 /* Any unrecognized conversion type */
+#define etINVALID    16 /* Any unrecognized conversion type */
 
 
 /*
@@ -24490,7 +24603,7 @@ SQLITE_PRIVATE void sqlite3VXPrintf(
   etByte flag_long;          /* True if "l" flag is present */
   etByte flag_longlong;      /* True if the "ll" flag is present */
   etByte done;               /* Loop termination flag */
-  etByte xtype = 0;          /* Conversion paradigm */
+  etByte xtype = etINVALID;  /* Conversion paradigm */
   u8 bArgList;               /* True for SQLITE_PRINTF_SQLFUNC */
   u8 useIntern;              /* Ok to use internal conversions (ex: %T) */
   char prefix;               /* Prefix character.  "+" or "-" or " " or '\0'. */
@@ -27194,7 +27307,7 @@ SQLITE_PRIVATE int sqlite3AtoF(const char *z, double *pResult, int length, u8 en
   int eValid = 1;  /* True exponent is either not used or is well-formed */
   double result;
   int nDigits = 0;
-  int nonNum = 0;
+  int nonNum = 0;  /* True if input contains UTF16 with high byte non-zero */
 
   assert( enc==SQLITE_UTF8 || enc==SQLITE_UTF16LE || enc==SQLITE_UTF16BE );
   *pResult = 0.0;   /* Default return value, in case of an error */
@@ -27207,7 +27320,7 @@ SQLITE_PRIVATE int sqlite3AtoF(const char *z, double *pResult, int length, u8 en
     assert( SQLITE_UTF16LE==2 && SQLITE_UTF16BE==3 );
     for(i=3-enc; i<length && z[i]==0; i+=2){}
     nonNum = i<length;
-    zEnd = z+i+enc-3;
+    zEnd = &z[i^1];
     z += (enc&1);
   }
 
@@ -27222,9 +27335,6 @@ SQLITE_PRIVATE int sqlite3AtoF(const char *z, double *pResult, int length, u8 en
   }else if( *z=='+' ){
     z+=incr;
   }
-
-  /* skip leading zeroes */
-  while( z<zEnd && z[0]=='0' ) z+=incr, nDigits++;
 
   /* copy max significant digits to significand */
   while( z<zEnd && sqlite3Isdigit(*z) && s<((LARGEST_INT64-9)/10) ){
@@ -27242,12 +27352,13 @@ SQLITE_PRIVATE int sqlite3AtoF(const char *z, double *pResult, int length, u8 en
     z+=incr;
     /* copy digits from after decimal to significand
     ** (decrease exponent by d to shift decimal right) */
-    while( z<zEnd && sqlite3Isdigit(*z) && s<((LARGEST_INT64-9)/10) ){
-      s = s*10 + (*z - '0');
-      z+=incr, nDigits++, d--;
+    while( z<zEnd && sqlite3Isdigit(*z) ){
+      if( s<((LARGEST_INT64-9)/10) ){
+        s = s*10 + (*z - '0');
+        d--;
+      }
+      z+=incr, nDigits++;
     }
-    /* skip non-significant digits */
-    while( z<zEnd && sqlite3Isdigit(*z) ) z+=incr, nDigits++;
   }
   if( z>=zEnd ) goto do_atof_calc;
 
@@ -27255,7 +27366,12 @@ SQLITE_PRIVATE int sqlite3AtoF(const char *z, double *pResult, int length, u8 en
   if( *z=='e' || *z=='E' ){
     z+=incr;
     eValid = 0;
-    if( z>=zEnd ) goto do_atof_calc;
+
+    /* This branch is needed to avoid a (harmless) buffer overread.  The 
+    ** special comment alerts the mutation tester that the correct answer
+    ** is obtained even if the branch is omitted */
+    if( z>=zEnd ) goto do_atof_calc;              /*PREVENTS-HARMLESS-OVERREAD*/
+
     /* get sign of exponent */
     if( *z=='-' ){
       esign = -1;
@@ -27272,9 +27388,7 @@ SQLITE_PRIVATE int sqlite3AtoF(const char *z, double *pResult, int length, u8 en
   }
 
   /* skip trailing spaces */
-  if( nDigits && eValid ){
-    while( z<zEnd && sqlite3Isspace(*z) ) z+=incr;
-  }
+  while( z<zEnd && sqlite3Isspace(*z) ) z+=incr;
 
 do_atof_calc:
   /* adjust exponent by d, and update sign */
@@ -27286,41 +27400,51 @@ do_atof_calc:
     esign = 1;
   }
 
-  /* if 0 significand */
-  if( !s ) {
-    /* In the IEEE 754 standard, zero is signed.
-    ** Add the sign if we've seen at least one digit */
-    result = (sign<0 && nDigits) ? -(double)0 : (double)0;
+  if( s==0 ) {
+    /* In the IEEE 754 standard, zero is signed. */
+    result = sign<0 ? -(double)0 : (double)0;
   } else {
-    /* attempt to reduce exponent */
-    if( esign>0 ){
-      while( s<(LARGEST_INT64/10) && e>0 ) e--,s*=10;
-    }else{
-      while( !(s%10) && e>0 ) e--,s/=10;
+    /* Attempt to reduce exponent.
+    **
+    ** Branches that are not required for the correct answer but which only
+    ** help to obtain the correct answer faster are marked with special
+    ** comments, as a hint to the mutation tester.
+    */
+    while( e>0 ){                                       /*OPTIMIZATION-IF-TRUE*/
+      if( esign>0 ){
+        if( s>=(LARGEST_INT64/10) ) break;             /*OPTIMIZATION-IF-FALSE*/
+        s *= 10;
+      }else{
+        if( s%10!=0 ) break;                           /*OPTIMIZATION-IF-FALSE*/
+        s /= 10;
+      }
+      e--;
     }
 
     /* adjust the sign of significand */
     s = sign<0 ? -s : s;
 
-    /* if exponent, scale significand as appropriate
-    ** and store in result. */
-    if( e ){
+    if( e==0 ){                                         /*OPTIMIZATION-IF-TRUE*/
+      result = (double)s;
+    }else{
       LONGDOUBLE_TYPE scale = 1.0;
       /* attempt to handle extremely small/large numbers better */
-      if( e>307 && e<342 ){
-        while( e%308 ) { scale *= 1.0e+1; e -= 1; }
-        if( esign<0 ){
-          result = s / scale;
-          result /= 1.0e+308;
-        }else{
-          result = s * scale;
-          result *= 1.0e+308;
-        }
-      }else if( e>=342 ){
-        if( esign<0 ){
-          result = 0.0*s;
-        }else{
-          result = 1e308*1e308*s;  /* Infinity */
+      if( e>307 ){                                      /*OPTIMIZATION-IF-TRUE*/
+        if( e<342 ){                                    /*OPTIMIZATION-IF-TRUE*/
+          while( e%308 ) { scale *= 1.0e+1; e -= 1; }
+          if( esign<0 ){
+            result = s / scale;
+            result /= 1.0e+308;
+          }else{
+            result = s * scale;
+            result *= 1.0e+308;
+          }
+        }else{ assert( e>=342 );
+          if( esign<0 ){
+            result = 0.0*s;
+          }else{
+            result = 1e308*1e308*s;  /* Infinity */
+          }
         }
       }else{
         /* 1.0e+22 is the largest power of 10 than can be 
@@ -27333,8 +27457,6 @@ do_atof_calc:
           result = s * scale;
         }
       }
-    } else {
-      result = (double)s;
     }
   }
 
@@ -27342,7 +27464,7 @@ do_atof_calc:
   *pResult = result;
 
   /* return true if number and no extra non-whitespace chracters after */
-  return z>=zEnd && nDigits>0 && eValid && nonNum==0;
+  return z==zEnd && nDigits>0 && eValid && nonNum==0;
 #else
   return !sqlite3Atoi64(z, pResult, length, enc);
 #endif /* SQLITE_OMIT_FLOATING_POINT */
@@ -27404,7 +27526,7 @@ SQLITE_PRIVATE int sqlite3Atoi64(const char *zNum, i64 *pNum, int length, u8 enc
   int neg = 0; /* assume positive */
   int i;
   int c = 0;
-  int nonNum = 0;
+  int nonNum = 0;  /* True if input contains UTF16 with high byte non-zero */
   const char *zStart;
   const char *zEnd = zNum + length;
   assert( enc==SQLITE_UTF8 || enc==SQLITE_UTF16LE || enc==SQLITE_UTF16BE );
@@ -27415,7 +27537,7 @@ SQLITE_PRIVATE int sqlite3Atoi64(const char *zNum, i64 *pNum, int length, u8 enc
     assert( SQLITE_UTF16LE==2 && SQLITE_UTF16BE==3 );
     for(i=3-enc; i<length && zNum[i]==0; i+=2){}
     nonNum = i<length;
-    zEnd = zNum+i+enc-3;
+    zEnd = &zNum[i^1];
     zNum += (enc&1);
   }
   while( zNum<zEnd && sqlite3Isspace(*zNum) ) zNum+=incr;
@@ -27442,8 +27564,11 @@ SQLITE_PRIVATE int sqlite3Atoi64(const char *zNum, i64 *pNum, int length, u8 enc
   testcase( i==18 );
   testcase( i==19 );
   testcase( i==20 );
-  if( (c!=0 && &zNum[i]<zEnd) || (i==0 && zStart==zNum)
-       || i>19*incr || nonNum ){
+  if( &zNum[i]<zEnd              /* Extra bytes at the end */
+   || (i==0 && zStart==zNum)     /* No digits */
+   || i>19*incr                  /* Too many digits */
+   || nonNum                     /* UTF16 with high-order bytes non-zero */
+  ){
     /* zNum is empty or contains non-numeric text or is longer
     ** than 19 digits (thus guaranteeing that it is too large) */
     return 1;
@@ -27485,7 +27610,6 @@ SQLITE_PRIVATE int sqlite3DecOrHexToI64(const char *z, i64 *pOut){
 #ifndef SQLITE_OMIT_HEX_INTEGER
   if( z[0]=='0'
    && (z[1]=='x' || z[1]=='X')
-   && sqlite3Isxdigit(z[2])
   ){
     u64 u = 0;
     int i, k;
@@ -28247,7 +28371,7 @@ SQLITE_PRIVATE LogEst sqlite3LogEst(u64 x){
     if( x<2 ) return 0;
     while( x<8 ){  y -= 10; x <<= 1; }
   }else{
-    while( x>255 ){ y += 40; x >>= 4; }
+    while( x>255 ){ y += 40; x >>= 4; }  /*OPTIMIZATION-IF-TRUE*/
     while( x>15 ){  y += 10; x >>= 1; }
   }
   return a[x&7] + y - 10;
@@ -28356,7 +28480,7 @@ SQLITE_PRIVATE void sqlite3HashClear(Hash *pH){
 static unsigned int strHash(const char *z){
   unsigned int h = 0;
   unsigned char c;
-  while( (c = (unsigned char)*z++)!=0 ){
+  while( (c = (unsigned char)*z++)!=0 ){     /*OPTIMIZATION-IF-TRUE*/
     h = (h<<3) ^ h ^ sqlite3UpperToLower[c];
   }
   return h;
@@ -28449,7 +28573,7 @@ static HashElem *findElementWithHash(
   int count;                     /* Number of elements left to test */
   unsigned int h;                /* The computed hash */
 
-  if( pH->ht ){
+  if( pH->ht ){   /*OPTIMIZATION-IF-TRUE*/
     struct _ht *pEntry;
     h = strHash(pKey) % pH->htsize;
     pEntry = &pH->ht[h];
@@ -28648,101 +28772,100 @@ SQLITE_PRIVATE const char *sqlite3OpcodeName(int i){
     /*  64 */ "IfPos"            OpHelp("if r[P1]>0 then r[P1]-=P3, goto P2"),
     /*  65 */ "IfNotZero"        OpHelp("if r[P1]!=0 then r[P1]-=P3, goto P2"),
     /*  66 */ "DecrJumpZero"     OpHelp("if (--r[P1])==0 goto P2"),
-    /*  67 */ "JumpZeroIncr"     OpHelp("if (r[P1]++)==0 ) goto P2"),
-    /*  68 */ "IncrVacuum"       OpHelp(""),
-    /*  69 */ "VNext"            OpHelp(""),
-    /*  70 */ "Init"             OpHelp("Start at P2"),
-    /*  71 */ "Return"           OpHelp(""),
-    /*  72 */ "EndCoroutine"     OpHelp(""),
-    /*  73 */ "HaltIfNull"       OpHelp("if r[P3]=null halt"),
-    /*  74 */ "Halt"             OpHelp(""),
-    /*  75 */ "Integer"          OpHelp("r[P2]=P1"),
-    /*  76 */ "Int64"            OpHelp("r[P2]=P4"),
-    /*  77 */ "String"           OpHelp("r[P2]='P4' (len=P1)"),
-    /*  78 */ "Null"             OpHelp("r[P2..P3]=NULL"),
-    /*  79 */ "SoftNull"         OpHelp("r[P1]=NULL"),
-    /*  80 */ "Blob"             OpHelp("r[P2]=P4 (len=P1)"),
-    /*  81 */ "Variable"         OpHelp("r[P2]=parameter(P1,P4)"),
-    /*  82 */ "Move"             OpHelp("r[P2@P3]=r[P1@P3]"),
-    /*  83 */ "Copy"             OpHelp("r[P2@P3+1]=r[P1@P3+1]"),
-    /*  84 */ "SCopy"            OpHelp("r[P2]=r[P1]"),
-    /*  85 */ "IntCopy"          OpHelp("r[P2]=r[P1]"),
-    /*  86 */ "ResultRow"        OpHelp("output=r[P1@P2]"),
-    /*  87 */ "CollSeq"          OpHelp(""),
-    /*  88 */ "Function0"        OpHelp("r[P3]=func(r[P2@P5])"),
-    /*  89 */ "Function"         OpHelp("r[P3]=func(r[P2@P5])"),
-    /*  90 */ "AddImm"           OpHelp("r[P1]=r[P1]+P2"),
-    /*  91 */ "RealAffinity"     OpHelp(""),
-    /*  92 */ "Cast"             OpHelp("affinity(r[P1])"),
-    /*  93 */ "Permutation"      OpHelp(""),
-    /*  94 */ "Compare"          OpHelp("r[P1@P3] <-> r[P2@P3]"),
-    /*  95 */ "Column"           OpHelp("r[P3]=PX"),
-    /*  96 */ "Affinity"         OpHelp("affinity(r[P1@P2])"),
+    /*  67 */ "IncrVacuum"       OpHelp(""),
+    /*  68 */ "VNext"            OpHelp(""),
+    /*  69 */ "Init"             OpHelp("Start at P2"),
+    /*  70 */ "Return"           OpHelp(""),
+    /*  71 */ "EndCoroutine"     OpHelp(""),
+    /*  72 */ "HaltIfNull"       OpHelp("if r[P3]=null halt"),
+    /*  73 */ "Halt"             OpHelp(""),
+    /*  74 */ "Integer"          OpHelp("r[P2]=P1"),
+    /*  75 */ "Int64"            OpHelp("r[P2]=P4"),
+    /*  76 */ "String"           OpHelp("r[P2]='P4' (len=P1)"),
+    /*  77 */ "Null"             OpHelp("r[P2..P3]=NULL"),
+    /*  78 */ "SoftNull"         OpHelp("r[P1]=NULL"),
+    /*  79 */ "Blob"             OpHelp("r[P2]=P4 (len=P1)"),
+    /*  80 */ "Variable"         OpHelp("r[P2]=parameter(P1,P4)"),
+    /*  81 */ "Move"             OpHelp("r[P2@P3]=r[P1@P3]"),
+    /*  82 */ "Copy"             OpHelp("r[P2@P3+1]=r[P1@P3+1]"),
+    /*  83 */ "SCopy"            OpHelp("r[P2]=r[P1]"),
+    /*  84 */ "IntCopy"          OpHelp("r[P2]=r[P1]"),
+    /*  85 */ "ResultRow"        OpHelp("output=r[P1@P2]"),
+    /*  86 */ "CollSeq"          OpHelp(""),
+    /*  87 */ "Function0"        OpHelp("r[P3]=func(r[P2@P5])"),
+    /*  88 */ "Function"         OpHelp("r[P3]=func(r[P2@P5])"),
+    /*  89 */ "AddImm"           OpHelp("r[P1]=r[P1]+P2"),
+    /*  90 */ "RealAffinity"     OpHelp(""),
+    /*  91 */ "Cast"             OpHelp("affinity(r[P1])"),
+    /*  92 */ "Permutation"      OpHelp(""),
+    /*  93 */ "Compare"          OpHelp("r[P1@P3] <-> r[P2@P3]"),
+    /*  94 */ "Column"           OpHelp("r[P3]=PX"),
+    /*  95 */ "Affinity"         OpHelp("affinity(r[P1@P2])"),
+    /*  96 */ "MakeRecord"       OpHelp("r[P3]=mkrec(r[P1@P2])"),
     /*  97 */ "String8"          OpHelp("r[P2]='P4'"),
-    /*  98 */ "MakeRecord"       OpHelp("r[P3]=mkrec(r[P1@P2])"),
-    /*  99 */ "Count"            OpHelp("r[P2]=count()"),
-    /* 100 */ "ReadCookie"       OpHelp(""),
-    /* 101 */ "SetCookie"        OpHelp(""),
-    /* 102 */ "ReopenIdx"        OpHelp("root=P2 iDb=P3"),
-    /* 103 */ "OpenRead"         OpHelp("root=P2 iDb=P3"),
-    /* 104 */ "OpenWrite"        OpHelp("root=P2 iDb=P3"),
-    /* 105 */ "OpenAutoindex"    OpHelp("nColumn=P2"),
-    /* 106 */ "OpenEphemeral"    OpHelp("nColumn=P2"),
-    /* 107 */ "SorterOpen"       OpHelp(""),
-    /* 108 */ "SequenceTest"     OpHelp("if( cursor[P1].ctr++ ) pc = P2"),
-    /* 109 */ "OpenPseudo"       OpHelp("P3 columns in r[P2]"),
-    /* 110 */ "Close"            OpHelp(""),
-    /* 111 */ "ColumnsUsed"      OpHelp(""),
-    /* 112 */ "Sequence"         OpHelp("r[P2]=cursor[P1].ctr++"),
-    /* 113 */ "NewRowid"         OpHelp("r[P2]=rowid"),
-    /* 114 */ "Insert"           OpHelp("intkey=r[P3] data=r[P2]"),
-    /* 115 */ "InsertInt"        OpHelp("intkey=P3 data=r[P2]"),
-    /* 116 */ "Delete"           OpHelp(""),
-    /* 117 */ "ResetCount"       OpHelp(""),
-    /* 118 */ "SorterCompare"    OpHelp("if key(P1)!=trim(r[P3],P4) goto P2"),
-    /* 119 */ "SorterData"       OpHelp("r[P2]=data"),
-    /* 120 */ "RowKey"           OpHelp("r[P2]=key"),
-    /* 121 */ "RowData"          OpHelp("r[P2]=data"),
-    /* 122 */ "Rowid"            OpHelp("r[P2]=rowid"),
-    /* 123 */ "NullRow"          OpHelp(""),
-    /* 124 */ "SorterInsert"     OpHelp(""),
-    /* 125 */ "IdxInsert"        OpHelp("key=r[P2]"),
-    /* 126 */ "IdxDelete"        OpHelp("key=r[P2@P3]"),
-    /* 127 */ "Seek"             OpHelp("Move P3 to P1.rowid"),
-    /* 128 */ "IdxRowid"         OpHelp("r[P2]=rowid"),
-    /* 129 */ "Destroy"          OpHelp(""),
-    /* 130 */ "Clear"            OpHelp(""),
-    /* 131 */ "ResetSorter"      OpHelp(""),
-    /* 132 */ "CreateIndex"      OpHelp("r[P2]=root iDb=P1"),
+    /*  98 */ "Count"            OpHelp("r[P2]=count()"),
+    /*  99 */ "ReadCookie"       OpHelp(""),
+    /* 100 */ "SetCookie"        OpHelp(""),
+    /* 101 */ "ReopenIdx"        OpHelp("root=P2 iDb=P3"),
+    /* 102 */ "OpenRead"         OpHelp("root=P2 iDb=P3"),
+    /* 103 */ "OpenWrite"        OpHelp("root=P2 iDb=P3"),
+    /* 104 */ "OpenAutoindex"    OpHelp("nColumn=P2"),
+    /* 105 */ "OpenEphemeral"    OpHelp("nColumn=P2"),
+    /* 106 */ "SorterOpen"       OpHelp(""),
+    /* 107 */ "SequenceTest"     OpHelp("if( cursor[P1].ctr++ ) pc = P2"),
+    /* 108 */ "OpenPseudo"       OpHelp("P3 columns in r[P2]"),
+    /* 109 */ "Close"            OpHelp(""),
+    /* 110 */ "ColumnsUsed"      OpHelp(""),
+    /* 111 */ "Sequence"         OpHelp("r[P2]=cursor[P1].ctr++"),
+    /* 112 */ "NewRowid"         OpHelp("r[P2]=rowid"),
+    /* 113 */ "Insert"           OpHelp("intkey=r[P3] data=r[P2]"),
+    /* 114 */ "InsertInt"        OpHelp("intkey=P3 data=r[P2]"),
+    /* 115 */ "Delete"           OpHelp(""),
+    /* 116 */ "ResetCount"       OpHelp(""),
+    /* 117 */ "SorterCompare"    OpHelp("if key(P1)!=trim(r[P3],P4) goto P2"),
+    /* 118 */ "SorterData"       OpHelp("r[P2]=data"),
+    /* 119 */ "RowKey"           OpHelp("r[P2]=key"),
+    /* 120 */ "RowData"          OpHelp("r[P2]=data"),
+    /* 121 */ "Rowid"            OpHelp("r[P2]=rowid"),
+    /* 122 */ "NullRow"          OpHelp(""),
+    /* 123 */ "SorterInsert"     OpHelp(""),
+    /* 124 */ "IdxInsert"        OpHelp("key=r[P2]"),
+    /* 125 */ "IdxDelete"        OpHelp("key=r[P2@P3]"),
+    /* 126 */ "Seek"             OpHelp("Move P3 to P1.rowid"),
+    /* 127 */ "IdxRowid"         OpHelp("r[P2]=rowid"),
+    /* 128 */ "Destroy"          OpHelp(""),
+    /* 129 */ "Clear"            OpHelp(""),
+    /* 130 */ "ResetSorter"      OpHelp(""),
+    /* 131 */ "CreateIndex"      OpHelp("r[P2]=root iDb=P1"),
+    /* 132 */ "CreateTable"      OpHelp("r[P2]=root iDb=P1"),
     /* 133 */ "Real"             OpHelp("r[P2]=P4"),
-    /* 134 */ "CreateTable"      OpHelp("r[P2]=root iDb=P1"),
-    /* 135 */ "ParseSchema"      OpHelp(""),
-    /* 136 */ "LoadAnalysis"     OpHelp(""),
-    /* 137 */ "DropTable"        OpHelp(""),
-    /* 138 */ "DropIndex"        OpHelp(""),
-    /* 139 */ "DropTrigger"      OpHelp(""),
-    /* 140 */ "IntegrityCk"      OpHelp(""),
-    /* 141 */ "RowSetAdd"        OpHelp("rowset(P1)=r[P2]"),
-    /* 142 */ "Param"            OpHelp(""),
-    /* 143 */ "FkCounter"        OpHelp("fkctr[P1]+=P2"),
-    /* 144 */ "MemMax"           OpHelp("r[P1]=max(r[P1],r[P2])"),
-    /* 145 */ "OffsetLimit"      OpHelp("if r[P1]>0 then r[P2]=r[P1]+max(0,r[P3]) else r[P2]=(-1)"),
-    /* 146 */ "AggStep0"         OpHelp("accum=r[P3] step(r[P2@P5])"),
-    /* 147 */ "AggStep"          OpHelp("accum=r[P3] step(r[P2@P5])"),
-    /* 148 */ "AggFinal"         OpHelp("accum=r[P1] N=P2"),
-    /* 149 */ "Expire"           OpHelp(""),
-    /* 150 */ "TableLock"        OpHelp("iDb=P1 root=P2 write=P3"),
-    /* 151 */ "VBegin"           OpHelp(""),
-    /* 152 */ "VCreate"          OpHelp(""),
-    /* 153 */ "VDestroy"         OpHelp(""),
-    /* 154 */ "VOpen"            OpHelp(""),
-    /* 155 */ "VColumn"          OpHelp("r[P3]=vcolumn(P2)"),
-    /* 156 */ "VRename"          OpHelp(""),
-    /* 157 */ "Pagecount"        OpHelp(""),
-    /* 158 */ "MaxPgcnt"         OpHelp(""),
-    /* 159 */ "CursorHint"       OpHelp(""),
-    /* 160 */ "Noop"             OpHelp(""),
-    /* 161 */ "Explain"          OpHelp(""),
+    /* 134 */ "ParseSchema"      OpHelp(""),
+    /* 135 */ "LoadAnalysis"     OpHelp(""),
+    /* 136 */ "DropTable"        OpHelp(""),
+    /* 137 */ "DropIndex"        OpHelp(""),
+    /* 138 */ "DropTrigger"      OpHelp(""),
+    /* 139 */ "IntegrityCk"      OpHelp(""),
+    /* 140 */ "RowSetAdd"        OpHelp("rowset(P1)=r[P2]"),
+    /* 141 */ "Param"            OpHelp(""),
+    /* 142 */ "FkCounter"        OpHelp("fkctr[P1]+=P2"),
+    /* 143 */ "MemMax"           OpHelp("r[P1]=max(r[P1],r[P2])"),
+    /* 144 */ "OffsetLimit"      OpHelp("if r[P1]>0 then r[P2]=r[P1]+max(0,r[P3]) else r[P2]=(-1)"),
+    /* 145 */ "AggStep0"         OpHelp("accum=r[P3] step(r[P2@P5])"),
+    /* 146 */ "AggStep"          OpHelp("accum=r[P3] step(r[P2@P5])"),
+    /* 147 */ "AggFinal"         OpHelp("accum=r[P1] N=P2"),
+    /* 148 */ "Expire"           OpHelp(""),
+    /* 149 */ "TableLock"        OpHelp("iDb=P1 root=P2 write=P3"),
+    /* 150 */ "VBegin"           OpHelp(""),
+    /* 151 */ "VCreate"          OpHelp(""),
+    /* 152 */ "VDestroy"         OpHelp(""),
+    /* 153 */ "VOpen"            OpHelp(""),
+    /* 154 */ "VColumn"          OpHelp("r[P3]=vcolumn(P2)"),
+    /* 155 */ "VRename"          OpHelp(""),
+    /* 156 */ "Pagecount"        OpHelp(""),
+    /* 157 */ "MaxPgcnt"         OpHelp(""),
+    /* 158 */ "CursorHint"       OpHelp(""),
+    /* 159 */ "Noop"             OpHelp(""),
+    /* 160 */ "Explain"          OpHelp(""),
   };
   return azName[i];
 }

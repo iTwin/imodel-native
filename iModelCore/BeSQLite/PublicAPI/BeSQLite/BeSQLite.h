@@ -11,6 +11,7 @@
 #include <Bentley/bset.h>
 #include <Bentley/BeId.h>
 #include <list>
+#include <type_traits>
 
 #ifndef NDEBUG
 #include <Logging/bentleylogging.h>
@@ -1131,7 +1132,7 @@ struct BeIdSet : bset<BeInt64Id>
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   12/14
 //=======================================================================================
-template<typename IdType> struct IdSet : BeIdSet, BeSQLite::VirtualSet
+template<typename IdType> struct IdSet : BeIdSet, VirtualSet
 {
 private:
     BeIdSet m_set;
@@ -1142,7 +1143,7 @@ private:
         return Contains(IdType(vals[0].GetValueUInt64()));
         }
 public:
-    IdSet(){static_assert(sizeof(IdType)==sizeof(BeInt64Id),"IdSets may only contain BeInt64Id");}
+    IdSet() { static_assert(std::is_base_of<BeInt64Id, IdType>::value && sizeof(BeInt64Id) == sizeof(IdType), "IdSet may only contain BeInt64Ids or subclasses of it of the same size."); }
 
     typedef bset<IdType> T_SetType;
     typedef typename T_SetType::const_iterator const_iterator;
