@@ -258,6 +258,7 @@ protected:
 public:
     static uint32_t const MaxRepo() {return 1L<<24;} 
     static uint32_t const Master()  {return 0;} 
+    static uint32_t const Standalone() {return 1;}
     static uint32_t const Illegal() {return (uint32_t)0xffffffff;}
 
     BeBriefcaseId GetNextBriefcaseId() const {return BeBriefcaseId(m_id+1);}
@@ -266,6 +267,7 @@ public:
     void Invalidate() {m_id = Illegal();}  //!< Set this BeBriefcaseId to the invalid id value 
     bool IsValid() const {return Illegal() != m_id;}  //!< Test to see whether this BriefcaseId is valid.
     bool IsMasterId() const {return Master()==m_id;}  //!< Determine whether this is the id of the master briefcase (special id==0).
+    bool IsStandaloneId() const {return Standalone()==m_id;} //!< Determine whether this is the id of a standalone briefcase not associated with any master briefcase (special id==1)
     uint32_t GetValue() const {BeAssert(IsValid()); BeAssert(m_id<MaxRepo()); return m_id;} //!< Get the briefcase id as a uint32_t
     bool operator==(BeBriefcaseId const& rhs) const {return rhs.m_id==m_id;}
 };
