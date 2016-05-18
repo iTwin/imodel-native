@@ -7,7 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #include "CWSCCInternal.h"
 
-
 /*---------------------------------------------------------------------------------**//**
 * Constructor.
 * @bsimethod
@@ -150,6 +149,54 @@ CallStatus httperrorToConnectWebServicesClientStatus(LPCWSCC api, HttpStatus sta
         }
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                    05/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+//CallStatus ConnectWebServicesClientC_CreateProjectFavorite
+//(
+//CWSCCHANDLE apiHandle,
+//WCharCP ProjectGuid
+//)
+//    {
+//    VERIFY_API
+//
+//    Json::Value instance;
+//
+//    if (ProjectGuid == nullptr)
+//        {
+//        api->SetStatusMessage ("ProjectGuid is invalid in ConnectWebServicesClientC_CreateProjectFavorite.");
+//        api->SetStatusDescription ("You must specify a ProjectGuid to create a ProjectFavorite instance.");
+//        return INVALID_PARAMETER;
+//        }
+//    instance["instanceId"] = Utf8String (ProjectGuid);
+//
+//    instance["schemaName"] = "GlobalSchema";
+//    instance["className"] = "ProjectFavorite";
+//
+//    Json::Value objectCreationJson;
+//    objectCreationJson["instance"] = instance;
+//
+//    if (api->m_repositoryClients.find(UrlProvider::Urls::ConnectWsgGlobal.Get() + "BentleyCONNECT.Global--CONNECT.GLOBAL") == api->m_repositoryClients.end())
+//        {
+//        api->CreateWSRepositoryClient
+//            (
+//            UrlProvider::Urls::ConnectWsgGlobal.Get(),
+//            "BentleyCONNECT.Global--CONNECT.GLOBAL"
+//            );
+//        }
+//
+//    auto client = api->m_repositoryClients.find(UrlProvider::Urls::ConnectWsgGlobal.Get() + "BentleyCONNECT.Global--CONNECT.GLOBAL")->second;
+//    auto result = client->SendCreateObjectRequest(objectCreationJson)->GetResult();
+//    if (!result.IsSuccess())
+//        return wsresultToConnectWebServicesClientCStatus(api, result.GetError().GetId(), result.GetError().GetDisplayMessage(), result.GetError().GetDisplayDescription());
+//
+//    api->SetCreatedObjectResponse(result.GetValue());
+//    api->SetStatusMessage("Successful operation");
+//    api->SetStatusDescription("ConnectWebServicesClientC_CreateProjectMRU completed successfully.");
+//    return SUCCESS;
+//    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -233,6 +280,54 @@ Utf8CP password
     api->SetStatusMessage("Success!");
     api->SetStatusDescription("The WSRepositoryClient was successfully created.");
     return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                    05/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+CallStatus wsresultToConnectWebServicesClientCStatus(LPCWSCC api, WSError::Id errorId, Utf8StringCR errorMessage, Utf8StringCR errorDescription)
+    {
+    api->SetStatusMessage(errorMessage.c_str());
+    api->SetStatusDescription(errorDescription.c_str());
+    switch(errorId)
+        {
+        case WSError::Id::Unknown:
+            return ERROR500;
+        case WSError::Id::LoginFailed:
+            return LOGIN_FAILED;
+        case WSError::Id::SslRequired:
+            return SSL_REQUIRED;
+        case WSError::Id::NotEnoughRights:
+            return NOT_ENOUGH_RIGHTS;
+        case WSError::Id::RepositoryNotFound:
+            return REPOSITORY_NOT_FOUND;
+        case WSError::Id::SchemaNotFound:
+            return SCHEMA_NOT_FOUND;
+        case WSError::Id::ClassNotFound:
+            return CLASS_NOT_FOUND;
+        case WSError::Id::PropertyNotFound:
+            return PROPERTY_NOT_FOUND;
+        case WSError::Id::InstanceNotFound:
+            return INSTANCE_NOT_FOUND;
+        case WSError::Id::FileNotFound:
+            return FILE_NOT_FOUND;
+        case WSError::Id::NotSupported:
+            return NOT_SUPPORTED;
+        case WSError::Id::NoServerLicense:
+            return NO_SERVER_LICENSE;
+        case WSError::Id::NoClientLicense:
+            return NO_CLIENT_LICENSE;
+        case WSError::Id::TooManyBadLoginAttempts:
+            return TO_MANY_BAD_LOGIN_ATTEMPTS;
+        case WSError::Id::ServerError:
+            return ERROR500;
+        case WSError::Id::BadRequest:
+            return ERROR400;
+        case WSError::Id::Conflict:
+            return ERROR409;
+        default:
+            return ERROR500;
+        }
     }
 
 WSLocalState ConnectWebServicesClientC_internal::m_localState = WSLocalState();
