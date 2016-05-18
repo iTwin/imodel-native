@@ -119,10 +119,6 @@ void ScriptTest::SetupProject(WCharCP testFile, Db::OpenMode mode, bool needBrie
     m_defaultCategoryId = DgnCategory::QueryCategoryId(s_seedFileInfo.categoryName, *m_db);
     }
 
-struct DPoint3dPtr
-static makeDPoint3d(double x, double y, double z)
-    
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      02/16
 //---------------------------------------------------------------------------------------
