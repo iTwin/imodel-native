@@ -233,7 +233,6 @@ DGNPLATFORM_REF_COUNTED_PTR(ViewDefinition)
 
 BEGIN_BENTLEY_RENDER_NAMESPACE
     DEFINE_POINTER_SUFFIX_TYPEDEFS(Device)
-    DEFINE_POINTER_SUFFIX_TYPEDEFS(GeometryTexture)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(GeometryParams)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(GradientSymb)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(Graphic)
@@ -243,7 +242,6 @@ BEGIN_BENTLEY_RENDER_NAMESPACE
     DEFINE_POINTER_SUFFIX_TYPEDEFS(GraphicParams)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(ISprite)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(Image)
-    DEFINE_POINTER_SUFFIX_TYPEDEFS(ImageTexture)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(LineStyleInfo)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(LineStyleParams)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(LineStyleSymb)
@@ -258,11 +256,9 @@ BEGIN_BENTLEY_RENDER_NAMESPACE
     DEFINE_POINTER_SUFFIX_TYPEDEFS(Window)
 
     DEFINE_REF_COUNTED_PTR(Device)
-    DEFINE_REF_COUNTED_PTR(GeometryTexture)
     DEFINE_REF_COUNTED_PTR(GradientSymb)
     DEFINE_REF_COUNTED_PTR(Graphic)
     DEFINE_REF_COUNTED_PTR(GraphicList)
-    DEFINE_REF_COUNTED_PTR(ImageTexture)
     DEFINE_REF_COUNTED_PTR(LineStyleInfo)
     DEFINE_REF_COUNTED_PTR(Material)
     DEFINE_REF_COUNTED_PTR(MultiResImage)
@@ -849,7 +845,8 @@ public:
     Byte GetBlue() const {return m_blue;}
     Byte GetAlpha() const {return m_alpha;}
 
-    uint32_t GetValue() const {return *reinterpret_cast<uint32_t const*>(this);}
+    uint32_t GetValue() const {return *reinterpret_cast<uint32_t const*>(this);} //! for use with Render primitives
+    uint32_t GetValueRgba() const {return ColorDef(m_alpha, m_blue, m_green, m_red).GetValue();} //! for use with UI controls
     uint32_t GetValueNoAlpha() const {return 0xffffff & GetValue();}
 
     bool operator==(ColorDef const& rhs) const {return GetValue() == rhs.GetValue();}
@@ -882,11 +879,6 @@ public:
 };
 
 //__PUBLISH_SECTION_END__
-
-#define QV_RESERVED_DISPLAYPRIORITY     (32)
-#define MAX_HW_DISPLAYPRIORITY          ((1<<23)-QV_RESERVED_DISPLAYPRIORITY)
-#define RESERVED_DISPLAYPRIORITY        (1<<19)
-
 // Used for verifying published tests in DgnPlatformTest are using published headers. DO NOT REMOVE.
 #define __DGNPLATFORM_NON_PUBLISHED_HEADER__ 1
 /*__PUBLISH_SECTION_START__*/

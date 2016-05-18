@@ -8,7 +8,6 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
-
 #if !defined (mdl_resource_compiler) && !defined (mdl_type_resource_generator)
   #include <Geom/GeomApi.h>
   #include "ExportMacros.h"
@@ -40,8 +39,6 @@
 #define END_BENTLEY_DGNPLATFORM_NAMESPACE   END_BENTLEY_DGN_NAMESPACE
 #endif
 
-
-
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 //! Identifies the coordinate space of a geometric model
@@ -50,7 +47,6 @@ enum class CoordinateSpace
     Local   = 0,    // the model has a local coordinate system
     World   = 1,    // the model is in the physical (world) coordinate system.
     };
-
 
 enum class GradientMode
     {
@@ -555,7 +551,6 @@ END_BENTLEY_DGN_NAMESPACE
 // DO NOT USE: these MAX*LENGTH values are not portable or correct!
 // ///////////////////////////////////////////////////////////////////////////////////////////////////
 BEGIN_BENTLEY_NAMESPACE
-
 enum
 {
     DGNPLATFORM_RESOURCE_MAXFILELENGTH                    = 256,
