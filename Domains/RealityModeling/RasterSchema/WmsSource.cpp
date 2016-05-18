@@ -19,7 +19,7 @@ USING_NAMESPACE_BENTLEY_SQLITE
 //=======================================================================================
 // @bsimethod                                                   Mathieu.Marchand  6/2015
 //=======================================================================================
-struct WmsTileData : IRealityData<WmsTileData, BeSQLiteRealityDataStorage, HttpRealityDataSource>
+struct WmsTileData : RealityData
 {
     //===================================================================================
     // @bsimethod                                               Mathieu.Marchand  6/2015
@@ -44,8 +44,9 @@ protected:
     virtual Utf8CP _GetId() const override {return m_url.c_str();}
     virtual bool _IsExpired() const override;
     virtual BentleyStatus _InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> const& header, ByteStream const& body) override;
-    virtual BentleyStatus _InitFrom(BeSQLite::Db& db, BeMutex& cs, Utf8CP key) override;
-    virtual BentleyStatus _Persist(BeSQLite::Db& db, BeMutex& cs) const override;
+    virtual BentleyStatus _InitFrom(BeSQLite::Db& db, Utf8CP key) override;
+    virtual BentleyStatus _InitFrom(Utf8CP filepath, ByteStream const& data) override {return ERROR;}
+    virtual BentleyStatus _Persist(BeSQLite::Db& db) const override;
 
 public:
     static RefCountedPtr<WmsTileData> Create() {return new WmsTileData();}    
@@ -63,18 +64,15 @@ public:
 //----------------------------------------------------------------------------------------
 bool WmsTileData::_IsExpired() const 
     {
-    return DateTime::CompareResult::EarlierThan == DateTime::Compare(GetExpirationDate(), DateTime::GetCurrentTime());
+    return false; //DateTime::CompareResult::EarlierThan == DateTime::Compare(GetExpirationDate(), DateTime::GetCurrentTime());
     }
 
 //=======================================================================================
 // @bsimethod                                                   Mathieu.Marchand  6/2015
 //=======================================================================================
-struct WmsTileCache : BeSQLiteRealityDataStorage
+struct WmsTileCache : RealityDataStorage
 {
-    using BeSQLiteRealityDataStorage::BeSQLiteRealityDataStorage;
-    mutable BeAtomic<bool> m_isPrepared;
-
-    virtual bool _IsPrepared() const override {return m_isPrepared;}
+    using RealityDataStorage::RealityDataStorage;
 
     //----------------------------------------------------------------------------------------
     // @bsimethod                                                   Mathieu.Marchand  6/2015
@@ -83,14 +81,12 @@ struct WmsTileCache : BeSQLiteRealityDataStorage
         {
         if (db.TableExists(TABLE_NAME_WmsTileData))
             {
-            m_isPrepared.store(true);
             return SUCCESS;
             }
     
         Utf8CP ddl = "Url CHAR PRIMARY KEY,Raster BLOB,RasterSize INT,ContentType CHAR,Created BIGINT,Expires BIGINT,ETag CHAR";
         if (BeSQLite::BE_SQLITE_OK == db.CreateTable(TABLE_NAME_WmsTileData, ddl))
             {
-            m_isPrepared.store(true);
             return SUCCESS;
             }
         return ERROR;
@@ -162,7 +158,7 @@ BentleyStatus WmsTileData::_InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> co
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  6/2015
 //----------------------------------------------------------------------------------------
-BentleyStatus WmsTileData::_InitFrom(BeSQLite::Db& db, BeMutex& cs, Utf8CP key)
+BentleyStatus WmsTileData::_InitFrom(BeSQLite::Db& db, Utf8CP key)
     {
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     wt_OperationForGraphics highPriority;
@@ -199,7 +195,7 @@ BentleyStatus WmsTileData::_InitFrom(BeSQLite::Db& db, BeMutex& cs, Utf8CP key)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  6/2015
 //----------------------------------------------------------------------------------------
-BentleyStatus WmsTileData::_Persist(BeSQLite::Db& db, BeMutex& cs) const
+BentleyStatus WmsTileData::_Persist(BeSQLite::Db& db) const
     {
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     int bufferSize = (int) GetData().size();
@@ -416,7 +412,7 @@ Render::Image WmsSource::_QueryTile(TileId const& id, bool& alphaBlend)
     //     Maybe one table per server?  and use TileId or hash the url ?
     //     BeSQLiteRealityDataStorage::wt_Prepare call to "VACCUUM" is the reason why we have such a big slowdown.
     RefCountedPtr<WmsTileData> pWmsTileData = WmsTileData::Create();
-    if (RealityDataCacheResult::Success != GetRealityDataCache().Get<WmsTileData>(*pWmsTileData, tileUrl.c_str(), WmsTileData::RequestOptions(true)))
+    if (RealityDataCacheResult::Success != GetRealityDataCache().RequestData(*pWmsTileData, tileUrl.c_str(), WmsTileData::RequestOptions(true)))
         return image;
 
     BeAssert(pWmsTileData.IsValid());
@@ -508,8 +504,12 @@ RealityDataCache& WmsSource::GetRealityDataCache() const
         m_realityDataCache = new RealityDataCache();
         BeFileName storageFileName = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName();
         storageFileName.AppendToPath(L"WMS");
-        m_realityDataCache->RegisterStorage(* new WmsTileCache(storageFileName, SchedulingMethod::LIFO));
-        m_realityDataCache->RegisterSource(*HttpRealityDataSource::Create(8, SchedulingMethod::LIFO));
+
+        RefCountedPtr<WmsTileCache> cache = new WmsTileCache(4);
+        if (SUCCESS == cache->OpenAndPrepare(storageFileName))
+            m_realityDataCache->SetStorage(*cache);
+
+        m_realityDataCache->SetSource(*HttpRealityDataSource::Create(8, SchedulingMethod::LIFO));
         }
     return *m_realityDataCache;
     }

@@ -15,14 +15,11 @@ BEGIN_UNNAMED_NAMESPACE
 //=======================================================================================
 // @bsiclass                                        Grigas.Petraitis            03/2015
 //=======================================================================================
-struct ThreeMxCache : BeSQLiteRealityDataStorage
+struct ThreeMxCache : RealityDataStorage
 {
     uint64_t m_allowedSize = (1024*1024*1024); // 1 Gb
 
-    using BeSQLiteRealityDataStorage::BeSQLiteRealityDataStorage;
-
-    mutable BeAtomic<bool> m_isPrepared;
-    virtual bool _IsPrepared() const override {return m_isPrepared;}
+    using RealityDataStorage::RealityDataStorage;
     virtual BentleyStatus _PrepareDatabase(BeSQLite::Db& db) const override;
     virtual BentleyStatus _CleanupDatabase(BeSQLite::Db& db) const override;
 };
@@ -30,7 +27,7 @@ struct ThreeMxCache : BeSQLiteRealityDataStorage
 //=======================================================================================
 // @bsiclass                                        Grigas.Petraitis            04/2015
 //=======================================================================================
-struct ThreeMxData
+struct ThreeMxData : RealityData
 {
 protected:
     Scene& m_scene;
@@ -40,12 +37,17 @@ protected:
     mutable MxStreamBuffer m_nodeBytes;
     MxStreamBuffer* m_output;
 
-    BentleyStatus InitFromSource(Utf8CP filename, ByteStream const& data);
-    BentleyStatus InitFromStorage(Db& db, BeMutex& cs, Utf8CP filename);
-    BentleyStatus PersistToStorage(Db& db, BeMutex& cs) const;
-    void OnNotFound() {BeAssert(false); if (m_node.IsValid()) m_node->SetNotFound();}
 
 public:
+    struct RequestOptions : RealityDataOptions
+    {
+        RequestOptions(bool synchronous)
+            {
+            m_forceSynchronous = synchronous;
+            m_requestFromSource=true;
+            }
+    };
+
     ThreeMxData(NodeP node, Scene& scene, MxStreamBuffer* output) : m_scene(scene), m_node(node), m_output(output) 
         {
         if (node)
@@ -54,72 +56,25 @@ public:
 
     Utf8StringCR GetFilename() const {return m_filename;}
     MxStreamBuffer& GetOutput() const {return m_nodeBytes;}
-};
 
-//=======================================================================================
-// @bsiclass                                        Grigas.Petraitis            04/2015
-//=======================================================================================
-struct HttpData : ThreeMxData, IRealityData<HttpData, BeSQLiteRealityDataStorage, HttpRealityDataSource>
-{
-    using ThreeMxData::ThreeMxData;
-
-    struct RequestOptions : RealityDataOptions
-    {
-        RequestOptions(bool synchronous)
-            {
-            m_forceSynchronous = synchronous;
-            m_useStorage=true;
-            m_requestFromSource=true;
-            }
-    };
-
-
-protected:
     virtual Utf8CP _GetId() const override {return GetFilename().c_str();}
     virtual bool _IsExpired() const override {return false;}
-    virtual void _OnError() override {OnNotFound();}
-    virtual void _OnNotFound() override {OnNotFound();}
-    virtual BentleyStatus _InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> const& header, ByteStream const& body) override {return InitFromSource(url, body);}
-    virtual BentleyStatus _InitFrom(Db& db, BeMutex& cs, Utf8CP id) override {return InitFromStorage(db, cs, id);}
-    virtual BentleyStatus _Persist(Db& db, BeMutex& cs) const override {return PersistToStorage(db, cs);}
+    virtual void _OnError() override {_OnNotFound();}
+    virtual void _OnNotFound() override {BeAssert(false); if (m_node.IsValid()) m_node->SetNotFound();}
+    virtual BentleyStatus _InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> const& header, ByteStream const& body) override {return _InitFrom(url, body);}
+    virtual BentleyStatus _InitFrom(Db& db, Utf8CP id) override;
+    virtual BentleyStatus _InitFrom(Utf8CP filepath, ByteStream const& data) override;
+    virtual BentleyStatus _Persist(Db& db) const override;
 };
 
-//=======================================================================================
-// @bsiclass                                        Grigas.Petraitis            04/2015
-//=======================================================================================
-struct FileData : ThreeMxData, IRealityData<FileData, BeSQLiteRealityDataStorage, FileRealityDataSource>
-{
-    struct RequestOptions : RealityDataOptions
-    {
-        RequestOptions(bool synchronous)
-            {
-            m_forceSynchronous = synchronous;
-            m_useStorage=false;
-            m_requestFromSource=true;
-            }
-    };
-
-    using ThreeMxData::ThreeMxData;
-
-protected:
-    virtual Utf8CP _GetId() const override {return GetFilename().c_str();}
-    virtual bool _IsExpired() const override {return false;}
-    virtual void _OnError() override {OnNotFound();}
-    virtual void _OnNotFound() override {OnNotFound();}
-    virtual BentleyStatus _InitFrom(Utf8CP filepath, ByteStream const& data) override {return InitFromSource(filepath, data);}
-    virtual BentleyStatus _InitFrom(Db& db, BeMutex& cs, Utf8CP id) override {return InitFromStorage(db, cs, id);}
-    virtual BentleyStatus _Persist(Db& db, BeMutex& cs) const override {return PersistToStorage(db, cs);}
-};
-
-DEFINE_REF_COUNTED_PTR(FileData)
-DEFINE_REF_COUNTED_PTR(HttpData)
+DEFINE_REF_COUNTED_PTR(ThreeMxData)
 
 END_UNNAMED_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ThreeMxData::InitFromSource(Utf8CP filename, ByteStream const& data)
+BentleyStatus ThreeMxData::_InitFrom(Utf8CP filename, ByteStream const& data)
     {
     if (m_node.IsValid() && !m_node->IsQueued())
         return SUCCESS; // this node was abandoned.
@@ -147,15 +102,13 @@ BentleyStatus ThreeMxData::InitFromSource(Utf8CP filename, ByteStream const& dat
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ThreeMxData::InitFromStorage(Db& db, BeMutex& cs, Utf8CP filename)
+BentleyStatus ThreeMxData::_InitFrom(Db& db, Utf8CP filename)
     {
     if (m_node.IsValid() && !m_node->IsQueued())
         return SUCCESS; // this node was abandoned.
 
     if (true)
         {
-//        BeMutexHolder lock(cs);
-
         CachedStatementPtr stmt;
         if (BE_SQLITE_OK != db.GetCachedStatement(stmt, "SELECT Data,DataSize FROM " TABLE_NAME_ThreeMx " WHERE Filename=?"))
             return ERROR;
@@ -195,12 +148,11 @@ BentleyStatus ThreeMxData::InitFromStorage(Db& db, BeMutex& cs, Utf8CP filename)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ThreeMxData::PersistToStorage(Db& db, BeMutex& cs) const
+BentleyStatus ThreeMxData::_Persist(Db& db) const
     {
     if (m_node.IsValid() && m_node->IsAbandoned())
         return SUCCESS;
 
-//    BeMutexHolder lock(cs);
     BeAssert(m_nodeBytes.HasData());
 
     Utf8String name = m_shortName.empty() ? m_filename : m_shortName;
@@ -224,17 +176,12 @@ BentleyStatus ThreeMxData::PersistToStorage(Db& db, BeMutex& cs) const
 BentleyStatus ThreeMxCache::_PrepareDatabase(BeSQLite::Db& db) const 
     {
     if (db.TableExists(TABLE_NAME_ThreeMx))
-        {
-        m_isPrepared.store(true);
         return SUCCESS;
-        }
 
     Utf8CP ddl = "Filename CHAR PRIMARY KEY,Data BLOB,DataSize BIGINT,Created BIGINT";
     if (BE_SQLITE_OK == db.CreateTable(TABLE_NAME_ThreeMx, ddl))
-        {
-        m_isPrepared.store(true);
         return SUCCESS;
-        }
+
     return ERROR;
     }
 
@@ -289,7 +236,7 @@ RealityDataCacheResult Scene::RequestData(NodeP node, bool synchronous, MxStream
     DgnDb::VerifyClientThread();
     BeAssert(output || node);
 
-    Utf8String filePath ;
+    Utf8String filePath;
     if (nullptr != node)
         {
         if (!node->AreChildrenNotLoaded())
@@ -305,15 +252,8 @@ RealityDataCacheResult Scene::RequestData(NodeP node, bool synchronous, MxStream
         {
         filePath = m_rootUrl;
         }
-    
-    if (IsHttp())
-        {
-        HttpDataPtr httpdata = new HttpData(node, *this, output);
-        return m_cache->Get(*httpdata, filePath.c_str(), HttpData::RequestOptions(synchronous));
-        }
 
-    FileDataPtr filedata = new FileData(node, *this, output);
-    return m_cache->Get(*filedata, filePath.c_str(), FileData::RequestOptions(synchronous));
+    return m_cache->RequestData(*new ThreeMxData(node, *this, output), filePath.c_str(), ThreeMxData::RequestOptions(synchronous));;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -322,8 +262,19 @@ RealityDataCacheResult Scene::RequestData(NodeP node, bool synchronous, MxStream
 void Scene::CreateCache()
     {
     m_cache = new RealityDataCache();
-    m_cache->RegisterStorage(*new ThreeMxCache(m_localCacheName, SchedulingMethod::FIFO));
 
     uint32_t threadCount = std::max((uint32_t) 2,BeThreadUtilities::GetHardwareConcurrency() / 2);
-    m_cache->RegisterSource(IsHttp() ? (IRealityDataSourceBase&) *HttpRealityDataSource::Create(threadCount, SchedulingMethod::FIFO) : *FileRealityDataSource::Create(threadCount, SchedulingMethod::FIFO));
+
+    if (IsHttp())
+        {
+        RefCountedPtr<ThreeMxCache> cache = new ThreeMxCache(threadCount);
+        if (SUCCESS == cache->OpenAndPrepare(m_localCacheName))
+            m_cache->SetStorage(*cache);
+
+        m_cache->SetSource(*new HttpRealityDataSource(threadCount, SchedulingMethod::FIFO));
+        }
+    else
+        {
+        m_cache->SetSource(*new FileRealityDataSource(threadCount, SchedulingMethod::FIFO));
+        }
     }

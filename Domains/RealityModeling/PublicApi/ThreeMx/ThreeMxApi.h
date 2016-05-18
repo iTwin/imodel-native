@@ -211,6 +211,7 @@ private:
     bool IsHttp() const {return m_isHttp;}
     Dgn::RealityDataCacheResult RequestData(Node* node, bool synchronous, MxStreamBuffer*);
     void CreateCache();
+    THREEMX_EXPORT ~Scene();
 
 public:
     THREEMX_EXPORT Scene(Dgn::DgnDbR, TransformCR location, Utf8CP realityCacheName, Utf8CP sceneFile, Dgn::Render::SystemP);
