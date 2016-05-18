@@ -196,7 +196,7 @@ TEST_F(JsonUpdaterTests, UpdateRelationshipProperty)
     expectedVal = "good evening";
     rapidjson::Document relationshipRapidJson;
     relationshipRapidJson.SetObject();
-    relationshipRapidJson.AddMember("Name", expectedVal, relationshipRapidJson.GetAllocator());
+    relationshipRapidJson.AddMember("Name", rapidjson::StringRef(expectedVal), relationshipRapidJson.GetAllocator());
 
     ASSERT_EQ(SUCCESS, updater.Update(relInstanceId, relationshipRapidJson, sourceKey, targetKey));
 
@@ -277,7 +277,7 @@ TEST_F(JsonUpdaterTests, UpdateProperties)
     rapidjson::Document ecClassRapidJson;
     ecClassRapidJson.SetObject();
     ecClassRapidJson.AddMember("P1", 300, ecClassRapidJson.GetAllocator());
-    ecClassRapidJson.AddMember("P2", expectedVal, ecClassRapidJson.GetAllocator());
+    ecClassRapidJson.AddMember("P2", rapidjson::StringRef(expectedVal), ecClassRapidJson.GetAllocator());
     ecClassRapidJson.AddMember("P3", 3000.30, ecClassRapidJson.GetAllocator());
 
     ASSERT_EQ(SUCCESS, updater.Update(key.GetECInstanceId(), ecClassRapidJson));
