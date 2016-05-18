@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVEClipShape.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HVEShape
@@ -52,8 +52,10 @@ private :
         };
 
     typedef list<ClipDefinition> ClipShapes;
-    ClipShapes                   m_clips;
     HFCPtr<HGF2DCoordSys>        m_pCoordSys;
+
+    public:
+        ClipShapes                   m_clips;
     };
 END_IMAGEPP_NAMESPACE
 
