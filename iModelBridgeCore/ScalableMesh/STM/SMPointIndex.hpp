@@ -399,16 +399,6 @@ template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::~SMPointInd
 //=======================================================================================
 // @bsimethod                                                   Alain.Robert 10/10
 //=======================================================================================
-template<class POINT, class EXTENT> HFCPtr<SMPointIndexNode<POINT, EXTENT> > SMPointIndexNode<POINT, EXTENT>::Clone () const
-    {
-    HFCPtr<SMPointIndexNode<POINT, EXTENT> > pNewNode = new SMPointIndexNode<POINT, EXTENT>(GetSplitTreshold(), GetNodeExtent(), GetFilter(), IsBalanced(), PropagatesDataDown(),  m_createdNodeMap);
-    return pNewNode;
-    }
-template<class POINT, class EXTENT> HFCPtr<SMPointIndexNode<POINT, EXTENT> > SMPointIndexNode<POINT, EXTENT>::Clone (const EXTENT& newNodeExtent) const
-    {
-    HFCPtr<SMPointIndexNode<POINT, EXTENT> > pNewNode = new SMPointIndexNode<POINT, EXTENT>(GetSplitTreshold(), newNodeExtent, GetFilter(), IsBalanced(), PropagatesDataDown(),  m_createdNodeMap);
-    return pNewNode;
-    }
 template<class POINT, class EXTENT> HFCPtr<SMPointIndexNode<POINT, EXTENT> > SMPointIndexNode<POINT, EXTENT>::CloneChild (const EXTENT& newNodeExtent) const
     {
     HFCPtr<SMPointIndexNode<POINT, EXTENT> > pNewNode = new SMPointIndexNode<POINT, EXTENT>(GetSplitTreshold(), newNodeExtent, const_cast<SMPointIndexNode<POINT, EXTENT>*>(this));
@@ -779,7 +769,7 @@ template<class POINT, class EXTENT> HFCPtr<SMPointIndexNode<POINT, EXTENT> > SMP
 template<class POINT, class EXTENT>
 HFCPtr<SMPointIndexNode<POINT, EXTENT> > SMPointIndexNode<POINT, EXTENT>::AddChild(EXTENT newExtent)
     {
-    auto childNodeP = this->CloneChild(newExtent);
+    auto childNodeP = this->CloneChild(newExtent);    
     if (m_apSubNodes[0] == nullptr) m_apSubNodes.clear();
     m_pSubNodeNoSplit = nullptr;
     m_apSubNodes.push_back(childNodeP);
@@ -1144,15 +1134,7 @@ void SMPointIndexNode<POINT, EXTENT>::SplitNode(POINT splitPosition, bool propag
                 PointOp<POINT>::GetZ(splitPosition),
                 ExtentOp<EXTENT>::GetXMax(m_nodeHeader.m_nodeExtent),
                 PointOp<POINT>::GetY(splitPosition),
-                ExtentOp<EXTENT>::GetZMax(m_nodeHeader.m_nodeExtent)));
-            m_apSubNodes[0]->SetDirty(true);
-            m_apSubNodes[1]->SetDirty(true);
-            m_apSubNodes[2]->SetDirty(true);
-            m_apSubNodes[3]->SetDirty(true);
-            m_apSubNodes[4]->SetDirty(true);
-            m_apSubNodes[5]->SetDirty(true);
-            m_apSubNodes[6]->SetDirty(true);
-            m_apSubNodes[7]->SetDirty(true);
+                ExtentOp<EXTENT>::GetZMax(m_nodeHeader.m_nodeExtent)));            
             }
         else if (newNumberOfChildNodesOnSplit == 4)
             {
@@ -1182,12 +1164,9 @@ void SMPointIndexNode<POINT, EXTENT>::SplitNode(POINT splitPosition, bool propag
                 ExtentOp<EXTENT>::GetZMin(m_nodeHeader.m_nodeExtent),
                 ExtentOp<EXTENT>::GetXMax(m_nodeHeader.m_nodeExtent),
                 PointOp<POINT>::GetY(splitPosition),
-                ExtentOp<EXTENT>::GetZMax(m_nodeHeader.m_nodeExtent)));
-            m_apSubNodes[0]->SetDirty(true);
-            m_apSubNodes[1]->SetDirty(true);
-            m_apSubNodes[2]->SetDirty(true);
-            m_apSubNodes[3]->SetDirty(true);
+                ExtentOp<EXTENT>::GetZMax(m_nodeHeader.m_nodeExtent)));            
             }
+
         SetupNeighborNodesAfterSplit();
 #ifdef SM_BESQL_FORMAT
         for (auto& node : m_apSubNodes) this->AdviseSubNodeIDChanged(node);

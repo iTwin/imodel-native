@@ -81,7 +81,11 @@ void WaitForThreadStop()
     for (size_t t = 0; t < 8; ++t)
         {
         s_areThreadsBusy[t] = false;
-        if (!s_threads[t].joinable()) s_threads[t] = std::thread();
+
+        if (s_threads[t].joinable())
+            s_threads[t].join();
+
+        s_threads[t] = std::thread();
         }
     }
 

@@ -192,9 +192,7 @@ public:
         {
         return false;
         }
-    
-    virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > Clone() const;
-    virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > Clone(const EXTENT& newNodeExtent) const;
+        
     virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CloneChild(const EXTENT& newNodeExtent) const;
     virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CloneUnsplitChild(const EXTENT& newNodeExtent) const;
     virtual HFCPtr<SMPointIndexNode<POINT, EXTENT> > CloneUnsplitChildVirtual() const;
@@ -897,7 +895,7 @@ public:
         };
 
     virtual void               ValidateInvariantsSoft() const
-        {
+        {            
 #ifdef __HMR_DEBUG
         // We only check invariants if the node is loaded ...
         if (IsLoaded())

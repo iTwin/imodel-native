@@ -435,30 +435,23 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Destroy
     return true;
     }
 
-template<class POINT, class EXTENT> HFCPtr<SMPointIndexNode<POINT, EXTENT> > SMMeshIndexNode<POINT, EXTENT>::Clone() const
-    {
-    HFCPtr<SMPointIndexNode<POINT, EXTENT> > pNewNode = static_cast<SMPointIndexNode<POINT, EXTENT> *>(new SMMeshIndexNode<POINT, EXTENT>(GetSplitTreshold(), GetNodeExtent(), dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex), GetFilter(), IsBalanced(), IsTextured(), PropagatesDataDown(), GetMesher2_5d(), GetMesher3d(), m_createdNodeMap));
-    return pNewNode;
-    }
-template<class POINT, class EXTENT> HFCPtr<SMPointIndexNode<POINT, EXTENT> > SMMeshIndexNode<POINT, EXTENT>::Clone(const EXTENT& newNodeExtent) const
-    {
-    HFCPtr<SMPointIndexNode<POINT, EXTENT> > pNewNode = static_cast<SMPointIndexNode<POINT, EXTENT> *>(new SMMeshIndexNode<POINT, EXTENT>(GetSplitTreshold(), newNodeExtent, dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex), GetFilter(), IsBalanced(), IsTextured(), PropagatesDataDown(), GetMesher2_5d(), GetMesher3d(), m_createdNodeMap));
-    return pNewNode;
-    }
 template<class POINT, class EXTENT> HFCPtr<SMPointIndexNode<POINT, EXTENT> > SMMeshIndexNode<POINT, EXTENT>::CloneChild(const EXTENT& newNodeExtent) const
     {
     HFCPtr<SMPointIndexNode<POINT, EXTENT> > pNewNode = static_cast<SMPointIndexNode<POINT, EXTENT> *>(new SMMeshIndexNode<POINT, EXTENT>(GetSplitTreshold(), newNodeExtent, const_cast<SMMeshIndexNode<POINT, EXTENT>*>(this)));
+    pNewNode->SetDirty(true);
     return pNewNode;
     }
 template<class POINT, class EXTENT> HFCPtr<SMPointIndexNode<POINT, EXTENT> > SMMeshIndexNode<POINT, EXTENT>::CloneUnsplitChild(const EXTENT& newNodeExtent) const
     {
     HFCPtr<SMPointIndexNode<POINT, EXTENT> > pNewNode = static_cast<SMPointIndexNode<POINT, EXTENT> *>(new SMMeshIndexNode<POINT, EXTENT>(GetSplitTreshold(), newNodeExtent, const_cast<SMMeshIndexNode<POINT, EXTENT>*>(this), true));
+    pNewNode->SetDirty(true);
     return pNewNode;
     }
 
 template<class POINT, class EXTENT> HFCPtr<SMPointIndexNode<POINT, EXTENT> > SMMeshIndexNode<POINT, EXTENT>::CloneUnsplitChildVirtual() const
     {
     HFCPtr<SMPointIndexNode<POINT, EXTENT> > pNewNode = static_cast<SMPointIndexNode<POINT, EXTENT> *>(new SMIndexNodeVirtual<POINT,EXTENT,SMMeshIndexNode<POINT,EXTENT>>(const_cast<SMMeshIndexNode<POINT, EXTENT>*>(this)));
+    pNewNode->SetDirty(true);
     return pNewNode;
     }
 
@@ -955,7 +948,7 @@ template <class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::PushUV
     RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> uvPtsIndicePtr = GetUVsIndicesPtr();    
     bool result = uvPtsIndicePtr->push_back(uvsIndices, size);
     assert(result);
-    assert(m_nodeHeader.m_uvsIndicesID.size() == 0);
+    //assert(m_nodeHeader.m_uvsIndicesID.size() == 0);
     m_nodeHeader.m_uvsIndicesID.push_back(GetBlockID());
     }
 
@@ -2254,16 +2247,21 @@ void SMMeshIndexNode<POINT, EXTENT>::SplitNodeBasedOnImageRes()
             PointOp<POINT>::GetY(splitPosition),
             ExtentOp<EXTENT>::GetZMax(m_nodeHeader.m_nodeExtent)));
         s_nCreatedNodes += 8;
-        }
+        }    
+
     // Indicate node is not a leaf anymore
     m_nodeHeader.m_IsLeaf = false;
     m_nodeHeader.m_IsBranched = true;
     for (size_t i = 0; i < m_nodeHeader.m_numberOfSubNodesOnSplit;++i)
-    this->AdviseSubNodeIDChanged(m_apSubNodes[i]);
+        {        
+        this->AdviseSubNodeIDChanged(m_apSubNodes[i]);
+        }
+
     SetupNeighborNodesAfterSplit();
 
 #ifdef SM_BESQL_FORMAT
-    for (auto& node : m_apSubNodes) this->AdviseSubNodeIDChanged(node);
+    for (auto& node : m_apSubNodes) 
+        this->AdviseSubNodeIDChanged(node);
 #endif
 
    SplitMeshForChildNodes();
