@@ -16,6 +16,8 @@
 #include "BeBriefcaseBasedIdSequence.h"
 #include "MapStrategy.h"
 
+#define DBSCHEMA_NULLTABLENAME "ECDbNotMapped"
+
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 typedef int64_t ECDbTableId;

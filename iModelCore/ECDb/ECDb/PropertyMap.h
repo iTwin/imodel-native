@@ -206,20 +206,7 @@ private:
     /*---------------------------------------------------------------------------------------
     * @bsimethod                                                    affan.khan      01/2015
     +---------------+---------------+---------------+---------------+---------------+------*/
-    virtual BentleyStatus _Load(ECDbClassMapInfo const& classMapInfo) override
-        {
-        BeAssert (m_column == nullptr);
-        ECDbPropertyMapInfo const* info = classMapInfo.FindPropertyMap(GetRoot().GetProperty().GetId(), GetPropertyAccessString());
-        if (info == nullptr)
-            {
-            BeAssert (false && "Failed to read back property map");
-            return ERROR;
-            }
-
-        SetColumn(*const_cast<ECDbSqlColumn*>(info->ExpectingSingleColumn()));
-        return SUCCESS;
-        }
-
+    virtual BentleyStatus _Load(ECDbClassMapInfo const& classMapInfo) override;
     virtual BentleyStatus _FindOrCreateColumnsInTable(ClassMap&, ClassMapInfo const*) override;
     virtual Utf8String _ToString() const override;
 

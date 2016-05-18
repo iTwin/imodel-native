@@ -9,8 +9,6 @@
 #include "ECDbSql.h"
 #include "ECDbImpl.h"
 
-#define ECDBSQL_NULLTABLENAME "ECDbNotMapped"
-
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -1757,10 +1755,10 @@ void ECDbSQLManager::Reset() const
 //---------------------------------------------------------------------------------------
 void ECDbSQLManager::SetupNullTable()
     {
-    m_nullTable = m_defaultDb.FindTableP(ECDBSQL_NULLTABLENAME);
+    m_nullTable = m_defaultDb.FindTableP(DBSCHEMA_NULLTABLENAME);
     if (!m_nullTable)
         {
-        m_nullTable = m_defaultDb.CreateTable(ECDBSQL_NULLTABLENAME, TableType::Primary, PersistenceType::Virtual);
+        m_nullTable = m_defaultDb.CreateTable(DBSCHEMA_NULLTABLENAME, TableType::Primary, PersistenceType::Virtual);
         }
 
     if (m_nullTable->GetEditHandleR().CanEdit())

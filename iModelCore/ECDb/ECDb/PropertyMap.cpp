@@ -827,6 +827,21 @@ bool PropertyMapSingleColumn::_IsVirtual () const
     return m_column != nullptr && m_column->GetPersistenceType() == PersistenceType::Virtual;
     }
 
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    affan.khan      01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus PropertyMapSingleColumn::_Load(ECDbClassMapInfo const& classMapInfo)
+    {
+    BeAssert(m_column == nullptr);
+    ECDbPropertyMapInfo const* info = classMapInfo.FindPropertyMap(GetRoot().GetProperty().GetId(), GetPropertyAccessString());
+    if (info == nullptr)
+        {
+        return ERROR;
+        }
+
+    SetColumn(*const_cast<ECDbSqlColumn*>(info->ExpectingSingleColumn()));
+    return SUCCESS;
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      11/2012
 //---------------------------------------------------------------------------------------

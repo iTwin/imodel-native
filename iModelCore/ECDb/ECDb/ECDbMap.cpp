@@ -39,6 +39,82 @@ bool ECDbMap::IsImportingSchema () const
 
 
 //----------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan      05/2016
+//---------------+---------------+---------------+---------------+---------------+--------
+BentleyStatus ECDbMap::PurgeOrphanTables() const
+    {
+    Statement stmt;
+    if (stmt.Prepare(m_ecdb,
+                     SqlPrintfString(
+                     "SELECT ec_Table.Name, ec_Table.IsVirtual FROM ec_Table"
+                     "    WHERE ec_Table.[Type] != %" PRId32 " AND" //Skip Existing tables
+                     "    ec_Table.Id NOT IN ("                     //Skip Tables that is already Mapped
+                     "        SELECT DISTINCT ec_Table.Id"
+                     "        FROM ec_PropertyMap"
+                     "          INNER JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.[PropertyPathId]"
+                     "          INNER JOIN ec_Property ON ec_PropertyPath.RootPropertyId = ec_Property.Id"
+                     "          INNER JOIN ec_Column ON ec_PropertyMap.[ColumnId] = ec_Column.Id"
+                     "          INNER JOIN ec_Table ON ec_Column.TableId = ec_Table.Id"
+                     "        ) AND Name != '" DBSCHEMA_NULLTABLENAME "'", Enum::ToInt(TableType::Existing)).GetUtf8CP()) != BE_SQLITE_OK)
+        {
+        BeAssert(false && "system sql schema changed");
+        return ERROR;
+        }
+    
+    std::vector<Utf8String> noneVirtualTables;
+    std::vector<Utf8String> virtualTables;
+    while (stmt.Step() == BE_SQLITE_ROW)
+        {
+        if (stmt.GetValueInt(1) != 0)
+            virtualTables.push_back(stmt.GetValueText(0));
+        else
+            noneVirtualTables.push_back(stmt.GetValueText(0));
+        }
+
+    stmt.Finalize();
+    if (!virtualTables.empty())
+        {
+        if (stmt.Prepare(m_ecdb, "DELETE FROM ec_Table WHERE Name = ?") != BE_SQLITE_OK)
+            {
+            BeAssert(false && "system sql schema changed");
+            return ERROR;
+            }
+       
+        for (Utf8StringCR name : virtualTables)
+            {
+            stmt.Reset();
+            stmt.ClearBindings();
+            stmt.BindText(1, name, Statement::MakeCopy::No);
+            if (stmt.Step() != BE_SQLITE_DONE)
+                {
+                BeAssert(false && "constraint voilation");
+                return ERROR;
+                }
+            }
+        }
+    if (!noneVirtualTables.empty())
+        {
+        BeBriefcaseId briefcaseId = GetECDb().GetBriefcaseId();
+        const bool allowDbSchemaChange = briefcaseId.IsMasterId() || briefcaseId.IsStandaloneId();
+        if (!allowDbSchemaChange)
+            {
+            GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to import ECSchemas: Imported ECSchemas would change the database schema. "
+                                                          "This is only allowed for standalone briefcases or the master briefcase. Briefcase id: %" PRIu32, briefcaseId.GetValue());
+            return ERROR;
+            }
+
+        for (Utf8StringCR name : noneVirtualTables)
+            {
+            if (m_ecdb.DropTable(name.c_str()) != BE_SQLITE_OK)
+                {
+                BeAssert(false && "failed to drop a table");
+                return ERROR;
+                }
+            }
+        }
+    return SUCCESS;
+    }
+//----------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      12/2015
 //---------------+---------------+---------------+---------------+---------------+--------
 ECDbSqlTable const* ECDbMap::GetPrimaryTable(ECDbSqlTable const& joinedTable) const
@@ -126,6 +202,11 @@ MappingStatus ECDbMap::MapSchemas(SchemaImportContext& schemaImportContext)
             }
         }
     
+    if (PurgeOrphanTables() != SUCCESS)
+        {
+        BeAssert(false);
+        return MappingStatus::Error;
+        }
 
     ECDbMapAnalyser mapAnalyser(*this);
     if (mapAnalyser.Analyse(true /*apply changes*/) != SUCCESS)
@@ -789,6 +870,9 @@ BentleyStatus ECDbMap::CreateOrUpdateRequiredTables() const
     m_ecdb.GetStatementCache().Empty();
     StopWatch timer(true);
 
+    BeBriefcaseId briefcaseId = GetECDb().GetBriefcaseId();
+    const bool allowDbSchemaChange = briefcaseId.IsMasterId() || briefcaseId.IsStandaloneId();
+
     if (SUCCESS != EvaluateColumnNotNullConstraints())
         return ERROR;
     
@@ -809,6 +893,13 @@ BentleyStatus ECDbMap::CreateOrUpdateRequiredTables() const
             {
             if (GetSQLManager().IsTableChanged(*table))
                 {
+                if (!allowDbSchemaChange)
+                    {
+                    GetECDbR().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to import ECSchemas: Imported ECSchemas would change the database schema. "
+                                                                  "This is only allowed for standalone briefcases or the master briefcase. Briefcase id: %" PRIu32, briefcaseId.GetValue());
+                    return ERROR;
+                    }
+
                 if (table->GetPersistenceManager().CreateOrUpdate(GetECDbR()) != SUCCESS)
                     return ERROR;
 
@@ -819,6 +910,13 @@ BentleyStatus ECDbMap::CreateOrUpdateRequiredTables() const
             }
         else
             {
+            if (!allowDbSchemaChange)
+                {
+                GetECDbR().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to import ECSchemas: Imported ECSchemas would change the database schema. "
+                                                                    "This is only allowed for standalone briefcases or the master briefcase. Briefcase id: %" PRIu32, briefcaseId.GetValue());
+                return ERROR;
+                }
+
             if (table->GetPersistenceManager().Create(GetECDbR()) != SUCCESS)
                 return ERROR;
 

@@ -658,12 +658,6 @@ MappingStatus ClassMap::AddPropertyMaps(ClassMapLoadContext& ctx, IClassMap cons
         if (propMap == nullptr)
             return MappingStatus::Error;
 
-        if (GetPropertyMap(propertyAccessString) != nullptr)
-            {
-            BeAssert(GetPropertyMap(propertyAccessString) == nullptr && " it should not be there");
-            return MappingStatus::Error;
-            }
-
         if (isImportingSchemas)
             {
             if (SUCCESS != propMap->FindOrCreateColumnsInTable(*this, classMapInfo))
@@ -671,19 +665,21 @@ MappingStatus ClassMap::AddPropertyMaps(ClassMapLoadContext& ctx, IClassMap cons
                 BeAssert(false);
                 return MappingStatus::Error;
                 }
-
-            GetPropertyMapsR().AddPropertyMap(propMap);
             }
         else
             {
-            if (SUCCESS != propMap->Load(*loadInfo))
+            if (ERROR == propMap->Load(*loadInfo))
                 {
-                BeAssert(false);
-                return MappingStatus::Error;
+                //ECSchema Upgrade
+                GetColumnFactoryR().Update();
+                if (SUCCESS != propMap->FindOrCreateColumnsInTable(*this, classMapInfo))
+                    {
+                    BeAssert(false);
+                    return MappingStatus::Error;
+                    }
                 }
-
-            GetPropertyMapsR().AddPropertyMap(propMap);
             }
+        GetPropertyMapsR().AddPropertyMap(propMap);
         }
 
     return MappingStatus::Success;

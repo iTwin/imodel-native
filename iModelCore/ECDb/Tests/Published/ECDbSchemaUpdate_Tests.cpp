@@ -481,12 +481,15 @@ TEST_F(ECSchemaUpdateTests, AddNewEntityClass)
 
     CloseReOpenECDb();
 
-    //Verify attributes via ECSql using MataSchema
     ECSqlStatement statement;
+#ifdef METASCHEMA
+    //Verify attributes via ECSql using MataSchema
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description FROM ec.ECClassDef WHERE Name='TestClass'"));
     ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
     ASSERT_STREQ("Test Class", statement.GetValueText(0));
     ASSERT_STREQ("This is test Class", statement.GetValueText(1));
+#endif // METASCHEMA
+
 
     //Query newly added Entity Class
     statement.Finalize();
@@ -1030,161 +1033,6 @@ TEST_F(ECSchemaUpdateTests, MinimumSharedColumnsCount_AddProperty)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, MinimumSharedColumnsCountForSubClasses_AddProperty)
-    {
-    SchemaItem schemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
-        "   <ECEntityClass typeName='Parent' modifier='None' >"
-        "        <ECCustomAttributes>"
-        "            <ClassMap xmlns='ECDbMap.01.00'>"
-        "                <MapStrategy>"
-        "                   <Strategy>SharedTable</Strategy>"
-        "                   <Options>SharedColumnsForSubclasses</Options>"
-        "                   <MinimumSharedColumnCount>5</MinimumSharedColumnCount>"
-        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
-        "                 </MapStrategy>"
-        "            </ClassMap>"
-        "        </ECCustomAttributes>"
-        "       <ECProperty propertyName='P1' typeName='int' />"
-        "   </ECEntityClass>"
-        "    <ECEntityClass typeName='Sub1' modifier='None'>"
-        "        <BaseClass>Parent</BaseClass>"
-        "        <ECProperty propertyName='S1' typeName='double' />"
-        "    </ECEntityClass>"
-        "</ECSchema>");
-
-    SetupECDb("schemaupdate.ecdb", schemaItem);
-    ASSERT_TRUE(GetECDb().IsDbOpen());
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
-
-    //Verify number of columns
-    std::vector<std::pair<Utf8String, int>> testItems;
-    testItems.push_back(std::make_pair("ts_Parent", 8));
-    AssertColumnCount(GetECDb(), testItems, "MinimumSharedColumnsForSubClasses");
-
-    SchemaItem editedSchemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
-        "   <ECEntityClass typeName='Parent' modifier='None' >"
-        "        <ECCustomAttributes>"
-        "            <ClassMap xmlns='ECDbMap.01.00'>"
-        "                <MapStrategy>"
-        "                   <Strategy>SharedTable</Strategy>"
-        "                   <Options>SharedColumnsForSubclasses</Options>"
-        "                   <MinimumSharedColumnCount>5</MinimumSharedColumnCount>"
-        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
-        "                 </MapStrategy>"
-        "            </ClassMap>"
-        "        </ECCustomAttributes>"
-        "       <ECProperty propertyName='P1' typeName='int' />"
-        "       <ECProperty propertyName='P2' typeName='int' />"
-        "   </ECEntityClass>"
-        "    <ECEntityClass typeName='Sub1' modifier='None'>"
-        "        <BaseClass>Parent</BaseClass>"
-        "        <ECProperty propertyName='S1' typeName='double' />"
-        "        <ECProperty propertyName='S2' typeName='double' />"
-        "        <ECProperty propertyName='S3' typeName='double' />"
-        "        <ECProperty propertyName='S4' typeName='double' />"
-        "        <ECProperty propertyName='S5' typeName='double' />"
-        "        <ECProperty propertyName='S6' typeName='double' />"
-        "    </ECEntityClass>"
-        "</ECSchema>");
-    bool asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
-    ASSERT_FALSE(asserted);
-
-    CloseReOpenECDb();
-
-    //Verify number of columns after upgrade
-    testItems.clear();
-    testItems.push_back(std::make_pair("ts_Parent", 10));
-    AssertColumnCount(GetECDb(), testItems, "MinimumSharedColumnsForSubClasses");
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Muhammad Hassan                     04/16
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, MinimumSharedColumnsCountWithJoinedTable_AddProperty)
-    {
-    SchemaItem schemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
-        "   <ECEntityClass typeName='Parent' modifier='None' >"
-        "        <ECCustomAttributes>"
-        "            <ClassMap xmlns='ECDbMap.01.00'>"
-        "                <MapStrategy>"
-        "                   <Strategy>SharedTable</Strategy>"
-        "                   <Options>JoinedTablePerDirectSubclass,SharedColumnsForSubclasses</Options>"
-        "                   <MinimumSharedColumnCount>5</MinimumSharedColumnCount>"
-        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
-        "                 </MapStrategy>"
-        "            </ClassMap>"
-        "        </ECCustomAttributes>"
-        "       <ECProperty propertyName='P1' typeName='int' />"
-        "   </ECEntityClass>"
-        "    <ECEntityClass typeName='Sub1' modifier='None'>"
-        "        <BaseClass>Parent</BaseClass>"
-        "        <ECProperty propertyName='S1' typeName='double' />"
-        "    </ECEntityClass>"
-        "</ECSchema>");
-
-    SetupECDb("schemaupdate.ecdb", schemaItem);
-    ASSERT_TRUE(GetECDb().IsDbOpen());
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
-
-    //Verify number of columns
-    std::vector<std::pair<Utf8String, int>> testItems;
-    testItems.push_back(std::make_pair("ts_Parent", 3));
-    testItems.push_back(std::make_pair("ts_Sub1", 7));
-    AssertColumnCount(GetECDb(), testItems, "MinimumSharedColumnsWithJoinedTable");
-
-    SchemaItem editedSchemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
-        "   <ECEntityClass typeName='Parent' modifier='None' >"
-        "        <ECCustomAttributes>"
-        "            <ClassMap xmlns='ECDbMap.01.00'>"
-        "                <MapStrategy>"
-        "                   <Strategy>SharedTable</Strategy>"
-        "                   <Options>JoinedTablePerDirectSubclass,SharedColumnsForSubclasses</Options>"
-        "                   <MinimumSharedColumnCount>5</MinimumSharedColumnCount>"
-        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
-        "                 </MapStrategy>"
-        "            </ClassMap>"
-        "        </ECCustomAttributes>"
-        "       <ECProperty propertyName='P1' typeName='int' />"
-        "   </ECEntityClass>"
-        "    <ECEntityClass typeName='Sub1' modifier='None'>"
-        "        <BaseClass>Parent</BaseClass>"
-        "        <ECProperty propertyName='S1' typeName='double' />"
-        "        <ECProperty propertyName='S2' typeName='double' />"
-        "        <ECProperty propertyName='S3' typeName='double' />"
-        "        <ECProperty propertyName='S4' typeName='double' />"
-        "        <ECProperty propertyName='S5' typeName='double' />"
-        "        <ECProperty propertyName='S6' typeName='double' />"
-        "    </ECEntityClass>"
-        "</ECSchema>");
-    bool asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
-    ASSERT_FALSE(asserted);
-
-    CloseReOpenECDb();
-
-    //Verify number of columns after upgrade
-    testItems.clear();
-    testItems.push_back(std::make_pair("ts_Parent", 3));
-    testItems.push_back(std::make_pair("ts_Sub1", 8));
-    AssertColumnCount(GetECDb(), testItems, "MinimumSharedColumnsWithJoinedTable");
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Muhammad Hassan                     04/16
-//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSchemaUpdateTests, ImportMultipleSchemaVersions_AddNewProperty)
     {
     SchemaItem schemaItem(
@@ -1346,7 +1194,7 @@ TEST_F(ECSchemaUpdateTests, DowngradeSchemaMinorVersion)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.1.1' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.1' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "</ECSchema>");
 
     SetupECDb("schemaupdate.ecdb", schemaItem);
@@ -1356,7 +1204,7 @@ TEST_F(ECSchemaUpdateTests, DowngradeSchemaMinorVersion)
     //import schema with downgraded minor version
     SchemaItem editedSchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "</ECSchema>", false, "Cannot Downgrade schema Minor Version");
     bool asserted = false;
     AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
@@ -2163,193 +2011,6 @@ TEST_F(ECSchemaUpdateTests, ModifyProperties)
     ASSERT_FALSE(asserted);
     sp.Cancel();
 
-
-    sp.Begin();
-    SchemaItem modifiedExtendedType(
-        //SchemaItem with Modifed Extended Type
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECStructClass typeName='ChangeInfoStruct' modifier='None'>"
-        "       <ECProperty propertyName='ChangeStatus' typeName='int' readOnly='false' />"
-        "   </ECStructClass>"
-        "   <ECEntityClass typeName='TestClass' modifier='None' >"
-        "       <ECProperty propertyName='PrimitiveProperty' typeName='string' readOnly='false' />"
-        "       <ECArrayProperty propertyName='PrimitiveArrayProperty' minOccurs='0' maxOccurs='5' typeName='string' />"
-        "       <ECStructProperty propertyName='structProp' typeName='ChangeInfoStruct' readOnly='false' />"
-        "       <ECStructArrayProperty propertyName='StructArrayProp' typeName='ChangeInfoStruct' minOccurs='0' maxOccurs='5' readOnly='false' />"
-        "       <ECProperty propertyName='ExtendedProperty' typeName='string' extendedTypeName='email' />"
-        "   </ECEntityClass>"
-        "</ECSchema>", false, "Modifying ExtendedTypeName is not supported");
-    asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), modifiedExtendedType);
-    ASSERT_FALSE(asserted);
-    sp.Cancel();
-
-    sp.Begin();
-    SchemaItem modifiedReadonlyFlag(
-        //SchemaItem with Modified readonly flag
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECStructClass typeName='ChangeInfoStruct' modifier='None'>"
-        "       <ECProperty propertyName='ChangeStatus' typeName='int' readOnly='false' />"
-        "   </ECStructClass>"
-        "   <ECEntityClass typeName='TestClass' modifier='None' >"
-        "       <ECProperty propertyName='PrimitiveProperty' typeName='string' readOnly='true' />"
-        "       <ECArrayProperty propertyName='PrimitiveArrayProperty' minOccurs='0' maxOccurs='5' typeName='string' />"
-        "       <ECStructProperty propertyName='structProp' typeName='ChangeInfoStruct' readOnly='false' />"
-        "       <ECStructArrayProperty propertyName='StructArrayProp' typeName='ChangeInfoStruct' minOccurs='0' maxOccurs='5' readOnly='false' />"
-        "       <ECProperty propertyName='ExtendedProperty' typeName='string' extendedTypeName='URL' />"
-        "   </ECEntityClass>"
-        "</ECSchema>", true, "Modifying ReadOnly flag is supported");
-    asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), modifiedReadonlyFlag);
-    ASSERT_FALSE(asserted);
-    sp.Cancel();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Muhammad Hassan                     05/16
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, ModifyPropToReadOnly)
-    {
-    SchemaItem schemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECEntityClass typeName='TestClass' modifier='None' >"
-        "       <ECProperty propertyName='ReadWriteProp' typeName='string' readOnly='false' />"
-        "       <ECProperty propertyName='P1' typeName='string' readOnly='true' />"
-        "       <ECProperty propertyName='P2' typeName='string' readOnly='false' />"
-        "   </ECEntityClass>"
-        "</ECSchema>");
-
-    SetupECDb("schemaupdate.ecdb", schemaItem);
-    ASSERT_TRUE(GetECDb().IsDbOpen());
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
-
-    /*-------------------After 1st Schema Import--------------------------
-    ReadWriteProp -> ReadWrite
-    P1            -> ReadOnly
-    P2            -> ReadWrite
-    */
-
-    ECSqlStatement statement;
-    //Insert should be successfull
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "INSERT INTO ts.TestClass(ReadWriteProp, P1, P2) VALUES('RW1', 'P1_Val1', 'P2_Val1')"));
-    ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
-
-    statement.Finalize();
-    ASSERT_NE(ECSqlStatus::Success, statement.Prepare(GetECDb(), "UPDATE ts.TestClass Set ReadWriteProp='RW1new', P1='P1_Val1new'"));
-
-    statement.Finalize();
-    //skipping readonly Property, Update should be successful.
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "UPDATE ts.TestClass Set ReadWriteProp='RW1new', P2='P2_Val1new' WHERE P2='P2_Val1'"));
-    ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
-
-    //Update schema 
-    SchemaItem schemaItem2(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECEntityClass typeName='TestClass' modifier='None' >"
-        "       <ECProperty propertyName='ReadWriteProp' typeName='string' readOnly='false' />"
-        "       <ECProperty propertyName='P1' typeName='string' readOnly='false' />"// readOnly='false' after update
-        "       <ECProperty propertyName='P2' typeName='string' readOnly='true' />"//readOnly='true' after update
-        "   </ECEntityClass>"
-        "</ECSchema>", true, "Modifying readonly Flag is expected to succeed");
-    bool asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), schemaItem2);
-    EXPECT_FALSE(asserted);
-
-    /*-------------------After 2nd Schema Import--------------------------
-    ReadWriteProp -> ReadWrite
-    P1            -> ReadWrite
-    P2            -> ReadOnly
-    */
-
-    //Verify Insert
-    statement.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "INSERT INTO ts.TestClass(ReadWriteProp, P1, P2) VALUES('RW2', 'P1_Val2', 'P2_Val2')"));
-    ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
-
-    //Verify Update
-    statement.Finalize();
-    ASSERT_NE(ECSqlStatus::Success, statement.Prepare(GetECDb(), "UPDATE ts.TestClass SET ReadWriteProp='RW2new', P2='P2_Val2new'"));
-
-    statement.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "UPDATE ts.TestClass SET ReadWriteProp='RW2new', P1='P1_Val2new' WHERE P1='P1_Val2'"));
-    ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
-
-    //Verify Select
-    statement.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT P2 FROM ts.TestClass WHERE ReadWriteProp='RW1new'"));
-    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
-    ASSERT_STREQ("P2_Val1new", statement.GetValueText(0));
-
-    statement.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT P1 FROM ts.TestClass WHERE ReadWriteProp='RW2new'"));
-    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
-    ASSERT_STREQ("P1_Val2new", statement.GetValueText(0));
-
-    //Verify Delete
-    Savepoint sp(GetECDb(), "To Revert Delete Operation");
-    statement.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "DELETE FROM ts.TestClass"));
-    ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
-
-    statement.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT COUNT(*) FROM ts.TestClass"));
-    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
-    ASSERT_EQ(0, statement.GetValueInt(0));
-    sp.Cancel();
-
-    //Update schema 
-    SchemaItem schemaItem3(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECEntityClass typeName='TestClass' modifier='None' >"
-        "       <ECProperty propertyName='ReadWriteProp' typeName='string' readOnly='false' />"
-        "       <ECProperty propertyName='P1' typeName='string' readOnly='true' />"// readOnly='true' after update
-        "       <ECProperty propertyName='P2' typeName='string' readOnly='false' />"//readOnly='false' after update
-        "   </ECEntityClass>"
-        "</ECSchema>", true, "Modifying readonly Flag is expected to succeed");
-    asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), schemaItem3);
-    EXPECT_FALSE(asserted);
-
-    /*-------------------After 3rd Schema Import--------------------------
-    ReadWriteProp -> ReadWrite
-    P1            -> ReadOnly
-    P2            -> ReadWrite
-    */
-    statement.Finalize();
-    //Insert should be successfull
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "INSERT INTO ts.TestClass(ReadWriteProp, P1, P2) VALUES('RW1', 'P1_Val3', 'P2_Val3')"));
-    ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
-
-    //Verify Update
-    statement.Finalize();
-    //Update Prepare should fail for ReadOnlyProp
-    ASSERT_NE(ECSqlStatus::Success, statement.Prepare(GetECDb(), "UPDATE ts.TestClass Set ReadWriteProp='RW3new', P1='P1_Val3new''"));
-
-    statement.Finalize();
-    //skipping readonly Property Update should be successful.
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "UPDATE ts.TestClass Set ReadWriteProp='RW3new', P2='P2_Val3new' WHERE P1 = 'P1_Val3'"));
-    ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
-
-    //Verify Select
-    statement.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT P1 FROM ts.TestClass WHERE ReadWriteProp='RW3new'"));
-    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
-    ASSERT_STREQ("P1_Val3", statement.GetValueText(0));
-
-    statement.Finalize();
-    //Verify Delete
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "DELETE FROM ts.TestClass"));
-    ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
-
-    statement.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT COUNT(*) FROM ts.TestClass"));
-    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
-    ASSERT_EQ(0, statement.GetValueInt(0));
     }
 
 //---------------------------------------------------------------------------------------

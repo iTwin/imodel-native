@@ -124,6 +124,7 @@ private:
     BentleyStatus CreateOrUpdateRequiredTables() const;
     BentleyStatus EvaluateColumnNotNullConstraints() const;
     BentleyStatus CreateOrUpdateIndexesInDb() const;
+    BentleyStatus PurgeOrphanTables() const;
 
     MappingStatus AddClassMap(ClassMapPtr&) const;
 

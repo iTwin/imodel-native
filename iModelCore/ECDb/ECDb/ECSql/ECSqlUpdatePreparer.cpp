@@ -22,6 +22,8 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
     {
     BeAssert(exp.IsComplete());
     ctx.PushScope(exp, exp.GetOptionsClauseExp());
+    
+
 
     ClassNameExp const* classNameExp = exp.GetClassNameExp();
 

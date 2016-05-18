@@ -266,7 +266,9 @@ BentleyStatus ECDbSchemaWriter::UpdateECProperty(ECPropertyChange& propertyChang
 
     if (propertyChange.IsReadonly().IsValid())
         {
-        updater.Set("IsReadonly", propertyChange.IsReadonly().GetNew().Value());
+        GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECProperty %s.%s: Changing the 'IsReadonly' which is not supported",
+                                  oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
+        return ERROR;
         }
 
     updater.Where("Id", propertyId);
@@ -706,7 +708,7 @@ BentleyStatus ECDbSchemaWriter::UpdateECSchemaReferences(ReferenceChanges& refer
 //+---------------+---------------+---------------+---------------+---------------+------
 bool ECDbSchemaWriter::IsSpecifiedInECRelationshipConstraint(ECClassCR deletedClass) const
     {
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT Id FROM ec_RelationshipConstraintClass WHERE ClassId = ? LIMIT 1");
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT ClassId FROM ec_RelationshipConstraintClass WHERE ClassId = ? LIMIT 1");
     stmt->BindInt64(1, deletedClass.GetId());
     if (stmt == nullptr)
         {

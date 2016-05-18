@@ -220,7 +220,7 @@ BentleyStatus ECDbSchemaManager::BatchImportECSchemas(SchemaImportContext const&
         {
         for (ECSchemaP primarySchema : primarySchemas)
             {
-            if (primarySchema->IsSupplemented())
+            if (primarySchema->IsSupplemented() || primarySchema->IsStandardSchema() || primarySchema->IsSystemSchema())
                 continue;
 
             SupplementedSchemaBuilder builder;
