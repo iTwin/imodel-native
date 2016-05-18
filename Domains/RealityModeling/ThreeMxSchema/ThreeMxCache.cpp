@@ -37,7 +37,6 @@ protected:
     mutable MxStreamBuffer m_nodeBytes;
     MxStreamBuffer* m_output;
 
-
 public:
     struct RequestOptions : RealityDataOptions
     {
