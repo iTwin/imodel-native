@@ -509,7 +509,7 @@ RealityDataCache& WmsSource::GetRealityDataCache() const
         if (SUCCESS == cache->OpenAndPrepare(storageFileName))
             m_realityDataCache->SetStorage(*cache);
 
-        m_realityDataCache->SetSource(*HttpRealityDataSource::Create(8, SchedulingMethod::LIFO));
+        m_realityDataCache->SetSource(*new HttpRealityDataSource(8, SchedulingMethod::LIFO));
         }
     return *m_realityDataCache;
     }

@@ -202,7 +202,7 @@ private:
     Transform m_location;
     double m_scale = 1.0;
     NodePtr m_rootNode;
-    uint32_t m_expirationTime = 20 * 1000; // save unused nodes for 20 seconds
+    uint32_t m_expirationTime = 20 * 1000; // save unused nodes for 20 seconds (value is in milliseconds)
     Dgn::RealityDataCachePtr m_cache;
     Dgn::Render::SystemP m_renderSystem = nullptr;
 
@@ -211,16 +211,16 @@ private:
     bool IsHttp() const {return m_isHttp;}
     Dgn::RealityDataCacheResult RequestData(Node* node, bool synchronous, MxStreamBuffer*);
     void CreateCache();
-    THREEMX_EXPORT ~Scene();
 
 public:
-    THREEMX_EXPORT Scene(Dgn::DgnDbR, TransformCR location, Utf8CP realityCacheName, Utf8CP sceneFile, Dgn::Render::SystemP);
+    Utf8String ConstructNodeName(Node& node) {return m_rootDir + node.GetChildFile();}
     Dgn::Render::SystemP GetRenderSystem() const {return m_renderSystem;}
     DPoint3d GetNodeCenter(Node const& node) const {return DPoint3d::FromProduct(m_location, node.GetCenter());}
     double GetNodeRadius(Node const& node) const {return m_scale * node.GetRadius();}
     void Draw(DrawArgs& args) {m_rootNode->Draw(args, 0);}
     Dgn::ElementAlignedBox3d ComputeRange() {return m_rootNode->ComputeRange();}
-    uint32_t GetNodeExpirationTime() const {return m_expirationTime;}
+    void SetNodeExpirationTime(uint32_t val) {m_expirationTime = val;} //! set expiration time for unused nodes, in milliseconds 
+    uint32_t GetNodeExpirationTime() const {return m_expirationTime;} //! get expiration time for unused nodes, in milliseconds
     int CountNodes() const {return m_rootNode->CountNodes();}
     bool UseFixedResolution()const {return m_useFixedResolution;}
     bool IsLocatable() const {return m_locatable;}
@@ -229,7 +229,7 @@ public:
     double GetScale() const {return m_scale;}
     THREEMX_EXPORT BentleyStatus ReadSceneFile(SceneInfo& sceneInfo); //! Read the scene file synchronously
     THREEMX_EXPORT BentleyStatus DeleteCacheFile(); //! delete the local SQLite file holding the cache of downloaded tiles.
-    Utf8String ConstructNodeName(Node& node) {return m_rootDir + node.GetChildFile();}
+    THREEMX_EXPORT Scene(Dgn::DgnDbR, TransformCR location, Utf8CP realityCacheName, Utf8CP sceneFile, Dgn::Render::SystemP);
 };
 
 //=======================================================================================
