@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/DgnMarkupProject.h>
+#include <DgnPlatform/LinkElement.h>
 #include <DgnPlatform/Annotations/TextAnnotationElement.h>
 #include <DgnPlatform/AnnotationTable.h>
 #if defined (NEEDSWORK_DIMENSION)
@@ -94,6 +95,7 @@ DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain
     RegisterHandler(dgn_ModelHandler::WebMercator::GetHandler());
     RegisterHandler(dgn_ModelHandler::StreetMap::GetHandler());
     RegisterHandler(dgn_ModelHandler::Definition::GetHandler());
+    RegisterHandler(dgn_ModelHandler::Link::GetHandler());
     RegisterHandler(dgn_ModelHandler::Dictionary::GetHandler());
     RegisterHandler(dgn_ModelHandler::GroupInformation::GetHandler());
 
@@ -103,6 +105,8 @@ DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain
     RegisterHandler(dgn_ElementHandler::GeometryPart::GetHandler());
     RegisterHandler(dgn_ElementHandler::Annotation2d::GetHandler());
     RegisterHandler(dgn_ElementHandler::DrawingGraphic::GetHandler());
+    RegisterHandler(dgn_ElementHandler::UrlLinkHandler::GetHandler());
+    RegisterHandler(dgn_ElementHandler::EmbeddedFileLinkHandler::GetHandler());
     RegisterHandler(dgn_ElementHandler::VolumeElementHandler::GetHandler());
     RegisterHandler(dgn_ElementHandler::TextAnnotation2dHandler::GetHandler());
     RegisterHandler(dgn_ElementHandler::TextAnnotation3dHandler::GetHandler());

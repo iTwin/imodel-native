@@ -10,6 +10,7 @@
 
 #include "DgnDb.h"
 #include <DgnPlatform/ImageUtilities.h>
+#include <DgnPlatform/LinkElement.h>
 #include <DgnPlatform/QueryView.h>
 
 /** @addtogroup DgnMarkupProjectGroup Markups and Redlines
@@ -610,7 +611,7 @@ namespace dgn_ElementHandler { struct MarkupExternalLinkHandler; struct MarkupEx
 //! Captures a link to an element in the external DgnDb referenced from the markup DgnDb
 //! @ingroup GROUP_DgnElement
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE MarkupExternalLink : LinkElement
+struct EXPORT_VTABLE_ATTRIBUTE MarkupExternalLink : LinkElement, ILinkElementBase<MarkupExternalLink>
 {
     DGNELEMENT_DECLARE_MEMBERS(MARKUP_CLASSNAME_MarkupExternalLink, LinkElement)
     friend struct dgn_ElementHandler::MarkupExternalLinkHandler;
@@ -625,8 +626,10 @@ public:
 
     explicit CreateParams(Dgn::DgnElement::CreateParams const& params, DgnElementId linkedElementId = DgnElementId()) : T_Super(params), m_linkedElementId(linkedElementId) {}
 
-    CreateParams(DgnDbR db, DgnModelId modelId, DgnElementId linkedElementId = DgnElementId()) : T_Super(db, modelId, MarkupExternalLink::QueryClassId(db)), m_linkedElementId(linkedElementId)
-        {}
+    //! Constructor
+    //! @param[in] linkModel Model that should contain the link
+    //! @param[in] linkedElementId Id of the linked element in the external file
+    DGNPLATFORM_EXPORT explicit CreateParams(LinkModelR linkModel, DgnElementId linkedElementId = DgnElementId());
     };
 
 private:
@@ -648,11 +651,29 @@ public:
     //! Create a MarkupExternalLink
     static MarkupExternalLinkPtr Create(CreateParams const& params) { return new MarkupExternalLink(params); }
 
+    //! Insert the MarkupExternalLink in the DgnDb
+    DGNPLATFORM_EXPORT MarkupExternalLinkCPtr Insert();
+
+    //! Get a read only copy of the MarkupExternalLink from the DgnDb
+    //! @return Invalid if the MarkupExternalLink does not exist
+    static MarkupExternalLinkCPtr Get(Dgn::DgnDbCR dgnDb, Dgn::DgnElementId linkElementId) { return dgnDb.Elements().Get<MarkupExternalLink>(linkElementId); }
+
+    //! Get an editable copy of the MarkupExternalLink from the DgnDb
+    //! @return Invalid if the MarkupExternalLink does not exist, or if it cannot be edited.
+    static MarkupExternalLinkPtr GetForEdit(Dgn::DgnDbR dgnDb, Dgn::DgnElementId linkElementId) { return dgnDb.Elements().GetForEdit<MarkupExternalLink>(linkElementId); }
+
+    //! Update the persistent state of the MarkupExternalLink in the DgnDb from this modified copy of it. 
+    DGNPLATFORM_EXPORT MarkupExternalLinkCPtr Update();
+
     //! Set the linked element id
     void SetLinkedElementId(DgnElementId linkedElementId) { m_linkedElementId = linkedElementId; }
 
     //! Get the linked element id
     DgnElementId GetLinkedElementId() const { return m_linkedElementId; }
+
+    //! Get the schema name for the MarkupExternalLink class
+    //! @note This is a static method that always returns the schema name of the MarkupExternalLink class - it does @em not return the schema of a specific instance.
+    static Utf8CP MyECSchemaName() { return MARKUP_SCHEMA_NAME; }
 
     //! Query the DgnClassId of the MarkupExternalLink ECClass in the specified DgnDb.
     //! @note This is a static method that always returns the DgnClassId of the markup.MarkupExternalLink class - it does @em not return the class of a specific instance.
@@ -662,7 +683,7 @@ public:
 //=======================================================================================
 // Group of markup external links for assignment of activities to multiple reference elements
 //=======================================================================================
-struct MarkupExternalLinkGroup : LinkElement, IElementGroupOf < MarkupExternalLink >
+struct MarkupExternalLinkGroup : LinkElement, ILinkElementBase<MarkupExternalLinkGroup>, IElementGroupOf<MarkupExternalLink>
 {
     DGNELEMENT_DECLARE_MEMBERS(MARKUP_CLASSNAME_MarkupExternalLinkGroup, LinkElement)
     friend struct dgn_ElementHandler::MarkupExternalLinkGroupHandler;
@@ -674,7 +695,10 @@ public:
         DEFINE_T_SUPER(MarkupExternalLinkGroup::T_Super::CreateParams);
 
         explicit CreateParams(Dgn::DgnElement::CreateParams const& params) : T_Super(params) {}
-        CreateParams(DgnDbR db, DgnModelId modelId) : T_Super(db, modelId, MarkupExternalLinkGroup::QueryClassId(db)) { BeAssert(m_classId.IsValid()); }
+
+        //! Constructor
+        //! @param[in] linkModel Model that should contain the link group
+        DGNPLATFORM_EXPORT explicit CreateParams(LinkModelR linkModel);
         };
 
 private:
@@ -686,6 +710,24 @@ public:
 
     static MarkupExternalLinkGroupPtr Create(CreateParams const& params) { return new MarkupExternalLinkGroup(params); }
 
+    //! Insert the MarkupExternalLinkGroup in the DgnDb
+    DGNPLATFORM_EXPORT MarkupExternalLinkGroupCPtr Insert();
+
+    //! Get a read only copy of the MarkupExternalLinkGroup from the DgnDb
+    //! @return Invalid if the MarkupExternalLinkGroup does not exist
+    static MarkupExternalLinkGroupCPtr Get(Dgn::DgnDbCR dgnDb, Dgn::DgnElementId linkElementId) { return dgnDb.Elements().Get<MarkupExternalLinkGroup>(linkElementId); }
+
+    //! Get an editable copy of the MarkupExternalLinkGroup from the DgnDb
+    //! @return Invalid if the MarkupExternalLinkGroup does not exist, or if it cannot be edited.
+    static MarkupExternalLinkGroupPtr GetForEdit(Dgn::DgnDbR dgnDb, Dgn::DgnElementId linkElementId) { return dgnDb.Elements().GetForEdit<MarkupExternalLinkGroup>(linkElementId); }
+
+    //! Update the persistent state of the MarkupExternalLinkGroup in the DgnDb from this modified copy of it. 
+    DGNPLATFORM_EXPORT MarkupExternalLinkGroupCPtr Update();
+
+    //! Get the schema name for the MarkupExternalLinkGroup class
+    //! @note This is a static method that always returns the schema name of the MarkupExternalLinkGroup class - it does @em not return the schema of a specific instance.
+    static Utf8CP MyECSchemaName() { return MARKUP_SCHEMA_NAME; }
+
     //! Query the DgnClassId of the MarkupExternalLinkGroup ECClass in the specified DgnDb.
     //! @note This is a static method that always returns the DgnClassId of the markup.MarkupExternalLinkGroup class - it does @em not return the class of a specific instance.
     static Dgn::DgnClassId QueryClassId(Dgn::DgnDbR db) { return Dgn::DgnClassId(db.Schemas().GetECClassId(MARKUP_SCHEMA_NAME, MARKUP_CLASSNAME_MarkupExternalLinkGroup)); }
@@ -696,32 +738,31 @@ namespace dgn_ElementHandler
 {
 //! The handler for MarkupExternalLink elements
 struct EXPORT_VTABLE_ATTRIBUTE MarkupExternalLinkHandler : Element
-    {
+{
     ELEMENTHANDLER_DECLARE_MEMBERS(MARKUP_CLASSNAME_MarkupExternalLink, MarkupExternalLink, MarkupExternalLinkHandler, Element, DGNPLATFORM_EXPORT)
-
     virtual void _GetClassParams(ECSqlClassParamsR params) override { T_Super::_GetClassParams(params); MarkupExternalLink::AddClassParams(params); }
-    };
+};
 
 //! The handler for MarkupExternalLinkGroup elements
 struct EXPORT_VTABLE_ATTRIBUTE MarkupExternalLinkGroupHandler : Element
-    {
+{
     ELEMENTHANDLER_DECLARE_MEMBERS(MARKUP_CLASSNAME_MarkupExternalLinkGroup, MarkupExternalLinkGroup, MarkupExternalLinkGroupHandler, Element, DGNPLATFORM_EXPORT)
-    };
+};
 }
 
 namespace dgn_ModelHandler
 {
 //! The ModelHandler for RedlineModel.
 struct Redline : Sheet
-    {
+{
     MODELHANDLER_DECLARE_MEMBERS("RedlineModel", RedlineModel, Redline, Sheet, )
-    };
+};
 
 //! The ModelHandler for SpatialRedlineModel.
 struct SpatialRedline : Spatial
-    {
+{
     MODELHANDLER_DECLARE_MEMBERS("SpatialRedlineModel", SpatialRedlineModel, SpatialRedline, Spatial, )
-    };
+};
 }
 
 END_BENTLEY_DGN_NAMESPACE
