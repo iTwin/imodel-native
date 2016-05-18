@@ -177,6 +177,8 @@ StatusInt LsSymbolReference::Output (LineStyleContextR lineStyleContext, LineSty
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     ClipPlaneSet clips (convexClip);
     context->DrawSymbol (m_symbol.get (), &transform, &clips);
+#else
+    m_symbol->Draw(lineStyleContext);
 #endif
 
     return  SUCCESS;
@@ -187,17 +189,16 @@ StatusInt LsSymbolReference::Output (LineStyleContextR lineStyleContext, LineSty
 +---------------+---------------+---------------+---------------+---------------+------*/
 void LsSymbolComponent::Draw (LineStyleContextR context)
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    DgnGeometryPartPtr geomPart = GetGeometryPart();
+    DgnGeometryPartCPtr geomPart = GetGeometryPart();
     if (!geomPart.IsValid())
         return;
 
     BeAssert(nullptr != context.GetViewContext());
-    ViewContextR vContext = *context.GetViewContext();
     GeometryStreamIO::Collection collection(geomPart->GetGeometryStream().GetData(), geomPart->GetGeometryStream().GetSize());
-    collection.Draw(context.GetGraphicR(), vContext, vContext.GetCurrentGeometryParams()); 
+    ViewContextR vContext = *context.GetViewContext();
+    Render::GeometryParams defaultParams;
+    collection.Draw(context.GetGraphicR(), vContext, defaultParams);
     //  collection.Draw(context, context.GetCurrentGeometryParams().GetCategoryId(), context.GetViewFlags()); 
-#endif
     }
 
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
