@@ -2,8 +2,8 @@ from CStruct import CStruct
 
 
 class CApiStruct(CStruct):
-    def __init__(self, ecschema_name, ecclass_dom, api, status_codes):
-        super(CApiStruct, self).__init__(ecclass_dom, api, status_codes)
+    def __init__(self, ecschema_name, ecclass_dom, api, status_codes, excluded_ecclass):
+        super(CApiStruct, self).__init__(ecclass_dom, api, status_codes, excluded_ecclass)
         self.__ecschema_name = ecschema_name
 
     def __get_api_gws_read_list_funtion_def(self):
@@ -282,6 +282,8 @@ class CApiStruct(CStruct):
     def __get_gws_properties_for_function_def(self):
         property_str = ""
         for ecproperty in self.get_properties():
+            if self._excluded_ecclass.should_filter_property(ecproperty.attributes["propertyName"].value):
+                continue
             if ecproperty.hasAttribute("readOnly") and ecproperty.attributes["readOnly"].value:
                 continue
             property_str += ',\n'
@@ -304,6 +306,8 @@ class CApiStruct(CStruct):
     def __get_gws_properties_for_function_impl(self):
         properties_str = '    Json::Value propertiesJson;\n'
         for ecproperty in self.get_properties():
+            if self._excluded_ecclass.should_filter_property(ecproperty.attributes["propertyName"].value):
+                continue
             if ecproperty.hasAttribute("readOnly") and ecproperty.attributes["readOnly"].value:
                 continue
             properties_str += "    if ({0} != nullptr) ".format(ecproperty.attributes["propertyName"].value)

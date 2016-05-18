@@ -13,7 +13,8 @@ class CppCliClassesSourceWriter(SourceWriter):
             if ecclass.attributes["typeName"].value in excluded_classes and \
                     excluded_classes[ecclass.attributes["typeName"].value].should_exclude_entire_class():
                 continue
-            self.__cpp_cli_structs.append(CppCliStruct(ecclass, api, status_codes))
+            self.__cpp_cli_structs.append(CppCliStruct(ecclass, api, status_codes,
+                                                       excluded_classes[ecclass.attributes["typeName"].value]))
 
     def write_source(self):
         self._write_header_comments()

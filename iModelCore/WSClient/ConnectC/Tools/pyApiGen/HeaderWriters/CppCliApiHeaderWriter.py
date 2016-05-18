@@ -10,7 +10,8 @@ class CppCliApiHeaderWriter(HeaderWriter):
             if ecclass.attributes["typeName"].value in excluded_classes and \
                     excluded_classes[ecclass.attributes["typeName"].value].should_exclude_entire_class():
                 continue
-            self.__cpp_cli_structs.append(CppCliStruct(ecclass, api, self._status_codes))
+            self.__cpp_cli_structs.append(CppCliStruct(ecclass, api, self._status_codes,
+                                                       excluded_classes[ecclass.attributes["typeName"].value]))
 
     def write_header(self):
         self._write_header_comments(True)
