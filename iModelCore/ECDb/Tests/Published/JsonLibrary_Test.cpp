@@ -174,6 +174,12 @@ TEST_F(RapidJsonTests, FromRapidJsonTutorialCpp)
     ASSERT_TRUE (0 == strcmp ("Milo Yip", document["author"].GetString()));
     }
 
+struct BeAssertIgnoreContext
+    {
+    BeAssertIgnoreContext() {BeTest::SetFailOnAssert(false);}
+    ~BeAssertIgnoreContext() {BeTest::SetFailOnAssert(true);}
+    };
+
 //---------------------------------------------------------------------------------------
 // Demonstrate unfortunate add member behavior
 // @bsitest                                    Shaun.Sewall                     01/14
@@ -182,6 +188,8 @@ TEST_F(RapidJsonTests, AddMemberBehavior)
     {
     rapidjson::Document document;
     document.SetObject();
+
+    BeAssertIgnoreContext ignoreAsserts;
 
     // expected: nothing has been added yet
     ASSERT_FALSE (document.HasMember ("x"));
@@ -678,7 +686,7 @@ TEST_F(RapidJsonTests, ValueString)
     // Constructor with type
     rapidjson::Value y (rapidjson::kStringType);
     ASSERT_TRUE (y.IsString());
-    ASSERT_EQ (0, y.GetString());
+    ASSERT_STREQ ("", y.GetString());
     ASSERT_EQ (0u, y.GetStringLength());
 
     // SetConsttring()
@@ -1062,7 +1070,7 @@ TEST_F(RapidJsonTests, WriterCompact)
 
     reader.Parse<0>(s, writer);
     ASSERT_STREQ ("{\"hello\":\"world\",\"t\":true,\"f\":false,\"n\":null,\"i\":123,\"a\":[1,2,3]}", buffer.GetString());
-    ASSERT_EQ (65u, buffer.Size());
+    ASSERT_EQ (65u, buffer.GetSize());
     }
 
 //---------------------------------------------------------------------------------------

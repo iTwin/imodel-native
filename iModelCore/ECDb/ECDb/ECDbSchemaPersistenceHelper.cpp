@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
+#include <rapidjson/BeRapidJson.h>
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -183,7 +184,7 @@ BentleyStatus ECDbSchemaPersistenceHelper::SerializeRelationshipKeyProperties(Ut
 
     for (Utf8StringCR keyPropertyName : keyPropNames)
         {
-        keyPropJson.PushBack(keyPropertyName.c_str(), allocator);
+        keyPropJson.PushBack(rapidjson::StringRef(keyPropertyName.c_str()), allocator);
         }
 
     rapidjson::StringBuffer buf;
