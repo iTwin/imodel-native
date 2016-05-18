@@ -87,13 +87,6 @@ namespace DirectionParser
                 thread->Terminate();
                 }));
             }
-
-        
-        /*---------------------------------------------------------------------------------**//**
-        * @bsimethod                                    Grigas.Petraitis                01/2016
-        +---------------+---------------+---------------+---------------+---------------+------*/
-        void Terminate(IRealityDataStorageBase& storage) {storage.Terminate();}
-
     }; // RealityData
 }
 

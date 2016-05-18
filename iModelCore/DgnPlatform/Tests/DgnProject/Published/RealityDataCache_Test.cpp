@@ -52,8 +52,6 @@ struct TestStorage : IRealityDataStorage<TestStorage>
         }
 
     TestStorage() : m_selectHandler(nullptr), m_onPersistHandlerCreated(nullptr) {}
-    virtual Utf8String _GetStorageId() const override {return StorageId();}
-    static Utf8String StorageId() {return "TestStorage";}
     static RefCountedPtr<TestStorage> Create() {return new TestStorage();}
     RealityDataStorageResult Select(Data& data, Utf8CP id, RealityDataOptions options, IRealityDataStorageResponseReceiver& receiver) 
         {
@@ -128,7 +126,6 @@ struct TestRealityData : IRealityData<TestRealityData, TestStorage, TestSource>
         RequestOptions(bool requestFromSource, bool shouldPersist = true) 
             {
             m_requestFromSource=requestFromSource;
-            m_useStorage=shouldPersist;
             }
         };
 
@@ -160,8 +157,8 @@ struct RealityDataCacheTests : ::testing::Test
     virtual void SetUp() override
         {
         m_cache = new RealityDataCache();
-        m_cache->RegisterSource(*(m_source = TestSource::Create()));
-        m_cache->RegisterStorage(*(m_storage = TestStorage::Create()));
+        m_cache->SetSource(*(m_source = TestSource::Create()));
+        m_cache->SetStorage(*(m_storage = TestStorage::Create()));
         }
     virtual void TearDown() override
         {
@@ -432,7 +429,6 @@ struct TestCacheDatabase : BeSQLiteRealityDataStorage
     mutable bool m_prepared;
     using BeSQLiteRealityDataStorage::BeSQLiteRealityDataStorage;
 
-    virtual bool _IsPrepared() const override {return m_prepared;}
     virtual BentleyStatus _PrepareDatabase(BeSQLite::Db& db) const override { m_prepared = true; return SUCCESS;}
     virtual BentleyStatus _CleanupDatabase(BeSQLite::Db& db) const override {return SUCCESS;}
     };
@@ -450,20 +446,20 @@ struct TestBeSQLiteStorageData : RefCounted<BeSQLiteRealityDataStorage::Data>
             }
         };
 
-    std::function<BentleyStatus(BeSQLite::Db& db, BeMutex& cs, Utf8CP key)> m_initFromHandler;
-    std::function<BentleyStatus(BeSQLite::Db& db, BeMutex& cs)>  m_persistHandler;
+    std::function<BentleyStatus(BeSQLite::Db& db, Utf8CP key)> m_initFromHandler;
+    std::function<BentleyStatus(BeSQLite::Db& db)>  m_persistHandler;
 
     TestBeSQLiteStorageData() 
         : m_initFromHandler(nullptr), m_persistHandler(nullptr)
         {}
     static RefCountedPtr<TestBeSQLiteStorageData> Create() {return new TestBeSQLiteStorageData();}
-    void SetInitFromHandler(std::function<BentleyStatus(BeSQLite::Db& db, BeMutex& cs, Utf8CP key)> const& handler) {m_initFromHandler = handler;}
-    void SetPersistHandler(std::function<BentleyStatus(BeSQLite::Db& db, BeMutex& cs)> const& handler) {m_persistHandler = handler;}
+    void SetInitFromHandler(std::function<BentleyStatus(BeSQLite::Db& db, Utf8CP key)> const& handler) {m_initFromHandler = handler;}
+    void SetPersistHandler(std::function<BentleyStatus(BeSQLite::Db& db)> const& handler) {m_persistHandler = handler;}
 
     virtual Utf8CP _GetId() const override {return nullptr;}
     virtual bool _IsExpired() const override {return false;}
-    virtual BentleyStatus _InitFrom(BeSQLite::Db& db, BeMutex& cs, Utf8CP key) {return (nullptr != m_initFromHandler ? m_initFromHandler(db, cs, key) : SUCCESS);}
-    virtual BentleyStatus _Persist(BeSQLite::Db& db, BeMutex& cs) const {return (nullptr != m_persistHandler ? m_persistHandler(db, cs) : SUCCESS);}
+    virtual BentleyStatus _InitFrom(BeSQLite::Db& db,  Utf8CP key) {return (nullptr != m_initFromHandler ? m_initFromHandler(db, key) : SUCCESS);}
+    virtual BentleyStatus _Persist(BeSQLite::Db& db) const {return (nullptr != m_persistHandler ? m_persistHandler(db) : SUCCESS);}
     };
 
 //=======================================================================================
@@ -484,12 +480,11 @@ public:
         BeFileName filename;
         BeTest::GetHost().GetOutputRoot(filename);
         filename.AppendToPath(L"BeSQLiteRealityDataStorageTests.db");
-
-        m_storage = new TestCacheDatabase(filename, SchedulingMethod::LIFO, 1, 0);
+        m_storage = new TestCacheDatabase(1, SchedulingMethod::LIFO, 0);
+        m_storage->OpenAndPrepare(filename);
         }
     virtual void TearDown() override
         {
-        BackDoor::RealityData::Terminate(*m_storage);
         m_storage = nullptr;
         }
 };
@@ -517,7 +512,7 @@ TEST_F (BeSQLiteRealityDataStorageTests, Select)
     {
     BeAtomic<bool> didInitialize (false);
     RefCountedPtr<TestBeSQLiteStorageData> data = TestBeSQLiteStorageData::Create();
-    data->SetInitFromHandler([&didInitialize](BeSQLite::Db&, BeMutex& cs, Utf8CP id)
+    data->SetInitFromHandler([&didInitialize](BeSQLite::Db&, Utf8CP id)
         {
         BeAssert(0 == strcmp("BeSQLiteRealityDataStorageTests.Select_1", id));
         didInitialize.store(true);
@@ -538,7 +533,7 @@ TEST_F (BeSQLiteRealityDataStorageTests, Persist)
     // create the data in a scope to test if Persist still works (increases refCount) when the data goes out of scope
         {
         RefCountedPtr<TestBeSQLiteStorageData> data = TestBeSQLiteStorageData::Create();
-        data->SetPersistHandler([&haltPersist, &didPersist, &cv](BeSQLite::Db&, BeMutex& cs)
+        data->SetPersistHandler([&haltPersist, &didPersist, &cv](BeSQLite::Db&)
             {
             while (haltPersist);
             BeMutexHolder lock(cv.GetMutex());

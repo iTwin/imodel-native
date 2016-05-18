@@ -77,19 +77,31 @@ struct EXPORT_VTABLE_ATTRIBUTE WebMercatorModel : SpatialModel
 public:
     struct Properties
         {
-        Utf8String m_mapService;        //! Identifies the source of the tiled map data. This is a token that is supplied by the 
-                                        //! subclass of WebMercatorModel and stored in the DgnDb to associate it with a map server. 
-                                        //! The WebMercatorModel subclass uses this string when constructing URLs at runtime for requesting tiles.
-        Utf8String m_mapType;           //! Identifies the type of map data to request and display.
-        bool m_finerResolution;         //! true => download and display more and smaller tiles, if necessary, in order to get the best resolution.
-                                        //! false => download and display fewer and larger tiles, resulting in sometimes slightly fuzzy resolution.
+        //! Identifies a well known street map tile service
+        enum class MapService
+        {
+            MapBox = 0,
+        };
+
+        //! The kind of map to display
+        enum class MapType
+        {
+            Map,            //!< Show a map
+            Satellite,      //!< Show a satellite image (if available)
+        };
+
+        MapService m_mapService=MapService::MapBox;  //! Identifies the source of the tiled map data. 
+        MapType m_mapType=MapType::Map;              //! Identifies the type of tiles to request and display.
+        bool m_finerResolution=false;   //! true => download and display more and smaller tiles, if necessary, in order to get the best resolution.
         double m_groundBias=-1.0;       //! An offset from the ground plane to draw map. By default, draw map 1 meter below sea level (negative values are below sea level)
         double m_transparency=0.0;      //! 0=fully opaque, 1.0=fully transparent
 
+        void SetMapType(MapType val) {m_mapType=val;}
         void SetGroundBias(double val) {m_groundBias=val;}
         double GetGroundBias() const {return m_groundBias;}
         void SetTransparency(double val) {m_transparency=std::max(0.0, std::min(val, .9));} // limit range bewteen 0 and .9
         double GetTransparency() const {return m_transparency;}
+        bool IsTransparent() const {return 0.0 < m_transparency;}
         void ToJson(Json::Value&) const;
         void FromJson(Json::Value const&);
         };
@@ -113,6 +125,15 @@ protected:
     mutable TileCache m_tileCache;
 
 public:
+    struct CreateParams : T_Super::CreateParams
+    {
+        DEFINE_T_SUPER(WebMercatorModel::T_Super::CreateParams);
+    public:
+        Properties m_properties;
+        DGNPLATFORM_EXPORT CreateParams(DgnDbR dgndb, Properties const& props);
+        CreateParams(DgnModel::CreateParams const& params) : T_Super(params) {}
+    };
+
     void RequestTile(TileId, TileR, Render::SystemR) const;
     TilePtr CreateTile(TileId id, Tile::Corners const&, Render::SystemR) const;
         
@@ -120,7 +141,7 @@ public:
     TileCache& GetTileCache() const {return m_tileCache;}
 
     //! Create a new WebMercatorModel object, in preparation for loading it from the DgnDb.
-    WebMercatorModel(CreateParams const& params) : T_Super(params) {}
+    WebMercatorModel(CreateParams const& params) : T_Super(params), m_properties(params.m_properties) {}
 
     void _AddTerrainGraphics(TerrainContextR) const override;
     void _WriteJsonProperties(Json::Value&) const override;
@@ -138,7 +159,7 @@ public:
     //! Call this after creating a new model, to set up properties.
     void SetProperties(Properties const& props) {m_properties=props;}
 
-    Properties const& GetProperties() {return m_properties;}
+    Properties const& GetProperties() const {return m_properties;}
     Properties& GetPropertiesR() {return m_properties;}
 
     void ClearTileCache() {m_tileCache.Clear();}
@@ -181,30 +202,10 @@ struct StreetMapHandler : ModelHandler
 {
     MODELHANDLER_DECLARE_MEMBERS ("StreetMapModel", StreetMapModel, StreetMapHandler, ModelHandler, DGNPLATFORM_EXPORT)
 
-    //! Identifies a well known street map tile service
-    enum class MapService
-        {
-#ifndef NDEBUG
-        OpenStreetMaps = 999,         //!< OpenStreetMaps (developer builds only!)
-#endif
-        MapBox = 0
-        };
-
-    //! The kind of map to display
-    enum class MapType
-        {
-        Map,                    //!< Show a map
-        SatelliteImage,         //!< Show a satellite image (if available)
-        };
-
     //! Create a new street map model in the DgnDb.
-    //! @param[in] db           The DgnDb
-    //! @param[in] mapService   Identifies the map service that will supply the maps or imagery
-    //! @param[in] mapType      Identifies the kind of map data to display
-    //! @param[in] finerResolution If true, the external data model will download and display more and smaller tiles, if necessary, in order to get the best resolution.
-    //!                            If false, fewer and larger tiles are obtained and displayed. That saves time but may sometimes result in slightly fuzzy resolution.
-    //! @return the Id of the new external data model.
-    DGNPLATFORM_EXPORT static DgnModelId CreateStreetMapModel(DgnDbR db, MapService mapService, MapType mapType, bool finerResolution);
+    //! @param[in] params       The parameters for the new model
+    //! @return the Id of the new StreetMap Model.
+    DGNPLATFORM_EXPORT static DgnModelId CreateStreetMapModel(StreetMapModel::CreateParams const& params);
 };
 
 }; // end WebMercator namespace

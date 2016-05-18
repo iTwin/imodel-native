@@ -246,12 +246,6 @@ template struct ThreadSafeQueue<int>;
 END_BENTLEY_DGN_NAMESPACE
 
 /*======================================================================================+
-|   IRealityDataStorageBase
-+======================================================================================*/
-void IRealityDataStorageBase::Terminate() {_Terminate();}
-IRealityDataStorageBase::~IRealityDataStorageBase() {Terminate();}
-
-/*======================================================================================+
 |   BeSQLiteRealityDataStorage
 +======================================================================================*/
 struct RealityDataStorageBusyRetry : BeSQLite::BusyRetry
@@ -274,24 +268,10 @@ struct RealityDataStorageBusyRetry : BeSQLite::BusyRetry
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLiteRealityDataStorage::BeSQLiteRealityDataStorage(BeFileName const& filename, SchedulingMethod schedulingMethod, int numThreads, uint32_t idleTime)
-    : m_filename(filename), m_database(new BeSQLite::Db()), m_initialized(false), m_hasChanges(false), m_idleTime(idleTime)
+RealityDataStorage::RealityDataStorage(int numThreads, SchedulingMethod schedulingMethod, uint32_t idleTime) : m_hasChanges(false), m_idleTime(idleTime)
     {
     m_retry = new RealityDataStorageBusyRetry();
-    m_threadPool = BeSQLiteStorageThreadPool::Create(*this, numThreads, schedulingMethod);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               01/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLiteRealityDataStorage::~BeSQLiteRealityDataStorage()
-    {
-    if (nullptr != m_database)
-        {
-        BeAssert(false);
-        DELETE_AND_CLEAR(m_database);
-        }
-    m_retry = nullptr;
+    m_threadPool = new BeSQLiteStorageThreadPool(*this, numThreads, schedulingMethod);
     }
 
 //=======================================================================================
@@ -299,8 +279,8 @@ BeSQLiteRealityDataStorage::~BeSQLiteRealityDataStorage()
 //=======================================================================================
 struct ThreadPoolQueueNotEmptyPredicate : IConditionVariablePredicate
     {
-     BeSQLiteRealityDataStorage::BeSQLiteStorageThreadPool& m_pool;
-    ThreadPoolQueueNotEmptyPredicate( BeSQLiteRealityDataStorage::BeSQLiteStorageThreadPool& pool) : m_pool(pool) {}
+     RealityDataStorage::BeSQLiteStorageThreadPool& m_pool;
+    ThreadPoolQueueNotEmptyPredicate( RealityDataStorage::BeSQLiteStorageThreadPool& pool) : m_pool(pool) {}
     virtual bool _TestCondition(BeConditionVariable& cv) override 
         {
         BeMutexHolder lock(cv.GetMutex());
@@ -325,18 +305,17 @@ struct SelectDataWorkHasResultPredicate : IConditionVariablePredicate
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BeSQLiteRealityDataStorage::CleanAndSaveChangesWork::_DoWork()
+void RealityDataStorage::CleanAndSaveChangesWork::_DoWork()
     {
     auto& queue = m_storage->m_threadPool->GetQueue();
     ThreadPoolQueueNotEmptyPredicate predicate(*m_storage->m_threadPool);
     if (queue.GetConditionVariable().WaitOnCondition(&predicate, m_idleTime))
         return;
 
-    BeMutexHolder lock(m_storage->m_saveChangesCS);
+    BeMutexHolder lock(m_storage->m_saveChangesMux);
     if (!m_storage->m_hasChanges)
         return;
 
-    m_storage->wt_Prepare();
     m_storage->wt_Cleanup();
     m_storage->wt_SaveChanges();
     }
@@ -344,7 +323,7 @@ void BeSQLiteRealityDataStorage::CleanAndSaveChangesWork::_DoWork()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BeSQLiteRealityDataStorage::PersistDataWork::_DoWork()
+void RealityDataStorage::PersistDataWork::_DoWork()
     {
     m_storage->wt_Persist(*m_data);
     }
@@ -352,10 +331,10 @@ void BeSQLiteRealityDataStorage::PersistDataWork::_DoWork()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BeSQLiteRealityDataStorage::SelectDataWork::_DoWork()
+void RealityDataStorage::SelectDataWork::_DoWork()
     {
     BeMutexHolder lock(m_resultCV.GetMutex());
-    m_result = m_storage->wt_Select(*m_data, m_id.c_str(), m_options, *m_responseReceiver);
+    m_result = m_storage->wt_Select(*m_data, m_id.c_str(), m_options, m_responseReceiver);
     m_hasResult = true;
     m_resultCV.notify_all();
     }
@@ -363,7 +342,7 @@ void BeSQLiteRealityDataStorage::SelectDataWork::_DoWork()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-RealityDataStorageResult BeSQLiteRealityDataStorage::SelectDataWork::GetResult() const
+RealityDataStorageResult RealityDataStorage::SelectDataWork::GetResult() const
     {
     SelectDataWorkHasResultPredicate predicate(m_hasResult);
     auto result = m_resultCV.WaitOnCondition(&predicate, BeConditionVariable::Infinite);
@@ -374,72 +353,64 @@ RealityDataStorageResult BeSQLiteRealityDataStorage::SelectDataWork::GetResult()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BeSQLiteRealityDataStorage::_Terminate()
+void RealityDataStorage::Terminate()
     {
     m_threadPool->Terminate();
     m_threadPool->WaitUntilAllThreadsIdle();
 
-    BeMutexHolder lock(m_databaseCS);
-    if (m_initialized)
-        {
-        m_database->CloseDb();
-        DELETE_AND_CLEAR(m_database);
-        }
-    m_initialized = false;
+    if (m_database.IsDbOpen())
+        m_database.CloseDb();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BeSQLiteRealityDataStorage::wt_Prepare()
+BentleyStatus RealityDataStorage::OpenAndPrepare(BeFileNameCR fileName)
     {
-    BeMutexHolder lock(m_databaseCS);
-    BeSQLite::DbResult result;
-    if (!m_initialized)
+    DbResult result = m_database.OpenBeSQLiteDb(fileName, Db::OpenParams(Db::OpenMode::ReadWrite, DefaultTxn::Yes, m_retry.get()));
+
+    if (BE_SQLITE_OK != result)
         {
-        if (BeSQLite::BE_SQLITE_OK != (result = m_database->OpenBeSQLiteDb(m_filename.c_str(), Db::OpenParams(Db::OpenMode::ReadWrite, DefaultTxn::Yes, m_retry.get()))))
+        Db::CreateParams createParams(Db::PageSize::PAGESIZE_4K, Db::Encoding::Utf8, false, DefaultTxn::Yes, m_retry.get());
+        if (BeSQLite::BE_SQLITE_OK != (result = m_database.CreateNewDb(fileName, BeSQLite::BeGuid(), createParams)))
             {
-            Db::CreateParams createParams(Db::PageSize::PAGESIZE_32K, Db::Encoding::Utf8, false, DefaultTxn::Yes, m_retry.get());
-            if (BeSQLite::BE_SQLITE_OK != (result = m_database->CreateNewDb(m_filename.c_str(), BeSQLite::BeGuid(), createParams)))
-                {
-                RDCLOG(LOG_ERROR, "%s: %s", m_filename.c_str(), BeSQLite::Db::InterpretDbResult(result));
-                BeAssert(false);
-                return;
-                }
-            }        
-        m_initialized = true;
+            RDCLOG(LOG_ERROR, "%s: %s", fileName.GetNameUtf8().c_str(), Db::InterpretDbResult(result));
+            BeAssert(false);
+            return ERROR;
+            }
+        }        
+
+    if (SUCCESS != _PrepareDatabase(m_database))
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+    
+    if (BE_SQLITE_OK != (result = m_database.SaveChanges()))
+        {
+        RDCLOG(LOG_ERROR, "%s: %s", fileName.GetNameUtf8().c_str(), Db::InterpretDbResult(result));
+        BeAssert(false);
+        return ERROR;
         }
 
-    if (!_IsPrepared())
-        {
-        BentleyStatus preparationStatus = _PrepareDatabase(*m_database);
-        BeAssert(SUCCESS == preparationStatus);
-    
-        if (BeSQLite::BE_SQLITE_OK != (result = m_database->SaveChanges()))
-            {
-            RDCLOG(LOG_ERROR, "%s: %s", m_filename.c_str(), BeSQLite::Db::InterpretDbResult(result));
-            BeAssert(false);
-            }
-        }
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Mantas.Ragauskas               01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BeSQLiteRealityDataStorage::wt_Cleanup()
+void RealityDataStorage::wt_Cleanup()
     {
-    BeMutexHolder lock(m_databaseCS);
-    BentleyStatus result = _CleanupDatabase(*m_database);
+    BentleyStatus result = _CleanupDatabase(m_database);
     BeAssert(SUCCESS == result);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BeSQLiteRealityDataStorage::wt_SaveChanges()
+void RealityDataStorage::wt_SaveChanges()
     {
-    BeMutexHolder lock(m_databaseCS);
-    auto result = m_database->SaveChanges();
+    auto result = m_database.SaveChanges();
     BeAssert(BeSQLite::BE_SQLITE_OK == result);
     m_hasChanges.store(false);
     }
@@ -447,25 +418,23 @@ void BeSQLiteRealityDataStorage::wt_SaveChanges()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-RealityDataStorageResult BeSQLiteRealityDataStorage::wt_Select(Data& data, Utf8CP id, RealityDataOptions options, IRealityDataStorageResponseReceiver& responseReceiver)
+RealityDataStorageResult RealityDataStorage::wt_Select(RealityData& data, Utf8CP id, RealityDataOptions options, RealityDataCache& responseReceiver)
     {
-    wt_Prepare();
-
     RealityDataStorageResult result;
-    if (SUCCESS != data._InitFrom(*m_database, m_databaseCS, id))
+    if (SUCCESS != data._InitFrom(m_database, id))
         {
-        responseReceiver._OnResponseReceived(*RealityDataStorageResponse::Create(RealityDataStorageResult::NotFound, id, data), options, !options.m_forceSynchronous);
+        responseReceiver.OnResponseReceived(*RealityDataStorageResponse::Create(RealityDataStorageResult::NotFound, id, data), options, !options.m_forceSynchronous);
         result = RealityDataStorageResult::NotFound;
         }
     else
         {
-        responseReceiver._OnResponseReceived(*RealityDataStorageResponse::Create(RealityDataStorageResult::Success, id, data), options, !options.m_forceSynchronous);
+        responseReceiver.OnResponseReceived(*RealityDataStorageResponse::Create(RealityDataStorageResult::Success, id, data), options, !options.m_forceSynchronous);
         result = RealityDataStorageResult::Success;
         }
 
     if (true)
         {
-        BeMutexHolder lock(m_activeRequestsCS);
+        BeMutexHolder lock(m_activeRequestsMux);
         BeAssert(m_activeRequests.end() != m_activeRequests.find(id));
         m_activeRequests.erase(m_activeRequests.find(id));
         }
@@ -475,17 +444,17 @@ RealityDataStorageResult BeSQLiteRealityDataStorage::wt_Select(Data& data, Utf8C
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-RealityDataStorageResult BeSQLiteRealityDataStorage::Select(Data& data, Utf8CP id, RealityDataOptions options, IRealityDataStorageResponseReceiver& responseReceiver)
+RealityDataStorageResult RealityDataStorage::Select(RealityData& data, Utf8CP id, RealityDataOptions options, RealityDataCache& responseReceiver)
     {
     if (true)
         {
-        BeMutexHolder lock(m_activeRequestsCS);
+        BeMutexHolder lock(m_activeRequestsMux);
         if (m_activeRequests.end() != m_activeRequests.find(id))
             return RealityDataStorageResult::Pending;
         m_activeRequests.insert(id);
         }
 
-    auto work = SelectDataWork::Create(*this, id, data, options, responseReceiver);
+    auto work = new SelectDataWork(*this, id, data, options, responseReceiver);
     m_threadPool->QueueWork(*work);
 
     if (options.m_forceSynchronous)
@@ -497,11 +466,9 @@ RealityDataStorageResult BeSQLiteRealityDataStorage::Select(Data& data, Utf8CP i
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BeSQLiteRealityDataStorage::wt_Persist(Data const& data)
+void RealityDataStorage::wt_Persist(RealityData const& data)
     {
-    wt_Prepare();
-
-    BentleyStatus result = data._Persist(*m_database, m_databaseCS);
+    BentleyStatus result = data._Persist(m_database);
     BeAssert(SUCCESS == result);
     m_hasChanges.store(true);
     }
@@ -509,119 +476,28 @@ void BeSQLiteRealityDataStorage::wt_Persist(Data const& data)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-RealityDataStorageResult BeSQLiteRealityDataStorage::Persist(Data const& data)
+RealityDataStorageResult RealityDataStorage::Persist(RealityData const& data)
     {
-    m_threadPool->QueueWork(*PersistDataWork::Create(*this, data));
+    m_threadPool->QueueWork(*new PersistDataWork(*this, data));
     return RealityDataStorageResult::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-RealityDataStorageResult BeSQLiteRealityDataStorage::PersistHandler::_Persist() const {return m_storage.Persist(*m_data);}
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-IRealityDataBase const* BeSQLiteRealityDataStorage::PersistHandler::_GetData() const {return m_data.get();}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool BeSQLiteRealityDataStorage::BeSQLiteStorageThreadPool::_AssignWork(RealityDataWorkerThread& thread)
+bool RealityDataStorage::BeSQLiteStorageThreadPool::_AssignWork(RealityDataWorkerThread& thread)
     {
     if (RealityDataThreadPool::_AssignWork(thread))
         return true;
 
-    if (m_storage->m_hasChanges && !IsTerminating())
+    if (m_storage.m_hasChanges && !IsTerminating())
         {
-        thread.DoWork(*CleanAndSaveChangesWork::Create(*m_storage, m_storage->m_idleTime));
+        thread.DoWork(*new CleanAndSaveChangesWork(m_storage, m_storage.m_idleTime));
         return true;
         }
 
     return false;
     }
-
-/*======================================================================================+
-|   InMemoryRealityDataStorage
-+======================================================================================*/
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-InMemoryRealityDataStoragePtr InMemoryRealityDataStorage::Create() {return new InMemoryRealityDataStorage();}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-InMemoryRealityDataStorage::~InMemoryRealityDataStorage()
-    {
-    for (auto pair : m_map)
-        pair.second->Release();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-RealityDataStorageResult InMemoryRealityDataStorage::Select(Data& data, Utf8CP id, RealityDataOptions options, IRealityDataStorageResponseReceiver& responseReceiver)
-    {
-    BeMutexHolder lock(m_cs);
-    auto iter = m_map.find(id);
-    if (m_map.end() != iter)
-        {
-        data._InitFrom(id, *iter->second);
-        if (options.m_removeAfterSelect)
-            {
-            iter->second->Release();
-            m_map.erase(iter);
-            }
-        return RealityDataStorageResult::Success;
-        }
-
-    return RealityDataStorageResult::NotFound;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-RealityDataStorageResult InMemoryRealityDataStorage::Persist(Data const& data)
-    {
-    BeMutexHolder lock(m_cs);
-    BeAssert(m_map.end() == m_map.find(data.GetId()));
-    data.AddRef();
-    m_map[data.GetId()] = &data;
-    return RealityDataStorageResult::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-RealityDataStorageResult InMemoryRealityDataStorage::PersistHandler::_Persist() const {return m_storage.Persist(*m_data);}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-IRealityDataBase const* InMemoryRealityDataStorage::PersistHandler::_GetData() const {return m_data.get();}
-
-/*======================================================================================+
-|   IRealityDataSource
-+======================================================================================*/
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               05/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-RealityDataSourceResult IRealityDataSourceBase::Request(Data& data, bool& handled, Utf8CP id, RealityDataOptions options, IRealityDataSourceResponseReceiver& responseReceiver)
-    {
-    return _Request(data, handled, id, options, responseReceiver);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               05/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void IRealityDataSourceBase::Terminate() {_Terminate();}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               05/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-IRealityDataSourceBase::~IRealityDataSourceBase() {Terminate();}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               03/2015
@@ -642,8 +518,7 @@ bool AsyncRealityDataSourceRequest::ShouldCancelRequest() const {return nullptr 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<class Derived>
-void AsyncRealityDataSource<Derived>::SetIgnoreRequests(uint32_t ignoreTime)
+void AsyncRealityDataSource::SetIgnoreRequests(uint32_t ignoreTime)
     {
     m_ignoreRequestsUntil.store(BeTimeUtilities::GetCurrentTimeAsUnixMillis() + ignoreTime);
     }
@@ -651,8 +526,7 @@ void AsyncRealityDataSource<Derived>::SetIgnoreRequests(uint32_t ignoreTime)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<class Derived>
-bool AsyncRealityDataSource<Derived>::ShouldIgnoreRequests() const
+bool AsyncRealityDataSource::ShouldIgnoreRequests() const
     {
     return BeTimeUtilities::GetCurrentTimeAsUnixMillis() < m_ignoreRequestsUntil;
     }
@@ -673,8 +547,7 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<class Derived>
-RealityDataSourceResult AsyncRealityDataSource<Derived>::QueueRequest(AsyncRealityDataSourceRequest& request, bool& handled, IRealityDataSourceResponseReceiver& responseReceiver)
+RealityDataSourceResult AsyncRealityDataSource::QueueRequest(AsyncRealityDataSourceRequest& request, bool& handled, RealityDataCache& responseReceiver)
     {
     handled = true;
     if (!request.GetRequestOptions().m_retryNotFoundRequests)
@@ -715,8 +588,7 @@ RealityDataSourceResult AsyncRealityDataSource<Derived>::QueueRequest(AsyncReali
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<class Derived> 
-void AsyncRealityDataSource<Derived>::RequestHandler::_DoWork()
+void AsyncRealityDataSource::RequestHandler::_DoWork()
     {
     RefCountedPtr<RealityDataSourceResponse> response = m_request->Handle(m_source->m_synchronizationCV.GetMutex());
     switch (response->GetResult())
@@ -755,19 +627,10 @@ void AsyncRealityDataSource<Derived>::RequestHandler::_DoWork()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<class Derived> 
-bool AsyncRealityDataSource<Derived>::RequestHandler::_ShouldCancel() const
+bool AsyncRealityDataSource::RequestHandler::_ShouldCancel() const
     {
     return m_source->m_terminateRequested;
     }
-
-/*======================================================================================+
-|   FileRealityDataSource
-+======================================================================================*/
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-FileRealityDataSourcePtr FileRealityDataSource::Create(int numThreads, SchedulingMethod schedulingMethod) {return new FileRealityDataSource(numThreads, schedulingMethod);}
 
 //===================================================================================
 // @bsiclass                                        Grigas.Petraitis        03/2015
@@ -775,24 +638,23 @@ FileRealityDataSourcePtr FileRealityDataSource::Create(int numThreads, Schedulin
 struct FileRealityDataSourceRequest : AsyncRealityDataSourceRequest
 {
 private:
-    RefCountedPtr<FileRealityDataSource::Data>  m_data;
+    RefCountedPtr<RealityData>  m_data;
     Utf8String m_filename;
     
-    FileRealityDataSourceRequest(FileRealityDataSource::Data& data, Utf8CP url, RealityDataOptions options) : AsyncRealityDataSourceRequest(nullptr, options), m_data(&data), m_filename(url) {}
 
 protected:
     virtual Utf8CP _GetId() const {return m_filename.c_str();}
     virtual RefCountedPtr<RealityDataSourceResponse> _Handle() const override
         {
         if (!BeFileName::DoesPathExist(BeFileName(m_filename).c_str()))
-            return RealityDataSourceResponse::Create(RealityDataSourceResult::Error_NotFound, m_filename.c_str(), *m_data);
+            return new RealityDataSourceResponse(RealityDataSourceResult::Error_NotFound, m_filename.c_str(), *m_data);
 
         // open the file
         BeFile configFile;
         if (BeFileStatus::Success != configFile.Open(m_filename.c_str(), BeFileAccess::Read))
             {
             BeAssert(false);
-            return RealityDataSourceResponse::Create(RealityDataSourceResult::Error_Unknown, m_filename.c_str(), *m_data);
+            return new RealityDataSourceResponse(RealityDataSourceResult::Error_Unknown, m_filename.c_str(), *m_data);
             }
     
         // read file content
@@ -800,49 +662,33 @@ protected:
         if (BeFileStatus::Success != configFile.ReadEntireFile(data))
             {
             BeAssert(false);
-            return RealityDataSourceResponse::Create(RealityDataSourceResult::Error_Unknown, m_filename.c_str(), *m_data);
+            return new RealityDataSourceResponse(RealityDataSourceResult::Error_Unknown, m_filename.c_str(), *m_data);
             }
 
         if (ShouldCancelRequest())
-            return RealityDataSourceResponse::Create(RealityDataSourceResult::Cancelled, m_filename.c_str(), *m_data);
+            return new RealityDataSourceResponse(RealityDataSourceResult::Cancelled, m_filename.c_str(), *m_data);
         
         if (SUCCESS != m_data->_InitFrom(m_filename.c_str(), data))
             {
             BeAssert(false);
-            return RealityDataSourceResponse::Create(RealityDataSourceResult::Error_Unknown, m_filename.c_str(), *m_data);
+            return new RealityDataSourceResponse(RealityDataSourceResult::Error_Unknown, m_filename.c_str(), *m_data);
             }
 
-        return RealityDataSourceResponse::Create(RealityDataSourceResult::Success, m_filename.c_str(), *m_data);
+        return new RealityDataSourceResponse(RealityDataSourceResult::Success, m_filename.c_str(), *m_data);
         }
 
 public:
-    static RefCountedPtr<FileRealityDataSourceRequest> Create(FileRealityDataSource::Data& data, Utf8CP url, RealityDataOptions requestOptions)
-        {
-        return new FileRealityDataSourceRequest(data, url, requestOptions);
-        }
+    FileRealityDataSourceRequest(RealityData& data, Utf8CP url, RealityDataOptions options) : AsyncRealityDataSourceRequest(nullptr, options), m_data(&data), m_filename(url) {}
 };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-RealityDataSourceResult FileRealityDataSource::Request(Data& data, bool& handled, Utf8CP id, RealityDataOptions options, IRealityDataSourceResponseReceiver& responseReceiver)
+RealityDataSourceResult FileRealityDataSource::Request(RealityData& data, bool& handled, Utf8CP id, RealityDataOptions options, RealityDataCache& responseReceiver)
     {
-    return QueueRequest(*FileRealityDataSourceRequest::Create(data, id, options), handled, responseReceiver);
+    return QueueRequest(*new FileRealityDataSourceRequest(data, id, options), handled, responseReceiver);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-RealityDataSourceResult FileRealityDataSource::RequestHandler::_Request() const {return m_source.Request(*m_data, m_handled, m_id.c_str(), m_options, *m_responseReceiver);}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-IRealityDataBase const* FileRealityDataSource::RequestHandler::_GetData() const {return m_data.get();}
-
-/*======================================================================================+
-|   HttpRealityDataSource
-+======================================================================================*/
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -933,7 +779,7 @@ static DateTime GetDefaultExpirationDate()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HttpRealityDataSource::Data::ParseExpirationDateAndETag(bmap<Utf8String, Utf8String> const& header)
+void RealityData::ParseExpirationDateAndETag(bmap<Utf8String, Utf8String> const& header)
     {
     auto cacheControlIter = header.find("Cache-Control");
     SetExpirationDate((cacheControlIter != header.end()) ? GetExpirationDateFromCacheControlStr(cacheControlIter->second.c_str()) : GetDefaultExpirationDate());
@@ -949,23 +795,11 @@ void HttpRealityDataSource::Data::ParseExpirationDateAndETag(bmap<Utf8String, Ut
 struct HttpRealityDataSourceRequest : AsyncRealityDataSourceRequest, IHttpRequestCancellationToken
 {
 private:
-    RefCountedPtr<HttpRealityDataSource::Data> m_data;
+    RefCountedPtr<RealityData> m_data;
     Utf8String                   m_url;
     
-    /*-----------------------------------------------------------------------------**//**
-    * @bsimethod                                     Grigas.Petraitis               03/2015
-    +---------------+---------------+---------------+---------------+-----------+------*/
-    HttpRealityDataSourceRequest(HttpRealityDataSource::Data& data, Utf8CP url, RealityDataOptions options) : AsyncRealityDataSourceRequest(nullptr, options), m_data(&data), m_url(url) {}
-
 protected:
-    /*-----------------------------------------------------------------------------**//**
-    * @bsimethod                                     Grigas.Petraitis               03/2015
-    +---------------+---------------+---------------+---------------+-----------+------*/
     virtual Utf8CP _GetId() const override {return m_url.c_str();}
-
-    /*-----------------------------------------------------------------------------**//**
-    * @bsimethod                                     Grigas.Petraitis               05/2015
-    +---------------+---------------+---------------+---------------+-----------+------*/
     virtual bool _ShouldCancelHttpRequest() const override {return ShouldCancelRequest();}
 
     /*-----------------------------------------------------------------------------**//**
@@ -987,17 +821,17 @@ protected:
         switch (requestStatus)
             {
             case HttpRequestStatus::NoConnection:
-                return RealityDataSourceResponse::Create(RealityDataSourceResult::Error_NoConnection, m_url.c_str(), *m_data);
+                return new RealityDataSourceResponse(RealityDataSourceResult::Error_NoConnection, m_url.c_str(), *m_data);
             case HttpRequestStatus::CouldNotResolveHost:
             case HttpRequestStatus::CouldNotResolveProxy:
-                return RealityDataSourceResponse::Create(RealityDataSourceResult::Error_CouldNotResolveHost, m_url.c_str(), *m_data);
+                return new RealityDataSourceResponse(RealityDataSourceResult::Error_CouldNotResolveHost, m_url.c_str(), *m_data);
             case HttpRequestStatus::UnknownError:
                 BeAssert(false && "All HTTP errors should be handled");
-                return RealityDataSourceResponse::Create(RealityDataSourceResult::Error_Unknown, m_url.c_str(), *m_data);
+                return new RealityDataSourceResponse(RealityDataSourceResult::Error_Unknown, m_url.c_str(), *m_data);
             }
 
         if (requestStatus == HttpRequestStatus::Aborted || ShouldCancelRequest())
-            return RealityDataSourceResponse::Create(RealityDataSourceResult::Cancelled, m_url.c_str(), *m_data);
+            return new RealityDataSourceResponse(RealityDataSourceResult::Cancelled, m_url.c_str(), *m_data);
 
         BeAssert(response.IsValid());
         switch (response->GetStatus())
@@ -1008,148 +842,41 @@ protected:
                 if (SUCCESS != m_data->_InitFrom(m_url.c_str(), response->GetHeader(), response->GetBody()))
                     {
                     RDCLOG(LOG_INFO, "[%lld] response 200 but unable to initialize reality data",(uint64_t)BeThreadUtilities::GetCurrentThreadId());
-                    return RealityDataSourceResponse::Create(RealityDataSourceResult::Error_Unknown, m_url.c_str(), *m_data);
+                    return new RealityDataSourceResponse(RealityDataSourceResult::Error_Unknown, m_url.c_str(), *m_data);
                     }
-                return RealityDataSourceResponse::Create(RealityDataSourceResult::Success, m_url.c_str(), *m_data);
+                return new RealityDataSourceResponse(RealityDataSourceResult::Success, m_url.c_str(), *m_data);
                 }
 
             case HttpResponseStatus::NotModified:
                 {
                 m_data->ParseExpirationDateAndETag(header);
-                return RealityDataSourceResponse::Create(RealityDataSourceResult::NotModified, m_url.c_str(), *m_data);
+                return new RealityDataSourceResponse(RealityDataSourceResult::NotModified, m_url.c_str(), *m_data);
                 }
 
             case HttpResponseStatus::NotFound:
-                return RealityDataSourceResponse::Create(RealityDataSourceResult::Error_NotFound, m_url.c_str(), *m_data);
+                return new RealityDataSourceResponse(RealityDataSourceResult::Error_NotFound, m_url.c_str(), *m_data);
 
             case HttpResponseStatus::Forbidden:
-                return RealityDataSourceResponse::Create(RealityDataSourceResult::Error_AccessDenied, m_url.c_str(), *m_data);
+                return new RealityDataSourceResponse(RealityDataSourceResult::Error_AccessDenied, m_url.c_str(), *m_data);
 
             case HttpResponseStatus::GatewayTimeout:
-                return RealityDataSourceResponse::Create(RealityDataSourceResult::Error_GatewayTimeout, m_url.c_str(), *m_data);
+                return new RealityDataSourceResponse(RealityDataSourceResult::Error_GatewayTimeout, m_url.c_str(), *m_data);
 
             default:
-                return RealityDataSourceResponse::Create(RealityDataSourceResult::Error_Unknown, m_url.c_str(), *m_data);
+                return new RealityDataSourceResponse(RealityDataSourceResult::Error_Unknown, m_url.c_str(), *m_data);
             }
         }
 
 public:
-    /*-----------------------------------------------------------------------------**//**
-    * @bsimethod                                     Grigas.Petraitis               03/2015
-    +---------------+---------------+---------------+---------------+-----------+------*/
-    static RefCountedPtr<HttpRealityDataSourceRequest> Create(HttpRealityDataSource::Data& data, Utf8CP url, RealityDataOptions requestOptions)
-        {
-        return new HttpRealityDataSourceRequest(data, url, requestOptions);
-        }
+    HttpRealityDataSourceRequest(RealityData& data, Utf8CP url, RealityDataOptions options) : AsyncRealityDataSourceRequest(nullptr, options), m_data(&data), m_url(url) {}
 };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-RealityDataSourceResult HttpRealityDataSource::Request(Data& data, bool& handled, Utf8CP id, RealityDataOptions options, IRealityDataSourceResponseReceiver& responseReceiver)
+RealityDataSourceResult HttpRealityDataSource::Request(RealityData& data, bool& handled, Utf8CP id, RealityDataOptions options, RealityDataCache& responseReceiver)
     {
-    return QueueRequest(*HttpRealityDataSourceRequest::Create(data, id, options), handled, responseReceiver);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-RealityDataSourceResult HttpRealityDataSource::RequestHandler::_Request() const {return m_source.Request(*m_data, m_handled, m_id.c_str(), m_options, *m_responseReceiver);}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-IRealityDataBase const* HttpRealityDataSource::RequestHandler::_GetData() const {return m_data.get();}
-
-/*======================================================================================+
-|   CombinedRealityDataSource
-+======================================================================================*/
-void CombinedRealityDataSourceBase::_Terminate()
-    {
-    for (auto& source : m_sources)
-        source.second->_Terminate();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String CombinedRealityDataSourceBase::GetIdFormat(int numSources)
-    {
-    Utf8String format("Combined:");
-    for (int i = 0; i < numSources - 1; i++)
-        format.append("%s,");
-    format.append("%s");
-    return format;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void CombinedRealityDataSourceBase::RegisterSource(IRealityDataSourceBase& source) {m_sources[source._GetSourceId()] = &source;}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-RealityDataSourceResult CombinedRealityDataSourceBase::Request(Data& data, bool& handled, Utf8CP id, RealityDataOptions options, IRealityDataSourceResponseReceiver& receiver)
-    {
-    IRealityDataSourceBase& source = data._PickDataSource(id, m_sources);
-    return source.Request(data, handled, id, options, receiver);
-    }
-
-/*======================================================================================+
-|   RealityDataCache
-+======================================================================================*/
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               05/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-RealityDataCache::~RealityDataCache()
-    {
-    for (auto& source : m_sources)
-        source.second->_Terminate();
-
-    for (auto& storage : m_storages)
-        storage.second->_Terminate();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-IRealityDataStorageBase* RealityDataCache::GetStorage(Utf8CP id) const
-    {
-    auto iter = m_storages.find(id);
-    if (m_storages.end() == iter)
-        return nullptr;
-    return iter->second.get();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RealityDataCache::RegisterStorage(IRealityDataStorageBase& storage)
-    {
-    BeAssert(nullptr == GetStorage(storage._GetStorageId().c_str()));
-    m_storages[storage._GetStorageId()] = &storage;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-IRealityDataSourceBase* RealityDataCache::GetSource(Utf8CP id) const
-    {
-    auto iter = m_sources.find(id);
-    if (m_sources.end() == iter)
-        return nullptr;
-    return iter->second.get();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RealityDataCache::RegisterSource(IRealityDataSourceBase& source)
-    {
-    BeAssert(nullptr == GetSource(source._GetSourceId().c_str()));
-    m_sources[source._GetSourceId()] = &source;
+    return QueueRequest(*new HttpRealityDataSourceRequest(data, id, options), handled, responseReceiver);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1164,7 +891,7 @@ void RealityDataCache::QueuePersistHandler(Utf8CP id, IRealityDataStoragePersist
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-RefCountedPtr<IRealityDataStoragePersistHandler> RealityDataCache::DequeuePersistHandler(Utf8CP id, IRealityDataBase const& data)
+RefCountedPtr<IRealityDataStoragePersistHandler> RealityDataCache::DequeuePersistHandler(Utf8CP id, RealityData const& data)
     {
     BeMutexHolder lock(m_persistHandlersCS);
     auto setIter = m_persistHandlers.find(id);
@@ -1200,7 +927,7 @@ void RealityDataCache::QueueRequestHandler(Utf8CP id, IRealityDataSourceRequestH
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-RefCountedPtr<IRealityDataSourceRequestHandler> RealityDataCache::DequeueRequestHandler(Utf8CP id, IRealityDataBase const& data)
+RefCountedPtr<IRealityDataSourceRequestHandler> RealityDataCache::DequeueRequestHandler(Utf8CP id, RealityData const& data)
     {
     BeMutexHolder lock(m_requestHandlersCS);
     auto setIter = m_requestHandlers.find(id);
@@ -1226,7 +953,7 @@ RefCountedPtr<IRealityDataSourceRequestHandler> RealityDataCache::DequeueRequest
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RealityDataCache::_OnResponseReceived(RealityDataSourceResponse const& response, RealityDataOptions options)
+void RealityDataCache::OnResponseReceived(RealityDataSourceResponse const& response, RealityDataOptions options)
     {
     RefCountedPtr<IRealityDataStoragePersistHandler> persistHandler = DequeuePersistHandler(response.GetId(), response.GetData());
     switch (response.GetResult())
@@ -1234,7 +961,7 @@ void RealityDataCache::_OnResponseReceived(RealityDataSourceResponse const& resp
         case RealityDataSourceResult::Success:
         case RealityDataSourceResult::NotModified:
             {
-            if (options.m_useStorage && persistHandler.IsValid())
+            if (persistHandler.IsValid())
                 {
                 BeAssert(&response.GetData() == persistHandler->_GetData());
                 RealityDataStorageResult result = persistHandler->_Persist();
@@ -1264,7 +991,7 @@ void RealityDataCache::_OnResponseReceived(RealityDataSourceResponse const& resp
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RealityDataCache::_OnResponseReceived(RealityDataStorageResponse const& response, RealityDataOptions options, bool isAsync)
+void RealityDataCache::OnResponseReceived(RealityDataStorageResponse const& response, RealityDataOptions options, bool isAsync)
     {
     RealityDataCacheResult result = HandleStorageResponse(response, options);
     
@@ -1295,7 +1022,7 @@ RealityDataCacheResult RealityDataCache::HandleStorageResponse(RealityDataStorag
         {
         case RealityDataStorageResult::Success:
             {
-            if (response.GetData().IsExpired() && options.m_requestFromSource)
+            if (response.GetData()._IsExpired() && options.m_requestFromSource)
                 {
                 RefCountedPtr<IRealityDataSourceRequestHandler> handler = DequeueRequestHandler(response.GetId(), response.GetData());
                 RealityDataSourceResult requestResult = handler->_Request();
@@ -1334,7 +1061,7 @@ RealityDataCacheResult RealityDataCache::HandleStorageResponse(RealityDataStorag
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-RealityDataCacheResult RealityDataCache::GetResult(IRealityDataBase& data, Utf8CP id, RealityDataStorageResult storageResult)
+RealityDataCacheResult RealityDataCache::GetResult(RealityData& data, Utf8CP id, RealityDataStorageResult storageResult)
     {
     if (RealityDataStorageResult::Pending == storageResult)
         {
@@ -1421,8 +1148,7 @@ void RealityDataCache::Cleanup()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-RealityDataThread::RealityDataThread(Utf8CP threadName) 
-    : m_threadId(-1), m_threadName(threadName)
+RealityDataThread::RealityDataThread(Utf8CP threadName) : m_threadId(-1), m_threadName(threadName)
     {
     }
 
