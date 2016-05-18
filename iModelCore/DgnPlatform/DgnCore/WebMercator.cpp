@@ -74,8 +74,9 @@ struct Upoint2d
     };
 
 static Upoint2d const s_pixelOrigin = {TILE_SIZE / 2, TILE_SIZE / 2};
-static double const s_pixelsPerLonDegree = TILE_SIZE / 360.0;
-static double const s_pixelsPerLonRadian = TILE_SIZE / msGeomConst_2pi;
+static double const s_dTileSize = 256.;
+static double const s_pixelsPerLonDegree = s_dTileSize / 360.0;
+static double const s_pixelsPerLonRadian = s_dTileSize / msGeomConst_2pi;
 static double const s_minLatitude  =  -85.05112878;
 static double const s_maxLatitude  =   85.05112878;
 static double const s_minLongitude = -180.0;
@@ -127,8 +128,8 @@ struct WPixelPoint : DPoint2d
     {
     if (v < 0)
         v = 0;
-    if (BeNumerical::Compare(v, TILE_SIZE) >= 0)
-        v = (TILE_SIZE - 1.0e-9);   // fudge the greatest possible coordinate as being just a little inside the edge.
+    if (BeNumerical::Compare(v, s_dTileSize) >= 0)
+        v = (s_dTileSize - 1.0e-9);   // fudge the greatest possible coordinate as being just a little inside the edge.
     }
 
     void Clamp() {ClampCoordinate(x); ClampCoordinate(y);}
@@ -151,8 +152,12 @@ struct PixelPoint : DPoint2d
 //=======================================================================================
 struct TileRange
 {
+    bool m_isValid = false;
     WPixelPoint m_upperLeft;
     WPixelPoint m_lowerRight;
+    void Invalidate() {m_isValid=false;}
+    bool IsValid() const {return m_isValid;}
+    void Extend(WPixelPoint);
 };
 
 //=======================================================================================
@@ -169,6 +174,7 @@ struct WebMercatorProgressive : ProgressiveTask
 };
 
 //=======================================================================================
+// Contains the input to drawing a tile (a RenderContext) and the outputs (a list of graphics, plus a list of missing tiles).
 // @bsiclass                                                    Keith.Bentley   05/16
 //=======================================================================================
 struct DrawArgs
@@ -303,7 +309,7 @@ static bool isLatLongPointInRange(LatLongPointCR latLng)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool isWpixelPointInRange(DPoint2dCR point)
     {
-    return (0 <= point.x && point.x <= TILE_SIZE) && (0 <= point.y && point.y <= TILE_SIZE);
+    return (0 <= point.x && point.x <= s_dTileSize) && (0 <= point.y && point.y <= s_dTileSize);
     }
 #endif
 
@@ -356,7 +362,7 @@ PixelPoint::PixelPoint(WPixelPointCR wpixels, uint8_t zoomLevel)
 TileId WPixelPoint::ToTileId(uint8_t zoomLevel)
     {
     PixelPoint pixelPt(*this, zoomLevel);
-    return TileId(zoomLevel, (uint32_t) floor(pixelPt.x / TILE_SIZE), (uint32_t) floor(pixelPt.y / TILE_SIZE));
+    return TileId(zoomLevel, (uint32_t) floor(pixelPt.x / s_dTileSize), (uint32_t) floor(pixelPt.y / s_dTileSize));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -364,12 +370,30 @@ TileId WPixelPoint::ToTileId(uint8_t zoomLevel)
 +---------------+---------------+---------------+---------------+---------------+------*/
 WPixelPoint::WPixelPoint(TileId tileid)
     {
-    auto pix = tileid.m_column * TILE_SIZE;
-    auto piy = tileid.m_row    * TILE_SIZE;
+    double pix = tileid.m_column * s_dTileSize;
+    double piy = tileid.m_row    * s_dTileSize;
 
     uint32_t numTiles = 1 << tileid.m_zoomLevel;
     x = pix / (double)numTiles;
     y = piy / (double)numTiles;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void TileRange::Extend(WPixelPoint pt)
+    {
+    if (!m_isValid)
+        {
+        m_upperLeft = m_lowerRight = pt;
+        m_isValid = true;
+        return;
+        }
+
+    if (pt.x < m_upperLeft.x) m_upperLeft.x = pt.x;
+    if (pt.x > m_lowerRight.x) m_lowerRight.x = pt.x;
+    if (pt.y < m_upperLeft.y) m_upperLeft.y = pt.y;
+    if (pt.y > m_lowerRight.y) m_lowerRight.y = pt.y;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -489,29 +513,25 @@ bool WebMercatorDisplay::ComputeZoomLevel(DgnViewportR vp)
     Frustum  worldFrust = vp.GetFrustum();
     DRange2d xyRange = DRange2d::NullRange();
 
+    BeAssert(!m_tileRange.IsValid());
     for (DPoint3dCR pt : worldFrust.m_pts)
         {
-        DPoint3d xyPt;
+        DPoint3d xyzPt;
         viewRay.origin = pt;
         double param;
-        if (!viewRay.Intersect(xyPt, param, xyPlane))
+        if (!viewRay.Intersect(xyzPt, param, xyPlane))
             return false;
 
-        xyRange.Extend(xyPt);
+        // must compute tile range in WPixels. 
+        m_tileRange.Extend(ConvertMetersToWpixels(DPoint2d::From(xyzPt.x, xyzPt.y)));
+        xyRange.Extend(xyzPt);
         }
+    BeAssert(m_tileRange.IsValid());
 
     double worldDiag = xyRange.low.Distance(xyRange.high);
     Frustum  viewFrust = vp.GetFrustum(DgnCoordSystem::View);
     double viewDiag = viewFrust.m_pts[NPC_LeftBottomRear].Distance(viewFrust.m_pts[NPC_RightTopRear]);
 
-    DPoint2d upperLeft, lowerRight;
-    upperLeft.x  = xyRange.low.x;
-    upperLeft.y  = xyRange.high.y;
-    lowerRight.x = xyRange.high.x;
-    lowerRight.y = xyRange.low.y;
-
-    m_tileRange.m_upperLeft  = ConvertMetersToWpixels(upperLeft);
-    m_tileRange.m_lowerRight = ConvertMetersToWpixels(lowerRight);
 
     // Get the number of meters / pixel that we are showing in the view
     double viewResolution = worldDiag / viewDiag;

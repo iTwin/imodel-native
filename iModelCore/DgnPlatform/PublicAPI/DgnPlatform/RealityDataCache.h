@@ -19,6 +19,7 @@ DGNPLATFORM_REF_COUNTED_PTR(RealityDataSource)
 
 DGNPLATFORM_REF_COUNTED_PTR(HttpRealityDataSource)
 DGNPLATFORM_REF_COUNTED_PTR(FileRealityDataSource)
+DGNPLATFORM_REF_COUNTED_PTR(IRealityDataSourceRequestHandler)
 
 struct HasWorkOrTerminatesPredicate;
 struct IsIdlePredicate;
@@ -366,6 +367,7 @@ protected:
     virtual RealityData const* _GetData() const = 0;
 };
 
+
 //=======================================================================================
 //! The base class for all reality data sources.
 // @bsiclass                                        Grigas.Petraitis            10/2014
@@ -386,7 +388,7 @@ protected:
     //! @note It is guaranteed that the arguments can be cast to their derived classes, provided by the implementation.
     virtual RealityDataSourceResult _Request(RealityData&, bool& handled, Utf8CP, RealityDataOptions, RealityDataCache&) = 0;
 
-    virtual IRealityDataSourceRequestHandler* _CreateRequestHandler(RealityData& data, Utf8CP id, RealityDataOptions options, RealityDataCache& responseReceiver) = 0;
+    virtual IRealityDataSourceRequestHandlerPtr _CreateRequestHandler(RealityData& data, Utf8CP id, RealityDataOptions options, RealityDataCache& responseReceiver) = 0;
 };
 
 //======================================================================================
@@ -551,7 +553,7 @@ public:
     ~RealityDataStorage() {m_retry = nullptr; Terminate();}
 
     //! Initialize data object with the data in the database.
-    DGNPLATFORM_EXPORT RealityDataStorageResult Select(RealityData& data, Utf8CP id, RealityDataOptions options, RealityDataCache& responseReceiver);
+    DGNPLATFORM_EXPORT virtual RealityDataStorageResult _Select(RealityData& data, Utf8CP id, RealityDataOptions options, RealityDataCache& responseReceiver);
 
     //! Persist the data object in the database.
     DGNPLATFORM_EXPORT RealityDataStorageResult Persist(RealityData const& data);
@@ -633,7 +635,7 @@ public:
         
         QueueRequestHandler(id, *m_source->_CreateRequestHandler(data, id, options, *this));
         QueuePersistHandler(id, *m_storage->CreatePersistHandler(data));
-        return GetResult(data, id, m_storage->Select(data, id, options, *this));
+        return GetResult(data, id, m_storage->_Select(data, id, options, *this));
         }
 };
 
@@ -791,7 +793,7 @@ public:
         return Request(data, handled, id, options, responseReceiver);
         }
 
-    IRealityDataSourceRequestHandler* _CreateRequestHandler(RealityData& data, Utf8CP id, RealityDataOptions options, RealityDataCache& responseReceiver) override
+    IRealityDataSourceRequestHandlerPtr _CreateRequestHandler(RealityData& data, Utf8CP id, RealityDataOptions options, RealityDataCache& responseReceiver) override
         {
         return new RequestHandler(*this, data, id, options, responseReceiver);
         }
@@ -838,7 +840,7 @@ protected:
         return Request(data, handled, id, options, responseReceiver);
         }
 
-    IRealityDataSourceRequestHandler* _CreateRequestHandler(RealityData& data, Utf8CP id, RealityDataOptions options, RealityDataCache& responseReceiver) override
+    IRealityDataSourceRequestHandlerPtr _CreateRequestHandler(RealityData& data, Utf8CP id, RealityDataOptions options, RealityDataCache& responseReceiver) override
         {
         return new RequestHandler(*this, data, id, options, responseReceiver);
         }

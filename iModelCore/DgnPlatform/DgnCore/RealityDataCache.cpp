@@ -444,7 +444,7 @@ RealityDataStorageResult RealityDataStorage::wt_Select(RealityData& data, Utf8CP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-RealityDataStorageResult RealityDataStorage::Select(RealityData& data, Utf8CP id, RealityDataOptions options, RealityDataCache& responseReceiver)
+RealityDataStorageResult RealityDataStorage::_Select(RealityData& data, Utf8CP id, RealityDataOptions options, RealityDataCache& responseReceiver)
     {
     if (true)
         {
