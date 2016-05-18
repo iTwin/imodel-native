@@ -42,4 +42,6 @@ always:
 always:
     !~@mkdir ${XCTEST_OUTPUT_DIR}
     |  See $(logFile) for details
-    $(RunPrefix) python $(_MakeFilePath)RunXCTests.py $(XCODEPROJ) '$(BENTLEY_RUN_XCTEST_DEVICE_NAME)' $(logFile)
+    xcodebuild test -project $(XCODEPROJ) -scheme BeTestiOS -destination 'platform=iOS,name=$(BENTLEY_RUN_XCTEST_DEVICE_NAME)'
+
+#$(RunPrefix) python $(_MakeFilePath)RunXCTests.py $(XCODEPROJ) '$(BENTLEY_RUN_XCTEST_DEVICE_NAME)' $(logFile)
