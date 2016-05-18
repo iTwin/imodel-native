@@ -423,12 +423,12 @@ RealityDataStorageResult RealityDataStorage::wt_Select(RealityData& data, Utf8CP
     RealityDataStorageResult result;
     if (SUCCESS != data._InitFrom(m_database, id))
         {
-        responseReceiver.OnResponseReceived(*RealityDataStorageResponse::Create(RealityDataStorageResult::NotFound, id, data), options, !options.m_forceSynchronous);
+        responseReceiver._OnResponseReceived(*new RealityDataStorageResponse(RealityDataStorageResult::NotFound, id, data), options, !options.m_forceSynchronous);
         result = RealityDataStorageResult::NotFound;
         }
     else
         {
-        responseReceiver.OnResponseReceived(*RealityDataStorageResponse::Create(RealityDataStorageResult::Success, id, data), options, !options.m_forceSynchronous);
+        responseReceiver._OnResponseReceived(*new RealityDataStorageResponse(RealityDataStorageResult::Success, id, data), options, !options.m_forceSynchronous);
         result = RealityDataStorageResult::Success;
         }
 
@@ -953,7 +953,7 @@ RefCountedPtr<IRealityDataSourceRequestHandler> RealityDataCache::DequeueRequest
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RealityDataCache::OnResponseReceived(RealityDataSourceResponse const& response, RealityDataOptions options)
+void RealityDataCache::_OnResponseReceived(RealityDataSourceResponse const& response, RealityDataOptions options)
     {
     RefCountedPtr<IRealityDataStoragePersistHandler> persistHandler = DequeuePersistHandler(response.GetId(), response.GetData());
     switch (response.GetResult())
@@ -991,7 +991,7 @@ void RealityDataCache::OnResponseReceived(RealityDataSourceResponse const& respo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RealityDataCache::OnResponseReceived(RealityDataStorageResponse const& response, RealityDataOptions options, bool isAsync)
+void RealityDataCache::_OnResponseReceived(RealityDataStorageResponse const& response, RealityDataOptions options, bool isAsync)
     {
     RealityDataCacheResult result = HandleStorageResponse(response, options);
     

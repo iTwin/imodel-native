@@ -23,14 +23,12 @@ DGNPLATFORM_REF_COUNTED_PTR(FileRealityDataSource)
 struct HasWorkOrTerminatesPredicate;
 struct IsIdlePredicate;
 struct AllThreadsIdlePredicate;
-struct FileRealityDataSourceRequest;
-struct HttpRealityDataSourceRequest;
 struct ThreadPoolQueueNotEmptyPredicate;
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 //=======================================================================================
-//! Options for @ref RealityDataCache::Get request function.
+//! Options for request function.
 // @bsiclass                                        Grigas.Petraitis            10/2014
 //=======================================================================================
 struct RealityDataOptions
@@ -326,10 +324,7 @@ struct IRealityDataStoragePersistHandler : RefCountedBase
 //======================================================================================
 struct RealityDataStorageResponse : RealityDataResponse<RealityDataStorageResult>
 {
-private:
     RealityDataStorageResponse(RealityDataStorageResult result, Utf8CP id, RealityData& data) : RealityDataResponse(result, id, data) {}
-public:
-    static RefCountedPtr<RealityDataStorageResponse> Create(RealityDataStorageResult result, Utf8CP id, RealityData& data) {return new RealityDataStorageResponse(result, id, data);}
 };
 
 //=======================================================================================
@@ -373,8 +368,6 @@ protected:
 
 //=======================================================================================
 //! The base class for all reality data sources.
-//! @warning Reality data source implementations should implement the @ref IRealityDataSource
-//! interface instead of this one.
 // @bsiclass                                        Grigas.Petraitis            10/2014
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE RealityDataSource : RefCountedBase, NonCopyableClass
@@ -425,7 +418,7 @@ struct EXPORT_VTABLE_ATTRIBUTE RealityDataStorage  : RefCountedBase, NonCopyable
 {
     //===================================================================================
     //! @ref IRealityDataStoragePersistHandler implementation which knows how to persist
-    //! reality data in the @ref BeSQLiteRealityDataStorage.
+    //! reality data in the RealityDataStorage.
     // @bsiclass                                        Grigas.Petraitis        03/2015
     //===================================================================================
     struct PersistHandler : IRealityDataStoragePersistHandler
@@ -603,7 +596,6 @@ private:
 
     DGNPLATFORM_EXPORT RealityDataCacheResult GetResult(RealityData& data, Utf8CP id, RealityDataStorageResult storageResult);
     DGNPLATFORM_EXPORT RealityDataCacheResult GetResult(Utf8CP id, RealityDataSourceResult sourceResult);
-    ~RealityDataCache() {m_storage=nullptr;m_source=nullptr;}
     
 public:
     //! Create a new reality data cache.
@@ -613,8 +605,8 @@ public:
     DGNPLATFORM_EXPORT void Cleanup();
 
     // note: these might be called from any thread!
-    void OnResponseReceived(RealityDataSourceResponse const& response, RealityDataOptions);
-    void OnResponseReceived(RealityDataStorageResponse const& response, RealityDataOptions, bool isAsync);
+    DGNPLATFORM_EXPORT virtual void _OnResponseReceived(RealityDataSourceResponse const& response, RealityDataOptions);
+    DGNPLATFORM_EXPORT virtual void _OnResponseReceived(RealityDataStorageResponse const& response, RealityDataOptions, bool isAsync);
 
     //! Set storage in this cache.
     void SetStorage(RealityDataStorage& storage) {BeAssert(!m_storage.IsValid()); m_storage = &storage; }
@@ -707,7 +699,7 @@ struct EXPORT_VTABLE_ATTRIBUTE AsyncRealityDataSource : RealityDataSource
         RequestHandler(AsyncRealityDataSource& source, AsyncRealityDataSourceRequest const& request, RealityDataCache& responseReceiver)
             : m_source(&source), m_request(&request), m_responseReceiver(responseReceiver)
             {}
-        void SendResponse(RealityDataSourceResponse const& response, RealityDataOptions options) {m_responseReceiver.OnResponseReceived(response, options);}
+        void SendResponse(RealityDataSourceResponse const& response, RealityDataOptions options) {m_responseReceiver._OnResponseReceived(response, options);}
 
     protected:
         virtual void _DoWork() override;
@@ -782,10 +774,6 @@ struct EXPORT_VTABLE_ATTRIBUTE FileRealityDataSource : AsyncRealityDataSource
 
 protected:
     virtual Utf8String _GetSourceId() const override {return SourceId();}
-    virtual RealityDataSourceResult _Request(RealityData& data, bool& handled, Utf8CP id, RealityDataOptions options, RealityDataCache& responseReceiver) override
-        {
-        return Request(data, handled, id, options, responseReceiver);
-        }
 
     DGNPLATFORM_EXPORT RealityDataSourceResult Request(RealityData& data, bool& handled, Utf8CP filepath, RealityDataOptions options, RealityDataCache& responseReceiver);
 
@@ -797,6 +785,11 @@ public:
     //! @param[in] numThreads   Number of worker threads to use for reading files. Must be at least 1.
     //! @param[in] schedulingMethod The order of handled requests.
     FileRealityDataSource(int numThreads, SchedulingMethod schedulingMethod) : AsyncRealityDataSource(numThreads, schedulingMethod) {}
+
+    virtual RealityDataSourceResult _Request(RealityData& data, bool& handled, Utf8CP id, RealityDataOptions options, RealityDataCache& responseReceiver) override
+        {
+        return Request(data, handled, id, options, responseReceiver);
+        }
 
     IRealityDataSourceRequestHandler* _CreateRequestHandler(RealityData& data, Utf8CP id, RealityDataOptions options, RealityDataCache& responseReceiver) override
         {

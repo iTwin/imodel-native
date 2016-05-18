@@ -127,7 +127,7 @@ namespace BackDoor
         /*---------------------------------------------------------------------------------**//**
         * @bsimethod                                    Grigas.Petraitis                01/2016
         +---------------+---------------+---------------+---------------+---------------+------*/
-        void Terminate(IRealityDataStorageBase& storage);
+        void Terminate(RealityDataStorage& storage);
     }; // RealityData
 
     /*---------------------------------------------------------------------------------**//**
