@@ -6927,7 +6927,8 @@ This method saves the node for streaming.
 
 @param
 -----------------------------------------------------------------------------*/
-template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveCloudReadyNode(HFCPtr<StreamingPointStoreType> pi_pPointStore,
+template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveCloudReadyNode(DataSourceAccount *dataSourceAccount,
+																							 HFCPtr<StreamingPointStoreType> pi_pPointStore,
                                                                                              HFCPtr<StreamingIndiceStoreType> pi_pIndiceStore,
                                                                                              HFCPtr<StreamingUVStoreType> pi_pUVStore,
                                                                                              HFCPtr<StreamingIndiceStoreType> pi_pUVIndiceStore,
@@ -6945,13 +6946,13 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveCl
         {
         if (m_pSubNodeNoSplit != NULL)
             {
-            static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_pSubNodeNoSplit))->SaveCloudReadyNode(pi_pPointStore, pi_pIndiceStore, pi_pUVStore, pi_pUVIndiceStore, pi_pTextureStore);
+            static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_pSubNodeNoSplit))->SaveCloudReadyNode(dataSourceAccount, pi_pPointStore, pi_pIndiceStore, pi_pUVStore, pi_pUVIndiceStore, pi_pTextureStore);
             }
         else
             {
             for (size_t indexNode = 0; indexNode < GetNumberOfSubNodesOnSplit(); indexNode++)
                 {
-                static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNode]))->SaveCloudReadyNode(pi_pPointStore, pi_pIndiceStore, pi_pUVStore, pi_pUVIndiceStore, pi_pTextureStore);
+                static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNode]))->SaveCloudReadyNode(dataSourceAccount, pi_pPointStore, pi_pIndiceStore, pi_pUVStore, pi_pUVIndiceStore, pi_pTextureStore);
                 }
             }
         }
@@ -6962,7 +6963,7 @@ This method saves the node for streaming using the grouping strategy.
 
 @param
 -----------------------------------------------------------------------------*/
-template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveCloudReadyNode(SMNodeGroup* pi_pGroup,
+template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveCloudReadyNode(DataSourceAccount *dataSourceAccount, SMNodeGroup* pi_pGroup,
                                                                                              SMNodeGroupMasterHeader* pi_pGroupsHeader) const
     {
     if (!IsLoaded())
@@ -6995,7 +6996,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveCl
             nextGroup = s_OpenGroups.count(nextLevel) > 0 ? s_OpenGroups[nextLevel] : nullptr;
             if (!nextGroup)
                 {
-                nextGroup = new SMNodeGroup(pi_pGroup->GetFilePath(), nextLevel, ++s_GroupID);
+                nextGroup = new SMNodeGroup(dataSourceAccount, pi_pGroup->GetFilePath(), nextLevel, ++s_GroupID);
                 this->AddOpenGroup(nextLevel, nextGroup);
                 pi_pGroupsHeader->AddGroup(s_GroupID);
                 }
@@ -7004,13 +7005,13 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveCl
 
         if (m_pSubNodeNoSplit != NULL)
             {
-            static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_pSubNodeNoSplit))->SaveCloudReadyNode(nextGroup, pi_pGroupsHeader);
+            static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_pSubNodeNoSplit))->SaveCloudReadyNode(dataSourceAccount, nextGroup, pi_pGroupsHeader);
             }
         else
             {
             for (size_t indexNode = 0; indexNode < GetNumberOfSubNodesOnSplit(); indexNode++)
                 {
-                static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNode]))->SaveCloudReadyNode(nextGroup, pi_pGroupsHeader);
+                static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNode]))->SaveCloudReadyNode(dataSourceAccount, nextGroup, pi_pGroupsHeader);
                 }
             }
 
@@ -7917,7 +7918,7 @@ template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveC
     auto rootNode = GetRootNode();
     if (groupNodeHeaders)
         {
-        HFCPtr<SMNodeGroup> group = new SMNodeGroup(pi_pOutputDirPath, 0, 0);
+        HFCPtr<SMNodeGroup> group = new SMNodeGroup(dataSourceAccount, pi_pOutputDirPath, 0, 0);
 
         HFCPtr<SMNodeGroupMasterHeader> groupMasterHeader(new SMNodeGroupMasterHeader());
         SMPointIndexHeader<EXTENT> oldMasterHeader;
@@ -7929,7 +7930,7 @@ template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveC
 
         rootNode->AddOpenGroup(0, group);
 
-        rootNode->SaveCloudReadyNode(group, groupMasterHeader);
+        rootNode->SaveCloudReadyNode(dataSourceAccount, group, groupMasterHeader);
 
         // Handle all open groups 
         rootNode->SaveAllOpenGroups();
@@ -7946,7 +7947,7 @@ template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveC
         HFCPtr<StreamingTextureTileStoreType> pTextureStore;
         this->GetCloudFormatStores(dataSourceAccount, pi_pOutputDirPath, pi_pCompress, pPointStore, pIndiceStore, pUVStore, pUVIndiceStore, pTextureStore);
 
-        rootNode->SaveCloudReadyNode(pPointStore, pIndiceStore, pUVStore, pUVIndiceStore, pTextureStore);
+        rootNode->SaveCloudReadyNode(dataSourceAccount, pPointStore, pIndiceStore, pUVStore, pUVIndiceStore, pTextureStore);
 
         // Save master header for cloud
         Json::Value masterHeader;

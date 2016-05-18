@@ -3,7 +3,6 @@
 #include "DataSourceAzure.h"
 
 
-
 DataSourceAccountAzure::DataSourceAccountAzure(const ServiceName & name, const AccountIdentifier & identifier, const AccountKey & key)
 {
 	setAccount(name, identifier, key);
@@ -69,6 +68,7 @@ DataSource * DataSourceAccountAzure::createDataSource(void)
 {
 	return new DataSourceAzure(this);
 }
+
 
 DataSourceStatus DataSourceAccountAzure::destroyDataSource(DataSource *dataSource)
 {

@@ -357,7 +357,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         return dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetPtsIndicesStore();
         }
 
-    void         SaveCloudReadyNode(HFCPtr<StreamingPointStoreType> pi_pPointStore,
+    void         SaveCloudReadyNode(DataSourceAccount *dataSourceAccount,
+									HFCPtr<StreamingPointStoreType> pi_pPointStore,
                                     HFCPtr<StreamingIndiceStoreType> pi_pIndiceStore,
                                     HFCPtr<StreamingUVStoreType> pi_pUVStore,
                                     HFCPtr<StreamingIndiceStoreType> pi_pUVIndiceStore,

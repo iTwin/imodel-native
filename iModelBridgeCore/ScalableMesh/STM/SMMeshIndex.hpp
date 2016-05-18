@@ -536,7 +536,8 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Load() 
     assert(m_uvCoordsPoolItemId == SMMemoryPool::s_UndefinedPoolItemId);                                        
     }
 
-template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::SaveCloudReadyNode(HFCPtr<StreamingPointStoreType> pi_pPointStore,
+template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::SaveCloudReadyNode(DataSourceAccount *dataSourceAccount,
+																							HFCPtr<StreamingPointStoreType> pi_pPointStore,
                                                                                             HFCPtr<StreamingIndiceStoreType> pi_pIndiceStore,
                                                                                             HFCPtr<StreamingUVStoreType> pi_pUVStore,
                                                                                             HFCPtr<StreamingIndiceStoreType> pi_pUVIndiceStore,
@@ -591,7 +592,8 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::SaveClo
 
     if (m_pSubNodeNoSplit != nullptr)
         {
-        static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(m_pSubNodeNoSplit))->SaveCloudReadyNode(pi_pPointStore,
+        static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(m_pSubNodeNoSplit))->SaveCloudReadyNode(dataSourceAccount,
+																								pi_pPointStore,
                                                                                                 pi_pIndiceStore,
                                                                                                 pi_pUVStore,
                                                                                                 pi_pUVIndiceStore,
@@ -603,7 +605,8 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::SaveClo
             {
             if (m_apSubNodes[indexNode] != nullptr)
                 {
-                static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNode]))->SaveCloudReadyNode(pi_pPointStore,
+                static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNode]))->SaveCloudReadyNode(dataSourceAccount,
+																											  pi_pPointStore,
                                                                                                               pi_pIndiceStore,
                                                                                                               pi_pUVStore,
                                                                                                               pi_pUVIndiceStore,
@@ -3175,7 +3178,7 @@ template<class POINT, class EXTENT> void SMMeshIndex<POINT, EXTENT>::GetCloudFor
     po_pIndiceStore = new StreamingIndiceStoreType(dataSourceAccount, indice_store_path, L"", pi_pCompress);
     po_pUVStore = new StreamingUVStoreType(dataSourceAccount, uv_store_path, L"", pi_pCompress);
     po_pUVIndiceStore = new StreamingIndiceStoreType(dataSourceAccount, uvIndice_store_path, L"", pi_pCompress);
-    po_pTextureStore = new StreamingTextureTileStoreType(texture_store_path.c_str());
+    po_pTextureStore = new StreamingTextureTileStoreType(dataSourceAccount, texture_store_path.c_str());
 
     }
 /**----------------------------------------------------------------------------

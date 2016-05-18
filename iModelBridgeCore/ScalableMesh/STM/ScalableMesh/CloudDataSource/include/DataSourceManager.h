@@ -8,7 +8,7 @@ class DataSourceManager : public Manager<DataSource>, public DataSourceServiceMa
 {
 public:
 
-	typedef Manager<DataSource>::ItemName				DataSourceName;
+	typedef DataSource::Name	DataSourceName;
 
 protected:
 
@@ -17,6 +17,9 @@ public:
 
 	DataSource			*		createDataSource		(const DataSourceName &name, const DataSourceAccount::AccountName &account, const DataSourceStoreConfig *config = nullptr);
 	DataSource			*		createDataSource		(const DataSourceName &name, DataSourceAccount &account, const DataSourceStoreConfig *config = nullptr);
+
+	DataSource			*		getOrCreateDataSource	(const DataSourceName &name, DataSourceAccount &account, bool *created = nullptr);
+
 	DataSourceStatus			destroyDataSource		(DataSource *dataSource);
 
 	DataSourceAccount	*		initializeAzureTest		(void);

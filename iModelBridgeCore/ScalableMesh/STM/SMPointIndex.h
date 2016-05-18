@@ -600,12 +600,13 @@ public:
     typedef SMStreamingPointTaggedTileStore<int32_t, EXTENT>      StreamingIndiceStoreType;
     typedef SMStreamingPointTaggedTileStore<DPoint2d, EXTENT>     StreamingUVStoreType;
     typedef StreamingTextureTileStore                             StreamingTextureTileStoreType;
-    virtual void         SaveCloudReadyNode(HFCPtr<StreamingPointStoreType> pi_pPointStore,
+    virtual void         SaveCloudReadyNode(DataSourceAccount *dataSourceAccount,
+											HFCPtr<StreamingPointStoreType> pi_pPointStore,
                                             HFCPtr<StreamingIndiceStoreType> pi_pIndiceStore,
                                             HFCPtr<StreamingUVStoreType> pi_pUVStore,
                                             HFCPtr<StreamingIndiceStoreType> pi_pUVIndiceStore,
                                             HFCPtr<StreamingTextureTileStoreType> pi_pTextureStore);
-    virtual void         SaveCloudReadyNode(SMNodeGroup* pi_pNodes, SMNodeGroupMasterHeader* pi_pGroupsHeader) const;
+    virtual void         SaveCloudReadyNode(DataSourceAccount *dataSourceAccount, SMNodeGroup* pi_pNodes, SMNodeGroupMasterHeader* pi_pGroupsHeader) const;
 
 #ifdef INDEX_DUMPING_ACTIVATED
     virtual void         DumpOctTreeNode(FILE* pi_pOutputXmlFileStream,

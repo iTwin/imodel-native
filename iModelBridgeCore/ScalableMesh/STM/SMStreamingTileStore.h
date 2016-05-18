@@ -148,12 +148,12 @@ class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
     {
     public:
 
-        SMNodeGroup(const size_t& pi_pID, const size_t& pi_pSize) 
+        SMNodeGroup(DataSourceAccount *dataSourceAccount, const size_t& pi_pID, const size_t& pi_pSize) 
             : m_pGroupHeader(new SMGroupHeader(pi_pID, pi_pSize)),
               m_stream_store(nullptr)
             {};
 
-        SMNodeGroup(WString& pi_pDataSourceName, scalable_mesh::azure::Storage& pi_pStreamStore)
+        SMNodeGroup(DataSourceAccount *dataSourceAccount, WString& pi_pDataSourceName, scalable_mesh::azure::Storage& pi_pStreamStore)
             {
             // reserve space for total number of nodes for this group
             m_pGroupHeader->reserve(s_max_number_nodes_in_group);
@@ -163,7 +163,7 @@ class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
             m_stream_store = &pi_pStreamStore;
             }
 
-        SMNodeGroup(const WString pi_pOutputDirPath, const size_t& pi_pGroupLevel, const size_t& pi_pGroupID)
+        SMNodeGroup(DataSourceAccount *dataSourceAccount, const WString pi_pOutputDirPath, const size_t& pi_pGroupLevel, const size_t& pi_pGroupID)
             : m_pOutputDirPath(pi_pOutputDirPath), m_pLevel(pi_pGroupLevel), m_pGroupHeader(new SMGroupHeader(pi_pGroupID))
             {
             // reserve space for total number of nodes for this group
@@ -293,7 +293,66 @@ class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
             file.Close();
             }
 
-        void Load()
+		void Load()
+		{
+			unique_lock<mutex> lk(m_pGroupMutex);
+			if (m_pIsLoading)
+			{
+				m_pGroupCV.wait(lk, [this] {return !m_pIsLoading; });
+			}
+			else
+			{
+				DataSource							*	dataSource;
+				DataSource::Name						dataSourceName;
+				wstringstream							ss;
+				wstringstream							name;
+				std::unique_ptr<DataSource::Buffer>		buffer;
+
+				if (m_dataSourceAccount == nullptr)
+					return;
+															// Get DataSourceName based on this thread's ID
+				std::thread::id threadID = std::this_thread::get_id();
+				name << threadID;
+				dataSourceName = name.str();
+															// Get the thread's DataSource or create a new one
+				dataSource = m_dataSourceAccount->getOrCreateDataSource(dataSourceName);
+				if (dataSource == nullptr)
+					return;
+
+				buffer.reset(new unsigned char[1024 * 1024 * 5]);
+				
+
+				DataSource::DataSize	dataSize;
+
+				m_pIsLoading = true;
+
+				loadFromDataSource(dataSource, buffer.get(), dataSize);
+
+				uint32_t position = 0;
+				size_t id;
+				memcpy(&id, buffer.get(), sizeof(size_t));
+				assert(m_pGroupHeader->GetID() == id);
+				position += sizeof(size_t);
+
+				size_t numNodes;
+				memcpy(&numNodes, buffer.get() + position, sizeof(numNodes));
+				assert(m_pGroupHeader->size() == numNodes);
+				position += sizeof(numNodes);
+
+				memcpy(m_pGroupHeader->data(), buffer.get() + position, numNodes * sizeof(SMNodeHeader));
+				position += (uint32_t)numNodes * sizeof(SMNodeHeader);
+
+				const auto headerSectionSize = dataSize - position;
+				m_pRawHeaders.resize(headerSectionSize);
+				memcpy(m_pRawHeaders.data(), buffer.get() + position, headerSectionSize);
+
+				m_pIsLoading = false;
+				m_pGroupCV.notify_all();
+			}
+			m_pIsLoaded = true;
+		}
+
+        void Load_Old()
             {
             unique_lock<mutex> lk(m_pGroupMutex);
             if (m_pIsLoading)
@@ -356,6 +415,25 @@ class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
 
     private:
 
+		void loadFromDataSource(DataSource *dataSource, DataSource::Buffer *buffer, DataSource::DataSize &dataSize)
+		{
+			if (dataSource == nullptr)
+				return;
+
+			wstringstream			ss;
+
+			ss << m_pDataSourceName << this->GetID() << L".bin";
+			auto groupFilename = ss.str();
+
+			DataSourceURL	dataSourceURL(groupFilename);
+
+			dataSource->open(dataSourceURL, DataSourceMode_Read);
+
+			dataSource->read(buffer, 0);
+
+			dataSource->close();
+		}
+
         void LoadFromLocal(std::unique_ptr<uint8_t>& pi_pBuffer, uint32_t& pi_pBufferSize)
             {
             wstringstream ss;
@@ -414,6 +492,8 @@ class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
         scalable_mesh::azure::Storage* m_stream_store;
         condition_variable m_pGroupCV;
         mutex m_pGroupMutex;
+
+		DataSourceAccount *m_dataSourceAccount;
     };
 
 
@@ -1125,10 +1205,15 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
             return points;
             }
 
+
+	protected:
+
+		DataSourceAccount *m_dataSourceAccount;
+
     public:
         // Constructor / Destroyer
 
-        SMStreamingPointTaggedTileStore(DataSourceAccount *dataSourceAccount, WString& path, WString grouped_headers_path = L"", bool areNodeHeadersGrouped = false, bool compress = true)
+        SMStreamingPointTaggedTileStore(DataSourceAccount *account, WString& path, WString grouped_headers_path = L"", bool areNodeHeadersGrouped = false, bool compress = true)
             :m_path(path),
             m_path_to_grouped_headers(grouped_headers_path),
             m_node_id(0),
@@ -1136,35 +1221,34 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
             m_pCodec(new HCDCodecZlib()),
             m_storage_connection_string(L"DefaultEndpointsProtocol=https;AccountName=pcdsustest;AccountKey=3EQ8Yb3SfocqbYpeIUxvwu/aEdiza+MFUDgQcIkrxkp435c7BxV8k2gd+F+iK/8V2iho80kFakRpZBRwFJh8wQ=="),
             m_stream_store(m_storage_connection_string.c_str(), L"scalablemeshtest")
-            {
+			{
+				m_dataSourceAccount = account;
 
-			(void) dataSourceAccount;
+				if (s_stream_from_disk)
+				{
+					// Create base directory structure to store information if not already done
+					// NEEDS_WORK_SM_STREAMING : directory/file functions are Windows only
+					if (0 == CreateDirectoryW(m_path.c_str(), NULL))
+					{
+						assert(ERROR_PATH_NOT_FOUND != GetLastError());
+					}
 
-            if (s_stream_from_disk)
-                {
-                // Create base directory structure to store information if not already done
-                // NEEDS_WORK_SM_STREAMING : directory/file functions are Windows only
-                if (0 == CreateDirectoryW(m_path.c_str(), NULL))
-                    {
-                    assert(ERROR_PATH_NOT_FOUND != GetLastError());
-                    }
-
-                WString pathToNodes(m_path + L"nodes/");
-                if (0 == CreateDirectoryW(pathToNodes.c_str(), NULL))
-                    {
-                    assert(ERROR_PATH_NOT_FOUND != GetLastError());
-                    }
-                WString pathToPoints(m_path + L"points/");
-                if (0 == CreateDirectoryW(pathToPoints.c_str(), NULL))
-                    {
-                    assert(ERROR_PATH_NOT_FOUND != GetLastError());
-                    }
-                }
-            else
-                {
-                // stream from azure
-                }
-            }
+					WString pathToNodes(m_path + L"nodes/");
+					if (0 == CreateDirectoryW(pathToNodes.c_str(), NULL))
+					{
+						assert(ERROR_PATH_NOT_FOUND != GetLastError());
+					}
+					WString pathToPoints(m_path + L"points/");
+					if (0 == CreateDirectoryW(pathToPoints.c_str(), NULL))
+					{
+						assert(ERROR_PATH_NOT_FOUND != GetLastError());
+					}
+				}
+				else
+				{
+					// stream from azure
+				}
+			}
 
         virtual ~SMStreamingPointTaggedTileStore()
             {
@@ -1327,7 +1411,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                             position += sizeof(size_t);
                             //assert(group_size <= s_max_number_nodes_in_group);
 
-                            auto group = HFCPtr<SMNodeGroup>(new SMNodeGroup(group_id, group_size));
+                            auto group = HFCPtr<SMNodeGroup>(new SMNodeGroup(m_dataSourceAccount, group_id, group_size));
                             group->SetDataSource(m_path_to_grouped_headers + L"g_", m_stream_store);
                             m_nodeHeaderGroups.push_back(group);
 

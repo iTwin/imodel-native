@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "DataSourceAccount.h"
 #include "DataSourceBuffered.h"
+#include "DataSourceManager.h"
 #include "include\DataSourceAccount.h"
 
 
@@ -97,6 +98,18 @@ const DataSourceAccount::AccountKey DataSourceAccount::getAccountKey(void) const
 {
 	return accountKey;
 }
+
+DataSource * DataSourceAccount::createDataSource(DataSourceManager::DataSourceName &name)
+{
+	return getDataSourceManager().createDataSource(name, *this);
+}
+
+
+DataSource * DataSourceAccount::getOrCreateDataSource(DataSourceManager::DataSourceName &name, bool *created)
+{
+	return getDataSourceManager().getOrCreateDataSource(name, *this, created);
+}
+
 
 DataSourceStatus DataSourceAccount::uploadSegments(DataSource &dataSource)
 {

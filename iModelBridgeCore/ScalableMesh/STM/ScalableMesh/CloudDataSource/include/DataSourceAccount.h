@@ -2,6 +2,7 @@
 
 #include "DataSourceStatus.h"
 #include "DataSourceTransferScheduler.h"
+#include "DataSource.h"
 
 
 class DataSource;
@@ -58,6 +59,11 @@ public:
 	const	AccountKey				getAccountKey				(void) const;
 
 	virtual DataSource			*	createDataSource			(void) = 0;
+			DataSource			*	createDataSource			(DataSource::Name &name);
+
+			DataSource			*	getOrCreateDataSource		(DataSource::Name &name, bool *created = nullptr);
+
+
 	virtual DataSourceStatus		destroyDataSource			(DataSource *dataSource) = 0;
 
 	DataSourceStatus				uploadSegments				(DataSource &dataSource);

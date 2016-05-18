@@ -35,7 +35,7 @@ DataSource * DataSourceManager::createDataSource(const DataSourceName & name, co
 }
 
 
-DataSource * DataSourceManager::createDataSource(const DataSourceName & name, DataSourceAccount &account, const DataSourceStoreConfig * config)
+DataSource * DataSourceManager::createDataSource(const DataSourceName &name, DataSourceAccount &account, const DataSourceStoreConfig * config)
 {
 	(void)config;
 
@@ -48,6 +48,25 @@ DataSource * DataSourceManager::createDataSource(const DataSourceName & name, Da
 		return nullptr;
 
 	return source;
+}
+
+
+DataSource *DataSourceManager::getOrCreateDataSource(const DataSourceName &name, DataSourceAccount &account, bool *created)
+{
+	DataSource *	dataSource;
+															// Attempt to get the named DataSource
+	dataSource = Manager<DataSource>::get(name);
+	if (dataSource)
+	{
+															// If requested, flag that the DataSource existed and was not created
+		if (created)
+			*created = false;
+	}
+															// If requested, flag that the DataSource was created
+	if (created)
+		*created = true;
+															// Otherwise, create it
+	return createDataSource(name, account);
 }
 
 

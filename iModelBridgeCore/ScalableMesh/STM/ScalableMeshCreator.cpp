@@ -686,12 +686,15 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
             WString uvIndice_store_path = streamingFilePath + L"uvIndice_store\\"; 
             WString texture_store_path = streamingFilePath + L"texture_store\\";
 
-            pStreamingTileStore = new StreamingStoreType(point_store_path, WString(), (SCM_COMPRESSION_DEFLATE == m_compressionType));
+			// Pip ToDo: Create account?
+			DataSourceAccount *account = nullptr;
+
+            pStreamingTileStore = new StreamingStoreType(account, point_store_path, WString(), (SCM_COMPRESSION_DEFLATE == m_compressionType));
             // SM_NEEDS_WORKS : layerID 
-            pStreamingIndiceTileStore = new SMStreamingPointTaggedTileStore< int32_t, PointIndexExtentType>(indice_store_path, WString(), (SCM_COMPRESSION_DEFLATE == m_compressionType));
-            pStreamingUVTileStore = new SMStreamingPointTaggedTileStore< DPoint2d, PointIndexExtentType>(uv_store_path, WString(), (SCM_COMPRESSION_DEFLATE == m_compressionType));
-            pStreamingUVsIndicesTileStore = new SMStreamingPointTaggedTileStore< int32_t, PointIndexExtentType>(uvIndice_store_path, WString(), (SCM_COMPRESSION_DEFLATE == m_compressionType));
-            pStreamingTextureTileStore = new StreamingTextureTileStore(texture_store_path.c_str());
+            pStreamingIndiceTileStore = new SMStreamingPointTaggedTileStore< int32_t, PointIndexExtentType>(account, indice_store_path, WString(), (SCM_COMPRESSION_DEFLATE == m_compressionType));
+            pStreamingUVTileStore = new SMStreamingPointTaggedTileStore< DPoint2d, PointIndexExtentType>(account, uv_store_path, WString(), (SCM_COMPRESSION_DEFLATE == m_compressionType));
+            pStreamingUVsIndicesTileStore = new SMStreamingPointTaggedTileStore< int32_t, PointIndexExtentType>(account, uvIndice_store_path, WString(), (SCM_COMPRESSION_DEFLATE == m_compressionType));
+            pStreamingTextureTileStore = new StreamingTextureTileStore(account, texture_store_path.c_str());
             
             pDataIndex = new MeshIndexType(ScalableMeshMemoryPools<PointType>::Get()->GetGenericPool(),                                       
                                        &*pStreamingTileStore,                                       

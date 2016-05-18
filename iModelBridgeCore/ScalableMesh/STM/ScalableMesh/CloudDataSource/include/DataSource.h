@@ -52,6 +52,8 @@ public:
 	typedef	DataSourceBuffer::TimeoutStatus		TimeoutStatus;
 	typedef DataSourceBuffer::Timeout			Timeout;
 
+	typedef std::wstring						Name;
+
 protected:
 
 	Timeout										timeout;
