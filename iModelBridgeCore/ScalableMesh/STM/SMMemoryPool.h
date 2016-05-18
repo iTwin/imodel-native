@@ -28,6 +28,7 @@ enum class SMPoolDataTypeDesc
     DiffSet, 
     Graph,
     Texture,
+    Display, //Use to represents data created for display purpose, like QV element. 
     Unknown, 
     };
 
@@ -79,6 +80,7 @@ enum class ContainerType
 
 template <typename DataType> class SMMemoryPoolVectorItem;
 template <typename DataType> class SMMemoryPoolBlobItem;
+template <typename DataType> class SMMemoryPoolGenericBlobItem;
 
 class SMMemoryPool;
 typedef RefCountedPtr<SMMemoryPool> SMMemoryPoolPtr;
@@ -123,6 +125,12 @@ class SMMemoryPoolItemBase : public RefCountedBase
             {            
             return dynamic_cast<SMMemoryPoolBlobItem<T>*>(this);
             }
+
+        template<typename T>
+        RefCountedPtr<SMMemoryPoolGenericBlobItem<T>> GetAsGenericBlobPoolItem()
+            {            
+            return dynamic_cast<SMMemoryPoolGenericBlobItem<T>*>(this);
+            }        
         
         virtual ~SMMemoryPoolItemBase();
                     
@@ -132,7 +140,9 @@ class SMMemoryPoolItemBase : public RefCountedBase
             
         SMMemoryPoolItemId GetPoolItemId() const;
             
-        void SetPoolItemId(SMMemoryPoolItemId poolItemId);            
+        void SetPoolItemId(SMMemoryPoolItemId poolItemId);
+
+        void SetDirty() { m_dirty = true; }
     };
 
 
@@ -162,7 +172,7 @@ class TextureTypedPoolItemCreator : public CustomTypedPoolItemCreator
 
 template <typename DataType> class SMMemoryPoolBlobItem : public SMMemoryPoolItemBase
     {
-    protected : 
+    protected :         
 
     public : 
         
@@ -185,30 +195,79 @@ template <typename DataType> class SMMemoryPoolBlobItem : public SMMemoryPoolIte
 
         const DataType* GetData()
             {
-            return m_data;
+            return (const DataType*)m_data;
             }
     };
 
 
-/*
-struct BlobItemSerializer
+template <typename DataType> class SMMemoryPoolGenericBlobItem : public SMMemoryPoolItemBase
     {
-    virtual Serialize(Byte* data) = 0;
+    protected :         
 
-    virtual Derialize() = 0;
+    public : 
+        
+        SMMemoryPoolGenericBlobItem(DataType* data, size_t size, uint64_t nodeId, SMPoolDataTypeDesc dataType)
+            {               
+            m_size = size;
+            m_nodeId = nodeId;
+            m_data = (Byte*)data;            
+            m_dataType = dataType;
+            }
 
-    virtual GetDataSize() = 0;
+        virtual ~SMMemoryPoolGenericBlobItem()
+            {
+            if (m_data != nullptr)
+                delete (DataType*)m_data;
+            m_data = 0;
+            }
+
+        const DataType* GetData()
+            {
+            return (const DataType*)m_data;
+            }
+
+        DataType* EditData()
+            {
+            return (DataType*)m_data;
+            }
+
+        void SetData(DataType* data)
+            {
+            m_data = (Byte*)data;
+            }
     };
 
-
-struct TextureItem : BlobItemSerializer
+template <typename DataType> class SMStoredMemoryPoolGenericBlobItem : public SMMemoryPoolGenericBlobItem<DataType>
     {
-    int   m_sizeX;
-    int   m_sizeY;
-    int   m_nbChannels;
-    Byte* m_data;
-    }
-    */
+    private:
+
+        IHPMDataStore<DataType>* m_store;
+
+    public:
+
+        SMStoredMemoryPoolGenericBlobItem(uint64_t nodeId, IHPMDataStore<DataType>* store, SMPoolDataTypeDesc dataType)
+            : SMMemoryPoolGenericBlobItem(nullptr,store->GetBlockDataCount(HPMBlockID(nodeId)), nodeId, dataType)
+            {
+            m_store = store;
+
+            if (m_size > 0)
+                {
+                m_data = (Byte*)new DataType();
+                HPMBlockID blockID(m_nodeId);
+                size_t nbBytesLoaded = m_store->LoadBlock((DataType*)m_data, m_size, blockID);
+                m_size = nbBytesLoaded;
+                }
+            }
+
+        virtual ~SMStoredMemoryPoolGenericBlobItem()
+            {
+            if (m_dirty)
+                {
+                HPMBlockID blockID(m_nodeId);
+                m_store->StoreBlock((DataType*)m_data, 1, blockID);
+                }
+            }
+    };
 
 template <typename DataType> class SMStoredMemoryPoolBlobItem : public SMMemoryPoolBlobItem<DataType>
     {
@@ -244,7 +303,7 @@ template <typename DataType> class SMStoredMemoryPoolBlobItem : public SMMemoryP
                 }           
             }
 
-        ~SMStoredMemoryPoolBlobItem()
+        virtual ~SMStoredMemoryPoolBlobItem()
             {
             if (m_dirty)
                 {
@@ -616,7 +675,7 @@ template <typename DataType> class SMStoredMemoryPoolVectorItem : public SMMemor
                 }           
             }
 
-        ~SMStoredMemoryPoolVectorItem()
+        virtual ~SMStoredMemoryPoolVectorItem()
             {
             if (m_dirty)
                 {
@@ -694,6 +753,25 @@ class SMMemoryPool : public RefCountedBase
 
             return poolMemBlobItemPtr.IsValid();
             }  
+
+
+        template<typename T>
+        bool GetItem(RefCountedPtr<SMMemoryPoolGenericBlobItem<T>>& poolMemBlobItemPtr, SMMemoryPoolItemId id, uint64_t nodeId, SMPoolDataTypeDesc dataType)
+            {
+            if (id == SMMemoryPool::s_UndefinedPoolItemId)
+                return false; 
+
+            assert(!poolMemBlobItemPtr.IsValid());
+            SMMemoryPoolItemBasePtr memItemPtr;
+            
+            if (GetItem(memItemPtr, id) && memItemPtr->IsCorrect(nodeId, dataType))
+                {
+                poolMemBlobItemPtr = memItemPtr->GetAsGenericBlobPoolItem<T>();                
+                }
+
+            return poolMemBlobItemPtr.IsValid();
+            }          
+
                
         bool GetItem(SMMemoryPoolItemBasePtr& memItemPtr, SMMemoryPoolItemId id);
             

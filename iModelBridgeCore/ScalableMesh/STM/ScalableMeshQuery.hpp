@@ -1045,7 +1045,7 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMesh(IS
     IScalableMeshMeshPtr meshP;
     if (flags->ShouldLoadGraph())
         {
-        m_meshNode->PinGraph();
+//        m_meshNode->PinGraph();
 #ifdef SCALABLE_MESH_ATP
         int64_t loadAttempts;
         int64_t loadMisses;
@@ -1053,13 +1053,14 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMesh(IS
         IScalableMeshATP::GetInt(L"nOfGraphStoreMisses", loadMisses);
         loadAttempts++;
 #endif
-        if (m_meshNode->GetGraphPtr() == NULL)
+       /* if (m_meshNode->GetGraphPtr() == NULL)
             {
 #ifdef SCALABLE_MESH_ATP
             loadMisses++;
 #endif
             m_meshNode->LoadGraph();
-            }
+            }*/
+        RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> graphPtr(m_meshNode->GetGraphPtr());
 #ifdef SCALABLE_MESH_ATP
         IScalableMeshATP::StoreInt(L"nOfGraphLoadAttempts", loadAttempts);
         IScalableMeshATP::StoreInt(L"nOfGraphStoreMisses", loadMisses);
@@ -1072,7 +1073,7 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMesh(IS
             {
             dataPoints[pointInd] = converter.operator()(m_node->operator[](pointInd));
             }*/
-        ScalableMeshMeshWithGraphPtr meshPtr = ScalableMeshMeshWithGraph::Create(m_meshNode->GetGraphPtr(), ArePoints3d());
+        ScalableMeshMeshWithGraphPtr meshPtr = ScalableMeshMeshWithGraph::Create(graphPtr->EditData(), ArePoints3d());
         //int status = meshPtr->AppendMesh(m_node->size(), &dataPoints[0], m_node->m_nodeHeader.m_nbFaceIndexes, (int32_t*)&m_node->operator[](m_node->size()), 0, 0, 0);
         // NEEDS_WORK_SM : texture logique !
 /*        std::ofstream file_s;
@@ -1085,7 +1086,7 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMesh(IS
         int status = meshPtr->AppendMesh(pointsPtr->size(), const_cast<DPoint3d*>(&pointsPtr->operator[](0)), ptIndices->size(), &(*ptIndices)[0], 0, 0, 0, 0, 0, 0);
         assert(status == SUCCESS);
         meshP = meshPtr.get();
-        m_meshNode->ReleaseGraph();
+        //m_meshNode->ReleaseGraph();
         }
     else
         {               
@@ -2218,11 +2219,15 @@ template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddMesh(DPoint3d*
 
     m_meshNode->m_nodeHeader.m_nbFaceIndexes = nIndices;
     bvector<int> componentPointsId;
-    if (NULL == m_meshNode->GetGraphPtr()) m_meshNode->CreateGraph();
-    CreateGraphFromIndexBuffer(m_meshNode->GetGraphPtr(), (const long*)&indicesVec[0], (int)nIndices, (int)nodePts.size(), componentPointsId, &nodePts[0]);
-   // m_meshNode->GetGraphPtr()->SortNodesBasedOnLabel(0);
-    m_meshNode->SetGraphDirty();
-    m_meshNode->StoreGraph();
+   // if (NULL == m_meshNode->GetGraphPtr()) m_meshNode->CreateGraph();
+    RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> graphPtr(m_meshNode->GetGraphPtr());
+    MTGGraph* newGraphP = new MTGGraph();
+    CreateGraphFromIndexBuffer(newGraphP, (const long*)&indicesVec[0], (int)nIndices, (int)nodePts.size(), componentPointsId, &nodePts[0]);
+    graphPtr->SetData(newGraphP);
+    graphPtr->SetDirty();
+    // m_meshNode->GetGraphPtr()->SortNodesBasedOnLabel(0);
+    //m_meshNode->SetGraphDirty();
+   // m_meshNode->StoreGraph();
 
     if (componentPointsId.size() > 0)
         {
@@ -2282,12 +2287,16 @@ template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddTexturedMesh(b
         }
     
     bvector<int> componentPointsId;
-    if (NULL == m_meshNode->GetGraphPtr()) m_meshNode->CreateGraph();
-
-    CreateGraphFromIndexBuffer(m_meshNode->GetGraphPtr(), (const long*)&indicesLine[0], (int)indicesLine.size(), (int)nodePts.size(), componentPointsId, &vertices[0]);
+   // if (NULL == m_meshNode->GetGraphPtr()) m_meshNode->CreateGraph();
+    RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> graphPtr(m_meshNode->GetGraphPtr());
+    MTGGraph* newGraphP = new MTGGraph();
+    CreateGraphFromIndexBuffer(newGraphP , (const long*)&indicesLine[0], (int)indicesLine.size(), (int)nodePts.size(), componentPointsId, &vertices[0]);
     //m_meshNode->GetGraphPtr()->SortNodesBasedOnLabel(0);
-    m_meshNode->SetGraphDirty();
-    m_meshNode->StoreGraph();
+   // m_meshNode->SetGraphDirty();
+    //m_meshNode->StoreGraph();
+    graphPtr->SetData(newGraphP);
+    graphPtr->SetDirty();
+
 
     if (componentPointsId.size() > 0)
         {
@@ -2406,8 +2415,8 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNodeWithReprojection<POI
         m_reprojectFunction.Reproject(points, pointsPtr->size(), points);
 
         PtToPtConverter::Transform(points, &(*pointsPtr)[0], pointsPtr->size());
-        
-        meshP = ScalableMeshMeshWithGraph::Create(pointsPtr->size(), points, m_node->m_nodeHeader.m_nbFaceIndexes, (int32_t*)(&pts[0] + pointsPtr->size()), 0, nullptr, nullptr, m_meshNode->GetGraphPtr(), ArePoints3d(), 0, 0, 0);
+        RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> graphPtr(m_meshNode->GetGraphPtr());
+        meshP = ScalableMeshMeshWithGraph::Create(pointsPtr->size(), points, m_node->m_nodeHeader.m_nbFaceIndexes, (int32_t*)(&pts[0] + pointsPtr->size()), 0, nullptr, nullptr, graphPtr->EditData(), ArePoints3d(), 0, 0, 0);
         delete pts;
         delete points;
         }

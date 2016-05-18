@@ -333,18 +333,20 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
                 // SM_NEED_WORKS : textures
                 if (faceIndexes.size() > 0)
                     {
-                    if (NULL == node->GetGraphPtr()) node->CreateGraph();
-                    CreateGraphFromIndexBuffer(node->GetGraphPtr(), (const long*)&faceIndexes[0], (int)faceIndexes.size(), (int)nodePts.size(), componentPointsId, &pts[0]);
+                    RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> graphPtr(node->GetGraphPtr());
+                    MTGGraph* newGraph = new MTGGraph();
+                    CreateGraphFromIndexBuffer(newGraph, (const long*)&faceIndexes[0], (int)faceIndexes.size(), (int)nodePts.size(), componentPointsId, &pts[0]);
                     //PrintGraph(LOG_PATH_STR, std::to_string(node->GetBlockID().m_integerID).c_str(), node->GetGraphPtr());
                     for (size_t i = 0; i < node->m_featureDefinitions.size(); ++i)
                         {
-                        TagFeatureEdges(node->GetGraphPtr(), (const DTMFeatureType)node->m_featureDefinitions[i][0], node->m_featureDefinitions[i].size() - 1, &node->m_featureDefinitions[i][1]);
+                        TagFeatureEdges(newGraph, (const DTMFeatureType)node->m_featureDefinitions[i][0], node->m_featureDefinitions[i].size() - 1, &node->m_featureDefinitions[i][1]);
                         }
-
+                    graphPtr->SetData(newGraph);
+                    graphPtr->SetDirty();
                     // node->GetGraphPtr()->SortNodesBasedOnLabel(0);
                     //CreateGraphFromIndexBuffer(node->GetGraphPtr(), (const long*)meshP->GetFaceIndexes(), (int)meshP->GetNbFaceIndexes(), (int)nodePts.size(),componentPointsId, meshP->GetPoints());
-                    node->SetGraphDirty();
-                    node->StoreGraph();
+                   // node->SetGraphDirty();
+                   // node->StoreGraph();
                     }
                 /*  MTGGraph* meshGraph = node->GetGraphPtr();
                    MTGMask visitedMask = meshGraph->GrabMask();
@@ -648,12 +650,15 @@ template<class POINT, class EXTENT> size_t ScalableMesh2DDelaunayMesher<POINT, E
         faceIndices.clear();
         }
 #endif
-    if (NULL == node->GetGraphPtr()) node->LoadGraph();
+    //if (NULL == node->GetGraphPtr()) node->LoadGraph();
     // *node->GetGraphPtr() = *meshGraphStitched;
-    *node->GetGraphPtr() = MTGGraph();
+   // *node->GetGraphPtr() = MTGGraph();
+    RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> graphPtr(node->GetGraphPtr());
     bvector<int> componentPointsId;
-    CreateGraphFromIndexBuffer(node->GetGraphPtr(), (const long*)&faceIndices[0], (int)faceIndices.size(), (int)geomData.size(), componentPointsId, &geomData[0]);
-    node->SetGraphDirty();
+    MTGGraph* newGraphP = new MTGGraph();
+    CreateGraphFromIndexBuffer(newGraphP, (const long*)&faceIndices[0], (int)faceIndices.size(), (int)geomData.size(), componentPointsId, &geomData[0]);
+    //node->SetGraphDirty();
+    graphPtr->SetData(newGraphP);
     node->m_nodeHeader.m_nbFaceIndexes = faceIndices.size();
     assert(faceIndices.size() % 3 == 0);
     nFaces = (int)faceIndices.size();
@@ -838,14 +843,18 @@ template<class POINT, class EXTENT> size_t ScalableMesh2DDelaunayMesher<POINT, E
         faceIndices.clear();
         }
 #endif
-    if (NULL == node->GetGraphPtr()) node->LoadGraph(true);
+   // if (NULL == node->GetGraphPtr()) node->LoadGraph(true);
    // *node->GetGraphPtr() = *meshGraphStitched;
-    *node->GetGraphPtr() = MTGGraph();
+   // *node->GetGraphPtr() = MTGGraph();
+    RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> graphPtr(node->GetGraphPtr());
+    MTGGraph* graphP = new MTGGraph();
     bvector<int> componentPointsId;
     if (faceIndices.size() > 0 && geometryData.size() > 0)
-    CreateGraphFromIndexBuffer(node->GetGraphPtr(), (const long*)&faceIndices[0], (int)faceIndices.size(), (int)geomData.size(), componentPointsId, &geomData[0]);
-    node->SetGraphDirty();
-    node->ReleaseGraph();
+        CreateGraphFromIndexBuffer(graphP, (const long*)&faceIndices[0], (int)faceIndices.size(), (int)geomData.size(), componentPointsId, &geomData[0]);
+    //node->SetGraphDirty();
+    //node->ReleaseGraph();
+    graphPtr->SetData(graphP);
+    graphPtr->SetDirty();
     node->m_nodeHeader.m_nbFaceIndexes = faceIndices.size();
     assert(faceIndices.size() % 3 == 0);
     nFaces = (int)faceIndices.size();
@@ -1153,11 +1162,20 @@ template<class POINT, class EXTENT> size_t ScalableMesh2DDelaunayMesher<POINT, E
         }
 #endif
     // *node->GetGraphPtr() = *meshGraphStitched;
-    MTGGraph tempGraph;
+    RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> graphPtr(node->GetGraphPtr());
+    MTGGraph * tempGraph = new MTGGraph();
     bvector<int> componentPointsId;
 
     if (faceIndices.size() >= 3 && geomData.size() > 0)
-    CreateGraphFromIndexBuffer(&tempGraph, (const long*)&faceIndices[0], (int)faceIndices.size(), (int)geomData.size(), componentPointsId, &geomData[0]);
+    CreateGraphFromIndexBuffer(tempGraph, (const long*)&faceIndices[0], (int)faceIndices.size(), (int)geomData.size(), componentPointsId, &geomData[0]);
+    MTGGraph* previous = graphPtr->EditData();
+    graphPtr->SetData(tempGraph);
+    graphPtr->SetDirty();
+        {
+        if (s_useThreadsInStitching) node->LockGraph();
+        if (previous != nullptr) delete previous;
+        if (s_useThreadsInStitching) node->UnlockGraph();
+        }
    /* for (size_t i = 0; i < node->m_featureDefinitions.size(); ++i)
         {
         TagFeatureEdges(&tempGraph, (const DTMFeatureType)node->m_featureDefinitions[i][0], node->m_featureDefinitions[i].size() - 1, &node->m_featureDefinitions[i][1]);
@@ -1181,9 +1199,9 @@ template<class POINT, class EXTENT> size_t ScalableMesh2DDelaunayMesher<POINT, E
         f << "FACE PTS :" + s << std::endl;
         }
     f.close();*/
-    if (NULL == node->GetGraphPtr()) node->LoadGraph(s_useThreadsInStitching);
-    if (s_useThreadsInStitching) node->LockGraph();
-    *node->GetGraphPtr() = tempGraph;
+    //if (NULL == node->GetGraphPtr()) node->LoadGraph(s_useThreadsInStitching);
+    //if (s_useThreadsInStitching) node->LockGraph();
+   // *node->GetGraphPtr() = tempGraph;
         {
       /*  Utf8String path = "E:\\output\\scmesh\\2016-01-28\\";
         Utf8String str1 = "afterStitch_graph_";
@@ -1202,9 +1220,9 @@ template<class POINT, class EXTENT> size_t ScalableMesh2DDelaunayMesher<POINT, E
             }*/
         }
 
-    node->SetGraphDirty();
-    if (s_useThreadsInStitching) node->UnlockGraph();
-    node->ReleaseGraph();
+    //node->SetGraphDirty();
+    //if (s_useThreadsInStitching) node->UnlockGraph();
+    //node->ReleaseGraph();
     node->m_nodeHeader.m_nbFaceIndexes = faceIndices.size();
     assert(faceIndices.size() % 3 == 0);
     nFaces = (int)faceIndices.size();
@@ -1273,10 +1291,16 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
 
     if (node->m_nodeHeader.m_nbFaceIndexes == 0) return true;
 
-    if (NULL == node->GetGraphPtr()) node->LoadGraph(s_useThreadsInStitching);
-    MTGGraph* meshGraphP = node->GetGraphPtr();
-    if (NULL == meshGraphP) return true;
-    MTGGraph meshGraph = *meshGraphP;
+  //  if (NULL == node->GetGraphPtr()) node->LoadGraph(s_useThreadsInStitching);
+  //  MTGGraph* meshGraphP = node->GetGraphPtr();
+  //  if (NULL == meshGraphP) return true;
+    RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> graphPtr(node->GetGraphPtr());
+    MTGGraph meshGraph;
+        {
+        if (s_useThreadsInStitching) node->LockGraph();
+        meshGraph = *(graphPtr->GetData());
+        if (s_useThreadsInStitching) node->UnlockGraph();
+        }
 
     //node->ReleaseGraph();
     
@@ -1339,12 +1363,17 @@ for (size_t& neighborInd : neighborIndices)
                 meshGraphNeighbor = MTGGraph();
                 if (node->m_nodeHeader.m_apAreNeighborNodesStitched[neighborInd] == false)
                     {
-                    if (NULL == meshNode->GetGraphPtr()) meshNode->LoadGraph(s_useThreadsInStitching);
-                    if (NULL == meshNode->GetGraphPtr()) continue;
-                    if (s_useThreadsInStitching)    meshNode->LockGraph();
-                    meshGraphNeighbor = *(meshNode->GetGraphPtr());
-                    if (s_useThreadsInStitching)  meshNode->UnlockGraph();
-                    meshNode->ReleaseGraph();
+                   // if (NULL == meshNode->GetGraphPtr()) meshNode->LoadGraph(s_useThreadsInStitching);
+                    //if (NULL == meshNode->GetGraphPtr()) continue;
+                   // if (s_useThreadsInStitching)    meshNode->LockGraph();
+                    RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> graphNeighborPtr(meshNode->GetGraphPtr());
+                        {
+                        if (s_useThreadsInStitching)    meshNode->LockGraph();
+                        if (graphNeighborPtr->GetData() != nullptr) meshGraphNeighbor = *(graphNeighborPtr->GetData());
+                        if (s_useThreadsInStitching)    meshNode->UnlockGraph();
+                        }
+                   // if (s_useThreadsInStitching)  meshNode->UnlockGraph();
+                    //meshNode->ReleaseGraph();
                     }
                /* s += " CURRENT N OF POINTS TO STITCH " + std::to_string(stitchedPoints.size()) + "\n";
                 s += " ADDING NEIGHBOR AT POS " + std::to_string(neighborInd) + " IDX " + std::to_string(neighborSubInd) + "\n";
@@ -2002,14 +2031,19 @@ return true;
                 }
             pointsPtr->push_back(&nodePts[0], nodePts.size());
             bvector<int> componentPointsId; //holds the leftmost point of each connected component
-            if (NULL == node->GetGraphPtr()) node->CreateGraph();
+            RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> graphPtr(node->GetGraphPtr());
+            //if (NULL == node->GetGraphPtr()) node->CreateGraph();
             else
                 {
                 *node->GetGraphPtr() = MTGGraph();
                 }
-            CreateGraphFromIndexBuffer(node->GetGraphPtr(), (const long*)meshP->GetFaceIndexes(), (int)meshP->GetNbFaceIndexes(), (int)nodePts.size(), componentPointsId, meshP->GetPoints());
-            node->SetGraphDirty();
-            node->StoreGraph();
+            MTGGraph* newGraphP = new MTGGraph();
+            CreateGraphFromIndexBuffer(/*node->GetGraphPtr()*/newGraphP, (const long*)meshP->GetFaceIndexes(), (int)meshP->GetNbFaceIndexes(), (int)nodePts.size(), componentPointsId, meshP->GetPoints());
+            graphPtr->SetData(newGraphP);
+            graphPtr->SetDirty();
+            
+            //node->SetGraphDirty();
+            //node->StoreGraph();
             vector<int> faceIndexes;
             const int*  indexList = meshP->GetFaceIndexes();
            for (int i = 0; i < meshP->GetNbFaceIndexes(); i+=3)

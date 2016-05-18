@@ -36,18 +36,19 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT,EXTENT>::SMMeshIndexN
                  ISMPointIndexMesher<POINT, EXTENT>* mesher3d,
                  CreatedNodeMap*                      createdNodeMap)
                  : SMPointIndexNode<POINT, EXTENT>(pi_SplitTreshold, pi_rExtent, filter, balanced, propagateDataDown, createdNodeMap),
-                 m_graphVec(meshIndex->GetGraphPool(), meshIndex->GetGraphStore()),                 
+                 //m_graphVec(meshIndex->GetGraphPool(), meshIndex->GetGraphStore()),                 
                  m_triIndicesPoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
                  m_uvCoordsPoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
                  m_triUvIndicesPoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
-                 m_texturePoolItemId(SMMemoryPool::s_UndefinedPoolItemId)                 
+                 m_texturePoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
+                 m_graphPoolItemId(SMMemoryPool::s_UndefinedPoolItemId)
     {
     m_SMIndex = meshIndex;
     m_mesher2_5d = mesher2_5d;
     m_mesher3d = mesher3d;
-    m_isGraphLoaded = false;
-    m_graphVec.SetDirty(false);
-    m_graphVec.SetDiscarded(true);
+//    m_isGraphLoaded = false;
+//    m_graphVec.SetDirty(false);
+//    m_graphVec.SetDiscarded(true);
                  
          
 
@@ -66,7 +67,7 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT,EXTENT>::SMMeshIndexN
     m_differenceSets.SetDirty(false);
 //#ifdef SM_BESQL_FORMAT
     m_nodeHeader.m_ptsIndiceID[0] = GetBlockID();    
-    m_graphVec.SetBlockID(GetBlockID());
+//    m_graphVec.SetBlockID(GetBlockID());
     m_differenceSets.SetBlockID(GetBlockID());
 //#endif
     }
@@ -75,18 +76,19 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
                 const EXTENT& pi_rExtent,
                 const HFCPtr<SMMeshIndexNode<POINT, EXTENT> >& pi_rpParentNode)
                 : SMPointIndexNode<POINT, EXTENT>(pi_SplitTreshold, pi_rExtent, dynamic_cast<SMPointIndexNode*>(pi_rpParentNode.GetPtr())),
-                m_graphVec(dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(pi_rpParentNode->m_SMIndex)->GetGraphPool(), dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(pi_rpParentNode->m_SMIndex)->GetGraphStore()),
+               // m_graphVec(dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(pi_rpParentNode->m_SMIndex)->GetGraphPool(), dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(pi_rpParentNode->m_SMIndex)->GetGraphStore()),
                 m_triIndicesPoolItemId(SMMemoryPool::s_UndefinedPoolItemId),                
                 m_triUvIndicesPoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
                 m_uvCoordsPoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
-                m_texturePoolItemId(SMMemoryPool::s_UndefinedPoolItemId)                 
+                m_texturePoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
+                m_graphPoolItemId(SMMemoryPool::s_UndefinedPoolItemId)
     {
     m_SMIndex = pi_rpParentNode->m_SMIndex;
     m_mesher2_5d = pi_rpParentNode->GetMesher2_5d();
     m_mesher3d = pi_rpParentNode->GetMesher3d();
-    m_isGraphLoaded = false;    
-    m_graphVec.SetDirty(false);
-    m_graphVec.SetDiscarded(true);
+//    m_isGraphLoaded = false;    
+//    m_graphVec.SetDirty(false);
+//    m_graphVec.SetDiscarded(true);
      
          
     
@@ -105,7 +107,7 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_nodeHeader.m_textureID[0] = IDTMFile::GetNullNodeID();
 //#ifdef SM_BESQL_FORMAT
     m_nodeHeader.m_ptsIndiceID[0] = GetBlockID();    
-    m_graphVec.SetBlockID(GetBlockID());
+//    m_graphVec.SetBlockID(GetBlockID());
     m_differenceSets.SetBlockID(GetBlockID());
 //#endif
     }
@@ -115,18 +117,19 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
                                                                                      const HFCPtr<SMMeshIndexNode<POINT, EXTENT> >& pi_rpParentNode,
                                                                                      bool IsUnsplitSubLevel)
                                                                                      : SMPointIndexNode<POINT, EXTENT>(pi_SplitTreshold, pi_rExtent, dynamic_cast<SMPointIndexNode*>(pi_rpParentNode.GetPtr()), IsUnsplitSubLevel),
-                                                                                     m_graphVec(dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(pi_rpParentNode->m_SMIndex)->GetGraphPool(), dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(pi_rpParentNode->m_SMIndex)->GetGraphStore()),
+                                                                                    // m_graphVec(dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(pi_rpParentNode->m_SMIndex)->GetGraphPool(), dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(pi_rpParentNode->m_SMIndex)->GetGraphStore()),
                                                                                      m_triIndicesPoolItemId(SMMemoryPool::s_UndefinedPoolItemId),                  
                   m_triUvIndicesPoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
                   m_uvCoordsPoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
-                  m_texturePoolItemId(SMMemoryPool::s_UndefinedPoolItemId)                 
+                  m_texturePoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
+                  m_graphPoolItemId(SMMemoryPool::s_UndefinedPoolItemId)
     {
     m_SMIndex = pi_rpParentNode->m_SMIndex;
     m_mesher2_5d = pi_rpParentNode->GetMesher2_5d();
     m_mesher3d = pi_rpParentNode->GetMesher3d();
-    m_isGraphLoaded = false;
-    m_graphVec.SetDirty(false);
-    m_graphVec.SetDiscarded(true);
+//    m_isGraphLoaded = false;
+//    m_graphVec.SetDirty(false);
+//    m_graphVec.SetDiscarded(true);
      
          
     
@@ -145,7 +148,7 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_nodeHeader.m_textureID[0] = IDTMFile::GetNullNodeID();
 //#ifdef SM_BESQL_FORMAT
     m_nodeHeader.m_ptsIndiceID[0] = GetBlockID();    
-    m_graphVec.SetBlockID(GetBlockID());
+//    m_graphVec.SetBlockID(GetBlockID());
     m_differenceSets.SetBlockID(GetBlockID());
 //#endif
     }
@@ -161,19 +164,20 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
                                                                                      ISMPointIndexMesher<POINT, EXTENT>* mesher3d,
                                                                                      CreatedNodeMap*                      createdNodeMap)
                                                                                      : SMPointIndexNode<POINT, EXTENT>(blockID, static_pcast<SMPointIndexNode<POINT, EXTENT>, SMMeshIndexNode<POINT, EXTENT>>(parent), filter, balanced, propagateDataDown, createdNodeMap),
-                                                                                      m_graphVec(meshIndex->GetGraphPool(), meshIndex->GetGraphStore()),
+                                                                                    //  m_graphVec(meshIndex->GetGraphPool(), meshIndex->GetGraphStore()),
                                                                                       m_triIndicesPoolItemId(SMMemoryPool::s_UndefinedPoolItemId),                  
                                                                                       m_triUvIndicesPoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
                                                                                       m_uvCoordsPoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
-                                                                                      m_texturePoolItemId(SMMemoryPool::s_UndefinedPoolItemId)                 
+                                                                                      m_texturePoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
+                                                                                      m_graphPoolItemId(SMMemoryPool::s_UndefinedPoolItemId)
                  
     {
     m_SMIndex = meshIndex;
     m_mesher2_5d = mesher2_5d;
     m_mesher3d = mesher3d;
-    m_isGraphLoaded = false;
-    m_graphVec.SetDirty(false);
-    m_graphVec.SetDiscarded(true);
+ //   m_isGraphLoaded = false;
+ //   m_graphVec.SetDirty(false);
+ //   m_graphVec.SetDiscarded(true);
      
                  
 
@@ -193,7 +197,7 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_nodeHeader.m_textureID[0]= IDTMFile::GetNullNodeID();
 //#ifdef SM_BESQL_FORMAT
     m_nodeHeader.m_ptsIndiceID[0] = GetBlockID();    
-    m_graphVec.SetBlockID(GetBlockID());
+//    m_graphVec.SetBlockID(GetBlockID());
     m_differenceSets.SetBlockID(GetBlockID());
 
 //#endif
@@ -209,19 +213,20 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
                                                                                      ISMPointIndexMesher<POINT, EXTENT>* mesher3d,
                                                                                      CreatedNodeMap* createdNodeMap)
                                                                                      : SMPointIndexNode<POINT, EXTENT>(blockID, filter, balanced, propagateDataDown, createdNodeMap),
-                                                                                     m_graphVec(meshIndex->GetGraphPool(), meshIndex->GetGraphStore()),
+                                                                                     //m_graphVec(meshIndex->GetGraphPool(), meshIndex->GetGraphStore()),
                                                                                      m_triIndicesPoolItemId(SMMemoryPool::s_UndefinedPoolItemId),                 
                                                                                      m_triUvIndicesPoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
                                                                                      m_uvCoordsPoolItemId(SMMemoryPool::s_UndefinedPoolItemId),
-                                                                                     m_texturePoolItemId(SMMemoryPool::s_UndefinedPoolItemId)                 
+                                                                                     m_texturePoolItemId(SMMemoryPool::s_UndefinedPoolItemId)   ,
+                                                                                     m_graphPoolItemId(SMMemoryPool::s_UndefinedPoolItemId)
 
     {
     m_SMIndex = meshIndex;
     m_mesher2_5d = mesher2_5d;
     m_mesher3d = mesher3d;
-    m_isGraphLoaded = false;
-    m_graphVec.SetDirty(false);
-    m_graphVec.SetDiscarded(true);
+ //   m_isGraphLoaded = false;
+//    m_graphVec.SetDirty(false);
+//    m_graphVec.SetDiscarded(true);
      
          
 
@@ -239,7 +244,7 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_nodeHeader.m_textureID.resize(1);
     m_nodeHeader.m_textureID[0] = IDTMFile::GetNullNodeID();
     m_nodeHeader.m_ptsIndiceID[0] = GetBlockID();    
-    m_graphVec.SetBlockID(GetBlockID());
+ //   m_graphVec.SetBlockID(GetBlockID());
     m_differenceSets.SetBlockID(GetBlockID());
     }
 
@@ -257,9 +262,9 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_SMIndex = meshIndex;
     m_mesher2_5d = mesher2_5d;
     m_mesher3d = mesher3d;
-    m_isGraphLoaded = false;
-    m_graphVec.SetDirty(false);
-    m_graphVec.SetDiscarded(true);
+//    m_isGraphLoaded = false;
+//    m_graphVec.SetDirty(false);
+ //   m_graphVec.SetDiscarded(true);
          
     m_nodeHeader.m_graphID = IDTMFile::GetNullNodeID();
     m_nodeHeader.m_ptsIndiceID.resize(1);
@@ -274,7 +279,7 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_differenceSets.SetDirty(false);
 //#ifdef SM_BESQL_FORMAT
     m_nodeHeader.m_ptsIndiceID[0] = GetBlockID();    
-    m_graphVec.SetBlockID(GetBlockID());
+   // m_graphVec.SetBlockID(GetBlockID());
     m_differenceSets.SetBlockID(GetBlockID());
 //#endif
     }
@@ -292,9 +297,9 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_SMIndex = meshIndex;
     m_mesher2_5d = mesher2_5d;
     m_mesher3d = mesher3d;
-    m_isGraphLoaded = false;
-    m_graphVec.SetDirty(false);
-    m_graphVec.SetDiscarded(true);
+//    m_isGraphLoaded = false;
+  //  m_graphVec.SetDirty(false);
+//    m_graphVec.SetDiscarded(true);
               
     m_nodeHeader.m_graphID = IDTMFile::GetNullNodeID();
     m_nodeHeader.m_ptsIndiceID.resize(1);
@@ -311,7 +316,7 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_differenceSets.SetDirty(false);
 //#ifdef SM_BESQL_FORMAT
     m_nodeHeader.m_ptsIndiceID[0] = GetBlockID();    
-    m_graphVec.SetBlockID(GetBlockID());
+ //   m_graphVec.SetBlockID(GetBlockID());
     m_differenceSets.SetBlockID(GetBlockID());
 //#endif
     }
@@ -330,9 +335,9 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_SMIndex = meshIndex;
     m_mesher2_5d = mesher2_5d;
     m_mesher3d = mesher3d;
-    m_isGraphLoaded = false;
-    m_graphVec.SetDirty(false);
-    m_graphVec.SetDiscarded(true);
+//    m_isGraphLoaded = false;
+//    m_graphVec.SetDirty(false);
+//    m_graphVec.SetDiscarded(true);
      
          
     m_nbClips = 0;
@@ -350,7 +355,7 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
     m_nodeHeader.m_textureID[0] = IDTMFile::GetNullNodeID();
 //#ifdef SM_BESQL_FORMAT
     m_nodeHeader.m_ptsIndiceID[0] = GetBlockID();
-    m_graphVec.SetBlockID(GetBlockID());
+  //  m_graphVec.SetBlockID(GetBlockID());
     m_differenceSets.SetBlockID(GetBlockID());
 //#endif
     }
@@ -394,18 +399,18 @@ template<class POINT, class EXTENT> void  SMMeshIndexNode<POINT, EXTENT>::StoreA
 //=======================================================================================
 template <class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::IsGraphLoaded() const
     {
-    return m_isGraphLoaded;
+    return true;// m_isGraphLoaded;
     }
 
 template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Destroy()
     {
     SMPointIndexNode::Destroy();
     //m_graphVec.clear();
-    m_graphVec.SetDirty(false);
-    m_graphVec.SetDiscarded(true);
-    m_isGraphLoaded = false;
-    if (m_graphVec.GetBlockID().IsValid())
-        dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetGraphStore()->DestroyBlock(m_graphVec.GetBlockID());
+//    m_graphVec.SetDirty(false);
+//    m_graphVec.SetDiscarded(true);
+//    m_isGraphLoaded = false;
+ //   if (m_graphVec.GetBlockID().IsValid())
+ //       dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetGraphStore()->DestroyBlock(m_graphVec.GetBlockID());
 
     if (GetBlockID().IsValid())
         {
@@ -419,7 +424,10 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Destroy
         dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetUVsIndicesStore()->DestroyBlock(GetBlockID());                
 
         GetMemoryPool()->RemoveItem(m_uvCoordsPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::UvCoords);                                    
-        dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetUVStore()->DestroyBlock(GetBlockID());                        
+        dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetUVStore()->DestroyBlock(GetBlockID());          
+
+        GetMemoryPool()->RemoveItem(m_graphPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::Graph);
+        dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetGraphStore()->DestroyBlock(GetBlockID());
         }
                 
     HINVARIANTS;
@@ -489,8 +497,8 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Discard
         {
         const_cast<SMMeshIndexNode<POINT, EXTENT>*>(this)->m_tileBcDTM = nullptr;
 
-        if (!m_graphVec.Discarded()) StoreGraph();
-        else if (m_graphVec.GetBlockID().IsValid())  m_nodeHeader.m_graphID = m_graphVec.GetBlockID();
+ //       if (!m_graphVec.Discarded()) StoreGraph();
+ //       else if (m_graphVec.GetBlockID().IsValid())  m_nodeHeader.m_graphID = m_graphVec.GetBlockID();
         
         if(m_differenceSets.IsDirty() && !m_differenceSets.Discarded()) m_differenceSets.Discard();
         if (m_differenceSets.GetBlockID().IsValid()) m_nodeHeader.m_clipSetsID.push_back(m_differenceSets.GetBlockID());                
@@ -519,7 +527,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Load() 
     std::lock_guard<std::mutex> lock(m_headerMutex);
     if (IsLoaded()) return;
     SMPointIndexNode<POINT, EXTENT>::Load();
-    m_graphVec.SetBlockID(m_nodeHeader.m_graphID);
+//    m_graphVec.SetBlockID(m_nodeHeader.m_graphID);
     if (m_nodeHeader.m_clipSetsID.size() > 0) m_differenceSets.SetBlockID(m_nodeHeader.m_clipSetsID[0]);
 
 
@@ -856,13 +864,13 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Unload(
 //=======================================================================================
 template <class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::CreateGraph(bool shouldPinGraph) const
     {
-    m_graphVec.SetDiscarded(false);
+/*    m_graphVec.SetDiscarded(false);
     if (m_graphVec.size() == 0) m_graphVec.push_back(MTGGraph());
     if (shouldPinGraph)
         {
         nGraphPins++;
         m_graphVec.Pin();
-        }
+        }*/
     }
 
 //=======================================================================================
@@ -871,7 +879,7 @@ template <class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Create
 //NEEDS_WORK_SM : Need to be redesign like difference set.
 template <class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::LoadGraph(bool shouldPinGraph) const
     {
-    if (m_graphVec.GetBlockID().IsValid() && (!IsGraphLoaded() || m_graphVec.Discarded()))
+/*    if (m_graphVec.GetBlockID().IsValid() && (!IsGraphLoaded() || m_graphVec.Discarded()))
         {
         if (shouldPinGraph) m_graphInflateMutex.lock();
         if (!m_graphVec.Discarded())
@@ -887,7 +895,7 @@ template <class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::LoadGr
         else m_graphVec.Inflate();
         m_isGraphLoaded = true;
         if (shouldPinGraph) m_graphInflateMutex.unlock();
-        }
+        }*/
     }
 
 //=======================================================================================
@@ -895,9 +903,9 @@ template <class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::LoadGr
 //=======================================================================================
 template <class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::StoreGraph() const
     {
-    const_cast<SMMeshIndexNode<POINT, EXTENT>*>(this)->ReleaseGraph();
+ /*   const_cast<SMMeshIndexNode<POINT, EXTENT>*>(this)->ReleaseGraph();
     if (m_graphVec.size() > 0 && !m_graphVec.Discarded()) m_graphVec.Discard();
-        m_nodeHeader.m_graphID = m_graphVec.GetBlockID();
+        m_nodeHeader.m_graphID = m_graphVec.GetBlockID();*/
     }
 
 template <class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::PushPtsIndices(const int32_t* indices, size_t size)
@@ -2095,10 +2103,13 @@ void SMMeshIndexNode<POINT, EXTENT>::UpdateFromGraph(MTGGraph * graph, bvector<D
     MTGARRAY_END_SET_LOOP(edgeID, graph)
         graph->ClearMask(visitedMask);
     graph->DropMask(visitedMask);
-    if (NULL == this->GetGraphPtr()) this->LoadGraph();
-    if (NULL == this->GetGraphPtr()) this->CreateGraph();
-    *this->GetGraphPtr() = *graph;
-    this->SetGraphDirty();
+    RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> graphPtr(this->GetGraphPtr());
+
+    if (graphPtr->EditData() != nullptr) delete graphPtr->EditData();
+    MTGGraph* graphP  =  new MTGGraph(*graph);
+    graphPtr->SetData(graphP);
+    graphPtr->SetDirty();
+    //this->SetGraphDirty();
     this->m_nodeHeader.m_nbFaceIndexes = faceIndices.size();
     assert(faceIndices.size() % 3 == 0);
     if (faceIndices.size() > 0 && retainedPts.size() > 0)

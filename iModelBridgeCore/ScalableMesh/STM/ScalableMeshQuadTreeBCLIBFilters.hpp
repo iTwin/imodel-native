@@ -399,7 +399,8 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIB_CGALMeshFilte
     size_t numSubNodes) const
     {
     HFCPtr<SMMeshIndexNode<POINT, EXTENT> > pParentMeshNode = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(parentNode);    
-    if (NULL == pParentMeshNode->GetGraphPtr()) pParentMeshNode->LoadGraph();
+   // if (NULL == pParentMeshNode->GetGraphPtr()) pParentMeshNode->LoadGraph();
+    RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> graphPtr(pParentMeshNode->GetGraphPtr());
     MTGGraph* meshInput = nullptr;
     std::vector<DPoint3d> inputPts;
     DPoint3d extentMin, extentMax;
@@ -428,11 +429,12 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIB_CGALMeshFilte
             if (numFaceIndexes > 0)
                 {
                 HFCPtr<SMMeshIndexNode<POINT, EXTENT>> subMeshNode = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(subNodes[indexNodes]);                
-                if (NULL == subMeshNode->GetGraphPtr()) subMeshNode->LoadGraph();
+              //  if (NULL == subMeshNode->GetGraphPtr()) subMeshNode->LoadGraph();
+                RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> subMeshGraphPtr(subMeshNode->GetGraphPtr());
                 if (meshInput == nullptr)
                     {
                     meshInput = new MTGGraph();
-                    *meshInput = *subMeshNode->GetGraphPtr();
+                    if(nullptr != subMeshGraphPtr->GetData()) *meshInput = *subMeshGraphPtr->GetData();
                     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> subMeshPointsPtr(subMeshNode->GetPointsPtr());
                     inputPts.resize(subMeshPointsPtr->size());
 
@@ -498,9 +500,9 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIB_CGALMeshFilte
                     fwrite(&npts, sizeof(size_t), 1, graphSaved);
                     fwrite(&pts[0], sizeof(DPoint3d), npts, graphSaved);
                     fclose(graphSaved);*/
-                    if (NULL == subMeshNode->GetGraphPtr()) subMeshNode->LoadGraph();
-
-                    MergeGraphs(meshInput, inputPts, subMeshNode->GetGraphPtr(), pts, extentMin, extentMax, pointsToDestPointsMap, contours);
+                   // if (NULL == subMeshNode->GetGraphPtr()) subMeshNode->LoadGraph();
+                    RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> subMeshGraphPtr(subMeshNode->GetGraphPtr());
+                    if(nullptr != subMeshGraphPtr->GetData()) MergeGraphs(meshInput, inputPts, subMeshGraphPtr->EditData(), pts, extentMin, extentMax, pointsToDestPointsMap, contours);
                    /* if (pParentMeshNode->GetBlockID().m_integerID == 15)
                         {
                         bvector<TaggedEdge> edges;

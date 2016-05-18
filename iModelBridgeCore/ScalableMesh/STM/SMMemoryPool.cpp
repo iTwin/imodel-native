@@ -118,7 +118,7 @@ bool SMMemoryPool::RemoveItem(SMMemoryPoolItemId id, uint64_t nodeId, SMPoolData
         {
         m_currentPoolSizeInBytes -= memItemPtr->GetSize();        
         memItemPtr = 0;
-        assert(m_memPoolItems[id]->GetRefCount() == 1);
+        //assert(m_memPoolItems[id]->GetRefCount() == 1);
         m_memPoolItems[id] = 0;
         return true;
         }
