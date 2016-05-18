@@ -213,8 +213,126 @@ bool WritePointsCallback(const DPoint3d* points, size_t nbOfPoints, bool arePoin
         return DTM_SUCCESS;
         }
     
+    static DRange3d s_importRange;
 
-    static DRange3d s_importRange; 
+    bool DirectPointsCallback(const DPoint3d* points, size_t nbOfPoints, bool arePoints3d)
+        {
+        if (nbOfPoints > 0)
+            {
+            bvector<DPoint3d> pointsInRange;
+
+            for (size_t ptInd = 0; ptInd < nbOfPoints; ptInd++)
+                {
+                if (s_importRange.IsContainedXY(points[ptInd]))
+                    {
+                    pointsInRange.push_back(points[ptInd]);
+                    }
+                }
+
+            if (pointsInRange.size() > 0)
+                {
+                TransmittedPointsHeader pointHeader((unsigned int)pointsInRange.size(), false);
+
+                DWORD  numBytesWritten;
+                WriteFile(s_pipe,
+                          &pointHeader,
+                          (DWORD)sizeof(pointHeader),
+                          &numBytesWritten,
+                          NULL
+                          );
+
+                WriteFile(s_pipe,
+                          &pointsInRange[0],
+                          (DWORD)(sizeof(DPoint3d) * pointsInRange.size()),
+                          &numBytesWritten,
+                          NULL
+                          );
+                }
+            }
+
+        return true;
+        }
+
+
+    bool DirectFeatureCallback(const DPoint3d* featurePoints, size_t nbOfFeaturesPoints, DTMFeatureType featureType, bool isFeature3d)
+        {
+
+        if (nbOfFeaturesPoints > 0)
+            {
+            bvector<DPoint3d> pointsInRange;
+            bool wasContained;
+
+            wasContained = s_importRange.IsContainedXY(featurePoints[0]);
+            pointsInRange.push_back(featurePoints[0]);
+
+            for (size_t ptInd = 0; ptInd < nbOfFeaturesPoints; ptInd++)
+                {
+                bool isContained;
+
+                switch (featureType)
+                    {
+                    //Dont cut close features
+                    case DTMFeatureType::Void:
+                    case DTMFeatureType::BreakVoid:
+                    case DTMFeatureType::DrapeVoid:
+                    case DTMFeatureType::Hole:
+                    case DTMFeatureType::Island:
+                    case DTMFeatureType::Hull:
+                    case DTMFeatureType::DrapeHull:
+                    case DTMFeatureType::Polygon:
+                    case DTMFeatureType::Region:
+                        isContained = true;
+                        break;
+                    default:
+                        isContained = s_importRange.IsContainedXY(featurePoints[ptInd]);
+                        break;
+                    }
+
+                if (isContained && !wasContained && (ptInd - 1) == 0)
+                    {
+                    pointsInRange.push_back(featurePoints[ptInd - 1]);
+                    }
+
+                if (isContained || wasContained)
+                    {
+                    pointsInRange.push_back(featurePoints[ptInd]);
+
+                    if (isContained == false)
+                        {
+                        //s_dataPipe.WriteFeature(&pointsInRange[0], pointsInRange.size(), featureType);
+                        pointsInRange.clear();
+                        }
+                    }
+
+                wasContained = isContained;
+                }
+
+            if (pointsInRange.size() > 0)
+                {
+                TransmittedFeatureHeader featureHeader((unsigned int)pointsInRange.size(), (short)featureType, false);
+
+                DWORD numBytesWritten;
+                WriteFile(s_pipe,
+                          &featureHeader,
+                          (DWORD)sizeof(featureHeader),
+                          &numBytesWritten,
+                          NULL
+                          );
+
+                WriteFile(s_pipe,
+                          &pointsInRange[0],
+                          (DWORD)(sizeof(DPoint3d) * pointsInRange.size()),
+                          &numBytesWritten,
+                          NULL
+                          );
+
+                return true;
+                }
+            }
+
+        return true;
+        }
+
     
     bool StreamPointsCallback(const DPoint3d* points, size_t nbOfPoints, bool arePoints3d)
         {           
@@ -819,10 +937,84 @@ int QueryStmFromBestResolution(RefCountedPtr<BcDTM>&        singleResolutionDtm,
                     
         return SUCCESS;
         }
+    BentleyStatus ScalableMeshSDKexe::ParseImportDefinition(BeXmlNodeP pTestNode, ImportParameters& params)
+        {
+        BeXmlStatus status;
+        status = pTestNode->GetAttributeStringValue(params.gcsKeyName, "gcsKeyName");
 
-    BentleyStatus ScalableMeshSDKexe::ParseImportDefinition(BeXmlNodeP pRootNode)
+        if (status != BEXML_Success)
+            {
+            params.gcsKeyName = L"";
+            }
+
+        status = pTestNode->GetAttributeUInt32Value(params.maximumNbOfPoints, "maxNbPointsToImport");
+
+        if (status != BEXML_Success)
+            {
+            params.maximumNbOfPoints = 5000000;
+            }
+
+        GetImportRange(s_importRange, pTestNode);
+
+        status = pTestNode->GetAttributeStringValue(params.tempPath, "tempPath");
+
+        if (status != BEXML_Success)
+            {
+            BeFileName name;
+            assert(BeFileNameStatus::Success == BeFileName::BeGetTempPath(name));
+            params.tempPath = name;
+            }
+        params.pRootNode = pTestNode;
+        params.decimateInput = true;
+
+        BeXmlNodeP pTestChildNode = pTestNode->GetFirstChild();
+
+        while ((0 != pTestChildNode))
+            {
+            if (0 == BeStringUtilities::Stricmp(pTestChildNode->GetName(), "noDecimation"))
+                {
+                params.decimateInput = false;
+                }
+            pTestChildNode = pTestChildNode->GetNextSibling();
+            }
+        return SUCCESS;
+        }
+
+    BentleyStatus ScalableMeshSDKexe::DoImportDirect(const ImportParameters& params)
+        {
+        Bentley::ScalableMesh::IScalableMeshSourceImporterPtr importerPtr(Bentley::ScalableMesh::IScalableMeshSourceImporter::Create());
+        s_pipe = m_pipe;
+        importerPtr->SetFeatureCallback(DirectFeatureCallback);
+        importerPtr->SetPointsCallback(DirectPointsCallback);
+
+        if (importerPtr == 0)
+            {
+            printf("ERROR : cannot create importer\r\n");
+            return ERROR;
+            }
+        else
+            {
+
+            if (!params.gcsKeyName.empty())
+                {
+                BaseGCSPtr baseGCSPtr(BaseGCS::CreateGCS(params.gcsKeyName.c_str()));
+                StatusInt status = importerPtr->SetBaseGCS(baseGCSPtr);
+                assert(status == SUCCESS);
+                }
+
+
+            if (ParseSourceSubNodes(importerPtr->EditSources(), params.pRootNode) == true)
+                {
+                importerPtr->Import();
+                }
+            }
+        return SUCCESS;
+        }
+
+
+    BentleyStatus ScalableMeshSDKexe::DoImportSTM(const ImportParameters& params)
         {               
-        BeXmlStatus status;       
+   
 
         Bentley::ScalableMesh::IScalableMeshSourceImporterPtr importerPtr(Bentley::ScalableMesh::IScalableMeshSourceImporter::Create());
         s_pipe = m_pipe;
@@ -836,49 +1028,27 @@ int QueryStmFromBestResolution(RefCountedPtr<BcDTM>&        singleResolutionDtm,
             }
         else
             {
-            WString gcsKeyName;
 
-            status = pRootNode->GetAttributeStringValue(gcsKeyName, "gcsKeyName");
-
-            if (status == BEXML_Success)
+            if (!params.gcsKeyName.empty())
                 {
-                BaseGCSPtr baseGCSPtr(BaseGCS::CreateGCS(gcsKeyName.c_str()));
+                BaseGCSPtr baseGCSPtr(BaseGCS::CreateGCS(params.gcsKeyName.c_str()));
                 StatusInt status = importerPtr->SetBaseGCS(baseGCSPtr);
                 assert(status == SUCCESS);
                 }
-
-            uint32_t maximumNbOfPoints;
-            status = pRootNode->GetAttributeUInt32Value(maximumNbOfPoints, "maxNbPointsToImport");
-            
-            if (status != BEXML_Success)
-                {
-                maximumNbOfPoints = 5000000;
-                }
-            
-            GetImportRange(s_importRange, pRootNode);
-
-            WString tempPath;
-            status = pRootNode->GetAttributeStringValue(tempPath, "tempPath");
-            
-            if (status != BEXML_Success)
-                {
-                BeFileName name;
-                assert(BeFileNameStatus::Success == BeFileName::BeGetTempPath(name));
-                tempPath = name;
-                }            
+         
                     
-            if (ParseSourceSubNodes(importerPtr->EditSources(), pRootNode) == true)
+            if (ParseSourceSubNodes(importerPtr->EditSources(), params.pRootNode) == true)
                 {
                 std::thread workingThread;
 
                 workingThread = std::thread(&ImportThread, DgnPlatformLib::QueryHost(), importerPtr);         
 
-                BeFileName tempStmFile(tempPath.c_str());
+                BeFileName tempStmFile(params.tempPath.c_str());
                 tempStmFile.AppendToPath(L"tempScalableMeshSdk.stm");
                                     
                 IMrDTMCreatorPtr mrdtmCreatorPtr(IMrDTMCreator::GetFor(tempStmFile.c_str()));
 
-                BeFileName tempStmstream(tempPath.c_str());
+                BeFileName tempStmstream(params.tempPath.c_str());
                 tempStmstream.AppendToPath(L"tempScalableMeshSdk.stmstream");
 
                 FILE* tempStmstreamFile = _wfopen(tempStmstream.c_str(), L"w+");
@@ -905,7 +1075,7 @@ int QueryStmFromBestResolution(RefCountedPtr<BcDTM>&        singleResolutionDtm,
                 
                 RefCountedPtr<BcDTM> singleResolutionDtm;
 
-                status = ChooseCorrectSubResolution(singleResolutionDtm, s_importRange, maximumNbOfPoints, tempStmFile);
+                status = ChooseCorrectSubResolution(singleResolutionDtm, s_importRange, params.maximumNbOfPoints, tempStmFile);
 
                 if (status != SUCCESS)
                     return ERROR;
@@ -1020,8 +1190,10 @@ int QueryStmFromBestResolution(RefCountedPtr<BcDTM>&        singleResolutionDtm,
     void ScalableMeshSDKexe::Import()
         {                      
         BeXmlNodeP pRootNode = m_pImportDefinitionXmlDom->GetRootElement();
-
-        ParseImportDefinition(pRootNode);
+        ImportParameters params;
+        ParseImportDefinition(pRootNode, params);
+        if (params.decimateInput) DoImportSTM(params);
+        else DoImportDirect(params);
                 
         CloseHandle(m_pipe);
         }
