@@ -29,7 +29,7 @@ struct ElementGeomPartTests : public DgnDbTestFixture
         }
 };
 
-static const DgnCode s_geomPartCode = DgnGeometryPart::CreateCode("Test", "GeomPart");
+static const DgnCode s_geomPartCode = DgnGeometryPart::CreateCode("GeomPart", "Test");
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Umar.Hayat      07/15

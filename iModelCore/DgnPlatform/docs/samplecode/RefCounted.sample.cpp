@@ -50,7 +50,7 @@ FooPtr Foo::Create(int input)
         return nullptr;
         }
 
-    // malloc as usual
+    // malloc as usual, RefCounterPtr will call free when reference count goes to zero
     return new Foo();
     }
 

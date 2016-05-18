@@ -15,7 +15,7 @@ struct PerformanceElementTestFixture : public DgnDbTestFixture
     {
     protected:
         static const DgnAuthorityId s_codeAuthorityId;
-        static const int s_instanceCount = 1000000;
+        static const int s_instanceCount = 500000;
         static Utf8CP const s_textVal;
         static const int64_t s_int64Val = 20000000LL;
         static const double s_doubleVal;
