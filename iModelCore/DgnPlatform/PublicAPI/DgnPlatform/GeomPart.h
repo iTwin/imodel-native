@@ -78,7 +78,7 @@ public:
     Render::GraphicSet& Graphics() const {return m_graphics;}
 
     //! Create a DgnCode suitable for assigning to a DgnGeometryPart
-    static DgnCode CreateCode(Utf8StringCR nameSpace, Utf8StringCR name) { return GeometryPartAuthority::CreateGeometryPartCode(nameSpace, name); }
+    static DgnCode CreateCode(Utf8StringCR name, Utf8StringCR nameSpace) { return GeometryPartAuthority::CreateGeometryPartCode(name, nameSpace); }
 
     //! Looks up a DgnGeometryPartId by its code.
     DGNPLATFORM_EXPORT static DgnGeometryPartId QueryGeometryPartId(DgnCode const& code, DgnDbR db);
