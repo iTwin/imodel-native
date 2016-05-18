@@ -436,7 +436,6 @@ DGNPLATFORM_EXPORT StatusInt              SetPaperScale
 double paperScale, 
 DgnDbR project
 );
-/*__PUBLISH_SECTION_END__*/
 private:
 
 public:
@@ -486,7 +485,6 @@ short const*   type66AppData,
 DgnDbR               cache
 );
 
-/*__PUBLISH_SECTION_START__*/
 
 DGNPLATFORM_EXPORT void PublishedCreateGeoCoordType66(
 short*                  type66AppData,

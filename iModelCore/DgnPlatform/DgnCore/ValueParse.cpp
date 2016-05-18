@@ -873,8 +873,8 @@ void            DistanceParser::InitModelSettings(GeometricModelCR model)
     UnitDefinitionCR  subUnit = displayInfo.GetSubUnits();
     UnitDefinitionCR  masterUnit = displayInfo.GetMasterUnits();
     
-    double  uorPerMast = masterUnit.ToMillimeters();
-    double  uorPerSub  = subUnit.ToMillimeters();
+    double  uorPerMast = masterUnit.ToMeters();
+    double  uorPerSub  = subUnit.ToMeters();
     
     SetMasterUnitLabel (masterUnit.GetLabelCP());
     SetSubUnitLabel    (subUnit.GetLabelCP());
@@ -1197,7 +1197,7 @@ void            AreaOrVolumeParser::InitModelSettings(GeometricModelCR model)
     GeometricModel::DisplayInfo const& displayInfo = model.GetDisplayInfo();
 
     UnitDefinition  masterUnit = displayInfo.GetMasterUnits();
-    double          uorPerMast = masterUnit.ToMillimeters();
+    double          uorPerMast = masterUnit.ToMeters();
     
     SetMasterUnitScale (uorPerMast);
     }
