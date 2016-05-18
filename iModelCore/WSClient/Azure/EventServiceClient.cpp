@@ -12,14 +12,13 @@
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Jeehwan.cho   05/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-EventServiceClient::EventServiceClient(Utf8StringCR nameSpace, Utf8StringCR repoId, Utf8StringCR userId)
+EventServiceClient::EventServiceClient(Utf8StringCR repoId, Utf8StringCR userId)
     {
-    m_nameSpace = nameSpace;
     m_repoId = repoId;
     m_userId = userId;
-    Utf8String baseAddress = "https://" + nameSpace + "." + "servicebus.windows.net/";
+    UpdateToken();  
+    Utf8String baseAddress = "https://" + m_nameSpace + "." + "servicebus.windows.net/";
     m_fullAddress = baseAddress + repoId + "/Subscriptions/" + userId + "/messages/head?timeout=";
-    UpdateToken();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -27,9 +26,17 @@ EventServiceClient::EventServiceClient(Utf8StringCR nameSpace, Utf8StringCR repo
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool EventServiceClient::UpdateToken()
     {
-    //todo: it will eventually hit BimServer web api using credential to get SaS token
-    m_token = "SharedAccessSignature sig=TOk40ce29TwpOYCFG7EWqHL5%2bmi9fIDX%2fYA0Ckv7Urs%3d&se=1463758026&skn=EventReceivePolicy&sr=https%3a%2f%2ftesthubjeehwan-ns.servicebus.windows.net%2ftest";
-    return true;
+    return MakeEventServiceRequest(m_token, m_nameSpace); //todo: need to do some sanity check
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Arvind   05/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool EventServiceClient::MakeEventServiceRequest(Utf8StringR outToken, Utf8StringR outNameSpace)
+    {
+    outNameSpace = "testhubjeehwan-ns";
+    outToken = "SharedAccessSignature sig=TOk40ce29TwpOYCFG7EWqHL5%2bmi9fIDX%2fYA0Ckv7Urs%3d&se=1463758026&skn=EventReceivePolicy&sr=https%3a%2f%2ftesthubjeehwan-ns.servicebus.windows.net%2ftest";
+    return true; //not yet implemented
     }
 
 /*--------------------------------------------------------------------------------------+
