@@ -75,10 +75,10 @@ WCharCP proxyPassword
 );
 
 /************************************************************************************//**
-* \brief Create a new projectfavorite
-* \param[in] apiHandle API object
-* \param[in] ProjectGuid
-* \return Success or error code. See \ref ConnectWebServicesClientCStatusCodes
+* //brief Create a new projectfavorite
+* \\param[in] apiHandle API object
+* \\param[in] ProjectGuid
+* \\return Success or error code. See \ref ConnectWebServicesClientCStatusCodes
 ****************************************************************************************/
 //CWSCC_EXPORT CallStatus ConnectWebServicesClientC_CreateProjectFavorite
 //(
