@@ -11,6 +11,14 @@
 #include <DgnPlatform/DgnViewport.h>
 #include <DgnPlatform/DgnDbTables.h>
 #include <DgnPlatform/ImageUtilities.h>
+#include <algorithm>
+
+#ifdef min
+#undef min
+#endif
+#ifdef max
+#undef max
+#endif
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -40,7 +48,6 @@ struct Tile : RefCountedBase, NonCopyableClass
     struct Corners
     {
         DPoint3d m_pts[4];
-        Corners Bias(double bias) const {Corners tmp(*this); {for (auto& pt : tmp.m_pts) pt.z = bias;} return tmp;}
     };
 
     static uint64_t Next();
@@ -58,7 +65,6 @@ struct Tile : RefCountedBase, NonCopyableClass
     void SetLoaded() {return m_loadStatus.store(LoadStatus::Ready);}
     void SetNotFound() {BeAssert(false); return m_loadStatus.store(LoadStatus::NotFound);}
     bool IsQueued() const {return m_loadStatus.load() == LoadStatus::Queued;}
-    bool IsAbandoned() const {return m_loadStatus.load() == LoadStatus::Abandoned;}
     TileId GetTileId() const {return m_id;}
     Tile(TileId id, Corners const& corners) : m_id(id), m_corners(corners){Accessed();}
 };
@@ -67,7 +73,7 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(Tile)
 DEFINE_REF_COUNTED_PTR(Tile)
 
 //=======================================================================================
-// Obtains and displays multi-resolution tiled raster reality data that is organized
+// Obtains and displays multi-resolution tiled raster that is organized
 // according to the WebMercator tiling system. 
 // @bsiclass                                                    Sam.Wilson      10/2014
 //=======================================================================================
@@ -132,7 +138,7 @@ public:
     //! @param[out] url The returned URL
     //! @param[in] tileid  The location of the tile, according to the WebMercator tiling system
     //! @return SUCCESS if URL was computed and is valid
-    virtual BentleyStatus _CreateUrl(Utf8StringR url, TileId tileid) const {return BSIERROR;}
+    virtual BentleyStatus _CreateUrl(Utf8StringR url, TileId tileid) const {return ERROR;}
 
     virtual bool _ShouldRejectTile(TileId tileid, Utf8StringCR url, ByteStream const& data) const {return false;}
 
@@ -143,6 +149,7 @@ public:
     Properties& GetPropertiesR() {return m_properties;}
 
     void ClearTileCache() {m_tileCache.Clear();}
+    DGNPLATFORM_EXPORT BentleyStatus DeleteCacheFile(); //! delete the local SQLite file holding the cache of downloaded tiles.
 };
 
 //=======================================================================================

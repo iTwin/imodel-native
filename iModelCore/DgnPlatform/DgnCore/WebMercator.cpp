@@ -29,7 +29,7 @@ enum
     TILE_SIZE = 256,
     MIN_ZOOM_LEVEL = 0,
     MAX_ZOOM_LEVEL = 22,
-    MAX_DB_CACHE_SIZE = 1024*1024*1024, // 1 Gb
+    MAX_DB_CACHE_SIZE = 100*1024*1024, // 100 Mb
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -1251,4 +1251,17 @@ void WebMercatorModel::RequestTile(TileId id, TileR tile, Render::SystemR sys) c
 
     TileDataPtr data = new TileData(tile, sys, color);
     GetRealityDataCache().Get(*data, url.c_str(), RealityDataOptions());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   04/16
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus WebMercatorModel::DeleteCacheFile()
+    {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+    m_realityDataCache = nullptr;
+    m_tileCache.Clear();
+    return BeFileNameStatus::Success == m_localCacheName.BeDeleteFile() ? SUCCESS : ERROR;
+#endif
+    return ERROR;
     }
