@@ -11,23 +11,19 @@ class CApiSourceWriter(SourceWriter):
             if ecclass.attributes["typeName"].value in excluded_classes and \
                     excluded_classes[ecclass.attributes["typeName"].value].should_exclude_entire_class():
                 continue
-            self.__api_structs.append(CApiStruct(self.__schema_name, ecclass, api, status_codes))
+            self.__api_structs.append(CApiStruct(self.__schema_name, ecclass, api, status_codes,
+                                                 excluded_classes[ecclass.attributes["typeName"].value]))
 
     def write_source(self):
         self._write_header_comments()
         self._write_spacing()
         self.__write_includes()
         self._write_spacing()
-        self.__write_utility_functions()
-        self._write_spacing()
         self.__write_api_function_definitions()
         self._close_file()
 
     def __write_includes(self):
         self._file.write('#include "{0}Internal.h"\n'.format(self._api.get_upper_api_acronym()))
-
-    def __write_utility_functions(self):
-        self._write_resolve_wserror_function()
 
     def __write_api_function_definitions(self):
         self.__write_api_handle_free_function()

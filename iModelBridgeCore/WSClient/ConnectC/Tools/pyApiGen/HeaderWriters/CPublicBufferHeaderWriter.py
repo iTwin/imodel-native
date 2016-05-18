@@ -11,7 +11,8 @@ class CPublicBufferHeaderWriter(HeaderWriter):
             if ecclass.attributes["typeName"].value in excluded_classes and \
                     excluded_classes[ecclass.attributes["typeName"].value].should_exclude_entire_class():
                 continue
-            self.__buffer_structs.append(CBufferStruct(ecclass, api, self._status_codes))
+            self.__buffer_structs.append(CBufferStruct(ecclass, api, self._status_codes,
+                                                       excluded_classes[ecclass.attributes["typeName"].value]))
 
     def write_header(self):
         self.__write_header_comment()

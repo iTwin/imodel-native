@@ -11,7 +11,8 @@ class CBufferSourceWriter(SourceWriter):
             if ecclass.attributes["typeName"].value in excluded_classes and \
                     excluded_classes[ecclass.attributes["typeName"].value].should_exclude_entire_class():
                 continue
-            self.__buffer_structs.append(CBufferStruct(ecclass, api, status_codes))
+            self.__buffer_structs.append(CBufferStruct(ecclass, api, status_codes,
+                                                 excluded_classes[ecclass.attributes["typeName"].value]))
 
     def write_source(self):
         self._write_header_comments()

@@ -17,7 +17,8 @@ class CPublicApiHeaderWriter(HeaderWriter):
             if ecclass.attributes["typeName"].value in excluded_classes and \
                     excluded_classes[ecclass.attributes["typeName"].value].should_exclude_entire_class():
                 continue
-            self.__api_structs.append(CApiStruct(self.__schema_name, ecclass, api, self._status_codes))
+            self.__api_structs.append(CApiStruct(self.__schema_name, ecclass, api, self._status_codes,
+                                                       excluded_classes[ecclass.attributes["typeName"].value]))
 
     def write_header(self):
         self.__write_header_comment()
@@ -112,6 +113,9 @@ class CPublicApiHeaderWriter(HeaderWriter):
     def __write_api_create_definition(self, api_struct):
         param_str = "\param[in] apiHandle API object\n"
         for ecproperty in api_struct.get_properties():
+            if api_struct.get_name() in self._excluded_classes and \
+                    self._excluded_classes[api_struct.get_name()].should_filter_property(ecproperty.attributes["propertyName"].value):
+                continue
             if ecproperty.hasAttribute("readOnly") and ecproperty.attributes["readOnly"].value:
                 continue
             param_str += "* \param[in] {0}\n".format(ecproperty.attributes["propertyName"].value)
@@ -135,6 +139,9 @@ class CPublicApiHeaderWriter(HeaderWriter):
         param_str = "\param[in] apiHandle API object\n"
         param_str += "* \param[in] {0}Id {1} ID to update\n".format(api_struct.get_lower_name(), api_struct.get_name())
         for ecproperty in api_struct.get_properties():
+            if api_struct.get_name() in self._excluded_classes and \
+                    self._excluded_classes[api_struct.get_name()].should_filter_property(ecproperty.attributes["propertyName"].value):
+                continue
             if ecproperty.hasAttribute("readOnly") and ecproperty.attributes["readOnly"].value:
                 continue
             param_str += "* \param[in] {0}\n".format(ecproperty.attributes["propertyName"].value)
