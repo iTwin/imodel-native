@@ -225,6 +225,7 @@
                 - does not have subclasses
                 - is not used as constraint class in an @ref BentleyApi::ECN::ECRelationshipConstraint "ECRelationshipConstraint"
             - an @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClass" which is mapped as <b>link table</b>
+            - @b Note: The major version of the schema must be increased in this case. Otherwise the ECSchema update will fail.
     - @ref BentleyApi::ECN::ECSchema::GetEnumerations "ECEnumerations"
         - @b Add a new @ref BentleyApi::ECN::ECEnumeration "ECEnumeration"
     - @b CustomAttributes on the ECSchema
