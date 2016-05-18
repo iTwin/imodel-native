@@ -1,4 +1,5 @@
 from xml.dom import minidom
+from openpyxl import load_workbook
 
 from HeaderWriters.CBufferHeaderWriter import CBufferHeaderWriter
 from HeaderWriters.CPublicApiHeaderWriter import CallStatus
@@ -11,18 +12,29 @@ from SourceWriters.CBufferSourceWriter import CBufferSourceWriter
 # from SourceWriters.CppCliClassesSourceWriter import CppCliClassesSourceWriter
 # from SourceWriters.CppCliApiSourceWriter import CppCliApiSourceWriter
 from Writer import Api
+from ExcludedECClass import ExcludedECClass
 
 ###########################################################################################################
-# ---------------------------------------------------------------------------------------------------------
-# -----------------------------     Configuration Variables    --------------------------------------------
-# ---------------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------------- #
+# -----------------------------     Configuration Variables    ------------------------------------------ #
+# ------------------------------------------------------------------------------------------------------- #
 ###########################################################################################################
 xmldoc = minidom.parse('N~3AGlobalSchema.01.00.xml')
 ecclasses = xmldoc.getElementsByTagName('ECClass')
 api = Api('CWSCC', 'ConnectWebServicesClientC', 'ConnectWsgGlobal', 'BentleyCONNECT.Global--CONNECT.GLOBAL')
-excluded_classes = ['Organization_SQLAzure_PoC', 'Project_SQLAzure_PoC',
-                    'ProjectFavorite_SQLAzure_PoC', 'ProjectMRU_SQLAzure_Poc',
-                    'ProjectMRUDetail_SQLAzure_PoC', 'ProjectProperties']
+
+#############################################
+# ------------ Excluded Classes ----------- #
+#############################################
+workbook = load_workbook('autoGenFilter.xlsx', use_iterators=True)
+worksheet = workbook.get_sheet_by_name('autoGenFilter')
+excluded_classes = {}
+for row in worksheet.iter_rows(range_string=worksheet.calculate_dimension(), row_offset=1):
+    excluded_classes[row[0].value] = (ExcludedECClass(row))
+
+#############################################
+# ------------- Status Codes -------------- #
+#############################################
 status_codes = {
     'ERROR400': CallStatus(400, 'The response from the server contained a 400, Bad Request, http error'),
     'ERROR401': CallStatus(401, 'The response from the server contained a 401, Unauthorized, http error'),
