@@ -33,7 +33,7 @@ const ClashObject* ClashSet::hasObject( const pt::PersistentObjectRef &obj ) con
 		const ClashObject *co = m_objects[i];
 		if (co->objRef() == obj) return co;
 	}
-	return false;
+	return NULL;
 }
 //-----------------------------------------------------------------------------
 ClashObject* ClashSet::getObject( const pt::PersistentObjectRef &obj ) const

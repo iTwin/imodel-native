@@ -969,7 +969,7 @@ ptds::DataSourcePtr VoxelLoader::openFile(pcloud::Voxel *vox, int thread)
 															/*check for null file index*/ 
 	if (file == Voxel::FILE_INDEX_NULL)
 	{														/*open scene file*/ 
-		return false;
+		return NULL;
 	}
 
 	DataSourcePtr dataSource = pp.files[file].handle[thread];

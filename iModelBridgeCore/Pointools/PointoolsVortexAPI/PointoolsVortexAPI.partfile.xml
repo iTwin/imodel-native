@@ -25,8 +25,17 @@
         </Bindings>
     </Part>
 
+    <!-- On iOS platforms, libraries must be static. That's why we make a distinction here between non-iOS and iOS platforms -->
     <Part Name="VortexLibs">
+        <SubPart PartName="VortexLibsNonIOS"/>
+        <SubPart PartName="VortexLibsIOS"/>
+    </Part>
+    <Part Name="VortexLibsNonIOS" ExcludePlatforms="iOS*">
         <SubPart PartName="PointoolsVortexAPI_DLL"/>
+        <SubPart PartName="PointoolsVortexAPI_FeatureExtract_DLL"/>
+    </Part>
+    <Part Name="VortexLibsIOS" OnlyPlatforms="iOS*">
+        <SubPart PartName="PointoolsVortexAPI_DLL" LibType="Static"/>
         <SubPart PartName="PointoolsVortexAPI_FeatureExtract_DLL"/>
     </Part>
     
@@ -41,6 +50,7 @@
         <RequiredRepository>PointoolsCommon</RequiredRepository>
         <SubPart PartName="PublicApi" />
         <SubPart PartName="BentleyDll"      PartFile="Bentley"           Repository="Bentley" />
+
         <!-- <SubPart PartName="Base" PartFile="Bentley" Repository="Bentley" /> -->
         <!-- <SubPart PartName="LicenseSDK8.11" PartFile="${SrcRoot}bsicommon/CvsPartfiles/bsibin" Repository="bsibin-licensesdk" />  -->
         <!--SubPart PartName="OpenGLSubParts"/-->

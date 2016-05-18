@@ -77,7 +77,7 @@ StreamHost *StreamScheduler::addStreamHostActive(const PTRMI::Name &hostName)
 	{
 		if((streamHost = addStreamHost(hostName)) == NULL)
 		{
-			return false;
+			return NULL;
 		}
 	}
 

@@ -30,13 +30,16 @@ const real epsilon=1e-12;
 
 #else
 
-// WARNING: these pragmas below could be MSVC compiler specific
-#pragma warning( push )// memorize the warning status
-#pragma warning( disable : 4305 )// disable "initializing : truncation from 'const double' to 'float'" warning
-#pragma warning( disable : 4244 )// disable "double to float conversion possible loss of data" warning
-#pragma warning( disable : 4136 )// disable "conversion between different floating-point types" warning
-#pragma warning( disable : 4309 )// disable " 'conversion' : truncation of constant value" warning
-#pragma warning( disable : 4051 )// disable " 'type conversion' ; possible loss of data" warning
+#if defined (BENTLEY_WIN32)     //NEEDS_WORK_VORTEX_DGNDB - Pragmas unrecognized on iOS
+    // WARNING: these pragmas below could be MSVC compiler specific
+    #pragma warning( push )// memorize the warning status
+    #pragma warning( disable : 4305 )// disable "initializing : truncation from 'const double' to 'float'" warning
+    #pragma warning( disable : 4244 )// disable "double to float conversion possible loss of data" warning
+    #pragma warning( disable : 4136 )// disable "conversion between different floating-point types" warning
+    #pragma warning( disable : 4309 )// disable " 'conversion' : truncation of constant value" warning
+    #pragma warning( disable : 4051 )// disable " 'type conversion' ; possible loss of data" warning
+#endif
+
 //! The base type for all the math helpers
 typedef float real;
 //! the treshold for comparisons with zero, mainly used to avoid division by zero errors
@@ -490,7 +493,7 @@ public:
 	gl_quaternion inversed() const;//!< inversed copy of the gl_quaternion
 	real length() const;//!< get the length of the gl_quaternion
 	real norm() const;//!< get the norm (similar to the squared length) of the gl_quaternion
-	virtual gl_tmatrix getRotMatrix();//<! constructs a rotation matrix from the gl_quaternion
+	virtual gl_tmatrix getRotMatrix() const;//<! constructs a rotation matrix from the gl_quaternion
 // static functions
 	static int howMany();//!< returns how many gl_quaternion objects exists
 // friend functions
@@ -669,8 +672,10 @@ inline int operator!=(const gl_vector& v1,const gl_vector& v2)
 //=============================================================================
 //=============================================================================
 
-#pragma warning(disable:4263)
-#pragma warning(disable:4264)
+#if defined (BENTLEY_WIN32)     //NEEDS_WORK_VORTEX_DGNDB - Pragmas unrecognized on iOS
+    #pragma warning(disable:4263)
+    #pragma warning(disable:4264)
+#endif
 
 /*!
 A unit lenght gl_quaternion class.
@@ -963,8 +968,10 @@ extern const real G_DOUBLE_PI;
 #endif
 
 #ifndef HIGH_PRECISION
-// this below could be MSVC compiler specific
-#pragma warning( pop )// reset the warning status
+    #if defined (BENTLEY_WIN32)     //NEEDS_WORK_VORTEX_DGNDB - Pragmas unrecognized on iOS
+        // this below could be MSVC compiler specific
+        #pragma warning( pop )// reset the warning status
+    #endif
 #endif
 
 #endif // _3D_MATH_H

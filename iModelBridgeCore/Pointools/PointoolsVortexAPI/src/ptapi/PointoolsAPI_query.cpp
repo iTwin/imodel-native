@@ -964,7 +964,7 @@ namespace querydetail
 															// For each StreamDataSource voxel
 			for(it = deferredVoxels.begin(); it != deferredVoxels.end(); it++)
 			{
-				if((voxel = *it) == false)
+				if((voxel = *it) == NULL)
 				{
 					Status::log(L"ReadPoints::processDeferredVoxels() iterator failed failed", L"");
 					return false;
