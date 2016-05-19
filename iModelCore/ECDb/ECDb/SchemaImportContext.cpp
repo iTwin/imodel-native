@@ -694,9 +694,9 @@ BentleyStatus ECSchemaCompareContext::Prepare(ECDbSchemaManager const& schemaMan
             return ERROR;
         
         
-        Utf8String str;
-        m_changes.WriteToString(str);
-        printf("%s", str.c_str());
+        //Utf8String str;
+        //m_changes.WriteToString(str);
+        //printf("%s", str.c_str());
         
         std::set<Utf8CP, CompareIUtf8> schemaOfInterest;
         if (m_changes.IsValid())
