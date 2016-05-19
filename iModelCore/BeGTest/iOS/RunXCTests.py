@@ -78,10 +78,11 @@ def RunTest(xcodeprojpath, deviceName, okToRetry, logfile):
             testSuiteCount, testCount, failureCount = RunTest(walkRoot, dirName, deviceName, False)
 
     printProgress(' ', status_len)
+    print '------------------------------------------------'
+    print 'Totals:'
     print '{0} suites, {1} tests, {2} failures'.format(testSuiteCount, testCount, failureCount)
 
     if failureCount != 0:
-        print '*** FAILURES ***'
         print failedtests
         print ''
         print 'To debug the failed tests, use the following command line to open the test xcodeproj:'
