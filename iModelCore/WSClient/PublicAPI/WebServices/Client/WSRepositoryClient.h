@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Client/WSRepositoryClient.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -137,13 +137,38 @@ struct IWSRepositoryClient
             ) const = 0;
 
         //! Create object with any relationships or related objects. Optionally attach file.
-        //! Parameter objectCreationJson must follow WSG 2.0 format for creating objects.
+        //! @param objectCreationJson must follow WSG 2.0 format for creating objects.
+        //! @param filePath [optional] file
+        //! @param uploadProgressCallback [optional] upload callback for changeset
+        //! @param ct [optional] cancellation token
+        //! @note
         //! NOTES for different server versions:
-        //!     WSG 2.0: creation format is fully supported. When root instanceId is specified, POST will be done to that instance.
+        //!     WSG 2.0: creation format is fully supported. <b>When root instanceId is specified, POST will be done to that instance.</b>
         //!     WSG 1.x: objectCreationJson can have only one relationship to existing object. This related object will be treated as "parent".
         //!     Server version can be checked by using GetWSClient()->GetServerInfo()
         virtual AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequest
             (
+            JsonValueCR objectCreationJson,
+            BeFileNameCR filePath = BeFileName(),
+            HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            ICancellationTokenPtr ct = nullptr
+            ) const = 0;
+
+        //! Create object with any relationships or related objects. Optionally attach file.
+        //! @param objectId Used to construct URL for POST request. Any schema, class or instanceId included in the URL will come from this object.
+        //!            <br> remoteId is optional. If supplied this implies that there are instances related to that instance that needs creation.
+        //! @param objectCreationJson must follow WSG 2.0 format for creating objects.
+        //! @param filePath [optional] file
+        //! @param uploadProgressCallback [optional] upload callback for changeset
+        //! @param ct [optional] cancellation token
+        //! @note
+        //! NOTES for different server versions:
+        //!     WSG 2.0: creation format is fully supported. <b>When root instanceId is specified, POST will be done to that instance, if and only if, the objectId parameter has an empty remoteId.</b>
+        //!     WSG 1.x: objectCreationJson can have only one relationship to existing object. This related object will be treated as "parent".
+        //!     Server version can be checked by using GetWSClient()->GetServerInfo()
+        virtual AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequest
+            (
+            ObjectIdCR objectId,
             JsonValueCR objectCreationJson,
             BeFileNameCR filePath = BeFileName(),
             HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
@@ -301,6 +326,15 @@ struct WSRepositoryClient : public IWSRepositoryClient
             (
             JsonValueCR objectCreationJson,
             BeFileNameCR filePath = BeFileName(),
+            HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            ICancellationTokenPtr ct = nullptr
+            ) const override;
+
+        WSCLIENT_EXPORT AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequest
+            (
+            ObjectIdCR objectId,
+            JsonValueCR objectCreationJson,
+            BeFileNameCR filePath = BeFileName (),
             HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const override;

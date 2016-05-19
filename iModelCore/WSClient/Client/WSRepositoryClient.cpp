@@ -2,7 +2,7 @@
 |
 |     $Source: Client/WSRepositoryClient.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -241,6 +241,24 @@ ICancellationTokenPtr ct
     return m_connection->GetWebApiAndReturnResponse<WSCreateObjectResult>([=] (WebApiPtr webApi)
         {
         return webApi->SendCreateObjectRequest(objectCreationJson, filePath, uploadProgressCallback, ct);
+        }, ct);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    David.Jones     05/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+AsyncTaskPtr<WSCreateObjectResult> WSRepositoryClient::SendCreateObjectRequest
+(
+ObjectIdCR objectId,
+JsonValueCR objectCreationJson,
+BeFileNameCR filePath,
+HttpRequest::ProgressCallbackCR uploadProgressCallback,
+ICancellationTokenPtr ct
+) const
+    {
+    return m_connection->GetWebApiAndReturnResponse<WSCreateObjectResult> ([=] (WebApiPtr webApi)
+        {
+        return webApi->SendCreateObjectRequest (objectId, objectCreationJson, filePath, uploadProgressCallback, ct);
         }, ct);
     }
 

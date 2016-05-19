@@ -2,7 +2,7 @@
 |
 |     $Source: Client/WebApi/WebApiV1.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -362,17 +362,12 @@ bool WebApiV1::IsObjectCreationJsonSupported(JsonValueCR objectCreationJson)
 void WebApiV1::GetParametersFromObjectCreationJson
 (
 JsonValueCR objectCreationJson,
-ObjectIdR newObjectId,
 Utf8StringR propertiesOut,
 ObjectIdR relObjectId,
 ObjectIdR parentObjectIdOut
 )
     {
     JsonValueCR instance = objectCreationJson["instance"];
-
-    newObjectId.schemaName = instance["schemaName"].asString();
-    newObjectId.className = instance["className"].asString();
-    newObjectId.remoteId = instance["instanceId"].asString();
 
     propertiesOut = Json::FastWriter::ToString(instance["properties"]);
 
@@ -953,18 +948,49 @@ HttpRequest::ProgressCallbackCR uploadProgressCallback,
 ICancellationTokenPtr ct
 ) const
     {
+    Utf8String schemaName(objectCreationJson["instance"]["schemaName"].asString());
+    Utf8String className(objectCreationJson["instance"]["className"].asString());
+    Utf8String remoteId(objectCreationJson["instance"]["instanceId"].asString());
+    ObjectId objectId(schemaName, className, Utf8String());
+
+    return SendCreateObjectRequest(objectId, objectCreationJson, filePath, uploadProgressCallback, ct);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    David.Jones     05/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+AsyncTaskPtr<WSCreateObjectResult> WebApiV1::SendCreateObjectRequest
+(
+ObjectIdCR objectId,
+JsonValueCR objectCreationJson,
+BeFileNameCR filePath,
+HttpRequest::ProgressCallbackCR uploadProgressCallback,
+ICancellationTokenPtr ct
+) const
+    {
     if (!IsObjectCreationJsonSupported(objectCreationJson) || !m_info.IsWebApiSupported(BeVersion(1, 2)))
         {
         return CreateCompletedAsyncTask(WSCreateObjectResult::Error(WSError::CreateFunctionalityNotSupportedError()));
         }
 
+    if (objectId.className.empty())
+        {
+        BeDebugLog("The className passed into WebApiV1::SendCreateObjectRequest is empty. ClassName is required to be valid.");
+        return CreateCompletedAsyncTask(WSCreateObjectResult::Error(WSError::WSError()));
+        }
+
+    BeAssert(objectId.schemaName.Equals(objectCreationJson["instance"]["schemaName"].asString()) 
+             && "schemaName in objectId parameter should match objectCreationJson schemanName.");
+    BeAssert(objectId.className.Equals(objectCreationJson["instance"]["className"].asString())
+             && "className in objectId parameter should match objectCreationJson className.");
+
     Utf8String propertiesStr;
-    ObjectId newObjectId, relObjectId, parentObjectId;
+    ObjectId relObjectId, parentObjectId;
 
     GetParametersFromObjectCreationJson
-        (objectCreationJson, newObjectId, propertiesStr, relObjectId, parentObjectId);
+        (objectCreationJson, propertiesStr, relObjectId, parentObjectId);
 
-    Utf8String url = GetUrl(SERVICE_Objects, newObjectId.className, CreateParentQuery(parentObjectId), "v1.2");
+    Utf8String url = GetUrl(SERVICE_Objects, objectId.className, CreateParentQuery(parentObjectId), "v1.2");
     ChunkedUploadRequest request("POST", url, m_configuration->GetHttpClient());
 
     request.SetHandshakeRequestBody(HttpStringBody::Create(propertiesStr), "application/json");
@@ -977,7 +1003,7 @@ ICancellationTokenPtr ct
 
     return request.PerformAsync()->Then<WSCreateObjectResult>([=] (HttpResponse& httpResponse)
         {
-        return ResolveCreateObjectResponse(httpResponse, newObjectId, relObjectId, parentObjectId);
+        return ResolveCreateObjectResponse(httpResponse, objectId, relObjectId, parentObjectId);
         });
     }
 

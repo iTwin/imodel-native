@@ -515,14 +515,40 @@ HttpRequest::ProgressCallbackCR uploadProgressCallback,
 ICancellationTokenPtr ct
 ) const
     {
-    Utf8String schemaName = objectCreationJson["instance"]["schemaName"].asString();
-    Utf8String className = objectCreationJson["instance"]["className"].asString();
-    Utf8String instanceId = objectCreationJson["instance"]["instanceId"].asString();
+    Utf8String schemaName(objectCreationJson["instance"]["schemaName"].asString());
+    Utf8String className(objectCreationJson["instance"]["className"].asString());
+    Utf8String remoteId(objectCreationJson["instance"]["instanceId"].asString());
+    ObjectId objectId(schemaName, className, remoteId);
 
-    Utf8String url = GetUrl(CreateClassSubPath(schemaName, className));
-    if (!instanceId.empty())
+    return SendCreateObjectRequest(objectId, objectCreationJson, filePath, uploadProgressCallback, ct);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+AsyncTaskPtr<WSCreateObjectResult> WebApiV2::SendCreateObjectRequest
+(
+ObjectIdCR objectId,
+JsonValueCR objectCreationJson,
+BeFileNameCR filePath,
+HttpRequest::ProgressCallbackCR uploadProgressCallback,
+ICancellationTokenPtr ct
+) const
+    {
+    if (objectId.schemaName.empty() || objectId.className.empty())
         {
-        url += "/" + instanceId;
+        BeDebugLog("Either schemaName or className passed into WebApiV2::SendCreateObjectRequest is empty. Both are required to be valid.");
+        return CreateCompletedAsyncTask(WSCreateObjectResult::Error(WSError::WSError()));
+        }
+
+    BeAssert(objectId.schemaName.Equals(objectCreationJson["instance"]["schemaName"].asString()));
+    BeAssert(objectId.className.Equals(objectCreationJson["instance"]["className"].asString()));
+
+    Utf8String url = GetUrl(CreateClassSubPath(objectId.schemaName, objectId.className));
+
+    if (!objectId.remoteId.empty())
+        {
+        url += "/" + objectId.remoteId;
         }
 
     ChunkedUploadRequest request("POST", url, m_configuration->GetHttpClient());
