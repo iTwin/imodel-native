@@ -87,14 +87,14 @@ public:
     //! @param options  Optional features of the seed DgnDb that you want
     //! @return Information about the requested seed DgnDb. 
     //! @note This function may create the seed DgnDb as a side effect, if it hasn't been created already.
-    //! @see OpenDgnDb, OpenDgnDbCopy
+    //! @see OpenDgnDb
     static SeedDbInfo GetSeedDb(SeedDbId seedId, SeedDbOptions const& options = SeedDbOptions());
 
     //! Open the specified seed DgnDb read-only
     //! @param relSeedPath Identifies a pre-existing seed DgnDb. If you want to open a seed DgnDb that was created by your test group's TC_SETUP logic, then you must specify the
     //! relative path to it. If you want to open a program-wide seed DgnDb, call GetSeedDb to get its relative path. 
     //! @return a pointer to the open DgnDb, or nullptr if the seed DgnDb does not exist
-    //! @see GetSeedDb, OpenDgnDbCopy
+    //! @see GetSeedDb
     static DgnDbPtr OpenSeedDb(WCharCP relSeedPath);
         
     //! Open <em>a copy of</em> the specified seed DgnDb for reading and writing. The result will be a private copy for the use of the caller.
@@ -105,8 +105,20 @@ public:
     //! @param newName optional. all or part of the name of the copy. If null, then the name of the copy will be based on the name of the input seed DgnDb. If not null, then
     //! the name of the copy will be based on \a newName and will be modified as necessary to make it unique.
     //! @return a pointer to the open DgnDb, or nullptr if the seed DgnDb does not exist.
-    //! @see OpenDgnDb, ReOpenDgnDbCopy, GetSeedDb
+    //! @see OpenDgnDb, GetSeedDb
     static DgnDbPtr OpenSeedDbCopy(WCharCP relSeedPath, WCharCP newName = nullptr);
+
+    //! Create <em>a copy of</em> the specified seed DgnDb for reading and writing. The result will be a private copy for the use of the caller.
+    //! The copy will always be located in a subdirectory with the same name as the caller's test case.
+    //! @note The copy of the file is automatically assigned a unique name, to avoid name collisions with other tests.
+    //! @param[out] actualName  Set to the name of the file that was created. May not be the same as \a newName, if a unique name was generated.
+    //! @param[in] relSeedPath Identifies a pre-existing seed DgnDb. If you want to open a seed DgnDb that was created by your test group's TC_SETUP logic, then you must specify the
+    //! relative path to it. If you want to open a program-wide seed DgnDb, call GetSeedDb to get its name. 
+    //! @param[in] newName optional. all or part of the name of the copy. If null, then the name of the copy will be based on the name of the input seed DgnDb. If not null, then
+    //! the name of the copy will be based on \a newName and will be modified as necessary to make it unique.
+    //! @return a non-zero error status if the seed DgnDb does not exist or the copy could not be created.
+    //! @see OpenDgnDb, GetSeedDb
+    static DgnDbStatus MakeSeedDbCopy(BeFileNameR actualName, WCharCP relSeedPath, WCharCP newName);
 
     //! @}
 

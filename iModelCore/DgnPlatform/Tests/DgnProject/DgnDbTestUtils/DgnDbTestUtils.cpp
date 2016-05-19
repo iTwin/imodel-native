@@ -30,6 +30,19 @@ static BeFileName getOutputPath(WStringCR relPath)
     return outputPathName;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                           Sam.Wilson             01/2016
+//---------------------------------------------------------------------------------------
+DgnDbStatus DgnDbTestUtils::OpenSeedDbCopy(BeFileNameR actualName, WCharCP relSeedPath, WCharCP newName)
+    {
+    auto db = OpenSeedDbCopy(relSeedPath, newName);
+    if (!db.IsValid())
+        return DgnDbStatus::BadRequest;
+    auto fn = db->GetFileName();
+    actualName.SetName(fn.substr(getOutputPath(L"").length()));
+    return DgnDbStatus::Success;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -283,7 +296,7 @@ DgnDbPtr DgnDbTestUtils::OpenSeedDbCopy(WCharCP relSeedPathIn, WCharCP newName)
     BeFileNameStatus fileStatus = BeFileName::BeCopyFile(infileName.c_str(), ccfileName.c_str(), /*failIfFileExists*/true);
     EXPECT_EQ(BeFileNameStatus::Success, fileStatus) << WPrintfString(L"%ls => %ls - copy failed", infileName.c_str(), ccfileName.c_str()).c_str();
 
-    return OpenDgnDb(ccRelPathBase.c_str(), DgnDb::OpenMode::ReadWrite);
+    return OpenDgnDb(ccRelPathUnique.c_str(), DgnDb::OpenMode::ReadWrite);
     }
 
 /*---------------------------------------------------------------------------------**//**

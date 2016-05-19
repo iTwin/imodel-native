@@ -724,10 +724,10 @@ TEST_F(ComponentModelTest, SimulateDeveloperAndClient)
     DgnDbTestUtils::SeedDbInfo rootInfo = DgnDbTestUtils::GetSeedDb(DgnDbTestUtils::SeedDbId::OneSpatialModel, DgnDbTestUtils::SeedDbOptions(false, false));
 
     m_componentDbName.SetName(L"ComponentModelTest/SimulateDeveloperAndClient_Component.bim");
-    DgnDbTestUtils::OpenSeedDbCopy(rootInfo.fileName, m_componentDbName);
+    DgnDbTestUtils::MakeSeedDbCopy(m_componentDbName, rootInfo.fileName, m_componentDbName);
     
     m_clientDbName.SetName(L"ComponentModelTest/SimulateDeveloperAndClient_Client.bim");
-    DgnDbTestUtils::OpenSeedDbCopy(rootInfo.fileName, m_clientDbName)->GetFileName();
+    DgnDbTestUtils::MakeSeedDbCopy(m_clientDbName, rootInfo.fileName, m_clientDbName);
     
     BeTest::GetHost().GetOutputRoot(m_componentSchemaFileName);
     m_componentSchemaFileName.AppendToPath(TEST_JS_NAMESPACE_W L"0.0.ECSchema.xml");
@@ -746,10 +746,10 @@ TEST_F(ComponentModelTest, SimulateDeveloperAndClientWithNestingSingleton)
     DgnDbTestUtils::SeedDbInfo rootInfo = DgnDbTestUtils::GetSeedDb(DgnDbTestUtils::SeedDbId::OneSpatialModel, DgnDbTestUtils::SeedDbOptions(false, false));
 
     m_componentDbName.SetName(L"ComponentModelTest/SimulateDeveloperAndClientWithNestingSingleton_Component.bim");
-    DgnDbTestUtils::OpenSeedDbCopy(rootInfo.fileName, m_componentDbName);
+    DgnDbTestUtils::MakeSeedDbCopy(m_componentDbName, rootInfo.fileName, m_componentDbName);
     
     m_clientDbName.SetName(L"ComponentModelTest/SimulateDeveloperAndClientWithNestingSingleton_Client.bim");
-    DgnDbTestUtils::OpenSeedDbCopy(rootInfo.fileName, m_clientDbName)->GetFileName();
+    DgnDbTestUtils::MakeSeedDbCopy(m_clientDbName, rootInfo.fileName, m_clientDbName);
 
     BeTest::GetHost().GetOutputRoot(m_componentSchemaFileName);
     m_componentSchemaFileName.AppendToPath(TEST_JS_NAMESPACE_W L"0.0.ECSchema.xml");
@@ -795,10 +795,10 @@ TEST_F(ComponentModelTest, SimulateDeveloperAndClientWithNesting)
     DgnDbTestUtils::SeedDbInfo rootInfo = DgnDbTestUtils::GetSeedDb(DgnDbTestUtils::SeedDbId::OneSpatialModel, DgnDbTestUtils::SeedDbOptions(false, false));
 
     m_componentDbName.SetName(L"ComponentModelTest/SimulateDeveloperAndClientWithNesting_Component.bim");
-    DgnDbTestUtils::OpenSeedDbCopy(rootInfo.fileName, m_componentDbName);
+    DgnDbTestUtils::MakeSeedDbCopy(m_componentDbName, rootInfo.fileName, m_componentDbName);
     
     m_clientDbName.SetName(L"ComponentModelTest/SimulateDeveloperAndClientWithNesting_Client.bim");
-    DgnDbTestUtils::OpenSeedDbCopy(rootInfo.fileName, m_clientDbName)->GetFileName();
+    DgnDbTestUtils::MakeSeedDbCopy(m_clientDbName, rootInfo.fileName, m_clientDbName);
 
     BeTest::GetHost().GetOutputRoot(m_componentSchemaFileName);
     m_componentSchemaFileName.AppendToPath(TEST_JS_NAMESPACE_W L"0.0.ECSchema.xml");
