@@ -14,7 +14,6 @@
 #include    <GeoCoord/BaseGeoCoord.h>
 #include    <GeoCoord/basegeocoordapi.h>
 #include    <GeoCoord/GCSLibrary.h>
-#include    <assert.h>
 #include    <csmap/csNameMapperSupport.h>
 #include    <csmap/cs_map.h>
 #include    <csmap/cs_Legacy.h>
@@ -3192,7 +3191,7 @@ bool                IsFatalGeoTiffError (StatusInt  status)
     if ( (status == GEOCOORDERR_CoordParamNotNeededForTrans) || (status == GEOCOORDERR_CoordParamRedundant))
         {
         // catch during debugging
-        assert (true);
+        BeAssert (true);
         return false;
         }
 
@@ -3205,7 +3204,7 @@ bool                IsFatalGeoTiffError (StatusInt  status)
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       ProcessModelTypeKey (IGeoTiffKeysList::GeoKeyItem& geoKey)
     {
-    assert (IGeoTiffKeysList::LONG == geoKey.KeyDataType);
+    BeAssert (IGeoTiffKeysList::LONG == geoKey.KeyDataType);
     m_modelType = (GeoKeyModelType) geoKey.KeyValue.LongVal;
 
     switch (m_modelType)
@@ -3216,11 +3215,11 @@ StatusInt       ProcessModelTypeKey (IGeoTiffKeysList::GeoKeyItem& geoKey)
 
         // we don't support
         case ModelTypeGeocentric:
-            assert (false);
+            BeAssert (false);
             return GEOCOORDERR_GeocentricNotSupported;
 
         default:
-            assert (false);
+            BeAssert (false);
             return GEOCOORDERR_UnexpectedGeoTiffModelType;
         }
     return SUCCESS;
@@ -3231,11 +3230,11 @@ StatusInt       ProcessModelTypeKey (IGeoTiffKeysList::GeoKeyItem& geoKey)
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       ProcessGeographicTypeKey (IGeoTiffKeysList::GeoKeyItem& geoKey)
     {
-    assert (IGeoTiffKeysList::LONG == geoKey.KeyDataType);
-    assert ( (ModelTypeProjected == m_modelType) || (ModelTypeGeographic == m_modelType) );
+    BeAssert (IGeoTiffKeysList::LONG == geoKey.KeyDataType);
+    BeAssert ( (ModelTypeProjected == m_modelType) || (ModelTypeGeographic == m_modelType) );
 
     int     geoCode = geoKey.KeyValue.LongVal;
-    assert ( ((geoCode >= 4000) && (geoCode < 5000)) ||
+    BeAssert ( ((geoCode >= 4000) && (geoCode < 5000)) ||
              ((geoCode >= UserDefinedKeyValue) && (geoCode <= USHRT_MAX)) );
 
     // NOTE: The GeographicTypeGeoKey gives us a Datum or Ellipsoid, and a prime meridian.
@@ -3323,8 +3322,8 @@ StatusInt       ProcessGeographicTypeKey (IGeoTiffKeysList::GeoKeyItem& geoKey)
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       ProcessGeographicCitationKey (IGeoTiffKeysList::GeoKeyItem& geoKey)
     {
-    assert (IGeoTiffKeysList::ASCII == geoKey.KeyDataType);
-    assert ( (ModelTypeProjected == m_modelType) || (ModelTypeGeographic == m_modelType) );
+    BeAssert (IGeoTiffKeysList::ASCII == geoKey.KeyDataType);
+    BeAssert ( (ModelTypeProjected == m_modelType) || (ModelTypeGeographic == m_modelType) );
 
     // if it's not a user defined ellipsoid, we have no use for the citation, since we're looking up the coordinate system.
     if (m_userDefinedGeoCS)
@@ -3413,11 +3412,11 @@ StatusInt       ProcessGeographicCitationKey (IGeoTiffKeysList::GeoKeyItem& geoK
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       ProcessGeodeticDatumKey (IGeoTiffKeysList::GeoKeyItem& geoKey)
     {
-    assert (IGeoTiffKeysList::LONG == geoKey.KeyDataType);
-    assert ( (ModelTypeProjected == m_modelType) || (ModelTypeGeographic == m_modelType) );
+    BeAssert (IGeoTiffKeysList::LONG == geoKey.KeyDataType);
+    BeAssert ( (ModelTypeProjected == m_modelType) || (ModelTypeGeographic == m_modelType) );
 
     int     geoCode = geoKey.KeyValue.LongVal;
-    assert ( ((geoCode >= 6000) && (geoCode < 7000)) || (geoCode == UserDefinedKeyValue) );
+    BeAssert ( ((geoCode >= 6000) && (geoCode < 7000)) || (geoCode == UserDefinedKeyValue) );
 
     // NOTE: Since the GeodeticDatumKey gives us only a Datum or Ellipsoid rather than a full coordinate
     //       system, that's all we can look up. There might be a prime meridian geoKey later?
@@ -3515,11 +3514,11 @@ StatusInt       ProcessGeodeticDatumKey (IGeoTiffKeysList::GeoKeyItem& geoKey)
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       ProcessPrimeMeridianKey (IGeoTiffKeysList::GeoKeyItem& geoKey)
     {
-    assert (IGeoTiffKeysList::LONG == geoKey.KeyDataType);
-    assert ( (ModelTypeProjected == m_modelType) || (ModelTypeGeographic == m_modelType) );
+    BeAssert (IGeoTiffKeysList::LONG == geoKey.KeyDataType);
+    BeAssert ( (ModelTypeProjected == m_modelType) || (ModelTypeGeographic == m_modelType) );
 
     int     geoCode = geoKey.KeyValue.LongVal;
-    assert ( ((geoCode >= 8900) && (geoCode < 9000)) || (geoCode != UserDefinedKeyValue) );
+    BeAssert ( ((geoCode >= 8900) && (geoCode < 9000)) || (geoCode != UserDefinedKeyValue) );
 
     switch (geoCode)
         {
@@ -3576,8 +3575,8 @@ StatusInt       ProcessPrimeMeridianKey (IGeoTiffKeysList::GeoKeyItem& geoKey)
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       ProcessPrimeMeridianLongitudeKey (IGeoTiffKeysList::GeoKeyItem& geoKey)
     {
-    assert (IGeoTiffKeysList::DOUBLE == geoKey.KeyDataType);
-    assert ( (ModelTypeProjected == m_modelType) || (ModelTypeGeographic == m_modelType) );
+    BeAssert (IGeoTiffKeysList::DOUBLE == geoKey.KeyDataType);
+    BeAssert ( (ModelTypeProjected == m_modelType) || (ModelTypeGeographic == m_modelType) );
 
     double geoValue = geoKey.KeyValue.DoubleVal * m_angularUnitsToDegrees;
     m_csDef.org_lng = geoValue;
@@ -3589,11 +3588,11 @@ StatusInt       ProcessPrimeMeridianLongitudeKey (IGeoTiffKeysList::GeoKeyItem& 
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       ProcessEllipsoidKey (IGeoTiffKeysList::GeoKeyItem& geoKey)
     {
-    assert (IGeoTiffKeysList::LONG == geoKey.KeyDataType);
-    assert ( (ModelTypeProjected == m_modelType) || (ModelTypeGeographic == m_modelType) );
+    BeAssert (IGeoTiffKeysList::LONG == geoKey.KeyDataType);
+    BeAssert ( (ModelTypeProjected == m_modelType) || (ModelTypeGeographic == m_modelType) );
 
     int     geoCode = geoKey.KeyValue.LongVal;
-    assert ( ((geoCode >= 7000) && (geoCode < 8000)) || (geoCode == UserDefinedKeyValue) );
+    BeAssert ( ((geoCode >= 7000) && (geoCode < 8000)) || (geoCode == UserDefinedKeyValue) );
 
 
     if (geoCode != UserDefinedKeyValue)
@@ -3629,11 +3628,11 @@ StatusInt       ProcessLinearUnitsKey (IGeoTiffKeysList::GeoKeyItem& geoKey, boo
     // for the interpretation of the ellispoid dimension yet we will not change the current CS definition unless it is
     // not a predefined GCS. (user defined GCS will have units applied)
 
-    assert (IGeoTiffKeysList::LONG == geoKey.KeyDataType);
-    assert ( (ModelTypeProjected == m_modelType) || (ModelTypeGeographic == m_modelType) );
+    BeAssert (IGeoTiffKeysList::LONG == geoKey.KeyDataType);
+    BeAssert ( (ModelTypeProjected == m_modelType) || (ModelTypeGeographic == m_modelType) );
 
     int     geoCode = geoKey.KeyValue.LongVal;
-    assert ( ((geoCode >= 9000) && (geoCode < 9100)) || (geoCode != UserDefinedKeyValue) );
+    BeAssert ( ((geoCode >= 9000) && (geoCode < 9100)) || (geoCode != UserDefinedKeyValue) );
 
     const struct cs_Unittab_  *pUnit;
     for (pUnit = cs_Unittab; cs_UTYP_END != pUnit->type; pUnit++)
@@ -3685,8 +3684,8 @@ StatusInt       ProcessLinearUnitsSizeKey (IGeoTiffKeysList::GeoKeyItem& geoKey,
     // for the interpretation of the ellispoid dimension yet we will not change the current CS definition unless it is
     // not a predefined GCS. (user defined GCS will have units applied)
 
-    assert (IGeoTiffKeysList::DOUBLE == geoKey.KeyDataType);
-    assert ( (ModelTypeProjected == m_modelType) || (ModelTypeGeographic == m_modelType) );
+    BeAssert (IGeoTiffKeysList::DOUBLE == geoKey.KeyDataType);
+    BeAssert ( (ModelTypeProjected == m_modelType) || (ModelTypeGeographic == m_modelType) );
 
     double geoValue = geoKey.KeyValue.DoubleVal;
     m_csDef.unit_scl = geoValue;
@@ -3723,11 +3722,11 @@ StatusInt       ProcessLinearUnitsSizeKey (IGeoTiffKeysList::GeoKeyItem& geoKey,
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       ProcessAngularUnitsKey (IGeoTiffKeysList::GeoKeyItem& geoKey, bool isGeographicCS)
     {
-    assert (IGeoTiffKeysList::LONG == geoKey.KeyDataType);
-    assert ( (ModelTypeProjected == m_modelType) || (ModelTypeGeographic == m_modelType) );
+    BeAssert (IGeoTiffKeysList::LONG == geoKey.KeyDataType);
+    BeAssert ( (ModelTypeProjected == m_modelType) || (ModelTypeGeographic == m_modelType) );
 
     int     geoCode = geoKey.KeyValue.LongVal;
-    assert ( ((geoCode >= 9100) && (geoCode < 9200)) || (geoCode != UserDefinedKeyValue) );
+    BeAssert ( ((geoCode >= 9100) && (geoCode < 9200)) || (geoCode != UserDefinedKeyValue) );
 
     const struct cs_Unittab_  *pUnit;
     for (pUnit = cs_Unittab; cs_UTYP_END != pUnit->type; pUnit++)
@@ -3750,8 +3749,8 @@ StatusInt       ProcessAngularUnitsKey (IGeoTiffKeysList::GeoKeyItem& geoKey, bo
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       ProcessAngularUnitsSizeKey (IGeoTiffKeysList::GeoKeyItem& geoKey, bool isGeographicCS)
     {
-    assert (IGeoTiffKeysList::DOUBLE == geoKey.KeyDataType);
-    assert ( (ModelTypeProjected == m_modelType) || (ModelTypeGeographic == m_modelType) );
+    BeAssert (IGeoTiffKeysList::DOUBLE == geoKey.KeyDataType);
+    BeAssert ( (ModelTypeProjected == m_modelType) || (ModelTypeGeographic == m_modelType) );
 
     double geoValue = geoKey.KeyValue.DoubleVal;
     const struct cs_Unittab_  *pUnit;
@@ -3781,8 +3780,8 @@ StatusInt       ProcessAngularUnitsSizeKey (IGeoTiffKeysList::GeoKeyItem& geoKey
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       ProcessSemiMajorAxisKey (IGeoTiffKeysList::GeoKeyItem& geoKey)
     {
-    assert (IGeoTiffKeysList::DOUBLE == geoKey.KeyDataType);
-    assert ( (ModelTypeProjected == m_modelType) || (ModelTypeGeographic == m_modelType) );
+    BeAssert (IGeoTiffKeysList::DOUBLE == geoKey.KeyDataType);
+    BeAssert ( (ModelTypeProjected == m_modelType) || (ModelTypeGeographic == m_modelType) );
 
     double geoValue = geoKey.KeyValue.DoubleVal * m_linearUnitsToMeters;
 
@@ -3797,8 +3796,8 @@ StatusInt       ProcessSemiMajorAxisKey (IGeoTiffKeysList::GeoKeyItem& geoKey)
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       ProcessSemiMinorAxisKey (IGeoTiffKeysList::GeoKeyItem& geoKey)
     {
-    assert (IGeoTiffKeysList::DOUBLE == geoKey.KeyDataType);
-    assert ( (ModelTypeProjected == m_modelType) || (ModelTypeGeographic == m_modelType) );
+    BeAssert (IGeoTiffKeysList::DOUBLE == geoKey.KeyDataType);
+    BeAssert ( (ModelTypeProjected == m_modelType) || (ModelTypeGeographic == m_modelType) );
 
     double geoValue = geoKey.KeyValue.DoubleVal * m_linearUnitsToMeters;
     // put value into the ellipse definition.
@@ -3815,8 +3814,8 @@ StatusInt       ProcessSemiMinorAxisKey (IGeoTiffKeysList::GeoKeyItem& geoKey)
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       ProcessInvFlatteningKey (IGeoTiffKeysList::GeoKeyItem& geoKey)
     {
-    assert (IGeoTiffKeysList::DOUBLE == geoKey.KeyDataType);
-    assert ( (ModelTypeProjected == m_modelType) || (ModelTypeGeographic == m_modelType) );
+    BeAssert (IGeoTiffKeysList::DOUBLE == geoKey.KeyDataType);
+    BeAssert ( (ModelTypeProjected == m_modelType) || (ModelTypeGeographic == m_modelType) );
 
     double geoValue = geoKey.KeyValue.DoubleVal;
     m_csEllipsoidDef.flat = 1.0 / geoValue;
@@ -3842,11 +3841,11 @@ StatusInt       ProcessInvFlatteningKey (IGeoTiffKeysList::GeoKeyItem& geoKey)
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       ProcessAzimuthUnitsKey (IGeoTiffKeysList::GeoKeyItem& geoKey)
     {
-    assert (IGeoTiffKeysList::LONG == geoKey.KeyDataType);
-    assert ( (ModelTypeProjected == m_modelType) || (ModelTypeGeographic == m_modelType) );
+    BeAssert (IGeoTiffKeysList::LONG == geoKey.KeyDataType);
+    BeAssert ( (ModelTypeProjected == m_modelType) || (ModelTypeGeographic == m_modelType) );
 
     int     geoCode = geoKey.KeyValue.LongVal;
-    assert ( ((geoCode >= 9100) && (geoCode < 9200)) || (geoCode != UserDefinedKeyValue) );
+    BeAssert ( ((geoCode >= 9100) && (geoCode < 9200)) || (geoCode != UserDefinedKeyValue) );
 
     const struct cs_Unittab_  *pUnit;
     for (pUnit = cs_Unittab; cs_UTYP_END != pUnit->type; pUnit++)
@@ -3865,8 +3864,8 @@ StatusInt       ProcessAzimuthUnitsKey (IGeoTiffKeysList::GeoKeyItem& geoKey)
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       ProcessProjectedCSTypeKey (IGeoTiffKeysList::GeoKeyItem& geoKey)
     {
-    assert (IGeoTiffKeysList::LONG == geoKey.KeyDataType);
-    assert (ModelTypeProjected == m_modelType);
+    BeAssert (IGeoTiffKeysList::LONG == geoKey.KeyDataType);
+    BeAssert (ModelTypeProjected == m_modelType);
 
     int     geoCode = geoKey.KeyValue.LongVal;
 
@@ -3924,8 +3923,8 @@ StatusInt       ProcessProjectedCSTypeKey (IGeoTiffKeysList::GeoKeyItem& geoKey)
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       ProcessPCSCitationKey (IGeoTiffKeysList::GeoKeyItem& geoKey)
     {
-    assert (IGeoTiffKeysList::ASCII == geoKey.KeyDataType);
-    assert (ModelTypeProjected == m_modelType);
+    BeAssert (IGeoTiffKeysList::ASCII == geoKey.KeyDataType);
+    BeAssert (ModelTypeProjected == m_modelType);
 
     static ProjTransInCitation projTransInCitation[] = {
         //From GCoord
@@ -3963,7 +3962,7 @@ StatusInt       ProcessPCSCitationKey (IGeoTiffKeysList::GeoKeyItem& geoKey)
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       ProcessProjectionKey (IGeoTiffKeysList::GeoKeyItem& geoKey)
     {
-    assert (IGeoTiffKeysList::LONG == geoKey.KeyDataType);
+    BeAssert (IGeoTiffKeysList::LONG == geoKey.KeyDataType);
 
     int geoValue      = geoKey.KeyValue.LongVal;
 
@@ -3981,8 +3980,8 @@ StatusInt       ProcessProjectionKey (IGeoTiffKeysList::GeoKeyItem& geoKey)
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       ProcessCoordTransKey (IGeoTiffKeysList::GeoKeyItem& geoKey)
     {
-    assert (IGeoTiffKeysList::LONG == geoKey.KeyDataType);
-    assert (ModelTypeProjected == m_modelType);
+    BeAssert (IGeoTiffKeysList::LONG == geoKey.KeyDataType);
+    BeAssert (ModelTypeProjected == m_modelType);
 
     int         geoCode      = geoKey.KeyValue.LongVal;
     const char *csProjection = NULL;
@@ -4141,8 +4140,8 @@ StatusInt       ProcessCoordTransKey (IGeoTiffKeysList::GeoKeyItem& geoKey)
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       ProcessStandardParallelKey (IGeoTiffKeysList::GeoKeyItem& geoKey, bool isFirst)
     {
-    assert (IGeoTiffKeysList::DOUBLE == geoKey.KeyDataType);
-    assert (ModelTypeProjected == m_modelType);
+    BeAssert (IGeoTiffKeysList::DOUBLE == geoKey.KeyDataType);
+    BeAssert (ModelTypeProjected == m_modelType);
 
     double geoValue = geoKey.KeyValue.DoubleVal * m_angularUnitsToDegrees;
 
@@ -4212,8 +4211,8 @@ StatusInt       ProcessStandardParallelKey (IGeoTiffKeysList::GeoKeyItem& geoKey
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       ProcessOriginOrCenterLLKey (IGeoTiffKeysList::GeoKeyItem& geoKey, bool isLongitude)
     {
-    assert (IGeoTiffKeysList::DOUBLE == geoKey.KeyDataType);
-    assert (ModelTypeProjected == m_modelType);
+    BeAssert (IGeoTiffKeysList::DOUBLE == geoKey.KeyDataType);
+    BeAssert (ModelTypeProjected == m_modelType);
 
     // if a previous key specifed the origin longitude or latitude, simply ignore a repeated attempt to set it.
     if (isLongitude && m_haveUserOriginLongitude)
@@ -4335,8 +4334,8 @@ StatusInt       ProcessOriginOrCenterLLKey (IGeoTiffKeysList::GeoKeyItem& geoKey
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       ProcessFalseENKey (IGeoTiffKeysList::GeoKeyItem& geoKey, bool isEasting)
     {
-    assert (IGeoTiffKeysList::DOUBLE == geoKey.KeyDataType);
-    assert (ModelTypeProjected == m_modelType);
+    BeAssert (IGeoTiffKeysList::DOUBLE == geoKey.KeyDataType);
+    BeAssert (ModelTypeProjected == m_modelType);
 
     if (isEasting && m_haveFalseEasting)
         return GEOCOORDERR_CoordParamRedundant;
@@ -4371,8 +4370,8 @@ StatusInt       ProcessFalseENKey (IGeoTiffKeysList::GeoKeyItem& geoKey, bool is
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       ProcessScaleAtNatOriginKey (IGeoTiffKeysList::GeoKeyItem& geoKey)
     {
-    assert (IGeoTiffKeysList::DOUBLE == geoKey.KeyDataType);
-    assert (ModelTypeProjected == m_modelType);
+    BeAssert (IGeoTiffKeysList::DOUBLE == geoKey.KeyDataType);
+    BeAssert (ModelTypeProjected == m_modelType);
 
     double geoValue = geoKey.KeyValue.DoubleVal;
 
@@ -4387,8 +4386,8 @@ StatusInt       ProcessScaleAtNatOriginKey (IGeoTiffKeysList::GeoKeyItem& geoKey
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       ProcessScaleAtCenterKey (IGeoTiffKeysList::GeoKeyItem& geoKey)
     {
-    assert (IGeoTiffKeysList::DOUBLE == geoKey.KeyDataType);
-    assert (ModelTypeProjected == m_modelType);
+    BeAssert (IGeoTiffKeysList::DOUBLE == geoKey.KeyDataType);
+    BeAssert (ModelTypeProjected == m_modelType);
 
     double geoValue = geoKey.KeyValue.DoubleVal;
 
@@ -4403,8 +4402,8 @@ StatusInt       ProcessScaleAtCenterKey (IGeoTiffKeysList::GeoKeyItem& geoKey)
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       ProcessAzimuthAngleKey (IGeoTiffKeysList::GeoKeyItem& geoKey)
     {
-    assert (IGeoTiffKeysList::DOUBLE == geoKey.KeyDataType);
-    assert (ModelTypeProjected == m_modelType);
+    BeAssert (IGeoTiffKeysList::DOUBLE == geoKey.KeyDataType);
+    BeAssert (ModelTypeProjected == m_modelType);
 
     double geoValue = geoKey.KeyValue.DoubleVal * m_azimuthUnitsToDegrees;
 
@@ -4450,8 +4449,8 @@ StatusInt       ProcessAzimuthAngleKey (IGeoTiffKeysList::GeoKeyItem& geoKey)
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       ProcessStraightVertPoleLongKey (IGeoTiffKeysList::GeoKeyItem& geoKey)
     {
-    assert (IGeoTiffKeysList::DOUBLE == geoKey.KeyDataType);
-    assert (ModelTypeProjected == m_modelType);
+    BeAssert (IGeoTiffKeysList::DOUBLE == geoKey.KeyDataType);
+    BeAssert (ModelTypeProjected == m_modelType);
 
     double geoValue = geoKey.KeyValue.DoubleVal * m_angularUnitsToDegrees;
 
@@ -4493,7 +4492,7 @@ StatusInt       ProcessStraightVertPoleLongKey (IGeoTiffKeysList::GeoKeyItem& ge
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       ProcessVerticalCSTypeKey (IGeoTiffKeysList::GeoKeyItem& geoKey)
     {
-    assert (IGeoTiffKeysList::LONG == geoKey.KeyDataType);
+    BeAssert (IGeoTiffKeysList::LONG == geoKey.KeyDataType);
 
     long verticalCSCode = geoKey.KeyValue.LongVal;
 
@@ -4554,8 +4553,8 @@ StatusInt       SaveGCS
     int     epsgCode = m_inGCS.GetEPSGCode();
     if (isGeographic)
         {
-        // assert ( (epsgCode >= 4000) && (epsgCode <= 4999) );
-        // There are some EPSG LL coordinate systems in our coordsys.asc (e.g., 104107) that are outside of the range, but might match. We used to assert and return error,
+        // BeAssert ( (epsgCode >= 4000) && (epsgCode <= 4999) );
+        // There are some EPSG LL coordinate systems in our coordsys.asc (e.g., 104107) that are outside of the range, but might match. We used to BeAssert and return error,
         // but I changed it to just ignore them.
         if ( (epsgCode < 4000) || (epsgCode > 4999) )
             epsgCode = 0;
@@ -5239,7 +5238,7 @@ BaseGCS::BaseGCS (BaseGCSCR source)
         return;
         }
 
-    assert ( NULL != source.m_csParameters );
+    BeAssert ( NULL != source.m_csParameters );
 
     // copy the parameters structure. 
     if (NULL != source.m_csParameters)
@@ -5410,7 +5409,7 @@ int                     quadrant
             char    csErrorMsg[512];
             CSMap::CS_errmsg (csErrorMsg, DIM(csErrorMsg));
             errorMsg->AssignA (csErrorMsg);
-            assert (false);
+            BeAssert (false);
             }
         m_csError = cs_Error;
         return cs_Error;
@@ -5475,7 +5474,7 @@ int                     quadrant
             char    csErrorMsg[512];
             CSMap::CS_errmsg (csErrorMsg, DIM(csErrorMsg));
             errorMsg->AssignA (csErrorMsg);
-            assert (false);
+            BeAssert (false);
             }
         m_csError = cs_Error;
         return cs_Error;
@@ -5532,7 +5531,7 @@ double                  originLatitude      // displacement from Greenwich
             char    csErrorMsg[512];
             CSMap::CS_errmsg (csErrorMsg, DIM(csErrorMsg));
             errorMsg->AssignA (csErrorMsg);
-            assert (false);
+            BeAssert (false);
             }
         m_csError = cs_Error;
         return cs_Error;
@@ -5585,7 +5584,7 @@ WCharCP                 wellKnownText       // The Well Known Text specifying th
             char    csErrorMsg[512];
             CSMap::CS_errmsg (csErrorMsg, DIM(csErrorMsg));
             warningOrErrorMsg->AssignA (csErrorMsg);
-//            assert (false);
+//            BeAssert (false);
             }
         // process warnings.
         if ((status & ~(StatusInt)(cs_EL2WKT_NMTRUNC | cs_DT2WKT_NMTRUNC | cs_CS2WKT_NMTRUNC | cs_DT2WKT_DTDEF | cs_DT2WKT_NODEF)) == 0)
@@ -5613,7 +5612,7 @@ WCharCP                 wellKnownText       // The Well Known Text specifying th
                 char    csErrorMsg[512];
                 CSMap::CS_errmsg (csErrorMsg, DIM(csErrorMsg));
                 warningOrErrorMsg->AssignA (csErrorMsg);
-                assert (false);
+                BeAssert (false);
                 }
             m_csError = cs_Error;
             status = cs_Error;
@@ -6161,7 +6160,7 @@ bool                 anyWord
         return 0;
 
     // the number of mixed case should always equal or exceed the number of uppercase. Exceed happens when you enter something such that strupr(string).Equals(string).
-    assert (numMixedCase >= numUpperCase);
+    BeAssert (numMixedCase >= numUpperCase);
 
     char concatString[4096];
     strcpy (concatString, m_csParameters->csdef.key_nm);
@@ -6227,7 +6226,7 @@ bool                 anyWord
         return score;
         }
 
-    assert (score >= 0);
+    BeAssert (score >= 0);
     return score;
     }
 
@@ -9639,7 +9638,7 @@ bvector<GeoPoint>&    shape
                 }
             else 
                 {
-                assert (3 == region);
+                BeAssert (3 == region);
 		        point.Init(14.510, 54.942, 0.0);
 		        shape.push_back(point);
 		        point.Init(14.510, 55.431, 0.0);
@@ -12290,7 +12289,7 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 VerticalDatumConverter (bool inputIsInNAD27, VertDatumCode inputVdc, VertDatumCode outputVdc)
     {
-    assert (inputVdc != outputVdc);
+    BeAssert (inputVdc != outputVdc);
 
     m_fromVDC = inputVdc;
     m_toVDC = outputVdc;
@@ -14535,7 +14534,7 @@ MilitaryGridConverter::MilitaryGridConverter (BaseGCSR baseGCS, bool useBessel, 
     m_fromWGS84Converter        = NULL;
 
     // can't have both useBessel and useWGS84Datum.
-    assert (!useBessel || !useWGS84Datum);
+    BeAssert (!useBessel || !useWGS84Datum);
 
     if (!baseGCS.IsValid())
         {
@@ -14551,7 +14550,7 @@ MilitaryGridConverter::MilitaryGridConverter (BaseGCSR baseGCS, bool useBessel, 
         // use Bessel version of the grid labels for Clarke and Bessel ellipsoids.
         WCharCP         ellipsoidName   = baseGCS.GetEllipsoidName();
         bool            besselEllipsoid = (0 == wcsncmp (L"CLRK", ellipsoidName, 4)) || (0 == wcsncmp (L"BESL", ellipsoidName, 4)) || (0 == wcsncmp (L"BESSEL", ellipsoidName, 6));
-        assert (besselEllipsoid);
+        BeAssert (besselEllipsoid);
 
         double          eccentricity    = baseGCS.GetEllipsoidEccentricity();
         m_csMgrs                        = CSMap::CSnewMgrs (baseGCS.GetEllipsoidEquatorialRadius(), eccentricity*eccentricity, useBessel);
@@ -14574,13 +14573,13 @@ MilitaryGridConverter::MilitaryGridConverter (BaseGCSR baseGCS, bool useBessel, 
             // getting WGS84 should never fail.
             if (NULL == (wgs84Datum = GeoCoordinates::Datum::CreateDatum (L"WGS84")))
                 {
-                assert (false);
+                BeAssert (false);
                 return;
                 }
 
             if (NULL == (wgs84CSDatum = wgs84Datum->GetCSDatum()))
                 {
-                assert (false);
+                BeAssert (false);
                 wgs84Datum->Destroy();
                 return;
                 }
