@@ -128,7 +128,7 @@ protected:
     };
 
     Properties m_properties;
-    mutable RealityDataCachePtr m_realityDataCache;
+    mutable RealityData::CachePtr m_realityDataCache;
     mutable TileCache m_tileCache;
 
 public:
@@ -144,9 +144,8 @@ public:
     void RequestTile(TileId, TileR, Render::SystemR) const;
     TilePtr CreateTile(TileId id, Tile::Corners const&, Render::SystemR) const;
         
-    RealityDataCache& GetRealityDataCache() const;
+    RealityData::Cache& GetRealityDataCache() const;
     TileCache& GetTileCache() const {return m_tileCache;}
-
     //! Create a new WebMercatorModel object, in preparation for loading it from the DgnDb.
     WebMercatorModel(CreateParams const& params) : T_Super(params), m_properties(params.m_properties) {}
 

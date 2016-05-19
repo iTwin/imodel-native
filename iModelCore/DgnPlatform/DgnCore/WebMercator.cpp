@@ -526,7 +526,6 @@ bool WebMercatorDisplay::ComputeZoomLevel(DgnViewportR vp)
         m_tileRange.Extend(ConvertMetersToWpixels(DPoint2d::From(xyzPt.x, xyzPt.y)));
         xyRange.Extend(xyzPt);
         }
-    BeAssert(m_tileRange.IsValid());
 
     double worldDiag = xyRange.low.Distance(xyRange.high);
     Frustum  viewFrust = vp.GetFrustum(DgnCoordSystem::View);
@@ -989,10 +988,10 @@ BEGIN_UNNAMED_NAMESPACE
 //=======================================================================================
 // @bsiclass                                        Grigas.Petraitis            03/2015
 //=======================================================================================
-struct TiledRasterCache : RealityDataStorage
+struct TiledRasterCache : RealityData::Storage
 {
     uint64_t m_allowedSize = MAX_DB_CACHE_SIZE;
-    using RealityDataStorage::RealityDataStorage;
+    using Storage::Storage;
     virtual BentleyStatus _PrepareDatabase(BeSQLite::Db& db) const override;
     virtual BentleyStatus _CleanupDatabase(BeSQLite::Db& db) const override;
 };
@@ -1000,7 +999,7 @@ struct TiledRasterCache : RealityDataStorage
 //=======================================================================================
 // @bsiclass                                        Grigas.Petraitis            10/2014
 //=======================================================================================
-struct TileData : RealityData
+struct TileData : RealityData::Payload
 {
 private:
     Utf8String  m_url;
@@ -1200,11 +1199,11 @@ BentleyStatus TileData::_Persist(Db& db) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-RealityDataCache& WebMercatorModel::GetRealityDataCache() const
+RealityData::CacheR WebMercatorModel::GetRealityDataCache() const
     {
     if (!m_realityDataCache.IsValid())
         {
-        m_realityDataCache = new RealityDataCache();
+        m_realityDataCache = new RealityData::Cache();
 
         BeFileName cacheName = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName();
         cacheName.AppendToPath(BeFileName(GetName()));
@@ -1216,7 +1215,7 @@ RealityDataCache& WebMercatorModel::GetRealityDataCache() const
         if (SUCCESS == cache->OpenAndPrepare(cacheName))
             m_realityDataCache->SetStorage(*cache);
 
-        m_realityDataCache->SetSource(*new HttpRealityDataSource(threadCount, SchedulingMethod::FIFO));
+        m_realityDataCache->SetSource(*new RealityData::HttpSource(threadCount, RealityData::SchedulingMethod::FIFO));
         }
 
     return *m_realityDataCache;
@@ -1238,7 +1237,7 @@ void WebMercatorModel::RequestTile(TileId id, TileR tile, Render::SystemR sys) c
     if (0.0 != m_properties.m_transparency)
         color.SetAlpha((Byte) (255.* m_properties.m_transparency));
 
-    GetRealityDataCache().RequestData(*new TileData(tile, sys, color), url.c_str(), RealityDataOptions());
+    GetRealityDataCache().RequestData(*new TileData(tile, sys, color), url.c_str(), RealityData::Options());
     }
 
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
