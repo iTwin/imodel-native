@@ -37,6 +37,7 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+#ifdef NOT_USED
 static void runOnAnotherThread(std::function<void()> const& handler)
     {
     WorkerThreadPtr thread = WorkerThread::Create();
@@ -47,7 +48,7 @@ static void runOnAnotherThread(std::function<void()> const& handler)
         thread->Terminate();
         }));
     }
-
+#endif
 //=======================================================================================
 // @bsiclass                                        Grigas.Petraitis            03/2015
 //=======================================================================================
