@@ -386,17 +386,15 @@ enum class CacheResult
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE Storage : RefCountedBase, NonCopyableClass
 {
+private:
     struct CleanAndSaveChangesWork;
     //===================================================================================
     // @bsiclass                                        Grigas.Petraitis        04/2015
     //===================================================================================
     struct StorageThreadPool : ThreadPool
     {
-    private:
         Storage& m_storage;
-    protected:
         virtual bool _AssignWork(WorkerThread& thread) override;
-    public:
         StorageThreadPool(Storage& storage, int numThreads, SchedulingMethod schedulingMethod) : ThreadPool(numThreads, numThreads, schedulingMethod), m_storage(storage){}
         void QueueIdleWork(Work& work);
         ThreadSafeQueue<WorkPtr>& GetQueue() {return ThreadPool::GetQueue();}
@@ -407,7 +405,6 @@ struct EXPORT_VTABLE_ATTRIBUTE Storage : RefCountedBase, NonCopyableClass
     //===================================================================================
     struct StorageWork : RefCounted<Work>
     {
-    protected:
         StoragePtr m_storage;
         StorageWork(Storage& storage) : m_storage(&storage) {}
     };
@@ -417,16 +414,13 @@ struct EXPORT_VTABLE_ATTRIBUTE Storage : RefCountedBase, NonCopyableClass
     //===================================================================================
     struct SelectDataWork : StorageWork
     {
-    private:
         RefCountedPtr<Payload> m_data;
         Options m_options;
         Cache& m_responseReceiver;
         bool m_hasResult;
         mutable StorageResult m_result;
         mutable BeConditionVariable m_resultCV;
-    protected:
         virtual void _DoWork() override;
-    public:
         SelectDataWork(Storage& storage, Payload& data, Options options, Cache& responseReceiver)
             : StorageWork(storage), m_data(&data), m_options(options), m_hasResult(false), m_responseReceiver(responseReceiver) {}
         StorageResult GetResult() const;
@@ -437,11 +431,8 @@ struct EXPORT_VTABLE_ATTRIBUTE Storage : RefCountedBase, NonCopyableClass
     //===================================================================================
     struct PersistDataWork : StorageWork
     {
-    private:
         RefCountedPtr<Payload const>  m_data;
-    protected:
         virtual void _DoWork() override;
-    public:
         PersistDataWork(Storage& storage, Payload const& data) : StorageWork(storage), m_data(&data) {}
     };
 
@@ -450,15 +441,11 @@ struct EXPORT_VTABLE_ATTRIBUTE Storage : RefCountedBase, NonCopyableClass
     //===================================================================================
     struct CleanAndSaveChangesWork : StorageWork
     {
-    private:
         uint32_t m_idleTime;
-    protected:
         virtual void _DoWork() override;
-    public:
         CleanAndSaveChangesWork(Storage& storage, uint32_t idleTime) : StorageWork(storage), m_idleTime(idleTime) {}
     };
 
-private:
     RefCountedPtr<StorageThreadPool> m_threadPool;
     BeAtomic<bool> m_hasChanges;
     BeMutex m_saveChangesMux;
@@ -468,14 +455,10 @@ private:
     uint32_t m_idleTime;
     RefCountedPtr<BeSQLite::BusyRetry> m_retry;
 
-private:
     void wt_Cleanup();
     void wt_Persist(Payload const& data);
     StorageResult wt_Select(Payload& data, Options options, Cache& responseReceiver);
     void wt_SaveChanges();
-
-public:
-    RefCountedPtr<StorageThreadPool> GetThreadPool() const {return m_threadPool;}
 
 protected:
     //! Called to prepare the database for storing specific type of data (the type
@@ -503,6 +486,7 @@ public:
     DGNPLATFORM_EXPORT BentleyStatus OpenAndPrepare(BeFileNameCR cacheName);
 
     DGNPLATFORM_EXPORT void Terminate();
+    RefCountedPtr<StorageThreadPool> GetThreadPool() const {return m_threadPool;}
 };
 
 //=======================================================================================
