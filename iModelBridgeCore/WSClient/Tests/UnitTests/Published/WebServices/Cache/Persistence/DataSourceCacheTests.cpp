@@ -3950,7 +3950,7 @@ TEST_F(DataSourceCacheTests, CacheFile_CachingPersistentLocation_CachedFilePathB
     cache->CacheFile(fileId, WSFileResponse(StubFile(), HttpStatus::OK, nullptr), FileCache::Persistent);
 
     BeFileName cachedFilePath = cache->ReadFilePath(fileId);
-    BeFileName environmentPath = StubCacheEnvironemnt().persistentFileCacheDir;
+    BeFileName environmentPath = GetTestCacheEnvironment().persistentFileCacheDir;
 
     EXPECT_TRUE(cachedFilePath.DoesPathExist());
     EXPECT_THAT(cachedFilePath.GetNameUtf8().c_str(), StartsWith(environmentPath.GetNameUtf8().c_str()));
@@ -3966,7 +3966,7 @@ TEST_F(DataSourceCacheTests, CacheFile_CachingTemporaryLocation_CachedFilePathBe
     cache->CacheFile(fileId, WSFileResponse(StubFile(), HttpStatus::OK, nullptr), FileCache::Temporary);
 
     BeFileName cachedFilePath = cache->ReadFilePath(fileId);
-    BeFileName environmentPath = StubCacheEnvironemnt().temporaryFileCacheDir;
+    BeFileName environmentPath = GetTestCacheEnvironment().temporaryFileCacheDir;
 
     EXPECT_TRUE(cachedFilePath.DoesPathExist());
     EXPECT_THAT(cachedFilePath.GetNameUtf8().c_str(), StartsWith(environmentPath.GetNameUtf8().c_str()));
@@ -4135,7 +4135,7 @@ TEST_F(DataSourceCacheTests, SetFileCacheLocation_MovingCachedFileToTemporary_Mo
     ASSERT_EQ(SUCCESS, cache->SetFileCacheLocation(fileId, FileCache::Temporary));
 
     BeFileName cachedFilePath = cache->ReadFilePath(fileId);
-    BeFileName environmentPath = StubCacheEnvironemnt().temporaryFileCacheDir;
+    BeFileName environmentPath = GetTestCacheEnvironment().temporaryFileCacheDir;
 
     EXPECT_TRUE(cachedFilePath.DoesPathExist());
     EXPECT_THAT(cachedFilePath.GetNameUtf8().c_str(), StartsWith(environmentPath.GetNameUtf8().c_str()));
@@ -4153,7 +4153,7 @@ TEST_F(DataSourceCacheTests, SetFileCacheLocation_MovingCachedFileToPersistent_M
     ASSERT_EQ(SUCCESS, cache->SetFileCacheLocation(fileId, FileCache::Persistent));
 
     BeFileName cachedFilePath = cache->ReadFilePath(fileId);
-    BeFileName environmentPath = StubCacheEnvironemnt().persistentFileCacheDir;
+    BeFileName environmentPath = GetTestCacheEnvironment().persistentFileCacheDir;
 
     EXPECT_TRUE(cachedFilePath.DoesPathExist());
     EXPECT_THAT(cachedFilePath.GetNameUtf8().c_str(), StartsWith(environmentPath.GetNameUtf8().c_str()));
