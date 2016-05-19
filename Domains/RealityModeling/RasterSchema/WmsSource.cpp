@@ -19,12 +19,12 @@ USING_NAMESPACE_BENTLEY_SQLITE
 //=======================================================================================
 // @bsimethod                                                   Mathieu.Marchand  6/2015
 //=======================================================================================
-struct WmsTileData : RealityData
+struct WmsTileData : RealityData::Payload
 {
     //===================================================================================
     // @bsimethod                                               Mathieu.Marchand  6/2015
     //===================================================================================
-    struct RequestOptions : RealityDataOptions
+    struct RequestOptions : RealityData::Options
     {
         RequestOptions(bool requestFromSource){m_requestFromSource=requestFromSource;}
     };
@@ -70,9 +70,9 @@ bool WmsTileData::_IsExpired() const
 //=======================================================================================
 // @bsimethod                                                   Mathieu.Marchand  6/2015
 //=======================================================================================
-struct WmsTileCache : RealityDataStorage
+struct WmsTileCache : RealityData::Storage
 {
-    using RealityDataStorage::RealityDataStorage;
+    using Storage::Storage;
 
     //----------------------------------------------------------------------------------------
     // @bsimethod                                                   Mathieu.Marchand  6/2015
@@ -412,7 +412,7 @@ Render::Image WmsSource::_QueryTile(TileId const& id, bool& alphaBlend)
     //     Maybe one table per server?  and use TileId or hash the url ?
     //     BeSQLiteRealityDataStorage::wt_Prepare call to "VACCUUM" is the reason why we have such a big slowdown.
     RefCountedPtr<WmsTileData> pWmsTileData = WmsTileData::Create();
-    if (RealityDataCacheResult::Success != GetRealityDataCache().RequestData(*pWmsTileData, tileUrl.c_str(), WmsTileData::RequestOptions(true)))
+    if (RealityData::CacheResult::Success != GetRealityDataCache().RequestData(*pWmsTileData, tileUrl.c_str(), WmsTileData::RequestOptions(true)))
         return image;
 
     BeAssert(pWmsTileData.IsValid());
@@ -497,11 +497,11 @@ Utf8String WmsSource::BuildTileUrl(TileId const& tileId)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-RealityDataCache& WmsSource::GetRealityDataCache() const
+RealityData::CacheR WmsSource::GetRealityDataCache() const
     {
     if (m_realityDataCache.IsNull())
         {
-        m_realityDataCache = new RealityDataCache();
+        m_realityDataCache = new RealityData::Cache();
         BeFileName storageFileName = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName();
         storageFileName.AppendToPath(L"WMS");
 
@@ -509,7 +509,7 @@ RealityDataCache& WmsSource::GetRealityDataCache() const
         if (SUCCESS == cache->OpenAndPrepare(storageFileName))
             m_realityDataCache->SetStorage(*cache);
 
-        m_realityDataCache->SetSource(*new HttpRealityDataSource(8, SchedulingMethod::LIFO));
+        m_realityDataCache->SetSource(*new RealityData::HttpSource(8, RealityData::SchedulingMethod::FIFO));
         }
     return *m_realityDataCache;
     }

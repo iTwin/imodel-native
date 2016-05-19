@@ -203,13 +203,13 @@ private:
     double m_scale = 1.0;
     NodePtr m_rootNode;
     uint32_t m_expirationTime = 20 * 1000; // save unused nodes for 20 seconds (value is in milliseconds)
-    Dgn::RealityDataCachePtr m_cache;
+    Dgn::RealityData::CachePtr m_cache;
     Dgn::Render::SystemP m_renderSystem = nullptr;
 
     BentleyStatus ReadGeoLocation(SceneInfo const&);
     BentleyStatus LoadScene(); // synchronous  
     bool IsHttp() const {return m_isHttp;}
-    Dgn::RealityDataCacheResult RequestData(Node* node, bool synchronous, MxStreamBuffer*);
+    Dgn::RealityData::CacheResult RequestData(Node* node, bool synchronous, MxStreamBuffer*);
     void CreateCache();
 
 public:

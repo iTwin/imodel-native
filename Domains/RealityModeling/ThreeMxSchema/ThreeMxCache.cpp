@@ -15,11 +15,11 @@ BEGIN_UNNAMED_NAMESPACE
 //=======================================================================================
 // @bsiclass                                        Grigas.Petraitis            03/2015
 //=======================================================================================
-struct ThreeMxCache : RealityDataStorage
+struct ThreeMxCache : RealityData::Storage
 {
     uint64_t m_allowedSize = (1024*1024*1024); // 1 Gb
 
-    using RealityDataStorage::RealityDataStorage;
+    using Storage::Storage;
     virtual BentleyStatus _PrepareDatabase(BeSQLite::Db& db) const override;
     virtual BentleyStatus _CleanupDatabase(BeSQLite::Db& db) const override;
 };
@@ -27,7 +27,7 @@ struct ThreeMxCache : RealityDataStorage
 //=======================================================================================
 // @bsiclass                                        Grigas.Petraitis            04/2015
 //=======================================================================================
-struct ThreeMxData : RealityData
+struct ThreeMxData : RealityData::Payload
 {
 protected:
     Scene& m_scene;
@@ -38,7 +38,7 @@ protected:
     MxStreamBuffer* m_output;
 
 public:
-    struct RequestOptions : RealityDataOptions
+    struct RequestOptions : RealityData::Options
     {
         RequestOptions(bool synchronous)
             {
@@ -230,7 +230,7 @@ BentleyStatus ThreeMxCache::_CleanupDatabase(BeSQLite::Db& db) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-RealityDataCacheResult Scene::RequestData(NodeP node, bool synchronous, MxStreamBuffer* output)
+RealityData::CacheResult Scene::RequestData(NodeP node, bool synchronous, MxStreamBuffer* output)
     {
     DgnDb::VerifyClientThread();
     BeAssert(output || node);
@@ -241,7 +241,7 @@ RealityDataCacheResult Scene::RequestData(NodeP node, bool synchronous, MxStream
         if (!node->AreChildrenNotLoaded())
             {
             BeAssert(false);
-            return RealityDataCacheResult::Error;
+            return RealityData::CacheResult::Error;
             }
 
         node->m_childLoad.store(Node::ChildLoad::Queued);
@@ -260,7 +260,7 @@ RealityDataCacheResult Scene::RequestData(NodeP node, bool synchronous, MxStream
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Scene::CreateCache()
     {
-    m_cache = new RealityDataCache();
+    m_cache = new RealityData::Cache();
 
     uint32_t threadCount = std::max((uint32_t) 2,BeThreadUtilities::GetHardwareConcurrency() / 2);
 
@@ -270,10 +270,10 @@ void Scene::CreateCache()
         if (SUCCESS == cache->OpenAndPrepare(m_localCacheName))
             m_cache->SetStorage(*cache);
 
-        m_cache->SetSource(*new HttpRealityDataSource(threadCount, SchedulingMethod::FIFO));
+        m_cache->SetSource(*new RealityData::HttpSource(threadCount, RealityData::SchedulingMethod::FIFO));
         }
     else
         {
-        m_cache->SetSource(*new FileRealityDataSource(threadCount, SchedulingMethod::FIFO));
+        m_cache->SetSource(*new RealityData::FileSource(threadCount, RealityData::SchedulingMethod::FIFO));
         }
     }

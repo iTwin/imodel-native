@@ -19,7 +19,7 @@ BEGIN_BENTLEY_RASTERSCHEMA_NAMESPACE
 struct WmsSource : public RasterSource
 {
 private:
-    mutable RealityDataCachePtr m_realityDataCache;
+    mutable RealityData::CachePtr m_realityDataCache;
 
 public:
     static WmsSourcePtr Create(WmsMap const& mapInfo);
@@ -28,7 +28,7 @@ public:
 
 protected:
     virtual Render::Image _QueryTile(TileId const& id, bool& alphaBlend) override;
-    RealityDataCache& GetRealityDataCache() const;
+    RealityData::Cache& GetRealityDataCache() const;
 
 private:
     WmsSource(WmsMap const& mapInfo);
