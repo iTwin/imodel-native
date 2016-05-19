@@ -34,10 +34,10 @@ public:
     static RefCountedPtr<TestWork> Create(Handler const& handler) {return new TestWork(handler);}
 };
 
+#ifdef UNREFERENCED_LOCAL_FUNCTION
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-#ifdef NOT_USED
 static void runOnAnotherThread(std::function<void()> const& handler)
     {
     WorkerThreadPtr thread = WorkerThread::Create();
@@ -49,6 +49,7 @@ static void runOnAnotherThread(std::function<void()> const& handler)
         }));
     }
 #endif
+
 //=======================================================================================
 // @bsiclass                                        Grigas.Petraitis            03/2015
 //=======================================================================================
