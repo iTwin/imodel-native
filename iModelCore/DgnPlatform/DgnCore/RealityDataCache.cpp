@@ -290,9 +290,9 @@ template<typename T> typename ThreadSafeQueue<T>::Iterator ThreadSafeQueue<T>::e
 
 // explicitly implement for testing purposes, 
 // note: must be done AFTER all template functions are defined
-BEGIN_BENTLEY_DGN_NAMESPACE
+BEGIN_BENTLEY_REALITYDATA_NAMESPACE
 template struct ThreadSafeQueue<int>;
-END_BENTLEY_DGN_NAMESPACE
+END_BENTLEY_REALITYDATA_NAMESPACE
 
 /*======================================================================================+
 |   BeSQLiteRealityDataStorage
