@@ -1105,7 +1105,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
     public:
         // Constructor / Destroyer
 
-        SMStreamingPointTaggedTileStore(WString& path, WString grouped_headers_path = L"", bool areNodeHeadersGrouped = false, bool compress = true)
+        SMStreamingPointTaggedTileStore(const WString& path, WString grouped_headers_path = L"", bool areNodeHeadersGrouped = false, bool compress = true)
             :m_path(path),
             m_path_to_grouped_headers(grouped_headers_path),
             m_node_id(0),
@@ -1179,7 +1179,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                 m_masterHeader["singleFile"] = false;
 
                 // Write to file
-                auto filename = (m_path + L"MasterHeader.sscm").c_str();
+                auto filename = (m_path + L"..\\MasterHeader.sscm").c_str();
                 BeFile file;
                 uint64_t buffer_size;
                 auto jsonWriter = [&file, &indexHeader, &buffer_size](BeFile& file, Json::Value& object) {
@@ -1324,7 +1324,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                     {
                     // For this particular implementation the header size is unused ... The indexHeader is unique and of known size
                     BeFile file;
-                    auto filename = (m_path + L"MasterHeader.sscm").c_str();
+                    auto filename = (m_path + L"..\\MasterHeader.sscm").c_str();
                     if (BeFileStatus::Success != OPEN_FILE(file, filename, BeFileAccess::Read))//file.Open(filename, BeFileAccess::Read, BeFileSharing::None))
                         {
                         assert(!"Local master header could not be found");

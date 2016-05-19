@@ -625,16 +625,6 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
         }
 #endif
 
-    if (!pDataIndex->IsSingleFile() && s_save_grouped_store && !pDataIndex->IsEmpty())
-        {
-        // Make sure node headers are stored
-        pDataIndex->Store();
-
-        auto position = m_scmFileName.find_last_of(L".stm");
-        auto filenameWithoutExtension = m_scmFileName.substr(0, position - 3);
-        auto groupedStreamingFilePath = filenameWithoutExtension + L"_grouped_stream\\";
-        pDataIndex->SaveCloudReady(groupedStreamingFilePath, true);
-        }
 //    auto& store = pDataIndex->GetClipStore();
     pDataIndex = 0;
     //store->Close();

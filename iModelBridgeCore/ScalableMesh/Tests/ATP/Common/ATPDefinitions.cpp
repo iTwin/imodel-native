@@ -1303,7 +1303,7 @@ void PerformGroupNodeHeaders(BeXmlNodeP pTestNode, FILE* pResultFile)
 
     if (scmFile != 0 && status == SUCCESS)
         {
-        status = scmFile->GroupNodeHeaders(outputDir);
+        status = scmFile->SaveGroupedNodeHeaders(outputDir);
         if (SUCCESS != status) result = L"FAILURE -> could not group node headers";
         }
     else

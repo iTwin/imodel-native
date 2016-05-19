@@ -366,9 +366,9 @@ int IScalableMesh::LoadAllNodeHeaders(size_t& nbLoadedNodes) const
     return _LoadAllNodeHeaders(nbLoadedNodes);
     }
 
-int IScalableMesh::GroupNodeHeaders(const WString& pi_pOutputDirPath) const
+int IScalableMesh::SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath) const
     {
-    return _GroupNodeHeaders(pi_pOutputDirPath);
+    return _SaveGroupedNodeHeaders(pi_pOutputDirPath);
     }
 #endif
 
@@ -1894,7 +1894,10 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_ConvertToCloud(const WStr
     {
     if (m_scmIndexPtr == nullptr) return ERROR;
 
-    return m_scmIndexPtr->SaveCloudReady(pi_pOutputDirPath, false);
+    s_stream_from_disk = true;
+    s_stream_from_grouped_store = false;
+
+    return m_scmIndexPtr->SaveMeshToCloud(pi_pOutputDirPath, false);
     }
 
 #ifdef SCALABLE_MESH_ATP
@@ -1910,9 +1913,14 @@ template <class POINT> int ScalableMesh<POINT>::_LoadAllNodeHeaders(size_t& nbLo
 /*----------------------------------------------------------------------------+
 |MrDTM::_GroupNodeHeaders
 +----------------------------------------------------------------------------*/
-template <class POINT> int ScalableMesh<POINT>::_GroupNodeHeaders(const WString& pi_pOutputDirPath) const
+template <class POINT> int ScalableMesh<POINT>::_SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath) const
     {
-    m_scmIndexPtr->SaveCloudReady(pi_pOutputDirPath, true);
+    if (m_scmIndexPtr == nullptr) return ERROR;
+
+    s_stream_from_disk = true;
+    s_stream_from_grouped_store = false;
+
+    m_scmIndexPtr->SaveGroupedNodeHeaders(pi_pOutputDirPath, true);
     return SUCCESS;
     }
 #endif
