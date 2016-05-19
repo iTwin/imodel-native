@@ -3144,7 +3144,7 @@ CachedStatement* StatementCache::FindStatement(Utf8CP sql) const
 StatementCache& Db::GetStatementCache() const
     {
     if (nullptr == m_statements)
-        m_statements = new StatementCache(20);
+        m_statements = new StatementCache(35);
 
     return  *m_statements;
     }
