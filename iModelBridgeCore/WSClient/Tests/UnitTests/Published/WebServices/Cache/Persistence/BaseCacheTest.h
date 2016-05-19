@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/Persistence/BaseCacheTest.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -15,14 +15,22 @@
 class BaseCacheTest : public WSClientBaseTest
     {
     private:
-        static std::shared_ptr<DataSourceCache> s_reusableCache;
+        static BeFileName s_seedCacheFolderPath;
+        static BeFileName s_targetCacheFolderPath;
+        static BeFileName s_seedCachePath;
+        static BeFileName s_targetCachePath;
+        static CacheEnvironment s_seedEnvironment;
+        static CacheEnvironment s_targetEnvironment;
 
     protected:
         std::shared_ptr<DataSourceCache> GetTestCache();
+        std::shared_ptr<DataSourceCache> CreateTestCache(Utf8StringCR fileName = "newTestCache.ecdb");
+        std::shared_ptr<DataSourceCache> CreateTestCache(BeFileName filePath, CacheEnvironment environment);
 
         virtual ECSchemaPtr GetTestSchema();
         virtual ECSchemaPtr GetTestSchema2();
         BeFileName GetTestSchemaPath();
+        CacheEnvironment GetTestCacheEnvironment();
 
     public:
         static void SetUpTestCase();
