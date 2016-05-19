@@ -16,28 +16,27 @@
 BEGIN_BENTLEY_REALITYDATA_NAMESPACE
 
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Cache)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(Cache)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(FileSource)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(HttpSource)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(Payload)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(Source)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(Storage)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Thread)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(ThreadPool)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Work)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(WorkerThread)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(Cache)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(Storage)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(Source)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(HttpSource)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(FileSource)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(SourceRequestHandler)
 
+DEFINE_REF_COUNTED_PTR(Cache)
+DEFINE_REF_COUNTED_PTR(FileSource)
+DEFINE_REF_COUNTED_PTR(HttpSource)
+DEFINE_REF_COUNTED_PTR(Payload)
+DEFINE_REF_COUNTED_PTR(Source)
+DEFINE_REF_COUNTED_PTR(Storage)
 DEFINE_REF_COUNTED_PTR(Thread)
 DEFINE_REF_COUNTED_PTR(ThreadPool)
 DEFINE_REF_COUNTED_PTR(Work)
 DEFINE_REF_COUNTED_PTR(WorkerThread)
-DEFINE_REF_COUNTED_PTR(Cache)
-DEFINE_REF_COUNTED_PTR(Storage)
-DEFINE_REF_COUNTED_PTR(Source)
-
-DEFINE_REF_COUNTED_PTR(HttpSource)
-DEFINE_REF_COUNTED_PTR(FileSource)
-DEFINE_REF_COUNTED_PTR(SourceRequestHandler)
 
 //=======================================================================================
 //! Options for request function.
@@ -52,14 +51,15 @@ struct Options
 };
 
 //=======================================================================================
-//! The base class for all reality data implementations. 
+//! The base class for all reality data implementations.
 // @bsiclass                                        Grigas.Petraitis            03/2015
 //=======================================================================================
 struct Payload : RefCountedBase
 {
-private:
-    DateTime    m_expirationDate;
-    Utf8String  m_entityTag;
+protected:
+    DateTime   m_expirationDate;
+    Utf8String m_entityTag;
+    Utf8String m_payloadId;
 
 public:
     void ParseExpirationDateAndETag(bmap<Utf8String, Utf8String> const& header);
@@ -68,15 +68,16 @@ public:
     DateTime const& GetExpirationDate() const {return m_expirationDate;}
     Utf8CP GetEntityTag() const {return m_entityTag.c_str();}
 
-    Payload() {}
+    Payload(Utf8CP id) : m_payloadId(id){}
     virtual ~Payload() {}
-    virtual Utf8CP _GetId() const = 0;
     virtual bool _IsExpired() const = 0;
     virtual void _OnError() {}
     virtual void _OnNotFound() {}
 
+    Utf8StringCR GetPayloadId() const {return m_payloadId;}
+
     //! Initialize data from the database using key and select options.
-    virtual BentleyStatus _InitFrom(BeSQLite::Db& db, Utf8CP key) = 0;
+    virtual BentleyStatus _InitFrom(BeSQLite::Db& db) = 0;
 
     //! Persist this data in the database.
     virtual BentleyStatus _Persist(BeSQLite::Db& db) const = 0;
@@ -84,9 +85,9 @@ public:
     //! Initializes this data with file path, content and request options.
     //! @param[in] filepath     The path of the file that the data was read from.
     //! @param[in] data         The file content.
-    virtual BentleyStatus _InitFrom(Utf8CP filepath, ByteStream const& data) = 0;
+    virtual BentleyStatus _InitFrom(ByteStream const& data) = 0;
 
-    virtual BentleyStatus _InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> const& header, ByteStream const& body) = 0;
+    virtual BentleyStatus _InitFrom(bmap<Utf8String, Utf8String> const& header, ByteStream const& body) = 0;
 };
 
 //=======================================================================================
@@ -139,7 +140,7 @@ private:
     bool PopBack(T* element);
     bool PopFront(T* element);
     bool Pop(T* element);
-    
+
 public:
     ThreadSafeQueue(SchedulingMethod defaultSchedulingMethod = SchedulingMethod::FIFO) : m_count(0), m_schedulingMethod(defaultSchedulingMethod) {}
     DGNPLATFORM_EXPORT void PushBack(T element);
@@ -167,7 +168,7 @@ struct Thread : RefCountedBase
 private:
     intptr_t    m_threadId;
     Utf8String  m_threadName;
-    
+
 private:
     static void ThreadRunner(void* arg);
 #if defined(__unix__)
@@ -175,7 +176,7 @@ private:
 #else
     static unsigned __stdcall PlatformThreadRunner(void* arg) {ThreadRunner(arg); return 0;}
 #endif
-    
+
 protected:
     DGNPLATFORM_EXPORT Thread(Utf8CP threadName = NULL);
     virtual void _Run() = 0;
@@ -204,7 +205,7 @@ struct WorkerThread : Thread
     friend struct ThreadPool;
     friend struct HasWorkOrTerminatesPredicate;
     friend struct IsIdlePredicate;
-        
+
     struct IStateListener : IRefCounted
     {
     friend struct WorkerThread;
@@ -248,7 +249,7 @@ public:
 // @bsiclass                                        Grigas.Petraitis            10/2014
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ThreadPool : RefCounted<WorkerThread::IStateListener>
-{       
+{
     friend struct AllThreadsIdlePredicate;
 
 private:
@@ -259,9 +260,9 @@ private:
     mutable BeMutex             m_workQueueCS;
     bmap<WorkerThread*, bool> m_threads;
     ThreadSafeQueue<WorkPtr> m_workQueue;
-    
+
 protected:
-    ThreadPool(int maxThreads, int maxIdleThreads, SchedulingMethod schedulingMethod) 
+    ThreadPool(int maxThreads, int maxIdleThreads, SchedulingMethod schedulingMethod)
         : m_workQueue(schedulingMethod), m_maxThreads(maxThreads), m_maxIdleThreads(maxIdleThreads), m_isTerminating(false)
         {}
     DGNPLATFORM_EXPORT virtual void _OnThreadBusy(WorkerThread& thread) override;
@@ -295,13 +296,11 @@ template<typename ResultType> struct Response : RefCountedBase
 {
 private:
     ResultType   m_result;
-    Utf8String   m_id;
     Payload& m_data;
 protected:
-    Response(ResultType result, Utf8CP id, Payload& data) : m_result(result), m_id(id), m_data(data) {}
+    Response(ResultType result, Payload& data) : m_result(result), m_data(data) {}
 public:
     ResultType GetResult() const {return m_result;}
-    Utf8CP GetId() const {return m_id.c_str();}
     Payload& GetData() const {return m_data;}
 };
 
@@ -318,28 +317,13 @@ enum class StorageResult
     Pending,
     };
 
-//=======================================================================================
-//! Interface for a persist operation.
-// @bsiclass                                        Grigas.Petraitis            03/2015
-//=======================================================================================
-struct StoragePersistHandler : RefCountedBase
-    {
-    friend struct Cache;
-    protected:
-        //! Called to persist the reality data into reality data storage.
-        virtual StorageResult _Persist() const = 0;
-
-        //! Return the data object.
-        virtual Payload const* _GetData() const = 0;
-    };
-
 //======================================================================================
 //! The response of reality data storage.
 // @bsiclass                                        Grigas.Petraitis           04/2015
 //======================================================================================
 struct StorageResponse : Response<StorageResult>
 {
-    StorageResponse(StorageResult result, Utf8CP id, Payload& data) : Response(result, id, data) {}
+    StorageResponse(StorageResult result, Payload& data) : Response(result, data) {}
 };
 
 //=======================================================================================
@@ -354,7 +338,7 @@ enum class SourceResult
     Error_GatewayTimeout,
     Error_NotFound,
     Error_AccessDenied,
-    
+
     Cancelled,
     Ignored,
     Pending,
@@ -364,45 +348,15 @@ enum class SourceResult
     };
 
 //=======================================================================================
-//! Interface for a request operation.
-// @bsiclass                                        Grigas.Petraitis            04/2015
-//=======================================================================================
-struct SourceRequestHandler : RefCountedBase
-{
-    friend struct Cache;
-protected:
-    //! Called to request reality data from reality data source.
-    virtual SourceResult _Request() const = 0;
-
-    //! Is the request already handled.
-    virtual bool _IsHandled() const = 0;
-
-    //! Return the data object.
-    virtual Payload const* _GetData() const = 0;
-};
-
-
-//=======================================================================================
 //! The base class for all reality data sources.
 // @bsiclass                                        Grigas.Petraitis            10/2014
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE Source : RefCountedBase, NonCopyableClass
-{   
-    friend struct Cache;
-
-protected:
-    virtual ~Source() {}
-
-    //! The unique id of this reality data source. 
-    //! @warning This id must match the id returned by the static SourceId() function.
-    virtual Utf8String _GetSourceId() const = 0;
-
+{
     //! The abstract function that might be called to request data. The imeplementations should simply
     //! forward requests to their more specialized `Request` functions.
     //! @note It is guaranteed that the arguments can be cast to their derived classes, provided by the implementation.
-    virtual SourceResult _Request(Payload&, bool& handled, Utf8CP, Options, Cache&) = 0;
-
-    virtual SourceRequestHandlerPtr _CreateRequestHandler(Payload& data, Utf8CP id, Options options, Cache& responseReceiver) = 0;
+    virtual SourceResult _Request(Payload&, Options, Cache&) = 0;
 };
 
 //======================================================================================
@@ -411,7 +365,7 @@ protected:
 //======================================================================================
 struct SourceResponse : Response<SourceResult>
 {
-    SourceResponse(SourceResult result, Utf8CP id, Payload& data) : Response(result, id, data) {}
+    SourceResponse(SourceResult result, Payload& data) : Response(result, data) {}
 };
 
 //=======================================================================================
@@ -430,45 +384,24 @@ enum class CacheResult
 //! Reality data storage which uses a SQLite database for storing cached data.
 // @bsiclass                                        Grigas.Petraitis            10/2014
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE Storage  : RefCountedBase, NonCopyableClass
+struct EXPORT_VTABLE_ATTRIBUTE Storage : RefCountedBase, NonCopyableClass
 {
-    //===================================================================================
-    //! @ref StoragePersistHandler implementation which knows how to persist
-    //! reality data in the Storage.
-    // @bsiclass                                        Grigas.Petraitis        03/2015
-    //===================================================================================
-    struct PersistHandler : StoragePersistHandler
-    {
-    private:
-        Storage& m_storage;
-        RefCountedPtr<Payload const>  m_data;
-    protected:
-        virtual StorageResult _Persist() const override {return m_storage.Persist(*m_data);}
-        virtual Payload const* _GetData() const override {return m_data.get();}
-    public:
-        PersistHandler(Storage& storage, Payload const& data) : m_storage(storage), m_data(&data) {}        
-    };
-
-    RefCountedPtr<PersistHandler> CreatePersistHandler(Payload const& data) {return new PersistHandler(*this, data);}
-
     struct CleanAndSaveChangesWork;
     //===================================================================================
     // @bsiclass                                        Grigas.Petraitis        04/2015
     //===================================================================================
-    struct BeSQLiteStorageThreadPool : ThreadPool
+    struct StorageThreadPool : ThreadPool
     {
     private:
         Storage& m_storage;
     protected:
         virtual bool _AssignWork(WorkerThread& thread) override;
     public:
-        BeSQLiteStorageThreadPool(Storage& storage, int numThreads, SchedulingMethod schedulingMethod) 
-            : ThreadPool(numThreads, numThreads, schedulingMethod), m_storage(storage) 
-            {}
+        StorageThreadPool(Storage& storage, int numThreads, SchedulingMethod schedulingMethod) : ThreadPool(numThreads, numThreads, schedulingMethod), m_storage(storage){}
         void QueueIdleWork(Work& work);
         ThreadSafeQueue<WorkPtr>& GetQueue() {return ThreadPool::GetQueue();}
     };
-    
+
     //===================================================================================
     // @bsiclass                                        Grigas.Petraitis        11/2014
     //===================================================================================
@@ -485,7 +418,6 @@ struct EXPORT_VTABLE_ATTRIBUTE Storage  : RefCountedBase, NonCopyableClass
     struct SelectDataWork : StorageWork
     {
     private:
-        Utf8String m_id;
         RefCountedPtr<Payload> m_data;
         Options m_options;
         Cache& m_responseReceiver;
@@ -495,12 +427,11 @@ struct EXPORT_VTABLE_ATTRIBUTE Storage  : RefCountedBase, NonCopyableClass
     protected:
         virtual void _DoWork() override;
     public:
-        SelectDataWork(Storage& storage, Utf8CP id, Payload& data, Options options, Cache& responseReceiver) 
-            : StorageWork(storage), m_id(id), m_data(&data), m_options(options), m_hasResult(false), m_responseReceiver(responseReceiver)
-            {} 
+        SelectDataWork(Storage& storage, Payload& data, Options options, Cache& responseReceiver)
+            : StorageWork(storage), m_data(&data), m_options(options), m_hasResult(false), m_responseReceiver(responseReceiver) {}
         StorageResult GetResult() const;
     };
-    
+
     //===================================================================================
     // @bsiclass                                        Grigas.Petraitis        11/2014
     //===================================================================================
@@ -511,9 +442,9 @@ struct EXPORT_VTABLE_ATTRIBUTE Storage  : RefCountedBase, NonCopyableClass
     protected:
         virtual void _DoWork() override;
     public:
-        PersistDataWork(Storage& storage, Payload const& data) : StorageWork(storage), m_data(&data) {} 
+        PersistDataWork(Storage& storage, Payload const& data) : StorageWork(storage), m_data(&data) {}
     };
-    
+
     //===================================================================================
     // @bsiclass                                        Grigas.Petraitis        11/2014
     //===================================================================================
@@ -526,9 +457,9 @@ struct EXPORT_VTABLE_ATTRIBUTE Storage  : RefCountedBase, NonCopyableClass
     public:
         CleanAndSaveChangesWork(Storage& storage, uint32_t idleTime) : StorageWork(storage), m_idleTime(idleTime) {}
     };
-    
+
 private:
-    RefCountedPtr<BeSQLiteStorageThreadPool> m_threadPool;
+    RefCountedPtr<StorageThreadPool> m_threadPool;
     BeAtomic<bool> m_hasChanges;
     BeMutex m_saveChangesMux;
     BeSQLite::Db m_database;
@@ -540,15 +471,14 @@ private:
 private:
     void wt_Cleanup();
     void wt_Persist(Payload const& data);
-    StorageResult wt_Select(Payload& data, Utf8CP id, Options options, Cache& responseReceiver);
+    StorageResult wt_Select(Payload& data, Options options, Cache& responseReceiver);
     void wt_SaveChanges();
 
 public:
-    //! NOT PUBLISHED: needed for tests
-    RefCountedPtr<BeSQLiteStorageThreadPool> GetThreadPool() const {return m_threadPool;}
+    RefCountedPtr<StorageThreadPool> GetThreadPool() const {return m_threadPool;}
 
 protected:
-    //! Called to prepare the database for storing specific type of data (the type 
+    //! Called to prepare the database for storing specific type of data (the type
     //! must be known to the implementation).
     virtual BentleyStatus _PrepareDatabase(BeSQLite::Db& db) const = 0;
 
@@ -565,7 +495,7 @@ public:
     ~Storage() {m_retry = nullptr; Terminate();}
 
     //! Initialize data object with the data in the database.
-    DGNPLATFORM_EXPORT virtual StorageResult _Select(Payload& data, Utf8CP id, Options options, Cache& responseReceiver);
+    DGNPLATFORM_EXPORT virtual StorageResult _Select(Payload& data, Options options, Cache& responseReceiver);
 
     //! Persist the data object in the database.
     DGNPLATFORM_EXPORT StorageResult Persist(Payload const& data);
@@ -583,40 +513,23 @@ public:
 // @bsiclass                                        Grigas.Petraitis            10/2014
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE Cache : RefCountedBase, NonCopyableClass
-{    
-    template<typename T> struct RefCountedPtrComparer
-        {
-        bool operator()(RefCountedPtr<T> const& lhs, RefCountedPtr<T> const& rhs) const {return lhs.get() < rhs.get();}
-        };
-    
+{
 private:
-    StoragePtr  m_storage;
+    StoragePtr m_storage;
     SourcePtr  m_source;
-    bmap<Utf8String, bset<RefCountedPtr<StoragePersistHandler>, RefCountedPtrComparer<StoragePersistHandler>>> m_persistHandlers;
-    BeMutex m_persistHandlersCS;
-    bmap<Utf8String, bset<RefCountedPtr<SourceRequestHandler>, RefCountedPtrComparer<SourceRequestHandler>>> m_requestHandlers;
-    BeMutex m_requestHandlersCS;
     mutable bmap<void const*, CacheResult> m_results;
     mutable BeMutex m_resultsCS;
 
     CacheResult HandleStorageResponse(StorageResponse const& response, Options);
     CacheResult ResolveResult(StorageResult storageResult, SourceResult sourceResult = SourceResult::Error_NotFound) const;
-    RefCountedPtr<SourceRequestHandler> DequeueRequestHandler(Utf8CP id, Payload const&);
-    RefCountedPtr<StoragePersistHandler> DequeuePersistHandler(Utf8CP id, Payload const&);
 
 private:
-    DGNPLATFORM_EXPORT void QueuePersistHandler(Utf8CP id, StoragePersistHandler&);
-    DGNPLATFORM_EXPORT void QueueRequestHandler(Utf8CP id, SourceRequestHandler&);
+    DGNPLATFORM_EXPORT CacheResult GetResult(Payload& data, StorageResult storageResult);
+    DGNPLATFORM_EXPORT CacheResult GetResult(SourceResult sourceResult);
 
-    DGNPLATFORM_EXPORT CacheResult GetResult(Payload& data, Utf8CP id, StorageResult storageResult);
-    DGNPLATFORM_EXPORT CacheResult GetResult(Utf8CP id, SourceResult sourceResult);
-    
 public:
     //! Create a new reality data cache.
     Cache() {}
-
-    //! Cleans up local caches
-    DGNPLATFORM_EXPORT void Cleanup();
 
     // note: these might be called from any thread!
     DGNPLATFORM_EXPORT virtual void _OnResponseReceived(SourceResponse const& response, Options);
@@ -632,7 +545,7 @@ public:
     //! @param[out] data       An reference object to receive the requested data.
     //! @param[in] id       The id of the requested data.
     //! @param[in] options  The request options.
-    CacheResult RequestData(Payload& data, Utf8CP id, Options options)
+    CacheResult RequestData(Payload& data, Options options)
         {
         RefCountedPtr<Payload> temp(&data);
 
@@ -641,13 +554,10 @@ public:
             if (!options.m_requestFromSource)
                 return CacheResult::NotFound;
 
-            bool handled;
-            return GetResult(id, m_source->_Request(data, handled, id, options, *this));
+            return GetResult(m_source->_Request(data, options, *this));
             }
-        
-        QueueRequestHandler(id, *m_source->_CreateRequestHandler(data, id, options, *this));
-        QueuePersistHandler(id, *m_storage->CreatePersistHandler(data));
-        return GetResult(data, id, m_storage->_Select(data, id, options, *this));
+
+        return GetResult(data, m_storage->_Select(data, options, *this));
         }
 };
 
@@ -656,8 +566,6 @@ public:
 //=======================================================================================
 struct IAsyncRequestCancellationToken
 {
-    friend struct AsyncSourceRequest;
-protected:
     virtual ~IAsyncRequestCancellationToken() {}
     virtual bool _ShouldCancel() const = 0;
 };
@@ -673,24 +581,22 @@ struct AsyncSourceRequest : RefCountedBase
 protected:
     IAsyncRequestCancellationToken* m_cancellationToken;
     Options m_options;
+    PayloadPtr m_payload;
 
     mutable RefCountedPtr<SourceResponse> m_response; // set only for sync requests
 
-    AsyncSourceRequest(IAsyncRequestCancellationToken* cancellationToken, Options options) : m_cancellationToken(cancellationToken), m_options(options) {}
+    AsyncSourceRequest(IAsyncRequestCancellationToken* cancellationToken, Options options, Payload& payload) : m_cancellationToken(cancellationToken), m_options(options), m_payload(&payload) {}
 
     //! Returns true if the request was cancelled.
     DGNPLATFORM_EXPORT bool ShouldCancelRequest() const;
-
-    //! Return the if of reality data which is handled by this request.
-    virtual Utf8CP _GetId() const = 0;
 
     //! Handle the request (e.g. read file content and initialize reality data from it).
     virtual RefCountedPtr<SourceResponse> _Handle() const = 0;
 
 public:
-    Utf8CP GetId() const {return _GetId();}
     RefCountedPtr<SourceResponse> Handle(BeMutex& cs) const;
     void SetCancellationToken(IAsyncRequestCancellationToken& token) {m_cancellationToken = &token;}
+    Payload& GetPayload() const {return *m_payload;}
     Options GetRequestOptions() const {return m_options;}
 };
 
@@ -709,7 +615,7 @@ struct EXPORT_VTABLE_ATTRIBUTE AsyncSource : Source
         RefCountedPtr<AsyncSource> m_source;
         RefCountedPtr<AsyncSourceRequest const> m_request;
         Cache& m_responseReceiver;
-        
+
         RequestHandler(AsyncSource& source, AsyncSourceRequest const& request, Cache& responseReceiver)
             : m_source(&source), m_request(&request), m_responseReceiver(responseReceiver)
             {}
@@ -720,9 +626,9 @@ struct EXPORT_VTABLE_ATTRIBUTE AsyncSource : Source
         virtual bool _ShouldCancel() const override;
 
     public:
-        static RefCountedPtr<RequestHandler> Create(AsyncSource& source, AsyncSourceRequest const& request, Cache& responseReceiver) 
+        static RefCountedPtr<RequestHandler> Create(AsyncSource& source, AsyncSourceRequest const& request, Cache& responseReceiver)
             {
-            return new RequestHandler(source, request, responseReceiver); 
+            return new RequestHandler(source, request, responseReceiver);
             }
     };
 
@@ -740,131 +646,47 @@ private:
     bool ShouldIgnoreRequests() const;
 
 protected:
-    virtual ~AsyncSource() 
+    virtual ~AsyncSource()
         {
         m_terminateRequested = true;
         m_threadPool->Terminate();
         m_threadPool->WaitUntilAllThreadsIdle();
         }
-    AsyncSource(int numThreads, SchedulingMethod schedulingMethod) 
+    AsyncSource(int numThreads, SchedulingMethod schedulingMethod)
         : m_threadPool(ThreadPool::Create(numThreads, numThreads, schedulingMethod)), m_ignoreRequestsUntil(0), m_terminateRequested(false)
         {}
 
 protected:
     //! Queues a request for handling on the work thread. Derived classes should use this
     //! function to queue their requests to be handled asynchronously.
-    SourceResult QueueRequest(AsyncSourceRequest& request, bool& handled, Cache& responseReceiver);
+    SourceResult QueueRequest(AsyncSourceRequest& request, Cache& responseReceiver);
 };
 
 //=======================================================================================
-//! Reality data source which uses files (on the disc) as the source of reality data.
+//! Reality data source which uses local files (on the disk) as the source of reality data.
 // @bsiclass                                        Grigas.Petraitis            03/2015
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE FileSource : AsyncSource
 {
-    //===================================================================================
-    //! @ref SourceRequestHandler implementation which knows how to request
-    //! reality data from the @ref FileSource.
-    // @bsiclass                                        Grigas.Petraitis        04/2015
-    //===================================================================================
-    struct RequestHandler : SourceRequestHandler
-    {
-    private:
-        mutable bool m_handled;
-        FileSource&    m_source;
-        RefCountedPtr<Payload> m_data;
-        Utf8String m_id;
-        Options m_options;
-        Cache& m_responseReceiver;
-    protected:
-        virtual bool _IsHandled() const override {return m_handled;}
-        virtual SourceResult _Request() const override {return m_source.Request(*m_data, m_handled, m_id.c_str(), m_options, m_responseReceiver);}
-        virtual Payload const* _GetData() const override {return m_data.get();}
-    public:
-        RequestHandler(FileSource& source, Payload& data, Utf8CP id, Options options, Cache& responseReceiver) 
-            : m_source(source), m_data(&data), m_id(id), m_options(options), m_responseReceiver(responseReceiver), m_handled(false)
-            {}
-    };
-
-protected:
-    virtual Utf8String _GetSourceId() const override {return SourceId();}
-
-    DGNPLATFORM_EXPORT SourceResult Request(Payload& data, bool& handled, Utf8CP filepath, Options options, Cache& responseReceiver);
-
-public:
-    //! The id of this reality data source.
-    static Utf8String SourceId() {return "File";}
-
     //! Create a new instance of FileSource.
     //! @param[in] numThreads   Number of worker threads to use for reading files. Must be at least 1.
     //! @param[in] schedulingMethod The order of handled requests.
     FileSource(int numThreads, SchedulingMethod schedulingMethod) : AsyncSource(numThreads, schedulingMethod) {}
 
-    virtual SourceResult _Request(Payload& data, bool& handled, Utf8CP id, Options options, Cache& responseReceiver) override
-        {
-        return Request(data, handled, id, options, responseReceiver);
-        }
-
-    SourceRequestHandlerPtr _CreateRequestHandler(Payload& data, Utf8CP id, Options options, Cache& responseReceiver) override
-        {
-        return new RequestHandler(*this, data, id, options, responseReceiver);
-        }
+    DGNPLATFORM_EXPORT virtual SourceResult _Request(Payload& data, Options options, Cache& responseReceiver) override;
 };
 
 //=======================================================================================
-//! Reality data source which uses HTTP protocol to download content and use it as 
+//! Reality data source which uses HTTP protocol to download content and use it as
 //! the source of reality data.
 // @bsiclass                                        Grigas.Petraitis            10/2014
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE HttpSource : AsyncSource
 {
-    //===================================================================================
-    //! @ref SourceRequestHandler implementation which knows how to request
-    //! reality data from the @ref HttpSource.
-    // @bsiclass                                        Grigas.Petraitis        04/2015
-    //===================================================================================
-    struct RequestHandler : SourceRequestHandler
-    {
-    private:
-        mutable bool m_handled;
-        HttpSource&    m_source;
-        RefCountedPtr<Payload> m_data;
-        Utf8String m_id;
-        Options m_options;
-        Cache& m_responseReceiver;
-    protected:
-        virtual bool _IsHandled() const override {return m_handled;}
-        virtual SourceResult _Request() const override {return m_source.Request(*m_data, m_handled, m_id.c_str(), m_options, m_responseReceiver);}
-        virtual Payload const* _GetData() const override {return m_data.get();}
-
-public:
-        RequestHandler(HttpSource& source, Payload& data, Utf8CP id, Options options, Cache& responseReceiver) 
-            : m_source(source), m_data(&data), m_id(id), m_options(options), m_responseReceiver(responseReceiver), m_handled(false)
-            {}  
-    };
-
-private:
-
-protected:
-    virtual Utf8String _GetSourceId() const override {return SourceId();}
-    virtual SourceResult _Request(Payload& data, bool& handled, Utf8CP id, Options options, Cache& responseReceiver) override
-        {
-        return Request(data, handled, id, options, responseReceiver);
-        }
-
-    SourceRequestHandlerPtr _CreateRequestHandler(Payload& data, Utf8CP id, Options options, Cache& responseReceiver) override
-        {
-        return new RequestHandler(*this, data, id, options, responseReceiver);
-        }
-
-public:
-    //! The id of this reality data source.
-    static Utf8String SourceId() {return "Http";}
-    
     HttpSource(int numThreads, SchedulingMethod schedulingMethod) : AsyncSource(numThreads, schedulingMethod) {}
-    
+
     //! Request the data to be initialized from the content at the specified url
-    DGNPLATFORM_EXPORT SourceResult Request(Payload& data, bool& handled, Utf8CP url, Options options, Cache& responseReceiver);
+    DGNPLATFORM_EXPORT virtual SourceResult _Request(Payload& data, Options options, Cache& responseReceiver) override;
 };
 
 END_BENTLEY_REALITYDATA_NAMESPACE

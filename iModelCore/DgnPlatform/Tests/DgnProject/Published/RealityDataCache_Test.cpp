@@ -34,38 +34,11 @@ public:
     static RefCountedPtr<TestWork> Create(Handler const& handler) {return new TestWork(handler);}
 };
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void runOnAnotherThread(std::function<void()> const& handler)
-    {
-    WorkerThreadPtr thread = WorkerThread::Create();
-    thread->Start();
-    thread->DoWork(*TestWork::Create([handler, thread]()
-        {
-        handler();
-        thread->Terminate();
-        }));
-    }
-
 //=======================================================================================
 // @bsiclass                                        Grigas.Petraitis            03/2015
 //=======================================================================================
 struct TestStorage : Storage
     {
-    struct PersistHandler : StoragePersistHandler
-        {
-        TestStorage& m_storage;
-        Payload const& m_data;
-        std::function<StorageResult()> m_persistHandler;
-
-        PersistHandler(TestStorage& storage, Payload const& data) : m_storage(storage), m_data(data) {m_storage.NotifyPersistHandlerCreated(*this);}
-        void SetPersistHandler(std::function<StorageResult()> const& handler) {m_persistHandler = handler;}
-        virtual StorageResult _Persist() const override {return (nullptr != m_persistHandler ? m_persistHandler() : StorageResult::Success);}
-        virtual Payload const* _GetData() const override {return &m_data;}
-        static RefCountedPtr<PersistHandler> Create(TestStorage& storage, Payload const& data) {return new PersistHandler(storage, data);}
-        };
-
     std::function<StorageResult(Payload&, Utf8CP, Options, CacheR)> m_selectHandler;
     void SetSelectHandler(std::function<StorageResult(Payload&, Utf8CP, Options, CacheR)> const& handler) {m_selectHandler = handler;}
 
@@ -580,50 +553,6 @@ TEST_F (BeSQLiteRealityDataStorageTests, Persist)
     ASSERT_TRUE(didPersist);
     }
 
-#if defined (NEEDS_WORK_REALITY_CACHE)
-//---------------------------------------------------------------------------------------
-// @bsimethod                                               Grigas.Petraitis    03/2015
-//---------------------------------------------------------------------------------------
-TEST_F (BeSQLiteRealityDataStorageTests, DoesPrepareDatabase)
-    {
-    BeAtomic<bool> didPrepare(false);
-    RefCountedPtr<TestDatabasePrepareAndCleanupHandler> handler = TestDatabasePrepareAndCleanupHandler::Create();
-    handler->SetPrepareDatabaseHandler([&didPrepare](BeSQLite::Db&)
-        {
-        didPrepare.store(true);
-        return SUCCESS;
-        });
-
-    RefCountedPtr<TestBeSQLiteStorageData> data = TestBeSQLiteStorageData::Create(handler.get());
-    m_storage->Select(*data, "", TestBeSQLiteStorageData::RequestOptions(), *TestStorageResponseReceiver::Create());
-    ASSERT_TRUE(didPrepare);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                               Grigas.Petraitis    03/2015
-//---------------------------------------------------------------------------------------
-TEST_F (BeSQLiteRealityDataStorageTests, DoesCleanupDatabase)
-    {
-    BeAtomic<bool> didCleanup(false);
-    BeConditionVariable cv;
-    RefCountedPtr<TestDatabasePrepareAndCleanupHandler> handler = TestDatabasePrepareAndCleanupHandler::Create();
-    handler->SetCleanupDatabaseHandler([&didCleanup, &cv](BeSQLite::Db&)
-        {
-        BeMutexHolder lock(cv.GetMutex());
-        didCleanup.store(true);
-        cv.notify_all();
-        return SUCCESS;
-        });
-
-    RefCountedPtr<TestBeSQLiteStorageData> data = TestBeSQLiteStorageData::Create(handler.get());
-    m_storage->Persist(*data);
-    BeMutexHolder lock(cv.GetMutex());
-    cv.ProtectedWaitOnCondition(lock, nullptr, 10000);
-    ASSERT_TRUE(didCleanup);
-    }
-#endif
-
-
 //=======================================================================================
 // @bsiclass                                        Grigas.Petraitis            03/2015
 //=======================================================================================
@@ -793,6 +722,20 @@ struct TestPredicate : IConditionVariablePredicate
     };
 
 #if defined (NEEDS_WORK_REALITY_CACHE)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static void runOnAnotherThread(std::function<void()> const& handler)
+    {
+    WorkerThreadPtr thread = WorkerThread::Create();
+    thread->Start();
+    thread->DoWork(*TestWork::Create([handler, thread]()
+        {
+        handler();
+        thread->Terminate();
+        }));
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Grigas.Petraitis    07/2015
 //---------------------------------------------------------------------------------------

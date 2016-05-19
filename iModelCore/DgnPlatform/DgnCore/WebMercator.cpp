@@ -1002,7 +1002,6 @@ struct TiledRasterCache : RealityData::Storage
 struct TileData : RealityData::Payload
 {
 private:
-    Utf8String  m_url;
     ByteStream  m_data;
     DateTime    m_creationDate;
     bool        m_isJpeg;
@@ -1014,15 +1013,14 @@ private:
     void LoadTile();
 
 protected:
-    virtual Utf8CP _GetId() const override {return m_url.c_str();}
     virtual bool _IsExpired() const override {return false;}
-    virtual BentleyStatus _InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> const& header, ByteStream const& body) override;
-    virtual BentleyStatus _InitFrom(BeSQLite::Db& db, Utf8CP key) override;
-    virtual BentleyStatus _InitFrom(Utf8CP filepath, ByteStream const& data) override {return ERROR;}
+    virtual BentleyStatus _InitFrom(bmap<Utf8String, Utf8String> const& header, ByteStream const& body) override;
+    virtual BentleyStatus _InitFrom(BeSQLite::Db& db) override;
+    virtual BentleyStatus _InitFrom(ByteStream const& data) override {return ERROR;}
     virtual BentleyStatus _Persist(BeSQLite::Db& db) const override;
 
 public:
-    TileData(TileR tile, Render::SystemR renderSys, ColorDef color) : m_tile(&tile), m_renderSys(renderSys), m_color(color) {}
+    TileData(TileR tile, Render::SystemR renderSys, ColorDef color, Utf8CP url) : m_tile(&tile), m_renderSys(renderSys), m_color(color), Payload(url) {}
     ByteStream const& GetData() const {return m_data;}
     DateTime GetCreationDate() const {return m_creationDate;}
 };
@@ -1126,9 +1124,8 @@ void TileData::LoadTile()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TileData::_InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> const& header, ByteStream const& body)
+BentleyStatus TileData::_InitFrom(bmap<Utf8String, Utf8String> const& header, ByteStream const& body)
     {
-    m_url.AssignOrClear(url);
     m_creationDate = DateTime::GetCurrentTime();
 
     auto contentTypeIter = header.find("Content-Type");
@@ -1147,22 +1144,15 @@ BentleyStatus TileData::_InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TileData::_InitFrom(BeSQLite::Db& db, Utf8CP key)
+BentleyStatus TileData::_InitFrom(BeSQLite::Db& db)
     {
     CachedStatementPtr stmt;
     db.GetCachedStatement(stmt, "SELECT Image,NumBytes,JPeg,Created FROM " TABLE_NAME_TiledRaster " WHERE Id=?");
     stmt->BindBlob(1, &m_tile->m_id, sizeof(m_tile->m_id), Statement::MakeCopy::No);
 
     if (BeSQLite::BE_SQLITE_ROW != stmt->Step())
-        {
-#ifdef DEBUG_MERCATOR
-        Utf8String tmp(key+40, 16);
-        DEBUG_PRINTF("missing %s", tmp.c_str());
-#endif
         return ERROR;
-        }
 
-    m_url = key;
     m_data.SaveData((Byte*) stmt->GetValueBlob(0), stmt->GetValueInt(1));
     m_isJpeg = TO_BOOL(stmt->GetValueInt(2));
     DateTime::FromUnixMilliseconds(m_creationDate,(uint64_t) stmt->GetValueInt64(3));
@@ -1237,7 +1227,7 @@ void WebMercatorModel::RequestTile(TileId id, TileR tile, Render::SystemR sys) c
     if (0.0 != m_properties.m_transparency)
         color.SetAlpha((Byte) (255.* m_properties.m_transparency));
 
-    GetRealityDataCache().RequestData(*new TileData(tile, sys, color), url.c_str(), RealityData::Options());
+    GetRealityDataCache().RequestData(*new TileData(tile, sys, color, url.c_str()), RealityData::Options());
     }
 
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
