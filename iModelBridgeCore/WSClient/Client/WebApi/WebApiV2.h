@@ -121,6 +121,15 @@ struct WebApiV2 : public WebApi
             ICancellationTokenPtr ct = nullptr
             ) const override;
 
+        virtual AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequest
+            (
+            ObjectIdCR objectId,
+            JsonValueCR objectCreationJson,
+            BeFileNameCR filePath = BeFileName(),
+            HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            ICancellationTokenPtr ct = nullptr
+            ) const override;
+
         virtual AsyncTaskPtr<WSUpdateObjectResult> SendUpdateObjectRequest
             (
             ObjectIdCR objectId,
