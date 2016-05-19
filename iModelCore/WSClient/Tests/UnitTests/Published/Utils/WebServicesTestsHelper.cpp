@@ -316,6 +316,13 @@ BeFileName GetTestsTempDir()
     return path;
     }
 
+BeFileName GetTestsOutputDir()
+    {
+    BeFileName path;
+    BeTest::GetHost().GetOutputRoot(path);
+    return path;
+    }
+
 BeFileName StubFilePath(Utf8StringCR customFileName)
     {
     BeFileName fileName;

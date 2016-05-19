@@ -137,6 +137,8 @@ ECN::ECSchemaPtr ParseSchema(Utf8StringCR schemaXml, ECN::ECSchemaReadContextPtr
 
 BeFileName GetTestsAssetsDir();
 BeFileName GetTestsTempDir();
+BeFileName GetTestsOutputDir();
+
 BeFileName StubFilePath(Utf8StringCR customFileName = "");
 BeFileName StubFile(Utf8StringCR content = "TestContent", Utf8StringCR customFileName = "");
 BeFileName StubFileWithSize(uint32_t bytesCount, Utf8StringCR customFileName = "");
