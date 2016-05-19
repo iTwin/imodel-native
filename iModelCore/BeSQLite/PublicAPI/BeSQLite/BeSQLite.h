@@ -1313,8 +1313,10 @@ struct BeDbMutexHolder : NonCopyableClass
 //=======================================================================================
 struct CachedStatement : Statement
 {
+    friend struct StatementCache;
 private:
     mutable uint32_t m_refCount;
+    bool m_inCache;
     Utf8CP  m_sql;
 
 public:

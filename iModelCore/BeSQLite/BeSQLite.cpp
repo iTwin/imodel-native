@@ -3016,7 +3016,7 @@ bool BeDbMutex::IsHeld() {return 0!=sqlite3_mutex_held((sqlite3_mutex*)m_mux);}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-CachedStatement::CachedStatement(Utf8CP sql)
+CachedStatement::CachedStatement(Utf8CP sql): m_inCache(true)
     {
     m_refCount = 0;
     size_t len = strlen(sql) + 1;
@@ -3031,6 +3031,7 @@ CachedStatement::~CachedStatement() {sqlite3_free((void*)m_sql);}
 +---------------+---------------+---------------+---------------+---------------+------*/
 uint32_t CachedStatement::Release()
     {
+    bool inCache = m_inCache;
     if (0 == --m_refCount)
         {
         delete this;
@@ -3041,7 +3042,7 @@ uint32_t CachedStatement::Release()
     // one else is pointing to this instance. That means that the statement is no longer in use and
     // we should reset it so sqlite won't keep it in the list of active vdbe's. Also, clear its bindings so
     // the next user won't accidentally inherit them.
-    if (1== m_refCount)
+    if (inCache && 1== m_refCount)
         {
         Reset();
         ClearBindings();
@@ -3056,6 +3057,8 @@ uint32_t CachedStatement::Release()
 void StatementCache::Empty()
     {
     BeDbMutexHolder _v_v(m_mutex);
+    for (auto& entry : m_entries)
+        entry->m_inCache = false;
     m_entries.clear();
     }
 
@@ -3097,7 +3100,10 @@ CachedStatement& StatementCache::AddStatement(Utf8CP sql) const
     BeDbMutexHolder _v_v(m_mutex);
 
     if (m_entries.size() >= m_entries.capacity()) // if cache is full, remove oldest entry
+		{
+		m_entries.front()->m_inCache = false;
         m_entries.erase(m_entries.begin());
+		}
 
     CachedStatement* newEntry = new CachedStatement(sql);
     m_entries.push_back(newEntry);
