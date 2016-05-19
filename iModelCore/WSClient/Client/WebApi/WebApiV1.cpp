@@ -976,7 +976,7 @@ ICancellationTokenPtr ct
     if (objectId.className.empty())
         {
         BeDebugLog("The className passed into WebApiV1::SendCreateObjectRequest is empty. ClassName is required to be valid.");
-        return CreateCompletedAsyncTask(WSCreateObjectResult::Error(WSError::WSError()));
+        return CreateCompletedAsyncTask(WSCreateObjectResult::Error(WSError()));
         }
 
     BeAssert(objectId.schemaName.Equals(objectCreationJson["instance"]["schemaName"].asString()) 
