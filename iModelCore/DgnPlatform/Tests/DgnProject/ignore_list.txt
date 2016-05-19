@@ -41,3 +41,4 @@ DgnECNavigatorTest.IfcElementInfo # Need to figure BIS schema for IFC - Shaun/Ra
 DgnECNavigatorTest.PlantElementInfo # Improperly creating a GroupInformationElement when the "NamedGroupOwnsMembers" CA is found - Shaun/Carole
 
 BeSQLiteRealityDataStorageTests.Select              # Notified Keith
+BeSQLiteRealityDataStorageTests.Persist             # Notified Keith
