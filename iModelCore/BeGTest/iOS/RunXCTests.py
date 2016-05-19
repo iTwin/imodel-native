@@ -29,6 +29,7 @@ def RunTest(xcodeprojpath, deviceName, okToRetry, logfile):
     failureCount = 0
     testCount = 0
     testSuiteCount = 0
+    failedtests = ''
 
     errpat = re.compile (r"error\:\s*\-\[(\w+)\s*(\w+).*failed")
 
@@ -43,12 +44,9 @@ def RunTest(xcodeprojpath, deviceName, okToRetry, logfile):
         # We often get an error when copying resources to the device the first time we try to run a given set of tests
         if lline.startswith('cp') and -1 != lline.find('permission denied'):
             mustRetry = True
-            break
         
-        #if lline.find('error') != -1:
-        #    print '\n' + procStdOutLine
-
-        printProgress(procStdOutLine, status_len)
+        #printProgress(procStdOutLine, status_len)
+        print procStdOutLine,    
 
         logfile.write(procStdOutLine)
 
@@ -62,7 +60,9 @@ def RunTest(xcodeprojpath, deviceName, okToRetry, logfile):
                 if -1 != starterr and -1 != lline.find('failed'):
                     err = errpat.match(procStdOutLine[starterr:])
                     if err != None:
-                        print "\nFAILED " + err.group(1) + "." + err.group(2)
+                        failuremsg = "\nFAILED " + err.group(1) + "." + err.group(2)
+                        print failuremsg
+                        failedtests = failedtests + failuremsg
                         failureCount = failureCount + 1
 
         procStdOutLine = proc.stdout.readline ()
@@ -81,6 +81,9 @@ def RunTest(xcodeprojpath, deviceName, okToRetry, logfile):
     print '{0} suites, {1} tests, {2} failures'.format(testSuiteCount, testCount, failureCount)
 
     if failureCount != 0:
+        print '*** FAILURES ***'
+        print failedtests
+        print ''
         print 'To debug the failed tests, use the following command line to open the test xcodeproj:'
         print '  open ' + xcodeprojpath
         print 'Then go to Test Navigator, filter on the test you want to run, and click its run arrow'
