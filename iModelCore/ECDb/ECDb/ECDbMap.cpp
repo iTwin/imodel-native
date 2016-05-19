@@ -161,7 +161,7 @@ MappingStatus ECDbMap::MapSchemas(SchemaImportContext& schemaImportContext)
         return MappingStatus::Success;
 
     m_schemaImportContext = &schemaImportContext;
-
+    m_schemaImportContext->GetECDbMapDb().Load();
     const MappingStatus stat = DoMapSchemas();
     if (MappingStatus::Success != stat)
         {
