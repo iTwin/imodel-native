@@ -2502,6 +2502,11 @@ bool IScalableMeshNode::HasClip(uint64_t clipId) const
     return _HasClip(clipId);
     }
 
+bool IScalableMeshNode::IsClippingUpToDate() const
+    {
+    return _IsClippingUpToDate();
+    }
+
 void IScalableMeshNode::GetSkirtMeshes(bvector<PolyfaceHeaderPtr>& meshes) const
     {
     return _GetSkirtMeshes(meshes);

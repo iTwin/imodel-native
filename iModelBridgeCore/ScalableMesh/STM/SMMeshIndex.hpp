@@ -2568,6 +2568,18 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::HasCli
     }
 
 //=======================================================================================
+// @bsimethod                                                   Elenie.Godzaridis 05/16
+//=======================================================================================
+template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::IsClippingUpToDate()
+    {
+    for (auto& diffSet : m_differenceSets)
+        {
+        if (diffSet.clientID == (uint64_t)-1 && diffSet.upToDate) return true;
+        }
+    return false;
+    }
+
+//=======================================================================================
 // @bsimethod                                                   Elenie.Godzaridis 10/15
 //=======================================================================================
 template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::ComputeMergedClips()

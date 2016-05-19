@@ -294,6 +294,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     bool HasClip(uint64_t clipId);
 
+    bool IsClippingUpToDate();
+
     //If necessary, update clips so as to merge them with other clips on the node.
     void  ComputeMergedClips();
     //Adds a new set of differences matching the desired clip (synchronously).
