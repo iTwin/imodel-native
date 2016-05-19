@@ -38,10 +38,10 @@ private:
         
 protected:
     virtual bool _IsExpired() const override;
-    virtual BentleyStatus _InitFrom(bmap<Utf8String, Utf8String> const& header, ByteStream const& body) override;
-    virtual BentleyStatus _InitFrom(BeSQLite::Db& db) override;
-    virtual BentleyStatus _InitFrom(ByteStream const& data) override {return ERROR;}
-    virtual BentleyStatus _Persist(BeSQLite::Db& db) const override;
+    virtual BentleyStatus _LoadFromHttp(bmap<Utf8String, Utf8String> const& header, ByteStream const& body) override;
+    virtual BentleyStatus _LoadFromStorage(BeSQLite::Db& db) override;
+    virtual BentleyStatus _LoadFromFile(ByteStream const& data) override {return ERROR;}
+    virtual BentleyStatus _PersistToStorage(BeSQLite::Db& db) const override;
 
 public:
     WmsTileData(Utf8CP name) : Payload(name) {}
@@ -51,15 +51,11 @@ public:
 };
 
 //----------------------------------------------------------------------------------------
-//-------------------------------  WmsTileData      ----------------------------------------
-//----------------------------------------------------------------------------------------
-
-//----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  6/2015
 //----------------------------------------------------------------------------------------
 bool WmsTileData::_IsExpired() const 
     {
-    return false; //DateTime::CompareResult::EarlierThan == DateTime::Compare(GetExpirationDate(), DateTime::GetCurrentTime());
+    return DateTime::CompareResult::EarlierThan == DateTime::Compare(GetExpirationDate(), DateTime::GetCurrentTime());
     }
 
 //=======================================================================================
@@ -131,7 +127,7 @@ bool WmsTileData::IsSupportedContent(Utf8StringCR contentType) const
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  6/2015
 //----------------------------------------------------------------------------------------
-BentleyStatus WmsTileData::_InitFrom(bmap<Utf8String, Utf8String> const& header, ByteStream const& body) 
+BentleyStatus WmsTileData::_LoadFromHttp(bmap<Utf8String, Utf8String> const& header, ByteStream const& body) 
     {    
     m_creationDate = DateTime::GetCurrentTime();
 
@@ -152,7 +148,7 @@ BentleyStatus WmsTileData::_InitFrom(bmap<Utf8String, Utf8String> const& header,
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  6/2015
 //----------------------------------------------------------------------------------------
-BentleyStatus WmsTileData::_InitFrom(BeSQLite::Db& db)
+BentleyStatus WmsTileData::_LoadFromStorage(BeSQLite::Db& db)
     {
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     wt_OperationForGraphics highPriority;
@@ -189,7 +185,7 @@ BentleyStatus WmsTileData::_InitFrom(BeSQLite::Db& db)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  6/2015
 //----------------------------------------------------------------------------------------
-BentleyStatus WmsTileData::_Persist(BeSQLite::Db& db) const
+BentleyStatus WmsTileData::_PersistToStorage(BeSQLite::Db& db) const
     {
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     int bufferSize = (int) GetData().size();
