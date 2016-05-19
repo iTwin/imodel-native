@@ -34,6 +34,7 @@ public:
     static RefCountedPtr<TestWork> Create(Handler const& handler) {return new TestWork(handler);}
 };
 
+#ifdef UNREFERENCED_LOCAL_FUNCTION
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -47,6 +48,7 @@ static void runOnAnotherThread(std::function<void()> const& handler)
         thread->Terminate();
         }));
     }
+#endif
 
 //=======================================================================================
 // @bsiclass                                        Grigas.Petraitis            03/2015
