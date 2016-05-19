@@ -77,7 +77,6 @@ public:
 
     ECOBJECTS_EXPORT ECObjectsStatus    AddConversionSchema(ECSchemaR schema);
     void                                RemoveConversionSchema(ECSchemaR schema);
-    ECSchemaPtr                         LocateConversionSchemaFor(Utf8CP schemaName, int versionMajor, int versionMinor);
 
     ECOBJECTS_EXPORT void AddSchemaLocaters (bvector<ECN::IECSchemaLocaterP> const& schemaLocators);
 
@@ -158,6 +157,13 @@ public:
     //! Gets the schemas cached by this context.
     //! @returns Schemas cached by this context
     ECOBJECTS_EXPORT ECSchemaCacheR GetCache ();
+
+    //! Look for a _V8Conversion schema for the given schema
+    //! @param[in] schemaName   The name of the schema to look for
+    //! @param[in] versionMajor The major version of the schema to look for
+    //! @param[in] versionMinor The minor version of the schema to look for
+    ECOBJECTS_EXPORT ECSchemaPtr        LocateConversionSchemaFor(Utf8CP schemaName, int versionMajor, int versionMinor);
+
 };
 
 typedef RefCountedPtr<ECInstanceReadContext>      ECInstanceReadContextPtr;
