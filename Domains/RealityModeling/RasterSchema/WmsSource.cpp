@@ -30,26 +30,21 @@ struct WmsTileData : RealityData::Payload
     };
 
 private:
-    Utf8String      m_url;
     ByteStream      m_data;
     DateTime        m_creationDate;
     Utf8String      m_contentType;
 
-private:
-    WmsTileData(){}
-
     bool IsSupportedContent(Utf8StringCR contentType) const;
         
 protected:
-    virtual Utf8CP _GetId() const override {return m_url.c_str();}
     virtual bool _IsExpired() const override;
-    virtual BentleyStatus _InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> const& header, ByteStream const& body) override;
-    virtual BentleyStatus _InitFrom(BeSQLite::Db& db, Utf8CP key) override;
-    virtual BentleyStatus _InitFrom(Utf8CP filepath, ByteStream const& data) override {return ERROR;}
+    virtual BentleyStatus _InitFrom(bmap<Utf8String, Utf8String> const& header, ByteStream const& body) override;
+    virtual BentleyStatus _InitFrom(BeSQLite::Db& db) override;
+    virtual BentleyStatus _InitFrom(ByteStream const& data) override {return ERROR;}
     virtual BentleyStatus _Persist(BeSQLite::Db& db) const override;
 
 public:
-    static RefCountedPtr<WmsTileData> Create() {return new WmsTileData();}    
+    WmsTileData(Utf8CP name) : Payload(name) {}
     ByteStream const& GetData() const  {return m_data;}
     DateTime GetCreationDate() const  {return m_creationDate;}
     Utf8String GetContentType() const  {return m_contentType;}
@@ -136,9 +131,8 @@ bool WmsTileData::IsSupportedContent(Utf8StringCR contentType) const
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  6/2015
 //----------------------------------------------------------------------------------------
-BentleyStatus WmsTileData::_InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> const& header, ByteStream const& body) 
+BentleyStatus WmsTileData::_InitFrom(bmap<Utf8String, Utf8String> const& header, ByteStream const& body) 
     {    
-    m_url.AssignOrClear(url);
     m_creationDate = DateTime::GetCurrentTime();
 
     auto contentTypeIter = header.find("Content-Type");
@@ -158,7 +152,7 @@ BentleyStatus WmsTileData::_InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> co
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  6/2015
 //----------------------------------------------------------------------------------------
-BentleyStatus WmsTileData::_InitFrom(BeSQLite::Db& db, Utf8CP key)
+BentleyStatus WmsTileData::_InitFrom(BeSQLite::Db& db)
     {
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     wt_OperationForGraphics highPriority;
@@ -411,8 +405,8 @@ Render::Image WmsSource::_QueryTile(TileId const& id, bool& alphaBlend)
     // *** as the database get bigger(I guess 500MB) the first call is very very slow. sorting by string is probably not a good idea either
     //     Maybe one table per server?  and use TileId or hash the url ?
     //     BeSQLiteRealityDataStorage::wt_Prepare call to "VACCUUM" is the reason why we have such a big slowdown.
-    RefCountedPtr<WmsTileData> pWmsTileData = WmsTileData::Create();
-    if (RealityData::CacheResult::Success != GetRealityDataCache().RequestData(*pWmsTileData, tileUrl.c_str(), WmsTileData::RequestOptions(true)))
+    RefCountedPtr<WmsTileData> pWmsTileData = new WmsTileData(tileUrl.c_str());
+    if (RealityData::CacheResult::Success != GetRealityDataCache().RequestData(*pWmsTileData, WmsTileData::RequestOptions(true)))
         return image;
 
     BeAssert(pWmsTileData.IsValid());
