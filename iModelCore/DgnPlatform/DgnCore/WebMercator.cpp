@@ -74,8 +74,9 @@ struct Upoint2d
     };
 
 static Upoint2d const s_pixelOrigin = {TILE_SIZE / 2, TILE_SIZE / 2};
-static double const s_pixelsPerLonDegree = TILE_SIZE / 360.0;
-static double const s_pixelsPerLonRadian = TILE_SIZE / msGeomConst_2pi;
+static double const s_dTileSize = 256.;
+static double const s_pixelsPerLonDegree = s_dTileSize / 360.0;
+static double const s_pixelsPerLonRadian = s_dTileSize / msGeomConst_2pi;
 static double const s_minLatitude  =  -85.05112878;
 static double const s_maxLatitude  =   85.05112878;
 static double const s_minLongitude = -180.0;
@@ -127,8 +128,8 @@ struct WPixelPoint : DPoint2d
     {
     if (v < 0)
         v = 0;
-    if (BeNumerical::Compare(v, TILE_SIZE) >= 0)
-        v = (TILE_SIZE - 1.0e-9);   // fudge the greatest possible coordinate as being just a little inside the edge.
+    if (BeNumerical::Compare(v, s_dTileSize) >= 0)
+        v = (s_dTileSize - 1.0e-9);   // fudge the greatest possible coordinate as being just a little inside the edge.
     }
 
     void Clamp() {ClampCoordinate(x); ClampCoordinate(y);}
@@ -151,8 +152,12 @@ struct PixelPoint : DPoint2d
 //=======================================================================================
 struct TileRange
 {
+    bool m_isValid = false;
     WPixelPoint m_upperLeft;
     WPixelPoint m_lowerRight;
+    void Invalidate() {m_isValid=false;}
+    bool IsValid() const {return m_isValid;}
+    void Extend(WPixelPoint);
 };
 
 //=======================================================================================
@@ -160,14 +165,16 @@ struct TileRange
 //=======================================================================================
 struct WebMercatorProgressive : ProgressiveTask
 {
+    bool m_isTransparent;
     TileList m_missingTiles;
     uint64_t m_nextShow = 0;
     
     virtual Completion _DoProgressive(ProgressiveContext& context, WantShow&) override;
-    WebMercatorProgressive(TileList& missing) : m_missingTiles(std::move(missing)) {}
+    WebMercatorProgressive(TileList& missing, bool isTransparent) : m_missingTiles(std::move(missing)), m_isTransparent(isTransparent) {}
 };
 
 //=======================================================================================
+// Contains the input to drawing a tile (a RenderContext) and the outputs (a list of graphics, plus a list of missing tiles).
 // @bsiclass                                                    Keith.Bentley   05/16
 //=======================================================================================
 struct DrawArgs
@@ -302,7 +309,7 @@ static bool isLatLongPointInRange(LatLongPointCR latLng)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool isWpixelPointInRange(DPoint2dCR point)
     {
-    return (0 <= point.x && point.x <= TILE_SIZE) && (0 <= point.y && point.y <= TILE_SIZE);
+    return (0 <= point.x && point.x <= s_dTileSize) && (0 <= point.y && point.y <= s_dTileSize);
     }
 #endif
 
@@ -355,7 +362,7 @@ PixelPoint::PixelPoint(WPixelPointCR wpixels, uint8_t zoomLevel)
 TileId WPixelPoint::ToTileId(uint8_t zoomLevel)
     {
     PixelPoint pixelPt(*this, zoomLevel);
-    return TileId(zoomLevel, (uint32_t) floor(pixelPt.x / TILE_SIZE), (uint32_t) floor(pixelPt.y / TILE_SIZE));
+    return TileId(zoomLevel, (uint32_t) floor(pixelPt.x / s_dTileSize), (uint32_t) floor(pixelPt.y / s_dTileSize));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -363,12 +370,30 @@ TileId WPixelPoint::ToTileId(uint8_t zoomLevel)
 +---------------+---------------+---------------+---------------+---------------+------*/
 WPixelPoint::WPixelPoint(TileId tileid)
     {
-    auto pix = tileid.m_column * TILE_SIZE;
-    auto piy = tileid.m_row    * TILE_SIZE;
+    double pix = tileid.m_column * s_dTileSize;
+    double piy = tileid.m_row    * s_dTileSize;
 
     uint32_t numTiles = 1 << tileid.m_zoomLevel;
     x = pix / (double)numTiles;
     y = piy / (double)numTiles;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void TileRange::Extend(WPixelPoint pt)
+    {
+    if (!m_isValid)
+        {
+        m_upperLeft = m_lowerRight = pt;
+        m_isValid = true;
+        return;
+        }
+
+    if (pt.x < m_upperLeft.x) m_upperLeft.x = pt.x;
+    if (pt.x > m_lowerRight.x) m_lowerRight.x = pt.x;
+    if (pt.y < m_upperLeft.y) m_upperLeft.y = pt.y;
+    if (pt.y > m_lowerRight.y) m_lowerRight.y = pt.y;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -488,29 +513,24 @@ bool WebMercatorDisplay::ComputeZoomLevel(DgnViewportR vp)
     Frustum  worldFrust = vp.GetFrustum();
     DRange2d xyRange = DRange2d::NullRange();
 
+    BeAssert(!m_tileRange.IsValid());
     for (DPoint3dCR pt : worldFrust.m_pts)
         {
-        DPoint3d xyPt;
+        DPoint3d xyzPt;
         viewRay.origin = pt;
         double param;
-        if (!viewRay.Intersect(xyPt, param, xyPlane))
+        if (!viewRay.Intersect(xyzPt, param, xyPlane))
             return false;
 
-        xyRange.Extend(xyPt);
+        // must compute tile range in WPixels. 
+        m_tileRange.Extend(ConvertMetersToWpixels(DPoint2d::From(xyzPt.x, xyzPt.y)));
+        xyRange.Extend(xyzPt);
         }
 
     double worldDiag = xyRange.low.Distance(xyRange.high);
     Frustum  viewFrust = vp.GetFrustum(DgnCoordSystem::View);
     double viewDiag = viewFrust.m_pts[NPC_LeftBottomRear].Distance(viewFrust.m_pts[NPC_RightTopRear]);
 
-    DPoint2d upperLeft, lowerRight;
-    upperLeft.x  = xyRange.low.x;
-    upperLeft.y  = xyRange.high.y;
-    lowerRight.x = xyRange.high.x;
-    lowerRight.y = xyRange.low.y;
-
-    m_tileRange.m_upperLeft  = ConvertMetersToWpixels(upperLeft);
-    m_tileRange.m_lowerRight = ConvertMetersToWpixels(lowerRight);
 
     // Get the number of meters / pixel that we are showing in the view
     double viewResolution = worldDiag / viewDiag;
@@ -542,6 +562,7 @@ TileIdList WebMercatorDisplay::GetTileIds(uint8_t zoomLevel)
     TileId ultileid = m_tileRange.m_upperLeft.ToTileId(zoomLevel);
 
     TileIdList tileids;
+
     // Get tileids of all tiles in the rectangular area
     for (auto row = ultileid.m_row; row <= lrtileid.m_row; ++row)
         {
@@ -607,7 +628,7 @@ void WebMercatorDisplay::DrawCoarserTiles(DrawArgs& args, uint8_t zoomLevel, uin
             args.DrawTile(*tile);
         }
 
-    DEBUG_PRINTF("drawing %d coarser tiles", args.m_graphics.m_entries.size());
+    // DEBUG_PRINTF("drawing %d coarser tiles", args.m_graphics.m_entries.size());
     args.DrawGraphics(-100.0 * DgnUnits::OneMillimeter());
 
     if (!allFound && maxLevelsToTry>0 && zoomLevel>0)
@@ -691,7 +712,7 @@ void WebMercatorDisplay::DrawView(TerrainContextR context)
         {
         DrawFinerTiles(args, missing->GetTileId(), 2);
 
-        DEBUG_PRINTF("drawing %d finer tiles", args.m_graphics.m_entries.size());
+        // DEBUG_PRINTF("drawing %d finer tiles", args.m_graphics.m_entries.size());
         args.DrawGraphics(-50.0 * DgnUnits::OneMillimeter());
         }
 
@@ -704,7 +725,7 @@ void WebMercatorDisplay::DrawView(TerrainContextR context)
 
     // register for progressive display.
     DEBUG_PRINTF("%d missing tiles", args.m_missing.size());
-    context.GetViewport()->ScheduleTerrainProgressiveTask(*new WebMercatorProgressive(args.m_missing));
+    context.GetViewport()->ScheduleTerrainProgressiveTask(*new WebMercatorProgressive(args.m_missing, m_model.GetProperties().IsTransparent()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -733,7 +754,11 @@ ProgressiveTask::Completion WebMercatorProgressive::_DoProgressive(ProgressiveCo
 
     if (m_missingTiles.empty()) // when we have no missing tiles, the progressive task is done. 
         {
-        context.GetViewport()->SetNeedsHeal(); // unfortunately the newly drawn tiles may be obscured by lower resolution ones due to transparency
+        if (m_isTransparent)
+            context.GetViewport()->SetNeedsHeal(); // unfortunately the newly drawn tiles may be obscured by lower resolution ones due to transparency
+        else
+            wantShow = WantShow::Yes;
+
         return Completion::Finished;
         }
 
@@ -755,6 +780,7 @@ WebMercatorDisplay::WebMercatorDisplay(WebMercatorModel const& model, DgnViewpor
     m_originLatitudeInRadians = Angle::DegreesToRadians(centerLatLng.latitude);
     }
 
+#if defined (NOTNOW_OPEN_STREET_MAPS)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -762,7 +788,7 @@ Utf8String StreetMapModel::CreateOsmUrl(TileId tileid) const
 {
     Utf8String url;
 
-    if (!m_properties.m_mapType.empty() && m_properties.m_mapType[0] == '0')  // "(c) OpenStreetMap contributors"
+    if (!m_properties.m_mapType == MapType::Map.empty() && m_properties.m_mapType[0] == '0')  // "(c) OpenStreetMap contributors"
         url = Utf8PrintfString("http://a.tile.openstreetmap.org/%d/%d/%d.png",tileid.m_zoomLevel, tileid.m_column, tileid.m_row);
     else // *** For now, use MapQuest for satellite images (just in developer builds) ***
         url = Utf8PrintfString("http://otile1.mqcdn.com/tiles/1.0.0/sat/%d/%d/%d.jpg",tileid.m_zoomLevel, tileid.m_column, tileid.m_row);  // "Portions Courtesy NASA/JPL-Caltech and U.S. Depart. of Agriculture, Farm Service Agency"
@@ -771,6 +797,7 @@ Utf8String StreetMapModel::CreateOsmUrl(TileId tileid) const
 
     return url;
     }
+#endif
 
 #define MAPBOX_ACCESS_KEY "pk.eyJ1IjoibWFwYm94YmVudGxleSIsImEiOiJjaWZvN2xpcW00ZWN2czZrcXdreGg2eTJ0In0.f7c9GAxz6j10kZvL_2DBHg"
 #define MAPBOX_ACCESS_KEY_URI_ENCODED "pk%2EeyJ1IjoibWFwYm94YmVudGxleSIsImEiOiJjaWZvN2xpcW00ZWN2czZrcXdreGg2eTJ0In0%2Ef7c9GAxz6j10kZvL%5F2DBHg"
@@ -793,7 +820,7 @@ Utf8String StreetMapModel::CreateMapBoxUrl(TileId tileid) const
     jpg90       90 % quality JPG
     */
     Utf8CP format = "png32";
-    Utf8CP mapid = (!m_properties.m_mapType.empty() && m_properties.m_mapType [0] == '0')? "mapbox.streets": "mapbox.satellite";
+    Utf8CP mapid = m_properties.m_mapType == Properties::MapType::Map ? "mapbox.streets" : "mapbox.satellite";
 
     //                                                  m  z  x  y  f
     url = Utf8PrintfString("http://api.mapbox.com/v4/%s/%d/%d/%d.%s?access_token=", mapid, tileid.m_zoomLevel, tileid.m_column, tileid.m_row, format);
@@ -807,6 +834,7 @@ Utf8String StreetMapModel::CreateMapBoxUrl(TileId tileid) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool StreetMapModel::_ShouldRejectTile(TileId tileid, Utf8StringCR url, ByteStream const& data) const
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     if (m_properties.m_mapService[0] != '0' || m_properties.m_mapType[0] != '1')
         return false;
 
@@ -836,6 +864,7 @@ bool StreetMapModel::_ShouldRejectTile(TileId tileid, Utf8StringCR url, ByteStre
         // MapBox
     if (data.GetSize() == sizeof(s_mapbox_x) && 0==memcmp(data.GetData(), s_mapbox_x, data.GetSize()))
         return true;
+#endif
 
     return false;
     }
@@ -845,26 +874,7 @@ bool StreetMapModel::_ShouldRejectTile(TileId tileid, Utf8StringCR url, ByteStre
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus StreetMapModel::_CreateUrl(Utf8StringR url, TileId tileid) const
     {
-    // The usual image format info
-    if (m_properties.m_mapService.empty())
-        {
-        BeAssert(false && "missing map service");
-        LOG.error("missing map service");
-        return BSIERROR;
-        }
-
-    if (m_properties.m_mapService[0] == '0')
-        {
-        url = CreateMapBoxUrl(tileid);
-        //printf ("url=%s\n", url.c_str());
-        }
-    else
-        {
-        BeAssert(false && "unrecognized map service");
-        LOG.errorv("[%s] is an unrecognized map service", m_properties.m_mapService.c_str());
-        return BSIERROR;
-        }
-
+    url = CreateMapBoxUrl(tileid);
     return BSISUCCESS;
     }
 
@@ -873,69 +883,48 @@ BentleyStatus StreetMapModel::_CreateUrl(Utf8StringR url, TileId tileid) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8CP StreetMapModel::_GetCopyrightMessage() const
     {
-    return m_properties.m_mapService[0] == '0' ? "(c) Mapbox, (c) OpenStreetMap contributors" : nullptr;
+    return "(c) Mapbox, (c) OpenStreetMap contributors";
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static Utf8String getStreetMapServerDescription(StreetMapHandler::MapService mapService, StreetMapHandler::MapType mapType)
+static Utf8String getStreetMapServerDescription(WebMercatorModel::Properties::MapType mapType)
     {
-    Utf8String descr;
-    switch (mapService)
-        {
-        case StreetMapHandler::MapService::MapBox:
-            {
-            descr = ("Mapbox");   // *** WIP translate
-            if (StreetMapHandler::MapType::Map == mapType)
-                descr.append(" Map");   // *** WIP translate
-            else
-                descr.append(" Satellite Images"); // *** WIP translate
-            break;
-            }
+    Utf8String descr("Mapbox");   // *** WIP translate
+    if (WebMercatorModel::Properties::MapType::Map == mapType)
+        descr.append(" Map");   // *** WIP translate
+    else
+        descr.append(" Satellite Images"); // *** WIP translate
 
-#ifndef NDEBUG
-        case StreetMapHandler::MapService::OpenStreetMaps:
-            {
-            descr = ("Open Street Maps");   // *** WIP translate
-            if (StreetMapHandler::MapType::Map == mapType)
-                descr.append(" Map");   // *** WIP translate
-            else
-                descr.append(" Satellite Images"); // *** WIP translate
-            break;
-            }
-#endif
-        }
     return descr;
     }
 
 DEFINE_REF_COUNTED_PTR(WebMercatorModel)
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+WebMercatorModel::CreateParams::CreateParams(DgnDbR dgndb, Properties const& props) : T_Super::CreateParams(dgndb, 
+    DgnClassId(dgndb.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, "StreetMapModel")), 
+    DgnModel::CreateModelCode(getStreetMapServerDescription(props.m_mapType))),
+    m_properties(props)
+    {
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelId StreetMapHandler::CreateStreetMapModel(DgnDbR db, MapService mapService, MapType mapType, bool finerResolution)
+DgnModelId StreetMapHandler::CreateStreetMapModel(StreetMapModel::CreateParams const& params)
     {
-    //Utf8PrintfString modelName("com.bentley.dgn.StreetMap_%d_%d", mapService, mapType); // *** WIP_STREET_MAP how to make sure name is unique?
-    // ANSWER to WIP: create a DgnAuthority and use the namespace
-    Utf8String modelName = getStreetMapServerDescription(mapService,mapType).c_str();
-    DgnClassId classId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, "StreetMapModel"));
-    BeAssert(classId.IsValid());
-
-    WebMercatorModelPtr model = new StreetMapModel(DgnModel::CreateParams(db, classId, DgnModel::CreateModelCode(modelName)));
-
-    WebMercatorModel::Properties props;
-    props.m_mapService = Utf8PrintfString("%d", mapService);
-    props.m_mapType = Utf8PrintfString("%d", mapType);
-    props.m_finerResolution = finerResolution;
-
-    model->SetProperties(props);
+    WebMercatorModelPtr model = new StreetMapModel(params);
     model->Insert();
     return model->GetModelId();
     }
 
 static Utf8CP JSON_WebMercatorModel = "WebMercatorModel";
-static Utf8CP PROPERTYJSON_MapService = "mapService";
-static Utf8CP PROPERTYJSON_MapType = "mapType";
+static Utf8CP PROPERTYJSON_MapService = "service";
+static Utf8CP PROPERTYJSON_MapType = "map_type";
 static Utf8CP PROPERTYJSON_FinerResolution = "finerResolution";
 static Utf8CP PROPERTYJSON_GroundBias = "groundBias";
 static Utf8CP PROPERTYJSON_Transparency = "transparency";
@@ -945,9 +934,12 @@ static Utf8CP PROPERTYJSON_Transparency = "transparency";
 +---------------+---------------+---------------+---------------+---------------+------*/
 void WebMercatorModel::Properties::ToJson(Json::Value& value) const
     {
-    value[PROPERTYJSON_MapService] = m_mapService.c_str();
-    value[PROPERTYJSON_MapType] = m_mapType.c_str();
-    value[PROPERTYJSON_FinerResolution] = m_finerResolution;
+    value[PROPERTYJSON_MapService] = (uint32_t) m_mapService;
+    value[PROPERTYJSON_MapType] = (uint32_t) m_mapType;
+
+    if (m_finerResolution)
+        value[PROPERTYJSON_FinerResolution] = m_finerResolution;
+
     value[PROPERTYJSON_GroundBias] = m_groundBias;
     value[PROPERTYJSON_Transparency] = m_transparency;
     }
@@ -957,9 +949,15 @@ void WebMercatorModel::Properties::ToJson(Json::Value& value) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void WebMercatorModel::Properties::FromJson(Json::Value const& value)
     {
-    m_mapService = value[PROPERTYJSON_MapService].asString();
-    m_mapType = value[PROPERTYJSON_MapType].asString();
-    m_finerResolution = value[PROPERTYJSON_FinerResolution].asBool();
+    if (value.isMember(PROPERTYJSON_MapService))
+        m_mapService = (MapService) value[PROPERTYJSON_MapService].asInt();
+
+    if (value.isMember(PROPERTYJSON_MapType))
+        m_mapType = (MapType) value[PROPERTYJSON_MapType].asInt();
+
+    if (value.isMember(PROPERTYJSON_FinerResolution))
+        m_finerResolution = value[PROPERTYJSON_FinerResolution].asBool();
+
     m_groundBias = value.isMember(PROPERTYJSON_GroundBias) ? value[PROPERTYJSON_GroundBias].asDouble() : -1.0;
     m_transparency = value.isMember(PROPERTYJSON_Transparency) ? value[PROPERTYJSON_Transparency].asDouble() : 0.0;
 
@@ -990,12 +988,10 @@ BEGIN_UNNAMED_NAMESPACE
 //=======================================================================================
 // @bsiclass                                        Grigas.Petraitis            03/2015
 //=======================================================================================
-struct TiledRasterCache : BeSQLiteRealityDataStorage
+struct TiledRasterCache : RealityData::Storage
 {
     uint64_t m_allowedSize = MAX_DB_CACHE_SIZE;
-    using BeSQLiteRealityDataStorage::BeSQLiteRealityDataStorage;
-    mutable BeAtomic<bool> m_isPrepared;
-    virtual bool _IsPrepared() const override {return m_isPrepared;}
+    using Storage::Storage;
     virtual BentleyStatus _PrepareDatabase(BeSQLite::Db& db) const override;
     virtual BentleyStatus _CleanupDatabase(BeSQLite::Db& db) const override;
 };
@@ -1003,7 +999,7 @@ struct TiledRasterCache : BeSQLiteRealityDataStorage
 //=======================================================================================
 // @bsiclass                                        Grigas.Petraitis            10/2014
 //=======================================================================================
-struct TileData : IRealityData<TileData, BeSQLiteRealityDataStorage, HttpRealityDataSource>
+struct TileData : RealityData::Payload
 {
 private:
     Utf8String  m_url;
@@ -1021,8 +1017,9 @@ protected:
     virtual Utf8CP _GetId() const override {return m_url.c_str();}
     virtual bool _IsExpired() const override {return false;}
     virtual BentleyStatus _InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> const& header, ByteStream const& body) override;
-    virtual BentleyStatus _InitFrom(BeSQLite::Db& db, BeMutex& cs, Utf8CP key) override;
-    virtual BentleyStatus _Persist(BeSQLite::Db& db, BeMutex& cs) const override;
+    virtual BentleyStatus _InitFrom(BeSQLite::Db& db, Utf8CP key) override;
+    virtual BentleyStatus _InitFrom(Utf8CP filepath, ByteStream const& data) override {return ERROR;}
+    virtual BentleyStatus _Persist(BeSQLite::Db& db) const override;
 
 public:
     TileData(TileR tile, Render::SystemR renderSys, ColorDef color) : m_tile(&tile), m_renderSys(renderSys), m_color(color) {}
@@ -1041,17 +1038,12 @@ END_UNNAMED_NAMESPACE
 BentleyStatus TiledRasterCache::_PrepareDatabase(BeSQLite::Db& db) const
     {
     if (db.TableExists(TABLE_NAME_TiledRaster))
-        {
-        m_isPrepared.store(true);
         return SUCCESS;
-        }
 
-    Utf8CP ddl = "Id PRIMARY KEY,Image BLOB,NumBytes INT,JPeg BOOL,Created BIGINT";
+    Utf8CP ddl = "Id BLOB PRIMARY KEY,Image BLOB,NumBytes INT,JPeg BOOL,Created BIGINT";
     if (BeSQLite::BE_SQLITE_OK == db.CreateTable(TABLE_NAME_TiledRaster, ddl))
-        {
-        m_isPrepared.store(true);
         return SUCCESS;
-        }
+
     return ERROR;
     }
 
@@ -1155,7 +1147,7 @@ BentleyStatus TileData::_InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TileData::_InitFrom(BeSQLite::Db& db, BeMutex& cs, Utf8CP key)
+BentleyStatus TileData::_InitFrom(BeSQLite::Db& db, Utf8CP key)
     {
     CachedStatementPtr stmt;
     db.GetCachedStatement(stmt, "SELECT Image,NumBytes,JPeg,Created FROM " TABLE_NAME_TiledRaster " WHERE Id=?");
@@ -1182,21 +1174,13 @@ BentleyStatus TileData::_InitFrom(BeSQLite::Db& db, BeMutex& cs, Utf8CP key)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TileData::_Persist(Db& db, BeMutex& cs) const
+BentleyStatus TileData::_Persist(Db& db) const
     {
-#ifdef DEBUG_MERCATOR
-    Utf8String tmp(GetId()+40, 16);
-    DEBUG_PRINTF("arrived  %s", tmp.c_str());
-#endif
 
     int bufferSize = (int) GetData().GetSize();
 
     int64_t creationTime = 0;
     if (SUCCESS != GetCreationDate().ToUnixMilliseconds(creationTime))
-        return ERROR;
-
-    int64_t expirationDate = 0;
-    if (SUCCESS != GetExpirationDate().ToUnixMilliseconds(expirationDate))
         return ERROR;
 
     // insert
@@ -1215,19 +1199,23 @@ BentleyStatus TileData::_Persist(Db& db, BeMutex& cs) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-RealityDataCache& WebMercatorModel::GetRealityDataCache() const
+RealityData::CacheR WebMercatorModel::GetRealityDataCache() const
     {
     if (!m_realityDataCache.IsValid())
         {
-        m_realityDataCache = new RealityDataCache();
+        m_realityDataCache = new RealityData::Cache();
 
-        BeFileName storageFileName = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName();
-        storageFileName.AppendToPath(BeFileName(GetName()));
-        storageFileName.AppendExtension(L"tilecache");
+        BeFileName cacheName = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName();
+        cacheName.AppendToPath(BeFileName(GetName()));
+        cacheName.AppendExtension(L"tilecache");
 
         uint32_t threadCount = std::max((uint32_t) 2,BeThreadUtilities::GetHardwareConcurrency() / 2);
-        m_realityDataCache->RegisterStorage(*new TiledRasterCache(storageFileName, SchedulingMethod::LIFO, 4));
-        m_realityDataCache->RegisterSource(*HttpRealityDataSource::Create(threadCount, SchedulingMethod::LIFO));
+
+        RefCountedPtr<TiledRasterCache> cache = new TiledRasterCache(threadCount);
+        if (SUCCESS == cache->OpenAndPrepare(cacheName))
+            m_realityDataCache->SetStorage(*cache);
+
+        m_realityDataCache->SetSource(*new RealityData::HttpSource(threadCount, RealityData::SchedulingMethod::FIFO));
         }
 
     return *m_realityDataCache;
@@ -1249,19 +1237,18 @@ void WebMercatorModel::RequestTile(TileId id, TileR tile, Render::SystemR sys) c
     if (0.0 != m_properties.m_transparency)
         color.SetAlpha((Byte) (255.* m_properties.m_transparency));
 
-    TileDataPtr data = new TileData(tile, sys, color);
-    GetRealityDataCache().Get(*data, url.c_str(), RealityDataOptions());
+    GetRealityDataCache().RequestData(*new TileData(tile, sys, color), url.c_str(), RealityData::Options());
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus WebMercatorModel::DeleteCacheFile()
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     m_realityDataCache = nullptr;
     m_tileCache.Clear();
-    return BeFileNameStatus::Success == m_localCacheName.BeDeleteFile() ? SUCCESS : ERROR;
-#endif
-    return ERROR;
+//    return BeFileNameStatus::Success == m_localCacheName.BeDeleteFile() ? SUCCESS : ERROR;
     }
+
+#endif
