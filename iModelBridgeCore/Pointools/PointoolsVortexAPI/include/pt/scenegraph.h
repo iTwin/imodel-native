@@ -156,8 +156,8 @@ public:
 	inline const wchar_t* identifier() const { return m_identifier; }
 	
 	void setIdentifier(const wchar_t*id) { 
-		wcsncpy_s(m_identifier, PT_IDENTIFIER_LENGTH, id, PT_IDENTIFIER_LENGTH-1); 
-		m_identifier[PT_IDENTIFIER_LENGTH-1] = L'\0'; 
+        wcsncpy_s(m_identifier, PT_IDENTIFIER_LENGTH, id, PT_IDENTIFIER_LENGTH-1);
+		m_identifier[PT_IDENTIFIER_LENGTH-1] = L'\0';
 	}
 
 	virtual const wchar_t *typeDescriptor() const { return L"_Object"; }
@@ -212,8 +212,12 @@ public:
 	{ return -1; };
 
 	virtual bool isGroup() const							{ return false; }
+
+    // We need to specify that we use "invoke" from Object, otherwise clang complains that "invoke" hides overloaded virtual function
+    using Object::invoke;
+
 	CCLASSES_API virtual bool invoke(wchar_t*command, void*data);	//! Implementation of basic show / hide commands
-	
+
 	CCLASSES_API virtual void parent(const Object3D *par);
 	virtual const Object3D* parent() const { return m_parent; }
 	int	depth() const;

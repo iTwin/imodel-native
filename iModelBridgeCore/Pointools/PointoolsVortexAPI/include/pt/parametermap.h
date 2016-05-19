@@ -78,9 +78,9 @@ public:
 	}//! Set parameter, 
 
 	template <class T>
-	bool get(const ParamIdType &id, T &v) const 
-	{	
-		PARAMETER_MAP::iterator i = _data.find(id);
+bool get(const ParamIdType &id, T &v) const
+	{
+		PARAMETER_MAP::const_iterator i = _data.find(id);
 		if (i == _data.end()) return false;
 
 		if (i->second.which() == Variant(v).which())
@@ -93,7 +93,7 @@ public:
 	template <class T>
 	bool typesMatch(const ParamIdType &id, const T &v) const
 	{
-		PARAMETER_MAP::iterator i = _data.find(id);
+		PARAMETER_MAP::const_iterator i = _data.find(id);
 		if (i == _data.end()) return false;
 		return (i->second.which() == Variant(v).which());				
 	}

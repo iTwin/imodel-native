@@ -427,8 +427,6 @@ namespace pcloud
 		template <class Receiver, class Transformer>
 		void _iterateTransformedPoints(Receiver &R, Transformer &T, ubyte layerMask=0, float amount=1.0f)
 		{
-			pcloud::DataChannel *geom = _channels[pcloud::PCloud_Geometry];
-
 			uint end = static_cast<uint>(amount * getNumPointsAtLOD(getCurrentLOD()));
 
 			_iterateTransformedPointsRange( R, T, layerMask, 0, end );
@@ -447,7 +445,6 @@ namespace pcloud
 
 			int index = start_point;
 			ubyte *f_b=0, *f_e=0;
-			ubyte nullFilter = 0xff & ~POINT_SELECT_CODE;
 			ubyte pnt_layer = layers(0);
 			pcloud::DataChannel *geom = _channels[pcloud::PCloud_Geometry];
 			pcloud::DataChannel *layer = _channels[pcloud::PCloud_Filter];

@@ -76,7 +76,7 @@ public:
 	*/
 	void copy(const bitvector &src) 
 	{
-		register elem_t i;
+		elem_t i;
 
 		for (i=0; i < src.size; i++) bits[i] = src.bits[i];
 	} 
@@ -153,7 +153,7 @@ public:
 	void assign_all(bool value) 
 	{
 		bit    setval = (value) ?~0 :0;
-		register elem_t i;
+		elem_t i;
 
 		for (i=0; i < size; i++) bits[i] = setval;
 
@@ -190,8 +190,8 @@ public:
 */
 	bool from_long(unsigned long num) 
 	{
-	   register elem_t i;
-		elem_t numbits = sizeof(num)*8;
+	   elem_t i;
+	   elem_t numbits = sizeof(num)*8;
 	   if (!allocate(numbits)) return false;
 
 	   /* usual base conversion algorithm */ 
@@ -231,8 +231,8 @@ public:
 	unsigned long count() const
 	{
 
-	  register     unsigned long count; 
-	  register     elem_t        i;     
+	  unsigned long count;
+	  elem_t        i;
 
 	  static const unsigned bitcount[256] = {0, 1, 1, 2, 1, 2, 2, 3, 1, 
 			2, 2, 3, 2, 3, 3, 4, 1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 
@@ -285,8 +285,8 @@ public:
 			6, 6, 7, 6, 7, 7, 8};
 
 
-		register     unsigned long count; 
-		register     elem_t        i;     
+		unsigned long count;
+		elem_t        i;
 
 		elem_t startblock = start / BITS_SZ;
 		elem_t endblock = 1 + (end / BITS_SZ);
@@ -321,10 +321,10 @@ public:
 	*/
 	bool intersection(const bitvector &B, bitvector &result)
 	{
-	   register elem_t i;
-				elem_t numints;   
-				unsigned char largest=0, smallest=1;
-				const bitvector *bv[2];
+	    elem_t i;
+		elem_t numints;
+		unsigned char largest=0, smallest=1;
+		const bitvector *bv[2];
 
 		bv[largest] = this;
 		bv[smallest] = &B;
@@ -351,8 +351,8 @@ public:
 	} 
 	void intersection(const bitvector &B)
 	{
-	   register elem_t i;
-				elem_t numblocks;   
+	    elem_t i;
+		elem_t numblocks;
 
 		numblocks = B.size > size ? static_cast<elem_t>(size) : static_cast<elem_t>(B.size);
 		for (i=0; i < numblocks; i++) bits[i] &= B.bits[i];
@@ -391,10 +391,10 @@ public:
 	 */
 	bool union_(const bitvector &B, bitvector &result) 
 	{
-		register elem_t    i;
-				 elem_t    numints;   
-				 unsigned char largest=0, smallest=1;
-				 const		bitvector *bv[2];
+        elem_t    i;
+		elem_t    numints;
+		unsigned char largest=0, smallest=1;
+		const		bitvector *bv[2];
 		
 	   bv[largest] = this;
 	   bv[smallest] = &B;
@@ -419,8 +419,8 @@ public:
 	} 
 	void union_(const bitvector &B) 
 	{
-	   register elem_t i;
-				elem_t numblocks;   
+	    elem_t i;
+		elem_t numblocks;
 
 		numblocks = B.size > size ? static_cast<elem_t>(size) : static_cast<elem_t>(B.size);
 		for (i=0; i < numblocks; i++) bits[i] |= B.bits[i];
@@ -448,10 +448,10 @@ public:
  */
 	bool diff( const bitvector &B, bitvector &diff) 
 	{
-		register elem_t    i;
-				 elem_t    numints;   
-				 unsigned char largest=0, smallest=1;
-				 const bitvector *bv[2];
+		elem_t    i;
+		elem_t    numints;
+		unsigned char largest=0, smallest=1;
+		const bitvector *bv[2];
 		
 	   bv[largest] = this;
 	   bv[smallest] = &B;
@@ -477,8 +477,8 @@ public:
 	} 
 	void diff(const bitvector &B)
 	{
-	   register elem_t i;
-				elem_t numblocks;   
+	    elem_t i;
+		elem_t numblocks;
 
 		numblocks = B.size > size ? static_cast<elem_t>(size) : static_cast<elem_t>(B.size);
 		for (i=0; i < numblocks; i++) bits[i] ^= B.bits[i];
@@ -494,7 +494,7 @@ public:
 	*/
 	void complement()
 	{
-		register elem_t i;
+		elem_t i;
 
 		for (i=0; i < size; i++) bits[i] = ~bits[i];
 
@@ -513,8 +513,8 @@ public:
 	*/
 	unsigned long dotprod(const bitvector &B) 
 	{
-	   register elem_t        i, j;
-	   register unsigned long sum = 0L;
+	   elem_t        i, j;
+	   unsigned long sum = 0L;
 
 	   for (i=0; i < bitsize; i++) {
 		  for (j=0; j < B.bitsize; j++) 
