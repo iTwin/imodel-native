@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/BaseCachingDataSourceTest.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -23,8 +23,11 @@
 class BaseCachingDataSourceTest : public BaseCacheTest
     {
     private:
-        static bmap<BeVersion, CachingDataSourcePtr> s_reusableDataSources;
         static std::shared_ptr<MockWSRepositoryClient> s_mockClient;
+        static ICachingDataSourcePtr s_lastCachingDataSource;
+        static IDataSourceCache* s_lastDataSourceCache;
+        static BeFileName s_seedCacheFolderPath;
+        static BeFileName s_targetCacheFolderPath;
 
     private:
         void SetupTestDataSource(CachingDataSourcePtr& reusable, WSInfoCR info);
@@ -54,6 +57,16 @@ class BaseCachingDataSourceTest : public BaseCacheTest
         // Create new CachingDataSource for testing
         CachingDataSourcePtr CreateNewTestDataSource
             (
+            std::shared_ptr<MockWSRepositoryClient> customClient = nullptr,
+            ECSchemaPtr customSchema = nullptr,
+            WSInfoCR info = StubWSInfoWebApi({1, 3})
+            );
+
+        // Create new CachingDataSource for testing
+        CachingDataSourcePtr CreateNewTestDataSource
+            (
+            BeFileName path,
+            CacheEnvironment environment = StubCacheEnvironemnt(),
             std::shared_ptr<MockWSRepositoryClient> customClient = nullptr,
             ECSchemaPtr customSchema = nullptr,
             WSInfoCR info = StubWSInfoWebApi({1, 3})

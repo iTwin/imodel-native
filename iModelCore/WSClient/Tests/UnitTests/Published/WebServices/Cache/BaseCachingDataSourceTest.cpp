@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/BaseCachingDataSourceTest.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -13,8 +13,11 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 #ifdef USE_GTEST
 
-bmap<BeVersion, CachingDataSourcePtr> BaseCachingDataSourceTest::s_reusableDataSources;
 std::shared_ptr<MockWSRepositoryClient> BaseCachingDataSourceTest::s_mockClient;
+ICachingDataSourcePtr BaseCachingDataSourceTest::s_lastCachingDataSource;
+IDataSourceCache* BaseCachingDataSourceTest::s_lastDataSourceCache;
+BeFileName BaseCachingDataSourceTest::s_seedCacheFolderPath;
+BeFileName BaseCachingDataSourceTest::s_targetCacheFolderPath;
 
 CachingDataSourcePtr BaseCachingDataSourceTest::GetTestDataSourceV1()
     {
@@ -28,8 +31,48 @@ CachingDataSourcePtr BaseCachingDataSourceTest::GetTestDataSourceV2()
 
 CachingDataSourcePtr BaseCachingDataSourceTest::GetTestDataSource(BeVersion webApiVersion)
     {
-    SetupTestDataSource(s_reusableDataSources[webApiVersion], StubWSInfoWebApi(webApiVersion));
-    return s_reusableDataSources[webApiVersion];
+    // AsyncTask API delays destruction of CachingDataSource, thus DB is not always closed, force close here
+    if (s_lastCachingDataSource && s_lastDataSourceCache->GetECDb().IsDbOpen())
+        s_lastDataSourceCache->Close();
+    s_lastCachingDataSource = nullptr;
+
+    BeFileName seedCacheFolderName(webApiVersion.ToString());
+    BeFileName seedCacheFolderPath = BeFileName(s_seedCacheFolderPath).AppendToPath(seedCacheFolderName);
+    BeFileName targetCacheFolderPath = BeFileName(s_targetCacheFolderPath).AppendToPath(seedCacheFolderName);
+
+    // Prepare source files
+    if (!seedCacheFolderPath.DoesPathExist())
+        {
+        auto client = MockWSRepositoryClient::Create();
+        BeFileName seedCachePath = BeFileName(seedCacheFolderPath).AppendToPath(L"testcache.ecdb");
+        CacheEnvironment seedEnvironment;
+        seedEnvironment.persistentFileCacheDir = BeFileName(seedCacheFolderPath).AppendToPath(L"persistent");
+        seedEnvironment.temporaryFileCacheDir = BeFileName(seedCacheFolderPath).AppendToPath(L"temporary");
+        auto ds = CreateNewTestDataSource(seedCachePath, seedEnvironment, client, nullptr, StubWSInfoWebApi(webApiVersion));
+        EXPECT_FALSE(nullptr == ds);
+        }
+
+    // Prepare target files
+    if (targetCacheFolderPath.DoesPathExist())
+        EXPECT_EQ(BeFileNameStatus::Success, BeFileName::EmptyAndRemoveDirectory(targetCacheFolderPath));
+    EXPECT_EQ(BeFileNameStatus::Success, BeFileName::CloneDirectory(seedCacheFolderPath, targetCacheFolderPath));
+
+    // Open target cache
+    auto client = GetMockClientPtr();
+    BeFileName targetCachePath = BeFileName(targetCacheFolderPath).AppendToPath(L"testcache.ecdb");
+    CacheEnvironment targetEnvironment;
+    targetEnvironment.persistentFileCacheDir = BeFileName(targetCacheFolderPath).AppendToPath(L"persistent");
+    targetEnvironment.temporaryFileCacheDir = BeFileName(targetCacheFolderPath).AppendToPath(L"temporary");
+
+    auto ds = CachingDataSource::OpenOrCreate(client, targetCachePath, targetEnvironment)->GetResult().GetValue();
+    EXPECT_FALSE(nullptr == ds);
+
+    // Store for next call
+    s_lastCachingDataSource = ds;
+    if (ds != nullptr)
+        s_lastDataSourceCache = &ds->StartCacheTransaction().GetCache();
+
+    return ds;
     }
 
 void BaseCachingDataSourceTest::SetupTestDataSource(CachingDataSourcePtr& reusable, WSInfoCR info)
@@ -40,7 +83,7 @@ void BaseCachingDataSourceTest::SetupTestDataSource(CachingDataSourcePtr& reusab
         }
 
     auto txn = reusable->StartCacheTransaction();
-    EXPECT_EQ(SUCCESS, txn.GetCache().Reset());
+    // EXPECT_EQ(SUCCESS, txn.GetCache().Reset());
     EXPECT_EQ(SUCCESS, txn.Commit());
 
     reusable->GetCacheAccessThread()->OnEmpty()->Wait();
@@ -102,15 +145,26 @@ ECSchemaPtr schema,
 WSInfoCR info
 )
     {
+    return CreateNewTestDataSource(BeFileName(L":memory:"), StubCacheEnvironemnt(), client, schema, info);
+    }
+
+CachingDataSourcePtr BaseCachingDataSourceTest::CreateNewTestDataSource
+(
+BeFileName path,
+CacheEnvironment environment,
+std::shared_ptr<MockWSRepositoryClient> client,
+ECSchemaPtr schema,
+WSInfoCR info
+)
+    {
+    if (path.empty())
+        path = BeFileName(":memory:");
+
     if (client == nullptr)
-        {
         client = GetMockClientPtr();
-        }
 
     if (schema.IsNull())
-        {
         schema = GetTestSchema();
-        }
 
     StubInstances schemaDefs;
     schemaDefs.Add({"MetaSchema.ECSchemaDef", "TestSchema"}, {{"Name", "TestSchema"}, {"VersionMajor", 1}, {"VersionMinor", 0}});
@@ -125,11 +179,11 @@ WSInfoCR info
         .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
         {
         SchemaWriteStatus status = schema->WriteToXmlFile(filePath);
-        EXPECT_EQ(SCHEMA_WRITE_STATUS_Success, status);
+        EXPECT_EQ(SchemaWriteStatus::SCHEMA_WRITE_STATUS_Success, status);
         return CreateCompletedAsyncTask(StubWSFileResult(filePath));
         }));
 
-    auto ds = CachingDataSource::OpenOrCreate(client, BeFileName(":memory:"), StubCacheEnvironemnt())->GetResult().GetValue();
+    auto ds = CachingDataSource::OpenOrCreate(client, path, environment)->GetResult().GetValue();
     EXPECT_FALSE(nullptr == ds);
     return ds;
     }
@@ -148,8 +202,15 @@ void BaseCachingDataSourceTest::SetUpTestCase()
     {
     CacheTransactionManager::SetAllowUnsafeAccess(true);
 
-    s_reusableDataSources.clear();
     s_mockClient = nullptr;
+    s_lastCachingDataSource = nullptr;
+    s_lastDataSourceCache = nullptr;
+
+    s_seedCacheFolderPath = GetTestsOutputDir().AppendToPath(L"BaseCachingDataSourceTest-Seeds");
+    s_targetCacheFolderPath = GetTestsTempDir().AppendToPath(L"BaseCachingDataSourceTest-TestCaches");
+
+    if (s_seedCacheFolderPath.DoesPathExist())
+        EXPECT_EQ(BeFileNameStatus::Success, BeFileName::EmptyAndRemoveDirectory(s_seedCacheFolderPath));
 
     BaseCacheTest::SetUpTestCase();
     }
@@ -158,7 +219,6 @@ void BaseCachingDataSourceTest::TearDownTestCase()
     {
     CacheTransactionManager::SetAllowUnsafeAccess(false);
 
-    s_reusableDataSources.clear();
     s_mockClient = nullptr;
 
     BaseCacheTest::TearDownTestCase();
