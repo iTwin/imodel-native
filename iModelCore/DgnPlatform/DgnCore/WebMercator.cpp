@@ -1014,10 +1014,10 @@ private:
 
 protected:
     virtual bool _IsExpired() const override {return false;}
-    virtual BentleyStatus _InitFrom(bmap<Utf8String, Utf8String> const& header, ByteStream const& body) override;
-    virtual BentleyStatus _InitFrom(BeSQLite::Db& db) override;
-    virtual BentleyStatus _InitFrom(ByteStream const& data) override {return ERROR;}
-    virtual BentleyStatus _Persist(BeSQLite::Db& db) const override;
+    virtual BentleyStatus _LoadFromHttp(bmap<Utf8String, Utf8String> const& header, ByteStream const& body) override;
+    virtual BentleyStatus _LoadFromStorage(BeSQLite::Db& db) override;
+    virtual BentleyStatus _LoadFromFile(ByteStream const& data) override {return ERROR;}
+    virtual BentleyStatus _PersistToStorage(BeSQLite::Db& db) const override;
 
 public:
     TileData(TileR tile, Render::SystemR renderSys, ColorDef color, Utf8CP url) : m_tile(&tile), m_renderSys(renderSys), m_color(color), Payload(url) {}
@@ -1124,7 +1124,7 @@ void TileData::LoadTile()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TileData::_InitFrom(bmap<Utf8String, Utf8String> const& header, ByteStream const& body)
+BentleyStatus TileData::_LoadFromHttp(bmap<Utf8String, Utf8String> const& header, ByteStream const& body)
     {
     m_creationDate = DateTime::GetCurrentTime();
 
@@ -1144,7 +1144,7 @@ BentleyStatus TileData::_InitFrom(bmap<Utf8String, Utf8String> const& header, By
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TileData::_InitFrom(BeSQLite::Db& db)
+BentleyStatus TileData::_LoadFromStorage(BeSQLite::Db& db)
     {
     CachedStatementPtr stmt;
     db.GetCachedStatement(stmt, "SELECT Image,NumBytes,JPeg,Created FROM " TABLE_NAME_TiledRaster " WHERE Id=?");
@@ -1164,7 +1164,7 @@ BentleyStatus TileData::_InitFrom(BeSQLite::Db& db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TileData::_Persist(Db& db) const
+BentleyStatus TileData::_PersistToStorage(Db& db) const
     {
 
     int bufferSize = (int) GetData().GetSize();

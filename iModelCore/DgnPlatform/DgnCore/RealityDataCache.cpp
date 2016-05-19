@@ -84,16 +84,13 @@ USING_NAMESPACE_BENTLEY_REALITYDATA
         };
 #endif
 
-/*======================================================================================+
-|   RealityDataQueue
-+======================================================================================*/
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename T> void ThreadSafeQueue<T>::PushFront(T element)
     {
     BeMutexHolder lock(m_cv.GetMutex());
-    auto item = Item::Create(element, NULL, m_first.get());
+    auto item = Item::Create(element, nullptr, m_first.get());
     if (m_first.IsNull())
         {
         BeAssert(m_last.IsNull());
@@ -114,7 +111,7 @@ template<typename T> void ThreadSafeQueue<T>::PushFront(T element)
 template<typename T> void ThreadSafeQueue<T>::PushBack(T element)
     {
     BeMutexHolder lock(m_cv.GetMutex());
-    auto item = Item::Create(element, m_last.get(), NULL);
+    auto item = Item::Create(element, m_last.get(), nullptr);
     if (m_last.IsNull())
         {
         BeAssert(m_first.IsNull());
@@ -143,11 +140,11 @@ template<typename T> bool ThreadSafeQueue<T>::PopFront(T* element)
 
     if (m_first.Equals(m_last))
         {
-        m_first = m_last = NULL;
+        m_first = m_last = nullptr;
         }
     else
         {
-        m_first->next->prev = NULL;
+        m_first->next->prev = nullptr;
         m_first = m_first->next;
         }
     m_count--;
@@ -169,11 +166,11 @@ template<typename T> bool ThreadSafeQueue<T>::PopBack(T* element)
 
     if (m_first.Equals(m_last))
         {
-        m_first = m_last = NULL;
+        m_first = m_last = nullptr;
         }
     else
         {
-        m_last->prev->next = NULL;
+        m_last->prev->next = nullptr;
         m_last = m_last->prev;
         }
     m_count--;
@@ -251,11 +248,11 @@ template<typename T> void ThreadSafeQueue<T>::Clear()
         {
         auto temp = item;
         item = item->next;
-        temp->next = NULL;
-        temp->prev = NULL;
+        temp->next = nullptr;
+        temp->prev = nullptr;
         }
-    m_first = NULL;
-    m_last = NULL;
+    m_first = nullptr;
+    m_last = nullptr;
     m_count = 0;
     m_cv.notify_all();
     }
@@ -294,9 +291,9 @@ BEGIN_BENTLEY_REALITYDATA_NAMESPACE
 template struct ThreadSafeQueue<int>;
 END_BENTLEY_REALITYDATA_NAMESPACE
 
-/*======================================================================================+
-|   BeSQLiteRealityDataStorage
-+======================================================================================*/
+//=======================================================================================
+// @bsiclass                                        Grigas.Petraitis            10/2014
+//=======================================================================================
 struct StorageBusyRetry : BeSQLite::BusyRetry
     {
     virtual int _OnBusy(int count) const
@@ -470,7 +467,7 @@ void Storage::wt_SaveChanges()
 StorageResult Storage::wt_Select(Payload& data, Options options, Cache& responseReceiver)
     {
     StorageResult result;
-    if (SUCCESS != data._InitFrom(m_database))
+    if (SUCCESS != data._LoadFromStorage(m_database))
         {
         responseReceiver._OnResponseReceived(*new StorageResponse(StorageResult::NotFound, data), options, !options.m_forceSynchronous);
         result = StorageResult::NotFound;
@@ -517,7 +514,7 @@ StorageResult Storage::_Select(Payload& data, Options options, Cache& responseRe
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Storage::wt_Persist(Payload const& data)
     {
-    BentleyStatus result = data._Persist(m_database);
+    BentleyStatus result = data._PersistToStorage(m_database);
     BeAssert(SUCCESS == result);
     m_hasChanges.store(true);
     }
@@ -707,7 +704,7 @@ protected:
         if (ShouldCancelRequest())
             return new SourceResponse(SourceResult::Cancelled, *m_payload);
         
-        if (SUCCESS != m_payload->_InitFrom(data))
+        if (SUCCESS != m_payload->_LoadFromFile(data))
             {
             BeAssert(false);
             return new SourceResponse(SourceResult::Error_Unknown, *m_payload);
@@ -873,7 +870,7 @@ struct HttpSourceRequest : AsyncSourceRequest, IHttpRequestCancellationToken
             case HttpResponseStatus::Success:
                 {
                 m_payload->ParseExpirationDateAndETag(response->GetHeader());
-                if (SUCCESS != m_payload->_InitFrom(response->GetHeader(), response->GetBody()))
+                if (SUCCESS != m_payload->_LoadFromHttp(response->GetHeader(), response->GetBody()))
                     {
                     RDCLOG(LOG_INFO, "[%lld] response 200 but unable to initialize reality data",(uint64_t)BeThreadUtilities::GetCurrentThreadId());
                     return new SourceResponse(SourceResult::Error_Unknown, *m_payload);
@@ -925,13 +922,13 @@ void Cache::_OnResponseReceived(SourceResponse const& response, Options options)
             if (!m_storage.IsValid())
                 return;
 
-            StorageResult result = m_storage->Persist(response.GetData());
+            StorageResult result = m_storage->Persist(response.GetPayload());
             BeAssert(StorageResult::Success == result);
             break;
             }
 
         case SourceResult::Error_NotFound:
-            response.GetData()._OnNotFound();
+            response.GetPayload()._OnNotFound();
             break;
 
         case SourceResult::Error_GatewayTimeout:
@@ -940,7 +937,7 @@ void Cache::_OnResponseReceived(SourceResponse const& response, Options options)
         case SourceResult::Error_AccessDenied:
         case SourceResult::Error_Unknown:
         case SourceResult::Cancelled:
-            response.GetData()._OnError();
+            response.GetPayload()._OnError();
             break;
 
         default:
@@ -957,18 +954,19 @@ void Cache::_OnResponseReceived(StorageResponse const& response, Options options
     
     if (!isAsync)
         {
-        BeMutexHolder lock(m_resultsCS);
-        BeAssert(m_results.end() == m_results.find(&response.GetData()));
-        m_results[&response.GetData()] = result;
+        BeMutexHolder lock(m_resultsMux);
+        BeAssert(m_results.end() == m_results.find(&response.GetPayload()));
+        m_results[&response.GetPayload()] = result;
         }
 
     switch (result)
         {
         case CacheResult::NotFound:
-            response.GetData()._OnNotFound();
+            response.GetPayload()._OnNotFound();
             break;
+
         case CacheResult::Error:
-            response.GetData()._OnError();
+            response.GetPayload()._OnError();
             break;
         }
     }
@@ -982,9 +980,9 @@ CacheResult Cache::HandleStorageResponse(StorageResponse const& response, Option
         {
         case StorageResult::Success:
             {
-            if (response.GetData()._IsExpired() && options.m_requestFromSource)
+            if (response.GetPayload()._IsExpired() && options.m_requestFromSource)
                 {
-                SourceResult requestResult = m_source->_Request(response.GetData(), options, *this);
+                SourceResult requestResult = m_source->_Request(response.GetPayload(), options, *this);
                 return ResolveResult(response.GetResult(), requestResult);
                 }
             break;
@@ -992,7 +990,7 @@ CacheResult Cache::HandleStorageResponse(StorageResponse const& response, Option
 
         case StorageResult::NotFound:
             {
-            SourceResult requestResult = m_source->_Request(response.GetData(), options, *this);
+            SourceResult requestResult = m_source->_Request(response.GetPayload(), options, *this);
             return ResolveResult(response.GetResult(), requestResult);
             }
 
@@ -1016,7 +1014,7 @@ CacheResult Cache::GetResult(Payload& data, StorageResult storageResult)
         return result;
 
     // unless there was an error or the request was queued, we expect to find the result in the m_results map
-    BeMutexHolder lock(m_resultsCS);
+    BeMutexHolder lock(m_resultsMux);
     auto iter = m_results.find(&data);
     BeAssert(m_results.end() != iter);
     CacheResult returnValue = iter->second;
@@ -1216,7 +1214,7 @@ WorkerThreadPtr ThreadPool::GetIdleThread() const
         if (!pair.second)
             return pair.first;
         }
-    return NULL;
+    return nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1400,7 +1398,7 @@ bool WorkerThread::IsBusy(uint64_t* busyTime) const
     BeMutexHolder lock(m_cv.GetMutex());
     if (m_busySince != 0)
         {
-        if (NULL != busyTime)
+        if (nullptr != busyTime)
             *busyTime = BeTimeUtilities::GetCurrentTimeAsUnixMillis() - m_busySince;
         return true;
         }
@@ -1415,7 +1413,7 @@ bool WorkerThread::IsIdle(uint64_t* idleTime) const
     BeMutexHolder lock(m_cv.GetMutex());
     if (m_idleSince != 0)
         {
-        if (NULL != idleTime)
+        if (nullptr != idleTime)
             *idleTime = BeTimeUtilities::GetCurrentTimeAsUnixMillis() - m_idleSince;
         return true;
         }
@@ -1465,7 +1463,7 @@ void WorkerThread::_Run()
             {
             BeAssert(m_currentWork.IsValid());
             auto work = m_currentWork;
-            m_currentWork = NULL;
+            m_currentWork = nullptr;
             holder.unlock();
             work->_DoWork();
             }

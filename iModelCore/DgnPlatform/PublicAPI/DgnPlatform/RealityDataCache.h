@@ -69,7 +69,6 @@ public:
     Utf8CP GetEntityTag() const {return m_entityTag.c_str();}
 
     Payload(Utf8CP id) : m_payloadId(id){}
-    virtual ~Payload() {}
     virtual bool _IsExpired() const = 0;
     virtual void _OnError() {}
     virtual void _OnNotFound() {}
@@ -77,17 +76,16 @@ public:
     Utf8StringCR GetPayloadId() const {return m_payloadId;}
 
     //! Initialize data from the database using key and select options.
-    virtual BentleyStatus _InitFrom(BeSQLite::Db& db) = 0;
+    virtual BentleyStatus _LoadFromStorage(BeSQLite::Db& db) = 0;
 
     //! Persist this data in the database.
-    virtual BentleyStatus _Persist(BeSQLite::Db& db) const = 0;
+    virtual BentleyStatus _PersistToStorage(BeSQLite::Db& db) const = 0;
 
     //! Initializes this data with file path, content and request options.
-    //! @param[in] filepath     The path of the file that the data was read from.
     //! @param[in] data         The file content.
-    virtual BentleyStatus _InitFrom(ByteStream const& data) = 0;
+    virtual BentleyStatus _LoadFromFile(ByteStream const& data) = 0;
 
-    virtual BentleyStatus _InitFrom(bmap<Utf8String, Utf8String> const& header, ByteStream const& body) = 0;
+    virtual BentleyStatus _LoadFromHttp(bmap<Utf8String, Utf8String> const& header, ByteStream const& body) = 0;
 };
 
 //=======================================================================================
@@ -295,13 +293,13 @@ public:
 template<typename ResultType> struct Response : RefCountedBase
 {
 private:
-    ResultType   m_result;
-    Payload& m_data;
+    ResultType m_result;
+    Payload& m_payload;
 protected:
-    Response(ResultType result, Payload& data) : m_result(result), m_data(data) {}
+    Response(ResultType result, Payload& payload) : m_result(result), m_payload(payload) {}
 public:
     ResultType GetResult() const {return m_result;}
-    Payload& GetData() const {return m_data;}
+    Payload& GetPayload() const {return m_payload;}
 };
 
 //=======================================================================================
@@ -386,7 +384,6 @@ enum class CacheResult
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE Storage : RefCountedBase, NonCopyableClass
 {
-private:
     struct CleanAndSaveChangesWork;
     //===================================================================================
     // @bsiclass                                        Grigas.Petraitis        04/2015
@@ -446,6 +443,7 @@ private:
         CleanAndSaveChangesWork(Storage& storage, uint32_t idleTime) : StorageWork(storage), m_idleTime(idleTime) {}
     };
 
+protected:
     RefCountedPtr<StorageThreadPool> m_threadPool;
     BeAtomic<bool> m_hasChanges;
     BeMutex m_saveChangesMux;
@@ -501,13 +499,13 @@ struct EXPORT_VTABLE_ATTRIBUTE Cache : RefCountedBase, NonCopyableClass
 private:
     StoragePtr m_storage;
     SourcePtr  m_source;
-    mutable bmap<void const*, CacheResult> m_results;
-    mutable BeMutex m_resultsCS;
+
+    mutable bmap<Payload const*, CacheResult> m_results;
+    mutable BeMutex m_resultsMux;
 
     CacheResult HandleStorageResponse(StorageResponse const& response, Options);
     CacheResult ResolveResult(StorageResult storageResult, SourceResult sourceResult = SourceResult::Error_NotFound) const;
 
-private:
     DGNPLATFORM_EXPORT CacheResult GetResult(Payload& data, StorageResult storageResult);
     DGNPLATFORM_EXPORT CacheResult GetResult(SourceResult sourceResult);
 
@@ -526,22 +524,18 @@ public:
     void SetSource(Source& source) {BeAssert(!m_source.IsValid()); m_source = &source;}
 
     //! Request reality data from this cache. The type of the reality data is provided as a template parameter.
-    //! @param[out] data       An reference object to receive the requested data.
-    //! @param[in] id       The id of the requested data.
+    //! @param[out] payload The payload of the requested.
     //! @param[in] options  The request options.
-    CacheResult RequestData(Payload& data, Options options)
+    CacheResult RequestData(Payload& payload, Options options)
         {
-        RefCountedPtr<Payload> temp(&data);
+        if (m_storage.IsValid())
+            return GetResult(payload, m_storage->_Select(payload, options, *this));
 
-        if (!m_storage.IsValid())
-            {
-            if (!options.m_requestFromSource)
-                return CacheResult::NotFound;
+        if (options.m_requestFromSource)
+            return GetResult(m_source->_Request(payload, options, *this));
 
-            return GetResult(m_source->_Request(data, options, *this));
-            }
-
-        return GetResult(data, m_storage->_Select(data, options, *this));
+        PayloadPtr temp(&payload); // in case it was passed with 0 refcount
+        return CacheResult::NotFound;
         }
 };
 
