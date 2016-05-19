@@ -80,6 +80,11 @@ def RunTest(xcodeprojpath, deviceName, okToRetry, logfile):
     printProgress(' ', status_len)
     print '{0} suites, {1} tests, {2} failures'.format(testSuiteCount, testCount, failureCount)
 
+    if failureCount != 0:
+        print 'To debug the failed tests, use the following command line to open the test xcodeproj:'
+        print '  open ' + xcodeprojpath
+        print 'Then go to Test Navigator, filter on the test you want to run, and click its run arrow'
+
     # if any test fails to build or if any test does not succeed, the xcodebuild test command should return a non-zero status. 
     return retval
 
