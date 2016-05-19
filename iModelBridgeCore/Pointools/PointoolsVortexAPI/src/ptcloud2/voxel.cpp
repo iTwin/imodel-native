@@ -96,13 +96,8 @@ Voxel::Voxel(const Voxel &v)
 
 	memcpy(_channels, v._channels, sizeof(void*)*MAX_CHANNELS);
 
-	int i;
-
-	for (i=0; i<6; i++)
-	{ 
-		_lower[i] = v._lower[i];
-		_upper[i] = v._upper[i];
-	}
+    memcpy(_lower, v._lower, sizeof(_lower));
+    memcpy(_upper, v._upper, sizeof(_upper));
 
 	setLastStreamManagerIteration(0);
 
