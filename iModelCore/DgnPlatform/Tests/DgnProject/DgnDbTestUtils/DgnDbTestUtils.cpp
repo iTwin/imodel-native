@@ -33,7 +33,7 @@ static BeFileName getOutputPath(WStringCR relPath)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Sam.Wilson             01/2016
 //---------------------------------------------------------------------------------------
-DgnDbStatus DgnDbTestUtils::OpenSeedDbCopy(BeFileNameR actualName, WCharCP relSeedPath, WCharCP newName)
+DgnDbStatus DgnDbTestUtils::MakeSeedDbCopy(BeFileNameR actualName, WCharCP relSeedPath, WCharCP newName)
     {
     auto db = OpenSeedDbCopy(relSeedPath, newName);
     if (!db.IsValid())
