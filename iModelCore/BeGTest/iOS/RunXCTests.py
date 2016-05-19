@@ -26,9 +26,6 @@ def RunTest(xcodeprojpath, deviceName, okToRetry, logfile):
     status_len = 132
 
     mustRetry = False
-    failureCount = 0
-    testCount = 0
-    testSuiteCount = 0
     failedtests = ''
 
     errpat = re.compile (r"error\:\s*\-\[(\w+)\s*(\w+).*failed")
@@ -50,20 +47,13 @@ def RunTest(xcodeprojpath, deviceName, okToRetry, logfile):
 
         logfile.write(procStdOutLine)
 
-        if lline.startswith('test case'):
-            testCount = testCount + 1
-        else:
-            if lline.startswith('test suite'):
-                testSuiteCount = testSuiteCount + 1
-            else:
-                starterr = lline.find('error:')
-                if -1 != starterr and -1 != lline.find('failed'):
-                    err = errpat.match(procStdOutLine[starterr:])
-                    if err != None:
-                        failuremsg = "\nFAILED " + err.group(1) + "." + err.group(2)
-                        print failuremsg
-                        failedtests = failedtests + failuremsg
-                        failureCount = failureCount + 1
+        starterr = lline.find('error:')
+        if -1 != starterr and -1 != lline.find('failed'):
+            err = errpat.match(procStdOutLine[starterr:])
+            if err != None:
+                failuremsg = "\nFAILED " + err.group(1) + "." + err.group(2)
+                print failuremsg
+                failedtests = failedtests + failuremsg
 
         procStdOutLine = proc.stdout.readline ()
 
@@ -78,16 +68,15 @@ def RunTest(xcodeprojpath, deviceName, okToRetry, logfile):
             testSuiteCount, testCount, failureCount = RunTest(walkRoot, dirName, deviceName, False)
 
     printProgress(' ', status_len)
-    print '------------------------------------------------'
-    print 'Totals:'
-    print '{0} suites, {1} tests, {2} failures'.format(testSuiteCount, testCount, failureCount)
 
-    if failureCount != 0:
+    if failedtests != "":
+        print '*********************'
         print failedtests
         print ''
         print 'To debug the failed tests, use the following command line to open the test xcodeproj:'
         print '  open ' + xcodeprojpath
         print 'Then go to Test Navigator, filter on the test you want to run, and click its run arrow'
+        print '*********************'
 
     # if any test fails to build or if any test does not succeed, the xcodebuild test command should return a non-zero status. 
     return retval
