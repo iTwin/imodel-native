@@ -32,7 +32,7 @@ struct RTree2dVal
     double Margin() const {return (m_maxx-m_minx) + (m_maxy-m_miny);}
     void ToRange(DRange2dR range) const {range.low.x=m_minx; range.low.y=m_miny; range.high.x=m_maxx; range.high.y=m_maxy;}
     void ToRange(DRange3dR range) const {range.low.x=m_minx; range.low.y=m_miny; range.high.x=m_maxx; range.high.y=m_maxy; range.low.z=range.high.z=0.0;}
-    bool IsValid() const {return m_maxx>=m_minx && m_maxx>=m_minx;}
+    bool IsValid() const {return m_maxx>=m_minx && m_maxy>=m_miny;}
     void Union(RTree2dVal const& other) {m_minx=std::min(m_minx,other.m_minx); m_miny=std::min(m_miny,other.m_miny); m_maxx=std::max(m_maxx,other.m_maxx); m_maxy=std::max(m_maxy,other.m_maxy);}
     bool Contains(RTree2dVal const& other) const    {return m_minx<=other.m_minx && m_miny<=other.m_miny && m_maxx>=other.m_maxx && m_maxy>=other.m_maxy;}
     bool Intersects(RTree2dVal const& other) const {return m_minx<=other.m_maxx && m_maxx>=other.m_minx && m_miny<=other.m_maxy && m_maxy>=other.m_miny;}
