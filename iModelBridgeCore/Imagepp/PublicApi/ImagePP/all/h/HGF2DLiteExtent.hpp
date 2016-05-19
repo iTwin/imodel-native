@@ -15,10 +15,10 @@ inline HGF2DLiteExtent::HGF2DLiteExtent ()
       m_YMin(0.0),
       m_YMax(0.0)
     {
-    HDEBUGCODE(m_initializedXMin = false;)
-    HDEBUGCODE(m_initializedYMin = false;)
-    HDEBUGCODE(m_initializedXMax = false;)
-    HDEBUGCODE(m_initializedYMax = false;)
+   m_initializedXMin = false;
+   m_initializedYMin = false;
+   m_initializedXMax = false;
+   m_initializedYMax = false;
     }
 
 //-----------------------------------------------------------------------------
@@ -35,10 +35,10 @@ inline HGF2DLiteExtent::HGF2DLiteExtent(const HGF2DPosition& pi_rOrigin,
     HPRECONDITION(pi_rOrigin.GetX() <= pi_rCorner.GetX());
     HPRECONDITION(pi_rOrigin.GetY() <= pi_rCorner.GetY());
 
-    HDEBUGCODE(m_initializedXMin = true;)
-    HDEBUGCODE(m_initializedYMin = true;)
-    HDEBUGCODE(m_initializedXMax = true;)
-    HDEBUGCODE(m_initializedYMax = true;)
+    m_initializedXMin = true;
+    m_initializedYMin = true;
+    m_initializedXMax = true;
+    m_initializedYMax = true;
     }
 
 //-----------------------------------------------------------------------------
@@ -53,10 +53,10 @@ inline HGF2DLiteExtent::HGF2DLiteExtent(double pi_X1,
       m_YMin(MIN(pi_Y1, pi_Y2)),
       m_YMax(MAX(pi_Y1, pi_Y2))
     {
-    HDEBUGCODE(m_initializedXMin = true;)
-    HDEBUGCODE(m_initializedYMin = true;)
-    HDEBUGCODE(m_initializedXMax = true;)
-    HDEBUGCODE(m_initializedYMax = true;)
+    m_initializedXMin = true;
+    m_initializedYMin = true;
+    m_initializedXMax = true;
+    m_initializedYMax = true;
     }
 
 
@@ -69,10 +69,10 @@ inline HGF2DLiteExtent::HGF2DLiteExtent(const HGF2DLiteExtent& pi_rObj)
       m_YMin (pi_rObj.m_YMin),
       m_YMax (pi_rObj.m_YMax)
     {
-    HDEBUGCODE(m_initializedXMin = pi_rObj.m_initializedXMin;)
-    HDEBUGCODE(m_initializedYMin = pi_rObj.m_initializedYMin;)
-    HDEBUGCODE(m_initializedXMax = pi_rObj.m_initializedXMax;)
-    HDEBUGCODE(m_initializedYMax = pi_rObj.m_initializedYMax;)
+    m_initializedXMin = pi_rObj.m_initializedXMin;
+    m_initializedYMin = pi_rObj.m_initializedYMin;
+    m_initializedXMax = pi_rObj.m_initializedXMax;
+    m_initializedYMax = pi_rObj.m_initializedYMax;
     }
 
 //-----------------------------------------------------------------------------
@@ -93,10 +93,10 @@ inline HGF2DLiteExtent& HGF2DLiteExtent::operator=(const HGF2DLiteExtent& pi_rOb
     m_YMin = pi_rObj.m_YMin;
     m_YMax = pi_rObj.m_YMax;
 
-    HDEBUGCODE(m_initializedXMin = pi_rObj.m_initializedXMin;)
-    HDEBUGCODE(m_initializedYMin = pi_rObj.m_initializedYMin;)
-    HDEBUGCODE(m_initializedXMax = pi_rObj.m_initializedXMax;)
-    HDEBUGCODE(m_initializedYMax = pi_rObj.m_initializedYMax;)
+    m_initializedXMin = pi_rObj.m_initializedXMin;
+    m_initializedYMin = pi_rObj.m_initializedYMin;
+    m_initializedXMax = pi_rObj.m_initializedXMax;
+    m_initializedYMax = pi_rObj.m_initializedYMax;
 
     return (*this);
     }
@@ -198,7 +198,7 @@ inline void HGF2DLiteExtent::SetXMin(double pi_XMin)
     // Set XMin
     m_XMin = pi_XMin;
 
-    HDEBUGCODE(m_initializedXMin = true;)
+    m_initializedXMin = true;
     }
 
 //-----------------------------------------------------------------------------
@@ -211,7 +211,7 @@ inline void HGF2DLiteExtent::SetYMin(double pi_YMin)
 
     // Set YMin
     m_YMin = pi_YMin;
-    HDEBUGCODE(m_initializedYMin = true;)
+    m_initializedYMin = true;
     }
 
 
@@ -226,7 +226,7 @@ inline void HGF2DLiteExtent::SetXMax(double pi_XMax)
     // Set XMax
     m_XMax = pi_XMax;
 
-    HDEBUGCODE(m_initializedXMax = true;)
+    m_initializedXMax = true;
     }
 
 //-----------------------------------------------------------------------------
@@ -240,7 +240,7 @@ inline void HGF2DLiteExtent::SetYMax(double pi_YMax)
     // Set YMax
     m_YMax = pi_YMax;
 
-    HDEBUGCODE(m_initializedYMax = true;)
+    m_initializedYMax = true;
     }
 
 //-----------------------------------------------------------------------------
@@ -256,8 +256,8 @@ inline void HGF2DLiteExtent::SetOrigin(const HGF2DPosition& pi_rOrigin)
     m_XMin = pi_rOrigin.GetX();
     m_YMin = pi_rOrigin.GetY();
 
-    HDEBUGCODE(m_initializedXMin = true;)
-    HDEBUGCODE(m_initializedYMin = true;)
+    m_initializedXMin = true;
+    m_initializedYMin = true;
     }
 
 
@@ -274,8 +274,8 @@ inline void HGF2DLiteExtent::SetCorner(const HGF2DPosition& pi_rCorner)
     m_XMax = pi_rCorner.GetX();
     m_YMax = pi_rCorner.GetY();
 
-    HDEBUGCODE(m_initializedXMax = true;)
-    HDEBUGCODE(m_initializedYMax = true;)
+    m_initializedXMax = true;
+    m_initializedYMax = true;
     }
 
 
@@ -636,10 +636,10 @@ inline void HGF2DLiteExtent::Set(double pi_X1,
                                  double pi_X2,
                                  double pi_Y2)
     {
-    HDEBUGCODE(m_initializedXMin = true;)
-    HDEBUGCODE(m_initializedYMin = true;)
-    HDEBUGCODE(m_initializedXMax = true;)
-    HDEBUGCODE(m_initializedYMax = true;)
+    m_initializedXMin = true;
+    m_initializedYMin = true;
+    m_initializedXMax = true;
+    m_initializedYMax = true;
 
     // Set X values
     if (pi_X1 < pi_X2)

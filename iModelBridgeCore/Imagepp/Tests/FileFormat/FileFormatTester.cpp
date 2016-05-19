@@ -60,6 +60,12 @@ class ExportTester : public ::testing::TestWithParam< std::wstring >
 
             //Initialize host
             ImagePP::ImageppLib::Initialize(*new ExportTestImageppLibHost());
+
+            //&&MM generate a failure if it fails. we need geocoord to read geotag.
+            BeFileName geoCoordData;
+            BeTest::GetHost().GetDgnPlatformAssetsDirectory(geoCoordData);
+            geoCoordData.AppendToPath(L"DgnGeoCoord");
+            GeoCoordinates::BaseGCS::Initialize(geoCoordData.c_str());
             }
         ~ExportTester()
             {
@@ -75,27 +81,38 @@ static vector<std::wstring> s_GetFileNameVector()
     {
     vector<std::wstring> directoryList;
     bvector<BeFileName> fileList;
-    BeFileName sourcePath("D:\\Image_Dataset\\Images");
+
+    //&&MM that path should come from the asset directory(symlink during build) or
+    // from a config file ?
+    //&&MM pss and dem are missing from the the test case.
+    BeFileName sourcePath("D:\\Dataset\\Images" );
 
     const WString glob = L"*";
 
     BeDirectoryIterator::WalkDirsAndMatch(fileList, sourcePath, glob.c_str(), true);
 
-    //Using a lambda to scan all the fileList and skipping not supported rasters and folders
-    for_each(begin(fileList), end(fileList), [&] (auto &actualName)
+    // Scan the fileList and skipping not supported rasters and folders
+    for (auto& actualName : fileList)
         {
-        if (!actualName.IsDirectory() &&
-            !actualName.Contains(L"NITF\\PasSupportees") &&
-            !actualName.Contains(L"ErdasImg\\ImagesInvalides") &&
-            !actualName.Contains(L"iTIFF\\xFileNotSupported") &&
-            !actualName.Contains(L"TIF\\xFileNotSupported") &&
-            !actualName.Contains(L"Pict\\xFileNotSupported") &&
-            !actualName.Contains(L"CAL\\xFileNotSupported (Type2-tiled)") &&
-            !actualName.Contains(L"BMP\\xFileNotSupported") &&
-            !actualName.Contains(L"Bil\\xFileNotSupported")
+        if (actualName.IsDirectory() ||
+            actualName.Contains(L"NITF\\PasSupportees") ||
+            actualName.Contains(L"ErdasImg\\ImagesInvalides") ||
+            actualName.Contains(L"iTIFF\\xFileNotSupported") ||
+            actualName.Contains(L"TIF\\xFileNotSupported") ||
+            actualName.Contains(L"Pict\\xFileNotSupported") ||
+            actualName.Contains(L"CAL\\xFileNotSupported (Type2-tiled)") ||
+            actualName.Contains(L"BMP\\xFileNotSupported") ||
+            actualName.Contains(L"Bil\\xFileNotSupported") ||
+            actualName.Contains(L"Images\\DOQ") ||
+            actualName.Contains(L"Images\\EPX") ||
+            actualName.Contains(L"Images\\MultiChannel_(XCH)\\Flashpix") ||
+            actualName.Contains(L"Images\\jpeg\\Jpeg_InvalidWorldFiles") ||
+            actualName.Contains(L"Images\\ECW\\TooBigImage")
             )
-            directoryList.push_back(actualName.GetName());
-        });
+            continue;
+
+        directoryList.push_back(actualName.GetName());
+        }
 
     return directoryList;
     }
@@ -352,6 +369,7 @@ TEST_P(ExportTester, ExportToiTiffBestOptions)
     {
     //Test that the source paths is not empty
     ASSERT_FALSE(GetParam().empty());
+    ASSERT_TRUE(GeoCoordinates::BaseGCS::IsLibraryInitialized());
 
     // ExportToBestiTiff
     HFCPtr<HGF2DWorldCluster> worldCluster = new HGFHMRStdWorldCluster();
@@ -393,6 +411,8 @@ TEST_P(ExportTester, ExportToiTiffBestOptions)
         // Use BestMatchSelectedValues for exportation
         ASSERT_NO_THROW(exporter->BestMatchSelectedValues());
 
+        //&&MM best match should use fax4 for binary and not RLE. make sure it is strip also.
+
         //Construct the output file path to fit the one from the old baseline
         /// >> &&MM chage to whatever once we have validated the baseline.
         //     and make a unique directory per specific test to avoid clash.
@@ -421,7 +441,11 @@ TEST_P(ExportTester, ExportToiTiffBestOptions)
         exporter->SelectExportFilename(pURL);
 
         HFCPtr<HRFRasterFile> pFile = exporter->StartExport();
-        ASSERT_TRUE(pFile.GetPtr() != nullptr);
+        ASSERT_TRUE(pFile.GetPtr() != nullptr);  
+
+//         HFCPtr<HPMGenericAttribute> pTag;  pTag = new HRFAttributeDateTime(pSystem);
+//         HRFAttributeDateTime
+//         HRFAttributeDateTime
 
         //&&MM what kind of post validation can we do?
 
@@ -432,10 +456,9 @@ TEST_P(ExportTester, ExportToiTiffBestOptions)
         //Adjust the time stamp to "9999:99:99 99:99:99"       
         ASSERT_TRUE(s_UpdateTiffHistogramTimestamp(pURL));
         }
-    catch (...)
+    catch (HFCException& e)
         {
-        //&&MM extract exception message and display it 
-        FAIL();
+        FAIL() << e.GetExceptionMessage().c_str();
         }
     }
 

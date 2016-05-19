@@ -125,6 +125,7 @@ protected:
     uint32_t                                m_PosTileY;
     bool                                   m_IsBlocksEmpty;
     bool                                   m_IsBlocksOverwritten;
+    HSTATUS                                m_LoadTilesStatus; // Remember the readBlock status so we can return the appropriate status for each tile.
 
     // Tiles data
     HArrayAutoPtr<HArrayAutoPtr<Byte> >    m_ppBlocks;

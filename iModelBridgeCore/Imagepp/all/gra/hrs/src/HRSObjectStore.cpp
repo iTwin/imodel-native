@@ -590,7 +590,13 @@ HFCPtr<HRABitmapBase> HRSObjectStore::LoadTile(uint64_t                  pi_Inde
             }
 
         if (Result != H_SUCCESS && Result != H_DATA_NOT_AVAILABLE)
-            pTile->MakeEmpty();
+            {
+            // Used to be MakeEmpty() but that will only remove the packet from the the Bitmap.
+            // It will be reinstate on the first call to GetPacket but unfortunately with an uninitialized packet 
+            // so better to clear if we had a read error.  
+            pTile->Clear();
+            //pTile->MakeEmpty();
+            }
 
         // Set persistent information.
         pTile->SetID (m_pLoadTileDescriptor->ComputeIDFromIndex (pi_Index,

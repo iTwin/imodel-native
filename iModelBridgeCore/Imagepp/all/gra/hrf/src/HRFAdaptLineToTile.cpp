@@ -135,7 +135,7 @@ HSTATUS HRFAdaptLineToTile::ReadBlock(uint64_t pi_PosBlockX,
     HPRECONDITION (m_AccessMode.m_HasReadAccess);
     HPRECONDITION (pi_PosBlockX <= UINT32_MAX && pi_PosBlockY <= UINT32_MAX);
 
-    HSTATUS Status = H_SUCCESS;
+    HSTATUS Status = m_LoadTilesStatus;
 
     // Check if the current location of intern blocks change
     if (pi_PosBlockY != m_PosTileY)
@@ -212,7 +212,7 @@ HSTATUS HRFAdaptLineToTile::LoadTiles(uint32_t pi_PosBlockX,
                                       uint32_t pi_PosBlockY)
     {
     HPRECONDITION (m_AccessMode.m_HasReadAccess);
-    HSTATUS Status = H_SUCCESS;
+    m_LoadTilesStatus = H_SUCCESS;
     uint32_t NumberOfLines;
 
     // Adjust if necessary the NumberOfLines to the resolution height
@@ -228,11 +228,11 @@ HSTATUS HRFAdaptLineToTile::LoadTiles(uint32_t pi_PosBlockX,
     // Load the client block and beside blocks into the intern blocks cache
     for (uint32_t NoLine = 0; (NoLine < NumberOfLines) &&
          (pi_PosBlockY+NoLine < m_Height) &&
-         (Status == H_SUCCESS); NoLine++)
+         (m_LoadTilesStatus == H_SUCCESS); NoLine++)
         {
-        Status = m_pAdaptedResolutionEditor->ReadBlock(0, pi_PosBlockY+NoLine, m_LineBuffer);
+        m_LoadTilesStatus = m_pAdaptedResolutionEditor->ReadBlock(0, pi_PosBlockY+NoLine, m_LineBuffer);
 
-        if (Status == H_SUCCESS)
+        if (m_LoadTilesStatus == H_SUCCESS)
             {
             // adapt the line to the blocks
             uint32_t LinePosInTile = (NoLine*m_ExactBytesPerBlockWidth);
@@ -259,7 +259,7 @@ HSTATUS HRFAdaptLineToTile::LoadTiles(uint32_t pi_PosBlockX,
                            0,
                            m_ExactBytesPerBlockWidth * (NumberOfLines - NoLine));
                     }
-                Status = H_SUCCESS;
+                m_LoadTilesStatus = H_SUCCESS;
                 }
             }
         }
@@ -270,7 +270,7 @@ HSTATUS HRFAdaptLineToTile::LoadTiles(uint32_t pi_PosBlockX,
     m_IsBlocksOverwritten = false;
     m_LineBuffer    = 0;                    // Free working buffer
 
-    return Status;
+    return m_LoadTilesStatus;
     }
 
 //-----------------------------------------------------------------------------

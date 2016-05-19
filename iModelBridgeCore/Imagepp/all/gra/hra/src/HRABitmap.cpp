@@ -1929,10 +1929,10 @@ void HRABitmap::MakeEmpty()
         GetPool()->FreeMemory(m_pPacket->GetBufferAddress(), m_pPacket->GetBufferSize());
         }
 
-    m_pPacket->SetBuffer(0, 0);
+    m_pPacket->SetBuffer(nullptr, 0);
     m_pPacket->SetDataSize(0);
     m_pPacket->SetBufferOwnership(false);
-    m_pSurfaceDescriptor = 0;
+    m_pSurfaceDescriptor = nullptr;
     }
 
 // ----------------------------------------------------------------------------
