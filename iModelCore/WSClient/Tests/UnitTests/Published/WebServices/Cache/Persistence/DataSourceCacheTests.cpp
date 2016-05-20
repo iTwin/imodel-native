@@ -720,6 +720,30 @@ TEST_F(DataSourceCacheTests, CacheInstancesAndLinkToRoot_OneInstanceWithETag_ETa
     EXPECT_EQ("TestTag", cache->ReadInstanceCacheTag(objectId));
     }
 
+TEST_F(DataSourceCacheTests, CacheInstancesAndLinkToRoot_RelatedInstancesWithWeakLink_InstancesCached)
+    {
+    auto cache = GetTestCache();
+
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "A"}).AddRelated({"TestSchema.TestRelationshipClass", "AB"}, {"TestSchema.TestClass", "B"});
+    EXPECT_EQ(SUCCESS, cache->CacheInstancesAndLinkToRoot(instances.ToWSObjectsResponse(), "Root", nullptr, true));
+
+    EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "A"}).IsFullyCached());
+    EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "B"}).IsFullyCached());
+    }
+
+TEST_F(DataSourceCacheTests, CacheInstancesAndLinkToRoot_RelatedInstancesWitStrongLink_InstancesCached)
+    {
+    auto cache = GetTestCache();
+
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "A"}).AddRelated({"TestSchema.TestRelationshipClass", "AB"}, {"TestSchema.TestClass", "B"});
+    EXPECT_EQ(SUCCESS, cache->CacheInstancesAndLinkToRoot(instances.ToWSObjectsResponse(), "Root", nullptr, true));
+
+    EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "A"}).IsFullyCached());
+    EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "B"}).IsFullyCached());
+    }
+
 TEST_F(DataSourceCacheTests, RemoveRoot_RootHasLinkedInstance_InstanceRemovedFromCache)
     {
     auto cache = GetTestCache();
@@ -4526,6 +4550,66 @@ TEST_F(DataSourceCacheTests, ReadInstancesLinkedToRoot_DifferentClassInstancesLi
     EXPECT_EQ(2, map.size());
     EXPECT_TRUE(ECDbHelper::IsInstanceInMultiMap(cache->FindInstance({"TestSchema.TestClass", "A"}), map));
     EXPECT_TRUE(ECDbHelper::IsInstanceInMultiMap(cache->FindInstance({"TestSchema.TestClass2", "B"}), map));
+    }
+
+TEST_F(DataSourceCacheTests, ReadInstanceHierarchy_InstanceIsInResponseButHasNoResponses_ReturnsNoInstances)
+    {
+    auto cache = GetTestCache();
+
+    CachedResponseKey responseKey1(cache->FindOrCreateRoot("Root"), "Foo");
+
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "A"});
+    instances.Add({"TestSchema.TestClass", "B"});
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey1, instances.ToWSObjectsResponse()));
+
+    CachedResponseKey responseKey2(cache->FindInstance({"TestSchema.TestClass", "A"}), "Foo");
+    instances.Clear();
+    instances.Add({"TestSchema.TestClass", "C"});
+    instances.Add({"TestSchema.TestClass", "D"});
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey2, instances.ToWSObjectsResponse()));
+
+    auto instance = cache->FindInstance({"TestSchema.TestClass", "C"});
+
+    ECInstanceKeyMultiMap map;
+    ASSERT_EQ(SUCCESS, cache->ReadInstanceHierarchy(instance, map));
+
+    EXPECT_EQ(0, map.size());
+    }
+
+TEST_F(DataSourceCacheTests, ReadInstanceHierarchy_InstanceHasResponsesCachedUnderIt_ReturnsInstancesUnderIt)
+    {
+    auto cache = GetTestCache();
+
+    CachedResponseKey responseKey1(cache->FindOrCreateRoot("Root"), "Foo");
+
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "A"});
+    instances.Add({"TestSchema.TestClass", "B"});
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey1, instances.ToWSObjectsResponse()));
+
+    CachedResponseKey responseKey2(cache->FindInstance({"TestSchema.TestClass", "A"}), "Foo");
+    instances.Clear();
+    instances.Add({"TestSchema.TestClass", "C"});
+    instances.Add({"TestSchema.TestClass", "D"});
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey2, instances.ToWSObjectsResponse()));
+
+    CachedResponseKey responseKey3(cache->FindInstance({"TestSchema.TestClass", "C"}), "Foo");
+    instances.Clear();
+    instances.Add({"TestSchema.TestClass", "E"});
+    instances.Add({"TestSchema.TestClass", "F"});
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey3, instances.ToWSObjectsResponse()));
+
+    auto instance = cache->FindInstance({"TestSchema.TestClass", "A"});
+
+    ECInstanceKeyMultiMap map;
+    ASSERT_EQ(SUCCESS, cache->ReadInstanceHierarchy(instance, map));
+
+    EXPECT_EQ(4, map.size());
+    EXPECT_CONTAINS(map, ECDbHelper::ToPair(cache->FindInstance({"TestSchema.TestClass", "C"})));
+    EXPECT_CONTAINS(map, ECDbHelper::ToPair(cache->FindInstance({"TestSchema.TestClass", "D"})));
+    EXPECT_CONTAINS(map, ECDbHelper::ToPair(cache->FindInstance({"TestSchema.TestClass", "E"})));
+    EXPECT_CONTAINS(map, ECDbHelper::ToPair(cache->FindInstance({"TestSchema.TestClass", "F"})));
     }
 
 TEST_F(DataSourceCacheTests, ReadRootSyncDate_NoRoot_ReturnsInvalid)

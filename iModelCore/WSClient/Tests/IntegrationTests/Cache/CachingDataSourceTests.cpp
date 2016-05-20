@@ -170,7 +170,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectFeatureTracking_Succee
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
-    Utf8String serverUrl = "https://Licensexm.bentley.com/LicensingProxy";
+    Utf8String serverUrl = "https://QA-SELECTserver.bentley.com/LicensingProxy";
     Utf8String repositoryId = "BentleyCONNECT--Main";
     Credentials credentials("bentleyvilnius@gmail.com", "Q!w2e3r4t5");
     BeFileName cachePath = GetTestCachePath();
