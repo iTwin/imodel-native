@@ -54,10 +54,10 @@ public:
     virtual bool _IsExpired() const override {return false;}
     virtual void _OnError() override {_OnNotFound();}
     virtual void _OnNotFound() override {BeAssert(false); if (m_node.IsValid()) m_node->SetNotFound();}
-    virtual BentleyStatus _InitFrom(bmap<Utf8String, Utf8String> const& header, ByteStream const& body) override {return _InitFrom(body);}
-    virtual BentleyStatus _InitFrom(Db& db) override;
-    virtual BentleyStatus _InitFrom(ByteStream const& data) override;
-    virtual BentleyStatus _Persist(Db& db) const override;
+    virtual BentleyStatus _LoadFromHttp(bmap<Utf8String, Utf8String> const& header, ByteStream const& body) override {return _LoadFromFile(body);}
+    virtual BentleyStatus _LoadFromStorage(Db& db) override;
+    virtual BentleyStatus _LoadFromFile(ByteStream const& data) override;
+    virtual BentleyStatus _PersistToStorage(Db& db) const override;
 };
 
 DEFINE_REF_COUNTED_PTR(ThreeMxFileData)
@@ -66,9 +66,9 @@ DEFINE_REF_COUNTED_PTR(ThreeMxTileCache)
 END_UNNAMED_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                04/2015
+* @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ThreeMxFileData::_InitFrom(ByteStream const& data)
+BentleyStatus ThreeMxFileData::_LoadFromFile(ByteStream const& data)
     {
     if (m_node.IsValid() && !m_node->IsQueued())
         return SUCCESS; // this node was abandoned.
@@ -93,9 +93,9 @@ BentleyStatus ThreeMxFileData::_InitFrom(ByteStream const& data)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                03/2015
+* @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ThreeMxFileData::_InitFrom(Db& db)
+BentleyStatus ThreeMxFileData::_LoadFromStorage(Db& db)
     {
     if (m_node.IsValid() && !m_node->IsQueued())
         return SUCCESS; // this node was abandoned.
@@ -137,9 +137,9 @@ BentleyStatus ThreeMxFileData::_InitFrom(Db& db)
 
 /*---------------------------------------------------------------------------------**//**
 * save the data for a 3mx file into the tile cache. Note that this is also called for the scene file.
-* @bsimethod                                    Grigas.Petraitis                03/2015
+* @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ThreeMxFileData::_Persist(Db& db) const
+BentleyStatus ThreeMxFileData::_PersistToStorage(Db& db) const
     {
     if (m_node.IsValid() && m_node->IsAbandoned())
         return SUCCESS;
