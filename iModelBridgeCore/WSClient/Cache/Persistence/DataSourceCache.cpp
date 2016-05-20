@@ -363,7 +363,7 @@ BentleyStatus DataSourceCache::Reset()
 
         for (ECClassCP ecClass : ecSchema->GetClasses())
             {
-            if (!ecClass->IsEntityClass() || 
+            if (!ecClass->IsEntityClass() ||
                 ecClass->IsRelationshipClass() ||
                 ignoreClasses.count(ecClass))
                 {
@@ -950,7 +950,7 @@ CacheStatus DataSourceCache::RemoveInstance(ObjectIdCR objectId)
 
     if (SUCCESS != m_state->GetCachedResponseManager().InvalidateResponsePagesContainingInstance(cachedKey) ||
         SUCCESS != m_state->GetHierarchyManager().DeleteInstance(cachedKey.GetInfoKey()))
-        { 
+        {
         return CacheStatus::Error;
         }
 
@@ -1237,6 +1237,32 @@ BentleyStatus DataSourceCache::ReadInstancesConnectedToRootMap(Utf8StringCR root
         {
         return ERROR;
         }
+
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    05/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus DataSourceCache::ReadInstanceHierarchy(ECInstanceKeyCR instance, ECInstanceKeyMultiMap& instancesOut)
+    {
+    auto cachedKey = m_state->GetObjectInfoManager().ReadCachedInstanceKey(instance);
+    if (!cachedKey.IsValid())
+        return ERROR;
+
+    ECInstanceKeyMultiMap nodeKeys;
+    ECInstanceKeyMultiMap ansestorNodes;
+    ansestorNodes.insert(ECDbHelper::ToPair(cachedKey.GetInfoKey()));
+    ECInstanceFinder::FindOptions findOptions(ECInstanceFinder::RelatedDirection::RelatedDirection_HeldChildren, UINT8_MAX);
+
+    if (SUCCESS != m_state->GetECDbAdapter().GetECInstanceFinder().FindInstances(nodeKeys, ansestorNodes, findOptions))
+        return ERROR;
+
+    // TODO: ECDb ECInstanceFinder::FindInstances() also returns seed instances, neeed to remove them
+    ECDbHelper::Erase(nodeKeys, cachedKey.GetInfoKey());
+
+    if (SUCCESS != m_state->GetObjectInfoManager().ReadCachedInstanceKeys(nodeKeys, instancesOut))
+        return ERROR;
 
     return SUCCESS;
     }

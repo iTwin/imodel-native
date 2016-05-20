@@ -182,7 +182,9 @@ struct MockDataSourceCache : public IDataSourceCache
         MOCK_METHOD2 (IsInstanceConnectedToRoot,
             bool (Utf8StringCR rootName, ECInstanceKeyCR instance));
         MOCK_METHOD3 (ReadInstancesConnectedToRootMap,
-            BentleyStatus (Utf8StringCR, ECInstanceKeyMultiMap&, uint8_t));
+            BentleyStatus(Utf8StringCR, ECInstanceKeyMultiMap&, uint8_t));
+        MOCK_METHOD2(ReadInstanceHierarchy,
+            BentleyStatus(ECInstanceKeyCR, ECInstanceKeyMultiMap&));
         MOCK_METHOD1 (IsInstanceFullyPersisted,
             bool (ObjectIdCR objectId));
         MOCK_METHOD1 (IsInstanceFullyPersisted,
