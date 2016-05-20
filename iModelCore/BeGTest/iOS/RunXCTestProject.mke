@@ -39,11 +39,23 @@ always:
     %return
 %endif
 
+# Note we often get an error when copying resources to the device the first time we try to run a given set of tests. 
+# The solution is simply to re-try the command.
+
 always:
     !~@mkdir ${XCTEST_OUTPUT_DIR}
-    |  See $(logFile) for details
-    $(RunPrefix) python $(_MakeFilePath)RunXCTests.py $(XCODEPROJ) '$(BENTLEY_RUN_XCTEST_DEVICE_NAME)' $(logFile)
-    
-    
-#xcodebuild test -project $(XCODEPROJ) -scheme BeTestiOS -destination 'platform=iOS,name=$(BENTLEY_RUN_XCTEST_DEVICE_NAME)'
+    -xcodebuild test -project $(XCODEPROJ) -scheme BeTestiOS -destination 'platform=iOS,name=$(BENTLEY_RUN_XCTEST_DEVICE_NAME)' > Tee.py $(logfile)
+    %if " " != $[@findstring "retry", $[@readstdout python $(baseDir)CheckForRetry.py $(logfile)]]
+        |Retrying...
+        -xcodebuild test -project $(XCODEPROJ) -scheme BeTestiOS -destination 'platform=iOS,name=$(BENTLEY_RUN_XCTEST_DEVICE_NAME)' > Tee.py $(logfile)
+    %endif
+    %if !defined (BEGTEST_DONTVALIDATELOGFILE)
+    %if !defined (NO_BREAK)
+        python $(baseDIr)PrintLogAndReturnResult.py $(logFile)
+    %else
+        -python $(baseDIr)PrintLogAndReturnResult.py $(logFile)
+    %endif # !defined (NO_BREAK)
+    %endif # !defined (BEGTEST_DONTVALIDATELOGFILE)
+
+
 
