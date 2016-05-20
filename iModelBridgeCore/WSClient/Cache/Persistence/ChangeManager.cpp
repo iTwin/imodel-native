@@ -566,6 +566,38 @@ BentleyStatus ChangeManager::SetSyncStatus(ECInstanceKeyCR instanceKey, SyncStat
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+BentleyStatus ChangeManager::AddCreatedInstanceToResponse(CachedResponseKeyCR cachedResponseKey, ECInstanceKeyCR instanceKey)
+    {
+    ResponseKey responseKey = m_responseManager.ConvertResponseKey(cachedResponseKey);
+    if (!responseKey.IsValid())
+        return ERROR;
+
+    ObjectInfo info = m_objectInfoManager.ReadInfo(instanceKey);
+    if (ChangeStatus::Created != info.GetChangeStatus())
+        return ERROR;
+
+    return m_responseManager.AddAdditionalInstance(responseKey, info.GetInfoKey());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+BentleyStatus ChangeManager::RemoveCreatedInstanceFromResponse(CachedResponseKeyCR cachedResponseKey, ECInstanceKeyCR instanceKey)
+    {
+    ResponseKey responseKey = m_responseManager.ConvertResponseKey(cachedResponseKey);
+    if (!responseKey.IsValid())
+        return ERROR;
+
+    ObjectInfo info = m_objectInfoManager.ReadInfo(instanceKey);
+    if (ChangeStatus::Created != info.GetChangeStatus())
+        return ERROR;
+
+    return m_responseManager.RemoveAdditionalInstance(responseKey, info.GetInfoKey());
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    07/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ChangeManager::HasChanges()
@@ -834,11 +866,13 @@ BentleyStatus ChangeManager::CommitInstanceChange(InstanceRevisionCR revision)
         return ERROR;
         }
 
+    // Deleted
     if (revision.GetChangeStatus() == ChangeStatus::Deleted && currentRevision)
         {
         return m_hierarchyManager.DeleteInstance(info.GetInfoKey());
         }
 
+    // Modified
     if (revision.GetChangeStatus() == ChangeStatus::Modified)
         {
         if (currentRevision)
@@ -862,11 +896,15 @@ BentleyStatus ChangeManager::CommitInstanceChange(InstanceRevisionCR revision)
         return ERROR;
         }
 
+    // Created
     if (revision.GetChangeStatus() != ChangeStatus::Created)
         {
         BeAssert(false && "Change status is unsupported for commit");
         return ERROR;
         }
+
+    if (SUCCESS != m_responseManager.RemoveAdditionalInstance(info.GetInfoKey()))
+        return ERROR;
 
     ObjectId newId = revision.GetObjectId();
     if (newId.remoteId.empty() || newId.remoteId == info.GetObjectId().remoteId)

@@ -13,7 +13,7 @@ SeedsOutputPath = $(OutputRootDir)build/UnitTests/WSClientTestAssets/Cache/Upgra
 
 $(SeedsOutputPath)5 : $(SeedsSourcePath)5.zip
     @python $(UpgradePath)UnZip.py $< $@
-    
+
 $(SeedsOutputPath)7 : $(SeedsSourcePath)7.zip
     @python $(UpgradePath)UnZip.py $< $@
 
@@ -21,6 +21,9 @@ $(SeedsOutputPath)8 : $(SeedsSourcePath)8.zip
     @python $(UpgradePath)UnZip.py $< $@
     
 $(SeedsOutputPath)9 : $(SeedsSourcePath)9.zip
+    @python $(UpgradePath)UnZip.py $< $@
+    
+$(SeedsOutputPath)10 : $(SeedsSourcePath)10.zip
     @python $(UpgradePath)UnZip.py $< $@
 
 $(BuildContext)WSClientTestAssets/Cache/UpgradeSeeds/ : $(SeedsOutputPath)

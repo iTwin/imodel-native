@@ -1,12 +1,15 @@
 class CStruct(object):
-    def __init__(self, ecclass_dom, api, status_codes):
+    def __init__(self, ecclass_dom, api, status_codes, excluded_ecclass):
         self._ecclass = ecclass_dom
         self._api = api
         self._status_codes = status_codes
+        self._excluded_ecclass = excluded_ecclass
 
     def _get_unique_property_types(self):
         unique_properties = []
         for ecproperty in self.get_properties():
+            if self._excluded_ecclass.should_filter_property(ecproperty.attributes["propertyName"].value):
+                continue
             if ecproperty.attributes["typeName"].value not in unique_properties:
                 unique_properties.append(ecproperty.attributes["typeName"].value)
         return unique_properties

@@ -2,14 +2,16 @@ from CStruct import CStruct
 
 
 class CppCliStruct(CStruct):
-    def __init__(self, ecclass_dom, api, status_codes):
-        super(CppCliStruct, self).__init__(ecclass_dom, api, status_codes)
+    def __init__(self, ecclass_dom, api, status_codes, excluded_ecclass):
+        super(CppCliStruct, self).__init__(ecclass_dom, api, status_codes, excluded_ecclass)
 
     def get_property_declarations(self):
         properties_str = "        public:\n"
         properties_str += "            {0}();\n".format(self.get_name())
         properties_str += "            {0}({1}HANDLE apiHandle, {1}DATABUFHANDLE dataBuffer, int16_t index);\n".format(self.get_name(), self._api.get_upper_api_acronym())
         for ecproperty in self.get_properties():
+            if self._excluded_ecclass.should_filter_property(ecproperty.attributes["propertyName"].value):
+                continue
             property_type = ecproperty.attributes["typeName"].value
             if property_type == "guid":
                 properties_str += "            property {0:16} {1};\n".format("Guid^",
@@ -49,6 +51,8 @@ class CppCliStruct(CStruct):
         if self.does_contain_long():
             ctor_str += '        int64_t pLong;\n'
         for ecproperty in self.get_properties():
+            if self._excluded_ecclass.should_filter_property(ecproperty.attributes["propertyName"].value):
+                continue
             property_type = ecproperty.attributes["typeName"].value
             ctor_str += '        status = {0}_DataBufferGet{1}Property('.format(self._api.get_api_name(), property_type.title())
             ctor_str += 'apiHandle, dataBuffer, {0}_BUFF_{1}, index'.format(self.get_upper_name(), ecproperty.attributes["propertyName"].value.upper())
@@ -113,6 +117,8 @@ class CppCliStruct(CStruct):
         create_str = '    CallStatus^ {2}::Create{0}({0}^ {1})\n'.format(self.get_name(), self.get_lower_name(), self._api.get_api_name())
         create_str += '        {\n'
         for ecproperty in self.get_properties():
+            if self._excluded_ecclass.should_filter_property(ecproperty.attributes["propertyName"].value):
+                continue
             if ecproperty.hasAttribute("readOnly") and ecproperty.attributes["readOnly"].value:
                 continue
             property_type = ecproperty.attributes["typeName"].value
@@ -140,6 +146,8 @@ class CppCliStruct(CStruct):
                                                                                        self._api.get_api_name(),
                                                                                        self.get_name())
         for ecproperty in self.get_properties():
+            if self._excluded_ecclass.should_filter_property(ecproperty.attributes["propertyName"].value):
+                continue
             if ecproperty.hasAttribute("readOnly") and ecproperty.attributes["readOnly"].value:
                 continue
             property_type = ecproperty.attributes["typeName"].value
@@ -186,6 +194,8 @@ class CppCliStruct(CStruct):
         update_str += '        {\n'
         update_str += '        pin_ptr<const wchar_t> {0}IdPtr = PtrToStringChars({0}Id);\n'.format(self.get_lower_name())
         for ecproperty in self.get_properties():
+            if self._excluded_ecclass.should_filter_property(ecproperty.attributes["propertyName"].value):
+                continue
             if ecproperty.hasAttribute("readOnly") and ecproperty.attributes["readOnly"].value:
                 continue
             property_type = ecproperty.attributes["typeName"].value
@@ -212,6 +222,8 @@ class CppCliStruct(CStruct):
         update_str += '\n        uint16_t updateStatus = {1}_Update{2}(m_api, {3}IdPtr'\
             .format(self._api.get_upper_api_name(), self._api.get_api_name(), self.get_name(), self.get_lower_name())
         for ecproperty in self.get_properties():
+            if self._excluded_ecclass.should_filter_property(ecproperty.attributes["propertyName"].value):
+                continue
             if ecproperty.hasAttribute("readOnly") and ecproperty.attributes["readOnly"].value:
                 continue
             property_type = ecproperty.attributes["typeName"].value

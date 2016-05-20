@@ -106,6 +106,7 @@
     <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV5ToCurrent.cpp" />
     <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV7ToV9.cpp" />
     <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV9ToV10.cpp" />
+    <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV10ToV11.cpp" />
     <ClCompile Include="Cache\ServerQueryHelper.cpp" />
     <ClCompile Include="Cache\SyncCachedDataTask.cpp" />
     <ClCompile Include="Cache\SyncCachedInstancesSeperatelyTask.cpp" />
@@ -242,6 +243,7 @@
     <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV5ToCurrent.h" />
     <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV7ToV9.h" />
     <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV9ToV10.h" />
+    <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV10ToV11.h" />
     <ClInclude Include="Cache\Schemas.h" />
     <ClInclude Include="Cache\Util\JsonUtil.h" />
     <ClInclude Include="Cache\Util\StringHelper.h" />
@@ -384,11 +386,15 @@
     <Xml Include="Cache\Persistence\ECSchemas\DSCacheSchema.01.05.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\DSCacheSchema.01.06.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\DSCacheSchema.01.07.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\DSCacheSchema.01.08.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\Support\Mapping\Bentley_SP_Supplemental_ECDbMapping.01.00.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\Support\Mapping\Issue_Supplemental_ECDbMapping.01.00.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\Support\Mapping\MetaSchema_Supplemental_ECDbMapping.02.00.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\Support\Mapping\ProjectContent_Supplemental_ECDbMapping.01.00.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\Support\Mapping\PW_WSG_Supplemental_ECDbMapping.01.01.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\Support\Mapping\PW_WSG_Supplemental_ECDbMapping.02.02.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\Support\V3Conversion\eBAttributes_V3Conversion.02.00.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\Support\V3Conversion\FileAccess_V3Conversion.01.00.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\Support\V3Conversion\Policies_V3Conversion.01.01.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\WSCache.02.00.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\WSCacheMetaSchema.03.00.ecschema.xml" />

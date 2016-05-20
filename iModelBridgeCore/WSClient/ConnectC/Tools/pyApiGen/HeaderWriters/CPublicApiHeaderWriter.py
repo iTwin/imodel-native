@@ -9,13 +9,16 @@ class CallStatus:
 
 
 class CPublicApiHeaderWriter(HeaderWriter):
-    def __init__(self, schema_name, ecclasses, header_filename, api, status_codes, excluded_classes=None):
+    def __init__(self, schema_name, ecclasses, header_filename, api, status_codes, excluded_classes):
         super(CPublicApiHeaderWriter, self).__init__(ecclasses, header_filename, api, status_codes, excluded_classes)
         self.__schema_name = schema_name
         self.__api_structs = []
         for ecclass in self._ecclasses:
-            if ecclass.attributes["typeName"].value not in self._excluded_classes:
-                self.__api_structs.append(CApiStruct(self.__schema_name, ecclass, api, self._status_codes))
+            if ecclass.attributes["typeName"].value in excluded_classes and \
+                    excluded_classes[ecclass.attributes["typeName"].value].should_exclude_entire_class():
+                continue
+            self.__api_structs.append(CApiStruct(self.__schema_name, ecclass, api, self._status_codes,
+                                                       excluded_classes[ecclass.attributes["typeName"].value]))
 
     def write_header(self):
         self.__write_header_comment()
@@ -76,10 +79,20 @@ class CPublicApiHeaderWriter(HeaderWriter):
         self._write_spacing()
         for api_struct in self.__api_structs:
             self.__write_api_read_list_definition(api_struct)
-            self.__write_api_create_definition(api_struct)
-            self.__write_api_read_definition(api_struct)
-            self.__write_api_update_definition(api_struct)
-            self.__write_api_delete_definition(api_struct)
+            if api_struct.get_name() in self._excluded_classes:
+                if self._excluded_classes[api_struct.get_name()].should_have_create():
+                    self.__write_api_create_definition(api_struct)
+                if self._excluded_classes[api_struct.get_name()].should_have_read():
+                    self.__write_api_read_definition(api_struct)
+                if self._excluded_classes[api_struct.get_name()].should_have_update():
+                    self.__write_api_update_definition(api_struct)
+                if self._excluded_classes[api_struct.get_name()].should_have_delete():
+                    self.__write_api_delete_definition(api_struct)
+            else:
+                self.__write_api_create_definition(api_struct)
+                self.__write_api_read_definition(api_struct)
+                self.__write_api_update_definition(api_struct)
+                self.__write_api_delete_definition(api_struct)
         self._file.write(self._COMMENT_GroupEnd)
 
     def __write_api_handle_free_declaration(self):
@@ -100,6 +113,9 @@ class CPublicApiHeaderWriter(HeaderWriter):
     def __write_api_create_definition(self, api_struct):
         param_str = "\param[in] apiHandle API object\n"
         for ecproperty in api_struct.get_properties():
+            if api_struct.get_name() in self._excluded_classes and \
+                    self._excluded_classes[api_struct.get_name()].should_filter_property(ecproperty.attributes["propertyName"].value):
+                continue
             if ecproperty.hasAttribute("readOnly") and ecproperty.attributes["readOnly"].value:
                 continue
             param_str += "* \param[in] {0}\n".format(ecproperty.attributes["propertyName"].value)
@@ -123,6 +139,9 @@ class CPublicApiHeaderWriter(HeaderWriter):
         param_str = "\param[in] apiHandle API object\n"
         param_str += "* \param[in] {0}Id {1} ID to update\n".format(api_struct.get_lower_name(), api_struct.get_name())
         for ecproperty in api_struct.get_properties():
+            if api_struct.get_name() in self._excluded_classes and \
+                    self._excluded_classes[api_struct.get_name()].should_filter_property(ecproperty.attributes["propertyName"].value):
+                continue
             if ecproperty.hasAttribute("readOnly") and ecproperty.attributes["readOnly"].value:
                 continue
             param_str += "* \param[in] {0}\n".format(ecproperty.attributes["propertyName"].value)

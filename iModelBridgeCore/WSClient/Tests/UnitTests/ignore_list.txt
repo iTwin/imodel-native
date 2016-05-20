@@ -11,7 +11,7 @@ CachingDataSourceTests.GetFile_ClassDoesNotHaveFileDependentPropertiesCA_Progres
 # Pending fix on UniqueTaskHolder. Low priority
 ConnectSignInManagerTests.GetAuthenticationHandler_TwoRequestsSentInParaleleUsingDifferentAuthHandlersWithSameServer_OnlyOneTokenRequestSent
 
-# Fails on Android. Medium priority
+# Fails on Android. Medium priority - disables important tests
 FileUtilTests.TruncateFilePath_FileWithNoExtension_TruncatesFileName
 FileUtilTests.TruncateFilePath_MaxPathLessThanPath_TruncatesFileName
 FileUtilTests.TruncateFilePath_MaxPathMoreThanPath_DoesNothing
@@ -20,7 +20,7 @@ FileUtilTests.TruncateFilePath_MaxPathSoSmallThatExtensionWouldBeChanged_Error
 FileUtilTests.TruncateFilePath_MaxPathSoSmallThatFileNameWouldBeEmpty_Error
 FileUtilTests.TruncateFilePath_PathIsFolder_Error
 
-#Fails on iOS; Need to investigate why. High priority
+#Fails on iOS; Need to investigate why. High priority - disables many tests
 ECDbAdapterTests.*
 
 #----------------------------------------------------------------------------------------
@@ -33,21 +33,14 @@ DataSourceCacheUpgradeTests.Open_V5*
 DataSourceCacheUpgradeTests.Open_V7*
 DataSourceCacheUpgradeTests.Open_V8*
 DataSourceCacheUpgradeTests.Open_V9*
+DataSourceCacheUpgradeTests.Open_V1*
 
-# ECSchema update in ECDb is not yet supported
+# ECSchema update in ECDb does not support deletions yet
 DataSourceCacheTests.UpdateSchemas_SchemasWithDeletedPropertyPassedToDataSourceCacheWithCachedStatements_SuccessAndSchemasAccessable
-CachingDataSourceTests.UpdateSchemas_*
-CachingDataSourceTests.OpenOrCreate_SchemaPathNotPassedAndServerRetursMetaSchema_GetsAllSchemasAndMetaSchemaFromServer
 
-# Fails because ECDb holding relationship deletion deletes child but not subchildren
-ECDbAdapterTests.DeleteInstances_DeletingRelationshipThatHoldsHierarchy_HierarchyDeleted
-ECDbAdapterTests.DeleteInstances_DeletingParentThatHoldsTwoChildrenThatHoldSubChild_DeletesParentAndChildrenAndSubChild
-ECDbAdapterTests.DeleteInstances_DeletedInstanceIsInHoldingCircularRelationships_DeletesChildren
+#----------------------------------------------------------------------------------------
+# New issues
+#----------------------------------------------------------------------------------------
 
-# Need adjustments to 06 ECRelationship limitations in ECDb
-CachingDataSourceTests.*
-ChangeManagerTests.*
-DataSourceCacheTests.*
-
-# Waiting for ECDb implementation
-DataSourceCacheTests.UpdateSchemas_*
+# Randomly crashes on x64. High priority
+CachingDataSourceTests.SyncCachedData_InitialQueriesSuppliedAndServerErrorReturnedForFirstOne_ContinuesWithOtherQuerysAndReturnsFailedObject

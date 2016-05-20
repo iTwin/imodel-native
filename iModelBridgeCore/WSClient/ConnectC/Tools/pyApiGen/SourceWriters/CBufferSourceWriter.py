@@ -4,12 +4,15 @@ from PropertyTypeError import PropertyTypeError
 
 
 class CBufferSourceWriter(SourceWriter):
-    def __init__(self, ecclasses, source_filename, api, status_codes, excluded_classes=None):
+    def __init__(self, ecclasses, source_filename, api, status_codes, excluded_classes):
         super(CBufferSourceWriter, self).__init__(ecclasses, source_filename, api, status_codes, excluded_classes)
         self.__buffer_structs = []
         for ecclass in self._ecclasses:
-            if ecclass.attributes["typeName"].value not in self._excluded_classes:
-                self.__buffer_structs.append(CBufferStruct(ecclass, api, status_codes))
+            if ecclass.attributes["typeName"].value in excluded_classes and \
+                    excluded_classes[ecclass.attributes["typeName"].value].should_exclude_entire_class():
+                continue
+            self.__buffer_structs.append(CBufferStruct(ecclass, api, status_codes,
+                                                 excluded_classes[ecclass.attributes["typeName"].value]))
 
     def write_source(self):
         self._write_header_comments()
@@ -222,7 +225,7 @@ class CBufferSourceWriter(SourceWriter):
         accessor_str += "    if(nullptr == dataBuffer)\n"
         accessor_str += '        {\n'
         accessor_str += '        api->SetStatusMessage("{1}");\n        api->SetStatusDescription("{2}");\n' \
-                        '        return {0};\n        }}\n\n'.format("INVALID_PARAMETER", self._status_codes["INVALID_PARAMETER"],
+                        '        return {0};\n        }}\n\n'.format("INVALID_PARAMETER", self._status_codes["INVALID_PARAMETER"].message,
                                                                      "The dataBuffer passed into {0} data access function is invalid."
                                                                      .format(self._api.get_api_name()))
         accessor_str += "    H{0}BUFFER buf = (H{0}BUFFER) dataBuffer;\n\n".format(self._api.get_api_acronym())
@@ -254,7 +257,7 @@ class CBufferSourceWriter(SourceWriter):
                     raise PropertyTypeError("Property type {0} not accepted".format(property_type))
         accessor_str += "        default:\n"
         accessor_str += '        api->SetStatusMessage("{1}");\n        api->SetStatusDescription("{2}");\n' \
-                        '        return {0};\n'.format("INVALID_PARAMETER", self._status_codes["INVALID_PARAMETER"],
+                        '        return {0};\n'.format("INVALID_PARAMETER", self._status_codes["INVALID_PARAMETER"].message,
                                                        "The buffer type passed in is invalid.")
         accessor_str += "        }\n"
         accessor_str += "    }\n"

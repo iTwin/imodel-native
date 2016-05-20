@@ -144,12 +144,13 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_SchemaPathNotPassedAndServerDoesNotR
     EXPECT_TRUE(nullptr != txn.GetCache().GetAdapter().GetECSchema("UserSchema"));
     }
 
-TEST_F(CachingDataSourceTests, OpenOrCreate_SchemaPathNotPassedAndServerRetursMetaSchema_GetsAllSchemasAndMetaSchemaFromServer)
+TEST_F(CachingDataSourceTests, OpenOrCreate_SchemaPathNotPassedAndServerRetursMetaSchema_GetsAllSchemasFromServerButSkipsMetaSchema)
     {
     auto client = MockWSRepositoryClient::Create();
 
     StubInstances schemas;
     schemas.Add({"MetaSchema.ECSchemaDef", "MetaSchemaId"}, {{"Name", "MetaSchema"}});
+    schemas.Add({"MetaSchema.ECSchemaDef", "TestSchemaId"}, {{"Name", "TestSchema"}});
 
     EXPECT_CALL(client->GetMockWSClient(), GetServerInfo(_))
         .WillOnce(Return(CreateCompletedAsyncTask(WSInfoResult::Success(StubWSInfoWebApi()))));
@@ -160,7 +161,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_SchemaPathNotPassedAndServerRetursMe
     EXPECT_CALL(*client, SendGetFileRequest(_, _, _, _, _)).Times(1)
         .WillOnce(Invoke([&] (ObjectIdCR objectId, BeFileNameCR, Utf8StringCR, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
         {
-        EXPECT_EQ(ObjectId("MetaSchema.ECSchemaDef", "MetaSchemaId"), objectId);
+        EXPECT_EQ(ObjectId("MetaSchema.ECSchemaDef", "TestSchemaId"), objectId);
         return CreateCompletedAsyncTask(WSFileResult());
         }));
 

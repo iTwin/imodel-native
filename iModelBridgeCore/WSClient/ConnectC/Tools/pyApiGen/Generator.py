@@ -1,4 +1,5 @@
 from xml.dom import minidom
+from openpyxl import load_workbook
 
 from HeaderWriters.CBufferHeaderWriter import CBufferHeaderWriter
 from HeaderWriters.CPublicApiHeaderWriter import CallStatus
@@ -11,15 +12,29 @@ from SourceWriters.CBufferSourceWriter import CBufferSourceWriter
 # from SourceWriters.CppCliClassesSourceWriter import CppCliClassesSourceWriter
 # from SourceWriters.CppCliApiSourceWriter import CppCliApiSourceWriter
 from Writer import Api
+from ExcludedECClass import ExcludedECClass
 
-
+###########################################################################################################
+# ------------------------------------------------------------------------------------------------------- #
+# -----------------------------     Configuration Variables    ------------------------------------------ #
+# ------------------------------------------------------------------------------------------------------- #
+###########################################################################################################
 xmldoc = minidom.parse('N~3AGlobalSchema.01.00.xml')
 ecclasses = xmldoc.getElementsByTagName('ECClass')
-api = Api('CWSCC', 'ConnectWebServicesClientC')
-excluded_classes = ['Organization_SQLAzure_PoC', 'Project_SQLAzure_PoC',
-                    'ProjectFavorite_SQLAzure_PoC', 'ProjectMRU_SQLAzure_Poc',
-                    'ProjectMRUDetail_SQLAzure_PoC', 'ProjectProperties']
+api = Api('CWSCC', 'ConnectWebServicesClientC', 'ConnectWsgGlobal', 'BentleyCONNECT.Global--CONNECT.GLOBAL')
 
+#############################################
+# ------------ Excluded Classes ----------- #
+#############################################
+workbook = load_workbook('autoGenFilter.xlsx', use_iterators=True)
+worksheet = workbook.get_sheet_by_name('autoGenFilter')
+excluded_classes = {}
+for row in worksheet.iter_rows(range_string=worksheet.calculate_dimension(), row_offset=1):
+    excluded_classes[row[0].value] = (ExcludedECClass(row))
+
+#############################################
+# ------------- Status Codes -------------- #
+#############################################
 status_codes = {
     'ERROR400': CallStatus(400, 'The response from the server contained a 400, Bad Request, http error'),
     'ERROR401': CallStatus(401, 'The response from the server contained a 401, Unauthorized, http error'),
@@ -45,13 +60,14 @@ status_codes = {
     'NO_CLIENT_LICENSE': CallStatus(-214, 'A client license was not found.'),
     'TO_MANY_BAD_LOGIN_ATTEMPTS': CallStatus(-215, 'To many unsuccessful login attempts have happened.'),
 }
-
 srcDir = "../../"
 publicApiDir = srcDir + "../PublicAPI/WebServices/ConnectC/"
 
+####################################################################
 # -----------------------------------------------------------------#
 # ---------------------------C-API---------------------------------#
 # -----------------------------------------------------------------#
+####################################################################
 publicApiHeaderWriter = CPublicApiHeaderWriter('GlobalSchema',
                                                ecclasses,
                                                publicApiDir + '{0}GenPublic.h'.format(api.get_api_acronym()),
@@ -67,9 +83,11 @@ apiSourceWriter = CApiSourceWriter('GlobalSchema',
                                    excluded_classes)
 apiSourceWriter.write_source()
 
+####################################################################
 # -----------------------------------------------------------------#
 # --------------------------C-Buffer-------------------------------#
 # -----------------------------------------------------------------#
+####################################################################
 publicBufferHeaderWriter = CPublicBufferHeaderWriter(ecclasses,
                                                      publicApiDir + '{0}GenBufferPublic.h'.format(api.get_api_acronym()),
                                                      api,
@@ -89,9 +107,11 @@ sourceWriter = CBufferSourceWriter(ecclasses,
                                    excluded_classes)
 sourceWriter.write_source()
 
+####################################################################
 # -----------------------------------------------------------------#
 # --------------------------CPP/CLI--------------------------------#
 # -----------------------------------------------------------------#
+####################################################################
 # cppcliClassesHeaderWriter = CppCliClassesHeaderWriter(ecclasses,
 #                                                       'C:/Users/David.Jones/Documents/Connect_Stuff/WSApi/WSApiSharp/{0}GenClasses.h'
 #                                                       .format(api.get_api_acronym()),

@@ -2,7 +2,7 @@
  |
  |     $Source: Client/ChunkedUploadRequest.cpp $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -26,6 +26,7 @@ struct ChunkedUploadRequest::TransferData
 * @bsimethod                                                    Vincas.Razma    08/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 ChunkedUploadRequest::ChunkedUploadRequest(Utf8StringCR method, Utf8StringCR url, HttpClientCR client) :
+m_handshakeRequest(client.CreateRequest(url, method)),
 m_client(client),
 m_method(method),
 m_url(url),
@@ -95,6 +96,14 @@ void ChunkedUploadRequest::SetUploadProgressCallback(HttpRequest::ProgressCallba
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    05/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+HttpRequest& ChunkedUploadRequest::GetHandshakeRequest()
+    {
+    return m_handshakeRequest;
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<HttpResponse> ChunkedUploadRequest::PerformAsync()
@@ -125,7 +134,7 @@ AsyncTaskPtr<HttpResponse> ChunkedUploadRequest::PerformAsync(std::shared_ptr<Ch
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<void> ChunkedUploadRequest::SendHandshakeAndContinue(std::shared_ptr<ChunkedUploadRequest> cuRequest)
     {
-    HttpRequest request = cuRequest->m_client.CreateRequest(cuRequest->m_url, cuRequest->m_method);
+    HttpRequest request = cuRequest->m_handshakeRequest;
 
     request.SetConnectionTimeoutSeconds(WSRepositoryClient::Timeout::Connection::Default);
     request.SetTransferTimeoutSeconds(WSRepositoryClient::Timeout::Transfer::Upload);
