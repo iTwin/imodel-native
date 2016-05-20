@@ -1440,24 +1440,18 @@ template<class POINT> class ScalableMeshCachedDisplayNode : public virtual IScal
           
     public:             
             
-            ScalableMeshCachedDisplayNode(HFCPtr<SMPointIndexNode<POINT, YProtPtExtentType>>& nodePtr)
-            : ScalableMeshNode(nodePtr)
-                {                                               
-                auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_node);                
-                m_cachedDisplayData = meshNode->GetDisplayData();                
-                }
+            ScalableMeshCachedDisplayNode(HFCPtr<SMPointIndexNode<POINT, YProtPtExtentType>>& nodePtr);
 
-            ~ScalableMeshCachedDisplayNode()
-                {                                                
-                }
-
+            virtual ~ScalableMeshCachedDisplayNode();
+                
             void LoadMesh(bool loadGraph, const bset<uint64_t>& clipsToShow, IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr, bool loadTexture);
 
-            bool IsLoaded()
-                {
-                return m_cachedDisplayData.IsValid();
-                }
+            bool IsLoaded() const;
+                
+            bool HasCorrectClipping(const bset<uint64_t>& clipsToShow) const;
 
+            void RemoveDisplayDataFromCache();
+                
             static ScalableMeshCachedDisplayNode<POINT>* Create(HFCPtr<SMPointIndexNode<POINT, YProtPtExtentType>>& nodePtr)
                 {
                 return new ScalableMeshCachedDisplayNode<POINT>(nodePtr);

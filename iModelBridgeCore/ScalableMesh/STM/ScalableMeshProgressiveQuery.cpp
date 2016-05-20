@@ -465,11 +465,15 @@ private:
             else
                 {
                 //meshNodePtr = CachedDisplayNodeManager::GetManager().FindOrLoadNode<DPoint3d>(visibleNode, loadTexture, clipVisibilities);
-                ScalableMeshCachedDisplayNode<DPoint3d>* meshNode(ScalableMeshCachedDisplayNode<DPoint3d>::Create(visibleNode));
-                if (meshNode->IsLoaded() == false)
-                    {                
-                    meshNode->ApplyAllExistingClips();
+                ScalableMeshCachedDisplayNode<DPoint3d>* meshNode(ScalableMeshCachedDisplayNode<DPoint3d>::Create(visibleNode));                
+
+                meshNode->ApplyAllExistingClips();
+
+                if (meshNode->IsLoaded() == false || !meshNode->HasCorrectClipping(clipVisibilities))                    
+                    {                                    
+                    meshNode->RemoveDisplayDataFromCache();                    
                     meshNode->LoadMesh(false, clipVisibilities, s_displayCacheManagerPtr, loadTexture);                               
+                    assert(meshNode->HasCorrectClipping(clipVisibilities));                    
                     }
 
                 meshNodePtr = meshNode;                                                
@@ -1015,15 +1019,9 @@ void FindOverview(bvector<IScalableMeshCachedDisplayNodePtr>& lowerResOverviewNo
         return;
         }
          
-    ScalableMeshCachedDisplayNode<DPoint3d>::Ptr meshNodePtr(ScalableMeshCachedDisplayNode<DPoint3d>::Create(parentNodePtr));
-    //RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayData>> displayData(parentNodePtr->GetDisplayData());        
-        
-    if (s_keepSomeInvalidate && !meshNodePtr->IsLoaded())
-        {        
-        //meshNodePtr = CachedDisplayNodeManager::GetManager().FindInvalidatedNode(parentNodePtr->GetBlockID().m_integerID, s_scalableMeshPtr, false);
-        }
-
-    if (!meshNodePtr->IsLoaded())
+    ScalableMeshCachedDisplayNode<DPoint3d>::Ptr meshNodePtr(ScalableMeshCachedDisplayNode<DPoint3d>::Create(parentNodePtr));    
+            
+    if (!meshNodePtr->IsLoaded() || (!meshNodePtr->HasCorrectClipping(clipVisibilities) && !s_keepSomeInvalidate))
         {
         FindOverview(lowerResOverviewNodes, parentNodePtr, loadTexture, clipVisibilities);
         }
@@ -1096,13 +1094,8 @@ class NewQueryStartingNodeProcessor
                 if (nodeInd % m_numWorkingThreads != threadId) continue;
                 
                 ScalableMeshCachedDisplayNode<DPoint3d>::Ptr meshNodePtr(ScalableMeshCachedDisplayNode<DPoint3d>::Create(m_nodesToSearch->GetNodes()[nodeInd]));
-                
-                if (s_keepSomeInvalidate && !meshNodePtr->IsLoaded())
-                    {        
-                    //meshNodePtr = CachedDisplayNodeManager::GetManager().FindInvalidatedNode(m_nodesToSearch->GetNodes()[nodeInd]->GetBlockID().m_integerID, s_scalableMeshPtr, false);
-                    }
-
-                if (!meshNodePtr->IsLoaded())
+                                
+                if (!meshNodePtr->IsLoaded() || (!meshNodePtr->HasCorrectClipping(*m_activeClips) && !s_keepSomeInvalidate))
                     {                                
                     FindOverview(m_lowerResOverviewNodes[threadId], m_nodesToSearch->GetNodes()[nodeInd], m_newQuery->m_loadTexture, *m_activeClips);
                     }
@@ -1118,29 +1111,24 @@ class NewQueryStartingNodeProcessor
                 
                 ScalableMeshCachedDisplayNode<DPoint3d>::Ptr meshNodePtr(ScalableMeshCachedDisplayNode<DPoint3d>::Create(m_foundNodes->GetNodes()[nodeInd]));
                 
-                if (!meshNodePtr->IsLoaded())
+                if (!meshNodePtr->IsLoaded() || (!meshNodePtr->HasCorrectClipping(*m_activeClips) && !s_keepSomeInvalidate))
                     {                
-                    if (s_keepSomeInvalidate && !meshNodePtr->IsLoaded())
-                        {        
-                        //meshNodePtr = CachedDisplayNodeManager::GetManager().FindInvalidatedNode(m_nodesToSearch->GetNodes()[nodeInd]->GetBlockID().m_integerID, s_scalableMeshPtr, false);
-                        }
-                        
-                    if (meshNodePtr->IsLoaded())
-                        {                                                
-                        m_lowerResOverviewNodes[threadId].push_back(meshNodePtr);
-                        }
-                    else
-                        {
-                        FindOverview(m_lowerResOverviewNodes[threadId], m_foundNodes->GetNodes()[nodeInd], m_newQuery->m_loadTexture, *m_activeClips/*, scalableMeshPtr*/);
-                        }
-                    
+                    FindOverview(m_lowerResOverviewNodes[threadId], m_foundNodes->GetNodes()[nodeInd], m_newQuery->m_loadTexture, *m_activeClips/*, scalableMeshPtr*/);
+                                        
                     m_toLoadNodes[threadId].push_back(m_foundNodes->GetNodes()[nodeInd]);
                     }
                 else
                     {
                     //NEEDS_WORK_SM : Should not be duplicated.
                     m_lowerResOverviewNodes[threadId].push_back(meshNodePtr);
-                    m_requiredMeshNodes[threadId].push_back(meshNodePtr);
+                    if (meshNodePtr->HasCorrectClipping(*m_activeClips))
+                        {                        
+                        m_requiredMeshNodes[threadId].push_back(meshNodePtr);
+                        }
+                    else
+                        {
+                        m_toLoadNodes[threadId].push_back(m_foundNodes->GetNodes()[nodeInd]);
+                        }
                     }
                 }
             }
@@ -1224,7 +1212,7 @@ void ComputeOverviewSearchToLoadNodes(RequestedQuery&                           
             {                                                            
             ScalableMeshCachedDisplayNode<DPoint3d>::Ptr meshNode(ScalableMeshCachedDisplayNode<DPoint3d>::Create(nodesToSearch.GetNodes()[nodeInd]));
 
-            if (!meshNode->IsLoaded())
+            if (!meshNode->IsLoaded() || (!meshNode->HasCorrectClipping(activeClips) && !s_keepSomeInvalidate))
                 {                                
                 FindOverview(lowerResOverviewNodes, nodesToSearch.GetNodes()[nodeInd], newQuery.m_loadTexture, activeClips);
                 }
@@ -1241,7 +1229,7 @@ void ComputeOverviewSearchToLoadNodes(RequestedQuery&                           
             {                                                
             ScalableMeshCachedDisplayNode<DPoint3d>::Ptr meshNodePtr(ScalableMeshCachedDisplayNode<DPoint3d>::Create(node));
 
-            if (!meshNodePtr->IsLoaded())
+            if (!meshNodePtr->IsLoaded() || (!meshNodePtr->HasCorrectClipping(activeClips) && !s_keepSomeInvalidate))
                 {                
                 FindOverview(lowerResOverviewNodes, node, newQuery.m_loadTexture, activeClips);
                 toLoadNodes.push_back(node);
@@ -1250,7 +1238,15 @@ void ComputeOverviewSearchToLoadNodes(RequestedQuery&                           
                 {
                 //NEEDS_WORK_SM : Should not be duplicated.                
                 newQuery.m_overviewMeshNodes.push_back(meshNodePtr);
-                newQuery.m_requiredMeshNodes.push_back(meshNodePtr);
+
+                if (meshNodePtr->HasCorrectClipping(activeClips))
+                    {                        
+                    newQuery.m_requiredMeshNodes.push_back(meshNodePtr);
+                    }
+                else
+                    {
+                    toLoadNodes.push_back(node);
+                    }
                 }
             }
         }    

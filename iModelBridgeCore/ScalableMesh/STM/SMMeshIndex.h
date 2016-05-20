@@ -69,18 +69,21 @@ struct SmCachedDisplayData
         SmCachedDisplayTexture*             m_cachedDisplayTexture;
         IScalableMeshDisplayCacheManagerPtr m_displayCacheManagerPtr;
         size_t                              m_memorySize;
+        bvector<uint64_t>                   m_appliedClips; 
 
     public : 
     
         SmCachedDisplayData(SmCachedDisplayMesh*                 cachedDisplayMesh,
                             SmCachedDisplayTexture*              cachedDisplayTexture,
                             IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr, 
-                            size_t                               memorySize)
+                            size_t                               memorySize, 
+                            const bvector<uint64_t>&             appliedClips)
             {
             m_cachedDisplayMesh = cachedDisplayMesh;
             m_cachedDisplayTexture = cachedDisplayTexture; 
             m_displayCacheManagerPtr = displayCacheManagerPtr;
             m_memorySize = memorySize;
+            m_appliedClips.insert(m_appliedClips.end(), appliedClips.begin(), appliedClips.end());
             }
 
         virtual ~SmCachedDisplayData()
@@ -111,6 +114,11 @@ struct SmCachedDisplayData
         SmCachedDisplayTexture* GetCachedDisplayTexture() const
             {
             return m_cachedDisplayTexture;
+            }
+
+        const bvector<uint64_t>& GetAppliedClips()
+            {
+            return m_appliedClips;
             }
     };
 
@@ -425,6 +433,12 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
             
         return cachedDisplayDataItemPtr;
         }    
+
+    virtual void RemoveDisplayData()
+        {                                
+        GetMemoryPool()->RemoveItem(m_displayDataPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::Display);                                                    
+        m_displayDataPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;        
+        }    
         
     SMMemoryPoolPtr GetMemoryPool() const
         {
@@ -458,7 +472,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
         if (!IsTextured())
             return poolMemBlobItemPtr;
-                             
+                  
+        //NEEDS_WORK_SM : Need to modify the pool to have a thread safe get or add.
         if (!GetMemoryPool()->GetItem<Byte>(poolMemBlobItemPtr, m_texturePoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::Texture))
             {                              
             RefCountedPtr<SMStoredMemoryPoolBlobItem<Byte>> storedMemoryPoolVector(new SMStoredMemoryPoolBlobItem<Byte>(GetBlockID().m_integerID, GetTextureStore().GetPtr(), SMPoolDataTypeDesc::Texture));
