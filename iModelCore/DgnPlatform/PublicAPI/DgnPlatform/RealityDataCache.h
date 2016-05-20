@@ -46,8 +46,6 @@ struct Options
 {
     bool m_requestFromSource = true;
     bool m_forceSynchronous = false;
-    bool m_removeAfterSelect = false;
-    bool m_retryNotFoundRequests = false;
 };
 
 //=======================================================================================
@@ -448,8 +446,10 @@ protected:
     BeAtomic<bool> m_hasChanges;
     BeMutex m_saveChangesMux;
     BeSQLite::Db m_database;
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     bset<Utf8String> m_activeRequests;
     BeMutex m_activeRequestsMux;
+#endif
     uint32_t m_idleTime;
     RefCountedPtr<BeSQLite::BusyRetry> m_retry;
 
@@ -499,9 +499,7 @@ struct EXPORT_VTABLE_ATTRIBUTE Cache : RefCountedBase, NonCopyableClass
 private:
     StoragePtr m_storage;
     SourcePtr  m_source;
-
-    mutable bmap<Payload const*, CacheResult> m_results;
-    mutable BeMutex m_resultsMux;
+    CacheResult m_result; // for synchronous requests
 
     CacheResult HandleStorageResponse(StorageResponse const& response, Options);
     CacheResult ResolveResult(StorageResult storageResult, SourceResult sourceResult = SourceResult::Error_NotFound) const;
@@ -614,7 +612,6 @@ private:
     ThreadPoolPtr m_threadPool;
     BeMutex                  m_requestsCS;
     bset<Utf8String>         m_activeRequests;
-    bset<Utf8String>         m_notFoundRequests;
     BeAtomic<uint64_t>       m_ignoreRequestsUntil;
     BeConditionVariable      m_synchronizationCV;
     bool                     m_terminateRequested;

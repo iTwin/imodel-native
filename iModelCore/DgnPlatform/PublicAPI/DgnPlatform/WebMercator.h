@@ -122,6 +122,8 @@ protected:
         void Trim();
 
     public:
+        int GetMaxSize() const {return m_maxSize;}
+        void SetMaxSize(int val) {m_maxSize=val;}
         void Clear() {m_map.clear();}
         void Add(TileId id, Tile* tile){Trim(); m_map.Insert(id,tile);}
         TilePtr Get(TileId id) {auto ifound = m_map.find(id); return (ifound == m_map.end()) ? nullptr : ifound->second;}

@@ -466,24 +466,8 @@ void Storage::wt_SaveChanges()
 +---------------+---------------+---------------+---------------+---------------+------*/
 StorageResult Storage::wt_Select(Payload& data, Options options, Cache& responseReceiver)
     {
-    StorageResult result;
-    if (SUCCESS != data._LoadFromStorage(m_database))
-        {
-        responseReceiver._OnResponseReceived(*new StorageResponse(StorageResult::NotFound, data), options, !options.m_forceSynchronous);
-        result = StorageResult::NotFound;
-        }
-    else
-        {
-        responseReceiver._OnResponseReceived(*new StorageResponse(StorageResult::Success, data), options, !options.m_forceSynchronous);
-        result = StorageResult::Success;
-        }
-
-    if (true)
-        {
-        BeMutexHolder lock(m_activeRequestsMux);
-        BeAssert(m_activeRequests.end() != m_activeRequests.find(data.GetPayloadId()));
-        m_activeRequests.erase(m_activeRequests.find(data.GetPayloadId()));
-        }
+    StorageResult result = (SUCCESS == data._LoadFromStorage(m_database)) ? StorageResult::Success : StorageResult::NotFound;
+    responseReceiver._OnResponseReceived(*new StorageResponse(result, data), options, !options.m_forceSynchronous);
     return result;
     }
 
@@ -492,14 +476,6 @@ StorageResult Storage::wt_Select(Payload& data, Options options, Cache& response
 +---------------+---------------+---------------+---------------+---------------+------*/
 StorageResult Storage::_Select(Payload& data, Options options, Cache& responseReceiver)
     {
-    if (true)
-        {
-        BeMutexHolder lock(m_activeRequestsMux);
-        if (m_activeRequests.end() != m_activeRequests.find(data.GetPayloadId()))
-            return StorageResult::Pending;
-        m_activeRequests.insert(data.GetPayloadId());
-        }
-
     auto work = new SelectDataWork(*this, data, options, responseReceiver);
     m_threadPool->QueueWork(*work);
 
@@ -595,13 +571,6 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 SourceResult AsyncSource::QueueRequest(AsyncSourceRequest& request, Cache& responseReceiver)
     {
-    if (!request.GetRequestOptions().m_retryNotFoundRequests)
-        {
-        BeMutexHolder lock(m_requestsCS);
-        if (m_notFoundRequests.end() != m_notFoundRequests.find(request.GetPayload().GetPayloadId()))
-            return SourceResult::Error_NotFound;
-        }
-
     if (ShouldIgnoreRequests())
         return SourceResult::Ignored;
 
@@ -643,13 +612,7 @@ void AsyncSource::RequestHandler::_DoWork()
             m_source->SetIgnoreRequests(3 * 1000);
             break;
         case SourceResult::Error_NotFound:
-            {
-            if (!m_request->GetRequestOptions().m_retryNotFoundRequests)
-                {
-                BeMutexHolder lock(m_source->m_requestsCS);
-                m_source->m_notFoundRequests.insert(m_request->GetPayload().GetPayloadId());
-                }
-            }
+            break;
         }
 
     if (!m_source->m_terminateRequested)
@@ -953,11 +916,7 @@ void Cache::_OnResponseReceived(StorageResponse const& response, Options options
     CacheResult result = HandleStorageResponse(response, options);
     
     if (!isAsync)
-        {
-        BeMutexHolder lock(m_resultsMux);
-        BeAssert(m_results.end() == m_results.find(&response.GetPayload()));
-        m_results[&response.GetPayload()] = result;
-        }
+        m_result = result;
 
     switch (result)
         {
@@ -1013,13 +972,8 @@ CacheResult Cache::GetResult(Payload& data, StorageResult storageResult)
     if (CacheResult::RequestQueued == result || CacheResult::Error == result)
         return result;
 
-    // unless there was an error or the request was queued, we expect to find the result in the m_results map
-    BeMutexHolder lock(m_resultsMux);
-    auto iter = m_results.find(&data);
-    BeAssert(m_results.end() != iter);
-    CacheResult returnValue = iter->second;
-    m_results.erase(iter);
-    return returnValue;
+    // this must be a synchronous request. 
+    return m_result;
     }
 
 /*---------------------------------------------------------------------------------**//**

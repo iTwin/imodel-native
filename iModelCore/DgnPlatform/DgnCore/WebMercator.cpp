@@ -85,7 +85,7 @@ static double const s_maxLongitude =  180.0;
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   03/16
 //=======================================================================================
-struct TileIdList : bvector<TileId>{};
+struct TileIdList : bvector<TileId>{int GetSize() const {return (int)size();}};
 struct TileList : bvector<TilePtr>{};
 
 DEFINE_POINTER_SUFFIX_TYPEDEFS(WPixelPoint)
@@ -640,6 +640,10 @@ void WebMercatorDisplay::DrawCoarserTiles(DrawArgs& args, uint8_t zoomLevel, uin
 +---------------+---------------+---------------+---------------+---------------+------*/
 void WebMercatorModel::_AddTerrainGraphics(TerrainContextR context) const
     {
+    static bool s_clear=false;
+    if (s_clear)
+        m_tileCache.Clear();
+
     WebMercatorDisplay display(*this, *context.GetViewport());
     display.DrawView(context);
     }
@@ -678,6 +682,9 @@ void WebMercatorDisplay::DrawView(TerrainContextR context)
     TileIdList tileIds = GetTileIds(m_zoomLevel);
     if (tileIds.empty())
         return;
+
+    if (tileIds.GetSize() >= m_model.GetTileCache().GetMaxSize())
+        m_model.GetTileCache().SetMaxSize(tileIds.GetSize());
 
     Render::SystemR renderSys = context.GetTargetR().GetSystem();
 
@@ -1023,6 +1030,7 @@ public:
     TileData(TileR tile, Render::SystemR renderSys, ColorDef color, Utf8CP url) : m_tile(&tile), m_renderSys(renderSys), m_color(color), Payload(url) {}
     ByteStream const& GetData() const {return m_data;}
     DateTime GetCreationDate() const {return m_creationDate;}
+    Utf8String ToString() const {return Utf8PrintfString("%d,%d,%d", m_tile->m_id.m_zoomLevel, m_tile->m_id.m_column, m_tile->m_id.m_row);} 
 };
 DEFINE_REF_COUNTED_PTR(TileData)
 
@@ -1106,6 +1114,7 @@ void TileData::LoadTile()
 
     if (ERROR == readStatus || !rgba.IsValid())
         {
+        BeAssert(false);
         m_tile->SetNotFound();
         return;
         }
@@ -1151,7 +1160,10 @@ BentleyStatus TileData::_LoadFromStorage(BeSQLite::Db& db)
     stmt->BindBlob(1, &m_tile->m_id, sizeof(m_tile->m_id), Statement::MakeCopy::No);
 
     if (BeSQLite::BE_SQLITE_ROW != stmt->Step())
+        {
+//        DEBUG_PRINTF("missing %s", ToString().c_str());
         return ERROR;
+        }
 
     m_data.SaveData((Byte*) stmt->GetValueBlob(0), stmt->GetValueInt(1));
     m_isJpeg = TO_BOOL(stmt->GetValueInt(2));
@@ -1166,6 +1178,7 @@ BentleyStatus TileData::_LoadFromStorage(BeSQLite::Db& db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus TileData::_PersistToStorage(Db& db) const
     {
+//    DEBUG_PRINTF("saving %s", ToString().c_str());
 
     int bufferSize = (int) GetData().GetSize();
 
