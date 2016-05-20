@@ -14,7 +14,7 @@
 #include "ImagePPHeaders.h"
 #include "ScalableMeshSources.h"
 #include <ScalableMesh/IScalableMeshSourceVisitor.h>
-#include <ScalableMesh/IScalableMeshStream.h>
+
 
 #include "ScalableMeshTime.h"
 #include <ScalableMesh/IScalableMeshSourceImportConfig.h>
@@ -654,6 +654,15 @@ IDTMDgnModelSource::Impl::Impl (DTMSourceDataType               sourceDataType,
     {    
     }
 
+IDTMDgnModelSource::Impl::Impl(DTMSourceDataType               sourceDataType,
+                               const wchar_t*                 filePath,
+                               uint32_t                          modelID,
+                               const WChar*                  modelName)
+                               : IDTMLocalFileSource::Impl(sourceDataType, filePath),
+                               m_modelID(modelID),
+                               m_modelName(modelName)
+    {}
+
 IDTMDgnModelSource::Impl::~Impl()
     {
     }
@@ -751,6 +760,21 @@ IDTMDgnLevelSourcePtr IDTMDgnLevelSource::Create   (DTMSourceDataType           
                                            levelName));
     }
 
+IDTMDgnLevelSourcePtr IDTMDgnLevelSource::Create(DTMSourceDataType           sourceDataType,
+                                                 const wchar_t* dgnFilePath,
+                                                 uint32_t                      modelID,
+                                                 const WChar*              modelName,
+                                                 uint32_t                      levelID,
+                                                 const WChar*              levelName)
+    {
+    return new IDTMDgnLevelSource(new Impl(sourceDataType,
+        dgnFilePath,
+        modelID,
+        modelName,
+        levelID,
+        levelName));
+    }
+
 
 IDTMDgnLevelSource::IDTMDgnLevelSource (Impl* implP)
     :   IDTMDgnModelSource(implP),
@@ -806,6 +830,17 @@ IDTMDgnLevelSource::Impl::Impl         (DTMSourceDataType               sourceDa
         m_levelName(levelName)
     {    
     }
+
+IDTMDgnLevelSource::Impl::Impl(DTMSourceDataType               sourceDataType,
+                               const wchar_t*                 filePath,
+                               uint32_t                          modelID,
+                               const WChar*                  modelName,
+                               uint32_t                          levelID,
+                               const WChar*                  levelName)
+                               : IDTMDgnModelSource::Impl(sourceDataType, filePath, modelID, modelName),
+                               m_levelID(levelID),
+                               m_levelName(levelName)
+    {}
 
 IDTMDgnLevelSource::Impl::~Impl()
     {

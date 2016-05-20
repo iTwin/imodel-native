@@ -3494,7 +3494,10 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Propag
     if (HasRealChildren() && (ptsPtr->size() > 0))
         {
         OnPropagateDataDown();
-        if (m_pSubNodeNoSplit != NULL && !m_pSubNodeNoSplit->IsVirtualNode())
+        if ((ptsPtr->size() == 0))
+            {
+            }
+        else if (m_pSubNodeNoSplit != NULL && !m_pSubNodeNoSplit->IsVirtualNode())
             {
             RefCountedPtr<SMMemoryPoolVectorItem<POINT>> ptsPtr(GetPointsPtr());
             size_t numberSpatial = ptsPtr->size();

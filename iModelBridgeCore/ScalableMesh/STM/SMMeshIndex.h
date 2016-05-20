@@ -124,6 +124,9 @@ struct SmCachedDisplayData
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE
 
+extern size_t nGraphPins;
+extern size_t nGraphReleases;
+
 template<class POINT, class EXTENT> class SMMeshIndex;
 
 template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndexNode < POINT, EXTENT >
@@ -230,9 +233,11 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     virtual void LoadGraph(bool shouldPinGraph=false) const;
 
+
     void ReleaseGraph()
         {
-        m_graphVec.UnPin();
+ //       nGraphReleases++;
+ //       m_graphVec.UnPin();
         }
 
     void LockGraph()
@@ -248,14 +253,34 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     void StoreAllGraphs();
 
-    virtual MTGGraph* GetGraphPtr()
+   /* virtual MTGGraph* GetGraphPtr()
         {
         if (m_graphVec.size() == 0 || m_graphVec.Discarded()) return NULL;
         else return const_cast<MTGGraph*>(&*m_graphVec.begin());
+        }*/
+
+    virtual RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> GetGraphPtr(bool loadGraph = true)
+        {
+        std::lock_guard<std::mutex> lock(m_graphMutex); //don't want to add item twice
+        RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> poolMemItemPtr;
+
+
+        if (!SMMemoryPool::GetInstance()->GetItem<MTGGraph>(poolMemItemPtr, m_graphPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::Graph) && loadGraph)
+            {
+            //NEEDS_WORK_SM : SharedPtr for GetPtsIndiceStore().get()            
+            RefCountedPtr<SMStoredMemoryPoolGenericBlobItem<MTGGraph>> storedMemoryPoolItem(new SMStoredMemoryPoolGenericBlobItem<MTGGraph>(GetBlockID().m_integerID, GetGraphStore().GetPtr(), SMPoolDataTypeDesc::Graph));
+            SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolItem.get());
+            m_graphPoolItemId = SMMemoryPool::GetInstance()->AddItem(memPoolItemPtr);
+            assert(m_graphPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
+            poolMemItemPtr = storedMemoryPoolItem.get();
+            }
+
+        return poolMemItemPtr;
         }
 
-    void SetGraphDirty()
+    /*void SetGraphDirty()
         {
+        //m_graphVec.RecomputeCount();
         m_graphVec.SetDiscarded(false);
         m_graphVec.SetDirty(true);
         }
@@ -268,7 +293,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     void PinGraph()
     {
         m_graphVec.Pin();
-    }
+    }*/
     /**----------------------------------------------------------------------------
     Returns the 2.5d mesher used for meshing the points
 
@@ -334,6 +359,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     void  BuildSkirts();
 
     bool HasClip(uint64_t clipId);
+
+    bool IsClippingUpToDate();
 
     //If necessary, update clips so as to merge them with other clips on the node.
     void  ComputeMergedClips();
@@ -606,18 +633,18 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
         bool ClipIntersectsBox(uint64_t clipId, EXTENT ext);
 
-        mutable HPMStoredPooledVector<DifferenceSet> m_differenceSets;
-        mutable HPMStoredPooledVector<MTGGraph> m_graphVec;
+        mutable HPMStoredPooledVector<DifferenceSet> m_differenceSets;        
         mutable std::mutex m_graphInflateMutex;
         mutable std::mutex m_graphMutex;
         mutable SMMemoryPoolItemId m_triIndicesPoolItemId;        
         mutable SMMemoryPoolItemId m_texturePoolItemId;                        
         mutable SMMemoryPoolItemId m_triUvIndicesPoolItemId;                
         mutable SMMemoryPoolItemId m_uvCoordsPoolItemId;
-        mutable SMMemoryPoolItemId m_displayDataPoolItemId;        
+        mutable SMMemoryPoolItemId m_displayDataPoolItemId;  
+		mutable SMMemoryPoolItemId m_graphPoolItemId;      
         ISMPointIndexMesher<POINT, EXTENT>* m_mesher2_5d;
         ISMPointIndexMesher<POINT, EXTENT>* m_mesher3d;
-        mutable bool m_isGraphLoaded;                
+       // mutable bool m_isGraphLoaded;                
         HFCPtr<ClipRegistry> m_clipRegistry;
         mutable std::mutex m_headerMutex;
     };
@@ -774,14 +801,12 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
             {
             return dynamic_cast<SMMeshIndexNode<POINT, EXTENT>*>(GetParentNodePtr().GetPtr())->LoadGraph();
             };
-        virtual MTGGraph* GetGraphPtr() override
+        virtual RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> GetGraphPtr(bool loadGraph = true) override
             {
-            return dynamic_cast<SMMeshIndexNode<POINT, EXTENT>*>(GetParentNodePtr().GetPtr())->GetGraphPtr();
+            return dynamic_cast<SMMeshIndexNode<POINT, EXTENT>*>(GetParentNodePtr().GetPtr())->GetGraphPtr(loadGraph);
             };
         virtual bool IsVirtualNode() const override
             {
-            volatile bool a = 1;
-            a = a;
             return true;
             }
         

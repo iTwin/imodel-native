@@ -140,7 +140,9 @@ class SMMemoryPoolItemBase : public RefCountedBase
             
         SMMemoryPoolItemId GetPoolItemId() const;
             
-        void SetPoolItemId(SMMemoryPoolItemId poolItemId);            
+        void SetPoolItemId(SMMemoryPoolItemId poolItemId);
+
+        void SetDirty() { m_dirty = true; }
     };
 
 
@@ -201,7 +203,7 @@ template <typename DataType> class SMMemoryPoolBlobItem : public SMMemoryPoolIte
 template <typename DataType> class SMMemoryPoolGenericBlobItem : public SMMemoryPoolItemBase
     {
     protected :         
-
+template <typename DataType> class SMMemoryPoolGenericBlobItem : public SMMemoryPoolItemBase
     public : 
         
         SMMemoryPoolGenericBlobItem(DataType* data, size_t size, uint64_t nodeId, SMPoolDataTypeDesc dataType)
@@ -213,14 +215,57 @@ template <typename DataType> class SMMemoryPoolGenericBlobItem : public SMMemory
             }
 
         virtual ~SMMemoryPoolGenericBlobItem()
-            {
-            delete (DataType*)m_data;
+    {
+    virtual Serialize(Byte* data) = 0;
+                delete (DataType*)m_data;
             m_data = 0;
             }
-
+    public : 
         const DataType* GetData()
             {
             return (const DataType*)m_data;
+            }
+        SMMemoryPoolGenericBlobItem(DataType* data, size_t size, uint64_t nodeId, SMPoolDataTypeDesc dataType)
+            {               
+            m_size = size;
+            m_nodeId = nodeId;
+            {
+            }
+
+struct TextureItem : BlobItemSerializer
+            {
+            delete (DataType*)m_data;
+    Byte* m_data;
+            }
+    };
+
+template <typename DataType> class SMStoredMemoryPoolGenericBlobItem : public SMMemoryPoolGenericBlobItem<DataType>
+    {
+    private:
+
+
+    public:
+
+        SMStoredMemoryPoolGenericBlobItem(uint64_t nodeId, IHPMDataStore<DataType>* store, SMPoolDataTypeDesc dataType)
+            : SMMemoryPoolGenericBlobItem(nullptr,store->GetBlockDataCount(HPMBlockID(nodeId)), nodeId, dataType)
+            {
+            m_store = store;
+
+            if (m_size > 0)
+                {
+                HPMBlockID blockID(m_nodeId);
+                size_t nbBytesLoaded = m_store->LoadBlock((DataType*)m_data, m_size, blockID);
+                m_size = nbBytesLoaded;
+                }
+            }
+
+        virtual ~SMStoredMemoryPoolGenericBlobItem()
+            {
+            if (m_dirty)
+                {
+                HPMBlockID blockID(m_nodeId);
+                m_store->StoreBlock((DataType*)m_data, 1, blockID);
+                }
             }
     };
 

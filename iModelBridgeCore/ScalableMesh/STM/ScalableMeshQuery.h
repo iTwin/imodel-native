@@ -1343,6 +1343,8 @@ template<class POINT> class ScalableMeshNode : public virtual IScalableMeshNode
 
         virtual bool _HasClip(uint64_t clip) const override;
 
+        virtual bool _IsClippingUpToDate() const override;
+
         virtual void _GetSkirtMeshes(bvector<PolyfaceHeaderPtr>& meshes) const override;
 
         virtual bool _RunQuery(ISMPointIndexQuery<DPoint3d, DRange3d>& query, bvector<IScalableMeshNodePtr>& nodes) const override;

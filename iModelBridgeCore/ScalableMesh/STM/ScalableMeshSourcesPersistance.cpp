@@ -18,7 +18,7 @@
 
 #include <ScalableMesh/IScalableMeshSourceImportConfig.h>
 #include <ScalableMesh\IScalableMeshSourceImporter.h>
-#include <ScalableMesh/IScalableMeshStream.h>
+
 
 
 #include "ScalableMeshSourcePersistance.h"

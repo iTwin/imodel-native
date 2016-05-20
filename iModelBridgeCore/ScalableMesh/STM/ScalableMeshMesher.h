@@ -96,6 +96,6 @@ template<class POINT, class EXTENT> class ScalableMesh2DDelaunayMesher : public 
         };
 
         void MergePolygonSets(bvector<bvector<DPoint3d>>& polygons);
-        void MergePolygonSets(bvector<bvector<DPoint3d>>& polygons, bvector<DTMFeatureType>& types);
+        void MergePolygonSets(bvector<bvector<DPoint3d>>& polygons, std::function<bool(const size_t i, const bvector<DPoint3d>& element)> choosePolygonInSet, std::function<void(const bvector<DPoint3d>& element)> afterPolygonAdded);
 
 //#include "ScalableMeshMesher.hpp"
