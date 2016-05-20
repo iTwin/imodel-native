@@ -2,7 +2,7 @@
 |
 |     $Source: PointCloudQueryBuffer.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "BePointCloudInternal.h"
@@ -12,11 +12,11 @@ USING_NAMESPACE_BENTLEY_BEPOINTCLOUD
 #define VIEW_POOL_MAX_BUFFER_COUNT (20)
 #define PICK_POOL_MAX_BUFFER_COUNT (10)
 
-PointCloudRgbChannelPool        PointCloudRgbChannel::m_pool(VIEW_POOL_MAX_BUFFER_COUNT);
-PointCloudXyzChannelPool        PointCloudXyzChannel::m_pool(VIEW_POOL_MAX_BUFFER_COUNT);
-PointCloudIntensityChannelPool  PointCloudIntensityChannel::m_pool(VIEW_POOL_MAX_BUFFER_COUNT);
-PointCloudNormalChannelPool     PointCloudNormalChannel::m_pool(VIEW_POOL_MAX_BUFFER_COUNT);
-PointCloudByteChannelPool       PointCloudByteChannel::m_pool(VIEW_POOL_MAX_BUFFER_COUNT);
+template <> PointCloudRgbChannelPool        PointCloudRgbChannel::m_pool(VIEW_POOL_MAX_BUFFER_COUNT);
+template <> PointCloudXyzChannelPool        PointCloudXyzChannel::m_pool(VIEW_POOL_MAX_BUFFER_COUNT);
+template <> PointCloudIntensityChannelPool  PointCloudIntensityChannel::m_pool(VIEW_POOL_MAX_BUFFER_COUNT);
+template <> PointCloudNormalChannelPool     PointCloudNormalChannel::m_pool(VIEW_POOL_MAX_BUFFER_COUNT);
+template <> PointCloudByteChannelPool       PointCloudByteChannel::m_pool(VIEW_POOL_MAX_BUFFER_COUNT);
 
 /*---------------------------------------------------------------------------------**//**
 * IPointCloudQueryBuffers
