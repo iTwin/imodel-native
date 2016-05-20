@@ -446,10 +446,6 @@ protected:
     BeAtomic<bool> m_hasChanges;
     BeMutex m_saveChangesMux;
     BeSQLite::Db m_database;
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    bset<Utf8String> m_activeRequests;
-    BeMutex m_activeRequestsMux;
-#endif
     uint32_t m_idleTime;
     RefCountedPtr<BeSQLite::BusyRetry> m_retry;
 

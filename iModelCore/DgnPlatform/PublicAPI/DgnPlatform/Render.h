@@ -254,7 +254,6 @@ struct Image
 protected:
     uint32_t   m_width = 0;
     uint32_t   m_height = 0;
-
     Format     m_format = Format::Rgba;
     ByteStream m_image;
 
