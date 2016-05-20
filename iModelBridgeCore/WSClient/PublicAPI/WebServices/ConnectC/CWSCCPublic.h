@@ -80,11 +80,11 @@ WCharCP proxyPassword
 * \\param[in] ProjectGuid
 * \\return Success or error code. See \ref ConnectWebServicesClientCStatusCodes
 ****************************************************************************************/
-//CWSCC_EXPORT CallStatus ConnectWebServicesClientC_CreateProjectFavorite
-//(
-//CWSCCHANDLE apiHandle,
-//WCharCP ProjectGuid
-//);
+CWSCC_EXPORT CallStatus ConnectWebServicesClientC_CreateProjectFavorite
+(
+CWSCCHANDLE apiHandle,
+WCharCP ProjectGuid
+);
 
 /************************************************************************************//**
 * \brief Generic REST utility
