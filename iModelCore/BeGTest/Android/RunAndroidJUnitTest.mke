@@ -64,7 +64,7 @@ teeCmd = python $(SrcRoot)bsicommon/build/Tee.py
 
 always:
     $(ANDROIDJUNITPROJ)Scripts/installApk$(scriptExt) 
-    -adb shell am instrument -w com.bentley.unittest/com.bentley.unittest.BeInstrumentationTestRunner | $(teeCmd) $(logFile)
+    -adb shell am instrument -w com.bentley.unittest\/com.bentley.unittest.BeInstrumentationTestRunner | $(teeCmd) $(logFile)
     %if !defined (BEGTEST_IGNORE_FAILURES)
         python $(baseDIr)CheckResultsForFailures.py $(logFile)
     %endif

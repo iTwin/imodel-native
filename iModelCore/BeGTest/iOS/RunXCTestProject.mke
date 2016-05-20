@@ -30,7 +30,7 @@ XCODEPROJ=$(OutputRootDir)Product/$(XCTEST_PRODUCT)/BeTestiOS.xcodeproj
     XCTEST_OUTPUT_DIR=$(OutputRootDir)build/RunXCTest/$(XCTEST_PRODUCT)/
 %endif
 
-logFile = ${XCTEST_OUTPUT_DIR}/RunXCTestProject.log
+logFile = ${XCTEST_OUTPUT_DIR}/XCTest.log
 
 %if defined (BMAKE_DELETE_ALL_TARGETS)
 always:

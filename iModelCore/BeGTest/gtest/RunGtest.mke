@@ -17,11 +17,9 @@
 
 runDir=$[@realpath ${GTEST_OUTPUT_DIR}]/run/
 LogDir=$(runDir)logs/
-LogFile=$(LogDir)BeGTeststdout.log
+LogFile=$(LogDir)gtest.log
 
 # NB: If you change the name of the output log file, you must also change it in RunBeGTest.logging.config.xml
-
-%message .
 
 %if !defined (BEGTEST_LOGGING_CONFIG)
     BEGTEST_LOGGING_CONFIG=$[@realpath $[@dir $(GTEST_EXE)]logging.config.xml]
@@ -70,9 +68,18 @@ always:
 
 teeCmd = python $(SrcRoot)bsicommon/build/Tee.py
 
+%if !defined (BEGTEST_VERBOSE)
+    teeCmd + -q
+%endif
+
 always:
+    !~@mkdir ${GTEST_OUTPUT_DIR}
     !~@mkdir ${LogDir}
+    !~@mkdir ${runDir}
+    !~@mkdir ${runDir}/Output
+    !~@mkdir ${runDir}/Temp
     -$(exeName) | $(teeCmd) $(logFile)
+    |See $(LogFile)
     %if !defined (BEGTEST_IGNORE_FAILURES)
        $(baseDir)CheckResultsForFailures.py $(LogFile) $(exeName)
     %endif
