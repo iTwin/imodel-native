@@ -15,7 +15,6 @@
     %error Define GTEST_OUTPUT_DIR to the directory where logs, etc. should go
 %endif
 
-BentleyTestDir=$(SrcRoot)util/gtest/BentleyTest/
 runDir=$[@realpath ${GTEST_OUTPUT_DIR}]/run/
 LogDir=$(runDir)logs/
 LogFile=$(LogDir)BeGTeststdout.log
@@ -77,16 +76,8 @@ always:
 teeCmd = python $(SrcRoot)bsicommon/build/Tee.py
 
 always:
-    !~@mkdir ${GTEST_OUTPUT_DIR}
-    !~@mkdir ${runDir}
-    !~@mkdir ${runDir}/Output
-    !~@mkdir ${runDir}/Temp
     !~@mkdir ${LogDir}
-    -$(exename) | $(teeCmd) $(logFile)
-    %if !defined (BEGTEST_DONTVALIDATELOGFILE)
-    %if !defined (NO_BREAK)
-       $(BentleyTestDir)PrintLogAndReturnResult.py $(LogFile) $(exename)
-    %else
-       -$(BentleyTestDir)PrintLogAndReturnResult.py $(LogFile) $(exename)
-    %endif # !defined (NO_BREAK)
-    %endif # !defined (BEGTEST_DONTVALIDATELOGFILE)
+    -$(exeName) | $(teeCmd) $(logFile)
+    %if !defined (BEGTEST_IGNORE_FAILURES)
+       $(baseDir)CheckResultsForFailures.py $(LogFile) $(exeName)
+    %endif

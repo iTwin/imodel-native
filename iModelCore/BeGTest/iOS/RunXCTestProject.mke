@@ -50,13 +50,9 @@ always:
         |Retrying...
         -xcodebuild test -project $(XCODEPROJ) -scheme BeTestiOS -destination 'platform=iOS,name=$(BENTLEY_RUN_XCTEST_DEVICE_NAME)' | tee $(logfile)
     %endif
-    %if !defined (BEGTEST_DONTVALIDATELOGFILE)
-    %if !defined (NO_BREAK)
-        python $(baseDIr)PrintLogAndReturnResult.py $(logFile)
-    %else
-        -python $(baseDIr)PrintLogAndReturnResult.py $(logFile)
-    %endif # !defined (NO_BREAK)
-    %endif # !defined (BEGTEST_DONTVALIDATELOGFILE)
+    %if !defined (BEGTEST_IGNORE_FAILURES)
+        python $(baseDIr)CheckResultsForFailures.py $(logFile)
+    %endif
 
 
 
