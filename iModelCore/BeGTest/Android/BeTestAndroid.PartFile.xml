@@ -49,6 +49,7 @@
 
         <ProductDirectory Name="GeomNativeAssemblies"               LibType="static" Deliver="false"/>
         <ProductDirectory Name="ECObjectsNativeAssemblies"          LibType="static" Deliver="false"/>
+        <ProductDirectory Name="UnitsNativeAssemblies"              LibType="static" Deliver="false"/>
         <ProductDirectory Name="ECSchemas"                          LibType="static" Deliver="false"/>
         <ProductDirectory Name="BeOpenSSLAssemblies"                LibType="static" Deliver="false"/>
         <ProductDirectory Name="BeCurlAssemblies"                   LibType="static" Deliver="false"/>
