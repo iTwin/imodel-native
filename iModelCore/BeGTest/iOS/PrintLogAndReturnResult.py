@@ -15,7 +15,13 @@ if __name__ == '__main__':
     errpat = re.compile (r"error\:\s*\-\[(\w+)\s*(\w+).*failed")
     with open(sys.argv[1], 'r') as logfile:
         for line in logfile.readlines():
+
             lline = line.lower()
+
+            # We get ** test failed ** if the build or the prep or the tests failed
+            if -1 != lline.find('** test failed **'):
+                failureCount = failureCount + 1
+
             starterr = lline.find('error:')
             if -1 != starterr and -1 != lline.find('failed'):
                 err = errpat.match(procStdOutLine[starterr:])
