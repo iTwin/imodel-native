@@ -168,7 +168,6 @@
     <ClCompile Include="DgnDbServerClient\RepositoryInfo.cpp" />
     <ClCompile Include="Ims\SolrQuery.cpp" />
     <ClCompile Include="Ims\SolrClient.cpp" />
-    <ClCompile Include="Licensing\FeatureTrackingData.cpp" />
     <ClCompile Include="Licensing\UsageTrackingData.cpp" />
     <ClCompile Include="Client\ObjectId.cpp" />
     <ClCompile Include="Connect\Passport.cpp" />
@@ -180,7 +179,6 @@
     <ClCompile Include="Client\Response\WSObjectsResponse.cpp" />
     <ClCompile Include="Client\ServerInfoProvider.cpp" />
     <ClCompile Include="Configuration\UrlProvider.cpp" />
-    <ClCompile Include="Licensing\FeatureTracking.cpp" />
     <ClCompile Include="Licensing\UsageTracking.cpp" />
     <ClCompile Include="Client\Utils.cpp" />
     <ClCompile Include="Client\WebApi\WebApi.cpp" />
@@ -349,7 +347,6 @@
     <ClInclude Include="PublicAPI\WebServices\Connect\IImsClient.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\ITokenStore.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\SamlToken.h" />
-    <ClInclude Include="PublicAPI\WebServices\Licensing\FeatureTrackingData.h" />
     <ClInclude Include="PublicAPI\WebServices\Licensing\UsageTrackingData.h" />
     <ClInclude Include="PublicAPI\WebServices\Client\ObjectId.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\Passport.h" />
@@ -361,7 +358,6 @@
     <ClInclude Include="PublicAPI\WebServices\Client\Response\WSObjectsResponse.h" />
     <ClInclude Include="PublicAPI\WebServices\Configuration\UrlProvider.h" />
     <ClInclude Include="PublicAPI\WebServices\Licensing\UsageTracking.h" />
-    <ClInclude Include="PublicAPI\WebServices\Licensing\FeatureTracking.h" />
     <ClInclude Include="PublicAPI\WebServices\Client\WebServicesClient.h" />
     <ClInclude Include="PublicAPI\WebServices\Client\WSClient.h" />
     <ClInclude Include="PublicAPI\WebServices\Client\WSError.h" />
