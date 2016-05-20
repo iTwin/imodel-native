@@ -169,14 +169,13 @@ WCharCP ProjectGuid
         api->SetStatusDescription ("You must specify a ProjectGuid to create a ProjectFavorite instance.");
         return INVALID_PARAMETER;
         }
-    instance["instanceId"] = Utf8String (ProjectGuid);
-
+    instance["instanceId"] = Utf8String(ProjectGuid);
     instance["schemaName"] = "GlobalSchema";
     instance["className"] = "ProjectFavorite";
 
     Json::Value objectCreationJson;
     objectCreationJson["instance"] = instance;
-    ObjectId objectId("GlobalSchema", "ProjectFavorite", Utf8String());
+    ObjectId objectId("GlobalSchema", "ProjectFavorite", "");
 
     if (api->m_repositoryClients.find(UrlProvider::Urls::ConnectWsgGlobal.Get() + "BentleyCONNECT.Global--CONNECT.GLOBAL") == api->m_repositoryClients.end())
         {
