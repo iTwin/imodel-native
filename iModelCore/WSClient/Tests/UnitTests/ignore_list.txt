@@ -38,4 +38,9 @@ DataSourceCacheUpgradeTests.Open_V1*
 # ECSchema update in ECDb does not support deletions yet
 DataSourceCacheTests.UpdateSchemas_SchemasWithDeletedPropertyPassedToDataSourceCacheWithCachedStatements_SuccessAndSchemasAccessable
 
+#----------------------------------------------------------------------------------------
+# New issues
+#----------------------------------------------------------------------------------------
+
+# Randomly crashes on x64. High priority
 CachingDataSourceTests.SyncCachedData_InitialQueriesSuppliedAndServerErrorReturnedForFirstOne_ContinuesWithOtherQuerysAndReturnsFailedObject
