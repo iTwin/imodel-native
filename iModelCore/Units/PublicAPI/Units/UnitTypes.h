@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 
 #pragma once
-
+/*__PUBLISH_SECTION_START__*/
 #include <Units/Units.h>
 
 UNITS_TYPEDEFS(UnitsSymbol)
@@ -158,3 +158,4 @@ public:
     UNITS_EXPORT bool IsCompatible(UnitCR unit) const;
 };
 END_BENTLEY_UNITS_NAMESPACE
+/*__PUBLISH_SECTION_END__*/

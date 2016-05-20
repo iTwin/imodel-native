@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 
 #pragma once
-
+/*__PUBLISH_SECTION_START__*/
 #include <Units/Units.h>
 
 UNITS_TYPEDEFS(Quantity);
@@ -64,3 +64,4 @@ public:
 
 END_BENTLEY_UNITS_NAMESPACE
 
+/*__PUBLISH_SECTION_END__*/

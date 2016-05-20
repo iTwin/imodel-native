@@ -262,6 +262,14 @@ UnitCP UnitRegistry::AddUnit (Utf8CP phenomName, Utf8CP systemName, Utf8CP unitN
     }
 
 //---------------------------------------------------------------------------------------//
+// @bsimethod                                              Colin.Kerr           05/16
+//+---------------+---------------+---------------+---------------+---------------+------//
+UnitCP UnitRegistry::AddDummyUnit(Utf8CP unitName)
+    {
+    return AddUnit("ONE", "USCUSTOM", unitName, "ONE");
+    }
+
+//---------------------------------------------------------------------------------------//
 // @bsimethod                                              Colin.Kerr           03/16
 //+---------------+---------------+---------------+---------------+---------------+------//
 UnitCP UnitRegistry::AddInvertingUnit(Utf8CP parentUnitName, Utf8CP unitName)

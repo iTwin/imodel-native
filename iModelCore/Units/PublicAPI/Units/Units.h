@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 
 #pragma once
-
+/*__PUBLISH_SECTION_START__*/
 #undef UNITS_EXPORT
 #ifdef __UNITS_BUILD__
     #define UNITS_EXPORT EXPORT_ATTRIBUTE
@@ -38,3 +38,5 @@ using namespace std;
 #include <Units/UnitTypes.h>
 #include <Units/Quantity.h>
 #include <Units/UnitRegistry.h>
+
+/*__PUBLISH_SECTION_END__*/

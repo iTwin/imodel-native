@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 
 #pragma once
-
+/*__PUBLISH_SECTION_START__*/
 #include <Units/Units.h>
 
 BEGIN_BENTLEY_UNITS_NAMESPACE
@@ -69,6 +69,7 @@ public:
     UNITS_EXPORT void AllPhenomena(bvector<PhenomenonCP>& allPhenomena) const;
     
     // Register methods.
+    UNITS_EXPORT UnitCP AddDummyUnit(Utf8CP unitName);
     UnitCP AddUnit(Utf8CP phenomName, Utf8CP systemName, Utf8CP unitName, Utf8CP definition, double factor = 1, double offset = 0);
     UnitCP AddInvertingUnit(Utf8CP parentUnitName, Utf8CP unitName);
     UnitCP AddConstant(Utf8CP phenomName, Utf8CP constantName, Utf8CP definition, double factor);
@@ -92,3 +93,4 @@ public:
     };
 
 END_BENTLEY_UNITS_NAMESPACE
+/*__PUBLISH_SECTION_END__*/
