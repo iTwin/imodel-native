@@ -4089,6 +4089,7 @@ void AssertECInstanceIdAutoGeneration(ECDbCR ecdb, bool expectedToSucceed, Utf8C
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(newKey)) << "Disable flag does not affect case when ECInstanceId is specified";
     ASSERT_EQ(id.GetValue(), newKey.GetECInstanceId().GetValue());
     }
+
     {
     Utf8String ecsql;
     ecsql.Sprintf("INSERT INTO %s (ECInstanceId, %s) VALUES(?, %s)", fullyQualifiedTestClass, prop, val);
@@ -4096,7 +4097,7 @@ void AssertECInstanceIdAutoGeneration(ECDbCR ecdb, bool expectedToSucceed, Utf8C
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str())) << ecsql.c_str();
 
-    ECInstanceId id(id.GetValue() + 1);
+    id = ECInstanceId(id.GetValue() + 1);
     stmt.BindId(1, id);
     ECInstanceKey newKey;
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(newKey)) << "Disable flag does not affect case when ECInstanceId is specified";

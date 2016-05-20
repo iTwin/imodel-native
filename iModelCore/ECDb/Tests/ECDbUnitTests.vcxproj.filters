@@ -37,9 +37,6 @@
     <ClCompile Include="Performance\QueryTests.cpp">
       <Filter>Performance</Filter>
     </ClCompile>
-    <ClCompile Include="Performance\DevSummitPerformanceTests.cpp">
-      <Filter>Performance</Filter>
-    </ClCompile>
     <ClCompile Include="Published\ECInstanceInserterTests.cpp">
       <Filter>Published\ECSql</Filter>
     </ClCompile>
@@ -167,9 +164,6 @@
       <Filter>Performance</Filter>
     </ClCompile>
     <ClCompile Include="Performance\PerformanceSharedTableTests.cpp">
-      <Filter>Performance</Filter>
-    </ClCompile>
-    <ClCompile Include="Performance\PerformanceECDbFileInfoTests.cpp">
       <Filter>Performance</Filter>
     </ClCompile>
     <ClCompile Include="Published\ECSqlStatementCache_Test.cpp">
