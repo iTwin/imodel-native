@@ -203,7 +203,7 @@ template <typename DataType> class SMMemoryPoolBlobItem : public SMMemoryPoolIte
 template <typename DataType> class SMMemoryPoolGenericBlobItem : public SMMemoryPoolItemBase
     {
     protected :         
-template <typename DataType> class SMMemoryPoolGenericBlobItem : public SMMemoryPoolItemBase
+
     public : 
         
         SMMemoryPoolGenericBlobItem(DataType* data, size_t size, uint64_t nodeId, SMPoolDataTypeDesc dataType)
@@ -215,34 +215,34 @@ template <typename DataType> class SMMemoryPoolGenericBlobItem : public SMMemory
             }
 
         virtual ~SMMemoryPoolGenericBlobItem()
-    {
-    virtual Serialize(Byte* data) = 0;
+            {
+            if (m_data != nullptr)
                 delete (DataType*)m_data;
             m_data = 0;
             }
-    public : 
+
         const DataType* GetData()
             {
             return (const DataType*)m_data;
             }
-        SMMemoryPoolGenericBlobItem(DataType* data, size_t size, uint64_t nodeId, SMPoolDataTypeDesc dataType)
-            {               
-            m_size = size;
-            m_nodeId = nodeId;
+
+        DataType* EditData()
             {
+            return (DataType*)m_data;
             }
 
-struct TextureItem : BlobItemSerializer
+        void SetData(DataType* data)
             {
-            delete (DataType*)m_data;
-    Byte* m_data;
+            m_data = (Byte*)data;
             }
     };
+
 
 template <typename DataType> class SMStoredMemoryPoolGenericBlobItem : public SMMemoryPoolGenericBlobItem<DataType>
     {
     private:
 
+        IHPMDataStore<DataType>* m_store;
 
     public:
 
@@ -253,6 +253,7 @@ template <typename DataType> class SMStoredMemoryPoolGenericBlobItem : public SM
 
             if (m_size > 0)
                 {
+                m_data = (Byte*)new DataType();
                 HPMBlockID blockID(m_nodeId);
                 size_t nbBytesLoaded = m_store->LoadBlock((DataType*)m_data, m_size, blockID);
                 m_size = nbBytesLoaded;
@@ -268,6 +269,7 @@ template <typename DataType> class SMStoredMemoryPoolGenericBlobItem : public SM
                 }
             }
     };
+
 
 template <typename DataType> class SMStoredMemoryPoolBlobItem : public SMMemoryPoolBlobItem<DataType>
     {

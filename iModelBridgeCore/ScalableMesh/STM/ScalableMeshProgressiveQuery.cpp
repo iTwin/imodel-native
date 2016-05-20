@@ -468,8 +468,8 @@ private:
                 ScalableMeshCachedDisplayNode<DPoint3d>* meshNode(ScalableMeshCachedDisplayNode<DPoint3d>::Create(visibleNode));                
 
                 meshNode->ApplyAllExistingClips();
-
-                if (meshNode->IsLoaded() == false || !meshNode->HasCorrectClipping(clipVisibilities))                    
+                
+                if (meshNode->IsLoaded() == false || !meshNode->IsClippingUpToDate() || !meshNode->HasCorrectClipping(clipVisibilities))                    
                     {                                    
                     meshNode->RemoveDisplayDataFromCache();                    
                     meshNode->LoadMesh(false, clipVisibilities, s_displayCacheManagerPtr, loadTexture);                               
@@ -638,7 +638,7 @@ public:
         {
         if (!s_streamingSM)
             {
-            m_numWorkingThreads = std::thread::hardware_concurrency() - 1;
+            m_numWorkingThreads = std::thread::hardware_concurrency() - 2;
             //m_numWorkingThreads = 1;
             }
         else
@@ -1021,7 +1021,7 @@ void FindOverview(bvector<IScalableMeshCachedDisplayNodePtr>& lowerResOverviewNo
          
     ScalableMeshCachedDisplayNode<DPoint3d>::Ptr meshNodePtr(ScalableMeshCachedDisplayNode<DPoint3d>::Create(parentNodePtr));    
             
-    if (!meshNodePtr->IsLoaded() || (!meshNodePtr->HasCorrectClipping(clipVisibilities) && !s_keepSomeInvalidate))
+    if (!meshNodePtr->IsLoaded() || ((!meshNodePtr->IsClippingUpToDate() || !meshNodePtr->HasCorrectClipping(clipVisibilities)) && !s_keepSomeInvalidate))
         {
         FindOverview(lowerResOverviewNodes, parentNodePtr, loadTexture, clipVisibilities);
         }
@@ -1069,7 +1069,7 @@ class NewQueryStartingNodeProcessor
 
         NewQueryStartingNodeProcessor()
             {
-            m_numWorkingThreads = std::thread::hardware_concurrency() - 1;
+            m_numWorkingThreads = std::thread::hardware_concurrency() - 2;
             //m_numWorkingThreads = 1;
 
             m_lowerResOverviewNodes.resize(m_numWorkingThreads);
@@ -1095,7 +1095,7 @@ class NewQueryStartingNodeProcessor
                 
                 ScalableMeshCachedDisplayNode<DPoint3d>::Ptr meshNodePtr(ScalableMeshCachedDisplayNode<DPoint3d>::Create(m_nodesToSearch->GetNodes()[nodeInd]));
                                 
-                if (!meshNodePtr->IsLoaded() || (!meshNodePtr->HasCorrectClipping(*m_activeClips) && !s_keepSomeInvalidate))
+                if (!meshNodePtr->IsLoaded() || ((!meshNodePtr->IsClippingUpToDate() || !meshNodePtr->HasCorrectClipping(*m_activeClips)) && !s_keepSomeInvalidate))
                     {                                
                     FindOverview(m_lowerResOverviewNodes[threadId], m_nodesToSearch->GetNodes()[nodeInd], m_newQuery->m_loadTexture, *m_activeClips);
                     }
@@ -1111,7 +1111,7 @@ class NewQueryStartingNodeProcessor
                 
                 ScalableMeshCachedDisplayNode<DPoint3d>::Ptr meshNodePtr(ScalableMeshCachedDisplayNode<DPoint3d>::Create(m_foundNodes->GetNodes()[nodeInd]));
                 
-                if (!meshNodePtr->IsLoaded() || (!meshNodePtr->HasCorrectClipping(*m_activeClips) && !s_keepSomeInvalidate))
+                if (!meshNodePtr->IsLoaded() || ((!meshNodePtr->IsClippingUpToDate() || !meshNodePtr->HasCorrectClipping(*m_activeClips)) && !s_keepSomeInvalidate))
                     {                
                     FindOverview(m_lowerResOverviewNodes[threadId], m_foundNodes->GetNodes()[nodeInd], m_newQuery->m_loadTexture, *m_activeClips/*, scalableMeshPtr*/);
                                         
@@ -1121,7 +1121,7 @@ class NewQueryStartingNodeProcessor
                     {
                     //NEEDS_WORK_SM : Should not be duplicated.
                     m_lowerResOverviewNodes[threadId].push_back(meshNodePtr);
-                    if (meshNodePtr->HasCorrectClipping(*m_activeClips))
+                    if (meshNodePtr->IsClippingUpToDate() && meshNodePtr->HasCorrectClipping(*m_activeClips))
                         {                        
                         m_requiredMeshNodes[threadId].push_back(meshNodePtr);
                         }
@@ -1212,7 +1212,7 @@ void ComputeOverviewSearchToLoadNodes(RequestedQuery&                           
             {                                                            
             ScalableMeshCachedDisplayNode<DPoint3d>::Ptr meshNode(ScalableMeshCachedDisplayNode<DPoint3d>::Create(nodesToSearch.GetNodes()[nodeInd]));
 
-            if (!meshNode->IsLoaded() || (!meshNode->HasCorrectClipping(activeClips) && !s_keepSomeInvalidate))
+            if (!meshNode->IsLoaded() || ((!meshNode->IsClippingUpToDate() || !meshNode->HasCorrectClipping(activeClips)) && !s_keepSomeInvalidate))
                 {                                
                 FindOverview(lowerResOverviewNodes, nodesToSearch.GetNodes()[nodeInd], newQuery.m_loadTexture, activeClips);
                 }
@@ -1229,7 +1229,7 @@ void ComputeOverviewSearchToLoadNodes(RequestedQuery&                           
             {                                                
             ScalableMeshCachedDisplayNode<DPoint3d>::Ptr meshNodePtr(ScalableMeshCachedDisplayNode<DPoint3d>::Create(node));
 
-            if (!meshNodePtr->IsLoaded() || (!meshNodePtr->HasCorrectClipping(activeClips) && !s_keepSomeInvalidate))
+            if (!meshNodePtr->IsLoaded() || ((!meshNodePtr->IsClippingUpToDate() || !meshNodePtr->HasCorrectClipping(activeClips)) && !s_keepSomeInvalidate))
                 {                
                 FindOverview(lowerResOverviewNodes, node, newQuery.m_loadTexture, activeClips);
                 toLoadNodes.push_back(node);
@@ -1239,7 +1239,7 @@ void ComputeOverviewSearchToLoadNodes(RequestedQuery&                           
                 //NEEDS_WORK_SM : Should not be duplicated.                
                 newQuery.m_overviewMeshNodes.push_back(meshNodePtr);
 
-                if (meshNodePtr->HasCorrectClipping(activeClips))
+                if (meshNodePtr->IsClippingUpToDate() && meshNodePtr->HasCorrectClipping(activeClips))
                     {                        
                     newQuery.m_requiredMeshNodes.push_back(meshNodePtr);
                     }
