@@ -180,7 +180,7 @@ bool UnitLocater::LocateUnitByName (UnitR unit, Utf8CP unitName) const
     IECInstancePtr unitAttr;
     if (NULL != unitClass && (unitAttr = unitClass->GetCustomAttribute (UNIT_ATTRIBUTES, UNIT_ATTRIBUTES)).IsValid())
         return GetUnitFromAttribute (unit, *unitAttr, unitName);
-    else if (m_createIfNonStandard)
+    else if (m_createIfNonStandard && !Utf8String::IsNullOrEmpty(unitName))
         {
         unit = Unit (unitName, unitName, UnitConverter (false), unitName);
         return true;
