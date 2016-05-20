@@ -1156,6 +1156,8 @@ struct ComponentDef : RefCountedBase
     //! @param instance The component instance element.
     //! @returns nullptr if \a instance is an instance of a component
     DGNPLATFORM_EXPORT static ECN::IECInstancePtr GetParameters(DgnElementCR instance);
+    
+    DGNPLATFORM_EXPORT static void DumpScriptOnlyParameters(ECN::IECInstanceCR props, Utf8CP title);
 
     //! Controls export/import of ComponentDefs
     struct ExportOptions
@@ -1261,7 +1263,7 @@ struct TsComponentParameter
 
     TsComponentParameter() : m_variesPer(ComponentDef::ParameterVariesPer::Instance), m_isForScriptOnly(true) {;}
     //! Construct a new Parameter
-    TsComponentParameter(ComponentDef::ParameterVariesPer s, ECN::ECValueCR v) : m_variesPer(s), m_value(v) {;}
+    TsComponentParameter(ComponentDef::ParameterVariesPer s, ECN::ECValueCR v) : m_variesPer(s), m_value(v), m_isForScriptOnly(true) {;}
     //! From JSON
     DGNPLATFORM_EXPORT explicit TsComponentParameter(Json::Value const&);
     //! To JSON
