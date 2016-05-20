@@ -131,11 +131,11 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::Passport(
     &s_urlRegistry
     );
 
-const UrlProvider::UrlDescriptor UrlProvider::Urls::FeatureTracking(
-    "Mobile.FeatureTracking",
-    "https://Licensexm.bentley.com/LicensingProxy/v2.3/Repositories/BentleyCONNECT--Main/FeatureTracking/AppState",
-    "https://Licensexm.bentley.com/LicensingProxy/v2.3/Repositories/BentleyCONNECT--Main/FeatureTracking/AppState",
-    "https://SELECTserver.bentley.com/LicensingProxy/v2.3/Repositories/BentleyCONNECT--Main/FeatureTracking/AppState",
+const UrlProvider::UrlDescriptor UrlProvider::Urls::UsageAndFeatureTrackingAPI(
+    "Mobile.UsageAndFeatureTrackingAPI",
+    "https://qa-selectserver.bentley.com/LicensingProxy",
+    "https://qa-selectserver.bentley.com/LicensingProxy",
+    "https://SELECTserver.bentley.com/LicensingProxy",
     &s_urlRegistry
     );
 
@@ -329,4 +329,12 @@ Utf8String UrlProvider::UrlDescriptor::Get() const
 AsyncTaskPtr<Utf8String> UrlProvider::UrlDescriptor::GetAsync() const
     {
     return UrlProvider::GetUrl(m_name, m_defaultUrls);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String UrlProvider::UrlDescriptor::GetDefault() const
+    {
+    return m_defaultUrls[s_env];
     }

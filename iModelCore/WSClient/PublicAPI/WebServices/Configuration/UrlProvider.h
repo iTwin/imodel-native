@@ -50,6 +50,9 @@ struct UrlProvider
 
                 //! Retrieve cached, server configured or default URL if no connection exists.
                 WSCLIENT_EXPORT AsyncTaskPtr<Utf8String> GetAsync() const;
+
+                //! Retrieve default URL.
+                WSCLIENT_EXPORT Utf8String GetDefault() const;
             };
 
         WSCLIENT_EXPORT static int64_t DefaultTimeout;
@@ -106,7 +109,7 @@ struct UrlProvider
             WSCLIENT_EXPORT static const UrlDescriptor ImsActiveStsDelegationService;
             WSCLIENT_EXPORT static const UrlDescriptor ImsFederatedAuth;
             WSCLIENT_EXPORT static const UrlDescriptor Passport;
-            WSCLIENT_EXPORT static const UrlDescriptor FeatureTracking;
+            WSCLIENT_EXPORT static const UrlDescriptor UsageAndFeatureTrackingAPI;
             WSCLIENT_EXPORT static const UrlDescriptor UsageTracking;
             WSCLIENT_EXPORT static const UrlDescriptor ConnectXmpp;
             };
