@@ -16,7 +16,7 @@ UnitManagerTest.GetStandardLabel                        # fails randomonly on 06
 UnitManagerTest.GetStandardName                         # fails randomonly on 06Dev; will have to find someone to investigate... maybe Josh
 UnitIterator.GetName                                    # fails randomonly on 06Dev; will have to find someone to investigate... maybe Josh
 
-ConfigurationManager_Test.*                             # UmarH -- Tests are ported from Vancouver for MacroConfiguration ,seems macros are not expanding on get variable method. 
+ConfigurationManager_Test.*                             # UmarH -- Tests are ported from Vancouver for MacroConfiguration ,seems macros are not expanding on get variable method.
 
 ComponentModelBasicTest.MakeVariationInstance           # UmarH Failing Only on 0601Dev Firebug ( not locally), need to investigate
 
@@ -34,11 +34,8 @@ DgnLineStyleTest.InsertAndQueryWithoutCacheReLoad       # Unable to query line s
 
 ECInstanceSelectTests.ImportSchema			# This test doesn't really do anything and it takes 40 seconds to run
 
-DgnLinkTest.Clone                                       # Defect 386016:- Does not copy member variables 
+DgnLinkTest.Clone                                       # Defect 386016:- Does not copy member variables
 DgnLinkTest.* # Need to figure the BIS hierarchy for DgnLinks - Shaun
 DgnECNavigatorTest.DgnLinksElementInfo # Need to figure the BIS hierarchy for DgnLinks - Shaun
 DgnECNavigatorTest.IfcElementInfo # Need to figure BIS schema for IFC - Shaun/Raman
 DgnECNavigatorTest.PlantElementInfo # Improperly creating a GroupInformationElement when the "NamedGroupOwnsMembers" CA is found - Shaun/Carole
-
-BeSQLiteRealityDataStorageTests.Select              # Notified Keith
-BeSQLiteRealityDataStorageTests.Persist             # Notified Keith

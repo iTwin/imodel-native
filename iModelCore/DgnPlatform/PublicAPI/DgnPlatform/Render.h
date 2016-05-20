@@ -254,7 +254,6 @@ struct Image
 protected:
     uint32_t   m_width = 0;
     uint32_t   m_height = 0;
-
     Format     m_format = Format::Rgba;
     ByteStream m_image;
 
@@ -1386,7 +1385,7 @@ public:
 struct GraphicArray
 {
     bvector<GraphicPtr> m_entries;
-    void Add(Graphic& graphic) {m_entries.push_back(&graphic);}
+    void Add(Graphic& graphic) {graphic.EnsureClosed(); m_entries.push_back(&graphic);}
 };
 
 //=======================================================================================
@@ -1396,15 +1395,18 @@ struct GraphicArray
 struct System
 {
     virtual MaterialPtr _GetMaterial(DgnMaterialId, DgnDbR) const = 0;
-    virtual TexturePtr _GetImageTexture(DgnTextureId, DgnDbR) const = 0;
     virtual GraphicBuilderPtr _CreateGraphic(Graphic::CreateParams const& params) const = 0;
     virtual GraphicPtr _CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency) const = 0;
     virtual GraphicPtr _CreateGroupNode(Graphic::CreateParams const& params, GraphicArray& entries, ClipPrimitiveCP clip) const = 0;
 
-    //N.B. _CreateTexture is called from multiple-threads implementer must ensure this is supported. If not non-shareable resource must be protected by locks.
+    //! Get or create a Texture from a DgnTexture element. Note that there is a cache of textures stored on a DgnDb, so this may return a pointer to a previously-created texture.
+    virtual TexturePtr _GetImageTexture(DgnTextureId, DgnDbR) const = 0;
+
+    //! Create a new Texture from an Image. Note: this is called from multiple-threads implementer must ensure this is supported.
     virtual TexturePtr _CreateImageTexture(ImageCR, bool enableAlpha) const = 0;
 
-    virtual TexturePtr _CreateGeometryTexture(Render::GraphicR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern) const = 0;
+    //! Create a Texture from a graphic.
+    virtual TexturePtr _CreateGeometryTexture(GraphicR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern) const = 0;
 };
 
 //=======================================================================================

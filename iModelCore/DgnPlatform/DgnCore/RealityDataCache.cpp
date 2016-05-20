@@ -84,16 +84,13 @@ USING_NAMESPACE_BENTLEY_REALITYDATA
         };
 #endif
 
-/*======================================================================================+
-|   RealityDataQueue
-+======================================================================================*/
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename T> void ThreadSafeQueue<T>::PushFront(T element)
     {
     BeMutexHolder lock(m_cv.GetMutex());
-    auto item = Item::Create(element, NULL, m_first.get());
+    auto item = Item::Create(element, nullptr, m_first.get());
     if (m_first.IsNull())
         {
         BeAssert(m_last.IsNull());
@@ -114,7 +111,7 @@ template<typename T> void ThreadSafeQueue<T>::PushFront(T element)
 template<typename T> void ThreadSafeQueue<T>::PushBack(T element)
     {
     BeMutexHolder lock(m_cv.GetMutex());
-    auto item = Item::Create(element, m_last.get(), NULL);
+    auto item = Item::Create(element, m_last.get(), nullptr);
     if (m_last.IsNull())
         {
         BeAssert(m_first.IsNull());
@@ -143,11 +140,11 @@ template<typename T> bool ThreadSafeQueue<T>::PopFront(T* element)
 
     if (m_first.Equals(m_last))
         {
-        m_first = m_last = NULL;
+        m_first = m_last = nullptr;
         }
     else
         {
-        m_first->next->prev = NULL;
+        m_first->next->prev = nullptr;
         m_first = m_first->next;
         }
     m_count--;
@@ -169,11 +166,11 @@ template<typename T> bool ThreadSafeQueue<T>::PopBack(T* element)
 
     if (m_first.Equals(m_last))
         {
-        m_first = m_last = NULL;
+        m_first = m_last = nullptr;
         }
     else
         {
-        m_last->prev->next = NULL;
+        m_last->prev->next = nullptr;
         m_last = m_last->prev;
         }
     m_count--;
@@ -251,11 +248,11 @@ template<typename T> void ThreadSafeQueue<T>::Clear()
         {
         auto temp = item;
         item = item->next;
-        temp->next = NULL;
-        temp->prev = NULL;
+        temp->next = nullptr;
+        temp->prev = nullptr;
         }
-    m_first = NULL;
-    m_last = NULL;
+    m_first = nullptr;
+    m_last = nullptr;
     m_count = 0;
     m_cv.notify_all();
     }
@@ -294,9 +291,9 @@ BEGIN_BENTLEY_REALITYDATA_NAMESPACE
 template struct ThreadSafeQueue<int>;
 END_BENTLEY_REALITYDATA_NAMESPACE
 
-/*======================================================================================+
-|   BeSQLiteRealityDataStorage
-+======================================================================================*/
+//=======================================================================================
+// @bsiclass                                        Grigas.Petraitis            10/2014
+//=======================================================================================
 struct StorageBusyRetry : BeSQLite::BusyRetry
     {
     virtual int _OnBusy(int count) const
@@ -320,7 +317,7 @@ struct StorageBusyRetry : BeSQLite::BusyRetry
 Storage::Storage(int numThreads, SchedulingMethod schedulingMethod, uint32_t idleTime) : m_hasChanges(false), m_idleTime(idleTime)
     {
     m_retry = new StorageBusyRetry();
-    m_threadPool = new BeSQLiteStorageThreadPool(*this, numThreads, schedulingMethod);
+    m_threadPool = new StorageThreadPool(*this, numThreads, schedulingMethod);
     }
 
 //=======================================================================================
@@ -328,8 +325,8 @@ Storage::Storage(int numThreads, SchedulingMethod schedulingMethod, uint32_t idl
 //=======================================================================================
 struct ThreadPoolQueueNotEmptyPredicate : IConditionVariablePredicate
     {
-     Storage::BeSQLiteStorageThreadPool& m_pool;
-    ThreadPoolQueueNotEmptyPredicate( Storage::BeSQLiteStorageThreadPool& pool) : m_pool(pool) {}
+    Storage::StorageThreadPool& m_pool;
+    ThreadPoolQueueNotEmptyPredicate( Storage::StorageThreadPool& pool) : m_pool(pool) {}
     virtual bool _TestCondition(BeConditionVariable& cv) override 
         {
         BeMutexHolder lock(cv.GetMutex());
@@ -383,7 +380,7 @@ void Storage::PersistDataWork::_DoWork()
 void Storage::SelectDataWork::_DoWork()
     {
     BeMutexHolder lock(m_resultCV.GetMutex());
-    m_result = m_storage->wt_Select(*m_data, m_id.c_str(), m_options, m_responseReceiver);
+    m_result = m_storage->wt_Select(*m_data, m_options, m_responseReceiver);
     m_hasResult = true;
     m_resultCV.notify_all();
     }
@@ -467,43 +464,19 @@ void Storage::wt_SaveChanges()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-StorageResult Storage::wt_Select(Payload& data, Utf8CP id, Options options, Cache& responseReceiver)
+StorageResult Storage::wt_Select(Payload& data, Options options, Cache& responseReceiver)
     {
-    StorageResult result;
-    if (SUCCESS != data._InitFrom(m_database, id))
-        {
-        responseReceiver._OnResponseReceived(*new StorageResponse(StorageResult::NotFound, id, data), options, !options.m_forceSynchronous);
-        result = StorageResult::NotFound;
-        }
-    else
-        {
-        responseReceiver._OnResponseReceived(*new StorageResponse(StorageResult::Success, id, data), options, !options.m_forceSynchronous);
-        result = StorageResult::Success;
-        }
-
-    if (true)
-        {
-        BeMutexHolder lock(m_activeRequestsMux);
-        BeAssert(m_activeRequests.end() != m_activeRequests.find(id));
-        m_activeRequests.erase(m_activeRequests.find(id));
-        }
+    StorageResult result = (SUCCESS == data._LoadFromStorage(m_database)) ? StorageResult::Success : StorageResult::NotFound;
+    responseReceiver._OnResponseReceived(*new StorageResponse(result, data), options, !options.m_forceSynchronous);
     return result;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-StorageResult Storage::_Select(Payload& data, Utf8CP id, Options options, Cache& responseReceiver)
+StorageResult Storage::_Select(Payload& data, Options options, Cache& responseReceiver)
     {
-    if (true)
-        {
-        BeMutexHolder lock(m_activeRequestsMux);
-        if (m_activeRequests.end() != m_activeRequests.find(id))
-            return StorageResult::Pending;
-        m_activeRequests.insert(id);
-        }
-
-    auto work = new SelectDataWork(*this, id, data, options, responseReceiver);
+    auto work = new SelectDataWork(*this, data, options, responseReceiver);
     m_threadPool->QueueWork(*work);
 
     if (options.m_forceSynchronous)
@@ -517,7 +490,7 @@ StorageResult Storage::_Select(Payload& data, Utf8CP id, Options options, Cache&
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Storage::wt_Persist(Payload const& data)
     {
-    BentleyStatus result = data._Persist(m_database);
+    BentleyStatus result = data._PersistToStorage(m_database);
     BeAssert(SUCCESS == result);
     m_hasChanges.store(true);
     }
@@ -534,7 +507,7 @@ StorageResult Storage::Persist(Payload const& data)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Storage::BeSQLiteStorageThreadPool::_AssignWork(WorkerThread& thread)
+bool Storage::StorageThreadPool::_AssignWork(WorkerThread& thread)
     {
     if (ThreadPool::_AssignWork(thread))
         return true;
@@ -596,27 +569,19 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-SourceResult AsyncSource::QueueRequest(AsyncSourceRequest& request, bool& handled, Cache& responseReceiver)
+SourceResult AsyncSource::QueueRequest(AsyncSourceRequest& request, Cache& responseReceiver)
     {
-    handled = true;
-    if (!request.GetRequestOptions().m_retryNotFoundRequests)
-        {
-        BeMutexHolder lock(m_requestsCS);
-        if (m_notFoundRequests.end() != m_notFoundRequests.find(request.GetId()))
-            return SourceResult::Error_NotFound;
-        }
-
     if (ShouldIgnoreRequests())
         return SourceResult::Ignored;
 
     if (!request.GetRequestOptions().m_forceSynchronous)
         {
         BeMutexHolder lock(m_requestsCS);
-        auto requestIter = m_activeRequests.find(request.GetId());
+        auto requestIter = m_activeRequests.find(request.GetPayload().GetPayloadId());
         if (requestIter != m_activeRequests.end())
             return SourceResult::Pending;
 
-        m_activeRequests.insert(request.GetId());
+        m_activeRequests.insert(request.GetPayload().GetPayloadId());
         }
     
     RefCountedPtr<RequestHandler> handler = RequestHandler::Create(*this, request, responseReceiver);
@@ -624,10 +589,7 @@ SourceResult AsyncSource::QueueRequest(AsyncSourceRequest& request, bool& handle
     m_threadPool->QueueWork(*handler);
 
     if (!request.GetRequestOptions().m_forceSynchronous)
-        {
-        handled = false;
         return SourceResult::Queued;
-        }
 
     AsyncSourceRequest::SynchronousRequestPredicate predicate(request);
     m_synchronizationCV.WaitOnCondition(&predicate, BeConditionVariable::Infinite);
@@ -650,13 +612,7 @@ void AsyncSource::RequestHandler::_DoWork()
             m_source->SetIgnoreRequests(3 * 1000);
             break;
         case SourceResult::Error_NotFound:
-            {
-            if (!m_request->GetRequestOptions().m_retryNotFoundRequests)
-                {
-                BeMutexHolder lock(m_source->m_requestsCS);
-                m_source->m_notFoundRequests.insert(m_request->GetId());
-                }
-            }
+            break;
         }
 
     if (!m_source->m_terminateRequested)
@@ -665,7 +621,7 @@ void AsyncSource::RequestHandler::_DoWork()
     if (!m_request->GetRequestOptions().m_forceSynchronous)
         {
         BeMutexHolder lock(m_source->m_requestsCS);
-        auto requestIter = m_source->m_activeRequests.find(m_request->GetId());
+        auto requestIter = m_source->m_activeRequests.find(m_request->GetPayload().GetPayloadId());
         BeAssert(requestIter != m_source->m_activeRequests.end());
         m_source->m_activeRequests.erase(requestIter);
         }
@@ -684,58 +640,52 @@ bool AsyncSource::RequestHandler::_ShouldCancel() const
 //===================================================================================
 // @bsiclass                                        Grigas.Petraitis        03/2015
 //===================================================================================
-struct FileRealityDataSourceRequest : AsyncSourceRequest
+struct FileSourceRequest : AsyncSourceRequest
 {
-private:
-    RefCountedPtr<Payload>  m_data;
-    Utf8String m_filename;
-    
-
 protected:
-    virtual Utf8CP _GetId() const {return m_filename.c_str();}
     virtual RefCountedPtr<SourceResponse> _Handle() const override
         {
-        if (!BeFileName::DoesPathExist(BeFileName(m_filename).c_str()))
-            return new SourceResponse(SourceResult::Error_NotFound, m_filename.c_str(), *m_data);
+        if (!BeFileName::DoesPathExist(BeFileName(m_payload->GetPayloadId())))
+            return new SourceResponse(SourceResult::Error_NotFound, *m_payload);
 
         // open the file
-        BeFile configFile;
-        if (BeFileStatus::Success != configFile.Open(m_filename.c_str(), BeFileAccess::Read))
+        BeFile dataFile;
+        if (BeFileStatus::Success != dataFile.Open(m_payload->GetPayloadId().c_str(), BeFileAccess::Read))
             {
             BeAssert(false);
-            return new SourceResponse(SourceResult::Error_Unknown, m_filename.c_str(), *m_data);
+            return new SourceResponse(SourceResult::Error_Unknown, *m_payload);
             }
     
         // read file content
         ByteStream data;
-        if (BeFileStatus::Success != configFile.ReadEntireFile(data))
+        if (BeFileStatus::Success != dataFile.ReadEntireFile(data))
             {
             BeAssert(false);
-            return new SourceResponse(SourceResult::Error_Unknown, m_filename.c_str(), *m_data);
+            return new SourceResponse(SourceResult::Error_Unknown, *m_payload);
             }
 
         if (ShouldCancelRequest())
-            return new SourceResponse(SourceResult::Cancelled, m_filename.c_str(), *m_data);
+            return new SourceResponse(SourceResult::Cancelled, *m_payload);
         
-        if (SUCCESS != m_data->_InitFrom(m_filename.c_str(), data))
+        if (SUCCESS != m_payload->_LoadFromFile(data))
             {
             BeAssert(false);
-            return new SourceResponse(SourceResult::Error_Unknown, m_filename.c_str(), *m_data);
+            return new SourceResponse(SourceResult::Error_Unknown, *m_payload);
             }
 
-        return new SourceResponse(SourceResult::Success, m_filename.c_str(), *m_data);
+        return new SourceResponse(SourceResult::Success, *m_payload);
         }
 
 public:
-    FileRealityDataSourceRequest(Payload& data, Utf8CP url, Options options) : AsyncSourceRequest(nullptr, options), m_data(&data), m_filename(url) {}
+    FileSourceRequest(Payload& data, Options options) : AsyncSourceRequest(nullptr, options, data) {}
 };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-SourceResult FileSource::Request(Payload& data, bool& handled, Utf8CP id, Options options, Cache& responseReceiver)
+SourceResult FileSource::_Request(Payload& data, Options options, Cache& responseReceiver)
     {
-    return QueueRequest(*new FileRealityDataSourceRequest(data, id, options), handled, responseReceiver);
+    return QueueRequest(*new FileSourceRequest(data, options), responseReceiver);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -843,12 +793,6 @@ void Payload::ParseExpirationDateAndETag(bmap<Utf8String, Utf8String> const& hea
 //=======================================================================================
 struct HttpSourceRequest : AsyncSourceRequest, IHttpRequestCancellationToken
 {
-private:
-    RefCountedPtr<Payload> m_data;
-    Utf8String                   m_url;
-    
-protected:
-    virtual Utf8CP _GetId() const override {return m_url.c_str();}
     virtual bool _ShouldCancelHttpRequest() const override {return ShouldCancelRequest();}
 
     /*-----------------------------------------------------------------------------**//**
@@ -857,146 +801,75 @@ protected:
     virtual RefCountedPtr<SourceResponse> _Handle() const override 
         {
         bmap<Utf8String, Utf8String> header;
-        if (m_data->GetExpirationDate().IsValid())
+        if (m_payload->GetExpirationDate().IsValid())
             {
-            BeAssert(DateTime::Kind::Utc == m_data->GetExpirationDate().GetInfo().GetKind());
-            header["If-Modified-Since"] = GetAnsiCFormattedDateTime(m_data->GetExpirationDate());
+            BeAssert(DateTime::Kind::Utc == m_payload->GetExpirationDate().GetInfo().GetKind());
+            header["If-Modified-Since"] = GetAnsiCFormattedDateTime(m_payload->GetExpirationDate());
             }
-        if (!Utf8String::IsNullOrEmpty(m_data->GetEntityTag()))
-            header["If-None-Match"] = m_data->GetEntityTag();
+        if (!Utf8String::IsNullOrEmpty(m_payload->GetEntityTag()))
+            header["If-None-Match"] = m_payload->GetEntityTag();
 
+        Utf8StringCR url = m_payload->GetPayloadId();
         HttpResponsePtr response;
-        HttpRequestStatus requestStatus = HttpHandler::Instance().Request(response, HttpRequest(m_url.c_str(), header), this);
+        HttpRequestStatus requestStatus = HttpHandler::Instance().Request(response, HttpRequest(url.c_str(), header), this);
         switch (requestStatus)
             {
             case HttpRequestStatus::NoConnection:
-                return new SourceResponse(SourceResult::Error_NoConnection, m_url.c_str(), *m_data);
+                return new SourceResponse(SourceResult::Error_NoConnection, *m_payload);
             case HttpRequestStatus::CouldNotResolveHost:
             case HttpRequestStatus::CouldNotResolveProxy:
-                return new SourceResponse(SourceResult::Error_CouldNotResolveHost, m_url.c_str(), *m_data);
+                return new SourceResponse(SourceResult::Error_CouldNotResolveHost,  *m_payload);
             case HttpRequestStatus::UnknownError:
                 BeAssert(false && "All HTTP errors should be handled");
-                return new SourceResponse(SourceResult::Error_Unknown, m_url.c_str(), *m_data);
+                return new SourceResponse(SourceResult::Error_Unknown, *m_payload);
             }
 
         if (requestStatus == HttpRequestStatus::Aborted || ShouldCancelRequest())
-            return new SourceResponse(SourceResult::Cancelled, m_url.c_str(), *m_data);
+            return new SourceResponse(SourceResult::Cancelled, *m_payload);
 
         BeAssert(response.IsValid());
         switch (response->GetStatus())
             {
             case HttpResponseStatus::Success:
                 {
-                m_data->ParseExpirationDateAndETag(response->GetHeader());
-                if (SUCCESS != m_data->_InitFrom(m_url.c_str(), response->GetHeader(), response->GetBody()))
+                m_payload->ParseExpirationDateAndETag(response->GetHeader());
+                if (SUCCESS != m_payload->_LoadFromHttp(response->GetHeader(), response->GetBody()))
                     {
                     RDCLOG(LOG_INFO, "[%lld] response 200 but unable to initialize reality data",(uint64_t)BeThreadUtilities::GetCurrentThreadId());
-                    return new SourceResponse(SourceResult::Error_Unknown, m_url.c_str(), *m_data);
+                    return new SourceResponse(SourceResult::Error_Unknown, *m_payload);
                     }
-                return new SourceResponse(SourceResult::Success, m_url.c_str(), *m_data);
+                return new SourceResponse(SourceResult::Success, *m_payload);
                 }
 
             case HttpResponseStatus::NotModified:
                 {
-                m_data->ParseExpirationDateAndETag(header);
-                return new SourceResponse(SourceResult::NotModified, m_url.c_str(), *m_data);
+                m_payload->ParseExpirationDateAndETag(header);
+                return new SourceResponse(SourceResult::NotModified, *m_payload);
                 }
 
             case HttpResponseStatus::NotFound:
-                return new SourceResponse(SourceResult::Error_NotFound, m_url.c_str(), *m_data);
+                return new SourceResponse(SourceResult::Error_NotFound, *m_payload);
 
             case HttpResponseStatus::Forbidden:
-                return new SourceResponse(SourceResult::Error_AccessDenied, m_url.c_str(), *m_data);
+                return new SourceResponse(SourceResult::Error_AccessDenied, *m_payload);
 
             case HttpResponseStatus::GatewayTimeout:
-                return new SourceResponse(SourceResult::Error_GatewayTimeout, m_url.c_str(), *m_data);
+                return new SourceResponse(SourceResult::Error_GatewayTimeout, *m_payload);
 
             default:
-                return new SourceResponse(SourceResult::Error_Unknown, m_url.c_str(), *m_data);
+                return new SourceResponse(SourceResult::Error_Unknown, *m_payload);
             }
         }
 
-public:
-    HttpSourceRequest(Payload& data, Utf8CP url, Options options) : AsyncSourceRequest(nullptr, options), m_data(&data), m_url(url) {}
+    HttpSourceRequest(Payload& data, Options options) : AsyncSourceRequest(nullptr, options, data) {}
 };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-SourceResult HttpSource::Request(Payload& data, bool& handled, Utf8CP id, Options options, Cache& responseReceiver)
+SourceResult HttpSource::_Request(Payload& data, Options options, Cache& responseReceiver)
     {
-    return QueueRequest(*new HttpSourceRequest(data, id, options), handled, responseReceiver);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Cache::QueuePersistHandler(Utf8CP id, StoragePersistHandler& handler)
-    {
-    BeMutexHolder lock(m_persistHandlersCS);
-    m_persistHandlers[id].insert(&handler);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-RefCountedPtr<StoragePersistHandler> Cache::DequeuePersistHandler(Utf8CP id, Payload const& data)
-    {
-    BeMutexHolder lock(m_persistHandlersCS);
-    auto setIter = m_persistHandlers.find(id);
-    if (m_persistHandlers.end() == setIter)
-        return nullptr;
-
-    auto& set = setIter->second;
-    for (auto handlerIter = set.begin(); handlerIter != set.end(); handlerIter++)
-        {
-        RefCountedPtr<StoragePersistHandler> handler = *handlerIter;
-        if (handler->_GetData() == &data)
-            {
-            set.erase(handlerIter);
-            if (set.empty())
-                m_persistHandlers.erase(setIter);
-            return handler;
-            }        
-        }
-    BeAssert(false);
-    return nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Cache::QueueRequestHandler(Utf8CP id, SourceRequestHandler& handler)
-    {
-    BeMutexHolder lock(m_requestHandlersCS);
-    BeAssert(m_requestHandlers.end() == m_requestHandlers.find(id) || m_requestHandlers[id].end() == m_requestHandlers[id].find(&handler));
-    m_requestHandlers[id].insert(&handler);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-RefCountedPtr<SourceRequestHandler> Cache::DequeueRequestHandler(Utf8CP id, Payload const& data)
-    {
-    BeMutexHolder lock(m_requestHandlersCS);
-    auto setIter = m_requestHandlers.find(id);
-    if (m_requestHandlers.end() == setIter)
-        return nullptr;
-
-    auto& set = setIter->second;
-    for (auto handlerIter = set.begin(); handlerIter != set.end(); handlerIter++)
-        {
-        RefCountedPtr<SourceRequestHandler> handler = *handlerIter;
-        if (handler->_GetData() == &data)
-            {
-            set.erase(handlerIter);
-            if (set.empty())
-                m_requestHandlers.erase(setIter);
-            return handler;
-            }        
-        }
-    BeAssert(false);
-    return nullptr;
+    return QueueRequest(*new HttpSourceRequest(data, options), responseReceiver);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1004,23 +877,21 @@ RefCountedPtr<SourceRequestHandler> Cache::DequeueRequestHandler(Utf8CP id, Payl
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Cache::_OnResponseReceived(SourceResponse const& response, Options options)
     {
-    RefCountedPtr<StoragePersistHandler> persistHandler = DequeuePersistHandler(response.GetId(), response.GetData());
     switch (response.GetResult())
         {
         case SourceResult::Success:
         case SourceResult::NotModified:
             {
-            if (persistHandler.IsValid())
-                {
-                BeAssert(&response.GetData() == persistHandler->_GetData());
-                StorageResult result = persistHandler->_Persist();
-                BeAssert(StorageResult::Success == result);
-                }
+            if (!m_storage.IsValid())
+                return;
+
+            StorageResult result = m_storage->Persist(response.GetPayload());
+            BeAssert(StorageResult::Success == result);
             break;
             }
 
         case SourceResult::Error_NotFound:
-            response.GetData()._OnNotFound();
+            response.GetPayload()._OnNotFound();
             break;
 
         case SourceResult::Error_GatewayTimeout:
@@ -1029,7 +900,7 @@ void Cache::_OnResponseReceived(SourceResponse const& response, Options options)
         case SourceResult::Error_AccessDenied:
         case SourceResult::Error_Unknown:
         case SourceResult::Cancelled:
-            response.GetData()._OnError();
+            response.GetPayload()._OnError();
             break;
 
         default:
@@ -1045,19 +916,16 @@ void Cache::_OnResponseReceived(StorageResponse const& response, Options options
     CacheResult result = HandleStorageResponse(response, options);
     
     if (!isAsync)
-        {
-        BeMutexHolder lock(m_resultsCS);
-        BeAssert(m_results.end() == m_results.find(&response.GetData()));
-        m_results[&response.GetData()] = result;
-        }
+        m_result = result;
 
     switch (result)
         {
         case CacheResult::NotFound:
-            response.GetData()._OnNotFound();
+            response.GetPayload()._OnNotFound();
             break;
+
         case CacheResult::Error:
-            response.GetData()._OnError();
+            response.GetPayload()._OnError();
             break;
         }
     }
@@ -1071,12 +939,9 @@ CacheResult Cache::HandleStorageResponse(StorageResponse const& response, Option
         {
         case StorageResult::Success:
             {
-            if (response.GetData()._IsExpired() && options.m_requestFromSource)
+            if (response.GetPayload()._IsExpired() && options.m_requestFromSource)
                 {
-                RefCountedPtr<SourceRequestHandler> handler = DequeueRequestHandler(response.GetId(), response.GetData());
-                SourceResult requestResult = handler->_Request();
-                if (handler->_IsHandled())
-                    DequeuePersistHandler(response.GetId(), response.GetData());
+                SourceResult requestResult = m_source->_Request(response.GetPayload(), options, *this);
                 return ResolveResult(response.GetResult(), requestResult);
                 }
             break;
@@ -1084,15 +949,8 @@ CacheResult Cache::HandleStorageResponse(StorageResponse const& response, Option
 
         case StorageResult::NotFound:
             {
-            RefCountedPtr<SourceRequestHandler> handler;
-            if (options.m_requestFromSource && (handler = DequeueRequestHandler(response.GetId(), response.GetData())).IsValid())
-                {
-                SourceResult requestResult = handler->_Request();
-                if (handler->_IsHandled())
-                    DequeuePersistHandler(response.GetId(), response.GetData());
-                return ResolveResult(response.GetResult(), requestResult);
-                }
-            break;
+            SourceResult requestResult = m_source->_Request(response.GetPayload(), options, *this);
+            return ResolveResult(response.GetResult(), requestResult);
             }
 
         case StorageResult::Queued:
@@ -1102,39 +960,26 @@ CacheResult Cache::HandleStorageResponse(StorageResponse const& response, Option
             }
         }
 
-    DequeueRequestHandler(response.GetId(), response.GetData());
-    DequeuePersistHandler(response.GetId(), response.GetData());
     return ResolveResult(response.GetResult());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-CacheResult Cache::GetResult(Payload& data, Utf8CP id, StorageResult storageResult)
+CacheResult Cache::GetResult(Payload& data, StorageResult storageResult)
     {
-    if (StorageResult::Pending == storageResult)
-        {
-        DequeuePersistHandler(id, data);
-        DequeueRequestHandler(id, data);
-        }
-
     CacheResult result = ResolveResult(storageResult);
     if (CacheResult::RequestQueued == result || CacheResult::Error == result)
         return result;
 
-    // unless there was an error or the request was queued, we expect to find the result in the m_results map
-    BeMutexHolder lock(m_resultsCS);
-    auto iter = m_results.find(&data);
-    BeAssert(m_results.end() != iter);
-    CacheResult returnValue = iter->second;
-    m_results.erase(iter);
-    return returnValue;
+    // this must be a synchronous request. 
+    return m_result;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-CacheResult Cache::GetResult(Utf8CP, SourceResult sourceResult)
+CacheResult Cache::GetResult(SourceResult sourceResult)
     {
     return ResolveResult(StorageResult::NotFound, sourceResult);
     }
@@ -1173,27 +1018,6 @@ CacheResult Cache::ResolveResult(StorageResult storageResult, SourceResult sourc
         }
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Cache::Cleanup()
-    {
-    if (true)
-        {
-        BeMutexHolder lock(m_persistHandlersCS);
-        m_persistHandlers.clear();
-        }
-    
-    if (true)
-        {
-        BeMutexHolder lock(m_requestHandlersCS);
-        m_requestHandlers.clear();
-        }
-    }
-
-/*======================================================================================+
-|   RealityDataThread
-+======================================================================================*/
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1344,7 +1168,7 @@ WorkerThreadPtr ThreadPool::GetIdleThread() const
         if (!pair.second)
             return pair.first;
         }
-    return NULL;
+    return nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1352,7 +1176,7 @@ WorkerThreadPtr ThreadPool::GetIdleThread() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 WorkerThreadPtr ThreadPool::CreateThread()
     {
-    auto thread = WorkerThread::Create(this, "Payload");
+    auto thread = WorkerThread::Create(this, "RealityData");
     thread->AddRef();
     thread->Start();
     BeMutexHolder lock(m_threadsCV.GetMutex());
@@ -1528,7 +1352,7 @@ bool WorkerThread::IsBusy(uint64_t* busyTime) const
     BeMutexHolder lock(m_cv.GetMutex());
     if (m_busySince != 0)
         {
-        if (NULL != busyTime)
+        if (nullptr != busyTime)
             *busyTime = BeTimeUtilities::GetCurrentTimeAsUnixMillis() - m_busySince;
         return true;
         }
@@ -1543,7 +1367,7 @@ bool WorkerThread::IsIdle(uint64_t* idleTime) const
     BeMutexHolder lock(m_cv.GetMutex());
     if (m_idleSince != 0)
         {
-        if (NULL != idleTime)
+        if (nullptr != idleTime)
             *idleTime = BeTimeUtilities::GetCurrentTimeAsUnixMillis() - m_idleSince;
         return true;
         }
@@ -1593,7 +1417,7 @@ void WorkerThread::_Run()
             {
             BeAssert(m_currentWork.IsValid());
             auto work = m_currentWork;
-            m_currentWork = NULL;
+            m_currentWork = nullptr;
             holder.unlock();
             work->_DoWork();
             }
