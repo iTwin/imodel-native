@@ -60,12 +60,9 @@ adb logcat BeTestX:* doOpenChoice:* ICU_DATA_FILE:* TestRunner:I BeSQLiteDb:* Be
 %message ${ANDROIDJUNIT_OUTPUT_DIR}/logcat$(scriptExt)
 %message in another shell to monitor progress
 
-%if defined(winNT)
-    RunPrefix=start \/WAIT \/MIN
-%endif
-
 always:
-    $(RunPrefix) python $(baseDir)RunAndroidJUnitTest.py $(logFile) $(ANDROIDJUNITPROJ)Scripts/installApk$(scriptExt) ${ANDROIDJUNIT_OUTPUT_DIR}/logcat$(scriptExt)
+    $(ANDROIDJUNITPROJ)Scripts/installApk$(scriptExt) 
+    adb shell am instrument -w com.bentley.unittest/com.bentley.unittest.BeInstrumentationTestRunner > $(logFile)
     %if !defined (BEGTEST_DONTVALIDATELOGFILE)
     %if !defined (NO_BREAK)
         python $(baseDIr)PrintLogAndReturnResult.py $(logFile)

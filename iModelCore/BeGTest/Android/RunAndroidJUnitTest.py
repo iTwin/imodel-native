@@ -53,20 +53,26 @@ def main():
     #tee = subprocess.Popen ("python " + teeCmd + " " + logfilename, shell=True, stdin=logcatproc.stdout, creationflags = subprocess.CREATE_NEW_PROCESS_GROUP)
 
     with open (logfilename, 'a') as logfile:
-        failureCount = 0
+        failedtests = ''
         procStdOutLine = proc.stdout.readline ()
         while procStdOutLine:
             showRewritableLine(procStdOutLine.replace('\n', ' ').replace('\r', ' '), INFO_LEVEL_Important)
             logfile.write(procStdOutLine)
             print procStdOutLine,
             if procStdOutLine.lower().startswith("failure"):
-                failureCount = failureCount + 1
+                failedtests = failedtests + procStdOutLine
             procStdOutLine = proc.stdout.readline ()
         proc.wait()
 
     #logcatproc.kill()
 
-    exit(failureCount)
+    if failedtests != "":
+        print '*********************'
+        print failedtests
+        print '*********************'
+        exit(1)
+    
+    exit(0)
 
 if __name__ == '__main__':
     main()

@@ -52,7 +52,6 @@ def RunTest(xcodeprojpath, deviceName, okToRetry, logfile):
             err = errpat.match(procStdOutLine[starterr:])
             if err != None:
                 failuremsg = "\nFAILED " + err.group(1) + "." + err.group(2)
-                print failuremsg
                 failedtests = failedtests + failuremsg
 
         procStdOutLine = proc.stdout.readline ()
