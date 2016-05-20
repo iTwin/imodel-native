@@ -23,6 +23,7 @@
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnClientFx\TestApplication.h" />
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnClientFx\TestEnvironment.h" />
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnClientFx\DgnClientFxViewportHelpers.h" />
+    <ClInclude Include="Published\WebServices\ConnectC\ConnectWebServicesClientCTests.h" />
     <ClInclude Include="Published\Utils\AsyncTestCheckpoint.h" />
     <ClInclude Include="Published\Utils\BaseMockHttpHandlerTest.h" />
     <ClInclude Include="Published\Utils\MockTests.h" />
@@ -161,6 +162,7 @@
     <ClCompile Include="BackDoor\TestApplication.cpp" />
     <ClCompile Include="BackDoor\TestEnvironment.cpp" />
     <ClCompile Include="BackDoor\DgnClientFxViewportHelpers.cpp" />
+    <ClCompile Include="Published\WebServices\ConnectC\ConnectWebServicesClientCTests.cpp" />
     <ClCompile Include="NonPublished\CordovaPluginTests.cpp" />
     <ClCompile Include="NonPublished\ConfigurableUiTests.cpp" />
     <ClCompile Include="NonPublished\ECExpressionTests.cpp" />
@@ -283,6 +285,11 @@
   <ItemGroup>
     <None Include="BuildTests.mke" />
     <None Include="Prewire.mke" />
+    <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\10.zip" />
+    <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\5.zip" />
+    <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\7.zip" />
+    <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\8.zip" />
+    <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\9.zip" />
     <None Include="AssetsDelivery.mke" />
   </ItemGroup>
   <ItemGroup>

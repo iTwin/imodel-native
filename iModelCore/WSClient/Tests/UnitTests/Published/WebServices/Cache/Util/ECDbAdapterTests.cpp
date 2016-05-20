@@ -39,11 +39,11 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 #define EXPECT_CALL_OnBeforeDelete(listener, db, instanceKey) \
     EXPECT_CALL(listener, OnBeforeDelete(Ref(*ECDbAdapter(*db).GetECClass(instanceKey)), instanceKey.GetECInstanceId(), _)) \
     .WillOnce(Invoke([&](ECClassCR ecClass, ECInstanceId id, bset<ECInstanceKey>&) \
-    { \
+            { \
     /* Check if instance was not deleted yet */ \
     EXPECT_INSTANCE_EXISTS(db, instanceKey); \
     return SUCCESS; \
-    }));
+            }));
 #else
 void EXPECT_CALL_OnBeforeDelete(MockECDbAdapterDeleteListener& listener, std::shared_ptr<ObservableECDb> db, ECInstanceKey instanceKey)
     {
@@ -59,7 +59,7 @@ void EXPECT_CALL_OnBeforeDelete(MockECDbAdapterDeleteListener& listener, std::sh
 #endif
 
 SeedFile ECDbAdapterTests::s_seedECDb("ecdbAdapterTest.ecdb",
-[] (BeFileNameCR filePath)
+                                      [] (BeFileNameCR filePath)
     {
     ECDb db;
     EXPECT_EQ(DbResult::BE_SQLITE_OK, db.CreateNewDb(filePath));
@@ -67,6 +67,8 @@ SeedFile ECDbAdapterTests::s_seedECDb("ecdbAdapterTest.ecdb",
     auto schema = ParseSchema(R"xml(
         <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
             <ECClass typeName="TestClass" />
+            <ECClass typeName="TestClass2" />
+            <ECClass typeName="TestClass3" />
             <ECRelationshipClass typeName="ReferencingRel" strength="referencing">
                 <Source cardinality="(0,N)"><Class class="TestClass" /></Source>
                 <Target cardinality="(0,N)"><Class class="TestClass" /></Target>
@@ -88,7 +90,7 @@ SeedFile ECDbAdapterTests::s_seedECDb("ecdbAdapterTest.ecdb",
     });
 
 SeedFile ECDbAdapterTests::s_seedEmptyECDb("ecdbAdapterTest-empty.ecdb",
-[] (BeFileNameCR filePath)
+                                           [] (BeFileNameCR filePath)
     {
     ECDb db;
     EXPECT_EQ(DbResult::BE_SQLITE_OK, db.CreateNewDb(filePath));
@@ -1637,6 +1639,58 @@ TEST_F(ECDbAdapterTests, DeleteRelationship_OnBeforeDeleteReturnsAdditionalToDel
     EXPECT_EQ(2, notDeletedInstances.size());
     EXPECT_CONTAINS(notDeletedInstances, a.GetECInstanceId());
     EXPECT_CONTAINS(notDeletedInstances, b.GetECInstanceId());
+    }
+
+TEST_F(ECDbAdapterTests, DeleteInstances_TwoMultipleClassInstances_DeletesInstances)
+    {
+    auto db = GetTestDb();
+    ECDbAdapter adapter(*db);
+
+    auto ecClass1 = adapter.GetECClass("TestSchema.TestClass");
+    auto ecClass2 = adapter.GetECClass("TestSchema.TestClass2");
+
+    ECInstanceKey instance;
+    ECInstanceKeyMultiMap instances;
+
+    INSERT_INSTANCE(*db, ecClass1, instance);
+    instances.insert(ECDbHelper::ToPair(instance));
+    INSERT_INSTANCE(*db, ecClass2, instance);
+    instances.insert(ECDbHelper::ToPair(instance));
+
+    EXPECT_EQ(SUCCESS, adapter.DeleteInstances(instances));
+    EXPECT_EQ(0, adapter.FindInstances(ecClass1).size());
+    EXPECT_EQ(0, adapter.FindInstances(ecClass2).size());
+    }
+
+TEST_F(ECDbAdapterTests, DeleteInstances_MultipleClassInstances_DeletesInstances)
+    {
+    auto db = GetTestDb();
+    ECDbAdapter adapter(*db);
+
+    auto ecClass1 = adapter.GetECClass("TestSchema.TestClass");
+    auto ecClass2 = adapter.GetECClass("TestSchema.TestClass2");
+    auto ecClass3 = adapter.GetECClass("TestSchema.TestClass3");
+
+    ECInstanceKey instance;
+    ECInstanceKeyMultiMap instances;
+
+    INSERT_INSTANCE(*db, ecClass1, instance);
+    instances.insert(ECDbHelper::ToPair(instance));
+    INSERT_INSTANCE(*db, ecClass2, instance);
+    instances.insert(ECDbHelper::ToPair(instance));
+    INSERT_INSTANCE(*db, ecClass3, instance);
+    instances.insert(ECDbHelper::ToPair(instance));
+    INSERT_INSTANCE(*db, ecClass1, instance);
+    instances.insert(ECDbHelper::ToPair(instance));
+    INSERT_INSTANCE(*db, ecClass2, instance);
+    instances.insert(ECDbHelper::ToPair(instance));
+    INSERT_INSTANCE(*db, ecClass3, instance);
+    instances.insert(ECDbHelper::ToPair(instance));
+
+    EXPECT_EQ(SUCCESS, adapter.DeleteInstances(instances));
+    EXPECT_EQ(0, adapter.FindInstances(ecClass1).size());
+    EXPECT_EQ(0, adapter.FindInstances(ecClass2).size());
+    EXPECT_EQ(0, adapter.FindInstances(ecClass3).size());
     }
 
 #endif

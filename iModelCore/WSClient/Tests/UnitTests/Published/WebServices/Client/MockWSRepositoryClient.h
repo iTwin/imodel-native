@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Client/MockWSRepositoryClient.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -120,6 +120,15 @@ struct MockWSRepositoryClient : public IWSRepositoryClient
 
         MOCK_CONST_METHOD4(SendCreateObjectRequest, AsyncTaskPtr<WSCreateObjectResult>
             (
+            JsonValueCR objectCreationJson,
+            BeFileNameCR filePath,
+            HttpRequest::ProgressCallbackCR uploadProgressCallback,
+            ICancellationTokenPtr ct
+            ));
+
+        MOCK_CONST_METHOD5(SendCreateObjectRequest, AsyncTaskPtr<WSCreateObjectResult>
+            (
+            ObjectIdCR objectId,
             JsonValueCR objectCreationJson,
             BeFileNameCR filePath,
             HttpRequest::ProgressCallbackCR uploadProgressCallback,

@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/WebServices/Cache/Util/ECSqlAdapterCache.h $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -27,19 +27,43 @@ template<typename A> struct ECSqlAdapterCache
         bmap<ECClassId, std::shared_ptr<A>> m_cache;
 
     public:
-        ECSqlAdapterCache(ECDb& ecdb) : m_ecdb(&ecdb)
-            {};
+        ECSqlAdapterCache(ECDb& ecdb) : m_ecdb(&ecdb) {};
 
         //! Get cached or newly intialized adapter
         A& Get(ECClassCR ecClass)
             {
             auto it = m_cache.find(ecClass.GetId());
             if (it != m_cache.end())
-                {
                 return *it->second;
-                }
 
             auto adapterPtr = std::make_shared<A>(*m_ecdb, ecClass);
+            m_cache.insert({ecClass.GetId(), adapterPtr});
+            return *adapterPtr;
+            };
+    };
+
+/*--------------------------------------------------------------------------------------+
+* @bsiclass                                                     Vincas.Razma    05/2016
+* Cache JsonUpdaters with ECSQL options
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename A> struct ECSqlAdapterCacheWithOptions
+    {
+    private:
+        ECDb* m_ecdb;
+        bmap<ECClassId, std::shared_ptr<A>> m_cache;
+        Utf8String m_ecSqlOptions;
+
+    public:
+        ECSqlAdapterCacheWithOptions(ECDb& ecdb, Utf8String ecSqlOptions) : m_ecdb(&ecdb), m_ecSqlOptions(ecSqlOptions) {};
+
+        //! Get cached or newly intialized adapter
+        A& Get(ECClassCR ecClass)
+            {
+            auto it = m_cache.find(ecClass.GetId());
+            if (it != m_cache.end())
+                return *it->second;
+
+            auto adapterPtr = std::make_shared<A>(*m_ecdb, ecClass, m_ecSqlOptions.c_str());
             m_cache.insert({ecClass.GetId(), adapterPtr});
             return *adapterPtr;
             };
@@ -57,17 +81,13 @@ template<typename A> struct ECSqlAdapterLoader
         std::shared_ptr<A> m_adapter;
 
     public:
-        ECSqlAdapterLoader(ECDb& ecdb, ECClassCR ecClass) : m_ecdb(&ecdb), m_ecClass(&ecClass)
-            {};
+        ECSqlAdapterLoader(ECDb& ecdb, ECClassCR ecClass) : m_ecdb(&ecdb), m_ecClass(&ecClass) {};
 
         //! Lazy initialize adapter
         A& Get()
             {
             if (nullptr == m_adapter)
-                {
                 m_adapter = std::make_shared<A>(*m_ecdb, *m_ecClass);
-                }
-
             return *m_adapter;
             };
     };

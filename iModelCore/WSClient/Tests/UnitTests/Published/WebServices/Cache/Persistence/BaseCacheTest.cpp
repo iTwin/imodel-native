@@ -10,7 +10,12 @@
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
-std::shared_ptr<DataSourceCache> BaseCacheTest::s_reusableCache;
+BeFileName BaseCacheTest::s_seedCacheFolderPath;
+BeFileName BaseCacheTest::s_targetCacheFolderPath;
+BeFileName BaseCacheTest::s_seedCachePath;
+BeFileName BaseCacheTest::s_targetCachePath;
+CacheEnvironment BaseCacheTest::s_seedEnvironment;
+CacheEnvironment BaseCacheTest::s_targetEnvironment;
 
 ECSchemaPtr BaseCacheTest::GetTestSchema()
     {
@@ -201,37 +206,64 @@ BeFileName BaseCacheTest::GetTestSchemaPath()
 
 std::shared_ptr<DataSourceCache> BaseCacheTest::GetTestCache()
     {
-    if (s_reusableCache)
+    // Prepare seed files
+    if (!s_seedCacheFolderPath.DoesPathExist())
         {
-        BentleyStatus status = s_reusableCache->Reset();
-        EXPECT_EQ(SUCCESS, status);
-        return s_reusableCache;
+        auto cache = CreateTestCache(s_seedCachePath, s_seedEnvironment);
+        EXPECT_FALSE(nullptr == cache);
         }
 
-    s_reusableCache = CreateTestCache("testCache.ecdb");
-    return s_reusableCache;
+    // Prepare target files
+    if (s_targetCacheFolderPath.DoesPathExist())
+        EXPECT_EQ(BeFileNameStatus::Success, BeFileName::EmptyAndRemoveDirectory(s_targetCacheFolderPath));
+    EXPECT_EQ(BeFileNameStatus::Success, BeFileName::CloneDirectory(s_seedCacheFolderPath, s_targetCacheFolderPath));
+
+    // Open target cache
+    auto cache = std::make_shared<DataSourceCache>();
+    cache->Open(s_targetCachePath, s_targetEnvironment);
+    EXPECT_FALSE(nullptr == cache);
+    return cache;
     }
 
 std::shared_ptr<DataSourceCache> BaseCacheTest::CreateTestCache(Utf8StringCR fileName)
     {
+    BeFileName filePath(":memory:");
+    filePath = GetTestsTempDir().AppendToPath(BeFileName(fileName));
+
+    if (filePath.DoesPathExist())
+        EXPECT_EQ(BeFileNameStatus::Success, BeFileName::BeDeleteFile(filePath));
+
+    return CreateTestCache(filePath, StubCacheEnvironemnt());
+    }
+
+std::shared_ptr<DataSourceCache> BaseCacheTest::CreateTestCache(BeFileName filePath, CacheEnvironment environment)
+    {
     auto cache = std::make_shared<DataSourceCache>();
-
-    BeFileName cachePath(":memory:");
-
-    cachePath = GetTestsTempDir().AppendToPath(BeFileName(fileName));
-    if (cachePath.DoesPathExist())
-        {
-        EXPECT_EQ(BeFileNameStatus::Success, BeFileName::BeDeleteFile(cachePath));
-        }
-
-    EXPECT_EQ(SUCCESS, cache->Create(cachePath, StubCacheEnvironemnt()));
+    EXPECT_EQ(SUCCESS, cache->Create(filePath, environment));
     EXPECT_EQ(SUCCESS, cache->UpdateSchemas(std::vector<ECSchemaPtr> {GetTestSchema(), GetTestSchema2()}));
-
     return cache;
     }
 
 void BaseCacheTest::SetUpTestCase()
     {
-    s_reusableCache = nullptr;
+    s_seedCacheFolderPath = GetTestsOutputDir().AppendToPath(L"BaseCacheTest-Seeds");
+    s_targetCacheFolderPath = GetTestsTempDir().AppendToPath(L"BaseCacheTest-TestCaches");
+
+    s_seedCachePath = BeFileName(s_seedCacheFolderPath).AppendToPath(L"testcache.ecdb");
+    s_seedEnvironment.persistentFileCacheDir = BeFileName(s_seedCacheFolderPath).AppendToPath(L"persistent");
+    s_seedEnvironment.temporaryFileCacheDir = BeFileName(s_seedCacheFolderPath).AppendToPath(L"temporary");
+
+    s_targetCachePath = BeFileName(s_targetCacheFolderPath).AppendToPath(L"testcache.ecdb");
+    s_targetEnvironment.persistentFileCacheDir = BeFileName(s_targetCacheFolderPath).AppendToPath(L"persistent");
+    s_targetEnvironment.temporaryFileCacheDir = BeFileName(s_targetCacheFolderPath).AppendToPath(L"temporary");
+
+    if (s_seedCacheFolderPath.DoesPathExist())
+        EXPECT_EQ(BeFileNameStatus::Success, BeFileName::EmptyAndRemoveDirectory(s_seedCacheFolderPath));
+
     WSClientBaseTest::SetUpTestCase();
+    }
+
+CacheEnvironment BaseCacheTest::GetTestCacheEnvironment()
+    {
+    return s_targetEnvironment;
     }

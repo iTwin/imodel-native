@@ -3,9 +3,11 @@ import os.path
 
 
 class Api(object):
-    def __init__(self, acronym, name):
+    def __init__(self, acronym, name, url_descriptor_name, repository_id):
         self.__acronym = acronym
         self.__name = name
+        self.__url_descriptor_name = url_descriptor_name
+        self.__repository_id = repository_id
 
     def get_api_acronym(self):
         return self.__acronym
@@ -18,6 +20,12 @@ class Api(object):
 
     def get_upper_api_acronym(self):
         return self.get_api_acronym().upper()
+
+    def get_url_descriptor(self):
+        return self.__url_descriptor_name
+
+    def get_repository_id(self):
+        return self.__repository_id
 
 
 class Writer(object):
@@ -47,7 +55,7 @@ class Writer(object):
         self._status_codes = status_codes
         self._COMMENT_AutoGen = self._COMMENT_AutoGen.format(datetime.date.today().strftime("%B %d, %Y"))
         self._COMMENT_Copyright = self._COMMENT_Copyright.format(os.path.basename(self._file.name), datetime.date.today().strftime("%Y"))
-        self._excluded_classes = [] if excluded_classes is None else excluded_classes
+        self._excluded_classes = excluded_classes
 
     def _write_spacing(self):
         self._file.write('\n')

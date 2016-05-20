@@ -6,12 +6,15 @@ class CppCliClassesSourceWriter(SourceWriter):
 
     __CLASS_MemberVariable = "        public {0} {1} {{ get; set; }}\n"
 
-    def __init__(self, ecclasses, source_filename, api, status_codes, excluded_classes=None):
+    def __init__(self, ecclasses, source_filename, api, status_codes, excluded_classes):
         super(CppCliClassesSourceWriter, self).__init__(ecclasses, source_filename, api, status_codes, excluded_classes)
         self.__cpp_cli_structs = []
         for ecclass in self._ecclasses:
-            if ecclass.attributes["typeName"].value not in self._excluded_classes:
-                self.__cpp_cli_structs.append(CppCliStruct(ecclass, api, status_codes))
+            if ecclass.attributes["typeName"].value in excluded_classes and \
+                    excluded_classes[ecclass.attributes["typeName"].value].should_exclude_entire_class():
+                continue
+            self.__cpp_cli_structs.append(CppCliStruct(ecclass, api, status_codes,
+                                                       excluded_classes[ecclass.attributes["typeName"].value]))
 
     def write_source(self):
         self._write_header_comments()

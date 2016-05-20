@@ -214,7 +214,7 @@ struct DataSourceCache : public IDataSourceCache
         WSCACHE_EXPORT BentleyStatus RemoveRootsByPrefix(Utf8StringCR rootPrefix) override;
 
         //--------------------------------------------------------------------------------------------------------------------------------+
-        //  Working with roots
+        //  Working with roots and cache structure
         //--------------------------------------------------------------------------------------------------------------------------------+
 
         WSCACHE_EXPORT bool DoesRootExist(Utf8StringCR rootName) override;
@@ -251,6 +251,12 @@ struct DataSourceCache : public IDataSourceCache
             Utf8StringCR rootName,
             ECInstanceKeyMultiMap& instancesOut,
             uint8_t depth = UINT8_MAX
+            ) override;
+
+        WSCACHE_EXPORT BentleyStatus ReadInstanceHierarchy
+            (
+            ECInstanceKeyCR instance,
+            ECInstanceKeyMultiMap& instancesOut
             ) override;
 
         //--------------------------------------------------------------------------------------------------------------------------------+

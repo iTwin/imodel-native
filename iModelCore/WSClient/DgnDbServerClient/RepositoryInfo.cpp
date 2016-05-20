@@ -21,8 +21,8 @@ RepositoryInfo::RepositoryInfo()
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-RepositoryInfo::RepositoryInfo(Utf8StringCR serverUrl, Utf8StringCR id)
-    : m_serverUrl(serverUrl), m_id(id)
+RepositoryInfo::RepositoryInfo(Utf8StringCR serverUrl, Utf8StringCR id, Utf8StringCR mergedRevisionId)
+    : m_serverUrl(serverUrl), m_id(id), m_mergedRevisionId(mergedRevisionId)
     {
     }
 
@@ -39,9 +39,9 @@ RepositoryInfo::RepositoryInfo(Utf8StringCR serverUrl, Utf8StringCR id, Utf8Stri
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
 RepositoryInfo::RepositoryInfo(Utf8StringCR serverUrl, Utf8StringCR id, Utf8StringCR name, Utf8StringCR fileId, Utf8StringCR fileUrl,
-                               Utf8StringCR fileName, Utf8StringCR description, Utf8StringCR user, DateTimeCR date)
+                               Utf8StringCR fileName, Utf8StringCR description, Utf8StringCR mergedRevisionId, Utf8StringCR user, DateTimeCR date)
     : m_serverUrl(serverUrl), m_id(id), m_name(name), m_fileId(fileId), m_fileUrl(fileUrl), m_fileName(fileName), m_description(description),
-    m_userUploaded(user), m_uploadedDate(date)
+    m_mergedRevisionId(mergedRevisionId), m_userUploaded(user), m_uploadedDate(date)
     {
     }
 
@@ -110,6 +110,14 @@ Utf8String RepositoryInfo::GetWSRepositoryName() const
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             05/2016
+//---------------------------------------------------------------------------------------
+Utf8StringCR RepositoryInfo::GetMergedRevisionId() const
+    {
+    return m_mergedRevisionId;
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
 Utf8StringCR RepositoryInfo::GetUserUploaded() const
@@ -132,13 +140,16 @@ DgnDbServerStatusResult RepositoryInfo::ReadRepositoryInfo(RepositoryInfo& repos
     {
     Utf8String serverUrl;
     Utf8String id;
+    Utf8String parentRevisionId;
     BeSQLite::DbResult status;
     status = db.QueryBriefcaseLocalValue(Db::Local::RepositoryURL, serverUrl);
     if (BeSQLite::DbResult::BE_SQLITE_ROW == status)
         status = db.QueryBriefcaseLocalValue(Db::Local::RepositoryId, id);
     if (BeSQLite::DbResult::BE_SQLITE_ROW == status)
+        status = db.QueryBriefcaseLocalValue(Db::Local::ParentRevisionId, parentRevisionId);
+    if (BeSQLite::DbResult::BE_SQLITE_ROW == status)
         {
-        repositoryInfo = RepositoryInfo(serverUrl, id);
+        repositoryInfo = RepositoryInfo(serverUrl, id, parentRevisionId);
         return DgnDbServerStatusResult::Success();
         }
     return DgnDbServerStatusResult::Error(DgnDbServerError(db, status));
@@ -155,6 +166,8 @@ DgnDbServerStatusResult RepositoryInfo::WriteRepositoryInfo(Dgn::DgnDbR db, Repo
         status = db.SaveBriefcaseLocalValue(Db::Local::RepositoryURL, repositoryInfo.GetServerURL());
     if (BeSQLite::DbResult::BE_SQLITE_DONE == status)
         status = db.SaveBriefcaseLocalValue(Db::Local::RepositoryId, repositoryInfo.GetId());
+    if (BeSQLite::DbResult::BE_SQLITE_DONE == status)
+        status = db.SaveBriefcaseLocalValue(Db::Local::ParentRevisionId, repositoryInfo.GetMergedRevisionId());
     if (BeSQLite::DbResult::BE_SQLITE_DONE == status)
         return DgnDbServerStatusResult::Success();
     return DgnDbServerStatusResult::Error(DgnDbServerError(db, status));

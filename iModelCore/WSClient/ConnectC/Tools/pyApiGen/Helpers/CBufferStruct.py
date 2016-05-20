@@ -3,8 +3,8 @@ from PropertyTypeError import PropertyTypeError
 
 
 class CBufferStruct(CStruct):
-    def __init__(self, ecclass_dom, api, status_codes):
-        super(CBufferStruct, self).__init__(ecclass_dom, api, status_codes)
+    def __init__(self, ecclass_dom, api, status_codes, excluded_ecclass):
+        super(CBufferStruct, self).__init__(ecclass_dom, api, status_codes, excluded_ecclass)
 
     def __get_accessor_functions_definition(self, property_type):
         if not self.does_contain_property_type(property_type):
@@ -80,8 +80,10 @@ class CBufferStruct(CStruct):
 
         is_first_property = True
         for ecproperty in self.get_properties():
+            if self._excluded_ecclass.should_filter_property(ecproperty.attributes["propertyName"].value):
+                continue
             if ecproperty.attributes["typeName"].value == property_type or \
-             (ecproperty.attributes["typeName"].value == 'string' and property_type == 'StringLength'):
+               (ecproperty.attributes["typeName"].value == 'string' and property_type == 'StringLength'):
                 if is_first_property:
                     accessor_str += "    if ({0}_BUFF_{1} == bufferProperty)\n".format(self.get_upper_name(),
                                                                                        ecproperty.attributes["propertyName"].value.upper())
@@ -159,6 +161,8 @@ class CBufferStruct(CStruct):
         struct_str += '    {\n'
         struct_str += '    bmap<WString, bool> IsSet;\n'
         for ecproperty in self.get_properties():
+            if self._excluded_ecclass.should_filter_property(ecproperty.attributes["propertyName"].value):
+                continue
             property_type = ecproperty.attributes["typeName"].value
             if property_type == "string":
                 struct_str += "    WString "
@@ -183,6 +187,8 @@ class CBufferStruct(CStruct):
         enum_str += "    {\n"
         enum_count = 1
         for ecproperty in self.get_properties():
+            if self._excluded_ecclass.should_filter_property(ecproperty.attributes["propertyName"].value):
+                continue
             enum_str += "    {0}_BUFF_{1:30} = {2}, /**< \\b {3}. */\n"\
                 .format(self.get_upper_name(), ecproperty.attributes["propertyName"].value.upper(), enum_count,
                         ecproperty.attributes["propertyName"].value)
@@ -206,6 +212,8 @@ class CBufferStruct(CStruct):
         stuffer_str += ")\n"
         stuffer_str += "    {\n"
         for ecproperty in self.get_properties():
+            if self._excluded_ecclass.should_filter_property(ecproperty.attributes["propertyName"].value):
+                continue
             property_type = ecproperty.attributes["typeName"].value
             if property_type == "string":
                 stuffer_str += '    if(properties.HasMember("{0}") && properties["{0}"].IsString())\n'\

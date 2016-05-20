@@ -20,7 +20,9 @@ BEGTEST_OUTPUT = $(OutputRootDir)build/
 
 dirToSearch = $(wsClientUnitTestsDir)Utils/
 %include cincapnd.mki
-dirToSearch = $(OutRoot)Winx64/Product/DgnClientSdk-Winx64/include
+dirToSearch = $(OutRoot)Winx64/BuildContexts/WSClient/VendorAPI
+%include cincapnd.mki
+dirToSearch = $(OutRoot)Winx64/BuildContexts/WSClient/PublicAPI
 %include cincapnd.mki
 
 %include $(SrcRoot)bsicommon/sharedmki/BuildUnitTests.mke

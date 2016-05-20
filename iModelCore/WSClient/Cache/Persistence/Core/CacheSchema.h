@@ -44,7 +44,7 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 #define CLASS_CachedResponsePageInfo_PROPERTY_Index                 "Index"
 
 #define CLASS_CachedRelationshipInfo                                "CachedRelationshipInfo"
-#define CLASS_CachedRelationshipInfo_PROPERTY_RemoteId              "RemoteId"
+#define CLASS_CachedRelationshipInfo_PROPERTY_RemoteId              "RelRemoteId"
 #define CLASS_CachedRelationshipInfo_PROPERTY_ClassId               "ClassId"
 #define CLASS_CachedRelationshipInfo_PROPERTY_InstanceId            "InstanceId"
 #define CLASS_CachedRelationshipInfo_PROPERTY_SourceClassId         "SourceClassId"
@@ -72,6 +72,7 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 #define CLASS_ChangeInfo_PROPERTY_IsLocal                           "IsLocal"
 
 #define CLASS_InstanceBackup                                        "InstanceBackup"
+#define CLASS_InstanceBackup_PROPERTY_InfoId                        "InfoId"
 #define CLASS_InstanceBackup_PROPERTY_Instance                      "Instance"
 
 #define CLASS_RootToNode                                            "RootToNode"
@@ -79,6 +80,7 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 #define CLASS_ResponseToParent                                      "ResponseToParent"
 #define CLASS_ResponseToHolder                                      "ResponseToHolder"
 #define CLASS_ResponseToResponsePage                                "ResponseToResponsePage"
+#define CLASS_ResponseToAdditionalInstance                          "ResponseToAdditionalInstance"
 #define CLASS_ResponsePageToResult                                  "ResponsePageToResult"
 #define CLASS_ResponsePageToResultWeak                              "ResponsePageToResultWeak"
 #define CLASS_ChangeInfoToInstanceBackup                            "ChangeInfoToInstanceBackup"
