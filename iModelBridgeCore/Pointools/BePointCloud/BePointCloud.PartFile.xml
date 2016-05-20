@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../bsicommon/build/PartFile.xsd">
 
     <Part Name="BePointCloud" OnlyPlatforms="x86,x64" BMakeFile="BePointCloud.mke" >
         <SubPart PartName="BentleyDll"      PartFile="Bentley"   Repository="Bentley"/>
