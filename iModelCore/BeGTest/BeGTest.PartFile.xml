@@ -65,6 +65,8 @@
         <ProductDirectory Name="ConstructionAssemblies"             Deliver="false" LibType="static"/>
         <ProductDirectory Name="ECObjectsNativeAssemblies"          Path="Assemblies"/>
         <ProductDirectory Name="ECObjectsNativeAssemblies"          Deliver="false" LibType="static"/>
+        <ProductDirectory Name="UnitsNativeAssemblies"              Path="Assemblies"/>
+        <ProductDirectory Name="UnitsNativeAssemblies"              Deliver="false" LibType="static"/>
         <ProductDirectory Name="GeoCoordNativeAssemblies"           Path="Assemblies"/>
         <ProductDirectory Name="GeoCoordNativeAssemblies"           Deliver="false" LibType="static"/>
         <ProductDirectory Name="PPNativeAssemblies"                 Path="Assemblies"/>
@@ -100,6 +102,8 @@
         <ProductDirectory Name="ConstructionLibs"                   Path="Libs" LibType="static"/>
         <ProductDirectory Name="ECObjectsLibs"                      Path="Libs"/>
         <ProductDirectory Name="ECObjectsLibs"                      Path="Libs" LibType="static"/>
+        <ProductDirectory Name="UnitsLibs"                          Path="Libs"/>
+        <ProductDirectory Name="UnitsLibs"                          Path="Libs" LibType="static"/>
         <ProductDirectory Name="PromiseKitLibs"                     Path="Libs" LibType="static"/>
         <ProductDirectory Name="UnitTests-Objects"                  Path="Objects"/>
         <ProductDirectory Name="UnitTests-Objects"                  Path="Objects" LibType="static"/>
