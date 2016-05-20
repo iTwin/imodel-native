@@ -423,9 +423,9 @@ DbResult DgnDb::CreateAuthorities()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode CategoryAuthority::CreateCategoryCode(Utf8StringCR name)
+DgnCode CategoryAuthority::CreateCategoryCode(Utf8StringCR name, Utf8StringCR nameSpace)
     {
-    return SystemAuthority::CreateCode(SystemAuthority::Category, name);
+    return SystemAuthority::CreateCode(SystemAuthority::Category, name, nameSpace);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -505,13 +505,13 @@ DgnCode DgnTexture::CreateTextureCode(Utf8StringCR name)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode ModelAuthority::CreateModelCode(Utf8StringCR modelName)
+DgnCode ModelAuthority::CreateModelCode(Utf8StringCR modelName, Utf8StringCR nameSpace)
     {
     // ###TODO_CODES: Silently replace illegal characters?
     Utf8String trimmed(modelName);
     trimmed.Trim();
 
-    return SystemAuthority::CreateCode(SystemAuthority::Model, trimmed);
+    return SystemAuthority::CreateCode(SystemAuthority::Model, trimmed, nameSpace);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -533,9 +533,9 @@ bool ComponentDef::IsComponentVariationCode(DgnCode const& icode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode GeometryPartAuthority::CreateGeometryPartCode(Utf8StringCR ns, Utf8StringCR name)
+DgnCode GeometryPartAuthority::CreateGeometryPartCode(Utf8StringCR name, Utf8StringCR ns)
     {
-    return SystemAuthority::CreateCode(SystemAuthority::GeometryPart, ns, name);
+    return SystemAuthority::CreateCode(SystemAuthority::GeometryPart, name, ns);
     }
 
 /*---------------------------------------------------------------------------------**//**

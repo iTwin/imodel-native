@@ -24,9 +24,9 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //! Once a True Color is defined, it may not be changed or deleted. Note that there may be multiple enties in the table with the same RGB value.
 //! However, for a given book name, there may not be two entries with the same name.
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DgnTrueColor : DictionaryElement
+struct EXPORT_VTABLE_ATTRIBUTE DgnTrueColor : DefinitionElement
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_TrueColor, DictionaryElement);
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_TrueColor, DefinitionElement);
 public:
     //! Parameters used to construct a DgnTrueColor
     struct CreateParams : T_Super::CreateParams

@@ -21,6 +21,8 @@ DGNPLATFORM_TYPEDEFS(DefinitionModel)
 DGNPLATFORM_TYPEDEFS(GeometricModel2d)
 DGNPLATFORM_TYPEDEFS(GeometricModel3d)
 DGNPLATFORM_TYPEDEFS(GraphicalModel2d)
+DGNPLATFORM_TYPEDEFS(GroupInformationModel)
+DGNPLATFORM_TYPEDEFS(FunctionalModel)
 DGNPLATFORM_TYPEDEFS(DgnRangeTree)
 DGNPLATFORM_TYPEDEFS(CheckStop)
 DGNPLATFORM_TYPEDEFS(DrawingModel)
@@ -30,6 +32,8 @@ DGNPLATFORM_TYPEDEFS(DictionaryModel)
 DGNPLATFORM_REF_COUNTED_PTR(SheetModel)
 DGNPLATFORM_REF_COUNTED_PTR(DefinitionModel)
 DGNPLATFORM_REF_COUNTED_PTR(DictionaryModel)
+DGNPLATFORM_REF_COUNTED_PTR(GroupInformationModel)
+DGNPLATFORM_REF_COUNTED_PTR(FunctionalModel)
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -53,12 +57,11 @@ struct DgnElementMap : bmap<DgnElementId, DgnElementCPtr>
     uint32_t GetCount() const {return (uint32_t) size();}
     };
 
-
 #define DGNMODEL_DECLARE_MEMBERS(__ECClassName__,__superclass__)\
     private: typedef __superclass__ T_Super;\
-    public: static Utf8CP MyECClassName() {return __ECClassName__;}\
-    protected:  virtual Utf8CP _GetECClassName() const override {return MyECClassName();}\
-                virtual Utf8CP _GetSuperECClassName() const override {return T_Super::_GetECClassName();}
+    public: static Utf8CP MyHandlerECClassName() {return __ECClassName__;}\
+    protected:  virtual Utf8CP _GetHandlerECClassName() const override {return MyHandlerECClassName();}\
+                virtual Utf8CP _GetSuperHandlerECClassName() const override {return T_Super::_GetHandlerECClassName();}
 
 /**
 * @addtogroup GROUP_DgnModel DgnModel Module
@@ -359,6 +362,8 @@ protected:
     virtual SpatialModelCP _ToSpatialModel() const {return nullptr;}
     virtual SectionDrawingModelCP _ToSectionDrawingModel() const {return nullptr;}
     virtual SheetModelCP _ToSheetModel() const {return nullptr;}
+    virtual GroupInformationModelCP _ToGroupInformationModel() const {return nullptr;}
+    virtual FunctionalModelCP _ToFunctionalModel() const {return nullptr;}
     /** @} */
 
     //! The sublcass should import elements from the source model into this model. 
@@ -415,8 +420,8 @@ protected:
 public:
     Utf8CP GetCopyrightMessage() const {return _GetCopyrightMessage();}
 
-    virtual Utf8CP _GetECClassName() const { return DGN_CLASSNAME_Model; }
-    virtual Utf8CP _GetSuperECClassName() const { return nullptr; }
+    virtual Utf8CP _GetHandlerECClassName() const {return DGN_CLASSNAME_Model;} //!< @private
+    virtual Utf8CP _GetSuperHandlerECClassName() const {return nullptr;}        //!< @private
 
     DGNPLATFORM_EXPORT ModelHandlerR GetModelHandler() const;
     DgnRangeTree* GetRangeIndexP(bool create) const {return _GetRangeIndexP(create);}
@@ -477,6 +482,8 @@ public:
     SpatialModelCP ToSpatialModel() const {return _ToSpatialModel();} //!< more efficient substitute for dynamic_cast<SpatialModelCP>(model)
     SectionDrawingModelCP ToSectionDrawingModel() const {return _ToSectionDrawingModel();} //!< more efficient substitute for dynamic_cast<SectionDrawingModelCP>(model)
     SheetModelCP ToSheetModel() const {return _ToSheetModel();} //!< more efficient substitute for dynamic_cast<SheetModelCP>(model)
+    GroupInformationModelCP ToGroupInformationModel() const {return _ToGroupInformationModel();} //!< more efficient substitute for dynamic_cast<GroupInformationModelCP>(model)
+    FunctionalModelCP ToFunctionalModel() const {return _ToFunctionalModel();} //!< more efficient substitute for dynamic_cast<FunctionalModelCP>(model)
     GeometricModelP ToGeometricModelP() {return const_cast<GeometricModelP>(_ToGeometricModel());} //!< more efficient substitute for dynamic_cast<GeometricModelP>(model)
     InformationModelP ToInformationModelP() {return const_cast<InformationModelP>(_ToInformationModel());} //!< more efficient substitute for dynamic_cast<InformationModelP>(model)
     DefinitionModelP ToDefinitionModelP() {return const_cast<DefinitionModelP>(_ToDefinitionModel());} //!< more efficient substitute for dynamic_cast<DefinitionModelP>(model)
@@ -485,6 +492,8 @@ public:
     SpatialModelP ToSpatialModelP() {return const_cast<SpatialModelP>(_ToSpatialModel());} //!< more efficient substitute for dynamic_cast<SpatialModelP>(model)
     SectionDrawingModelP ToSectionDrawingModelP() {return const_cast<SectionDrawingModelP>(_ToSectionDrawingModel());} //!< more efficient substitute for dynamic_cast<SectionDrawingModelP>(model)
     SheetModelP ToSheetModelP() {return const_cast<SheetModelP>(_ToSheetModel());}//!< more efficient substitute for dynamic_cast<SheetModelP>(model)
+    GroupInformationModelP ToGroupInformationModelP() {return const_cast<GroupInformationModelP>(_ToGroupInformationModel());}//!< more efficient substitute for dynamic_cast<GroupInformationModelP>(model)
+    FunctionalModelP ToFunctionalModelP() {return const_cast<FunctionalModelP>(_ToFunctionalModel());}//!< more efficient substitute for dynamic_cast<FunctionalModelP>(model)
 
     bool IsGeometricModel() const { return nullptr != ToGeometricModel(); }
     bool IsSpatialModel() const { return nullptr != ToSpatialModel(); }
@@ -493,6 +502,8 @@ public:
     bool IsInformationModel() const { return nullptr != ToInformationModel(); }
     bool IsDefinitionModel() const { return nullptr != ToDefinitionModel(); }
     bool IsSheetModel() const { return nullptr != ToSheetModel(); }
+    bool IsGroupInformationModel() const { return nullptr != ToGroupInformationModel(); }
+    bool IsFunctionalModel() const { return nullptr != ToFunctionalModel(); }
     bool IsDictionaryModel() const { return DictionaryId() == GetModelId(); }
     //@}
 
@@ -605,6 +616,8 @@ public:
 
     //! Returns the ID used by the unique dictionary model associated with each DgnDb
     static DgnModelId DictionaryId() { return DgnModelId((uint64_t)1LL); }
+    //! Returns the ID used by the default GroupInformationModel associated with each DgnDb
+    static DgnModelId GroupInformationId() { return DgnModelId((uint64_t)2LL); }
 
     //! This method is called when it is time to validate changes that have been made to the model's content during the transaction.
     //! This method is called by the transaction manager after all element-level changes have been validated and all root models have been solved.
@@ -616,7 +629,7 @@ public:
     void OnValidate() { _OnValidate(); }
 
     //! Creates a DgnCode for a model with the given name, associated with the default DgnAuthority for models.
-    static DgnCode CreateModelCode(Utf8StringCR modelName) { return ModelAuthority::CreateModelCode(modelName); }
+    static DgnCode CreateModelCode(Utf8StringCR modelName, Utf8StringCR nameSpace="") { return ModelAuthority::CreateModelCode(modelName, nameSpace); }
 };
 
 //=======================================================================================
@@ -916,8 +929,7 @@ public:
 //=======================================================================================
 //! A definition model which contains definitions like materials and styles which are used
 //! throughout a DgnDb. Each DgnDb has exactly one DictionaryModel.
-//! A DictionaryModel can contain @em only DictionaryElements; and likewise, a
-//! DictionaryElement can @em only reside in a DictionaryModel.
+//! A DictionaryModel can contain @em only DefinitionElements.
 //! The dictionary model cannot be copied or deleted. In general, dictionary elements
 //! are copied from one dictionary model to another, often indirectly as the result of
 //! copying another element which depends upon them.
@@ -934,6 +946,38 @@ protected:
     DGNPLATFORM_EXPORT DgnModelPtr virtual _CloneForImport(DgnDbStatus* stat, DgnImportContext& importer) const override;
 public:
     explicit DictionaryModel(CreateParams const& params) : T_Super(params) { }
+};
+
+//=======================================================================================
+//! A model which contains only GroupInformationElements.
+//! @ingroup GROUP_DgnModel
+// @bsiclass                                                    Shaun.Sewall    05/16
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE GroupInformationModel : InformationModel
+{
+    DGNMODEL_DECLARE_MEMBERS(DGN_CLASSNAME_GroupInformationModel, InformationModel);
+protected:
+    GroupInformationModelCP _ToGroupInformationModel() const override final {return this;}
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
+public:
+    explicit GroupInformationModel(CreateParams const& params) : T_Super(params) {}
+    DGNPLATFORM_EXPORT static GroupInformationModelPtr Create(DgnDbR db, DgnCode const& code = DgnCode());
+};
+
+//=======================================================================================
+//! A model which contains only FunctionalElements.
+//! @ingroup GROUP_DgnModel
+// @bsiclass                                                    Shaun.Sewall    05/16
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE FunctionalModel : DgnModel
+{
+    DGNMODEL_DECLARE_MEMBERS(DGN_CLASSNAME_FunctionalModel, DgnModel);
+protected:
+    FunctionalModelCP _ToFunctionalModel() const override final {return this;}
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
+public:
+    explicit FunctionalModel(CreateParams const& params) : T_Super(params) {}
+    DGNPLATFORM_EXPORT static FunctionalModelPtr Create(DgnDbR db, DgnCode const& code = DgnCode());
 };
 
 struct ComponentDef;
@@ -1478,7 +1522,18 @@ namespace dgn_ModelHandler
     {
         MODELHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_DictionaryModel, DictionaryModel, Dictionary, Definition, DGNPLATFORM_EXPORT)
     };
+
+    //! The ModelHandler for GroupInformationModel
+    struct EXPORT_VTABLE_ATTRIBUTE GroupInformation : Model
+    {
+        MODELHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_GroupInformationModel, GroupInformationModel, GroupInformation, Model, DGNPLATFORM_EXPORT)
+    };
+
+    //! The ModelHandler for FunctionalModel
+    struct EXPORT_VTABLE_ATTRIBUTE Functional : Model
+    {
+        MODELHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_FunctionalModel, FunctionalModel, Functional, Model, DGNPLATFORM_EXPORT)
+    };
 };
 
 END_BENTLEY_DGN_NAMESPACE
-

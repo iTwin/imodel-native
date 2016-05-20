@@ -22,9 +22,9 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //=======================================================================================
 //! Holds the definition of a light, with its data encoded in JSON.
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE LightDefinition : DictionaryElement
+struct EXPORT_VTABLE_ATTRIBUTE LightDefinition : DefinitionElement
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_LightDefinition, DictionaryElement);
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_LightDefinition, DefinitionElement);
 public:
     //! Holds the data which describes a light definition
     struct Data

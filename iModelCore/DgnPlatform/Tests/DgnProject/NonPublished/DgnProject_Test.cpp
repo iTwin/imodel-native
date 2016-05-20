@@ -62,7 +62,7 @@ TEST (DgnDb, Settings)
 
     if (true)
         {
-        DgnDbTestDgnManager tdm(L"2dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite, false);
+        DgnDbTestDgnManager tdm(L"2dMetricGeneral.ibim", __FILE__, Db::OpenMode::ReadWrite, false);
         DgnDbP newProject = tdm.GetDgnProjectP();
         ASSERT_TRUE( newProject != NULL );
     
@@ -112,7 +112,7 @@ TEST (DgnDb, CheckStandardProperties)
     //DbResult rc;
     Utf8String val;
 
-    DgnDbTestDgnManager tdm(L"2dMetricGeneral.idgndb", __FILE__, Db::OpenMode::Readonly, false);
+    DgnDbTestDgnManager tdm(L"2dMetricGeneral.ibim", __FILE__, Db::OpenMode::Readonly, false);
     DgnDbP project = tdm.GetDgnProjectP();
     ASSERT_TRUE( project != NULL );
 
@@ -146,7 +146,7 @@ TEST(DgnDb, ProjectSchemaVersions)
     {
     ScopedDgnHost autoDgnHost;
 
-    DgnDbTestDgnManager tdm(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite, TestDgnManager::DGNINITIALIZEMODE_None);
+    DgnDbTestDgnManager tdm(L"3dMetricGeneral.ibim", __FILE__, Db::OpenMode::ReadWrite, TestDgnManager::DGNINITIALIZEMODE_None);
     DgnDbP project = tdm.GetDgnProjectP();
     ASSERT_TRUE( project != NULL);
 
@@ -185,15 +185,15 @@ TEST(DgnDb, ProjectWithDuplicateName)
     DgnDbPtr project, project2;
     
     //Deleting the project file if it exists already
-    BeFileName::BeDeleteFile(DgnDbTestDgnManager::GetOutputFilePath(L"dup.idgndb"));
+    BeFileName::BeDeleteFile(DgnDbTestDgnManager::GetOutputFilePath(L"dup.ibim"));
 
     //Create and Verify that project was created
-    project = DgnDb::CreateDgnDb(&status, DgnDbTestDgnManager::GetOutputFilePath(L"dup.idgndb"), params);
+    project = DgnDb::CreateDgnDb(&status, DgnDbTestDgnManager::GetOutputFilePath(L"dup.ibim"), params);
     ASSERT_TRUE (project != NULL);
     ASSERT_EQ (BE_SQLITE_OK, status) << "Status returned is:" << status;
 
     //Create another project with same name. It should fail
-    project2 = DgnDb::CreateDgnDb(&status2, DgnDbTestDgnManager::GetOutputFilePath(L"dup.idgndb"), params);
+    project2 = DgnDb::CreateDgnDb(&status2, DgnDbTestDgnManager::GetOutputFilePath(L"dup.ibim"), params);
     EXPECT_FALSE (project2.IsValid()) << "Project with Duplicate name should not be created";
     EXPECT_EQ (BE_SQLITE_ERROR_FileExists, status2) << "Status returned for duplicate name is: " << status2;
     }
@@ -207,9 +207,9 @@ TEST(DgnDb, MultipleReadWrite)
     ScopedDgnHost autoDgnHost;
 
     BeFileName fullFileName;
-    TestDataManager::FindTestData(fullFileName, L"ElementsSymbologyByLevel.idgndb", DgnDbTestDgnManager::GetUtDatPath(__FILE__));
+    TestDataManager::FindTestData(fullFileName, L"ElementsSymbologyByLevel.ibim", DgnDbTestDgnManager::GetUtDatPath(__FILE__));
     
-    BeFileName testFile = DgnDbTestDgnManager::GetOutputFilePath(L"ElementsSymbologyByLevel.idgndb");
+    BeFileName testFile = DgnDbTestDgnManager::GetOutputFilePath(L"ElementsSymbologyByLevel.ibim");
     BeFileName::BeCopyFile(fullFileName, testFile);
 
     DbResult status1;
@@ -233,7 +233,7 @@ TEST(DgnDb, InvalidFileFormat)
     ScopedDgnHost           autoDgnHost;
     DgnDbPtr      dgnProj;
     BeFileName path;
-    StatusInt testDataFound = TestDataManager::FindTestData(path, L"ECSqlTest.01.00.ecschema.xml", BeFileName(L"DgnDb\\ECDb\\Schemas"));
+    StatusInt testDataFound = TestDataManager::FindTestData(path, L"ECSqlTest.01.00.ecschema.xml", BeFileName(L"DgnDb\\Schemas"));
     ASSERT_TRUE (SUCCESS == testDataFound);
 
     DbResult status;
@@ -251,7 +251,7 @@ TEST(DgnDb, CreateDgnDb)
     DgnDbPtr      dgnProj;
     BeFileName dgndbFileName;
     BeTest::GetHost().GetOutputRoot(dgndbFileName);
-    dgndbFileName.AppendToPath(L"MyFile.idgndb");
+    dgndbFileName.AppendToPath(L"MyFile.ibim");
 
      if (BeFileName::DoesPathExist(dgndbFileName))
         BeFileName::BeDeleteFile(dgndbFileName);
@@ -295,7 +295,7 @@ TEST(DgnDb, FileNotFoundToOpen)
 
     BeFileName dgndbFileNotExist;
     BeTest::GetHost().GetOutputRoot(dgndbFileNotExist);
-    dgndbFileNotExist.AppendToPath(L"MyFileNotExist.idgndb");
+    dgndbFileNotExist.AppendToPath(L"MyFileNotExist.ibim");
 
     dgnProj = DgnDb::OpenDgnDb(&status, BeFileName(dgndbFileNotExist.GetNameUtf8().c_str()), DgnDb::OpenParams(Db::OpenMode::Readonly));
     EXPECT_EQ (BE_SQLITE_ERROR_FileNotFound, status) << status;
@@ -309,7 +309,7 @@ TEST(DgnDb, OpenAlreadyOpen)
 {
     ScopedDgnHost  autoDgnHost;
 
-    WCharCP testFileName = L"ElementsSymbologyByLevel.idgndb";
+    WCharCP testFileName = L"ElementsSymbologyByLevel.ibim";
     BeFileName sourceFile = DgnDbTestDgnManager::GetSeedFilePath(testFileName);
 
     BeFileName dgndbFileName;
@@ -337,7 +337,7 @@ TEST(DgnDb, GetCoordinateSystemProperties)
     {
     ScopedDgnHost autoDgnHost;
     BeFileName fullFileName;
-    TestDataManager::FindTestData(fullFileName, L"GeoCoordinateSystem.i.idgndb", DgnDbTestDgnManager::GetUtDatPath(__FILE__));
+    TestDataManager::FindTestData(fullFileName, L"GeoCoordinateSystem.i.ibim", DgnDbTestDgnManager::GetUtDatPath(__FILE__));
     //Open project
     DgnDbPtr dgnProj;
     openProject(dgnProj, fullFileName, BeSQLite::Db::OpenMode::Readonly);
@@ -465,8 +465,8 @@ TEST_F(DgnProjectPackageTest, CreatePackageUsingDefaults)
     {
     //Copy file to temp directory
     BeFileName fullFileName;
-    TestDataManager::FindTestData(fullFileName, L"ElementsSymbologyByLevel.idgndb", DgnDbTestDgnManager::GetUtDatPath(__FILE__));
-    BeFileName testFile = DgnDbTestDgnManager::GetOutputFilePath(L"ElementsSymbologyByLevel.idgndb");
+    TestDataManager::FindTestData(fullFileName, L"ElementsSymbologyByLevel.ibim", DgnDbTestDgnManager::GetUtDatPath(__FILE__));
+    BeFileName testFile = DgnDbTestDgnManager::GetOutputFilePath(L"ElementsSymbologyByLevel.ibim");
     BeFileName::BeCopyFile(fullFileName, testFile);
     //Collect properties for later verification
     DbResult status;
@@ -488,7 +488,7 @@ TEST_F(DgnProjectPackageTest, CreatePackageUsingDefaults)
     //Check embedded files table and get file id
     DbEmbeddedFileTable& embeddedFiles = db.EmbeddedFiles();
     ASSERT_EQ(1, embeddedFiles.MakeIterator().QueryCount())<<"There should be only one embeded file";
-    BeBriefcaseBasedId fileId = embeddedFiles.QueryFile("ElementsSymbologyByLevel.idgndb");
+    BeBriefcaseBasedId fileId = embeddedFiles.QueryFile("ElementsSymbologyByLevel.ibim");
     //Verify properties
     Utf8String propertToVerify;
     PropertiesInTable propertiesInTableV;
@@ -503,11 +503,11 @@ TEST_F(DgnProjectPackageTest, CreatePackageUsingDefaults)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnProjectPackageTest, ExtractFromPackage)
     {
-    WCharCP testDatabase = L"ElementsSymbologyByLevel.idgndb";
+    WCharCP testDatabase = L"ElementsSymbologyByLevel.ibim";
     //Copy file to temp directory
     BeFileName fullFileName;
     TestDataManager::FindTestData(fullFileName, testDatabase, DgnDbTestDgnManager::GetUtDatPath(__FILE__));
-    BeFileName testFile = DgnDbTestDgnManager::GetOutputFilePath(L"ElementsSymbologyByLevel.idgndb");
+    BeFileName testFile = DgnDbTestDgnManager::GetOutputFilePath(L"ElementsSymbologyByLevel.ibim");
     BeFileName::BeCopyFile(fullFileName, testFile);
     //Get some information which can be used later to verify if file was extracted correctly
     DbResult status;
@@ -559,7 +559,7 @@ TEST_F(DgnProjectPackageTest, ExtractFromPackage)
 TEST_F(DgnProjectPackageTest, ExtractPackageUsingDefaults)
     {
     //Copy project to temp folder
-    WCharCP fileName = L"ElementsSymbologyByLevel.idgndb";
+    WCharCP fileName = L"ElementsSymbologyByLevel.ibim";
     BeFileName fullFileName;
     TestDataManager::FindTestData(fullFileName, fileName, DgnDbTestDgnManager::GetUtDatPath(__FILE__));
     BeFileName testFile = DgnDbTestDgnManager::GetOutputFilePath(fileName);
@@ -583,7 +583,7 @@ TEST_F(DgnProjectPackageTest, ExtractPackageUsingDefaults)
     ASSERT_TRUE ((int) DgnDbStatus::Success == status); 
     //Extract file from package
     DbResult dbResult;
-    BeFileName extractedFile = DgnDbTestDgnManager::GetOutputFilePath(L"extractedUsingDefaults.idgndb");
+    BeFileName extractedFile = DgnDbTestDgnManager::GetOutputFilePath(L"extractedUsingDefaults.ibim");
     auto fileStatus = DgnIModel::ExtractUsingDefaults(dbResult, extractedFile, packageFile, true);
     EXPECT_EQ(DgnDbStatus::Success, fileStatus);
     EXPECT_TRUE(BE_SQLITE_OK == dbResult);
@@ -615,7 +615,7 @@ BentleyStatus ImportSchema (ECSchemaR ecSchema, DgnDbR project)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (DgnProjectPackageTest, EnforceLinkTableFor11Relationship)
     {
-    WCharCP testFileName = L"2dMetricGeneral.idgndb";
+    WCharCP testFileName = L"2dMetricGeneral.ibim";
     BeFileName sourceFile = DgnDbTestDgnManager::GetSeedFilePath (testFileName);
 
     BeFileName dgndbFileName;
@@ -632,7 +632,6 @@ TEST_F (DgnProjectPackageTest, EnforceLinkTableFor11Relationship)
     BeFileName ecSchemaPath;
     BeTest::GetHost ().GetDocumentsRoot (ecSchemaPath);
     ecSchemaPath.AppendToPath (L"DgnDb");
-    ecSchemaPath.AppendToPath (L"ECDb");
     ecSchemaPath.AppendToPath (L"Schemas");
     ecSchemaPath.AppendToPath (L"SampleDgnDbEditor.01.00.ecschema.xml");
 
@@ -665,7 +664,7 @@ TEST(DgnProject, DuplicateElementId)
     
     // // We're going to write to the file; make a copy.
     // BeFileName dbPath;
-    // ASSERT_TRUE(SUCCESS == DgnDbTestDgnManager::GetTestDataOut(dbPath, L"3dMetricGeneral.idgndb", L"DgnProject.DuplicateElementId.dgndb", __FILE__));
+    // ASSERT_TRUE(SUCCESS == DgnDbTestDgnManager::GetTestDataOut(dbPath, L"3dMetricGeneral.ibim", L"DgnProject.DuplicateElementId.bim", __FILE__));
     
     // DgnModelId modelId;
     // ElementId firstAddId;
@@ -733,12 +732,12 @@ TEST(DgnProject, DuplicateElementId)
 TEST_F (DgnProjectPackageTest, VerifyViewsForDgndbFilesConvertedDuringBuild)
     {
     std::vector<Utf8String> dgndbFiles;
-    dgndbFiles.push_back ("79_Main.i.idgndb");
-    dgndbFiles.push_back ("04_Plant.i.idgndb");
-    dgndbFiles.push_back ("BGRSubset.i.idgndb");
-    dgndbFiles.push_back ("fonts.dgn.i.idgndb");
-    dgndbFiles.push_back ("2dMetricGeneral.idgndb");
-    dgndbFiles.push_back ("3dMetricGeneral.idgndb");
+    dgndbFiles.push_back ("79_Main.i.ibim");
+    dgndbFiles.push_back ("04_Plant.i.ibim");
+    dgndbFiles.push_back ("BGRSubset.i.ibim");
+    dgndbFiles.push_back ("fonts.dgn.i.ibim");
+    dgndbFiles.push_back ("2dMetricGeneral.ibim");
+    dgndbFiles.push_back ("3dMetricGeneral.ibim");
 
     BeFileName dgndbFilesPath;
     BeTest::GetHost ().GetDocumentsRoot (dgndbFilesPath);
@@ -904,7 +903,7 @@ TEST_F(ImportTests, simpleSchemaImport)
         "  </ECClass>"
         "</ECSchema>";
 
-    SetupProject(L"3dMetricGeneral.idgndb", L"New3dMetricGeneralDb.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.ibim", L"New3dMetricGeneralDb.ibim", BeSQLite::Db::OpenMode::ReadWrite);
     ECN::ECSchemaReadContextPtr schemaContext = ECN::ECSchemaReadContext::CreateContext();
     m_db->SaveChanges();
 

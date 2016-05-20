@@ -10,63 +10,65 @@
 static DgnHost::Key s_allMapsKey;
 static DgnHost::Key s_systemLsFileInfoKey;
 
-#if defined (NEEDSWORK_RENDER_GRAPHIC)
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
 struct LineStyleRangeCollector : IGeometryProcessor
 {
 private:
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    GeometrySourceCR    m_stroker;
-#endif
+    LsComponentR        m_component;
     DRange3d            m_range;
-    ViewContextP        m_context;
     Transform           m_currentTransform;
+    DPoint3d            m_points[2];
 
 protected:
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
-explicit LineStyleRangeCollector(GeometrySourceCR stroker) 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-: m_stroker(stroker) 
-#endif
+explicit LineStyleRangeCollector(LsComponentR component, DPoint3d points[2]) 
+: m_component(component) 
     {
-    m_range.Init();
+    //  Make sure to include both end points in case the line style has pading at the beginning or end.
+    m_range = DRange3d::From(points[0], points[1]);
     m_currentTransform.InitIdentity();
+    m_points[0] = points[0];
+    m_points[1] = points[1];
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
-virtual bool _ProcessAsFacets(bool isPolyface) const override {return false;}
-virtual bool _ProcessAsBody(bool isCurved) const override {return false;}
-virtual void _AnnounceContext(ViewContextR context) override {m_context = &context;}
-virtual void _AnnounceTransform(TransformCP trans) override {if (trans) m_currentTransform = *trans; else m_currentTransform.InitIdentity();}
+//  virtual bool _ProcessAsFacets(bool isPolyface) const override {return false;}
+//  virtual bool _ProcessAsBody(bool isCurved) const override {return false;}
+//  virtual void _AnnounceContext(ViewContextR context) override {m_context = &context;}
+//  virtual void _AnnounceTransform(TransformCP trans) override {if (trans) m_currentTransform = *trans; else m_currentTransform.InitIdentity();}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
-virtual BentleyStatus _ProcessCurveVector(CurveVectorCR curves, bool isFilled) override
+bool _ProcessCurveVector(CurveVectorCR curves, bool filled, SimplifyGraphic&) override
     {
     DRange3d  range;
 
     curves.GetRange(range, m_currentTransform);
     m_range.Extend(range);
 
-    return SUCCESS;
+    return true;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
-virtual void _OutputGraphics(ViewContext& context) override
+virtual void _OutputGraphics(ViewContext& viewContext) override
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    m_stroker.Stroke(context);
-#endif
+    Render::GraphicBuilderPtr  graphic = viewContext.CreateGraphic();
+
+    LineStyleSymb   lineStyleSymb;
+    lineStyleSymb.Init(nullptr);
+    //  lineStyleSymb.SetScale(m_scaleFactor);
+
+    m_component._StrokeLineString(*graphic, &viewContext, &lineStyleSymb, m_points, 2, false);
     }
 
 //---------------------------------------------------------------------------------------
@@ -82,19 +84,17 @@ public:
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
-static void Process(DRange3dR range, GeometrySourceCR stroker)
+static void Process(DRange3dR range, LsComponentR component, DPoint3d points[2])
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    LineStyleRangeCollector  processor(stroker);
+    LineStyleRangeCollector  processor(component, points);
 
-    GeometryProcessor::Process(processor, stroker._GetDgnDb());
+    BeAssert(nullptr != component.GetDgnDbP());
+    GeometryProcessor::Process(processor, *component.GetDgnDbP());
 
     processor.GetRange(range);
-#endif
     }
 
 }; // LineStyleRangeCollector
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   01/03
@@ -204,13 +204,12 @@ Utf8String         LsDefinition::GetStyleName () const
 #define NUMBER_ITERATIONS_ComponentStroker   (1)
 #define MAX_XRANGE_RATIO (256 * NUMBER_ITERATIONS_ComponentStroker)
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 //=======================================================================================
 //! Base class for StrokeComponentForRange and ComponentToTextureStroker
 // @bsiclass                                                    John.Gooding    10/2015
 //=======================================================================================
-struct ComponentStroker : Dgn::IStrokeForCache
-    {
+struct ComponentStroker
+{
 protected:
     DgnDbR              m_dgndb;
     LsComponentPtr      m_component;
@@ -238,43 +237,15 @@ ComponentStroker(DgnDbR dgndb, LsComponentR component, double scale) : m_dgndb(d
     m_points[1].Init(length, 0, 0);
     }
 
-int32_t _GetQvIndex() const override {return 1;}
-QvElemP _GetQvElem(double pixelSize) const override {return nullptr;}
-void _SaveQvElem(QvElemP, double pixelSize = 0.0, double sizeDependentRatio = 0.0) const override {}
-DgnDbR _GetDgnDb() const override { return m_dgndb; }
+DgnDbR GetDgnDb() const { return m_dgndb; }
+double GetLength() {return m_points[1].x;}
 };
-
-//=======================================================================================
-//! Used to calculate the range of the line style.
-// @bsiclass                                                    John.Gooding    09/2015
-//=======================================================================================
-struct          StrokeComponentForRange : ComponentStroker
-{
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    08/2015
-//---------------------------------------------------------------------------------------
-StrokeComponentForRange(DgnDbR dgndb, LsComponentR component) : ComponentStroker(dgndb, component, 1.0)
-    {
-    //  It should have already created a copy of the components if that is necessary
-    BeAssert(m_component->_IsOkayForTextureGeneration() == LsOkayForTextureGeneration::NoChangeRequired);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    08/2015
-//---------------------------------------------------------------------------------------
-/* static */  void CreateGeometryMapMaterial(ViewContextR context, Stroker& stroker, intptr_t textureId)
-    {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    context.GetIViewDraw ().DefineQVGeometryMap (textureId, stroker, nullptr, false, context, false);
-#endif
-    return;
-    }
 
 //=======================================================================================
 //! Used to generate a texture based on a line style.
 // @bsiclass                                                    John.Gooding    08/2015
 //=======================================================================================
-struct ComponentToTextureStroker : Stroker
+struct ComponentToTextureStroker : ComponentStroker
 {
 private:
     double              m_scaleFactor;
@@ -305,7 +276,7 @@ ComponentToTextureStroker(DgnDbR dgndb, double scaleFactor, ColorDef lineColor, 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
-void _Stroke(ViewContextR context) const override
+Render::GraphicPtr Stroke(ViewContextR context) const
     {
     GraphicParams         elemMatSymb;
 
@@ -325,13 +296,38 @@ void _Stroke(ViewContextR context) const override
     lineStyleSymb.Init(nullptr);
     lineStyleSymb.SetScale(m_scaleFactor);
 
-    context.GetCurrentGraphicR().ActivateGraphicParams(&elemMatSymb);
 
-    context.PushTransform(m_transformForTexture);
-    m_component->_StrokeLineString(&context, &lineStyleSymb, m_points, 2, false);
-    context.PopTransformClip();
+    //  Create the graphic
+    Render::GraphicBuilderPtr graphic = context.CreateGraphic(Graphic::CreateParams(context.GetViewport(), m_transformForTexture));
+
+    //  Add symbology
+    graphic->ActivateGraphicParams(elemMatSymb);
+    m_component->_StrokeLineString(*graphic, &context, &lineStyleSymb, m_points, 2, false);
+
+    return graphic;
     }
 };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    05/2016
+//---------------------------------------------------------------------------------------
+static void initializePoints(DPoint3d points[2], LsComponentR component, double scale)
+    {
+    double length = component._GetLength() * NUMBER_ITERATIONS_ComponentStroker;
+
+    if (length <  mgds_fc_epsilon)
+        {
+        //  Apparently nothing is length dependent.
+        length = component._GetMaxWidth(nullptr);
+        if (length <  mgds_fc_epsilon)
+            length = 1.0;
+        }
+
+    length *= scale;
+
+    points[0].Init(0, 0, 0);
+    points[1].Init(length, 0, 0);
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2015
@@ -395,29 +391,46 @@ static DRange2d getAdjustedRange(uint32_t& scaleFactor, DRange3dCR lsRange, doub
 
     return range2d;
     }
-#endif
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
-Render::TexturePtr LsDefinition::GenerateTexture(ViewContextR viewContext, LineStyleSymbR lineStyleSymb)
+Render::TexturePtr LsDefinition::GenerateTexture(double& textureDrawWidth, ViewContextR viewContext, LineStyleSymbR lineStyleSymb)
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+    double unitDef = GetUnitsDefinition();
+    if (unitDef < mgds_fc_epsilon)
+        {
+        BeAssert(unitDef > mgds_fc_epsilon);
+        unitDef = 1.0;
+        }
+
+    textureDrawWidth = 0;
+    DgnViewportP vp = viewContext.GetViewport();
+    if (vp == nullptr)
+        return nullptr;
+
     //  Assume the caller already knows this is something that must be converted but does not know it can be converted.
     BeAssert(m_lsComp->GetComponentType() != LsComponentType::RasterImage);
+
+    //  A component may cache information used from running texture generation for another component.
+    //  If so, reset it now.  _StartTextureGeneration also traverses the children.
     m_lsComp->_StartTextureGeneration();
 
     if (m_lsComp->_IsOkayForTextureGeneration() == Dgn::LsOkayForTextureGeneration::NotAllowed)
-        return 0;
+        return nullptr;
 
+    //  Something in the component tree may be modified for texture generation.  For example, the size of an iteration
+    //  may be expanded to accomodate a symbol that overflows.
     LsComponentPtr  comp = m_lsComp->_GetForTextureGeneration();
     if (comp.IsNull())
-        return 0;
+        return nullptr;
 
     //  Get just the range of the components.  Don't let any scaling enter into this.
+    DPoint3d  points[2];
+    initializePoints(points, *m_lsComp, 1.0);
+
     DRange3d  lsRange;
-    StrokeComponentForRange rangeStroker(viewContext.GetDgnDb(), *comp);
-    rangeStroker.ComputeRange(lsRange);
+    LineStyleRangeCollector::Process(lsRange, *comp, points);
 
     uint32_t  scaleFactor = 1;
     DRange2d range2d = getAdjustedRange(scaleFactor, lsRange, comp->_GetLength());
@@ -426,13 +439,6 @@ Render::TexturePtr LsDefinition::GenerateTexture(ViewContextR viewContext, LineS
     comp->_QuerySymbology(symbologyResults);
     ColorDef lineColor, fillColor;
     bool isColorBySymbol = symbologyResults.IsColorBySymbol(lineColor, fillColor) && !symbologyResults.IsColorByLevel();
-    if (!isColorBySymbol)
-        {
-        //  This should not matter because we pass false for isColorBySymbol causing DefineQVGeometryMap to use QV_GEOTEXTURE_DEFERCLRSEL
-        //  However, at the time this was tested it QV_GEOTEXTURE_DEFERCLRSEL did not provide the expected behavior.
-        lineColor = ColorDef::Black();
-        fillColor = ColorDef::Black();
-        }
 
     uint32_t lineWeight;
     bool isWeightBySymbol = symbologyResults.IsWeightBySymbol(lineWeight);
@@ -440,18 +446,22 @@ Render::TexturePtr LsDefinition::GenerateTexture(ViewContextR viewContext, LineS
         lineWeight = 0;
 
     ComponentToTextureStroker   stroker(viewContext.GetDgnDb(), scaleFactor, lineColor, fillColor, lineWeight, *comp);
+    GraphicPtr graphic = stroker.Stroke(viewContext);
 
-    viewContext.GetIViewDraw ().DefineQVGeometryMap (intptr_t(this), stroker, range2d, isColorBySymbol, viewContext, false);
-    m_hasTextureWidth = true;
-    m_textureWidth = scaleFactor * (range2d.high.y - range2d.low.y);
-#endif
-    return nullptr;
+    Render::TexturePtr texture = vp->GetRenderTarget()->CreateGeometryTexture(*graphic, range2d, isColorBySymbol, false);
+
+    double yRange = range2d.high.y - range2d.low.y;
+    if (0.0 == yRange)
+        yRange = 1;
+
+    textureDrawWidth = yRange * unitDef;
+    return texture.get();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-Texture* LsDefinition::GetTexture(ViewContextR viewContext, LineStyleSymbR lineStyleSymb, bool forceTexture, double scale) 
+Texture* LsDefinition::GetTexture(ViewContextR viewContext, LineStyleSymbR lineStyleSymb, bool forceTexture, double scaleWithoutUnits) 
     {
     if (!m_lsComp.IsValid())
         return nullptr;
@@ -494,12 +504,13 @@ Texture* LsDefinition::GetTexture(ViewContextR viewContext, LineStyleSymbR lineS
             {
             m_textureInitialized = true;
             //  Convert this type to texture on the fly if possible
-            m_texture = GenerateTexture(viewContext, lineStyleSymb);
+            m_texture = GenerateTexture(m_textureWidth, viewContext, lineStyleSymb);
+            m_hasTextureWidth = true;
             }
         }
 
     if (m_texture.IsValid() && m_lsComp.IsValid() && m_hasTextureWidth)
-        lineStyleSymb.SetWidth (m_textureWidth * scale);
+        lineStyleSymb.SetWidth (m_textureWidth * scaleWithoutUnits);
     
     return m_texture.get();
     }

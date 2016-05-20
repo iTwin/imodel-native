@@ -102,9 +102,9 @@ typedef DgnElementId AnnotationFrameStyleId;
 //! @ingroup GROUP_Annotation
 // @bsiclass                                                    Jeff.Marker     06/2014
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE AnnotationFrameStyle : DictionaryElement
+struct EXPORT_VTABLE_ATTRIBUTE AnnotationFrameStyle : DefinitionElement
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_AnnotationFrameStyle, DictionaryElement);
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_AnnotationFrameStyle, DefinitionElement);
 
 private:
     friend struct AnnotationFrameStylePersistence;
@@ -128,7 +128,7 @@ public:
     static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_AnnotationFrameStyle); }
     static DgnClassId QueryDgnClassId(DgnDbR db) { return DgnClassId(QueryECClassId(db)); }
 
-    explicit AnnotationFrameStyle(DgnDbR db) : T_Super(CreateParams(db, QueryDgnClassId(db), DgnCode())) {}
+    explicit AnnotationFrameStyle(DgnDbR db) : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryDgnClassId(db), DgnCode())) {}
     explicit AnnotationFrameStyle(CreateParams const& params) : T_Super(params) {}
     static AnnotationFrameStylePtr Create(DgnDbR db) { return new AnnotationFrameStyle(db); }
     AnnotationFrameStylePtr CreateCopy() const { return MakeCopy<AnnotationFrameStyle>(); }

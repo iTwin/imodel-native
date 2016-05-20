@@ -39,7 +39,7 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnTexture::CreateParams::CreateParams(DgnDbR db, Utf8StringCR name, Data const& data, Utf8StringCR descr)
-    : T_Super(db, QueryDgnClassId(db), CreateTextureCode(name)), m_data(data), m_descr(descr)
+    : T_Super(db, DgnModel::DictionaryId(), QueryDgnClassId(db), CreateTextureCode(name)), m_data(data), m_descr(descr)
     {
     }
 
@@ -174,7 +174,7 @@ Render::Image DgnTexture::ExtractImage() const
             imageInfo.m_height = m_data.GetHeight();
             imageInfo.m_hasAlpha = true;
             imageInfo.m_isBGR = false;
-            imageInfo.m_isTopDown = true;
+            imageInfo.SetTopDown(true);
             
             imageInfo.ReadImageFromJpgBuffer(image, m_data.GetData(), m_data.GetSize());
             break;

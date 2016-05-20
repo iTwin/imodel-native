@@ -34,8 +34,8 @@ struct DgnModelTests : public DgnDbTestFixture
     
     void SetUp() override
         {
-        //DgnDbTestDgnManager tdm(L"XGraphicsElements.idgndb", __FILE__, Db::OpenMode::ReadWrite, /*needBriefcase*/false);
-        //SetupProject(L"XGraphicsElements.idgndb", __FILE__, Db::OpenMode::ReadWrite);
+        //DgnDbTestDgnManager tdm(L"XGraphicsElements.ibim", __FILE__, Db::OpenMode::ReadWrite, /*needBriefcase*/false);
+        //SetupProject(L"XGraphicsElements.ibim", __FILE__, Db::OpenMode::ReadWrite);
 
         //m_db = tdm.GetDgnProjectP();
         }
@@ -79,7 +79,7 @@ public:
 //---------------------------------------------------------------------------------------
 TEST_F(DgnModelTests, GetGraphicElements)
     {
-    SetupProject(L"XGraphicsElements.idgndb", __FILE__, Db::OpenMode::ReadWrite);
+    SetupProject(L"XGraphicsElements.ibim", __FILE__, Db::OpenMode::ReadWrite);
     LoadModel("Splines");
     uint32_t graphicElementCount = (uint32_t) m_model->GetElements().size();
     ASSERT_NE(graphicElementCount, 0);
@@ -98,7 +98,7 @@ TEST_F(DgnModelTests, GetGraphicElements)
 //---------------------------------------------------------------------------------------
 TEST_F(DgnModelTests, GetName)
     {
-    SetupProject(L"XGraphicsElements.idgndb", __FILE__, Db::OpenMode::ReadWrite);
+    SetupProject(L"XGraphicsElements.ibim", __FILE__, Db::OpenMode::ReadWrite);
     LoadModel("Splines");
     Utf8String name = m_model->GetCode().GetValue();
     EXPECT_TRUE(name.CompareTo("Splines")==0);
@@ -122,7 +122,7 @@ TEST_F(DgnModelTests, GetName)
 //---------------------------------------------------------------------------------------
 TEST_F(DgnModelTests, EmptyList)
     {
-    SetupProject(L"XGraphicsElements.idgndb", __FILE__, Db::OpenMode::ReadWrite);
+    SetupProject(L"XGraphicsElements.ibim", __FILE__, Db::OpenMode::ReadWrite);
     LoadModel("Splines");
     ASSERT_TRUE(0 != m_model->GetElements().size());
     m_model->EmptyModel();
@@ -136,7 +136,7 @@ TEST_F(DgnModelTests, EmptyList)
 //---------------------------------------------------------------------------------------
 TEST_F(DgnModelTests, GetRange)
     {
-    SetupProject(L"ModelRangeTest.idgndb", __FILE__, Db::OpenMode::ReadWrite);
+    SetupProject(L"ModelRangeTest.ibim", __FILE__, Db::OpenMode::ReadWrite);
     LoadModel("RangeTest");
 
     AxisAlignedBox3d range = m_model->ToGeometricModel()->QueryModelRange();
@@ -153,7 +153,7 @@ TEST_F(DgnModelTests, GetRange)
 //---------------------------------------------------------------------------------------
 TEST_F(DgnModelTests, GetRangeOfEmptyModel)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.ibim", __FILE__, Db::OpenMode::ReadWrite);
     LoadModel("Default");
 
     AxisAlignedBox3d thirdRange = m_model->ToGeometricModel()->QueryModelRange();
@@ -206,7 +206,7 @@ void DgnModelTests::InsertElement(DgnDbR db,   DgnModelId mid, bool is3d, bool e
 //---------------------------------------------------------------------------------------
 TEST_F(DgnModelTests, SheetModelCRUD)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.ibim", __FILE__, Db::OpenMode::ReadWrite);
 
     static Utf8CP s_sheet1Name = "Sheet1";
     static Utf8CP s_sheet1NameUPPER = "SHEET1";
@@ -314,12 +314,12 @@ TEST_F(DgnModelTests, SheetModelCRUD)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnModelTests, WorkWithDgnModelTable)
     {
-    SetupProject(L"ElementsSymbologyByLevel.idgndb", __FILE__, Db::OpenMode::ReadWrite);
+    SetupProject(L"ElementsSymbologyByLevel.ibim", __FILE__, Db::OpenMode::ReadWrite);
 
     //Iterating through the models
     DgnModels& modelTable = m_db->Models();
     DgnModels::Iterator iter = modelTable.MakeIterator();
-    ASSERT_EQ(3, iter.QueryCount()); // including dictionary model...
+    ASSERT_EQ(4, iter.QueryCount()); // including DictionaryModel and GroupInformationModel...
 
     //Set up testmodel properties as we know what the models in this file contain
     TestModelProperties models[3], testModel;
@@ -331,7 +331,7 @@ TEST_F(DgnModelTests, WorkWithDgnModelTable)
     for (DgnModels::Iterator::Entry const& entry : iter)
     {
         ASSERT_TRUE(entry.GetModelId().IsValid()) << "Model Id is not Valid";
-        if (DgnModel::DictionaryId() == entry.GetModelId())
+        if ((DgnModel::DictionaryId() == entry.GetModelId()) || (DgnModel::GroupInformationId() == entry.GetModelId()))
             continue;
 
         WString entryNameW(entry.GetCodeValue(), true);               // string conversion
@@ -347,7 +347,7 @@ TEST_F(DgnModelTests, WorkWithDgnModelTable)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnModelTests, DictionaryModel)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.ibim", __FILE__, Db::OpenMode::ReadWrite);
     DgnDbR db = *m_db;
 
     DgnModelPtr model = db.Models().GetModel(DgnModel::DictionaryId());
@@ -372,7 +372,7 @@ TEST_F(DgnModelTests, DictionaryModel)
     EXPECT_TRUE(DgnModel::Import(nullptr, dictModelR, cc).IsNull());
 
     // The dictionary model cannot be imported
-    DgnDbPtr db2 = openCopyOfDb(L"DgnDb/3dMetricGeneral.idgndb", L"3dMetricGeneralcc.idgndb", DgnDb::OpenMode::ReadWrite);
+    DgnDbPtr db2 = openCopyOfDb(L"DgnDb/3dMetricGeneral.ibim", L"3dMetricGeneralcc.ibim", DgnDb::OpenMode::ReadWrite);
     DgnImportContext importer(db, *db2);
     EXPECT_TRUE(DgnModel::Import(nullptr, dictModelR, importer).IsNull());
     }
@@ -381,7 +381,7 @@ TEST_F(DgnModelTests, DictionaryModel)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (DgnModelTests, ModelsIterator)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.ibim", __FILE__, Db::OpenMode::ReadWrite);
     DgnDbR db = *m_db;
 
     DgnModelPtr seedModel = db.Models ().GetModel (db.Models ().QueryFirstModelId ());
@@ -417,7 +417,7 @@ TEST_F (DgnModelTests, ModelsIterator)
 
     DgnModels& models = db.Models ();
     DgnModels::Iterator iter = models.MakeIterator ();
-    EXPECT_EQ (5, iter.QueryCount ()); // including the dictionary model...
+    EXPECT_EQ (6, iter.QueryCount ()); // including the DictionaryModel and GroupInformationModel...
     DgnModels::Iterator::Entry entry = iter.begin ();
     int i = 0;
     for (auto const& entry : iter)
@@ -459,7 +459,7 @@ TEST_F (DgnModelTests, ModelsIterator)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (DgnModelTests, AbandonChanges)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.ibim", __FILE__, Db::OpenMode::ReadWrite);
     DgnDbR db = *m_db;
 
     DgnModelPtr seedModel = db.Models ().GetModel (db.Models ().QueryFirstModelId ());
@@ -506,7 +506,7 @@ struct TestAppData : DgnModel::AppData
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (DgnModelTests, AddAppData)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.ibim", __FILE__, Db::OpenMode::ReadWrite);
     DgnDbR db = *m_db;
 
     DgnModelPtr seedModel = db.Models ().GetModel (db.Models ().QueryFirstModelId ());
@@ -540,7 +540,7 @@ TEST_F (DgnModelTests, AddAppData)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (DgnModelTests, DropAppData)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.ibim", __FILE__, Db::OpenMode::ReadWrite);
     DgnDbR db = *m_db;
 
     DgnModelPtr seedModel = db.Models ().GetModel (db.Models ().QueryFirstModelId ());
@@ -569,7 +569,7 @@ TEST_F (DgnModelTests, DropAppData)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (DgnModelTests, ReplaceInvalidCharacter)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.ibim", __FILE__, Db::OpenMode::ReadWrite);
 
     Utf8String name = "Invalid*Name";
     Utf8CP InvalidChar = "*";

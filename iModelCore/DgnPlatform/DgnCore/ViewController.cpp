@@ -153,7 +153,7 @@ void ViewFlags::To3dJson(JsonValueR val) const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                   Eric.Paquet         4/2016
 //-----------------------------------------------------------------------------------------
-void PointCloudViewSettings::FromJson(JsonValueCR val)
+void PointCloudSettings::FromJson(JsonValueCR val)
     {
     m_flags                 = val[SETTINGPOINTCLOUD_flags].asUInt();
     m_contrast              = val[SETTINGPOINTCLOUD_contrast].asDouble();
@@ -177,7 +177,7 @@ void PointCloudViewSettings::FromJson(JsonValueCR val)
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                   Eric.Paquet         4/2016
 //-----------------------------------------------------------------------------------------
-void PointCloudViewSettings::ToJson(JsonValueR val) const
+void PointCloudSettings::ToJson(JsonValueR val) const
     {
     val[SETTINGPOINTCLOUD_flags]                = m_flags;
     val[SETTINGPOINTCLOUD_contrast]             = m_contrast;
@@ -264,7 +264,7 @@ ViewController::ViewController(DgnDbR dgndb, DgnViewId viewId) : m_dgndb(dgndb)
 void ViewController::LoadCategories(JsonValueCR settings)
     {
     if (settings.isMember(VIEW_SETTING_Categories))
-        m_viewedCategories.FromJson(settings[VIEW_SETTING_Categories]);
+        m_viewedCategories.FromString(settings[VIEW_SETTING_Categories].asString());
 
     // load all SubCategories (even for categories not currently on)
     for (auto const& id : DgnSubCategory::QuerySubCategories(m_dgndb))
@@ -299,11 +299,6 @@ void ViewController::_RestoreFromSettings(JsonValueCR settings)
         m_viewFlags.InitDefaults();
     else
         m_viewFlags.FromBaseJson(settings[VIEW_SETTING_Flags]);
-
-    if (!settings.isMember(VIEW_SETTING_PointCloud))
-        m_pointCloudViewSettings.InitDefaults();
-    else
-        m_pointCloudViewSettings.FromJson(settings[VIEW_SETTING_PointCloud]);
 
     if (!settings.isMember(VIEW_SETTING_BackgroundColor))
         m_backgroundColor = ColorDef::Black();
@@ -342,8 +337,8 @@ DbResult ViewController::Load()
     Json::Reader::Parse(settingsStr, json);
     _RestoreFromSettings(json);
 
-    //  The QueryModel calls GetModel in the QueryModel thread.  produces a thread race condition if it calls QueryModelById and
-    //  the model is not already loaded.
+    // The QueryModel calls GetModel in the QueryModel thread.  produces a thread race condition if it calls QueryModelById and
+    // the model is not already loaded.
     for (auto& id : GetViewedModels())
         m_dgndb.Models().GetModel(id);
 
@@ -361,11 +356,7 @@ void ViewController::_SaveToSettings(JsonValueR settings) const
     if (ColorDef::Black() != m_backgroundColor)
         settings[VIEW_SETTING_BackgroundColor] = m_backgroundColor.GetValue();
 
-    // Only save point cloud view settings if they're not set to default values
-    if (!m_pointCloudViewSettings.AreSetToDefault())
-        m_pointCloudViewSettings.ToJson(settings[VIEW_SETTING_PointCloud]);
-
-    m_viewedCategories.ToJson(settings[VIEW_SETTING_Categories]);
+    settings[VIEW_SETTING_Categories] = m_viewedCategories.ToString();
     if (m_subCategoryOverrides.empty())
         return;
 
@@ -1392,6 +1383,17 @@ void CameraViewController::VerifyFocusPlane()
 
     double backDist = eyeOrg.z;
     double frontDist = backDist - m_delta.z;
+
+    if (backDist<=0.0 || frontDist<=0.0)
+        {
+        // the camera location is invalid. Set it based on the view range.
+        double tanangle = tan(m_camera.GetLensAngle()/2.0);
+        backDist = m_delta.z / tanangle;
+        m_camera.SetFocusDistance(backDist/2);
+        CenterEyePoint(&backDist);
+        return;
+        }
+
     double focusDist = m_camera.GetFocusDistance();
     if (focusDist>frontDist && focusDist<backDist)
         return;
@@ -1614,6 +1616,7 @@ void CameraViewController::_RestoreFromSettings(JsonValueCR jsonObj)
     DPoint3d eyePt;
     JsonUtils::DPoint3dFromJson(eyePt, jsonObj[VIEW_SETTING_CameraPosition]);
     m_camera.SetEyePoint(eyePt);
+    m_camera.ValidateLens();
 
     VerifyFocusPlane();
     }
@@ -1626,7 +1629,7 @@ void SpatialViewController::_RestoreFromSettings(JsonValueCR jsonObj)
     T_Super::_RestoreFromSettings(jsonObj);
 
     if (jsonObj.isMember(VIEW_SETTING_Models))
-        m_viewedModels.FromJson(jsonObj[VIEW_SETTING_Models]);
+        m_viewedModels.FromString(jsonObj[VIEW_SETTING_Models].asString());
 
     m_viewFlags.From3dJson(jsonObj[VIEW_SETTING_Flags]);
 
@@ -1638,6 +1641,11 @@ void SpatialViewController::_RestoreFromSettings(JsonValueCR jsonObj)
         m_rotation.InitIdentity();
 
     DgnViewport::ValidateViewDelta(m_delta, false);
+
+    if (!jsonObj.isMember(VIEW_SETTING_PointCloud))
+        m_pointCloudSettings.InitDefaults();
+    else
+        m_pointCloudSettings.FromJson(jsonObj[VIEW_SETTING_PointCloud]);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1651,6 +1659,7 @@ void CameraViewController::_SaveToSettings(JsonValueR jsonObj) const
     jsonObj[VIEW_SETTING_CameraAngle] = m_camera.GetLensAngle();
     JsonUtils::DPoint3dToJson(jsonObj[VIEW_SETTING_CameraPosition], m_camera.GetEyePoint());
     jsonObj[VIEW_SETTING_CameraFocalLength] = m_camera.GetFocusDistance();
+
     }
 
 //---------------------------------------------------------------------------------------
@@ -1661,11 +1670,15 @@ void SpatialViewController::_SaveToSettings(JsonValueR jsonObj) const
     T_Super::_SaveToSettings(jsonObj);
 
     m_viewFlags.To3dJson(jsonObj[VIEW_SETTING_Flags]);
-    m_viewedModels.ToJson(jsonObj[VIEW_SETTING_Models]);
+    jsonObj[VIEW_SETTING_Models] = m_viewedModels.ToString();
 
     JsonUtils::DPoint3dToJson(jsonObj[VIEW_SETTING_Origin], m_origin);
     JsonUtils::DPoint3dToJson(jsonObj[VIEW_SETTING_Delta], m_delta);
     JsonUtils::RotMatrixToJson(jsonObj[VIEW_SETTING_Rotation], m_rotation);
+
+    // Only save point cloud view settings if they're not set to default values
+    if (!m_pointCloudSettings.AreSetToDefault())
+        m_pointCloudSettings.ToJson(jsonObj[VIEW_SETTING_PointCloud]);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1688,22 +1701,13 @@ void ViewFlags::InitDefaults()
     }
 
 //-----------------------------------------------------------------------------------------
-// Constructor
 // @bsimethod                                                   Eric.Paquet         4/2016
 //-----------------------------------------------------------------------------------------
-PointCloudViewSettings::PointCloudViewSettings()
+void PointCloudSettings::InitDefaults()
     {
-    InitDefaults();
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                                   Eric.Paquet         4/2016
-//-----------------------------------------------------------------------------------------
-void PointCloudViewSettings::InitDefaults()
-    {
-    m_flags = (VIEWSETTINGS_FRONTBIAS_MASK);
-    m_contrast = POINTCLOUD_DEFAULT_VIEW_CONTRAST;
-    m_brightness = POINTCLOUD_DEFAULT_VIEW_BRIGHTNESS;
+    m_flags = VIEWSETTINGS_FRONTBIAS_MASK;
+    m_contrast = GetDefaultViewContrast();
+    m_brightness = GetDefaultViewBrightness();
     m_distance = 10.0f;
     m_offset = 0;
     m_adaptivePointSize = 0;
@@ -1714,8 +1718,6 @@ void PointCloudViewSettings::InitDefaults()
     m_displayStyle = DisplayStyle::None;
     m_planeRamp     = "";
     m_intensityRamp = "";
-
-    //Advanced Settings for SS4
     m_clampIntensity = false;
     m_needClassifBuffer = false;
     m_displayStyleName = "";
@@ -1723,12 +1725,12 @@ void PointCloudViewSettings::InitDefaults()
     }
 
 //-----------------------------------------------------------------------------------------
-// Verify if PointCloudViewSettings are equal to default settings
+// Verify if this PointCloudSettings is equal to default settings
 // @bsimethod                                                   Eric.Paquet         5/2016
 //-----------------------------------------------------------------------------------------
-bool PointCloudViewSettings::AreSetToDefault() const
+bool PointCloudSettings::AreSetToDefault() const
     {
-    PointCloudViewSettings tmpViewSettings;
+    PointCloudSettings tmpViewSettings;
 
     if (m_flags != tmpViewSettings.m_flags  ||
         m_contrast != tmpViewSettings.m_contrast ||
@@ -1753,50 +1755,6 @@ bool PointCloudViewSettings::AreSetToDefault() const
 
     return true;
     }
-
-//-----------------------------------------------------------------------------------------
-// PointCloudViewSettings get/set methods
-// @bsimethod                                                   Eric.Paquet         5/2016
-//-----------------------------------------------------------------------------------------
-bool        PointCloudViewSettings::GetUseRgb() const               { return TO_BOOL(m_flags & VIEWSETTINGS_RGB_MASK); }
-bool        PointCloudViewSettings::GetUseIntensity() const         { return TO_BOOL(m_flags & VIEWSETTINGS_INTENSITY_MASK); }
-bool        PointCloudViewSettings::GetUseLightning() const         { return TO_BOOL(m_flags & VIEWSETTINGS_LIGHTNING_MASK); }
-bool        PointCloudViewSettings::GetUsePlane() const             { return TO_BOOL(m_flags & VIEWSETTINGS_PLANE_MASK); }
-bool        PointCloudViewSettings::GetUseFrontBias() const         { return TO_BOOL(m_flags & VIEWSETTINGS_FRONTBIAS_MASK); }
-uint32_t    PointCloudViewSettings::GetFlags() const                { return m_flags; }
-void        PointCloudViewSettings::SetFlags(uint32_t flags)        { m_flags = flags;}
-double      PointCloudViewSettings::GetContrast() const             { return m_contrast;}
-void        PointCloudViewSettings::SetContrast(double contrast)    { m_contrast = contrast;}
-double      PointCloudViewSettings::GetBrightness() const           { return m_brightness;}
-void        PointCloudViewSettings::SetBrightness(double brightness){ m_brightness = brightness; }
-double      PointCloudViewSettings::GetDistance() const             { return m_distance;}
-void        PointCloudViewSettings::SetDistance(double distance)    { m_distance = distance;}
-double      PointCloudViewSettings::GetOffset() const               { return m_offset;}
-void        PointCloudViewSettings::SetOffset(double offset)        { m_offset = offset;}
-int32_t     PointCloudViewSettings::GetAdaptivePointSize() const    { return m_adaptivePointSize;}
-void        PointCloudViewSettings::SetAdaptivePointSize(int32_t adaptivePointSize){ m_adaptivePointSize = adaptivePointSize;}
-uint32_t    PointCloudViewSettings::GetIntensityRampIdx() const     { return m_intensityRampIdx;}
-void        PointCloudViewSettings::SetIntensityRampIdx(uint32_t intensityRampIdx){ m_intensityRampIdx = intensityRampIdx;}
-uint32_t    PointCloudViewSettings::GetPlaneRampIdx() const         { return m_planeRampIdx;}
-void        PointCloudViewSettings::SetPlaneRampIdx(uint32_t planeRampIdx){ m_planeRampIdx = planeRampIdx;}
-uint32_t    PointCloudViewSettings::GetPlaneAxis() const            { return m_planeAxis;}
-void        PointCloudViewSettings::SetPlaneAxis(uint32_t planeAxis){ m_planeAxis = planeAxis;}
-Render::PointCloudViewSettings::DisplayStyle PointCloudViewSettings::GetDisplayStyle() const { return m_displayStyle;}
-void        PointCloudViewSettings::SetDisplayStyle(Render::PointCloudViewSettings::DisplayStyle const& displayStyle) { m_displayStyle = displayStyle;}
-Utf8String  PointCloudViewSettings::GetPlaneRamp() const            { return m_planeRamp;}
-void        PointCloudViewSettings::SetPlaneRamp(Utf8StringCR planeRamp){ m_planeRamp = planeRamp;}
-Utf8String  PointCloudViewSettings::GetIntensityRamp() const        { return m_intensityRamp;}
-void        PointCloudViewSettings::SetIntensityRamp(Utf8StringCR intensityRamp){ m_intensityRamp = intensityRamp;}
-bool        PointCloudViewSettings::GetUseACSAsPlaneAxis() const    { return m_useACSAsPlaneAxis;}
-void        PointCloudViewSettings::SetUseACSAsPlaneAxis(bool useACSAsPlaneAxis){ m_useACSAsPlaneAxis = useACSAsPlaneAxis;}
-bool        PointCloudViewSettings::GetClampIntensity() const       { return m_clampIntensity;}
-void        PointCloudViewSettings::SetClampIntensity(bool clampIntensity){ m_clampIntensity = clampIntensity;}
-bool        PointCloudViewSettings::GetNeedClassifBuffer() const    { return m_needClassifBuffer;}
-void        PointCloudViewSettings::SetNeedClassifBuffer(bool needClassifBuffer){ m_needClassifBuffer = needClassifBuffer;}
-Utf8String  PointCloudViewSettings::GetDisplayStyleName() const     { return m_displayStyleName;}
-void        PointCloudViewSettings::SetDisplayStyleName(Utf8StringCR displayStyleName){ m_displayStyleName = displayStyleName;}
-int32_t     PointCloudViewSettings::GetDisplayStyleIndex() const    { return m_displayStyleIndex;}
-void        PointCloudViewSettings::SetDisplayStyleIndex(int32_t displayStyleIndex){ m_displayStyleIndex = displayStyleIndex;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/10
@@ -1984,7 +1942,7 @@ static void drawLocateHitDetail(DecorateContextR context, double aperture, HitDe
     RotMatrix   rMatrix = RotMatrix::From1Vector(normal, 2, true);
     DEllipse3d  ellipse = DEllipse3d::FromScaledRotMatrix(pt, rMatrix, radius, radius, 0.0, Angle::TwoPi());
 
-    GraphicPtr graphic = context.CreateGraphic();
+    GraphicBuilderPtr graphic = context.CreateGraphic();
 
     color.SetAlpha(200);
     graphic->SetSymbology(color, color, 1);
@@ -2020,7 +1978,7 @@ static void drawLocateCircle(DecorateContextR context, double aperture, DPoint3d
     ellipse.InitFromDGNFields2d((DPoint2dCR) center, 0.0, radius, radius, 0.0, msGeomConst_2pi, 0.0);
     ellipse2.InitFromDGNFields2d((DPoint2dCR) center, 0.0, radius+1, radius+1, 0.0, msGeomConst_2pi, 0.0);
 
-    GraphicPtr graphic = context.CreateGraphic();
+    GraphicBuilderPtr graphic = context.CreateGraphic();
     ColorDef    white = ColorDef::White();
     ColorDef    black = ColorDef::Black();
 

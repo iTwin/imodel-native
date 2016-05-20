@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/LsLocal.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -60,7 +60,7 @@ public:
         void                GetDirectionVector (DPoint3dR segDir, DPoint3dCR org, DPoint3dCR end) const;
 
     void    AddPoint    (DPoint3dCP pt, double width, double length);
-    void    Output      (ViewContextP, LsStrokeP, DPoint3dCP normal, DPoint3dCP startTangent, DPoint3dCP endTangent);
+    void    Output      (LineStyleContextR, LsStrokeP, DPoint3dCP normal, DPoint3dCP startTangent, DPoint3dCP endTangent);
 };
 
 END_BENTLEY_DGN_NAMESPACE

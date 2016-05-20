@@ -18,7 +18,56 @@
 DPILOG_DEFINE(RealityDataCache)
 #define RDCLOG(sev,...) {if (RealityDataCache_getLogger().isSeverityEnabled(sev)) {RealityDataCache_getLogger().messagev(sev, __VA_ARGS__);}}
 
-USING_NAMESPACE_BENTLEY_DGN
+BEGIN_BENTLEY_REALITYDATA_NAMESPACE
+//=======================================================================================
+// @bsiclass                                        Grigas.Petraitis            10/2014
+//=======================================================================================
+struct IsIdlePredicate : IConditionVariablePredicate
+{
+private:
+    WorkerThread& m_thread;
+public:
+    IsIdlePredicate(WorkerThread& thread) : m_thread(thread) {}
+    virtual bool _TestCondition(BeConditionVariable &cv) override {return m_thread.IsIdle();}
+};
+
+//=======================================================================================
+// @bsiclass                                        Grigas.Petraitis            10/2014
+//=======================================================================================
+struct HasWorkOrTerminatesPredicate : IConditionVariablePredicate
+{
+private:
+    WorkerThread& m_thread;
+
+public:
+    HasWorkOrTerminatesPredicate(WorkerThread& thread) : m_thread(thread) {}
+    virtual bool _TestCondition(BeConditionVariable &cv) override {return m_thread.TerminateRequested() || m_thread.m_currentWork.IsValid();}
+};
+
+//=======================================================================================
+// @bsiclass                                        Grigas.Petraitis            11/2014
+//=======================================================================================
+struct AllThreadsIdlePredicate : IConditionVariablePredicate
+{
+private:
+    ThreadPool const& m_pool;
+public:
+    AllThreadsIdlePredicate(ThreadPool const& pool) : m_pool(pool) {}
+    virtual bool _TestCondition(BeConditionVariable& cv) override 
+        {
+        BeMutexHolder lock(m_pool.m_threadsCV.GetMutex());
+        for (auto pair : m_pool.m_threads)
+            {
+            bool isThreadBusy = pair.second;
+            if (isThreadBusy && pair.first->GetThreadId() != BeThreadUtilities::GetCurrentThreadId())
+                return false;
+            }
+        return true;
+        }
+};
+END_BENTLEY_REALITYDATA_NAMESPACE
+
+USING_NAMESPACE_BENTLEY_REALITYDATA
 
 /*======================================================================================+
 |   Debug timer                                                 Grigas.Petraitis
@@ -35,16 +84,13 @@ USING_NAMESPACE_BENTLEY_DGN
         };
 #endif
 
-/*======================================================================================+
-|   RealityDataQueue
-+======================================================================================*/
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename T> void ThreadSafeQueue<T>::PushFront(T element)
     {
     BeMutexHolder lock(m_cv.GetMutex());
-    auto item = Item::Create(element, NULL, m_first.get());
+    auto item = Item::Create(element, nullptr, m_first.get());
     if (m_first.IsNull())
         {
         BeAssert(m_last.IsNull());
@@ -65,7 +111,7 @@ template<typename T> void ThreadSafeQueue<T>::PushFront(T element)
 template<typename T> void ThreadSafeQueue<T>::PushBack(T element)
     {
     BeMutexHolder lock(m_cv.GetMutex());
-    auto item = Item::Create(element, m_last.get(), NULL);
+    auto item = Item::Create(element, m_last.get(), nullptr);
     if (m_last.IsNull())
         {
         BeAssert(m_first.IsNull());
@@ -94,11 +140,11 @@ template<typename T> bool ThreadSafeQueue<T>::PopFront(T* element)
 
     if (m_first.Equals(m_last))
         {
-        m_first = m_last = NULL;
+        m_first = m_last = nullptr;
         }
     else
         {
-        m_first->next->prev = NULL;
+        m_first->next->prev = nullptr;
         m_first = m_first->next;
         }
     m_count--;
@@ -120,11 +166,11 @@ template<typename T> bool ThreadSafeQueue<T>::PopBack(T* element)
 
     if (m_first.Equals(m_last))
         {
-        m_first = m_last = NULL;
+        m_first = m_last = nullptr;
         }
     else
         {
-        m_last->prev->next = NULL;
+        m_last->prev->next = nullptr;
         m_last = m_last->prev;
         }
     m_count--;
@@ -202,11 +248,11 @@ template<typename T> void ThreadSafeQueue<T>::Clear()
         {
         auto temp = item;
         item = item->next;
-        temp->next = NULL;
-        temp->prev = NULL;
+        temp->next = nullptr;
+        temp->prev = nullptr;
         }
-    m_first = NULL;
-    m_last = NULL;
+    m_first = nullptr;
+    m_last = nullptr;
     m_count = 0;
     m_cv.notify_all();
     }
@@ -241,20 +287,14 @@ template<typename T> typename ThreadSafeQueue<T>::Iterator ThreadSafeQueue<T>::e
 
 // explicitly implement for testing purposes, 
 // note: must be done AFTER all template functions are defined
-BEGIN_BENTLEY_DGN_NAMESPACE
+BEGIN_BENTLEY_REALITYDATA_NAMESPACE
 template struct ThreadSafeQueue<int>;
-END_BENTLEY_DGN_NAMESPACE
+END_BENTLEY_REALITYDATA_NAMESPACE
 
-/*======================================================================================+
-|   IRealityDataStorageBase
-+======================================================================================*/
-void IRealityDataStorageBase::Terminate() {_Terminate();}
-IRealityDataStorageBase::~IRealityDataStorageBase() {Terminate();}
-
-/*======================================================================================+
-|   BeSQLiteRealityDataStorage
-+======================================================================================*/
-struct RealityDataStorageBusyRetry : BeSQLite::BusyRetry
+//=======================================================================================
+// @bsiclass                                        Grigas.Petraitis            10/2014
+//=======================================================================================
+struct StorageBusyRetry : BeSQLite::BusyRetry
     {
     virtual int _OnBusy(int count) const
         {
@@ -274,32 +314,10 @@ struct RealityDataStorageBusyRetry : BeSQLite::BusyRetry
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLiteRealityDataStoragePtr BeSQLiteRealityDataStorage::Create(BeFileName const& filename, uint32_t idleTime)
+Storage::Storage(int numThreads, SchedulingMethod schedulingMethod, uint32_t idleTime) : m_hasChanges(false), m_idleTime(idleTime)
     {
-    return new BeSQLiteRealityDataStorage(filename, idleTime);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               11/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLiteRealityDataStorage::BeSQLiteRealityDataStorage(BeFileName const& filename, uint32_t idleTime)
-    : m_filename(filename), m_database(new BeSQLite::Db()), m_initialized(false), m_hasChanges(false), m_idleTime(idleTime)
-    {
-    m_retry = new RealityDataStorageBusyRetry();
-    m_threadPool = BeSQLiteStorageThreadPool::Create(*this);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               01/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLiteRealityDataStorage::~BeSQLiteRealityDataStorage()
-    {
-    if (nullptr != m_database)
-        {
-        BeAssert(false);
-        DELETE_AND_CLEAR(m_database);
-        }
-    m_retry = nullptr;
+    m_retry = new StorageBusyRetry();
+    m_threadPool = new StorageThreadPool(*this, numThreads, schedulingMethod);
     }
 
 //=======================================================================================
@@ -307,8 +325,8 @@ BeSQLiteRealityDataStorage::~BeSQLiteRealityDataStorage()
 //=======================================================================================
 struct ThreadPoolQueueNotEmptyPredicate : IConditionVariablePredicate
     {
-     BeSQLiteRealityDataStorage::BeSQLiteStorageThreadPool& m_pool;
-    ThreadPoolQueueNotEmptyPredicate( BeSQLiteRealityDataStorage::BeSQLiteStorageThreadPool& pool) : m_pool(pool) {}
+    Storage::StorageThreadPool& m_pool;
+    ThreadPoolQueueNotEmptyPredicate( Storage::StorageThreadPool& pool) : m_pool(pool) {}
     virtual bool _TestCondition(BeConditionVariable& cv) override 
         {
         BeMutexHolder lock(cv.GetMutex());
@@ -333,19 +351,16 @@ struct SelectDataWorkHasResultPredicate : IConditionVariablePredicate
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BeSQLiteRealityDataStorage::CleanAndSaveChangesWork::_DoWork()
+void Storage::CleanAndSaveChangesWork::_DoWork()
     {
     auto& queue = m_storage->m_threadPool->GetQueue();
     ThreadPoolQueueNotEmptyPredicate predicate(*m_storage->m_threadPool);
     if (queue.GetConditionVariable().WaitOnCondition(&predicate, m_idleTime))
         return;
 
-    BeMutexHolder lock(m_storage->m_saveChangesCS);
+    BeMutexHolder lock(m_storage->m_saveChangesMux);
     if (!m_storage->m_hasChanges)
         return;
-
-    for (auto const& handler : m_storage->m_cleanupHandlers)
-        m_storage->wt_Prepare(*handler);
 
     m_storage->wt_Cleanup();
     m_storage->wt_SaveChanges();
@@ -354,7 +369,7 @@ void BeSQLiteRealityDataStorage::CleanAndSaveChangesWork::_DoWork()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BeSQLiteRealityDataStorage::PersistDataWork::_DoWork()
+void Storage::PersistDataWork::_DoWork()
     {
     m_storage->wt_Persist(*m_data);
     }
@@ -362,10 +377,10 @@ void BeSQLiteRealityDataStorage::PersistDataWork::_DoWork()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BeSQLiteRealityDataStorage::SelectDataWork::_DoWork()
+void Storage::SelectDataWork::_DoWork()
     {
     BeMutexHolder lock(m_resultCV.GetMutex());
-    m_result = m_storage->wt_Select(*m_data, m_id.c_str(), *m_options, *m_responseReceiver);
+    m_result = m_storage->wt_Select(*m_data, m_options, m_responseReceiver);
     m_hasResult = true;
     m_resultCV.notify_all();
     }
@@ -373,7 +388,7 @@ void BeSQLiteRealityDataStorage::SelectDataWork::_DoWork()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-RealityDataStorageResult BeSQLiteRealityDataStorage::SelectDataWork::GetResult() const
+StorageResult Storage::SelectDataWork::GetResult() const
     {
     SelectDataWorkHasResultPredicate predicate(m_hasResult);
     auto result = m_resultCV.WaitOnCondition(&predicate, BeConditionVariable::Infinite);
@@ -384,84 +399,64 @@ RealityDataStorageResult BeSQLiteRealityDataStorage::SelectDataWork::GetResult()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BeSQLiteRealityDataStorage::_Terminate()
+void Storage::Terminate()
     {
     m_threadPool->Terminate();
     m_threadPool->WaitUntilAllThreadsIdle();
 
-    for (auto& cleanupHandler : m_cleanupHandlers)
-        cleanupHandler->Release();
-
-    BeMutexHolder lock(m_databaseCS);
-    if (m_initialized)
-        {
-        m_database->CloseDb();
-        DELETE_AND_CLEAR(m_database);
-        }
-    m_initialized = false;
+    if (m_database.IsDbOpen())
+        m_database.CloseDb();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BeSQLiteRealityDataStorage::wt_Prepare(DatabasePrepareAndCleanupHandler const& prepareHandler)
+BentleyStatus Storage::OpenAndPrepare(BeFileNameCR fileName)
     {
-    BeMutexHolder lock(m_databaseCS);
-    BeSQLite::DbResult result;
-    if (!m_initialized)
+    DbResult result = m_database.OpenBeSQLiteDb(fileName, Db::OpenParams(Db::OpenMode::ReadWrite, DefaultTxn::Yes, m_retry.get()));
+
+    if (BE_SQLITE_OK != result)
         {
-        if (BeSQLite::BE_SQLITE_OK != (result = m_database->OpenBeSQLiteDb(m_filename.c_str(), Db::OpenParams(Db::OpenMode::ReadWrite, DefaultTxn::Yes, m_retry.get()))))
+        Db::CreateParams createParams(Db::PageSize::PAGESIZE_4K, Db::Encoding::Utf8, false, DefaultTxn::Yes, m_retry.get());
+        if (BeSQLite::BE_SQLITE_OK != (result = m_database.CreateNewDb(fileName, BeSQLite::BeGuid(), createParams)))
             {
-            Db::CreateParams createParams(Db::PageSize::PAGESIZE_32K, Db::Encoding::Utf8, false, DefaultTxn::Yes, m_retry.get());
-            if (BeSQLite::BE_SQLITE_OK != (result = m_database->CreateNewDb(m_filename.c_str(), BeSQLite::BeGuid(), createParams)))
-                {
-                RDCLOG(LOG_ERROR, "%s: %s", m_filename.c_str(), BeSQLite::Db::InterpretDbResult(result));
-                BeAssert(false);
-                return;
-                }
-            }        
-        m_initialized = true;
+            RDCLOG(LOG_ERROR, "%s: %s", fileName.GetNameUtf8().c_str(), Db::InterpretDbResult(result));
+            BeAssert(false);
+            return ERROR;
+            }
+        }        
+
+    if (SUCCESS != _PrepareDatabase(m_database))
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+    
+    if (BE_SQLITE_OK != (result = m_database.SaveChanges()))
+        {
+        RDCLOG(LOG_ERROR, "%s: %s", fileName.GetNameUtf8().c_str(), Db::InterpretDbResult(result));
+        BeAssert(false);
+        return ERROR;
         }
 
-    if (!prepareHandler._IsPrepared())
-        {
-        BentleyStatus preparationStatus = prepareHandler._PrepareDatabase(*m_database);
-        BeAssert(SUCCESS == preparationStatus);
-        BeAssert(m_cleanupHandlers.end() == m_cleanupHandlers.find(&prepareHandler) || typeid(prepareHandler).hash_code() == typeid(**m_cleanupHandlers.find(&prepareHandler)).hash_code());
-        if (m_cleanupHandlers.end() == m_cleanupHandlers.find(&prepareHandler))
-            {
-            prepareHandler.AddRef();
-            m_cleanupHandlers.insert(&prepareHandler);
-            }
-    
-        if (BeSQLite::BE_SQLITE_OK != (result = m_database->SaveChanges()))
-            {
-            RDCLOG(LOG_ERROR, "%s: %s", m_filename.c_str(), BeSQLite::Db::InterpretDbResult(result));
-            BeAssert(false);
-            }
-        }
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Mantas.Ragauskas               01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BeSQLiteRealityDataStorage::wt_Cleanup()
+void Storage::wt_Cleanup()
     {
-    BeMutexHolder lock(m_databaseCS);
-    for (auto const& cleanupHandler : m_cleanupHandlers)
-        {
-        BentleyStatus result = cleanupHandler->_CleanupDatabase(*m_database);
-        BeAssert(SUCCESS == result);
-        }                                
+    BentleyStatus result = _CleanupDatabase(m_database);
+    BeAssert(SUCCESS == result);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BeSQLiteRealityDataStorage::wt_SaveChanges()
+void Storage::wt_SaveChanges()
     {
-    BeMutexHolder lock(m_databaseCS);
-    auto result = m_database->SaveChanges();
+    auto result = m_database.SaveChanges();
     BeAssert(BeSQLite::BE_SQLITE_OK == result);
     m_hasChanges.store(false);
     }
@@ -469,61 +464,33 @@ void BeSQLiteRealityDataStorage::wt_SaveChanges()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-RealityDataStorageResult BeSQLiteRealityDataStorage::wt_Select(Data& data, Utf8CP id, SelectOptions const& options, IRealityDataStorageResponseReceiver& responseReceiver)
+StorageResult Storage::wt_Select(Payload& data, Options options, Cache& responseReceiver)
     {
-    wt_Prepare(*data._GetDatabasePrepareAndCleanupHandler());
-
-    RealityDataStorageResult result;
-    if (SUCCESS != data._InitFrom(*m_database, m_databaseCS, id, options))
-        {
-        responseReceiver._OnResponseReceived(*RealityDataStorageResponse::Create(RealityDataStorageResult::NotFound, id, data), options, !options.ForceSynchronousRequest());
-        result = RealityDataStorageResult::NotFound;
-        }
-    else
-        {
-        responseReceiver._OnResponseReceived(*RealityDataStorageResponse::Create(RealityDataStorageResult::Success, id, data), options, !options.ForceSynchronousRequest());
-        result = RealityDataStorageResult::Success;
-        }
-
-    if (true)
-        {
-        BeMutexHolder lock(m_activeRequestsCS);
-        BeAssert(m_activeRequests.end() != m_activeRequests.find(id));
-        m_activeRequests.erase(m_activeRequests.find(id));
-        }
+    StorageResult result = (SUCCESS == data._LoadFromStorage(m_database)) ? StorageResult::Success : StorageResult::NotFound;
+    responseReceiver._OnResponseReceived(*new StorageResponse(result, data), options, !options.m_forceSynchronous);
     return result;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-RealityDataStorageResult BeSQLiteRealityDataStorage::Select(Data& data, Utf8CP id, SelectOptions const& options, IRealityDataStorageResponseReceiver& responseReceiver)
+StorageResult Storage::_Select(Payload& data, Options options, Cache& responseReceiver)
     {
-    if (true)
-        {
-        BeMutexHolder lock(m_activeRequestsCS);
-        if (m_activeRequests.end() != m_activeRequests.find(id))
-            return RealityDataStorageResult::Pending;
-        m_activeRequests.insert(id);
-        }
-
-    auto work = SelectDataWork::Create(*this, id, data, options, responseReceiver);
+    auto work = new SelectDataWork(*this, data, options, responseReceiver);
     m_threadPool->QueueWork(*work);
 
-    if (options.ForceSynchronousRequest())
+    if (options.m_forceSynchronous)
         return work->GetResult();
-    else
-        return RealityDataStorageResult::Queued;
+
+    return StorageResult::Queued;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BeSQLiteRealityDataStorage::wt_Persist(Data const& data)
+void Storage::wt_Persist(Payload const& data)
     {
-    wt_Prepare(*data._GetDatabasePrepareAndCleanupHandler());
-
-    BentleyStatus result = data._Persist(*m_database, m_databaseCS);
+    BentleyStatus result = data._PersistToStorage(m_database);
     BeAssert(SUCCESS == result);
     m_hasChanges.store(true);
     }
@@ -531,139 +498,35 @@ void BeSQLiteRealityDataStorage::wt_Persist(Data const& data)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-RealityDataStorageResult BeSQLiteRealityDataStorage::Persist(Data const& data)
+StorageResult Storage::Persist(Payload const& data)
     {
-    m_threadPool->QueueWork(*PersistDataWork::Create(*this, data));
-    return RealityDataStorageResult::Success;
+    m_threadPool->QueueWork(*new PersistDataWork(*this, data));
+    return StorageResult::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-RealityDataStorageResult BeSQLiteRealityDataStorage::PersistHandler::_Persist() const {return m_storage.Persist(*m_data);}
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-IRealityDataBase const* BeSQLiteRealityDataStorage::PersistHandler::_GetData() const {return m_data.get();}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool BeSQLiteRealityDataStorage::BeSQLiteStorageThreadPool::_AssignWork(RealityDataWorkerThread& thread)
+bool Storage::StorageThreadPool::_AssignWork(WorkerThread& thread)
     {
-    if (RealityDataThreadPool::_AssignWork(thread))
+    if (ThreadPool::_AssignWork(thread))
         return true;
 
-    if (m_storage->m_hasChanges && !IsTerminating())
+    if (m_storage.m_hasChanges && !IsTerminating())
         {
-        thread.DoWork(*CleanAndSaveChangesWork::Create(*m_storage, m_storage->m_idleTime));
+        thread.DoWork(*new CleanAndSaveChangesWork(m_storage, m_storage.m_idleTime));
         return true;
         }
 
     return false;
     }
 
-/*======================================================================================+
-|   InMemoryRealityDataStorage
-+======================================================================================*/
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-InMemoryRealityDataStoragePtr InMemoryRealityDataStorage::Create() {return new InMemoryRealityDataStorage();}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-InMemoryRealityDataStorage::~InMemoryRealityDataStorage()
-    {
-    for (auto pair : m_map)
-        pair.second->Release();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-RealityDataStorageResult InMemoryRealityDataStorage::Select(Data& data, Utf8CP id, SelectOptions const& options, IRealityDataStorageResponseReceiver& responseReceiver)
-    {
-    BeMutexHolder lock(m_cs);
-    auto iter = m_map.find(id);
-    if (m_map.end() != iter)
-        {
-        data._InitFrom(id, *iter->second, options);
-        if (options.GetRemoveAfterSelect())
-            {
-            iter->second->Release();
-            m_map.erase(iter);
-            }
-        return RealityDataStorageResult::Success;
-        }
-
-    return RealityDataStorageResult::NotFound;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-RealityDataStorageResult InMemoryRealityDataStorage::Persist(Data const& data)
-    {
-    BeMutexHolder lock(m_cs);
-    BeAssert(m_map.end() == m_map.find(data.GetId()));
-    data.AddRef();
-    m_map[data.GetId()] = &data;
-    return RealityDataStorageResult::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-RealityDataStorageResult InMemoryRealityDataStorage::PersistHandler::_Persist() const {return m_storage.Persist(*m_data);}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-IRealityDataBase const* InMemoryRealityDataStorage::PersistHandler::_GetData() const {return m_data.get();}
-
-/*======================================================================================+
-|   IRealityDataSource
-+======================================================================================*/
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               05/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-RealityDataSourceResult IRealityDataSourceBase::Request(Data& data, bool& handled, Utf8CP id, RequestOptions const& options, IRealityDataSourceResponseReceiver& responseReceiver)
-    {
-    return _Request(data, handled, id, options, responseReceiver);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               05/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void IRealityDataSourceBase::Terminate() {_Terminate();}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               05/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-IRealityDataSourceBase::~IRealityDataSourceBase() {Terminate();}
-
-/*======================================================================================+
-|   AsyncRealityDataSource
-+======================================================================================*/
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP AsyncRealityDataSourceRequest::GetId() const {return _GetId();}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-AsyncRealityDataSourceRequest::RequestOptions const& AsyncRealityDataSourceRequest::GetRequestOptions() const {return _GetRequestOptions();}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-RefCountedPtr<RealityDataSourceResponse> AsyncRealityDataSourceRequest::Handle(BeMutex& cs) const
+RefCountedPtr<SourceResponse> AsyncSourceRequest::Handle(BeMutex& cs) const
     {
-    RefCountedPtr<RealityDataSourceResponse> response = _Handle();
+    RefCountedPtr<SourceResponse> response = _Handle();
     BeMutexHolder lock(cs);
     m_response = response;
     return m_response;
@@ -672,13 +535,12 @@ RefCountedPtr<RealityDataSourceResponse> AsyncRealityDataSourceRequest::Handle(B
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool AsyncRealityDataSourceRequest::ShouldCancelRequest() const {return nullptr != m_cancellationToken && m_cancellationToken->_ShouldCancel();}
+bool AsyncSourceRequest::ShouldCancelRequest() const {return nullptr != m_cancellationToken && m_cancellationToken->_ShouldCancel();}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<class Derived>
-void AsyncRealityDataSource<Derived>::SetIgnoreRequests(uint32_t ignoreTime)
+void AsyncSource::SetIgnoreRequests(uint32_t ignoreTime)
     {
     m_ignoreRequestsUntil.store(BeTimeUtilities::GetCurrentTimeAsUnixMillis() + ignoreTime);
     }
@@ -686,8 +548,7 @@ void AsyncRealityDataSource<Derived>::SetIgnoreRequests(uint32_t ignoreTime)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<class Derived>
-bool AsyncRealityDataSource<Derived>::ShouldIgnoreRequests() const
+bool AsyncSource::ShouldIgnoreRequests() const
     {
     return BeTimeUtilities::GetCurrentTimeAsUnixMillis() < m_ignoreRequestsUntil;
     }
@@ -695,54 +556,42 @@ bool AsyncRealityDataSource<Derived>::ShouldIgnoreRequests() const
 //===================================================================================
 // @bsiclass                                        Grigas.Petraitis        04/2015
 //===================================================================================
-struct AsyncRealityDataSourceRequest::SynchronousRequestPredicate : IConditionVariablePredicate
+struct AsyncSourceRequest::SynchronousRequestPredicate : IConditionVariablePredicate
 {
 private:
-    AsyncRealityDataSourceRequest const& m_request;
+    AsyncSourceRequest const& m_request;
 public:
-    SynchronousRequestPredicate(AsyncRealityDataSourceRequest const& request) : m_request(request) {}
-    RealityDataSourceResult GetResult() const {return m_request.m_response->GetResult();}
+    SynchronousRequestPredicate(AsyncSourceRequest const& request) : m_request(request) {}
+    SourceResult GetResult() const {return m_request.m_response->GetResult();}
     virtual bool _TestCondition(BeConditionVariable &cv) override {BeMutexHolder lock(cv.GetMutex()); return m_request.m_response.IsValid();}
     };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<class Derived>
-RealityDataSourceResult AsyncRealityDataSource<Derived>::QueueRequest(AsyncRealityDataSourceRequest& request, bool& handled, IRealityDataSourceResponseReceiver& responseReceiver)
+SourceResult AsyncSource::QueueRequest(AsyncSourceRequest& request, Cache& responseReceiver)
     {
-    handled = true;
-    if (!request.GetRequestOptions().RetryNotFoundRequests())
-        {
-        BeMutexHolder lock(m_requestsCS);
-        if (m_notFoundRequests.end() != m_notFoundRequests.find(request.GetId()))
-            return RealityDataSourceResult::Error_NotFound;
-        }
-
     if (ShouldIgnoreRequests())
-        return RealityDataSourceResult::Ignored;
+        return SourceResult::Ignored;
 
-    if (!request.GetRequestOptions().ForceSynchronousRequest())
+    if (!request.GetRequestOptions().m_forceSynchronous)
         {
         BeMutexHolder lock(m_requestsCS);
-        auto requestIter = m_activeRequests.find(request.GetId());
+        auto requestIter = m_activeRequests.find(request.GetPayload().GetPayloadId());
         if (requestIter != m_activeRequests.end())
-            return RealityDataSourceResult::Pending;
+            return SourceResult::Pending;
 
-        m_activeRequests.insert(request.GetId());
+        m_activeRequests.insert(request.GetPayload().GetPayloadId());
         }
     
     RefCountedPtr<RequestHandler> handler = RequestHandler::Create(*this, request, responseReceiver);
     request.SetCancellationToken(*handler);
     m_threadPool->QueueWork(*handler);
 
-    if (!request.GetRequestOptions().ForceSynchronousRequest())
-        {
-        handled = false;
-        return RealityDataSourceResult::Queued;
-        }
+    if (!request.GetRequestOptions().m_forceSynchronous)
+        return SourceResult::Queued;
 
-    AsyncRealityDataSourceRequest::SynchronousRequestPredicate predicate(request);
+    AsyncSourceRequest::SynchronousRequestPredicate predicate(request);
     m_synchronizationCV.WaitOnCondition(&predicate, BeConditionVariable::Infinite);
     return predicate.GetResult();
     }
@@ -750,36 +599,29 @@ RealityDataSourceResult AsyncRealityDataSource<Derived>::QueueRequest(AsyncReali
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<class Derived> 
-void AsyncRealityDataSource<Derived>::RequestHandler::_DoWork()
+void AsyncSource::RequestHandler::_DoWork()
     {
-    RefCountedPtr<RealityDataSourceResponse> response = m_request->Handle(m_source->m_synchronizationCV.GetMutex());
+    RefCountedPtr<SourceResponse> response = m_request->Handle(m_source->m_synchronizationCV.GetMutex());
     switch (response->GetResult())
         {
-        case RealityDataSourceResult::Error_CouldNotResolveHost:
-        case RealityDataSourceResult::Error_NoConnection:
+        case SourceResult::Error_CouldNotResolveHost:
+        case SourceResult::Error_NoConnection:
             m_source->SetIgnoreRequests(10 * 1000);
             break;
-        case RealityDataSourceResult::Error_GatewayTimeout:
+        case SourceResult::Error_GatewayTimeout:
             m_source->SetIgnoreRequests(3 * 1000);
             break;
-        case RealityDataSourceResult::Error_NotFound:
-            {
-            if (!m_request->GetRequestOptions().RetryNotFoundRequests())
-                {
-                BeMutexHolder lock(m_source->m_requestsCS);
-                m_source->m_notFoundRequests.insert(m_request->GetId());
-                }
-            }
+        case SourceResult::Error_NotFound:
+            break;
         }
 
     if (!m_source->m_terminateRequested)
         SendResponse(*response, m_request->GetRequestOptions());
 
-    if (!m_request->GetRequestOptions().ForceSynchronousRequest())
+    if (!m_request->GetRequestOptions().m_forceSynchronous)
         {
         BeMutexHolder lock(m_source->m_requestsCS);
-        auto requestIter = m_source->m_activeRequests.find(m_request->GetId());
+        auto requestIter = m_source->m_activeRequests.find(m_request->GetPayload().GetPayloadId());
         BeAssert(requestIter != m_source->m_activeRequests.end());
         m_source->m_activeRequests.erase(requestIter);
         }
@@ -790,98 +632,62 @@ void AsyncRealityDataSource<Derived>::RequestHandler::_DoWork()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<class Derived> 
-bool AsyncRealityDataSource<Derived>::RequestHandler::_ShouldCancel() const
+bool AsyncSource::RequestHandler::_ShouldCancel() const
     {
     return m_source->m_terminateRequested;
     }
 
-/*======================================================================================+
-|   FileRealityDataSource
-+======================================================================================*/
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-FileRealityDataSourcePtr FileRealityDataSource::Create(int numThreads) {return new FileRealityDataSource(numThreads);}
-
 //===================================================================================
 // @bsiclass                                        Grigas.Petraitis        03/2015
 //===================================================================================
-struct FileRealityDataSourceRequest : AsyncRealityDataSourceRequest
+struct FileSourceRequest : AsyncSourceRequest
 {
-private:
-    RefCountedPtr<FileRealityDataSource::Data>  m_data;
-    Utf8String m_filename;
-    RefCountedPtr<FileRealityDataSource::RequestOptions const> m_requestOptions;
-    
-    FileRealityDataSourceRequest(FileRealityDataSource::Data& data, Utf8CP url, FileRealityDataSource::RequestOptions const& requestOptions)
-        : m_data(&data), m_filename(url), m_requestOptions(&requestOptions)
-        {}
-
 protected:
-    virtual Utf8CP _GetId() const {return m_filename.c_str();}
-    virtual AsyncRealityDataSourceRequest::RequestOptions const& _GetRequestOptions() const {return *m_requestOptions;}
-    virtual RefCountedPtr<RealityDataSourceResponse> _Handle() const override
+    virtual RefCountedPtr<SourceResponse> _Handle() const override
         {
-        if (!BeFileName::DoesPathExist(BeFileName(m_filename).c_str()))
-            return RealityDataSourceResponse::Create(RealityDataSourceResult::Error_NotFound, m_filename.c_str(), *m_data);
+        if (!BeFileName::DoesPathExist(BeFileName(m_payload->GetPayloadId())))
+            return new SourceResponse(SourceResult::Error_NotFound, *m_payload);
 
         // open the file
-        BeFile configFile;
-        if (BeFileStatus::Success != configFile.Open(m_filename.c_str(), BeFileAccess::Read))
+        BeFile dataFile;
+        if (BeFileStatus::Success != dataFile.Open(m_payload->GetPayloadId().c_str(), BeFileAccess::Read))
             {
             BeAssert(false);
-            return RealityDataSourceResponse::Create(RealityDataSourceResult::Error_Unknown, m_filename.c_str(), *m_data);
+            return new SourceResponse(SourceResult::Error_Unknown, *m_payload);
             }
     
         // read file content
         ByteStream data;
-        if (BeFileStatus::Success != configFile.ReadEntireFile(data))
+        if (BeFileStatus::Success != dataFile.ReadEntireFile(data))
             {
             BeAssert(false);
-            return RealityDataSourceResponse::Create(RealityDataSourceResult::Error_Unknown, m_filename.c_str(), *m_data);
+            return new SourceResponse(SourceResult::Error_Unknown, *m_payload);
             }
 
         if (ShouldCancelRequest())
-            return RealityDataSourceResponse::Create(RealityDataSourceResult::Cancelled, m_filename.c_str(), *m_data);
+            return new SourceResponse(SourceResult::Cancelled, *m_payload);
         
-        if (SUCCESS != m_data->_InitFrom(m_filename.c_str(), data, *m_requestOptions))
+        if (SUCCESS != m_payload->_LoadFromFile(data))
             {
             BeAssert(false);
-            return RealityDataSourceResponse::Create(RealityDataSourceResult::Error_Unknown, m_filename.c_str(), *m_data);
+            return new SourceResponse(SourceResult::Error_Unknown, *m_payload);
             }
 
-        return RealityDataSourceResponse::Create(RealityDataSourceResult::Success, m_filename.c_str(), *m_data);
+        return new SourceResponse(SourceResult::Success, *m_payload);
         }
 
 public:
-    static RefCountedPtr<FileRealityDataSourceRequest> Create(FileRealityDataSource::Data& data, Utf8CP url, FileRealityDataSource::RequestOptions const& requestOptions)
-        {
-        return new FileRealityDataSourceRequest(data, url, requestOptions);
-        }
+    FileSourceRequest(Payload& data, Options options) : AsyncSourceRequest(nullptr, options, data) {}
 };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-RealityDataSourceResult FileRealityDataSource::Request(Data& data, bool& handled, Utf8CP id, RequestOptions const& options, IRealityDataSourceResponseReceiver& responseReceiver)
+SourceResult FileSource::_Request(Payload& data, Options options, Cache& responseReceiver)
     {
-    return QueueRequest(*FileRealityDataSourceRequest::Create(data, id, options), handled, responseReceiver);
+    return QueueRequest(*new FileSourceRequest(data, options), responseReceiver);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-RealityDataSourceResult FileRealityDataSource::RequestHandler::_Request() const {return m_source.Request(*m_data, m_handled, m_id.c_str(), m_options, *m_responseReceiver);}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-IRealityDataBase const* FileRealityDataSource::RequestHandler::_GetData() const {return m_data.get();}
-
-/*======================================================================================+
-|   HttpRealityDataSource
-+======================================================================================*/
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -972,7 +778,7 @@ static DateTime GetDefaultExpirationDate()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HttpRealityDataSource::Data::ParseExpirationDateAndETag(bmap<Utf8String, Utf8String> const& header)
+void Payload::ParseExpirationDateAndETag(bmap<Utf8String, Utf8String> const& header)
     {
     auto cacheControlIter = header.find("Cache-Control");
     SetExpirationDate((cacheControlIter != header.end()) ? GetExpirationDateFromCacheControlStr(cacheControlIter->second.c_str()) : GetDefaultExpirationDate());
@@ -985,328 +791,116 @@ void HttpRealityDataSource::Data::ParseExpirationDateAndETag(bmap<Utf8String, Ut
 //=======================================================================================
 // @bsiclass                                        Grigas.Petraitis            03/2015
 //=======================================================================================
-struct HttpRealityDataSourceRequest : AsyncRealityDataSourceRequest, IHttpRequestCancellationToken
+struct HttpSourceRequest : AsyncSourceRequest, IHttpRequestCancellationToken
 {
-private:
-    RefCountedPtr<HttpRealityDataSource::Data> m_data;
-    Utf8String                   m_url;
-    RefCountedPtr<HttpRealityDataSource::RequestOptions const> m_requestOptions;
-    
-    /*-----------------------------------------------------------------------------**//**
-    * @bsimethod                                     Grigas.Petraitis               03/2015
-    +---------------+---------------+---------------+---------------+-----------+------*/
-    HttpRealityDataSourceRequest(HttpRealityDataSource::Data& data, Utf8CP url, HttpRealityDataSource::RequestOptions const& requestOptions)
-        : m_data(&data), m_url(url), m_requestOptions(&requestOptions)
-        {}
-
-protected:
-    /*-----------------------------------------------------------------------------**//**
-    * @bsimethod                                     Grigas.Petraitis               03/2015
-    +---------------+---------------+---------------+---------------+-----------+------*/
-    virtual Utf8CP _GetId() const override {return m_url.c_str();}
-
-    /*-----------------------------------------------------------------------------**//**
-    * @bsimethod                                     Grigas.Petraitis               04/2015
-    +---------------+---------------+---------------+---------------+-----------+------*/
-    virtual AsyncRealityDataSourceRequest::RequestOptions const& _GetRequestOptions() const {return *m_requestOptions;}
-
-    /*-----------------------------------------------------------------------------**//**
-    * @bsimethod                                     Grigas.Petraitis               05/2015
-    +---------------+---------------+---------------+---------------+-----------+------*/
     virtual bool _ShouldCancelHttpRequest() const override {return ShouldCancelRequest();}
 
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                     Grigas.Petraitis               03/2015
     +---------------+---------------+---------------+---------------+-----------+------*/
-    virtual RefCountedPtr<RealityDataSourceResponse> _Handle() const override 
+    virtual RefCountedPtr<SourceResponse> _Handle() const override 
         {
         bmap<Utf8String, Utf8String> header;
-        if (m_data->GetExpirationDate().IsValid())
+        if (m_payload->GetExpirationDate().IsValid())
             {
-            BeAssert(DateTime::Kind::Utc == m_data->GetExpirationDate().GetInfo().GetKind());
-            header["If-Modified-Since"] = GetAnsiCFormattedDateTime(m_data->GetExpirationDate());
+            BeAssert(DateTime::Kind::Utc == m_payload->GetExpirationDate().GetInfo().GetKind());
+            header["If-Modified-Since"] = GetAnsiCFormattedDateTime(m_payload->GetExpirationDate());
             }
-        if (!Utf8String::IsNullOrEmpty(m_data->GetEntityTag()))
-            header["If-None-Match"] = m_data->GetEntityTag();
+        if (!Utf8String::IsNullOrEmpty(m_payload->GetEntityTag()))
+            header["If-None-Match"] = m_payload->GetEntityTag();
 
+        Utf8StringCR url = m_payload->GetPayloadId();
         HttpResponsePtr response;
-        HttpRequestStatus requestStatus = HttpHandler::Instance().Request(response, HttpRequest(m_url.c_str(), header), this);
+        HttpRequestStatus requestStatus = HttpHandler::Instance().Request(response, HttpRequest(url.c_str(), header), this);
         switch (requestStatus)
             {
             case HttpRequestStatus::NoConnection:
-                return RealityDataSourceResponse::Create(RealityDataSourceResult::Error_NoConnection, m_url.c_str(), *m_data);
+                return new SourceResponse(SourceResult::Error_NoConnection, *m_payload);
             case HttpRequestStatus::CouldNotResolveHost:
             case HttpRequestStatus::CouldNotResolveProxy:
-                return RealityDataSourceResponse::Create(RealityDataSourceResult::Error_CouldNotResolveHost, m_url.c_str(), *m_data);
+                return new SourceResponse(SourceResult::Error_CouldNotResolveHost,  *m_payload);
             case HttpRequestStatus::UnknownError:
                 BeAssert(false && "All HTTP errors should be handled");
-                return RealityDataSourceResponse::Create(RealityDataSourceResult::Error_Unknown, m_url.c_str(), *m_data);
+                return new SourceResponse(SourceResult::Error_Unknown, *m_payload);
             }
 
         if (requestStatus == HttpRequestStatus::Aborted || ShouldCancelRequest())
-            return RealityDataSourceResponse::Create(RealityDataSourceResult::Cancelled, m_url.c_str(), *m_data);
+            return new SourceResponse(SourceResult::Cancelled, *m_payload);
 
         BeAssert(response.IsValid());
         switch (response->GetStatus())
             {
             case HttpResponseStatus::Success:
                 {
-                m_data->ParseExpirationDateAndETag(response->GetHeader());
-                if (SUCCESS != m_data->_InitFrom(m_url.c_str(), response->GetHeader(), response->GetBody(), *m_requestOptions))
+                m_payload->ParseExpirationDateAndETag(response->GetHeader());
+                if (SUCCESS != m_payload->_LoadFromHttp(response->GetHeader(), response->GetBody()))
                     {
                     RDCLOG(LOG_INFO, "[%lld] response 200 but unable to initialize reality data",(uint64_t)BeThreadUtilities::GetCurrentThreadId());
-                    return RealityDataSourceResponse::Create(RealityDataSourceResult::Error_Unknown, m_url.c_str(), *m_data);
+                    return new SourceResponse(SourceResult::Error_Unknown, *m_payload);
                     }
-                return RealityDataSourceResponse::Create(RealityDataSourceResult::Success, m_url.c_str(), *m_data);
+                return new SourceResponse(SourceResult::Success, *m_payload);
                 }
 
             case HttpResponseStatus::NotModified:
                 {
-                m_data->ParseExpirationDateAndETag(header);
-                return RealityDataSourceResponse::Create(RealityDataSourceResult::NotModified, m_url.c_str(), *m_data);
+                m_payload->ParseExpirationDateAndETag(header);
+                return new SourceResponse(SourceResult::NotModified, *m_payload);
                 }
 
             case HttpResponseStatus::NotFound:
-                return RealityDataSourceResponse::Create(RealityDataSourceResult::Error_NotFound, m_url.c_str(), *m_data);
+                return new SourceResponse(SourceResult::Error_NotFound, *m_payload);
 
             case HttpResponseStatus::Forbidden:
-                return RealityDataSourceResponse::Create(RealityDataSourceResult::Error_AccessDenied, m_url.c_str(), *m_data);
+                return new SourceResponse(SourceResult::Error_AccessDenied, *m_payload);
 
             case HttpResponseStatus::GatewayTimeout:
-                return RealityDataSourceResponse::Create(RealityDataSourceResult::Error_GatewayTimeout, m_url.c_str(), *m_data);
+                return new SourceResponse(SourceResult::Error_GatewayTimeout, *m_payload);
 
             default:
-                return RealityDataSourceResponse::Create(RealityDataSourceResult::Error_Unknown, m_url.c_str(), *m_data);
+                return new SourceResponse(SourceResult::Error_Unknown, *m_payload);
             }
         }
 
-public:
-    /*-----------------------------------------------------------------------------**//**
-    * @bsimethod                                     Grigas.Petraitis               03/2015
-    +---------------+---------------+---------------+---------------+-----------+------*/
-    static RefCountedPtr<HttpRealityDataSourceRequest> Create(HttpRealityDataSource::Data& data, Utf8CP url, HttpRealityDataSource::RequestOptions const& requestOptions)
-        {
-        return new HttpRealityDataSourceRequest(data, url, requestOptions);
-        }
+    HttpSourceRequest(Payload& data, Options options) : AsyncSourceRequest(nullptr, options, data) {}
 };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-RealityDataSourceResult HttpRealityDataSource::Request(Data& data, bool& handled, Utf8CP id, RequestOptions const& options, IRealityDataSourceResponseReceiver& responseReceiver)
+SourceResult HttpSource::_Request(Payload& data, Options options, Cache& responseReceiver)
     {
-    return QueueRequest(*HttpRealityDataSourceRequest::Create(data, id, options), handled, responseReceiver);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-RealityDataSourceResult HttpRealityDataSource::RequestHandler::_Request() const {return m_source.Request(*m_data, m_handled, m_id.c_str(), m_options, *m_responseReceiver);}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-IRealityDataBase const* HttpRealityDataSource::RequestHandler::_GetData() const {return m_data.get();}
-
-/*======================================================================================+
-|   CombinedRealityDataSource
-+======================================================================================*/
-void CombinedRealityDataSourceBase::_Terminate()
-    {
-    for (auto& source : m_sources)
-        source.second->_Terminate();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String CombinedRealityDataSourceBase::GetIdFormat(int numSources)
-    {
-    Utf8String format("Combined:");
-    for (int i = 0; i < numSources - 1; i++)
-        format.append("%s,");
-    format.append("%s");
-    return format;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void CombinedRealityDataSourceBase::RegisterSource(IRealityDataSourceBase& source) {m_sources[source._GetSourceId()] = &source;}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-RealityDataSourceResult CombinedRealityDataSourceBase::Request(Data& data, bool& handled, Utf8CP id, RequestOptions const& options, IRealityDataSourceResponseReceiver& receiver)
-    {
-    IRealityDataSourceBase& source = data._PickDataSource(id, m_sources);
-    return source.Request(data, handled, id, options, receiver);
-    }
-
-/*======================================================================================+
-|   RealityDataCache
-+======================================================================================*/
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-RealityDataCachePtr RealityDataCache::Create(int arrivalsQueueSize) {return new RealityDataCache(arrivalsQueueSize);}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               05/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-RealityDataCache::~RealityDataCache()
-    {
-    for (auto& source : m_sources)
-        source.second->_Terminate();
-
-    for (auto& storage : m_storages)
-        storage.second->_Terminate();
+    return QueueRequest(*new HttpSourceRequest(data, options), responseReceiver);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-IRealityDataStorageBase* RealityDataCache::GetStorage(Utf8CP id) const
+void Cache::_OnResponseReceived(SourceResponse const& response, Options options)
     {
-    auto iter = m_storages.find(id);
-    if (m_storages.end() == iter)
-        return nullptr;
-    return iter->second.get();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RealityDataCache::RegisterStorage(IRealityDataStorageBase& storage)
-    {
-    BeAssert(nullptr == GetStorage(storage._GetStorageId().c_str()));
-    m_storages[storage._GetStorageId()] = &storage;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-IRealityDataSourceBase* RealityDataCache::GetSource(Utf8CP id) const
-    {
-    auto iter = m_sources.find(id);
-    if (m_sources.end() == iter)
-        return nullptr;
-    return iter->second.get();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RealityDataCache::RegisterSource(IRealityDataSourceBase& source)
-    {
-    BeAssert(nullptr == GetSource(source._GetSourceId().c_str()));
-    m_sources[source._GetSourceId()] = &source;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RealityDataCache::QueuePersistHandler(Utf8CP id, IRealityDataStoragePersistHandler& handler)
-    {
-    BeMutexHolder lock(m_persistHandlersCS);
-    m_persistHandlers[id].insert(&handler);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-RefCountedPtr<IRealityDataStoragePersistHandler> RealityDataCache::DequeuePersistHandler(Utf8CP id, IRealityDataBase const& data)
-    {
-    BeMutexHolder lock(m_persistHandlersCS);
-    auto setIter = m_persistHandlers.find(id);
-    if (m_persistHandlers.end() == setIter)
-        return nullptr;
-
-    auto& set = setIter->second;
-    for (auto handlerIter = set.begin(); handlerIter != set.end(); handlerIter++)
-        {
-        RefCountedPtr<IRealityDataStoragePersistHandler> handler = *handlerIter;
-        if (handler->_GetData() == &data)
-            {
-            set.erase(handlerIter);
-            if (set.empty())
-                m_persistHandlers.erase(setIter);
-            return handler;
-            }        
-        }
-    BeAssert(false);
-    return nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RealityDataCache::QueueRequestHandler(Utf8CP id, IRealityDataSourceRequestHandler& handler)
-    {
-    BeMutexHolder lock(m_requestHandlersCS);
-    BeAssert(m_requestHandlers.end() == m_requestHandlers.find(id) || m_requestHandlers[id].end() == m_requestHandlers[id].find(&handler));
-    m_requestHandlers[id].insert(&handler);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-RefCountedPtr<IRealityDataSourceRequestHandler> RealityDataCache::DequeueRequestHandler(Utf8CP id, IRealityDataBase const& data)
-    {
-    BeMutexHolder lock(m_requestHandlersCS);
-    auto setIter = m_requestHandlers.find(id);
-    if (m_requestHandlers.end() == setIter)
-        return nullptr;
-
-    auto& set = setIter->second;
-    for (auto handlerIter = set.begin(); handlerIter != set.end(); handlerIter++)
-        {
-        RefCountedPtr<IRealityDataSourceRequestHandler> handler = *handlerIter;
-        if (handler->_GetData() == &data)
-            {
-            set.erase(handlerIter);
-            if (set.empty())
-                m_requestHandlers.erase(setIter);
-            return handler;
-            }        
-        }
-    BeAssert(false);
-    return nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RealityDataCache::_OnResponseReceived(RealityDataSourceResponse const& response, IRealityDataSourceBase::RequestOptions const& options)
-    {
-    RefCountedPtr<IRealityDataStoragePersistHandler> persistHandler = DequeuePersistHandler(response.GetId(), response.GetData());
     switch (response.GetResult())
         {
-        case RealityDataSourceResult::Success:
-        case RealityDataSourceResult::NotModified:
+        case SourceResult::Success:
+        case SourceResult::NotModified:
             {
-            BeAssert(nullptr != dynamic_cast<RealityDataCacheOptions const*>(&options));
-            RealityDataCacheOptions const& cacheOptions = dynamic_cast<RealityDataCacheOptions const&>(options);
+            if (!m_storage.IsValid())
+                return;
 
-            if (cacheOptions.SaveInArrivals())
-                AddToArrivals(*Arrival::Create(response.GetData()));
-            
-            if (cacheOptions.UseStorage() && persistHandler.IsValid())
-                {
-                BeAssert(&response.GetData() == persistHandler->_GetData());
-                RealityDataStorageResult result = persistHandler->_Persist();
-                BeAssert(RealityDataStorageResult::Success == result);
-                }
+            StorageResult result = m_storage->Persist(response.GetPayload());
+            BeAssert(StorageResult::Success == result);
             break;
             }
 
-        case RealityDataSourceResult::Error_GatewayTimeout:
-        case RealityDataSourceResult::Error_CouldNotResolveHost:
-        case RealityDataSourceResult::Error_NoConnection:
-        case RealityDataSourceResult::Error_NotFound:
-        case RealityDataSourceResult::Error_AccessDenied:
-        case RealityDataSourceResult::Error_Unknown:
-        case RealityDataSourceResult::Cancelled:
+        case SourceResult::Error_NotFound:
+            response.GetPayload()._OnNotFound();
+            break;
+
+        case SourceResult::Error_GatewayTimeout:
+        case SourceResult::Error_CouldNotResolveHost:
+        case SourceResult::Error_NoConnection:
+        case SourceResult::Error_AccessDenied:
+        case SourceResult::Error_Unknown:
+        case SourceResult::Cancelled:
+            response.GetPayload()._OnError();
             break;
 
         default:
@@ -1317,237 +911,124 @@ void RealityDataCache::_OnResponseReceived(RealityDataSourceResponse const& resp
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RealityDataCache::_OnResponseReceived(RealityDataStorageResponse const& response, IRealityDataStorageBase::SelectOptions const& options, bool isAsync)
+void Cache::_OnResponseReceived(StorageResponse const& response, Options options, bool isAsync)
     {
-    BeAssert(nullptr != dynamic_cast<RealityDataCacheOptions const*>(&options));
-    RealityDataCacheOptions const& cacheOptions = dynamic_cast<RealityDataCacheOptions const&>(options);
-    RealityDataCacheResult result = HandleStorageResponse(response, cacheOptions);
-
-    if (cacheOptions.SaveInArrivals())
-        {
-        switch (result)
-            {
-            case RealityDataCacheResult::Success:
-                AddToArrivals(*Arrival::Create(response.GetData()));
-                break;
-            case RealityDataCacheResult::NotFound:
-                AddToArrivals(*Arrival::Create(response.GetId(), RealityDataCacheResult::NotFound));
-                break;
-            }
-        }
-
+    CacheResult result = HandleStorageResponse(response, options);
+    
     if (!isAsync)
+        m_result = result;
+
+    switch (result)
         {
-        BeMutexHolder lock(m_resultsCS);
-        BeAssert(m_results.end() == m_results.find(&response.GetData()));
-        m_results[&response.GetData()] = result;
+        case CacheResult::NotFound:
+            response.GetPayload()._OnNotFound();
+            break;
+
+        case CacheResult::Error:
+            response.GetPayload()._OnError();
+            break;
         }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-RealityDataCacheResult RealityDataCache::HandleStorageResponse(RealityDataStorageResponse const& response, RealityDataCacheOptions const& options)
+CacheResult Cache::HandleStorageResponse(StorageResponse const& response, Options options)
     {    
     switch (response.GetResult())
         {
-        case RealityDataStorageResult::Success:
+        case StorageResult::Success:
             {
-            if (options.SaveInArrivals())
-                AddToArrivals(*Arrival::Create(response.GetData()));
-            if (response.GetData().IsExpired() && options.RequestFromSource())
+            if (response.GetPayload()._IsExpired() && options.m_requestFromSource)
                 {
-                RefCountedPtr<IRealityDataSourceRequestHandler> handler = DequeueRequestHandler(response.GetId(), response.GetData());
-                RealityDataSourceResult requestResult = handler->_Request();
-                if (handler->_IsHandled())
-                    DequeuePersistHandler(response.GetId(), response.GetData());
+                SourceResult requestResult = m_source->_Request(response.GetPayload(), options, *this);
                 return ResolveResult(response.GetResult(), requestResult);
                 }
             break;
             }
 
-        case RealityDataStorageResult::NotFound:
+        case StorageResult::NotFound:
             {
-            RefCountedPtr<IRealityDataSourceRequestHandler> handler;
-            if (options.RequestFromSource() && (handler = DequeueRequestHandler(response.GetId(), response.GetData())).IsValid())
-                {
-                RealityDataSourceResult requestResult = handler->_Request();
-                if (handler->_IsHandled())
-                    DequeuePersistHandler(response.GetId(), response.GetData());
-                return ResolveResult(response.GetResult(), requestResult);
-                }
-            break;
+            SourceResult requestResult = m_source->_Request(response.GetPayload(), options, *this);
+            return ResolveResult(response.GetResult(), requestResult);
             }
 
-        case RealityDataStorageResult::Queued:
+        case StorageResult::Queued:
             {
             BeAssert(false);
             break;
             }
         }
 
-    DequeueRequestHandler(response.GetId(), response.GetData());
-    DequeuePersistHandler(response.GetId(), response.GetData());
     return ResolveResult(response.GetResult());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-RealityDataCacheResult RealityDataCache::GetResult(IRealityDataBase& data, Utf8CP id, RealityDataStorageResult storageResult)
+CacheResult Cache::GetResult(Payload& data, StorageResult storageResult)
     {
-    if (RealityDataStorageResult::Pending == storageResult)
-        {
-        DequeuePersistHandler(id, data);
-        DequeueRequestHandler(id, data);
-        }
-
-    RealityDataCacheResult result = ResolveResult(storageResult);
-    if (RealityDataCacheResult::RequestQueued == result || RealityDataCacheResult::Error == result)
+    CacheResult result = ResolveResult(storageResult);
+    if (CacheResult::RequestQueued == result || CacheResult::Error == result)
         return result;
 
-    // unless there was an error or the request was queued, we expect to find the result in the m_results map
-    BeMutexHolder lock(m_resultsCS);
-    auto iter = m_results.find(&data);
-    BeAssert(m_results.end() != iter);
-    RealityDataCacheResult returnValue = iter->second;
-    m_results.erase(iter);
-    return returnValue;
+    // this must be a synchronous request. 
+    return m_result;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-RealityDataCacheResult RealityDataCache::GetResult(Utf8CP, RealityDataSourceResult sourceResult)
+CacheResult Cache::GetResult(SourceResult sourceResult)
     {
-    return ResolveResult(RealityDataStorageResult::NotFound, sourceResult);
+    return ResolveResult(StorageResult::NotFound, sourceResult);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-RealityDataCacheResult RealityDataCache::ResolveResult(RealityDataStorageResult storageResult, RealityDataSourceResult sourceResult) const
+CacheResult Cache::ResolveResult(StorageResult storageResult, SourceResult sourceResult) const
     {
     switch (storageResult)
         {
-        case RealityDataStorageResult::Success:
-            return RealityDataCacheResult::Success;
+        case StorageResult::Success:
+            return CacheResult::Success;
 
-        case RealityDataStorageResult::Queued:
-        case RealityDataStorageResult::Pending:
-            return RealityDataCacheResult::RequestQueued;
+        case StorageResult::Queued:
+        case StorageResult::Pending:
+            return CacheResult::RequestQueued;
 
-        case RealityDataStorageResult::NotFound:
+        case StorageResult::NotFound:
             switch (sourceResult)
                 {
-                case RealityDataSourceResult::NotModified:
-                case RealityDataSourceResult::Success:
-                    return RealityDataCacheResult::Success;
-                case RealityDataSourceResult::Queued:
-                case RealityDataSourceResult::Pending:
-                    return RealityDataCacheResult::RequestQueued;
-                case RealityDataSourceResult::Error_NotFound:
-                    return RealityDataCacheResult::NotFound;
+                case SourceResult::NotModified:
+                case SourceResult::Success:
+                    return CacheResult::Success;
+                case SourceResult::Queued:
+                case SourceResult::Pending:
+                    return CacheResult::RequestQueued;
+                case SourceResult::Error_NotFound:
+                    return CacheResult::NotFound;
                 default:
-                    return RealityDataCacheResult::Error;
+                    return CacheResult::Error;
                 }
 
         default:
-            return RealityDataCacheResult::Error;
+            return CacheResult::Error;
         }
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-static ThreadSafeQueue<RealityDataCache::ArrivalPtr>::Iterator Find(ThreadSafeQueue<RealityDataCache::ArrivalPtr> const& queue, Utf8CP id)
-    {
-    BeMutexHolder lock(queue.GetConditionVariable().GetMutex());
-    for (auto iter = queue.begin(); iter != queue.end(); ++iter)
-        {
-        RealityDataCache::ArrivalPtr arrival = *iter;
-        if (arrival->GetId().Equals(id))
-            return iter;
-        }
-    return queue.end();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RealityDataCache::AddToArrivals(Arrival& arrival)
-    {
-    // 0 means arrivals queue is not used
-    if (0 == m_arrivalsQueueSize)
-        return;
-
-    BeMutexHolder lock(m_arrivals.GetConditionVariable().GetMutex());
-    auto iter = Find(m_arrivals, arrival.GetId().c_str());
-    if (m_arrivals.end() != iter)
-        m_arrivals.Erase(iter);
-
-    // -1 means infinite
-    if (-1 != m_arrivalsQueueSize)
-        {
-        while (m_arrivals.Size() > (unsigned)(m_arrivalsQueueSize - 1))
-            m_arrivals.Pop();
-        }
-    m_arrivals.PushBack(&arrival);
-    RDCLOG(LOG_DEBUG, "Pushed to arrivals: %s. Total: %d", arrival.GetId().c_str(), m_arrivals.Size());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-RealityDataCache::ArrivalPtr RealityDataCache::GetFromArrivals(Utf8CP id, RealityDataCacheOptions const& options)
-    {
-    BeMutexHolder lock(m_arrivals.GetConditionVariable().GetMutex());
-    auto iter = Find(m_arrivals, id);
-    if (m_arrivals.end() == iter)
-        return nullptr;
-
-    RealityDataCache::ArrivalPtr arrival = *iter;
-    if (options.RemoveFromArrivals())
-        m_arrivals.Erase(iter);
-    
-    return arrival;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Grigas.Petraitis               04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RealityDataCache::Cleanup()
-    {
-    m_arrivals.Clear();
-
-    if (true)
-        {
-        BeMutexHolder lock(m_persistHandlersCS);
-        m_persistHandlers.clear();
-        }
-    
-    if (true)
-        {
-        BeMutexHolder lock(m_requestHandlersCS);
-        m_requestHandlers.clear();
-        }
-    }
-
-/*======================================================================================+
-|   RealityDataThread
-+======================================================================================*/
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-RealityDataThread::RealityDataThread(Utf8CP threadName) 
-    : m_threadId(-1), m_threadName(threadName)
+Thread::Thread(Utf8CP threadName) : m_threadId(-1), m_threadName(threadName)
     {
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RealityDataThread::Start()
+void Thread::Start()
     {
     BeThreadUtilities::StartNewThread(1024 * 1024, PlatformThreadRunner, this);
     }
@@ -1555,9 +1036,9 @@ void RealityDataThread::Start()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RealityDataThread::ThreadRunner(void* arg)
+void Thread::ThreadRunner(void* arg)
     {
-    RealityDataThreadPtr thread = (RealityDataThread*)arg;
+    ThreadPtr thread = (Thread*)arg;
     thread->Run();
     }
 
@@ -1565,7 +1046,7 @@ void RealityDataThread::ThreadRunner(void* arg)
 * Runs on its own thread.
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RealityDataThread::Run()
+void Thread::Run()
     {
     m_threadId = BeThreadUtilities::GetCurrentThreadId();
 
@@ -1579,13 +1060,13 @@ void RealityDataThread::Run()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-intptr_t RealityDataThread::GetThreadId() const
+intptr_t Thread::GetThreadId() const
     {
     return m_threadId;
     }
 
 /*======================================================================================+
-|   RealityDataThreadPool
+|   ThreadPool
 +======================================================================================*/
 #ifdef DEBUG_THREADPOOL
 #define THREADPOOL_MSG(msg)     BeDebugLog(Utf8PrintfString("\t %llu\t ThreadPool\t %lld\t %s", BeTimeUtilities::GetCurrentTimeAsUnixMillis(), (Int64)BeThreadUtilities::GetCurrentThreadId(), msg).c_str());
@@ -1597,7 +1078,7 @@ intptr_t RealityDataThread::GetThreadId() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RealityDataThreadPool::QueueWork(RealityDataWork& work)
+void ThreadPool::QueueWork(Work& work)
     {
     THREADPOOL_TIMER("QueueWork")
     THREADPOOL_MSG("QueueWork")
@@ -1623,9 +1104,9 @@ void RealityDataThreadPool::QueueWork(RealityDataWork& work)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-RealityDataThreadPool::~RealityDataThreadPool()
+ThreadPool::~ThreadPool()
     {
-    THREADPOOL_MSG("~RealityDataThreadPool")
+    THREADPOOL_MSG("~ThreadPool")
     Terminate();
 
     // clear the list of threads in a critical section
@@ -1644,7 +1125,7 @@ RealityDataThreadPool::~RealityDataThreadPool()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RealityDataThreadPool::Terminate()
+void ThreadPool::Terminate()
     {
     THREADPOOL_MSG("Terminate")
     if (m_isTerminating)
@@ -1657,7 +1138,7 @@ void RealityDataThreadPool::Terminate()
     m_workQueue.GetConditionVariable().notify_all();
 
     // copy the threads list in a critical section
-    bvector<RealityDataWorkerThreadPtr> threads;
+    bvector<WorkerThreadPtr> threads;
         {
         BeMutexHolder threadsLock(m_threadsCV.GetMutex());
         for (auto pair : m_threads)
@@ -1668,7 +1149,7 @@ void RealityDataThreadPool::Terminate()
     THREADPOOL_MSG(Utf8PrintfString("Terminate all threads: %d", threads.size()).c_str());
     while (!threads.empty())
         {
-        RealityDataWorkerThreadPtr thread = threads[0];
+        WorkerThreadPtr thread = threads[0];
         threads.erase(threads.begin());
 
         if (thread->Terminate())
@@ -1679,7 +1160,7 @@ void RealityDataThreadPool::Terminate()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-RealityDataWorkerThreadPtr RealityDataThreadPool::GetIdleThread() const
+WorkerThreadPtr ThreadPool::GetIdleThread() const
     {
     BeMutexHolder lock(m_threadsCV.GetMutex());
     for (auto pair : m_threads)
@@ -1687,15 +1168,15 @@ RealityDataWorkerThreadPtr RealityDataThreadPool::GetIdleThread() const
         if (!pair.second)
             return pair.first;
         }
-    return NULL;
+    return nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-RealityDataWorkerThreadPtr RealityDataThreadPool::CreateThread()
+WorkerThreadPtr ThreadPool::CreateThread()
     {
-    auto thread = RealityDataWorkerThread::Create(this, "RealityData");
+    auto thread = WorkerThread::Create(this, "RealityData");
     thread->AddRef();
     thread->Start();
     BeMutexHolder lock(m_threadsCV.GetMutex());
@@ -1707,7 +1188,7 @@ RealityDataWorkerThreadPtr RealityDataThreadPool::CreateThread()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-int RealityDataThreadPool::GetThreadsCount() const
+int ThreadPool::GetThreadsCount() const
     {
     BeMutexHolder lock(m_threadsCV.GetMutex());
     return (int) m_threads.size();
@@ -1716,7 +1197,7 @@ int RealityDataThreadPool::GetThreadsCount() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool RealityDataThreadPool::ShouldCreateNewThread() const
+bool ThreadPool::ShouldCreateNewThread() const
     {
     // do not exceed the "max threads" parameter
     if (GetThreadsCount() >= m_maxThreads)
@@ -1728,7 +1209,7 @@ bool RealityDataThreadPool::ShouldCreateNewThread() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RealityDataThreadPool::_OnThreadBusy(RealityDataWorkerThread& thread)
+void ThreadPool::_OnThreadBusy(WorkerThread& thread)
     {
     BeMutexHolder lock(m_threadsCV.GetMutex());
     THREADPOOL_MSG("_OnThreadBusy: Marked the thread as busy")
@@ -1739,7 +1220,7 @@ void RealityDataThreadPool::_OnThreadBusy(RealityDataWorkerThread& thread)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RealityDataThreadPool::_OnThreadIdle(RealityDataWorkerThread& thread)
+void ThreadPool::_OnThreadIdle(WorkerThread& thread)
     {
     THREADPOOL_MSG("_OnThreadIdle")
 
@@ -1779,12 +1260,12 @@ void RealityDataThreadPool::_OnThreadIdle(RealityDataWorkerThread& thread)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool RealityDataThreadPool::_AssignWork(RealityDataWorkerThread& thread)
+bool ThreadPool::_AssignWork(WorkerThread& thread)
     {
     if (m_isTerminating)
         return false;
 
-    RealityDataWorkPtr work;
+    WorkPtr work;
     if (true)
         {
         BeMutexHolder lock(m_workQueueCS);
@@ -1801,52 +1282,30 @@ bool RealityDataThreadPool::_AssignWork(RealityDataWorkerThread& thread)
     return false;
     }
 
-//=======================================================================================
-// @bsiclass                                        Grigas.Petraitis            11/2014
-//=======================================================================================
-struct AllThreadsIdlePredicate : IConditionVariablePredicate
-{
-private:
-    RealityDataThreadPool const& m_pool;
-public:
-    AllThreadsIdlePredicate(RealityDataThreadPool const& pool) : m_pool(pool) {}
-    virtual bool _TestCondition(BeConditionVariable& cv) override 
-        {
-        BeMutexHolder lock(m_pool.m_threadsCV.GetMutex());
-        for (auto pair : m_pool.m_threads)
-            {
-            bool isThreadBusy = pair.second;
-            if (isThreadBusy && pair.first->GetThreadId() != BeThreadUtilities::GetCurrentThreadId())
-                return false;
-            }
-        return true;
-        }
-};
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RealityDataThreadPool::WaitUntilAllThreadsIdle() const
+void ThreadPool::WaitUntilAllThreadsIdle() const
     {
     AllThreadsIdlePredicate predicate(*this);
     m_threadsCV.WaitOnCondition(&predicate, BeConditionVariable::Infinite);
     }
 
 /*======================================================================================+
-|   RealityDataWorkerThread
+|   WorkerThread
 +======================================================================================*/
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-RealityDataWorkerThread::RealityDataWorkerThread(IStateListener* stateListener, Utf8CP threadName)
-    : RealityDataThread(threadName), m_cv(), m_terminate(false), m_stateListener(stateListener), m_idleSince(BeTimeUtilities::GetCurrentTimeAsUnixMillis()), m_busySince(0)
+WorkerThread::WorkerThread(IStateListener* stateListener, Utf8CP threadName)
+    : Thread(threadName), m_cv(), m_terminate(false), m_stateListener(stateListener), m_idleSince(BeTimeUtilities::GetCurrentTimeAsUnixMillis()), m_busySince(0)
     {
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RealityDataWorkerThread::SetIsBusy(bool busy)
+void WorkerThread::SetIsBusy(bool busy)
     {
     BeMutexHolder lock(m_cv.GetMutex());
     if (busy && 0 != m_busySince || !busy && 0 != m_idleSince)
@@ -1870,7 +1329,7 @@ void RealityDataWorkerThread::SetIsBusy(bool busy)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RealityDataWorkerThread::_OnBusy()
+void WorkerThread::_OnBusy()
     {
     if (m_stateListener.IsValid())
         m_stateListener->_OnThreadBusy(*this);
@@ -1879,7 +1338,7 @@ void RealityDataWorkerThread::_OnBusy()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RealityDataWorkerThread::_OnIdle()
+void WorkerThread::_OnIdle()
     {
     if (m_stateListener.IsValid())
         m_stateListener->_OnThreadIdle(*this);
@@ -1888,12 +1347,12 @@ void RealityDataWorkerThread::_OnIdle()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool RealityDataWorkerThread::IsBusy(uint64_t* busyTime) const
+bool WorkerThread::IsBusy(uint64_t* busyTime) const
     {
     BeMutexHolder lock(m_cv.GetMutex());
     if (m_busySince != 0)
         {
-        if (NULL != busyTime)
+        if (nullptr != busyTime)
             *busyTime = BeTimeUtilities::GetCurrentTimeAsUnixMillis() - m_busySince;
         return true;
         }
@@ -1903,47 +1362,23 @@ bool RealityDataWorkerThread::IsBusy(uint64_t* busyTime) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool RealityDataWorkerThread::IsIdle(uint64_t* idleTime) const
+bool WorkerThread::IsIdle(uint64_t* idleTime) const
     {
     BeMutexHolder lock(m_cv.GetMutex());
     if (m_idleSince != 0)
         {
-        if (NULL != idleTime)
+        if (nullptr != idleTime)
             *idleTime = BeTimeUtilities::GetCurrentTimeAsUnixMillis() - m_idleSince;
         return true;
         }
     return false;
     }
 
-//=======================================================================================
-// @bsiclass                                        Grigas.Petraitis            10/2014
-//=======================================================================================
-struct IsIdlePredicate : IConditionVariablePredicate
-{
-private:
-    RealityDataWorkerThread& m_thread;
-public:
-    IsIdlePredicate(RealityDataWorkerThread& thread) : m_thread(thread) {}
-    virtual bool _TestCondition(BeConditionVariable &cv) override {return m_thread.IsIdle();}
-};
-
-//=======================================================================================
-// @bsiclass                                        Grigas.Petraitis            10/2014
-//=======================================================================================
-struct HasWorkOrTerminatesPredicate : IConditionVariablePredicate
-{
-private:
-    RealityDataWorkerThread& m_thread;
-
-public:
-    HasWorkOrTerminatesPredicate(RealityDataWorkerThread& thread) : m_thread(thread) {}
-    virtual bool _TestCondition(BeConditionVariable &cv) override {return m_thread.TerminateRequested() || m_thread.m_currentWork.IsValid();}
-};
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RealityDataWorkerThread::_DoWork(RealityDataWork& work)
+void WorkerThread::_DoWork(Work& work)
     {
     // note: if m_threadId is -1 it means that the thread hasn't been started yet
     // but that also means that we're not on that thread and should wait for idle, etc.
@@ -1967,7 +1402,7 @@ void RealityDataWorkerThread::_DoWork(RealityDataWork& work)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RealityDataWorkerThread::_Run()
+void WorkerThread::_Run()
     {
 #ifdef BENTLEY_WIN32
     SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_BELOW_NORMAL);
@@ -1982,7 +1417,7 @@ void RealityDataWorkerThread::_Run()
             {
             BeAssert(m_currentWork.IsValid());
             auto work = m_currentWork;
-            m_currentWork = NULL;
+            m_currentWork = nullptr;
             holder.unlock();
             work->_DoWork();
             }
@@ -1997,7 +1432,7 @@ void RealityDataWorkerThread::_Run()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool RealityDataWorkerThread::Terminate()
+bool WorkerThread::Terminate()
     {
     BeMutexHolder lock(m_cv.GetMutex());
     if (m_terminate)
@@ -2011,7 +1446,7 @@ bool RealityDataWorkerThread::Terminate()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool RealityDataWorkerThread::TerminateRequested() const
+bool WorkerThread::TerminateRequested() const
     {
     BeMutexHolder lock(m_cv.GetMutex());
     return m_terminate;

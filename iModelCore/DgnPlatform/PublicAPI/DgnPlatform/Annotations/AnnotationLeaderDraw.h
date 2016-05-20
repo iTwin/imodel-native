@@ -36,7 +36,7 @@ public:
 
     AnnotationLeaderLayoutCR GetLeaderLayout() const { return *m_leaderLayout; }
 
-    DGNPLATFORM_EXPORT BentleyStatus Draw(Render::GraphicR, ViewContextR, Render::GeometryParamsR) const;
+    DGNPLATFORM_EXPORT BentleyStatus Draw(Render::GraphicBuilderR, ViewContextR, Render::GeometryParamsR) const;
 };
 
 END_BENTLEY_DGN_NAMESPACE

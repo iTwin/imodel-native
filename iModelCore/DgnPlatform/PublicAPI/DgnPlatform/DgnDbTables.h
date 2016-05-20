@@ -25,7 +25,6 @@
 #define DGN_CLASSNAME_ComponentModel        "ComponentModel"
 #define DGN_CLASSNAME_DefinitionElement     "DefinitionElement"
 #define DGN_CLASSNAME_DefinitionModel       "DefinitionModel"
-#define DGN_CLASSNAME_DictionaryElement     "DictionaryElement"
 #define DGN_CLASSNAME_DictionaryModel       "DictionaryModel"
 #define DGN_CLASSNAME_AnnotationElement2d   "AnnotationElement2d"
 #define DGN_CLASSNAME_DrawingGraphic        "DrawingGraphic"
@@ -34,6 +33,8 @@
 #define DGN_CLASSNAME_ElementAspect         "ElementAspect"
 #define DGN_CLASSNAME_ElementExternalKey    "ElementExternalKey"
 #define DGN_CLASSNAME_ElementMultiAspect    "ElementMultiAspect"
+#define DGN_CLASSNAME_FunctionalElement     "FunctionalElement"
+#define DGN_CLASSNAME_FunctionalModel       "FunctionalModel"
 #define DGN_CLASSNAME_GeometricElement2d    "GeometricElement2d"
 #define DGN_CLASSNAME_GeometricElement3d    "GeometricElement3d"
 #define DGN_CLASSNAME_GeometricModel        "GeometricModel"
@@ -44,8 +45,10 @@
 #define DGN_CLASSNAME_GraphicalElement2d    "GraphicalElement2d"
 #define DGN_CLASSNAME_GraphicalElement3d    "GraphicalElement3d"
 #define DGN_CLASSNAME_GraphicalModel2d      "GraphicalModel2d"
+#define DGN_CLASSNAME_GroupInformationModel "GroupInformationModel"
 #define DGN_CLASSNAME_LineStyle             "LineStyle"
 #define DGN_CLASSNAME_Link                  "Link"
+#define DGN_CLASSNAME_LinkElement           "LinkElement"
 #define DGN_CLASSNAME_LocalAuthority        "LocalAuthority"
 #define DGN_CLASSNAME_MaterialAuthority     "MaterialAuthority"
 #define DGN_CLASSNAME_Model                 "Model"
@@ -332,6 +335,9 @@ public:
 public:
     static DgnCode GetModelCode(Iterator::Entry const& entry); //!< @private
     //! Determine the Id of the first non-dictionary model in this DgnDb.
+    //! @note DEPRECATED - Improper assumptions about model structure within a DgnDb
+    //! @see QueryModelId
+    //! @private
     DGNPLATFORM_EXPORT DgnModelId QueryFirstModelId() const;
 
     //! Load a DgnModel from this DgnDb. Loading a model does not cause its elements to be filled. Rather, it creates an

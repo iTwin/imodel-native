@@ -161,7 +161,7 @@ protected:
 public:
     ModelAuthority(CreateParams const& params) : T_Super(params) { }
 
-    DGNPLATFORM_EXPORT static DgnCode CreateModelCode(Utf8StringCR modelName);
+    DGNPLATFORM_EXPORT static DgnCode CreateModelCode(Utf8StringCR modelName, Utf8StringCR nameSpace="");
 };
 
 //=======================================================================================
@@ -190,7 +190,7 @@ protected:
 public:
     CategoryAuthority(CreateParams const& params) : T_Super(params) { }
 
-    DGNPLATFORM_EXPORT static DgnCode CreateCategoryCode(Utf8StringCR categoryName);
+    DGNPLATFORM_EXPORT static DgnCode CreateCategoryCode(Utf8StringCR categoryName, Utf8StringCR nameSpace="");
     DGNPLATFORM_EXPORT static DgnCode CreateSubCategoryCode(DgnCategoryId categoryId, Utf8StringCR subCategoryName);
     DGNPLATFORM_EXPORT static DgnAuthorityId GetCategoryAuthorityId();
 };
@@ -251,7 +251,7 @@ protected:
 public:
     GeometryPartAuthority(CreateParams const& params) : T_Super(params) { }
 
-    DGNPLATFORM_EXPORT static DgnCode CreateGeometryPartCode(Utf8StringCR nameSpace, Utf8StringCR name);
+    DGNPLATFORM_EXPORT static DgnCode CreateGeometryPartCode(Utf8StringCR name, Utf8StringCR nameSpace);
     static DgnCode CreateEmptyCode() { return CreateGeometryPartCode("", ""); }
     DGNPLATFORM_EXPORT static DgnAuthorityId GetGeometryPartAuthorityId();
 };

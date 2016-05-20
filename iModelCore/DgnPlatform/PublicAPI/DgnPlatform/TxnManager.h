@@ -306,6 +306,7 @@ private:
     void ReinstateTxn(TxnRange&, Utf8StringP redoStr);
     void ApplyChanges(TxnId, TxnAction);
     void OnChangesetApplied(BeSQLite::ChangeSet& changeset, TxnAction);
+    void OnChangesApplied(BeSQLite::Changes const&, TxnAction);
     OnCommitStatus CancelChanges(BeSQLite::ChangeSet& changeset);
     DgnDbStatus ReinstateActions(TxnRange& revTxn);
     bool PrepareForUndo();

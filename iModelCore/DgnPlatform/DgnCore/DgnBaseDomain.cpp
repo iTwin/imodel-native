@@ -32,11 +32,17 @@ HANDLER_DEFINE_MEMBERS(Spatial)
 HANDLER_DEFINE_MEMBERS(Component)
 HANDLER_DEFINE_MEMBERS(Sheet)
 HANDLER_DEFINE_MEMBERS(SectionDrawing)
-HANDLER_DEFINE_MEMBERS(StreetMap)
-HANDLER_DEFINE_MEMBERS(WebMercator)
 HANDLER_DEFINE_MEMBERS(Definition)
 HANDLER_DEFINE_MEMBERS(Dictionary)
 HANDLER_DEFINE_MEMBERS(Geometric2d)
+HANDLER_DEFINE_MEMBERS(GroupInformation)
+HANDLER_DEFINE_MEMBERS(Functional)
+};
+
+namespace WebMercator
+{
+HANDLER_DEFINE_MEMBERS(ModelHandler)
+HANDLER_DEFINE_MEMBERS(StreetMapHandler)
 };
 
 namespace dgn_ElementHandler
@@ -90,10 +96,12 @@ DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain
     RegisterHandler(dgn_ModelHandler::Geometric2d::GetHandler());
     RegisterHandler(dgn_ModelHandler::Sheet::GetHandler());
     RegisterHandler(dgn_ModelHandler::SectionDrawing::GetHandler());
-    RegisterHandler(dgn_ModelHandler::WebMercator::GetHandler());
-    RegisterHandler(dgn_ModelHandler::StreetMap::GetHandler());
+    RegisterHandler(WebMercator::ModelHandler::GetHandler());
+    RegisterHandler(WebMercator::StreetMapHandler::GetHandler());
     RegisterHandler(dgn_ModelHandler::Definition::GetHandler());
     RegisterHandler(dgn_ModelHandler::Dictionary::GetHandler());
+    RegisterHandler(dgn_ModelHandler::GroupInformation::GetHandler());
+    RegisterHandler(dgn_ModelHandler::Functional::GetHandler());
 
     RegisterHandler(dgn_ElementHandler::Element::GetHandler());
     RegisterHandler(dgn_ElementHandler::Geometric2d::GetHandler());

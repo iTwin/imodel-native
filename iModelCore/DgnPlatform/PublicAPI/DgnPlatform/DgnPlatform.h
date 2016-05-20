@@ -95,7 +95,6 @@ DGNPLATFORM_TYPEDEFS(DgnScript)
 DGNPLATFORM_TYPEDEFS(DgnShxFont)
 DGNPLATFORM_TYPEDEFS(DgnTrueTypeFont)
 DGNPLATFORM_TYPEDEFS(DgnViewport)
-DGNPLATFORM_TYPEDEFS(DictionaryElement)
 DGNPLATFORM_TYPEDEFS(DisplayStyle)
 DGNPLATFORM_TYPEDEFS(DisplayStyleFlags)
 DGNPLATFORM_TYPEDEFS(DrawingGraphic)
@@ -114,6 +113,7 @@ DGNPLATFORM_TYPEDEFS(FenceManager)
 DGNPLATFORM_TYPEDEFS(FenceParams)
 DGNPLATFORM_TYPEDEFS(FitContext)
 DGNPLATFORM_TYPEDEFS(Frustum)
+DGNPLATFORM_TYPEDEFS(FunctionalElement)
 DGNPLATFORM_TYPEDEFS(GeomDetail)
 DGNPLATFORM_TYPEDEFS(GeometricPrimitive)
 DGNPLATFORM_TYPEDEFS(GeometryBuilder)
@@ -122,6 +122,7 @@ DGNPLATFORM_TYPEDEFS(GeometrySource2d)
 DGNPLATFORM_TYPEDEFS(GeometrySource3d)
 DGNPLATFORM_TYPEDEFS(GeometryStream)
 DGNPLATFORM_TYPEDEFS(GeometryStreamEntryId)
+DGNPLATFORM_TYPEDEFS(GroupInformationElement)
 DGNPLATFORM_TYPEDEFS(HatchLinkage)
 DGNPLATFORM_TYPEDEFS(HitDetail)
 DGNPLATFORM_TYPEDEFS(HitList)
@@ -138,6 +139,7 @@ DGNPLATFORM_TYPEDEFS(IGeoCoordinateServices)
 DGNPLATFORM_TYPEDEFS(IGeometryProcessor)
 DGNPLATFORM_TYPEDEFS(ILineStyle)
 DGNPLATFORM_TYPEDEFS(ILineStyleComponent)
+DGNPLATFORM_TYPEDEFS(InformationElement)
 DGNPLATFORM_TYPEDEFS(IPickGeom)
 DGNPLATFORM_TYPEDEFS(IRedrawAbort)
 DGNPLATFORM_TYPEDEFS(IRedrawOperation)
@@ -187,6 +189,7 @@ DGNPLATFORM_TYPEDEFS(ViewDefinition)
 DGNPLATFORM_TYPEDEFS(ViewManager)
 
 DGNPLATFORM_REF_COUNTED_PTR(AnnotationElement)
+DGNPLATFORM_REF_COUNTED_PTR(AnnotationElement2d)
 DGNPLATFORM_REF_COUNTED_PTR(ClipPrimitive)
 DGNPLATFORM_REF_COUNTED_PTR(ClipVector)
 DGNPLATFORM_REF_COUNTED_PTR(ComponentDef)
@@ -202,19 +205,17 @@ DGNPLATFORM_REF_COUNTED_PTR(DgnGCS)
 DGNPLATFORM_REF_COUNTED_PTR(DgnGeometryPart)
 DGNPLATFORM_REF_COUNTED_PTR(DgnMarkupProject)
 DGNPLATFORM_REF_COUNTED_PTR(DgnModel)
+DGNPLATFORM_REF_COUNTED_PTR(DgnQueryView)
 DGNPLATFORM_REF_COUNTED_PTR(DgnRevision)
 DGNPLATFORM_REF_COUNTED_PTR(DgnViewport)
-DGNPLATFORM_REF_COUNTED_PTR(DictionaryElement)
-DGNPLATFORM_REF_COUNTED_PTR(AnnotationElement2d)
 DGNPLATFORM_REF_COUNTED_PTR(DisplayStyleHandlerSettings)
-DGNPLATFORM_REF_COUNTED_PTR (DrawingGraphic)
+DGNPLATFORM_REF_COUNTED_PTR(DrawingGraphic)
 DGNPLATFORM_REF_COUNTED_PTR(DrawingViewDefinition)
 DGNPLATFORM_REF_COUNTED_PTR(IBriefcaseManager)
 DGNPLATFORM_REF_COUNTED_PTR(IElemTopology)
 DGNPLATFORM_REF_COUNTED_PTR(PatternParams)
 DGNPLATFORM_REF_COUNTED_PTR(PhysicalElement)
 DGNPLATFORM_REF_COUNTED_PTR(ProgressiveTask)
-DGNPLATFORM_REF_COUNTED_PTR(DgnQueryView)
 DGNPLATFORM_REF_COUNTED_PTR(RedlineViewController)
 DGNPLATFORM_REF_COUNTED_PTR(SheetElement)
 DGNPLATFORM_REF_COUNTED_PTR(SheetViewController)
@@ -235,6 +236,8 @@ BEGIN_BENTLEY_RENDER_NAMESPACE
     DEFINE_POINTER_SUFFIX_TYPEDEFS(GeometryParams)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(GradientSymb)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(Graphic)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(IGraphicBuilder)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(GraphicBuilder)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(GraphicList)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(GraphicParams)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(ISprite)
@@ -294,57 +297,11 @@ typedef struct dgn_AuthorityHandler::Authority* AuthorityHandlerP;
 typedef struct dgn_AuthorityHandler::Authority& AuthorityHandlerR;
 typedef Byte const* ByteCP;
 
-//=======================================================================================
-// @bsiclass                                                    Keith.Bentley   12/14
-//=======================================================================================
-struct BeBriefcaseBasedIdSet : bset<BeSQLite::BeBriefcaseBasedId>
-{
-    DGNPLATFORM_EXPORT void FromJson(Json::Value const& in);
-    DGNPLATFORM_EXPORT void ToJson(Json::Value& out) const;
-};
-
-//=======================================================================================
-// @bsiclass                                                    Keith.Bentley   12/14
-//=======================================================================================
-template<typename IdType> struct IdSet : BeBriefcaseBasedIdSet, BeSQLite::VirtualSet
-{
-private:
-    BeBriefcaseBasedIdSet m_set;
-
-    virtual bool _IsInSet(int nVals, BeSQLite::DbValue const* vals) const
-        {
-        BeAssert(nVals == 1);
-        return Contains(IdType(vals[0].GetValueUInt64()));
-        }
-public:
-    IdSet(){static_assert(sizeof(IdType)==sizeof(BeSQLite::BeBriefcaseBasedId),"IdSets may only contain BeBriefcaseBasedId");}
-
-    typedef BentleyApi::bset<IdType> T_SetType;
-    typedef typename T_SetType::const_iterator const_iterator;
-    typedef typename T_SetType::iterator iterator;
-
-    const_iterator begin() const {return ((T_SetType&)m_set).begin();}
-    const_iterator end() const {return ((T_SetType&)m_set).end();}
-    const_iterator find(IdType id) const {return ((T_SetType&)m_set).find(id);}
-    bool empty() const {return m_set.empty();}
-    void clear() {m_set.clear();}
-    size_t size() const {return m_set.size();}
-    bpair<iterator,bool> insert(IdType const& val) {BeAssert(val.IsValid()); return ((T_SetType&)m_set).insert(val);}
-    void insert(const_iterator first, const_iterator last) {((T_SetType&)m_set).insert(first,last);}
-    size_t erase(IdType const& val) {return ((T_SetType&)m_set).erase(val);}
-    iterator erase(iterator it) {return ((T_SetType&)m_set).erase(it);}
-    bool Contains(IdType id) const {return end() != find(id);}
-    void FromJson(Json::Value const& in) {m_set.FromJson(in);}
-    void ToJson(Json::Value& out) const {m_set.ToJson(out);}
-
-    BeBriefcaseBasedIdSet const& GetBriefcaseBasedIdSet() const { return m_set; }
-};
-
-typedef IdSet<DgnElementId> DgnElementIdSet;            //!< IdSet with DgnElementId members. @ingroup GROUP_DgnElement
-typedef IdSet<DgnModelId> DgnModelIdSet;                //!< IdSet with DgnModelId members. @ingroup GROUP_DgnModel
-typedef IdSet<DgnCategoryId> DgnCategoryIdSet;          //!< IdSet with DgnCategoryId members. @ingroup GROUP_DgnCategory
-typedef IdSet<DgnSubCategoryId> DgnSubCategoryIdSet;    //!< IdSet with DgnSubCategoryId members. @ingroup GROUP_DgnCategory
-typedef IdSet<DgnMaterialId> DgnMaterialIdSet;          //!< IdSet with DgnMaterialId members.
+typedef BeSQLite::IdSet<DgnElementId> DgnElementIdSet;            //!< IdSet with DgnElementId members. @ingroup GROUP_DgnElement
+typedef BeSQLite::IdSet<DgnModelId> DgnModelIdSet;                //!< IdSet with DgnModelId members. @ingroup GROUP_DgnModel
+typedef BeSQLite::IdSet<DgnCategoryId> DgnCategoryIdSet;          //!< IdSet with DgnCategoryId members. @ingroup GROUP_DgnCategory
+typedef BeSQLite::IdSet<DgnSubCategoryId> DgnSubCategoryIdSet;    //!< IdSet with DgnSubCategoryId members. @ingroup GROUP_DgnCategory
+typedef BeSQLite::IdSet<DgnMaterialId> DgnMaterialIdSet;          //!< IdSet with DgnMaterialId members.
 
 typedef ECN::ECClassId DgnClassId;
 
@@ -380,27 +337,6 @@ public:
     void SetActiveGeometryPart(DgnGeometryPartId partId) {SetGeometryPartId(partId);}
     void Increment() {if (m_partId.IsValid()) SetPartIndex(GetPartIndex()+1); else SetIndex(GetIndex()+1);}
 };
-
-#ifdef WIP_ELEMENT_ITEM // *** pending redesign
-//=======================================================================================
-//! The key (classId,instanceId) of a the Item aspect.
-//=======================================================================================
-struct ElementItemKey : BeSQLite::EC::ECInstanceKey
-{
-    ElementItemKey() : BeSQLite::EC::ECInstanceKey() {}
-    ElementItemKey(ECN::ECClassId classId, BeSQLite::EC::ECInstanceId instanceId) : BeSQLite::EC::ECInstanceKey(classId, instanceId) {}
-    ElementItemKey(DgnClassId classId, BeSQLite::EC::ECInstanceId instanceId) : BeSQLite::EC::ECInstanceKey(classId.GetValue(), instanceId) {}
-    //! Converts an ECInstanceKey to a ElementItemKey.
-    //! @note Does a simple type conversion without checking if the specified ECInstanceKey is a valid ElementItemKey
-    explicit ElementItemKey(BeSQLite::EC::ECInstanceKeyCR key) : BeSQLite::EC::ECInstanceKey(key) {}
-    //! Return the DgnElementId held by this key.
-    //! @note The ECInstanceId of an Element and its ElementGeom aspect are the same.
-    DgnElementId GetElementId() const {return DgnElementId(GetECInstanceId().GetValue());}
-    DgnClassId GetClassId() const {return DgnClassId(GetECClassId());}
-};
-
-typedef ElementItemKey const& ElementItemKeyCR;
-#endif
 
 //=======================================================================================
 //! A DRange3d that holds min/max values for an object in each of x,y,z in some coordinate system.
@@ -856,6 +792,7 @@ enum class GeoLocationProviderStatus
     Available               = 4,
     OutOfService            = 5,
     LocationUnavailable     = 6,
+    Initializing            = 7,
 };
 
 typedef bvector<double> T_DoubleVector;
@@ -908,7 +845,8 @@ public:
     Byte GetBlue() const {return m_blue;}
     Byte GetAlpha() const {return m_alpha;}
 
-    uint32_t GetValue() const {return *reinterpret_cast<uint32_t const*>(this);}
+    uint32_t GetValue() const {return *reinterpret_cast<uint32_t const*>(this);} //! for use with Render primitives
+    uint32_t GetValueRgba() const {return ColorDef(m_alpha, m_blue, m_green, m_red).GetValue();} //! for use with UI controls
     uint32_t GetValueNoAlpha() const {return 0xffffff & GetValue();}
 
     bool operator==(ColorDef const& rhs) const {return GetValue() == rhs.GetValue();}
@@ -941,11 +879,6 @@ public:
 };
 
 //__PUBLISH_SECTION_END__
-
-#define QV_RESERVED_DISPLAYPRIORITY     (32)
-#define MAX_HW_DISPLAYPRIORITY          ((1<<23)-QV_RESERVED_DISPLAYPRIORITY)
-#define RESERVED_DISPLAYPRIORITY        (1<<19)
-
 // Used for verifying published tests in DgnPlatformTest are using published headers. DO NOT REMOVE.
 #define __DGNPLATFORM_NON_PUBLISHED_HEADER__ 1
 /*__PUBLISH_SECTION_START__*/

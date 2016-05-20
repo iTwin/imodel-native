@@ -120,7 +120,7 @@ template<typename READER> static BentleyStatus readPngToBuffer(ByteStream& outPi
     info.m_height = info_ptr->height;
     info.m_hasAlpha = (32 == info_ptr->pixel_depth);     // either RGB or RGBA
     info.m_isBGR = false;
-    info.m_isTopDown = true;
+    info.SetTopDown();
     outPixels.Resize((uint32_t) (info.m_height*bytesPerRow));
 
     for (uint32_t line=0; line < info.m_height; ++line)
@@ -262,8 +262,8 @@ static BentleyStatus prepareForPng(int& pngformat, bvector <png_bytep>& rows, By
     rows.resize(pngInfo.m_height);
 
     int    rowSize = pngInfo.m_width * bytesPerPixel;
-    uint8_t* row     = pngInfo.m_isTopDown ? img.GetDataP() : img.GetDataP() + (pngInfo.m_height-1)*rowSize;
-    int    rowStep = pngInfo.m_isTopDown? rowSize: -rowSize;
+    uint8_t* row     = pngInfo.IsTopDown() ? img.GetDataP() : img.GetDataP() + (pngInfo.m_height-1)*rowSize;
+    int    rowStep = pngInfo.IsTopDown() ? rowSize : -rowSize;
     for (size_t i=0; i<rows.size(); ++i)
         {
         rows[i] = row;
@@ -353,16 +353,16 @@ static size_t computeBytesPerPixel(RgbImageInfo const& infoIn)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      10/2013
 //---------------------------------------------------------------------------------------
-BentleyStatus RgbImageInfo::WriteImageToJpgBuffer(bvector<uint8_t>& jpegData, ByteStream const& imageData, int quality) const
+BentleyStatus RgbImageInfo::WriteImageToJpgBuffer(ByteStream& jpegData, ByteStream const& imageData, int quality, BottomUp bottomUp) const
     {
     BeJpegCompressor writer;
-    return writer.Compress(jpegData, imageData.GetData(), m_width, m_height, computePixelFormat(*this), quality);
+    return writer.Compress(jpegData, imageData.GetData(), m_width, m_height, computePixelFormat(*this), quality, BottomUp::Yes==bottomUp ? BeJpegBottomUp::Yes : BeJpegBottomUp::No);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      10/2013
 //---------------------------------------------------------------------------------------
-BentleyStatus RgbImageInfo::ReadImageFromJpgBuffer(Render::Image& image, Byte const*inputBuffer, size_t inputBufferSize)
+BentleyStatus RgbImageInfo::ReadImageFromJpgBuffer(Render::Image& image, Byte const*inputBuffer, size_t inputBufferSize, BottomUp bottomUp)
     {
     BeJpegDecompressor reader;
     if (SUCCESS != reader.ReadHeader(m_width, m_height, inputBuffer, inputBufferSize))
@@ -371,6 +371,6 @@ BentleyStatus RgbImageInfo::ReadImageFromJpgBuffer(Render::Image& image, Byte co
     image.Initialize(m_width, m_height, m_hasAlpha ? Render::Image::Format::Rgba : Render::Image::Format::Rgb);
     ByteStream& rgbaBuffer = image.GetByteStreamR();
     rgbaBuffer.Resize((uint32_t) (m_width*m_height*computeBytesPerPixel(*this)));
-    return reader.Decompress(rgbaBuffer.GetDataP(), rgbaBuffer.GetSize(), inputBuffer, inputBufferSize, computePixelFormat(*this));
+    return reader.Decompress(rgbaBuffer.GetDataP(), rgbaBuffer.GetSize(), inputBuffer, inputBufferSize, computePixelFormat(*this), BottomUp::Yes==bottomUp ? BeJpegBottomUp::Yes : BeJpegBottomUp::No);
     }
 

@@ -75,8 +75,18 @@ FenceAcceptContext(FenceParamsR fp, FenceCheckStop* checkStop = nullptr) : m_fp(
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual Render::GraphicPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override
+virtual Render::GraphicBuilderPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override
     {
+    return new SimplifyGraphic(params, *this, *this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual Render::GraphicPtr _CreateGroupNode(Render::Graphic::CreateParams const& params, Render::GraphicArray& entries, ClipPrimitiveCP clip) override
+    {
+#if defined (NEEDS_WORK)
+#endif
     return new SimplifyGraphic(params, *this, *this);
     }
 
@@ -567,7 +577,7 @@ bool AcceptCurveVector(CurveVectorCR curves)
     if (SUCCESS != Attach(m_fp.GetViewport(), m_purpose))
         return false;
 
-    Render::GraphicPtr graphic = CreateGraphic(Graphic::CreateParams(GetViewport()));
+    Render::GraphicBuilderPtr graphic = CreateGraphic(Graphic::CreateParams(GetViewport()));
 
     graphic->AddCurveVector(curves, false);
 

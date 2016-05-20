@@ -47,7 +47,7 @@ struct MaterialTest : public BlankDgnDbTestFixture
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MaterialTest, CRUD)
     {
-    SetupProject(L"materials.idgndb");
+    SetupProject(L"materials.ibim");
     auto params = MakeParams("Palette1", "Material1");
     DgnMaterialPtr mat = new DgnMaterial(params);
     ASSERT_TRUE(mat.IsValid());
@@ -90,7 +90,7 @@ void MaterialTest::ExpectParent(DgnDbR db, Utf8StringCR childName, Utf8StringCR 
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MaterialTest, ParentChildCycles)
     {
-    SetupProject(L"materials.idgndb");
+    SetupProject(L"materials.ibim");
     auto params = MakeParams("Palette", "Parent");
     DgnMaterialPtr parent = new DgnMaterial(params);
     parent->Insert();
@@ -141,8 +141,8 @@ TEST_F(MaterialTest, ParentChildCycles)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MaterialTest, ParentChildClone)
     {
-    SetupProject(L"materials.idgndb");
-    DgnDbPtr db2 = CreateDb(L"clonematerials.idgndb");
+    SetupProject(L"materials.ibim");
+    DgnDbPtr db2 = CreateDb(L"clonematerials.ibim");
 
     Utf8String palette("Palette");
     DgnMaterialCPtr parent = CreateMaterial(palette, "Parent");
@@ -195,7 +195,7 @@ TEST_F(MaterialTest, ParentChildClone)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MaterialTest, Iterate)
     {
-    SetupProject(L"materials_Iterate.idgndb");
+    SetupProject(L"materials_Iterate.ibim");
     DgnMaterialCPtr mat1 = CreateMaterial("Palette1", "Material1");
     ASSERT_TRUE(mat1.IsValid());
     DgnMaterialCPtr mat2 = CreateMaterial("Palette1", "Material2");
@@ -253,7 +253,7 @@ TEST_F(MaterialTest, Iterate)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MaterialTest, Iterate_WithFilter)
     {
-    SetupProject(L"materials_Iterate.idgndb");
+    SetupProject(L"materials_Iterate.ibim");
     DgnMaterialCPtr mat1 = CreateMaterial("Palette1", "Material1");
     ASSERT_TRUE(mat1.IsValid());
     DgnMaterialCPtr mat2 = CreateMaterial("Palette1", "Material2");

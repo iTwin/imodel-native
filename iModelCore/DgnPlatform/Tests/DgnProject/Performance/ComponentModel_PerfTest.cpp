@@ -289,7 +289,7 @@ void ComponentModelPerfTest::PlaceInstances(int ninstances, int boxCount, DPoint
             {
             DgnElementCPtr instance = cdef->MakeInstanceOfVariation(&status, *targetModel, *variation, nullptr);
 
-            PhysicalElementPtr pinst = instance->MakeCopy<PhysicalElement>();
+            auto pinst = instance->MakeCopy<GeometricElement3d>();
             Placement3d placement;
             placement.GetOriginR() = DPoint3d::From(-i,-i,-i);
             pinst->SetPlacement(placement);
@@ -340,8 +340,8 @@ void ComponentModelPerfTest::PlaceElements(int ninstances, int boxCount, DPoint3
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ComponentModelPerfTest, PlaceInstances_TwoBoxes)
     {
-    m_componentDbName = copyDb(L"DgnDb/3dMetricGeneral.idgndb", L"ComponentModelTest_Component2.idgndb");
-    m_clientDbName = copyDb(L"DgnDb/3dMetricGeneral.idgndb", L"ComponentModelTest_Performance_PlaceInstances2.idgndb");
+    m_componentDbName = copyDb(L"DgnDb/3dMetricGeneral.ibim", L"ComponentModelTest_Component2.ibim");
+    m_clientDbName = copyDb(L"DgnDb/3dMetricGeneral.ibim", L"ComponentModelTest_Performance_PlaceInstances2.ibim");
     PlaceInstances(100000, 2, DPoint3d::From(10,12,13));
     }
 
@@ -350,7 +350,7 @@ TEST_F(ComponentModelPerfTest, PlaceInstances_TwoBoxes)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ComponentModelPerfTest, PlaceElements_TwoBoxes)
     {
-    m_clientDbName = copyDb(L"DgnDb/3dMetricGeneral.idgndb", L"ComponentModelTest_Performance_PlaceElements2.idgndb");
+    m_clientDbName = copyDb(L"DgnDb/3dMetricGeneral.ibim", L"ComponentModelTest_Performance_PlaceElements2.ibim");
     PlaceElements(100000, 2, DPoint3d::From(10,12,13));
     };
 
@@ -359,8 +359,8 @@ TEST_F(ComponentModelPerfTest, PlaceElements_TwoBoxes)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ComponentModelPerfTest, PlaceInstances_TwentyBoxes)
     {
-    m_componentDbName = copyDb(L"DgnDb/3dMetricGeneral.idgndb", L"ComponentModelTest_Component20.idgndb");
-    m_clientDbName = copyDb(L"DgnDb/3dMetricGeneral.idgndb", L"ComponentModelTest_Performance_PlaceInstances20.idgndb");
+    m_componentDbName = copyDb(L"DgnDb/3dMetricGeneral.ibim", L"ComponentModelTest_Component20.ibim");
+    m_clientDbName = copyDb(L"DgnDb/3dMetricGeneral.ibim", L"ComponentModelTest_Performance_PlaceInstances20.ibim");
     PlaceInstances(100000, 20, DPoint3d::From(10,12,13));
     }
 
@@ -369,7 +369,7 @@ TEST_F(ComponentModelPerfTest, PlaceInstances_TwentyBoxes)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ComponentModelPerfTest, PlaceElements_TwentyBoxes)
     {
-    m_clientDbName = copyDb(L"DgnDb/3dMetricGeneral.idgndb", L"ComponentModelTest_Performance_PlaceElements20.idgndb");
+    m_clientDbName = copyDb(L"DgnDb/3dMetricGeneral.ibim", L"ComponentModelTest_Performance_PlaceElements20.ibim");
     PlaceElements(100000, 20, DPoint3d::From(10,12,13));
     };
 

@@ -367,9 +367,37 @@ DgnDbStatus DefinitionModel::_OnInsertElement(DgnElementR el)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DictionaryModel::_OnInsertElement(DgnElementR el)
     {
-    // dictionary model can contain *only* dictionary elements
-    auto status = el.IsDictionaryElement() ? T_Super::_OnInsertElement(el) : DgnDbStatus::WrongModel;
+    // dictionary model can contain *only* DefinitionElements
+    DgnDbStatus status = el.IsDefinitionElement() ? T_Super::_OnInsertElement(el) : DgnDbStatus::WrongModel;
     return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus GroupInformationModel::_OnInsertElement(DgnElementR element)
+    {
+    return element.IsGroupInformationElement() ? T_Super::_OnInsertElement(element) : DgnDbStatus::WrongModel;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus FunctionalModel::_OnInsertElement(DgnElementR element)
+    {
+    return element.IsFunctionalElement() ? T_Super::_OnInsertElement(element) : DgnDbStatus::WrongModel;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+GroupInformationModelPtr GroupInformationModel::Create(DgnDbR db, DgnCode const& modelCode)
+    {
+    ModelHandlerR handler = dgn_ModelHandler::GroupInformation::GetHandler();
+    DgnClassId classId = db.Domains().GetClassId(handler);
+    DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, classId, modelCode));
+
+    return dynamic_cast<GroupInformationModelP>(model.get());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1054,7 +1082,7 @@ Utf8String DgnModels::GetUniqueModelName(Utf8CP baseName)
 DgnModelId DgnModels::QueryFirstModelId() const
     {
     for (auto const& model : MakeIterator())
-        if (model.GetModelId() != DgnModel::DictionaryId())
+        if ((model.GetModelId() != DgnModel::DictionaryId()) && (model.GetModelId() != DgnModel::GroupInformationId()))
             return model.GetModelId();
 
     return DgnModelId();

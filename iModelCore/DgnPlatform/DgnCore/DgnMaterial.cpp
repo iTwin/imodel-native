@@ -122,7 +122,7 @@ DgnDbStatus DgnMaterial::_SetParentId(DgnElementId parentId)
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnMaterial::CreateParams::CreateParams(DgnDbR db, Utf8StringCR paletteName, Utf8StringCR materialName, Utf8StringCR value, DgnMaterialId parentMaterialId, Utf8StringCR descr)
-  : T_Super(db, DgnMaterial::QueryDgnClassId(db), CreateMaterialCode(paletteName, materialName), nullptr, parentMaterialId),
+  : T_Super(db, DgnModel::DictionaryId(), DgnMaterial::QueryDgnClassId(db), CreateMaterialCode(paletteName, materialName), nullptr, parentMaterialId),
     m_data(value, descr)
     {
     }

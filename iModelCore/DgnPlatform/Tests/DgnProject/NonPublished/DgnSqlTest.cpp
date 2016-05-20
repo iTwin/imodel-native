@@ -93,7 +93,7 @@ void SqlFunctionsTest::InsertElement(PhysicalElementR pelem)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SqlFunctionsTest, placement_areaxy)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"placement_areaxy.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.ibim", L"placement_areaxy.ibim", BeSQLite::Db::OpenMode::ReadWrite);
 
     double o1y = 5.0;
     double o2x = 5.0;
@@ -180,7 +180,7 @@ TEST_F(SqlFunctionsTest, placement_areaxy)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SqlFunctionsTest, placement_angles)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"placement_angles.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.ibim", L"placement_angles.ibim", BeSQLite::Db::OpenMode::ReadWrite);
 
     double o1y = 5.0;
     double o2x = 5.0;
@@ -273,7 +273,7 @@ TEST_F(SqlFunctionsTest, placement_angles)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SqlFunctionsTest, DGN_point_min_distance_to_bbox)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"DGN_point_min_distance_to_bbox.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.ibim", L"DGN_point_min_distance_to_bbox.ibim", BeSQLite::Db::OpenMode::ReadWrite);
 
     double o1y = 2.0;
     double o2x = 5.0;
@@ -403,7 +403,7 @@ TEST_F(SqlFunctionsTest, DGN_point_min_distance_to_bbox)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SqlFunctionsTest, spatialQueryECSql)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"spatialQueryECSql.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.ibim", L"spatialQueryECSql.ibim", BeSQLite::Db::OpenMode::ReadWrite);
 
     double o1y = 5.0;
     double o2x = 5.0;
@@ -617,7 +617,7 @@ TEST_F(SqlFunctionsTest, spatialQueryECSql)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SqlFunctionsTest, spatialQuery)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"spatialQuery.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.ibim", L"spatialQuery.ibim", BeSQLite::Db::OpenMode::ReadWrite);
 
     double o1y = 5.0;
     double o2x = 5.0;
@@ -823,7 +823,7 @@ TEST_F(SqlFunctionsTest, spatialQuery)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SqlFunctionsTest, bbox_union)
     {
-    DgnDbTestDgnManager tdm(L"04_Plant.i.idgndb", __FILE__, Db::OpenMode::Readonly, TestDgnManager::DGNINITIALIZEMODE_None);
+    DgnDbTestDgnManager tdm(L"04_Plant.i.ibim", __FILE__, Db::OpenMode::Readonly, TestDgnManager::DGNINITIALIZEMODE_None);
     DgnDbP dgndb = tdm.GetDgnProjectP();
 
     Statement stmt;
@@ -831,7 +831,7 @@ TEST_F(SqlFunctionsTest, bbox_union)
     // This is an example of accumlating the union of bounding boxes.
     // Note that when computing a union, it only makes sense to use axis-aligned bounding boxes, not element-aligned bounding boxes.
     stmt.Prepare(*dgndb, "SELECT DGN_bbox_union(" AABB_FROM_PLACEMENT ") FROM " DGN_TABLE(DGN_CLASSNAME_Element) " AS e," DGN_TABLE(DGN_CLASSNAME_GeometricElement3d) 
-                    " AS g WHERE e.ModelId=2 AND e.id=g.ElementId");
+                    " AS g WHERE e.ModelId=3 AND e.id=g.ElementId");
     //__PUBLISH_EXTRACT_END__
     auto rc = stmt.Step();
     ASSERT_EQ(BE_SQLITE_ROW, rc);

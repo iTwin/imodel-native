@@ -259,7 +259,7 @@ void PerformanceDgnECTests::RunQueryTests (ECSchemaR schema, DgnDbTestDgnManager
 
 TEST_F (PerformanceDgnECTests, InsertingAndQueryingInstances)
     {
-    DgnDbTestDgnManager tdm (L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite, false);
+    DgnDbTestDgnManager tdm (L"3dMetricGeneral.ibim", __FILE__, Db::OpenMode::ReadWrite, false);
 
     ECSchemaPtr schema;
     PerformanceTestFixture::ImportTestSchema (schema, tdm, 25, 25);
@@ -269,7 +269,7 @@ TEST_F (PerformanceDgnECTests, InsertingAndQueryingInstances)
 
 TEST_F (PerformanceDgnECTests, InsertingAndQueryingInstancesWithComplexSchema)
     {
-    DgnDbTestDgnManager tdm (L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite, false);
+    DgnDbTestDgnManager tdm (L"3dMetricGeneral.ibim", __FILE__, Db::OpenMode::ReadWrite, false);
 
     ECSchemaPtr schema;
     PerformanceTestFixture::ImportComplexTestSchema (schema, tdm);

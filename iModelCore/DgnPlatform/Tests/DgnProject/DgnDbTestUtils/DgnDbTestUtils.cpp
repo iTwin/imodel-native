@@ -70,7 +70,7 @@ DgnDbTestUtils::SeedDbInfo DgnDbTestUtils::GetOneSpatialModelSeedDb(SeedDbOption
     SeedDbInfo info;
     info.id = SeedDbId::OneSpatialModel;
     info.options = options;
-    info.fileName.SetName(WPrintfString(L"DgnDbTestUtils_OneSpatialModel%ls.dgndb", options.ToKey().c_str()));   // note that we need different files for different combinations of options.
+    info.fileName.SetName(WPrintfString(L"DgnDbTestUtils_OneSpatialModel%ls.bim", options.ToKey().c_str()));   // note that we need different files for different combinations of options.
     info.modelCode = DgnModel::CreateModelCode("DefaultModel");
     info.categoryName = "DefaultCategory";
 
@@ -206,7 +206,7 @@ DgnDbPtr DgnDbTestUtils::OpenSeedDb(WCharCP relSeedPath)
 static void supplyMissingDbExtension(WStringR name)
     {
     if (name.find(L".") == WString::npos)
-        name.append(L".dgndb");
+        name.append(L".bim");
     }
 
 //---------------------------------------------------------------------------------------

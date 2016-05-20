@@ -6,6 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 
+#ifdef NOT_NOW_ANDROID_STATIC_BB_1_ISSUE
+
 #ifdef BENTLEY_WIN32
 
 #include "DgnHandlersTests.h"
@@ -1083,7 +1085,7 @@ TEST_F(SchemaVisualizationTests, TestSchemaDiagram)
     {
     BeFileName dbPath;
     BeTest::GetHost().GetOutputRoot(dbPath);
-    dbPath.AppendToPath(L"SchemaVisualizationTest.idgndb");
+    dbPath.AppendToPath(L"SchemaVisualizationTest.ibim");
 
     CreateDgnDbParams dbCreateParams;
     dbCreateParams.SetOverwriteExisting(true);
@@ -1132,7 +1134,7 @@ TEST_F(SchemaVisualizationTests, TestClassDiagram)
     {
     BeFileName dbPath;
     BeTest::GetHost().GetOutputRoot(dbPath);
-    dbPath.AppendToPath(L"SchemaVisualizationTest.idgndb");
+    dbPath.AppendToPath(L"SchemaVisualizationTest.ibim");
 
     CreateDgnDbParams dbCreateParams;
     dbCreateParams.SetOverwriteExisting(true);
@@ -1990,7 +1992,7 @@ TEST_F(SchemaVisualizationTests, GraphvizDiagramTest)
     {
     //Make DgnDb, Schema, Scope, Category, Model
     BeFileName dbPath;
-    ASSERT_TRUE(SUCCESS == DgnDbTestDgnManager::GetTestDataOut(dbPath, L"3dMetricGeneral.idgndb", L"GVDiagramTestOutput.dgndb", __FILE__));
+    ASSERT_TRUE(SUCCESS == DgnDbTestDgnManager::GetTestDataOut(dbPath, L"3dMetricGeneral.ibim", L"GVDiagramTestOutput.bim", __FILE__));
 
     DbResult openStatus;
     DgnDbPtr db = DgnDb::OpenDgnDb(&openStatus, dbPath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
@@ -2135,3 +2137,5 @@ geometry to the DgnDb. These will make it easier to provide the intended interac
 */
 
 #endif
+
+#endif // NOT_NOW_ANDROID_STATIC_BB_1_ISSUE

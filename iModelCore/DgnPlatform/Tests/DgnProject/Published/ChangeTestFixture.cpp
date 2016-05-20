@@ -4,17 +4,28 @@
 //-------------------------------------------------------------------------------------- 
 
 #include "ChangeTestFixture.h"
+#include "../BackDoor/PublicAPI/BackDoor/DgnProject/DgnPlatformTestDomain.h"
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
+USING_NAMESPACE_BENTLEY_DPTEST
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ChangeTestFixture::ChangeTestFixture(WCharCP testFileName, bool wantTestDomain) : m_testFileName (testFileName), m_wantTestDomain(wantTestDomain)
+    {
+    if (wantTestDomain)
+        DgnDomains::RegisterDomain(DPTest::DgnPlatformTestDomain::GetDomain());
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    06/2015
 //---------------------------------------------------------------------------------------
 void ChangeTestFixture::CreateSeedDgnDb(BeFileNameR seedPathname)
     {
-    seedPathname = DgnDbTestDgnManager::GetOutputFilePath(L"ChangeTestSeed.dgndb");
+    seedPathname = DgnDbTestDgnManager::GetOutputFilePath(L"ChangeTestSeed.bim");
     if (seedPathname.DoesPathExist())
         return;
 
@@ -50,6 +61,9 @@ void ChangeTestFixture::_CreateDgnDb()
     DgnDb::OpenParams openParams(Db::OpenMode::ReadWrite);
     m_testDb = DgnDb::OpenDgnDb(&openStatus, DgnDbTestDgnManager::GetOutputFilePath(m_testFileName.c_str()), openParams);
     ASSERT_TRUE(m_testDb.IsValid()) << "Could not open test project";
+
+    if (m_wantTestDomain)
+        ASSERT_EQ(DgnDbStatus::Success, DgnPlatformTestDomain::ImportSchema(*m_testDb));
 
     TestDataManager::MustBeBriefcase(m_testDb, Db::OpenMode::ReadWrite);
 

@@ -225,12 +225,15 @@ public:
     bool IsUndoActive() {return m_undoActive;}
     void ClearUndo();
     void ChangeDynamics(Render::GraphicListP list);
-    void ChangeRenderPlan();
+    DGNVIEW_EXPORT void ChangeRenderPlan();
     void ApplyViewState(Utf8StringCR val, int animationTime);
-    void Refresh();
+    DGNVIEW_EXPORT void Refresh();
     DGNVIEW_EXPORT void ApplyNext(int animationTime);
     DGNVIEW_EXPORT void ApplyPrevious(int animationTime);
     DGNPLATFORM_EXPORT static Render::Queue& RenderQueue();
+
+    // Find world distance to nearest element in view rect.
+    DGNVIEW_EXPORT double FindNearestZ(DRange2dCR range);
 
     //! @return the current Camera for this DgnViewport. Note that the DgnViewport's camera may not match its ViewController's camera
     //! due to adjustments made for front/back clipping being turned off.
@@ -492,14 +495,6 @@ public:
     //! Get the View Flags for this DgnViewport.
     //! @return the View flags for this DgnViewport.
     Render::ViewFlags GetViewFlags() const {return m_viewController->GetViewFlags();}
-
-    //! Get the Point Cloud View Settings (display style, ...) for this DgnViewport.
-    //! @return the point cloud view settings for this DgnViewport.
-    Render::PointCloudViewSettings GetPointCloudViewSettings() const {return m_viewController->GetPointCloudViewSettings();}
-
-    //! Get the Point Cloud View Settings (display style, ...) for this DgnViewport.
-    //! @return the point cloud view settings for this DgnViewport.
-    Render::PointCloudViewSettings const& GetPointCloudViewSettingsR() const {return m_viewController->GetPointCloudViewSettingsR();}
 
     //! Synchronized this DgnViewport with the current state of its ViewController. A DgnViewport may hold local copies of the information
     //! in its ViewController. Therefore, when changes are made to the state of a ViewController, it must be synchronized with the

@@ -22,9 +22,9 @@ namespace dgn_ElementHandler {struct GeometryPart;};
 //! @see DgnGeometryParts
 //! @ingroup GROUP_Geometry
 //=======================================================================================
-struct DgnGeometryPart : DictionaryElement
+struct EXPORT_VTABLE_ATTRIBUTE DgnGeometryPart : DefinitionElement
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_GeometryPart, DictionaryElement);
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_GeometryPart, DefinitionElement);
     friend struct dgn_ElementHandler::GeometryPart;
 
 //__PUBLISH_SECTION_END__
@@ -78,7 +78,7 @@ public:
     Render::GraphicSet& Graphics() const {return m_graphics;}
 
     //! Create a DgnCode suitable for assigning to a DgnGeometryPart
-    static DgnCode CreateCode(Utf8StringCR nameSpace, Utf8StringCR name) { return GeometryPartAuthority::CreateGeometryPartCode(nameSpace, name); }
+    static DgnCode CreateCode(Utf8StringCR name, Utf8StringCR nameSpace) { return GeometryPartAuthority::CreateGeometryPartCode(name, nameSpace); }
 
     //! Looks up a DgnGeometryPartId by its code.
     DGNPLATFORM_EXPORT static DgnGeometryPartId QueryGeometryPartId(DgnCode const& code, DgnDbR db);

@@ -18,11 +18,18 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 //=======================================================================================
 struct RgbImageInfo
 {
+    enum class BottomUp {No=0, Yes=1};
+
     uint32_t m_height = 0; //!< height of image in pixels
     uint32_t m_width = 0; //!< width of image in pixels
     bool m_hasAlpha = false; //!< If true, each pixel also has an alpha value (so that the image has 4 bytes per pixel).
     bool m_isBGR = false;    //!< If true, the image data is in BGR format; else RGB format. Always false for an image read from PNG.
-    bool m_isTopDown = true; //!< If true, the image data is in top-down row order; else bottom-up order. Always true for an image read from PNG.
+    BottomUp m_isBottomUp = BottomUp::No; //!< If true, the image data is in top-down row order; else bottom-up order. Always true for an image read from PNG.
+
+    void SetBottomUp(bool yesNo=true) {m_isBottomUp = yesNo ? BottomUp::Yes : BottomUp::No;}
+    void SetTopDown(bool yesNo=true) {SetBottomUp(!yesNo);}
+    bool IsBottomUp() const {return m_isBottomUp==BottomUp::Yes;}
+    bool IsTopDown() const {return m_isBottomUp==BottomUp::No;}
 
 /** @name PNG Support for the PNG format */
 /** @{ */
@@ -65,18 +72,20 @@ struct RgbImageInfo
 /** @{ */
     //! Read an image in RGB format from a JPEG file
     //! @param[out] image Image data read from JPEG file.
-    //! @param[in]  jpegBuffer The JPEG definition data
-    //! @param[in]  jpegBufferSize The number of bytes in \a inputBuffer
+    //! @param[in] jpegBuffer The JPEG definition data
+    //! @param[in] jpegBufferSize The number of bytes in \a inputBuffer
+    //! @param[in] bottomUp Whether the image is flipped in y direction
     //! @return non-zero if the image could not be read.
-    DGNPLATFORM_EXPORT BentleyStatus ReadImageFromJpgBuffer(Render::Image& image, Byte const* jpegBuffer, size_t jpegBufferSize);
+    DGNPLATFORM_EXPORT BentleyStatus ReadImageFromJpgBuffer(Render::Image& image, Byte const* jpegBuffer, size_t jpegBufferSize, BottomUp bottomUp=BottomUp::No);
 
     //! Read an image in RGB format from a JPEG file
     //! @param[out] jpegData   The image in JPEG format.
     //! @param[in] rgbBuffer   Image data to be converted to JPEG format.
     //! @param[in] quality     The image quality to preserve. A value in the range 0-100, inclusive. 100 is loss-less. Any value less than 100 is lossy. 
+    //! @param[in] bottomUp Whether the image is flipped in y direction
     //! @return non-zero if the image could not be written.
-    //! @note the data in \a rgbBuffer must be in RGB format, have no alpha, and be in bottom-up row order. No other format is currently supported.
-    DGNPLATFORM_EXPORT BentleyStatus WriteImageToJpgBuffer(bvector<uint8_t>& jpegData, ByteStream const& rgbBuffer, int quality) const;
+    //! @note the data in \a rgbBuffer must be in RGB format, have no alpha. 
+    DGNPLATFORM_EXPORT BentleyStatus WriteImageToJpgBuffer(ByteStream& jpegData, ByteStream const& rgbBuffer, int quality, BottomUp bottomUp=BottomUp::No) const;
 /** @} */
 };
 

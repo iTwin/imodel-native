@@ -60,7 +60,7 @@ struct DgnAuthoritiesTest : public BlankDgnDbTestFixture
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (DgnAuthoritiesTest, Authorities)
     {
-    SetupProject(L"authorities.idgndb");
+    SetupProject(L"authorities.ibim");
 
     // Create some new authorities
     auto auth1Id = Create("Auth1")->GetAuthorityId();
@@ -81,7 +81,7 @@ TEST_F (DgnAuthoritiesTest, Authorities)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnAuthoritiesTest, IterateCodes)
     {
-    SetupProject(L"IterateCodes.idgndb");
+    SetupProject(L"IterateCodes.ibim");
 
     EXPECT_TRUE(CodeExists(GetDb().GetDictionaryModel().GetCode()));
 
