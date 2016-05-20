@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/linestyle/StrokePattern.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -217,11 +217,11 @@ LsStrokePatternComponent::LsStrokePatternComponent (LsStrokePatternComponent con
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JimBartlett     11/98
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       LsStrokePatternComponent::_DoStroke (ViewContextP context, DPoint3dCP inPoints, int nPoints, LineStyleSymbCP modifiers) const
+StatusInt       LsStrokePatternComponent::_DoStroke (LineStyleContextR context, DPoint3dCP inPoints, int nPoints, LineStyleSymbCP modifiers) const
     {
     // test to see whether a single repetition of the pattern will be discernible in this view.
     // If not, use a continuous line style so we'll get width.
-    if (!IsSingleRepDiscernible (context, modifiers, *inPoints))
+    if (!IsSingleRepDiscernible (context.GetViewContext(), modifiers, *inPoints))
         {
         LsStrokePatternComponent solid (this);
         solid.SetContinuous();
@@ -234,7 +234,7 @@ StatusInt       LsStrokePatternComponent::_DoStroke (ViewContextP context, DPoin
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JimBartlett     11/98
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       LsStrokePatternComponent::ProcessStroke (ViewContextP context, ISymbolProcess const* symbolProcessor, DPoint3dCP inPoints,
+StatusInt       LsStrokePatternComponent::ProcessStroke (LineStyleContextR context, ISymbolProcess const* symbolProcessor, DPoint3dCP inPoints,
                                               int nPoints, LineStyleSymbCP modifiers) const
     {
     if (nPoints < 2)
@@ -322,7 +322,7 @@ StatusInt       LsStrokePatternComponent::ProcessStroke (ViewContextP context, I
         StrokeLocal (context, symbolProcessor, inPoints, nPoints, modifiers->GetTotalLength(), modifiers, tan1, tan2, segFlag);
         }
 
-    return  context->CheckStop() ? ERROR : SUCCESS;
+    return  context.GetViewContext()->CheckStop() ? ERROR : SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -697,18 +697,7 @@ void            LsStrokePatternComponent::FixDashWidths (double& orgWidth, doubl
 * public stroke method.
 * @bsimethod                                                    JimBartlett     03/99
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            LsStrokePatternComponent::StrokeLocal
-(
-ViewContextP            context,
-ISymbolProcess const*   symbolProcessor,
-DPoint3dCP              inPoints,
-int                     nPoints,
-double                  length,
-LineStyleSymbCP         modifiers,
-DPoint3dCP              startTangent,
-DPoint3dCP              endTangent,
-int                     segFlag
-) const
+void            LsStrokePatternComponent::StrokeLocal(LineStyleContextR context, ISymbolProcess const*symbolProcessor, DPoint3dCP inPoints, int nPoints, double length, LineStyleSymbCP modifiers, DPoint3dCP startTangent, DPoint3dCP endTangent, int segFlag) const
     {
     double patLength  = _GetLength () * modifiers->GetScale();
 
@@ -732,7 +721,7 @@ int                     segFlag
     if (modifiers != NULL)
         usesTaper = oClone.ApplyModifiers (&orgWidth, &endWidth, modifiers);
 
-    oClone.FixDashWidths (orgWidth, endWidth, usesTaper, context, inPoints);  // No dashes less than 1 pixel wide.
+    oClone.FixDashWidths (orgWidth, endWidth, usesTaper, context.GetViewContext(), inPoints);  // No dashes less than 1 pixel wide.
 
     if (usesTaper && length > 0)
         {
@@ -760,7 +749,7 @@ int                     segFlag
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JimBartlett     03/99
 +---------------+---------------+---------------+---------------+---------------+------7*/
-double          LsStrokePatternComponent::GenerateStrokes (ViewContextP context, ISymbolProcess const* symbolProcessor, LineStyleSymbCP modifiers,
+double          LsStrokePatternComponent::GenerateStrokes (LineStyleContextR context, ISymbolProcess const* symbolProcessor, LineStyleSymbCP modifiers,
                                                 DPoint3dCP inPoints, int nPoints, double length, double width, double taper, int segFlag)
     {
     BeAssert (m_nStrokes != 0);
@@ -928,7 +917,7 @@ double          LsStrokePatternComponent::GenerateStrokes (ViewContextP context,
         endFlag = 0;
         cutLength = 0.0;
 
-        if (!stroker.HasMoreData() || context->CheckStop())
+        if (!stroker.HasMoreData() || context.GetViewContext()->CheckStop())
             break;
 
         if (firstStrokeCenterPhaseGap || ++pStroke > pLastStroke)
@@ -1574,7 +1563,6 @@ bool            StrokeGenerator::IncrementSegment ()
     return false;
     }
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * extend first and last point by half of the widths
 * @bsimethod                                                    Keith.Bentley   02/03
@@ -1676,7 +1664,7 @@ static void    createTristrip (DPoint3dP tristrip, int nPts, DPoint3dCP centerLi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   04/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void outputCapArc (Graphic* output, DPoint3dCP pt1, DPoint3dCP pt2, DPoint3dCP pt3, bool doFill)
+static void outputCapArc (Render::GraphicR output, DPoint3dCP pt1, DPoint3dCP pt2, DPoint3dCP pt3, bool doFill)
     {
     DVec3d      xDir, yDir, zDir;
 
@@ -1697,13 +1685,13 @@ static void outputCapArc (Graphic* output, DPoint3dCP pt1, DPoint3dCP pt2, DPoin
     DEllipse3d  ellipse;
 
     ellipse.InitFromDGNFields3d (origin, xDir, yDir, radius, radius, 0.0, msGeomConst_pi);
-    output->AddArc (ellipse, false, doFill, NULL);
+    output.AddArc (ellipse, false, doFill);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   04/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void outputPolygon (Graphic* output, int nPts, DPoint3dCP pts, double const* widths, int widthMode, int capMode, DPoint3dCP normal, DPoint3dCP startTangent, DPoint3dCP endTangent, bool polyLengthNotDiscernible)
+static void outputPolygon (Render::GraphicR output, int nPts, DPoint3dCP pts, double const* widths, int widthMode, int capMode, DPoint3dCP normal, DPoint3dCP startTangent, DPoint3dCP endTangent, bool polyLengthNotDiscernible)
     {
     ScopedArray<LineJoint, 50>  scopedJoints(nPts);
     LineJoint*  joints = scopedJoints.GetData();
@@ -1715,17 +1703,17 @@ static void outputPolygon (Graphic* output, int nPts, DPoint3dCP pts, double con
     if (capMode == CAP_Open)
         {
         createPolygon (outsidePts, nPts, pts, widths, joints, widthMode);
-        output->AddLineString (nPts, outsidePts, NULL);
-        output->AddLineString (nPts, outsidePts+nPts, NULL);
+        output.AddLineString (nPts, outsidePts);
+        output.AddLineString (nPts, outsidePts+nPts);
         }
     else
         {
-        bool  doFill = true; // NOTE: Always fill...don't check output->GetDrawViewFlags()->fill
+        bool  doFill = true; // NOTE: Always fill...don't check output.GetDrawViewFlags()->fill
 
         if (polyLengthNotDiscernible)
             {
             createPolygon (outsidePts, nPts, pts, widths, joints, widthMode);
-            output->AddLineString (2, outsidePts+1, NULL);
+            output.AddLineString (2, outsidePts+1);
 
             if (capMode > 2)
                 {
@@ -1737,7 +1725,7 @@ static void outputPolygon (Graphic* output, int nPts, DPoint3dCP pts, double con
         else
             {
             createTristrip (outsidePts, nPts, pts, widths, joints, widthMode);
-            output->AddTriStrip (nPts*2, outsidePts, 1,NULL);
+            output.AddTriStrip (nPts*2, outsidePts, 1);
 
             if (capMode > 2)
                 {
@@ -1748,7 +1736,6 @@ static void outputPolygon (Graphic* output, int nPts, DPoint3dCP pts, double con
             }
         }
     }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   07/04
@@ -1817,15 +1804,13 @@ void            Centerline::AddPoint (DPoint3dCP pt, double width, double length
 *   pPoints is doubled +1 (last point duplicates first)
 * @bsimethod                                                    JimBartlett     04/99
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            Centerline::Output (ViewContextP context, LsStrokeP pStroke, DPoint3dCP normal, DPoint3dCP startTangent, DPoint3dCP endTangent)
+void            Centerline::Output (LineStyleContextR context, LsStrokeP pStroke, DPoint3dCP normal, DPoint3dCP startTangent, DPoint3dCP endTangent)
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     int nPts = GetCount();
     if (nPts <= 0)
         return;
 
-    GraphicR output = context->GetCurrentGraphicR();
-
+    auto& output = context.GetGraphicR();
     int     widthMode = pStroke->GetWidthMode() & 0x3;
 
     // if there's no width, just output the centerline
@@ -1836,9 +1821,9 @@ void            Centerline::Output (ViewContextP context, LsStrokeP pStroke, DPo
         // NEEDSWORK: According to Karin, it would be much more efficient to pass all the points in the centerline as a single array.  
         //    Need to restructure Centerline to do store them separately.
         if (1 == nPts || (2 == nPts && points->IsEqual (points[1])))
-            output.AddPointString (1, points, NULL);
+            output.AddPointString (1, points);
         else
-            output.AddLineString (nPts, points, NULL);
+            output.AddLineString (nPts, points);
         return;
         }
 
@@ -1865,7 +1850,7 @@ void            Centerline::Output (ViewContextP context, LsStrokeP pStroke, DPo
             normal2.NormalizedDifference (m_pts[i], m_pts[i+1]);
             if (TOLERANCE_MitreLimit > normal1.DotProduct (normal2))
                 {
-                outputPolygon (&output, i-start+1, m_pts+start, m_widths+start, widthMode, capMode, normal, startTangent, NULL, false);
+                outputPolygon (output, i-start+1, m_pts+start, m_widths+start, widthMode, capMode, normal, startTangent, NULL, false);
                 startTangent = NULL;
                 start = i;
                 }
@@ -1874,9 +1859,8 @@ void            Centerline::Output (ViewContextP context, LsStrokeP pStroke, DPo
             }
         }
 
-    bool    polyLengthNotDiscernible = (nPts > 2 ? false : segmentNotDiscernible (context, nPts, m_pts+start));
-    outputPolygon (&output, nPts-start, m_pts+start, m_widths+start, widthMode, capMode, normal, startTangent, endTangent, polyLengthNotDiscernible);
-#endif
+    bool    polyLengthNotDiscernible = (nPts > 2 ? false : segmentNotDiscernible (context.GetViewContext(), nPts, m_pts+start));
+    outputPolygon (output, nPts-start, m_pts+start, m_widths+start, widthMode, capMode, normal, startTangent, endTangent, polyLengthNotDiscernible);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -104,6 +104,7 @@ struct Task : RefCounted<NonCopyableClass>
         BeginHeal,
         FinishHeal,
         Heal,
+        DefineGeometryTexture,
     };
 
     //! The outcome of the processing of a Task.
@@ -1314,6 +1315,7 @@ struct System
 
     //N.B. _CreateTexture is called from multiple-threads implementer must ensure this is supported. If not non-shareable resource must be protected by locks.
     virtual TexturePtr _CreateTexture(ImageCR, bool enableAlpha) const = 0;
+    virtual TexturePtr _CreateGeometryTexture(Render::GraphicR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern) const = 0;
 };
 
 //=======================================================================================
@@ -1385,6 +1387,7 @@ public:
     MaterialPtr GetMaterial(DgnMaterialId id, DgnDbR dgndb) const {return m_system._GetMaterial(id, dgndb);}
     TexturePtr GetTexture(DgnTextureId id, DgnDbR dgndb) const {return m_system._GetTexture(id, dgndb);}
     TexturePtr CreateTexture(ImageR image, bool enableAlpha) const {return m_system._CreateTexture(image, enableAlpha);}
+    TexturePtr CreateGeometryTexture(Render::GraphicR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern) const {return m_system._CreateGeometryTexture(graphic, range, useGeometryColors, forAreaPattern);}
     SystemR GetSystem() {return m_system;}
 
     uint32_t GetGraphicsPerSecondScene() const {return m_graphicsPerSecondScene.load();}

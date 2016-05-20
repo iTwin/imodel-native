@@ -128,23 +128,22 @@ DPoint3dCR      pt
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   04/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       LsComponent::_StrokeLineString (ViewContextP context, LineStyleSymbP lsSymb, DPoint3dCP pts, int nPts, bool isClosed) const
+StatusInt       LsComponent::_StrokeLineString (Render::GraphicR graphic, ViewContextP viewContext, LineStyleSymbP lsSymb, DPoint3dCP pts, int nPts, bool isClosed) const
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     double      totalLength;
     int         disconnect=0;
 
     // totalLength of 0.0 can be a disconnect.
-    if (!IsWidthDiscernible (context, lsSymb, *pts) || 0.0 == (totalLength = getLinearLength (pts, nPts, disconnect)))
+    if (!IsWidthDiscernible (viewContext, lsSymb, *pts) || 0.0 == (totalLength = getLinearLength (pts, nPts, disconnect)))
         {
         if (disconnect > 1) // if we have a disconnect, recursively draw the part before and after
             {
-            _StrokeLineString (context, lsSymb, pts, disconnect, false);
+            _StrokeLineString (graphic, viewContext, lsSymb, pts, disconnect, false);
 
-            return _StrokeLineString (context, lsSymb, pts+disconnect+1, nPts-disconnect-1, false);
+            return _StrokeLineString (graphic, viewContext, lsSymb, pts+disconnect+1, nPts-disconnect-1, false);
             }
 
-        context->GetCurrentGraphicR().AddLineString (nPts, pts, NULL);
+        graphic.AddLineString (nPts, pts);
 
         return SUCCESS;
         }
@@ -152,17 +151,20 @@ StatusInt       LsComponent::_StrokeLineString (ViewContextP context, LineStyleS
     lsSymb->SetElementClosed (isClosed);
     lsSymb->SetTotalLength (totalLength);
 
+    LineStyleContext context(graphic, viewContext);
     double iterationLength = _GetLength() * lsSymb->GetScale();
-    if (nullptr == context || iterationLength == 0 || totalLength/iterationLength < 1000)
+    if (nullptr == viewContext || iterationLength == 0 || totalLength/iterationLength < 1000)
         return _DoStroke (context, pts, nPts, lsSymb);
 
+    //  We should never encounter this if drawing line styles with textures.  
+    BeAssert (false && L"Trying to clip line string");
+ #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     //  If there are more than a thousand iterations we assume it is not essential 
     //  to have all of the intermediate iterations start in the correct place. Therefore,
     //  we can skip drawing some of the segments.  In some cases, this is absolutely 
     //  essential for performance -- especially on tablets.
     context->ValidateScanRange();
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     TransformClipStackR clipStack = context->GetTransformClipStack();
 
     int startPoint = 0;
@@ -192,16 +194,13 @@ StatusInt       LsComponent::_StrokeLineString (ViewContextP context, LineStyleS
         }
 #endif
 
-    return false;
-#else
-    return ERROR;
-#endif
+    return BSIERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   04/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       LsComponent::_StrokeLineString2d (ViewContextP context, LineStyleSymbP lsSymb, DPoint2dCP pts, int nPts, double zDepth, bool isClosed) const
+StatusInt       LsComponent::_StrokeLineString2d (Render::GraphicR graphic, ViewContextP context, LineStyleSymbP lsSymb, DPoint2dCP pts, int nPts, double zDepth, bool isClosed) const
     {
     if (nPts < 2)
         return ERROR;
@@ -219,10 +218,9 @@ StatusInt       LsComponent::_StrokeLineString2d (ViewContextP context, LineStyl
         }
 
     // output points in 3d
-    return _StrokeLineString (context, lsSymb, pts3d, nPts, isClosed);
+    return _StrokeLineString (graphic, context, lsSymb, pts3d, nPts, isClosed);
     }
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -230,18 +228,16 @@ static inline bool biggerThanPixel (double val, double pixelSize)
     {
     return  fabs (val) > pixelSize;
     }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus       LsComponent::StrokeContinuousArc (ViewContextP context, LineStyleSymbCP lsSymb, DPoint3dCP origin, RotMatrixCP rMatrix,
+BentleyStatus       LsComponent::StrokeContinuousArc (LineStyleContextR context, LineStyleSymbCP lsSymb, DPoint3dCP origin, RotMatrixCP rMatrix,
                                         double r0, double r1, double const* inStart, double const* inSweep, DPoint3dCP range) const
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     bool filled = false;        // if the linestyle on the arc is indiscernible, then just draw an unfilled arc.
 
-    bool isWidthDiscernible = IsWidthDiscernible (context, lsSymb, *origin);
+    bool isWidthDiscernible = IsWidthDiscernible (context.GetViewContext(), lsSymb, *origin);
 
     // if the linestyle is too small to recognize in this view, just draw the arc with no style.
     if (isWidthDiscernible)
@@ -261,10 +257,15 @@ BentleyStatus       LsComponent::StrokeContinuousArc (ViewContextP context, Line
 
            if all of that is true, then use the QV filled arc (or complex shape) rather than sending the arc through the normal linestyle code.
         */
-        if (!_IsContinuous() || (NULL != context->GetIPickGeom()))
+        if (!_IsContinuous() 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+        || (NULL != context->GetIPickGeom())
+#endif
+        )
             return  ERROR;
 
-        double pixelWidth = (NULL == context->GetViewport()) ? 1.0 : context->GetPixelSizeAtPoint (origin);
+        //  NEEDS_WORK_CONTINUOUS_RENDER is not appropriate for generating a texture.
+        double pixelWidth = (NULL == context.GetViewContext()->GetViewport()) ? 1.0 : context.GetViewContext()->GetPixelSizeAtPoint (origin);
         double startWidth = lsSymb->GetOriginWidth();
         double endWidth   = lsSymb->GetEndWidth();
 
@@ -280,6 +281,7 @@ BentleyStatus       LsComponent::StrokeContinuousArc (ViewContextP context, Line
     rMatrix->GetColumns (xCol, yCol, zCol);
 
     DEllipse3d  ellipse;
+    auto& graphic = context.GetGraphicR();
 
     ellipse.InitFromDGNFields3d (*origin, xCol, yCol, r0, r1, inStart ? *inStart : 0.0, inSweep ? *inSweep : msGeomConst_pi);
 
@@ -297,11 +299,11 @@ BentleyStatus       LsComponent::StrokeContinuousArc (ViewContextP context, Line
             curve->push_back (ICurvePrimitive::CreateArc (ellipse));
             curve->push_back (ICurvePrimitive::CreateLineString (pts, 3));
 
-            context->GetCurrentGraphicR().AddCurveVector (*curve, filled);
+            graphic.AddCurveVector (*curve, filled);
             }
         else
             {
-            context->GetCurrentGraphicR().AddArc (ellipse, NULL == inSweep, filled, range);
+            graphic.AddArc (ellipse, NULL == inSweep, filled);
             }
         }
     else
@@ -326,14 +328,11 @@ BentleyStatus       LsComponent::StrokeContinuousArc (ViewContextP context, Line
             context->GetCurrentGraphic().ActivateGraphicParams (&saveMatSymb);
             }
 #else
-        context->GetCurrentGraphicR().AddArc (ellipse, NULL == inSweep, filled, range);
+        graphic.AddArc (ellipse, NULL == inSweep, filled);
 #endif
         }
 
     return SUCCESS;
-#else
-    return ERROR;
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -355,9 +354,10 @@ void            genArc3d (DPoint3dP outPts, double xPos, double yPos, double sin
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   04/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       LsComponent::_StrokeArc (ViewContextP context, LineStyleSymbP lsSymb, DPoint3dCP origin, RotMatrixCP rMatrix,
+StatusInt       LsComponent::_StrokeArc (Render::GraphicR graphic, ViewContextP viewContext, LineStyleSymbP lsSymb, DPoint3dCP origin, RotMatrixCP rMatrix,
                                         double r0, double r1, double const* inStart, double const* inSweep, DPoint3dCP range) const
     {
+    LineStyleContext context(graphic, viewContext);
     if (SUCCESS == StrokeContinuousArc (context, lsSymb, origin, rMatrix, r0, r1, inStart, inSweep, range))
         return SUCCESS;
 
@@ -375,12 +375,12 @@ StatusInt       LsComponent::_StrokeArc (ViewContextP context, LineStyleSymbP ls
     // When we don't have a viewport...just use 100.
     double   numVerts = 100;
 
-    if (NULL != context->GetViewport ())
+    if (NULL != viewContext->GetViewport ())
         {
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-        context->LocalToView (vec, vec, 2);
+        viewContext->LocalToView (vec, vec, 2);
 #else
-        context->WorldToView (vec, vec, 2);
+        viewContext->WorldToView (vec, vec, 2);
 #endif
 
         double  dist = vec[0].Distance (vec[1]);
@@ -448,22 +448,22 @@ StatusInt       LsComponent::_StrokeArc (ViewContextP context, LineStyleSymbP ls
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Chuck.Kirschman   06/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       LsComponent::_StrokeBSplineCurve (ViewContextP context, LineStyleSymbP lsSymb, MSBsplineCurveCP curve, double const* optTolerance) const
+StatusInt       LsComponent::_StrokeBSplineCurve (Render::GraphicR graphic, ViewContextP viewContext, LineStyleSymbP lsSymb, MSBsplineCurveCP curve, double const* optTolerance) const
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     DPoint3d    firstPt;
     curve->FractionToPoint (firstPt, 0.0);
 
     // if the linestyle is too small to recognize in this view, just draw the bspline with no style.
-    if (!IsWidthDiscernible (context, lsSymb, firstPt))
+    if (!IsWidthDiscernible (viewContext, lsSymb, firstPt))
         {
-        context->GetCurrentGraphicR().AddBSplineCurve (*curve, false);
+        graphic.AddBSplineCurve (*curve, false);
 
         return SUCCESS;
         }
 
     bvector<DPoint3d> points;
-    double      tolerance = (optTolerance ? *optTolerance : context->GetPixelSizeAtPoint (&firstPt));
+    //  NEEDS_WORK_CONTINUOUS_RENDER should be using GetPixelSizeAtPoint when generating a texture
+    double      tolerance = (optTolerance ? *optTolerance : viewContext->GetPixelSizeAtPoint (&firstPt));
 
     curve->AddStrokes (points, tolerance);
     int nPoints = (int)points.size ();
@@ -504,6 +504,7 @@ StatusInt       LsComponent::_StrokeBSplineCurve (ViewContextP context, LineStyl
 
         lsSymb->SetTotalLength (totalLength);
 
+        LineStyleContext context(graphic, viewContext);
         status = _DoStroke (context, &points[0], nPoints, lsSymb);
 
         lsSymb->SetTreatAsSingleSegment (saveTreatAsSingle);
@@ -512,9 +513,6 @@ StatusInt       LsComponent::_StrokeBSplineCurve (ViewContextP context, LineStyl
 
 
     return status;
-#else
-    return ERROR;
-#endif
     }
 
 LsComponentId       LsComponent::GetId ()const {return m_location.GetComponentId ();}
