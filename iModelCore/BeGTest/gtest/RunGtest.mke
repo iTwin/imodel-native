@@ -42,7 +42,6 @@ always:
 
 %if $(TARGET_PLATFORM)=="Windows"
     
-    RunPrefix=start \/WAIT \/MIN
     # Must fix up directory separators
     exeName = $[@realpath $(GTEST_EXE)]
 
@@ -75,17 +74,19 @@ always:
     %return
 %endif
 
+teeCmd = python $(SrcRoot)bsicommon/build/Tee.py
+
 always:
     !~@mkdir ${GTEST_OUTPUT_DIR}
     !~@mkdir ${runDir}
     !~@mkdir ${runDir}/Output
     !~@mkdir ${runDir}/Temp
     !~@mkdir ${LogDir}
-    $(RunPrefix) python $(_MakeFilePath)RunTests.py --exename="$(exeName)" --gtest_output="xml:$(LogDir)TestResults.xml" --truncate_output --output_dir=$(GTEST_OUTPUT_DIR) --log_file=$(LogFile)
+    -$(exename) | $(teeCmd) $(logFile)
     %if !defined (BEGTEST_DONTVALIDATELOGFILE)
     %if !defined (NO_BREAK)
-       $(BentleyTestDir)PrintLogAndReturnResult.py $(LogFile)
+       $(BentleyTestDir)PrintLogAndReturnResult.py $(LogFile) $(exename)
     %else
-       -$(BentleyTestDir)PrintLogAndReturnResult.py $(LogFile)
+       -$(BentleyTestDir)PrintLogAndReturnResult.py $(LogFile) $(exename)
     %endif # !defined (NO_BREAK)
     %endif # !defined (BEGTEST_DONTVALIDATELOGFILE)
