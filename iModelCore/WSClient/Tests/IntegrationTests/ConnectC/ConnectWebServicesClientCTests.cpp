@@ -5,13 +5,17 @@
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#pragma warning(disable: 4067) //suppress a compiler warning from using the boost li
 
 #include "ConnectWebServicesClientCTests.h"
 
-#include <Bentley/Bentley.h>
+static BeFileName s_temporaryDirectory, s_assetsRootDirectory;
 
-using namespace boost::uuids;
+void ConnectWebServicesClientC::SetUpTestCase()
+    {
+    WSClientBaseTest::SetUpTestCase();
+    BeTest::GetHost().GetTempDir(s_temporaryDirectory);
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(s_assetsRootDirectory);
+    }
 
 void ConnectWebServicesClientC::SetUp ()
     {
@@ -35,8 +39,8 @@ TEST_F (ConnectWebServicesClientC, Ctor_InvalidProxyUrl_ApiIsNull)
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
         (m_username.c_str (),
         m_password.c_str (),
-        m_temporaryDirectory.c_str (),
-        m_assetsRootDirectory.c_str (),
+        s_temporaryDirectory.c_str (),
+        s_assetsRootDirectory.c_str (),
         m_applicationName.c_str (),
         m_applicationVersion.c_str (),
         m_applicationGuid.c_str (),
@@ -56,8 +60,8 @@ TEST_F (ConnectWebServicesClientC, Ctor_InvalidProxyCredentialsWhenProxyCredenti
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
         (m_username.c_str (),
         m_password.c_str (),
-        m_temporaryDirectory.c_str (),
-        m_assetsRootDirectory.c_str (),
+        s_temporaryDirectory.c_str (),
+        s_assetsRootDirectory.c_str (),
         m_applicationName.c_str (),
         m_applicationVersion.c_str (),
         m_applicationGuid.c_str (),
@@ -77,8 +81,8 @@ TEST_F(ConnectWebServicesClientC, Ctor_ValidParameters_SuccessfulInitialization)
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
         (m_username.c_str(),
         m_password.c_str(),
-        m_temporaryDirectory.c_str(),
-        m_assetsRootDirectory.c_str(),
+        s_temporaryDirectory.c_str(),
+        s_assetsRootDirectory.c_str(),
         m_applicationName.c_str(),
         m_applicationVersion.c_str(),
         m_applicationGuid.c_str(),
@@ -99,8 +103,8 @@ TEST_F(ConnectWebServicesClientC, Ctor_InvalidCredentialsAndValidProductId_ApiIs
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
         (m_username.c_str(),
         password,
-        m_temporaryDirectory.c_str(),
-        m_assetsRootDirectory.c_str(),
+        s_temporaryDirectory.c_str(),
+        s_assetsRootDirectory.c_str(),
         m_applicationName.c_str(),
         m_applicationVersion.c_str(),
         m_applicationGuid.c_str(),
@@ -117,8 +121,8 @@ TEST_F(ConnectWebServicesClientC, Ctor_ValidCredentialsAndInvalidProductId_ApiIs
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
         (m_username.c_str(),
         m_password.c_str(),
-        m_temporaryDirectory.c_str(),
-        m_assetsRootDirectory.c_str(),
+        s_temporaryDirectory.c_str(),
+        s_assetsRootDirectory.c_str(),
         m_applicationName.c_str(),
         m_applicationVersion.c_str(),
         m_applicationGuid.c_str(),
@@ -135,8 +139,8 @@ TEST_F (ConnectWebServicesClientC, Ctor_NoProxyUrlOrCredentials_ApiIsNotNull)
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
         (m_username.c_str (),
         m_password.c_str (),
-        m_temporaryDirectory.c_str (),
-        m_assetsRootDirectory.c_str (),
+        s_temporaryDirectory.c_str (),
+        s_assetsRootDirectory.c_str (),
         m_applicationName.c_str (),
         m_applicationVersion.c_str (),
         m_applicationGuid.c_str (),
@@ -156,8 +160,8 @@ TEST_F (ConnectWebServicesClientC, ReadProject_ProjectExists_SuccessfulRetreival
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
         (m_username.c_str (),
         m_password.c_str (),
-        m_temporaryDirectory.c_str (),
-        m_assetsRootDirectory.c_str (),
+        s_temporaryDirectory.c_str (),
+        s_assetsRootDirectory.c_str (),
         m_applicationName.c_str (),
         m_applicationVersion.c_str (),
         m_applicationGuid.c_str (),
@@ -185,8 +189,8 @@ TEST_F (ConnectWebServicesClientC, ReadProject_InvalidDataBufHandle_ErrorCodeRet
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
         (m_username.c_str (),
         m_password.c_str (),
-        m_temporaryDirectory.c_str (),
-        m_assetsRootDirectory.c_str (),
+        s_temporaryDirectory.c_str (),
+        s_assetsRootDirectory.c_str (),
         m_applicationName.c_str (),
         m_applicationVersion.c_str (),
         m_applicationGuid.c_str (),
@@ -210,8 +214,8 @@ TEST_F(ConnectWebServicesClientC, DataBufferGetCount_Only1ProjectIsReturned_Succ
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
         (m_username.c_str (),
         m_password.c_str (),
-        m_temporaryDirectory.c_str (),
-        m_assetsRootDirectory.c_str (),
+        s_temporaryDirectory.c_str (),
+        s_assetsRootDirectory.c_str (),
         m_applicationName.c_str (),
         m_applicationVersion.c_str (),
         m_applicationGuid.c_str (),
@@ -241,8 +245,8 @@ TEST_F(ConnectWebServicesClientC, GetPropertyMethods_Only1ProjectIsReturnedWithF
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
         (m_username.c_str (),
         m_password.c_str (),
-        m_temporaryDirectory.c_str (),
-        m_assetsRootDirectory.c_str (),
+        s_temporaryDirectory.c_str (),
+        s_assetsRootDirectory.c_str (),
         m_applicationName.c_str (),
         m_applicationVersion.c_str (),
         m_applicationGuid.c_str (),
@@ -285,8 +289,8 @@ TEST_F(ConnectWebServicesClientC, GetPropertyMethods_NULLBuffer_AppropriateStatu
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
         (m_username.c_str (),
         m_password.c_str (),
-        m_temporaryDirectory.c_str (),
-        m_assetsRootDirectory.c_str (),
+        s_temporaryDirectory.c_str (),
+        s_assetsRootDirectory.c_str (),
         m_applicationName.c_str (),
         m_applicationVersion.c_str (),
         m_applicationGuid.c_str (),
@@ -330,8 +334,8 @@ TEST_F(ConnectWebServicesClientC, GetPropertyMethods_BufferWithProjectTypeButInv
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
         (m_username.c_str (),
         m_password.c_str (),
-        m_temporaryDirectory.c_str (),
-        m_assetsRootDirectory.c_str (),
+        s_temporaryDirectory.c_str (),
+        s_assetsRootDirectory.c_str (),
         m_applicationName.c_str (),
         m_applicationVersion.c_str (),
         m_applicationGuid.c_str (),
@@ -365,8 +369,8 @@ TEST_F(ConnectWebServicesClientC, GetPropertyMethods_BufferWithProjectTypeAndVal
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
         (m_username.c_str (),
         m_password.c_str (),
-        m_temporaryDirectory.c_str (),
-        m_assetsRootDirectory.c_str (),
+        s_temporaryDirectory.c_str (),
+        s_assetsRootDirectory.c_str (),
         m_applicationName.c_str (),
         m_applicationVersion.c_str (),
         m_applicationGuid.c_str (),
@@ -414,8 +418,8 @@ TEST_F (ConnectWebServicesClientC, CRUDProjectFunctions_CRUDsSuccessful_Successf
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
         (m_username.c_str (),
         m_password.c_str (),
-        m_temporaryDirectory.c_str (),
-        m_assetsRootDirectory.c_str (),
+        s_temporaryDirectory.c_str (),
+        s_assetsRootDirectory.c_str (),
         m_applicationName.c_str (),
         m_applicationVersion.c_str (),
         m_applicationGuid.c_str (),
@@ -446,8 +450,9 @@ TEST_F (ConnectWebServicesClientC, CRUDProjectFunctions_CRUDsSuccessful_Successf
     * \param[in] PWDMInvitationId
     * \return Success or error code. See \ref clientErrorCodes
     ****************************************************************************************/
-    WPrintfString Name (L"CWSCCTest%s", to_wstring (random_generator ()()).c_str ());
-    WString Number (to_wstring (random_generator()()).c_str ());
+    BeGuid guid(true);
+    WPrintfString Name(L"CWSCCTest%s", guid.ToString().c_str());
+    WPrintfString Number(L"CWSCCTest%s", guid.ToString().c_str());
     WString OrgId = L"1001389117";
     bool Active = true;
     WString Industry = L"8";
@@ -486,7 +491,8 @@ TEST_F (ConnectWebServicesClientC, CRUDProjectFunctions_CRUDsSuccessful_Successf
     status = ConnectWebServicesClientC_DataBufferFree (api, project);
     ASSERT_TRUE (status == SUCCESS);
 
-    WPrintfString NewName (L"CWSCCTest%s", to_wstring (random_generator ()()).c_str ());
+    BeGuid newGuid(true);
+    WPrintfString NewName(L"CWSCCTest%s", newGuid.ToString().c_str());
     status = ConnectWebServicesClientC_UpdateProject (api,
                                                       wInstanceId.c_str (),
                                                       NewName.c_str(),
@@ -517,8 +523,8 @@ TEST_F (ConnectWebServicesClientC, CRUDOrganizationFunctions_CRUDsSuccessful_Suc
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
         (m_username.c_str (),
         m_password.c_str (),
-        m_temporaryDirectory.c_str (),
-        m_assetsRootDirectory.c_str (),
+        s_temporaryDirectory.c_str (),
+        s_assetsRootDirectory.c_str (),
         m_applicationName.c_str (),
         m_applicationVersion.c_str (),
         m_applicationGuid.c_str (),
@@ -565,8 +571,8 @@ TEST_F (ConnectWebServicesClientC, CRUDProjectFavoriteFunctions_CRUDsSuccessful_
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
         (m_username.c_str (),
         m_password.c_str (),
-        m_temporaryDirectory.c_str (),
-        m_assetsRootDirectory.c_str (),
+        s_temporaryDirectory.c_str (),
+        s_assetsRootDirectory.c_str (),
         m_applicationName.c_str (),
         m_applicationVersion.c_str (),
         m_applicationGuid.c_str (),
@@ -597,8 +603,9 @@ TEST_F (ConnectWebServicesClientC, CRUDProjectFavoriteFunctions_CRUDsSuccessful_
     * \param[in] PWDMInvitationId
     * \return Success or error code. See \ref clientErrorCodes
     ****************************************************************************************/
-    WPrintfString Name (L"CWSCCTest%s", to_wstring (random_generator ()()).c_str ());
-    WString Number (to_wstring (random_generator()()).c_str ());
+    BeGuid guid(true);
+    WPrintfString Name(L"CWSCCTest%s", guid.ToString().c_str());
+    WPrintfString Number(L"CWSCCTest%s", guid.ToString().c_str());
     WString OrgId = L"1001389117";
     bool Active = true;
     WString Industry = L"8";
@@ -631,19 +638,18 @@ TEST_F (ConnectWebServicesClientC, CRUDProjectFavoriteFunctions_CRUDsSuccessful_
     WString wInstanceId;
     wInstanceId.AssignUtf8 (instanceId);
     
-    //TODO: Need to create WSRepositoryClient extension to allow for CreateProjectFavorite to work
-    //status = ConnectWebServicesClientC_CreateProjectFavorite(api, 
-    //                                        wInstanceId.c_str());
+    status = ConnectWebServicesClientC_CreateProjectFavorite(api, 
+                                            wInstanceId.c_str());
 
-    //CWSCCDATABUFHANDLE projectFavorite;
-    //status = ConnectWebServicesClientC_ReadProjectFavorite (api, wInstanceId.c_str(), &projectFavorite);
-    //ASSERT_TRUE (status == SUCCESS);
+    CWSCCDATABUFHANDLE projectFavorite;
+    status = ConnectWebServicesClientC_ReadProjectFavorite (api, wInstanceId.c_str(), &projectFavorite);
+    ASSERT_TRUE (status == SUCCESS);
 
-    //status = ConnectWebServicesClientC_DataBufferFree (api, projectFavorite);
-    //ASSERT_TRUE (status == SUCCESS);
+    status = ConnectWebServicesClientC_DataBufferFree (api, projectFavorite);
+    ASSERT_TRUE (status == SUCCESS);
 
-    //status = ConnectWebServicesClientC_DeleteProjectFavorite (api, wInstanceId.c_str ());
-    //ASSERT_TRUE (status == SUCCESS);
+    status = ConnectWebServicesClientC_DeleteProjectFavorite (api, wInstanceId.c_str ());
+    ASSERT_TRUE (status == SUCCESS);
 
     status = ConnectWebServicesClientC_DeleteProject (api, wInstanceId.c_str ());
     ASSERT_TRUE (status == SUCCESS);
@@ -657,8 +663,8 @@ TEST_F (ConnectWebServicesClientC, CRUDProjectMRUFunctions_CRUDsSuccessful_Succe
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
         (m_username.c_str (),
         m_password.c_str (),
-        m_temporaryDirectory.c_str (),
-        m_assetsRootDirectory.c_str (),
+        s_temporaryDirectory.c_str (),
+        s_assetsRootDirectory.c_str (),
         m_applicationName.c_str (),
         m_applicationVersion.c_str (),
         m_applicationGuid.c_str (),
@@ -689,8 +695,9 @@ TEST_F (ConnectWebServicesClientC, CRUDProjectMRUFunctions_CRUDsSuccessful_Succe
     * \param[in] PWDMInvitationId
     * \return Success or error code. See \ref clientErrorCodes
     ****************************************************************************************/
-    WPrintfString Name (L"CWSCCTest%s", to_wstring (random_generator ()()).c_str ());
-    WString Number (to_wstring (random_generator()()).c_str ());
+    BeGuid guid(true);
+    WPrintfString Name(L"CWSCCTest%s", guid.ToString().c_str());
+    WPrintfString Number(L"CWSCCTest%s", guid.ToString().c_str());
     WString OrgId = L"1001389117";
     bool Active = true;
     WString Industry = L"8";

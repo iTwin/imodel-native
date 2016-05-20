@@ -153,49 +153,50 @@ CallStatus httperrorToConnectWebServicesClientStatus(LPCWSCC api, HttpStatus sta
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                    05/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-//CallStatus ConnectWebServicesClientC_CreateProjectFavorite
-//(
-//CWSCCHANDLE apiHandle,
-//WCharCP ProjectGuid
-//)
-//    {
-//    VERIFY_API
-//
-//    Json::Value instance;
-//
-//    if (ProjectGuid == nullptr)
-//        {
-//        api->SetStatusMessage ("ProjectGuid is invalid in ConnectWebServicesClientC_CreateProjectFavorite.");
-//        api->SetStatusDescription ("You must specify a ProjectGuid to create a ProjectFavorite instance.");
-//        return INVALID_PARAMETER;
-//        }
-//    instance["instanceId"] = Utf8String (ProjectGuid);
-//
-//    instance["schemaName"] = "GlobalSchema";
-//    instance["className"] = "ProjectFavorite";
-//
-//    Json::Value objectCreationJson;
-//    objectCreationJson["instance"] = instance;
-//
-//    if (api->m_repositoryClients.find(UrlProvider::Urls::ConnectWsgGlobal.Get() + "BentleyCONNECT.Global--CONNECT.GLOBAL") == api->m_repositoryClients.end())
-//        {
-//        api->CreateWSRepositoryClient
-//            (
-//            UrlProvider::Urls::ConnectWsgGlobal.Get(),
-//            "BentleyCONNECT.Global--CONNECT.GLOBAL"
-//            );
-//        }
-//
-//    auto client = api->m_repositoryClients.find(UrlProvider::Urls::ConnectWsgGlobal.Get() + "BentleyCONNECT.Global--CONNECT.GLOBAL")->second;
-//    auto result = client->SendCreateObjectRequest(objectCreationJson)->GetResult();
-//    if (!result.IsSuccess())
-//        return wsresultToConnectWebServicesClientCStatus(api, result.GetError().GetId(), result.GetError().GetDisplayMessage(), result.GetError().GetDisplayDescription());
-//
-//    api->SetCreatedObjectResponse(result.GetValue());
-//    api->SetStatusMessage("Successful operation");
-//    api->SetStatusDescription("ConnectWebServicesClientC_CreateProjectMRU completed successfully.");
-//    return SUCCESS;
-//    }
+CallStatus ConnectWebServicesClientC_CreateProjectFavorite
+(
+CWSCCHANDLE apiHandle,
+WCharCP ProjectGuid
+)
+    {
+    VERIFY_API
+
+    Json::Value instance;
+
+    if (ProjectGuid == nullptr)
+        {
+        api->SetStatusMessage ("ProjectGuid is invalid in ConnectWebServicesClientC_CreateProjectFavorite.");
+        api->SetStatusDescription ("You must specify a ProjectGuid to create a ProjectFavorite instance.");
+        return INVALID_PARAMETER;
+        }
+    instance["instanceId"] = Utf8String (ProjectGuid);
+
+    instance["schemaName"] = "GlobalSchema";
+    instance["className"] = "ProjectFavorite";
+
+    Json::Value objectCreationJson;
+    objectCreationJson["instance"] = instance;
+    ObjectId objectId("GlobalSchema", "ProjectFavorite", Utf8String());
+
+    if (api->m_repositoryClients.find(UrlProvider::Urls::ConnectWsgGlobal.Get() + "BentleyCONNECT.Global--CONNECT.GLOBAL") == api->m_repositoryClients.end())
+        {
+        api->CreateWSRepositoryClient
+            (
+            UrlProvider::Urls::ConnectWsgGlobal.Get(),
+            "BentleyCONNECT.Global--CONNECT.GLOBAL"
+            );
+        }
+
+    auto client = api->m_repositoryClients.find(UrlProvider::Urls::ConnectWsgGlobal.Get() + "BentleyCONNECT.Global--CONNECT.GLOBAL")->second;
+    auto result = client->SendCreateObjectRequest(objectId, objectCreationJson)->GetResult();
+    if (!result.IsSuccess())
+        return wsresultToConnectWebServicesClientCStatus(api, result.GetError().GetId(), result.GetError().GetDisplayMessage(), result.GetError().GetDisplayDescription());
+
+    api->SetCreatedObjectResponse(result.GetValue());
+    api->SetStatusMessage("Successful operation");
+    api->SetStatusDescription("ConnectWebServicesClientC_CreateProjectMRU completed successfully.");
+    return SUCCESS;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod

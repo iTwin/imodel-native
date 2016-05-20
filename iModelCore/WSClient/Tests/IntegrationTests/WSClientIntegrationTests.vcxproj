@@ -47,7 +47,7 @@
     <NMakeReBuildCommandLine>bb -v4 -ax64 -r WSClient -f WSClient -p WSClientIntegrationTests b</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>bb $(BB2N0) -v4 -ax64 -r WSClient -f WSClient -p WSClientIntegrationTests re  WSClientIntegrationTests WebServices* -c</NMakeCleanCommandLine>
     <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
-    <IncludePath>$(SrcRoot)libsrc\boost_1.57.0_headers;$(SrcRoot)WSClient\Tests\UnitTests\Published\Utils;$(OutRoot)Winx64\BuildContexts\WSClient\VendorAPI;$(OutRoot)Winx64\BuildContexts\WSClient\PublicAPI;$(IncludePath)</IncludePath>
+    <IncludePath>$(SrcRoot)WSClient\Tests\UnitTests\Published\Utils;$(OutRoot)Winx64\BuildContexts\WSClient\VendorAPI;$(OutRoot)Winx64\BuildContexts\WSClient\PublicAPI;$(IncludePath)</IncludePath>
     <OutDir>$(OutRoot)VSOut\$(MSBuildProjectName)\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(OutDir)</IntDir>
   </PropertyGroup>
