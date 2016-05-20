@@ -65,7 +65,7 @@ def RunTest(xcodeprojpath, deviceName, okToRetry, logfile):
             return 1
         else:
             print '\nFailed to copy resources to device. Retrying...'
-            testSuiteCount, testCount, failureCount = RunTest(walkRoot, dirName, deviceName, False)
+            return RunTest(xcodeprojpath, deviceName, False, logfile)
 
     printProgress(' ', status_len)
 

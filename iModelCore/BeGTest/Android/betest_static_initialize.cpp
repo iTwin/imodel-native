@@ -152,6 +152,7 @@ jstring         tempDir,
 jstring         localStateDir
 )
     {
+#ifdef DEBUG_BETEST_STARTUP
     fprintf(stderr, "Java_com_bentley_test_TestActivity_initializeJni. Waiting");
     int i = 0;
     static bool s_loop = true;
@@ -161,7 +162,7 @@ jstring         localStateDir
         if (i++ % 10000 == 0)
             printf(".");
         }
-
+#endif
 
     BeJStringUtilities::InitWStringFromJString (env, s_assetsDir, assetsDir);
     BeJStringUtilities::InitWStringFromJString (env, s_docsDir, docsDir);
