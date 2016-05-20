@@ -25,7 +25,7 @@ public:
 //---------------------------------------------------------------------------------------
 LinkModelPtr LinkElementTest::InsertLinkModel(DgnDbR dgndb, Utf8CP modelName)
     {
-    LinkModelPtr model = new LinkModel(LinkModel::CreateParams(dgndb, dgndb.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_LinkModel), DgnModel::CreateModelCode(modelName)));
+    LinkModelPtr model = new LinkModel(LinkModel::CreateParams(dgndb, DgnModel::CreateModelCode(modelName)));
     return (DgnDbStatus::Success != model->Insert()) ? nullptr : model;
     }
 
@@ -150,7 +150,7 @@ TEST_F(LinkElementTest, UrlLinkQuery)
     ASSERT_EQ(NUM_LINKS, sourceLinkCount);
 
     //.............................................................................................
-    int whereLinkCount = (int) UrlLink::Query(db, LINK_ECSQL_PREFIX ".Label LIKE '%2'").size();
+    int whereLinkCount = (int) UrlLink::QueryByWhere(db, LINK_ECSQL_PREFIX ".Label LIKE '%2'").size();
     ASSERT_EQ(1, whereLinkCount);
 
     //.............................................................................................
@@ -160,7 +160,7 @@ TEST_F(LinkElementTest, UrlLinkQuery)
     modelLinkCount = (int) UrlLink::QueryByModel(db, linkModel->GetModelId()).size();
     ASSERT_EQ(NUM_LINKS, modelLinkCount); // Removing the link doesn't delete it
 
-    status = UrlLink::PurgeUnused(db);
+    status = UrlLink::PurgeOrphaned(db);
     ASSERT_TRUE(status == SUCCESS);
 
     modelLinkCount = (int) UrlLink::QueryByModel(db, linkModel->GetModelId()).size();
@@ -169,7 +169,7 @@ TEST_F(LinkElementTest, UrlLinkQuery)
     status = UrlLink::RemoveAllFromSource(db, result->GetElementId());
     ASSERT_TRUE(status == SUCCESS);
 
-    status = UrlLink::PurgeUnused(db);
+    status = UrlLink::PurgeOrphaned(db);
     ASSERT_TRUE(status == SUCCESS);
 
     modelLinkCount = (int) UrlLink::QueryByModel(db, linkModel->GetModelId()).size();
@@ -207,7 +207,7 @@ TEST_F(LinkElementTest, OtherIterators)
     ASSERT_TRUE(SUCCESS == link3->AddToSource(elementId2));
     ASSERT_TRUE(SUCCESS == link4->AddToSource(elementId2));
 
-    ASSERT_EQ(4, (int) EmbeddedFileLink::Query(db).size());
+    ASSERT_EQ(4, (int) EmbeddedFileLink::QueryByWhere(db, nullptr).size());
     ASSERT_EQ(2, (int) EmbeddedFileLink::QueryBySource(db, elementId1).size());
     ASSERT_EQ(3, (int) EmbeddedFileLink::QueryBySource(db, elementId2).size());
     
@@ -216,10 +216,10 @@ TEST_F(LinkElementTest, OtherIterators)
     ASSERT_EQ(1, (int) link3->QuerySources().size());
     ASSERT_EQ(1, (int) link4->QuerySources().size());
 
-    ASSERT_EQ(1, (int) EmbeddedFileLink::Query(db, LINK_ECSQL_PREFIX ".Label LIKE '%1'").size());
-    ASSERT_EQ(1, (int) EmbeddedFileLink::Query(db, LINK_ECSQL_PREFIX ".Label LIKE '%2'").size());
-    ASSERT_EQ(1, (int) EmbeddedFileLink::Query(db, LINK_ECSQL_PREFIX ".Label LIKE '%3'").size());
-    ASSERT_EQ(1, (int) EmbeddedFileLink::Query(db, LINK_ECSQL_PREFIX ".Label LIKE '%4'").size());
+    ASSERT_EQ(1, (int) EmbeddedFileLink::QueryByWhere(db, LINK_ECSQL_PREFIX ".Label LIKE '%1'").size());
+    ASSERT_EQ(1, (int) EmbeddedFileLink::QueryByWhere(db, LINK_ECSQL_PREFIX ".Label LIKE '%2'").size());
+    ASSERT_EQ(1, (int) EmbeddedFileLink::QueryByWhere(db, LINK_ECSQL_PREFIX ".Label LIKE '%3'").size());
+    ASSERT_EQ(1, (int) EmbeddedFileLink::QueryByWhere(db, LINK_ECSQL_PREFIX ".Label LIKE '%4'").size());
     }
 
 //---------------------------------------------------------------------------------------
