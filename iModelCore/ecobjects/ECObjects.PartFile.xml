@@ -23,7 +23,8 @@
         <SubPart PartName="StandardSchemasV3" PartFile="ECStandards" Repository="ECStandards" />
         <SubPart PartName="V3ConversionSchemas" PartFile="ECStandards" Repository="ECStandards"/>
         <SubPart PartName="BeJsonCpp"           PartFile="BeJsonCpp"    Repository="Libsrc-JsonCpp"/>
-        <SubPart PartName="rapidjson"       PartFile="rapidjson" Repository="Libsrc-RapidJson"/>       
+        <SubPart PartName="rapidjson"       PartFile="rapidjson" Repository="Libsrc-RapidJson"/>
+        <SubPart PartName="UnitsNative"        PartFile="Units"        Repository="Units" />
         <Bindings>
             <Libs ProductDirectoryName="ECObjectsLibs" Required="false">Delivery/$(libprefix)ECObjects$(libext)</Libs>
             <Assemblies ProductDirectoryName="ECObjectsNativeAssemblies">Delivery/$(shlibprefix)ECObjects$(ApiNumber)$(shlibext)</Assemblies>
@@ -306,6 +307,7 @@
         <ProductDirectory   Name="GeomNativeAssemblies"         LibType="Static"    Deliver="false"/>
         <ProductDirectory   Name="RmgrToolsNativeAssemblies"    LibType="Static"    Deliver="false"/>
         <ProductDirectory   Name="ecobjectsnativeassemblies"    LibType="Static"    Deliver="false"/>
+        <ProductDirectory   Name="unitssnativeassemblies"       LibType="Static"    Deliver="false"/>
         <ProductDirectory   Name="ecschemas"                    LibType="Static"    Deliver="false"/>
 
         <ProductDirectory Name="loggingnativeassemblies"            Path="Runtime"/>
@@ -317,7 +319,7 @@
         <ProductDirectory Name="PublishedApi_Doc"                   Path="Docs"/>
         <ProductDirectory Name="ecschemas"                          Path="Runtime"/>
         <ProductDirectory Name="VendorNotices"                      Path="Notices"/>
-        
+        <ProductDirectory Name="UnitsNativeAssemblies"              Path="Runtime"/>
     </ProductDirectoryList>
 
     <Product Name="ECObjects">

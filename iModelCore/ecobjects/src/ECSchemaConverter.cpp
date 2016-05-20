@@ -191,6 +191,35 @@ struct UnitSpecificationsConverter : IECCustomAttributeConverter
     ECObjectsStatus Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance);
     };
 
+static Utf8CP const  UNIT_ATTRIBUTES                = "Unit_Attributes";
+static Utf8CP const  KOQ_NAME                       = "KindOfQuantityName";
+static Utf8CP const  DIMENSION_NAME                 = "DimensionName";
+static Utf8CP const  UNIT_SPECIFICATION             = "UnitSpecificationAttr";
+static Utf8CP const  UNIT_SPECIFICATIONS            = "UnitSpecifications";
+static Utf8CP const  UNIT_SPECIFICATION_LIST        = "UnitSpecificationList";
+static Utf8CP const  DISPLAY_UNIT_SPECIFICATION     = "DisplayUnitSpecificationAttr";
+
+struct UnitSpecification
+    {
+    UnitSpecification() = delete;
+    static Utf8CP GetNewKOQName(IECInstanceCR instance)
+        {
+        Utf8CP newKOQName = GetStringValue(instance, KOQ_NAME);
+        if (Utf8String::IsNullOrEmpty(newKOQName))
+            newKOQName = GetStringValue(instance, DIMENSION_NAME);
+
+        return newKOQName;
+        }
+
+    static Utf8CP GetStringValue(IECInstanceCR instance, Utf8CP propName)
+        {
+        ECValue v;
+        if (ECObjectsStatus::Success == instance.GetValue(v, propName) && !v.IsNull())
+            return v.GetUtf8CP();
+        
+        return nullptr;
+        }
+    };
 
 struct CustomAttributeReplacement
     {
@@ -239,11 +268,11 @@ bool ECSchemaConverter::Convert(ECSchemaR schema)
     ECSchemaConverterP eCSchemaConverter = GetSingleton();
     eCSchemaConverter->m_convertedOK = true;
 
-    eCSchemaConverter->ConvertSchemaLevel(schema);
-
     eCSchemaConverter->ConvertClassLevel(schema);
 
     eCSchemaConverter->ConvertPropertyLevel(schema);
+
+    eCSchemaConverter->ConvertSchemaLevel(schema);
 
     return eCSchemaConverter->m_convertedOK;
     }
@@ -266,6 +295,7 @@ ECSchemaConverterP ECSchemaConverter::GetSingleton()
 
         IECCustomAttributeConverterPtr unitPropConv = new UnitSpecificationConverter();
         ECSchemaConverterSingleton->AddConverter("Unit_Attributes", "UnitSpecification", unitPropConv);
+        ECSchemaConverterSingleton->AddConverter("Unit_Attributes", "UnitSpecificationAttr", unitPropConv);
 
         // Iterates over the Custom Attributes classes that will be converted. This converter basically
         // handles Custom Attributes that moved into a new schema but with no content change.
@@ -804,18 +834,87 @@ ECObjectsStatus StandardValuesConverter::ConvertToEnumType(ECPropertyP& primitiv
     return ECSchemaConverter::TraverseProperty(primitiveEcProperty, ecSchema, propertyProcessor);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Colin.Kerr                  06/2016
+//+---------------+---------------+---------------+---------------+---------------+------
 ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance)
     {
-    ECPropertyP prop = dynamic_cast<ECPropertyP> (&container);
+    PrimitiveECPropertyP prop = dynamic_cast<PrimitiveECPropertyP> (&container);
     if (prop == nullptr)
-        return ECObjectsStatus::Success;
-
-    /*Unit unit;
-    if(Unit::GetUnitForECProperty(unit, *prop))
         {
+        Utf8String fullName = schema.GetFullSchemaName();
+        LOG.warningv("Found UnitSpecification custom attribute on a container which is not a property, removing.  Container is in schema %s", fullName.c_str());
+        container.RemoveCustomAttribute("UnitSpecification");
+        return ECObjectsStatus::Success;
+        }
 
-        }*/
+    Unit oldUnit;
+    if(!Unit::GetUnitForECProperty(oldUnit, *prop))
+        {
+        Utf8String fullName = schema.GetFullSchemaName();
+        LOG.errorv("The property %s:%s.%s has a UnitSpecification but it does not resolve to a unit.", fullName.c_str(), prop->GetClass().GetName().c_str(), prop->GetName().c_str());
+        return ECObjectsStatus::Error;
+        }
 
+    Units::UnitCP newUnit = Units::UnitRegistry::Instance().LookupUnitUsingOldName(oldUnit.GetName());
+    if (nullptr == newUnit)
+        {
+        Utf8String fullName = schema.GetFullSchemaName();
+        LOG.warningv("The property %s:%s.%s has an old unit '%s' that does not resolve to a new unit.  Creating a dummy unit to continue", fullName.c_str(), prop->GetClass().GetName().c_str(), prop->GetName().c_str(), oldUnit.GetName());
+        newUnit = Units::UnitRegistry::Instance().AddDummyUnit(oldUnit.GetName());
+        //return ECObjectsStatus::Error;
+        }
+
+    KindOfQuantityP newKOQ;
+    Utf8CP newKOQName = UnitSpecification::GetNewKOQName(instance);
+    if (Utf8String::IsNullOrEmpty(newKOQName))
+        newKOQName = newUnit->GetPhenomenon()->GetName();
+
+    newKOQ = schema.GetKindOfQuantityP(newKOQName);
+    if (nullptr != newKOQ)
+        {
+        if (!newKOQ->GetPersistenceUnit().Equals(newUnit->GetName()))
+            {
+            Utf8String fullName = schema.GetFullSchemaName();
+            LOG.infov("Found property %s:%s.%s with KindOfQuantity '%s' and unit '%s' but the KindOfQuantity defines the unit '%s'.  Looking for alternate KindOFQuantity",
+                        fullName.c_str(), prop->GetClass().GetName().c_str(), prop->GetName().c_str(), newKOQName, newUnit->GetName(), newKOQ->GetPersistenceUnit().c_str());
+
+            Utf8PrintfString newKoqName("%s_%s", newKOQName, newUnit->GetName());
+            newKOQ = schema.GetKindOfQuantityP(newKoqName.c_str());
+            if (nullptr == newKOQ)
+                {
+                schema.CreateKindOfQuantity(newKOQ, newKoqName.c_str());
+                newKOQ->SetPersistenceUnit(newUnit->GetName());
+                }
+            }
+        }
+    else
+        {
+        schema.CreateKindOfQuantity(newKOQ, newKOQName);
+        newKOQ->SetPersistenceUnit(newUnit->GetName());
+        }
+
+
+    Unit oldDisplayUnit;
+    Utf8String oldFormatString;
+    if (Unit::GetDisplayUnitAndFormatForECProperty(oldDisplayUnit, oldFormatString, oldUnit, *prop) && (0 != strcmp(oldDisplayUnit.GetName(), oldUnit.GetName())))
+        {
+        if (Utf8String::IsNullOrEmpty(newKOQ->GetDefaultPresentationUnit().c_str()))
+            {
+            Units::UnitCP newDisplayUnit = Units::UnitRegistry::Instance().LookupUnitUsingOldName(oldDisplayUnit.GetName());
+            if (nullptr == newUnit)
+                {
+                Utf8String fullName = schema.GetFullSchemaName();
+                LOG.warningv("The property %s:%s.%s has an old display unit '%s' that does not resolve to a new unit.", fullName.c_str(), prop->GetClass().GetName().c_str(), prop->GetName().c_str(), oldUnit.GetName());
+                }
+            else
+                newKOQ->SetDefaultPresentationUnit(newDisplayUnit->GetName());
+            }
+        }
+
+    prop->SetKindOfQuantity(newKOQ);
+    prop->RemoveCustomAttribute(UNIT_ATTRIBUTES, UNIT_SPECIFICATION);
+    prop->RemoveCustomAttribute(UNIT_ATTRIBUTES, DISPLAY_UNIT_SPECIFICATION);
 
     return ECObjectsStatus::Success;
     }
@@ -825,10 +924,14 @@ ECObjectsStatus UnitSpecificationsConverter::Convert(ECSchemaR schema, IECCustom
     ECSchemaP containerAsSchema = dynamic_cast<ECSchemaP>(&container);
     if (containerAsSchema == nullptr)
         {
-        //container.RemoveCustomAttribute("UnitSpecifications"); drop the CA if it's not on a property?
+        Utf8String fullName = schema.GetFullSchemaName();
+        LOG.warningv("Found a 'UnitSpecifications' custom attribute on a container which is not an ECSchema, removing.  Container is in schema %s", fullName.c_str());
+        container.RemoveCustomAttribute(UNIT_ATTRIBUTES, UNIT_SPECIFICATIONS);
         return ECObjectsStatus::Success;
         }
 
+    container.RemoveCustomAttribute(UNIT_ATTRIBUTES, UNIT_SPECIFICATIONS);
+    schema.RemoveReferencedSchema(instance.GetClass().GetSchema().GetSchemaKey());
     return ECObjectsStatus::Success;
     }
 
@@ -869,14 +972,14 @@ IECInstanceR sourceCustomAttribute
 
     schema.AddReferencedSchema(*customAttributeSchema);
 
-	ECObjectsStatus propertyConversionStatus;
+    ECObjectsStatus propertyConversionStatus;
     for (uint32_t i = 0; i < sourceCustomAttributeClass->GetPropertyCount(); i++)
         {
         ECPropertyP propP = sourceCustomAttributeClass->GetPropertyByIndex((uint32_t)i);
 
-		propertyConversionStatus = ConvertPropertyValue(propP->GetName(), sourceCustomAttribute, *targetAttributeInstance);
-		if (ECObjectsStatus::Success != propertyConversionStatus)
-			return propertyConversionStatus;
+        propertyConversionStatus = ConvertPropertyValue(propP->GetName(), sourceCustomAttribute, *targetAttributeInstance);
+        if (ECObjectsStatus::Success != propertyConversionStatus)
+            return propertyConversionStatus;
         }
 
     // Remove the old Custom Attribute and add the new one to the container

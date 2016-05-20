@@ -300,6 +300,7 @@ LINKER_LIBRARIES           + $(BuildContext)SubParts/Libs/$(libprefix)BeLibxml2$
 LINKER_LIBRARIES           + $(BuildContext)SubParts/Libs/$(libprefix)BentleyGeom$(libext)
 LINKER_LIBRARIES           + $(BuildContext)SubParts/Libs/$(libprefix)BentleyGeomSerialization$(libext)
 LINKER_LIBRARIES           + $(BuildContext)SubParts/Libs/$(libprefix)BeJsonCpp$(stlibext)
+LINKER_LIBRARIES           + $(BuildContext)SubParts/Libs/$(libprefix)Units$(libext)
 
 %ifdef BuildCGJsonValueBuilder
 LINKER_LIBRARIES            + d:/topaz1/out/Winx64/BuildContexts/DgnPlatform/SdkSources/MobileDgnSdk-Winx64/lib/Winx64/BeJsonCpp.lib

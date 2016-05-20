@@ -3290,6 +3290,10 @@ public:
     //! @param[in]  refSchema   The schema that should be removed from the list of referenced schemas
     ECOBJECTS_EXPORT ECObjectsStatus            RemoveReferencedSchema(ECSchemaR refSchema);
 
+    //! Removes an ECSchema from the list of referenced schemas
+    //! @param[in]  schemaKey   The key for the schema that should be removed from the list of referenced schemas.  Must be an exact match
+    ECOBJECTS_EXPORT ECObjectsStatus            RemoveReferencedSchema(SchemaKeyCR schemaKey);
+
     //! Serializes an ECXML schema to a string
     //! @param[out] ecSchemaXml     The string containing the Xml of the serialized schema
     //! @param[in]  ecXmlVersionMajor   The major version of the ECXml spec to be used for serializing this schema
