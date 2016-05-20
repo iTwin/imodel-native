@@ -883,7 +883,8 @@ bool ClassMap::HasPersistedView() const
 //---------------------------------------------------------------------------------------
 BentleyStatus ClassMap::GenerateSelectView(NativeSqlBuilder& viewSql, bool isPolymorphic, ECSqlPrepareContext const& prepareContext) const
     {
-    return ViewGenerator::CreateView(viewSql, GetECDbMap(), *this, isPolymorphic, prepareContext, true /*optimizeByIncludingOnlyRealTables*/);
+    ViewGenerator viewGenerator(GetECDbMap());
+    return viewGenerator.CreateView(viewSql, *this, isPolymorphic, prepareContext);
     }
 
 //=========================================================================================
