@@ -34,11 +34,6 @@ always:
     %message !!! If you don't turn on Console logging, you won't get interleaved output at $(LogDir)PublishedTestResults.txt !!!
 %endif
 
-%message .
-%message See $(LogDir)TestsTestResults.txt for logging output, interleaved with test output. 
-%message .
-
-
 %if $(TARGET_PLATFORM)=="Windows"
     
     # Must fix up directory separators
