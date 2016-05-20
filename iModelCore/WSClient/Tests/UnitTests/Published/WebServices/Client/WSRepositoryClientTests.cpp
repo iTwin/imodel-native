@@ -893,7 +893,7 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV11WithObjectId_Er
                 "properties" : { "TestProperty" : "TestValue" }
                 }
             })");
-    ObjectId objectId(Utf8String(), "TestClass", Utf8String());
+    ObjectId objectId("", "TestClass", "");
 
     GetHandler().ExpectRequests(1);
     GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi11());
@@ -919,7 +919,9 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithInvalidObjec
     GetHandler().ExpectRequests(1);
     GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi13());
 
+    BeTest::SetFailOnAssert(false);
     auto result = client->SendCreateObjectRequest(objectId, objectCreationJson)->GetResult();
+    BeTest::SetFailOnAssert(true);
     EXPECT_EQ(WSError::Id::Unknown, result.GetError().GetId());
     }
 
@@ -962,7 +964,7 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithObjectIdAndC
                 "properties" : { "TestProperty" : "TestValue" }
                 }
             })");
-    ObjectId objectId(Utf8String(), "TestClass", Utf8String());
+    ObjectId objectId("", "TestClass", "");
 
     GetHandler().ExpectRequests(2);
     GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi13());
@@ -1030,7 +1032,7 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithObjectIdAndO
                     }]
                 }
             })");
-    ObjectId objectId(Utf8String(), "TestClass", Utf8String());
+    ObjectId objectId("", "TestClass", "");
 
     GetHandler().ExpectRequests(2);
     GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi13());
@@ -1110,7 +1112,7 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithObjectIdAndN
                     }]
                 }
             })");
-    ObjectId objectId(Utf8String(), "TestClass", Utf8String());
+    ObjectId objectId("", "TestClass", "");
 
     GetHandler().ExpectRequests(1);
     GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi13());
@@ -1157,7 +1159,7 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithObjectIdAndM
                 "relationshipInstances" : [{}, {}]
                 }
             })");
-    ObjectId objectId(Utf8String(), "TestClass", Utf8String());
+    ObjectId objectId("", "TestClass", "");
 
     GetHandler().ExpectRequests(1);
     GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi13());
@@ -1186,7 +1188,9 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2WithInvalidObjec
     GetHandler().ExpectRequests(1);
     GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi20());
 
+    BeTest::SetFailOnAssert(false);
     auto result = client->SendCreateObjectRequest(objectId, objectCreationJson)->GetResult();
+    BeTest::SetFailOnAssert(true);
     EXPECT_EQ(WSError::Id::Unknown, result.GetError().GetId());
     }
 
@@ -1230,7 +1234,7 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2WithObjectIdAndC
                 "properties": {}
                 }
             })");
-    ObjectId objectId("TestSchema", "TestClass", Utf8String());
+    ObjectId objectId("TestSchema", "TestClass", "");
 
     GetHandler().ExpectRequests(2);
     GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi20());
@@ -1288,7 +1292,7 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2WithObjectIdThat
                 "properties": {}
                 }
             })");
-    ObjectId objectId("TestSchema", "TestClass", Utf8String());
+    ObjectId objectId("TestSchema", "TestClass", "");
 
     GetHandler().ExpectRequests(2);
     GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi20());
@@ -1385,7 +1389,7 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithObjectId_Con
                 "properties": {}
                 }
             })");
-    ObjectId objectId("TestSchema", "TestClass", Utf8String());
+    ObjectId objectId("TestSchema", "TestClass", "");
     auto response = client->SendCreateObjectRequest(objectId, creationJson)->GetResult();
 
     ASSERT_TRUE(response.IsSuccess());
@@ -1530,7 +1534,7 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2WithObjectId_Pas
                 "properties": {}
                 }
             })");
-    ObjectId objectId("TestSchema", "TestClass", Utf8String());
+    ObjectId objectId("TestSchema", "TestClass", "");
 
     auto response = client->SendCreateObjectRequest(objectId, creationJson)->GetResult();
 
@@ -1572,7 +1576,7 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithObjectIdAndF
         return StubHttpResponse();
         });
 
-    ObjectId objectId("TestSchema", "TestClass", Utf8String());
+    ObjectId objectId("TestSchema", "TestClass", "");
     client->SendCreateObjectRequest(objectId, StubWSObjectCreationJson(), filePath)->Wait();
     }
 
@@ -1609,7 +1613,7 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2WithObjectIdAndF
         return StubHttpResponse();
         });
 
-    ObjectId objectId("TestSchema", "TestClass", Utf8String());
+    ObjectId objectId("TestSchema", "TestClass", "");
     client->SendCreateObjectRequest(objectId, StubWSObjectCreationJson(), filePath)->Wait();
     }
 #endif
