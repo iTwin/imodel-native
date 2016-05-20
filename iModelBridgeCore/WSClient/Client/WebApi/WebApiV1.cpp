@@ -948,10 +948,10 @@ HttpRequest::ProgressCallbackCR uploadProgressCallback,
 ICancellationTokenPtr ct
 ) const
     {
-    Utf8String schemaName(objectCreationJson["instance"]["schemaName"].asString());
-    Utf8String className(objectCreationJson["instance"]["className"].asString());
-    Utf8String remoteId(objectCreationJson["instance"]["instanceId"].asString());
-    ObjectId objectId(schemaName, className, Utf8String());
+    ObjectId objectId;
+    objectId.schemaName = objectCreationJson["instance"]["schemaName"].asString();
+    objectId.className = objectCreationJson["instance"]["className"].asString();
+    objectId.remoteId = objectCreationJson["instance"]["instanceId"].asString();
 
     return SendCreateObjectRequest(objectId, objectCreationJson, filePath, uploadProgressCallback, ct);
     }
@@ -975,7 +975,7 @@ ICancellationTokenPtr ct
 
     if (objectId.className.empty())
         {
-        BeDebugLog("The className passed into WebApiV1::SendCreateObjectRequest is empty. ClassName is required to be valid.");
+        BeAssert(false && "The className passed into WebApiV1::SendCreateObjectRequest is empty. ClassName is required to be valid.");
         return CreateCompletedAsyncTask(WSCreateObjectResult::Error(WSError()));
         }
 
