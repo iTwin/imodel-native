@@ -8,7 +8,7 @@
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
 
-#include <BePointCloud/BePointCloudCommon.h>
+#include <BePointCloud/BePointCloudApi.h>  //&&MM I would like to hide the dependency on BePointCloud and pointools
 #include <BePointCloud/PointCloudHandle.h>
 #include <BePointCloud/PointCloudScene.h>
 
