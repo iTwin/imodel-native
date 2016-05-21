@@ -91,6 +91,7 @@ AxisAlignedBox3d ThreeMxModel::_QueryModelRange() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ThreeMxModel::_AddTerrainGraphics(TerrainContextR context) const
     {
+#if defined (NOT_YET) // This was not ready on the dgndb61-16q2-dev branch. Just disable it for now DO NOT MERGE FORWARD!
     Load(&context.GetTargetR().GetSystem());
 
     if (!m_scene.IsValid())
@@ -103,6 +104,7 @@ void ThreeMxModel::_AddTerrainGraphics(TerrainContextR context) const
 
     if (m_scene->HasPendingRequests())
         context.GetViewport()->ScheduleTerrainProgressiveTask(*new ThreeMxProgressive(*m_scene));
+#endif
     }
 
 #define JSON_ROOT_URL "RootUrl"
