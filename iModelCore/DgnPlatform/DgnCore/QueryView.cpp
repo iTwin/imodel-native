@@ -324,6 +324,9 @@ void DgnQueryView::_OnAttachedToViewport(DgnViewportR)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnQueryView::_DrawView(ViewContextR context)
     {
+    if (m_activeVolume.IsValid())
+        context.SetActiveVolume(*m_activeVolume);
+
     _VisitAllElements(context);
 
     // Allow models to participate in picking
@@ -520,7 +523,25 @@ bool DgnQueryView::_IsSceneReady() const
 void DgnQueryView::_VisitAllElements(ViewContextR context)
     {
     RangeQuery rangeQuery(*this, context.GetFrustum(), *context.GetViewport(), UpdatePlan::Query()); // NOTE: the context may have a smaller frustum than the view
+
     rangeQuery.Start(*this);
+
+    if (m_noQuery)
+        {
+        // we're only showing a fixed set of elements. Don't perform a query, just get the results (created in ctor of RangeQuery)
+        DgnQueryView::QueryResultsPtr results = rangeQuery.GetResults();
+
+        for (auto& thisScore : results->m_scores)
+            {
+            if (rangeQuery.TestElement(thisScore.second))
+                context.VisitElement(thisScore.second, true);
+
+            if (context.CheckStop())
+                return;
+            }
+
+        return;
+        }
 
     // the range tree will return all elements in the volume. Filter them by the view criteria
     DgnElementId thisId;

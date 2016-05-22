@@ -233,11 +233,10 @@ public:
 
     //! Save an image as the backdrop for this redline model.
     //! @param imageData       the image data
-    //! @param imageInfo        information about the image, including its width and format
     //! @param fitToX           If true, the image is stretched to fit the width of the sheet, and the image height is computed from it so as to preserve its original aspect ratio. 
     //!                         If false, the image is stretched to fit the height of the sheet, and the image width is computed.
     //! @param compressImageProperty If true, the image data is compressed before being stored in the database. 
-    DGNPLATFORM_EXPORT void StoreImageData(ByteStream const& imageData, RgbImageInfo const& imageInfo, bool fitToX, bool compressImageProperty=true);
+    DGNPLATFORM_EXPORT void StoreImageData(Render::Image const& imageData, bool fitToX, bool compressImageProperty=true);
 
     //! Save an image as the backdrop for this redline model.
     //! @param jpegData         The image data in JPEG format.
@@ -245,7 +244,7 @@ public:
     //! @param imageInfoIn      Information about the format of the image. Note that the width and format members are ignored as they are already encoded in the JPEG data.
     //! @param fitToX           If true, the image is stretched to fit the width of the sheet, and the image height is computed from it so as to preserve its original aspect ratio. 
     //!                         If false, the image is stretched to fit the height of the sheet, and the image width is computed.
-    DGNPLATFORM_EXPORT void StoreImageDataFromJPEG (uint8_t const* jpegData, size_t jpegDataSize, RgbImageInfo const& imageInfoIn, bool fitToX);
+    DGNPLATFORM_EXPORT void StoreImageDataFromJPEG(uint8_t const* jpegData, size_t jpegDataSize, RgbImageInfo& imageInfoIn, bool fitToX);
 
 /** @name Association to DgnDb */
 /** @{ */
@@ -654,14 +653,6 @@ public:
     //! Insert the MarkupExternalLink in the DgnDb
     DGNPLATFORM_EXPORT MarkupExternalLinkCPtr Insert();
 
-    //! Get a read only copy of the MarkupExternalLink from the DgnDb
-    //! @return Invalid if the MarkupExternalLink does not exist
-    static MarkupExternalLinkCPtr Get(Dgn::DgnDbCR dgnDb, Dgn::DgnElementId linkElementId) { return dgnDb.Elements().Get<MarkupExternalLink>(linkElementId); }
-
-    //! Get an editable copy of the MarkupExternalLink from the DgnDb
-    //! @return Invalid if the MarkupExternalLink does not exist, or if it cannot be edited.
-    static MarkupExternalLinkPtr GetForEdit(Dgn::DgnDbR dgnDb, Dgn::DgnElementId linkElementId) { return dgnDb.Elements().GetForEdit<MarkupExternalLink>(linkElementId); }
-
     //! Update the persistent state of the MarkupExternalLink in the DgnDb from this modified copy of it. 
     DGNPLATFORM_EXPORT MarkupExternalLinkCPtr Update();
 
@@ -675,9 +666,6 @@ public:
     //! @note This is a static method that always returns the schema name of the MarkupExternalLink class - it does @em not return the schema of a specific instance.
     static Utf8CP MyECSchemaName() { return MARKUP_SCHEMA_NAME; }
 
-    //! Query the DgnClassId of the MarkupExternalLink ECClass in the specified DgnDb.
-    //! @note This is a static method that always returns the DgnClassId of the markup.MarkupExternalLink class - it does @em not return the class of a specific instance.
-    static Dgn::DgnClassId QueryClassId(Dgn::DgnDbCR dgndb) { return Dgn::DgnClassId(dgndb.Schemas().GetECClassId(MARKUP_SCHEMA_NAME, MARKUP_CLASSNAME_MarkupExternalLink)); }
 };
 
 //=======================================================================================
@@ -713,24 +701,12 @@ public:
     //! Insert the MarkupExternalLinkGroup in the DgnDb
     DGNPLATFORM_EXPORT MarkupExternalLinkGroupCPtr Insert();
 
-    //! Get a read only copy of the MarkupExternalLinkGroup from the DgnDb
-    //! @return Invalid if the MarkupExternalLinkGroup does not exist
-    static MarkupExternalLinkGroupCPtr Get(Dgn::DgnDbCR dgnDb, Dgn::DgnElementId linkElementId) { return dgnDb.Elements().Get<MarkupExternalLinkGroup>(linkElementId); }
-
-    //! Get an editable copy of the MarkupExternalLinkGroup from the DgnDb
-    //! @return Invalid if the MarkupExternalLinkGroup does not exist, or if it cannot be edited.
-    static MarkupExternalLinkGroupPtr GetForEdit(Dgn::DgnDbR dgnDb, Dgn::DgnElementId linkElementId) { return dgnDb.Elements().GetForEdit<MarkupExternalLinkGroup>(linkElementId); }
-
     //! Update the persistent state of the MarkupExternalLinkGroup in the DgnDb from this modified copy of it. 
     DGNPLATFORM_EXPORT MarkupExternalLinkGroupCPtr Update();
 
     //! Get the schema name for the MarkupExternalLinkGroup class
     //! @note This is a static method that always returns the schema name of the MarkupExternalLinkGroup class - it does @em not return the schema of a specific instance.
     static Utf8CP MyECSchemaName() { return MARKUP_SCHEMA_NAME; }
-
-    //! Query the DgnClassId of the MarkupExternalLinkGroup ECClass in the specified DgnDb.
-    //! @note This is a static method that always returns the DgnClassId of the markup.MarkupExternalLinkGroup class - it does @em not return the class of a specific instance.
-    static Dgn::DgnClassId QueryClassId(Dgn::DgnDbR db) { return Dgn::DgnClassId(db.Schemas().GetECClassId(MARKUP_SCHEMA_NAME, MARKUP_CLASSNAME_MarkupExternalLinkGroup)); }
 };
 
 

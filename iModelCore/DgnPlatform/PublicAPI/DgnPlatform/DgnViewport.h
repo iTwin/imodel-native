@@ -542,6 +542,11 @@ public:
     DGNVIEW_EXPORT void UpdateView(UpdatePlan const& info = UpdatePlan());
     void UpdateViewDynamic(UpdatePlan const& info = DynamicUpdatePlan()) {UpdateView(info);}
 
+    //! Read the current image from this viewport from the Rendering system.
+    //! @param[in] targetSize The requested size for the Image. If either x or y value is 0 or greater than the current size of this viewport, the viewport size is used.
+    //! @return the Image containing the RGBA pixels from the viewpoert. On error, image.IsValid() will return false.
+    DGNVIEW_EXPORT Render::Image ReadImage(Point2d targetSize={0,0});
+
     static double GetMinViewDelta() {return DgnUnits::OneMillimeter() / 100.;}
     static double GetMaxViewDelta() {return 20000 * DgnUnits::OneKilometer();}    // about twice the diameter of the earth
     static double GetCameraPlaneRatio() {return 300.0;}
