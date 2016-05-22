@@ -400,7 +400,7 @@ void LineStyleSymb::Init(DgnStyleId styleId, LineStyleParamsCR styleParams, DVec
     {
     Clear(); // In case of error make sure m_lStyle is nullptr so we callers know this LineStyleSymb isn't valid...
 
-    if (!styleId.IsValid() || true)
+    if (!styleId.IsValid())
         return;
 
     LsCacheP lsCache = LsCache::GetDgnDbCache(context.GetDgnDb());
