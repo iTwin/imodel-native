@@ -364,12 +364,12 @@ static DRange2d getAdjustedRange(uint32_t& scaleFactor, DRange3dCR lsRange, doub
         xRange = range2d.high.x - range2d.low.x;
         }
 
-    //  Theoretically we could make the image smaller and save memory by just guaranteeing that
-    //  the size of the Y range is a multiple of 2 of the X range or vice versa.  However, I don't
-    //  think QV is detecting that correctly so for now I am just going for the same size.  Without
-    //  this change to the range QV scales the contents of the geometry map in one direction or the other.
+   //  QV recommends the range should be either equal or proportional by powers of two (for
+   //  example, the width is 2X, 4X, or 8X the height).  The range must be centered around 0 
+   //  for the texture to be applied to the line correctly.
     double yVal = xRange/2.0;
     bool changed = false;
+    //  Keep doubling while it is both higher than the high and lower than the low.
     while (yVal < range2d.high.y || -yVal > range2d.low.y)
         {
         changed = true;
@@ -378,6 +378,7 @@ static DRange2d getAdjustedRange(uint32_t& scaleFactor, DRange3dCR lsRange, doub
 
     if (!changed)
         {
+        //  We didn't have to increase the Y range. Maybe we can decrease it.
         while (yVal/2.0 >= range2d.high.y && -yVal/2.0 <= range2d.low.y)
             {
             yVal /= 2.0;
@@ -387,6 +388,7 @@ static DRange2d getAdjustedRange(uint32_t& scaleFactor, DRange3dCR lsRange, doub
     if (yVal < 2)
         yVal = 2;
 
+    //  Force the range to be centered at 0.  Othwerwise, it won't be centered on the line.
     range2d.low.y = -yVal;
     range2d.high.y = yVal;
 
@@ -399,6 +401,7 @@ static DRange2d getAdjustedRange(uint32_t& scaleFactor, DRange3dCR lsRange, doub
 Render::TexturePtr LsDefinition::GenerateTexture(double& textureDrawWidth, ViewContextR viewContext, LineStyleSymbR lineStyleSymb)
     {
     double unitDef = GetUnitsDefinition();
+    m_textureInitialized = false;
     if (unitDef < mgds_fc_epsilon)
         {
         BeAssert(unitDef > mgds_fc_epsilon);
@@ -418,13 +421,19 @@ Render::TexturePtr LsDefinition::GenerateTexture(double& textureDrawWidth, ViewC
     m_lsComp->_StartTextureGeneration();
 
     if (m_lsComp->_IsOkayForTextureGeneration() == Dgn::LsOkayForTextureGeneration::NotAllowed)
+        {
+        m_textureInitialized = true;  //  Don't try again. It won't get any better.
         return nullptr;
+        }
 
     //  Something in the component tree may be modified for texture generation.  For example, the size of an iteration
     //  may be expanded to accomodate a symbol that overflows.
     LsComponentPtr  comp = m_lsComp->_GetForTextureGeneration();
     if (comp.IsNull())
+        {
+        m_textureInitialized = true;  //  Don't try again. It won't get any better.
         return nullptr;
+        }
 
     //  Get just the range of the components.  Don't let any scaling enter into this.
     DPoint3d  points[2];
@@ -449,6 +458,13 @@ Render::TexturePtr LsDefinition::GenerateTexture(double& textureDrawWidth, ViewC
     ComponentToTextureStroker   stroker(viewContext.GetDgnDb(), scaleFactor, lineColor, fillColor, lineWeight, *comp);
     GraphicPtr graphic = stroker.Stroke(viewContext);
 
+    if (!graphic.IsValid() || viewContext.CheckStop())
+        {
+        //  If aborted due to checkstop, we want to try again.  Otherwise, we assume it is an unrecoverable error.
+        m_textureInitialized = !viewContext.CheckStop();
+        return nullptr;
+        }
+
     Render::TexturePtr texture = vp->GetRenderTarget()->CreateGeometryTexture(*graphic, range2d, isColorBySymbol, false);
 
     double yRange = range2d.high.y - range2d.low.y;
@@ -456,6 +472,8 @@ Render::TexturePtr LsDefinition::GenerateTexture(double& textureDrawWidth, ViewC
         yRange = 1;
 
     textureDrawWidth = yRange * unitDef;
+
+    m_textureInitialized = true;
     return texture.get();
     }
 
@@ -503,10 +521,24 @@ Texture* LsDefinition::GetTexture(ViewContextR viewContext, LineStyleSymbR lineS
             }
         else if (forceTexture)
             {
-            m_textureInitialized = true;
-            //  Convert this type to texture on the fly if possible
-            m_texture = GenerateTexture(m_textureWidth, viewContext, lineStyleSymb);
-            m_hasTextureWidth = true;
+            switch(viewContext.GetDrawPurpose())
+                {
+                case DrawPurpose::CreateScene:
+                case DrawPurpose::Progressive:
+                case DrawPurpose::Plot:
+                case DrawPurpose::Dynamics:
+                case DrawPurpose::Redraw:
+                case DrawPurpose::Heal:
+                    {
+                    //  Convert this type to texture on the fly if possible
+                    m_texture = GenerateTexture(m_textureWidth, viewContext, lineStyleSymb);
+                    m_hasTextureWidth = true;
+                    }
+                    break;
+                default:
+                    //  Very rare to get here. It does happen if checkstop stops us from creating the texture and then the user tries to pick the element.
+                    return nullptr;
+                }
             }
         }
 
