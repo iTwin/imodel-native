@@ -22,36 +22,34 @@
         </Bindings>
     </Part>
 
-    <!-- Bind my own PublicAPI into BuildContext/PublicAPI. Note that this part does not cause any sub-part PublicAPIs to be bound. -->
+  <!-- Why don't we just rename 'UnitsDll' to 'UnitsNative'? Do we plan to have a managed wrapper? -->
+  <Part Name="UnitsNative">
+    <SubPart PartName="UnitsDll" />
+  </Part>
+
+  <!-- Bind my own PublicAPI into BuildContext/PublicAPI. Note that this part does not cause any sub-part PublicAPIs to be bound. -->
     <Part Name="PublicAPI" BentleyBuildMakeFile="units.prewire.mke">
         <Bindings>
             <PublicAPI Domain="Units" />
         </Bindings>
     </Part>
 
-    <Part Name="Units-Windows-Only" OnlyPlatforms="x*">
-        <SubPart PartName="UnitsDll" />
-    </Part>
+  <Part Name="UnitsConversionData" BentleyBuildMakeFile="test/ConversionData.prewire.mke">
+    <Bindings>
+      <Files SubPartDirectory="ConversionData" ProductDirectoryName="UnitTests-Assets" ProductSubDirectory="ConversionData">
+        Delivery/ConversionData/*csv
+      </Files>
+    </Bindings>
+  </Part>
 
-    <Part Name="Units-iOS-Only" OnlyPlatforms="iOS*">
-        <SubPart PartName="UnitsDll" />
-    </Part>
-
-    <Part Name="Units-Android-Only" OnlyPlatforms="Android*">
-        <SubPart PartName="UnitsDll" />
-    </Part>
-
-    <Part Name="UnitsNative">
-        <SubPart PartName="Units-Windows-Only"  LibType="Dynamic" />
-        <SubPart PartName="Units-iOS-Only"      LibType="Static" />
-        <SubPart PartName="Units-Android-Only"  LibType="Static" />
-    </Part>
-
-<!-- ///////////////////////////////////////////////////////////////////////////////////// -->
+  <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
 <!-- ////////////////////////////////// Products ///////////////////////////////////////// -->
 <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
 
-    <ProductDirectoryList ListName="UnitsTested" >
+  <!-- Cross-platform test part and product definitions -->
+  <!-- Only/ExcludePlatforms attributes should NOT be used in this section -->
+
+  <ProductDirectoryList ListName="UnitsTested" >
         <ProductDirectory Name="PublicAPI"                          Deliver="false"/>
         <ProductDirectory Name="VendorAPI"                          Deliver="false" />
         <ProductDirectory Name="VendorNotices"                      Deliver="false" />
@@ -78,31 +76,59 @@
 
 
     <Product Name="UnitsTested" PrgOutputDir="Units" SaveProduct="true" AddIn="true">
-        <SubPart PartName="UnitsNative" />
-        <SubProduct ProductName="Units-Tests" ExcludePlatforms="ios*"/>
-        <SubPart PartName="RunGtest" ExcludePlatforms="ios*"/>
+        <SubPart PartName="UnitsDLL" />
+        <SubProduct ProductName="Units-Tests" />
+        <SubPart PartName="RunGtest" />
+        <SubPart PartName="RunAndroidJUnitTest" />
+        <SubPart PartName="RuniOSXCTest" />
         <Directories DirectoryListName="UnitsTested"/>
     </Product>
     
-    <Part Name="RunGtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/Units-Gtest/UnitsTest -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/Units" OnlyPlatforms="x86,x64,MacOs*,Linux*">
-        <SubProduct ProductName="Units-Gtest" />
-        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
-    </Part>
-    
-    <Product Name="Units-Gtest" >
-        <SubPart PartName="Gtest"/>
-        <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+  <Product Name="Units-Tests">
+        <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
+        <SubPart PartName="Tests"/>
+        <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
     </Product>
     
-    <Part Name="Gtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=UnitsTest -dTEST_COLLECTION_PRODUCT=Units-Tests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
-        <SubProduct ProductName="Units-Tests"/>
-        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+    <Part Name="Tests" BentleyBuildMakeFile="Test/BuildTests.mke">
+        <SubPart PartName="TestDependencies" />
         <Bindings>
-            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/UnitsTest/Assemblies/*</Files>
-            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/UnitsTest/Assets" />
+            <Directory ProductDirectoryName="UnitTests-Objects"    SourceName="Delivery/UnitTests/Objects/UnitTests"/>
         </Bindings>
     </Part>
 
+    <Part Name="TestDependencies" BentleyBuildMakeFile="Test/Prewire.mke">
+        <SubPart PartName="UnitsDLL" />
+        <SubPart PartName="UnitsConversionData" />
+        <Bindings>
+            <Files ProductDirectoryName="UnitTests-IgnoreList"     ProductSubDirectory="Units" SubPartDirectory="UnitTests/Units">Delivery/UnitTests/ignore_list.txt</Files>
+        </Bindings>
+    </Part>
+
+  <!-- Platform-specific test parts and products -->
+  <!-- Only/ExcludePlatforms attributes should be used only in this section -->
+
+  <!-- *** GTEST - runs on Windows, Linux, MaxOS *** -->
+  <Part Name="RunGtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/Units-Gtest/UnitsTest -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/Units" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+    <SubProduct ProductName="Units-Gtest" />
+    <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+  </Part>
+
+  <Product Name="Units-Gtest" >
+    <SubPart PartName="Gtest"/>
+    <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+  </Product>
+
+  <Part Name="Gtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=UnitsTest -dTEST_COLLECTION_PRODUCT=Units-Tests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+    <SubProduct ProductName="Units-Tests"/>
+    <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+    <Bindings>
+      <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/UnitsTest/Assemblies/*</Files>
+      <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/UnitsTest/Assets" />
+    </Bindings>
+  </Part>
+
+  <!-- *** AndroidJUnit *** -->
   <Part Name="AndroidJUnit" BentleyBuildMakeFile="${SrcRoot}BeGTest/Android/MakeJUnitTestProject.mke" BentleyBuildMakeOptions="-dTEST_COLLECTION_PRODUCT=Units-Tests -dUSE_STATIC_LIBRARIES=1 -dTEST_ANDROID_MIN_SDK_VERSION=19" OnlyPlatforms="Android*">
     <SubProduct ProductName="Units-Tests"/>
     <SubPart PartName="AndroidJUnitTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
@@ -120,6 +146,7 @@
     <SubProduct ProductName="Units-AndroidJUnit"/>
   </Part>
 
+  <!-- *** iOSXCTest *** -->
   <Part Name="iOSXCTest" BentleyBuildMakeFile="${SrcRoot}BeGTest/iOS/MakeXCTestProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=Units -dTEST_COLLECTION_PRODUCT=Units-Tests -dUSE_STATIC_LIBRARIES=1" OnlyPlatforms="iOS*">
     <SubProduct ProductName="Units-Tests"/>
     <SubPart PartName="iOSXCTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
@@ -136,33 +163,7 @@
   <Part Name="RuniOSXCTest" BentleyBuildMakeFile="${SrcRoot}BeGTest/iOS/RunXCTestProject.mke" BentleyBuildMakeOptions="-dXCTEST_PRODUCT=Units-iOSXCTest" OnlyPlatforms="iOS*">
     <SubProduct ProductName="Units-iOSXCTest"/>
   </Part>
-  
-  <Product Name="Units-Tests">
-        <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
-        <SubPart PartName="Tests"/>
-        <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
-    </Product>
-    
-    <Part Name="Tests" BentleyBuildMakeFile="Test/BuildTests.mke" OnlyPlatforms="x86,x64,Linux*,MacOS*">
-        <SubPart PartName="TestDependencies" />
-        <Bindings>
-            <Directory ProductDirectoryName="UnitTests-Objects"    SourceName="Delivery/UnitTests/Objects/UnitTests"/>
-        </Bindings>
-    </Part>
 
-    <Part Name="TestDependencies" BentleyBuildMakeFile="Test/Prewire.mke">
-        <SubPart PartName="UnitsNative" />
-        <SubPart PartName="UnitsConversionData" />
-        <Bindings>
-            <Files ProductDirectoryName="UnitTests-IgnoreList"     ProductSubDirectory="Units" SubPartDirectory="UnitTests/Units">Delivery/UnitTests/ignore_list.txt</Files>
-        </Bindings>
-    </Part>
+  <!-- *** WinRT CTest - TBD ... *** -->
 
-    <Part Name="UnitsConversionData" BentleyBuildMakeFile="test/ConversionData.prewire.mke">
-        <Bindings>
-            <Files SubPartDirectory="ConversionData" ProductDirectoryName="UnitTests-Assets" ProductSubDirectory="ConversionData">
-                Delivery/ConversionData/*csv
-            </Files>
-        </Bindings>
-    </Part>
 </BuildContext>
