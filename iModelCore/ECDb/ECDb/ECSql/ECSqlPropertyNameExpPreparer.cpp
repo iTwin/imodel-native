@@ -72,13 +72,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare(NativeSqlBuilder::List& native
             if (isPolymorphic && desc.HierarchyMapsToMultipleTables())
                 {
                 BeAssert(desc.HierarchyMapsToMultipleTables() && isPolymorphic && "Returned partition is null only for a polymorphic ECSQL where subclasses are in a separate table");
-                if (!classMap.HasPersistedView())
-                    {
-                    BeAssert(false && "[Programmer Error] Database view must exist for this class as it derive classes is map into its on table");
-                    return ECSqlStatus::Error;
-                    }
-
-                classIdentifier.assign(classMap.GetPersistedViewName());
+                classIdentifier.assign(classMap.GetUpdatableViewName());
                 }
             }
         }

@@ -228,18 +228,13 @@ struct ClassMap : RefCountedBase
         bool HasJoinedTable() const;
         bool IsParentOfJoinedTable() const;
 
-        Utf8String GetPersistedViewName() const;
-        bool HasPersistedView() const;
-
-        BentleyStatus GenerateSelectView(NativeSqlBuilder& viewSql, bool isPolymorphic, ECSqlPrepareContext const& prepareContext) const;
+        Utf8String GetUpdatableViewName() const;
+        BentleyStatus GenerateSelectViewSql(NativeSqlBuilder& viewSql, bool isPolymorphic, ECSqlPrepareContext const& prepareContext) const;
+        BentleyStatus CreateECClassView() const;
 
         static BentleyStatus DetermineTableName(Utf8StringR tableName, ECN::ECClassCR, Utf8CP tablePrefix = nullptr);
         static bool IsAnyClass(ECN::ECClassCR ecclass) { return ecclass.GetSchema().IsStandardSchema() && ecclass.GetName().Equals("AnyClass"); }
         void WriteDebugInfo(DebugWriter& writer) const { _WriteDebugInfo(writer); }
-
-        BentleyStatus DropViewIfExists() const;
-        BentleyStatus CreateOrReplaceView() const;
-
     };
 
 

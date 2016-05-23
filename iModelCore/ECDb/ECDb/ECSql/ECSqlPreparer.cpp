@@ -426,7 +426,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
     if (currentScopeECSqlType == ECSqlType::Select)
         {
         NativeSqlBuilder classViewSql;
-        if (classMap.GenerateSelectView(classViewSql, exp.IsPolymorphic(), ctx) != SUCCESS)
+        if (classMap.GenerateSelectViewSql(classViewSql, exp.IsPolymorphic(), ctx) != SUCCESS)
             {
             BeAssert(false && "Class view generation failed during preparation of class name expression.");
             return ECSqlStatus::Error;
@@ -461,15 +461,8 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
             if (exp.IsPolymorphic() && desc.HierarchyMapsToMultipleTables())
                 {
                 BeAssert(desc.HierarchyMapsToMultipleTables() && exp.IsPolymorphic() && "Returned partition is null only for a polymorphic ECSQL where subclasses are in a separate table");
-                //we need a view for it.
-                if (!classMap.HasPersistedView())
-                    {
-                    BeAssert(false && "[Programmer Error] Database view must exist for this class as it derive classes is map into its on table");
-                    return ECSqlStatus::Error;
-                    }
-
                 NativeSqlBuilder nativeSqlSnippet;
-                nativeSqlSnippet.AppendEscaped(classMap.GetPersistedViewName().c_str());
+                nativeSqlSnippet.AppendEscaped(classMap.GetUpdatableViewName().c_str());
                 nativeSqlSnippets.push_back(move(nativeSqlSnippet));
                 return ECSqlStatus::Success;
                 }
@@ -1325,7 +1318,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
     //Generate view for relationship
     NativeSqlBuilder relationshipView;
 
-    if (relationshipClassNameExp.GetInfo().GetMap().GenerateSelectView(relationshipView, DEFAULT_POLYMORPHIC_QUERY, ctx) != SUCCESS)
+    if (relationshipClassNameExp.GetInfo().GetMap().GenerateSelectViewSql(relationshipView, DEFAULT_POLYMORPHIC_QUERY, ctx) != SUCCESS)
         {
         BeAssert(false && "Generating class view during preparation of relationship class name expression failed.");
         return ECSqlStatus::Error;

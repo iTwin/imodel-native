@@ -98,25 +98,21 @@ struct SqlTriggerBuilder
 //+===============+===============+===============+===============+===============+======
 struct SqlViewBuilder
     {
-    private:
-        NativeSqlBuilder m_name;
-        NativeSqlBuilder::List m_selectList;
-        bool m_isTmp;
-        bool m_isNullView;
-        Utf8String m_sqlComment;
+private:
+    Utf8String m_name;
+    bool m_isNullView;
+    NativeSqlBuilder::List m_selectStatementList;
+    Utf8String m_sqlComment;
 
-    public:
-        SqlViewBuilder();
-        void MarkAsNullView();
-        bool IsNullView() const;
-        NativeSqlBuilder& GetNameBuilder();
-        NativeSqlBuilder& AddSelect();
-        void SetComment(Utf8CP comment) { m_sqlComment.assign(comment); }
-        bool IsEmpty() const;
-        bool IsValid() const;
-        Utf8CP GetName() const;
-        bool IsTemporary() const;
-        Utf8String ToString(SqlOption option, bool escape = false, bool useUnionAll = true) const;
+public:
+    explicit SqlViewBuilder(Utf8CP viewName, bool isNullView, NativeSqlBuilder::List const& selectStatements) : m_name(viewName), m_isNullView(isNullView), m_selectStatementList(selectStatements) {}
+
+    Utf8CP GetName() const { return m_name.c_str(); }
+    bool IsNullView() const { return m_isNullView; }
+    void SetComment(Utf8CP comment) { m_sqlComment.assign(comment); }
+    bool IsEmpty() const { return m_name.empty() && m_selectStatementList.empty(); }
+    bool IsValid() const;
+    Utf8String ToString(SqlOption option, bool escape = false, bool useUnionAll = true) const;
     };
 
 //=======================================================================================
@@ -253,17 +249,17 @@ struct ECDbMapAnalyser
             {
             private:
                 SqlTriggerBuilder::TriggerList m_triggers;
-                SqlViewBuilder m_view;
+                SqlViewBuilder m_viewDdl;
             public:
-                ViewInfo() {}
-                ViewInfo(ViewInfo const& rhs) :m_triggers(rhs.m_triggers), m_view(rhs.m_view) {}
-                ViewInfo(ViewInfo const&& rhs) :m_triggers(std::move(rhs.m_triggers)), m_view(std::move(rhs.m_view)) {}
+                explicit ViewInfo(SqlViewBuilder const& viewDdl) : m_viewDdl(viewDdl) {}
+                ViewInfo(ViewInfo const& rhs) :m_triggers(rhs.m_triggers), m_viewDdl(rhs.m_viewDdl) {}
+                ViewInfo(ViewInfo const&& rhs) :m_triggers(std::move(rhs.m_triggers)), m_viewDdl(std::move(rhs.m_viewDdl)) {}
                 ViewInfo& operator = (ViewInfo const& rhs)
                     {
                     if (this != &rhs)
                         {
                         m_triggers = rhs.m_triggers;
-                        m_view = rhs.m_view;
+                        m_viewDdl = rhs.m_viewDdl;
                         }
                     return *this;
                     }
@@ -272,13 +268,13 @@ struct ECDbMapAnalyser
                     if (this != &rhs)
                         {
                         m_triggers = std::move(rhs.m_triggers);
-                        m_view = std::move(rhs.m_view);
+                        m_viewDdl = std::move(rhs.m_viewDdl);
                         }
                     return *this;
                     }
-                SqlViewBuilder& GetViewR() { return m_view; }
+
                 SqlTriggerBuilder::TriggerList& GetTriggersR() { return m_triggers; }
-                SqlViewBuilder const& GetView() const { return m_view; }
+                SqlViewBuilder const& GetViewDdl() const { return m_viewDdl; }
                 SqlTriggerBuilder::TriggerList const& GetTriggers() const { return m_triggers; }
 
             };
@@ -288,7 +284,7 @@ struct ECDbMapAnalyser
         std::map<ECN::ECClassId, std::unique_ptr<Class>> m_classes;
         std::map<ECN::ECClassId, std::unique_ptr<Relationship>> m_relationships;
         std::map<Utf8CP, std::unique_ptr<Storage>, CompareIUtf8Ascii> m_storage;
-        std::map<Class const*, ViewInfo> m_viewInfos;
+        std::map<Class const*, std::unique_ptr<ViewInfo>> m_viewInfos;
 
     private:
         Storage& GetStorage(Utf8CP tableName);
@@ -300,13 +296,13 @@ struct ECDbMapAnalyser
         void GetClassIds(std::vector<ECN::ECClassId>& rootClassIds, std::vector<ECN::ECClassId>& rootRelationshipClassIds) const;
         std::set<ECN::ECClassId> const& GetDerivedClassIds(ECN::ECClassId baseClassId) const;
         void SetupDerivedClassLookup();
-        ClassMapCP GetClassMap(ECN::ECClassId classId) const;
-        SqlViewBuilder BuildView(Class& nclass);
+        ClassMapCP GetClassMap(ECN::ECClassId) const;
+        SqlViewBuilder BuildView(Class&);
         BentleyStatus BuildPolymorphicDeleteTrigger(Class&);
         BentleyStatus BuildPolymorphicUpdateTrigger(Class&);
         static NativeSqlBuilder GetClassFilter(std::pair<ECDbMapAnalyser::Storage const*, std::set<ECDbMapAnalyser::Class const*>> const& partition);
-        DbResult ApplyChanges();
-        DbResult ExecuteDDL(Utf8CP sql);
+        DbResult ApplyChanges() const;
+        DbResult ExecuteDDL(Utf8CP sql) const;
         ViewInfo* GetViewInfoForClass(Class const&);
 
     public:

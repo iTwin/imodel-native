@@ -13,60 +13,19 @@
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //=====================================SqlViewBuilder===================================
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                         09/2015
-//---------------------------------------------------------------------------------------
-SqlViewBuilder::SqlViewBuilder()
-    :m_isTmp(false), m_isNullView(false)
-    {}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                         09/2015
-//---------------------------------------------------------------------------------------
-void SqlViewBuilder::MarkAsNullView()
-    {
-    m_isNullView = true;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                         09/2015
-//---------------------------------------------------------------------------------------
-bool SqlViewBuilder::IsNullView() const { return m_isNullView; }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                         09/2015
-//---------------------------------------------------------------------------------------
-NativeSqlBuilder& SqlViewBuilder::GetNameBuilder() { return m_name; }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                         09/2015
-//---------------------------------------------------------------------------------------
-NativeSqlBuilder& SqlViewBuilder::AddSelect()
-    {
-    m_selectList.push_back(NativeSqlBuilder());
-    return m_selectList.back();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                         09/2015
-//---------------------------------------------------------------------------------------
-bool SqlViewBuilder::IsEmpty() const
-    {
-    return m_selectList.empty() && m_name.IsEmpty();
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                         09/2015
 //---------------------------------------------------------------------------------------
 bool SqlViewBuilder::IsValid() const
     {
-    if (m_name.IsEmpty())
+    if (m_name.empty())
         {
         BeAssert(false && "Must specify a view name");
         return false;
         }
 
-    if (m_selectList.empty())
+    if (m_selectStatementList.empty())
         {
         BeAssert(false && "View must have atleast one select statement");
         return false;
@@ -74,16 +33,6 @@ bool SqlViewBuilder::IsValid() const
 
     return true;
     }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                         09/2015
-//---------------------------------------------------------------------------------------
-Utf8CP SqlViewBuilder::GetName() const { return m_name.ToString(); }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                         09/2015
-//---------------------------------------------------------------------------------------
-bool SqlViewBuilder::IsTemporary() const { return m_isTmp; }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                         09/2015
@@ -102,14 +51,14 @@ Utf8String SqlViewBuilder::ToString(SqlOption option, bool escape, bool useUnion
         }
     else
         {
-        sql.Append("CREATE ").AppendIf(IsTemporary(), "TEMP ").Append("VIEW ").AppendIf(option == SqlOption::CreateIfNotExist, "IF NOT EXISTS ").Append(GetName(), escape).AppendLine(" AS");
+        sql.Append("CREATE VIEW ").AppendIf(option == SqlOption::CreateIfNotExist, "IF NOT EXISTS ").Append(GetName(), escape).AppendLine(" AS");
 
         if (!m_sqlComment.empty())
             sql.Append("--").AppendLine(m_sqlComment.c_str());
 
-        for (auto& select : m_selectList)
+        for (auto& select : m_selectStatementList)
             {
-            if (&select != &m_selectList.front())
+            if (&select != &m_selectStatementList.front())
                 sql.Append("UNION ").AppendIf(useUnionAll, "ALL").AppendEol();
 
             sql.AppendLine(select.ToString());
@@ -898,7 +847,7 @@ ECDbMapAnalyser::ViewInfo* ECDbMapAnalyser::GetViewInfoForClass(Class const& ncl
     if (itor == m_viewInfos.end())
         return nullptr;
 
-    return &(itor->second);
+    return itor->second.get();
     }
 
 //---------------------------------------------------------------------------------------
@@ -964,7 +913,7 @@ BentleyStatus ECDbMapAnalyser::BuildPolymorphicDeleteTrigger(Class& nclass)
     {
     BeAssert(nclass.RequireView());
     auto viewInfo = GetViewInfoForClass(nclass);
-    BeAssert(viewInfo != nullptr && !viewInfo->GetView().IsEmpty());
+    BeAssert(viewInfo != nullptr && !viewInfo->GetViewDdl().IsEmpty());
     auto p = nclass.GetStorage().GetTable().GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
     auto c = nclass.GetStorage().GetTable().GetFilteredColumnFirst(DbColumn::Kind::ECClassId);
     for (auto & i : nclass.GetPartitionsR())
@@ -974,7 +923,7 @@ BentleyStatus ECDbMapAnalyser::BuildPolymorphicDeleteTrigger(Class& nclass)
             continue;
 
         SqlTriggerBuilder& builder = viewInfo->GetTriggersR().Create(SqlTriggerBuilder::Type::Delete, SqlTriggerBuilder::Condition::InsteadOf, false);
-        builder.GetOnBuilder().Append(viewInfo->GetViewR().GetName());
+        builder.GetOnBuilder().Append(viewInfo->GetViewDdl().GetName());
         builder.GetNameBuilder().Append(nclass.GetSqlName()).Append("_").Append(storage->GetTable().GetName().c_str()).Append("_Delete");
         NativeSqlBuilder classFilter = GetClassFilter(i);
         if (!classFilter.IsEmpty())
@@ -1003,7 +952,7 @@ BentleyStatus ECDbMapAnalyser::BuildPolymorphicUpdateTrigger(Class& nclass)
     BeAssert(nclass.RequireView());
     BeAssert(nclass.RequireView());
     auto viewInfo = GetViewInfoForClass(nclass);
-    BeAssert(viewInfo != nullptr && !viewInfo->GetView().IsEmpty());
+    BeAssert(viewInfo != nullptr && !viewInfo->GetViewDdl().IsEmpty());
 
     auto rootPMS = PropertyMapSet::Create(nclass.GetClassMap());
     auto rootEndPoints = rootPMS->GetEndPoints();
@@ -1017,7 +966,7 @@ BentleyStatus ECDbMapAnalyser::BuildPolymorphicUpdateTrigger(Class& nclass)
             continue;
 
         SqlTriggerBuilder& builder = viewInfo->GetTriggersR().Create(SqlTriggerBuilder::Type::Update, SqlTriggerBuilder::Condition::InsteadOf, false);
-        builder.GetOnBuilder().Append(viewInfo->GetViewR().GetName());
+        builder.GetOnBuilder().Append(viewInfo->GetViewDdl().GetName());
         builder.GetNameBuilder().Append(nclass.GetSqlName()).Append("_").Append(storage->GetTable().GetName().c_str()).Append("_").Append("Update");
         NativeSqlBuilder classFilter = GetClassFilter(i);
         if (!classFilter.IsEmpty())
@@ -1073,24 +1022,18 @@ BentleyStatus ECDbMapAnalyser::BuildPolymorphicUpdateTrigger(Class& nclass)
 //---------------------------------------------------------------------------------------
 SqlViewBuilder ECDbMapAnalyser::BuildView(Class& nclass)
     {
-    auto classMap = &nclass.GetClassMap();
-    auto rootPMS = PropertyMapSet::Create(*classMap);
-    auto const& storageDescription = classMap->GetStorageDescription();
+    ClassMapCR classMap = nclass.GetClassMap();
+    std::unique_ptr<PropertyMapSet> rootPMS = PropertyMapSet::Create(classMap);
+    StorageDescription const& storageDescription = classMap.GetStorageDescription();
 
-    SqlViewBuilder builder;
-    builder.GetNameBuilder()
-        .Append("_")
-        .Append(classMap->GetClass().GetSchema().GetNamespacePrefix().c_str())
-        .Append("_")
-        .Append(classMap->GetClass().GetName().c_str());
-
-    NativeSqlBuilder::List selects;
     Partition const* root = &storageDescription.GetRootHorizontalPartition();
     if (root->GetTable().GetPersistenceType() == PersistenceType::Virtual)
         root = nullptr;
 
+    NativeSqlBuilder::List selectStatementList;
+
     bool bFirst = true;
-    for (auto const& hp : storageDescription.GetHorizontalPartitions())
+    for (Partition const& hp : storageDescription.GetHorizontalPartitions())
         {
         if (hp.GetTable().GetPersistenceType() == PersistenceType::Virtual)
             continue;
@@ -1098,7 +1041,7 @@ SqlViewBuilder ECDbMapAnalyser::BuildView(Class& nclass)
         NativeSqlBuilder select;
         select.Append("SELECT ");
         ClassMapCP firstChildMap = m_map.GetClassMap(hp.GetClassIds().front());
-        auto childPMS = PropertyMapSet::Create(*firstChildMap);
+        std::unique_ptr<PropertyMapSet> childPMS = PropertyMapSet::Create(*firstChildMap);
         auto rootEndPoints = rootPMS->GetEndPoints();
         for (PropertyMapSet::EndPoint const* rootE : rootEndPoints)
             {
@@ -1115,9 +1058,9 @@ SqlViewBuilder ECDbMapAnalyser::BuildView(Class& nclass)
             else
                 {
                 if (rootE->GetColumn() != nullptr)
-                    select.Append(Utf8PrintfString("%" PRIu64 " [%s]", (uint64_t) childE->GetValue().GetLong(), rootE->GetColumn()->GetName().c_str()).c_str());
+                    select.AppendFormatted("%" PRIu64 " [%s]", (uint64_t) childE->GetValue().GetLong(), rootE->GetColumn()->GetName().c_str());
                 else
-                    select.Append(Utf8PrintfString("%" PRIu64 " [%s]", (uint64_t) childE->GetValue().GetLong(), (rootE->GetAccessString().c_str())).c_str());
+                    select.AppendFormatted("%" PRIu64 " [%s]", (uint64_t) childE->GetValue().GetLong(), (rootE->GetAccessString().c_str()));
                 }
 
             if (rootE != rootEndPoints.back())
@@ -1137,22 +1080,15 @@ SqlViewBuilder ECDbMapAnalyser::BuildView(Class& nclass)
             }
 
         if (&hp == root)
-            selects.insert(selects.begin(), std::move(select));
+            selectStatementList.insert(selectStatementList.begin(), std::move(select));
         else
-            selects.push_back(std::move(select));
+            selectStatementList.push_back(std::move(select));
         }
 
-    if (!selects.empty())
+    const bool isEmptyView = selectStatementList.empty();
+    if (isEmptyView)
         {
-        for (NativeSqlBuilder const& select : selects)
-            {
-            builder.AddSelect().Append(select);
-            }
-        }
-    else
-        {
-        auto& select = builder.AddSelect();
-        select.Append("SELECT ");
+        NativeSqlBuilder select("SELECT ");
         auto rootEndPoints = rootPMS->GetEndPoints();
         for (auto const rootE : rootEndPoints)
             {
@@ -1163,16 +1099,17 @@ SqlViewBuilder ECDbMapAnalyser::BuildView(Class& nclass)
             }
 
         select.Append(" LIMIT 0");
-        builder.MarkAsNullView();
+        selectStatementList.push_back(std::move(select));
         }
 
+    SqlViewBuilder builder(classMap.GetUpdatableViewName().c_str(), isEmptyView, selectStatementList);
     return builder;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                         09/2015
 //---------------------------------------------------------------------------------------
-DbResult ECDbMapAnalyser::ExecuteDDL(Utf8CP sql)
+DbResult ECDbMapAnalyser::ExecuteDDL(Utf8CP sql) const
     {
     auto r = m_map.GetECDb().ExecuteSql(sql);
     if (r != BE_SQLITE_OK)
@@ -1186,47 +1123,45 @@ DbResult ECDbMapAnalyser::ExecuteDDL(Utf8CP sql)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                         09/2015
 //---------------------------------------------------------------------------------------
-DbResult ECDbMapAnalyser::ApplyChanges()
+DbResult ECDbMapAnalyser::ApplyChanges() const
     {
-    Utf8String sql;
-    DbResult r = BE_SQLITE_OK;
-    for (auto& i : m_viewInfos)
+    for (auto const& kvPair : m_viewInfos)
         {
-        ViewInfo const& viewInfo = i.second;
-        if (viewInfo.GetView().IsEmpty())
+        ViewInfo const& viewInfo = *kvPair.second;
+        if (viewInfo.GetViewDdl().IsEmpty())
             {
             BeAssert(false && "must have a view");
             continue;
             }
 
-        sql = viewInfo.GetView().ToString(SqlOption::DropIfExists, true);
-        r = ExecuteDDL(sql.c_str());
-        if (r != BE_SQLITE_OK)
-            return r;
+        Utf8String sql = viewInfo.GetViewDdl().ToString(SqlOption::DropIfExists, true);
+        DbResult stat = ExecuteDDL(sql.c_str());
+        if (BE_SQLITE_OK != stat)
+            return stat;
 
-        sql = viewInfo.GetView().ToString(SqlOption::Create, true);
-        r = ExecuteDDL(sql.c_str());
-        if (r != BE_SQLITE_OK)
-            return r;
+        sql = viewInfo.GetViewDdl().ToString(SqlOption::Create, true);
+        stat = ExecuteDDL(sql.c_str());
+        if (BE_SQLITE_OK != stat)
+            return stat;
 
         for (SqlTriggerBuilder const& trigger : viewInfo.GetTriggers().GetTriggers())
             {
             if (!trigger.IsEmpty())
                 {
                 sql = trigger.ToString(SqlOption::DropIfExists, true);
-                r = ExecuteDDL(sql.c_str());
-                if (r != BE_SQLITE_OK)
-                    return r;
+                stat = ExecuteDDL(sql.c_str());
+                if (BE_SQLITE_OK != stat)
+                    return stat;
 
                 sql = trigger.ToString(SqlOption::Create, true);
-                r = ExecuteDDL(sql.c_str());
-                if (r != BE_SQLITE_OK)
-                    return r;
+                stat = ExecuteDDL(sql.c_str());
+                if (BE_SQLITE_OK != stat)
+                    return stat;
                 }
             }
         }
 
-    return r;
+    return BE_SQLITE_OK;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1273,14 +1208,14 @@ BentleyStatus ECDbMapAnalyser::Analyse(bool applyChanges)
         if (!ecclass.RequireView())
             continue;
 
-        ViewInfo& viewInfo = m_viewInfos[&ecclass];
-        viewInfo.GetViewR() = BuildView(ecclass);
+        SqlViewBuilder viewBuilder = BuildView(ecclass);
+        m_viewInfos[&ecclass] = std::unique_ptr<ViewInfo>(new ViewInfo(viewBuilder));
         BuildPolymorphicDeleteTrigger(ecclass);
         BuildPolymorphicUpdateTrigger(ecclass);
         }
 
     if (applyChanges)
-        return ApplyChanges() == DbResult::BE_SQLITE_OK ? SUCCESS : ERROR;
+        return ApplyChanges() == BE_SQLITE_OK ? SUCCESS : ERROR;
 
     return SUCCESS;
     }

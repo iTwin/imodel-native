@@ -76,16 +76,17 @@ struct ViewGenerator
             if (returnViewAccessStringList)
                 m_viewAccessStringList = decltype(m_viewAccessStringList)(new std::vector<Utf8String>());
             }
-        ~ViewGenerator(){}
-        //! Create a SQLite polymorphic SELECT query for a given classMap
+
+        //! Generates a SQLite polymorphic SELECT query for a given classMap
         //! @param viewSql [out] Output SQL for view
         //! @param classMap [in] Source classMap for which to generate view
         //! @param isPolymorphicQuery [in] if true return a polymorphic view of ECClass else return a non-polymorphic view. Intend to be use by ECSQL "ONLY <ecClass>"
         //! @param prepareContext [in] prepareContext from ECSQL
         //! @remarks Only work work normal ECClasses but not relationship. It also support query over ecdb.Instances
-        BentleyStatus CreateView(NativeSqlBuilder& viewSql, ClassMap const& classMap, bool isPolymorphicQuery, ECSqlPrepareContext const& prepareContext);
-        BentleyStatus CreateView(NativeSqlBuilder& viewSql, ClassMap const& classMap, bool isPolymorphicQuery);
-        BentleyStatus CreateView(NativeSqlBuilder& viewSql, ClassMap const& classMap);
+        BentleyStatus Generate(NativeSqlBuilder& viewSql, ClassMap const& classMap, bool isPolymorphicQuery, ECSqlPrepareContext const& prepareContext);
+        BentleyStatus Generate(NativeSqlBuilder& viewSql, ClassMap const& classMap, bool isPolymorphicQuery);
+        BentleyStatus Generate(NativeSqlBuilder& viewSql, ClassMap const& classMap);
+
         std::vector<Utf8String> const* GetLastViewAccessStringList() const { return m_viewAccessStringList.get(); }
     };
 

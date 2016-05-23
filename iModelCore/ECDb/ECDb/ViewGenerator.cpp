@@ -18,23 +18,23 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2016
 //+---------------+---------------+---------------+---------------+---------------+--------
-BentleyStatus ViewGenerator::CreateView(NativeSqlBuilder& viewSql, ClassMap const& classMap, bool isPolymorphicQuery, ECSqlPrepareContext const& prepareContext)
+BentleyStatus ViewGenerator::Generate(NativeSqlBuilder& viewSql, ClassMap const& classMap, bool isPolymorphicQuery, ECSqlPrepareContext const& prepareContext)
     {
     return CreateViewInternal(viewSql, classMap, isPolymorphicQuery, &prepareContext);
     }
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2016
 //+---------------+---------------+---------------+---------------+---------------+--------
-BentleyStatus ViewGenerator::CreateView(NativeSqlBuilder& viewSql, ClassMap const& classMap, bool isPolymorphicQuery)
+BentleyStatus ViewGenerator::Generate(NativeSqlBuilder& viewSql, ClassMap const& classMap, bool isPolymorphicQuery)
     {
     return CreateViewInternal(viewSql, classMap, isPolymorphicQuery, nullptr);
     }
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2016
 //+---------------+---------------+---------------+---------------+---------------+--------
-BentleyStatus ViewGenerator::CreateView(NativeSqlBuilder& viewSql, ClassMap const& classMap)
+BentleyStatus ViewGenerator::Generate(NativeSqlBuilder& viewSql, ClassMap const& classMap)
     {
-    return CreateView(viewSql, classMap, true);
+    return Generate(viewSql, classMap, true);
     }
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      07/2013

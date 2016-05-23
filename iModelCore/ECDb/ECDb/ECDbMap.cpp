@@ -287,9 +287,8 @@ BentleyStatus ECDbMap::CreateECClassViewsInDb() const
             }
 
         BeAssert((classMap->GetClass().IsEntityClass() || classMap->GetClass().IsRelationshipClass()) && classMap->GetType() != ClassMap::Type::Unmapped);
-        if (classMap->CreateOrReplaceView() != SUCCESS)
+        if (classMap->CreateECClassView() != SUCCESS)
             return ERROR;
-
         }
 
     return SUCCESS;
