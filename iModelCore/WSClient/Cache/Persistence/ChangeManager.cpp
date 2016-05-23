@@ -21,7 +21,7 @@
 #include "Instances/ObjectInfoManager.h"
 #include "Instances/RelationshipInfoManager.h"
 #include "Responses/CachedResponseManager.h"
-#include "../Util/JsonUtil.h"
+#include <WebServices/Cache/Util/JsonUtil.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 

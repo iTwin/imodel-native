@@ -2,7 +2,7 @@
 |
 |  $Source: Client/Response/WSObjectsReader.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -42,6 +42,14 @@ bool WSObjectsReader::Instances::IsValid() const
 bool WSObjectsReader::Instances::IsEmpty() const
     {
     return begin() == end();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    05/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::SizeType WSObjectsReader::Instances::Size() const
+    {
+    return m_reader->GetInstanceCount();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -241,6 +249,14 @@ bool WSObjectsReader::RelationshipInstances::IsValid() const
 bool WSObjectsReader::RelationshipInstances::IsEmpty() const
     {
     return begin() == end();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    05/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::SizeType WSObjectsReader::RelationshipInstances::Size() const
+    {
+    return m_reader->GetRelationshipInstanceCount(m_relationshipInstances);
     }
 
 /*--------------------------------------------------------------------------------------+

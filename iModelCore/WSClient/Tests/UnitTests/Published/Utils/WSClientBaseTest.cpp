@@ -20,6 +20,7 @@ std::shared_ptr<TestAppPathProvider>  WSClientBaseTest::s_pathProvider;
 
 void WSClientBaseTest::SetUp()
     {
+    BeTest::SetFailOnAssert(true);
     SetUpTestCase();
     }
 
