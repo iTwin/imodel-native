@@ -6,7 +6,7 @@
     <!-- // IModelExtractor                                                        // -->
     <!-- //////////////////////////////////////////////////////////////////////////// -->
 
-    <Product Name="IModelExtractor">
+    <Product Name="IModelExtractor" SaveProduct="true">
         <SubPart PartName="IModelExtractorExe" LibType="Static"/>        
         <Directories DirectoryListName="IModelExtractorDirList"/>
     </Product>
