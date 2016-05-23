@@ -44,6 +44,7 @@ namespace ServerSchema
         static Utf8CP Repository = "DgnDbRepository";
         static Utf8CP Lock = "Lock";
         static Utf8CP MultiLock = "MultiLock";
+		static Utf8CP EventService = "EventService";
         }
     namespace Property
         {
@@ -72,6 +73,8 @@ namespace ServerSchema
         static Utf8CP ReleasedWithRevision = "ReleasedWithRevision";
         static Utf8CP ConflictingLocks = "ConflictingLocks";
         static Utf8CP LocksRequiresPull = "LocksRequiresPull";
+		static Utf8CP EventServiceSASToken = "EventServiceSASToken";
+		static Utf8CP EventServiceNameSpace = "EventServiceNameSpace";
         }
     static Utf8CP DeleteAllLocks = "DeleteAll";
     }
