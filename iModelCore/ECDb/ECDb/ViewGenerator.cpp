@@ -16,12 +16,33 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //************************** ViewGenerator ***************************************************
 //-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                      07/2013
+// @bsimethod                                    Affan.Khan                      05/2016
 //+---------------+---------------+---------------+---------------+---------------+--------
 BentleyStatus ViewGenerator::CreateView(NativeSqlBuilder& viewSql, ClassMap const& classMap, bool isPolymorphicQuery, ECSqlPrepareContext const& prepareContext)
     {
+    return CreateViewInternal(viewSql, classMap, isPolymorphicQuery, &prepareContext);
+    }
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                      05/2016
+//+---------------+---------------+---------------+---------------+---------------+--------
+BentleyStatus ViewGenerator::CreateView(NativeSqlBuilder& viewSql, ClassMap const& classMap, bool isPolymorphicQuery)
+    {
+    return CreateViewInternal(viewSql, classMap, isPolymorphicQuery, nullptr);
+    }
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                      05/2016
+//+---------------+---------------+---------------+---------------+---------------+--------
+BentleyStatus ViewGenerator::CreateView(NativeSqlBuilder& viewSql, ClassMap const& classMap)
+    {
+    return CreateView(viewSql, classMap, true);
+    }
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                      07/2013
+//+---------------+---------------+---------------+---------------+---------------+--------
+BentleyStatus ViewGenerator::CreateViewInternal(NativeSqlBuilder& viewSql, ClassMap const& classMap, bool isPolymorphicQuery, ECSqlPrepareContext const* prepareContext)
+    {
     m_isPolymorphic = isPolymorphicQuery;
-    m_prepareContext = &prepareContext;
+    m_prepareContext = prepareContext;
 
     if (classMap.GetMapStrategy().IsNotMapped())
         {
@@ -33,7 +54,8 @@ BentleyStatus ViewGenerator::CreateView(NativeSqlBuilder& viewSql, ClassMap cons
     if (classMap.IsRelationshipClassMap())
         return CreateViewForRelationship(viewSql, classMap);
 
-    viewSql.AppendParenLeft();
+    if (m_asSubQuery)
+        viewSql.AppendParenLeft();
     ECDbCR db = m_map.GetECDb();
     DbSchema::EntityType entityType = DbSchema::GetEntityType(db, classMap.GetPrimaryTable().GetName().c_str());
     if (entityType == DbSchema::EntityType::None && !isPolymorphicQuery)
@@ -41,7 +63,9 @@ BentleyStatus ViewGenerator::CreateView(NativeSqlBuilder& viewSql, ClassMap cons
         if (SUCCESS != CreateNullView(viewSql, classMap))
             return ERROR;
 
-        viewSql.AppendParenRight();
+        if (m_asSubQuery)
+            viewSql.AppendParenRight();
+
         return SUCCESS;
         }
 
@@ -90,12 +114,16 @@ BentleyStatus ViewGenerator::CreateView(NativeSqlBuilder& viewSql, ClassMap cons
         if (SUCCESS != CreateNullView(viewSql, classMap))
             return ERROR;
 
-        viewSql.AppendParenRight();
+        if (m_asSubQuery)
+            viewSql.AppendParenRight();
+
         return SUCCESS;
         }
     else
-        viewSql.AppendParenRight();
-
+        {
+        if (m_asSubQuery)
+            viewSql.AppendParenRight();
+        }
     return SUCCESS;
     }
 
@@ -214,8 +242,10 @@ BentleyStatus ViewGenerator::GetPropertyMapsOfDerivedClassCastAsBaseClass(std::v
 
     for (PropertyMap const* baseClassPropertyMap : baseClassMap.GetPropertyMaps())
         {
-        if ((skipSystemProperties && baseClassPropertyMap->IsSystemPropertyMap()) ||
-            !m_prepareContext->GetSelectionOptions().IsSelected(baseClassPropertyMap->GetPropertyAccessString()))
+        if ((skipSystemProperties && baseClassPropertyMap->IsSystemPropertyMap()))
+            continue;
+
+        if(m_prepareContext && !m_prepareContext->GetSelectionOptions().IsSelected(baseClassPropertyMap->GetPropertyAccessString()))
             continue;
 
         NavigationPropertyMap const* navPropMap = baseClassPropertyMap->GetAsNavigationPropertyMap();
@@ -248,7 +278,7 @@ BentleyStatus ViewGenerator::AppendViewPropMapsToQuery(NativeSqlBuilder& viewSql
         {
         PropertyMapCP basePropMap = propMapPair.first;
         PropertyMapCP actualPropMap = propMapPair.second;
-        if (!m_prepareContext->GetSelectionOptions().IsSelected(actualPropMap->GetPropertyAccessString()))
+        if (m_prepareContext && !m_prepareContext->GetSelectionOptions().IsSelected(actualPropMap->GetPropertyAccessString()))
             continue;
 
         auto aliasSqlSnippets = basePropMap->ToNativeSql(nullptr, ECSqlType::Select, false);
@@ -311,7 +341,8 @@ BentleyStatus ViewGenerator::GetViewQueryForChild(NativeSqlBuilder& viewSql, DbT
         firstChildClassMap->GetClass().GetId().ToString(classIdStr);
         viewSql.Append(classIdStr).AppendSpace().Append(ECDB_COL_ECClassId);
         }
-
+    if (m_viewAccessStringList)
+        m_viewAccessStringList->push_back(ECDB_COL_ECClassId);
 
     std::vector<std::pair<PropertyMapCP, PropertyMapCP>> viewPropMaps;
     auto status = GetPropertyMapsOfDerivedClassCastAsBaseClass(viewPropMaps, baseClassMap, *firstChildClassMap, false);
@@ -326,7 +357,7 @@ BentleyStatus ViewGenerator::GetViewQueryForChild(NativeSqlBuilder& viewSql, DbT
     for (auto const& propMapPair : viewPropMaps)
         {
         auto actualPropMap = propMapPair.second;
-        if (!m_prepareContext->GetSelectionOptions().IsSelected(actualPropMap->GetPropertyAccessString()))
+        if (m_prepareContext && !m_prepareContext->GetSelectionOptions().IsSelected(actualPropMap->GetPropertyAccessString()))
             continue;
 
         tableToJoinOn.insert(actualPropMap->GetTable());
@@ -353,10 +384,16 @@ BentleyStatus ViewGenerator::GetViewQueryForChild(NativeSqlBuilder& viewSql, DbT
     if (classIdColumn != nullptr)
         {
         auto tableP = &firstChildClassMap->GetPrimaryTable();
-        OptionsExp const* options = m_prepareContext->GetCurrentScope().GetOptions();
-        if (options == nullptr || !options->HasOption(OptionsExp::NOECCLASSIDFILTER_OPTION))
+        bool noClassIdFilterOption = false;
+        if (m_prepareContext)
             {
-            if (SUCCESS != baseClassMap.GetStorageDescription().GenerateECClassIdFilter(where, *tableP, *classIdColumn,m_isPolymorphic, tableP != &table, table.GetName().c_str()))
+            if (OptionsExp const* options = m_prepareContext->GetCurrentScope().GetOptions())
+                noClassIdFilterOption = options->HasOption(OptionsExp::NOECCLASSIDFILTER_OPTION);
+            }
+
+        if (!noClassIdFilterOption)
+            {
+            if (SUCCESS != baseClassMap.GetStorageDescription().GenerateECClassIdFilter(where, *tableP, *classIdColumn, m_isPolymorphic, tableP != &table, table.GetName().c_str()))
                 return ERROR;
             }
         }
@@ -590,8 +627,13 @@ BentleyStatus ViewGenerator::CreateViewForRelationship(NativeSqlBuilder& viewSql
                 DbColumn const* classIdColumn = nullptr;
                 if (table.TryGetECClassIdColumn(classIdColumn))
                     {
-                    OptionsExp const* options = m_prepareContext->GetCurrentScope().GetOptions();
-                    if (options == nullptr || !options->HasOption(OptionsExp::NOECCLASSIDFILTER_OPTION))
+                    bool noClassIdFilterOption = false;
+                    if (m_prepareContext)
+                        {
+                        if (OptionsExp const* options = m_prepareContext->GetCurrentScope().GetOptions())
+                            noClassIdFilterOption = options->HasOption(OptionsExp::NOECCLASSIDFILTER_OPTION);
+                        }
+                    if (!noClassIdFilterOption)
                         {
                         Utf8String whereClause;
                         if (SUCCESS != cm->GetStorageDescription().GenerateECClassIdFilter(whereClause, table,
@@ -643,8 +685,14 @@ BentleyStatus ViewGenerator::CreateViewForRelationship(NativeSqlBuilder& viewSql
             DbColumn const* classIdColumn = nullptr;
             if (table->TryGetECClassIdColumn(classIdColumn))
                 {
-                OptionsExp const* options = m_prepareContext->GetCurrentScope().GetOptions();
-                if (options == nullptr || !options->HasOption(OptionsExp::NOECCLASSIDFILTER_OPTION))
+                bool noClassIdFilterOption = false;
+                if (m_prepareContext)
+                    {
+                    if (OptionsExp const* options = m_prepareContext->GetCurrentScope().GetOptions())
+                        noClassIdFilterOption = options->HasOption(OptionsExp::NOECCLASSIDFILTER_OPTION);
+                    }
+
+                if (!noClassIdFilterOption)
                     {
                     Utf8String whereClause;
                     if (SUCCESS != firstClassMap.GetStorageDescription().GenerateECClassIdFilter(whereClause, *table,
@@ -666,8 +714,15 @@ BentleyStatus ViewGenerator::CreateViewForRelationship(NativeSqlBuilder& viewSql
                 return ERROR;
             }
         }
+    
+    if (m_asSubQuery)
+        viewSql.AppendParenLeft();
 
-    viewSql.AppendParenLeft().Append(unionQuery.ToString()).AppendParenRight();
+    viewSql.Append(unionQuery.ToString());
+
+    if (m_asSubQuery)
+        viewSql.AppendParenRight();
+
     return SUCCESS;
     }
 

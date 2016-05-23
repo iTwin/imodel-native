@@ -59,15 +59,18 @@ struct ViewGenerator
 
         //! Return prop maps of child base on parent map. So only prop maps that make up baseClass properties are selected.
         BentleyStatus GetPropertyMapsOfDerivedClassCastAsBaseClass(std::vector<std::pair<PropertyMapCP, PropertyMapCP>>& propMaps, ClassMap const& baseClassMap, ClassMap const& childClassMap, bool skipSystemProperties);
+        BentleyStatus CreateViewInternal(NativeSqlBuilder& viewSql, ClassMap const& classMap, bool isPolymorphicQuery, ECSqlPrepareContext const* prepareContext);
+
     private:
         ECDbMapCR m_map;
         bool m_optimizeByIncludingOnlyRealTables;
         ECSqlPrepareContext const* m_prepareContext;
         bool m_isPolymorphic;
         std::unique_ptr<std::vector<Utf8String>> m_viewAccessStringList;
+        bool m_asSubQuery;
     public:
-        ViewGenerator(ECDbMapCR map, bool returnViewAccessStringList = false):
-            m_map(map), m_optimizeByIncludingOnlyRealTables(true), m_prepareContext(nullptr)
+        ViewGenerator(ECDbMapCR map, bool returnViewAccessStringList = false, bool asSubQuery = true):
+            m_map(map), m_optimizeByIncludingOnlyRealTables(true), m_prepareContext(nullptr), m_asSubQuery(asSubQuery)
             {
             if (returnViewAccessStringList)
                 m_viewAccessStringList = decltype(m_viewAccessStringList)(new std::vector<Utf8String>());
@@ -75,13 +78,13 @@ struct ViewGenerator
         ~ViewGenerator(){}
         //! Create a SQLite polymorphic SELECT query for a given classMap
         //! @param viewSql [out] Output SQL for view
-        //! @param map [in] ECDbMap instance
         //! @param classMap [in] Source classMap for which to generate view
         //! @param isPolymorphicQuery [in] if true return a polymorphic view of ECClass else return a non-polymorphic view. Intend to be use by ECSQL "ONLY <ecClass>"
-        //! @param optimizeByIncludingOnlyRealTables [in] Enabling would produce small length views but it does take a little long to generate
-        //! @return The number of relevant relationships found
+        //! @param prepareContext [in] prepareContext from ECSQL
         //! @remarks Only work work normal ECClasses but not relationship. It also support query over ecdb.Instances
         BentleyStatus CreateView(NativeSqlBuilder& viewSql, ClassMap const& classMap, bool isPolymorphicQuery, ECSqlPrepareContext const& prepareContext);
+        BentleyStatus CreateView(NativeSqlBuilder& viewSql, ClassMap const& classMap, bool isPolymorphicQuery);
+        BentleyStatus CreateView(NativeSqlBuilder& viewSql, ClassMap const& classMap);
         std::vector<Utf8String> const* GetLastViewAccessStringList() const { return m_viewAccessStringList.get(); }
     };
 

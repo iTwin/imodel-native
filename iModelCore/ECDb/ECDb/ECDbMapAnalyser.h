@@ -314,45 +314,5 @@ struct ECDbMapAnalyser
         BentleyStatus Analyse(bool applyChanges);
     };
 
-//=======================================================================================
-// @bsiclass                                               Affan.Khan          09/2015
-//+===============+===============+===============+===============+===============+======
-struct ECClassViewGenerator : NonCopyableClass
-    {
-    private:
-        ECDbMapCR m_map;
 
-    private:
-        BentleyStatus BuildRelationshipJoinIfAny(NativeSqlBuilder& sqlBuilder, RelationshipClassMapCR classMap, ECN::ECRelationshipEnd endPoint) const;
-        BentleyStatus BuildEndTableRelationshipView(NativeSqlBuilder::List& viewSql, RelationshipClassMapCR classMap) const;
-        BentleyStatus BuildClassView(SqlViewBuilder& viewBuilder, ClassMap const& classMap) const;
-
-        static BentleyStatus BuildSelectionClause(NativeSqlBuilder& viewSql, ClassMapCR baseClassMap, ClassMapCR classMap, Utf8CP tablePrefix, bool nullValue);
-        static BentleyStatus BuildSystemSelectionClause(NativeSqlBuilder::List& fragments, ClassMapCR baseClassMap, ClassMapCR classMap, bool nullValue);
-
-        static BentleyStatus BuildPrimitivePropertyExpression(NativeSqlBuilder& viewSql, PropertyMap const&, Utf8CP tablePrefix, bool nullValue);
-        static BentleyStatus BuildPointPropertyExpression(NativeSqlBuilder& viewSql, PointPropertyMap const& propertyMap, Utf8CP tablePrefix, bool nullValue);
-        static BentleyStatus BuildStructPropertyExpression(NativeSqlBuilder& viewSql, StructPropertyMap const& propertyMap, Utf8CP tablePrefix, bool nullValue);
-        static BentleyStatus BuildPropertyExpression(NativeSqlBuilder& viewSql, PropertyMapCR propertyMap, Utf8CP tablePrefix, bool nullValue);
-
-        static BentleyStatus BuildECClassIdConstraintExpression(NativeSqlBuilder::List& fragments, RelationshipClassMapCR classMap, ECN::ECRelationshipEnd endPoint, Utf8CP tablePrefix, bool nullValue);
-        static BentleyStatus BuildECInstanceIdConstraintExpression(NativeSqlBuilder::List& fragments, RelationshipClassMapCR classMap, ECN::ECRelationshipEnd endPoint, Utf8CP tablePrefix, bool nullValue);
-
-        static BentleyStatus BuildColumnExpression(NativeSqlBuilder::List& colExpList, bool isNullValue, Utf8CP tablePrefix, Utf8CP columnName, Utf8CP castTargetType, Utf8CP columnAlias);
-
-        void DropExistingViews() const;
-
-        static Utf8String BuildViewClassName(ECN::ECClassCR ecClass);
-        static Utf8String BuildSchemaQualifiedClassName(ECN::ECClassCR ecClass);
-        static Utf8CP GetECClassIdPrimaryTableAlias(ECN::ECRelationshipEnd endPoint) { return endPoint == ECN::ECRelationshipEnd::ECRelationshipEnd_Source ? "SourceECClassPrimaryTable" : "TargetECClassPrimaryTable"; }
-
-        static Utf8CP DetermineCastTargetType(DbColumn const&, ECN::ECPropertyCR);
-        static Utf8CP DetermineCastTargetType(DbColumn const&, DbColumn::Type targetType);
-
-        static void CollectDerivedEndTableRelationships(std::set<RelationshipClassEndTableMap const*>& childMaps, RelationshipClassMapCR classMap);
-
-    public:
-        explicit ECClassViewGenerator(ECDbMapCR map) : m_map(map) {}
-        BentleyStatus BuildViews(std::vector<ClassMap const*> const& classMaps) const;
-    };
 END_BENTLEY_SQLITE_EC_NAMESPACE
