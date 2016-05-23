@@ -20,6 +20,8 @@ ConfigurationManager_Test.*                             # UmarH -- Tests are por
 
 ComponentModelBasicTest.MakeVariationInstance           # UmarH Failing Only on 0601Dev Firebug ( not locally), need to investigate
 
+DgnProjectPackageTest.VerifyViewsForDgndbFilesConvertedDuringBuild   #Affan #TFS353039
+
 # WIP fixing after 0601 branch created
 ViewAttachmentTest.Geom                                 # NonVisibleViewport
 VolumeElementTestFixture.QueryTest                      # FenceParams::AcceptElement
