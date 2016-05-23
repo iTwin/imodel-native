@@ -43,7 +43,7 @@ BentleyStatus ViewGenerator::CreateViewInternal(NativeSqlBuilder& viewSql, Class
     {
     m_isPolymorphic = isPolymorphicQuery;
     m_prepareContext = prepareContext;
-
+    m_captureViewAccessStringList = true;
     if (classMap.GetMapStrategy().IsNotMapped())
         {
         BeAssert(false && "ViewGenerator::CreateView must not be called on unmapped class");
@@ -307,7 +307,7 @@ BentleyStatus ViewGenerator::AppendViewPropMapsToQuery(NativeSqlBuilder& viewSql
                 viewSql.AppendSpace().Append(aliasSqlSnippet);
             }
 
-        if (m_viewAccessStringList)
+        if (m_viewAccessStringList && m_captureViewAccessStringList)
             {
             if (actualPropMap->GetPropertyPathList(*m_viewAccessStringList) != SUCCESS)
                 return ERROR;
@@ -341,7 +341,7 @@ BentleyStatus ViewGenerator::GetViewQueryForChild(NativeSqlBuilder& viewSql, DbT
         firstChildClassMap->GetClass().GetId().ToString(classIdStr);
         viewSql.Append(classIdStr).AppendSpace().Append(ECDB_COL_ECClassId);
         }
-    if (m_viewAccessStringList)
+    if (m_viewAccessStringList && m_captureViewAccessStringList)
         m_viewAccessStringList->push_back(ECDB_COL_ECClassId);
 
     std::vector<std::pair<PropertyMapCP, PropertyMapCP>> viewPropMaps;
@@ -401,6 +401,8 @@ BentleyStatus ViewGenerator::GetViewQueryForChild(NativeSqlBuilder& viewSql, DbT
     if (!where.empty())
         viewSql.Append(" WHERE ").Append(where.c_str());
 
+    if (m_viewAccessStringList)
+        m_captureViewAccessStringList = false; //stop viewAccessString capture;
     return SUCCESS;
     }
 
@@ -742,14 +744,14 @@ BentleyStatus ViewGenerator::AppendSystemPropMaps(NativeSqlBuilder& viewSql, Rel
 
     BeAssert(relationMap.GetECInstanceIdPropertyMap()->GetSingleColumn(contextTable, true) != nullptr);
     viewSql.Append(relationMap.GetECInstanceIdPropertyMap()->ToNativeSql(nullptr, ECSqlType::Select, false, &contextTable)).AppendComma();
-    if (m_viewAccessStringList)
+    if (m_viewAccessStringList && m_captureViewAccessStringList)
         ecId->GetPropertyPathList(*m_viewAccessStringList);
 
     //ECClassId-----------------------------------
     Utf8Char relClassIdStr[ECClassId::ID_STRINGBUFFER_LENGTH];
     relationMap.GetClass().GetId().ToString(relClassIdStr);
     viewSql.Append(relClassIdStr).AppendSpace().Append(ECDB_COL_ECClassId).AppendComma();
-    if (m_viewAccessStringList)
+    if (m_viewAccessStringList && m_captureViewAccessStringList)
         m_viewAccessStringList->push_back(ECDB_COL_ECClassId);
 
     //SourceECInstanceId-----------------------------------
@@ -759,7 +761,7 @@ BentleyStatus ViewGenerator::AppendSystemPropMaps(NativeSqlBuilder& viewSql, Rel
         viewSql.AppendEscaped(contextTable.GetName().c_str()).AppendDot();
 
     idPropMap->AppendSelectClauseSqlSnippetForView(viewSql, contextTable);
-    if (m_viewAccessStringList)
+    if (m_viewAccessStringList && m_captureViewAccessStringList)
         idPropMap->GetPropertyPathList(*m_viewAccessStringList);
 
     viewSql.AppendComma();
@@ -775,7 +777,7 @@ BentleyStatus ViewGenerator::AppendSystemPropMaps(NativeSqlBuilder& viewSql, Rel
         }
 
     AppendConstraintClassIdPropMap(viewSql, *classIdPropMap, relationMap, relationMap.GetRelationshipClass().GetSource(), contextTable);
-    if (m_viewAccessStringList)
+    if (m_viewAccessStringList && m_captureViewAccessStringList)
         classIdPropMap->GetPropertyPathList(*m_viewAccessStringList);
     viewSql.AppendComma();
 
@@ -787,7 +789,7 @@ BentleyStatus ViewGenerator::AppendSystemPropMaps(NativeSqlBuilder& viewSql, Rel
         viewSql.AppendEscaped(contextTable.GetName().c_str()).AppendDot();
 
     idPropMap->AppendSelectClauseSqlSnippetForView(viewSql, contextTable);
-    if (m_viewAccessStringList)
+    if (m_viewAccessStringList && m_captureViewAccessStringList)
         idPropMap->GetPropertyPathList(*m_viewAccessStringList);
     viewSql.AppendComma();
 
@@ -802,7 +804,7 @@ BentleyStatus ViewGenerator::AppendSystemPropMaps(NativeSqlBuilder& viewSql, Rel
         }
 
     AppendConstraintClassIdPropMap(viewSql, *classIdPropMap, relationMap, relationMap.GetRelationshipClass().GetTarget(), contextTable);
-    if (m_viewAccessStringList)
+    if (m_viewAccessStringList && m_captureViewAccessStringList)
         classIdPropMap->GetPropertyPathList(*m_viewAccessStringList);
 
     return SUCCESS;
@@ -819,13 +821,13 @@ BentleyStatus ViewGenerator::AppendSystemPropMapsToNullView(NativeSqlBuilder& vi
     if (sqlSnippets.size() != 1)
         return ERROR;
 
-    if (m_viewAccessStringList)
+    if (m_viewAccessStringList && m_captureViewAccessStringList)
         relationMap.GetECInstanceIdPropertyMap()->GetPropertyPathList(*m_viewAccessStringList);
 
     viewSql.Append("SELECT NULL ").Append(sqlSnippets).AppendComma();
     viewSql.Append("NULL ").Append(ECDB_COL_ECClassId).AppendComma();
 
-    if (m_viewAccessStringList)
+    if (m_viewAccessStringList && m_captureViewAccessStringList)
         m_viewAccessStringList->push_back(ECDB_COL_ECClassId);
 
     //Source constraint
@@ -834,7 +836,7 @@ BentleyStatus ViewGenerator::AppendSystemPropMapsToNullView(NativeSqlBuilder& vi
         return ERROR;
 
     viewSql.Append("NULL ").Append(sqlSnippets).AppendComma();
-    if (m_viewAccessStringList)
+    if (m_viewAccessStringList && m_captureViewAccessStringList)
         relationMap.GetSourceECInstanceIdPropMap()->GetPropertyPathList(*m_viewAccessStringList);
 
     sqlSnippets = relationMap.GetSourceECClassIdPropMap()->ToNativeSql(nullptr, ECSqlType::Select, false);
@@ -842,7 +844,7 @@ BentleyStatus ViewGenerator::AppendSystemPropMapsToNullView(NativeSqlBuilder& vi
         return ERROR;
 
     viewSql.Append("NULL ").Append(sqlSnippets).AppendComma();
-    if (m_viewAccessStringList)
+    if (m_viewAccessStringList && m_captureViewAccessStringList)
         relationMap.GetSourceECClassIdPropMap()->GetPropertyPathList(*m_viewAccessStringList);
 
     //Target constraint
@@ -851,7 +853,7 @@ BentleyStatus ViewGenerator::AppendSystemPropMapsToNullView(NativeSqlBuilder& vi
         return ERROR;
 
     viewSql.Append("NULL ").Append(sqlSnippets).AppendComma();
-    if (m_viewAccessStringList)
+    if (m_viewAccessStringList && m_captureViewAccessStringList)
         relationMap.GetTargetECInstanceIdPropMap()->GetPropertyPathList(*m_viewAccessStringList);
 
     sqlSnippets = relationMap.GetTargetECClassIdPropMap()->ToNativeSql(nullptr, ECSqlType::Select, false);
@@ -859,7 +861,7 @@ BentleyStatus ViewGenerator::AppendSystemPropMapsToNullView(NativeSqlBuilder& vi
         return ERROR;
 
     viewSql.Append("NULL ").Append(sqlSnippets);
-    if (m_viewAccessStringList)
+    if (m_viewAccessStringList && m_captureViewAccessStringList)
         relationMap.GetTargetECClassIdPropMap()->GetPropertyPathList(*m_viewAccessStringList);
 
     if (endWithComma)

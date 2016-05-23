@@ -599,7 +599,7 @@ BentleyStatus ClassMap::_Save(std::set<ClassMap const*>& savedGraph)
 BentleyStatus ClassMap::DropViewIfExists() const
     {
     Utf8String sql;
-    sql.Sprintf("DROP VIEW IF EXISTS [%s.%s];", GetClass().GetSchema().GetName().c_str(), GetClass().GetName().c_str());
+    sql.Sprintf("DROP VIEW IF EXISTS [%s.%s];", GetClass().GetSchema().GetNamespacePrefix().c_str(), GetClass().GetName().c_str());
 
     if (GetECDbMap().GetECDb().ExecuteSql(sql.c_str()) != BE_SQLITE_OK)
         return ERROR;
@@ -632,7 +632,7 @@ BentleyStatus  ClassMap::CreateOrReplaceView() const
         }
 
     Utf8String sql;
-    sql.Sprintf("CREATE VIEW [%s.%s] (%s) AS %s;", GetClass().GetSchema().GetName().c_str(), GetClass().GetName().c_str(), columns.c_str(), viewSql.ToString());
+    sql.Sprintf("CREATE VIEW [%s.%s] (%s)\n\t--### ECCLASS VIEW is for only debugging purpose.\n\tAS %s;", GetClass().GetSchema().GetNamespacePrefix().c_str(), GetClass().GetName().c_str(), columns.c_str(), viewSql.ToString());
     if (GetECDbMap().GetECDb().ExecuteSql(sql.c_str()) != BE_SQLITE_OK)
         return ERROR;
 

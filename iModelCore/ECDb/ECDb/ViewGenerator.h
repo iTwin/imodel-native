@@ -68,9 +68,10 @@ struct ViewGenerator
         bool m_isPolymorphic;
         std::unique_ptr<std::vector<Utf8String>> m_viewAccessStringList;
         bool m_asSubQuery;
+        bool m_captureViewAccessStringList;
     public:
         ViewGenerator(ECDbMapCR map, bool returnViewAccessStringList = false, bool asSubQuery = true):
-            m_map(map), m_optimizeByIncludingOnlyRealTables(true), m_prepareContext(nullptr), m_asSubQuery(asSubQuery)
+            m_map(map), m_optimizeByIncludingOnlyRealTables(true), m_prepareContext(nullptr), m_asSubQuery(asSubQuery), m_captureViewAccessStringList(true)
             {
             if (returnViewAccessStringList)
                 m_viewAccessStringList = decltype(m_viewAccessStringList)(new std::vector<Utf8String>());

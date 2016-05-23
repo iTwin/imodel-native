@@ -827,6 +827,7 @@ TEST_F(ECDbSchemaManagerTests, CreateECClassViews)
     ASSERT_TRUE(ecdb.IsDbOpen());
 
     ASSERT_EQ(SUCCESS, ecdb.Schemas().CreateECClassViewsInDb());
+    ecdb.SaveChanges();
     std::map<Utf8String, std::set<Utf8String>> schemasWithECClassViews = GetECViewNamesByPrefix(ecdb);
     ASSERT_EQ(2, schemasWithECClassViews.size()) << "Unexpected number of schemas with ECClassViews";
     ASSERT_EQ(4, schemasWithECClassViews["ecdbf"].size()) << "Unexpected number of ECClassViews";
@@ -839,6 +840,7 @@ TEST_F(ECDbSchemaManagerTests, CreateECClassViews)
 
     ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(*schemacache)) << "couldn't import the schema";
     ASSERT_EQ(SUCCESS, ecdb.Schemas().CreateECClassViewsInDb());
+    ecdb.SaveChanges();
     schemasWithECClassViews = GetECViewNamesByPrefix(ecdb);
     ASSERT_EQ(3, schemasWithECClassViews.size()) << "Unexpected number of schemas with ECClassViews";
     ASSERT_EQ(4, schemasWithECClassViews["ecdbf"].size()) << "Unexpected number of ECClassViews";
