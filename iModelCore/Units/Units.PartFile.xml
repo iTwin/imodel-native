@@ -102,8 +102,42 @@
             <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/UnitsTest/Assets" />
         </Bindings>
     </Part>
-    
-    <Product Name="Units-Tests">
+
+  <Part Name="AndroidJUnit" BentleyBuildMakeFile="${SrcRoot}BeGTest/Android/MakeJUnitTestProject.mke" BentleyBuildMakeOptions="-dTEST_COLLECTION_PRODUCT=Units-Tests -dUSE_STATIC_LIBRARIES=1 -dTEST_ANDROID_MIN_SDK_VERSION=19" OnlyPlatforms="Android*">
+    <SubProduct ProductName="Units-Tests"/>
+    <SubPart PartName="AndroidJUnitTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+    <Bindings>
+      <Directory ProductDirectoryName="AndroidJUnit-Project" SourceName="Delivery/ANJUP" />
+    </Bindings>
+  </Part>
+
+  <Product Name="Units-AndroidJUnit" >
+    <SubPart PartName="AndroidJUnit" LibType="Static"/>
+    <Directories DirectoryListName="AndroidJUnitProduct" Repository="BeGTest" PartFile="BeGTest"/>
+  </Product>
+
+  <Part Name="RunAndroidJUnitTest" BentleyBuildMakeFile="${SrcRoot}BeGTest/Android/RunAndroidJUnitTest.mke" BentleyBuildMakeOptions="-dANDROIDJUNIT_PRODUCT=Units-AndroidJUnit" OnlyPlatforms="Android*">
+    <SubProduct ProductName="Units-AndroidJUnit"/>
+  </Part>
+
+  <Part Name="iOSXCTest" BentleyBuildMakeFile="${SrcRoot}BeGTest/iOS/MakeXCTestProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=Units -dTEST_COLLECTION_PRODUCT=Units-Tests -dUSE_STATIC_LIBRARIES=1" OnlyPlatforms="iOS*">
+    <SubProduct ProductName="Units-Tests"/>
+    <SubPart PartName="iOSXCTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+    <Bindings>
+      <Directory ProductDirectoryName="iOSXCTestProject" SourceName="Delivery/iOSXCTest/Units/Project" />
+    </Bindings>
+  </Part>
+
+  <Product Name="Units-iOSXCTest" >
+    <SubPart PartName="iOSXCTest" LibType="Static"/>
+    <Directories DirectoryListName="iOSXCTestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+  </Product>
+
+  <Part Name="RuniOSXCTest" BentleyBuildMakeFile="${SrcRoot}BeGTest/iOS/RunXCTestProject.mke" BentleyBuildMakeOptions="-dXCTEST_PRODUCT=Units-iOSXCTest" OnlyPlatforms="iOS*">
+    <SubProduct ProductName="Units-iOSXCTest"/>
+  </Part>
+  
+  <Product Name="Units-Tests">
         <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
         <SubPart PartName="Tests"/>
         <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
