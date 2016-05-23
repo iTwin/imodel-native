@@ -95,7 +95,25 @@ private:
     virtual BentleyStatus _FindOrCreateColumnsInTable(ClassMap const&) { return SUCCESS; }
     virtual BentleyStatus _Save(ClassDbMapping&) const;
     virtual BentleyStatus _Load(ClassDbMapping const&) { return SUCCESS; }
+    virtual BentleyStatus _GetPropertyPathList(std::vector<Utf8String>& propertyPathList) const
+        { 
+        if (GetChildren().IsEmpty())
+            {
+            if (GetSingleColumn() == nullptr)
+                return ERROR;
 
+            propertyPathList.push_back(GetPropertyAccessString());
+            }
+        else
+            {
+            for (PropertyMapCP child : GetChildren())
+                {
+                if (child->GetPropertyPathList(propertyPathList) != SUCCESS)
+                    return ERROR;
+                }
+            }
+        return SUCCESS; 
+        }
     virtual StructArrayJsonPropertyMap const* _GetAsStructArrayPropertyMap() const { return nullptr; }
     virtual NavigationPropertyMap const* _GetAsNavigationPropertyMap() const { return nullptr; }
     virtual ECClassIdRelationshipConstraintPropertyMap const* _GetAsECClassIdRelationshipConstraintPropertyMapRelationship() const { return nullptr; }
@@ -121,7 +139,7 @@ public:
     ECN::ECPropertyCR GetProperty() const { return m_ecProperty; }
     Utf8CP GetPropertyAccessString() const { return m_propertyAccessString.c_str(); }
     PropertyMapCollection const& GetChildren() const { return m_children; }
-
+    virtual BentleyStatus GetPropertyPathList(std::vector<Utf8String>& propertyPathList) const { return _GetPropertyPathList(propertyPathList); }
     //! Gets a value indicating whether this property map is a virtual mapping, i.e. maps
     //! to a virtual DbColumn. A virtual DbColumn does not exist in a real table, but might
     //! be used as column aliases in views.
@@ -185,6 +203,7 @@ private:
     virtual BentleyStatus _Load(ClassDbMapping const& classMapInfo) override;
     virtual void _GetColumns(std::vector<DbColumn const*>& columns) const override;
     void SetColumn(DbColumn const&);
+    virtual BentleyStatus _GetPropertyPathList(std::vector<Utf8String>& propertyPathList)const override  { propertyPathList.push_back(GetPropertyAccessString());  return SUCCESS; }
 
 protected:
     SingleColumnPropertyMap (ECN::ECPropertyCR ecProperty, Utf8CP propertyAccessString, PropertyMapCP parentPropertyMap)
@@ -243,6 +262,15 @@ private:
     virtual BentleyStatus _Save(ClassDbMapping&) const override;
     virtual BentleyStatus _Load(ClassDbMapping const&) override;
     virtual Utf8String _ToString() const override;
+    virtual BentleyStatus _GetPropertyPathList(std::vector<Utf8String>& propertyPathList)const override
+        {
+        propertyPathList.push_back(GetPropertyAccessString() + Utf8String(".X"));
+        propertyPathList.push_back(GetPropertyAccessString() + Utf8String(".Y"));
+        if (m_is3d)
+            propertyPathList.push_back(GetPropertyAccessString() + Utf8String(".X"));
+
+        return SUCCESS;
+        }
 
     BentleyStatus SetColumns(DbColumn const&, DbColumn const&, DbColumn const*);
 

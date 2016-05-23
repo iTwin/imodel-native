@@ -236,6 +236,10 @@ struct ClassMap : RefCountedBase
         static BentleyStatus DetermineTableName(Utf8StringR tableName, ECN::ECClassCR, Utf8CP tablePrefix = nullptr);
         static bool IsAnyClass(ECN::ECClassCR ecclass) { return ecclass.GetSchema().IsStandardSchema() && ecclass.GetName().Equals("AnyClass"); }
         void WriteDebugInfo(DebugWriter& writer) const { _WriteDebugInfo(writer); }
+
+        BentleyStatus DropViewIfExists() const;
+        BentleyStatus CreateOrReplaceView() const;
+
     };
 
 

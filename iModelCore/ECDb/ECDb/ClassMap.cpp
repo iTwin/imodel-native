@@ -593,7 +593,51 @@ BentleyStatus ClassMap::_Save(std::set<ClassMap const*>& savedGraph)
         m_isDirty = false;
         return SUCCESS;
     }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    affan.khan      01/2015
+//---------------------------------------------------------------------------------------
+BentleyStatus ClassMap::DropViewIfExists() const
+    {
+    Utf8String sql;
+    sql.Sprintf("DROP VIEW IF EXISTS [%s.%s];", GetClass().GetSchema().GetNamespacePrefix().c_str(), GetClass().GetName().c_str());
 
+    if (GetECDbMap().GetECDb().ExecuteSql(sql.c_str()) != BE_SQLITE_OK)
+        return ERROR;
+
+    return SUCCESS;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    affan.khan      01/2015
+//---------------------------------------------------------------------------------------
+BentleyStatus  ClassMap::CreateOrReplaceView() const
+    {
+    if (DropViewIfExists() != SUCCESS)
+        return ERROR;
+
+    ViewGenerator viewGenerator(GetECDbMap(), true, false);
+    NativeSqlBuilder viewSql;
+    if (viewGenerator.CreateView(viewSql, *this) != SUCCESS)
+        return ERROR;
+
+    Utf8String columns;
+    bool bFirst = true;;
+    for (Utf8StringCR column : *viewGenerator.GetLastViewAccessStringList())
+        {
+        if (bFirst)
+            bFirst = false;
+        else
+            columns.append(", ");
+
+        columns.append("[").append(column).append("]");
+        }
+
+    Utf8String sql;
+    sql.Sprintf("CREATE VIEW [%s.%s] (%s)\n\t--### ECCLASS VIEW is for debugging purpose only!.\n\tAS %s;", GetClass().GetSchema().GetNamespacePrefix().c_str(), GetClass().GetName().c_str(), columns.c_str(), viewSql.ToString());
+    if (GetECDbMap().GetECDb().ExecuteSql(sql.c_str()) != BE_SQLITE_OK)
+        return ERROR;
+
+    return SUCCESS;
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    affan.khan      01/2015
 //---------------------------------------------------------------------------------------
@@ -883,7 +927,8 @@ bool ClassMap::HasPersistedView() const
 //---------------------------------------------------------------------------------------
 BentleyStatus ClassMap::GenerateSelectView(NativeSqlBuilder& viewSql, bool isPolymorphic, ECSqlPrepareContext const& prepareContext) const
     {
-    return ViewGenerator::CreateView(viewSql, GetECDbMap(), *this, isPolymorphic, prepareContext, true /*optimizeByIncludingOnlyRealTables*/);
+    ViewGenerator viewGenerator(GetECDbMap());
+    return viewGenerator.CreateView(viewSql, *this, isPolymorphic, prepareContext);
     }
 
 //=========================================================================================

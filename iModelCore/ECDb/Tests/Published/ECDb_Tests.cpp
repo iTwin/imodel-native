@@ -10,7 +10,40 @@
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
+TEST(BeSQLite, TestCachedStatement)
+    {
+    BeFileName temporaryDir;
+    BeTest::GetHost().GetOutputRoot(temporaryDir);
+    BeSQLite::BeSQLiteLib::Initialize(temporaryDir);
+    Db db;
+    ASSERT_EQ(db.CreateNewDb(BEDB_MemoryDb), BE_SQLITE_OK);
+    ASSERT_EQ(db.ExecuteSql("CREATE TABLE Foo(Id INTEGER PRIMARY KEY, Str TEXT NOT NULL)"), BE_SQLITE_OK);
+    ASSERT_EQ(db.ExecuteSql("INSERT INTO Foo(Id, Str) VALUES(1,'Test1')"), BE_SQLITE_OK);
+    ASSERT_EQ(db.ExecuteSql("INSERT INTO Foo(Id, Str) VALUES(2,'Test2')"), BE_SQLITE_OK);
+    ASSERT_EQ(db.ExecuteSql("INSERT INTO Foo(Id, Str) VALUES(3,'Test3')"), BE_SQLITE_OK);
 
+    bvector<CachedStatementPtr> recursionStack(100);
+    for (CachedStatementPtr& ptr : recursionStack)
+        {
+        ptr = db.GetCachedStatement("SELECT Id, Str FROM Foo ORDER BY Id");
+        ASSERT_EQ(ptr->Step(), BE_SQLITE_ROW);
+        ASSERT_EQ(ptr->GetValueInt64(0), 1);
+        ASSERT_STREQ(ptr->GetValueText(1), "Test1");
+        }
+
+    for (CachedStatementPtr& ptr : recursionStack)
+        {
+        ASSERT_EQ(ptr->GetValueInt64(0), 1);
+        ASSERT_STREQ(ptr->GetValueText(1), "Test1");
+        ASSERT_EQ(ptr->Step(), BE_SQLITE_ROW);
+        ASSERT_EQ(ptr->GetValueInt64(0), 2);
+        ASSERT_STREQ(ptr->GetValueText(1), "Test2");
+        ASSERT_EQ(ptr->Step(), BE_SQLITE_ROW);
+        ASSERT_EQ(ptr->GetValueInt64(0), 3);
+        ASSERT_STREQ(ptr->GetValueText(1), "Test3");
+        ASSERT_EQ(ptr->Step(), BE_SQLITE_DONE);
+        }
+    }
 //=======================================================================================
 // @bsiclass                                     Krischan.Eberle                  01/15
 //=======================================================================================
