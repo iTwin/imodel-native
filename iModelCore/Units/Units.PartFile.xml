@@ -76,15 +76,13 @@
 
 
     <Product Name="UnitsTested" PrgOutputDir="Units" SaveProduct="true" AddIn="true">
-        <SubPart PartName="UnitsDLL" />
-        <SubProduct ProductName="Units-Tests" />
         <SubPart PartName="RunGtest" />
         <SubPart PartName="RunAndroidJUnitTest" />
         <SubPart PartName="RuniOSXCTest" />
         <Directories DirectoryListName="UnitsTested"/>
     </Product>
     
-  <Product Name="Units-Tests">
+    <Product Name="Units-Tests">
         <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
         <SubPart PartName="Tests"/>
         <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
@@ -98,7 +96,7 @@
     </Part>
 
     <Part Name="TestDependencies" BentleyBuildMakeFile="Test/Prewire.mke">
-        <SubPart PartName="UnitsDLL" />
+        <SubPart PartName="UnitsNative" />
         <SubPart PartName="UnitsConversionData" />
         <Bindings>
             <Files ProductDirectoryName="UnitTests-IgnoreList"     ProductSubDirectory="Units" SubPartDirectory="UnitTests/Units">Delivery/UnitTests/ignore_list.txt</Files>
