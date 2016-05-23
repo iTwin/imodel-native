@@ -6,7 +6,8 @@
 CachingDataSourceTests.OpenOrCreate_CalledSecondTimeAfterCacheWasCreated_OpensAndSucceeds
 
 # Fails on WinX86. (onProgressCalled actual 0; expected 1). Low priority
-CachingDataSourceTests.GetFile_ClassDoesNotHaveFileDependentPropertiesCA_ProgressIsCalledWithNoNameAndNoSizeAndFileHasDefaultName
+# Commenting out to see if GTEST/GMOCK update fixed this issue
+# CachingDataSourceTests.GetFile_ClassDoesNotHaveFileDependentPropertiesCA_ProgressIsCalledWithNoNameAndNoSizeAndFileHasDefaultName
 
 # Pending fix on UniqueTaskHolder. Low priority
 ConnectSignInManagerTests.GetAuthenticationHandler_TwoRequestsSentInParaleleUsingDifferentAuthHandlersWithSameServer_OnlyOneTokenRequestSent
@@ -42,7 +43,5 @@ DataSourceCacheTests.UpdateSchemas_SchemasWithDeletedPropertyPassedToDataSourceC
 # New issues
 #----------------------------------------------------------------------------------------
 
-# Randomly crashes on x64. High priority
-CachingDataSourceTests.SyncCachedData_InitialQueriesSuppliedAndServerErrorReturnedForFirstOne_ContinuesWithOtherQuerysAndReturnsFailedObject
 ClientInfoTests.Create_PassedMandatoryValues_SetsValues # fails on Android - notified Vincas
 
