@@ -15,46 +15,42 @@
 #include <memory>
 
 USING_NAMESPACE_BENTLEY_DGN
+USING_NAMESPACE_BENTLEY_SQLITE
 USING_DGNDB_UNIT_TESTS_NAMESPACE
+USING_NAMESPACE_BENTLEY_REALITYDATA
+
+/*---------------------------------------------------------------------------------**//**
+* @bsiclass                                     Grigas.Petraitis                07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+struct TestWork : RefCounted<Work>
+{
+typedef std::function<void()> Handler;
+private:
+    Handler m_handler;
+    TestWork(Handler const& handler) : m_handler(handler) {}
+protected:
+    virtual void _DoWork() override {m_handler();}
+public:
+    static RefCountedPtr<TestWork> Create(Handler const& handler) {return new TestWork(handler);}
+};
 
 //=======================================================================================
 // @bsiclass                                        Grigas.Petraitis            03/2015
 //=======================================================================================
-struct TestStorage : IRealityDataStorage<TestStorage>
+struct TestStorage : Storage
     {
-    struct SelectOptions : IRealityDataStorage::SelectOptions {};
-    struct PersistHandler : IRealityDataStoragePersistHandler
-        {
-        TestStorage& m_storage;
-        Data const& m_data;
-        std::function<RealityDataStorageResult()> m_persistHandler;
+    std::function<StorageResult(Payload&, Options, CacheR)> m_selectHandler;
+    void SetSelectHandler(std::function<StorageResult(Payload&, Options, CacheR)> const& handler) {m_selectHandler = handler;}
 
-        PersistHandler(TestStorage& storage, Data const& data) : m_storage(storage), m_data(data) {m_storage.NotifyPersistHandlerCreated(*this);}
-        void SetPersistHandler(std::function<RealityDataStorageResult()> const& handler) {m_persistHandler = handler;}
-        virtual RealityDataStorageResult _Persist() const override {return (nullptr != m_persistHandler ? m_persistHandler() : RealityDataStorageResult::Success);}
-        virtual IRealityDataBase const* _GetData() const override {return &m_data;}
-        static RefCountedPtr<PersistHandler> Create(TestStorage& storage, Data const& data) {return new PersistHandler(storage, data);}
-        };
+    virtual BentleyStatus _PrepareDatabase(BeSQLite::Db& db) const override {return SUCCESS;}
+    virtual BentleyStatus _CleanupDatabase(BeSQLite::Db& db) const override {return SUCCESS;}
 
-    std::function<RealityDataStorageResult(Data&, Utf8CP, SelectOptions const&, IRealityDataStorageResponseReceiver&)> m_selectHandler;
-    void SetSelectHandler(std::function<RealityDataStorageResult(Data&, Utf8CP, SelectOptions const&, IRealityDataStorageResponseReceiver&)> const& handler) {m_selectHandler = handler;}
-
-    std::function<void(PersistHandler&)> m_onPersistHandlerCreated;
-    void OnPersistHandlerCreated(std::function<void(PersistHandler&)> handler) {m_onPersistHandlerCreated = handler;}
-    void NotifyPersistHandlerCreated(PersistHandler& handler)
-        {
-        if (nullptr != m_onPersistHandlerCreated)
-            m_onPersistHandlerCreated(handler);
-        }
-
-    TestStorage() : m_selectHandler(nullptr), m_onPersistHandlerCreated(nullptr) {}
-    virtual Utf8String _GetStorageId() const override {return StorageId();}
-    static Utf8String StorageId() {return "TestStorage";}
+    TestStorage() : Storage(1), m_selectHandler(nullptr){}
     static RefCountedPtr<TestStorage> Create() {return new TestStorage();}
-    RealityDataStorageResult Select(Data& data, Utf8CP id, SelectOptions const& options, IRealityDataStorageResponseReceiver& receiver) 
+    StorageResult _Select(Payload& data, Options options, CacheR receiver) override
         {
-        RealityDataStorageResult result = (nullptr != m_selectHandler ? m_selectHandler(data, id, options, receiver) : RealityDataStorageResult::Success);
-        receiver._OnResponseReceived(*RealityDataStorageResponse::Create(result, id, data), options, false);
+        StorageResult result = (nullptr != m_selectHandler ? m_selectHandler(data, options, receiver) : StorageResult::Success);
+         receiver._OnResponseReceived(*new StorageResponse(result, data), options, false);
         return result;
         }
     };
@@ -62,78 +58,53 @@ struct TestStorage : IRealityDataStorage<TestStorage>
 //=======================================================================================
 // @bsiclass                                        Grigas.Petraitis            03/2015
 //=======================================================================================
-struct TestSource : IRealityDataSource<TestSource>
+struct TestSource : Source
     {
-    struct RequestOptions : IRealityDataSource<TestSource>::RequestOptions {};
+    std::function<SourceResult(Payload&, Options, Cache&)> m_requestHandler;
 
-    struct RequestHandler : IRealityDataSourceRequestHandler
-    {
-    private:
-        TestSource&    m_source;
-        RefCountedPtr<Data> m_data;
-        Utf8String m_id;
-        RequestOptions const& m_options;
-        IRealityDataSourceResponseReceiverPtr m_responseReceiver;
-        mutable bool m_handled;
-        RequestHandler(TestSource& source, Data& data, Utf8CP id, RequestOptions const& options, IRealityDataSourceResponseReceiver& responseReceiver) 
-            : m_source(source), m_data(&data), m_id(id), m_options(options), m_responseReceiver(&responseReceiver)
-            {}
-    protected:
-        virtual bool _IsHandled() const override {return m_handled;}
-        virtual RealityDataSourceResult _Request() const override {return m_source.Request(*m_data, m_handled, m_id.c_str(), m_options, *m_responseReceiver);}
-        virtual IRealityDataBase const* _GetData() const override {return m_data.get();}
-    public:
-        static RefCountedPtr<RequestHandler> Create(TestSource& source, Data& data, Utf8CP id, RequestOptions const& options, IRealityDataSourceResponseReceiver& responseReceiver)
-            {
-            return new RequestHandler(source, data, id, options, responseReceiver);
-            }
-    };
-
-    std::function<RealityDataSourceResult(Data&, bool&, Utf8CP, RequestOptions const&, IRealityDataSourceResponseReceiver&)> m_requestHandler;
-    void SetRequestHandler(std::function<RealityDataSourceResult(Data&, bool&, Utf8CP, RequestOptions const&, IRealityDataSourceResponseReceiver&)> const& handler) {m_requestHandler = handler;}
-
-    virtual RealityDataSourceResult _Request(IRealityDataSource::Data& data, bool& handled, Utf8CP id, IRealityDataSource::RequestOptions const& options, IRealityDataSourceResponseReceiver& responseReceiver) override
+    void SetRequestHandler(std::function<SourceResult(Payload&, Options, Cache&)> const& handler) {m_requestHandler = handler;}
+    virtual SourceResult _Request(Payload& data, Options options, Cache& responseReceiver) override
         {
-        return Request(dynamic_cast<Data&>(data), handled, id, dynamic_cast<RequestOptions const&>(options), responseReceiver);
+        return Request(data, options, responseReceiver);
         }
-    virtual Utf8String _GetSourceId() const override {return SourceId();}
-    static Utf8String SourceId() {return "TestSource";}
     static RefCountedPtr<TestSource> Create() {return new TestSource();}
-    RealityDataSourceResult Request(Data& data, bool& handled, Utf8CP id, RequestOptions const& options, IRealityDataSourceResponseReceiver& responseReceiver)
+    SourceResult Request(Payload& data, Options options, Cache& responseReceiver)
         {
-        handled = false;
         if (nullptr != m_requestHandler)
-            return m_requestHandler(data, handled, id, options, responseReceiver);
-        
-        responseReceiver._OnResponseReceived(*RealityDataSourceResponse::Create(RealityDataSourceResult::Success, id, data), options);
-        handled = true;
-        return RealityDataSourceResult::Success;
+            return m_requestHandler(data, options, responseReceiver);
+        responseReceiver._OnResponseReceived(*new SourceResponse(SourceResult::Success, data), options);
+        return SourceResult::Success;
         }
+
     };
 
 //=======================================================================================
 // @bsiclass                                        Grigas.Petraitis            03/2015
 //=======================================================================================
-struct TestRealityData : IRealityData<TestRealityData, TestStorage, TestSource>
+struct TestRealityData : Payload
     {
-    struct RequestOptions : RealityDataCacheOptions, IRealityData::RequestOptions
-    {
-    DEFINE_BENTLEY_REF_COUNTED_MEMBERS
-    private:
-        RequestOptions(bool requestFromSource, bool shouldPersist) : RealityDataCacheOptions(requestFromSource, shouldPersist) {}
-    public:
-        static RefCountedPtr<RequestOptions> Create(bool requestFromSource, bool shouldPersist = true) {return new RequestOptions(requestFromSource, shouldPersist);}
-    };
+    struct RequestOptions : Options
+        {
+        RequestOptions(bool requestFromSource, bool shouldPersist = true) 
+            {
+            m_requestFromSource = requestFromSource;
+            m_forceSynchronous = true;
+            }
+        };
 
-    Utf8String m_id;
     bool m_expired;
+    size_t m_onErrorCalls;
+    size_t m_onNotFoundCalls;
 
-    TestRealityData() : m_expired(false) {}
+    TestRealityData(Utf8CP name) : Payload(name), m_expired(false), m_onErrorCalls(0), m_onNotFoundCalls(0) {}
 
-    static RefCountedPtr<TestRealityData> Create() {return new TestRealityData();}
-    virtual Utf8CP _GetId() const {return m_id.c_str();}
     virtual bool _IsExpired() const {return m_expired;}
-    virtual BentleyStatus _InitFrom(IRealityDataBase const& self, RealityDataCacheOptions const&) override {return ERROR;}
+    virtual void _OnError() override {++m_onErrorCalls;}
+    virtual void _OnNotFound() override {++m_onNotFoundCalls;}
+    virtual BentleyStatus _LoadFromHttp(bmap<Utf8String, Utf8String> const& header, ByteStream const& body) override {return SUCCESS;}
+    virtual BentleyStatus _LoadFromStorage(BeSQLite::Db& db) override {return ERROR;}
+    virtual BentleyStatus _LoadFromFile(ByteStream const& data) override {return ERROR;}
+    virtual BentleyStatus _PersistToStorage(Db& db) const override {return SUCCESS;}
     };
 
 //=======================================================================================
@@ -141,15 +112,15 @@ struct TestRealityData : IRealityData<TestRealityData, TestStorage, TestSource>
 //=======================================================================================
 struct RealityDataCacheTests : ::testing::Test
     {
-    RealityDataCachePtr m_cache;
+    CachePtr m_cache;
     RefCountedPtr<TestSource> m_source;
     RefCountedPtr<TestStorage> m_storage;
 
     virtual void SetUp() override
         {
-        m_cache = RealityDataCache::Create(0);
-        m_cache->RegisterSource(*(m_source = TestSource::Create()));
-        m_cache->RegisterStorage(*(m_storage = TestStorage::Create()));
+        m_cache = new Cache();
+        m_cache->SetSource(*(m_source = TestSource::Create()));
+        m_cache->SetStorage(*(m_storage = TestStorage::Create()));
         }
     virtual void TearDown() override
         {
@@ -164,17 +135,16 @@ struct RealityDataCacheTests : ::testing::Test
 //---------------------------------------------------------------------------------------
 TEST_F (RealityDataCacheTests, Get_PassesRequestToStorage)
     {
-    TestStorage::Data const* dataP = nullptr;
-    RefCountedPtr<TestRealityData::RequestOptions> actualOptions = TestRealityData::RequestOptions::Create(false);
-    m_storage->SetSelectHandler([&actualOptions, &dataP](TestStorage::Data& data, Utf8CP id, TestStorage::SelectOptions const& options, IRealityDataStorageResponseReceiver&)
+    Payload const* dataP = nullptr;
+    TestRealityData::RequestOptions requestOptions(false);
+    m_storage->SetSelectHandler([&requestOptions, &dataP](Payload& data, Options options, Cache&)
         {
-        BeAssert(0 == strcmp("Get_PassesRequestToStorage", id));
-        BeAssert(actualOptions.get() == &options);
+        BeAssert(0 == strcmp("Get_PassesRequestToStorage", data.GetPayloadId().c_str()));
         dataP = &data;
-        return RealityDataStorageResult::Success;
+        return StorageResult::Success;
         });
-    RefCountedPtr<TestRealityData> data;
-    ASSERT_TRUE(RealityDataCacheResult::Success == m_cache->Get(data, "Get_PassesRequestToStorage", *actualOptions));
+    RefCountedPtr<TestRealityData> data = new TestRealityData("Get_PassesRequestToStorage");
+    ASSERT_TRUE(CacheResult::Success == m_cache->RequestData(*data, requestOptions));
     ASSERT_EQ(dataP, data.get());
     }
 
@@ -183,16 +153,16 @@ TEST_F (RealityDataCacheTests, Get_PassesRequestToStorage)
 //---------------------------------------------------------------------------------------
 TEST_F (RealityDataCacheTests, Get_Error)
     {
-    m_storage->SetSelectHandler([](TestStorage::Data&, Utf8CP, TestStorage::SelectOptions const&, IRealityDataStorageResponseReceiver&)
+    m_storage->SetSelectHandler([](Payload&, Options, Cache&)
         {
-        return RealityDataStorageResult::Error;
+        return StorageResult::Error;
         });
 
     BeTest::SetFailOnAssert(false);
-    RefCountedPtr<TestRealityData> data;
-    ASSERT_TRUE(RealityDataCacheResult::Error == m_cache->Get(data, "Get_Error", *TestRealityData::RequestOptions::Create(false)));
+    RefCountedPtr<TestRealityData> data = new TestRealityData("Get_Error");
+    ASSERT_TRUE(CacheResult::Error == m_cache->RequestData(*data, TestRealityData::RequestOptions(false)));
     BeTest::SetFailOnAssert(true);
-    SUCCEED();
+    EXPECT_EQ(1, data->m_onErrorCalls);
     }
 
 //---------------------------------------------------------------------------------------
@@ -200,13 +170,13 @@ TEST_F (RealityDataCacheTests, Get_Error)
 //---------------------------------------------------------------------------------------
 TEST_F (RealityDataCacheTests, Get_Success)
     {
-    m_storage->SetSelectHandler([](TestStorage::Data&, Utf8CP, TestStorage::SelectOptions const&, IRealityDataStorageResponseReceiver&)
+    m_storage->SetSelectHandler([](Payload&, Options, Cache&)
         {
-        return RealityDataStorageResult::Success;
+        return StorageResult::Success;
         });
 
-    RefCountedPtr<TestRealityData> data;
-    ASSERT_TRUE(RealityDataCacheResult::Success == m_cache->Get(data, "Get_Success", *TestRealityData::RequestOptions::Create(false)));
+    RefCountedPtr<TestRealityData> data = new TestRealityData("Get_Success");
+    ASSERT_TRUE(CacheResult::Success == m_cache->RequestData(*data, TestRealityData::RequestOptions(false)));
     ASSERT_TRUE(data.IsValid());
     }
 
@@ -215,16 +185,16 @@ TEST_F (RealityDataCacheTests, Get_Success)
 //---------------------------------------------------------------------------------------
 TEST_F (RealityDataCacheTests, Get_Success_ReturnsExpired)
     {
-    m_storage->SetSelectHandler([](TestStorage::Data& data, Utf8CP, TestStorage::SelectOptions const&, IRealityDataStorageResponseReceiver&)
+    m_storage->SetSelectHandler([](Payload& data, Options, Cache&)
         {
         static_cast<TestRealityData&>(data).m_expired = true;
-        return RealityDataStorageResult::Success;
+        return StorageResult::Success;
         });
 
-    RefCountedPtr<TestRealityData> data;
-    ASSERT_TRUE(RealityDataCacheResult::Success == m_cache->Get(data, "Get_Success_ReturnExpired", *TestRealityData::RequestOptions::Create(false)));
+    RefCountedPtr<TestRealityData> data = new TestRealityData("Get_Success_ReturnExpired");
+    ASSERT_TRUE(CacheResult::Success == m_cache->RequestData(*data, TestRealityData::RequestOptions(false)));
     ASSERT_TRUE(data.IsValid());
-    ASSERT_TRUE(data->IsExpired());
+    ASSERT_TRUE(data->_IsExpired());
     }
 
 //---------------------------------------------------------------------------------------
@@ -233,19 +203,19 @@ TEST_F (RealityDataCacheTests, Get_Success_ReturnsExpired)
 TEST_F (RealityDataCacheTests, Get_Success_RequestFromSource_WhenExpired)
     {
     BeAtomic<bool> didRequest (false);
-    m_storage->SetSelectHandler([](TestStorage::Data& data, Utf8CP, TestStorage::SelectOptions const&, IRealityDataStorageResponseReceiver&)
+    m_storage->SetSelectHandler([](Payload& data, Options, Cache&)
         {
         static_cast<TestRealityData&>(data).m_expired = true;
-        return RealityDataStorageResult::Success;
+        return StorageResult::Success;
         });
-    m_source->SetRequestHandler([&didRequest](TestSource::Data&, bool&, Utf8CP, TestSource::RequestOptions const&, IRealityDataSourceResponseReceiver&)
+    m_source->SetRequestHandler([&didRequest](Payload&, Options, Cache&)
         {
         didRequest.store(true);
-        return RealityDataSourceResult::Error_Unknown;
+        return SourceResult::Error_Unknown;
         });
 
-    RefCountedPtr<TestRealityData> data;
-    ASSERT_TRUE(RealityDataCacheResult::Success == m_cache->Get(data, "Get_Success_RequestFromSource_WhenExpired", *TestRealityData::RequestOptions::Create(true)));
+    RefCountedPtr<TestRealityData> data = new TestRealityData("Get_Success_RequestFromSource_WhenExpired");
+    ASSERT_TRUE(CacheResult::Success == m_cache->RequestData(*data, TestRealityData::RequestOptions(true)));
     ASSERT_TRUE(didRequest);
     }
 
@@ -254,14 +224,14 @@ TEST_F (RealityDataCacheTests, Get_Success_RequestFromSource_WhenExpired)
 //---------------------------------------------------------------------------------------
 TEST_F (RealityDataCacheTests, Get_Success_RequestFromSource_OnlyIfExpired)
     {
-    m_source->SetRequestHandler([](TestSource::Data&, bool&, Utf8CP, TestSource::RequestOptions const&, IRealityDataSourceResponseReceiver&)
+    m_source->SetRequestHandler([](Payload&, Options, Cache&)
         {
         BeAssert(false);
-        return RealityDataSourceResult::Error_Unknown;
+        return SourceResult::Error_Unknown;
         });
 
-    RefCountedPtr<TestRealityData> data;
-    ASSERT_TRUE(RealityDataCacheResult::Success == m_cache->Get(data, "Get_Success_RequestFromSource_OnlyIfExpired", *TestRealityData::RequestOptions::Create(true)));
+    RefCountedPtr<TestRealityData> data = new TestRealityData("Get_Success_RequestFromSource_OnlyIfExpired");
+    ASSERT_TRUE(CacheResult::Success == m_cache->RequestData(*data, TestRealityData::RequestOptions(true)));
     SUCCEED();
     }
 
@@ -271,40 +241,20 @@ TEST_F (RealityDataCacheTests, Get_Success_RequestFromSource_OnlyIfExpired)
 TEST_F (RealityDataCacheTests, Get_Success_RequestFromSource_WhenFlagSet)
     {
     BeAtomic<bool> didRequest (false);
-    m_storage->SetSelectHandler([](TestStorage::Data& data, Utf8CP, TestStorage::SelectOptions const&, IRealityDataStorageResponseReceiver&)
+    m_storage->SetSelectHandler([](Payload& data, Options, Cache&)
         {
         static_cast<TestRealityData&>(data).m_expired = true;
-        return RealityDataStorageResult::Success;
+        return StorageResult::Success;
         });
-    m_source->SetRequestHandler([&didRequest](TestSource::Data&, bool&, Utf8CP, TestSource::RequestOptions const&, IRealityDataSourceResponseReceiver&)
+    m_source->SetRequestHandler([&didRequest](Payload&, Options, Cache&)
         {
         didRequest.store(true);
-        return RealityDataSourceResult::Success;
+        return SourceResult::Success;
         });
 
-    RefCountedPtr<TestRealityData> data;
-    ASSERT_TRUE(RealityDataCacheResult::Success == m_cache->Get(data, "Get_Success_RequestFromSource_WhenFlagSet", *TestRealityData::RequestOptions::Create(true)));
+    RefCountedPtr<TestRealityData> data = new TestRealityData("Get_Success_RequestFromSource_WhenFlagSet");
+    ASSERT_TRUE(CacheResult::Success == m_cache->RequestData(*data, TestRealityData::RequestOptions(true)));
     ASSERT_TRUE(didRequest);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                               Grigas.Petraitis    03/2015
-//---------------------------------------------------------------------------------------
-TEST_F (RealityDataCacheTests, Get_Success_RequestFromSource_OnlyIfFlagSet)
-    {
-    m_storage->SetSelectHandler([](TestStorage::Data& data, Utf8CP, TestStorage::SelectOptions const&, IRealityDataStorageResponseReceiver&)
-        {
-        static_cast<TestRealityData&>(data).m_expired = true;
-        return RealityDataStorageResult::Success;
-        });
-    m_source->SetRequestHandler([](TestSource::Data&, bool&, Utf8CP, TestSource::RequestOptions const&, IRealityDataSourceResponseReceiver&)
-        {
-        BeAssert(false);
-        return RealityDataSourceResult::Error_Unknown;
-        });
-
-    RefCountedPtr<TestRealityData> data;
-    ASSERT_TRUE(RealityDataCacheResult::Success == m_cache->Get(data, "Get_Success_RequestFromSource_OnlyIfFlagSet", *TestRealityData::RequestOptions::Create(false)));
     }
 
 //---------------------------------------------------------------------------------------
@@ -312,13 +262,18 @@ TEST_F (RealityDataCacheTests, Get_Success_RequestFromSource_OnlyIfFlagSet)
 //---------------------------------------------------------------------------------------
 TEST_F (RealityDataCacheTests, Get_NotFound)
     {
-    m_storage->SetSelectHandler([](TestStorage::Data&, Utf8CP, TestStorage::SelectOptions const&, IRealityDataStorageResponseReceiver&)
+    m_storage->SetSelectHandler([](Payload&, Options, Cache&)
         {
-        return RealityDataStorageResult::NotFound;
+        return StorageResult::NotFound;
+        });
+    m_source->SetRequestHandler([](Payload&, Options, Cache&)
+        {
+        return SourceResult::Error_NotFound;
         });
 
-    RefCountedPtr<TestRealityData> data;
-    ASSERT_TRUE(RealityDataCacheResult::NotFound == m_cache->Get(data, "Get_NotFound", *TestRealityData::RequestOptions::Create(false)));
+    RefCountedPtr<TestRealityData> data = new TestRealityData("Get_NotFound");
+    ASSERT_TRUE(CacheResult::NotFound == m_cache->RequestData(*data, TestRealityData::RequestOptions(false)));
+    ASSERT_EQ(1, data->m_onNotFoundCalls);
     }
 
 //---------------------------------------------------------------------------------------
@@ -327,38 +282,20 @@ TEST_F (RealityDataCacheTests, Get_NotFound)
 TEST_F (RealityDataCacheTests, Get_NotFound_RequestsFromSource_WhenFlagSet)
     {
     BeAtomic<bool> didRequest (false);
-    m_storage->SetSelectHandler([](TestStorage::Data&, Utf8CP, TestStorage::SelectOptions const&, IRealityDataStorageResponseReceiver&)
+    m_storage->SetSelectHandler([](Payload&, Options, Cache&)
         {
-        return RealityDataStorageResult::NotFound;
+        return StorageResult::NotFound;
         });
-    m_source->SetRequestHandler([&didRequest](TestSource::Data&, bool&, Utf8CP, TestSource::RequestOptions const&, IRealityDataSourceResponseReceiver&)
+    m_source->SetRequestHandler([&didRequest](Payload&, Options, Cache&)
         {
         didRequest.store(true);
-        return RealityDataSourceResult::Success;
+        return SourceResult::Success;
         });
 
-    RefCountedPtr<TestRealityData> data;
-    ASSERT_TRUE(RealityDataCacheResult::Success == m_cache->Get(data, "Get_NotFound_RequestsFromSource_WhenFlagSet", *TestRealityData::RequestOptions::Create(true)));
+    RefCountedPtr<TestRealityData> data = new TestRealityData("Get_NotFound_RequestsFromSource_WhenFlagSet");
+    ASSERT_TRUE(CacheResult::Success == m_cache->RequestData(*data, TestRealityData::RequestOptions(true)));
     ASSERT_TRUE(didRequest);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                               Grigas.Petraitis    03/2015
-//---------------------------------------------------------------------------------------
-TEST_F (RealityDataCacheTests, Get_NotFound_RequestsFromSource_OnlyIfFlagSet)
-    {
-    m_storage->SetSelectHandler([](TestStorage::Data&, Utf8CP, TestStorage::SelectOptions const&, IRealityDataStorageResponseReceiver&)
-        {
-        return RealityDataStorageResult::NotFound;
-        });
-    m_source->SetRequestHandler([](TestSource::Data&, bool&, Utf8CP, TestSource::RequestOptions const&, IRealityDataSourceResponseReceiver&)
-        {
-        BeAssert(false);
-        return RealityDataSourceResult::Error_Unknown;
-        });
-
-    RefCountedPtr<TestRealityData> data;
-    ASSERT_TRUE(RealityDataCacheResult::NotFound == m_cache->Get(data, "Get_NotFound_RequestsFromSource_OnlyIfFlagSet", *TestRealityData::RequestOptions::Create(false)));
+    ASSERT_EQ(0, data->m_onNotFoundCalls);
     }
 
 //---------------------------------------------------------------------------------------
@@ -366,19 +303,21 @@ TEST_F (RealityDataCacheTests, Get_NotFound_RequestsFromSource_OnlyIfFlagSet)
 //---------------------------------------------------------------------------------------
 TEST_F (RealityDataCacheTests, Get_NotFoundInSource_ResolvesToNotFoundResult)
     {
-    m_storage->SetSelectHandler([](TestStorage::Data&, Utf8CP, TestStorage::SelectOptions const&, IRealityDataStorageResponseReceiver&)
+    m_storage->SetSelectHandler([](Payload&, Options, Cache&)
         {
-        return RealityDataStorageResult::NotFound;
+        return StorageResult::NotFound;
         });
-    m_source->SetRequestHandler([](TestSource::Data&, bool&, Utf8CP, TestSource::RequestOptions const&, IRealityDataSourceResponseReceiver&)
+    m_source->SetRequestHandler([](Payload&, Options, Cache&)
         {
-        return RealityDataSourceResult::Error_NotFound;
+        return SourceResult::Error_NotFound;
         });
 
-    RefCountedPtr<TestRealityData> data;
-    ASSERT_TRUE(RealityDataCacheResult::NotFound == m_cache->Get(data, "Get_NotFoundInSource_ResolvesToNotFoundResult", *TestRealityData::RequestOptions::Create(true)));
+    RefCountedPtr<TestRealityData> data = new TestRealityData("Get_NotFoundInSource_ResolvesToNotFoundResult");
+    ASSERT_TRUE(CacheResult::NotFound == m_cache->RequestData(*data, TestRealityData::RequestOptions(true)));
+    ASSERT_EQ(1, data->m_onNotFoundCalls);
     }
 
+#if defined (NEEDS_WORK_REALITY_CACHE)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Grigas.Petraitis    03/2015
 //---------------------------------------------------------------------------------------
@@ -386,82 +325,67 @@ TEST_F (RealityDataCacheTests, SourceResponseHandling_Persists)
     {
     BeAtomic<bool> didPersist (false);
     TestStorage& storage = *m_storage;
-    m_storage->SetSelectHandler([](TestStorage::Data&, Utf8CP, TestStorage::SelectOptions const&, IRealityDataStorageResponseReceiver&)
+    m_storage->SetSelectHandler([](Payload&, Utf8CP, Options, Cache&)
         {
-        return RealityDataStorageResult::NotFound;
+        return StorageResult::NotFound;
         });
     m_storage->OnPersistHandlerCreated([&didPersist](TestStorage::PersistHandler& handler)
         {
         handler.SetPersistHandler([&didPersist]()
             {
             didPersist.store(true);
-            return RealityDataStorageResult::Success;
+            return StorageResult::Success;
             });
         });
-    m_source->SetRequestHandler([&storage, &didPersist](TestSource::Data& data, bool&, Utf8CP id, TestSource::RequestOptions const& options, IRealityDataSourceResponseReceiver& responseReceiver)
+    m_source->SetRequestHandler([&storage, &didPersist](Payload& data, bool&, Utf8CP id, Options options, Cache& responseReceiver)
         {
-        responseReceiver._OnResponseReceived(*RealityDataSourceResponse::Create(RealityDataSourceResult::Success, id, data), options);
-        return RealityDataSourceResult::Queued;
+        responseReceiver._OnResponseReceived(*new SourceResponse(SourceResult::Success, id, data), options);
+        return SourceResult::Queued;
         });
 
-    RefCountedPtr<TestRealityData> data;
-    ASSERT_TRUE(RealityDataCacheResult::RequestQueued == m_cache->Get(data, "SourceResponseHandling_Persists", *TestRealityData::RequestOptions::Create(true)));
+    RefCountedPtr<TestRealityData> data = TestRealityData::Create();
+    ASSERT_TRUE(CacheResult::RequestQueued == m_cache->RequestData(*data, "SourceResponseHandling_Persists", TestRealityData::RequestOptions(true)));
     ASSERT_TRUE(didPersist);
     }
+#endif
 
 //=======================================================================================
 // @bsiclass                                        Grigas.Petraitis            03/2015
 //=======================================================================================
-struct TestDatabasePrepareAndCleanupHandler : BeSQLiteRealityDataStorage::DatabasePrepareAndCleanupHandler
+struct TestCacheDatabase : Storage
     {
     mutable bool m_prepared;
-    std::function<BentleyStatus(BeSQLite::Db&)> m_prepareDatabaseHandler;
-    std::function<BentleyStatus(BeSQLite::Db&)> m_cleanupDatabaseHandler;
+    using Storage::Storage;
 
-    TestDatabasePrepareAndCleanupHandler() : m_prepareDatabaseHandler(nullptr), m_cleanupDatabaseHandler(nullptr), m_prepared(false) {}
-    static RefCountedPtr<TestDatabasePrepareAndCleanupHandler> Create() {return new TestDatabasePrepareAndCleanupHandler();}
-    void SetPrepareDatabaseHandler(std::function<BentleyStatus(BeSQLite::Db&)> const& prepareDatabaseHandler) {m_prepareDatabaseHandler = prepareDatabaseHandler;}
-    void SetCleanupDatabaseHandler(std::function<BentleyStatus(BeSQLite::Db&)> const& cleanupDatabaseHandler) {m_cleanupDatabaseHandler = cleanupDatabaseHandler;}
-
-    virtual bool _IsPrepared() const override {return m_prepared;}
-    virtual BentleyStatus _PrepareDatabase(BeSQLite::Db& db) const override { m_prepared = true; return (nullptr != m_prepareDatabaseHandler ? m_prepareDatabaseHandler(db) : SUCCESS);}
-    virtual BentleyStatus _CleanupDatabase(BeSQLite::Db& db) const override {return (nullptr != m_cleanupDatabaseHandler ? m_cleanupDatabaseHandler(db) : SUCCESS);}
+    virtual BentleyStatus _PrepareDatabase(BeSQLite::Db& db) const override { m_prepared = true; return SUCCESS;}
+    virtual BentleyStatus _CleanupDatabase(BeSQLite::Db& db) const override {return SUCCESS;}
     };
 
 //=======================================================================================
 // @bsiclass                                        Grigas.Petraitis            03/2015
 //=======================================================================================
-struct TestBeSQLiteStorageData : RefCounted<BeSQLiteRealityDataStorage::Data>
+struct TestBeSQLiteStorageData : Payload
     {
-    struct RequestOptions : BeSQLiteRealityDataStorage::SelectOptions 
-    {
-    DEFINE_BENTLEY_REF_COUNTED_MEMBERS
-    private:
-        RequestOptions(bool synchronous) 
+    struct RequestOptions : Options
+        {
+        RequestOptions(bool synchronous = true) 
             {
-            SetForceSynchronousRequest(synchronous);
+            m_forceSynchronous= synchronous;
             }
-    public:
-        static RefCountedPtr<RequestOptions> Create(bool synchronous = true) {return new RequestOptions(synchronous);}
-    };
+        };
 
-    RefCountedPtr<TestDatabasePrepareAndCleanupHandler> m_prepareAndCleanupHandler;
-    std::function<BentleyStatus(BeSQLite::Db& db, BeMutex& cs, Utf8CP key, BeSQLiteRealityDataStorage::SelectOptions const& options)> m_initFromHandler;
-    std::function<BentleyStatus(BeSQLite::Db& db, BeMutex& cs)>  m_persistHandler;
+    std::function<BentleyStatus(BeSQLite::Db& db, PayloadR)> m_initFromHandler;
+    std::function<BentleyStatus(BeSQLite::Db& db, PayloadCR)>  m_persistHandler;
 
-    TestBeSQLiteStorageData(TestDatabasePrepareAndCleanupHandler* prepareAndCleanupHandler) 
-        : m_prepareAndCleanupHandler(prepareAndCleanupHandler), m_initFromHandler(nullptr), m_persistHandler(nullptr)
-        {}
-    static RefCountedPtr<TestBeSQLiteStorageData> Create(TestDatabasePrepareAndCleanupHandler* prepareAndCleanupHandler = nullptr) {return new TestBeSQLiteStorageData(prepareAndCleanupHandler);}
-    void SetInitFromHandler(std::function<BentleyStatus(BeSQLite::Db& db, BeMutex& cs, Utf8CP key, BeSQLiteRealityDataStorage::SelectOptions const& options)> const& handler) {m_initFromHandler = handler;}
-    void SetPersistHandler(std::function<BentleyStatus(BeSQLite::Db& db, BeMutex& cs)> const& handler) {m_persistHandler = handler;}
+    TestBeSQLiteStorageData(Utf8CP name) : Payload(name), m_initFromHandler(nullptr), m_persistHandler(nullptr){}
+    void SetInitFromHandler(std::function<BentleyStatus(BeSQLite::Db& db, Payload& payload)> const& handler) {m_initFromHandler = handler;}
+    void SetPersistHandler(std::function<BentleyStatus(BeSQLite::Db& db, PayloadCR)> const& handler) {m_persistHandler = handler;}
 
-    virtual Utf8CP _GetId() const override {return nullptr;}
     virtual bool _IsExpired() const override {return false;}
-    virtual BeSQLiteRealityDataStorage::DatabasePrepareAndCleanupHandlerPtr _GetDatabasePrepareAndCleanupHandler() const override {return (m_prepareAndCleanupHandler.IsValid() ? m_prepareAndCleanupHandler : TestDatabasePrepareAndCleanupHandler::Create());}
-    virtual BentleyStatus _InitFrom(BeSQLite::Db& db, BeMutex& cs, Utf8CP key, BeSQLiteRealityDataStorage::SelectOptions const& options) {return (nullptr != m_initFromHandler ? m_initFromHandler(db, cs, key, options) : SUCCESS);}
-    virtual BentleyStatus _Persist(BeSQLite::Db& db, BeMutex& cs) const {return (nullptr != m_persistHandler ? m_persistHandler(db, cs) : SUCCESS);}
-    virtual BentleyStatus _InitFrom(IRealityDataBase const& self, RealityDataCacheOptions const&) override {return ERROR;}
+    virtual BentleyStatus _LoadFromStorage(BeSQLite::Db& db) {return (nullptr != m_initFromHandler ? m_initFromHandler(db, *this) : SUCCESS);}
+    virtual BentleyStatus _PersistToStorage(BeSQLite::Db& db) const {return (nullptr != m_persistHandler ? m_persistHandler(db, *this) : SUCCESS);}
+    virtual BentleyStatus _LoadFromHttp(bmap<Utf8String, Utf8String> const& header, ByteStream const& body) override {return SUCCESS;}
+    virtual BentleyStatus _LoadFromFile(ByteStream const& data) override {return SUCCESS;}
     };
 
 //=======================================================================================
@@ -470,7 +394,7 @@ struct TestBeSQLiteStorageData : RefCounted<BeSQLiteRealityDataStorage::Data>
 struct BeSQLiteRealityDataStorageTests : ::testing::Test
 {
 protected:
-    BeSQLiteRealityDataStoragePtr m_storage;
+    StoragePtr m_storage;
 
 public:
     virtual void SetUp() override
@@ -482,12 +406,11 @@ public:
         BeFileName filename;
         BeTest::GetHost().GetOutputRoot(filename);
         filename.AppendToPath(L"BeSQLiteRealityDataStorageTests.db");
-
-        m_storage = BeSQLiteRealityDataStorage::Create(filename, 0);
+        m_storage = new TestCacheDatabase(1, SchedulingMethod::LIFO, 0);
+        m_storage->OpenAndPrepare(filename);
         }
     virtual void TearDown() override
         {
-        BackDoor::RealityData::Terminate(*m_storage);
         m_storage = nullptr;
         }
 };
@@ -495,17 +418,16 @@ public:
 //=======================================================================================
 // @bsiclass                                        Grigas.Petraitis            03/2015
 //=======================================================================================
-struct TestStorageResponseReceiver : IRealityDataStorageResponseReceiver
+struct TestStorageResponseReceiver : Cache
     {
-    DEFINE_BENTLEY_REF_COUNTED_MEMBERS
-    std::function<void(RealityDataStorageResponse const&)> m_onResponseReceivedHandler;
-    TestStorageResponseReceiver(std::function<void(RealityDataStorageResponse const&)> const& handler) : m_onResponseReceivedHandler(handler) {}
-    virtual void _OnResponseReceived(RealityDataStorageResponse const& response, IRealityDataStorageBase::SelectOptions const&, bool isAsync) override
+    std::function<void(StorageResponse const&, Options)> m_OnResponseReceivedHandler;
+    TestStorageResponseReceiver(std::function<void(StorageResponse const&, Options)> const& handler) : m_OnResponseReceivedHandler(handler) {}
+    virtual void _OnResponseReceived(StorageResponse const& response, Options options, bool isAsync) override
         {
-        if (nullptr != m_onResponseReceivedHandler)
-            m_onResponseReceivedHandler(response);
+        if (nullptr != m_OnResponseReceivedHandler)
+            m_OnResponseReceivedHandler(response, options);
         }
-    static RefCountedPtr<TestStorageResponseReceiver> Create(std::function<void(RealityDataStorageResponse const&)> const& handler = nullptr) {return new TestStorageResponseReceiver(handler);}
+    static RefCountedPtr<TestStorageResponseReceiver> Create(std::function<void(StorageResponse const&, Options)> const& handler = nullptr) {return new TestStorageResponseReceiver(handler);}
     };
 
 //---------------------------------------------------------------------------------------
@@ -514,16 +436,14 @@ struct TestStorageResponseReceiver : IRealityDataStorageResponseReceiver
 TEST_F (BeSQLiteRealityDataStorageTests, Select)
     {
     BeAtomic<bool> didInitialize (false);
-    RefCountedPtr<TestBeSQLiteStorageData::RequestOptions> options = TestBeSQLiteStorageData::RequestOptions::Create();
-    RefCountedPtr<TestBeSQLiteStorageData> data = TestBeSQLiteStorageData::Create();
-    data->SetInitFromHandler([&didInitialize, &options](BeSQLite::Db&, BeMutex& cs, Utf8CP id, BeSQLiteRealityDataStorage::SelectOptions const& opts)
+    RefCountedPtr<TestBeSQLiteStorageData> data = new TestBeSQLiteStorageData("BeSQLiteRealityDataStorageTests.Select_1");
+    data->SetInitFromHandler([&didInitialize](BeSQLite::Db&, PayloadR payload)
         {
-        BeAssert(0 == strcmp("BeSQLiteRealityDataStorageTests.Select_1", id));
-        BeAssert(options.get() == &opts);
+        BeAssert(0 == strcmp("BeSQLiteRealityDataStorageTests.Select_1", payload.GetPayloadId().c_str()));
         didInitialize.store(true);
         return SUCCESS;
         });
-    ASSERT_TRUE(RealityDataStorageResult::Success == m_storage->Select(*data, "BeSQLiteRealityDataStorageTests.Select_1", *options, *TestStorageResponseReceiver::Create()));
+    ASSERT_EQ(StorageResult::Success, m_storage->_Select(*data, TestBeSQLiteStorageData::RequestOptions(), *TestStorageResponseReceiver::Create()));
     ASSERT_TRUE(didInitialize);
     }
 
@@ -537,8 +457,8 @@ TEST_F (BeSQLiteRealityDataStorageTests, Persist)
     BeConditionVariable cv;
     // create the data in a scope to test if Persist still works (increases refCount) when the data goes out of scope
         {
-        RefCountedPtr<TestBeSQLiteStorageData> data = TestBeSQLiteStorageData::Create();
-        data->SetPersistHandler([&haltPersist, &didPersist, &cv](BeSQLite::Db&, BeMutex& cs)
+        RefCountedPtr<TestBeSQLiteStorageData> data = new TestBeSQLiteStorageData("");
+        data->SetPersistHandler([&haltPersist, &didPersist, &cv](BeSQLite::Db&, PayloadCR)
             {
             while (haltPersist);
             BeMutexHolder lock(cv.GetMutex());
@@ -546,7 +466,7 @@ TEST_F (BeSQLiteRealityDataStorageTests, Persist)
             cv.notify_all();
             return SUCCESS;
             });
-        ASSERT_TRUE(RealityDataStorageResult::Success == m_storage->Persist(*data));
+        ASSERT_TRUE(StorageResult::Success == m_storage->Persist(*data));
         }
     haltPersist.store(false);
     BeMutexHolder lock(cv.GetMutex());
@@ -554,72 +474,29 @@ TEST_F (BeSQLiteRealityDataStorageTests, Persist)
     ASSERT_TRUE(didPersist);
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                               Grigas.Petraitis    03/2015
-//---------------------------------------------------------------------------------------
-TEST_F (BeSQLiteRealityDataStorageTests, DoesPrepareDatabase)
-    {
-    BeAtomic<bool> didPrepare(false);
-    RefCountedPtr<TestDatabasePrepareAndCleanupHandler> handler = TestDatabasePrepareAndCleanupHandler::Create();
-    handler->SetPrepareDatabaseHandler([&didPrepare](BeSQLite::Db&)
-        {
-        didPrepare.store(true);
-        return SUCCESS;
-        });
-
-    RefCountedPtr<TestBeSQLiteStorageData> data = TestBeSQLiteStorageData::Create(handler.get());
-    m_storage->Select(*data, "", *TestBeSQLiteStorageData::RequestOptions::Create(), *TestStorageResponseReceiver::Create());
-    ASSERT_TRUE(didPrepare);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                               Grigas.Petraitis    03/2015
-//---------------------------------------------------------------------------------------
-TEST_F (BeSQLiteRealityDataStorageTests, DoesCleanupDatabase)
-    {
-    BeAtomic<bool> didCleanup(false);
-    BeConditionVariable cv;
-    RefCountedPtr<TestDatabasePrepareAndCleanupHandler> handler = TestDatabasePrepareAndCleanupHandler::Create();
-    handler->SetCleanupDatabaseHandler([&didCleanup, &cv](BeSQLite::Db&)
-        {
-        BeMutexHolder lock(cv.GetMutex());
-        didCleanup.store(true);
-        cv.notify_all();
-        return SUCCESS;
-        });
-
-    RefCountedPtr<TestBeSQLiteStorageData> data = TestBeSQLiteStorageData::Create(handler.get());
-    m_storage->Persist(*data);
-    BeMutexHolder lock(cv.GetMutex());
-    cv.ProtectedWaitOnCondition(lock, nullptr, 10000);
-    ASSERT_TRUE(didCleanup);
-    }
-
-
 //=======================================================================================
 // @bsiclass                                        Grigas.Petraitis            03/2015
 //=======================================================================================
-struct TestFileSourceData : RefCounted<FileRealityDataSource::Data>
+struct TestFileSourceData : Payload
     {
-    struct RequestOptions : FileRealityDataSource::RequestOptions
+    struct RequestOptions : Options
         {
-        DEFINE_BENTLEY_REF_COUNTED_MEMBERS
-        private:
-            RequestOptions() {}
-        public:
-            static RefCountedPtr<RequestOptions> Create() {return new RequestOptions();}
+        RequestOptions(bool synchronous = false) 
+            {
+            m_forceSynchronous=synchronous;
+            }
         };
 
-    std::function<BentleyStatus(Utf8CP, ByteStream const&, FileRealityDataSource::RequestOptions const&)> m_initFromHandler;
+    std::function<BentleyStatus(ByteStream const&)> m_initFromHandler;
 
-    TestFileSourceData() : m_initFromHandler(nullptr) {}
-    static RefCountedPtr<TestFileSourceData> Create() {return new TestFileSourceData();}
-    void SetInitFromHandler(std::function<BentleyStatus(Utf8CP, ByteStream const&, FileRealityDataSource::RequestOptions const&)> const& handler) {m_initFromHandler = handler;}
+    TestFileSourceData(Utf8CP name) : Payload(name), m_initFromHandler(nullptr) {}
+    void SetInitFromHandler(std::function<BentleyStatus(ByteStream const&)> const& handler) {m_initFromHandler = handler;}
     
-    virtual Utf8CP _GetId() const override {return nullptr;}
     virtual bool _IsExpired() const override {return false;}
-    virtual BentleyStatus _InitFrom(Utf8CP id, ByteStream const& data, FileRealityDataSource::RequestOptions const& options) override {return (nullptr != m_initFromHandler ? m_initFromHandler(id, data, options) : SUCCESS);}
-    virtual BentleyStatus _InitFrom(IRealityDataBase const& self, RealityDataCacheOptions const&) override {return ERROR;}
+    virtual BentleyStatus _LoadFromFile(ByteStream const& data) override {return (nullptr != m_initFromHandler ? m_initFromHandler(data) : SUCCESS);}
+    virtual BentleyStatus _LoadFromStorage(BeSQLite::Db& db) {return SUCCESS;}
+    virtual BentleyStatus _PersistToStorage(BeSQLite::Db& db) const {return SUCCESS;}
+    virtual BentleyStatus _LoadFromHttp(bmap<Utf8String, Utf8String> const& header, ByteStream const& body) override {return SUCCESS;}
     };
 
 //=======================================================================================
@@ -628,14 +505,14 @@ struct TestFileSourceData : RefCounted<FileRealityDataSource::Data>
 struct FileRealityDataSourceTests : ::testing::Test
 {
 protected:
-    FileRealityDataSourcePtr m_source;
+    FileSourcePtr m_source;
     Utf8String m_fileContent;
     Utf8String m_filePath;
 
 public:
     virtual void SetUp() override
         {
-        m_source = FileRealityDataSource::Create(1);
+        m_source = new FileSource(1, SchedulingMethod::LIFO);
 
         BeFileName sourceFile;
         BeTest::GetHost().GetOutputRoot(sourceFile);
@@ -665,19 +542,19 @@ public:
 //=======================================================================================
 // @bsiclass                                        Grigas.Petraitis            03/2015
 //=======================================================================================
-struct TestSourceResponseReceiver : IRealityDataSourceResponseReceiver
+struct TestSourceResponseReceiver : Cache
     {
-    DEFINE_BENTLEY_REF_COUNTED_MEMBERS
-    std::function<void(RealityDataSourceResponse const&)> m_onResponseReceivedHandler;
-    TestSourceResponseReceiver(std::function<void(RealityDataSourceResponse const&)> const& handler) : m_onResponseReceivedHandler(handler) {}
-    virtual void _OnResponseReceived(RealityDataSourceResponse const& response, IRealityDataSourceBase::RequestOptions const&) override
+    std::function<void(SourceResponse const&, Options)> mOnResponseReceivedHandler;
+    TestSourceResponseReceiver(std::function<void(SourceResponse const&, Options)> const& handler) : mOnResponseReceivedHandler(handler) {}
+    virtual void _OnResponseReceived(SourceResponse const& response, Options options) override
         {
-        if (nullptr != m_onResponseReceivedHandler)
-            m_onResponseReceivedHandler(response);
+        if (nullptr != mOnResponseReceivedHandler)
+            mOnResponseReceivedHandler(response, options);
         }
-    static RefCountedPtr<TestSourceResponseReceiver> Create(std::function<void(RealityDataSourceResponse const&)> const& handler = nullptr) {return new TestSourceResponseReceiver(handler);}
+    static RefCountedPtr<TestSourceResponseReceiver> Create(std::function<void(SourceResponse const&, Options)> const& handler = nullptr) {return new TestSourceResponseReceiver(handler);}
     };
 
+#if defined (NEEDS_WORK_REALITY_CACHE)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Grigas.Petraitis    03/2015
 //---------------------------------------------------------------------------------------
@@ -687,19 +564,17 @@ TEST_F (FileRealityDataSourceTests, Request)
     Utf8String fileContent = m_fileContent;
 
     BeAtomic<bool> didInitialize(false);
-    RefCountedPtr<TestFileSourceData::RequestOptions> options = TestFileSourceData::RequestOptions::Create();
-    RefCountedPtr<TestFileSourceData> data = TestFileSourceData::Create();
-    data->SetInitFromHandler([&didInitialize, &filePath, &options, &fileContent](Utf8CP id, ByteStream const& string, FileRealityDataSource::RequestOptions const& opts)
+    RefCountedPtr<TestFileSourceData> data = new TestFileSourceData(filePath.c_str());
+    data->SetInitFromHandler([&didInitialize, &fileContent](ByteStream const& string)
         {
         BeAssert(filePath.Equals(id));
-        BeAssert(options.get() == &opts);
         BeAssert(fileContent.Equals((Utf8CP)string.GetData()));
         didInitialize.store(true);
         return SUCCESS;
         });
     BeAtomic<bool> didReceiveResponse(false);
     BeConditionVariable cv;
-    RefCountedPtr<TestSourceResponseReceiver> responseReceiver = TestSourceResponseReceiver::Create([&didReceiveResponse, &cv, &data](RealityDataSourceResponse const& response)
+    RefCountedPtr<TestSourceResponseReceiver> responseReceiver = new TestSourceResponseReceiver([&didReceiveResponse, &cv, &data](SourceResponse const& response, Options options)
         {
         BeAssert(data.get() == &response.GetData());
         BeMutexHolder lock(cv.GetMutex());
@@ -707,7 +582,7 @@ TEST_F (FileRealityDataSourceTests, Request)
         cv.notify_all();
         });
     bool handled;
-    ASSERT_TRUE(RealityDataSourceResult::Queued == m_source->Request(*data, handled, m_filePath.c_str(), *options, *responseReceiver));
+    ASSERT_TRUE(SourceResult::Queued == m_source->_Request(*data, handled, m_filePath.c_str(), TestFileSourceData::RequestOptions(), *responseReceiver));
 
     BeMutexHolder lock(cv.GetMutex());
     cv.ProtectedWaitOnCondition(lock, nullptr, 10000);
@@ -727,8 +602,7 @@ TEST_F (FileRealityDataSourceTests, Request_WithDataOutOfScope)
     BeAtomic<bool> didInitialize(false);
     BeAtomic<bool> didReceiveResponse(false);
     BeConditionVariable cv;
-    RefCountedPtr<TestFileSourceData::RequestOptions> options = TestFileSourceData::RequestOptions::Create();
-    RefCountedPtr<TestSourceResponseReceiver> responseReceiver = TestSourceResponseReceiver::Create([&didReceiveResponse, &cv](RealityDataSourceResponse const& response)
+    RefCountedPtr<TestSourceResponseReceiver> responseReceiver = TestSourceResponseReceiver::Create([&didReceiveResponse, &cv](SourceResponse const& response, Options options)
         {
         BeMutexHolder lock(cv.GetMutex());
         didReceiveResponse.store(true);
@@ -737,17 +611,16 @@ TEST_F (FileRealityDataSourceTests, Request_WithDataOutOfScope)
 
         {
         RefCountedPtr<TestFileSourceData> data = TestFileSourceData::Create();
-        data->SetInitFromHandler([&didInitialize, &filePath, &options, &fileContent, &block](Utf8CP id, ByteStream const& string, FileRealityDataSource::RequestOptions const& opts)
+        data->SetInitFromHandler([&didInitialize, &filePath, &fileContent, &block](Utf8CP id, ByteStream const& string)
             {
             while(block);
             BeAssert(filePath.Equals(id));
-            BeAssert(options.get() == &opts);
             BeAssert(fileContent.Equals((Utf8CP)string.GetData()));
             didInitialize.store(true);
             return SUCCESS;
             });
         bool handled;
-        ASSERT_TRUE(RealityDataSourceResult::Queued == m_source->Request(*data, handled, m_filePath.c_str(), *options, *responseReceiver));
+        ASSERT_TRUE(SourceResult::Queued == m_source->_Request(*data, handled, m_filePath.c_str(), TestFileSourceData::RequestOptions(), *responseReceiver));
         }
         
     block.store(false);
@@ -768,13 +641,27 @@ struct TestPredicate : IConditionVariablePredicate
     virtual bool _TestCondition(BeConditionVariable& cv) {return m_handler();}
     };
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static void runOnAnotherThread(std::function<void()> const& handler)
+    {
+    WorkerThreadPtr thread = WorkerThread::Create();
+    thread->Start();
+    thread->DoWork(*TestWork::Create([handler, thread]()
+        {
+        handler();
+        thread->Terminate();
+        }));
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Grigas.Petraitis    07/2015
 //---------------------------------------------------------------------------------------
 TEST_F (FileRealityDataSourceTests, SynchronousRequestReturnsDataSynchronouslyAfterQueueing)
     {
     BeAtomic<bool> block(true);
-    auto initHandler = [&block](Utf8CP id, ByteStream const& string, FileRealityDataSource::RequestOptions const& opts)
+    auto initHandler = [&block](Utf8CP id, ByteStream const& string)
         {
         while (block)
             ;
@@ -783,7 +670,7 @@ TEST_F (FileRealityDataSourceTests, SynchronousRequestReturnsDataSynchronouslyAf
 
     BeAtomic<int> responseCount(0);
     BeConditionVariable responseCV;
-    RefCountedPtr<TestSourceResponseReceiver> responseReceiver = TestSourceResponseReceiver::Create([&responseCount, &responseCV](RealityDataSourceResponse const& response)
+    RefCountedPtr<TestSourceResponseReceiver> responseReceiver = TestSourceResponseReceiver::Create([&responseCount, &responseCV](SourceResponse const& response, Options options)
         {
         if (++responseCount == 2)
             responseCV.notify_all();
@@ -792,23 +679,20 @@ TEST_F (FileRealityDataSourceTests, SynchronousRequestReturnsDataSynchronouslyAf
     bool handled1 = false;
     RefCountedPtr<TestFileSourceData> data1 = TestFileSourceData::Create();
     data1->SetInitFromHandler(initHandler);
-    RefCountedPtr<TestFileSourceData::RequestOptions> options1 = TestFileSourceData::RequestOptions::Create();
-    RealityDataSourceResult result1 = m_source->Request(*data1, handled1, m_filePath.c_str(), *options1, *responseReceiver);
-    ASSERT_TRUE(RealityDataSourceResult::Queued == result1);
+    SourceResult result1 = m_source->_Request(*data1, handled1, m_filePath.c_str(), TestFileSourceData::RequestOptions(), *responseReceiver);
+    ASSERT_TRUE(SourceResult::Queued == result1);
     
     BeConditionVariable requestCV;
     BeMutexHolder lock(requestCV.GetMutex());
-    BackDoor::RealityData::RunOnAnotherThread([&initHandler, &responseReceiver, &requestCV, this]()
+    runOnAnotherThread([&initHandler, &responseReceiver, &requestCV, this]()
         {
         BeMutexHolder lock(requestCV.GetMutex());
 
         bool handled2 = false;
         RefCountedPtr<TestFileSourceData> data2 = TestFileSourceData::Create();
         data2->SetInitFromHandler(initHandler);
-        RefCountedPtr<TestFileSourceData::RequestOptions> options2 = TestFileSourceData::RequestOptions::Create();
-        options2->SetForceSynchronousRequest(true);
-        RealityDataSourceResult result2 = m_source->Request(*data2, handled2, m_filePath.c_str(), *options2, *responseReceiver);
-        ASSERT_TRUE(RealityDataSourceResult::Success == result2);
+        SourceResult result2 = m_source->_Request(*data2, handled2, m_filePath.c_str(), TestFileSourceData::RequestOptions(true), *responseReceiver);
+        ASSERT_TRUE(SourceResult::Success == result2);
         requestCV.notify_all();
         });
     block.store(false);
@@ -821,3 +705,4 @@ TEST_F (FileRealityDataSourceTests, SynchronousRequestReturnsDataSynchronouslyAf
 
     ASSERT_EQ(2, responseCount);
     }
+#endif

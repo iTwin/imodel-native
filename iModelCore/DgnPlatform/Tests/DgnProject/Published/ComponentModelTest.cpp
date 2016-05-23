@@ -130,18 +130,39 @@ struct VariationSpec
     void MakeVariation(DgnElementCPtr&, SpatialModelR destModel);
 
     void SetValue(Utf8CP name, ECN::ECValueCR v) {m_params[name].m_value = v;}
+
+    void Dump(Utf8CP title) const;
 };
+
+void VariationSpec::Dump(Utf8CP title) const
+    {
+    BeTest::Log("ComponentModelTest", BeTest::LogPriority::PRIORITY_FATAL, title);
+    for (auto entry : m_params)
+        {
+        BeTest::Log("ComponentModelTest", BeTest::LogPriority::PRIORITY_FATAL, Utf8PrintfString("%s - %s", entry.first.c_str(), entry.second.m_value.ToString().c_str()).c_str());
+        }
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECN::IECInstancePtr VariationSpec::MakeVariationSpec(DgnDbR db) const
     {
+#ifdef DEBUG_COMPONENT_MODEL_TEST
+    BeTest::Log("ComponentModelTest", BeTest::LogPriority::PRIORITY_FATAL, Utf8PrintfString("%s - MakeVariationSpec", m_name.c_str()).c_str());
+    Dump("The VariationSpec");
+#endif
+
     ComponentDefPtr cdef = ComponentDef::FromECClass(nullptr, db, *db.Schemas().GetECClass(TEST_JS_NAMESPACE, m_componentName.c_str()));
     if (!cdef.IsValid())
         return nullptr;
     ECN::IECInstancePtr instance = cdef->MakeVariationSpec();
     m_params.ToECProperties(*instance);
+
+#ifdef DEBUG_COMPONENT_MODEL_TEST
+    ComponentDef::DumpScriptOnlyParameters(*instance, "Test - set my properties");
+#endif
+
     return instance;
     }
 
@@ -164,6 +185,10 @@ void VariationSpec::CheckInstance(DgnElementCR el, size_t expectedSolidCount) co
 +---------------+---------------+---------------+---------------+---------------+------*/
 void VariationSpec::MakeUniqueInstance(DgnElementCPtr& inst, DgnModelR destModel, size_t expectedSolidCount)
     {
+#ifdef DEBUG_COMPONENT_MODEL_TEST
+    BeTest::Log("ComponentModelTest", BeTest::LogPriority::PRIORITY_FATAL, Utf8PrintfString("%s MakeUniqueInstance", m_name.c_str()).c_str());
+#endif
+
     DgnDbR db = destModel.GetDgnDb();
     inst = ComponentDef::MakeUniqueInstance(nullptr, destModel, *MakeVariationSpec(db));
     ASSERT_TRUE(inst.IsValid()); 
@@ -276,17 +301,21 @@ void ComponentModelTest::Developer_DefineSchema()
         m_wsln3.m_params = m_wsln1.m_params;
         m_wsln3.m_slabDimensions = m_wsln1.m_slabDimensions;
         m_wsln3.m_params["X"].m_value = ECN::ECValue(100.0);
+        ASSERT_DOUBLE_EQ(100.0, m_wsln3.m_params["X"].m_value.GetDouble());
+        ASSERT_STREQ("100", m_wsln3.m_params["X"].m_value.ToString().c_str());
 
         m_wsln4 = VariationSpec(TEST_WIDGET_COMPONENT_NAME, "wsln4");
         m_wsln4.m_params = m_wsln3.m_params;
         m_wsln4.m_slabDimensions = m_wsln1.m_slabDimensions;
         m_wsln4.m_params["X"].m_value = ECN::ECValue(2.0);
+        ASSERT_DOUBLE_EQ(2.0, m_wsln4.m_params["X"].m_value.GetDouble());
 
         m_wsln44 = VariationSpec(TEST_WIDGET_COMPONENT_NAME, "wsln44");
         m_wsln44.m_params = m_wsln4.m_params;
         m_wsln44.m_slabDimensions = m_wsln1.m_slabDimensions;
         m_wsln44.m_params["X"].m_value = ECN::ECValue(44.0);
-        }
+        ASSERT_DOUBLE_EQ(44.0, m_wsln44.m_params["X"].m_value.GetDouble());
+    }
 
     // Gadget
         {
@@ -329,7 +358,11 @@ void ComponentModelTest::Developer_DefineSchema()
         m_nsln1.m_slabDimensions.push_back("C");
         }
 
+    StopWatch timer;
+    timer.Start();
     ASSERT_TRUE(ComponentDefCreator::ImportSchema(*m_componentDb, *testSchema, false) != nullptr);
+    timer.Stop();
+    BeTest::Log("Performance", BeTest::LogPriority::PRIORITY_INFO, Utf8PrintfString("ComponentModelTest - Import component definition schema: %lf seconds", timer.GetElapsedSeconds()).c_str());
 
     //  Verify that we can look up an existing component
     //ComponentDefPtr widgetCDef = ComponentDef::FromECSqlName(nullptr, *m_componentDb, TEST_JS_NAMESPACE "." TEST_WIDGET_COMPONENT_NAME);
@@ -384,7 +417,11 @@ void ComponentModelTest::Client_ImportComponentDef(Utf8CP componentName)
     ComponentDefPtr sourceCdef = ComponentDef::FromECSqlName(nullptr, *m_componentDb, Utf8PrintfString("%s.%s", TEST_JS_NAMESPACE, componentName));
 
     DgnImportContext ctx(*m_componentDb, *m_clientDb);
+    StopWatch timer;
+    timer.Start();
     ASSERT_EQ( DgnDbStatus::Success , sourceCdef->Export(ctx));
+    timer.Stop();
+    BeTest::Log("Performance", BeTest::LogPriority::PRIORITY_INFO, Utf8PrintfString("ComponentModelTest - Import component model and schema: %lf seconds", timer.GetElapsedSeconds()).c_str());
 
     m_clientDb->SaveChanges();
 
@@ -720,15 +757,21 @@ void ComponentModelTest::SimulateClient()
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ComponentModelTest, SimulateDeveloperAndClient)
     {
+    StopWatch timer;
+    timer.Start();
+
     // For the purposes of this test, we'll put the Component and Client models in different DgnDbs
     DgnDbTestUtils::SeedDbInfo rootInfo = DgnDbTestUtils::GetSeedDb(DgnDbTestUtils::SeedDbId::OneSpatialModel, DgnDbTestUtils::SeedDbOptions(false, false));
 
-    m_componentDbName.SetName(L"ComponentModelTest/SimulateDeveloperAndClient_Component.dgndb");
-    DgnDbTestUtils::OpenSeedDbCopy(rootInfo.fileName, m_componentDbName);
+    m_componentDbName.SetName(L"ComponentModelTest/SimulateDeveloperAndClient_Component.bim");
+    DgnDbTestUtils::MakeSeedDbCopy(m_componentDbName, rootInfo.fileName, m_componentDbName);
     
-    m_clientDbName.SetName(L"ComponentModelTest/SimulateDeveloperAndClient_Client.dgndb");
-    DgnDbTestUtils::OpenSeedDbCopy(rootInfo.fileName, m_clientDbName)->GetFileName();
+    m_clientDbName.SetName(L"ComponentModelTest/SimulateDeveloperAndClient_Client.bim");
+    DgnDbTestUtils::MakeSeedDbCopy(m_clientDbName, rootInfo.fileName, m_clientDbName);
     
+    timer.Stop();
+    BeTest::Log("Performance", BeTest::LogPriority::PRIORITY_INFO, Utf8PrintfString("ComponentModelTest - Create seed Dbs (with imported schemas): %lf seconds", timer.GetElapsedSeconds()).c_str());
+
     BeTest::GetHost().GetOutputRoot(m_componentSchemaFileName);
     m_componentSchemaFileName.AppendToPath(TEST_JS_NAMESPACE_W L"0.0.ECSchema.xml");
 
@@ -745,11 +788,11 @@ TEST_F(ComponentModelTest, SimulateDeveloperAndClientWithNestingSingleton)
     // For the purposes of this test, we'll put the Component and Client models in different DgnDbs
     DgnDbTestUtils::SeedDbInfo rootInfo = DgnDbTestUtils::GetSeedDb(DgnDbTestUtils::SeedDbId::OneSpatialModel, DgnDbTestUtils::SeedDbOptions(false, false));
 
-    m_componentDbName.SetName(L"ComponentModelTest/SimulateDeveloperAndClientWithNestingSingleton_Component.dgndb");
-    DgnDbTestUtils::OpenSeedDbCopy(rootInfo.fileName, m_componentDbName);
+    m_componentDbName.SetName(L"ComponentModelTest/SimulateDeveloperAndClientWithNestingSingleton_Component.bim");
+    DgnDbTestUtils::MakeSeedDbCopy(m_componentDbName, rootInfo.fileName, m_componentDbName);
     
-    m_clientDbName.SetName(L"ComponentModelTest/SimulateDeveloperAndClientWithNestingSingleton_Client.dgndb");
-    DgnDbTestUtils::OpenSeedDbCopy(rootInfo.fileName, m_clientDbName)->GetFileName();
+    m_clientDbName.SetName(L"ComponentModelTest/SimulateDeveloperAndClientWithNestingSingleton_Client.bim");
+    DgnDbTestUtils::MakeSeedDbCopy(m_clientDbName, rootInfo.fileName, m_clientDbName);
 
     BeTest::GetHost().GetOutputRoot(m_componentSchemaFileName);
     m_componentSchemaFileName.AppendToPath(TEST_JS_NAMESPACE_W L"0.0.ECSchema.xml");
@@ -794,11 +837,11 @@ TEST_F(ComponentModelTest, SimulateDeveloperAndClientWithNesting)
     // For the purposes of this test, we'll put the Component and Client models in different DgnDbs
     DgnDbTestUtils::SeedDbInfo rootInfo = DgnDbTestUtils::GetSeedDb(DgnDbTestUtils::SeedDbId::OneSpatialModel, DgnDbTestUtils::SeedDbOptions(false, false));
 
-    m_componentDbName.SetName(L"ComponentModelTest/SimulateDeveloperAndClientWithNesting_Component.dgndb");
-    DgnDbTestUtils::OpenSeedDbCopy(rootInfo.fileName, m_componentDbName);
+    m_componentDbName.SetName(L"ComponentModelTest/SimulateDeveloperAndClientWithNesting_Component.bim");
+    DgnDbTestUtils::MakeSeedDbCopy(m_componentDbName, rootInfo.fileName, m_componentDbName);
     
-    m_clientDbName.SetName(L"ComponentModelTest/SimulateDeveloperAndClientWithNesting_Client.dgndb");
-    DgnDbTestUtils::OpenSeedDbCopy(rootInfo.fileName, m_clientDbName)->GetFileName();
+    m_clientDbName.SetName(L"ComponentModelTest/SimulateDeveloperAndClientWithNesting_Client.bim");
+    DgnDbTestUtils::MakeSeedDbCopy(m_clientDbName, rootInfo.fileName, m_clientDbName);
 
     BeTest::GetHost().GetOutputRoot(m_componentSchemaFileName);
     m_componentSchemaFileName.AppendToPath(TEST_JS_NAMESPACE_W L"0.0.ECSchema.xml");
@@ -865,7 +908,7 @@ TEST(SchemaImportTest, SelectAfterImport)
     // For the purposes of this test, we'll put the Component and Client models in different DgnDbs
     DgnDbTestUtils::SeedDbInfo rootInfo = DgnDbTestUtils::GetSeedDb(DgnDbTestUtils::SeedDbId::OneSpatialModel, DgnDbTestUtils::SeedDbOptions(false, false));
 
-    DgnDbPtr db = DgnDbTestUtils::OpenSeedDbCopy(rootInfo.fileName, L"ComponentModelTest/SelectAfterImport.dgndb");
+    DgnDbPtr db = DgnDbTestUtils::OpenSeedDbCopy(rootInfo.fileName, L"ComponentModelTest/SelectAfterImport.bim");
 
     if (true)
         {

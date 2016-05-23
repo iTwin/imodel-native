@@ -128,7 +128,6 @@ protected:
     ColorDef       m_backgroundColor;      // used only if bit set in flags
     RotMatrix      m_defaultDeviceOrientation;
     bool           m_defaultDeviceOrientationValid;
-    Render::PointCloudViewSettings m_pointCloudViewSettings;
 
     mutable bmap<DgnSubCategoryId,DgnSubCategory::Appearance> m_subCategories;
     mutable bmap<DgnSubCategoryId,DgnSubCategory::Override> m_subCategoryOverrides;
@@ -396,12 +395,6 @@ public:
     //! Gets a reference to the ViewFlags.
     Render::ViewFlags& GetViewFlagsR() {return m_viewFlags;}
 
-    //! Get the PointCloudViewSettings.
-    Render::PointCloudViewSettings GetPointCloudViewSettings() const {return m_pointCloudViewSettings;}
-
-    //! Get a reference to the PointCloudViewSettings.
-    Render::PointCloudViewSettings& GetPointCloudViewSettingsR() {return m_pointCloudViewSettings;}
-
     //! Gets the DgnViewId of this view.
     DgnViewId GetViewId() const {return m_viewId;}
 
@@ -544,6 +537,100 @@ public:
     DVec3d GetZVector() const {DVec3d v; GetRotation().GetRow(v,2); return v;}
 };
 
+/*=================================================================================**//**
+* View settings for point clouds
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct PointCloudSettings
+    {
+    enum class DisplayStyle
+        {
+        None           = 0,
+        Intensity      = 1,
+        Classification = 2,
+        Location       = 3,
+        Custom         = 4, //New Display style in SS4
+        };
+
+    enum {
+        VIEWSETTINGS_RGB_MASK        = (0x00000001),
+        VIEWSETTINGS_INTENSITY_MASK  = (0x00000002),
+        VIEWSETTINGS_LIGHTNING_MASK  = (0x00000004),
+        VIEWSETTINGS_PLANE_MASK      = (0x00000008),
+        VIEWSETTINGS_FRONTBIAS_MASK  = (0x00000010),
+        };
+
+protected:
+    uint32_t        m_flags;
+    double          m_contrast;
+    double          m_brightness;
+    double          m_distance;
+    double          m_offset;
+    int32_t         m_adaptivePointSize;
+    uint32_t        m_intensityRampIdx;
+    uint32_t        m_planeRampIdx;
+    uint32_t        m_planeAxis; //{x,y,z} index
+    DisplayStyle    m_displayStyle = DisplayStyle::None;
+    Utf8String      m_planeRamp;
+    Utf8String      m_intensityRamp;
+    bool            m_useACSAsPlaneAxis;
+    bool            m_clampIntensity;
+    bool            m_needClassifBuffer;
+    Utf8String      m_displayStyleName;
+    int32_t         m_displayStyleIndex;
+
+public:
+    static float GetDefaultViewContrast() {return 50.0;}
+    static float GetDefaultViewBrightness() {return 180.0;}
+    
+    PointCloudSettings() {InitDefaults();}
+    void InitDefaults();
+    bool AreSetToDefault() const;
+
+    bool GetUseRgb() const {return TO_BOOL(m_flags & VIEWSETTINGS_RGB_MASK);}
+    bool GetUseIntensity() const {return TO_BOOL(m_flags & VIEWSETTINGS_INTENSITY_MASK);}
+    bool GetUseLightning() const {return TO_BOOL(m_flags & VIEWSETTINGS_LIGHTNING_MASK);}
+    bool GetUsePlane() const {return TO_BOOL(m_flags & VIEWSETTINGS_PLANE_MASK);}
+    bool GetUseFrontBias() const {return TO_BOOL(m_flags & VIEWSETTINGS_FRONTBIAS_MASK);}
+    uint32_t GetFlags() const {return m_flags;}
+    void SetFlags(uint32_t flags) {m_flags = flags;}
+    double GetContrast() const {return m_contrast;}
+    void SetContrast(double contrast) {m_contrast = contrast;}
+    double GetBrightness() const {return m_brightness;}
+    void SetBrightness(double brightness){m_brightness = brightness;}
+    double GetDistance() const {return m_distance;}
+    void SetDistance(double distance) {m_distance = distance;}
+    double GetOffset() const {return m_offset;}
+    void SetOffset(double offset) {m_offset = offset;}
+    int32_t GetAdaptivePointSize() const {return m_adaptivePointSize;}
+    void SetAdaptivePointSize(int32_t adaptivePointSize){m_adaptivePointSize = adaptivePointSize;}
+    uint32_t GetIntensityRampIdx() const {return m_intensityRampIdx;}
+    void SetIntensityRampIdx(uint32_t intensityRampIdx){m_intensityRampIdx = intensityRampIdx;}
+    uint32_t GetPlaneRampIdx() const {return m_planeRampIdx;}
+    void SetPlaneRampIdx(uint32_t planeRampIdx){m_planeRampIdx = planeRampIdx;}
+    uint32_t GetPlaneAxis() const {return m_planeAxis;}
+    void SetPlaneAxis(uint32_t planeAxis){m_planeAxis = planeAxis;}
+    DisplayStyle GetDisplayStyle() const {return m_displayStyle;}
+    void SetDisplayStyle(DisplayStyle const& displayStyle) {m_displayStyle = displayStyle;}
+    Utf8StringCR GetPlaneRamp() const {return m_planeRamp;}
+    void SetPlaneRamp(Utf8StringCR planeRamp){m_planeRamp = planeRamp;}
+    Utf8StringCR GetIntensityRamp() const {return m_intensityRamp;}
+    void SetIntensityRamp(Utf8StringCR intensityRamp){m_intensityRamp = intensityRamp;}
+    bool GetUseACSAsPlaneAxis() const {return m_useACSAsPlaneAxis;}
+    void SetUseACSAsPlaneAxis(bool useACSAsPlaneAxis){m_useACSAsPlaneAxis = useACSAsPlaneAxis;}
+    bool GetClampIntensity() const {return m_clampIntensity;}
+    void SetClampIntensity(bool clampIntensity){m_clampIntensity = clampIntensity;}
+    bool GetNeedClassifBuffer() const {return m_needClassifBuffer;}
+    void SetNeedClassifBuffer(bool needClassifBuffer){m_needClassifBuffer = needClassifBuffer;}
+    Utf8String GetDisplayStyleName() const {return m_displayStyleName;}
+    void SetDisplayStyleName(Utf8StringCR displayStyleName){m_displayStyleName = displayStyleName;}
+    int32_t GetDisplayStyleIndex() const {return m_displayStyleIndex;}
+    void SetDisplayStyleIndex(int32_t displayStyleIndex){m_displayStyleIndex = displayStyleIndex;}
+
+    void FromJson(JsonValueCR);
+    void ToJson(JsonValueR val) const;
+   };
+
 //=======================================================================================
 //! A SpatialViewControllerBase controls views of SpatialModels.
 //! @ingroup GROUP_DgnView
@@ -561,6 +648,7 @@ protected:
     RotMatrix       m_rotation;         //!< Rotation of the view frustum.
     DgnStyleId      m_displayStyleId;   //!< The display style id of the view
     IAuxCoordSysPtr m_auxCoordSys;      //!< The auxiliary coordinate system in use.
+    PointCloudSettings m_pointCloudSettings;
 
     virtual SpatialViewControllerCP _ToSpatialView() const override {return this;}
 
@@ -598,6 +686,13 @@ public:
     //! Sets the Auxiliary Coordinate System to use for this view.
     //! @param[in] acs The new Auxiliary Coordinate System.
     void SetAuxCoordinateSystem(IAuxCoordSysP acs) {m_auxCoordSys = acs;}
+
+    //! Get the PointCloudViewSettings.
+    PointCloudSettings const& GetPointCloudSettings() const {return m_pointCloudSettings;}
+
+    //! Get a reference to the PointCloudViewSettings.
+    PointCloudSettings& GetPointCloudSettingsR() {return m_pointCloudSettings;}
+
 };
 
 /** @addtogroup GROUP_DgnView DgnView Module
@@ -608,7 +703,7 @@ This is what the parameters to the camera methods, and the values stored by Came
                v-- {origin}
           -----+-------------------------------------- -   [back plane]
           ^\   .                                    /  ^
-          | \  .            /   |        p
+          | \  .            /   |        p                      P
         d |  \ .                                  /    |        o
         e |   \.         {targetPoint}           /     |        s
         l |    |---------------+----------------|      |        i    [focus plane]

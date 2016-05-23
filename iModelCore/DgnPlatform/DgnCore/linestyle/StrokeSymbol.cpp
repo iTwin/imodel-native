@@ -193,6 +193,7 @@ void LsSymbolComponent::Draw (LineStyleContextR context, TransformCR transform)
     if (!geomPart.IsValid())
         return;
 
+    BeAssert(nullptr != context.GetViewContext());
     GeometryCollection  collection(geomPart->GetGeometryStream(), *GetDgnDbP());
     for (auto iter : collection)
         {

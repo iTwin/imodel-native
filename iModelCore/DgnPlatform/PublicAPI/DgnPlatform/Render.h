@@ -22,23 +22,24 @@
 
 BEGIN_BENTLEY_RENDER_NAMESPACE
 
+struct GraphicBuilderPtr;
+
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   12/14
 //=======================================================================================
 enum class RenderMode
     {
-    Wireframe           = 0,
-    CrossSection        = 1,
-    Wiremesh            = 2,
-    HiddenLine          = 3,
-    SolidFill           = 4,
-    ConstantShade       = 5,
-    SmoothShade         = 6,
-    Phong               = 7,
-    RayTrace            = 8,
-    Radiosity           = 10,
-    RenderLuxology      = 12,
-    Invalid             = 15,
+    Wireframe      = 0,
+    CrossSection   = 1,
+    Wiremesh       = 2,
+    HiddenLine     = 3,
+    SolidFill      = 4,
+    ConstantShade  = 5,
+    SmoothShade    = 6,
+    Phong          = 7,
+    RayTrace       = 8,
+    Radiosity      = 10,
+    Invalid        = 15,
     };
 
 /*=================================================================================**//**
@@ -105,6 +106,7 @@ struct Task : RefCounted<NonCopyableClass>
         FinishHeal,
         Heal,
         DefineGeometryTexture,
+        FindNearestZ,
         ReadImage,
     };
 
@@ -140,8 +142,10 @@ public:
     //! @return true if this Task should replace the other pending task.
     virtual bool _Replaces(Task& other) const {return m_operation == other.m_operation;}
 
+    //! return true if this task changes the scene.
     virtual bool _DefinesScene() const = 0;
 
+    //! called when this task is entered into the render queue
     virtual void _OnQueued() const {}
 
     Target* GetTarget() const {return m_target.get();} //!< Get the Target of this Task
@@ -153,6 +157,7 @@ public:
 };
 
 //=======================================================================================
+// Base class for all tasks that change the scene
 // @bsiclass                                                    Keith.Bentley   03/16
 //=======================================================================================
 struct SceneTask : Task
@@ -163,6 +168,7 @@ struct SceneTask : Task
 };
 
 //=======================================================================================
+// Base class for tasks that don't change the scene
 // @bsiclass                                                    Keith.Bentley   03/16
 //=======================================================================================
 struct NonSceneTask : Task
@@ -227,6 +233,8 @@ struct Image
         Rgb  = 2,
         Bgr  = 3,
         Gray = 4,
+        Jpeg = 5,
+        PNG  = 6,
     };
     static size_t BytesPerPixel(Format format)
         {
@@ -234,6 +242,8 @@ struct Image
             {
             case Format::Rgba:
             case Format::Bgra:
+            case Format::Jpeg:
+            case Format::PNG:
                 return 4;
             case Format::Rgb:
             case Format::Bgr:
@@ -326,29 +336,29 @@ private:
     // NOTE: For performance, the constructor initializes members using:
     //         memset (&m_lStyle, 0, offsetof (LineStyleSymb, m_planeByRows)- offsetof (LineStyleSymb, m_lStyle));
     //         So it will be necessary to update it if first/last member are changed. */
-    ILineStyleCP    m_lStyle; // if nullptr, no linestyle active
+    ILineStyleCP m_lStyle; // if nullptr, no linestyle active
     struct
         {
-        uint32_t       scale:1;
-        uint32_t       dashScale:1;
-        uint32_t       gapScale:1;
-        uint32_t       orgWidth:1;
-        uint32_t       endWidth:1;
-        uint32_t       phaseShift:1;
-        uint32_t       autoPhase:1;
-        uint32_t       maxCompress:1;
-        uint32_t       iterationLimit:1;
-        uint32_t       treatAsSingleSegment:1;
-        uint32_t       plane:1;
-        uint32_t       cosmetic:1;
-        uint32_t       centerPhase:1;
-        uint32_t       xElemPhaseSet:1;
-        uint32_t       startTangentSet:1;
-        uint32_t       endTangentSet:1;
-        uint32_t       elementIsClosed:1;
-        uint32_t       continuationXElems:1;
-        uint32_t       isCurve:1;
-        uint32_t       isContinuous:1;
+        uint32_t scale:1;
+        uint32_t dashScale:1;
+        uint32_t gapScale:1;
+        uint32_t orgWidth:1;
+        uint32_t endWidth:1;
+        uint32_t phaseShift:1;
+        uint32_t autoPhase:1;
+        uint32_t maxCompress:1;
+        uint32_t iterationLimit:1;
+        uint32_t treatAsSingleSegment:1;
+        uint32_t plane:1;
+        uint32_t cosmetic:1;
+        uint32_t centerPhase:1;
+        uint32_t xElemPhaseSet:1;
+        uint32_t startTangentSet:1;
+        uint32_t endTangentSet:1;
+        uint32_t elementIsClosed:1;
+        uint32_t continuationXElems:1;
+        uint32_t isCurve:1;
+        uint32_t isContinuous:1;
         } m_options;
 
     int         m_nIterate;
@@ -391,7 +401,7 @@ public:
     double GetTotalLength() const {return m_totalLength;}
     DVec3dCP GetStartTangent() const {return &m_startTangent;}
     DVec3dCP GetEndTangent() const{return &m_endTangent;}
-    Texture* GetTexture() const {return m_texture.get(); }
+    Texture* GetTexture() const {return m_texture.get();}
 
     bool IsScaled() const {return m_options.scale;}
     bool IsAutoPhase() const {return m_options.autoPhase;}
@@ -886,8 +896,8 @@ struct PointCloudDraw : RefCounted<NonCopyableClass>
 };
 
 //=======================================================================================
-//! An object that supplies the renderer-specific implementation of the Graphic primitives.
-// @bsiclass
+//! A renderer-specific object which can be placed into a display list.
+// @bsistruct                                                   Paul.Connelly   05/16
 //=======================================================================================
 struct Graphic : RefCounted<NonCopyableClass>
 {
@@ -900,65 +910,18 @@ struct Graphic : RefCounted<NonCopyableClass>
         CreateParams(DgnViewportCP vp=nullptr, TransformCR placement=Transform::FromIdentity(), double pixelSize=0.0) : m_vp(vp), m_pixelSize(pixelSize), m_placement(placement) {}
     };
 
-    struct TriMeshArgs
-    {
-        int32_t m_numIndices = 0;
-        int32_t const* m_vertIndex = nullptr;
-        int32_t m_numPoints = 0;
-        FPoint3d const* m_points= nullptr;
-        FPoint3d const* m_normals= nullptr;
-        FPoint2d const* m_textureUV= nullptr;
-        TexturePtr m_texture;
-        int32_t m_flags = 0; // don't generate normals
-        DGNPLATFORM_EXPORT PolyfaceHeaderPtr ToPolyface() const;
-    };
-
 protected:
-    bool          m_isOpen = true;
     DgnViewportCP m_vp; //! Viewport this Graphic is valid for (Graphic is valid for any viewport if nullptr)
     double        m_pixelSize; //! Pixel size to use for stroke
     double        m_minSize; //! Minimum pixel size this Graphic is valid for (Graphic is valid for all sizes if min and max are both 0.0)
     double        m_maxSize; //! Maximum pixel size this Graphic is valid for (Graphic is valid for all sizes if min and max are both 0.0)
     Transform     m_localToWorldTransform;
-    TextureCPtr   m_texture;
 
-    virtual StatusInt _Close() {m_isOpen=false; return SUCCESS;}
-    virtual bool _IsForDisplay() const {return false;}
-    virtual void _ActivateGraphicParams(GraphicParamsCR graphicParams, GeometryParamsCP geomParams) = 0;
-    virtual void _AddLineString(int numPoints, DPoint3dCP points) = 0;
-    virtual void _AddLineString2d(int numPoints, DPoint2dCP points, double zDepth) = 0;
-    virtual void _AddPointString(int numPoints, DPoint3dCP points) = 0;
-    virtual void _AddPointString2d(int numPoints, DPoint2dCP points, double zDepth) = 0;
-    virtual void _AddShape(int numPoints, DPoint3dCP points, bool filled) = 0;
-    virtual void _AddShape2d(int numPoints, DPoint2dCP points, bool filled, double zDepth) = 0;
-    virtual void _AddTriStrip(int numPoints, DPoint3dCP points, int32_t usageFlags) = 0;
-    virtual void _AddTriStrip2d(int numPoints, DPoint2dCP points, int32_t usageFlags, double zDepth) = 0;
-    virtual void _AddArc(DEllipse3dCR ellipse, bool isEllipse, bool filled) = 0;
-    virtual void _AddArc2d(DEllipse3dCR ellipse, bool isEllipse, bool filled, double zDepth) = 0;
-    virtual void _AddBSplineCurve(MSBsplineCurveCR curve, bool filled) = 0;
-    virtual void _AddBSplineCurve2d(MSBsplineCurveCR curve, bool filled, double zDepth) = 0;
-    virtual void _AddCurveVector(CurveVectorCR curves, bool isFilled) = 0;
-    virtual void _AddCurveVector2d(CurveVectorCR curves, bool isFilled, double zDepth) = 0;
-    virtual void _AddSolidPrimitive(ISolidPrimitiveCR primitive) = 0;
-    virtual void _AddBSplineSurface(MSBsplineSurfaceCR surface) = 0;
-    virtual void _AddPolyface(PolyfaceQueryCR meshData, bool filled = false) = 0;
-    virtual void _AddTriMesh(TriMeshArgs const& args) = 0;
-    virtual void _AddBody(ISolidKernelEntityCR) = 0;
-    virtual void _AddTextString(TextStringCR text) = 0;
-    virtual void _AddTextString2d(TextStringCR text, double zDepth) = 0;
-    virtual void _AddTile(TextureCR tile, DPoint3dCP corners) = 0;
-    virtual void _AddDgnOle(DgnOleDraw*) = 0;
-    virtual void _AddPointCloud(PointCloudDraw* drawParams) = 0;
-    virtual void _AddSubGraphic(GraphicR, TransformCR, GraphicParamsCR) = 0;
-    virtual GraphicPtr _CreateSubGraphic(TransformCR) const = 0;
     virtual ~Graphic() {}
-
+    virtual bool _IsForDisplay() const {return false;}
+    virtual StatusInt _EnsureClosed() = 0;
 public:
     explicit Graphic(CreateParams const& params=CreateParams()) : m_vp(params.m_vp), m_pixelSize(params.m_pixelSize), m_minSize(0.0), m_maxSize(0.0) {m_localToWorldTransform = params.m_placement;}
-    GraphicPtr CreateSubGraphic(TransformCR subToGraphic) const {return _CreateSubGraphic(subToGraphic);} // NOTE: subToGraphic is provided to allow stroking in world coords...
-
-    StatusInt Close() {return m_isOpen ? _Close() : SUCCESS;}
-    bool IsOpen() const {return m_isOpen;}
 
     bool IsValidFor(DgnViewportCR vp, double metersPerPixel) const
         {
@@ -986,39 +949,132 @@ public:
         m_maxSize = (0.0 == m_maxSize ? newMax : DoubleOps::Min(m_maxSize, newMax));
         }
 
+    //! Return whether this decoration will be drawn to a viewport as opposed to being collected for some other purpose (ex. geometry export).
+    bool IsForDisplay() const {return _IsForDisplay();}
+    StatusInt EnsureClosed() {return _EnsureClosed();} //!< Called when this Graphic is added to a display list, to ensure it is fully constructed and ready for display
+};
+
+//=======================================================================================
+//! Interface adopted by an object which can build a Graphic from the Graphic primitives.
+// @bsiclass
+//=======================================================================================
+struct IGraphicBuilder
+{
+    struct TriMeshArgs
+    {
+        int32_t m_numIndices = 0;
+        int32_t const* m_vertIndex = nullptr;
+        int32_t m_numPoints = 0;
+        FPoint3d const* m_points= nullptr;
+        FPoint3d const* m_normals= nullptr;
+        FPoint2d const* m_textureUV= nullptr;
+        TexturePtr m_texture;
+        int32_t m_flags = 0; // don't generate normals
+        DGNPLATFORM_EXPORT PolyfaceHeaderPtr ToPolyface() const;
+    };
+protected:
+    friend struct GraphicBuilder;
+
+    virtual bool _IsOpen() const = 0;
+    virtual StatusInt _Close() = 0;
+    virtual void _ActivateGraphicParams(GraphicParamsCR graphicParams, GeometryParamsCP geomParams) = 0;
+    virtual void _AddLineString(int numPoints, DPoint3dCP points) = 0;
+    virtual void _AddLineString2d(int numPoints, DPoint2dCP points, double zDepth) = 0;
+    virtual void _AddPointString(int numPoints, DPoint3dCP points) = 0;
+    virtual void _AddPointString2d(int numPoints, DPoint2dCP points, double zDepth) = 0;
+    virtual void _AddShape(int numPoints, DPoint3dCP points, bool filled) = 0;
+    virtual void _AddShape2d(int numPoints, DPoint2dCP points, bool filled, double zDepth) = 0;
+    virtual void _AddTriStrip(int numPoints, DPoint3dCP points, int32_t usageFlags) = 0;
+    virtual void _AddTriStrip2d(int numPoints, DPoint2dCP points, int32_t usageFlags, double zDepth) = 0;
+    virtual void _AddArc(DEllipse3dCR ellipse, bool isEllipse, bool filled) = 0;
+    virtual void _AddArc2d(DEllipse3dCR ellipse, bool isEllipse, bool filled, double zDepth) = 0;
+    virtual void _AddBSplineCurve(MSBsplineCurveCR curve, bool filled) = 0;
+    virtual void _AddBSplineCurve2d(MSBsplineCurveCR curve, bool filled, double zDepth) = 0;
+    virtual void _AddCurveVector(CurveVectorCR curves, bool isFilled) = 0;
+    virtual void _AddCurveVector2d(CurveVectorCR curves, bool isFilled, double zDepth) = 0;
+    virtual void _AddSolidPrimitive(ISolidPrimitiveCR primitive) = 0;
+    virtual void _AddBSplineSurface(MSBsplineSurfaceCR surface) = 0;
+    virtual void _AddPolyface(PolyfaceQueryCR meshData, bool filled = false) = 0;
+    virtual void _AddTriMesh(TriMeshArgs const& args) = 0;
+    virtual void _AddBody(ISolidKernelEntityCR) = 0;
+    virtual void _AddTextString(TextStringCR text) = 0;
+    virtual void _AddTextString2d(TextStringCR text, double zDepth) = 0;
+    virtual void _AddTile(TextureCR tile, DPoint3dCP corners) = 0;
+    virtual void _AddDgnOle(DgnOleDraw*) = 0;
+    virtual void _AddPointCloud(PointCloudDraw* drawParams) = 0;
+    virtual void _AddSubGraphic(GraphicR, TransformCR, GraphicParamsCR) = 0;
+    virtual GraphicBuilderPtr _CreateSubGraphic(TransformCR) const = 0;
+};
+
+//=======================================================================================
+//! Exposes methods for constructing a Graphic from graphic primitives.
+// @bsistruct                                                   Paul.Connelly   05/16
+//=======================================================================================
+struct GraphicBuilder
+{
+    typedef IGraphicBuilder::TriMeshArgs TriMeshArgs;
+private:
+    friend struct GraphicBuilderPtr;
+
+    GraphicPtr          m_graphic;
+    IGraphicBuilderP    m_builder;
+
+    GraphicBuilder() : m_builder(nullptr) { }
+    GraphicBuilder(GraphicR graphic, IGraphicBuilderR builder) : m_graphic(&graphic), m_builder(&builder) { }
+    template<typename T> GraphicBuilder(T* t) : m_graphic(t), m_builder(t) { }
+
+    bool IsValid() const { return m_graphic.IsValid(); }
+public:
+    GraphicBuilder(GraphicBuilderP p) : m_graphic(nullptr != p ? p->m_graphic : nullptr), m_builder(nullptr != p ? p->m_builder : nullptr) { }
+    template<typename T> GraphicBuilder(T& t) : m_graphic(&t), m_builder(&t) { }
+
+    DGNPLATFORM_EXPORT GraphicBuilderPtr CreateSubGraphic(TransformCR subToGraphic) const; // NOTE: subToGraphic is provided to allow stroking in world coords...
+
+    operator Graphic&() { BeAssert(m_graphic.IsValid()); return *m_graphic; }
+    DgnViewportCP GetViewport() const { return m_graphic->GetViewport(); }
+    TransformCR GetLocalToWorldTransform() const { return m_graphic->GetLocalToWorldTransform(); }
+    double GetPixelSize() const { return m_graphic->GetPixelSize(); }
+    void GetPixelSizeRange(double& min, double& max) const { m_graphic->GetPixelSizeRange(min, max); }
+    void SetPixelSizeRange(double min, double max) { m_graphic->SetPixelSizeRange(min, max); }
+    void UpdatePixelSizeRange(double newMin, double newMax) { m_graphic->UpdatePixelSizeRange(newMin, newMax); }
+    bool IsForDisplay() const { return m_graphic->IsForDisplay(); }
+
+    StatusInt Close() {return IsOpen() ? m_builder->_Close() : SUCCESS;}
+    bool IsOpen() const { return m_builder->_IsOpen(); }
+
     //! Set an GraphicParams to be the "active" GraphicParams for this Render::Graphic.
     //! @param[in]          graphicParams   The new active GraphicParams. All geometry drawn via calls to this Render::Graphic will
     //! @param[in]          geomParams      The source GeometryParams if graphicParams was created by cooking geomParams, nullptr otherwise.
-    void ActivateGraphicParams(GraphicParamsCR graphicParams, GeometryParamsCP geomParams=nullptr) {_ActivateGraphicParams(graphicParams, geomParams);}
+    void ActivateGraphicParams(GraphicParamsCR graphicParams, GeometryParamsCP geomParams=nullptr) {m_builder->_ActivateGraphicParams(graphicParams, geomParams);}
 
     //! Draw a 3D line string.
     //! @param[in]          numPoints   Number of vertices in points array.
     //! @param[in]          points      Array of vertices in the line string.
-    void AddLineString(int numPoints, DPoint3dCP points) {_AddLineString(numPoints, points);}
+    void AddLineString(int numPoints, DPoint3dCP points) {m_builder->_AddLineString(numPoints, points);}
 
     //! Draw a 2D line string.
     //! @param[in]          numPoints   Number of vertices in points array.
     //! @param[in]          points      Array of vertices in the line string.
     //! @param[in]          zDepth      Z depth value in local coordinates.
-    void AddLineString2d(int numPoints, DPoint2dCP points, double zDepth) {_AddLineString2d(numPoints, points, zDepth);}
+    void AddLineString2d(int numPoints, DPoint2dCP points, double zDepth) {m_builder->_AddLineString2d(numPoints, points, zDepth);}
 
     //! Draw a 3D point string. A point string is displayed as a series of points, one at each vertex in the array, with no vectors connecting the vertices.
     //! @param[in]          numPoints   Number of vertices in points array.
     //! @param[in]          points      Array of vertices in the point string.
-    void AddPointString(int numPoints, DPoint3dCP points) {_AddPointString(numPoints, points);}
+    void AddPointString(int numPoints, DPoint3dCP points) {m_builder->_AddPointString(numPoints, points);}
 
     //! Draw a 2D point string. A point string is displayed as a series of points, one at each vertex in the array, with no vectors connecting the vertices.
     //! @param[in]          numPoints   Number of vertices in points array.
     //! @param[in]          points      Array of vertices in the point string.
     //! @param[in]          zDepth      Z depth value.
-    void AddPointString2d(int numPoints, DPoint2dCP points, double zDepth) {_AddPointString2d(numPoints, points, zDepth);}
+    void AddPointString2d(int numPoints, DPoint2dCP points, double zDepth) {m_builder->_AddPointString2d(numPoints, points, zDepth);}
 
     //! Draw a closed 3D shape.
     //! @param[in]          numPoints   Number of vertices in \c points array. If the last vertex in the array is not the same as the first vertex, an
     //!                                     additional vertex will be added to close the shape.
     //! @param[in]          points      Array of vertices of the shape.
     //! @param[in]          filled      If true, the shape will be drawn filled.
-    void AddShape(int numPoints, DPoint3dCP points, bool filled) {_AddShape(numPoints, points, filled);}
+    void AddShape(int numPoints, DPoint3dCP points, bool filled) {m_builder->_AddShape(numPoints, points, filled);}
 
     //! Draw a 2D shape.
     //! @param[in]          numPoints   Number of vertices in \c points array. If the last vertex in the array is not the same as the first vertex, an
@@ -1026,80 +1082,80 @@ public:
     //! @param[in]          points      Array of vertices of the shape.
     //! @param[in]          zDepth      Z depth value.
     //! @param[in]          filled      If true, the shape will be drawn filled.
-    void AddShape2d(int numPoints, DPoint2dCP points, bool filled, double zDepth) {_AddShape2d(numPoints, points, filled, zDepth);}
+    void AddShape2d(int numPoints, DPoint2dCP points, bool filled, double zDepth) {m_builder->_AddShape2d(numPoints, points, filled, zDepth);}
 
     //! Draw a 3D elliptical arc or ellipse.
     //! @param[in]          ellipse     arc data.
     //! @param[in]          isEllipse   If true, and if full sweep, then draw as an ellipse instead of an arc.
     //! @param[in]          filled      If true, and isEllipse is also true, then draw ellipse filled.
-    void AddArc(DEllipse3dCR ellipse, bool isEllipse, bool filled) {_AddArc(ellipse, isEllipse, filled);}
+    void AddArc(DEllipse3dCR ellipse, bool isEllipse, bool filled) {m_builder->_AddArc(ellipse, isEllipse, filled);}
 
     //! Draw a 2D elliptical arc or ellipse.
     //! @param[in]          ellipse     arc data.
     //! @param[in]          isEllipse   If true, and if full sweep, then draw as an ellipse instead of an arc.
     //! @param[in]          filled      If true, and isEllipse is also true, then draw ellipse filled.
     //! @param[in]          zDepth      Z depth value
-    void AddArc2d(DEllipse3dCR ellipse, bool isEllipse, bool filled, double zDepth) {_AddArc2d(ellipse, isEllipse, filled, zDepth);}
+    void AddArc2d(DEllipse3dCR ellipse, bool isEllipse, bool filled, double zDepth) {m_builder->_AddArc2d(ellipse, isEllipse, filled, zDepth);}
 
     //! Draw a BSpline curve.
-    void AddBSplineCurve(MSBsplineCurveCR curve, bool filled) {_AddBSplineCurve(curve, filled);}
+    void AddBSplineCurve(MSBsplineCurveCR curve, bool filled) {m_builder->_AddBSplineCurve(curve, filled);}
 
     //! Draw a BSpline curve as 2d geometry with display priority.
     //! @note Only necessary for non-ICachedDraw calls to support non-zero display priority.
-    void AddBSplineCurve2d(MSBsplineCurveCR curve, bool filled, double zDepth) {_AddBSplineCurve2d(curve, filled, zDepth);}
+    void AddBSplineCurve2d(MSBsplineCurveCR curve, bool filled, double zDepth) {m_builder->_AddBSplineCurve2d(curve, filled, zDepth);}
 
     //! Draw a curve vector.
-    void AddCurveVector(CurveVectorCR curves, bool isFilled) {_AddCurveVector(curves, isFilled);}
+    void AddCurveVector(CurveVectorCR curves, bool isFilled) {m_builder->_AddCurveVector(curves, isFilled);}
 
     //! Draw a curve vector as 2d geometry with display priority.
     //! @note Only necessary for non-ICachedDraw calls to support non-zero display priority.
-    void AddCurveVector2d(CurveVectorCR curves, bool isFilled, double zDepth) {_AddCurveVector2d(curves, isFilled, zDepth);}
+    void AddCurveVector2d(CurveVectorCR curves, bool isFilled, double zDepth) {m_builder->_AddCurveVector2d(curves, isFilled, zDepth);}
 
     //! Draw a light-weight surface or solid primitive.
     //! @remarks Solid primitives can be capped or uncapped, they include cones, torus, box, spheres, and sweeps.
-    void AddSolidPrimitive(ISolidPrimitiveCR primitive) {_AddSolidPrimitive(primitive);}
+    void AddSolidPrimitive(ISolidPrimitiveCR primitive) {m_builder->_AddSolidPrimitive(primitive);}
 
     //! Draw a BSpline surface.
-    void AddBSplineSurface(MSBsplineSurfaceCR surface) {_AddBSplineSurface(surface);}
+    void AddBSplineSurface(MSBsplineSurfaceCR surface) {m_builder->_AddBSplineSurface(surface);}
 
     //! @remarks Wireframe fill display supported for non-illuminated meshes.
-    void AddPolyface(PolyfaceQueryCR meshData, bool filled = false) {_AddPolyface(meshData, filled);}
+    void AddPolyface(PolyfaceQueryCR meshData, bool filled = false) {m_builder->_AddPolyface(meshData, filled);}
 
-    void AddTriMesh(TriMeshArgs const& args) {_AddTriMesh(args);}
+    void AddTriMesh(TriMeshArgs const& args) {m_builder->_AddTriMesh(args);}
 
     //! Draw a BRep surface/solid entity from the solids kernel.
-    void AddBody(ISolidKernelEntityCR entity) {_AddBody(entity);}
+    void AddBody(ISolidKernelEntityCR entity) {m_builder->_AddBody(entity);}
 
     //! Draw a series of Glyphs.
     //! @param[in]          text        Text drawing parameters
-    void AddTextString(TextStringCR text) {_AddTextString(text);}
+    void AddTextString(TextStringCR text) {m_builder->_AddTextString(text);}
 
     //! Draw a series of Glyphs with display priority.
-    //! @param[in]          text        Text drawing parameters
-    //! @param[in]          zDepth      Priority value in 2d
-    void AddTextString2d(TextStringCR text, double zDepth) {_AddTextString2d(text, zDepth);}
+    //! @param[in] text   Text drawing parameters
+    //! @param[in] zDepth Priority value in 2d
+    void AddTextString2d(TextStringCR text, double zDepth) {m_builder->_AddTextString2d(text, zDepth);}
 
     //! Draw a filled triangle strip from 3D points.
-    //! @param[in]          numPoints   Number of vertices in \c points array.
-    //! @param[in]          points      Array of vertices.
-    //! @param[in]          usageFlags  0 or 1 if tri-strip represents a thickened line.
-    void AddTriStrip(int numPoints, DPoint3dCP points, int32_t usageFlags) {_AddTriStrip(numPoints, points, usageFlags);}
+    //! @param[in] numPoints   Number of vertices in \c points array.
+    //! @param[in] points      Array of vertices.
+    //! @param[in] usageFlags  0 or 1 if tri-strip represents a thickened line.
+    void AddTriStrip(int numPoints, DPoint3dCP points, int32_t usageFlags) {m_builder->_AddTriStrip(numPoints, points, usageFlags);}
 
     //! Draw a filled triangle strip from 2D points.
-    //! @param[in]          numPoints   Number of vertices in \c points array.
-    //! @param[in]          points      Array of vertices.
-    //! @param[in]          zDepth      Z depth value.
-    //! @param[in]          usageFlags  0 or 1 if tri-strip represents a thickened line.
-    void AddTriStrip2d(int numPoints, DPoint2dCP points, int32_t usageFlags, double zDepth) {_AddTriStrip2d(numPoints, points, usageFlags, zDepth);}
+    //! @param[in] numPoints   Number of vertices in \c points array.
+    //! @param[in] points      Array of vertices.
+    //! @param[in] zDepth      Z depth value.
+    //! @param[in] usageFlags  0 or 1 if tri-strip represents a thickened line.
+    void AddTriStrip2d(int numPoints, DPoint2dCP points, int32_t usageFlags, double zDepth) {m_builder->_AddTriStrip2d(numPoints, points, usageFlags, zDepth);}
 
     //! @private
-    void AddTile(TextureCR tile, DPoint3dCP corners) {_AddTile(tile, corners);}
+    void AddTile(TextureCR tile, DPoint3dCP corners) {m_builder->_AddTile(tile, corners);}
 
     //! Helper Methods to draw simple SolidPrimitives.
     void AddTorus(DPoint3dCR center, DVec3dCR vectorX, DVec3dCR vectorY, double majorRadius, double minorRadius, double sweepAngle, bool capped) {AddSolidPrimitive(*ISolidPrimitive::CreateDgnTorusPipe(DgnTorusPipeDetail(center, vectorX, vectorY, majorRadius, minorRadius, sweepAngle, capped)));}
     void AddBox(DVec3dCR primary, DVec3dCR secondary, DPoint3dCR basePoint, DPoint3dCR topPoint, double baseWidth, double baseLength, double topWidth, double topLength, bool capped) {AddSolidPrimitive(*ISolidPrimitive::CreateDgnBox(DgnBoxDetail::InitFromCenters(basePoint, topPoint, primary, secondary, baseWidth, baseLength, topWidth, topLength, capped)));}
 
-    //! Add DRange3d edges using AddLineString
+    //! Add DRange3d edges 
     void AddRangeBox(DRange3dCR range)
         {
         DPoint3d p[8], tmpPts[9];
@@ -1122,7 +1178,7 @@ public:
         AddLineString(2, DSegment3d::From(p[2], p[6]).point);
         }
 
-    //! Add DRange2d edges using AddLineString2d
+    //! Add DRange2d edges 
     void AddRangeBox2d(DRange2dCR range, double zDepth)
         {
         DPoint2d tmpPts[5];
@@ -1137,16 +1193,13 @@ public:
         }
 
     //! Draw a 3D point cloud.
-    //! @param[in] drawParams Object containing draw parameters.
-    void AddPointCloud(PointCloudDraw* drawParams) {_AddPointCloud(drawParams);}
+    //! @param[in] drawParams PointCloud parameters
+    void AddPointCloud(PointCloudDraw* drawParams) {m_builder->_AddPointCloud(drawParams);}
 
     //! Draw OLE object.
-    void AddDgnOle(DgnOleDraw* ole) {_AddDgnOle(ole);}
+    void AddDgnOle(DgnOleDraw* ole) {m_builder->_AddDgnOle(ole);}
 
-    void AddSubGraphic(GraphicR graphic, TransformCR subToGraphic, GraphicParamsCR params) {_AddSubGraphic(graphic, subToGraphic, params);}
-
-    //! Return whether this decoration will be drawn to a viewport as opposed to being collected for some other purpose (ex. geometry export).
-    bool IsForDisplay() const {return _IsForDisplay();}
+    void AddSubGraphic(GraphicR graphic, TransformCR subToGraphic, GraphicParamsCR params) {m_builder->_AddSubGraphic(graphic, subToGraphic, params);}
 
     //! Set symbology for decorations that are only used for display purposes. Pickable decorations require a category, must initialize
     //! a GeometryParams and cook it into a GraphicParams to have a locatable decoration.
@@ -1169,6 +1222,29 @@ public:
         graphicParams.SetIsBlankingRegion(true);
         ActivateGraphicParams(graphicParams);
         }
+};
+
+//=======================================================================================
+//! A smart-pointer to a GraphicBuilder object.
+// @bsistruct                                                   Paul.Connelly   05/16
+//=======================================================================================
+struct GraphicBuilderPtr
+{
+private:
+    GraphicBuilder  m_builder;
+public:
+    GraphicBuilderPtr() { }
+    GraphicBuilderPtr(GraphicBuilderP builder) : m_builder(builder) { }
+
+    template<typename T> GraphicBuilderPtr(T* impl) : m_builder(impl) { }
+    operator GraphicPtr() { return m_builder.m_graphic; }
+
+    bool IsValid() const { return m_builder.IsValid(); }
+    bool IsNull() const { return !IsValid(); }
+    GraphicBuilderP get() { return IsValid() ? &m_builder : nullptr; }
+    GraphicBuilderP operator->() { return get(); }
+    GraphicBuilderR operator*() { BeAssert(IsValid()); return *get(); }
+    GraphicP GetGraphic() { return m_builder.m_graphic.get(); }
 };
 
 //=======================================================================================
@@ -1305,25 +1381,39 @@ public:
 };
 
 //=======================================================================================
+// @bsiclass                                                    Keith.Bentley   05/16
+//=======================================================================================
+struct GraphicArray
+{
+    bvector<GraphicPtr> m_entries;
+    void Add(Graphic& graphic) {graphic.EnsureClosed(); m_entries.push_back(&graphic);}
+};
+
+//=======================================================================================
+//! A Render::System is the renderer-specific factory for creating Render::Graphics, Render::Textures, and Render::Materials.
 // @bsiclass                                                    Keith.Bentley   03/16
 //=======================================================================================
 struct System
 {
     virtual MaterialPtr _GetMaterial(DgnMaterialId, DgnDbR) const = 0;
-    virtual TexturePtr _GetTexture(DgnTextureId, DgnDbR) const = 0;
-    virtual GraphicPtr _CreateGraphic(Graphic::CreateParams const& params) const = 0;
+    virtual GraphicBuilderPtr _CreateGraphic(Graphic::CreateParams const& params) const = 0;
     virtual GraphicPtr _CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency) const = 0;
+    virtual GraphicPtr _CreateGroupNode(Graphic::CreateParams const& params, GraphicArray& entries, ClipPrimitiveCP clip) const = 0;
 
-    //N.B. _CreateTexture is called from multiple-threads implementer must ensure this is supported. If not non-shareable resource must be protected by locks.
-    virtual TexturePtr _CreateTexture(ImageCR, bool enableAlpha) const = 0;
-    virtual TexturePtr _CreateGeometryTexture(Render::GraphicR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern) const = 0;
+    //! Get or create a Texture from a DgnTexture element. Note that there is a cache of textures stored on a DgnDb, so this may return a pointer to a previously-created texture.
+    virtual TexturePtr _GetImageTexture(DgnTextureId, DgnDbR) const = 0;
+
+    //! Create a new Texture from an Image. Note: this is called from multiple-threads implementer must ensure this is supported.
+    virtual TexturePtr _CreateImageTexture(ImageCR, bool enableAlpha) const = 0;
+
+    //! Create a Texture from a graphic.
+    virtual TexturePtr _CreateGeometryTexture(GraphicR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern) const = 0;
 };
 
 //=======================================================================================
-//! A Render::Target is the renderer-specific factory for creating Render::Graphics.
 //! A Render:Target holds the current "scene", the current set of dynamic Graphics, and the current decorators.
 //! When frames are composed, all of those Graphics are rendered, as appropriate.
-//! A Render:Target holds a reference to a Display::Device.
+//! A Render:Target holds a reference to a Render::Device, and a Render::System
 //! Every DgnViewport holds a reference to a Render::Target.
 // @bsiclass                                                    Keith.Bentley   11/15
 //=======================================================================================
@@ -1376,6 +1466,7 @@ public:
     virtual void _DrawProgressive(GraphicListR progressiveList, StopWatch&) = 0;
     virtual bool _WantInvertBlackBackground() {return false;}
     virtual double _GetCameraFrustumNearScaleLimit() const = 0;
+    virtual double _FindNearestZ(DRange2dCR) const = 0;
 
     void AbortProgressive() {m_abort=true;}
     Point2d GetScreenOrigin() const {return _GetScreenOrigin();}
@@ -1384,11 +1475,11 @@ public:
     DeviceCP GetDevice() const {return m_device.get();}
     void OnResized() {_OnResized();}
     void* ResolveOverrides(OvrGraphicParamsCP ovr) {return ovr ? _ResolveOverrides(*ovr) : nullptr;}
-    GraphicPtr CreateGraphic(Graphic::CreateParams const& params) {return m_system._CreateGraphic(params);}
+    GraphicBuilderPtr CreateGraphic(Graphic::CreateParams const& params) {return m_system._CreateGraphic(params);}
     GraphicPtr CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency) {return m_system._CreateSprite(sprite, location, xVec, transparency);}
     MaterialPtr GetMaterial(DgnMaterialId id, DgnDbR dgndb) const {return m_system._GetMaterial(id, dgndb);}
-    TexturePtr GetTexture(DgnTextureId id, DgnDbR dgndb) const {return m_system._GetTexture(id, dgndb);}
-    TexturePtr CreateTexture(ImageR image, bool enableAlpha) const {return m_system._CreateTexture(image, enableAlpha);}
+    TexturePtr GetImageTexture(DgnTextureId id, DgnDbR dgndb) const {return m_system._GetImageTexture(id, dgndb);}
+    TexturePtr CreateImageTexture(ImageR image, bool enableAlpha) const {return m_system._CreateImageTexture(image, enableAlpha);}
     TexturePtr CreateGeometryTexture(Render::GraphicR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern) const {return m_system._CreateGeometryTexture(graphic, range, useGeometryColors, forAreaPattern);}
     SystemR GetSystem() {return m_system;}
 
@@ -1397,116 +1488,5 @@ public:
     void RecordFrameTime(GraphicList& scene, double seconds, bool isFromProgressiveDisplay) { RecordFrameTime(scene.GetCount(), seconds, isFromProgressiveDisplay); }
     DGNPLATFORM_EXPORT void RecordFrameTime(uint32_t numGraphicsInScene, double seconds, bool isFromProgressiveDisplay);
 };
-
-/*=================================================================================**//**
-* View settings for the point cloud
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
-#define POINTCLOUD_DEFAULT_VIEW_CONTRAST    (50.0)
-#define POINTCLOUD_DEFAULT_VIEW_BRIGHTNESS  (180.0)
-
-#define VIEWSETTINGS_RGB_MASK        (0x00000001)
-#define VIEWSETTINGS_INTENSITY_MASK  (0x00000002)
-#define VIEWSETTINGS_LIGHTNING_MASK  (0x00000004)
-#define VIEWSETTINGS_PLANE_MASK      (0x00000008)
-#define VIEWSETTINGS_FRONTBIAS_MASK  (0x00000010)
-
-struct PointCloudViewSettings
-    {
-    enum class DisplayStyle
-        {
-        None           = 0,
-        Intensity      = 1,
-        Classification = 2,
-        Location       = 3,
-        Custom         = 4, //New Display style in SS4
-        };
-
-protected:
-    uint32_t        m_flags;
-    double          m_contrast;
-    double          m_brightness;
-    double          m_distance;
-    double          m_offset;
-    int32_t         m_adaptivePointSize;
-    uint32_t        m_intensityRampIdx;
-    uint32_t        m_planeRampIdx;
-    uint32_t        m_planeAxis; //{x,y,z} index
-    DisplayStyle    m_displayStyle = DisplayStyle::None;
-    Utf8String      m_planeRamp;
-    Utf8String      m_intensityRamp;
-    bool            m_useACSAsPlaneAxis;
-
-    //Advanced Settings from SS4
-    bool            m_clampIntensity;
-    bool            m_needClassifBuffer;
-    Utf8String      m_displayStyleName;
-    int32_t         m_displayStyleIndex;
-
-public:
-    
-    DGNPLATFORM_EXPORT PointCloudViewSettings();
-    DGNPLATFORM_EXPORT void InitDefaults();
-    DGNPLATFORM_EXPORT bool AreSetToDefault() const;
-    DGNPLATFORM_EXPORT void FromJson(JsonValueCR);
-    DGNPLATFORM_EXPORT void ToJson(JsonValueR val) const;
-
-    DGNPLATFORM_EXPORT bool GetUseRgb() const;
-    DGNPLATFORM_EXPORT bool GetUseIntensity() const;
-    DGNPLATFORM_EXPORT bool GetUseLightning() const;
-    DGNPLATFORM_EXPORT bool GetUsePlane() const;
-    DGNPLATFORM_EXPORT bool GetUseFrontBias() const;
-
-    DGNPLATFORM_EXPORT uint32_t GetFlags() const;
-    DGNPLATFORM_EXPORT void SetFlags(uint32_t flags);
-
-    DGNPLATFORM_EXPORT double GetContrast() const;
-    DGNPLATFORM_EXPORT void SetContrast(double contrast);
-
-    DGNPLATFORM_EXPORT double GetBrightness() const;
-    DGNPLATFORM_EXPORT void SetBrightness(double brightness);
-
-    DGNPLATFORM_EXPORT double GetDistance() const;
-    DGNPLATFORM_EXPORT void SetDistance(double distance);
-
-    DGNPLATFORM_EXPORT double GetOffset() const;
-    DGNPLATFORM_EXPORT void SetOffset(double offset);
-
-    DGNPLATFORM_EXPORT int32_t GetAdaptivePointSize() const;
-    DGNPLATFORM_EXPORT void SetAdaptivePointSize(int32_t adaptivePointSize);
-
-    DGNPLATFORM_EXPORT uint32_t GetIntensityRampIdx() const;
-    DGNPLATFORM_EXPORT void SetIntensityRampIdx(uint32_t intensityRampIdx);
-
-    DGNPLATFORM_EXPORT uint32_t GetPlaneRampIdx() const;
-    DGNPLATFORM_EXPORT void SetPlaneRampIdx(uint32_t planeRampIdx);
-
-    DGNPLATFORM_EXPORT uint32_t GetPlaneAxis() const;
-    DGNPLATFORM_EXPORT void SetPlaneAxis(uint32_t planeAxis);
-
-    DGNPLATFORM_EXPORT DisplayStyle GetDisplayStyle() const;
-    DGNPLATFORM_EXPORT void SetDisplayStyle(DisplayStyle const& displayStyle);
-
-    DGNPLATFORM_EXPORT Utf8String GetPlaneRamp() const;
-    DGNPLATFORM_EXPORT void SetPlaneRamp(Utf8StringCR planeRamp);
-
-    DGNPLATFORM_EXPORT Utf8String GetIntensityRamp() const;
-    DGNPLATFORM_EXPORT void SetIntensityRamp(Utf8StringCR intensityRamp);
-
-    DGNPLATFORM_EXPORT bool GetUseACSAsPlaneAxis() const;
-    DGNPLATFORM_EXPORT void SetUseACSAsPlaneAxis(bool useACSAsPlaneAxis);
-
-    DGNPLATFORM_EXPORT bool GetClampIntensity() const;
-    DGNPLATFORM_EXPORT void SetClampIntensity(bool clampIntensity);
-
-    DGNPLATFORM_EXPORT bool GetNeedClassifBuffer() const;
-    DGNPLATFORM_EXPORT void SetNeedClassifBuffer(bool needClassifBuffer);
-
-    DGNPLATFORM_EXPORT Utf8String GetDisplayStyleName() const;
-    DGNPLATFORM_EXPORT void SetDisplayStyleName(Utf8StringCR displayStyleName);
-
-    DGNPLATFORM_EXPORT int32_t GetDisplayStyleIndex() const;
-    DGNPLATFORM_EXPORT void SetDisplayStyleIndex(int32_t displayStyleIndex);
-    };
 
 END_BENTLEY_RENDER_NAMESPACE

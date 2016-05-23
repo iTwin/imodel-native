@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/ElementGeometry_Tests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -22,7 +22,7 @@ struct GeometricPrimitiveTests : public DgnDbTestFixture
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(GeometricPrimitiveTests, Create)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"GeometricPrimitiveTests_CreateElement3d.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.ibim", L"GeometricPrimitiveTests_CreateElement3d.ibim", BeSQLite::Db::OpenMode::ReadWrite);
 
     DgnModelP model = m_db->Models().GetModel(m_defaultModelId).get();
 

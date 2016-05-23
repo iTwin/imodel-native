@@ -76,7 +76,7 @@ struct ComponentModelBasicTest : public testing::Test
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbPtr ComponentModelBasicTest::initDb(WCharCP fileName, Db::OpenMode mode)
     {
-    BeFileName dbName = DgnDbTestFixture::CopyDb(L"DgnDb/3dMetricGeneral.idgndb", fileName);
+    BeFileName dbName = DgnDbTestFixture::CopyDb(L"DgnDb/3dMetricGeneral.ibim", fileName);
     DgnDbPtr db;
     DgnDbTestFixture::OpenDb(db, dbName, Db::OpenMode::ReadWrite);
     return db;
@@ -185,7 +185,7 @@ void ComponentModelBasicTest::CreateAndImportComponentSchema(DgnDbPtr& db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ComponentModelBasicTest, ComponentDef_FromECClass)
     {
-    DgnDbPtr db = initDb(L"ComponentDef_FromECClass.idgndb");
+    DgnDbPtr db = initDb(L"ComponentDef_FromECClass.ibim");
     ASSERT_TRUE(db.IsValid());
     
     ECN::ECSchemaPtr testSchema = ComponentDefCreator::GenerateSchema(*db, TEST_JS_NAMESPACE);
@@ -218,7 +218,7 @@ TEST_F(ComponentModelBasicTest, ComponentDef_FromECClass)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ComponentModelBasicTest, ComponentDef_FromECClassId)
     {
-    DgnDbPtr db = initDb(L"ComponentDef_FromECClassId.idgndb");
+    DgnDbPtr db = initDb(L"ComponentDef_FromECClassId.ibim");
     ASSERT_TRUE(db.IsValid());
     
     ECN::ECSchemaPtr testSchema = ComponentDefCreator::GenerateSchema(*db, TEST_JS_NAMESPACE);
@@ -252,7 +252,7 @@ TEST_F(ComponentModelBasicTest, ComponentDef_FromECClassId)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ComponentModelBasicTest, ComponentDef_FromECSqlName)
     {
-    DgnDbPtr db = initDb(L"ComponentDef_FromECSqlName.idgndb");
+    DgnDbPtr db = initDb(L"ComponentDef_FromECSqlName.ibim");
     ASSERT_TRUE(db.IsValid());
 
     DgnDbStatus status;
@@ -284,7 +284,7 @@ TEST_F(ComponentModelBasicTest, ComponentDef_FromECSqlName)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ComponentModelBasicTest, CreateComponentModel)
     {
-    DgnDbPtr db = initDb(L"CreateComponentModel.idgndb");
+    DgnDbPtr db = initDb(L"CreateComponentModel.ibim");
     ASSERT_TRUE(db.IsValid());
 
     CreateAndImportComponentSchema(db);
@@ -299,7 +299,7 @@ TEST_F(ComponentModelBasicTest, CreateComponentModel)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ComponentModelBasicTest, CreateComponentModel_NoSchema)
     {
-    DgnDbPtr db = initDb(L"CreateComponentModel_NoSchema.idgndb");
+    DgnDbPtr db = initDb(L"CreateComponentModel_NoSchema.ibim");
     ASSERT_TRUE(db.IsValid());
 
     ComponentModelPtr CM = ComponentModel::Create(*db, TEST_BOXES_COMPONENT_ECSQLCLASS_NAME);
@@ -313,7 +313,7 @@ TEST_F(ComponentModelBasicTest, CreateComponentModel_NoSchema)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ComponentModelBasicTest, CreateComponentModel_Redundant)
     {
-    DgnDbPtr db = initDb(L"CreateComponentModel_Redundant.idgndb");
+    DgnDbPtr db = initDb(L"CreateComponentModel_Redundant.ibim");
     ASSERT_TRUE(db.IsValid());
 
     ComponentModelPtr CM = ComponentModel::Create(*db, TEST_BOXES_COMPONENT_ECSQLCLASS_NAME);
@@ -332,7 +332,7 @@ TEST_F(ComponentModelBasicTest, CreateComponentModel_Redundant)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ComponentModelBasicTest, ComponentDef_FromComponentModel)
     {
-    DgnDbPtr db = initDb(L"ComponentDef_FromComponentModel.idgndb");
+    DgnDbPtr db = initDb(L"ComponentDef_FromComponentModel.ibim");
     ASSERT_TRUE(db.IsValid());
 
     ComponentModelPtr CM = ComponentModel::Create(*db, TEST_BOXES_COMPONENT_ECSQLCLASS_NAME);
@@ -364,7 +364,7 @@ TEST_F(ComponentModelBasicTest, ComponentDef_FromComponentModel)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ComponentModelBasicTest, DeleteComponentDef)
     {
-    DgnDbPtr db = initDb(L"DeleteComponentDef.idgndb");
+    DgnDbPtr db = initDb(L"DeleteComponentDef.ibim");
     ASSERT_TRUE(db.IsValid());
 
     // Create Category
@@ -386,9 +386,9 @@ TEST_F(ComponentModelBasicTest, DeleteComponentDef)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ComponentModelBasicTest, ComponentDef_Export)
     {
-    DgnDbPtr db = initDb(L"ComponentDef_Export_Source.idgndb");
+    DgnDbPtr db = initDb(L"ComponentDef_Export_Source.ibim");
     ASSERT_TRUE(db.IsValid());
-    DgnDbPtr clientDb = initDb(L"ComponentDef_Export_Destination.idgndb");
+    DgnDbPtr clientDb = initDb(L"ComponentDef_Export_Destination.ibim");
     ASSERT_TRUE(clientDb.IsValid());
 
     // Create Category and Component Schema
@@ -416,7 +416,7 @@ TEST_F(ComponentModelBasicTest, ComponentDef_Export)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ComponentModelBasicTest, ComponentDef_Export_SameDb)
     {
-    DgnDbPtr db = initDb(L"ComponentDef_Export_SameDb.idgndb");
+    DgnDbPtr db = initDb(L"ComponentDef_Export_SameDb.ibim");
     ASSERT_TRUE(db.IsValid());
 
     // Create Category and Component Schema
@@ -440,7 +440,7 @@ TEST_F(ComponentModelBasicTest, ComponentDef_Export_SameDb)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ComponentModelBasicTest, QueryComponentDefs)
     {
-    DgnDbPtr db = initDb(L"QueryComponentDefs.idgndb");
+    DgnDbPtr db = initDb(L"QueryComponentDefs.ibim");
     ASSERT_TRUE(db.IsValid());
 
     DgnDbStatus status;
@@ -479,7 +479,7 @@ TEST_F(ComponentModelBasicTest, QueryComponentDefs)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ComponentModelBasicTest, ComponentDef_FromInstance)
     {
-    DgnDbPtr db = initDb(L"ComponentDef_FromInstance.idgndb");
+    DgnDbPtr db = initDb(L"ComponentDef_FromInstance.ibim");
     ASSERT_TRUE(db.IsValid());
 
     DgnDbStatus status;
@@ -516,7 +516,7 @@ TEST_F(ComponentModelBasicTest, ComponentDef_FromInstance)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ComponentModelBasicTest, MakeUniqueInstance)
     {
-    DgnDbPtr db = initDb(L"MakeUniqueInstance.idgndb");
+    DgnDbPtr db = initDb(L"MakeUniqueInstance.ibim");
     ASSERT_TRUE(db.IsValid());
 
     DgnDbStatus status;
@@ -549,7 +549,7 @@ TEST_F(ComponentModelBasicTest, MakeUniqueInstance)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ComponentModelBasicTest, Variations)
     {
-    DgnDbPtr db = initDb(L"Variations.idgndb");
+    DgnDbPtr db = initDb(L"Variations.ibim");
     ASSERT_TRUE(db.IsValid());
 
     DgnDbStatus status;
@@ -628,7 +628,7 @@ TEST_F(ComponentModelBasicTest, Variations)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ComponentModelBasicTest, MakeVariationInstance)
     {
-    DgnDbPtr db = initDb(L"MakeVariationInstance.idgndb");
+    DgnDbPtr db = initDb(L"MakeVariationInstance.ibim");
     ASSERT_TRUE(db.IsValid());
 
     DgnDbStatus status;

@@ -662,8 +662,8 @@ template<> struct HandlerTraits<dgn_ElementHandler::Element>
 
     static DgnDomain::Handler* GetBaseHandler() { return &dgn_ElementHandler::Element::GetHandler(); }
     static DgnElementPtr CreateInstance(dgn_ElementHandler::Element& handler, DgnDbR db) { return handler.Create(DgnElement::CreateParams(db, DgnModelId(), DgnClassId())); }
-    static Utf8CP GetECClassName(DgnElementCR el) { return el.GetECClassName(); }
-    static Utf8CP GetSuperECClassName(DgnElementCR el) { return el.GetSuperECClassName(); }
+    static Utf8CP GetECClassName(DgnElementCR el) { return el.GetHandlerECClassName(); }
+    static Utf8CP GetSuperECClassName(DgnElementCR el) { return el.GetSuperHandlerECClassName(); }
     static Utf8CP GetCppClassName() { return "DgnElement"; }
     static Utf8CP GetMacroName() { return "DGNELEMENT_DECLARE_MEMBERS"; }
 };
@@ -692,8 +692,8 @@ template<> struct HandlerTraits<dgn_ModelHandler::Model>
 
     static DgnDomain::Handler* GetBaseHandler() { return &dgn_ModelHandler::Model::GetHandler(); }
     static DgnModelPtr CreateInstance(dgn_ModelHandler::Model& handler, DgnDbR db) { return handler.Create(DgnModel::CreateParams(db, DgnClassId(), DgnCode())); }
-    static Utf8CP GetECClassName(DgnModelCR model) { return model._GetECClassName(); }
-    static Utf8CP GetSuperECClassName(DgnModelCR model) { return model._GetSuperECClassName(); }
+    static Utf8CP GetECClassName(DgnModelCR model) { return model._GetHandlerECClassName(); }
+    static Utf8CP GetSuperECClassName(DgnModelCR model) { return model._GetSuperHandlerECClassName(); }
     static Utf8CP GetCppClassName() { return "DgnModel"; }
     static Utf8CP GetMacroName() { return "DGNMODEL_DECLARE_MEMBERS"; }
 };

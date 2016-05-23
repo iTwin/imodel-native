@@ -321,7 +321,7 @@ SimplifyGraphic::SimplifyGraphic(Render::Graphic::CreateParams const& params, IG
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-Render::GraphicPtr SimplifyGraphic::_CreateSubGraphic(TransformCR subToGraphic) const
+Render::GraphicBuilderPtr SimplifyGraphic::_CreateSubGraphic(TransformCR subToGraphic) const
     {
     SimplifyGraphic* subGraphic = new SimplifyGraphic(Render::Graphic::CreateParams(m_vp, Transform::FromProduct(m_localToWorldTransform, subToGraphic), m_pixelSize), m_processor, m_context);
 
@@ -1507,8 +1507,8 @@ void SimplifyGraphic::ClipAndProcessText(TextStringCR text)
 
     if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::Curve & unhandled))
         {
-        Render::GraphicPtr graphic = _CreateSubGraphic(text.ComputeTransform());
-        SimplifyGraphic* sGraphic = static_cast<SimplifyGraphic*> (graphic.get());
+        Render::GraphicBuilderPtr graphic = _CreateSubGraphic(text.ComputeTransform());
+        SimplifyGraphic* sGraphic = static_cast<SimplifyGraphic*> (graphic.GetGraphic());
 
         if (nullptr == sGraphic)
             return;
@@ -2651,7 +2651,7 @@ IGeometryProcessorR    m_processor;
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  06/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual Render::GraphicPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override
+virtual Render::GraphicBuilderPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override
     {
     return new SimplifyGraphic(params, m_processor, *this);
     }

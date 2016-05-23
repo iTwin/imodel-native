@@ -128,7 +128,7 @@ DPoint3dCR      pt
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   04/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       LsComponent::_StrokeLineString (Render::GraphicR graphic, ViewContextP viewContext, LineStyleSymbP lsSymb, DPoint3dCP pts, int nPts, bool isClosed) const
+StatusInt       LsComponent::_StrokeLineString (Render::GraphicBuilderR graphic, ViewContextP viewContext, LineStyleSymbP lsSymb, DPoint3dCP pts, int nPts, bool isClosed) const
     {
     double      totalLength;
     int         disconnect=0;
@@ -200,7 +200,7 @@ StatusInt       LsComponent::_StrokeLineString (Render::GraphicR graphic, ViewCo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   04/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       LsComponent::_StrokeLineString2d (Render::GraphicR graphic, ViewContextP context, LineStyleSymbP lsSymb, DPoint2dCP pts, int nPts, double zDepth, bool isClosed) const
+StatusInt       LsComponent::_StrokeLineString2d (Render::GraphicBuilderR graphic, ViewContextP context, LineStyleSymbP lsSymb, DPoint2dCP pts, int nPts, double zDepth, bool isClosed) const
     {
     if (nPts < 2)
         return ERROR;
@@ -354,7 +354,7 @@ void            genArc3d (DPoint3dP outPts, double xPos, double yPos, double sin
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   04/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       LsComponent::_StrokeArc (Render::GraphicR graphic, ViewContextP viewContext, LineStyleSymbP lsSymb, DPoint3dCP origin, RotMatrixCP rMatrix,
+StatusInt       LsComponent::_StrokeArc (Render::GraphicBuilderR graphic, ViewContextP viewContext, LineStyleSymbP lsSymb, DPoint3dCP origin, RotMatrixCP rMatrix,
                                         double r0, double r1, double const* inStart, double const* inSweep, DPoint3dCP range) const
     {
     LineStyleContext context(graphic, viewContext);
@@ -448,7 +448,7 @@ StatusInt       LsComponent::_StrokeArc (Render::GraphicR graphic, ViewContextP 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Chuck.Kirschman   06/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       LsComponent::_StrokeBSplineCurve (Render::GraphicR graphic, ViewContextP viewContext, LineStyleSymbP lsSymb, MSBsplineCurveCP curve, double const* optTolerance) const
+StatusInt       LsComponent::_StrokeBSplineCurve (Render::GraphicBuilderR graphic, ViewContextP viewContext, LineStyleSymbP lsSymb, MSBsplineCurveCP curve, double const* optTolerance) const
     {
     DPoint3d    firstPt;
     curve->FractionToPoint (firstPt, 0.0);

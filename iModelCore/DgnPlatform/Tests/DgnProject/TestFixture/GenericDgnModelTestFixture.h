@@ -31,7 +31,7 @@ public:
 GenericDgnModelTestFixture (char const* sourcefile, bool is3d, bool needBriefcase)
     :
     m_is3d(is3d),
-    m_testDgnManager (is3d? L"3dMetricGeneral.idgndb": L"2dMetricGeneral.idgndb", sourcefile, BeSQLite::Db::OpenMode::ReadWrite, needBriefcase)
+    m_testDgnManager (is3d? L"3dMetricGeneral.ibim": L"2dMetricGeneral.ibim", sourcefile, BeSQLite::Db::OpenMode::ReadWrite, needBriefcase)
     {
     BeAssert( NULL != GetDgnModelP() );
     }

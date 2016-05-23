@@ -62,7 +62,7 @@ bool _ProcessCurveVector(CurveVectorCR curves, bool filled, SimplifyGraphic&) ov
 //---------------------------------------------------------------------------------------
 virtual void _OutputGraphics(ViewContext& viewContext) override
     {
-    Render::GraphicPtr  graphic = viewContext.CreateGraphic();
+    Render::GraphicBuilderPtr  graphic = viewContext.CreateGraphic();
 
     LineStyleSymb   lineStyleSymb;
     lineStyleSymb.Init(nullptr);
@@ -298,7 +298,7 @@ Render::GraphicPtr Stroke(ViewContextR context) const
 
 
     //  Create the graphic
-    Render::GraphicPtr graphic = context.CreateGraphic(Graphic::CreateParams(context.GetViewport(), m_transformForTexture));
+    Render::GraphicBuilderPtr graphic = context.CreateGraphic(Graphic::CreateParams(context.GetViewport(), m_transformForTexture));
 
     //  Add symbology
     graphic->ActivateGraphicParams(elemMatSymb);

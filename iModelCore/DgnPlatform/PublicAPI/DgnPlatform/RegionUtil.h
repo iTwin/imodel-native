@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/RegionUtil.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -209,7 +209,7 @@ DgnModelP               m_targetModel;
 bvector<FloodSeed>      m_floodSeeds;
 FloodSeed               m_dynamicFaceSeed;
 
-virtual Render::GraphicPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override {m_output->SetLocalToWorldTransform(params.m_placement); return m_output;}
+virtual Render::GraphicBuilderPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override {m_output->SetLocalToWorldTransform(params.m_placement); return m_output;}
 
 DgnModelP GetViewTarget () {return m_targetModel;}
 

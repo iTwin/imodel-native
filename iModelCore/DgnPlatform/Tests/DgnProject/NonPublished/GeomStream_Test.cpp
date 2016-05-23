@@ -19,7 +19,7 @@ ScopedDgnHost       m_host;
 DgnDbTestDgnManager m_testDataManager;
 
 public:
-    GeometryStreamTest() : m_testDataManager (L"2dMetricGeneral.idgndb", "", Db::OpenMode::ReadWrite, false){BeAssert( NULL != GetDgnModelP() );}
+    GeometryStreamTest() : m_testDataManager (L"2dMetricGeneral.ibim", "", Db::OpenMode::ReadWrite, false){BeAssert( NULL != GetDgnModelP() );}
     virtual ~GeometryStreamTest () {}
 
     DgnModelP GetDgnModelP() {return m_testDataManager.GetDgnModelP();}

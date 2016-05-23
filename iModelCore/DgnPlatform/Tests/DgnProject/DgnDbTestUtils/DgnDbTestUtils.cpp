@@ -30,6 +30,19 @@ static BeFileName getOutputPath(WStringCR relPath)
     return outputPathName;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                           Sam.Wilson             01/2016
+//---------------------------------------------------------------------------------------
+DgnDbStatus DgnDbTestUtils::MakeSeedDbCopy(BeFileNameR actualName, WCharCP relSeedPath, WCharCP newName)
+    {
+    auto db = OpenSeedDbCopy(relSeedPath, newName);
+    if (!db.IsValid())
+        return DgnDbStatus::BadRequest;
+    auto fn = db->GetFileName();
+    actualName.SetName(fn.substr(getOutputPath(L"").length()));
+    return DgnDbStatus::Success;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -70,7 +83,7 @@ DgnDbTestUtils::SeedDbInfo DgnDbTestUtils::GetOneSpatialModelSeedDb(SeedDbOption
     SeedDbInfo info;
     info.id = SeedDbId::OneSpatialModel;
     info.options = options;
-    info.fileName.SetName(WPrintfString(L"DgnDbTestUtils_OneSpatialModel%ls.dgndb", options.ToKey().c_str()));   // note that we need different files for different combinations of options.
+    info.fileName.SetName(WPrintfString(L"DgnDbTestUtils_OneSpatialModel%ls.bim", options.ToKey().c_str()));   // note that we need different files for different combinations of options.
     info.modelCode = DgnModel::CreateModelCode("DefaultModel");
     info.categoryName = "DefaultCategory";
 
@@ -206,7 +219,7 @@ DgnDbPtr DgnDbTestUtils::OpenSeedDb(WCharCP relSeedPath)
 static void supplyMissingDbExtension(WStringR name)
     {
     if (name.find(L".") == WString::npos)
-        name.append(L".dgndb");
+        name.append(L".bim");
     }
 
 //---------------------------------------------------------------------------------------
@@ -283,7 +296,7 @@ DgnDbPtr DgnDbTestUtils::OpenSeedDbCopy(WCharCP relSeedPathIn, WCharCP newName)
     BeFileNameStatus fileStatus = BeFileName::BeCopyFile(infileName.c_str(), ccfileName.c_str(), /*failIfFileExists*/true);
     EXPECT_EQ(BeFileNameStatus::Success, fileStatus) << WPrintfString(L"%ls => %ls - copy failed", infileName.c_str(), ccfileName.c_str()).c_str();
 
-    return OpenDgnDb(ccRelPathBase.c_str(), DgnDb::OpenMode::ReadWrite);
+    return OpenDgnDb(ccRelPathUnique.c_str(), DgnDb::OpenMode::ReadWrite);
     }
 
 /*---------------------------------------------------------------------------------**//**
