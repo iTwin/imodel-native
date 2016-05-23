@@ -184,7 +184,7 @@ public:
     static bool ElementHasLinks(DgnDbR dgndb, DgnElementId elementId)
         {
         BeSQLite::EC::CachedECSqlStatementPtr stmt = GetQueryBySourceStatement(dgndb, elementId);
-        return (BE_SQLITE_ROW == stmt->Step());
+        return (BeSQLite::DbResult::BE_SQLITE_ROW == stmt->Step());
         }
 
     //! Query links by where clause
