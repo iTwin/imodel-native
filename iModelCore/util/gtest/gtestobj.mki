@@ -18,26 +18,22 @@ PublicApiIncludes + -I$(GUnitTestDir)include
 #--------------------------------------------------------------------------------------
 # Compile the test framework itself, including the main if requested.
 #--------------------------------------------------------------------------------------
-$(GUNITTEST_OBJ_DEST)gtest-death-test$(oext) : $(GUnitTestDir)src/gtest-death-test.cpp $(GUnitTestDir)include/gtest/gtest-message.h $(GUnitTestDir)include/gtest/internal/gtest-string.h
+$(GUNITTEST_OBJ_DEST)gtest-death-test$(oext) : $(GUnitTestDir)src/gtest-death-test.cc $(GUnitTestDir)include/gtest/gtest-message.h $(GUnitTestDir)include/gtest/internal/gtest-string.h
 
-$(GUNITTEST_OBJ_DEST)gtest-filepath$(oext) : $(GUnitTestDir)src/gtest-filepath.cpp $(GUnitTestDir)include/gtest/internal/gtest-filepath.h $(GUnitTestDir)include/gtest/internal/gtest-port.h $(GUnitTestDir)include/gtest/internal/gtest-string.h
+$(GUNITTEST_OBJ_DEST)gtest-filepath$(oext) : $(GUnitTestDir)src/gtest-filepath.cc $(GUnitTestDir)include/gtest/internal/gtest-filepath.h $(GUnitTestDir)include/gtest/internal/gtest-port.h $(GUnitTestDir)include/gtest/internal/gtest-string.h
 
-$(GUNITTEST_OBJ_DEST)gtest-port$(oext) : $(GUnitTestDir)src/gtest-port.cpp $(GUnitTestDir)src/gtest-filepath.cpp $(GUnitTestDir)include/gtest/internal/gtest-port.h $(GUnitTestDir)include/gtest/gtest-spi.h $(GUnitTestDir)include/gtest/gtest-message.h $(GUnitTestDir)include/gtest/internal/gtest-string.h
+$(GUNITTEST_OBJ_DEST)gtest-port$(oext) : $(GUnitTestDir)src/gtest-port.cc $(GUnitTestDir)src/gtest-filepath.cc $(GUnitTestDir)include/gtest/internal/gtest-port.h $(GUnitTestDir)include/gtest/gtest-spi.h $(GUnitTestDir)include/gtest/gtest-message.h $(GUnitTestDir)include/gtest/internal/gtest-string.h
 
-$(GUNITTEST_OBJ_DEST)gtest-test-part$(oext) : $(GUnitTestDir)src/gtest-test-part.cpp $(GUnitTestDir)include/gtest/gtest-test-part.h
+$(GUNITTEST_OBJ_DEST)gtest-test-part$(oext) : $(GUnitTestDir)src/gtest-test-part.cc $(GUnitTestDir)include/gtest/gtest-test-part.h
 
-$(GUNITTEST_OBJ_DEST)gtest-typed-test$(oext) : $(GUnitTestDir)src/gtest-typed-test.cpp  $(GUnitTestDir)include/gtest/gtest-typed-test.h $(GUnitTestDir)include/gtest/gtest.h
+$(GUNITTEST_OBJ_DEST)gtest-typed-test$(oext) : $(GUnitTestDir)src/gtest-typed-test.cc  $(GUnitTestDir)include/gtest/gtest-typed-test.h $(GUnitTestDir)include/gtest/gtest.h
 
-$(GUNITTEST_OBJ_DEST)gtest-printers$(oext) : $(GUnitTestDir)src/gtest-printers.cpp $(GUnitTestDir)include/gtest/gtest-printers.h $(GUnitTestDir)include/gtest/gtest-spi.h
+$(GUNITTEST_OBJ_DEST)gtest-printers$(oext) : $(GUnitTestDir)src/gtest-printers.cc $(GUnitTestDir)include/gtest/gtest-printers.h $(GUnitTestDir)include/gtest/gtest-spi.h
 
-$(GUNITTEST_OBJ_DEST)gtest$(oext) : $(GUnitTestDir)src/gtest.cpp $(GUnitTestDir)include/gtest/gtest.h $(GUnitTestDir)include/gtest/gtest-spi.h
+$(GUNITTEST_OBJ_DEST)gtest$(oext) : $(GUnitTestDir)src/gtest.cc $(GUnitTestDir)include/gtest/gtest.h $(GUnitTestDir)include/gtest/gtest-spi.h
 
 %if !defined(GTEST_MAIN_IS_SUPPLIED)
-$(GUNITTEST_OBJ_DEST)gtest_main$(oext) : $(GUnitTestDir)src/gtest_main.cpp $(GUnitTestDir)include/gtest/gtest.h
-%endif
-
-%if $(TARGET_PLATFORM)=="Windows"
-$(GUNITTEST_OBJ_DEST)StackWalker$(oext) : $(GUnitTestDir)src/StackWalker.cpp $(GUnitTestDir)src/StackWalker.h
+$(GUNITTEST_OBJ_DEST)gtest_main$(oext) : $(GUnitTestDir)src/gtest_main.cc $(GUnitTestDir)include/gtest/gtest.h
 %endif
 
 #--------------------------------------------------------------------------------------
@@ -51,10 +47,6 @@ LOCAL_GUNITTEST_OBJS = $(GUNITTEST_OBJ_DEST)gtest-death-test$(oext) \
                        $(GUNITTEST_OBJ_DEST)gtest-printers$(oext) \
                        $(GUNITTEST_OBJ_DEST)gtest$(oext) \
                        $(GUNITTEST_OBJS)
-
-%if $(TARGET_PLATFORM)=="Windows"
-    LOCAL_GUNITTEST_OBJS + $(GUNITTEST_OBJ_DEST)StackWalker$(oext) 
-%endif
 
 %if !defined(GTEST_MAIN_IS_SUPPLIED)
     LOCAL_GUNITTEST_OBJS + $(GUNITTEST_OBJ_DEST)gtest_main$(oext)
