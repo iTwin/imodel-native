@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Transactions/CacheTransaction.cpp $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -15,7 +15,7 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 +---------------+---------------+---------------+---------------+---------------+------*/
 CacheTransaction::CacheTransaction(IDataSourceCache& cache, ITransactionHandler* handler) :
 Transaction(handler),
-m_cache(cache)
+m_cache(&cache)
     {}
 
 /*--------------------------------------------------------------------------------------+
@@ -33,6 +33,19 @@ CacheTransaction::~CacheTransaction()
     {}
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+CacheTransaction& CacheTransaction::operator=(CacheTransaction&& other)
+    {
+    Transaction::operator=(std::move(other));
+    
+    m_cache = other.m_cache;
+    other.m_cache = nullptr;
+
+    return *this;
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    12/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 IDataSourceCache& CacheTransaction::GetCache() const
@@ -41,5 +54,5 @@ IDataSourceCache& CacheTransaction::GetCache() const
         {
         BeAssert(IsActive());
         }
-    return m_cache;
+    return *m_cache;
     }

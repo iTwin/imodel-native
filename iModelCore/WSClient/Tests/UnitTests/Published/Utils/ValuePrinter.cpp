@@ -277,6 +277,7 @@ std::ostream& operator << (std::ostream &o, WSError::Status status)
         TO_VALUE_STRING_PAIR(WSError::Status::None),
         TO_VALUE_STRING_PAIR(WSError::Status::Canceled),
         TO_VALUE_STRING_PAIR(WSError::Status::ConnectionError),
+        TO_VALUE_STRING_PAIR(WSError::Status::CertificateError),
         TO_VALUE_STRING_PAIR(WSError::Status::ServerNotSupported),
         TO_VALUE_STRING_PAIR(WSError::Status::ReceivedError),
         };

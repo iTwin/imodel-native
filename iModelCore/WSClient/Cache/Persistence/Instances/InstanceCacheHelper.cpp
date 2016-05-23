@@ -14,7 +14,8 @@
 
 #include "../Core/CacheSchema.h"
 #include "../Hierarchy/HierarchyManager.h"
-#include "../../Util/JsonUtil.h"
+#include <WebServices/Cache/Util/JsonUtil.h>
+
 #include "../../Logging.h"
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES

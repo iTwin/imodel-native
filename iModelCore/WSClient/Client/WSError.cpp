@@ -104,7 +104,16 @@ WSError::WSError(HttpResponseCR httpResponse) : WSError()
         {
         m_message = HttpError(httpResponse).GetMessage();
         m_data = nullptr;
-        m_status = Status::ConnectionError;
+        
+        if (ConnectionStatus::CertificateError == httpResponse.GetConnectionStatus())
+            {
+            m_status = Status::CertificateError;
+            }
+        else
+            {
+            m_status = Status::ConnectionError;
+            }
+
         m_id = WSError::Id::Unknown;
         return;
         }
