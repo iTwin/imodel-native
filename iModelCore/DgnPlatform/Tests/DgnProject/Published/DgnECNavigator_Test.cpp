@@ -193,13 +193,27 @@ protected:
         bool readFileStatus = ReadJsonFromFile(expectedElementInfo, expectedFile.GetName());
         ASSERT_TRUE(readFileStatus);
 
-        // Ignore "$ECInstanceId", "LastMod" in comparison - it's too volatile. 
-        // ASSERT_TRUE(actualElementInfo["ecInstances"].size() == expectedElementInfo["ecInstances"].size());
+        const char* volatileProperties[] =
+            {
+            "$ECInstanceId",
+            "$ECInstanceLabel",
+            "ModelId",
+            "Name",
+            "LastMod"
+            };
+
+        // Ignore some properties in comparison - they too volatile. 
+        ASSERT_TRUE(actualElementInfo["ecInstances"].size() == expectedElementInfo["ecInstances"].size());
         for (int ii = 0; ii < (int) actualElementInfo["ecInstances"].size(); ii++)
             {
-            JsonValueR jsonInstance = actualElementInfo["ecInstances"][ii];
-            jsonInstance["$ECInstanceId"] = "*";
-            jsonInstance["LastMod"] = "*";
+            JsonValueR actualInstance = actualElementInfo["ecInstances"][ii];
+            JsonValueR expectedInstance = expectedElementInfo["ecInstances"][ii];
+
+            for (const char* prop : volatileProperties)
+                {
+                if (actualInstance.isMember(prop)) actualInstance[prop] = "*";
+                if (expectedInstance.isMember(prop)) expectedInstance[prop] = "*";
+                }
             }
 
         int compare = expectedElementInfo.compare(actualElementInfo);
