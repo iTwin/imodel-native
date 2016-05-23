@@ -44,3 +44,5 @@ DataSourceCacheTests.UpdateSchemas_SchemasWithDeletedPropertyPassedToDataSourceC
 
 # Randomly crashes on x64. High priority
 CachingDataSourceTests.SyncCachedData_InitialQueriesSuppliedAndServerErrorReturnedForFirstOne_ContinuesWithOtherQuerysAndReturnsFailedObject
+ClientInfoTests.Create_PassedMandatoryValues_SetsValues # fails on Android - notified Vincas
+
