@@ -14,7 +14,7 @@
 #include <Bentley/Base64Utilities.h>
 #include <WebServices/Client/WSRepositoryClient.h>
 #include <WebServices/Client/WSChangeset.h>
-#include "../../../../../Cache/Util/JsonUtil.h"
+#include <WebServices/Cache/Util/JsonUtil.h>
 
 #include "MockWSSchemaProvider.h"
 

@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Persistence/Changes/ChangeInfoManager.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -11,7 +11,7 @@
 #include <WebServices/Cache/Util/ECDbHelper.h>
 #include <WebServices/Cache/Util/JsonDiff.h>
 #include "../Core/CacheSchema.h"
-#include "../../Util/JsonUtil.h"
+#include <WebServices/Cache/Util/JsonUtil.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
