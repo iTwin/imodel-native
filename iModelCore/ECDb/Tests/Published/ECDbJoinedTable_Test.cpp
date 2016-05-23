@@ -2280,8 +2280,8 @@ TEST_F (JoinedTableECDbMapStrategyTests, RelationshipWithStandAloneClass1)
 //                  Foo                                                                 
 //                   |                                                                  
 //                  Goo                              Goo<>Body                          
-//                   |                               Roo<>Body                          
-//                  Roo                                                                 
+//                   |                               Boo<>Body                          
+//                  Boo                                                                 
 //------ Relationship of a class having JoinedTable strategy with standalone class ------
 //      IFace <- IFaceHasBody(REFERENCING) -> Body
 //      IFace <- IFaceHasManyBody(REFERENCING) -> Body
@@ -2306,6 +2306,7 @@ TEST_F (JoinedTableECDbMapStrategyTests, PolymorphicRelationshipWithStandAloneCl
         "                </MapStrategy>"
         "            </ClassMap>"
         "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='IFace_L' typeName='long'/>"
         "   </ECEntityClass>"
         "    <ECEntityClass typeName='Foo'>"
         "        <BaseClass>IFace</BaseClass>"
