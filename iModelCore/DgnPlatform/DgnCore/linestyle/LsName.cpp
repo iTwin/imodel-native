@@ -404,7 +404,9 @@ Render::TexturePtr LsDefinition::GenerateTexture(double& textureDrawWidth, ViewC
     m_textureInitialized = false;
     if (unitDef < mgds_fc_epsilon)
         {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
         BeAssert(unitDef > mgds_fc_epsilon);
+#endif
         unitDef = 1.0;
         }
 
