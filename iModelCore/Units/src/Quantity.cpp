@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "UnitsPCH.h"
-#include <cmath>
+#include <complex>      // for std::abs
 
 USING_NAMESPACE_BENTLEY_UNITS
 
