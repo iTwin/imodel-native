@@ -259,6 +259,7 @@ TEST_F(ECSchemaUpdateTests, UpdateECPropertyAttributes)
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT TestProperty FROM ts_modified.TestClass"));
     ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         04/16
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -303,6 +304,7 @@ TEST_F(ECSchemaUpdateTests, UpdatingECDbMapCAIsNotSupported)
     AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
     ASSERT_FALSE(asserted);
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     03/16
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -488,6 +490,44 @@ TEST_F(ECSchemaUpdateTests, AddNewEntityClass)
     statement.Finalize();
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT * FROM ts.TestClass"));
     ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     05/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, AddNewEntityClassWithECDbMapCA)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='3.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "</ECSchema>", false, "Delete class containing ECDbMap CA is not supposed to be deleted");
+
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+
+    //Add Goo with ECDbMap CA Applied On it==========================================================================================
+    SchemaItem addGooWithCA(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='4.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Goo' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "               <MapStrategy>"
+        "                  <Strategy>SharedTable</Strategy>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "               </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='S' typeName='string' />"
+        "       <ECProperty propertyName='D' typeName='double' />"
+        "       <ECProperty propertyName='L' typeName='long' />"
+        "   </ECEntityClass>"
+        "</ECSchema>", true, "Add New Class with ECDbMap CA is supposed to be not supported");
+    bool asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), addGooWithCA);
+    ASSERT_FALSE(asserted);
     }
 
 //---------------------------------------------------------------------------------------
@@ -826,7 +866,7 @@ TEST_F(ECSchemaUpdateTests, AddingNewECDbMapCANotSupported)
         "   <ECEntityClass typeName='TestClass' displayLabel='Test Class' description='This is test Class' modifier='None' />"
         "</ECSchema>");
 
-    SetupECDb("schemaupgrade.ecdb", schemaItem);
+    SetupECDb("schemaupdate.ecdb", schemaItem);
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
@@ -947,7 +987,7 @@ TEST_F(ECSchemaUpdateTests, AddNewCAOnProperty)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, MinimumSharedColumnsCount_AddProperty)
+TEST_F(ECSchemaUpdateTests, UpdateECDbMapCA_AddMinimumSharedColumnsCount)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -959,7 +999,6 @@ TEST_F(ECSchemaUpdateTests, MinimumSharedColumnsCount_AddProperty)
         "                <MapStrategy>"
         "                   <Strategy>SharedTable</Strategy>"
         "                   <Options>SharedColumns</Options>"
-        //    "                   <MinimumSharedColumnCount>5</MinimumSharedColumnCount>"
         "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
         "                 </MapStrategy>"
         "            </ClassMap>"
@@ -971,11 +1010,6 @@ TEST_F(ECSchemaUpdateTests, MinimumSharedColumnsCount_AddProperty)
     SetupECDb("schemaupdate.ecdb", schemaItem);
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
-
-    //Verify number of columns
-    std::vector<std::pair<Utf8String, int>> testItems;
-    testItems.push_back(std::make_pair("ts_Parent", 7));
-    //AssertColumnCount(GetECDb(), testItems, "MinimumSharedColumns");
 
     SchemaItem editedSchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -1006,8 +1040,8 @@ TEST_F(ECSchemaUpdateTests, MinimumSharedColumnsCount_AddProperty)
 
     CloseReOpenECDb();
 
-    //Verify number of columns after upgrade
-    testItems.clear();
+    //Verify number of columns
+    std::vector<std::pair<Utf8String, int>> testItems;
     testItems.push_back(std::make_pair("ts_Parent", 8));
     AssertColumnCount(GetECDb(), testItems, "MinimumSharedColumns");
     }
@@ -1401,6 +1435,73 @@ TEST_F(ECSchemaUpdateTests, InvalidValueForNameSpacePrefix)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     05/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, MajorVersionChange_WithoutMajorVersionIncremented)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='3.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECEntityClass typeName='Foo' modifier='None'>"
+        "       <ECProperty propertyName='S' typeName='string' />"
+        "       <ECProperty propertyName='D' typeName='double' />"
+        "       <ECProperty propertyName='L' typeName='long' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    SchemaItem decrementedMajorVersion(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "</ECSchema>", false, "Schema Update with ECSchema Major Version decremented is expected to be not supported");
+
+    bool asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), decrementedMajorVersion);
+    ASSERT_FALSE(asserted);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     05/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, Delete_ECDbMapCANotSupported)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Goo' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "               <MapStrategy>"
+        "                  <Strategy>SharedTable</Strategy>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "               </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='S' typeName='string' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    //Delete ECDbMap CA
+    SchemaItem DeleteECDbMapCA(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Goo' modifier='None'>"
+        "       <ECProperty propertyName='S' typeName='string' />"
+        "   </ECEntityClass>"
+        "</ECSchema>", false, "Deleting ECDbMap CustomAttribute Not supported");
+    bool asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), DeleteECDbMapCA);
+    ASSERT_FALSE(asserted);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan Khan                          05/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSchemaUpdateTests, Delete_ECEntityClass_MappedTo_OwnTable)
@@ -1427,17 +1528,17 @@ TEST_F(ECSchemaUpdateTests, Delete_ECEntityClass_MappedTo_OwnTable)
     auto assertAndExecuteECSQL = [] (ECDbCR ecdb, Utf8CP ecsql, ECSqlStatus prepareStatus = ECSqlStatus::Success, DbResult stepStatus = BE_SQLITE_DONE)
         {
         ECSqlStatement stmt;
-        ASSERT_EQ(stmt.Prepare(ecdb, ecsql), prepareStatus);
+        ASSERT_EQ(stmt.Prepare(ecdb, ecsql), prepareStatus) << "Prepare failed for: " << ecsql;
         if (stmt.IsPrepared())
             {
-            ASSERT_EQ(stmt.Step(), stepStatus);
+            ASSERT_EQ(stmt.Step(), stepStatus) << "Step failed for: " << ecsql;
             }
         };
 
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(S,D,L) VALUES ('test1', 1.3, 334)" , ECSqlStatus::Success, BE_SQLITE_DONE);
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(S,D,L) VALUES ('test2', 23.3, 234)", ECSqlStatus::Success, BE_SQLITE_DONE);
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(S,D,L) VALUES ('test3', 44.32, 3344)", ECSqlStatus::Success, BE_SQLITE_DONE);
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(S,D,L) VALUES ('test4', 13.3, 2345)", ECSqlStatus::Success, BE_SQLITE_DONE);
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(S,D,L) VALUES ('test1', 1.3, 334)");
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(S,D,L) VALUES ('test2', 23.3, 234)");
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(S,D,L) VALUES ('test3', 44.32, 3344)");
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(S,D,L) VALUES ('test4', 13.3, 2345)");
 
     ASSERT_TRUE(GetECDb().TableExists("ts_Foo"));
     ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Foo"), nullptr);
@@ -1494,11 +1595,2183 @@ TEST_F(ECSchemaUpdateTests, Delete_ECEntityClass_MappedTo_OwnTable)
     ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
     ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
 
-    assertAndExecuteECSQL(GetECDb(), "SELECT S, D, L FROM ts.Foo", ECSqlStatus::Success, BE_SQLITE_DONE);
+    assertAndExecuteECSQL(GetECDb(), "SELECT S, D, L FROM ts.Foo");
     assertAndExecuteECSQL(GetECDb(), "SELECT S, D, L FROM ts.Goo", ECSqlStatus::Success, BE_SQLITE_ROW);
 
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(S,D,L) VALUES ('test1', 1.3, 334)", ECSqlStatus::Success, BE_SQLITE_DONE);
-    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(S,D,L) VALUES ('test2', 23.3, 234)", ECSqlStatus::Success, BE_SQLITE_DONE);
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(S,D,L) VALUES ('test1', 1.3, 334)");
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(S,D,L) VALUES ('test2', 23.3, 234)");
+    }
+
+/*********************************************************************Example Scenario******************************************************************************************
+
+-Parent(JoinedTable)   ->    Parent(JoinedTable)     ->      Parent(JoinedTable) -> *DeletedParent* -> Parent(JoinedTable)   ->   Parent(JoinedTable)   ->    Parent(JoinedTable)
+---|-----------------------------|--------------------------------------------------------------------------------------------------|-----------------------------|--------------
+--Goo---------------------------Goo------------------------------------------------------------------------------------------------Goo---------------------------Goo-------------
+---|--------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------
+--Foo------------------------------------------------------------------------------------------------------------------------------------------------------------Foo-------------
+
+********************************************************************************************************************************************************************************/
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     05/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_SharedTable)
+    {
+    //Setup Db ===================================================================================================
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Goo' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "               <MapStrategy>"
+        "                  <Strategy>SharedTable</Strategy>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "               </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='GS' typeName='string' />"
+        "       <ECProperty propertyName='GD' typeName='double' />"
+        "       <ECProperty propertyName='GL' typeName='long' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Foo' modifier='None'>"
+        "       <BaseClass>Goo</BaseClass>"
+        "       <ECProperty propertyName='FS' typeName='string' />"
+        "       <ECProperty propertyName='FD' typeName='double' />"
+        "       <ECProperty propertyName='FL' typeName='long' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    auto assertAndExecuteECSQL = [] (ECDbCR ecdb, Utf8CP ecsql, ECSqlStatus prepareStatus = ECSqlStatus::Success, DbResult stepStatus = BE_SQLITE_DONE)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(stmt.Prepare(ecdb, ecsql), prepareStatus) << "Prepare failed for: " << ecsql;
+        if (stmt.IsPrepared())
+            {
+            ASSERT_EQ(stmt.Step(), stepStatus) << "Step failed for: " << ecsql;
+            }
+        };
+
+    ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
+
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Foo"), nullptr);
+    ASSERT_FALSE(GetECDb().TableExists("ts_Foo"));
+
+    //Verify number of columns
+    std::vector<std::pair<Utf8String, int>> testItems;
+    testItems.push_back(std::make_pair("ts_Goo", 8));
+    AssertColumnCount(GetECDb(), testItems, "SharedTable_AppliedToSubClasses");
+
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL) VALUES ('test1', 1.3, 334)");
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL) VALUES ('test2', 23.3, 234)");
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
+
+    //Delete Foo ===================================================================================================
+    SchemaItem deleteFoo(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Goo' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "               <MapStrategy>"
+        "                  <Strategy>SharedTable</Strategy>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "               </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='GS' typeName='string' />"
+        "       <ECProperty propertyName='GD' typeName='double' />"
+        "       <ECProperty propertyName='GL' typeName='long' />"
+        "   </ECEntityClass>"
+        "</ECSchema>", true, "Delete class should be successfull");
+    bool asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), deleteFoo);
+    ASSERT_FALSE(asserted);
+
+    //Following should not exist
+    ASSERT_EQ(GetECDb().Schemas().GetECClass("TestSchema", "Foo"), nullptr);
+    ASSERT_FALSE(GetECDb().TableExists("ts_Foo"));
+
+    //Following should exist
+    ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
+
+    //Verify number of columns should not change as we don't delete columns
+    testItems.clear();
+    testItems.push_back(std::make_pair("ts_Goo", 8));
+    AssertColumnCount(GetECDb(), testItems, "SharedTable_AppliedToSubClasses");
+
+    assertAndExecuteECSQL(GetECDb(), "SELECT FS, FD, FL FROM ts.Foo", ECSqlStatus::InvalidECSql);
+    assertAndExecuteECSQL(GetECDb(), "SELECT GS, GD, GL FROM ts.Goo", ECSqlStatus::Success, BE_SQLITE_ROW);
+
+    //Delete Goo ===================================================================================================
+    //Deleting Class with ECDbMap CA is expected to be supported
+    SchemaItem deleteGoo(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='3.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "</ECSchema>", true, "Deleting Class with ECDbMap CA is expected to be supported");
+    asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), deleteGoo);
+    ASSERT_FALSE(asserted);
+
+    //Following should not exist
+    ASSERT_FALSE(GetECDb().TableExists("ts_Goo"));
+
+    //Add Goo Again===================================================================================================
+    //Adding new class with ECDbMapCA applied on it is expected to be supported
+    SchemaItem addGoo(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='4.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Goo' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "               <MapStrategy>"
+        "                  <Strategy>SharedTable</Strategy>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "               </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='GS' typeName='string' />"
+        "       <ECProperty propertyName='GD' typeName='double' />"
+        "       <ECProperty propertyName='GL' typeName='long' />"
+        "   </ECEntityClass>"
+        "</ECSchema>", true, "Add New Class with ECDbMap CA Should be successful");
+    asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), addGoo);
+    ASSERT_FALSE(asserted);
+
+    //Following should not exist
+    ASSERT_EQ(GetECDb().Schemas().GetECClass("TestSchema", "Foo"), nullptr);
+    ASSERT_FALSE(GetECDb().TableExists("ts_Foo"));
+
+    //Following should exist
+    ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
+
+    //Verify Number of columns
+    testItems.clear();
+    testItems.push_back(std::make_pair("ts_Goo", 5));
+    AssertColumnCount(GetECDb(), testItems, "SharedTable_AppliedToSubClasses");
+
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
+
+    //Add Foo Again===============================================================================================
+    SchemaItem addFoo(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='5.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Goo' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "               <MapStrategy>"
+        "                  <Strategy>SharedTable</Strategy>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "               </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='GS' typeName='string' />"
+        "       <ECProperty propertyName='GD' typeName='double' />"
+        "       <ECProperty propertyName='GL' typeName='long' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Foo' modifier='None'>"
+        "       <BaseClass>Goo</BaseClass>"
+        "       <ECProperty propertyName='FS' typeName='string' />"
+        "       <ECProperty propertyName='FD' typeName='double' />"
+        "       <ECProperty propertyName='FL' typeName='long' />"
+        "   </ECEntityClass>"
+        "</ECSchema>", true, "Adding new derived class should be successful");
+    asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), addFoo);
+    ASSERT_FALSE(asserted);
+
+    //should exist
+    ASSERT_FALSE(GetECDb().TableExists("ts_Foo"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Foo"), nullptr);
+
+    //following should not exist
+    ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
+
+    //Verify number of columns
+    testItems.clear();
+    testItems.push_back(std::make_pair("ts_Goo", 8));
+    AssertColumnCount(GetECDb(), testItems, "SharedTable_AppliedToSubClasses");
+
+    assertAndExecuteECSQL(GetECDb(), "SELECT FS, FD, FL FROM ts.Foo", ECSqlStatus::Success, BE_SQLITE_DONE);
+    assertAndExecuteECSQL(GetECDb(), "SELECT GS, GD, GL FROM ts.Goo", ECSqlStatus::Success, BE_SQLITE_ROW);
+
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL) VALUES ('test1', 1.3, 334)");
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL) VALUES ('test2', 23.3, 234)");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     05/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_SharedTable_SharedColumns)
+    {
+    //Setup Db ===================================================================================================
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Goo' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "               <MapStrategy>"
+        "                  <Strategy>SharedTable</Strategy>"
+        "                  <Options>SharedColumns</Options>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "               </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='GS' typeName='string' />"
+        "       <ECProperty propertyName='GD' typeName='double' />"
+        "       <ECProperty propertyName='GL' typeName='long' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Foo' modifier='None'>"
+        "       <BaseClass>Goo</BaseClass>"
+        "       <ECProperty propertyName='FS' typeName='string' />"
+        "       <ECProperty propertyName='FD' typeName='double' />"
+        "       <ECProperty propertyName='FL' typeName='long' />"
+        "       <ECProperty propertyName='FI' typeName='int' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    auto assertAndExecuteECSQL = [] (ECDbCR ecdb, Utf8CP ecsql, ECSqlStatus prepareStatus = ECSqlStatus::Success, DbResult stepStatus = BE_SQLITE_DONE)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(stmt.Prepare(ecdb, ecsql), prepareStatus) << "Prepare failed for: " << ecsql;
+        if (stmt.IsPrepared())
+            {
+            ASSERT_EQ(stmt.Step(), stepStatus) << "Step failed for: " << ecsql;
+            }
+        };
+
+    //following table should exist.
+    ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
+
+    //Following table should not exist
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Foo"), nullptr);
+    ASSERT_FALSE(GetECDb().TableExists("ts_Foo"));
+
+    //Verify number of columns
+    std::vector<std::pair<Utf8String, int>> testItems;
+    testItems.push_back(std::make_pair("ts_Goo", 9));
+    AssertColumnCount(GetECDb(), testItems, "SharedTable_SharedColumns");
+
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
+
+    //Delete Foo ===================================================================================================
+    GetECDb().SaveChanges();
+    SchemaItem deleteFoo(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Goo' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "               <MapStrategy>"
+        "                  <Strategy>SharedTable</Strategy>"
+        "                  <Options>SharedColumns</Options>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "               </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='GS' typeName='string' />"
+        "       <ECProperty propertyName='GD' typeName='double' />"
+        "       <ECProperty propertyName='GL' typeName='long' />"
+        "   </ECEntityClass>"
+        "</ECSchema>", true, "Delete derived class should be successfull");
+    bool asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), deleteFoo);
+    ASSERT_FALSE(asserted);
+
+    //Following should not exist
+    ASSERT_EQ(GetECDb().Schemas().GetECClass("TestSchema", "Foo"), nullptr);
+    ASSERT_FALSE(GetECDb().TableExists("ts_Foo"));
+
+    //Following should exist
+    ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
+
+    //verify number of columns
+    testItems.clear();
+    testItems.push_back(std::make_pair("ts_Goo", 9));
+    AssertColumnCount(GetECDb(), testItems, "SharedTable_SharedColumns");
+
+    assertAndExecuteECSQL(GetECDb(), "SELECT FS, FD, FL FROM ts.Foo", ECSqlStatus::InvalidECSql);
+    assertAndExecuteECSQL(GetECDb(), "SELECT GS, GD, GL FROM ts.Goo", ECSqlStatus::Success, BE_SQLITE_ROW);
+
+    //Delete Goo ===================================================================================================
+    //Deleting Class with SharedTable:SharedColumns is expected to be supported
+    GetECDb().SaveChanges();
+    SchemaItem deleteGoo(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='3.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "</ECSchema>", true, "Delete class containing ECDbMap CA should be successful");
+    asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), deleteGoo);
+    ASSERT_FALSE(asserted);
+
+    //Following should not exist
+    ASSERT_FALSE(GetECDb().TableExists("ts_Goo"));
+
+    //Add Goo Again===================================================================================================
+    //Add Class with SharedTable:SharedColumns is expected to be supported
+    GetECDb().SaveChanges();
+    SchemaItem addGoo(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='4.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Goo' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "               <MapStrategy>"
+        "                  <Strategy>SharedTable</Strategy>"
+        "                  <Options>SharedColumns</Options>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "               </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='GS' typeName='string' />"
+        "       <ECProperty propertyName='GD' typeName='double' />"
+        "       <ECProperty propertyName='GL' typeName='long' />"
+        "   </ECEntityClass>"
+        "</ECSchema>", true, "Add New Class with ECDbMap CA is expected to be successful");
+    asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), addGoo);
+    ASSERT_FALSE(asserted);
+
+    //Following should not exist
+    ASSERT_EQ(GetECDb().Schemas().GetECClass("TestSchema", "Foo"), nullptr);
+    ASSERT_FALSE(GetECDb().TableExists("ts_Foo"));
+
+    //Following should exist
+    ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
+
+    //Verify Column count
+    testItems.clear();
+    testItems.push_back(std::make_pair("ts_Goo", 5));
+    AssertColumnCount(GetECDb(), testItems, "SharedTable_SharedColumns");
+
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
+
+    //Add Foo Again===============================================================================================
+    //Adding new derived entity class is expected to be supported
+    GetECDb().SaveChanges();
+    SchemaItem addFoo(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='5.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Goo' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "               <MapStrategy>"
+        "                  <Strategy>SharedTable</Strategy>"
+        "                  <Options>SharedColumns</Options>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "               </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='GS' typeName='string' />"
+        "       <ECProperty propertyName='GD' typeName='double' />"
+        "       <ECProperty propertyName='GL' typeName='long' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Foo' modifier='None'>"
+        "       <BaseClass>Goo</BaseClass>"
+        "       <ECProperty propertyName='FS' typeName='string' />"
+        "       <ECProperty propertyName='FD' typeName='double' />"
+        "       <ECProperty propertyName='FL' typeName='long' />"
+        "       <ECProperty propertyName='FI' typeName='int' />"
+        "   </ECEntityClass>"
+        "</ECSchema>", true, "New derived entity class is expected to be supported");
+    asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), addFoo);
+    ASSERT_FALSE(asserted);
+
+    //Table should not exist
+    ASSERT_FALSE(GetECDb().TableExists("ts_Foo"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Foo"), nullptr);
+
+    //Table should exist
+    ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
+
+    //Verify column count
+    testItems.clear();
+    testItems.push_back(std::make_pair("ts_Goo", 9));
+    AssertColumnCount(GetECDb(), testItems, "SharedTable_SharedColumns");
+
+    assertAndExecuteECSQL(GetECDb(), "SELECT FS, FD, FL FROM ts.Foo");
+    assertAndExecuteECSQL(GetECDb(), "SELECT GS, GD, GL FROM ts.Goo", ECSqlStatus::Success, BE_SQLITE_ROW);
+
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     05/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_SharedTable_SharedColumns_MinimumSharedColumn)
+    {
+    //Setup Db ===================================================================================================
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Goo' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "               <MapStrategy>"
+        "                  <Strategy>SharedTable</Strategy>"
+        "                  <Options>SharedColumns</Options>"
+        "                  <MinimumSharedColumnCount>7</MinimumSharedColumnCount>"
+        "                  <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "               </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='GS' typeName='string' />"
+        "       <ECProperty propertyName='GD' typeName='double' />"
+        "       <ECProperty propertyName='GL' typeName='long' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Foo' modifier='None'>"
+        "       <BaseClass>Goo</BaseClass>"
+        "       <ECProperty propertyName='FS' typeName='string' />"
+        "       <ECProperty propertyName='FD' typeName='double' />"
+        "       <ECProperty propertyName='FL' typeName='long' />"
+        "       <ECProperty propertyName='FI' typeName='int' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    auto assertAndExecuteECSQL = [] (ECDbCR ecdb, Utf8CP ecsql, ECSqlStatus prepareStatus = ECSqlStatus::Success, DbResult stepStatus = BE_SQLITE_DONE)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(stmt.Prepare(ecdb, ecsql), prepareStatus) << "Prepare failed for: " << ecsql;
+        if (stmt.IsPrepared())
+            {
+            ASSERT_EQ(stmt.Step(), stepStatus) << "Step failed for: " << ecsql;
+            }
+        };
+
+    //following table should exist.
+    ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
+
+    //Following table should not exist
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Foo"), nullptr);
+    ASSERT_FALSE(GetECDb().TableExists("ts_Foo"));
+
+    //Verify number of columns
+    std::vector<std::pair<Utf8String, int>> testItems;
+    testItems.push_back(std::make_pair("ts_Goo", 9));
+    AssertColumnCount(GetECDb(), testItems, "SharedTable_SharedColumns_minimumSharedColumn");
+
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
+
+    //Delete Foo ===================================================================================================
+    GetECDb().SaveChanges();
+    SchemaItem deleteFoo(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Goo' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "               <MapStrategy>"
+        "                  <Strategy>SharedTable</Strategy>"
+        "                  <Options>SharedColumns</Options>"
+        "                  <MinimumSharedColumnCount>7</MinimumSharedColumnCount>"
+        "                  <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "               </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='GS' typeName='string' />"
+        "       <ECProperty propertyName='GD' typeName='double' />"
+        "       <ECProperty propertyName='GL' typeName='long' />"
+        "   </ECEntityClass>"
+        "</ECSchema>", true, "Delete derived class should be successfull");
+    bool asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), deleteFoo);
+    ASSERT_FALSE(asserted);
+
+    //Following should not exist
+    ASSERT_EQ(GetECDb().Schemas().GetECClass("TestSchema", "Foo"), nullptr);
+    ASSERT_FALSE(GetECDb().TableExists("ts_Foo"));
+
+    //Following should exist
+    ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
+
+    //verify number of columns
+    testItems.clear();
+    testItems.push_back(std::make_pair("ts_Goo", 9));
+    AssertColumnCount(GetECDb(), testItems, "SharedTable_SharedColumns_MinimumSharedColumn");
+
+    assertAndExecuteECSQL(GetECDb(), "SELECT FS, FD, FL FROM ts.Foo", ECSqlStatus::InvalidECSql);
+    assertAndExecuteECSQL(GetECDb(), "SELECT GS, GD, GL FROM ts.Goo", ECSqlStatus::Success, BE_SQLITE_ROW);
+
+    //Delete Goo ===================================================================================================
+    //Deleting Class with SharedTable_SharedColumns_minimumSharedColumn is expected to be supported
+    GetECDb().SaveChanges();
+    SchemaItem deleteGoo(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='3.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "</ECSchema>", true, "Delete class containing ECDbMap CA should be successful");
+    asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), deleteGoo);
+    ASSERT_FALSE(asserted);
+
+    //Following should not exist
+    ASSERT_FALSE(GetECDb().TableExists("ts_Goo"));
+
+    //Add Goo Again===================================================================================================
+    //Add Class with SharedTable_SharedColumns_minimumSharedColumn is expected to be supported
+    GetECDb().SaveChanges();
+    SchemaItem addGoo(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='4.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Goo' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "               <MapStrategy>"
+        "                  <Strategy>SharedTable</Strategy>"
+        "                  <Options>SharedColumns</Options>"
+        "                   <MinimumSharedColumnCount>7</MinimumSharedColumnCount>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "               </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='GS' typeName='string' />"
+        "       <ECProperty propertyName='GD' typeName='double' />"
+        "       <ECProperty propertyName='GL' typeName='long' />"
+        "   </ECEntityClass>"
+        "</ECSchema>", true, "Add New Class with ECDbMap CA (SharedTable_SharedColumns_minimumSharedColumn) is expected to be successful");
+    asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), addGoo);
+    ASSERT_FALSE(asserted);
+
+    //Following should not exist
+    ASSERT_EQ(GetECDb().Schemas().GetECClass("TestSchema", "Foo"), nullptr);
+    ASSERT_FALSE(GetECDb().TableExists("ts_Foo"));
+
+    //Following should exist
+    ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
+
+    //Verify Column count
+    testItems.clear();
+    testItems.push_back(std::make_pair("ts_Goo", 9));
+    AssertColumnCount(GetECDb(), testItems, "SharedTable_SharedColumns_minimumSharedColumn");
+
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
+
+    //Add Foo Again===============================================================================================
+    //Adding new derived entity class is expected to be supported
+    GetECDb().SaveChanges();
+    SchemaItem addFoo(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='5.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Goo' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "               <MapStrategy>"
+        "                  <Strategy>SharedTable</Strategy>"
+        "                  <Options>SharedColumns</Options>"
+        "                   <MinimumSharedColumnCount>7</MinimumSharedColumnCount>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "               </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='GS' typeName='string' />"
+        "       <ECProperty propertyName='GD' typeName='double' />"
+        "       <ECProperty propertyName='GL' typeName='long' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Foo' modifier='None'>"
+        "       <BaseClass>Goo</BaseClass>"
+        "       <ECProperty propertyName='FS' typeName='string' />"
+        "       <ECProperty propertyName='FD' typeName='double' />"
+        "       <ECProperty propertyName='FL' typeName='long' />"
+        "       <ECProperty propertyName='FI' typeName='int' />"
+        "       <ECProperty propertyName='FI1' typeName='int' />"//Extra column to verify that sharedcolumn count should be incremented
+        "   </ECEntityClass>"
+        "</ECSchema>", true, "New derived entity class is expected to be supported");
+    asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), addFoo);
+    ASSERT_FALSE(asserted);
+
+    //Table should not exist
+    ASSERT_FALSE(GetECDb().TableExists("ts_Foo"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Foo"), nullptr);
+
+    //Table should exist
+    ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
+
+    //Verify column count
+    testItems.clear();
+    testItems.push_back(std::make_pair("ts_Goo", 10));
+    AssertColumnCount(GetECDb(), testItems, "SharedTable_SharedColumns_minimumSharedColumn");
+
+    assertAndExecuteECSQL(GetECDb(), "SELECT FS, FD, FL FROM ts.Foo");
+    assertAndExecuteECSQL(GetECDb(), "SELECT GS, GD, GL FROM ts.Goo", ECSqlStatus::Success, BE_SQLITE_ROW);
+
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI,FI1) VALUES ('test1', 1.3, 334, 1, 11)");
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI,FI1) VALUES ('test2', 23.3, 234, 2, 22)");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     05/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_SharedTable_SharedColumns_DisableSharedColumns)
+    {
+    //Setup Db ===================================================================================================
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Goo' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "               <MapStrategy>"
+        "                  <Strategy>SharedTable</Strategy>"
+        "                  <Options>SharedColumns</Options>"
+        "                  <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "               </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='GS' typeName='string' />"
+        "       <ECProperty propertyName='GD' typeName='double' />"
+        "       <ECProperty propertyName='GL' typeName='long' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Foo' modifier='None'>"
+        "       <BaseClass>Goo</BaseClass>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>"
+        "                  <Options>DisableSharedColumns</Options>"
+        "                </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='FS' typeName='string' />"
+        "       <ECProperty propertyName='FD' typeName='double' />"
+        "       <ECProperty propertyName='FL' typeName='long' />"
+        "       <ECProperty propertyName='FI' typeName='int' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    auto assertAndExecuteECSQL = [] (ECDbCR ecdb, Utf8CP ecsql, ECSqlStatus prepareStatus = ECSqlStatus::Success, DbResult stepStatus = BE_SQLITE_DONE)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(stmt.Prepare(ecdb, ecsql), prepareStatus) << "Prepare failed for: " << ecsql;
+        if (stmt.IsPrepared())
+            {
+            ASSERT_EQ(stmt.Step(), stepStatus) << "Step failed for: " << ecsql;
+            }
+        };
+
+    //following table should exist.
+    ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
+
+    //Following table should not exist
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Foo"), nullptr);
+    ASSERT_FALSE(GetECDb().TableExists("ts_Foo"));
+
+    //verify No of Columns in BaseClass
+    int expectedColCount = 9;
+    Statement statement;
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, statement.Prepare(GetECDb(), "SELECT * FROM ts_Goo"));
+    ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
+    ASSERT_EQ(expectedColCount, statement.GetColumnCount());
+
+    //verify that the columns generated are same as expected
+    Utf8String expectedColumnNames = "ECInstanceIdECClassIdsc01sc02sc03FSFDFLFI";
+    Utf8String actualColumnNames;
+    for (int i = 0; i < expectedColCount; i++)
+        {
+        actualColumnNames.append(statement.GetColumnName(i));
+        }
+    ASSERT_STREQ(expectedColumnNames.c_str(), actualColumnNames.c_str());
+
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
+
+    //Delete Foo ===================================================================================================
+    GetECDb().SaveChanges();
+    SchemaItem deleteFoo(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Goo' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "               <MapStrategy>"
+        "                  <Strategy>SharedTable</Strategy>"
+        "                  <Options>SharedColumns</Options>"
+        "                  <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "               </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='GS' typeName='string' />"
+        "       <ECProperty propertyName='GD' typeName='double' />"
+        "       <ECProperty propertyName='GL' typeName='long' />"
+        "   </ECEntityClass>"
+        "</ECSchema>", true, "Delete derived class should be successfull");
+    bool asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), deleteFoo);
+    ASSERT_FALSE(asserted);
+
+    //Following should not exist
+    ASSERT_EQ(GetECDb().Schemas().GetECClass("TestSchema", "Foo"), nullptr);
+    ASSERT_FALSE(GetECDb().TableExists("ts_Foo"));
+
+    //Following should exist
+    ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
+
+    //verify number of columns
+    std::vector<std::pair<Utf8String, int>> testItems;
+    testItems.push_back(std::make_pair("ts_Goo", 9));
+    AssertColumnCount(GetECDb(), testItems, "SharedTable_SharedColumns_DisableSharedColumns");
+
+    assertAndExecuteECSQL(GetECDb(), "SELECT FS, FD, FL FROM ts.Foo", ECSqlStatus::InvalidECSql);
+    assertAndExecuteECSQL(GetECDb(), "SELECT GS, GD, GL FROM ts.Goo", ECSqlStatus::Success, BE_SQLITE_ROW);
+
+    //Delete Goo ===================================================================================================
+    //Deleting Class with SharedTable_SharedColumns_minimumSharedColumn is expected to be supported
+    GetECDb().SaveChanges();
+    SchemaItem deleteGoo(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='3.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "</ECSchema>", true, "Delete class containing ECDbMap CA should be successful");
+    asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), deleteGoo);
+    ASSERT_FALSE(asserted);
+
+    //Following should not exist
+    ASSERT_FALSE(GetECDb().TableExists("ts_Goo"));
+
+    //Add Goo Again===================================================================================================
+    //Add Class with SharedTable_SharedColumns_DisableSharedColumns is expected to be supported
+    GetECDb().SaveChanges();
+    SchemaItem addGoo(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='4.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Goo' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "               <MapStrategy>"
+        "                  <Strategy>SharedTable</Strategy>"
+        "                  <Options>SharedColumns</Options>"
+        "                  <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "               </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='GS' typeName='string' />"
+        "       <ECProperty propertyName='GD' typeName='double' />"
+        "       <ECProperty propertyName='GL' typeName='long' />"
+        "   </ECEntityClass>"
+        "</ECSchema>", true, "Add New Class with ECDbMap CA (SharedTable_SharedColumns_DisableSharedColumns) is expected to be successful");
+    asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), addGoo);
+    ASSERT_FALSE(asserted);
+
+    //Following should not exist
+    ASSERT_EQ(GetECDb().Schemas().GetECClass("TestSchema", "Foo"), nullptr);
+    ASSERT_FALSE(GetECDb().TableExists("ts_Foo"));
+
+    //Following should exist
+    ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
+
+    //verify No of Columns in BaseClass
+    expectedColCount = 5;
+    statement.Finalize();
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, statement.Prepare(GetECDb(), "SELECT * FROM ts_Goo"));
+    ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
+    ASSERT_EQ(expectedColCount, statement.GetColumnCount());
+
+    //verify that the columns generated are same as expected
+    expectedColumnNames = "ECInstanceIdECClassIdsc01sc02sc03";
+    actualColumnNames = "";
+    for (int i = 0; i < statement.GetColumnCount(); i++)
+        {
+        actualColumnNames.append(statement.GetColumnName(i));
+        }
+    ASSERT_STREQ(expectedColumnNames.c_str(), actualColumnNames.c_str());
+
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
+
+    //Add Foo Again===============================================================================================
+    //Adding new derived entity class is expected to be supported
+    GetECDb().SaveChanges();
+    SchemaItem addFoo(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='5.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Goo' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "               <MapStrategy>"
+        "                  <Strategy>SharedTable</Strategy>"
+        "                  <Options>SharedColumns</Options>"
+        "                  <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "               </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='GS' typeName='string' />"
+        "       <ECProperty propertyName='GD' typeName='double' />"
+        "       <ECProperty propertyName='GL' typeName='long' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Foo' modifier='None'>"
+        "       <BaseClass>Goo</BaseClass>"
+        "       <ECProperty propertyName='FS' typeName='string' />"
+        "       <ECProperty propertyName='FD' typeName='double' />"
+        "       <ECProperty propertyName='FL' typeName='long' />"
+        "       <ECProperty propertyName='FI' typeName='int' />"
+        "   </ECEntityClass>"
+        "</ECSchema>", true, "New derived entity class is expected to be supported");
+    asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), addFoo);
+    ASSERT_FALSE(asserted);
+
+    //Table should not exist
+    ASSERT_FALSE(GetECDb().TableExists("ts_Foo"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Foo"), nullptr);
+
+    //Table should exist
+    ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
+
+    //verify No of Columns in BaseClass
+    expectedColCount = 9;
+    statement.Finalize();
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, statement.Prepare(GetECDb(), "SELECT * FROM ts_Goo"));
+    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
+    ASSERT_EQ(expectedColCount, statement.GetColumnCount());
+
+    //verify that the columns generated are same as expected
+    expectedColumnNames = "ECInstanceIdECClassIdsc01sc02sc03sc04sc05sc06sc07";
+    actualColumnNames = "";
+    for (int i = 0; i < expectedColCount; i++)
+        {
+        actualColumnNames.append(statement.GetColumnName(i));
+        }
+    ASSERT_STREQ(expectedColumnNames.c_str(), actualColumnNames.c_str());
+
+    assertAndExecuteECSQL(GetECDb(), "SELECT FS, FD, FL FROM ts.Foo");
+    assertAndExecuteECSQL(GetECDb(), "SELECT GS, GD, GL FROM ts.Goo", ECSqlStatus::Success, BE_SQLITE_ROW);
+
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     05/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable)
+    {
+    //Setup Db ===================================================================================================
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Parent' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <Options>JoinedTablePerDirectSubclass</Options>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='P' typeName='long' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Goo' modifier='None'>"
+        "       <BaseClass>Parent</BaseClass>"
+        "       <ECProperty propertyName='GS' typeName='string' />"
+        "       <ECProperty propertyName='GD' typeName='double' />"
+        "       <ECProperty propertyName='GL' typeName='long' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Foo' modifier='None'>"
+        "       <BaseClass>Goo</BaseClass>"
+        "       <ECProperty propertyName='FS' typeName='string' />"
+        "       <ECProperty propertyName='FD' typeName='double' />"
+        "       <ECProperty propertyName='FL' typeName='long' />"
+        "       <ECProperty propertyName='FI' typeName='int' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    auto assertAndExecuteECSQL = [] (ECDbCR ecdb, Utf8CP ecsql, ECSqlStatus prepareStatus = ECSqlStatus::Success, DbResult stepStatus = BE_SQLITE_DONE)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(stmt.Prepare(ecdb, ecsql), prepareStatus) << "Prepare failed for: " << ecsql;
+        if (stmt.IsPrepared())
+            {
+            ASSERT_EQ(stmt.Step(), stepStatus) << "Step failed for: " << ecsql;
+            }
+        };
+
+    //Following Table should exist
+    ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
+
+    ASSERT_TRUE(GetECDb().TableExists("ts_Parent"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Parent"), nullptr);
+
+    //Following should not exist
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Foo"), nullptr);
+    ASSERT_FALSE(GetECDb().TableExists("ts_Foo"));
+
+    //Verify number of columns
+    std::vector<std::pair<Utf8String, int>> testItems;
+    testItems.push_back(std::make_pair("ts_Parent", 3));
+    testItems.push_back(std::make_pair("ts_Goo", 9));
+    AssertColumnCount(GetECDb(), testItems, "JoinedTablePerDirectSubclass");
+
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
+
+    //Delete Foo ===================================================================================================
+    GetECDb().SaveChanges();
+    SchemaItem deleteFoo(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Parent' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <Options>JoinedTablePerDirectSubclass</Options>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='P' typeName='long' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Goo' modifier='None'>"
+        "       <BaseClass>Parent</BaseClass>"
+        "       <ECProperty propertyName='GS' typeName='string' />"
+        "       <ECProperty propertyName='GD' typeName='double' />"
+        "       <ECProperty propertyName='GL' typeName='long' />"
+        "   </ECEntityClass>"
+        "</ECSchema>", true, "Delete a class should be successfull");
+    bool asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), deleteFoo);
+    ASSERT_FALSE(asserted);
+
+    //Following should not exist
+    ASSERT_EQ(GetECDb().Schemas().GetECClass("TestSchema", "Foo"), nullptr);
+    ASSERT_FALSE(GetECDb().TableExists("ts_Foo"));
+
+    //Following should exist
+    ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
+
+    ASSERT_TRUE(GetECDb().TableExists("ts_Parent"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Parent"), nullptr);
+
+    //Verify Number of columns
+    AssertColumnCount(GetECDb(), testItems, "JoinedTablePerDirectSubclass");
+
+    assertAndExecuteECSQL(GetECDb(), "SELECT FS, FD, FL, FI FROM ts.Foo", ECSqlStatus::InvalidECSql);
+    assertAndExecuteECSQL(GetECDb(), "SELECT GS, GD, GL FROM ts.Goo", ECSqlStatus::Success, BE_SQLITE_ROW);
+
+    //Delete Goo ===================================================================================================
+    GetECDb().SaveChanges();
+    SchemaItem deleteGoo(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='3.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Parent' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <Options>JoinedTablePerDirectSubclass</Options>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='P' typeName='long' />"
+        "   </ECEntityClass>"
+        "</ECSchema>", true, "Delete Derived ECClass is supported");
+    asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), deleteGoo);
+    ASSERT_FALSE(asserted);
+
+    //Following should not exist
+    ASSERT_FALSE(GetECDb().TableExists("ts_Goo"));
+
+    //Parent should exist
+    ASSERT_TRUE(GetECDb().TableExists("ts_Parent"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Parent"), nullptr);
+
+    //Verify number of columns
+    testItems.clear();
+    testItems.push_back(std::make_pair("ts_Parent", 3));
+    AssertColumnCount(GetECDb(), testItems, "JoinedTablePerDirectSubclass");
+
+    //Delete Parent ===================================================================================================
+    //Deleting Class with CA  JoinedTablePerDirectSubClass is expected to be supported
+    GetECDb().SaveChanges();
+    SchemaItem deleteParent(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='4.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "</ECSchema>", true, "Deleting Class with CA  JoinedTablePerDirectSubClass is expected to be supported");
+    asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), deleteParent);
+    ASSERT_FALSE(asserted);
+
+    //Parent should not exist
+    ASSERT_FALSE(GetECDb().TableExists("ts_Parent"));
+
+    //Add Parent ===================================================================================================
+    GetECDb().SaveChanges();
+    SchemaItem AddParent(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='5.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Parent' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <Options>JoinedTablePerDirectSubclass</Options>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='P' typeName='long' />"
+        "   </ECEntityClass>"
+        "</ECSchema>", true, "Adding New class containing ECDbMap CA JoinedTablePerDirectSubClass should be successful");
+    asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), AddParent);
+    ASSERT_FALSE(asserted);
+
+    //Parent should exist
+    ASSERT_TRUE(GetECDb().TableExists("ts_Parent"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Parent"), nullptr);
+
+    //Verify number of columns
+    testItems.clear();
+    testItems.push_back(std::make_pair("ts_Parent", 3));
+    AssertColumnCount(GetECDb(), testItems, "JoinedTablePerDirectSubclass");
+
+    //Add Goo Again===================================================================================================
+    //Added Derived class with CA JoinecTablePerDirectSubClass on base class is expected to be supported
+    GetECDb().SaveChanges();
+    SchemaItem addGoo(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='6.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Parent' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <Options>JoinedTablePerDirectSubclass</Options>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='P' typeName='long' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Goo' modifier='None'>"
+        "       <BaseClass>Parent</BaseClass>"
+        "       <ECProperty propertyName='GS' typeName='string' />"
+        "       <ECProperty propertyName='GD' typeName='double' />"
+        "       <ECProperty propertyName='GL' typeName='long' />"
+        "   </ECEntityClass>"
+        "</ECSchema>", true, "Add New Class with JoinedTablePerDirectSubClass on Parent is expected to be successful");
+    asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), addGoo);
+    ASSERT_FALSE(asserted);
+
+    //Following should exist
+    ASSERT_TRUE(GetECDb().TableExists("ts_Parent"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Parent"), nullptr);
+
+    ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
+
+    //verify number of columns
+    testItems.push_back(std::make_pair("ts_Goo", 5));
+    AssertColumnCount(GetECDb(), testItems, "JoinedTablePerDirectSubclass");
+
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
+
+    //Add Foo Again===============================================================================================
+    GetECDb().SaveChanges();
+    SchemaItem addFoo(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='7.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Parent' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <Options>JoinedTablePerDirectSubclass</Options>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='P' typeName='long' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Goo' modifier='None'>"
+        "       <BaseClass>Parent</BaseClass>"
+        "       <ECProperty propertyName='GS' typeName='string' />"
+        "       <ECProperty propertyName='GD' typeName='double' />"
+        "       <ECProperty propertyName='GL' typeName='long' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Foo' modifier='None'>"
+        "       <BaseClass>Goo</BaseClass>"
+        "       <ECProperty propertyName='FS' typeName='string' />"
+        "       <ECProperty propertyName='FD' typeName='double' />"
+        "       <ECProperty propertyName='FL' typeName='long' />"
+        "       <ECProperty propertyName='FI' typeName='int' />"
+        "   </ECEntityClass>"
+        "</ECSchema>", true, "Adding new derived Entity class is supported now");
+    asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), addFoo);
+    ASSERT_FALSE(asserted);
+
+    //Table should not exist
+    ASSERT_FALSE(GetECDb().TableExists("ts_Foo"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Foo"), nullptr);
+
+    //following tables should exist.
+    ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
+
+    ASSERT_TRUE(GetECDb().TableExists("ts_Parent"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Parent"), nullptr);
+
+    //verify number of columns
+    testItems.clear();
+    testItems.push_back(std::make_pair("ts_Parent", 3));
+    testItems.push_back(std::make_pair("ts_Goo", 9));
+    AssertColumnCount(GetECDb(), testItems, "JoinedTablePerDirectSubclass");
+
+    assertAndExecuteECSQL(GetECDb(), "SELECT FS, FD, FL FROM ts.Foo");
+    assertAndExecuteECSQL(GetECDb(), "SELECT GS, GD, GL FROM ts.Goo", ECSqlStatus::Success, BE_SQLITE_ROW);
+
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     05/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable_SharedColumns)
+    {
+    //Setup Db ===================================================================================================
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Parent' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <Options>JoinedTablePerDirectSubclass,SharedColumnsForSubclasses</Options>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='P' typeName='long' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Goo' modifier='None'>"
+        "       <BaseClass>Parent</BaseClass>"
+        "       <ECProperty propertyName='GS' typeName='string' />"
+        "       <ECProperty propertyName='GD' typeName='double' />"
+        "       <ECProperty propertyName='GL' typeName='long' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Foo' modifier='None'>"
+        "       <BaseClass>Goo</BaseClass>"
+        "       <ECProperty propertyName='FS' typeName='string' />"
+        "       <ECProperty propertyName='FD' typeName='double' />"
+        "       <ECProperty propertyName='FL' typeName='long' />"
+        "       <ECProperty propertyName='FI' typeName='int' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    auto assertAndExecuteECSQL = [] (ECDbCR ecdb, Utf8CP ecsql, ECSqlStatus prepareStatus = ECSqlStatus::Success, DbResult stepStatus = BE_SQLITE_DONE)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(stmt.Prepare(ecdb, ecsql), prepareStatus) << "Prepare failed for: " << ecsql;
+        if (stmt.IsPrepared())
+            {
+            ASSERT_EQ(stmt.Step(), stepStatus) << "Step failed for: " << ecsql;
+            }
+        };
+
+    //Following Table should exist
+    ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
+
+    ASSERT_TRUE(GetECDb().TableExists("ts_Parent"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Parent"), nullptr);
+
+    //Following should not exist
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Foo"), nullptr);
+    ASSERT_FALSE(GetECDb().TableExists("ts_Foo"));
+
+    //Verify number of columns
+    std::vector<std::pair<Utf8String, int>> testItems;
+    testItems.push_back(std::make_pair("ts_Parent", 3));
+    testItems.push_back(std::make_pair("ts_Goo", 9));
+    AssertColumnCount(GetECDb(), testItems, "JoinedTablePerDirectSubClass,SharedColumnForSubClasses");
+
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
+
+    //Delete Foo ===================================================================================================
+    GetECDb().SaveChanges();
+    SchemaItem deleteFoo(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Parent' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <Options>JoinedTablePerDirectSubclass,SharedColumnsForSubclasses</Options>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='P' typeName='long' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Goo' modifier='None'>"
+        "       <BaseClass>Parent</BaseClass>"
+        "       <ECProperty propertyName='GS' typeName='string' />"
+        "       <ECProperty propertyName='GD' typeName='double' />"
+        "       <ECProperty propertyName='GL' typeName='long' />"
+        "   </ECEntityClass>"
+        "</ECSchema>", true, "Delete a class should be successfull");
+    bool asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), deleteFoo);
+    ASSERT_FALSE(asserted);
+
+    //Following should not exist
+    ASSERT_FALSE(GetECDb().TableExists("ts_Foo"));
+    ASSERT_EQ(GetECDb().Schemas().GetECClass("TestSchema", "Foo"), nullptr);
+
+    //Following should exist
+    ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
+
+    ASSERT_TRUE(GetECDb().TableExists("ts_Parent"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Parent"), nullptr);
+
+    //Verify Number of columns
+    AssertColumnCount(GetECDb(), testItems, "JoinedTablePerDirectSubClass,SharedColumnForSubClasses");
+
+    assertAndExecuteECSQL(GetECDb(), "SELECT FS, FD, FL, FI FROM ts.Foo", ECSqlStatus::InvalidECSql);
+    assertAndExecuteECSQL(GetECDb(), "SELECT GS, GD, GL FROM ts.Goo", ECSqlStatus::Success, BE_SQLITE_ROW);
+
+    //Delete Goo ===================================================================================================
+    GetECDb().SaveChanges();
+    SchemaItem deleteGoo(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='3.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Parent' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <Options>JoinedTablePerDirectSubclass,SharedColumnsForSubclasses</Options>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='P' typeName='long' />"
+        "   </ECEntityClass>"
+        "</ECSchema>", true, "Delete Derived ECClass is supported");
+    asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), deleteGoo);
+    ASSERT_FALSE(asserted);
+
+    //Following should not exist
+    ASSERT_FALSE(GetECDb().TableExists("ts_Goo"));
+
+    //Parent should exist
+    ASSERT_TRUE(GetECDb().TableExists("ts_Parent"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Parent"), nullptr);
+
+    //Verify number of columns
+    testItems.clear();
+    testItems.push_back(std::make_pair("ts_Parent", 3));
+    AssertColumnCount(GetECDb(), testItems, "JoinedTablePerDirectSubClass,SharedColumnForSubClasses");
+
+    //Delete Parent ===================================================================================================
+    //Deleting Class with CA JoinedTablePerDirectSubClass,SharedColumnForSubClasses is expected to be supported
+    GetECDb().SaveChanges();
+    SchemaItem deleteParent(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='4.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "</ECSchema>", true, "Deleting Class with CA  JoinedTablePerDirectSubClass,SharedColumnForSubClasses is expected to be supported");
+    asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), deleteParent);
+    ASSERT_FALSE(asserted);
+
+    //Parent should not exist
+    ASSERT_FALSE(GetECDb().TableExists("ts_Parent"));
+
+    //Add Parent ===================================================================================================
+    GetECDb().SaveChanges();
+    SchemaItem AddParent(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='5.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Parent' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <Options>JoinedTablePerDirectSubclass,SharedColumnsForSubclasses</Options>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='P' typeName='long' />"
+        "   </ECEntityClass>"
+        "</ECSchema>", true, "Adding New class with ECDbMap CA JoinedTablePerDirectSubClass,SharedColumnForSubClasses should be successful");
+    asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), AddParent);
+    ASSERT_FALSE(asserted);
+
+    //Parent should exist
+    ASSERT_TRUE(GetECDb().TableExists("ts_Parent"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Parent"), nullptr);
+
+    //Verify number of columns
+    testItems.clear();
+    testItems.push_back(std::make_pair("ts_Parent", 3));
+    AssertColumnCount(GetECDb(), testItems, "JoinedTablePerDirectSubClass,SharedColumnForSubClasses");
+
+    //Add Goo Again===================================================================================================
+    //Added Derived class with CA JoinedTablePerDirectSubClass,SharedColumnForSubClasses on base class is expected to be supported
+    GetECDb().SaveChanges();
+    SchemaItem addGoo(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='6.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Parent' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <Options>JoinedTablePerDirectSubclass,SharedColumnsForSubclasses</Options>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='P' typeName='long' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Goo' modifier='None'>"
+        "       <BaseClass>Parent</BaseClass>"
+        "       <ECProperty propertyName='GS' typeName='string' />"
+        "       <ECProperty propertyName='GD' typeName='double' />"
+        "       <ECProperty propertyName='GL' typeName='long' />"
+        "   </ECEntityClass>"
+        "</ECSchema>", true, "Add New Class with JoinedTablePerDirectSubClass,SharedColumnForSubClasses on Parent is expected to be successful");
+    asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), addGoo);
+    ASSERT_FALSE(asserted);
+
+    //Following should exist
+    ASSERT_TRUE(GetECDb().TableExists("ts_Parent"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Parent"), nullptr);
+
+    ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
+
+    //verify number of columns
+    testItems.push_back(std::make_pair("ts_Goo", 5));
+    AssertColumnCount(GetECDb(), testItems, "JoinedTablePerDirectSubClass,SharedColumnForSubClasses");
+
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
+
+    //Add Foo Again===============================================================================================
+    GetECDb().SaveChanges();
+    SchemaItem addFoo(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='7.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Parent' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <Options>JoinedTablePerDirectSubclass,SharedColumnsForSubclasses</Options>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='P' typeName='long' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Goo' modifier='None'>"
+        "       <BaseClass>Parent</BaseClass>"
+        "       <ECProperty propertyName='GS' typeName='string' />"
+        "       <ECProperty propertyName='GD' typeName='double' />"
+        "       <ECProperty propertyName='GL' typeName='long' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Foo' modifier='None'>"
+        "       <BaseClass>Goo</BaseClass>"
+        "       <ECProperty propertyName='FS' typeName='string' />"
+        "       <ECProperty propertyName='FD' typeName='double' />"
+        "       <ECProperty propertyName='FL' typeName='long' />"
+        "       <ECProperty propertyName='FI' typeName='int' />"
+        "   </ECEntityClass>"
+        "</ECSchema>", true, "Adding new derived Entity class is supported now");
+    asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), addFoo);
+    ASSERT_FALSE(asserted);
+
+    //Table should not exist
+    ASSERT_FALSE(GetECDb().TableExists("ts_Foo"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Foo"), nullptr);
+
+    //following tables should exist.
+    ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
+
+    ASSERT_TRUE(GetECDb().TableExists("ts_Parent"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Parent"), nullptr);
+
+    //verify number of columns
+    testItems.clear();
+    testItems.push_back(std::make_pair("ts_Parent", 3));
+    testItems.push_back(std::make_pair("ts_Goo", 9));
+    AssertColumnCount(GetECDb(), testItems, "JoinedTablePerDirectSubClass,SharedColumnForSubClasses");
+
+    assertAndExecuteECSQL(GetECDb(), "SELECT FS, FD, FL FROM ts.Foo");
+    assertAndExecuteECSQL(GetECDb(), "SELECT GS, GD, GL FROM ts.Goo", ECSqlStatus::Success, BE_SQLITE_ROW);
+
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     05/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable_MinimumSharedColumnCount)
+    {
+    //Setup Db ===================================================================================================
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Parent' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <Options>JoinedTablePerDirectSubclass,SharedColumnsForSubclasses</Options>"
+        "                   <MinimumSharedColumnCount>7</MinimumSharedColumnCount>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='P' typeName='long' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Goo' modifier='None'>"
+        "       <BaseClass>Parent</BaseClass>"
+        "       <ECProperty propertyName='GS' typeName='string' />"
+        "       <ECProperty propertyName='GD' typeName='double' />"
+        "       <ECProperty propertyName='GL' typeName='long' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Foo' modifier='None'>"
+        "       <BaseClass>Goo</BaseClass>"
+        "       <ECProperty propertyName='FS' typeName='string' />"
+        "       <ECProperty propertyName='FD' typeName='double' />"
+        "       <ECProperty propertyName='FL' typeName='long' />"
+        "       <ECProperty propertyName='FI' typeName='int' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    auto assertAndExecuteECSQL = [] (ECDbCR ecdb, Utf8CP ecsql, ECSqlStatus prepareStatus = ECSqlStatus::Success, DbResult stepStatus = BE_SQLITE_DONE)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(stmt.Prepare(ecdb, ecsql), prepareStatus) << "Prepare failed for: " << ecsql;
+        if (stmt.IsPrepared())
+            {
+            ASSERT_EQ(stmt.Step(), stepStatus) << "Step failed for: " << ecsql;
+            }
+        };
+
+    //Following Table should exist
+    ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
+
+    ASSERT_TRUE(GetECDb().TableExists("ts_Parent"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Parent"), nullptr);
+
+    //Following should not exist
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Foo"), nullptr);
+    ASSERT_FALSE(GetECDb().TableExists("ts_Foo"));
+
+    //Verify number of columns
+    std::vector<std::pair<Utf8String, int>> testItems;
+    testItems.push_back(std::make_pair("ts_Parent", 3));
+    testItems.push_back(std::make_pair("ts_Goo", 9));
+    AssertColumnCount(GetECDb(), testItems, "JoinedTablePerDirectSubclass_MinimumSharedColumnCount");
+
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
+
+    //Delete Foo ===================================================================================================
+    GetECDb().SaveChanges();
+    SchemaItem deleteFoo(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Parent' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <Options>JoinedTablePerDirectSubclass,SharedColumnsForSubclasses</Options>"
+        "                   <MinimumSharedColumnCount>7</MinimumSharedColumnCount>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='P' typeName='long' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Goo' modifier='None'>"
+        "       <BaseClass>Parent</BaseClass>"
+        "       <ECProperty propertyName='GS' typeName='string' />"
+        "       <ECProperty propertyName='GD' typeName='double' />"
+        "       <ECProperty propertyName='GL' typeName='long' />"
+        "   </ECEntityClass>"
+        "</ECSchema>", true, "Delete a class should be successfull");
+    bool asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), deleteFoo);
+    ASSERT_FALSE(asserted);
+
+    //Following should not exist
+    ASSERT_EQ(GetECDb().Schemas().GetECClass("TestSchema", "Foo"), nullptr);
+    ASSERT_FALSE(GetECDb().TableExists("ts_Foo"));
+
+    //Following should exist
+    ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
+
+    ASSERT_TRUE(GetECDb().TableExists("ts_Parent"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Parent"), nullptr);
+
+    //Verify Number of columns
+    AssertColumnCount(GetECDb(), testItems, "JoinedTablePerDirectSubclass_MinimumSharedColumnCount");
+
+    assertAndExecuteECSQL(GetECDb(), "SELECT FS, FD, FL, FI FROM ts.Foo", ECSqlStatus::InvalidECSql);
+    assertAndExecuteECSQL(GetECDb(), "SELECT GS, GD, GL FROM ts.Goo", ECSqlStatus::Success, BE_SQLITE_ROW);
+
+    //Delete Goo ===================================================================================================
+    GetECDb().SaveChanges();
+    SchemaItem deleteGoo(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='3.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Parent' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <Options>JoinedTablePerDirectSubclass,SharedColumnsForSubclasses</Options>"
+        "                   <MinimumSharedColumnCount>7</MinimumSharedColumnCount>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='P' typeName='long' />"
+        "   </ECEntityClass>"
+        "</ECSchema>", true, "Delete Derived ECClass is supported");
+    asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), deleteGoo);
+    ASSERT_FALSE(asserted);
+
+    //Following should not exist
+    ASSERT_FALSE(GetECDb().TableExists("ts_Goo"));
+
+    //Parent should exist
+    ASSERT_TRUE(GetECDb().TableExists("ts_Parent"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Parent"), nullptr);
+
+    //Verify number of columns
+    testItems.clear();
+    testItems.push_back(std::make_pair("ts_Parent", 3));
+    AssertColumnCount(GetECDb(), testItems, "JoinedTablePerDirectSubclass_MinimumSharedColumnCount");
+
+    //Delete Parent ===================================================================================================
+    //Deleting Class with CA  JoinedTablePerDirectSubclass_MinimumSharedColumnCount is expected to be supported
+    GetECDb().SaveChanges();
+    SchemaItem deleteParent(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='4.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "</ECSchema>", true, "Deleting Class with CA  JoinedTablePerDirectSubclass_MinimumSharedColumnCount is expected to be supported");
+    asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), deleteParent);
+    ASSERT_FALSE(asserted);
+
+    //Parent should not exist
+    ASSERT_FALSE(GetECDb().TableExists("ts_Parent"));
+
+    //Add Parent ===================================================================================================
+    GetECDb().SaveChanges();
+    SchemaItem AddParent(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='5.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Parent' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <Options>JoinedTablePerDirectSubclass,SharedColumnsForSubclasses</Options>"
+        "                   <MinimumSharedColumnCount>7</MinimumSharedColumnCount>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='P' typeName='long' />"
+        "   </ECEntityClass>"
+        "</ECSchema>", true, "Adding New class containing ECDbMap CA JoinedTablePerDirectSubclass_MinimumSharedColumnCount should be successful");
+    asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), AddParent);
+    ASSERT_FALSE(asserted);
+
+    //Parent should exist
+    ASSERT_TRUE(GetECDb().TableExists("ts_Parent"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Parent"), nullptr);
+
+    //Verify number of columns
+    testItems.clear();
+    testItems.push_back(std::make_pair("ts_Parent", 3));
+    AssertColumnCount(GetECDb(), testItems, "JoinedTablePerDirectSubclass_MinimumSharedColumnCount");
+
+    //Add Goo Again===================================================================================================
+    //Added Derived class with CA JoinedTablePerDirectSubclass_MinimumSharedColumnCount on base class is expected to be supported
+    GetECDb().SaveChanges();
+    SchemaItem addGoo(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='6.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Parent' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <Options>JoinedTablePerDirectSubclass,SharedColumnsForSubclasses</Options>"
+        "                   <MinimumSharedColumnCount>7</MinimumSharedColumnCount>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='P' typeName='long' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Goo' modifier='None'>"
+        "       <BaseClass>Parent</BaseClass>"
+        "       <ECProperty propertyName='GS' typeName='string' />"
+        "       <ECProperty propertyName='GD' typeName='double' />"
+        "       <ECProperty propertyName='GL' typeName='long' />"
+        "   </ECEntityClass>"
+        "</ECSchema>", true, "Add New Class with JoinedTablePerDirectSubclass_MinimumSharedColumnCount on Parent is expected to be successful");
+    asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), addGoo);
+    ASSERT_FALSE(asserted);
+
+    //Following should exist
+    ASSERT_TRUE(GetECDb().TableExists("ts_Parent"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Parent"), nullptr);
+
+    ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
+
+    //verify number of columns
+    testItems.push_back(std::make_pair("ts_Goo", 9));
+    AssertColumnCount(GetECDb(), testItems, "JoinedTablePerDirectSubclass_MinimumSharedColumnCount");
+
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
+
+    //Add Foo Again===============================================================================================
+    GetECDb().SaveChanges();
+    SchemaItem addFoo(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='7.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Parent' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <Options>JoinedTablePerDirectSubclass,SharedColumnsForSubclasses</Options>"
+        "                   <MinimumSharedColumnCount>7</MinimumSharedColumnCount>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='P' typeName='long' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Goo' modifier='None'>"
+        "       <BaseClass>Parent</BaseClass>"
+        "       <ECProperty propertyName='GS' typeName='string' />"
+        "       <ECProperty propertyName='GD' typeName='double' />"
+        "       <ECProperty propertyName='GL' typeName='long' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Foo' modifier='None'>"
+        "       <BaseClass>Goo</BaseClass>"
+        "       <ECProperty propertyName='FS' typeName='string' />"
+        "       <ECProperty propertyName='FD' typeName='double' />"
+        "       <ECProperty propertyName='FL' typeName='long' />"
+        "       <ECProperty propertyName='FI' typeName='int' />"
+        "       <ECProperty propertyName='FI1' typeName='int' />"//Extra column to verify that sharedcolumn count should be incremented
+        "   </ECEntityClass>"
+        "</ECSchema>", true, "Adding new derived Entity class is supported now");
+    asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), addFoo);
+    ASSERT_FALSE(asserted);
+
+    //Table should not exist
+    ASSERT_FALSE(GetECDb().TableExists("ts_Foo"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Foo"), nullptr);
+
+    //following tables should exist.
+    ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
+
+    ASSERT_TRUE(GetECDb().TableExists("ts_Parent"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Parent"), nullptr);
+
+    //verify number of columns
+    testItems.clear();
+    testItems.push_back(std::make_pair("ts_Parent", 3));
+    testItems.push_back(std::make_pair("ts_Goo", 10));
+    AssertColumnCount(GetECDb(), testItems, "JoinedTablePerDirectSubclass_MinimumSharedColumnCount");
+
+    assertAndExecuteECSQL(GetECDb(), "SELECT FS, FD, FL, FI, FI1 FROM ts.Foo");
+    assertAndExecuteECSQL(GetECDb(), "SELECT GS, GD, GL FROM ts.Goo", ECSqlStatus::Success, BE_SQLITE_ROW);
+
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI,FI1) VALUES ('test1', 1.3, 334, 1, 11)");
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI,FI1) VALUES ('test2', 23.3, 234, 2, 22)");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     05/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable_SharedColumns_DisableSharedColumns)
+    {
+    //Setup Db ===================================================================================================
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Parent' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <Options>JoinedTablePerDirectSubclass,SharedColumnsForSubclasses</Options>"
+        "                   <MinimumSharedColumnCount>3</MinimumSharedColumnCount>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='P' typeName='long' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Goo' modifier='None'>"
+        "       <BaseClass>Parent</BaseClass>"
+        "       <ECProperty propertyName='GS' typeName='string' />"
+        "       <ECProperty propertyName='GD' typeName='double' />"
+        "       <ECProperty propertyName='GL' typeName='long' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Foo' modifier='None'>"
+        "       <BaseClass>Goo</BaseClass>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>"
+        "                  <Options>DisableSharedColumns</Options>"
+        "                </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='FS' typeName='string' />"
+        "       <ECProperty propertyName='FD' typeName='double' />"
+        "       <ECProperty propertyName='FL' typeName='long' />"
+        "       <ECProperty propertyName='FI' typeName='int' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    auto assertAndExecuteECSQL = [] (ECDbCR ecdb, Utf8CP ecsql, ECSqlStatus prepareStatus = ECSqlStatus::Success, DbResult stepStatus = BE_SQLITE_DONE)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(stmt.Prepare(ecdb, ecsql), prepareStatus) << "Prepare failed for: " << ecsql;
+        if (stmt.IsPrepared())
+            {
+            ASSERT_EQ(stmt.Step(), stepStatus) << "Step failed for: " << ecsql;
+            }
+        };
+
+    //Following Table should exist
+    ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
+
+    ASSERT_TRUE(GetECDb().TableExists("ts_Parent"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Parent"), nullptr);
+
+    //Following should not exist
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Foo"), nullptr);
+    ASSERT_FALSE(GetECDb().TableExists("ts_Foo"));
+
+    //verify No of Columns in BaseClass
+    int expectedColCount = 9;
+    Statement statement;
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, statement.Prepare(GetECDb(), "SELECT * FROM ts_Goo"));
+    ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
+    ASSERT_EQ(expectedColCount, statement.GetColumnCount());
+
+    //verify that the columns generated are same as expected
+    Utf8String expectedColumnNames = "ParentECInstanceIdECClassIdsc01sc02sc03FSFDFLFI";
+    Utf8String actualColumnNames;
+    for (int i = 0; i < expectedColCount; i++)
+        {
+        actualColumnNames.append(statement.GetColumnName(i));
+        }
+    ASSERT_STREQ(expectedColumnNames.c_str(), actualColumnNames.c_str());
+
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
+
+    //Delete Foo ===================================================================================================
+    GetECDb().SaveChanges();
+    SchemaItem deleteFoo(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Parent' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <Options>JoinedTablePerDirectSubclass,SharedColumnsForSubclasses</Options>"
+        "                   <MinimumSharedColumnCount>3</MinimumSharedColumnCount>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='P' typeName='long' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Goo' modifier='None'>"
+        "       <BaseClass>Parent</BaseClass>"
+        "       <ECProperty propertyName='GS' typeName='string' />"
+        "       <ECProperty propertyName='GD' typeName='double' />"
+        "       <ECProperty propertyName='GL' typeName='long' />"
+        "   </ECEntityClass>"
+        "</ECSchema>", true, "Delete a class should be successfull");
+    bool asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), deleteFoo);
+    ASSERT_FALSE(asserted);
+
+    //Following should not exist
+    ASSERT_EQ(GetECDb().Schemas().GetECClass("TestSchema", "Foo"), nullptr);
+    ASSERT_FALSE(GetECDb().TableExists("ts_Foo"));
+
+    //Following should exist
+    ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
+
+    ASSERT_TRUE(GetECDb().TableExists("ts_Parent"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Parent"), nullptr);
+
+    //verify number of columns
+    std::vector<std::pair<Utf8String, int>> testItems;
+    testItems.push_back(std::make_pair("ts_Goo", 9));
+    AssertColumnCount(GetECDb(), testItems, "JoinedTable_SharedColumns_DisableSharedColumns");
+
+    assertAndExecuteECSQL(GetECDb(), "SELECT FS, FD, FL, FI FROM ts.Foo", ECSqlStatus::InvalidECSql);
+    assertAndExecuteECSQL(GetECDb(), "SELECT GS, GD, GL FROM ts.Goo", ECSqlStatus::Success, BE_SQLITE_ROW);
+
+    //Delete Goo ===================================================================================================
+    GetECDb().SaveChanges();
+    SchemaItem deleteGoo(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='3.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Parent' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <Options>JoinedTablePerDirectSubclass,SharedColumnsForSubclasses</Options>"
+        "                   <MinimumSharedColumnCount>3</MinimumSharedColumnCount>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='P' typeName='long' />"
+        "   </ECEntityClass>"
+        "</ECSchema>", true, "Delete Derived ECClass is supported");
+    asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), deleteGoo);
+    ASSERT_FALSE(asserted);
+
+    //Following should not exist
+    ASSERT_FALSE(GetECDb().TableExists("ts_Goo"));
+
+    //Parent should exist
+    ASSERT_TRUE(GetECDb().TableExists("ts_Parent"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Parent"), nullptr);
+
+    //Verify number of columns
+    testItems.clear();
+    testItems.push_back(std::make_pair("ts_Parent", 3));
+    AssertColumnCount(GetECDb(), testItems, "JoinedTable_SharedColumns_DisableSharedColumns");
+
+    //Delete Parent ===================================================================================================
+    //Deleting Class with CA  JoinedTable_MinimumSharedColumnCount is expected to be supported
+    GetECDb().SaveChanges();
+    SchemaItem deleteParent(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='4.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "</ECSchema>", true, "Deleting Class with CA  JoinedTable_MinimumSharedColumnCount is expected to be supported");
+    asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), deleteParent);
+    ASSERT_FALSE(asserted);
+
+    //Parent should not exist
+    ASSERT_FALSE(GetECDb().TableExists("ts_Parent"));
+
+    //Add Parent ===================================================================================================
+    GetECDb().SaveChanges();
+    SchemaItem AddParent(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='5.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Parent' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <Options>JoinedTablePerDirectSubclass,SharedColumnsForSubclasses</Options>"
+        "                   <MinimumSharedColumnCount>3</MinimumSharedColumnCount>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='P' typeName='long' />"
+        "   </ECEntityClass>"
+        "</ECSchema>", true, "Adding New class containing ECDbMap CA JoinedTable_MinimumSharedColumnCount should be successful");
+    asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), AddParent);
+    ASSERT_FALSE(asserted);
+
+    //Parent should exist
+    ASSERT_TRUE(GetECDb().TableExists("ts_Parent"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Parent"), nullptr);
+
+    //Verify number of columns
+    testItems.clear();
+    testItems.push_back(std::make_pair("ts_Parent", 3));
+    AssertColumnCount(GetECDb(), testItems, "JoinedTable_SharedColumns_DisableSharedColumns");
+
+    //Add Goo Again===================================================================================================
+    //Adding Derived class with CA JoinedTable_MinimumSharedColumnCount on base class is expected to be supported
+    GetECDb().SaveChanges();
+    SchemaItem addGoo(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='6.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Parent' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <Options>JoinedTablePerDirectSubclass,SharedColumnsForSubclasses</Options>"
+        "                   <MinimumSharedColumnCount>3</MinimumSharedColumnCount>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='P' typeName='long' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Goo' modifier='None'>"
+        "       <BaseClass>Parent</BaseClass>"
+        "       <ECProperty propertyName='GS' typeName='string' />"
+        "       <ECProperty propertyName='GD' typeName='double' />"
+        "       <ECProperty propertyName='GL' typeName='long' />"
+        "   </ECEntityClass>"
+        "</ECSchema>", true, "Add New Class with JoinedTable_MinimumSharedColumnCount on Parent is expected to be successful");
+    asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), addGoo);
+    ASSERT_FALSE(asserted);
+
+    //Following should exist
+    ASSERT_TRUE(GetECDb().TableExists("ts_Parent"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Parent"), nullptr);
+
+    ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
+
+    //verify No of Columns in BaseClass
+    expectedColCount = 5;
+    statement.Finalize();
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, statement.Prepare(GetECDb(), "SELECT * FROM ts_Goo"));
+    ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
+    ASSERT_EQ(expectedColCount, statement.GetColumnCount());
+
+    //verify that the columns generated are same as expected
+    expectedColumnNames = "ParentECInstanceIdECClassIdsc01sc02sc03";
+    actualColumnNames = "";
+    for (int i = 0; i < expectedColCount; i++)
+        {
+        actualColumnNames.append(statement.GetColumnName(i));
+        }
+    ASSERT_STREQ(expectedColumnNames.c_str(), actualColumnNames.c_str());
+
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
+
+    //Add Foo Again===============================================================================================
+    GetECDb().SaveChanges();
+    SchemaItem addFoo(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='7.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Parent' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <Options>JoinedTablePerDirectSubclass,SharedColumnsForSubclasses</Options>"
+        "                   <MinimumSharedColumnCount>3</MinimumSharedColumnCount>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='P' typeName='long' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Goo' modifier='None'>"
+        "       <BaseClass>Parent</BaseClass>"
+        "       <ECProperty propertyName='GS' typeName='string' />"
+        "       <ECProperty propertyName='GD' typeName='double' />"
+        "       <ECProperty propertyName='GL' typeName='long' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Foo' modifier='None'>"
+        "       <BaseClass>Goo</BaseClass>"
+        "       <ECProperty propertyName='FS' typeName='string' />"
+        "       <ECProperty propertyName='FD' typeName='double' />"
+        "       <ECProperty propertyName='FL' typeName='long' />"
+        "       <ECProperty propertyName='FI' typeName='int' />"
+        "   </ECEntityClass>"
+        "</ECSchema>", true, "Adding new derived Entity class is supported now");
+    asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), addFoo);
+    ASSERT_FALSE(asserted);
+
+    //Table should not exist
+    ASSERT_FALSE(GetECDb().TableExists("ts_Foo"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Foo"), nullptr);
+
+    //following tables should exist.
+    ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
+
+    ASSERT_TRUE(GetECDb().TableExists("ts_Parent"));
+    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Parent"), nullptr);
+
+    //verify No of Columns in BaseClass
+    expectedColCount = 9;
+    statement.Finalize();
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, statement.Prepare(GetECDb(), "SELECT * FROM ts_Goo"));
+    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
+    ASSERT_EQ(expectedColCount, statement.GetColumnCount());
+
+    //verify that the columns generated are same as expected
+    expectedColumnNames = "ECInstanceIdECClassIdsc01sc02sc03sc04sc05sc06sc07";
+    actualColumnNames = "";
+    for (int i = 0; i < expectedColCount; i++)
+        {
+        actualColumnNames.append(statement.GetColumnName(i));
+        }
+    ASSERT_STREQ(expectedColumnNames.c_str(), actualColumnNames.c_str());
+
+    assertAndExecuteECSQL(GetECDb(), "SELECT FS, FD, FL, FI FROM ts.Foo");
+    assertAndExecuteECSQL(GetECDb(), "SELECT GS, GD, GL FROM ts.Goo", ECSqlStatus::Success, BE_SQLITE_ROW);
+
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
+    assertAndExecuteECSQL(GetECDb(), "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
     }
 
 //---------------------------------------------------------------------------------------
@@ -1995,7 +4268,7 @@ TEST_F(ECSchemaUpdateTests, ModifyProperties)
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
-    Savepoint sp(GetECDb(), "SchemaUpgrade");
+    Savepoint sp(GetECDb(), "SchemaUpdate");
     SchemaItem modifiedECPropertyType(
         //SchemaItem with modified ECProperty type
         "<?xml version='1.0' encoding='utf-8'?>"
