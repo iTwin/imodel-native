@@ -537,7 +537,7 @@ BentleyStatus ECDbSchemaWriter::UpdateECClass(ECClassChange& classChange, ECClas
 
     if (classChange.Properties().IsValid())
         {
-        int ordinal = (int) newClass.GetPropertyCount(false);
+        int ordinal = (int) oldClass.GetPropertyCount(false);
         for (size_t i = 0; i < classChange.Properties().Count(); i++)
             {
             auto& change = classChange.Properties().At(i);
