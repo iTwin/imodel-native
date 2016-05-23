@@ -458,6 +458,9 @@ BentleyStatus ViewGenerator::CreateViewForRelationshipClassLinkTableMap(NativeSq
     if (SUCCESS != BuildRelationshipJoinIfAny(viewSql, relationMap, ECN::ECRelationshipEnd::ECRelationshipEnd_Source, relationMap.GetPrimaryTable()))
         return ERROR;
 
+    if (m_viewAccessStringList)
+        m_captureViewAccessStringList = false; //stop viewAccessString capture;
+
     return BuildRelationshipJoinIfAny(viewSql, relationMap, ECN::ECRelationshipEnd::ECRelationshipEnd_Target, relationMap.GetPrimaryTable());
     }
 
@@ -500,6 +503,9 @@ BentleyStatus ViewGenerator::CreateViewForRelationshipClassEndTableMap(NativeSql
         viewSql.Append(selectSQL);
         }
 
+
+    if (m_viewAccessStringList)
+        m_captureViewAccessStringList = false; //stop viewAccessString capture;
 
     return SUCCESS;
     }
