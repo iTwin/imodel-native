@@ -796,6 +796,24 @@ protected:
     //! @note If you override this method, you @em must call T_Super::_OnChildDelete, forwarding its status.
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnChildDelete(DgnElementCR child) const;
 
+    //! Called when an existing element is about to be added as a child to this parent.
+    //! Subclasses may override this method to block children from being added.
+    //! @param[in] child that will be added to this parent.
+    //! @return DgnDbStatus::Success to allow the child addition, otherwise it will fail with the returned status.
+    //! @note implementers should not presume that returning DgnDbStatus::Success means that the element was added,
+    //! since the add may fail for other reasons. Instead, rely on _OnChildAdded for that purpose.
+    //! @note If you override this method, you @em must call T_Super::_OnChildAdd, forwarding its status.
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnChildAdd(DgnElementCR child) const;
+
+    //! Called when an existing element is about to be dropped as a child from this parent.
+    //! Subclasses may override this method to block children from being dropped.
+    //! @param[in] child that will be dropped from this parent.
+    //! @return DgnDbStatus::Success to allow the child removal, otherwise it will fail with the returned status.
+    //! @note implementers should not presume that returning DgnDbStatus::Success means that the element was dropped,
+    //! since the drop may fail for other reasons. Instead, rely on _OnChildDropped for that purpose.
+    //! @note If you override this method, you @em must call T_Super::_OnChildDrop, forwarding its status.
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnChildDrop(DgnElementCR child) const;
+
     //! Called after a new element was inserted with this element as its parent.
     //! @note If you override this method, you @em must call T_Super::_OnChildInserted.
     virtual void _OnChildInserted(DgnElementCR child) const {}
@@ -808,6 +826,14 @@ protected:
     //! Called after an element, with this element as its parent, was successfully deleted.
     //! @note If you override this method, you @em must call T_Super::_OnChildDeleted.
     virtual void _OnChildDeleted(DgnElementCR child) const {}
+
+    //! Called after an existing element was successfully added to this parent.
+    //! @note If you override this method, you @em must call T_Super::_OnChildAdded.
+    virtual void _OnChildAdded(DgnElementCR child) const {}
+
+    //! Called after an existing element was successfully dropped from this parent.
+    //! @note If you override this method, you @em must call T_Super::_OnChildDropped.
+    virtual void _OnChildDropped(DgnElementCR child) const {}
 
     //! Called when a child element of this element is about to be imported into another DgnDb or model
     //! Subclasses may override this method to block control import of their children.
