@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Persistence/Upgrade/RawWSObjectsReader.cpp $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -100,4 +100,12 @@ Utf8String RawWSObjectsReader::GetInstanceETag(const rapidjson::Value* instance)
         return nullptr;
         }
     return *it->second;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::SizeType RawWSObjectsReader::GetRelationshipInstanceCount(const rapidjson::Value* relationshipInstances) const
+    {
+    return 0;
     }

@@ -2,7 +2,7 @@
 |
 |  $Source: Client/Response/WSObjectsReaderV1.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -193,4 +193,12 @@ WSObjectsReader::RelationshipInstance WSObjectsReaderV1::GetRelationshipInstance
 Utf8String WSObjectsReaderV1::GetInstanceETag(const rapidjson::Value* instance) const
     {
     return nullptr;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    05/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::SizeType WSObjectsReaderV1::GetRelationshipInstanceCount(const rapidjson::Value* instance) const
+    {
+    return 0;
     }

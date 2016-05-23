@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Transactions/Transaction.cpp $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -31,7 +31,22 @@ m_activeTransactionHandler(other.m_activeTransactionHandler)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Transaction::~Transaction()
     {
-    Rollback();
+	if (IsActive())
+        Rollback();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                          
++---------------+---------------+---------------+---------------+---------------+------*/
+Transaction& Transaction::operator = (Transaction&& other)
+    {
+	if (IsActive())
+        Rollback();
+
+    m_activeTransactionHandler = other.m_activeTransactionHandler;
+    other.m_activeTransactionHandler = nullptr;
+
+    return *this;
     }
 
 /*--------------------------------------------------------------------------------------+
