@@ -51,6 +51,11 @@ typedef bmap<Utf8String, ICustomECStructSerializerP> NameSerializerMap;
 //////////////////////////////////////////////////////////////////////////////////
 typedef bmap<Utf8String, ICustomAttributeDeserializerP> AttributeDeserializerMap;
 
+//////////////////////////////////////////////////////////////////////////////////
+//  Typedef for a list of values
+//////////////////////////////////////////////////////////////////////////////////
+typedef bvector<ECValue> ValueList;
+
 //! Interface for a custom ECStruct Serializer.  Implement this class if you need to allow a struct property
 //! to generate a custom XML representation of itself.
 struct ICustomECStructSerializer
@@ -536,6 +541,71 @@ public:
     //! @param[in] propertyIndex The index (into the ClassLayout) of the array property
     //! @returns SUCCESS if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    ClearArray (uint32_t propertyIndex);
+
+    //! Given a property index, gets the size of the array. Returns 0 if the property is not an array.
+    //! @param[in] propertyIndex The index of the array property
+    //! @returns array size or 0 if not an array
+    uint32_t    GetArraySize(uint32_t propertyIndex)
+        {
+        ECValue val;
+        if (GetValue(val, propertyIndex) != ECObjectsStatus::Success)
+            return 0;
+
+        if (!val.IsArray())
+            return 0;
+
+        auto arrayInfo = val.GetArrayInfo();
+        return arrayInfo.GetCount();
+        }
+
+    //! Given a property name, gets the size of the array. Returns 0 if the property is not an array.
+    //! @param[in] propertyAccessString The name of the array property
+    //! @returns array size or 0 if not an array
+    uint32_t    GetArraySize(Utf8CP propertyAccessString)
+        {
+        uint32_t index;
+        if (GetEnabler().GetPropertyIndex(index, propertyAccessString) != ECObjectsStatus::Success)
+            {
+            return 0;
+            }
+
+        return GetArraySize(index);
+        }
+
+    //! Given a property index, gets the size of the array. Returns 0 if the property is not an array.
+    //! @param[in] valueList The result vector which will be filled with values
+    //! @param[in] propertyIndex The index of the array property
+    //! @returns the count of elements obtained or 0 if not an array or no values were found.
+    uint32_t GetArrayValues(ValueList& valueList, uint32_t propertyIndex)
+        {
+        auto count = GetArraySize(propertyIndex);
+        if (count <= 0)
+            return 0;
+        
+        for (uint32_t i = 0; i < count; i++)
+            {
+            valueList.emplace_back();
+            auto& value = valueList.back();
+            GetValue(value, propertyIndex, i);
+            }
+        
+        return count;
+        }
+
+    //! Given a property name, gets the size of the array. Returns 0 if the property is not an array.
+    //! @param[in] valueList The result vector which will be filled with values
+    //! @param[in] propertyAccessString The name of the array property
+    //! @returns the count of elements obtained or 0 if not an array or no values were found.
+    uint32_t GetArrayValues(ValueList& valueList, Utf8CP propertyAccessString)
+        {
+        uint32_t index;
+        if (GetEnabler().GetPropertyIndex(index, propertyAccessString) != ECObjectsStatus::Success)
+            {
+            return 0;
+            }
+
+        return GetArrayValues(valueList, index);
+        }
 
     //! Returns the display label for the instance.  The following are checked (in order) for the label:
     //! @li InstanceLabelSpecification custom attribute set on the instance itself

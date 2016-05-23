@@ -411,7 +411,7 @@ ECObjectsStatus SchemaLocalizedStrings::ParseCaKeyString(Utf8StringR containerAc
     if (WString::npos == accessorHashSepIndex)
         return ECObjectsStatus::ParseError;
 				
-    caSchemaName = keyString.substr(beginCaKeyIndex, caSchemaClassSepIndex-1 - beginCaKeyIndex); // substract 6 for schema version
+    caSchemaName = keyString.substr(beginCaKeyIndex, caSchemaClassSepIndex - beginCaKeyIndex);
     caClassName = keyString.substr(caSchemaClassSepIndex + 1, propertyAccessorIndex - caSchemaClassSepIndex - 1);
     propertyAccessor = keyString.substr(propertyAccessorIndex + 1, accessorHashSepIndex - propertyAccessorIndex - 1);
 

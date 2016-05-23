@@ -280,7 +280,15 @@ static void WriteCustomAttributeContainerResources(BeXmlWriter& writer, Utf8CP k
             StructECPropertyCP structP = prop->GetAsStructProperty();
             if (structP != nullptr)
                 {
-                //TODO
+                /*EXPECT_EQ(m_instance->GetValue(arrayVal, propIndex), ECObjectsStatus::Success);
+                EXPECT_TRUE(arrayVal.IsArray());
+                EXPECT_EQ(arrayVal.GetArrayInfo().GetCount(), 42);
+                uint32_t arraySize = value.GetArrayInfo().GetCount();
+                for (uint32_t i = 0; i < arraySize; i++)
+                    {
+                    status = instance.GetValue(value, accessString.c_str(), i);
+                    if (ECObjectsStatus::Success != status && !value.IsStruct())
+                        return status;*/
                 continue;
                 }
             }
