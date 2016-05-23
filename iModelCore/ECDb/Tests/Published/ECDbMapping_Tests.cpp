@@ -1339,6 +1339,7 @@ TEST_F(ECDbMappingTestFixture, JoinedTableCATests)
                           "        <ECProperty propertyName='Cost' typeName='double' />"
                           "    </ECEntityClass>"
                           "</ECSchema>");
+
     testSchemas.push_back("<?xml version='1.0' encoding='utf-8'?>"
                           "<ECSchema schemaName='TestSchema2' nameSpacePrefix='ts2' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                           "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
@@ -1410,6 +1411,26 @@ TEST_F(ECDbMappingTestFixture, JoinedTableCATests)
         "        <ECProperty propertyName='P3' typeName='int' />"
         "    </ECEntityClass>"
         "</ECSchema>", true, "Option JoinedTablePerDirectSubclass can be applied to subclass where base has SharedTable (applies to subclasses)."));
+
+    testItems.push_back(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+                                   "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                                   "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                                   "    <ECEntityClass typeName='ClassA' modifier='None'>"
+                                   "        <ECCustomAttributes>"
+                                   "            <ClassMap xmlns='ECDbMap.01.00'>"
+                                   "                <MapStrategy>"
+                                   "                   <Strategy>SharedTable</Strategy>"
+                                   "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+                                   "                   <Options>JoinedTablePerDirectSubclass</Options>"
+                                   "                </MapStrategy>"
+                                   "            </ClassMap>"
+                                   "        </ECCustomAttributes>"
+                                   "    </ECEntityClass>"
+                                   "    <ECEntityClass typeName='ClassB' modifier='None'>"
+                                   "        <BaseClass>ClassA</BaseClass>"
+                                   "        <ECProperty propertyName='Cost' typeName='double' />"
+                                   "    </ECEntityClass>"
+                                   "</ECSchema>", false, "JoinedTable on a class without any property is expected to be not successful"));
 
     AssertSchemaImport(testItems, "joinedtablecatests.ecdb");
     }
@@ -1888,7 +1909,8 @@ TEST_F(ECDbMappingTestFixture, SharedColumnCA)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbMappingTestFixture, SharedColumnAndPerColumnConstraints)
     {
-    SchemaItem testSchema("<?xml version='1.0' encoding='utf-8'?>"
+    SchemaItem testSchema(
+        "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='01.00.01' prefix='ecdbmap' />"
         "    <ECEntityClass typeName='Parent' modifier='None'>"
@@ -3837,7 +3859,23 @@ TEST_F(ECDbMappingTestFixture, SharedTableAppliesToSubclasses_SharedColumns_Disa
     ASSERT_FALSE(db.TableExists("rc_DerivedA"));
     ASSERT_FALSE(db.TableExists("rc_DerivedB"));
 
-    //verify ECSqlStatments
+    //verify No of Columns in BaseClass
+    const int expectedColCount = 6;
+    Statement statement;
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, statement.Prepare(db, "SELECT * FROM rc_BaseClass"));
+    ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
+    ASSERT_EQ(expectedColCount, statement.GetColumnCount());
+
+    //verify that the columns generated are same as expected
+    Utf8String expectedColumnNames = "ECInstanceIdECClassIdP1P2sc01sc02";
+    Utf8String actualColumnNames;
+    for (int i = 0; i < statement.GetColumnCount(); i++)
+        {
+        actualColumnNames.append(statement.GetColumnName(i));
+        }
+    ASSERT_STREQ(expectedColumnNames.c_str(), actualColumnNames.c_str());
+
+    //verify Insert ECSqlStatments
     ECSqlStatement s1, s2, s3, s4, s5;
     ASSERT_EQ(ECSqlStatus::Success, s1.Prepare(db, "INSERT INTO rc.BaseClass (P1) VALUES('HelloWorld')"));
     ASSERT_EQ(BE_SQLITE_DONE, s1.Step());
@@ -3850,21 +3888,20 @@ TEST_F(ECDbMappingTestFixture, SharedTableAppliesToSubclasses_SharedColumns_Disa
     ASSERT_EQ(ECSqlStatus::Success, s5.Prepare(db, "INSERT INTO rc.DerivedB (P1, P3, P5) VALUES('DerivedB', 11, 'DerivedB')"));
     ASSERT_EQ(BE_SQLITE_DONE, s5.Step());
 
-    //verify No of Columns in BaseClass
-    const int expectedColCount = 6;
-    Statement statement;
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, statement.Prepare(db, "SELECT * FROM rc_BaseClass"));
-    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
-    ASSERT_EQ(expectedColCount, statement.GetColumnCount());
+    db.SaveChanges();
 
-    //verify that the columns generated are same as expected
-    Utf8String expectedColumnNames = "ECInstanceIdECClassIdP1P2sc01sc02";
-    Utf8String actualColumnNames;
-    for (int i = 0; i < expectedColCount; i++)
-        {
-        actualColumnNames.append(statement.GetColumnName(i));
-        }
-    ASSERT_STREQ(expectedColumnNames.c_str(), actualColumnNames.c_str());
+    //Verify that data inserted Successfully
+    ECSqlStatement selectS1, selectS2, selectS3, selectS4, selectS5;
+    ASSERT_EQ(ECSqlStatus::Success, selectS1.Prepare(db, "SELECT * FROM rc.BaseClass WHERE P1='HelloWorld'"));
+    ASSERT_EQ(BE_SQLITE_ROW, selectS1.Step());
+    ASSERT_EQ(ECSqlStatus::Success, selectS2.Prepare(db, "SELECT * FROM rc.ChildDomainClassA WHERE P1='ChildClassA' AND P2=10.002"));
+    ASSERT_EQ(BE_SQLITE_ROW, selectS2.Step());
+    ASSERT_EQ(ECSqlStatus::Success, selectS3.Prepare(db, "SELECT * FROM rc.ChildDomainClassB WHERE P1='ChildClassB' AND P3=2"));
+    ASSERT_EQ(BE_SQLITE_ROW, selectS3.Step());
+    ASSERT_EQ(ECSqlStatus::Success, selectS4.Prepare(db, "SELECT * FROM rc.DerivedA WHERE P1='DerivedA' AND P2=11.003 AND P4=12.004"));
+    ASSERT_EQ(BE_SQLITE_ROW, selectS4.Step());
+    ASSERT_EQ(ECSqlStatus::Success, selectS5.Prepare(db, "SELECT * FROM rc.DerivedB WHERE P1='DerivedB' AND P3=11 AND P5='DerivedB'"));
+    ASSERT_EQ(BE_SQLITE_ROW, selectS5.Step());
     }
 
 //---------------------------------------------------------------------------------------
@@ -4189,6 +4226,7 @@ void AssertECInstanceIdAutoGeneration(ECDbCR ecdb, bool expectedToSucceed, Utf8C
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(newKey)) << "Disable flag does not affect case when ECInstanceId is specified";
     ASSERT_EQ(id.GetValue(), newKey.GetECInstanceId().GetValue());
     }
+
     {
     Utf8String ecsql;
     ecsql.Sprintf("INSERT INTO %s (ECInstanceId, %s) VALUES(?, %s)", fullyQualifiedTestClass, prop, val);
@@ -4196,7 +4234,7 @@ void AssertECInstanceIdAutoGeneration(ECDbCR ecdb, bool expectedToSucceed, Utf8C
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str())) << ecsql.c_str();
 
-    ECInstanceId id(id.GetValue() + 1);
+    id = ECInstanceId(id.GetValue() + 1);
     stmt.BindId(1, id);
     ECInstanceKey newKey;
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(newKey)) << "Disable flag does not affect case when ECInstanceId is specified";
@@ -6462,153 +6500,152 @@ TEST_F(ECDbMappingTestFixture, NotNullConstraintsOnFkColumns)
     ASSERT_TRUE(ddl.ContainsI("[AId] INTEGER,"));
     }
 
-        {
-        SchemaItem testItem("<?xml version='1.0' encoding='utf-8'?>"
-                            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                            "  <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-                            "    <ECEntityClass typeName='A'>"
-                            "        <ECProperty propertyName='AName' typeName='string' />"
-                            "    </ECEntityClass>"
-                            "    <ECEntityClass typeName='Base' modifier='Abstract'>"
-                            "      <ECCustomAttributes>"
-                            "        <ClassMap xmlns='ECDbMap.01.00'>"
-                            "             <MapStrategy>"
-                            "                <Strategy>SharedTable</Strategy>"
-                            "                <AppliesToSubclasses>True</AppliesToSubclasses>"
-                            "             </MapStrategy>"
-                            "        </ClassMap>"
-                            "      </ECCustomAttributes>"
-                            "       <ECProperty propertyName='BaseName' typeName='string' />"
-                            "    </ECEntityClass>"
-                            "    <ECEntityClass typeName='Sub' modifier='Abstract'>"
-                            "        <BaseClass>Base</BaseClass>"
-                            "        <ECProperty propertyName='SubName' typeName='string' />"
-                            "        <ECNavigationProperty propertyName='AId' relationshipName='Rel' direction='Backward'/>"
-                            "    </ECEntityClass>"
-                            "    <ECEntityClass typeName='SubSub'>"
-                            "        <BaseClass>Sub</BaseClass>"
-                            "        <ECProperty propertyName='SubSubName' typeName='string' />"
-                            "    </ECEntityClass>"
-                            "  <ECRelationshipClass typeName='Rel' strength='embedding'>"
-                            "    <Source cardinality='(1,1)' polymorphic='True'>"
-                            "      <Class class = 'A' />"
-                            "    </Source>"
-                            "    <Target cardinality='(0,N)' polymorphic='True'>"
-                            "      <Class class = 'Sub' />"
-                            "    </Target>"
-                            "  </ECRelationshipClass>"
-                            "</ECSchema>");
+    {
+    SchemaItem testItem("<?xml version='1.0' encoding='utf-8'?>"
+                        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                        "  <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                        "    <ECEntityClass typeName='A'>"
+                        "        <ECProperty propertyName='AName' typeName='string' />"
+                        "    </ECEntityClass>"
+                        "    <ECEntityClass typeName='Base' modifier='Abstract'>"
+                        "      <ECCustomAttributes>"
+                        "        <ClassMap xmlns='ECDbMap.01.00'>"
+                        "             <MapStrategy>"
+                        "                <Strategy>SharedTable</Strategy>"
+                        "                <AppliesToSubclasses>True</AppliesToSubclasses>"
+                        "             </MapStrategy>"
+                        "        </ClassMap>"
+                        "      </ECCustomAttributes>"
+                        "       <ECProperty propertyName='BaseName' typeName='string' />"
+                        "    </ECEntityClass>"
+                        "    <ECEntityClass typeName='Sub' modifier='Abstract'>"
+                        "        <BaseClass>Base</BaseClass>"
+                        "        <ECProperty propertyName='SubName' typeName='string' />"
+                        "        <ECNavigationProperty propertyName='AId' relationshipName='Rel' direction='Backward'/>"
+                        "    </ECEntityClass>"
+                        "    <ECEntityClass typeName='SubSub'>"
+                        "        <BaseClass>Sub</BaseClass>"
+                        "        <ECProperty propertyName='SubSubName' typeName='string' />"
+                        "    </ECEntityClass>"
+                        "  <ECRelationshipClass typeName='Rel' strength='embedding'>"
+                        "    <Source cardinality='(1,1)' polymorphic='True'>"
+                        "      <Class class = 'A' />"
+                        "    </Source>"
+                        "    <Target cardinality='(0,N)' polymorphic='True'>"
+                        "      <Class class = 'Sub' />"
+                        "    </Target>"
+                        "  </ECRelationshipClass>"
+                        "</ECSchema>");
 
-        ECDb ecdb;
-        bool asserted = false;
-        AssertSchemaImport(ecdb, asserted, testItem, "notnullconstraintsonfk.ecdb");
-        ASSERT_FALSE(asserted);
+    ECDb ecdb;
+    bool asserted = false;
+    AssertSchemaImport(ecdb, asserted, testItem, "notnullconstraintsonfk.ecdb");
+    ASSERT_FALSE(asserted);
 
-        Utf8String ddl;
-        getDdl(ddl, ecdb, "ts_Base");
-        ASSERT_FALSE(ddl.empty());
-        ASSERT_TRUE(ddl.ContainsI("[AId] INTEGER NOT NULL,")) << "Actual DDL: " << ddl.c_str();
-        }
+    Utf8String ddl;
+    getDdl(ddl, ecdb, "ts_Base");
+    ASSERT_FALSE(ddl.empty());
+    ASSERT_TRUE(ddl.ContainsI("[AId] INTEGER NOT NULL,")) << "Actual DDL: " << ddl.c_str();
+    }
 
-        {
-        SchemaItem testItem("<?xml version='1.0' encoding='utf-8'?>"
-                            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                            "  <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-                            "    <ECEntityClass typeName='A'>"
-                            "        <ECProperty propertyName='AName' typeName='string' />"
-                            "    </ECEntityClass>"
-                            "    <ECEntityClass typeName='Base' modifier='None'>"
-                            "      <ECCustomAttributes>"
-                            "        <ClassMap xmlns='ECDbMap.01.00'>"
-                            "             <MapStrategy>"
-                            "                <Strategy>SharedTable</Strategy>"
-                            "                <AppliesToSubclasses>True</AppliesToSubclasses>"
-                            "             </MapStrategy>"
-                            "        </ClassMap>"
-                            "      </ECCustomAttributes>"
-                            "       <ECProperty propertyName='BaseName' typeName='string' />"
-                            "    </ECEntityClass>"
-                            "    <ECEntityClass typeName='Sub' modifier='Abstract'>"
-                            "        <BaseClass>Base</BaseClass>"
-                            "        <ECProperty propertyName='SubName' typeName='string' />"
-                            "        <ECNavigationProperty propertyName='AId' relationshipName='Rel' direction='Backward'/>"
-                            "    </ECEntityClass>"
-                            "    <ECEntityClass typeName='SubSub'>"
-                            "        <BaseClass>Sub</BaseClass>"
-                            "        <ECProperty propertyName='SubSubName' typeName='string' />"
-                            "    </ECEntityClass>"
-                            "  <ECRelationshipClass typeName='Rel' strength='embedding'>"
-                            "    <Source cardinality='(1,1)' polymorphic='True'>"
-                            "      <Class class = 'A' />"
-                            "    </Source>"
-                            "    <Target cardinality='(0,N)' polymorphic='True'>"
-                            "      <Class class = 'Sub' />"
-                            "    </Target>"
-                            "  </ECRelationshipClass>"
-                            "</ECSchema>");
+    {
+    SchemaItem testItem("<?xml version='1.0' encoding='utf-8'?>"
+                        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                        "  <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                        "    <ECEntityClass typeName='A'>"
+                        "        <ECProperty propertyName='AName' typeName='string' />"
+                        "    </ECEntityClass>"
+                        "    <ECEntityClass typeName='Base' modifier='None'>"
+                        "      <ECCustomAttributes>"
+                        "        <ClassMap xmlns='ECDbMap.01.00'>"
+                        "             <MapStrategy>"
+                        "                <Strategy>SharedTable</Strategy>"
+                        "                <AppliesToSubclasses>True</AppliesToSubclasses>"
+                        "             </MapStrategy>"
+                        "        </ClassMap>"
+                        "      </ECCustomAttributes>"
+                        "       <ECProperty propertyName='BaseName' typeName='string' />"
+                        "    </ECEntityClass>"
+                        "    <ECEntityClass typeName='Sub' modifier='Abstract'>"
+                        "        <BaseClass>Base</BaseClass>"
+                        "        <ECProperty propertyName='SubName' typeName='string' />"
+                        "        <ECNavigationProperty propertyName='AId' relationshipName='Rel' direction='Backward'/>"
+                        "    </ECEntityClass>"
+                        "    <ECEntityClass typeName='SubSub'>"
+                        "        <BaseClass>Sub</BaseClass>"
+                        "        <ECProperty propertyName='SubSubName' typeName='string' />"
+                        "    </ECEntityClass>"
+                        "  <ECRelationshipClass typeName='Rel' strength='embedding'>"
+                        "    <Source cardinality='(1,1)' polymorphic='True'>"
+                        "      <Class class = 'A' />"
+                        "    </Source>"
+                        "    <Target cardinality='(0,N)' polymorphic='True'>"
+                        "      <Class class = 'Sub' />"
+                        "    </Target>"
+                        "  </ECRelationshipClass>"
+                        "</ECSchema>");
 
-        ECDb ecdb;
-        bool asserted = false;
-        AssertSchemaImport(ecdb, asserted, testItem, "notnullconstraintsonfk.ecdb");
-        ASSERT_FALSE(asserted);
+    ECDb ecdb;
+    bool asserted = false;
+    AssertSchemaImport(ecdb, asserted, testItem, "notnullconstraintsonfk.ecdb");
+    ASSERT_FALSE(asserted);
 
-        Utf8String ddl;
-        getDdl(ddl, ecdb, "ts_Base");
-        ASSERT_FALSE(ddl.empty());
-        ASSERT_TRUE(ddl.ContainsI("[AId] INTEGER,")) << "Actual DDL: " << ddl.c_str();
-        }
+    Utf8String ddl;
+    getDdl(ddl, ecdb, "ts_Base");
+    ASSERT_FALSE(ddl.empty());
+    ASSERT_TRUE(ddl.ContainsI("[AId] INTEGER,")) << "Actual DDL: " << ddl.c_str();
+    }
 
-        {
-        SchemaItem testItem("<?xml version='1.0' encoding='utf-8'?>"
-                            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                            "  <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-                            "    <ECEntityClass typeName='A'>"
-                            "        <ECProperty propertyName='AName' typeName='string' />"
-                            "    </ECEntityClass>"
-                            "    <ECEntityClass typeName='Base' modifier='Abstract'>"
-                            "      <ECCustomAttributes>"
-                            "        <ClassMap xmlns='ECDbMap.01.00'>"
-                            "             <MapStrategy>"
-                            "                <Strategy>SharedTable</Strategy>"
-                            "                <AppliesToSubclasses>True</AppliesToSubclasses>"
-                            "             </MapStrategy>"
-                            "        </ClassMap>"
-                            "      </ECCustomAttributes>"
-                            "       <ECProperty propertyName='BaseName' typeName='string' />"
-                            "    </ECEntityClass>"
-                            "    <ECEntityClass typeName='Sub' modifier='Abstract'>"
-                            "        <BaseClass>Base</BaseClass>"
-                            "        <ECProperty propertyName='SubName' typeName='string' />"
-                            "    </ECEntityClass>"
-                            "    <ECEntityClass typeName='SubSub'>"
-                            "        <BaseClass>Sub</BaseClass>"
-                            "        <ECProperty propertyName='SubSubName' typeName='string' />"
-                            "    </ECEntityClass>"
-                            "  <ECRelationshipClass typeName='Rel' strength='embedding'>"
-                            "    <Source cardinality='(1,1)' polymorphic='True'>"
-                            "      <Class class = 'A' />"
-                            "    </Source>"
-                            "    <Target cardinality='(0,N)' polymorphic='True'>"
-                            "      <Class class = 'Sub'>"
-                            "           <Key>"
-                            "              <Property name='ECInstanceId'/>"
-                            "           </Key>"
-                            "      </Class>"
-                            "    </Target>"
-                            "  </ECRelationshipClass>"
-                            "</ECSchema>");
+    {
+    SchemaItem testItem("<?xml version='1.0' encoding='utf-8'?>"
+                        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                        "  <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                        "    <ECEntityClass typeName='A'>"
+                        "        <ECProperty propertyName='AName' typeName='string' />"
+                        "    </ECEntityClass>"
+                        "    <ECEntityClass typeName='Base' modifier='Abstract'>"
+                        "      <ECCustomAttributes>"
+                        "        <ClassMap xmlns='ECDbMap.01.00'>"
+                        "             <MapStrategy>"
+                        "                <Strategy>SharedTable</Strategy>"
+                        "                <AppliesToSubclasses>True</AppliesToSubclasses>"
+                        "             </MapStrategy>"
+                        "        </ClassMap>"
+                        "      </ECCustomAttributes>"
+                        "       <ECProperty propertyName='BaseName' typeName='string' />"
+                        "    </ECEntityClass>"
+                        "    <ECEntityClass typeName='Sub' modifier='Abstract'>"
+                        "        <BaseClass>Base</BaseClass>"
+                        "        <ECProperty propertyName='SubName' typeName='string' />"
+                        "    </ECEntityClass>"
+                        "    <ECEntityClass typeName='SubSub'>"
+                        "        <BaseClass>Sub</BaseClass>"
+                        "        <ECProperty propertyName='SubSubName' typeName='string' />"
+                        "    </ECEntityClass>"
+                        "  <ECRelationshipClass typeName='Rel' strength='embedding'>"
+                        "    <Source cardinality='(1,1)' polymorphic='True'>"
+                        "      <Class class = 'A' />"
+                        "    </Source>"
+                        "    <Target cardinality='(0,N)' polymorphic='True'>"
+                        "      <Class class = 'Sub'>"
+                        "           <Key>"
+                        "              <Property name='ECInstanceId'/>"
+                        "           </Key>"
+                        "      </Class>"
+                        "    </Target>"
+                        "  </ECRelationshipClass>"
+                        "</ECSchema>");
 
-        ECDb ecdb;
-        bool asserted = false;
-        AssertSchemaImport(ecdb, asserted, testItem, "notnullconstraintsonfkwhichispk.ecdb");
-        ASSERT_FALSE(asserted);
+    ECDb ecdb;
+    bool asserted = false;
+    AssertSchemaImport(ecdb, asserted, testItem, "notnullconstraintsonfkwhichispk.ecdb");
+    ASSERT_FALSE(asserted);
 
-        Utf8String ddl;
-        getDdl(ddl, ecdb, "ts_Base");
-        ASSERT_FALSE(ddl.empty());
-        ASSERT_TRUE(ddl.ContainsI("[ECInstanceId] INTEGER NOT NULL,")) << "Actual DDL: " << ddl.c_str();
-        }
-
+    Utf8String ddl;
+    getDdl(ddl, ecdb, "ts_Base");
+    ASSERT_FALSE(ddl.empty());
+    ASSERT_TRUE(ddl.ContainsI("[ECInstanceId] INTEGER NOT NULL,")) << "Actual DDL: " << ddl.c_str();
+    }
     }
 
 //---------------------------------------------------------------------------------------
@@ -9249,60 +9286,60 @@ struct RelationshipsAndSharedTablesTestFixture : ECDbMappingTestFixture
 Utf8CP const RelationshipsAndSharedTablesTestFixture::SCHEMA_XML =
 "<?xml version='1.0' encoding='utf-8'?>"
 "<ECSchema schemaName='test' nameSpacePrefix='t' version='1.0' description='Schema covers all the cases in which base class is OwnTable(Polymorphic)' displayLabel='Table Per Hierarchy' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-"<ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-"<ECEntityClass typeName='Base'>"
-"<ECCustomAttributes>"
-"<ClassMap xmlns='ECDbMap.01.00'>"
-"<MapStrategy>"
-"<Strategy>SharedTable</Strategy>"
-"<AppliesToSubclasses>True</AppliesToSubclasses>"
-"</MapStrategy>"
-"</ClassMap>"
-"</ECCustomAttributes>"
-"<ECProperty propertyName='P0' typeName='string' />"
-"</ECEntityClass>"
-"<ECEntityClass typeName='ClassA' >"
-"<BaseClass>Base</BaseClass>"
-"<ECProperty propertyName='P1' typeName='string' />"
-"</ECEntityClass>"
-"<ECEntityClass typeName='ClassB' >"
-"<BaseClass>ClassA</BaseClass>"
-"<ECProperty propertyName='P2' typeName='string' />"
-"</ECEntityClass>"
-"<ECRelationshipClass typeName='BaseOwnsBase' strength='referencing' strengthDirection='forward'>"
-"<ECCustomAttributes>"
-"<ClassMap xmlns='ECDbMap.01.00'>"
-"<MapStrategy>"
-"<Strategy>SharedTable</Strategy>"
-"<AppliesToSubclasses>True</AppliesToSubclasses>"
-"</MapStrategy>"
-"</ClassMap>"
-"</ECCustomAttributes>"
-"<Source cardinality='(0,N)' polymorphic='True'>"
-"<Class class='Base' />"
-"</Source>"
-"<Target cardinality='(0,N)' polymorphic='True'>"
-"<Class class='Base' />"
-"</Target>"
-"</ECRelationshipClass>"
-"<ECRelationshipClass typeName='BaseHasClassA' strength='referencing' strengthDirection='forward'>"
-"<BaseClass>BaseOwnsBase</BaseClass>"
-"<Source cardinality='(0,1)' polymorphic='True'>"
-"<Class class='Base' />"
-"</Source>"
-"<Target cardinality='(0,1)' polymorphic='True'>"
-"<Class class='ClassA' />"
-"</Target>"
-"</ECRelationshipClass>"
-"<ECRelationshipClass typeName='BaseHasClassB' strength='referencing' strengthDirection='forward'>"
-"<BaseClass>BaseOwnsBase</BaseClass>"
-"<Source cardinality='(0,1)' polymorphic='True'>"
-"<Class class='Base' />"
-"</Source>"
-"<Target cardinality='(0,1)' polymorphic='True'>"
-"<Class class='ClassB' />"
-"</Target>"
-"</ECRelationshipClass>"
+    "<ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+    "<ECEntityClass typeName='Base'>"
+        "<ECCustomAttributes>"
+        "<ClassMap xmlns='ECDbMap.01.00'>"
+            "<MapStrategy>"
+                "<Strategy>SharedTable</Strategy>"
+                "<AppliesToSubclasses>True</AppliesToSubclasses>"
+            "</MapStrategy>"
+        "</ClassMap>"
+        "</ECCustomAttributes>"
+        "<ECProperty propertyName='P0' typeName='string' />"
+    "</ECEntityClass>"
+    "<ECEntityClass typeName='ClassA' >"
+        "<BaseClass>Base</BaseClass>"
+        "<ECProperty propertyName='P1' typeName='string' />"
+    "</ECEntityClass>"
+    "<ECEntityClass typeName='ClassB' >"
+        "<BaseClass>ClassA</BaseClass>"
+            "<ECProperty propertyName='P2' typeName='string' />"
+    "</ECEntityClass>"
+    "<ECRelationshipClass typeName='BaseOwnsBase' strength='referencing' strengthDirection='forward'>"
+        "<ECCustomAttributes>"
+        "<ClassMap xmlns='ECDbMap.01.00'>"
+        "<MapStrategy>"
+            "<Strategy>SharedTable</Strategy>"
+            "<AppliesToSubclasses>True</AppliesToSubclasses>"
+        "</MapStrategy>"
+        "</ClassMap>"
+        "</ECCustomAttributes>"
+        "<Source cardinality='(0,N)' polymorphic='True'>"
+            "<Class class='Base' />"
+        "</Source>"
+        "<Target cardinality='(0,N)' polymorphic='True'>"
+            "<Class class='Base' />"
+        "</Target>"
+    "</ECRelationshipClass>"
+    "<ECRelationshipClass typeName='BaseHasClassA' strength='referencing' strengthDirection='forward'>"
+        "<BaseClass>BaseOwnsBase</BaseClass>"
+        "<Source cardinality='(0,1)' polymorphic='True'>"
+            "<Class class='Base' />"
+        "</Source>"
+        "<Target cardinality='(0,1)' polymorphic='True'>"
+            "<Class class='ClassA' />"
+        "</Target>"
+    "</ECRelationshipClass>"
+    "<ECRelationshipClass typeName='BaseHasClassB' strength='referencing' strengthDirection='forward'>"
+        "<BaseClass>BaseOwnsBase</BaseClass>"
+        "<Source cardinality='(0,1)' polymorphic='True'>"
+            "<Class class='Base' />"
+        "</Source>"
+        "<Target cardinality='(0,1)' polymorphic='True'>"
+            "<Class class='ClassB' />"
+        "</Target>"
+    "</ECRelationshipClass>"
 "</ECSchema>";
 
 //---------------------------------------------------------------------------------------
