@@ -87,6 +87,7 @@ ECSchemaReadContext::ECSchemaReadContext(IStandaloneEnablerLocaterP enablerLocat
         conversionSchemasDirectory.AppendToPath(EC_V3CONVERSION_DIRECTORY);
         m_conversionSchemas = CreateContext(enablerLocater, acceptLegacyImperfectLatestCompatibleMatch, false);
         m_conversionSchemas->AddSchemaPath(conversionSchemasDirectory.c_str());
+        m_conversionSchemas->AddSchemaLocater(*m_knownSchemas);
         }
     }
 
