@@ -2,7 +2,7 @@
 |
 |     $Source: Client/WSRepositoryClient.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -48,6 +48,8 @@ IWSSchemaProviderPtr schemaProvider,
 IHttpHandlerPtr customHandler
 )
     {
+    BeAssert(!serverUrl.empty());
+    BeAssert(!repositoryId.empty());
     BeAssert(nullptr != clientInfo);
     auto configuration = std::make_shared<ClientConfiguration>(serverUrl, repositoryId, clientInfo, schemaProvider, customHandler);
     return std::shared_ptr<WSRepositoryClient>(new WSRepositoryClient(std::make_shared<ClientConnection>(configuration)));
