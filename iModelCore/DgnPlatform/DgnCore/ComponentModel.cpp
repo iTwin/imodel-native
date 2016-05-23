@@ -18,6 +18,22 @@
 
 #define ECSUCCESS(STMT) if (ECN::ECObjectsStatus::Success != (ecstatus = STMT)) {BeAssert(false); return nullptr;}
 
+void ComponentDef::DumpScriptOnlyParameters(ECN::IECInstanceCR props, Utf8CP title)
+    {
+    NativeLogging::LoggingManager::GetLogger("ComponentModelTest")->messagev(NativeLogging::SEVERITY::LOG_FATAL, title);
+    ECN::AdhocPropertyQuery pquery(props, "ScriptOnlyParameters");
+    auto pcount = pquery.GetCount();
+    for (uint32_t i = 0; i < pcount; ++i)
+        {
+        ECN::ECValue value;
+        pquery.GetValue(value, i);
+        Utf8String name;
+        pquery.GetName(name, i);
+        Utf8PrintfString propdesc("%s = %s", name.c_str(), value.ToString().c_str());
+        NativeLogging::LoggingManager::GetLogger("ComponentModelTest")->messagev(NativeLogging::SEVERITY::LOG_FATAL, propdesc.c_str());
+        }
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -626,6 +642,10 @@ ECN::IECInstancePtr ComponentDef::MakeVariationSpec()
     //  Add the script-only parameters to the ad hoc properties of the instance
     adhocParams.ToECProperties(*instance);
 
+#ifdef DEBUG_COMPONENT_MODEL_TEST
+    DumpScriptOnlyParameters(*instance, "MakeVariationSpec");
+#endif
+
     return instance;
     }
 
@@ -758,7 +778,15 @@ DgnDbStatus ComponentDef::GenerateElements(DgnModelR destModel, ECN::IECInstance
     GetModel();
 
     ECN::IECInstancePtr instanceTemplate = MakeVariationSpec();
-    instanceTemplate->CopyValues(variationSpecIn);
+    if (ECN::ECObjectsStatus::Success != instanceTemplate->CopyValues(variationSpecIn))
+        {
+        BeAssert(false);
+        return DgnDbStatus::BadRequest;
+        }
+
+#ifdef DEBUG_COMPONENT_MODEL_TEST
+    DumpScriptOnlyParameters(*instanceTemplate, "GenerateElements");
+#endif
 
     Utf8String scriptName = GetElementGeneratorName();
     if (scriptName.empty())
@@ -1631,7 +1659,10 @@ void TsComponentParameterSet::ToECProperties(ECN::IECInstanceR props) const
             props.SetValue(paramName.c_str(), param.m_value);
         else
             {
-            adHocPropsEditor.Add(paramName.c_str(), param.m_value, "");
+            if (ECN::ECObjectsStatus::Success != adHocPropsEditor.Add(paramName.c_str(), param.m_value, ""))
+				{
+				BeAssert(false);
+				}
 
             #ifndef NDEBUG
             uint32_t idx;

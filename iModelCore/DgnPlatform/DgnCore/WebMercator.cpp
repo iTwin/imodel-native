@@ -85,7 +85,7 @@ static double const s_maxLongitude =  180.0;
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   03/16
 //=======================================================================================
-struct TileIdList : bvector<TileId>{};
+struct TileIdList : bvector<TileId>{int GetSize() const {return (int)size();}};
 struct TileList : bvector<TilePtr>{};
 
 DEFINE_POINTER_SUFFIX_TYPEDEFS(WPixelPoint)
@@ -640,6 +640,10 @@ void WebMercatorDisplay::DrawCoarserTiles(DrawArgs& args, uint8_t zoomLevel, uin
 +---------------+---------------+---------------+---------------+---------------+------*/
 void WebMercatorModel::_AddTerrainGraphics(TerrainContextR context) const
     {
+    static bool s_clear=false;
+    if (s_clear)
+        m_tileCache.Clear();
+
     WebMercatorDisplay display(*this, *context.GetViewport());
     display.DrawView(context);
     }
@@ -678,6 +682,9 @@ void WebMercatorDisplay::DrawView(TerrainContextR context)
     TileIdList tileIds = GetTileIds(m_zoomLevel);
     if (tileIds.empty())
         return;
+
+    if (tileIds.GetSize() >= m_model.GetTileCache().GetMaxSize())
+        m_model.GetTileCache().SetMaxSize(tileIds.GetSize());
 
     Render::SystemR renderSys = context.GetTargetR().GetSystem();
 
@@ -1002,7 +1009,6 @@ struct TiledRasterCache : RealityData::Storage
 struct TileData : RealityData::Payload
 {
 private:
-    Utf8String  m_url;
     ByteStream  m_data;
     DateTime    m_creationDate;
     bool        m_isJpeg;
@@ -1014,17 +1020,17 @@ private:
     void LoadTile();
 
 protected:
-    virtual Utf8CP _GetId() const override {return m_url.c_str();}
     virtual bool _IsExpired() const override {return false;}
-    virtual BentleyStatus _InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> const& header, ByteStream const& body) override;
-    virtual BentleyStatus _InitFrom(BeSQLite::Db& db, Utf8CP key) override;
-    virtual BentleyStatus _InitFrom(Utf8CP filepath, ByteStream const& data) override {return ERROR;}
-    virtual BentleyStatus _Persist(BeSQLite::Db& db) const override;
+    virtual BentleyStatus _LoadFromHttp(bmap<Utf8String, Utf8String> const& header, ByteStream const& body) override;
+    virtual BentleyStatus _LoadFromStorage(BeSQLite::Db& db) override;
+    virtual BentleyStatus _LoadFromFile(ByteStream const& data) override {return ERROR;}
+    virtual BentleyStatus _PersistToStorage(BeSQLite::Db& db) const override;
 
 public:
-    TileData(TileR tile, Render::SystemR renderSys, ColorDef color) : m_tile(&tile), m_renderSys(renderSys), m_color(color) {}
+    TileData(TileR tile, Render::SystemR renderSys, ColorDef color, Utf8CP url) : m_tile(&tile), m_renderSys(renderSys), m_color(color), Payload(url) {}
     ByteStream const& GetData() const {return m_data;}
     DateTime GetCreationDate() const {return m_creationDate;}
+    Utf8String ToString() const {return Utf8PrintfString("%d,%d,%d", m_tile->m_id.m_zoomLevel, m_tile->m_id.m_column, m_tile->m_id.m_row);} 
 };
 DEFINE_REF_COUNTED_PTR(TileData)
 
@@ -1108,6 +1114,7 @@ void TileData::LoadTile()
 
     if (ERROR == readStatus || !rgba.IsValid())
         {
+        BeAssert(false);
         m_tile->SetNotFound();
         return;
         }
@@ -1126,9 +1133,8 @@ void TileData::LoadTile()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TileData::_InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> const& header, ByteStream const& body)
+BentleyStatus TileData::_LoadFromHttp(bmap<Utf8String, Utf8String> const& header, ByteStream const& body)
     {
-    m_url.AssignOrClear(url);
     m_creationDate = DateTime::GetCurrentTime();
 
     auto contentTypeIter = header.find("Content-Type");
@@ -1147,7 +1153,7 @@ BentleyStatus TileData::_InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TileData::_InitFrom(BeSQLite::Db& db, Utf8CP key)
+BentleyStatus TileData::_LoadFromStorage(BeSQLite::Db& db)
     {
     CachedStatementPtr stmt;
     db.GetCachedStatement(stmt, "SELECT Image,NumBytes,JPeg,Created FROM " TABLE_NAME_TiledRaster " WHERE Id=?");
@@ -1155,14 +1161,10 @@ BentleyStatus TileData::_InitFrom(BeSQLite::Db& db, Utf8CP key)
 
     if (BeSQLite::BE_SQLITE_ROW != stmt->Step())
         {
-#ifdef DEBUG_MERCATOR
-        Utf8String tmp(key+40, 16);
-        DEBUG_PRINTF("missing %s", tmp.c_str());
-#endif
+//        DEBUG_PRINTF("missing %s", ToString().c_str());
         return ERROR;
         }
 
-    m_url = key;
     m_data.SaveData((Byte*) stmt->GetValueBlob(0), stmt->GetValueInt(1));
     m_isJpeg = TO_BOOL(stmt->GetValueInt(2));
     DateTime::FromUnixMilliseconds(m_creationDate,(uint64_t) stmt->GetValueInt64(3));
@@ -1174,8 +1176,9 @@ BentleyStatus TileData::_InitFrom(BeSQLite::Db& db, Utf8CP key)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TileData::_Persist(Db& db) const
+BentleyStatus TileData::_PersistToStorage(Db& db) const
     {
+//    DEBUG_PRINTF("saving %s", ToString().c_str());
 
     int bufferSize = (int) GetData().GetSize();
 
@@ -1237,7 +1240,7 @@ void WebMercatorModel::RequestTile(TileId id, TileR tile, Render::SystemR sys) c
     if (0.0 != m_properties.m_transparency)
         color.SetAlpha((Byte) (255.* m_properties.m_transparency));
 
-    GetRealityDataCache().RequestData(*new TileData(tile, sys, color), url.c_str(), RealityData::Options());
+    GetRealityDataCache().RequestData(*new TileData(tile, sys, color, url.c_str()), RealityData::Options());
     }
 
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
