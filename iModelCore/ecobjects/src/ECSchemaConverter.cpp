@@ -492,7 +492,7 @@ void ECSchemaConverter::ProcessCustomAttributeInstance(ECCustomAttributeInstance
 //+---------------+---------------+---------------+---------------+---------------+------
 void ECSchemaConverter::ConvertSchemaLevel(ECSchemaR schema)
     {
-    ProcessCustomAttributeInstance(schema.GetPrimaryCustomAttributes(false), schema.GetCustomAttributeContainer(), "ECSchema:" + schema.GetName());
+    ProcessCustomAttributeInstance(schema.GetCustomAttributes(false), schema.GetCustomAttributeContainer(), "ECSchema:" + schema.GetName());
     }
 
 //---------------------------------------------------------------------------------------
@@ -502,16 +502,16 @@ void ECSchemaConverter::ConvertClassLevel(ECSchemaR schema)
     {
     for (auto const& ecClass : GetHierarchicallySortedClasses(schema))
         {
-        ProcessCustomAttributeInstance(ecClass->GetPrimaryCustomAttributes(false), *ecClass, "ECClass:" + ecClass->GetName());
+        ProcessCustomAttributeInstance(ecClass->GetCustomAttributes(false), *ecClass, "ECClass:" + ecClass->GetName());
         if (ecClass->IsRelationshipClass())
             {
             ECRelationshipClassP relClass = ecClass->GetRelationshipClassP();
 
             ECRelationshipConstraintR source = relClass->GetSource();
-            ProcessCustomAttributeInstance(source.GetPrimaryCustomAttributes(false), source, "ECRelationshipConstraint:" + source.GetRoleLabel());
+            ProcessCustomAttributeInstance(source.GetCustomAttributes(false), source, "ECRelationshipConstraint:" + source.GetRoleLabel());
 
             ECRelationshipConstraintR target = relClass->GetTarget();
-            ProcessCustomAttributeInstance(target.GetPrimaryCustomAttributes(false), target, "ECRelationshipConstraint:" + target.GetRoleLabel());
+            ProcessCustomAttributeInstance(target.GetCustomAttributes(false), target, "ECRelationshipConstraint:" + target.GetRoleLabel());
             }
         
         }
@@ -527,7 +527,7 @@ void ECSchemaConverter::ConvertPropertyLevel(ECSchemaR schema)
         for (auto const& ecProp : ecClass->GetProperties(false))
             {
             Utf8String debugName = Utf8String("ECProperty:") + ecClass->GetFullName() + Utf8String(".") + ecProp->GetName();
-            ProcessCustomAttributeInstance(ecProp->GetPrimaryCustomAttributes(false), *ecProp, debugName);
+            ProcessCustomAttributeInstance(ecProp->GetCustomAttributes(false), *ecProp, debugName);
             }
         }
     }
