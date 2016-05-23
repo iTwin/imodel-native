@@ -196,7 +196,7 @@ static Utf8CP const  KOQ_NAME                       = "KindOfQuantityName";
 static Utf8CP const  DIMENSION_NAME                 = "DimensionName";
 static Utf8CP const  UNIT_SPECIFICATION             = "UnitSpecificationAttr";
 static Utf8CP const  UNIT_SPECIFICATIONS            = "UnitSpecifications";
-static Utf8CP const  UNIT_SPECIFICATION_LIST        = "UnitSpecificationList";
+//static Utf8CP const  UNIT_SPECIFICATION_LIST        = "UnitSpecificationList"; UNUSED
 static Utf8CP const  DISPLAY_UNIT_SPECIFICATION     = "DisplayUnitSpecificationAttr";
 
 struct UnitSpecification
