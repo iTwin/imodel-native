@@ -58,8 +58,8 @@ enum ClipAction
     };
 END_BENTLEY_SCALABLEMESH_NAMESPACE
 
-extern size_t nGraphPins;
-extern size_t nGraphReleases;
+//extern size_t nGraphPins;
+//extern size_t nGraphReleases;
 
 template<class POINT, class EXTENT> class SMMeshIndex;
 
@@ -212,6 +212,24 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         return poolMemItemPtr;
         }
 
+
+    virtual RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> GetDiffSetPtr() const
+        {
+        RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> poolMemItemPtr;
+
+
+        if (!SMMemoryPool::GetInstance()->GetItem<DifferenceSet>(poolMemItemPtr, m_diffSetsItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::DiffSet))
+            {
+            //NEEDS_WORK_SM : SharedPtr for GetPtsIndiceStore().get()            
+            RefCountedPtr<SMStoredMemoryPoolGenericVectorItem<DifferenceSet>> storedMemoryPoolItem(new SMStoredMemoryPoolGenericVectorItem<DifferenceSet>(GetBlockID().m_integerID, dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetClipStore().GetPtr(), SMPoolDataTypeDesc::DiffSet));
+            SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolItem.get());
+            m_diffSetsItemId = SMMemoryPool::GetInstance()->AddItem(memPoolItemPtr);
+            assert(m_diffSetsItemId != SMMemoryPool::s_UndefinedPoolItemId);
+            poolMemItemPtr = storedMemoryPoolItem.get();
+            }
+
+        return poolMemItemPtr;
+        }
     /*void SetGraphDirty()
         {
         //m_graphVec.RecomputeCount();
@@ -317,7 +335,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     const DifferenceSet& GetClipSet(size_t index) const
         {
-        return m_differenceSets[index];
+        RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> diffset = GetDiffSetPtr();
+        return (*diffset.get())[index];
         }
 
 
@@ -540,7 +559,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
         bool ClipIntersectsBox(uint64_t clipId, EXTENT ext);
 
-        mutable HPMStoredPooledVector<DifferenceSet> m_differenceSets;
+        //mutable HPMStoredPooledVector<DifferenceSet> m_differenceSets;
         //mutable HPMStoredPooledVector<MTGGraph> m_graphVec;
         mutable std::mutex m_graphInflateMutex;
         mutable std::mutex m_graphMutex;
@@ -549,6 +568,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         mutable SMMemoryPoolItemId m_triUvIndicesPoolItemId;                
         mutable SMMemoryPoolItemId m_uvCoordsPoolItemId;       
         mutable SMMemoryPoolItemId m_graphPoolItemId;
+        mutable SMMemoryPoolItemId m_diffSetsItemId;
         ISMPointIndexMesher<POINT, EXTENT>* m_mesher2_5d;
         ISMPointIndexMesher<POINT, EXTENT>* m_mesher3d;
        // mutable bool m_isGraphLoaded;                

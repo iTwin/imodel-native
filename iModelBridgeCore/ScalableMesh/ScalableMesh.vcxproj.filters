@@ -858,6 +858,9 @@
     <ClInclude Include="stm\ScalableMeshDb.h">
       <Filter>Includes\STM</Filter>
     </ClInclude>
+    <ClInclude Include="stm\ComputeMemoryUseTraits.h">
+      <Filter>Includes\STM</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Foundations\Errors.cpp">

@@ -52,13 +52,15 @@ class SMSQLiteDiffsetTileStore : public IScalableMeshDataStore<DifferenceSet, By
             }
         void Open()
             {
+            std::lock_guard<std::mutex> lock(fileLock);
+            if (m_smSQLiteFile != NULL && m_smSQLiteFile->IsOpen()) return;
             StatusInt status;
             m_smSQLiteFile = SMSQLiteFile::Open(m_path, false, status);
-            if (m_needsCreate || !status || !m_smSQLiteFile->IsOpen())
-                {
-                m_needsCreate = true;
-                m_smSQLiteFile->Create(m_path);
-                }
+                if (m_needsCreate || !status || !m_smSQLiteFile->IsOpen())
+                    {
+                    m_needsCreate = true;
+                    m_smSQLiteFile->Create(m_path);
+                    }
             }
 
 
@@ -151,9 +153,12 @@ class SMSQLiteDiffsetTileStore : public IScalableMeshDataStore<DifferenceSet, By
 
         virtual size_t GetBlockDataCount(HPMBlockID blockID) const
             {
+            if (m_smSQLiteFile == NULL || !m_smSQLiteFile->IsOpen())
+                const_cast<SMSQLiteDiffsetTileStore*>(this)->Open();
             bvector<uint8_t> diffsetData;
             size_t uncompressedSize = 0;
             m_smSQLiteFile->GetDiffSet(blockID.m_integerID, diffsetData, uncompressedSize);
+            if (uncompressedSize == 0) return 0;
             size_t dataCount = 0;
             memcpy(&dataCount, &diffsetData[0], sizeof(size_t));
             return dataCount;
@@ -211,4 +216,5 @@ class SMSQLiteDiffsetTileStore : public IScalableMeshDataStore<DifferenceSet, By
         SMSQLiteFilePtr m_smSQLiteFile;
         WString m_path;
         bool m_needsCreate;
+        std::mutex fileLock;
     };

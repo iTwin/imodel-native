@@ -440,6 +440,7 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f Terra
     <ClInclude Include="STM\3dDelaunay\TrimHull.h" />
     <ClInclude Include="STM\CGALEdgeCollapse.h" />
     <ClInclude Include="STM\CGAL_BentleyKernel.h" />
+    <ClInclude Include="stm\ComputeMemoryUseTraits.h" />
     <ClInclude Include="STM\Edits\Skirts.h" />
     <ClInclude Include="stm\ScalableMeshDb.h" />
     <ClInclude Include="STM\ScalableMeshFileMoniker.h" />
