@@ -4633,7 +4633,7 @@ void BeIdSet::FromString(Utf8StringCR str)
             std::swap(startRange, endRange);
         
         for (; startRange<=endRange; ++startRange)
-            insert((BeBriefcaseBasedId) startRange);
+            insert((BeInt64Id) startRange);
 
         curr = strchr(curr, ',');
         if (curr == nullptr)

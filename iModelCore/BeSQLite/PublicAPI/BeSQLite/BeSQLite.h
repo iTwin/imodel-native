@@ -1119,7 +1119,6 @@ struct VirtualSet
     virtual bool _IsInSet(int nVals, DbValue const* vals) const = 0;
 };
 
-
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   12/14
 //=======================================================================================
@@ -1137,7 +1136,7 @@ template<typename IdType> struct IdSet : BeIdSet, VirtualSet
 private:
     BeIdSet m_set;
 
-    virtual bool _IsInSet(int nVals, DbValue const* vals) const
+    virtual bool _IsInSet(int nVals, DbValue const* vals) const override
         {
         BeAssert(nVals == 1);
         return Contains(IdType(vals[0].GetValueUInt64()));
@@ -2080,7 +2079,7 @@ public:
         //! Set the compression mode for the new Db. Default is CompressDb_None.
         void SetCompressMode(CompressedDb val) {m_compressedDb=val;}
         //! Set Application Id to be stored at offset 68 of the SQLite file
-    void SetApplicationId(ApplicationId applicationId) {m_applicationId=applicationId;}
+        void SetApplicationId(ApplicationId applicationId) {m_applicationId=applicationId;}
         //! Set expiration date for the newly created database.
         void SetExpirationDate(DateTime xdate) {m_expirationDate=xdate;}
     };
