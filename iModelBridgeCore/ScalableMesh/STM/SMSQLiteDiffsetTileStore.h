@@ -101,8 +101,9 @@ class SMSQLiteDiffsetTileStore : public IScalableMeshDataStore<DifferenceSet, By
                 {
                 ct[i] = DataTypeArray[i].WriteToBinaryStream(serializedSet[i]);
                 countAsBytes += ct[i];
+                countAsPts += (size_t)(ceil((float)ct[i] / sizeof(int32_t)));
                 }
-            countAsPts = (size_t)(ceil((float)countAsBytes / sizeof(int32_t)));
+            //countAsPts = (size_t)(ceil((float)countAsBytes / sizeof(int32_t)));
             size_t nOfInts = (size_t)(ceil(((float)sizeof(size_t) / sizeof(int32_t))));
             int32_t* ptArray = new int32_t[countAsPts + countData + nOfInts];
             memcpy(ptArray, &countData, sizeof(size_t));
@@ -110,6 +111,7 @@ class SMSQLiteDiffsetTileStore : public IScalableMeshDataStore<DifferenceSet, By
             for (size_t i = 0; i < countData; i++)
                 {
                 ptArray[(size_t)(ceil(((float)offset / sizeof(int32_t))))] = (int32_t)ct[i];
+                offset = (size_t)(ceil(((float)offset / sizeof(int32_t))))*sizeof(int32_t);
                 offset += sizeof(int32_t);
                 memcpy((char*)ptArray + offset, serializedSet[i], ct[i]);
                 offset += ct[i];
@@ -200,6 +202,7 @@ class SMSQLiteDiffsetTileStore : public IScalableMeshDataStore<DifferenceSet, By
                     diffSet->upToDate = true;
                     offset += sizeof(int32_t);
                     offset += sizeOfCurrentSerializedSet;
+                    offset = ceil(((float)offset / sizeof(int32_t)))*sizeof(int32_t);
                     ++ct;
                     }
                 }

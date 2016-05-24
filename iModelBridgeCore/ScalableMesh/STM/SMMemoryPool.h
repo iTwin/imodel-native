@@ -457,7 +457,12 @@ public:
     */
 
     virtual ~SMMemoryPoolVectorItem()
-        {     
+        { 
+        if (m_data != 0)
+            {
+            delete[](DataType*)m_data;
+            m_data = 0;
+            }
         }
 
     virtual bool reserve(size_t newCount)
