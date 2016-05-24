@@ -270,7 +270,7 @@ ComponentToTextureStroker(DgnDbR dgndb, double scaleFactor, ColorDef lineColor, 
     normal.Init(0, 1, 0);
     DPoint3d zero;
     zero.Zero();
-    m_transformForTexture.InitFromMirrorPlane(zero, normal);
+    m_transformForTexture.InitIdentity(); //  InitFromMirrorPlane(zero, normal);
     }
 
 //---------------------------------------------------------------------------------------
@@ -303,6 +303,7 @@ Render::GraphicPtr Stroke(ViewContextR context) const
     //  Add symbology
     graphic->ActivateGraphicParams(elemMatSymb);
     m_component->_StrokeLineString(*graphic, &context, &lineStyleSymb, m_points, 2, false);
+    graphic->Close();
 
     return graphic;
     }

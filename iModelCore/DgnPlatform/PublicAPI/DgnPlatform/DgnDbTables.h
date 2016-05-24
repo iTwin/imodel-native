@@ -47,8 +47,6 @@
 #define DGN_CLASSNAME_GraphicalModel2d      "GraphicalModel2d"
 #define DGN_CLASSNAME_GroupInformationModel "GroupInformationModel"
 #define DGN_CLASSNAME_LineStyle             "LineStyle"
-#define DGN_CLASSNAME_Link                  "Link"
-#define DGN_CLASSNAME_LinkElement           "LinkElement"
 #define DGN_CLASSNAME_LocalAuthority        "LocalAuthority"
 #define DGN_CLASSNAME_MaterialAuthority     "MaterialAuthority"
 #define DGN_CLASSNAME_Model                 "Model"
@@ -86,12 +84,10 @@
 #define DGN_RELNAME_ModelContainsElements       "ModelContainsElements"
 #define DGN_RELNAME_SolutionOfComponent         "SolutionOfComponent"
 #define DGN_RELNAME_InstantiationOfTemplate     "InstantiationOfTemplate"
-#define DGN_RELNAME_ElementHasLinks             "ElementHasLinks"
 #define DGN_RELNAME_ModelDrivesModel            "ModelDrivesModel"
 
 #include <DgnPlatform/DgnProperties.h>
 #include "UnitDefinition.h"
-#include "DgnLink.h"
 #include "DgnFont.h"
 #include "DgnCoreEvent.h"
 #include "ECSqlClassParams.h"
@@ -701,144 +697,6 @@ private:
 public:
     //! Provides accessors for line styles.
     DGNPLATFORM_EXPORT struct DgnLineStyles& LineStyles();
-};
-
-//=======================================================================================
-// Links are shared definitions, referenced by elements. 
-//! @see DgnDb::Links
-// @bsiclass
-//=======================================================================================
-struct DgnLinks : public DgnDbTable
-{
-private:
-    DEFINE_T_SUPER(DgnDbTable);
-    friend struct DgnDb;
-
-    DgnLinks(DgnDbR db) : T_Super(db) {}
-
-public:
-    //=======================================================================================
-    // @bsiclass
-    //=======================================================================================
-    struct Iterator : public BeSQLite::DbTableIterator
-    {
-    private:
-        DEFINE_T_SUPER(BeSQLite::DbTableIterator);
-
-    public:
-        Iterator(DgnDbCR db) : T_Super((BeSQLite::DbCR)db) {}
-
-        //=======================================================================================
-        // @bsiclass
-        //=======================================================================================
-        struct Entry : public DbTableIterator::Entry, public std::iterator < std::input_iterator_tag, Entry const >
-        {
-        private:
-            DEFINE_T_SUPER(DbTableIterator::Entry);
-            friend struct Iterator;
-
-            Entry(BeSQLite::StatementP sql, bool isValid) : T_Super(sql, isValid) {}
-
-        public:
-            DGNPLATFORM_EXPORT DgnLinkId GetId() const;
-            DGNPLATFORM_EXPORT DgnLinkType GetType() const;
-            DGNPLATFORM_EXPORT Utf8CP GetDisplayLabel() const;
-            Entry const& operator*() const { return *this; }
-        };
-
-        typedef Entry const_iterator;
-        typedef Entry iterator;
-        DGNPLATFORM_EXPORT const_iterator begin() const;
-        const_iterator end() const { return Entry(nullptr, false); }
-        DGNPLATFORM_EXPORT size_t QueryCount() const;
-    }; // Iterator
-
-    //=======================================================================================
-    // @bsiclass
-    //=======================================================================================
-    struct OnElementIterator : public BeSQLite::DbTableIterator
-    {
-    private:
-        DEFINE_T_SUPER(BeSQLite::DbTableIterator);
-
-        DgnElementId m_elementId;
-
-    public:
-        OnElementIterator(DgnDbCR db, DgnElementId elementId) : T_Super((BeSQLite::DbCR)db), m_elementId(elementId) {}
-
-        //=======================================================================================
-        // @bsiclass
-        //=======================================================================================
-        struct Entry : DbTableIterator::Entry, std::iterator < std::input_iterator_tag, Entry const >
-        {
-        private:
-            DEFINE_T_SUPER(DbTableIterator::Entry);
-            friend struct OnElementIterator;
-
-            Entry(BeSQLite::StatementP sql, bool isValid) : T_Super(sql, isValid) {}
-
-        public:
-            DGNPLATFORM_EXPORT DgnLinkId GetId() const;
-            DGNPLATFORM_EXPORT DgnLinkType GetType() const;
-            DGNPLATFORM_EXPORT Utf8CP GetDisplayLabel() const;
-            Entry const& operator*() const { return *this; }
-
-        };
-
-        typedef Entry const_iterator;
-        typedef Entry iterator;
-        DGNPLATFORM_EXPORT const_iterator begin() const;
-        const_iterator end() const { return Entry(nullptr, false); }
-        DGNPLATFORM_EXPORT size_t QueryCount() const;
-    }; // OnElementIterator
-
-    //=======================================================================================
-    // @bsiclass
-    //=======================================================================================
-    struct ReferencesLinkIterator : public BeSQLite::DbTableIterator
-    {
-    private:
-        DEFINE_T_SUPER(BeSQLite::DbTableIterator);
-
-        DgnLinkId m_linkId;
-
-    public:
-        ReferencesLinkIterator(DgnDbCR db, DgnLinkId linkId) : T_Super((BeSQLite::DbCR)db), m_linkId(linkId) {}
-
-        //=======================================================================================
-        // @bsiclass
-        //=======================================================================================
-        struct Entry : DbTableIterator::Entry, std::iterator < std::input_iterator_tag, Entry const >
-        {
-        private:
-            DEFINE_T_SUPER(DbTableIterator::Entry);
-            friend struct OnElementIterator;
-
-            Entry(BeSQLite::StatementP sql, bool isValid) : T_Super(sql, isValid) {}
-
-        public:
-            DGNPLATFORM_EXPORT BeSQLite::EC::ECInstanceKey GetECInstanceKey() const;
-            Entry const& operator*() const { return *this; }
-
-        }; // Entry
-
-        typedef Entry const_iterator;
-        typedef Entry iterator;
-        DGNPLATFORM_EXPORT const_iterator begin() const;
-        const_iterator end() const { return Entry(nullptr, false); }
-        DGNPLATFORM_EXPORT size_t QueryCount() const;
-    }; // ReferencesLinkIterator
-
-    DGNPLATFORM_EXPORT DgnLinkPtr QueryById(DgnLinkId) const;
-    Iterator MakeIterator() const { return Iterator(m_dgndb); }
-    OnElementIterator MakeOnElementIterator(DgnElementId elementId) const { return OnElementIterator(m_dgndb, elementId); }
-    ReferencesLinkIterator MakeReferencesLinkIterator(DgnLinkId linkId) const { return ReferencesLinkIterator(m_dgndb, linkId); }
-    DGNPLATFORM_EXPORT BentleyStatus Update(DgnLinkCR);
-
-    DGNPLATFORM_EXPORT BentleyStatus InsertOnElement(DgnElementId, DgnLinkR);
-    DGNPLATFORM_EXPORT BentleyStatus InsertOnElement(DgnElementId, DgnLinkId);
-    DGNPLATFORM_EXPORT BentleyStatus DeleteFromElement(DgnElementId, DgnLinkId);
-    DGNPLATFORM_EXPORT void PurgeUnused();
 };
 
 //=======================================================================================

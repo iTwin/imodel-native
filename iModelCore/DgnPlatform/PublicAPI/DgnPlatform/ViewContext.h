@@ -507,7 +507,6 @@ private:
     void _OutputGraphic(Render::GraphicR graphic, GeometrySourceCP) override;
     StatusInt _VisitHit(HitDetailCR hit) override;
     DecorateContext(DgnViewportR vp, Render::Decorations& decorations) : RenderContext(vp, DrawPurpose::Decorate), m_decorations(decorations) {}
-
 public:
     //! Display world coordinate graphic with flash/hilite treatment.
     DGNPLATFORM_EXPORT void AddFlashed(Render::GraphicR graphic, Render::OvrGraphicParamsCP ovr=nullptr);
@@ -526,6 +525,9 @@ public:
 
     //! @private
     DGNPLATFORM_EXPORT void DrawStandardGrid(DPoint3dR gridOrigin, RotMatrixR rMatrix, DPoint2d spacing, uint32_t gridsPerRef, bool isoGrid=false, Point2dCP fixedRepetitions=nullptr);
+
+    //! Set context to state used to flash elements.
+    void SetIsFlash(bool isFlash) {m_isFlash = isFlash;}
 };  
 
 END_BENTLEY_DGN_NAMESPACE
