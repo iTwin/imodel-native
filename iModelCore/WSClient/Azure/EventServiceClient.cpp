@@ -6,10 +6,10 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
-#include "../DgnDbServerClient/DgnDbServerUtils.h"
+// #include "../DgnDbServerClient/DgnDbServerUtils.h"
 #include <WebServices/Azure/EventServiceClient.h>
 #include <iomanip>
-USING_NAMESPACE_BENTLEY_DGNDBSERVER
+//USING_NAMESPACE_BENTLEY_DGNDBSERVER
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                     Jeehwan.cho   05/2016
@@ -148,7 +148,8 @@ ClientInfoPtr EventServiceClient::CreateTestClientInfo()
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String EventServiceClient::GetRepository()
 {
-	return ServerSchema::Plugin::Repository + ("--" + m_repoId);
+	//return ServerSchema::Plugin::Repository + ("--" + m_repoId);
+	return nullptr;
 }
 
 /*--------------------------------------------------------------------------------------+
@@ -213,19 +214,21 @@ SamlTokenPtr EventServiceClient::GetIMSToken()
 +---------------+---------------+---------------+---------------+---------------+------*/
 HttpResponse EventServiceClient::MakeEventServiceAPIRequest()
 {
-	SamlTokenPtr imstokenptr = GetIMSToken();
-	if (imstokenptr == nullptr)
-	{
-		HttpResponse response(HttpResponseContent::Create(HttpStringBody::Create("Invalid credentials")), "", ConnectionStatus::None, HttpStatus::Unauthorized);
-		return response;
-	}
+	// SamlTokenPtr imstokenptr = GetIMSToken();
+	// if (imstokenptr == nullptr)
+	// {
+	// 	HttpResponse response(HttpResponseContent::Create(HttpStringBody::Create("Invalid credentials")), "", ConnectionStatus::None, HttpStatus::Unauthorized);
+	// 	return response;
+	// }
 	
-	Utf8String url = m_bimServerURL + "/v2.4/Repositories/" + GetRepository() + "/" + ServerSchema::Schema::Repository + "/" + ServerSchema::Class::EventService;
-	HttpRequest request(url.c_str(), "GET", nullptr);
-	request.GetHeaders().Clear();
-	request.GetHeaders().SetAuthorization(imstokenptr->ToAuthorizationString());
-	request.SetTransferTimeoutSeconds(230);
-	return request.Perform();
+	// Utf8String url = m_bimServerURL + "/v2.4/Repositories/" + GetRepository() + "/" + ServerSchema::Schema::Repository + "/" + ServerSchema::Class::EventService;
+	// HttpRequest request(url.c_str(), "GET", nullptr);
+	// request.GetHeaders().Clear();
+	// request.GetHeaders().SetAuthorization(imstokenptr->ToAuthorizationString());
+	// request.SetTransferTimeoutSeconds(230);
+	// return request.Perform();
+	HttpResponse response(HttpResponseContent::Create(HttpStringBody::Create("Invalid credentials")), "", ConnectionStatus::None, HttpStatus::Unauthorized);
+	return response;
 }
 
 /*--------------------------------------------------------------------------------------+
@@ -233,57 +236,58 @@ HttpResponse EventServiceClient::MakeEventServiceAPIRequest()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool EventServiceClient::GetInfoThroughIMSClient(Utf8StringR sasToken, Utf8StringR ns)
 {
-	HttpResponse response = MakeEventServiceAPIRequest();
-	switch (response.GetHttpStatus())
-	{
-	case HttpStatus::OK:
-	{
-		JsonValueCR jsonInstances = response.GetBody().AsJson();
-		if (
-			jsonInstances.isValidIndex(0) && jsonInstances.size() == 1 &&
-			jsonInstances.isMember(ServerSchema::Instances) &&
-			jsonInstances[ServerSchema::Instances].size() == 1 &&
-			jsonInstances[ServerSchema::Instances][0].isMember(ServerSchema::Properties) &&
-			jsonInstances[ServerSchema::Instances][0][ServerSchema::Properties].isMember(ServerSchema::Property::EventServiceSASToken) &&
-			jsonInstances[ServerSchema::Instances][0][ServerSchema::Properties].isMember(ServerSchema::Property::EventServiceNameSpace)
-			)
-		{
-			sasToken = jsonInstances[ServerSchema::Instances][0][ServerSchema::Properties][ServerSchema::Property::EventServiceSASToken].asCString();
-			ns = jsonInstances[ServerSchema::Instances][0][ServerSchema::Properties][ServerSchema::Property::EventServiceNameSpace].asCString();
-			return true;
-		}
-		else
-		{
-			sasToken = NULL;
-			ns = NULL;
-			return false;
-		}
-	}
-	case HttpStatus::NoContent:
-	{
-		sasToken = NULL;
-		ns = NULL;
-		return false;
-	}
-	case HttpStatus::NotFound:
-	{
-		sasToken = NULL;
-		ns = NULL;
-		return false;
-	}
-	case HttpStatus::Unauthorized:
-	{
-		sasToken = NULL;
-		ns = NULL;
-		return false;
-	}
-	default:
-	{
-		sasToken = NULL;
-		ns = NULL;
-		return false;
-	}
-	}
+	// HttpResponse response = MakeEventServiceAPIRequest();
+	// switch (response.GetHttpStatus())
+	// {
+	// case HttpStatus::OK:
+	// {
+	// 	JsonValueCR jsonInstances = response.GetBody().AsJson();
+	// 	if (
+	// 		jsonInstances.isValidIndex(0) && jsonInstances.size() == 1 &&
+	// 		jsonInstances.isMember(ServerSchema::Instances) &&
+	// 		jsonInstances[ServerSchema::Instances].size() == 1 &&
+	// 		jsonInstances[ServerSchema::Instances][0].isMember(ServerSchema::Properties) &&
+	// 		jsonInstances[ServerSchema::Instances][0][ServerSchema::Properties].isMember(ServerSchema::Property::EventServiceSASToken) &&
+	// 		jsonInstances[ServerSchema::Instances][0][ServerSchema::Properties].isMember(ServerSchema::Property::EventServiceNameSpace)
+	// 		)
+	// 	{
+	// 		sasToken = jsonInstances[ServerSchema::Instances][0][ServerSchema::Properties][ServerSchema::Property::EventServiceSASToken].asCString();
+	// 		ns = jsonInstances[ServerSchema::Instances][0][ServerSchema::Properties][ServerSchema::Property::EventServiceNameSpace].asCString();
+	// 		return true;
+	// 	}
+	// 	else
+	// 	{
+	// 		sasToken = NULL;
+	// 		ns = NULL;
+	// 		return false;
+	// 	}
+	// }
+	// case HttpStatus::NoContent:
+	// {
+	// 	sasToken = NULL;
+	// 	ns = NULL;
+	// 	return false;
+	// }
+	// case HttpStatus::NotFound:
+	// {
+	// 	sasToken = NULL;
+	// 	ns = NULL;
+	// 	return false;
+	// }
+	// case HttpStatus::Unauthorized:
+	// {
+	// 	sasToken = NULL;
+	// 	ns = NULL;
+	// 	return false;
+	// }
+	// default:
+	// {
+	// 	sasToken = NULL;
+	// 	ns = NULL;
+	// 	return false;
+	// }
+	// }
+	return false;
 }
 
 /*--------------------------------------------------------------------------------------+
@@ -291,42 +295,43 @@ bool EventServiceClient::GetInfoThroughIMSClient(Utf8StringR sasToken, Utf8Strin
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool EventServiceClient::GetInfoThroughWSRepositoryClient(Utf8StringR sasToken, Utf8StringR ns)
 {
-	//Initialize credentials and urls
-	EventServiceAPILocalState localState;
-	UrlProvider::Initialize(m_env, UrlProvider::DefaultTimeout, &localState);
+	// //Initialize credentials and urls
+	// EventServiceAPILocalState localState;
+	// UrlProvider::Initialize(m_env, UrlProvider::DefaultTimeout, &localState);
 
-	//Create ConnectSignInManager and connect
-	auto manager = ConnectSignInManager::Create(m_clientInfo, nullptr, &localState);
-	bool isSuccess = manager->SignInWithCredentials(m_credentials)->GetResult().IsSuccess();
-	if (!isSuccess)
-		return false;
-	auto authHandler = manager->GetAuthenticationHandler(m_bimServerURL);
-	if (authHandler == nullptr)
-		return false;
+	// //Create ConnectSignInManager and connect
+	// auto manager = ConnectSignInManager::Create(m_clientInfo, nullptr, &localState);
+	// bool isSuccess = manager->SignInWithCredentials(m_credentials)->GetResult().IsSuccess();
+	// if (!isSuccess)
+	// 	return false;
+	// auto authHandler = manager->GetAuthenticationHandler(m_bimServerURL);
+	// if (authHandler == nullptr)
+	// 	return false;
 
-	//Create WSRepositoryClient 
-	IWSRepositoryClientPtr wsRepositoryClient = WSRepositoryClient::Create(m_bimServerURL, GetRepository(), m_clientInfo, nullptr, authHandler);
-	if (wsRepositoryClient == nullptr)
-		return false;
+	// //Create WSRepositoryClient 
+	// IWSRepositoryClientPtr wsRepositoryClient = WSRepositoryClient::Create(m_bimServerURL, GetRepository(), m_clientInfo, nullptr, authHandler);
+	// if (wsRepositoryClient == nullptr)
+	// 	return false;
 
-	//Query for https://{server}/{version}/Repositories/DgnDbServer--{repoId}/EventService
-	ObjectId eventServiceObject(ServerSchema::Schema::Repository, ServerSchema::Class::EventService, "");
-	WSObjectsResult response = wsRepositoryClient->SendGetObjectRequest(eventServiceObject)->GetResult();
-	if (!response.IsSuccess())
-		return false;
-	bvector<WSObjectsReader::Instance> jsoninstances;
-	for (WSObjectsReader::Instance instance : response.GetValue().GetInstances())
-	{
-		jsoninstances.push_back(instance);
-	}
-	if (jsoninstances.size() < 1)
-		return false;
+	// //Query for https://{server}/{version}/Repositories/DgnDbServer--{repoId}/EventService
+	// ObjectId eventServiceObject(ServerSchema::Schema::Repository, ServerSchema::Class::EventService, "");
+	// WSObjectsResult response = wsRepositoryClient->SendGetObjectRequest(eventServiceObject)->GetResult();
+	// if (!response.IsSuccess())
+	// 	return false;
+	// bvector<WSObjectsReader::Instance> jsoninstances;
+	// for (WSObjectsReader::Instance instance : response.GetValue().GetInstances())
+	// {
+	// 	jsoninstances.push_back(instance);
+	// }
+	// if (jsoninstances.size() < 1)
+	// 	return false;
 
-	//Get json values
-	RapidJsonValueCR instanceProperties = jsoninstances[0].GetProperties();
-	if (!instanceProperties.HasMember(ServerSchema::Property::EventServiceSASToken))
-		return false;
-	sasToken = instanceProperties[ServerSchema::Property::EventServiceSASToken].GetString();
-	ns = instanceProperties[ServerSchema::Property::EventServiceNameSpace].GetString();
-	return true;
+	// //Get json values
+	// RapidJsonValueCR instanceProperties = jsoninstances[0].GetProperties();
+	// if (!instanceProperties.HasMember(ServerSchema::Property::EventServiceSASToken))
+	// 	return false;
+	// sasToken = instanceProperties[ServerSchema::Property::EventServiceSASToken].GetString();
+	// ns = instanceProperties[ServerSchema::Property::EventServiceNameSpace].GetString();
+	// return true;
+	return false;
 }
