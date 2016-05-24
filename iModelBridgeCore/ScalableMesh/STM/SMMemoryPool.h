@@ -242,7 +242,8 @@ template <typename DataType> class SMMemoryPoolGenericBlobItem : public SMMemory
         void SetData(DataType* data)
             {
             m_data = (Byte*)data;
-            NotifySizeChangePoolItem(GetSizeInMemory(data) - m_size);
+            if (GetPoolItemId() != SMMemoryPool::s_UndefinedPoolItemId) NotifySizeChangePoolItem(GetSizeInMemory(data) - m_size);
+            m_size = GetSizeInMemory(data);
             }
     };
 
@@ -1000,6 +1001,8 @@ class SMMemoryPool : public RefCountedBase
         bool RemoveItem(SMMemoryPoolItemId id, uint64_t nodeId, SMPoolDataTypeDesc dataType);
             
         SMMemoryPoolItemId AddItem(SMMemoryPoolItemBasePtr& poolItem);
+
+        void ReplaceItem(SMMemoryPoolItemBasePtr& poolItem, SMMemoryPoolItemId id, uint64_t nodeId, SMPoolDataTypeDesc dataType);
 
         void NotifySizeChangePoolItem(SMMemoryPoolItemBase* poolItem, int64_t sizeDelta);
 

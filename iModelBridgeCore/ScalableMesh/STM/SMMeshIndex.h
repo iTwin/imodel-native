@@ -555,6 +555,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     atomic<size_t> m_nbClips;
     BcDTMPtr m_tileBcDTM;
     std::mutex m_dtmLock;
+    mutable SMMemoryPoolItemId m_graphPoolItemId;
     private:
 
         bool ClipIntersectsBox(uint64_t clipId, EXTENT ext);
@@ -567,7 +568,6 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         mutable SMMemoryPoolItemId m_texturePoolItemId;                        
         mutable SMMemoryPoolItemId m_triUvIndicesPoolItemId;                
         mutable SMMemoryPoolItemId m_uvCoordsPoolItemId;       
-        mutable SMMemoryPoolItemId m_graphPoolItemId;
         mutable SMMemoryPoolItemId m_diffSetsItemId;
         ISMPointIndexMesher<POINT, EXTENT>* m_mesher2_5d;
         ISMPointIndexMesher<POINT, EXTENT>* m_mesher3d;

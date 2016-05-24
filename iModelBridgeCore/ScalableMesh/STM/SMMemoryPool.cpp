@@ -129,6 +129,24 @@ bool SMMemoryPool::RemoveItem(SMMemoryPoolItemId id, uint64_t nodeId, SMPoolData
     return false;
     }
 
+void SMMemoryPool::ReplaceItem(SMMemoryPoolItemBasePtr& poolItem, SMMemoryPoolItemId id, uint64_t nodeId, SMPoolDataTypeDesc dataType)
+    {
+    if (id == SMMemoryPool::s_UndefinedPoolItemId)
+        return;
+    std::lock_guard<std::mutex> lock(*m_memPoolItemMutex[id]);
+    SMMemoryPoolItemBasePtr memItemPtr(m_memPoolItems[id]);
+
+    if (memItemPtr.IsValid() && memItemPtr->IsCorrect(nodeId, dataType))
+        {
+        m_currentPoolSizeInBytes -= memItemPtr->GetSize();
+        memItemPtr = 0;
+        m_memPoolItems[id] = poolItem;
+        m_currentPoolSizeInBytes += m_memPoolItems[id]->GetSize();
+        m_lastAccessTime[id] = clock();
+        return;
+        }
+    }
+
 SMMemoryPoolItemId SMMemoryPool::AddItem(SMMemoryPoolItemBasePtr& poolItem)
     {    
     uint64_t itemInd = 0;            

@@ -1162,20 +1162,17 @@ template<class POINT, class EXTENT> size_t ScalableMesh2DDelaunayMesher<POINT, E
         }
 #endif
     // *node->GetGraphPtr() = *meshGraphStitched;
-    RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> graphPtr(node->GetGraphPtr());
+    RefCountedPtr<SMStoredMemoryPoolGenericBlobItem<MTGGraph>> storedMemoryPoolItem(new SMStoredMemoryPoolGenericBlobItem<MTGGraph>(node->GetBlockID().m_integerID, node->GetGraphStore().GetPtr(), SMPoolDataTypeDesc::Graph));
+    SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolItem.get());
     MTGGraph * tempGraph = new MTGGraph();
     bvector<int> componentPointsId;
 
     if (faceIndices.size() >= 3 && geomData.size() > 0)
     CreateGraphFromIndexBuffer(tempGraph, (const long*)&faceIndices[0], (int)faceIndices.size(), (int)geomData.size(), componentPointsId, &geomData[0]);
-    MTGGraph* previous = graphPtr->EditData();
-    graphPtr->SetData(tempGraph);
-    graphPtr->SetDirty();
-        {
-        if (s_useThreadsInStitching) node->LockGraph();
-        if (previous != nullptr) delete previous;
-        if (s_useThreadsInStitching) node->UnlockGraph();
-        }
+    storedMemoryPoolItem->SetData(tempGraph);
+    storedMemoryPoolItem->SetDirty();
+    RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> graphPtr(node->GetGraphPtr());
+    SMMemoryPool::GetInstance()->ReplaceItem(memPoolItemPtr, node->m_graphPoolItemId, node->GetBlockID().m_integerID, SMPoolDataTypeDesc::Graph);
    /* for (size_t i = 0; i < node->m_featureDefinitions.size(); ++i)
         {
         TagFeatureEdges(&tempGraph, (const DTMFeatureType)node->m_featureDefinitions[i][0], node->m_featureDefinitions[i].size() - 1, &node->m_featureDefinitions[i][1]);

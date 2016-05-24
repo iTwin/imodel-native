@@ -277,6 +277,7 @@ void ScalableMeshATPexe::Start()
 
 int wmain(int argc, wchar_t* argv[])
     {
+    _set_error_mode(_OUT_TO_MSGBOX);
     ScalableMeshATPexe::ScalableMeshATPexe app;
     if (SUCCESS != app.ParseCommandLine(argc, argv))
         return 1;
