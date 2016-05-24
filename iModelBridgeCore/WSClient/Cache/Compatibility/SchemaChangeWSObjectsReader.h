@@ -71,6 +71,10 @@ class SchemaChangeWSObjectsReader : public WSObjectsReader
             {
             return m_reader->GetInstance(m_indexes[properties]).GetETag();
             }
+        virtual rapidjson::SizeType GetRelationshipInstanceCount(const rapidjson::Value* instance) const override
+            {
+            return m_reader->GetRelationshipInstanceCount(instance);
+            }
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE
