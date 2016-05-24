@@ -2894,9 +2894,7 @@ static bool IsGeometryVisible(ViewContextR context, Render::GeometryParamsCR geo
 
     if (nullptr != range && !range->IsNull())
         {
-        Frustum box(*range);
-
-        if (!context.GetFrustumPlanes().Intersects(box))
+        if (!context.IsRangeVisible(*range))
             return false; // Sub-graphic outside range...
         }
 

@@ -69,6 +69,8 @@ private:
     uint64_t m_targetMemorySize;
 
 public:
+    DGNPLATFORM_EXPORT MemoryManager();
+
     //! Set the target number of bytes for future Purge operations.
     void SetMemoryTarget(uint64_t numBytes) {m_targetMemorySize = numBytes;}
     

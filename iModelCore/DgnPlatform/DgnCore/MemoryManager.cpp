@@ -57,11 +57,7 @@ uint64_t MemoryManager::CalculateBytesConsumed() const
     {
     uint64_t total = 0;
     for (auto const& entry : m_entries)
-        {
-        auto consumed = entry.m_consumer->_CalculateBytesConsumed();
-        BeAssert(consumed >= 0);
-        total += consumed;
-        }
+        total += entry.m_consumer->_CalculateBytesConsumed();
 
     return total;
     }
@@ -88,7 +84,7 @@ bool MemoryManager::PurgeUntil(uint64_t memTarget)
     for (size_t i = 0; i < m_entries.size(); ++i)
         {
         uint64_t consumed = bytesPerConsumer.GetData()[i];
-        if (consumed <= 0)
+        if (consumed == 0)
             continue;
 
         // Ask all but the highest-priority consumer to relinquish all reclaimable memory
@@ -107,3 +103,17 @@ bool MemoryManager::PurgeUntil(uint64_t memTarget)
     return false;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+MemoryManager::MemoryManager()
+    {
+    enum Sizes : uint64_t {K=1024, MEG=K*K, GIG=K*MEG,};
+#if defined (_X64_)
+    m_targetMemorySize = 4 * GIG;
+#elif defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
+    m_targetMemorySize =  2 * GIG;
+#else
+    m_targetMemorySize = (BeSystemInfo::GetAmountOfPhysicalMemory() > (600 * MEG)) ? 50*MEG : 30*MEG;
+#endif
+    }
