@@ -248,9 +248,9 @@ public:
             z = static_cast<short>(z / val);
 		}
 	inline void operator /= (const int &val) {
-			x /= val;
-			y /= val;
-			z /= val;
+			x = static_cast<short>(x / val);
+            y = static_cast<short>(y / val);
+            z = static_cast<short>(z / val);
 		}
 	inline void operator *= (const vector3s& vx)	{
 			x *= vx.x;
@@ -263,9 +263,9 @@ public:
         z = static_cast<short>(z * val);
     }
 	inline void operator *= (const int &val) {
-			x *= val;
-			y *= val;
-			z *= val;
+        x = static_cast<short>(x * val);
+        y = static_cast<short>(y * val);
+        z = static_cast<short>(z * val);
 		}
 
 	/*assignment*/ 

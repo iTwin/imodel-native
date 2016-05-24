@@ -92,7 +92,7 @@ public:
 		memcpy(_upper, upper, sizeof(float)*3); 
 		_parent = 0; 
 		_pointCount = 0;
-		_depth = deep;
+		_depth = (ubyte) deep;
 		_worldExtents = exts;
 		_flags[0] = 0;
 		_flags[1] = 0;
@@ -171,7 +171,7 @@ public:
 	void removeChildren();
 
 	/*parent*/ 
-	void reparent(Node*n) { _parent = n; _depth = _parent->depth()+1; }
+	void reparent(Node*n) { _parent = n; _depth = (ubyte) _parent->depth()+1; }
 	inline Node* parent() { return _parent; }
 	inline const Node* parent() const { return _parent; }
 

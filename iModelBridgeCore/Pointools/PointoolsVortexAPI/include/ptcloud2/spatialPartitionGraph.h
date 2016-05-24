@@ -241,7 +241,7 @@ class Container
 
 public:
 
-    virtual                                ~Container               () = 0;
+    virtual                                ~Container               () {};
 
 	virtual void							setChild				(ChildIndex index, Container *container) = 0;
 	virtual Container					*	getChild				(ChildIndex index)	= 0;

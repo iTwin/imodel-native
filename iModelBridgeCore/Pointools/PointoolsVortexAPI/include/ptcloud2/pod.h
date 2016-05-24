@@ -87,7 +87,7 @@ namespace pcloud
 	{
 	public:
 		PodBlockReadHandler(std::string const& id);
-        virtual ~PodBlockReadHandler() = 0;
+        virtual ~PodBlockReadHandler() {};
 
 		// All PodBlockHandlers must implement this function which is called by the PodBlockManager on
 		// encountering a PodBlock matching this handlers ID.
