@@ -37,3 +37,4 @@ ECInstanceSelectTests.ImportSchema			# This test doesn't really do anything and 
 DgnECNavigatorTest.IfcElementInfo # Need to figure BIS schema for IFC - Shaun/Raman
 DgnECNavigatorTest.PlantElementInfo # Improperly creating a GroupInformationElement when the "NamedGroupOwnsMembers" CA is found - Shaun/Carole
 ChangeSummaryTestFixture.ElementChildRelationshipChanges # notified Raman
+DgnECNavigatorTest.DgnLinksElementInfo # on merge into 0601dev; notified Raman

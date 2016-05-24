@@ -145,7 +145,7 @@ private:
             "JOIN " DGN_SCHEMA(DGN_CLASSNAME_Element) " " SOURCE_ECSQL_PREFIX " USING " DGN_SCHEMA(DGN_RELNAME_ElementHasLinks) " " \
             "WHERE " SOURCE_ECSQL_PREFIX ".ECInstanceId=?";
 
-        Utf8PrintfString ecSql(ecSqlFmt, LINK_SUBTYPE::MyECSchemaName(), LINK_SUBTYPE::MyECClassName());
+        Utf8PrintfString ecSql(ecSqlFmt, LINK_SUBTYPE::MyECSchemaName(), LINK_SUBTYPE::MyHandlerECClassName());
 
         BeSQLite::EC::CachedECSqlStatementPtr stmt = dgndb.GetPreparedECSqlStatement(ecSql.c_str());
         BeAssert(stmt.IsValid());
@@ -192,7 +192,7 @@ public:
     //! @param whereClause Optional where clause. e.g., LINK_ECSQL_PREFIX ".Label LIKE 'MyLabel%'"
     static DgnElementIdSet QueryByWhere(DgnDbR dgndb, Utf8CP whereClause)
         {
-        Utf8PrintfString ecSql("SELECT " LINK_ECSQL_PREFIX ".ECInstanceId FROM ONLY %s.%s " LINK_ECSQL_PREFIX, LINK_SUBTYPE::MyECSchemaName(), LINK_SUBTYPE::MyECClassName());
+        Utf8PrintfString ecSql("SELECT " LINK_ECSQL_PREFIX ".ECInstanceId FROM ONLY %s.%s " LINK_ECSQL_PREFIX, LINK_SUBTYPE::MyECSchemaName(), LINK_SUBTYPE::MyHandlerECClassName());
 
         if (whereClause)
             {
@@ -211,7 +211,7 @@ public:
         {
         BeAssert(linkModelId.IsValid());
 
-        Utf8PrintfString ecSql("SELECT " LINK_ECSQL_PREFIX ".ECInstanceId FROM ONLY %s.%s " LINK_ECSQL_PREFIX, LINK_SUBTYPE::MyECSchemaName(), LINK_SUBTYPE::MyECClassName());
+        Utf8PrintfString ecSql("SELECT " LINK_ECSQL_PREFIX ".ECInstanceId FROM ONLY %s.%s " LINK_ECSQL_PREFIX, LINK_SUBTYPE::MyECSchemaName(), LINK_SUBTYPE::MyHandlerECClassName());
 
         ecSql.append(" WHERE " LINK_ECSQL_PREFIX ".ModelId=?");
 
@@ -234,7 +234,7 @@ public:
         DgnElementIdSet removeLinkIds = QueryBySource(dgndb, sourceElementId);
 
         Utf8CP ecSqlFmt = "DELETE FROM ONLY " DGN_SCHEMA(DGN_RELNAME_ElementHasLinks) " WHERE InVirtualSet(?, TargetECInstanceId)";
-        Utf8PrintfString ecSql(ecSqlFmt, LINK_SUBTYPE::MyECSchemaName(), LINK_SUBTYPE::MyECClassName());
+        Utf8PrintfString ecSql(ecSqlFmt, LINK_SUBTYPE::MyECSchemaName(), LINK_SUBTYPE::MyHandlerECClassName());
 
         BeSQLite::EC::CachedECSqlStatementPtr stmt = dgndb.GetPreparedECSqlStatement(ecSql.c_str());
         BeAssert(stmt.IsValid());
@@ -255,7 +255,7 @@ public:
     static DgnElementIdSet FindOrphaned(DgnDbCR dgndb)
         {
         Utf8CP ecSqlFmt = "SELECT link.ECInstanceId FROM ONLY %s.%s link WHERE link.ECInstanceId NOT IN (SELECT TargetECInstanceId FROM " DGN_SCHEMA(DGN_RELNAME_ElementHasLinks) ")";
-        Utf8PrintfString ecSql(ecSqlFmt, LINK_SUBTYPE::MyECSchemaName(), LINK_SUBTYPE::MyECClassName());
+        Utf8PrintfString ecSql(ecSqlFmt, LINK_SUBTYPE::MyECSchemaName(), LINK_SUBTYPE::MyHandlerECClassName());
 
         BeSQLite::EC::CachedECSqlStatementPtr stmt = dgndb.GetPreparedECSqlStatement(ecSql.c_str());
         BeAssert(stmt.IsValid());
@@ -273,7 +273,7 @@ public:
             return SUCCESS;
 
         Utf8CP ecSqlFmt = "DELETE FROM ONLY %s.%s WHERE InVirtualSet(?, ECInstanceId)";
-        Utf8PrintfString ecSql(ecSqlFmt, LINK_SUBTYPE::MyECSchemaName(), LINK_SUBTYPE::MyECClassName());
+        Utf8PrintfString ecSql(ecSqlFmt, LINK_SUBTYPE::MyECSchemaName(), LINK_SUBTYPE::MyHandlerECClassName());
 
         BeSQLite::EC::CachedECSqlStatementPtr stmt = dgndb.GetPreparedECSqlStatement(ecSql.c_str());
         BeAssert(stmt.IsValid());
@@ -294,7 +294,7 @@ public:
     //! @note This is a static method that always returns the DgnClassId of the LinkElement class - it does @em not return the class of a specific instance.
     static Dgn::DgnClassId QueryClassId(Dgn::DgnDbCR dgndb)
         {
-        return dgndb.Schemas().GetECClassId(LINK_SUBTYPE::MyECSchemaName(), LINK_SUBTYPE::MyECClassName());
+        return dgndb.Schemas().GetECClassId(LINK_SUBTYPE::MyECSchemaName(), LINK_SUBTYPE::MyHandlerECClassName());
         }
     };
 
