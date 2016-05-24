@@ -259,17 +259,6 @@ bool ViewContext::_ScanRangeFromPolyhedron()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Test an element against the current scan range using the range planes.
-* @return true if the element is outside the range and should be ignored.
-* @bsimethod                                                    KeithBentley    04/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ViewContext::_FilterRangeIntersection(GeometrySourceCR source)
-    {
-    Frustum box(source.CalculateRange3d());
-    return FrustumPlanes::Contained::Outside != m_frustumPlanes.Contains(box.m_pts, 8);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 Render::GraphicPtr ViewContext::_StrokeGeometry(GeometrySourceCR source, double pixelSize)
