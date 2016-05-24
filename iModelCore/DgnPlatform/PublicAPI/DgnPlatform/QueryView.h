@@ -218,8 +218,11 @@ public:
     double GetNonSceneLODSize() const {return m_nonSceneLODSize;}
     void SetNonSceneLODSize(double val) {m_nonSceneLODSize=val;} //!< see GetNonSceneLODSize
 
+    // Get the set of special elements for this DgnQueryView.
+    SpecialElements const& GetSpecialElements() const {return m_special;}
+
     //! Get the list of elements that are always drawn
-    DgnElementIdSet const& GetAlwaysDrawn() {return m_special.m_always;}
+    DgnElementIdSet const& GetAlwaysDrawn() {return GetSpecialElements().m_always;}
 
     //! Establish a set of elements that are always drawn in the view.
     //! @param[in] exclusive If true, only these elements are drawn
@@ -234,7 +237,7 @@ public:
     //! Get the list of elements that are never drawn.
     //! @remarks An element in the never-draw list is excluded regardless of whether or not it is
     //! in the always-draw list. That is, the never-draw list gets priority over the always-draw list.
-    DgnElementIdSet const& GetNeverDrawn() {return m_special.m_never;}
+    DgnElementIdSet const& GetNeverDrawn() {return GetSpecialElements().m_never;}
 
     //! Empty the set of elements that are never drawn
     DGNPLATFORM_EXPORT void ClearNeverDrawn();
