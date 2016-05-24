@@ -1668,7 +1668,11 @@ template <class POINT> bool ScalableMesh<POINT>::_AddClip(const DPoint3d* pts, s
 template <class POINT> bool ScalableMesh<POINT>::_ModifyClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID)
     {
     if (m_scmIndexPtr->GetClipRegistry() == nullptr) return false;
-    DRange3d extent = DRange3d::From(pts, (int)ptsSize);
+    bvector<DPoint3d> clipData;
+    m_scmIndexPtr->GetClipRegistry()->GetClip(clipID, clipData);
+    DRange3d extent = DRange3d::From(&clipData[0], (int)clipData.size());
+    DRange3d extentNew = DRange3d::From(pts, (int)ptsSize);
+    extent.Extend(extentNew);
    /* bvector<int> idx;
     bvector<DPoint3d> points;
     vu_triangulateSpacePolygonExt(&idx, &points, const_cast<DPoint3d*>(pts), (int)ptsSize, 1e-6, true);

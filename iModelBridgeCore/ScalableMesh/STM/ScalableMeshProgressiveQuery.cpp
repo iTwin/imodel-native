@@ -466,11 +466,10 @@ private:
                 {
                 //meshNodePtr = CachedDisplayNodeManager::GetManager().FindOrLoadNode<DPoint3d>(visibleNode, loadTexture, clipVisibilities);
                 ScalableMeshCachedDisplayNode<DPoint3d>* meshNode(ScalableMeshCachedDisplayNode<DPoint3d>::Create(visibleNode));                
-
-                meshNode->ApplyAllExistingClips();
                 
                 if (meshNode->IsLoaded() == false || !meshNode->IsClippingUpToDate() || !meshNode->HasCorrectClipping(clipVisibilities))                    
-                    {                                    
+                    {
+                    meshNode->ApplyAllExistingClips();
                     meshNode->RemoveDisplayDataFromCache();                    
                     meshNode->LoadMesh(false, clipVisibilities, s_displayCacheManagerPtr, loadTexture);                               
                     assert(meshNode->HasCorrectClipping(clipVisibilities));                    

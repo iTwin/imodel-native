@@ -2679,6 +2679,13 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
             clipIds.push_back(diffSet.clientID);
             polys.push_back(bvector<DPoint3d>());
             GetClipRegistry()->GetClip(diffSet.clientID, polys.back());
+            DRange3d polyExtent = DRange3d::From(&polys.back()[0], (int)polys.back().size());
+            if (!polyExtent.IntersectsWith(nodeRange, 2))
+                {
+                polys.resize(polys.size() - 1);
+                clipIds.resize(clipIds.size() - 1);
+                continue;
+                }
             double importance;
             int nDimensions;
             GetClipRegistry()->GetClipMetadata(diffSet.clientID, importance, nDimensions);
@@ -3117,6 +3124,7 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::Modify
     if (!found)
         {
         found = ClipIntersectsBox(clipId, m_nodeHeader.m_nodeExtent);
+        if (found) AddClip(clipId, isVisible, setToggledWhenIdIsOn);
         }
     return found;
     }
