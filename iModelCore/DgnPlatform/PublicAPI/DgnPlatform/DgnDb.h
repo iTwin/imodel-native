@@ -122,6 +122,7 @@ protected:
     friend struct Txns;
     friend struct DgnElement;
 
+#if !defined (DOCUMENTATION_GENERATOR)
     Utf8String      m_fileName;
     DgnElements     m_elements;
     DgnModels       m_models;
@@ -152,6 +153,7 @@ protected:
     BeSQLite::DbResult InitializeDgnDb(CreateDgnDbParams const& params);
     BeSQLite::DbResult SaveDgnDbSchemaVersion(DgnVersion version=DgnVersion(DGNDB_CURRENT_VERSION_Major,DGNDB_CURRENT_VERSION_Minor,DGNDB_CURRENT_VERSION_Sub1,DGNDB_CURRENT_VERSION_Sub2));
     BeSQLite::DbResult DoOpenDgnDb(BeFileNameCR projectNameIn, OpenParams const&);
+#endif
 
 public:
     DgnDb();
@@ -217,6 +219,8 @@ public:
 
     DGNPLATFORM_EXPORT DictionaryModelR GetDictionaryModel(); //!< Return the dictionary model for this DgnDb.
 
+/** @name DgnPlatform Threads */
+/** @{ */
     //! Ids for DgnPlatform threads
     enum class ThreadId {Unknown=0, Client=100, Render=101, Query=102, RealityData=103};
 
@@ -227,6 +231,7 @@ public:
     static void VerifyClientThread() {VerifyThread(ThreadId::Client);}     //!< assert that this is the Client thread
     static void VerifyRenderThread() {VerifyThread(ThreadId::Render);}     //!< assert that this is the Render thread
     static void VerifyQueryThread()  {VerifyThread(ThreadId::Query);}      //!< assert that this is the Query thread
+/** @} */
 };
 
 END_BENTLEY_DGN_NAMESPACE
