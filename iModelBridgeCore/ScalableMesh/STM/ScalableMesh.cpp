@@ -787,6 +787,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
             clipFilePath.append(L"_clips"); 
            // IDTMFile::File::Ptr clipFilePtr = IDTMFile::File::Create(clipFilePath.c_str());
             HFCPtr<IScalableMeshDataStore<DifferenceSet, Byte, Byte>> store = new SMSQLiteDiffsetTileStore(clipFilePath, 0);//DiffSetTileStore(clipFilePath, 0);
+            ((SMSQLiteDiffsetTileStore*)(store.GetPtr()))->Open();
             //store->StoreMasterHeader(NULL,0);
             m_scmIndexPtr->SetClipStore(store);
             auto pool = ScalableMeshMemoryPools<POINT>::Get()->GetDiffSetPool();

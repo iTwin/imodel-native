@@ -128,10 +128,10 @@ class SMSQLiteDiffsetTileStore : public IScalableMeshDataStore<DifferenceSet, By
             HCDPacket pi_uncompressedPacket, pi_compressedPacket;
             size_t countAsPts;
             int32_t * ptArray = Serialize(countAsPts, DataTypeArray, countData);
-            bvector<uint8_t> diffsetData(countAsPts*sizeof(int));
-            memcpy(&diffsetData[0], ptArray, countAsPts*sizeof(int));
+            bvector<uint8_t> diffsetData(countAsPts*sizeof(int) + countData*sizeof(int) + sizeof(size_t));
+            memcpy(&diffsetData[0], ptArray, countAsPts*sizeof(int) + countData*sizeof(int) + sizeof(size_t));
             int64_t id = SQLiteNodeHeader::NO_NODEID;
-            m_smSQLiteFile->StoreDiffSet(id, diffsetData, countAsPts*sizeof(int));
+            m_smSQLiteFile->StoreDiffSet(id, diffsetData, countAsPts*sizeof(int) + countData*sizeof(int) + sizeof(size_t));
             delete[] ptArray;
             return HPMBlockID(id);
             }
@@ -143,10 +143,10 @@ class SMSQLiteDiffsetTileStore : public IScalableMeshDataStore<DifferenceSet, By
             if (!blockID.IsValid()) return StoreNewBlock(DataTypeArray, countData);
             size_t countAsPts;
             int32_t * ptArray = Serialize(countAsPts, DataTypeArray, countData);
-            bvector<uint8_t> diffsetData(countAsPts*sizeof(int));
-            memcpy(&diffsetData[0], ptArray, countAsPts*sizeof(int));
+            bvector<uint8_t> diffsetData(countAsPts*sizeof(int)+countData*sizeof(int)+sizeof(size_t));
+            memcpy(&diffsetData[0], ptArray, countAsPts*sizeof(int) + countData*sizeof(int) + sizeof(size_t));
             int64_t id = blockID.m_integerID;
-            m_smSQLiteFile->StoreDiffSet(id, diffsetData, countAsPts*sizeof(int));
+            m_smSQLiteFile->StoreDiffSet(id, diffsetData, countAsPts*sizeof(int) + countData*sizeof(int) + sizeof(size_t));
             delete[] ptArray;
             return HPMBlockID(id);
             }
@@ -190,15 +190,16 @@ class SMSQLiteDiffsetTileStore : public IScalableMeshDataStore<DifferenceSet, By
                 {
                 size_t offset = (size_t)ceil(sizeof(size_t));
                 size_t ct = 0;
-                while (*((int32_t*)&diffsetData[offset]) > 0 && ct < dataCount && offset + 1 < diffsetData.size())
+                while (offset + 1 < diffsetData.size() && *((int32_t*)&diffsetData[offset]) > 0 && ct < dataCount)
                     {
                     //The pooled vectors don't initialize the memory they allocate. For complex datatypes with some logic in the constructor (like bvector),
                     //this leads to undefined behavior when using the object. So we call the constructor on the allocated memory from the pool right here using placement new.
                     DifferenceSet * diffSet = new(DataTypeArray + ct)DifferenceSet();
-                    diffSet->LoadFromBinaryStream(&diffsetData[0] + offset + 1, (size_t)*((int32_t*)&diffsetData[offset]));
+                    size_t sizeOfCurrentSerializedSet = (size_t)*((int32_t*)&diffsetData[offset]);
+                    diffSet->LoadFromBinaryStream(&diffsetData[0] + offset + sizeof(int32_t), sizeOfCurrentSerializedSet);
                     diffSet->upToDate = true;
-                    offset++;
-                    offset += *((int32_t*)&diffsetData[offset]);
+                    offset += sizeof(int32_t);
+                    offset += sizeOfCurrentSerializedSet;
                     ++ct;
                     }
                 }

@@ -672,6 +672,15 @@ template <typename DataType> class SMMemoryPoolGenericVectorItem : public SMMemo
 
         }
 
+    virtual ~SMMemoryPoolGenericVectorItem()
+        {
+        if (m_data != 0)
+            {
+            delete[] (DataType*)m_data;
+            m_data = 0;
+            }
+        }
+
     virtual bool reserve(size_t newCount)
         {
         assert(newCount > 0);
@@ -846,7 +855,6 @@ template <typename DataType> class SMStoredMemoryPoolGenericVectorItem : public 
                 {                
                 HPMBlockID blockID(m_nodeId);
                 size_t nbBytesLoaded = m_store->LoadBlock ((DataType*)m_data, m_nbItems, blockID);
-                NotifySizeChangePoolItem(nbBytesLoaded - m_size);
                 m_size = nbBytesLoaded;
                 }           
             }
