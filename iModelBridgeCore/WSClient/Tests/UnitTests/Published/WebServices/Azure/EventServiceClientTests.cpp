@@ -20,9 +20,11 @@ void EventServiceClientTests::SetUp()
 
 TEST_F(EventServiceClientTests, Test1)
     {
-    Utf8String REPO_ID = "TEST0";
-    Utf8String USER_ID1 = "USER_ID1";
-    EventServiceClient* client = new EventServiceClient(REPO_ID, USER_ID1);
+    //Utf8String REPO_ID = "TEST0";
+    Utf8String REPO_ID = "CSim";
+    Utf8String USER_ID = "USER_ID1";
+    //EventServiceClient* client = new EventServiceClient(REPO_ID, USER_ID1);
+	EventServiceClient* client = new EventServiceClient(REPO_ID, USER_ID, servers[0], credentials[0]);
     printf("receiving msgs..\n");
     Utf8String msg = "";
     while (client->Receive(msg))

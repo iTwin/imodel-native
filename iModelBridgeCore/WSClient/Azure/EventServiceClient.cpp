@@ -12,18 +12,7 @@
 USING_NAMESPACE_BENTLEY_DGNDBSERVER
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Jeehwan.cho   05/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-EventServiceClient::EventServiceClient(Utf8StringCR repoId, Utf8StringCR userId)
-{
-	m_repoId = repoId;
-	m_userId = userId;
-	UpdateToken();
-	Utf8String baseAddress = "https://" + m_nameSpace + "." + "servicebus.windows.net/";
-	m_fullAddress = baseAddress + repoId + "/Subscriptions/" + userId + "/messages/head?timeout=";
-}
-
-/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                     Jeehwan.cho   05/2016
 * @bsimethod                                            Arvind.Venkateswaran   05/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 EventServiceClient::EventServiceClient
@@ -34,40 +23,51 @@ EventServiceClient::EventServiceClient
 										Credentials credentials, 
 										ClientInfoPtr clientInfo, 
 										UrlProvider::Environment env
-										) : EventServiceClient(repoId, userId)
+										)
 {
+	m_repoId = repoId;
+	m_userId = userId;
 	m_bimServerURL = bimServerURL;
 	m_credentials = credentials;
 	m_clientInfo = (clientInfo == nullptr) ? CreateTestClientInfo() : clientInfo;
 	m_env = env;
 	UpdateToken();
+	Utf8String baseAddress = "https://" + m_nameSpace + "." + "servicebus.windows.net/";
+	m_fullAddress = baseAddress + repoId + "/Subscriptions/" + userId + "/messages/head?timeout=";
 }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Jeehwan.cho   05/2016
+* @bsimethod                                            Arvind.Venkateswaran  05/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool EventServiceClient::UpdateToken()
+bool EventServiceClient::UpdateToken(bool useDefaultVal)
 {
 	//return MakeEventServiceRequest(m_token, m_nameSpace); //todo: need to do some sanity check
 
-	bool rtnVal = false;
-
-	if(m_bimServerURL == "")
+	if(useDefaultVal)
 	{
 		m_nameSpace = "testhubjeehwan-ns";
 		m_token = "SharedAccessSignature sig=TOk40ce29TwpOYCFG7EWqHL5%2bmi9fIDX%2fYA0Ckv7Urs%3d&se=1463758026&skn=EventReceivePolicy&sr=https%3a%2f%2ftesthubjeehwan-ns.servicebus.windows.net%2ftest";
-		rtnVal = true;
+		return true;
 	}
 
 	else
 	{
 		if (!MakeEventServiceRequest(m_token, m_nameSpace) || m_token == "" || m_nameSpace == "")
-			throw std::invalid_argument("Could not get SAS Token and namespace");
-		m_fullAddress = "https://" + m_nameSpace + "." + "servicebus.windows.net/" + m_repoId + "/Subscriptions/" + m_userId + "/messages/head?timeout=";
-		rtnVal = true;
-	}
+		{
+			// Options: 
+		
+			//1) throw exception -- Let creator handle it
+			//throw std::invalid_argument("Could not get SAS Token and namespace");
 
-	return rtnVal;
+			//2) call the default values
+			return UpdateToken(true);
+
+			//3) just return false and find another way to handle it.
+			//return false;
+		}
+		return true;
+	}
 }
 
 /*--------------------------------------------------------------------------------------+
