@@ -148,7 +148,6 @@ protected:
     DGNPLATFORM_EXPORT virtual void _InitScanRangeAndPolyhedron();
     DGNPLATFORM_EXPORT virtual bool _VisitAllModelElements();
     DGNPLATFORM_EXPORT virtual StatusInt _VisitDgnModel(DgnModelP);
-    DGNPLATFORM_EXPORT virtual bool _FilterRangeIntersection(GeometrySourceCR);
     virtual IPickGeomP _GetIPickGeom() {return nullptr;}
     virtual Render::GraphicPtr _CreateGraphic(Render::Graphic::CreateParams const& params) = 0;
     DGNPLATFORM_EXPORT virtual void _SetupScanCriteria();

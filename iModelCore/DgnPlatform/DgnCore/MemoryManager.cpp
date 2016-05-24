@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/MemoryManager.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -11,7 +11,7 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MemoryManager::AddConsumer(IMemoryConsumer& consumer, Priority priority)
+void MemoryManager::AddConsumer(MemoryConsumer& consumer, MemoryConsumer::Priority priority)
     {
     auto existing = std::find_if(m_entries.begin(), m_entries.end(), [&](Entry const& arg) { return arg.m_consumer == &consumer; });
     BeAssert(m_entries.end() == existing && "Consumer already registered");
@@ -20,10 +20,10 @@ void MemoryManager::AddConsumer(IMemoryConsumer& consumer, Priority priority)
         auto at = m_entries.end();
         switch (priority)
             {
-            case Priority::VeryLow:
+            case MemoryConsumer::Priority::VeryLow:
                 at = m_entries.begin();
                 break;
-            case Priority::Highest:
+            case MemoryConsumer::Priority::Highest:
                 BeAssert(nullptr != dynamic_cast<DgnElements*>(&consumer) && "Highest priority is reserved for DgnElements table");
                 break;
             default:
@@ -42,7 +42,7 @@ void MemoryManager::AddConsumer(IMemoryConsumer& consumer, Priority priority)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MemoryManager::DropConsumer(IMemoryConsumer& consumer)
+void MemoryManager::DropConsumer(MemoryConsumer& consumer)
     {
     auto found = std::find_if(m_entries.begin(), m_entries.end(), [&](Entry const& arg) { return arg.m_consumer == & consumer; });
     BeAssert(m_entries.end() != found && "Consumer not registered");
@@ -53,12 +53,12 @@ void MemoryManager::DropConsumer(IMemoryConsumer& consumer)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-int64_t MemoryManager::CalculateBytesConsumed() const
+uint64_t MemoryManager::CalculateBytesConsumed() const
     {
-    int64_t total = 0;
+    uint64_t total = 0;
     for (auto const& entry : m_entries)
         {
-        auto consumed = entry.m_consumer->CalculateBytesConsumed();
+        auto consumed = entry.m_consumer->_CalculateBytesConsumed();
         BeAssert(consumed >= 0);
         total += consumed;
         }
@@ -69,17 +69,14 @@ int64_t MemoryManager::CalculateBytesConsumed() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool MemoryManager::Purge(int64_t memTarget)
+bool MemoryManager::PurgeUntil(uint64_t memTarget)
     {
-    if (memTarget < 0)
-        memTarget = 0;
-
     // Calculating bytes consumed should be reasonably efficient, but avoid doing so more than necessary
-    int64_t totalConsumed = 0;
-    ScopedArray<int64_t> bytesPerConsumer(m_entries.size());
+    uint64_t totalConsumed = 0;
+    ScopedArray<uint64_t> bytesPerConsumer(m_entries.size());
     for (size_t i = 0; i < m_entries.size(); i++)
         {
-        int64_t consumed = m_entries[i].m_consumer->CalculateBytesConsumed();
+        uint64_t consumed = m_entries[i].m_consumer->_CalculateBytesConsumed();
         bytesPerConsumer.GetData()[i] = consumed;
         totalConsumed += consumed;
         }
@@ -88,19 +85,19 @@ bool MemoryManager::Purge(int64_t memTarget)
         return true;
 
     // traverse in order of lowest to highest priority, so that more important memory is not reclaimed before less important
-    for (size_t i = 0; i < m_entries.size(); i++)
+    for (size_t i = 0; i < m_entries.size(); ++i)
         {
-        int64_t consumed = bytesPerConsumer.GetData()[i];
+        uint64_t consumed = bytesPerConsumer.GetData()[i];
         if (consumed <= 0)
             continue;
 
         // Ask all but the highest-priority consumer to relinquish all reclaimable memory
-        int64_t consumerTarget = (m_entries.size()-1 == i) ? memTarget : 0;
-        IMemoryConsumer& consumer = *(m_entries[i].m_consumer);
-        int64_t nowConsumed = consumer.Purge(consumerTarget);
+        uint64_t consumerTarget = (m_entries.size()-1 == i) ? memTarget : 0;
+        MemoryConsumer& consumer = *(m_entries[i].m_consumer);
+        uint64_t nowConsumed = consumer._Purge(consumerTarget);
         BeAssert(nowConsumed <= consumed && "Purging memory caused more memory to be consumed?");
 
-        int64_t reclaimed = consumed - nowConsumed;
+        uint64_t reclaimed = consumed - nowConsumed;
         totalConsumed -= reclaimed;
 
         if (totalConsumed <= memTarget)
