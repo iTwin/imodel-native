@@ -12,11 +12,11 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 void EventServiceClientTests::SetUp()
-{
-	credentials.push_back(*(new Credentials("eventservicetest1@mailinator.com", "Bentley123")));
-	credentials.push_back(*(new Credentials("eventservicetest2@mailinator.com", "Bentley123")));
-	servers.push_back("https://127.255.0.0:444");
-}
+    {
+    credentials.push_back(*(new Credentials("eventservicetest1@mailinator.com", "Bentley123")));
+    credentials.push_back(*(new Credentials("eventservicetest2@mailinator.com", "Bentley123")));
+    servers.push_back("https://127.255.0.0:444");
+    }
 
 TEST_F(EventServiceClientTests, Test1)
     {
@@ -24,7 +24,7 @@ TEST_F(EventServiceClientTests, Test1)
     Utf8String REPO_ID = "CSim";
     Utf8String USER_ID = "USER_ID1";
     //EventServiceClient* client = new EventServiceClient(REPO_ID, USER_ID1);
-	EventServiceClient* client = new EventServiceClient(REPO_ID, USER_ID, servers[0], credentials[0]);
+    EventServiceClient* client = new EventServiceClient(REPO_ID, USER_ID, servers[0], credentials[0]);
     printf("receiving msgs..\n");
     Utf8String msg = "";
     while (client->Receive(msg))
@@ -34,21 +34,21 @@ TEST_F(EventServiceClientTests, Test1)
     }
 
 TEST_F(EventServiceClientTests, BasicFromWSRepositoryClient)
-{
-	Utf8String sasToken = "", ns = "";
-	Utf8String REPO_ID = "CSim";
-	Utf8String USER_ID = "USER_ID1";
-	EventServiceClient* client = new EventServiceClient(REPO_ID, USER_ID, servers[0], credentials[0]);
-	bool result = client->GetInfoThroughWSRepositoryClient(sasToken, ns);
-	EXPECT_TRUE(result);
-}
+    {
+    Utf8String sasToken = nullptr, ns = nullptr;
+    Utf8String REPO_ID = "CSim";
+    Utf8String USER_ID = "USER_ID1";
+    EventServiceClient* client = new EventServiceClient(REPO_ID, USER_ID, servers[0], credentials[0]);
+    bool result = client->GetInfoThroughWSRepositoryClient(sasToken, ns);
+    EXPECT_TRUE(result);
+    }
 
 TEST_F(EventServiceClientTests, BasicFromIMSClient)
-{
-	Utf8String sasToken = "", ns = "";
-	Utf8String REPO_ID = "CSim";
-	Utf8String USER_ID = "USER_ID1";
-	EventServiceClient* client = new EventServiceClient(REPO_ID, USER_ID, servers[0], credentials[0]);
-	bool result = client->GetInfoThroughIMSClient(sasToken, ns);
-	EXPECT_TRUE(result);
-}
+    {
+    Utf8String sasToken = nullptr, ns = nullptr;
+    Utf8String REPO_ID = "CSim";
+    Utf8String USER_ID = "USER_ID1";
+    EventServiceClient* client = new EventServiceClient(REPO_ID, USER_ID, servers[0], credentials[0]);
+    bool result = client->GetInfoThroughIMSClient(sasToken, ns);
+    EXPECT_TRUE(result);
+    }
