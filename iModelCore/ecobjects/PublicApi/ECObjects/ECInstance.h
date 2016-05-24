@@ -51,6 +51,11 @@ typedef bmap<Utf8String, ICustomECStructSerializerP> NameSerializerMap;
 //////////////////////////////////////////////////////////////////////////////////
 typedef bmap<Utf8String, ICustomAttributeDeserializerP> AttributeDeserializerMap;
 
+//////////////////////////////////////////////////////////////////////////////////
+//  Typedef for a list of values
+//////////////////////////////////////////////////////////////////////////////////
+typedef bvector<ECValue> ValueList;
+
 //! Interface for a custom ECStruct Serializer.  Implement this class if you need to allow a struct property
 //! to generate a custom XML representation of itself.
 struct ICustomECStructSerializer
@@ -536,7 +541,7 @@ public:
     //! @param[in] propertyIndex The index (into the ClassLayout) of the array property
     //! @returns SUCCESS if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    ClearArray (uint32_t propertyIndex);
-
+    
     //! Returns the display label for the instance.  The following are checked (in order) for the label:
     //! @li InstanceLabelSpecification custom attribute set on the instance itself
     //! @li InstanceLabelSpecification custom attribute set on base classes
