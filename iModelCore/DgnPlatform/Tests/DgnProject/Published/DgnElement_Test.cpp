@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "../TestFixture/DgnDbTestFixtures.h"
-#include <DgnPlatform/UnitTests/DgnDbTestUtils.h>
+#include <UnitTests/BackDoor/DgnPlatform/DgnDbTestUtils.h>
 
 USING_NAMESPACE_BENTLEY_DPTEST
 
