@@ -17,12 +17,7 @@ static Utf8CP const RESOURCE           = "Resource";
 static Utf8CP const KEY                = "Key";
 static Utf8CP const VALUE              = "Value";
 
-//static Utf8CP const STANDARD           = "Standard";
-//static Utf8CP const DISPLAYLABEL       = "DisplayLabel";
-//static Utf8CP const DESCRIPTION        = "Description";
 static Utf8CP const SOURCE             = "Source";
-//static Utf8CP const SOURCEROLELABEL    = "SourceRoleLabel";
-//static Utf8CP const TARGETROLELABEL    = "TargetRoleLabel";
 static Utf8CP const COLON              = ":";
 static Utf8CP const DOT                = ".";
 static Utf8CP const AT                 = "@";
