@@ -662,7 +662,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         mutable SMMemoryPoolItemId m_uvCoordsPoolItemId;
         mutable SMMemoryPoolItemId m_diffSetsItemId;
         mutable SMMemoryPoolItemId m_displayDataPoolItemId;  
-		mutable SMMemoryPoolItemId m_graphPoolItemId;      
+        //mutable SMMemoryPoolItemId m_graphPoolItemId;      
         ISMPointIndexMesher<POINT, EXTENT>* m_mesher2_5d;
         ISMPointIndexMesher<POINT, EXTENT>* m_mesher3d;
        // mutable bool m_isGraphLoaded;                
