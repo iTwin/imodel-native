@@ -21,6 +21,9 @@ FileUtilTests.TruncateFilePath_MaxPathSoSmallThatExtensionWouldBeChanged_Error
 FileUtilTests.TruncateFilePath_MaxPathSoSmallThatFileNameWouldBeEmpty_Error
 FileUtilTests.TruncateFilePath_PathIsFolder_Error
 
+# Fails on Android due to DgnClientFx::Device not being initialized. Medium priority - disables important tests
+ClientInfoTests.Create_PassedMandatoryValues_SetsValues
+
 #Fails on iOS; Need to investigate why. High priority - disables many tests
 ECDbAdapterTests.*
 
@@ -42,6 +45,3 @@ DataSourceCacheTests.UpdateSchemas_SchemasWithDeletedPropertyPassedToDataSourceC
 #----------------------------------------------------------------------------------------
 # New issues
 #----------------------------------------------------------------------------------------
-
-ClientInfoTests.Create_PassedMandatoryValues_SetsValues # fails on Android - notified Vincas
-
