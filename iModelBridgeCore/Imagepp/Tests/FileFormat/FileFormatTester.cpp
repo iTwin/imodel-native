@@ -107,7 +107,8 @@ static vector<std::wstring> s_GetFileNameVector()
             actualName.Contains(L"Images\\EPX") ||
             actualName.Contains(L"Images\\MultiChannel_(XCH)\\Flashpix") ||
             actualName.Contains(L"Images\\jpeg\\Jpeg_InvalidWorldFiles") ||
-            actualName.Contains(L"Images\\ECW\\TooBigImage")
+            actualName.Contains(L"Images\\ECW\\TooBigImage") ||
+            actualName.Contains(L"Images\\ECW\\TC31T1\\2005_mosaic_colour.ecw")  // too big for .itiff
             )
             continue;
 
