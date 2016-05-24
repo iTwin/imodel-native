@@ -36,7 +36,7 @@ private:
 	Credentials m_credentials;
 	ClientInfoPtr m_clientInfo;
 	UrlProvider::Environment m_env;
-	bool UpdateToken();
+	bool UpdateToken(bool useDefaultVal = false);
 	bool MakeEventServiceRequest(Utf8StringR outToken, Utf8StringR outNameSpace);
 	HttpResponse MakeReceiveDeleteRequest(bool longPolling);
 	bool Receive(Utf8StringR msgOut, int retry, bool longPolling);
@@ -46,7 +46,6 @@ private:
 	Utf8String GetRepository();
 
 public:
-	WSCLIENT_EXPORT EventServiceClient(Utf8StringCR repoId, Utf8StringCR userId);
 	WSCLIENT_EXPORT EventServiceClient(Utf8StringCR repoId, Utf8StringCR userId, Utf8StringCR bimServerURL, Credentials credentials, ClientInfoPtr clientInfo = nullptr, UrlProvider::Environment env = UrlProvider::Environment::Dev);
 	WSCLIENT_EXPORT bool Receive(Utf8StringR msgOut, bool longPolling = true);
 	WSCLIENT_EXPORT bool GetInfoThroughIMSClient(Utf8StringR sasToken, Utf8StringR ns); //todo: Public for now, should be made private
