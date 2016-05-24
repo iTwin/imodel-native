@@ -481,7 +481,7 @@ StatusInt LsDefinition::GenerateTexture(TextureDescr& textureDescr, ViewContextR
     if (0.0 == yRange)
         yRange = 1;
 
-    textureDescr.m_hasTextureWidth = false;
+    textureDescr.m_hasTextureWidth = true;
     textureDescr.m_textureWidth = yRange * unitDef;
 
     m_firstTextureInitialized = true;
