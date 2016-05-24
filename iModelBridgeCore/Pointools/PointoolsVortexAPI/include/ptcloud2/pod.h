@@ -80,13 +80,14 @@ namespace pcloud
 	};	
 
 	// Pod Block IDs ------------------------------------------------------------
-	static char* PODBLOCK_DOUBLEBOUNDINGBOX = "DBBX";
+	static char PODBLOCK_DOUBLEBOUNDINGBOX[10] = "DBBX";
 	// --------------------------------------------------------------------------
 
 	class PodBlockReadHandler	
 	{
 	public:
 		PodBlockReadHandler(std::string const& id);
+        virtual ~PodBlockReadHandler() = 0;
 
 		// All PodBlockHandlers must implement this function which is called by the PodBlockManager on
 		// encountering a PodBlock matching this handlers ID.
@@ -163,7 +164,7 @@ namespace pcloud
 		Scene							*scene;
 		void							*tracker;
 		ubyte							endian;
-		ubyte							version[4];
+		ubyte							version[5];
 		int64_t							fileSize;
 	};
 	class PCLOUD_API PodIO

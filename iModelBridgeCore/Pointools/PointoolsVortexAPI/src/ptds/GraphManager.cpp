@@ -27,10 +27,10 @@ void testGraph(void)
 
 	s[0]->calculateMinMax(minimum, maximum);
 
-	Series2F::Point average1	= s[0]->calculateMean();
-	double variance				= s[0]->calculateVariance(Series2F::Point::Y);
-	double stdDev				= s[0]->calculateStdDev(Series2F::Point::Y);
-	bool ls						= s[0]->calculateLinearLeastSquares2D(a, b, Series2F::Point::X, Series2F::Point::Y);
+	s[0]->calculateMean();
+	s[0]->calculateVariance(Series2F::Point::Y);
+	s[0]->calculateStdDev(Series2F::Point::Y);
+	s[0]->calculateLinearLeastSquares2D(a, b, Series2F::Point::X, Series2F::Point::Y);
 
 	Graph	*graph1;
 	Graph	*graph2;

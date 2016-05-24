@@ -318,6 +318,7 @@ PTuint64 PTAPI ptWriteChannelsFileToBuffer(PTint numChannels, const PThandle *ch
 	if (uchannels.size()) 
 	{
 		 PTres res = UserChannelManager::instance()->saveChannelsToFile(dummyFilename, static_cast<int>(uchannels.size()), &(uchannels[0]), &dataSource);
+         UNUSED_VARIABLE(res);
 	}
 	else 
 	{

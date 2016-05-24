@@ -71,7 +71,7 @@ Branch * Branch::getBranch( const NodeID &nid, bool allow_create/*=false*/ )
 		Branch *b = new Branch(nid);
 		b->_parent = this;
 
-		_branches.insert(Branches::value_type(nid, b)).second;
+		_branches.insert(Branches::value_type(nid, b));
 		if (b) b->_level = _level + 1;
 		return b;
 	}

@@ -218,10 +218,8 @@ void VoxelLODSet::clipRequestLODMax(LOD maxLOD)
 															// If LOD is larger
 		if(it->getRequestLOD() > maxLOD)
 		{
-															// Limit the LOD
 			it->setRequestLOD(maxLOD);
-
-			bool clipped = true;
+			clipped = true;
 		}
 	}
 															// If the LOD range has been clipped

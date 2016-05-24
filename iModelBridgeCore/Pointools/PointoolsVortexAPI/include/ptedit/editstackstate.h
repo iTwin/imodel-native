@@ -40,10 +40,13 @@ struct LeafID
 	}
 	static pcloud::Voxel * voxelFromID( LeafID lid );
 };
+
+//&&ep del this ?
 static bool operator < ( const LeafID &a, const LeafID &b )
 {
 	return ( a.pc < b.pc || a.leafIndex < b.leafIndex ) ? true : false;
 }
+
 //-----------------------------------------------------------------------------
 struct LeafStateInfo
 {

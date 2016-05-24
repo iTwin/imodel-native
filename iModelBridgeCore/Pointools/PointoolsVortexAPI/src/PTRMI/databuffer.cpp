@@ -165,7 +165,6 @@ Status DataBuffer::manageBuffer(DataSize extraBytes)
 {
 	float	upsizeCoef			= 1.3;
 	float	fullRatioUpSize		= 0.7;
-	float	fullRatioReset		= 0.3;
 
 															// Only manage internal buffer
 	if(getMode() == Mode_Internal)
@@ -777,7 +776,6 @@ DataBuffer::Data *DataBuffer::getPtrAddress(DataPtr position)
 
 PTRMI::Status DataBuffer::testSimple(void)
 {
-	unsigned int	numInsertions		= 10;
 	unsigned int	maxInsertions		= 1024 * 1024 * 10;
 	unsigned int	numIterations		= 100;
 	unsigned int	readAllIterations	= 4;

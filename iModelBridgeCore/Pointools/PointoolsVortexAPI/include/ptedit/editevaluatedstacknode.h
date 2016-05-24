@@ -34,6 +34,8 @@ namespace ptedit
 		bool apply();		//applies previously saved evaluated stack
 
 		int icon() const { return 5; }
+
+        using EditNodeDef::flags; // tell the compiler we want both the flags from EditNodeDef and ours (otherwise clang complains)
 		uint flags() const { return 0; }
 	
 		bool readState(const pt::datatree::Branch *b);

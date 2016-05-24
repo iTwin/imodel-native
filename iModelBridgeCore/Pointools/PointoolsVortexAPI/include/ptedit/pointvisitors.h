@@ -466,6 +466,8 @@ namespace ptedit
 				else  return true;
 			}
 			else return false;
+            
+            return false;
 		}
 		inline void point( const pt::vector3d &p, uint index, ubyte &f) { mt_point(0, p, index, f);}
 		inline void mt_point(int t, const pt::vector3d &p, uint index, ubyte &f) { 
@@ -564,7 +566,8 @@ namespace ptedit
 				}
 				else return true;
 			}
-			else return false;
+			
+            return false;
 		}
 		inline void point(const pt::vector3d &p, uint index, ubyte &f) { mt_point(0, p, index, f);}
 		inline void mt_point(int t, const pt::vector3d &p, uint index, ubyte &f) 

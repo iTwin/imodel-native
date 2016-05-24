@@ -149,7 +149,8 @@ namespace ptedit
 			}
 			return oddNodes[th];
 		}
-		else false;
+		else
+            return false;
 	}
 	inline static bool inside(int th, const FenceSelect &f, const pt::vector3d &pnt)
 	{

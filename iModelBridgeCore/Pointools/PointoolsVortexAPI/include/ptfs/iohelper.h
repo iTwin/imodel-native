@@ -427,7 +427,7 @@ namespace ptds
 					return 0;
 				}
 			
-			memcpy(&d, &_buffer[_pos-_chunkstart], sizeof(T));
+			memcpy((void*)&d, (void*)&_buffer[_pos-_chunkstart], sizeof(T));
 
 			_pos += sizeof(T);
 			return sizeof(T);

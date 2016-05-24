@@ -57,8 +57,7 @@ namespace pod
 		ReWriteSizes(ptds::Tracker *_tracker, int cloudindex, int structure_version)
 			: tracker(_tracker), 
 			_cloudindex(cloudindex), 
-			_nodeindex(0), 
-			_structure(structure_version)
+			_nodeindex(0)
 		{};
 		
 
@@ -101,7 +100,6 @@ namespace pod
 	private:
 		uint _cloudindex;
 		uint _nodeindex;
-		uint _structure;
 		ptds::Tracker *tracker;
 	};
 	//-------------------------------------------------------------------------
@@ -162,7 +160,6 @@ namespace pod
 			//8 bytes spare where we squeeze in qt value without killing fwd compat
 			ubyte qt = node->quadTreeAxis() + 1;	// quadtree spec
 			ubyte hasQT = 133;
-			uint vfptr=0;
 
 			// just a code
 			block->write(hasQT);

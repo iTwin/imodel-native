@@ -136,7 +136,7 @@ struct ListBranchVisitor
 	void operator()(const pt::String &v)
 	{
 		if (v.length())
-			printf( v.c_str() );
+			printf( "%s", v.c_str() );
 	}
 };	
 }

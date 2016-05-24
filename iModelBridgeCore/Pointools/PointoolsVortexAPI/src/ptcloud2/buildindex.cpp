@@ -79,6 +79,7 @@ namespace pcindex
 		{
 			calcDepth();
 			int D = _depth;
+            UNUSED_VARIABLE(D);
 			
 			//indentOutput();
 			//std::cout << "D" << D << " P:" << _pointCount << std::endl;

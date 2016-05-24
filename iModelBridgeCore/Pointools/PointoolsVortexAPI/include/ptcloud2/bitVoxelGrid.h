@@ -193,8 +193,11 @@ public:
 		unsigned int index = getIndex( x,y,z, pnt );
 
 		if (index >= (_divx*_divy*_divz)) return 0;
+        
+/* NEEDS_WORK_VORTEX_DGNDB - always false, index is always >= 0. But was something else intended ?
 		if (index < 0) return 0;
-		
+*/
+
 		bitvector *bv = _grid[index];
 
 		if (create && !bv)

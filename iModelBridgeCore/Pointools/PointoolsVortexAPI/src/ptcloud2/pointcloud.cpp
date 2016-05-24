@@ -38,8 +38,6 @@ PointCloud::PointCloud(const wchar_t*id, const Scene *scene, float compressionTo
 	_compressionTolerance = compressionTolerance;
 	_scene = scene;
 
-	static int col_test = 255;
-
 	_pointSize=0; // use global setting
 	_baseColour[0] = 255;
 	_baseColour[1] = 255;
@@ -111,8 +109,6 @@ const Voxel* PointCloud::findContainingVoxel(const pt::vector3d &seek_pnt, pt::C
 		m.vec3_multiply_mat4(seek_pnt, pnt);
 	}	
 
-	const Voxel* vox=0;
-	double mindist = -1;
 	pt::vector3d check, nr;
 
 	/*check world space bounds*/ 
