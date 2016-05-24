@@ -17,6 +17,10 @@ DataSourceStatus DataSourceFile::open(const DataSourceURL & sourceURL, DataSourc
 {
 	std::ios_base::open_mode	streamMode = std::ios_base::binary;
 
+	std::wstring filePath;
+	
+	sourceURL.getFilePath(filePath);
+
 	switch (sourceMode)
 	{
 	case DataSourceMode_Write:
@@ -29,7 +33,7 @@ DataSourceStatus DataSourceFile::open(const DataSourceURL & sourceURL, DataSourc
 		break;
 	}
 
-	stream.open(sourceURL, streamMode);
+	stream.open(filePath, streamMode);
 
 	if (stream.is_open())
 	{
@@ -73,6 +77,7 @@ DataSource::DataSize DataSourceFile::getSize(void)
 	return length;
 }
 
+/*
 DataSourceStatus DataSourceFile::read(Buffer * dest, DataSize destSize)
 {
 	DataSize	size;
@@ -87,14 +92,39 @@ DataSourceStatus DataSourceFile::read(Buffer * dest, DataSize destSize)
 
 	return DataSourceStatus(DataSourceStatus::Status_Error_Read);
 }
+*/
 
-DataSourceStatus DataSourceFile::read(Buffer * dest, DataSize destSize, DataSize size)
+DataSourceStatus DataSourceFile::read(Buffer *dest, DataSize destSize, DataSize &readSize, DataSize size)
 {
-	(void) destSize;
+	if (size > destSize)
+		return DataSourceStatus(DataSourceStatus::Status_Error_Dest_Buffer_Too_Small);
 
-	getStream().read(reinterpret_cast<char *>(dest), size);
+	if (size > 0)
+	{
+		getStream().read(reinterpret_cast<char *>(dest), size);
+	}
+	else
+	{
+		std::streampos originalPosition = getStream().tellg();
 
-	if (stream)
+		getStream().seekg(0, getStream().end);
+		DataSize fileSize = getStream().tellg();
+		getStream().seekg(originalPosition);
+
+		DataSize sizeToRead = fileSize - originalPosition;
+
+		if(sizeToRead > destSize)
+			return DataSourceStatus(DataSourceStatus::Status_Error_Dest_Buffer_Too_Small);
+
+		getStream().read(reinterpret_cast<char *>(dest), sizeToRead);
+	}
+
+	readSize = getStream().gcount();
+
+	if(size > 0 && readSize != size)
+		return DataSourceStatus(DataSourceStatus::Status_Error_EOF);
+
+	if (getStream())
 	{
 		return DataSourceStatus();
 	}

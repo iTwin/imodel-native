@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "DataSourceURL.h"
+#include "include\DataSourceURL.h"
 
 DataSourceURL::DataSourceURL(void)
 {
@@ -8,13 +9,45 @@ DataSourceURL::DataSourceURL(void)
 
 DataSourceURL::DataSourceURL(wchar_t * str) : std::wstring(str)
 {
-
+	normalize();
 }
 
 
 DataSourceURL::DataSourceURL(const std::wstring &str) : std::wstring(str)
 {
+	normalize();
+}
 
+
+bool DataSourceURL::isWindowsFilePath(void) const
+{
+															// Assume windows filepath if second character is ':'
+	return ((*this)[1] == DATA_SOURCE_URL_WINDOWS_DEVICE_SEPARATOR);
+}
+
+
+DataSourceStatus DataSourceURL::getFilePath(std::wstring &filePath) const
+{
+	if (isWindowsFilePath() == false)
+		return DataSourceStatus(DataSourceStatus::Status_Error_Not_File_Path);
+
+	DataSourceURL	result;
+
+	result = *this;
+															// Revert forward slashes to back slashes
+	result.findAndReplace(std::wstring(DATA_SOURCE_URL_SEPARATOR_STR), std::wstring(DATA_SOURCE_URL_WINDOWS_FILE_SEPARATOR_STR));
+
+	filePath = result;
+
+	return DataSourceStatus();
+}
+
+DataSourceStatus DataSourceURL::normalize(void)
+{
+															// Normalize windows file separators to forward slash
+	findAndReplace(std::wstring(DATA_SOURCE_URL_WINDOWS_FILE_SEPARATOR_STR), std::wstring(DATA_SOURCE_URL_SEPARATOR_STR));
+
+	return DataSourceStatus();
 }
 
 

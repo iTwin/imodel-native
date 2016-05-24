@@ -538,6 +538,9 @@ DataSourceStatus ScalableMeshBase::initializeAzureTest(void)
 	DataSourceAccount::AccountKey				accountKey(L"3EQ8Yb3SfocqbYpeIUxvwu/aEdiza+MFUDgQcIkrxkp435c7BxV8k2gd+F+iK/8V2iho80kFakRpZBRwFJh8wQ==");
 	DataSourceService						*	serviceAzure;
 	DataSourceAccount						*	accountAzure;
+	DataSourceAccount						*	accountCaching;
+	DataSourceService						*	serviceFile;
+
 //	DataSourceAccount						*	accountCaching;
 //	DataSourceBuffer::BufferSize				testDataSize = 1024 * 1024 * 8;
 
@@ -562,6 +565,16 @@ DataSourceStatus ScalableMeshBase::initializeAzureTest(void)
 															// Time I/O operation timeouts for threading
 	dataSourceAzure->setTimeout(DataSource::Timeout(100000));
 */
+															// Get the file service
+	if ((serviceFile = getDataSourceManager().getService(DataSourceService::ServiceName(L"DataSourceServiceFile"))) == nullptr)
+		return DataSourceStatus(DataSourceStatus::Status_Error_Test_Failed);
+															// Create an account on the file service for caching
+	if ((accountCaching = serviceFile->createAccount(DataSourceAccount::AccountName(L"CacheAccount"), DataSourceAccount::AccountIdentifier(), DataSourceAccount::AccountKey())) == nullptr)
+		return DataSourceStatus(DataSourceStatus::Status_Error_Test_Failed);
+
+	accountAzure->setCacheRootURL(DataSourceURL(L"C:\\Temp\\CacheAzure"));
+															// Set up local file based caching
+	accountAzure->setCaching(*accountCaching, DataSourceURL());
 
 
 	return status;

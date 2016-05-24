@@ -150,7 +150,7 @@ class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
 
         SMNodeGroup(DataSourceAccount *dataSourceAccount, const size_t& pi_pID, const size_t& pi_pSize) 
             : m_pGroupHeader(new SMGroupHeader(pi_pID, pi_pSize)),
-              m_stream_store(nullptr)
+              m_stream_store(nullptr), m_dataSourceAccount(dataSourceAccount)
             {};
 
         SMNodeGroup(DataSourceAccount *dataSourceAccount, WString& pi_pDataSourceName, scalable_mesh::azure::Storage& pi_pStreamStore)
@@ -161,6 +161,9 @@ class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
             m_pTotalSize = 2 * sizeof(size_t);
             m_pDataSourceName = pi_pDataSourceName + L"g_";
             m_stream_store = &pi_pStreamStore;
+
+			setDataSourceAccount(dataSourceAccount);
+
             }
 
         SMNodeGroup(DataSourceAccount *dataSourceAccount, const WString pi_pOutputDirPath, const size_t& pi_pGroupLevel, const size_t& pi_pGroupID)
@@ -171,6 +174,8 @@ class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
             m_pRawHeaders.reserve(3000 * s_max_number_nodes_in_group);
 
             m_pTotalSize = 2 * sizeof(size_t);
+
+			setDataSourceAccount(dataSourceAccount);
             }
 
         size_t GetLevel() { return m_pLevel; }
@@ -259,6 +264,18 @@ class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
 
         bool IsLoaded() { return m_pIsLoaded; }
 
+
+		void setDataSourceAccount(DataSourceAccount *dataSourceAccount)
+		{
+			m_dataSourceAccount = dataSourceAccount;
+		}
+
+		DataSourceAccount *getDataSourceAccount(void)
+		{
+			return m_dataSourceAccount;
+		}
+
+
         void Save()
             {
             WString path(m_pOutputDirPath + L"\\g_");
@@ -306,7 +323,8 @@ class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
 				DataSource::Name						dataSourceName;
 				wstringstream							ss;
 				wstringstream							name;
-				std::unique_ptr<DataSource::Buffer>		buffer;
+				std::unique_ptr<DataSource::Buffer>		dest;
+				DataSourceBuffer::BufferSize			destSize;
 
 				if (m_dataSourceAccount == nullptr)
 					return;
@@ -318,33 +336,37 @@ class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
 				dataSource = m_dataSourceAccount->getOrCreateDataSource(dataSourceName);
 				if (dataSource == nullptr)
 					return;
+															// Enable caching for this DataSource
+				dataSource->setCachingEnabled(true);
 
-				buffer.reset(new unsigned char[1024 * 1024 * 5]);
+				destSize = 1024 * 1024 * 5;
+
+				dest.reset(new unsigned char[destSize]);
 				
 
-				DataSource::DataSize	dataSize;
+				DataSource::DataSize	readSize;
 
 				m_pIsLoading = true;
 
-				loadFromDataSource(dataSource, buffer.get(), dataSize);
+				loadFromDataSource(dataSource, dest.get(), destSize, readSize);
 
 				uint32_t position = 0;
 				size_t id;
-				memcpy(&id, buffer.get(), sizeof(size_t));
+				memcpy(&id, dest.get(), sizeof(size_t));
 				assert(m_pGroupHeader->GetID() == id);
 				position += sizeof(size_t);
 
 				size_t numNodes;
-				memcpy(&numNodes, buffer.get() + position, sizeof(numNodes));
+				memcpy(&numNodes, dest.get() + position, sizeof(numNodes));
 				assert(m_pGroupHeader->size() == numNodes);
 				position += sizeof(numNodes);
 
-				memcpy(m_pGroupHeader->data(), buffer.get() + position, numNodes * sizeof(SMNodeHeader));
+				memcpy(m_pGroupHeader->data(), dest.get() + position, numNodes * sizeof(SMNodeHeader));
 				position += (uint32_t)numNodes * sizeof(SMNodeHeader);
 
-				const auto headerSectionSize = dataSize - position;
+				const auto headerSectionSize = readSize - position;
 				m_pRawHeaders.resize(headerSectionSize);
-				memcpy(m_pRawHeaders.data(), buffer.get() + position, headerSectionSize);
+				memcpy(m_pRawHeaders.data(), dest.get() + position, headerSectionSize);
 
 				m_pIsLoading = false;
 				m_pGroupCV.notify_all();
@@ -415,21 +437,21 @@ class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
 
     private:
 
-		void loadFromDataSource(DataSource *dataSource, DataSource::Buffer *buffer, DataSource::DataSize &dataSize)
+		void loadFromDataSource(DataSource *dataSource, DataSource::Buffer *dest, DataSourceBuffer::BufferSize destSize, DataSourceBuffer::BufferSize &readSize)
 		{
 			if (dataSource == nullptr)
 				return;
 
 			wstringstream			ss;
 
-			ss << m_pDataSourceName << this->GetID() << L".bin";
+			ss << L"scalablemeshtest\\" << m_pDataSourceName << this->GetID() << L".bin";
 			auto groupFilename = ss.str();
 
 			DataSourceURL	dataSourceURL(groupFilename);
 
 			dataSource->open(dataSourceURL, DataSourceMode_Read);
 
-			dataSource->read(buffer, 0);
+			dataSource->read(dest, destSize, readSize, 0);
 
 			dataSource->close();
 		}
@@ -477,6 +499,7 @@ class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
                 });
             }
 
+		
     private:
         bool   m_pIsLoaded = false;
         bool   m_pIsLoading = false;

@@ -1,6 +1,8 @@
 #include "stdafx.h"
 #include "DataSourceAccountAzure.h"
 #include "DataSourceAzure.h"
+#include <cpprest/rawptrstream.h>
+#include <cpprest/producerconsumerstream.h>
 
 
 DataSourceAccountAzure::DataSourceAccountAzure(const ServiceName & name, const AccountIdentifier & identifier, const AccountKey & key)
@@ -97,6 +99,7 @@ DataSourceStatus DataSourceAccountAzure::initializeContainer(const DataSourceURL
 	return DataSourceStatus();
 }
 
+
 DataSourceStatus DataSourceAccountAzure::setAccount(const AccountName & account, const AccountIdentifier & identifier, const AccountKey & key)
 {
 	if (account.length() == 0 || identifier.length() == 0 || key.length() == 0)
@@ -118,10 +121,15 @@ DataSourceStatus DataSourceAccountAzure::setAccount(const AccountName & account,
 	return DataSourceStatus();
 }
 
-#include <cpprest/rawptrstream.h>
-#include <cpprest/producerconsumerstream.h>
 
-DataSourceStatus DataSourceAccountAzure::downloadBlobSync(const DataSourceURL & blobPath, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize size)
+DataSourceStatus DataSourceAccountAzure::download(DataSource &dataSource, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize destSize, DataSourceBuffer::BufferSize & readSize)
+{
+	downloadBlobSync(dataSource.getSubPath(), dest, readSize, destSize);
+	
+	return DataSourceStatus();
+}
+
+DataSourceStatus DataSourceAccountAzure::downloadBlobSync(const DataSourceURL & blobPath, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size)
 {
 	if(getContainer().is_valid() == false)
 		return DataSourceStatus(DataSourceStatus::Status_Error_Failed_To_Upload);
@@ -131,7 +139,7 @@ DataSourceStatus DataSourceAccountAzure::downloadBlobSync(const DataSourceURL & 
 		return DataSourceStatus(DataSourceStatus::Status_Error_Failed_To_Upload);
 
 
-std::streampos p;
+	std::streampos p;
 
 	try
 	{
@@ -141,7 +149,9 @@ std::streampos p;
 
 		blockBlob.download_to_stream(stream);
 
-p = stream.tell();
+		p = stream.tell();
+
+		readSize = p;
 
 		stream.close().wait();
 

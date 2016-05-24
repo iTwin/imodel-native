@@ -26,7 +26,7 @@ public:
 	DataSourceStatus			open					(const DataSourceURL & sourceURL, DataSourceMode sourceMode);
 	DataSourceStatus			close					(void);
 
-	DataSourceStatus			read					(Buffer * dest,   DataSize size);
+	DataSourceStatus			read					(Buffer *dest, DataSize destSize, DataSize &readSize, DataSize size = 0);
 	DataSourceStatus			write					(Buffer * source, DataSize size);
 
 	DataSourceStatus			flush					(void);

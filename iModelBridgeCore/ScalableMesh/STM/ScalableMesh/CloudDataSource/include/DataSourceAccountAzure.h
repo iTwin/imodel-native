@@ -56,6 +56,8 @@ public:
 
 		DataSourceStatus				initializeContainer				(const DataSourceURL &containerName, DataSourceMode mode);
 
-		DataSourceStatus				downloadBlobSync				(const DataSourceURL &blobPath, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size);
+		DataSourceStatus				download						(DataSource &dataSource, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize destSize, DataSourceBuffer::BufferSize &readSize);
+
+		DataSourceStatus				downloadBlobSync				(const DataSourceURL &blobPath, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size);
 		DataSourceStatus				uploadBlobSync					(const DataSourceURL &blobPath, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size);
 };

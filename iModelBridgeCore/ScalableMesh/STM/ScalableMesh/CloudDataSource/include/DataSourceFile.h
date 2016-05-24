@@ -23,8 +23,7 @@ public:
 
 		DataSource::DataSize		getSize					(void);
 
-		DataSourceStatus			read					(Buffer *dest, DataSize destSize);
-		DataSourceStatus			read					(Buffer *dest, DataSize destSize, DataSize size);
+		DataSourceStatus			read					(Buffer *dest, DataSize destSize, DataSize &readSize, DataSize size = 0);
 		DataSourceStatus			write					(Buffer *source, DataSize size);
 
 		DataSourceStatus			move					(DataPtr position);

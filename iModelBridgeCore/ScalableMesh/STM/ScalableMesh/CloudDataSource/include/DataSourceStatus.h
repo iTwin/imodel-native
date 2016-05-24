@@ -14,6 +14,8 @@ public:
 		Status_Error_Bad_Parameters,
 		Status_Error_Memory_Allocation,
 
+		Status_Error_Not_File_Path,
+
 		Status_Error_Not_Found,
 		Status_Error_Not_Supported,
 		Status_Error_Not_Open,

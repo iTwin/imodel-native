@@ -24,7 +24,7 @@ protected:
 
 	bool						isCached				(void);
 
-	DataSourceStatus			readFromCache			(DataSourceBuffer::BufferData *dest, DataSourceBuffer::BufferSize size);
+	DataSourceStatus			readFromCache			(DataSourceBuffer::BufferData *dest, DataSourceBuffer::BufferSize destSize, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size);
 	DataSourceStatus			writeToCache			(DataSourceBuffer::BufferData *source, DataSourceBuffer::BufferSize size);
 
 	void						setWriteToCache			(bool write);
@@ -46,7 +46,7 @@ public:
 	DataSourceStatus			open					(const DataSourceURL & sourceURL, DataSourceMode sourceMode);
 	DataSourceStatus			close					(void);
 
-	DataSourceStatus			read					(Buffer * dest, DataSize size);
+	DataSourceStatus			read					(Buffer *dest, DataSize destSize, DataSize &readSize, DataSize size);
 	DataSourceStatus			write					(Buffer * source, DataSize size);
 
 };

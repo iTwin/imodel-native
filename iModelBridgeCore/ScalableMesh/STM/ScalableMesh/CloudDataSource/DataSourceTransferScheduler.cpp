@@ -84,6 +84,7 @@ DataSourceStatus DataSourceTransferScheduler::initializeTransferTasks(unsigned i
 			DataSourceBuffer				*	buffer;
 			DataSourceBuffer::BufferData	*	segmentBuffer;
 			DataSourceBuffer::BufferSize		segmentSize;
+			DataSourceBuffer::BufferSize		readSize;
 			DataSourceBuffer::SegmentIndex		segmentIndex;
 			DataSourceAccount				*	account;
 			DataSourceStatus					status;
@@ -110,7 +111,7 @@ DataSourceStatus DataSourceTransferScheduler::initializeTransferTasks(unsigned i
 			if (locator.getMode() == DataSourceMode_Read)
 			{
 															// Attempt to download a single segment
-				if ((status = account->downloadBlobSync(segmentName, segmentBuffer, segmentSize)).isFailed())
+				if ((status = account->downloadBlobSync(segmentName, segmentBuffer, readSize, segmentSize)).isFailed())
 					return DataSourceStatus(DataSourceStatus::Status_Error_Failed_To_Upload);
 			}
 			else

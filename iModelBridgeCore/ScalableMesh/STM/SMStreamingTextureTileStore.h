@@ -9,6 +9,8 @@
 //#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>
 #include <ImagePP/all/h/HRPPixelTypeV24B8G8R8.h>
 
+#include <CloudDataSource/DataSourceAccount.h>
+
 class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, float> // JPEGData (uint8_t*), size
     {
     public:
@@ -227,8 +229,11 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
                 }
             else
                 {
+
                 // stream from azure
                 }
+
+			m_dataSourceAccount = dataSourceAccount;
             }
 
         virtual ~StreamingTextureTileStore()
@@ -376,4 +381,6 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
         mutable map<uint32_t, Texture> m_textureCache;
         // NEEDS_WORK_SM_STREAMING: should only have one stream store for all data types
         scalable_mesh::azure::Storage m_stream_store;
+
+		DataSourceAccount *	m_dataSourceAccount;
     };

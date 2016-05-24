@@ -26,10 +26,12 @@ bool DataSourceCached::isCached(void)
 	return false;
 }
 
-DataSourceStatus DataSourceCached::readFromCache(DataSourceBuffer::BufferData *dest, DataSourceBuffer::BufferSize size)
+DataSourceStatus DataSourceCached::readFromCache(DataSourceBuffer::BufferData *dest, DataSourceBuffer::BufferSize destSize, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size)
 {
-	DataSource			*	dataSource;
-	DataSourceStatus		statusNotFound(DataSourceStatus::Status_Not_Found);
+	DataSource						*	dataSource;
+	DataSourceStatus					statusNotFound(DataSourceStatus::Status_Not_Found);
+
+	(void) destSize;
 
 	if ((dataSource = getCacheDataSource()) == nullptr && getAccount())
 	{
@@ -47,11 +49,14 @@ DataSourceStatus DataSourceCached::readFromCache(DataSourceBuffer::BufferData *d
 	if ((dataSource->open(getCacheURL(), DataSourceMode_Read)).isFailed())
 		return statusNotFound;
 
-	if ((dataSource->read(dest, size)).isFailed())
+	if ((dataSource->read(dest, destSize, readSize, size)).isFailed())
 		return statusNotFound;
 
 	if ((dataSource->close()).isFailed())
 		return statusNotFound;
+
+	if (size > 0 && readSize != size)
+		return DataSourceStatus(DataSourceStatus::Status_Error_EOF);
 
 	return DataSourceStatus();
 }
@@ -91,8 +96,7 @@ bool DataSourceCached::getWriteToCache(void)
 
 void DataSourceCached::setCacheURL(const DataSourceURL &url)
 {
-															// Generate cache path based on collapsed directories
-	url.collapseDirectories(cacheURL);
+	cacheURL = url;
 }
 
 const DataSourceURL &DataSourceCached::getCacheURL(void)
@@ -158,14 +162,14 @@ DataSourceStatus DataSourceCached::close(void)
 }
 
 
-DataSourceStatus DataSourceCached::read(Buffer *dest, DataSize size)
+DataSourceStatus DataSourceCached::read(Buffer *dest, DataSize destSize, DataSize &readSize, DataSize size)
 {
 	DataSourceStatus	status;
 															// If caching is enabled
 	if(getCachingEnabled())
 	{
 															// Try reading from the cache
-		if (readFromCache(dest, size).isOK())
+		if (readFromCache(dest, destSize, readSize, size).isOK())
 		{
 															// If read, return OK
 			return status;
@@ -174,7 +178,7 @@ DataSourceStatus DataSourceCached::read(Buffer *dest, DataSize size)
 		setWriteToCache(true);
 	}
 															// Get Superclass to read
-	if ((status = Super::read(dest, size)).isFailed())
+	if ((status = Super::read(dest, destSize, readSize, size)).isFailed())
 		return status;
 															// If cache needs writing
 	if (getWriteToCache())
@@ -182,7 +186,7 @@ DataSourceStatus DataSourceCached::read(Buffer *dest, DataSize size)
 															// Write to the cache
 		setWriteToCache(false);
 															// Write to cache [Note: This could be on separate thread in future]
-		if ((status = writeToCache(dest, size)).isFailed())
+		if ((status = writeToCache(dest, readSize)).isFailed())
 			return status;
 	}
 															// Return status

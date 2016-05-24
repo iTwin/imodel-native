@@ -60,19 +60,35 @@ bool DataSourceBuffered::isValid(void)
 }
 
 
-DataSourceStatus DataSourceBuffered::read(Buffer * dest, DataSize size)
+DataSourceStatus DataSourceBuffered::read(Buffer *dest, DataSize destSize, DataSize &readSize, DataSize size)
 {
 	DataSourceStatus		status;
 	DataSourceAccount *		account;
-																// Size the buffer ready to read data into it
-	if ((status = initializeBuffer(size, dest)).isFailed())
-		return status;
+
 																// Get the associated account
 	if ((account = getAccount()) == nullptr)
 		return DataSourceStatus(DataSourceStatus::Status_Error);
-																// Download segments to the buffer
-	status = account->downloadSegments(*this, dest, size);
 
+																// If size to read is specified
+	if(size > 0)
+	{
+																// Size the buffer ready to read segmented data into it
+		if ((status = initializeBuffer(size, dest)).isFailed())
+			return status;
+
+																// Download segments to the buffer
+		status = account->downloadSegments(*this, dest, size);
+	}
+	else
+	{
+																// Size the buffer ready to read an arbitrary amount of data into it
+		if ((status = initializeBuffer(destSize, dest)).isFailed())
+			return status;
+																// Download unknown size
+		status = account->download(*this, dest, destSize, readSize);
+	}
+
+																// Return status
 	return status;
 }
 

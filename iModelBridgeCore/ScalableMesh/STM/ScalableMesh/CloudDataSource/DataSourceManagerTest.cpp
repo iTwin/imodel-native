@@ -27,11 +27,13 @@ DataSourceStatus DataSourceManagerTest::testBasicWriteRead(DataSource *dataSourc
 		return DataSourceStatus(DataSourceStatus::Status_Error_Bad_Parameters);
 
 															// Set up source/dest test buffers
-	DataSourceStatus		status;
-	unsigned long long		numTestValues = dataSize / sizeof(TestValue);
-	unsigned long long		bufferSize = dataSize;
-	TestValue			*	bufferSource = nullptr;
-	TestValue			*	bufferDest = nullptr;;
+	DataSourceStatus					status;
+	unsigned long long					numTestValues = dataSize / sizeof(TestValue);
+	DataSourceBuffer::BufferSize		bufferSize = dataSize;
+	TestValue						*	bufferSource = nullptr;
+	TestValue						*	bufferDest = nullptr;;
+
+	DataSourceBuffer::BufferSize readSize;
 
 	try
 	{
@@ -52,7 +54,7 @@ DataSourceStatus DataSourceManagerTest::testBasicWriteRead(DataSource *dataSourc
 		dataSource->close();
 															// Read back data and close
 		dataSource->open(url, DataSourceMode_Read);
-		dataSource->read(reinterpret_cast<DataSourceBuffer::BufferData *>(bufferDest), bufferSize);
+		dataSource->read(reinterpret_cast<DataSourceBuffer::BufferData *>(bufferDest), bufferSize, readSize, bufferSize);
 		dataSource->close();
 
 															// Verify dest buffer contents
@@ -82,10 +84,11 @@ DataSourceStatus DataSourceManagerTest::testBasicRead(DataSource * dataSource, c
 		return DataSourceStatus(DataSourceStatus::Status_Error_Test_Failed);
 
 															// Set up source/dest test buffers
-	DataSourceStatus		status;
-	unsigned long long		numTestValues = dataSize / sizeof(TestValue);
-	unsigned long long		bufferSize = dataSize;
-	TestValue			 *	bufferDest = nullptr;
+	DataSourceStatus				status;
+	unsigned long long				numTestValues = dataSize / sizeof(TestValue);
+	DataSourceBuffer::BufferSize	bufferSize = dataSize;
+	TestValue					 *	bufferDest = nullptr;
+	DataSourceBuffer::BufferSize	readSize;
 
 	try
 	{
@@ -96,7 +99,7 @@ DataSourceStatus DataSourceManagerTest::testBasicRead(DataSource * dataSource, c
 		if ((status = dataSource->open(url, DataSourceMode_Read)).isFailed())
 			throw status;
 
-		if ((status = dataSource->read(reinterpret_cast<DataSourceBuffer::BufferData *>(bufferDest), bufferSize)).isFailed())
+		if ((status = dataSource->read(reinterpret_cast<DataSourceBuffer::BufferData *>(bufferDest), bufferSize, readSize)).isFailed())
 			throw status;
 
 		if ((status = dataSource->close()).isFailed())

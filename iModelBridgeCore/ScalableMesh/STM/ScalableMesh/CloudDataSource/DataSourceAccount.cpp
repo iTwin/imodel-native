@@ -130,10 +130,21 @@ DataSourceStatus DataSourceAccount::uploadSegments(DataSource &dataSource)
 	return DataSourceStatus();
 }
 
-DataSourceStatus DataSourceAccount::downloadBlobSync(const DataSourceURL &segmentName, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size)
+DataSourceStatus DataSourceAccount::download(DataSource &dataSource, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize destSize, DataSourceBuffer::BufferSize &readSize)
+{
+	(void) dataSource;
+	(void) dest;
+	(void) destSize;
+	(void) readSize;
+
+	return DataSourceStatus(DataSourceStatus::Status_Error_Not_Supported);
+}
+
+DataSourceStatus DataSourceAccount::downloadBlobSync(const DataSourceURL &segmentName, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size)
 {
 	(void) segmentName;
-	(void) source;
+	(void) dest;
+	(void) readSize;
 	(void) size;
 
 	return DataSourceStatus(DataSourceStatus::Status_Error_Not_Supported);

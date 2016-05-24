@@ -67,9 +67,11 @@ public:
 	virtual DataSourceStatus		destroyDataSource			(DataSource *dataSource) = 0;
 
 	DataSourceStatus				uploadSegments				(DataSource &dataSource);
-	DataSourceStatus				downloadSegments			(DataSource & dataSource, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize size);
+	DataSourceStatus				downloadSegments			(DataSource &dataSource, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize size);
 
-	virtual DataSourceStatus		downloadBlobSync			(const DataSourceURL &blobPath, DataSourceBuffer::BufferData *source, DataSourceBuffer::BufferSize size);
+	virtual DataSourceStatus		download					(DataSource &dataSource, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize destSize, DataSourceBuffer::BufferSize &readSize);
+
+	virtual DataSourceStatus		downloadBlobSync			(const DataSourceURL &blobPath, DataSourceBuffer::BufferData *dest, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size);
 	virtual DataSourceStatus		uploadBlobSync				(const DataSourceURL &blobPath, DataSourceBuffer::BufferData *source, DataSourceBuffer::BufferSize size);
 
 
