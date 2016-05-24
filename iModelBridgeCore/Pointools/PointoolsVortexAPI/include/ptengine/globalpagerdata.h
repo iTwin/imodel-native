@@ -156,8 +156,6 @@ struct GlobalPagerData
 		disableLoading = false;
 		purge = false;
 
-		int iteration = 0;
-
 		/* tuning parameters*/ 
 		capacity = 0.95f;
 		memoryTarget = 1024 * 1024 * 1024;

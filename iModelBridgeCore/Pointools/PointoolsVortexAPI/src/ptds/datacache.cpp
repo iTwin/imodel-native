@@ -836,7 +836,6 @@ Status DataCache::readPageRangeContiguousState(CachePageIndex pageStart, CachePa
 
 DataSource::DataSize DataCache::getCachePageRangeDataSize(CachePageIndex pageStart, CachePageIndex pageEnd)
 {
-	DataSize	lastPageAddition = 0;
 	DataSize	rangeDataSize = 0;
 
 															// If range has only one page

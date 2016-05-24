@@ -36,7 +36,12 @@ public:
 		m_userFlags(0), m_elementCount(elementCount)
 	{}
 
+#ifndef __APPLE__
 	~BoundsTreeNode()	// avoid virtual destructor to prevent vtable ptr for mem efficiency
+#else
+    // clang requires a virtual destructor here
+    virtual	~BoundsTreeNode()
+#endif
 	{
 		if (m_left) delete m_left;
 		if (m_right) delete m_right;
@@ -805,7 +810,10 @@ class BoundsTree
 			{ a[0] = a0; a[1] = a1; b[0] = b0; b[1] = b1; };
 
 			void clear()				{ a[0]=0;a[1]=0;b[0]=0;b[1]=0; }
-			bool empty() const			{ a[0]==0 || b[0]==0 ? true : false; }
+			bool empty() const			{ if (a[0]==0 || b[0]==0)
+                                            return true;
+                                          else
+                                            return false; }
 
 			Node *a[2];
 			Node *b[2];
@@ -882,7 +890,6 @@ class BoundsTree
 		{			
 			static bool compare( Node** a, Node** b, std::queue<CompareSet> &comps)
 			{
-				uint refine = 0;
 				bool ins = false;
 
 				for (int i=0; i<2; i++)
@@ -934,7 +941,6 @@ class BoundsTree
 		{			
 			static bool compare( Node** a, Node** b, std::queue<CompareSet> &comps)
 			{
-				uint refine = 0;
 				bool res = false;
 
 				for (int j=0; j<2; j++)

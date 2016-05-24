@@ -27,7 +27,6 @@ public:
 	static DataSource::Size read( DS *ds, pt::String &str )
 	{
 		int strLen = 0;
-		wchar_t term = 0;
 
 		DataSource::Size s = ds->readBytes(strLen);
 

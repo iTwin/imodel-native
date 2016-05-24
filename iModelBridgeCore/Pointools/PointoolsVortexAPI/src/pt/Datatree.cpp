@@ -132,7 +132,7 @@ bool DataTree::writeTree( const String &path )
 	if (NULL == wv._file)
 		return false;
 
-	char *id = "dtree1.1";
+	char id[16] = "dtree1.1";
 	fwrite(id, 8, 1, wv._file);
 
 	if (!wv._file) return false;

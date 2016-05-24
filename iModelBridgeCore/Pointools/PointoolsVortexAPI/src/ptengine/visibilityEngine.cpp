@@ -33,14 +33,6 @@ static vector4d basePoint4;
 
 extern double g_unitScale;
 
-inline static float quadArea2(const vector4d &a, const vector4d &b, const vector4d &c, const vector4d &d)
-{
-	/*two triangles - abc + acd*/ 
-	double area = fabs(((b.x - a.x)*(c.y-a.y)) - ((c.x - a.x) * (b.y - a.y)));
-	area += fabs(((c.x - a.x)*(d.y-a.y)) - ((d.x - a.x) * (c.y - a.y)));
-	area *= 0.5;
-	return static_cast<float>(area);
-}
 VisibilityEngine::VisibilityEngine()
 {
 	m_iteration = 0;
@@ -129,12 +121,9 @@ void VisibilityEngine::setFixedVisibility(float vis)
 	PointsScene::VoxIterator e = m_voxlist.end();
 	pcloud::Voxel *vox;
 	
-	bool filter = false;/*thePointsFilter().isActive();*/ 
-
 	pt::Bounds<1, float> bounds;
 	bounds.makeEmpty();
 
-	int count = 0;
 	while (i != e)
 	{
 		vox = (*i);
@@ -142,6 +131,7 @@ void VisibilityEngine::setFixedVisibility(float vis)
 		{
 			const pcloud::PointCloud* pc = vox->pointCloud();
 			const pt::DisplayInfo &di = pc->displayInfo();
+            UNUSED_VARIABLE(di);
 
 			BoundingBoxD bb = vox->extents();
 			bb.translateBy(-basePoint);
@@ -419,11 +409,8 @@ void	VisibilityEngine::computeCurrentPntsShortfall( const pcloud::Scene* inScene
 	PointsScene::VoxIterator e = m_voxlist.end();
 	pcloud::Voxel *vox;
 
-	int64_t totalOutstandingRequests = 0;
-
 	while (i != e)
 	{
-		float request = 0;
 		vox = (*i);
 		++i;
 
@@ -567,6 +554,8 @@ struct FillOcclusionFrame : public PointsVisitor
 		return true;
 	}
 	
+    // We need to specify that we use "point" from PointsVisitor, otherwise clang complains that "point" hides overloaded virtual function
+    using PointsVisitor::point;
 	void point(const pt::vector3d &v, int index, ubyte &f)
 	{
 		pt::vector4d v4(v.x,v.y,v.z,1.0);
@@ -650,6 +639,8 @@ struct CullOccluded : public PointsVisitor
 		return true;
 	}
 	
+    // We need to specify that we use "point" from PointsVisitor, otherwise clang complains that "point" hides overloaded virtual function
+    using PointsVisitor::point;
 	void point(const pt::vector3d &v, int index, ubyte &f)
 	{
 		int						occ_vid;
@@ -692,6 +683,7 @@ struct UpdateStats : public PointsVisitor
 	bool cloud(pcloud::PointCloud *cloud)
 	{
 		pcloud::Node * node = const_cast<pcloud::Node*>(cloud->root());
+        UNUSED_VARIABLE(node);
 		bool vis = cloud->displayInfo().visible();
 		if (!vis)
 		{
@@ -746,6 +738,7 @@ struct BudgetAdjustment : public PointsVisitor
 	bool cloud(pcloud::PointCloud *cloud)
 	{
 		pcloud::Node * node = const_cast<pcloud::Node*>(cloud->root());
+        UNUSED_VARIABLE(node);
 		bool vis = cloud->displayInfo().visible();
 		if (!vis)
 		{
@@ -804,6 +797,7 @@ struct ComputeShortfall : public PointsVisitor
 	bool cloud(pcloud::PointCloud *cloud)
 	{
 		pcloud::Node * node = const_cast<pcloud::Node*>(cloud->root());
+        UNUSED_VARIABLE(node);
 		bool vis = cloud->displayInfo().visible();
 		if (!vis)
 		{
@@ -1032,6 +1026,7 @@ void VisibilityEngine::computeVisibility()
 		Project3D::project().registration().matrix()(3,2), 0);
 	
     pt::Timer::TimeMs t0 = pt::Timer::tick();
+    UNUSED_VARIABLE(t0);
 
 	/* frustum visibility */ 
 	FrustumCheck frustumcheck(m_fr);

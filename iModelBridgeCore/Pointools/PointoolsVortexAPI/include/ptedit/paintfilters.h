@@ -212,10 +212,9 @@ namespace ptedit
 			else
 			{
 				/* check for full inclusion */ 
-                float rx2 = static_cast<float>(g_paint.brush.radius() * 2);
 				pt::vector3d corner;
 				int i=0;
-				for (i; i<8; i++)
+				for (; i<8; i++)
 				{
 					bb.getExtrema(i, corner);
 					if (!pointInside(0, cen, corner)) break;
