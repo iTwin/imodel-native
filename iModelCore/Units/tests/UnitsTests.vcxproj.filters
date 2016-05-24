@@ -1,0 +1,54 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="NonPublished">
+      <UniqueIdentifier>{a4f1ee3f-cfa3-4e60-bdfb-e6226f8781a4}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ConversionData\complex.csv">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="ConversionData\unitcomparisondata.csv">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="ConversionData\ConversionsBetweenAllOldUnits.csv">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="ConversionData\NeededUnits.csv">
+      <Filter>Resource Files</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="ignore_list.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="NonPublished\QuantityTestFixture.cpp">
+      <Filter>NonPublished</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\QuantityTests.cpp">
+      <Filter>NonPublished</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\UnitsTestFixture.cpp">
+      <Filter>NonPublished</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\UnitsTests.cpp">
+      <Filter>NonPublished</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="NonPublished\QuantityTestFixture.h">
+      <Filter>NonPublished</Filter>
+    </ClInclude>
+    <ClInclude Include="NonPublished\UnitsTestFixture.h">
+      <Filter>NonPublished</Filter>
+    </ClInclude>
+    <ClInclude Include="NonPublished\UnitsTests.h">
+      <Filter>NonPublished</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

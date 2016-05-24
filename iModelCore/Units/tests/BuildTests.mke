@@ -1,6 +1,6 @@
 #----------------------------------------------------------------------------------------
 #
-#  $Source: test/BuildTests.mke $
+#  $Source: tests/BuildTests.mke $
 #
 #  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
@@ -9,12 +9,15 @@ NO_DEFAULT_CLANG_WARNINGS=1
 
 %include mdl.mki
 
+%ifndef TestDir
+    %error must define TestDir
+%endif
 
 baseDir = $(_MakeFilePath)
 
 # Compile and Link the unit tests
-BEGTEST_NAME  = Units
-BEGTEST_INPUT = $(baseDir)
+BEGTEST_NAME  = $(TestDir)Units
+BEGTEST_INPUT = $(baseDir)$(TestDir)/
 BEGTEST_OUTPUT=$(OutputRootDir)build/Units/UnitTests/
 BEGTEST_IGNORE= $(baseDir)ignore_list.txt
 o = $(BEGTEST_OUTPUT)$(BEGTEST_NAME)/
@@ -26,5 +29,5 @@ o = $(BEGTEST_OUTPUT)$(BEGTEST_NAME)/
 %include $(SrcRoot)bsicommon/sharedmki/DetectAndCompileUnitTests.mki
 
 # Deliver 
-$(BuildContext)Delivery/UnitTests/Objects/UnitTests : ${o}
+$(BuildContext)Delivery/UnitTests/Objects/$(TestDir) : ${o}
     $(LinkFirstDepToFirstTargetAsDirectory)

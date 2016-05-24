@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: test/UnitsTestFixture.cpp $
+|  $Source: tests/NonPublished/UnitsTestFixture.cpp $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
