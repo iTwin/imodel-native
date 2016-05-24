@@ -2894,9 +2894,7 @@ static bool IsGeometryVisible(ViewContextR context, Render::GeometryParamsCR geo
 
     if (nullptr != range && !range->IsNull())
         {
-        Frustum box(*range);
-
-        if (!context.GetFrustumPlanes().Intersects(box))
+        if (!context.IsRangeVisible(*range))
             return false; // Sub-graphic outside range...
         }
 
@@ -3061,6 +3059,9 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR mainGraphic, ViewContex
                 if (!reader.Get(egOp, pts, nPts, boundary))
                     break;
 
+                if (!geomParamsChanged)
+                    geomParams.Resolve(context); // NEEDSWORK: Make sure net display priority is set...
+                
                 DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
 
                 switch (boundary)
@@ -3130,6 +3131,8 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR mainGraphic, ViewContex
 
                 if (!context.Is3dView())
                     {
+                    geomParams.Resolve(context); // NEEDSWORK: Make sure net display priority is set...
+
                     if (FB::BoundaryType_Closed != boundary)
                         currGraphic->AddArc2d(arc, false, false, geomParams.GetNetDisplayPriority());
                     else
@@ -3163,6 +3166,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR mainGraphic, ViewContex
 
                 if (!context.Is3dView())
                     {
+                    geomParams.Resolve(context); // NEEDSWORK: Make sure net display priority is set...
                     currGraphic->AddCurveVector2d(*curvePtr, false, geomParams.GetNetDisplayPriority());
                     break;
                     }
@@ -3204,6 +3208,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR mainGraphic, ViewContex
 
                 if (!context.Is3dView())
                     {
+                    geomParams.Resolve(context); // NEEDSWORK: Make sure net display priority is set...
                     currGraphic->AddCurveVector2d(*curvePtr, curvePtr->IsAnyRegionType() && FillDisplay::Never != geomParams.GetFillDisplay(), geomParams.GetNetDisplayPriority());
                     break;
                     }
@@ -3487,6 +3492,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR mainGraphic, ViewContex
 
                 if (!context.Is3dView())
                     {
+                    geomParams.Resolve(context); // NEEDSWORK: Make sure net display priority is set...
                     currGraphic->AddTextString2d(text, geomParams.GetNetDisplayPriority());
                     break;
                     }

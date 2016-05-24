@@ -398,7 +398,7 @@ TEST_F (AnnotationTableTest, BasicPersist)
     DgnElementId elementId = CreateBasicTablePersisted (numRows, numCols);
 
     // Purge the cache so that we don't get a cached element.
-    GetDgnDb().Elements().Purge(0);
+    GetDgnDb().Memory().PurgeUntil(0);
 
     AnnotationTableCPtr readTableElement = AnnotationTable::Get(GetDgnDb(), elementId);
     ASSERT_TRUE(readTableElement.IsValid());
@@ -423,7 +423,7 @@ TEST_F (AnnotationTableTest, PersistTwoTables)
     DgnElementId elementId2 = CreateBasicTablePersisted (numRows2, numCols2);
 
     // Purge the cache so that we don't get a cached element.
-    GetDgnDb().Elements().Purge(0);
+                                  GetDgnDb().Memory().PurgeUntil(0);
 
     AnnotationTableCPtr readTableElement = AnnotationTable::Get(GetDgnDb(), elementId1);
     ASSERT_TRUE(readTableElement.IsValid());
@@ -488,7 +488,7 @@ TEST_F (AnnotationTableTest, PersistRowAndColumnAspects)
     tableElement2 = nullptr;
 
     // Purge the cache so that we don't get a cached element.
-    GetDgnDb().Elements().Purge(0);
+    GetDgnDb().Memory().PurgeUntil(0);
 
     AnnotationTableCPtr readTableElement = AnnotationTable::Get(GetDgnDb(), elementId1);
     ASSERT_TRUE(readTableElement.IsValid());
@@ -602,7 +602,7 @@ public:
         ReopenTestFile();
 #endif
         // Purge the cache so that we don't get a cached element.
-        GetDgnDb().Elements().Purge(0);
+        GetDgnDb().Memory().PurgeUntil(0);
 
         AnnotationTableCPtr    foundTable;
 
@@ -649,7 +649,7 @@ GetDgnDb().Elements().Purge(0);
         ReopenTestFile();
 #endif
         // Purge the cache so that we don't get a cached element.
-        GetDgnDb().Elements().Purge(0);
+        GetDgnDb().Memory().PurgeUntil(0);
 
         AnnotationTableCPtr    postActionTable;
 

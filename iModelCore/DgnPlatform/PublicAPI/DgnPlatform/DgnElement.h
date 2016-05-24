@@ -1738,7 +1738,7 @@ protected:
 //! @see DgnDb::Elements
 //! @ingroup GROUP_DgnElement
 //=======================================================================================
-struct DgnElements : DgnDbTable, IMemoryConsumer
+struct DgnElements : DgnDbTable, MemoryConsumer
 {
     friend struct DgnDb;
     friend struct DgnElement;
@@ -1757,7 +1757,7 @@ struct DgnElements : DgnDbTable, IMemoryConsumer
         uint32_t m_extant;         //! total number of DgnElements extant (persistent and non-persistent)
         uint32_t m_entries;        //! total number of persistent elements
         uint32_t m_unreferenced;   //! total number of unreferenced persistent elements
-        int64_t  m_allocedBytes;   //! total number of bytes of data held by persistent elements
+        uint64_t m_allocedBytes;   //! total number of bytes of data held by persistent elements
     };
 
     //! Statistics for element activity in this DgnDb. these values can be reset at any point to gauge "element flux"
@@ -1837,8 +1837,8 @@ private:
     BeSQLite::EC::CachedECSqlStatementPtr GetPreparedInsertStatement(DgnElementR el) const;
     BeSQLite::EC::CachedECSqlStatementPtr GetPreparedUpdateStatement(DgnElementR el) const;
 
-    virtual int64_t _CalculateBytesConsumed() const override {return GetTotalAllocated();}
-    virtual int64_t _Purge(int64_t memTarget) override;
+    virtual uint64_t _CalculateBytesConsumed() const override {return GetTotalAllocated();}
+    virtual uint64_t _Purge(uint64_t memTarget) override;
 
     BeSQLite::SnappyFromMemory& GetSnappyFrom() {return m_snappyFrom;} // NB: Not to be used during loading of a GeometricElement or GeometryPart!
     BeSQLite::SnappyToBlob& GetSnappyTo() {return m_snappyTo;} // NB: Not to be used during insert or update of a GeometricElement or GeometryPart!

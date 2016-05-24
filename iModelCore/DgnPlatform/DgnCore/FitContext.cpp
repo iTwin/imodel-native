@@ -115,9 +115,8 @@ struct FitQuery : DgnQueryView::SpatialQuery
     virtual int _TestRTree(BeSQLite::RTreeMatchFunction::QueryInfo const&) override;
 
 public:
-    FitQuery(DgnQueryView::SpecialElements const* special, FitContextR context, ClipPrimitiveCP volume) : DgnQueryView::SpatialQuery(special), m_context(context)
+    FitQuery(DgnQueryView::SpecialElements const* special, FitContextR context, ClipPrimitiveCP volume) : DgnQueryView::SpatialQuery(special, volume), m_context(context)
         {
-        m_activeVolume = volume;
         if (context.m_params.m_limitByVolume)
             SetFrustum(context.GetFrustum());
         }

@@ -259,17 +259,6 @@ bool ViewContext::_ScanRangeFromPolyhedron()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Test an element against the current scan range using the range planes.
-* @return true if the element is outside the range and should be ignored.
-* @bsimethod                                                    KeithBentley    04/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ViewContext::_FilterRangeIntersection(GeometrySourceCR source)
-    {
-    Frustum box(source.CalculateRange3d());
-    return FrustumPlanes::Contained::Outside != m_frustumPlanes.Contains(box.m_pts, 8);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 Render::GraphicPtr ViewContext::_StrokeGeometry(GeometrySourceCR source, double pixelSize)
@@ -353,9 +342,8 @@ Render::GraphicPtr ViewContext::_AddSubGraphic(Render::GraphicR graphic, DgnGeom
         ElementAlignedBox3d range = partGeometry->GetBoundingBox();
 
         partToWorld.Multiply(range, range);
-        Frustum box(range);
 
-        if (!GetFrustumPlanes().Intersects(box))
+        if (!IsRangeVisible(range))
             return nullptr; // Part range doesn't overlap pick...
         }
 
@@ -518,18 +506,45 @@ ScanCriteria::Result ViewContext::_CheckNodeRange(ScanCriteriaCR scanCriteria, D
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ViewContext::_AnyPointVisible(DPoint3dCP worldPoints, int nPts, double tolerance)
+    {
+    if (m_volume.IsValid())
+        {
+        int nOutside = 0;
+
+        for (int iPt=0; iPt < nPts; iPt++)
+            if (!m_volume->PointInside(worldPoints[iPt], tolerance))
+                nOutside++;
+
+        if (nOutside == nPts)
+            return false;
+        }
+
+    return (FrustumPlanes::Contained::Outside != m_frustumPlanes.Contains(worldPoints, nPts, tolerance));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ViewContext::IsRangeVisible(DRange3dCR range, double tolerance)
+    {
+    Frustum box(range);
+
+    return _AnyPointVisible(box.m_pts, 8, tolerance);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/07
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ViewContext::IsPointVisible(DPoint3dCR worldPoint, WantBoresite boresite, double tolerance)
     {
-    if (boresite==WantBoresite::No && m_volume.IsValid() && !m_volume->PointInside(worldPoint, tolerance))
-        return false;
+    if (WantBoresite::No == boresite)
+        return _AnyPointVisible(&worldPoint, 1, tolerance);
 
     if (m_frustumPlanes.ContainsPoint(worldPoint, tolerance))
         return true;
-
-    if (boresite!=WantBoresite::Yes)
-        return false;
 
     DVec3d worldZVec;
     if (IsCameraOn())
@@ -1314,7 +1329,7 @@ void DecorateContext::AddFlashed(Render::GraphicR graphic, Render::OvrGraphicPar
     if (!m_decorations.m_flashed.IsValid())
         m_decorations.m_flashed = new GraphicList;
 
-    m_decorations.m_flashed->Add(graphic, m_target.ResolveOverrides(&m_ovrParams), m_ovrParams.GetFlags());
+    m_decorations.m_flashed->Add(graphic, m_target.ResolveOverrides(ovrParams), ovrParams ? ovrParams->GetFlags() : 0);
     }
 
 /*---------------------------------------------------------------------------------**//**
