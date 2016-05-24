@@ -19,27 +19,24 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="QuantityTestFixture.h" />
-    <ClInclude Include="UnitsTestFixture.h" />
-    <ClInclude Include="UnitsTests.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="QuantityTestFixture.cpp" />
-    <ClCompile Include="QuantityTests.cpp" />
-    <ClCompile Include="UnitsTestFixture.cpp" />
-    <ClCompile Include="UnitsTests.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="BuildTests.mke" />
-    <None Include="ConversionData.prewire.mke" />
     <None Include="ConversionData\complex.csv" />
     <None Include="ConversionData\ConversionsBetweenAllOldUnits.csv" />
     <None Include="ConversionData\NeededUnits.csv" />
     <None Include="ConversionData\unitcomparisondata.csv" />
-    <None Include="Prewire.mke" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="ignore_list.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="NonPublished\QuantityTestFixture.cpp" />
+    <ClCompile Include="NonPublished\QuantityTests.cpp" />
+    <ClCompile Include="NonPublished\UnitsTestFixture.cpp" />
+    <ClCompile Include="NonPublished\UnitsTests.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="NonPublished\QuantityTestFixture.h" />
+    <ClInclude Include="NonPublished\UnitsTestFixture.h" />
+    <ClInclude Include="NonPublished\UnitsTests.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{0F533B32-AC1E-480A-BDC3-5B1B664D7843}</ProjectGuid>

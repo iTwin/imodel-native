@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: test/UnitsTests.cpp $
+|  $Source: tests/NonPublished/UnitsTests.cpp $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -9,6 +9,7 @@
 #include "UnitsTestFixture.h"
 #include <fstream>
 #include <sstream>
+#include <Bentley/BeNumerical.h>
 
 using namespace BentleyApi::Units;
 BEGIN_UNITS_UNITTESTS_NAMESPACE
@@ -127,9 +128,9 @@ static almost_equal(const T x, const T y, int ulp)
     {
     // the machine epsilon has to be scaled to the magnitude of the values used
     // and multiplied by the desired precision in ULPs (units in the last place)
-    return std::abs(x - y) < std::numeric_limits<T>::epsilon() * std::abs(x + y) * ulp
+    return fabs(x - y) < std::numeric_limits<T>::epsilon() * fabs(x + y) * ulp
         // unless the result is subnormal
-        || std::abs(x - y) < std::numeric_limits<T>::min();
+        || fabs(x - y) < std::numeric_limits<T>::min();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -187,7 +188,7 @@ bool UnitsTests::TestUnitConversion (double fromVal, Utf8CP fromUnitName, double
         conversionErrors.push_back(formattedText);
         EXPECT_FALSE(true) << formattedText;
         }
-    EXPECT_FALSE(std::isnan(convertedVal) || !std::isfinite(convertedVal)) << "Conversion from " << fromUnitName << " to " << targetUnitName << " resulted in an invalid number";
+    EXPECT_FALSE(BeNumerical::BeIsnan(convertedVal) || !BeNumerical::BeFinite(convertedVal)) << "Conversion from " << fromUnitName << " to " << targetUnitName << " resulted in an invalid number";
     //EXPECT_NEAR(expectedVal, convertedVal, tolerance)<<  "Conversion from "<< fromUnitName << " to " << targetUnitName <<". Input : " << fromVal << ", Output : " << convertedVal << ", ExpectedOutput : " << expectedVal << " Tolerance : " << tolerance<< "\n";
     handledUnits.push_back(make_bpair(fromUnit->GetName(), targetUnit->GetName()));
     if (showDetailLogs)
@@ -1041,7 +1042,7 @@ TEST_F(UnitsTests, PrintOutAllUnitsGroupedByPhenonmenon)
             continue;
 
         WriteLine(file, "-Phenomenon-");
-        Utf8PrintfString line("%s,,%s,%s", phenomenon->GetName(), phenomenon->GetDefinition(), phenomenon->GetPhenomenonSignature());
+        Utf8PrintfString line("%s,,%s,%s", phenomenon->GetName(), phenomenon->GetDefinition(), phenomenon->GetPhenomenonSignature().c_str());
         WriteLine(file, line.c_str());
 
         WriteLine(file);
@@ -1052,7 +1053,7 @@ TEST_F(UnitsTests, PrintOutAllUnitsGroupedByPhenonmenon)
                 continue;
 
             Utf8String parsedExpression = unit->GetParsedUnitExpression();
-            line.Sprintf("%s,%s,%s,%s,%s", unit->GetName(), unit->GetUnitSystem(), unit->GetDefinition(), unit->GetUnitSignature(), parsedExpression.c_str());
+            line.Sprintf("%s,%s,%s,%s,%s", unit->GetName(), unit->GetUnitSystem(), unit->GetDefinition(), unit->GetUnitSignature().c_str(), parsedExpression.c_str());
 
             WriteLine(file, line.c_str());
 
@@ -1210,7 +1211,7 @@ TEST_F(UnitsPerformanceTests, GenerateEveryConversionValue)
         for (auto const& unit : phenomenon->GetUnits())
             {
             double conversion = firstUnit->Convert(42, unit);
-            ASSERT_FALSE(std::isnan(conversion)) << "Generated conversion factor is invalid from " << firstUnit->GetName() << " to " << unit->GetName();
+            ASSERT_FALSE(BeNumerical::BeIsnan(conversion)) << "Generated conversion factor is invalid from " << firstUnit->GetName() << " to " << unit->GetName();
             ++numConversions;
             }
         }

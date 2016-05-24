@@ -1,13 +1,13 @@
 #*--------------------------------------------------------------------------------------+
 #
-#     $Source: test/ConversionData.prewire.mke $
+#     $Source: tests/ConversionData.prewire.mke $
 #
 #  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------*/
 %include mdl.mki
 
-conversionDataSource  = $(SrcRoot)Units/test/ConversionData/
+conversionDataSource  = $(SrcRoot)Units/Tests/ConversionData/
 
 # Wire in conversion data
 always:
