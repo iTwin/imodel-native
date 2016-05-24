@@ -190,6 +190,7 @@ BentleyStatus ViewGenerator::DropUpdatableViews(ECDbCR ecdb)
 //+---------------+---------------+---------------+---------------+---------------+--------
 BentleyStatus ViewGenerator::GetUpdateSetClause(NativeSqlBuilder& sql, ClassMap const& baseClassMap, ClassMap const& derivedClassMap)
     {
+    sql.Reset();
     std::vector<Utf8String> values;
     baseClassMap.GetPropertyMaps().Traverse(
         [&] (TraversalFeedback& fb, PropertyMapCP basePropertyMap) 
@@ -224,6 +225,9 @@ BentleyStatus ViewGenerator::GetUpdateSetClause(NativeSqlBuilder& sql, ClassMap 
             }
     
         }, true);
+
+    if (values.empty())
+        return ERROR;
 
     for (auto itor = values.begin(); itor != values.end(); ++itor)
         {
@@ -290,8 +294,8 @@ BentleyStatus ViewGenerator::CreateUpdatableViewIfRequired(ECDbCR ecdb, ClassMap
             }
         
         NativeSqlBuilder setSQL;
-        if (GetUpdateSetClause(setSQL, classMap, *derviedClassMap) != SUCCESS)
-            return ERROR;
+        if (GetUpdateSetClause(setSQL, classMap, *derviedClassMap) == ERROR)
+            continue; //nothing to update.
 
         updateTrigger.GetBodyBuilder().AppendFormatted("UPDATE [%s] SET %s WHERE [%s] = OLD.[%s];", partition.GetTable().GetName().c_str(), setSQL.ToString(), partitionECIdColumn->GetName().c_str(), rootPartitionECIdColumn->GetName().c_str());
         if (partition.NeedsECClassIdFilter())

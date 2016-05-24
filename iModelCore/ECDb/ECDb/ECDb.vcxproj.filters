@@ -336,9 +336,6 @@
     <ClInclude Include="ECDbMap.h">
       <Filter>ECDbMap</Filter>
     </ClInclude>
-    <ClInclude Include="ECDbMapAnalyser.h">
-      <Filter>ECDbMap</Filter>
-    </ClInclude>
     <ClInclude Include="MapStrategy.h">
       <Filter>ECDbMap</Filter>
     </ClInclude>
@@ -390,6 +387,9 @@
       <Filter>ECDbMap</Filter>
     </ClInclude>
     <ClInclude Include="DebugWriter.h" />
+    <ClInclude Include="SqlUtilities.h">
+      <Filter>ECDbMap</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ECDb.mke">
@@ -663,9 +663,6 @@
     <ClCompile Include="ECDbMap.cpp">
       <Filter>ECDbMap</Filter>
     </ClCompile>
-    <ClCompile Include="ECDbMapAnalyser.cpp">
-      <Filter>ECDbMap</Filter>
-    </ClCompile>
     <ClCompile Include="MapStrategy.cpp">
       <Filter>ECDbMap</Filter>
     </ClCompile>
@@ -713,6 +710,9 @@
     </ClCompile>
     <ClCompile Include="ECDbMapDebugInfo.cpp" />
     <ClCompile Include="DebugWriter.cpp" />
+    <ClCompile Include="SqlUtilities.cpp">
+      <Filter>ECDbMap</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Xml Include="ECSchemas\ECDb_FileInfo.02.00.ecschema.xml">
