@@ -16,7 +16,6 @@
 #include <WebServices/Configuration/UrlProvider.h>
 #include <DgnClientFx/Utils/Http/ProxyHttpHandler.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
-//#include <DgnDbServer/Client/RepositoryInfo.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
@@ -44,6 +43,8 @@ private:
 	HttpResponse MakeEventServiceAPIRequest();
 	ClientInfoPtr CreateTestClientInfo();
 	Utf8String GetRepository();
+    const Utf8String DEFAULT_NAMESPACE = "testhubjeehwan-ns";
+    const Utf8String DEFAULT_SASTOKEN = "SharedAccessSignature sig=TOk40ce29TwpOYCFG7EWqHL5%2bmi9fIDX%2fYA0Ckv7Urs%3d&se=1463758026&skn=EventReceivePolicy&sr=https%3a%2f%2ftesthubjeehwan-ns.servicebus.windows.net%2ftest";
 
 public:
 	WSCLIENT_EXPORT EventServiceClient(Utf8StringCR repoId, Utf8StringCR userId, Utf8StringCR bimServerURL, Credentials credentials, ClientInfoPtr clientInfo = nullptr, UrlProvider::Environment env = UrlProvider::Environment::Dev);
@@ -64,5 +65,32 @@ public:
 	void _SaveValue(Utf8CP nameSpace, Utf8CP key, JsonValueCR value) override;
 	Json::Value _GetValue(Utf8CP nameSpace, Utf8CP key) const override;
 };
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                             Arvind.Venkateswaran   05/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+//Todo: Copied from DgnDbServerClient/DgnDbServerUtils.h. Need to find a better way of Accessing DgnDbServer Schema Information.
+namespace LocalEventServiceServerSchema
+    {
+    static Utf8CP Instances = "instances";
+    static Utf8CP Properties = "properties";
+    namespace Schema
+        {
+        static Utf8CP Repository = "DgnDbServer";
+        }
+    namespace Plugin
+        {
+        static Utf8CP Repository = "DgnDbServer";
+        }
+    namespace Class
+        {
+        static Utf8CP EventService = "EventService";
+        }
+    namespace Property
+        {
+        static Utf8CP EventServiceSASToken = "EventServiceSASToken";
+        static Utf8CP EventServiceNameSpace = "EventServiceNameSpace";
+        }
+    }
 
 END_BENTLEY_WEBSERVICES_NAMESPACE
