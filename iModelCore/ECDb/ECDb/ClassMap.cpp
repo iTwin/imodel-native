@@ -597,45 +597,6 @@ BentleyStatus ClassMap::_Save(std::set<ClassMap const*>& savedGraph)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    affan.khan      01/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus ClassMap::CreateECClassView() const
-    {
-    Utf8String viewName;
-    viewName.Sprintf("[%s.%s]", m_ecClass.GetSchema().GetNamespacePrefix().c_str(), m_ecClass.GetName().c_str());
-
-    Utf8String dropViewSql;
-    dropViewSql.Sprintf("DROP VIEW IF EXISTS %s", viewName.c_str());
-
-    if (GetECDbMap().GetECDb().ExecuteSql(dropViewSql.c_str()) != BE_SQLITE_OK)
-        return ERROR;
-
-    ViewGenerator viewGenerator(GetECDbMap(), true, false);
-    NativeSqlBuilder viewSql;
-    if (viewGenerator.Generate(viewSql, *this) != SUCCESS)
-        return ERROR;
-
-    Utf8String columns;
-    bool bFirst = true;;
-    for (Utf8StringCR column : *viewGenerator.GetLastViewAccessStringList())
-        {
-        if (bFirst)
-            bFirst = false;
-        else
-            columns.append(", ");
-
-        columns.append("[").append(column).append("]");
-        }
-
-    Utf8String createViewSql;
-    createViewSql.Sprintf("CREATE VIEW %s (%s)\n\t--### ECCLASS VIEW is for debugging purpose only!.\n\tAS %s;", viewName.c_str(), columns.c_str(), viewSql.ToString());
-    if (GetECDbMap().GetECDb().ExecuteSql(createViewSql.c_str()) != BE_SQLITE_OK)
-        return ERROR;
-
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    affan.khan      01/2015
-//---------------------------------------------------------------------------------------
 BentleyStatus ClassMap::_Load(std::set<ClassMap const*>& loadGraph, ClassMapLoadContext& ctx, ClassDbMapping const& mapInfo, ClassMap const* parentClassMap)
     {
     if (parentClassMap)
