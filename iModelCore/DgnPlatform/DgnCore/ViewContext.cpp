@@ -1270,7 +1270,7 @@ void GeometryParams::Resolve(ViewContextR context)
     Resolve(context.GetDgnDb(), context.GetViewport());
 
     if (m_styleInfo.IsValid())
-        m_styleInfo->Cook(context);
+        m_styleInfo->Cook(context, *this);
     }
 
 /*---------------------------------------------------------------------------------**//**
