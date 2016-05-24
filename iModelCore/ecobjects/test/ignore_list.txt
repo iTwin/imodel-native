@@ -50,3 +50,6 @@ SchemaDeserializationTest.TestDefaultElementOrder
 SchemaDeserializationTest.TestDefaultElementOrderWithBaseClassAndRelationships
 SchemaDeserializationTest.TestPreserveElementOrderWithBaseClassAndRelationships
 ValueValidationTests.ECPropertyHasMinAndMaxValues
+
+UnitsTest.TestConvertingUnitSpecifications  # Crashes on Android - notified Colin
+SchemaVersionConversionTests.SchemaWithOldUnitSpecifications # Crashes on Android
