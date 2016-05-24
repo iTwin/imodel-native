@@ -16,7 +16,7 @@
 #include <WebServices/Configuration/UrlProvider.h>
 #include <DgnClientFx/Utils/Http/ProxyHttpHandler.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
-#include <DgnDbServer/Client/RepositoryInfo.h>
+//#include <DgnDbServer/Client/RepositoryInfo.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
