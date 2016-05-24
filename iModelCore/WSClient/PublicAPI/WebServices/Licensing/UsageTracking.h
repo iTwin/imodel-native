@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/WebServices/Licensing/UsageTracking.h $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -21,11 +21,11 @@ USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct UsageTracking
     {
-    enum UsageStatus
+    enum class Status
         {
-        USAGE_SUCCESS = 0,
-        USAGE_ERROR,
-        USAGE_NO_USAGES
+        Success = 0,
+        Error,
+        NoUsages
         };
 
     private:
@@ -41,12 +41,20 @@ struct UsageTracking
         //__PUBLISH_SECTION_START__
 
     public:
-        WSCLIENT_EXPORT static StatusInt RegisterUserUsages(Utf8StringCR dev, Utf8StringCR userId, Utf8StringCR prodId, Utf8StringCR projId, DateTimeCR usageDate, Utf8StringCR prodVer);
-        WSCLIENT_EXPORT static StatusInt RegisterUserUsages(bvector<MobileTracking> usages);
-        WSCLIENT_EXPORT static StatusInt RegisterUserUsages(MobileTracking usage);
-
         WSCLIENT_EXPORT static void Initialize(std::shared_ptr<IHttpHandler> customHttpHandler = nullptr);
         WSCLIENT_EXPORT static void Uninintialize();
+
+        WSCLIENT_EXPORT static AsyncTaskPtr<Status> RegisterUserUsages
+            (
+            Utf8StringCR dev,
+            Utf8StringCR userId,
+            Utf8StringCR prodId,
+            Utf8StringCR projId,
+            DateTimeCR usageDate,
+            Utf8StringCR prodVer
+            );
+        WSCLIENT_EXPORT static AsyncTaskPtr<Status> RegisterUserUsages(bvector<MobileTracking> usages);
+        WSCLIENT_EXPORT static AsyncTaskPtr<Status> RegisterUserUsages(MobileTracking usage);
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

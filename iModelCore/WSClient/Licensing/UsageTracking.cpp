@@ -2,7 +2,7 @@
  |
  |     $Source: Licensing/UsageTracking.cpp $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -52,7 +52,7 @@ Utf8String UsageTracking::GetServiceUrl()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    George.Rodier   02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt UsageTracking::RegisterUserUsages(Utf8StringCR dev, Utf8StringCR userId, Utf8StringCR prodId, Utf8StringCR projId, DateTimeCR usageDate, Utf8StringCR prodVer)
+AsyncTaskPtr<UsageTracking::Status> UsageTracking::RegisterUserUsages(Utf8StringCR dev, Utf8StringCR userId, Utf8StringCR prodId, Utf8StringCR projId, DateTimeCR usageDate, Utf8StringCR prodVer)
     {
     MobileTracking mt(dev, userId, prodId, projId, usageDate, prodVer);
     return RegisterUserUsages(mt);
@@ -61,21 +61,17 @@ StatusInt UsageTracking::RegisterUserUsages(Utf8StringCR dev, Utf8StringCR userI
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    George.Rodier   02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt UsageTracking::RegisterUserUsages(bvector<MobileTracking> usages)
+AsyncTaskPtr<UsageTracking::Status> UsageTracking::RegisterUserUsages(bvector<MobileTracking> usages)
     {
     Json::Value usageList;
-    for (MobileTracking mt : usages)
+    for (MobileTracking usage : usages)
         {
-        if (!mt.IsEmpty())
-            {
-            usageList.append(mt.ToJson());
-            }
+        if (!usage.IsEmpty())
+            usageList.append(usage.ToJson());
         }
 
-    if (0 >= usageList.size())
-        {
-        return USAGE_NO_USAGES;
-        }
+    if (usageList.empty())
+        return CreateCompletedAsyncTask( Status::NoUsages);
 
     HttpClient client(nullptr, s_httpHandler);
     HttpRequest request = client.CreatePostRequest(GetServiceUrl());
@@ -85,20 +81,19 @@ StatusInt UsageTracking::RegisterUserUsages(bvector<MobileTracking> usages)
     HttpStringBodyPtr requestBody = HttpStringBody::Create(Json::FastWriter().write(usageList));
     request.SetRequestBody(requestBody);
 
-    HttpResponse httpResponse = request.Perform();
-
-    if (httpResponse.GetConnectionStatus() != ConnectionStatus::OK)
+    return request.PerformAsync()
+    ->Then<Status>([=] (HttpResponse response)
         {
-        return USAGE_ERROR;
-        }
-
-    return USAGE_SUCCESS;
+        if (response.GetConnectionStatus() != ConnectionStatus::OK)
+            return Status::Error;
+        return Status::Success;
+        });
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    George.Rodier   02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt UsageTracking::RegisterUserUsages(MobileTracking usage)
+AsyncTaskPtr<UsageTracking::Status> UsageTracking::RegisterUserUsages(MobileTracking usage)
     {
     bvector<MobileTracking> list;
     list.push_back(usage);
