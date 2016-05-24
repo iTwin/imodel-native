@@ -170,7 +170,7 @@ struct CachingDataSource :
             (
             ObjectIdCR objectId,
             DataOrigin origin,
-            IDataSourceCache::JsonFormat format,
+            IDataSourceCache::JsonFormat format = IDataSourceCache::JsonFormat::Raw,
             ICancellationTokenPtr ct = nullptr
             ) override;
 
