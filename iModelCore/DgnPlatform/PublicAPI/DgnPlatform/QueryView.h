@@ -48,7 +48,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnQueryView : CameraViewController, BeSQLite::Vi
         SpecialElements const* m_special;
         ClipPrimitiveCPtr m_activeVolume;
         int m_idCol = 0;
-        bool TestElement(DgnElementId);
+        DGNPLATFORM_EXPORT bool TestElement(DgnElementId);
         bool IsNever(DgnElementId id) const {return m_special && m_special->m_never.Contains(id);}
         bool IsAlways(DgnElementId id) const {return m_special && m_special->m_always.Contains(id);}
         bool HasAlwaysList() const {return m_special && !m_special->m_always.empty();}
