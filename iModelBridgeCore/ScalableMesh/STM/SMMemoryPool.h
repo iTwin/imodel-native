@@ -115,7 +115,7 @@ class SMMemoryPoolItemBase : public RefCountedBase
         SMMemoryPoolItemBase();
             
         SMMemoryPoolItemBase(Byte* data, uint64_t size, uint64_t nodeId, SMPoolDataTypeDesc& dataType);
-            
+                    
         template<typename T>
         RefCountedPtr<SMMemoryPoolVectorItem<T>> GetAsPoolVector()
             {            
@@ -247,6 +247,7 @@ template <typename DataType> class SMMemoryPoolGenericBlobItem : public SMMemory
             }
     };
 
+
 template <typename DataType> class SMStoredMemoryPoolGenericBlobItem : public SMMemoryPoolGenericBlobItem<DataType>
     {
     private:
@@ -278,6 +279,7 @@ template <typename DataType> class SMStoredMemoryPoolGenericBlobItem : public SM
                 }
             }
     };
+
 
 template <typename DataType> class SMStoredMemoryPoolBlobItem : public SMMemoryPoolBlobItem<DataType>
     {

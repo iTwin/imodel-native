@@ -1751,6 +1751,76 @@ inline void ApplyClipDiffSetToMesh(FloatXYZ*& points, size_t& nbPoints,
 
 
 
+template <class POINT> ScalableMeshCachedDisplayNode<POINT>::ScalableMeshCachedDisplayNode(HFCPtr<SMPointIndexNode<POINT, YProtPtExtentType>>& nodePtr)
+    : ScalableMeshNode(nodePtr)
+    {    
+    auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_node);                
+    m_cachedDisplayData = meshNode->GetDisplayData();                
+    }
+
+template <class POINT> ScalableMeshCachedDisplayNode<POINT>::~ScalableMeshCachedDisplayNode()
+    {
+    }
+     
+template <class POINT> bool ScalableMeshCachedDisplayNode<POINT>::IsLoaded() const
+    {
+    return m_cachedDisplayData.IsValid();
+    }
+
+template <class POINT> bool ScalableMeshCachedDisplayNode<POINT>::HasCorrectClipping(const bset<uint64_t>& clipsToShow) const
+    {
+    assert(IsLoaded() == true);
+
+    const bvector<uint64_t>& appliedClips(const_cast<SmCachedDisplayData*>(m_cachedDisplayData->GetData())->GetAppliedClips());
+    auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_node);                
+    bvector<bool> appliedClipsVisible;
+    appliedClipsVisible.resize(appliedClips.size(), false);        
+    
+    for (auto& clipToShow : clipsToShow)
+        {                    
+        if (meshNode->HasClip(clipToShow))
+            {        
+            size_t clipInd = 0;
+
+            for (; clipInd < appliedClips.size(); clipInd++)
+                {              
+                if (appliedClips[clipInd] == clipToShow)
+                    {
+                    appliedClipsVisible[clipInd] = true;
+                    break;
+                    }
+                }
+
+            //Some visible clip was not previously applied.
+            if (clipInd == appliedClips.size())
+                {                            
+                return false;                            
+                }
+            }
+        }
+    
+    //One of the previously applied clip is not visible
+    for (auto& appliedClipVisible : appliedClipsVisible)
+        {
+        if (!appliedClipVisible)
+            return false;
+        }
+                        
+    return true;
+    }
+
+template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::RemoveDisplayDataFromCache() 
+    {
+    if (IsLoaded())
+        {
+        auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_node);                
+            
+       // assert(m_cachedDisplayData->GetRefCount() == 2);
+        m_cachedDisplayData = 0;
+    
+        meshNode->RemoveDisplayData();
+        }
+    }
 
 template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool loadGraph, const bset<uint64_t>& clipsToShow, IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr, bool loadTexture)
     {
@@ -1758,10 +1828,11 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
 
     //Not implemented yet
     assert(loadGraph == false);
+    assert(displayCacheManagerPtr != 0);
 
     LOAD_NODE
-    
-    if (displayCacheManagerPtr != 0 && !m_isLoaded)                
+            
+    if (displayCacheManagerPtr != 0 && !m_cachedDisplayData.IsValid())                
         {        
         //NEEDS_WORK_SM_PROGRESSIF : Node header loaded unexpectingly
         if (m_node->GetNbPoints() > 0)
@@ -1803,16 +1874,24 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
                 return;
                 }
 
+
+            SmCachedDisplayTexture* cachedDisplayTexture = 0;
+            size_t                  qvMemorySizeEstimate = 0;
+            
             if (loadTexture && meshNode->IsTextured())
-                {                    
+                {             
+                //NEEDS_WORK_SM : Don't keep texture in memory.
                 IScalableMeshTexturePtr smTexturePtr(GetTexture());
 
-                BentleyStatus status = displayCacheManagerPtr->_CreateCachedTexture(m_cachedDisplayTexture,
+                BentleyStatus status = displayCacheManagerPtr->_CreateCachedTexture(cachedDisplayTexture,
                                                                                     smTexturePtr->GetDimension().x,
                                                                                     smTexturePtr->GetDimension().y,
                                                                                     false,
                                                                                     QV_RGB_FORMAT,
                                                                                     smTexturePtr->GetData());
+                
+                //Estimate which seems to give good result. 
+                qvMemorySizeEstimate += smTexturePtr->GetDimension().x * smTexturePtr->GetDimension().y * 6;
 
                 assert(status == SUCCESS);
                 }
@@ -1824,7 +1903,7 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
             RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> uvIndicesPtr;
             RefCountedPtr<SMMemoryPoolVectorItem<DPoint2d>> uvCoordsPtr;
 
-            if (m_cachedDisplayTexture != 0)
+            if (cachedDisplayTexture != 0)
                 {                                                                
                 uvIndicesPtr = meshNode->GetUVsIndicesPtr();
 
@@ -1842,6 +1921,7 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
 
             DifferenceSet clipDiffSet;
             bool isClipped = false;
+            bvector<uint64_t> appliedClips;
 
             if (meshNode->m_nbClips > 0 && (clipsToShow.size() > 0))
                 {
@@ -1859,6 +1939,14 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
                 for (size_t ind = 0; ind < toLoadNbFaceIndexes; ind++)
                     {
                     toLoadFaceIndexes[ind] -= 1;
+                    }
+                
+                for (auto& clipToShow : clipsToShow)
+                    {
+                    if (meshNode->HasClip(clipToShow))
+                        {
+                        appliedClips.push_back(clipToShow);
+                        }
                     }
 
                 isClipped = true;
@@ -1897,8 +1985,7 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
             int32_t* finalIndexPtr = toLoadFaceIndexes;
             size_t finalIndexNb = toLoadNbFaceIndexes;
             float* finalUVPtr = 0;
-            SmCachedDisplayTexture* cachedTexture = 0;
-
+            
             // For textured meshes, we need to create new arrays of points, UV coords and face indices, such that face indices map to the correct points and UVs
             // In particular, this requires to duplicate points having different UVs in different triangles, as it typically happens for meshes generated by ContextCapture
             typedef std::pair<int32_t, int32_t> PointUVIndexPair;
@@ -1907,10 +1994,8 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
             bvector<FloatXY> newUVs;
             bvector<int32_t> newIndices;  
 
-            if (m_cachedDisplayTexture != 0 && toLoadUvCount > 0)
-                {
-                cachedTexture = m_cachedDisplayTexture;
-                                          
+            if (cachedDisplayTexture != 0 && toLoadUvCount > 0)
+                {                                                         
                 for (size_t faceInd = 0; faceInd < toLoadNbFaceIndexes; faceInd++)
                     {
                     int32_t pointInd = toLoadFaceIndexes[faceInd];
@@ -1945,9 +2030,11 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
                 finalIndexNb = newIndices.size();                    
                 }
 
+            SmCachedDisplayMesh* cachedDisplayMesh = 0;            
+            
             if (s_deactivateTexture)
                 {
-                BentleyStatus status = displayCacheManagerPtr->_CreateCachedMesh(m_cachedDisplayMesh, 
+                BentleyStatus status = displayCacheManagerPtr->_CreateCachedMesh(cachedDisplayMesh, 
                                                                                  finalPointNb, 
                                                                                  &centroid,
                                                                                  finalPointPtr,
@@ -1961,7 +2048,7 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
                 }
             else
                 {
-                BentleyStatus status = displayCacheManagerPtr->_CreateCachedMesh(m_cachedDisplayMesh, 
+                BentleyStatus status = displayCacheManagerPtr->_CreateCachedMesh(cachedDisplayMesh, 
                                                                                  finalPointNb,
                                                                                  &centroid,
                                                                                  finalPointPtr,
@@ -1969,10 +2056,20 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
                                                                                  (int)finalIndexNb / 3,
                                                                                  finalIndexPtr,
                                                                                  finalUVPtr,
-                                                                                 cachedTexture);
+                                                                                 cachedDisplayTexture);
 
                 assert(status == SUCCESS);
-                }            
+                }         
+            
+            qvMemorySizeEstimate += finalPointNb * sizeof(float) * 3 + finalIndexNb * sizeof(int32_t) + sizeof(float) * 2 * finalPointNb;
+
+            SmCachedDisplayData* displayData(new SmCachedDisplayData(cachedDisplayMesh,
+                                                                     cachedDisplayTexture,
+                                                                     displayCacheManagerPtr, 
+                                                                     qvMemorySizeEstimate, 
+                                                                     appliedClips));
+            
+            m_cachedDisplayData = meshNode->AddDisplayData(displayData);
 
             if (isClipped)
                 {
@@ -1989,10 +2086,7 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
             if (toLoadUv != 0)
                 delete[] toLoadUv;
             }       
-        }
-            
-    m_isLoaded = true;
-    m_displayCacheManagerPtr = displayCacheManagerPtr;               
+        }                    
     }
     
     

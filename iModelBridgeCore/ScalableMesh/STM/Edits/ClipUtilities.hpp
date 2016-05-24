@@ -4,6 +4,7 @@
 #include <Vu/VuApi.h>
 #include <TerrainModel/Core/DTMIterators.h>
 #include "..\ScalableMeshQuery.h"
+
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 //#define DEBUG 1

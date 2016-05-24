@@ -137,7 +137,7 @@ bool IScalableMeshProgressiveQueryEngine::IsQueryComplete(int queryId)
 
 IScalableMeshProgressiveQueryEnginePtr IScalableMeshProgressiveQueryEngine::Create(IScalableMeshPtr& scalableMeshPtr, IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr)
     {
-    //s_displayCacheManagerPtr = displayCacheManagerPtr;
+    s_displayCacheManagerPtr = displayCacheManagerPtr;
     //s_scalableMeshPtr = scalableMeshPtr;
     return new ScalableMeshProgressiveQueryEngine(scalableMeshPtr, displayCacheManagerPtr);
     }
@@ -147,349 +147,7 @@ static bool s_LoadQVDuringQuery = true;
 static bool s_keepSomeInvalidate = true; 
 static int s_maxNbLevelToKeep = 4;
 
-class CachedDisplayNodeManager
-    {
-private:
-
-    size_t               m_maxNbPoints;
-    size_t               m_totalNbPoints;
-    std::recursive_mutex m_nodeListMutex;
-
-    struct CachedNode
-    {
-        CachedNode(IScalableMeshPtr& scalableMeshPtr, IScalableMeshCachedDisplayNodePtr& displayNodePtr)
-            {
-            m_scalableMeshPtr = scalableMeshPtr;
-            m_displayNodePtr = displayNodePtr;            
-            }
-
-        /*void ReleaseQVisionCache()
-        {
-        if (m_material.IsValid())
-        {
-        MaterialManager::GetManagerR().ClearQvTexture(m_material->GetName().c_str(), m_material.get());
-        m_material = nullptr;
-        }
-        }*/
-
-
-        IScalableMeshPtr                  m_scalableMeshPtr;
-        IScalableMeshCachedDisplayNodePtr m_displayNodePtr;               
-
-        //MaterialPtr m_material;
-    };
-
-    typedef std::list<CachedNode> CachedNodesList;
-    typedef std::vector<CachedNode> CachedNodesVector;
-    CachedNodesList m_cachedNodes;
-    CachedNodesVector m_invalidatedCachedNodes;
-    
-    CachedDisplayNodeManager()
-        {
-        m_maxNbPoints = 1000000;
-        m_totalNbPoints = 0;
-        }
-
-public:
-
-
-    void AddCachedNode(IScalableMeshPtr& scalableMeshPtr, IScalableMeshCachedDisplayNodePtr& displayNodePtr)
-    {
-        //assert(qvElem != 0);
-        size_t addedNodePointCount = displayNodePtr->GetPointCount();
-
-        m_nodeListMutex.lock();
-        auto iter = m_cachedNodes.begin();
-
-        while (m_totalNbPoints + addedNodePointCount > m_maxNbPoints)
-            {                        
-            if (iter == m_cachedNodes.end())
-                {
-                assert(!"Bad, too many data kept for low levels for the set pool size");
-                break;
-                }
-
-            if (iter->m_displayNodePtr->GetLevel() <= s_maxNbLevelToKeep)
-                {
-                iter++;
-                continue;
-                }
-
-            assert(m_totalNbPoints >= iter->m_displayNodePtr->GetPointCount());
-            m_totalNbPoints -= iter->m_displayNodePtr->GetPointCount();
-            //T_HOST.GetGraphicsAdmin()._DeleteQvElem (m_cachedNodes.back().m_qvElem);
-            //        m_cachedNodes.back().ReleaseQVisionCache();
-            
-            iter = m_cachedNodes.erase(iter);            
-            }
-
-        m_cachedNodes.push_back(CachedNode(scalableMeshPtr, displayNodePtr));        
-
-        if (s_keepSomeInvalidate)
-            {
-            auto invalidatedNodeIter(m_invalidatedCachedNodes.begin());
-            auto invalidatedNodeIterEnd(m_invalidatedCachedNodes.end());
-
-            while (invalidatedNodeIter != invalidatedNodeIterEnd)
-                {                        
-                if ((invalidatedNodeIter->m_scalableMeshPtr == scalableMeshPtr) && 
-                    (invalidatedNodeIter->m_displayNodePtr->GetNodeId() == displayNodePtr->GetNodeId()))
-                    {
-                    invalidatedNodeIter = m_invalidatedCachedNodes.erase(invalidatedNodeIter);
-                    }
-
-                invalidatedNodeIter++;
-                }            
-            }
-
-        m_nodeListMutex.unlock();
-
-        m_totalNbPoints += addedNodePointCount;
-    }
-
-
-    void ClearCachedNodes(IScalableMeshPtr& scalableMeshPtr)
-        {                
-        m_nodeListMutex.lock();
-
-        auto cachedNodeIter(m_cachedNodes.begin());
-        auto cachedNodeIterEnd(m_cachedNodes.end());
-
-        //NEEDS_WORK_SM : Maybe should try making it parallel?        
-        while (cachedNodeIter != cachedNodeIterEnd)
-            {
-            if (cachedNodeIter->m_scalableMeshPtr == scalableMeshPtr)
-                {                     
-                cachedNodeIter = m_cachedNodes.erase(cachedNodeIter);                    
-                }
-            else
-                {
-                cachedNodeIter++;
-                }
-            }
-
-        m_nodeListMutex.unlock();
-        }
-
-    //MaterialPtr GetMaterial(__int64 nodeId, DTMDataRef* dtmDataRef);
-
-    void ClearCachedNodes(const bvector<DRange2d>* clearRanges, const IScalableMeshPtr& scalableMeshPtr)
-        {        
-        m_nodeListMutex.lock();
-
-        auto cachedNodeIter(m_cachedNodes.begin());
-        auto cachedNodeIterEnd(m_cachedNodes.end());
-
-        //NEEDS_WORK_SM : Maybe should try making it parallel?        
-        while (cachedNodeIter != cachedNodeIterEnd)
-            {
-            if (cachedNodeIter->m_scalableMeshPtr == scalableMeshPtr)
-                {      
-                if (clearRanges != 0)
-                    {
-                    DRange3d range3d = cachedNodeIter->m_displayNodePtr->GetContentExtent();
-                    DRange2d nodeContentRange;
-                    nodeContentRange.low.x = range3d.low.x;
-                    nodeContentRange.low.y = range3d.low.y;
-                    nodeContentRange.high.x = range3d.high.x;
-                    nodeContentRange.high.y = range3d.high.y;
-
-                    bool isCleared = false;
-
-                    for (auto& range : *clearRanges)
-                        {
-                        if (nodeContentRange.IntersectsWith(range))
-                            {
-                            cachedNodeIter = m_cachedNodes.erase(cachedNodeIter);
-                            isCleared = true;
-                            break;
-                            }                        
-                        }                    
-
-                    if (!isCleared)
-                        cachedNodeIter++;
-                        
-                    }
-                else
-                    {
-                    cachedNodeIter = m_cachedNodes.erase(cachedNodeIter);
-                    }                                
-                }
-            else
-                {
-                cachedNodeIter++;
-                }
-            }
-
-        m_nodeListMutex.unlock();
-        }
-
-    void ClearCachedNodes(const bvector<uint64_t>& clipIds, const IScalableMeshPtr& scalableMeshPtr)
-        {
-        m_nodeListMutex.lock();
-
-        auto cachedNodeIter(m_cachedNodes.begin());
-        auto cachedNodeIterEnd(m_cachedNodes.end());
-
-        //NEEDS_WORK_SM : Maybe should try making it parallel?        
-        while (cachedNodeIter != cachedNodeIterEnd)
-            {
-            if (cachedNodeIter->m_scalableMeshPtr == scalableMeshPtr)
-                {
-                if (clipIds.size() > 0)
-                    {
-                    bool isCleared = false;
-
-                    for (auto& id : clipIds)
-                        {
-                        if (cachedNodeIter->m_displayNodePtr->HasClip(id))
-                            {                                       
-                            if (s_keepSomeInvalidate)
-                                {                                                                
-                                m_invalidatedCachedNodes.push_back(*cachedNodeIter);
-                                }
-
-                            cachedNodeIter = m_cachedNodes.erase(cachedNodeIter);
-                            isCleared = true;
-                            break;
-                            }
-                        }
-
-                    if (!isCleared)
-                        cachedNodeIter++;
-
-                    }
-                else
-                    {
-                    //NEEDS_WORK_SM : Remove all clips if the are no clip passed has been done to handle the isolate case, 
-                    //                which is sub-optimal (all tiles to which only the isolate road is crossing shouldn't be erase.
-                    //NEEDS_WORK_SM : Remove magic number -1.
-                    if (cachedNodeIter->m_displayNodePtr->HasClip((uint64_t)-1))
-                        {
-                        if (s_keepSomeInvalidate)
-                            m_invalidatedCachedNodes.push_back(*cachedNodeIter);
-
-                        cachedNodeIter = m_cachedNodes.erase(cachedNodeIter);
-                        }
-                    else cachedNodeIter++;
-                    }
-
-                }
-            else
-                {
-                cachedNodeIter++;
-                }
-            }
-
-        //NEEDS_WORK_SM : m_invalidatedCachedNodes could potentially explode, need to work something out.
-        assert(m_invalidatedCachedNodes.size() < 5 || m_cachedNodes.size() < 5 || m_invalidatedCachedNodes.size() / 5.0 < m_cachedNodes.size());
-
-        m_nodeListMutex.unlock();
-        }
-
-        void GetNodeListLock()
-            {
-            m_nodeListMutex.lock();
-            }
-
-        void ReleaseNodeListLock()
-            {
-            m_nodeListMutex.unlock();
-            }
-
-        IScalableMeshCachedDisplayNodePtr FindNode(__int64 nodeId, IScalableMeshPtr& scalableMeshPtr, bool threadSafe = true, bool updateLRU = true)
-            {        
-            //NEEDS_WORK_SM : Must be remove this mutex, cost too much
-            if (threadSafe)
-                m_nodeListMutex.lock();
-
-            auto cachedNodeIter(m_cachedNodes.begin());
-            auto cachedNodeIterEnd(m_cachedNodes.end());
-
-            IScalableMeshCachedDisplayNodePtr foundNodePtr;
-                        
-            while (cachedNodeIter != cachedNodeIterEnd)
-                {                
-                if ((cachedNodeIter->m_scalableMeshPtr == scalableMeshPtr) && 
-                    (cachedNodeIter->m_displayNodePtr->GetNodeId() == nodeId))
-                    {
-                    CachedNode cachedNode(*cachedNodeIter);
-                    foundNodePtr = cachedNodeIter->m_displayNodePtr;        
-                    if (updateLRU)
-                        {
-                        m_cachedNodes.erase(cachedNodeIter);
-                        m_cachedNodes.push_back(cachedNode);                    
-                        }
-                    break;
-                    }
-
-                cachedNodeIter++;
-                }
-            
-            if (threadSafe)
-                m_nodeListMutex.unlock();
-
-            return foundNodePtr; 
-            }
-
-        IScalableMeshCachedDisplayNodePtr FindInvalidatedNode(__int64 nodeId, IScalableMeshPtr& scalableMeshPtr, bool threadSafe = true)
-            {          
-            assert(s_keepSomeInvalidate == true);
-            assert(threadSafe == false);            
-
-            auto cachedNodeIter(m_invalidatedCachedNodes.begin());
-            auto cachedNodeIterEnd(m_invalidatedCachedNodes.end());
-
-            IScalableMeshCachedDisplayNodePtr foundNodePtr;
-                        
-            while (cachedNodeIter != cachedNodeIterEnd)
-                {                
-                if ((cachedNodeIter->m_scalableMeshPtr == scalableMeshPtr) && 
-                    (cachedNodeIter->m_displayNodePtr->GetNodeId() == nodeId))
-                    {
-                    CachedNode cachedNode(*cachedNodeIter);
-                    foundNodePtr = cachedNodeIter->m_displayNodePtr;                            
-                    break;
-                    }
-
-                cachedNodeIter++;
-                }
-                        
-            return foundNodePtr; 
-            }
-              
-        template <class POINT, class EXTENT>
-        IScalableMeshCachedDisplayNodePtr FindOrLoadNode(HFCPtr<SMPointIndexNode<POINT, EXTENT>>& node, bool loadTexture, const bset<uint64_t>& clipVisibilities, IScalableMeshPtr& scalableMeshPtr, IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr)
-            {                           
-            IScalableMeshCachedDisplayNodePtr foundNodePtr(FindNode(node->GetBlockID().m_integerID, scalableMeshPtr));
-                   
-            if (foundNodePtr == 0)     
-                {    
-                ScalableMeshCachedDisplayNode<POINT>* meshNode(ScalableMeshCachedDisplayNode<POINT>::Create(node));               
-                meshNode->ApplyAllExistingClips();
-                meshNode->LoadMesh(false, clipVisibilities, displayCacheManagerPtr, loadTexture);
-                
-                foundNodePtr = meshNode;                
-                AddCachedNode(scalableMeshPtr, foundNodePtr);
-                }   
-
-            return foundNodePtr;
-            }
-          
-        static CachedDisplayNodeManager& GetManager()
-            {
-            static CachedDisplayNodeManager* s_manager = 0;
-
-            if (s_manager == 0) 
-                {
-                s_manager = new CachedDisplayNodeManager();
-                }
-
-            return *s_manager;
-            }   
-    };
-
-
+                                            
 template <class POINT, class EXTENT> class NodeQueryProcessor : public RefCountedBase, public IStopQuery
     {
 private:
@@ -806,7 +464,19 @@ private:
                 }
             else
                 {
-                meshNodePtr = CachedDisplayNodeManager::GetManager().FindOrLoadNode<DPoint3d>(visibleNode, loadTexture, clipVisibilities, scalableMeshPtr, displayCacheManagerPtr);
+                //meshNodePtr = CachedDisplayNodeManager::GetManager().FindOrLoadNode<DPoint3d>(visibleNode, loadTexture, clipVisibilities);
+                ScalableMeshCachedDisplayNode<DPoint3d>* meshNode(ScalableMeshCachedDisplayNode<DPoint3d>::Create(visibleNode));                
+
+                meshNode->ApplyAllExistingClips();
+                
+                if (meshNode->IsLoaded() == false || !meshNode->IsClippingUpToDate() || !meshNode->HasCorrectClipping(clipVisibilities))                    
+                    {                                    
+                    meshNode->RemoveDisplayDataFromCache();                    
+                    meshNode->LoadMesh(false, clipVisibilities, s_displayCacheManagerPtr, loadTexture);                               
+                    assert(meshNode->HasCorrectClipping(clipVisibilities));                    
+                    }
+
+                meshNodePtr = meshNode;                                                
                 }
 
             inloadingNodePtr->m_displayNode = meshNodePtr;
@@ -1247,8 +917,7 @@ ScalableMeshProgressiveQueryEngine::ScalableMeshProgressiveQueryEngine(IScalable
 
 ScalableMeshProgressiveQueryEngine::~ScalableMeshProgressiveQueryEngine()
     {    
-    s_queryProcessor.CancelAllQueries();
-    CachedDisplayNodeManager::GetManager().ClearCachedNodes(m_scalableMeshPtr);
+    s_queryProcessor.CancelAllQueries();    
     }
 
 template <class POINT> int BuildQueryObject(//ScalableMeshQuadTreeViewDependentMeshQuery<POINT, YProtPtExtentType>* viewDependentQueryP,
@@ -1332,7 +1001,7 @@ static double s_firstNodeSearchingDelay = (double)1 / 30 * CLOCKS_PER_SEC;
 #endif
 //static int    s_nbIterClock;
 
-void FindOverview(bvector<IScalableMeshCachedDisplayNodePtr>& lowerResOverviewNodes, HFCPtr<SMPointIndexNode<DPoint3d, YProtPtExtentType>>& node, bool loadTexture, const bset<uint64_t>& clipVisibilities, IScalableMeshPtr& scalableMeshPtr)
+void FindOverview(bvector<IScalableMeshCachedDisplayNodePtr>& lowerResOverviewNodes, HFCPtr<SMPointIndexNode<DPoint3d, YProtPtExtentType>>& node, bool loadTexture, const bset<uint64_t>& clipVisibilities/*, IScalableMeshPtr& scalableMeshPtr*/)
     {    
     assert(node->IsParentSet() == true);
         
@@ -1349,25 +1018,20 @@ void FindOverview(bvector<IScalableMeshCachedDisplayNodePtr>& lowerResOverviewNo
         */
         return;
         }
-                    
-    IScalableMeshCachedDisplayNodePtr meshNodePtr = CachedDisplayNodeManager::GetManager().FindNode(parentNodePtr->GetBlockID().m_integerID, scalableMeshPtr, false, false);
-    
-    if (s_keepSomeInvalidate && meshNodePtr == 0)
-        {        
-        meshNodePtr = CachedDisplayNodeManager::GetManager().FindInvalidatedNode(parentNodePtr->GetBlockID().m_integerID, scalableMeshPtr, false);
-        }
-
-    if (meshNodePtr == 0)
+         
+    ScalableMeshCachedDisplayNode<DPoint3d>::Ptr meshNodePtr(ScalableMeshCachedDisplayNode<DPoint3d>::Create(parentNodePtr));    
+            
+    if (!meshNodePtr->IsLoaded() || ((!meshNodePtr->IsClippingUpToDate() || !meshNodePtr->HasCorrectClipping(clipVisibilities)) && !s_keepSomeInvalidate))
         {
-        FindOverview(lowerResOverviewNodes, parentNodePtr, loadTexture, clipVisibilities, scalableMeshPtr);
+        FindOverview(lowerResOverviewNodes, parentNodePtr, loadTexture, clipVisibilities);
         }
     else   
         {
         auto nodeIter = lowerResOverviewNodes.begin();
 
         while (nodeIter != lowerResOverviewNodes.end())
-            {
-            if (nodeIter->get() == meshNodePtr.get())
+            {            
+            if ((*nodeIter)->GetNodeId() == meshNodePtr->GetNodeId())
                 break;            
 
             nodeIter++;
@@ -1405,7 +1069,7 @@ class NewQueryStartingNodeProcessor
 
         NewQueryStartingNodeProcessor()
             {
-            m_numWorkingThreads = std::thread::hardware_concurrency() - 1;
+            m_numWorkingThreads = std::thread::hardware_concurrency() - 2;
             //m_numWorkingThreads = 1;
 
             m_lowerResOverviewNodes.resize(m_numWorkingThreads);
@@ -1428,17 +1092,12 @@ class NewQueryStartingNodeProcessor
             for (size_t nodeInd = m_nodeToSearchCurrentInd + 1; nodeInd < m_nodesToSearch->GetNodes().size(); nodeInd++)        
                 {                              
                 if (nodeInd % m_numWorkingThreads != threadId) continue;
-
-                IScalableMeshCachedDisplayNodePtr meshNodePtr = CachedDisplayNodeManager::GetManager().FindNode(m_nodesToSearch->GetNodes()[nodeInd]->GetBlockID().m_integerID, scalableMeshPtr, false, false);
-
-                if (s_keepSomeInvalidate && meshNodePtr == 0)
-                    {        
-                    meshNodePtr = CachedDisplayNodeManager::GetManager().FindInvalidatedNode(m_nodesToSearch->GetNodes()[nodeInd]->GetBlockID().m_integerID, scalableMeshPtr, false);
-                    }
-
-                if (meshNodePtr == 0)
+                
+                ScalableMeshCachedDisplayNode<DPoint3d>::Ptr meshNodePtr(ScalableMeshCachedDisplayNode<DPoint3d>::Create(m_nodesToSearch->GetNodes()[nodeInd]));
+                                
+                if (!meshNodePtr->IsLoaded() || ((!meshNodePtr->IsClippingUpToDate() || !meshNodePtr->HasCorrectClipping(*m_activeClips)) && !s_keepSomeInvalidate))
                     {                                
-                    FindOverview(m_lowerResOverviewNodes[threadId], m_nodesToSearch->GetNodes()[nodeInd], m_newQuery->m_loadTexture, *m_activeClips, scalableMeshPtr);
+                    FindOverview(m_lowerResOverviewNodes[threadId], m_nodesToSearch->GetNodes()[nodeInd], m_newQuery->m_loadTexture, *m_activeClips);
                     }
                 else
                     {
@@ -1449,32 +1108,27 @@ class NewQueryStartingNodeProcessor
             for (size_t nodeInd = 0; nodeInd < m_foundNodes->GetNodes().size(); nodeInd++)        
                 {                      
                 if (nodeInd % m_numWorkingThreads != threadId) continue;
-
-                IScalableMeshCachedDisplayNodePtr meshNodePtr = CachedDisplayNodeManager::GetManager().FindNode(m_foundNodes->GetNodes()[nodeInd]->GetBlockID().m_integerID, scalableMeshPtr, false, false);
-
-                if (meshNodePtr == 0)
+                
+                ScalableMeshCachedDisplayNode<DPoint3d>::Ptr meshNodePtr(ScalableMeshCachedDisplayNode<DPoint3d>::Create(m_foundNodes->GetNodes()[nodeInd]));
+                
+                if (!meshNodePtr->IsLoaded() || ((!meshNodePtr->IsClippingUpToDate() || !meshNodePtr->HasCorrectClipping(*m_activeClips)) && !s_keepSomeInvalidate))
                     {                
-                    if (s_keepSomeInvalidate && meshNodePtr == 0)
-                        {        
-                        meshNodePtr = CachedDisplayNodeManager::GetManager().FindInvalidatedNode(m_nodesToSearch->GetNodes()[nodeInd]->GetBlockID().m_integerID, scalableMeshPtr, false);
-                        }
-                        
-                    if (meshNodePtr != 0)
-                        {
-                        m_lowerResOverviewNodes[threadId].push_back(meshNodePtr);
-                        }
-                    else
-                        {
-                        FindOverview(m_lowerResOverviewNodes[threadId], m_foundNodes->GetNodes()[nodeInd], m_newQuery->m_loadTexture, *m_activeClips, scalableMeshPtr);
-                        }
-                    
+                    FindOverview(m_lowerResOverviewNodes[threadId], m_foundNodes->GetNodes()[nodeInd], m_newQuery->m_loadTexture, *m_activeClips/*, scalableMeshPtr*/);
+                                        
                     m_toLoadNodes[threadId].push_back(m_foundNodes->GetNodes()[nodeInd]);
                     }
                 else
                     {
                     //NEEDS_WORK_SM : Should not be duplicated.
                     m_lowerResOverviewNodes[threadId].push_back(meshNodePtr);
-                    m_requiredMeshNodes[threadId].push_back(meshNodePtr);
+                    if (meshNodePtr->IsClippingUpToDate() && meshNodePtr->HasCorrectClipping(*m_activeClips))
+                        {                        
+                        m_requiredMeshNodes[threadId].push_back(meshNodePtr);
+                        }
+                    else
+                        {
+                        m_toLoadNodes[threadId].push_back(m_foundNodes->GetNodes()[nodeInd]);
+                        }
                     }
                 }
             }
@@ -1542,7 +1196,6 @@ void ComputeOverviewSearchToLoadNodes(RequestedQuery&                           
                                       bset<uint64_t>&                                                 activeClips,
                                       IScalableMeshPtr& scalableMeshPtr)
     {   
-    CachedDisplayNodeManager::GetManager().GetNodeListLock();                            
 
     if (s_computeInParallel)   
         {
@@ -1556,15 +1209,16 @@ void ComputeOverviewSearchToLoadNodes(RequestedQuery&                           
     else
         {
         for (size_t nodeInd = currentInd + 1; nodeInd < nodesToSearch.GetNodes().size(); nodeInd++)        
-            {                                    
-            IScalableMeshCachedDisplayNodePtr meshNodePtr = CachedDisplayNodeManager::GetManager().FindNode(nodesToSearch.GetNodes()[nodeInd]->GetBlockID().m_integerID, scalableMeshPtr, false);
+            {                                                            
+            ScalableMeshCachedDisplayNode<DPoint3d>::Ptr meshNode(ScalableMeshCachedDisplayNode<DPoint3d>::Create(nodesToSearch.GetNodes()[nodeInd]));
 
-            if (meshNodePtr == 0)
+            if (!meshNode->IsLoaded() || ((!meshNode->IsClippingUpToDate() || !meshNode->HasCorrectClipping(activeClips)) && !s_keepSomeInvalidate))
                 {                                
-                FindOverview(lowerResOverviewNodes, nodesToSearch.GetNodes()[nodeInd], newQuery.m_loadTexture, activeClips, scalableMeshPtr);
+                FindOverview(lowerResOverviewNodes, nodesToSearch.GetNodes()[nodeInd], newQuery.m_loadTexture, activeClips);
                 }
             else
                 {
+                IScalableMeshCachedDisplayNodePtr meshNodePtr(meshNode.get()) ;
                 newQuery.m_overviewMeshNodes.push_back(meshNodePtr);
                 }
 
@@ -1572,28 +1226,34 @@ void ComputeOverviewSearchToLoadNodes(RequestedQuery&                           
             }                    
 
         for (auto& node : foundNodes.GetNodes())
-            {                        
-            IScalableMeshCachedDisplayNodePtr meshNodePtr = CachedDisplayNodeManager::GetManager().FindNode(node->GetBlockID().m_integerID, scalableMeshPtr, false);
+            {                                                
+            ScalableMeshCachedDisplayNode<DPoint3d>::Ptr meshNodePtr(ScalableMeshCachedDisplayNode<DPoint3d>::Create(node));
 
-            if (meshNodePtr == 0)
+            if (!meshNodePtr->IsLoaded() || ((!meshNodePtr->IsClippingUpToDate() || !meshNodePtr->HasCorrectClipping(activeClips)) && !s_keepSomeInvalidate))
                 {                
-                FindOverview(lowerResOverviewNodes, node, newQuery.m_loadTexture, activeClips, scalableMeshPtr);
+                FindOverview(lowerResOverviewNodes, node, newQuery.m_loadTexture, activeClips);
                 toLoadNodes.push_back(node);
                 }
             else
                 {
-                //NEEDS_WORK_SM : Should not be duplicated.
+                //NEEDS_WORK_SM : Should not be duplicated.                
                 newQuery.m_overviewMeshNodes.push_back(meshNodePtr);
-                newQuery.m_requiredMeshNodes.push_back(meshNodePtr);
+
+                if (meshNodePtr->IsClippingUpToDate() && meshNodePtr->HasCorrectClipping(activeClips))
+                    {                        
+                    newQuery.m_requiredMeshNodes.push_back(meshNodePtr);
+                    }
+                else
+                    {
+                    toLoadNodes.push_back(node);
+                    }
                 }
             }
         }    
     
 #ifdef PRINT_SMDISPLAY_MSG
     PRINT_MSG("StartNewQuery m_requiredMeshNodes : %I64u toLoadNodes : %I64u \n", newQuery.m_requiredMeshNodes.size(), toLoadNodes.size());
-#endif
-
-    CachedDisplayNodeManager::GetManager().ReleaseNodeListLock();
+#endif    
     }
     
 void ScalableMeshProgressiveQueryEngine::StartNewQuery(RequestedQuery& newQuery, ISMPointIndexQuery<DPoint3d, YProtPtExtentType>* queryObjectP, const bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& startingNodes)
@@ -1684,7 +1344,9 @@ void ScalableMeshProgressiveQueryEngine::StartNewQuery(RequestedQuery& newQuery,
                         }
                     else
                         {
-                        meshNodePtr = CachedDisplayNodeManager::GetManager().FindOrLoadNode<DPoint3d>(node, newQuery.m_loadTexture, m_activeClips, m_scalableMeshPtr, m_displayCacheManagerPtr);
+                        ScalableMeshCachedDisplayNode<DPoint3d>* meshNode(ScalableMeshCachedDisplayNode<DPoint3d>::Create(node));
+                        meshNode->LoadMesh(false, m_activeClips, s_displayCacheManagerPtr, newQuery.m_loadTexture);
+                        meshNodePtr = meshNode;
                         }
 
                     newQuery.m_requiredMeshNodes.push_back(meshNodePtr);
@@ -1706,8 +1368,10 @@ void ScalableMeshProgressiveQueryEngine::StartNewQuery(RequestedQuery& newQuery,
                     meshNodePtr = meshNode;
                     }
                 else
-                    {
-                    meshNodePtr = CachedDisplayNodeManager::GetManager().FindOrLoadNode<DPoint3d>(node, newQuery.m_loadTexture, m_activeClips, m_scalableMeshPtr, m_displayCacheManagerPtr);
+                    {                    
+                    ScalableMeshCachedDisplayNode<DPoint3d>* meshNode(ScalableMeshCachedDisplayNode<DPoint3d>::Create(node));
+                    meshNode->LoadMesh(false, m_activeClips, s_displayCacheManagerPtr, newQuery.m_loadTexture);                    
+                    meshNodePtr = meshNode;
                     }
 
                 newQuery.m_overviewMeshNodes.push_back(meshNodePtr);
@@ -1727,12 +1391,14 @@ void ScalableMeshProgressiveQueryEngine::StartNewQuery(RequestedQuery& newQuery,
                 if (!s_LoadQVDuringQuery)
                     {
                     ScalableMeshCachedMeshNode<DPoint3d>* meshNode(new ScalableMeshCachedMeshNode<DPoint3d>(node, newQuery.m_loadTexture));
-                        meshNode->LoadMesh(false, m_activeClips);
+                    meshNode->LoadMesh(false, m_activeClips);
                     meshNodePtr = meshNode;
                     }
                 else
                     {
-                    meshNodePtr = CachedDisplayNodeManager::GetManager().FindOrLoadNode<DPoint3d>(node, newQuery.m_loadTexture, m_activeClips, m_scalableMeshPtr, m_displayCacheManagerPtr);
+                    ScalableMeshCachedDisplayNode<DPoint3d>::Ptr meshNode(ScalableMeshCachedDisplayNode<DPoint3d>::Create(node));                    
+                    meshNode->LoadMesh(false, m_activeClips, s_displayCacheManagerPtr, newQuery.m_loadTexture);
+                    meshNodePtr = meshNode;                    
                     }
 
                 newQuery.m_requiredMeshNodes.push_back(meshNodePtr);
@@ -1747,14 +1413,14 @@ void ScalableMeshProgressiveQueryEngine::StartNewQuery(RequestedQuery& newQuery,
       
 BentleyStatus ScalableMeshProgressiveQueryEngine::_ClearCaching(const bvector<DRange2d>* clearRanges, const IScalableMeshPtr& scalableMeshPtr)
     {
-    CachedDisplayNodeManager::GetManager().ClearCachedNodes(clearRanges, scalableMeshPtr);
+    //CachedDisplayNodeManager::GetManager().ClearCachedNodes(clearRanges, s_scalableMeshPtr);
 
     return SUCCESS;
     }
 
 BentleyStatus ScalableMeshProgressiveQueryEngine::_ClearCaching(const bvector<uint64_t>& clipIds, const IScalableMeshPtr& scalableMeshPtr)
     {
-    CachedDisplayNodeManager::GetManager().ClearCachedNodes(clipIds, scalableMeshPtr);
+    //CachedDisplayNodeManager::GetManager().ClearCachedNodes(clipIds, s_scalableMeshPtr);
 
     return SUCCESS;
     }

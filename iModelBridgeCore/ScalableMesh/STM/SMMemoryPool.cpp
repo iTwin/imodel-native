@@ -30,13 +30,13 @@ SMMemoryPoolItemBase::SMMemoryPoolItemBase()
 SMMemoryPoolItemBase::SMMemoryPoolItemBase(Byte* data, uint64_t size, uint64_t nodeId, SMPoolDataTypeDesc& dataType)
     {
     m_data = data;
-    m_size = size;
+    m_size = size;   
     m_nodeId = nodeId;
     m_dataType = dataType;
     m_data = data;
     m_dirty = false;
     }
-
+   
 SMMemoryPoolItemBase::~SMMemoryPoolItemBase()
     {
     if (m_data != 0)
@@ -44,7 +44,7 @@ SMMemoryPoolItemBase::~SMMemoryPoolItemBase()
         delete[] m_data;
         m_data = 0;
         }
-    }
+    }   
 
 uint64_t SMMemoryPoolItemBase::GetSize()
     {

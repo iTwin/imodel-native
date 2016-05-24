@@ -224,8 +224,7 @@ public:
     virtual RefCountedPtr<SMMemoryPoolVectorItem<POINT>> GetPointsPtr(bool loadPts = true)
         {
         RefCountedPtr<SMMemoryPoolVectorItem<POINT>> poolMemVectorItemPtr;
-                
-        
+                        
         if (!SMMemoryPool::GetInstance()->GetItem<POINT>(poolMemVectorItemPtr, m_pointsPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::Points) && loadPts)
             {                  
             //NEEDS_WORK_SM : SharedPtr for GetPtsIndiceStore().get()            
