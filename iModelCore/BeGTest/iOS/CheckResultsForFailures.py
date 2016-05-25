@@ -24,7 +24,7 @@ if __name__ == '__main__':
 
             starterr = lline.find('error:')
             if -1 != starterr and -1 != lline.find('failed'):
-                err = errpat.match(procStdOutLine[starterr:])
+                err = errpat.match(lline[starterr:])
                 if err != None:
                     print "\nFAILED " + err.group(1) + "." + err.group(2)
                     failureCount = failureCount + 1
