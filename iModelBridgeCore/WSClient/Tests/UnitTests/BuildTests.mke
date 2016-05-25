@@ -2,7 +2,7 @@
 #
 #  $Source: Tests/UnitTests/BuildTests.mke $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 %include mdl.mki
@@ -12,6 +12,11 @@
 %endif
 
 baseDir = $(_MakeFilePath)
+
+%ifdef BUILD_AGGREGATE_TESTS
+	nameToDefine=BUILD_FOR_AGGREGATE_TESTS=1
+    %include cdefapnd.mki
+%endif
 
 # Compile and Link the unit tests
 BEGTEST_NAME  = $(TestDir)WebServices
