@@ -33,8 +33,8 @@ struct IDTMLocalFileSource;
 struct IDTMDgnLevelSource;
 struct IDTMDgnReferenceLevelSource;
 
-struct BinaryIStream;
-struct BinaryOStream;
+//struct BinaryIStream;
+//struct BinaryOStream;
 
 
 typedef RefCountedPtr<IDTMSource>           IDTMSourcePtr;
@@ -323,6 +323,14 @@ struct IDTMDgnLevelSource : public IDTMDgnModelSource
         BENTLEY_SM_EXPORT static IDTMDgnLevelSourcePtr 
                                             Create                     (DTMSourceDataType           sourceDataType, 
                                                                         const ILocalFileMonikerPtr& dgnFileMonikerPtr,
+                                                                        uint32_t                      modelID, 
+                                                                        const WChar*              modelName,
+                                                                        uint32_t                      levelID,
+                                                                        const WChar*              levelName);
+
+                BENTLEY_SM_EXPORT static IDTMDgnLevelSourcePtr 
+                                            Create                     (DTMSourceDataType           sourceDataType, 
+                                                                        const wchar_t* dgnFileMonikerPtr,
                                                                         uint32_t                      modelID, 
                                                                         const WChar*              modelName,
                                                                         uint32_t                      levelID,

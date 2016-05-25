@@ -1263,7 +1263,7 @@ DifferenceSetWithTracking Clipper::ClipPolygon2DDTM(const DPoint3d* poly, size_t
     if (m_nVertices < 2000 || polySize < 200 || polySize > 1000) return d;
     map<DPoint3d, int32_t, DPoint3dZYXTolerancedSortComparison> mapOfPoints(DPoint3dZYXTolerancedSortComparison(1e-5,0));
     FaceLookupList l(m_nVertices+1);
-    s_number++;
+    s_number++;    
     vector<bool> faceRemoved(m_nIndices / 3, true);
 
     for (size_t i = 0; i < m_nVertices; ++i)

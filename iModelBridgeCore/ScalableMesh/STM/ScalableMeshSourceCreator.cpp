@@ -34,7 +34,6 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #include "../Import/Sink.h"
 #include "ScalableMeshSourcesImport.h"
 
-#include <ScalableMesh/IScalableMeshStream.h>
 
 #include <ScalableMesh/IScalableMeshPolicy.h>
 #include "ScalableMeshSources.h"
@@ -57,6 +56,9 @@ bool s_useThreadsInFiltering = false;
 bool s_useThreadsInTexturing = false;
 size_t s_nCreatedNodes = 0;
 bool s_useSpecialTriangulationOnGrids = false;
+
+size_t nGraphPins =0;
+size_t nGraphReleases = 0;
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 
@@ -988,9 +990,9 @@ SourceRef CreateSourceRefFromIDTMSource (const IDTMSource& source, const WString
             if (BSISUCCESS != status)
                 throw SourceNotFoundException();
 
-            m_sourceRefP.reset(new SourceRef(DGNLevelByIDSourceRef(source.GetPath(),
-                                                                   source.GetModelID(),
-                                                                   source.GetLevelID())));
+            m_sourceRefP.reset(new SourceRef(DGNLevelByNameSourceRef(source.GetPath(),
+                                                                   source.GetModelName(),
+                                                                   source.GetLevelName())));
             }
 
         virtual void                _Visit             (const IDTMDgnReferenceSource&       source) override
@@ -1118,8 +1120,15 @@ int IScalableMeshSourceCreator::Impl::TraverseSource(SourcesImporter&           
 
         SourceRef sourceRef(CreateSourceRefFromIDTMSource(dataSource, m_scmFileName));
 
-
-        importer.AddSource(sourceRef, sourceConfig, importConfig.get(), importSequence, srcImportConfig/*, vecRange*/);
+        if (dynamic_cast<DGNLevelByNameSourceRef*>((sourceRef.m_basePtr.get())) != nullptr || dynamic_cast<DGNReferenceLevelByNameSourceRef*>((sourceRef.m_basePtr.get())) != nullptr)
+            {
+            importConfig->SetClipShape(clipShapePtr);
+            importer.AddSDKSource(sourceRef, sourceConfig, importConfig.get(), importSequence, srcImportConfig/*, vecRange*/);
+            }
+        else
+            {
+            importer.AddSource(sourceRef, sourceConfig, importConfig.get(), importSequence, srcImportConfig/*, vecRange*/);
+            }
         }
     catch (...)
         {

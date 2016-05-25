@@ -16,6 +16,8 @@ baseDir         = $(_MakeFilePath)
 #this means we can use CGAL with the modules that were licensed to us
 %include $(BuildContext)SubParts/Files/LicensedComponents.mki
 
+DgnPlatformV8LibDir = ${BuildContext}/SubParts/DgnV8Libs/
+
 dirToSearch=$(BuildContext)VendorAPI/CGAL
 %include cincapnd.mki
 
@@ -34,6 +36,9 @@ always:
 #----------------------------------------------------------------------
 always:
    @CreateSymLinks.py -d"$(BuildContext)PublicAPI/ScalableMesh=$(SCMPublicAPISrc)/ScalableMesh"
+
+always:
+   @CreateSymLinks.py -d"$(BuildContext)PublicAPI/DgnV8Api=$(BuildContext)SdkSources/ScalableMeshSDK/PublicAPI"
 
 CCompOpts + -openmp -bigobj -DCGAL_NO_AUTOLINK -DBOOST_ALL_NO_LIB -DBOOST_SYSTEM_NO_DEPRECATED -GR
 
@@ -241,8 +246,6 @@ $(o)ScalableMeshSourceDescription$(oext) : $(stmDir)ScalableMeshSourceDescriptio
 
 $(o)ScalableMeshSourceImportConfig$(oext) : $(stmDir)ScalableMeshSourceImportConfig.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)ScalableMeshStream$(oext) : $(stmDir)ScalableMeshStream.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
-
 $(o)ScalableMeshURL$(oext) : $(stmDir)ScalableMeshURL.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 $(o)ScalableMeshPolicy$(oext) : $(stmDir)ScalableMeshPolicy.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
@@ -381,11 +384,33 @@ $(o)tetgenpredicates$(oext) : $(delaunayDir)tetgen/tetgenpredicates.cpp $(delaun
 
 
 %include MultiCppCompileGo.mki
+
+
+cppObjects =% $(MultiCompileObjectList)
+
+#FileTypeControl =
+#CCPchOpts =
+#CPchOpts =
+#PublicApiIncludes =
+#cIncs = -I$(BuildContext)PublicAPI/DgnV8Api/
+
+
+#%include MultiCppCompileRule.mki
+
+#$(o)DgnInterface$(oext) : $(baseDir)ScalableMeshDgn\DgnInterface.cpp $(baseDir)ScalableMeshDgn\DgnInterface.h ${MultiCompileDepends}
+
+#$(o)ElementType$(oext) : $(baseDir)ScalableMeshDgn\ElementType.cpp $(baseDir)ScalableMeshDgn\ElementType.h ${MultiCompileDepends}
+
+#%include MultiCppCompileGo.mki
+
+#nonPortableObjects =% $(MultiCompileObjectList)
+#cppObjects = $(nonPortableObjects)
+
 #----------------------------------------------------------------------
 #   dependencies of the subsystem.
 #----------------------------------------------------------------------
 DLM_OBJECT_PCH      = $(o)ScalableMeshPCH$(oext)
-DLM_OBJECT_FILES    = $(MultiCompileObjectList)
+DLM_OBJECT_FILES    = $(cppObjects)
 
 LINKER_LIBRARIES_DELAYLOADED  = \
     $(ContextSubpartsLibs)BeCurl.lib \
@@ -395,6 +420,14 @@ LINKER_LIBRARIES_DELAYLOADED  = \
     $(ContextSubpartsLibs)$(TerrainModelCoreLib) \
     $(ContextSubpartsLibs)$(TerrainModelFormatsLib) \
     $(ContextSubpartsLibs)wastorage.lib \
+#    $(DgnPlatformV8LibDir)Bentley.lib \
+#    $(DgnPlatformV8LibDir)ECObjects.lib \
+#    $(DgnPlatformV8LibDir)BentleyGeom.lib \
+#    $(DgnPlatformV8LibDir)DgnPlatform.lib \
+#    $(DgnPlatformV8LibDir)DgnGeoCoord.lib \
+#    $(DgnPlatformV8LibDir)RmgrTools.lib \
+#    $(DgnPlatformV8LibDir)BaseGeoCoord.lib 
+
 #    $(ContextSubpartsLibs)cpprest140_2_6.lib
 #    $(ContextSubpartsLibs)PCLWrapper.lib \
 #    $(ContextSubpartsLibs)Imagepp-gdal.lib \

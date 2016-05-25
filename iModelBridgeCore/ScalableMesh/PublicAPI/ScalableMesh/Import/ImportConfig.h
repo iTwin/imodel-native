@@ -44,6 +44,14 @@ struct ImportConfig : RefCountedBase
 
         virtual void _SetSourceFilters(const CustomFilteringSequence& sourceFilters) = 0;
         virtual void _SetTargetFilters(const CustomFilteringSequence& targetFilters) = 0;
+        virtual const CustomFilteringSequence& _GetTargetFilters(void) const = 0;
+
+        virtual void _SetClipShape(const HFCPtr<HVEClipShape>& clipShapePtr) = 0;
+
+        virtual const HVEClipShape* _GetClipShape() const = 0;
+
+        virtual bool                    _HasDefaultTargetGCS() const = 0;
+        virtual const GCS&              _GetDefaultTargetGCS() const = 0;
 
          explicit                ImportConfig();
          virtual                        ~ImportConfig();
@@ -92,6 +100,29 @@ struct ImportConfig : RefCountedBase
         IMPORT_DLLE void SetTargetFilters(const CustomFilteringSequence& targetFilters)
             {
             return _SetTargetFilters(targetFilters);
+            }
+        IMPORT_DLLE void SetClipShape(const HFCPtr<HVEClipShape>& clipShapePtr)
+            {
+            return _SetClipShape(clipShapePtr);
+            }
+
+        IMPORT_DLLE const HVEClipShape* GetClipShape() const
+            {
+            return _GetClipShape();
+            }
+
+        IMPORT_DLLE const CustomFilteringSequence& GetTargetFilters() const
+            {
+            return _GetTargetFilters();
+            }
+
+        IMPORT_DLLE bool                    HasDefaultTargetGCS() const
+            {
+            return _HasDefaultTargetGCS();
+            }
+        IMPORT_DLLE const GCS&              GetDefaultTargetGCS() const
+            {
+            return _GetDefaultTargetGCS();
             }
 
         IMPORT_DLLE RefCountedPtr<ImportConfig> Create();

@@ -20,7 +20,6 @@
 #include <ScalableMesh/Type/IScalableMeshTIN.h>
 #include <ScalableMesh/Type/IScalableMeshMesh.h>
 
-#include <ScalableMesh/IScalableMeshStream.h>
 
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT

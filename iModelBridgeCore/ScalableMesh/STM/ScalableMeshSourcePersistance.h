@@ -18,8 +18,8 @@
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 
-struct BinaryOStream;
-struct BinaryIStream;
+//struct BinaryOStream;
+//struct BinaryIStream;
 struct DocumentEnv;
 
 /*---------------------------------------------------------------------------------**//**

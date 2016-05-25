@@ -61,7 +61,7 @@ struct DifferenceSet
         return *this;
         }
 
-    bool IsEmpty()
+    bool IsEmpty() const
         {
         return addedFaces.empty() && removedFaces.empty();
         }

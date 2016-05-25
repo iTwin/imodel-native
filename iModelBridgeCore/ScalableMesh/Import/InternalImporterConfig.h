@@ -57,6 +57,8 @@ namespace Internal {
     const ExtractionConfig*         m_extractionConfigP;
     const FilteringConfig*          m_filteringConfigP;
 
+    const HFCPtr<HVEClipShape> m_clipShapeP;
+
 
     virtual void _SetAreAttachmentsImported(bool importAttachments) override
         {
@@ -103,10 +105,47 @@ namespace Internal {
         {
         m_targetFilters = targetFilters;
         }
+    virtual const CustomFilteringSequence&  _GetTargetFilters() const { return m_targetFilters; }
 
+    virtual void _SetClipShape(const HFCPtr<HVEClipShape>& clipShapePtr)
+        {
+        const_cast<HFCPtr<HVEClipShape>&>(m_clipShapeP) = clipShapePtr.GetPtr();
+        }
+
+    virtual const HVEClipShape* _GetClipShape() const
+        {
+        return m_clipShapeP.GetPtr();
+        }
+
+    virtual bool                    _HasDefaultTargetGCS() const { return 0 != m_defaultTargetGCSP; }
+    virtual const GCS&              _GetDefaultTargetGCS() const { return *m_defaultTargetGCSP; }
 
 public:
     explicit                        Config                     ();
+
+   explicit                        Config(const Config& config)
+        : m_sourceFilters(config.m_sourceFilters), m_filteringConfigP(config.m_filteringConfigP), m_extractionConfigP(config.m_extractionConfigP),
+        m_defaultSourceGCSP(config.m_defaultSourceGCSP), m_defaultTargetSMDataP(config.m_defaultTargetSMDataP), m_defaultTargetTypeP(config.m_defaultTargetTypeP),
+        m_defaultTargetLayer(config.m_defaultTargetLayer), m_hasDefaultTargetLayer(config.m_hasDefaultTargetLayer), m_defaultTargetGCSP(config.m_defaultTargetGCSP),
+        m_targetFilters(config.m_targetFilters), m_clipShapeP(m_clipShapeP.GetPtr())
+        {
+        }
+
+    Config&                         operator=(const Config& config)
+        {
+        m_sourceFilters = config.m_sourceFilters;
+        m_filteringConfigP = config.m_filteringConfigP;
+        m_extractionConfigP =config.m_extractionConfigP;
+        m_defaultSourceGCSP = config.m_defaultSourceGCSP;
+        m_defaultTargetSMDataP = config.m_defaultTargetSMDataP; 
+        m_defaultTargetTypeP = config.m_defaultTargetTypeP;
+        m_defaultTargetLayer = config.m_defaultTargetLayer ; 
+        m_hasDefaultTargetLayer = config.m_hasDefaultTargetLayer;
+        m_defaultTargetGCSP = config.m_defaultTargetGCSP;
+        m_targetFilters = config.m_targetFilters;
+        const_cast<HFCPtr<HVEClipShape>&>(m_clipShapeP) = m_clipShapeP.GetPtr();
+        return *this;
+        }
     
 
     bool                            HasDefaultTargetLayer      () const { return m_hasDefaultTargetLayer; }
@@ -121,15 +160,12 @@ public:
     bool                            HasDefaultSourceGCS        () const { return 0 != m_defaultSourceGCSP; }
     const GCS&                      GetDefaultSourceGCS        () const { return *m_defaultSourceGCSP; }
 
-    bool                            HasDefaultTargetGCS        () const { return 0 != m_defaultTargetGCSP; }
-    const GCS&                      GetDefaultTargetGCS        () const { return *m_defaultTargetGCSP; }
 
     const ExtractionConfig&         GetExtractionConfig        () const { return *m_extractionConfigP; }
 
     const FilteringConfig&          GetFilteringConfig         () const { return *m_filteringConfigP; }
 
     const CustomFilteringSequence&  GetSourceFilters           () const { return m_sourceFilters; }
-    const CustomFilteringSequence&  GetTargetFilters           () const { return m_targetFilters; }
     };
 
 

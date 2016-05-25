@@ -391,7 +391,6 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f Terra
     <ClInclude Include="PublicAPI\ScalableMesh\IScalableMesh.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshClipContainer.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshCreator.h" />
-    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshDataStore.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshDocumentEnv.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshFeature.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshMoniker.h" />
@@ -441,6 +440,7 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f Terra
     <ClInclude Include="STM\3dDelaunay\TrimHull.h" />
     <ClInclude Include="STM\CGALEdgeCollapse.h" />
     <ClInclude Include="STM\CGAL_BentleyKernel.h" />
+    <ClInclude Include="stm\ComputeMemoryUseTraits.h" />
     <ClInclude Include="STM\Edits\Skirts.h" />
     <ClInclude Include="stm\ScalableMeshDb.h" />
     <ClInclude Include="STM\ScalableMeshFileMoniker.h" />

@@ -21,6 +21,9 @@
 
 #include "SMMemoryPool.h"
 
+#include <ScalableMesh\IScalableMeshProgressiveQuery.h>
+
+
 extern bool s_useThreadsInStitching;
 extern bool s_useThreadsInMeshing;
 extern bool s_useThreadsInTexturing;
@@ -51,13 +54,79 @@ template<class POINT, class EXTENT> class ISMPointIndexMesher;
 template<class POINT, class EXTENT> class ISMMeshIndexFilter;
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
+
 enum ClipAction
     {
     ACTION_ADD = 0,
     ACTION_DELETE,
     ACTION_MODIFY
     };
+
+struct SmCachedDisplayData 
+    {
+    private : 
+
+        SmCachedDisplayMesh*                m_cachedDisplayMesh;
+        SmCachedDisplayTexture*             m_cachedDisplayTexture;
+        IScalableMeshDisplayCacheManagerPtr m_displayCacheManagerPtr;
+        size_t                              m_memorySize;
+        bvector<uint64_t>                   m_appliedClips; 
+
+    public : 
+    
+        SmCachedDisplayData(SmCachedDisplayMesh*                 cachedDisplayMesh,
+                            SmCachedDisplayTexture*              cachedDisplayTexture,
+                            IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr, 
+                            size_t                               memorySize, 
+                            const bvector<uint64_t>&             appliedClips)
+            {
+            m_cachedDisplayMesh = cachedDisplayMesh;
+            m_cachedDisplayTexture = cachedDisplayTexture; 
+            m_displayCacheManagerPtr = displayCacheManagerPtr;
+            m_memorySize = memorySize;
+            m_appliedClips.insert(m_appliedClips.end(), appliedClips.begin(), appliedClips.end());
+            }
+
+        virtual ~SmCachedDisplayData()
+            {
+            if (m_cachedDisplayMesh != 0)
+                {
+                BentleyStatus status = m_displayCacheManagerPtr->_DestroyCachedMesh(m_cachedDisplayMesh); 
+                assert(status == SUCCESS);                    
+                }
+
+            if (m_cachedDisplayTexture != 0)
+                {
+                BentleyStatus status = m_displayCacheManagerPtr->_DestroyCachedTexture(m_cachedDisplayTexture); 
+                assert(status == SUCCESS);                    
+                }
+            }
+
+        size_t GetMemorySize() const
+            {
+            return m_memorySize;
+            }                
+
+        SmCachedDisplayMesh* GetCachedDisplayMesh() const
+            {
+            return m_cachedDisplayMesh; 
+            }
+
+        SmCachedDisplayTexture* GetCachedDisplayTexture() const
+            {
+            return m_cachedDisplayTexture;
+            }
+
+        const bvector<uint64_t>& GetAppliedClips()
+            {
+            return m_appliedClips;
+            }
+    };
+
 END_BENTLEY_SCALABLEMESH_NAMESPACE
+
+//extern size_t nGraphPins;
+//extern size_t nGraphReleases;
 
 template<class POINT, class EXTENT> class SMMeshIndex;
 
@@ -165,9 +234,11 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     virtual void LoadGraph(bool shouldPinGraph=false) const;
 
+
     void ReleaseGraph()
         {
-        m_graphVec.UnPin();
+ //       nGraphReleases++;
+ //       m_graphVec.UnPin();
         }
 
     void LockGraph()
@@ -183,14 +254,52 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     void StoreAllGraphs();
 
-    virtual MTGGraph* GetGraphPtr()
+   /* virtual MTGGraph* GetGraphPtr()
         {
         if (m_graphVec.size() == 0 || m_graphVec.Discarded()) return NULL;
         else return const_cast<MTGGraph*>(&*m_graphVec.begin());
+        }*/
+
+    virtual RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> GetGraphPtr(bool loadGraph = true)
+        {
+        std::lock_guard<std::mutex> lock(m_graphMutex); //don't want to add item twice
+        RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> poolMemItemPtr;
+
+
+        if (!SMMemoryPool::GetInstance()->GetItem<MTGGraph>(poolMemItemPtr, m_graphPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::Graph) && loadGraph)
+            {
+            //NEEDS_WORK_SM : SharedPtr for GetPtsIndiceStore().get()            
+            RefCountedPtr<SMStoredMemoryPoolGenericBlobItem<MTGGraph>> storedMemoryPoolItem(new SMStoredMemoryPoolGenericBlobItem<MTGGraph>(GetBlockID().m_integerID, GetGraphStore().GetPtr(), SMPoolDataTypeDesc::Graph));
+            SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolItem.get());
+            m_graphPoolItemId = SMMemoryPool::GetInstance()->AddItem(memPoolItemPtr);
+            assert(m_graphPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
+            poolMemItemPtr = storedMemoryPoolItem.get();
+            }
+
+        return poolMemItemPtr;
         }
 
-    void SetGraphDirty()
+
+    virtual RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> GetDiffSetPtr() const
         {
+        RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> poolMemItemPtr;
+
+
+        if (!SMMemoryPool::GetInstance()->GetItem<DifferenceSet>(poolMemItemPtr, m_diffSetsItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::DiffSet))
+            {
+            //NEEDS_WORK_SM : SharedPtr for GetPtsIndiceStore().get()            
+            RefCountedPtr<SMStoredMemoryPoolGenericVectorItem<DifferenceSet>> storedMemoryPoolItem(new SMStoredMemoryPoolGenericVectorItem<DifferenceSet>(GetBlockID().m_integerID, dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetClipStore().GetPtr(), SMPoolDataTypeDesc::DiffSet));
+            SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolItem.get());
+            m_diffSetsItemId = SMMemoryPool::GetInstance()->AddItem(memPoolItemPtr);
+            assert(m_diffSetsItemId != SMMemoryPool::s_UndefinedPoolItemId);
+            poolMemItemPtr = storedMemoryPoolItem.get();
+            }
+
+        return poolMemItemPtr;
+        }
+    /*void SetGraphDirty()
+        {
+        //m_graphVec.RecomputeCount();
         m_graphVec.SetDiscarded(false);
         m_graphVec.SetDirty(true);
         }
@@ -203,7 +312,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     void PinGraph()
     {
         m_graphVec.Pin();
-    }
+    }*/
     /**----------------------------------------------------------------------------
     Returns the 2.5d mesher used for meshing the points
 
@@ -270,6 +379,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     bool HasClip(uint64_t clipId);
 
+    bool IsClippingUpToDate();
+
     //If necessary, update clips so as to merge them with other clips on the node.
     void  ComputeMergedClips();
     //Adds a new set of differences matching the desired clip (synchronously).
@@ -291,7 +402,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     const DifferenceSet& GetClipSet(size_t index) const
         {
-        return m_differenceSets[index];
+        RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> diffset = GetDiffSetPtr();
+        return (*diffset.get())[index];
         }
 
 
@@ -348,6 +460,32 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
         return poolMemVectorItemPtr;
         }
+
+    virtual RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayData>> AddDisplayData(SmCachedDisplayData* smCachedDisplayData)
+        {                        
+        assert(smCachedDisplayData != 0);        
+
+        RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayData>> customGenericBlobItemPtr(new SMMemoryPoolGenericBlobItem<SmCachedDisplayData>(smCachedDisplayData, smCachedDisplayData->GetMemorySize(), GetBlockID().m_integerID, SMPoolDataTypeDesc::Display));        
+        SMMemoryPoolItemBasePtr memPoolItemPtr(customGenericBlobItemPtr.get());
+        m_displayDataPoolItemId = GetMemoryPool()->AddItem(memPoolItemPtr);
+        assert(m_displayDataPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);                                            
+        return customGenericBlobItemPtr;
+        }    
+    
+    virtual RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayData>> GetDisplayData()
+        {        
+        RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayData>> cachedDisplayDataItemPtr;
+                
+        GetMemoryPool()->GetItem<SmCachedDisplayData>(cachedDisplayDataItemPtr, m_displayDataPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::Display);
+            
+        return cachedDisplayDataItemPtr;
+        }    
+
+    virtual void RemoveDisplayData()
+        {                                
+        GetMemoryPool()->RemoveItem(m_displayDataPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::Display);                                                    
+        m_displayDataPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;        
+        }    
         
     SMMemoryPoolPtr GetMemoryPool() const
         {
@@ -384,7 +522,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
         if (!IsTextured())
             return poolMemBlobItemPtr;
-                             
+                  
+        //NEEDS_WORK_SM : Need to modify the pool to have a thread safe get or add.
         if (!GetMemoryPool()->GetItem<Byte>(poolMemBlobItemPtr, m_texturePoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::Texture))
             {                              
             RefCountedPtr<SMStoredMemoryPoolBlobItem<Byte>> storedMemoryPoolVector(new SMStoredMemoryPoolBlobItem<Byte>(GetBlockID().m_integerID, GetTextureStore().GetPtr(), SMPoolDataTypeDesc::Texture));
@@ -513,21 +652,24 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     atomic<size_t> m_nbClips;
     BcDTMPtr m_tileBcDTM;
     std::mutex m_dtmLock;
+    mutable SMMemoryPoolItemId m_graphPoolItemId;
     private:
 
         bool ClipIntersectsBox(uint64_t clipId, EXTENT ext);
 
-        mutable HPMStoredPooledVector<DifferenceSet> m_differenceSets;
-        mutable HPMStoredPooledVector<MTGGraph> m_graphVec;
+        //mutable HPMStoredPooledVector<DifferenceSet> m_differenceSets;
         mutable std::mutex m_graphInflateMutex;
         mutable std::mutex m_graphMutex;
         mutable SMMemoryPoolItemId m_triIndicesPoolItemId;        
         mutable SMMemoryPoolItemId m_texturePoolItemId;                        
         mutable SMMemoryPoolItemId m_triUvIndicesPoolItemId;                
-        mutable SMMemoryPoolItemId m_uvCoordsPoolItemId;                
+        mutable SMMemoryPoolItemId m_uvCoordsPoolItemId;
+        mutable SMMemoryPoolItemId m_diffSetsItemId;
+        mutable SMMemoryPoolItemId m_displayDataPoolItemId;  
+        //mutable SMMemoryPoolItemId m_graphPoolItemId;      
         ISMPointIndexMesher<POINT, EXTENT>* m_mesher2_5d;
         ISMPointIndexMesher<POINT, EXTENT>* m_mesher3d;
-        mutable bool m_isGraphLoaded;                
+       // mutable bool m_isGraphLoaded;                
         HFCPtr<ClipRegistry> m_clipRegistry;
         mutable std::mutex m_headerMutex;
     };
@@ -689,14 +831,12 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
             {
             return dynamic_cast<SMMeshIndexNode<POINT, EXTENT>*>(GetParentNodePtr().GetPtr())->LoadGraph();
             };
-        virtual MTGGraph* GetGraphPtr() override
+        virtual RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> GetGraphPtr(bool loadGraph = true) override
             {
-            return dynamic_cast<SMMeshIndexNode<POINT, EXTENT>*>(GetParentNodePtr().GetPtr())->GetGraphPtr();
+            return dynamic_cast<SMMeshIndexNode<POINT, EXTENT>*>(GetParentNodePtr().GetPtr())->GetGraphPtr(loadGraph);
             };
         virtual bool IsVirtualNode() const override
             {
-            volatile bool a = 1;
-            a = a;
             return true;
             }
         

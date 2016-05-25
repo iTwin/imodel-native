@@ -30,18 +30,21 @@ SMMemoryPoolItemBase::SMMemoryPoolItemBase()
 SMMemoryPoolItemBase::SMMemoryPoolItemBase(Byte* data, uint64_t size, uint64_t nodeId, SMPoolDataTypeDesc& dataType)
     {
     m_data = data;
-    m_size = size;
+    m_size = size;   
     m_nodeId = nodeId;
     m_dataType = dataType;
     m_data = data;
     m_dirty = false;
     }
-
+   
 SMMemoryPoolItemBase::~SMMemoryPoolItemBase()
     {
     if (m_data != 0)
-        delete [] m_data;
-    }
+        {
+        delete[] m_data;
+        m_data = 0;
+        }
+    }   
 
 uint64_t SMMemoryPoolItemBase::GetSize()
     {
@@ -118,12 +121,30 @@ bool SMMemoryPool::RemoveItem(SMMemoryPoolItemId id, uint64_t nodeId, SMPoolData
         {
         m_currentPoolSizeInBytes -= memItemPtr->GetSize();        
         memItemPtr = 0;
-        assert(m_memPoolItems[id]->GetRefCount() == 1);
+        //assert(m_memPoolItems[id]->GetRefCount() == 1);
         m_memPoolItems[id] = 0;
         return true;
         }
 
     return false;
+    }
+
+void SMMemoryPool::ReplaceItem(SMMemoryPoolItemBasePtr& poolItem, SMMemoryPoolItemId id, uint64_t nodeId, SMPoolDataTypeDesc dataType)
+    {
+    if (id == SMMemoryPool::s_UndefinedPoolItemId)
+        return;
+    std::lock_guard<std::mutex> lock(*m_memPoolItemMutex[id]);
+    SMMemoryPoolItemBasePtr memItemPtr(m_memPoolItems[id]);
+
+    if (memItemPtr.IsValid() && memItemPtr->IsCorrect(nodeId, dataType))
+        {
+        m_currentPoolSizeInBytes -= memItemPtr->GetSize();
+        memItemPtr = 0;
+        m_memPoolItems[id] = poolItem;
+        m_currentPoolSizeInBytes += m_memPoolItems[id]->GetSize();
+        m_lastAccessTime[id] = clock();
+        return;
+        }
     }
 
 SMMemoryPoolItemId SMMemoryPool::AddItem(SMMemoryPoolItemBasePtr& poolItem)

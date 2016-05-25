@@ -52,13 +52,15 @@ class SMSQLiteDiffsetTileStore : public IScalableMeshDataStore<DifferenceSet, By
             }
         void Open()
             {
+            std::lock_guard<std::mutex> lock(fileLock);
+            if (m_smSQLiteFile != NULL && m_smSQLiteFile->IsOpen()) return;
             StatusInt status;
             m_smSQLiteFile = SMSQLiteFile::Open(m_path, false, status);
-            if (m_needsCreate || !status || !m_smSQLiteFile->IsOpen())
-                {
-                m_needsCreate = true;
-                m_smSQLiteFile->Create(m_path);
-                }
+                if (m_needsCreate || !status || !m_smSQLiteFile->IsOpen())
+                    {
+                    m_needsCreate = true;
+                    m_smSQLiteFile->Create(m_path);
+                    }
             }
 
 
@@ -99,8 +101,9 @@ class SMSQLiteDiffsetTileStore : public IScalableMeshDataStore<DifferenceSet, By
                 {
                 ct[i] = DataTypeArray[i].WriteToBinaryStream(serializedSet[i]);
                 countAsBytes += ct[i];
+                countAsPts += (size_t)(ceil((float)ct[i] / sizeof(int32_t)));
                 }
-            countAsPts = (size_t)(ceil((float)countAsBytes / sizeof(int32_t)));
+            //countAsPts = (size_t)(ceil((float)countAsBytes / sizeof(int32_t)));
             size_t nOfInts = (size_t)(ceil(((float)sizeof(size_t) / sizeof(int32_t))));
             int32_t* ptArray = new int32_t[countAsPts + countData + nOfInts];
             memcpy(ptArray, &countData, sizeof(size_t));
@@ -108,6 +111,7 @@ class SMSQLiteDiffsetTileStore : public IScalableMeshDataStore<DifferenceSet, By
             for (size_t i = 0; i < countData; i++)
                 {
                 ptArray[(size_t)(ceil(((float)offset / sizeof(int32_t))))] = (int32_t)ct[i];
+                offset = (size_t)(ceil(((float)offset / sizeof(int32_t))))*sizeof(int32_t);
                 offset += sizeof(int32_t);
                 memcpy((char*)ptArray + offset, serializedSet[i], ct[i]);
                 offset += ct[i];
@@ -126,10 +130,10 @@ class SMSQLiteDiffsetTileStore : public IScalableMeshDataStore<DifferenceSet, By
             HCDPacket pi_uncompressedPacket, pi_compressedPacket;
             size_t countAsPts;
             int32_t * ptArray = Serialize(countAsPts, DataTypeArray, countData);
-            bvector<uint8_t> diffsetData(countAsPts*sizeof(int));
-            memcpy(&diffsetData[0], ptArray, countAsPts*sizeof(int));
+            bvector<uint8_t> diffsetData(countAsPts*sizeof(int) + countData*sizeof(int) + sizeof(size_t));
+            memcpy(&diffsetData[0], ptArray, countAsPts*sizeof(int) + countData*sizeof(int) + sizeof(size_t));
             int64_t id = SQLiteNodeHeader::NO_NODEID;
-            m_smSQLiteFile->StoreDiffSet(id, diffsetData, countAsPts*sizeof(int));
+            m_smSQLiteFile->StoreDiffSet(id, diffsetData, countAsPts*sizeof(int) + countData*sizeof(int) + sizeof(size_t));
             delete[] ptArray;
             return HPMBlockID(id);
             }
@@ -141,19 +145,22 @@ class SMSQLiteDiffsetTileStore : public IScalableMeshDataStore<DifferenceSet, By
             if (!blockID.IsValid()) return StoreNewBlock(DataTypeArray, countData);
             size_t countAsPts;
             int32_t * ptArray = Serialize(countAsPts, DataTypeArray, countData);
-            bvector<uint8_t> diffsetData(countAsPts*sizeof(int));
-            memcpy(&diffsetData[0], ptArray, countAsPts*sizeof(int));
+            bvector<uint8_t> diffsetData(countAsPts*sizeof(int)+countData*sizeof(int)+sizeof(size_t));
+            memcpy(&diffsetData[0], ptArray, countAsPts*sizeof(int) + countData*sizeof(int) + sizeof(size_t));
             int64_t id = blockID.m_integerID;
-            m_smSQLiteFile->StoreDiffSet(id, diffsetData, countAsPts*sizeof(int));
+            m_smSQLiteFile->StoreDiffSet(id, diffsetData, countAsPts*sizeof(int) + countData*sizeof(int) + sizeof(size_t));
             delete[] ptArray;
             return HPMBlockID(id);
             }
 
         virtual size_t GetBlockDataCount(HPMBlockID blockID) const
             {
+            if (m_smSQLiteFile == NULL || !m_smSQLiteFile->IsOpen())
+                const_cast<SMSQLiteDiffsetTileStore*>(this)->Open();
             bvector<uint8_t> diffsetData;
             size_t uncompressedSize = 0;
             m_smSQLiteFile->GetDiffSet(blockID.m_integerID, diffsetData, uncompressedSize);
+            if (uncompressedSize == 0) return 0;
             size_t dataCount = 0;
             memcpy(&dataCount, &diffsetData[0], sizeof(size_t));
             return dataCount;
@@ -185,15 +192,17 @@ class SMSQLiteDiffsetTileStore : public IScalableMeshDataStore<DifferenceSet, By
                 {
                 size_t offset = (size_t)ceil(sizeof(size_t));
                 size_t ct = 0;
-                while (*((int32_t*)&diffsetData[offset]) > 0 && ct < dataCount && offset + 1 < diffsetData.size())
+                while (offset + 1 < diffsetData.size() && *((int32_t*)&diffsetData[offset]) > 0 && ct < dataCount)
                     {
                     //The pooled vectors don't initialize the memory they allocate. For complex datatypes with some logic in the constructor (like bvector),
                     //this leads to undefined behavior when using the object. So we call the constructor on the allocated memory from the pool right here using placement new.
                     DifferenceSet * diffSet = new(DataTypeArray + ct)DifferenceSet();
-                    diffSet->LoadFromBinaryStream(&diffsetData[0] + offset + 1, (size_t)*((int32_t*)&diffsetData[offset]));
+                    size_t sizeOfCurrentSerializedSet = (size_t)*((int32_t*)&diffsetData[offset]);
+                    diffSet->LoadFromBinaryStream(&diffsetData[0] + offset + sizeof(int32_t), sizeOfCurrentSerializedSet);
                     diffSet->upToDate = true;
-                    offset++;
-                    offset += *((int32_t*)&diffsetData[offset]);
+                    offset += sizeof(int32_t);
+                    offset += sizeOfCurrentSerializedSet;
+                    offset = ceil(((float)offset / sizeof(int32_t)))*sizeof(int32_t);
                     ++ct;
                     }
                 }
@@ -211,4 +220,5 @@ class SMSQLiteDiffsetTileStore : public IScalableMeshDataStore<DifferenceSet, By
         SMSQLiteFilePtr m_smSQLiteFile;
         WString m_path;
         bool m_needsCreate;
+        std::mutex fileLock;
     };

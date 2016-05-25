@@ -849,9 +849,6 @@
     <ClInclude Include="STM\SMSQLiteSkirtDefinitionsTileStore.h">
       <Filter>Includes\STM</Filter>
     </ClInclude>
-    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshDataStore.h">
-      <Filter>Includes\PublicAPI</Filter>
-    </ClInclude>
     <ClInclude Include="STM\Edits\Skirts.h">
       <Filter>Includes\STM\Edits</Filter>
     </ClInclude>
@@ -859,6 +856,9 @@
       <Filter>Includes\STM</Filter>
     </ClInclude>
     <ClInclude Include="stm\ScalableMeshDb.h">
+      <Filter>Includes\STM</Filter>
+    </ClInclude>
+    <ClInclude Include="stm\ComputeMemoryUseTraits.h">
       <Filter>Includes\STM</Filter>
     </ClInclude>
   </ItemGroup>
