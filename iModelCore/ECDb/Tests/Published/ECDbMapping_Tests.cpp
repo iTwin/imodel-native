@@ -6644,7 +6644,7 @@ TEST_F(ECDbMappingTestFixture, NotNullConstraintsOnFkColumns)
     Utf8String ddl;
     getDdl(ddl, ecdb, "ts_Base");
     ASSERT_FALSE(ddl.empty());
-    ASSERT_TRUE(ddl.ContainsI("[ECInstanceId] INTEGER NOT NULL,")) << "Actual DDL: " << ddl.c_str();
+    ASSERT_TRUE(ddl.ContainsI("[ECInstanceId] INTEGER PRIMARY KEY,")) << "Actual DDL: " << ddl.c_str();
     }
     }
 

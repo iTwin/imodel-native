@@ -168,7 +168,7 @@ BentleyStatus ECDbSchemaManager::ImportECSchemas(ECSchemaCacheR cache) const
         return ERROR;
 
     //Drop all debug views
-    if (ViewGenerator::DropDebugViews(GetECDb()) != SUCCESS)
+    if (ViewGenerator::DropECClassViews(GetECDb()) != SUCCESS)
         return ERROR;
 
     //Drop all updatable views

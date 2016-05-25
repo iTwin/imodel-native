@@ -10,6 +10,24 @@
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //*************************************** ECDbProfileUpgrader_XXX *********************************
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle        05/2016
+//+---------------+---------------+---------------+---------------+---------------+--------
+DbResult ECDbProfileUpgrader_3710::_Upgrade(ECDbCR ecdb) const
+    {
+    const int ecinstanceIdColKindInt = Enum::ToInt(DbColumn::Kind::ECInstanceId);
+    Utf8String sql;
+    sql.Sprintf("UPDATE ec_Column SET NotNullConstraint=0 WHERE ColumnKind & %d = %d", ecinstanceIdColKindInt, ecinstanceIdColKindInt);
+    const DbResult stat = ecdb.ExecuteSql(sql.c_str());
+    if (BE_SQLITE_OK != stat)
+        {
+        LOG.errorv("ECDb profile upgrade failed: Updating column 'NotNullConstraint' in table 'ec_Column' for ECInstanceId columns failed: %s", ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    LOG.debug("ECDb profile upgrade: Updated column 'NotNullConstraint' in table 'ec_Column' for ECInstanceId columns.");
+    return BE_SQLITE_OK;
+    }
 
 //*************************************** ECProfileUpgrader *********************************
 //-----------------------------------------------------------------------------------------

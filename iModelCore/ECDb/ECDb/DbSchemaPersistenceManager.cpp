@@ -65,7 +65,7 @@ DbResult DbSchemaPersistenceManager::ReadTables(DbSchema& dbSchema, ECDbCR ecdb)
         DbTableId id = stmt->GetValueId<DbTableId>(0);
         Utf8CP name = stmt->GetValueText(1);
         DbTable::Type tableType = Enum::FromInt<DbTable::Type>(stmt->GetValueInt(2));
-        PersistenceType persistenceType = stmt->GetValueInt(3) == 1 ? PersistenceType::Virtual : PersistenceType::Persisted;
+        PersistenceType persistenceType = IsTrue(stmt->GetValueInt(3)) ? PersistenceType::Virtual : PersistenceType::Persisted;
         Utf8CP primaryTableName = stmt->GetValueText(4);
 
         DbTable const* primaryTable = nullptr;
@@ -114,20 +114,32 @@ DbResult DbSchemaPersistenceManager::ReadColumns(DbTable& table, ECDbCR ecdb)
     if (stat != BE_SQLITE_OK)
         return stat;
 
-    bmap<int, DbColumn const*> primaryKeyColumns;
-    while (stmt->Step() == BE_SQLITE_ROW)
+    const int notNullColIx = 4;
+    const int uniqueColIx = 5;
+    const int checkColIx = 6;
+    const int defaultValueColIx = 7;
+    const int collationColIx = 8;
+    const int pkOrdinalColIx = 9;
+    const int kindColIx = 10;
+
+    std::vector<DbColumn*> pkColumns;
+    std::vector<size_t> pkOrdinals;
+
+    while (BE_SQLITE_ROW == stmt->Step())
         {
         DbColumnId id = stmt->GetValueId<DbColumnId>(0);
         Utf8CP name = stmt->GetValueText(1);
         const DbColumn::Type type = Enum::FromInt<DbColumn::Type>(stmt->GetValueInt(2));
-        const PersistenceType persistenceType = stmt->GetValueInt(3) == 1 ? PersistenceType::Virtual : PersistenceType::Persisted;
-        const bool constraintNotNull = stmt->GetValueInt(4) == 1;
-        const bool constraintUnique = stmt->GetValueInt(5) == 1;
-        Utf8CP constraintCheck = !stmt->IsColumnNull(6) ? stmt->GetValueText(6) : nullptr;
-        Utf8CP constraintDefault = !stmt->IsColumnNull(7) ? stmt->GetValueText(7) : nullptr;
-        const DbColumn::Constraint::Collation constraintCollate = Enum::FromInt<DbColumn::Constraint::Collation>(stmt->GetValueInt(8));
-        int primaryKeyOrdinal = stmt->IsColumnNull(9) ? -1 : stmt->GetValueInt(9);
-        const DbColumn::Kind columnKind = Enum::FromInt<DbColumn::Kind>(stmt->GetValueInt(10));
+        const PersistenceType persistenceType = IsTrue(stmt->GetValueInt(3)) ? PersistenceType::Virtual : PersistenceType::Persisted;
+
+        const bool hasNotNullConstraint = IsTrue(stmt->GetValueInt(notNullColIx));
+        const bool hasUniqueConstraint = IsTrue(stmt->GetValueInt(uniqueColIx));
+        Utf8CP constraintCheck = !stmt->IsColumnNull(checkColIx) ? stmt->GetValueText(checkColIx) : nullptr;
+        Utf8CP constraintDefault = !stmt->IsColumnNull(defaultValueColIx) ? stmt->GetValueText(defaultValueColIx) : nullptr;
+        const DbColumn::Constraints::Collation collationConstraint = Enum::FromInt<DbColumn::Constraints::Collation>(stmt->GetValueInt(collationColIx));
+
+        int primaryKeyOrdinal = stmt->IsColumnNull(pkOrdinalColIx) ? -1 : stmt->GetValueInt(pkOrdinalColIx);
+        const DbColumn::Kind columnKind = Enum::FromInt<DbColumn::Kind>(stmt->GetValueInt(kindColIx));
 
         DbColumn* column = table.CreateColumn(id, name, type, columnKind, persistenceType);
         if (column == nullptr)
@@ -136,27 +148,31 @@ DbResult DbSchemaPersistenceManager::ReadColumns(DbTable& table, ECDbCR ecdb)
             return BE_SQLITE_ERROR;
             }
 
-        column->GetConstraintR().SetIsNotNull(constraintNotNull);
-        column->GetConstraintR().SetIsUnique(constraintUnique);
-        column->GetConstraintR().SetCollation(constraintCollate);
+        if (hasNotNullConstraint)
+            column->GetConstraintsR().SetNotNullConstraint();
+
+        if (hasUniqueConstraint)
+            column->GetConstraintsR().SetUniqueConstraint();
+
+        column->GetConstraintsR().SetCollation(collationConstraint);
 
         if (!Utf8String::IsNullOrEmpty(constraintCheck))
-            column->GetConstraintR().SetCheckExpression(constraintCheck);
+            column->GetConstraintsR().SetCheckConstraint(constraintCheck);
 
         if (!Utf8String::IsNullOrEmpty(constraintDefault))
-            column->GetConstraintR().SetDefaultExpression(constraintDefault);
+            column->GetConstraintsR().SetDefaultValueExpression(constraintDefault);
 
         if (primaryKeyOrdinal >= 0)
-            primaryKeyColumns[primaryKeyOrdinal] = column;
+            {
+            pkColumns.push_back(column);
+            pkOrdinals.push_back((size_t) primaryKeyOrdinal);
+            }
         }
 
-    if (!primaryKeyColumns.empty())
+    if (!pkColumns.empty())
         {
-        PrimaryKeyDbConstraint& pkConstraint = table.GetPrimaryKeyConstraintR();
-        for (bpair<int, DbColumn const*> const& kvPair : primaryKeyColumns)
-            {
-            pkConstraint.Add(kvPair.second->GetName().c_str());
-            }
+        if (SUCCESS != table.CreatePrimaryKeyConstraint(pkColumns, &pkOrdinals))
+            return BE_SQLITE_ERROR;
         }
 
     return BE_SQLITE_OK;
@@ -177,11 +193,11 @@ BentleyStatus DbSchemaPersistenceManager::ReadIndexes(DbSchema& dbSchema, ECDbCR
         DbIndexId id = stmt->GetValueId<DbIndexId>(0);
         Utf8CP tableName = stmt->GetValueText(1);
         Utf8CP name = stmt->GetValueText(2);
-        bool isUnique = stmt->GetValueInt(3) == 1;
-        bool addNotNullWhereExp = stmt->GetValueInt(4) == 1;
-        bool isAutoGenerated = stmt->GetValueInt(5) == 1;
+        bool isUnique = IsTrue(stmt->GetValueInt(3));
+        bool addNotNullWhereExp = IsTrue(stmt->GetValueInt(4));
+        bool isAutoGenerated = IsTrue(stmt->GetValueInt(5));
         ECClassId classId = !stmt->IsColumnNull(6) ? stmt->GetValueId<ECClassId>(6) : ECClassId();
-        bool appliesToSubclassesIfPartial = stmt->GetValueInt(7) == 1;
+        bool appliesToSubclassesIfPartial = IsTrue(stmt->GetValueInt(7));
 
         DbTable* table = dbSchema.FindTableP(tableName);
         if (table == nullptr)
@@ -300,8 +316,7 @@ DbResult DbSchemaPersistenceManager::ReadClassMappings(DbSchema& dbSchema, ECDbC
         ECDbMapStrategy mapStrategy;
         if (SUCCESS != mapStrategy.Assign(Enum::FromInt<ECDbMapStrategy::Strategy>(stmt->GetValueInt(3)),
                                           Enum::FromInt<ECDbMapStrategy::Options>(stmt->GetValueInt(4)),
-                                          minSharedColCount,
-                                          stmt->GetValueInt(6) == 1))
+                                          minSharedColCount, IsTrue(stmt->GetValueInt(6))))
             {
             BeAssert(false && "Found invalid persistence values for ECDbMapStrategy");
             return BE_SQLITE_ERROR;
@@ -504,18 +519,18 @@ DbResult DbSchemaPersistenceManager::InsertColumn(ECDbCR ecdb, DbColumn const& c
     stmt->BindId(2, column.GetTable().GetId());
     stmt->BindText(3, column.GetName().c_str(), Statement::MakeCopy::No);
     stmt->BindInt(4, Enum::ToInt(column.GetType()));
-    stmt->BindInt(5, column.GetPersistenceType() == PersistenceType::Virtual ? 1 : 0);
+    stmt->BindInt(5, BoolToSqlInt(column.GetPersistenceType() == PersistenceType::Virtual));
     stmt->BindInt64(6, columnOrdinal);
-    stmt->BindInt(7, column.GetConstraint().IsNotNull() ? 1 : 0);
-    stmt->BindInt(8, column.GetConstraint().IsUnique() ? 1 : 0);
+    stmt->BindInt(7, BoolToSqlInt(column.GetConstraints().HasNotNullConstraint()));
+    stmt->BindInt(8, BoolToSqlInt(column.GetConstraints().HasUniqueConstraint()));
 
-    if (!column.GetConstraint().GetCheckExpression().empty())
-        stmt->BindText(9, column.GetConstraint().GetCheckExpression().c_str(), Statement::MakeCopy::No);
+    if (!column.GetConstraints().GetCheckConstraint().empty())
+        stmt->BindText(9, column.GetConstraints().GetCheckConstraint().c_str(), Statement::MakeCopy::No);
 
-    if (!column.GetConstraint().GetDefaultExpression().empty())
-        stmt->BindText(10, column.GetConstraint().GetDefaultExpression().c_str(), Statement::MakeCopy::No);
+    if (!column.GetConstraints().GetDefaultValueConstraint().empty())
+        stmt->BindText(10, column.GetConstraints().GetDefaultValueConstraint().c_str(), Statement::MakeCopy::No);
 
-    stmt->BindInt(11, Enum::ToInt(column.GetConstraint().GetCollation()));
+    stmt->BindInt(11, Enum::ToInt(column.GetConstraints().GetCollation()));
     if (primaryKeyOrdinal > -1)
         stmt->BindInt(12, primaryKeyOrdinal);
 
@@ -747,31 +762,30 @@ BentleyStatus DbSchemaPersistenceManager::CreateTable(ECDbCR ecdb, DbTable const
         }
 
     // Append constraints;
+    PrimaryKeyDbConstraint const* pkConstraint = table.GetPrimaryKeyConstraint();
+    if (pkConstraint != nullptr && pkConstraint->GetColumns().size() > 1)
+        {
+        //only use a PRIMARY KEY constraint clause for multi-column keys. Single column keys use the column constraint clause (handled above)
+        ddl.append(", PRIMARY KEY(");
+        AppendColumnNamesToDdl(ddl, pkConstraint->GetColumns());
+        ddl.append(")");
+        }
+
     std::vector<DbConstraint const*> tableConstraints = table.GetConstraints();
     for (DbConstraint const* tableConstraint : tableConstraints)
         {
         ddl.append(", ");
 
-        if (tableConstraint->GetType() == DbConstraint::Type::PrimaryKey)
-            {
-            PrimaryKeyDbConstraint const* pkConstraint = static_cast<PrimaryKeyDbConstraint const*>(tableConstraint);
-            if (pkConstraint->GetColumns().empty())
-                {
-                BeAssert(false && "PK constraint must at least have one column");
-                return ERROR;
-                }
-
-            ddl.append("PRIMARY KEY(");
-            AppendColumnNamesToDdl(ddl, pkConstraint->GetColumns());
-            ddl.append(")");
-            }
-        else if (tableConstraint->GetType() == DbConstraint::Type::ForeignKey)
+        if (tableConstraint->GetType() == DbConstraint::Type::ForeignKey)
             {
             ForeignKeyDbConstraint const* fkConstraint = static_cast<ForeignKeyDbConstraint const*>(tableConstraint);
             if (SUCCESS != AppendForeignKeyDdl(ddl, *fkConstraint))
                 return ERROR;
             }
-
+        else
+            {
+            BeAssert(false && "Unsupported DbConstraint type");
+            }
         }
     ddl.append(")");
 
@@ -1091,7 +1105,7 @@ BentleyStatus DbSchemaPersistenceManager::GenerateIndexWhereClause(Utf8StringR w
         bool isFirstCol = true;
         for (DbColumn const* indexCol : index.GetColumns())
             {
-            if (indexCol->GetConstraint().IsNotNull())
+            if (indexCol->GetConstraints().HasNotNullConstraint())
                 continue;
 
             if (!isFirstCol)
@@ -1240,21 +1254,28 @@ BentleyStatus DbSchemaPersistenceManager::AppendColumnDdl(Utf8StringR ddl, DbCol
 
     ddl.append(typeStr);
 
-    DbColumn::Constraint const& colConstraint = col.GetConstraint();
-    if (colConstraint.IsNotNull())
+    if (col.IsOnlyColumnOfPrimaryKeyConstraint())
+        {
+        ddl.append(" PRIMARY KEY");
+        BeAssert(!col.GetConstraints().HasNotNullConstraint() && !col.GetConstraints().HasUniqueConstraint());
+        return SUCCESS;
+        }
+
+    DbColumn::Constraints const& colConstraint = col.GetConstraints();
+    if (colConstraint.HasNotNullConstraint())
         ddl.append(" NOT NULL");
 
-    if (colConstraint.IsUnique())
+    if (colConstraint.HasUniqueConstraint())
         ddl.append(" UNIQUE");
 
-    if (colConstraint.GetCollation() != DbColumn::Constraint::Collation::Default)
-        ddl.append(" COLLATE ").append(DbColumn::Constraint::CollationToSql(colConstraint.GetCollation()));
+    if (colConstraint.GetCollation() != DbColumn::Constraints::Collation::Default)
+        ddl.append(" COLLATE ").append(DbColumn::Constraints::CollationToSql(colConstraint.GetCollation()));
 
-    if (!colConstraint.GetDefaultExpression().empty())
-        ddl.append(" DEFAULT(").append(colConstraint.GetDefaultExpression()).append(")");
+    if (!colConstraint.GetDefaultValueConstraint().empty())
+        ddl.append(" DEFAULT(").append(colConstraint.GetDefaultValueConstraint()).append(")");
 
-    if (!colConstraint.GetCheckExpression().empty())
-        ddl.append(" CHECK('").append(colConstraint.GetCheckExpression()).append("')");
+    if (!colConstraint.GetCheckConstraint().empty())
+        ddl.append(" CHECK('").append(colConstraint.GetCheckConstraint()).append("')");
 
     return SUCCESS;
     }
@@ -1326,7 +1347,6 @@ void DbSchemaPersistenceManager::DoAppendForeignKeyDdl(Utf8StringR ddl, ForeignK
     if (fkConstraint.GetOnUpdateAction() != ForeignKeyDbConstraint::ActionType::NotSpecified)
         ddl.append(" ON UPDATE ").append(ForeignKeyDbConstraint::ActionTypeToSql(fkConstraint.GetOnUpdateAction()));
     }
-
 
 //---------------------------------------------------------------------------------------
 //! This method is not called from anywhere, because it provides compile-time asserts

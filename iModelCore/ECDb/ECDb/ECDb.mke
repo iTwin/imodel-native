@@ -53,7 +53,6 @@ ECDbAllHeaders = \
                 $(baseDir)ECDbProfileUpgrader.h \
                 $(baseDir)ECDbSystemSchemaHelper.h \
                 $(baseDir)ECDbPolicyManager.h \
-                $(baseDir)SqlUtilities.h \
                 $(baseDir)ECSql/DynamicSelectClauseECClass.h \
                 $(baseDir)ECSql/Parser/SqlTypes.h \
                 $(baseDir)ECSql/Parser/IParseContext.h \
@@ -177,8 +176,6 @@ $(o)ECDbSchemaPersistenceHelper$(oext):                     $(baseDir)ECDbSchema
 $(o)ECDbSchemaReader$(oext):								$(baseDir)ECDbSchemaReader.cpp              $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECDbSchemaWriter$(oext):								$(baseDir)ECDbSchemaWriter.cpp              $(ECDbAllHeaders) ${MultiCompileDepends}
-
-$(o)SqlUtilities$(oext):								    $(baseDir)SqlUtilities.cpp               $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECDbSchemaManager$(oext):								$(baseDir)ECDbSchemaManager.cpp             $(ECDbAllHeaders) ${MultiCompileDepends}
 
