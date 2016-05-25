@@ -2,6 +2,9 @@
 
 #include <ScalableTerrainModel\IMrDTMSources.h>
 
+#include <Vu\VuApi.h>
+#include <Vu\vuconvex.fdf>
+
 #include <windows.h>
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
@@ -308,11 +311,29 @@ inline void AddWildCardToFolderPath(WString* pio_pFolderPath)
                         }
             }
         }
-    
-    bool ParseSourceSubNodes(Bentley::ScalableMesh::IDTMSourceCollection& sourceCollection, BeXmlNodeP pTestNode)
+        
+    void ConvexSplittingCallback(DPoint3d* pPts, int* flags, int size, void* pArg)
+        {
+        auto arg = (bvector<bvector<DPoint3d>>*) pArg;
+        bvector<DPoint3d> vec(size);
+        memcpy(&vec[0], pPts, size*sizeof(DPoint3d));
+        arg->push_back(vec);
+        }
+
+    bool ParseSourceSubNodes(Bentley::ScalableMesh::IDTMSourceCollection& sourceCollection, 
+                             bvector<bvector<DPoint3d>>&                  importConvexClipShapes, 
+                             DRange3d&                                    importRange, 
+                             BeXmlNodeP                                   pTestNode)
         {
         bool isSuccess = true;
 
+        importRange.low.x = -numeric_limits<double>::max();
+        importRange.high.x = numeric_limits<double>::max();
+        importRange.low.y = -numeric_limits<double>::max();
+        importRange.high.y = numeric_limits<double>::max();
+        importRange.low.z = -numeric_limits<double>::max();
+        importRange.high.z = numeric_limits<double>::max();
+        
         BeXmlNodeP pTestChildNode = pTestNode->GetFirstChild();
 
         while ((0 != pTestChildNode) && (isSuccess == true))
@@ -380,7 +401,55 @@ inline void AddWildCardToFolderPath(WString* pio_pFolderPath)
                     }
                 }
             else
-                {
+            if (0 == BeStringUtilities::Stricmp(pTestChildNode->GetName(), "clipshape"))
+                {      
+                WString clipShapeStr;
+                BeXmlStatus status = pTestChildNode->GetContent(clipShapeStr);
+                assert(status == BEXML_Success);
+                
+                size_t startInd = 0;
+                size_t endInd = 0;
+                bvector<DPoint3d> clipShapePts;
+                DPoint3d pt; 
+                pt.z = 0;
+                bool isX = true;
+
+                for (; endInd < clipShapeStr.size(); endInd++)
+                    {
+                    if (((clipShapeStr.c_str()[endInd] == L',') || (clipShapeStr.c_str()[endInd] == L';')) && (startInd < endInd - 1))
+                        {                    
+                        WString coordStr(clipShapeStr.substr(startInd, endInd - startInd - 1));
+                        if (isX)
+                            {
+                            assert((clipShapeStr.c_str()[endInd] == L','));
+                            pt.x = _wtof(coordStr.c_str());                                        
+                            isX = false;
+                            }
+                        else
+                            {
+                            assert((clipShapeStr.c_str()[endInd] == L';'));
+                            pt.y = _wtof(coordStr.c_str());                                        
+                            isX = true;
+                            clipShapePts.push_back(pt);
+                            }
+                        
+                        startInd = endInd + 1;
+                        }
+                    }
+
+                if (startInd < endInd)
+                    {
+                    assert(isX == false);
+                    WString coordStr(clipShapeStr.substr(startInd, endInd - startInd));
+                    pt.y = _wtof(coordStr.c_str());
+                    clipShapePts.push_back(pt);
+                    }
+
+                clipShapePts.push_back(clipShapePts[0]);
+                                                           
+                vu_splitToConvexParts(&clipShapePts[0], (int)clipShapePts.size(), &importConvexClipShapes, ConvexSplittingCallback);
+                                               
+                importRange = DRange3d::From(&clipShapePts[0], (int)clipShapePts.size());                
                 }
 
             pTestChildNode = pTestChildNode->GetNextSibling();

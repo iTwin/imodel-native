@@ -213,8 +213,28 @@ bool WritePointsCallback(const DPoint3d* points, size_t nbOfPoints, bool arePoin
         return DTM_SUCCESS;
         }
     
+    
+    bvector<bvector<DPoint3d>> s_importConvexClipShapes;
+    DRange3d                   s_importRange; 
 
-    static DRange3d s_importRange; 
+    inline bool IsPointInClipShape(const DPoint3d& point)
+        {
+        if (s_importConvexClipShapes.size() == 0)
+            {
+            return true;            
+            }
+                
+        for (auto clipShape : s_importConvexClipShapes)
+            {
+            if (bsiGeom_isXYPointInConvexPolygon(&point, &clipShape[0], (int)clipShape.size(), 0))
+                {
+                return true;                                
+                }                    
+            }        
+
+        return false;
+        }
+
     
     bool StreamPointsCallback(const DPoint3d* points, size_t nbOfPoints, bool arePoints3d)
         {           
@@ -223,8 +243,8 @@ bool WritePointsCallback(const DPoint3d* points, size_t nbOfPoints, bool arePoin
             bvector<DPoint3d> pointsInRange; 
 
             for (size_t ptInd = 0; ptInd < nbOfPoints; ptInd++)
-                {
-                if (s_importRange.IsContainedXY(points[ptInd]))
+                {                                                                         
+                if (IsPointInClipShape(points[ptInd]))
                     {
                     pointsInRange.push_back(points[ptInd]);
                     }
@@ -253,9 +273,7 @@ bool WritePointsCallback(const DPoint3d* points, size_t nbOfPoints, bool arePoin
         if (nbOfFeaturesPoints > 0)
             {
             bvector<DPoint3d> pointsInRange; 
-            bool wasContained; 
-
-            wasContained = s_importRange.IsContainedXY(featurePoints[0]);
+            bool wasContained = IsPointInClipShape(featurePoints[0]);            
             pointsInRange.push_back(featurePoints[0]);
 
             for (size_t ptInd = 0; ptInd < nbOfFeaturesPoints; ptInd++)
@@ -277,7 +295,7 @@ bool WritePointsCallback(const DPoint3d* points, size_t nbOfPoints, bool arePoin
                         isContained = true;
                         break;
                     default: 
-                        isContained = s_importRange.IsContainedXY(featurePoints[ptInd]);
+                        isContained = IsPointInClipShape(featurePoints[ptInd]);
                         break;
                     }
                 
@@ -559,61 +577,6 @@ StatusInt QuerySubResolutionData(DTMPtr&         dtmPtr,
     return SUCCESS;
     }
 
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Mathieu.St-Pierre 11/2015
-+---------------+---------------+---------------+---------------+---------------+------*/    
-void GetImportRange(DRange3d& importRange, BeXmlNodeP pRootNode)
-    {    
-    double value;
-    BeXmlStatus status = pRootNode->GetAttributeDoubleValue(value, "xmax");
-
-    if (status != BEXML_Success)
-        {
-        importRange.high.x = numeric_limits<double>::max();
-        }
-    else
-        {
-        importRange.high.x = value;
-        }
-
-    status = pRootNode->GetAttributeDoubleValue(value, "xmin");
-
-    if (status != BEXML_Success)
-        {
-        importRange.low.x = -numeric_limits<double>::max();
-        }
-    else
-        {
-        importRange.low.x = value;
-        }
-
-    status = pRootNode->GetAttributeDoubleValue(value, "ymax");
-
-    if (status != BEXML_Success)
-        {
-        importRange.high.y = numeric_limits<double>::max();
-        }
-    else
-        {
-        importRange.high.y = value;
-        }
-
-    status = pRootNode->GetAttributeDoubleValue(value, "ymin");
-
-    if (status != BEXML_Success)
-        {
-        importRange.low.y = -numeric_limits<double>::max();
-        }
-    else
-        {
-        importRange.low.y = value;
-        }
-
-    importRange.low.z = 0;
-    importRange.high.z = 0;
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mathieu.St-Pierre 11/2015
 +---------------+---------------+---------------+---------------+---------------+------*/    
@@ -854,9 +817,7 @@ int QueryStmFromBestResolution(RefCountedPtr<BcDTM>&        singleResolutionDtm,
                 {
                 maximumNbOfPoints = 5000000;
                 }
-            
-            GetImportRange(s_importRange, pRootNode);
-
+                        
             WString tempPath;
             status = pRootNode->GetAttributeStringValue(tempPath, "tempPath");
             
@@ -865,9 +826,9 @@ int QueryStmFromBestResolution(RefCountedPtr<BcDTM>&        singleResolutionDtm,
                 BeFileName name;
                 assert(BeFileNameStatus::Success == BeFileName::BeGetTempPath(name));
                 tempPath = name;
-                }            
-                    
-            if (ParseSourceSubNodes(importerPtr->EditSources(), pRootNode) == true)
+                }                       
+                                          
+            if (ParseSourceSubNodes(importerPtr->EditSources(), s_importConvexClipShapes, s_importRange, pRootNode) == true)
                 {
                 std::thread workingThread;
 

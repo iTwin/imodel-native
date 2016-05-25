@@ -36,7 +36,11 @@ namespace ScalableMeshSDKexe
                                                  WString&                pio_FirstPath) const;
         };
     
-    bool ParseSourceSubNodes(Bentley::ScalableMesh::IDTMSourceCollection& sourceCollection, BeXmlNodeP pTestNode);
+    bool ParseSourceSubNodes(Bentley::ScalableMesh::IDTMSourceCollection& sourceCollection, 
+                             bvector<bvector<DPoint3d>>&                  importConvexClipShapes, 
+                             DRange3d&                                    importRange, 
+                             BeXmlNodeP                                   pTestNode);
+    
     Bentley::MrDTM::IDTMSourcePtr CreateSourceFor(const WString&                    sourcePath,
                                                   Bentley::MrDTM::DTMSourceDataType importedType);        
     };
