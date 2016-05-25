@@ -199,12 +199,25 @@
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
     </Part>
 
-    <ProductDirectoryList ListName="Empty" />
+    <ProductDirectoryList ListName="ECDbTestedDirList" >
+        <ProductDirectory Name="PublicAPI"                          Deliver="false"/>
+        <ProductDirectory Name="PublicAPI"                          Deliver="false" LibType="static"/>
+        <ProductDirectory Name="VendorAPI"                          Deliver="false"/>
+        <ProductDirectory Name="VendorAPI"                          Deliver="false" LibType="static"/>
+        <ProductDirectory Name="Libs"                               Deliver="false"/>
+        <ProductDirectory Name="Libs"                               Deliver="false" LibType="static"/>
+        <ProductDirectory Name="bentleynativeassemblies"            Path=""/>
+        <ProductDirectory Name="loggingnativeassemblies"            Path=""/>
+        <ProductDirectory Name="VendorNotices"                      Path="Notices"/>
+        <ProductDirectory Name="VendorNotices"                      Path="Notices" LibType="static"/>
+    </ProductDirectoryList>
+
     <Product Name="ECDbTested">
         <SubPart PartName="RunGtest" />
         <!--  *** NEEDS WORK: What's the best way to include all platforms? Redefine this container product as a 'MultiPlatform'? -->
-        <Directories DirectoryListName="Empty" />
+        <Directories DirectoryListName="ECDbTestedDirList" />
     </Product>
+
     <!-- //////////////////////////////////////////////////////////////////////////// -->
     <!-- // ECSqlConsole                                                           // -->
     <!-- //////////////////////////////////////////////////////////////////////////// -->
