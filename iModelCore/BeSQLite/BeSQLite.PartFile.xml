@@ -29,6 +29,7 @@
     <!-- TRICKY: There are two sets of public APIs, BeSQLite and ECDb. There is only one published API for this repository, and it must do for both. 
          To avoid that we run the publishing twice this part cares for it and symlinks the same published API once under the name of BeSQLite and
          once under the name of ECDb-->
+    <!-- IS THE ABOVE COMMENT STILL ACCURATE? I don't see where we are publishing the API twice in this part. How could a part generate two different sets of bindings? -->
     <Part Name="PublishedApi" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishApi.mke" BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi">
         <SubPart PartName="PublicAPI" />
         <Bindings>
