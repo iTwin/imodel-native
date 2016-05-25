@@ -25,14 +25,14 @@ struct EventServiceClient
         Utf8String m_userId;
         Utf8String m_fullAddress;
         Utf8String m_token;
-        bool UpdateToken();
-        bool MakeEventServiceRequest(Utf8StringR outToken, Utf8StringR outNameSpace);
+        // bool MakeEventServiceRequest(Utf8StringR outToken, Utf8StringR outNameSpace);
         HttpResponse MakeReceiveDeleteRequest(bool longPolling);
         bool Receive(Utf8StringR msgOut, int retry, bool longPolling);
 
     public:
-        WSCLIENT_EXPORT EventServiceClient(Utf8StringCR repoId, Utf8StringCR userId);
+        WSCLIENT_EXPORT EventServiceClient(Utf8StringCR nameSpace, Utf8StringCR repoId, Utf8StringCR userId);
         WSCLIENT_EXPORT bool Receive(Utf8StringR msgOut, bool longPolling = true);
+        WSCLIENT_EXPORT void UpdateSASToken(Utf8StringCR sasToken);
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

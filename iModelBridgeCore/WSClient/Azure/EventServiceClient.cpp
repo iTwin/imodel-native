@@ -12,31 +12,13 @@
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Jeehwan.cho   05/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-EventServiceClient::EventServiceClient(Utf8StringCR repoId, Utf8StringCR userId)
+EventServiceClient::EventServiceClient(Utf8StringCR nameSpace, Utf8StringCR repoId, Utf8StringCR userId)
     {
+    m_nameSpace = nameSpace;
     m_repoId = repoId;
     m_userId = userId;
-    UpdateToken();  
     Utf8String baseAddress = "https://" + m_nameSpace + "." + "servicebus.windows.net/";
     m_fullAddress = baseAddress + repoId + "/Subscriptions/" + userId + "/messages/head?timeout=";
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Jeehwan.cho   05/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool EventServiceClient::UpdateToken()
-    {
-    return MakeEventServiceRequest(m_token, m_nameSpace); //todo: need to do some sanity check
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Arvind   05/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool EventServiceClient::MakeEventServiceRequest(Utf8StringR outToken, Utf8StringR outNameSpace)
-    {
-    outNameSpace = "testhubjeehwan-ns";
-    outToken = "SharedAccessSignature sig=TOk40ce29TwpOYCFG7EWqHL5%2bmi9fIDX%2fYA0Ckv7Urs%3d&se=1463758026&skn=EventReceivePolicy&sr=https%3a%2f%2ftesthubjeehwan-ns.servicebus.windows.net%2ftest";
-    return true; //not yet implemented
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -62,7 +44,8 @@ HttpResponse EventServiceClient::MakeReceiveDeleteRequest(bool longPolling)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Jeehwan.cho   05/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool EventServiceClient::Receive(Utf8StringR msgOut, int retry, bool longPolling)
+//todo: need to return with more error status
+bool EventServiceClient::Receive(Utf8StringR msgOut, bool longPolling)
     {
     HttpResponse response = MakeReceiveDeleteRequest(longPolling);
     switch (response.GetHttpStatus())
@@ -76,9 +59,7 @@ bool EventServiceClient::Receive(Utf8StringR msgOut, int retry, bool longPolling
             case HttpStatus::NotFound: //subscription not setup yet
                 return false;
             case HttpStatus::Unauthorized: //token may be expired
-                if (retry >= 1 || !UpdateToken())
-                    return false;
-                return Receive(msgOut, retry + 1, longPolling);
+                return false;
             default:
                 return false;
         }
@@ -87,7 +68,7 @@ bool EventServiceClient::Receive(Utf8StringR msgOut, int retry, bool longPolling
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Jeehwan.cho   05/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool EventServiceClient::Receive(Utf8StringR msgOut, bool longPolling)
+void EventServiceClient::UpdateSASToken(Utf8StringCR sasToken)
     {
-    return Receive(msgOut, 0, longPolling);
+    m_token = sasToken;
     }
