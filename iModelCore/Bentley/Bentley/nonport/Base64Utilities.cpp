@@ -5,6 +5,7 @@
  |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
+#include <stdlib.h>
 #include <Bentley/Base64Utilities.h>
 
 USING_NAMESPACE_BENTLEY
