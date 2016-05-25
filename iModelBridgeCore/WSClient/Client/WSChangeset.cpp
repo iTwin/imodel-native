@@ -429,7 +429,7 @@ void WSChangeset::Instance::FillBase(JsonValueR instanceJsonOut, ObjectIdCR id, 
         instanceJsonOut["changeState"] = stateStr;
         }
 
-    if (nullptr != properties && !properties->isNull() && (ChangeState::Created == state || ChangeState::Modified == state))
+    if (nullptr != properties && !properties->empty() && (ChangeState::Created == state || ChangeState::Modified == state))
         {
         instanceJsonOut["properties"] = *properties;
         }
