@@ -44,11 +44,11 @@ always:
 
 always:
     !~@mkdir ${XCTEST_OUTPUT_DIR}
-    -xcodebuild test -project $(XCODEPROJ) -scheme BeTestiOS -destination 'platform=iOS,name=$(BENTLEY_RUN_XCTEST_DEVICE_NAME)' | tee $(logfile)
+    -xcodebuild test -project $(XCODEPROJ) -scheme BeTestiOS -destination 'platform=iOS,name=$(BENTLEY_RUN_XCTEST_DEVICE_NAME)' &> $(logfile)
     python $(baseDir)CheckForRetry.py $(logfile) > ${XCTEST_OUTPUT_DIR}/CheckForRetry.txt
     %if " " != $[@findstring "retry", $[@readfile ${XCTEST_OUTPUT_DIR}/CheckForRetry.txt]]
         |Retrying...
-        -xcodebuild test -project $(XCODEPROJ) -scheme BeTestiOS -destination 'platform=iOS,name=$(BENTLEY_RUN_XCTEST_DEVICE_NAME)' | tee $(logfile)
+        -xcodebuild test -project $(XCODEPROJ) -scheme BeTestiOS -destination 'platform=iOS,name=$(BENTLEY_RUN_XCTEST_DEVICE_NAME)' &> $(logfile)
     %endif
     %if !defined (BEGTEST_IGNORE_FAILURES)
         python $(baseDIr)CheckResultsForFailures.py $(logFile)
