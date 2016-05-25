@@ -603,51 +603,51 @@ TEST_F(DgnProjectPackageTest, ExtractPackageUsingDefaults)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                             Muhammad Hassan                         07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ImportSchema (ECSchemaR ecSchema, DgnDbR project)
+BentleyStatus ImportSchema(ECSchemaR ecSchema, DgnDbR project)
     {
-    ECSchemaCachePtr schemaList = ECSchemaCache::Create ();
-    schemaList->AddSchema (ecSchema);
-    return project.Schemas ().ImportECSchemas (*schemaList);
+    ECSchemaCachePtr schemaList = ECSchemaCache::Create();
+    schemaList->AddSchema(ecSchema);
+    return project.Schemas().ImportECSchemas(*schemaList);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                             Muhammad Hassan                         07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (DgnProjectPackageTest, EnforceLinkTableFor11Relationship)
+TEST_F(DgnProjectPackageTest, EnforceLinkTableFor11Relationship)
     {
     WCharCP testFileName = L"2dMetricGeneral.ibim";
-    BeFileName sourceFile = DgnDbTestDgnManager::GetSeedFilePath (testFileName);
+    BeFileName sourceFile = DgnDbTestDgnManager::GetSeedFilePath(testFileName);
 
     BeFileName dgndbFileName;
-    BeTest::GetHost ().GetOutputRoot (dgndbFileName);
-    dgndbFileName.AppendToPath (testFileName);
+    BeTest::GetHost().GetOutputRoot(dgndbFileName);
+    dgndbFileName.AppendToPath(testFileName);
 
-    ASSERT_EQ (BeFileNameStatus::Success, BeFileName::BeCopyFile (sourceFile, dgndbFileName, false));
+    ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(sourceFile, dgndbFileName, false));
 
     DbResult status;
-    DgnDbPtr dgnProj = DgnDb::OpenDgnDb (&status, dgndbFileName, DgnDb::OpenParams (Db::OpenMode::ReadWrite));
-    EXPECT_EQ (DbResult::BE_SQLITE_OK, status) << status;
-    ASSERT_TRUE (dgnProj != NULL);
+    DgnDbPtr dgnProj = DgnDb::OpenDgnDb(&status, dgndbFileName, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
+    EXPECT_EQ(DbResult::BE_SQLITE_OK, status) << status;
+    ASSERT_TRUE(dgnProj != NULL);
 
     BeFileName ecSchemaPath;
-    BeTest::GetHost ().GetDocumentsRoot (ecSchemaPath);
-    ecSchemaPath.AppendToPath (L"DgnDb");
-    ecSchemaPath.AppendToPath (L"Schemas");
-    ecSchemaPath.AppendToPath (L"SampleDgnDbEditor.01.00.ecschema.xml");
+    BeTest::GetHost().GetDocumentsRoot(ecSchemaPath);
+    ecSchemaPath.AppendToPath(L"DgnDb");
+    ecSchemaPath.AppendToPath(L"Schemas");
+    ecSchemaPath.AppendToPath(L"SampleDgnDbEditor.01.00.ecschema.xml");
 
-    ECSchemaCachePtr schemaCache = ECSchemaCache::Create ();
-    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext ();
-    WString schemaPath = BeFileName::GetDirectoryName (ecSchemaPath);
-    schemaContext->AddSchemaPath (schemaPath.c_str ());
+    ECSchemaCachePtr schemaCache = ECSchemaCache::Create();
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    WString schemaPath = BeFileName::GetDirectoryName(ecSchemaPath);
+    schemaContext->AddSchemaPath(schemaPath.c_str());
 
     ECSchemaPtr schema;
-    ECSchema::ReadFromXmlFile (schema, ecSchemaPath, *schemaContext);
-    ASSERT_TRUE (schema.IsValid ());
+    ECSchema::ReadFromXmlFile(schema, ecSchemaPath, *schemaContext);
+    ASSERT_TRUE(schema.IsValid());
 
-    ASSERT_EQ (SUCCESS, ImportSchema (*schema, *dgnProj));
+    ASSERT_EQ(SUCCESS, ImportSchema(*schema, *dgnProj));
 
-    ASSERT_TRUE (dgnProj->TableExists ("sdde_ArchStoreyWithElements"));
-    ASSERT_TRUE (dgnProj->TableExists ("sdde_ArchWithHVACStorey"));
+    ASSERT_TRUE(dgnProj->TableExists("sdde_ArchStoreyWithElements"));
+    ASSERT_TRUE(dgnProj->TableExists("sdde_ArchWithHVACStorey"));
     }
 
 //---------------------------------------------------------------------------------------
@@ -729,19 +729,19 @@ TEST(DgnProject, DuplicateElementId)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                             Muhammad Hassan                         12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (DgnProjectPackageTest, VerifyViewsForDgndbFilesConvertedDuringBuild)
+TEST_F(DgnProjectPackageTest, VerifyViewsForDgndbFilesConvertedDuringBuild)
     {
     std::vector<Utf8String> dgndbFiles;
-    dgndbFiles.push_back ("79_Main.i.ibim");
-    dgndbFiles.push_back ("04_Plant.i.ibim");
-    dgndbFiles.push_back ("BGRSubset.i.ibim");
-    dgndbFiles.push_back ("fonts.dgn.i.ibim");
-    dgndbFiles.push_back ("2dMetricGeneral.ibim");
-    dgndbFiles.push_back ("3dMetricGeneral.ibim");
+    dgndbFiles.push_back("79_Main.i.ibim");
+    dgndbFiles.push_back("04_Plant.i.ibim");
+    dgndbFiles.push_back("BGRSubset.i.ibim");
+    dgndbFiles.push_back("fonts.dgn.i.ibim");
+    dgndbFiles.push_back("2dMetricGeneral.ibim");
+    dgndbFiles.push_back("3dMetricGeneral.ibim");
 
     BeFileName dgndbFilesPath;
-    BeTest::GetHost ().GetDocumentsRoot (dgndbFilesPath);
-    dgndbFilesPath.AppendToPath (L"DgnDb");
+    BeTest::GetHost().GetDocumentsRoot(dgndbFilesPath);
+    dgndbFilesPath.AppendToPath(L"DgnDb");
 
     DbResult status;
     DgnDbPtr dgnProj;
@@ -749,24 +749,24 @@ TEST_F (DgnProjectPackageTest, VerifyViewsForDgndbFilesConvertedDuringBuild)
     for (auto dgndbFileName : dgndbFiles)
         {
         BeFileName filePath = dgndbFilesPath;
-        filePath.AppendToPath ((BeFileName)dgndbFileName);
-        
-        dgnProj = DgnDb::OpenDgnDb (&status, filePath, DgnDb::OpenParams (Db::OpenMode::ReadWrite));
-        ASSERT_EQ (DbResult::BE_SQLITE_OK, status) << status;
+        filePath.AppendToPath((BeFileName) dgndbFileName);
+
+        dgnProj = DgnDb::OpenDgnDb(&status, filePath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
+        ASSERT_EQ(DbResult::BE_SQLITE_OK, status) << status;
 
         Statement statement;
-        ASSERT_EQ (DbResult::BE_SQLITE_OK, statement.Prepare (*dgnProj, "select '[' || name || ']'  from sqlite_master where type = 'view' and instr (name,'.') and instr(sql, '--### ECCLASS VIEW')"));
-        while (statement.Step () == BE_SQLITE_ROW)
+        ASSERT_EQ(DbResult::BE_SQLITE_OK, statement.Prepare(*dgnProj, "select '[' || name || ']'  from sqlite_master where type = 'view' and instr (name,'.') and instr(sql, '--### ECCLASS VIEW')"));
+        while (statement.Step() == BE_SQLITE_ROW)
             {
             //printf ("\n Schema : %s ,     View Name : %s   \n", statement.GetValueText (0), statement.GetValueText (1));
             Statement stmt;
             Utf8String sql;
-            sql.Sprintf ("SELECT * FROM %s", statement.GetValueText (0));
-            ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.Prepare (*dgnProj, sql.c_str ())) << "Prepare failed : " << sql.c_str () << " in DgnDb : " << dgndbFileName.c_str ();
+            sql.Sprintf("SELECT * FROM %s", statement.GetValueText(0));
+            ASSERT_EQ(DbResult::BE_SQLITE_OK, stmt.Prepare(*dgnProj, sql.c_str())) << "Prepare failed : " << sql.c_str() << " in DgnDb : " << dgndbFileName.c_str();
             }
-        statement.Finalize ();
+        statement.Finalize();
 
-        dgnProj->CloseDb ();
+        dgnProj->CloseDb();
         }
     }
 
