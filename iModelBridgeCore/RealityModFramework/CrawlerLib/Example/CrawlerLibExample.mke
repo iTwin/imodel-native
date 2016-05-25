@@ -36,6 +36,7 @@ $(o)CrawlerLibExample$(oext) : $(baseDir)CrawlerLibExample.cpp
 #----------------------------------------------------------------------
 #   DLL/LIB creation
 #----------------------------------------------------------------------
+EXE_UNICODE  = 1
 EXE_DEST     = $(o)
 EXE_NAME     = $(appName)
 EXE_OBJS     = $(o)CrawlerLibExample$(oext)

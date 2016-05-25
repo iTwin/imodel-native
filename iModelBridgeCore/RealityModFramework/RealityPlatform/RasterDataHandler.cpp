@@ -8,6 +8,8 @@
 
 #include "stdafx.h"
 
+#include <atlimage.h>
+
 #include <RealityPlatform/RealityDataHandler.h>
 #include <RealityPlatform/RealityPlatformUtil.h>
 
@@ -264,55 +266,55 @@ StatusInt RasterData::ExtractFootprint(DRange2dP pFootprint) const
     return ERROR;
     }
 
-    /*---------------------------------------------------------------------------------**//**
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jean-Francois.Cote              02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-//StatusInt RasterDataHandler::_GetThumbnail(HBITMAP *pThumbnailBmp) const
-//    {
-//    return ExtractThumbnail(pThumbnailBmp, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT);
-//    }
+StatusInt RasterData::_GetThumbnail(HBITMAP *pThumbnailBmp, uint32_t width, uint32_t height) const
+    {
+    return ExtractThumbnail(pThumbnailBmp, width, height);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Chantal.Poulin                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-//StatusInt RasterDataHandler::ExtractThumbnail(HBITMAP *pThumbnailBmp, uint32_t width, uint32_t height) const
-//    {
-//    try
-//        {
-//        // Get the rasterFile 
-//        HFCPtr<HRFRasterFile> rasterFile = GetRasterFile(m_filename);
-//        if (NULL == rasterFile)
-//            return ERROR;
-//
-//        // Generate the thumbnail
-//        HFCPtr<HRFThumbnail>  pThumbnail = HRFThumbnailMaker(rasterFile, 0, &width, &height, false);
-//        if (NULL == pThumbnail)
-//            return ERROR;
-//
-//        HFCPtr<HRPPixelType> pPixelType = rasterFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetPixelType();
-//        RasterFacility::CreateHBitmapFromHRFThumbnail(pThumbnailBmp, pThumbnail, pPixelType);
-//
-//        return SUCCESS;
-//        }
-//    catch (HFCException&)
-//        {
-//        return ERROR;
-//        }
-//    catch (exception &e)
-//        {
-//        //C++ exception
-//        ostringstream errorStr;
-//
-//        errorStr << "Caught " << e.what() << endl;
-//        errorStr << "Type " << typeid(e).name() << endl;
-//
-//        return ERROR;
-//        }
-//    catch (...)
-//        {
-//        return ERROR;
-//        }
-//    }
+StatusInt RasterData::ExtractThumbnail(HBITMAP* pThumbnailBmp, uint32_t width, uint32_t height) const
+    {
+    try
+        {
+        // Get the rasterFile 
+        HFCPtr<HRFRasterFile> rasterFile = GetRasterFile(m_filename.c_str());
+        if (NULL == rasterFile)
+            return ERROR;
+
+        // Generate the thumbnail
+        HFCPtr<HRFThumbnail>  pThumbnail = HRFThumbnailMaker(rasterFile, 0, &width, &height, false);
+        if (NULL == pThumbnail)
+            return ERROR;
+
+        HFCPtr<HRPPixelType> pPixelType = rasterFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetPixelType();
+        RasterFacility::CreateHBitmapFromHRFThumbnail(pThumbnailBmp, pThumbnail, pPixelType);
+
+        return SUCCESS;
+        }
+    catch (HFCException&)
+        {
+        return ERROR;
+        }
+    catch (exception &e)
+        {
+        //C++ exception
+        ostringstream errorStr;
+
+        errorStr << "Caught " << e.what() << endl;
+        errorStr << "Type " << typeid(e).name() << endl;
+
+        return ERROR;
+        }
+    catch (...)
+        {
+        return ERROR;
+        }
+    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 8/2015
@@ -370,23 +372,93 @@ StatusInt RasterData::ExtractThumbnail(bvector<Byte>& data, uint32_t width, uint
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 9/2015
 //-------------------------------------------------------------------------------------
-StatusInt RasterData::_SaveFootprint(const DRange2dR data, const BeFileName outFilename) const
+StatusInt RasterData::_SaveFootprint(DRange2dCR data, BeFileNameCR outFilename) const
     {
+    bvector<Utf8String> buffer;
+
+    //DPoint2dP box;
+    //data.Get4Corners(box);
+
+    // Convert double to string.
+    char buf[32];
+    BeStringUtilities::Snprintf(buf, "%f %f \n", data.low.x, data.low.y);
+    buffer.push_back(buf);
+    BeStringUtilities::Snprintf(buf, "%f %f \n", data.low.x, data.high.y);
+    buffer.push_back(buf);
+    BeStringUtilities::Snprintf(buf, "%f %f \n", data.high.x, data.high.y);
+    buffer.push_back(buf);
+    BeStringUtilities::Snprintf(buf, "%f %f \n", data.high.x, data.low.y);
+    buffer.push_back(buf);
+    BeStringUtilities::Snprintf(buf, "%f %f", data.low.x, data.low.y);
+    buffer.push_back(buf);
+    
+    BeFile file;
+    uint32_t bytesWritten = 0;
+    
+           
+    if (BeFileStatus::Success != file.Create(outFilename))
+        return ERROR;
+    
+    if (BeFileStatus::Success != file.Open(outFilename, BeFileAccess::Write))
+        return ERROR;
+    
+    for (Utf8StringCR point : buffer)
+        {
+        uint32_t byteCountToCopy = static_cast<uint32_t>(point.size() * sizeof(char));
+        if ((BeFileStatus::Success != file.Write(&bytesWritten, point.c_str(), byteCountToCopy)) || (bytesWritten != byteCountToCopy))
+            return ERROR;
+        }
+        
+    if (BeFileStatus::Success != file.Close())
+        return ERROR;
+    
     return SUCCESS;
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 9/2015
 //-------------------------------------------------------------------------------------
-StatusInt RasterData::_SaveThumbnail(const bvector<Byte>& buffer, const BeFileName outFilename) const
+StatusInt RasterData::_SaveThumbnail(const bvector<Byte>& buffer, BeFileNameCR outFilename) const
     {
-    if (buffer.empty())
-        return ERROR;
+    //if (buffer.empty())
+    //    return ERROR;
+    //
+    //BeFile file;
+    //uint32_t bytesWritten = 0;
+    //uint32_t byteCountToCopy = static_cast<uint32_t>(buffer.size());
+    //
+    //if (BeFileStatus::Success != file.Create(outFilename))
+    //    return ERROR;
+    //
+    //if (BeFileStatus::Success != file.Open(outFilename, BeFileAccess::Write))
+    //    return ERROR;
+    //
+    //if ((BeFileStatus::Success != file.Write(&bytesWritten, buffer.data(), byteCountToCopy)) || (bytesWritten != byteCountToCopy))
+    //    return ERROR;
+    //
+    //if (BeFileStatus::Success != file.Close())
+    //    return ERROR;
+    //
+    //return SUCCESS;
+
 
     /* TODO */
     //HFCPtr<HRFThumbnail> pThumbnail = 0; 
     //if (!pThumbnail->Write(buffer.data()))
     //    return ERROR;
+    
+    return SUCCESS;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         		 9/2015
+//-------------------------------------------------------------------------------------
+StatusInt RasterData::_SaveThumbnail(const HBITMAP* pThumbnailBmp, BeFileNameCR outFilename) const
+    {
+    CImage image;
+    image.Attach(*pThumbnailBmp);
+    image.Save(outFilename.GetNameUtf8().c_str());
 
     return SUCCESS;
     }
+

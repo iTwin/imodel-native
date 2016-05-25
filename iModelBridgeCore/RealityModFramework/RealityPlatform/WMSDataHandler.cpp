@@ -2,11 +2,13 @@
 |
 |     $Source: RealityPlatform/WMSDataHandler.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #include "stdafx.h"
+
+#include <atlimage.h>
 
 #include <RealityPlatform/RealityDataHandler.h>
 
@@ -132,6 +134,22 @@ StatusInt WmsData::ExtractThumbnail(bvector<Byte>& buffer, uint32_t width, uint3
     return GetFromServer(buffer, thumbnailUrl);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jean-Francois.Cote              02/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt WmsData::_GetThumbnail(HBITMAP* pThumbnailBmp, uint32_t width, uint32_t height) const
+    {
+    return ExtractThumbnail(pThumbnailBmp, width, height);
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         		 9/2015
+//-------------------------------------------------------------------------------------
+StatusInt WmsData::ExtractThumbnail(HBITMAP* pThumbnailBmp, uint32_t width, uint32_t height) const
+    {
+    return ERROR;
+    }
+
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 4/2015
 //-------------------------------------------------------------------------------------
@@ -253,7 +271,7 @@ StatusInt WmsData::GetFromServer(bvector<Byte>& buffer, Utf8StringCR url) const
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 9/2015
 //-------------------------------------------------------------------------------------
-StatusInt WmsData::_SaveFootprint(const DRange2dR data, const BeFileName outFilename) const
+StatusInt WmsData::_SaveFootprint(DRange2dCR data, BeFileNameCR outFilename) const
     {
     return SUCCESS;
     }
@@ -261,7 +279,7 @@ StatusInt WmsData::_SaveFootprint(const DRange2dR data, const BeFileName outFile
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 9/2015
 //-------------------------------------------------------------------------------------
-StatusInt WmsData::_SaveThumbnail(const bvector<Byte>& buffer, const BeFileName outFilename) const
+StatusInt WmsData::_SaveThumbnail(const bvector<Byte>& buffer, BeFileNameCR outFilename) const
     {
     if (buffer.empty())
         return ERROR;
@@ -281,6 +299,18 @@ StatusInt WmsData::_SaveThumbnail(const bvector<Byte>& buffer, const BeFileName 
 
     if (BeFileStatus::Success != file.Close())
         return ERROR;
+
+    return SUCCESS;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         		 9/2015
+//-------------------------------------------------------------------------------------
+StatusInt WmsData::_SaveThumbnail(const HBITMAP* pThumbnailBmp, BeFileNameCR outFilename) const
+    {
+    CImage image;
+    image.Attach(*pThumbnailBmp);
+    image.Save(outFilename.GetNameUtf8().c_str());
 
     return SUCCESS;
     }

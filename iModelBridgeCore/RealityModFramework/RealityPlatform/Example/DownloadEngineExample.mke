@@ -36,6 +36,7 @@ $(o)DownloadEngineExample$(oext) : $(baseDir)DownloadEngineExample.cpp
 #----------------------------------------------------------------------
 #   DLL/LIB creation
 #----------------------------------------------------------------------
+EXE_UNICODE  = 1
 EXE_DEST     = $(o)
 EXE_NAME     = $(appName)
 EXE_OBJS     = $(o)DownloadEngineExample$(oext)
