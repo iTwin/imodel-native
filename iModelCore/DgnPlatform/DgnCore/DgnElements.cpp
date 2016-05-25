@@ -1313,10 +1313,25 @@ DgnElementCPtr DgnElements::UpdateElement(DgnElementR replacement, DgnDbStatus* 
     if (DgnDbStatus::Success != (stat=replacement._OnUpdate(element)))
         return nullptr; // something rejected proposed change
 
-    // ask parent whether its ok to update his child.
-    auto parent = GetElement(element.m_parentId);
-    if (parent.IsValid() && DgnDbStatus::Success != (stat = parent->_OnChildUpdate(element, replacement)))
-        return nullptr;
+    if (element.m_parentId != replacement.m_parentId) // did parent change?
+        {
+        // ask original parent if it is okay to drop the child
+        DgnElementCPtr originalParent = GetElement(element.m_parentId);
+        if (originalParent.IsValid() && DgnDbStatus::Success != (stat = originalParent->_OnChildDrop(element)))
+            return nullptr;
+
+        // ask new parent if it is okay to add the child
+        DgnElementCPtr replacementParent = GetElement(replacement.m_parentId);
+        if (replacementParent.IsValid() && DgnDbStatus::Success != (stat = replacementParent->_OnChildAdd(replacement)))
+            return nullptr;
+        }
+    else
+        {
+        // ask parent whether it is ok to update its child.
+        DgnElementCPtr parent = GetElement(element.m_parentId);
+        if (parent.IsValid() && DgnDbStatus::Success != (stat = parent->_OnChildUpdate(element, replacement)))
+            return nullptr;
+        }
 
     stat = replacement._UpdateInDb();   // perform the actual update in the database
     if (DgnDbStatus::Success != stat)
@@ -1326,10 +1341,24 @@ DgnElementCPtr DgnElements::UpdateElement(DgnElementR replacement, DgnDbStatus* 
     FinishUpdate(replacement, element);
 
     if (element.m_parentId != replacement.m_parentId) // did parent change?
-        parent = GetElement(replacement.m_parentId);
+        {
+        // notify original parent that child has been dropped
+        DgnElementCPtr originalParent = GetElement(element.m_parentId);
+        if (originalParent.IsValid())
+            originalParent->_OnChildDropped(element);
 
-    if (parent.IsValid())
-        parent->_OnChildUpdated(element);
+        // notify new parent that child has been added
+        DgnElementCPtr replacementParent = GetElement(replacement.m_parentId);
+        if (replacementParent.IsValid())
+            replacementParent->_OnChildAdded(replacement);
+        }
+    else
+        {
+        // notify parent that its child has been updated
+        DgnElementCPtr parent = GetElement(replacement.m_parentId);
+        if (parent.IsValid())
+            parent->_OnChildUpdated(element);
+        }
 
     return &element;
     }
