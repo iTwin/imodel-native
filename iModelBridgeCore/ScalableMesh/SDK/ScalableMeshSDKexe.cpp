@@ -11,6 +11,10 @@
 #include <ScalableTerrainModel\IMrDTMQuery.h>
 
 
+
+#include <ImagePP\all\h\HFCPtr.h>
+#include <ImagePP\all\h\HVEShape.h>
+
 USING_NAMESPACE_BENTLEY_MRDTM
 USING_NAMESPACE_BENTLEY_TERRAINMODEL    
 
@@ -213,25 +217,23 @@ bool WritePointsCallback(const DPoint3d* points, size_t nbOfPoints, bool arePoin
         return DTM_SUCCESS;
         }
     
-    
-    bvector<bvector<DPoint3d>> s_importConvexClipShapes;
+    HFCPtr<HGF2DCoordSys>      s_dumpCoordSys(new HGF2DCoordSys()); 
+    HFCPtr<HVEShape>           s_importClipShape2D;    
     DRange3d                   s_importRange; 
-
+    
     inline bool IsPointInClipShape(const DPoint3d& point)
         {
-        if (s_importConvexClipShapes.size() == 0)
+        if (s_importClipShape2D == 0)
             {
             return true;            
-            }
-                
-        for (auto clipShape : s_importConvexClipShapes)
-            {
-            if (bsiGeom_isXYPointInConvexPolygon(&point, &clipShape[0], (int)clipShape.size(), 0))
-                {
-                return true;                                
-                }                    
-            }        
+            }                
 
+        HGF2DLocation location(point.x, point.y, s_dumpCoordSys);                                                                                            
+
+        if (s_importClipShape2D->IsPointIn(location) || 
+            s_importClipShape2D->IsPointOn(location))
+            return true;
+        
         return false;
         }
 
@@ -826,10 +828,26 @@ int QueryStmFromBestResolution(RefCountedPtr<BcDTM>&        singleResolutionDtm,
                 BeFileName name;
                 assert(BeFileNameStatus::Success == BeFileName::BeGetTempPath(name));
                 tempPath = name;
-                }                       
-                                          
-            if (ParseSourceSubNodes(importerPtr->EditSources(), s_importConvexClipShapes, s_importRange, pRootNode) == true)
+                }                                   
+                                              
+            bvector<DPoint3d> importClipShape;
+
+            if (ParseSourceSubNodes(importerPtr->EditSources(), importClipShape, s_importRange, pRootNode) == true)
                 {
+                if (importClipShape.size() > 0)
+                    {
+                    bvector<double> coord;
+                    for (auto pt : importClipShape)
+                        {
+                        coord.push_back(pt.x);
+                        coord.push_back(pt.y);
+                        }
+                    
+                    size_t nbCoord = coord.size();
+
+                    s_importClipShape2D = new HVEShape(&nbCoord, &coord[0], s_dumpCoordSys);                        
+                    }                
+
                 std::thread workingThread;
 
                 workingThread = std::thread(&ImportThread, DgnPlatformLib::QueryHost(), importerPtr);         

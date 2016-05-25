@@ -2,10 +2,8 @@
 
 #include <ScalableTerrainModel\IMrDTMSources.h>
 
-#include <Vu\VuApi.h>
-#include <Vu\vuconvex.fdf>
 
-#include <windows.h>
+#include <windows.h>   
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 namespace ScalableMeshSDKexe
@@ -310,18 +308,10 @@ inline void AddWildCardToFolderPath(WString* pio_pFolderPath)
                         printf("Unsupporter/unknown data type");
                         }
             }
-        }
-        
-    void ConvexSplittingCallback(DPoint3d* pPts, int* flags, int size, void* pArg)
-        {
-        auto arg = (bvector<bvector<DPoint3d>>*) pArg;
-        bvector<DPoint3d> vec(size);
-        memcpy(&vec[0], pPts, size*sizeof(DPoint3d));
-        arg->push_back(vec);
-        }
+        }            
 
-    bool ParseSourceSubNodes(Bentley::ScalableMesh::IDTMSourceCollection& sourceCollection, 
-                             bvector<bvector<DPoint3d>>&                  importConvexClipShapes, 
+    bool ParseSourceSubNodes(Bentley::ScalableMesh::IDTMSourceCollection& sourceCollection,    
+                             bvector<DPoint3d>&                           importClipShape,                                                          
                              DRange3d&                                    importRange, 
                              BeXmlNodeP                                   pTestNode)
         {
@@ -408,8 +398,9 @@ inline void AddWildCardToFolderPath(WString* pio_pFolderPath)
                 assert(status == BEXML_Success);
                 
                 size_t startInd = 0;
-                size_t endInd = 0;
-                bvector<DPoint3d> clipShapePts;
+                size_t endInd = 0;                
+                //DPoint3d pt; 
+                bvector<double> clipShape2d;                
                 DPoint3d pt; 
                 pt.z = 0;
                 bool isX = true;
@@ -430,7 +421,7 @@ inline void AddWildCardToFolderPath(WString* pio_pFolderPath)
                             assert((clipShapeStr.c_str()[endInd] == L';'));
                             pt.y = _wtof(coordStr.c_str());                                        
                             isX = true;
-                            clipShapePts.push_back(pt);
+                            importClipShape.push_back(pt);
                             }
                         
                         startInd = endInd + 1;
@@ -442,14 +433,12 @@ inline void AddWildCardToFolderPath(WString* pio_pFolderPath)
                     assert(isX == false);
                     WString coordStr(clipShapeStr.substr(startInd, endInd - startInd));
                     pt.y = _wtof(coordStr.c_str());
-                    clipShapePts.push_back(pt);
+                    importClipShape.push_back(pt);
                     }
 
-                clipShapePts.push_back(clipShapePts[0]);
-                                                           
-                vu_splitToConvexParts(&clipShapePts[0], (int)clipShapePts.size(), &importConvexClipShapes, ConvexSplittingCallback);
-                                               
-                importRange = DRange3d::From(&clipShapePts[0], (int)clipShapePts.size());                
+                importClipShape.push_back(importClipShape[0]);
+                                                                                                                          
+                importRange = DRange3d::From(&importClipShape[0], (int)importClipShape.size());                
                 }
 
             pTestChildNode = pTestChildNode->GetNextSibling();

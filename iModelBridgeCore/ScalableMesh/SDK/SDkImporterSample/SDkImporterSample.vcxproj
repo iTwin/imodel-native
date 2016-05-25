@@ -222,7 +222,7 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableMesh -f ScalableMesh 
     <ClInclude Include="..\SDKSampleImporter.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\SDKSample.mke" />
+    <None Include="..\ScalableMeshSDKexe.mke" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
