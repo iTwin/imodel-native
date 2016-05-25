@@ -114,7 +114,7 @@ private:
 public:
     LineStyleContext(Render::GraphicR graphic, Render::GraphicParamsR graphicParams, ViewContextP context) : m_graphic(&graphic), m_graphParams(graphicParams), m_viewContext(context) { }
     Render::GraphicR GetGraphicR() { return *m_graphic; }
-    Render::GraphicParamsR GetGraphicParamsR() { return *m_graphParams; }
+    Render::GraphicParamsR GetGraphicParamsR() { return m_graphParams; }
     //  GraphicParamsR GetGraphicParamsR(){return m_elemMatSymb};
     ViewContextP GetViewContext() { return m_viewContext; }
 };
