@@ -72,7 +72,7 @@ TEST_F(DgnBaseDomainSchemaTests, ValidateDomainSchemaDDL)
         ASSERT_EQ(numColumns, expectedColumnNames.size());
 
         Utf8String ddl = GetDDL(DGN_TABLE(DGN_CLASSNAME_Element));
-        ASSERT_TRUE(ddl.Contains("[Id] INTEGER NOT NULL,"));
+        ASSERT_TRUE(ddl.Contains("[Id] INTEGER PRIMARY KEY,"));
         ASSERT_TRUE(ddl.Contains("[ECClassId] INTEGER NOT NULL,"));
         ASSERT_TRUE(ddl.Contains("[ParentId] INTEGER,"));
         ASSERT_TRUE(ddl.Contains("[ModelId] INTEGER NOT NULL,"));
@@ -80,7 +80,7 @@ TEST_F(DgnBaseDomainSchemaTests, ValidateDomainSchemaDDL)
         ASSERT_TRUE(ddl.Contains("[Code_Namespace] TEXT NOT NULL COLLATE NOCASE,"));
         ASSERT_TRUE(ddl.Contains("[Code_Value] TEXT COLLATE NOCASE,"));
         ASSERT_TRUE(ddl.Contains("[LastMod] TIMESTAMP NOT NULL DEFAULT(julianday('now')),"));
-        ASSERT_TRUE(ddl.Contains("PRIMARY KEY([Id])"));
+        ASSERT_FALSE(ddl.Contains("PRIMARY KEY([Id])"));
         ASSERT_TRUE(ddl.Contains("FOREIGN KEY([Code_AuthorityId]) REFERENCES [dgn_Authority]([Id])"));
         ASSERT_TRUE(ddl.Contains("FOREIGN KEY([ParentId]) REFERENCES [dgn_Element]([Id])")); // Element API does the "cascade delete"
         ASSERT_TRUE(ddl.Contains("FOREIGN KEY([ModelId]) REFERENCES [dgn_Model]([Id])"));
