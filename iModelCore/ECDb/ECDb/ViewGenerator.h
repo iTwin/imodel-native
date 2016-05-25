@@ -60,7 +60,9 @@ struct ViewGenerator
         //! Return prop maps of child base on parent map. So only prop maps that make up baseClass properties are selected.
         BentleyStatus GetPropertyMapsOfDerivedClassCastAsBaseClass(std::vector<std::pair<PropertyMapCP, PropertyMapCP>>& propMaps, ClassMap const& baseClassMap, ClassMap const& childClassMap, bool skipSystemProperties);
         BentleyStatus CreateViewInternal(NativeSqlBuilder& viewSql, ClassMap const& classMap, bool isPolymorphicQuery, ECSqlPrepareContext const* prepareContext);
-
+        static BentleyStatus CreateDebugView(ClassMapCR classMap);
+        static BentleyStatus GetUpdateSetClause(NativeSqlBuilder& sql, ClassMap const& baseClassMap, ClassMap const& derivedClassMap);
+        static BentleyStatus CreateUpdatableViewIfRequired(ECDbCR ecdb, ClassMap const& classMap);
     private:
         ECDbMapCR m_map;
         bool m_optimizeByIncludingOnlyRealTables;
@@ -86,7 +88,10 @@ struct ViewGenerator
         BentleyStatus Generate(NativeSqlBuilder& viewSql, ClassMap const& classMap, bool isPolymorphicQuery, ECSqlPrepareContext const& prepareContext);
         BentleyStatus Generate(NativeSqlBuilder& viewSql, ClassMap const& classMap, bool isPolymorphicQuery);
         BentleyStatus Generate(NativeSqlBuilder& viewSql, ClassMap const& classMap);
-
+        static BentleyStatus DropUpdatableViews(ECDbCR ecdb);
+        static BentleyStatus DropDebugViews(ECDbCR ecdb);
+        static BentleyStatus CreateDebugViews(ECDbCR ecdb);
+        static BentleyStatus CreateUpdatableViews(ECDbCR ecdb);
         std::vector<Utf8String> const* GetLastViewAccessStringList() const { return m_viewAccessStringList.get(); }
     };
 

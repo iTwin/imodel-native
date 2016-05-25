@@ -244,12 +244,12 @@ MappingStatus ECDbMap::MapSchemas(SchemaImportContext& schemaImportContext)
         return MappingStatus::Error;
         }
 
-    ECDbMapAnalyser mapAnalyser(*this);
-    if (mapAnalyser.Analyse(true /*apply changes*/) != SUCCESS)
-        {
-        m_schemaImportContext = nullptr;
-        return MappingStatus::Error;
-        }
+    //SqlUtilities mapAnalyser(*this);
+    //if (mapAnalyser.Analyse(true /*apply changes*/) != SUCCESS)
+    //    {
+    //    m_schemaImportContext = nullptr;
+    //    return MappingStatus::Error;
+    //    }
 
     m_schemaImportContext = nullptr;
     return MappingStatus::Success;
@@ -260,39 +260,7 @@ MappingStatus ECDbMap::MapSchemas(SchemaImportContext& schemaImportContext)
 //---------------------------------------------------------------------------------------
 BentleyStatus ECDbMap::CreateECClassViewsInDb() const
     {
-    if (GetECDb().IsReadonly())
-        {
-        GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Can only call ECDb::CreateECClassViewsInDb() on an ECDb file with read-write access.");
-        return ERROR;
-        }
-
-    Utf8String sql;
-    sql.Sprintf("SELECT c.Id FROM ec_Class c, ec_ClassMap cm WHERE c.Id = cm.ClassId AND c.Type IN (%d,%d) AND cm.MapStrategy<>%d",
-                Enum::ToInt(ECClassType::Entity),
-                Enum::ToInt(ECClassType::Relationship),
-                Enum::ToInt(ECDbMapStrategy::Strategy::NotMapped));
-
-    Statement stmt;
-    if (BE_SQLITE_OK != stmt.Prepare(GetECDb(), sql.c_str()))
-        return ERROR;
-
-    std::vector<ClassMapCP> classMaps;
-    while (stmt.Step() == BE_SQLITE_ROW)
-        {
-        ECClassId classId = stmt.GetValueId<ECClassId>(0);
-        ClassMapCP classMap = GetClassMap(classId);
-        if (classMap == nullptr)
-            {
-            BeAssert(classMap != nullptr);
-            return ERROR;
-            }
-
-        BeAssert((classMap->GetClass().IsEntityClass() || classMap->GetClass().IsRelationshipClass()) && classMap->GetType() != ClassMap::Type::Unmapped);
-        if (classMap->CreateECClassView() != SUCCESS)
-            return ERROR;
-        }
-
-    return SUCCESS;
+    return ViewGenerator::CreateDebugViews(GetECDb());
     }
 
 //---------------------------------------------------------------------------------------

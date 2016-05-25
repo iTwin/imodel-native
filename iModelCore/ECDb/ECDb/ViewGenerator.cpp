@@ -9,12 +9,341 @@
 #include "ECDbPolicyManager.h"
 #include <set>
 #include "ECSql/ECSqlPrepareContext.h"
-
+#include "SqlUtilities.h"
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 #define ECDB_HOLDING_VIEW "ec_RelationshipHoldingStatistics"
 
 //************************** ViewGenerator ***************************************************
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                      05/2016
+//+---------------+---------------+---------------+---------------+---------------+--------
+//static 
+BentleyStatus ViewGenerator::CreateDebugView(ClassMapCR classMap)
+    {
+    Utf8String viewName;
+    viewName.Sprintf("[%s.%s]", classMap.GetClass().GetSchema().GetNamespacePrefix().c_str(), classMap.GetClass().GetName().c_str());
+
+    ViewGenerator viewGenerator(classMap.GetECDbMap(), true, false);
+    NativeSqlBuilder viewSql;
+    if (viewGenerator.Generate(viewSql, classMap) != SUCCESS)
+        return ERROR;
+
+    Utf8String columns;
+    bool bFirst = true;;
+    for (Utf8StringCR column : *viewGenerator.GetLastViewAccessStringList())
+        {
+        if (bFirst)
+            bFirst = false;
+        else
+            columns.append(", ");
+
+        columns.append("[").append(column).append("]");
+        }
+
+    Utf8String createViewSql;
+    createViewSql.Sprintf("CREATE VIEW %s (%s)\n\t--### ECCLASS VIEW is for debugging purpose only!.\n\tAS %s;", viewName.c_str(), columns.c_str(), viewSql.ToString());
+    if (classMap.GetECDbMap().GetECDb().ExecuteSql(createViewSql.c_str()) != BE_SQLITE_OK)
+        return ERROR;
+
+    return SUCCESS;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                      05/2016
+//+---------------+---------------+---------------+---------------+---------------+--------
+//static 
+BentleyStatus ViewGenerator::CreateDebugViews(ECDbCR ecdb)
+    {
+    if (ecdb.IsReadonly())
+        {
+        ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Can only call ECDb::CreateECClassViewsInDb() on an ECDb file with read-write access.");
+        return ERROR;
+        }
+
+    if (DropDebugViews(ecdb) != SUCCESS)
+        return ERROR;
+
+    Utf8String sql;
+    sql.Sprintf("SELECT c.Id FROM ec_Class c, ec_ClassMap cm WHERE c.Id = cm.ClassId AND c.Type IN (%d,%d) AND cm.MapStrategy<>%d",
+                Enum::ToInt(ECClassType::Entity),
+                Enum::ToInt(ECClassType::Relationship),
+                Enum::ToInt(ECDbMapStrategy::Strategy::NotMapped));
+
+    Statement stmt;
+    if (BE_SQLITE_OK != stmt.Prepare(ecdb, sql.c_str()))
+        return ERROR;
+
+    std::vector<ClassMapCP> classMaps;
+    ECDbMapCR map = ecdb.GetECDbImplR().GetECDbMap();
+    while (stmt.Step() == BE_SQLITE_ROW)
+        {
+        ECClassId classId = stmt.GetValueId<ECClassId>(0);
+        ClassMapCP classMap = map.GetClassMap(classId);
+        if (classMap == nullptr)
+            {
+            BeAssert(classMap != nullptr);
+            return ERROR;
+            }
+
+        BeAssert((classMap->GetClass().IsEntityClass() || classMap->GetClass().IsRelationshipClass()) && classMap->GetType() != ClassMap::Type::Unmapped);
+        if (CreateDebugView(*classMap) != SUCCESS)
+            return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                      05/2016
+//+---------------+---------------+---------------+---------------+---------------+--------
+//static 
+BentleyStatus ViewGenerator::CreateUpdatableViews(ECDbCR ecdb)
+    {
+    if (ecdb.IsReadonly())
+        {
+        ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Can only call ECDb::CreateECClassViewsInDb() on an ECDb file with read-write access.");
+        return ERROR;
+        }
+
+    Utf8String sql;
+    sql.Sprintf("SELECT c.Id FROM ec_Class c, ec_ClassMap cm, ec_ClassHasBaseClasses cc WHERE c.Id = cm.ClassId AND c.Id = cc.BaseClassId AND c.Type = %d AND cm.MapStrategy<> %d GROUP BY c.Id",
+                Enum::ToInt(ECClassType::Entity),
+                Enum::ToInt(ECDbMapStrategy::Strategy::NotMapped));
+
+    Statement stmt;
+    if (BE_SQLITE_OK != stmt.Prepare(ecdb, sql.c_str()))
+        return ERROR;
+
+    std::vector<ClassMapCP> classMaps;
+    ECDbMapCR map = ecdb.GetECDbImplR().GetECDbMap();
+    while (stmt.Step() == BE_SQLITE_ROW)
+        {
+        ECClassId classId = stmt.GetValueId<ECClassId>(0);
+        ClassMapCP classMap = map.GetClassMap(classId);
+        if (classMap == nullptr)
+            {
+            BeAssert(classMap != nullptr);
+            return ERROR;
+            }
+
+        BeAssert(classMap->GetClass().IsEntityClass() && classMap->GetType() != ClassMap::Type::Unmapped);
+        if (CreateUpdatableViewIfRequired(ecdb, *classMap) != SUCCESS)
+            return ERROR;
+        }
+
+    return SUCCESS;
+    }
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                      05/2016
+//+---------------+---------------+---------------+---------------+---------------+--------
+//static 
+BentleyStatus ViewGenerator::DropDebugViews(ECDbCR ecdb)
+    {
+    Statement stmt;
+    stmt.Prepare(ecdb,
+                 "SELECT"
+                 "    ('DROP VIEW IF EXISTS [' || ec_Schema.NamespacePrefix || '.' || ec_Class.Name || '];') AS DebugView"
+                 "    FROM ec_Class"
+                 "    INNER JOIN ec_Schema ON ec_Schema.Id = ec_Class.SchemaId");
+
+    while (stmt.Step() == BE_SQLITE_ROW)
+        {
+        Utf8CP debugViewSQL = stmt.GetValueText(0);
+        if (ecdb.ExecuteSql(debugViewSQL) != BE_SQLITE_OK)
+            {
+            BeAssert(false && "Failed to drop debug view");
+            return ERROR;
+            }
+        }
+
+    return SUCCESS;
+    }
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                      05/2016
+//+---------------+---------------+---------------+---------------+---------------+--------
+//static 
+BentleyStatus ViewGenerator::DropUpdatableViews(ECDbCR ecdb)
+    {
+    Statement stmt;
+    stmt.Prepare(ecdb,
+                 "SELECT"
+                 "    ('DROP VIEW IF EXISTS _' || ec_Schema.NamespacePrefix || '_' || ec_Class.Name)  AS UpdatableView"
+                 "    FROM ec_Class"
+                 "    INNER JOIN ec_Schema ON ec_Schema.Id = ec_Class.SchemaId");
+
+    while (stmt.Step() == BE_SQLITE_ROW)
+        {
+        Utf8CP updtableViewSQL = stmt.GetValueText(0);
+        if (ecdb.ExecuteSql(updtableViewSQL) != BE_SQLITE_OK)
+            {
+            BeAssert(false && "Failed to drop uptable view");
+            return ERROR;
+            }
+        }
+
+    return SUCCESS;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                      05/2016
+//+---------------+---------------+---------------+---------------+---------------+--------
+BentleyStatus ViewGenerator::GetUpdateSetClause(NativeSqlBuilder& sql, ClassMap const& baseClassMap, ClassMap const& derivedClassMap)
+    {
+    sql.Reset();
+    std::vector<Utf8String> values;
+    baseClassMap.GetPropertyMaps().Traverse(
+        [&] (TraversalFeedback& fb, PropertyMapCP basePropertyMap) 
+        {
+        fb = TraversalFeedback::Next;
+        if (basePropertyMap->IsSystemPropertyMap())
+            return;
+
+        PropertyMapPtr derivedPropertyMap;
+        if (!derivedClassMap.GetPropertyMaps().TryGetPropertyMap(derivedPropertyMap, basePropertyMap->GetPropertyAccessString(), true))
+            {
+            BeAssert(false);
+            return;
+            }
+
+        std::vector<DbColumn const*> derivedColumnList, baseColumnList;
+        if (auto navProp = basePropertyMap->GetAsNavigationPropertyMap())
+            {
+            if (!navProp->IsSupportedInECSql())
+                return;
+            }
+
+        derivedPropertyMap->GetColumns(derivedColumnList);
+        basePropertyMap->GetColumns(baseColumnList);
+
+        BeAssert(derivedColumnList.size() == baseColumnList.size());
+        if (derivedColumnList.size() != baseColumnList.size())
+            {
+            BeAssert(false);
+            return;
+            }
+
+        for (auto deriveColumnItor = derivedColumnList.begin(), baseColumnItor = baseColumnList.begin(); deriveColumnItor != derivedColumnList.end() && baseColumnItor != baseColumnList.end(); ++deriveColumnItor, ++baseColumnItor)
+            {
+            Utf8String str;
+            str.Sprintf("[%s] = NEW.[%s]", (*deriveColumnItor)->GetName().c_str(), (*baseColumnItor)->GetName().c_str());
+            values.push_back(str);
+            }
+    
+        }, true);
+
+    if (values.empty())
+        return ERROR;
+
+    for (auto itor = values.begin(); itor != values.end(); ++itor)
+        {
+        if (itor != values.begin())
+            sql.AppendComma();
+
+        sql.Append((*itor).c_str());
+        }
+
+    return SUCCESS;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                      05/2016
+//+---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus ViewGenerator::CreateUpdatableViewIfRequired(ECDbCR ecdb, ClassMap const& classMap)
+    {
+    std::vector<SqlTriggerBuilder> triggerList;
+    if (classMap.GetMapStrategy().IsNotMapped() || classMap.IsRelationshipClassMap())
+        return ERROR;
+
+    ECDbMapCR ecdbMap = classMap.GetECDbMap();
+    StorageDescription const& descr = classMap.GetStorageDescription();
+    std::vector<Partition> const& partitions = descr.GetHorizontalPartitions();
+    Partition const& rootPartition = classMap.GetStorageDescription().GetRootHorizontalPartition();
+    DbColumn const* rootPartitionECIdColumn = rootPartition.GetTable().GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
+    int tables = 0;
+    for (auto const& partition : partitions)
+        {
+        if (partition.GetTable().GetPersistenceType() == PersistenceType::Virtual)
+            continue;
+
+        tables++;
+        DbColumn const* partitionECIdColumn = partition.GetTable().GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
+        {//<----------DELETE trigger----------
+        SqlTriggerBuilder deleteTrigger(SqlTriggerBuilder::Type::Delete, SqlTriggerBuilder::Condition::InsteadOf, false);
+        deleteTrigger.GetNameBuilder().AppendFormatted("%s_%s_delete", rootPartition.GetTable().GetName().c_str(), partition.GetTable().GetName().c_str());
+        deleteTrigger.GetOnBuilder().Append(classMap.GetUpdatableViewName().c_str());
+        deleteTrigger.GetBodyBuilder().AppendFormatted("DELETE FROM [%s] WHERE [%s] = OLD.[%s];", partition.GetTable().GetName().c_str(), partitionECIdColumn->GetName().c_str(), rootPartitionECIdColumn->GetName().c_str());
+        if (partition.NeedsECClassIdFilter())
+            {
+            Utf8String whenClause;
+            partition.AppendECClassIdFilterSql(whenClause, "OLD.ECClassId");
+            deleteTrigger.GetWhenBuilder().Append(whenClause.c_str());
+            }
+        else
+            {
+            deleteTrigger.GetWhenBuilder().Append("OLD.ECClassId = ").Append(partition.GetRootClassId().ToString().c_str());
+            }
+
+        triggerList.push_back(deleteTrigger);
+        }//----------DELETE trigger---------->
+
+        {//<----------UPDATE trigger----------
+        SqlTriggerBuilder updateTrigger(SqlTriggerBuilder::Type::Update, SqlTriggerBuilder::Condition::InsteadOf, false);
+        updateTrigger.GetNameBuilder().AppendFormatted("%s_%s_update", rootPartition.GetTable().GetName().c_str(), partition.GetTable().GetName().c_str());
+        updateTrigger.GetOnBuilder().Append(classMap.GetUpdatableViewName().c_str());
+
+        ClassMapCP derviedClassMap = ecdbMap.GetClassMap(partition.GetRootClassId());
+        if (derviedClassMap == nullptr)
+            {
+            BeAssert(false && "ClassMap not found");
+            return ERROR;
+            }
+        
+        NativeSqlBuilder setSQL;
+        if (GetUpdateSetClause(setSQL, classMap, *derviedClassMap) == ERROR)
+            continue; //nothing to update.
+
+        updateTrigger.GetBodyBuilder().AppendFormatted("UPDATE [%s] SET %s WHERE [%s] = OLD.[%s];", partition.GetTable().GetName().c_str(), setSQL.ToString(), partitionECIdColumn->GetName().c_str(), rootPartitionECIdColumn->GetName().c_str());
+        if (partition.NeedsECClassIdFilter())
+            {
+            Utf8String whenClause;
+            partition.AppendECClassIdFilterSql(whenClause, "OLD.ECClassId");
+            updateTrigger.GetWhenBuilder().Append(whenClause.c_str());
+            }
+        else
+            {
+            updateTrigger.GetWhenBuilder().Append("OLD.ECClassId = ").Append(partition.GetRootClassId().ToString().c_str());
+            }
+
+
+        triggerList.push_back(updateTrigger);
+        }//----------UPDATE trigger---------->
+        }
+        
+
+    if (tables < 2)
+        return SUCCESS;
+
+    ViewGenerator generator(ecdb.GetECDbImplR().GetECDbMap(), false, false);
+    NativeSqlBuilder view;
+    if (generator.Generate(view, classMap) != SUCCESS)
+        return ERROR;
+
+    
+    NativeSqlBuilder builder;
+    builder.AppendFormatted("CREATE VIEW %s AS %s", classMap.GetUpdatableViewName().c_str(), view.ToString());
+
+    if (ecdb.ExecuteSql(builder.ToString()) != BE_SQLITE_OK)
+        return ERROR;
+
+    for (SqlTriggerBuilder const& trigger : triggerList)
+        {
+        if (ecdb.ExecuteSql(trigger.ToString(SqlOption::Create, true).c_str()) != BE_SQLITE_OK)
+            return ERROR;
+        }
+
+    return SUCCESS;
+    }
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2016
 //+---------------+---------------+---------------+---------------+---------------+--------

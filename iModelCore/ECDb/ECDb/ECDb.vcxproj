@@ -24,7 +24,6 @@
     <ClCompile Include="ECDbExpressionSymbolProvider.cpp" />
     <ClCompile Include="ECDbImpl.cpp" />
     <ClCompile Include="ECDbLogger.cpp" />
-    <ClCompile Include="ECDbMapAnalyser.cpp" />
     <ClCompile Include="ECDbMapDebugInfo.cpp" />
     <ClCompile Include="ECDbPolicyManager.cpp" />
     <ClCompile Include="ECDbSchemaManager.cpp" />
@@ -111,6 +110,7 @@
     <ClCompile Include="PropertyMap.cpp" />
     <ClCompile Include="RelationshipClassMap.cpp" />
     <ClCompile Include="SchemaImportContext.cpp" />
+    <ClCompile Include="SqlUtilities.cpp" />
     <ClCompile Include="SystemPropertyMap.cpp" />
     <ClCompile Include="ViewGenerator.cpp" />
   </ItemGroup>
@@ -140,7 +140,6 @@
     <ClInclude Include="ECDbInternalTypes.h" />
     <ClInclude Include="ECDbLogger.h" />
     <ClInclude Include="ECDbMap.h" />
-    <ClInclude Include="ECDbMapAnalyser.h" />
     <ClInclude Include="ECDbPch.h" />
     <ClInclude Include="ECDbPolicyManager.h" />
     <ClInclude Include="ECDbSchemaPersistenceHelper.h" />
@@ -214,6 +213,7 @@
     <ClInclude Include="PropertyMap.h" />
     <ClInclude Include="RelationshipClassMap.h" />
     <ClInclude Include="SchemaImportContext.h" />
+    <ClInclude Include="SqlUtilities.h" />
     <ClInclude Include="SystemPropertyMap.h" />
     <ClInclude Include="ViewGenerator.h" />
   </ItemGroup>

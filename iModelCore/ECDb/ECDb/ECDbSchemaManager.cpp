@@ -167,6 +167,15 @@ BentleyStatus ECDbSchemaManager::ImportECSchemas(ECSchemaCacheR cache) const
     if (SUCCESS != context.Initialize(m_map.GetDbSchemaR(), m_ecdb))
         return ERROR;
 
+    //Drop all debug views
+    if (ViewGenerator::DropDebugViews(GetECDb()) != SUCCESS)
+        return ERROR;
+
+    //Drop all updatable views
+    if (ViewGenerator::DropUpdatableViews(GetECDb()) != SUCCESS)
+        return ERROR;
+
+
     if (SUCCESS != BatchImportECSchemas(context, cache))
         return ERROR;
 
@@ -179,6 +188,10 @@ BentleyStatus ECDbSchemaManager::ImportECSchemas(ECSchemaCacheR cache) const
         return ERROR;
 
     if (MappingStatus::Error == m_map.MapSchemas(context))
+        return ERROR;
+
+    //Drop all updatable/system  view which included trigger
+    if (ViewGenerator::CreateUpdatableViews(GetECDb()) != SUCCESS)
         return ERROR;
 
     m_ecdb.ClearECDbCache();
