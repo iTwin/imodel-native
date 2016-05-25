@@ -393,10 +393,10 @@ Utf8CP ECDbProfileECSchemaUpgrader::GetECDbSystemECSchemaXml()
     {
     return "<?xml version='1.0' encoding='utf-8'?> "
         "<ECSchema schemaName='ECDb_System' nameSpacePrefix='ecdbsys' version='3.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
-        "    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.13' prefix='bsca' /> "
         "    <ECSchemaReference name='ECDbMap' version='01.00.01' prefix='ecdbmap' /> "
+        "    <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' prefix='CoreCA' />"
         "    <ECCustomAttributes> "
-        "         <SystemSchema xmlns='Bentley_Standard_CustomAttributes.01.13'/> "
+        "       <BentleyInternalSchema xmlns='CoreCustomAttributes.01.00' />"
         "    </ECCustomAttributes> "
         "    <ECEntityClass typeName='PrimitiveArray' modifier='Abstract'> "
         "        <ECCustomAttributes> "
