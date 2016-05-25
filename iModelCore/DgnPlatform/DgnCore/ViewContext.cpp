@@ -1194,6 +1194,9 @@ bool GeometryParams::operator==(GeometryParamsCR rhs) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometryParams::Resolve(DgnDbR dgnDb, DgnViewportP vp)
     {
+    if (m_resolved)
+        return; // Already resolved...
+
     BeAssert(m_subCategoryId.IsValid());
     if (!m_subCategoryId.IsValid())
         return;
@@ -1270,7 +1273,7 @@ void GeometryParams::Resolve(ViewContextR context)
     {
     Resolve(context.GetDgnDb(), context.GetViewport());
 
-    if (m_styleInfo.IsValid())
+    if (m_styleInfo.IsValid() && nullptr == m_styleInfo->GetLineStyleSymb().GetILineStyle())
         m_styleInfo->Cook(context);
     }
 

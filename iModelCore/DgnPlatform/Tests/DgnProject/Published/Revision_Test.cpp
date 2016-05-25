@@ -512,9 +512,11 @@ TEST_F(RevisionTestFixture, Codes)
 struct TestElementDependency : TestElementDrivesElementHandler::Callback
 {
     int32_t m_mostRecentValue = -1;
+    uint32_t m_invocationCount = 0;
 
-    void Reset() { m_mostRecentValue = -1; }
+    void Reset() { m_mostRecentValue = -1; m_invocationCount = 0; }
     int32_t GetMostRecentValue() const { return m_mostRecentValue; }
+    uint32_t GetInvocationCount() const { return m_invocationCount; }
 
     virtual void _OnRootChanged(DgnDbR, ECInstanceId, DgnElementId, DgnElementId) override;
     virtual void _ProcessDeletedDependency(DgnDbR, dgn_TxnTable::ElementDep::DepRelData const&) override { }
@@ -568,6 +570,7 @@ uint8_t TestElementDependency::GetIndex(DgnDbR db, ECInstanceId relId)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TestElementDependency::_OnRootChanged(DgnDbR db, ECInstanceId relId, DgnElementId rootId, DgnElementId depId)
     {
+    ++m_invocationCount;
     auto root = db.Elements().Get<TestElement>(rootId);
     auto dep = db.Elements().GetForEdit<TestElement>(depId);
     ASSERT_TRUE(root.IsValid() && dep.IsValid());
@@ -681,7 +684,23 @@ TEST_F(DependencyRevisionTest, TestDependency)
     pB->SetIntegerProperty(0, 654);
     EXPECT_TRUE(pB->Update().IsValid());
 
+    EXPECT_EQ(321, pA->GetIntegerProperty(0));
+    EXPECT_EQ(654, pB->GetIntegerProperty(0));
+
+    m_dep.Reset();
+    EXPECT_EQ(0, m_dep.GetInvocationCount());
+
     db.SaveChanges("Modify root properties");
+
+    // sporadically, and apparently only in optimized builds, dependent element C's properties do not get updated, as if the dependency callback was never invoked.
+    // Check that the dependency callback was invoked
+    EXPECT_EQ(2, m_dep.GetInvocationCount());
+
+    // Check that the root properties at least were saved to eliminate that possibility
+    a = db.Elements().Get<TestElement>(aId);
+    b = db.Elements().Get<TestElement>(bId);
+    EXPECT_EQ(321, a->GetIntegerProperty(0));
+    EXPECT_EQ(654, b->GetIntegerProperty(0));
 
     c = db.Elements().Get<TestElement>(cId);
     EXPECT_EQ(321, c->GetIntegerProperty(2));
