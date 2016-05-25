@@ -14,6 +14,7 @@
 #include <DgnDbServer/Client/RepositoryInfo.h>
 #include <DgnDbServer/Client/DgnDbServerRevision.h>
 #include <WebServices/Azure/AzureBlobStorageClient.h>
+#include <WebServices/Azure/EventServiceClient.h>
 #include <DgnClientFx/Utils/Http/AuthenticationHandler.h>
 
 BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
@@ -69,6 +70,7 @@ private:
     RepositoryInfo                          m_repositoryInfo;
     IWSRepositoryClientPtr     m_wsRepositoryClient;
     IAzureBlobStorageClientPtr m_azureClient;
+    EventServiceClient         m_eventServiceClient;
 
     friend struct DgnDbClient;
     friend struct DgnDbBriefcase;
@@ -78,6 +80,9 @@ private:
 
     //! Sets AzureBlobStorageClient. 
     void SetAzureClient(IAzureBlobStorageClientPtr azureClient);
+
+    //Sets EventServiceClient
+    void SetEventServiceClient(EventServiceClient eventServiceClient);
 
     //! Update repository info from the server.
     DgnDbServerStatusTaskPtr UpdateRepositoryInfo (ICancellationTokenPtr cancellationToken = nullptr);
