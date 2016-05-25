@@ -110,10 +110,16 @@ bool MemoryManager::PurgeUntil(uint64_t memTarget)
 MemoryManager::MemoryManager()
     {
     enum Sizes : uint64_t {K=1024, MEG=K*K, GIG=K*MEG,};
-#if defined (_X64_)
-    m_targetMemorySize = 4 * GIG;
-#elif defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
-    m_targetMemorySize =  2 * GIG;
+
+#if defined (BENTLEYCONFIG_VIRTUAL_MEMORY)
+
+    // the theory here is that if we have virtual memory, use the OS to manage physical memory mapping - they'll do a better job than we will.
+    #if defined(BENTLEYCONFIG_64BIT_HARDWARE)
+        m_targetMemorySize = 4 * GIG;
+    #else
+        m_targetMemorySize = 1 * GIG;
+    #endif
+
 #else
     m_targetMemorySize = (BeSystemInfo::GetAmountOfPhysicalMemory() > (600 * MEG)) ? 50*MEG : 30*MEG;
 #endif
