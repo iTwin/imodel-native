@@ -207,6 +207,12 @@ BentleyStatus ViewGenerator::GetUpdateSetClause(NativeSqlBuilder& sql, ClassMap 
             }
 
         std::vector<DbColumn const*> derivedColumnList, baseColumnList;
+        if (auto navProp = basePropertyMap->GetAsNavigationPropertyMap())
+            {
+            if (!navProp->IsSupportedInECSql())
+                return;
+            }
+
         derivedPropertyMap->GetColumns(derivedColumnList);
         basePropertyMap->GetColumns(baseColumnList);
 
