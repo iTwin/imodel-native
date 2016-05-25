@@ -9,78 +9,34 @@
 #include <WebServices/Azure/EventServiceClient.h>
 #include <iomanip>
 
-//#include "../DgnDbServerClient/DgnDbServerUtils.h"
-//#include <DgnDbServer/Client/RepositoryInfo.h>
-//USING_NAMESPACE_BENTLEY_DGNDBSERVER
-
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                     Jeehwan.cho   05/2016
-* @bsimethod                                            Arvind.Venkateswaran   05/2016
+* @bsimethod                                                    Jeehwan.cho   05/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-EventServiceClient::EventServiceClient
-(
-Utf8StringCR repoId,
-Utf8StringCR userId,
-Utf8StringCR bimServerURL,
-Credentials credentials,
-ClientInfoPtr clientInfo,
-UrlProvider::Environment env
-)
+EventServiceClient::EventServiceClient(Utf8StringCR repoId, Utf8StringCR userId)
     {
     m_repoId = repoId;
     m_userId = userId;
-    m_bimServerURL = bimServerURL;
-    m_credentials = credentials;
-    m_clientInfo = (clientInfo == nullptr) ? CreateTestClientInfo() : clientInfo;
-    m_env = env;
-    UpdateToken();
+    UpdateToken();  
     Utf8String baseAddress = "https://" + m_nameSpace + "." + "servicebus.windows.net/";
     m_fullAddress = baseAddress + repoId + "/Subscriptions/" + userId + "/messages/head?timeout=";
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Jeehwan.cho   05/2016
-* @bsimethod                                            Arvind.Venkateswaran  05/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool EventServiceClient::UpdateToken(bool useDefaultVal)
+bool EventServiceClient::UpdateToken()
     {
-    //return MakeEventServiceRequest(m_token, m_nameSpace); //todo: need to do some sanity check
-
-    //Default values
-    if (useDefaultVal)
-        {
-        m_nameSpace = DEFAULT_NAMESPACE;
-        m_token = DEFAULT_SASTOKEN;
-        return true;
-        }
-
-    else
-        {
-        if (
-            !MakeEventServiceRequest(m_token, m_nameSpace) || 
-            Utf8String::IsNullOrEmpty(m_token.c_str()) ||
-            Utf8String::IsNullOrEmpty(m_nameSpace.c_str())
-            )
-            {
-            // Options: 
-            //1) throw exception -- Let creator handle it -- E.g throw std::invalid_argument("Could not get SAS Token and namespace");
-            //2) call the default values) 
-            //3) just return false and find another way to handle it.
-
-            return UpdateToken(true);
-            }
-        return true;
-        }
+    return MakeEventServiceRequest(m_token, m_nameSpace); //todo: need to do some sanity check
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                            Arvind.Venkateswaran   05/2016
+* @bsimethod                                                    Arvind   05/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool EventServiceClient::MakeEventServiceRequest(Utf8StringR outToken, Utf8StringR outNameSpace)
     {
-    if (!GetInfoThroughWSRepositoryClient(outToken, outNameSpace))
-        return false;
-    return true;
+    outNameSpace = "testhubjeehwan-ns";
+    outToken = "SharedAccessSignature sig=TOk40ce29TwpOYCFG7EWqHL5%2bmi9fIDX%2fYA0Ckv7Urs%3d&se=1463758026&skn=EventReceivePolicy&sr=https%3a%2f%2ftesthubjeehwan-ns.servicebus.windows.net%2ftest";
+    return true; //not yet implemented
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -134,202 +90,4 @@ bool EventServiceClient::Receive(Utf8StringR msgOut, int retry, bool longPolling
 bool EventServiceClient::Receive(Utf8StringR msgOut, bool longPolling)
     {
     return Receive(msgOut, 0, longPolling);
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                            Arvind.Venkateswaran   05/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-ClientInfoPtr EventServiceClient::CreateTestClientInfo()
-    {
-    Utf8String productId = "1654"; // Navigator Desktop, definitely needed for generating relying party URL
-    WebServices::ClientInfoPtr clientInfo(new ClientInfo("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", productId));
-    return clientInfo;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                            Arvind.Venkateswaran   05/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String EventServiceClient::GetRepository()
-    {
-    return LocalEventServiceServerSchema::Plugin::Repository + ("--" + m_repoId);
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                            Arvind.Venkateswaran   05/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-JsonValueR EventServiceAPILocalState::GetStubMap()
-    {
-    return m_map;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                            Arvind.Venkateswaran   05/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void EventServiceAPILocalState::_SaveValue(Utf8CP nameSpace, Utf8CP key, JsonValueCR value)
-    {
-    Utf8PrintfString identifier("%s/%s", nameSpace, key);
-
-    if (value.isNull())
-        {
-        m_map.removeMember(identifier);
-        }
-    else
-        {
-        m_map[identifier] = value;
-        }
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                            Arvind.Venkateswaran   05/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value EventServiceAPILocalState::_GetValue(Utf8CP nameSpace, Utf8CP key) const
-    {
-    Utf8PrintfString identifier("%s/%s", nameSpace, key);
-    return m_map[identifier];
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                            Arvind.Venkateswaran   05/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-SamlTokenPtr EventServiceClient::GetIMSToken()
-    {
-    EventServiceAPILocalState localState;
-    UrlProvider::Initialize(m_env, UrlProvider::DefaultTimeout, &localState);
-
-    /*auto rpUri = ImsClient::GetLegacyRelyingPartyUri();
-    auto proxy = ProxyHttpHandler::GetProxyIfReachable(rpUri, credentials);
-    auto client = ImsClient::Create(clientInfo, proxy);
-    SamlTokenResult result = client->RequestToken(credentials, rpUri)->GetResult();
-    if (!result.IsSuccess())
-    return nullptr;
-    return result.GetValue();*/
-
-    auto client = ImsClient::Create(m_clientInfo);
-    SamlTokenResult result = client->RequestToken(m_credentials)->GetResult();
-    if (!result.IsSuccess())
-        return nullptr;
-    return result.GetValue();
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                            Arvind.Venkateswaran   05/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-HttpResponse EventServiceClient::MakeEventServiceAPIRequest()
-    {
-    SamlTokenPtr imstokenptr = GetIMSToken();
-    if (imstokenptr == nullptr)
-        {
-        HttpResponse response(HttpResponseContent::Create(HttpStringBody::Create("Invalid credentials")), "", ConnectionStatus::None, HttpStatus::Unauthorized);
-        return response;
-        }
-
-    Utf8String url = m_bimServerURL + "/v2.4/Repositories/" + GetRepository() + "/" + LocalEventServiceServerSchema::Schema::Repository + "/" + LocalEventServiceServerSchema::Class::EventService;
-    HttpRequest request(url.c_str(), "GET", nullptr);
-    request.GetHeaders().Clear();
-    request.GetHeaders().SetAuthorization(imstokenptr->ToAuthorizationString());
-    request.SetTransferTimeoutSeconds(230);
-    return request.Perform();
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                            Arvind.Venkateswaran   05/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool EventServiceClient::GetInfoThroughIMSClient(Utf8StringR sasToken, Utf8StringR ns)
-    {
-    HttpResponse response = MakeEventServiceAPIRequest();
-    switch (response.GetHttpStatus())
-        {
-            case HttpStatus::OK:
-                {
-                JsonValueCR jsonInstances = response.GetBody().AsJson();
-                if (
-                    jsonInstances.isValidIndex(0) && jsonInstances.size() == 1 &&
-                    jsonInstances.isMember(LocalEventServiceServerSchema::Instances) &&
-                    jsonInstances[LocalEventServiceServerSchema::Instances].size() == 1 &&
-                    jsonInstances[LocalEventServiceServerSchema::Instances][0].isMember(LocalEventServiceServerSchema::Properties) &&
-                    jsonInstances[LocalEventServiceServerSchema::Instances][0][LocalEventServiceServerSchema::Properties].isMember(LocalEventServiceServerSchema::Property::EventServiceSASToken) &&
-                    jsonInstances[LocalEventServiceServerSchema::Instances][0][LocalEventServiceServerSchema::Properties].isMember(LocalEventServiceServerSchema::Property::EventServiceNameSpace)
-                    )
-                    {
-                    sasToken = jsonInstances[LocalEventServiceServerSchema::Instances][0][LocalEventServiceServerSchema::Properties][LocalEventServiceServerSchema::Property::EventServiceSASToken].asCString();
-                    ns = jsonInstances[LocalEventServiceServerSchema::Instances][0][LocalEventServiceServerSchema::Properties][LocalEventServiceServerSchema::Property::EventServiceNameSpace].asCString();
-                    return true;
-                    }
-                else
-                    {
-                    sasToken = NULL;
-                    ns = NULL;
-                    return false;
-                    }
-                }
-            case HttpStatus::NoContent:
-                {
-                sasToken = NULL;
-                ns = NULL;
-                return false;
-                }
-            case HttpStatus::NotFound:
-                {
-                sasToken = NULL;
-                ns = NULL;
-                return false;
-                }
-            case HttpStatus::Unauthorized:
-                {
-                sasToken = NULL;
-                ns = NULL;
-                return false;
-                }
-            default:
-                {
-                sasToken = NULL;
-                ns = NULL;
-                return false;
-                }
-        }
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                            Arvind.Venkateswaran   05/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool EventServiceClient::GetInfoThroughWSRepositoryClient(Utf8StringR sasToken, Utf8StringR ns)
-    {
-    //Initialize credentials and urls
-    EventServiceAPILocalState localState;
-    UrlProvider::Initialize(m_env, UrlProvider::DefaultTimeout, &localState);
-
-    //Create ConnectSignInManager and connect
-    auto manager = ConnectSignInManager::Create(m_clientInfo, nullptr, &localState);
-    bool isSuccess = manager->SignInWithCredentials(m_credentials)->GetResult().IsSuccess();
-    if (!isSuccess)
-        return false;
-    auto authHandler = manager->GetAuthenticationHandler(m_bimServerURL);
-    if (authHandler == nullptr)
-        return false;
-
-    //Create WSRepositoryClient 
-    IWSRepositoryClientPtr wsRepositoryClient = WSRepositoryClient::Create(m_bimServerURL, GetRepository(), m_clientInfo, nullptr, authHandler);
-    if (wsRepositoryClient == nullptr)
-        return false;
-
-    //Query for https://{server}/{version}/Repositories/DgnDbServer--{repoId}/EventService
-    ObjectId eventServiceObject(LocalEventServiceServerSchema::Schema::Repository, LocalEventServiceServerSchema::Class::EventService, "");
-    WSObjectsResult response = wsRepositoryClient->SendGetObjectRequest(eventServiceObject)->GetResult();
-    if (!response.IsSuccess())
-        return false;
-    bvector<WSObjectsReader::Instance> jsoninstances;
-    for (WSObjectsReader::Instance instance : response.GetValue().GetInstances())
-        {
-        jsoninstances.push_back(instance);
-        }
-    if (jsoninstances.size() < 1)
-        return false;
-
-    //Get json values
-    RapidJsonValueCR instanceProperties = jsoninstances[0].GetProperties();
-    if (!instanceProperties.HasMember(LocalEventServiceServerSchema::Property::EventServiceSASToken))
-        return false;
-    sasToken = instanceProperties[LocalEventServiceServerSchema::Property::EventServiceSASToken].GetString();
-    ns = instanceProperties[LocalEventServiceServerSchema::Property::EventServiceNameSpace].GetString();
-    return true;
     }

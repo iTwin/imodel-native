@@ -11,9 +11,9 @@
 
 class EventServiceClientTests : public BaseMockHttpHandlerTest
     {
-	public:
+	/*public:
 		bvector<Credentials> credentials;
 		bvector<Utf8String> servers;
-		void SetUp();
+		void SetUp();*/
 	};
 
