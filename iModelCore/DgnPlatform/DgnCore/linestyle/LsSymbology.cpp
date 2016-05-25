@@ -396,11 +396,11 @@ void LineStyleSymb::CheckContinuationData ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void LineStyleSymb::Init(DgnStyleId styleId, LineStyleParamsCR styleParams, DVec3dCP startTangent, DVec3dCP endTangent, ViewContextR context)
+void LineStyleSymb::Init(DgnStyleId styleId, LineStyleParamsCR styleParams, DVec3dCP startTangent, DVec3dCP endTangent, ViewContextR context, GeometryParamsR params)
     {
     Clear(); // In case of error make sure m_lStyle is nullptr so we callers know this LineStyleSymb isn't valid...
 
-    if (!styleId.IsValid() || true)
+    if (!styleId.IsValid())
         return;
 
     LsCacheP lsCache = LsCache::GetDgnDbCache(context.GetDgnDb());
@@ -478,7 +478,7 @@ void LineStyleSymb::Init(DgnStyleId styleId, LineStyleParamsCR styleParams, DVec
 
     // now adjust scale for units in linestyle definition
     double unitDef = nameRec->GetUnitsDefinition();
-    if (unitDef < mgds_fc_epsilon)
+    if (unitDef == 0)
         unitDef = 1.0;
 
     // NOTE: Removed nameRec->IsUnitsDevice() check. Problematic if not drawing in immediate mode...and a bad idea (draws outside element range, i.e. not pickable, etc.)
@@ -505,7 +505,7 @@ void LineStyleSymb::Init(DgnStyleId styleId, LineStyleParamsCR styleParams, DVec
 
     // NEEDSWORK_LINESTYLES -- this probably is the right place to get a raster texture based on an image.
     // Texture is required for 3d...but it should still be an option for 2d...
-    m_texture = nameRec->GetTexture(context, *this, context.Is3dView(), 1 /* scaleWithoutUnits */);
+    m_texture = nameRec->GetTexture(context, *this, context.Is3dView(), 1 /* scaleWithoutUnits */, params.GetWeight());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -533,21 +533,6 @@ void LineStyleSymb::ClearContinuationData ()
     m_options.startTangentSet    = 0;
     m_options.endTangentSet      = 0;
     m_options.continuationXElems = 0;
-    }
-
-//---------------------------------------------------------------------------------------
-// When this is called both GeometryParams and GraphicParams are fully determined.
-// It is called before the call to ActivateGraphicParams.
-// @bsimethod                                                   John.Gooding    08/2015
-//---------------------------------------------------------------------------------------
-void LineStyleSymb::ConvertLineStyleToTexture(ViewContextR context, bool force)
-    {
-    LsDefinitionP lsDef = (LsDefinitionP)m_lStyle;
-    BeAssert(nullptr != lsDef && dynamic_cast<LsDefinitionCP>(m_lStyle) == lsDef);
-
-    //  We know we have something that we want to be represented as a texture, but
-    //  there is a possibility it can't be.
-    m_texture = lsDef->GetTexture(context, *this, force, m_scale);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -713,10 +698,10 @@ bool LineStyleInfo::operator==(LineStyleInfoCR rhs) const
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void LineStyleInfo::Cook(ViewContextR context)
+void LineStyleInfo::Cook(ViewContextR context, GeometryParamsR params)
     {
     bool useStart = (0.0 != m_startTangent.Magnitude());
     bool useEnd = (0.0 != m_endTangent.Magnitude());
 
-    m_lStyleSymb.Init(m_styleId, m_styleParams, useStart ? &m_startTangent : nullptr, useEnd ? &m_endTangent : nullptr, context);
+    m_lStyleSymb.Init(m_styleId, m_styleParams, useStart ? &m_startTangent : nullptr, useEnd ? &m_endTangent : nullptr, context, params);
     }
