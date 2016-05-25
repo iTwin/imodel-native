@@ -405,6 +405,11 @@ namespace IndexECPlugin.Source
                 throw new ProgrammerException("The ECSchema is not valid. PackageRequest must have an array property.");
                 }
 
+            if ((requestedEntitiesECArray.Count == 0) && (osm == false))
+                {
+                throw new UserFriendlyException("The request is empty. Please specify items to include in the package");
+                }
+
             //List<RequestedEntity> bentleyFileInfoList = new List<RequestedEntity>();
             List<RequestedEntity> wmsRequestedEntities = new List<RequestedEntity>();
             List<RequestedEntity> usgsRequestedEntities = new List<RequestedEntity>();
@@ -885,28 +890,36 @@ namespace IndexECPlugin.Source
                 return usgsSourceNetList;
                 }
 
+            IECClass spatialentityClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "SpatialEntity");
+
+            IECRelationshipClass dataSourceRelClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "SpatialEntityToSpatialDataSource") as IECRelationshipClass;
             IECClass dataSourceClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "SpatialDataSource");
+            RelatedInstanceSelectCriteria dataSourceRelCrit = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(dataSourceRelClass, RelatedInstanceDirection.Forward, dataSourceClass), true);
+
+            IECRelationshipClass metadataRelClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "SpatialEntityBaseToMetadata") as IECRelationshipClass;
             IECClass metadataClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "Metadata");
-            IECClass spatialentityBaseClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "SpatialEntityBase");
+            RelatedInstanceSelectCriteria metadataRelCrit = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(metadataRelClass, RelatedInstanceDirection.Forward, metadataClass), true);
 
-            ECQuery query = new ECQuery(dataSourceClass);
+            //ECQuery query = new ECQuery(dataSourceClass);
+            //query.SelectClause.SelectAllProperties = false;
+            //query.SelectClause.SelectedProperties = new List<IECProperty>();
+            //query.SelectClause.SelectedProperties.Add(dataSourceClass.First(prop => prop.Name == "Metadata"));
+            //query.SelectClause.SelectedProperties.Add(dataSourceClass.First(prop => prop.Name == "MainURL"));
+            //query.SelectClause.SelectedProperties.Add(dataSourceClass.First(prop => prop.Name == "DataSourceType"));
+            //query.SelectClause.SelectedProperties.Add(dataSourceClass.First(prop => prop.Name == "FileSize"));
+
+            //query.WhereClause = new WhereCriteria(new ECInstanceIdExpression(usgsRequestedEntities.Select(e => e.ID.ToString()).ToArray()));
+
+            //query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "usgsapi"));
+
+            //var queriedSpatialDataSources = ExecuteQuery(queryModule, connection, query, null);
+
+            ECQuery query = new ECQuery(spatialentityClass);
             query.SelectClause.SelectAllProperties = false;
             query.SelectClause.SelectedProperties = new List<IECProperty>();
-            query.SelectClause.SelectedProperties.Add(dataSourceClass.First(prop => prop.Name == "Metadata"));
-            query.SelectClause.SelectedProperties.Add(dataSourceClass.First(prop => prop.Name == "MainURL"));
-            query.SelectClause.SelectedProperties.Add(dataSourceClass.First(prop => prop.Name == "DataSourceType"));
-            query.SelectClause.SelectedProperties.Add(dataSourceClass.First(prop => prop.Name == "FileSize"));
-
-            query.WhereClause = new WhereCriteria(new ECInstanceIdExpression(usgsRequestedEntities.Select(e => e.ID.ToString()).ToArray()));
-
-            query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "usgsapi"));
-
-            var queriedSpatialDataSources = ExecuteQuery(queryModule, connection, query, null);
-
-            query = new ECQuery(spatialentityBaseClass);
-            query.SelectClause.SelectAllProperties = false;
-            query.SelectClause.SelectedProperties = new List<IECProperty>();
-            query.SelectClause.SelectedProperties.Add(spatialentityBaseClass.First(prop => prop.Name == "Classification"));
+            query.SelectClause.SelectedProperties.Add(spatialentityClass.First(prop => prop.Name == "Classification"));
+            query.SelectClause.SelectedRelatedInstances.Add(dataSourceRelCrit);
+            query.SelectClause.SelectedRelatedInstances.Add(metadataRelCrit);
 
             query.WhereClause = new WhereCriteria(new ECInstanceIdExpression(usgsRequestedEntities.Select(e => e.ID.ToString()).ToArray()));
 
@@ -914,28 +927,31 @@ namespace IndexECPlugin.Source
 
             var queriedSpatialEntities = ExecuteQuery(queryModule, connection, query, null);
 
-            query = new ECQuery(metadataClass);
-            query.SelectClause.SelectAllProperties = false;
-            query.SelectClause.SelectedProperties = new List<IECProperty>();
-            query.SelectClause.SelectedProperties.Add(metadataClass.First(prop => prop.Name == "Legal"));
+            //query = new ECQuery(metadataClass);
+            //query.SelectClause.SelectAllProperties = false;
+            //query.SelectClause.SelectedProperties = new List<IECProperty>();
+            //query.SelectClause.SelectedProperties.Add(metadataClass.First(prop => prop.Name == "Legal"));
 
-            query.WhereClause = new WhereCriteria(new ECInstanceIdExpression(usgsRequestedEntities.Select(e => e.ID.ToString()).ToArray()));
+            //query.WhereClause = new WhereCriteria(new ECInstanceIdExpression(usgsRequestedEntities.Select(e => e.ID.ToString()).ToArray()));
 
-            query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "usgsapi"));
+            //query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "usgsapi"));
 
-            var queriedMetadatas = ExecuteQuery(queryModule, connection, query, null);
+            //var queriedMetadatas = ExecuteQuery(queryModule, connection, query, null);
 
-            foreach ( var entity in queriedSpatialDataSources )
+            foreach ( var entity in queriedSpatialEntities )
                 {
-                string metadata = entity.GetPropertyValue("Metadata").StringValue;
-                string url = entity.GetPropertyValue("MainURL").StringValue;
-                string type = entity.GetPropertyValue("DataSourceType").StringValue;
-                string copyright = queriedMetadatas.First(m => m.InstanceId == entity.InstanceId).GetPropertyValue("Legal").StringValue;
-                string id = entity.GetPropertyValue("Id").StringValue;
-                long fileSize = (long) entity.GetPropertyValue("FileSize").NativeValue;
+                IECInstance metadataInstance = entity.GetRelationshipInstances().First(rel => rel.Target.ClassDefinition.Name == metadataClass.Name).Target;
+                IECInstance datasourceInstance = entity.GetRelationshipInstances().First(rel => rel.Target.ClassDefinition.Name == dataSourceClass.Name).Target;
+
+                string metadata = datasourceInstance.GetPropertyValue("Metadata").StringValue;
+                string url = datasourceInstance.GetPropertyValue("MainURL").StringValue;
+                string type = datasourceInstance.GetPropertyValue("DataSourceType").StringValue;
+                string copyright = metadataInstance.GetPropertyValue("Legal").StringValue;
+                string id = datasourceInstance.GetPropertyValue("Id").StringValue;
+                long fileSize = (long) datasourceInstance.GetPropertyValue("FileSize").NativeValue;
                 ulong uFileSize = (fileSize > 0) ? (ulong) fileSize : 0;
-                string location = entity.GetPropertyValue("LocationInCompound").StringValue;
-                var classificationPropValue = queriedSpatialEntities.First(m => m.InstanceId == entity.InstanceId).GetPropertyValue("Classification");
+                string location = datasourceInstance.GetPropertyValue("LocationInCompound").StringValue;
+                var classificationPropValue = entity.GetPropertyValue("Classification");
                 string classification = null;
                 if ( (classificationPropValue != null) && (!classificationPropValue.IsNull) )
                     {

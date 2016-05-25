@@ -30,6 +30,8 @@ namespace IndexECPlugin.Source.QueryProviders
         ECQuerySettings m_querySettings;
         IUSGSDataFetcher m_usgsDataFetcher;
 
+        Tuple<string, JObject> jsonCache;
+
         Dictionary<string, IECInstance> m_storedParents;
 
         /// <summary>
@@ -91,7 +93,7 @@ namespace IndexECPlugin.Source.QueryProviders
                     foreach ( string sourceID in instanceIDExpression.InstanceIdSet )
                         {
                         IECInstance instance = CreateInstanceFromID(ecClass, sourceID);
-
+                        CreateRelatedInstance(instance, m_query.SelectClause.SelectedRelatedInstances);
                         if ( instance != null )
                             {
                             instanceList.Add(instance);
@@ -124,10 +126,10 @@ namespace IndexECPlugin.Source.QueryProviders
                 }
 
             //Related instances of each instance found before
-            foreach ( var instance in instanceList )
-                {
-                CreateRelatedInstance(instance, m_query.SelectClause.SelectedRelatedInstances);
-                }
+            //foreach ( var instance in instanceList )
+            //    {
+            //    CreateRelatedInstance(instance, m_query.SelectClause.SelectedRelatedInstances);
+            //    }
 
             return instanceList;
 
@@ -193,6 +195,10 @@ namespace IndexECPlugin.Source.QueryProviders
         private IECInstance CreateInstanceFromID (IECClass ecClass, string sourceID)
             {
 
+            if ( sourceID.Length != IndexConstants.USGSIdLenght )
+                {
+                return null;
+                }
             switch ( ecClass.Name )
                 {
                 case "SpatialEntityBase":
@@ -226,12 +232,7 @@ namespace IndexECPlugin.Source.QueryProviders
             IECInstance instance = ecClass.CreateInstance();
             instance.InstanceId = sourceID;
 
-            JObject json = m_usgsDataFetcher.GetSciencebaseJson(sourceID);
-
-            if ( json == null )
-                {
-                return null;
-                }
+            JObject json = GetJsonWithCache(sourceID);
 
             instance["Id"].StringValue = sourceID;
 
@@ -322,12 +323,8 @@ namespace IndexECPlugin.Source.QueryProviders
             IECInstance instance = ecClass.CreateInstance();
             instance.InstanceId = sourceID;
 
-            JObject json = m_usgsDataFetcher.GetSciencebaseJson(sourceID);
-
-            if ( json == null )
-                {
-                return null;
-                }
+            JObject json;
+            json = GetJsonWithCache(sourceID);
 
             instance["Id"].StringValue = sourceID;
 
@@ -432,6 +429,21 @@ namespace IndexECPlugin.Source.QueryProviders
             return instance;
             }
 
+        private JObject GetJsonWithCache (string sourceID)
+            {
+            JObject json;
+            if ( jsonCache == null || jsonCache.Item1 != sourceID )
+                {
+                json = m_usgsDataFetcher.GetSciencebaseJson(sourceID);
+                jsonCache = new Tuple<string, JObject>(sourceID, json);
+                }
+            else
+                {
+                json = jsonCache.Item2;
+                }
+            return json;
+            }
+
         private IECInstance QuerySingleSpatialDataSource (string sourceID, IECClass ecClass)
             {
             if ( sourceID.Length != IndexConstants.USGSIdLenght )
@@ -442,12 +454,7 @@ namespace IndexECPlugin.Source.QueryProviders
             IECInstance instance = ecClass.CreateInstance();
             instance.InstanceId = sourceID;
 
-            JObject json = m_usgsDataFetcher.GetSciencebaseJson(sourceID);
-
-            if ( json == null )
-                {
-                return null;
-                }
+            JObject json = GetJsonWithCache(sourceID);
 
             instance["Id"].StringValue = sourceID;
 
@@ -463,8 +470,15 @@ namespace IndexECPlugin.Source.QueryProviders
                     string[] acceptedFormats = { "JPEG2000", "TIFF", "IMG", "Shapefile", "LAS" };
                     if ( (weblink["title"] != null) && (acceptedFormats.Contains(weblink["title"].Value<string>())) )
                         {
-                        instance["MainURL"].StringValue = weblink["uri"].Value<string>();
-                        instance["FileSize"].NativeValue = weblink["length"].Value<long>() / 1024;
+                        instance["MainURL"].StringValue = weblink.TryToGetString("uri");
+                        if ( weblink["length"] != null )
+                            {
+                            long size;
+                            if ( Int64.TryParse(weblink.TryToGetString("length"), out size) )
+                                {
+                                instance["FileSize"].NativeValue = (long) (size / 1024);
+                                }
+                            }
                         break;
                         }
                     }
@@ -526,12 +540,7 @@ namespace IndexECPlugin.Source.QueryProviders
             IECInstance instance = ecClass.CreateInstance();
             instance.InstanceId = sourceID;
 
-            JObject json = m_usgsDataFetcher.GetSciencebaseJson(sourceID);
-
-            if ( json == null )
-                {
-                return null;
-                }
+            JObject json = GetJsonWithCache(sourceID);
 
             instance["Id"].StringValue = sourceID;
 
@@ -599,12 +608,7 @@ namespace IndexECPlugin.Source.QueryProviders
             IECInstance instance = ecClass.CreateInstance();
             instance.InstanceId = sourceID;
 
-            JObject json = m_usgsDataFetcher.GetSciencebaseJson(sourceID);
-
-            if ( json == null )
-                {
-                return null;
-                }
+            JObject json = GetJsonWithCache(sourceID);
 
             instance["Id"].StringValue = sourceID;
 
@@ -684,8 +688,19 @@ namespace IndexECPlugin.Source.QueryProviders
         private string ExtractFormatFromURI (string uri)
             {
             string[] splitURI = uri.Split('.');
-
-            return splitURI[splitURI.Length - 1];
+            string extension = splitURI[splitURI.Length - 1].ToLower();
+            switch ( extension )
+                {
+                case "jpeg":
+                case "jpg":
+                case "png":
+                case "gif":
+                case "jp2":
+                    return extension;
+                default:
+                    return "Unknown";
+                }
+            //return splitURI[splitURI.Length - 1];
             }
 
         private string ExtractNameFromURI (string uri)
@@ -714,12 +729,7 @@ namespace IndexECPlugin.Source.QueryProviders
 
             instance.InstanceId = sourceID;
 
-            JObject json = m_usgsDataFetcher.GetSciencebaseJson(sourceID);
-
-            if ( json == null )
-                {
-                return null;
-                }
+            JObject json = GetJsonWithCache(sourceID);
 
             instance["Id"].StringValue = sourceID;
 
@@ -972,7 +982,14 @@ namespace IndexECPlugin.Source.QueryProviders
 
                         }
 
-                    instance["FileSize"].NativeValue = jtoken["sizeInBytes"].Value<long>() / 1024;
+                    if ( jtoken["sizeInBytes"] != null )
+                        {
+                        long size;
+                        if ( Int64.TryParse(jtoken.TryToGetString("sizeInBytes"), out size) )
+                            {
+                            instance["FileSize"].NativeValue = (long) (size / 1024);
+                            }
+                        }
 
                     instanceList.Add(instance);
                     }
