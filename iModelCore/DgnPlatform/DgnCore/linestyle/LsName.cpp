@@ -63,12 +63,14 @@ bool _ProcessCurveVector(CurveVectorCR curves, bool filled, SimplifyGraphic&) ov
 virtual void _OutputGraphics(ViewContext& viewContext) override
     {
     Render::GraphicPtr  graphic = viewContext.CreateGraphic();
+    Render::GraphicParams   defaultParams;
+    LineStyleContext lsContext(*graphic, defaultParams, &viewContext);
 
     LineStyleSymb   lineStyleSymb;
     lineStyleSymb.Init(nullptr);
     //  lineStyleSymb.SetScale(m_scaleFactor);
 
-    m_component._StrokeLineString(*graphic, &viewContext, &lineStyleSymb, m_points, 2, false);
+    m_component._StrokeLineString(*graphic, lsContext, &lineStyleSymb, m_points, 2, false);
     }
 
 //---------------------------------------------------------------------------------------
@@ -302,7 +304,8 @@ Render::GraphicPtr Stroke(ViewContextR context) const
 
     //  Add symbology
     graphic->ActivateGraphicParams(elemMatSymb);
-    m_component->_StrokeLineString(*graphic, &context, &lineStyleSymb, m_points, 2, false);
+    LineStyleContext lsContext(*graphic, elemMatSymb, &context);
+    m_component->_StrokeLineString(*graphic, lsContext, &lineStyleSymb, m_points, 2, false);
     graphic->Close();
 
     return graphic;
