@@ -2919,28 +2919,14 @@ private:
         SchemaKey Key;
         };
 
+    bmap<bpair<SchemaKey, SchemaMatchType>, ECSchemaPtr> m_knownSchemas;
     bvector<WString> m_searchPaths;
     SearchPathSchemaFileLocater (bvector<WString> const& searchPaths);
     virtual ~SearchPathSchemaFileLocater();
     static bool TryLoadingSupplementalSchemas(Utf8StringCR schemaName, WStringCR schemaFilePath, ECSchemaReadContextR schemaContext, bvector<ECSchemaP>& supplementalSchemas);
 
-    void FindEligibleSchemaFiles
-    (
-    bvector<CandidateSchema>& foundFiles, 
-    SchemaKeyR desiredSchemaKey, 
-    SchemaMatchType matchType, 
-    ECSchemaReadContextCR schemaContext
-    );
-
-    void AddCandidateSchemas
-    (
-    bvector<CandidateSchema>& foundFiles,
-    WStringCR schemaPath,
-    WStringCR fileFilter,
-    SchemaKeyR desiredSchemaKey,
-    SchemaMatchType matchType,
-    ECSchemaReadContextCR schemaContext
-    );
+    void FindEligibleSchemaFiles(bvector<CandidateSchema>& foundFiles, SchemaKeyR desiredSchemaKey, SchemaMatchType matchType, ECSchemaReadContextCR schemaContext);
+    void AddCandidateSchemas(bvector<CandidateSchema>& foundFiles, WStringCR schemaPath, WStringCR fileFilter, SchemaKeyR desiredSchemaKey, SchemaMatchType matchType, ECSchemaReadContextCR schemaContext);
 
     static bool SchemyKeyIsLessByVersion(CandidateSchema const& lhs, CandidateSchema const& rhs);
 

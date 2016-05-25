@@ -1713,12 +1713,20 @@ bool SearchPathSchemaFileLocater::SchemyKeyIsLessByVersion(CandidateSchema const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaPtr SearchPathSchemaFileLocater::_LocateSchema(SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextR schemaContext)
     {
+    bpair<SchemaKey, SchemaMatchType> lookup = make_bpair<SchemaKey, SchemaMatchType>(key, matchType);
+    bmap<bpair<SchemaKey, SchemaMatchType>, ECSchemaPtr>::iterator iter = m_knownSchemas.find(lookup);
+    if (iter != m_knownSchemas.end())
+        return iter->second;
+
     bvector<CandidateSchema> eligibleSchemaFiles;
     FindEligibleSchemaFiles(eligibleSchemaFiles, key, matchType, schemaContext);
     
     size_t resultCount = eligibleSchemaFiles.size();
     if (resultCount == 0)
+        {
+        m_knownSchemas.Insert(lookup, nullptr);
         return nullptr;
+        }
 
     auto& schemaToLoad = *std::max_element(eligibleSchemaFiles.begin(), eligibleSchemaFiles.end(), SchemyKeyIsLessByVersion);
     LOG.debugv(L"Attempting to load schema %ls...", schemaToLoad.FileName.GetName());
@@ -1726,10 +1734,16 @@ ECSchemaPtr SearchPathSchemaFileLocater::_LocateSchema(SchemaKeyR key, SchemaMat
     //Get cached version of the schema
     ECSchemaPtr schemaOut = schemaContext.GetFoundSchema(schemaToLoad.Key, SchemaMatchType::Exact);;
     if (schemaOut.IsValid())
+        {
+        m_knownSchemas.Insert(make_bpair<SchemaKey, SchemaMatchType>(key, SchemaMatchType::Exact), schemaOut);
         return schemaOut;
+        }
      
     if (SchemaReadStatus::Success != ECSchema::ReadFromXmlFile(schemaOut, schemaToLoad.FileName.c_str(), schemaContext))
+        {
+        m_knownSchemas.Insert(lookup, nullptr);
         return nullptr;
+        }
 
     LOG.debugv(L"Located %ls...", schemaToLoad.FileName.c_str());
 
@@ -1754,6 +1768,7 @@ ECSchemaPtr SearchPathSchemaFileLocater::_LocateSchema(SchemaKeyR key, SchemaMat
         builder.UpdateSchema(*schemaOut, supplementalSchemas);
         }
 
+    m_knownSchemas.Insert(lookup, schemaOut);
     return schemaOut;
     }
 
