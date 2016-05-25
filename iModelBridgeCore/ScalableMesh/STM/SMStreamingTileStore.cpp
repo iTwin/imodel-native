@@ -10,7 +10,6 @@
 #include "ImagePPHeaders.h"
 #include "SMStreamingTileStore.h"
 
-bool s_save_grouped_store = false;
 bool s_stream_from_disk = false;
 bool s_stream_from_file_server = false;
 bool s_stream_from_grouped_store = true;

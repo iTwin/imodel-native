@@ -30,7 +30,6 @@
 
 
 //static bool s_useStreamingStore = true;
-extern bool s_save_grouped_store;
 extern bool s_stream_from_disk;
 extern bool s_stream_from_file_server;
 extern bool s_stream_from_grouped_store;
