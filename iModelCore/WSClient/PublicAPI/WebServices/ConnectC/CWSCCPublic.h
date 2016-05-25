@@ -11,6 +11,8 @@
 #include <WebServices/ConnectC/CWSCCGenPublic.h>
 #include <WebServices/ConnectC/CWSCCGenBufferPublic.h>
 
+typedef void* IHTTPHANDLERPTR;
+
 /************************************************************************************//**
 * \addtogroup ConnectWebServicesClientCAPIFunctions ConnectWebServicesClientC API Function Declarations
 * \{
@@ -20,7 +22,7 @@
 * \brief Initialize the API with the authenticated token string
 * \param[in] authenticatedToken used to initizalize HttpClients
 * \param[in] temporaryDirectory directory path used for temporary files
-* \param[in] assetsRootDirectory directory path which contains needed asset files (
+* \param[in] sqlangFilePath full path to the sqlang file for localization strings - needed for localized HttpResponses
 * \param[in] applicationName human readable string with company and application name. Format: "Bentley-TestApplication"
 * \param[in] applicationVersion major and minor numbers could be used to identify application in server side
 * \param[in] applicationGUID unique application GUID used for registering WSG usage
@@ -28,20 +30,22 @@
 * \param[in] proxyUrl [optional] The base url for the Web Proxy
 * \param[in] proxyUsername [optional] The username used to configure the Web Proxy
 * \param[in] proxyPassword [optional] The password used to configure the Web Proxy
+* \param[in] customHandler [forbidden] Custom HttpHandler used for testing purposes ONLY
 * \return WSAPIHANDLE API object
 ****************************************************************************************/
 CWSCC_EXPORT CWSCCHANDLE ConnectWebServicesClientC_InitializeApiWithToken
 (
 WCharCP authenticatedToken,
 WCharCP temporaryDirectory,
-WCharCP assetsRootDirectory,
+WCharCP sqlangFilePath,
 WCharCP applicationName,
 WCharCP applicationVersion,
 WCharCP applicationGUID,
 WCharCP applicationProductId,
 WCharCP proxyUrl,
 WCharCP proxyUsername,
-WCharCP proxyPassword
+WCharCP proxyPassword,
+IHTTPHANDLERPTR customHandler
 );
 
 /************************************************************************************//**
@@ -49,7 +53,7 @@ WCharCP proxyPassword
 * \param[in] username username used to login
 * \param[in] password password used to login
 * \param[in] temporaryDirectory directory path used for temporary files
-* \param[in] assetsRootDirectory directory path which contains needed asset files (
+* \param[in] sqlangFilePath full path to the sqlang file for localization strings - needed for localized HttpResponses
 * \param[in] applicationName human readable string with company and application name. Format: "Bentley-TestApplication"
 * \param[in] applicationVersion major and minor numbers could be used to identify application in server side
 * \param[in] applicationGUID unique application GUID used for registering WSG usage
@@ -57,6 +61,7 @@ WCharCP proxyPassword
 * \param[in] proxyUrl [optional] The base url for the Web Proxy
 * \param[in] proxyUsername [optional] The username used to configure the Web Proxy
 * \param[in] proxyPassword [optional] The password used to configure the Web Proxy
+* \param[in] customHandler [forbidden] Custom HttpHandler used for testing purposes ONLY
 * \return WSAPIHANDLE API object
 ****************************************************************************************/
 CWSCC_EXPORT CWSCCHANDLE ConnectWebServicesClientC_InitializeApiWithCredentials
@@ -64,14 +69,15 @@ CWSCC_EXPORT CWSCCHANDLE ConnectWebServicesClientC_InitializeApiWithCredentials
 WCharCP username,
 WCharCP password,
 WCharCP temporaryDirectory,
-WCharCP assetsRootDirectory,
+WCharCP sqlangFilePath,
 WCharCP applicationName,
 WCharCP applicationVersion,
 WCharCP applicationGUID,
 WCharCP applicationProductId,
 WCharCP proxyUrl,
 WCharCP proxyUsername,
-WCharCP proxyPassword
+WCharCP proxyPassword,
+IHTTPHANDLERPTR customHandler
 );
 
 /************************************************************************************//**

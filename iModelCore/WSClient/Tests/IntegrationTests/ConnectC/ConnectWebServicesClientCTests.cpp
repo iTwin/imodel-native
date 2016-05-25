@@ -10,14 +10,14 @@
 
 static BeFileName s_temporaryDirectory, s_assetsRootDirectory;
 
-void ConnectWebServicesClientC::SetUpTestCase()
+void ConnectWebServicesClientCTests::SetUpTestCase()
     {
     WSClientBaseTest::SetUpTestCase();
     BeTest::GetHost().GetTempDir(s_temporaryDirectory);
     BeTest::GetHost().GetDgnPlatformAssetsDirectory(s_assetsRootDirectory);
     }
 
-void ConnectWebServicesClientC::SetUp ()
+void ConnectWebServicesClientCTests::SetUp ()
     {
     auto proxy = ProxyHttpHandler::GetProxyIfReachable ("http://127.0.0.1:8888", Credentials ("1", "1"), nullptr);
     if (!Utf8String::IsNullOrEmpty (proxy->GetProxyUrl ().c_str ()))
@@ -26,13 +26,13 @@ void ConnectWebServicesClientC::SetUp ()
         m_fiddlerProxyUrl = L"";
     }
 
-void ConnectWebServicesClientC::TearDown ()
+void ConnectWebServicesClientCTests::TearDown ()
     {
     m_fiddlerProxyUrl = nullptr;
     }
 
 
-TEST_F (ConnectWebServicesClientC, Ctor_InvalidProxyUrl_ApiIsNull)
+TEST_F (ConnectWebServicesClientCTests, Ctor_InvalidProxyUrl_ApiIsNull)
     {
     //NOTE: If Fiddler is running, and has been running for previous tests, this test will fail.
     //      To successfully run this test, restart Fiddler, or close out Fiddler entirely.
@@ -47,12 +47,13 @@ TEST_F (ConnectWebServicesClientC, Ctor_InvalidProxyUrl_ApiIsNull)
         m_ccProductId.c_str (),
         L"http://0.0.0.0:80",
         nullptr,
+        nullptr,
         nullptr
         );
     ASSERT_TRUE (api == nullptr);
     }
 
-TEST_F (ConnectWebServicesClientC, Ctor_InvalidProxyCredentialsWhenProxyCredentialsAreRequired_ApiIsNull)
+TEST_F (ConnectWebServicesClientCTests, Ctor_InvalidProxyCredentialsWhenProxyCredentialsAreRequired_ApiIsNull)
     {
     //NOTE: If Fiddler is running, and has been running for previous tests, this test will probably fail.
     //      To successfully run this test, restart Fiddler AND make sure to Require Proxy Authentication!
@@ -68,7 +69,8 @@ TEST_F (ConnectWebServicesClientC, Ctor_InvalidProxyCredentialsWhenProxyCredenti
         m_ccProductId.c_str (),
         m_fiddlerProxyUrl.c_str (),
         L"Invalid",
-        L"Invalid"
+        L"Invalid",
+        nullptr
         );
     if (WString::IsNullOrEmpty(m_fiddlerProxyUrl.c_str()))
         ASSERT_FALSE (api == nullptr);
@@ -76,7 +78,7 @@ TEST_F (ConnectWebServicesClientC, Ctor_InvalidProxyCredentialsWhenProxyCredenti
         ASSERT_TRUE (api == nullptr);
     }
 
-TEST_F(ConnectWebServicesClientC, Ctor_ValidParameters_SuccessfulInitialization)
+TEST_F(ConnectWebServicesClientCTests, Ctor_ValidParameters_SuccessfulInitialization)
     {
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
         (m_username.c_str(),
@@ -89,7 +91,8 @@ TEST_F(ConnectWebServicesClientC, Ctor_ValidParameters_SuccessfulInitialization)
         m_ccProductId.c_str(),
         m_fiddlerProxyUrl.c_str(),
         m_fiddlerProxyUsername.c_str(),
-        m_fiddlerProxyPassword.c_str()
+        m_fiddlerProxyPassword.c_str(),
+        nullptr
         );
     ASSERT_TRUE (api != nullptr);
 
@@ -97,7 +100,7 @@ TEST_F(ConnectWebServicesClientC, Ctor_ValidParameters_SuccessfulInitialization)
     ASSERT_TRUE (status == SUCCESS);
     }
 
-TEST_F(ConnectWebServicesClientC, Ctor_InvalidCredentialsAndValidProductId_ApiIsNull)
+TEST_F(ConnectWebServicesClientCTests, Ctor_InvalidCredentialsAndValidProductId_ApiIsNull)
     {
     WCharP password = L"password";
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
@@ -111,12 +114,13 @@ TEST_F(ConnectWebServicesClientC, Ctor_InvalidCredentialsAndValidProductId_ApiIs
         m_ccProductId.c_str(),
         m_fiddlerProxyUrl.c_str(),
         m_fiddlerProxyUsername.c_str(),
-        m_fiddlerProxyPassword.c_str()
+        m_fiddlerProxyPassword.c_str(),
+        nullptr
         );
     ASSERT_TRUE(api == nullptr);
     }
 
-TEST_F(ConnectWebServicesClientC, Ctor_ValidCredentialsAndInvalidProductId_ApiIsNull)
+TEST_F(ConnectWebServicesClientCTests, Ctor_ValidCredentialsAndInvalidProductId_ApiIsNull)
     {
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
         (m_username.c_str(),
@@ -129,12 +133,13 @@ TEST_F(ConnectWebServicesClientC, Ctor_ValidCredentialsAndInvalidProductId_ApiIs
         L"9999",
         m_fiddlerProxyUrl.c_str(),
         m_fiddlerProxyUsername.c_str(),
-        m_fiddlerProxyPassword.c_str()
+        m_fiddlerProxyPassword.c_str(),
+        nullptr
         );
     ASSERT_TRUE(api == nullptr);
     }
 
-TEST_F (ConnectWebServicesClientC, Ctor_NoProxyUrlOrCredentials_ApiIsNotNull)
+TEST_F (ConnectWebServicesClientCTests, Ctor_NoProxyUrlOrCredentials_ApiIsNotNull)
     {
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
         (m_username.c_str (),
@@ -147,6 +152,7 @@ TEST_F (ConnectWebServicesClientC, Ctor_NoProxyUrlOrCredentials_ApiIsNotNull)
         m_ccProductId.c_str (),
         nullptr,
         nullptr,
+        nullptr,
         nullptr
         );
     ASSERT_TRUE (api != nullptr);
@@ -155,7 +161,7 @@ TEST_F (ConnectWebServicesClientC, Ctor_NoProxyUrlOrCredentials_ApiIsNotNull)
     ASSERT_TRUE (status == SUCCESS);
     }
 
-TEST_F (ConnectWebServicesClientC, ReadProject_ProjectExists_SuccessfulRetreival)
+TEST_F (ConnectWebServicesClientCTests, ReadProject_ProjectExists_SuccessfulRetreival)
     {
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
         (m_username.c_str (),
@@ -168,7 +174,8 @@ TEST_F (ConnectWebServicesClientC, ReadProject_ProjectExists_SuccessfulRetreival
         m_ccProductId.c_str (),
         m_fiddlerProxyUrl.c_str (),
         m_fiddlerProxyUsername.c_str (),
-        m_fiddlerProxyPassword.c_str ()
+        m_fiddlerProxyPassword.c_str(),
+        nullptr
         );
     ASSERT_TRUE (api != nullptr);
 
@@ -184,7 +191,7 @@ TEST_F (ConnectWebServicesClientC, ReadProject_ProjectExists_SuccessfulRetreival
     ASSERT_TRUE (status == SUCCESS);
     }
 
-TEST_F (ConnectWebServicesClientC, ReadProject_InvalidDataBufHandle_ErrorCodeReturned)
+TEST_F (ConnectWebServicesClientCTests, ReadProject_InvalidDataBufHandle_ErrorCodeReturned)
     {
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
         (m_username.c_str (),
@@ -197,7 +204,8 @@ TEST_F (ConnectWebServicesClientC, ReadProject_InvalidDataBufHandle_ErrorCodeRet
         m_ccProductId.c_str (),
         m_fiddlerProxyUrl.c_str (),
         m_fiddlerProxyUsername.c_str (),
-        m_fiddlerProxyPassword.c_str ()
+        m_fiddlerProxyPassword.c_str(),
+        nullptr
         );
     ASSERT_TRUE (api != nullptr);
 
@@ -209,7 +217,7 @@ TEST_F (ConnectWebServicesClientC, ReadProject_InvalidDataBufHandle_ErrorCodeRet
     ASSERT_TRUE (status == SUCCESS);
     }
 
-TEST_F(ConnectWebServicesClientC, DataBufferGetCount_Only1ProjectIsReturned_SuccessfulRetreival)
+TEST_F(ConnectWebServicesClientCTests, DataBufferGetCount_Only1ProjectIsReturned_SuccessfulRetreival)
     {
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
         (m_username.c_str (),
@@ -222,7 +230,8 @@ TEST_F(ConnectWebServicesClientC, DataBufferGetCount_Only1ProjectIsReturned_Succ
         m_ccProductId.c_str (),
         m_fiddlerProxyUrl.c_str (),
         m_fiddlerProxyUsername.c_str (),
-        m_fiddlerProxyPassword.c_str ()
+        m_fiddlerProxyPassword.c_str(),
+        nullptr
         );
     ASSERT_TRUE (api != nullptr);
 
@@ -240,7 +249,7 @@ TEST_F(ConnectWebServicesClientC, DataBufferGetCount_Only1ProjectIsReturned_Succ
     ASSERT_TRUE (status == SUCCESS);
     }
 
-TEST_F(ConnectWebServicesClientC, GetPropertyMethods_Only1ProjectIsReturnedWithFulfilledProjectProperties_SuccessfulRetreivalOfProperties)
+TEST_F(ConnectWebServicesClientCTests, GetPropertyMethods_Only1ProjectIsReturnedWithFulfilledProjectProperties_SuccessfulRetreivalOfProperties)
     {
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
         (m_username.c_str (),
@@ -253,7 +262,8 @@ TEST_F(ConnectWebServicesClientC, GetPropertyMethods_Only1ProjectIsReturnedWithF
         m_ccProductId.c_str (),
         m_fiddlerProxyUrl.c_str (),
         m_fiddlerProxyUsername.c_str (),
-        m_fiddlerProxyPassword.c_str ()
+        m_fiddlerProxyPassword.c_str(),
+        nullptr
         );
     ASSERT_TRUE (api != nullptr);
 
@@ -284,7 +294,7 @@ TEST_F(ConnectWebServicesClientC, GetPropertyMethods_Only1ProjectIsReturnedWithF
     ASSERT_TRUE (status == SUCCESS);
     }
 
-TEST_F(ConnectWebServicesClientC, GetPropertyMethods_NULLBuffer_AppropriateStatusCodeReturned)
+TEST_F(ConnectWebServicesClientCTests, GetPropertyMethods_NULLBuffer_AppropriateStatusCodeReturned)
     {
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
         (m_username.c_str (),
@@ -297,7 +307,8 @@ TEST_F(ConnectWebServicesClientC, GetPropertyMethods_NULLBuffer_AppropriateStatu
         m_ccProductId.c_str (),
         m_fiddlerProxyUrl.c_str (),
         m_fiddlerProxyUsername.c_str (),
-        m_fiddlerProxyPassword.c_str ()
+        m_fiddlerProxyPassword.c_str(),
+        nullptr
         );
     ASSERT_TRUE (api != nullptr);
 
@@ -329,7 +340,7 @@ TEST_F(ConnectWebServicesClientC, GetPropertyMethods_NULLBuffer_AppropriateStatu
     ASSERT_TRUE (status == SUCCESS);
     }
 
-TEST_F(ConnectWebServicesClientC, GetPropertyMethods_BufferWithProjectTypeButInvalidPropertyType_AppropriateStatusCodeReturned)
+TEST_F(ConnectWebServicesClientCTests, GetPropertyMethods_BufferWithProjectTypeButInvalidPropertyType_AppropriateStatusCodeReturned)
     {
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
         (m_username.c_str (),
@@ -342,7 +353,8 @@ TEST_F(ConnectWebServicesClientC, GetPropertyMethods_BufferWithProjectTypeButInv
         m_ccProductId.c_str (),
         m_fiddlerProxyUrl.c_str (),
         m_fiddlerProxyUsername.c_str (),
-        m_fiddlerProxyPassword.c_str ()
+        m_fiddlerProxyPassword.c_str(),
+        nullptr
         );
     ASSERT_TRUE (api != nullptr);
 
@@ -364,7 +376,7 @@ TEST_F(ConnectWebServicesClientC, GetPropertyMethods_BufferWithProjectTypeButInv
     ASSERT_TRUE (status == SUCCESS);
     }
 
-TEST_F(ConnectWebServicesClientC, GetPropertyMethods_BufferWithProjectTypeAndValidPropertyTypeButInvalidProperty_AppropriateStatusCodeReturned)
+TEST_F(ConnectWebServicesClientCTests, GetPropertyMethods_BufferWithProjectTypeAndValidPropertyTypeButInvalidProperty_AppropriateStatusCodeReturned)
     {
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
         (m_username.c_str (),
@@ -377,7 +389,8 @@ TEST_F(ConnectWebServicesClientC, GetPropertyMethods_BufferWithProjectTypeAndVal
         m_ccProductId.c_str (),
         m_fiddlerProxyUrl.c_str (),
         m_fiddlerProxyUsername.c_str (),
-        m_fiddlerProxyPassword.c_str ()
+        m_fiddlerProxyPassword.c_str(),
+        nullptr
         );
     ASSERT_TRUE (api != nullptr);
 
@@ -413,7 +426,7 @@ TEST_F(ConnectWebServicesClientC, GetPropertyMethods_BufferWithProjectTypeAndVal
     ASSERT_TRUE (status == SUCCESS);
     }
 
-TEST_F (ConnectWebServicesClientC, CRUDProjectFunctions_CRUDsSuccessful_SuccessfulCodesReturned)
+TEST_F (ConnectWebServicesClientCTests, CRUDProjectFunctions_CRUDsSuccessful_SuccessfulCodesReturned)
     {
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
         (m_username.c_str (),
@@ -426,7 +439,8 @@ TEST_F (ConnectWebServicesClientC, CRUDProjectFunctions_CRUDsSuccessful_Successf
         m_ccProductId.c_str (),
         m_fiddlerProxyUrl.c_str (),
         m_fiddlerProxyUsername.c_str (),
-        m_fiddlerProxyPassword.c_str ()
+        m_fiddlerProxyPassword.c_str(),
+        nullptr
         );
     ASSERT_TRUE (api != nullptr);
 
@@ -518,7 +532,7 @@ TEST_F (ConnectWebServicesClientC, CRUDProjectFunctions_CRUDsSuccessful_Successf
     ASSERT_TRUE (status == SUCCESS);
     }
 
-TEST_F (ConnectWebServicesClientC, CRUDOrganizationFunctions_CRUDsSuccessful_SuccessfulCodesReturned)
+TEST_F (ConnectWebServicesClientCTests, CRUDOrganizationFunctions_CRUDsSuccessful_SuccessfulCodesReturned)
     {
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
         (m_username.c_str (),
@@ -531,7 +545,8 @@ TEST_F (ConnectWebServicesClientC, CRUDOrganizationFunctions_CRUDsSuccessful_Suc
         m_ccProductId.c_str (),
         m_fiddlerProxyUrl.c_str (),
         m_fiddlerProxyUsername.c_str (),
-        m_fiddlerProxyPassword.c_str ()
+        m_fiddlerProxyPassword.c_str(),
+        nullptr
         );
     ASSERT_TRUE (api != nullptr);
 
@@ -566,7 +581,7 @@ TEST_F (ConnectWebServicesClientC, CRUDOrganizationFunctions_CRUDsSuccessful_Suc
     ASSERT_TRUE (status == SUCCESS);
     }
 
-TEST_F (ConnectWebServicesClientC, CRUDProjectFavoriteFunctions_CRUDsSuccessful_SuccessfulCodesReturned)
+TEST_F (ConnectWebServicesClientCTests, CRUDProjectFavoriteFunctions_CRUDsSuccessful_SuccessfulCodesReturned)
     {
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
         (m_username.c_str (),
@@ -579,7 +594,8 @@ TEST_F (ConnectWebServicesClientC, CRUDProjectFavoriteFunctions_CRUDsSuccessful_
         m_ccProductId.c_str (),
         m_fiddlerProxyUrl.c_str (),
         m_fiddlerProxyUsername.c_str (),
-        m_fiddlerProxyPassword.c_str ()
+        m_fiddlerProxyPassword.c_str(),
+        nullptr
         );
     ASSERT_TRUE (api != nullptr);
 
@@ -658,7 +674,7 @@ TEST_F (ConnectWebServicesClientC, CRUDProjectFavoriteFunctions_CRUDsSuccessful_
     ASSERT_TRUE (status == SUCCESS);
     }
 
-TEST_F (ConnectWebServicesClientC, CRUDProjectMRUFunctions_CRUDsSuccessful_SuccessfulCodesReturned)
+TEST_F (ConnectWebServicesClientCTests, CRUDProjectMRUFunctions_CRUDsSuccessful_SuccessfulCodesReturned)
     {
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
         (m_username.c_str (),
@@ -671,7 +687,8 @@ TEST_F (ConnectWebServicesClientC, CRUDProjectMRUFunctions_CRUDsSuccessful_Succe
         m_ccProductId.c_str (),
         m_fiddlerProxyUrl.c_str (),
         m_fiddlerProxyUsername.c_str (),
-        m_fiddlerProxyPassword.c_str ()
+        m_fiddlerProxyPassword.c_str(),
+        nullptr
         );
     ASSERT_TRUE (api != nullptr);
 

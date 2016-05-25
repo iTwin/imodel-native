@@ -14,7 +14,7 @@
 #include <DgnClientFx/Utils/Http/ProxyHttpHandler.h>
 #include <Bentley/Bentley.h>
 
-struct ConnectWebServicesClientC : public WSClientBaseTest
+struct ConnectWebServicesClientCTests : public WSClientBaseTest
     {
     const WString m_username = L"david.jones@bentley.com";
     const WString m_password = L"testdfijEr34";
