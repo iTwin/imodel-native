@@ -637,11 +637,16 @@ LsInternalComponent::LsInternalComponent (LsLocation const *pLocation) :
             LsStrokePatternComponent (pLocation)
     {
     uint32_t id = pLocation->GetComponentId().GetValue();
-
     m_hardwareLineCode = 0;
+    if (id <= MAX_LINECODE)
+        m_hardwareLineCode = id;
+
+#if defined(NOTNOW)
+    // MicroStation does this but I don't see why we need any indicator other than then "Internal" type
     // Linecode only if hardware bit is set and masked value is within range.
     if ( (0 != (id & LSID_HARDWARE)) && ((id & LSID_HWMASK) <= MAX_LINECODE))
         m_hardwareLineCode = id & LSID_HWMASK;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -652,8 +657,6 @@ StatusInt       LsInternalComponent::_DoStroke (LineStyleContextR context, DPoin
 #if defined (WIP_LINESTYLE)
     if (GetLocation ()->IsInternalDefault ())
         return LsStrokePatternComponent::_DoStroke (context, inPoints, nPoints, modifiers);
-
-    int32_t style = GetHardwareStyle ();
 
     GraphicParams saveMatSymb;
     saveMatSymb = *context->GetGraphicParams (); // Copy current GraphicParams
@@ -691,6 +694,10 @@ StatusInt       LsInternalComponent::_DoStroke (LineStyleContextR context, DPoin
 
     return SUCCESS;
 #else
+    int32_t style = GetHardwareStyle ();
+    if (style < MIN_LINECODE || style > MAX_LINECODE)
+        return LsStrokePatternComponent::_DoStroke (context, inPoints, nPoints, modifiers);
+
     return LsStrokePatternComponent::_DoStroke (context, inPoints, nPoints, modifiers);
 #endif
     }
