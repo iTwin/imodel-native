@@ -51,7 +51,7 @@ always:
         -xcodebuild test -project $(XCODEPROJ) -scheme BeTestiOS -destination 'platform=iOS,name=$(BENTLEY_RUN_XCTEST_DEVICE_NAME)' &> $(logfile)
     %endif
     %if !defined (BEGTEST_IGNORE_FAILURES)
-        python $(baseDIr)CheckResultsForFailures.py $(logFile)
+        python $(baseDIr)CheckResultsForFailures.py $(logFile) $(XCODEPROJ)
     %endif
 
 
