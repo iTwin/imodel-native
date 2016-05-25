@@ -780,7 +780,7 @@ BentleyStatus RelationshipClassEndTableMap::ValidateForeignKeyColumn(DbColumn co
     {
     DbTable& fkTable = fkColumn.GetTableR();
 
-    if (fkColumn.GetConstraint().IsNotNull() != cardinalityImpliesNotNullOnFkCol)
+    if (fkColumn.DoNotAllowDbNull() != cardinalityImpliesNotNullOnFkCol)
         {
         Utf8CP error = nullptr;
         if (cardinalityImpliesNotNullOnFkCol)
@@ -803,11 +803,6 @@ BentleyStatus RelationshipClassEndTableMap::ValidateForeignKeyColumn(DbColumn co
 
     if (tableIsReadonly)
         fkTable.GetEditHandleR().EndEdit();
-
-    if (!fkTable.IsOwnedByECDb())
-        {
-
-        }
 
     return SUCCESS;
     }
@@ -1018,7 +1013,7 @@ BentleyStatus RelationshipClassEndTableMap::TryGetForeignKeyColumnInfoFromNaviga
         return SUCCESS;
 
     bool isNullable, isUnique; //unused
-    DbColumn::Constraint::Collation collation;//unused
+    DbColumn::Constraints::Collation collation;//unused
     Utf8String columnName;
     if (SUCCESS != PropertyMap::DetermineColumnInfo(columnName, isNullable, isUnique, collation, GetECDbMap().GetECDb(), *singleNavProperty, singleNavProperty->GetName().c_str()))
         return ERROR;

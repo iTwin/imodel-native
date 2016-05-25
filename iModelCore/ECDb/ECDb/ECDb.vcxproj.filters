@@ -336,9 +336,6 @@
     <ClInclude Include="ECDbMap.h">
       <Filter>ECDbMap</Filter>
     </ClInclude>
-    <ClInclude Include="ECDbMapAnalyser.h">
-      <Filter>ECDbMap</Filter>
-    </ClInclude>
     <ClInclude Include="MapStrategy.h">
       <Filter>ECDbMap</Filter>
     </ClInclude>
@@ -661,9 +658,6 @@
       <Filter>ECDbMap</Filter>
     </ClCompile>
     <ClCompile Include="ECDbMap.cpp">
-      <Filter>ECDbMap</Filter>
-    </ClCompile>
-    <ClCompile Include="ECDbMapAnalyser.cpp">
       <Filter>ECDbMap</Filter>
     </ClCompile>
     <ClCompile Include="MapStrategy.cpp">

@@ -101,6 +101,8 @@ DbTable* DbSchema::CreateTableAndColumnsForExistingTableMapStrategy(Utf8CP exist
     if (!table->GetEditHandle().CanEdit())
         table->GetEditHandleR().BeginEdit();
 
+    std::vector<DbColumn*> pkColumns;
+    std::vector<size_t> pkOrdinals;
     while (stmt.Step() == BE_SQLITE_ROW)
         {
         BeAssert(BeStringUtilities::StricmpAscii(stmt.GetColumnName(1), "name") == 0);
@@ -118,7 +120,7 @@ DbTable* DbSchema::CreateTableAndColumnsForExistingTableMapStrategy(Utf8CP exist
         Utf8CP colDefaultValue = stmt.GetValueText(4);
 
         BeAssert(BeStringUtilities::StricmpAscii(stmt.GetColumnName(5), "pk") == 0);
-        const bool isPkCol = stmt.GetValueInt(5) == 1;
+        const int pkOrdinal = stmt.GetValueInt(5) - 1; //PK column ordinals returned by this pragma are 1-based as 0 indicates "not a PK col"
 
         DbColumn::Type colType = DbColumn::Type::Any;
         if (colTypeName.rfind("long") != Utf8String::npos ||
@@ -149,11 +151,22 @@ DbTable* DbSchema::CreateTableAndColumnsForExistingTableMapStrategy(Utf8CP exist
             }
 
         if (!Utf8String::IsNullOrEmpty(colDefaultValue))
-            column->GetConstraintR().SetDefaultExpression(colDefaultValue);
+            column->GetConstraintsR().SetDefaultValueExpression(colDefaultValue);
 
-        column->GetConstraintR().SetIsNotNull(colIsNotNull);
-        if (isPkCol)
-            table->GetPrimaryKeyConstraintR().Add(colName);
+        if (colIsNotNull)
+            column->GetConstraintsR().SetNotNullConstraint();
+        
+        if (pkOrdinal >= 0)
+            {
+            pkColumns.push_back(column);
+            pkOrdinals.push_back((size_t) pkOrdinal);
+            }
+        }
+
+    if (!pkColumns.empty())
+        {
+        if (SUCCESS != table->CreatePrimaryKeyConstraint(pkColumns, &pkOrdinals))
+            return nullptr;
         }
 
     table->GetEditHandleR().EndEdit(); //we do not want this table to be editable;
@@ -341,38 +354,34 @@ DbTable const* DbSchema::GetNullTable() const
 //****************************************************************************************
 //DbTable
 //****************************************************************************************
-
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        09/2014
+// @bsimethod                                                   Krischan.Eberle   05/2016
 //---------------------------------------------------------------------------------------
-PrimaryKeyDbConstraint const* DbTable::GetPrimaryKeyConstraint() const
+BentleyStatus DbTable::CreatePrimaryKeyConstraint(std::vector<DbColumn*> const& pkColumns, std::vector<size_t> const* pkOrdinals)
     {
-    for (std::unique_ptr<DbConstraint> const& constraint : m_constraints)
+    if (GetEditHandleR().AssertNotInEditMode())
+        return ERROR;
+
+    //if ordinals are passed and PK consists of more than one column, order the columns first
+    std::vector<DbColumn*> const* orderedPkColumnsP = &pkColumns;
+
+    std::vector<DbColumn*> orderedPkColumns;
+    if (pkColumns.size() > 1 && pkOrdinals != nullptr)
         {
-        if (constraint->GetType() == DbConstraint::Type::PrimaryKey)
-            return static_cast<PrimaryKeyDbConstraint const*>(constraint.get());
+        for (size_t pkOrdinal : *pkOrdinals)
+            {
+            orderedPkColumns.push_back(pkColumns[pkOrdinal]);
+            }
+
+        orderedPkColumnsP = &orderedPkColumns;
         }
 
-    return nullptr;
-    }
+    std::unique_ptr<PrimaryKeyDbConstraint> pkConstraint = PrimaryKeyDbConstraint::Create(*this, *orderedPkColumnsP);
+    if (pkConstraint == nullptr)
+        return ERROR;
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        09/2014
-//---------------------------------------------------------------------------------------
-PrimaryKeyDbConstraint& DbTable::GetPrimaryKeyConstraintR()
-    {
-    for (std::unique_ptr<DbConstraint>& constraint : m_constraints)
-        {
-        if (constraint->GetType() == DbConstraint::Type::PrimaryKey)
-            return *static_cast<PrimaryKeyDbConstraint*>(constraint.get());
-        }
-
-    BeAssert(!GetEditHandleR().AssertNotInEditMode());
-            
-    std::unique_ptr<PrimaryKeyDbConstraint> pkConstraint = std::unique_ptr<PrimaryKeyDbConstraint>(new PrimaryKeyDbConstraint(*this));
-    PrimaryKeyDbConstraint* pkConstraintP = pkConstraint.get();
-    m_constraints.push_back(std::move(pkConstraint));
-    return *pkConstraintP;
+    m_pkConstraint = std::move(pkConstraint);
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
@@ -571,39 +580,36 @@ DbColumn* DbTable::CreateColumn(DbColumnId id, Utf8CP name, DbColumn::Type type,
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-bool DbTable::DeleteColumn(Utf8CP name)
+BentleyStatus DbTable::DeleteColumn(DbColumn& col)
     {
     if (GetEditHandleR().AssertNotInEditMode())
-        return false;
+        return ERROR;
 
-    auto itor = m_columns.find(name);
-    if (itor != m_columns.end())
+    for (std::unique_ptr<DbConstraint>& constraint : m_constraints)
         {
-        DbColumn& col = *itor->second;
-        for (auto const& constraint : m_constraints)
+        if (constraint->GetType() == DbConstraint::Type::ForeignKey)
             {
-            if (constraint->GetType() == DbConstraint::Type::ForeignKey)
+            ForeignKeyDbConstraint* fkc = static_cast<ForeignKeyDbConstraint*>(constraint.get());
+            fkc->Remove(col.GetName().c_str(), nullptr);
+            }
+        else if (constraint->GetType() == DbConstraint::Type::PrimaryKey)
+            {
+            PrimaryKeyDbConstraint const* pkc = static_cast<PrimaryKeyDbConstraint const*>(constraint.get());
+            if (pkc->Contains(col))
                 {
-                auto fkc = static_cast<ForeignKeyDbConstraint*>(constraint.get());
-                fkc->Remove(col.GetName().c_str(), nullptr);
-                }
-            else if (constraint->GetType() == DbConstraint::Type::PrimaryKey)
-                {
-                auto pkc = static_cast<PrimaryKeyDbConstraint*>(constraint.get());
-                pkc->Remove(col.GetName().c_str());
+                BeAssert(false && "Cannot delete a column from a PK constraint");
+                return ERROR;
                 }
             }
-
-        for (auto& eh : m_columnEvents)
-            eh(ColumnEvent::Deleted, col);
-
-        auto columnsAreEqual = [&col] (DbColumn const* column) { return column == &col; };
-        m_orderedColumns.erase(std::find_if(m_orderedColumns.begin(), m_orderedColumns.end(), columnsAreEqual));
-        m_columns.erase(itor);
-        return true;
         }
 
-    return false;
+    for (auto& eh : m_columnEvents)
+        eh(ColumnEvent::Deleted, col);
+
+    m_columns.erase(col.GetName().c_str());
+    auto columnsAreEqual = [&col] (DbColumn const* column) { return column == &col; };
+    m_orderedColumns.erase(std::find_if(m_orderedColumns.begin(), m_orderedColumns.end(), columnsAreEqual));
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
@@ -762,6 +768,22 @@ bool DbTable::EditHandle::AssertNotInEditMode()
 //****************************************************************************************
 //DbColumn
 //****************************************************************************************
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Krischan.Eberle   05/2016
+//---------------------------------------------------------------------------------------
+bool DbColumn::IsUnique() const
+    {
+    return m_constraints.HasUniqueConstraint() || IsOnlyColumnOfPrimaryKeyConstraint();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Krischan.Eberle   05/2016
+//---------------------------------------------------------------------------------------
+bool DbColumn::IsOnlyColumnOfPrimaryKeyConstraint() const
+    {
+    return m_pkConstraint != nullptr && m_pkConstraint->GetColumns().size() == 1;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        10/2014
 //---------------------------------------------------------------------------------------
@@ -935,7 +957,7 @@ Utf8CP DbColumn::KindToString(Kind columnKind)
 // @bsimethod                                                    Affan.Khan        10/2014
 //---------------------------------------------------------------------------------------
 //static 
-Utf8CP DbColumn::Constraint::CollationToSql(DbColumn::Constraint::Collation collation)
+Utf8CP DbColumn::Constraints::CollationToSql(DbColumn::Constraints::Collation collation)
     {
     switch (collation)
         {
@@ -961,7 +983,7 @@ Utf8CP DbColumn::Constraint::CollationToSql(DbColumn::Constraint::Collation coll
 // @bsimethod                                                    Affan.Khan        10/2014
 //---------------------------------------------------------------------------------------
 //static 
-bool DbColumn::Constraint::TryParseCollationString(Collation& collation, Utf8CP str)
+bool DbColumn::Constraints::TryParseCollationString(Collation& collation, Utf8CP str)
     {
     if (Utf8String::IsNullOrEmpty(str))
         {
@@ -984,61 +1006,45 @@ bool DbColumn::Constraint::TryParseCollationString(Collation& collation, Utf8CP 
 //****************************************************************************************
 //PrimaryKeyDbConstraint
 //****************************************************************************************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        09/2014
-//---------------------------------------------------------------------------------------
-BentleyStatus PrimaryKeyDbConstraint::Add(Utf8CP columnName)
-    {
-    return InsertOrReplace(columnName, m_columns.size());
-    }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        09/2014
+// @bsimethod                                                    Krischan.Eberle  05/2016
 //---------------------------------------------------------------------------------------
-BentleyStatus PrimaryKeyDbConstraint::InsertOrReplace(Utf8CP columnName, size_t position)
+std::unique_ptr<PrimaryKeyDbConstraint> PrimaryKeyDbConstraint::Create(DbTable const& table, std::vector<DbColumn*> const& columns)
     {
-    auto column = GetTable().FindColumn(columnName);
-    BeAssert(column != nullptr);
-    if (column == nullptr)
-        return ERROR;
-
-    for (auto itor = m_columns.begin(); itor != m_columns.end(); ++itor)
+    if (columns.empty())
         {
-        if ((*itor)->GetName().EqualsI(columnName))
-            {
-            m_columns.erase(itor);
-            break;
-            }
+        BeAssert(false && "PK must at least have one column");
+        return nullptr;
         }
 
-    if (column->GetPersistenceType() == PersistenceType::Virtual)
+    std::set<Utf8CP, CompareIUtf8Ascii> uniqueColNames;
+    std::unique_ptr<PrimaryKeyDbConstraint> pkConstraint(new PrimaryKeyDbConstraint(table));
+    for (DbColumn* col : columns)
         {
-        BeAssert(false && "Virtual column cannot be use as primary key");
-        return ERROR;
-        }
-
-    m_columns.insert((m_columns.begin() + position), column);
-    return SUCCESS;
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        09/2014
-//---------------------------------------------------------------------------------------
-BentleyStatus PrimaryKeyDbConstraint::Remove(Utf8CP columnName)
-    {
-    for (auto itor = m_columns.begin(); itor != m_columns.end(); ++itor)
-        if ((*itor)->GetName().EqualsI(columnName))
+        if (uniqueColNames.find(col->GetName().c_str()) != uniqueColNames.end())
             {
-            m_columns.erase(itor);
-            return SUCCESS;
+            BeAssert(false && "Duplicate columns in PK constraint");
+            return nullptr;
             }
 
-    return ERROR;
+        if (col->GetPersistenceType() == PersistenceType::Virtual)
+            {
+            BeAssert(false && "Virtual columns are not allowed in PK constraint");
+            return nullptr;
+            }
+
+        pkConstraint->m_columns.push_back(col);
+        col->SetIsPrimaryKeyColumn(*pkConstraint);
+        }
+
+    return pkConstraint;
     }
+
 
 //****************************************************************************************
 //ForeignKeyDbConstraint
 //****************************************************************************************
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------

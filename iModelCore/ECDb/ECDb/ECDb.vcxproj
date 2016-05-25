@@ -24,7 +24,6 @@
     <ClCompile Include="ECDbExpressionSymbolProvider.cpp" />
     <ClCompile Include="ECDbImpl.cpp" />
     <ClCompile Include="ECDbLogger.cpp" />
-    <ClCompile Include="ECDbMapAnalyser.cpp" />
     <ClCompile Include="ECDbMapDebugInfo.cpp" />
     <ClCompile Include="ECDbPolicyManager.cpp" />
     <ClCompile Include="ECDbSchemaManager.cpp" />
@@ -140,7 +139,6 @@
     <ClInclude Include="ECDbInternalTypes.h" />
     <ClInclude Include="ECDbLogger.h" />
     <ClInclude Include="ECDbMap.h" />
-    <ClInclude Include="ECDbMapAnalyser.h" />
     <ClInclude Include="ECDbPch.h" />
     <ClInclude Include="ECDbPolicyManager.h" />
     <ClInclude Include="ECDbSchemaPersistenceHelper.h" />

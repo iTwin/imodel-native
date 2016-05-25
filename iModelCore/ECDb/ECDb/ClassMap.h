@@ -104,7 +104,7 @@ struct ColumnFactory : NonCopyableClass
 
         BentleyStatus ResolveColumnName(Utf8StringR resolvedColumName, Utf8CP requestedColumnName, ECN::ECClassId, int retryCount) const;
 
-        DbColumn* ApplyDefaultStrategy(Utf8CP requestedColumnName, PropertyMapCR, DbColumn::Type, bool addNotNullConstraint, bool addUniqueConstraint, DbColumn::Constraint::Collation) const;
+        DbColumn* ApplyDefaultStrategy(Utf8CP requestedColumnName, PropertyMapCR, DbColumn::Type, bool addNotNullConstraint, bool addUniqueConstraint, DbColumn::Constraints::Collation) const;
         DbColumn* ApplySharedColumnStrategy() const;
 
         ECN::ECClassId GetPersistenceClassId(PropertyMapCR) const;
@@ -118,7 +118,7 @@ struct ColumnFactory : NonCopyableClass
         explicit ColumnFactory(ClassMapCR classMap);
         ~ColumnFactory() {}
 
-        DbColumn* CreateColumn(PropertyMapCR, Utf8CP requestedColumnName, DbColumn::Type, bool addNotNullConstraint, bool addUniqueConstraint, DbColumn::Constraint::Collation) const;
+        DbColumn* CreateColumn(PropertyMapCR, Utf8CP requestedColumnName, DbColumn::Type, bool addNotNullConstraint, bool addUniqueConstraint, DbColumn::Constraints::Collation) const;
         void Update();
 
         bool UsesSharedColumnStrategy() const { return m_usesSharedColumnStrategy; }
@@ -230,7 +230,6 @@ struct ClassMap : RefCountedBase
 
         Utf8String GetUpdatableViewName() const;
         BentleyStatus GenerateSelectViewSql(NativeSqlBuilder& viewSql, bool isPolymorphic, ECSqlPrepareContext const& prepareContext) const;
-        BentleyStatus CreateECClassView() const;
 
         static BentleyStatus DetermineTableName(Utf8StringR tableName, ECN::ECClassCR, Utf8CP tablePrefix = nullptr);
         static bool IsAnyClass(ECN::ECClassCR ecclass) { return ecclass.GetSchema().IsStandardSchema() && ecclass.GetName().Equals("AnyClass"); }

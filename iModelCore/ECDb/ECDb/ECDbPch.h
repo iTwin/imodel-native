@@ -28,7 +28,6 @@
 #include "ECDbSystemSchemaHelper.h"
 #include "ECDbPolicyManager.h"
 #include "ViewGenerator.h"
-#include "ECDbMapAnalyser.h"
 #include "ECDbSchemaPersistenceHelper.h"
 #include "ECDbSchemaReader.h"
 #include "ECDbSchemaWriter.h"
