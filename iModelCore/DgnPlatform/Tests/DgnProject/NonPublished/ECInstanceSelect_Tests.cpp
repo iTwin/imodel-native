@@ -339,21 +339,6 @@ TEST_F (ECInstanceSelectTests, SelectQueriesOnDbGeneratedDuringBuild_79Main)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                             Maha Nasir                         1/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ECInstanceSelectTests, ImportSchema)
-    {
-    WCharCP baseProjFile = L"79_Main.i.ibim";
-    CharCP testProjFile = "TestDb.ibim";
-    BeSQLite::Db::OpenMode mode = BeSQLite::Db::OpenMode::ReadWrite;
-
-    DgnDbTestDgnManager tdm (baseProjFile, testProjFile, mode, false);
-    m_db = tdm.GetDgnProjectP ();
-
-    auto status = DgnPlatformTestDomain::GetDomain ().ImportSchema (*m_db);
-    ASSERT_EQ (DgnDbStatus::Success, status);
-    }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                             Maha Nasir                         1/16
-+---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ECInstanceSelectTests, VerifyInstanceCountFor04Plant)
     {
 
