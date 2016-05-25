@@ -3061,23 +3061,20 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 if (!reader.Get(egOp, pts, nPts, boundary))
                     break;
 
-                if (!geomParamsChanged)
-                    geomParams.Resolve(context); // NEEDSWORK: Make sure net display priority is set...
-                
                 DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
 
                 switch (boundary)
                     {
                     case FB::BoundaryType_None:
-                        currGraphic->AddPointString2d(nPts, pts, geomParams.GetNetDisplayPriority());
+                        currGraphic->AddPointString2d(nPts, pts, geomParams.GetNetDisplayPriority(context));
                         break;
 
                     case FB::BoundaryType_Open:
-                        currGraphic->AddLineString2d(nPts, pts, geomParams.GetNetDisplayPriority());
+                        currGraphic->AddLineString2d(nPts, pts, geomParams.GetNetDisplayPriority(context));
                         break;
 
                     case FB::BoundaryType_Closed:
-                        currGraphic->AddShape2d(nPts, pts, FillDisplay::Never != geomParams.GetFillDisplay(), geomParams.GetNetDisplayPriority());
+                        currGraphic->AddShape2d(nPts, pts, FillDisplay::Never != geomParams.GetFillDisplay(), geomParams.GetNetDisplayPriority(context));
                         break;
                     }
                 break;
@@ -3133,12 +3130,10 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
 
                 if (!context.Is3dView())
                     {
-                    geomParams.Resolve(context); // NEEDSWORK: Make sure net display priority is set...
-
                     if (FB::BoundaryType_Closed != boundary)
-                        currGraphic->AddArc2d(arc, false, false, geomParams.GetNetDisplayPriority());
+                        currGraphic->AddArc2d(arc, false, false, geomParams.GetNetDisplayPriority(context));
                     else
-                        currGraphic->AddArc2d(arc, true, FillDisplay::Never != geomParams.GetFillDisplay(), geomParams.GetNetDisplayPriority());
+                        currGraphic->AddArc2d(arc, true, FillDisplay::Never != geomParams.GetFillDisplay(), geomParams.GetNetDisplayPriority(context));
                     break;
                     }
 
@@ -3168,8 +3163,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
 
                 if (!context.Is3dView())
                     {
-                    geomParams.Resolve(context); // NEEDSWORK: Make sure net display priority is set...
-                    currGraphic->AddCurveVector2d(*curvePtr, false, geomParams.GetNetDisplayPriority());
+                    currGraphic->AddCurveVector2d(*curvePtr, false, geomParams.GetNetDisplayPriority(context));
                     break;
                     }
 
@@ -3210,8 +3204,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
 
                 if (!context.Is3dView())
                     {
-                    geomParams.Resolve(context); // NEEDSWORK: Make sure net display priority is set...
-                    currGraphic->AddCurveVector2d(*curvePtr, curvePtr->IsAnyRegionType() && FillDisplay::Never != geomParams.GetFillDisplay(), geomParams.GetNetDisplayPriority());
+                    currGraphic->AddCurveVector2d(*curvePtr, curvePtr->IsAnyRegionType() && FillDisplay::Never != geomParams.GetFillDisplay(), geomParams.GetNetDisplayPriority(context));
                     break;
                     }
 
@@ -3494,8 +3487,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
 
                 if (!context.Is3dView())
                     {
-                    geomParams.Resolve(context); // NEEDSWORK: Make sure net display priority is set...
-                    currGraphic->AddTextString2d(text, geomParams.GetNetDisplayPriority());
+                    currGraphic->AddTextString2d(text, geomParams.GetNetDisplayPriority(context));
                     break;
                     }
 
