@@ -36,16 +36,10 @@ $(o)DataHandlerTool$(oext) : $(baseDir)DataHandlerTool.cpp
 EXE_DEST = $(o)
 EXE_NAME = $(appName)
 EXE_OBJS = $(o)DataHandlerTool$(oext)
+consoleEntry=main
 
 LINKER_LIBRARIES = $(ContextSubpartsLibs)Bentley.lib \
 				   $(ContextDeliveryDir)RealityPlatform.lib
                    
-                   #Gdi32.lib
-
-# remove console options; let the system determine the entry point
-# NOTE: Consequently prevents linking errors when using \entry linker
-# option with managed c++ code.
-%undef consoleOpts
-
 %include $(SharedMki)linktool.mki
     

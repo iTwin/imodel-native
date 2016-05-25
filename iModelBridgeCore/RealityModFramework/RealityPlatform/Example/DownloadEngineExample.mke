@@ -5,7 +5,7 @@
 #  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #  
 #----------------------------------------------------------------------
-consoleAppUnicode   = 1     # use wmain  
+ 
 %include mdl.mki
 
 appName             = DownloadEngineExample
@@ -39,6 +39,7 @@ $(o)DownloadEngineExample$(oext) : $(baseDir)DownloadEngineExample.cpp
 EXE_DEST     = $(o)
 EXE_NAME     = $(appName)
 EXE_OBJS     = $(o)DownloadEngineExample$(oext)
+EXE_UNICODE  = 1
 
 LINKER_LIBRARIES    =  $(ContextSubpartsLibs)$(libprefix)Bentley$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)BeCurl$(libext) \
