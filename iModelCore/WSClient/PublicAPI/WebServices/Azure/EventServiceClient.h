@@ -25,7 +25,6 @@ struct EventServiceClient
         Utf8String m_userId;
         Utf8String m_fullAddress;
         Utf8String m_token;
-        // bool MakeEventServiceRequest(Utf8StringR outToken, Utf8StringR outNameSpace);
         HttpResponse MakeReceiveDeleteRequest(bool longPolling);
         bool Receive(Utf8StringR msgOut, int retry, bool longPolling);
 
