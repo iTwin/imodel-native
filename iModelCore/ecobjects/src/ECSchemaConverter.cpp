@@ -107,6 +107,9 @@ ECObjectsStatus StandardValueInfo::ExtractInstanceData(IECInstanceR instance, St
     return ECObjectsStatus::Success;
     }
 
+static Utf8CP const  STANDARDVALUES_CUSTOMATTRIBUTE = "StandardValues";
+static Utf8CP const  STANDARDVALUES_SCHEMANAME = "EditorCustomAttributes";
+
 //---------------------------------------------------------------------------------------
 // Implements IECCustomAttributeConverter to convert Standard Values Custom Attribute to ECEnumeration
 // @bsistruct                                                    Basanta.Kharel   12/2015
@@ -333,16 +336,16 @@ ECObjectsStatus ECSchemaConverter::AddConverter(Utf8StringCR customAttributeKey,
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Basanta.Kharel                  01/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus ECSchemaConverter::RemoveCustomAttribute(ECPropertyP& ecProperty, ECSchemaR ecSchema, Utf8StringCR customAttributeName)
+ECObjectsStatus ECSchemaConverter::RemoveCustomAttribute(ECPropertyP& ecProperty, ECSchemaR ecSchema, Utf8StringCR schemaName, Utf8StringCR customAttributeName)
     {
-    auto propertyProcessor = [&customAttributeName](ECPropertyP localProp)
+    auto propertyProcessor = [&customAttributeName, &schemaName](ECPropertyP localProp)
         {
-        IECInstancePtr currentInstance = localProp->GetPrimaryCustomAttributeLocal(customAttributeName);
+        IECInstancePtr currentInstance = localProp->GetPrimaryCustomAttributeLocal(schemaName, customAttributeName);
         if (currentInstance.IsValid())
             {
             Utf8String propertyName = localProp->GetClass().GetFullName() + Utf8String(".") + localProp->GetName();
             
-            if (!localProp->RemoveCustomAttribute(customAttributeName))
+            if (!localProp->RemoveCustomAttribute(schemaName, customAttributeName))
                 {
                 LOG.errorv("Error removing %s CustomAttribute for %s", customAttributeName.c_str(), propertyName.c_str());
                 return ECObjectsStatus::Error;
@@ -624,6 +627,7 @@ bvector<ECClassP> ECSchemaConverter::GetHierarchicallySortedClasses(ECSchemaR sc
     return classes;
     }
 
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Basanta.Kharel                  12/2015
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -658,7 +662,7 @@ ECObjectsStatus StandardValuesConverter::Convert(ECSchemaR schema, IECCustomAttr
         return status;
         }
 
-    return ECSchemaConverter::RemoveCustomAttribute(prop, schema, "StandardValues");
+    return ECSchemaConverter::RemoveCustomAttribute(prop, schema, STANDARDVALUES_SCHEMANAME, STANDARDVALUES_CUSTOMATTRIBUTE);
     }
 
 //---------------------------------------------------------------------------------------
@@ -673,7 +677,7 @@ ECObjectsStatus StandardValuesConverter::CheckForConflict(ECPropertyP standardVa
         if (standardValueProperty == localProperty)
             return ECObjectsStatus::Success;
 
-        IECInstancePtr currentInstance = localProperty->GetPrimaryCustomAttributeLocal("StandardValues");
+        IECInstancePtr currentInstance = localProperty->GetPrimaryCustomAttributeLocal(STANDARDVALUES_SCHEMANAME, STANDARDVALUES_CUSTOMATTRIBUTE);
         if (!currentInstance.IsValid())
             return ECObjectsStatus::Success;
 
@@ -701,7 +705,7 @@ void StandardValuesConverter::SetStrictness(ECPropertyP standardValueProperty, E
     ECClassP rootClass = ECSchemaConverter::FindRootBaseClass(standardValueProperty, schema);
     ECPropertyP rootProperty = rootClass->GetPropertyP(standardValueProperty->GetName(), false);
 
-    IECInstancePtr rootInstance = rootProperty->GetPrimaryCustomAttributeLocal("StandardValues");
+    IECInstancePtr rootInstance = rootProperty->GetPrimaryCustomAttributeLocal(STANDARDVALUES_SCHEMANAME, STANDARDVALUES_CUSTOMATTRIBUTE);
     if (!rootInstance.IsValid())
         sdInfo.m_mustBeFromList = false;
     else
