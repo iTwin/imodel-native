@@ -18,9 +18,7 @@
     <ClCompile Include="BackDoor\ECDbTestFixture.cpp" />
     <ClCompile Include="BackDoor\ECDbTestProject.cpp" />
     <ClCompile Include="BackDoor\ECDbTests.cpp" />
-    <ClCompile Include="Performance\DevSummitPerformanceTests.cpp" />
     <ClCompile Include="Performance\PerformanceCRUDTestsHelper.cpp" />
-    <ClCompile Include="Performance\PerformanceECDbFileInfoTests.cpp" />
     <ClCompile Include="Performance\PerformanceECDbMapCATests.cpp" />
     <ClCompile Include="Performance\PerformanceECDbReferentialIntegrityTests.cpp" />
     <ClCompile Include="Performance\PerformanceECInstanceInserterTests.cpp" />
