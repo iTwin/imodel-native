@@ -393,11 +393,7 @@ Utf8CP ECDbProfileECSchemaUpgrader::GetECDbSystemECSchemaXml()
     {
     return "<?xml version='1.0' encoding='utf-8'?> "
         "<ECSchema schemaName='ECDb_System' nameSpacePrefix='ecdbsys' version='3.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
-        "    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.13' prefix='bsca' /> "
         "    <ECSchemaReference name='ECDbMap' version='01.00.01' prefix='ecdbmap' /> "
-        "    <ECCustomAttributes> "
-        "         <SystemSchema xmlns='Bentley_Standard_CustomAttributes.01.13'/> "
-        "    </ECCustomAttributes> "
         "    <ECEntityClass typeName='PrimitiveArray' modifier='Abstract'> "
         "        <ECCustomAttributes> "
         "            <ClassMap xmlns='ECDbMap.01.00.01'> "
@@ -464,4 +460,6 @@ Utf8CP ECDbProfileECSchemaUpgrader::GetECDbSystemECSchemaXml()
         "    </ECEntityClass> "
         "</ECSchema>";
     }
+
 END_BENTLEY_SQLITE_EC_NAMESPACE
+
