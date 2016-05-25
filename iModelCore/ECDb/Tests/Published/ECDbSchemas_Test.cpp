@@ -1037,27 +1037,6 @@ TEST_F(ECDbSchemaTests, ImportSupplementalSchemas)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Affan.Khan                        03/13
-! This test need to be moved to ECF test suit
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ECDbSchemaTests, SystemSchemaTest)
-    {
-    ECDbR ecdb = SetupECDb("startupcompany.ecdb", BeFileName("StartupCompany.02.00.ecschema.xml"));
-    ASSERT_TRUE(ecdb.IsDbOpen());
-
-    ECSchemaCP startupCompanySchema = ecdb.Schemas().GetECSchema("StartupCompany");
-    ASSERT_TRUE(startupCompanySchema != nullptr);
-    ECSchemaCP ecdbSystemSchema = ecdb.Schemas().GetECSchema("ECDb_System");
-    ASSERT_TRUE(ecdbSystemSchema != nullptr);
-
-    ASSERT_TRUE(ecdbSystemSchema->IsSystemSchema());
-    ASSERT_TRUE(StandardCustomAttributeHelper::IsSystemSchema(*ecdbSystemSchema));
-
-    ASSERT_FALSE(startupCompanySchema->IsSystemSchema());
-    ASSERT_FALSE(StandardCustomAttributeHelper::IsSystemSchema(*startupCompanySchema));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                   Affan.Khan                        03/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbSchemaTests, ArrayPropertyTest)
     {

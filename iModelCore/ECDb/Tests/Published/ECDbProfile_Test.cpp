@@ -68,6 +68,27 @@ TEST_F(ECDbTestFixture, ECDbProfile)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  05/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbTestFixture, ECDbProfileSchemas)
+    {
+    ECDbCR ecdb = SetupECDb("empty.ecdb");
+
+    ECSchemaCP systemSchema = ecdb.Schemas().GetECSchema("ECDb_System");
+    ASSERT_TRUE(systemSchema != nullptr);
+    
+    //Terminology of system/standard schemas is not clear yet for the EC3 world. Right now, the profile schemas are neither of that.
+    ASSERT_FALSE(systemSchema->IsSystemSchema());
+    ASSERT_FALSE(StandardCustomAttributeHelper::IsSystemSchema(*systemSchema));
+
+    ECSchemaCP fileInfoSchema = ecdb.Schemas().GetECSchema("ECDb_FileInfo");
+    ASSERT_TRUE(fileInfoSchema != nullptr);
+
+    ASSERT_FALSE(fileInfoSchema->IsSystemSchema());
+    ASSERT_FALSE(StandardCustomAttributeHelper::IsSystemSchema(*fileInfoSchema));
+    }
+
+//---------------------------------------------------------------------------------------
 // Test to verify TFS 107173: ECDb profile creation should fail if it exists
 // @bsimethod                                     Majd.Uddin                  07/14
 //+---------------+---------------+---------------+---------------+---------------+------
