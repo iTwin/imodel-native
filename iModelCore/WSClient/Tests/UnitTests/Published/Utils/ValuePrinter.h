@@ -63,8 +63,12 @@ namespace rapidjson
 
 // DEPRECATED: Duplicating symbols with DgnClientFx SDK UnitTests
 // Now tests are build seperately for each library so no duplication should occur
-// If any problems, comment out WSCLIENT_ENABLE_DUPLICATING_SYMBOLS define
-//#define WSCLIENT_ENABLE_DUPLICATING_SYMBOLS
+// In case of Aggregate build set Environment Variable (BUILD_AGGREGATE_TESTS) which will make (#define WSCLIENT_ENABLE_DUPLICATING_SYMBOLS) in active
+
+#ifndef BUILD_FOR_AGGREGATE_TESTS
+#define WSCLIENT_ENABLE_DUPLICATING_SYMBOLS
+#endif
+
 #ifdef WSCLIENT_ENABLE_DUPLICATING_SYMBOLS
 
 std::ostream& operator << (std::ostream &o, CredentialsCR creds);
