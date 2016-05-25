@@ -34,8 +34,8 @@ namespace scalable_mesh
         class Storage {
 
         public:
-            typedef std::vector<Byte> point_buffer_type;
-            typedef concurrency::streams::container_buffer<std::vector<Byte>> point_buffer_type2;
+            typedef std::vector<uint8_t> point_buffer_type;
+            typedef concurrency::streams::container_buffer<std::vector<uint8_t>> point_buffer_type2;
 
         private:
             account m_storage;

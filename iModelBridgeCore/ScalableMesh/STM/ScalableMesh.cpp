@@ -720,15 +720,15 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                     auto position = m_path.find_last_of(L".stm");
                     auto filenameWithoutExtension = m_path.substr(0, position - 3);
                     // NEEDS_WORK_SM - Remove hardcoded azure dataset name
-                    WString azureDatasetName(L"quebeccity\\");
+                    WString azureDatasetName(L"quebeccityvg\\");
                     // NEEDS_WORK_SM - Check existence of the following directories
-                    WString streamingFilePath = (s_stream_from_disk ? m_path.substr(0, position - 3) + L"_stream\\" : L"");
-                    WString groupedStreamingFilePath = (s_stream_from_disk ? streamingFilePath + L"groupedNodeHeaders\\" : azureDatasetName + L"headers\\");
-                    WString point_store_path = (s_stream_from_disk ? streamingFilePath + L"point_store\\" : azureDatasetName + L"points\\");
-                    WString indice_store_path = (s_stream_from_disk ? streamingFilePath + L"indice_store\\" : azureDatasetName + L"indices\\");
-                    WString uv_store_path = (s_stream_from_disk ? streamingFilePath + L"uv_store\\" : azureDatasetName + L"uvs\\");
-                    WString uvIndice_store_path = (s_stream_from_disk ? streamingFilePath + L"uvIndice_store\\" : azureDatasetName + L"uvIndices\\");
-                    WString texture_store_path = (s_stream_from_disk ? streamingFilePath + L"texture_store\\" : azureDatasetName + L"textures\\");
+                    WString streamingSourcePath = (s_stream_from_disk ? m_path.substr(0, position - 3) + L"_stream\\" : azureDatasetName);
+                    WString groupedStreamingFilePath = streamingSourcePath + L"headers\\";
+                    WString point_store_path         = streamingSourcePath + L"points\\";
+                    WString indice_store_path        = streamingSourcePath + L"indices\\";
+                    WString uv_store_path            = streamingSourcePath + L"uvs\\";
+                    WString uvIndice_store_path      = streamingSourcePath + L"uvindices\\";
+                    WString texture_store_path       = streamingSourcePath + L"textures\\";
 
                     // NEEDS_WORK_SM - Need to stream textures as well
                     pStreamingTileStore = new StreamingPointStoreType(point_store_path, groupedStreamingFilePath, s_stream_from_grouped_store, AreDataCompressed());
@@ -1916,6 +1916,7 @@ template <class POINT> int ScalableMesh<POINT>::_LoadAllNodeHeaders(size_t& nbLo
 template <class POINT> int ScalableMesh<POINT>::_SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath) const
     {
     if (m_scmIndexPtr == nullptr) return ERROR;
+    if (m_smSQLitePtr->IsSingleFile()) return ERROR;
 
     s_stream_from_disk = true;
     s_stream_from_grouped_store = false;

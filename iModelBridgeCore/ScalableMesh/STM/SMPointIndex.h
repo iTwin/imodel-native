@@ -592,8 +592,6 @@ public:
 
     virtual void         SaveAllOpenGroups() const;
 
-    virtual void         SerializeHeaderToBinary(std::unique_ptr<Byte>& pi_pData, uint32_t& pi_pDataSize) const;
-
     typedef SMStreamingPointTaggedTileStore<POINT, EXTENT>        StreamingPointStoreType;
     void                 SavePointsToCloud(HFCPtr<StreamingPointStoreType> pi_pPointStore);
     virtual void         SaveGroupedNodeHeaders(SMNodeGroup* pi_pNodes, SMNodeGroupMasterHeader* pi_pGroupsHeader);
