@@ -178,7 +178,7 @@ StatusInt LsSymbolReference::Output (LineStyleContextR lineStyleContext, LineSty
     ClipPlaneSet clips (convexClip);
     context->DrawSymbol (m_symbol.get (), &transform, &clips);
 #else
-    m_symbol->Draw(lineStyleContext);
+    m_symbol->Draw(lineStyleContext, transform);
 #endif
 
     return  SUCCESS;
@@ -187,18 +187,24 @@ StatusInt LsSymbolReference::Output (LineStyleContextR lineStyleContext, LineSty
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    08/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-void LsSymbolComponent::Draw (LineStyleContextR context)
+void LsSymbolComponent::Draw (LineStyleContextR context, TransformCR transform)
     {
     DgnGeometryPartCPtr geomPart = GetGeometryPart();
     if (!geomPart.IsValid())
         return;
 
     BeAssert(nullptr != context.GetViewContext());
-    GeometryStreamIO::Collection collection(geomPart->GetGeometryStream().GetData(), geomPart->GetGeometryStream().GetSize());
-    ViewContextR vContext = *context.GetViewContext();
-    Render::GeometryParams defaultParams;
-    collection.Draw(context.GetGraphicR(), vContext, defaultParams);
-    //  collection.Draw(context, context.GetCurrentGeometryParams().GetCategoryId(), context.GetViewFlags()); 
+    GeometryCollection  collection(geomPart->GetGeometryStream(), *GetDgnDbP());
+    for (auto iter : collection)
+        {
+        GeometricPrimitivePtr source = iter.GetGeometryPtr();
+        if (!source.IsValid())
+            continue;
+
+        GeometricPrimitivePtr gp = source->Clone();
+        gp->TransformInPlace(transform);
+        gp->AddToGraphic(context.GetGraphicR());
+        }
     }
 
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
@@ -343,9 +349,5 @@ void                LsSymbolComponent::GetRange (DRange3dR range) const
 //---------------------------------------------------------------------------------------
 DgnGeometryPartCPtr LsSymbolComponent::GetGeometryPart() const
     {
-    if (m_geomPart.IsValid())
-        return m_geomPart;
-
-    m_geomPart = GetDgnDbP()->Elements().Get<DgnGeometryPart>(m_geomPartId);
-    return m_geomPart;
+    return GetDgnDbP()->Elements().Get<DgnGeometryPart>(m_geomPartId);
     }

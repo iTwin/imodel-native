@@ -107,6 +107,7 @@ struct Task : RefCounted<NonCopyableClass>
         Heal,
         DefineGeometryTexture,
         FindNearestZ,
+        ReadImage,
     };
 
     //! The outcome of the processing of a Task.
@@ -1461,6 +1462,7 @@ public:
     virtual void _FinishHeal(HealAborted) = 0;
     virtual bool _NeedsHeal(BSIRectR) const = 0;
     virtual void _DrawFrame(StopWatch&) = 0;
+    virtual Image _ReadImage(Point2d targetSize) = 0;
     virtual void _DrawProgressive(GraphicListR progressiveList, StopWatch&) = 0;
     virtual bool _WantInvertBlackBackground() {return false;}
     virtual double _GetCameraFrustumNearScaleLimit() const = 0;

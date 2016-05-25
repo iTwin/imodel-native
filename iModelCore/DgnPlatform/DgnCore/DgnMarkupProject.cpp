@@ -40,6 +40,41 @@ namespace dgn_ElementHandler
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    04/2016
 //---------------------------------------------------------------------------------------
+MarkupExternalLink::CreateParams::CreateParams(LinkModelR linkModel, DgnElementId linkedElementId /*= DgnElementId()*/) : CreateParams(Dgn::DgnElement::CreateParams(linkModel.GetDgnDb(), linkModel.GetModelId(), MarkupExternalLink::QueryClassId(linkModel.GetDgnDb())), linkedElementId)
+    {
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    05/2016
+//---------------------------------------------------------------------------------------
+MarkupExternalLinkCPtr MarkupExternalLink::Insert()
+    {
+    MarkupExternalLinkCPtr link = GetDgnDb().Elements().Insert<MarkupExternalLink>(*this);
+    BeAssert(link.IsValid());
+    return link;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    05/2016
+//---------------------------------------------------------------------------------------
+MarkupExternalLinkCPtr MarkupExternalLink::Update()
+    {
+    MarkupExternalLinkCPtr link = GetDgnDb().Elements().Update<MarkupExternalLink>(*this);
+    BeAssert(link.IsValid());
+    return link;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    04/2016
+//---------------------------------------------------------------------------------------
+void MarkupExternalLink::AddClassParams(ECSqlClassParamsR params)
+    {
+    params.Add(MARKUPEXTERNALLINK_LinkedElementId);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    04/2016
+//---------------------------------------------------------------------------------------
 DgnDbStatus MarkupExternalLink::_BindInsertParams(BeSQLite::EC::ECSqlStatement& statement)
     {
     DgnDbStatus stat = BindParams(statement);
@@ -93,6 +128,33 @@ void MarkupExternalLink::_CopyFrom(DgnElementCR other)
     MarkupExternalLinkCP otherLink = dynamic_cast<MarkupExternalLinkCP> (&other);
     if (otherLink)
         m_linkedElementId = otherLink->m_linkedElementId;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    04/2016
+//---------------------------------------------------------------------------------------
+MarkupExternalLinkGroup::CreateParams::CreateParams(LinkModelR linkModel) : CreateParams(Dgn::DgnElement::CreateParams(linkModel.GetDgnDb(), linkModel.GetModelId(), MarkupExternalLinkGroup::QueryClassId(linkModel.GetDgnDb())))
+    {
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    05/2016
+//---------------------------------------------------------------------------------------
+MarkupExternalLinkGroupCPtr MarkupExternalLinkGroup::Insert()
+    {
+    MarkupExternalLinkGroupCPtr link = GetDgnDb().Elements().Insert<MarkupExternalLinkGroup>(*this);
+    BeAssert(link.IsValid());
+    return link;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    05/2016
+//---------------------------------------------------------------------------------------
+MarkupExternalLinkGroupCPtr MarkupExternalLinkGroup::Update()
+    {
+    MarkupExternalLinkGroupCPtr link = GetDgnDb().Elements().Update<MarkupExternalLinkGroup>(*this);
+    BeAssert(link.IsValid());
+    return link;
     }
 
 //---------------------------------------------------------------------------------------
@@ -186,14 +248,6 @@ DgnViewId SpatialRedlineModel::GetFirstView()
     {
     auto db = GetDgnMarkupProject();
     return db? db->GetFirstViewOf(GetModelId()): DgnViewId();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ramanujam.Raman                 04/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void MarkupExternalLink::AddClassParams(ECSqlClassParamsR params)
-    {
-    params.Add(MARKUPEXTERNALLINK_LinkedElementId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1085,22 +1139,17 @@ SpatialRedlineModelPtr SpatialRedlineModel::Create(DgnMarkupProjectR markupProje
     return rdlModel;
     }
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RedlineModel::StoreImageData(ByteStream const& imageData, Target::CapturedImageInfo const& imageInfo, bool fitToX, bool compressImageProperty)
+void RedlineModel::StoreImageData(Render::Image const& imageData, bool fitToX, bool compressImageProperty)
     {
     //  Grab possibly updated image definition data
-    if (imageInfo.hasAlpha)
-        m_imageDef.m_format = imageInfo.isBGR? QV_BGRA_FORMAT: QV_RGBA_FORMAT; 
-    else
-        m_imageDef.m_format = imageInfo.isBGR? QV_BGR_FORMAT: QV_RGB_FORMAT; 
+    m_imageDef.m_format = (int) imageData.GetFormat();
+    m_imageDef.m_sizeInPixels.x = imageData.GetWidth();
+    m_imageDef.m_sizeInPixels.y = imageData.GetHeight();
 
-    m_imageDef.m_sizeInPixels.x = (int32_t)imageInfo.width;
-    m_imageDef.m_sizeInPixels.y = (int32_t)imageInfo.height;
-
-    m_imageDef.m_topDown = imageInfo.isTopDown;
+    m_imageDef.m_topDown = false;//imageInfo.isTopDown;
 
     //  Map the image into the sheet area, scaling it up or down to fit ... 
     //  but, be sure to maintain the aspect ratio of the original image.
@@ -1125,7 +1174,7 @@ void RedlineModel::StoreImageData(ByteStream const& imageData, Target::CapturedI
     
     //  Store image data
     RedlineModelProperty::Spec propSpec = compressImageProperty? RedlineModelProperty::ImageData(): RedlineModelProperty::ImageData2();
-    GetDgnMarkupProject()->SaveProperty(propSpec, &imageData[0], (uint32_t)imageData.size(), GetModelId().GetValue());
+    GetDgnMarkupProject()->SaveProperty(propSpec, imageData.GetByteStream().GetData(), imageData.GetByteStream().GetSize(), GetModelId().GetValue());
 
     // Update the sheetdef to make sure it encloses the image.
     if (!m_imageDef.m_size.AlmostEqual(DVec2d::From(m_size)))
@@ -1137,7 +1186,9 @@ void RedlineModel::StoreImageData(ByteStream const& imageData, Target::CapturedI
     Update();
 
     //  Define the image texture
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     DefineImageTextures(m_imageDef, imageData);
+#endif
 
 #if defined (WIP_TILED_IMAGE_TEST_TEST_TEST)
     ImageDef def1x1;
@@ -1159,15 +1210,14 @@ BeAssert(def1x1.GetSizeofPixelInBytes() == 3);
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RedlineModel::StoreImageDataFromJPEG (uint8_t const* jpegData, size_t jpegDataSize, Target::CapturedImageInfo const& imageInfoIn, bool fitToX)
+void RedlineModel::StoreImageDataFromJPEG(uint8_t const* jpegData, size_t jpegDataSize, RgbImageInfo& imageInfoIn, bool fitToX)
     {
-    Target::CapturedImageInfo imageInfo;
-    ByteStream rgbData;
-    if (ImageUtilities::ReadImageFromJpgBuffer(rgbData, imageInfo, jpegData, jpegDataSize, imageInfoIn) != BSISUCCESS)
+    Render::Image image;
+    if (imageInfoIn.ReadImageFromJpgBuffer(image, jpegData, jpegDataSize) != BSISUCCESS)
         return;
-    StoreImageData(rgbData, imageInfo, fitToX, /*compresssImageProperty*/false);
+
+    StoreImageData(image, fitToX, /*compresssImageProperty*/false);
     }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/13

@@ -10,6 +10,7 @@
 
 #include "DgnDb.h"
 #include <DgnPlatform/ImageUtilities.h>
+#include <DgnPlatform/LinkElement.h>
 #include <DgnPlatform/QueryView.h>
 
 /** @addtogroup DgnMarkupProjectGroup Markups and Redlines
@@ -232,11 +233,10 @@ public:
 
     //! Save an image as the backdrop for this redline model.
     //! @param imageData       the image data
-    //! @param imageInfo        information about the image, including its width and format
     //! @param fitToX           If true, the image is stretched to fit the width of the sheet, and the image height is computed from it so as to preserve its original aspect ratio. 
     //!                         If false, the image is stretched to fit the height of the sheet, and the image width is computed.
     //! @param compressImageProperty If true, the image data is compressed before being stored in the database. 
-    DGNPLATFORM_EXPORT void StoreImageData(ByteStream const& imageData, RgbImageInfo const& imageInfo, bool fitToX, bool compressImageProperty=true);
+    DGNPLATFORM_EXPORT void StoreImageData(Render::Image const& imageData, bool fitToX, bool compressImageProperty=true);
 
     //! Save an image as the backdrop for this redline model.
     //! @param jpegData         The image data in JPEG format.
@@ -244,7 +244,7 @@ public:
     //! @param imageInfoIn      Information about the format of the image. Note that the width and format members are ignored as they are already encoded in the JPEG data.
     //! @param fitToX           If true, the image is stretched to fit the width of the sheet, and the image height is computed from it so as to preserve its original aspect ratio. 
     //!                         If false, the image is stretched to fit the height of the sheet, and the image width is computed.
-    DGNPLATFORM_EXPORT void StoreImageDataFromJPEG (uint8_t const* jpegData, size_t jpegDataSize, RgbImageInfo const& imageInfoIn, bool fitToX);
+    DGNPLATFORM_EXPORT void StoreImageDataFromJPEG(uint8_t const* jpegData, size_t jpegDataSize, RgbImageInfo& imageInfoIn, bool fitToX);
 
 /** @name Association to DgnDb */
 /** @{ */
@@ -610,7 +610,7 @@ namespace dgn_ElementHandler { struct MarkupExternalLinkHandler; struct MarkupEx
 //! Captures a link to an element in the external DgnDb referenced from the markup DgnDb
 //! @ingroup GROUP_DgnElement
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE MarkupExternalLink : LinkElement
+struct EXPORT_VTABLE_ATTRIBUTE MarkupExternalLink : LinkElement, ILinkElementBase<MarkupExternalLink>
 {
     DGNELEMENT_DECLARE_MEMBERS(MARKUP_CLASSNAME_MarkupExternalLink, LinkElement)
     friend struct dgn_ElementHandler::MarkupExternalLinkHandler;
@@ -625,8 +625,10 @@ public:
 
     explicit CreateParams(Dgn::DgnElement::CreateParams const& params, DgnElementId linkedElementId = DgnElementId()) : T_Super(params), m_linkedElementId(linkedElementId) {}
 
-    CreateParams(DgnDbR db, DgnModelId modelId, DgnElementId linkedElementId = DgnElementId()) : T_Super(db, modelId, MarkupExternalLink::QueryClassId(db)), m_linkedElementId(linkedElementId)
-        {}
+    //! Constructor
+    //! @param[in] linkModel Model that should contain the link
+    //! @param[in] linkedElementId Id of the linked element in the external file
+    DGNPLATFORM_EXPORT explicit CreateParams(LinkModelR linkModel, DgnElementId linkedElementId = DgnElementId());
     };
 
 private:
@@ -648,21 +650,28 @@ public:
     //! Create a MarkupExternalLink
     static MarkupExternalLinkPtr Create(CreateParams const& params) { return new MarkupExternalLink(params); }
 
+    //! Insert the MarkupExternalLink in the DgnDb
+    DGNPLATFORM_EXPORT MarkupExternalLinkCPtr Insert();
+
+    //! Update the persistent state of the MarkupExternalLink in the DgnDb from this modified copy of it. 
+    DGNPLATFORM_EXPORT MarkupExternalLinkCPtr Update();
+
     //! Set the linked element id
     void SetLinkedElementId(DgnElementId linkedElementId) { m_linkedElementId = linkedElementId; }
 
     //! Get the linked element id
     DgnElementId GetLinkedElementId() const { return m_linkedElementId; }
 
-    //! Query the DgnClassId of the MarkupExternalLink ECClass in the specified DgnDb.
-    //! @note This is a static method that always returns the DgnClassId of the markup.MarkupExternalLink class - it does @em not return the class of a specific instance.
-    static Dgn::DgnClassId QueryClassId(Dgn::DgnDbCR dgndb) { return Dgn::DgnClassId(dgndb.Schemas().GetECClassId(MARKUP_SCHEMA_NAME, MARKUP_CLASSNAME_MarkupExternalLink)); }
+    //! Get the schema name for the MarkupExternalLink class
+    //! @note This is a static method that always returns the schema name of the MarkupExternalLink class - it does @em not return the schema of a specific instance.
+    static Utf8CP MyECSchemaName() { return MARKUP_SCHEMA_NAME; }
+
 };
 
 //=======================================================================================
 // Group of markup external links for assignment of activities to multiple reference elements
 //=======================================================================================
-struct MarkupExternalLinkGroup : LinkElement, IElementGroupOf < MarkupExternalLink >
+struct MarkupExternalLinkGroup : LinkElement, ILinkElementBase<MarkupExternalLinkGroup>, IElementGroupOf<MarkupExternalLink>
 {
     DGNELEMENT_DECLARE_MEMBERS(MARKUP_CLASSNAME_MarkupExternalLinkGroup, LinkElement)
     friend struct dgn_ElementHandler::MarkupExternalLinkGroupHandler;
@@ -674,7 +683,10 @@ public:
         DEFINE_T_SUPER(MarkupExternalLinkGroup::T_Super::CreateParams);
 
         explicit CreateParams(Dgn::DgnElement::CreateParams const& params) : T_Super(params) {}
-        CreateParams(DgnDbR db, DgnModelId modelId) : T_Super(db, modelId, MarkupExternalLinkGroup::QueryClassId(db)) { BeAssert(m_classId.IsValid()); }
+
+        //! Constructor
+        //! @param[in] linkModel Model that should contain the link group
+        DGNPLATFORM_EXPORT explicit CreateParams(LinkModelR linkModel);
         };
 
 private:
@@ -686,9 +698,15 @@ public:
 
     static MarkupExternalLinkGroupPtr Create(CreateParams const& params) { return new MarkupExternalLinkGroup(params); }
 
-    //! Query the DgnClassId of the MarkupExternalLinkGroup ECClass in the specified DgnDb.
-    //! @note This is a static method that always returns the DgnClassId of the markup.MarkupExternalLinkGroup class - it does @em not return the class of a specific instance.
-    static Dgn::DgnClassId QueryClassId(Dgn::DgnDbR db) { return Dgn::DgnClassId(db.Schemas().GetECClassId(MARKUP_SCHEMA_NAME, MARKUP_CLASSNAME_MarkupExternalLinkGroup)); }
+    //! Insert the MarkupExternalLinkGroup in the DgnDb
+    DGNPLATFORM_EXPORT MarkupExternalLinkGroupCPtr Insert();
+
+    //! Update the persistent state of the MarkupExternalLinkGroup in the DgnDb from this modified copy of it. 
+    DGNPLATFORM_EXPORT MarkupExternalLinkGroupCPtr Update();
+
+    //! Get the schema name for the MarkupExternalLinkGroup class
+    //! @note This is a static method that always returns the schema name of the MarkupExternalLinkGroup class - it does @em not return the schema of a specific instance.
+    static Utf8CP MyECSchemaName() { return MARKUP_SCHEMA_NAME; }
 };
 
 
@@ -696,32 +714,31 @@ namespace dgn_ElementHandler
 {
 //! The handler for MarkupExternalLink elements
 struct EXPORT_VTABLE_ATTRIBUTE MarkupExternalLinkHandler : Element
-    {
+{
     ELEMENTHANDLER_DECLARE_MEMBERS(MARKUP_CLASSNAME_MarkupExternalLink, MarkupExternalLink, MarkupExternalLinkHandler, Element, DGNPLATFORM_EXPORT)
-
     virtual void _GetClassParams(ECSqlClassParamsR params) override { T_Super::_GetClassParams(params); MarkupExternalLink::AddClassParams(params); }
-    };
+};
 
 //! The handler for MarkupExternalLinkGroup elements
 struct EXPORT_VTABLE_ATTRIBUTE MarkupExternalLinkGroupHandler : Element
-    {
+{
     ELEMENTHANDLER_DECLARE_MEMBERS(MARKUP_CLASSNAME_MarkupExternalLinkGroup, MarkupExternalLinkGroup, MarkupExternalLinkGroupHandler, Element, DGNPLATFORM_EXPORT)
-    };
+};
 }
 
 namespace dgn_ModelHandler
 {
 //! The ModelHandler for RedlineModel.
 struct Redline : Sheet
-    {
+{
     MODELHANDLER_DECLARE_MEMBERS("RedlineModel", RedlineModel, Redline, Sheet, )
-    };
+};
 
 //! The ModelHandler for SpatialRedlineModel.
 struct SpatialRedline : Spatial
-    {
+{
     MODELHANDLER_DECLARE_MEMBERS("SpatialRedlineModel", SpatialRedlineModel, SpatialRedline, Spatial, )
-    };
+};
 }
 
 END_BENTLEY_DGN_NAMESPACE

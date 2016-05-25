@@ -44,6 +44,7 @@
 #include "DgnViewport.h"
 #include "DgnView.h"
 #include "ECSqlClassParams.h"
+#include "LinkElement.h"
 
 //__PUBLISH_SECTION_END__
 #include "SnapContext.h"

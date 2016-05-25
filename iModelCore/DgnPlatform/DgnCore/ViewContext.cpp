@@ -405,7 +405,7 @@ void ViewContext::_AddViewOverrides(OvrGraphicParamsR ovrMatSymb)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::_AddContextOverrides(OvrGraphicParamsR ovrMatSymb, GeometrySourceCP source)
     {
-    _AddViewOverrides(ovrMatSymb); // Modify m_ovrGraphicParams for view flags...
+    _AddViewOverrides(ovrMatSymb); // Modify ovrMatSymb for view flags...
 
     if (nullptr != m_viewport)
         m_viewport->GetViewControllerR()._OverrideGraphicParams(ovrMatSymb, source);
@@ -1315,7 +1315,7 @@ void DecorateContext::AddFlashed(Render::GraphicR graphic, Render::OvrGraphicPar
     if (!m_decorations.m_flashed.IsValid())
         m_decorations.m_flashed = new GraphicList;
 
-    m_decorations.m_flashed->Add(graphic, m_target.ResolveOverrides(&m_ovrParams), m_ovrParams.GetFlags());
+    m_decorations.m_flashed->Add(graphic, m_target.ResolveOverrides(ovrParams), ovrParams ? ovrParams->GetFlags() : 0);
     }
 
 /*---------------------------------------------------------------------------------**//**
