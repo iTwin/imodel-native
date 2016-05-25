@@ -58,8 +58,8 @@ TEST_F (DgnElementTests, ResetStatistics)
     EXPECT_EQ ((DgnDbStatus)SUCCESS, status);
     m_db->SaveChanges();
 
-    int64_t memTarget = 0;
-    m_db->Elements().Purge(memTarget);
+    uint64_t memTarget = 0;
+    m_db->Memory().PurgeUntil(memTarget);
 
     //Get stats of the element pool.
     DgnElements::Statistics stats = m_db->Elements().GetStatistics();
@@ -699,7 +699,7 @@ TEST_F(ElementGeomAndPlacementTests, ValidateOnInsert)
         EXPECT_EQ(DgnDbStatus::BadElement, status);
         }
 
-    m_db->Elements().Purge(0);
+    m_db->Memory().PurgeUntil(0);
 
     TestLoadElem(noPlacementNoGeomId, nullptr, false);
     TestLoadElem(placementAndGeomId, &placement, true);
@@ -848,7 +848,7 @@ TEST_F(DgnElementTests, TestUserProperties)
     m_db->SaveChanges("");
 
     m_defaultModelP->EmptyModel();
-    m_db->Elements().Purge(0);
+    m_db->Memory().PurgeUntil(0);
 
     ASSERT_TRUE(persistentId.IsValid());
 
@@ -890,7 +890,7 @@ TEST_F(DgnElementTests, TestUserProperties)
         }
 
     m_defaultModelP->EmptyModel();
-    m_db->Elements().Purge(0);
+    m_db->Memory().PurgeUntil(0);
 
     if (true)
         {

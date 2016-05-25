@@ -2,6 +2,7 @@
 <ECSchema schemaName="dgn" nameSpacePrefix="dgn" version="02.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
 
     <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" prefix="bsca"/>
+    <ECSchemaReference name="EditorCustomAttributes" version="01.03" prefix="beca" />
     <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap"/>
 
     <ECCustomAttributes>
@@ -239,9 +240,30 @@
                 </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
-        <ECProperty propertyName="Properties" typeName="string"/>
-        <ECProperty propertyName="Visibility" typeName="int"/>
-        <ECProperty propertyName="DependencyIndex" typeName="int"/>
+        <ECProperty propertyName="Properties" typeName="string">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.03">
+                    <If2D>True</If2D>
+                    <If3D>True</If3D>
+                </HideProperty>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Visibility" typeName="int">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.03">
+                    <If2D>True</If2D>
+                    <If3D>True</If3D>
+                </HideProperty>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="DependencyIndex" typeName="int">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.03">
+                    <If2D>True</If2D>
+                    <If3D>True</If3D>
+                </HideProperty>
+            </ECCustomAttributes>
+        </ECProperty>
     </ECEntityClass>
     <ECEntityClass typeName="GeometricModel" modifier="Abstract">
         <BaseClass>Model</BaseClass>
@@ -378,8 +400,22 @@
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
         <ECStructProperty propertyName="Code" typeName="AuthorityIssuedCode"/>
-        <ECNavigationProperty propertyName="ModelId" relationshipName="ModelContainsElements" direction="Backward"/>
-        <ECNavigationProperty propertyName="ParentId" relationshipName="ElementOwnsChildElements" direction="Backward"/> 
+        <ECNavigationProperty propertyName="ModelId" relationshipName="ModelContainsElements" direction="Backward">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.03">
+                    <If2D>True</If2D>
+                    <If3D>True</If3D>
+                </HideProperty>
+            </ECCustomAttributes>
+        </ECNavigationProperty>
+        <ECNavigationProperty propertyName="ParentId" relationshipName="ElementOwnsChildElements" direction="Backward">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.03">
+                    <If2D>True</If2D>
+                    <If3D>True</If3D>
+                </HideProperty>
+            </ECCustomAttributes>
+        </ECNavigationProperty> 
         <ECProperty propertyName="Label" typeName="string">
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.01.00">
@@ -390,7 +426,7 @@
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="UserProperties" typeName="string" extendedTypeName="AdHocJson"/>
-        <ECProperty propertyName="LastMod" typeName="dateTime">
+        <ECProperty propertyName="LastMod"  displayLabel="Last Modified" typeName="dateTime">
             <ECCustomAttributes>
                 <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.12">
                     <DateTimeKind>Utc</DateTimeKind>
@@ -508,15 +544,78 @@
                 </MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
-        <ECNavigationProperty propertyName="CategoryId" relationshipName="GeometricElement3dIsInCategory" direction="Forward"/>
-        <ECProperty propertyName="GeometryStream" typeName="binary"/>
-        <ECProperty propertyName="InSpatialIndex" typeName="boolean"/>
-        <ECProperty propertyName="Origin" typeName="point3d" />
-        <ECProperty propertyName="Yaw" typeName="double" />
-        <ECProperty propertyName="Pitch" typeName="double" />
-        <ECProperty propertyName="Roll" typeName="double" />
-        <ECProperty propertyName="BBoxLow" typeName="point3d" />
-        <ECProperty propertyName="BBoxHigh" typeName="point3d" />
+        <ECNavigationProperty propertyName="CategoryId" relationshipName="GeometricElement3dIsInCategory" direction="Forward">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.03">
+                    <If2D>True</If2D>
+                    <If3D>True</If3D>
+                </HideProperty>
+            </ECCustomAttributes>
+        </ECNavigationProperty>
+        <ECProperty propertyName="GeometryStream" typeName="binary">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.03">
+                    <If2D>True</If2D>
+                    <If3D>True</If3D>
+                </HideProperty>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="InSpatialIndex" typeName="boolean">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.03">
+                    <If2D>True</If2D>
+                    <If3D>True</If3D>
+                </HideProperty>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Origin" typeName="point3d">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.03">
+                    <If2D>True</If2D>
+                    <If3D>True</If3D>
+                </HideProperty>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Yaw" typeName="double">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.03">
+                    <If2D>True</If2D>
+                    <If3D>True</If3D>
+                </HideProperty>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Pitch" typeName="double">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.03">
+                    <If2D>True</If2D>
+                    <If3D>True</If3D>
+                </HideProperty>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Roll" typeName="double">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.03">
+                    <If2D>True</If2D>
+                    <If3D>True</If3D>
+                </HideProperty>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="BBoxLow" typeName="point3d">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.03">
+                    <If2D>True</If2D>
+                    <If3D>True</If3D>
+                </HideProperty>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="BBoxHigh" typeName="point3d">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.03">
+                    <If2D>True</If2D>
+                    <If3D>True</If3D>
+                </HideProperty>
+            </ECCustomAttributes>
+        </ECProperty>
     </ECEntityClass>
     <ECEntityClass typeName="GraphicalElement3d" modifier="Abstract">
         <!-- 3D geometric element that is used to convey information within 3D graphical presentations. -->
@@ -1111,9 +1210,30 @@
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
         <BaseClass>DefinitionElement</BaseClass>
-        <ECProperty propertyName="Descr" DisplayLabel="Description" typeName="string"/>
-        <ECProperty propertyName="Scope" typeName="int"/>
-        <ECProperty propertyName="Rank" typeName="int"/>
+        <ECProperty propertyName="Descr" DisplayLabel="Description" typeName="string">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.03">
+                    <If2D>True</If2D>
+                    <If3D>True</If3D>
+                </HideProperty>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Scope" typeName="int">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.03">
+                    <If2D>True</If2D>
+                    <If3D>True</If3D>
+                </HideProperty>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Rank" typeName="int">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.03">
+                    <If2D>True</If2D>
+                    <If3D>True</If3D>
+                </HideProperty>
+            </ECCustomAttributes>
+        </ECProperty>
     </ECEntityClass>
     <ECEntityClass typeName="SubCategory">
         <ECCustomAttributes>

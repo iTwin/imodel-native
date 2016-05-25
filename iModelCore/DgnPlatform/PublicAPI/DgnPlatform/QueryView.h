@@ -40,23 +40,36 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnQueryView : CameraViewController, BeSQLite::Vi
     };
 
     //=======================================================================================
+    // @bsiclass                                                    Keith.Bentley   05/16
+    //=======================================================================================
+    struct ElementsQuery
+    {
+        BeSQLite::CachedStatementPtr m_viewStmt;
+        SpecialElements const* m_special;
+        ClipPrimitiveCPtr m_activeVolume;
+        int m_idCol = 0;
+        DGNPLATFORM_EXPORT bool TestElement(DgnElementId);
+        bool IsNever(DgnElementId id) const {return m_special && m_special->m_never.Contains(id);}
+        bool IsAlways(DgnElementId id) const {return m_special && m_special->m_always.Contains(id);}
+        bool HasAlwaysList() const {return m_special && !m_special->m_always.empty();}
+        DGNPLATFORM_EXPORT void Start(DgnQueryViewCR); //!< when this method is called the SQL string for the "ViewStmt" is obtained from the DgnQueryView supplied.
+        ElementsQuery(SpecialElements const* special, ClipPrimitiveCP activeVolume) {m_special = (special && !special->IsEmpty()) ? special : nullptr; m_activeVolume=activeVolume;}
+    };
+
+    //=======================================================================================
     // A query that uses both the BeSQLite spatial index and a DgnElementId-based filter for a QueryView.
     // This object holds two statements - one for the spatial query and one that filters element, by id,
     // on the "other" criteria for a QueryView.
     // The Statements are retrieved from the statement cache and prepared/bound in the Start method.
     // @bsiclass                                                    Keith.Bentley   02/16
     //=======================================================================================
-    struct SpatialQuery
+    struct SpatialQuery : ElementsQuery
     {
         bool m_doSkewTest = false;
-        int m_idCol = 0;
         BeSQLite::CachedStatementPtr m_rangeStmt;
-        BeSQLite::CachedStatementPtr m_viewStmt;
-        SpecialElements const* m_special;
         BeSQLite::RTree3dVal m_boundingRange;    // only return entries whose range intersects this cube.
         BeSQLite::RTree3dVal m_backFace;
         Render::FrustumPlanes m_planes;
-        ClipPrimitiveCPtr m_activeVolume;
         Frustum m_frustum;
         DMatrix4d m_localToNpc;
         DVec3d m_viewVec;  // vector from front face to back face, for SkewScan
@@ -66,13 +79,9 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnQueryView : CameraViewController, BeSQLite::Vi
         DgnElementId StepRtree();
         bool SkewTest(BeSQLite::RTree3dValCP testRange);
         BeSQLite::RTreeMatchFunction::Within TestVolume(FrustumCR box, BeSQLite::RTree3dValCP);
-        bool TestElement(DgnElementId);
         void Start(DgnQueryViewCR); //!< when this method is called the SQL string for the "ViewStmt" is obtained from the DgnQueryView supplied.
-        bool IsNever(DgnElementId id) const {return m_special && m_special->m_never.Contains(id);}
-        bool IsAlways(DgnElementId id) const {return m_special && m_special->m_always.Contains(id);}
-        bool HasAlwaysList() const {return m_special && !m_special->m_always.empty();}
         void SetFrustum(FrustumCR);
-        SpatialQuery(SpecialElements const* special) {m_special = (special && !special->IsEmpty()) ? special : nullptr;}
+        SpatialQuery(SpecialElements const* special, ClipPrimitiveCP activeVolume) : ElementsQuery(special, activeVolume) {}
     };
 
     //! Holds the results of a query.
@@ -209,8 +218,11 @@ public:
     double GetNonSceneLODSize() const {return m_nonSceneLODSize;}
     void SetNonSceneLODSize(double val) {m_nonSceneLODSize=val;} //!< see GetNonSceneLODSize
 
+    // Get the set of special elements for this DgnQueryView.
+    SpecialElements const& GetSpecialElements() const {return m_special;}
+
     //! Get the list of elements that are always drawn
-    DgnElementIdSet const& GetAlwaysDrawn() {return m_special.m_always;}
+    DgnElementIdSet const& GetAlwaysDrawn() {return GetSpecialElements().m_always;}
 
     //! Establish a set of elements that are always drawn in the view.
     //! @param[in] exclusive If true, only these elements are drawn
@@ -225,7 +237,7 @@ public:
     //! Get the list of elements that are never drawn.
     //! @remarks An element in the never-draw list is excluded regardless of whether or not it is
     //! in the always-draw list. That is, the never-draw list gets priority over the always-draw list.
-    DgnElementIdSet const& GetNeverDrawn() {return m_special.m_never;}
+    DgnElementIdSet const& GetNeverDrawn() {return GetSpecialElements().m_never;}
 
     //! Empty the set of elements that are never drawn
     DGNPLATFORM_EXPORT void ClearNeverDrawn();
