@@ -10,5 +10,10 @@
 #include "../../Utils/WebServicesTestsHelper.h"
 
 class EventServiceClientTests : public BaseMockHttpHandlerTest
-    {};
+    {
+	/*public:
+		bvector<Credentials> credentials;
+		bvector<Utf8String> servers;
+		void SetUp();*/
+	};
 
