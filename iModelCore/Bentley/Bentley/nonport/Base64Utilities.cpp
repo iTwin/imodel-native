@@ -101,7 +101,7 @@ Utf8String Base64Utilities::Decode(Utf8CP encodedString, size_t encodedStringLen
 //--------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle    03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus Base64Utilities::Decode(bvector<Byte>& byteArray, Utf8CP encodedString, size_t encodedStringLength)
+template<typename T> static BentleyStatus base64_decode(T& byteArray, Utf8CP encodedString, size_t encodedStringLength)
     {
     if (Utf8String::IsNullOrEmpty(encodedString) || encodedStringLength == 0)
         return SUCCESS;
@@ -148,6 +148,48 @@ BentleyStatus Base64Utilities::Decode(bvector<Byte>& byteArray, Utf8CP encodedSt
         }
 
     return SUCCESS;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                                   Krischan.Eberle    03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus Base64Utilities::Decode(bvector<Byte>& byteArray, Utf8CP encodedString, size_t encodedStringLength)
+    {
+    return base64_decode(byteArray, encodedString, encodedStringLength);
+    }
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   05/16
+//=======================================================================================
+struct ByteStreamAdapter
+{
+    ByteStream& m_buffer;
+
+    ByteStreamAdapter(ByteStream& buffer, size_t srcLen) : m_buffer(buffer)
+        {
+        uint32_t nDecodedBytes = static_cast<uint32_t>((3.0/4.0) * srcLen);
+        m_buffer.Reserve(nDecodedBytes);
+        }
+
+    void push_back(Byte b)
+        {
+        if (m_buffer.GetAllocSize() <= m_buffer.GetSize())
+            m_buffer.Reserve(2 * m_buffer.GetAllocSize());  // we miscalculated above??
+
+        m_buffer.Append(&b, 1);
+        }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus Base64Utilities::Decode(ByteStream& dest, Utf8CP src, size_t srcLen)
+    {
+    if (0 == srcLen || Utf8String::IsNullOrEmpty(src))
+        return SUCCESS;
+
+    ByteStreamAdapter proxy(dest, srcLen);
+    return base64_decode(proxy, src, srcLen);
     }
 
 /*--------------------------------------------------------------------------------------+
