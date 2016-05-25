@@ -36,6 +36,7 @@ bool ECDbMap::IsImportingSchema() const
     {
     return m_schemaImportContext != nullptr;
     }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      05/2016
 //---------------+---------------+---------------+---------------+---------------+--------
@@ -96,14 +97,14 @@ BentleyStatus ECDbMap::PurgeOrphanTables() const
         return ERROR;
         }
     
-    std::vector<Utf8String> noneVirtualTables;
+    std::vector<Utf8String> nonVirtualTables;
     std::vector<Utf8String> virtualTables;
     while (stmt.Step() == BE_SQLITE_ROW)
         {
-        if (stmt.GetValueInt(1) != 0)
+        if (DbSchemaPersistenceManager::IsTrue(stmt.GetValueInt(1)))
             virtualTables.push_back(stmt.GetValueText(0));
         else
-            noneVirtualTables.push_back(stmt.GetValueText(0));
+            nonVirtualTables.push_back(stmt.GetValueText(0));
         }
 
     stmt.Finalize();
@@ -127,7 +128,7 @@ BentleyStatus ECDbMap::PurgeOrphanTables() const
                 }
             }
         }
-    if (!noneVirtualTables.empty())
+    if (!nonVirtualTables.empty())
         {
         BeBriefcaseId briefcaseId = GetECDb().GetBriefcaseId();
         const bool allowDbSchemaChange = briefcaseId.IsMasterId() || briefcaseId.IsStandaloneId();
@@ -138,7 +139,7 @@ BentleyStatus ECDbMap::PurgeOrphanTables() const
             return ERROR;
             }
 
-        for (Utf8StringCR name : noneVirtualTables)
+        for (Utf8StringCR name : nonVirtualTables)
             {
             if (m_ecdb.DropTable(name.c_str()) != BE_SQLITE_OK)
                 {
@@ -707,8 +708,9 @@ DbTable* ECDbMap::FindOrCreateTable(SchemaImportContext* schemaImportContext, Ut
         DbColumn* column = table->CreateColumn(primaryKeyColumnName, DbColumn::Type::Integer, DbColumn::Kind::ECInstanceId, PersistenceType::Persisted);
         if (table->GetPersistenceType() == PersistenceType::Persisted)
             {
-            column->GetConstraintR().SetIsNotNull(true);
-            table->GetPrimaryKeyConstraintR().Add(primaryKeyColumnName);
+            std::vector<DbColumn*> pkColumns {column};
+            if (SUCCESS != table->CreatePrimaryKeyConstraint(pkColumns))
+                return nullptr;
             }
         }
     else
@@ -719,19 +721,19 @@ DbTable* ECDbMap::FindOrCreateTable(SchemaImportContext* schemaImportContext, Ut
 
         if (!Utf8String::IsNullOrEmpty(primaryKeyColumnName))
             {
-            auto editMode = table->GetEditHandle().CanEdit();
-            if (!editMode)
+            const bool canEdit = table->GetEditHandle().CanEdit();
+            if (!canEdit)
                 table->GetEditHandleR().BeginEdit();
 
-            auto systemColumn = table->FindColumnP(primaryKeyColumnName);
-            if (systemColumn == nullptr)
+            DbColumn* idColumn = table->FindColumnP(primaryKeyColumnName);
+            if (idColumn == nullptr)
                 {
                 LOG.errorv("Primary key column '%s' does not exist in table '%s' which was specified in ClassMap custom attribute together with ExistingTable MapStrategy.", primaryKeyColumnName, tableName);
                 return nullptr;
                 }
 
-            systemColumn->SetKind(DbColumn::Kind::ECInstanceId);
-            if (!editMode)
+            idColumn->SetKind(DbColumn::Kind::ECInstanceId);
+            if (!canEdit)
                 table->GetEditHandleR().EndEdit();
             }
         }
@@ -838,18 +840,17 @@ BentleyStatus ECDbMap::EvaluateColumnNotNullConstraints() const
                 return ERROR;
                 }
 
-            //If FK column is a key property pointing to the ECInstanceId, it can already be NOT NULL
-            if (fkColumn->GetConstraint().IsNotNull())
+            //If FK column is a key property pointing to the ECInstanceId, which is the PK, it is already NOT NULL implicitly
+            if (fkColumn->DoNotAllowDbNull())
                 continue;
 
             if (allClassIds.size() == constraintClassIds.size())
                 {
                 DbColumn* fkColumnP = const_cast<DbColumn*> (fkColumn);
-                fkColumnP->GetConstraintR().SetIsNotNull(true);
+                fkColumnP->GetConstraintsR().SetNotNullConstraint();
                 continue;
                 }
 
-            BeAssert(!fkColumn->GetConstraint().IsNotNull());
             m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Warning, "The cardinality of the ECRelationshipClass '%s' "
                                                             "would imply the foreign key column to be 'not nullable'. ECDb cannot enforce that though for the "
                                                             "foreign key column '%s' in table '%s' because other classes not involved in the ECRelationshipClass map to that table. "
@@ -1043,7 +1044,7 @@ BentleyStatus ECDbMap::CreateClassIdColumnIfNecessary(DbTable& table, bset<Class
     if (ecClassIdColumn == nullptr)
         return ERROR;
 
-    ecClassIdColumn->GetConstraintR().SetIsNotNull(true);
+    ecClassIdColumn->GetConstraintsR().SetNotNullConstraint();
     //whenever we create a class id column, we index it to speed up the frequent class id look ups
     Utf8String indexName("ix_");
     indexName.append(table.GetName()).append("_ecclassid");
