@@ -875,8 +875,7 @@ Utf8String ClassMap::GetUpdatableViewName() const
 //---------------------------------------------------------------------------------------
 BentleyStatus ClassMap::GenerateSelectViewSql(NativeSqlBuilder& viewSql, bool isPolymorphic, ECSqlPrepareContext const& prepareContext) const
     {
-    ViewGenerator viewGenerator(GetECDbMap());
-    return viewGenerator.Generate(viewSql, *this, isPolymorphic, prepareContext);
+    return ViewGenerator::GenerateSelectViewSql(viewSql, *this, isPolymorphic, prepareContext);
     }
 
 //=========================================================================================

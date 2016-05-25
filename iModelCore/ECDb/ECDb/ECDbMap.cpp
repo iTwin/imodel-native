@@ -260,7 +260,7 @@ MappingStatus ECDbMap::MapSchemas(SchemaImportContext& schemaImportContext)
 //---------------------------------------------------------------------------------------
 BentleyStatus ECDbMap::CreateECClassViewsInDb() const
     {
-    return ViewGenerator::CreateDebugViews(GetECDb());
+    return ViewGenerator::CreateECClassViews(GetECDb());
     }
 
 //---------------------------------------------------------------------------------------

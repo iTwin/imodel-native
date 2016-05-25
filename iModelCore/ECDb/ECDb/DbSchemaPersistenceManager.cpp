@@ -1348,7 +1348,6 @@ void DbSchemaPersistenceManager::DoAppendForeignKeyDdl(Utf8StringR ddl, ForeignK
         ddl.append(" ON UPDATE ").append(ForeignKeyDbConstraint::ActionTypeToSql(fkConstraint.GetOnUpdateAction()));
     }
 
-
 //---------------------------------------------------------------------------------------
 //! This method is not called from anywhere, because it provides compile-time asserts
 //! for all enumerations that ECDb persists. This is a safe-guard to notify us whenever
