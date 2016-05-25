@@ -94,9 +94,10 @@ public:
     //! Removes a custom attribute from the ecProperty including its base and child ecProperties
     //! @param[in] ecProperty               The ecProperty whose custom attribute is being removed
     //! @param[in] ecSchema                 The schema the ecProperty belongs to
+    //! @param[in] schemaName               The schema name the custom attribute is defined in
     //! @param[in] customAttributeName      The name of the cutomAtrribute being removed
     //! @remarks   Traverse the ecProperty hierarchy to remove customattribute from all of them
-    ECOBJECTS_EXPORT static ECObjectsStatus RemoveCustomAttribute(ECPropertyP& ecProperty, ECSchemaR ecSchema, Utf8StringCR customAttributeName);
+    ECOBJECTS_EXPORT static ECObjectsStatus RemoveCustomAttribute(ECPropertyP& ecProperty, ECSchemaR ecSchema, Utf8StringCR schemaName, Utf8StringCR customAttributeName);
 
     //! Gets a vector of EClasses sorted by hierarchy in descending order (parent comes first)
     //! @param[in] schema           The schema whose classes are to be sorted

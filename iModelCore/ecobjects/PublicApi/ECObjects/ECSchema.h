@@ -334,10 +334,11 @@ public:
 
     //! Retrieves the custom attribute matching the class name.  DoesNot include custom attributes from either base
     //! containers or supplemental custom attributes
+    //! @param[in]  schemaName  The name of the schema the CustomAttribute is defined in
     //! @param[in]  className   The name of the CustomAttribute Class to look for an instance of
     //! @returns An IECInstancePtr.  If IsValid(), will be the matching custom attribute.  Otherwise, no instance of
     //! the custom attribute was found on the container.
-    ECOBJECTS_EXPORT IECInstancePtr     GetPrimaryCustomAttributeLocal(Utf8StringCR className) const;
+    ECOBJECTS_EXPORT IECInstancePtr     GetPrimaryCustomAttributeLocal(Utf8StringCR schemaName, Utf8StringCR className) const;
 
     //! Retrieves the custom attribute matching the class name.  DoesNot include custom attributes from either base
     //! containers or supplemental custom attributes

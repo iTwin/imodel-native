@@ -18,11 +18,12 @@ struct CustomAttributeRemovalTest : ECTestFixture
     {
     ECSchemaReadContextPtr   m_readContext = ECSchemaReadContext::CreateContext();
     Utf8String m_customAttributeName;
+    Utf8String m_customAttributeSchemaName;
     ECSchemaPtr m_schema;
     ECSchemaPtr m_refSchema;
 
-    CustomAttributeRemovalTest(Utf8String customAttributeName)
-        :m_customAttributeName(customAttributeName) {}
+    CustomAttributeRemovalTest(Utf8String schemaName, Utf8String customAttributeName)
+        :m_customAttributeName(customAttributeName), m_customAttributeSchemaName(schemaName){}
 
     ~CustomAttributeRemovalTest()
         {
@@ -44,13 +45,13 @@ struct CustomAttributeRemovalTest : ECTestFixture
         ReadSchema(schemaString);
         }
 
-    bool HasCustomAttribute(ECSchemaR schema, Utf8StringCR customAttributeName)
+    bool HasCustomAttribute(ECSchemaR schema, Utf8StringCR schemaName, Utf8StringCR customAttributeName)
         {
         for (auto ecClass : schema.GetClasses())
             {
             for (auto ecProp : ecClass->GetProperties(false))
                 {
-                auto instance = ecProp->GetPrimaryCustomAttributeLocal(customAttributeName);
+                auto instance = ecProp->GetPrimaryCustomAttributeLocal(schemaName, customAttributeName);
                 if (instance.IsValid())
                     return true;
                 }
@@ -60,7 +61,7 @@ struct CustomAttributeRemovalTest : ECTestFixture
 
     void ValidateSchema(ECSchemaR schema, bool useFreshReadContext = true)
         {
-        EXPECT_FALSE(HasCustomAttribute(*m_schema, m_customAttributeName)) << "Schema still has " << m_customAttributeName << "CustomAttribute !!";
+        EXPECT_FALSE(HasCustomAttribute(*m_schema, m_customAttributeSchemaName, m_customAttributeName)) << "Schema still has " << m_customAttributeSchemaName << "." << m_customAttributeName << "CustomAttribute !!";
         }
     };
 
@@ -72,7 +73,7 @@ struct StandardValueToEnumConversionTest : CustomAttributeRemovalTest
     ECSchemaReadContextPtr   m_validationReadContext = ECSchemaReadContext::CreateContext();
 
     StandardValueToEnumConversionTest()
-        :CustomAttributeRemovalTest("StandardValues") {}
+        :CustomAttributeRemovalTest("EditorCustomAttributes", "StandardValues") {}
 
     ~StandardValueToEnumConversionTest()
         {
