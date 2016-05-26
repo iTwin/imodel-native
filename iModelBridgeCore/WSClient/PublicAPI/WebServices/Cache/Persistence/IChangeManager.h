@@ -90,6 +90,9 @@ struct EXPORT_VTABLE_ATTRIBUTE IChangeManager
         virtual ECInstanceKey CreateObject(ECClassCR ecClass, JsonValueCR properties, SyncStatus syncStatus = SyncStatus::Ready) = 0;
 
         //! Modify object properties
+        //! @param[in] instanceKey
+        //! @param[in] properties - changed or all properties.
+        //! @param[in] syncStatus
         virtual BentleyStatus ModifyObject(ECInstanceKeyCR instanceKey, JsonValueCR properties, SyncStatus syncStatus = SyncStatus::Ready) = 0;
 
         //! Remove change and revert modified instance properties to latest cached version
@@ -119,7 +122,7 @@ struct EXPORT_VTABLE_ATTRIBUTE IChangeManager
         //! @param[in] syncStatus
         virtual BentleyStatus ModifyFile(ECInstanceKeyCR instanceKey, BeFileNameCR filePath, bool copyFile, SyncStatus syncStatus = SyncStatus::Ready) = 0;
 
-        //! Modify name for existing modified file on disk. Does not modify any properties in ECInstance.
+        //! Modify name for existing file on disk. Does not modify any properties in ECInstance.
         //! @param[in] instanceKey
         //! @param[in] newFileName - new name for file. Invalid characters that are not supported by file system will be normalized
         virtual BentleyStatus ModifyFileName(ECInstanceKeyCR instanceKey, Utf8StringCR newFileName) = 0;
