@@ -1111,123 +1111,12 @@ void ColumnFactory::Update()
         }
     }
 
-
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
 DbTable& ColumnFactory::GetTable() const
     {
     return m_classMap.GetJoinedTable();
-    }
-
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Affan.Khan       08 / 2015
-//------------------------------------------------------------------------------------------
-const PropertyMapSet::EndPoints  PropertyMapSet::GetEndPoints () const
-    {
-    EndPoints endPoints;
-    for (auto const& endPoint : m_orderedEndPoints)
-        endPoints.push_back (endPoint.get ());
-
-    return endPoints;
-    }
-
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Affan.Khan       08 / 2015
-//------------------------------------------------------------------------------------------
-BentleyStatus PropertyMapSet::AddSystemEndPoint(PropertyMapSet& propertySet, ClassMap const& classMap, DbColumn::Kind kind, ECValueCR value, DbColumn const* column)
-    {
-    DbTable const& table = classMap.GetJoinedTable();
-
-    if (column == nullptr)
-        column = table.GetFilteredColumnFirst(kind);
-
-    Utf8CP accessString = DbColumn::KindToString(kind);
-    if (value.IsNull())
-        {
-        BeAssert(column != nullptr);
-        if (column == nullptr)
-            return ERROR;
-        }
-
-    BeAssert(accessString != nullptr);
-    if (accessString == nullptr)
-        return ERROR;
-
-    if (column == nullptr)
-        propertySet.m_orderedEndPoints.push_back(std::unique_ptr<EndPoint>(new EndPoint(accessString, kind, value)));
-    else
-        propertySet.m_orderedEndPoints.push_back(std::unique_ptr<EndPoint>(new EndPoint(accessString, *column, value)));
-
-    return SUCCESS;
-    }
-
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Affan.Khan       08 / 2015
-//------------------------------------------------------------------------------------------
-PropertyMapSet::Ptr PropertyMapSet::Create(ClassMap const& classMap)
-    {
-    BeAssert(!classMap.GetJoinedTable().IsNullTable());
-    Ptr propertySet = Ptr(new PropertyMapSet());
-    ECValue defaultValue;
-    AddSystemEndPoint(*propertySet, classMap, DbColumn::Kind::ECInstanceId, defaultValue);
-    AddSystemEndPoint(*propertySet, classMap, DbColumn::Kind::ECClassId, ECValue(classMap.GetClass().GetId().GetValue()));
-
-    if (classMap.IsRelationshipClassMap())
-        {
-        RelationshipClassMapCR relationshipMap = static_cast<RelationshipClassMapCR>(classMap);
-        auto const& sourceConstraints = relationshipMap.GetRelationshipClass().GetSource().GetClasses();
-        auto const& targetConstraints = relationshipMap.GetRelationshipClass().GetTarget().GetClasses();
-        auto sourceECInstanceIdColumn = relationshipMap.GetSourceECInstanceIdPropMap()->GetSingleColumn();
-        auto sourceECClassIdColumn = relationshipMap.GetSourceECInstanceIdPropMap()->GetSingleColumn();
-        auto targetECInstanceIdColumn = relationshipMap.GetTargetECInstanceIdPropMap()->GetSingleColumn();
-        auto targetECClassIdColumn = relationshipMap.GetTargetECClassIdPropMap()->GetSingleColumn();
-
-
-        AddSystemEndPoint(*propertySet, classMap, DbColumn::Kind::SourceECInstanceId, defaultValue, sourceECInstanceIdColumn);
-        auto sourceConstraintClass = sourceConstraints.at(0);
-        if (!ClassMap::IsAnyClass(*sourceConstraintClass) && sourceConstraints.size() == 1)
-            AddSystemEndPoint(*propertySet, classMap, DbColumn::Kind::SourceECClassId, ECValue(sourceConstraintClass->GetId().GetValue()), sourceECClassIdColumn);
-        else
-            AddSystemEndPoint(*propertySet, classMap, DbColumn::Kind::SourceECClassId, defaultValue, sourceECClassIdColumn);
-
-        AddSystemEndPoint(*propertySet, classMap, DbColumn::Kind::TargetECInstanceId, defaultValue, targetECInstanceIdColumn);
-        auto targetConstraintClass = targetConstraints.at(0);
-        if (!ClassMap::IsAnyClass(*targetConstraintClass) && targetConstraints.size() == 1)
-            AddSystemEndPoint(*propertySet, classMap, DbColumn::Kind::TargetECClassId, ECValue(targetConstraintClass->GetId().GetValue()), targetECClassIdColumn);
-        else
-            AddSystemEndPoint(*propertySet, classMap, DbColumn::Kind::SourceECClassId, defaultValue, targetECClassIdColumn);
-        }
-
-    classMap.GetPropertyMaps().Traverse([&propertySet] (TraversalFeedback& feedback, PropertyMapCP propMap)
-        {
-        if (auto pm = dynamic_cast<PointPropertyMap const*> (propMap))
-            {
-            std::vector<DbColumn const*> columns;
-            pm->GetColumns(columns);
-            Utf8String  baseAccessString = pm->GetPropertyAccessString();
-            propertySet->m_orderedEndPoints.push_back(std::unique_ptr<EndPoint>(new EndPoint((baseAccessString + ".X").c_str(), *columns[0], ECValue())));
-            propertySet->m_orderedEndPoints.push_back(std::unique_ptr<EndPoint>(new EndPoint((baseAccessString + ".Y").c_str(), *columns[1], ECValue())));
-            if (pm->Is3d())
-                propertySet->m_orderedEndPoints.push_back(std::unique_ptr<EndPoint>(new EndPoint((baseAccessString + ".Z").c_str(), *columns[2], ECValue())));
-            }
-        else if (nullptr != propMap->GetAsNavigationPropertyMap())
-            {
-            feedback = TraversalFeedback::NextSibling;
-            }
-        else if (!propMap->IsSystemPropertyMap() && !propMap->GetProperty().GetAsStructProperty())
-            {
-            propertySet->m_orderedEndPoints.push_back(std::unique_ptr<EndPoint>(new EndPoint(propMap->GetPropertyAccessString(), *propMap->GetSingleColumn(), ECValue())));
-            }
-        feedback = TraversalFeedback::Next;
-        }, true);
-
-    for (auto const& ep : propertySet->m_orderedEndPoints)
-        {
-        propertySet->m_endPointByAccessString[ep->GetAccessString().c_str()] = ep.get();
-        }
-
-    return propertySet;
     }
 
 //------------------------------------------------------------------------------------------

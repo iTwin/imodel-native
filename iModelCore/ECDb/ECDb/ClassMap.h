@@ -38,60 +38,8 @@ public:
     BentleyStatus Postprocess(ECDbMapCR);
     };
 
-
 struct NativeSqlBuilder;
 struct StorageDescription;
-
-//=======================================================================================
-//! A helper class to help generate view/trigger in standard way
-// @bsiclass                                               Affan.Khan          08/2015
-//+===============+===============+===============+===============+===============+======
-struct PropertyMapSet : NonCopyableClass
-    {
-    typedef std::unique_ptr<PropertyMapSet> Ptr;
-    struct EndPoint : NonCopyableClass
-        {
-        private:
-            DbColumn const* m_column;
-            Utf8String m_accessString;
-            ECN::ECValue m_value;
-            DbColumn::Kind m_columnKind;
-        public:
-            EndPoint(Utf8CP accessString, DbColumn::Kind columnKind, ECN::ECValueCR value)
-                : m_accessString(accessString), m_column(nullptr), m_value(value), m_columnKind(columnKind)
-                {}
-            EndPoint(Utf8CP accessString, DbColumn const& column, ECN::ECValueCR value)
-                : m_accessString(accessString), m_column(&column), m_value(value), m_columnKind(column.GetKind())
-                {}
-            DbColumn const* GetColumn() const { return m_column; }
-            Utf8StringCR GetAccessString() const { return m_accessString; }
-            ECN::ECValueCR GetValue() const { return m_value; }
-            DbColumn::Kind GetColumnKind() const { return m_columnKind; }
-        };
-
-
-    typedef std::vector<EndPoint const*> EndPoints;
-    private:
-        std::vector<std::unique_ptr<EndPoint>> m_orderedEndPoints;
-        std::map<Utf8CP, EndPoint const*, CompareIUtf8Ascii> m_endPointByAccessString;
-
-        PropertyMapSet() {}
-
-    public:
-        const EndPoints GetEndPoints() const;
-        const EndPoint* GetEndPointByAccessString(Utf8CP accessString) const
-            {
-            auto itor = m_endPointByAccessString.find(accessString);
-            if (itor == m_endPointByAccessString.end())
-                return nullptr;
-
-            return itor->second;
-            }
-
-        static BentleyStatus AddSystemEndPoint(PropertyMapSet& propertySet, ClassMap const&, DbColumn::Kind, ECN::ECValueCR, DbColumn const* column = nullptr);
-        static PropertyMapSet::Ptr Create(ClassMap const&);
-    };
-
 //======================================================================================
 // @bsiclass                                                     Affan.Khan      01/2015
 //===============+===============+===============+===============+===============+======
