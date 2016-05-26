@@ -29,9 +29,8 @@ const std::function<void(ECSqlStatement& statement, int firstArgIndex)>& bindArg
 
     auto sql = Utf8PrintfString(
         "SELECT ECInstanceId FROM %s "
-        "WHERE ECInstanceId IN (%s) AND %s",
+        "WHERE InVirtualSet(?, ECInstanceId) AND %s",
         ECSqlBuilder::ToECSqlSnippet(*ecClassP).c_str(),
-        ECDbHelper::ToECInstanceIdList(from, to).c_str(),
         whereClause.c_str());
 
     ECSqlStatement statement;
@@ -40,7 +39,15 @@ const std::function<void(ECSqlStatement& statement, int firstArgIndex)>& bindArg
         return ERROR;
         }
 
-    bindArgs(statement, 1);
+    ECInstanceIdSet idSet;
+    for (auto it = from; it != to; it++)
+        {
+        idSet.insert(it->second);
+        }
+
+    statement.BindInt64(1, (int64_t)&idSet);
+
+    bindArgs(statement, 2);
 
     return txn.GetCache().GetAdapter().ExtractECInstanceKeyMultiMapFromStatement(statement, 0, ecClassP->GetId(), result);
     }
