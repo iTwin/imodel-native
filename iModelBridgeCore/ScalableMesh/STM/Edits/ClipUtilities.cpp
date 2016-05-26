@@ -1444,9 +1444,7 @@ void Clipper::TagUVsOnPolyface(PolyfaceHeaderPtr& poly, BENTLEY_NAMESPACE_NAME::
             poly->ParamIndex().push_back(allUvs[uvCoords[uvI]]);
             }
         }
-    std::string s;
-    s+= " MISSES "+std::to_string(nFaceMisses);
-    assert(nFaceMisses <= (indices.size()*.75)/3 );
+    //assert(nFaceMisses <= (indices.size()*.75)/3 );
 #if SM_TRACE_CLIPS_GETMESH
     Utf8String nameBeforeClips = Utf8String(s_path) + "meshtaggeds_";
     nameBeforeClips.append(to_string(m_range.low.x).c_str());

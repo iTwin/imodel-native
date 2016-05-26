@@ -399,7 +399,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     //Completes an async clip operation.
     void DoClip(uint64_t clipId, bool isVisible);
 
-    const DifferenceSet& GetClipSet(size_t index) const
+    const DifferenceSet GetClipSet(size_t index) const
         {
         RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> diffset = GetDiffSetPtr();
         return (*diffset.get())[index];
