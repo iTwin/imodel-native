@@ -191,8 +191,8 @@ void RealityDataPackageNet::Create(String^  location,
             // Find min/max for bbox.
             double minX = DBL_MAX;
             double minY = DBL_MAX;
-            double maxX = DBL_MIN;
-            double maxY = DBL_MIN;
+            double maxX = -DBL_MAX;
+            double maxY = -DBL_MAX;
 
             DPoint2dCP bboxPts = boundingPolygon->GetPointCP();
             for (size_t i = 0; i < boundingPolygon->GetPointCount(); ++i)
@@ -773,8 +773,8 @@ OsmSourceNet::OsmSourceNet(System::String^ uri,
 
     double minX = DBL_MAX;
     double minY = DBL_MAX;
-    double maxX = DBL_MIN;
-    double maxY = DBL_MIN;
+    double maxX = -DBL_MAX;
+    double maxY = -DBL_MAX;
 
     for (size_t i = 0; i < 4; ++i)
         {
