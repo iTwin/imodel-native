@@ -43,7 +43,7 @@
         BeFileName::EmptyDirectory(dirName);
         }
 
-    BentleyApi::NativeLogging::LoggingConfig::SetOption (CONFIG_OPTION_DEFAULT_SEVERITY, LOG_TEXT_ERROR);
+    BentleyApi::NativeLogging::LoggingConfig::SetOption (CONFIG_OPTION_DEFAULT_SEVERITY, LOG_TEXT_INFO);
     BentleyApi::NativeLogging::LoggingConfig::ActivateProvider (BentleyApi::NativeLogging::CONSOLE_LOGGING_PROVIDER); // send messages to syslog
     BentleyApi::NativeLogging::LoggingConfig::SetSeverity(L"ECDb", NativeLogging::LOG_FATAL); // ECDb error messages are so verbose as to significantly slow down the test run
     BentleyApi::NativeLogging::LoggingConfig::SetSeverity (L"TestRunner", NativeLogging::LOG_INFO);
