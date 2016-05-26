@@ -858,16 +858,12 @@ BentleyStatus ECDbSchemaWriter::DeleteECCustomAttributes(ECContainerId id, ECDbS
     return stmt->Step() == BE_SQLITE_DONE ? SUCCESS : ERROR;
     }
 
+//BentleyStatus CheckIfUsedAsRelationshipConstraintKeyProperty(ECPropertyCR ecproperty)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECDbSchemaWriter::DeleteECProperty(ECPropertyChange& propertyChange, ECPropertyCR deletedProperty)
     {
-
-    //Also consider OVERRIDING. 
-    //Look at index definition as well
-    //KeyProperty
-    //What exactly we mean by deleting a overriden property
     ClassMapCP classMap = m_ecdb.GetECDbImplR().GetECDbMap().GetClassMap(deletedProperty.GetClass());
     if (classMap == nullptr)
         {
@@ -938,6 +934,15 @@ BentleyStatus ECDbSchemaWriter::DeleteECProperty(ECPropertyChange& propertyChang
                 {
                 if (!sharedColumnFound) sharedColumnFound = true;
                 continue;
+                }
+            //Check for use as key property.
+            if (Enum::Contains(column->GetKind(), DbColumn::Kind::SourceECInstanceId) ||
+                Enum::Contains(column->GetKind(), DbColumn::Kind::TargetECInstanceId))
+                {
+                //Fail we do not want to delete a sql column right now
+                GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECClass %s: Deleting an ECProperty '%s' from an ECClass as it is used as KeyProperty in a relationship.",
+                                          deletedProperty.GetClass().GetFullName(), deletedProperty.GetName().c_str());
+                return ERROR;
                 }
 
             //For virtual column delete column from ec_Column.
