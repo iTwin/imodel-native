@@ -46,7 +46,7 @@ GeoCoordinates::BaseGCS::WktFlavor PointCloudGcsFacility::GetWKTFlavor(WString* 
     {
     PointCloudGcsFacility::WktFlavor wktFlavor = PointCloudGcsFacility::WktFlavor_Oracle9;
 
-    int32_t charInd = wktStr.size() - 1;
+    int64_t charInd = wktStr.size() - 1;
     for (charInd = wktStr.size() - 1; charInd >= 0; charInd--)
         {
         if (wktStr[charInd] == L']')
