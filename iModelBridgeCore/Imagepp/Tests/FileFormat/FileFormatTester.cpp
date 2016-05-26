@@ -95,20 +95,21 @@ static vector<std::wstring> s_GetFileNameVector()
     for (auto& actualName : fileList)
         {
         if (actualName.IsDirectory() ||
-            actualName.Contains(L"NITF\\PasSupportees") ||
-            actualName.Contains(L"ErdasImg\\ImagesInvalides") ||
-            actualName.Contains(L"iTIFF\\xFileNotSupported") ||
-            actualName.Contains(L"TIF\\xFileNotSupported") ||
-            actualName.Contains(L"Pict\\xFileNotSupported") ||
-            actualName.Contains(L"CAL\\xFileNotSupported (Type2-tiled)") ||
-            actualName.Contains(L"BMP\\xFileNotSupported") ||
-            actualName.Contains(L"Bil\\xFileNotSupported") ||
-            actualName.Contains(L"Images\\DOQ") ||
-            actualName.Contains(L"Images\\EPX") ||
-            actualName.Contains(L"Images\\MultiChannel_(XCH)\\Flashpix") ||
-            actualName.Contains(L"Images\\jpeg\\Jpeg_InvalidWorldFiles") ||
-            actualName.Contains(L"Images\\ECW\\TooBigImage") ||
-            actualName.Contains(L"Images\\ECW\\TC31T1\\2005_mosaic_colour.ecw")  // too big for .itiff
+            actualName.ContainsI(L"thumb.db") ||                         // Ignore thumnail windows files.
+            actualName.ContainsI(L"NITF\\PasSupportees") ||
+            actualName.ContainsI(L"ErdasImg\\ImagesInvalides") ||
+            actualName.ContainsI(L"iTIFF\\xFileNotSupported") ||
+            actualName.ContainsI(L"TIF\\xFileNotSupported") ||
+            actualName.ContainsI(L"Pict\\xFileNotSupported") ||
+            actualName.ContainsI(L"CAL\\xFileNotSupported (Type2-tiled)") ||
+            actualName.ContainsI(L"BMP\\xFileNotSupported") ||
+            actualName.ContainsI(L"Bil\\xFileNotSupported") ||
+            actualName.ContainsI(L"Images\\DOQ") ||
+            actualName.ContainsI(L"Images\\EPX") ||
+            actualName.ContainsI(L"Images\\MultiChannel_(XCH)\\Flashpix") ||
+            actualName.ContainsI(L"Images\\jpeg\\Jpeg_InvalidWorldFiles") ||
+            actualName.ContainsI(L"Images\\ECW\\TooBigImage") ||
+            actualName.ContainsI(L"Images\\ECW\\TC31T1\\2005_mosaic_colour.ecw")  // too big for .itiff
             )
             continue;
 
