@@ -52,6 +52,7 @@ AuthenticationHandlerPtr   authenticationHandler
     {
     m_wsRepositoryClient = WSRepositoryClient::Create(repository.GetServerURL(), repository.GetWSRepositoryName(), clientInfo, nullptr, authenticationHandler);
     m_wsRepositoryClient->SetCredentials(credentials);
+    m_eventServiceClient = nullptr;
     }
 
 //---------------------------------------------------------------------------------------
@@ -65,9 +66,26 @@ void DgnDbRepositoryConnection::SetAzureClient(WebServices::IAzureBlobStorageCli
 //---------------------------------------------------------------------------------------
 //@bsimethod                                    Arvind.Venkateswaran            03/2016
 //---------------------------------------------------------------------------------------
-void DgnDbRepositoryConnection::SetEventServiceClient(EventServiceClient *eventServiceClient)
+bool DgnDbRepositoryConnection::SetEventServiceClient(RepositoryInfoCR repoInfo)
     {
-    m_eventServiceClient = eventServiceClient;
+    //Get Event Service SASToken and Set EventService Client
+    if (m_eventServiceClient == nullptr)
+        {
+        EventServiceConnectionTaskPtr taskPtr1, taskPtr2;
+        taskPtr1 = GetEventServiceSAS();
+        if (!taskPtr1->GetResult().IsSuccess())
+            return false;
+        taskPtr2 = GetEventServiceConnectionId();
+        if (!taskPtr2->GetResult().IsSuccess())
+            return false;
+
+        EventServiceClient *eventServiceClient = new EventServiceClient(taskPtr1->GetResult().GetValue()->GetNamespace(), 
+                                                                        repoInfo.GetId(),
+                                                                        taskPtr2->GetResult().GetValue()->GetConnectionId());
+        eventServiceClient->UpdateSASToken(taskPtr1->GetResult().GetValue()->GetSasToken());
+        m_eventServiceClient = eventServiceClient;
+        }
+    return true;
     }
 
 //---------------------------------------------------------------------------------------
@@ -140,24 +158,10 @@ AuthenticationHandlerPtr authenticationHandler
         //if (Utf8String::npos != repositoryConnection->GetRepositoryInfo().GetServerURL().rfind ("cloudapp.net"))
         repositoryConnection->SetAzureClient(AzureBlobStorageClient::Create());
 
-        //Get Event Service SASToken and Set EventService Client
-        EventServiceInfoTaskPtr taskPtr = repositoryConnection->GetEventServiceSAS();
-        if (!taskPtr->GetResult().IsSuccess())
+        //Set EventServiceClient
+        if (!repositoryConnection->SetEventServiceClient(repository))
             return DgnDbRepositoryConnectionResult::Error(result.GetError());
-        auto manager = ConnectSignInManager::Create(clientInfo, authenticationHandler);
 
-		bool isSuccess = manager->SignInWithCredentials(credentials)->GetResult().IsSuccess();
-		if (!isSuccess)
-			return DgnDbRepositoryConnectionResult::Error(result.GetError());
-
-        EventServiceInfo info = *(taskPtr->GetResult().GetValue());
-        Utf8String userid = manager->GetUserInfo().userId;
-        userid.ReplaceAll("@", "_");
-        EventServiceClient *eventServiceClient = new EventServiceClient(info.GetNamespace(), repository.GetId(), userid);
-        eventServiceClient->UpdateSASToken(info.GetSasToken());
-        repositoryConnection->SetEventServiceClient(eventServiceClient);
-
-        //Now return
         return DgnDbRepositoryConnectionResult::Success(repositoryConnection);
         });
     }
@@ -663,15 +667,14 @@ ICancellationTokenPtr cancellationToken
         });
     }
 
+
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Arvind.Venkateswaran           05/2016
 //---------------------------------------------------------------------------------------
-EventServiceInfoTaskPtr DgnDbRepositoryConnection::GetEventServiceSAS(ICancellationTokenPtr cancellationToken) const
+EventServiceConnectionTaskPtr DgnDbRepositoryConnection::GetEventServiceConnection(Utf8String EventServiceClass, ICancellationTokenPtr cancellationToken) const
     {
-    //Query for https://{server}/{version}/Repositories/DgnDbServer--{repoId}/EventService
-    ObjectId eventServiceObject(ServerSchema::Schema::Repository, ServerSchema::Class::EventSAS, "");
-
-    return m_wsRepositoryClient->SendGetObjectRequest(eventServiceObject, nullptr, cancellationToken)->Then<EventServiceInfoResult>
+    ObjectId eventServiceObject(ServerSchema::Schema::Repository, EventServiceClass, "");
+    return m_wsRepositoryClient->SendGetObjectRequest(eventServiceObject, nullptr, cancellationToken)->Then<EventServiceConnectionResult>
         ([=] (WSObjectsResult& eventServiceResult)
         {
         if (eventServiceResult.IsSuccess())
@@ -684,39 +687,77 @@ EventServiceInfoTaskPtr DgnDbRepositoryConnection::GetEventServiceSAS(ICancellat
 
             //Todo: Find a better way to handle error
             if (jsoninstances.size() < 1)
-                return EventServiceInfoResult::Success(EventServiceInfo::CreateDefaultInfo());
+                //return EventServiceConnectionResult::Success(EventServiceConnection::CreateDefaultInfo());
+                return EventServiceConnectionResult::Error(eventServiceResult.GetError());
 
             //Get json values 
             RapidJsonValueCR instanceProperties = jsoninstances[0].GetProperties();
 
-            //Todo: Find a better way to handle error
-            if (
-                !instanceProperties.HasMember(ServerSchema::Property::EventServiceSASToken) ||
-                !instanceProperties.HasMember(ServerSchema::Property::EventServiceNameSpace)
-                )
-                return EventServiceInfoResult::Success(EventServiceInfo::CreateDefaultInfo());
+            if (EventServiceClass.CompareTo(ServerSchema::Class::EventSAS))
+                {
+                //Todo: Find a better way to handle error
+                if (
+                    !instanceProperties.HasMember(ServerSchema::Property::EventServiceSASToken) ||
+                    !instanceProperties.HasMember(ServerSchema::Property::EventServiceNameSpace)
+                    )
+                    //return EventServiceConnectionResult::Success(EventServiceConnection::CreateDefaultInfo());
+                    return EventServiceConnectionResult::Error(eventServiceResult.GetError());
 
-            auto info = EventServiceInfo::Create(
-                instanceProperties[ServerSchema::Property::EventServiceSASToken].GetString(),
-                instanceProperties[ServerSchema::Property::EventServiceNameSpace].GetString()
-                );
+                auto info = EventServiceConnection::Create(
+                    instanceProperties[ServerSchema::Property::EventServiceSASToken].GetString(),
+                    instanceProperties[ServerSchema::Property::EventServiceNameSpace].GetString()
+                    );
 
-            //Todo: Find a better way to handle error
-            if (Utf8String::IsNullOrEmpty(info->GetSasToken().c_str()) ||
-                Utf8String::IsNullOrEmpty(info->GetNamespace().c_str())
-                )
-                return EventServiceInfoResult::Success(EventServiceInfo::CreateDefaultInfo());
+                //Todo: Find a better way to handle error
+                if (Utf8String::IsNullOrEmpty(info->GetSasToken().c_str()) ||
+                    Utf8String::IsNullOrEmpty(info->GetNamespace().c_str())
+                    )
+                    //return EventServiceInfoResult::Success(EventServiceInfo::CreateDefaultInfo());
+                    return EventServiceConnectionResult::Error(eventServiceResult.GetError());
+                return EventServiceConnectionResult::Success(info);
+                }
 
-            return EventServiceInfoResult::Success(info);
+            else
+                {
+                if (
+                    !instanceProperties.HasMember(ServerSchema::Property::EventServiceConnectionId)
+                    )
+                    //return EventServiceConnectionResult::Success(EventServiceConnection::CreateDefaultInfo());
+                    return EventServiceConnectionResult::Error(eventServiceResult.GetError());
+                auto info = EventServiceConnection::Create(nullptr, nullptr, instanceProperties[ServerSchema::Property::EventServiceConnectionId].GetString());
+
+                //Todo: Find a better way to handle error
+                if (Utf8String::IsNullOrEmpty(info->GetConnectionId().c_str()))
+                    //return EventServiceInfoResult::Success(EventServiceInfo::CreateDefaultInfo());
+                    return EventServiceConnectionResult::Error(eventServiceResult.GetError());
+                return EventServiceConnectionResult::Success(info);
+                }
+            
             }
         else
             {
             //Todo: Find a better way to handle error
-
-            //return EventServiceInfoResult::Error(eventServiceResult.GetError());
-            return EventServiceInfoResult::Success(EventServiceInfo::CreateDefaultInfo());
+            return EventServiceConnectionResult::Error(eventServiceResult.GetError());
             }
         });
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Arvind.Venkateswaran           05/2016
+//---------------------------------------------------------------------------------------
+EventServiceConnectionTaskPtr DgnDbRepositoryConnection::GetEventServiceConnectionId(ICancellationTokenPtr cancellationToken) const
+    {
+    //Query for https://{server}/{version}/Repositories/DgnDbServer--{repoId}/DgnDbServer/EventConnection 
+    return GetEventServiceConnection(ServerSchema::Class::EventConnection, cancellationToken);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Arvind.Venkateswaran           05/2016
+//---------------------------------------------------------------------------------------
+EventServiceConnectionTaskPtr DgnDbRepositoryConnection::GetEventServiceSAS(ICancellationTokenPtr cancellationToken) const
+    {
+    //Query for https://{server}/{version}/Repositories/DgnDbServer--{repoId}/DgnDbServer/EventSAS
+    return GetEventServiceConnection(ServerSchema::Class::EventSAS, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
