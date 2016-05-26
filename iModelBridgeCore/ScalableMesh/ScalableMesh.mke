@@ -443,7 +443,6 @@ LINKER_LIBRARIES            = \
     $(ContextSubpartsLibs)$(BeJsonCppLib) \
     $(ContextSubpartsLibs)$(BentleyGeomLib) \
     $(ContextSubpartsLibs)DgnPlatform.lib \
-#    "C:\Program Files (x86)\Visual Leak Detector\lib\Win64\vld.lib" \
     $(ContextSubpartsLibs)CGAL.lib
 #    $(ContextSubpartsLibs)BePointCloud.lib \
 
