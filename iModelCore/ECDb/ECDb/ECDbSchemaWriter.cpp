@@ -537,59 +537,69 @@ BentleyStatus ECDbSchemaWriter::UpdateECClass(ECClassChange& classChange, ECClas
 
     if (classChange.Properties().IsValid())
         {
-        int ordinal = (int) oldClass.GetPropertyCount(false);
-        for (size_t i = 0; i < classChange.Properties().Count(); i++)
-            {
-            auto& change = classChange.Properties().At(i);
-            if (change.GetState() == ChangeState::Deleted)
-                {
-                ECPropertyCP oldProperty = oldClass.GetPropertyP(change.GetId(), false);
-                if (oldProperty == nullptr)
-                    {
-                    BeAssert(false && "Failed to find property");
-                    return ERROR;
-                    }
-
-                return DeleteECProperty(change, *oldProperty);
-                }
-            else if (change.GetState() == ChangeState::New)
-                {
-                ECPropertyCP newProperty = newClass.GetPropertyP(change.GetName().GetNew().Value().c_str(), false);
-                if (newProperty == nullptr)
-                    {
-                    BeAssert(false && "Failed to find the class");
-                    return ERROR;
-                    }
-
-                if (SUCCESS != ImportECProperty(*newProperty, ordinal))
-                    return ERROR;
-
-                ordinal++;
-                }
-            else if (change.GetState() == ChangeState::Modified)
-                {
-                ECPropertyCP oldProperty = oldClass.GetPropertyP(change.GetId(), false);
-                ECPropertyCP newProperty = newClass.GetPropertyP(change.GetId(), false);
-                if (oldProperty == nullptr)
-                    {
-                    BeAssert(false && "Failed to find property");
-                    return ERROR;
-                    }
-                if (newProperty == nullptr)
-                    {
-                    BeAssert(false && "Failed to find property");
-                    return ERROR;
-                    }
-
-                if (UpdateECProperty(change, *oldProperty, *newProperty) != SUCCESS)
-                    return ERROR;
-                }
-            }
+        if (UpdateECProperties(classChange.Properties(), oldClass, newClass) != SUCCESS)
+            return ERROR;
         }
 
     return UpdateECCustomAttributes(ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Class, classId, classChange.CustomAttributes(), oldClass, newClass);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  05/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECDbSchemaWriter::UpdateECProperties(ECPropertyChanges& propertyChanges, ECClassCR oldClass, ECClassCR newClass)
+    {
+    int ordinal = (int) oldClass.GetPropertyCount(false);
+    for (size_t i = 0; i < propertyChanges.Count(); i++)
+        {
+        auto& change = propertyChanges.At(i);
+        if (change.GetState() == ChangeState::Deleted)
+            {
+            ECPropertyCP oldProperty = oldClass.GetPropertyP(change.GetId(), false);
+            if (oldProperty == nullptr)
+                {
+                BeAssert(false && "Failed to find property");
+                return ERROR;
+                }
+
+            return DeleteECProperty(change, *oldProperty);
+            }
+        else if (change.GetState() == ChangeState::New)
+            {
+            ECPropertyCP newProperty = newClass.GetPropertyP(change.GetName().GetNew().Value().c_str(), false);
+            if (newProperty == nullptr)
+                {
+                BeAssert(false && "Failed to find the class");
+                return ERROR;
+                }
+
+            if (SUCCESS != ImportECProperty(*newProperty, ordinal))
+                return ERROR;
+
+            ordinal++;
+            }
+        else if (change.GetState() == ChangeState::Modified)
+            {
+            ECPropertyCP oldProperty = oldClass.GetPropertyP(change.GetId(), false);
+            ECPropertyCP newProperty = newClass.GetPropertyP(change.GetId(), false);
+            if (oldProperty == nullptr)
+                {
+                BeAssert(false && "Failed to find property");
+                return ERROR;
+                }
+            if (newProperty == nullptr)
+                {
+                BeAssert(false && "Failed to find property");
+                return ERROR;
+                }
+
+            if (UpdateECProperty(change, *oldProperty, *newProperty) != SUCCESS)
+                return ERROR;
+            }
+        }
+
+    return SUCCESS;
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -847,15 +857,126 @@ BentleyStatus ECDbSchemaWriter::DeleteECCustomAttributes(ECContainerId id, ECDbS
     stmt->BindInt(2, Enum::ToInt(type));
     return stmt->Step() == BE_SQLITE_DONE ? SUCCESS : ERROR;
     }
-    
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECDbSchemaWriter::DeleteECProperty(ECPropertyChange& propertyChange, ECPropertyCR deletedProperty)
     {
-    GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECClass %s: Deleting an ECProperty '%s' from an ECClass is not supported.",
-                              deletedProperty.GetClass().GetFullName(), deletedProperty.GetName().c_str());
-    return ERROR;
+
+    //Also consider OVERRIDING. 
+    //Look at index definition as well
+    //KeyProperty
+    //What exactly we mean by deleting a overriden property
+    ClassMapCP classMap = m_ecdb.GetECDbImplR().GetECDbMap().GetClassMap(deletedProperty.GetClass());
+    if (classMap == nullptr)
+        {
+        BeAssert(false && "Failed to find classMap");
+        return ERROR;
+        }
+
+    auto setPropertyToNull = [&] ()
+        {
+        ECSqlStatement setToNullStmt;
+        const Utf8CP msg = "ECSchema Update failed. ECClass %s: Deleting an ECProperty '%s' from an ECClass failed due error while setting property to null";
+        if (setToNullStmt.Prepare(m_ecdb, SqlPrintfString("UPDATE %s SET [%s] = ?", classMap->GetClass().GetECSqlName().c_str(), deletedProperty.GetName().c_str()).GetUtf8CP()) != ECSqlStatus::Success)
+            {
+            GetIssueReporter().Report(ECDbIssueSeverity::Error, msg, deletedProperty.GetClass().GetFullName(), deletedProperty.GetName().c_str());
+            return ERROR;
+            }
+
+        setToNullStmt.BindNull(1);
+        if (setToNullStmt.Step() != BE_SQLITE_DONE)
+            {
+            GetIssueReporter().Report(ECDbIssueSeverity::Error, msg, deletedProperty.GetClass().GetFullName(), deletedProperty.GetName().c_str());
+            return ERROR;
+            }
+
+        return SUCCESS;
+        };
+
+
+    bool sharedColumnFound = false;
+    for (Partition const& partition : classMap->GetStorageDescription().GetHorizontalPartitions())
+        {
+        ClassMapCP partitionRootClassMap = m_ecdb.GetECDbImplR().GetECDbMap().GetClassMap(partition.GetRootClassId());
+        if (classMap == nullptr)
+            {
+            BeAssert(false && "Failed to find classMap");
+            return ERROR;
+            }
+
+        PropertyMapCP propertyMap = partitionRootClassMap->GetPropertyMap(deletedProperty.GetName().c_str());
+        if (propertyMap == nullptr)
+            {
+            BeAssert(false && "Failed to find propertymap");
+            return ERROR;
+            }
+
+        if (auto navPropertyMap = propertyMap->GetAsNavigationPropertyMap())
+            {
+            if (!navPropertyMap->IsSupportedInECSql())
+                continue;
+            }
+
+        //Reject overriden property
+        if (propertyMap->GetProperty().GetBaseProperty() != nullptr)
+            {
+            //Fail we do not want to delete a sql column right now
+            GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECClass %s: Deleting an ECProperty '%s' from an ECClass is not supported as its overriden",
+                                      deletedProperty.GetClass().GetFullName(), deletedProperty.GetName().c_str());
+            return ERROR;
+            }
+
+        //Delete DbTable entries
+        std::vector<DbColumn const*> columns;
+        propertyMap->GetColumns(columns);
+        for (DbColumn const* column : columns)
+            {
+            //For shared column do not delete column itself.
+            if (column->IsShared())
+                {
+                if (!sharedColumnFound) sharedColumnFound = true;
+                continue;
+                }
+
+            //For virtual column delete column from ec_Column.
+            if (column->GetPersistenceType() == PersistenceType::Virtual)
+                {
+                CachedStatementPtr stmt = m_ecdb.GetCachedStatement("DELETE FROM ec_Column WHERE Id = ?");
+                stmt->BindId(1, column->GetId());
+                if (stmt->Step() != BE_SQLITE_DONE)
+                    {
+                    BeAssert(false && "Failed to delete DbColumn");
+                    return ERROR;
+                    }
+                }
+            else
+                {
+                //Fail we do not want to delete a sql column right now
+                GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECClass %s: Deleting an ECProperty '%s' from an ECClass is not supported as property mapped to a none-shared column.",
+                                          deletedProperty.GetClass().GetFullName(), deletedProperty.GetName().c_str());
+                return ERROR;
+                }
+            }
+        }
+    
+    if (sharedColumnFound)
+        {
+        if (setPropertyToNull() != SUCCESS)
+            return ERROR;
+        }
+
+    //Delete ECProperty entry make sure ec_Column is already deleted or set to null
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("DELETE FROM ec_Property WHERE ec_Property.Id = ?");
+    stmt->BindId(1, deletedProperty.GetId());
+    if (stmt->Step() != BE_SQLITE_DONE)
+        {
+        BeAssert(false && "Failed to delete ecproperty");
+        return ERROR;
+        }
+
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------

@@ -70,6 +70,7 @@ private:
     BentleyStatus UpdateECSchemaReferences(ReferenceChanges& referenceChanges, ECSchemaCR oldSchema, ECSchemaCR newSchema);
     BentleyStatus UpdateECClasses(ECClassChanges& classChanges, ECSchemaCR oldSchema, ECSchemaCR newSchema);
     BentleyStatus UpdateECEnumerations(ECEnumerationChanges& enumChanges, ECSchemaCR oldSchema, ECSchemaCR newSchema);
+    BentleyStatus UpdateECProperties(ECPropertyChanges&, ECClassCR oldClass, ECClassCR newClass);
 
     BentleyStatus DeleteECClass(ECClassChange& classChange, ECClassCR deletedClass);
     BentleyStatus DeleteECProperty(ECPropertyChange& propertyChange, ECPropertyCR deletedProperty);

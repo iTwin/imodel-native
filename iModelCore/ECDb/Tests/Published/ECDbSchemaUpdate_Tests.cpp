@@ -86,6 +86,84 @@ struct ECSchemaDuplicator :IECSchemaLocater
     };
 #endif // NotUsedYet
 
+void AssertECProperties(ECDbCR ecdb, Utf8CP assertExpression, bool strict = true)
+    {
+    const bool includeBaseProperties = true;
+    Utf8String str = assertExpression;
+    str.ReplaceAll(" ", "");
+    str.Trim();
+    size_t n = str.find("->");
+    if (n == Utf8String::npos)
+        {
+        ASSERT_FALSE(true) << "Assert Expression is invalid (" << assertExpression << ")";
+        }
+
+    Utf8String classQualifiedName = str.substr(0, n);
+    Utf8String expr = str.substr(n + 2);
+    n = classQualifiedName.find(":");
+    if (n == Utf8String::npos)
+        {
+        ASSERT_FALSE(true) << "Assert Expression is invalid (ClassName is invalid) (" << assertExpression << ")";
+        }
+
+    Utf8String schemaName = classQualifiedName.substr(0, n);
+    Utf8String className = classQualifiedName.substr(n + 1);
+
+    ECClassCP ecClass = ecdb.Schemas().GetECClass(schemaName.c_str(), className.c_str(), ResolveSchema::AutoDetect);
+    ASSERT_TRUE(ecClass != nullptr) << "Failed to find class " << classQualifiedName;
+
+    bvector<Utf8String> properties;
+    BeStringUtilities::Split(expr.c_str(), ",", properties);
+    std::set<Utf8String> currentProperties;
+
+    std::set<Utf8String> mustNotExist;
+    std::set<Utf8String> mustExist;
+    for (ECPropertyCP property : ecClass->GetProperties(includeBaseProperties))
+        {
+        currentProperties.insert(property->GetName().c_str());
+        }
+
+    for (Utf8StringCR property : properties)
+        {
+        if (property.StartsWith("-"))
+            mustNotExist.insert(property.substr(1));
+        else if (property.StartsWith("+"))
+            mustExist.insert(property.substr(1));
+        else
+            mustExist.insert(property);
+        }
+
+    for (Utf8StringCR property : mustNotExist)
+        {
+        if (currentProperties.find(property) != currentProperties.end())
+            {
+            ASSERT_FALSE(true) << "Found ECProperty " << property << " in ECClass " << ecClass->GetName() << " whcih must not exist";
+            }
+        }
+
+    for (Utf8StringCR property : mustExist)
+        {
+        if (currentProperties.find(property) == currentProperties.end())
+            {
+            ASSERT_FALSE(true) << "Failed to find ECProperty " << property << " in ECClass " << ecClass->GetName();
+            }
+        }
+
+    if (strict)
+        {
+        if (mustExist.size() > currentProperties.size())
+            {
+            ASSERT_FALSE(true) << "Number of properties in ECClass " << ecClass->GetName() << " is less than list of properties asserted (" << assertExpression;
+            }
+        if (mustExist.size() < currentProperties.size())
+            {
+            ASSERT_FALSE(true) << "Number of properties in ECClass " << ecClass->GetName() << " is greater than list of properties asserted (" << assertExpression;
+            }
+        }
+    }
+
+#define ASSERT_PROPERTIES_STRICT(ECDB_OBJ, EXPRESSION) AssertECProperties(ECDB_OBJ, EXPRESSION, true);
+#define ASSERT_PROPERTIES(ECDB_OBJ, EXPRESSION)        AssertECProperties(ECDB_OBJ, EXPRESSION, false);
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     03/16
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -305,6 +383,95 @@ TEST_F(ECSchemaUpdateTests, UpdatingECDbMapCAIsNotSupported)
     ASSERT_FALSE(asserted);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     03/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, DeleteProperties)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Koo' modifier='None' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <Options>SharedColumnsForSubclasses</Options>"
+        "                   <MinimumSharedColumnCount>5</MinimumSharedColumnCount>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='L1' typeName='long' />"
+        "       <ECProperty propertyName='S1' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Foo' modifier='None' >"
+        "       <BaseClass>Koo</BaseClass>"
+        "       <ECProperty propertyName='L2' typeName='long' />"
+        "       <ECProperty propertyName='S2' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Goo' modifier='None' >"
+        "       <BaseClass>Foo</BaseClass>"
+        "       <ECProperty propertyName='L3' typeName='long' />"
+        "       <ECProperty propertyName='S3' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Boo' modifier='None' >"
+        "       <BaseClass>Goo</BaseClass>"
+        "       <ECProperty propertyName='L4' typeName='long' />"
+        "       <ECProperty propertyName='S4' typeName='string' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    ASSERT_PROPERTIES_STRICT(GetECDb(), "TestSchema:Koo -> L1, S1");
+    ASSERT_PROPERTIES_STRICT(GetECDb(), "TestSchema:Foo -> L1, L2, S1, S2");
+    ASSERT_PROPERTIES_STRICT(GetECDb(), "TestSchema:Goo -> L1, L2, L3, S1, S2, S3");
+    ASSERT_PROPERTIES_STRICT(GetECDb(), "TestSchema:Boo -> L1, L2, L3, L4, S1, S2, S3, S4");
+
+    //import edited schema with some changes.
+    SchemaItem editedSchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "   <ECEntityClass typeName='Koo' modifier='None' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.01'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <Options>SharedColumnsForSubclasses</Options>"
+        "                   <MinimumSharedColumnCount>5</MinimumSharedColumnCount>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                 </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='L1' typeName='long' />"
+        "       <ECProperty propertyName='S1' typeName='string' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Foo' modifier='None' >"
+        "       <BaseClass>Koo</BaseClass>"
+        "       <ECProperty propertyName='L2' typeName='long' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Goo' modifier='None' >"
+        "       <BaseClass>Foo</BaseClass>"
+        "       <ECProperty propertyName='L3' typeName='long' />"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Boo' modifier='None' >"
+        "       <BaseClass>Goo</BaseClass>"
+        "       <ECProperty propertyName='L4' typeName='long' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+
+    bool asserted = false;
+    AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
+    ASSERT_FALSE(asserted);
+    ASSERT_PROPERTIES_STRICT(GetECDb(), "TestSchema:Koo -> L1, S1");
+    ASSERT_PROPERTIES_STRICT(GetECDb(), "TestSchema:Foo -> L1, L2, S1, -S2");
+    ASSERT_PROPERTIES_STRICT(GetECDb(), "TestSchema:Goo -> L1, L2, L3, S1, -S2, -S3");
+    ASSERT_PROPERTIES_STRICT(GetECDb(), "TestSchema:Boo -> L1, L2, L3, L4, S1, -S2, -S3, -S4");
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     03/16
 //+---------------+---------------+---------------+---------------+---------------+------

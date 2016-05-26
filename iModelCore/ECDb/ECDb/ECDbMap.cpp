@@ -243,13 +243,6 @@ MappingStatus ECDbMap::MapSchemas(SchemaImportContext& schemaImportContext)
         return MappingStatus::Error;
         }
 
-    //SqlUtilities mapAnalyser(*this);
-    //if (mapAnalyser.Analyse(true /*apply changes*/) != SUCCESS)
-    //    {
-    //    m_schemaImportContext = nullptr;
-    //    return MappingStatus::Error;
-    //    }
-
     m_schemaImportContext = nullptr;
     return MappingStatus::Success;
     }
