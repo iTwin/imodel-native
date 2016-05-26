@@ -51,8 +51,8 @@ public:
     REALITYPACKAGE_EXPORT void         SetProvider(Utf8CP provider);
 
     //! Get/Set the filesize in kilobytes. Default to 0.
-    REALITYPACKAGE_EXPORT uint64_t GetFilesize() const;
-    REALITYPACKAGE_EXPORT void     SetFilesize(uint64_t filesizeInKB);
+    REALITYPACKAGE_EXPORT uint64_t     GetFilesize() const;
+    REALITYPACKAGE_EXPORT void         SetFilesize(uint64_t filesizeInKB);
 
     //! Get/Set the full path for the main file in a compound type. Might be empty.
     REALITYPACKAGE_EXPORT Utf8StringCR GetFileInCompound() const;
@@ -62,10 +62,20 @@ public:
     REALITYPACKAGE_EXPORT Utf8StringCR GetMetadata() const;
     REALITYPACKAGE_EXPORT void         SetMetadata(Utf8CP metadata);
 
+    //! Indicates the type of metadata. This is a string.
+    REALITYPACKAGE_EXPORT Utf8StringCR GetMetadataType() const;
+    REALITYPACKAGE_EXPORT void         SetMetadataType(Utf8CP metadataType);
+
+    //! Indicates the default geographic coordinate system keyname. May be empty.
+    REALITYPACKAGE_EXPORT Utf8StringCR GetGeoCS() const;
+    REALITYPACKAGE_EXPORT void         SetGeoCS(Utf8CP geoCS);    
+
     //! Get/Set the sister files. Might be empty.
     REALITYPACKAGE_EXPORT const bvector<Utf8String>& GetSisterFiles() const;
     REALITYPACKAGE_EXPORT void                       SetSisterFiles(const bvector<Utf8String>& sisterFiles);
    
+
+
 protected:
     RealityDataSource(){}
     RealityDataSource(Utf8CP uri, Utf8CP type);
@@ -123,7 +133,8 @@ private:
 };
 
 //=======================================================================================
-//! Base class for data source.
+//! Class for OSM data source. This class is deprecated and is only used to deserialized
+//! or serialize version 1.0 of the package.
 //! @bsiclass
 //=======================================================================================
 struct OsmDataSource : public RealityDataSource

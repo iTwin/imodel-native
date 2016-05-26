@@ -61,6 +61,10 @@ static void callback_status_func (int index, void *pClient, int ErrorCode, const
         else
             printf("******     Unzip status Failed\n");
         }
+    else
+        {
+        // An error occured ... we will try one of the alternate source
+        }
     }
 
 
@@ -159,11 +163,11 @@ int wmain(int pi_Argc, wchar_t *pi_ppArgv[])
 
         for (auto& realityData : DownloadList)
             {
-            RealityDataSourceCP pSource = dynamic_cast<RealityDataSourceCP>(&realityData->GetSource());
+            RealityDataSourceCP pSource = dynamic_cast<RealityDataSourceCP>(&realityData->GetSource(0));
             if (NULL == pSource)
                 continue;
 
-            WString filename = createDirWithHash(pSource->GetUri(), sOutputFolder, realityData->GetSource().GetFilesize());
+            WString filename = createDirWithHash(pSource->GetUri(), sOutputFolder, realityData->GetSource(0).GetFilesize());
             RealityDataDownload::ExtractFileName(filename, pSource->GetUri());
             urlList.push_back(std::make_pair(pSource->GetUri(), filename));
             }

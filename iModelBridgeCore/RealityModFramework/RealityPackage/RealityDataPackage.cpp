@@ -2,7 +2,7 @@
 |
 |     $Source: RealityPackage/RealityDataPackage.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <RealityPackage/RealityDataPackage.h>
@@ -52,6 +52,9 @@ BoundingPolygonPtr BoundingPolygon::Create(DPoint2dCP pPoints, size_t count)
             return NULL;
             }
         }
+
+    // &&AR TO DO We should definitely validate to check if the polygon autocrosses or is autocontiguous.
+
 
     return new BoundingPolygon(pPoints, count);
     }
@@ -136,6 +139,8 @@ BoundingPolygonPtr BoundingPolygon::FromString(WStringCR polygonStr)
             points.push_back(points[0]);    // add closure point.
             }    
 
+    // &&AR TO DO We should definitely validate to check if the polygon autocrosses or is autocontiguous.
+
         return new BoundingPolygon(points); // >>> Use std::move on 'points'.
         }
     
@@ -149,6 +154,9 @@ BoundingPolygonPtr BoundingPolygon::FromString(WStringCR polygonStr)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   
 //----------------------------------------------------------------------------------------
+Utf8StringCR RealityDataPackage::GetPackageOrigin() const {return m_packageOrigin;}
+void         RealityDataPackage::SetPackageOrigin(Utf8CP packageOrigin) {m_packageOrigin = packageOrigin; }
+
 Utf8StringCR RealityDataPackage::GetName() const {return m_name;}
 void         RealityDataPackage::SetName(Utf8CP name) { BeAssert(!Utf8String::IsNullOrEmpty(name)); m_name = name; }
 
@@ -287,12 +295,40 @@ RealityDataPackagePtr RealityDataPackage::CreateFromDom(RealityPackageStatus& st
         return NULL;
         }
 
+    // Instanciate the appropriated serializer/deserialiser based on the major version number
+	
+#if (0) /// Genre de trucs que l'on peut faire ...
+	RealityDataSerializer serializer;
+    if (pPackage->GetMajorVersion() == 1)
+		serializer = new RealityDataSerializer1_0();
+	else (pPackage->GetMajorVersion() == 2)
+		serializer = new RealityDataSerializer2_0();
+	else
+		{
+        status = RealityPackageStatus::UnsupportedVersion;
+        return NULL;		
+		}
+	   
+
+        
+
+    xmlDom.RegisterNamespace(PACKAGE_PREFIX, PACKAGE_CURRENT_NAMESPACE);
+
+    xmlXPathContextPtr pRootContext = xmlDom.AcquireXPathContext (pRootNode);
+
+	status = serializer->Read(pRootContenxt, pPackage);
+	
+	return pPackage;
+	
+#else
+
     xmlDom.RegisterNamespace(PACKAGE_PREFIX, PACKAGE_CURRENT_NAMESPACE);
 
     xmlXPathContextPtr pRootContext = xmlDom.AcquireXPathContext (pRootNode);
 
     // Things we do not validate.[Optional] 
     xmlDom.SelectNodeContent(pPackage->m_name, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Name, pRootContext, BeXmlDom::NODE_BIAS_First);
+    xmlDom.SelectNodeContent(pPackage->m_packageOrigin, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_PackageOrigin, pRootContext, BeXmlDom::NODE_BIAS_First);
     xmlDom.SelectNodeContent(pPackage->m_description, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Description, pRootContext, BeXmlDom::NODE_BIAS_First);
     xmlDom.SelectNodeContent(pPackage->m_copyright, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Copyright, pRootContext, BeXmlDom::NODE_BIAS_First);
     xmlDom.SelectNodeContent(pPackage->m_packageId, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_PackageId, pRootContext, BeXmlDom::NODE_BIAS_First);
@@ -325,6 +361,7 @@ RealityDataPackagePtr RealityDataPackage::CreateFromDom(RealityPackageStatus& st
        RealityPackageStatus::Success != (status = pPackage->ReadDataGroup_T(pPackage->GetTerrainGroupR(), PACKAGE_PREFIX ":" PACKAGE_ELEMENT_TerrainGroup, *pRootNode)))
         return NULL;
 
+#endif
     return pPackage;
     }
 
@@ -355,6 +392,9 @@ RealityPackageStatus RealityDataPackage::Write(BeFileNameCR filename)
     pRootNode->AddElementStringValue(PACKAGE_ELEMENT_CreationDate, BuildCreationDateUTC().c_str());
 
     // Optional fields, if empty don't add them to the package.
+    if (!GetPackageOrigin().empty())
+        pRootNode->AddElementStringValue(PACKAGE_ELEMENT_PackageOrigin, GetPackageOrigin().c_str());
+
     if (!GetDescription().empty())
         pRootNode->AddElementStringValue(PACKAGE_ELEMENT_Description, GetDescription().c_str());
     
@@ -465,15 +505,39 @@ WString RealityDataPackage::BuildCreationDateUTC()
 //=======================================================================================
 //                              RealityData
 //=======================================================================================
-RealityDataSourceR RealityData::GetSourceR() {return *m_pSource;}
-RealityDataSourceCR RealityData::GetSource() const {return *m_pSource;}
+
+RealityDataSourceR RealityData::GetSourceR(size_t index) 
+    {
+    BeAssert(index < m_Sources.size());
+        
+    return *(m_Sources[index]);
+    }
+RealityDataSourceCR RealityData::GetSource(size_t index) const 
+    {
+    BeAssert(index < m_Sources.size());
+
+    return *(m_Sources[index]);
+    }
+
+
+void RealityData::AddSource(RealityDataSourceR dataSource)
+    {
+    m_Sources.push_back(RealityDataSourcePtr(&dataSource));
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Alain.Robert  3/2016
+//----------------------------------------------------------------------------------------
+Utf8StringCR RealityData::GetDataId() const {return m_id;}
+void RealityData::SetDataId(Utf8CP dataId) {m_id = dataId;}
+Utf8StringCR RealityData::GetDataName() const {return m_name;}
+void RealityData::SetDataName(Utf8CP dataName) {m_name = dataName;}
+size_t RealityData::GetNumSources() const {return m_Sources.size();}
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
-RealityData::RealityData(RealityDataSourceR dataSource)
-    : m_pSource(&dataSource)
-    {}
+RealityData::RealityData(RealityDataSourceR dataSource)  {m_Sources.push_back(RealityDataSourcePtr(&dataSource));}
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
@@ -490,9 +554,9 @@ RealityPackageStatus RealityData::_Read(BeXmlNodeR dataNode)
     // Source should be the the first child element but we loop over all children to be more flexible.
     for (BeXmlNodeP pChildElement = dataNode.GetFirstChild(); NULL != pChildElement; pChildElement = pChildElement->GetNextSibling())
         {
-        m_pSource = RealityDataSourceSerializer::Get().Load(status, *pChildElement);
+        m_Sources.push_back(RealityDataSourcePtr(RealityDataSourceSerializer::Get().Load(status, *pChildElement)));
         if (RealityPackageStatus::UnknownElementType != status)
-            break;  // either we loaded the source or we had an error loading it.
+            break;  // either we loaded a source or we had an error loading it.
 
         status = RealityPackageStatus::MissingDataSource;   // reset status we do not want return UnknownElementType if it's the last iteration.
         }       
@@ -505,10 +569,14 @@ RealityPackageStatus RealityData::_Read(BeXmlNodeR dataNode)
 //----------------------------------------------------------------------------------------
 RealityPackageStatus RealityData::_Write(BeXmlNodeR dataNode) const
     {
-    if (!m_pSource.IsValid())
+    if (0 >= m_Sources.size())
         return RealityPackageStatus::MissingDataSource;
 
-    return RealityDataSourceSerializer::Get().Store(*m_pSource, dataNode);
+    RealityPackageStatus status = RealityPackageStatus::Success;
+    for (size_t index = 0 ; (RealityPackageStatus::Success == status) && index < m_Sources.size() ; index++)
+        status = RealityDataSourceSerializer::Get().Store(*(m_Sources[index]), dataNode);
+
+    return status;
     }
 
 //=======================================================================================
@@ -523,7 +591,8 @@ ImageryData::~ImageryData(){}
 //----------------------------------------------------------------------------------------
 ImageryDataPtr ImageryData::Create(RealityDataSourceR dataSource, DPoint2dCP pCorners)
     {
-    if(NULL != NULL && !HasValidCorners(pCorners))
+    // If corners are given they must be valid.
+    if(NULL != pCorners && !HasValidCorners(pCorners))
         return NULL;
 
     return new ImageryData(dataSource, pCorners);
@@ -604,6 +673,7 @@ bool ImageryData::HasValidCorners(DPoint2dCP pCorners)
             }
         }
 
+    // &&AR TO DO ... Make sure the path defined by corners does not autocross.
     return true;
     } 
 
@@ -736,6 +806,17 @@ bool PinnedData::SetLocation(DPoint2dCR location)
         return false;
 
     m_location = location;
+    return true;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Alain.Robert  5/2016
+//----------------------------------------------------------------------------------------
+bool PinnedData::HasArea() const {return !m_area.IsNull();}
+BoundingPolygonCP PinnedData::GetAreaCP() const{return m_area.get();}
+bool PinnedData::SetArea(BoundingPolygonR area)
+    {
+    m_area = &area;
     return true;
     }
 

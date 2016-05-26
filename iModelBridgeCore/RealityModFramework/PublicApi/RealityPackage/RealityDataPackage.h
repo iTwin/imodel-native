@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/RealityPackage/RealityDataPackage.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -30,7 +30,8 @@ public:
     static BoundingPolygonPtr Create();
 
     //! Create a polygon from points. Duplication will be forced on first/last point. 
-    //! Return NULL if count is less than 3 or if points value are not within long/lat range.
+    //! Return NULL if count is less than 3, if points value are not within long/lat range or
+    //! if the points form an invalid polygon that is autoconguous or autcrosses.
     REALITYPACKAGE_EXPORT static BoundingPolygonPtr Create(DPoint2dCP pPoints, size_t count);
 
     //! The polygon points in lat/long including the duplicated closing point.
@@ -87,6 +88,10 @@ public:
     //! Store the content of this instance to disk. 
     //! If at the time of writing the creation date is invalid a valid one will be created with the current date.
     REALITYPACKAGE_EXPORT RealityPackageStatus Write(BeFileNameCR filename);
+
+    //! The origin of this package file. Specified the Context service or GeoCoordinate Service server.
+    REALITYPACKAGE_EXPORT Utf8StringCR GetPackageOrigin() const;
+    REALITYPACKAGE_EXPORT void SetPackageOrigin(Utf8CP packageOrigin);
 
     //! The name of this package file.
     REALITYPACKAGE_EXPORT Utf8StringCR GetName() const;
@@ -156,6 +161,7 @@ private:
 
     uint32_t m_majorVersion;
     uint32_t m_minorVersion;
+    Utf8String m_packageOrigin;
     Utf8String m_name;
     Utf8String m_description;
     Utf8String m_copyright;
@@ -177,9 +183,21 @@ private:
 struct RealityData : public RefCountedBase
 {
 public:      
-    REALITYPACKAGE_EXPORT RealityDataSourceR GetSourceR();
-    REALITYPACKAGE_EXPORT RealityDataSourceCR GetSource() const;
-    
+    REALITYPACKAGE_EXPORT Utf8StringCR GetDataId() const;
+    REALITYPACKAGE_EXPORT void SetDataId(Utf8CP dataId);
+
+    REALITYPACKAGE_EXPORT Utf8StringCR GetDataName() const;
+    REALITYPACKAGE_EXPORT void SetDataName(Utf8CP dataName);
+
+    //! Data can contain many sources (at least one). This returns the number of sources.
+    REALITYPACKAGE_EXPORT size_t GetNumSources() const;
+
+    //! Returns the source. index start at 0 up to GetNumSource()-1
+    REALITYPACKAGE_EXPORT RealityDataSourceR GetSourceR(size_t index);
+    REALITYPACKAGE_EXPORT RealityDataSourceCR GetSource(size_t index) const;
+
+    //! Adds an alternate source to the data.
+    REALITYPACKAGE_EXPORT void AddSource(RealityDataSourceR dataSource);
 protected:
     explicit RealityData(){}; // for persistence.
     RealityData(RealityDataSourceR dataSource);
@@ -190,7 +208,9 @@ protected:
     virtual RealityPackageStatus _Write(BeXmlNodeR dataNode) const;
       
 private:
-    RealityDataSourcePtr m_pSource;
+    bvector<RealityDataSourcePtr> m_Sources;
+    Utf8String m_id;
+    Utf8String m_name;
 };
 
 //=======================================================================================
@@ -211,14 +231,17 @@ public:
         UpperRight  = 3     // (1,1)
         };
 
-    //! Create a new ImageryData. Optionally imagery corners in lat/long.
+    //! Create a new ImageryData. Optionally imagery corners in lat/long. If corners are provided then
+    //! the pointer given must point to 4 consecutive DPoint2d structures in an array
     REALITYPACKAGE_EXPORT static ImageryDataPtr Create(RealityDataSourceR dataSource, DPoint2dCP pCorners);
     
     //! Imagery corners in lat/long.
-    //! May return NULL. In such a case the corners should be read from the file header.
+    //! May return NULL. In such a case the corners should be read from the file header. The pointer returned is the 
+    //! start of a 4 DPoint2d array.
     REALITYPACKAGE_EXPORT DPoint2dCP GetCornersCP() const;
 
-    //! Set Imagery corners.
+    //! Set Imagery corners. nullptr can be passed to remove corners. If corners are provided then
+    //! the pointer given must point to 4 consecutive DPoint2d structures in an array
     REALITYPACKAGE_EXPORT void SetCorners(DPoint2dCP pCorners);
        
     static Utf8CP ElementName; 
@@ -281,7 +304,20 @@ public:
     //! Set the object location in long/lat coordinate. 
     //! Longitudes range from -180 to 180. Latitudes range from -90 to 90.
     //! False is returned if location is invalid.
-    REALITYPACKAGE_EXPORT bool SetLocation(DPoint2dCR location); 
+    REALITYPACKAGE_EXPORT bool SetLocation(DPoint2dCR location);
+
+    //! Returns true if the location has a defined area (a polygon)
+    REALITYPACKAGE_EXPORT bool HasArea() const;
+
+    //! Get the object polygon location in long/lat coordinate. If the location is not defined by a polygon 
+    //! a nullptr is returned. First check with HasPolygonLocation() before calling this method.
+    REALITYPACKAGE_EXPORT BoundingPolygonCP GetAreaCP() const;
+
+    //! Set the object location as a polygon in a sequence long/lat coordinate. 
+    //! Longitudes range from -180 to 180. Latitudes range from -90 to 90.
+    //! The polygon can be convex or not but it must not be autocontiguous or auto crossing
+    //! False is returned if polygon is invalid.
+    REALITYPACKAGE_EXPORT bool SetArea(BoundingPolygonR polygon); 
 
     static Utf8CP ElementName;
 private:
@@ -292,7 +328,8 @@ private:
     virtual RealityPackageStatus _Read(BeXmlNodeR dataNode) override;
     virtual RealityPackageStatus _Write(BeXmlNodeR dataNode) const override;
 
-    DPoint2d m_location;        //!spatial location in long/lat
+    DPoint2d            m_location;        //!spatial location in long/lat
+    BoundingPolygonPtr  m_area;
 };
 
 //=======================================================================================

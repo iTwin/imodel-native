@@ -43,6 +43,7 @@
 #define PACKAGE_ELEMENT_Copyright           "Copyright"
 #define PACKAGE_ELEMENT_PackageId           "PackageId"
 #define PACKAGE_ELEMENT_BoundingPolygon     "BoundingPolygon"
+#define PACKAGE_ELEMENT_PackageOrigin       "PackageOrigin"
 
 // RealityData
 #define PACKAGE_ELEMENT_ImageryGroup        "ImageryGroup"
@@ -59,11 +60,13 @@
 #define PACKAGE_ELEMENT_PinnedGroup         "PinnedGroup"
 #define PACKAGE_ELEMENT_PinnedData          "PinnedData"
 #define PACKAGE_ELEMENT_Position            "Position"
+#define PACKAGE_ELEMENT_Area                "Area"
 
 #define PACKAGE_ELEMENT_TerrainGroup        "TerrainGroup"
 #define PACKAGE_ELEMENT_TerrainData         "TerrainData"
 
 // RealityDataSources
+#define PACKAGE_ELEMENT_Sources             "Sources"
 #define PACKAGE_ELEMENT_Source              "Source"
 #define PACKAGE_SOURCE_ATTRIBUTE_Uri        "uri"
 #define PACKAGE_SOURCE_ATTRIBUTE_Type       "type"
@@ -72,6 +75,7 @@
 #define PACKAGE_ELEMENT_Provider            "Provider"
 #define PACKAGE_ELEMENT_Filesize            "Filesize"
 #define PACKAGE_ELEMENT_Metadata            "Metadata"
+#define PACKAGE_ELEMENT_GeoCS               "GeoCS"
 #define PACKAGE_ELEMENT_SisterFiles         "SisterFiles"
 
 #define PACKAGE_ELEMENT_WmsSource           "WmsSource"

@@ -51,18 +51,7 @@
         <xs:simpleContent>
             <xs:extension base="xs:string"/>
         </xs:simpleContent>
-<!--
-        <xs:attribute name="type" type="xs:string" use="required">
-            <xs:annotation>
-                <xs:documentation>
-                    The type of the coordinate system definition
-                    TODO: (WHAT is this?)
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
--->
-
-  </xs:complexType>
+    </xs:complexType>
 
     <!-- =========================================================== -->
     <xs:complexType name="PolygonType">
@@ -157,6 +146,14 @@
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute> 
+            </xs:element>
+            <xs:element name="GeoCS" type="CoordinateSystemType" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                    This element specifies the geographic coordinate system keyname to be used as default for the source given the 
+                    geographic coordinate system cannot be stored in the soure format, is not stored or cannot be interpreted by the application.
+                    </xs:documentation>
+                </xs:annotation>
             </xs:element>
             <xs:element name="SisterFiles" type="ListOfFilesType" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
@@ -421,7 +418,7 @@
                         <xs:annotation>
                             <xs:documentation>
                             Corners indicate the footprint extent of the Imagery. All four corners are specified allowing
-                            specification of a rotated square footprint.
+                            specification of an approximate georeference of the image.
                             </xs:documentation>
                         </xs:annotation>                    
                     </xs:element>   
@@ -450,17 +447,32 @@
         <xs:annotation>
             <xs:documentation>
             Pinned data type specify the data type for pinned data. It extends the generic data type by adding a mandatory pin 
-            position applicable to the non-geospatially located data.
+            position applicable to the non-geospatially located data. Note that if a document applies to many different locations
+            then a PinnedData entry must be present for every location it refers to.
             </xs:documentation>
         </xs:annotation>      
         <xs:complexContent>
             <xs:extension base="DataEntryType">
                 <xs:sequence>
-                    <xs:element name="Position" type="xs:string" minOccurs="1" maxOccurs="1">
+                    <xs:element name="Position" type="doubleList" minOccurs="1" maxOccurs="1">
                         <xs:annotation>
                             <xs:documentation>
-                            The position of the pin. It is expressed as pair of numbers longitude/latitude.
-                            NOTE: We do not currently support spatial pins that define an attachement to a sizeable area. 
+                            The position of the pin. It is expressed  as a pair of numbers longitude/latitude . If an area is specified after the position
+                            it is recommended that this position be located inside the area.
+                            Typical use for single coordinate pin would be to attach a picture of some building upon the approximative location
+                            of this building. Most pinned data will only have a position.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="Area" type="doubleList" minOccurs="0" maxOccurs="1">
+                        <xs:annotation>
+                            <xs:documentation>
+                            The optional area to which applies the pinned data. It is a list of decimal degrees space separated longitude latitude pairs
+                            forming a non-crossing non autocontiguous polygon. It shall define an area to which the document is attached.
+                            Typical use of a polygon defined area would be to attach a document upon a large area for example defining the 
+                            web site URL to a municipality thus attached to the whole town area.
+                            The vast majority of pinned document should make only use of single coordinate pin position while sizeable pins being only used for large
+                            areas. Note that the polygon must have a duplicate of the first point as a closing point.
                             </xs:documentation>
                         </xs:annotation>
                     </xs:element>
@@ -571,7 +583,7 @@
         </xs:annotation>
         <xs:complexType>
             <xs:sequence>
-                <xs:element name="ContextServiceOrigin" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:element name="PackageOrigin" type="xs:string" minOccurs="0" maxOccurs="1">
                     <xs:annotation>
                         <xs:documentation>
                         String that contains the Context Service server that was used in the creation of the package if any.
@@ -593,8 +605,8 @@
                     <xs:annotation>
                         <xs:documentation>
                         A textual description of the package. The description is language unspecified meaning
-                        that it can be in any language as seen fit by the package creator.
-                        TO DO: Maybe no description should be provided since it introduces I10N issues with the file.
+                        that it can be in any language as seen fit by the package creator but would be in the locale at the time of the
+                        package order..
                         </xs:documentation>
                     </xs:annotation>
                 </xs:element>
@@ -607,25 +619,14 @@
                     <xs:annotation>
                         <xs:documentation>
                         A textual Copyright. The copyright is language unspecified meaning
-                        that it can be in any language as seen fit by the package creator.
-                        TO DO: Maybe no description should be provided since it introduces I10N issues with the file.
-                        COULD the copyright be a link instead to some Web page that would take into account the language of the client?
-                        Using reflections from others we could have something like what is used in Metadata in tc211 (ISO-19115) such as:
-                        <!-- <gco:CharacterString>Codelists for description of metadata datasets compliant with ISO/TC 211 19115:2003 and 19139</gco:CharacterString>
-                             <gmd:PT_FreeText>
-                                <gmd:textGroup>
-                                   <gmd:LocalisedCharacterString locale="#FR ">Listes de codes pour la description de lots de métadonnées conforme ISO TC/211 19115:2003 et 19139</gmd:LocalisedCharacterString>
-                                </gmd:textGroup>
-                             </gmd:PT_FreeText>
-                        -->
-                        Where the locale attribute uses a standard language code (ISO 639-1).
+                        that it can be in any language as seen fit by the package creator usually the language requested at the time of creation.
                         </xs:documentation>
                     </xs:annotation>
                 </xs:element>
                 <xs:element name="PackageId" type="xs:string" minOccurs="0" maxOccurs="1">
                     <xs:annotation>
                         <xs:documentation>
-                        TO DO Package ID. Technically all packages are stored in the Context Service server so it is technically recoverable from server
+                        Package ID. Technically all packages are stored in the Context Service server so it is technically recoverable from server
                         but the ID should instead be used as the file name to store package into.
                         </xs:documentation>
                     </xs:annotation>
