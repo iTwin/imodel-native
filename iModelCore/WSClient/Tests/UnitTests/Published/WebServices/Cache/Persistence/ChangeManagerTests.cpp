@@ -234,7 +234,7 @@ TEST_F(ChangeManagerTests, ModifyObject_ExistingObject_SavesNewValuesToCache)
     {
     // Arrange
     auto cache = GetTestCache();
-    auto instance = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Foo"}, {{"TestProperty", "OldValue"}});
+    auto instance = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Foo"}, {{"TestProperty", "OldValue"}, {"TestProperty2", "OldValue"}});
     // Act
     Json::Value properties;
     properties["TestProperty"] = "NewValue";
@@ -245,6 +245,7 @@ TEST_F(ChangeManagerTests, ModifyObject_ExistingObject_SavesNewValuesToCache)
     Json::Value instanceJson;
     cache->GetAdapter().GetJsonInstance(instanceJson, instance);
     EXPECT_EQ("NewValue", instanceJson["TestProperty"].asString());
+    EXPECT_EQ("OldValue", instanceJson["TestProperty2"].asString());
     }
 
 TEST_F(ChangeManagerTests, ModifyObject_CreatedObject_SuccessAndLeavesStatusCreatedAndSameNumber)
@@ -573,14 +574,18 @@ TEST_F(ChangeManagerTests, ModifyFileName_InstanceWithoutFile_Error)
     BeTest::SetFailOnAssert(true);
     }
 
-TEST_F(ChangeManagerTests, ModifyFileName_InstanceWithNonModifiedFile_Error)
+TEST_F(ChangeManagerTests, ModifyFileName_InstanceWithNonModifiedFile_SuccessAndFileRenamed)
     {
+    // Arrange
     auto cache = GetTestCache();
     auto instance = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Foo"});
     ASSERT_EQ(SUCCESS, cache->CacheFile({"TestSchema.TestClass", "Foo"}, StubWSFileResponse(StubFile()), FileCache::Persistent));
-    BeTest::SetFailOnAssert(false);
-    EXPECT_EQ(ERROR, cache->GetChangeManager().ModifyFileName(instance, "Foo.txt"));
-    BeTest::SetFailOnAssert(true);
+    // Act
+    EXPECT_EQ(SUCCESS, cache->GetChangeManager().ModifyFileName(instance, "Foo.txt"));
+    // Assert
+    auto newFilePath = cache->ReadFilePath(instance);
+    EXPECT_TRUE(newFilePath.DoesPathExist());
+    EXPECT_EQ(L"Foo.txt", newFilePath.GetFileNameAndExtension());
     }
 
 TEST_F(ChangeManagerTests, ModifyFileName_InstanceWithModifiedFile_SuccessAndFileRenamed)
