@@ -145,6 +145,11 @@ AuthenticationHandlerPtr authenticationHandler
         if (!taskPtr->GetResult().IsSuccess())
             return DgnDbRepositoryConnectionResult::Error(result.GetError());
         auto manager = ConnectSignInManager::Create(clientInfo, authenticationHandler);
+
+		bool isSuccess = manager->SignInWithCredentials(credentials)->GetResult().IsSuccess();
+		if (!isSuccess)
+			return DgnDbRepositoryConnectionResult::Error(result.GetError());
+
         EventServiceInfo info = *(taskPtr->GetResult().GetValue());
         Utf8String userid = manager->GetUserInfo().userId;
         userid.ReplaceAll("@", "_");
