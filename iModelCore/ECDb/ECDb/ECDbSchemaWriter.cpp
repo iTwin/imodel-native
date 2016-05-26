@@ -795,9 +795,17 @@ BentleyStatus ECDbSchemaWriter::DeleteECClass(ECClassChange& classChange, ECClas
             return ERROR;
         }
 
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("DELETE FROM ec_Class WHERE Id = ?");
+    stmt->BindId(1, deletedClass.GetId());
+    if (stmt->Step() != BE_SQLITE_DONE)
+        {
+        BeAssert(false && "Failed to delete the class");
+        return ERROR;
+        }
+
     for (ECPropertyCP localProperty : deletedClass.GetProperties(false))
         {
-        if (DeleteECCustomAttributes(localProperty->GetId(), ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Property) != ERROR)
+        if (DeleteECCustomAttributes(localProperty->GetId(), ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Property) != SUCCESS)
             {
             BeAssert(false && "Failed to delete property customAttribute ");
             return ERROR;
@@ -806,12 +814,12 @@ BentleyStatus ECDbSchemaWriter::DeleteECClass(ECClassChange& classChange, ECClas
 
     if (auto relationshipClass = deletedClass.GetRelationshipClassCP())
         {
-        if (DeleteECCustomAttributes(relationshipClass->GetId(), ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::SourceRelationshipConstraint) != ERROR)
+        if (DeleteECCustomAttributes(relationshipClass->GetId(), ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::SourceRelationshipConstraint) != SUCCESS)
             {
             BeAssert(false && "Failed to delete property customAttribute ");
             return ERROR;
             }
-        if (DeleteECCustomAttributes(relationshipClass->GetId(), ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::TargetRelationshipConstraint) != ERROR)
+        if (DeleteECCustomAttributes(relationshipClass->GetId(), ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::TargetRelationshipConstraint) != SUCCESS)
             {
             BeAssert(false && "Failed to delete property customAttribute ");
             return ERROR;

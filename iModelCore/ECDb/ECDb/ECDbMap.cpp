@@ -108,26 +108,24 @@ BentleyStatus ECDbMap::PurgeOrphanTables() const
         }
 
     stmt.Finalize();
-    if (!virtualTables.empty())
+    if (stmt.Prepare(m_ecdb, "DELETE FROM ec_Table WHERE Name = ?") != BE_SQLITE_OK)
         {
-        if (stmt.Prepare(m_ecdb, "DELETE FROM ec_Table WHERE Name = ?") != BE_SQLITE_OK)
+        BeAssert(false && "system sql schema changed");
+        return ERROR;
+        }
+
+    for (Utf8StringCR name : virtualTables)
+        {
+        stmt.Reset();
+        stmt.ClearBindings();
+        stmt.BindText(1, name, Statement::MakeCopy::No);
+        if (stmt.Step() != BE_SQLITE_DONE)
             {
-            BeAssert(false && "system sql schema changed");
+            BeAssert(false && "constraint voilation");
             return ERROR;
             }
-       
-        for (Utf8StringCR name : virtualTables)
-            {
-            stmt.Reset();
-            stmt.ClearBindings();
-            stmt.BindText(1, name, Statement::MakeCopy::No);
-            if (stmt.Step() != BE_SQLITE_DONE)
-                {
-                BeAssert(false && "constraint voilation");
-                return ERROR;
-                }
-            }
         }
+
     if (!nonVirtualTables.empty())
         {
         BeBriefcaseId briefcaseId = GetECDb().GetBriefcaseId();
@@ -135,7 +133,7 @@ BentleyStatus ECDbMap::PurgeOrphanTables() const
         if (!allowDbSchemaChange)
             {
             GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to import ECSchemas: Imported ECSchemas would change the database schema. "
-                                                          "This is only allowed for standalone briefcases or the master briefcase. Briefcase id: %" PRIu32, briefcaseId.GetValue());
+                                                               "This is only allowed for standalone briefcases or the master briefcase. Briefcase id: %" PRIu32, briefcaseId.GetValue());
             return ERROR;
             }
 
@@ -144,6 +142,15 @@ BentleyStatus ECDbMap::PurgeOrphanTables() const
             if (m_ecdb.DropTable(name.c_str()) != BE_SQLITE_OK)
                 {
                 BeAssert(false && "failed to drop a table");
+                return ERROR;
+                }
+
+            stmt.Reset();
+            stmt.ClearBindings();
+            stmt.BindText(1, name, Statement::MakeCopy::No);
+            if (stmt.Step() != BE_SQLITE_DONE)
+                {
+                BeAssert(false && "constraint voilation");
                 return ERROR;
                 }
             }

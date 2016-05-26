@@ -1932,7 +1932,7 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_SharedTable)
     asserted = false;
     AssertSchemaImport(asserted, GetECDb(), deleteGoo);
     ASSERT_FALSE(asserted);
-
+    GetECDb().SaveChanges();
     //Following should not exist
     ASSERT_FALSE(GetECDb().TableExists("ts_Goo"));
 
@@ -3970,7 +3970,7 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable_Shared
     ASSERT_EQ(expectedColCount, statement.GetColumnCount());
 
     //verify that the columns generated are same as expected
-    expectedColumnNames = "ECInstanceIdECClassIdsc01sc02sc03sc04sc05sc06sc07";
+    expectedColumnNames = "ParentECInstanceIdECClassIdsc01sc02sc03sc04sc05sc06sc07";
     actualColumnNames = "";
     for (int i = 0; i < expectedColCount; i++)
         {
