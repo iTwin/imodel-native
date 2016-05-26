@@ -13,7 +13,8 @@
 #include <DgnDbServer/DgnDbServerCommon.h>
 #include <DgnDbServer/Client/RepositoryInfo.h>
 #include <DgnDbServer/Client/DgnDbServerRevision.h>
-#include <DgnDbServer/Client/EventServiceInfo.h>
+#include <DgnDbServer/Client/EventServiceConnection.h>
+#include <DgnDbServer/Client/EventServiceReceive.h>
 #include <WebServices/Azure/AzureBlobStorageClient.h>
 #include <WebServices/Azure/EventServiceClient.h>
 #include <DgnClientFx/Utils/Http/AuthenticationHandler.h>
@@ -33,7 +34,7 @@ DEFINE_TASK_TYPEDEFS(DgnDbServerRevisionPtr, DgnDbServerRevision);
 DEFINE_TASK_TYPEDEFS(bvector<DgnDbServerRevisionPtr>, DgnDbServerRevisions);
 DEFINE_TASK_TYPEDEFS(uint64_t, DgnDbServerUInt64);
 DEFINE_TASK_TYPEDEFS(DgnDbLockSetResultInfo, DgnDbServerLockSet);
-DEFINE_TASK_TYPEDEFS(EventServiceInfoPtr, EventServiceInfo);
+DEFINE_TASK_TYPEDEFS(EventServiceConnectionPtr, EventServiceConnection);
 DEFINE_TASK_TYPEDEFS(EventServiceReceivePtr, EventServiceReceive);
 
 //=======================================================================================
@@ -86,7 +87,7 @@ private:
     void SetAzureClient(IAzureBlobStorageClientPtr azureClient);
 
     //! Sets EventServiceClient.
-    void SetEventServiceClient(EventServiceClient *eventServiceClient);
+    bool SetEventServiceClient(RepositoryInfoCR repoInfo);
 
     //! Update repository info from the server.
     DgnDbServerStatusTaskPtr UpdateRepositoryInfo (ICancellationTokenPtr cancellationToken = nullptr);
@@ -116,7 +117,13 @@ private:
     DgnDbServerRevisionsTaskPtr RevisionsFromQuery (const WSQuery& query, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Get the SasToken and NameSpace based on query to EventService WebAPI.
-    EventServiceInfoTaskPtr GetEventServiceSAS(ICancellationTokenPtr cancellationToken = nullptr) const;
+    EventServiceConnectionTaskPtr GetEventServiceSAS(ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Get the ConnectionId based on query to EventService WebAPI.
+    EventServiceConnectionTaskPtr GetEventServiceConnectionId(ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Get the ConnectionInformation from EventService WebAPI.
+    EventServiceConnectionTaskPtr GetEventServiceConnection(Utf8String EventServiceClass, ICancellationTokenPtr cancellationToken) const;
 
     //! Get the index from a revisionId.
     DgnDbServerUInt64TaskPtr GetRevisionIndex (Utf8StringCR revisionId, ICancellationTokenPtr cancellationToken = nullptr) const;
