@@ -44,6 +44,9 @@ BentleyStatus Base64Utilities::Encode(Utf8StringR encodedString, Byte const* byt
     if (byteArray == nullptr || byteCount == 0)
         return SUCCESS;
 
+    size_t nEncodedBytes = static_cast<size_t>(4.0 * ((byteCount + 2) / 3.0));
+    encodedString.reserve(nEncodedBytes);
+
     Byte byte_array_3[3];
     Byte byte_array_4[4];
 
